@@ -24,6 +24,8 @@ dnl AC_CONFIG_AUX_DIR(.)
 
 AC_CANONICAL_HOST
 
+m4_include(../aclocal.m4)
+
 AC_PROG_CC
 AC_PROG_CXX
 
@@ -327,6 +329,9 @@ dnl By default, make the library as general as possible.
 AC_DEFINE(JAVA_FINALIZATION)
 dnl AC_DEFINE(GC_GCJ_SUPPORT)
 AC_DEFINE(ATOMIC_UNCOLLECTABLE)
+
+dnl Sets some optimization flags by heuristics.
+AC_GAUCHE_OPTFLAGS
 
 dnl This is something of a hack.  When cross-compiling we turn off
 dnl some functionality.  We also enable the "small" configuration.

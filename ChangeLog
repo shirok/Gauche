@@ -1,3 +1,14 @@
+2002-07-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/write.c, src/gauche/port.h : inlined port lock
+	  primitives in write.c.
+	* gc/configure.in: disabled THREAD_LOCAL_ALLOC for now, since it
+	  caused significant performance loss on Linux/x86 when gosh is
+	  compiled with pthreads but not using threads.  The difference
+	  of GC lock implementation may be the cause.  Disabling local alloc
+	  may damage multithreaded app, but at least on gosh, MT is more
+	  for asynchronous event handling than performance benefit, I think.
+
 2002-07-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (break_env_paths): fixed a bug (thanks to Alex Shinn).

@@ -6,6 +6,7 @@ VPATH = $(srcdir)
 CC = @CC@
 LIBS = @LIBS@
 DEFS = @DEFS@
+OPTFLAGS = @OPTFLAGS@
 CFLAGS = @CFLAGS@ @DEFS@ -I$(srcdir) -I$(srcdir)/../gc/include \
          @LOCAL_INC@ @SHLIB_SO_CFLAGS@ $(OPTFLAGS)
 LDFLAGS = @LOCAL_LIB@ @SHLIB_MAIN_LDFLAGS@

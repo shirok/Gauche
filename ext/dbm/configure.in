@@ -1,9 +1,10 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.12 2002-02-10 05:40:05 shirok Exp $
+dnl $Id: configure.in,v 1.13 2002-07-18 10:52:21 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
+AC_CANONICAL_SYSTEM
 AC_GAUCHE_INIT_EXT
 
 # Sets the default value of INSTALL_TYPE macro.
@@ -12,6 +13,7 @@ AC_GAUCHE_INSTALL_TYPE(sys)
 # Get compiler parameters which Gauche has been compiled with.
 AC_GAUCHE_CC
 AC_GAUCHE_FLAGS
+AC_GAUCHE_OPTFLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL

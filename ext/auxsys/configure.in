@@ -1,9 +1,10 @@
 dnl
 dnl Configure auxiliary system functions
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.2 2002-03-06 08:43:15 shirok Exp $
+dnl $Id: configure.in,v 1.3 2002-07-18 10:52:21 shirok Exp $
 AC_INIT(auxsys.c)
 AC_CONFIG_HEADER(auxsysconf.h)
+AC_CANONICAL_SYSTEM
 AC_GAUCHE_INIT_EXT
 
 # Sets the default value of INSTALL_TYPE macro.
@@ -12,6 +13,7 @@ AC_GAUCHE_INSTALL_TYPE(sys)
 # Get compiler parameters which Gauche has been compiled with.
 AC_GAUCHE_CC
 AC_GAUCHE_FLAGS
+AC_GAUCHE_OPTFLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL

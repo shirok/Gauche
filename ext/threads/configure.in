@@ -1,8 +1,9 @@
 dnl
 dnl Configuring ext/threads
 dnl
-dnl $Id: configure.in,v 1.1 2002-07-14 09:53:38 shirok Exp $
+dnl $Id: configure.in,v 1.2 2002-07-18 10:52:22 shirok Exp $
 AC_INIT(threads.c)
+AC_CANONICAL_SYSTEM
 AC_GAUCHE_INIT_EXT
 
 # Sets the default value of INSTALL_TYPE macro.
@@ -11,6 +12,7 @@ AC_GAUCHE_INSTALL_TYPE(sys)
 # Get compiler parameters which Gauche has been compiled with.
 AC_GAUCHE_CC
 AC_GAUCHE_FLAGS
+AC_GAUCHE_OPTFLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL

@@ -106,6 +106,7 @@ RANLIB = @RANLIB@
 STRIP = @STRIP@
 THREADLIBS = @THREADLIBS@
 VERSION = @VERSION@
+OPTFLAGS = @OPTFLAGS@
 addobjs = @addobjs@
 am__include = @am__include@
 am__quote = @am__quote@

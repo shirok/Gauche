@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.70 2002-07-17 07:17:54 shirok Exp $
+dnl $Id: configure.in,v 1.71 2002-07-18 10:52:21 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.70 $)
+AC_REVISION($Revision: 1.71 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -239,12 +239,6 @@ if test "$ac_cv_type_time_t_integral" = yes; then
 AC_DEFINE(INTEGRAL_TIME_T)
 fi
 
-dnl if we build for i686, take advantage of USE_I686_PREFETCH
-if test $target_cpu = "i686"; then
-  I686OPT=-DUSE_I686_PREFETCH
-fi
-AC_SUBST(I686OPT)
-
 dnl ===========================================================
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
@@ -414,6 +408,9 @@ AC_SUBST(GOSH_LIBGAUCHE_LIB)
 AC_SUBST(GOSH_LIBGAUCHE_FILES)
 AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX")
 AC_MSG_RESULT($SHLIB_OK)
+
+dnl Sets some optimization flags by heuristics.
+AC_GAUCHE_OPTFLAGS
 
 dnl ===========================================================
 dnl Add version macro
