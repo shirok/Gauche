@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.37 2001-02-14 10:11:24 shiro Exp $
+ *  $Id: vm.c,v 1.38 2001-02-15 08:56:25 shiro Exp $
  */
 
 #include "gauche.h"
@@ -36,6 +36,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
                  ScmModule *module)
 {
     ScmVM *v = SCM_NEW(ScmVM);
+    int i;
+    
     SCM_SET_CLASS(v, &Scm_VMClass);
     v->parent = base;
     v->module = module ? module : base->module;
@@ -61,6 +63,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->cont = NULL;
     v->pc = SCM_NIL;
     v->val0 = SCM_UNDEFINED;
+    for (i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
+    v->numVals = 1;
     
     v->handlers = SCM_NIL;
 
@@ -75,16 +79,25 @@ static void vm_reset()
     theVM->cont = NULL;
     theVM->pc = SCM_NIL;
     theVM->val0 = SCM_UNDEFINED;
+    theVM->numVals = 1;
 }
 
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
-    return Scm_Cons(vm->val0, SCM_NIL);
+    ScmObj head = SCM_NIL, tail;
+    int i;
+    if (vm->numVals == 0) return SCM_NIL;
+    SCM_APPEND1(head, tail, vm->val0);
+    for (i=1; i<vm->numVals; i++) {
+        SCM_APPEND1(head, tail, vm->vals[i-1]);
+    }
+    return head;
 }
 
 void Scm_VMSetResult(ScmObj obj)
 {
     theVM->val0 = obj;
+    theVM->numVals = 1;
 }
 
 /*
@@ -183,6 +196,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
             argp = cont->argp;                                          \
             pc   = cont->pc;                                            \
         } else {                                                        \
+            sp = vm->stackBase;                                         \
             if (cont->argp) {                                           \
                 memcpy(sp, cont->argp, cont->size*sizeof(ScmObj*));     \
                 argp = (ScmEnvFrame *)sp;                               \
@@ -414,10 +428,12 @@ static void run_loop()
                 PUSH_CONT(next);
                 PUSH_ENV_HDR();
                 pc = prep;
+                vm->numVals = 1; /* default */
                 continue;
             }
             CASE(SCM_VM_PRE_TAIL) {
                 PUSH_ENV_HDR();
+                vm->numVals = 1; /* default */
                 continue;
             }
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
@@ -431,11 +447,16 @@ static void run_loop()
                 RESTORE_REGS();
                 if (tailp) {
                     /* discard the caller's argument frame, and shift
-                       the callee's argument frame there. */
+                       the callee's argument frame there.  This argument
+                       shifting is not necessary if the caller's continuation
+                       is saved in the heap.
+                    */
                     ScmObj *to = (ScmObj*)argp - ENV_SIZE(env->size);
-                    memmove(to, argp, ENV_SIZE(argcnt)*sizeof(ScmObj));
-                    argp = (ScmEnvFrame*)to;
-                    sp = to + ENV_SIZE(argcnt);
+                    if (to >= vm->stackBase) {
+                        memmove(to, argp, ENV_SIZE(argcnt)*sizeof(ScmObj));
+                        argp = (ScmEnvFrame*)to;
+                        sp = to + ENV_SIZE(argcnt);
+                    }
                 }
 
                 if (SCM_SUBRP(val0)) {
@@ -891,6 +912,7 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
     argp = (ScmEnvFrame *)sp;
     PUSH_CONT(v);
+    vm->numVals = 1;
     SAVE_REGS();
     return SCM_UNDEFINED;
 }
@@ -925,6 +947,7 @@ static ScmObj user_eval_inner(ScmObj program)
     h->stackBase = theVM->sp;
     h->cont = theVM->cont;
     theVM->history = h;
+    theVM->numVals = 1;
     
     SCM_PUSH_ERROR_HANDLER {
         theVM->cont = NULL;
@@ -1102,7 +1125,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 }
 
 /*==============================================================
- * Continuation
+ * Call With Current Continuation
  */
 
 struct cont_data {
@@ -1117,7 +1140,7 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
                                                       current continuation */
                               ScmObj dest_handlers, /* dynamic handlers of
                                                        target continuation */
-                              ScmContFrame *cont, /* target continuation */
+                              struct cont_data *cd,/* target continuation */
                               ScmObj args)        /* args to pass to the
                                                      target continuation */ 
 {
@@ -1135,12 +1158,11 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
                 /* evaluate "after" handlers of the current continuation */
                 data[0] = (void*)SCM_CDR(cur_handlers);
                 data[1] = (void*)dest_handlers;
-                data[2] = (void*)cont;
+                data[2] = (void*)cd;
                 data[3] = (void*)args;
                 theVM->handlers = SCM_CDR(cur_handlers);
                 Scm_VMPushCC(throw_cont_cc, data, 4);
-                Scm_VMApply0(SCM_CDAR(cur_handlers));
-                return SCM_UNDEFINED;
+                return Scm_VMApply0(SCM_CDAR(cur_handlers));
             } else {
                 /* the destination is in the same dynamic environment, so
                    we don't need to go further */
@@ -1155,12 +1177,11 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
                 /* evaluate "before" handlers of the target continuation */
                 data[0] = (void*)cur_handlers;
                 data[1] = (void*)SCM_CDR(dest_handlers);
-                data[2] = (void*)cont;
+                data[2] = (void*)cd;
                 data[3] = (void*)args;
                 theVM->handlers = SCM_CDR(dest_handlers);
                 Scm_VMPushCC(throw_cont_cc, data, 4);
-                Scm_VMApply0(SCM_CAR(SCM_CAR(dest_handlers)));
-                return SCM_UNDEFINED;
+                return Scm_VMApply0(SCM_CAR(SCM_CAR(dest_handlers)));
             } else {
                 break;
             }
@@ -1170,11 +1191,11 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
     /*
      * now, install the target continuation
      */
-    theVM->pc = cont->pc;
-    theVM->env = cont->env;
-    theVM->cont = cont->prev;
+    theVM->pc = SCM_NIL;
+    theVM->cont = cd->cont;
     theVM->handlers = dest_handlers;
-
+    theVM->history = cd->history;
+    
     return args;
 }
 
@@ -1182,10 +1203,10 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
 {
     ScmObj cur_handlers = SCM_OBJ(data[0]);
     ScmObj dest_handlers = SCM_OBJ(data[1]);
-    ScmContFrame *cont = (ScmContFrame *)data[2];
+    struct cont_data *cd = (struct cont_data *)data[2];
     ScmObj args = SCM_OBJ(data[3]);
 
-    return throw_cont_body(cur_handlers, dest_handlers, cont, args);
+    return throw_cont_body(cur_handlers, dest_handlers, cd, args);
 }
 
 static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
@@ -1196,11 +1217,18 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     ScmObj current = theVM->handlers;
     ScmContFrame *cont = cd->cont;
     ScmObj args = argframe[0];
+    ScmVMActivationHistory *h;
 
+    for (h = theVM->history; h; h = h->prev) {
+        if (cd->history == h) break;
+    }
+    if (h == NULL)
+        Scm_Error("a continuation is thrown outside of it's extent: %p", cd);
+    
     SCM_ASSERT(cont != NULL);
     args = argframe[0];
     
-    return throw_cont_body(current, handlers, cont, args);
+    return throw_cont_body(current, handlers, cd, args);
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
@@ -1224,7 +1252,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
        Copying frame-by-frame will be terribly slow.  I'd like to fix
        it asap. */
     {
-        ScmContFrame *c = vm->cont;
+        ScmContFrame *c = vm->cont, *prev = NULL;
         for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
             ScmEnvFrame *e = save_env(vm, c->env, c);
             int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
@@ -1242,6 +1270,8 @@ ScmObj Scm_VMCallCC(ScmObj proc)
                 memcpy(csave, c,
                        (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj));
             }
+            if (prev) prev->prev = csave;
+            prev = csave;
         }
     }
     data = SCM_NEW(struct cont_data);
@@ -1252,6 +1282,29 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     contproc = Scm_MakeSubr(throw_continuation, data, 1, 0,
                             SCM_MAKE_STR("continuation"));
     return Scm_VMApply1(proc, contproc);
+}
+
+/*==============================================================
+ * Values
+ */
+
+ScmObj Scm_Values(ScmObj args)
+{
+    ScmVM *vm = theVM;
+    ScmObj val0, cp;
+    int nvals;
+    
+    if (!SCM_PAIRP(args)) {
+        vm->numVals = 0;
+        return SCM_UNDEFINED;
+    }
+    nvals = 1;
+    SCM_FOR_EACH(cp, SCM_CDR(args)) {
+        vm->vals[nvals-1] = SCM_CAR(cp);
+        nvals++;
+    }
+    vm->numVals = nvals;
+    return SCM_CAR(args);
 }
 
 /*==============================================================
