@@ -1,9 +1,9 @@
 /*
  * list.c - List related functions
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,51 +12,24 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: list.c,v 1.20 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/memory.h"
 
 /*
  * Classes
  */
-
-/* placeholder.  these routine should never be called */
-static int dummy_print(ScmObj obj, ScmPort *port, int mode)
-{
-    Scm_Abort("dummy print routine is called.  something's wrong.");
-    return 0;
-}
-
-static ScmClass *sequence_cpl[] = {
-    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
 
 static ScmClass *list_cpl[] = {
     SCM_CLASS_LIST, SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP,
     NULL
 };
 
-ScmClass Scm_ListClass = {
-    SCM_CLASS_CLASS,
-    "<list>",
-    dummy_print,
-    sequence_cpl
-};
-
-ScmClass Scm_PairClass = {
-    SCM_CLASS_CLASS,
-    "<pair>",
-    dummy_print,
-    list_cpl
-};
-
-ScmClass Scm_NullClass = {
-    SCM_CLASS_CLASS,
-    "<null>",
-    dummy_print,
-    list_cpl
-};
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ListClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, list_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, list_cpl);
 
 /*
  * CONSTRUCTOR
@@ -64,11 +37,28 @@ ScmClass Scm_NullClass = {
 
 ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
 {
-    ScmPair *z = SCM_NEW(ScmPair);
-    z->hdr.klass = SCM_CLASS_PAIR;
+    ScmPair *z;
+    SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
+    SCM_SET_CLASS(z, SCM_CLASS_PAIR);
     SCM_SET_CAR(z, car);
     SCM_SET_CDR(z, cdr);
     z->attributes = SCM_NIL;
+    return SCM_OBJ(z);
+}
+
+ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr)
+{
+    ScmPair *y, *z;
+    SCM_MALLOC_WORDS(y, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
+    SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
+    SCM_SET_CLASS(y, SCM_CLASS_PAIR);
+    y->attributes = SCM_NIL;
+    SCM_SET_CLASS(z, SCM_CLASS_PAIR);
+    z->attributes = SCM_NIL;
+    SCM_SET_CAR(y, caar);
+    SCM_SET_CDR(y, cdar);
+    SCM_SET_CAR(z, SCM_OBJ(y));
+    SCM_SET_CDR(z, cdr);
     return SCM_OBJ(z);
 }
 
@@ -111,12 +101,14 @@ ScmObj Scm_VaList(va_list pvar)
     {
 	if (SCM_NULLP(start)) {
             start = SCM_OBJ(SCM_NEW(ScmPair));
+            SCM_SET_CLASS(start, SCM_CLASS_PAIR);
             SCM_SET_CAR(start, obj);
             SCM_SET_CDR(start, SCM_NIL);
             cp = start;
         } else {
             ScmObj item;
             item = SCM_OBJ(SCM_NEW(ScmPair));
+            SCM_SET_CLASS(item, SCM_CLASS_PAIR);
             SCM_SET_CDR(cp, item);
             SCM_SET_CAR(item, obj);
             SCM_SET_CDR(item, SCM_NIL);
@@ -131,6 +123,18 @@ ScmObj Scm_VaCons(va_list pvar)
 {
     Scm_Panic("Scm_VaCons: not implemented");
     return SCM_UNDEFINED;
+}
+
+ScmObj Scm_ArrayToList(ScmObj *elts, int nelts)
+{
+    ScmObj h = SCM_NIL, t;
+    if (elts) {
+        int i;
+        for (i=0; i<nelts; i++) {
+            SCM_APPEND1(h, t, *elts++);
+        }
+    }
+    return h;
 }
 
 /* Procedures intended to be used from Scheme */
@@ -234,7 +238,7 @@ ScmObj Scm_CopyList(ScmObj list)
     if (!SCM_PAIRP(list)) return list;
     
     SCM_FOR_EACH(list, list) {
-        SCM_GROW_LIST(start, last, SCM_CAR(list));
+        SCM_APPEND1(start, last, SCM_CAR(list));
     }
     if (!SCM_NULLP(list)) {
         if (start == SCM_NIL) start = list;
@@ -252,7 +256,7 @@ ScmObj Scm_MakeList(int len, ScmObj fill)
 {
     ScmObj start = SCM_NIL, last;
     while (len--) {
-        SCM_GROW_LIST(start, last, fill);
+        SCM_APPEND1(start, last, fill);
     }
     return start;
 }
@@ -287,12 +291,31 @@ ScmObj Scm_Append2(ScmObj list, ScmObj obj)
     if (!SCM_PAIRP(list)) return obj;
 
     SCM_FOR_EACH(list, list) {
-	SCM_GROW_LIST(start, last, SCM_CAR(list));
+	SCM_APPEND1(start, last, SCM_CAR(list));
     }
     SCM_SET_CDR(last, obj);
 
     return start;
-}    
+}
+
+ScmObj Scm_Append(ScmObj args)
+{
+    ScmObj start = SCM_NIL, last, cp;
+    SCM_FOR_EACH(cp, args) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            if (SCM_NULLP(start)) return SCM_CAR(cp);
+            SCM_SET_CDR(last, SCM_CAR(cp));
+            break;
+        } else if (SCM_NULLP(SCM_CAR(cp))) {
+            continue;
+        } else if (!SCM_PAIRP(SCM_CAR(cp))) {
+            Scm_Error("pair required, but got %S", SCM_CAR(cp));
+        } else {
+            SCM_APPEND(start, last, Scm_CopyList(SCM_CAR(cp)));
+        }
+    }
+    return start;
+}
 
 /* Scm_Reverse(list)
  *    Reverse LIST.  If LIST is not a pair, return LIST itself.
@@ -302,13 +325,16 @@ ScmObj Scm_Append2(ScmObj list, ScmObj obj)
 ScmObj Scm_Reverse(ScmObj list)
 {
     ScmObj cp, result;
+    ScmPair *p;
 
     if (!SCM_PAIRP(list)) return list;
 
-    result = Scm_Cons(SCM_NIL, SCM_NIL);
+    SCM_NEW_PAIR(p, SCM_NIL, SCM_NIL);
+    result = SCM_OBJ(p);
     SCM_FOR_EACH(cp, list) {
 	SCM_SET_CAR(result, SCM_CAR(cp));
-	result = Scm_Cons(SCM_NIL, result);
+        SCM_NEW_PAIR(p, SCM_NIL, result);
+        result = SCM_OBJ(p);
     }
     return SCM_CDR(result);
 }
@@ -331,7 +357,6 @@ ScmObj Scm_ReverseX(ScmObj list)
     }
     return result;
 }
-
 
 /* Scm_ListTail(list, i)
  * Scm_ListRef(list, i)
@@ -392,14 +417,31 @@ ScmObj Scm_Memq(ScmObj obj, ScmObj list)
 
 ScmObj Scm_Memv(ScmObj obj, ScmObj list)
 {
-    SCM_FOR_EACH(list, list) if (Scm_EqvP(obj, SCM_CAR(list))) return list;
+    SCM_FOR_EACH(list, list) {
+        if (Scm_EqvP(obj, SCM_CAR(list))) return list;
+    }
     return SCM_FALSE;
 }
 
-ScmObj Scm_Member(ScmObj obj, ScmObj list)
+ScmObj Scm_Member(ScmObj obj, ScmObj list, int cmpmode)
 {
-    SCM_FOR_EACH(list, list) if (Scm_EqualP(obj, SCM_CAR(list))) return list;
+    SCM_FOR_EACH(list, list) {
+        if (Scm_EqualM(obj, SCM_CAR(list), cmpmode)) return list;
+    }
     return SCM_FALSE;
+}
+
+/* delete. */
+ScmObj Scm_Delete(ScmObj obj, ScmObj list, int cmpmode)
+{
+    if (SCM_NULLP(list)) return SCM_NIL;
+    if (Scm_EqualM(obj, SCM_CAR(list), cmpmode)) {
+        return Scm_Delete(obj, SCM_CDR(list), cmpmode);
+    } else {
+        ScmObj tail = Scm_Delete(obj, SCM_CDR(list), cmpmode);
+        if (tail == SCM_CDR(list)) return list;
+        else return Scm_Cons(SCM_CAR(list), tail);
+    }
 }
 
 /*
@@ -430,15 +472,49 @@ ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
     return SCM_FALSE;
 }
 
-ScmObj Scm_Assoc(ScmObj obj, ScmObj alist)
+ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode)
 {
     ScmObj cp;
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
-        if (Scm_EqualP(obj, SCM_CAR(entry))) return entry;
+        if (Scm_EqualM(obj, SCM_CAR(entry), cmpmode)) return entry;
     }
     return SCM_FALSE;
+}
+
+/* Assoc-delete */
+
+ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
+{
+    ScmObj cp, prev = SCM_NIL;
+    SCM_FOR_EACH(cp, alist) {
+        ScmObj e = SCM_CAR(cp);
+        if (!SCM_PAIRP(e)) continue;
+        if (Scm_EqualM(elt, SCM_CAR(e), cmpmode)) {
+            if (SCM_NULLP(prev)) {
+                alist = SCM_CDR(cp);
+                continue;
+            } else {
+                SCM_SET_CDR(prev, SCM_CDR(cp));
+            }
+        }
+        prev = cp;
+    }
+    return alist;
+}
+
+/* DeleteDuplicates.  preserve the order of original list.   N^2 algorithm */
+
+ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode)
+{
+    ScmObj result = SCM_NIL, tail, lp;
+    SCM_FOR_EACH(lp, list) {
+        if (SCM_FALSEP(Scm_Member(SCM_CAR(lp), result, cmpmode))) {
+            SCM_APPEND(result, tail, SCM_CAR(lp));
+        }
+    }
+    return result;
 }
 
 /* Return union of two lists.
@@ -463,6 +539,147 @@ ScmObj Scm_Union(ScmObj list1, ScmObj list2)
 }
 
 /* Return intersection of two lists. */
+
+
+#if 0                           /* I'm not sure it needs to be here. */
+/*
+ * Topological sort
+ *
+ *  Given list of directed edge (from . to), returns a list of nodes
+ *  sorted topologically.
+ */
+
+ScmObj Scm_TopologicalSort(ScmObj lists)
+{
+    ScmObj nodes = SCM_NIL, nt;  /* list of (node indeg to ... ) */
+    ScmObj result = SCM_NIL, rt; /* result list */
+    ScmObj ep, np, nnp;
+    
+    /* construct node alist */
+    SCM_FOR_EACH(ep, lists) {
+        ScmObj edge = SCM_CAR(ep), p;
+        if (!SCM_PAIRP(edge)) Scm_Error("bad edge: %S", edge);
+
+        p = Scm_Assq(SCM_CAR(edge), nodes);
+        if (SCM_FALSEP(p)) {
+            SCM_APPEND1(nodes, nt,
+                        SCM_LIST3(SCM_CAR(edge),
+                                  SCM_MAKE_INT(0),
+                                  SCM_CDR(edge)));
+        } else {
+            Scm_Append2X(p, Scm_Cons(SCM_CDR(edge), SCM_NIL));
+        }
+        
+        p = Scm_Assq(SCM_CDR(edge), nodes);
+        if (SCM_FALSEP(p)) {
+            SCM_APPEND1(nodes, nt, SCM_LIST2(SCM_CDR(edge), SCM_MAKE_INT(1)));
+        } else {
+            int indeg = SCM_INT_VALUE(SCM_CADR(p)) + 1;
+            SCM_SET_CAR(SCM_CDR(p), SCM_MAKE_INT(indeg));
+        }
+    }
+
+    /* construct result */
+    while (!SCM_NULLP(nodes)) {
+        SCM_FOR_EACH(np, nodes) {
+            ScmObj node = SCM_CAR(np);
+            if (SCM_CADR(node) == SCM_MAKE_INT(0)) {
+                SCM_APPEND1(result, rt, SCM_CAR(node));
+                nodes = Scm_AssocDeleteX(SCM_CAR(node), nodes, SCM_CMP_EQ);
+                SCM_FOR_EACH(nnp, SCM_CDDR(node)) {
+                    ScmObj p = Scm_Assq(SCM_CAR(nnp), nodes);
+                    int indeg;
+                    
+                    if (!SCM_PAIRP(p))
+                        Scm_Error("internal error in topological-sort!");
+                    indeg = SCM_INT_VALUE(SCM_CADR(p)) - 1;
+                    SCM_SET_CAR(SCM_CDR(p), SCM_MAKE_INT(indeg));
+                }
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+#endif /* #if 0 for topologicalsort */
+
+/*
+ * Monotonic Merge
+ *
+ *  Merge lists, keeping the order of elements (left to right) in each
+ *  list.  Returns SCM_FALSE if the lists are inconsistent to be ordered
+ *  in the way. 
+ *
+ *  START is an item of the starting point.  It is inserted into the result
+ *  first.  SEQUENCES is a list of lists describing the order of preference.
+ *  GET_SUPER is a C procedure which returns direct parents of the given
+ *  element.
+ *
+ *  The algorithm is used in class precedence list calculation of
+ *  Dylan, described in the paper
+ *    http://www.webcom.com/~haahr/dylan/linearization-oopsla96.html.
+ *  Since the algorithm is generally useful, I implement the core routine
+ *  of the algorithm here.
+ */
+
+ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
+                          ScmObj (*get_super)(ScmObj, void*),
+                          void* data)
+{
+    ScmObj result = Scm_Cons(start, SCM_NIL), rp, next;
+    ScmObj *seqv, *sp;
+    int nseqs = Scm_Length(sequences), i;
+
+    if (nseqs < 0) Scm_Error("bad list of sequences: %S", sequences);
+    seqv = SCM_NEW2(ScmObj *, sizeof(ScmObj)*nseqs);
+    for (sp=seqv; SCM_PAIRP(sequences); sp++, sequences=SCM_CDR(sequences)) {
+        *sp = SCM_CAR(sequences);
+    }
+
+    for (;;) {
+        /* have we consumed all the inputs? */
+        for (sp=seqv; sp<seqv+nseqs; sp++) {
+            if (!SCM_NULLP(*sp)) break;
+        }
+        if (sp == seqv+nseqs) return Scm_ReverseX(result);
+
+        /* select candidate */
+        next = SCM_FALSE;
+        SCM_FOR_EACH(rp, result) {
+            ScmObj e = SCM_CAR(rp);
+            ScmObj supers = get_super(e, data);
+            if (!SCM_PAIRP(supers)) continue;
+            SCM_FOR_EACH(supers, supers) {
+                ScmObj s = SCM_CAR(supers);
+                /* see if s can go to the result */
+                for (sp = seqv; sp < seqv+nseqs; sp++) {
+                    if (SCM_PAIRP(*sp) && s == SCM_CAR(*sp)) break;
+                }
+                if (sp == seqv+nseqs) continue;
+                for (sp = seqv; sp < seqv+nseqs; sp++) {
+                    if (SCM_PAIRP(*sp) && !SCM_FALSEP(Scm_Memq(s, SCM_CDR(*sp))))
+                        break;
+                }
+                if (sp != seqv+nseqs) continue;
+                next = s;
+                break;
+            }
+            if (!SCM_FALSEP(next)) break;
+        }
+
+        if (SCM_FALSEP(next)) return SCM_FALSE; /* inconsistent */
+
+        /* move the candidate to the result */
+        result = Scm_Cons(next, result);
+        for (sp = seqv; sp < seqv+nseqs; sp++) {
+            if (SCM_PAIRP(*sp) && next == SCM_CAR(*sp)) {
+                *sp = SCM_CDR(*sp);
+            }
+        }
+    }
+    /* NOTREACHED */
+}
 
 /*
  * Pair attributes

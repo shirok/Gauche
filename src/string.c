@@ -1,9 +1,9 @@
 /*
  * string.c - string implementation
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,36 +12,27 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: string.c,v 1.19 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include <stdio.h>
 #include <sys/types.h>
 #include "gauche.h"
 
+static int string_print(ScmObj obj, ScmPort *port, int mode);
+SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL,
+                         SCM_CLASS_SEQUENCE_CPL);
+
 #define INITSTR(var, len, siz, p)               \
     do {                                        \
         (var) = SCM_NEW(ScmString);             \
-        (var)->hdr.klass = SCM_CLASS_STRING;    \
+        SCM_SET_CLASS(var, SCM_CLASS_STRING);   \
         (var)->length = (len);                  \
         (var)->size = (siz);                    \
         (var)->start = (p);                     \
     } while (0)
 
 #define DUMP_LENGTH   50
-
-static int string_print(ScmObj obj, ScmPort *port, int mode);
-
-static ScmClass *sequence_cpl[] = {
-    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
-
-ScmClass Scm_StringClass = {
-    SCM_CLASS_CLASS,
-    "<string>",
-    string_print,
-    sequence_cpl
-};
 
 /* for debug */
 void Scm_StringDump(FILE *out, ScmObj str)
@@ -132,7 +123,7 @@ int Scm_MBLen(const char *str)
     return count;
 }
 
-/*
+/*----------------------------------------------------------------
  * Constructors
  */
 
@@ -140,7 +131,8 @@ ScmObj Scm_MakeStringConst(const char *str, int size, int len)
 {
     ScmString *z;
 
-    if (size < 0 || len < 0) count_size_and_length(str, &size, &len);
+    if (size < 0) count_size_and_length(str, &size, &len);
+    else if (len < 0) len = count_length(str, size);
     INITSTR(z, len, size, str);
     return SCM_OBJ(z);
 }
@@ -150,7 +142,8 @@ ScmObj Scm_MakeString(const char *str, int size, int len)
     ScmString *z;
     char *nstr;
 
-    if (size < 0 || len < 0) count_size_and_length(str, &size, &len);
+    if (size < 0) count_size_and_length(str, &size, &len);
+    else if (len < 0) len = count_length(str, size);
     nstr = SCM_NEW_ATOMIC2(char *, size + 1);
     memcpy(nstr, str, size+1);  /* includes \0 */
     INITSTR(z, len, size, nstr);
@@ -167,7 +160,7 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
     for (i=0, p=ptr; i<len; i++, p+=size) {
         SCM_STR_PUTC(p, fill);
     }
-    p[size*len+1] = '\0';
+    ptr[size*len] = '\0';
     INITSTR(z, len, size*len, ptr);
     return SCM_OBJ(z);
 }
@@ -236,23 +229,115 @@ ScmObj Scm_CopyString(ScmString *x)
     return SCM_OBJ(z);
 }
 
-/*
+/*----------------------------------------------------------------
  * Comparison
  */
 
-ScmObj Scm_StringEqual(ScmString *x, ScmString *y)
+int Scm_StringEqual(ScmString *x, ScmString *y)
 {
     int sizx = SCM_STRING_SIZE(x);
     int sizy = SCM_STRING_SIZE(y);
     if (sizx == sizy) {
         if (memcmp(SCM_STRING_START(x), SCM_STRING_START(y), sizx) == 0) {
-            return SCM_TRUE;
+            return TRUE;
         }
     }
-    return SCM_FALSE;
+    return FALSE;
 }
 
-/*
+#define STRCMP(fn, op1, op2)                                            \
+ScmObj fn(ScmString *x, ScmString *y)                                   \
+{                                                                       \
+    int sizx = SCM_STRING_SIZE(x);                                      \
+    int sizy = SCM_STRING_SIZE(y);                                      \
+    int siz = (sizx < sizy)? sizx : sizy;                               \
+    int r = memcmp(SCM_STRING_START(x), SCM_STRING_START(y), siz);      \
+    if (r op1 0) return SCM_TRUE;                                       \
+    if (r == 0 && sizx op2 sizy) return SCM_TRUE;                       \
+    else return SCM_FALSE;                                              \
+}
+
+STRCMP(Scm_StringLt, <, <)
+STRCMP(Scm_StringLe, <, <=)
+STRCMP(Scm_StringGt, >, >)
+STRCMP(Scm_StringGe, >, >=)
+
+/* single-byte case insensitive comparison */
+static int sb_strcasecmp(const char *px, int sizx,
+                         const char *py, int sizy)
+{
+    char cx, cy;
+    for (; sizx > 0 && sizy > 0; sizx--, sizy--, px++, py++) {
+        cx = tolower(*px);
+        cy = tolower(*py);
+        if (cx == cy) continue;
+        return (cx - cy);
+    }
+    if (sizx > 0) return 1;
+    if (sizy > 0) return -1;
+    return 0;
+}
+
+/* multi-byte case insensitive comparison */
+static int mb_strcasecmp(const char *px, int lenx,
+                         const char *py, int leny)
+{
+    int cx, cy, ccx, ccy, ix, iy;
+    for (; lenx > 0 && leny > 0; lenx--, leny--, px+=ix, py+=iy) {
+        SCM_STR_GETC(px, cx);
+        SCM_STR_GETC(py, cy);
+        ccx = SCM_CHAR_UPCASE(cx);
+        ccy = SCM_CHAR_UPCASE(cy);
+        if (ccx != ccy) return (ccx - ccy);
+        ix = SCM_CHAR_NBYTES(cx);
+        iy = SCM_CHAR_NBYTES(cy);
+    }
+    if (lenx > 0) return 1;
+    if (leny > 0) return -1;
+    return 0;
+}
+
+ScmObj Scm_StringCiEqual(ScmString *x, ScmString *y)
+{
+    int sizx = SCM_STRING_SIZE(x), lenx = SCM_STRING_SIZE(x);
+    int sizy = SCM_STRING_SIZE(y), leny = SCM_STRING_SIZE(y);
+    const char *px = SCM_STRING_START(x);
+    const char *py = SCM_STRING_START(y);
+    
+    if (sizx != sizy) return SCM_FALSE;
+    if (lenx != leny) return SCM_FALSE;
+    if (sizx == lenx || lenx < 0) {
+        /* both are SBString or incomplete string */
+        return (sb_strcasecmp(px, sizx, py, sizy) == 0)? SCM_TRUE : SCM_FALSE;
+    } else {
+        /* both are MBString. */
+        return (mb_strcasecmp(px, lenx, py, leny) == 0)? SCM_TRUE : SCM_FALSE;
+    }
+}
+
+#define STRCICMP(fn, op)                                                \
+ScmObj fn(ScmString *x, ScmString *y)                                   \
+{                                                                       \
+    int sizx = SCM_STRING_SIZE(x), lenx = SCM_STRING_SIZE(x);           \
+    int sizy = SCM_STRING_SIZE(y), leny = SCM_STRING_SIZE(y);           \
+    const char *px = SCM_STRING_START(x);                               \
+    const char *py = SCM_STRING_START(y);                               \
+                                                                        \
+    if ((sizx == lenx && sizy == leny) || lenx < 0  || leny < 0) {      \
+        return (sb_strcasecmp(px, sizx, py, sizy) op 0)?                \
+            SCM_TRUE : SCM_FALSE;                                       \
+    } else {                                                            \
+        return (mb_strcasecmp(px, sizx, py, sizy) op 0)?                \
+            SCM_TRUE : SCM_FALSE;                                       \
+    }                                                                   \
+}
+
+STRCICMP(Scm_StringCiLt, <)
+STRCICMP(Scm_StringCiLe, <=)
+STRCICMP(Scm_StringCiGt, >)
+STRCICMP(Scm_StringCiGe, >=)
+    
+/*----------------------------------------------------------------
  * Reference
  */
 
@@ -300,7 +385,7 @@ int Scm_StringByteRef(ScmString *str, int offset)
     return (ScmByte)SCM_STRING(str)->start[offset];
 }
 
-/*
+/*----------------------------------------------------------------
  * Concatenation
  */
 
@@ -310,8 +395,7 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     int sizey = SCM_STRING_SIZE(y), leny = SCM_STRING_LENGTH(y);
     int lenz;
     ScmString *z;
-    char *p = (char *)GC_malloc_atomic(sizex + sizey + 1);
-    if (p == NULL) Scm_Abort("out of memory");
+    char *p = SCM_NEW_ATOMIC2(char *,sizex + sizey + 1);
 
     memcpy(p, x->start, sizex);
     memcpy(p+sizex, y->start, sizey);
@@ -333,7 +417,8 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
     char *p;
     ScmString *z;
 
-    if (sizey < 0 || leny < 0) count_size_and_length(str, &sizey, &leny);
+    if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+    else if (leny < 0) leny = count_length(str, sizey);
     
     p = SCM_NEW_ATOMIC2(char *, sizex + sizey + 1);
     memcpy(p, x->start, sizex);
@@ -349,7 +434,73 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
     return SCM_OBJ(z);
 }
 
-/*
+ScmObj Scm_StringAppend(ScmObj strs)
+{
+    ScmObj cp;
+    int size = 0, len = 0;
+    char *buf, *bufp;
+    ScmString *z;
+
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
+        size += SCM_STRING_SIZE(str);
+        if (len >= 0 && SCM_STRING_LENGTH(str) >= 0) {
+            len += SCM_STRING_LENGTH(str);
+        }
+    }
+
+    bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        memcpy(bufp, SCM_STRING_START(str), SCM_STRING_SIZE(str));
+        bufp += SCM_STRING_SIZE(str);
+    }
+    *bufp = '\0';
+    
+    INITSTR(z, len, size, buf);
+    return SCM_OBJ(z);
+}
+
+ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
+{
+    ScmObj cp;
+    int size = 0, len = 0, nstrs = 0;
+    int dsize = SCM_STRING_SIZE(delim), dlen = SCM_STRING_LENGTH(delim);
+    char *buf, *bufp;
+    ScmString *z;
+
+    if (SCM_NULLP(strs)) return SCM_MAKE_STR("");
+    
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
+        size += SCM_STRING_SIZE(str);
+        if (len >= 0 && SCM_STRING_LENGTH(str) >= 0 && dlen > 0) {
+            len += SCM_STRING_LENGTH(str);
+        }
+        nstrs++;
+    }
+    size += dsize * (nstrs-1);
+    if (len >= 0) len += dlen * (nstrs-1);
+
+    bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        memcpy(bufp, SCM_STRING_START(str), SCM_STRING_SIZE(str));
+        bufp += SCM_STRING_SIZE(str);
+        if (SCM_PAIRP(SCM_CDR(cp))) {
+            memcpy(bufp, SCM_STRING_START(delim), dsize);
+            bufp += dsize;
+        }
+    }
+    *bufp = '\0';
+    
+    INITSTR(z, len, size, buf);
+    return SCM_OBJ(z);
+}
+
+/*----------------------------------------------------------------
  * Substitution
  */
 
@@ -367,11 +518,12 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
             if (sizey < 0) sizey = strlen(str);
             lenz = -1;
         } else {                /* x is complete sbstring */
-            if (sizey < 0 || leny < 0)
-                count_size_and_length(str, &sizey, &leny);
-            lenz = lenx + leny;
+            if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+            else if (leny < 0) leny = count_length(str, sizey);
+            if (leny >= 0) lenz = lenx - (end - start) + leny;
+            else lenz = -1;
         }
-        if (end >= sizex) return SCM_FALSE;
+        if (end > sizex) return SCM_FALSE;
         sizez = sizex - (end - start) + sizey;
 
         p = SCM_NEW_ATOMIC2(char *, sizez+1);
@@ -382,11 +534,13 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
     } else {
         /* x is mbstring */
         const char *s, *e;
-        if (sizey < 0 || leny < 0) count_size_and_length(str, &sizey, &leny);
+        if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+        else if (leny < 0) leny = count_length(str, sizey);
         s = forward_pos(x->start, start);
         e = forward_pos(s, end - start);
         sizez = sizex + sizey - (e - s);
-        lenz = lenx + leny - (end - start);
+        if (leny >= 0) lenz = lenx + leny - (end - start);
+        else lenz = -1;
 
         p = SCM_NEW_ATOMIC2(char *, sizez+1);
         if (start > 0) memcpy(p, x->start, s - x->start);
@@ -436,7 +590,7 @@ ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
     return SCM_OBJ(x);
 }
 
-/*
+/*----------------------------------------------------------------
  * Substring
  */
 
@@ -448,10 +602,11 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
     
     if (start < 0)
         Scm_Error("start argument needs to be positive: %d", start);
-    if (end >= lenx)
+    if (end > lenx)
         Scm_Error("end argument is out of range: %d", end);
     if (end < start)
         Scm_Error("end argument must be equal to or greater than the start argument: start=%d, end=%d", start, end);
+    /* TODO: incomplete string case? */
     if (start) s = forward_pos(x->start, start); else s = x->start;
     e = forward_pos(s, end - start);
 
@@ -459,7 +614,153 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
     return SCM_OBJ(z);
 }
 
-/*
+/* auxiliary procedure to support optional start/end parameter specified
+   in lots of SRFI-13 functions.   If at least one of START or END is
+   SCM_UNBOUND, it returns the string itself.  Otherwise, it returns
+   a substring. */
+ScmObj Scm_QuasiSubstring(ScmString *x, ScmObj start, ScmObj end)
+{
+    int istart, iend, slen;
+
+    if (SCM_UNBOUNDP(start) || SCM_UNBOUNDP(end)) return SCM_OBJ(x);
+    if (!SCM_INTP(start))
+        Scm_Error("exact integer required for start, but got %S", start);
+    if (!SCM_INTP(end))
+        Scm_Error("exact integer required for start, but got %S", end);
+    return Scm_Substring(x, SCM_INT_VALUE(start), SCM_INT_VALUE(end));
+}
+
+/* SRFI-13 string-take and string-drop */
+ScmObj Scm_StringTake(ScmString *x, int nchars, int takefirst, int fromright)
+{
+    int len = SCM_STRING_LENGTH(x);
+    if (nchars < 0 || nchars >= len)
+        Scm_Error("nchars argument out of range: %d", nchars);
+    if (fromright) nchars = len - nchars;
+    if (takefirst)
+        return Scm_Substring(x, 0, nchars);
+    else
+        return Scm_Substring(x, nchars, len);
+}
+
+/*----------------------------------------------------------------
+ * Search & parse
+ */
+
+/* Split string by char.  Char itself is not included in the result. */
+/* TODO: fix semantics.  What should be returned for (string-split "" #\.)? */
+ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
+{
+    int size = SCM_STRING_SIZE(str), sizecnt = 0;
+    int len = SCM_STRING_LENGTH(str), lencnt = 0;
+    const char *s = SCM_STRING_START(str), *p = s, *e = s + size;
+    ScmObj head = SCM_NIL, tail;
+
+    if (len < 0) {
+        /* TODO: fix the policy of handling incomplete string */
+        Scm_Error("incomplete string not accepted: %S", str);
+    }
+    
+    while (p < e) {
+        ScmChar cc;
+        int ncc;
+
+        SCM_STR_GETC(p, cc);
+        ncc = SCM_CHAR_NBYTES(cc);
+        if (ch == cc) {
+            SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
+            sizecnt = lencnt = 0;
+            p += ncc;
+            s = p;
+        } else {
+            p += ncc;
+            sizecnt += ncc;
+            lencnt ++;
+        }
+    }
+    SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
+    return head;
+}
+
+/* Boyer-Moore string search.  assuming siz1 > siz2, siz2 < 256. */
+static inline ScmObj boyer_moore(const char *ss1, int siz1,
+                                 const char *ss2, int siz2)
+{
+    unsigned char shift[256];
+    int i, j;
+    for (i=0; i<256; i++) { shift[i] = siz2; }
+    for (i=0; i<siz2; i++) {
+        if (shift[(unsigned char)ss2[i]] > i)
+            shift[(unsigned char)ss2[i]] = i;
+    }
+    for (i=j=siz2-1; i<siz1; i++) {
+        if (ss2[j] == ss1[i]) {
+            for (; j > 0; i--, j--) {
+                if (ss2[j] != ss1[i]) return SCM_FALSE;
+            }
+            return Scm_MakeInteger(i);
+        } else {
+            i += shift[(unsigned char)ss2[j]];
+        }
+    }
+    return SCM_FALSE;
+}
+
+/* See if s2 appears in s1.  If both strings are single-byte, and s1
+   is long, we use Boyer-Moore. */
+ScmObj Scm_StringContains(ScmString *s1, ScmString *s2)
+{
+    int i;
+    const char *ss1 = SCM_STRING_START(s1);
+    const char *ss2 = SCM_STRING_START(s2);
+    int siz1 = SCM_STRING_SIZE(s1), len1 = SCM_STRING_LENGTH(s1);
+    int siz2 = SCM_STRING_SIZE(s2), len2 = SCM_STRING_LENGTH(s2);
+
+    if (len1 < 0) {
+        if (len2 < 0 || siz2 == len2) goto sbstring;
+        Scm_Error("can't handle incomplete string %S with complete string %S",
+                  s1, s2);
+    }
+    if (siz1 == len1) {
+        if (len2 < 0 || siz2 == len2) goto sbstring;
+        return SCM_FALSE;       /* sbstring can't contain mbstring. */
+    }
+    if (len2 < 0)
+        Scm_Error("can't handle complete string %S with incomplete stirng %S",
+                  s1, s2);
+    
+  mbstring:
+    if (len1 < len2) return SCM_FALSE;
+    else {
+        const char *ssp = ss1;
+        for (i=0; i<=len1-len2; i++) {
+            if (memcmp(ssp, ss2, siz2) == 0) return Scm_MakeInteger(i);
+            ssp += SCM_CHAR_NFOLLOWS(*ssp);
+        }
+        return SCM_FALSE;
+    }
+    return SCM_FALSE;
+  sbstring: /* short cut for special case */
+    if (siz1 < siz2) return SCM_FALSE;
+    if (siz1 < 256 || siz2 >= 256) {
+        /* brute-force search */
+        for (i=0; i<=siz1-siz2; i++) {
+            if (memcmp(ss2, ss1+i, siz2) == 0) return Scm_MakeInteger(i);
+        }
+    } else {
+        return boyer_moore(ss1, siz1, ss2, siz2);
+    }
+    return SCM_FALSE;
+}
+
+/*----------------------------------------------------------------
+ * Prefix/suffix
+ */
+
+
+
+
+/*----------------------------------------------------------------
  * Miscellaneous functions
  */
 
@@ -483,7 +784,7 @@ ScmObj Scm_StringToList(ScmString *str)
     while (len-- > 0) {
         SCM_STR_GETC(bufp, ch);
         bufp += SCM_CHAR_NBYTES(ch);
-        SCM_GROW_LIST(start, end, SCM_MAKE_CHAR(ch));
+        SCM_APPEND1(start, end, SCM_MAKE_CHAR(ch));
     }
     return start;
 }
@@ -491,6 +792,24 @@ ScmObj Scm_StringToList(ScmString *str)
 ScmObj Scm_ListToString(ScmObj chars)
 {
     return makestring_from_list(chars);
+}
+
+ScmObj Scm_StringFill(ScmString *str, ScmChar ch)
+{
+    int len = SCM_STRING_LENGTH(str), i;
+    int chlen = SCM_CHAR_NBYTES(ch);
+    char *newstr = SCM_NEW_ATOMIC2(char *, len * chlen + 1);
+    char *p = newstr;
+
+    for (i=0; i<len; i++) {
+        SCM_STR_PUTC(p, ch);
+        p += chlen;
+    }
+    p[len*chlen] = '\0';
+    /* modify str */
+    str->size = len * chlen;
+    str->start = newstr;
+    return SCM_OBJ(str);
 }
 
 static int string_print(ScmObj obj, ScmPort *port, int mode)
@@ -556,6 +875,8 @@ static int string_print(ScmObj obj, ScmPort *port, int mode)
  */
 
 #define DSTRING_CHUNK_SIZE 16
+#define DSTRING_CHUNK_ROUND_UP(siz) \
+    ((siz+DSTRING_CHUNK_SIZE-1)&~(DSTRING_CHUNK_SIZE-1))
 
 void Scm_DStringInit(ScmDString *dstr)
 {
@@ -565,13 +886,16 @@ void Scm_DStringInit(ScmDString *dstr)
     dstr->length = 0;
 }
 
-void Scm__DStringRealloc(ScmDString *dstr)
+void Scm__DStringRealloc(ScmDString *dstr, int minincr)
 {
-    int newsize = dstr->end - dstr->start + DSTRING_CHUNK_SIZE;
+    char *p;
+    int newsize = dstr->end - dstr->start + DSTRING_CHUNK_ROUND_UP(minincr);
     int cursize = dstr->current - dstr->start;
-    dstr->start = (char *)Scm_Realloc(dstr->start, newsize);
-    dstr->end = dstr->start + newsize;
-    dstr->current = dstr->start + cursize;
+
+    p = (char *)SCM_REALLOC(dstr->start, newsize);
+    dstr->start = p;
+    dstr->end = p + newsize;
+    dstr->current = p + cursize;
 }
 
 /* We don't need to copy the string, thanks to GC.
@@ -605,7 +929,7 @@ void Scm_DStringPutCstr(ScmDString *dstr, const char *str)
 {
     int size = strlen(str);
     while (dstr->current + size >= dstr->end) {
-        Scm__DStringRealloc(dstr);
+        Scm__DStringRealloc(dstr, size);
     }
     memcpy(dstr->current, str, size);
     dstr->current += size;
@@ -620,7 +944,7 @@ void Scm_DStringAdd(ScmDString *dstr, ScmString *str)
 {
     int size = SCM_STRING_SIZE(str);
     while (dstr->current + size >= dstr->end) {
-        Scm__DStringRealloc(dstr);
+        Scm__DStringRealloc(dstr, size);
     }
     memcpy(dstr->current, SCM_STRING_START(str), size);
     dstr->current += size;

@@ -1,9 +1,9 @@
 /*
  * core.c - core kernel interface
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,34 +12,20 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: core.c,v 1.21 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/arch.h"
 
 /*
- * Malloc wrapper
+ * out-of-memory handler.  this will be called by GC.
  */
 
-void *Scm_Malloc(size_t size)
+static GC_PTR oom_handler(size_t bytes)
 {
-    void *p = GC_MALLOC(size);
-    if (p == NULL) Scm_Panic("out of memory");
-    return p;
-}
-
-void *Scm_MallocAtomic(size_t size)
-{
-    void *p = GC_MALLOC_ATOMIC(size);
-    if (p == NULL) Scm_Panic("out of memory");
-    return p;
-}
-
-void *Scm_Realloc(void *ptr, size_t size)
-{
-    void *p = GC_REALLOC(ptr, size);
-    if (p == NULL) Scm_Panic("out of memory");
-    return p;
+    Scm_Panic("out of memory.  aborting...");
+    return NULL;                /* dummy */
 }
 
 /*
@@ -48,22 +34,44 @@ void *Scm_Realloc(void *ptr, size_t size)
 
 extern void Scm__InitModule(void);
 extern void Scm__InitSymbol(void);
+extern void Scm__InitKeyword(void);
 extern void Scm__InitClass(void);
 extern void Scm__InitPort(void);
+extern void Scm__InitWrite(void);
+extern void Scm__InitCompiler(void);
+extern void Scm__InitMacro(void);
+extern void Scm__InitLoad(void);
+extern void Scm__InitProc(void);
+
+extern void Scm_Init_stdlib(ScmModule *);
+extern void Scm_Init_extlib(ScmModule *);
+extern void Scm_Init_syslib(ScmModule *);
+extern void Scm_Init_moplib(ScmModule *);
 
 void Scm_Init(void)
 {
     ScmVM *vm;
-    
-    Scm__InitModule();
-    Scm__InitSymbol();
-    Scm__InitClass();
-    Scm__InitPort();
-    Scm__InitCompiler();
 
-    vm = Scm_NewVM(NULL, Scm_UserModule());
+    GC_oom_fn = oom_handler;
+    
+    Scm__InitSymbol();
+    Scm__InitModule();
+    Scm__InitKeyword();
+    Scm__InitClass();
+    Scm__InitProc();
+    Scm__InitPort();
+    Scm__InitWrite();
+    Scm__InitCompiler();
+    Scm__InitMacro();
+    Scm__InitLoad();
+
+    vm = Scm_NewVM(NULL, Scm_SchemeModule());
     Scm_SetVM(vm);
-    Scm_Init_stdlib();
+    Scm_Init_stdlib(Scm_SchemeModule());
+    Scm_Init_extlib(Scm_GaucheModule());
+    Scm_Init_syslib(Scm_GaucheModule());
+    Scm_Init_moplib(Scm_GaucheModule());
+    Scm_SelectModule(Scm_UserModule());
 }
 
 /*
@@ -92,34 +100,12 @@ void Scm_Panic(const char *msg, ...)
 }
 
 /*
- * Error handler should interact with dynamic env.
- * for now, we just jump.
+ * Inspect the configuration
  */
 
-void Scm_Error(const char *msg, ...)
+const char *Scm_HostArchitecture(void)
 {
-    ScmVM *vm = Scm_VM();
-    va_list args;
-    
-    if (vm && vm->escape) {
-        SCM_PUSH_ERROR_HANDLER {
-            ScmObj ostr = Scm_MakeOutputStringPort();
-            va_start(args, msg);
-            Scm_Vprintf(SCM_PORT(ostr), msg, args);
-            va_end(args);
-            vm->errstr = Scm_GetOutputString(SCM_PORT(ostr));
-        }
-        SCM_WHEN_ERROR {
-            vm->errstr = SCM_MAKE_STR("Error occurred in error handler");
-        }
-        SCM_POP_ERROR_HANDLER;
-        
-        longjmp(vm->escape->jbuf, 1);
-    } else {
-        /* No error handler is installed.  Just exit. */
-        va_start(args, msg);
-        vfprintf(stderr, msg, args);
-        va_end(args);
-        exit(1);
-    }
+    return GAUCHE_ARCH;
 }
+
+
