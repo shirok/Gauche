@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.23 2001-02-15 10:28:21 shiro Exp $
+ *  $Id: compile.c,v 1.24 2001-02-16 06:57:19 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1276,9 +1276,6 @@ static ScmSyntax syntax_delay = {
  * Receive
  */
 
-/* In Gauche, call-with-values is defined using receive
-   - do not to redefine receive by call-with-values! */
-
 static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj code = SCM_NIL, codetail, vars, expr, body;
@@ -1289,8 +1286,13 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
     expr = SCM_CAR(SCM_CDDR(form));
     body = SCM_CDR(SCM_CDDR(form));
 
-    Scm_Error("receive not implemented yet!");
-    return SCM_UNDEFINED;
+    /* TODO: this implementation doens't take advantage of tail call. */
+    ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
+    ADDCODE1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, Scm_Length(vars), 0));
+    ADDCODE1(form);             /* info; should be source-inro? */
+    ADDCODE(compile_body(body, Scm_Cons(vars, env), SCM_COMPILE_NORMAL));
+    ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
+    return code;
 }
 
 static ScmSyntax syntax_receive = {
