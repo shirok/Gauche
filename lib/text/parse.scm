@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parse.scm,v 1.2 2001-10-05 08:13:46 shirok Exp $
+;;;  $Id: parse.scm,v 1.3 2001-10-05 09:55:12 shirok Exp $
 ;;;
 
 ;; This module implements the input parsing utilities described in Oleg's site
@@ -158,9 +158,7 @@
           (lambda ()
             (receive (cs eof-ok?) (fold-char-list inc-charset/pred)
               (let loop ((c (peek-char port)))
-                (cond ((eof-object? c)
-                       (unless eof-ok?
-                         (errorf "~aunexpacted EOF" (port-position-prefix port))))
+                (cond ((eof-object? c)) ;ok to see EOF
                       ((char-set-contains? cs c)
                        (display (read-char port))
                        (loop (peek-char port)))
