@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.15 2001-04-23 06:38:52 shiro Exp $
+ *  $Id: bignum.c,v 1.16 2001-05-03 09:37:47 shirok Exp $
  */
 
 #include <math.h>
@@ -504,7 +504,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
         br->size = bx->size - nwords;
         br->sign = bx->sign;
     }
-    Scm_DumpBignum(br, SCM_CUROUT); printf("\n");
+/*    Scm_DumpBignum(br, SCM_CUROUT); printf("\n");*/
     return br;
 }
 

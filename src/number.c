@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.28 2001-04-22 11:41:44 shiro Exp $
+ *  $Id: number.c,v 1.29 2001-05-03 09:37:47 shirok Exp $
  */
 
 #include <math.h>
@@ -602,6 +602,7 @@ ScmObj Scm_Multiply(ScmObj args)
     v = SCM_CAR(args);
     args = SCM_CDR(args);
 
+  retry:
     if (SCM_INTP(v)) {
         if (!SCM_PAIRP(args)) return v;
         result_int = SCM_INT_VALUE(v);
@@ -621,8 +622,8 @@ ScmObj Scm_Multiply(ScmObj args)
                 }
                 result_int = k;
             } else if (SCM_BIGNUMP(v)) {
-                ScmObj big = Scm_BignumMulSI(SCM_BIGNUM(v), result_int);
-                return Scm_BignumMulN(SCM_BIGNUM(big), args);
+                v = Scm_BignumMulSI(SCM_BIGNUM(v), result_int);
+                goto retry;
             } else if (SCM_FLONUMP(v)) {
                 result_real = (double)result_int;
                 goto DO_FLONUM;
