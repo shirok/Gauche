@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cvt.scm,v 1.3 2002-06-04 21:51:30 shirok Exp $
+;;;  $Id: cvt.scm,v 1.4 2002-06-17 05:33:10 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -218,7 +218,8 @@
 
   ;; emit the table of 2-byte utf8 range
   (define (emit-utf2b)
-    (dolist (u0 '(#xc2 #xc3 #xc4 #xc5 #xc7 #xc9 #xca #xcb #xcc #xce #xcf))
+    (dolist (u0 '(#xc2 #xc3 #xc4 #xc5 #xc7 #xc9 #xca #xcb #xcc #xce #xcf
+                  #xd0 #xd1))
       (format #t "\n/* 2-byte UTF8: [~X XX] */\n" u0)
       (format #t "static unsigned short utf2euc_~x[64] = {\n" u0)
       (let1 v (hash-table-get root u0)
