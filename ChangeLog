@@ -15,6 +15,12 @@
 	* test/* : added some more tests.
 	* The above changes are based on a patch from Ueyama Rui.
 
+	* src/vm.c (save_env): discarded the old sloppy code that took
+	  too much time when recursion gets very deep.  Rewritten with a
+	  new code which runs proportional in the amount of stack-allocated
+	  activation records, whose upper bound is not large.  This change
+	  improves performance of deep recursion code in order of magnitude.
+
 	* src/extlib.stub (read-block) : allow 0 to be passed as nbytes.
 	  read-block returns a null string in such a case.
 

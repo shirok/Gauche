@@ -1,7 +1,7 @@
 /*
  * vm.c - evaluator
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.203 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: vm.c,v 1.204 2004-01-17 05:27:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1452,6 +1452,15 @@ static void run_loop()
  * Stack management
  */
 
+#define ADJUST_CONT_ENV(c, start)                                       \
+    do {                                                                \
+      for (c = (start); IN_STACK_P((ScmObj*)c); c = c->prev) {          \
+        if (IN_STACK_P((ScmObj*)(c->env)) && c->env->size == -1) {      \
+          c->env = c->env->up;                                          \
+        }                                                               \
+      }                                                                 \
+    } while (0)
+
 /* move the current chain of environments from the stack to the heap.
    if there're continuation frames which point to the moved env, those
    pointers are adjusted as well. */
@@ -1459,37 +1468,42 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
                                     ScmEnvFrame *env_begin,
                                     ScmContFrame *cont_begin)
 {
-    ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin, *saved;
+    ScmEnvFrame *e = env_begin, *prev = NULL, *next, *head = env_begin, *saved;
     ScmContFrame *c = cont_begin;
     ScmObj *s;
     ScmCStack *cstk;
     ScmEscapePoint *eh;
-    int esize, bsize;
+
+    if (!IN_STACK_P((ScmObj*)e)) return e;
     
-    for (; IN_STACK_P((ScmObj*)e); e = e->up) {
-        esize = e->size;
-        bsize = ENV_SIZE(esize) * sizeof(ScmObj);
+    /* First pass - move envs in stack to heap.  After env is moved,
+       the location of 'up' pointer in the env frame in the stack
+       contains the new location of env frame, so that the env pointers
+       in continuation frames will be adjusted in the second pass.
+       Such forwarded pointer is indicated by env->size == -1. */
+    do {
+        int esize = e->size;
+        int bsize = ENV_SIZE(esize) * sizeof(ScmObj);
         s = SCM_NEW2(ScmObj*, bsize);
         memcpy(s, ENV_FP(e), bsize);
         saved = (ScmEnvFrame*)(s + esize);
-        for (c = cont_begin; c; c = c->prev) {
-            if (c->env == e) c->env = saved;
-        }
-        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
-            for (c = cstk->cont; c; c = c->prev) {
-                if (!IN_STACK_P((ScmObj*)c)) break;
-                if (c->env == e) c->env = saved;
-            }
-        }
-        for (eh = vm->escapePoint; eh; eh = eh->prev) {
-            for (c = eh->cont; c; c = c->prev) {
-                if (!IN_STACK_P((ScmObj*)c)) break;
-                if (c->env == e) c->env = saved;
-            }
-        }
-        if (e == env_begin) head = saved;
         if (prev) prev->up = saved;
-        prev = saved;
+        if (e == env_begin) head = saved;
+        next = e->up;
+        e->up = prev = saved; /* forwarding pointer */
+        e->size = -1;         /* indicates forwarded */
+        e->info = SCM_FALSE;  /* clear pointer for GC */
+        e = next;
+    } while (IN_STACK_P((ScmObj*)e));
+    
+    /* Second pass - scan continuation frames in the stack, and forwards
+       env pointers */
+    ADJUST_CONT_ENV(c, cont_begin);
+    for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+        ADJUST_CONT_ENV(c, cstk->cont);
+    }
+    for (eh = vm->escapePoint; eh; eh = eh->prev) {
+        ADJUST_CONT_ENV(c, eh->cont);
     }
     return head;
 }
@@ -1540,7 +1554,7 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
 static void save_stack(ScmVM *vm)
 {
     ScmObj *p;
-#if 0    
+#if 0
     struct timeval t0, t1;
     fprintf(stderr, "save_stack\n");
     gettimeofday(&t0, NULL);
