@@ -18,13 +18,13 @@
     (write '(provide "test.o/a"))
     (newline)))
 
-(test "double require"
-      #t
-      (lambda ()
-        (eval '(require "test.o/a") (interaction-environment))
-        (sys-unlink "test.o/a.scm")
-        (eval '(require "test.o/a") (interaction-environment))
-        #t))
+(test* "double require"
+       #t
+       (begin
+         (eval '(require "test.o/a") (interaction-environment))
+         (sys-unlink "test.o/a.scm")
+         (eval '(require "test.o/a") (interaction-environment))
+         #t))
 
 (sys-system "rm -rf test.o")
 (sys-mkdir "test.o" #o777)
@@ -39,14 +39,9 @@
     (write '(provide "test.o/c"))
     (newline)))
 
-(test "detecting loop of require"
-      'error
-      (lambda ()
-        (with-error-handler
-         (lambda (e) 'error)
-         (lambda ()
-           (eval '(require "test.o/b") (interaction-environment)))))
-      )
+(test* "detecting loop of require"
+       *test-error*
+       (eval '(require "test.o/b") (interaction-environment)))
 
 (sys-system "rm -rf test.o")
 (sys-mkdir "test.o" #o777)
@@ -76,9 +71,9 @@
 (define-module load.test )
 (define foo 8)
 
-(test ":environment argument"
+(test* ":environment argument"
       3
-      (lambda ()
+      (begin
         (load "test.o/d" :environment (find-module 'load.test))
         (with-module load.test foo)))
 
@@ -89,11 +84,11 @@
   (lambda ()
     (display "(print (current-module)) (define foo 6)")))
 
-(test "eval & load & environment"
-      6
-      (lambda ()
-        (eval '(load "test.o/d") (find-module 'load.test))
-        (with-module load.test foo)))
+(test* "eval & load & environment"
+       6
+       (begin
+         (eval '(load "test.o/d") (find-module 'load.test))
+         (with-module load.test foo)))
 
 (sys-system "rm -rf test.o")
 

@@ -1,6 +1,6 @@
 ;;
 ;; test for listener
-;; $Id: listener.scm,v 1.1 2002-10-22 08:32:56 shirok Exp $
+;; $Id: listener.scm,v 1.2 2003-01-08 00:53:53 shirok Exp $
 
 (use gauche.test)
 
@@ -13,12 +13,9 @@
 (define-syntax sexp-tester
   (syntax-rules ()
     ((_ result str)
-     (test (format #f "complete-sexp? ~,,,,40:a" str)
-           result
-           (lambda ()
-             (with-error-handler
-              (lambda (e) 'error)
-              (lambda () (complete-sexp? str))))))
+     (test* (format #f "complete-sexp? ~,,,,40:a" str)
+            result
+            (complete-sexp? str)))
     ))
 
 (sexp-tester #t "")
@@ -78,7 +75,7 @@
 (sexp-tester #t "#/\\/usr\\/bin/")
 (sexp-tester #f "#/\\/usr\\/bin  ")
 (sexp-tester #t "(#/(/ . a)")
-(sexp-tester 'error "(ibanr #<booba> )")
+(sexp-tester *test-error* "(ibanr #<booba> )")
 
 (test-section "listener")
 
@@ -100,10 +97,10 @@
 
 (define handler (listener-read-handler listener))
 
-(test "prompter" "<<<"
-      (lambda ()
-        (listener-show-prompt listener)
-        (read-line opipe-in)))
+(test* "prompter" "<<<"
+       (begin
+         (listener-show-prompt listener)
+         (read-line opipe-in)))
 
 (define (send-expr expr)
   (display expr ipipe-out) (flush ipipe-out))
@@ -115,56 +112,56 @@
         (reverse r)
         (loop (read-line opipe-in) (cons l r)))))
 
-(test "listener" '("3")
-      (lambda ()
-        (send-expr "(+ 1 2)\n")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (read-results)))
+(test* "listener" '("3")
+       (begin
+         (send-expr "(+ 1 2)\n")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (read-results)))
 
-(test "listener" '("1" "2" "3")
-      (lambda ()
-        (send-expr "(values 1 2 3)\n")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (read-results)))
+(test* "listener" '("1" "2" "3")
+       (begin
+         (send-expr "(values 1 2 3)\n")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (read-results)))
 
-(test "listener" '(("1") ("2"))
-      (lambda ()
-        (send-expr "1 2\n")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (let* ((r0 (read-results))
-               (r1 (read-results)))
-          (list r0 r1))))
+(test* "listener" '(("1") ("2"))
+       (begin
+         (send-expr "1 2\n")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (let* ((r0 (read-results))
+                (r1 (read-results)))
+           (list r0 r1))))
 
-(test "listener" '("3")
-      (lambda ()
-        (send-expr "(+ 1 \n")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (send-expr "2")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (send-expr ")")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (read-results)))
+(test* "listener" '("3")
+       (begin
+         (send-expr "(+ 1 \n")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (send-expr "2")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (send-expr ")")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (read-results)))
 
-(test "listener" '(("#\\a") ("3"))
-      (lambda ()
-        (send-expr "#\\")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (send-expr "a (+")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (send-expr " 1 2)")
-        (with-error-handler (lambda (e) (print (ref e 'message)))
-                            handler)
-        (let* ((r0 (read-results))
-               (r1 (read-results)))
-          (list r0 r1))))
+(test* "listener" '(("#\\a") ("3"))
+       (begin
+         (send-expr "#\\")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (send-expr "a (+")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (send-expr " 1 2)")
+         (with-error-handler (lambda (e) (print (ref e 'message)))
+           handler)
+         (let* ((r0 (read-results))
+                (r1 (read-results)))
+           (list r0 r1))))
 
 ;(test "listener (error)" "error"
 ;      (lambda ()
