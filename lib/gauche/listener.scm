@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: listener.scm,v 1.1 2002-10-22 08:32:56 shirok Exp $
+;;;  $Id: listener.scm,v 1.2 2002-10-22 10:17:43 shirok Exp $
 ;;;
 
 ;; provides functions useful to implement a repl listener
@@ -51,6 +51,8 @@
    (environment :init-keyword :environment
                 :init-form (interaction-environment))
    (finalizer :init-keyword :finalizer :init-form #f)
+   (ehandler  :init-keyword :error-handler
+              :init-form (lambda (e) (report-error e)))
    (rbuf      :init-value "")
    ))
 
@@ -67,25 +69,22 @@
       (when (complete-sexp? istr)
         (with-input-from-string istr
           (lambda ()
-            ;; The dynamic-wind lets the current dynamic error handler
-            ;; handle whatever error occurred inside read-eval-print
-            ;; sequence.
-            (dynamic-wind
-             (lambda () #f)
-             (lambda ()
-               (let* ((env  (ref self 'environment))
-                      (expr ((ref self 'reader))))
-                 (with-output-to-port (ref self 'oport)
-                   (lambda ()
-                     (call-with-values
-                      (lambda () ((ref self 'evaluator) expr env))
-                      (ref self 'printer))))))
-             (lambda ()
-               (set! (ref self 'rbuf)
-                     (port->string (current-input-port)))
-               (listener-show-prompt self)))
-            (when (string-skip (ref self 'rbuf) #[\s]) (repl))))
-        )))
+            (with-error-handler
+                (ref self 'ehandler) 
+              (lambda ()
+                (let* ((env  (ref self 'environment))
+                       (expr ((ref self 'reader))))
+                  (with-output-to-port (ref self 'oport)
+                    (lambda ()
+                      (call-with-values
+                          (lambda () ((ref self 'evaluator) expr env))
+                        (ref self 'printer)))))))
+            (set! (ref self 'rbuf)
+                  (port->string (current-input-port)))
+            (listener-show-prompt self)
+            (when (string-skip (ref self 'rbuf) #[\s]) (repl))
+            )))
+      ))
 
   (lambda ()
     (let ((chunk (read-block 8192 (ref self 'iport))))
