@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.176 2002-04-22 03:33:48 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.177 2002-04-22 04:48:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3571,6 +3571,16 @@ Remainder @var{R} と商 @var{Q} とは次の関係があります。
 (remainder -10 -3)  @result{} -1
 (modulo -10 -3)     @result{} -1
 @end example
+@end defun
+
+@defun quotient&remainder n1 n2
+@c EN
+Calculates the quotient and the remainder of dividing integer @var{n1}
+by integer @var{n2} simultaneously, and returns them as two values.
+@c JP
+整数@var{n1}を整数@var{n2}で割った商(quotient)および余り(remainder)
+を同時に計算し、2つの値として返します。
+@c COMMON
 @end defun
 
 @defun gcd n @dots{}
