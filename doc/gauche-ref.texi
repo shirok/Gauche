@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.416 2003-06-10 02:29:53 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.417 2003-06-10 02:45:57 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12285,12 +12285,21 @@ the code is executed or not.
 
 @defun sort seq &optional cmfpn
 @defunx sort! seq &optional cmfpn
+@c EN
 Sorts elements in a sequence @var{seq} (a list or a vector) 
 in ascending order and returns the sorted sequence.
 @code{sort!} destructively reuses the original sequence.
 The sorting order is specified by @code{cmpfn}, which is
 a procedure takes two elements of @var{list}, and returns @code{#t}
 if the first argument strictly precedes the second.
+@c JP
+シーケンス@var{seq}(リストかベクタ)の要素を昇順にソートし、
+ソートされたシーケンスを返します。
+@code{sort!}は、オリジナルのシーケンスを破壊的に再利用します。
+ソート順は@code{cmpfn}で指定されます。@code{cmpfn}は2要素の@var{list}を
+引数に取り、最初の要素が厳密に2番目の要素より先行するものの場合は
+@code{#f}を返す手続きです。
+@c COMMON
 
 @example
 (sort '(("Chopin" "Frederic") 
@@ -12302,11 +12311,21 @@ if the first argument strictly precedes the second.
              ("Liszt" "Franz"))
 @end example
 
+@c EN
 Some builtin objects have natural comparison order, and it is used
 if @code{cmpfn} is omitted.
+@c JP
+いくつかのビルトインオブジェクトは自然な比較順を持っており、
+@code{cmpfn}が省略された場合にはそれが使われます。
+@c COMMON
 
+@c EN
 Built-in sort function uses quicksort and heapsort algorithm, 
 so it is not a stable sort.
+@c JP
+ビルトインのソート関数はクィックソートとヒープソートアルゴリズムを
+使うので、安定したソートとはいえません。
+@c COMMON
 @end defun
 
 
