@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.214 2004-11-22 14:12:43 shirok Exp $
+ *  $Id: vm.c,v 1.215 2004-11-22 23:21:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -459,7 +459,7 @@ static void run_loop()
             }
             if (vm->queueNotEmpty & SCM_VM_FINQ_MASK) {
                 SAVE_REGS();
-                val0 = Scm_VMFinalizerRun(vm);
+                Scm_VMFinalizerRun(vm);
                 RESTORE_REGS();
                 continue;
             }
