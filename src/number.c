@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.77 2002-04-06 22:48:00 shirok Exp $
+ *  $Id: number.c,v 1.78 2002-04-08 06:04:51 shirok Exp $
  */
 
 #include <math.h>
@@ -1669,10 +1669,10 @@ static ScmObj read_uint(const char **strp, int *lenp,
         } else if (SCM_BIGNUMP(initval)) {
             value_big = initval;
         }
+    } else {
+        /* Ignore leading 0's, to avoid unnecessary bignum operations. */
+        while (len > 0 && *str == '0') { str++; len--; }
     }
-
-    /* Ignore leading 0's, to avoid unnecessary bignum operations. */
-    while (len > 0 && *str == '0') { str++; len--; }
 
     while (len--) {
         c = tolower(*str++);
@@ -1786,15 +1786,14 @@ static ScmObj read_real(const char **strp, int *lenp,
         }
         (*strp)++; (*lenp)--;
         lensave = *lenp;
-        fraction = read_uint(strp, lenp, ctx, SCM_FALSE/*for now*/);
+        fraction = read_uint(strp, lenp, ctx, intpart);
         fracdigs = lensave - *lenp;
     } else {
-        fraction = SCM_MAKE_INT(0);
+        fraction = intpart;
     }
 
     if (SCM_FALSEP(intpart)) {
         if (fracdigs == 0) return SCM_FALSE; /* input was "." */
-        intpart = SCM_MAKE_INT(0);
     }
 
     /* Read exponent.  */
@@ -1834,35 +1833,12 @@ static ScmObj read_real(const char **strp, int *lenp,
     {
         double realnum = 0.0;
 
-        /* NB: watch out for overflow/underflow of power component.
-         * We can't precaulculate pow(10.0, exponent), for it will
-         * overflow in the case like:
-         *   0.00000001e310
-         * On the other hand, if exponent is very small (close to -307),
-         * pow(10.0, exponent-fracdigs) causes underflow, and floating
-         * point addition suffers loss of precision.
-         */
-        /*Scm_Printf(SCM_CURERR, "intpart=%S, fraction=%S, fracdigs=%d, exponent=%d\n", intpart, fraction, fracdigs, exponent);*/
-        if (exponent > DBL_MIN_10_EXP) {
-            if (intpart != SCM_MAKE_INT(0)) {
-                realnum = Scm_GetDouble(intpart) * pow(10.0, exponent);
-            }
-            if (fracdigs) {
-                if (exponent - fracdigs <= DBL_MIN_10_EXP) {
-                    realnum += Scm_GetDouble(fraction)
-                        * pow(10.0, -fracdigs) * pow(10.0, exponent);
-                } else {
-                    realnum += Scm_GetDouble(fraction)
-                        * pow(10.0, exponent - fracdigs);
-                }
-            }
+        if (exponent - fracdigs >= 0) {
+            realnum = Scm_GetDouble(fraction) * pow(10.0, exponent-fracdigs);
+        } else if (exponent - fracdigs > DBL_MIN_10_EXP) {
+            realnum = Scm_GetDouble(fraction) / pow(10.0, -(exponent-fracdigs));
         } else {
-            ScmObj f = Scm_Add(Scm_Multiply(intpart,
-                                            Scm_Expt(SCM_MAKE_INT(10),
-                                                     SCM_MAKE_INT(fracdigs)),
-                                            SCM_NIL),
-                               fraction, SCM_NIL);
-            realnum = Scm_GetDouble(f) * pow(10.0, -fracdigs) * pow(10.0, exponent);
+            realnum = Scm_GetDouble(fraction) * pow(10.0, exponent) / pow(10.0, fracdigs);
         }
         
         if (minusp) realnum = -realnum;
