@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.54 2001-04-03 11:18:46 shiro Exp $
+;;; $Id: extlib.stub,v 1.55 2001-04-04 18:57:08 shiro Exp $
 ;;;
 
 "
@@ -176,6 +176,71 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 ;; 6.3.4  Characters
 ;;
+
+;; character sets (SRFI-14)
+;;   not all of srfi-14 functions are defined in C.  you need to load
+;;   srfi-14.scm to get a full set of functions.
+
+(define-symbol *char-code-max* "char_code_max"
+  "Scm_MakeInteger(SCM_CHAR_MAX)")
+
+(define-cproc char-set? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHARSETP(obj)));")
+
+"static void char_set_add(ScmCharSet *cs, ScmObj chars)
+ {  ScmObj cp; ScmChar ch;
+  SCM_FOR_EACH(cp, chars) {
+    if (!SCM_CHARP(SCM_CAR(cp)))
+      Scm_Error(\"character required, but got %S\", SCM_CAR(cp));
+    ch = SCM_CHAR_VALUE(SCM_CAR(cp));
+    Scm_CharSetAddRange(cs, ch, ch);
+  }
+ }"
+
+(define-cproc char-set (&rest chars)
+  "  ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());
+  char_set_add(cs, chars);
+  SCM_RETURN(SCM_OBJ(cs));")
+
+(define-cproc char-set-copy (cs)
+  (assert (char-set? cs))
+  "  SCM_RETURN(Scm_CopyCharSet(cs));")
+
+(define-cproc %char-set-add-chars! (cs chars)
+  (assert (char-set? cs))
+  (assert (list? chars))
+  "  char_set_add(cs, chars); SCM_RETURN(SCM_OBJ(cs));")
+
+(define-cproc %char-set-add-range! (cs from to)
+  (assert (char-set? cs))
+  "  long fromc = -1, toc = -1;
+  if (SCM_EXACTP(from)) fromc = Scm_GetInteger(from);
+  else if (SCM_CHARP(from)) fromc = SCM_CHAR_VALUE(from);
+  if (fromc < 0) Scm_Error(\"character or positive integer required, but got %S\", from);
+  if (fromc >= SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", from);
+  if (SCM_EXACTP(to)) toc = Scm_GetInteger(to);
+  else if (SCM_CHARP(to)) toc = SCM_CHAR_VALUE(to);
+  if (toc < 0) Scm_Error(\"character or positive integer required, but got %S\", to);
+  if (toc >= SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", to);
+  SCM_RETURN(Scm_CharSetAddRange(cs, (ScmChar)fromc, (ScmChar)toc));")
+
+(define-cproc %char-set-add! (dst src)
+  (assert (char-set? dst))
+  (assert (char-set? src))
+  "  SCM_RETURN(Scm_CharSetAdd(dst, src));")
+
+(define-cproc char-set-contains? (cs ch)
+  (assert (char-set? cs))
+  (assert (char? ch))
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_CharSetContains(cs, ch)));")
+
+(define-cproc %char-set-complement! (cs)
+  (assert (char-set? cs))
+  "  SCM_RETURN(Scm_CharSetComplement(cs));")
+  
+(define-cproc %char-set-dump (cs);for debug
+  (assert (char-set? cs))
+  "  Scm_CharSetDump(cs, SCM_CUROUT); SCM_RETURN(SCM_UNDEFINED);")
 
 ;;
 ;; 6.3.5 Strings
