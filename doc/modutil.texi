@@ -2355,7 +2355,9 @@ Say @code{(use rfc.822)} to use this module.
 @c COMMON
 @end deftp
 
-@defun rfc822-header->list iport &optional strict?
+@subheading Parsing a message header
+
+@defun rfc822-header->list iport &keyword strict? reader
 @c EN
 Reads RFC822 format message from an input port @var{iport},
 until it reaches the end of the message header.
@@ -2383,7 +2385,132 @@ The order of fields are preserved.
 行が連結され CRLF が削除される以外は変更されません。
 フィールドの順番は保存されます。
 @c COMMON
+
+By default, the parser works permissively.  If EOF is encountered
+during parsing header, it is taken as the end of the message.
+And if a line that doesn't consist neither continuing (folded) line
+nor start a new header field, it is simply ignored.
+You can change this behavior by giving true value to
+the keyword argument @var{strict?}; then the parser raises an error
+for such a malformed header.
+
+The keyword argument @var{reader} takes a procedure that reads
+a line from @var{iport}.  Its default is @code{read-line}, which
+should be enough for most cases.
 @end defun
+
+@defun rfc822-header-ref header-list field-name &optional default
+An utility procedure to get a specific field from the parsed
+header list, which is returned by @code{rfc822-header->list}.
+
+@var{Field-name} specifies the field name in a lowercase string.
+If the field with given name is in @var{header-list}, the procedure
+returns its value in a string.  Otherwise, if @var{default} is given,
+it is returned, and if not, @code{#f} is returned.
+@end defun
+
+@subheading Basic field parsers
+
+Several procedures are provided to parse "structured" header fields
+of RFC2822 messages.  These procedures deal with the body of
+a header field, i.e. if the header field is 
+"@code{To: Wandering Schemer <schemer@@example.com>}",
+they parse "@code{Wandering Schemer <schemer@@example.com>}".
+
+Most of procedures take an input port.  Usually you first parse
+the entire header fields by @code{rfc822-header->list},
+obtain the body of the header by @code{rfc822-header-ref},
+then open an input string port for the body and use those
+procedures to parse them.
+
+The reason for this complexity is because you need
+different tokenization schemes depending on the type of the field.
+Rfc2822 also allows comments to appear between tokens for most cases,
+so a simple-minded regexp won't do the job,
+since rfc2822 comment can be nested 
+and can't be represented by regular grammar.
+So, this layer of procedures are designed flexible enough
+to handle various syntaxes.  For the standard header types,
+high-level parsers are also provided; see "specific field parsers" below.
+
+@defun rfc822-next-token iport &optional tokenizer-specs
+A basic tokenizer.  First it skips whitespaces and/or
+comments (@code{CFWS}) from @var{iport}, if any.  Then
+reads one token according to @var{tokenizer-specs}.  If @var{iport}
+reaches EOF before any token is read, EOF is returned.
+
+@var{Tokenizer-specs} is a list of tokenizer spec, which is
+either a char-set or a cons of a char-set and a procedure.
+
+After skipping @code{CFWS}, the procedure peeks a character
+at the head of @var{iport}, and checks it
+against the char-sets in @var{tokenizer-specs} one by one.
+If a char-set that contains the character belongs to is found,
+then a token is retrieved as follows: 
+If the tokenizer spec is just a char-set, a sequence of characters
+that belong to the char-set consists a token.
+If it is a cons, the procedure is called with @var{iport} to
+read a token.
+
+If the head character doesn't match any char-sets,
+the character is taken from @var{iport} and returned.
+
+The default @var{tokenizer-specs} is as follows:
+@example
+(list (cons #["] rfc822-quoted-string)
+      (cons *rfc822-atext-chars* rfc822-dot-atom))
+@end example
+Where @code{rfc822-quoted-string} and @code{rfc822-dot-atom}
+are tokenizer procedures described below, and @code{*rfc822-atext-chars*}
+is bound to a char-set of @code{atext} specified in rfc2822.
+This means @code{rfc822-next-token} retrieves a token
+either @code{quoted-string} or @code{dot-atom} specified in rfc2822
+by default.
+
+Using @var{tokenizer-specs}, you can customize how the header
+field is parsed.  For example, if you want to retrieve a token
+that is either (1) a word constructed by alphabetic characters, or
+(2) a quoted string, then you can call @code{rfc822-next-token}
+by this:
+
+@example
+(rfc822-next-token iport
+   `(#[[:alpha:]] (#["] . ,rfc822-quoted-string)))
+@end example
+@end defun
+
+@defun rfc822-field->tokens field &optional tokenizer-specs
+A convenience procedure.  Creates an input string port for
+a field body @var{field}, and calls @code{rfc822-next-token}
+repeatedly on it until it consumes all input, then returns
+a list of tokens.   @var{Tokenizer-specs} is passed to
+@code{rfc822-next-token}.
+@end defun
+
+@defun rfc822-skip-cfws iport
+A utility procedure that consumes any comments and/or whitespace
+characters from @var{iport}, and returns the head character
+that is neither a whitespece nor a comment.  The returned character
+remains in @var{iport}.
+@end defun
+
+@defvr {Constant} *rfc822-atext-chars*
+Bound to a char-set that is a valid constituent of @code{atom}.
+@end defvr
+
+@defvr {Constant} *rfc822-standard-tokenizers*
+Bound to the default @var{tokenizer-specs}.
+@end defvr
+
+@defun rfc822-atom iport
+@defunx rfc822-dot-atom iport
+@defunx rfc822-quoted-string iport
+Tokenizers for @code{atom}, @code{dot-atom} and @code{quoted-string},
+respectively.  The double-quotes and escaping backslashes within
+@code{quoted-string} are removed by @code{rfc822-quoted-string}.
+@end defun
+
+@subheading Specific field parsers
 
 @defun rfc822-parse-date string
 @c EN
@@ -2400,20 +2527,20 @@ year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
 @emph{Day-of-week} is a day from sunday,
 and may be #f if that information is not available.
 If the string is not parsable, all the elements are #f.
-
-Note: This function follows the new definition of date format in RFC2822,
-but may fail to recognize "obsolete" format, which allows arbitrary
-comments appear between words.
 @c JP
 @emph{Timezone} は UT(グリニッジ標準時)からの分単位のオフセットです。
 @emph{Day-of-week} は日曜日から数えた曜日で、情報が不足している場合は #f です。
 文字列がパーズ不可能ならば、全ての要素が #f になります。
-
-注意: この手続きは、RFC2822 の新しい日付形式の定義に従っています。
-ワードの間に任意のコメントが許されている「旧式の」フォーマットは
-認識しそこねるかもしれません。
 @c COMMON
 @end defun
+
+@defun rfc822-date->date string
+Parses RFC2822 date format and returns SRFI-19 @code{<date>} object
+(see @ref{SRFI-19 Date}).  If @var{string} can't be parsed, 
+returns @code{#f} instead.
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
 @node rfc.base64 - Base64 encoding/decoding, rfc.cookie - HTTP cookie handling, rfc.822 - RFC822 message parsing, Library modules - Utilities

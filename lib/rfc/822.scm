@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.13 2003-12-12 07:53:50 shirok Exp $
+;;;  $Id: 822.scm,v 1.14 2003-12-13 02:07:57 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -61,19 +61,20 @@
 ;; Generic header parser, recognizes folded line and field names
 ;;
 (define (rfc822-header->list iport . args)
-  (let-optionals* args ((strict? #f))
+  (let-keywords* args ((strict? #f)
+                       (reader read-line))
 
     (define (accum name bodies r)
       (cons (list name (string-concatenate-reverse bodies)) r))
     
     (let loop ((r '())
-               (line (read-line iport)))
+               (line (reader iport)))
       (rxmatch-case line
         (test eof-object?  (reverse! r))
         (test string-null? (reverse! r))
         (#/^([\x21-\x39\x3b-\x7e]+):\s*(.*)$/ (#f name body)
             (let ((name (string-downcase name)))
-              (let loop2 ((nline (read-line iport))
+              (let loop2 ((nline (reader iport))
                           (bodies (list body)))
                 (cond ((eof-object? nline)
                        ;; maybe premature end of the message
@@ -83,7 +84,7 @@
                       ((string-null? nline)     ;; end of the header
                        (reverse! (accum name bodies r)))
                       ((char-set-contains? #[ \t] (string-ref nline 0))
-                       (loop2 (read-line iport) (cons nline bodies)))
+                       (loop2 (reader iport) (cons nline bodies)))
                       (else
                        (loop (accum name bodies r) nline)))
                 )
@@ -91,7 +92,7 @@
         (else
          (if strict?
            (error "bad header line:" line)
-           (loop r (read-line iport))))))
+           (loop r (reader iport))))))
     ))
 
 (define (rfc822-header-ref header field-name . maybe-default)
