@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.33 2001-02-09 20:41:14 shiro Exp $
+ *  $Id: vm.c,v 1.34 2001-02-10 12:42:28 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1191,21 +1191,21 @@ ScmObj Scm_VMCallCC(ScmObj proc)
        Copying frame-by-frame will be terribly slow.  I'd like to fix
        it asap. */
     {
-        
+        ScmVM *vm = theVM;
         ScmContFrame *c = vm->cont;
         for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
             ScmEnvFrame *e = save_env(vm, c->env, c);
-            int size = (CONT_FRAME_SIZE + c->argsize) * sizeof(ScmObj);
+            int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
             ScmContFrame *csave = SCM_NEW2(ScmContFrame*, size);
             if (c->argp) {
                 memcpy(csave, c, CONT_FRAME_SIZE * sizeof(ScmObj));
                 memcpy((void**)csave + CONT_FRAME_SIZE,
-                       c->argp, c->argsize * sizeof(ScmObj));
-                csave->argp =(ScmContFrame*)((void **)csave + CONT_FRAME_SIZE);
+                       c->argp, c->size * sizeof(ScmObj));
+                csave->argp =(ScmEnvFrame*)((void **)csave + CONT_FRAME_SIZE);
             } else {
                 /* C continuation */
                 memcpy(csave, c,
-                       (CONT_FRAME_SIZE + c->argsize) * sizeof(ScmObj));
+                       (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj));
             }
         }
     }
