@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.394 2003-05-28 11:34:03 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.395 2003-05-30 07:59:20 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12599,13 +12599,17 @@ Use @code{slot-ref} to access information of @code{<sys-stat>} object.
 @defun sys-access pathname amode
 [POSIX]
 @c EN
-An interface to @code{access(2)}.
+Emulates POSIX @code{access(2)}.
 Returns a boolean value of indicating whether access of @var{pathname}
-is allowed in @var{amode}.  @var{amode} can be a combinations (logical or) of
+is allowed in @var{amode}.   This procedure signals an error
+if used in a suid/sgid program (see the note below).
+@var{amode} can be a combinations (logical or) of
 following predefined flags.
 @c JP
-@code{access(2)}へのインタフェースです。@var{pathname}へのアクセスが
+POSIXの@code{access(2)}関数をエミュレートします。
+@var{pathname}へのアクセスが
 @var{mode}に示されるモードで許可されているかどうかを示す真偽値を返します。
+この手続きは、suid/sgidプログラムで使われるとエラーとなります(下記註参照)。
 @var{mode}は以下に示す定数のコンビネーション(logical or)です。
 @c COMMON
 @table @code
@@ -12643,6 +12647,26 @@ access permissions of the directories containing @var{pathname}).
 存在するかどうか (但し@var{pathname}があるディレクトリの読みだし許可は必要)。
 @c COMMON
 @end table
+
+@c EN
+@emph{Note:} POSIX access(2) uses real uid/gid to check the permission
+instead of effective uid/gid.  It was intended to be convenient to check
+the user's priviledge in suid/sgid programs, but such usage creates
+a security hole.  Because of that, access(2) is often referred as
+"should never be used".  Gauche actually uses stat(2) in @code{sys-access}
+instead of access(2).  There is effectively no difference,
+since @code{sys-access} signals an error 
+if real uid/gid differs from effective uid/gid.
+@c JP
+@emph{註:} POSIXのaccess(2)は実効uid/gidのかわりに実uid/gidを使って
+パーミッションを検査します。本来はsuid/guidプログラム中で、それを
+実行したユーザの特権を確かめるための仕様でしたが、
+その目的に使うのはセキュリティホールとなります。
+そのため、access(2)は「決して使うべきでない」とされています。
+Gaucheでは、@code{sys-access}はaccess(2)でなくstat(2)を使って
+実現されています。実uid/gidと実行uid/gidが異なっている場合は
+@code{sys-access}はエラーを通知するので、この違いが問題になることはないでしょう。
+@c COMMON
 @end defun
 
 @defun sys-chmod path mode

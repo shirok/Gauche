@@ -1,5 +1,17 @@
 2003-05-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/syslib.stub (sys-access): let it signal an error if real
+	  uid/gid differs from effective uid/gid.  Sys-access should never
+	  be used in suid/sgid program anyway.  And if we exclude that,
+	  there's no difference between access() and stat(), so I changed
+	  it to use stat() on all platforms.
+
+	* src/Makefile.in (install): avoid using -m 444 to install
+	  libgauche.la, for on some platforms libtool tries to run ranlib
+	  on the installed libgauche.a and fails if it is not writable.
+	  libtool then changes its permission to 644; it is hardcoded in
+	  the AC_PROG_LIBTOOL macro.
+
 	* mkinstalldirs, src/Makefile.in, ext/Makefile.ext.in, lib/Makefile.in,
 	  doc/Makefile.in : changed to use mkinstalldirs instead of
 	  "install -d", for some system's install doesn't understand -d option.
