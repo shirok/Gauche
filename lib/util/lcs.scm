@@ -1,11 +1,45 @@
 ;;;; lcs.scm -- find out the longest common sequence
+;;;  
+;;;   Copyright (c) 2002-2003 by Alex Shinn, All rights reserved.
+;;;   Copyright (c) 2002-2003 by Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;;  $Id: lcs.scm,v 1.6 2003-09-05 20:58:29 shirok Exp $
+;;;
 
 ;;; Created:    <2002-06-21 15:36:46 foof>
 ;;; Time-stamp: <2003-02-15 00:09:55 foof>
 ;;; Author:     Alex Shinn <foof@synthcode.com>
 
-;;; Modified a bit by Shiro Kawai
-;;; $Id: lcs.scm,v 1.5 2003-09-03 15:36:16 shirok Exp $
+;;; Modified by Shiro Kawai
+;;;  - added lcs-fold and rewrote lcs-edit-list using lcs-fold
+;;;  - replaced base algorithm from DP to Myers'
 
 (define-module util.lcs
   (use gauche.sequence)
@@ -17,11 +51,13 @@
 ;; The base algorithm.   This code implements
 ;; Eugene Myers, "An O(ND) Difference Algorithm and Its Variations",
 ;; Algorithmica Vol. 1 No. 2, 1986, pp. 251-266.
-;; It takes O((M+N)D) time and space, where N = (length a) and M = (length b)
-;; and D is the length of the smallest edit sequence.  In most applications
-;; the difference is small, so it is much better than DP algorithm
-;; that is generally O(MN).  The worst case where a and b totally differ
-;; is O((M+N)^2).  The Myers's paper gives refinement of the algorithm
+;; It takes O((M+N)D) time and O((M+N)L) space, where
+;; N = (length a), M = (length b), D is the length of the smallest edit
+;; sequence (SES), and L is the length of the longest common subsequence (LCS).
+;; In most applications the difference is small, so it is much better than
+;; DP algorithm that is generally O(MN) time and space complextiy.
+;; The worst case where a and b totally differ is O((M+N)^2).
+;; The Myers's paper gives refinement of the algorithm
 ;; that improves worst case behavior, but I don't implement it yet. --[SK]
 
 (define (lcs-with-positions a-ls b-ls . opt-eq)
