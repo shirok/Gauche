@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.3 2001-11-11 12:05:01 shirok Exp $
+;;;  $Id: cgi.scm,v 1.4 2001-11-11 12:13:12 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
@@ -23,9 +23,12 @@
   (use srfi-13)
   (use rfc.uri)
   (use rfc.cookie)
+  (use text.tree)
+  (use text.html-lite)
   (export cgi-parse-parameters
           cgi-get-parameter
-          cgi-header)
+          cgi-header
+          cgi-main)
   )
 (select-module www.cgi)
 
@@ -97,5 +100,17 @@
                      (list "Set-cookie: " cookie "\n"))
                    cookies)
               "\n"))))
+
+(define (cgi-main thunk . args)
+  (let ((eproc (get-keyword :on-error args
+                            (lambda (e)
+                              `(,(cgi-header)
+                                ,(html-html
+                                  (html-head (html-title "Error"))
+                                  (html-body (html-h1 "Error")
+                                             (html-p (html-escape-string
+                                                      (slot-ref e 'message))))
+                                  ))))))
+    (write-tree (with-error-handler eproc thunk))))
 
 (provide "www/cgi")
