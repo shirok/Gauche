@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.5 2005-01-02 00:40:59 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.6 2005-01-02 02:01:21 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -154,26 +154,23 @@
 
 (define (syntax-if form env ctx)
   (match form
-    ((if test then else)
+    ((_ test then else)
      (let ((test-code (compile-int test env 'normal))
            (then-code (compile-int then env ctx))
            (else-code (compile-int else env ctx)))
-       (if (eq? ctx tail)
-         (append test-code
-                 (cons '(IF) test-code)
-                 else-code)
-         (let1 merger (list (list 'MNOP))
-           (append test-code
-                   (cons '(IF) (append test-code merger))
-                   (append else-code merger))))))
-    ((if test then)
-     (syntax-if `(if ,test ,then (undefined))))
+       (if (eq? ctx 'tail)
+         (append! test-code
+                  (list (vm-insn-make 'IF) then-code)
+                  else-code)
+         (let1 merger (list (vm-insn-make 'MNOP))
+           (append! test-code
+                    (list (vm-insn-make 'IF) (append! then-code merger))
+                    (append! else-code merger))))))
+    ((_ test then)
+     (syntax-if `(if ,test ,then ,(undefined)) env ctx))
     (else
-     (error "syntax error:" form))))
-       
+     (error "malformed if:" form))))
 
-
-        
 ;;============================================================
 ;; Utilities
 ;;
@@ -201,4 +198,44 @@
 (define (last-cdr lis)
   (let loop ((lis lis))
     (if (pair? lis) (loop (cdr lis)) lis)))
+
+;; These used to be defined in autoloaded file.
+;; The new compiler needs them, so we need to compile them as well.
+(define (caaar x) (car (caar x)))
+(define (caadr x) (car (cadr x)))
+(define (cadar x) (car (cdar x)))
+(define (caddr x) (car (cddr x)))
+(define (cdaar x) (cdr (caar x)))
+(define (cdadr x) (cdr (cadr x)))
+(define (cddar x) (cdr (cdar x)))
+(define (cdddr x) (cdr (cddr x)))
+
+(define (caaaar x) (caar (caar x)))
+(define (caaadr x) (caar (cadr x)))
+(define (caadar x) (caar (cdar x)))
+(define (caaddr x) (caar (cddr x)))
+(define (cadaar x) (cadr (caar x)))
+(define (cadadr x) (cadr (cadr x)))
+(define (caddar x) (cadr (cdar x)))
+(define (cadddr x) (cadr (cddr x)))
+
+(define (cdaaar x) (cdar (caar x)))
+(define (cdaadr x) (cdar (cadr x)))
+(define (cdadar x) (cdar (cdar x)))
+(define (cdaddr x) (cdar (cddr x)))
+(define (cddaar x) (cddr (caar x)))
+(define (cddadr x) (cddr (cadr x)))
+(define (cdddar x) (cddr (cdar x)))
+(define (cddddr x) (cddr (cddr x)))
+
+;;============================================================
+;; Initialization
+;;
+
+(define (init-compiler)
+  ;; Injects syntax objects into basic modules.
+  (let ((null-module   (find-module 'null))
+        (gauche-module (find-module 'gauche)))
+    (%insert-binding null-module 'if (make-syntax 'if syntax-if))
+    ))
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.1.2.3 2005-01-02 00:41:00 shirok Exp $
+;;; $Id: intlib.stub,v 1.1.2.4 2005-01-02 02:01:22 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -86,6 +86,9 @@
   "ScmGloc *g = Scm_FindBinding(mod, name, stay_in_module);
    if (g) SCM_RETURN(SCM_OBJ(g));
    else   SCM_RETURN(SCM_FALSE);")
+
+(define-cproc %insert-binding (mod::<module> name::<symbol> value)
+  (return "Scm_Define"))
 
 (define-cproc gloc-ref (gloc)
   "if (!SCM_GLOCP(gloc)) Scm_Error(\"GLOC required, but got %S\", gloc);
