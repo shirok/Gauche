@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.8 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: symbol.c,v 1.9 2001-03-04 09:34:04 shiro Exp $
  */
 
 #include "gauche.h"
@@ -43,9 +43,10 @@ ScmObj Scm_Intern(ScmString *name)
     ScmHashEntry *e = Scm_HashTableGet(obtable, SCM_OBJ(name));
     if (e) return e->value;
     else {
+        ScmObj n = Scm_CopyString(name);
         ScmSymbol *sym;
-        INITSYM(sym, Scm_CopyString(name));
-        Scm_HashTablePut(obtable, SCM_OBJ(name), SCM_OBJ(sym));
+        INITSYM(sym, n);
+        Scm_HashTablePut(obtable, n, SCM_OBJ(sym));
         return SCM_OBJ(sym);
     }
 }
