@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.7 2003-07-23 03:42:30 shirok Exp $
+dnl $Id: configure.ac,v 1.8 2003-07-23 13:08:22 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.1_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.7 $)
+AC_REVISION($Revision: 1.8 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -338,6 +338,10 @@ dnl                      SHLIB_SO_LDFLAGS.
 dnl  SHLIB_MAIN_LDFLAGS  flags required to compile a main program which
 dnl                      exposes symbols to be referred by the dynamically
 dnl                      loaded module, e.g. "-rdynamic"
+dnl  LINK_HELPER         A script that helps linking libgauche.  Sort of
+dnl                      simplified libtool.  So far we only need this on
+dnl                      MacOSX.  We have absolutely no intention to
+dnl                      re-invent libtool, though.
 dnl  LIBGAUCHE_SO        defined as "libgauche.$(SHLIB_SO_SUFFIX)" if
 dnl                      system supports dso.  empty otherwise.
 dnl  GOSH_USE_SHLIB      If set to "yes", gosh uses dynamic linkable version
@@ -349,7 +353,11 @@ AC_MSG_CHECKING(how to make dynamic loadable module)
 # A flag to indicate libgauche can be linked when building extension module.
 # It is required on cygwin; it has to be omitted on MacOS X; Other unices
 # generally don't care.
-ext_use_libgauche=yes 
+ext_use_libgauche=no
+
+# A flag to indicate we need to create a link with version numbers to
+# libgauche.so after building it.
+libgauche_version_link=yes
 
 # A flag to indicate uvector.so should be added when linking extension module
 # that refers to uvector.  It is required if we want to resolve all symbols,
@@ -391,12 +399,14 @@ case $target in
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
-    SHLIB_DYLIB_LDFLAGS='-dynamiclib -install_name "$$TARGETLIB/libgauche.dylib -o'
+    SHLIB_DYLIB_LDFLAGS='-dynamiclib -o'
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
+    LINK_HELPER='./link-dylib'
     ext_use_libgauche=no
+    libgauche_version_link=no
     ;;
   mips-sgi-irix*)
     if test "$CC" = gcc; then
@@ -473,6 +483,11 @@ if test "$ext_use_uvector" = yes; then
 else
   EXT_UVECTOR=
 fi
+if test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok; then
+  MAKEVERSLINK='./makeverslink'
+else
+  MAKEVERSLINK=:
+fi
 
 AC_SUBST(SHLIB_SO_CFLAGS)
 AC_SUBST(SHLIB_SO_LDFLAGS)
@@ -486,6 +501,8 @@ AC_SUBST(EXT_UVECTOR)
 AC_SUBST(LIBGAUCHE_SO)
 AC_SUBST(GOSH_USE_SHLIB)
 AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX")
+AC_SUBST(LINK_HELPER)
+AC_SUBST(MAKEVERSLINK)
 AC_MSG_RESULT($SHLIB_OK)
 
 dnl Check to see the linker takes --rpath flag via -Wl.
@@ -497,11 +514,14 @@ AC_CACHE_CHECK([linker takes --rpath flag], ac_cv_linker_rpath_flag, [
                  ac_cv_linker_rpath_flag=no)])
 CFLAGS="$cflags_save"
 if test "$ac_cv_linker_rpath_flag" = "yes"; then
-  RPATH='-Wl,--rpath "-Wl,$$TARGETLIB"'
+  RPATH_TMP='-Wl,--rpath "-Wl,`pwd`"'
+  RPATH_REAL='-Wl,--rpath "-Wl,$(LIB_INSTALL_DIR)"'
 else
-  RPATH=
+  RPATH_TMP=
+  RPATH_REAL=
 fi
-AC_SUBST(RPATH)
+AC_SUBST(RPATH_TMP)
+AC_SUBST(RPATH_REAL)
 
 dnl Sets some optimization flags by heuristics.
 AC_GAUCHE_OPTFLAGS

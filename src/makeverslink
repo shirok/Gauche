@@ -1,0 +1,13 @@
+#!/bin/sh
+# Helper script to create a symlink to sharedlib,
+#   like libgauche.so.0 -> libgauche.so
+# Assumes $TARGETLIB is set by the caller.
+
+# NB: the link direction is somewhat reversed from the tradition.
+# should be fixed later.
+
+LIBGAUCHE=$1
+(cd $TARGETLIB; rm -f $LIBGAUCHE.0; ln -s $LIBGAUCHE $LIBGAUCHE.0)
+(cd $TARGETLIB; rm -f $LIBGAUCHE.0.0.0; ln -s $LIBGAUCHE $LIBGAUCHE.0.0.0)
+
+

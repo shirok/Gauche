@@ -1,3 +1,12 @@
+2003-07-22  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/Makefile.in, src/link-dylib, src/makeverslink:
+	  fixed link and installation process.  Introduced a couple of
+	  helper script to keep configure.ac and Makefile.in simple.
+	
+	* ext/sxml/adaptor.scm : added cerr, cout and nl for sxml-tools
+	* ext/sxml/sxpath.scm.in : use srfi-2 and srfi-11.
+
 2003-07-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in : On Cygwin, installs libgauche.dll to bindir
