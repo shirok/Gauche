@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: odbm.scm,v 1.2 2001-10-28 11:38:14 shirok Exp $
+;;;  $Id: odbm.scm,v 1.3 2001-10-29 00:50:20 shirok Exp $
 ;;;
 
 (define-module dbm.odbm
@@ -96,7 +96,7 @@
 (define-method dbm-get ((self <odbm>) key . args)
   (next-method)
   (cond ((odbm-fetch (%dbm-k2s self key))
-         => (lambda (v) (%dbm-v2s self v)))
+         => (lambda (v) (%dbm-s2v self v)))
         ((pair? args) (car args))     ;fall-back value
         (else  (errorf "odbm: no data for key ~s in database ~s"
                        key self))))
