@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.17 2002-10-17 02:42:29 shirok Exp $
+# $Id: gauche-config.in,v 1.18 2002-10-23 23:37:07 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -42,42 +42,43 @@ shlib_main_ldflags="@SHLIB_MAIN_LDFLAGS@"
 libgauche_so="@LIBGAUCHE_SO@"
 
 usage () {
-    echo "Usage: gauche-config [option]"
-    echo
-    echo "General parameter"
-    echo "  -V   the current gauche version"
-    echo
-    echo "Parameters to compile an application using Gauche"
-    echo "  -I   include paths required to compile programs using gauche"
-    echo "  -L   library paths required to link programs using gauche"
-    echo "  -l   libraries required to link programs using gauche"
-    echo "  --cc name of the compiler"
-    echo "  --ac directory that contains Gauche specific autoconf macro"
-    echo "  --reconfigure"
-    echo "       prints the command line used to configure the current"
-    echo "       installation."
-    echo "  --arch"
-    echo "       prints the architecture signature"
-    echo
-    echo "Parameters to install files"
-    echo "  --syslibdir/--sitelibdir"
-    echo "       directories where system/site scheme files go"
-    echo "  --sysarchdir/--sitearchdir"
-    echo "       directories where system/site DSO files go"
-    echo "  --sysincdir/--siteincdir"
-    echo "       directories where system/site header files of extensions go"
-    echo "  --mandir"
-    echo "  --infodir"
-    echo "       directories where gauche manpage and info docs are installed"
-    echo
-    echo "Parameters to compile Gauche extention"
-    echo "  --so-suffix     object file suffix of the gauche extension"
-    echo "  --so-cflags     flags required to compile shared object"
-    echo "  --so-ldflags    flags required to link a gauche extension"
-    echo "  --so-libs       libraries to be linked with a gauche extension"
-    echo "  --dylib-suffix  dynamic/shared library file suffix of the system"
-    echo "  --dylib-ldflags flags required to link dynamic/shared library file"
-    echo "  --libgauche-so  the name of shared library of libgauche"
+    cat <<EOF
+Usage: gauche-config [option]
+
+General parameter
+  -V   the current gauche version
+
+Parameters to compile an application using Gauche
+  -I   include paths required to compile programs using gauche
+  -L   library paths required to link programs using gauche
+  -l   libraries required to link programs using gauche
+  --cc name of the compiler
+  --ac directory that contains Gauche specific autoconf macro
+  --reconfigure
+       prints the command line used to configure the current
+       installation.
+  --arch
+       prints the architecture signature
+
+Parameters to install files
+  --syslibdir/--sitelibdir
+       directories where system/site scheme files go
+  --sysarchdir/--sitearchdir
+       directories where system/site DSO files go
+  --sysincdir/--siteincdir
+       directories where system/site header files of extensions go
+  --mandir/--infodir
+       directories where gauche manpage and info docs are installed
+
+Parameters to compile Gauche extention
+  --so-suffix     object file suffix of the gauche extension
+  --so-cflags     flags required to compile shared object
+  --so-ldflags    flags required to link a gauche extension
+  --so-libs       libraries to be linked with a gauche extension
+  --dylib-suffix  dynamic/shared library file suffix of the system
+  --dylib-ldflags flags required to link dynamic/shared library file
+  --libgauche-so  the name of shared library of libgauche
+EOF
     exit 1
 }
 
@@ -102,8 +103,8 @@ case $1 in
   --sitelibdir) echo $gauche_sitelibdir;;
   --sysarchdir) echo $gauche_archdir;;
   --sitearchdir) echo $gauche_sitearchdir;;
-  --mandir) echo $mandir;;
-  --infodir) echo $infodir;;
+  --mandir) echo $gauche_mandir;;
+  --infodir) echo $gauche_infodir;;
   --arch) echo $arch;;
 
   --local-incdir) echo $local_incdir;;
