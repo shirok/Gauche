@@ -2,13 +2,16 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.30 2002-09-09 08:08:45 shirok Exp $
+ * $Id: config.h.in,v 1.31 2002-09-12 21:28:47 shirok Exp $
  */
 
 #undef STDC_HEADERS
 
 /* Define gauche version */
 #define GAUCHE_VERSION "0.0"
+#define GAUCHE_MAJOR_VERSION    0
+#define GAUCHE_MINOR_VERSION    0
+#define GAUCHE_MICRO_VERSION    0
 
 /* Define one of the followings to set internal character encoding */
 #undef GAUCHE_CHAR_ENCODING_EUC_JP

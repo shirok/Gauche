@@ -1,3 +1,10 @@
+2002-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/promise.c : fixed a bug in force.
+	* src/core.c : added Scm_RegisterFinalizer
+	* configure.in, src/gauche/config.h.in : added GAUCHE_MAJOR_VERSION et al.
+	* src/gauche.h : added SCM_DECL_{BEGIN|END} macro
+
 2002-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c, src/gauche/vm.h : changed the compiler to

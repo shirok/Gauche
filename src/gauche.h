@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.299 2002-09-11 03:19:40 shirok Exp $
+ *  $Id: gauche.h,v 1.300 2002-09-12 21:28:47 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -31,9 +31,17 @@
 #define GC_DLL
 #include <gc.h>
 
+#ifndef SCM_DECL_BEGIN
 #ifdef __cplusplus
-extern "C" {
-#endif
+#define SCM_DECL_BEGIN  extern "C" {
+#define SCM_DECL_END    }
+#else  /*! __cplusplus */
+#define SCM_DECL_BEGIN
+#define SCM_DECL_END
+#endif /*! __cplusplus */
+#endif /*!defined(SCM_DECL_BEGIN)*/
+
+SCM_DECL_BEGIN
 
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
@@ -293,6 +301,10 @@ typedef struct ScmHeaderRec {
 #define SCM_NEW2(type, size)  ((type)(SCM_MALLOC(size)))
 #define SCM_NEW_ATOMIC(type)  ((type*)(SCM_MALLOC_ATOMIC(sizeof(type))))
 #define SCM_NEW_ATOMIC2(type, size) ((type)(SCM_MALLOC_ATOMIC(size)))
+
+typedef void (*ScmFinalizerProc)(ScmObj z, void *data);
+SCM_EXTERN void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer,
+                                      void *data);
 
 /* safe coercer */
 #define SCM_OBJ_SAFE(obj)     ((obj)?SCM_OBJ(obj):SCM_UNDEFINED)
@@ -2320,8 +2332,6 @@ SCM_EXTERN ScmObj Scm_SortListX(ScmObj objs, ScmObj fn);
 #endif /* !GAUCHE_RECKLESS */
 
 
-#ifdef __cplusplus
-}
-#endif
+SCM_DECL_END
 
 #endif /* GAUCHE_H */

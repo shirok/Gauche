@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.78 2002-08-16 23:55:51 shirok Exp $
+ *  $Id: port.c,v 1.79 2002-09-12 21:28:47 shirok Exp $
  */
 
 #include <unistd.h>
@@ -31,7 +31,7 @@
  */
 
 static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-static void port_finalize(GC_PTR obj, GC_PTR data);
+static void port_finalize(ScmObj obj, void* data);
 static void register_buffered_port(ScmPort *port);
 static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int);
@@ -72,7 +72,7 @@ static int port_cleanup(ScmPort *port)
 }
 
 /* called by GC */
-static void port_finalize(GC_PTR obj, GC_PTR data)
+static void port_finalize(ScmObj obj, void* data)
 {
     port_cleanup(SCM_PORT(obj));
 }
@@ -104,7 +104,7 @@ static ScmPort *make_port(int dir, int type, int ownerp)
     switch (type) {
     case SCM_PORT_FILE: /*FALLTHROUGH*/;
     case SCM_PORT_PROC:
-        GC_REGISTER_FINALIZER(port, port_finalize, NULL, &ofn, &ocd);
+        Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
         break;
     default:
         break;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.45 2002-07-31 22:09:11 shirok Exp $
+ *  $Id: core.c,v 1.46 2002-09-12 21:28:47 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -108,6 +108,16 @@ void Scm_RegisterDL(void *data_start, void *data_end,
 }
 
 /*
+ * Finalization.  Scheme finalizers are added as NO_ORDER.
+ */
+void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer, void *data)
+{
+    GC_finalization_proc ofn; GC_PTR ocd;
+    GC_REGISTER_FINALIZER_NO_ORDER(z, (GC_finalization_proc)finalizer,
+                                   data, &ofn, &ocd);
+}
+
+/*
  * Program termination
  */
 
@@ -159,14 +169,12 @@ const char *Scm_HostArchitecture(void)
  * collected.
  */
 
-static void gc_sentinel(GC_PTR obj, GC_PTR data)
+static void gc_sentinel(ScmObj obj, void *data)
 {
     Scm_Printf(SCM_CURERR, "WARNING: object %s(%p) is inadvertently collected\n", (char *)data, obj);
 }
 
 void Scm_GCSentinel(void *obj, const char *name)
 {
-    GC_finalization_proc ofn;
-    GC_PTR ocd;
-    GC_REGISTER_FINALIZER(obj, gc_sentinel, (void*)name, &ofn, &ocd);
+    Scm_RegisterFinalizer(SCM_OBJ(obj), gc_sentinel, (void*)name);
 }
