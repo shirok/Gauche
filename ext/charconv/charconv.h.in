@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.11 2002-11-11 05:41:13 shirok Exp $
+ *  $Id: charconv.h.in,v 1.12 2002-12-14 00:38:10 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -27,10 +27,7 @@
 typedef int iconv_t;
 #endif /* !HAVE_ICONV_H */
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+SCM_DECL_BEGIN
 
 struct ScmConvInfoRec;
 
@@ -107,9 +104,7 @@ extern size_t jconv_reset(ScmConvInfo *, char *outptr, size_t outroom);
 
 extern void jconv_ucs4_to_utf8(unsigned int ucs, char *cp);
 
-#ifdef __cplusplus
-}
-#endif
+SCM_DECL_END
 
 #endif /*GAUCHE_CHARCONV_H*/
 
