@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use srfi-13)
 
 (load "net")
 (import gauche.net)
@@ -46,10 +47,6 @@
           (and (eq? (sockaddr-family addr) :inet)
                (equal? (sockaddr-name addr) "255.255.255.255:0")
                #t))))
-
-;;-----------------------------------------------------------------
-(test-section "socket")
-
 
 ;;-----------------------------------------------------------------
 (test-section "netdb")
@@ -106,5 +103,108 @@
                            '(name port proto)))))
              '(23       21)
              '("tcp"    "tcp"))))
+
+;;-----------------------------------------------------------------
+(test-section "socket")
+
+(define (simple-server socket)
+  (let loop ((clnt (socket-accept socket)))
+    (let ((in   (socket-input-port clnt))
+          (out  (socket-output-port clnt)))
+      (let loop2 ((line (read-line in)))
+        (cond ((eof-object? line)
+               (socket-close clnt)
+               (loop (socket-accept socket)))
+              ((string=? line "END")
+               (socket-close clnt)
+               (socket-close socket)
+               (sys-exit 33))
+              (else
+               (display (string-upcase line) out)
+               (newline out)
+               (flush out)
+               (loop2 (read-line in))))))))
+
+;; max size of the packet.  increase this to test robustness for
+;; buffer overrun attack.  right now, Gauche can bear fairly large
+;; packet, but got extremely inefficient.
+(define *chunk-size* 65537)
+
+;; port number to test inet socket connection.  Gauche needs some
+;; mechanism to check if the port is in use or not.
+(define *inet-port* 6726)
+
+(sys-unlink "sock.o")
+
+(test "unix server socket" 'socket
+      (lambda ()
+        (let ((pid (sys-fork)))
+          (if (= pid 0)
+              (simple-server (make-server-socket 'unix "sock.o"))
+              (begin
+                (sys-select #f #f #f 300000)
+                (let ((stat (sys-stat "sock.o")))
+                  (sys-stat->file-type stat)))))))
+
+(test "unix client socket" '("ABC" "XYZ")
+      (lambda ()
+        (call-with-client-socket (make-client-socket 'unix "sock.o")
+          (lambda (in out)
+            (display "abc\n" out) (flush out)
+            (let ((abc (read-line in)))
+              (display "xyz\n" out) (flush out)
+              (list abc (read-line in)))))))
+
+(test "unix client socket" #t
+      (lambda ()
+        (call-with-client-socket (make-client-socket 'unix "sock.o")
+          (lambda (in out)
+            (display (make-string *chunk-size* #\a) out)
+            (newline out)
+            (flush out)
+            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+
+(test "unix client socket" 33
+      (lambda ()
+        (call-with-client-socket (make-client-socket 'unix "sock.o")
+          (lambda (in out)
+            (display "END\n" out) (flush out)
+            (sys-wait-exit-status (cdr (sys-wait)))))))
+
+(sys-unlink "sock.o")
+
+(test "inet server socket" #t
+      (lambda ()
+        (let ((pid (sys-fork)))
+          (if (= pid 0)
+              (simple-server (make-server-socket 'inet *inet-port* :reuse-addr? #t))
+              (begin
+                (sys-select #f #f #f 300000)
+                #t)))))
+
+(test "inet client socket" '("ABC" "XYZ")
+      (lambda ()
+        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
+          (lambda (in out)
+            (display "abc\n" out) (flush out)
+            (let ((abc (read-line in)))
+              (display "xyz\n" out) (flush out)
+              (list abc (read-line in)))))))
+
+(test "inet client socket" #t
+      (lambda ()
+        (call-with-client-socket (make-client-socket "localhost" *inet-port*)
+          (lambda (in out)
+            (display (make-string *chunk-size* #\a) out)
+            (newline out)
+            (flush out)
+            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+
+(test "inet client socket" 33
+      (lambda ()
+        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
+          (lambda (in out)
+            (display "END\n" out) (flush out)
+            (sys-wait-exit-status (cdr (sys-wait)))))))
 
 (test-end)
