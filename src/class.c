@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.86 2002-09-19 05:22:41 shirok Exp $
+ *  $Id: class.c,v 1.87 2002-10-20 05:32:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1477,7 +1477,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     g = SCM_GENERIC(generic);
     if (!SCM_CLOSUREP(body))
         Scm_Error("closure required for :body argument: %S", body);
-    if (!SCM_PAIRP(specs) ||(speclen = Scm_Length(specs)) < 0)
+    if ((speclen = Scm_Length(specs)) < 0)
         Scm_Error("invalid specializers list: %S", specs);
     specarray = class_list_to_array(specs, speclen);
 
