@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.31 2001-03-27 10:16:08 shiro Exp $
+ *  $Id: class.c,v 1.32 2001-03-27 10:49:50 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1118,7 +1118,7 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
         if (xs[i] != ys[i]) {
             ac = Scm_ClassOf(args[i]);
             if (xs[i] == ac) return TRUE;
-            if (ys[i] == ac) return TRUE;
+            if (ys[i] == ac) return FALSE;
             for (acpl = ac->cpa; *acpl; acpl++) {
                 if (xs[i] == *acpl) return TRUE;
                 if (ys[i] == *acpl) return FALSE;
@@ -1293,6 +1293,8 @@ static void method_specializers_set(ScmMethod *m, ScmObj val)
  */
 ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 {
+    ScmObj mp;
+    
     if (method->generic && method->generic != gf)
         Scm_Error("method %S already added to a generic function %S",
                   method, method->generic);
@@ -1301,6 +1303,24 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                   " something wrong in MOP implementation?",
                   method, gf);
     method->generic = gf;
+    /* Check if a method with the same signature exists */
+    SCM_FOR_EACH(mp, gf->methods) {
+        ScmMethod *mm = SCM_METHOD(SCM_CAR(mp));
+        if (SCM_PROCEDURE_REQUIRED(method) == SCM_PROCEDURE_REQUIRED(mm)
+            && SCM_PROCEDURE_OPTIONAL(method) == SCM_PROCEDURE_OPTIONAL(mm)) {
+            ScmClass **sp1 = method->specializers;
+            ScmClass **sp2 = mm->specializers;
+            int i;
+            for (i=0; i<SCM_PROCEDURE_REQUIRED(method); i++) {
+                if (sp1[i] != sp2[i]) break;
+            }
+            if (i == SCM_PROCEDURE_REQUIRED(method)) {
+                /* TODO: alert for MT */
+                SCM_SET_CAR(mp, SCM_OBJ(method));
+                return SCM_UNDEFINED;
+            }
+        }
+    }
     gf->methods = Scm_Cons(SCM_OBJ(method), gf->methods);
     return SCM_UNDEFINED;
 }
