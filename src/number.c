@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.34 2001-05-06 01:37:59 shirok Exp $
+ *  $Id: number.c,v 1.35 2001-05-06 07:38:46 shirok Exp $
  */
 
 #include <math.h>
@@ -1138,40 +1138,8 @@ ScmObj Scm_Round(ScmObj num, int mode)
 
 /*===============================================================
  * TRANSCEDENTAL FUNCTIONS
- *   for now, we have functions only for real numbers.
  */
 
-#define TRANS(sfn, fn)                                                   \
-ScmObj sfn(ScmObj z)                                                     \
-{                                                                        \
-    double r;                                                            \
-    if (!SCM_REALP(z)) Scm_Error("real number required, but got %S", z); \
-    r = fn(Scm_GetDouble(z));                                            \
-    return Scm_MakeFlonum(r);                                            \
-}
-
-/* TODO: check domain error! */
-TRANS(Scm_Exp, exp)
-TRANS(Scm_Log, log)
-TRANS(Scm_Sin, sin)
-TRANS(Scm_Cos, cos)
-TRANS(Scm_Tan, tan)
-TRANS(Scm_Asin, asin)
-TRANS(Scm_Acos, acos)
-TRANS(Scm_Atan, atan)
-
-ScmObj Scm_Atan2(ScmObj y, ScmObj x)
-{
-    if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
-    if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
-    {
-        double vx = Scm_GetDouble(x);
-        double vy = Scm_GetDouble(y);
-        double r = atan2(vy, vx);
-        return Scm_MakeFlonum(r);
-    }
-}
-     
 ScmObj Scm_Expt(ScmObj x, ScmObj y)
 {
     if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
