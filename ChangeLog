@@ -1,3 +1,9 @@
+2002-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : reorganizing code.
+	* lib/gauche/interactive.scm (apropos): adapted to the new module
+	  inheitance mechanism.
+
 2002-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub : added fixnum? and bignum?
