@@ -1,3 +1,12 @@
+2002-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub : added open-input-fd-port and open-output-fd-port.
+	* src/port.c, src/stdlib.stub, src/extlib.stub : refactored port
+	  buffering mode check routine.
+	* ext/termios/* : added pty interface (openpty and forkpty).
+	* src/system.c, ext/extlib.stub : made system object information
+	  accessible as slots.
+
 2002-04-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/extlib.stub : added buffering mode keyword argument
