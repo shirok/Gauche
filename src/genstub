@@ -1,10 +1,19 @@
 ;;;
-;;; Simple stub generator
+;;; genstub - simple stub generator
 ;;;
-
-;;; $Id: genstub,v 1.31 2001-04-01 09:19:44 shiro Exp $
-
-(add-load-path "../lib")
+;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;
+;;;  Permission to use, copy, modify, distribute this software and
+;;;  accompanying documentation for any purpose is hereby granted,
+;;;  provided that existing copyright notices are retained in all
+;;;  copies and that this notice is included verbatim in all
+;;;  distributions.
+;;;  This software is provided as is, without express or implied
+;;;  warranty.  In no circumstances the author(s) shall be liable
+;;;  for any damages arising out of the use of this software.
+;;;
+;;;  $Id: genstub,v 1.32 2001-04-01 09:40:23 shiro Exp $
+;;;
 
 ;; (define-cproc scheme-name (argspec)
 ;;   assertions ...
@@ -36,53 +45,10 @@
 (define (file-exists? file) (sys-access file F_OK))
 
 ;;-----------------------------------------------------------------
-;; poor man's fake object system
-;;   These are only here to make the rest of program, originally written
-;;   for STk, work under the current gosh.
-;;   I'll remove them once Gauche has a proper OO.
-
-(define-syntax define-klass
-  (syntax-rules ()
-    ((_ ?name () ((?slot ?spec ...) ...))
-     (begin
-       (define ?name
-         (lambda ()
-           (let ((slots (list (cons '?slot (slot-initform ?spec ...)) ...)))
-             (cons '?name slots))))
-       (define-slots (?slot ?spec ...) ...)))
-    ))
-
-(define-syntax define-slots
-  (syntax-rules ()
-    ((_) '())
-    ((_ (?slot) ?more ...)
-     (define-slots ?more ...))
-    ((_ (?slot :accessor ?acc ?spec ...) ?more ...)
-     (begin
-       (define ?acc
-         (getter-with-setter
-          (lambda (obj) (cdr (assq '?slot (cdr obj))))
-          (lambda (obj value)
-            (set-cdr! (assq '?slot (cdr obj)) value))))
-       (define-slots ?more ...)))
-    ((_ (?slot ?key ?val ?spec ...) ?more ...)
-     (define-slots (?slot ?spec ...) ?more ...))
-    ))
-
-(define-syntax slot-initform
-  (syntax-rules ()
-    ((_) #f)
-    ((_ :initform ?val ?spec ...) ?val)
-    ((_ ?spec ?val ?spec2 ...) (slot-initform ?spec2 ...))))
-
-(define (make klass)
-  (klass))
-
-;;-----------------------------------------------------------------
 ;; Procedure
 ;;
 
-(define-klass <cproc> ()
+(define-class <cproc> ()
   ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
    (args            :initform '() :accessor args-of)
    (num-reqargs     :initform 0   :accessor num-reqargs-of)
@@ -96,13 +62,8 @@
    (c-name          :accessor c-name-of)
    ))
 
-;(define (make-cproc scheme-name)
-;  (make <cproc> :scheme-name scheme-name))
-
 (define (make-cproc scheme-name)
-  (let ((cproc (make <cproc>)))
-    (set! (scheme-name-of cproc) scheme-name)
-    cproc))
+  (make <cproc> :scheme-name scheme-name))
 
 (define (push-arg! cproc arg)
   (let* ((argname   (car arg))
@@ -133,7 +94,7 @@
 
 (define *super-table* '())
 
-(define-klass <cclass> ()
+(define-class <cclass> ()
   ((scheme-class-name :accessor scheme-class-name-of)
    (c-class-name      :accessor c-class-name-of)
    (slots             :accessor slots-of)
@@ -170,7 +131,7 @@
 
 (define *type-table* '())
 
-(define-klass <type> ()
+(define-class <type> ()
   ((name        :init-keyword :name        :accessor name-of)
    (predicate   :init-keyword :predicate   :accessor predicate-of)
    (c-type      :init-keyword :c-type      :accessor c-type-of)
@@ -178,19 +139,9 @@
    (unboxer     :init-keyword :unboxer     :accessor unboxer-of)
    ))
 
-;(define (make-type name predicate c-type c-predicate unboxer)
-;  (let ((i (make <type> :name name :predicate predicate
-;                 :c-type c-type :c-predicate c-predicate :unboxer unboxer)))
-;    (set! *type-table* (cons i *type-table*))
-;    i))
-
 (define (make-type name predicate c-type c-predicate unboxer)
-  (let ((i (make <type>)))
-    (set! (name-of i) name)
-    (set! (predicate-of i) predicate)
-    (set! (c-type-of i) c-type)
-    (set! (c-predicate-of i) c-predicate)
-    (set! (unboxer-of i) unboxer)
+  (let ((i (make <type> :name name :predicate predicate
+                 :c-type c-type :c-predicate c-predicate :unboxer unboxer)))
     (set! *type-table* (cons i *type-table*))
     i))
 
