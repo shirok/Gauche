@@ -2,7 +2,7 @@
  * mt-random.h - implements MT19937 random number generation algorithm
  * This code is based on Makoto Matsumoto & Takuji Nishimura's mt18837ar.c
  * See mt-random.c for details.
- * $Id: mt-random.h,v 1.4 2002-05-27 12:22:25 shirok Exp $
+ * $Id: mt-random.h,v 1.5 2002-05-27 22:12:15 shirok Exp $
  * The original copyright notice follows.
  */
 /*
@@ -60,7 +60,7 @@ typedef struct ScmMersenneTwisterRec {
     int mti;             /* mti==N+1 means mt[N] is not initialized */
 } ScmMersenneTwister;
 
-extern ScmClass Scm_MersenneTwisterClass;
+SCM_CLASS_DECL(Scm_MersenneTwisterClass);
 #define SCM_MERSENNE_TWISTER(obj)   ((ScmMersenneTwister*)obj)
 #define SCM_MERSENNE_TWISTER_P(obj) SCM_XTYPEP(obj, &Scm_MersenneTwisterClass)
 
