@@ -1,3 +1,20 @@
+/*
+ * netdb.c - obtain information about network
+ *
+ *  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
+ *
+ *  Permission to use, copy, modify, distribute this software and
+ *  accompanying documentation for any purpose is hereby granted,
+ *  provided that existing copyright notices are retained in all
+ *  copies and that this notice is included verbatim in all
+ *  distributions.
+ *  This software is provided as is, without express or implied
+ *  warranty.  In no circumstances the author(s) shall be liable
+ *  for any damages arising out of the use of this software.
+ *
+ *  $Id: netdb.c,v 1.6 2003-05-04 10:05:49 shirok Exp $
+ */
+
 #include "net.h"
 #include <gauche/class.h>
 
@@ -494,13 +511,24 @@ ScmObj Scm_GetAddrinfo(const char *nodename,
     int r;
 
     r = getaddrinfo(nodename, servname, hints, &res0);
-    if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
+    if (r) Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
 
     for (res = res0; res != NULL; res = res->ai_next) {
         SCM_APPEND1(h, t, SCM_OBJ(make_addrinfo(res)));
     }
     freeaddrinfo(res0);
     return h;
+}
+
+ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags)
+{
+    char host[NI_MAXHOST], serv[NI_MAXSERV];
+    int r;
+
+    r = getnameinfo(&addr->addr, addr->addrlen,
+		    host, sizeof(host), serv, sizeof(serv), flags);
+    if (r) Scm_Error("getnameinfo failed: %s", gai_strerror(r));
+    return Scm_Values2(SCM_MAKE_STR_COPYING(host), SCM_MAKE_STR_COPYING(serv));
 }
 
 #endif /* HAVE_IPV6 */

@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.20 2003-05-02 10:34:56 shirok Exp $
+;;  $Id: netlib.stub,v 1.21 2003-05-04 10:05:49 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -239,6 +239,9 @@
   SCM_RETURN(Scm_GetAddrinfo(SCM_FALSEP(nodename) ? NULL : Scm_GetStringConst(SCM_STRING(nodename)),
                              SCM_FALSEP(servname) ? NULL : Scm_GetStringConst(SCM_STRING(servname)),
                              SCM_FALSEP(hints) ? NULL : &ai));")
+
+      (define-cproc sys-getnameinfo (addr::<socket-address> flags::<fixnum>)
+	"  SCM_RETURN(Scm_GetNameinfo(addr, flags));")
       ))
 
 (if "defined AF_INET6" (define-enum AF_INET6))
@@ -260,6 +263,12 @@
 (if "defined AI_V4MAPPED" (define-enum AI_V4MAPPED))
 (if "defined AI_ALL" (define-enum AI_ALL))
 (if "defined AI_ADDRCONFIG" (define-enum AI_ADDRCONFIG))
+
+(if "defined NI_NOFQDN" (define-enum NI_NOFQDN))
+(if "defined NI_NUMERICHOST" (define-enum NI_NUMERICHOST))
+(if "defined NI_NAMEREQD" (define-enum NI_NAMEREQD))
+(if "defined NI_NUMERICSERV" (define-enum NI_NUMERICSERV))
+(if "defined NI_DGRAM" (define-enum NI_DGRAM))
 
 ;; Local variables:
 ;; mode: scheme

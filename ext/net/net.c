@@ -1,7 +1,7 @@
 /*
  * net.c - network interface
  *
- *  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.24 2003-01-30 12:14:19 shirok Exp $
+ *  $Id: net.c,v 1.25 2003-05-04 10:05:49 shirok Exp $
  */
 
 #include "net.h"

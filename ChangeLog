@@ -1,5 +1,15 @@
 2003-05-02  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/addr.c, ext/net/net.scm, ext/net/netdb.c,
+	  ext/net/netlib.stub: added seamless ipv6 support in
+	  make-{server|client}-socket, and sys-getnameinfo support.
+	  (Patch from Kimura Fuyuki).
+
+	* configure.in, src/gauche/config.h.in : checks if sin_len is in
+	  sockaddr_in (and sin6_len in sockaddr_in6).  It is reported that
+	  FreeBSD has them, and needs them to be set up for getnameinfo
+	  to work correctly.
+	
 	* src/Makefile: ensure BIN_INSTALL_DIR's existence at the installation
 	  time.
 

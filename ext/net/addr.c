@@ -1,7 +1,7 @@
 /*
  * addr.c - socket address
  *
- *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.15 2003-05-02 10:34:56 shirok Exp $
+ *  $Id: addr.c,v 1.16 2003-05-04 10:05:49 shirok Exp $
  */
 
 #include "net.h"
@@ -143,6 +143,9 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     addr = SCM_NEW(ScmSockAddrIn);
     SCM_SET_CLASS(addr, &Scm_SockAddrInClass);
     memset(&addr->addr, sizeof(struct sockaddr_in), 0);
+#ifdef HAVE_SIN_LEN
+    addr->addr.sin_len = sizeof(struct sockaddr_in);
+#endif
     addr->addr.sin_family = AF_INET;
     addr->addr.sin_port = htons(SCM_INT_VALUE(port));
     if (SCM_STRINGP(host)) {
@@ -201,6 +204,9 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
     addr = SCM_NEW(ScmSockAddrIn6);
     SCM_SET_CLASS(addr, &Scm_SockAddrIn6Class);
     memset(&addr->addr, sizeof(struct sockaddr_in6), 0);
+#ifdef HAVE_SIN6_LEN
+    addr->addr.sin6_len = sizeof(struct sockaddr_in6);
+#endif
     addr->addr.sin6_family = AF_INET6;
     addr->addr.sin6_port = htons(SCM_INT_VALUE(port));
     if (SCM_STRINGP(host)) {

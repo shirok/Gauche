@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.15 2003-05-02 10:34:56 shirok Exp $
+ *  $Id: net.h,v 1.16 2003-05-04 10:05:49 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -233,6 +233,10 @@ SCM_CLASS_DECL(Scm_SysAddrinfoClass);
 extern ScmObj Scm_GetAddrinfo(const char *nodename,
 			      const char *servname,
 			      struct addrinfo *hints);
+extern ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags);
+
+#define NI_MAXHOST  1025
+#define NI_MAXSERV    32
 
 #endif /* HAVE_IPV6 */
 

@@ -1,7 +1,7 @@
 ;;;
 ;;; net - network interface
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,10 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.16 2003-05-02 10:34:56 shirok Exp $
+;;;  $Id: net.scm,v 1.17 2003-05-04 10:05:49 shirok Exp $
 ;;;
 
 (define-module gauche.net
+  (use srfi-1)
   (export <socket> make-socket
           |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
@@ -36,14 +37,31 @@
 
 (dynamic-load "libnet" :export-symbols #t)
 
+(define ipv6-capable (symbol-bound? 'sys-getaddrinfo))
+
+(if ipv6-capable
+    (define (make-sys-addrinfo . args)
+      (let-keywords* args ((flags :flags 0)
+                           (family :family |AF_UNSPEC|)
+                           (socktype :socktype 0)
+                           (protocol :protocol 0))
+        (let1 hints (make <sys-addrinfo>)
+          (slot-set! hints 'flags (if (list? flags) (apply logior flags) flags))
+          (slot-set! hints 'family family)
+          (slot-set! hints 'socktype socktype)
+          (slot-set! hints 'protocol protocol)
+          hints))))
+
 ;; if ipv6 is supported, these symbols are defiend in the C routine.
 
 (export-if-defined
  |PF_INET6| |AF_INET6|
- <sockaddr-in6> <sys-addrinfo> sys-getaddrinfo make-hints
+ <sockaddr-in6> <sys-addrinfo> sys-getaddrinfo make-sys-addrinfo
  |AI_PASSIVE| |AI_CANONNAME| |AI_NUMERICHOST| |AI_NUMERICSERV|
- |AI_V4MAPPED| |AI_ALL| |AI_ADDRCONFIG|)
-         
+ |AI_V4MAPPED| |AI_ALL| |AI_ADDRCONFIG|
+ sys-getnameinfo
+ |NI_NOFQDN| |NI_NUMERICHOST| |NI_NAMEREQD| |NI_NUMERICSERV| |NI_DGRAM|)
+
 ;; High-level interface.  We need some hardcoded heuristics here.
 
 (define (make-client-socket proto . args)
@@ -71,12 +89,29 @@
         (socket  (make-socket |PF_UNIX| |SOCK_STREAM|)))
     (socket-connect socket address)
     socket))
-  
+
 (define (make-client-socket-inet host port)
-  (let ((address (make <sockaddr-in> :host host :port port))
-        (socket (make-socket |PF_INET| |SOCK_STREAM|)))
-    (socket-connect socket address)
-    socket))
+  (cond (ipv6-capable
+         (let1 err #f
+           (define (try-connect ai)
+             (with-error-handler (lambda (e) (set! err e) #f)
+               (lambda ()
+                 (let ((address (slot-ref ai 'addr))
+                       (socket (make-socket (slot-ref ai 'family)
+                                            (slot-ref ai 'socktype))))
+                   (socket-connect socket address)))))
+           (let* ((hints (make-sys-addrinfo :socktype |SOCK_STREAM|))
+                  (socket (any try-connect
+                               (sys-getaddrinfo host (number->string port)
+                                                hints))))
+             (unless socket (raise err))
+             socket)))
+        (else
+         (let ((address (make <sockaddr-in> :host host :port port))
+               (socket (make-socket |PF_INET| |SOCK_STREAM|)))
+           (socket-connect socket address)
+           socket))
+        ))
 
 (define (make-server-socket proto . args)
   (cond ((eq? proto 'unix)
@@ -102,13 +137,33 @@
     (socket-listen socket 5)))
 
 (define (make-server-socket-inet port . args)
-  (let ((reuse-addr? (get-keyword :reuse-addr? args #f))
-        (address (make <sockaddr-in> :host :any :port port))
-        (socket (make-socket |PF_INET| |SOCK_STREAM|)))
-    (when reuse-addr?
-      (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
-    (socket-bind socket address)
-    (socket-listen socket 5)))
+  (let1 reuse-addr? (get-keyword :reuse-addr? args #f)
+    (define (bind-listen socket address)
+      (when reuse-addr?
+        (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
+      (socket-bind socket address)
+      (socket-listen socket 5))
+    (cond (ipv6-capable
+           (let1 err #f
+             (define (try-bind-listen ai)
+               (with-error-handler (lambda (e) (set! err e) #f)
+                 (lambda ()
+                   (let ((address (slot-ref ai 'addr))
+                         (socket (make-socket (slot-ref ai 'family)
+                                             (slot-ref ai 'socktype))))
+                   (bind-listen socket address)))))
+             (let* ((hints (make-sys-addrinfo :flags |AI_PASSIVE|
+                                       :socktype |SOCK_STREAM|))
+                    (socket (any try-bind-listen
+                                 (sys-getaddrinfo #f (number->string port)
+                                                  hints))))
+               (unless socket (raise err))
+               socket)))
+          (else
+           (let ((address (make <sockaddr-in> :host :any :port port))
+                 (socket (make-socket |PF_INET| |SOCK_STREAM|)))
+             (bind-listen socket address))))
+    ))
 
 (define (call-with-client-socket socket proc)
   (with-error-handler
@@ -119,19 +174,6 @@
       (begin0
        (proc (socket-input-port socket) (socket-output-port socket))
        (socket-close socket)))))
-
-(if (symbol-bound? '|AF_INET6|)
-    (define (make-hints . args)
-      (let-keywords* args ((flags :flags 0)
-			   (family :family |AF_UNSPEC|)
-			   (socktype :socktype 0)
-			   (protocol :protocol 0))
-	(let1 hints (make <sys-addrinfo>)
-	  (slot-set! hints 'flags (if (list? flags) (apply logior flags) flags))
-	  (slot-set! hints 'family family)
-	  (slot-set! hints 'socktype socktype)
-	  (slot-set! hints 'protocol protocol)
-	  hints))))
 
 ;; backward compatibility -- will be removed!
 (define pf_inet |PF_INET|)
