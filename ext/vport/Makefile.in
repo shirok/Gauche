@@ -1,0 +1,27 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche
+
+LIBFILES = vport.$(SOEXT)
+SCMFILES = vport.scm
+
+OBJECTS = vport_head.$(OBJEXT) vport.$(OBJEXT) vportlib.$(OBJEXT) vport_tail.$(OBJEXT)
+
+GENERATED = Makefile vportlib.c vport_head.c vport_tail.c
+
+all : $(LIBFILES)
+
+vport.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) vport.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+vportlib.c : vportlib.stub
+
+vport_head.c vport_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension vport
+
+install : install-std
+
