@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.87 2002-09-19 20:17:27 shirok Exp $
+ *  $Id: compile.c,v 1.88 2002-09-20 09:44:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -825,7 +825,7 @@ static ScmObj compile_body(ScmObj form,
                            int ctx)
 {
     ScmObj body = SCM_NIL, bodytail = SCM_NIL, formtail = SCM_NIL;
-    ScmObj idef_vars = SCM_NIL, idef_vars_tail = SCM_NIL;
+    ScmObj idef_vars = SCM_NIL, idef_vars_tail = SCM_NIL, idef_save = SCM_NIL;
     ScmObj idef_vals = SCM_NIL, idef_vals_tail = SCM_NIL;
     int idefs = 0, body_started = 0;
 
@@ -874,7 +874,8 @@ static ScmObj compile_body(ScmObj form,
             /* This is the beginning of the real body after interal defines.
                Creates a new env for them and bind them. */
             int cnt;
-            
+
+            idef_save = idef_vars;
             env = Scm_Cons(idef_vars, env);
             for (cnt=0; cnt<idefs; cnt++) {
                 SCM_APPEND(body, bodytail,
@@ -899,7 +900,7 @@ static ScmObj compile_body(ScmObj form,
     if (idefs > 0) {
         /* Internal defines introduced a new scope. */
         body = add_bindinfo(SCM_LIST2(SCM_VM_INSN1(SCM_VM_LET, idefs), body),
-                            idef_vars);
+                            idef_save);
     }
     return body;
 }
