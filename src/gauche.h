@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.244 2002-04-29 03:07:38 shirok Exp $
+ *  $Id: gauche.h,v 1.245 2002-04-29 23:58:58 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1151,6 +1151,9 @@ SCM_CLASS_DECL(Scm_PortClass);
 SCM_EXTERN ScmObj Scm_Stdin(void);
 SCM_EXTERN ScmObj Scm_Stdout(void);
 SCM_EXTERN ScmObj Scm_Stderr(void);
+
+SCM_EXTERN ScmObj Scm_GetBufferingMode(ScmPort *port);
+SCM_EXTERN int    Scm_BufferingMode(ScmObj flag, int direction, int fallback);
 
 SCM_EXTERN ScmObj Scm_OpenFilePort(const char *path, int flags,
                                    int buffering, int perm);

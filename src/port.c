@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.60 2002-04-29 03:07:38 shirok Exp $
+ *  $Id: port.c,v 1.61 2002-04-29 23:58:58 shirok Exp $
  */
 
 #include <unistd.h>
@@ -515,8 +515,6 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
  */
 
 /*TODO: allow to extend the port vector. */
-/*TODO: if we make at most one port owns one fd, the vector can be directly
-  indexed by fd. */
 
 #define PORT_VECTOR_SIZE 256    /* need to be 2^n */
 
@@ -607,6 +605,40 @@ void Scm_FlushAllPorts(int exitting)
         }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
     }
+}
+
+/* Utility procedure to translate Scheme arg into buffering mode */
+static ScmObj key_full, key_modest, key_line, key_none;
+
+int Scm_BufferingMode(ScmObj flag, int direction, int fallback)
+{
+    if (SCM_EQ(flag, key_full)) return SCM_PORT_BUFFER_FULL;
+    if (SCM_EQ(flag, key_none)) return SCM_PORT_BUFFER_NONE;
+    if (fallback >= 0 && (SCM_UNBOUNDP(flag) || SCM_FALSEP(flag)))
+        return fallback;
+    if (direction == SCM_PORT_INPUT) {
+        if (SCM_EQ(flag, key_modest)) return SCM_PORT_BUFFER_LINE;
+        else Scm_Error("buffering mode must be one of :full, :modest or :none, but got %S", flag);
+    }
+    if (direction == SCM_PORT_OUTPUT) {
+        if (SCM_EQ(flag, key_line)) return SCM_PORT_BUFFER_LINE;
+        else Scm_Error("buffering mode must be one of :full, :line or :none, but got %S", flag);
+    }
+    return -1;                  /* dummy */
+}
+
+ScmObj Scm_GetBufferingMode(ScmPort *port)
+{
+    if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
+        switch (port->src.buf.mode) {
+        case SCM_PORT_BUFFER_FULL: return key_full;
+        case SCM_PORT_BUFFER_NONE: return key_none;
+        default:
+            if (SCM_IPORTP(port)) return key_modest;
+            else return key_line;
+        }
+    }
+    return SCM_FALSE;
 }
 
 /*===============================================================
@@ -1476,4 +1508,8 @@ void Scm__InitPort(void)
     scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(stderr)"),
                                     SCM_PORT_OUTPUT, 2,
                                     SCM_PORT_BUFFER_NONE, TRUE);
+    key_full   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("full")));
+    key_modest = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("modest")));
+    key_line   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("line")));
+    key_none   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("none")));
 }

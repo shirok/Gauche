@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.85 2002-04-29 03:07:38 shirok Exp $
+;;; $Id: stdlib.stub,v 1.86 2002-04-29 23:58:58 shirok Exp $
 ;;;
 
 
@@ -868,10 +868,6 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-keyword supersede "key_supersede")
 (define-keyword character "key_character")
 (define-keyword binary "key_binary")
-(define-keyword full "key_full")
-(define-keyword line "key_line")
-(define-keyword modest "key_modest")
-(define-keyword none "key_none")
 
 (define-cproc input-port? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_IPORTP(obj)));")
@@ -890,20 +886,16 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc open-input-file (path
                                &keyword (if-does-not-exist (c "key_error"))
-                                        (buffering (c "key_full"))
+                                        (buffering #f)
                                         (element-type (c "key_character"))
                                )
   (assert (string? path))
-  "  ScmObj o; int ignerr = FALSE, bufmode = SCM_PORT_BUFFER_FULL;
+  "  ScmObj o; int ignerr = FALSE, bufmode;
   if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
   else if (!SCM_EQ(if_does_not_exist, key_error)) {
     Scm_Error(\"argument for :if-does-not-exist must be either :error or #f, but got %S\", if_does_not_exist);
   }
-  if (SCM_EQ(buffering, key_modest)) bufmode = SCM_PORT_BUFFER_LINE;
-  else if (SCM_EQ(buffering, key_none)) bufmode = SCM_PORT_BUFFER_NONE;
-  else if (!SCM_EQ(buffering, key_full)) {
-    Scm_Error(\"argument for :buffering must be either :full, :modest or :none, but got %S\", buffering);
-  }
+  bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_FULL);
   o = Scm_OpenFilePort(Scm_GetStringConst(path), O_RDONLY, bufmode, 0);
   if (o == SCM_FALSE && !ignerr) {
      Scm_Error(\"couldn't open input file: %S\", path_scm);
@@ -914,13 +906,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
                                 &keyword (if-exists (c "key_supersede"))
                                          (if-does-not-exist (c "key_create"))
                                          (mode #o666)
-                                         (buffering (c "key_full"))
+                                         (buffering #f)
                                          (element-type (c "key_character"))
                                          )
   (assert (string? path))
   (assert (small-integer? mode))
   "  ScmObj o;
-  int ignerr = FALSE, bufmode = SCM_PORT_BUFFER_FULL, flags = O_WRONLY;
+  int ignerr = FALSE, bufmode, flags = O_WRONLY;
 
   if (SCM_EQ(if_exists, key_append)) flags |= O_APPEND;
   else if (SCM_EQ(if_exists, key_error)) {
@@ -941,12 +933,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
     Scm_Error(\"argument for :if-does-not-exist must be either :error, :create or #f, but got %S\", if_does_not_exist);
   }
 
-  if (SCM_EQ(buffering, key_modest)) bufmode = SCM_PORT_BUFFER_LINE;
-  else if (SCM_EQ(buffering, key_none)) bufmode = SCM_PORT_BUFFER_NONE;
-  else if (!SCM_EQ(buffering, key_full)) {
-    Scm_Error(\"argument for :buffering must be either :full, :line or :none, but got %S\", buffering);
-  }
-
+  bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_FULL);
   o = Scm_OpenFilePort(Scm_GetStringConst(path), flags, bufmode, mode);
   if (!ignerr && o == SCM_FALSE) {
      Scm_Error(\"couldn't open output file: %S\", path_scm);
