@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.16 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: port.c,v 1.17 2001-03-31 08:45:20 shiro Exp $
  */
 
+#include <unistd.h>
 #include <errno.h>
 #include "gauche.h"
 
@@ -121,6 +122,7 @@ ScmObj Scm_PortName(ScmPort *port)
         break;
     default:
         Scm_Panic("Scm_PortName: something screwed up");
+        /*NOTREACHED*/
     }
     return z;
 }
@@ -146,6 +148,7 @@ int Scm_PortLine(ScmPort *port)
         break;
     default:
         Scm_Panic("Scm_PortLine: something screwed up");
+        /*NOTREACHED*/
     }
     return l;
 }
@@ -174,6 +177,7 @@ int Scm_PortPosition(ScmPort *port)
         break;
     default:
         Scm_Panic("Scm_PortLine: something screwed up");
+        /*NOTREACHED*/
     }
     return pos;
 }
@@ -225,7 +229,6 @@ ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode, int ownerp)
 
 ScmObj Scm_OpenFilePort(const char *path, const char *mode)
 {
-    int dir;
     FILE *fp;
     
     fp = fopen(path, mode);
@@ -242,7 +245,6 @@ ScmObj Scm_OpenFilePort(const char *path, const char *mode)
 
 int Scm__PortFileGetc(int prefetch, ScmPort *port)
 {
-    unsigned char b;
     char *p;
     int next, nfollows, i, ch;
 
@@ -307,6 +309,7 @@ int Scm__PortGetcInternal(ScmPort *port)
               case SCM_PORT_ISTR: SCM__ISTR_GETB(b, port); break;
               case SCM_PORT_PROC: SCM__PROC_GETB(b, port); break;
               default: Scm_Panic("getc: something screwed up");
+                  /*NOTREACHED*/
             }
             if (b == EOF) return EOF;
             port->buf[port->bufcnt] = b;
@@ -634,6 +637,8 @@ static int fdport_close_unbuffered(ScmPort *port)
     DECL_FDPORT(pdata, port);
     if (port->ownerp && pdata->info.fd >= 0)
         return close(pdata->info.fd);
+    else
+        return -1;
 }
 
 static ScmProcPortInfo *fdport_info(ScmPort *port)

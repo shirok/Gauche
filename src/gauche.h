@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.94 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: gauche.h,v 1.95 2001-03-31 08:46:31 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -340,7 +340,7 @@ extern ScmObj Scm_ClassAccessors(ScmClass *klass);
 extern int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 extern int Scm_TypeP(ScmObj obj, ScmClass *type);
 
-extern ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot);
+extern ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp);
 extern ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj value);
 
 /* built-in classes */
@@ -380,7 +380,7 @@ extern ScmClass *Scm_ObjectCPL[];
 
 #define SCM_DEFINE_CLASS_COMMON(cname, size, flag, printer, compare, serialize, cpa) \
     ScmClass cname = {                          \
-        SCM_CLASS_CLASS,                        \
+        { SCM_CLASS_CLASS },                    \
         printer,                                \
         compare,                                \
         serialize,                              \
@@ -644,7 +644,7 @@ extern ScmObj  Scm_StringFill(ScmString *str, ScmChar c);
    the length by yourself. */
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)    \
     ScmString name = {                                  \
-        SCM_CLASS_STRING, (len), (siz), (str)           \
+        { SCM_CLASS_STRING }, (len), (siz), (str)       \
     };
 
 /* Auxiliary structure to construct a string.  This is not an ScmObj. */
@@ -740,7 +740,7 @@ struct ScmPortRec {
     char type;                  /* SCM_PORT_{FILE|ISTR|OSTR|PORT|CLOSED} */
     char ownerp;                /* TRUE if this port owns underlying
                                    file descriptor/stream */
-    char bufcnt;                /* # of bytes in the incomplete buffer */
+    unsigned char bufcnt;       /* # of bytes in the incomplete buffer */
     char buf[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
     
     ScmChar ungotten;           /* ungotten character */
@@ -913,6 +913,7 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
           case SCM_PORT_CLOSED:                                         \
             Scm_Error("port already closed: %S", SCM_OBJ(port));        \
           default: Scm_Panic("SCM_PUTB: something screwed up");         \
+            /*NOTREACHED*/                                              \
         }                                                               \
     } while (0)
 
@@ -925,6 +926,7 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
           case SCM_PORT_CLOSED:                                         \
             Scm_Error("port already closed: %S", SCM_OBJ(port));        \
           default: Scm_Panic("SCM_PUTC: something screwed up");         \
+            /*NOTREACHED*/                                              \
         }                                                               \
     } while (0)
 
@@ -949,6 +951,7 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
           case SCM_PORT_CLOSED:                                         \
             Scm_Error("port already closed: %S", SCM_OBJ(port));        \
           default: Scm_Panic("SCM_PUTS: something screwed up");         \
+            /*NOTREACHED*/                                              \
         }                                                               \
     } while (0)
 
@@ -960,6 +963,7 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
           case SCM_PORT_PROC: SCM__PROC_FLUSH(port); break;             \
           case SCM_PORT_CLOSED: break;                                  \
           default: Scm_Panic("SCM_FLUSH: something screwed up");        \
+            /*NOTREACHED*/                                              \
         }                                                               \
     } while (0)
 
@@ -1037,6 +1041,7 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
               case SCM_PORT_CLOSED:                                     \
                 Scm_Error("port already closed: %S", SCM_OBJ(port));    \
               default: Scm_Panic("SCM_GETB: something screwed up");     \
+                 /*NOTREACHED*/                                         \
             }                                                           \
         }                                                               \
     } while (0)
@@ -1058,6 +1063,7 @@ extern int Scm__PortGetbInternal(ScmPort *port);
               case SCM_PORT_CLOSED:                                     \
                 Scm_Error("port already closed: %S", SCM_OBJ(port));    \
               default: Scm_Panic("SCM_GETC: something screwed up");     \
+                 /*NOTREACHED*/                                         \
             }                                                           \
         }                                                               \
     } while (0)
@@ -1521,7 +1527,7 @@ extern ScmClass Scm_GenericClass;
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
-        { SCM_CLASS_GENERIC, 0, 0, SCM_PROC_GENERIC, SCM_FALSE },       \
+        { { SCM_CLASS_GENERIC }, 0, 0, SCM_PROC_GENERIC, SCM_FALSE },   \
         SCM_NIL, cfunc, data                                            \
     };
 
@@ -1554,7 +1560,7 @@ extern ScmClass Scm_MethodClass;
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
-        { SCM_CLASS_METHOD, req, opt, SCM_PROC_METHOD, SCM_FALSE },     \
+        { { SCM_CLASS_METHOD }, req, opt, SCM_PROC_METHOD, SCM_FALSE }, \
         gf, specs, func, data, NULL                                     \
     };
 

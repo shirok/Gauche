@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.22 2001-03-22 09:21:33 shiro Exp $
+ *  $Id: macro.c,v 1.23 2001-03-31 08:45:34 shiro Exp $
  */
 
 #include "gauche.h"
@@ -75,7 +75,6 @@ static int synrule_print(ScmObj obj, ScmPort *port, int mode)
 {
     int nc = 0, i;
     ScmSyntaxRules *r = SCM_SYNTAX_RULES(obj);
-    ScmSyntaxRuleBranch *br;
 
     nc += Scm_Printf(port, "#<syntax-rules(%d)\n", r->numRules);
     for (i = 0; i < r->numRules; i++) {
@@ -122,7 +121,7 @@ ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
 static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
                                    void *data)
 {
-    ScmObj name, args, body, proc, mt, code, info;
+    ScmObj name, args, body, proc, mt, code;
     if (Scm_Length(form) < 3)  goto badsyn;
     if (!SCM_PAIRP(SCM_CADR(form))) goto badsyn;
     name = SCM_CAR(SCM_CADR(form));
@@ -153,7 +152,7 @@ static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
 }
 
 static ScmSyntax syntax_define_macro = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_DEFINE_MACRO),
     compile_define_macro,
     NULL
@@ -365,7 +364,6 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     PatternContext ctx;
     ScmSyntaxPattern *pat, *tmpl;
     ScmSyntaxRules *sr;
-    ScmSyntaxRuleBranch *branch;
     ScmObj rp;
     int numRules = Scm_Length(rules), i;
 
@@ -481,6 +479,7 @@ static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec,
 }
 
 /* for debug */
+#if 0
 static void print_matchvec(MatchVar *mvec, int numPvars, ScmPort *port)
 {
     int i;
@@ -489,6 +488,7 @@ static void print_matchvec(MatchVar *mvec, int numPvars, ScmPort *port)
                    mvec[i].branch, mvec[i].sprout, mvec[i].root);
     }
 }
+#endif
 
 static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
                          MatchVar *mvec);
@@ -750,7 +750,7 @@ static ScmObj realize_template_rec(ScmObj template,
 static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
                                MatchVar *mvec)
 {
-    int index[DEFAULT_MAX_LEVEL], *indices = index, i, lev;
+    int index[DEFAULT_MAX_LEVEL], *indices = index, i;
     int exlev = 0;
     ScmObj idlist = SCM_NIL;
     
@@ -806,7 +806,6 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
                                    int ctx, void *data)
 {
     ScmObj name, literals, rules;
-    ScmSyntaxPattern *pat, *tmpl;
     ScmSyntaxRules *sr;
 
     if (Scm_Length(form) < 4) {
@@ -834,7 +833,7 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
 }
 
 static ScmSyntax syntax_syntax_rules = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_SYNTAX_RULES_INT),
     compile_syntax_rules,
     NULL
@@ -869,7 +868,7 @@ static ScmObj compile_define_syntax(ScmObj form, ScmObj env, int ctx,
 }
 
 static ScmSyntax syntax_define_syntax = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_DEFINE_SYNTAX),
     compile_define_syntax,
     NULL
@@ -936,14 +935,14 @@ static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_let_syntax = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_LET_SYNTAX),
     compile_let_syntax,
     (void*)0
 };
 
 static ScmSyntax syntax_letrec_syntax = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_LETREC_SYNTAX),
     compile_let_syntax,
     (void*)1
@@ -965,7 +964,6 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
 {
     ScmObj expr, sym;
     ScmSyntax *syn;
-    ScmGloc *gloc;
     int oncep = (int)data;
 
     if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
@@ -1012,14 +1010,14 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
 }
 
 static ScmSyntax syntax_macro_expand = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
     compile_macro_expand,
     (void*)0
 };
 
 static ScmSyntax syntax_macro_expand_1 = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_MACRO_EXPAND_1),
     compile_macro_expand,
     (void*)1

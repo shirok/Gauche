@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.19 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: string.c,v 1.20 2001-03-31 08:44:41 shiro Exp $
  */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include "gauche.h"
 
@@ -41,7 +42,7 @@ void Scm_StringDump(FILE *out, ScmObj str)
     int s = SCM_STRING_SIZE(str);
     const char *p = SCM_STRING_START(str);
 
-    fprintf(out, "STR(len=%d,siz=%d) \"", SCM_STRING_LENGTH(str), s);
+    fprintf(out, "STR(len=%ld,siz=%d) \"", SCM_STRING_LENGTH(str), s);
     for (i=0; i < DUMP_LENGTH && s > 0;) {
         int n = SCM_CHAR_NFOLLOWS(*p) + 1;
         for (; n > 0 && s > 0; p++, n--, s--, i++) {
@@ -71,7 +72,7 @@ static int count_size_and_length(const char *str, int *psize, int *plen)
     char c;
     const char *p = str;
     int size = 0, len = 0;
-    while (c = *p++) {
+    while ((c = *p++) != 0) {
         int i = SCM_CHAR_NFOLLOWS(c);
         len++;
         size++;
@@ -112,7 +113,7 @@ int Scm_MBLen(const char *str)
     char c;
     int count = 0;
     
-    while (c = *str++) {
+    while ((c = *str++) != 0) {
         int i = SCM_CHAR_NFOLLOWS(c);
         if (i < 0) return -1;
         count++;
@@ -167,7 +168,7 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
 
 static ScmObj makestring_from_list(ScmObj chars)
 {
-    ScmObj cp, s;
+    ScmObj cp;
     int size = 0, len = 0;
     ScmChar ch;
     char *buf, *bufp;
@@ -557,11 +558,7 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
 
 ScmObj Scm_StringSubstitute(ScmString *x, int start, int end, ScmString *y)
 {
-    int sizex = SCM_STRING_SIZE(x), lenx = SCM_STRING_LENGTH(x);
     int sizey = SCM_STRING_SIZE(y), leny = SCM_STRING_LENGTH(y);
-    int sizez, lenz;
-    ScmString *z;
-    char *p, *s, *e;
 
     return Scm_StringSubstituteCstr(x, start, end, y->start, sizey, leny);
 }
@@ -576,7 +573,7 @@ ScmObj Scm_StringSet(ScmString *x, int k, ScmChar ch)
 
 ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
 {
-    int size = SCM_STRING_SIZE(x), len = SCM_STRING_LENGTH(x);
+    int size = SCM_STRING_SIZE(x);
     char *p;
     
     if (k < 0 || k >= size) Scm_Error("argument out of range: %d", k);
@@ -598,7 +595,7 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
 {
     ScmString *z;
     const char *s, *e;
-    int sizex = SCM_STRING_SIZE(x), lenx = SCM_STRING_LENGTH(x);
+    int lenx = SCM_STRING_LENGTH(x);
     
     if (start < 0)
         Scm_Error("start argument needs to be positive: %d", start);
@@ -620,8 +617,6 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
    a substring. */
 ScmObj Scm_QuasiSubstring(ScmString *x, ScmObj start, ScmObj end)
 {
-    int istart, iend, slen;
-
     if (SCM_UNBOUNDP(start) || SCM_UNBOUNDP(end)) return SCM_OBJ(x);
     if (!SCM_INTP(start))
         Scm_Error("exact integer required for start, but got %S", start);
@@ -729,7 +724,6 @@ ScmObj Scm_StringContains(ScmString *s1, ScmString *s2)
         Scm_Error("can't handle complete string %S with incomplete stirng %S",
                   s1, s2);
     
-  mbstring:
     if (len1 < len2) return SCM_FALSE;
     else {
         const char *ssp = ss1;
@@ -778,7 +772,7 @@ ScmObj Scm_StringToList(ScmString *str)
 {
     ScmObj start = SCM_NIL, end;
     const char *bufp = SCM_STRING_START(str);
-    int chsize, len = SCM_STRING_LENGTH(str);
+    int len = SCM_STRING_LENGTH(str);
     ScmChar ch;
     
     while (len-- > 0) {
@@ -825,7 +819,7 @@ static int string_print(ScmObj obj, ScmPort *port, int mode)
         if (SCM_STRING_COMPLETE_P(str)) {
             ScmChar ch;
             const char *cp = SCM_STRING_START(str);
-            int chsize, len = SCM_STRING_LENGTH(str);
+            int len = SCM_STRING_LENGTH(str);
 
             while (len--) {
                 SCM_STR_GETC(cp, ch);

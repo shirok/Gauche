@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.16 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: module.c,v 1.17 2001-03-31 08:45:57 shiro Exp $
  */
 
 #include "gauche.h"
@@ -94,7 +94,6 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 
 ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol)
 {
-    ScmObj mod;
     ScmGloc *g = Scm_FindBinding(module, symbol, FALSE);
     return (g != NULL)? g->value : SCM_UNBOUND;
 }

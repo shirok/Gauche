@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.20 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: list.c,v 1.21 2001-03-31 08:45:45 shiro Exp $
  */
 
 #include "gauche.h"
@@ -629,7 +629,7 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
 {
     ScmObj result = Scm_Cons(start, SCM_NIL), rp, next;
     ScmObj *seqv, *sp;
-    int nseqs = Scm_Length(sequences), i;
+    int nseqs = Scm_Length(sequences);
 
     if (nseqs < 0) Scm_Error("bad list of sequences: %S", sequences);
     seqv = SCM_NEW2(ScmObj *, sizeof(ScmObj)*nseqs);
