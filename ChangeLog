@@ -1,3 +1,10 @@
+2003-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c : changed DynLoad stuff so that the platform-dependent
+	  code are in separate files and #included in src/load.c conditionally.
+	* src/dl_dlopen.c, src/dl_dummy.c, src/dl_win.c, src/dl_darwin.c :
+	  platform-dependent dynload stubs.   Not tested yet except dl_dlopen.
+
 2003-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/lcs.scm, lib/text/diff.scm, lib/Makefile.in : added

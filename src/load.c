@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.71 2003-04-30 20:24:09 shirok Exp $
+ *  $Id: load.c,v 1.72 2003-05-15 11:32:54 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -26,10 +26,6 @@
 #include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/port.h"
-
-#ifdef HAVE_DLFCN_H
-#include <dlfcn.h>
-#endif
 
 #define LOAD_SUFFIX ".scm"      /* default load suffix */
 
@@ -426,47 +422,63 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * Dynamic link
  */
 
-/* Problem of transitive dynamic linking:
+/* The API to load object file dynamically differ among platforms.
+ * We include the platform-dependent implementations (dl_*.c) that
+ * provides a common API:
  *
- * Suppose you wrote a useful extention library for Gauche, named useful.so.
- * It can be loaded into Gauche by dynamic linking feature.   Then, the 
- * other person wrote another extention library, another.so, from which
- * he wants to call a C function defined in useful.so.  What shall he do?
- * Since generally, symbols in dlopen-ed useful.so is not visible from
- * other dlopen-ed libraries.  Using RTLD_GLOBAL in Scm_DynLoad allows
- * another.so to see global symbols in useful.so, but do we really want
- * to open all of the global symbols of dynloaded libraries?
- * Furthermore, how can another.so ensure useful.so has been loaded before it?
- * 
- * The other option is to name an extention library lib*.so, if it exposes
- * C-level functions meant to be called by the others.  Using the above
- * example, useful.so should be libuseful.so, and when the other person
- * compiles another.so, he/she specify "`gauche-config -L` -luseful".
- * Then another.so can see libuseful.so, and the latter is loaded
- * automatically (as far as LD_LIBRARY_PATH contains the location of
- * libuseful.so) if it has not already been loaded.
+ *   void *dl_open(const char *pathname)
+ *     Dynamically loads the object file specified by PATHNAME,
+ *     and returns its handle.   On failure, returns NULL.
  *
- * In initialize routine of another.so, he/she must call Scm_Init_libuseful()
- * as well, to ensure the initialization of the useful module.
- * Consequently, Scm_Init_* function should be prepared to be called more than
- * one time.
+ *     PATHNAME is guaranteed to contain directory names, so this function
+ *     doesn't need to look it up in the search paths.
+ *     The caller also checks whether pathname is already loaded or not,
+ *     so this function doesn't need to worry about duplicate loads.
+ *
+ *     This function should have the semantics equivalent to the
+ *     RTLD_NOW|RTLD_GLOBAL of dlopen().
+ *
+ *     We don't call with NULL as PATHNAME; dlopen() returns the handle
+ *     of the calling program itself in such a case, but we never need that
+ *     behavior.
+ *
+ *   ScmDynloadInitFn dl_sym(void *handle, const char *symbol)
+ *     Finds the address of SYMBOL in the dl_openModule()-ed module
+ *     HANDLE.
+ *
+ *   void dl_close(void *handle)
+ *     Closes the opened module.  This can only be called when we couldn't
+ *     find the initialization function in the module; once the initialization
+ *     function is called, we don't have a safe way to remove the module.
+ *
+ *   const char *dl_error(void)
+ *     Returns the last error occurred on HANDLE in the dl_* function.
+ *
+ * Notes:
+ *   - The caller takes care of mutex so that dl_ won't be called from
+ *     more than one thread at a time, and no other thread calls
+ *     dl_* functions between dl_open and dl_error (so that dl_open
+ *     can store the error info in global variable).
+ *
+ * Since this API assumes the caller does a lot of work, the implementation
+ * should be much simpler than implementing fully dlopen()-compatible
+ * functions.
  */
 
+typedef void (*ScmDynLoadInitFn)(void);
+
 #if defined(HAVE_DLOPEN)
-#if defined(__NetBSD__)
-#define DYNLOAD_PREFIX   ___STRING(_C_LABEL(Scm_Init_))
-#elif defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
-/* Darwin/MacOSX */
-#define DYNLOAD_PREFIX   "_Scm_Init_"
-#elif defined(__FreeBSD__) && __FreeBSD__ < 3
-/* FreeBSD 2.x   (patch from Abe Hiroshi) */
-#define RTLD_NOW         1
-#define RTLD_GLOBAL      4
-#define DYNLOAD_PREFIX   "_Scm_Init_"
+#include "dl_dlopen.c"
 #else
-/* We might have some other ifdefs... */
-#define DYNLOAD_PREFIX   "Scm_Init_"
+#include "dl_dummy.c"
 #endif
+
+/* Derives initialization function name from the module file name.
+   This function _always_ appends underscore before the symbol.
+   The dynamic loader first tries the symbol without underscore,
+   then tries with underscore. */
+#define DYNLOAD_PREFIX   "_Scm_Init_"
+
 static const char *get_dynload_initfn(const char *filename)
 {
     const char *head, *tail, *s;
@@ -554,19 +566,16 @@ static ScmObj find_so_from_la(ScmString *lafile)
     }
     return SCM_FALSE;
 }
-#endif /* HAVE_DLOPEN */
 
 /* Dynamically load the specified object by FILENAME.
    FILENAME must not contain the system's suffix (.so, for example).
 */
 ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
 {
-#if defined(HAVE_DLOPEN)
     ScmObj reqname, truename, load_paths = Scm_GetDynLoadPath();
     void *handle;
-    void (*func)(void);
+    ScmDynLoadInitFn func;
     const char *cpath, *initname, *err = NULL, *suff;
-    int flags = RTLD_NOW;
     enum  {
         DLERR_NONE,             /* no error */
         DLERR_DLOPEN,           /* failure in dlopen */
@@ -589,14 +598,16 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
     }
 
     if (SCM_STRINGP(initfn)) {
-        initname = Scm_GetStringConst(SCM_STRING(initfn));
+        ScmObj _initfn = Scm_StringAppend2(SCM_STRING(Scm_MakeString("_", 1, 1, 0)),
+                                           SCM_STRING(initfn));
+        initname = Scm_GetStringConst(SCM_STRING(_initfn));
     } else {
         /* NB: we use requested name to derive initfn name, instead of
            the one given in libtool .la file.  For example, on cygwin,
            the actual DLL that libtool library libfoo.la points to is
            named cygfoo.dll; we still want Scm_Init_libfoo in that case,
            not Scm_Init_cygfoo. */
-        initname = get_dynload_initfn(Scm_GetStringConst(reqname));
+        initname = get_dynload_initfn(Scm_GetStringConst(SCM_STRING(reqname)));
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
@@ -604,19 +615,21 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
         /* already loaded */
         goto cleanup;
     }
-    if (export) flags |= RTLD_GLOBAL;
-    handle = dlopen(cpath, flags);
+    handle = dl_open(cpath);
     if (handle == NULL) {
-        /* TODO: check if dlerror() is available on all platforms */
-        err = dlerror();
+        err = dl_error();
         errtype = DLERR_DLOPEN;
         goto cleanup;
     }
-    func = (void(*)(void))dlsym(handle, initname);
+    /* initname always has '_'.  We first try without '_' */
+    func = dl_sym(handle, initname+1);
     if (func == NULL) {
-        dlclose(handle);
-        errtype = DLERR_NOINITFN;
-        goto cleanup;
+        func = (void(*)(void))dl_sym(handle, initname);
+        if (func == NULL) {
+            dl_close(handle);
+            errtype = DLERR_NOINITFN;
+            goto cleanup;
+        }
     }
     /* TODO: if the module initialization function fails,
        there's no safe way to unload the module, and we
@@ -644,10 +657,6 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
         /*NOTREACHED*/
     }
     return SCM_TRUE;
-#else  /* !HAVE_DLOPEN */
-    Scm_Error("dynamic linking is not supported on this architecture");
-    return SCM_FALSE;           /* dummy */
-#endif /* !HAVE_DLOPEN */
 }
 
 /*------------------------------------------------------------------

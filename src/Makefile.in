@@ -132,6 +132,8 @@ moplib.c : moplib.stub genstub
 
 port.$(OBJEXT) : port.c portapi.c
 
+load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
+
 libgauche.la : $(libgauche_la_OBJECTS) $(GCLIB)
 	$(LINK) -rpath $(libdir) $(libgauche_la_LDFLAGS) $(libgauche_la_OBJECTS) $(GCLIB) $(LIBS)
 
