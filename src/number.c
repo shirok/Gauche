@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.61 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: number.c,v 1.62 2002-02-11 09:54:41 shirok Exp $
  */
 
 #include <math.h>
@@ -159,7 +159,7 @@ ScmObj Scm_MakeInteger(long i)
 
 ScmObj Scm_MakeIntegerFromUI(u_long i)
 {
-    if (i <= SCM_SMALL_INT_MAX) return SCM_MAKE_INT(i);
+    if (i <= (u_long)SCM_SMALL_INT_MAX) return SCM_MAKE_INT(i);
     else return Scm_MakeBignumFromUI(i);
 }
 
