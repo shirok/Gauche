@@ -1,6 +1,13 @@
+2002-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/repl.c : clears VM val0 register after evaluating prompt
+	  string; it showed up when (begin) was evaluated at the toplevel
+	  and was ugly.
+	* src/gauche-init.scm : added compose
+	* lib/file/util.scm : more procedures.
+
 2002-05-01  Shiro Kawai  <shiro@acm.org>
 
-	* src/gauche-init.scm : added compose
 	* src/port.c : fixed a memory-overwriting bug in bufport_read.
 	* lib/file/util.scm : more procedures.
 
