@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.183 2002-04-26 09:57:35 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.184 2002-04-27 04:51:05 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2436,12 +2436,16 @@ then @var{body} @dots{} are evaluated.
 @c EN
 See also @code{call-with-values} in @ref{Multiple values}
 which is the procedural equivalent of @code{receive}.
+You can use @code{define-values} (@xref{Definitions}) to
+bind multiple values to the toplevel variables simultaneously.
 Also @code{let-values} and @code{let*-values} 
 in SRFI-11 (@ref{Let-values}) provides
 @code{let}-like syntax with multiple values.
 @c JP
-なお、@ref{Multiple values}の@var{call-with-values}は
+なお、@ref{Multiple values}の@code{call-with-values}は
 @code{receive}と等価な手続き的インタフェースです。
+多値を複数のトップレベル変数に束縛するには、@code{define-values}
+(@ref{Definitions}参照) が使えます。
 また、SRFI-11 (@ref{Let-values}) の@code{let-values}と
 @code{let*-values}は@code{let}のような形式で多値を扱うことができます。
 @c COMMON
@@ -2600,26 +2604,6 @@ this introduce a local binding of the variable.
 このフォームがローカルスコープの中に現われた場合、ローカル変数の束縛となります。
 @c COMMON
 
-@defmac define-values (var @dots{}) expr
-@c EN
-@var{Expr} is evaluated, and it should return as many values as
-@var{var}s.  Then each value of the results are
-bound to each variable in @var{var} @dots{}.
-@xref{Let-values}.
-@c JP
-まず@var{expr}が評価されます。それは与えられた@var{var}と同数の値を
-返さなければなりません。続いて各値が@var{var}に順に束縛されます。
-@ref{Let-values}も参照してください。
-@c COMMON
-@example
-(define-values (lo hi) (min&max 3 -1 15 2))
-
-lo @result{} -1
-hi @result{} 15
-@end example
-@end defmac
-
-
 @c EN
 Note that @code{begin} (@xref{Sequencing}) doesn't introduce a new scope.
 @code{Define}s in the @code{begin} act as if @code{begin} and surrounding
@@ -2639,9 +2623,26 @@ parenthesis are not there.  Thus these two forms are equivalent.
   (define (foo y) (+ x y))
   (foo 3))
 @end example
-
 @end defspec
 
+@defmac define-values (var @dots{}) expr
+@c EN
+@var{Expr} is evaluated, and it should return as many values as
+@var{var}s.  Then each value of the results are
+bound to each variable in @var{var} @dots{}.
+@xref{Let-values}.
+@c JP
+まず@var{expr}が評価されます。それは与えられた@var{var}と同数の値を
+返さなければなりません。続いて各値が@var{var}に順に束縛されます。
+@ref{Let-values}も参照してください。
+@c COMMON
+@example
+(define-values (lo hi) (min&max 3 -1 15 2))
+
+lo @result{} -1
+hi @result{} 15
+@end example
+@end defmac
 
 @defspec define-in-module module variable expression
 @defspecx define-in-module module (variable . formals) body @dots{}
