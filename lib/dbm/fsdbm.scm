@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.5 2003-10-25 23:11:09 shirok Exp $
+;;;  $Id: fsdbm.scm,v 1.6 2004-02-04 22:20:26 shirok Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -241,7 +241,16 @@
                    (write-char c) (loop (read-char)))))))))))
 
 (define (path->hash path)
-  (string (string-ref *hash-chars* (string-hash path *hash-range*))))
+  ;; NB: we use our own hash fn to keep backward compatibility.
+  (define mask (- (expt 2 32) 1))
+  (define (shash hval mod)
+    (let1 b (read-byte)
+      (if (eof-object? b)
+        (modulo hval mod)
+        (shash (logand (+ hval (ash hval 3) b) mask) mod))))
+  (string (string-ref *hash-chars*
+                      (with-input-from-string path
+                        (cut shash 0 *hash-range*)))))
 
 (define (value-file-path key . maybe-dir)
   (let1 p (key->path key)

@@ -1,3 +1,9 @@
+2004-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm/fsdbm.scm (path->hash): avoid using string-hash, since
+	  the current implementation doesn't produce a portable hash value.
+	  Instead, I use Scheme-implemented version.
+
 2004-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.7.4
