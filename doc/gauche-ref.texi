@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.123 2001-11-12 11:27:51 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.124 2001-11-13 10:53:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7316,7 +7316,7 @@ of descendants of @var{class}.
 * Determine isomorphism::       
 * Queue::                       
 * Topological sort::            
-* CGI::                         
+* CGI Utility::                 
 @end menu
 
 @node Library modules overview, Generic DBM interface, Library modules, Library modules
@@ -7470,7 +7470,11 @@ DBMライブラリ  (@xref{Original DBM interface}).
 @end table
 @end deftp
 
+@c EN
 The following code shows a typical usage of the database.
+@c JP
+以下にdbmデータベースの使用例を示します。
+@c COMMON
 
 @example
 (use dbm)         ; @r{dbm abstract interface}
@@ -7625,6 +7629,15 @@ level, so the external representation of the same key must match.
 @end defivar
 @end deftp
 
+@deftp {Metaclass} <dbm-meta>
+@clindex <dbm-meta>
+@c EN
+A metaclass of @code{<dbm>} and its subclasses.
+@c JP
+@var{<dbm>}クラス及びそのサブクラスのメタクラスです。
+@c COMMON
+@end deftp
+
 @deffn {Method} dbm-open (dbm <dbm>)
 @c EN
 Opens a dbm database.  @var{dbm} must be an instance of
@@ -7639,7 +7652,7 @@ DBMデータベースをオープンします。@var{dbm}は、@code{<dbm>}クラスを継承した
 @c COMMON
 @end deffn
 
-@deffn {Method} dbm-open (dbm-class <class>) options @dots{}
+@deffn {Method} dbm-open (dbm-class <dbm-meta>) options @dots{}
 @c EN
 A convenient method that creates dbm instance and opens it.
 It is defined as follows.
@@ -11932,9 +11945,10 @@ For example, you can construct an HTML table by the following code:
 @end example
 See the description of @code{html:@var{element}} below for details.
 
-This module does almost no checks for the constructed html documents,
-and does not provide a feature to parse the html document; hence 
-the name `lite'.
+This module does little check for the constructed html documents,
+such as whether the attributes are valid, and whether the content
+of the element matches DTD.  It does not provide a feature to parse
+the html document neither.  Hence the name `lite'.
 @end deftp
 
 @defun html-escape
@@ -12719,7 +12733,7 @@ if @var{queue} is empty.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Topological sort, CGI, Queue, Library modules
+@node Topological sort, CGI Utility, Queue, Library modules
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
@@ -12763,8 +12777,9 @@ If the graph contains circular reference, an error is signalled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CGI,  , Topological sort, Library modules
+@node CGI Utility,  , Topological sort, Library modules
 @section @code{www.cgi} - CGI utility
+@c NODE CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
 
 @deftp {Module} www.cgi
 @mdindex www.cgi
@@ -12842,65 +12857,135 @@ See the following example:
 @end defun
 
 @defun cgi-get-parameter name params &keyword :default :list :convert
+@c EN
 A convenient function to obtain a value of the parameter @var{name} from
 parsed query string @var{params}, which is the value
 @code{cgi-parse-parameters} returns.
+@c JP
+@code{cgi-parse-parameters}が返す、パーズされたQuery文字列@var{params}から、
+名前@var{name}を持つパラメータの値を簡単に取り出すための手続きです。
+@c COMMON
 
+@c EN
 Unless true value is given to @var{list}, the returned value is
 a scalar value.  If more than one value is associated to @var{name},
 only the first value is returned.  If @var{list} is true, the
 returned value is always a list, even @var{name} has only one value.
+@c JP
+キーワード引数@var{list}に真の値が与えられていなければ、
+返される値はスカラー値です。パラメータ@var{name}に複数の値が与えられた場合でも、
+最初の値のみが返されます。@var{list}に真の値が与えられれば、返されるのは
+常に値のリストとなります。
+@c COMMON
 
+@c EN
 After the value is retrieved, you can apply a procedure to
 convert the string value to the appropriate type by giving
 a procedure to the @var{convert} argument.  The procedure must
 take one string argument.  If @var{list} is true, the convert
 procedure is applied to each values.
+@c JP
+キーワード引数@var{convert}に手続きを与えると、対応する値が取り出された後でその
+手続きが値を引数として呼ばれます。これによって値を文字列から必要な型へと変換することが
+できます。@var{list}に真の値が与えられている場合、変換手続きは各値に対して呼ばれ、
+その結果のリストが@var{cgi-get-parameter}から返されます。
+@c COMMON
 
+@c EN
 If no value is defined for @var{name}, a value given to the keyword
 argument @var{default} is returned; the default value of @var{default}
 is @code{#f} if @var{list} is false, or @code{()} otherwise.
+@c JP
+パラメータ@var{name}に対応する値が無ければ、@var{default}に与えられた値がそのまま
+返されます。@var{default}が省略された場合、@var{list}が偽であれば@code{#f}が、
+真であれば@code{()}が返されます。
+@c COMMON
 @end defun
 
 @defun cgi-header &keyword content-type location cookies
+@c EN
 Creates a text tree (@xref{Lazy text construction}) for the
 HTTP header of the reply message.  The most simple form is
 like this:
+@c JP
+HTTPリプライメッセージのヘッダを、テキストツリー形式(@ref{Lazy text construction}参照)
+で作成して返します。最も簡単な呼び出しでは次のようになります。
+@c COMMON
 @example
 (tree->string (cgi-header))
   @result{} "Content-type: text/html\r\n\r\n"
 @end example
 
+@c EN
 You can specify alternative content-type by the keyword argument
 @var{content-type}.   If you want to set cookies to the client,
 specify a list of cookie strings to the keyword argument @var{cookies}.
 You can use @code{construct-cookie-string} (@xref{HTTP cookie handling})
 to build such a list of cookie strings.
+@c JP
+キーワード引数@var{content-type}によってContent typeを指定できます。
+また、@var{cookies}にクッキー文字列のリストを渡すことにより、
+クライアントにクッキーを設定できます。クッキー文字列を構築するには手続き
+@code{construct-cookie-string} (@ref{HTTP cookie handling}参照)
+が使えます。
+@c COMMON
 
+@c EN
 The keyword argument @var{location} may be used to generate
 a @code{Location:} header to redirect the client to the specified URI.
+@c JP
+キーワード引数@var{location}は、@code{Location}ヘッダを作成して
+クライアントを別のURIに誘導するのに使えます。
+@c COMMON
 @end defun
 
 @defun cgi-main proc &keyword on-error merge-cookies
+@c EN
 A convenient wrapper function for CGI script.
 This function calls @code{cgi-parse-parameters}, then calls
 @var{proc} with the result of @code{cgi-parse-parameters}.
 The keyword argument @var{merge-cookies} is passed to
 @code{cgi-parse-parameters}.
+@c JP
+CGIスクリプトのための便利なラッパー手続きです。
+この手続きは、まず@code{cgi-parse-parameters}を呼び出してCGIスクリプトに
+渡されたパラメータを解析し、続いてその結果を引数として@var{proc}を呼び出します。
+キーワード引数@var{merge-cookies}は、与えられればそのまま
+@code{cgi-parse-parameters}に渡されます。
+@c COMMON
 
+@c EN
 @var{proc} has to return a tree of strings
 (@xref{Lazy text construction}), including the HTTP header.
 @code{cgi-main} outputs the returned tree to the current output port
 by @code{write-tree}, then returns zero.
+@c JP
+手続き@var{proc}はHTTPヘッダを含むドキュメントを
+テキストツリー構造(@ref{Lazy text construction}参照)で
+返さなければなりません。@code{cgi-main}はそれを@code{write-tree}を使って
+現在の出力ポートに書き出し、0を返します。
+@c COMMON
 
+@c EN
 If an error is signalled in @var{proc}, it is caught and an HTML
 page reporting the error is generated.  You can customize the
 error page by providing a procedure to the @var{on-error} keyword argument.
 The procedure takes an @code{<exception>} object (@xref{Exception object}),
 and has to return a tree of string for the error reporting HTML
 page, including an HTTP header.
+@c JP
+もし@var{proc}内でエラーが起こった場合、そのエラーは捕捉されて、エラーを報告する
+HTMLページが作成されて出力されます。このエラーページは、@var{on-error}キーワード引数に
+手続きを渡すことでカスタマイズできます。@var{on-error}に渡された手続きは
+エラー発生時に@code{<exception>}オブジェクト(@ref{Exception object}参照)
+を引数として呼ばれ、HTTPヘッダを含むドキュメントをテキストツリー構造で返さねばなりません。
+@c COMMON
 
+@c EN
 The following example shows the parameters given to the CGI program.
+@c JP
+以下の例はCGIに渡されたパラメータ全てをテーブルにして表示します。
+@c COMMON
 
 @example
 #!/usr/local/bin/gosh

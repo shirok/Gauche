@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.20 2001-11-07 09:33:00 shirok Exp $
+ *  $Id: error.c,v 1.21 2001-11-13 10:53:26 shirok Exp $
  */
 
 #include <errno.h>
@@ -23,10 +23,19 @@
 /*-----------------------------------------------------------
  * Exception class hierarchy
  *
+ * The terminology about exceptions and errors are not well
+ * established across various languages.  I define them here
+ * for Gauche.
+ *
+ * <exception> is the base class of all the "throwable" entity.
+ * SRFI-18 defines the ter
+ *
+ *
  *  <exception>
  *     +-- <signal>
  *     +-- <error>
  *           +-- <system-error>
+ *           +-- <type-error>
  */
 
 static void exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)

@@ -1,3 +1,8 @@
+2001-11-12  Shiro Kawai  <shiro@scm.org>
+
+	* ext/dbm/configure.in : fix
+	
+	
 2001-11-11  Shiro Kawai  <shiro@scm.org>
 
 	* lib/www/cgi.scm : fixed more bugs.

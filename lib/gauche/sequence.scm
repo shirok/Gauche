@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: sequence.scm,v 1.1 2001-11-05 10:48:46 shirok Exp $
+;;;  $Id: sequence.scm,v 1.2 2001-11-13 10:53:26 shirok Exp $
 ;;;
 
 ;;;; This is still experimental.  Do not rely on the interface.
@@ -21,6 +21,11 @@
 ;; (that is, a collection object that can be accessed by integer index).
 
 (define-module gauche.sequence
+  (export seq-referencer seq-modifier seq-length
+          seq-ref seq-set! subseq seq-append
+          seq-for-each seq-map seq-fold seq-fold-right
+          seq-find seq-filter seq-remove seq-partition
+          seq-sort seq-sort! seq-permute)
   )
 (select-module gauche.sequence)
 
@@ -83,5 +88,12 @@
 ;;     seq-builder
 ;;
 
-;; Sequence builder is an object to build a sequence.
+;; Sequence builder is a procedure to build a sequence.  It can be used
+;; to build a sequence with both known and unknown length.
 ;;
+;;   (builder 
+;;
+
+
+
+(provide "gauche/sequence")
