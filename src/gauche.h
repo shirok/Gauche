@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.34 2001-02-10 12:41:45 shiro Exp $
+ *  $Id: gauche.h,v 1.35 2001-02-11 02:50:50 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1133,7 +1133,8 @@ extern ScmClass Scm_KeywordClass;
 ScmObj Scm_MakeKeyword(ScmString *name);
 ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 
-#define SCM_MAKE_KEYWORD(cstr)  Scm_MakeKeyword(Scm_MakeString(cstr, -1, -1))
+#define SCM_MAKE_KEYWORD(cstr) \
+    Scm_MakeKeyword(SCM_STRING(Scm_MakeString(cstr, -1, -1)))
 #define SCM_GET_KEYWORD(cstr, list, fallback) \
     Scm_GetKeyword(SCM_MAKE_KEYWORD(cstr), list, fallback)
 
