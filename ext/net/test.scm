@@ -16,35 +16,35 @@
 (test "sockaddr_un" #t
       (lambda ()
         (let ((addr (make <sockaddr-un> :path "/tmp/xxx")))
-          (and (eq? (sockaddr-family addr) :unix)
+          (and (eq? (sockaddr-family addr) 'unix)
                (equal? (sockaddr-name addr) "/tmp/xxx")
                #t))))
 
 (test "sockaddr_in" #t
       (lambda ()
         (let ((addr (make <sockaddr-in> :host "127.0.0.1" :port 80)))
-          (and (eq? (sockaddr-family addr) :inet)
+          (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "127.0.0.1:80")
                #t))))
 
 (test "sockaddr_in" #t
       (lambda ()
         (let ((addr (make <sockaddr-in> :host "localhost" :port 23)))
-          (and (eq? (sockaddr-family addr) :inet)
+          (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "127.0.0.1:23")
                #t))))
 
 (test "sockaddr_in" #t
       (lambda ()
         (let ((addr (make <sockaddr-in> :host :any :port 7777)))
-          (and (eq? (sockaddr-family addr) :inet)
+          (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "0.0.0.0:7777")
                #t))))
 
 (test "sockaddr_in" #t
       (lambda ()
         (let ((addr (make <sockaddr-in> :host :broadcast)))
-          (and (eq? (sockaddr-family addr) :inet)
+          (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "255.255.255.255:0")
                #t))))
 

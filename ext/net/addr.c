@@ -12,15 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.7 2001-06-22 08:17:48 shirok Exp $
+ *  $Id: addr.c,v 1.8 2001-06-30 10:09:13 shirok Exp $
  */
 
 #include "net.h"
 #include <string.h>
 
-static ScmObj key_unknown;
-static ScmObj key_inet;
-static ScmObj key_unix;
 static ScmObj key_path;
 static ScmObj key_host;
 static ScmObj key_port;
@@ -168,9 +165,6 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
 
 void Scm_Init_NetAddr(ScmModule *mod)
 {
-    key_unknown   = SCM_MAKE_KEYWORD("unknown");
-    key_inet      = SCM_MAKE_KEYWORD("inet");
-    key_unix      = SCM_MAKE_KEYWORD("unix");
     key_path      = SCM_MAKE_KEYWORD("path");
     key_host      = SCM_MAKE_KEYWORD("host");
     key_port      = SCM_MAKE_KEYWORD("port");
