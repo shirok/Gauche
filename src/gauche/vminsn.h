@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.15 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: vminsn.h,v 1.16 2001-02-27 08:14:13 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -187,3 +187,6 @@ DEFINSN(SCM_VM_NUMGT2, "NUMGT2", 0)
 DEFINSN(SCM_VM_NUMGE2, "NUMGE2", 0)
 DEFINSN(SCM_VM_NUMADD2, "NUMADD2", 0)
 DEFINSN(SCM_VM_NUMSUB2, "NUMSUB2", 0)
+
+DEFINSN(SCM_VM_NUMADDI, "NUMADDI", 1)
+DEFINSN(SCM_VM_NUMSUBI, "NUMSUBI", 1)

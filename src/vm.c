@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.46 2001-02-22 06:47:41 shiro Exp $
+ *  $Id: vm.c,v 1.47 2001-02-27 08:14:01 shiro Exp $
  */
 
 #include "gauche.h"
@@ -838,7 +838,11 @@ static void run_loop()
             CASE(SCM_VM_NUMEQ2) {
                 ScmObj arg;
                 POP_ARG(arg);
-                val0 = Scm_NumEq(arg, val0, SCM_NIL);
+                if (SCM_INTP(val0) && SCM_INTP(arg)) {
+                    val0 = SCM_MAKE_BOOL(val0 == arg);
+                } else {
+                    val0 = Scm_NumEq(arg, val0, SCM_NIL);
+                }
                 continue;
             }
             CASE(SCM_VM_NUMLT2) {
@@ -875,6 +879,34 @@ static void run_loop()
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_Subtract(arg, val0, SCM_NIL);
+                continue;
+            }
+            CASE(SCM_VM_NUMADDI) {
+                int imm = SCM_VM_INSN_ARG(code);
+                if (SCM_INTP(val0)) {
+                    imm += SCM_INT_VALUE(val0);
+                    if (SCM_SMALL_INT_FITS(imm)) {
+                        val0 = SCM_MAKE_INT(imm);
+                    } else {
+                        val0 = Scm_MakeInteger(imm);
+                    }
+                } else {
+                    val0 = Scm_Add(SCM_LIST2(SCM_MAKE_INT(imm), val0));
+                }
+                continue;
+            }
+            CASE(SCM_VM_NUMSUBI) {
+                int imm = SCM_VM_INSN_ARG(code);
+                if (SCM_INTP(val0)) {
+                    imm -= SCM_INT_VALUE(val0);
+                    if (SCM_SMALL_INT_FITS(imm)) {
+                        val0 = SCM_MAKE_INT(imm);
+                    } else {
+                        val0 = Scm_MakeInteger(imm);
+                    }
+                } else {
+                    val0 = Scm_Add(SCM_LIST2(SCM_MAKE_INT(imm), val0));
+                }
                 continue;
             }
             DEFAULT
