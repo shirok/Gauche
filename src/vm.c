@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.120 2001-12-20 07:16:57 shirok Exp $
+ *  $Id: vm.c,v 1.121 2001-12-20 10:57:39 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1498,6 +1498,9 @@ static ScmObj user_eval_inner(ScmObj program)
                 restarted = TRUE;
                 goto restart;
             }
+            SCM_ASSERT(vm->cstack && vm->cstack->prev);
+            vm->cstack = vm->cstack->prev;
+            longjmp(vm->cstack->jbuf, 1);
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
 
@@ -1517,12 +1520,12 @@ static ScmObj user_eval_inner(ScmObj program)
                    stack is already rewind. */
                 exit(EX_SOFTWARE);
             }
+            vm->cstack = vm->cstack->prev;
+            longjmp(vm->cstack->jbuf, 1);
         } else {
             Scm_Panic("invalid longjmp");
         }
-        SCM_ASSERT(vm->cstack->prev);
-        vm->cstack = vm->cstack->prev;
-        longjmp(vm->cstack->jbuf, 1);
+        /* NOTREACHED */
     }
     vm->cstack = vm->cstack->prev;
     return vm->val0;
@@ -1779,6 +1782,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
 
         vm->escapePoint = ep->prev;
         vm->cont = ep->cont;
+
         /* Call the error handler and save the results. */
         result = Scm_Apply(ep->ehandler, SCM_LIST1(e));
         if ((numVals = vm->numVals) > 1) {
@@ -1873,18 +1877,8 @@ ScmObj Scm_VMThrowException(ScmObj exception)
  */
 static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
 {
-    ScmObj handler = (ScmObj)data;
-    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
-    ep->prev = vm->escapePoint;
-    ep->ehandler = handler;
-    /* NB: vm->cont has extra C-continuation frame pushed by dynamic-wind.
-       We want to capture the frame below. */
-    SCM_ASSERT(vm->cont);
-    ep->cont = vm->cont->prev;
-    ep->handlers = vm->handlers;
-    ep->cstack = vm->cstack;
-    ep->xhandler = vm->exceptionHandler;
     vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     vm->escapePoint = ep;
     return SCM_UNDEFINED;
@@ -1893,17 +1887,34 @@ static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
 static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
-    theVM->escapePoint = ep;
-    if (ep) theVM->exceptionHandler = ep->xhandler;
+    theVM->escapePoint = ep->prev;
+    theVM->exceptionHandler = ep->xhandler;
     return SCM_UNDEFINED;
 }
 
 ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
 {
     ScmVM *vm = theVM;
-    ScmEscapePoint *ep = vm->escapePoint;
-    ScmObj before = Scm_MakeSubr(install_ehandler, handler, 0, 0, SCM_FALSE);
-    ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
+    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    ScmObj before, after;
+
+    /* NB: we can save pointer to the stack area (vm->cont) to ep->cont,
+     * since such ep is always accessible via vm->escapePoint chain and
+     * ep->cont is redirected whenever the continuation is captured while
+     * ep is valid.
+     */
+    ep->prev = vm->escapePoint;
+    ep->ehandler = handler;
+    ep->handlers = vm->handlers;
+    ep->cstack = vm->cstack;
+    ep->xhandler = vm->exceptionHandler;
+    ep->cont = vm->cont;
+    
+    vm->escapePoint = ep; /* This will be done in install_ehandler, but
+                             make sure ep is visible from save_cont
+                             to redirect ep->cont */
+    before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
+    after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, thunk, after);
 }
 
@@ -2024,7 +2035,6 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
 /* Body of the continuation SUBR */
 static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
 {
-
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
     ScmObj handlers = ep->handlers;
