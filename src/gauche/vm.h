@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.78 2002-11-02 02:50:42 shirok Exp $
+ *  $Id: vm.h,v 1.79 2002-11-02 22:50:39 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -29,6 +29,16 @@
 #else
 #define PCTYPE ScmObj
 #endif
+
+#ifdef USE_NVM
+/*
+ * Instruction vector (only for "new VM")
+ */
+typedef struct ScmIVectorRec {
+    ScmObj info;
+    ScmObj insn[1];             /* variable length */
+} ScmIVector;
+#endif /*USE_NVM*/
 
 /*
  * Environment frame
@@ -76,21 +86,14 @@ typedef struct ScmContFrameRec {
     int size;                     /* size of argument frame */
     PCTYPE pc;                    /* next PC */
     ScmObj info;                  /* debug info */
+#ifdef USE_NVM
+    ScmIVector *ivec;
+#endif
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
 
 SCM_EXTERN void Scm_CallCC(ScmObj body);
-
-#ifdef USE_NVM
-/*
- * Instruction vector (only for "new VM")
- */
-typedef struct ScmIVectorRec {
-    ScmObj info;
-    ScmObj insn[1];             /* variable length */
-} ScmIVector;
-#endif /*USE_NVM*/
 
 /*
  * Identifier
