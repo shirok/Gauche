@@ -1,3 +1,8 @@
+2002-04-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : naively implemented Burger&Dybvig printing algorithm.
+	  This is just an experiment to see how it works.
+
 2002-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : fixed read_real to avoid underflow of reading

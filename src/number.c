@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.74 2002-04-05 00:49:43 shirok Exp $
+ *  $Id: number.c,v 1.75 2002-04-06 09:58:45 shirok Exp $
  */
 
 #include <math.h>
@@ -1373,35 +1373,126 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
 /*
  * Number Printer
  *
- * For flonum printer, the algorithm is taken from Robert G. Burger
- * and R. Kent Dybvig, "Priting Floating-Point Numbers Quickly and Accurately",
- * PLDI '96, pp.108--116.  
- *
- *  
+ * This version implements Burger&Dybvig algorithm (Robert G. Burger
+ * and and R. Kent Dybvig, "Priting Floating-Point Numbers Quickly and 
+ * Accurately", PLDI '96, pp.108--116, 1996) naively.
  */
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
-#if 0
-    union ieee754_double dd;
-    int exponent;
-    ScmObj f; /* fraction part in integer*/
-
-    /* decompose double value into integer fraction part and exponent */
-    dd.d = val;
-    f = Scm_MakeBignumFromUI(dd.ieee.mantissa0);
-#endif
+    if (val < 0.0) *buf++ = '-';
+    else if (plus_sign) *buf++ = '+';
     if (SCM_IS_INF(val)) {
-        if (plus_sign) *buf++ = '+';
         strcpy(buf, "#<inf>");
     } else if (SCM_IS_NAN(val)) {
-        if (plus_sign) *buf++ = '+';
         strcpy(buf, "#<nan>");
+    } else if (val == 0.0) {
+        strcpy(buf, "0.0");
     } else {
-        if (plus_sign && val >= 0) { *buf++ = '+'; buflen--; }
-        snprintf(buf, buflen - 3, "%.15g", val);
-        if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
-            strcat(buf, ".0");
+        /* variable names follows Burger&Dybvig paper */
+        ScmObj f, e, r, s, mp, mm, q;
+        int exp, sign, est, tc1, tc2, digs;
+
+        if (val < 0) val = -val;
+        
+        /* initialize r, s, m+ and m- */
+        f = Scm_DecodeFlonum(val, &exp, &sign);
+        if (exp >= 0) {
+            ScmObj be = Scm_Ash(SCM_MAKE_INT(1), exp);
+            ScmObj be1 = Scm_Ash(be, 1);
+            if (Scm_NumCmp(f, Scm_Ash(SCM_MAKE_INT(1), 52)) != 0) {
+                r = Scm_Multiply(f, be1, SCM_NIL);
+                s = SCM_MAKE_INT(2);
+                mp = be;
+                mm = be;
+            } else {
+                ScmObj be2 = Scm_Ash(be1, 1);
+                r = Scm_Multiply(f, be2, SCM_NIL);
+                s = SCM_MAKE_INT(4);
+                mp = be1;
+                mm = be;
+            }
+        } else {
+            if (exp == -1023 || Scm_NumCmp(f, Scm_Ash(SCM_MAKE_INT(1), 52)) != 0) {
+                r = Scm_Ash(f, 1);
+                s = Scm_Ash(SCM_MAKE_INT(1), -exp+1);
+                mp = SCM_MAKE_INT(1);
+                mm = SCM_MAKE_INT(1);
+            } else {
+                r = Scm_Ash(f, 2);
+                s = Scm_Ash(SCM_MAKE_INT(1), -exp+2);
+                mp = SCM_MAKE_INT(2);
+                mm = SCM_MAKE_INT(1);
+            }
+        }
+
+        /* estimate scale */
+        est = (int)ceil(log10(val) - 0.1);
+        if (est >= 0) {
+            s = Scm_Multiply(s, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(est)),
+                             SCM_NIL);
+        } else {
+            ScmObj scale = Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(-est));
+            r = Scm_Multiply(r, scale, SCM_NIL);
+            mp = Scm_Multiply(mp, scale, SCM_NIL);
+            mm = Scm_Multiply(mm, scale, SCM_NIL);
+        }
+
+        /* fixup */
+        if (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) >= 0) {
+            s = Scm_Multiply(s, SCM_MAKE_INT(10), SCM_NIL);
+            est++;
+        }
+        /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
+           est, r, s, mp, mm); */
+
+        /* generate */
+        for (digs=0;;digs++) {
+            ScmObj r10 = Scm_Multiply(r, SCM_MAKE_INT(10), SCM_NIL);
+            q = Scm_Quotient(r10, s);
+            r = Scm_Modulo(r10, s, TRUE);
+            mp = Scm_Multiply(mp, SCM_MAKE_INT(10), SCM_NIL);
+            mm = Scm_Multiply(mm, SCM_MAKE_INT(10), SCM_NIL);
+            
+            /* Scm_Printf(SCM_CURERR, "q=%S, r=%S, mp=%S, mm=%S\n",
+               q, r, mp, mm); */
+
+            SCM_ASSERT(SCM_INTP(q));
+            tc1 = (Scm_NumCmp(r, mm) < 0);
+            tc2 = (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) > 0);
+            if (!tc1) {
+                if (!tc2) {
+                    *buf++ = SCM_INT_VALUE(q) + '0';
+                    if (digs == 0) *buf++ = '.';
+                    continue;
+                } else {
+                    *buf++ = SCM_INT_VALUE(q) + '1';
+                    break;
+                }
+            } else {
+                if (!tc2) {
+                    *buf++ = SCM_INT_VALUE(q) + '0';
+                    break;
+                } else {
+                    if (Scm_NumCmp(Scm_Ash(r, 1), s) < 0) {
+                        *buf++ = SCM_INT_VALUE(q) + '0';
+                        break;
+                    } else {
+                        *buf++ = SCM_INT_VALUE(q) + '1';
+                        break;
+                    }
+                }
+            }
+        }
+
+        /* prints exponent.  we shifted decimal point, so -1. */
+        est--;
+        if (est != 0) {
+            *buf++ = 'e';
+            sprintf(buf, "%d", est);
+        } else {
+            *buf++ = 0;
+        }
     }
 }
 
