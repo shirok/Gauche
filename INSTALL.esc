@@ -1,4 +1,4 @@
-#? /usr/local/bin/gosh
+#? /usr/bin/gosh
 <? ;; Process this file with escm
 (define japanese? (equal? (sys-getenv "LANG") "ja_JP"))
 (define (header ja en)
@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.14 2002-04-16 09:48:01 shirok Exp $
+$Id: INSTALL.esc,v 1.15 2002-04-16 21:17:08 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -173,7 +173,6 @@ SLIB is a portable Scheme library containing various useful functions,
 entirely written in Scheme.  Gauche can use SLIB features if you have
 it on your system.
 <? ) !>
-
 <? (if-lang japanese? !>
 configureスクリプトは、/usr/local/slibなどいくつかの基本的なディレクトリ
 からSLIBを自動的に探します。もしあなたのSLIBシステムが標準的ではない場所に
@@ -192,7 +191,6 @@ it to the configure script as follows:
 <? else !>
 where PATH is the path you installed your SLIB.
 <? ) !>
-
 <? (if-lang japanese? !>
 GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
 気にしなくてよいです。
@@ -200,7 +198,6 @@ GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
 Gauche works without SLIB, anyway.  If you're not interested, you
 don't need to care about this.
 <? ) !>
-
 <? (if-lang japanese? !>
 SLIBは最初に使う前にGaucheのライブラリディレクトリにカタログファイルを
 作成します。Gaucheのインストール時に既にSLIBが存在すればインストール
@@ -362,7 +359,6 @@ The files are installed in those locations:
 
          ./configure --with-local=$HOME
 <? ) !>
-
 <? (if-lang japanese? !>
 * FreeBSD - 4.4附属のiconvライブラリ (/usr/local/lib/libiconv.so等) の
        2.xを使うと、gauche.charconvがうまく動作しないという問題が報告されています。
@@ -380,7 +376,6 @@ The files are installed in those locations:
        
          ./configure --with-iconv=/usr/local --with-iconv-lib=giconv
 <? ) !>
-
 <? (if-lang japanese? !>
 * IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
        したい場合は次のようにして下さい。
