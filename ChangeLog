@@ -1,3 +1,9 @@
+2002-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/stdlib.stub : fix a bug in the code generator of
+	  immediate_integer_inliner (thanks for Nobuo YAMASHITA to
+	  point this out).
+
 2002-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c : added sys-sigset class.
