@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.11 2001-10-11 09:08:39 shirok Exp $
+;; $Id: object.scm,v 1.12 2001-11-07 09:33:38 shirok Exp $
 
 (use gauche.test)
 
@@ -295,5 +295,18 @@
           (map (lambda (s) (slot-ref ww s)) '(a b c d e f)))))
 (test "metaclass" '(<ww> <vv> <yy> <xx>)
       (lambda () (class-slot-ref <listing-class> 'classes)))
+
+(test-section "metaclass w/ slots")
+
+(define-class <documentation-meta> (<class>)
+  ((doc :init-keyword :doc :initform #f)))
+
+(define-class <xxx> ()
+  (a b c)
+  :metaclass <documentation-meta>
+  :doc "Doc doc")
+
+(test "class slot in meta" "Doc doc"
+      (lambda () (slot-ref <xxx> 'doc)))
 
 (test-end)
