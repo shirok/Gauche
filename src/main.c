@@ -4,6 +4,7 @@
 #include "gauche.h"
 
 int show_compile = 0;
+int allow_inline = 1;
 
 void toplevel(void)
 {
@@ -12,6 +13,8 @@ void toplevel(void)
     in = Scm_Stdin();
     out = Scm_Stdout();
     err = Scm_Stderr();
+
+    vm->enableInline = allow_inline;
 
     for (;;) {
         SCM_PUSH_ERROR_HANDLER {
@@ -55,9 +58,10 @@ int main(int argc, char **argv)
 {
     int c;
     
-    while ((c = getopt(argc, argv, "g")) >= 0) {
+    while ((c = getopt(argc, argv, "gI")) >= 0) {
         switch (c) {
-        case 'g': show_compile = 1;
+        case 'g': show_compile = 1; break;
+        case 'I': allow_inline = 0; break;
         }
     }
 
