@@ -1,7 +1,7 @@
 ;;;
 ;;; quoted-printable.scm - quoted-printable encoding/decoding routine
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: quoted-printable.scm,v 1.3 2001-10-17 10:30:12 shirok Exp $
+;;;  $Id: quoted-printable.scm,v 1.4 2002-09-13 03:35:36 shirok Exp $
 ;;;
 
 
@@ -39,13 +39,13 @@
           ((= c #x0d)
            (let ((c1 (read-byte)))
              (cond (= c1 #x0a) (display "\r\n") (loop (read-byte) 0))
-                   (else (display "\r\n") (loop c1 0)))))
+                   (else (display "\r\n") (loop c1 0))))
           ((= c #x0a)
            (display "\r\n") (loop (read-byte) 0))
           ((<= #x21 c #x7e)
            (write-byte c) (loop (read-byte) (+ lcnt 1)))
-          (else (format #t "=~2,'0X" c) (loop (read-byte) (+ lcnt 3)))
-          ))
+          (else (format #t "=~2,'0X" c) (loop (read-byte) (+ lcnt 3))))
+    ))
 
 (define (quoted-printable-encode-string string . args)
   (with-string-io string (lambda () (apply quoted-printable-encode args))))
