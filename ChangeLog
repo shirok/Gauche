@@ -1,3 +1,8 @@
+2003-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (let-args): added Alex Shinn's let-args
+	  macro.
+
 2003-04-14  Shiro Kawai  <shiro@acm.org>
 
 	* various Makefile.am's and configure.in: made "make install" work.
