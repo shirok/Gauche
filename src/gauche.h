@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.38 2001-02-13 06:05:16 shiro Exp $
+ *  $Id: gauche.h,v 1.39 2001-02-15 08:57:09 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -246,6 +246,7 @@ extern ScmVM *Scm_VM(void);     /* Returns the current VM */
 extern ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
 extern ScmObj Scm_Eval(ScmObj form, ScmObj env);
 extern ScmObj Scm_Apply(ScmObj proc, ScmObj args);
+extern ScmObj Scm_Values(ScmObj args);
 
 extern ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
                                        ScmProcedure *proc);
