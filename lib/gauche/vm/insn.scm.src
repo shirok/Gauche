@@ -68,16 +68,16 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: insn.scm.src,v 1.1.2.1 2004-12-24 23:53:02 shirok Exp $
+;;;  $Id: insn.scm.src,v 1.1.2.2 2004-12-25 03:12:12 shirok Exp $
 ;;;
 
 (define-module gauche.vm.insn
-  (export <vm-insn>
-          vm-find-insn)
+  (export <vm-insn-info>
+          vm-find-insn-info)
   )
 (select-module gauche.vm.insn)
 
-(define-class <vm-insn> ()
+(define-class <vm-insn-info> ()
   ((name   :init-keyword :name)           ; name of insn (symbol)
    (code   :init-keyword :code)           ; code of insn (integer)
    (num-params :init-keyword :num-params) ; # of parameters
@@ -87,14 +87,14 @@
               :init-keyword :all-insns)   ;   keyed by name.
    ))
 
-(define-method initialize ((self <vm-insn>) initargs)
+(define-method initialize ((self <vm-insn-info>) initargs)
   (next-method)
   (set! (ref self 'code) (length (ref self 'all-insns)))
   (push! (ref self 'all-insns)
          (cons (ref self 'name) self)))
 
-(define (vm-find-insn name)
-  (cond ((assq name (class-slot-ref <vm-insn> 'all-insns)) => cdr)
+(define (vm-find-insn-info name)
+  (cond ((assq name (class-slot-ref <vm-insn-info> 'all-insns)) => cdr)
         (else (error "No such VM instruction:" name))))
 
 ;; INSERT INSN DEFINITION HERE
