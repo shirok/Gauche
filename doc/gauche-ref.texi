@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.114 2001-11-03 09:16:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.115 2001-11-04 04:36:50 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2153,12 +2153,12 @@ real numbers.
 @c JP
 Gaucheは次のタイプの数値をサポートしています。
 @table @asis
-@item 多倍長の完全な整数
+@item 多倍長の正確な整数
 メモリの許す限りの精度が扱えます。
-@item 浮動少数点の不完全な実数
+@item 浮動少数点の不正確な実数
 実装に使われるC言語の@code{double}型で表現されます。通常IEEE 64bit浮動少数点数です。
-@item 浮動少数点の不完全な複素数
-実部と虚部はそれぞれ浮動少数点の不完全な実数で表現されます。
+@item 浮動少数点の不正確な複素数
+実部と虚部はそれぞれ浮動少数点の不正確な実数で表現されます。
 @end table
 @c COMMON
 
@@ -2252,7 +2252,7 @@ Gaucheでは、数の集合は複素数の集合と同一であり、有理数の集合は整数の集合と同一で
 Returns @code{#t} if @var{obj} is an exact number and an inexact number,
 respectively.
 @c JP
-@var{obj}がそれぞれ完全数、非完全数ならば@code{#t}を返します。
+@var{obj}がそれぞれ正確な数、不正確な数ならば@code{#t}を返します。
 @c COMMON
 
 @example
@@ -2488,7 +2488,7 @@ Returns an exact integer only if all the given numbers are exact integers.
 @end example
 を返します。もし@var{min}または@var{max}が省略されるか@code{#f}が与えられたら、
 それぞれ @var{-∞} もしくは @var{+∞} と解釈されます。
-与えられた全ての数値が完全な整数の場合に限り完全な整数を返します。
+与えられた全ての数値が正確な整数の場合に限り正確な整数を返します。
 @c COMMON
 @example
 (clamp 3.1 0.0 1.0) @result{} 1.0
@@ -2600,13 +2600,13 @@ can't be a number, @code{#f} is returned.
 @var{radix}は2から36の間でなければなりません。省略された場合は10進数とみなされます。
 
 @code{number->string}は数値@var{z}を取り文字列を返します。
-@var{z}が完全な整数以外の場合、@var{radix}は10でなければなりません。
+@var{z}が正確な整数以外の場合、@var{radix}は10でなければなりません。
 10より大きい@var{radix}に関しては、小文字のアルファベットが桁として使われます。
 但し、省略可能な引数@var{use-upper?}に真の値が与えられた場合は大文字のアルファベットが
 使われます。@var{use-upper?}引数はGaucheの拡張です。
 
 @code{string->number}は文字列@var{string}を取り数値を返します。
-不完全な数値は10進数表記しか認識されません。与えられた文字列が数値を構成しない
+不正確な数値は10進数表記しか認識されません。与えられた文字列が数値を構成しない
 場合は@code{#f}が返されます。
 @c COMMON
 @end defun
@@ -2627,13 +2627,13 @@ as a number that is not an exact integer, @code{x->integer} uses
 Other class may provide a method to customize the behavior.
 @c JP
 数値への強制型変換手続きです。
-@var{obj}をそれぞれ数値もしくは完全な整数と解釈して返します。
+@var{obj}をそれぞれ数値もしくは正確な整数と解釈して返します。
 数値と文字列に対してのメソッドは定義されています
 (文字列は@var{string->number}を使って変換されます。
 数値として解釈できない文字列に関しては0が返されます)。
 その他の@var{obj}については単に0が返されます。
-@code{x->integer}は、@var{obj}が数値として表現できるけれど完全な整数では
-ない場合、@code{round}と@code{inexact->exact}によって完全な整数に変換します。
+@code{x->integer}は、@var{obj}が数値として表現できるけれど正確な整数では
+ない場合、@code{round}と@code{inexact->exact}によって正確な整数に変換します。
 
 他のクラスはこのメソッドを定義することにより、独自の変換関数を提供することができます。
 @c COMMON
@@ -4810,20 +4810,68 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 @c COMMON
 @end defun
 
-@defun call-with-input-file string proc
-@defunx call-with-output-file string proc
-[R5RS] Opens a file specified by @var{string} for input/output,
+@defun call-with-input-file string proc &keyword if-exists element-type
+@defunx call-with-output-file string proc &keyword if-does-not-exist if-exists element-type
+[R5RS]
+@c EN
+Opens a file specified by @var{string} for input/output,
 and call @var{proc} with one argument, the file port.  When @var{proc}
-returns, or a control exits @var{proc}'s dynamic scope by invoking
-a continuation captured outside @code{call-with-string}, the file
-is closed.  If the specified file can't be opened, an error is thrown.
+returns, or a control exits @var{proc}'s dynamic scope, the file
+is closed.
+
+The keyword arguments have the same meanings of
+@code{open-input-file} and @code{open-output-file}'s.  Note that
+if you specify @code{#f} to @var{if-exists} and/or @var{if-does-not-exist},
+@var{proc} may receive @code{#f} instead of a port object when
+the file is not opened.
 
 Returns the value(s) @code{proc} returned.
+@c JP
+@var{string}で示されるファイルを入力または出力用にオープンし、
+作成されたポートを引数として手続き@var{proc}を呼び出します。
+@var{proc}が正常終了するか、その他の要因によって制御が@var{proc}の
+動的スコープから抜け出す際にファイルはクローズされます。
+
+キーワード引数は
+@code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
+@var{if-exists}や@var{if-does-not-exist}に@code{#f}を指定した場合、
+ファイルがオープンされなかった場合は@var{proc}にポートではなく@code{#f}が渡される
+ことに注意して下さい。
+
+@var{proc}が返す値を返します。
+@c COMMON
 @end defun
 
-@defun with-input-from-file string thunk
-@defunx with-output-to-file string thunk
+@defun with-input-from-file string thunk &keyword if-exists element-type
+@defunx with-output-to-file string thunk &keyword if-does-not-exist if-exists element-type
 [R5RS]
+@c EN
+Opens a file specified by @var{string} for input or output
+and makes the opened port as the current input or output port,
+then calls @var{thunk}.  The file is closed and the current port
+is restored when @var{thunk} returns or the control exits from
+the scope of @var{thunk}.
+
+The keyword arguments have the same
+meanings of @code{open-input-file} and @code{open-output-file}'s,
+except that @code{#f} is not allowed to @var{if-exists} and
+@var{if-does-not-exist}; i.e. an error is always signalled if the
+file can't be opened.
+
+Returns the value(s) @code{thunk} returned.
+@c JP
+@var{string}で示されるファイルを入力または出力用にオープンし、オープンされた
+ポートを現在の入力または出力ポートに設定して、@var{thunk}を呼び出します。
+@var{thunk}が戻るか、その他の要因によって制御が@var{thunk}の外側に移った
+際にファイルは閉じられ、現在のポートには元の値が戻されます。
+
+キーワード引数は
+@code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
+但し@var{if-exists}や@var{if-does-not-exist}に@code{#f}を指定することは
+出来ません。ファイルがオープンできなかった場合は常にエラーとなります。
+
+@var{thunk}が返す値を返します。
+@c COMMON
 @end defun
 
 
@@ -5188,7 +5236,7 @@ Write a byte @var{byte} to the port.
 @var{byte} must be an exact integer in range between 0 and 255.
 @c JP
 出力ポートに1バイトのデータ@var{byte}を書き出します。
-@var{byte}は0から255の間の完全な整数でなければなりません。
+@var{byte}は0から255の間の正確な整数でなければなりません。
 @c COMMON
 @end defun
 
@@ -5574,22 +5622,165 @@ them, until EOF is read.
 @c COMMON
 @end defun
 
-@defun dynamic-load file &keyword init-function
+@defun dynamic-load file &keyword init-function export-symbols
+@c EN
+Loads and links a dynamic loadable library (shared library) @var{file}.
+@var{File} shouldn't contain the suffix (``.so'' on most systems);
+@code{dynamic-load} adds it, for it may differ among platforms.
+
+The keyword argument @var{init-function} specifies the initialization
+function name of the library in a string.  By default, if the file
+basename (without extension) is ``foo'', the initialization function
+name is ``Scm_Init_foo''.
+
+The keyword argument @var{export-symbols} tells whether the dynamic loader
+that the external symbols in @var{file} should be appended to
+the symbol table of the running process.  (Note: I'm talking about
+C function and variable names, not Scheme symbols).
+By default, the symbols
+in @var{file} are not visible from other dynamically loaded libraries.
+If you want to allow other dynamically loaded libraries to call
+C function in your library, you should give @code{#t} to this 
+argument.  It sets @code{RTLD_GLOBAL} flag for @code{dlopen()}.
+
+Usually a dynamic loadable library is provided with wrapping Scheme
+module, so the user doesn't have to call this function directly.
+
+There's no way to unload the loaded libraries.
+@c JP
+ダイナミックローダブルライブラリ(共有ライブラリ)@var{file}をロードしてリンクします。
+@var{file}にはサフィックス(``.so'' 等) を含めないで下さい。システムによって
+サフィックスは異なるため、@code{dynamic-load}がそれを追加します。
+
+キーワード引数@var{init-function}は共有ライブラリ中の初期化関数の名前を
+指定します。デフォルトでは、サフィックスを除くファイル名が ``foo'' の場合、
+初期化関数名は ``Scm_Init_foo'' となります。
+
+キーワード引数@var{export-symbols}は、ロードされるライブラリ中の外部シンボルを
+プロセスのシンボルテーブルに追加すべきかどうかを指定します。(註：ここでの「シンボル」
+とはCの関数名や変数名のことで、Schemeのシンボルのことではありません)。
+デフォルトでは共有ライブラリの外部シンボルはプロセスのシンボルテーブルに追加されず、
+それぞれの共有ライブラリは他の共有ライブラリのシンボルを見ることができません。
+@var{export-symbols}に真の値を渡すと、フラグ@code{RTLD_GLOBAL}が
+@code{dlopen()}に渡されて、その共有ライブラリ中のシンボルがこれからロードされる
+共有ライブラリからも見えるようになります。
+
+通常、共有ライブラリはSchemeモジュール中でロードされるので、モジュールユーザが
+直接この手続きを呼ぶ必要はほとんどないでしょう。
+
+一度ロードされた共有ライブラリをアンロードすることはできません。
+@c COMMON
 @end defun
 
 @defspec add-load-path path &optional (afterp #f)
+@c EN
+Adds a path @var{path} to the library load path list.
+If a true value is given to @var{afterp}, @var{path} is added
+after the existing paths; otherwise, @var{path} is added before the
+existing paths.
+
+Use this form instead of changing @code{*load-path*} directly.
+This form is a special form and recognized by the compiler;
+if you change @code{*load-path*}, it is in effect at run time,
+and that may be too late for ``use'' or ``require''.
+
+Furthermore,
+@code{add-load-path} looks for the architecture dependent directories
+under the specified path and if it exists, sets up the internal
+path list for dynamic loading correctly.   Suppose you have
+your Scheme module in @code{/home/yours/lib}, and that requires 
+a dyncamic loadable library.  You can put the library under
+@code{/home/yours/lib/@var{ARCH}/}, where @var{ARCH} is
+the value @code{(gauche-architecture)} returns (@xref{Environment Inquiry}).
+Then you can have compiled libraries for multiple platforms and
+Gauche can still find the right library.
+@c JP
+パス@var{path}をライブラリロードパスのリストに加えます。
+@var{afterp}に真の値が与えられていれば@var{path}は既存のリストの末尾に
+追加されます。そうでなければ@var{path}は既存のリストの先頭に追加されます。
+
+ロードパスを変更したい場合、@code{*load-path*}を直接替えずにこのフォームを
+使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{*load-path*}を
+書き換えるコードは実行時に解釈されます。``@code{use}'' や ``@code{require}'' は
+コンパイル時のロードパスを使うので、@code{*load-path*}への変更は反映されないかもしれません。
+
+更に、@code{add-load-path}は@var{path}の下にアーキテクチャ依存のディレクトリが
+ないかどうかを探し、あればそれを内部の共有ライブラリサーチパスに追加します。
+例えばあなたが自分のSchemeモジュールを@code{/home/yours/lib}に入れていて、
+それが共有ライブラリを必要としていたとします。手続き@code{gauche-architecture}
+(@ref{Environment Inquiry}参照)が返す値を@var{ARCH}として、
+共有ライブラリを@code{/home/yours/lib/@var{ARCH}/}に置いておくと、
+共有ライブラリはそこからロードされます。この方法を取ると、複数のプラットフォーム用に
+別々にコンパイルされた共有ライブラリを管理することができます。
+@c COMMON
 @end defspec
 
 @defspec require feature
+@c EN
+If @var{feature} is not loaded, load it.  @var{Feature} must be a string,
+and it is taken as a file name (without suffix) to be loaded.
+This loading takes place at compile time.   The loaded file must provide
+@var{feature}; if not, a warning is issued.
+
+If you load SLIB module, @code{require} is extended.  @xref{SLIB} for
+details.
+@c JP
+@var{feature}がまだロードされていなければロードします。@var{feature}は文字列で
+なければなりません。それがそのまま(サフィックスを除く)ファイル名としてロードパスから
+探されます。@code{require}の解釈はコンパイル時に行われます。
+ロードされたファイルはその中で@var{feature}をprovideしなければなりません。
+そうでないと警告が出されます。
+
+SLIBモジュールをロードすると、@code{require}が拡張されます。詳しくは@ref{SLIB}を
+参照して下さい。
+@c COMMON
 @end defspec
 
 @defun provide feature
+@c EN
+Adds @var{feature} to the system's provided feature list, so that
+the subsequent @code{require} won't load the same file again.
+Usually this procedure should be called at the end of the Scheme file
+that is to be @code{require}d.   The reason that it should be at the end
+of file is that if an error is raised during loading, you may want to
+fix the error and @code{require} it again.
+@c JP
+@var{feature}をシステムのprovideされたフィーチャーリストに加えます。
+以降、@var{feature}が@code{require}されてもファイルはふたたびロードされません。
+通常この手続きは、requireされるファイルの末尾で呼ばれます。ファイルの末尾で呼ぶのが良いのは、
+もしファイルのロード中にエラーが発生した場合、そのエラーを修正した上でふたたび@code{require}
+でロードできるからです。
+@c COMMON
 @end defun
 
 @defun provided? feature
+@c EN
+Returns @code{#t} if @var{feature} is already provided.
+@c JP
+@var{feature}が既にprovideされていれば@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defmac autoload file symbol @dots{}
+@c EN
+Sets up @var{symbol} @dots{} to be autoloaded.
+That is, if @var{symbol}s are referenced next time,
+@var{file} is loaded before the @var{symbol} is evaluated.
+This delays the loading of @var{file} until it is needed.
+@var{file} must define @var{symbol}, or an error is signalled
+when @var{file} is loaded.
+
+The autoloading takes place at run time, so you can't
+autoload macros.
+@c JP
+@var{symbol} @dots{} がオートロードされるように設定します。すなわち、
+次に@var{symbol}の値が参照された時、それが実際に評価される前に@var{file}がロード
+されるようにします。これによって、必要とされる時まで@var{file}のロードを遅らせる
+ことができます。@var{symbol}は@var{file}の中で定義されなければなりません。
+そうでなければロード時にエラーが報告されます。
+
+オートロードは実行時に機能します。従って、マクロ定義をオートロードすることはできません。
+@c COMMON
 @end defmac
 
 
@@ -12065,6 +12256,16 @@ if @var{queue} is empty.
 @c COMMON
 @end defun
 
+@defun dequeue-all! queue
+@c EN
+Returns the whole content of the queue by a list, with emptying
+@var{queue}.   If @var{queue} is already empty, returns an empty list.
+@c JP
+キューの全ての内容をリストにして返します。キューそのものは空になります。
+キューが既に空の場合は空リストが返されます。
+@c COMMON
+@end defun
+
 @defun queue-front queue
 @defunx queue-rear queue
 @c EN
@@ -12088,6 +12289,9 @@ Implements topological sort algorithm.
 @end deftp
 
 @defun topological-sort graph &optional =
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
