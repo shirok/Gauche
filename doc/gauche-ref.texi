@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.329 2002-12-15 12:05:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.330 2002-12-25 09:10:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -26306,7 +26306,7 @@ notation before the actual content.
 @end example
 
 The boolean value given to the attribute has a special meaning.
-If @code{#t} is given, the attribute is renfered without a value.
+If @code{#t} is given, the attribute is rendered without a value.
 If @code{#f} is given, the attribute is not rendered.
 @example
 (tree->string (html:table :border #t))
