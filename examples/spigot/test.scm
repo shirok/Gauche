@@ -3,10 +3,12 @@
 ;;
 
 (use gauche.test)
-(use spigot)
 
 (test-start "spigot")
+(use spigot)
+(test-module 'spigot)  ;; This checks the exported symbols are indeed bound.
 
+;; Normal operation test
 (test* "spigot-calculate-pi (10)"
        '#(3 1 4 1 5 9 2 6 5 3)
        (spigot-calculate-pi 10))
@@ -23,6 +25,7 @@
        '#(2)
        (spigot-calculate-e 1))
 
+;; See if they reports error for invalid arguments.
 (test* "spigot-calculate-pi (0)"
        *test-error*
        (spigot-calculate-pi 0))

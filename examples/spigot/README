@@ -10,7 +10,7 @@ The sources include:
   Makefile.in    - template makefile
   spigot.h       - common declaration within the spigot module
   spigot.c       - main logic 
-  spigot.stub    - a "stub" file to generate Scheme-C glue
+  spigotlib.stub - a "stub" file to generate Scheme-C glue
   spigot.scm     - Scheme part of the module
   test.scm       - unit test
 
@@ -32,7 +32,7 @@ running configure script.
   % ./configure
 
 The configure script automatically finds installed Gauche,
-and picks right options to compile and link.
+and picks the right options to compile and link.
 Now, 'make' builds the extension, 'make check' runs
 the test, and 'make install' installs the extension
 in the Gauche's standard location.
@@ -40,5 +40,4 @@ in the Gauche's standard location.
   % make
   % make check
   % make install
-
 
