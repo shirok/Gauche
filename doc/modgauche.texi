@@ -4794,7 +4794,7 @@ Some examples:
 @example
 (define a (make-parameter 1))
 (a) @result{} 1
-(a 2)
+(a 2) @result{} 1
 (a) @result{} 2
 (parameterize ((a 3))
   (a)) @result{} 3
