@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.9 2002-05-09 06:22:22 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.10 2002-06-04 06:12:13 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -160,13 +160,13 @@
 
 ;; Anaphoric macros.   Cf. Paul Graham, "On Lisp"
 (define-macro (l_ . body) `(lambda (_) ,@body))
-(define-macro (let_ expr . body) `(let1 _ ,expr ,@body))
-(define-macro (if_ test then . else)
-  `(let ((_ ,test)) (if _ ,then ,@else)))
-(define-macro (when_ test . body)
-  `(let ((_ ,test)) (when _ ,@body)))
-(define-macro (while_ test . body)
-  `(do ((_ test test)) ((not _)) ,@body))
+;(define-macro (let_ expr . body) `(let1 _ ,expr ,@body))
+;(define-macro (if_ test then . else)
+;  `(let ((_ ,test)) (if _ ,then ,@else)))
+;(define-macro (when_ test . body)
+;  `(let ((_ ,test)) (when _ ,@body)))
+;(define-macro (while_ test . body)
+;  `(do ((_ test test)) ((not _)) ,@body))
 
 ;;;-------------------------------------------------------------
 ;;; repeat construct
@@ -185,6 +185,17 @@
        . body))
     ((_ . other)
      (syntax-error "malformed dotimes" (dotimes . other)))))
+
+(define-syntax dolist
+  (syntax-rules ()
+    ((_ (var lis res) . body)
+     (begin (for-each (lambda (var) . body) lis)
+            (let ((var '())) res))      ;bound var for CL compatibility
+     )
+    ((_ (var lis) . body)
+     (begin (for-each (lambda (var) . body) lis) '()))
+    ((_ . other)
+     (syntax-error "malformed dolist" (dolist . other)))))
 
 (define-syntax while
   (syntax-rules ()
