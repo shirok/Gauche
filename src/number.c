@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.68 2002-04-04 08:06:13 shirok Exp $
+ *  $Id: number.c,v 1.69 2002-04-04 08:16:07 shirok Exp $
  */
 
 #include <math.h>
@@ -1783,7 +1783,6 @@ void Scm__InitNumber(void)
         /* Find max D where R^(D+1)-1 <= LONG_MAX */
         for (i = 0, n = 1; ; i++, n *= radix) {
             if (n >= LONG_MAX/radix) {
-                fprintf(stderr, "radix %d, longdigs %d, bigdig %d\n", radix, i-1, n);
                 longdigs[radix-RADIX_MIN] = i-1;
                 bigdig[radix-RADIX_MIN] = n;
                 break;
