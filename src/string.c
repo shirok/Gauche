@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.43 2001-05-22 08:15:01 shirok Exp $
+ *  $Id: string.c,v 1.44 2001-06-01 20:39:24 shirok Exp $
  */
 
 #include <stdio.h>
@@ -841,17 +841,17 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 {
     char buf[5];
     switch (ch) {
-    case '\\': SCM_PUTZ("\\\\", port); break;
-    case '"':  SCM_PUTZ("\\\"", port); break;
-    case '\n': SCM_PUTZ("\\n", port); break;
-    case '\t': SCM_PUTZ("\\t", port); break;
-    case '\r': SCM_PUTZ("\\r", port); break;
-    case '\f': SCM_PUTZ("\\f", port); break;
-    case '\0': SCM_PUTZ("\\0", port); break;
+    case '\\': SCM_PUTZ("\\\\", -1, port); break;
+    case '"':  SCM_PUTZ("\\\"", -1, port); break;
+    case '\n': SCM_PUTZ("\\n", -1, port); break;
+    case '\t': SCM_PUTZ("\\t", -1, port); break;
+    case '\r': SCM_PUTZ("\\r", -1, port); break;
+    case '\f': SCM_PUTZ("\\f", -1, port); break;
+    case '\0': SCM_PUTZ("\\0", -1, port); break;
     default:
         if (ch < ' ' || ch == 0x7f || (bytemode && ch >= 0x80)) {
             snprintf(buf, 5, "\\x%02x", (unsigned char)ch);
-            SCM_PUTZ(buf, port);
+            SCM_PUTZ(buf, -1, port);
         } else {
             SCM_PUTC(ch, port);
         }
@@ -869,7 +869,7 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             const char *cp = SCM_STRING_START(str);
             int size = SCM_STRING_SIZE(str);
             if (SCM_STRING_INCOMPLETE_P(str)) {
-                SCM_PUTZ("#\"", port);
+                SCM_PUTZ("#\"", -1, port);
             } else {
                 SCM_PUTC('"', port);
             }

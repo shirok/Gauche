@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.4 2001-05-24 08:55:12 shirok Exp $
+ *  $Id: portmacros.h,v 1.5 2001-06-01 20:39:25 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
@@ -40,8 +40,10 @@
                 SCM_PORT(port)->src.file.fp);                   \
     } while(0)
 
-#define SCM__FILE_PUTZ(s, port) \
-    fputs(s, SCM_PORT(port)->src.file.fp)
+#define SCM__FILE_PUTZ(s, len, port)                            \
+    ((len) < 0?                                                 \
+     (void)fputs(s, SCM_PORT(port)->src.file.fp) :              \
+     (void)fwrite(s, 1, len, SCM_PORT(port)->src.file.fp))
 
 #define SCM__FILE_PUTS(s, port)                 \
     fwrite(SCM_STRING_START(s), 1,              \
@@ -61,7 +63,7 @@
 #define SCM__OSTR_PUTC(c, port)                         \
     SCM_DSTRING_PUTC(&SCM_PORT(port)->src.ostr, c)
 
-#define SCM__OSTR_PUTZ(s, port)                         \
+#define SCM__OSTR_PUTZ(s, len, port)                    \
     Scm_DStringPutz(&SCM_PORT(port)->src.ostr, s)
 
 #define SCM__OSTR_PUTS(s, port)                         \
@@ -77,8 +79,8 @@
 #define SCM__PROC_PUTC(c, port)                         \
     SCM_PORT(port)->src.proc.vtable->Putc(SCM_PORT(port), c)
 
-#define SCM__PROC_PUTZ(s, port)                         \
-    SCM_PORT(port)->src.proc.vtable->Putz(SCM_PORT(port), s)
+#define SCM__PROC_PUTZ(s, len, port)                    \
+    SCM_PORT(port)->src.proc.vtable->Putz(s, len, SCM_PORT(port))
 
 #define SCM__PROC_PUTS(s, port)                                 \
     SCM_PORT(port)->src.proc.vtable->Puts(SCM_PORT(port),       \
@@ -117,12 +119,12 @@
         }                                                               \
     } while (0)
 
-#define SCM_PUTZ(str, port)                                             \
+#define SCM_PUTZ(str, len, port)                                        \
     do {                                                                \
         switch (SCM_PORT_TYPE(port)) {                                  \
-          case SCM_PORT_FILE: SCM__FILE_PUTZ(str, port); break;         \
-          case SCM_PORT_OSTR: SCM__OSTR_PUTZ(str, port); break;         \
-          case SCM_PORT_PROC: SCM__PROC_PUTZ(str, port); break;         \
+          case SCM_PORT_FILE: SCM__FILE_PUTZ(str, len, port); break;    \
+          case SCM_PORT_OSTR: SCM__OSTR_PUTZ(str, len, port); break;    \
+          case SCM_PORT_PROC: SCM__PROC_PUTZ(str, len, port); break;    \
           case SCM_PORT_CLOSED:                                         \
             Scm_Error("port already closed: %S", SCM_OBJ(port));        \
           default: Scm_Panic("SCM_PUTZ: something screwed up");         \

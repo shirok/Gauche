@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.84 2001-05-31 10:10:41 shirok Exp $
+;;; $Id: extlib.stub,v 1.85 2001-06-01 20:39:24 shirok Exp $
 ;;;
 
 "
@@ -577,7 +577,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  char *buf; int nread;
   if (bytes <= 0) Scm_Error(\"bytes must be non-zero positive integer: %d\", bytes);
   buf = SCM_NEW_ATOMIC2(char*, bytes);
-  nread = Scm_Getz(port, buf, bytes);
+  nread = Scm_Getz(buf, bytes, port);
   if (nread <= 0) {
     SCM_RETURN(SCM_EOF);
   } else {

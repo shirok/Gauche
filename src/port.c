@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.32 2001-05-31 19:43:08 shirok Exp $
+ *  $Id: port.c,v 1.33 2001-06-01 20:39:24 shirok Exp $
  */
 
 #include <unistd.h>
@@ -372,9 +372,9 @@ void Scm_Puts(ScmString *s, ScmPort *port)
     SCM_PUTS(s, port);
 }
 
-void Scm_Putz(const char *s, ScmPort *port)
+void Scm_Putz(const char *s, int len, ScmPort *port)
 {
-    SCM_PUTZ(s, port);
+    SCM_PUTZ(s, len, port);
 }
 
 void Scm_Putnl(ScmPort *port)
@@ -409,7 +409,7 @@ int Scm_Getc(ScmPort *port)
 /*
  * Getz - block read.
  */
-int Scm_Getz(ScmPort *port, char *buf, int buflen)
+int Scm_Getz(char *buf, int buflen, ScmPort *port)
 {
     int nread = 0;
     
@@ -432,7 +432,7 @@ int Scm_Getz(ScmPort *port, char *buf, int buflen)
         }
         break;
     case SCM_PORT_PROC:
-        nread = port->src.proc.vtable->Getz(port, buf, buflen);
+        nread = port->src.proc.vtable->Getz(buf, buflen, port);
         break;
     case SCM_PORT_CLOSED:
         Scm_Error("attempted to read from closed port: %S", port);
@@ -491,7 +491,7 @@ static int null_getc(ScmPort *dummy)
     return SCM_CHAR_INVALID;
 }
 
-static int null_getz(ScmPort *dummy, char *buf, int buflen)
+static int null_getz(char *buf, int buflen, ScmPort *dummy)
     /*ARGSUSED*/
 {
     return 0;
@@ -520,7 +520,7 @@ static int null_putc(ScmPort *dummy, ScmChar c)
     return 0;
 }
 
-static int null_putz(ScmPort *dummy, const char *str)
+static int null_putz(const char *str, int len, ScmPort *dummy)
     /*ARGSUSED*/
 {
     return 0;
@@ -676,10 +676,10 @@ static int fdport_putc_unbuffered(ScmPort *port, ScmChar ch)
     return nbytes;
 }
 
-static int fdport_putz_unbuffered(ScmPort *port, const char *buf)
+static int fdport_putz_unbuffered(const char *buf, int len, ScmPort *port)
 {
     DECL_FDPORT(pdata, port);
-    int nwrote, size = strlen(buf), count = size;
+    int nwrote, size = (len < 0? strlen(buf) : len), count = size;
     do {
         nwrote = write(pdata->info.fd, buf, count);
         CHECK_ERROR(nwrote, pdata);
@@ -837,7 +837,7 @@ static int bufport_getc(ScmPort *port)
     }
 }
 
-static int bufport_getz(ScmPort *port, char *buf, int buflen)
+static int bufport_getz(char *buf, int buflen, ScmPort *port)
 {
     struct bufport *bp = PORT_BUFPORT(port);
     int nread = 0;
@@ -911,9 +911,9 @@ static int bufport_put_internal(ScmPort *port, const char *buf, int nbytes)
     return 0;
 }
 
-static int bufport_putz(ScmPort *port, const char *buf)
+static int bufport_putz(const char *buf, int len, ScmPort *port)
 {
-    return bufport_put_internal(port, buf, strlen(buf));
+    return bufport_put_internal(port, buf, (len < 0? strlen(buf) : len));
 }
 
 static int bufport_puts(ScmPort *port, ScmString *s)

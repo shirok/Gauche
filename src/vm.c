@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.79 2001-05-20 08:58:15 shirok Exp $
+ *  $Id: vm.c,v 1.80 2001-06-01 20:39:24 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1392,15 +1392,15 @@ void default_exception_handler(ScmObj e)
     int depth = 0;
     
     if (SCM_EXCEPTIONP(e) && SCM_STRINGP(SCM_EXCEPTION_DATA(e))) {
-        SCM_PUTZ("*** ERROR: ", err);
+        SCM_PUTZ("*** ERROR: ", -1, err);
         SCM_PUTS(SCM_STRING(SCM_EXCEPTION_DATA(e)), err);
         SCM_PUTNL(err);
     } else {
-        SCM_PUTZ("*** ERROR: (unknown exception type)\n", err);
+        SCM_PUTZ("*** ERROR: (unknown exception type)\n", -1, err);
     }
     
-    SCM_PUTZ("Stack Trace:\n", err);
-    SCM_PUTZ("_______________________________________\n", err);
+    SCM_PUTZ("Stack Trace:\n", -1, err);
+    SCM_PUTZ("_______________________________________\n", -1, err);
     SCM_FOR_EACH(cp, stack) {
         Scm_Printf(SCM_PORT(err), "%3d   %66.1S\n",
                    depth++, SCM_CAR(cp));
@@ -1724,7 +1724,7 @@ void Scm__VMInsnWrite(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     default:
         Scm_Panic("something screwed up");
     }
-    SCM_PUTZ(buf, out);
+    SCM_PUTZ(buf, -1, out);
 }
 
 /* Returns list of insn name and parameters.  Useful if you want to 

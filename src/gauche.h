@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.147 2001-05-30 09:00:29 shirok Exp $
+ *  $Id: gauche.h,v 1.148 2001-06-01 20:39:24 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -920,12 +920,12 @@ typedef struct ScmProcPortInfoRec {
 typedef struct ScmPortVTableRec {
     int       (*Getb)(ScmPort *p);
     int       (*Getc)(ScmPort *p);
-    int       (*Getz)(ScmPort *p, char *buf, int buflen);
+    int       (*Getz)(char *buf, int buflen, ScmPort *p);
     ScmObj    (*Getline)(ScmPort *p);
     int       (*Ready)(ScmPort *p);
     int       (*Putb)(ScmPort *p, ScmByte b);
     int       (*Putc)(ScmPort *p, ScmChar c);
-    int       (*Putz)(ScmPort *p, const char *buf);
+    int       (*Putz)(const char *buf, int len, ScmPort *p);
     int       (*Puts)(ScmPort *p, ScmString *s);
     int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
@@ -1015,14 +1015,14 @@ extern ScmObj Scm_ClosePort(ScmPort *port);
 extern void Scm_Putb(ScmByte b, ScmPort *port);
 extern void Scm_Putc(ScmChar c, ScmPort *port);
 extern void Scm_Puts(ScmString *s, ScmPort *port);
-extern void Scm_Putz(const char *s, ScmPort *port);
+extern void Scm_Putz(const char *s, int len, ScmPort *port);
 extern void Scm_Putnl(ScmPort *port);
 extern void Scm_Flush(ScmPort *port);
 
 extern void Scm_Ungetc(ScmChar ch, ScmPort *port);
 extern int Scm_Getb(ScmPort *port);
 extern int Scm_Getc(ScmPort *port);
-extern int Scm_Getz(ScmPort *port, char *buf, int buflen);
+extern int Scm_Getz(char *buf, int buflen, ScmPort *port);
 
 extern ScmObj Scm_ReadLine(ScmPort *port);
 

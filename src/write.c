@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.15 2001-05-20 08:58:15 shirok Exp $
+ *  $Id: write.c,v 1.16 2001-06-01 20:39:24 shirok Exp $
  */
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ static const char *char_names[] = {
 };
 
 #define CASE_ITAG(obj, str) \
-    case SCM_ITAG(obj): SCM_PUTZ(str, out); break;
+    case SCM_ITAG(obj): SCM_PUTZ(str, -1, out); break;
 
 #define SPBUFSIZ   50
 
@@ -87,16 +87,16 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
         else if (SCM_INTP(obj)) {
             char buf[SPBUFSIZ];
             snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
-            SCM_PUTZ(buf, out);
+            SCM_PUTZ(buf, -1, out);
         }
         else if (SCM_CHARP(obj)) {
             ScmChar ch = SCM_CHAR_VALUE(obj);
             if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
                 SCM_PUTC(ch, out);
             } else {
-                SCM_PUTZ("#\\", out);
-                if (ch <= 0x20)       SCM_PUTZ(char_names[ch], out);
-                else if (ch == 0x7f)  SCM_PUTZ("del", out);
+                SCM_PUTZ("#\\", -1, out);
+                if (ch <= 0x20)       SCM_PUTZ(char_names[ch], -1, out);
+                else if (ch == 0x7f)  SCM_PUTZ("del", -1, out);
                 else                  SCM_PUTC(ch, out);
             }
         }
@@ -114,7 +114,7 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
                 write_internal(SCM_CAR(p), out, ctx);
             }
             if (!SCM_NULLP(p)) {
-                SCM_PUTZ(" . ", out);
+                SCM_PUTZ(" . ", -1, out);
                 write_internal(p, out, ctx);
             }
             SCM_PUTC(')', out);
@@ -225,14 +225,14 @@ static void write_circular_list(ScmObj obj, ScmPort *port,
         obj = SCM_CDR(obj);
         if (SCM_NULLP(obj)) { SCM_PUTC(')', port); return; }
         if (!SCM_PAIRP(obj)) {
-            SCM_PUTZ(" . ", port);
+            SCM_PUTZ(" . ", -1, port);
             write_circular(obj, port, ctx);
             SCM_PUTC(')', port);
             return;
         }
         e = Scm_HashTableGet(ctx->table, obj);
         if (e && e->value != SCM_FALSE) {
-            SCM_PUTZ(" . ", port);
+            SCM_PUTZ(" . ", -1, port);
             write_circular(obj, port, ctx);
             SCM_PUTC(')', port);
             return;
@@ -273,7 +273,7 @@ static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         if (SCM_INTP(e->value)) {
             /* This object is already printed. */
             snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e->value));
-            SCM_PUTZ(numbuf, port);
+            SCM_PUTZ(numbuf, -1, port);
             return;
         } else {
             /* This object will be seen again.
@@ -282,7 +282,7 @@ static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             snprintf(numbuf, 50, "#%d=", ctx->ncirc);
             e->value = SCM_MAKE_INT(ctx->ncirc);
             ctx->ncirc++;
-            SCM_PUTZ(numbuf, port);
+            SCM_PUTZ(numbuf, -1, port);
         }
     }
 
@@ -290,7 +290,7 @@ static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         SCM_PUTC('(', port);
         write_circular_list(obj, port, ctx);
     } else if (SCM_VECTORP(obj)) {
-        SCM_PUTZ("#(", port);
+        SCM_PUTZ("#(", -1, port);
         write_circular_vector(obj, port, ctx);
     }
 }
@@ -519,7 +519,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
-                    SCM_PUTZ(buf, out);
+                    SCM_PUTZ(buf, -1, out);
                     break;
                 }
             case 'o':; case 'u':; case 'x':; case 'X':
@@ -528,7 +528,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
-                    SCM_PUTZ(buf, out);
+                    SCM_PUTZ(buf, -1, out);
                     break;
                 }
             case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
@@ -537,14 +537,14 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
-                    SCM_PUTZ(buf, out);
+                    SCM_PUTZ(buf, -1, out);
                     break;
                 }
             case 's':;
                 {
                     char *val = va_arg(ap, char *);
                     int len;
-                    SCM_PUTZ(val, out);
+                    SCM_PUTZ(val, -1, out);
 
                     /* TODO: support right adjustment such as %-10s.
                        Currently we ignore minus sign and pad chars
@@ -565,7 +565,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
-                    SCM_PUTZ(buf, out);
+                    SCM_PUTZ(buf, -1, out);
                     break;
                 }
             case 'S':; case 'A':
@@ -580,7 +580,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     if (pound_appeared) {
                         int n = Scm_WriteCircular(o, out, mode, width);
                         if (n < 0 && prec > 0) {
-                            SCM_PUTZ(" ...", out);
+                            SCM_PUTZ(" ...", -1, out);
                         }
                         if (n > 0) {
                             for (; n < width; n++) SCM_PUTC(' ', out);
@@ -590,7 +590,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     } else if (dot_appeared) {
                         int n = Scm_WriteLimited(o, SCM_OBJ(out), mode, width);
                         if (n < 0 && prec > 0) {
-                            SCM_PUTZ(" ...", out);
+                            SCM_PUTZ(" ...", -1, out);
                         }
                         if (n > 0) {
                             for (; n < width; n++) SCM_PUTC(' ', out);

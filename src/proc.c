@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.17 2001-05-20 08:58:15 shirok Exp $
+ *  $Id: proc.c,v 1.18 2001-06-01 20:39:24 shirok Exp $
  */
 
 #include "gauche.h"
@@ -29,7 +29,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
         ScmSubr *subr = SCM_SUBR(obj);
-        SCM_PUTZ("#<subr", port);
+        SCM_PUTZ("#<subr", -1, port);
         if (SCM_PROCEDURE_INFO(subr)) {
             Scm_Printf(port, ":%S", SCM_PROCEDURE_INFO(subr));
         }
