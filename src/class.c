@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.95 2003-09-29 12:47:51 shirok Exp $
+ *  $Id: class.c,v 1.96 2003-10-18 11:07:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -329,17 +329,12 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmClass *instance = SCM_ALLOCATE(ScmClass, klass);
     SCM_SET_CLASS(instance, klass);
-#if 0 /*def __CYGWIN__*/
-    instance->classPtr = SCM_NEW(ScmClass*);
-    *instance->classPtr = instance;
-#endif
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = object_compare;
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
-    instance->instanceSlotOffset = 1; /* will be adjusted when CPL is set */
     instance->flags = 0;        /* ?? */
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
@@ -349,6 +344,9 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->slots = SCM_NIL;
     instance->directSubclasses = SCM_NIL;
     instance->directMethods = SCM_NIL;
+    instance->redefined = SCM_FALSE;
+    (void)SCM_INTERNAL_MUTEX_INIT(instance->mutex);
+    (void)SCM_INTERNAL_COND_INIT(instance->cv);
     return SCM_OBJ(instance);
 }
 
@@ -454,15 +452,12 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     /* find correct allocation method */
     klass->allocate = NULL;
     for (p = klass->cpa; *p; p++) {
-        if (SCM_CLASS_FINAL_P(*p))
-            Scm_Error("you can't inherit a final class %S", *p);
         if ((*p)->allocate) {
             if ((*p)->allocate != object_allocate) {
                 if (klass->allocate && klass->allocate != (*p)->allocate) {
                     Scm_Error("class precedence list has more than one C-defined base class (except <object>): %S", val);
                 }
                 klass->allocate = (*p)->allocate;
-                klass->instanceSlotOffset = (*p)->instanceSlotOffset;
             } else {
                 object_inherited = TRUE;
             }
@@ -544,17 +539,6 @@ static void class_accessors_set(ScmClass *klass, ScmObj val)
     klass->accessors = val;
 }
 
-static ScmObj class_direct_subclasses(ScmClass *klass)
-{
-    return klass->directSubclasses;
-}
-
-static void class_direct_subclasses_set(ScmClass *klass, ScmObj val)
-{
-    /* TODO: check argument vailidity */
-    klass->directSubclasses = val;
-}
-
 static ScmObj class_numislots(ScmClass *klass)
 {
     return Scm_MakeInteger(klass->numInstanceSlots);
@@ -568,6 +552,45 @@ static void class_numislots_set(ScmClass *klass, ScmObj snf)
         /*NOTREACHED*/
     }
     klass->numInstanceSlots = nf;
+}
+
+/* 
+ * The following slots should only be modified by a special MT-safe procedures.
+ */
+static ScmObj class_direct_subclasses(ScmClass *klass)
+{
+    return klass->directSubclasses;
+}
+
+static ScmObj class_direct_methods(ScmClass *klass)
+{
+    return klass->directMethods;
+}
+
+static ScmObj class_redefined(ScmClass *klass)
+{
+    ScmObj r;
+    int abandoned = FALSE;
+    
+    /* If this class is being redefined by other thread, you should wait */
+    (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
+    while (SCM_VMP(klass->redefined)) {
+        if (SCM_VM(klass->redefined)->state == SCM_VM_TERMINATED) {
+            /* TODO: this means redefinition of klass has been abandoned,
+               so the state of klass may be inconsistent.  Should we do
+               something to it? */
+            abandoned = TRUE;
+            klass->redefined = SCM_FALSE;
+        } else {
+            (void)SCM_INTERNAL_COND_WAIT(klass->cv, klass->mutex);
+        }
+    }
+    r = klass->redefined;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
+    if (abandoned) {
+        Scm_Warn("redefinition of class %S has been abandoned", klass);
+    }
+    return r;
 }
 
 /*--------------------------------------------------------------
@@ -617,7 +640,6 @@ static ScmClass *make_implicit_meta(const char *name,
     meta->allocate = class_allocate;
     meta->print = class_print;
     meta->cpa = metas;
-    meta->instanceSlotOffset = sizeof(ScmClass) / sizeof(ScmObj);
     initialize_builtin_cpl(meta);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(meta));
     meta->slots = Scm_ClassClass.slots;
@@ -683,27 +705,86 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
     return result;
 }
 
+/*
+ * Internal procedures for class redefinition
+ */
+
+/* %start-class-redefinition klass */
+int Scm_StartClassRedefinition(ScmClass *klass)
+{
+    int success = FALSE;
+    (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
+    if (SCM_FALSEP(klass->redefined)) {
+        klass->redefined = SCM_OBJ(Scm_VM());
+        success = TRUE;
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
+    return success;
+}
+
+/* %commit-class-redefinition klass */
+void Scm_CommitClassRedefinition(ScmClass *klass, ScmClass *newklass)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
+    if (SCM_EQ(klass->redefined, SCM_OBJ(Scm_VM()))) {
+        klass->redefined = SCM_OBJ(newklass);
+        (void)SCM_INTERNAL_COND_BROADCAST(klass->cv);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
+}
+
+/* %add-direct-subclass! super sub */
+void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub)
+{
+    ScmObj p = Scm_Cons(SCM_OBJ(sub), SCM_NIL);
+    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+    SCM_SET_CDR(p, super->directSubclasses);
+    super->directSubclasses = p;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+}
+
+/* %delete-direct-subclass! super sub */
+void Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+    super->directSubclasses =
+        Scm_DeleteX(super->directSubclasses, SCM_OBJ(sub), SCM_CMP_EQ);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+}
+
+/* %add-direct-method! super sub */
+void Scm_AddDirectMethod(ScmClass *super, ScmClass *sub)
+{
+    ScmObj p = Scm_Cons(SCM_OBJ(sub), SCM_NIL);
+    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+    SCM_SET_CDR(p, super->directMethods);
+    super->directMethods = p;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+}
+
+/* %delete-direct-method! super sub */
+void Scm_DeleteDirectMethod(ScmClass *super, ScmClass *sub)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+    super->directMethods =
+        Scm_DeleteX(super->directMethods, SCM_OBJ(sub), SCM_CMP_EQ);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+}
+
 /*=====================================================================
  * Scheme slot access
  */
 
-/* Scheme slots are simply stored in ScmObj array.  What complicates
- * the matter is that we allow any C structure to be a base class of
- * Scheme class, so there may be an offset for such slots.
+/* Scheme slots are stored in ScmObj array pointed by slots field
+ * of ScmInstance.  This one-level indirection allows an instance
+ * to be redefined.
  */
+
 /* Unbound slot: if the slot value yields either SCM_UNBOUND or
  * SCM_UNDEFINED, a generic function slot-unbound is called.
  * We count SCM_UNDEFINED as unbound so that a Scheme program can
  * make slot unbound, especially needed for procedural slots.
  */
-
-/* dummy structure to access Scheme slots */
-typedef struct ScmInstanceRec {
-    SCM_HEADER;
-    ScmObj slots[1];
-} ScmInstance;
-
-#define SCM_INSTANCE(obj)      ((ScmInstance *)obj)
 
 /* A common routine to be used to allocate object that is possibly
    be subclassed by Scheme.  Coresize should be a size of base C structure
@@ -713,38 +794,30 @@ typedef struct ScmInstanceRec {
 ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
 {
     int i, offset_words = (coresize+sizeof(ScmObj)-1)/sizeof(ScmObj);
-    ScmObj obj = SCM_NEW2(ScmObj,
-                          (offset_words + klass->numInstanceSlots) * sizeof(ScmObj));
+    ScmObj obj = SCM_NEW2(ScmObj, coresize);
+    ScmObj *slots = SCM_NEW2(ScmObj*, klass->numInstanceSlots*sizeof(ScmObj));
+    
     for (i=0; i<klass->numInstanceSlots; i++) {
-        SCM_INSTANCE(obj)->slots[i+offset_words-1] = SCM_UNBOUND;
+        slots[i] = SCM_UNBOUND;
     }
+    SCM_INSTANCE(obj)->slots = slots;
     return obj;
 }
 
-static inline int scheme_slot_index(ScmObj obj, int number)
-{
-    ScmClass *k = SCM_CLASS_OF(obj);
-    int offset = k->instanceSlotOffset;
-    if (offset == 0)
-        Scm_Error("scheme slot accessor called with C-defined object %S.  implementation error?",
-                  obj);
-    if (number < 0 || number >= k->numInstanceSlots)
-        Scm_Error("instance slot index %d out of bounds for %S",
-                  number, obj);
-    return number+offset-1;
-}
-
-
 static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
 {
-    int index = scheme_slot_index(obj, number);
-    return SCM_INSTANCE(obj)->slots[index];
+    ScmClass *k = SCM_CLASS_OF(obj);
+    if (number < 0 || number >= k->numInstanceSlots)
+        Scm_Error("instance slot index %d out of bounds for %S", number, obj);
+    return SCM_INSTANCE_SLOTS(obj)[number];
 }
 
 static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
 {
-    int index = scheme_slot_index(obj, number);
-    SCM_INSTANCE(obj)->slots[index] = val;
+    ScmClass *k = SCM_CLASS_OF(obj);
+    if (number < 0 || number >= k->numInstanceSlots)
+        Scm_Error("instance slot index %d out of bounds for %S", number, obj);
+    SCM_INSTANCE_SLOTS(obj)[number] = val;
 }
 
 /* These two are exposed to Scheme to do some nasty things. */
@@ -1110,7 +1183,7 @@ static void slot_accessor_scheme_accessor_set(ScmSlotAccessor *sa, ScmObj p)
 
 static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmObj obj = Scm_AllocateInstance(klass, sizeof(ScmHeader));
+    ScmObj obj = Scm_AllocateInstance(klass, sizeof(ScmInstance));
     SCM_SET_CLASS(obj, klass);
     return SCM_OBJ(obj);
 }
@@ -1667,8 +1740,10 @@ static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("accessors", class_accessors, class_accessors_set),
     SCM_CLASS_SLOT_SPEC("slots", class_slots_ref, class_slots_set),
     SCM_CLASS_SLOT_SPEC("direct-slots", class_direct_slots, class_direct_slots_set),
-    SCM_CLASS_SLOT_SPEC("direct-subclasses", class_direct_subclasses, class_direct_subclasses_set),
     SCM_CLASS_SLOT_SPEC("num-instance-slots", class_numislots, class_numislots_set),
+    SCM_CLASS_SLOT_SPEC("direct-subclasses", class_direct_subclasses, NULL),
+    SCM_CLASS_SLOT_SPEC("direct-methods", class_direct_methods, NULL),
+    SCM_CLASS_SLOT_SPEC("redefined", class_redefined, NULL),
     { NULL }
 };
 
@@ -1734,19 +1809,6 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
     if (k->cpa == NULL) {
 	k->cpa = SCM_CLASS_DEFAULT_CPL;
     }
-#if 0 /*def __CYGWIN__*/
-    /* fix CPA on __CYGWIN__ */
-    {
-	ScmClass **c, **d, **cpa; int depth = 0;
-	for (c = k->cpa; *c; c++) depth++;
-	cpa = SCM_NEW2(ScmClass**, (depth+1)*sizeof(ScmClass*));
-	for (c = k->cpa, d = cpa; *c; c++, d++) {
-	    *d = **(ScmClass***)c;
-	}
-	*d = NULL;
-	k->cpa = cpa;
-    }
-#endif
 
     k->name = s;
     initialize_builtin_cpl(k);
@@ -1786,9 +1848,6 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
     }
     k->slots = slots;
     k->accessors = acc;
-    if (instanceSize > 0) {
-        k->instanceSlotOffset = instanceSize / sizeof(ScmObj);
-    }
 }
 
 void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
@@ -1826,20 +1885,6 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 
 void Scm_InitBuiltinMethod(ScmMethod *m)
 {
-#if 0 /*def __CYGWIN__*/
-    /* fix specializer array on __CYGWIN__ */
-    {
-	ScmClass **c, **d, **spa;
-	int i;
-	spa = SCM_NEW2(ScmClass**,SCM_PROCEDURE_REQUIRED(m)*sizeof(ScmClass*));
-	for (i = 0, c = m->specializers, d = spa;
-	     i < SCM_PROCEDURE_REQUIRED(m);
-	     c++, d++, i++) {
-	    *d = **(ScmClass***)c;
-	}
-	m->specializers = spa;
-    }
-#endif
     m->common.info = Scm_Cons(m->generic->common.info,
                               class_array_to_names(m->specializers,
                                                    m->common.required));

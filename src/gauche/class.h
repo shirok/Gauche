@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.31 2003-09-09 12:21:26 shirok Exp $
+ *  $Id: class.h,v 1.32 2003-10-18 11:07:01 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -113,6 +113,13 @@ SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
 
 SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
 SCM_EXTERN void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
+
+SCM_EXTERN int  Scm_StartClassRedefinition(ScmClass *klass);
+SCM_EXTERN void Scm_CommitClassRedefinition(ScmClass *klass, ScmClass *newk);
+SCM_EXTERN void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub);
+SCM_EXTERN void Scm_RemoveDirectSubclass(ScmClass *super, ScmClass *sub);
+SCM_EXTERN void Scm_AddDirectMethod(ScmClass *super, ScmClass *sub);
+SCM_EXTERN void Scm_RemoveDirectMethod(ScmClass *super, ScmClass *sub);
 
 SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 

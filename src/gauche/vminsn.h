@@ -30,17 +30,20 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vminsn.h,v 1.38 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: vminsn.h,v 1.39 2003-10-18 11:07:01 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
 
 /* NOP
- *   Input stack  : -
- *   Result stack : -
  *  Used for placeholder.
  */
 DEFINSN(SCM_VM_NOP, "NOP", 0)
+
+/* MNOP
+ *  NOP, but appears at the point where instruction graph merges.
+ */
+DEFINSN(SCM_VM_MNOP, "MNOP", 0)
 
 /* PUSH
  *
@@ -93,6 +96,13 @@ DEFINSN(SCM_VM_CALL, "CALL", 1)
  *  Call procedure in val0.
  */
 DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
+
+/* JUMP <CODE>
+ *
+ *  Jump to <CODE>.  In the old VM architecture where compiled code
+ *  is a list, this is equivalent to NOP.
+ */
+DEFINSN(SCM_VM_JUMP, "JUMP", 0)
 
 /* DEFINE <SYMBOL>
  *

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.102 2003-10-03 09:22:27 shirok Exp $
+ *  $Id: compile.c,v 1.103 2003-10-18 11:07:01 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -48,18 +48,7 @@ static ScmObj id_letrec = SCM_UNBOUND;
 
 /*#define GAUCHE_USE_NVM*/
 
-#ifdef GAUCHE_USE_NVM
-static ScmObj sym_merger = SCM_NIL;
-
-static ScmObj mark_merger_cell(ScmObj cell)
-{
-    if (SCM_PAIRP(cell)) {
-        SCM_PAIR_ATTR(cell)
-            = Scm_Acons(sym_merger, SCM_TRUE, SCM_PAIR_ATTR(cell));
-    }
-    return cell;
-}
-#endif /*GAUCHE_USE_NVM*/
+#define GAUCHE_NVM_VECTORIZATION
 
 /* Conventions of internal functions
  *
@@ -102,6 +91,7 @@ static ScmObj compile_body(ScmObj form, ScmObj env, int ctx, int *depth);
    performance reason. */
 static inline ScmObj make_lref(int depth, int offset)
 {
+#ifndef GAUCHE_NVM_VECTORIZATION
     if (depth == 0) {
         switch (offset) {
         case 0: return SCM_VM_INSN(SCM_VM_LREF0);
@@ -120,6 +110,9 @@ static inline ScmObj make_lref(int depth, int offset)
         }
     }
     return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
+#else  /* GAUCHE_NVM_VECTORIZATION */
+    return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
+#endif /* GAUCHE_NVM_VECTORIZATION */
 }
 
 static inline ScmObj make_lset(int depth, int offset)
@@ -158,6 +151,7 @@ static ScmObj add_bindinfo(ScmObj code, ScmObj info)
    LREF, substitute it for combined instruction instead. */
 static void combine_push(ScmObj *head, ScmObj *tail)
 {
+#ifndef GAUCHE_NVM_VECTORIZATION
     if (SCM_NULLP(*head)) {
         SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
     } else if (!SCM_VM_INSNP(SCM_CAR(*tail))) {
@@ -220,6 +214,9 @@ static void combine_push(ScmObj *head, ScmObj *tail)
             SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
         }
     }
+#else  /* GAUCHE_NVM_VECTORIZATION */
+    SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
+#endif /* GAUCHE_NVM_VECTORIZATION */
 }
 
 /* type of let-family bindings */
@@ -1102,12 +1099,9 @@ static ScmObj compile_if(ScmObj form, ScmObj env, int ctx, int *depth,
     ScmObj tail = SCM_CDR(form);
     ScmObj then_code = SCM_NIL, then_tail = SCM_NIL;
     ScmObj else_code = SCM_NIL, else_tail = SCM_NIL;
-    ScmObj merger = TAILP(ctx)? SCM_NIL : SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
+    ScmObj merger = TAILP(ctx)? SCM_NIL : SCM_LIST1(SCM_VM_INSN(SCM_VM_MNOP));
     int nargs = Scm_Length(tail);
 
-#ifdef GAUCHE_USE_NVM
-    merger = mark_merger_cell(merger);
-#endif /*GAUCHE_USE_NVM*/
     if (nargs < 2 || nargs > 3) Scm_Error("syntax error: %S", form);
     SCM_APPEND(then_code, then_tail, compile_int(SCM_CADR(tail), env, ctx, depth));
     SCM_APPEND(then_code, then_tail, merger);
@@ -1134,14 +1128,11 @@ static ScmObj compile_when(ScmObj form, ScmObj env, int ctx, int *depth,
     ScmObj tail = SCM_CDR(form);
     ScmObj then_code = SCM_NIL, then_tail = SCM_NIL;
     ScmObj else_code = SCM_NIL, else_tail = SCM_NIL;
-    ScmObj merger = TAILP(ctx)? SCM_NIL : SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
+    ScmObj merger = TAILP(ctx)? SCM_NIL : SCM_LIST1(SCM_VM_INSN(SCM_VM_MNOP));
     int unlessp = (data != NULL);
     int nargs = Scm_Length(tail);
     if (nargs < 2) Scm_Error("syntax error: %S", form);
 
-#ifdef GAUCHE_USE_NVM
-    merger = mark_merger_cell(merger);
-#endif /*GAUCHE_USE_NVM*/
     SCM_APPEND(then_code, then_tail, compile_body(SCM_CDR(tail), env, ctx, depth));
     SCM_APPEND(then_code, then_tail, merger);
     if (ctx != SCM_COMPILE_STMT)
@@ -1196,10 +1187,7 @@ static ScmObj compile_and(ScmObj form, ScmObj env, int ctx, int *depth, void *da
         if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
         else return orp ? SCM_LIST1(SCM_FALSE) : SCM_LIST1(SCM_TRUE);
     } else {
-        ScmObj merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-#ifdef GAUCHE_USE_NVM
-        merger = mark_merger_cell(merger);
-#endif /*GAUCHE_USE_NVM*/
+        ScmObj merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_MNOP));
         return compile_and_rec(tail, merger, orp, env, ctx, depth);
     }
 }
@@ -1327,10 +1315,7 @@ static ScmObj compile_cond(ScmObj form, ScmObj env, int ctx, int *depth, void *d
     if (SCM_NULLP(clauses)) {
         Scm_Error("at least one clause is required for cond: %S", form);
     }
-    merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-#ifdef GAUCHE_USE_NVM
-    merger = mark_merger_cell(merger);
-#endif /*GAUCHE_USE_NVM*/
+    merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_MNOP));
     return compile_cond_int(form, clauses, merger, env, ctx, depth, FALSE);
 }
 
@@ -1352,10 +1337,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, int *depth, void *d
 
     ADDCODE(compile_int(key, env, SCM_COMPILE_NORMAL, depth));
     ADDPUSH();
-    merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-#ifdef GAUCHE_USE_NVM
-    merger = mark_merger_cell(merger);
-#endif /*GAUCHE_USE_NVM*/
+    merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_MNOP));
     ADDCODE(compile_cond_int(form, clauses, merger, env, ctx, depth, TRUE));
     return code;
 }
@@ -2015,6 +1997,133 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
 }
 
 /*===================================================================
+ * Code vectorization
+ */
+
+#ifdef GAUCHE_NVM_VECTORIZATION
+/* This is the first step of moving to the New VM architecture, which
+   uses a vector instead of a list for code.  In this transitional stage,
+   we use the old compiler to generate a directed graph, then call this
+   routine to make a code vector out of it.  Later, the whole compiler
+   passes will be reorganized for more efficient compilation.
+
+   Note that the constant values are embedded in the code vector; we
+   still need the constant vector, but that is only to protect heap-
+   allocated constants from GC; the code vector itself is allocated from
+   the atomic heap to reduce the scanning overhead of GC.
+
+   Vectorization pass takes DG from the first pass, and creates a code
+   vector and a constant vector.
+
+   The first pass of vectorization is a serialization pass, where DG
+   is turned into a list, inserting JUMP instructions.  Several peephole
+   optimizations are done in this stage, too.  During the serialization
+   pass, instructions are counted and the jump target cells (MNOPs) are
+   associated with its address.
+
+   Once the serialized form is obtained, a code vector is allocated and
+   the instructions are packed into it.  Since we already know the
+   jump target address, we don't need to back up to fill them in.
+*/
+
+typedef struct v_context_rec {
+    int numCodes;               /* # of instructions */
+    ScmObj targets;             /* assoc list of jump targets and addresses */
+    ScmObj constants;           /* list of heap-allocated constants */
+} v_context;
+
+static ScmObj vectorize_rec(ScmObj form, v_context *ctx)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    while (!SCM_NULLP(form)) {
+        ScmObj ca = SCM_CAR(form);
+        int code;
+        
+        if (!SCM_VM_INSNP(ca)) {
+            /* Constant */
+            SCM_APPEND1(h, t, ca);
+            if (SCM_PTRP(ca) && SCM_FALSEP(Scm_Memq(ctx->constants, ca))) {
+                ctx->constants = Scm_Cons(ca, ctx->constants);
+            }
+            continue;
+        }
+
+        code = SCM_VM_INSN_CODE(ca);
+        switch (code) {
+        case SCM_VM_NOP: break; /* We omit NOP */
+        case SCM_VM_MNOP: /* we reached merging point */
+            break;
+        case SCM_VM_PUSH:;
+        case SCM_VM_POP:;
+        case SCM_VM_DUP:;
+            
+        case SCM_VM_PRE_CALL:;
+        case SCM_VM_PRE_TAIL:;
+        case SCM_VM_CHECK_STACK:;
+        case SCM_VM_CALL:;
+        case SCM_VM_TAIL_CALL:;
+        case SCM_VM_JUMP:;
+        case SCM_VM_DEFINE:;
+        case SCM_VM_DEFINE_CONST:;
+        case SCM_VM_LAMBDA:;
+        case SCM_VM_LET:;
+        case SCM_VM_IF:;
+        case SCM_VM_VALUES_BIND:;
+        case SCM_VM_LSET:;
+        case SCM_VM_GSET:;
+        case SCM_VM_LREF:;
+        case SCM_VM_GREF:;
+        case SCM_VM_PROMISE:;
+        case SCM_VM_QUOTE_INSN:;
+        case SCM_VM_CONS:;
+        case SCM_VM_CAR:;
+        case SCM_VM_CDR:;
+        case SCM_VM_LIST:;
+        case SCM_VM_LIST_STAR:;
+        case SCM_VM_MEMQ:;
+        case SCM_VM_MEMV:;
+        case SCM_VM_ASSQ:;
+        case SCM_VM_ASSV:;
+        case SCM_VM_EQ:;
+        case SCM_VM_EQV:;
+        case SCM_VM_APPEND:;
+        case SCM_VM_NOT:;
+        case SCM_VM_REVERSE:;
+        case SCM_VM_APPLY:;
+        case SCM_VM_NULLP:;
+        case SCM_VM_PAIRP:;
+        case SCM_VM_CHARP:;
+        case SCM_VM_EOFP:;
+            
+        case SCM_VM_STRINGP:;
+        case SCM_VM_SYMBOLP:;
+        case SCM_VM_SETTER:;
+        case SCM_VM_VALUES:;
+        case SCM_VM_VEC:;
+        case SCM_VM_APP_VEC:;
+        case SCM_VM_VEC_LEN:;
+        case SCM_VM_VEC_REF:;
+        case SCM_VM_VEC_SET:;
+        case SCM_VM_NUMEQ2:;
+        case SCM_VM_NUMLT2:;
+        case SCM_VM_NUMLE2:;
+        case SCM_VM_NUMGT2:;
+        case SCM_VM_NUMGE2:;
+        case SCM_VM_NUMADD2:;
+        case SCM_VM_NUMSUB2:;
+        case SCM_VM_NUMADDI:;
+        case SCM_VM_NUMSUBI:;
+        case SCM_VM_READ_CHAR:;
+        case SCM_VM_WRITE_CHAR:;
+        case SCM_VM_SLOT_REF:;
+        case SCM_VM_SLOT_SET:;
+        }
+    }
+}
+
+#endif /*GAUCHE_NVM_VECTORIZATION*/
+
+/*===================================================================
  * Initializer
  */
 
@@ -2062,9 +2171,5 @@ void Scm__InitCompiler(void)
     id_if = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_IF), SCM_NIL);
     id_begin = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_BEGIN), SCM_NIL);
     id_letrec = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LETREC), SCM_NIL);
-
-#ifdef GAUCHE_USE_NVM
-    sym_merger = SCM_INTERN("merger-cell");
-#endif /*GAUCHE_USE_NVM*/
 }
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.17 2003-07-05 03:29:12 shirok Exp $
+;;; $Id: moplib.stub,v 1.18 2003-10-18 11:07:01 shirok Exp $
 ;;;
 
 "
@@ -81,6 +81,19 @@
   m = SCM_METHOD(method);
   if (m->func) SCM_RETURN(SCM_FALSE);
   else SCM_RETURN(SCM_OBJ(m->data));")
+
+(define-cproc %start-class-redifinition (k::<class>)
+  (return <boolean> "Scm_StartClassRedefinition"))
+(define-cproc %commit-class-redifinition (k::<class> newk::<class>)
+  (return <void> "Scm_CommitClassRedefinition"))
+(define-cproc %add-direct-subclass! (super::<class> sub::<class>)
+  (return <void> "Scm_AddDirectSubclass"))
+(define-cproc %delete-direct-subclass! (super::<class> sub::<class>)
+  (return <void> "Scm_DeleteDirectSubclass"))
+(define-cproc %add-direct-method! (super::<class> sub::<class>)
+  (return <void> "Scm_AddDirectMethod"))
+(define-cproc %delete-direct-method! (super::<class> sub::<class>)
+  (return <void> "Scm_DeleteDirectMethod"))
 
 ;;
 ;; Public interface

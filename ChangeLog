@@ -1,7 +1,17 @@
 2003-10-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c, src/gauche.h, src/moplib.stub, lib/gauche/object.scm :
+	  Checked in the preparation of class-redefinition support.
+	  Instance slots are now stored in an array separately allocated
+	  from the object itself (so the number of instance slots can be
+	  changed).  Some bookkeeping routines are added to the ScmClass.
+	  Class flags has been changed, but not fixed its meanings.
+
+	* src/vm.c, src/gauche/vminsn.h : added some code to support
+	  instruction vectorization.   Not yet finalized.
+
 	* lib/dbm.scm (dbm-open): fixed a bug when a custom accessor
-	  specification is given (Patch from Grzegorz Chrupa-B³a).$)B
+	  specification is given (Patch from Grzegorz Chrupala).
 
 2003-10-08  Shiro Kawai  <shiro@acm.org>
 

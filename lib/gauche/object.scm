@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.42 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: object.scm,v 1.43 2003-10-18 11:07:00 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -133,7 +133,6 @@
 ;; Class
 ;;
 
-;; TODO: class redefinition
 (define-macro (define-class name supers slots . options)
   (define (transform-slot-definition slot)
     (if (pair? slot)
@@ -207,10 +206,14 @@
     ))
 
 ;;; Method INITIALIZE (class <class>) initargs
+;;;  NB: we always add <object> to the direct supers, for C defined
+;;;  base classes may not be inheriting from it.
 (define-method initialize ((class <class>) initargs)
   (next-method)
-  (let ((slots  (get-keyword :slots  initargs '()))
-        (supers (append (get-keyword :supers initargs '()) `(,<object>))))
+  (let* ((slots  (get-keyword :slots  initargs '()))
+         (sup    (get-keyword :supers initargs '()))
+         (supers (append sup (list <object>)))
+         )
     ;; The order of initialization is somewhat important, since calculation
     ;; of values of some slots depends on the other slots.
     (slot-set! class 'direct-supers supers)
@@ -223,6 +226,10 @@
       (slot-set! class 'accessors
                  (map (lambda (s) (%compute-accessor class s)) slots))
       )
+    ;; bookkeeping for class redefinition
+    (for-each (lambda (super)
+                (%add-direct-subclass! super class))
+              supers)
     ))
 
 (define (%compute-accessor class slot)

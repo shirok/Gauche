@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.344 2003-10-04 11:44:47 shirok Exp $
+ *  $Id: gauche.h,v 1.345 2003-10-18 11:07:01 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -72,7 +72,7 @@ SCM_DECL_BEGIN
 # endif
 #endif
 
-/* Ugly cliche for Win32.  There'll be more to come. */
+/* Ugly cliche for Win32. */
 #if defined(__CYGWIN__)
 # if defined(LIBGAUCHE_BODY)
 #  define SCM_EXTERN extern
@@ -279,19 +279,10 @@ SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
 #define SCM_CPP_CAT(a, b)   a ## b
 #define SCM_CPP_CAT3(a, b, c)  a ## b ## c
 
-/* For ScmClass, we shouldn't use __declspec(dllimport) magic on Win32.
- * See doc/cygwin-memo.txt for details.
- */
-#if 0 /*def __CYGWIN__*/
-# define SCM_CLASS_DECL(klass)                      \
-     SCM_EXTERN ScmClass klass;                     \
-     extern ScmClass *SCM_CPP_CAT(_imp__, klass)
-# define SCM_CLASS_STATIC_PTR(klass)  (ScmClass*)(&SCM_CPP_CAT(_imp__, klass))
-#else  /* !__CYGWIN__ */
-# define SCM_CLASS_DECL(klass) extern ScmClass klass
-# define SCM_CLASS_STATIC_PTR(klass)  (&klass)
-#endif /* __CYGWIN__ */
+#define SCM_CLASS_DECL(klass) extern ScmClass klass
+#define SCM_CLASS_STATIC_PTR(klass)  (&klass)
 
+/* A common header for all Scheme objects */
 typedef struct ScmHeaderRec {
     ScmClass *klass;            /* private */
 } ScmHeader;
@@ -299,19 +290,25 @@ typedef struct ScmHeaderRec {
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
 /* Only these two macros can access header's klass field. */
-#if 0 /*def __CYGWIN__*/
-#define SCM_CLASS_OF(obj)      (*((ScmClass**)(SCM_OBJ(obj)->klass)))
-#define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (ScmClass*)((k)->classPtr))
-#else  /* !__CYGWIN__ */
 #define SCM_CLASS_OF(obj)      (SCM_OBJ(obj)->klass)
 #define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (k))
-#endif /* !__CYGWIN__ */
 
 /* Check if classof(OBJ) equals to an extended class KLASS */
 #define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj)==(klass)))
 
 /* Check if classof(OBJ) is a subtype of an extended class KLASS */
 #define SCM_ISA(obj, klass) (SCM_XTYPEP(obj,klass)||Scm_TypeP(SCM_OBJ(obj),klass))
+
+/* A common header for objects whose class is defined in Scheme */
+typedef struct ScmInstanceRec {
+    ScmClass *klass;
+    ScmObj *slots;
+} ScmInstance;
+
+#define SCM_INSTANCE_HEADER  ScmInstance hdr  /* for declaration */
+
+#define SCM_INSTANCE(obj)        ((ScmInstance*)(obj))
+#define SCM_INSTANCE_SLOTS(obj)  (SCM_INSTANCE(obj)->slots)
 
 /* Fundamental allocators */
 #define SCM_MALLOC(size)          GC_MALLOC(size)
@@ -422,17 +419,13 @@ SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
 
 /* See class.c for the description of function pointer members. */
 struct ScmClassRec {
-    SCM_HEADER;
-#if 0 /*def __CYGWIN__*/
-    ScmClass **classPtr;
-#endif
+    SCM_INSTANCE_HEADER;
     void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
     int (*compare)(ScmObj x, ScmObj y, int equalp);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
     ScmClass **cpa;             /* class precedence array, NULL terminated */
     short numInstanceSlots;     /* # of instance slots */
-    unsigned char instanceSlotOffset;
     unsigned char flags;
     ScmObj name;                /* scheme name */
     ScmObj directSupers;        /* list of classes */
@@ -440,26 +433,33 @@ struct ScmClassRec {
     ScmObj accessors;           /* alist of slot-name & slot-accessor */
     ScmObj directSlots;         /* alist of slot-name & slot-definition */
     ScmObj slots;               /* alist of slot-name & slot-definition */
-    /* The following slots are for class redefinition protocol,
-       not used yet. */
     ScmObj directSubclasses;    /* list of direct subclasses */
     ScmObj directMethods;       /* list of methods that has this class in
                                    its specializer */
     ScmObj redefined;           /* if this class is obsoleted by class
                                    redefinition, points to the new class.
+                                   if this class is being redefined, points
+                                   to a thread that is handling the
+                                   redefinition.  (it won't be seen by
+                                   Scheme; see class.c)
                                    otherwise #f */
+    ScmInternalMutex mutex;     /* to protect from MT hazard */
+    ScmInternalCond cv;         /* wait on this while a class is updating */
 };
 
 typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
 
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
-#define SCM_CLASSP(obj)       SCM_XTYPEP(obj, SCM_CLASS_CLASS)
+#define SCM_CLASSP(obj)       SCM_ISA(obj, SCM_CLASS_CLASS)
 
 /* Class flags (bitmask) */
 enum {
-    SCM_CLASS_BUILTIN = 0x01,   /* true if builtin class */
-    SCM_CLASS_FINAL = 0x02,     /* true if the class is final */
-    SCM_CLASS_APPLICABLE = 0x04 /* true if the instance is "natively
+    SCM_CLASS_NATIVE = 0x01,    /* True for "native class" - from which you
+                                   cannot define a subclass in Scheme.
+                                   An instance of a native class doesn't
+                                   have "slots" field, i.e. can't be cast
+                                   to ScmInstance.  */
+    SCM_CLASS_APPLICABLE = 0x04 /* True if the instance is "natively
                                    applicable" object, such as suprs, closures
                                    or generic functions.  Other objects are
                                    applicable only if object-apply method
@@ -467,15 +467,11 @@ enum {
 };
 
 #define SCM_CLASS_FLAGS(obj)     (SCM_CLASS(obj)->flags)
-#define SCM_CLASS_BUILTIN_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_BUILTIN)
-#define SCM_CLASS_SCHEME_P(obj)  (!SCM_CLASS_BUILTIN_P(obj))
-#define SCM_CLASS_FINAL_P(obj)   (SCM_CLASS_FLAGS(obj)&SCM_CLASS_FINAL)
 #define SCM_CLASS_APPLICABLE_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_APPLICABLE)
 
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
 				     ScmClassStaticSlotSpec *slots,
 				     int instanceSize, ScmModule *m);
-
 SCM_EXTERN ScmClass *Scm_ClassOf(ScmObj obj);
 SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
@@ -519,27 +515,15 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
  *   SCM_DEFINE_BASE_CLASS
  */
 
-/* internal macro. do not use directly */
-#if 0 /*def __CYGWIN__*/
-# define SCM__CLASS_PTR_SLOT(cname)   &SCM_CPP_CAT(_imp__, cname),
-# define SCM__CLASS_PTR_BODY(cname) \
-      ; ScmClass *SCM_CPP_CAT(_imp__, cname) = &cname
-#else
-# define SCM__CLASS_PTR_SLOT(cname)   /*none*/
-# define SCM__CLASS_PTR_BODY(cname)   /*none*/
-#endif
-
-#define SCM__DEFINE_CLASS_COMMON(cname, size, flag, printer, compare, serialize, allocate, cpa) \
+#define SCM__DEFINE_CLASS_COMMON(cname, flag, printer, compare, serialize, allocate, cpa) \
     ScmClass cname = {                           \
-        { SCM_CLASS_STATIC_PTR(Scm_ClassClass) },\
-        SCM__CLASS_PTR_SLOT(cname)               \
+        { SCM_CLASS_STATIC_PTR(Scm_ClassClass), NULL },\
         printer,                                 \
         compare,                                 \
         serialize,                               \
         allocate,                                \
         cpa,                                     \
         0,                                       \
-        size,                                    \
         flag,                                    \
         SCM_FALSE,                               \
         SCM_FALSE,                               \
@@ -550,12 +534,12 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
         SCM_NIL,                                 \
         SCM_NIL,                                 \
         SCM_FALSE                                \
-    } SCM__CLASS_PTR_BODY(cname)
+    }
     
 /* Define built-in class statically -- full-featured version */
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
-    SCM__DEFINE_CLASS_COMMON(cname, 0,                                    \
-                             SCM_CLASS_BUILTIN|SCM_CLASS_FINAL,           \
+    SCM__DEFINE_CLASS_COMMON(cname,                                    \
+                             SCM_CLASS_NATIVE,           \
                              printer, compare, serialize, allocate, cpa)
 
 /* Define built-in class statically -- simpler version */
@@ -564,15 +548,14 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 
 /* define an abstract class */
 #define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)            \
-    SCM__DEFINE_CLASS_COMMON(cname, 0,                   \
-                             SCM_CLASS_BUILTIN,          \
+    SCM__DEFINE_CLASS_COMMON(cname,                   \
+                             0,          \
                              NULL, NULL, NULL, NULL, cpa)
 
 /* define a class that can be subclassed by Scheme */
 #define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, serialize, allocate, cpa) \
     SCM__DEFINE_CLASS_COMMON(cname,                                           \
-                             (sizeof(ctype)+sizeof(ScmObj)-1)/sizeof(ScmObj), \
-                             SCM_CLASS_BUILTIN,                               \
+                             0,                               \
                              printer, compare, serialize, allocate, cpa)
 
 /*--------------------------------------------------------
@@ -1753,7 +1736,7 @@ SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict);
 
 /* Base structure */
 struct ScmProcedureRec {
-    SCM_HEADER;
+    SCM_INSTANCE_HEADER;
     unsigned char required;     /* # of required args */
     unsigned char optional;     /* 1 if it takes rest args */
     unsigned char type;         /* procedure type  */

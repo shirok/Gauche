@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.201 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: vm.c,v 1.202 2003-10-18 11:07:01 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -690,6 +690,10 @@ static void run_loop()
                 VM_ERR(("wrong number of arguments for %S (required %d, got %d)",
                         val0, SCM_PROCEDURE_REQUIRED(val0), argc));
             }
+            CASE(SCM_VM_JUMP) {
+                /* This is just a placeholder now. */
+                NEXT;
+            }
             CASE(SCM_VM_GREF) {
                 ScmGloc *gloc;
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -861,6 +865,9 @@ static void run_loop()
                 NEXT;
             }
             CASE(SCM_VM_NOP) {
+                NEXT;
+            }
+            CASE(SCM_VM_MNOP) {
                 NEXT;
             }
             CASE(SCM_VM_DEFINE) {
