@@ -12,14 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.1 2003-02-04 12:34:20 shirok Exp $
+;;;  $Id: list.scm,v 1.2 2003-02-04 13:44:49 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
 
 (define-module util.list
   (use srfi-1)
-  (export take* drop* split-at* slices)
+  (export take* drop* take-right* drop-right* split-at* slices)
   )
 (select-module util.list)
 
@@ -54,6 +54,22 @@
     (cond ((= i k) lis)
           ((null? lis) '())
           (else (loop (+ i 1) (cdr lis))))))
+
+(define (take-right* lis k . args)
+  (when (or (not (integer? k)) (negative? k))
+    (error "index must be non-negative integer" k))
+  (let-optionals* args ((fill? #f)
+                        (filler #f))
+    (let1 len (length lis)
+      (cond ((<= k len) (drop lis (- len k)))
+            (fill? (append! (make-list (- k len) filler) lis))
+            (else lis)))))
+
+(define (drop-right* lis k)
+  (let1 len (length lis)
+    (if (<= k len)
+        (take lis (- len k))
+        '())))
 
 ;;-----------------------------------------------------------------
 ;; slices - split a list to a bunch of sublists of length k

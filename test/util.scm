@@ -60,6 +60,19 @@
 (test* "drop* (error)" *test-error*  (drop* '(a b c d) -3))
 (test* "drop* (past)" '()            (drop* '(a b c d) 5))
 
+(test* "take-right* (normal)" '(b c d)  (take-right* '(a b c d) 3))
+(test* "take-right* (boundary)" '()     (take-right* '(a b c d) 0))
+(test* "take-right* (boundary)" '(a b c d) (take-right* '(a b c d) 4))
+(test* "take-right* (error)" *test-error*  (take-right* '(a b c d) -1))
+(test* "take-right* (shorten)" '(a b c d)  (take-right* '(a b c d) 6))
+(test* "take-right* (fill)" '(z z a b c d) (take-right* '(a b c d) 6 #t 'z))
+
+(test* "drop-right* (normal)" '(a b c)  (drop-right* '(a b c d) 1))
+(test* "drop-right* (boundary)" '()     (drop-right* '(a b c d) 4))
+(test* "drop-right* (boundary)" '(a b c d) (drop-right* '(a b c d) 0))
+(test* "drop-right* (error)" *test-error*  (drop-right* '(a b c d) -1))
+(test* "drop-right* (past)" '()         (drop-right* '(a b c d) 7))
+
 (test* "slices (normal)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12 13 14 15))
        (slices (iota 16) 4))
 (test* "slices (boundary)" '()
