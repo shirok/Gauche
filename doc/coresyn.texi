@@ -101,89 +101,251 @@ See the table below.
 @c COMMON
 @end table
 
+@c EN
 The table below lists sharp-syntaxes.
+@c JP
+以下の表はシャープ構文のリストです。
+@c COMMON
 
 @multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item @code{#!}
+@c EN
  @tab [SRFI-22] Specifies interpreter at the beginning of file.
       Scheme loader ignores the line.
+@c JP
+ @tab [SRFI-22] ファイルの先頭でインタプリタを指定します。
+      Scheme のローダはこの行を無視します。
+@c COMMON
 @item @code{#"}, @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#(}
+@c EN
  @tab [R5RS] Introduces a vector.
+@c JP
+ @tab [R5RS] ベクタを先導します。
+@c COMMON
 @item @code{#)}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#*}
+@c EN
  @tab If followed by a double quote, denotes an incomplete string.  @xref{Strings}.
+@c JP
+ @tab 二重引用符がこれに続くときは、不完全な文字列を表します。@ref{Strings}参照。
+@c COMMON
 @item @code{#+}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#,}
+@c EN
  @tab [SRFI-10] Introduces reader constructor syntax.
+@c JP
+ @tab [SRFI-10] リーダ構築子構文を先導します。
+@c COMMON
 @item @code{#-}, @code{#.}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#/}
+@c EN
  @tab Introduces a literal regular expression.  @xref{Regular expression}.
+@c JP
+ @tab リテラルの正規表現を先導します。@ref{Regular expression}参照。
+@c COMMON
 @item @code{#0} @dots{} @code{#9}
+@c EN
  @tab [SRFI-38] Shared substructure definition and reference.
+@c JP
+ @tab [SRFI-38] 共有サブストラクチャの定義と参照。
+@c COMMON
 @item @code{#:}, @code{#;}
+@c EN
  @tab Unused
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#<}
+@c EN
  @tab Introduces an unreadable object.
+@c JP
+ @tab 読み取り不可能オブジェクトを先導します。
+@c COMMON
 @item @code{#=}, @code{#>}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#?}
+@c EN
  @tab Introduces debug macros.  @xref{Debugging}.
+@c JP
+ @tab デバッグマクロを先導します。@ref{Debugging}参照。
+@c COMMON
 @item @code{#@@}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#a}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#b}
+@c EN
  @tab [R5RS] Binary number prefix.
+@c JP
+ @tab [R5RS] 2進数接頭辞。
+@c COMMON
 @item @code{#c}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#d}
+@c EN
  @tab [R5RS] Decimal number prefix.
+@c JP
+ @tab [R5RS] 10進数接頭辞。
+@c COMMON
 @item @code{#e}
+@c EN
  @tab [R5RS] Exact number prefix.
+@c JP
+ @tab [R5RS] 正確数接頭辞。
+@c COMMON
 @item @code{#f}
+@c EN
  @tab [R5RS] Boolean false, or
       introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+@c JP
+ @tab [R5RS] 真理値の偽、あるいは
+      SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照
+@c COMMON
 @item @code{#g}, @code{#h}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#i}
+@c EN
  @tab [R5RS] Inxact number prefix.
+@c JP
+ @tab [R5RS] 不正確数接頭辞。
+@c COMMON
 @item @code{#j}, @code{#k}, @code{#l}, @code{#m}, @code{#n}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#o}
+@c EN
  @tab [R5RS] Octal number prefix.
+@c JP
+ @tab [R5RS] 8進数接頭辞。
+@c COMMON
 @item @code{#p}, @code{#q}, @code{#r}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#s}
+@c EN
  @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+@c JP
+ @tab [SRFI-4] SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
+@c COMMON
 @item @code{#t}
+@c EN
  @tab [R5RS] Boolean true.
+@c JP
+ @tab [R5RS] 真理値の真。
+@c COMMON
 @item @code{#u}
+@c EN
  @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+@c JP
+ @tab [SRFI-4] SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
+@c COMMON
 @item @code{#v}, @code{#w}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#x}
+@c EN
  @tab [R5RS] Hexadecimal number prefix.
+@c JP
+ @tab [R5RS] 16進数接頭辞
+@c COMMON
 @item @code{#y}, @code{#z}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#[}
+@c EN
  @tab Introduces a literal character set.  @xref{Character set}.
+@c JP
+ @tab リテラルの文字集合を先導します。@ref{Character set}参照
+@c COMMON
 @item @code{#\}
+@c EN
  @tab [R5RS] Introduces a literal character.  @xref{Characters}.
+@c JP
+ @tab [R5RS] リテラルの文字を先導します。@ref{Characters}参照。
+@c COMMON
 @item @code{#]}, @code{#^}, @code{#_}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#`}
+@c EN
  @tab Introduces an interpolated string.  @xref{String interpolation}.
+@c JP
+ @tab 補間された文字列を先導します。@ref{String interpolation}参照。
+@c COMMON
 @item @code{#@{}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @item @code{#|}
+@c EN
  @tab [SRFI-30] Introduces a block comment.  Comment ends by matching '@code{|#}'.
+@c JP
+ @tab [SRFI-30] ブロックコメントを先導します。コメントは対応する '@code{|#}' で終ります。
+@c COMMON
 @item @code{#@}}, @code{#~}
+@c EN
  @tab Unused.
+@c JP
+ @tab 未使用。
+@c COMMON
 @end multitable
 
 @c ----------------------------------------------------------------------
@@ -390,6 +552,7 @@ Gaucheはまた、部分適用を行う@code{pa$}という組み込み手続きを持っています
 
 @defmac case-lambda clause @dots{}
 [SRFI-16]
+@c EN
 Each @var{clause} should have the form (@var{formals} @var{expr} @dots{}),
 where @var{formals} is a formal arguments list as for @code{lambda}.
 
@@ -401,10 +564,25 @@ then the first @var{clause} for which the arguments agree with
 @var{formals} is selected, where agreement is specified as for
 the @var{formals} of a @code{lambda} expression.
 The variables of @code{formals} are bound to the given
-arguments, and the @var{expr} @dots{} are evaluated withing the environment.
+arguments, and the @var{expr} @dots{} are evaluated within the environment.
 
 It is an error for the arguments not to agree with
 the @var{formals} of any @var{clause}.
+@c JP
+それぞれの @var{clause} は (@var{formals} @var{expr} @dots{}) という形式
+でなければなりません。ここで、@var{formals} は @code{lambda} の仮引数
+リストです。
+
+この式は、評価されると可変数の引数をとり、@code{lambda} 式から結果として
+できる手続き同じレキシカルスコープをもつ手続きになります。この手続きが
+いくつかの引数とともに呼ばれると、@var{formals} と一致する引数に対応する
+最初の @var{clause} が選択されます。この引数の一致というのは、
+@code{lambda} 式の @var{formals} に対応するものとして指定されるものです。
+@code{formals} の変数は実引数に束縛され、 @var{expr} @dots{} がその
+環境内で評価されます。
+
+実際の引数がどの @var{clause} の @var{formals} にも一致しなければエラーです。
+@c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
