@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.40 2001-09-16 23:01:12 shirok Exp $
+ *  $Id: port.c,v 1.41 2001-09-18 07:51:35 shirok Exp $
  */
 
 #include <unistd.h>
@@ -45,11 +45,13 @@ static int port_cleanup(ScmPort *port)
         if (SCM_PORT_OWNER_P(port)) {
             return fclose(port->src.file.fp);
         }
+        break;
     case SCM_PORT_PROC:
         if (port->src.proc.vtable->Close) {
             port->src.proc.vtable->Flush(SCM_PORT(port));
             return port->src.proc.vtable->Close(SCM_PORT(port));
         }
+        break;
     }
     return 0;
 }
