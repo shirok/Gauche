@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: folder.scm,v 1.1 2001-04-30 18:32:41 shirok Exp $
+;;;  $Id: folder.scm,v 1.2 2001-05-01 06:41:43 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -64,9 +64,19 @@
   (check-arg procedure? p)
   (check-arg procedure? f)
   (check-arg procedure? g)
-  (let-optional* args ((base "") (make-final ""))
-    ;; write me
+  (let-optional* args ((base "") (make-final (lambda (_) "")))
+    (let ((dest (open-output-string)))
+      (display base dest)
+      (let loop ((seed seed))
+        (if (p seed)
+            (begin (display (make-final seed) dest)
+                   (get-output-string dest))
+            (begin (write-char (f seed) dest)
+                   (loop (g seed))))))
     ))
+
+(define (string-unfold-right p f g seed . args)
+  (string-reverse (apply string-unfold p f g seed args)))
 
 (define (string-map proc s . args)
   (check-arg procedure? proc)
