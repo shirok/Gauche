@@ -30,13 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parseopt.scm,v 1.6 2004-04-12 04:27:19 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.7 2004-04-12 08:48:40 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
   (use gauche.regexp)
   (use srfi-1)
   (use srfi-2)
+  (use srfi-13)
   (export make-option-parser parse-options let-args))
 (select-module gauche.parseopt)
 
@@ -46,6 +47,7 @@
    (args :init-keyword :args) ;; option agrspecs (list of chars)
    (arg-optional? :init-keyword :arg-optional?) ;; option's arg optional?
    (handler :init-keyword :handler) ;; handler closure
+   (optspec :init-keyword :optspec) ;; original <optspec> string
    (help :init-keyword :help) ;; help string
    ))
 
@@ -53,9 +55,12 @@
 
 ;; Parse optspec clause, and returns
 ;;  ((option-string argument-specs optional? handler) ...)
-;; <a-spec> is (<optspec> <handler>).
+;; <a-spec> is (<optspec> <handler>) or
+;; ((<optspec> <help-string>) <handler)
 (define (compose-entry a-spec)
-  (receive (optspec handler) (apply values a-spec)
+  (let ((optspec (if (pair? (car a-spec)) (caar a-spec) (car a-spec)))
+        (helpstr (and (>= (length+ (car a-spec)) 2) (cadar a-spec)))
+        (handler (cadr a-spec)))
     (unless (string? optspec)
       (error "option spec must be a string, but got" optspec))
     (rxmatch-if (rxmatch #/^-*([-+\w|]+)(?:([=:])(.+))?$/ optspec)
@@ -65,7 +70,8 @@
                  :args (if argspec (string->list argspec) '())
                  :arg-optional? (equal? optional? ":")
                  :handler handler
-                 :help "")
+                 :optspec optspec
+                 :help helpstr)
            (string-split optnames #\|))
       (error "unrecognized option spec:" optspec))))
 
@@ -183,6 +189,8 @@
     ((_ ((optspec vars . body) . clause) (spec ...))
      (make-option-parser-int clause
                              (spec ... (list optspec (lambda vars . body)))))
+    ((_ (other . clause) specs)
+     (syntax-error "make-option-parser: malformed clause:" other))
     ))
 
 (define-syntax parse-options
