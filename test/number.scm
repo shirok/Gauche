@@ -422,4 +422,24 @@
 (test "inexact mod inexact -> inexact" (m-result 1113.0 26240.0 #f)
       (lambda () (m-tester 3735928559.0 27353.0)))
 
+;;==================================================================
+;; Predicates
+;;
+
+(test-section "predicates")
+
+(test "odd?" #t (lambda () (odd? 1)))
+(test "odd?" #f (lambda () (odd? 2)))
+(test "even?" #f (lambda () (even? 1)))
+(test "even?" #t (lambda () (even? 2)))
+(test "odd?" #t (lambda () (odd? 1.0)))
+(test "odd?" #f (lambda () (odd? 2.0)))
+(test "even?" #f (lambda () (even? 1.0)))
+(test "even?" #t (lambda () (even? 2.0)))
+(test "odd?" #t (lambda () (odd? 10000000000000000000000000000000000001)))
+(test "odd?" #f (lambda () (odd? 10000000000000000000000000000000000002)))
+(test "even?" #f (lambda () (even? 10000000000000000000000000000000000001)))
+(test "even?" #t (lambda () (even? 10000000000000000000000000000000000002)))
+
+
 (test-end)
