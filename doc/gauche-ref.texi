@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.82 2001-10-04 11:51:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.83 2001-10-05 09:56:50 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4237,6 +4237,7 @@ of descendants of @var{class}.
 * String library::              
 * Character-set library::       
 * CSV tables::                  
+* Parsing input stream::        
 * Transliterate characters::    
 * CGI::                         
 @end menu
@@ -8070,7 +8071,7 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Transliterate characters, Character-set library, Libarary Modules
+@node CSV tables, Parsing input stream, Character-set library, Libarary Modules
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -8114,7 +8115,124 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, CGI, CSV tables, Libarary Modules
+@node Parsing input stream, Transliterate characters, CSV tables, Libarary Modules
+@section @code{text.parse} - Parsing input stream
+
+@deftp {Module} text.parse
+@mdindex text.parse
+A collection of utilities that does simple parsing from
+the input port.   The API is inspired, and compatible with
+Oleg Kiselyov's input parsing library (@ref{olegp,,OLEGP}).
+His library is used in lots of other libraries, notably,
+a full-Scheme XML parser/generator SSAX (@ref{ssax,,SSAX}).
+
+You can use this module in place of his
+@code{input-parse.scm} and @code{look-for-str.scm}.
+
+I reimplemented the functions to be efficient on Gauche.
+Especially, usage of @code{string-set!} is totally avoided.
+Also I use Knuth-Morris-Pratt search in @code{find-string-from-port?}.
+I extended the interface a bit so that they can deal with character sets
+as well as a list of characters.
+
+These functions work sequentially on the given input port,
+that is, they read from the port as much as they need, without
+buffering extra characters.
+@end deftp
+
+@defun find-string-from-port? str in-port &optional max-no-chars
+Looks for a string @var{str} from the input port @var{in-port}.
+The optional argument @var{max-no-chars} limits the maximum number of
+characters to be read from the port; if omitted, the search span is
+until EOF.
+
+If @var{str} is found, this function returns the number of characters
+it has read.   The next read from @var{in-port} returns the next char
+of @var{str}.  If @var{str} is not found, it returns @code{#f}.
+
+Note: Although this procedure has `@code{?}' in its name,
+it may return non-boolean value, contrary to the Scheme convention.
+@end defun
+
+@defun peek-next-char &optional port
+Discards the current character and peeks the next character from @var{port}.
+Useful to look ahead one character.
+If @var{port} is omitted, the current input port is used.
+@end defun
+
+In the following functions, @var{char-list} refers to one of the
+followings:
+@itemize @bullet
+@item
+A character set.
+@item
+A list of characters, character sets and/or symbol @code{*eof*}.
+@end itemize
+That denotes a set of characters.  If a symbol @code{*eof*} is
+included, the EOF condition is also included.  Without @code{*eof*},
+the EOF condition is regarded as an error.
+
+@defun assert-curr-char char-list string &optional port
+Reads a character from @var{port}.  If it is included in @var{char-list},
+returns the character.  Otherwise, signals an error with a message
+containing @var{string}.
+If @var{port} is omitted, the current input port is used.
+@end defun
+
+@defun skip-until char-list/number &optional port
+@var{char-list/number} is either a char-list or a number.
+If it is a number; it reas that many characters and returns @code{#f}.
+If the input is not long enough, an error is signalled.
+IF @var{char-list/number} is a char-list, it reads from @var{port}
+until it sees a character that belongs to the char-list.
+Then the character is returned.
+If @var{port} is omitted, the current input port is used.
+@end defun
+
+@defun skip-while char-list &optional port
+Reads from @var{port} until it sees a character that does not
+belong to @var{char-list}.  The character remains in the stream.
+If it reaches EOF, an EOF is returned.
+If @var{port} is omitted, the current input port is used.
+
+This example skips whitespaces from input.  Next read from
+port returns the first non-whitespace character.
+@example
+(skip-while #[\s] port)
+@end example
+@end defun
+
+@defun next-token prefix-char-list break-char-list &optional comment port
+Skips any number of characters in @var{prefix-char-list},
+then collects the characters until it sees @var{break-char-list}.
+The collected characters are returned as a string.
+The break character remains in the @var{port}.
+
+If the function encounters EOF and @code{*eof*} is not included in
+@var{break-char-list}, an error is signalled with @var{comment} is
+included in the message.
+@end defun
+
+@defun next-token-of char-list/pred &optional port
+Reads and collects the characters as far as
+it belongs to @var{char-list/pred}, then returns them as a string.
+The first character that doesn't belong to @var{char-list/pred} remains
+on the port.
+
+@var{char-list/pred} may be a char-list or a predicate that takes
+a character.   If it is a predicate, each character is passed to it,
+and the character is regarded to ``belong to'' @var{char-list/pred}
+when it returns a true value.
+@end defun
+
+@defun read-string n &optional port
+Reads up to @var{n} characters, collects them into a string, and returns it.
+If the input stream contains less characters, the returns string contains
+as many characters available.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Transliterate characters, CGI, Parsing input stream, Libarary Modules
 @section @code{text.tr} - Transliterate characters
 
 @deftp {Module} text.tr
@@ -8398,7 +8516,17 @@ Per Bothner, Generalized @code{set!}, July 2000. @*
 Stephan Housen, Error reporting mechanism, April 2001.@*
 @url{http://srfi.schemers.org/srfi-23/srfi-23.html}.
 
+@anchor{ssax}
+@item [SSAX]
+Oleg Kiselyov, XML and Scheme, @*
+@url{http://pobox.com/~oleg/ftp/Scheme/xml.html}.@*
+The SSAX distribution is also available at sourceforge:@*
+@url{http://ssax.sourceforge.net/}.
 
+@anchor{olegp}
+@item [OLEGP]
+Oleg Kiselyov, Making sense of an input stream,@*
+@url{http://pobox.com/~oleg/ftp/Scheme/parsing.html}.
 @end table
 
 @c ======================================================================
@@ -8703,6 +8831,9 @@ No equivalent functions.
 Gauche's @code{sys-mkdir}.  @xref{Directory manipulation}.
 @item mkfifo
 Not supported yet.
+@item mkstemp
+Gauche's @code{sys-mkstemp}.   @xref{Directory manipulation}.
+Use this instead of tmpnam.
 @item mktime
 Gauche's @code{sys-mktime}.  @xref{Time}.
 @item modf
@@ -8927,7 +9058,10 @@ Gauche's @code{sys-times}.  @xref{System Inquiry}.
 @item tmpfile
 Not exactly supported.
 @item tmpnam
-Gauche's @code{sys-tmpnam}.  @xref{Directory manipulation}.
+Gauche's @code{sys-tmpnam}.
+This function is provided since it is in POSIX, but its use is
+discouraged for the potential security risk.  Use @code{sys-mkstemp}
+instead.   @xref{Directory manipulation}.
 @item tolower
 @itemx toupper
 R5RS @code{char-upcase} and @code{char-downcase}.   @xref{Characters}.
