@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.1 2004-01-28 09:34:55 shirok Exp $
+ *  $Id: binary.c,v 1.2 2004-02-05 03:01:23 shirok Exp $
  */
 
 #include <gauche.h>
@@ -256,7 +256,7 @@ void Scm_WriteBinaryUint32(ScmObj sval, ScmObj sport, Endian endian)
     union { char buf[4]; ScmUInt32 val; } v;
     ScmPort *oport;
     OPORT(oport, sport);
-    v.val = Scm_GetIntegerUClamp(sval, FALSE, FALSE);
+    v.val = Scm_GetIntegerU32Clamp(sval, FALSE, FALSE);
     SWAP4();
     Scm_Putz(v.buf, 4, oport);
 }
@@ -266,7 +266,7 @@ void Scm_WriteBinarySint32(ScmObj sval, ScmObj sport, Endian endian)
     union { char buf[4]; ScmInt32 val; } v;
     ScmPort *oport;
     OPORT(oport, sport);
-    v.val = Scm_GetIntegerClamp(sval, FALSE, FALSE);
+    v.val = Scm_GetInteger32Clamp(sval, FALSE, FALSE);
     SWAP4();
     Scm_Putz(v.buf, 4, oport);
 }

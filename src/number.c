@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.108 2004-01-28 08:36:26 shirok Exp $
+ *  $Id: number.c,v 1.109 2004-02-05 03:01:23 shirok Exp $
  */
 
 #include <math.h>
@@ -368,6 +368,50 @@ u_long Scm_GetIntegerUClamp(ScmObj obj, int clamphi, int clamplo)
     Scm_Error("argument out of range: %S", obj);
     return 0; /* dummy */
 }
+
+/* 32bit integer specific */
+ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamphi, int clamplo)
+{
+#if SIZEOF_LONG == 4
+    return (ScmInt32)Scm_GetIntegerClamp(obj, clamphi, clamplo);
+#else  /* SIZEOF_LONG >= 8 */
+    if (SCM_INTP(obj)) {
+        long r = SCM_INT_VALUE(obj);
+        if (r < -(1L<<31)) {
+            if (clamplo) return -(1L<<31);
+            Scm_Error("argument out of range: %S", obj);
+        }
+        if (r >= (1L<<31)) {
+            if (clamphi) return (1L<<31)-1;
+            Scm_Error("argument out of range: %S", obj);
+        }
+    }
+    /*FALLTHROUGH*/
+    return (ScmInt32)Scm_GetIntegerClamp(obj, clamphi, clamplo);
+#endif /* SIZEOF_LONG >= 8 */
+}
+
+ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamphi, int clamplo)
+{
+#if SIZEOF_LONG == 4
+    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamphi, clamplo);
+#else  /* SIZEOF_LONG >= 8 */
+    if (SCM_INTP(obj)) {
+        long r = SCM_INT_VALUE(obj);
+        if (r < 0) {
+            if (clamplo) return 0;
+            Scm_Error("argument out of range: %S", obj);
+        }
+        if (r >= (1L<<32)) {
+            if (clamphi) return (1L<<32)-1;
+            Scm_Error("argument out of range: %S", obj);
+        }
+    }
+    /*FALLTHROUGH*/
+    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamphi, clamplo);
+#endif /* SIZEOF_LONG >= 8 */
+}
+
 
 #if SIZEOF_LONG == 4
 /* we need special routines */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.366 2004-02-03 13:12:28 shirok Exp $
+ *  $Id: gauche.h,v 1.367 2004-02-05 03:01:23 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1749,12 +1749,8 @@ SCM_EXTERN u_long Scm_GetIntegerUClamp(ScmObj obj, int clamphi, int clamplo);
 #define Scm_GetInteger(x)  Scm_GetIntegerClamp(x, TRUE, TRUE)
 #define Scm_GetIntegerU(x) Scm_GetIntegerUClamp(x, TRUE, TRUE)
 
-SCM_EXTERN ScmObj Scm_MakeFlonum(double d);
-SCM_EXTERN double Scm_GetDouble(ScmObj obj);
-SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
-
-SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
-SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
+SCM_EXTERN ScmInt32  Scm_GetInteger32Clamp(ScmObj obj, int hi, int lo);
+SCM_EXTERN ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int hi, int lo);
 
 /* 64bit integer stuff */
 #if SIZEOF_LONG == 4
@@ -1774,6 +1770,13 @@ SCM_EXTERN ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int hi, int lo);
 /* for backward compatibility -- will be gone soon */
 #define Scm_MakeIntegerFromUI Scm_MakeIntegerU
 #define Scm_GetUInteger       Scm_GetIntegerU
+
+SCM_EXTERN ScmObj Scm_MakeFlonum(double d);
+SCM_EXTERN double Scm_GetDouble(ScmObj obj);
+SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
+
+SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
+SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
 
 SCM_EXTERN int    Scm_IntegerP(ScmObj obj);
 SCM_EXTERN int    Scm_OddP(ScmObj obj);

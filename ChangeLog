@@ -1,5 +1,9 @@
 2004-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (Scm_GetInteger32Clamp, Scm_GetIntegerU32Clamp):
+	  APIs for routines sensitive to integer width.
+	* ext/binary/binary.c : adopted the above APIs.
+
 	* release 0.7.4.1
 
 	* lib/dbm/fsdbm.scm (path->hash): avoid using string-hash, since
