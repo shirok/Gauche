@@ -1,3 +1,8 @@
+2001-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/stdlib.stub (symbol->string): fixed a bug that didn't check
+	  if arg is symbol (Thanks to Yuuichi Teranishi).
+
 2001-05-07  Shiro Kawai  <shiro@acm.org>
 
 	* test/cmpplane.scm : a port of the program shown in CLtL2 to plot
