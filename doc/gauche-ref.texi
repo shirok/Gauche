@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.278 2002-10-13 23:32:39 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.279 2002-10-14 01:19:20 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13457,11 +13457,11 @@ Mathematics.
 数学。
 @c COMMON
 
-@item port.*
+@item compat.*
 @c EN
-Portability libraries.
+Compatibility libraries
 @c JP
-ポータビリティに関するライブラリ。
+他の実装とのコンパチビリティに関するライブラリ。 (予定)
 @c COMMON
 
 @item rfc.*
@@ -18866,6 +18866,16 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 のいずれにも置き換えて読むことができるものとします。
 @c COMMON
 
+@menu
+* Uvector basic operations::    
+* Uvector conversion operations::  
+* Uvector numeric operations::  
+@end menu
+
+@node Uvector basic operations, Uvector conversion operations, Uniform vectors, Uniform vectors
+@subsection Uvector basic operations
+@c NODE ユニフォームベクタの基本操作
+
 @deftp {Builtin Class} <@var{TAG}vector>
 @clindex s8vector
 @clindex u8vector
@@ -19084,76 +19094,6 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@deftp {Function} @var{TAG}vector->list @r{@var{vec} &optional @var{start} @var{end}}
-@findex s8vector->list
-@findex u8vector->list
-@findex s16vector->list
-@findex u16vector->list
-@findex s32vector->list
-@findex u32vector->list
-@findex s64vector->list
-@findex u64vector->list
-@findex f32vector->list
-@findex f64vector->list
-[SRFI-4+]
-@c EN
-Converts @var{TAG}vector @var{vec} to a list.
-If @var{start} and/or @var{end} are given, they limit the range of
-@var{vec} to be extracted.
-
-Note that the generic function @code{coerce-to} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-@var{TAG}vector @var{vec}をリストに変換します。
-省略可能な引数@var{start}と@var{end}が与えられた場合、
-それらは取り出される要素の範囲を制限します。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{coerce-to}を使うこともできます。
-@c COMMON
-@example
-(u32vector->list '#u32(9 2 5)) @result{} (9 2 5)
-
-(use gauche.collection)
-(coerce-to <list> '#u32(9 2 5)) @result{} (9 2 5)
-@end example
-@end deftp
-
-@deftp {Function} list->@var{TAG}vector @r{@var{list} &optional @var{clamp}}
-@findex list->s8vector
-@findex list->u8vector
-@findex list->s16vector
-@findex list->u16vector
-@findex list->s32vector
-@findex list->u32vector
-@findex list->s64vector
-@findex list->u64vector
-@findex list->f32vector
-@findex list->f64vector
-[SRFI-4+]
-@c EN
-Converts a list @var{list} to a @var{TAG}vector.
-Optional argument @var{clamp} specifies the behavior when
-the element of @var{list} is out of the valid range.
-
-Note that the generic function @code{coerce-to} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-リスト@var{list}を@var{TAG}vectorに変換します。
-省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
-動作を指定します。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{coerce-to}を使うこともできます。
-@c COMMON
-@example
-(list->s64vector '(9 2 5)) @result{} #s64(9 2 5)
-
-(use gauche.collection)
-(coerce-to <s64vector> '(9 2 5)) @result{} #s64(9 2 5)
-@end example
-@end deftp
-
 @deftp {Function} @var{TAG}vector-copy @r{@var{vec} &optional @var{start} @var{end}}
 @findex s8vector-copy
 @findex u8vector-copy
@@ -19198,6 +19138,66 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @c COMMON
 @end deftp
 
+@c EN
+Using collection and sequence framework, you can perform
+various operations on the homogeneous vectors.
+@c JP
+コレクションやシーケンスフレームワークを使うと、さらに様々な操作を
+行うことができます。
+@c COMMON
+
+@example
+(use gauche.collection)
+(use gauche.sequence)
+
+(fold + 0 '#s32(1 2 3 4)) @result{} 10
+
+(map-to <f32vector> * '#f32(3.2 1.1 4.3) '#f32(-4.3 2.2 9.4))
+  @result{} #f32(-13.760001 2.420000 40.420002)
+
+(subseq #u32(1 4 3 4 5) 2 4) @result{} #u32(3 4)
+@end example
+
+
+@node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, Uniform vectors
+@subsection Uvector conversion operations
+@c NODE ユニフォームベクタの変換
+
+@deftp {Function} @var{TAG}vector->list @r{@var{vec} &optional @var{start} @var{end}}
+@findex s8vector->list
+@findex u8vector->list
+@findex s16vector->list
+@findex u16vector->list
+@findex s32vector->list
+@findex u32vector->list
+@findex s64vector->list
+@findex u64vector->list
+@findex f32vector->list
+@findex f64vector->list
+[SRFI-4+]
+@c EN
+Converts @var{TAG}vector @var{vec} to a list.
+If @var{start} and/or @var{end} are given, they limit the range of
+@var{vec} to be extracted.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}をリストに変換します。
+省略可能な引数@var{start}と@var{end}が与えられた場合、
+それらは取り出される要素の範囲を制限します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(u32vector->list '#u32(9 2 5)) @result{} (9 2 5)
+
+(use gauche.collection)
+(coerce-to <list> '#u32(9 2 5)) @result{} (9 2 5)
+@end example
+@end deftp
+
 @deftp {Function} @var{TAG}vector->vector @r{@var{vec} &optional @var{start} @var{end}}
 @findex s8vector->vector
 @findex u8vector->vector
@@ -19230,6 +19230,41 @@ if you import @code{gauche.collection}.
 
 (use gauche.collection)
 (coerce-to <vector> '#f32(9.3 2.2 5.5)) @result{} #(9.3 2.2 5.5)
+@end example
+@end deftp
+
+@deftp {Function} list->@var{TAG}vector @r{@var{list} &optional @var{clamp}}
+@findex list->s8vector
+@findex list->u8vector
+@findex list->s16vector
+@findex list->u16vector
+@findex list->s32vector
+@findex list->u32vector
+@findex list->s64vector
+@findex list->u64vector
+@findex list->f32vector
+@findex list->f64vector
+[SRFI-4+]
+@c EN
+Converts a list @var{list} to a @var{TAG}vector.
+Optional argument @var{clamp} specifies the behavior when
+the element of @var{list} is out of the valid range.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+リスト@var{list}を@var{TAG}vectorに変換します。
+省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
+動作を指定します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(list->s64vector '(9 2 5)) @result{} #s64(9 2 5)
+
+(use gauche.collection)
+(coerce-to <s64vector> '(9 2 5)) @result{} #s64(9 2 5)
 @end example
 @end deftp
 
@@ -19271,26 +19306,101 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
+@defun string->s8vector string &optional start end
+@defunx string->u8vector string &optional start end
 @c EN
-Using collection and sequence framework, you can perform
-various operations on the homogeneous vectors.
+Returns an s8vector or u8vector whose byte sequence is the same
+as the internal representation of the given string.
+Optional range arguments @var{start} and @var{end} specifies
+the @emph{character position} inside @var{string} to be
+converted.
+
+These procedures are useful when you want to access byte
+sequence of the string randomly.
 @c JP
-コレクションやシーケンスフレームワークを使うと、さらに様々な操作を
-行うことができます。
+与えられた文字列の内部表現のバイト列と同じバイト列を持つs8vectorもしくは
+u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は、
+変換される文字列中の文字位置を指定します。
+
+これらの手続きは、文字を構成するバイト列をランダムにアクセスしたい場合などに
+有用です。
 @c COMMON
 
 @example
-(use gauche.collection)
-(use gauche.sequence)
+(string->u8vector "abc") @result{} #u8(97 98 99)
 
-(fold + 0 '#s32(1 2 3 4)) @result{} 10
-
-(map-to <f32vector> * '#f32(3.2 1.1 4.3) '#f32(-4.3 2.2 9.4))
-  @result{} #f32(-13.760001 2.420000 40.420002)
-
-(subseq #u32(1 4 3 4 5) 2 4) @result{} #u32(3 4)
+@c JP
+;; 内部コードがEUCの場合
+(string->u8vector "いろは") @result{} #u8(164 164 164 237 164 207)
+@c COMMON
 @end example
+@end defun
 
+@defun s8vector->string vec &optional start end
+@defunx u8vector->string vec &optional start end
+@c EN
+Converts a byte sequence in s8vector or u8vector to a string that
+has the same byte sequence.  Optional range arguments @var{start} and
+@var{end} specifies the byte position in @var{vec} to be converted.
+
+Note that these procedure may result an incomplete string if
+@var{vec} contains a byte sequence invalid as the internal encoding
+of the string.
+@c JP
+与えられたs8vectorもしくはu8vector @var{vec}のバイト列と同じ内部バイト列を
+持つ文字列を作成して返します。省略可能な範囲引数@var{start}、@var{end}は、
+@var{vec}中の変換されるべき範囲をバイト位置で指定します。
+
+@var{vec}中のバイト列が文字列の内部表現として不正な値を持っていた場合は、
+不完全な文字列が返されます。
+@c COMMON
+@end defun
+
+@defun string->s32vector string &optional start end
+@defunx string->u32vector string &optional start end
+@c EN
+Returns an s32vector or u32vector whose elements are
+the internal codes of the characters in the string.
+Optional range arguments @var{start} and @var{end} specifies
+the @emph{character position} inside @var{string} to be
+converted.
+
+These procedures are useful when you want to access
+the characters in the string randomly.
+@c JP
+与えられた文字列@var{string}の各文字の内部コードを値として持つ
+s32vectorもしくはu32vectorを返します。
+省略可能な範囲引数@var{start}、@var{end}は、
+変換される文字列中の文字位置を指定します。
+
+これらの手続きは、文字列中の文字をランダムにアクセスする場合に便利です。
+@c COMMON
+@end defun
+
+@defun s32vector->string vec &optional start end
+@defunx u32vector->string vec &optional start end
+@c EN
+Without @var{start} and @var{end}, these procedures work like this:
+@c JP
+@var{start}と@var{end}を考えなければ、
+これらの手続きは次のコードのような動作をします：
+@c COMMON
+@example
+(lambda (vec) (map-to <string> integer->char vec)))
+@end example
+@c EN
+Optional range arguments @var{start} and @var{end} limits
+the range of conversion between them.
+@c JP
+省略可能な範囲引数@var{start}、@var{end}は、
+@var{vec}中の変換されるべき範囲を指定します。
+@c COMMON
+@end defun
+
+
+@node Uvector numeric operations,  , Uvector conversion operations, Uniform vectors
+@subsection Uvector numeric operations
+@c NODE ユニフォームベクタの数値演算
 
 @deftp {Function} @var{TAG}vector-add @r{@var{vec} @var{val} &optional @var{clamp}}
 @deftpx {Function} @var{TAG}vector-add! @r{@var{vec} @var{val} &optional @var{clamp}}
