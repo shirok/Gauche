@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.26 2001-11-21 10:49:49 shirok Exp $
+;;;  $Id: object.scm,v 1.27 2001-11-23 01:01:59 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -207,22 +207,7 @@
 (define (%compute-accessor class slot)
   (let ((name (car slot))
         (gns  (compute-get-n-set class slot)))
-    (if (is-a? gns <slot-accessor>)
-        (cons name gns)
-        (cons name
-              (apply make <slot-accessor>
-                     :class class :name slot
-                     `(,@(cond ((integer? gns)
-                                (list :slot-number gns))
-                               ((pair? gns)
-                                (list :slot-ref (car gns)
-                                      :slot-set! (cadr gns)))
-                               (else
-                                (errorf "bad getter-and-setter returned by compute-get-n-set for ~s: ~s"
-                                        class gns)))
-                       ,@(cdr slot))))
-        ))
-  )
+    (cons name (compute-slot-accessor class slot gns))))
 
 (define (%make-accessor class slot module)
   (let ((%getter   (slot-definition-getter slot))
@@ -323,6 +308,21 @@
                    (car slot) class)))
       (else
        (error "unsupported slot allocation:" alloc)))))
+
+;; METHOD COMPUTE-SLOT-ACCESSOR (class <class>) g-n-s
+;;  this method doesn't have equivalent one in STklos.
+(define-method compute-slot-accessor ((class <class>) slot gns)
+  (if (is-a? gns <slot-accessor>)
+      gns
+      (apply make <slot-accessor>
+             :class class :name (slot-definition-name slot)
+             `(,@(cond ((integer? gns) (list :slot-number gns))
+                       ((pair? gns) (list :slot-ref (car gns)
+                                          :slot-set! (cadr gns)))
+                       (else
+                        (errorf "bad getter-and-setter returned by compute-get-n-set for ~s ~s: ~s"
+                                class slot gns)))
+               ,@(cdr slot)))))
 
 ;; access class allocated slot.  API compatible with Goops.
 (define (%class-slot-gns class slot-name)
