@@ -1,3 +1,15 @@
+2001-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : added one word to the continuation frame for debug
+	  info.  This impacts performance (<2% in rudimental tests).
+	* configure.in : added --with-rpath experimentally.  
+	* configure.in, src/gauche/config.h.in, src/main.c : applied a fix
+	  from Hiroshi INAMURA for cygwin.   Added -i (force interactive)
+	  option to main.c.
+	* lib/gauche/vm/disasm.scm : fixed TAILBIND
+	* src/gauche-init.scm : added file-exists?, file-is-directory? and
+	  file-is-regular?.
+
 2001-09-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/cookie.scm : added construct-cookie-string
