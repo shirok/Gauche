@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.63 2002-06-25 06:28:04 shirok Exp $
+ *  $Id: string.c,v 1.64 2002-07-03 01:09:58 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1143,6 +1143,11 @@ ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int afterp)
    chunk getting bigger as the string grows, until a certain threshold.
    The memory for actual chunks and the chain is allocated separately,
    in order to use SCM_NEW_ATOMIC.
+ */
+
+/* NB: it is important that DString functions don't call any
+ * time-consuming procedures except memory allocation.   Some of
+ * mutex code in other parts relies on that fact.
  */
 
 /* maximum chunk size */
