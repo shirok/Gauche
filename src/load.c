@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.72 2003-05-15 11:32:54 shirok Exp $
+ *  $Id: load.c,v 1.73 2003-05-16 07:49:07 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -467,7 +467,9 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 
 typedef void (*ScmDynLoadInitFn)(void);
 
-#if defined(HAVE_DLOPEN)
+#if defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
+#include "dl_darwin.c"
+#elif defined(HAVE_DLOPEN)
 #include "dl_dlopen.c"
 #else
 #include "dl_dummy.c"
