@@ -1,5 +1,5 @@
 dnl Gauche-specific autoconf macros.
-dnl $Id: acinclude.m4,v 1.9 2003-10-23 23:45:46 fuyuki Exp $
+dnl $Id: acinclude.m4,v 1.10 2003-11-02 05:06:27 fuyuki Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -24,7 +24,7 @@ AC_SUBST(GAUCHE_INC)
 AC_SUBST(GAUCHE_LIB)
 GAUCHE_VERSION=`$GAUCHE_CONFIG -V`
 AC_SUBST(GAUCHE_VERSION)
-AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
+AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION", [Gauche version string])
 ])
 
 dnl AC_GAUCHE_INSTALL_TYPE(TYPE)

@@ -1,3 +1,8 @@
+2003-11-02  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* aclocal.m4, acinclude.m4 : Add a description for GAUCHE_VERSION
+	  to make autoheader happy.
+
 2003-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/selector.scm (selector-delete!): fixed an error when
