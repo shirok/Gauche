@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.75 2002-08-24 02:11:00 shirok Exp $
+;;;  $Id: genstub,v 1.76 2002-08-25 13:37:52 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -69,15 +69,113 @@
 ;;      property-clause ...
 ;;
 ;;   define-symbol scheme-name [c-name]
-;;      Defines a symbol that is bound to a C variable c-name.
+;;      Defines a Scheme symbol.  No Scheme binding is created.
+;;      When c-name is given, the named C variable points to the
+;;      created ScmSymbol.
+;;
+;;   define-variable scheme-name initializer
+;;      Defines a Scheme variable.
 ;;
 ;;   define-const scheme-name initializer
+;;      Defines a Scheme constant.
 ;;
 ;;   define-enum name
+;;      A define-const Specialized for enum values.
 ;;
 ;;   initcode <c-code>
 ;;      Insert <c-code> literally in the initialization function
 ;;
+
+;; 'instance pool' metaclass trick.  this should go to the library,
+;; but for now, we embed it.
+
+(define-class <instance-pool-meta> (<class>)
+  ((instance-pool:pool  :accessor instance-pool-of :init-value #f)
+   (instance-pool:pools :accessor instance-pools-of)
+   ))
+
+(define-method instance-pool-of (obj) #f) ; fallback
+
+(define-class <instance-pool-mixin> ()
+  ()
+  :metaclass <instance-pool-meta>)
+
+(define-method instance-pool-create-pool ((class <instance-pool-meta>))
+  (let ((pool '()))
+    (lambda args
+      (if (null? args)
+          pool
+          (push! pool (car args))))))
+
+(define-method instance-pool-compute-pools ((class <instance-pool-meta>))
+  (filter-map instance-pool-of (class-precedence-list class)))
+
+(define-method initialize ((class <instance-pool-meta>) initargs)
+  (next-method)
+  (when (memq <instance-pool-mixin> (class-direct-supers class))
+    (set! (instance-pool-of class)
+          (instance-pool-create-pool class)))
+  (set! (instance-pools-of class)
+        (instance-pool-compute-pools class))
+  )
+
+(define-method initialize ((self <instance-pool-mixin>) initargs)
+  (next-method)
+  (for-each (lambda (pool) (pool self))
+            (instance-pools-of (class-of self))))
+
+(define-method get-all-instances ((class <instance-pool-meta>))
+  (cond ((instance-pool-of class)
+         => (lambda (pool) (pool)))
+        (else
+         (apply lset-union eq?
+                (map (lambda (pool) (pool))
+                     (instance-pools-of class))))
+        ))
+
+(define-method get-all-instances ((self <instance-pool-mixin>))
+  (get-all-instances (class-of self)))
+
+;;===================================================================
+;; Form parsers
+;;
+
+;; just a device to register handlers of syntax elements.
+(define-class <form-parser> (<instance-pool-mixin>)
+  ((name    :init-keyword :name    :getter name-of)
+   (args    :init-keyword :args    :getter args-of)
+   (handler :init-keyword :handler :getter handler-of)))
+
+(define-macro (define-form-parser name args . body)
+  `(make <form-parser>
+     :name ',name
+     :args ',args
+     :handler (lambda ,args ,@body)))
+
+(define-method invoke ((self <form-parser>) form)
+  (define (badform)
+    (errorf "malformed ~a: ~s" (name-of self) form))
+  (let1 args
+      ;; need to check if given form matches args
+      (let loop ((llist (args-of self))
+                 (form  (cdr form)))
+        (cond ((null? llist)
+               (if (null? form) '() (badform)))
+              ((pair? llist)
+               (if (null? form)
+                   (badform)
+                   (cons (car form) (loop (cdr llist) (cdr form)))))
+              (else form)))
+    (apply (handler-of self) args)))
+
+(define (parse-form form)
+  (cond ((string? form) (print form))
+        ((not (pair? form))
+         (error "bad form:" form))
+        ((find (lambda (p) (eq? (car form) (name-of p)))
+               (get-all-instances <form-parser>))
+         => (cut invoke <> form))
+        (else (error "bad form:" form))))
 
 ;;===================================================================
 ;; Type handling
@@ -148,7 +246,7 @@
 ;;
 
 ;; Stub type definition
-(define-class <type> ()
+(define-class <type> (<instance-pool-mixin>)
   ((name        :init-keyword :name        :accessor name-of)
    ;; ::<symbol> - name of this stub type.
    (c-type      :init-keyword :c-type      :accessor c-type-of)
@@ -165,13 +263,7 @@
                 :init-value "SCM_OBJ_SAFE")
    ;; ::<string> - name of a C function (macro) that takes C object
    ;;              and returns a Scheme Object.
-   (all-types   :allocation :class :initform '())
-   ;; list of all types.
    ))
-
-(define-method initialize ((self <type>) initargs)
-  (next-method)
-  (slot-push! self 'all-types self))
 
 (define (find-type-by-name name)
   ;; trick for transition - will be removed later
@@ -183,7 +275,7 @@
                  type-name))))
   (let1 cname (canon-type-name name)
     (find (lambda (type) (eq? (canon-type-name (name-of type)) cname))
-          (class-slot-ref <type> 'all-types))))
+          (get-all-instances <type>))))
 
 (define (name->type name)
   (or (find-type-by-name name) (error "unknown type" name)))
@@ -192,7 +284,7 @@
 ;;
 ;;   Creates a new stub type for existing scheme type.
 
-(define (process-define-type form)
+(define-form-parser define-type args
   (define (strip<> name) (string-trim-both name #[<>]))
   (define (default-cpred name)
     (if (string-index name #\-)
@@ -205,13 +297,12 @@
   (define (default-box name)
     #`"SCM_MAKE_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
 
-  (if (string? (cadr form))
+  (if (string? (car args))
       ;; comatibility
       (receive (desc assert c-type c-pred unboxer . maybe-boxer)
-          (apply values (cdr form))
-        (warn "~s: using obsolete define-type form (~s)"
-              (pair-attribute-get form 'source-info) desc)
-        (process-define-type
+          (apply values args)
+        (warn "using obsolete define-type form (~s)" desc)
+        (parse-form
          `(define-type
             ,(string->symbol #`"<,(string-drop-right (symbol->string assert) 1)>")
             ,c-type
@@ -220,14 +311,14 @@
             ,unboxer
             ,@maybe-boxer)))
       (begin
-        (unless (<= 3 (length form) 7)
-          (error "malformed define-type:" form))
-        (let ((name   (list-ref form 1))
-              (c-type (list-ref form 2))
-              (desc   (list-ref form 3 #f))
-              (c-pred (list-ref form 4 #f))
-              (unbox  (list-ref form 5 #f))
-              (box    (list-ref form 6 #f)))
+        (unless (<= 2 (length args) 6)
+          (error "malformed define-type:" args))
+        (let ((name   (list-ref args 0))
+              (c-type (list-ref args 1))
+              (desc   (list-ref args 2 #f))
+              (c-pred (list-ref args 3 #f))
+              (unbox  (list-ref args 4 #f))
+              (box    (list-ref args 5 #f)))
           (make <type>
             :name name :c-type c-type
             :description (or desc (x->string name))
@@ -238,7 +329,7 @@
 
 ;; Builtin types
 (for-each
- process-define-type
+ parse-form
  '(;; Numeric types
    (define-type <fixnum>  "int" "small integer"
      "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
@@ -332,42 +423,40 @@
 ;; default
 (define *scm-type* (name->type '<top>))
 
-;; compatibility stuff
+;; DEPRECATED: for backward compatibility
 (define-method predicate-of ((self <type>))
   (string->symbol #`",(string-trim-both (x->string (name-of self)) #[<>])?"))
 
+;; DEPRECATED: for backward compatibility
 (define (predicate->type pred)
   (or (find (lambda (type) (eq? (predicate-of type) pred))
-            (class-slot-ref <type> 'all-types))
+            (get-all-instances <type>))
       (error "unknown predicate to assert" pred)))
 
 ;;===================================================================
 ;; Stub : base class of declarations
 ;;
 ;;   - Each declaration makes a stub.
-;;   - Stub is used to generate three things: immediate definition,
-;;     initialization, and (optionally) declaration.
+;;   - Stub is used to generate two things: immediate definition,
+;;     and initialization code called in Scm_Init_<module>.
 ;;     Those should be implemented by the following methods:
 ;;        emit-definition
 ;;        emit-initializer
-;;        emit-record
 
-(define-class <stub> ()
+(define-class <stub> (<instance-pool-mixin>)
   ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
    (c-name          :init-keyword :c-name      :accessor c-name-of)
    (cpp-condition   :init-keyword :cpp-condition :initform #f
                     :accessor cpp-condition-of)
-   (all-stubs       :allocation :class :initform '())
    ))
 
 (define-method initialize ((self <stub>) initargs)
   (next-method)
-  (set! (cpp-condition-of self) (cpp-condition))
-  (slot-push! self 'all-stubs self))
+  (set! (cpp-condition-of self) (cpp-condition)))
 
 (define (get-stubs class)
   (reverse (filter (lambda (s) (is-a? s class))
-                   (class-slot-ref <stub> 'all-stubs))))
+                   (get-all-instances <stub>))))
 
 (define-syntax with-cpp-condition
   (syntax-rules ()
@@ -379,15 +468,129 @@
        ))))
 
 ;;===================================================================
+;; Literals
+;;
+
+;; Literal is used to embed Scheme value in C file.
+;; Class <literal> is subclassed to each Scheme object types.
+;; Besides the standard stub protocol, a subclass has to define
+;; value-getter-of that returns a C expression ot retrieve the
+;; Scheme value.
+
+(define-class <literal> (<instance-pool-mixin>)
+  ((value        :init-keyword :value :accessor value-of)
+   ;; - the Scheme value
+   (c-name       :init-keyword :c-name :accessor c-name-of)
+   ;; - C variable name used to keep the literal; the actual use
+   ;;   of this depends on the subclass.
+   (next-serial  :allocation :class :init-value 0)
+   ;; - counter of literals; can be used to generate unique C variable name.
+   ))
+
+(define-method initialize ((self <literal>) initargs)
+  (next-method)
+  (set! (c-name-of self)
+        #`"genstub__literal_,(slot-ref self 'next-serial)")
+  (inc! (slot-ref self 'next-serial)))
+
+(define-method make-literal (obj)       ;falback
+  (errorf "can't use Scheme object ~s as a literal value" obj))
+(define-method emit-definition ((obj <literal>)) #f) ;fallback
+(define-method emit-initializer ((obj <literal>)) #f);fallback
+(define-method value-getter-of ((obj <literal>))
+  ;; this is the most common way
+  #`"SCM_OBJ(,(c-name-of obj))")
+
+;; integer literals
+(define-method make-literal ((obj <integer>))
+  (make (if (fixnum? obj) <fixnum-literal> <bignum-literal>) :value obj))
+
+(define-class <fixnum-literal> (<literal>) ())
+(define-method value-getter-of ((self <fixnum-literal>))
+  #`"SCM_MAKE_INT(,(value-of self))")
+
+(define-class <bignum-literal> (<literal>) ())
+(define-method emit-definition ((self <bignum-literal>))
+  (f #`"static ScmObj ,(c-name-of self) = SCM_UNBOUND;"))
+(define-method emit-initializer ((self <bignum-literal>))
+  (f "  ~a = ~a(~a)"
+     (c-name-of a)
+     (if (positive? (value-of a)) "Scm_MakeIntegerFromUI" "Scm_MakeInteger")
+     (value-of a)))
+
+;; string literals
+(define-method make-literal ((obj <string>))
+  (make <string-literal> :value obj))
+(define-class <string-literal> (<literal>) ())
+(define-method emit-definition ((self <string-literal>))
+  (emit-static-string (c-name-of self) (value-of self)))
+
+;; symbol literals
+(define-method make-literal ((obj <symbol>))
+  (make <symbol-literal> :value obj))
+(define-class <symbol-literal> (<literal>) ())
+(define-method emit-definition ((self <symbol-literal>))
+  (emit-static-string (c-name-of self) (value-of self))
+  (f "static ScmObj ~a = SCM_UNBOUND;" (c-name-of self)))
+(define-method emit-initializer ((self <symbol-literal>))
+  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self)))
+
+;; keyword literals
+(define-method make-literal ((obj <keyword>))
+  (make <keyword-literal> :value obj))
+(define-class <keyword-literal> (<literal>) ())
+(define-method emit-definition ((self <keyword-literal>))
+  (emit-static-string (c-name-of self)
+                      (write-to-string keyword display))
+  (f "static ScmObj ~a = SCM_UNBOUND;" (c-name-of self)))
+(define-method emit-initializer ((self <keyword-literal>))
+  (f "  ~a = Scm_MAkeKeyword(&~:*~a__NAME);" (c-name-of self)))
+
+;;===================================================================
+;; Arg
+;;
+
+;; <arg> is used to keep procedure's argument information.
+(define-class <arg> ()
+  ((name     :init-keyword :name :accessor name-of)
+   ;; - <symbol>: the name as appears in the Scheme argument list.
+   (c-name   :accessor c-name-of)
+   ;; - <string>: C variable name for unboxed value
+   (scm-name :accessor scm-name-of)
+   ;; - <string>: C variable name to hold boxed ScmObj value
+   (count    :init-keyword :count :accessor count-of)
+   ;; - <integer>: This arg is count-th in the procedure
+   (type     :init-keyword :type :accessor  type-of)
+   ;; - <type>: Stub type of this arg
+   (default  :init-keyword :default :initform *unbound* :accessor default-of)
+   ))
+
+(define-class <required-arg> (<arg>) ())
+(define-class <optional-arg> (<arg>) ())
+(define-class <keyword-arg>  (<arg>)
+  ((c-keyword :initform #f :accessor c-keyword-of)
+   ))
+(define-class <rest-arg> (<arg>) ())
+
+(define-method write-object ((self <arg>) out)
+  (format out "#<~a ~a>" (class-of self) (name-of self)))
+
+(define-method initialize ((self <arg>) initargs)
+  (next-method)
+  (set! (c-name-of self) (get-c-name "" (name-of self)))
+  (set! (scm-name-of self) (string-append (c-name-of self) "_scm")))
+
+;;===================================================================
 ;; Symbol and keyword definition
 ;;
 
+;;-------------------------------------------------------------------
 ;; (define-symbol scheme-name c-name)
 
 (define-class <csymbol> (<stub>)
-  ((initializer    :init-keyword :initializer :accessor initializer-of)
+  ((symbol     :init-keyword :symbol :accessor symbol-of)
    ))
-
+  
 (define-method emit-definition ((self <csymbol>))
   (with-cpp-condition self
     (emit-static-string (c-name-of self) (scheme-name-of self))
@@ -395,79 +598,70 @@
     (newline)))
 
 (define-method emit-initializer ((self <csymbol>))
-  (with-cpp-condition self
-    (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
-    (when (initializer-of self)
-      (f "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
-         (c-name-of self) (initializer-of self)))))
+  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self)))
 
-(define (process-define-symbol form)
-  (unless (and (<= 3 (length form) 4)
-               (symbol? (cadr form))
-               (string? (caddr form)))
-    (error "malformed define-symbol:" form))
-  (when (= (length form) 4)
-    (warn "using initializer value in define-symbol is deprecated.  use define-variable instead."))
-  (let ((symbol (make <csymbol>
-                  :scheme-name (cadr form) :c-name (caddr form)
-                  :initializer (if (pair? (cdddr form)) (cadddr form) #f))))
+(define-form-parser define-symbol (name c-name . maybe-init)
+  (check-arg symbol? name)
+  (check-arg string? c-name)
+  (unless (null? maybe-init)
+    (warn "using initializer value in define-symbol is deprecated.  use define-variable instead.")
+    (parse-form `(define-variable ,name ,@maybe-init)))
+  (let ((symbol (make <csymbol> :scheme-name name :c-name c-name)))
     (emit-definition symbol)
     ))
 
+;;-------------------------------------------------------------------
 ;; (define-variable scheme-name init &keyword c-name)
 
 (define-class <cvariable> (<stub>)
   ((initializer    :init-keyword :initializer :accessor initializer-of)
+   ;; - <literal> : constant value to be initialized
+   (symbol         :init-keyword :symbol :accessor symbol-of)
+   ;; - <literal> : symbol object
    ))
 
-(define-method emit-definition ((self <cvariable>))
-  (with-cpp-condition self
-    (emit-static-string (c-name-of self) (scheme-name-of self))
-    (f "static ScmObj ~a = SCM_FALSE;" (c-name-of self))
-    (newline)))
-
 (define-method emit-initializer ((self <cvariable>))
-  (with-cpp-condition self
-    (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
-    (when (initializer-of self)
-      (f "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
-         (c-name-of self) (initializer-of self)))))
+  (emit-initializer (symbol-of self))
+  (emit-initializer (initializer-of self))
+  (f "  Scm_Define(module, ~a, ~a);"
+     (value-getter-of (symbol-of self))
+     (value-getter-of (initializer-of self))))
 
-(define (process-define-variable form)
-  (unless (and (> (length form) 3)
-               (symbol? (cadr form)))
-    (error "malformed define-variable:" form))
+(define-method emit-definition ((self <cvariable>))
+  (emit-definition (symbol-of self))
+  (emit-definition (initializer-of self)))
+
+(define-form-parser define-variable (name init)
+  (check-arg symbol? name)
   (let ((symbol (make <cvariable>
-                  :scheme-name (cadr form)
-                  :c-name (get-keyword :c-name (cdddr form)
-                                       #`",(cadr form)__VAR")
-                  :initializer (caddr form))))
+                  :scheme-name name
+                  :symbol (make-literal name)
+                  :initializer (make-literal init))))
     (emit-definition symbol)
     ))
 
+;;-------------------------------------------------------------------
 ;; (define-const scheme-name c-name init)
 
 (define-class <cconst> (<csymbol>)
-  ()
-  )
+  ((initializer :init-keyword :initializer :accessor initializer-of)
+   ))
 
 (define-method emit-initializer ((self <cconst>))
-  (with-cpp-condition self
-    (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
-    (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
-       (c-name-of self) (initializer-of self))))
+  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
+  (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
+     (c-name-of self) (initializer-of self)))
 
-(define (process-define-const form)
-  (unless (and (= (length form) 4)
-               (symbol? (cadr form))
-               (string? (caddr form)))
-    (error "malformed define-const:" form))
+(define-form-parser define-const (name c-name init)
+  (check-arg symbol? name)
+  (check-arg string? c-name)
   (let ((const (make <cconst>
-                 :scheme-name (cadr form) :c-name (caddr form)
-                 :initializer (cadddr form))))
+                 :scheme-name name :c-name c-name
+                 :initializer init)))
     (emit-definition const)
     ))
 
+;;-------------------------------------------------------------------
 ;; (define-enum name)
 
 (define-class <cenum> (<csymbol>)
@@ -475,21 +669,19 @@
   )
 
 (define-method emit-initializer ((self <cenum>))
-  (with-cpp-condition self
-    (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
-    (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(Scm_MakeInteger(~a)));"
-       (c-name-of self) (scheme-name-of self))))
+  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
+  (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(Scm_MakeInteger(~a)));"
+     (c-name-of self) (scheme-name-of self)))
 
-(define (process-define-enum form)
-  (unless (and (= (length form) 2)
-               (symbol? (cadr form)))
-    (error "malformed define-enum:" form))
+(define-form-parser define-enum (name)
+  (check-arg symbol? name)
   (let ((enum (make <cenum>
-                :scheme-name (cadr form)
-                :c-name (string->symbol #`"sym_,(cadr form)"))))
+                :scheme-name name
+                :c-name (string->symbol #`"sym_,|name|"))))
     (emit-definition enum)
     ))
 
+;;-------------------------------------------------------------------
 ;; (define-keyword scheme-name c-name)
 
 (define-class <ckeyword> (<stub>)
@@ -501,22 +693,18 @@
         (get-stubs <ckeyword>)))
 
 (define-method emit-definition ((self <ckeyword>))
-  (with-cpp-condition self
-    (emit-static-string (c-name-of self) (scheme-name-of self))
-    (f "static ScmObj ~a = SCM_FALSE;" (c-name-of self))
-    (newline)))
+  (emit-static-string (c-name-of self) (scheme-name-of self))
+  (f "static ScmObj ~a = SCM_FALSE;" (c-name-of self))
+  (newline))
 
 (define-method emit-initializer ((self <ckeyword>))
-  (with-cpp-condition self
-    (f "  ~a = Scm_MakeKeyword(&~:*~a__NAME);" (c-name-of self))))
+  (f "  ~a = Scm_MakeKeyword(&~:*~a__NAME);" (c-name-of self)))
 
-(define (process-define-keyword form)
-  (unless (and (= (length form) 3)
-               (symbol? (cadr form))
-               (string? (caddr form)))
-    (error "malformed define-keyword:" form))
+(define-form-parser define-keyword (name c-name)
+  (check-arg symbol? name)
+  (check-arg string? c-name)
   (emit-definition (make <ckeyword>
-                     :scheme-name (cadr form) :c-name (caddr form))))
+                     :scheme-name name :c-name c-name)))
     
 ;;===================================================================
 ;; Procedure
@@ -536,32 +724,6 @@
    (decls           :initform '() :accessor decls-of)
    (stmts           :initform '() :accessor stmts-of)
    ))
-
-;; argument
-(define-class <arg> ()
-  ((name     :init-keyword :name :accessor name-of)
-   (c-name   :accessor c-name-of)
-   (scm-name :accessor scm-name-of)
-   (count    :init-keyword :count :accessor count-of)
-   (type     :init-keyword :type :accessor  type-of)
-   (category :init-keyword :category :initform :required :accessor category-of)
-   (default  :init-keyword :default :initform *unbound* :accessor default-of)
-   ))
-
-(define-class <required-arg> (<arg>) ())
-(define-class <optional-arg> (<arg>) ())
-(define-class <keyword-arg>  (<arg>)
-  ((c-keyword :initform #f :accessor c-keyword-of)
-   ))
-(define-class <rest-arg> (<arg>) ())
-
-(define-method write-object ((self <arg>) out)
-  (format out "#<arg ~a ~a>" (name-of self) (category-of self)))
-
-(define-method initialize ((self <arg>) initargs)
-  (next-method)
-  (set! (c-name-of self) (get-c-name "" (name-of self)))
-  (set! (scm-name-of self) (string-append (c-name-of self) "_scm")))
 
 (define (get-arg cproc arg)
   (find (lambda (x) (eq? arg (name-of x))) (args-of cproc)))
@@ -589,23 +751,21 @@
    (inline-insn     :initform #f  :accessor inline-insn-of)
    ))
 
-(define (process-define-cproc form)
-  (unless (and (>= (length form) 4)
-               (symbol? (cadr form))
-               (list? (caddr form)))
-    (error "malformed define-cproc:" form))
+(define-form-parser define-cproc (scheme-name argspec . body)
+  (check-arg symbol? scheme-name)
+  (check-arg list? argspec)
   (receive (args nreqs nopts rest?)
-      (process-cproc-args (caddr form))
+      (process-cproc-args argspec)
     (let ((cproc (make <cproc>
-                   :scheme-name (cadr form)
-                   :c-name (get-c-name *file-prefix* (cadr form))
+                   :scheme-name scheme-name
+                   :c-name (get-c-name *file-prefix* scheme-name)
                    :args args
                    :num-reqargs nreqs
                    :num-optargs nopts
                    :have-rest-arg? rest?)))
       (set! (keyword-args-of cproc)
             (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
-      (process-body cproc (cdddr form))
+      (process-body cproc body)
       (emit-definition cproc)
       (emit-inliner cproc)
       (emit-record cproc))))
@@ -943,12 +1103,10 @@
        (c-name-of self) (symbol->string (scheme-name-of self)))
     (next-method)))
 
-(define (process-define-cgeneric form)
-  (unless (and (>= (length form) 3)
-               (symbol? (cadr form))
-               (string? (caddr form)))
-    (error "malformed define-cgeneric"))
-  (let ((gf (make <cgeneric> :scheme-name (cadr form) :c-name (caddr form))))
+(define-form-parser define-cgeneric (scheme-name c-name . body)
+  (check-arg symbol? scheme-name)
+  (check-arg string? c-name)
+  (let ((gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)))
     (for-each (lambda (form)
                 (cond ((not (pair? form))
                        (error "bad gf form:" form))
@@ -962,7 +1120,7 @@
                          (error "bad setter form in" form))
                        (process-setter gf (cdr form)))
                       (else (error "bad gf form:" form))))
-              (cdddr form))
+              body)
     (emit-definition gf)))
 
 (define-method process-setter ((gf <cgeneric>) setter)
@@ -992,40 +1150,36 @@
    (c-generic    :initform #f    :accessor c-generic-of)
    ))
 
-(define (process-define-cmethod form)
-  (unless (>= (length form) 4) (error "malformed define-cmetihod:" form))
-  (let ((scheme-name (cadr form))
-        (arglist     (caddr form))
-        (body        (cdddr form)))
-    (unless (symbol? scheme-name)
-      (error "malformed define-cmethod:" form))
-    (receive (args specializers numargs have-optarg?)
-        (parse-specialized-args arglist)
-      (let ((method (make <cmethod>
-                          :scheme-name scheme-name
-                          :c-name (get-c-name *file-prefix*
-                                              (gensym (symbol->string scheme-name)))
-                          :specializers specializers
-                          :num-reqargs numargs
-                          :args args
-                          :have-rest-arg? have-optarg?
-                          )))
-        (for-each (lambda (stmt)
-                    (cond ((string? stmt) (push-stmt! method stmt))
-                          ((and (pair? stmt) (eq? (car stmt) 'c-generic-name))
-                           (unless (string? (cadr stmt))
-                             (error "c-generic-name requires a string:"
-                                    (cadr stmt)))
-                           (set! (c-generic-of method) (cadr stmt)))
-                          (else
-                           (error "unrecognized form in body:" stmt))))
-                  body)
-        (unless (c-generic-of method)
-          (set! (c-generic-of method)
-                (or (get-c-generic-name scheme-name)
-                    (error "method can't find C name of the generic function:" scheme-name))))
-        (emit-definition method)))
-    ))
+(define-form-parser define-cmethod (scheme-name argspec . body)
+  (check-arg symbol? scheme-name)
+  (check-arg list? argspec)
+  (receive (args specializers numargs have-optarg?)
+      (parse-specialized-args argspec)
+    (let ((method (make <cmethod>
+                    :scheme-name scheme-name
+                    :c-name (get-c-name *file-prefix*
+                                        (gensym (symbol->string scheme-name)))
+                    :specializers specializers
+                    :num-reqargs numargs
+                    :args args
+                    :have-rest-arg? have-optarg?
+                    )))
+      (for-each (lambda (stmt)
+                  (cond ((string? stmt) (push-stmt! method stmt))
+                        ((and (pair? stmt) (eq? (car stmt) 'c-generic-name))
+                         (unless (string? (cadr stmt))
+                           (error "c-generic-name requires a string:"
+                                  (cadr stmt)))
+                         (set! (c-generic-of method) (cadr stmt)))
+                        (else
+                         (error "unrecognized form in body:" stmt))))
+                body)
+      (unless (c-generic-of method)
+        (set! (c-generic-of method)
+              (or (get-c-generic-name scheme-name)
+                  (error "method can't find C name of the generic function:" scheme-name))))
+      (emit-definition method)))
+  )
 
 (define-method emit-definition ((method <cmethod>))
   (with-cpp-condition method
@@ -1131,7 +1285,7 @@
 (define-method initialize ((self <cclass>) initargs)
   (next-method)
   (unless (find-type-by-name (scheme-name-of self))
-    (process-define-type
+    (parse-form
      `(define-type ,(scheme-name-of self) ,(c-type-of self))))
   )
 
@@ -1145,20 +1299,19 @@
    (setter      :init-keyword :setter :accessor setter-of :init-value #t)
    ))
 
-(define (process-define-cclass form)
-  (unless (>= (length form) 6)
-    (error "malformed define-cclass" form))
-  (receive (_ scm-name c-type c-name cpa slot-spec . more) (apply values form)
-    (unless (and (symbol? scm-name) (string? c-name) (list? cpa) (list? slot-spec))
-      (error "malformed define-cclass" form))
-    (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
-           (printer   (cond ((assq 'printer more) => cadr) (else #f)))
-           (cclass (make <cclass>
-                     :scheme-name scm-name :c-type c-type :c-name c-name 
-                     :cpa cpa
-                     :allocator allocator :printer printer)))
-      (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
-      (emit-definition cclass))))
+(define-form-parser define-cclass (scm-name c-type c-name cpa slot-spec . more)
+  (check-arg symbol? scm-name)
+  (check-arg string? c-name)
+  (check-arg list? cpa)
+  (check-arg list? slot-spec)
+  (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
+         (printer   (cond ((assq 'printer more) => cadr) (else #f)))
+         (cclass (make <cclass>
+                   :scheme-name scm-name :c-type c-type :c-name c-name 
+                   :cpa cpa
+                   :allocator allocator :printer printer)))
+    (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
+    (emit-definition cclass)))
 
 (define-method c-printer-name-of ((self <cclass>))
   (let1 printer (printer-of self)
@@ -1315,8 +1468,8 @@
   (with-cpp-condition self
     (for-each display (code-of self))))
 
-(define (process-initcode form)
-  (make <initcode> :code (cdr form)))
+(define-form-parser process-initcode (code)
+  (make <initcode> :code code))
 
 ;;===================================================================
 ;; Miscellaneous utilities
@@ -1395,62 +1548,27 @@
 ;; Main parser
 ;;
 
-(define (process-if form)
-  (unless (= 3 (length form))
-    (error "malformed if: " form))
-  (parameterize ((cpp-condition (cadr form)))
-    (parse-form (caddr form))))
+(define-form-parser if (test then)
+  (parameterize ((cpp-condition test))
+    (parse-form then)))
 
-(define (process-begin form)
-  (let loop ((f (cdr form)))
-    (unless (null? f)
-      (parse-form (car f))
-      (loop (cdr f)))))
+(define-form-parser begin forms
+  (for-each parse-form forms))
 
-(define (process-include form)
-  (unless (= 2 (length form))
-    (error "malformed include: " form))
-  (unless (file-exists? (cadr form))
+(define-form-parser include (file)
+  (unless (file-exists? file)
     ;; TODO: search path
-    (error "couldn't find include file: " (cadr form)))
-  (with-input-from-file (cadr form)
+    (error "couldn't find include file: " file))
+  (with-input-from-file file
     (lambda () (port-for-each parse-form read)))
   )
-
-(define *syntax-table*
-  `((define-cproc     . ,process-define-cproc)
-    (define-symbol    . ,process-define-symbol)
-    (define-const     . ,process-define-const)
-    (define-enum      . ,process-define-enum)
-    (define-keyword   . ,process-define-keyword)
-    (define-type      . ,process-define-type)
-    (define-cgeneric  . ,process-define-cgeneric)
-    (define-cmethod   . ,process-define-cmethod)
-    (define-cclass    . ,process-define-cclass)
-    (if               . ,process-if)
-    (begin            . ,process-begin)
-    (include          . ,process-include)
-    (initcode         . ,process-initcode)
-    ))
-
-(define (parse-form form)
-  (cond ((string? form) (print form))
-        ((not (pair? form))
-         (error "bad form:" form))
-        ((assq (car form) *syntax-table*)
-         => (lambda (p) ((cdr p) form)))
-        (else (error "bad form:" form))))
 
 (define-method emit-initializer ((name <string>))
   (f "void Scm_Init_~a(ScmModule *module)" name)
   (print "{")
-  (for-each emit-initializer (get-stubs <cclass>))
-  (for-each emit-initializer (get-stubs <cproc>))
-  (for-each emit-initializer (get-stubs <csymbol>))
-  (for-each emit-initializer (get-stubs <ckeyword>))
-  (for-each emit-initializer (get-stubs <cgeneric>))
-  (for-each emit-initializer (get-stubs <cmethod>))
-  (for-each emit-initializer (get-stubs <initcode>))
+  (for-each (lambda (stub)
+              (with-cpp-condition stub (emit-initializer stub)))
+            (get-all-instances <stub>))
   (print "}")
   )
 
