@@ -1,3 +1,21 @@
+2001-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.8
+	* lib/srfi-13.scm: began to implement this.
+	* src/string.c, src/stdlib.stub: modified string-fill!, string->list
+	  and string-copy to take optional start/end arguments as in SRFI-13.
+	* src/gauche-init.scm, lib/gauche/numerical.scm: implemented some
+	  R5RS numerical functions (e.g. gcd and lcm) in Scheme, and set
+	  autoload for it.
+	* src/bignum.c: further debugging for the infrequent path of the
+	  division code.
+
+2001-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/bignum.c, src/number.c, test/number.scm: fixed integer
+	  division/remainer/modulo routines.
+	* src/Makefile.in: added test/number.scm for test targets.
+
 2001-04-19  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.7
@@ -5,10 +23,10 @@
 	  charset syntax.
 	* src/char.c: adapted print syntax to the literal charset syntax.
 	  added charset reading function (Scm_CharSetRead).
-	  added predefined charset.
+	  added predefined charsets.
 	* src/extlib.stub, lib/srfi-14.scm: adapted predefined charset.
 	* src/regexp.c: added \s, \S, \w, \W, \d and \D character
-	  classes.  Added stack boundary check to protect too deep
+	  classes.  Added stack boundary check to protect from too deep
 	  recursive calls.
 	* configure.in, gc/mach_dep.c: applied a patch from Shigenobu
 	  Kimura (skimu@ti.com) in order to compile under NetBSD.
