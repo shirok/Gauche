@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.150 2002-01-27 09:35:03 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.151 2002-01-31 08:50:29 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1096,8 +1096,19 @@ To exit the interpreter, type EOF (usually Control-D in Unix termials)
 or evaluate @code{(exit)}.
 
 I recommend you to run @code{gosh} inside Emacs, for it has
-rich capability to 
+rich features useful to interact with internal Scheme process.
+Put the following line to your @file{.emacs} file:
+@example
+(setq scheme-program-name "gosh")
+@end example
+And you can run @code{gosh} by @key{M-x run-scheme}.
 
+If you want to use multibyte characters in the interaction,
+make sure your terminal's settings is in sync with @code{gosh}'s
+internal character encodings.
+
+Currently @code{gosh} has no fancy features such as
+line-editing or command history.   They'll be added in future.
 
 @c ----------------------------------------------------------------------
 @node Debugging, Writing Scheme scripts, Interactive development, Programming in Gauche
@@ -5963,6 +5974,17 @@ use @code{sys-access} or @code{file-exists?} (@xref{File stats}).
 @c COMMON
 
 @c EN
+Note: @code{gauche.charconv} module extends these procedures to
+take @var{encoding} keyword argument so that they can read or write
+in different character encoding scheme.  @xref{Character code conversion}.
+@c JP
+註：@code{gauche.charconv}モジュールはこれらの手続きを、
+@var{encoding}キーワード引数を取るように拡張して、
+異なる文字エンコーディングでのファイルの読み書きを可能にします。
+@ref{Character code conversion}参照。
+@c COMMON
+
+@c EN
 Note for portability: Some Scheme implementations (e.g. STk) allows
 you to specify a command to @var{filename} and reads from, or
 writes to, the subprocess standard input/output.  Some other scripting
@@ -7254,13 +7276,9 @@ provide lower level routines as well.
 
 @defun exit &optional (code 0)
 [POSIX] Terminates the current process with the exit code @var{code}.
-This calls @code{exit(2)} and does some cleaning up, like flushing
-the opened file buffers.
-
-BUG: This procedure should also unwind the current dynamic environment
-created by @code{dynamic-wind}, but it is not implemented yet.
-Also, Gauche doesn't have an interface to register cleanup procedure
-via @code{atexit()}.
+This procedure first invokes the @var{before} thunks of the current dynamic
+handlers (@xref{Continuation}), then This calls @code{exit(2)}
+which does some cleaning up, like flushing the opened file buffers.
 @end defun
 
 
@@ -9419,9 +9437,14 @@ APIs.
 @c EN
 This module defines a set of functions that converts character encoding
 of the given data stream.
+This module also overloads Gauche's file stream creating functions
+(such as @code{open-input-file} and @code{call-with-output-file})
+so that they accept @code{:encoding} keyword argument.
 @c JP
 与えられたデータストリームの文字エンコーディングを変換するための手続き群を提供する
-モジュールです。
+モジュールです。また、このモジュールは@code{open-input-file}や
+@code{call-with-output-file}等のファイルストリームを作成する手続きを
+置き換え、@code{:encoding} キーワード引数を認識するようにします。
 @c COMMON
 
 @c EN
@@ -9603,6 +9626,7 @@ For example, the following code copies a file @file{unknown.txt} to a file
 @end example
 @end defun
 
+
 @defun open-output-conversion-port sink to-code &keyword from-code buffer-size owner?
 @c EN
 Creates and returns an output port that converts
@@ -9638,6 +9662,39 @@ and true, however, it closes @var{sink} when it is closed.
 通常、出力変換ポートがクローズされても@var{sink}はクローズされません。
 @var{owner?}に真の値を与えれば、出力変換ポートのクローズ時に@var{sink}を
 クローズするようにできます。
+@c COMMON
+@end defun
+
+
+@defun open-input-file filename &keyword encoding conversion-buffer-size @dots{}
+@defunx call-with-input-file filename proc &keyword encoding conversion-buffer-size @dots{}
+@defunx with-input-from-file filename thunk &keyword encoding conversion-buffer-size @dots{}
+@defunx open-output-file filename &keyword encoding conversion-buffer-size @dots{}
+@defunx call-with-output-file filename proc &keyword encoding conversion-buffer-size @dots{}
+@defunx with-output-to-file filename thunk &keyword encoding conversion-buffer-size @dots{}
+@c EN
+These Gauche built-in procedures are extended to accept two extra
+keyword arguments, @var{encoding} and @var{conversion-buffer-size}.
+(@xref{File ports}, for their default behavior).
+
+You can give a CES of the file @var{filename} to @var{encoding},
+and the port automatically converts the file CES to the Gauche's
+native CES.  You can use a CES guessing algorithm name for
+input file port.
+
+The keyword argument @var{conversion-buffer-size} has the same
+meaning as @var{buffer-size} of @code{open-input-conversion-port}.
+@c JP
+これらのGauche組み込みの手続きは、@var{encoding}と@var{conversion-buffer-size}
+という二つの追加のキーワード引数を取るように拡張されます。
+(これらの手続きの元の動作については@ref{File ports}を参照して下さい)。
+
+@var{filename}の文字エンコーディング名を@var{encoding}に渡すと、
+ファイルを読む際に@var{encoding}からGaucheの内部エンコーディングへの変換が
+行われます。入力の場合は@var{encoding}にCES推測アルゴリズム名を渡すこともできます。
+
+@var{conversion-buffer-size}は@code{open-input-conversion-port}
+における@var{buffer-size}と同じ意味を持ちます。
 @c COMMON
 @end defun
 
@@ -9681,6 +9738,8 @@ usually in favor of the native CES.
 ひとつが選んで返されます。
 @c COMMON
 @end defun
+
+
 
 @c ----------------------------------------------------------------------
 @node Collection framework, Low-level file operations, Character code conversion, Library modules
