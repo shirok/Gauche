@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.28 2003-10-23 05:05:35 shirok Exp $
+# $Id: Gauche.spec,v 1.29 2003-10-23 09:53:44 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -63,7 +63,7 @@ package as well.
 %package gdbm-%{encoding}
 Summary: gdbm binding for Gauche Scheme system
 Group: Development/Languages
-Copyright: GPL
+Copyright: revised BSD
 Provides: Gauche-gdbm
 Requires: gdbm >= 1.8.0, Gauche-%{encoding}
 %description gdbm-%{encoding}
