@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.60 2002-03-28 19:50:54 shirok Exp $
+ *  $Id: vm.h,v 1.61 2002-04-13 19:40:38 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -278,7 +278,7 @@ enum {
                                    system call, VM's state is still RUNNABLE.*/
     SCM_VM_TERMINATED           /* The thread attached to this VM is
                                    terminated. */
-} Scm_VMStates;
+};
 
 /*
  * VM instructions
