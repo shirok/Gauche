@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.49 2004-09-17 23:32:15 shirok Exp $
+ *  $Id: charconv.c,v 1.50 2004-11-06 12:43:40 shirok Exp $
  */
 
 #include <string.h>
@@ -229,10 +229,10 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     }
 }
 
-static int conv_input_closer(ScmPort *p)
+static void conv_input_closer(ScmPort *p)
 {
     ScmConvInfo *info = (ScmConvInfo*)p->src.buf.data;
-    return jconv_close(info);
+    jconv_close(info);
 }
 
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
@@ -340,7 +340,7 @@ static ScmPort *coding_aware_conv(ScmPort *src, const char *encoding)
 
 #define GLIBC_2_1_ICONV_BUG
 
-static int conv_output_closer(ScmPort *port)
+static void conv_output_closer(ScmPort *port)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     int r;
@@ -369,7 +369,7 @@ static int conv_output_closer(ScmPort *port)
         Scm_ClosePort(info->remote);
         info->remoteClosed = TRUE;
     }
-    return jconv_close(info);
+    jconv_close(info);
 }
 
 static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
