@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.6 2001-04-06 11:10:32 shiro Exp $
+;; $Id: srfi-1.scm,v 1.7 2001-04-06 19:52:41 shiro Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -136,9 +136,9 @@
 
 (define (delete-duplicates! lis . args)
   (%case-by-cmp args =
-                (%delete-duplicates lis 'eq?)
-                (%delete-duplicates lis 'eqv?)
-                (%delete-duplicates lis 'equal?)
+                (%delete-duplicates! lis 'eq?)
+                (%delete-duplicates! lis 'eqv?)
+                (%delete-duplicates! lis 'equal?)
                 (let recur ((lis lis))
                   (if (null-list? lis) lis
                       (let* ((x (car lis))
