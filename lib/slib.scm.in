@@ -17,7 +17,9 @@
 ;;; (software-type) should be set to the generic operating system type.
 ;;; UNIX, VMS, MACOS, AMIGA and MS-DOS are supported.
 
-(define (software-type) 'UNIX)
+(define software-type
+  (let ((t (if (#/-mingw32$/ (gauche-architecture)) 'MS-DOS 'UNIX)))
+    (lambda () t)))
 
 ;;; (scheme-implementation-type) should return the name of the scheme
 ;;; implementation loading this file.
