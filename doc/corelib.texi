@@ -7191,18 +7191,35 @@ See @ref{Multibyte scripts} for the details of coding magic comment.
 @c COMMON
 
 @defun open-coding-aware-port iport
+@c EN
 Takes an input port and returns an input coding aware port,
 which basically just pass through the data from @var{iport} to
 its reader.  However, if a magic comment appears within the
 first two lines of data from @var{iport}, the coding aware port
 applies the necessary character encoding conversion to the rest of the
 data as they are read.
+@c JP
+入力ポートを引数としてとりコーディング認識入力ポートを返します。
+基本的には @var{iport} からの入力データをリーダにわたしているだけです。
+しかし、@var{iport} からの入力データの最初の2行以内に、特別な呪文コメント
+が現れた場合、コーディング認識ポートは、その後に読み込まれるデータについて
+必要な文字エンコーディング変換を行います。
+@c COMMON
 
+@c EN
 The passed port, @var{iport}, is "owned" by the created coding-aware
 port.  That is, when the coding-aware port is closed, @var{iport} is
 also closed.  The content read from @var{iport} is buffered in the
 coding-aware port, so other code shouldn't read from @var{iport}.
+@c JP
+引数として渡されたポート、@var{iport} は生成されたコーディング認識
+ポートによって所有されます。つまり、コーディング認識ポートがクローズ
+されると、@var{iport} もクローズされます。@var{iport} から読み込まれた
+内容はコーディング認識ポート内でバッファリングさます、したがって、
+別のコードで @var{iport} から読み出しを行うべきではありません。
+@c COMMON
 
+@c EN
 By default, Gauche's @code{load} uses a coding aware port to read
 the program source, so that the coding magic comment works for
 the Gauche source programs (see @ref{Loading Scheme file}).
@@ -7211,6 +7228,15 @@ is independent from @code{load}, you can use this port for
 other purposes; it is particulary useful to write a function
 that processes Scheme source programs which may have the coding
 magic comment.
+@c JP
+デフォルトでは、Gauche の @code{load} はプログラムソースを読むのに
+コーディング認識ポートを使います。したがって、文字エンコーディングを
+示す特別な呪文コメントは、Gauche のソースプログラムでは有効になります
+(@ref{Loading Scheme file}参照)。ただし、この機構自身は @code{load} とは
+独立しており、このポートを別の目的で利用できます。特にコーディングの
+呪文コメントがある Scheme のソースプログラムを処理する関数を書くときに
+便利です。
+@c COMMON
 @end defun
 
 @node Procedural ports, Input, Coding-aware ports, Input and output
