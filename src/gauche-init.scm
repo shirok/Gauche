@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.3 2001-02-13 12:37:42 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.4 2001-02-14 10:08:04 shiro Exp $
 ;;;
 
 ;;
@@ -25,7 +25,7 @@
    (lambda (_ spec . body)
      (unless (and (pair? spec)
                   (symbol? (car spec))
-                  (not (null? (body))))
+                  (not (null? body)))
        (error "badly formed define-macro: ~s" (list* _ spec body)))
      `(define ,(car spec)
         (%make-macro-transformer
