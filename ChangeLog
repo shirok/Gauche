@@ -1,3 +1,12 @@
+2001-02-13  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.10
+	* src/vm.c: added REVERSE instruction.  added code to support
+	  call/cc (but not working yet---call/cc crashes in the current
+	  version)
+	* src/system.c, src/syslib.stub: avoid using PATH_MAX
+	* src/string.c, src/extlib.stub: added string-split
+
 2001-02-12  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.9

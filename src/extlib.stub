@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.18 2001-02-13 07:06:08 shiro Exp $
+;;; $Id: extlib.stub,v 1.19 2001-02-13 20:58:37 shiro Exp $
 ;;;
 
 ;;
@@ -40,6 +40,14 @@
 ;;
 ;; 6.3.2  Pairs and lists
 ;;
+
+(define-cproc make-list (len &optional (fill #f)) ; SRFI-1
+  (assert (small-integer? len))
+  "  SCM_RETURN(Scm_MakeList(len, fill));")
+
+(define-cproc last-pair (list)          ; SRFI-1
+  (assert (pair? list))
+  "  SCM_RETURN(Scm_LastPair(list));")
 
 (define-cproc list* (&rest args)
   (inliner "SCM_VM_LIST_STAR")

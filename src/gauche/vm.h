@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.19 2001-02-09 09:20:19 shiro Exp $
+ *  $Id: vm.h,v 1.20 2001-02-13 20:58:37 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -70,6 +70,20 @@ typedef struct ScmContFrameRec {
 extern void Scm_CallCC(ScmObj body);
 
 /*
+ * VM activation history
+ *
+ *   Activation history keeps the chain of C calls from where
+ *   VM is activated (by run_loop()).  Only "upward" continuation
+ *   can be thrown across this record.  See vm.c for details.
+ */
+
+typedef struct ScmVMActivationHistoryRec {
+    struct ScmVMActivationHistoryRec *prev; /* previous history */
+    ScmObj *stackBase;          /* saved stack base */
+} ScmVMActivationHistory;
+
+
+/*
  * Source info
  *
  *   It is inserted in the compiled code by the compiler, and used
@@ -109,6 +123,7 @@ struct ScmVMRec {
     ScmModule *module;          /* current global namespace */
     ScmErrorHandler *escape;    /* current escape point */
     ScmObj errorHandler;        /* error handler */
+    ScmVMActivationHistory *history; /* activation history */
     
     int enableInline;           /* enable inlining on compilation */
     int debugCompile;           /* show the result of compilation for debug */
