@@ -1,27 +1,38 @@
+2001-02-05  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.5
+	* src/core.c, src/main.c, src/gauche-init.scm: now Scm_Init() takes
+	  a name of Scheme file for initialization.  gauche-init.scm is
+	  the default one for gosh.
+	* src/vm.c, src/compile.c: fix compilation of case, and clean up
+	  the code related to compile_if_family.
+	* src/load.c: added *load-path*
+	* src/keyword.c: added
+
 2001-02-04  Shiro Kawai  <shiro@scherzo>
 
+	* release 0.0.4
 	* src/vm.c: clearify interaction between user-level eval/apply and
 	  exception handlers.
         * src/compile.c: added traditional macro system.
 	* src/class.c, et.al.: code cleanup around statically defined
 	  built-in classes
-	* release 0.0.4
 
 2001-02-02  Shiro Kawai  <shiro@scherzo>
 
+	* release 0.0.3
 	* src/vm.c, src/gauche/vminsn.h, src/stdlib.stub: inline several
 	  number operations.
         * src/compile.c: fix quasiquote code and clean up.
 	* make installation procedure clearer.
 	* src/gauche-config.in: added
-	* release 0.0.3
 
 2001-02-01  Shiro Kawai  <shiro@scherzo>
 
+	* release 0.0.2
 	* src/class.c: added Scm_MakeBuiltinClass.
 	* src/string.c, extlib.stub: added string-append, string-join
 	* src/file.c: added
-	* release 0.0.2
 	
 2001-01-31  Shiro Kawai  <shiro@scherzo>
 
