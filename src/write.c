@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.36 2002-08-29 00:41:09 shirok Exp $
+ *  $Id: write.c,v 1.37 2002-11-02 06:47:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -470,11 +470,14 @@ static void format_writer(ScmPort *out, ScmObj arg,
     tmpstr = SCM_STRING(Scm_GetOutputString(SCM_PORT(tmpout)));
 
     if (maxcol > 0 && nwritten < 0) {
+        const char *s = SCM_STRING_START(tmpstr), *e;
         if (dots && maxcol > 4) {
-            Scm_PutzUnsafe(SCM_STRING_START(tmpstr), maxcol-4, out);
+            e = Scm_StringPosition(tmpstr, maxcol-4);
+            Scm_PutzUnsafe(s, e-s, out);
             Scm_PutzUnsafe(" ...", 4, out);
         } else {
-            Scm_PutzUnsafe(SCM_STRING_START(tmpstr), maxcol, out);
+            e = Scm_StringPosition(tmpstr, maxcol);
+            Scm_PutzUnsafe(s, e-s, out);
         }
     } else {
         format_pad(out, tmpstr, mincol, colinc, padchar, rightalign);

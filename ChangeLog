@@ -1,3 +1,12 @@
+2002-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_DStringAdd): fixed a bug that didn't handle
+	  complete-string addition to DString.
+	* src/write.c : fixed a format problem that counts # of characters
+	  incorrectly when maxcol argument is given to the ~a or ~s directive
+	  (a bug pointed out by Kimura Fuyuki).  Test cases for this is
+	  also added.
+
 2002-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/gauche/vm.h : start adding experimental new VM

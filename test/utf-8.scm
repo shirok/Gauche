@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.2 2002-09-21 10:30:50 shirok Exp $
+;; $Id: utf-8.scm,v 1.3 2002-11-02 06:47:13 shirok Exp $
 
 (use gauche.test)
 
@@ -153,6 +153,20 @@
 (test "string-incompltet->incomplete" "あ"
       (lambda () (string-incomplete->complete
                   (string-append #*"\xe3" #*"\x81" #*"\x82"))))
+
+;;-------------------------------------------------------------------
+(test-section "format")
+
+(test "format" "あぶら"
+      (lambda () (format #f "~,,,,3a" "あぶらかだぶら")))
+(test "format" "abら"
+      (lambda () (format #f "~,,,,3a" "abらかだぶら")))
+(test "format" "あぶらかだぶら"
+      (lambda () (format #f "~,,,,7:a" "あぶらかだぶら")))
+(test "format" "あぶらか"
+      (lambda () (format #f "~,,,,7:a" "あぶらか")))
+(test "format" "あぶら ..."
+      (lambda () (format #f "~,,,,7:a" "あぶらかだぶらぶらぶら")))
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")

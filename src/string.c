@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.67 2002-09-27 10:01:19 shirok Exp $
+ *  $Id: string.c,v 1.68 2002-11-02 06:47:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -391,9 +391,13 @@ int Scm_StringByteRef(ScmString *str, int offset)
 
 /* External interface of forward_pos.  Returns the pointer to the
    offset-th character in str. */
+/* NB: this function allows offset == length of the string; in that
+   case, the return value points the location past the string body,
+   but it is necessary sometimes to do a pointer arithmetic with the
+   returned values. */
 const char *Scm_StringPosition(ScmString *str, int offset)
 {
-    if (offset < 0 || offset >= SCM_STRING_LENGTH(str)) {
+    if (offset < 0 || offset > SCM_STRING_LENGTH(str)) {
         Scm_Error("argument out of range: %d", offset);
     }
     if (SCM_STRING_INCOMPLETE_P(str)) {
@@ -1000,7 +1004,6 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmString *str = SCM_STRING(obj);
-    
     if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(str, port);
     } else {
@@ -1334,7 +1337,7 @@ void Scm_DStringAdd(ScmDString *dstr, ScmString *str)
     }
     memcpy(dstr->current, SCM_STRING_START(str), size);
     dstr->current += size;
-    if (dstr->length >= 0 && SCM_STRING_INCOMPLETE_P(str)) {
+    if (dstr->length >= 0 && !SCM_STRING_INCOMPLETE_P(str)) {
         dstr->length += SCM_STRING_LENGTH(str);
     } else {
         dstr->length = -1;

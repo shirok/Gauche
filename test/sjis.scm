@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with shift-jis.
 
-;; $Id: sjis.scm,v 1.2 2002-09-21 10:30:50 shirok Exp $
+;; $Id: sjis.scm,v 1.3 2002-11-02 06:47:13 shirok Exp $
 
 (use gauche.test)
 
@@ -173,6 +173,20 @@
 (test "string-incompltet->incomplete" "‚ "
       (lambda () (string-incomplete->complete
                   (string-append #*"\x82" #*"\xa0"))))
+
+;;-------------------------------------------------------------------
+(test-section "format")
+
+(test "format" "‚ ‚Ô‚ç"
+      (lambda () (format #f "~,,,,3a" "‚ ‚Ô‚ç‚©‚¾‚Ô‚ç")))
+(test "format" "ab‚ç"
+      (lambda () (format #f "~,,,,3a" "ab‚ç‚©‚¾‚Ô‚ç")))
+(test "format" "‚ ‚Ô‚ç‚©‚¾‚Ô‚ç"
+      (lambda () (format #f "~,,,,7:a" "‚ ‚Ô‚ç‚©‚¾‚Ô‚ç")))
+(test "format" "‚ ‚Ô‚ç‚©"
+      (lambda () (format #f "~,,,,7:a" "‚ ‚Ô‚ç‚©")))
+(test "format" "‚ ‚Ô‚ç ..."
+      (lambda () (format #f "~,,,,7:a" "‚ ‚Ô‚ç‚©‚¾‚Ô‚ç‚Ô‚ç‚Ô‚ç")))
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
