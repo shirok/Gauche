@@ -1,3 +1,11 @@
+2002-06-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm_Getc): fixed a bug that getc didn't work when
+	  the size of character was bigger than the size of the buffer
+	  (pretty rare case, but bug is bug).
+	* src/error.c, src/extlib.stub : fixed a bug in Scm_Warn.  Added
+	  Scheme-level interface (warn).
+
 2002-06-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/util.scm : experimentally added file->string, file->list,
