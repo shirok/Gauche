@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.67 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: main.c,v 1.68 2003-07-09 11:31:54 shirok Exp $
  */
 
 #include <unistd.h>
@@ -185,6 +185,8 @@ int main(int argc, char **argv)
 {
     int argind;
     ScmObj cp;
+    const char *scriptfile = NULL;
+    ScmObj av = SCM_NIL;
 
 #ifdef __CYGWIN__
     /* Cygwin needs explicit initialization for GC module.
@@ -234,6 +236,43 @@ int main(int argc, char **argv)
         SCM_END_PROTECT;
     }
 
+    /* prepare *program-name* and *argv* */
+    if (optind < argc) {
+        /* We have a script file specified. */
+        ScmObj at = SCM_NIL;
+        int ac;
+        struct stat statbuf;
+
+        /* if the script name is given in relative pathname, see if
+           it exists from the current directory.  if not, leave it
+           to load() to search in the load paths */
+        if (argv[optind][0] == '\0') Scm_Error("bad script name");
+        if (argv[optind][0] == '/') {
+            scriptfile = argv[optind];
+        } else {
+            if (stat(argv[optind], &statbuf) == 0) {
+                ScmDString ds;
+                Scm_DStringInit(&ds);
+                Scm_DStringPutz(&ds, "./", -1);
+                Scm_DStringPutz(&ds, argv[optind], -1);
+                scriptfile = Scm_DStringGetz(&ds);
+            } else {
+                scriptfile = argv[optind];
+            }
+        }
+
+        /* sets up arguments. */
+        for (ac = optind; ac < argc; ac++) {
+            SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
+        }
+    } else {
+        av = SCM_LIST1(SCM_MAKE_STR_IMMUTABLE(argv[0]));
+    }
+
+    /* define these before loading stuff specified by cmdargs. */
+    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(av));
+    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(av));
+
     /* process pre-commands */
     SCM_FOR_EACH(cp, Scm_Reverse(pre_cmds)) {
         ScmObj p = SCM_CAR(cp);
@@ -271,38 +310,9 @@ int main(int argc, char **argv)
     }
 
     /* If script file is specified, load it. */
-    if (optind < argc) {
-        ScmObj av = SCM_NIL, at = SCM_NIL, mainproc, result;
-        int ac;
-        struct stat statbuf;
-        const char *scriptfile;
-
-        /* if the script name is given in relative pathname, see if
-           it exists from the current directory.  if not, leave it
-           to load() to search in the load paths */
-        if (argv[optind][0] == '\0') Scm_Error("bad script name");
-        if (argv[optind][0] == '/') {
-            scriptfile = argv[optind];
-        } else {
-            if (stat(argv[optind], &statbuf) == 0) {
-                ScmDString ds;
-                Scm_DStringInit(&ds);
-                Scm_DStringPutz(&ds, "./", -1);
-                Scm_DStringPutz(&ds, argv[optind], -1);
-                scriptfile = Scm_DStringGetz(&ds);
-            } else {
-                scriptfile = argv[optind];
-            }
-        }
-
-        /* sets up arguments. */
-        for (ac = optind; ac < argc; ac++) {
-            SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
-        }
-        SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(av));
-        SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(av));
-
-        /* load the file */
+    if (scriptfile != NULL) {
+        ScmObj result, mainproc;
+        
         Scm_Load(scriptfile, TRUE);
 
         /* if symbol 'main is bound to a procedure in the user module,
@@ -317,12 +327,7 @@ int main(int argc, char **argv)
         Scm_Exit(0);
     }
 
-    /* now, we're in the interactive mode. */
-    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_NIL);
-    SCM_DEFINE(Scm_UserModule(), "*program-name*",
-               SCM_MAKE_STR_IMMUTABLE(argv[0]));
-
-    /* (use gauche.interactive) only for interactive session */
+    /* Now we're in interactive mode. (use gauche.interactive) */
     if (load_initfile) {
         SCM_UNWIND_PROTECT {
             Scm_Require(SCM_MAKE_STR("gauche/interactive"));

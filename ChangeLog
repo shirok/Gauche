@@ -1,5 +1,10 @@
 2003-07-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c (main): changed to set up *program-name* and *argv*
+	  before evaluating -u, -l, and -e options, so that the files
+	  loaded by these options can refer to the proper *program-name*
+	  and *argv*.
+
 	* ext/dbm/gdbm.scm (dbm-fold): fixed to use %dbm-s2v to convert
 	  value field (it was %dbm-s2k).  Thanks to Alex Shinn for pointing
 	  this out.
