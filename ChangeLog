@@ -1,5 +1,20 @@
+2001-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.13
+	* configure.in, ext/charconv/* : check existence of iconv() to avoid
+	  compilation error.  Added a new configure option --with-iconv
+	  to tell if iconv is installed in a non-trivial location.
+	* ext/uvector/* : added a test suite, and fixed bugs found by it.
+	* src/load.c : use RTLD_NOW for dlopen() to avoid segfault when
+	  loaded DSO has unresolved reference.
+	* src/bignum.c : fixed a bug in Scm_MakeBignumFromSI that made wrong
+	  result if the argument was LONG_MIN.
+	* src/main.c : added batch mode, i.e. to evaluate input without
+	  prompting and printing the result.  Useful for filter programs.
+
 2001-05-28  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.3.12
 	* configure.in, lib/slib.scm.in : let configure.in to find the slib
 	  location.  the user can specify it by --with-slib=PATH,
 	  alternatively.
