@@ -1,7 +1,7 @@
 ;;;
 ;;; file/util.scm - filesystem utility functions
 ;;;
-;;;  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2002-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.18 2002-12-02 01:07:37 shirok Exp $
+;;;  $Id: util.scm,v 1.19 2003-01-09 11:31:47 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -29,7 +29,7 @@
           home-directory
           make-directory* create-directory* remove-directory* delete-directory*
           build-path resolve-path expand-path simplify-path
-          absolute-path? relative-path? decompose-path find-file-in-paths
+          absolute-path? relative-path? find-file-in-paths
           file-is-readable? file-is-writable? file-is-executable?
           file-type file-perm file-mode file-ino file-dev file-rdev file-nlink
           file-uid file-gid file-size file-mtime file-atime file-ctime
@@ -38,7 +38,7 @@
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
           touch-file copy-file move-file
-          file->string file->string-list file->list file->sexp-list
+          ;;file->string file->string-list file->list file->sexp-list
           ))
 (select-module file.util)
 
