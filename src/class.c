@@ -12,14 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.27 2001-03-25 08:45:07 shiro Exp $
+ *  $Id: class.c,v 1.28 2001-03-25 10:23:05 shiro Exp $
  */
 
 #include "gauche.h"
 #include "gauche/macro.h"
 #include "gauche/class.h"
 
-/*
+/*===================================================================
  * Built-in classes
  */
 
@@ -29,6 +29,7 @@ static int method_print(ScmObj, ScmPort *, int);
 static int slot_accessor_print(ScmObj, ScmPort *, int);
 
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
+static void scheme_slot_default(ScmObj obj);
 
 ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
 ScmClass *Scm_CollectionCPL[] = {
@@ -80,8 +81,6 @@ SCM_DEFINE_GENERIC(Scm_GenericAddMethod, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeCPL, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericComputeGetterMethod, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericComputeSetterMethod, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 
@@ -138,58 +137,6 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
     int i;
     for (i=0; i<len; i++, array++) SCM_APPEND1(h, t, (*array)->name);
     return h;
-}
-
-/*=====================================================================
- * Scheme slot access
- */
-
-/* Scheme slots are simply stored in ScmObj array.  What complicates
- * the matter is that we allow any C structure to be a base class of
- * Scheme class, so there may be an offset for such slots.
- */
-
-/* dummy structure to access Scheme slots */
-typedef struct ScmInstanceRec {
-    SCM_HEADER;
-    ScmObj slots[1];
-} ScmInstance;
-
-#define SCM_INSTANCE(obj)      ((ScmInstance *)obj)
-
-static inline int scheme_slot_index(ScmObj obj, int number)
-{
-    ScmClass *k = SCM_CLASS_OF(obj);
-    int offset = k->instanceSlotOffset;
-    if (offset == 0)
-        Scm_Error("scheme slot accessor called with C-defined object %S.  implementation error?",
-                  obj);
-    if (number < 0 || number > k->numInstanceSlots)
-        Scm_Error("instance slot index %d out of bounds for %S",
-                  number, obj);
-    return number-offset+1;
-}
-
-
-static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
-{
-    int index = scheme_slot_index(obj, number);
-    return SCM_INSTANCE(obj)->slots[index];
-}
-
-static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
-{
-    int index = scheme_slot_index(obj, number);
-    SCM_INSTANCE(obj)->slots[index] = val;
-}
-
-static void scheme_slot_initialize(ScmObj obj)
-{
-    int index = scheme_slot_index(obj, 0);
-    int count = SCM_CLASS_OF(obj)->numInstanceSlots;
-    int i;
-    for (i=0; i<count; i++, index++)
-        SCM_INSTANCE(obj)->slots[index] = SCM_UNBOUND;
 }
 
 /*=====================================================================
@@ -312,7 +259,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->slots = SCM_NIL;
     instance->directSubclasses = SCM_NIL;
     instance->directMethods = SCM_NIL;
-    scheme_slot_initialize(SCM_OBJ(instance));
+    scheme_slot_default(SCM_OBJ(instance));
     return SCM_OBJ(instance);
 }
 
@@ -554,7 +501,6 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
         SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS(SCM_CAR(dp))));
     }
     SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS_OBJECT));
-    Scm_Printf(SCM_CUROUT, "-- %S\n", seqh);
     
     result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh, compute_cpl_cb, NULL);
     if (SCM_FALSEP(result))
@@ -564,24 +510,113 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
 }
 
 /*=====================================================================
- * Slot accessors
+ * Scheme slot access
  */
 
+/* Scheme slots are simply stored in ScmObj array.  What complicates
+ * the matter is that we allow any C structure to be a base class of
+ * Scheme class, so there may be an offset for such slots.
+ */
+
+/* dummy structure to access Scheme slots */
+typedef struct ScmInstanceRec {
+    SCM_HEADER;
+    ScmObj slots[1];
+} ScmInstance;
+
+#define SCM_INSTANCE(obj)      ((ScmInstance *)obj)
+
+static inline int scheme_slot_index(ScmObj obj, int number)
+{
+    ScmClass *k = SCM_CLASS_OF(obj);
+    int offset = k->instanceSlotOffset;
+    if (offset == 0)
+        Scm_Error("scheme slot accessor called with C-defined object %S.  implementation error?",
+                  obj);
+    if (number < 0 || number > k->numInstanceSlots)
+        Scm_Error("instance slot index %d out of bounds for %S",
+                  number, obj);
+    return number-offset+1;
+}
+
+
+static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
+{
+    int index = scheme_slot_index(obj, number);
+    return SCM_INSTANCE(obj)->slots[index];
+}
+
+static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
+{
+    int index = scheme_slot_index(obj, number);
+    SCM_INSTANCE(obj)->slots[index] = val;
+}
+
+static void scheme_slot_default(ScmObj obj)
+{
+    int index = scheme_slot_index(obj, 0);
+    int count = SCM_CLASS_OF(obj)->numInstanceSlots;
+    int i;
+    for (i=0; i<count; i++, index++)
+        SCM_INSTANCE(obj)->slots[index] = SCM_UNBOUND;
+}
+
+/* initialize slot according to its accessor spec */
+static ScmObj slot_initialize_cc(ScmObj result, void **data)
+{
+    ScmObj obj = data[0];
+    ScmObj slot = data[1];
+    return Scm_VMSlotSet(obj, slot, result);
+}
+
+static ScmObj slot_initialize(ScmObj obj, ScmObj acc, ScmObj initargs)
+{
+    ScmClass *klass = SCM_CLASS_OF(obj);
+    ScmObj slot = SCM_CAR(acc);
+    ScmSlotAccessor *ca = SCM_SLOT_ACCESSOR(SCM_CDR(acc));
+    if (SCM_KEYWORDP(ca->initKeyword)) {
+        ScmObj v = Scm_GetKeyword(ca->initKeyword, initargs, SCM_UNDEFINED);
+        if (!SCM_UNDEFINEDP(v)) return Scm_VMSlotSet(obj, slot, v);
+        v = SCM_UNBOUND;
+    }
+    if (!SCM_UNBOUNDP(ca->initValue))
+        return Scm_VMSlotSet(obj, slot, ca->initValue);
+    if (SCM_PROCEDUREP(ca->initThunk)) {
+        void *data[2];
+        data[0] = (void*)obj;
+        data[1] = (void*)slot;
+        Scm_VMPushCC(slot_initialize_cc, data, 2);
+        return Scm_VMApply(ca->initThunk, SCM_NIL);
+    }
+    return SCM_UNDEFINED;
+}
+
+/*
+ * Convenient function
+ */
+inline ScmSlotAccessor *Scm_GetSlotAccessor(ScmObj obj, ScmObj slot)
+{
+    ScmObj p = Scm_Assq(slot, Scm_ClassOf(obj)->accessors);
+    if (!SCM_PAIRP(p)) return NULL;
+    if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
+        Scm_Error("slot accessor information of class %S, slot %S is screwed up.",
+                  SCM_OBJ(Scm_ClassOf(obj)), slot);
+    return SCM_SLOT_ACCESSOR(SCM_CDR(p));
+}
+
+/*
+ * slot-ref & slot-set!
+ */
 ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmSlotAccessor *ca;
-    ScmObj p = Scm_Assq(slot, klass->accessors);
+    ScmSlotAccessor *ca = Scm_GetSlotAccessor(obj, slot);
     ScmObj val = SCM_UNBOUND;
 
-    if (!SCM_PAIRP(p)) {
+    if (ca == NULL) {
         return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
                            SCM_LIST3(SCM_OBJ(klass), obj, slot));
     }
-    if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
-        Scm_Error("slot accessor information of class %S is screwed up.",
-                  SCM_OBJ(klass));
-    ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
     if (ca->getter) {
         val = ca->getter(obj);
     } else if (ca->slotNumber >= 0) {
@@ -603,18 +638,13 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot)
 ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmSlotAccessor *ca;
-    ScmObj p = Scm_Assq(slot, klass->accessors);
+    ScmSlotAccessor *ca = Scm_GetSlotAccessor(obj, slot);
     ScmObj r = SCM_UNDEFINED;
     
-    if (!SCM_PAIRP(p)) {
+    if (ca == NULL) {
         return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
                            SCM_LIST4(SCM_OBJ(klass), obj, slot, val));
     }
-    if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
-        Scm_Error("slot accessor information of class %S is screwed up.",
-                  SCM_OBJ(klass));
-    ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
     if (ca->setter) {
         ca->setter(obj, val);
     } else if (ca->slotNumber >= 0) {
@@ -626,15 +656,6 @@ ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
         Scm_Error("slot %S of class %S is read-only", slot, SCM_OBJ(klass));
     }
     return r;
-}
-
-ScmObj Scm_GetSlotAllocation(ScmObj slot)
-{
-    if (SCM_PAIRP(slot)) {
-        return Scm_GetKeyword(key_allocation, SCM_CDR(slot), key_instance);
-    } else {
-        return key_instance;
-    }
 }
 
 /*--------------------------------------------------------------
@@ -737,9 +758,48 @@ static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
     int i;
     ScmObj obj = SCM_NEW2(ScmObj, size);
     SCM_SET_CLASS(obj, klass);
-    scheme_slot_initialize(obj);
+    scheme_slot_default(obj);
     return SCM_OBJ(obj);
 }
+
+/* (initialize <object> initargs) */
+static ScmObj object_initialize_cc(ScmObj result, void **data)
+{
+    ScmObj obj = SCM_OBJ(data[0]);
+    ScmObj accs = SCM_OBJ(data[1]);
+    ScmObj initargs = SCM_OBJ(data[2]);
+    void *next[3];
+    if (SCM_NULLP(accs)) return obj;
+    next[0] = obj;
+    next[1] = SCM_CDR(accs);
+    next[2] = initargs;
+    Scm_VMPushCC(object_initialize_cc, next, 3);
+    return slot_initialize(obj, SCM_CAR(accs), initargs);
+}
+
+static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                void *data)
+{
+    ScmObj obj = args[0];
+    ScmObj initargs = args[1];
+    ScmObj accs = Scm_ClassOf(obj)->accessors;
+    void *next[3];
+    if (SCM_NULLP(accs)) return obj;
+    next[0] = obj;
+    next[1] = SCM_CDR(accs);
+    next[2] = initargs;
+    Scm_VMPushCC(object_initialize_cc, next, 3);
+    return slot_initialize(obj, SCM_CAR(accs), initargs);
+}
+
+static ScmClass *object_initialize_SPEC[] = {
+    SCM_CLASS_OBJECT, SCM_CLASS_LIST
+};
+static SCM_DEFINE_METHOD(object_initialize_rec,
+                         &Scm_GenericInitialize,
+                         2, 0,
+                         object_initialize_SPEC,
+                         object_initialize, NULL);
 
 /*=====================================================================
  * Generic function
@@ -756,7 +816,7 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     instance->methods = SCM_NIL;
     instance->fallback = Scm_NoNextMethod;
     instance->data = NULL;
-    scheme_slot_initialize(SCM_OBJ(instance));
+    scheme_slot_default(SCM_OBJ(instance));
     return SCM_OBJ(instance);
 }
 
@@ -884,7 +944,7 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
     instance->generic = NULL;
     instance->specializers = NULL;
     instance->func = NULL;
-    scheme_slot_initialize(SCM_OBJ(instance));
+    scheme_slot_default(SCM_OBJ(instance));
     return SCM_OBJ(instance);
 }
 
@@ -1088,6 +1148,8 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
                         slot_accessor_init_value, NULL, SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("init-keyword",
                         slot_accessor_init_keyword, NULL, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("init-thunk",
+                        slot_accessor_init_thunk, NULL, SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("slot-number",
                         slot_accessor_slot_number,
                         slot_accessor_slot_number_set, SCM_FALSE),
@@ -1268,13 +1330,12 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericComputeCPL, "compute-cpl");
     GINIT(&Scm_GenericComputeSlots, "compute-slots");
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
-    GINIT(&Scm_GenericComputeGetterMethod, "compute-getter-method");
-    GINIT(&Scm_GenericComputeSetterMethod, "compute-setter-method");
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);
+    Scm_InitBuiltinMethod(&object_initialize_rec);
     Scm_InitBuiltinMethod(&generic_initialize_rec);
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
     Scm_InitBuiltinMethod(&method_initialize_rec);
