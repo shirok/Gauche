@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.14 2001-04-02 02:26:44 shiro Exp $
+;;;  $Id: object.scm,v 1.15 2001-04-02 10:26:38 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -126,7 +126,9 @@
     ))
 
 ;; Determine default metaclass, that is a class inheriting all the metaclasses
-;; of supers.  The idea is taken from stklos.
+;; of supers.  The idea is taken from stklos.  The difference is that
+;; metaclass calculation is done at runtime in Gauche, while at compile-time
+;; in STklos.
 (define %get-default-metaclass
   (let ((generated-metas '()))
     (define (find-metaclass metasupers)
@@ -152,9 +154,11 @@
              (lambda (m)
                (when (and (not (memq m all-cpls))
                           (not (memq m needed)))
-                 (set! needed (append needed (list m)))))
+                 (set! needed (cons m needed))))
              all-metas)
-            (if (null? (cdr needed)) (car needed) (find-metaclass needed)))))
+            (if (null? (cdr needed))
+                (car needed)
+                (find-metaclass (reverse! needed))))))
     ))
 
 ;;; Method INITIALIZE (class <class>) initargs
