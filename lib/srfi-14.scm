@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-14.scm,v 1.2 2001-04-05 08:04:30 shiro Exp $
+;;;  $Id: srfi-14.scm,v 1.3 2001-04-05 08:17:41 shiro Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -44,6 +44,7 @@
           list->char-set list->char-set! string->char-set string->char-set!
           char-set-filter char-set-filter!
           ucs-range->char-set ucs-range->char-set!
+          integer-range->char-set integer-range->char-set!
           ->char-set
           char-set-size char-set-count char-set->list char-set->string
           char-set-every char-set-any
