@@ -8,7 +8,7 @@
 
 ;;; Modified for Gauche, by Shiro Kawai (shiro@acm.org)
 ;;; You can obtain the original version from http://srfi.schemers.org
-;;;   $Id: srfi-1.scm,v 1.3 2001-03-07 06:58:53 shiro Exp $
+;;;   $Id: srfi-1.scm,v 1.4 2001-03-10 08:11:50 shiro Exp $
 
 ;;; This is a library of list- and pair-processing functions. I wrote it after
 ;;; carefully considering the functions provided by the libraries found in
@@ -212,17 +212,42 @@
 ;;;
 ;;; The SRFI discussion record contains more discussion on this topic.
 
+(define-module srfi-1
+  (export xcons cons* make-list list-copy circular-list iota
+          proper-list? circular-list? dotted-list? not-pair?
+          null-list? list=
+          first second third fourth fifth sixth seventh eighth
+          ninth tenth car+cdr take drop take-right drop-right
+          take! drop-right! split-at split-at! last
+          length+ concatenate append! concatenate! reverse!
+          append-reverse append-reverse!
+          zip unzip1 unzip2 unzip3 unzip4 unzip5 count
+          fold unfold pair-fold reduce fold-right unfold-right
+          pair-fold-right reduce-right append-map append-map!
+          map! pair-for-each filter-map map-in-order
+          filter partition filter! partition! remove!
+          member find find-tail any every list-index
+          take-while drop-while take-while! span break span! break!
+          delete delete-duplicates delete! delete-duplicates!
+          assoc alist-cons alist-copy alist-delete alist-delete!
+          lset lset= lset-adjoin lset-union lset-union!
+          lset-intersection lset-intersection! lset-difference
+          lset-difference! lset-xor lset-xor!
+          lset-diff+intersection lset-diff+intersection!))
+(select-module srfi-1)
 
-;; [SK] For now, I use traditional macro.  Replace it for define-syntax
-;; later.
-(define-macro (check-arg proc arg name)
-  (let ((tmp (gensym)))
-    `(let ((,tmp ,arg))
-       (unless (,proc ,tmp)
-         (error "~a: bad type of argument: ~s" ',name ,tmp)))))
+(define-syntax check-arg
+  (syntax-rules ()
+    ((check-arg ?test ?arg ?fname)
+     (let ((tmp ?arg))
+       (unless (?test tmp)
+         (error "~a: bad type of argument: ~s" ?fname tmp))))
+    ))
 
-(define-macro (%optional arg default)
-  `(if (pair? ,arg) (car ,arg) ,default))
+(define-syntax %optional
+  (syntax-rules ()
+    ((%optional ?opts ?default)
+     (if (pair? ?opts) (car ?opts) ?default))))
 
 ;;; Constructors
 ;;;;;;;;;;;;;;;;
