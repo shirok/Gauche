@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.21 2002-04-25 02:49:05 shirok Exp $
+ *  $Id: charconv.c,v 1.22 2002-04-25 14:02:30 shirok Exp $
  */
 
 #include <string.h>
@@ -107,7 +107,7 @@ static conv_guess *findGuessingProc(const char *code)
 
 static int conv_input_filler(ScmPort *port, int mincnt)
 {
-    conv_info *info = (conv_info*)port->data;
+    conv_info *info = (conv_info*)port->src.buf.data;
     size_t insize, inroom, outroom, result;
     int nread;
     const char *inbuf = info->inbuf;
@@ -237,10 +237,12 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->outptr = cinfo->outbuf;
     
-    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_INPUT, cinfo->bufsiz, 0,
-                                            cinfo->outbuf, conv_input_filler,
-                                            NULL, conv_input_closer, -1));
-    newport->data = (void*)cinfo;
+    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_INPUT, SCM_PORT_BUFFER_ALWAYS,
+                                            cinfo->bufsiz, cinfo->outbuf,
+                                            ownerp,
+                                            conv_input_filler, NULL,
+                                            conv_input_closer, NULL,
+                                            cinfo));
     return SCM_OBJ(newport);
 }
 
@@ -267,7 +269,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 
 static int conv_output_closer(ScmPort *port)
 {
-    conv_info *info = (conv_info*)port->data;
+    conv_info *info = (conv_info*)port->src.buf.data;
     if (info->outptr > info->outbuf) {
         Scm_Putz(info->outbuf, info->outptr - info->outbuf, info->remote);
     }
@@ -278,7 +280,7 @@ static int conv_output_closer(ScmPort *port)
 
 static int conv_output_flusher(ScmPort *port, int mincnt)
 {
-    conv_info *info = (conv_info*)port->data;
+    conv_info *info = (conv_info*)port->src.buf.data;
     size_t outsize, inroom, outroom, result, len;
     int nread;
     const char *inbuf;
@@ -377,11 +379,12 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->outptr = cinfo->outbuf;
     
-    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_OUTPUT, cinfo->bufsiz, 0,
-                                            cinfo->inbuf, NULL,
-                                            conv_output_flusher,
-                                            conv_output_closer, -1));
-    newport->data = (void*)cinfo;
+    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_OUTPUT, SCM_PORT_BUFFER_ALWAYS,
+                                            cinfo->bufsiz, cinfo->inbuf,
+                                            ownerp,
+                                            NULL, conv_output_flusher,
+                                            conv_output_closer, NULL,
+                                            cinfo));
     return SCM_OBJ(newport);
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.52 2002-04-25 12:28:51 shirok Exp $
+ *  $Id: port.c,v 1.53 2002-04-25 14:02:34 shirok Exp $
  */
 
 #include <unistd.h>
@@ -31,6 +31,7 @@ static void port_finalize(GC_PTR obj, GC_PTR data);
 static void register_buffered_port(ScmPort *port);
 static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int);
+static int file_closer(ScmPort *p);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
 
@@ -151,7 +152,12 @@ static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 int Scm_PortFileNo(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
-        return port->src.buf.fd;
+        /* TODO: this is ugly, and not extensible.  rewrite. */
+        if (port->src.buf.closer == file_closer) {
+            return (int)port->src.buf.data;
+        } else {
+            return -1;
+        }
     } else {
         /* TODO: proc port */
         return -1;
@@ -194,8 +200,8 @@ int Scm_CharReady(ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current < p->src.buf.end) return TRUE;
-        if (p->src.buf.fd < 0) return TRUE; /*FIXME*/
-        return (Scm_FdReady(p->src.buf.fd, SCM_PORT_INPUT) != SCM_FD_WOULDBLOCK);
+        if (p->src.buf.ready == NULL) return TRUE;
+        return (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK);
     case SCM_PORT_PROC:
         return p->src.vt.Ready(p);
     default:
@@ -289,35 +295,37 @@ int Scm_CharReady(ScmPort *p)
 #define SCM_PORT_DEFAULT_BUFSIZ 8192
 
 ScmObj Scm_MakeBufferedPort(int dir,     /* direction */
+                            int mode,    /* buffering mode */
                             int bufsiz,  /* size of the buffer. */
-                            int bytes,   /* # of bytes already exist
-                                            in the buffer. */
                             char *buffer,  /* the buffer.  can be NULL
                                               to be autoallocated */
+                            int ownerp,  /* owner flag*/
                             int (*filler)(ScmPort *p, int cnt),
                             int (*flusher)(ScmPort *p, int cnt),
                             int (*closer)(ScmPort *p),
-                            int fd)
+                            int (*ready)(ScmPort *p),
+                            void *data)
 {
     ScmPort *p;
     
     if (bufsiz <= 0) bufsiz = SCM_PORT_DEFAULT_BUFSIZ;
     if (buffer == NULL) buffer = SCM_NEW_ATOMIC2(char*, bufsiz);
-    p = make_port(dir, SCM_PORT_FILE, fd >= 0);
+    p = make_port(dir, SCM_PORT_FILE, ownerp);
     p->src.buf.buffer = buffer;
     if (dir == SCM_PORT_INPUT) {
         p->src.buf.current = p->src.buf.buffer;
-        p->src.buf.end = bytes? p->src.buf.buffer + bytes : p->src.buf.buffer;
+        p->src.buf.end = p->src.buf.buffer;
     } else {
-        p->src.buf.current = bytes? p->src.buf.buffer + bytes : p->src.buf.buffer;
+        p->src.buf.current = p->src.buf.buffer;
         p->src.buf.end = p->src.buf.buffer + bufsiz;
     }
     p->src.buf.size = bufsiz;
-    p->src.buf.mode = SCM_PORT_BUFFER_ALWAYS;
+    p->src.buf.mode = mode;
     p->src.buf.filler = filler;
     p->src.buf.flusher = flusher;
     p->src.buf.closer = closer;
-    p->src.buf.fd = fd;
+    p->src.buf.ready = ready;
+    p->src.buf.data = data;
     p->src.buf.line = 1;
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
     return SCM_OBJ(p);
@@ -815,11 +823,12 @@ static int file_filler(ScmPort *p, int mincnt)
 {
     int nread = 0, r;
     int room = SCM_PORT_BUFFER_ROOM(p);
+    int fd = (int)p->src.buf.data;
     char *datptr = p->src.buf.end;
-    SCM_ASSERT(p->src.buf.fd >= 0);
+    SCM_ASSERT(fd >= 0);
     while (nread < mincnt) {
         errno = 0;
-        r = read(p->src.buf.fd, datptr, room-nread);
+        r = read(fd, datptr, room-nread);
         if (r < 0) {
             if (errno == EINTR) {
                 Scm_SigCheck(Scm_VM());
@@ -842,12 +851,13 @@ static int file_flusher(ScmPort *p, int mincnt)
 {
     int nwrote = 0, r;
     int datsiz = SCM_PORT_BUFFER_AVAIL(p);
+    int fd = (int)p->src.buf.data;
     char *datptr = p->src.buf.buffer;
     
-    SCM_ASSERT(p->src.buf.fd >= 0);
+    SCM_ASSERT(fd >= 0);
     while (nwrote < mincnt) {
         errno = 0;
-        r = write(p->src.buf.fd, datptr, datsiz-nwrote);
+        r = write(fd, datptr, datsiz-nwrote);
         if (r < 0) {
             if (errno == EINTR) {
                 Scm_SigCheck(Scm_VM());
@@ -865,9 +875,17 @@ static int file_flusher(ScmPort *p, int mincnt)
 
 static int file_closer(ScmPort *p)
 {
-    SCM_ASSERT(p->src.buf.fd >= 0);
+    int fd = (int)p->src.buf.data;
+    SCM_ASSERT(fd >= 0);
     if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) bufport_flush(p, 0);
-    return close(p->src.buf.fd);
+    return close(fd);
+}
+
+static int file_ready(ScmPort *p)
+{
+    int fd = (int)p->src.buf.data;
+    SCM_ASSERT(fd >= 0);
+    return Scm_FdReady(fd, SCM_PORT_DIR(p));
 }
 
 ScmObj Scm_OpenFilePort(const char *path, int flags, int mode)
@@ -878,11 +896,12 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int mode)
     if ((flags & O_ACCMODE) == O_RDONLY) dir = SCM_PORT_INPUT;
     else if ((flags & O_ACCMODE) == O_WRONLY) dir = SCM_PORT_OUTPUT;
     else Scm_Error("unsupported file access mode %d to open %s", flags&O_ACCMODE, path);
-    fd = open(path, flags, mode); /*TODO: create mode*/
+    fd = open(path, flags, mode);
     if (fd < 0) return SCM_FALSE;
-    p = Scm_MakeBufferedPort(dir, 0, 0, NULL, file_filler, file_flusher, file_closer, fd);
+    p = Scm_MakeBufferedPort(dir, SCM_PORT_BUFFER_ALWAYS, 0, NULL, TRUE,
+                             file_filler, file_flusher,
+                             file_closer, file_ready, (void*)fd);
     SCM_PORT(p)->name = SCM_MAKE_STR_COPYING(path);
-    SCM_PORT(p)->ownerp = TRUE;
     return p;
 }
 
@@ -897,12 +916,12 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
                           int fd, int buffered, int ownerp)
 {
     ScmObj p;
+    int bmode = buffered? SCM_PORT_BUFFER_ALWAYS : SCM_PORT_BUFFER_NEVER;
     
-    /* TODO: buffered mode */
-    p = Scm_MakeBufferedPort(direction, 0, 0, NULL,
-                             file_filler, file_flusher, file_closer, fd);
+    p = Scm_MakeBufferedPort(direction, bmode, 0, NULL, ownerp,
+                             file_filler, file_flusher,
+                             file_closer, file_ready, (void*)fd);
     SCM_PORT(p)->name = name;
-    SCM_PORT(p)->ownerp = ownerp;
     return p;
 }
 
@@ -923,6 +942,7 @@ ScmObj Scm_MakeOutputStringPort(void)
 {
     ScmPort *p = make_port(SCM_PORT_OUTPUT, SCM_PORT_OSTR, FALSE);
     Scm_DStringInit(&p->src.ostr);
+    SCM_PORT(p)->name = SCM_MAKE_STR("(output string port)");
     return SCM_OBJ(p);
 }
 

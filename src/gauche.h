@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.240 2002-04-25 12:28:50 shirok Exp $
+ *  $Id: gauche.h,v 1.241 2002-04-25 14:02:34 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1025,12 +1025,13 @@ typedef struct ScmPortBufferRec {
     char *current;      /* current buffer position */
     char *end;          /* the end of the current valid data */
     int  size;          /* buffer size */
-    int  mode;          /* buffering mode */
-    int (*filler)(ScmPort *p, int min);
-    int (*flusher)(ScmPort *p, int min);
-    int (*closer)(ScmPort *p);
-    int fd;
-    int line;
+    int  mode;          /* buffering mode (ScmPortBufferMode) */
+    int  line;          /* line counter */
+    int  (*filler)(ScmPort *p, int min);
+    int  (*flusher)(ScmPort *p, int min);
+    int  (*closer)(ScmPort *p);
+    int  (*ready)(ScmPort *p);
+    void *data;
 } ScmPortBuffer;
 
 /* For input buffered port, returns the size of room that can be filled
@@ -1162,14 +1163,14 @@ SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port);
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(int direction,
 				      ScmPortVTable *vtable,
 				      void *clientData);
-SCM_EXTERN ScmObj Scm_MakeBufferedPort(int direction,
-				       int bufsize,
-				       int bytes,
-				       char *buffer,
+SCM_EXTERN ScmObj Scm_MakeBufferedPort(int direction, int mode,
+				       int bufsize,   char *buffer,
+                                       int ownerp,
                                        int (*filler)(ScmPort *p, int cnt),
                                        int (*flusher)(ScmPort *p, int cnt),
                                        int (*closer)(ScmPort *p),
-                                       int fd);
+                                       int (*ready)(ScmPort *p),
+                                       void *data);
 SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
 				     int direction,
 				     int fd,
@@ -1180,6 +1181,7 @@ SCM_EXTERN ScmObj Scm_PortName(ScmPort *port);
 SCM_EXTERN int    Scm_PortLine(ScmPort *port);
 SCM_EXTERN int    Scm_PortPosition(ScmPort *port);
 SCM_EXTERN int    Scm_PortFileNo(ScmPort *port);
+SCM_EXTERN int    Scm_FdReady(int fd, int dir);
 SCM_EXTERN int    Scm_CharReady(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_ClosePort(ScmPort *port);

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.137 2002-04-25 03:31:57 shirok Exp $
+;;; $Id: extlib.stub,v 1.138 2002-04-25 14:02:34 shirok Exp $
 ;;;
 
 "
@@ -683,7 +683,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 "static int bufport_closer(ScmPort *p)
  {
     if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) {
-       ScmObj scmflusher = SCM_OBJ(p->data);
+       ScmObj scmflusher = SCM_OBJ(p->src.buf.data);
        int siz = (int)(p->src.buf.current - p->src.buf.buffer);
        if (siz > 0) Scm_Apply(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING)));
        Scm_Apply(scmflusher, SCM_LIST1(SCM_FALSE));
@@ -694,7 +694,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 "static int bufport_filler(ScmPort *p, int mincnt)
  {
     ScmObj scmfiller, r;  int bufsiz, siz;
-    scmfiller = SCM_OBJ(p->data);
+    scmfiller = SCM_OBJ(p->src.buf.data);
     bufsiz = p->src.buf.buffer + p->src.buf.size - p->src.buf.end;
     /* no need to use VMApply; we're in the C callback */
     r = Scm_Apply(scmfiller, SCM_LIST1(Scm_MakeInteger(bufsiz)));
@@ -713,15 +713,14 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc open-input-buffered-port (filler buffer-size)
   (assert (procedure? filler))
   (assert (small-integer? buffer-size))
-  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_INPUT, buffer_size, 0, NULL, bufport_filler, NULL, bufport_closer, -1);
-  SCM_PORT(p)->data = (void*)filler;
+  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_INPUT, SCM_PORT_BUFFER_ALWAYS, buffer_size, NULL, FALSE, bufport_filler, NULL, bufport_closer, NULL, (void*)filler);
   SCM_RETURN(p);")
 
 "static int bufport_flusher(ScmPort *p, int mincnt)
  {
      ScmObj scmflusher, s;
      int siz;
-     scmflusher = SCM_OBJ(p->data);
+     scmflusher = SCM_OBJ(p->src.buf.data);
      siz = (int)(p->src.buf.current - p->src.buf.buffer);
      s = Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING);
      Scm_Apply(scmflusher, SCM_LIST1(s));
@@ -731,8 +730,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc open-output-buffered-port (flusher buffer-size)
   (assert (procedure? flusher))
   (assert (small-integer? buffer-size))
-  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_OUTPUT, buffer_size, 0, NULL, NULL, bufport_flusher, bufport_closer, -1);
-   SCM_PORT(p)->data = (void*)flusher;
+  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_OUTPUT, SCM_PORT_BUFFER_ALWAYS, buffer_size, NULL, FALSE, NULL, bufport_flusher, bufport_closer, NULL, (void*)flusher);
    SCM_RETURN(p);")
 
 (define-cproc flush (&optional (oport (current-output-port)))
