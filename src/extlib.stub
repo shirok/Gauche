@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.119 2001-12-10 09:33:50 shirok Exp $
+;;; $Id: extlib.stub,v 1.120 2001-12-10 10:03:03 shirok Exp $
 ;;;
 
 "
@@ -1074,6 +1074,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc vm-insn-inspect (obj)
   "  SCM_RETURN(Scm_VMInsnInspect(obj));")
+
+(define-cproc vm-load-history ()
+  "  SCM_RETURN(Scm_VM()->load_history);")
+(define-cproc vm-load-next ()
+  "  SCM_RETURN(Scm_VM()->load_next);")
+(define-cproc vm-load-port ()
+  "  SCM_RETURN(Scm_VM()->load_port);")
 
 ;; GC stuff
 (define-cproc gc ()

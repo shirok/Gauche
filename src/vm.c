@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.115 2001-12-07 07:31:30 shirok Exp $
+ *  $Id: vm.c,v 1.116 2001-12-10 10:03:03 shirok Exp $
  */
 
 #include "gauche.h"
@@ -85,6 +85,10 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
     v->defaultEscapeHandler = SCM_FALSE;
+
+    v->load_history = SCM_NIL;
+    v->load_next = SCM_NIL;
+    v->load_port = SCM_FALSE;
     
     return v;
 }

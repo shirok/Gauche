@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.47 2001-12-07 07:31:30 shirok Exp $
+ *  $Id: load.c,v 1.48 2001-12-10 10:03:03 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -38,11 +38,6 @@
 /* TODO: need to lock in MT */
 static ScmGloc *load_path_rec;       /* *load-path*         */
 static ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
-
-/* TODO: the followings should be in VM prvate in MT env */
-static ScmGloc *load_next_rec;       /* *load-next*         */
-static ScmGloc *load_history_rec;    /* *load-history*      */
-static ScmGloc *load_port_rec;       /* *load-port*         */
 
 /* List of provided features.  Must be protected in MT. */
 static ScmObj provided;
@@ -75,10 +70,11 @@ struct load_packet {
 static ScmObj load_after(ScmObj *args, int nargs, void *data)
 {
     struct load_packet *p = (struct load_packet *)data;
+    ScmVM *vm = Scm_VM();
     Scm_ClosePort(p->port);
     Scm_SelectModule(p->prev_module);
-    load_port_rec->value = p->prev_port;
-    load_history_rec->value = p->prev_history;
+    vm->load_port = p->prev_port;
+    vm->load_history = p->prev_history;
     return SCM_UNDEFINED;
 }
 
@@ -106,6 +102,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
 {
     struct load_packet *p;
     ScmObj port_info;
+    ScmVM *vm = Scm_VM();
     
     if (!SCM_IPORTP(port))
         Scm_Error("input port required, but got: %S", port);
@@ -115,17 +112,17 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
     p = SCM_NEW(struct load_packet);
     p->port = port;
     p->prev_module = Scm_CurrentModule();
-    p->prev_port = load_port_rec->value;
-    p->prev_history = load_history_rec->value;
+    p->prev_port = vm->load_port;
+    p->prev_history = vm->load_history;
 
-    load_port_rec->value = SCM_OBJ(port);
+    vm->load_port = SCM_OBJ(port);
     if (SCM_PORTP(p->prev_port)) {
         port_info = SCM_LIST2(p->prev_port,
                               Scm_MakeInteger(Scm_PortLine(SCM_PORT(p->prev_port))));
     } else {
         port_info = SCM_LIST1(SCM_FALSE);
     }
-    load_history_rec->value = Scm_Cons(port_info, load_history_rec->value);
+    vm->load_history = Scm_Cons(port_info, vm->load_history);
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
@@ -218,16 +215,17 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
 ScmObj Scm_VMLoad(ScmString *filename, int errorp)
 {
     ScmObj port, truename, load_paths = Scm_GetLoadPath();
+    ScmVM *vm = Scm_VM();
 
     truename = Scm_FindFile(filename, &load_paths, errorp);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
-    if (Scm_VM()->runtimeFlags & SCM_LOAD_VERBOSE) {
-        int len = Scm_Length(load_history_rec->value);
+    if (vm->runtimeFlags & SCM_LOAD_VERBOSE) {
+        int len = Scm_Length(vm->load_history);
         SCM_PUTZ(";;", 2, SCM_CURERR);
         while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
         Scm_Printf(SCM_CURERR, "Loading %A...\n", truename);
     }
-    load_next_rec->value = load_paths;
+    vm->load_next = load_paths;
     port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)), "r");
     if (SCM_FALSEP(port)) {
         if (errorp) 
@@ -562,9 +560,6 @@ void Scm__InitLoad(void)
 
     DEF(load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
     DEF(dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
-    DEF(load_history_rec, SCM_SYM_LOAD_HISTORY, SCM_NIL);
-    DEF(load_next_rec,    SCM_SYM_LOAD_NEXT, SCM_NIL);
-    DEF(load_port_rec,    SCM_SYM_LOAD_PORT, SCM_FALSE);
 
     provided = SCM_LIST4(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
                          SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
