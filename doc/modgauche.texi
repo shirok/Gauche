@@ -10417,7 +10417,7 @@ Given the order of @code{<relnum>}, the order of version numbers
 are defined as follows:
 @c JP
 @code{<relnum>}間の順序が定義できたところで、バージョン番号の順序を次のように定義します。
-@c COMMON
+@c EN
 @enumerate
 @item
 Decompose each version number into a list of @code{<principal-release>} and
@@ -10445,8 +10445,38 @@ Both lists have post-subrelease or pre-subrelease at head:
 compare their relnums.
 @end enumerate
 @end enumerate
-
 Here are some examples:
+@c JP
+@enumerate
+@item
+各々のバージョン番号を分解して @code{<principal-release>} とそれに続く
+サブリリース部品のリストに入れる。このリストの各要素のことを「リリース部品」
+と呼びます。
+@item
+もし両方のリストの最初のリリース部品が同じなら、それを両方のリストから
+取り除きます。これをリストの先頭が異るまでくりかえします。
+@item
+そうすると次のような場合に分られます。
+@enumerate
+@item
+両方のリストが空： バージョンは同じ。
+@item
+一方のリスト (A) が空で、他方のリスト (B) の先頭がポストサブリリース：
+A が B より前のバージョン。
+@item
+一方のリスト (A) が空で、他方のリスト (B) の先頭がプリサブリリース：
+B が A より前のバージョン
+@item
+リスト A の先頭がポストサブリリースで、リスト B の先頭がプリサブリリース：
+B が A より前のバージョン
+@item
+両方のリストとも先頭がポストサブリリースであるかプリサブリリース：
+relnum を比較する。
+@end enumerate
+@end enumerate
+
+以下はいくつかの例です。
+@c COMMON
 @example
 "1" < "1.0" < "1.1" < "1.1.1" < "1.1.2" < "1.2" < "1.11"
 "1.2.3" < "1.2.3-1" < "1.2.4"
@@ -10455,8 +10485,13 @@ Here are some examples:
 "1.1-patch112" < "1.2_alpha"
 @end example
 
+@c EN
 The reason of having @code{<pre-subrelease>} is to allow
 "release candidate" or "pre-release" version.
+@c JP
+@code{<pre-subrelease>} があるのは、「リリース候補」あるいは
+「プリリリース」のバージョンをつかえるようにするためです。
+@c COMMON
 @end deftp
 
 @defun version=? ver1 ver2
@@ -10464,22 +10499,43 @@ The reason of having @code{<pre-subrelease>} is to allow
 @defunx version<=? ver1 ver2
 @defunx version>? ver1 ver2
 @defunx version>=? ver1 ver2
+@c EN
 Returns a boolean value depending on the order of two version number
 string @var{ver1} and @var{ver2}.  If the arguments contain invalid
 strings as the defined version number, an error is signalled.
+@c JP
+ふたつのバージョン番号文字列 @var{ver1} と @var{ver2} の順序関係によって
+真偽値を返します。もし引数が、バージョン番号を定義するのに不正な文字列を
+含んでいたばあい、エラーが上ります。
+@c COMMON
 @end defun
 
 @defun version-compare ver1 ver2
+@c EN
 Compares two version number strings @var{ver1} and @var{ver2},
 and returns either -1, 0, or 1, depending whether @var{ver1} is
 prior to @var{ver2}, @var{ver1} is the same as @var{ver2}, or
 @var{ver1} is after @var{ver2}, respectively.
+@c JP
+ふたつのバージョン番号文字列 @var{ver1} と @var{ver2} を比較し、
+@var{ver1} のほうが @var{ver2} より前、@var{ver1} と @var{ver2} は同じ、
+@var{ver1} が @var{ver2} の後、の3つの場合によって、それぞれ、
+-1、0、1 を返します。
+@c COMMON
 @end defun
 
 @defun relnum-compare rel1 rel2
+@c EN
 This is lower-level procedure of @code{version-compare}.  Compares
 two release numbers (relnums) @var{rel1} and @var{rel2}, 
 and returns either -1, 0, or 1 depending whether  @var{rel1} is
 prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @var{rel1} is after @var{rel2}, respectively.
+@c JP
+これは @code{version-compare}の下位レベルの手続きです。
+ふたつのリリース番号 (relnum) @var{rel1} と @var{rel2} を比較し、
+@var{rel1} が @var{rel2} より前、@var{rel1} と @var{rel2} が同じ、
+@var{rel1} が @var{rel2} より後、の3つの場合によって、それぞれ、
+-1、0、1 を返します。
+@c COMMON
 @end defun
