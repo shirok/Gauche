@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.226 2002-04-05 00:49:43 shirok Exp $
+ *  $Id: gauche.h,v 1.227 2002-04-12 00:48:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1513,6 +1513,11 @@ SCM_EXTERN ScmObj Scm_Add(ScmObj arg1, ScmObj arg2, ScmObj args);
 SCM_EXTERN ScmObj Scm_Subtract(ScmObj arg1, ScmObj arg2, ScmObj args);
 SCM_EXTERN ScmObj Scm_Multiply(ScmObj arg1, ScmObj arg2, ScmObj args);
 SCM_EXTERN ScmObj Scm_Divide(ScmObj arg1, ScmObj arg2, ScmObj args);
+
+#define Scm_Add2(a, b)       Scm_Add((a), (b), SCM_NIL)
+#define Scm_Subtract2(a, b)  Scm_Subtract((a), (b), SCM_NIL)
+#define Scm_Multiply2(a, b)  Scm_Multiply((a), (b), SCM_NIL)
+#define Scm_Divide2(a, b)    Scm_Divide((a), (b), SCM_NIL)
 
 SCM_EXTERN ScmObj Scm_Quotient(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_Remainder(ScmObj arg1, ScmObj arg2);

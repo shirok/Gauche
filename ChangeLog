@@ -1,3 +1,12 @@
+2002-04-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : number reader/writer passes r4rstest.
+
+2002-04-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c: fixed a bug that produced bogus output for
+	  (write* '#()).   Thanks for HAbe to point this out.
+
 2002-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : modified Burger&Dybvig algorithm to use floating-
