@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.58 2002-04-27 08:05:34 shirok Exp $
+ *  $Id: port.c,v 1.59 2002-04-28 01:02:38 shirok Exp $
  */
 
 #include <unistd.h>
@@ -745,12 +745,16 @@ void Scm_Ungetc(ScmChar c, ScmPort *port)
  * Getb
  */
 
+/* shift scratch buffer content */
+#define SHIFT_SCRATCH(p, off) \
+   do { int i_; for (i_=0; i_ < (p)->scrcnt; i_++) (p)->scratch[i_]=(p)->scratch[i_+(off)]; } while (0)
+
 /* handle the case that there's remaining data in the scratch buffer */
 static int getb_scratch(ScmPort *p)
 {
-    int b = (unsigned char)p->scratch[0], i;
+    int b = (unsigned char)p->scratch[0];
     p->scrcnt--;
-    for (i=0; i<p->scrcnt; i++) p->scratch[i]=p->scratch[i+1];
+    SHIFT_SCRATCH(p, 1);
     return b;
 }
 
@@ -899,7 +903,7 @@ static int getz_scratch(char *buf, int buflen, ScmPort *p)
     if (p->scrcnt >= buflen) {
         memcpy(buf, p->scratch, buflen);
         p->scrcnt -= buflen;
-        for (i=0; i<p->scrcnt; i++) p->scratch[i] = p->scratch[i+buflen];
+        SHIFT_SCRATCH(p, buflen);
         return buflen;
     } else {
         memcpy(buf, p->scratch, p->scrcnt);
@@ -953,17 +957,164 @@ int Scm_Getz(char *buf, int buflen, ScmPort *p)
 
 /*--------------------------------------------------- 
  * ReadLine
- *   Reads up to '\n' or EOF.
+ *   Reads up to EOL or EOF.  
  */
 
-/* TODO: this can be optimized by scanning buffer directly, instead of
-   using Scm_Getc. */
+#if 0
+/* NB: An attempt to implement "optimized" version of readline.
+   This avoids unnecessary DString creation and mb->char->mb conversion,
+   and potentially boost the performance of readline.
+   However, it complicates the code considerably, and I'm wondering if
+   it's worth to do.  I stop implmenenting it now, until I really hit
+   the performance bottleneck of read-line. [SK] */
 
+/* Common routine to scan buffer to find EOL between cur to end.  If EOL
+   is found, ScmString is created from the line and returned (If dsused
+   is true, the string is added to ds and the entire string is returned).
+
+   If EOL is not found until end, but eof is TRUE, the end of buffer
+   is regarded as the end of line.  For istr port, eof is always TRUE.
+
+   If EOL is not found until end and eof is FALSE, the entire buffer is
+   added to ds, and SCM_FALSE is returned to indicate that the buffer is
+   filled again.  The special exception is when the last byte of the
+   buffer is '\r'---in that case we should see if the next byte is '\n'
+   or not---and scanbuf returns SCM_TRUE to indicate that.
+*/
+static ScmObj readline_scanbuf(const char *cur, const char *end,
+                               const char **next, ScmDString *ds,
+                               int dsused, int eof)
+{
+    int eol = eof;
+    const char *cp;
+    *next = end;
+    for (cp = cur; cp < end; cp++) {
+        if (*cp == '\n') { *next = cp+1; eol = TRUE; break; }
+        if (*cp == '\r') {
+            if (cp < end-1 && cp[1] == '\n') {
+                *next = cp+2; eol = TRUE; break;
+            } else if (cp == end-1 && !eof) {
+                Scm_DStringPutz(ds, cur, (int)(cp-cur));
+                return SCM_TRUE;
+            } else {
+                *next = cp+1; eol = TRUE; break;
+            }
+        }
+    }
+    if (dsused) {
+        Scm_DStringPutz(ds, cur, (int)(cp-cur));
+        if (eol) return Scm_DStringGet(ds);
+        else return SCM_FALSE;
+    } else {
+        if (eol) {
+            return Scm_MakeString(cur, (int)(cp-cur), -1, SCM_MAKSTR_COPYING);
+        } else {
+            Scm_DStringPutz(ds, cur, (int)(cp-cur));
+            return SCM_FALSE;
+        }
+    }
+}
+
+static ScmObj readline_scratch(ScmPort *p, ScmDString *ds,
+                               int *dsused, int *crread)
+{
+    int i;
+    ScmObj r;
+    for (i=0; i<p->scrcnt; i++) {
+        if (p->scratch[i] == '\n') {
+            r = Scm_MakeString(p->scratch, i-1, -1, SCM_MAKSTR_COPYING);
+            SHIFT_SCRATCH(p, i);
+            return r;
+        } else if (p->scratch[i] == '\r') {
+            if (i < p->scrcnt-1) {
+                r = Scm_MakeString(p->scratch, i-1, -1, SCM_MAKSTR_COPYING);
+                if (p->scratch[i+1] == '\n') SHIFT_SCRATCH(p, i+1);
+                else                         SHIFT_SCRATCH(p, i);
+                return r;
+            } else {
+                Scm_DStringPutz(ds, p->scratch, i-1);
+                p->scrcnt = 0;
+                *crread = TRUE;
+                return SCM_FALSE;
+            }
+        }
+    }
+    *dsused = TRUE; Scm_DStringPutz(ds, p->scratch, p->scrcnt);
+    return SCM_FALSE;
+}
+
+ScmObj Scm_ReadLine(ScmPort *p)
+{
+    int dsused = FALSE, crread = FALSE;
+    int c1;
+    const char *cp1;
+    ScmDString ds;
+    ScmObj r;
+
+    if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
+    Scm_DStringInit(&ds);
+
+    /* check ungotten stuff */
+    if (p->scrcnt) {
+        r = readline_scratch(p, &ds, &dsused, &crread);
+        if (SCM_STRINGP(r)) return r;
+    }
+    if (p->ungotten != SCM_CHAR_INVALID) {
+        c1 = p->ungotten; p->ungotten = SCM_CHAR_INVALID;
+        if (c1 == '\n') return Scm_DStringGet(&ds);
+        dsused = TRUE; Scm_DStringPutc(&ds, c1);
+    }
+    
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        if (p->src.buf.current == p->src.buf.end) {
+            if (bufport_fill(p, 1, FALSE) == 0) goto eofdeal;
+        }
+        for (;;) {
+            r = readline_scanbuf(p->src.buf.current, p->src.buf.end,
+                                 &cp1, &ds, dsused, FALSE);
+            if (SCM_STRINGP(r)) {
+                p->src.buf.current = (char*)cp1;
+                break;
+            } else {
+                dsused = TRUE;
+                if (bufport_fill(p, 1, FALSE) == 0) goto eofdeal;
+                if (SCM_TRUEP(r) && *p->src.buf.current == '\n') {
+                    p->src.buf.current++;
+                    goto eofdeal;
+                }
+            }
+        }
+        return r;
+    case SCM_PORT_ISTR:
+        if (p->src.istr.current == p->src.istr.end) goto eofdeal;
+        r = readline_scanbuf(p->src.istr.current, p->src.istr.end,
+                             &cp1, &ds, dsused, TRUE);
+        p->src.istr.current = cp1;
+        return r;
+    case SCM_PORT_PROC:
+        r = p->src.vt.Getline(p);
+        if (dsused) {
+            if (!SCM_STRINGP(r)) goto eofdeal;
+            Scm_DStringAdd(&ds, SCM_STRING(r));
+            return Scm_DStringGet(&ds);
+        } else {
+            return r;
+        }
+    default:
+        Scm_Error("bad port type for output: %S", p);
+        /*NOTREACHED*/
+    }
+  eofdeal:
+    if (dsused) return Scm_DStringGet(&ds);
+    else return SCM_EOF;
+}
+#else
+/* This is much simpler, non-optimized version. */
 ScmObj Scm_ReadLine(ScmPort *p)
 {
     int c1, c2;
     ScmDString ds;
-
     Scm_DStringInit(&ds);
     SCM_GETC(c1, p);
     if (c1 == EOF) return SCM_EOF;
@@ -980,6 +1131,7 @@ ScmObj Scm_ReadLine(ScmPort *p)
     }
     return Scm_DStringGet(&ds);
 }
+#endif
 
 /*===============================================================
  * File Port
