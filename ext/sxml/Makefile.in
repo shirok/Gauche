@@ -20,7 +20,7 @@ SCMFILES = $(GENERATED_TARGET) adaptor.scm
 all : $(GENERATED_TARGET)
 
 ssax.scm : src/SSAX.scm
-sxpath.scm : src/SXPath.scm
+sxpath.scm : src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm
 tools.scm : src/sxml-tools.scm
 tree-trans.scm : src/SXML-tree-trans.scm
 to-html.scm : src/SXML-to-HTML.scm

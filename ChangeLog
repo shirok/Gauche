@@ -1,3 +1,13 @@
+2003-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in : On Cygwin, installs libgauche.dll to bindir
+	  as well as libdir, or it won't be found by the shell.
+
+	* doc/Makefile.in : honors DESTDIR for installation.
+
+	* ext/sxml : updated SXPath to the newer version in sxml-tools
+	  by Kirill Lisovsky and Dmitry Lizorkin.  Also added sxml.tools.
+
 2003-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/sxpath.scm, ext/sxml/trans.scm : incorporated Alex Shinn's
