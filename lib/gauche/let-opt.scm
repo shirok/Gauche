@@ -4,12 +4,11 @@
 ;;;  Defines let-optionals* macro, hinted from scsh by Olin Shivers.
 ;;;  TODO: add let-optionals as well
 ;;;
-;;;  $Id: let-opt.scm,v 1.1 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: let-opt.scm,v 1.2 2002-05-02 11:35:48 shirok Exp $
 ;;;
 
 (define-module gauche.let-opt
-  (export let-optionals*))
-
+  (export let-optionals* let-keywords*))
 (select-module gauche.let-opt)
 
 (define-syntax let-optionals*

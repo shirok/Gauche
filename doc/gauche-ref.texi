@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.193 2002-05-01 02:30:04 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.194 2002-05-02 11:35:48 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11632,8 +11632,359 @@ By default, the output (or the temporary file when
 
 @deftp {Module} file.util
 @mdindex file.util
-Provides convenient utilities handling files and directories.
+@c EN
+Provides convenient utility functions handling files and directories.
+Those functions are built on top of the primitive system
+procedures described in @ref{Filesystems}.
+@c JP
+ファイルやディレクトリを扱う便利な手続き群を提供します。
+これらの手続きは@ref{Filesystems}で述べられたプリミティブなシステム手続きの上に
+構築されています。
+@c COMMON
 @end deftp
+
+@menu
+* Directory utilities::         
+* Pathname utilities::          
+* File attribute utilities::    
+* File operations::             
+@end menu
+
+@node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
+@subsection Directory utilities
+@c NODE ディレクトリユーティリティ
+
+@defun current-directory &optional new-directory
+@c EN
+When called with no argument, this returns the pathname of the current
+working directory.  When called with a string argument @var{new-directory},
+this sets the current working directory of the process to it.
+If the process can't change directory to @var{new-directory}, an error is
+signalled.
+
+This function is in ChezScheme, MzScheme and some other Scheme
+implementations.
+@c JP
+引数無しで呼ばれた場合、カレントディレクトリを返します。
+文字列@var{new-directory}が与えられた場合はプロセスのカレントディレクトリを
+@var{new-directory}に変更します。変更が出来なかった場合はエラーとなります。
+
+この関数はChezSchemeやMzSchemeなどいくつかのScheme処理系に見られます。
+@c COMMON
+@end defun
+
+@defun directory-list path &keyword children? add-path? filter
+@c EN
+Returns a list of entries in the directory @var{path}.
+The result is sorted by dictionary order.
+
+By default, only the basename (the last component) of the entries
+returned.   If @var{add-path?} is given and true, @var{path} is appended
+to each entry.  If @var{children?} is given and true, @code{"."} and 
+@code{".."} are excluded from the result.  If @var{filter} is given,
+it must be a predicate that takes one argument.  It is called on
+every element of the entry basename, and only the entries on which
+@code{filter} returns true are included in the result.
+
+If @var{path} is not a directory, an error is signalled.
+@c JP
+ディレクトリ@var{path}中のエントリのリストを返します。
+リストは文字列順にソートされます。
+
+デフォルトでは、エントリのベースネーム(パスの最後のコンポーネント)のみが
+返されますが、キーワード引数@var{add-path?}に真の値が与えられた時は
+@var{path}が各エントリの前に追加されます。
+@var{children?}に真の値が与えられた時は、カレントディレクトリと親ディレクトリが
+リストから除かれます。@var{filter}引数は、もし与えられれば、一つの引数を取る
+手続きでなければなりません。ディレクトリ中の各エントリを引数としてその手続きが呼ばれ、
+真を返したエントリのみが結果に含まれます。
+
+@var{path}がディレクトリでない場合はエラーが報告されます。
+@c COMMON
+
+@example
+(directory-list "test")
+ @result{} ("." ".." "test.scm" "test.scm~")
+
+(directory-list "test" :add-path? #t)
+ @result{} ("test/." "test/.." "test/test.scm" "test/test.scm~")
+
+(directory-list "test" :children? #t)
+ @result{} ("test.scm" "test.scm~")
+
+(directory-list "test" :children? #t :add-path? #t
+   :filter (lambda (e) (not (string-suffix? "~" e))))
+ @result{} ("test/test.scm")
+@end example
+@end defun
+
+@defun directory-list2 path &keyword children? add-path? filter dont-follow-link?
+@c EN
+Like @code{directory-list}, but returns two values; the first one is a list
+of subdirectories, and the second one is a list of the rest.
+
+The keyword arguments @var{children?}, @code{add-path?} and @var{filter}
+are the same as @code{directory-list}.   Giving true value to
+@var{dont-follow-link?} makes @code{directory-list2} not follow
+the symbolic links; if the @var{path} contains a symlink to a directory,
+it will be included in the first list if @var{dont-follow-link?} is omitted
+or false, while it will be in the second list if @var{dont-follow-link?}
+is true.
+@c JP
+@code{directory-list}に似ていますが、ふたつの値を返します。最初の値は
+@var{path}内にあるサブディレクトリのリストで、次の値はそれ以外のエントリのリストです。
+
+キーワード引数@var{children?}、@code{add-path?}、@var{filter}は
+@code{directory-list}と同じ意味をもちます。
+真の値を@var{dont-follow-link?}に与えると、@var{path}内のシンボリックリンクを
+辿りません；すなわち、@var{path}内にディレクトリへのシンボリックリンクがあった場合、
+デフォルトではそれは最初のリスト(サブディレクトリ)に入りますが、@var{dont-follow-link?}
+が与えられていて真の値を持つ場合は後者のリスト(その他のエントリ)に入ります。
+@c COMMON
+@end defun
+
+@node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
+@subsection Pathname utilities
+@c NODE パスネームユーティリティ
+
+@defun build-path base-path component @dots{}
+@c EN
+Appends pathname components @var{component} to the @var{base-path}.
+@var{Component} can be a symbol @code{up} or @code{same};
+in Unix, they are synonym to @code{".."} and @code{"."}.
+This API is taken from MzScheme.
+@c JP
+パス名のコンポーネント@var{component}を@var{base-path}に追加します。
+@var{Component}はシンボル@code{up}または@code{same}であっても
+構いません; Unixではそれらは@code{".."}または@code{"."}と等価です。
+このAPIはMzSchemeから採られました。
+@c COMMON
+@end defun
+
+@defun absolute-path? path
+@defunx relative-path? path
+@c EN
+Returns @code{#t} if @var{path} is absolute or relative, respectively.
+@c JP
+@var{path}がそれぞれ絶対パスまたは相対パスならば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun expand-path path
+@c EN
+Expands tilda-notation of @var{path} if it contains one.
+Otherwise, @var{path} is returned.  This function does not
+check if @var{path} exists and/or readable.
+@c JP
+@var{path}がチルダ表記を含んでいたらそれを展開したものを返します。
+そうでなければ@var{path}そのものを返します。この手続きは@var{path}が
+存在しアクセス可能であるかどうかはチェックしません。
+@c COMMON
+@end defun
+
+@defun resolve-path path
+@c EN
+Expands @var{path} like @code{expand-path},
+then resolve symbolic links for every components
+of the path.  If @var{path} does not exist, or contains dangling link,
+or contains unreadable directory, an error is signalled.
+@c JP
+@var{path}を@code{expand-path}と同様に展開し、
+続いて@var{path}の各コンポーネントに対してそれがシンボリックリンクであればリンク先の
+ものに置き換えてゆきます。@var{path}が存在しないパスを指していたり、
+シンボリックリンクの先が存在しなかったり、読み出せないディレクトリがあった場合は
+エラーとなります。
+@c COMMON
+@end defun
+
+@defun simplify-path path
+@c EN
+Remove 'up' (@code{".."}) components and 'same' (@code{"."}) components
+from @var{path} as much as possible.
+This function does not access the filesystem.
+@c JP
+@var{path}から、親ディレクトリへの参照(@code{".."})と自分自身への参照(@code{"."})を
+出来る限り取り除きます。この手続きはファイルシステムへはアクセスしません。
+@c COMMON
+@end defun
+
+
+@node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
+@subsection File attibute utilities
+@c NODE ファイル属性ユーティリティ
+
+@defun file-type path &optional dont-follow-link?
+@defunx file-perm path &optional dont-follow-link?
+@defunx file-mode path &optional dont-follow-link?
+@defunx file-ino path &optional dont-follow-link?
+@defunx file-dev path &optional dont-follow-link?
+@defunx file-rdev path &optional dont-follow-link?
+@defunx file-nlink path &optional dont-follow-link?
+@defunx file-uid path &optional dont-follow-link?
+@defunx file-gid path &optional dont-follow-link?
+@defunx file-size path &optional dont-follow-link?
+@defunx file-atime path &optional dont-follow-link?
+@defunx file-mtime path &optional dont-follow-link?
+@defunx file-ctime path &optional dont-follow-link?
+@c EN
+These functions return the attribute of file/directory specified by
+@var{path}.  The attribute name corresponds to the slot name of
+@code{<sys-stat>} class (@xref{File stats}).
+If the named path doesn't exist, @code{#f} is returned.
+
+If @var{path} is a symbolic link, these functions queries the
+attributes of the file pointed by the link, unless
+an optional argument @var{dont-follow-link?} is given and true.
+
+MzScheme and Chicken have @code{file-size}.  Chicken also has
+@code{file-modification-time}, which is @code{file-mtime}.
+@c JP
+これらの手続きは@var{path}で示されるファイルやディレクトリのアトリビュートを
+返します。アトリビュート名は@code{<sys-stat>}のスロット名に対応しています。
+@ref{File stats}を参照して下さい。@var{path}で示されるファイルが
+存在しなければ@code{#f}が返されます。
+
+@var{path}がシンボリックリンクだった場合、オプショナルな引数
+@var{dont-follow-link?} に真の値が与えられていない限り、これらの手続きは
+リンクの指す先のファイルに関する情報を返します。
+
+MzSchemeとChickenには@code{file-size}があります。
+Chickenには@code{file-modification-time}があり、これは@code{file-mtime}と
+同じです。
+@c COMMON
+@end defun
+
+@defun file-is-readable? path
+@defunx file-is-writable? path
+@defunx file-is-executable? path
+@c EN
+Returns @code{#t} if @var{path} exists and readable/writable/executable
+by the current effective user, respectively.
+This API is taken from STk.
+@c JP
+@var{path}が存在して、現在の実効ユーザがそれぞれ読み取り/書き込み/実行可能なら@code{#t}を
+返します。
+このAPIはSTkから取られました。
+@c COMMON
+@end defun
+
+@defun file-eq? path1 path2
+@defunx file-eqv? path1 path2
+@defunx file-equal? path1 path2
+@c EN
+Compares two files specified by @var{path1} and @var{path2}.
+@code{file-eq?} and @code{file-eqv?} checks if @var{path1} and @var{path2}
+refers to the identical file, that is, whether they are on the same
+device and have the identical inode number.  The only difference is
+when the last component of @var{path1} and/or @var{path2} is a symbolic
+link, @code{file-eq?} doesn't resolve the link (so compares the links
+themselves) while @var{file-eqv?} resolves the link and compares the
+files referred by the link(s).
+@c JP
+@var{path1}と@var{path2}で示されるファイルを比較します。
+@code{file-eq?}と@code{file-eqv?}は@var{path1}と@var{path2}が
+全く同一のファイルを参照しているかどうか、すなわち、同じデバイス上にあり同じ
+inode番号を持つかどうかをチェックします。二つの手続きの違いは、
+@code{path1}や@var{path2}の最後のコンポーネントがシンボリックリンクで
+あった場合に、@var{file-eq?}はリンクそのものの比較をするが
+@code{file-eqv?}はリンクを辿った先のファイルの比較をする、という点です。
+@c COMMON
+
+@c EN
+@code{file-equal?} compares @var{path1} and @var{path2} considering their
+content, that is, when two are not the identical file in the sense of
+@code{file-eqv?}, @code{file-equal?} compares their content and returns
+@code{#t} if all the bytes match.
+@c JP
+@code{file-equal?}は@var{path1}と@var{path2}をその内容まで考慮して比較します。
+すなわち、二つのファイルが@code{file-eqv?}の意味で同一でなかった場合、
+@code{file-equal?}はファイルの内容を比較し、全てが一致した場合に@code{#t}を返します。
+@c COMMON
+
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@deffn {Generic Function} file-mtime=? f1 f2
+@deffnx {Generic Function} file-mtime<? f1 f2
+@deffnx {Generic Function} file-mtime<=? f1 f2
+@deffnx {Generic Function} file-mtime>? f1 f2
+@deffnx {Generic Function} file-mtime>=? f1 f2
+@c EN
+Compares file modification time stamps.  There are a bunch of methods defined,
+so each argument can be either one of the followings.
+
+@itemize @bullet
+@item
+String pathname.   The mtime of the specified path is used.
+@item
+@code{<sys-stat>} object (@xref{File stats}).
+The mtime is taken from the stat structure.
+@item
+@code{<time>} object.  The time is used as the mtime.
+@item
+Number.  It is considered as the number of seconds since Unix Epoch, and
+used as mtime.
+@end itemize
+@c JP
+二つのファイルの変更時間を比較します。それぞれの引数に対して、
+次のような型のオブジェクトが渡せるようなメソッドが定義されています。
+
+@itemize @bullet
+@item
+文字列のパス名。そのパス名で示されるファイルから変更時間が取られます。
+@item
+@code{<sys-stat>}オブジェクト (@xref{File stats})。
+stat構造体から変更時間が取られます。
+@item
+@code{<time>}オブジェクト。その示す時間が変更時間と考えられます。
+@item
+数値。変更時間をUnix Epochからの秒数で表したものと見なされます。
+@end itemize
+@c COMMON
+
+@example
+@c EN
+;; @r{compare "foo.c" is newer than "foo.o"}
+@c JP
+;; @r{"foo.c" より "foo.o" が新しいかどうか調べる}
+@c COMMON
+(file-mtime>? "foo.c" "foo.o")
+
+@c EN
+;; @r{see if "foo.log" is updated within last 24 hours}
+@c JP
+;; @r{"foo.log"が過去24時間以内に更新されたかどうかを調べる}
+@c COMMON
+(file-mtime>? "foo.c" (- (sys-time) 86400))
+@end example
+@end deffn
+
+@deffn {Generic Function} file-ctime=? f1 f2
+@deffnx {Generic Function} file-atime=? f1 f2
+@findex file-ctime<?
+@findex file-ctime<=?
+@findex file-ctime>?
+@findex file-ctime>=?
+@findex file-atime<?
+@findex file-atime<=?
+@findex file-atime>?
+@findex file-atime>=?
+@c EN
+Same as @code{file-mtime=?}, except these checks file's creation time
+and access time, respectively.
+All the variants of @code{<}, @code{<=}, @code{>}, @code{>=} are also
+defined.
+@c JP
+@code{file-mtime=?}と同じですが、ファイルの作成時間とアクセス時間に関して比較します。
+@code{<}, @code{<=}, @code{>}, @code{>=}を使う関数も同様に定義されています。
+@c COMMON
+@end deftp
+
+@node File operations,  , File attribute utilities, Filesystem utilities
+@subsection File operations
+@c NODE ファイル操作
 
 @c ----------------------------------------------------------------------
 @node Character code conversion, Collection framework, Filesystem utilities, Library modules
