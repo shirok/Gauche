@@ -2,6 +2,7 @@ MANPAGES = gosh.1 gauche-config.1
 GENERATED = gauche-refe.texi gauche-refj.texi Makefile $(MANPAGES)
 GOSH = gosh
 INSTALL = @INSTALL@
+MAKEINFO = @MAKEINFO@
 
 # Manual page destination.  Default @mandir@ doesn't include 'share'
 # in the path, so I redefine it---a user can still override it by
@@ -9,16 +10,26 @@ INSTALL = @INSTALL@
 prefix  = @prefix@
 datadir = @datadir@
 mandir  = $(datadir)/man/man1
+infodir = $(datadir)/info
 
-all:
+all: info
 
-install:
+install: all
 	if test ! -d $(mandir); then\
 	  $(INSTALL) -d $(mandir); \
 	fi
 	for m in $(MANPAGES); do \
 	  $(INSTALL) -m 444 $$m $(mandir); \
 	done
+	if test -f gauche-refe.info -a -f gauche-refj.info; then \
+	  for info in *.info *.info-*; do \
+	    $(INSTALL) -m 444 $$info $(infodir); \
+	  done; \
+	fi
+
+uninstall:
+	(cd $(mandir); rm -rf $(MANPAGES))
+	(cd $(infodir); if test -f gauche-refe.info; then rm -rf gauche-refe.* gauche-refj.*; fi)
 
 texi : gauche-refe.texi gauche-refj.texi
 
@@ -48,7 +59,7 @@ gauche-refe.texi : gauche-ref.texi extract
 	$(GOSH) ./extract -en -o gauche-refe.texi gauche-ref.texi
 
 gauche-refe.info : gauche-refe.texi
-	makeinfo gauche-refe.texi
+	$(MAKEINFO) gauche-refe.texi
 
 gauche-refj.html : gauche-refj.texi
 	texi2html -number gauche-refj.texi
@@ -66,11 +77,11 @@ gauche-refj.texi : gauche-ref.texi extract
 	$(GOSH) ./extract -jp -o gauche-refj.texi gauche-ref.texi
 
 gauche-refj.info : gauche-refj.texi
-	makeinfo gauche-refj.texi
+	$(MAKEINFO) gauche-refj.texi
 
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
-	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi \
+	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info *.info-*
 
 distclean : clean
 	rm -rf $(GENERATED)
