@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.100 2001-10-17 20:30:40 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.101 2001-10-18 09:41:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4535,55 +4535,120 @@ the copying is done character by character, using C-version of
 
 @defun open-input-file filename &keyword if-does-not-exist element-type
 @defunx open-output-file filename &keyword if-does-not-exist if-exists element-type
-[R5RS+] Opens a file @var{filename} for input or output, and
+[R5RS+]
+@c EN
+Opens a file @var{filename} for input or output, and
 returns an input or output port associated with it, respectively.
 
 The keyword arguments specify precise behavior on the exceptional case.
+@c JP
+ファイル@var{filename}を入力または出力用にオープンし、
+入力ポートまたは出力ポートを作成して返します。
+
+キーワード引数により、例外的な場合の動作を細かく指定できます。
+@c COMMON
 
 @table @code
 @item :if-exists
-This argument can be specified only for @code{open-output-file}, and
+@c EN
+This keyword argument can be specified only for @code{open-output-file}, and
 specifies the action when the @var{filename} already exists.
 One of the following value can be given.
+@c JP
+このキーワード引数は@code{open-output-file}のみに指定でき、
+@var{filename}が既に存在した場合の動作を指定します。次の値のいずれかを与えることができます。
+@c COMMON
 @table @code
 @item :supersede
-This is the default behavior.  The existing file is truncated.
+@c EN
+The existing file is truncated.  This is the default behavior.
+@c JP
+既存のファイルが長さ0に縮められます。これが既定の動作です。
+@c COMMON
 @item :append
+@c EN
 The output data will be appended to the existing file.
+@c JP
+既存のファイルにこれから書き出す内容が追加されます。
+@c COMMON
 @item :error
+@c EN
 An error is signalled.
+@c JP
+エラーが報告されます。
+@c COMMON
 @item #f
+@c EN
 No action is taken, and the function returns @code{#f}.
+@c JP
+何もせず、@code{#f}を返します。
+@c COMMON
 @end table
 
 @item :if-does-not-exist
-This argument specifies the action when @var{filename} does not exist.
+@c EN
+This keyword argument specifies the action when @var{filename} does not exist.
+@c JP
+このキーワード引数は@var{filename}が存在しない場合の動作を指定します。
+@c COMMON
 @table @code
 @item :error
+@c EN
 An error is signalled.  This is the default behavior of
 @code{open-input-file}.
+@c JP
+エラーを報告します。これが@code{open-input-file}の既定の動作です。
+@c COMMON
 @item :create
+@c EN
 A file is created.  This is the default behavior of @code{open-output-file}.
 The check of file existence and creation is done atomically; you can
 exclusively create the file by specifying @code{:error} or @code{#f} to
 @var{if-exists}, along this option.
 You can't specify this value for @code{open-input-file}.
+@c JP
+ファイルが作成されます。これが@code{open-output-file}の既定の動作です。
+ファイルの存在のチェックと作成はアトミックに行われます。
+このオプションに加え、@var{if-exists}オプションに@code{:error}か@code{#f}を
+指定することで、排他的にファイルを作成することができます。
+@code{open-input-file}に対してはこの値を指定することはできません。
+@c COMMON
 @item #f
+@c EN
 No action is taken, and the function returns @code{#f}.
+@c JP
+何もせず、@code{#f}を返します。
+@c COMMON
 @end table
 
 @item :element-type
+@c EN
 This argument specifies the type of the file.
+@c JP
+この引数はファイルのタイプを指定します。
+@c COMMON
 @table @code
 @item :character
+@c EN
 The file is opened in ``character'' (or ``text'') mode.
+@c JP
+ファイルはキャラクタモード(テキストモード)でオープンされます。
+@c COMMON
 @item :binary
+@c EN
 The file is opened in ``binary'' mode.
+@c JP
+ファイルはバイナリモードでオープンされます。
+@c COMMON
 @end table
+@c EN
 The two makes no difference on most Unix systems.
+@c JP
+Unixシステムでは両者の動作に違いはありません。
+@c COMMON
 @end table
 
-
+@c EN
 By combination of @var{if-exists} and @var{if-does-not-exist} flags,
 you can implement various actions:
 @example
@@ -4597,18 +4662,49 @@ you can implement various actions:
                         :if-does-not-exist :error)
  @result{} ;@r{opens "foo" for append only if it already exists}
 @end example
+@c JP
+@var{if-exists}と@var{if-does-not-exist}フラグの組合せにより、
+色々な動作を実現できます。
+@example
+(open-output-file "foo" :if-exists :error)
+ @result{} ;@r{"foo"を排他的にオープンするかエラーを報告する}
 
+(open-output-file "foo" :if-exists #f)
+ @result{} ;@r{"foo"を排他的にオープンするか}#f@r{を返す}
+
+(open-output-file "foo" :if-exists :append
+                        :if-does-not-exist :error)
+ @result{} ;@r{"foo"が既に存在する場合に限り、それを追加モードでオープン}
+@end example
+@c COMMON
+
+@c EN
 To check the existence of a file without opening it,
 use @code{sys-access} or @code{file-exists?} (@xref{File stats}).
+@c JP
+ファイルをオープンせずにその存在をチェックするには、
+@code{sys-access}か@code{file-exists?}を使って下さい (@ref{File stats}参照)。
+@c COMMON
 
+@c EN
 Note for portability: Some Scheme implementations (e.g. STk) allows
 you to specify a command to @var{filename} and reads from, or
 writes to, the subprocess standard input/output.  Some other scripting
 languages (e.g. Perl) have similar features.  In Gauche,
 @code{open-input-file} and @code{open-output-file} strictly operates
-on files.  However, you can use ``process ports'' to invoke
+on files (what the underlying OS thinks as files).
+However, you can use ``process ports'' to invoke
 other command in a subprocess and to communiate it.
 @xref{Process ports}, for details.
+@c JP
+移植性に関する註：Schemeシステムによっては、@var{filename}のところに
+シェルコマンドを指定して、サブプロセスの標準入出力と通信できるようにするものが
+あります。他のスクリプティング言語(例：Perl)にも同様の機能があります。
+Gaucheでは、@code{open-input-file}と@code{open-output-file}は
+あくまでファイル (OSがファイルとして扱うもの) のみに対して使えます。
+サブプロセスと通信するためには、「プロセスポート」という機能が提供されています。
+@ref{Process ports}を参照して下さい。
+@c COMMON
 @end defun
 
 @defun call-with-input-file string proc
@@ -4875,6 +4971,14 @@ applies @var{fn} to each item.  The former discards the results
 @subsection Output
 @c NODE 出力
 
+@c EN
+For the following procedures, the optional @var{port} argument must be
+an output port, and when omitted, current output port is assumed.
+@c JP
+以下の手続きで、省略可能な引数@var{port}は出力ポートでなければなりません。
+省略された場合が現在の出力ポートが使われます。
+@c COMMON
+
 @defun write obj &optional port
 [R5RS]
 @end defun
@@ -4893,9 +4997,21 @@ You can customize how the object is printed out by this method.
 
 @defun write-char char &optional port
 [R5RS]
+@c EN
+Write a single character @var{char} to the output port @var{port}.
+@c JP
+文字@var{char}をポートに出力します。
+@c COMMON
 @end defun
 
 @defun write-byte byte &optional port
+@c EN
+Write a byte @var{byte} to the port.
+@var{byte} must be an exact integer in range between 0 and 255.
+@c JP
+出力ポートに1バイトのデータ@var{byte}を書き出します。
+@var{byte}は0から255の間の完全な整数でなければなりません。
+@c COMMON
 @end defun
 
 @defun write* obj &optional port
@@ -5024,12 +5140,20 @@ directive; usually they have no distinction, except noted.
 
 @table @asis
 @item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar}@b{A}
+@c EN
 Ascii output.  The corresponding argument is printed by @code{display}.
 If an integer @var{mincol} is given, it specifies the minimum number
 of characters to be output; if the formatted result is shorter than
 @var{mincol}, a whitespace is padded to the right (i.e. the result
 is left justified).
+@c JP
+ASCII出力。対応する引数が@code{display}を使ってフォーマットされます。
+整数が@var{mincol}に与えられた場合、それは出力される最小の文字数を指定します。
+引数のフォーマット結果が@var{mincol}より短ければ、空白が右に追加されます(つまり、
+左詰めになります)。
+@c COMMON
 
+@c EN
 The @var{colinc}, @var{minpad} and @var{padchar} parameters
 control, if given, further padding.  A character @var{padchar} replaces
 the padding character for the whitespace.  If an integer @var{minpad}
@@ -5037,9 +5161,20 @@ is given and greater than 0, at least @var{minpad} padding character
 is used, regardless of the resulting width.  If an integer @var{colinc}
 is given, the padding character is added (after @var{minpad}) in chunk
 of @var{colinc} characters, until the entire width exceeds @var{mincol}.
+@c JP
+@var{colinc}、@var{minpad}、そして@var{padchar}は更に細かいパディング方法を
+指定します。@var{padchar}に文字が与えられた場合、それが空白文字の代わりにパディング文字と
+して使われます。@var{minpad}に0以上の整数が与えられた場合、少なくともその数だけの
+パディング文字が追加されます。@var{colinc}が指定された場合、
+追加されるパディング文字の数が@var{colinc}の倍数に調整されます。
+@c COMMON
 
+@c EN
 If atmark-flag is given, the format result is right justified, i.e.
 padding is added to the left.
+@c JP
+アトマーク `@code{@@}' フラグが与えられた場合、結果は右詰めになります。
+@c COMMON
 
 @example
 (format #f "|~a|" "oops")
@@ -5048,14 +5183,23 @@ padding is added to the left.
   @result{} "|oops      |"
 (format #f "|~10@@a|" "oops")
   @result{} "|      oops|"
-(format #f "|~10,,,'*a|" "oops")
+(format #f "|~10,,,'*@@a|" "oops")
   @result{} "|******oops|"
+@c JP
+(format #f "|~10,,,'☆a|" "oops")
+  @result{} "|oops☆☆☆☆☆☆|"
+@c COMMON
 @end example
 
 @item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar}@b{S}
+@c EN
 S-expression output.  The corresponding argument is printed
 by @code{write}.  The semantics of parameters and flags are the same
 as @code{~A} directive.
+@c JP
+S式出力。対応する引数が@code{write}を使ってフォーマットされます。
+パラメータの意味は@code{~A}指示子と同じです。
+@c COMMON
 
 @example
 (format #f "|~s|" "oops")
@@ -5064,18 +5208,36 @@ as @code{~A} directive.
   @result{} "|\"oops\"    |"
 (format #f "|~10@@s|" "oops")
   @result{} "|    \"oops\"|"
-(format #f "|~10,,,'*s|" "oops")
+(format #f "|~10,,,'*@@s|" "oops")
   @result{} "|****\"oops\"|"
+@c JP
+(format #f "|~10,,,'★s|" "oops")
+  @result{} "|\"oops\"★★★★|"
+@c COMMON
 @end example
 
 @item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{D}
+@c EN
 Decimal output.  The argument is formatted as an decimal integer.
-If the argument is not an integer, @code{~A} is used to format it.
+If the argument is not an integer, all parameters are ignored 
+(after processing `@code{v}' parameters) and
+it is formatted by @code{~A} directive.
+@c JP
+10進出力。対応する引数が10進数表記でフォーマットされます。もし引数が数値でなければ、
+全てのパラメータは(`@code{v}'パラメータの処理後に)無視され、
+引数は@code{~A}でフォーマットされます。
+@c COMMON
 
+@c EN
 If an integer parameter @var{mincol} is given, it specifies minimum
 width of the formatted result; if the result is shorter than it,
 @var{padchar} is padded on the left (i.e. the result is right
 justified).  The default of @var{padchar} is a whitespace.
+@c JP
+もし@var{mincol}に整数が与えられたら、それが最小の文字数を指定します。
+結果の文字数がそれより少なければ、文字@var{padchar}が左に追加されます(右詰めになります)。
+@var{padchar}が省略された場合は空白文字が使われます。
+@c COMMON
 
 @example
 (format #f "|~d|" 12345)
@@ -5086,13 +5248,24 @@ justified).  The default of @var{padchar} is a whitespace.
   @result{} "|0000012345|"
 @end example
 
+@c EN
 If atmark-flag is given, the sign `@code{+}' is printed for the
 positive argument.
+@c JP
+アトマーク `@code{@@}' フラグが与えられた場合、正の引数に対して `@code{+}' が
+先頭につけられます。
+@c COMMON
 
+@c EN
 If colon-flag is given, every @var{interval}-th digit of
 the result is grouped and @var{commachar} is inserted between them.
 The default of @var{commachar} is `@code{,}', and the default of
 @var{interval} is 3.
+@c JP
+コロンフラグ `@code{:}' が与えられた場合、結果の文字は@var{interval}文字毎に
+まとめられ、間に文字@var{commachar}が挿入されます。デフォルトでは3文字毎にコンマが
+挿入されます。
+@c COMMON
 
 @example
 (format #f "|~:d|" 12345)
@@ -5102,17 +5275,28 @@ The default of @var{commachar} is `@code{,}', and the default of
 @end example
 
 @item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{B}
+@c EN
 Binary output.  The argument is formatted as a binary integer.
 The semantics of parameters and flags are the same as
 the @code{~D} directive.
+@c JP
+2進出力。対応する引数が2進数の整数としてフォーマットされます。
+パラメータの意味は@code{~D}と同じです。
+@c COMMON
 
 @item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{O}
+@c EN
 Octal output.  The argument is formatted as an octal integer.
 The semantics of parameters and flags are the same as
 the @code{~D} directive.
+@c JP
+8進出力。対応する引数が8進数の整数としてフォーマットされます。
+パラメータの意味は@code{~D}と同じです。
+@c COMMON
 
 @item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{X}
 @item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{x}
+@c EN
 Hexadecimal output.
 The argument is formatted as a hexadecimal integer.
 If `@code{X}' is used, upper case alphabets are used for
@@ -5120,6 +5304,12 @@ the digits larger than 10.  If `@code{x}' is used, lower case
 alphabets are used.
 The semantics of parameters and flags are the same as
 the @code{~D} directive.
+@c JP
+16進出力。対応する引数が16進数の整数としてフォーマットされます。
+フォーマット指示文字に `@code{X}' が与えられた場合は `@code{ABCDEF}' が桁文字として
+使われ、 `@code{x}' が与えられた場合は `@code{abcdef}' が桁文字として使われます。
+パラメータの意味は@code{~D}と同じです。
+@c COMMON
 
 @example
 (format #f "~8,'0x" 259847592)
