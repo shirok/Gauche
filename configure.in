@@ -25,4 +25,4 @@ dnl Add version macro
 GAUCHE_VERSION=`cat VERSION`
 AC_SUBST(GAUCHE_VERSION)
 
-AC_OUTPUT(src/Makefile src/gauche-config Makefile)
+AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile Makefile)
