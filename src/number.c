@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.109 2004-02-05 03:01:23 shirok Exp $
+ *  $Id: number.c,v 1.110 2004-06-18 00:33:06 shirok Exp $
  */
 
 #include <math.h>
@@ -1171,7 +1171,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                 goto DO_FLONUM;
             }
             if (SCM_NULLP(args)) return SCM_CAR(divrem);
-            return Scm_Divide(divrem, SCM_CAR(args), SCM_CDR(args));
+            return Scm_Divide(SCM_CAR(divrem), SCM_CAR(args), SCM_CDR(args));
         }
         if (SCM_FLONUMP(arg1)) {
             exact = FALSE;

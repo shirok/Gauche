@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.109 2004-06-04 23:38:35 shirok Exp $
+ *  $Id: compile.c,v 1.110 2004-06-18 00:33:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -773,7 +773,7 @@ static ScmObj unwrap_identifier(ScmObj form)
                     SCM_VECTOR_ELEMENT(newvec, j) = *pelt;
                 }
                 SCM_VECTOR_ELEMENT(newvec, i) = elt;
-                for (pelt++; j<len; j++, pelt++) {
+                for (; j<len; j++, pelt++) {
                     SCM_VECTOR_ELEMENT(newvec, j) = unwrap_identifier(*pelt);
                 }
                 return newvec;

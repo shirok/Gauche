@@ -1,5 +1,11 @@
 2004-06-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.c (unwrap_identifier): fixed a bug when expanded
+	  syntax has a quoted vector (patch by teranishi).
+
+	* src/number.c (Scm_Divide): fixed a bug when '/' takes more than
+	  two args and involves bignum. (patch by anonymous).
+
 	* src/bignum.c (bignum_gdiv): fixed the problem of bignum division,
 	  when the estimated quotient becomes greater than one digit value
 	  (e.g. #x10001).  Pointed out by 'hipster'.
