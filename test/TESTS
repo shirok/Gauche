@@ -15,6 +15,7 @@ mb-chars
 system.scm
 rfc.scm
 parseopt.scm
+parameter.scm
 text.scm
 util.scm
 version.scm
