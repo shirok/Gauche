@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.7 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: proc.c,v 1.8 2001-02-17 10:21:07 shiro Exp $
  */
 
 #include "gauche.h"
@@ -94,6 +94,26 @@ static int subr_print(ScmObj obj, ScmPort *port, int mode)
     }
     SCM_PUTC('>', port); nc++;
     return nc;
+}
+
+/*
+ * A dummy function which does nothing.   Convenient to pass to other
+ * fhunctions which requires a thunk.
+ */
+static ScmObj theNullProc = SCM_NIL;
+
+static ScmObj null_proc(ScmObj *args, int nargs, void *data)
+{
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_NullProc(void)
+{
+    if (SCM_NULLP(theNullProc)) {
+        theNullProc = Scm_MakeSubr(null_proc, NULL, 0, 1,
+                                   SCM_MAKE_STR("nullproc"));
+    }
+    return SCM_OBJ(theNullProc);
 }
 
 /*
