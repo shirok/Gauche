@@ -432,8 +432,9 @@
                           (caddr x))
                          (else (loop (read src)))))))))))
 
-(dolist (num '(1 2 3))
-  (dolist (enc '("EUCJP" "SJIS" "UTF-8"))
-    (test-coding-aware-port num enc)))
+(unless (eq? (gauche-character-encoding) 'none)
+  (dolist (num '(1 2 3))
+    (dolist (enc '("EUCJP" "SJIS" "UTF-8"))
+      (test-coding-aware-port num enc))))
 
 (test-end)
