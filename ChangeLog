@@ -1,7 +1,8 @@
 2001-04-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/srfi-13/*: added some more.
 	* src/string.c, src/gauche.h, src/extlib.stub: added string-pointer
-	  object.
+	  object.  removed StringTake stuff which are moved to srfi-13.
 	* test/string.scm, test/euc-jp.scm: added test for string-pointer
 	  object.
 	* src/gauche/char_euc_jp.h, src/gauche/char_utf_8.h: improved

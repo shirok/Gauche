@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-13.scm,v 1.3 2001-04-27 08:29:07 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.4 2001-04-27 09:49:58 shirok Exp $
 ;;;
 
 ;; Srfi-13 is a large set of functions, so I splitted it up to a number of
@@ -33,6 +33,8 @@
   (export string-null? string-every string-any
           string-tabulate reverse-list->string
           substring/shared string-copy!
+          string-take string-take-right
+          string-drop string-drop-right
           string-pad string-pad-right
           string-trim string-trim-right string-trim-both
           string-compare string-compare-ci

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.35 2001-04-22 07:43:16 shiro Exp $
+ *  $Id: load.c,v 1.36 2001-04-27 09:49:58 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -256,8 +256,7 @@ static ScmObj break_env_paths(const char *envname)
     const char *e = getenv(envname);
     if (geteuid() == 0) return SCM_NIL; /* don't trust env when run by root */
     if (e == NULL) return SCM_NIL;
-    else return Scm_StringSplitByChar(SCM_STRING(Scm_MakeString(e, -1, -1)),
-                                      ':');
+    else return Scm_StringSplitByChar(SCM_STRING(Scm_MakeString(envname, -1, -1)), ':');
 }
 
 /* Add CPATH to the current list of load path.  The path is
