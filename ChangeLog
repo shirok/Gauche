@@ -1,3 +1,14 @@
+2001-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h : fixed continuations thrown across
+	  C stack boundary.
+	* ext/termios : added cf[gs]et[io]speed.   use #ifdef's for non-POSIX
+	  constants.
+
+2001-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/termios : added termios support.
+
 2001-09-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/selector.scm : added
