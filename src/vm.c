@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.73 2001-04-07 06:38:18 shiro Exp $
+ *  $Id: vm.c,v 1.74 2001-04-19 09:54:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1037,7 +1037,7 @@ static void run_loop()
                         val0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    val0 = Scm_Add(SCM_LIST2(SCM_MAKE_INT(imm), val0));
+                    val0 = Scm_Subtract(SCM_MAKE_INT(imm), val0, SCM_NIL);
                 }
                 continue;
             }
