@@ -1,3 +1,8 @@
+2003-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi-test.scm : added.
+	* test/www.scm : added tests for www.cgi-test.
+
 2003-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib.scm.in : let (require 'format) use slib's format.
