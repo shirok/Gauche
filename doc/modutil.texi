@@ -31,6 +31,7 @@
 * manipulationg SXML structure::  (sxml.tools)
 * CSV tables::                  (text.csv)
 * Calculate difference of text streams::  (text.diff)
+* Localized messages::          (text.gettext)
 * Simple HTML document construction::  (text.html-lite)
 * Parsing input stream::        (text.parse)
 * Transliterate characters::    (text.tr)
@@ -7615,7 +7616,7 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Calculate difference of text streams, Simple HTML document construction, CSV tables, Library modules - Utilities
+@node Calculate difference of text streams, Localized messages, CSV tables, Library modules - Utilities
 @section @code{text.diff} - Calculate difference of text streams
 @c NODE テキストストリームの相違点を計算する, @code{text.diff} - テキストストリームの相違点を計算する
 
@@ -7722,63 +7723,140 @@ displays:
 
 
 @c ----------------------------------------------------------------------
-@c @node text.gettext - Dealing with localized messages
-@c @section @code{text.gettext} - Dealing with localized messages
+@node Localized messages, Simple HTML document construction, Calculate difference of text streams, Library modules - Utilities
+@section @code{text.gettext} - Localized messages
 
-@c @deftp {Module} text.gettext
-@c @mdindex text.gettext
-@c A module that provides a utility to deal with localized messages.
-@c The API is pretty similar to GNU's gettext, and the messages
-@c are read from @file{*.po} file, so that you can use the GNU texttext
-@c toolchain to prepare localized messages.
-@c However, the code is written from scratch by Alex Shinn and
-@c doesn't depend on GNU's gettext library.
+@deftp {Module} text.gettext
+@mdindex text.gettext
+This module provides utilities to deal with localized messages.
+The API is compatible to GNU's gettext, and the messages
+are read from @file{*.po} and @file{*.mo} files,
+so that you can use the GNU texttext
+toolchain to prepare localized messages.
+However, the code is written from scratch by Alex Shinn and
+doesn't depend on GNU's gettext library.
 
-@c This implementation extends GNU's gettext API in the following ways:
-@c @itemize @bullet
-@c @item It can read from multiple message files in cascaded way,
-@c       allowing applications to share a part of message files.
-@c @item It supports multiple locale/domain simultaneously.
-@c @end itemize
-@c @end deftp
+This implementation extends GNU's gettext API in the following ways:
+@itemize @bullet
+@item
+It can read from multiple message files in cascaded way,
+allowing applications to share a part of message files.
+@item
+It supports multiple locale/domain simultaneously.
+@end itemize
 
-@c The following procedures are gettext-like APIs.
+SRFI-29 (@xref{Localization}) provides another means of message
+localization.  A portable program may wish to use srfi-29, but
+generally @code{text.gettext} is recommended in Gauche scripts
+because of its flexibility and compatibility to existing message files.
+@end deftp
 
-@c @defun textdomain domain-name
-@c Selects the domain named by @var{domain-name} as the default domain.
+@subheading Gettext-compatible API
 
-@c Returns an @emph{accessor procedure} which packages information of
-@c the domain, instead of just a domain name.
+@defun textdomain domain-name &optional locale dirs cdir cached? lookup-cached?
+Sets up the default domain and other parameters for
+the application.  The setting affects to the following @code{gettext}
+call.
 
-@c You can pass @code{#f} as @var{domain-name} just to get the default
-@c domain accessor procedure.
-@c @end defun
+@var{Domain} is a string or list of strings specifying the domain
+(name of @file{.mo} or @file{.po} files) as in C gettext.
+You can pass @code{#f} as @var{domain-name} just to get the default
+domain accessor procedure.
+You can alo pass multiple domains to @var{domain-name}.
+@example
+(textdomain '("myapp" "gimp"))  ; search 1st myapp, then gimp
+(gettext "/File/Close")         ; "Close" from gimp unless overridden
+@end example
 
-@c @defun gettext msg-id
-@c Returns a translated message of @var{msg-id}.  If there's no
-@c translated message, @var{msg-id} itself is returned.
-@c @end defun
+@var{Locale} is a string or list of strings in the standard Unix format of
+@code{LANG[_REGION][.ENCODING]}.  You can also pass a list of locales
+to specify fallbacks.
 
-@c @defun bindtextdomain domain dirs
-@c Sets the search path of domain @var{domain} to @var{dirs}, which 
-@c may be just a single directory name or a list of directory names.
-@c @end defun
+@example
+(textdomain "myapp" '("ru" "uk"))  ; search 1st Russian then Ukranian,
+(gettext "Hello, World!")          ; which are somewhat similar
+@end example
 
-@c @defun dgettext domain msg-id
-@c @defunx dcgettext domain msg-id locale
-@c Returns a translated message of @var{msg-id} in @var{domain}.
-@c @code{Dcgettext} takes @var{locale} as well.
-@c @end defun
+@var{Dirs} is the search path of directories which should hold the
+@file{LOCALE/CDIR/} directories which contain the actual message catalogs.
+This is always appended with the system default, e.g.
+@file{"/usr/share/locale"}, and may also inherit from the 
+@code{GETTEXT_PATH} colon-delimited environment variable.
 
-@c The following procedure is more flexible interface, on top of which
-@c the above APIs.
+@var{Cdir} is the catagory directory, defaulting to either the 
+@code{LC_CATEGORY}
+environment variable or the appropriate system default
+(e.g. @code{LC_MESSAGES}).  You generally won't need this.
 
-@c @defun make-gettext &optional domain locale dirs gettext-cached? lookup-cached?
-@c Returns a @emph{access procedure}, which can be called like this:
-@c @end defun
+@var{Cached?}
+means to cache individual messages, and defaults to @code{#t}.
+
+@var{Lookup-cached?}
+means to cache the lookup dispatch generated by these
+parameters, and defaults to @code{#t}.
+
+@code{Textdomain} just passes these parameters to the internal
+@code{make-gettext},
+and binds the result to the global dispatch used by @code{gettext}.  
+You may build these closures manually for convenience in using multiple
+separate domains or locales at once (useful for server environments).
+See the description of @code{make-gettext} below.
+
+@code{Textdomain} returns an @emph{accessor procedure} which
+packages information of the domain.  See @code{make-gettext} below
+for the details.
+@end defun
+
+@defun gettext msg-id
+Returns a translated message of @var{msg-id}.  If there's no
+translated message, @var{msg-id} itself is returned.
+@end defun
+
+@defun ngettext msg-id &optional msg-id2 num
+Similar to @var{gettext}, but it can be used to handle
+plural forms.
+Pass a singular form to @var{msg-id}, and plural form to
+@code{msg-id2}.  The @var{num} argument is used to determine
+the plural form.  If no message catalog is found, @var{msg-id}
+is returnf when @var{num} is 1, and @var{msg-id2} otherwise.
+@end defun
+
+@defun bindtextdomain domain dirs
+Sets the search path of domain @var{domain} to @var{dirs}, which 
+may be just a single directory name or a list of directory names.
+@end defun
+
+@defun dgettext domain msg-id
+@defunx dcgettext domain msg-id locale
+Returns a translated message of @var{msg-id} in @var{domain}.
+@code{Dcgettext} takes @var{locale} as well.
+@end defun
+
+@subheading Low-level flexible API
+
+The following procedure is more flexible interface,
+on top of which the gettext-compatible APIs are written.
+
+@defun make-gettext &optional domain locale dirs gettext-cached? lookup-cached?
+Creates and returns an @emph{accessor procedure}, which encapsulates
+methods to retrieve localized messages.
+
+The meaning of arguments are the same as @code{textdomain} above.
+Indeed, @code{textdomain} just calls @code{make-gettext}, and later
+it binds the result to the global parameter.   If you wish to have
+multiple independent domains within a single program, you can
+call @code{make-gettext} directly and manage the created
+accessor procedure by yourself.
+
+@example
+(define my-gettext (make-gettex "myapp"))
+(define (_ (my-gettext 'getter)))
+(_ "Hello, World!")
+@end example
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Simple HTML document construction, Parsing input stream, Calculate difference of text streams, Library modules - Utilities
+@node Simple HTML document construction, Parsing input stream, Localized messages, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
 @c NODE シンプルなHTMLドキュメントの構築, @code{text.html-lite} - シンプルなHTMLドキュメントの構築
 

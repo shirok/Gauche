@@ -3588,7 +3588,8 @@ Gauche's native @code{format}.   If a program just want
 srfi-29's "bundle" API, but want to keep Gauche's @code{format},
 use @code{srfi-29.bundle}.
 
-A similar feature is provided by @code{text.gettext} module,
+A similar feature is provided by @code{text.gettext} module
+(@xref{Localized messages}),
 which is a preferable way of message localication in Gauche.
 This module is provided mainly for porting code that uses
 srfi-29 features.
