@@ -1,6 +1,6 @@
 
 # the following line is examined by configure.  keep "^SUBDIRS=" pattern.
-SUBDIRS= example uvector
+SUBDIRS= example uvector charconv
 
 all :
 	@for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) all); done

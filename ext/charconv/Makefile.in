@@ -12,7 +12,7 @@ SCMFILES = charconv.scm
 HEADERS = 
 
 TARGET = charconv.so
-OBJS = charconv.o
+OBJS = charconv.o convlib.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status
 
 INSTALL_TYPE = @INSTALL_TYPE@
@@ -24,6 +24,9 @@ all : $(TARGET)
 
 charconv.so : $(OBJS)
 	$(CC) $(LDFLAGS) charconv.so $(OBJS) $(LIBS)
+
+convlib.c : convlib.stub
+	$(GOSH) genstub convlib.stub
 
 test : all
 	@rm -f test.log
