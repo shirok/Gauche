@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.54 2002-04-25 22:31:47 shirok Exp $
+ *  $Id: port.c,v 1.55 2002-04-26 06:24:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -49,7 +49,7 @@ static int port_cleanup(ScmPort *port)
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
         if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) bufport_flush(port, 0);
-        if (port->src.buf.closer) port->src.buf.closer(port);
+        if (port->ownerp && port->src.buf.closer) port->src.buf.closer(port);
         break;
     case SCM_PORT_PROC:
         if (port->src.vt.Close) port->src.vt.Close(port);
@@ -84,13 +84,15 @@ static ScmPort *make_port(int dir, int type, int ownerp)
     port->scrcnt = 0;
     port->ungotten = SCM_CHAR_INVALID;
     port->closed = FALSE;
-    port->ownerp = FALSE;
+    port->ownerp = ownerp;
     port->name = SCM_FALSE;
-    if (ownerp) {
-        GC_REGISTER_FINALIZER(port,
-                              port_finalize,
-                              NULL,
-                              &ofn, &ocd);
+    switch (type) {
+    case SCM_PORT_FILE: /*FALLTHROUGH*/;
+    case SCM_PORT_PROC:
+        GC_REGISTER_FINALIZER(port, port_finalize, NULL, &ofn, &ocd);
+        break;
+    default:
+        break;
     }
     return port;
 }
@@ -286,6 +288,26 @@ int Scm_CharReady(ScmPort *p)
  *        ^                                   ^ 
  *        bc                                  e
  *
+ *  Close
+ *    Port is closed either explicitly (via close-port etc) or implicity
+ *    (via GC -> finalizer).   In either case, the flusher is called
+ *    if there's any data remaining in the buffer.   Then, if the closer
+ *    procedure (port->src.buf.closer) is not NULL, and port->owner is TRUE,
+ *    the closer procedure is called which has to take care of any system-
+ *    level cleanup.   The closer can assume the buffer is already flushed.
+ *
+ *  Ready
+ *    When char-ready? is called on a buffered port, it first checks if
+ *    there's any data available in the buffer.  If so, it returns true.
+ *    If not, it calls port->src.buf.ready if it is not NULL to query
+ *    the character is ready.   If port->src.buf.ready is NULL, bufport
+ *    assumes the input is always ready.
+ *
+ *  Fileno
+ *    Port->src.buf.fileno is a query procedure that should return the
+ *    underlying integer file descriptor of the port, or -1 if there's
+ *    no associated one.   If it is NULL, the port is assumed not to
+ *    be associated to any file descriptor.
  */
 
 #define SCM_PORT_DEFAULT_BUFSIZ 8192
@@ -870,7 +892,6 @@ static int file_closer(ScmPort *p)
 {
     int fd = (int)p->src.buf.data;
     SCM_ASSERT(fd >= 0);
-    if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) bufport_flush(p, 0);
     return close(fd);
 }
 
