@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.35 2001-06-23 07:06:05 shirok Exp $
+;;; $Id: syslib.stub,v 1.36 2001-06-24 21:41:48 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -359,21 +359,22 @@
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r = stat(Scm_GetStringConst(path), &s->statrec);
   if (r < 0) Scm_SysError(\"stat failed for %S\", path);
-  return SCM_OBJ(s);")
+  SCM_RETURN(SCM_OBJ(s));")
 
 (define-cproc sys-lstat (path)
   (assert (string? path))
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r = lstat(Scm_GetStringConst(path), &s->statrec);
   if (r < 0) Scm_SysError(\"lstat failed for %S\", path);
-  return SCM_OBJ(s);")
+  SCM_RETURN(SCM_OBJ(s));")
 
-(define-cproc sys-fstat (fd)
-  (assert (small-integer? fd))
+(define-cproc sys-fstat (port-or-fd)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
-  int r = fstat(fd, &s->statrec);
+  int fd = get_port_or_fd(port_or_fd, FALSE), r;
+  if (fd < 0) SCM_RETURN(SCM_FALSE);
+  r = fstat(fd, &s->statrec);
   if (r < 0) Scm_SysError(\"fstat failed for %d\", fd);
-  return SCM_OBJ(s);")
+  SCM_RETURN(SCM_OBJ(s));")
 
 ;; TODO: check range of integer values; check non-standard fields
 (define-cproc sys-stat->mode (stat)
@@ -397,6 +398,10 @@
 (define-cproc sys-stat->gid (stat)
   (assert (sys-stat? stat))
   "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_gid));")
+(define-cproc sys-stat->size (stat)
+  (assert (sys-stat? stat))
+  "  /*TODO: check portability of off_t (maybe 64bits) */
+  SCM_RETURN(Scm_MakeIntegerFromUI((u_long)stat->statrec.st_size));")
 (define-cproc sys-stat->atime (stat)
   (assert (sys-stat? stat))
   "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_atime));")
