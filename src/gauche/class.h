@@ -1,7 +1,7 @@
 /*
  * class.h - Gauche object system private header
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.28 2002-12-22 12:29:58 shirok Exp $
+ *  $Id: class.h,v 1.29 2003-01-15 06:51:20 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -64,7 +64,7 @@ struct ScmClassStaticSlotSpecRec {
               SCM_UNBOUND,					\
               SCM_FALSE,					\
               SCM_FALSE,					\
-              TRUE, 0,						\
+              TRUE, -1,						\
               SCM_FALSE,					\
              } }
 
