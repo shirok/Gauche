@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.60 2001-03-24 08:13:40 shiro Exp $
+ *  $Id: vm.c,v 1.61 2001-03-26 08:01:07 shiro Exp $
  */
 
 #include "gauche.h"
@@ -320,6 +320,7 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
     if (restarg) {                                                      \
         ScmObj p = SCM_NIL, a;                                          \
         if (caller_args < reqargs) {                                    \
+            SAVE_REGS();                                                \
             Scm_Error("wrong number of arguments for %S"                \
                       " (required %d, got %d)",                         \
                       proc, reqargs, caller_args);                      \
@@ -333,6 +334,7 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
         sp = (ScmObj*)argp + ENV_SIZE(callee_args);                     \
     } else {                                                            \
         if (caller_args != reqargs) {                                   \
+            SAVE_REGS();                                                \
             Scm_Error("wrong number of arguments for %S"                \
                       " (required %d, got %d)",                         \
                       proc, reqargs, caller_args);                      \
@@ -478,6 +480,8 @@ static void run_loop()
                  */
                 if (proctype != SCM_PROC_GENERIC) {
                     ADJUST_ARGUMENT_FRAME(val0, nargs, argcnt);
+                } else {
+                    argcnt = nargs;
                 }
                 if (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL) {
                     /* discard the caller's argument frame, and shift
