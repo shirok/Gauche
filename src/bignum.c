@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.7 2001-04-18 09:29:53 shiro Exp $
+ *  $Id: bignum.c,v 1.8 2001-04-18 09:35:15 shiro Exp $
  */
 
 #include <math.h>
@@ -673,7 +673,7 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divider,
                         ScmBignum *quotient, ScmBignum *remainder)
 {
     ScmBignum *u, *v;
-    int dv = div_normalization_factor(divider->values[divider->size-1]);
+    int d = div_normalization_factor(divider->values[divider->size-1]);
     int j, k, l, n, m;
     u_long v1, v2;
 

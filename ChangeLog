@@ -1,3 +1,18 @@
+2001-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.6
+	* src/bignum.c: added Scm_BignumDivSI, and a conversion routine
+	  from bignum to string; not debugged well.
+	* src/number.c (read_complex): fixed a bug that caused segfault.
+	* src/regexp.c: correctly recognize ']' at the beginning of the
+	  character range.
+
+2001-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c: added BOL/EOL anchors (^ and $).  Fixed some bugs
+	  in character range operator.
+	* test/regexp.scm: more tests.
+
 2001-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.5
