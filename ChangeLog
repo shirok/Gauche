@@ -1,3 +1,17 @@
+2001-03-04  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.1.1
+	* src/module.c, src/compile.c: implemented module selection
+ 	  mechanism.  Module binding is resolved during compile time,
+	  so the Scheme interface such as with-module, select-module and
+	  current-module are implemented as a built-in syntax.
+	* src/core.c (Scm_Init): initialize builtin functions within
+	  appropriate modules.
+	* src/boolean.c etc.: equivalent preicate C API now returns C boolean
+	  instead of Scheme boolean; easier for C programs.
+	* src/list.c: added topological sort function and some more list
+	  manipulaton functions, generally useful from C.
+
 2001-03-03  Shiro Kawai  <shiro@scherzo>
 	
 	* release 0.1: almost covered R5RS
