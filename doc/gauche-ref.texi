@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.129 2001-12-01 12:19:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.130 2001-12-01 21:52:57 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8022,7 +8022,7 @@ APIs.
 @end defun
 
 @defun gdbm-errno
-@end defvar
+@end defun
 
 @c ----------------------------------------------------------------------
 @node NDBM interface, Original DBM interface, GDBM interface, Library modules
@@ -10602,12 +10602,40 @@ See the following example:
 @end example
 
 @c EN
+You can specify default slot value (@code{:init-value} etc.) with
+@code{:validator}.  In that case, the initialization method of the
+instance calls the validator with the specified default value,
+if :init-keyword is not given.
+@c JP
+@code{:validator} が指定されたスロットにも、@code{:init-value}等を
+使って既定の初期値を指定しておくことができます。その場合、インスタンスの初期化ルーチンは、
+init-keywordによる初期値指定が無ければ既定の初期値を引数としてvalidator手続きを
+呼び出します。
+@c COMMON
+
+@example
+(define-class <v> ()
+  ((a :initform 'foo :init-keyword :a
+      :validator (lambda (obj value) (x->string value)))))
+
+(slot-ref (make <v>) 'a)        @result{} "foo"
+(slot-ref (make <v> :a 555) 'a) @result{} "555"
+@end example
+
+@c EN
 It looks similar to the virtual slot, but note that a slot with
 validator has an actual storage in the instance, while a virtual
 slot doesn't.
+
+It is also a good example of customizing how the slots are accessed
+using the metaobject protocol.  This feature is implemented by
+only a dozen lines of code.
 @c JP
 仮想スロットに似ていますが、validatorを持つスロットはインスタンス内に実際に
 値を格納している点が異なります。
+
+このモジュールはまた、スロットのアクセスをメタオブジェクトプロトコルを使って
+カスタマイズする例でもあります。この機能はほんの12行ほどのコードで実現されています。
 @c COMMON
 @end deftp
 
