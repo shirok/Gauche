@@ -1,3 +1,16 @@
+2001-09-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c : fixed a bug in format (thanks to Abe Hiroshi)
+	* src/bignum.c : fixed BignumLogXor
+	* lib/text/tr.scm : made basic function work
+	
+2001-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/extlib.stub : added digit->integer and
+	  integer->digit, for converting digit char <-> number.
+	* lib/cgi.scm : added
+	* lib/text/tr.scm : added
+
 2001-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.5
