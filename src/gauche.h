@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.297 2002-09-02 01:47:35 shirok Exp $
+ *  $Id: gauche.h,v 1.298 2002-09-10 21:57:14 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1825,6 +1825,7 @@ SCM_EXTERN ScmObj Scm_MakeBaseGeneric(ScmObj name,
 				      void *data);
 SCM_EXTERN ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf);
 SCM_EXTERN ScmObj Scm_NoOperation(ScmObj *args, int nargs, ScmGeneric *gf);
+SCM_EXTERN ScmObj Scm_InvalidApply(ScmObj *args, int nargs, ScmGeneric *gf);
 
 /* Method - method
    A method can be defined either by C or by Scheme.  C-defined method

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.84 2002-08-28 09:14:43 shirok Exp $
+ *  $Id: class.c,v 1.85 2002-09-10 21:57:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -121,6 +121,7 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -1272,6 +1273,13 @@ ScmObj Scm_NoOperation(ScmObj *arg, int nargs, ScmGeneric *gf)
     return SCM_UNDEFINED;
 }
 
+/* fallback of object-apply */
+ScmObj Scm_InvalidApply(ScmObj *args, int nargs, ScmGeneric *gf)
+{
+    Scm_Error("invalid application: %S", Scm_ArrayToList(args, nargs));
+    return SCM_UNDEFINED;
+}
+
 /* compute-applicable-methods */
 ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
 {
@@ -1944,6 +1952,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
     GINIT(&Scm_GenericObjectEqualP, "object-equal?");
     GINIT(&Scm_GenericObjectCompare, "object-compare");
+    GINIT(&Scm_GenericObjectApply, "object-apply");
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);

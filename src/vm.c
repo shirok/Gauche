@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.170 2002-09-10 20:16:32 shirok Exp $
+ *  $Id: vm.c,v 1.171 2002-09-10 21:57:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -510,7 +510,19 @@ static void run_loop()
                 int argcnt, proctype;
                 ScmObj nm = SCM_FALSE;
 
-                if (!SCM_PROCEDUREP(val0)) VM_ERR(("bad procedure: %S", val0));
+                /*
+                 * Step 0. object-apply hook
+                 */
+                if (!SCM_PROCEDUREP(val0)) {
+                    int i;
+                    CHECK_STACK(1);
+                    for (i=0; i<nargs; i++) {
+                        *(sp-i) = *(sp-i-1);
+                    }
+                    *(sp-nargs) = val0;
+                    sp++; nargs++;
+                    val0 = SCM_OBJ(&Scm_GenericObjectApply);
+                }
                 /*
                  * Step 1. Preprocess for generic function
                  */

@@ -1,3 +1,9 @@
+2002-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/class.c : added object-apply hook.  If non-procedure
+	  object is applied, like ("abc" 1), a method object-apply is
+	  called as (object-apply "abc" 1).
+
 2002-09-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/gauche/vm.h : changed environment frame layout.  see
