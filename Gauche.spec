@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.15 2002-09-22 11:13:13 shirok Exp $
+# $Id: Gauche.spec,v 1.16 2002-10-15 10:27:53 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -12,7 +12,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.6.3
+%define version  0.6.4
 %define encoding eucjp
 %define threads  pthreads
 
@@ -50,7 +50,7 @@ This package is compiled with %{encoding} as the native character encoding.
 %setup
 
 %build
-./configure --prefix=/usr --enable-threads=%{threads} --enable-multibyte=%{encoding}
+./configure --prefix=/usr --mandir='${prefix}/share/man' --infodir='${prefix}/share/info' --enable-threads=%{threads} --enable-multibyte=%{encoding}
 %ifarch i386
 make OPTFLAGS="-fomit-frame-pointer"
 %else
@@ -91,6 +91,9 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 /usr/share/man/man1/
 
 %changelog
+* Mon Oct 14 2002 Shiro Kawai
+- Gauche release 0.6.4
+
 * Thu Sep 22 2002 Shiro Kawai
 - Gauche release 0.6.3
 

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.86 2002-09-02 22:18:39 shirok Exp $
+;;; $Id: syslib.stub,v 1.87 2002-10-15 10:28:00 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -580,7 +580,7 @@
 
 (if "defined(HAVE_NANOSLEEP)"
     (define-cproc sys-nanosleep (nanoseconds)
-      "struct timespec spec, rem; int r;
+      "struct timespec spec, rem;
        if (SCM_TIMEP(nanoseconds)) {
            spec.tv_sec = SCM_TIME(nanoseconds)->sec;
            spec.tv_nsec = SCM_TIME(nanoseconds)->nsec;

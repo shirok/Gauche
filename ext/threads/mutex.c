@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.2 2002-07-14 22:43:11 shirok Exp $
+ *  $Id: mutex.c,v 1.3 2002-10-15 10:28:00 shirok Exp $
  */
 
 #include <math.h>
@@ -136,7 +136,7 @@ static ScmObj mutex_specific_get(ScmMutex *mutex)
     return mutex->specific;
 }
 
-static ScmObj mutex_specific_set(ScmMutex *mutex, ScmObj value)
+static void mutex_specific_set(ScmMutex *mutex, ScmObj value)
 {
     mutex->specific = value;
 }
@@ -210,7 +210,6 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
     ScmObj r = SCM_TRUE;
 #ifdef GAUCHE_USE_PTHREADS
     struct timespec ts, *pts;
-    ScmVM *vm = Scm_VM();
     int intr = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
@@ -299,7 +298,7 @@ static ScmObj cv_specific_get(ScmConditionVariable *cv)
     return cv->specific;
 }
 
-static ScmObj cv_specific_set(ScmConditionVariable *cv, ScmObj val)
+static void cv_specific_set(ScmConditionVariable *cv, ScmObj val)
 {
     cv->specific = val;
 }

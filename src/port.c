@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.81 2002-10-12 13:56:01 shirok Exp $
+ *  $Id: port.c,v 1.82 2002-10-15 10:28:00 shirok Exp $
  */
 
 #include <unistd.h>
@@ -85,7 +85,6 @@ static void port_finalize(ScmObj obj, void* data)
 static ScmPort *make_port(int dir, int type, int ownerp)
 {
     ScmPort *port;
-    GC_finalization_proc ofn; GC_PTR ocd;
 
     port = SCM_NEW(ScmPort);
     SCM_SET_CLASS(port, SCM_CLASS_PORT);

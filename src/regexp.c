@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.31 2002-09-21 08:52:49 shirok Exp $
+ *  $Id: regexp.c,v 1.32 2002-10-15 10:28:00 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -737,22 +737,26 @@ void Scm_RegDump(ScmRegexp *rx)
         case RE_SET:
             codep++;
             Scm_Printf(SCM_CUROUT, "%4d  SET  %d    %S\n",
-                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
+                       codep-1, rx->code[codep],
+                       rx->sets[(unsigned int)rx->code[codep]]);
             continue;
         case RE_NSET:
             codep++;
             Scm_Printf(SCM_CUROUT, "%4d  NSET  %d    %S\n",
-                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
+                       codep-1, rx->code[codep],
+                       rx->sets[(unsigned int)rx->code[codep]]);
             continue;
         case RE_SET1:
             codep++;
             Scm_Printf(SCM_CUROUT, "%4d  SET1 %d    %S\n",
-                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
+                       codep-1, rx->code[codep],
+                       rx->sets[(unsigned int)rx->code[codep]]);
             continue;
         case RE_NSET1:
             codep++;
             Scm_Printf(SCM_CUROUT, "%4d  NSET1 %d    %S\n",
-                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
+                       codep-1, rx->code[codep],
+                       rx->sets[(unsigned int)rx->code[codep]]);
             continue;
         case RE_JUMP:
             codep++;

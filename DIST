@@ -5,6 +5,7 @@ MAN_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/man/"
 DOC_DEST="../test"
 RPMDIR="$HOME/rpm"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
+XTRA_TEST_DIR="$HOME/src/test"
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -80,6 +81,7 @@ if [ "$test" = "yes" ]; then
   for tt in `cat ./Gauche-$VERSION/test/TESTS`; do
     /usr/local/bin/gosh -I./Gauche-$VERSION/test $tt >> test.log
   done
+  (cd $XTRA_TEST_DIR/r4rstest/ && make test)
 fi
 
 if [ "$testcode" = "yes" ]; then

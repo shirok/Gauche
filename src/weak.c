@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: weak.c,v 1.3 2002-09-12 21:28:47 shirok Exp $
+ *  $Id: weak.c,v 1.4 2002-10-15 10:28:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -67,7 +67,6 @@ ScmObj Scm_MakeWeakVector(int size)
     int i;
     ScmObj *p;
     ScmWeakVector *v = SCM_NEW(ScmWeakVector);
-    GC_finalization_proc ofn; GC_PTR ocd;
     
     SCM_SET_CLASS(v, SCM_CLASS_WEAKVECTOR);
     v->size = size;

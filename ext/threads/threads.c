@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: threads.c,v 1.3 2002-07-17 07:17:54 shirok Exp $
+ *  $Id: threads.c,v 1.4 2002-10-15 10:28:00 shirok Exp $
  */
 
 #include <gauche.h>
@@ -225,7 +225,7 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
     struct timespec ts, *pts;
     ScmInternalCond dummyc = PTHREAD_COND_INITIALIZER;
     ScmInternalMutex dummym = PTHREAD_MUTEX_INITIALIZER;
-    int intr;
+    int intr = FALSE;
     pts = Scm_GetTimeSpec(timeout, &ts);
     if (pts == NULL) Scm_Error("thread-sleep! can't take #f as a timeout value");
     pthread_mutex_lock(&dummym);

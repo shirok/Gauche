@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.180 2002-09-20 10:00:58 shirok Exp $
+ *  $Id: vm.c,v 1.181 2002-10-15 10:28:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -902,7 +902,6 @@ static void run_loop()
                 int size = CONT_FRAME_SIZE + ENV_SIZE(reqargs + restarg);
                 int i = 0, argsize;
                 ScmObj rest = SCM_NIL, tail = SCM_NIL, body;
-                ScmEnvFrame *e;
 
                 CHECK_STACK(size);
                 if (vm->numVals < reqargs) {

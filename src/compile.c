@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.88 2002-09-20 09:44:27 shirok Exp $
+ *  $Id: compile.c,v 1.89 2002-10-15 10:28:00 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1293,7 +1293,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
                                  ScmObj env, int ctx)
 {
     ScmObj code = SCM_NIL, codetail = SCM_NIL;
-    ScmObj cfr = SCM_NIL, cfrtail = SCM_NIL;  /* current frame */
+    ScmObj cfr = SCM_NIL;  /* current frame */
     ScmObj newenv, varp, valp;
     int count = 0;
 

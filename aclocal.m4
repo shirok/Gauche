@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.12 2002-07-19 02:21:47 shirok Exp $
+# $Id: aclocal.m4,v 1.13 2002-10-15 10:27:53 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -22,7 +22,7 @@ if test -f ../../src/gauche.h; then
   GAUCHE_TOP='../../'
   GAUCHE_INC="-I../../src -I../../gc/include `$GAUCHE_CONFIG --local-incdir`"
   GAUCHE_LIB="-L../../src"
-  GOSH="../../src/gosh -I../../src -I../../lib"
+  GOSH="../../src/gosh -q -I../../src -I../../lib -lgauche-init"
 else
   GAUCHE_CONFIG=gauche-config
   GAUCHE_TOP=

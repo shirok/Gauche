@@ -11,8 +11,8 @@ GZIP_PROGRAM = @GZIP_PROGRAM@
 # make mandir=wherever
 prefix  = @prefix@
 datadir = @datadir@
-mandir  = $(datadir)/man/man1
-infodir = $(datadir)/info
+mandir  = @mandir@/man1
+infodir = @infodir@
 
 all: info
 

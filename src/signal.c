@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.24 2002-08-29 07:18:02 shirok Exp $
+ *  $Id: signal.c,v 1.25 2002-10-15 10:28:00 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -229,6 +229,7 @@ static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
 static ScmObj exit_sighandler(ScmObj *args, int nargs, void *data)
 {
     Scm_Exit(0);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 static SCM_DEFINE_STRING_CONST(exit_sighandler_name,

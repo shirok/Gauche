@@ -1,5 +1,9 @@
 2002-10-14  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.6.4
+	* doc/Makefile.in : reverted to use autoconf's default mandir and
+	  infodir.  For rpm files, let spec file override them.  (Suggested
+	  by MINOURA Makoto).
 	* ext/uvector/* : added read-block!, write-block, and uvector-alias.
 	* lib/gauche/singleton.scm : moved to lib/gauche/mop/singleton,
 	  keeping the old file for compatibility.
