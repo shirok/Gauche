@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.45 2003-11-27 17:10:40 shirok Exp $
+ *  $Id: charconv.c,v 1.46 2003-12-08 08:32:58 shirok Exp $
  */
 
 #include <string.h>
@@ -291,6 +291,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
         cinfo->ptr = cinfo->buf;
     }
 
+    memset(&bufrec, 0, sizeof(bufrec));
     bufrec.size = cinfo->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     bufrec.mode = SCM_PORT_BUFFER_FULL;
@@ -451,7 +452,8 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->remoteClosed = FALSE;
     cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->ptr = cinfo->buf;
-    
+
+    memset(&bufrec, 0, sizeof(bufrec));
     bufrec.size = cinfo->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     bufrec.mode = SCM_PORT_BUFFER_FULL;

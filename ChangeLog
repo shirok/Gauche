@@ -1,3 +1,9 @@
+2003-12-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/charconv.c (Scm_MakeInputConversionPort,
+	  Scm_MakeOutputConversionPort) : fixed a bug that didn't
+	  initialize all the members of ScmPortBuffer.
+
 2003-12-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_SYSCALL), src/system.c, src/syslib.stub,
