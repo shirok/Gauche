@@ -2,16 +2,13 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.7 2001-06-30 09:43:52 shirok Exp $
+;; $Id: regexp.scm,v 1.8 2001-09-23 21:57:39 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
 
 (test-start "regexp")
 
-;; In order to do thorough test, I need a standard mechanism to catch
-;; an error so that I can test error conditions as well.  Gauche doesn't
-;; have it yet.
 ;; Some test examples are taken from the test suite of Henry Spencer's
 ;; regexp package.
 
@@ -405,5 +402,27 @@
       (lambda () (test-parse-date2 "1999/12/25")))
 (test "rxmatch-case" #f
       (lambda () (test-parse-date2 'abc)))
+
+
+(test "regexp-replace" "abraabra**brabra**brabrabracadabrabrabra"
+      (lambda ()
+        (regexp-replace #/a((bra)+)cadabra/
+                        "abraabraabrabracadabrabrabrabracadabrabrabra"
+                        "**\\1**")))
+
+(test "regexp-replace-all" "abraabra**brabra**br**brabra**brabra"
+      (lambda ()
+        (regexp-replace-all #/a((bra)+)cadabra/
+                            "abraabraabrabracadabrabrabrabracadabrabrabra"
+                            "**\\1**")))
+
+(test "regexp-replace-all" "abraabra(bra^2)br(bra^2)brabra"
+      (lambda ()
+        (regexp-replace-all #/a((bra)+)cadabra/
+                            "abraabraabrabracadabrabrabrabracadabrabrabra"
+                            (lambda (m)
+                              (format #f "(bra^~a)"
+                                      (/ (string-length (rxmatch-substring m 1))
+                                         3))))))
 
 (test-end)
