@@ -1,9 +1,15 @@
+2001-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* test/string.scm : added more tests for builtin string ops
+	* test/srfi.scm : start adding SRFI-13 functions
+	* lib/srfi-13/*.scm : fixing bugs
+
 2001-04-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/string.c, src/extlib.stub: added 'grammer'
 	  argument to Scm_StringJoin and string-join, so that it will be
 	  compatible to SRFI-13.
-	* src/srfi-13/*.scm: added some more srfi-13 stuff.
+	* lib/srfi-13/*.scm: added some more srfi-13 stuff.
 
 2001-04-26  Shiro Kawai  <shiro@acm.org>
 

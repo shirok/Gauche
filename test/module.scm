@@ -2,7 +2,6 @@
 ;; testing module system
 ;;
 
-(add-load-path "../lib")
 (use gauche.test)
 
 (test-start "module")

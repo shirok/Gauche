@@ -2,9 +2,8 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.11 2001-04-13 19:36:01 shiro Exp $
+;; $Id: srfi.scm,v 1.12 2001-05-02 08:20:25 shirok Exp $
 
-(add-load-path "../lib")
 (use gauche.test)
 
 (test-start "SRFIs")
@@ -334,6 +333,8 @@
           (set-cdr! (assq 'a y) (list 2))
           (list (assq 'a x) (assq 'a y)))))
 
+;; TODO: lset stuff
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")
 (use srfi-2)
@@ -356,6 +357,169 @@
           (and-let* (((positive? x))
                      (y x))
                     y))))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-13")
+(use srfi-13)
+
+(test "string-null?" #f (lambda () (string-null? "abc")))
+(test "string-null?" #t (lambda () (string-null? "")))
+(test "string-every" #t (lambda () (string-every #\a "")))
+(test "string-every" #t (lambda () (string-every #\a "aaaa")))
+(test "string-every" #f (lambda () (string-every #\a "aaba")))
+(test "string-every" #t (lambda () (string-every #\a "")))
+(test "string-every" #t (lambda () (string-every #[a-z] "aaba")))
+(test "string-every" #f (lambda () (string-every #[a-z] "aAba")))
+(test "string-every" #t (lambda () (string-every #[a-z] "")))
+(test "string-every" #t (lambda () (string-every (lambda (x) (char-ci=? x #\a)) "aAaA")))
+(test "string-every" #f (lambda () (string-every (lambda (x) (char-ci=? x #\a)) "aAbA")))
+(test "string-every" (char->integer #\A)
+      (lambda () (string-every (lambda (x) (char->integer x)) "aAbA")))
+(test "string-every" #t
+      (lambda () (string-every (lambda (x) (error "hoge")) "")))
+(test "string-any" #t (lambda () (string-any #\a "aaaa")))
+(test "string-any" #f (lambda () (string-any #\a "Abcd")))
+(test "string-any" #f (lambda () (string-any #\a "")))
+(test "string-any" #t (lambda () (string-any #[a-z] "ABcD")))
+(test "string-any" #f (lambda () (string-any #[a-z] "ABCD")))
+(test "string-any" #f (lambda () (string-any #[a-z] "")))
+(test "string-any" #t (lambda () (string-any (lambda (x) (char-ci=? x #\a)) "CAaA")))
+(test "string-any" #f (lambda () (string-any (lambda (x) (char-ci=? x #\a)) "ZBRC")))
+(test "string-any" #f (lambda () (string-any (lambda (x) (char-ci=? x #\a)) "")))
+(test "string-any" (char->integer #\a)
+      (lambda () (string-any (lambda (x) (char->integer x)) "aAbA")))
+(test "string-tabulate" "0123456789"
+      (lambda () (string-tabulate (lambda (code)
+                                    (integer->char (+ code (char->integer #\0))))
+                                  10)))
+(test "string-tabulate" ""
+      (lambda () (string-tabulate (lambda (code)
+                                    (integer->char (+ code (char->integer #\0))))
+                                  0)))
+(test "reverse-list->string" "cBa"
+      (lambda () (reverse-list->string '(#\a #\B #\c))))
+(test "reverse-list->string" ""
+      (lambda () (reverse-list->string '())))
+; string-join : Gauche builtin.
+(test "substring/shared" "cde" (lambda () (substring/shared "abcde" 2)))
+(test "substring/shared" "cd"  (lambda () (substring/shared "abcde" 2 4)))
+(test "string-copy!" "abCDEfg"
+      (lambda () (let ((x (string-copy "abcdefg")))
+                   (string-copy! x 2 "CDE")
+                   x)))
+(test "string-copy!" "abCDEfg"
+      (lambda () (let ((x (string-copy "abcdefg")))
+                   (string-copy! x 2 "ZABCDE" 3)
+                   x)))
+(test "string-copy!" "abCDEfg"
+      (lambda () (let ((x (string-copy "abcdefg")))
+                   (string-copy! x 2 "ZABCDEFG" 3 6)
+                   x)))
+(test "string-take" "Pete S"  (lambda () (string-take "Pete Szilagyi" 6)))
+(test "string-take" ""        (lambda () (string-take "Pete Szilagyi" 0)))
+(test "string-take" "Pete Szilagyi" (lambda () (string-take "Pete Szilagyi" 13)))
+(test "string-drop" "zilagyi" (lambda () (string-drop "Pete Szilagyi" 6)))
+(test "string-drop" "Pete Szilagyi" (lambda () (string-drop "Pete Szilagyi" 0)))
+(test "string-drop" ""        (lambda () (string-drop "Pete Szilagyi" 13)))
+
+(test "string-take-right" "rules" (lambda () (string-take-right "Beta rules" 5)))
+(test "string-take-right" ""      (lambda () (string-take-right "Beta rules" 0)))
+(test "string-take-right" "Beta rules" (lambda () (string-take-right "Beta rules" 10)))
+(test "string-drop-right" "Beta " (lambda () (string-drop-right "Beta rules" 5)))
+(test "string-drop-right" "Beta rules" (lambda () (string-drop-right "Beta rules" 0)))
+(test "string-drop-right" ""      (lambda () (string-drop-right "Beta rules" 10)))
+
+(test "string-pad" "  325" (lambda () (string-pad "325" 5)))
+(test "string-pad" "71325" (lambda () (string-pad "71325" 5)))
+(test "string-pad" "71325" (lambda () (string-pad "8871325" 5)))
+(test "string-pad" "~~325" (lambda () (string-pad "325" 5 #\~)))
+(test "string-pad" "~~~25" (lambda () (string-pad "325" 5 #\~ 1)))
+(test "string-pad" "~~~~2" (lambda () (string-pad "325" 5 #\~ 1 2)))
+(test "string-pad-right" "325  " (lambda () (string-pad-right "325" 5)))
+(test "string-pad-right" "71325" (lambda () (string-pad-right "71325" 5)))
+(test "string-pad-right" "88713" (lambda () (string-pad-right "8871325" 5)))
+(test "string-pad-right" "325~~" (lambda () (string-pad-right "325" 5 #\~)))
+(test "string-pad-right" "25~~~" (lambda () (string-pad-right "325" 5 #\~ 1)))
+(test "string-pad-right" "2~~~~" (lambda () (string-pad-right "325" 5 #\~ 1 2)))
+
+(test "string-trim"  "a b c d  \r\n"
+      (lambda () (string-trim "  \t  a b c d  \r\n")))
+(test "string-trim"  "\t  a b c d  \r\n"
+      (lambda () (string-trim "  \t  a b c d  \r\n" #\space)))
+(test "string-trim"  "a b c d  \r\n"
+      (lambda () (string-trim "4358948a b c d  \r\n" #[\d])))
+
+(test "string-trim-right"  "  \t  a b c d"
+      (lambda () (string-trim-right "  \t  a b c d  \r\n")))
+(test "string-trim-right"  "  \t  a b c d  "
+      (lambda () (string-trim-right "  \t  a b c d  \r\n" #[\r\n])))
+(test "string-trim-right"  "349853a b c d"
+      (lambda () (string-trim-right "349853a b c d03490" #[\d])))
+
+(test "string-trim-both"  "a b c d"
+      (lambda () (string-trim-both "  \t  a b c d  \r\n")))
+(test "string-trim-both"  "  \t  a b c d  "
+      (lambda () (string-trim-both "  \t  a b c d  \r\n" #[\r\n])))
+(test "string-trim-both"  "a b c d"
+      (lambda () (string-trim-both "349853a b c d03490" #[\d])))
+
+; string-fill - in string.scm
+
+(test "string-compare" 5
+      (lambda () (string-compare "The cat in the hat" "abcdefgh"
+                                 values values values
+                                 4 6 2 4)))
+(test "string-compare-ci" 5
+      (lambda () (string-compare-ci "The cat in the hat" "ABCDEFGH"
+                                 values values values
+                                 4 6 2 4)))
+
+; TODO: bunch of string= families
+
+(test "string-prefix-length" 5
+      (lambda () (string-prefix-length "cancaNCAM" "cancancan")))
+(test "string-prefix-length-ci" 8
+      (lambda () (string-prefix-length-ci "cancaNCAM" "cancancan")))
+(test "string-suffix-length" 4
+      (lambda () (string-suffix-length "CanCan" "cankancan")))
+(test "string-suffix-length-ci" 1
+      (lambda () (string-suffix-length-ci "CanCan" "cankancan")))
+
+(test "string-prefix?" #t    (lambda () (string-prefix? "abcd" "abcdefg")))
+(test "string-prefix?" #f    (lambda () (string-prefix? "abcf" "abcdefg")))
+(test "string-prefix-ci?" #t (lambda () (string-prefix-ci? "abcd" "aBCDEfg")))
+(test "string-prefix-ci?" #f (lambda () (string-prefix-ci? "abcf" "aBCDEfg")))
+(test "string-suffix?" #t    (lambda () (string-suffix? "defg" "abcdefg")))
+(test "string-suffix?" #f    (lambda () (string-suffix? "aefg" "abcdefg")))
+(test "string-suffix-ci?" #t (lambda () (string-suffix-ci? "defg" "aBCDEfg")))
+(test "string-suffix-ci?" #f (lambda () (string-suffix-ci? "aefg" "aBCDEfg")))
+
+(test "string-index" 4
+      (lambda () (string-index "abcd:efgh;ijkl" #\:)))
+(test "string-index" 4
+      (lambda () (string-index "abcd:efgh;ijkl" #[\W])))
+(test "string-index" #f
+      (lambda () (string-index "abcd:efgh;ijkl" #[\d])))
+(test "string-index-right" 4
+      (lambda () (string-index-right "abcd:efgh;ijkl" #\:)))
+(test "string-index-right" 9
+      (lambda () (string-index-right "abcd:efgh;ijkl" #[\W])))
+(test "string-index-right" #f
+      (lambda () (string-index-right "abcd:efgh;ijkl" #[\d])))
+
+(test "string-count" 2
+      (lambda () (string-count "abc def\tghi jkl" #\space)))
+(test "string-count" 3
+      (lambda () (string-count "abc def\tghi jkl" #[\s])))
+(test "string-contains" 3
+      (lambda () (string-contains "Ma mere l'oye" "mer")))
+(test "string-contains" #f
+      (lambda () (string-contains "Ma mere l'oye" "Mer")))
+(test "string-contains-ci" 3
+      (lambda () (string-contains-ci "Ma mere l'oye" "Mer")))
+(test "string-contains-ci" #f
+      (lambda () (string-contains-ci "Ma mere l'oye" "Meer")))
+
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-14")

@@ -2,7 +2,6 @@
 ;; testing macro expansion
 ;;
 
-(add-load-path "../lib")
 (use gauche.test)
 
 (test-start "macro")

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: comparer.scm,v 1.2 2001-04-27 09:37:48 shirok Exp $
+;;;  $Id: comparer.scm,v 1.3 2001-05-02 08:20:25 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -42,7 +42,7 @@
   (let-optional* args ((start1 0) end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
-      (%string-compare-int start1 str1 str2
+      (%string-compare-int (- start1 1) str1 str2
                            char<? char>?
                            proc< proc= proc>))))
 
@@ -52,7 +52,7 @@
   (let-optional* args ((start1 0) end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
-      (%string-compare-int start1 str1 str2
+      (%string-compare-int (- start1 1) str1 str2
                            char-ci<? char-ci>?
                            proc< proc= proc>))))
 

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: pred.scm,v 1.1 2001-04-25 07:33:52 shiro Exp $
+;;;  $Id: pred.scm,v 1.2 2001-05-02 08:20:25 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -36,8 +36,8 @@
   (let* ((src  (open-input-string (apply %maybe-substring s args)))
          (pred (%get-char-pred c/s/p)))
     (let loop ((ch (read-char src)))
-      (cond ((pred ch))
-            ((eof-object? ch) #f)
+      (cond ((eof-object? ch) #f)
+            ((pred ch))
             (else (loop (read-char src)))))))
 
 

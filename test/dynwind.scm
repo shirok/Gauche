@@ -2,9 +2,8 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.7 2001-04-07 06:37:40 shiro Exp $
+;; $Id: dynwind.scm,v 1.8 2001-05-02 08:20:25 shirok Exp $
 
-(add-load-path "../lib")
 (use gauche.test)
 
 (test-start "dynamic-wind and call/cc")

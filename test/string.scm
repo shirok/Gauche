@@ -19,11 +19,30 @@
 
 (test "string->list" '(#\a #\b #\c #\d #\e #\f #\g)
       (lambda () (string->list "abcdefg")))
+(test "string->list" '(#\c #\d #\e #\f #\g)
+      (lambda () (string->list "abcdefg" 2))) ;srfi-13 extension
+(test "string->list" '(#\c #\d #\e)
+      (lambda () (string->list "abcdefg" 2 5))) ;srfi-13 extension
+(test "string->list" '(#\a)
+      (lambda () (string->list "abcdefg" 0 1))) ;srfi-13 extension
 (test "string->list" '() (lambda () (string->list "")))
+
+(test "string-copy" '("abcde" #f)
+      (lambda () (let* ((x "abcde") (y (string-copy x)))
+                   (list y (eq? x y)))))
+(test "string-copy" "cde" (lambda () (string-copy "abcde" 2)))
+(test "string-copy" "cd"  (lambda () (string-copy "abcde" 2 4)))
 
 (test "string-ref" #\b (lambda () (string-ref "abc" 1)))
 (define x (string-copy "abcde"))
 (test "string-set!" "abZde" (lambda () (string-set! x 2 #\Z) x))
+
+(test "string-fill!" "ZZZZZZ"
+      (lambda () (string-fill! (string-copy "000000") #\Z)))
+(test "string-fill!" "000ZZZ"
+      (lambda () (string-fill! (string-copy "000000") #\Z 3)))
+(test "string-fill!" "000ZZ0"
+      (lambda () (string-fill! (string-copy "000000") #\Z 3 5)))
 
 (test "string-join" "foo bar baz"
       (lambda () (string-join '("foo" "bar" "baz"))))

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.3 2001-04-27 08:28:14 shirok Exp $
+;;;  $Id: selector.scm,v 1.4 2001-05-02 08:20:25 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -55,25 +55,25 @@
 
 (define (string-take s nchars)
   (check-arg string? s)
-  (when (or (< nchars 0) (<= nchars (string-length s)))
+  (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range: ~s" nchars))
   (%maybe-substring s 0 nchars))
 
 (define (string-drop s nchars)
   (check-arg string? s)
-  (when (or (< nchars 0) (<= nchars (string-length s)))
+  (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range: ~s" nchars))
   (%maybe-substring s nchars))
 
 (define (string-take-right s nchars)
   (check-arg string? s)
-  (when (or (< nchars 0) (<= nchars (string-length s)))
+  (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range: ~s" nchars))
   (%maybe-substring s (- (string-length s) nchars)))
 
 (define (string-drop-right s nchars)
   (check-arg string? s)
-  (when (or (< nchars 0) (<= nchars (string-length s)))
+  (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range: ~s" nchars))
   (%maybe-substring s 0 (- (string-length s) nchars)))
 

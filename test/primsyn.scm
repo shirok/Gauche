@@ -2,7 +2,6 @@
 ;;; primitive syntax test
 ;;;
 
-(add-load-path "../lib")
 (use gauche.test)
 
 (test-start "primitive syntax")

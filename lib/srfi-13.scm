@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-13.scm,v 1.4 2001-04-27 09:49:58 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.5 2001-05-02 08:20:25 shirok Exp $
 ;;;
 
 ;; Srfi-13 is a large set of functions, so I splitted it up to a number of
@@ -27,7 +27,7 @@
 ;;   string? make-string string string->list list->string
 ;;   string-join string-length string-ref string-copy
 ;;   string-set! string-fill!
-;;   string-append
+;;   string-append string-contains
 
 (define-module srfi-13
   (export string-null? string-every string-any

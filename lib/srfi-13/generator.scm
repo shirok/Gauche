@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: generator.scm,v 1.1 2001-04-25 07:33:31 shiro Exp $
+;;;  $Id: generator.scm,v 1.2 2001-05-02 08:20:25 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -20,7 +20,7 @@
 (select-module srfi-13)
 
 (define (string-tabulate proc len)
-  (check-arg (lambda (l) (and (integer? l) (positive? l))) len)
+  (check-arg (lambda (l) (and (integer? l) (>= l 0))) len)
   (let ((sink (open-output-string)))
     (do ((i 0 (+ i 1)))
         ((>= i len) (get-output-string sink))

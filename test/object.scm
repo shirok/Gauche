@@ -2,9 +2,8 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.9 2001-04-03 10:30:34 shiro Exp $
+;; $Id: object.scm,v 1.10 2001-05-02 08:20:25 shirok Exp $
 
-(add-load-path "../lib")
 (use gauche.test)
 
 (test-start "object system")
