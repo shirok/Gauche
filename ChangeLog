@@ -1,3 +1,8 @@
+2004-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/test.scm : added *test-report-error* variable to control
+	  showing stack trace of captured errors.
+
 2004-05-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in : added dependency of symbol.o on builtin-syms.c

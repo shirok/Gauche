@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.11 2004-02-03 13:12:27 shirok Exp $
+;;;  $Id: test.scm,v 1.12 2004-05-11 10:22:31 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -67,7 +67,7 @@
 
 (define-module gauche.test
   (export test test* test-start test-end test-section test-module
-          *test-error* test-error? prim-test))
+          *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
 
 ;; An object to represent error.
@@ -83,6 +83,9 @@
   #t)
 
 (define *test-error* (make <test-error>))
+
+(define *test-report-error*
+  (sys-getenv "GAUCHE_TEST_REPORT_ERROR"))
 
 (define (test-error? obj) (is-a? obj <test-error>))
 
@@ -113,10 +116,12 @@
          (lambda ()
            (with-error-handler
                (lambda (e)
+                 (when *test-report-error*
+                   (report-error e))
                  (make <test-error>
                    :message (if (is-a? e <error>)
-                                (ref e 'message)
-                                e)))
+                              (ref e 'message)
+                              e)))
              thunk))
          compare))
 

@@ -7693,6 +7693,36 @@ value if the test thunk is supposed to signal an error.
 @end example
 @end defvar
 
+@defvar *test-report-error*
+@c EN
+If this variable is true, the @code{test} routine prints stack trace
+to the current error port when it captures an error.  It is useful
+when you got an unexpected test-error object and want to check out
+where the error is occurring.
+
+This variable is initialized by the environment variable
+@code{GAUCHE_TEST_REPORT_ERROR} when the @code{gauche.test} module
+is loaded.  For example, you can use the environment variable to check out
+an unexpected error from your test script as follows (the value
+of the environment variable doesn't matter).
+@c JP
+この変数が真であれば、@code{test}ルーチンはエラーを捕捉した際に
+スタックトレースをカレントエラーポートに出力します。
+期待しない状況でtest-errorオブジェクトが返された際に、そのエラーが
+どこで起こったかを知るのに役立つでしょう。
+
+この変数は@code{gauche.test}モジュールが読み込まれた時点で
+環境変数@code{GAUCHE_TEST_REPORT_ERROR}の値により初期化されます。
+例えば、テストスクリプト中の予期せぬエラーを調べるのに、
+次のようにすることができるでしょう (環境変数がセットされていれば、値は関係ありません)。
+@c COMMON
+
+@example
+env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
+@end example
+@end defvar
+
+
 @defmac test* name expected expr &optional compare
 @c EN
 A convenience macro that wraps @var{expr} by lambda.
