@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.83 2004-05-04 04:39:22 fuyuki Exp $
+ *  $Id: load.c,v 1.84 2004-05-21 21:34:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -606,7 +606,7 @@ static ScmObj find_so_from_la(ScmString *lafile)
 /* Dynamically load the specified object by FILENAME.
    FILENAME must not contain the system's suffix (.so, for example).
 */
-ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
+ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
 {
     ScmObj reqname, truename, load_paths = Scm_GetDynLoadPath();
     void *handle;

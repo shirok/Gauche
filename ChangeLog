@@ -1,5 +1,8 @@
 2004-05-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h, src/gauche/class.h : avoid using C++ reserved words
+	  (pointed out by Laurent Marzullo).
+
 	* src/extlib.stub (rxmatch-num-matches): added.
 
 	* lib/gauche/object.scm: added 'ref' method specialized for hash-table.

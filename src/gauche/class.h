@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.39 2003-11-27 17:10:41 shirok Exp $
+ *  $Id: class.h,v 1.40 2004-05-21 21:34:28 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -157,8 +157,8 @@ SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
 SCM_EXTERN ScmGeneric Scm_GenericChangeClass;
 
 SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
-                                         ScmClass *old,
-                                         ScmClass *new);
+                                         ScmClass *oldk,
+                                         ScmClass *newk);
 
 SCM_DECL_END
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.371 2004-05-21 07:19:52 shirok Exp $
+ *  $Id: gauche.h,v 1.372 2004-05-21 21:34:27 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2411,7 +2411,7 @@ SCM_EXTERN int Scm_Load(const char *file, int error_if_not_found);
 SCM_EXTERN ScmObj Scm_GetLoadPath(void);
 SCM_EXTERN ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
 
-SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, int export);
+SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, int export_);
 
 SCM_EXTERN ScmObj Scm_Require(ScmObj feature);
 SCM_EXTERN ScmObj Scm_Provide(ScmObj feature);
