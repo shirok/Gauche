@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.271 2002-09-21 10:30:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.272 2002-09-22 06:12:29 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -55,7 +55,10 @@ Gaucheのバージョン@VERSION@に対応します。
 * Macros::                      
 * Core library::                
 * Object system::               
-* Library modules::             
+* Library module overview::     
+* Gauche basic extension modules::  
+* SRFI modules::                
+* Miscellaneous library modules::  
 * References::                  
 * C to Scheme mapping::         
 * Indices::                     
@@ -2134,14 +2137,14 @@ from shell.
 @c EN
 If you feel like to conserve global module name space, you can organize
 modules hierarchically.   Some Gauche libraries already does so.
-@xref{Library modules}, for examples.
+@xref{Library module overview}, for examples.
 For example, @code{text.tr} module is implemented in ``text/tr.scm'' file.
 Note that the pathname separator `/' in the file becomes a period in the
 module name.
 @c JP
 モジュールの名前空間のトップに新たなモジュールを追加するのに気が引ける場合は、
 モジュールを階層的に構成することもできます。Gaucheのモジュールの多くは既に階層的に
-構成されています。具体的なモジュール例は@ref{Library modules}を参照して下さい。
+構成されています。具体的なモジュール例は@ref{Library module overview}を参照して下さい。
 例えば、@code{text.tr}モジュールは ``@code{text/tr.scm}'' ファイルに
 実装されています。パス名の区切り文字`/'がモジュール名ではピリオドになることに
 注意して下さい。
@@ -13001,7 +13004,7 @@ Bound to a positive integer that @code{sys-random} may return.
 @end defvar
 
 @c ======================================================================
-@node Object system, Library modules, Core library, Top
+@node Object system, Library module overview, Core library, Top
 @chapter Object system
 @c NODE オブジェクトシステム
 
@@ -13289,72 +13292,8 @@ for the usage of metaclass.
 
 
 @c ======================================================================
-@node Library modules, References, Object system, Top
-@chapter Library modules
-@c NODE ライブラリモジュール
-
-@c ----------------------------------------------------------------------
-@menu
-* Library modules overview::    
-* Generic DBM interface::       
-* GDBM interface::              
-* NDBM interface::              
-* Original DBM interface::      
-* Filtering file content::      
-* Filesystem utilities::        
-* Arrays::                      
-* Character code conversion::   
-* Collection framework::        
-* Low-level file operations::   
-* Interactive session::         
-* User-level logging::          
-* Networking::                  
-* Parameters::                  
-* Parsing command-line options::  
-* High Level Process Interface::  
-* Regular expression utilities::  
-* Simple dispatcher::           
-* Sequence framework::          
-* Singleton::                   
-* Termios::                     
-* Unit Testing::                
-* Threads::                     
-* Uniform vectors::             
-* Slot with validator::         
-* Comparing version numbers::   
-* Mathematic constants::        
-* Mersenne Twister Random number generator::  
-* RFC822 Message parsing::      
-* Base64 encoding/decoding::    
-* HTTP cookie handling::        
-* Quoted-printable encoding/decoding::  
-* URI parsing and construction::  
-* SLIB::                        
-* Feature Conditional::         
-* List library::                
-* And-let*::                    
-* Homogeneous Vectors::         
-* SRFI String ports::           
-* Syntax to receive multiple values::  
-* Record types::                
-* Let-values::                  
-* String library::              
-* Character-set library::       
-* Time data types and procedures::  
-* Sources of Random Bits::      
-* CSV tables::                  
-* Simple HTML document construction::  
-* Parsing input stream::        
-* Transliterate characters::    
-* Lazy text construction::      
-* Determine isomorphism::       
-* Queue::                       
-* Topological sort::            
-* CGI Utility::                 
-@end menu
-
-@node Library modules overview, Generic DBM interface, Library modules, Library modules
-@section Library modules overview
+@node Library module overview, Gauche basic extension modules, Object system, Top
+@chapter Library module overview
 @c NODE ライブラリモジュールの概要
 
 @c EN
@@ -13434,1484 +13373,37 @@ Generic implementations of various algorithms.
 @c COMMON
 @end table
 
+@c ======================================================================
+@node Gauche basic extension modules, SRFI modules, Library module overview, Top
+@chapter Gauche basic extension modules
+@c NODE Gaucheの基本拡張モジュール
+
 @c ----------------------------------------------------------------------
-@node Generic DBM interface, GDBM interface, Library modules overview, Library modules
-@section @code{dbm} - Generic DBM interface
-@c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
-
-@deftp {Module} dbm
-@mdindex dbm
-@c EN
-DBM-like libraries provides an easy way to store values to a file,
-indexed by keys.  You can think it as a persistent associative memory.
-@c JP
-DBM系のライブラリはキーでインデックスされた値をファイルに格納する簡単な方法を
-提供します。一種の永続的な連想記憶と言えるでしょう。
-@c COMMON
-
-@c EN
-This modules defines @code{<dbm>} abstract class, which has
-a common interface to use various DBM-type database packages.
-As far as you operate on the already opened database,
-importing @code{dbm} module is enough.
-@c JP
-このモジュールが定義する抽象クラス@code{<dbm>}は、DBM系ライブラリへの
-統一されたインタフェースを提供します。@code{dbm}モジュールだけをインポートすれば、
-既にオープンされたデータベースを操作することができます。
-@c COMMON
-
-@c EN
-To create or open a database, you need a concrete implementation
-of the database.  Gauche currently has the following impelentations.
-Each module defines its own low-level accessing functions
-as well as the common interface.
-Note that your system may not have one or more of those DBM libraries;
-Gauche defines only what the system provides.
-@c JP
-データベースをオープンしたり作成したりするには、dbmインタフェースを実装した
-モジュールが必要になります。今のところGaucheでは以下の実装が使えます。
-それぞれのモジュールは、dbmインタフェース共通の手続きの他に、
-直接実装を操作できる低レベルの手続きも提供します。
-システムによっては以下のインタフェースの全てが実装されているわけではないことに
-注意してください。Gaucheではシステムが提供する実装のみを定義します。
-@c COMMON
-
-@table @code
-@item dbm.gdbm
-@c EN
-GDBM library (@xref{GDBM interface}).
-@c JP
-GDBMライブラリ (@xref{GDBM interface}).
-@c COMMON
-
-@item dbm.ndbm
-@c EN
-NDBM library (@xref{NDBM interface}).
-@c JP
-NDBMライブラリ (@xref{NDBM interface}).
-@c COMMON
-
-@item dbm.odbm
-@c EN
-DBM library  (@xref{Original DBM interface}).
-@c JP
-DBMライブラリ  (@xref{Original DBM interface}).
-@c COMMON
-@end table
-@end deftp
-
-@c EN
-The following code shows a typical usage of the database.
-@c JP
-以下にdbmデータベースの使用例を示します。
-@c COMMON
-
-@example
-(use dbm)         ; @r{dbm abstract interface}
-(use dbm.gdbm)    ; @r{dbm concrete interface}
-
-; @r{open the database}
-(define *db* (dbm-open <gdbm> :path "mydb" :rw-mode :write))
-
-; @r{put the value to the database}
-(dbm-put! *db* "key1" "value1")
-
-; @r{get the value from the database}
-(define val (dbm-get *db* "key1"))
-
-; @r{iterate over the database}
-(dbm-for-each *db* (lambda (key val) (foo key val)))
-
-; @r{close the database}
-(dbm-close *db*)
-@end example
-
 @menu
-* Opening and closing a dbm database::  
-* Accessing a dbm database::    
-* Iterating on a database::     
+* Arrays::                      
+* Character code conversion::   
+* Collection framework::        
+* Low-level file operations::   
+* Interactive session::         
+* User-level logging::          
+* Networking::                  
+* Parameters::                  
+* Parsing command-line options::  
+* High Level Process Interface::  
+* Regular expression utilities::  
+* Simple dispatcher::           
+* Sequence framework::          
+* Singleton::                   
+* Syslog::                      
+* Termios::                     
+* Unit Testing::                
+* Threads::                     
+* Uniform vectors::             
+* Slot with validator::         
+* Comparing version numbers::   
 @end menu
 
-@node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
-@subsection Opening and closing a dbm database
-@c NODE DBMデータベースのオープンとクローズ
-
-@deftp {Class} <dbm>
-@clindex dbm
-@c EN
-An abstract class for dbm-style database.  Defindes the common
-database operations.   This class has the following instance slots.
-They must be set before the database is actually opened by
-@code{dbm-open}.
-
-The concrete class may add more slots for finer control on the database,
-such as locking.
-@c JP
-DBM系のデータベースのための抽象クラスです。データベースへの共通のオペレーションを
-定義します。以下のインスタンススロットを持ちます。これらのスロットの値は
-@code{dbm-open}によってデータベースがオープンされる前にセットされて
-いなければなりません。
-
-具体クラスは、データベースの操作をより細かく行うための追加のスロット(例えばロックを
-行うかどうか)を持つかもしれません。
-@c COMMON
-
-@defivar <dbm> path
-@c EN
-Pathname of the dbm database.  Some dbm implementation may append
-suffixes to this.
-@c JP
-データベースファイルのパス名。dbmの実装によっては、このパスにサフィックスが追加されます。
-@c COMMON
-@end defivar
-
-@defivar <dbm> rw-mode
-@c EN
-Specifies read/write mode.  Can be either one of the following keywords:
-@table @code
-@item :read
-The database will be opened in read-only mode.  The database file must
-exist when @code{dbm-open} is called.  This is the default value.
-@item :write
-The database will be opened in Read-write mode.
-If the database file does not exist, @code{dbm-open} creates one.
-@item :create
-The database will be created and opened in Read-write mode.
-If the database file exists, @code{dbm-open} truncates it.
-@end table
-@c JP
-読み書きのモードを指定します。以下の値のいずれかを取ります。
-@table @code
-@item :read
-データベースは@code{dbm-open}によって読みだし専用モードでオープンされます。
-オープンされる時点でデータベースは存在していなければなりません。
-@item :write
-データベースは@code{dbm-open}によって読み書き可能なモードでオープンされます。
-データベースが存在しなければ、@code{dbm-open}は新しいデータベースを作成します。
-@item :create
-@code{dbm-open}によって新しいデータベースが作成され、読み書き可能なモードでオープンされます。
-既にデータベースが存在していた場合、その内容はクリアされます。
-@end table
-@c COMMON
-@end defivar
-
-@defivar <dbm> file-mode
-@c EN
-Specifies the file permissions (as @code{sys-chmod}) to create the
-database.  The default value is @code{#o664}.
-@c JP
-データベースが作成されるときのファイルパーミッションを指定します。
-デフォルトは@code{#o664}です。
-@c COMMON
-@end defivar
-
-@defivar <dbm> key-convert
-@defivarx <dbm> value-convert
-@c EN
-By default, you can use only strings for both key and values.  With this
-option, however, you can specify how to convert other Scheme values to/from
-string to be stored in the database.   The possible values are the
-followings:
-@table @asis
-@item @code{#f}
-The default value.  Keys (values) are not converted.  They must be
-a string.
-@item @code{#t}
-Keys (values) are converted to its string representation, using 
-@code{write}, to store in the database, and converted
-back to Scheme values, using @code{read}, to retrieve from the database.
-The data must have an external representation that can be read back.
-(But it is not checked when the data is written; you'll get an error
-when you read the data).  The key comparison is done in the string
-level, so the external representation of the same key must match.
-@item a list of two procedures
-Both procedure must take a single argument.  The first procedure must
-receive a Scheme object and returns a string.  It is used to convert
-the keys (values) to store in the database.  The second procedure
-must receive a string and returns a Scheme object.  It is used to
-convert the stored data in the database to a Scheme object.
-The key comparison is done in the string
-level, so the external representation of the same key must match.
-@end table
-@c JP
-デフォルトでは、dbmデータベースはキーにも値にも文字列しか使うことはできません。
-これらのスロットによって、それ以外のSchemeオブジェクトを取り扱う方法を指定することが
-できます。以下の値のいずれかが可能です。
-@table @asis
-@item @code{#f}
-デフォルトの値です。キーあるいは値は変換されません。それらは文字列でなければなりません。
-@item @code{#t}
-キーあるいは値は@code{write}を使って文字列に変換されデータベースに格納されます。
-そして@code{read}を使って文字列からSchemeオブジェクトへと変換されます。
-後で@code{read}で読みこめるようなキーあるいは値のみを扱うことができます。
-(但し、dbmライブラリは書き込み時にそれが後で読み込めるかどうかのチェックは行いません)。
-キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列表現を
-持つ必要があります。
-@item 二つの手続きのリスト
-どちらの手続きも一つの引数を取ります。最初の手続きはSchemeオブジェクトを受け取り、
-文字列を返します。キーあるいは値をデータベースに格納する時に呼ばれます。
-二つ目の手続きは文字列を受け取りSchemeオブジェクトを返します。データベースから
-キーあるいは値を取り出す時に呼ばれます。
-キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列に
-変換される必要があります。
-@end table
-@c COMMON
-@end defivar
-@end deftp
-
-@deftp {Metaclass} <dbm-meta>
-@clindex dbm-meta
-@c EN
-A metaclass of @code{<dbm>} and its subclasses.
-@c JP
-@var{<dbm>}クラス及びそのサブクラスのメタクラスです。
-@c COMMON
-@end deftp
-
-@deffn {Method} dbm-open (dbm <dbm>)
-@c EN
-Opens a dbm database.  @var{dbm} must be an instance of
-one of the concrete classes that derived from the @code{<dbm>} class,
-and its slots must be set appropriately.   On success, it returns
-the @var{dbm} itself.  On failure, it signals an error.
-@c JP
-DBMデータベースをオープンします。@var{dbm}は、@code{<dbm>}クラスを継承した
-具体クラスのインスタンスでなければなりません。また、そのスロットには適切な値が
-セットされている必要があります。オープンに成功したら@var{dbm}自身が返されます。
-失敗した場合はエラーが報告されます。
-@c COMMON
-@end deffn
-
-@deffn {Method} dbm-open (dbm-class <dbm-meta>) options @dots{}
-@c EN
-A convenient method that creates dbm instance and opens it.
-It is defined as follows.
-@c JP
-DBMインスタンスを作成してオープンするための便利なメソッドです。
-次のように定義されます。
-@c COMMON
-@example
-(define-method dbm-open ((class <class>) . initargs)
-  (dbm-open (apply make class initargs)))
-@end example
-@end deffn
-
-@c EN
-Database file is closed when it is garbage collected.
-However, to ensure the modification is properly synchornized,
-you should close the database explicitly.
-@c JP
-データベースファイルはガベージコレクトされる際にクローズされますが、
-変更を正しくデータベースに反映するには、明示的にクローズした方が良いでしょう。
-@c COMMON
-
-@deffn {Method} dbm-close (dbm @code{<dbm>})
-@c EN
-Closes a database @var{dbm}.  Once the database is closed, any
-operation to access the database content raises an error.
-@c JP
-データベース@var{dbm}をクローズします。データベースがクローズされると、
-それ以降のアクセスオペレーションはエラーとなります。
-@c COMMON
-@end deffn
-
-@deffn {Method} dbm-closed? (dbm @code{<dbm>})
-@c EN
-Returns true if a database @var{dbm} is already closed, false otherwise.
-@c JP
-データベース@var{dbm}が既にクローズされていたら@code{#t}を返します。
-@c COMMON
-@end deffn
-
-@node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, Generic DBM interface
-@subsection Accessing a dbm database
-@c NODE DBMデータベースのアクセス
-
-@c EN
-Once a database is opened, you can use the following methods
-to access individual key/value pairs.
-@c JP
-データベースがオープンされたら、以下のアクセスメソッドが使えます。
-@c COMMON
-
-@deffn {Method} dbm-put! (dbm @code{<dbm>}) key value
-@c EN
-Put a @var{value} with @var{key}.
-@c JP
-値@var{value}をキー@var{key}と関連付けて保存します。
-@c COMMON
-@end deffn
-
-@deffn {Method} dbm-get (dbm @code{<dbm>}) key &optional default
-@c EN
-Get a value associated with @var{key}.  If no value exists for @var{key}
-and @var{default} is specified, it is returned.  If no value exists for
-@var{key} and @var{default} is not specified, an error is signalled.
-@c JP
-キー@var{key}に関連付けられた値を返します。もし値が存在しなければ、@var{default}が
-与えられていればそれを返し、そうでなければエラーを報告します。
-@c COMMON
-@end deffn
-
-@deffn {Method} dbm-exists? (dbm @code{<dbm>}) key
-@c EN
-Return true if a value exists for @var{key}, false otherwise.
-@c JP
-キー@var{key}に関連付けられた値が存在すれば@code{#t}を返します。
-@c COMMON
-@end deffn
-
-@deffn {Method} dbm-delete! (dbm @code{<dbm>}) key
-@c EN
-Delete a value associated with @var{key}.  
-@c JP
-キー@var{key}に関連付けられた値を消去します。値が存在しない場合は何もしません。
-@c COMMON
-@end deffn
-
-
-@node Iterating on a database,  , Accessing a dbm database, Generic DBM interface
-@subsection Iterating on a dbm database
-@c NODE DBMデータベース上の繰り返し処理
-
-@c EN
-To walk over the entire database, following methos are provided.
-@c JP
-全データベースを渡り歩く処理のために、以下のメソッドが用意されています。
-@c COMMON
-
-@deffn {Method} dbm-fold (dbm @code{<dbm>}) procedure knil
-@c EN
-The basic iterator.
-For each key/value pair, @var{procedure} is called as
-@code{(@var{procedure} @var{key} @var{value} @var{r})},
-where @var{r} is @var{knil} for the fist call of @var{procedure},
-and the return value of the previous call for subsequent calls.
-Returns the result of the last call of @var{procedure}.
-If no data is in the database, @var{knil} is returned.
-
-The following method returns the sum of all the integer values.
-@c JP
-基本的な繰り返し処理です。データベース内の各キー／値のペアに関して、手続き
-@var{procedure}が @code{(@var{procedure} @var{key} @var{value} @var{r})},
-のように呼ばれます。ここで@var{r}は、最初の@var{procedure}の呼び出しの時には@var{knil}
-が、以降の呼び出しの時にはその直前の@var{procedure}が返した値が渡されます。
-最後の@var{procedure}の戻り値が@code{dbm-fold}の戻り値となります。
-データベース中にデータがひとつもなければ@var{knil}がそのまま返されます。
-
-次の例は、データベース中の整数の値を全て加算します。
-@c COMMON
-@example
-(dbm-fold dbm (lambda (k v r) (if (integer? v) (+ v r) r) 0))
-@end example
-@end deffn
-
-@deffn {Method} dbm-for-each (dbm @code{<dbm>}) procedure
-@c EN
-For each key/value pair in the database @var{dbm}, @var{procedure}
-is called.  Two arguments are passed to @var{procedure}---a key and
-a value.   The result of @var{procedure} is discarded.
-@c JP
-データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
-@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値は捨てられます。
-@c COMMON
-@end deffn
-
-@deffn {Method} dbm-map (dbm @code{<dbm>}) procedure
-@c EN
-For each key/value pair in the database @var{dbm}, @var{procedure}
-is called.  Two arguments are passed to @var{procedure}---a key and
-a value.   The result of @var{procedure} is accumulated to a list
-which is returned as a result of @code{dbm-map}.
-@c JP
-データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
-@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値はリストに
-集められて@code{dbm-map}の戻り値となります。
-@c COMMON
-@end deffn
-
-
-@c ----------------------------------------------------------------------
-@node GDBM interface, NDBM interface, Generic DBM interface, Library modules
-@section @code{dbm.gdbm} - GDBM interface
-
-@deftp {Module} dbm.gdbm
-@mdindex dbm.gdbm
-@end deftp
-
-@deftp {Class} <gdbm>
-@clindex gdbm
-Inherits @code{<dbm>}.  Provides an implementation for GDBM library.
-This module is only installed when your system already has GDBM
-(1.8.0 is preferred, but works with older 1.7.x with some limitations).
-
-@defivar <gdbm> sync
-@end defivar
-@defivar <gdbm> nolock
-@end defivar
-@defivar <gdbm> bsize
-@end defivar
-@end deftp
-
-Besides the unified DBM interface (@xref{Generic DBM interface}),
-this module provides the following low-level functions that provides
-direct access to the gdbm API.  See gdbm manual for details of these
-APIs.
-
-@defun gdbm-open path &optional size rwmode fmode error-callback
-
-@defvar GDBM_READER
-@end defvar
-
-@defvar GDBM_WRITER
-@end defvar
-
-@defvar GDBM_WRCREAT
-@end defvar
-
-@defvar GDBM_NEWDB
-@end defvar
-
-@defvar GDBM_FAST
-@end defvar
-
-@defvar GDBM_SYNC
-@end defvar
-
-@defvar GDBM_NOLOCK
-@end defvar
-@end defun
-
-@defun gdbm-close gdbm-object
-@end defun
-
-@defun gdbm-closed? gdbm-object
-@end defun
-
-@defun gdbm-store key value &optional flag
-
-
-@defvar GDBM_INSERT
-@end defvar
-
-@defvar GDBM_REPLACE
-@end defvar
-
-@end defun
-
-
-@defun gdbm-fetch gdbm-object key
-@end defun
-
-
-@defun gdbm-delete gdbm-object key
-@end defun
-
-
-@defun gdbm-firstkey gdbm-object
-@end defun
-
-
-@defun gdbm-nextkey gdbm-object key
-@end defun
-
-
-@defun gdbm-reorganize gdbm-object
-@end defun
-
-
-@defun gdbm-sync gdbm-object
-@end defun
-
-
-@defun gdbm-exists gdbm-object key
-@end defun
-
-
-@defun gdbm-strerror errno
-@end defun
-
-
-@defun gdbm-setopt gdbm-object option value
-
-@defvar GDBM_CACHESIZE
-@end defvar
-
-@defvar GDBM_FASTMODE
-@end defvar
-
-@defvar GDBM_SYNCMODE
-@end defvar
-
-@defvar GDBM_CENTFREE
-@end defvar
-
-@defvar GDBM_COALESCEBLKS
-@end defvar
-@end defun
-
-@defun gdbm-version
-@end defun
-
-@defun gdbm-errno
-@end defun
-
-@c ----------------------------------------------------------------------
-@node NDBM interface, Original DBM interface, GDBM interface, Library modules
-@section @code{dbm.ndbm} - NDBM interface
-
-@deftp {Module} dbm.ndbm
-@mdindex dbm.ndbm
-@end deftp
-
-@deftp {Class} <ndbm>
-@clindex ndbm
-Inherits @code{<dbm>}.  Provides an implementation for NDBM library.
-This module is only installed when your system already has NDBM.
-@end deftp
-
-Besides the unified DBM interface (@xref{Generic DBM interface}),
-this module provides the following low-level functions that provides
-direct access to the ndbm API.  See ndbm manual for details of these
-APIs.
-
-@defun ndbm-open path flags mode
-@end defun
-
-@defun ndbm-close ndbm-object
-@end defun
-
-@defun ndbm-closed? ndbm-object
-@end defun
-
-@defun ndbm-store ndbm-object key content &optional flag
-@end defun
-
-@defun ndbm-fetch ndbm-object key
-@end defun
-
-@defun ndbm-delete ndbm-object key
-@end defun
-
-@defun ndbm-firstkey ndbm-object
-@end defun
-
-@defun ndbm-nextkey ndbm-object
-@end defun
-
-@defun ndbm-error ndbm-object
-@end defun
-
-@defun ndbm-clear-error ndbm-object
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Original DBM interface, Filtering file content, NDBM interface, Library modules
-@section @code{dbm.odbm} - Original DBM interface
-
-@deftp {Module} dbm.odbm
-@mdindex dbm.odbm
-@end deftp
-
-@deftp {Class} <odbm>
-@clindex odbm
-Inherits @code{<dbm>}.  Provides an implementation for legacy DBM
-library.
-This module is only installed when your system already has DBM.
-
-The biggest limitation of the legacy DBM is that you can only open
-one database at a time.  You can create a multiple @code{<odbm>}
-instances, but you can open at most one of it at a time, or
-you'll get an error.
-@end deftp
-
-Besides the unified DBM interface (@xref{Generic DBM interface}),
-this module provides the following low-level functions that provides
-direct access to the dbm API.  See dbm manual for details of these
-APIs.
-
-@defun odbm-init path
-@end defun
-
-@defun odbm-close
-@end defun
-
-@defun odbm-store key value
-@end defun
-
-@defun odbm-fetch key
-@end defun
-
-@defun odbm-delete key
-@end defun
-
-@defun odbm-firstkey
-@end defun
-
-@defun odbm-nextkey key
-@end defun
-
-
-@c ----------------------------------------------------------------------
-@c @node Pseudo DBM interface, Character code conversion, Original DBM interface, Library modules
-@c @section @code{dbm.pdbm} - Pseudo DBM interface
-
-@c ----------------------------------------------------------------------
-@node Filtering file content, Filesystem utilities, Original DBM interface, Library modules
-@section @code{file.filter} - Filtering file content
-@c NODE ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
-
-@deftp {Module} file.filter
-@mdindex file.filter
-@c EN
-This module provides utilities for a common pattern in
-filter-type commands, that is, to take an input, to process
-the content, and to write the result.   The common occurring
-pattern is:
-
-@itemize @bullet
-@item
-Input may be a specified file, or an input port
-(the current input port by default).
-@item
-Output may be a specified file, or an output port
-(the current output port by default).
-@item
-Output may be a temporary file, which will be renamed
-upon completion of the processing.
-@item
-Output file may be removed when an error occurs
-in the processing.
-@end itemize
-@c JP
-このモジュールは、フィルター型のコマンド、
-すなわち入力を読み込み、処理をして結果を書き出すような場合に
-共通するパターンに使えるユーティリティ手続きを提供します。
-共通するパターンとは：
-
-@itemize @bullet
-@item
-入力は指定されたファイルかポートで、デフォルトはカレント入力ポート。
-@item
-出力は指定されたファイルかポートで、デフォルトはカレント出力ポート。
-@item
-出力は一時ファイルに書き出すこともできて、
-その場合は処理が終了した時点で指定されたファイルにリネーム。
-@item
-処理途中でエラーが起こった場合に出力ファイルを削除
-@end itemize
-@c COMMON
-@end deftp
-
-@defun file-filter proc &keyword input output temporary-file keep-output?
-@c EN
-Calls @var{proc} with two arguments, an input port and 
-an output port.   Returns the result(s) of @var{proc}.
-The input port and output port are chosen depending on the keyword arguments.
-@c JP
-二つの引数、入力ポートと出力ポートを引数として@var{proc}を呼び出し、
-その結果を返します。
-入力ポートと出力ポートはキーワード引数により決定されます。
-@c COMMON
-
-@table @code
-@item input
-@c EN
-The argument must be either an input port or a string
-that specifies a file name.
-If it's an input port, it is passed to @var{proc} as is.
-If it's a string, the named file is opened for input and the resulting
-port is passed to @var{proc}, and the port is closed when @var{proc}
-returns.
-If this argument is omitted, the current input port is passed.
-@c JP
-この引数は入力ポートかファイル名を示す文字列でなければなりません。
-入力ポートの場合、それはそのまま@var{proc}に渡されます。
-文字列が渡された場合は、そのファイル名を持つファイルを入力用にオープンし、
-そのポートが@var{proc}に渡され、またこのポートは@var{proc}が戻った時に閉じられます。
-この引数が省略された場合は、現在の入力ポートが渡されます。
-@c COMMON
-@item output
-@c EN
-The argument must be either an output port or a string
-that specifies a file name.
-If it's an output port, it is passed to @var{proc} as is.
-If it's a string, the named file is opened for output
-(unless @var{temporary-file} is given, in that case
-a temporary file is opened instead), and the resulting port
-is passed to @var{proc}.  This port is closed when @var{proc} returns.
-If this argument is omitted, the current output port is passed.
-@c JP
-この引数は入力ポートかファイル名を示す文字列でなければなりません。
-出力ポートの場合、それはそのまま@var{proc}に渡されます。
-文字列が渡された場合は、そのファイル名を持つファイルを出力用にオープンし、
-そのポートが@var{proc}に渡されます (但し、@var{temporary-file}
-引数が渡された時はそれに指定されるファイルが一時ファイルとしてオープンされます)。
-オープンされたポートは@var{proc}が戻った時に閉じられます。
-この引数が省略された場合は、現在の出力ポートが渡されます。
-@c COMMON
-@item temporary-file
-@c EN
-If a string file name is given to this argument, the named file
-is opened for output during the processing, instead of the file
-name as @var{output}.   The output port @var{proc} receives
-is connected to this file.  When @var{proc}
-returns normally, the file is renamed to the name given to @var{output}
-keyword argument.
-
-If the given file name begins with characters except @code{"/"}, @code{"./"}
-or @code{"../"}, the directory of the file name given to @var{output} argument
-is attached before it.
-Furthermore, a unique name is attached to the temporary file name
-(the temporary file is opened by @code{sys-mkstemp}.)
-
-This argument is ignored when @var{output} argument is not a string
-file name.
-@c JP
-文字列でファイル名が渡された場合、処理の間の出力先として@var{output}に指定された
-ファイルのかわりにそのファイルがオープンされます。
-@var{proc}にはその一時ファイルへの出力ポートが渡されます。
-@var{proc}が正常に返って来た時点で、一時ファイルは@var{output}に指定された
-ファイルへとリネームされます。
-
-もし一時ファイル名が@code{"/"}、@code{"./"}、@code{"../"}以外の
-文字で始まっていた場合は、@var{output}に与えられたファイル名のディレクトリが
-一時ファイルの前に追加されます。さらに、ユニークなサフィックスが一時ファイルの後に
-追加されます(一時ファイルは@code{sys-mkstemp}を使ってオープンされます)。
-
-この引数は、@var{output}にファイル名が与えられなかった場合は無視されます。
-@c COMMON
-@item keep-output?
-@c EN
-If a true value is given, the output is not deleted even
-when @var{proc} signals an error.
-By default, the output (or the temporary file when
-@var{temporary-file} is given) will be deleted on error.
-@c JP
-真の値が与えられた場合、@var{proc}がエラーになった場合でも出力ファイルを削除しません。
-デフォルトでは、出力ファイル(もしくは@var{temporary-file}が与えられた場合は
-そのファイル)はエラーの場合には削除されます。
-@c COMMON
-@end table
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Filesystem utilities, Arrays, Filtering file content, Library modules
-@section @code{file.util} - Filesystem utilities
-@c NODE ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
-
-@deftp {Module} file.util
-@mdindex file.util
-@c EN
-Provides convenient utility functions handling files and directories.
-Those functions are built on top of the primitive system
-procedures described in @ref{Filesystems}.
-@c JP
-ファイルやディレクトリを扱う便利な手続き群を提供します。
-これらの手続きは@ref{Filesystems}で述べられたプリミティブなシステム手続きの上に
-構築されています。
-@c COMMON
-
-@c EN
-Many procedures in this module takes a keyword argument @var{follow-link?},
-which specifies the behavior when the procedure sees a symbolic link.
-If true value is given to @var{follow-link?} (which is the default),
-the procedure operates on the file referenced by the link; if false is 
-given, it operates on the link itself.
-@c JP
-このモジュール内の多くの手続きは@var{follow-link?}というキーワード引数を取ります。
-これは手続きがシンボリックリンクに出会ったときの動作を指定します。@var{follow-link?}が
-真であれば、手続きはリンクの指す先のファイルに作用します。これがデフォルトの振舞いです。
-@var{follow-link?}に@code{#f}が渡された場合は手続きはリンクそのものに作用します。
-@c COMMON
-@end deftp
-
-@c EN
-Note on the naming convention: Some Scheme implementations "create"
-new directories and files, while the others "make" them.
-Some implementations "delete" them, while the others "remove" them.
-It seems that both conventions are equally popular.
-So Gauche provides @emph{both}.
-@c JP
-名前つけ規則に関する注記：ファイルやディレクトリを
-作成するのに@code{"create"}という語を使う処理系と@code{"make"}を
-使う処理系があります。ファイルやディレクトリを削除するのにも@code{"remove"}と
-@code{"delete"}の流派があります。どちらも同じくらい広く使われているようなので、
-Gaucheでは@emph{両方の}名前を提供することにしました。
-@c COMMON
-
-@menu
-* Directory utilities::         
-* Pathname utilities::          
-* File attribute utilities::    
-* File operations::             
-@end menu
-
-@node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
-@subsection Directory utilities
-@c NODE ディレクトリユーティリティ
-
-@defun current-directory &optional new-directory
-@c EN
-When called with no argument, this returns the pathname of the current
-working directory.  When called with a string argument @var{new-directory},
-this sets the current working directory of the process to it.
-If the process can't change directory to @var{new-directory}, an error is
-signalled.
-
-This function is in ChezScheme, MzScheme and some other Scheme
-implementations.
-@c JP
-引数無しで呼ばれた場合、カレントディレクトリを返します。
-文字列@var{new-directory}が与えられた場合はプロセスのカレントディレクトリを
-@var{new-directory}に変更します。変更が出来なかった場合はエラーとなります。
-
-この関数はChezSchemeやMzSchemeなどいくつかのScheme処理系に見られます。
-@c COMMON
-@end defun
-
-@defun directory-list path &keyword children? add-path? filter
-@c EN
-Returns a list of entries in the directory @var{path}.
-The result is sorted by dictionary order.
-
-By default, only the basename (the last component) of the entries
-returned.   If @var{add-path?} is given and true, @var{path} is appended
-to each entry.  If @var{children?} is given and true, @code{"."} and 
-@code{".."} are excluded from the result.  If @var{filter} is given,
-it must be a predicate that takes one argument.  It is called on
-every element of the entry basename, and only the entries on which
-@code{filter} returns true are included in the result.
-
-If @var{path} is not a directory, an error is signalled.
-@c JP
-ディレクトリ@var{path}中のエントリのリストを返します。
-リストは文字列順にソートされます。
-
-デフォルトではエントリのベースネーム(パスの最後のコンポーネント)のみが
-返されますが、キーワード引数@var{add-path?}に真の値が与えられた時は
-@var{path}が各エントリの前に追加されます。
-@var{children?}に真の値が与えられた時は、カレントディレクトリと親ディレクトリが
-リストから除かれます。@var{filter}引数は、もし与えられれば、一つの引数を取る
-手続きでなければなりません。ディレクトリ中の各エントリを引数としてその手続きが呼ばれ、
-真を返したエントリのみが結果に含まれます。
-
-@var{path}がディレクトリでない場合はエラーが報告されます。
-@c COMMON
-
-@example
-(directory-list "test")
- @result{} ("." ".." "test.scm" "test.scm~")
-
-(directory-list "test" :add-path? #t)
- @result{} ("test/." "test/.." "test/test.scm" "test/test.scm~")
-
-(directory-list "test" :children? #t)
- @result{} ("test.scm" "test.scm~")
-
-(directory-list "test" :children? #t :add-path? #t
-   :filter (lambda (e) (not (string-suffix? "~" e))))
- @result{} ("test/test.scm")
-@end example
-@end defun
-
-@defun directory-list2 path &keyword children? add-path? filter follow-link?
-@c EN
-Like @code{directory-list}, but returns two values; the first one is a list
-of subdirectories, and the second one is a list of the rest.
-The keyword arguments @var{children?}, @code{add-path?} and @var{filter}
-are the same as @code{directory-list}.
-
-Giving false value to @var{follow-link?} makes @code{directory-list2}
-not follow the symbolic links; if the @var{path} contains a
-symlink to a directory,
-it will be included in the first list if @var{follow-link?}
-is omitted or true,
-while it will be in the second list if @var{follow-link?} is false.
-@c JP
-@code{directory-list}に似ていますが、ふたつの値を返します。最初の値は
-@var{path}内にあるサブディレクトリのリストで、次の値はそれ以外のエントリのリストです。
-キーワード引数@var{children?}、@code{add-path?}、@var{filter}は
-@code{directory-list}と同じ意味をもちます。
-
-偽の値を@var{follow-link?}に与えると、@var{path}内のシンボリックリンクを
-辿りません；すなわち、@var{path}内にディレクトリへのシンボリックリンクがあった場合、
-デフォルト、もしくは@var{follow-link?}に真の値が与えられた場合は
-それは最初のリスト(サブディレクトリ)に入りますが、@var{follow-link?}
-に偽の値が与えられた場合は後者のリスト(その他のエントリ)に入ります。
-@c COMMON
-@end defun
-
-@defun directory-fold path proc knil &keyword lister follow-link?
-@c EN
-A fundamental directory traverser.
-Conceptually it works as follows, in recursive way.
-@c JP
-ディレクトリ探索の最も基本的な手続きです。基本的な動作は以下に示すような再帰的なものです。
-@c COMMON
-
-@c EN
-@itemize @bullet
-@item
-If @var{path} is not a directory, calls 
-@code{(@var{proc} @var{path} @var{knil})} and returns the result.
-@item
-If @var{path} is a directory, calls
-@code{(@var{lister} @var{path} @var{knil})}.  The procedure @var{lister}
-is expected to return a list of pathnames.  Then
-@code{directory-fold} is called on each returned pathname.
-Each result of @code{directory-fold} is passed as the @var{knil}
-argument of the next recursive invocation.
-Returns the result of the last recursive call.
-@end itemize
-@c JP
-@itemize @bullet
-@item
-@var{path}がディレクトリでない場合は@code{(@var{proc} @var{path} @var{knil})} を
-評価し、結果を返します。
-@item
-@var{path}がディレクトリであった場合、まず
-@var{(@var{lister} @var{path} @var{knil})} を評価します。
-手続き@var{lister}はパス名のリストを返さなければなりません。
-続いて、@code{directory-fold}が各パス名に対して再帰的に呼ばれます。
-各呼び出しの結果が次の再帰呼び出しの@var{knil}の値に使われます。
-@end itemize
-@c COMMON
-
-@c EN
-The default procedure of @var{lister} is just a call to @code{directory-list},
-as follows.
-@c JP
-デフォルトの@var{lister}は@code{directory-list}を次のように呼び出すものです。
-@c COMMON
-@example
-(lambda (path knil)
-  (directory-list path :add-path? #t :children? #t)))))
-@end example
-
-@c EN
-Note that @var{lister} shouldn't return the given path itself (@code{"."})
-nor the parent directory (@code{".."}), or the recursion wouldn't
-terminate.  Also note @var{lister} is expected to return a path accesible
-from the current directory, i.e. if @var{path} is @code{"/usr/lib/foo"} and
-it contains @code{"libfoo.a"} and @code{"libfoo.so"}, @var{lister} should
-return @code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}.
-@c JP
-@var{lister}は@var{path}自身への参照 (@code{"."}) やその親ディレクトリへの参照を
-返してはなりません。また、@var{lister}の戻り値は現在のディレクトリからアクセス可能な
-パス名でなければなりません。例えば@var{path}が@code{"/usr/lib/foo"}であり、
-そのディレクトリが@code{"libfoo.a"}と@code{"libfoo.so"}を含んでいた場合、
-@var{lister}は@code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}
-のようなリストを返す必要があります。
-@c COMMON
-
-@c EN
-The keyword argument @var{follow-link?} is used to determine whether
-@var{lister} should be called on a symbolic link pointing to a directory.
-When @var{follow-link?} is true (default), @var{lister} is called
-with the symbolic link if it points to a directory.
-When @var{follow-link?} is false, @var{proc} is not called.
-@c JP
-キーワード引数@var{follow-link?}はディレクトリを指しているシンボリックリンクに対して
-@var{lister}を呼ぶかどうかを決定します。@var{follow-link?}が真(デフォルト値)である
-場合はそのようなシンボリックリンクに対しても@var{lister}が呼ばれます。
-一方、@var{follow-link?}が偽であればシンボリックリンクに対しては@var{proc}が呼ばれます。
-@c COMMON
-
-@c EN
-The following examble returns a list of pathnames of the emacs backup files
-(whose name ends with "~") under the given path.
-@c JP
-次の例は、与えられたpath以下からemacsのバックアップファイル ("~"で終る名を持つファイル)
-のリストを返します。
-@c COMMON
-@example
-(use srfi-13) ;; for string-suffix?
-(directory-fold path
-                (lambda (entry result) 
-                  (if (string-suffix? "~" entry)
-                      (cons entry result)
-                      result))
-                '())
-@end example
-
-@end defun
-
-@defun make-directory* name &optional perm
-@defunx create-directory* name &optional perm
-@c EN
-Creates a directory @var{name}.  If the intermediate path to the
-directory doesn't exist, they are also created
-(like @code{mkdir -p} command on Unix).   If the directory
-@var{name} already exist, these procedure does nothing.
-@var{Perm} specifies the integer flag for permission bits of the
-directory.
-@c JP
-ディレクトリ@var{name}を作成します。@var{name}に至るパスが存在しない
-場合は必要なディレクトリが作成されます (Unixの@code{mkdir -p}コマンドと
-同様です)。ディレクトリ@var{name}が既に存在していた場合は何もしません。
-@var{perm}は作成されるディレクトリのパーミッションビットを指定します。
-@c COMMON
-@end defun
-
-
-@defun remove-directory* name
-@defunx delete-directory* name 
-@c EN
-Deletes directory @var{name} and its content recursively 
-(like @code{rm -r} command on Unix).   Symbolic links are not
-followed.
-@c JP
-ディレクトリ@var{name}とその内容を再帰的に消去します
-(Unixの@code{rm -r}コマンドと同様です)。シンボリックリンクは辿られません。
-@c COMMON
-@end defun
-
-
-@node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
-@subsection Pathname utilities
-@c NODE パスネームユーティリティ
-
-@defun build-path base-path component @dots{}
-@c EN
-Appends pathname components @var{component} to the @var{base-path}.
-@var{Component} can be a symbol @code{up} or @code{same};
-in Unix, they are synonym to @code{".."} and @code{"."}.
-This API is taken from MzScheme.
-@c JP
-パス名のコンポーネント@var{component}を@var{base-path}に追加します。
-@var{Component}はシンボル@code{up}または@code{same}であっても
-構いません; Unixではそれらは@code{".."}または@code{"."}と等価です。
-このAPIはMzSchemeから採られました。
-@c COMMON
-@end defun
-
-@defun absolute-path? path
-@defunx relative-path? path
-@c EN
-Returns @code{#t} if @var{path} is absolute or relative, respectively.
-@c JP
-@var{path}がそれぞれ絶対パスまたは相対パスならば@code{#t}を返します。
-@c COMMON
-@end defun
-
-@defun expand-path path
-@c EN
-Expands tilda-notation of @var{path} if it contains one.
-Otherwise, @var{path} is returned.  This function does not
-check if @var{path} exists and/or readable.
-@c JP
-@var{path}がチルダ表記を含んでいたらそれを展開したものを返します。
-そうでなければ@var{path}そのものを返します。この手続きは@var{path}が
-存在しアクセス可能であるかどうかはチェックしません。
-@c COMMON
-@end defun
-
-@defun resolve-path path
-@c EN
-Expands @var{path} like @code{expand-path},
-then resolve symbolic links for every components
-of the path.  If @var{path} does not exist, or contains dangling link,
-or contains unreadable directory, an error is signalled.
-@c JP
-@var{path}を@code{expand-path}と同様に展開し、
-続いて@var{path}の各コンポーネントに対してそれがシンボリックリンクであればリンク先の
-ものに置き換えてゆきます。@var{path}が存在しないパスを指していたり、
-シンボリックリンクの先が存在しなかったり、読み出せないディレクトリがあった場合は
-エラーとなります。
-@c COMMON
-@end defun
-
-@defun simplify-path path
-@c EN
-Remove 'up' (@code{".."}) components and 'same' (@code{"."}) components
-from @var{path} as much as possible.
-This function does not access the filesystem.
-@c JP
-@var{path}から、親ディレクトリへの参照(@code{".."})と自分自身への参照(@code{"."})を
-出来る限り取り除きます。この手続きはファイルシステムへはアクセスしません。
-@c COMMON
-@end defun
-
-@defun find-file-in-paths name &keyword paths pred
-@c EN
-Looks for a file that has name @var{name} in the given list of pathnames
-@var{paths} and that satisfies a predicate @var{pred}.  If found,
-the absolute pathname of the file is returned.  Otherwise, @code{#f}
-is returned.
-
-If @var{name} is an absolute path, only the existence of @var{name}
-and whether it satisfies @var{pred} are checked.
-
-The default value of @var{paths} is taken from the environment variable
-@code{PATH}, and the default value of @var{pred} is @code{file-is-executable?}
-(@xref{File attribute utilities}).  That is, @code{find-file-in-paths}
-searches the named executable file in the command search paths
-by default.
-@c JP
-名前@var{name}を持ち、述語@var{pred}を満たすファイルをパス名のリスト@var{paths}
-から探します。見つかった場合はファイルの絶対パス名を、見つからなかった場合は
-@code{#f}を返します。
-
-@var{name}が絶対パス名で与えられた場合はそれが存在するかどうかと
-@var{pred}を満たすかどうかのみがチェックされます。
-
-@var{paths}のデフォルト値は環境変数@code{PATH}から取られます。また、
-@var{pred}のデフォルト値は@code{file-is-executable?}
-(@ref{File attribute utilities}参照)です。すなわち、デフォルトでは
-この手続きはコマンドサーチパスから実行可能ファイルを探すのに使えます。
-@c COMMON
-
-@example
-(find-file-in-path "ls")
-  @result{} "/bin/ls"
-
-@c EN
-;; @r{example of searchin user preference file of my application}
-@c JP
-;; @r{アプリケーション"myapp"のユーザプレファレンスファイルを探す例}
-@c COMMON
-(find-file-in-path "userpref"
-  :paths `(,(expand-path "~/.myapp")
-           "/usr/local/share/myapp"
-           "/usr/share/myapp")
-  :pred  file-is-readable?)
-@end example
-@end defun
-
-@node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
-@subsection File attibute utilities
-@c NODE ファイル属性ユーティリティ
-
-@defun file-type path &keyword follow-link?
-@defunx file-perm path &keyword follow-link?
-@defunx file-mode path &keyword follow-link?
-@defunx file-ino path &keyword follow-link?
-@defunx file-dev path &keyword follow-link?
-@defunx file-rdev path &keyword follow-link?
-@defunx file-nlink path &keyword follow-link?
-@defunx file-uid path &keyword follow-link?
-@defunx file-gid path &keyword follow-link?
-@defunx file-size path &keyword follow-link?
-@defunx file-atime path &keyword follow-link?
-@defunx file-mtime path &keyword follow-link?
-@defunx file-ctime path &keyword follow-link?
-@c EN
-These functions return the attribute of file/directory specified by
-@var{path}.  The attribute name corresponds to the slot name of
-@code{<sys-stat>} class (@xref{File stats}).
-If the named path doesn't exist, @code{#f} is returned.
-
-If @var{path} is a symbolic link, these functions queries the
-attributes of the file pointed by the link, unless
-an optional argument @var{follow-link?} is given and false.
-
-MzScheme and Chicken have @code{file-size}.  Chicken also has
-@code{file-modification-time}, which is @code{file-mtime}.
-@c JP
-これらの手続きは@var{path}で示されるファイルやディレクトリのアトリビュートを
-返します。アトリビュート名は@code{<sys-stat>}のスロット名に対応しています。
-@ref{File stats}を参照して下さい。@var{path}で示されるファイルが
-存在しなければ@code{#f}が返されます。
-
-@var{path}がシンボリックリンクだった場合、オプショナルな引数
-@var{follow-link?} に偽の値が与えられていない限り、これらの手続きは
-リンクの指す先のファイルに関する情報を返します。
-
-MzSchemeとChickenには@code{file-size}があります。
-Chickenには@code{file-modification-time}があり、これは@code{file-mtime}と
-同じです。
-@c COMMON
-@end defun
-
-@defun file-is-readable? path
-@defunx file-is-writable? path
-@defunx file-is-executable? path
-@c EN
-Returns @code{#t} if @var{path} exists and readable/writable/executable
-by the current effective user, respectively.
-This API is taken from STk.
-@c JP
-@var{path}が存在して、現在の実効ユーザがそれぞれ読み取り/書き込み/実行可能なら@code{#t}を
-返します。
-このAPIはSTkから取られました。
-@c COMMON
-@end defun
-
-@defun file-eq? path1 path2
-@defunx file-eqv? path1 path2
-@defunx file-equal? path1 path2
-@c EN
-Compares two files specified by @var{path1} and @var{path2}.
-@code{file-eq?} and @code{file-eqv?} checks if @var{path1} and @var{path2}
-refers to the identical file, that is, whether they are on the same
-device and have the identical inode number.  The only difference is
-when the last component of @var{path1} and/or @var{path2} is a symbolic
-link, @code{file-eq?} doesn't resolve the link (so compares the links
-themselves) while @var{file-eqv?} resolves the link and compares the
-files referred by the link(s).
-@c JP
-@var{path1}と@var{path2}で示されるファイルを比較します。
-@code{file-eq?}と@code{file-eqv?}は@var{path1}と@var{path2}が
-全く同一のファイルを参照しているかどうか、すなわち、同じデバイス上にあり同じ
-inode番号を持つかどうかをチェックします。二つの手続きの違いは、
-@code{path1}や@var{path2}の最後のコンポーネントがシンボリックリンクで
-あった場合に、@var{file-eq?}はリンクそのものの比較をするが
-@code{file-eqv?}はリンクを辿った先のファイルの比較をする、という点です。
-@c COMMON
-
-@c EN
-@code{file-equal?} compares @var{path1} and @var{path2} considering their
-content, that is, when two are not the identical file in the sense of
-@code{file-eqv?}, @code{file-equal?} compares their content and returns
-@code{#t} if all the bytes match.
-@c JP
-@code{file-equal?}は@var{path1}と@var{path2}をその内容まで考慮して比較します。
-すなわち、二つのファイルが@code{file-eqv?}の意味で同一でなかった場合、
-@code{file-equal?}はファイルの内容を比較し、全てが一致した場合に@code{#t}を返します。
-@c COMMON
-
-@c EN
-The behavior of @code{file-equal?} is undefined
-when @var{path1} and @var{path2} are both directories.
-Later, it may be extended to scan the directory contents.
-@c JP
-@var{path1}と@var{path2}ともにディレクトリが与えられた場合の
-@code{file-equal?}の動作は未定義です。将来、ディレクトリ内容を
-スキャンするような拡張が加えられるかもしれません。
-@c COMMON
-@end defun
-
-@deffn {Generic Function} file-mtime=? f1 f2
-@deffnx {Generic Function} file-mtime<? f1 f2
-@deffnx {Generic Function} file-mtime<=? f1 f2
-@deffnx {Generic Function} file-mtime>? f1 f2
-@deffnx {Generic Function} file-mtime>=? f1 f2
-@c EN
-Compares file modification time stamps.  There are a bunch of methods defined,
-so each argument can be either one of the followings.
-
-@itemize @bullet
-@item
-String pathname.   The mtime of the specified path is used.
-@item
-@code{<sys-stat>} object (@xref{File stats}).
-The mtime is taken from the stat structure.
-@item
-@code{<time>} object.  The time is used as the mtime.
-@item
-Number.  It is considered as the number of seconds since Unix Epoch, and
-used as mtime.
-@end itemize
-@c JP
-二つのファイルの変更時間を比較します。それぞれの引数に対して、
-次のような型のオブジェクトが渡せるようなメソッドが定義されています。
-
-@itemize @bullet
-@item
-文字列のパス名。そのパス名で示されるファイルから変更時間が取られます。
-@item
-@code{<sys-stat>}オブジェクト (@xref{File stats})。
-stat構造体から変更時間が取られます。
-@item
-@code{<time>}オブジェクト。その示す時間が変更時間と考えられます。
-@item
-数値。変更時間をUnix Epochからの秒数で表したものと見なされます。
-@end itemize
-@c COMMON
-
-@example
-@c EN
-;; @r{compare "foo.c" is newer than "foo.o"}
-@c JP
-;; @r{"foo.c" より "foo.o" が新しいかどうか調べる}
-@c COMMON
-(file-mtime>? "foo.c" "foo.o")
-
-@c EN
-;; @r{see if "foo.log" is updated within last 24 hours}
-@c JP
-;; @r{"foo.log"が過去24時間以内に更新されたかどうかを調べる}
-@c COMMON
-(file-mtime>? "foo.c" (- (sys-time) 86400))
-@end example
-@end deffn
-
-@deffn {Generic Function} file-ctime=? f1 f2
-@deffnx {Generic Function} file-atime=? f1 f2
-@findex file-ctime<?
-@findex file-ctime<=?
-@findex file-ctime>?
-@findex file-ctime>=?
-@findex file-atime<?
-@findex file-atime<=?
-@findex file-atime>?
-@findex file-atime>=?
-@c EN
-Same as @code{file-mtime=?}, except these checks file's change time
-and access time, respectively.
-All the variants of @code{<}, @code{<=}, @code{>}, @code{>=} are also
-defined.
-@c JP
-@code{file-mtime=?}と同じですが、ファイルの属性変更時間とアクセス時間に
-関して比較します。
-@code{<}, @code{<=}, @code{>}, @code{>=}を使う関数も同様に定義されています。
-@c COMMON
-@end deffn
-
-@node File operations,  , File attribute utilities, Filesystem utilities
-@subsection File operations
-@c NODE ファイル操作
-
-@defun touch-file path
-@c EN
-Updates timestamp of @var{path} to the current time.  If @var{path} 
-doesn't exist, a new file with size zero is created.
-See also @code{sys-utime} (@xref{File stats}).
-@c JP
-@var{path}のタイムスタンプを現在の時刻に更新します。
-@var{path}が存在しなかった場合はそのファイルを作成します。
-@ref{File stats}の@code{sys-utime}も参照して下さい。
-@c COMMON
-@end defun
-
-@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp
-@c EN
-Copies file from @var{src} to @var{dst}.  The source file @var{src} must exist.
-The behavior when the destination @var{dst} exists varies by the keyword
-argument @var{if-exists};
-
-@table @code
-@item :error
-(Default) Signals an error when @var{dst} exists.
-@item :supersede
-Replaces @var{dst} to the copy of @code{src}. 
-@item :backup
-Keeps @var{dst} by renaming it.
-@item #f
-Doesn't copy and returns @code{#f} when @var{dst} exists.
-@end table
-@c JP
-ファイル@var{src}を@var{dst}へコピーします。コピー元ファイル@var{src}は
-存在していなければなりません。コピー先ファイル@var{dst}が存在していた場合の
-ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
-
-@table @code
-@item :error
-(デフォルト) @var{dst}が存在していたらエラーを通知する。
-@item :supersede
-@var{dst}を@code{src}のコピーで置き換える。
-@item :backup
-@var{dst}の名前を変えてキープする。
-@item #f
-@var{dst}が存在していたらコピーをせず@code{#f}を返す。
-@end table
-@c COMMON
-
-@c EN
-@code{Copy-file} returns @code{#t} after completion.
-@c JP
-@code{copy-file}はコピーが完了したら@code{#t}を返します。
-@c COMMON
-
-@c EN
-If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
-specifies the suffix attached to the @var{dst} to be renamed.
-The default value is @code{".orig"}.
-@c JP
-@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
-名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
-付けたものとなります。デフォルト値は@code{".orig"}です。
-@c COMMON
-
-@c EN
-By default, @code{copy-file} starts copying to @var{dst} directly.
-However, if the keyword argument @var{safe} is a true value,
-it copies the file to a temporary file in the same directory of @var{dst},
-then renames it to @var{dst} when copy is completed.
-If copy is interrupted for some reason, the filesystem is "rolled back"
-properly.
-@c JP
-デフォルトでは@code{copy-file}は直接@var{dst}にコピーを行いますが、
-キーワード引数@var{safe}に真の値が与えられた場合は、@var{dst}と同じディレクトリ
-内の一時ファイルにまずコピーし、それが完了した時点で@var{dst}へとリネームします。
-コピーが何らかの理由で中断された場合、ファイルシステムはコピー前の状態へと
-「ロールバック」されます。
-@c COMMON
-
-@c EN
-If the keyword argument @var{keep-timestamp} is true, @code{copy-file}
-sets the destination's timestamp to the same as the source's timestamp
-after copying.
-@c JP
-キーワード引数@var{keep-timestamp}に真の値が与えられた場合は、
-@code{copy-file}はコピー後にコピー先のファイルのタイムスタンプを
-コピー元のタイムスタンプに合わせます。
-@c COMMON
-@end defun
-
-@defun move-file src dst &keyword if-exists backup-suffix
-@c EN
-Moves file @var{src} to @var{dst}.   The source @var{src} must exist.
-The behavior when @var{dst} exists varies by the keyword argument
-@var{if-exists}, as follows.
-@table @code
-@item :error
-(Default) Signals an error when @var{dst} exists.
-@item :supersede
-Replaces @var{dst} by @code{src}. 
-@item :backup
-Keeps @var{dst} by renaming it.
-@item #f
-Doesn't move and returns @code{#f} when @var{dst} exists.
-@end table
-@c JP
-ファイル@var{src}を@var{dst}へ移動します。移動元ファイル@var{src}は
-存在していなければなりません。移動先ファイル@var{dst}が存在した場合の
-ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
-@table @code
-@item :error
-(デフォルト) @var{dst}が存在していたらエラーを通知する。
-@item :supersede
-@var{dst}を@code{src}で置き換える。
-@item :backup
-@var{dst}の名前を変えてキープする。
-@item #f
-@var{dst}が存在していたら移動をせず@code{#f}を返す。
-@end table
-@c COMMON
-
-@c EN
-@code{Move-file} returns @code{#t} after completion.
-@c JP
-@code{move-file}は移動が完了したら@code{#t}を返します。
-@c COMMON
-
-@c EN
-If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
-specifies the suffix attached to the @var{dst} to be renamed.
-The default value is @code{".orig"}.
-@c JP
-@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
-名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
-付けたものとなります。デフォルト値は@code{".orig"}です。
-@c COMMON
-
-@c EN
-The file @var{src} and @var{dst} can be on the different filesystem.
-In such a case, @code{move-file} first copies @var{src} to the
-temporary file on the same directory as @var{dst}, then renames
-it to @var{dst}, then removes @var{src}.
-@c JP
-ファイル@var{src}と@var{dst}は別のファイルシステム上にあっても構いません。
-その場合、@code{move-file}はまず@var{src}を@var{dst}と同じディレクトリの
-一時ファイルにコピーし、それを@var{dst}にリネームし、それから
-@var{src}を消去します。
-@c COMMON
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Arrays, Character code conversion, Filesystem utilities, Library modules
+@node Arrays, Character code conversion, Gauche basic extension modules, Gauche basic extension modules
 @section @code{gauche.array} - Arrays
 @c NODE 配列, @code{gauche.array} - 配列
 
@@ -15263,7 +13755,7 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Collection framework, Arrays, Library modules
+@node Character code conversion, Collection framework, Arrays, Gauche basic extension modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
@@ -15722,7 +14214,7 @@ meaning as @var{buffer-size} of @code{open-input-conversion-port}.
 
 
 @c ----------------------------------------------------------------------
-@node Collection framework, Low-level file operations, Character code conversion, Library modules
+@node Collection framework, Low-level file operations, Character code conversion, Gauche basic extension modules
 @section @code{gauche.collection} - Collection framework
 @c NODE コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
 
@@ -16693,7 +15185,7 @@ Optionally, you can overload other generic functions to optimize
 performance.
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Interactive session, Collection framework, Library modules
+@node Low-level file operations, Interactive session, Collection framework, Gauche basic extension modules
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -16849,7 +15341,7 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Interactive session, User-level logging, Low-level file operations, Library modules
+@node Interactive session, User-level logging, Low-level file operations, Gauche basic extension modules
 @section @code{gauche.interactive} - Utilities for interactive session
 @c NODE インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 
@@ -16976,7 +15468,7 @@ to parse the info file.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node User-level logging, Networking, Interactive session, Library modules
+@node User-level logging, Networking, Interactive session, Gauche basic extension modules
 @section @code{gauche.logger} - User-level logging
 @c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
@@ -16984,14 +15476,16 @@ to parse the info file.
 @mdindex gauche.logger
 @c EN
 Provides a simple interface to log the program's activity.
-It writes the information directly to the specified file,
-instead of using syslog(2).  A syslog-like prefix string is added
+The information can be written to the specified file,
+or to the system logger using @code{syslog(3)}.
+When a file is used, syslog-like prefix string is added
 to each message, which is configurable.  It also takes care of
 locking of the file.
 @c JP
 プログラムからログを書き出す簡単なインタフェースを提供します。
-このモジュールは、syslog(2)を使うかわりに、
-指定されたファイルへ直接ログを書き出します。
+情報は指定されたファイルへ書き出されるか、もしくは@code{syslog(3)}を
+使ってシステムログへと送られます。
+ファイルに書き出される場合は、
 syslogに似たプレフィクスが各メッセージの前に追加されます。
 プレフィクスはカスタマイズすることもできます。
 ログファイルの排他制御は組み込まれています。
@@ -17018,14 +15512,17 @@ to more than one destination.
 @c EN
 Path of the log file.  It can be also @code{#t}, which means 
 the current error port, or @code{#f}, which makes @code{log-format}
-to return the formatted message but not write to any log files.
+to return the formatted message but not write to any log files,
+or a symbol @code{syslog}, which means the messages are sent to
+the system logger.
 
 By default, this slot is @code{#f}.
 @c JP
-ログファイルのパス名か、@code{#t}または@code{#f}の値を取ります。
-このスロットが@code{#t}の場合、ログメッセージは現在のエラーポートに
+ログファイルのパス名か、@code{#t}、@code{#f}、あるいはシンボル@code{syslog}
+の値を取ります。このスロットが@code{#t}の場合、ログメッセージは現在のエラーポートに
 書き出されます。@code{#f}の場合は@code{log-format}は
 ログを書き出すかわりにフォーマットされたログメッセージを文字列として返します。
+シンボル@code{syslog}の場合はメッセージがシステムログへと送られます。
 
 このスロットの初期値は@code{#f}です。
 @c COMMON
@@ -17035,13 +15532,31 @@ By default, this slot is @code{#f}.
 @c EN
 Specifies the prefix string that is attached to the beginning of every
 message.  If the message spans to several lines, the prefix is
-attached to each line.   In the prefix, the following character sequences
-have special meanings and replaced by @code{log-format} for appropriate
-information when written out.
+attached to each line.   The value of this slot can also be a procedure
+that takes @code{<log-drain>} object and returns a string to be used as
+the prefix.  The procedure is called every time prefix is needed.
 @c JP
 各メッセージの前に追加されるプレフィクス文字列を指定します。
 メッセージが複数行に渡る場合、プレフィクスは各行の頭に追加されます。
-プレフィクス文字列中で、以下に挙げる文字シーケンスは特別な意味を持ち、
+またこのスロットには手続きをセットすることもできます。
+その場合、プレフィクス文字列が必要とされる度にその手続きが@code{<log-drain>}
+を引数として呼び出され、戻り値の文字列がプレフィクスとして使われます。
+@c COMMON
+
+@c EN
+When the @code{path} slot is a symbol @code{syslog}, the value of this slot
+is ignored.  System logger will attach an appropriate prefix.
+@c JP
+@code{path}スロットの値がシンボル@code{syslog}の場合は、
+このスロットの値は無視されます。システムのログ機構が適切なプレフィクスを付けるからです。
+@c COMMON
+
+@c EN
+When the value of the prefix slot is a string, the following character sequences
+have special meanings and replaced by @code{log-format} for appropriate
+information when written out.
+@c JP
+prefixスロットの値が文字列の場合、以下に挙げる文字シーケンスは特別な意味を持ち、
 @code{log-format}によって置換されます。
 @c COMMON
 
@@ -17127,6 +15642,21 @@ the prefix slot.
 プレフィクス文字列の@code{~P}が置換されるプログラム名を指定します。
 @c COMMON
 @end defivar
+
+@defivar {<log-drain>} syslog-option
+@defivarx {<log-drain>} syslog-facility
+@defivarx {<log-drain>} syslog-priority
+@c EN
+The value of these slots are used when the destination of the drain
+is the system logger.   @xref{Syslog}, for the detailed information
+about these values.  The default values of these slots
+are @code{LOG_PID}, @code{LOG_USER} and @code{LOG_INFO}, respectively.
+@c JP
+これらのスロットの値は、ログの行き先がシステムログの場合にのみ使われます。
+これらの値に関する説明は@ref{Syslog}を参照して下さい。
+デフォルトの値はそれぞれ@code{LOG_PID}、@code{LOG_USER}、@code{LOG_INFO}です。
+@c COMMON
+@end defivar
 @end deftp
 
 
@@ -17138,7 +15668,8 @@ You can also set prefix and program name by corresponding keyword
 arguments.
 @c JP
 デフォルトのログの行き先を@var{path}に指定します。
-@var{path}は文字列かboolean値で、上の@code{path}スロットで述べたものと
+@var{path}は文字列かboolean値あるいはシンボル@code{syslog}で、
+上の@code{path}スロットで述べたものと
 おなじ意味を持ちます。またプレフィクスとプログラム名をキーワード引数で
 指定することもできます。
 @c COMMON
@@ -17193,7 +15724,7 @@ the code runs without logging.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Networking, Parameters, User-level logging, Library modules
+@node Networking, Parameters, User-level logging, Gauche basic extension modules
 @section @code{gauche.net} - Networking
 @c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
@@ -17945,7 +16476,7 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parameters, Parsing command-line options, Networking, Library modules
+@node Parameters, Parsing command-line options, Networking, Gauche basic extension modules
 @section @code{gauche.parameter} - Parameters
 @c NODE パラメータ, @code{gauche.parameter} - パラメータ
 
@@ -18025,7 +16556,7 @@ Some examples:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Parsing command-line options, High Level Process Interface, Parameters, Library modules
+@node Parsing command-line options, High Level Process Interface, Parameters, Gauche basic extension modules
 @section @code{gauche.parseopt} - Parsing command-line options
 @c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
@@ -18187,7 +16718,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Library modules
+@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Gauche basic extension modules
 @section @code{gauche.process} - High Level Process Interface
 @c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
@@ -18430,7 +16961,7 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular expression utilities, Simple dispatcher, High Level Process Interface, Library modules
+@node Regular expression utilities, Simple dispatcher, High Level Process Interface, Gauche basic extension modules
 @section @code{gauche.regexp} - Regular expression utilities
 @c NODE 正規表現ユーティリティ, @code{gauche.regexp} - 正規表現ユーティリティ
 
@@ -18657,7 +17188,7 @@ value from the procedure is inserted to the output string using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple dispatcher, Sequence framework, Regular expression utilities, Library modules
+@node Simple dispatcher, Sequence framework, Regular expression utilities, Gauche basic extension modules
 @section @code{gauche.selector} - Simple dispatcher
 @c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
@@ -18763,7 +17294,7 @@ This is a simple example of "echo" server:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Sequence framework, Singleton, Simple dispatcher, Library modules
+@node Sequence framework, Singleton, Simple dispatcher, Gauche basic extension modules
 @section @code{gauche.sequence} - Sequence framework
 @c NODE シーケンスフレームワーク, @code{gauche.sequence} - シーケンスフレームワーク
 
@@ -18847,7 +17378,7 @@ types, such as SRFI-4 uniform vector, have the methods as well.
 @c @end deftp
 
 @c ----------------------------------------------------------------------
-@node Singleton, Termios, Sequence framework, Library modules
+@node Singleton, Syslog, Sequence framework, Gauche basic extension modules
 @section @code{gauche.singleton} - Singleton
 
 @deftp {Module} gauche.singleton
@@ -18881,9 +17412,86 @@ This method just calls @code{make} with the passed arguments.
 It is more obvious in the program that you're dealing with singleton.
 @end deffn
 
+@c ----------------------------------------------------------------------
+@node Syslog, Termios, Singleton, Gauche basic extension modules
+@section @code{gauche.syslog} - Syslog
+@c NODE Syslog, @code{gauche.syslog} - Syslog
+
+@deftp {Module} gauche.syslog
+@mdindex gauche.syslog
+This module provides syslog(3) system logger interface.
+
+For the common applications, you might find @code{gauche.logger} module
+easier to use (@xref{User-level logging}).  This module is for those
+who need direct access to the syslog API.
+
+The procedures are only defined if the undelying system supports them.
+@end deftp
+
+@defun sys-openlog ident option facility
+[POSIX]
+Opens a connection to the system logger.  A string argument
+@var{ident} is used for the prefix of the log, and usually is
+the program name.  @var{Option} is an integer flag to control
+the behavior of logging, and @var{facility} is an integer
+that specify the type of the program.
+
+The flag for @var{option} can be composed by @code{logior}-ing
+one or more of the following integer constants:
+@code{LOG_CONS}, @code{LOG_NDELAY}, @code{LOG_NOWAIT},
+@code{LOG_ODELAY}, @code{LOG_PERROR} and @code{LOG_PID}.
+(Some of the constants may not be defined if the underlying system
+doesn't support them).
+
+The @var{facility} argument can be one of the following integer
+constants: @code{LOG_AUTH}, @code{LOG_AUTHPRIV}, @code{LOG_CRON},
+@code{LOG_DAEMON}, @code{LOG_FTP}, @code{LOG_KERN}, @code{LOG_LOCAL0}
+through @code{LOG_LOCAL7}, @code{LOG_LPR}, @code{LOG_MAIL}, @code{LOG_NEWS},
+@code{LOG_SYSLOG}, @code{LOG_USER} and @code{LOG_UUCP}.
+(Some of the constants may not be defined if the underlying system
+doesn't support them).
+
+See your system's manpage of openlog(3) for detail description about
+these constants.
+@end defun
+
+@defun sys-syslog priority message
+[POSIX]
+Log the string @var{message}.  Unlike syslog(3), this procedure doesn't
+do formatting---you can use @code{format} (@xref{Output}) to create
+a formatted message, or use higher-level routine @code{log-format}
+(@xref{User-level logging}).
+
+An integer argument @var{priority} can be composed by @code{logior}-ing
+one of the @var{facility} constants described above and
+the @var{level} constants: @code{LOG_EMERG}, @code{LOG_ALERT},
+@code{LOG_CRIT}, @code{LOG_ERR}, @code{LOG_WARNING}, @code{LOG_NOTICE},
+@code{LOG_INFO}, @code{LOG_DEBUG}.
+@end defun
+
+@defun sys-closelog
+[POSIX]
+Closes the connection to the logging system.
+@end defun
+
+@defun sys-setlogmask mask
+[POSIX]
+Sets the process's log priority mask that determines which calls to
+@code{sys-syslog} may be logged.
+An priority @var{mask} can be composed by @code{logior}-ing
+bitmasks corresponding to the @var{level} argument of @code{sys-syslog}.
+You can use @code{sys-logmask} below to obtain a bitmask
+from the level.
+@end defun
+
+@defun sys-logmask level
+[POSIX]
+Returns an integer bitmask for @code{sys-setlogmask} from 
+the log level @var{level}.
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Termios, Unit Testing, Singleton, Library modules
+@node Termios, Unit Testing, Syslog, Gauche basic extension modules
 @section @code{gauche.termios} - Termios
 @c NODE Termios, @code{gauche.termios} - Termios
 
@@ -19069,7 +17677,7 @@ without echoing:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Unit Testing, Threads, Termios, Library modules
+@node Unit Testing, Threads, Termios, Gauche basic extension modules
 @section @code{gauche.test} - Unit Testing
 @c NODE 単体テスト, @code{gauche.test} - 単体テスト
 
@@ -19193,7 +17801,7 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Threads, Uniform vectors, Unit Testing, Library modules
+@node Threads, Uniform vectors, Unit Testing, Gauche basic extension modules
 @section @code{gauche.threads} - Threads
 @c NODE スレッド, @code{gauche.threads} - スレッド
 
@@ -19652,7 +18260,7 @@ Provided for the compatibility to SRFI-18.
 
 
 @c ----------------------------------------------------------------------
-@node Uniform vectors, Slot with validator, Threads, Library modules
+@node Uniform vectors, Slot with validator, Threads, Gauche basic extension modules
 @section @code{gauche.uvector} - Uniform vectors
 @c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
 
@@ -20623,7 +19231,7 @@ Both return the clamped vector.
 
 
 @c ----------------------------------------------------------------------
-@node Slot with validator, Comparing version numbers, Uniform vectors, Library modules
+@node Slot with validator, Comparing version numbers, Uniform vectors, Gauche basic extension modules
 @section @code{gauche.validator} - Slot with validator
 @c NODE Validator付きスロット, @code{gauche.validator} - Validator付きスロット
 
@@ -20730,7 +19338,7 @@ only a dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Comparing version numbers, Mathematic constants, Slot with validator, Library modules
+@node Comparing version numbers,  , Slot with validator, Gauche basic extension modules
 @section @code{gauche.version} - Comparing version numbers
 @c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
 
@@ -20903,462 +19511,28 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @var{rel1} is after @var{rel2}, respectively.
 @end defun
 
-@c ----------------------------------------------------------------------
-@node Mathematic constants, Mersenne Twister Random number generator, Comparing version numbers, Library modules
-@section @code{math.const} - Mathematic constants
-@c NODE 定数, @code{math.const} - 定数
-
-@deftp {Module} math.const
-@mdindex math.const
-This module defines several commonly-used mathematic constants.
-@end deftp
-
-@defvr {Constant} pi
-@defvrx {Constant} pi/2
-@defvrx {Constant} pi/4
-@defvrx {Constant} pi/180
-@defvrx {Constant} 1/pi
-@defvrx {Constant} 180/pi
-@c EN
-Bound to pi, pi/2, pi/4, pi/180, 1/pi and 180/pi, respectively.
-@c JP
-それぞれ、π、π/2、π/4、π/180、1/π、180/πです。
-@c COMMON
-@end defvr
-
-@defvr {Constant} e
-e.
-@end defvr
+@c ======================================================================
+@node SRFI modules, Miscellaneous library modules, Gauche basic extension modules, Top
+@chapter SRFI modules
+@c NODE SRFIモジュール
 
 @c ----------------------------------------------------------------------
-@node Mersenne Twister Random number generator, RFC822 Message parsing, Mathematic constants, Library modules
-@section @code{math.mt-random} - Mersenne Twister Random number generator
-@c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
+@menu
+* Feature Conditional::         
+* List library::                
+* And-let*::                    
+* Homogeneous Vectors::         
+* SRFI String ports::           
+* Syntax to receive multiple values::  
+* Record types::                
+* Let-values::                  
+* String library::              
+* Character-set library::       
+* Time data types and procedures::  
+* Sources of Random Bits::      
+@end menu
 
-@deftp {Module} math.mt-random
-@mdindex math.mt-random
-Provides a pseudo random number generator (RNG) based on 
-"Mersenne Twister" algorithm developed by Makoto Matsumoto and
-Takuji Nishimura.   It is fast, and has huge period of 2^19937-1.
-See @ref{MT,,MT}, for details about the algorithm.
-@end deftp
-
-@deftp {Class} <mersenne-twister>
-@clindex mersenne-twister
-A class to encapsulate the state of Mersenne Twister RNG.
-Each instance of this class has its own state, and can be used
-as an independent source of random bits if initialized
-by individual seed.
-
-The random seed value can be given at the instantiation time
-by @code{:seed} initialization argument, or by using
-@code{mt-random-set-seed!} described below.
-
-@example
-(define m (make <mersenne-twister> :seed (sys-time)))
-
-(mt-random-real m) @result{} 0.10284287848537865
-(mt-random-real m) @result{} 0.463227748348805
-(mt-random-real m) @result{} 0.8628500643709712
-@dots{}
-@end example
-@end deftp
-
-@defun mt-random-set-seed! mt seed
-Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
-@var{Seed} can be an arbitrary positive exact integer,
-or arbitrary length of u32vector (@xref{Homogeneous Vectors}).
-If it is an integer, the lower 32bits are used for initialization.
-If it is a u32vector, up to 624 elements are used for initialization.
-@end defun
-
-@defun mt-random-get-state mt
-@defunx mt-random-set-state! mt state
-Retrieves and reinstalls the state of Mersenne Twister RNG @var{mt}.
-The state is represented by a u32vector of 625 elements.  The state
-can be stored elsewhere, and then restored to an instance of
-@code{<mersenne-twister>} to continue to generate the pseudo random
-sequence.
-@end defun
-
-@defun mt-random-real mt
-@defunx mt-random-real0 mt
-Returns a random real number between 0.0 and 1.0.
-1.0 is not included in the range.  @code{Mt-random-real} doesn't
-include 0.0 either, while @code{mt-random-real0} does.
-Excluding 0.0 is from the draft SRFI-27.
-@end defun
-
-@defun mt-random-integer mt range
-Returns a random exact positive integer between 0 and @var{range}-1.
-@var{Range} can be any positive exact integer.
-@end defun
-
-@defun mt-random-fill-u32vector! mt u32vector
-@defunx mt-random-fill-f32vector! mt f32vector
-@defunx mt-random-fill-f64vector! mt f64vector
-Fills the given uniform vector by the random numbers.
-For @code{mt-random-fill-u32vector!}, the elements are filled
-by exact positive integers between 0 and 2^32-1.
-For @code{mt-random-fill-f32vector!} and
-@code{mt-random-fill-f64vector!}, it is filled by an inexact
-real number between 0.0 and 1.0, exclusive.
-
-If you need a bunch of random numbers at once, these are much
-faster than getting one by one.
-@end defun
-
-@c ----------------------------------------------------------------------
-@node RFC822 Message parsing, Base64 encoding/decoding, Mersenne Twister Random number generator, Library modules
-@section @code{rfc.822} - RFC822 message parsing
-@c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
-
-@deftp {Module} rfc.822
-@mdindex rfc.822
-Defines a set of functions that parses and constructs the ``Internet
-Message Format'', a text format used to exchange e-mails.
-The most recent specification can be found in
-RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}).
-The format was originally defined in RFC 822, and people still 
-call it ``RFC822 format'', hence I named this module.
-In the following document, I also refer to the format as ``RFC822 format''.
-
-Say @code{(use rfc.822)} to use this module.
-@end deftp
-
-@defun rfc822-header->list iport &optional strict?
-Reads RFC822 format message from an input port @var{iport},
-until it reaches the end of the message header.
-The header fields are unfolded, and broken into a list of the following
-format:
-@example
-((name body) @dots{})
-@end example
-@var{Name} @dots{} are the field names, and @var{body} @dots{} are
-the corresponding field body, both as strings.
-Field names are converted to lower-case characters.
-Field bodies are not modified, except the folded line is concatenated,
-CRLFs removed.
-The order of fields are preserved.
-@end defun
-
-@defun rfc822-parse-date string
-Takes RFC-822 type date string, and returns eight values:
-@example
-year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
-@end example
-
-@emph{Timezone} is an offset from UT in minutes.
-@emph{Day-of-week} is a day from sunday,
-and may be #f if that information is not available.
-If the string is not parsable, all the elements are #f.
-
-Note: This function follows the new definition of date format in RFC2822,
-but may fail to recognize "obsolete" format, which allows arbitrary
-comments appear between words.
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Library modules
-@section @code{rfc.base64} - Base64 encoding/decoding
-@c NODE Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
-
-@deftp {Module} rfc.base64
-@mdindex rfc.base64
-This module defines a few functions to encode/decode Base64 format,
-defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3.
-@end deftp
-
-@defun base64-encode
-Reads byte stream from the current input port, encodes it in Base64
-format and writes the result character stream to the current output port.
-The conversion ends when it reads EOF from the current input port.
-@end defun
-
-@defun base64-encode-string string
-Converts contents of @var{string} to Base64 encoded format.
-Input string can be either complete or incomplete string;
-it is always interpreted as a byte sequence.
-@end defun
-
-@defun base64-decode
-Reads character stream from the current input port, decodes it from Base64
-format and writes the result byte stream to the current output port.
-The conversion ends when it reads EOF or the termination character
-(@code{=}).  The characters which does not in legal Base64 encoded character
-set are silently ignored.
-@end defun
-
-@defun base64-decode-string string
-Decodes a Base64 encoded string @var{string} and returns
-the result as a string.
-The conversion terminates at the end of @var{string} or
-the termination character (@code{=}).
-The characters which does not in legal Base64 encoded character
-set are silently ignored.
-@end defun
-
-@c ----------------------------------------------------------------------
-@node HTTP cookie handling, Quoted-printable encoding/decoding, Base64 encoding/decoding, Library modules
-@section @code{rfc.cookie} - HTTP cookie handling
-@c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
-
-@deftp {Module} rfc.cookie
-@mdindex rfc.cookie
-Defines a set of functions to parse and construct a ``cookie'' information
-defined in RFC 2965 (@ref{rfc2965,,RFC2965}).
-@end deftp
-
-@defun parse-cookie-string string &optional version
-Parse a cookie string @var{string}, which is the value of ``Cookie''
-request header.  Usually, the same information is available to CGI
-program via the environemnt variable @code{HTTP_COOKIE}.
-
-If the cookie version is known, via ``Cookie2'' request header,
-the integer version must be passed to @var{version}.  Otherwise,
-@code{parse-cookie} figures out the version from @var{string}.
-
-The result has the following format.
-@example
-((<name> <value> [:path <path>] [:domain <domain>] [:port <port>])
- @dots{})
-@end example
-where @var{<name>} is the attribute name, and @var{<value>} is
-the corresponding value.  If the attribute doesn't have value,
-@var{<value>} is @code{#f}.  (Note that it differs from the attribute
-having null value, @code{""}.)
-If the attribute has path, domain or port options, it is given
-as a form of keyword-value pair.
-@end defun
-
-@defun construct-cookie-string specs &optional version
-Given list of cookie specs, creates a cookie string suitable for
-@code{Set-cookie2} or @code{Set-cookie} header.
-
-Optional @var{version} argument specifies cookie protocol version.
-0 for the old Netscape style format, and 1 for RFC2965 style format.
-When omitted, version 1 is assumed.
-
-Each cookie spec has the following format.
-@example
-(<name> <value> [:comment <comment>] [:comment-url <url>]
-                [:discard <bool>] [:domain <domain>]
-                [:max-age <age>] [:path <path>]
-                [:port <port-list>] [:secure <bool>]
-                [:version <version>] [:expires <date>])
-@end example
-Where,
-@table @code
-@item <name>
-A string.  Name of the cookie.
-@item <value>
-Value of the cookie.  May be a string, or @code{#f} if no value is needed.
-@item <comment> <url> <domain> <path> <port-list>
-Strings.
-@item <bool>
-Boolean value
-@item <age> <version>
-Integers
-@item <date>
-Either an integer (seconds since Epoch) or a formatted date string
-following the netscape cookie specification.
-@end table
-
-The attribute values are quoted appropriately.  If the specified attribute
-is irrelevant for the @var{version}, it is ignored.  So you can pass
-the same specs to generate both old-style and new-style cookie strings.
-
-Return value is a list of cookie strings, each of which stands for
-each cookie.  For old-style protocol (using @code{Set-cookie} header)
-you must send each of them by individual header.  For new-style
-protocol (using @code{Set-cookie2} header), you can join them
-with comma and send it at once.  See RFC2965 for further details.
-
-Some examples:
-@example
-(construct-cookie-string
-   '(("name" "foo" :domain "foo.com :path "/"
-                   :expires (+ (sys-time) 86400) :max-age 86400)))
- @result{} ("name=foo;Domain=foo.com;Path=/;Max-age=86400")
-
-(construct-cookie-string
-   '(("name" "foo" :domain "foo.com :path "/"
-                   :expires (+ (sys-time) 86400) :max-age 86400))
-   0)
- @result{}
- ("name=foo;Domain=foo.com;Path=/;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
-@end example
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Quoted-printable encoding/decoding, URI parsing and construction, HTTP cookie handling, Library modules
-@section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
-@c NODE Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
-
-@deftp {Module} rfc.quoted-printable
-@mdindex rfc.quoted-printable
-This module defines a few functions to encode/decode Quoted-printable format,
-defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
-@end deftp
-
-@defun quoted-printable-encode
-Reads byte stream from the current input port, encodes it in Quoted-printable
-format and writes the result character stream to the current output port.
-The conversion ends when it reads EOF from the current input port.
-@end defun
-
-@defun quoted-printable-encode-string string
-Converts contents of @var{string} to Quoted-printable encoded format.
-Input string can be either complete or incomplete string;
-it is always interpreted as a byte sequence.
-@end defun
-
-@defun quoted-printable-decode
-Reads character stream from the current input port,
-decodes it from Quoted-printable
-format and writes the result byte stream to the current output port.
-The conversion ends when it reads EOF.
-If it encounters illegal character sequence (such as '=' followed 
-by non-hexadecimal characters), it copies them literally to the output.
-@end defun
-
-@defun quoted-printable-decode-string string
-Decodes a Quoted-printable encoded string @var{string} and returns
-the result as a string.
-@end defun
-
-@c ----------------------------------------------------------------------
-@node URI parsing and construction, SLIB, Quoted-printable encoding/decoding, Library modules
-@section @code{rfc.uri} - URI parsing and construction
-@c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
-
-@deftp {Module} rfc.uri
-@mdindex rfc.uri
-Provides a set of functions to parse Uniform Resource Identifiers
-defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}).
-@end deftp
-
-@defun uri-scheme&specific uri
-@defunx uri-decompose-hierarchical specific
-@defunx uri-decompose-authority authority
-General parser of URI.  These functions does not decode
-URI encoding.
-
-@code{uri-scheme&specific} takes a URI @var{uri}, and
-returns two values, its scheme part and its scheme-specific part.
-If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
-@example
-(uri-scheme&specific "mailto:sclaus@@north.pole")
-  @result{} "mailto" @r{and} "sclaus@@north.pole"
-(uri-scheme&specific "/icons/new.gif")
-  @result{} #f @r{and} "/icons/new.gif"
-@end example
-
-If the URI scheme uses hierarchical notation, i.e.
-``@code{//@var{authority}/@var{path}?@var{query}#@var{fragment}}'',
-you can pass
-the scheme-specific part to @code{uri-decompose-hierarchical}
-and it returns four values, @var{authority}, @var{path}, @var{query}
-and @var{fragment}.
-@example
-(uri-decompose-hierarchical "//www.foo.com/about/company.html")
-  @result{} "www.foo.com"@r{,} "/about/company.html"@r{,} #f @r{and} #f
-(uri-decompose-hierarchical "//zzz.org/search?key=%3fhelp")
-  @result{} "zzz.org"@r{,} "/search"@r{,} "key=%3fhelp" @r{and} #f
-(uri-decompose-hierarchical "//jjj.jp/index.html#whatsnew")
-  @result{} "jjj.jp"@r{,} "/index.html"@r{,} #f @r{and} "whatsnew"
-(uri-decompose-hierarchical "my@@address")
-  @result{} #f@r{,} #f@r{,} #f @r{and} #f
-@end example
-
-Furthermore, you can parse @var{authority} part of the
-hierarchical URI by @code{uri-decompose-authority}.
-It returns @var{userinfo}, @var{host} and @var{port}.
-@example
-(uri-decompose-authority "yyy.jp:8080")
-  @result{} #f@r{,} "yyy.jp" @r{and} "8080"
-(uri-decompose-authority "mylogin@@yyy.jp")
-  @result{} "mylogin"@r{,} "yyy.jp" @r{and} #f
-@end example
-@end defun
-
-@defun uri-decode &keyword :cgi-decode
-@defunx uri-decode-string string &keyword :cgi-decode
-Decodes ``URI encoding'', i.e. @code{%}-escapes.
-@code{uri-decode} takes input from the current input port,
-and writes decoded result to the current output port.
-@code{uri-decode-string} takes input from @var{string} and
-returns decoded string.
-
-If @var{cgi-decode} is true, also replaces @code{+} to a space character.
-@end defun
-
-@defun uri-encode &keyword :noescape
-@defunx uri-encode-string string &keyword :noescape
-Encodes unsafe characters by @code{%}-escape.  @code{uri-encode}
-takes input from the current input port and writes the result to
-the current output port.  @code{uri-encode-string} takes input
-from @var{string} and returns the encoded string.
-
-By default, characters that are not specified ``unreserved'' in
-RFC2396 are escaped.  You can pass different character set
-to @var{noescape} argument to keep from being encoded.
-
-The multibyte characters are encoded as the octed stream of Gauche's
-native multibyte representation.
-@end defun
-
-@c ----------------------------------------------------------------------
-@node SLIB, Feature Conditional, URI parsing and construction, Library modules
-@section @code{slib} - SLIB interface
-@c NODE SLIB, @code{slib} - SLIB
-
-@deftp {Module} slib
-@mdindex slib
-@c EN
-This module is the interface to the Aubrey Jaffer's SLIB.
-To use SLIB, say @code{(use slib)}.   SLIB itself is not included
-in Gauche distribution.   If you don't have it on your system,
-get it from @uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}.
-@c JP
-このモジュールはAubrey Jaffer氏のSLIBへのインタフェースです。
-SLIBがインストールされている場合、@code{(use slib)} とすれば
-SLIBの機能が使えるようになります。
-SLIBそのものはGaucheのディストリビューションには含まれていません。
-あなたのシステムにまだインストールされていない場合は
-@uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}から入手することができます。
-@c COMMON
-
-@c EN
-This module redefines @code{require}, shadowing the Gauche's original
-@code{require}.  If it gets a symbol as an argument, it works as
-SLIB's @code{require}, while if it gets a string, it works as
-Gauche's @code{require}.   The same applies to @code{provide} and
-@code{provided?}.
-@c JP
-このモジュールは@code{require}を再定義し、Gaucheオリジナルの@code{require}を
-シャドウします。@code{require}にシンボルが渡された場合はSLIBの@code{require}
-のように動作します。@code{require}に文字列が渡された場合はGaucheの@code{require}
-のように動作します。@code{provide}と@code{provided?}についても同様です。
-@c COMMON
-
-@c EN
-All SLIB symbol bindings, loaded by @code{require}, stay in the
-module @code{slib}.
-@c JP
-@code{require}でロードされる、SLIBで導入されるすべての定義は、
-@code{slib}モジュール内で行われます。
-@c COMMON
-@end deftp
-
-@example
-(use slib)         ; @r{load and set up slib}
-(require 'getopt)  ; @r{load SLIB's getopt module}
-(require "foo")    ; @r{load Gauche's foo module}
-@end example
-
-@c ----------------------------------------------------------------------
-@node Feature Conditional, List library, SLIB, Library modules
+@node Feature Conditional, List library, SRFI modules, SRFI modules
 @section @code{srfi-0} - Feature Conditional
 
 @deftp {Module} srfi-0
@@ -21370,7 +19544,7 @@ module @code{slib}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node List library, And-let*, Feature Conditional, Library modules
+@node List library, And-let*, Feature Conditional, SRFI modules
 @section @code{srfi-1} - List library
 
 @deftp {Module} srfi-1
@@ -22021,7 +20195,7 @@ The cells in the first list argument may be reused to construct the result.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node And-let*, Homogeneous Vectors, List library, Library modules
+@node And-let*, Homogeneous Vectors, List library, SRFI modules
 @section @code{srfi-2} - And-let*
 
 @deftp {Module} srfi-2
@@ -22120,7 +20294,7 @@ number from a few possibilities (environment variable, configuration file,
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Homogeneous Vectors, SRFI String ports, And-let*, Library modules
+@node Homogeneous Vectors, SRFI String ports, And-let*, SRFI modules
 @section @code{srfi-4} - Homogeneous Vectors
 @c NODE 単一型のベクタ, @code{srfi-4} - 単一型のベクタ
 
@@ -22132,7 +20306,7 @@ This module simply inherits @code{gauche.uvector} for backward-compatibility.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, Library modules
+@node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, SRFI modules
 @section @code{srfi-6} - String ports
 
 @deftp {Module} srfi-6
@@ -22142,7 +20316,7 @@ The form @code{(use srfi-6)} doesn't do anything.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Syntax to receive multiple values, Record types, SRFI String ports, Library modules
+@node Syntax to receive multiple values, Record types, SRFI String ports, SRFI modules
 @section @code{srfi-8} - Syntax to receive multiple values
 
 @deftp {Module} srfi-8
@@ -22153,7 +20327,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 
 @c ----------------------------------------------------------------------
-@node Record types, Let-values, Syntax to receive multiple values, Library modules
+@node Record types, Let-values, Syntax to receive multiple values, SRFI modules
 @section @code{srfi-9} - Record types
 
 @deftp {Module} srfi-9
@@ -22226,7 +20400,7 @@ sequence of forms.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Let-values, String library, Record types, Library modules
+@node Let-values, String library, Record types, SRFI modules
 @section @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
@@ -22287,7 +20461,7 @@ the preceding @var{vars}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node String library, Character-set library, Let-values, Library modules
+@node String library, Character-set library, Let-values, SRFI modules
 @section @code{srfi-13} - String library
 
 @deftp {Module} srfi-13
@@ -22723,7 +20897,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library, Time data types and procedures, String library, Library modules
+@node Character-set library, Time data types and procedures, String library, SRFI modules
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
@@ -23055,7 +21229,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node Time data types and procedures, Sources of Random Bits, Character-set library, Library modules
+@node Time data types and procedures, Sources of Random Bits, Character-set library, SRFI modules
 @section @code{srfi-19} - Time data types and procedures
 @c NODE 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
 
@@ -23418,7 +21592,7 @@ Conversions from time-utc to various date/time types.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Sources of Random Bits, CSV tables, Time data types and procedures, Library modules
+@node Sources of Random Bits,  , Time data types and procedures, SRFI modules
 @section @code{srfi-27} - Sources of Random Bits
 @c NODE ランダムビットのソース, @code{srfi-27} - ランダムビットのソース
 
@@ -23495,7 +21669,7 @@ returns a random integer between 0 and @var{n}-1 inclusive for every
 invocation, from the random source @var{s}.
 @end defun
 
-@defun ransom-source-make-reals s &optional unit
+@defun random-source-make-reals s &optional unit
 [SRFI-27]
 Returns a procedure, that takes no argument and
 returns a random real between 0 and 1 exclusive for
@@ -23505,8 +21679,1971 @@ generates will be quantized by the given @var{unit}, where
 0 < @var{unit} < 1.
 @end defun
 
+
+@c ======================================================================
+@node Miscellaneous library modules, References, SRFI modules, Top
+@chapter Miscellaneous library modules
+@c NODE その他のライブラリモジュール
+
+
 @c ----------------------------------------------------------------------
-@node CSV tables, Simple HTML document construction, Sources of Random Bits, Library modules
+@menu
+* Generic DBM interface::       
+* GDBM interface::              
+* NDBM interface::              
+* Original DBM interface::      
+* Filtering file content::      
+* Filesystem utilities::        
+* Mathematic constants::        
+* Mersenne Twister Random number generator::  
+* RFC822 Message parsing::      
+* Base64 encoding/decoding::    
+* HTTP cookie handling::        
+* Quoted-printable encoding/decoding::  
+* URI parsing and construction::  
+* SLIB::                        
+* CSV tables::                  
+* Simple HTML document construction::  
+* Parsing input stream::        
+* Transliterate characters::    
+* Lazy text construction::      
+* Determine isomorphism::       
+* Queue::                       
+* Topological sort::            
+* CGI Utility::                 
+@end menu
+
+@node Generic DBM interface, GDBM interface, Miscellaneous library modules, Miscellaneous library modules
+@section @code{dbm} - Generic DBM interface
+@c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
+
+@deftp {Module} dbm
+@mdindex dbm
+@c EN
+DBM-like libraries provides an easy way to store values to a file,
+indexed by keys.  You can think it as a persistent associative memory.
+@c JP
+DBM系のライブラリはキーでインデックスされた値をファイルに格納する簡単な方法を
+提供します。一種の永続的な連想記憶と言えるでしょう。
+@c COMMON
+
+@c EN
+This modules defines @code{<dbm>} abstract class, which has
+a common interface to use various DBM-type database packages.
+As far as you operate on the already opened database,
+importing @code{dbm} module is enough.
+@c JP
+このモジュールが定義する抽象クラス@code{<dbm>}は、DBM系ライブラリへの
+統一されたインタフェースを提供します。@code{dbm}モジュールだけをインポートすれば、
+既にオープンされたデータベースを操作することができます。
+@c COMMON
+
+@c EN
+To create or open a database, you need a concrete implementation
+of the database.  Gauche currently has the following impelentations.
+Each module defines its own low-level accessing functions
+as well as the common interface.
+Note that your system may not have one or more of those DBM libraries;
+Gauche defines only what the system provides.
+@c JP
+データベースをオープンしたり作成したりするには、dbmインタフェースを実装した
+モジュールが必要になります。今のところGaucheでは以下の実装が使えます。
+それぞれのモジュールは、dbmインタフェース共通の手続きの他に、
+直接実装を操作できる低レベルの手続きも提供します。
+システムによっては以下のインタフェースの全てが実装されているわけではないことに
+注意してください。Gaucheではシステムが提供する実装のみを定義します。
+@c COMMON
+
+@table @code
+@item dbm.gdbm
+@c EN
+GDBM library (@xref{GDBM interface}).
+@c JP
+GDBMライブラリ (@xref{GDBM interface}).
+@c COMMON
+
+@item dbm.ndbm
+@c EN
+NDBM library (@xref{NDBM interface}).
+@c JP
+NDBMライブラリ (@xref{NDBM interface}).
+@c COMMON
+
+@item dbm.odbm
+@c EN
+DBM library  (@xref{Original DBM interface}).
+@c JP
+DBMライブラリ  (@xref{Original DBM interface}).
+@c COMMON
+@end table
+@end deftp
+
+@c EN
+The following code shows a typical usage of the database.
+@c JP
+以下にdbmデータベースの使用例を示します。
+@c COMMON
+
+@example
+(use dbm)         ; @r{dbm abstract interface}
+(use dbm.gdbm)    ; @r{dbm concrete interface}
+
+; @r{open the database}
+(define *db* (dbm-open <gdbm> :path "mydb" :rw-mode :write))
+
+; @r{put the value to the database}
+(dbm-put! *db* "key1" "value1")
+
+; @r{get the value from the database}
+(define val (dbm-get *db* "key1"))
+
+; @r{iterate over the database}
+(dbm-for-each *db* (lambda (key val) (foo key val)))
+
+; @r{close the database}
+(dbm-close *db*)
+@end example
+
+@menu
+* Opening and closing a dbm database::  
+* Accessing a dbm database::    
+* Iterating on a database::     
+@end menu
+
+@node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
+@subsection Opening and closing a dbm database
+@c NODE DBMデータベースのオープンとクローズ
+
+@deftp {Class} <dbm>
+@clindex dbm
+@c EN
+An abstract class for dbm-style database.  Defindes the common
+database operations.   This class has the following instance slots.
+They must be set before the database is actually opened by
+@code{dbm-open}.
+
+The concrete class may add more slots for finer control on the database,
+such as locking.
+@c JP
+DBM系のデータベースのための抽象クラスです。データベースへの共通のオペレーションを
+定義します。以下のインスタンススロットを持ちます。これらのスロットの値は
+@code{dbm-open}によってデータベースがオープンされる前にセットされて
+いなければなりません。
+
+具体クラスは、データベースの操作をより細かく行うための追加のスロット(例えばロックを
+行うかどうか)を持つかもしれません。
+@c COMMON
+
+@defivar <dbm> path
+@c EN
+Pathname of the dbm database.  Some dbm implementation may append
+suffixes to this.
+@c JP
+データベースファイルのパス名。dbmの実装によっては、このパスにサフィックスが追加されます。
+@c COMMON
+@end defivar
+
+@defivar <dbm> rw-mode
+@c EN
+Specifies read/write mode.  Can be either one of the following keywords:
+@table @code
+@item :read
+The database will be opened in read-only mode.  The database file must
+exist when @code{dbm-open} is called.  This is the default value.
+@item :write
+The database will be opened in Read-write mode.
+If the database file does not exist, @code{dbm-open} creates one.
+@item :create
+The database will be created and opened in Read-write mode.
+If the database file exists, @code{dbm-open} truncates it.
+@end table
+@c JP
+読み書きのモードを指定します。以下の値のいずれかを取ります。
+@table @code
+@item :read
+データベースは@code{dbm-open}によって読みだし専用モードでオープンされます。
+オープンされる時点でデータベースは存在していなければなりません。
+@item :write
+データベースは@code{dbm-open}によって読み書き可能なモードでオープンされます。
+データベースが存在しなければ、@code{dbm-open}は新しいデータベースを作成します。
+@item :create
+@code{dbm-open}によって新しいデータベースが作成され、読み書き可能なモードでオープンされます。
+既にデータベースが存在していた場合、その内容はクリアされます。
+@end table
+@c COMMON
+@end defivar
+
+@defivar <dbm> file-mode
+@c EN
+Specifies the file permissions (as @code{sys-chmod}) to create the
+database.  The default value is @code{#o664}.
+@c JP
+データベースが作成されるときのファイルパーミッションを指定します。
+デフォルトは@code{#o664}です。
+@c COMMON
+@end defivar
+
+@defivar <dbm> key-convert
+@defivarx <dbm> value-convert
+@c EN
+By default, you can use only strings for both key and values.  With this
+option, however, you can specify how to convert other Scheme values to/from
+string to be stored in the database.   The possible values are the
+followings:
+@table @asis
+@item @code{#f}
+The default value.  Keys (values) are not converted.  They must be
+a string.
+@item @code{#t}
+Keys (values) are converted to its string representation, using 
+@code{write}, to store in the database, and converted
+back to Scheme values, using @code{read}, to retrieve from the database.
+The data must have an external representation that can be read back.
+(But it is not checked when the data is written; you'll get an error
+when you read the data).  The key comparison is done in the string
+level, so the external representation of the same key must match.
+@item a list of two procedures
+Both procedure must take a single argument.  The first procedure must
+receive a Scheme object and returns a string.  It is used to convert
+the keys (values) to store in the database.  The second procedure
+must receive a string and returns a Scheme object.  It is used to
+convert the stored data in the database to a Scheme object.
+The key comparison is done in the string
+level, so the external representation of the same key must match.
+@end table
+@c JP
+デフォルトでは、dbmデータベースはキーにも値にも文字列しか使うことはできません。
+これらのスロットによって、それ以外のSchemeオブジェクトを取り扱う方法を指定することが
+できます。以下の値のいずれかが可能です。
+@table @asis
+@item @code{#f}
+デフォルトの値です。キーあるいは値は変換されません。それらは文字列でなければなりません。
+@item @code{#t}
+キーあるいは値は@code{write}を使って文字列に変換されデータベースに格納されます。
+そして@code{read}を使って文字列からSchemeオブジェクトへと変換されます。
+後で@code{read}で読みこめるようなキーあるいは値のみを扱うことができます。
+(但し、dbmライブラリは書き込み時にそれが後で読み込めるかどうかのチェックは行いません)。
+キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列表現を
+持つ必要があります。
+@item 二つの手続きのリスト
+どちらの手続きも一つの引数を取ります。最初の手続きはSchemeオブジェクトを受け取り、
+文字列を返します。キーあるいは値をデータベースに格納する時に呼ばれます。
+二つ目の手続きは文字列を受け取りSchemeオブジェクトを返します。データベースから
+キーあるいは値を取り出す時に呼ばれます。
+キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列に
+変換される必要があります。
+@end table
+@c COMMON
+@end defivar
+@end deftp
+
+@deftp {Metaclass} <dbm-meta>
+@clindex dbm-meta
+@c EN
+A metaclass of @code{<dbm>} and its subclasses.
+@c JP
+@var{<dbm>}クラス及びそのサブクラスのメタクラスです。
+@c COMMON
+@end deftp
+
+@deffn {Method} dbm-open (dbm <dbm>)
+@c EN
+Opens a dbm database.  @var{dbm} must be an instance of
+one of the concrete classes that derived from the @code{<dbm>} class,
+and its slots must be set appropriately.   On success, it returns
+the @var{dbm} itself.  On failure, it signals an error.
+@c JP
+DBMデータベースをオープンします。@var{dbm}は、@code{<dbm>}クラスを継承した
+具体クラスのインスタンスでなければなりません。また、そのスロットには適切な値が
+セットされている必要があります。オープンに成功したら@var{dbm}自身が返されます。
+失敗した場合はエラーが報告されます。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-open (dbm-class <dbm-meta>) options @dots{}
+@c EN
+A convenient method that creates dbm instance and opens it.
+It is defined as follows.
+@c JP
+DBMインスタンスを作成してオープンするための便利なメソッドです。
+次のように定義されます。
+@c COMMON
+@example
+(define-method dbm-open ((class <class>) . initargs)
+  (dbm-open (apply make class initargs)))
+@end example
+@end deffn
+
+@c EN
+Database file is closed when it is garbage collected.
+However, to ensure the modification is properly synchornized,
+you should close the database explicitly.
+@c JP
+データベースファイルはガベージコレクトされる際にクローズされますが、
+変更を正しくデータベースに反映するには、明示的にクローズした方が良いでしょう。
+@c COMMON
+
+@deffn {Method} dbm-close (dbm @code{<dbm>})
+@c EN
+Closes a database @var{dbm}.  Once the database is closed, any
+operation to access the database content raises an error.
+@c JP
+データベース@var{dbm}をクローズします。データベースがクローズされると、
+それ以降のアクセスオペレーションはエラーとなります。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-closed? (dbm @code{<dbm>})
+@c EN
+Returns true if a database @var{dbm} is already closed, false otherwise.
+@c JP
+データベース@var{dbm}が既にクローズされていたら@code{#t}を返します。
+@c COMMON
+@end deffn
+
+@node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, Generic DBM interface
+@subsection Accessing a dbm database
+@c NODE DBMデータベースのアクセス
+
+@c EN
+Once a database is opened, you can use the following methods
+to access individual key/value pairs.
+@c JP
+データベースがオープンされたら、以下のアクセスメソッドが使えます。
+@c COMMON
+
+@deffn {Method} dbm-put! (dbm @code{<dbm>}) key value
+@c EN
+Put a @var{value} with @var{key}.
+@c JP
+値@var{value}をキー@var{key}と関連付けて保存します。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-get (dbm @code{<dbm>}) key &optional default
+@c EN
+Get a value associated with @var{key}.  If no value exists for @var{key}
+and @var{default} is specified, it is returned.  If no value exists for
+@var{key} and @var{default} is not specified, an error is signalled.
+@c JP
+キー@var{key}に関連付けられた値を返します。もし値が存在しなければ、@var{default}が
+与えられていればそれを返し、そうでなければエラーを報告します。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-exists? (dbm @code{<dbm>}) key
+@c EN
+Return true if a value exists for @var{key}, false otherwise.
+@c JP
+キー@var{key}に関連付けられた値が存在すれば@code{#t}を返します。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-delete! (dbm @code{<dbm>}) key
+@c EN
+Delete a value associated with @var{key}.  
+@c JP
+キー@var{key}に関連付けられた値を消去します。値が存在しない場合は何もしません。
+@c COMMON
+@end deffn
+
+
+@node Iterating on a database,  , Accessing a dbm database, Generic DBM interface
+@subsection Iterating on a dbm database
+@c NODE DBMデータベース上の繰り返し処理
+
+@c EN
+To walk over the entire database, following methos are provided.
+@c JP
+全データベースを渡り歩く処理のために、以下のメソッドが用意されています。
+@c COMMON
+
+@deffn {Method} dbm-fold (dbm @code{<dbm>}) procedure knil
+@c EN
+The basic iterator.
+For each key/value pair, @var{procedure} is called as
+@code{(@var{procedure} @var{key} @var{value} @var{r})},
+where @var{r} is @var{knil} for the fist call of @var{procedure},
+and the return value of the previous call for subsequent calls.
+Returns the result of the last call of @var{procedure}.
+If no data is in the database, @var{knil} is returned.
+
+The following method returns the sum of all the integer values.
+@c JP
+基本的な繰り返し処理です。データベース内の各キー／値のペアに関して、手続き
+@var{procedure}が @code{(@var{procedure} @var{key} @var{value} @var{r})},
+のように呼ばれます。ここで@var{r}は、最初の@var{procedure}の呼び出しの時には@var{knil}
+が、以降の呼び出しの時にはその直前の@var{procedure}が返した値が渡されます。
+最後の@var{procedure}の戻り値が@code{dbm-fold}の戻り値となります。
+データベース中にデータがひとつもなければ@var{knil}がそのまま返されます。
+
+次の例は、データベース中の整数の値を全て加算します。
+@c COMMON
+@example
+(dbm-fold dbm (lambda (k v r) (if (integer? v) (+ v r) r) 0))
+@end example
+@end deffn
+
+@deffn {Method} dbm-for-each (dbm @code{<dbm>}) procedure
+@c EN
+For each key/value pair in the database @var{dbm}, @var{procedure}
+is called.  Two arguments are passed to @var{procedure}---a key and
+a value.   The result of @var{procedure} is discarded.
+@c JP
+データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
+@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値は捨てられます。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-map (dbm @code{<dbm>}) procedure
+@c EN
+For each key/value pair in the database @var{dbm}, @var{procedure}
+is called.  Two arguments are passed to @var{procedure}---a key and
+a value.   The result of @var{procedure} is accumulated to a list
+which is returned as a result of @code{dbm-map}.
+@c JP
+データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
+@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値はリストに
+集められて@code{dbm-map}の戻り値となります。
+@c COMMON
+@end deffn
+
+
+@c ----------------------------------------------------------------------
+@node GDBM interface, NDBM interface, Generic DBM interface, Miscellaneous library modules
+@section @code{dbm.gdbm} - GDBM interface
+
+@deftp {Module} dbm.gdbm
+@mdindex dbm.gdbm
+@end deftp
+
+@deftp {Class} <gdbm>
+@clindex gdbm
+Inherits @code{<dbm>}.  Provides an implementation for GDBM library.
+This module is only installed when your system already has GDBM
+(1.8.0 is preferred, but works with older 1.7.x with some limitations).
+
+@defivar <gdbm> sync
+@end defivar
+@defivar <gdbm> nolock
+@end defivar
+@defivar <gdbm> bsize
+@end defivar
+@end deftp
+
+Besides the unified DBM interface (@xref{Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the gdbm API.  See gdbm manual for details of these
+APIs.
+
+@defun gdbm-open path &optional size rwmode fmode error-callback
+
+@defvar GDBM_READER
+@end defvar
+
+@defvar GDBM_WRITER
+@end defvar
+
+@defvar GDBM_WRCREAT
+@end defvar
+
+@defvar GDBM_NEWDB
+@end defvar
+
+@defvar GDBM_FAST
+@end defvar
+
+@defvar GDBM_SYNC
+@end defvar
+
+@defvar GDBM_NOLOCK
+@end defvar
+@end defun
+
+@defun gdbm-close gdbm-object
+@end defun
+
+@defun gdbm-closed? gdbm-object
+@end defun
+
+@defun gdbm-store key value &optional flag
+
+
+@defvar GDBM_INSERT
+@end defvar
+
+@defvar GDBM_REPLACE
+@end defvar
+
+@end defun
+
+
+@defun gdbm-fetch gdbm-object key
+@end defun
+
+
+@defun gdbm-delete gdbm-object key
+@end defun
+
+
+@defun gdbm-firstkey gdbm-object
+@end defun
+
+
+@defun gdbm-nextkey gdbm-object key
+@end defun
+
+
+@defun gdbm-reorganize gdbm-object
+@end defun
+
+
+@defun gdbm-sync gdbm-object
+@end defun
+
+
+@defun gdbm-exists gdbm-object key
+@end defun
+
+
+@defun gdbm-strerror errno
+@end defun
+
+
+@defun gdbm-setopt gdbm-object option value
+
+@defvar GDBM_CACHESIZE
+@end defvar
+
+@defvar GDBM_FASTMODE
+@end defvar
+
+@defvar GDBM_SYNCMODE
+@end defvar
+
+@defvar GDBM_CENTFREE
+@end defvar
+
+@defvar GDBM_COALESCEBLKS
+@end defvar
+@end defun
+
+@defun gdbm-version
+@end defun
+
+@defun gdbm-errno
+@end defun
+
+@c ----------------------------------------------------------------------
+@node NDBM interface, Original DBM interface, GDBM interface, Miscellaneous library modules
+@section @code{dbm.ndbm} - NDBM interface
+
+@deftp {Module} dbm.ndbm
+@mdindex dbm.ndbm
+@end deftp
+
+@deftp {Class} <ndbm>
+@clindex ndbm
+Inherits @code{<dbm>}.  Provides an implementation for NDBM library.
+This module is only installed when your system already has NDBM.
+@end deftp
+
+Besides the unified DBM interface (@xref{Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the ndbm API.  See ndbm manual for details of these
+APIs.
+
+@defun ndbm-open path flags mode
+@end defun
+
+@defun ndbm-close ndbm-object
+@end defun
+
+@defun ndbm-closed? ndbm-object
+@end defun
+
+@defun ndbm-store ndbm-object key content &optional flag
+@end defun
+
+@defun ndbm-fetch ndbm-object key
+@end defun
+
+@defun ndbm-delete ndbm-object key
+@end defun
+
+@defun ndbm-firstkey ndbm-object
+@end defun
+
+@defun ndbm-nextkey ndbm-object
+@end defun
+
+@defun ndbm-error ndbm-object
+@end defun
+
+@defun ndbm-clear-error ndbm-object
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Original DBM interface, Filtering file content, NDBM interface, Miscellaneous library modules
+@section @code{dbm.odbm} - Original DBM interface
+
+@deftp {Module} dbm.odbm
+@mdindex dbm.odbm
+@end deftp
+
+@deftp {Class} <odbm>
+@clindex odbm
+Inherits @code{<dbm>}.  Provides an implementation for legacy DBM
+library.
+This module is only installed when your system already has DBM.
+
+The biggest limitation of the legacy DBM is that you can only open
+one database at a time.  You can create a multiple @code{<odbm>}
+instances, but you can open at most one of it at a time, or
+you'll get an error.
+@end deftp
+
+Besides the unified DBM interface (@xref{Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the dbm API.  See dbm manual for details of these
+APIs.
+
+@defun odbm-init path
+@end defun
+
+@defun odbm-close
+@end defun
+
+@defun odbm-store key value
+@end defun
+
+@defun odbm-fetch key
+@end defun
+
+@defun odbm-delete key
+@end defun
+
+@defun odbm-firstkey
+@end defun
+
+@defun odbm-nextkey key
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@c @node Pseudo DBM interface, Character code conversion, Original DBM interface, Library modules
+@c @section @code{dbm.pdbm} - Pseudo DBM interface
+
+@c ----------------------------------------------------------------------
+@node Filtering file content, Filesystem utilities, Original DBM interface, Miscellaneous library modules
+@section @code{file.filter} - Filtering file content
+@c NODE ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
+
+@deftp {Module} file.filter
+@mdindex file.filter
+@c EN
+This module provides utilities for a common pattern in
+filter-type commands, that is, to take an input, to process
+the content, and to write the result.   The common occurring
+pattern is:
+
+@itemize @bullet
+@item
+Input may be a specified file, or an input port
+(the current input port by default).
+@item
+Output may be a specified file, or an output port
+(the current output port by default).
+@item
+Output may be a temporary file, which will be renamed
+upon completion of the processing.
+@item
+Output file may be removed when an error occurs
+in the processing.
+@end itemize
+@c JP
+このモジュールは、フィルター型のコマンド、
+すなわち入力を読み込み、処理をして結果を書き出すような場合に
+共通するパターンに使えるユーティリティ手続きを提供します。
+共通するパターンとは：
+
+@itemize @bullet
+@item
+入力は指定されたファイルかポートで、デフォルトはカレント入力ポート。
+@item
+出力は指定されたファイルかポートで、デフォルトはカレント出力ポート。
+@item
+出力は一時ファイルに書き出すこともできて、
+その場合は処理が終了した時点で指定されたファイルにリネーム。
+@item
+処理途中でエラーが起こった場合に出力ファイルを削除
+@end itemize
+@c COMMON
+@end deftp
+
+@defun file-filter proc &keyword input output temporary-file keep-output?
+@c EN
+Calls @var{proc} with two arguments, an input port and 
+an output port.   Returns the result(s) of @var{proc}.
+The input port and output port are chosen depending on the keyword arguments.
+@c JP
+二つの引数、入力ポートと出力ポートを引数として@var{proc}を呼び出し、
+その結果を返します。
+入力ポートと出力ポートはキーワード引数により決定されます。
+@c COMMON
+
+@table @code
+@item input
+@c EN
+The argument must be either an input port or a string
+that specifies a file name.
+If it's an input port, it is passed to @var{proc} as is.
+If it's a string, the named file is opened for input and the resulting
+port is passed to @var{proc}, and the port is closed when @var{proc}
+returns.
+If this argument is omitted, the current input port is passed.
+@c JP
+この引数は入力ポートかファイル名を示す文字列でなければなりません。
+入力ポートの場合、それはそのまま@var{proc}に渡されます。
+文字列が渡された場合は、そのファイル名を持つファイルを入力用にオープンし、
+そのポートが@var{proc}に渡され、またこのポートは@var{proc}が戻った時に閉じられます。
+この引数が省略された場合は、現在の入力ポートが渡されます。
+@c COMMON
+@item output
+@c EN
+The argument must be either an output port or a string
+that specifies a file name.
+If it's an output port, it is passed to @var{proc} as is.
+If it's a string, the named file is opened for output
+(unless @var{temporary-file} is given, in that case
+a temporary file is opened instead), and the resulting port
+is passed to @var{proc}.  This port is closed when @var{proc} returns.
+If this argument is omitted, the current output port is passed.
+@c JP
+この引数は入力ポートかファイル名を示す文字列でなければなりません。
+出力ポートの場合、それはそのまま@var{proc}に渡されます。
+文字列が渡された場合は、そのファイル名を持つファイルを出力用にオープンし、
+そのポートが@var{proc}に渡されます (但し、@var{temporary-file}
+引数が渡された時はそれに指定されるファイルが一時ファイルとしてオープンされます)。
+オープンされたポートは@var{proc}が戻った時に閉じられます。
+この引数が省略された場合は、現在の出力ポートが渡されます。
+@c COMMON
+@item temporary-file
+@c EN
+If a string file name is given to this argument, the named file
+is opened for output during the processing, instead of the file
+name as @var{output}.   The output port @var{proc} receives
+is connected to this file.  When @var{proc}
+returns normally, the file is renamed to the name given to @var{output}
+keyword argument.
+
+If the given file name begins with characters except @code{"/"}, @code{"./"}
+or @code{"../"}, the directory of the file name given to @var{output} argument
+is attached before it.
+Furthermore, a unique name is attached to the temporary file name
+(the temporary file is opened by @code{sys-mkstemp}.)
+
+This argument is ignored when @var{output} argument is not a string
+file name.
+@c JP
+文字列でファイル名が渡された場合、処理の間の出力先として@var{output}に指定された
+ファイルのかわりにそのファイルがオープンされます。
+@var{proc}にはその一時ファイルへの出力ポートが渡されます。
+@var{proc}が正常に返って来た時点で、一時ファイルは@var{output}に指定された
+ファイルへとリネームされます。
+
+もし一時ファイル名が@code{"/"}、@code{"./"}、@code{"../"}以外の
+文字で始まっていた場合は、@var{output}に与えられたファイル名のディレクトリが
+一時ファイルの前に追加されます。さらに、ユニークなサフィックスが一時ファイルの後に
+追加されます(一時ファイルは@code{sys-mkstemp}を使ってオープンされます)。
+
+この引数は、@var{output}にファイル名が与えられなかった場合は無視されます。
+@c COMMON
+@item keep-output?
+@c EN
+If a true value is given, the output is not deleted even
+when @var{proc} signals an error.
+By default, the output (or the temporary file when
+@var{temporary-file} is given) will be deleted on error.
+@c JP
+真の値が与えられた場合、@var{proc}がエラーになった場合でも出力ファイルを削除しません。
+デフォルトでは、出力ファイル(もしくは@var{temporary-file}が与えられた場合は
+そのファイル)はエラーの場合には削除されます。
+@c COMMON
+@end table
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Filesystem utilities, Mathematic constants, Filtering file content, Miscellaneous library modules
+@section @code{file.util} - Filesystem utilities
+@c NODE ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
+
+@deftp {Module} file.util
+@mdindex file.util
+@c EN
+Provides convenient utility functions handling files and directories.
+Those functions are built on top of the primitive system
+procedures described in @ref{Filesystems}.
+@c JP
+ファイルやディレクトリを扱う便利な手続き群を提供します。
+これらの手続きは@ref{Filesystems}で述べられたプリミティブなシステム手続きの上に
+構築されています。
+@c COMMON
+
+@c EN
+Many procedures in this module takes a keyword argument @var{follow-link?},
+which specifies the behavior when the procedure sees a symbolic link.
+If true value is given to @var{follow-link?} (which is the default),
+the procedure operates on the file referenced by the link; if false is 
+given, it operates on the link itself.
+@c JP
+このモジュール内の多くの手続きは@var{follow-link?}というキーワード引数を取ります。
+これは手続きがシンボリックリンクに出会ったときの動作を指定します。@var{follow-link?}が
+真であれば、手続きはリンクの指す先のファイルに作用します。これがデフォルトの振舞いです。
+@var{follow-link?}に@code{#f}が渡された場合は手続きはリンクそのものに作用します。
+@c COMMON
+@end deftp
+
+@c EN
+Note on the naming convention: Some Scheme implementations "create"
+new directories and files, while the others "make" them.
+Some implementations "delete" them, while the others "remove" them.
+It seems that both conventions are equally popular.
+So Gauche provides @emph{both}.
+@c JP
+名前つけ規則に関する注記：ファイルやディレクトリを
+作成するのに@code{"create"}という語を使う処理系と@code{"make"}を
+使う処理系があります。ファイルやディレクトリを削除するのにも@code{"remove"}と
+@code{"delete"}の流派があります。どちらも同じくらい広く使われているようなので、
+Gaucheでは@emph{両方の}名前を提供することにしました。
+@c COMMON
+
+@menu
+* Directory utilities::         
+* Pathname utilities::          
+* File attribute utilities::    
+* File operations::             
+@end menu
+
+@node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
+@subsection Directory utilities
+@c NODE ディレクトリユーティリティ
+
+@defun current-directory &optional new-directory
+@c EN
+When called with no argument, this returns the pathname of the current
+working directory.  When called with a string argument @var{new-directory},
+this sets the current working directory of the process to it.
+If the process can't change directory to @var{new-directory}, an error is
+signalled.
+
+This function is in ChezScheme, MzScheme and some other Scheme
+implementations.
+@c JP
+引数無しで呼ばれた場合、カレントディレクトリを返します。
+文字列@var{new-directory}が与えられた場合はプロセスのカレントディレクトリを
+@var{new-directory}に変更します。変更が出来なかった場合はエラーとなります。
+
+この関数はChezSchemeやMzSchemeなどいくつかのScheme処理系に見られます。
+@c COMMON
+@end defun
+
+@defun directory-list path &keyword children? add-path? filter
+@c EN
+Returns a list of entries in the directory @var{path}.
+The result is sorted by dictionary order.
+
+By default, only the basename (the last component) of the entries
+returned.   If @var{add-path?} is given and true, @var{path} is appended
+to each entry.  If @var{children?} is given and true, @code{"."} and 
+@code{".."} are excluded from the result.  If @var{filter} is given,
+it must be a predicate that takes one argument.  It is called on
+every element of the entry basename, and only the entries on which
+@code{filter} returns true are included in the result.
+
+If @var{path} is not a directory, an error is signalled.
+@c JP
+ディレクトリ@var{path}中のエントリのリストを返します。
+リストは文字列順にソートされます。
+
+デフォルトではエントリのベースネーム(パスの最後のコンポーネント)のみが
+返されますが、キーワード引数@var{add-path?}に真の値が与えられた時は
+@var{path}が各エントリの前に追加されます。
+@var{children?}に真の値が与えられた時は、カレントディレクトリと親ディレクトリが
+リストから除かれます。@var{filter}引数は、もし与えられれば、一つの引数を取る
+手続きでなければなりません。ディレクトリ中の各エントリを引数としてその手続きが呼ばれ、
+真を返したエントリのみが結果に含まれます。
+
+@var{path}がディレクトリでない場合はエラーが報告されます。
+@c COMMON
+
+@example
+(directory-list "test")
+ @result{} ("." ".." "test.scm" "test.scm~")
+
+(directory-list "test" :add-path? #t)
+ @result{} ("test/." "test/.." "test/test.scm" "test/test.scm~")
+
+(directory-list "test" :children? #t)
+ @result{} ("test.scm" "test.scm~")
+
+(directory-list "test" :children? #t :add-path? #t
+   :filter (lambda (e) (not (string-suffix? "~" e))))
+ @result{} ("test/test.scm")
+@end example
+@end defun
+
+@defun directory-list2 path &keyword children? add-path? filter follow-link?
+@c EN
+Like @code{directory-list}, but returns two values; the first one is a list
+of subdirectories, and the second one is a list of the rest.
+The keyword arguments @var{children?}, @code{add-path?} and @var{filter}
+are the same as @code{directory-list}.
+
+Giving false value to @var{follow-link?} makes @code{directory-list2}
+not follow the symbolic links; if the @var{path} contains a
+symlink to a directory,
+it will be included in the first list if @var{follow-link?}
+is omitted or true,
+while it will be in the second list if @var{follow-link?} is false.
+@c JP
+@code{directory-list}に似ていますが、ふたつの値を返します。最初の値は
+@var{path}内にあるサブディレクトリのリストで、次の値はそれ以外のエントリのリストです。
+キーワード引数@var{children?}、@code{add-path?}、@var{filter}は
+@code{directory-list}と同じ意味をもちます。
+
+偽の値を@var{follow-link?}に与えると、@var{path}内のシンボリックリンクを
+辿りません；すなわち、@var{path}内にディレクトリへのシンボリックリンクがあった場合、
+デフォルト、もしくは@var{follow-link?}に真の値が与えられた場合は
+それは最初のリスト(サブディレクトリ)に入りますが、@var{follow-link?}
+に偽の値が与えられた場合は後者のリスト(その他のエントリ)に入ります。
+@c COMMON
+@end defun
+
+@defun directory-fold path proc knil &keyword lister follow-link?
+@c EN
+A fundamental directory traverser.
+Conceptually it works as follows, in recursive way.
+@c JP
+ディレクトリ探索の最も基本的な手続きです。基本的な動作は以下に示すような再帰的なものです。
+@c COMMON
+
+@c EN
+@itemize @bullet
+@item
+If @var{path} is not a directory, calls 
+@code{(@var{proc} @var{path} @var{knil})} and returns the result.
+@item
+If @var{path} is a directory, calls
+@code{(@var{lister} @var{path} @var{knil})}.  The procedure @var{lister}
+is expected to return a list of pathnames.  Then
+@code{directory-fold} is called on each returned pathname.
+Each result of @code{directory-fold} is passed as the @var{knil}
+argument of the next recursive invocation.
+Returns the result of the last recursive call.
+@end itemize
+@c JP
+@itemize @bullet
+@item
+@var{path}がディレクトリでない場合は@code{(@var{proc} @var{path} @var{knil})} を
+評価し、結果を返します。
+@item
+@var{path}がディレクトリであった場合、まず
+@var{(@var{lister} @var{path} @var{knil})} を評価します。
+手続き@var{lister}はパス名のリストを返さなければなりません。
+続いて、@code{directory-fold}が各パス名に対して再帰的に呼ばれます。
+各呼び出しの結果が次の再帰呼び出しの@var{knil}の値に使われます。
+@end itemize
+@c COMMON
+
+@c EN
+The default procedure of @var{lister} is just a call to @code{directory-list},
+as follows.
+@c JP
+デフォルトの@var{lister}は@code{directory-list}を次のように呼び出すものです。
+@c COMMON
+@example
+(lambda (path knil)
+  (directory-list path :add-path? #t :children? #t)))))
+@end example
+
+@c EN
+Note that @var{lister} shouldn't return the given path itself (@code{"."})
+nor the parent directory (@code{".."}), or the recursion wouldn't
+terminate.  Also note @var{lister} is expected to return a path accesible
+from the current directory, i.e. if @var{path} is @code{"/usr/lib/foo"} and
+it contains @code{"libfoo.a"} and @code{"libfoo.so"}, @var{lister} should
+return @code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}.
+@c JP
+@var{lister}は@var{path}自身への参照 (@code{"."}) やその親ディレクトリへの参照を
+返してはなりません。また、@var{lister}の戻り値は現在のディレクトリからアクセス可能な
+パス名でなければなりません。例えば@var{path}が@code{"/usr/lib/foo"}であり、
+そのディレクトリが@code{"libfoo.a"}と@code{"libfoo.so"}を含んでいた場合、
+@var{lister}は@code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}
+のようなリストを返す必要があります。
+@c COMMON
+
+@c EN
+The keyword argument @var{follow-link?} is used to determine whether
+@var{lister} should be called on a symbolic link pointing to a directory.
+When @var{follow-link?} is true (default), @var{lister} is called
+with the symbolic link if it points to a directory.
+When @var{follow-link?} is false, @var{proc} is not called.
+@c JP
+キーワード引数@var{follow-link?}はディレクトリを指しているシンボリックリンクに対して
+@var{lister}を呼ぶかどうかを決定します。@var{follow-link?}が真(デフォルト値)である
+場合はそのようなシンボリックリンクに対しても@var{lister}が呼ばれます。
+一方、@var{follow-link?}が偽であればシンボリックリンクに対しては@var{proc}が呼ばれます。
+@c COMMON
+
+@c EN
+The following examble returns a list of pathnames of the emacs backup files
+(whose name ends with "~") under the given path.
+@c JP
+次の例は、与えられたpath以下からemacsのバックアップファイル ("~"で終る名を持つファイル)
+のリストを返します。
+@c COMMON
+@example
+(use srfi-13) ;; for string-suffix?
+(directory-fold path
+                (lambda (entry result) 
+                  (if (string-suffix? "~" entry)
+                      (cons entry result)
+                      result))
+                '())
+@end example
+
+@end defun
+
+@defun make-directory* name &optional perm
+@defunx create-directory* name &optional perm
+@c EN
+Creates a directory @var{name}.  If the intermediate path to the
+directory doesn't exist, they are also created
+(like @code{mkdir -p} command on Unix).   If the directory
+@var{name} already exist, these procedure does nothing.
+@var{Perm} specifies the integer flag for permission bits of the
+directory.
+@c JP
+ディレクトリ@var{name}を作成します。@var{name}に至るパスが存在しない
+場合は必要なディレクトリが作成されます (Unixの@code{mkdir -p}コマンドと
+同様です)。ディレクトリ@var{name}が既に存在していた場合は何もしません。
+@var{perm}は作成されるディレクトリのパーミッションビットを指定します。
+@c COMMON
+@end defun
+
+
+@defun remove-directory* name
+@defunx delete-directory* name 
+@c EN
+Deletes directory @var{name} and its content recursively 
+(like @code{rm -r} command on Unix).   Symbolic links are not
+followed.
+@c JP
+ディレクトリ@var{name}とその内容を再帰的に消去します
+(Unixの@code{rm -r}コマンドと同様です)。シンボリックリンクは辿られません。
+@c COMMON
+@end defun
+
+
+@node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
+@subsection Pathname utilities
+@c NODE パスネームユーティリティ
+
+@defun build-path base-path component @dots{}
+@c EN
+Appends pathname components @var{component} to the @var{base-path}.
+@var{Component} can be a symbol @code{up} or @code{same};
+in Unix, they are synonym to @code{".."} and @code{"."}.
+This API is taken from MzScheme.
+@c JP
+パス名のコンポーネント@var{component}を@var{base-path}に追加します。
+@var{Component}はシンボル@code{up}または@code{same}であっても
+構いません; Unixではそれらは@code{".."}または@code{"."}と等価です。
+このAPIはMzSchemeから採られました。
+@c COMMON
+@end defun
+
+@defun absolute-path? path
+@defunx relative-path? path
+@c EN
+Returns @code{#t} if @var{path} is absolute or relative, respectively.
+@c JP
+@var{path}がそれぞれ絶対パスまたは相対パスならば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun expand-path path
+@c EN
+Expands tilda-notation of @var{path} if it contains one.
+Otherwise, @var{path} is returned.  This function does not
+check if @var{path} exists and/or readable.
+@c JP
+@var{path}がチルダ表記を含んでいたらそれを展開したものを返します。
+そうでなければ@var{path}そのものを返します。この手続きは@var{path}が
+存在しアクセス可能であるかどうかはチェックしません。
+@c COMMON
+@end defun
+
+@defun resolve-path path
+@c EN
+Expands @var{path} like @code{expand-path},
+then resolve symbolic links for every components
+of the path.  If @var{path} does not exist, or contains dangling link,
+or contains unreadable directory, an error is signalled.
+@c JP
+@var{path}を@code{expand-path}と同様に展開し、
+続いて@var{path}の各コンポーネントに対してそれがシンボリックリンクであればリンク先の
+ものに置き換えてゆきます。@var{path}が存在しないパスを指していたり、
+シンボリックリンクの先が存在しなかったり、読み出せないディレクトリがあった場合は
+エラーとなります。
+@c COMMON
+@end defun
+
+@defun simplify-path path
+@c EN
+Remove 'up' (@code{".."}) components and 'same' (@code{"."}) components
+from @var{path} as much as possible.
+This function does not access the filesystem.
+@c JP
+@var{path}から、親ディレクトリへの参照(@code{".."})と自分自身への参照(@code{"."})を
+出来る限り取り除きます。この手続きはファイルシステムへはアクセスしません。
+@c COMMON
+@end defun
+
+@defun find-file-in-paths name &keyword paths pred
+@c EN
+Looks for a file that has name @var{name} in the given list of pathnames
+@var{paths} and that satisfies a predicate @var{pred}.  If found,
+the absolute pathname of the file is returned.  Otherwise, @code{#f}
+is returned.
+
+If @var{name} is an absolute path, only the existence of @var{name}
+and whether it satisfies @var{pred} are checked.
+
+The default value of @var{paths} is taken from the environment variable
+@code{PATH}, and the default value of @var{pred} is @code{file-is-executable?}
+(@xref{File attribute utilities}).  That is, @code{find-file-in-paths}
+searches the named executable file in the command search paths
+by default.
+@c JP
+名前@var{name}を持ち、述語@var{pred}を満たすファイルをパス名のリスト@var{paths}
+から探します。見つかった場合はファイルの絶対パス名を、見つからなかった場合は
+@code{#f}を返します。
+
+@var{name}が絶対パス名で与えられた場合はそれが存在するかどうかと
+@var{pred}を満たすかどうかのみがチェックされます。
+
+@var{paths}のデフォルト値は環境変数@code{PATH}から取られます。また、
+@var{pred}のデフォルト値は@code{file-is-executable?}
+(@ref{File attribute utilities}参照)です。すなわち、デフォルトでは
+この手続きはコマンドサーチパスから実行可能ファイルを探すのに使えます。
+@c COMMON
+
+@example
+(find-file-in-path "ls")
+  @result{} "/bin/ls"
+
+@c EN
+;; @r{example of searchin user preference file of my application}
+@c JP
+;; @r{アプリケーション"myapp"のユーザプレファレンスファイルを探す例}
+@c COMMON
+(find-file-in-path "userpref"
+  :paths `(,(expand-path "~/.myapp")
+           "/usr/local/share/myapp"
+           "/usr/share/myapp")
+  :pred  file-is-readable?)
+@end example
+@end defun
+
+@node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
+@subsection File attibute utilities
+@c NODE ファイル属性ユーティリティ
+
+@defun file-type path &keyword follow-link?
+@defunx file-perm path &keyword follow-link?
+@defunx file-mode path &keyword follow-link?
+@defunx file-ino path &keyword follow-link?
+@defunx file-dev path &keyword follow-link?
+@defunx file-rdev path &keyword follow-link?
+@defunx file-nlink path &keyword follow-link?
+@defunx file-uid path &keyword follow-link?
+@defunx file-gid path &keyword follow-link?
+@defunx file-size path &keyword follow-link?
+@defunx file-atime path &keyword follow-link?
+@defunx file-mtime path &keyword follow-link?
+@defunx file-ctime path &keyword follow-link?
+@c EN
+These functions return the attribute of file/directory specified by
+@var{path}.  The attribute name corresponds to the slot name of
+@code{<sys-stat>} class (@xref{File stats}).
+If the named path doesn't exist, @code{#f} is returned.
+
+If @var{path} is a symbolic link, these functions queries the
+attributes of the file pointed by the link, unless
+an optional argument @var{follow-link?} is given and false.
+
+MzScheme and Chicken have @code{file-size}.  Chicken also has
+@code{file-modification-time}, which is @code{file-mtime}.
+@c JP
+これらの手続きは@var{path}で示されるファイルやディレクトリのアトリビュートを
+返します。アトリビュート名は@code{<sys-stat>}のスロット名に対応しています。
+@ref{File stats}を参照して下さい。@var{path}で示されるファイルが
+存在しなければ@code{#f}が返されます。
+
+@var{path}がシンボリックリンクだった場合、オプショナルな引数
+@var{follow-link?} に偽の値が与えられていない限り、これらの手続きは
+リンクの指す先のファイルに関する情報を返します。
+
+MzSchemeとChickenには@code{file-size}があります。
+Chickenには@code{file-modification-time}があり、これは@code{file-mtime}と
+同じです。
+@c COMMON
+@end defun
+
+@defun file-is-readable? path
+@defunx file-is-writable? path
+@defunx file-is-executable? path
+@c EN
+Returns @code{#t} if @var{path} exists and readable/writable/executable
+by the current effective user, respectively.
+This API is taken from STk.
+@c JP
+@var{path}が存在して、現在の実効ユーザがそれぞれ読み取り/書き込み/実行可能なら@code{#t}を
+返します。
+このAPIはSTkから取られました。
+@c COMMON
+@end defun
+
+@defun file-eq? path1 path2
+@defunx file-eqv? path1 path2
+@defunx file-equal? path1 path2
+@c EN
+Compares two files specified by @var{path1} and @var{path2}.
+@code{file-eq?} and @code{file-eqv?} checks if @var{path1} and @var{path2}
+refers to the identical file, that is, whether they are on the same
+device and have the identical inode number.  The only difference is
+when the last component of @var{path1} and/or @var{path2} is a symbolic
+link, @code{file-eq?} doesn't resolve the link (so compares the links
+themselves) while @var{file-eqv?} resolves the link and compares the
+files referred by the link(s).
+@c JP
+@var{path1}と@var{path2}で示されるファイルを比較します。
+@code{file-eq?}と@code{file-eqv?}は@var{path1}と@var{path2}が
+全く同一のファイルを参照しているかどうか、すなわち、同じデバイス上にあり同じ
+inode番号を持つかどうかをチェックします。二つの手続きの違いは、
+@code{path1}や@var{path2}の最後のコンポーネントがシンボリックリンクで
+あった場合に、@var{file-eq?}はリンクそのものの比較をするが
+@code{file-eqv?}はリンクを辿った先のファイルの比較をする、という点です。
+@c COMMON
+
+@c EN
+@code{file-equal?} compares @var{path1} and @var{path2} considering their
+content, that is, when two are not the identical file in the sense of
+@code{file-eqv?}, @code{file-equal?} compares their content and returns
+@code{#t} if all the bytes match.
+@c JP
+@code{file-equal?}は@var{path1}と@var{path2}をその内容まで考慮して比較します。
+すなわち、二つのファイルが@code{file-eqv?}の意味で同一でなかった場合、
+@code{file-equal?}はファイルの内容を比較し、全てが一致した場合に@code{#t}を返します。
+@c COMMON
+
+@c EN
+The behavior of @code{file-equal?} is undefined
+when @var{path1} and @var{path2} are both directories.
+Later, it may be extended to scan the directory contents.
+@c JP
+@var{path1}と@var{path2}ともにディレクトリが与えられた場合の
+@code{file-equal?}の動作は未定義です。将来、ディレクトリ内容を
+スキャンするような拡張が加えられるかもしれません。
+@c COMMON
+@end defun
+
+@deffn {Generic Function} file-mtime=? f1 f2
+@deffnx {Generic Function} file-mtime<? f1 f2
+@deffnx {Generic Function} file-mtime<=? f1 f2
+@deffnx {Generic Function} file-mtime>? f1 f2
+@deffnx {Generic Function} file-mtime>=? f1 f2
+@c EN
+Compares file modification time stamps.  There are a bunch of methods defined,
+so each argument can be either one of the followings.
+
+@itemize @bullet
+@item
+String pathname.   The mtime of the specified path is used.
+@item
+@code{<sys-stat>} object (@xref{File stats}).
+The mtime is taken from the stat structure.
+@item
+@code{<time>} object.  The time is used as the mtime.
+@item
+Number.  It is considered as the number of seconds since Unix Epoch, and
+used as mtime.
+@end itemize
+@c JP
+二つのファイルの変更時間を比較します。それぞれの引数に対して、
+次のような型のオブジェクトが渡せるようなメソッドが定義されています。
+
+@itemize @bullet
+@item
+文字列のパス名。そのパス名で示されるファイルから変更時間が取られます。
+@item
+@code{<sys-stat>}オブジェクト (@xref{File stats})。
+stat構造体から変更時間が取られます。
+@item
+@code{<time>}オブジェクト。その示す時間が変更時間と考えられます。
+@item
+数値。変更時間をUnix Epochからの秒数で表したものと見なされます。
+@end itemize
+@c COMMON
+
+@example
+@c EN
+;; @r{compare "foo.c" is newer than "foo.o"}
+@c JP
+;; @r{"foo.c" より "foo.o" が新しいかどうか調べる}
+@c COMMON
+(file-mtime>? "foo.c" "foo.o")
+
+@c EN
+;; @r{see if "foo.log" is updated within last 24 hours}
+@c JP
+;; @r{"foo.log"が過去24時間以内に更新されたかどうかを調べる}
+@c COMMON
+(file-mtime>? "foo.c" (- (sys-time) 86400))
+@end example
+@end deffn
+
+@deffn {Generic Function} file-ctime=? f1 f2
+@deffnx {Generic Function} file-atime=? f1 f2
+@findex file-ctime<?
+@findex file-ctime<=?
+@findex file-ctime>?
+@findex file-ctime>=?
+@findex file-atime<?
+@findex file-atime<=?
+@findex file-atime>?
+@findex file-atime>=?
+@c EN
+Same as @code{file-mtime=?}, except these checks file's change time
+and access time, respectively.
+All the variants of @code{<}, @code{<=}, @code{>}, @code{>=} are also
+defined.
+@c JP
+@code{file-mtime=?}と同じですが、ファイルの属性変更時間とアクセス時間に
+関して比較します。
+@code{<}, @code{<=}, @code{>}, @code{>=}を使う関数も同様に定義されています。
+@c COMMON
+@end deffn
+
+@node File operations,  , File attribute utilities, Filesystem utilities
+@subsection File operations
+@c NODE ファイル操作
+
+@defun touch-file path
+@c EN
+Updates timestamp of @var{path} to the current time.  If @var{path} 
+doesn't exist, a new file with size zero is created.
+See also @code{sys-utime} (@xref{File stats}).
+@c JP
+@var{path}のタイムスタンプを現在の時刻に更新します。
+@var{path}が存在しなかった場合はそのファイルを作成します。
+@ref{File stats}の@code{sys-utime}も参照して下さい。
+@c COMMON
+@end defun
+
+@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp
+@c EN
+Copies file from @var{src} to @var{dst}.  The source file @var{src} must exist.
+The behavior when the destination @var{dst} exists varies by the keyword
+argument @var{if-exists};
+
+@table @code
+@item :error
+(Default) Signals an error when @var{dst} exists.
+@item :supersede
+Replaces @var{dst} to the copy of @code{src}. 
+@item :backup
+Keeps @var{dst} by renaming it.
+@item #f
+Doesn't copy and returns @code{#f} when @var{dst} exists.
+@end table
+@c JP
+ファイル@var{src}を@var{dst}へコピーします。コピー元ファイル@var{src}は
+存在していなければなりません。コピー先ファイル@var{dst}が存在していた場合の
+ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
+
+@table @code
+@item :error
+(デフォルト) @var{dst}が存在していたらエラーを通知する。
+@item :supersede
+@var{dst}を@code{src}のコピーで置き換える。
+@item :backup
+@var{dst}の名前を変えてキープする。
+@item #f
+@var{dst}が存在していたらコピーをせず@code{#f}を返す。
+@end table
+@c COMMON
+
+@c EN
+@code{Copy-file} returns @code{#t} after completion.
+@c JP
+@code{copy-file}はコピーが完了したら@code{#t}を返します。
+@c COMMON
+
+@c EN
+If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
+specifies the suffix attached to the @var{dst} to be renamed.
+The default value is @code{".orig"}.
+@c JP
+@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
+名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
+付けたものとなります。デフォルト値は@code{".orig"}です。
+@c COMMON
+
+@c EN
+By default, @code{copy-file} starts copying to @var{dst} directly.
+However, if the keyword argument @var{safe} is a true value,
+it copies the file to a temporary file in the same directory of @var{dst},
+then renames it to @var{dst} when copy is completed.
+If copy is interrupted for some reason, the filesystem is "rolled back"
+properly.
+@c JP
+デフォルトでは@code{copy-file}は直接@var{dst}にコピーを行いますが、
+キーワード引数@var{safe}に真の値が与えられた場合は、@var{dst}と同じディレクトリ
+内の一時ファイルにまずコピーし、それが完了した時点で@var{dst}へとリネームします。
+コピーが何らかの理由で中断された場合、ファイルシステムはコピー前の状態へと
+「ロールバック」されます。
+@c COMMON
+
+@c EN
+If the keyword argument @var{keep-timestamp} is true, @code{copy-file}
+sets the destination's timestamp to the same as the source's timestamp
+after copying.
+@c JP
+キーワード引数@var{keep-timestamp}に真の値が与えられた場合は、
+@code{copy-file}はコピー後にコピー先のファイルのタイムスタンプを
+コピー元のタイムスタンプに合わせます。
+@c COMMON
+@end defun
+
+@defun move-file src dst &keyword if-exists backup-suffix
+@c EN
+Moves file @var{src} to @var{dst}.   The source @var{src} must exist.
+The behavior when @var{dst} exists varies by the keyword argument
+@var{if-exists}, as follows.
+@table @code
+@item :error
+(Default) Signals an error when @var{dst} exists.
+@item :supersede
+Replaces @var{dst} by @code{src}. 
+@item :backup
+Keeps @var{dst} by renaming it.
+@item #f
+Doesn't move and returns @code{#f} when @var{dst} exists.
+@end table
+@c JP
+ファイル@var{src}を@var{dst}へ移動します。移動元ファイル@var{src}は
+存在していなければなりません。移動先ファイル@var{dst}が存在した場合の
+ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
+@table @code
+@item :error
+(デフォルト) @var{dst}が存在していたらエラーを通知する。
+@item :supersede
+@var{dst}を@code{src}で置き換える。
+@item :backup
+@var{dst}の名前を変えてキープする。
+@item #f
+@var{dst}が存在していたら移動をせず@code{#f}を返す。
+@end table
+@c COMMON
+
+@c EN
+@code{Move-file} returns @code{#t} after completion.
+@c JP
+@code{move-file}は移動が完了したら@code{#t}を返します。
+@c COMMON
+
+@c EN
+If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
+specifies the suffix attached to the @var{dst} to be renamed.
+The default value is @code{".orig"}.
+@c JP
+@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
+名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
+付けたものとなります。デフォルト値は@code{".orig"}です。
+@c COMMON
+
+@c EN
+The file @var{src} and @var{dst} can be on the different filesystem.
+In such a case, @code{move-file} first copies @var{src} to the
+temporary file on the same directory as @var{dst}, then renames
+it to @var{dst}, then removes @var{src}.
+@c JP
+ファイル@var{src}と@var{dst}は別のファイルシステム上にあっても構いません。
+その場合、@code{move-file}はまず@var{src}を@var{dst}と同じディレクトリの
+一時ファイルにコピーし、それを@var{dst}にリネームし、それから
+@var{src}を消去します。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Mathematic constants, Mersenne Twister Random number generator, Filesystem utilities, Miscellaneous library modules
+@section @code{math.const} - Mathematic constants
+@c NODE 定数, @code{math.const} - 定数
+
+@deftp {Module} math.const
+@mdindex math.const
+This module defines several commonly-used mathematic constants.
+@end deftp
+
+@defvr {Constant} pi
+@defvrx {Constant} pi/2
+@defvrx {Constant} pi/4
+@defvrx {Constant} pi/180
+@defvrx {Constant} 1/pi
+@defvrx {Constant} 180/pi
+@c EN
+Bound to pi, pi/2, pi/4, pi/180, 1/pi and 180/pi, respectively.
+@c JP
+それぞれ、π、π/2、π/4、π/180、1/π、180/πです。
+@c COMMON
+@end defvr
+
+@defvr {Constant} e
+e.
+@end defvr
+
+@c ----------------------------------------------------------------------
+@node Mersenne Twister Random number generator, RFC822 Message parsing, Mathematic constants, Miscellaneous library modules
+@section @code{math.mt-random} - Mersenne Twister Random number generator
+@c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
+
+@deftp {Module} math.mt-random
+@mdindex math.mt-random
+Provides a pseudo random number generator (RNG) based on 
+"Mersenne Twister" algorithm developed by Makoto Matsumoto and
+Takuji Nishimura.   It is fast, and has huge period of 2^19937-1.
+See @ref{MT,,MT}, for details about the algorithm.
+@end deftp
+
+@deftp {Class} <mersenne-twister>
+@clindex mersenne-twister
+A class to encapsulate the state of Mersenne Twister RNG.
+Each instance of this class has its own state, and can be used
+as an independent source of random bits if initialized
+by individual seed.
+
+The random seed value can be given at the instantiation time
+by @code{:seed} initialization argument, or by using
+@code{mt-random-set-seed!} described below.
+
+@example
+(define m (make <mersenne-twister> :seed (sys-time)))
+
+(mt-random-real m) @result{} 0.10284287848537865
+(mt-random-real m) @result{} 0.463227748348805
+(mt-random-real m) @result{} 0.8628500643709712
+@dots{}
+@end example
+@end deftp
+
+@defun mt-random-set-seed! mt seed
+Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
+@var{Seed} can be an arbitrary positive exact integer,
+or arbitrary length of u32vector (@xref{Homogeneous Vectors}).
+If it is an integer, the lower 32bits are used for initialization.
+If it is a u32vector, up to 624 elements are used for initialization.
+@end defun
+
+@defun mt-random-get-state mt
+@defunx mt-random-set-state! mt state
+Retrieves and reinstalls the state of Mersenne Twister RNG @var{mt}.
+The state is represented by a u32vector of 625 elements.  The state
+can be stored elsewhere, and then restored to an instance of
+@code{<mersenne-twister>} to continue to generate the pseudo random
+sequence.
+@end defun
+
+@defun mt-random-real mt
+@defunx mt-random-real0 mt
+Returns a random real number between 0.0 and 1.0.
+1.0 is not included in the range.  @code{Mt-random-real} doesn't
+include 0.0 either, while @code{mt-random-real0} does.
+Excluding 0.0 is from the draft SRFI-27.
+@end defun
+
+@defun mt-random-integer mt range
+Returns a random exact positive integer between 0 and @var{range}-1.
+@var{Range} can be any positive exact integer.
+@end defun
+
+@defun mt-random-fill-u32vector! mt u32vector
+@defunx mt-random-fill-f32vector! mt f32vector
+@defunx mt-random-fill-f64vector! mt f64vector
+Fills the given uniform vector by the random numbers.
+For @code{mt-random-fill-u32vector!}, the elements are filled
+by exact positive integers between 0 and 2^32-1.
+For @code{mt-random-fill-f32vector!} and
+@code{mt-random-fill-f64vector!}, it is filled by an inexact
+real number between 0.0 and 1.0, exclusive.
+
+If you need a bunch of random numbers at once, these are much
+faster than getting one by one.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node RFC822 Message parsing, Base64 encoding/decoding, Mersenne Twister Random number generator, Miscellaneous library modules
+@section @code{rfc.822} - RFC822 message parsing
+@c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
+
+@deftp {Module} rfc.822
+@mdindex rfc.822
+Defines a set of functions that parses and constructs the ``Internet
+Message Format'', a text format used to exchange e-mails.
+The most recent specification can be found in
+RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}).
+The format was originally defined in RFC 822, and people still 
+call it ``RFC822 format'', hence I named this module.
+In the following document, I also refer to the format as ``RFC822 format''.
+
+Say @code{(use rfc.822)} to use this module.
+@end deftp
+
+@defun rfc822-header->list iport &optional strict?
+Reads RFC822 format message from an input port @var{iport},
+until it reaches the end of the message header.
+The header fields are unfolded, and broken into a list of the following
+format:
+@example
+((name body) @dots{})
+@end example
+@var{Name} @dots{} are the field names, and @var{body} @dots{} are
+the corresponding field body, both as strings.
+Field names are converted to lower-case characters.
+Field bodies are not modified, except the folded line is concatenated,
+CRLFs removed.
+The order of fields are preserved.
+@end defun
+
+@defun rfc822-parse-date string
+Takes RFC-822 type date string, and returns eight values:
+@example
+year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
+@end example
+
+@emph{Timezone} is an offset from UT in minutes.
+@emph{Day-of-week} is a day from sunday,
+and may be #f if that information is not available.
+If the string is not parsable, all the elements are #f.
+
+Note: This function follows the new definition of date format in RFC2822,
+but may fail to recognize "obsolete" format, which allows arbitrary
+comments appear between words.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Miscellaneous library modules
+@section @code{rfc.base64} - Base64 encoding/decoding
+@c NODE Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
+
+@deftp {Module} rfc.base64
+@mdindex rfc.base64
+This module defines a few functions to encode/decode Base64 format,
+defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3.
+@end deftp
+
+@defun base64-encode
+Reads byte stream from the current input port, encodes it in Base64
+format and writes the result character stream to the current output port.
+The conversion ends when it reads EOF from the current input port.
+@end defun
+
+@defun base64-encode-string string
+Converts contents of @var{string} to Base64 encoded format.
+Input string can be either complete or incomplete string;
+it is always interpreted as a byte sequence.
+@end defun
+
+@defun base64-decode
+Reads character stream from the current input port, decodes it from Base64
+format and writes the result byte stream to the current output port.
+The conversion ends when it reads EOF or the termination character
+(@code{=}).  The characters which does not in legal Base64 encoded character
+set are silently ignored.
+@end defun
+
+@defun base64-decode-string string
+Decodes a Base64 encoded string @var{string} and returns
+the result as a string.
+The conversion terminates at the end of @var{string} or
+the termination character (@code{=}).
+The characters which does not in legal Base64 encoded character
+set are silently ignored.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node HTTP cookie handling, Quoted-printable encoding/decoding, Base64 encoding/decoding, Miscellaneous library modules
+@section @code{rfc.cookie} - HTTP cookie handling
+@c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
+
+@deftp {Module} rfc.cookie
+@mdindex rfc.cookie
+Defines a set of functions to parse and construct a ``cookie'' information
+defined in RFC 2965 (@ref{rfc2965,,RFC2965}).
+@end deftp
+
+@defun parse-cookie-string string &optional version
+Parse a cookie string @var{string}, which is the value of ``Cookie''
+request header.  Usually, the same information is available to CGI
+program via the environemnt variable @code{HTTP_COOKIE}.
+
+If the cookie version is known, via ``Cookie2'' request header,
+the integer version must be passed to @var{version}.  Otherwise,
+@code{parse-cookie} figures out the version from @var{string}.
+
+The result has the following format.
+@example
+((<name> <value> [:path <path>] [:domain <domain>] [:port <port>])
+ @dots{})
+@end example
+where @var{<name>} is the attribute name, and @var{<value>} is
+the corresponding value.  If the attribute doesn't have value,
+@var{<value>} is @code{#f}.  (Note that it differs from the attribute
+having null value, @code{""}.)
+If the attribute has path, domain or port options, it is given
+as a form of keyword-value pair.
+@end defun
+
+@defun construct-cookie-string specs &optional version
+Given list of cookie specs, creates a cookie string suitable for
+@code{Set-cookie2} or @code{Set-cookie} header.
+
+Optional @var{version} argument specifies cookie protocol version.
+0 for the old Netscape style format, and 1 for RFC2965 style format.
+When omitted, version 1 is assumed.
+
+Each cookie spec has the following format.
+@example
+(<name> <value> [:comment <comment>] [:comment-url <url>]
+                [:discard <bool>] [:domain <domain>]
+                [:max-age <age>] [:path <path>]
+                [:port <port-list>] [:secure <bool>]
+                [:version <version>] [:expires <date>])
+@end example
+Where,
+@table @code
+@item <name>
+A string.  Name of the cookie.
+@item <value>
+Value of the cookie.  May be a string, or @code{#f} if no value is needed.
+@item <comment> <url> <domain> <path> <port-list>
+Strings.
+@item <bool>
+Boolean value
+@item <age> <version>
+Integers
+@item <date>
+Either an integer (seconds since Epoch) or a formatted date string
+following the netscape cookie specification.
+@end table
+
+The attribute values are quoted appropriately.  If the specified attribute
+is irrelevant for the @var{version}, it is ignored.  So you can pass
+the same specs to generate both old-style and new-style cookie strings.
+
+Return value is a list of cookie strings, each of which stands for
+each cookie.  For old-style protocol (using @code{Set-cookie} header)
+you must send each of them by individual header.  For new-style
+protocol (using @code{Set-cookie2} header), you can join them
+with comma and send it at once.  See RFC2965 for further details.
+
+Some examples:
+@example
+(construct-cookie-string
+   '(("name" "foo" :domain "foo.com :path "/"
+                   :expires (+ (sys-time) 86400) :max-age 86400)))
+ @result{} ("name=foo;Domain=foo.com;Path=/;Max-age=86400")
+
+(construct-cookie-string
+   '(("name" "foo" :domain "foo.com :path "/"
+                   :expires (+ (sys-time) 86400) :max-age 86400))
+   0)
+ @result{}
+ ("name=foo;Domain=foo.com;Path=/;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Quoted-printable encoding/decoding, URI parsing and construction, HTTP cookie handling, Miscellaneous library modules
+@section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
+@c NODE Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
+
+@deftp {Module} rfc.quoted-printable
+@mdindex rfc.quoted-printable
+This module defines a few functions to encode/decode Quoted-printable format,
+defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
+@end deftp
+
+@defun quoted-printable-encode
+Reads byte stream from the current input port, encodes it in Quoted-printable
+format and writes the result character stream to the current output port.
+The conversion ends when it reads EOF from the current input port.
+@end defun
+
+@defun quoted-printable-encode-string string
+Converts contents of @var{string} to Quoted-printable encoded format.
+Input string can be either complete or incomplete string;
+it is always interpreted as a byte sequence.
+@end defun
+
+@defun quoted-printable-decode
+Reads character stream from the current input port,
+decodes it from Quoted-printable
+format and writes the result byte stream to the current output port.
+The conversion ends when it reads EOF.
+If it encounters illegal character sequence (such as '=' followed 
+by non-hexadecimal characters), it copies them literally to the output.
+@end defun
+
+@defun quoted-printable-decode-string string
+Decodes a Quoted-printable encoded string @var{string} and returns
+the result as a string.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node URI parsing and construction, SLIB, Quoted-printable encoding/decoding, Miscellaneous library modules
+@section @code{rfc.uri} - URI parsing and construction
+@c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
+
+@deftp {Module} rfc.uri
+@mdindex rfc.uri
+Provides a set of functions to parse Uniform Resource Identifiers
+defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}).
+@end deftp
+
+@defun uri-scheme&specific uri
+@defunx uri-decompose-hierarchical specific
+@defunx uri-decompose-authority authority
+General parser of URI.  These functions does not decode
+URI encoding.
+
+@code{uri-scheme&specific} takes a URI @var{uri}, and
+returns two values, its scheme part and its scheme-specific part.
+If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
+@example
+(uri-scheme&specific "mailto:sclaus@@north.pole")
+  @result{} "mailto" @r{and} "sclaus@@north.pole"
+(uri-scheme&specific "/icons/new.gif")
+  @result{} #f @r{and} "/icons/new.gif"
+@end example
+
+If the URI scheme uses hierarchical notation, i.e.
+``@code{//@var{authority}/@var{path}?@var{query}#@var{fragment}}'',
+you can pass
+the scheme-specific part to @code{uri-decompose-hierarchical}
+and it returns four values, @var{authority}, @var{path}, @var{query}
+and @var{fragment}.
+@example
+(uri-decompose-hierarchical "//www.foo.com/about/company.html")
+  @result{} "www.foo.com"@r{,} "/about/company.html"@r{,} #f @r{and} #f
+(uri-decompose-hierarchical "//zzz.org/search?key=%3fhelp")
+  @result{} "zzz.org"@r{,} "/search"@r{,} "key=%3fhelp" @r{and} #f
+(uri-decompose-hierarchical "//jjj.jp/index.html#whatsnew")
+  @result{} "jjj.jp"@r{,} "/index.html"@r{,} #f @r{and} "whatsnew"
+(uri-decompose-hierarchical "my@@address")
+  @result{} #f@r{,} #f@r{,} #f @r{and} #f
+@end example
+
+Furthermore, you can parse @var{authority} part of the
+hierarchical URI by @code{uri-decompose-authority}.
+It returns @var{userinfo}, @var{host} and @var{port}.
+@example
+(uri-decompose-authority "yyy.jp:8080")
+  @result{} #f@r{,} "yyy.jp" @r{and} "8080"
+(uri-decompose-authority "mylogin@@yyy.jp")
+  @result{} "mylogin"@r{,} "yyy.jp" @r{and} #f
+@end example
+@end defun
+
+@defun uri-decode &keyword :cgi-decode
+@defunx uri-decode-string string &keyword :cgi-decode
+Decodes ``URI encoding'', i.e. @code{%}-escapes.
+@code{uri-decode} takes input from the current input port,
+and writes decoded result to the current output port.
+@code{uri-decode-string} takes input from @var{string} and
+returns decoded string.
+
+If @var{cgi-decode} is true, also replaces @code{+} to a space character.
+@end defun
+
+@defun uri-encode &keyword :noescape
+@defunx uri-encode-string string &keyword :noescape
+Encodes unsafe characters by @code{%}-escape.  @code{uri-encode}
+takes input from the current input port and writes the result to
+the current output port.  @code{uri-encode-string} takes input
+from @var{string} and returns the encoded string.
+
+By default, characters that are not specified ``unreserved'' in
+RFC2396 are escaped.  You can pass different character set
+to @var{noescape} argument to keep from being encoded.
+
+The multibyte characters are encoded as the octed stream of Gauche's
+native multibyte representation.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SLIB, CSV tables, URI parsing and construction, Miscellaneous library modules
+@section @code{slib} - SLIB interface
+@c NODE SLIB, @code{slib} - SLIB
+
+@deftp {Module} slib
+@mdindex slib
+@c EN
+This module is the interface to the Aubrey Jaffer's SLIB.
+To use SLIB, say @code{(use slib)}.   SLIB itself is not included
+in Gauche distribution.   If you don't have it on your system,
+get it from @uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}.
+@c JP
+このモジュールはAubrey Jaffer氏のSLIBへのインタフェースです。
+SLIBがインストールされている場合、@code{(use slib)} とすれば
+SLIBの機能が使えるようになります。
+SLIBそのものはGaucheのディストリビューションには含まれていません。
+あなたのシステムにまだインストールされていない場合は
+@uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}から入手することができます。
+@c COMMON
+
+@c EN
+This module redefines @code{require}, shadowing the Gauche's original
+@code{require}.  If it gets a symbol as an argument, it works as
+SLIB's @code{require}, while if it gets a string, it works as
+Gauche's @code{require}.   The same applies to @code{provide} and
+@code{provided?}.
+@c JP
+このモジュールは@code{require}を再定義し、Gaucheオリジナルの@code{require}を
+シャドウします。@code{require}にシンボルが渡された場合はSLIBの@code{require}
+のように動作します。@code{require}に文字列が渡された場合はGaucheの@code{require}
+のように動作します。@code{provide}と@code{provided?}についても同様です。
+@c COMMON
+
+@c EN
+All SLIB symbol bindings, loaded by @code{require}, stay in the
+module @code{slib}.
+@c JP
+@code{require}でロードされる、SLIBで導入されるすべての定義は、
+@code{slib}モジュール内で行われます。
+@c COMMON
+@end deftp
+
+@example
+(use slib)         ; @r{load and set up slib}
+(require 'getopt)  ; @r{load SLIB's getopt module}
+(require "foo")    ; @r{load Gauche's foo module}
+@end example
+
+@c ----------------------------------------------------------------------
+@node CSV tables, Simple HTML document construction, SLIB, Miscellaneous library modules
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -23550,7 +23687,7 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple HTML document construction, Parsing input stream, CSV tables, Library modules
+@node Simple HTML document construction, Parsing input stream, CSV tables, Miscellaneous library modules
 @section @code{text.html-lite} - Simple HTML document construction
 
 @deftp {Module} text.html-lite
@@ -23725,7 +23862,7 @@ if the given content is valid for the element.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Parsing input stream, Transliterate characters, Simple HTML document construction, Library modules
+@node Parsing input stream, Transliterate characters, Simple HTML document construction, Miscellaneous library modules
 @section @code{text.parse} - Parsing input stream
 
 @deftp {Module} text.parse
@@ -23841,7 +23978,7 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, Lazy text construction, Parsing input stream, Library modules
+@node Transliterate characters, Lazy text construction, Parsing input stream, Miscellaneous library modules
 @section @code{text.tr} - Transliterate characters
 @c NODE 文字変換, @code{text.tr} - 文字変換
 
@@ -24079,7 +24216,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Lazy text construction, Determine isomorphism, Transliterate characters, Library modules
+@node Lazy text construction, Determine isomorphism, Transliterate characters, Miscellaneous library modules
 @section @code{text.tree} - Lazy text construction
 
 @deftp {Module} text.tree
@@ -24172,7 +24309,7 @@ an output string port, and returns the result string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Determine isomorphism, Queue, Lazy text construction, Library modules
+@node Determine isomorphism, Queue, Lazy text construction, Miscellaneous library modules
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE 同型判定, @code{util.isomorph} - 同型判定
 
@@ -24238,7 +24375,7 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Queue, Topological sort, Determine isomorphism, Library modules
+@node Queue, Topological sort, Determine isomorphism, Miscellaneous library modules
 @section @code{util.queue} - Queue
 @c NODE キュー, @code{util.queue} - キュー
 
@@ -24438,7 +24575,7 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Topological sort, CGI Utility, Queue, Library modules
+@node Topological sort, CGI Utility, Queue, Miscellaneous library modules
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
@@ -24482,7 +24619,7 @@ If the graph contains circular reference, an error is signalled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CGI Utility,  , Topological sort, Library modules
+@node CGI Utility,  , Topological sort, Miscellaneous library modules
 @section @code{www.cgi} - CGI utility
 @c NODE CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
 
@@ -24719,7 +24856,7 @@ The following example shows the parameters given to the CGI program.
 @end defun
 
 @c ======================================================================
-@node References, C to Scheme mapping, Library modules, Top
+@node References, C to Scheme mapping, Miscellaneous library modules, Top
 @appendix References
 @c NODE 参考文献
 

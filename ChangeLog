@@ -1,3 +1,9 @@
+2002-09-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/syslog/* : added syslog(3) interface.
+	* lib/gauche/logger.scm : allow a procedure for log prefix generator.
+	  Also integrated to the syslog feature.
+
 2002-09-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c, src/string.c : changed incomplete string syntax
@@ -91,7 +97,6 @@
 
 2002-09-07  Shiro Kawai  <shiro@acm.org>
 
-	* src/pango-lib.hints : added some more pango support.
 	* configure.in, doc/Makefile.in : changed autoconf variable GZIP to
 	  GZIP_PROGRAM, for it interferes gzip's operation.
 
