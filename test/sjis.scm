@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with shift-jis.
 
-;; $Id: sjis.scm,v 1.4 2003-01-08 02:44:47 shirok Exp $
+;; $Id: sjis.scm,v 1.5 2003-02-05 09:50:00 shirok Exp $
 
 (use gauche.test)
 
@@ -243,6 +243,47 @@
                   (integer-range->char-set (char->integer #\ぁ)
                                            (char->integer #\お))))
 
+;;-------------------------------------------------------------------
+(test-section "ports")
+
+;; イロハニホヘト : 8343.838d.836e.836a.837a.8377.8367
+(define istr (open-input-string "イロハニホヘト"))
+(test* "read-char" #\イ (read-char istr))
+(test* "read-byte" #x83 (read-byte istr))
+(test* "read-byte (using scratch)" #x8d
+       (begin (peek-char istr) (read-byte istr)))
+(test* "read-char (using scratch)" #\ハ
+       (read-char istr))
+(test* "read-block (using scratch)" #*"ニ"
+       (begin (peek-char istr) (read-block 2 istr)))
+(test* "read-block (using scratch)" #*"\x83"
+       (begin (peek-char istr) (read-block 1 istr)))
+(test* "read-block (using scratch)" #*"\x7aヘト"
+       (begin (peek-char istr) (read-block 10 istr)))
+
+;; start over
+(set! istr (open-input-string "イロハニホヘト"))
+(test* "peek-byte" #x83 (peek-byte istr))
+(test* "peek-char" #\イ (peek-char istr))
+(test* "read-byte" #x83 (read-byte istr))
+(test* "peek-byte" #x43 (peek-byte istr))
+(test* "peek-char" #\ロ (begin (read-byte istr) (peek-char istr)))
+(test* "read-char" #\ロ (begin (peek-byte istr) (read-char istr)))
+(test* "peek-byte" #x6e
+       (begin (peek-char istr) (read-byte istr) (peek-byte istr)))
+(test* "read-block" #*"\x6eニホヘ\x83" (read-block 8 istr))
+(test* "peek-byte" #x67 (peek-byte istr))
+(test* "peek-byte" #t (begin (read-byte istr) (eof-object? (peek-byte istr))))
+
+(test* "read-line (LF)" "なむ"
+       (read-line (open-input-string "なむ\n")))
+(test* "read-line (CR)" "なむ"
+       (read-line (open-input-string "なむ\r")))
+(test* "read-line (CRLF)" "なむ"
+       (read-line (open-input-string "なむ\r\n")))
+(test* "read-line (using ungotten)" "なむ"
+       (let1 s (open-input-string "なむ\n")
+         (peek-char s) (read-line s)))
 
 ;;-------------------------------------------------------------------
 (test-section "buffered ports")

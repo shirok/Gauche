@@ -132,6 +132,19 @@
 (test* "read-byte (ungotten)" 97
        (call-with-input-file "tmp1.o"
          (lambda (p) (peek-char p) (read-byte p))))
+(test* "peek-byte (a)" '(97 97)
+       (call-with-input-file "tmp1.o"
+         (lambda (p) (let1 a (peek-byte p) (list a (read-byte p))))))
+(test* "peek-byte (ungotten)" '(97 97)
+       (call-with-input-file "tmp1.o"
+         (lambda (p)
+           (peek-char p) (let1 a (peek-byte p) (list a (read-byte p))))))
+(test* "peek-byte and read-char" #\a
+       (call-with-input-file "tmp1.o"
+         (lambda (p) (peek-byte p) (read-char p))))
+(test* "peek-byte and peek-char" #\a
+       (call-with-input-file "tmp1.o"
+         (lambda (p) (peek-byte p) (peek-char p))))
 (test* "read-block (a)" #*"ab"
        (call-with-input-file "tmp1.o" (cut read-block 10 <>)))
 (test* "read-block (ungotten)" #*"ab"

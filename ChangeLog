@@ -4,6 +4,8 @@
 	  Scm_MakeOutputStringPort, which pre-locks the created string port
 	  so that mutex will be omitted.  Various files that uses those
 	  functions are revised.
+	* src/portapi.c, src/stdlib.stub, src/extlib.stub : added peek-byte,
+	  and incorporated Scm_Peek* functions into the core from stub files.
 	* lib/util/combinations.scm : revised to support duplicated entries.
 	* lib/util/list.scm : added.  additional list library.
 	* lib/gauche/sequence.scm : added fold-with-index, map-with-index,

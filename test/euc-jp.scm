@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.17 2003-01-08 00:25:30 shirok Exp $
+;; $Id: euc-jp.scm,v 1.18 2003-02-05 09:50:00 shirok Exp $
 
 (use gauche.test)
 
@@ -234,6 +234,20 @@
 (test* "read-block (using scratch)" #*"\xdbヘト"
        (begin (peek-char istr) (read-block 10 istr)))
 
+;; start over
+(set! istr (open-input-string "イロハニホヘト"))
+(test* "peek-byte" #xa5 (peek-byte istr))
+(test* "peek-char" #\イ (peek-char istr))
+(test* "read-byte" #xa5 (read-byte istr))
+(test* "peek-byte" #xa4 (peek-byte istr))
+(test* "peek-char" #\ロ (begin (read-byte istr) (peek-char istr)))
+(test* "read-byte" #\ロ (begin (peek-byte istr) (read-char istr)))
+(test* "peek-byte" #xcf
+       (begin (peek-char istr) (read-byte istr) (peek-byte istr)))
+(test* "read-block" #*"\xcfニホヘ\xa5" (read-block 8 istr))
+(test* "peek-byte" #xc8 (peek-byte istr))
+(test* "peek-byte" #t (begin (read-byte istr) (eof-object? (peek-byte istr))))
+
 (test* "read-line (LF)" "なむ"
        (read-line (open-input-string "なむ\n")))
 (test* "read-line (CR)" "なむ"
@@ -243,6 +257,9 @@
 (test* "read-line (using ungotten)" "なむ"
        (let1 s (open-input-string "なむ\n")
          (peek-char s) (read-line s)))
+(test* "read-line (using ungotten)" "なむ"
+       (let1 s (open-input-string "なむ\n")
+         (peek-byte s) (read-line s)))
 
 ;(test "read-line (using scratch)" "なむ"
 ;      (lambda ()

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.7 2003-01-31 02:34:30 shirok Exp $
+ *  $Id: portapi.c,v 1.8 2003-02-05 09:50:00 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -261,7 +261,7 @@ void Scm_FlushUnsafe(ScmPort *p)
 }
 
 /*=================================================================
- * Ungetc
+ * Ungetc & PeekChar
  */
 
 #ifdef SAFE_PORT_OP
@@ -275,6 +275,77 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
     LOCK(p);
     SCM_UNGETC(c, p);
     UNLOCK(p);
+}
+
+#ifdef SAFE_PORT_OP
+ScmChar Scm_Peekc(ScmPort *p)
+#else
+ScmChar Scm_PeekcUnsafe(ScmPort *p)
+#endif
+{
+    ScmChar ch;
+    VMDECL;
+    SHORTCUT(p, return Scm_PeekcUnsafe(p));
+    LOCK(p);
+    if ((ch = SCM_PORT_UNGOTTEN(p)) == SCM_CHAR_INVALID) {
+        ch = Scm_GetcUnsafe(p);
+        SCM_PORT_UNGOTTEN(p) = ch;
+    }
+    UNLOCK(p);
+    return ch;
+}
+
+/*=================================================================
+ * Ungetb & PeekByte
+ */
+
+#ifdef SAFE_PORT_OP
+void Scm_Ungetb(int b, ScmPort *p)
+#else
+void Scm_UngetbUnsafe(int b, ScmPort *p)
+#endif
+{
+    VMDECL;
+    SHORTCUT(p, Scm_UngetbUnsafe(b, p); return);
+    LOCK(p);
+    /* caller must ensure ungetb is called only at the fresh state */
+    p->scratch[0] = b;
+    p->scrcnt = 1;
+    UNLOCK(p);
+}
+
+#ifdef SAFE_PORT_OP
+int Scm_Peekb(ScmPort *p)
+#else
+int Scm_PeekbUnsafe(ScmPort *p)
+#endif
+{
+    int b;
+    VMDECL;
+    SHORTCUT(p, return Scm_PeekbUnsafe(p));
+    LOCK(p);
+    if (p->scrcnt > 0) {
+        b = (unsigned char)p->scratch[0];
+    } else {
+        SCM_GETB(b, p);
+        if (b >= 0) {
+            if (p->scrcnt > 0) {
+                /* unshift scratch buffer */
+                int i;
+                SCM_ASSERT(p->scrcnt < SCM_CHAR_MAX_BYTES);
+                for (i=p->scrcnt; i>0; i--) {
+                    p->scratch[i] = p->scratch[i-1];
+                }
+                p->scratch[0] = b;
+                p->scrcnt++;
+            } else {
+                p->scratch[0] = b;
+                p->scrcnt = 1;
+            }
+        }
+    }
+    UNLOCK(p);
+    return b;
 }
 
 /*=================================================================

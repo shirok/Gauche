@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.98 2002-12-23 00:04:09 shirok Exp $
+;;; $Id: stdlib.stub,v 1.99 2003-02-05 09:50:00 shirok Exp $
 ;;;
 
 
@@ -784,12 +784,8 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   else SCM_RETURN(SCM_MAKE_CHAR(ch));")
 
 (define-cproc peek-char (&optional (port::<input-port> (current-input-port)))
-  "  ScmChar ch; ScmObj r;
-  if ((ch = SCM_PORT_UNGOTTEN(port)) == SCM_CHAR_INVALID) {
-    SCM_GETC(ch, port);
-    SCM_PORT_UNGOTTEN(port) = ch;
-  }
-  r = (ch == SCM_CHAR_INVALID)? SCM_EOF : SCM_MAKE_CHAR(ch);
+  "  ScmChar ch = Scm_Peekc(port);
+  ScmObj r = (ch == SCM_CHAR_INVALID)? SCM_EOF : SCM_MAKE_CHAR(ch);
   SCM_RETURN(r);")
 
 (define-cproc eof-object? (obj)

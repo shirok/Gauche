@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.3 2002-11-02 06:47:13 shirok Exp $
+;; $Id: utf-8.scm,v 1.4 2003-02-05 09:50:00 shirok Exp $
 
 (use gauche.test)
 
@@ -231,6 +231,52 @@
                    (integer-range->char-set (char->integer #\ぁ)
                                             (char->integer #\お)))))
 
+;;-------------------------------------------------------------------
+(test-section "ports")
+
+;; イ     ロ     ハ     ニ      ホ     ヘ     ト
+;; e382a4.e383ad.e3838f.e3838b.e3839b.e38398.e38388
+(define istr (open-input-string "イロハニホヘト"))
+(test* "read-char" #\イ (read-char istr))
+(test* "read-byte" #xe3 (read-byte istr))
+(test* "read-byte (using scratch)" #xad
+       (begin (read-byte istr) (read-byte istr) (read-byte istr)))
+(test* "read-char (using scratch)" #\ハ
+       (begin (peek-byte istr) (read-char istr)))
+(test* "read-block (using scratch)" #*"ニ"
+       (begin (peek-char istr) (read-block 3 istr)))
+(test* "read-block (using scratch)" #*"\xe3"
+       (begin (peek-char istr) (read-block 1 istr)))
+(test* "read-block (using scratch)" #*"\x83\x9bヘト"
+       (begin (read-block 10 istr)))
+
+;; start over
+(set! istr (open-input-string "イロハニホヘト"))
+(test* "peek-byte" #xe3 (peek-byte istr))
+(test* "peek-char" #\イ (peek-char istr))
+(test* "read-byte" #xe3 (read-byte istr))
+(test* "peek-byte" #x82 (peek-byte istr))
+(test* "peek-char" #\ロ
+       (begin (read-byte istr) (read-byte istr) (peek-char istr)))
+(test* "read-byte" #\ロ (begin (peek-byte istr) (read-char istr)))
+(test* "peek-byte" #x83
+       (begin (peek-char istr) (read-byte istr) (peek-byte istr)))
+(test* "read-block" #*"\x83\x8fニホヘ\xe3\x83" (read-block 13 istr))
+(test* "peek-byte" #x88 (peek-byte istr))
+(test* "peek-byte" #t (begin (read-byte istr) (eof-object? (peek-byte istr))))
+
+(test* "read-line (LF)" "なむ"
+       (read-line (open-input-string "なむ\n")))
+(test* "read-line (CR)" "なむ"
+       (read-line (open-input-string "なむ\r")))
+(test* "read-line (CRLF)" "なむ"
+       (read-line (open-input-string "なむ\r\n")))
+(test* "read-line (using ungotten)" "なむ"
+       (let1 s (open-input-string "なむ\n")
+         (peek-char s) (read-line s)))
+(test* "read-line (using ungotten)" "なむ"
+       (let1 s (open-input-string "なむ\n")
+         (peek-byte s) (read-line s)))
 
 ;;-------------------------------------------------------------------
 (test-section "buffered ports")
