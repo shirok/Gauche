@@ -7,7 +7,7 @@
 @synindex tp fn
 @synindex vr fn
 
-@c $Id: gauche-ref.texi,v 1.1 2001-05-16 10:04:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.2 2001-05-16 20:11:16 shirok Exp $
 
 @iftex
 @finalout
@@ -113,6 +113,14 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS][SRFI-17]
 @end defspec
 
+@defun setter proc
+[SRFI-17]
+@end defun
+
+@defun getter-with-setter get set
+[SRFI-17]
+@end defun
+
 
 @node Conditionals
 @section Conditionals
@@ -196,6 +204,11 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defspec
 
+@defun force promise
+[R5RS]
+@end defun
+
+
 @node Quasiquotation
 @section Quasiquotation
 
@@ -213,17 +226,75 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defspec
 
 
+@node Modules
+@section Modules
+
+@defspec define-module name body
+@end defspec
+
+@defspec select-module name
+@end defspec
+
+@defspec with-module name body
+@end defspec
+
+@defspec export symbol @dots{}
+@end defspec
+
+@defspec import module-name @dots{}
+@end defspec
+
+@defspec use name
+@end defspec
+
+@defun module? obj
+@end defun
+
+@defun module-name module
+@defunx module-imports module
+@defunx module-exports module
+@defunx module-table module
+@end defun
+
+@defun find-module name
+@end defun
+
+@defun all-modules
+@end defun
+
+
 @node Macros
 @chapter Macros
 
 @node Hygienic Macros
 @section Hygienic Macros
 
+@defspec define-syntax name transformer-spec
+[R5RS]
+@end defspec
+
+@defspec let-syntax ((name transformer-spec) @dots{}) body
+@defspecx letrec-syntax ((name transformer-spec) @dots{}) body
+[R5RS]
+@end defspec
+
+@defspec syntax-rules literals clause1 clause2 @dots{}
+[R5RS]
+@end defspec
+
 
 @node Traditional Macros
 @section Traditional Macros
 
+@defspec define-macro (name formals) body
+@end defspec
 
+@node Macro Expansion
+@section Macro Expansion
+
+@defspec %macro-expand form
+@defspecx %macro-expand1 form
+@end defspec
 
 @node Core library
 @chapter Core library
@@ -818,6 +889,35 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
+@node Hashtables
+@section Hashtables
+
+@defun make-hash-table args
+@end defun
+
+@defun hash-table?
+@end defun
+
+@defun hash-table-get hash key &optional default
+@end defun
+
+@defun hash-table-put! hash key value
+@end defun
+
+@defun hash-table-exists? hash key
+@end defun
+
+@defun hash-table-for-each hash proc
+@end defun
+
+@defun hash-table-keys hash
+@defunx hash-table-values hash
+@end defun
+
+@defun hash-table-stat hash
+@end defun
+
+
 @node Control features
 @section Control features
 
@@ -834,10 +934,6 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 @defun for-each proc list1 list2 @dots{}
-[R5RS]
-@end defun
-
-@defun force promise
 [R5RS]
 @end defun
 
@@ -872,6 +968,11 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
+@defun null-environment
+@defunx interaction-environment
+@defunx scheme-report-environment version
+[R5RS]
+@end defun
 
 @node Input and Output
 @section Input and Output
@@ -1027,9 +1128,105 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @node Loading Programs
 @section Loading Programs
 
+@defun load file &keyword (error-if-not-found #t)
+[R5RS+]
+@end defun
+
+@defun load-from-port port
+@end defun
+
+@defun dynamic-load file &keyword init-function
+@end defun
+
+@defspec add-load-path path &optional (afterp #f)
+@end defspec
+
+@defspec require feature
+@end defspec
+
+@defun provide feature
+@end defun
+
+@defun provided? feature
+@end defun
+
 
 @node System interface
 @section System interface
+
+
+@node Program termination
+@subsection Program termination
+
+@defun exit &optional code
+@end defun
+
+@node Environment Inquiry
+@subsection Environment Inquiry
+
+@defun gauche-version
+@defunx gauche-architecture
+@defunx gauche-library-directory
+@defunx gauche-architecture-directory
+@defunx gauche-site-library-directory
+@defunx gauche-site-architecture-directory
+@end defun
+
+@node Filesystems
+@subsection Filesystems
+
+@node Directories
+@subsubsection Directories
+
+@defun sys-readdir
+@end defun
+
+@defun sys-glob
+@end defun
+
+@node Pathnames
+@subsubsection Pathnames
+
+@defun sys-normalize-pathname pathname &keyword absolute expand canonicalize
+@end defun
+
+@defun sys-basename
+@defunx sys-dirname
+@end defun
+
+@node File stats
+@subsubsection File stats
+
+
+
+
+@node Unix groups and passwords
+@subsection Unix groups and passwords
+
+@node Locale
+@subsection Locale
+
+
+@node Signal
+@subsection Signal
+
+
+@node System Inquiry
+@subsection System Inquiry
+
+
+@node Time
+@subsection Time
+
+
+@node Unix process management
+@subsection Unix process management
+
+@node Fork and exec
+@subsubsection Fork and exec
+
+@node Wait
+@subsubsection Wait
 
 
 @node Object System
