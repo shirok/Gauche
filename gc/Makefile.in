@@ -22,7 +22,7 @@ AS=@AS@ $(ABI_FLAG)
 I686OPT=@I686OPT@
 
 # architecture-specific thread options
-THREADOPTS="@THREADOPTS@"
+THREADOPTS=@THREADOPTS@
 
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
