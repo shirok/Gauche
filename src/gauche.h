@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.52 2001-02-27 08:17:09 shiro Exp $
+ *  $Id: gauche.h,v 1.53 2001-02-27 08:24:51 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -245,6 +245,7 @@ typedef struct ScmExceptionRec ScmException;
 extern ScmVM *Scm_VM(void);     /* Returns the current VM */
 
 extern ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
+extern ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
 extern ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
 extern ScmObj Scm_Eval(ScmObj form, ScmObj env);
 extern ScmObj Scm_Apply(ScmObj proc, ScmObj args);
