@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interactive.scm,v 1.6 2001-10-15 09:06:41 shirok Exp $
+;;;  $Id: interactive.scm,v 1.7 2001-11-12 11:50:13 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
@@ -100,7 +100,7 @@
                               (with-output-to-string
                                 (lambda () (write-limited (slot-ref object s)
                                                           60)))
-                              "#unbound")))
+                              "#<unbound>")))
                 (map slot-definition-name slots)))
     (values)
     ))
