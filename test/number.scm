@@ -726,5 +726,16 @@
 (test "ash (bignum->bignum)" (- #x12345679)
       (lambda () (ash (- #x1234567812345678) -32)))
 
+(test "lognot (fixnum)" -1 (lambda () (lognot 0)))
+(test "lognot (fixnum)" 0 (lambda () (lognot -1)))
+(test "lognot (fixnum)" -65536 (lambda () (lognot 65535)))
+(test "lognot (fixnum)" 65535 (lambda () (lognot -65536)))
+(test "lognot (bignum)" (- #x1000000000000000001)
+      (lambda () (lognot #x1000000000000000000)))
+(test "lognot (bignum)" #x1000000000000000000
+      (lambda () (lognot (- #x1000000000000000001))))
+
+      
+
 
 (test-end)
