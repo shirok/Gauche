@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.33 2002-10-18 05:00:17 shirok Exp $
+ *  $Id: regexp.c,v 1.34 2002-11-28 11:09:26 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -970,7 +970,7 @@ void re_exec_rec(const char *code,
                 input++;
             } else {
                 code++;
-                input += SCM_CHAR_NBYTES((unsigned char)*input);
+                input += SCM_CHAR_NFOLLOWS((unsigned char)*input) + 1;
             }
             continue;
         case RE_SET:
