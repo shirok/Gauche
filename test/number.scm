@@ -563,4 +563,153 @@
 (test "inexact mod inexact -> inexact" (m-result 1113.0 26240.0 #f)
       (lambda () (m-tester 3735928559.0 27353.0)))
 
+;;------------------------------------------------------------------
+(test-section "logical operations")
+
+(test "ash (fixnum)" #x408000           ;fixnum
+      (lambda () (ash #x81 15)))
+(test "ash (fixnum)" #x81
+      (lambda () (ash #x408000 -15)))
+(test "ash (fixnum)" #x01
+      (lambda () (ash #x408000 -22)))
+(test "ash (fixnum)" 0
+      (lambda () (ash #x408000 -23)))
+(test "ash (fixnum)" 0
+      (lambda () (ash #x408000 -24)))
+(test "ash (fixnum)" 0
+      (lambda () (ash #x408000 -100)))
+(test "ash (fixnum)" #x81
+      (lambda () (ash #x81 0)))
+(test "ash (neg. fixnum)" (- #x408000)  ;negative fixnum
+      (lambda () (ash (- #x81) 15)))
+(test "ash (neg. fixnum)" (- #x81)      ;nagative fixnum
+      (lambda () (ash (- #x408000) -15)))
+(test "ash (fixnum)" -2
+      (lambda () (ash (- #x408000) -22)))
+(test "ash (fixnum)" -1
+      (lambda () (ash (- #x408000) -23)))
+(test "ash (fixnum)" -1
+      (lambda () (ash (- #x408000) -24)))
+(test "ash (fixnum)" -1
+      (lambda () (ash (- #x408000) -100)))
+(test "ash (fixnum)" (- #x408000)
+      (lambda () (ash (- #x408000) 0)))
+
+(test "ash (fixnum->bignum)" #x81000000
+      (lambda () (ash #x81 24)))
+(test "ash (fixnum->bignum)" #x4080000000
+      (lambda () (ash #x81 31)))
+(test "ash (fixnum->bignum)" #x8100000000
+      (lambda () (ash #x81 32)))
+(test "ash (fixnum->bignum)" #x8100000000000000
+      (lambda () (ash #x81 56)))
+(test "ash (fixnum->bignum)" #x408000000000000000
+      (lambda () (ash #x81 63)))
+(test "ash (fixnum->bignum)" #x810000000000000000
+      (lambda () (ash #x81 64)))
+(test "ash (neg.fixnum->bignum)" (- #x81000000)
+      (lambda () (ash (- #x81) 24)))
+(test "ash (neg.fixnum->bignum)" (- #x4080000000)
+      (lambda () (ash (- #x81) 31)))
+(test "ash (neg.fixnum->bignum)" (- #x8100000000)
+      (lambda () (ash (- #x81) 32)))
+(test "ash (neg.fixnum->bignum)" (- #x8100000000000000)
+      (lambda () (ash (- #x81) 56)))
+(test "ash (neg.fixnum->bignum)" (- #x408000000000000000)
+      (lambda () (ash (- #x81) 63)))
+(test "ash (neg.fixnum->bignum)" (- #x810000000000000000)
+      (lambda () (ash (- #x81) 64)))
+
+(test "ash (bignum->fixnum)" #x81
+      (lambda () (ash  #x81000000 -24)))
+(test "ash (bignum->fixnum)" #x40
+      (lambda () (ash  #x81000000 -25)))
+(test "ash (bignum->fixnum)" 1
+      (lambda () (ash  #x81000000 -31)))
+(test "ash (bignum->fixnum)" 0
+      (lambda () (ash  #x81000000 -32)))
+(test "ash (bignum->fixnum)" 0
+      (lambda () (ash  #x81000000 -100)))
+(test "ash (bignum->fixnum)" #x81
+      (lambda () (ash #x4080000000 -31)))
+(test "ash (bignum->fixnum)" #x81
+      (lambda () (ash #x8100000000 -32)))
+(test "ash (bignum->fixnum)" #x40
+      (lambda () (ash #x8100000000 -33)))
+(test "ash (bignum->fixnum)" 1
+      (lambda () (ash #x8100000000 -39)))
+(test "ash (bignum->fixnum)" 0
+      (lambda () (ash #x8100000000 -40)))
+(test "ash (bignum->fixnum)" 0
+      (lambda () (ash #x8100000000 -100)))
+(test "ash (bignum->fixnum)" #x81
+      (lambda () (ash #x8100000000000000 -56)))
+(test "ash (bignum->fixnum)" #x81
+      (lambda () (ash #x408000000000000000 -63)))
+(test "ash (bignum->fixnum)" #x40
+      (lambda () (ash #x408000000000000000 -64)))
+(test "ash (bignum->fixnum)" #x20
+      (lambda () (ash #x408000000000000000 -65)))
+(test "ash (bignum->fixnum)" 1
+      (lambda () (ash #x408000000000000000 -70)))
+(test "ash (bignum->fixnum)" 0
+      (lambda () (ash #x408000000000000000 -71)))
+(test "ash (bignum->fixnum)" 0
+      (lambda () (ash #x408000000000000000 -100)))
+
+(test "ash (neg.bignum->fixnum)" (- #x81)
+      (lambda () (ash (- #x81000000) -24)))
+(test "ash (neg.bignum->fixnum)" (- #x41)
+      (lambda () (ash (- #x81000000) -25)))
+(test "ash (neg.bignum->fixnum)" (- #x21)
+      (lambda () (ash (- #x81000000) -26)))
+(test "ash (neg.bignum->fixnum)" -2
+      (lambda () (ash (- #x81000000) -31)))
+(test "ash (neg.bignum->fixnum)" -1
+      (lambda () (ash (- #x81000000) -32)))
+(test "ash (neg.bignum->fixnum)" -1
+      (lambda () (ash (- #x81000000) -33)))
+(test "ash (neg.bignum->fixnum)" -1
+      (lambda () (ash (- #x81000000) -100)))
+(test "ash (neg.bignum->fixnum)" (- #x81)
+      (lambda () (ash (- #x4080000000) -31)))
+(test "ash (neg.bignum->fixnum)" (- #x41)
+      (lambda () (ash (- #x4080000000) -32)))
+(test "ash (neg.bignum->fixnum)" (- #x21)
+      (lambda () (ash (- #x4080000000) -33)))
+(test "ash (neg.bignum->fixnum)" -2
+      (lambda () (ash (- #x4080000000) -38)))
+(test "ash (neg.bignum->fixnum)" -1
+      (lambda () (ash (- #x4080000000) -39)))
+(test "ash (neg.bignum->fixnum)" -1
+      (lambda () (ash (- #x4080000000) -100)))
+(test "ash (neg.bignum->fixnum)" (- #x81)
+      (lambda () (ash (- #x408000000000000000) -63)))
+(test "ash (neg.bignum->fixnum)" (- #x41)
+      (lambda () (ash (- #x408000000000000000) -64)))
+(test "ash (neg.bignum->fixnum)" (- #x21)
+      (lambda () (ash (- #x408000000000000000) -65)))
+(test "ash (neg.bignum->fixnum)" -2
+      (lambda () (ash (- #x408000000000000000) -70)))
+(test "ash (neg.bignum->fixnum)" -1
+      (lambda () (ash (- #x408000000000000000) -71)))
+(test "ash (neg.bignum->fixnum)" -1
+      (lambda () (ash (- #x408000000000000000) -72)))
+
+(test "ash (bignum->bignum)" #x12345678123456780
+      (lambda () (ash #x1234567812345678 4)))
+(test "ash (bignum->bignum)" #x1234567812345678000000000000000
+      (lambda () (ash #x1234567812345678 60)))
+(test "ash (bignum->bignum)" #x12345678123456780000000000000000
+      (lambda () (ash #x1234567812345678 64)))
+(test "ash (bignum->bignum)" #x123456781234567
+      (lambda () (ash #x1234567812345678 -4)))
+(test "ash (bignum->bignum)" #x12345678
+      (lambda () (ash #x1234567812345678 -32)))
+(test "ash (neg.bignum->bignum)" (- #x123456781234568)
+      (lambda () (ash (- #x1234567812345678) -4)))
+(test "ash (bignum->bignum)" (- #x12345679)
+      (lambda () (ash (- #x1234567812345678) -32)))
+
+
 (test-end)
