@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.19 2001-06-17 09:32:19 shirok Exp $
+ *  $Id: proc.c,v 1.20 2001-06-17 22:05:20 shirok Exp $
  */
 
 #include "gauche.h"
@@ -284,12 +284,14 @@ ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter, int lock)
     if (proc->locked) {
         Scm_Error("can't change the locked setter of procedure %S", proc);
     }
+#if 0 /* this doesn't work weel for generic functions
     /* check setter can get at least one more argument than proc */
-    if ((SCM_PROCEDURE_OPTIONAL(proc) && !SCM_PROCEDURE_OPTIONAL(setter))
-        || (SCM_PROCEDURE_REQUIRED(proc) >= SCM_PROCEDURE_REQUIRED(setter))) {
+    if (!SCM_PROCEDURE_OPTIONAL(setter)
+        && (SCM_PROCEDURE_REQUIRED(proc) >= SCM_PROCEDURE_REQUIRED(setter))) {
         Scm_Error("procedure %S takes too few arguments to be a setter of procedure %S",
                   setter, proc);
     }
+#endif
     proc->setter = SCM_OBJ(setter);
     proc->locked = lock;
     return SCM_OBJ(proc);

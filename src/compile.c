@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.50 2001-04-22 07:29:54 shiro Exp $
+ *  $Id: compile.c,v 1.51 2001-06-17 22:05:20 shirok Exp $
  */
 
 #include "gauche.h"
@@ -591,9 +591,40 @@ static ScmObj compile_set(ScmObj form,
     location = SCM_CAR(tail);
     expr = SCM_CADR(tail);
 
-    /* TODO: support generalized set! */
     if (SCM_PAIRP(location)) {
-        Scm_Error("generalized set! not supported (yet): %S", form);
+        /* generalized set!
+         * (set (proc args ...) value) => ((setter proc) args ... value)
+         */
+        /* TODO: inline known setters */
+        ScmObj args;
+        int nargs = 0;
+        SCM_FOR_EACH(args, SCM_CDR(location)) {
+            ScmObj arg = compile_int(SCM_CAR(args), env, SCM_COMPILE_NORMAL);
+            ADDCODE(arg);
+            ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+            nargs++;
+        }
+        if (!SCM_NULLP(args))
+            Scm_Error("syntax error for generalized set! location: %S", form);
+        ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
+        ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+        nargs++;
+        ADDCODE(compile_int(SCM_CAR(location), env, SCM_COMPILE_NORMAL));
+        ADDCODE1(SCM_VM_INSN(SCM_VM_SETTER));
+
+        ADDCODE1(((ctx == SCM_COMPILE_TAIL)?
+                  SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
+                  SCM_VM_INSN1(SCM_VM_CALL, nargs)));
+        
+        if (!(Scm_VM()->compilerFlags & SCM_COMPILE_NOSOURCE))
+            ADDCODE1(Scm_MakeSourceInfo(form, NULL));
+
+        if (ctx == SCM_COMPILE_TAIL) {
+            code = Scm_Cons(SCM_VM_INSN(SCM_VM_PRE_TAIL), code);
+        } else {
+            code = SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL), code);
+        }
+        return code;
     }
     if (!VAR_P(location)) {
         Scm_Error("syntax error: %S", form);

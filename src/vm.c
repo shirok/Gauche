@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.80 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: vm.c,v 1.81 2001-06-17 22:05:20 shirok Exp $
  */
 
 #include "gauche.h"
@@ -908,6 +908,13 @@ static void run_loop()
             CASE(SCM_VM_PROMISE) {
                 SAVE_REGS();
                 val0 = Scm_MakePromise(val0);
+                continue;
+            }
+            CASE(SCM_VM_SETTER) {
+                SAVE_REGS();
+                if (!SCM_PROCEDUREP(val0))
+                    VM_ERR(("procedure required, but got %S\n", val0));
+                val0 = Scm_Setter(SCM_PROCEDURE(val0));
                 continue;
             }
             CASE(SCM_VM_VEC) {

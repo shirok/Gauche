@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.31 2001-05-22 20:28:52 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.32 2001-06-17 22:05:20 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -164,10 +164,16 @@
        (let-optional* next-arg ?more . ?body)))
     ))
 
+;; srfi-17
+(define (getter-with-setter get set)
+  (let ((proc (lambda x (apply get x))))
+    (set! (setter proc) set)
+    proc))
+
 ;;
 ;; Load object system
 ;;
-(require "srfi-17")                     ;generalized set!
+
 (require "gauche/object")
 
 ;;

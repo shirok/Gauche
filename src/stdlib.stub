@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.61 2001-06-17 09:30:59 shirok Exp $
+;;; $Id: stdlib.stub,v 1.62 2001-06-17 22:05:20 shirok Exp $
 ;;;
 
 
@@ -387,14 +387,14 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc car (obj)
   (inliner "SCM_VM_CAR")
   (assert (pair? obj))
-  (setter set-car!)
-  "  SCM_RETURN(SCM_CAR(obj));")
+  "  SCM_RETURN(SCM_CAR(obj));"
+  (setter set-car!))
 
 (define-cproc cdr (obj)
   (inliner "SCM_VM_CDR")
   (assert (pair? obj))
-  (setter set-cdr!)
-  "  SCM_RETURN(SCM_CDR(obj));")
+  "  SCM_RETURN(SCM_CDR(obj));"
+  (setter set-cdr!))
 
 (define-cproc set-car! (obj value)
   (assert (pair? obj))
@@ -406,34 +406,68 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  SCM_SET_CDR(obj, value);
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc caar (obj)    "SCM_RETURN(Scm_Caar(obj));")
-(define-cproc cadr (obj)    "SCM_RETURN(Scm_Cadr(obj));")
-(define-cproc cdar (obj)    "SCM_RETURN(Scm_Cdar(obj));")
-(define-cproc cddr (obj)    "SCM_RETURN(Scm_Cddr(obj));")
-(define-cproc caaar (obj)   "SCM_RETURN(Scm_Caaar(obj));")
-(define-cproc caadr (obj)   "SCM_RETURN(Scm_Caadr(obj));")
-(define-cproc cadar (obj)   "SCM_RETURN(Scm_Cadar(obj));")
-(define-cproc caddr (obj)   "SCM_RETURN(Scm_Caddr(obj));")
-(define-cproc cdaar (obj)   "SCM_RETURN(Scm_Cdaar(obj));")
-(define-cproc cdadr (obj)   "SCM_RETURN(Scm_Cdadr(obj));")
-(define-cproc cddar (obj)   "SCM_RETURN(Scm_Cddar(obj));")
-(define-cproc cdddr (obj)   "SCM_RETURN(Scm_Cdddr(obj));")
-(define-cproc caaaar (obj)  "SCM_RETURN(Scm_Caaaar(obj));")
-(define-cproc caaadr (obj)  "SCM_RETURN(Scm_Caaadr(obj));")
-(define-cproc caadar (obj)  "SCM_RETURN(Scm_Caadar(obj));")
-(define-cproc caaddr (obj)  "SCM_RETURN(Scm_Caaddr(obj));")
-(define-cproc cadaar (obj)  "SCM_RETURN(Scm_Cadaar(obj));")
-(define-cproc cadadr (obj)  "SCM_RETURN(Scm_Cadadr(obj));")
-(define-cproc caddar (obj)  "SCM_RETURN(Scm_Caddar(obj));")
-(define-cproc cadddr (obj)  "SCM_RETURN(Scm_Cadddr(obj));")
-(define-cproc cdaaar (obj)  "SCM_RETURN(Scm_Cdaaar(obj));")
-(define-cproc cdaadr (obj)  "SCM_RETURN(Scm_Cdaadr(obj));")
-(define-cproc cdadar (obj)  "SCM_RETURN(Scm_Cdadar(obj));")
-(define-cproc cdaddr (obj)  "SCM_RETURN(Scm_Cdaddr(obj));")
-(define-cproc cddaar (obj)  "SCM_RETURN(Scm_Cddaar(obj));")
-(define-cproc cddadr (obj)  "SCM_RETURN(Scm_Cddadr(obj));")
-(define-cproc cdddar (obj)  "SCM_RETURN(Scm_Cdddar(obj));")
-(define-cproc cddddr (obj)  "SCM_RETURN(Scm_Cddddr(obj));")
+"#define CXR_SETTER(PRE, pre, tail) \\
+  ScmObj cell = Scm_C##tail##r(obj); \\
+  if (!SCM_PAIRP(cell)) Scm_Error(\"can't set c\" #pre #tail \"r of %S\", obj); \\
+  SCM_SET_C##PRE##R(cell, value); SCM_RETURN(SCM_UNDEFINED);
+"
+
+(define-cproc caar (obj)    "SCM_RETURN(Scm_Caar(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, a);"))
+(define-cproc cadr (obj)    "SCM_RETURN(Scm_Cadr(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, d);"))
+(define-cproc cdar (obj)    "SCM_RETURN(Scm_Cdar(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, a);"))
+(define-cproc cddr (obj)    "SCM_RETURN(Scm_Cddr(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, d);"))
+(define-cproc caaar (obj)   "SCM_RETURN(Scm_Caaar(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, aa);"))
+(define-cproc caadr (obj)   "SCM_RETURN(Scm_Caadr(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, ad);"))
+(define-cproc cadar (obj)   "SCM_RETURN(Scm_Cadar(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, da);"))
+(define-cproc caddr (obj)   "SCM_RETURN(Scm_Caddr(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, dd);"))
+(define-cproc cdaar (obj)   "SCM_RETURN(Scm_Cdaar(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, aa);"))
+(define-cproc cdadr (obj)   "SCM_RETURN(Scm_Cdadr(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, ad);"))
+(define-cproc cddar (obj)   "SCM_RETURN(Scm_Cddar(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, da);"))
+(define-cproc cdddr (obj)   "SCM_RETURN(Scm_Cdddr(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, dd);"))
+(define-cproc caaaar (obj)  "SCM_RETURN(Scm_Caaaar(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, aaa);"))
+(define-cproc caaadr (obj)  "SCM_RETURN(Scm_Caaadr(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, aad);"))
+(define-cproc caadar (obj)  "SCM_RETURN(Scm_Caadar(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, ada);"))
+(define-cproc caaddr (obj)  "SCM_RETURN(Scm_Caaddr(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, add);"))
+(define-cproc cadaar (obj)  "SCM_RETURN(Scm_Cadaar(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, daa);"))
+(define-cproc cadadr (obj)  "SCM_RETURN(Scm_Cadadr(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, dad);"))
+(define-cproc caddar (obj)  "SCM_RETURN(Scm_Caddar(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, dda);"))
+(define-cproc cadddr (obj)  "SCM_RETURN(Scm_Cadddr(obj));"
+  (setter (obj value)       "CXR_SETTER(A, a, ddd);"))
+(define-cproc cdaaar (obj)  "SCM_RETURN(Scm_Cdaaar(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, aaa);"))
+(define-cproc cdaadr (obj)  "SCM_RETURN(Scm_Cdaadr(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, aad);"))
+(define-cproc cdadar (obj)  "SCM_RETURN(Scm_Cdadar(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, ada);"))
+(define-cproc cdaddr (obj)  "SCM_RETURN(Scm_Cdaddr(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, add);"))
+(define-cproc cddaar (obj)  "SCM_RETURN(Scm_Cddaar(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, daa);"))
+(define-cproc cddadr (obj)  "SCM_RETURN(Scm_Cddadr(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, dad);"))
+(define-cproc cdddar (obj)  "SCM_RETURN(Scm_Cdddar(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, dda);"))
+(define-cproc cddddr (obj)  "SCM_RETURN(Scm_Cddddr(obj));"
+  (setter (obj value)       "CXR_SETTER(D, d, ddd);"))
 
 (define-cproc null? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_NULLP(obj)));")

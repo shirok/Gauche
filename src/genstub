@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.41 2001-06-17 09:30:31 shirok Exp $
+;;;  $Id: genstub,v 1.42 2001-06-17 22:05:20 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -358,12 +358,31 @@
                  (error "unknown body form: ~s" form)))))))
 
 (define-method process-setter ((cproc <cproc>) decl)
-  (if (symbol? (car decl))
-      (begin (set! (setter-of cproc) (car decl))
-             (set! (setter-c-name-of cproc)
-                   (get-c-name *file-prefix* (car decl))))
-      (error "anonymous setter not supported yet: ~s" decl)))
-
+  (cond
+   ((symbol? (car decl))
+    (set! (setter-of cproc) (car decl))
+    (set! (setter-c-name-of cproc) (get-c-name *file-prefix* (car decl))))
+   ((< (length decl) 2)
+    (error "bad form of anonymous setter: ~s" `(setter ,decl)))
+   (else
+    (receive (args nreqs nopts rest?)
+        (process-cproc-args (car decl))
+      (let ((setter (make <cproc>
+                      :scheme-name `(setter ,(scheme-name-of cproc))
+                      :c-name (string-append (c-name-of cproc) "_SETTER")
+                      :args args
+                      :num-reqargs nreqs
+                      :num-optargs nopts
+                      :have-rest-arg? rest?)))
+        (set! (setter-of cproc) setter)
+        (set! (setter-c-name-of cproc) (c-name-of setter))
+        (set! (keyword-args-of setter)
+              (filter (lambda (x) (eqv? (category-of x) :keyword)) args))
+        (process-body setter (cdr decl))
+        (emit-definition setter)
+        (emit-inliner setter)
+        (emit-record setter)))
+    )))
 
 ;;; emit code
 
@@ -394,9 +413,10 @@
   )
 
 (define-method emit-initializer ((cproc <cproc>))
-  (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
-           (symbol->string (scheme-name-of cproc))
-           (c-name-of cproc))
+  (when (symbol? (scheme-name-of cproc))
+    (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
+             (symbol->string (scheme-name-of cproc))
+             (c-name-of cproc)))
   (when (setter-of cproc)
     (println "  Scm_SetterSet(SCM_PROCEDURE(&~a_STUB), SCM_PROCEDURE(&~a_STUB), TRUE);"
              (c-name-of cproc)
@@ -505,7 +525,7 @@
     ))
 
 (define (emit-record cproc)
-  (let* ((scm-func-name (symbol->string (scheme-name-of cproc)))
+  (let* ((scm-func-name (ensure-string (scheme-name-of cproc)))
          (c-func-name (c-name-of cproc)))
     (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
              c-func-name
