@@ -722,7 +722,7 @@
 (test "100" number->string 100)
 (test "100" number->string 256 16)
 (test 100 string->number "100")
-;XX;(test 256 string->number "100" 16)
+(test 256 string->number "100" 16)
 (test #f string->number "")
 (test #f string->number ".")
 (test #f string->number "d")
