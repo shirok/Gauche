@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.13 2001-03-10 09:57:42 shiro Exp $
+ *  $Id: main.c,v 1.14 2001-03-11 09:45:13 shiro Exp $
  */
 
 #include <unistd.h>
@@ -39,7 +39,12 @@ int main(int argc, char **argv)
     if (!enable_inline) Scm_VM()->enableInline = FALSE;
 
     if (optind < argc) {
-        /* file name passed. */
+        ScmObj av = SCM_NIL, at;
+        int ac;
+        for (ac = optind+1; ac < argc; ac++) {
+            SCM_APPEND1(av, at, Scm_MakeString(argv[ac], -1, -1));
+        }
+        SCM_DEFINE(Scm_UserModule(), "*argv*", av);
         Scm_Load(argv[optind]);
         exit(0);
     }
