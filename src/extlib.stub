@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.90 2001-06-04 02:25:15 shirok Exp $
+;;; $Id: extlib.stub,v 1.91 2001-06-07 07:10:05 shirok Exp $
 ;;;
 
 "
@@ -467,6 +467,20 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   if (!SCM_REGMATCHP(match))
     Scm_Error(\"regexp match object required, but got %S\", match);
   SCM_RETURN(Scm_RegMatchEnd(SCM_REGMATCH(match), i));")
+
+(define-cproc rxmatch-before (match &optional (i 0))
+  (assert (small-integer? i))
+  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
+  if (!SCM_REGMATCHP(match))
+    Scm_Error(\"regexp match object required, but got %S\", match);
+  SCM_RETURN(Scm_RegMatchBefore(SCM_REGMATCH(match), i));")
+
+(define-cproc rxmatch-after (match &optional (i 0))
+  (assert (small-integer? i))
+  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
+  if (!SCM_REGMATCHP(match))
+    Scm_Error(\"regexp match object required, but got %S\", match);
+  SCM_RETURN(Scm_RegMatchAfter(SCM_REGMATCH(match), i));")
 
 (define-cproc %regexp-dump (rx)
   "  if (!SCM_REGEXPP(rx)) Scm_Error(\"regexp required, but got %S\", rx);
