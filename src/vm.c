@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.15 2001-01-31 11:55:17 shiro Exp $
+ *  $Id: vm.c,v 1.16 2001-02-01 08:17:12 shiro Exp $
  */
 
 #include "gauche.h"
@@ -195,6 +195,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 #define PUSH_ENV_HDR()                          \
     do {                                        \
         argp = (ScmEnvFrame*)sp;                \
+        argp->up   = NULL;                      \
         argp->info = SCM_FALSE;                 \
         argp->size = 0;     /*patched later*/   \
         sp += ENV_HDR_SIZE;                     \
@@ -353,7 +354,7 @@ static void run_loop()
     int nvals;                  /* # of values */
     
     for (;;) {
-        SAVE_REGS(); Scm_VMDump(vm);
+/*        SAVE_REGS(); Scm_VMDump(vm);*/
         
         if (!SCM_PAIRP(pc)) {
             /* We are at the end of procedure.  Activate the most recent
@@ -362,6 +363,24 @@ static void run_loop()
                 SAVE_REGS();
                 return; /* no more continuations */
             }
+            if (cont->argp == NULL) {
+                /* C continuation */
+                void *data[SCM_CCONT_DATA_SIZE];
+                ScmObj (*after)(ScmObj, void**);
+
+                memcpy(data,
+                       (ScmObj*)cont + CONT_FRAME_SIZE,
+                       cont->size * sizeof(void*));
+                after = (ScmObj (*)(ScmObj, void**))cont->pc;
+                sp = (ScmObj*)cont;
+                cont = cont->prev;
+                env = cont->env;
+                SAVE_REGS();
+                val0 = after(val0, data);
+                RESTORE_REGS();
+                continue;
+            }
+            
             POP_CONT();
             continue;
         }
@@ -418,14 +437,13 @@ static void run_loop()
                     argp = (ScmEnvFrame*)to;
                     sp = to + ENV_SIZE(argcnt);
                 }
-                
+
                 if (SCM_SUBRP(val0)) {
                     env = argp;
                     SAVE_REGS();
                     val0 = SCM_SUBR(val0)->func(argp->data, argcnt,
                                                 SCM_SUBR(val0)->data);
                     RESTORE_REGS();
-                    pc = SCM_NIL;
                 } else {
                     env = argp;
                     env->up = SCM_CLOSURE(val0)->env;
@@ -480,11 +498,17 @@ static void run_loop()
             }
         case SCM_VM_TAILBIND:
             {
+                /* TODO: concrete implementation of frame shifting */
                 int nlocals = SCM_VM_INSN_ARG(code);
-                ScmObj info, arg;
+                ScmObj info;
 
-                SAVE_REGS();
-                Scm_Error("TAILBIND not supported");
+                FETCH_INSN(info); /* discard it */
+                argp->size = env->size;
+                argp->up = env->up;
+                argp->info = env->info;
+                env = argp;
+                fprintf(stderr, "***********************************\n");
+                Scm_VMDump(theVM);
                 continue;
             }
         case SCM_VM_LET:
@@ -587,18 +611,28 @@ static void run_loop()
             /* Inlined procedures */
         case SCM_VM_NOT:
             {
+                val0 = SCM_MAKE_BOOL(SCM_FALSEP(val0));
                 continue;
             }
         case SCM_VM_CONS:
             {
+                ScmObj ca;
+                POP_ARG(ca);
+                val0 = Scm_Cons(ca, val0);
                 continue;
             }
         case SCM_VM_CAR:
             {
+                if (!SCM_PAIRP(val0))
+                    VM_ERR(("pair required, but got %S", val0));
+                val0 = SCM_CAR(val0);
                 continue;
             }
         case SCM_VM_CDR:
             {
+                if (!SCM_PAIRP(val0))
+                    VM_ERR(("pair required, but got %S", val0));
+                val0 = SCM_CDR(val0);
                 continue;
             }
         case SCM_VM_LIST:
@@ -615,10 +649,16 @@ static void run_loop()
             }
         case SCM_VM_EQV:
             {
+                ScmObj item;
+                POP_ARG(item);
+                val0 = Scm_EqvP(item, val0);
                 continue;
             }
         case SCM_VM_MEMV:
             {
+                ScmObj item;
+                POP_ARG(item);
+                val0 = Scm_Memv(item, val0);
                 continue;
             }
         case SCM_VM_APPEND:
@@ -673,6 +713,7 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
     }
     SCM_APPEND1(code, tail, proc);
     SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, numargs));
+    argp = (ScmEnvFrame *)sp;
     PUSH_CONT(code);
     SAVE_REGS();
 }
@@ -721,12 +762,8 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
     DECL_REGS;
     ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-    /* push dummy continuation and env, to be popped up on
-       return of the current subr.
-       TODO: need to think out clearer control. */
+    argp = (ScmEnvFrame *)sp;
     PUSH_CONT(v);
-    PUSH_ENV_HDR();
-    env = argp = (ScmEnvFrame *)(sp - ENV_HDR_SIZE);
     SAVE_REGS();
     return SCM_UNDEFINED;
 }
@@ -761,18 +798,20 @@ ScmClass Scm_CContClass = {
 void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
                   void **data, int datasize)
 {
-    /* TODO: allocate CC on stack frame? */
-    ScmCContinuation *cc = SCM_NEW(ScmCContinuation);
-    int i = 0;
-    
-    cc->hdr.klass = &Scm_CContClass;
-    cc->func = after;
-
-    for (i=0; i<datasize && i<SCM_CCONT_DATA_SIZE; i++) {
-        cc->data[i] = data[i];
+    DECL_REGS;
+    int i;
+    ScmContFrame *cc = (ScmContFrame*)sp;
+    sp += CONT_FRAME_SIZE;
+    cc->prev = cont;
+    cc->argp = NULL;
+    cc->size = datasize;
+    cc->pc = SCM_OBJ(after);
+    cc->env = env;
+    for (i=0; i<datasize; i++) {
+        PUSH_ARG(SCM_OBJ(data[i]));
     }
-
-    theVM->pc = Scm_Cons(SCM_OBJ(cc), theVM->pc);
+    cont = cc;
+    SAVE_REGS();
 }
 
 /*=================================================================
@@ -1168,7 +1207,11 @@ void Scm_VMDump(ScmVM *vm)
         Scm_Printf(out, "   %p\n", cont);
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             argp = %p[%d]\n", cont->argp, cont->size);
-        Scm_Printf(out, "               pc = %50.1S\n", cont->pc);
+        if (cont->argp) {
+            Scm_Printf(out, "               pc = %50.1S\n", cont->pc);
+        } else {
+            Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
+        }
         cont = cont->prev;
     }
 
