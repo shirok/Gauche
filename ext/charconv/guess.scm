@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: guess.scm,v 1.1 2002-06-11 14:07:08 shirok Exp $
+;;;  $Id: guess.scm,v 1.2 2002-06-12 10:45:40 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -27,6 +27,7 @@
 ;; <score> : real
 ;; <input-set> : (<byte-or-range> ...)
 ;; <byte-or-range> : <byte> | (<byte> <byte>)
+;; <byte> : integer between 0 and #xff | ASCII char
 ;;
 ;; When evaluated, the DFA generates a state transition table in
 ;; C source format.
@@ -37,11 +38,11 @@
    (instances :allocation :class  :init-value '())))
 
 (define-class <state> ()
-  ((name      :init-keyword :name      :accessor name-of)
-   (index     :init-keyword :index     :accessor index-of)
-   (branches  :init-keyword :branches  :getter branches-of :init-value '())))
+  ((name    :init-keyword :name   :accessor name-of)
+   (index   :init-keyword :index  :accessor index-of)
+   (arcs    :init-keyword :arcs   :accessor arcs-of :init-value '())))
 
-(define-class <branch> ()
+(define-class <arc> ()
   ((from-state :init-keyword :from-state :accessor from-state-of)
    (to-state   :init-keyword :to-state   :accessor to-state-of)
    (ranges     :init-keyword :ranges     :accessor ranges-of)
@@ -68,62 +69,77 @@
                      state-defs
                      (iota (length state-defs)))))
     (fold (lambda (s d i)
-            (let1 num-branches (length (cdr d))
-              (set! (ref s 'branches)
-                    (map (lambda (branch bindex)
-                           (make <branch>
+            (let1 num-arcs (length (cdr d))
+              (set! (arcs-of s)
+                    (map (lambda (arc aindex)
+                           (make <arc>
                              :from-state s
                              :to-state (or (find (lambda (e)
-                                                   (eq? (name-of e) (cadr branch)))
+                                                   (eq? (name-of e) (cadr arc)))
                                                  states)
-                                           (error "no such state" (cadr branch)))
-                             :ranges (car branch)
-                             :index bindex
-                             :score (caddr branch)))
+                                           (error "no such state" (cadr arc)))
+                             :ranges (car arc)
+                             :index aindex
+                             :score (caddr arc)))
                          (cdr d)
-                         (iota num-branches i)))
-              (+ i num-branches)))
+                         (iota num-arcs i)))
+              (+ i num-arcs)))
           0
           states state-defs)
     states))
 
 ;; Emit state table
 (define (emit-dfa-table dfa)
-  (format #t "static unsigned char guess_st_~a[][256] = {\n" (name-of dfa))
+  (format #t "static signed char guess_~a_st[][256] = {\n" (name-of dfa))
   (for-each emit-state-table (states-of dfa))
-  (print "}\n")
-  (format #t "static guess_branch guess_br_~a[] = {\n" (name-of dfa))
-  (for-each emit-branch-table
-            (append-map branches-of (states-of dfa)))
-  (print "}\n")
+  (print "};\n")
+  (format #t "static guess_arc guess_~a_ar[] = {\n" (name-of dfa))
+  (for-each emit-arc-table
+            (append-map arcs-of (states-of dfa)))
+  (print "};\n")
   )
 
 (define (emit-state-table state)
-  (let1 branch-vec (make-vector 256 -1)
-    (dolist (br (branches-of state))
+  (define (b2i byte)                    ;byte->integer
+    (if (char? byte) (char->integer byte) byte))
+  (let1 arc-vec (make-vector 256 -1)
+    (dolist (br (arcs-of state))
       (dolist (range (ranges-of br))
         (if (pair? range)
-            (vector-fill! branch-vec (index-of br) (car range) (+ (cadr range) 1))
-            (set! (ref branch-vec range) (index-of br)))))
+            (vector-fill! arc-vec (index-of br)
+                          (b2i (car range)) (+ (b2i (cadr range)) 1))
+            (set! (ref arc-vec (b2i range)) (index-of br)))))
     (format #t " { /* state ~a */" (name-of state))
     (dotimes (i 256)
       (when (zero? (modulo i 16)) (newline))
-      (format #t " ~2d," (ref branch-vec i)))
+      (format #t " ~2d," (ref arc-vec i)))
     (print "\n },")
     ))
 
-(define (emit-branch-table branch)
+(define (emit-arc-table arc)
   (format #t " { ~2d, ~5s }, /* ~a -> ~a */\n"
-          (index-of (to-state-of branch))
-          (score-of branch)
-          (name-of (from-state-of branch))
-          (name-of (to-state-of branch))))
+          (index-of (to-state-of arc))
+          (score-of arc)
+          (name-of (from-state-of arc))
+          (name-of (to-state-of arc))))
 ;;
 ;; main
 ;;
 
 (define (main args)
-  (for-each emit-dfa-table (all-dfas)))
+  (unless (= (length args) 2)
+    (error "usage: ~a <outout-file.c>" (car args)))
+  (with-output-to-file (cadr args)
+    (lambda ()
+      (print "/* State transition table for character code guessing */")
+      (print "/* This file is automatically generated by guess.scm */")
+      (newline)
+      (for-each emit-dfa-table (all-dfas))))
+  0)
+
+;;;============================================================
+;;; DFA definitions
+;;;
 
 ;;;
 ;;; EUC-JP
@@ -187,4 +203,44 @@
    (((#x80 #xbf)) 3byte_more   1.0))
   (5byte_more
    (((#x80 #xbf)) 4byte_more   1.0))
+  )
+
+;;;
+;;; JIS (ISO2022JP)
+;;;
+
+;; NB: for now, we just check the sequence of <ESC> $ or <ESC> '('.
+'(define-dfa jis
+  (init
+   ((#x1b)        esc          1.0)
+   (((#x00 #x1a)  (#x1c #x1f)) init 1.0) ;C0
+   (((#x20 #x7f)) init         1.0)      ;ASCII
+   (((#xa1 #xdf)) init         0.7)      ;JIS8bit kana
+   )
+  (esc
+   ((#x0d #x0a)   init         0.9)      ;cancel
+   ((#\( )        esc-paren    1.0)
+   ((#\$ )        esc-$        1.0)
+   ((#\& )        esc-&        1.0)
+   )
+  (esc-paren
+   ((#\B #\J #\H) init         1.0)
+   ((#\I)         jis0201kana  0.8)
+   )
+  (esc-$
+   ((#\@ #\B)     kanji        1.0)
+   ((#\( )        esc-$-paren  1.0)
+   )
+  (esc-$-paren
+   ((#\D #\O #\P) kanji        1.0))
+  (esc-&
+   ((#\@ )        init         1.0))
+  (jis0201kana
+   ((#x1b)        esc          1.0)
+   (((#x20 #x5f)) jis0201kana  1.0))
+  (kanji
+   ((#x1b)        esc          1.0)
+   (((#x21 #x7e)) kanji-2      1.0))
+  (kanji-2
+   (((#x21 #x7e)) kanji        1.0))
   )
