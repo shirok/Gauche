@@ -1788,6 +1788,7 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 
 @node SRFI-13 General conventions, SRFI-13 String predicates, srfi-13 - String library, srfi-13 - String library
 @subsection General conventions
+@c NODE 一般規約
 
 @c EN
 There are a few common factors in string library API, which I don't
@@ -1897,6 +1898,7 @@ that works from right to left.
 
 @node SRFI-13 String predicates, SRFI-13 String Constructors, SRFI-13 General conventions, srfi-13 - String library
 @subsection String predicates
+@c NODE 文字列についての述語
 
 @defun string-null? s
 @c EN
@@ -1938,6 +1940,7 @@ satisfies @var{char/char-set/pred}, @code{#f} is returned.
 
 @node SRFI-13 String Constructors, SRFI-13 String Selection, SRFI-13 String predicates, srfi-13 - String library
 @subsection String Constructors
+@c NODE 文字列の構築子
 
 @defun string-tabulate proc len
 @c EN
@@ -1964,6 +1967,7 @@ creates a string, whose @var{i}-th character is calculated by
 
 @node SRFI-13 String Selection, SRFI-13 String Comparison, SRFI-13 String Constructors, srfi-13 - String library
 @subsection String selection
+@c NODE 文字列の選択
 
 @defun substring/shared s start &optional end
 @c EN
@@ -2092,6 +2096,7 @@ the substring of @var{s} is used as the source.
 
 @node SRFI-13 String Comparison, SRFI-13 String Prefixes & Suffixes, SRFI-13 String Selection, srfi-13 - String library
 @subsection String comparison
+@c NODE 文字列の色々な比較
 
 @defun string-compare s1 s2 proc< proc= proc> &optional start1 end1 start2 end2
 @defunx string-compare-ci s1 s2 proc< proc= proc> &optional start1 end1 start2 end2
@@ -2123,6 +2128,7 @@ the substring of @var{s} is used as the source.
 
 @node SRFI-13 String Prefixes & Suffixes, SRFI-13 String searching, SRFI-13 String Comparison, srfi-13 - String library
 @subsection String Prefixes & Suffixes
+@c NODE 文字列のプリフィックスとサフィックス
 
 @defun string-prefix-length s1 s2 &optional start1 end1 start2 end2
 @defunx string-suffix-length s1 s2 &optional start1 end1 start2 end2
@@ -2140,6 +2146,7 @@ the substring of @var{s} is used as the source.
 
 @node SRFI-13 String searching, SRFI-13 String case mapping, SRFI-13 String Prefixes & Suffixes, srfi-13 - String library
 @subsection String searching
+@c NODE 文字列の探索
 
 @defun string-index s char/char-set/pred &optional start end
 @defunx string-index-right s char/char-set/pred &optional start end
@@ -2224,6 +2231,7 @@ See also the Gauche built-in procedure @code{string-scan}
 
 @node SRFI-13 String case mapping, SRFI-13 String reverse & append, SRFI-13 String searching, srfi-13 - String library
 @subsection String case mapping
+@c NODE 文字列のケース(大文字小文字)マッピング
 
 @defun string-titlecase s &optional start end
 @defunx string-titlecase! s &optional start end
@@ -2242,6 +2250,7 @@ See also the Gauche built-in procedure @code{string-scan}
 
 @node SRFI-13 String reverse & append, SRFI-13 String mapping, SRFI-13 String case mapping, srfi-13 - String library
 @subsection String reverse & append
+@c NODE 文字列の反転と追加
 
 @defun string-reverse s &optional start end
 @defunx string-reverse! s &optional start end
@@ -2300,6 +2309,7 @@ Gaucheでは、``共有''バージョンは全く同じ動作をします。
 
 @node SRFI-13 String mapping, SRFI-13 String rotation, SRFI-13 String reverse & append, srfi-13 - String library
 @subsection String mapping
+@c NODE 文字列のマッピング
 
 @defun string-map proc s &optional start end
 @defunx string-map! proc s &optional start end
@@ -2346,6 +2356,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 
 @node SRFI-13 String rotation, SRFI-13 other string operations, SRFI-13 String mapping, srfi-13 - String library
 @subsection String rotation
+@c NODE 文字列のローテーション
 
 @defun xsubstring s from &optional to start end
 [SRFI-13]
@@ -2357,6 +2368,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 
 @node SRFI-13 other string operations, SRFI-13 String filtering, SRFI-13 String rotation, srfi-13 - String library
 @subsection Other string operations
+@c NODE 他の文字列操作
 
 @defun string-replace s1 s2 start1 end2 &optional start2 end2
 [SRFI-13]
@@ -2388,6 +2400,7 @@ which provides similar features but different criteria.
 
 @node SRFI-13 String filtering, SRFI-13 Low-level string procedures, SRFI-13 other string operations, srfi-13 - String library
 @subsection String filtering
+@c NODE 文字列のフィルタリング
 
 @defun string-filter s char/char-set/pred &optional start end
 @defunx string-delete s char/char-set/pred &optional start end
@@ -2396,6 +2409,7 @@ which provides similar features but different criteria.
 
 @node SRFI-13 Low-level string procedures,  , SRFI-13 String filtering, srfi-13 - String library
 @subsection Low-level string procedures
+@c NODE 低レベルな文字列に関する手続き
 
 @defun string-parse-start+end proc s args
 @defunx string-parse-final-start+end proc s args
@@ -2453,6 +2467,7 @@ SRFI-14で定義された文字セットライブラリを実装します
 
 @node SRFI-14 Character-set constructors, SRFI-14 Character-set Comparison, srfi-14 - Character-set library, srfi-14 - Character-set library
 @subsection Character-set constructors
+@c NODE 文字セットの構築子
 
 @defun list->char-set char-list &optional base-cs
 @defunx list->char-set! char-list base-cs
@@ -2527,6 +2542,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 
 @node SRFI-14 Character-set Comparison, SRFI-14 Character-set iteration, SRFI-14 Character-set constructors, srfi-14 - Character-set library
 @subsection Character-set comparison
+@c NODE 文字セットの比較
 
 @defun char-set= char-set1 @dots{}
 [SRFI-14]
@@ -2551,6 +2567,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 
 @node SRFI-14 Character-set iteration, SRFI-14 Character-set query, SRFI-14 Character-set Comparison, srfi-14 - Character-set library
 @subsection Character-set iteration
+@c NODE 文字セットのイテレーション
 
 @defun char-set-cursor char-set
 [SRFI-14]
@@ -2611,6 +2628,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 
 @node SRFI-14 Character-set query, SRFI-14 Character-set algebra, SRFI-14 Character-set iteration, srfi-14 - Character-set library
 @subsection Character-set query
+@c NODE 文字セットへの問い合わせ
 
 @defun char-set-size char-set
 [SRFI-14]
@@ -2656,6 +2674,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 
 @node SRFI-14 Character-set algebra, SRFI-14 Predefined character-set, SRFI-14 Character-set query, srfi-14 - Character-set library
 @subsection Character-set algebra
+@c NODE 文字セットに適用できる代数的関数
 
 @defun char-set-adjoin char-set char1 @dots{}
 @defunx char-set-adjoin! char-set char1 @dots{}
@@ -2701,6 +2720,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 
 @node SRFI-14 Predefined character-set,  , SRFI-14 Character-set algebra, srfi-14 - Character-set library
 @subsection Predefined character-set
+@c NODE 定義済みの文字セット
 
 @defvar char-set:letter
 [SRFI-14]

@@ -43,9 +43,11 @@
 @c ----------------------------------------------------------------------
 @node binary.pack - Packing Binary Data, dbm - Generic DBM interface, Library modules - Utilities, Library modules - Utilities
 @section @code{binary.pack} - Packing Binary Data
+@c NODE binary.pack - バイナリデータのパック, @code{dbm} - バイナリデータのパック
 
 @deftp {Module} binary.pack
 @mdindex binary.pack
+@c EN
 This module provides an interface for packing and unpacking (writing
 and reading) binary data with templates.  The functionality was
 inspired largely by the Perl pack/unpack functions, with comparison of
@@ -57,28 +59,60 @@ default behavior is to pack and unpack using port I/O, so you can seek
 in a large file and unpack from it.  Also, templates may be stored as
 dispatch closures to pack, unpack or even skip over values without
 re-parsing the template.
+@c JP
+このモジュールは、バイナリデータをテンプレートを使って
+パック/アンパック(読み書き)するためのインタフェースを提供します。
+この機能は、その多くをPerlのpack/unpack関数から着想し、他の言語での
+同じような機能と比較しながら、しかし、データベースライクな処理に
+便利なように、より一般的でより効率が良くなるように実装しました。
+これを受けて、最も大きな相違点は、全てのパック可能な値はアンパック
+可能で(逆も同様)、パック/アンパックのデフォルトの振る舞いはポートI/Oを
+使うので、巨大なファイルを読みながらそこからアンパックすることが
+できます。また、テンプレートはディスパッチクロージャとして格納でき、
+パック、アンパック、あるいは値のスキップさえも、テンプレートを
+パーズし直すことなく行えます。
+@c COMMON
 
 @c See also binary.io - Binary I/O for utilities to read and write
 @c individual binary values.
 @end deftp
 
 @defun pack template list &keyword :output :to-string?
+@c EN
 Writes the values in @var{list} to the current output port, according
 to the format specified by the string @var{template}.  The template
 string is a series of single character codes, optionally followed by a
 numeric count (which defaults to 1).
+@c JP
+@var{list}にある値を、文字列@var{template}で指定されたフォーマットに
+したがって、現在の出力ポートに書き出します。テンプレート文字列は、
+1文字のコードの連続で、オプションで(デフォルトが1である)カウント用の数字
+が続きます。
 
+@c EN
 The format characters can generally be divided into string types,
 which interpret the count as a string byte size, and object types,
 which treat the count as a repetition indicator.  The count may be
 specified as the character @code{*}, which means to use the full
 size of the string for string types, and use all remaining values for
 object types.
+@c JP
+フォーマット文字は一般的に、カウントを文字のバイト数と解釈する
+文字列型と、カウントを繰り返し指示子と解釈するオブジェクト型に
+分けられます。カウントは文字@code{*}で指定され、文字列型では
+文字列の全体の長さを、オブジェクト型では残りの全ての値を使うことを
+意味します。
 
+@c EN
 Counts may also be specified as a template enclosed in brackets, which
 means the count is the byte size of the enclosed template.  For
 example, @code{x[L]} skips a long.
+@c JP
+カウントは大括弧に囲まれたテンプレートとしても指定でき、その場合
+カウントはその大括弧を囲んでいるテンプレートのバイト数を意味します。
+例えば、@code{x[L]}はlongをスキップします。
 
+@c EN
 The special format character @code{/} may be used to indicate a
 structure where the packed data contains a dynamic count followed by
 the value itself.  The template is written as
@@ -86,105 +120,239 @@ the value itself.  The template is written as
 template character to be interpreted as a numeric count, and
 @code{<value-item>} is any other template character to use this count.
 If a normal count is given after @code{<value-item>} it is ignored.
+@c JP
+特別なフォーマット文字@code{/}は、パックされたデータが、値に続く
+動的なカウント分を含むという構造を表すために使われます。
+テンプレートは、@code{<count-item>/<value-item>}のように書かれ、
+ここでは@code{<count-item>}は数値のカウントと解釈されるいかなる
+テンプレート文字、@code{<value-item>}はこのカウントを使ういかなる
+他のテンプレート文字です。
+@code{<value-item}>の後に通常のカウントが与えられても、無視されます。
 
+@c EN
 The format character @code{@@} may be used with a count to pad to an
 absolute position since the start of the template.
+@c JP
+フォーマット文字@code{@@}は、カウントとともに使われ、テンプレートの
+最初からの絶対位置までパディングします。
 
+@c EN
 Sub-templates may be grouped inside parentheses.  If angle-brackets
 are used, then they also behave as group operators but recursively
 operate on nested lists.
+@c JP
+サブテンプレートは、括弧の中にグループ化されます。<>が使われると、
+ネストされたリストに再帰的に適用されるグループ化オペレータとしても
+振舞います。
 
+@c EN
 The string types:
+@c JP
+文字列型:
 
+@c COMMON
 @table @code
 @item a
+@c EN
 An arbitrary incomplete string, null padded.
+@c JP
+任意の不完全文字列。NULLでパディングされます。
+@c COMMON
 
 @item A
+@c EN
 A text string, space padded.
+@c JP
+テキスト文字列。空白スペースでパディングされます。
+@c COMMON
 
 @item Z
+@c EN
 A null terminated (ASCIZ) string, null padded.
+@c JP
+NULL終端(ASCIZ)文字列。NULLでパディングされます。
+@c COMMON
 
 @item b
+@c EN
 A bit string (ascending bit order inside each byte).
+@c JP
+ビット文字列(それぞれのバイトにおけるビットオーダーは昇順)。
+@c COMMON
 
 @item B
+@c EN
 A bit string (decending bit order inside each byte).
+@c JP
+ビット文字列(それぞれのバイトにおけるビットオーダーは降順)。
+@c COMMON
 
 @item h
+@c EN
 A hex string (low nybble first).
+@c JP
+16進文字列(低いニブルが先)。
+@c COMMON
 
 @item H
+@c EN
 A hex string (high nybble first).
+@c JP
+16進文字列(高いニブルが先)。
+@c COMMON
 @end table
 
+@c EN
 The object types:
+@c JP
+オブジェクト型:
+@c COMMON
 
 @table @code
 @item c
+@c EN
 A single char value.
+@c JP
+1つのchar。
+@c COMMON
 
 @item C
+@c EN
 An unsigned char value, single-byte only.
+@c JP
+符号なしchar。シングルバイトのみ。
+@c COMMON
 
 @item s
+@c EN
 A signed short (16 bit) value.
+@c JP
+符号付きshort(16ビット)。
+@c COMMON
 
 @item S
+@c EN
 An unsigned short (16 bit) value.
+@c JP
+符号なしshort(16ビット)。
+@c COMMON
 
 @item i
+@c EN
 A signed integer (>= 32 bit) value.
+@c JP
+符号付き整数(>= 32ビット)。
+@c COMMON
 
 @item I
+@c EN
 An unsigned integer (>= 32 bit) value.
+@c JP
+符号なし整数(>= 32ビット)。
+@c COMMON
 
 @item l
+@c EN
 A signed long (32 bit) value.
+@c JP
+符号付きlong(32ビット)。
+@c COMMON
 
 @item L
+@c EN
 An unsigned long (32 bit) value.
+@c JP
+符号なしlong(32ビット)。
+@c COMMON
 
 @item n
+@c EN
 An unsigned short (16 bit) in "network" (big-endian) order.
+@c JP
+ネットワークオーダー(ビッグエンディアン)での符号なしshort(16ビット)。
+@c COMMON
 
 @item N
+@c EN
 An unsigned long (32 bit) in "network" (big-endian) order.
+@c JP
+ネットワークオーダー(ビッグエンディアン)での符号なしlong(32ビット)。
+@c COMMON
 
 @item v
+@c EN
 An unsigned short (16 bit) in "VAX" (little-endian) order.
+@c JP
+VAXオーダー(リトルエンディアン)での符号なしshort(16ビット)。
+@c COMMON
 
 @item V
+@c EN
 An unsigned long (32 bit) in "VAX" (little-endian) order.
+@c JP
+VAXオーダー(リトルエンディアン)での符号なしlong(32ビット)。
+@c COMMON
 
 @item q
+@c EN
 A signed quad (64 bit) value.
+@c JP
+符号付きquad(64ビット)。
+@c COMMON
 
 @item Q
+@c EN
 An unsigned quad (64 bit) value.
+@c JP
+符号なしquad(64ビット)。
+@c COMMON
 
 @item f
+@c EN
 A single-precision float in the native format.
+@c JP
+負の単精度float。
+@c COMMON
 
 @item d
+@c EN
 A double-precision float in the native format.
+@c JP
+負の倍精度float。
+@c COMMON
 
 @item w
+@c EN
 A BER compressed integer.  An unsigned integer in base 128, most
 significant digit first, where the high bit is set on all but the
 final (least significant) byte.  Thus any size integer can be encoded,
 but the encoding is efficient and small integers don't take up any
 more space than they would in normal char/short/int encodings.
+@c JP
+BER圧縮された整数。ベース128における符号なし整数で、最も大きな桁が
+最初で、高いビットが最後の(一番小さな)バイト以外にセットされる。
+したがって、どのような大きさの整数もエンコードできるが、
+エンコーディングは効率的で、小さな整数は通常のchar/short/int
+エンコーディングの場合よりも占有する空間が少ない。
+@c COMMON
 
 @item x
+@c EN
 A null byte.
+@c JP
+NULLバイト。
+@c COMMON
 
 @item o
+@c EN
 An sexp, handled with @code{read} and @code{write}.
+@c JP
+S式。@code{read}と@code{write}で扱われる。
+@c COMMON
 
 @end table
 
+@c EN
 If the optional keyword @var{:output} is given that port is used
 instead of the current output port.  If @var{:to-string?} is given and
 true, then pack accumulates and returns the output as a string.
@@ -192,6 +360,12 @@ true, then pack accumulates and returns the output as a string.
 Note that the returned string may be an incomplete string
 if the packed string contains a byte sequence invalid as
 a character sequence.
+@c JP
+オプションのキーワード@var{:output}が与えられると、
+現在の出力ポートの代わりにそのポートが使われます。
+@var{:to-string?}が与えられそれが真である場合は、
+パックは蓄積され、その出力は文字列として返ります。
+@c COMMON
 
 @example
 (pack "CCCC" '(65 66 67 68) :to-string? #t)
@@ -203,15 +377,24 @@ a character sequence.
 @end defun
 
 @defun unpack template &keyword :input :from-string
+@c EN
 The complement of pack, unpack reads values from the current input
 port assuming they've been packed according to the string template and
 returns the values as a list.  unpack accepts the same format strings
 as pack.  Further, the following tautology holds:
+@c JP
+packの逆を行うもので、unpackは現在の入力ポートから、値が文字列の
+templateでパックされているものとして読み込み、その値をリストとして
+返します。unpackはpackと同じフォーマット文字列を受け付けます。
+また、いかなるリスト@var{x}とフォーマット文字列@var{fmt}においても、
+次のようなトートロジーが維持されます。
+@c COMMON
 
 @example
 (equal? x (unpack fmt :from-string (pack fmt x :to-string? #t)))
 @end example
 
+@c EN
 for any list @var{x} and format string @var{fmt}.  The only exceptions
 to this are when the template includes a @code{*} and when the
 @code{o} template is used, since Scheme numeric literals cannot be
@@ -221,6 +404,16 @@ circumvent this by registering a new read syntax).
 If the optional keyword @var{:input} is given that port is used
 instead of the current input port.  If @var{:from-string} is given,
 then pack reads input from that string.
+@c JP
+ただ一つの例外は、テンプレートが@code{*}を含み、@code{o}テンプレートが
+使われている場合です。これは、Schemeの数値リテラルは確実に区切られる
+ことができないからです(@code{pack}の将来のバージョンでは、
+新しいread構文を登録することによってこれは回避されるでしょう)。
+
+オプションのキーワード@{:input}が与えられると、現在の入力ポートの
+代わりにそのポートが使われます。@var{:from-string}が与えられると、
+packはその文字列を入力とします。
+@c COMMON
 
 @example
 (unpack "CCCC" :from-string "ABCD")
@@ -232,40 +425,85 @@ then pack reads input from that string.
 @end defun
 
 @defun unpack-skip template &keyword :input
+@c EN
 unpack-skip is the same as unpack except it does not return the
 values.  In some cases, particulary with fixed-size templates, this
 can be much more efficient when you just want to skip over a value.
+@c JP
+unpack-skipは、値を返さないことを除いてunpackと同じです。
+いくつかのケースでは、特に固定サイズのテンプレートを使うときには、
+単に値を読み飛ばしたいときにより効率的です。
+@c COMMON
 @end defun
 
 @defun make-packer template
+@c EN
 The low-level interface.  This function returns a disptach closure
 that can be used to pack, unpack and skip over the same cached
 template.  The dispatch closure accepts symbol methods as follows:
+@c JP
+低レベルなインタフェースです。この関数は、pack、unpackやキャッシュ
+された同じテンプレートを読み飛ばす時に使われるディスパッチクロージャを
+返します。ディスパッチクロージャは、以下のようにシンボルメソッドを
+受け付けます。
+@c COMMON
 
 @table @code
 @item 'pack list
+@c EN
 pack the items in list to the current output port.
+@c JP
+listにあるアイテムを、現在の出力ポートへpackします。
+@c COMMON
 
 @item 'unpack
+@c EN
 unpack items from the current input port.
+@c JP
+現在の入力ポートからアイテムをunpackします。
+@c COMMON
 
 @item 'skip
+@c EN
 skip items from the current input port.
+@c JP
+現在の入力ポートからのアイテムをスキップします。
+@c COMMON
 
 @item 'packer
+@c EN
 return the cached 'pack closure
+@c JP
+キャッシュされた'packクロージャを返します。
+@c COMMON
 
 @item 'unpacker
+@c EN
 return the cached 'unpack closure.
+@c JP
+キャッシュされた'unpackクロージャを返します。
+@c COMMON
 
 @item 'skipper
+@c EN
 return the cached 'skip closure.
+@c JP
+キャッシュされた'skipクロージャを返します。
+@c COMMON
 
 @item 'length
+@c EN
 return the known fixed length of the template.
+@c JP
+テンプレートの知られている固定された長さを返します。
+@c COMMON
 
 @item 'variable-length?
-return #t iff the template has variable length elements.
+@c EN
+return #t if the template has variable length elements.
+@c JP
+テンプレートが可変長の要素を持っている場合に#tを返します。
+@c COMMON
 @end table
 @end defun
 @c ----------------------------------------------------------------------
@@ -670,6 +908,7 @@ which is returned as a result of @code{dbm-map}.
 @c ----------------------------------------------------------------------
 @node dbm.gdbm - GDBM interface, dbm.ndbm - NDBM interface, dbm - Generic DBM interface, Library modules - Utilities
 @section @code{dbm.gdbm} - GDBM interface
+@c NODE dbm.gdbm - GDBMインタフェース, @code{dbm.gdbm} - GDBMインタフェース
 
 @deftp {Module} dbm.gdbm
 @mdindex dbm.gdbm
@@ -809,6 +1048,7 @@ APIs.
 @c ----------------------------------------------------------------------
 @node dbm.ndbm - NDBM interface, dbm.odbm - Original DBM interface, dbm.gdbm - GDBM interface, Library modules - Utilities
 @section @code{dbm.ndbm} - NDBM interface
+@c NODE dbm.ndbm - NDBMインタフェース, @code{dbm.ndbm} - NDBMインタフェース
 
 @deftp {Module} dbm.ndbm
 @mdindex dbm.ndbm
@@ -871,6 +1111,7 @@ APIs.
 @c ----------------------------------------------------------------------
 @node dbm.odbm - Original DBM interface, file.filter - Filtering file content, dbm.ndbm - NDBM interface, Library modules - Utilities
 @section @code{dbm.odbm} - Original DBM interface
+@c NODE dbm.odbm - オリジナルのDBMインタフェース, @code{dbm.odbm} - オリジナルのDBMインタフェース
 
 @deftp {Module} dbm.odbm
 @mdindex dbm.odbm
@@ -1853,14 +2094,23 @@ e.
 
 @deftp {Module} math.mt-random
 @mdindex math.mt-random
+@c EN
 Provides a pseudo random number generator (RNG) based on 
 "Mersenne Twister" algorithm developed by Makoto Matsumoto and
 Takuji Nishimura.   It is fast, and has huge period of 2^19937-1.
 See @ref{MT,,MT}, for details about the algorithm.
+@c JP
+Makoto MatsumotoとTakuji Nishimuraにより開発された、
+``Mersenne Twister''アルゴリズムに基づく、
+仮想的な乱数発生器(RNG)を提供します。
+高速で、2^19937-1までの範囲を持ちます。
+アルゴリズムの詳細については、@ref{MT,,MT}を参照して下さい。
+@c COMMON
 @end deftp
 
 @deftp {Class} <mersenne-twister>
 @clindex mersenne-twister
+@c EN
 A class to encapsulate the state of Mersenne Twister RNG.
 Each instance of this class has its own state, and can be used
 as an independent source of random bits if initialized
@@ -1869,6 +2119,15 @@ by individual seed.
 The random seed value can be given at the instantiation time
 by @code{:seed} initialization argument, or by using
 @code{mt-random-set-seed!} described below.
+@c JP
+Mersenne Twister RNGの状態をカプセル化するクラスです。
+このクラスのそれぞれのインスタンスは独自の状態を持ち、
+個別のシードで初期化されていれば、それぞれがランダムビットの
+独立したソースになり得ます。
+
+ランダムシードの値は初期化引数@code{:seed}により初期化時に与えるか、
+以下で説明する@code{mt-random-set-seed!}を使います。
+@c COMMON
 
 @example
 (define m (make <mersenne-twister> :seed (sys-time)))
@@ -1881,38 +2140,68 @@ by @code{:seed} initialization argument, or by using
 @end deftp
 
 @defun mt-random-set-seed! mt seed
+@c EN
 Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
 @var{Seed} can be an arbitrary positive exact integer,
 or arbitrary length of u32vector (@xref{srfi-4 - Homogeneous vectors}).
 If it is an integer, the lower 32bits are used for initialization.
 If it is a u32vector, up to 624 elements are used for initialization.
+@c JP
+Mersenne Twister RNG @var{mt}にランダムシードの値@var{seed}をセットします。
+@var{seed}は任意の正の正確整数か、任意長のu32vector
+(@ref{srfi-4 - Homogeneous vectors}参照)が使えます。
+整数の場合は、初期化のために低位の32ビットが使われます。
+u32vectorの場合は、初期化のために624までの要素が使われます。
+@c COMMON
 @end defun
 
 @defun mt-random-get-state mt
 @defunx mt-random-set-state! mt state
+@c EN
 Retrieves and reinstalls the state of Mersenne Twister RNG @var{mt}.
 The state is represented by a u32vector of 625 elements.  The state
 can be stored elsewhere, and then restored to an instance of
 @code{<mersenne-twister>} to continue to generate the pseudo random
 sequence.
+@c JP
+Mersenne Twister RNG @var{mt}を取り出して再インストールします。
+状態は、625要素のu32vectorで表現されます。
+状態はどこにでも保存することができ、仮想的なランダムシーケンスの
+生成を続行するために、@code{<mersenne-twister>}のインスタンスとして
+リストアできます。
+@c COMMON
 @end defun
 
 @defun mt-random-real mt
 @defunx mt-random-real0 mt
+@c EN
 Returns a random real number between 0.0 and 1.0.
 1.0 is not included in the range.  @code{Mt-random-real} doesn't
 include 0.0 either, while @code{mt-random-real0} does.
 Excluding 0.0 is from the draft SRFI-27.
+@c JP
+0.0と1.0の間のランダムな実数を返します。
+1.0は範囲に含まれません。
+@code{mt-random-real}は、0.0も範囲に含みませんが、
+@code{mt-random-real0}は含みます。
+0.0を含まないのは、SRFI-27ドラフトに依拠しています。
+@c COMMON
 @end defun
 
 @defun mt-random-integer mt range
+@c EN
 Returns a random exact positive integer between 0 and @var{range}-1.
 @var{Range} can be any positive exact integer.
+@c JP
+0から@var{range}-1までの正の正確整数をランダムに返します。
+@var{range}はいかなる正の正確整数でも構いません。
+@c COMMON
 @end defun
 
 @defun mt-random-fill-u32vector! mt u32vector
 @defunx mt-random-fill-f32vector! mt f32vector
 @defunx mt-random-fill-f64vector! mt f64vector
+@c EN
 Fills the given uniform vector by the random numbers.
 For @code{mt-random-fill-u32vector!}, the elements are filled
 by exact positive integers between 0 and 2^32-1.
@@ -1922,6 +2211,13 @@ real number between 0.0 and 1.0, exclusive.
 
 If you need a bunch of random numbers at once, these are much
 faster than getting one by one.
+@c JP
+与えられたユニフォームベクタをランダムな数値で埋めます。
+@code{mt-random-fill-u32vector!}では、要素は0と2^32-1の間の
+正の正確整数で埋められます。
+@code{mt-random-fill-f32vector!}と@code{mt-random-fill-f64vector!}
+では、0.0と1.0(含まれない)の間の不正確実数で埋められます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2248,9 +2544,11 @@ Some examples:
 @c ----------------------------------------------------------------------
 @node rfc.hmac - HMAC keyed-hashing, rfc.http - HTTP, rfc.cookie - HTTP cookie handling, Library modules - Utilities
 @section @code{rfc.hmac} - HMAC keyed-hashing
+@c NODE rfc.hmac - HMAC鍵付きハッシング, @code{rfc.hmac} - HMAC鍵付きハッシング
 
 @deftp {Module} rfc.hmac
 @mdindex rfc.hmac
+@c EN
 This module implements HMAC algorithm,
 Keyed-hashing for message authentication, defined in RFC 2104.
 
@@ -2258,10 +2556,20 @@ For simple batched keyed hashing, you can use high-level API
 @code{hmac-digest} and @code{hmac-digest-string}.
 Or you can create @code{<hmac>} object and update its state
 as the data coming in.
+@c JP
+個のモジュールは、RFC 2104で定義されている、メッセージ認証のための
+鍵付きハッシングのHMACアルゴリズムを実装しています。
+
+シンプルなバッチ処理での鍵付きハッシングでは、高レベルなAPIである
+@code{hmac-digest}と@code{hmac-digest-string}が使えます。
+あるいは、@code{<hmac>}オブジェクトを作成して、入力となるデータで
+その状態を更新することもできます。
+@c COMMON
 @end deftp
 
 @deftp {Class} <hmac>
 @clindex hmac
+@c EN
 Keeps state informatoin of HMAC algorithm.
 Key and the hashing algorithm should be given at the construction
 time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
@@ -2271,17 +2579,34 @@ such as @code{<md5>} (@xref{rfc.md5 - MD5 message digest})
 or @code{<sha1>} (@xref{rfc.sha1 - SHA1 message digest}).
 
 Example:
+@c JP
+HMACアルゴリズムの状態情報を保持します。
+鍵とハッシングアルゴリズムは、キーワード引数@code{:key}と@code{:hasher}を
+それぞれ使って、生成時に与えます。
+@code{<md5>} (@ref{rfc.md5 - MD5 message digest}参照)や
+@code{<sha1>} (@ref{rfc.sha1 - SHA1 message digest}参照)などのような
+ダイジェストインタフェース(@ref{util.digest - Message digester framework}参照)を
+実装するいかなるクラスオブジェクトを渡すこともできます。
+
+例:
+@c COMMON
 @example
 (make <hmac> :key (make-byte-string 16 #x0b) :hasher <md5>)
 @end example
 @end deftp
 
 @deffn {Method} hmac-update! (hmac <hmac>) data
+@c EN
 Updates the internal state of @var{hmac} by @var{data},
 which must be represented by a (possibly incomplete) string.
+@c JP
+(不完全かもしれない)文字列で表現される@var{data}により、
+@var{hmac}の内部状態を更新します。
+@c COMMON
 @end deffn
 
 @deffn {Method} hmac-final! (hmac <hmac>)
+@c EN
 Finalizes the internal state of @var{hmac} and returns the
 hashed string in incomplete string.
 You can use @code{digest-hexify}
@@ -2289,17 +2614,37 @@ You can use @code{digest-hexify}
 result.
 Once finalized, you can't call @code{hmac-update!} or @code{hmac-final!}
 on @var{hmac}.
+@c JP
+@var{hmac}の内部状態を終了させ、不完全文字列でハッシュされた文字列を
+返します。
+``hexified''(16進化)された結果を得るために、@code{digest-hexify}
+(@ref{util.digest - Message digester framework}参照)を使うことが
+できます。
+一旦終了されると、@var{hmac}に対しては@code{hmac-update!}や
+@code{hmac-final!}を呼ぶことはできません。
+@c COMMON
 @end deffn
 
 @deffn {Method} hmac-digest &keyword key hasher
+@c EN
 Creates an @code{<hmac>} object and hash the data stream
 from the current input port, then returns the hashed result
 in an incomplete string.
+@c JP
+@code{<hmac>}オブジェクトを作り、現在の入力ポートからの
+データストリームをハッシュし、不完全文字列でそのハッシュされた
+結果を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} hmac-digest-string string &keyword key hasher
+@c EN
 Creates an @code{<hmac>} object and hash the data in @var{string},
 then returns the hashed result in an incomplete string.
+@c JP
+@code{<hmac>}オブジェクトを作り、@var{string}にあるデータをハッシュし、
+不完全文字列でそのハッシュされた結果を返します。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
@@ -2940,6 +3285,7 @@ native multibyte representation.
 @c ----------------------------------------------------------------------
 @node slib - SLIB, text.csv - CSV tables, rfc.uri - URI parsing and construction, Library modules - Utilities
 @section @code{slib} - SLIB interface
+@c NODE slib - SLIBインタフェース, @code{slib} - SLIBインタフェース
 
 @deftp {Module} slib
 @mdindex slib
@@ -2988,6 +3334,7 @@ module @code{slib}.
 @c ----------------------------------------------------------------------
 @node text.csv - CSV tables, text.diff - Calculate difference of text streams, slib - SLIB, Library modules - Utilities
 @section @code{text.csv} - CSV tables
+@c NODE text.csv - CSVテーブル, @code{text.csv} - CSVテーブル
 
 @deftp {Module} text.csv
 @mdindex text.csv
@@ -3229,6 +3576,7 @@ displays:
 @c ----------------------------------------------------------------------
 @node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.diff - Calculate difference of text streams, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
+@c NODE text.html-lite - シンプルなHTMLドキュメントの構築, @code{text.html-lite} - シンプルなHTMLドキュメントの構築
 
 @deftp {Module} text.html-lite
 @mdindex text.html-lite
@@ -3464,6 +3812,7 @@ if the given content is valid for the element.
 @c ----------------------------------------------------------------------
 @node text.parse - Parsing input stream, text.tr - Transliterate characters, text.html-lite - Simple HTML document construction, Library modules - Utilities
 @section @code{text.parse} - Parsing input stream
+@c NODE text.parse - 入力ストリームのパージング, @code{text.parse} - 入力ストリームのパージング
 
 @deftp {Module} text.parse
 @mdindex text.parse
@@ -3916,6 +4265,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 @c ----------------------------------------------------------------------
 @node text.tree - Lazy text construction, util.combinations - Combination library, text.tr - Transliterate characters, Library modules - Utilities
 @section @code{text.tree} - Lazy text construction
+@c NODE text.tree - 怠惰なテキスト構築, @code{text.tree} - 怠惰なテキスト構築
 
 @deftp {Module} text.tree
 @mdindex text.tree
@@ -4009,9 +4359,11 @@ an output string port, and returns the result string.
 @c ----------------------------------------------------------------------
 @node util.combinations - Combination library, util.digest - Message digester framework, text.tree - Lazy text construction, Library modules - Utilities
 @section @code{util.combinations} - Combination library
+@c NODE util.combinations - 組み合わせ, @code{util.combinations} - 組み合わせ
 
 @deftp {Module} util.combinations
 @mdindex util.combinations
+@c EN
 This module implements several useful procedures of
 combinations, permutations and related operations.
 
@@ -4020,11 +4372,26 @@ star (e.g. @code{permutations}) treats all elements in the given
 set distinct, while a procedure with star (e.g. @code{permutations*})
 considers duplication.  The procedures with star take optional @var{eq}
 argument that is used to test equality, which defaults to @code{eqv?}.
+@c JP
+このモジュールは、いくつかの便利なコンビネーションや順列とそれに関連する
+操作の手続きを実装しています。
+
+このモジュールのほとんどの手続きは2つのバージョンを持っています。
+1つはアスタリスクの付かない手続き(例えば、@code{permutations})で、
+与えられたセットにある全ての要素を区別して扱います。もう1つは、
+アスタリスクの付く手続き(例えば、@code{permutations*})で、重複を
+考慮します。アスタリスクの付く手続きは、オプショナルな@var{eq}引数を取り
+ます。それは等値性のテストに使われ、デフォルトは@code{eqv?}です。
+@c COMMON
 @end deftp
 
 @defun permutations set
 @defunx permutations* set &optional eq
+@c EN
 Returns a list of all permutations of a list @var{set}.
+@c JP
+リスト@var{set}の全ての順列のリストを返します。
+@c COMMON
 
 @example
 (permutations '(a b c))
@@ -4037,21 +4404,38 @@ Returns a list of all permutations of a list @var{set}.
   @result{} ((a a b) (a b a) (b a a))
 @end example
 
+@c EN
 The number of possible permutations explodes if @var{set} has
 more than several elements.  Use with care.  If you want to process
 each permutation at a time, consider @code{permutations-for-each} below.
+@c JP
+@var{set}がある程度の要素を持っている場合、可能性のある順列の数は
+爆発的に大きくなります。注意して使って下さい。
+一度にそれぞれの順列を処理したい場合は、下記の@code{permutations-for-each}の
+使用を考慮して下さい。
+@c COMMON
 @end defun
 
 @defun permutations-for-each proc set
 @defunx permutations*-for-each proc set &optional eq
+@c EN
 For each permutation of a list @var{set}, calls @var{proc}.
 Returns an undefined value.
+@c JP
+リスト@var{set}のそれぞれの順列に対して、@var{proc}を呼び出します。
+戻り値は未定義値です。
+@c COMMON
 @end defun
 
 @defun combinations set n
 @defunx combinations* set n &optional eq
+@c EN
 Returns a list of all possible combinations of @var{n} elements out
 of a list @var{set}.
+@c JP
+リスト@var{set}の@var{n}個の要素の可能性のある全ての順列のリストを
+返します。
+@c COMMON
 
 @example
 (combinations '(a b c) 2)
@@ -4064,18 +4448,31 @@ of a list @var{set}.
   @result{} ((a a) (a b))
 @end example
 
+@c EN
 Watch out the explosion of combinations when @var{set} is large.
+@c JP
+@var{set}が大きいときは、組み合わせの爆発について注意して下さい。
+@c COMMON
 @end defun
 
 @defun combinations-for-each proc set n
 @defunx combinations*-for-each proc set n &optional eq
+@c EN
 Calls @var{proc} for each combination of @var{n} elements out of @var{set}.
 Returns an undefined value.
+@c JP
+@var{set}の@var{n}個の要素のそれぞれの組み合わせについて@var{proc}を
+呼び出します。戻り値は未定義値です。
+@c COMMON
 @end defun
 
 @defun power-set set
 @defunx power-set* set &optional eq
+@c EN
 Returns power set (all subsets) of a list @var{set}.
+@c JP
+リスト@var{set}の累乗集合(全てのサブセット)を返します。
+@c COMMON
 
 @example
 (power-set '(a b c))
@@ -4088,13 +4485,23 @@ Returns power set (all subsets) of a list @var{set}.
 
 @defun power-set-for-each proc set
 @defunx power-set*-for-each proc set &optional eq
+@c EN
 Calls @var{proc} for each subset of @var{set}.
+@c JP
+@var{set}のそれぞれのサブセットについて@var{proc}を呼び出す。
+@c COMMON
 @end defun
 
 @defun power-set-binary set
+@c EN
 Returns power set of @var{set}, like @code{power-set}, but in different order.
 @code{Power-set-binary} traverses subset space in depth-first order,
 while @code{power-set} in breadth-first order.
+@c JP
+@code{power-set}のように、@var{set}の累乗集合を返しますが、順番が異なります。
+@code{power-set-binary}はサブセットの空間を深さ優先でトラバースしますが、
+@code{power-set}は横型探索を行います。
+@c COMMON
 
 @example
 (power-set-binary '(a b c))
@@ -4104,11 +4511,19 @@ while @code{power-set} in breadth-first order.
 
 @defun cartesian-product list-of-sets
 @defunx cartesian-product-right list-of-sets
+@c EN
 Returns a cartesian product of sets in @var{list-of-sets}.
 @code{Cartesian-product} construct the result in left fixed order
 (the rightmost element varies first), while 
 @code{cartesian-product-right} in right fixed order
 (the leftmost element varies first).
+@c JP
+@var{list-of-sets}にあるセットのデカルト積を返します。
+@code{cartesian-product}は左固定順で結果を構築しますが
+(一番右の要素がまず異なる)、
+@code{cartesian-product-right}は右固定順で行います
+(一番左の要素がまず異なる)。
+@c COMMON
 
 @example
 (cartesian-product '((a b c) (0 1)))
@@ -4486,6 +4901,7 @@ returns.
 @c ----------------------------------------------------------------------
 @node util.list - Additional list library, util.queue - Queue, util.lcs - The longest common subsequence, Library modules - Utilities
 @section @code{util.list} - Additional list library
+@c NODE util.list - その他のリストライブラリ, @code{util.list} - その他のリストライブラリ
 
 @deftp {Module} util.list
 @mdindex util.list
