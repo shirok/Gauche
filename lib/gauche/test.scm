@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.13 2004-05-20 04:50:33 shirok Exp $
+;;;  $Id: test.scm,v 1.14 2004-10-10 09:52:09 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -119,7 +119,7 @@
                  (when *test-report-error*
                    (report-error e))
                  (make <test-error>
-                   :message (if (is-a? e <error>)
+                   :message (if (is-a? e <message-condition>)
                               (ref e 'message)
                               e)))
              thunk))

@@ -1,13 +1,24 @@
 2004-10-09  Shiro Kawai  <shiro@acm.org>
 
+
 	* src/port.c, src/portapi.c : revised to use Scm_PortError instead
 	  of Scm_Error when appropriate.
 	* src/read.c : replaced some Scm_Error by Scm_ReadError.
+	* src/class.c (Scm_InitStaticClassWithMeta): exported for tricky
+	  use, if the builtin class wants to control both metaclasses and
+	  superclasses.
+	  (Scm_ObjectAllocate): expose object_allocate so that
+	  other C-defined placeholding "base" class (i.e. classes only
+	  introduced for inheritance, but does not introduce C-specific
+	  slots) can be used as a a superclass of other C-defined classes.
 	* src/error.c (Scm_PortError): added utility function.
 	  (Scm_PrintDefaultErrorHeading): use condition's class name to
 	  display the error message heading.
+	  (Scm_ConditionTypeName): for convenicne.
+	* src/exclib.stub : some srfi-35 procedures.
 	* src/vm.c (Scm_VMThrowException): changed the non-continuable
 	  exception check according to the new condition hierarchy.
+	* test/exception.scm : modified according to the recent change.
 
 2004-10-08  Shiro Kawai  <shiro@acm.org>
 

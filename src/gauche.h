@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.390 2004-10-09 23:06:35 shirok Exp $
+ *  $Id: gauche.h,v 1.391 2004-10-10 09:52:09 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -530,6 +530,13 @@ SCM_EXTERN void Scm_InitStaticClassWithSupers(ScmClass *klass,
                                               ScmObj supers,
                                               ScmClassStaticSlotSpec *slots,
                                               int flags);
+SCM_EXTERN void Scm_InitStaticClassWithMeta(ScmClass *klass,
+                                            const char *name,
+                                            ScmModule *mod,
+                                            ScmClass *meta,
+                                            ScmObj supers,
+                                            ScmClassStaticSlotSpec *slots,
+                                            int flags);
 
 /* OBSOLETE */
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
@@ -2186,6 +2193,10 @@ SCM_EXTERN ScmObj Scm_FError(ScmObj fmt, ScmObj args);
 
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);
+
+SCM_EXTERN int    Scm_ConditionHasType(ScmObj c, ScmObj k);
+SCM_EXTERN ScmObj Scm_ConditionMessage(ScmObj c);
+SCM_EXTERN ScmObj Scm_ConditionTypeName(ScmObj c);
 
 enum {
     /* predefined stack trace formats.  EXPERIMENTAL. */

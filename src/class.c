@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.114 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: class.c,v 1.115 2004-10-10 09:52:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -53,7 +53,6 @@ static void accessor_method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static ScmObj class_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs);
-static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
 static void   initialize_builtin_cpl(ScmClass *klass, ScmObj supers);
 
@@ -105,7 +104,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UnknownClass, NULL);
 
 SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmInstance,
-                      NULL, NULL, NULL, object_allocate,
+                      NULL, NULL, NULL, Scm_ObjectAllocate,
                       SCM_CLASS_DEFAULT_CPL);
 
 /* Basic metaobjects */
@@ -534,7 +533,7 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     klass->allocate = NULL;
     for (p = klass->cpa; *p; p++) {
         if ((*p)->allocate) {
-            if ((*p)->allocate != object_allocate) {
+            if ((*p)->allocate != Scm_ObjectAllocate) {
                 if (klass->allocate && klass->allocate != (*p)->allocate) {
                     Scm_Error("class precedence list has more than one C-defined base class (except <object>): %S", val);
                 }
@@ -552,7 +551,7 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
         Scm_Error("class precedence list doesn't have a base class: %S", val);
     }
     if (!klass->allocate) {
-        klass->allocate = object_allocate; /* default */
+        klass->allocate = Scm_ObjectAllocate; /* default */
         klass->coreSize = sizeof(ScmInstance);
     }
     if (applicable) {
@@ -1785,7 +1784,7 @@ static void slot_accessor_scheme_boundp_set(ScmSlotAccessor *sa, ScmObj p)
  * <object> class initialization
  */
 
-static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
+ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj obj = Scm_AllocateInstance(klass, sizeof(ScmInstance));
     SCM_SET_CLASS(obj, klass);
@@ -2721,30 +2720,42 @@ void Scm_InitStaticClassWithSupers(ScmClass *klass,
 }
 
 /* A special initialization for some of builtin classes.
-   Creates metaclass automatically.   Extensions shouldn't use
-   this function; the implicit metaclass would be removed in future */
-void Scm__InitStaticClassWithMeta(ScmClass *klass,
-                                  const char *name,
-                                  ScmModule *mod,
-                                  ScmClassStaticSlotSpec *specs,
-                                  int flags)
+   Sets klass's metaclass to META.  If META is NULL, a new metaclass
+   (whose name has "-meta" after the original class name except brackets)
+   is created automatically.  This procedure should be only if
+   metaclass is absolutely required (e.g. all condition classes should
+   be an instance of <condition-meta>).   The older version of Gauche
+   has metaclasses for many builtin classes, which is a compensation of
+   lack of eqv-method specializer; such use of metaclass is deprecated
+   and will be removed in future. */
+void Scm_InitStaticClassWithMeta(ScmClass *klass,
+                                 const char *name,
+                                 ScmModule *mod,
+                                 ScmClass *meta,
+                                 ScmObj supers,
+                                 ScmClassStaticSlotSpec *specs,
+                                 int flags)
 {
-    int nlen;
-    char *metaname;
-    
-    init_class(klass, name, mod, SCM_FALSE, specs, flags);
-    
-    nlen = strlen(name);
-    metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
+    init_class(klass, name, mod, supers, specs, flags);
 
-    if (name[nlen - 1] == '>') {
-        strncpy(metaname, name, nlen-1);
-        strcpy(metaname+nlen-1, "-meta>");
+    if (meta) {
+        SCM_SET_CLASS(klass, meta);
     } else {
-        strcpy(metaname, name);
-        strcat(metaname, "-meta");
+        int nlen;
+        char *metaname;
+    
+        nlen = strlen(name);
+        metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
+
+        if (name[nlen - 1] == '>') {
+            strncpy(metaname, name, nlen-1);
+            strcpy(metaname+nlen-1, "-meta>");
+        } else {
+            strcpy(metaname, name);
+            strcat(metaname, "-meta");
+        }
+        SCM_SET_CLASS(klass, make_implicit_meta(metaname, klass->cpa, mod));
     }
-    SCM_SET_CLASS(klass, make_implicit_meta(metaname, klass->cpa, mod));
 }
 
 /* The old API - deprecated.  We keep this around for a while
@@ -2754,7 +2765,7 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
                           int withMeta, ScmModule *mod)
 {
     if (withMeta) {
-        Scm__InitStaticClassWithMeta(klass, name, mod, specs, 0);
+        Scm_InitStaticClassWithMeta(klass, name, mod, NULL, SCM_FALSE, specs, 0);
     } else {
         Scm_InitStaticClass(klass, name, mod, specs, 0);
     }
@@ -2803,7 +2814,7 @@ void Scm__InitClass(void)
     Scm_InitStaticClass(cl, nam, mod, slots, 0)
 
 #define CINIT(cl, nam) \
-    Scm__InitStaticClassWithMeta(cl, nam, mod, NULL, 0)
+    Scm_InitStaticClassWithMeta(cl, nam, mod, NULL, SCM_FALSE, NULL, 0)
     
     /* class.c */
     BINIT(SCM_CLASS_CLASS,  "<class>", class_slots);

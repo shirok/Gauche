@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.41 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: class.h,v 1.42 2004-10-10 09:52:09 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -106,7 +106,8 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
     ((klassname*)Scm_AllocateInstance(klass, sizeof(klassname)))
 
 /* some internal methods */
-    
+
+SCM_EXTERN ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs);
 SCM_EXTERN ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize);
 SCM_EXTERN ScmObj Scm_ComputeCPL(ScmClass *klass);
 SCM_EXTERN ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
@@ -149,12 +150,6 @@ SCM_EXTERN void   Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void   Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m);
 
 SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
-
-SCM_EXTERN void   Scm__InitStaticClassWithMeta(ScmClass *klass,
-                                               const char *name,
-                                               ScmModule *mod,
-                                               ScmClassStaticSlotSpec *specs,
-                                               int flags);
 
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 SCM_EXTERN ScmGeneric Scm_GenericObjectHash;

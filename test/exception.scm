@@ -1,16 +1,12 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.3 2004-05-21 04:38:45 shirok Exp $
+;; $Id: exception.scm,v 1.4 2004-10-10 09:52:10 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
 
 ;;--------------------------------------------------------------------
 (test-section "constructors")
-
-;; cannot directly make <exception>, for it is an abstract class.
-(test* "make <exception>" *test-error*
-       (make <exception>))
 
 (test* "make <error>" '(#t #t #f)
        (let ((e (make <error>)))
