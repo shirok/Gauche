@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl
-dnl $Id: configure.in,v 1.1 2001-10-20 11:19:02 shirok Exp $
+dnl $Id: configure.in,v 1.2 2001-10-20 21:18:36 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 
@@ -41,15 +41,15 @@ AC_PROG_INSTALL
 dnl Check various dbm libraries availability
 AC_CHECK_HEADERS(gdbm.h, [
   ARCHFILES=gdbm.so
-  SCMFILES=gdbm.scm
+  SCMFILES=dbm/gdbm.scm
 ])
 AC_CHECK_HEADERS(ndbm.h gdbm/ndbm.h, [
   ARCHFILES="ndbm.so $ARCHFILES"
-  SCMFILES="ndbm.scm $SCMFILES"
+  SCMFILES="dbm/ndbm.scm $SCMFILES"
 ])
 AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
   ARCHFILES="odbm.so $ARCHFILES"
-  SCMFILES="odbm.scm $SCMFILES"
+  SCMFILES="dbm/odbm.scm $SCMFILES"
 ])
 
 AC_CHECK_LIB(gdbm, main, [ GDBMLIB="-lgdbm" ])

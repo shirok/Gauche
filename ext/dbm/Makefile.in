@@ -10,7 +10,7 @@ GAUCHE_TOP = @GAUCHE_TOP@
 INSTALL = @INSTALL@
 
 ARCHFILES = @ARCHFILES@
-SCMFILES = @SCMFILES@
+SCMFILES = dbm.scm @SCMFILES@
 HEADERS = 
 
 TARGET = @ARCHFILES@
@@ -57,7 +57,7 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) *.o *~ test.log so_locations
+	rm -rf core $(TARGET) *.o *.c *~ test.log so_locations
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
