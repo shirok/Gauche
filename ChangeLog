@@ -1,3 +1,10 @@
+2001-12-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c : added maxcol parameter to ~A and ~S format directive
+	  to limit the length of formatted string
+	* src/Makefile.in : ensure the binary installation directory
+	  (pointed out by Bengt Kleberg).
+
 2001-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub: added GC interface, gc and gc-stat (experimentally)
