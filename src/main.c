@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.25 2001-06-23 07:13:26 shirok Exp $
+ *  $Id: main.c,v 1.26 2001-06-30 09:19:04 shirok Exp $
  */
 
 #include <unistd.h>
@@ -145,14 +145,16 @@ int main(int argc, char **argv)
         mainproc = Scm_SymbolValue(Scm_UserModule(),
                                    SCM_SYMBOL(SCM_INTERN("main")));
         if (SCM_PROCEDUREP(mainproc)) {
-            Scm_Apply(mainproc, SCM_LIST1(av));
+            ScmObj result = Scm_Apply(mainproc, SCM_LIST1(av));
+            if (SCM_INTP(result)) exit(SCM_INT_VALUE(result));
         }
         exit(0);
-    } else {
-        SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_NIL);
-        SCM_DEFINE(Scm_UserModule(), "*program-name*",
-                   SCM_MAKE_STR_IMMUTABLE(argv[0]));
     }
+
+    /* now, we're in the interactive mode. */
+    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_NIL);
+    SCM_DEFINE(Scm_UserModule(), "*program-name*",
+               SCM_MAKE_STR_IMMUTABLE(argv[0]));
 
     if (batch_mode || !isatty(0)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()));
