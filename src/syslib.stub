@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.18 2001-03-12 02:28:44 shiro Exp $
+;;; $Id: syslib.stub,v 1.19 2001-03-12 04:39:44 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -555,6 +555,16 @@
 (define-cproc sys-pause ()
   "  pause();  SCM_RETURN(SCM_UNDEFINED);")
 
+;; returns a list of two ports
+(define-cproc sys-pipe (&keyword (name "(pipe)") (buffer-size 0))
+  (assert (small-integer? buffer-size))
+  "  int fds[2], r; ScmObj rend, wend;
+  r = pipe(fds);
+  if (r < 0) Scm_SysError(\"pipe failed\");
+  rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0], buffer_size, TRUE);
+  wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], buffer_size, TRUE);
+  SCM_RETURN(SCM_LIST2(rend, wend));")  
+
 (define-cproc sys-rmdir (pathname)
   (assert (string? pathname))
   "  if (rmdir(Scm_GetStringConst(pathname)) < 0)
@@ -605,7 +615,7 @@
 ")
 
 ;; not supported yet:
-;;  fpathconf lseek pathconf pipe read
+;;  fpathconf lseek pathconf read
 ;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp write
 
 ;;---------------------------------------------------------------------
