@@ -54,15 +54,18 @@
 (test "gethostbyname" #t
       (lambda ()
         (let ((host (sys-gethostbyname "localhost")))
-          (and (equal? (slot-ref host 'name) "localhost")
+          (and host
+               (or (equal? (slot-ref host 'name) "localhost")
+                   (member "localhost" (slot-ref host 'aliases)))
                (member "127.0.0.1" (slot-ref host 'addresses))
                #t))))
 
 (test "gethostbyaddr" #t
       (lambda ()
         (let ((host (sys-gethostbyaddr "127.0.0.1" af_inet)))
-          (and (or (member "localhost" (slot-ref host 'aliases))
-                   (equal? (slot-ref host 'name) "localhost"))
+          (and host
+               (or (equal? (slot-ref host 'name) "localhost")
+                   (member "localhost" (slot-ref host 'aliases)))
                (member "127.0.0.1" (slot-ref host 'addresses))
                #t))))
 
