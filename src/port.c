@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.85 2002-12-13 11:41:41 shirok Exp $
+ *  $Id: port.c,v 1.86 2002-12-13 23:58:20 shirok Exp $
  */
 
 #include <unistd.h>
@@ -937,16 +937,17 @@ ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable)
     
     /* Copy vtable, and ensure all entries contain some ptr */
     p->src.vt = *vtable;
-    if (!p->src.vt.Getb) p->src.vt.Getb = null_getb;
-    if (!p->src.vt.Getc) p->src.vt.Getc = null_getc;
-    if (!p->src.vt.Getz) p->src.vt.Getz = null_getz;
+    if (!p->src.vt.Getb)  p->src.vt.Getb = null_getb;
+    if (!p->src.vt.Getc)  p->src.vt.Getc = null_getc;
+    if (!p->src.vt.Getz)  p->src.vt.Getz = null_getz;
     if (!p->src.vt.Getline) p->src.vt.Getline = null_getline;
     if (!p->src.vt.Ready) p->src.vt.Ready = null_ready;
-    if (!p->src.vt.Putb) p->src.vt.Putb = null_putb;
-    if (!p->src.vt.Putc) p->src.vt.Putc = null_putc;
-    if (!p->src.vt.Putz) p->src.vt.Putz = null_putz;
-    if (!p->src.vt.Puts) p->src.vt.Puts = null_puts;
+    if (!p->src.vt.Putb)  p->src.vt.Putb = null_putb;
+    if (!p->src.vt.Putc)  p->src.vt.Putc = null_putc;
+    if (!p->src.vt.Putz)  p->src.vt.Putz = null_putz;
+    if (!p->src.vt.Puts)  p->src.vt.Puts = null_puts;
     if (!p->src.vt.Flush) p->src.vt.Flush = null_flush;
+    /* Close and Seek can be left NULL */
     return SCM_OBJ(p);
 }
 

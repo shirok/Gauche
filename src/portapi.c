@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.5 2002-12-13 19:36:51 shirok Exp $
+ *  $Id: portapi.c,v 1.6 2002-12-13 23:58:20 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -739,7 +739,9 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         }
         break;
     case SCM_PORT_PROC:
-        /*writeme*/
+        if (p->src.vt.Seek) {
+            SAFE_CALL(p, r = p->src.vt.Seek(p, o, whence));
+        }
         break;
     default:
     }

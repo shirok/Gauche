@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.314 2002-12-13 11:41:40 shirok Exp $
+ *  $Id: gauche.h,v 1.315 2002-12-13 23:58:20 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -296,7 +296,7 @@ typedef struct ScmHeaderRec {
 #define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj)==(klass)))
 
 /* Check if classof(OBJ) is a subtype of an extended class KLASS */
-#define SCM_ISA(obj, klass)    (SCM_XTYPEP(obj,klass)||Scm_TypeP(obj,klass))
+#define SCM_ISA(obj, klass) (SCM_XTYPEP(obj,klass)||Scm_TypeP(SCM_OBJ(obj),klass))
 
 /* Fundamental allocators */
 #define SCM_MALLOC(size)          GC_MALLOC(size)
@@ -1083,6 +1083,7 @@ typedef struct ScmPortVTableRec {
     int       (*Puts)(ScmString *s, ScmPort *p);
     int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
+    off_t     (*Seek)(ScmPort *p, off_t off, int whence);
     void      *data;
 } ScmPortVTable;
 
@@ -1096,7 +1097,9 @@ struct ScmPortRec {
                                    file pointer */
     unsigned int closed    : 1; /* TRUE if this port is closed */
     unsigned int error     : 1; /* Error has been occurred */
-
+    unsigned int private   : 1; /* This port is private for a thread */
+    unsigned int endian    : 1; /* endianness; used for binary I/O */
+    
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
 
     ScmChar ungotten;           /* ungotten character.
@@ -1163,7 +1166,7 @@ enum ScmPortICPolicy {
 #endif
 
 /* Predicates & accessors */
-#define SCM_PORTP(obj)          (SCM_XTYPEP(obj, SCM_CLASS_PORT))
+#define SCM_PORTP(obj)          (SCM_ISA(obj, SCM_CLASS_PORT))
 
 #define SCM_PORT(obj)           ((ScmPort *)(obj))
 #define SCM_PORT_TYPE(obj)      (SCM_PORT(obj)->type)
@@ -1936,7 +1939,7 @@ SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 /* <exception> : abstract class for predefined exceptions. */
 SCM_CLASS_DECL(Scm_ExceptionClass);
 #define SCM_CLASS_EXCEPTION        (&Scm_ExceptionClass)
-#define SCM_EXCEPTIONP(obj)        Scm_TypeP(obj, SCM_CLASS_EXCEPTION)
+#define SCM_EXCEPTIONP(obj)        SCM_ISA(obj, SCM_CLASS_EXCEPTION)
 
 /* <error>: root of all errors (uncontinuable exceptions). */
 struct ScmErrorRec {
@@ -1946,7 +1949,7 @@ struct ScmErrorRec {
 
 SCM_CLASS_DECL(Scm_ErrorClass);
 #define SCM_CLASS_ERROR            (&Scm_ErrorClass)
-#define SCM_ERRORP(obj)            Scm_TypeP(obj, SCM_CLASS_ERROR)
+#define SCM_ERRORP(obj)            SCM_ISA(obj, SCM_CLASS_ERROR)
 #define SCM_ERROR(obj)             ((ScmError*)(obj))
 #define SCM_ERROR_MESSAGE(obj)     SCM_ERROR(obj)->message
 
@@ -1961,7 +1964,7 @@ typedef struct ScmSystemErrorRec {
 SCM_CLASS_DECL(Scm_SystemErrorClass);
 #define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
 #define SCM_SYSTEM_ERROR(obj)      ((ScmSystemError*)(obj))
-#define SCM_SYSTEM_ERROR_P(obj)    Scm_TypeP(obj, SCM_CLASS_SYSTEM_ERROR)
+#define SCM_SYSTEM_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_SYSTEM_ERROR)
 
 SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
 
@@ -1984,7 +1987,7 @@ typedef struct ScmApplicationExitRec {
 
 SCM_CLASS_DECL(Scm_ApplicationExitClass);
 #define SCM_CLASS_APPLICATION_EXIT   (&Scm_ApplicationExitClass)
-#define SCM_APPLICATION_EXIT_P(obj)  Scm_TypeP(obj, SCM_CLASS_APPLICATION_EXIT)
+#define SCM_APPLICATION_EXIT_P(obj)  SCM_ISA(obj, SCM_CLASS_APPLICATION_EXIT)
 
 SCM_EXTERN ScmObj Scm_MakeApplicationExit(int);
 
