@@ -12,12 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_euc_jp.h,v 1.4 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: char_euc_jp.h,v 1.5 2001-04-07 06:39:39 shiro Exp $
  */
 
 /*
  * Not complete, but for now...
  */
+#define SCM_CHAR_ENCODING_NAME "euc-jp"
+
 #define SCM_CHAR_NFOLLOWS(ch) \
     ((((unsigned char)(ch)) >= 0x80) ? 1 : 0)
 
