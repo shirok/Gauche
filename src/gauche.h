@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.403.2.1 2004-12-23 06:57:21 shirok Exp $
+ *  $Id: gauche.h,v 1.403.2.2 2004-12-24 22:13:30 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -394,7 +394,7 @@ typedef struct ScmAutoloadRec  ScmAutoload;
 
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
-SCM_EXTERN ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
+SCM_EXTERN ScmObj Scm_Compile(ScmObj program, ScmObj mod);
 SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
 

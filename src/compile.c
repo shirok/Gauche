@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.2 2004-12-24 12:50:35 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.3 2004-12-24 22:13:30 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -272,13 +272,54 @@ enum {
  *   I think.
  */
 
-/* entry point. */
-ScmObj Scm_Compile(ScmObj form, ScmObj env, int context)
+/*
+ * External entry of the compiler.
+ *   ENV is either a module, or UNBOUND or FALSE (use default module).
+ *   Code is always compiled in the tail context.  This function is
+ *   the grand entry of the entire compile module, and it won't be
+ *   called recursively from inside of the compiler.
+ */
+static ScmObj compile_in_module(ScmObj, ScmModule*);
+
+ScmObj Scm_Compile(ScmObj program, ScmObj env)
 {
-    ScmObj code = compile_int(form, env, context);
-    return Scm_PackCode(code);
+    ScmObj insn_list = SCM_NIL;
+    
+    if (SCM_FALSEP(env) || SCM_UNBOUNDP(env)) {
+        insn_list = compile_int(program, SCM_NIL, SCM_COMPILE_TAIL);
+    } else if (!SCM_MODULEP(env)) {
+        Scm_Error("compile: module required, but got %S", env);
+    } else {
+        insn_list = compile_in_module(program, SCM_MODULE(env));
+    }
+    return Scm_PackCode(insn_list);
 }
 
+/* When compiling with other module, make sure the current module
+   is restored after compilation. */
+static ScmObj compile_in_module(ScmObj program, ScmModule* nmodule)
+{
+    ScmObj v = SCM_NIL;
+    ScmVM *volatile vm = Scm_VM();
+    ScmModule *omodule = vm->module;
+    
+    SCM_UNWIND_PROTECT {
+        vm->module = nmodule;
+        v = compile_int(program, SCM_NIL, SCM_COMPILE_TAIL);
+    }
+    SCM_WHEN_ERROR {
+        vm->module = omodule;
+        SCM_NEXT_HANDLER;
+        /*NOTREACHED*/
+    }
+    SCM_END_PROTECT;
+    vm->module = omodule;
+    return v;
+}
+
+/*
+ * Recursive entry point (used by macro expander)
+ */
 ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 {
     return compile_body(form, env, context);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.9 2004-12-24 21:25:58 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.10 2004-12-24 22:13:30 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1870,27 +1870,6 @@ ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
     return proc;
 }
 
-/* support proc. for eval.  compile expr in the module nmodule,
-   ensuring the env is reset to omodule afterwards */
-static ScmObj compile_for_eval(ScmObj expr,
-                               ScmModule *nmodule,
-                               ScmModule *omodule)
-{
-    ScmObj v = SCM_NIL;
-    SCM_UNWIND_PROTECT {
-        theVM->module = nmodule;
-        v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-    }
-    SCM_WHEN_ERROR {
-        theVM->module = omodule;
-        SCM_NEXT_HANDLER;
-        /*NOTREACHED*/
-    }
-    SCM_END_PROTECT;
-    theVM->module = omodule;
-    return v;
-}
-
 static ScmObj eval_restore_env(ScmObj *args, int argc, void *data)
 {
     Scm_VM()->module = SCM_MODULE(data);
@@ -1902,24 +1881,12 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
     ScmObj v = SCM_NIL;
     ScmVM *vm = Scm_VM();
-    int restore_module = FALSE;
+    int restore_module = SCM_MODULEP(e);
     
-    /* NB: v is ScmCompiledCode. */
-        
-    if (SCM_UNBOUNDP(e)) {
-        /* if env is not given, just use the current env */
-        v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-    } else if (!SCM_MODULEP(e)) {
-        Scm_Error("module required, but got %S", e);
-    } else {
-        v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
-        restore_module = TRUE;
-    }
+    v = Scm_Compile(expr, e);
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
-        Scm_Printf(theVM->curerr, "== %#S\n", v);
+        Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
     }
-
-    /*Scm_CompiledCodeDump(v);*/
 
     vm->numVals = 1;
     if (restore_module) {
@@ -2053,16 +2020,8 @@ static ScmObj user_eval_inner(ScmObj program)
 ScmObj Scm_Eval(ScmObj expr, ScmObj e)
 {
     ScmObj v = SCM_NIL;
-    if (SCM_UNBOUNDP(e)) {
-        /* if env is not given, just use the current env */
-        v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-    } else if (!SCM_MODULEP(e)) {
-        Scm_Error("module required, but got %S", e);
-    } else {
-        v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
-    }
+    v = Scm_Compile(expr, e);
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
-        Scm_Printf(theVM->curerr, "==\n");
         Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
     }
     return user_eval_inner(v);
