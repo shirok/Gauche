@@ -1,3 +1,10 @@
+2002-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/procedure.scm (let-keywords*): take care of syntactic
+	  unwrapping in case when let-keywords* appear in the expanded
+	  form of R5RS macro.
+	* src/list.c : let <list> inherit <sequence> for clearity.
+
 2002-12-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-19/format.scm : fixed a bug in locale-dependent date
