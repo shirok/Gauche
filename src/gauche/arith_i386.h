@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: arith_i386.h,v 1.3 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: arith_i386.h,v 1.4 2004-12-22 00:35:32 shirok Exp $
  */
 
 #ifdef __GNUC__
@@ -166,6 +166,9 @@
  *  if x * y overflows, v = 1
  *  else r <- x * y, v = 0
  */
+/* This and SMULOV is used in the gauche.uvector where lots of
+   functions are inlined, and using "r" constraint sometimes makes
+   gcc fail to allocate registers.  Thus we use "g" constraint. */
 
 #define UMULOV(r, v, x, y) \
     asm("movl %2, %%eax;" \
@@ -173,8 +176,8 @@
         "movl %%eax, %0;" \
         "movl $0, %1;" \
         "rcll $1, %1;" \
-           :"=r" (r), "=&r" (v) \
-           :"g" (x), "r" (y) \
+           :"=g" (r), "=g" (v) \
+           :"g" (x), "g" (y) \
            :"%eax", "%edx")
 
 /*-----------------------------------------------------------------
@@ -194,10 +197,10 @@
         "cmp $0, %%edx;" \
         "jl 1f;" \
         "movl $1, %1; jmp 0f;" \
-        "1: movl $-1, %1; "\
+        "1: movl $-1, %1;"\
         "0:" \
-           :"=r" (r), "=&r" (v) \
-           :"g" (x), "r" (y) \
+           :"=g" (r), "=&g" (v) \
+           :"g" (x), "g" (y) \
            :"%eax", "%edx")
 
 #endif /*__GNUC__*/

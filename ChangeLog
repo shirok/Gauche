@@ -1,5 +1,7 @@
 2004-12-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/arith_i386.h (UMULOV, SMULOV): use "g" constraint to
+	  avoid gcc from failing to allocate registers in some cases.
 	* acinclude.m4, aclocal.m4 (AC_GAUCHE_OPTFLAGS): check $target instead
 	  of $host.  Use 'case' to check if the compiler is gcc or not.
 
