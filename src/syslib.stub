@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.16 2001-03-10 05:36:54 shiro Exp $
+;;; $Id: syslib.stub,v 1.17 2001-03-10 09:40:21 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -279,7 +279,7 @@
 ;; sys/utsname.h
 
 ;; returns list of (sysname nodename release version machine)
-(defnie-cproc sys-uname ()
+(define-cproc sys-uname ()
   "  struct utsname info;
   ScmObj head = SCM_NIL, tail;
   if (uname(&info) < 0) Scm_SysError(\"uname() failed\");
@@ -377,27 +377,37 @@
 (define-cproc sys-time ()
   "  SCM_RETURN(Scm_MakeSysTime(time(NULL)));")
 
+(define-symbol tm_sec   "sym_tm_sec")
+(define-symbol tm_min   "sym_tm_min")
+(define-symbol tm_hour  "sym_tm_hour")
+(define-symbol tm_mday  "sym_tm_mday")
+(define-symbol tm_mon   "sym_tm_mon")
+(define-symbol tm_year  "sym_tm_year")
+(define-symbol tm_wday  "sym_tm_wday")
+(define-symbol tm_yday  "sym_tm_yday")
+(define-symbol tm_isdst "sym_tm_isdst")
+
 (define-cproc sys-tm->alist (tm)
   (assert (sys-tm? tm))
   "  ScmObj p = SCM_NIL, val;
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_sec);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_sec\"), val, p);
+  p = Scm_Acons(sym_tm_sec, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_min);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_min\"), val, p);
+  p = Scm_Acons(sym_tm_min, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_hour);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_hour\"), val, p);
+  p = Scm_Acons(sym_tm_hour, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_mday);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_mday\"), val, p);
+  p = Scm_Acons(sym_tm_mday, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_mon);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_mon\"), val, p);
+  p = Scm_Acons(sym_tm_mon, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_year);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_year\"), val, p);
+  p = Scm_Acons(sym_tm_year, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_wday);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_wday\"), val, p);
+  p = Scm_Acons(sym_tm_wday, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_yday);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_yday\"), val, p);
+  p = Scm_Acons(sym_tm_yday, val, p);
   val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_isdst);
-  p = Scm_Acons(SCM_MAKE_STR(\"tm_isdst\"), val, p);
+  p = Scm_Acons(sym_tm_isdst, val, p);
   SCM_RETURN(p);")
     
 ;;---------------------------------------------------------------------
