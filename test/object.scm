@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.16 2002-07-01 10:46:21 shirok Exp $
+;; $Id: object.scm,v 1.17 2002-09-19 21:25:21 shirok Exp $
 
 (use gauche.test)
 
@@ -279,6 +279,39 @@
       (lambda () (compare (make <cmp> :x 3) (make <cmp> :x 3))))
 (test "object-compare" 1
       (lambda () (compare (make <cmp> :x 4) (make <cmp> :x 3))))
+
+;;----------------------------------------------------------------
+(test-section "object-apply protocol")
+
+(define-class <applicable> ()
+  ((v :initform (make-vector 5 #f))))
+
+(define-method object-apply ((self <applicable>) (i <integer>))
+  (vector-ref (ref self 'v) i))
+
+(define-method (setter object-apply) ((self <applicable>) (i <integer>) v)
+  (vector-set! (ref self 'v) i v))
+
+(define-method object-apply ((self <applicable>) (s <symbol>))
+  (case s
+    ((list)   (vector->list (ref self 'v)))
+    ((vector) (ref self 'v))
+    (else #f)))
+
+(define applicable (make <applicable>))
+
+(test "object-apply" #f
+      (lambda () (applicable 2)))
+(test "object-apply" 'a
+      (lambda () (set! (applicable 3) 'a) (applicable 3)))
+(test "object-apply" '(d b c a q)
+      (lambda ()
+        (for-each (lambda (i v) (set! (applicable i) v))
+                  '(2 4 1 0) '(c q b d))
+        (map applicable '(0 1 2 3 4))))
+(test "object-apply" '((d b c a q) #(d b c a q))
+      (lambda ()
+        (map applicable '(list vector))))
 
 ;;----------------------------------------------------------------
 (test-section "metaclass")
