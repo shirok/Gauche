@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.5 2001-01-16 04:44:40 shiro Exp $
+ *  $Id: string.c,v 1.6 2001-01-16 06:42:11 shiro Exp $
  */
 
 #include <stdio.h>
@@ -269,6 +269,81 @@ STRCMP(Scm_StringLe, <, <=)
 STRCMP(Scm_StringGt, >, >)
 STRCMP(Scm_StringGe, >, >=)
 
+/* single-byte case insensitive comparison */
+static int sb_strcasecmp(const char *px, int sizx,
+                         const char *py, int sizy)
+{
+    char cx, cy;
+    for (; sizx > 0 && sizy > 0; sizx--, sizy--, px++, py++) {
+        cx = tolower(*px);
+        cy = tolower(*py);
+        if (cx == cy) continue;
+        return (cx - cy);
+    }
+    if (sizx > 0) return 1;
+    if (sizy > 0) return -1;
+    return 0;
+}
+
+/* multi-byte case insensitive comparison */
+static int mb_strcasecmp(const char *px, int lenx,
+                         const char *py, int leny)
+{
+    int cx, cy, ccx, ccy, ix, iy;
+    for (; lenx > 0 && leny > 0; lenx--, leny--, px+=ix, py+=iy) {
+        SCM_STR_GETC(px, cx);
+        SCM_STR_GETC(py, cy);
+        ccx = SCM_CHAR_UPCASE(cx);
+        ccy = SCM_CHAR_UPCASE(cy);
+        if (ccx != ccy) return (ccx - ccy);
+        ix = SCM_CHAR_NBYTES(cx);
+        iy = SCM_CHAR_NBYTES(cy);
+    }
+    if (lenx > 0) return 1;
+    if (leny > 0) return -1;
+    return 0;
+}
+
+ScmObj Scm_StringCiEqual(ScmString *x, ScmString *y)
+{
+    int sizx = SCM_STRING_SIZE(x), lenx = SCM_STRING_SIZE(x);
+    int sizy = SCM_STRING_SIZE(y), leny = SCM_STRING_SIZE(y);
+    const char *px = SCM_STRING_START(x);
+    const char *py = SCM_STRING_START(y);
+    
+    if (sizx != sizy) return SCM_FALSE;
+    if (lenx != leny) return SCM_FALSE;
+    if (sizx == lenx || lenx < 0) {
+        /* both are SBString or incomplete string */
+        return (sb_strcasecmp(px, sizx, py, sizy) == 0)? SCM_TRUE : SCM_FALSE;
+    } else {
+        /* both are MBString. */
+        return (mb_strcasecmp(px, lenx, py, leny) == 0)? SCM_TRUE : SCM_FALSE;
+    }
+}
+
+#define STRCICMP(fn, op)                                                \
+ScmObj fn(ScmString *x, ScmString *y)                                   \
+{                                                                       \
+    int sizx = SCM_STRING_SIZE(x), lenx = SCM_STRING_SIZE(x);           \
+    int sizy = SCM_STRING_SIZE(y), leny = SCM_STRING_SIZE(y);           \
+    const char *px = SCM_STRING_START(x);                               \
+    const char *py = SCM_STRING_START(y);                               \
+                                                                        \
+    if ((sizx == lenx && sizy == leny) || lenx < 0  || leny < 0) {      \
+        return (sb_strcasecmp(px, sizx, py, sizy) op 0)?                \
+            SCM_TRUE : SCM_FALSE;                                       \
+    } else {                                                            \
+        return (mb_strcasecmp(px, sizx, py, sizy) op 0)?                \
+            SCM_TRUE : SCM_FALSE;                                       \
+    }                                                                   \
+}
+
+STRCICMP(Scm_StringCiLt, <)
+STRCICMP(Scm_StringCiLe, <=)
+STRCICMP(Scm_StringCiGt, >)
+STRCICMP(Scm_StringCiGe, >=)
+    
 /*
  * Reference
  */
