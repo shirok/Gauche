@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.9 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: net.scm,v 1.10 2001-07-03 09:17:40 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -93,7 +93,7 @@
     (socket-listen socket 5)))
 
 (define (make-server-socket-inet port . args)
-  (let ((reuse-addr? (get-keyword :reuse-addr args #f))
+  (let ((reuse-addr? (get-keyword :reuse-addr? args #f))
         (address (make <sockaddr-in> :host :any :port port))
         (socket (make-socket pf_inet sock_stream)))
     (when reuse-addr?
