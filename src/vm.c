@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.43 2001-02-20 06:01:23 shiro Exp $
+ *  $Id: vm.c,v 1.44 2001-02-21 13:32:52 shiro Exp $
  */
 
 #include "gauche.h"
@@ -473,9 +473,12 @@ static void run_loop()
                         VM_ERR(("unbound variable: %S",
                                 SCM_OBJ(SCM_GLOC(sym)->name)));
                     }
-                } else if (SCM_SYMBOLP(sym)) {
-                    ScmGloc *gloc =
-                        Scm_FindBinding(vm->module, SCM_SYMBOL(sym), FALSE);
+                } else {
+                    ScmGloc *gloc;
+                    SCM_ASSERT(SCM_IDENTIFIERP(sym));
+                    gloc = Scm_FindBinding(SCM_IDENTIFIER(sym)->module,
+                                           SCM_IDENTIFIER(sym)->name,
+                                           FALSE);
                     if (gloc == NULL) {
                         VM_ERR(("unbound variable: %S", sym));
                     }
@@ -541,28 +544,28 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_GSET) {
-                ScmObj location, val;
+                ScmObj loc, val;
                 VM_ASSERT(SCM_PAIRP(pc));
                 
-                location = SCM_CAR(pc);
-                if (SCM_GLOCP(location)) {
-                    SCM_GLOC(location)->value = val0;
-                } else if (SCM_SYMBOLP(location)) {
+                loc = SCM_CAR(pc);
+                if (SCM_GLOCP(loc)) {
+                    SCM_GLOC(loc)->value = val0;
+                } else {
+                    ScmGloc *gloc;
+                    SCM_ASSERT(SCM_IDENTIFIERP(loc));
                     /* The third arg of this call should be TRUE
                        (stay_in_module).  See the discussion about modules
                        in compile.c.  For now, this one is more convenient. */
-                    ScmGloc *gloc = Scm_FindBinding(vm->module,
-                                                    SCM_SYMBOL(location),
-                                                    FALSE);
+                    gloc = Scm_FindBinding(SCM_IDENTIFIER(loc)->module,
+                                           SCM_IDENTIFIER(loc)->name,
+                                           FALSE);
                     if (gloc == NULL) {
-                        VM_ERR(("symbol not defined: %S", location));
+                        VM_ERR(("symbol not defined: %S", loc));
                     }
                     gloc->value = val0;
                     /* memorize gloc */
                     /* TODO: make it MT safe! */
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
-                } else {
-                    Scm_Panic("SET instruction got invalid operand");
                 }
                 pc = SCM_CDR(pc);
                 continue;
@@ -585,14 +588,15 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_DEFINE) {
-                ScmObj var;
+                ScmObj var; ScmSymbol *name;
 
                 VM_ASSERT(SCM_PAIRP(pc));
                 var = SCM_CAR(pc);
-                VM_ASSERT(SCM_SYMBOLP(var));
+                VM_ASSERT(SCM_IDENTIFIERP(var));
                 pc = SCM_CDR(pc);
-                Scm_Define(vm->module, SCM_SYMBOL(var), val0);
-                val0 = var;
+                Scm_Define(SCM_IDENTIFIER(var)->module,
+                           (name = SCM_IDENTIFIER(var)->name), val0);
+                val0 = SCM_OBJ(name);
                 continue;
             }
             CASE(SCM_VM_IF) {
