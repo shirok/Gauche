@@ -73,58 +73,68 @@
 					;(slib:load-source "filename")
 ;	compiled			;can load compiled files
 					;(slib:load-compiled "filename")
-	rev4-report			;conforms to
-	rev3-report			;conforms to
-;	ieee-p1178			;conforms to
-;	sicp				;runs code from Structure and
-					;Interpretation of Computer
-					;Programs by Abelson and Sussman.
+
+		       ;; Scheme report features
+
+	rev5-report			;conforms to
+	eval				;R5RS two-argument eval
+	values				;R5RS multiple values
+	dynamic-wind			;R5RS dynamic-wind
+	macro				;R5RS high level macros
+	delay				;has DELAY and FORCE
+	multiarg-apply			;APPLY can take more than 2 args.
+	char-ready?
+;	rationalize
 	rev4-optional-procedures	;LIST-TAIL, STRING->LIST,
 					;LIST->STRING, STRING-COPY,
 					;STRING-FILL!, LIST->VECTOR,
 					;VECTOR->LIST, and VECTOR-FILL!
+
+	rev4-report			;conforms to
+
+	ieee-p1178			;conforms to
+
+;	rev3-report			;conforms to
+
 ;	rev2-procedures			;SUBSTRING-MOVE-LEFT!,
 					;SUBSTRING-MOVE-RIGHT!,
 					;SUBSTRING-FILL!,
 					;STRING-NULL?, APPEND!, 1+,
 					;-1+, <?, <=?, =?, >?, >=?
-	multiarg/and-			;/ and - can take more than 2 args.
-	multiarg-apply			;APPLY can take more than 2 args.
-;	rationalize
-	delay				;has DELAY and FORCE
-	with-file			;has WITH-INPUT-FROM-FILE and
-					;WITH-OUTPUT-FROM-FILE
-	string-port			;has CALL-WITH-INPUT-STRING and
-					;CALL-WITH-OUTPUT-STRING
-;	transcript			;TRANSCRIPT-ON and TRANSCRIPT-OFF
-;	char-ready?
-	macro				;has R4RS high level macros
-	defmacro			;has Common Lisp DEFMACRO
-	eval				;R5RS two-argument eval
-;	record				;has user defined data structures
-	values				;proposed multiple values
-	dynamic-wind			;proposed dynamic-wind
-	ieee-floating-point		;conforms to
-	full-continuation		;can return multiple times
 ;	object-hash			;has OBJECT-HASH
 
+	multiarg/and-			;/ and - can take more than 2 args.
+	with-file			;has WITH-INPUT-FROM-FILE and
+					;WITH-OUTPUT-FROM-FILE
+;	transcript			;TRANSCRIPT-ON and TRANSCRIPT-OFF
+	ieee-floating-point		;conforms to IEEE Standard 754-1985
+					;IEEE Standard for Binary
+					;Floating-Point Arithmetic.
+	full-continuation		;can return multiple times
+
+			;; Other common features
+
+	srfi				;srfi-0, COND-EXPAND finds all srfi-*
+;	sicp				;runs code from Structure and
+					;Interpretation of Computer
+					;Programs by Abelson and Sussman.
+	defmacro			;has Common Lisp DEFMACRO
+	record				;has user defined data structures
+	string-port			;has CALL-WITH-INPUT-STRING and
+					;CALL-WITH-OUTPUT-STRING
 	sort
-;	queue				;queues
 ;	pretty-print
-;	object->string
-;	format
+	object->string
+	format				;Common-lisp output formatting
 ;	trace				;has macros: TRACE and UNTRACE
 ;	compiler			;has (COMPILER)
 ;	ed				;(ED) is editor
 	system				;posix (system <string>)
 	getenv				;posix (getenv <string>)
 	program-arguments		;returns list of strings (argv)
-;	Xwindows			;X support
-;	curses				;screen management package
-;	termcap				;terminal description package
-;	terminfo			;sysV terminal description
 	current-time			;returns time in seconds since 1/1/1970
-        srfi
+
+		  ;; Implementation Specific features
 	))
 
 ;;; (OUTPUT-PORT-WIDTH <port>)
@@ -145,7 +155,7 @@
 (define getenv sys-getenv)
 
 ;;; (FILE-EXISTS? <string>)
-(define (file-exists? f) (sys-access f |F_OK|))
+; Gauche has this
 
 ;;; (DELETE-FILE <string>)
 (define (delete-file f)  (sys-unlink f))
@@ -175,10 +185,11 @@
 (define char-code-limit (+ *char-code-max* 1))
 
 ;;; MOST-POSITIVE-FIXNUM is used in modular.scm
+;; NB: this should be architecture dependent.
 (define most-positive-fixnum #x0FFFFFFF)
 
 ;;; Return argument
-(define (identity x) x)
+;(define (identity x) x)  Gauche has this.
 
 ;;; SLIB:EVAL is single argument eval using the top-level (user) environment.
 (define (slib:eval expr) (eval expr (interaction-environment)))
@@ -195,6 +206,7 @@
   (syntax-rules ()
     ((_ name params . body) (define-macro (name . params) . body))))
 
+;; Gauche has these
 ; macroexpand-1
 ; macroexpand
 
@@ -228,6 +240,30 @@
 
 ;;; define an error procedure for the library
 (define slib:error error)
+
+(define (make-exchanger obj)
+  (lambda (rep) (let ((old obj)) (set! obj rep) old)))
+(define (open-file filename modes)
+  (case modes
+    ((r rb) (open-input-file filename))
+    ((w wb) (open-output-file filename))
+    (else (slib:error 'open-file 'mode? modes))))
+(define (port? obj) (or (input-port? port) (output-port? port)))
+(define (call-with-open-ports . ports)
+  (define proc (car ports))
+  (cond ((procedure? proc) (set! ports (cdr ports)))
+	(else (set! ports (reverse ports))
+	      (set! proc (car ports))
+	      (set! ports (reverse (cdr ports)))))
+  (let ((ans (apply proc ports)))
+    (for-each close-port ports)
+    ans))
+(define (close-port port)
+  (cond ((input-port? port)
+	 (close-input-port port)
+	 (if (output-port? port) (close-output-port port)))
+	((output-port? port) (close-output-port port))
+	(else (slib:error 'close-port 'port? port))))
 
 ;;; define these as appropriate for your system.
 (define slib:tab (integer->char 9))

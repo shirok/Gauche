@@ -2,6 +2,8 @@
 
 	* configure.in : search slib from /usr/share/slib first, for
 	  it appears to be the default location of slib installation.
+	* lib/slib.scm.in : incorporated the changes of the slib2d3's
+	  Template.scm
 
 2002-03-30  Shiro Kawai  <shiro@acm.org>
 
