@@ -1,3 +1,15 @@
+2003-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/charconv/charconv.scm : fixed bug in wrap-* (keyword typo)
+	* doc/extract : fixed extract script so that it can deal with the
+	  euc-jp document under gosh with any internal encodings.
+	* src/gauche/char_none.h : add "NONE" to the compatible encoding names.
+	* src/compile.c, src/macro.c : added some code to support NVM (not
+	  yet completed).
+	* lib/text/html-lite.scm : inserting newlines before closing tags
+	  instead of after, to prevent extra whitespaces appear in the rendered
+	  output.
+
 2003-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm : allow character encoding conversion of CGI output
