@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.8 2004-12-27 01:15:50 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.9 2004-12-28 00:01:10 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -87,6 +87,7 @@ SCM_CLASS_DECL(Scm_CompiledCodeClass);
 SCM_EXTERN ScmObj Scm_PackCode(ScmObj code);
 SCM_EXTERN void Scm_CompiledCodeDump(ScmCompiledCode *cc);
 SCM_EXTERN ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc);
+SCM_EXTERN ScmObj Scm_MakeCompiledCode(ScmWord *code, int codeSize);
 
 /*
  * Environment frame

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.11 2004-12-25 00:37:03 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.12 2004-12-28 00:01:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3385,6 +3385,7 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
     }
 }
 
+/* A bridge to convert old-style directed graph into compiled code structure */
 ScmObj Scm_PackCode(ScmObj compiled)
 {
     pk_data data;
@@ -3452,6 +3453,16 @@ ScmObj Scm_PackCode(ScmObj compiled)
     return SCM_OBJ(cc);
 }
 
+/* An API to set up statically compiled code.  *PROVISIONAL* */
+ScmObj Scm_MakeCompiledCode(ScmWord *code, int codeSize)
+{
+    ScmCompiledCode *cc = make_compiled_code();
+    cc->code = code;
+    cc->codeSize = codeSize;
+    return SCM_OBJ(cc);
+}
+
+/* Disassembler */
 void Scm_CompiledCodeDump(ScmCompiledCode *cc)
 {
     int i;
