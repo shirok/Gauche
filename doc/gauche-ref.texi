@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.410 2003-06-09 06:55:14 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.411 2003-06-09 07:10:04 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -25227,9 +25227,15 @@ number from a few possibilities (environment variable, configuration file,
 
 @deftp {Module} srfi-4
 @mdindex srfi-4
+@c EN
 SRFI-4 is now implemented in @code{gauche.uvector} module
 @xref{gauche.uvector - Uniform vectors}.
 This module simply inherits @code{gauche.uvector} for backward-compatibility.
+@c JP
+SRFI-4は、@code{gauche.uvector}モジュールとして実装されています。
+@ref{gauche.uvector - Uniform vectors}参照。
+このモジュールは後方互換性のために単に@code{gauche.uvector}を継承しています。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
