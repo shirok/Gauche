@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.10 2001-09-27 10:14:23 shirok Exp $
+;;;  $Id: process.scm,v 1.11 2002-07-12 05:01:38 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -181,13 +181,15 @@
   (let* ((p (run-process "/bin/sh" "-c" command
                          :input "/dev/null" :output :pipe :error "/dev/null"))
          (i (process-output p)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () (proc i))
-     (lambda ()
-       (process-send-signal p |SIGTERM|)
-       (close-input-port i)
-       (process-wait p)))))
+    (with-error-handler
+        (lambda (e)
+          (close-input-port i)
+          (process-wait p)
+          (raise e))
+      (lambda ()
+        (begin0 (proc i)
+                (close-input-port i)
+                (process-wait p))))))
 
 (define (with-input-from-process command thunk)
   (call-with-input-process command
