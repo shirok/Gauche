@@ -7,6 +7,7 @@
 ;; SLIB module exports all symbols for compatibility.
 (define-module slib
   (use srfi-0)
+  (extend util.record)  ;; SLIB-compatible make-record-type
   (export-all))
 (select-module slib)
 
