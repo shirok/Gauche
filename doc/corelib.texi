@@ -5140,6 +5140,19 @@ returns.
 @end example
 @end defun
 
+@defmac values-ref mv-expr k
+Returns @var{k}-th value of what @var{mv-expr} returns.
+Conceptually, it is the same sa the following code.
+@example
+(call-with-values (lambda () mv-expr) (lambda r (list-ref r k)))
+@end example
+
+This macro shortcuts the typical cases like @var{k} is zero.
+
+Similar to Common Lisp's @code{nth-value}, but the argument order
+is flipped to match other Scheme's @code{*-ref} procedures.
+@end defmac
+
 @node Delayed Evaludation,  , Multiple values, Control features
 @subsection  Delayed Evaludation
 @c NODE √Ÿ±‰…æ≤¡
