@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.40 2001-05-30 08:19:57 shirok Exp $
+ *  $Id: load.c,v 1.41 2001-07-02 11:42:32 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -377,22 +377,24 @@ static const char *get_dynload_initfn(const char *filename)
 /* Dynamically load the specified object by FILENAME.
    FILENAME must not contain the system's suffix (.so, for example).
 */
-ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
+ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
 {
 #ifdef HAVE_DLOPEN
     ScmObj truename, load_paths = Scm_GetDynLoadPath();
     void *handle;
     void (*func)(void);
     const char *cpath, *initname;
+    int flags = RTLD_NOW;
 
     filename = SCM_STRING(Scm_StringAppendC(filename, "." SHLIB_SO_SUFFIX, -1, -1));
     truename = Scm_FindFile(filename, &load_paths, TRUE);
 
     if (!SCM_FALSEP(Scm_Member(truename, dso_list, SCM_CMP_EQUAL)))
         return SCM_FALSE;
-    
+
+    if (export) flags |= RTLD_GLOBAL;
     cpath = Scm_GetStringConst(SCM_STRING(truename));
-    handle = dlopen(cpath, RTLD_NOW);
+    handle = dlopen(cpath, flags);
     if (handle == NULL) {
         /* TODO: check if dlerror() is available on all platforms */
         const char *err = dlerror();
