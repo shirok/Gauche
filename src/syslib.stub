@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.10 2001-03-07 08:07:46 shiro Exp $
+;;; $Id: syslib.stub,v 1.11 2001-03-07 08:23:19 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -186,7 +186,7 @@
 ;;---------------------------------------------------------------------
 ;; sys/utsname.h
 
-;; returns list of (sysname nodename release versino machine)
+;; returns list of (sysname nodename release version machine)
 (defnie-cproc sys-uname ()
   "  struct utsname info;
   ScmObj head = SCM_NIL, tail;
@@ -366,9 +366,16 @@
 (define-cproc sys-symlink (existing new)
   (assert (string? existing))
   (assert (string? new))
-  "  int r = symlink(Scm_GetStringConst(existing), Scm_GetStringConst(new));
+  "
+#ifdef HAVE_SYMLINK
+  int r = symlink(Scm_GetStringConst(existing), Scm_GetStringConst(new));
   if (r < 0) Scm_SysError(\"link failed\");
-  SCM_RETURN(SCM_TRUE);")
+  SCM_RETURN(SCM_TRUE);
+#else
+  Scm_Error(\"the system doesn't support symbolic links\");
+  SCM_RETURN(SCM_FALSE);
+#endif
+")
 
 ;; Local variables:
 ;; mode: scheme
