@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.6 2002-01-22 01:52:35 shirok Exp $
+ *  $Id: signal.c,v 1.7 2002-01-22 11:39:46 shirok Exp $
  */
 
 #include <signal.h>
@@ -52,8 +52,12 @@ static struct sigdesc {
     SIGDEF(SIGILL),	/* Illegal instruction (ANSI).  */
     SIGDEF(SIGTRAP),	/* Trace trap (POSIX).  */
     SIGDEF(SIGABRT),	/* Abort (ANSI).  */
+#ifdef SIGIOT
     SIGDEF(SIGIOT),	/* IOT trap (4.2 BSD).  */
+#endif
+#ifdef SIGBUS
     SIGDEF(SIGBUS),	/* BUS error (4.2 BSD).  */
+#endif
     SIGDEF(SIGFPE),	/* Floating-point exception (ANSI).  */
     SIGDEF(SIGKILL),	/* Kill, unblockable (POSIX).  */
     SIGDEF(SIGUSR1),	/* User-defined signal 1 (POSIX).  */
@@ -62,22 +66,42 @@ static struct sigdesc {
     SIGDEF(SIGPIPE),	/* Broken pipe (POSIX).  */
     SIGDEF(SIGALRM),	/* Alarm clock (POSIX).  */
     SIGDEF(SIGTERM),	/* Termination (ANSI).  */
+#ifdef SIGSTKFLT
     SIGDEF(SIGSTKFLT),	/* Stack fault.  */
+#endif
     SIGDEF(SIGCHLD),	/* Child status has changed (POSIX).  */
     SIGDEF(SIGCONT),	/* Continue (POSIX).  */
     SIGDEF(SIGSTOP),	/* Stop, unblockable (POSIX).  */
     SIGDEF(SIGTSTP),	/* Keyboard stop (POSIX).  */
     SIGDEF(SIGTTIN),	/* Background read from tty (POSIX).  */
     SIGDEF(SIGTTOU),	/* Background write to tty (POSIX).  */
+#ifdef SIGURG
     SIGDEF(SIGURG),	/* Urgent condition on socket (4.2 BSD).  */
+#endif
+#ifdef SIGXCPU
     SIGDEF(SIGXCPU),	/* CPU limit exceeded (4.2 BSD).  */
+#endif
+#ifdef SIGXFSZ
     SIGDEF(SIGXFSZ),	/* File size limit exceeded (4.2 BSD).  */
+#endif
+#ifdef SIGVTALRM
     SIGDEF(SIGVTALRM),	/* Virtual alarm clock (4.2 BSD).  */
+#endif
+#ifdef SIGPROF
     SIGDEF(SIGPROF),	/* Profiling alarm clock (4.2 BSD).  */
+#endif
+#ifdef SIGWINCH
     SIGDEF(SIGWINCH),	/* Window size change (4.3 BSD, Sun).  */
+#endif
+#ifdef SIGPOLL
     SIGDEF(SIGPOLL),	/* Pollable event occurred (System V).  */
+#endif
+#ifdef SIGIO
     SIGDEF(SIGIO),	/* I/O now possible (4.2 BSD).  */
+#endif
+#ifdef SIGPWR
     SIGDEF(SIGPWR),	/* Power failure restart (System V).  */
+#endif
     { NULL, -1 }
 };
 
@@ -191,9 +215,9 @@ static void sig_handle(int signum)
         }
     } else {
         vm->sigQueue[vm->sigQueueTail++] = signum;
-        if (vm->sigQueueTail >= vm->sigQueueHead) {
-            vm->sigOverflow++;
-        }
+    }
+    if (vm->sigQueueTail == vm->sigQueueHead) {
+        Scm_Error("signal queue overflow\n");
     }
 }
 
@@ -206,7 +230,7 @@ void Scm_SigCheck(ScmVM *vm)
     int i;
     ScmObj sp, tail;
 
-    sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);
+    /*sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);*/
     /* NB: if an error occurs during the critical section,
        some signals may be lost. */
     SCM_UNWIND_PROTECT {
@@ -234,13 +258,13 @@ void Scm_SigCheck(ScmVM *vm)
         }
     }
     SCM_WHEN_ERROR {
-        sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
+        /*sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);*/
         SCM_NEXT_HANDLER;
     }
     SCM_END_PROTECT;
     /* TODO: signal overflow handling */
     vm->sigOverflow = 0;
-    sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
+    /*sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);*/
 }
 
 /*
@@ -253,6 +277,7 @@ void Scm_SigCheck(ScmVM *vm)
 
 static ScmObj set_sighandlers(ScmObj *args, int nargs, void *data)
 {
+    /* NB: change sigmask of this thread */
     ScmObj handlers = SCM_OBJ(data);
     Scm_VM()->sigHandlers = handlers;
 }
@@ -274,6 +299,45 @@ ScmObj Scm_VMWithSignalHandlers(ScmObj handlers, ScmProcedure *thunk)
     before = Scm_MakeSubr(set_sighandlers, newhandlers, 0, 0, SCM_FALSE);
     after = Scm_MakeSubr(set_sighandlers, vm->sigHandlers, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, SCM_OBJ(thunk), after);
+}
+
+/*
+ * set/get master signal
+ */
+/* TODO: MT protected */
+sigset_t Scm_GetMasterSigmask(void)
+{
+    return masterSigset;
+}
+
+void Scm_SetMasterSigmask(sigset_t *set)
+{
+    struct sigdesc *desc = sigDesc;
+    struct sigaction acton, actoff;
+
+    acton.sa_handler = (void(*)())sig_handle;
+    acton.sa_mask = *set;
+    acton.sa_flags = 0;
+    actoff.sa_handler = SIG_DFL;
+    sigemptyset(&actoff.sa_mask);
+    actoff.sa_flags = 0;
+    
+    for (; desc->name; desc++) {
+        if (sigismember(&masterSigset, desc->num)
+            && !sigismember(set, desc->num)) {
+            /* remove sighandler */
+            if (sigaction(desc->num, &actoff, NULL) != 0) {
+                Scm_SysError("sigaction on %d failed\n", desc->num);
+            }
+        } else if (!sigismember(&masterSigset, desc->num)
+                   && sigismember(set, desc->num)) {
+            /* add sighandler */
+            if (sigaction(desc->num, &acton, NULL) != 0) {
+                Scm_SysError("sigaction on %d failed\n", desc->num);
+            }
+        }
+    }
+    masterSigset = *set;
 }
 
 /*

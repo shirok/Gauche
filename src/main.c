@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.42 2002-01-15 21:05:22 shirok Exp $
+ *  $Id: main.c,v 1.43 2002-01-22 11:39:46 shirok Exp $
  */
 
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include "gauche.h"
 
 #ifdef HAVE_GETOPT_H
@@ -83,6 +84,21 @@ void further_options(const char *optarg)
     }
 }
 
+/* signal handler setup.  let's catch as many signals as possible. */
+static void sig_setup(void)
+{
+    sigset_t set;
+    sigfillset(&set);
+    sigdelset(&set, SIGABRT);
+    sigdelset(&set, SIGILL);
+    sigdelset(&set, SIGKILL);
+    sigdelset(&set, SIGCONT);
+    sigdelset(&set, SIGSTOP);
+    sigdelset(&set, SIGSEGV); /* for now */
+    sigdelset(&set, SIGCHLD); /* for now */
+    Scm_SetMasterSigmask(&set);
+}
+
 /*-----------------------------------------------------------------
  * MAIN
  */
@@ -118,6 +134,9 @@ int main(int argc, char **argv)
     SCM_FOR_EACH(cp, extra_load_paths) {
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(SCM_CAR(cp))), FALSE);
     }
+
+    /* setup signal handlers */
+    sig_setup();
 
     /* load init file */
     if (load_initfile) {

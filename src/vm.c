@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.128 2002-01-22 11:13:24 shirok Exp $
+ *  $Id: vm.c,v 1.129 2002-01-22 11:39:46 shirok Exp $
  */
 
 #include "gauche.h"
@@ -97,7 +97,9 @@ ScmVM *Scm_NewVM(ScmVM *base,
     for (i=0; i<SCM_VM_SIGQ_SIZE; i++) v->sigQueue[i] = -1;
     v->sigQueueHead = v->sigQueueTail = 0;
     v->sigOverflow = 0;
+    v->sigPending = SCM_NIL;
     v->sigHandlers =  SCM_NIL;
+    sigemptyset(&v->sigMask);
     
     return v;
 }
