@@ -342,5 +342,59 @@
                           (sys-fdset-ref rfds in)
                           (read-char in)))))))))
 
+;;-------------------------------------------------------------------
+(test-section "signal handling")
+
+(test "sigalrm1" SIGALRM
+      (lambda ()
+        (call/cc
+         (lambda (k)
+           (with-signal-handlers
+            ((SIGALRM => k)
+             (#t (k 0)))
+            (lambda ()
+              (sys-alarm 1)
+              (sys-pause)))))))
+
+(test "sigalrm2" 0
+      (lambda ()
+        (call/cc
+         (lambda (k)
+           (with-signal-handlers
+            ((#t (k 0))
+             (SIGALRM => k))
+            (lambda ()
+              (sys-alarm 1)
+              (sys-pause)))))))
+
+(test "sigalrm3" #t
+      (lambda ()
+        (with-error-handler
+         (lambda (e) #t)
+         (lambda ()
+           (call/cc
+            (lambda (k)
+              (with-signal-handlers
+               ((SIGINT => k)
+                (SIGUSR1 => k))
+               (lambda ()
+                 (sys-alarm 1)
+                 (sys-pause)))))))))
+
+(test "fork & sigint" SIGINT
+      (lambda ()
+        (let ((pid (sys-fork))
+              (r   0))
+          (if (= pid 0)
+              (let ((parent (sys-getppid)))
+                (sys-sleep 1)
+                (sys-kill parent SIGINT)
+                (sys-exit 0))
+              (with-signal-handlers
+               (((list SIGINT SIGUSR1) => (lambda (sig) (inc! r sig))))
+               (lambda ()
+                 (sys-sleep 2)
+                 r))))))
+
 (test-end)
 
