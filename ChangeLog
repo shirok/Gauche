@@ -1,3 +1,8 @@
+2003-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c, doc/gauche-ref.texi: typo fix
+	 (Patch from Kimura Fuyuki)
+
 2003-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* Makefile.in, acinclude.m4, aclocal.m4, configure.in, 

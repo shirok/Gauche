@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.386 2003-04-22 08:44:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.387 2003-04-25 01:47:54 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13826,7 +13826,7 @@ SRFI-time.
 @c JP
 [POSIX] @var{time} を @code{<sys-tm>} オブジェクトに変換します。
 標準時での表現かローカルタイムゾーンでの表現かで使い分けます。
-@var{Time} は POSIX 時間か SRFI 時間であす。
+@var{Time} は POSIX 時間か SRFI 時間です。
 @c COMMON
 @end defun
 

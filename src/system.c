@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.46 2002-12-13 11:41:41 shirok Exp $
+ *  $Id: system.c,v 1.47 2003-04-25 01:50:19 shirok Exp $
  */
 
 #include <stdio.h>
@@ -495,7 +495,7 @@ static ScmObj time_sec_get(ScmTime *t)
 static void time_sec_set(ScmTime *t, ScmObj val)
 {
     if (!SCM_REALP(val)) {
-        Scm_Error("reaul number required, but got %S", val);
+        Scm_Error("real number required, but got %S", val);
     }
     t->sec = Scm_GetInteger(val);
 }
