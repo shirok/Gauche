@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.368 2003-02-18 13:27:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.369 2003-02-25 02:48:43 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18851,7 +18851,7 @@ the subprocess, which is the default behavior.  If @var{flag} is
 false, @code{run-process} directly calls @code{sys-exec}, so
 it never returns.
 @c JP
-@var{flag} が真の場合、@code{run-process} はサブプロセスをじっこうするために
+@var{flag} が真の場合、@code{run-process} はサブプロセスを実行するために
 フォークします。これはデフォルトの振る舞いです。@var{flag} が偽の場合、
 @code{run-process} は直接 @code{sys-exec} を呼ぶので、それは返りません。
 @c COMMON
