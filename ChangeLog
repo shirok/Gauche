@@ -1,3 +1,9 @@
+2003-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www.cgi.scm (cgi-parse-parameters) : accept ';' as well as '&'
+	  as a parameter separator.  (Support of ';' is recommended in the
+	  B.2.2 of HTML4.01 specification).
+
 2003-08-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_ListTail): fixed error message when arg is out

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.12 2003-07-05 20:40:49 shirok Exp $
+;;;  $Id: cgi.scm,v 1.13 2003-09-01 20:30:34 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -134,7 +134,7 @@
                            (begin (set! (cdr p) (cons v (cdr p))) params)
                            (cons (list n v) params))))
                    '()
-                   (string-split input #\&))))
+                   (string-split input #[&\;]))))
      (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
 
 ;;----------------------------------------------------------------
