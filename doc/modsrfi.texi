@@ -1100,13 +1100,16 @@ satisfy @var{pred}, and returns the rest.
 @c EN
 [SRFI-1]
 Applies @var{pred} across each element of @var{clist}s, and
-returns true if any application of @var{pred} returns true.
-The returned value is the true value @var{pred} returned.
+returns as soon as @var{pred} returns a non-false value.
+The return value of @code{any} is the non-false value @var{pred} returned.
+If @var{clist}s are exhausted before @var{pred} returns a non-false
+value, @code{#f} is returned.
 @c JP
 [SRFI-1]
-@var{clist} の各要素に @var{pred} を適用し、その @var{pred} の
-いずれかの適用が真を返した場合、真を返します。
-戻り値は、@var{pred} が返した真の値です。
+@var{clist} の各要素に @var{pred} を適用し、@var{pred}が偽でない
+値を返したら直ちにその値を返します。
+@var{pred}が偽でない値を返す前にリストの要素を使いきってしまったら
+@code{#f}が返ります。
 @c COMMON
 @end defun
 
@@ -1114,16 +1117,14 @@ The returned value is the true value @var{pred} returned.
 @c EN
 [SRFI-1]
 Applies @var{pred} across each element of @var{clist}s, and
-returns true if every application of @var{pred} returns true.
-If all applications returns a true value until one of the lists
-is exhausted, @code{every} returns the value the last @var{pred}
-returned.
+returns @code{#f} as soon as @var{pred} returns @code{#f}.
+If all application of @var{pred} return a non-false value, 
+@code{every} returns the last result of the applications.
 @c JP
 [SRFI-1]
-@var{clist} の各要素に @var{pred} を適用し、@var{pred} の全ての
-適用が真を返した場合、真を返します。リストのうちの1つが全て
-消費されるまでの全ての適用が真を返す場合、@code{every} は最後の
-@var{pred} が返した値になります。
+@var{clist} の各要素に @var{pred} を順に適用し、@var{pred}が
+偽を返した場合、直ちに偽を返します。全ての@var{pred}の適用が
+偽でない値を返した場合は、最後に返された値が返されます。
 @c COMMON
 @end defun
 
