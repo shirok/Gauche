@@ -95,14 +95,16 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h      \
 INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh$(EXEEXT) gauche-config gauche-install gauche-package \
                gauche-cesconv
-INSTALL_BATS = gauche-config.bat gauche-install.bat gauche-package.bat \
-               gauche-cesconv.bat
 INSTALL_SCMS = gauche-init.scm genstub cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
 PRIVATE_HEADERS = gauche/arith.h 
 
+# MinGW specific
+INSTALL_MINGWHEADERS = gauche/mingw-compat.h
+INSTALL_BATS = gauche-config.bat gauche-install.bat gauche-package.bat \
+               gauche-cesconv.bat
 
 # build -----------------------------------------------
 
@@ -281,3 +283,4 @@ uninstall :
 
 install-mingw: $(INSTALL_BATS)
 	$(INSTALL) -m 555 $(INSTALL_BATS) $(DESTDIR)$(BIN_INSTALL_DIR)
+	$(INSTALL) -m 444 $(INSTALL_MINGWHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche

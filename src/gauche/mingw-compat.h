@@ -6,7 +6,7 @@
  *  I tried to put mingw-specific stuff here as much as possible,
  *  instead of scattering #ifdefs around the sources.
  *
- *  $Id: mingw-compat.h,v 1.2 2004-07-16 06:03:20 shirok Exp $
+ *  $Id: mingw-compat.h,v 1.3 2004-11-21 22:42:27 shirok Exp $
  */
 
 #ifndef GAUCHE_MINGW_COMPAT_H
@@ -33,8 +33,12 @@ typedef unsigned long u_long;
  * MinGW doesn't really have users and groups in the sense of POSIX,
  * so we fake them.
  */
+#ifndef gid_t
 typedef int gid_t;
+#endif
+#ifndef uid_t
 typedef int uid_t;
+#endif
 
 struct passwd {
     char *pw_name;
