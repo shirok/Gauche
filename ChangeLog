@@ -1,5 +1,11 @@
 2002-07-12  Shiro Kawai  <shiro@acm.org>
 
+	* gc/configure.in : undefine GC_GCJ_SUPPORT.
+	* ext/net/net.c (Scm_SocketGetOpt): fixed a bug that may returned
+	  smaller data.
+	* ext/uvector/uvector.c.sh, ext/uvector/uvectorP.h : fixed a bug
+	  that caused s64/u64 vector code crash.  SCM_NEW2 should be used
+	  instead of SCM_NEW_ATOMIC2 for these vectors on ILP32 architecture.
 	* configure.in, src/gauche/config.h.in : set proper thread-supporting
 	  #defines accodring to the platform.
 
