@@ -1,3 +1,10 @@
+2003-08-07  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in, lib/Makefile.in, lib/mklibcat : added 'slibcat-in-place'
+	  make target which creates 'slibcat' within the source tree before
+	  installing gauche.  This is useful to make a package of the
+	  system that doesn't allow to run a postinstall script.
+
 2003-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/record.scm : added SCM compatible make-record-type
