@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.17 2001-10-13 11:44:18 shirok Exp $
+ *  $Id: hash.c,v 1.18 2001-10-16 11:14:18 shirok Exp $
  */
 
 #include "gauche.h"
@@ -371,12 +371,36 @@ static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
 /* generic scheme object hash */
 static unsigned long general_hash(ScmObj obj)
 {
-    return 0;                   /* to be implemented */
+    if (!SCM_PTRP(obj)) {
+        return (unsigned long)obj;
+    } else if (SCM_NUMBERP(obj)) {
+        return eqv_hash(obj);
+    } else if (SCM_STRINGP(obj)) {
+        return string_hash(obj);
+    } else if (SCM_PAIRP(obj)) {
+        /* Note: this diverges when we have circular structure */
+        return (general_hash(SCM_CAR(obj)) + general_hash(SCM_CDR(obj)));
+    } else if (SCM_VECTORP(obj)) {
+        int i;
+        unsigned long h = 0;
+        ScmObj elt;
+        SCM_VECTOR_FOR_EACH(i, elt, obj) {
+            h += general_hash(elt);
+        }
+        return h;
+    } else if (SCM_SYMBOLP(obj)) {
+        return string_hash(SCM_OBJ(SCM_SYMBOL_NAME(obj)));
+    } else if (SCM_KEYWORDP(obj)) {
+        return string_hash(SCM_OBJ(SCM_KEYWORD_NAME(obj)));
+    } else {
+        /* TODO: allow to define per-object hash function */
+        Scm_Error("object not hashable: %S", obj);
+    }
 }
 
 static int general_cmp(ScmObj key, ScmHashEntry *e)
 {
-    return 0;                   /* to be implemented */
+    return (Scm_EqualP(key, e->key)? 0 : -1);
 }
 
 /*---------------------------------------------------------
