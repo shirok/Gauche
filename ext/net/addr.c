@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.2 2001-06-12 10:20:45 shirok Exp $
+ *  $Id: addr.c,v 1.3 2001-06-13 06:33:51 shirok Exp $
  */
 
 #include "net.h"
@@ -146,7 +146,7 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
         memcpy(addr->addr.sun_path, SCM_STRING_START(path), size);
         addr->addr.sun_path[size] = '\0';
     }
-    addr->addrlen = SUN_LEN(&addr->addr);
+    addr->addrlen = sizeof(struct sockaddr_un);
     return SCM_OBJ(addr);
 }
 
