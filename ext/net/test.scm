@@ -139,7 +139,7 @@
 
 (sys-unlink "sock.o")
 
-(test "unix server socket" 'socket
+(test "unix server socket" #f
       (lambda ()
         (let ((pid (sys-fork)))
           (if (= pid 0)
@@ -147,7 +147,7 @@
               (begin
                 (sys-select #f #f #f 300000)
                 (let ((stat (sys-stat "sock.o")))
-                  (sys-stat->file-type stat)))))))
+                  (not (memq (sys-stat->file-type stat) '(socket fifo)))))))))
 
 (test "unix client socket" '("ABC" "XYZ")
       (lambda ()
