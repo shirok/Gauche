@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.26 2001-02-19 22:54:58 shiro Exp $
+;;; $Id: extlib.stub,v 1.27 2001-02-21 08:02:18 shiro Exp $
 ;;;
 
 ;;
@@ -72,7 +72,7 @@
   SCM_RETURN(head);")
 
 (define-cproc reverse! (list)
-  "  SCM_RETURN(Scm_Reverse(list));")
+  "  SCM_RETURN(Scm_ReverseX(list));")
 
 (define-cproc pair-attributes (pair)
   (assert (pair? pair))
