@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.29 2001-12-07 07:31:30 shirok Exp $
+ *  $Id: read.c,v 1.30 2001-12-09 09:37:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -24,10 +24,10 @@
  * READ
  */
 
-static ScmObj read_internal(ScmPort *port);
-static ScmObj read_list(ScmPort *port, ScmChar closer);
+static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
+static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep);
-static ScmObj read_quoted(ScmPort *port, ScmObj quoter);
+static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
 static ScmObj read_char(ScmPort *port);
 static ScmObj read_word(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial);
@@ -38,9 +38,7 @@ static ScmObj read_keyword(ScmPort *port);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
-static ScmObj maybe_uvector(ScmPort *port, char c);
-
-static ScmObj sym_read_sharp_comma_string;
+static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
@@ -54,18 +52,24 @@ static ScmHashTable *read_ctor_table;
  */
 ScmObj Scm_Read(ScmObj port)
 {
+    ScmReadContext ctx;
+    ctx.flags = SCM_READ_SOURCE_INFO;
+    ctx.table = NULL;
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-    return read_internal(SCM_PORT(port));
+    return read_internal(SCM_PORT(port), &ctx);
 }
 
 ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 {
+    ScmReadContext ctx;
+    ctx.flags = SCM_READ_SOURCE_INFO;
+    ctx.table = NULL;
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-    return read_list(SCM_PORT(port), closer);
+    return read_list(SCM_PORT(port), closer, &ctx);
 }
 
 /*----------------------------------------------------------------
@@ -121,14 +125,14 @@ static int skipws(ScmPort *port)
     case '{':; case '}':; case '"':; case ';':;       \
     case ' ':; case '\n':; case '\t':; case '\r'
 
-ScmObj read_internal(ScmPort *port)
+ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
 {
     int c;
 
     c = skipws(port);
     switch (c) {
     case '(':
-        return read_list(port, ')');
+        return read_list(port, ')', ctx);
     case '"':
         return read_string(port, FALSE);
     case '#':
@@ -139,12 +143,12 @@ ScmObj read_internal(ScmPort *port)
             case EOF:
                 read_error(port, "premature #-sequence at EOF");
             case 't':; case 'T': return SCM_TRUE;
-            case 'f':; case 'F': return maybe_uvector(port, 'f');
-            case 's':; case 'S': return maybe_uvector(port, 's');
-            case 'u':; case 'U': return maybe_uvector(port, 'u');
+            case 'f':; case 'F': return maybe_uvector(port, 'f', ctx);
+            case 's':; case 'S': return maybe_uvector(port, 's', ctx);
+            case 'u':; case 'U': return maybe_uvector(port, 'u', ctx);
             case '(':
                 {
-                    ScmObj v = read_list(port, ')');
+                    ScmObj v = read_list(port, ')', ctx);
                     return Scm_ListToVector(v);
                 }
             case '\\':
@@ -158,7 +162,7 @@ ScmObj read_internal(ScmPort *port)
                 /* allow `#!' magic of executable */
                 for (;;) {
                     SCM_GETC(c, port);
-                    if (c == '\n') return read_internal(port);
+                    if (c == '\n') return read_internal(port, ctx);
                     if (c == EOF) return SCM_EOF;
                 }
             case '/':
@@ -173,21 +177,21 @@ ScmObj read_internal(ScmPort *port)
             case ',':
                 /* #,(form) - SRFI-10 read-time macro */
                 {
-                    ScmObj form = read_internal(port);
+                    ScmObj form = read_internal(port, ctx);
                     return read_sharp_comma(port, form);
                 }
             case '@':
                 /* #@form - debug print (for now) */
                 {
-                    ScmObj form = read_internal(port);
+                    ScmObj form = read_internal(port, ctx);
                     return SCM_LIST2(SCM_INTERN("debug-print"), form);
                 }
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
         }
-    case '\'': return read_quoted(port, SCM_SYM_QUOTE);
-    case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE);
+    case '\'': return read_quoted(port, SCM_SYM_QUOTE, ctx);
+    case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE, ctx);
     case ':':
         return read_keyword(port);
     case ',':
@@ -197,19 +201,19 @@ ScmObj read_internal(ScmPort *port)
             if (c1 == EOF) {
                 read_error(port, "unterminated unquote");
             } else if (c1 == '@') {
-                return read_quoted(port, SCM_SYM_UNQUOTE_SPLICING);
+                return read_quoted(port, SCM_SYM_UNQUOTE_SPLICING, ctx);
             } else {
                 SCM_UNGETC(c1, port);
-                return read_quoted(port, SCM_SYM_UNQUOTE);
+                return read_quoted(port, SCM_SYM_UNQUOTE, ctx);
             }
         }
     case '|':
         return read_escaped_symbol(port, '|');
     case '[':
         /* TODO: make it customizable */
-        return read_list(port, ']');
+        return read_list(port, ']', ctx);
     case '{':
-        return read_list(port, '}');
+        return read_list(port, '}', ctx);
     case '+':; case '-':
         /* Note: R5RS doesn't permit identifiers beginning with '+' or '-',
            but some Scheme programs use such identifiers. */
@@ -244,7 +248,7 @@ ScmObj read_internal(ScmPort *port)
  * List
  */
 
-static ScmObj read_list(ScmPort *port, ScmChar closer)
+static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     ScmObj start = SCM_NIL, last = SCM_NIL, item;
     int c, dot_seen = 0;
@@ -266,7 +270,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer)
                 if (start == SCM_NIL) {
                     read_error(port, "bad dot syntax");
                 }
-                item = read_internal(port);
+                item = read_internal(port, ctx);
                 SCM_SET_CDR(last, item);
                 dot_seen++;
                 continue;
@@ -275,15 +279,15 @@ static ScmObj read_list(ScmPort *port, ScmChar closer)
             item = read_symbol_or_number(port, c);
         } else {
             SCM_UNGETC(c, port);
-            item = read_internal(port);
+            item = read_internal(port, ctx);
         }
         SCM_APPEND1(start, last, item);
     }
 }
 
-static ScmObj read_quoted(ScmPort *port, ScmObj quoter)
+static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 {
-    ScmObj item = read_internal(port);
+    ScmObj item = read_internal(port, ctx);
     if (SCM_EOFP(item)) read_error(port, "unterminated quote");
     return Scm_Cons(quoter, Scm_Cons(item, SCM_NIL));
 }
@@ -568,10 +572,6 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmObj form)
     ScmHashEntry *e;
 
     if (len <= 0) {
-        if (SCM_STRINGP(form)) {
-            /* #,"foo" extension */
-            return SCM_LIST2(sym_read_sharp_comma_string, form);
-        }
         read_error(port, "bad #,-form: #,%S", form);
     }
 
@@ -596,7 +596,7 @@ static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
 /* Uvector support is implemented by extention.  When the extention
    is loaded, it sets up the pointer Scm_ReadUvectorHook. */
 
-static ScmObj maybe_uvector(ScmPort *port, char ch)
+static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 {
     ScmChar c1 = 0, c2 = SCM_CHAR_INVALID;
     char *tag = NULL;
@@ -658,7 +658,5 @@ void Scm__InitRead(void)
     Scm_DefineReaderCtor(sym_reader_ctor,
                          Scm_MakeSubr(reader_ctor, NULL, 2, 0,
                                       sym_reader_ctor));
-
-    sym_read_sharp_comma_string = SCM_INTERN("read-#,-string");
 }
 
