@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.scm,v 1.7 2003-09-15 12:47:43 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.8 2003-10-23 02:42:37 fuyuki Exp $
 ;;;
 
 (define-module dbm.gdbm
@@ -69,7 +69,7 @@
 (define-method dbm-open ((self <gdbm>))
   (next-method)
   (unless (slot-bound? self 'path)
-    (errorf "path must be set to open gdbm database"))
+    (error "path must be set to open gdbm database"))
   (when (gdbm-file-of self)
     (errorf "gdbm ~S already opened" gdbm))
   (let* ((path   (slot-ref self 'path))

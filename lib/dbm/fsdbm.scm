@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.3 2003-10-18 04:45:39 fuyuki Exp $
+;;;  $Id: fsdbm.scm,v 1.4 2003-10-23 02:42:37 fuyuki Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -94,7 +94,7 @@
 (define-method dbm-open ((self <fsdbm>))
   (next-method)
   (unless (slot-bound? self 'path)
-    (errorf "path must be set to open dbm database"))
+    (error "path must be set to open fsdbm database"))
   (let ((path    (ref self 'path))
         (rwmode  (ref self 'rw-mode))
         (fmode   (ref self 'file-mode)))

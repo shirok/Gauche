@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cookie.scm,v 1.7 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: cookie.scm,v 1.8 2003-10-23 02:42:37 fuyuki Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in
@@ -185,7 +185,7 @@
       (cond
        ((null? attr) (string-join (reverse r) ";"))
        ((null? (cdr attr))
-        (errorf "bad cooke spec: attribute %s requires value" (car attr)))
+        (errorf "bad cookie spec: attribute ~s requires value" (car attr)))
        ((eqv? :comment (car attr))
         (if (> ver 0)
             (next (string-append "Comment=" (quote-if-needed (cadr attr))))

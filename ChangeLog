@@ -1,3 +1,9 @@
+2003-10-23  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* ext/dbm/gdbm.scm, ext/dbm/ndbm.scm, ext/dbm/odbm.scm,
+	  lib/dbm/fsdbm.scm, lib/rfc/cookie.scm, lib/srfi-19/format.scm :
+	  Use "error" rather than "errorf" if not needed.
+
 2003-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* Makefile.in, Gauche.spec : installs acinclude.m4 as gauche.m4 under

@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.8 2003-02-28 04:02:31 shirok Exp $
+;;; $Id: format.scm,v 1.9 2003-10-23 02:42:37 fuyuki Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -286,7 +286,7 @@
 	(cond
 	 ((>= nchars n) accum)
 	 ((eof-object? ch)
-          (errorf "string->date: premature ending of integer read"))
+          (error "string->date: premature ending of integer read"))
 	 ((char-numeric? ch)
 	  (set! padding-ok #f)
 	  (accum-int port
@@ -296,7 +296,7 @@
 	  (read-ch port) ; consume padding
 	  (accum-int prot accum (+ nchars 1)))
 	 (else ; padding where it shouldn't be
-          (errorf "string->date: Non-numeric characters in integer read."))
+          (error "string->date: Non-numeric characters in integer read."))
          )))
     (accum-int port 0 0)))
 
@@ -320,22 +320,22 @@
               (errorf "string->date: invalid time zone +/-: ~s" ch)))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-                  (errorf "string->date: premature end of time zone number"))
+                  (error "string->date: premature end of time zone number"))
 	      (set! offset (* (tm:char->int ch)
 			      10 60 60)))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-                  (errorf "string->date: premature end of time zone number"))
+                  (error "string->date: premature end of time zone number"))
 	      (set! offset (+ offset (* (tm:char->int ch)
 					60 60))))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-                  (errorf "string->date: premature end of time zone number"))
+                  (error "string->date: premature end of time zone number"))
 	      (set! offset (+ offset (* (tm:char->int ch)
 					10 60))))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-                  (errorf "string->date: premature end of time zone number"))
+                  (error "string->date: premature end of time zone number"))
 	      (set! offset (+ offset (* (tm:char->int ch)
 					60))))
 	    (if positive? offset (- offset)))))))
@@ -362,7 +362,7 @@
   (lambda (port)
     (if (char=? char (read-char port))
 	char
-        (errorf "string->date: invalid character match"))))
+        (error "string->date: invalid character match"))))
 
 ;; A List of formatted read directives.
 ;; Each entry is a list.

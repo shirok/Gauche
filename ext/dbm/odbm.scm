@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: odbm.scm,v 1.6 2003-09-15 12:47:44 shirok Exp $
+;;;  $Id: odbm.scm,v 1.7 2003-10-23 02:42:37 fuyuki Exp $
 ;;;
 
 (define-module dbm.odbm
@@ -69,7 +69,7 @@
 (define-method dbm-open ((self <odbm>))
   (next-method)
   (unless (slot-bound? self 'path)
-    (errorf "path must be set to open dbm database"))
+    (error "path must be set to open odbm database"))
   (let* ((path   (slot-ref self 'path))
          (rwmode (slot-ref self 'rw-mode))
          (fmode  (slot-ref self 'file-mode))
@@ -114,7 +114,7 @@
 (define-method dbm-put! ((self <odbm>) key value)
   (next-method)
   (when (positive? (odbm-store (%dbm-k2s self key) (%dbm-v2s self value)))
-    (errorf "dbm-put!: put failed")))
+    (error "dbm-put! failed" self)))
 
 (define-method dbm-get ((self <odbm>) key . args)
   (next-method)
