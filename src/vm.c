@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.75 2001-04-22 07:21:50 shiro Exp $
+ *  $Id: vm.c,v 1.76 2001-05-09 10:32:05 shirok Exp $
  */
 
 #include "gauche.h"
@@ -390,7 +390,6 @@ static void run_loop()
                 RESTORE_REGS();
                 continue;
             }
-            
             POP_CONT();
             continue;
         }
@@ -789,6 +788,7 @@ static void run_loop()
             CASE(SCM_VM_CONS) {
                 ScmObj ca;
                 POP_ARG(ca);
+                SAVE_REGS();
                 val0 = Scm_Cons(ca, val0);
                 continue;
             }
@@ -809,9 +809,11 @@ static void run_loop()
                 ScmObj cp = SCM_NIL;
                 if (nargs > 0) {
                     ScmObj arg;
+                    SAVE_REGS();
                     cp = Scm_Cons(val0, cp);
                     while (--nargs > 0) {
                         POP_ARG(arg);
+                        SAVE_REGS();
                         cp = Scm_Cons(arg, cp);
                     }
                 }
@@ -826,6 +828,7 @@ static void run_loop()
                     cp = val0;
                     while (--nargs > 0) {
                         POP_ARG(arg);
+                        SAVE_REGS();
                         cp = Scm_Cons(arg, cp);
                     }
                 }
@@ -849,30 +852,35 @@ static void run_loop()
             CASE(SCM_VM_EQV) {
                 ScmObj item;
                 POP_ARG(item);
+                SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_EqvP(item, val0));
                 continue;
             }
             CASE(SCM_VM_MEMQ) {
                 ScmObj item;
                 POP_ARG(item);
+                SAVE_REGS();
                 val0 = Scm_Memq(item, val0);
                 continue;
             }
             CASE(SCM_VM_MEMV) {
                 ScmObj item;
                 POP_ARG(item);
+                SAVE_REGS();
                 val0 = Scm_Memv(item, val0);
                 continue;
             }
             CASE(SCM_VM_ASSQ) {
                 ScmObj item;
                 POP_ARG(item);
+                SAVE_REGS();
                 val0 = Scm_Assq(item, val0);
                 continue;
             }
             CASE(SCM_VM_ASSV) {
                 ScmObj item;
                 POP_ARG(item);
+                SAVE_REGS();
                 val0 = Scm_Assv(item, val0);
                 continue;
             }
@@ -883,8 +891,9 @@ static void run_loop()
                     cp = val0;
                     while (--nargs > 0) {
                         POP_ARG(arg);
+                        SAVE_REGS();
                         if (Scm_Length(arg) < 0)
-                            Scm_Error("list required, but got %S\n", arg);
+                            VM_ERR(("list required, but got %S\n", arg));
                         cp = Scm_Append2(arg, cp);
                     }
                 }
@@ -892,16 +901,20 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_REVERSE) {
+                SAVE_REGS();
                 val0 = Scm_Reverse(val0);
                 continue;
             }
             CASE(SCM_VM_PROMISE) {
+                SAVE_REGS();
                 val0 = Scm_MakePromise(val0);
                 continue;
             }
             CASE(SCM_VM_VEC) {
                 int nargs = SCM_VM_INSN_ARG(code), i;
-                ScmObj vec = Scm_MakeVector(nargs, SCM_UNDEFINED);
+                ScmObj vec;
+                SAVE_REGS();
+                vec = Scm_MakeVector(nargs, SCM_UNDEFINED);
                 if (nargs > 0) {
                     ScmObj arg = val0;
                     for (i=nargs-1; i > 0; i--) {
@@ -920,11 +933,13 @@ static void run_loop()
                     cp = val0;
                     while (--nargs > 0) {
                         POP_ARG(arg);
+                        SAVE_REGS();
                         if (Scm_Length(arg) < 0)
-                            Scm_Error("list required, but got %S\n", arg);
+                            VM_ERR(("list required, but got %S\n", arg));
                         cp = Scm_Append2(arg, cp);
                     }
                 }
+                SAVE_REGS();
                 val0 = Scm_ListToVector(cp);
                 continue;
             }
@@ -973,43 +988,50 @@ static void run_loop()
                 if (SCM_INTP(val0) && SCM_INTP(arg)) {
                     val0 = SCM_MAKE_BOOL(val0 == arg);
                 } else {
-                    val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) == 0);
+                    SAVE_REGS();
+                    val0 = SCM_MAKE_BOOL(Scm_NumEq(arg, val0));
                 }
                 continue;
             }
             CASE(SCM_VM_NUMLT2) {
                 ScmObj arg;
                 POP_ARG(arg);
+                SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) < 0);
                 continue;
             }
             CASE(SCM_VM_NUMLE2) {
                 ScmObj arg;
                 POP_ARG(arg);
+                SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) <= 0);
                 continue;
             }
             CASE(SCM_VM_NUMGT2) {
                 ScmObj arg;
                 POP_ARG(arg);
+                SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) > 0);
                 continue;
             }
             CASE(SCM_VM_NUMGE2) {
                 ScmObj arg;
                 POP_ARG(arg);
+                SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) >= 0);
                 continue;
             }
             CASE(SCM_VM_NUMADD2) {
                 ScmObj arg;
                 POP_ARG(arg);
+                SAVE_REGS();
                 val0 = Scm_Add(SCM_LIST2(arg, val0));
                 continue;
             }
             CASE(SCM_VM_NUMSUB2) {
                 ScmObj arg;
                 POP_ARG(arg);
+                SAVE_REGS();
                 val0 = Scm_Subtract(arg, val0, SCM_NIL);
                 continue;
             }
@@ -1020,9 +1042,11 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         val0 = SCM_MAKE_INT(imm);
                     } else {
+                        SAVE_REGS();
                         val0 = Scm_MakeInteger(imm);
                     }
                 } else {
+                    SAVE_REGS();
                     val0 = Scm_Add(SCM_LIST2(SCM_MAKE_INT(imm), val0));
                 }
                 continue;
@@ -1034,9 +1058,11 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         val0 = SCM_MAKE_INT(imm);
                     } else {
+                        SAVE_REGS();
                         val0 = Scm_MakeInteger(imm);
                     }
                 } else {
+                    SAVE_REGS();
                     val0 = Scm_Subtract(SCM_MAKE_INT(imm), val0, SCM_NIL);
                 }
                 continue;
@@ -1046,11 +1072,12 @@ static void run_loop()
                 ScmPort *port;
                 if (nargs == 1) {
                     if (!SCM_IPORTP(val0))
-                        Scm_Error("read-char: input port required: %S", val0);
+                        VM_ERR(("read-char: input port required: %S", val0));
                     port = SCM_PORT(val0);
                 } else {
                     port = SCM_CURIN;
                 }
+                SAVE_REGS();
                 SCM_GETC(ch, port);
                 val0 = (ch < 0)? SCM_EOF : SCM_MAKE_CHAR(ch);
                 continue;
@@ -1061,7 +1088,7 @@ static void run_loop()
                 ScmPort *port;
                 if (nargs == 2) {
                     if (!SCM_OPORTP(val0))
-                        Scm_Error("write-char: output port required: %S", val0);
+                        VM_ERR(("write-char: output port required: %S", val0));
                     port = SCM_PORT(val0);
                     POP_ARG(ch);
                 } else {
@@ -1069,7 +1096,8 @@ static void run_loop()
                     ch = val0;
                 }
                 if (!SCM_CHARP(ch))
-                    Scm_Error("write-char: character required: %S", ch);
+                    VM_ERR(("write-char: character required: %S", ch));
+                SAVE_REGS();
                 SCM_PUTC(SCM_CHAR_VALUE(ch), port);
                 val0 = SCM_MAKE_INT(1);
                 continue;
@@ -1623,24 +1651,21 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
     ScmObj pc = vm->pc;
     ScmObj stack = SCM_NIL, stacktail = SCM_NIL;
 
-    for (;;) {
-        SCM_FOR_EACH(pc, pc) {
-            if (SCM_SOURCE_INFOP(SCM_CAR(pc))) {
-                SCM_APPEND1(stack, stacktail,
-                            SCM_SOURCE_INFO(SCM_CAR(pc))->info);
-                break;
-            }
+    /* Get info from the last subr call, if any.
+       This will be removed once source-info mechanism gone. */
+    SCM_FOR_EACH(pc, pc) {
+        if (SCM_SOURCE_INFOP(SCM_CAR(pc))) {
+            SCM_APPEND1(stack, stacktail, SCM_SOURCE_INFO(SCM_CAR(pc))->info);
             break;
         }
-        if (e) {
-            SCM_APPEND1(stack, stacktail, e->info);
-        }
-
-        if (!c) break;
+        break;
+    }
+    
+    while (c) {
+        if (e) SCM_APPEND1(stack, stacktail, e->info);
         e = c->env;
-        pc = c->pc;
         c = c->prev;
-    } while (c);
+    }
     return stack;
 }
 
