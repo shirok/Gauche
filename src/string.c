@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.66 2002-09-21 10:30:50 shirok Exp $
+ *  $Id: string.c,v 1.67 2002-09-27 10:01:19 shirok Exp $
  */
 
 #include <stdio.h>
@@ -387,6 +387,20 @@ int Scm_StringByteRef(ScmString *str, int offset)
         Scm_Error("argument out of range: %d", offset);
     }
     return (ScmByte)SCM_STRING_START(str)[offset];
+}
+
+/* External interface of forward_pos.  Returns the pointer to the
+   offset-th character in str. */
+const char *Scm_StringPosition(ScmString *str, int offset)
+{
+    if (offset < 0 || offset >= SCM_STRING_LENGTH(str)) {
+        Scm_Error("argument out of range: %d", offset);
+    }
+    if (SCM_STRING_INCOMPLETE_P(str)) {
+        return (SCM_STRING_START(str)+offset);
+    } else {
+        return (forward_pos(SCM_STRING_START(str), offset));
+    }
 }
 
 /*----------------------------------------------------------------

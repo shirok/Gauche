@@ -1166,6 +1166,136 @@
                      #u64(3 3 3 3 3) #u64(199 199 199 199 199))
 
 ;;-------------------------------------------------------------------
+(test-section "string <-> uvector")
+
+(test "string->u8vector" '#u8(64 65 66 67 68)
+      (lambda () (string->u8vector "@ABCD")))
+(test "string->u8vector (start)" '#u8(66 67 68)
+      (lambda () (string->u8vector "@ABCD" 2)))
+(test "string->u8vector (start, end)" '#u8(65 66 67)
+      (lambda () (string->u8vector "@ABCD" 1 4)))
+(test "string->u8vector (start, end)" '#u8(64 65 66 67 68)
+      (lambda () (string->u8vector "@ABCD" 0 5)))
+(test "string->u8vector (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (string->u8vector "abcde" 2 6)))))
+
+(test "u8vector->string" "@ABCD"
+      (lambda () (u8vector->string '#u8(64 65 66 67 68))))
+(test "u8vector->string (start)" "ABCD"
+      (lambda () (u8vector->string '#u8(64 65 66 67 68) 1)))
+(test "u8vector->string (start, end)" "BC"
+      (lambda () (u8vector->string '#u8(64 65 66 67 68) 2 4)))
+(test "u8vector->string (start, end)" "@ABCD"
+      (lambda () (u8vector->string '#u8(64 65 66 67 68) 0 5)))
+(test "u8vector->string (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (u8vector->string '#u8(64 65 66 67 68) 0 8)))))
+
+(test "string->s8vector" '#s8(64 65 66 67 68)
+      (lambda () (string->s8vector "@ABCD")))
+(test "string->s8vector (start)" '#s8(66 67 68)
+      (lambda () (string->s8vector "@ABCD" 2)))
+(test "string->s8vector (start, end)" '#s8(65 66 67)
+      (lambda () (string->s8vector "@ABCD" 1 4)))
+(test "string->s8vector (start, end)" '#s8(64 65 66 67 68)
+      (lambda () (string->s8vector "@ABCD" 0 5)))
+(test "string->s8vector (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (string->s8vector "abcde" 2 6)))))
+
+(test "s8vector->string" "@ABCD"
+      (lambda () (s8vector->string '#s8(64 65 66 67 68))))
+(test "s8vector->string (start)" "ABCD"
+      (lambda () (s8vector->string '#s8(64 65 66 67 68) 1)))
+(test "s8vector->string (start, end)" "BC"
+      (lambda () (s8vector->string '#s8(64 65 66 67 68) 2 4)))
+(test "s8vector->string (start, end)" "@ABCD"
+      (lambda () (s8vector->string '#s8(64 65 66 67 68) 0 5)))
+(test "s8vector->string (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (s8vector->string '#s8(64 65 66 67 68) 0 8)))))
+
+(test "string->u32vector" '#u32(64 65 66 67 68)
+      (lambda () (string->u32vector "@ABCD")))
+(test "string->u32vector (start)" '#u32(66 67 68)
+      (lambda () (string->u32vector "@ABCD" 2)))
+(test "string->u32vector (start, end)" '#u32(65 66 67)
+      (lambda () (string->u32vector "@ABCD" 1 4)))
+(test "string->u32vector (start, end)" '#u32(64 65 66 67 68)
+      (lambda () (string->u32vector "@ABCD" 0 5)))
+(test "string->u32vector (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (string->u32vector "abcde" 2 6)))))
+
+(test "u32vector->string" "@ABCD"
+      (lambda () (u32vector->string '#u32(64 65 66 67 68))))
+(test "u32vector->string (start)" "ABCD"
+      (lambda () (u32vector->string '#u32(64 65 66 67 68) 1)))
+(test "u32vector->string (start, end)" "BC"
+      (lambda () (u32vector->string '#u32(64 65 66 67 68) 2 4)))
+(test "u32vector->string (start, end)" "@ABCD"
+      (lambda () (u32vector->string '#u32(64 65 66 67 68) 0 5)))
+(test "u32vector->string (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (u32vector->string '#u32(64 65 66 67 68) 0 8)))))
+
+(test "string->s32vector" '#s32(64 65 66 67 68)
+      (lambda () (string->s32vector "@ABCD")))
+(test "string->s32vector (start)" '#s32(66 67 68)
+      (lambda () (string->s32vector "@ABCD" 2)))
+(test "string->s32vector (start, end)" '#s32(65 66 67)
+      (lambda () (string->s32vector "@ABCD" 1 4)))
+(test "string->s32vector (start, end)" '#s32(64 65 66 67 68)
+      (lambda () (string->s32vector "@ABCD" 0 5)))
+(test "string->s32vector (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (string->s32vector "abcde" 2 6)))))
+
+(test "s32vector->string" "@ABCD"
+      (lambda () (s32vector->string '#s32(64 65 66 67 68))))
+(test "s32vector->string (start)" "ABCD"
+      (lambda () (s32vector->string '#s32(64 65 66 67 68) 1)))
+(test "s32vector->string (start, end)" "BC"
+      (lambda () (s32vector->string '#s32(64 65 66 67 68) 2 4)))
+(test "s32vector->string (start, end)" "@ABCD"
+      (lambda () (s32vector->string '#s32(64 65 66 67 68) 0 5)))
+(test "s32vector->string (OOB)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (s32vector->string '#s32(64 65 66 67 68) 0 8)))))
+
+;; test for multibyte chars
+(case (gauche-character-encoding)
+  ((euc-jp) (load "./test-eucjp"))
+  ((utf-8)  (load "./test-utf8"))
+  ((sjis)   (load "./test-sjis"))
+  (else #f))
+
+;;-------------------------------------------------------------------
 ; (use gauche.array)
 (load "array")
 (import gauche.array)

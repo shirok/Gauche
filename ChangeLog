@@ -1,5 +1,8 @@
 2002-09-26  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvlib.stub.sh : added conversion routines between
+	  string and uvectors (u8, s8, u32, s32).  These are convenient to
+	  manipulate strings in low-level.
 	* ext/uvector/uvector.[ch].sh : changed uvector struture to have
 	  separate data area from the object header.  This increases the
 	  cost of allocation, but enables the future extensions to share

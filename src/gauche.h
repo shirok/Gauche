@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.304 2002-09-21 03:00:12 shirok Exp $
+ *  $Id: gauche.h,v 1.305 2002-09-27 10:01:19 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -833,6 +833,7 @@ SCM_EXTERN ScmObj  Scm_StringIncompleteToComplete(ScmString *str);
 SCM_EXTERN int     Scm_StringCmp(ScmString *x, ScmString *y);
 SCM_EXTERN int     Scm_StringCiCmp(ScmString *x, ScmString *y);
 
+SCM_EXTERN const char *Scm_StringPosition(ScmString *str, int k);
 SCM_EXTERN ScmChar Scm_StringRef(ScmString *str, int k);
 SCM_EXTERN ScmObj  Scm_StringSet(ScmString *str, int k, ScmChar sc);
 SCM_EXTERN int     Scm_StringByteRef(ScmString *str, int k);

@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.16 2002-07-24 15:38:50 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.17 2002-09-27 10:01:19 shirok Exp $
 ;;;
 
 "
@@ -195,3 +195,70 @@ emit u64 1
 emit f32
 emit f64
 
+strlib() {
+    z=$1
+    Z=`echo $z | tr '[a-z]' '[A-Z]'`
+cat <<EOF
+;;
+;; Additional Operations
+;;
+
+(define-cproc string->${z}8vector (s::<string>
+                                   &optional (start::<fixnum> 0)
+                                             (end::<fixnum> -1))
+  "int len = SCM_STRING_LENGTH(s); const char *sp, *ep;
+  SCM_CHECK_START_END(start, end, len);
+  if (start == 0) sp = SCM_STRING_START(s);
+  else sp = Scm_StringPosition(s, start);
+  if (end == len) ep = SCM_STRING_START(s)+SCM_STRING_SIZE(s);
+  else ep = Scm_StringPosition(s, end);
+  SCM_RETURN(Scm_Make${Z}8VectorFromArray(ep - sp, (${Z}8ELTTYPE*)sp));
+  ")
+
+(define-cproc ${z}8vector->string (v::<${z}8vector>
+                                   &optional (start::<fixnum> 0)
+                                             (end::<fixnum> -1))
+  "int len = SCM_${Z}8VECTOR_SIZE(v);
+  SCM_CHECK_START_END(start, end, len);
+  SCM_RETURN(Scm_MakeString((char *)(SCM_${Z}8VECTOR_ELEMENTS(v)+start),
+                            end-start, -1, SCM_MAKSTR_COPYING));")
+
+
+(define-cproc string->${z}32vector (s::<string>
+                                    &optional (start::<fixnum> 0)
+                                              (end::<fixnum> -1))
+  "int len = SCM_STRING_LENGTH(s), i; const char *sp, *ep;
+  ScmObj v; ${Z}32ELTTYPE *eltp;
+  SCM_CHECK_START_END(start, end, len);
+  if (start == 0) sp = SCM_STRING_START(s);
+  else sp = Scm_StringPosition(s, start);
+  if (end == len) ep = SCM_STRING_START(s)+SCM_STRING_SIZE(s);
+  else ep = Scm_StringPosition(s, end);
+  v = Scm_Make${Z}32Vector(end - start, 0);
+  eltp = SCM_${Z}32VECTOR_ELEMENTS(v);
+  for (i=0; sp<ep; i++) {
+    ScmChar ch;
+    SCM_CHAR_GET(sp, ch);
+    eltp[i] = ch;
+    sp += SCM_CHAR_NBYTES(ch);
+  }
+  SCM_RETURN(v);")
+
+(define-cproc ${z}32vector->string (v::<${z}32vector>
+                                    &optional (start::<fixnum> 0)
+                                              (end::<fixnum> -1))
+  "int len = SCM_${Z}32VECTOR_SIZE(v); ScmObj s = Scm_MakeOutputStringPort();
+  ${Z}32ELTTYPE *eltp;
+  SCM_CHECK_START_END(start, end, len);
+  eltp = SCM_${Z}32VECTOR_ELEMENTS(v);
+  for (; start < end; start++) {
+    ScmChar ch = (ScmChar)eltp[start];
+    Scm_PutcUnsafe(ch, SCM_PORT(s));
+  }
+  SCM_RETURN(Scm_GetOutputStringUnsafe(SCM_PORT(s)));")
+
+EOF
+}
+
+strlib u
+strlib s
