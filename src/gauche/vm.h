@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.23 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: vm.h,v 1.24 2001-02-21 13:31:35 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -85,6 +85,29 @@ typedef struct ScmVMActivationHistoryRec {
     ScmContFrame *cont;         /* saved continuation frame chain */
 } ScmVMActivationHistory;
 
+/*
+ * Identifier
+ *
+ *   Identifier wraps a symbol with its lexical environment.  This
+ *   object is used in hygienic macro expansion (see macro.c), and
+ *   also used as a placeholder in a global variable reference/assignment
+ *   (see compile.c).
+ */
+
+typedef struct ScmIdentifierRec {
+    SCM_HEADER;
+    ScmSymbol *name;
+    ScmModule *module;
+    ScmObj env;
+} ScmIdentifier;
+
+extern ScmClass Scm_IdentifierClass;
+#define SCM_CLASS_IDENTIFIER    (&Scm_IdentifierClass)
+
+#define SCM_IDENTIFIER(obj)     ((ScmIdentifier*)(obj))
+#define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
+
+extern ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env);
 
 /*
  * Source info
@@ -106,7 +129,7 @@ extern ScmClass Scm_SourceInfoClass;
 #define SCM_SOURCE_INFO(obj)     ((ScmSourceInfo*)(obj))
 #define SCM_SOURCE_INFOP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOURCE_INFO)
 
-ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
+extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 
 /*
  * C-level error handler
