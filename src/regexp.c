@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.26 2002-07-10 10:09:50 shirok Exp $
+ *  $Id: regexp.c,v 1.27 2002-09-02 03:01:09 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -153,13 +153,19 @@ static ScmObj last_item(struct comp_ctx *ctx, ScmObj head, ScmObj tail,
     if (SCM_INTP(last)) {
         int gnum = SCM_INT_VALUE(last);
         if (gnum < 0) {
-            /* just after close parenthesis.
-               find the begining of the group. */
-            ScmObj cp, gstart = SCM_MAKE_INT(-gnum);
-            SCM_FOR_EACH(cp, head) {
-                if (SCM_CAR(cp) == gstart) return cp;
+            /* just after close parenthesis.  There may be the case that
+               we're also at the end of implicit grouping (by '|') so
+               let's check it first. */
+            if (ch == '|') {
+                return SCM_CDAR(gstack);
+            } else {
+                /* find the begining of the group. */
+                ScmObj cp, gstart = SCM_MAKE_INT(-gnum);
+                SCM_FOR_EACH(cp, head) {
+                    if (SCM_CAR(cp) == gstart) return cp;
+                }
+                Scm_Error("something broken internally.");
             }
-            Scm_Error("something broken internally.");
         } else {
             /* just after open parenthesis or beginning. */
             if (ch == '|') {
