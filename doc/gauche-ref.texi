@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.175 2002-04-21 21:57:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.176 2002-04-22 03:33:48 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2599,6 +2599,25 @@ this introduce a local binding of the variable.
 @c JP
 このフォームがローカルスコープの中に現われた場合、ローカル変数の束縛となります。
 @c COMMON
+
+@defmac define-values (var @dots{}) expr
+@c EN
+@var{Expr} is evaluated, and it should return as many values as
+@var{var}s.  Then each value of the results are
+bound to each variable in @var{var} @dots{}.
+@xref{Let-values}.
+@c JP
+まず@var{expr}が評価されます。それは与えられた@var{var}と同数の値を
+返さなければなりません。続いて各値が@var{var}に順に束縛されます。
+@ref{Let-values}も参照してください。
+@c COMMON
+@example
+(define-values (lo hi) (min&max 3 -1 15 2))
+
+lo @result{} -1
+hi @result{} 15
+@end example
+@end defmac
 
 
 @c EN
