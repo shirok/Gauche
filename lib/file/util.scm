@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.12 2002-06-13 05:35:53 shirok Exp $
+;;;  $Id: util.scm,v 1.13 2002-06-14 02:40:33 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -463,16 +463,19 @@
 ;; file->string, file->list, file->string-list, file->sexp-list
 ;; shortcuts of port->string, port->list, port->string-list adn port->sexp-list
 
-(define (file->string file . opts)
-  (apply call-with-input-file file port->string opts))
+;; NB: this doesn't work well with gauche.charconv.  Redefinition of
+;; call-with-input-file isn't reflected to these definitions.
 
-(define (file->list reader file . opts)
-  (apply call-with-input-file file (pa$ port->list reader) opts))
+;(define (file->string file . opts)
+;  (apply call-with-input-file file port->string opts))
 
-(define (file->string-list file . opts)
-  (apply call-with-input-file file (pa$ port->list read-line) opts))
+;(define (file->list reader file . opts)
+;  (apply call-with-input-file file (pa$ port->list reader) opts))
 
-(define (file->sexp-list file . opts)
-  (apply call-with-input-file file (pa$ port->list read) opts))
+;(define (file->string-list file . opts)
+;  (apply call-with-input-file file (pa$ port->list read-line) opts))
+
+;(define (file->sexp-list file . opts)
+;  (apply call-with-input-file file (pa$ port->list read) opts))
 
 (provide "file/util")
