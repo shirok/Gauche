@@ -1,3 +1,11 @@
+2001-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : improved default stack trace display to include source
+	  file info.
+	* src/load.c, src/gauche-init.scm, src/extlib.stub : made autoloading
+	  modules work.
+	* lib/gauche/vm/debugger.scm : added further features.
+
 2001-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c : added maxcol parameter to ~A and ~S format directive
