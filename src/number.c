@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.87 2002-04-13 09:44:20 shirok Exp $
+ *  $Id: number.c,v 1.88 2002-04-13 11:55:18 shirok Exp $
  */
 
 #include <math.h>
@@ -1500,13 +1500,12 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
     } else {
         /* variable names follows Burger&Dybvig paper. mp, mm for m+, m- */
         double f, r, s, mp, mm, q;
-        int exp, est, tc1, tc2, digs, round;
+        int exp, est, tc1, tc2, digs, point, round;
 
         if (val < 0) val = -val;
         
         /* initialize r, s, m+ and m- */
         f = frexp(val, &exp);
-        round = (fmod(ldexp(f, 53), 2.0) == 0.0);
         s = 1.0;
         if (exp > -1022) {
             mp = ldexp(0.5, -53);
@@ -1546,27 +1545,38 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         /*fprintf(stderr, "fixup est=%d, r=%.20g, mp=%.20g, mm=%.20g\n",
           est, r, mp, mm);*/
 
+        /* determine position of decimal point.  we avoid exponential
+           notation if exponent is small, i.e. 0.9 and 30.0 instead of
+           9.0e-1 and 3.0e1.   The magic number 10 is arbitrary. */
+        if (est < 10 && est > -3) {
+            point = est; est = 1;
+        } else {
+            point = 1;
+        }
+
         /* generate */
-        for (digs=0;buflen>5;digs++) {
+        if (point <= 0) {
+            *buf++ = q + '0', buflen--;
+            *buf++ = '.', buflen--;
+            for (digs=point;digs<0 && buflen>5;digs++) {
+                *buf++ = '0'; buflen--;
+            }
+        }
+        for (digs=1;buflen>5;digs++) {
             int q;
             q = r;
             r -= q;
 
             /*fprintf(stderr, "generate, r=%.20g, mp=%.20g\n", r, mp);*/
-            if (round) {
-                tc1 = (r <= 0.9*mm);
-                tc2 = (r + 0.9*mp >= s);
-            } else {
-                tc1 = (r < 0.9*mm);
-                tc2 = (r + 0.9*mp > s);
-            }
+            tc1 = (r < 0.9*mm);
+            tc2 = (r + 0.9*mp > s);
             if (!tc1) {
                 if (!tc2) {
                     *buf++ = q + '0', buflen--;
-                    if (digs == 0) *buf++ = '.', buflen--;
+                    if (digs == point) *buf++ = '.', buflen--;
                     r *= 10.0;
-            mp *= 10.0;
-            mm *= 10.0;
+                    mp *= 10.0;
+                    mm *= 10.0;
                     continue;
                 } else {
                     *buf++ = q + '1', buflen--;
@@ -1588,7 +1598,10 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             }
         }
 
-        if (digs == 0) {
+        if (digs <= point) {
+            for (;digs<point&&buflen>5;digs++) {
+                *buf++ = '0', buflen--;
+            }
             *buf++ = '.';
             *buf++ = '0';
         }
