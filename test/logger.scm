@@ -2,7 +2,7 @@
 ;; testing gauche.logger
 ;;
 
-;; $Id: logger.scm,v 1.3 2002-09-22 07:45:18 shirok Exp $
+;; $Id: logger.scm,v 1.4 2002-10-07 04:55:13 shirok Exp $
 
 (use gauche.test)
 
@@ -48,7 +48,7 @@
         "real testing again...")
       (lambda ()
         (map (lambda (line)
-               (cond ((#/^... \d\d ..:..:.. .+\[\d+\]: (.*)$/ line)
+               (cond ((#/^... .. ..:..:.. .+\[\d+\]: (.*)$/ line)
                       => (lambda (m) (m 1)))
                      (else #f)))
              (call-with-input-file "test.o" port->string-list))))
