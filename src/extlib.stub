@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.183 2002-12-06 12:46:58 shirok Exp $
+;;; $Id: extlib.stub,v 1.184 2002-12-07 00:21:22 shirok Exp $
 ;;;
 
 "
@@ -415,6 +415,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc string-size (str::<string>)
   (return <fixnum> "SCM_STRING_SIZE"))
+
+(define-cproc make-byte-string (size::<fixnum> &optional (byte::<fixnum> 0))
+  "char *s;
+  if (size < 0) Scm_Error(\"size out of bound: %d\", size);
+  s = SCM_NEW_ATOMIC2(char *, size);
+  memset(s, byte, size);
+  SCM_RETURN(Scm_MakeString(s, size, size, SCM_MAKSTR_INCOMPLETE));")
 
 (define-cproc string-byte-ref (str::<string> k::<fixnum> &optional fallback)
   "  int r;
