@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.39 2002-12-07 03:20:55 shirok Exp $
+;;;  $Id: object.scm,v 1.40 2002-12-11 05:56:51 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -352,6 +352,10 @@
            (slot-unbound class slot-name)
            val)))
    class-slot-set!))
+
+;; default class printer
+(define-method write-object ((obj <class>) out)
+  (format out "#<class ~a>" (class-name obj)))
 
 ;; convenient routine to push the value to the slot.
 ;; this can be optimized later.
