@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.31 2001-05-31 10:10:22 shirok Exp $
+ *  $Id: port.c,v 1.32 2001-05-31 19:43:08 shirok Exp $
  */
 
 #include <unistd.h>
@@ -793,7 +793,7 @@ static int bufport_getb(ScmPort *port)
     if (bp->chars < 0) return EOF;
     if (bp->current >= bp->chars) bufport_fill(bp);
     if (bp->chars < 0) return EOF;
-    return bp->buffer[bp->current++];
+    return (unsigned char)bp->buffer[bp->current++];
 }
 
 static int bufport_getc(ScmPort *port)
@@ -843,15 +843,17 @@ static int bufport_getz(ScmPort *port, char *buf, int buflen)
     int nread = 0;
     
     if (bp->chars < 0) return 0;
-    while (bp->chars - bp->current < buflen) {
+    while (nread + bp->chars - bp->current < buflen) {
         int chunklen = bp->chars - bp->current;
+        SCM_ASSERT(chunklen >= 0);
         memcpy(buf + nread, bp->buffer + bp->current, chunklen);
         nread += chunklen;
         bufport_fill(bp);
         if (bp->chars < 0) return nread;
     }
-    memcpy(buf + nread, bp->buffer + bp->current,
-           buflen - (bp->chars - bp->current));
+    memcpy(buf + nread, bp->buffer + bp->current, buflen - nread);
+    bp->current += buflen - nread;
+    SCM_ASSERT(bp->current <= bp->chars);
     return buflen;
 }
 
