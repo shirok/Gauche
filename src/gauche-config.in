@@ -3,13 +3,13 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.8 2001-07-14 18:58:28 shirok Exp $
+# $Id: gauche-config.in,v 1.9 2001-08-30 06:38:54 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
 exec_prefix=@exec_prefix@
 
-cc=@CC@
+cc="@CC@"
 
 datadir=@datadir@/gauche
 archdir=@libdir@/gauche
