@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.103 2001-09-12 10:46:23 shirok Exp $
+ *  $Id: vm.c,v 1.104 2001-09-12 20:04:49 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1692,13 +1692,15 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
 
 void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
 {
-    ScmObj stack = Scm_VMGetStack(theVM), cp;
-    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(theVM);
+    ScmVM *vm = theVM;
+    ScmObj stack = Scm_VMGetStack(vm), cp;
+    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
+    ScmObj handlers = vm->handlers, hp;
     int depth = 0;
 
-    if (SCM_EXCEPTIONP(e) && SCM_STRINGP(SCM_EXCEPTION_DATA(e))) {
+    if (Scm_ExceptionP(e) && SCM_STRINGP(SCM_EXCEPTION_MESSAGE(e))) {
         SCM_PUTZ("*** ERROR: ", -1, err);
-        SCM_PUTS(SCM_STRING(SCM_EXCEPTION_DATA(e)), err);
+        SCM_PUTS(SCM_STRING(SCM_EXCEPTION_MESSAGE(e)), err);
         SCM_PUTNL(err);
     } else {
         SCM_PUTZ("*** ERROR: (unknown exception type)\n", -1, err);
@@ -1709,6 +1711,13 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
     SCM_FOR_EACH(cp, stack) {
         Scm_Printf(SCM_PORT(err), "%3d   %66.1S\n",
                    depth++, SCM_CAR(cp));
+    }
+
+    /* unwind the dynamic handlers */
+    SCM_FOR_EACH(hp, handlers) {
+        ScmObj proc = SCM_CDAR(hp);
+        vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
+        Scm_Apply(proc, SCM_NIL);
     }
 }
 
@@ -1736,12 +1745,6 @@ ScmObj Scm_VMThrowException(ScmObj exception)
         /* No C stack is defined.   We're called as a library functions
            from C program. */
         Scm_VMDefaultExceptionHandler(exception, NULL);
-        /* unwind the dynamic handlers */
-        SCM_FOR_EACH(hp, handlers) {
-            ScmObj proc = SCM_CDAR(hp);
-            vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
-            Scm_Apply(proc, SCM_NIL);
-        }
         exit(EX_SOFTWARE);
     }
     /* NOTREACHED */

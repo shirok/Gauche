@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.17 2001-09-12 10:46:23 shirok Exp $
+ *  $Id: error.c,v 1.18 2001-09-12 20:04:49 shirok Exp $
  */
 
 #include <errno.h>
@@ -153,6 +153,20 @@ static ScmClassStaticSlotSpec sys_error_slots[] = {
                         NULL, SCM_FALSE),
     { NULL }
 };
+
+/*
+ * Predicates
+ */
+int Scm_ExceptionP(ScmObj e)
+{
+    return Scm_TypeP(e, SCM_CLASS_EXCEPTION);
+}
+
+int Scm_ContinuableExceptionP(ScmObj e)
+{
+    return (Scm_TypeP(e, SCM_CLASS_EXCEPTION)
+            && !Scm_TypeP(e, SCM_CLASS_ERROR));
+}
 
 /*
  * Initializing
