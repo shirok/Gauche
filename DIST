@@ -4,12 +4,15 @@ TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
 MAN_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/man/"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 
-case $1 in
-  -all) docs=yes; tgz=yes;;
-  -doc) docs=yes; tgz=no;;
-  -tgz)    docs=no; tgz=yes;;
-  *) echo "DIST -all|-doc|-tgz"; exit 0;;
-esac
+while [ $# -gt 0 ]; do
+  case $1 in
+    doc) docs=yes; shift ;;
+    tgz) tgz=yes; shift ;;
+    test) test=yes; shift ;;
+    testclean) testclean=yes; shift ;;
+    *) echo "DIST [doc][tgz][test][testclean]"; exit 0;;
+  esac
+done
 
 if [ "$tgz" = "yes" ]; then
   rm -f DIST_EXCLUDE_X
@@ -34,4 +37,24 @@ if [ "$docs" = "yes" ]; then
   cp doc/gauche-ref.texi doc/Makefile $MAN_DEST
   (cd $MAN_DEST; make htmls)
   rm -f $MAN_DEST/gauche-ref.texi $MAN_DEST/Makefile
+fi
+
+if [ "$test" = "yes" ]; then
+  rm -rf ../test/Gauche
+  cd ../test
+  tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz
+  cd Gauche
+  ./configure
+  make
+  make test
+  make install
+  cd ..
+  for tt in primsyn module macro number dynwind object string srfi regexp system rfc parseopt; do
+    gosh Gauche/test/$tt.scm >> test.log
+  done
+fi
+
+if [ "$testclean" = "yes" ]; then
+  rm -rf ../test/Gauche
+  rm -rf ../test/test.log ../test/temp.o ../test/tmp1.o
 fi
