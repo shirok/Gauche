@@ -1430,9 +1430,9 @@ bindings become visible to the module.
 A module can import any number of modules.
 @c JP
 モジュールは、自身が持つ一部または全ての束縛を他のモジュールからも
-使えるように@emph{export}することができます。モジュールが他の
-モジュールを@emph{import}すると、それらのモジュールでexportされている
-束縛が元もモジュールから見えるようになります。
+使えるように@emph{export}することができます。あるモジュールXが他の
+モジュールYを@emph{import}すると、
+モジュールYでexportされている束縛が元のモジュールXから見えるようになります。
 モジュールはいくつでも他のモジュールをimportすることができます。
 @c COMMON
 
