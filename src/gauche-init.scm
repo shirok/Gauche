@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.68 2002-04-03 10:36:13 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.69 2002-04-22 02:29:23 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -211,6 +211,22 @@
 ;; print (from SCM, Chicken)
 (define (print . args)
   (for-each display args) (newline))
+
+;; define-values (from Chicken, MzScheme)
+(define-syntax define-values
+  (syntax-rules ()
+    ((_ "gentmp" (tmp ...) () (var ...) expr)
+     (begin (define var (undefined)) ...
+            (receive (tmp ...) expr
+              (set! var tmp) ...
+              (undefined))))
+    ((_ "gentmp" (tmp ...) (v v2 ...) (var ...) expr)
+     (define-values "gentmp" (tmp ... tmp1) (v2 ...) (var ...) expr))
+    ((_ (var  ...) expr)
+     (define-values "gentmp" () (var ...) (var ...) expr))
+    ((_ . else)
+     (syntax-error "malformed define-values" (define-values . else)))
+    ))
 
 ;;
 ;; Load object system
