@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.76 2004-09-17 23:32:16 shirok Exp $
+ *  $Id: main.c,v 1.77 2004-12-18 04:11:13 shirok Exp $
  */
 
 #include <unistd.h>
@@ -356,7 +356,7 @@ int main(int argc, char **argv)
         }
         SCM_END_PROTECT;
     }
-
+    
     if (batch_mode || (!isatty(0) && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), 0);
     } else {

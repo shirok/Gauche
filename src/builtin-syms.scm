@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.5 2004-11-11 11:52:47 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.6 2004-12-18 04:11:12 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.5 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.6 $.  DO NOT EDIT */"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
@@ -26,7 +26,7 @@
     (cgen-extern "SCM_EXTERN ScmSymbol Scm_BuiltinSymbols[];")
     (cgen-body "ScmSymbol Scm_BuiltinSymbols[] = {")
     (cgen-body "#define ENTRY(s) \\"
-               "  {{ SCM_CLASS_STATIC_PTR(Scm_SymbolClass) }, \\"
+               "  {{ SCM_CLASS2TAG(SCM_CLASS_SYMBOL) }, \\"
                "     SCM_STRING(s) }")
     (cgen-init "#define INTERN(s, i) \\"
                "Scm_HashTablePut(obtable, s, SCM_OBJ(&Scm_BuiltinSymbols[i]))")

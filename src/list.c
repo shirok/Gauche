@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.43 2004-01-17 01:34:48 shirok Exp $
+ *  $Id: list.c,v 1.44 2004-12-18 04:11:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -61,10 +61,8 @@ ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
 {
     ScmPair *z;
     SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
-    SCM_SET_CLASS(z, SCM_CLASS_PAIR);
     SCM_SET_CAR(z, car);
     SCM_SET_CDR(z, cdr);
-    z->attributes = SCM_NIL;
     return SCM_OBJ(z);
 }
 
@@ -73,10 +71,6 @@ ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr)
     ScmPair *y, *z;
     SCM_MALLOC_WORDS(y, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
     SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
-    SCM_SET_CLASS(y, SCM_CLASS_PAIR);
-    y->attributes = SCM_NIL;
-    SCM_SET_CLASS(z, SCM_CLASS_PAIR);
-    z->attributes = SCM_NIL;
     SCM_SET_CAR(y, caar);
     SCM_SET_CDR(y, cdar);
     SCM_SET_CAR(z, SCM_OBJ(y));
@@ -123,14 +117,14 @@ ScmObj Scm_VaList(va_list pvar)
     {
 	if (SCM_NULLP(start)) {
             start = SCM_OBJ(SCM_NEW(ScmPair));
-            SCM_SET_CLASS(start, SCM_CLASS_PAIR);
+            /*SCM_SET_CLASS(start, SCM_CLASS_PAIR);*/
             SCM_SET_CAR(start, obj);
             SCM_SET_CDR(start, SCM_NIL);
             cp = start;
         } else {
             ScmObj item;
             item = SCM_OBJ(SCM_NEW(ScmPair));
-            SCM_SET_CLASS(item, SCM_CLASS_PAIR);
+            /*SCM_SET_CLASS(item, SCM_CLASS_PAIR);*/
             SCM_SET_CDR(cp, item);
             SCM_SET_CAR(item, obj);
             SCM_SET_CDR(item, SCM_NIL);
@@ -673,10 +667,34 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences)
  * Pair attributes
  */
 
+ScmObj Scm_PairAttr(ScmPair *pair)
+{
+    if (SCM_EXTENDED_PAIR_P(pair)) {
+        return SCM_EXTENDED_PAIR(pair)->attributes;
+    } else {
+        return SCM_NIL;
+    }
+}
+
+ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr)
+{
+    ScmExtendedPair *xp = SCM_NEW(ScmExtendedPair);
+    xp->car = car;
+    xp->cdr = cdr;
+    xp->attributes = SCM_NIL;
+    return SCM_OBJ(xp);
+}
+
 ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback)
 {
-    ScmObj p = Scm_Assq(key, SCM_PAIR_ATTR(pair));
+    ScmObj p;
+    if (!SCM_EXTENDED_PAIR_P(pair)) {
+        goto fallback;
+    }
+    
+    p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
+  fallback:
     if (fallback == SCM_UNBOUND)
         Scm_Error("No value associated with key %S in pair attributes of %S",
                   key, SCM_OBJ(pair));
@@ -685,10 +703,16 @@ ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback)
 
 ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
 {
-    ScmObj p = Scm_Assq(key, SCM_PAIR_ATTR(pair));
+    ScmObj p;
+    if (!SCM_EXTENDED_PAIR_P(pair)) {
+        Scm_Error("Cannot set pair attribute (%S) to non-extended pair: %S",
+                  key, SCM_OBJ(pair));
+    }
+    
+    p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
     if (SCM_PAIRP(p)) SCM_SET_CDR(p, value);
-    else SCM_PAIR_ATTR(pair) = Scm_Cons(Scm_Cons(key, value),
-                                        SCM_PAIR_ATTR(pair));
+    else SCM_EXTENDED_PAIR(pair)->attributes
+        = Scm_Acons(key, value, SCM_EXTENDED_PAIR(pair)->attributes);
     return SCM_UNDEFINED;
 }
 

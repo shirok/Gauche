@@ -1,3 +1,10 @@
+2004-12-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/gauche/class.h, src/gauche/memory.h, 
+	  src/list.c, src/compile.c, src/macro.c, src/read.c, src/vm.c,
+	  src/error.c, src/builtin-syms.scm:  Changed tagging scheme
+	  to make ScmPair 2 words.
+
 2004-12-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/digest/md5.stub, ext/digest/md5.scm,

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: memory.h,v 1.6 2003-07-15 11:10:31 shirok Exp $
+ *  $Id: memory.h,v 1.7 2004-12-18 04:11:13 shirok Exp $
  */
 
 #ifndef GAUCHE_MEM_H
@@ -82,7 +82,6 @@
         SCM_SET_CLASS(p, SCM_CLASS_PAIR);                                \
         SCM_SET_CAR(p, car_);                                            \
         SCM_SET_CDR(p, cdr_);                                            \
-        p->attributes = SCM_NIL;                                         \
     } while (0)
 
 #define SCM_NEW_LIST1(p, obj0) \

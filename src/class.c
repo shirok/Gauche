@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.116 2004-11-11 02:44:13 shirok Exp $
+ *  $Id: class.c,v 1.117 2004-12-18 04:11:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -431,6 +431,8 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         if (SCM_CHARP(obj)) return SCM_CLASS_CHAR;
         if (SCM_INTP(obj))  return SCM_CLASS_INTEGER;
         else return SCM_CLASS_UNKNOWN;
+    } else if (SCM_PAIRP(obj)) {
+        return SCM_CLASS_PAIR;
     } else {
         return SCM_CLASS_OF(obj);
     }
@@ -1125,7 +1127,7 @@ static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old)
 /* most primitive internal accessor */
 static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
 {
-    ScmClass *k = SCM_CLASS_OF(obj);
+    ScmClass *k = Scm_ClassOf(obj);
     if (number < 0 || number >= k->numInstanceSlots)
         Scm_Error("instance slot index %d out of bounds for %S", number, obj);
     return SCM_INSTANCE_SLOTS(obj)[number];
@@ -1133,7 +1135,7 @@ static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
 
 static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
 {
-    ScmClass *k = SCM_CLASS_OF(obj);
+    ScmClass *k = Scm_ClassOf(obj);
     if (number < 0 || number >= k->numInstanceSlots)
         Scm_Error("instance slot index %d out of bounds for %S", number, obj);
     SCM_INSTANCE_SLOTS(obj)[number] = val;
@@ -2686,6 +2688,7 @@ static void init_class(ScmClass *klass,
             if (SCM_FALSEP(p)) {
                 slots = Scm_Cons(Scm_CopyList(slot), slots);
                 a = Scm_GetKeyword(key_slot_accessor, SCM_CDR(slot), SCM_FALSE);
+                SCM_ASSERT(SCM_HOBJP(a));
                 SCM_ASSERT(SCM_SLOT_ACCESSOR_P(a));
                 acc = Scm_Acons(snam, a, acc);
             }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.61 2004-11-29 22:18:10 shirok Exp $
+ *  $Id: error.c,v 1.62 2004-12-18 04:11:12 shirok Exp $
  */
 
 #include <errno.h>
@@ -85,7 +85,7 @@ SCM_DEFINE_BASE_CLASS(Scm_SeriousConditionClass, ScmSeriousCondition,
 
 static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmClass *k = SCM_CLASS_OF(obj);
+    ScmClass *k = Scm_ClassOf(obj);
     Scm_Printf(port, "#<%A \"%30.1A\">",
                Scm__InternalClassName(k),
                SCM_ERROR_MESSAGE(obj));

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.42 2004-10-10 09:52:09 shirok Exp $
+ *  $Id: class.h,v 1.43 2004-12-18 04:11:13 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -74,16 +74,16 @@ struct ScmClassStaticSlotSpecRec {
     ScmSlotAccessor accessor;
 };
 
-#define SCM_CLASS_SLOT_SPEC(name, getter, setter)		\
-    { name, { {SCM_CLASS_STATIC_PTR(Scm_SlotAccessorClass)},    \
-              NULL, NULL,					\
-              (ScmNativeGetterProc)getter,			\
-              (ScmNativeSetterProc)setter,			\
-              SCM_UNBOUND,					\
-              SCM_FALSE,					\
-              SCM_FALSE,					\
-              TRUE, -1,						\
-              SCM_FALSE, SCM_FALSE, SCM_FALSE,			\
+#define SCM_CLASS_SLOT_SPEC(name, getter, setter)       \
+    { name, { {SCM_CLASS2TAG(SCM_CLASS_SLOT_ACCESSOR)}, \
+              NULL, NULL,                               \
+              (ScmNativeGetterProc)getter,              \
+              (ScmNativeSetterProc)setter,              \
+              SCM_UNBOUND,                              \
+              SCM_FALSE,                                \
+              SCM_FALSE,                                \
+              TRUE, -1,                                 \
+              SCM_FALSE, SCM_FALSE, SCM_FALSE,          \
              } }
 
 #define SCM_CLASS_SLOT_SPEC_END()   { NULL }

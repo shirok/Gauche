@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.75 2004-10-10 05:34:30 shirok Exp $
+ *  $Id: read.c,v 1.76 2004-12-18 04:11:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -561,45 +561,30 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
 /* Internal read_list.  returns whether the list contains unresolved
    reference or not within the flag has_ref */
 static ScmObj read_list_int(ScmPort *port, ScmChar closer,
-                            ScmReadContext *ctx, int *has_ref)
+                            ScmReadContext *ctx, int *has_ref, int start_line)
 {
     ScmObj start = SCM_NIL, last = SCM_NIL, item;
     int c, dot_seen = FALSE, ref_seen = FALSE;
-    int line = -1;
 
-    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
-    
     for (;;) {
         c = skipws(port, ctx);
-        if (c == EOF) {
-            if (line >= 0) {
-                Scm_ReadError(port, "EOF inside a list (starting from line %d)", line);
-            } else {
-                Scm_ReadError(port, "EOF inside a list");
-            }
-        }
+        if (c == EOF) goto eoferr;
         if (c == closer) {
             *has_ref = !!ref_seen;
             return start;
         }
 
-        if (dot_seen) Scm_ReadError(port, "bad dot syntax");
+        if (dot_seen) goto baddot;
 
         if (c == '.') {
             int c2 = Scm_GetcUnsafe(port);
-            if (c2 == closer) { 
-                Scm_ReadError(port, "bad dot syntax");
+            if (c2 == closer) {
+                goto baddot;
             } else if (c2 == EOF) {
-                if (line >= 0) {
-                    Scm_ReadError(port, "EOF inside a list (starting from line %d)", line);
-                } else {
-                    Scm_ReadError(port, "EOF inside a list");
-                }
+                goto eoferr;
             } else if (isspace(c2)) {
                 /* dot pair at the end */
-                if (start == SCM_NIL) {
-                    Scm_ReadError(port, "bad dot syntax");
-                }
+                if (start == SCM_NIL) goto baddot;
                 item = read_item(port, ctx);
                 if (SCM_READ_REFERENCE_P(item)) ref_seen = TRUE;
                 SCM_SET_CDR(last, item);
@@ -615,19 +600,37 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
             if (SCM_READ_REFERENCE_P(item)) ref_seen = TRUE;
         }
         SCM_APPEND1(start, last, item);
-        if (start==last && (ctx->flags & SCM_READ_SOURCE_INFO) && line >= 0) {
-            /* add source information to the top of the list */
-            Scm_PairAttrSet(SCM_PAIR(start), SCM_SYM_SOURCE_INFO,
-                            SCM_LIST2(Scm_PortName(port),
-                                      SCM_MAKE_INT(line)));
-        }
     }
+  eoferr:
+    if (start_line >= 0) {
+        Scm_ReadError(port, "EOF inside a list (starting from line %d)",
+                      start_line);
+    } else {
+        Scm_ReadError(port, "EOF inside a list");
+    }
+  baddot:
+    Scm_ReadError(port, "bad dot syntax");
+    return SCM_NIL;             /* dummy */
 }
 
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     int has_ref;
-    ScmObj r = read_list_int(port, closer, ctx, &has_ref);
+    int line = -1;
+    ScmObj r;
+
+    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
+
+    r = read_list_int(port, closer, ctx, &has_ref, line);
+
+    if (SCM_PAIRP(r) && (ctx->flags & SCM_READ_SOURCE_INFO) && line >= 0) {
+        /* Swap the head of the list for an extended pair to record
+           source-code info.*/
+        r = Scm_ExtendedCons(SCM_CAR(r), SCM_CDR(r));
+        Scm_PairAttrSet(SCM_PAIR(r), SCM_SYM_SOURCE_INFO,
+                        SCM_LIST2(Scm_PortName(port), SCM_MAKE_INT(line)));
+    }
+
     if (has_ref) ref_push(ctx, r, SCM_FALSE);
     return r;
 }
@@ -635,7 +638,11 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     int has_ref;
-    ScmObj r = read_list_int(port, closer, ctx, &has_ref);
+    int line = -1;
+    ScmObj r;
+    
+    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
+    r = read_list_int(port, closer, ctx, &has_ref, line);
     r = Scm_ListToVector(r);
     if (has_ref) ref_push(ctx, r, SCM_FALSE);
     return r;
@@ -649,10 +656,12 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
     if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
     item = read_item(port, ctx);
     if (SCM_EOFP(item)) Scm_ReadError(port, "unterminated quote");
-    r = Scm_Cons(quoter, Scm_Cons(item, SCM_NIL));
     if (line >= 0) {
+        r = Scm_ExtendedCons(quoter, Scm_Cons(item, SCM_NIL));
         Scm_PairAttrSet(SCM_PAIR(r), SCM_SYM_SOURCE_INFO,
                         SCM_LIST2(Scm_PortName(port), SCM_MAKE_INT(line)));
+    } else {
+        r = Scm_Cons(quoter, Scm_Cons(item, SCM_NIL));
     }
     if (SCM_READ_REFERENCE_P(item)) ref_push(ctx, SCM_CDR(r), SCM_FALSE);
     return r;
@@ -1038,7 +1047,7 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher)
 
 static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
 {
-    int len, has_ref;
+    int len, has_ref, line=-1;
     ScmChar next;
     ScmObj form, r;
 
@@ -1047,8 +1056,10 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
         Scm_ReadError(port, "bad #,-form: '(' should be followed, but got %C",
                       next);
     }
+
+    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
     
-    form = read_list_int(port, ')', ctx, &has_ref);
+    form = read_list_int(port, ')', ctx, &has_ref, line);
     len = Scm_Length(form);
     if (len <= 0) {
         Scm_ReadError(port, "bad #,-form: #,%S", form);

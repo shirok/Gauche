@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.217 2004-11-23 13:10:00 shirok Exp $
+ *  $Id: vm.c,v 1.218 2004-12-18 04:11:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2717,7 +2717,8 @@ ScmObj Scm_VMInsnInspect(ScmObj obj)
 ScmObj Scm_VMGetSourceInfo(ScmObj program)
 {
     if (SCM_PAIRP(program)) {
-        ScmObj p = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(program));
+        ScmObj p = Scm_Assq(SCM_SYM_SOURCE_INFO,
+                            Scm_PairAttr(SCM_PAIR(program)));
         if (SCM_PAIRP(p)) return SCM_CDR(p);
     }
     return SCM_FALSE;
@@ -2726,7 +2727,8 @@ ScmObj Scm_VMGetSourceInfo(ScmObj program)
 ScmObj Scm_VMGetBindInfo(ScmObj program)
 {
     if (SCM_PAIRP(program)) {
-        ScmObj p = Scm_Assq(SCM_SYM_BIND_INFO, SCM_PAIR_ATTR(program));
+        ScmObj p = Scm_Assq(SCM_SYM_BIND_INFO,
+                            Scm_PairAttr(SCM_PAIR(program)));
         if (SCM_PAIRP(p)) return SCM_CDR(p);
     }
     return SCM_FALSE;

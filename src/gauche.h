@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.402 2004-12-02 12:14:12 shirok Exp $
+ *  $Id: gauche.h,v 1.403 2004-12-18 04:11:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -149,7 +149,7 @@ typedef struct ScmClassRec ScmClass;
  *
  * [Pointer]
  *      -------- -------- -------- ------00
- *      Points to cell (4-byte aligned)
+ *      Points to a pair or other heap-allocated objects.
  *
  * [Fixnum]
  *      -------- -------- -------- ------01
@@ -166,6 +166,12 @@ typedef struct ScmClassRec ScmClass;
  * [VM Instructions]
  *      -------- -------- -------- ----1110
  *      Only appears in a compiled code.
+ *
+ * [Heap object]
+ *      -------- -------- -------- ------11
+ *      Only appears at the first word of heap-allocated
+ *      objects except pairs.   Masking lower 2bits gives
+ *      a pointer to ScmClass.  
  */
 
 /* Type coercer */
@@ -278,40 +284,44 @@ SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
 /*
  * HEAP ALLOCATED OBJECTS
  *
- *  A heap allocated object has its class tag in the first word.
- *  On most platforms, the class tag is simply a pointer to the
- *  class object.
- *  On Windows (Cygwin) platform, things are much more complicated.
- *  See doc/cygwin-memo.txt for details.
+ *  A heap allocated object has its class tag in the first word
+ *  (except pairs).  Masking the lower two bits of class tag
+ *  gives a pointer to the class object.
  */
+
+#define SCM_HOBJP(obj)  (SCM_PTRP(obj)&&SCM_TAG(SCM_OBJ(obj)->tag)==3)
 
 #define SCM_CPP_CAT(a, b)   a ## b
 #define SCM_CPP_CAT3(a, b, c)  a ## b ## c
 
 #define SCM_CLASS_DECL(klass) extern ScmClass klass
 #define SCM_CLASS_STATIC_PTR(klass)  (&klass)
+#define SCM_CLASS2TAG(klass)  ((ScmByte*)(klass) + 3)
 
-/* A common header for all Scheme objects */
+/* A common header for heap-allocated objects */
 typedef struct ScmHeaderRec {
-    ScmClass *klass;            /* private */
+    ScmByte *tag;                /* private.  should be accessed
+                                    only via macros. */
 } ScmHeader;
 
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
-/* Only these two macros can access header's klass field. */
-#define SCM_CLASS_OF(obj)      (SCM_OBJ(obj)->klass)
-#define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (k))
+/* Extract the class pointer from the tag.
+   You can use these only if SCM_HOBJP(obj) != FALSE */
+#define SCM_CLASS_OF(obj)      SCM_CLASS((SCM_OBJ(obj)->tag - 3))
+#define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)(k) + 3)
 
 /* Check if classof(OBJ) equals to an extended class KLASS */
-#define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj)==(klass)))
+#define SCM_XTYPEP(obj, klass) \
+    (SCM_PTRP(obj)&&(SCM_OBJ(obj)->tag == SCM_CLASS2TAG(klass)))
 
 /* Check if classof(OBJ) is a subtype of an extended class KLASS */
 #define SCM_ISA(obj, klass) (SCM_XTYPEP(obj,klass)||Scm_TypeP(SCM_OBJ(obj),klass))
 
 /* A common header for objects whose class is defined in Scheme */
 typedef struct ScmInstanceRec {
-    ScmClass *klass;
-    ScmObj *slots;
+    ScmByte *tag;               /* private */
+    ScmObj *slots;              /* private */
 } ScmInstance;
 
 #define SCM_INSTANCE_HEADER  ScmInstance hdr  /* for declaration */
@@ -339,6 +349,7 @@ SCM_EXTERN void Scm_UnregisterFinalizer(ScmObj z);
 
 typedef struct ScmVMRec        ScmVM;
 typedef struct ScmPairRec      ScmPair;
+typedef struct ScmExtendedPairRec ScmExtendedPair;
 typedef struct ScmCharSetRec   ScmCharSet;
 typedef struct ScmStringRec    ScmString;
 typedef struct ScmDStringRec   ScmDString;
@@ -544,6 +555,7 @@ SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
 				     ScmClassStaticSlotSpec *slots,
 				     int withMeta,
                                      ScmModule *m);
+
 SCM_EXTERN ScmClass *Scm_ClassOf(ScmObj obj);
 SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
@@ -591,7 +603,7 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 
 #define SCM__DEFINE_CLASS_COMMON(cname, coreSize, flag, printer, compare, serialize, allocate, cpa) \
     ScmClass cname = {                           \
-        { SCM_CLASS_STATIC_PTR(Scm_ClassClass), NULL },\
+        { SCM_CLASS2TAG(SCM_CLASS_CLASS), NULL },\
         printer,                                 \
         compare,                                 \
         serialize,                               \
@@ -639,14 +651,28 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
  * PAIR AND LIST
  */
 
+/* Ordinary pair uses two words.  It can be distinguished from
+ * other heap allocated objects by checking the first word doesn't
+ * have "11" in the lower bits.
+ */
 struct ScmPairRec {
-    SCM_HEADER;
-    ScmObj car;
-    ScmObj cdr;
-    ScmObj attributes;
+    ScmObj car;                 /* should be accessed via macros */
+    ScmObj cdr;                 /* ditto */
 };
 
-#define SCM_PAIRP(obj)          SCM_XTYPEP(obj, SCM_CLASS_PAIR)
+/* To keep extra information such as source-code info, some pairs
+ * actually have one extra word for attribute assoc-list.  Checking
+ * whether a pair is an extended one or not isn't a very lightweight
+ * operation, so the use of extended pair should be kept minimal.
+ */
+struct ScmExtendedPairRec {
+    ScmObj car;                 /* should be accessed via macros */
+    ScmObj cdr;                 /* ditto */
+    ScmObj attributes;          /* should be accessed via API func. */
+};
+
+#define SCM_PAIRP(obj)  (SCM_PTRP(obj)&&SCM_TAG(SCM_OBJ(obj)->tag)!=0x03)
+
 #define SCM_PAIR(obj)           ((ScmPair*)(obj))
 #define SCM_CAR(obj)            (SCM_PAIR(obj)->car)
 #define SCM_CDR(obj)            (SCM_PAIR(obj)->cdr)
@@ -657,14 +683,18 @@ struct ScmPairRec {
 
 #define SCM_SET_CAR(obj, value) (SCM_CAR(obj) = (value))
 #define SCM_SET_CDR(obj, value) (SCM_CDR(obj) = (value))
-#define SCM_PAIR_ATTR(obj)      (SCM_PAIR(obj)->attributes)
+
+#define SCM_EXTENDED_PAIR_P(obj) \
+    (SCM_PAIRP(obj)&&GC_size(obj)>=sizeof(ScmExtendedPair))
+#define SCM_EXTENDED_PAIR(obj)  ((ScmExtendedPair*)(obj))
+
 
 SCM_CLASS_DECL(Scm_ListClass);
 SCM_CLASS_DECL(Scm_PairClass);
 SCM_CLASS_DECL(Scm_NullClass);
-#define SCM_CLASS_LIST      (&Scm_ListClass)
-#define SCM_CLASS_PAIR      (&Scm_PairClass)
-#define SCM_CLASS_NULL      (&Scm_NullClass)
+#define SCM_CLASS_LIST          (&Scm_ListClass)
+#define SCM_CLASS_PAIR          (&Scm_PairClass)
+#define SCM_CLASS_NULL          (&Scm_NullClass)
 
 #define SCM_LISTP(obj)          (SCM_NULLP(obj) || SCM_PAIRP(obj))
 
@@ -751,6 +781,8 @@ SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences);
 SCM_EXTERN ScmObj Scm_Union(ScmObj list1, ScmObj list2);
 SCM_EXTERN ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
 
+SCM_EXTERN ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr);
+SCM_EXTERN ScmObj Scm_PairAttr(ScmPair *pair);
 SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
 
@@ -937,10 +969,10 @@ SCM_EXTERN ScmObj Scm_CStringArrayToList(char **array, int size);
 
 /* You can allocate a constant string statically, if you calculate
    the length by yourself. */
-#define SCM_DEFINE_STRING_CONST(name, str, len, siz)		\
-    ScmString name = {						\
-        { SCM_CLASS_STATIC_PTR(Scm_StringClass) }, 0, 1,	\
-        (len), (siz), (str)					\
+#define SCM_DEFINE_STRING_CONST(name, str, len, siz)            \
+    ScmString name = {                                          \
+        { SCM_CLASS2TAG(SCM_CLASS_STRING) }, 0, 1,              \
+        (len), (siz), (str)                                     \
     }
 
 /* Auxiliary structure to construct a string of unknown length.
@@ -1985,7 +2017,7 @@ enum {
 SCM_CLASS_DECL(Scm_ProcedureClass);
 #define SCM_CLASS_PROCEDURE    (&Scm_ProcedureClass)
 #define SCM_PROCEDUREP(obj) \
-    (SCM_PTRP(obj) && SCM_CLASS_APPLICABLE_P(SCM_CLASS_OF(obj)))
+    (SCM_HOBJP(obj) && SCM_CLASS_APPLICABLE_P(SCM_CLASS_OF(obj)))
 #define SCM_PROCEDURE_TAKE_NARG_P(obj, narg) \
     (SCM_PROCEDUREP(obj)&& \
      (  (!SCM_PROCEDURE_OPTIONAL(obj)&&SCM_PROCEDURE_REQUIRED(obj)==(narg)) \
@@ -2038,7 +2070,7 @@ struct ScmSubrRec {
 
 #define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)           \
     ScmSubr cvar = {                                                        \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_ProcedureClass),\
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS2TAG(SCM_CLASS_PROCEDURE),      \
                                    req, opt, SCM_PROC_SUBR, inf, inliner),  \
         (func), (data)                                                      \
     }
@@ -2071,7 +2103,7 @@ SCM_CLASS_DECL(Scm_GenericClass);
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_GenericClass),\
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS2TAG(SCM_CLASS_GENERIC),    \
                                    0, 0, SCM_PROC_GENERIC, SCM_FALSE,   \
                                    NULL),                               \
         SCM_NIL, cfunc, data                                            \
@@ -2106,7 +2138,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_MethodClass),\
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS2TAG(SCM_CLASS_METHOD),     \
                                    req, opt, SCM_PROC_METHOD,           \
                                    SCM_FALSE, NULL),                    \
         gf, specs, func, data, NULL                                     \

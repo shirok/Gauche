@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.229 2004-11-21 12:46:58 shirok Exp $
+;;; $Id: extlib.stub,v 1.230 2004-12-18 04:11:12 shirok Exp $
 ;;;
 
 "
@@ -252,7 +252,7 @@
   (return "Scm_MonotonicMerge"))
 
 (define-cproc pair-attributes (pair::<pair>)
-  (return "SCM_PAIR_ATTR"))
+  (return "Scm_PairAttr"))
 
 (define-cproc pair-attribute-get (pair::<pair> key &optional fallback)
   "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")

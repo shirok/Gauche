@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.51 2004-08-16 02:33:58 shirok Exp $
+ *  $Id: macro.c,v 1.52 2004-12-18 04:11:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -225,7 +225,7 @@ static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
 }
 
 static ScmSyntax syntax_define_macro = {
-    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
     SCM_SYMBOL(SCM_SYM_DEFINE_MACRO),
     compile_define_macro,
     NULL
@@ -931,7 +931,7 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
 }
 
 static ScmSyntax syntax_syntax_rules = {
-    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
     SCM_SYMBOL(SCM_SYM_SYNTAX_RULES_INT),
     compile_syntax_rules,
     NULL
@@ -966,7 +966,7 @@ static ScmObj compile_define_syntax(ScmObj form, ScmObj env, int ctx,
 }
 
 static ScmSyntax syntax_define_syntax = {
-    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
     SCM_SYMBOL(SCM_SYM_DEFINE_SYNTAX),
     compile_define_syntax,
     NULL
@@ -1034,14 +1034,14 @@ static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx,
 }
 
 static ScmSyntax syntax_let_syntax = {
-    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
     SCM_SYMBOL(SCM_SYM_LET_SYNTAX),
     compile_let_syntax,
     (void*)0
 };
 
 static ScmSyntax syntax_letrec_syntax = {
-    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
     SCM_SYMBOL(SCM_SYM_LETREC_SYNTAX),
     compile_let_syntax,
     (void*)1
@@ -1101,14 +1101,14 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
 }
 
 static ScmSyntax syntax_macro_expand = {
-    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
     SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
     compile_macro_expand,
     (void*)0
 };
 
 static ScmSyntax syntax_macro_expand_1 = {
-    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
     SCM_SYMBOL(SCM_SYM_MACRO_EXPAND_1),
     compile_macro_expand,
     (void*)1
