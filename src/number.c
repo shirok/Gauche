@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.79 2002-04-08 09:45:53 shirok Exp $
+ *  $Id: number.c,v 1.80 2002-04-09 01:03:15 shirok Exp $
  */
 
 #include <math.h>
@@ -168,7 +168,7 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
         }
     }
 
-    *exp  = dd.components.exp - 0x3ff - 52;
+    *exp  = (dd.components.exp? dd.components.exp - 0x3ff - 52 : -0x3fe - 52);
     *sign = (dd.components.sign? -1 : 1);
     
 #if SIZEOF_LONG >= 8
@@ -186,6 +186,8 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
         values[1] = dd.components.mant0;
         if (dd.components.exp > 0) {
             values[1] += (1L<<20); /* hidden bit */
+        } else {
+            
         }
         f = Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(1, values, 2)));
     }
@@ -1378,6 +1380,8 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  * Accurately", PLDI '96, pp.108--116, 1996), except I use floating-point
  * arithmetic instead of multiple-precision integer arithmetic.
  * So it is fast but inaccurate.
+ * A special care must be taken when the exponent part is very large
+ * or very small, for it may cause some parameters to overflow.
  */
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
@@ -1400,28 +1404,26 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         /* initialize r, s, m+ and m- */
         f = frexp(val, &exp);
         round = (fmod(ldexp(f, 53), 2.0) == 0.0);
-        if (exp >= 0) {
-            r = ldexp(f, exp);
+        if (exp-55 > -1022) {
+            r = val;
             s = 1.0;
             mp = ldexp(0.5, exp-53);
             if (f != 0.5) {
                 mm = ldexp(0.5, exp-53);
             } else {
-                mm = ldexp(0.5, exp-54);
+                mm = ldexp(0.25, exp-53);
             }
         } else {
-            if (exp == -1023 || f != 0.5) {
-                r = f * 2.0;
-                s = ldexp(2.0, -exp);
-                mp = ldexp(1.0, -53);
-                mm = ldexp(1.0, -53);
-            } else {
-                r = f * 4.0;
-                s = ldexp(4.0, -exp);
-                mp = ldexp(1.0, -52);
-                mm = ldexp(1.0, -53);
-            }
+            /* Within this range, we have to scale r so that m+ and m- can be
+               representable as the minimum floating point number */
+            r = val * 2.0;
+            s = 2.0;
+            mp = ldexp(1.0, -1074);
+            mm = ldexp(1.0, -1074);
         }
+
+/*        fprintf(stderr, "init f=%g, r=%g, s=%g, mp=%g, mm=%g, round=%d\n",
+          f, r, s, mp, mm, round);*/
 
         /* estimate scale */
         est = ceil(log10(val) - 0.1);
@@ -1435,7 +1437,13 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                 s *= pow(10.0, est);
             }
         } else {
-            double scale = pow(10.0, -est);
+            double scale;
+            if (-est >= DBL_MAX_10_EXP) {
+                scale = pow(10.0, DBL_MAX_10_EXP);
+                s /= pow(10.0, -est-DBL_MAX_10_EXP);
+            } else {
+                scale = pow(10.0, -est);
+            }
             r *= scale;
             mp *= scale;
             mm *= scale;
@@ -1472,6 +1480,9 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                 }
             }
         }
+
+/*        fprintf(stderr, "scale r=%g, s=%g, mp=%g, mm=%g, est=%d\n",
+          r, s, mp, mm, est);*/
 
         /* generate */
         for (digs=0;buflen>5;digs++) {
@@ -1846,14 +1857,16 @@ static ScmObj read_real(const char **strp, int *lenp,
        on Programming Language Design and Implementation, 1990.)
        For now, we trade accuracy for simplicity. */
     {
-        double realnum = 0.0;
+        double realnum = Scm_GetDouble(fraction);
 
         if (exponent - fracdigs >= 0) {
-            realnum = Scm_GetDouble(fraction) * pow(10.0, exponent-fracdigs);
-        } else if (exponent - fracdigs > DBL_MIN_10_EXP) {
-            realnum = Scm_GetDouble(fraction) / pow(10.0, -(exponent-fracdigs));
+            realnum *= pow(10.0, exponent-fracdigs);
+        } else if (exponent - fracdigs > -DBL_MAX_10_EXP) {
+            realnum /= pow(10.0, -(exponent-fracdigs));
+        } else if (exponent > -DBL_MAX_10_EXP) {
+            realnum = realnum / pow(10.0, -exponent) / pow(10.0, fracdigs);
         } else {
-            realnum = Scm_GetDouble(fraction) * pow(10.0, exponent) / pow(10.0, fracdigs);
+            realnum = realnum / pow(10.0, -DBL_MAX_10_EXP-(exponent-fracdigs)) / pow(10.0, DBL_MAX_10_EXP);
         }
         
         if (minusp) realnum = -realnum;
