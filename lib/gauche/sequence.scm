@@ -12,88 +12,55 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: sequence.scm,v 1.2 2001-11-13 10:53:26 shirok Exp $
+;;;  $Id: sequence.scm,v 1.3 2001-12-02 05:27:21 shirok Exp $
 ;;;
-
-;;;; This is still experimental.  Do not rely on the interface.
 
 ;; This module defines an unified way to treat sequence-like objects
 ;; (that is, a collection object that can be accessed by integer index).
+;; See also gauche.collection, that defines various mapping functions.
 
 (define-module gauche.sequence
-  (export seq-referencer seq-modifier seq-length
-          seq-ref seq-set! subseq seq-append
-          seq-for-each seq-map seq-fold seq-fold-right
-          seq-find seq-filter seq-remove seq-partition
-          seq-sort seq-sort! seq-permute)
+  (use gauche.collection)
+  (export referencer modifier ref subseq)
   )
 (select-module gauche.sequence)
 
-;;================================================================
-;; Sequence Referencer Protocol
-;;
-;;  Mandatory methods
-;;     seq-referencer
-;;     seq-modifier    (if the sequence is mutable)
-;;     seq-length
+(define-method referencer ((obj <list>))   list-ref)
+(define-method referencer ((obj <vector>)) vector-ref)
+(define-method referencer ((obj <string>)) string-ref)
 
-(define-method seq-referencer ((obj <list>))   list-ref)
-(define-method seq-referencer ((obj <vector>)) vector-ref)
-(define-method seq-referencer ((obj <string>)) string-ref)
+(define-method modifier   ((obj <list>))
+  (lambda (o i v) (set-car! (list-tail o i) v)))
+(define-method modifier   ((obj <vector>)) vector-set!)
+(define-method modifier   ((obj <string>)) string-set!)
 
-(define-method seq-modifier   ((obj <list>))   list-set!)
-(define-method seq-modifier   ((obj <vector>)) vector-set!)
-(define-method seq-modifier   ((obj <string>)) string-set!)
+;; ref and (setter ref) --------------------------------
 
-(define-method seq-length     ((obj <list>))   (length obj))
-(define-method seq-length     ((obj <vector>)) (vector-length obj))
-(define-method seq-length     ((obj <string>)) (string-length obj))
+(define-method ref ((obj <sequence>) index)
+  ((referencer obj) obj index))
 
-;; These two are procedure instead of methods, for efficiency.
-(define (seq-ref obj k . args)
-  (apply (seq-referencer obj) obj k args))
+(define-method ref ((obj <sequence>) index default)
+  ((referencer obj) obj index default))
 
-(define (seq-set! obj k val)
-  ((seq-modifier obj) obj k val))
+(define-method (setter ref) ((obj <sequence>) index value)
+  ((modifier obj) obj index value))
 
-(set! (setter seq-ref) seq-set!)
+;; subseq ----------------------------------------------
 
-;; The implementations may override the following methods for efficiency.
+(define-method subseq ((seq <sequence>))
+  (subseq seq 0 (size-of seq)))
 
-(define-method seq-fold (proc knil obj)
-  (let ((len (seq-length obj))
-        (ref (seq-referencer obj)))
-    (do ((i 0 (+ i 1))
-         (r knil (proc (ref obj i) r)))
-        ((>= i len) r)
-      #f)))
+(define-method subseq ((seq <sequence>) start)
+  (subseq seq start (size-of seq)))
 
-(define-method seq-for-each (proc obj)
-  (let ((len (seq-length obj))
-        (ref (seq-referencer obj)))
-    (dotimes (i len) (proc (ref obj i)))))
-
-(define-methdo seq-map (proc obj)
-  (let ((len (seq-length obj))
-        (ref (seq-referencer obj)))
-    (do ((i 0   (+ i 1))
-         (r '() (cons (proc (ref obj i)) r)))
-        ((>= i len) (reverse r))
-      #f)))
-
-;;================================================================
-;; Sequence Builder Protocol
-;;
-;;  Mandatory methods
-;;     seq-builder
-;;
-
-;; Sequence builder is a procedure to build a sequence.  It can be used
-;; to build a sequence with both known and unknown length.
-;;
-;;   (builder 
-;;
-
+(define-method subseq ((seq <sequence>) start end)
+  (when (< end 0) (set! end (modulo end (size-of seq))))
+  (when (> start end)
+    (errorf "start ~a must be smaller than or equal to end ~a" start end))
+  (let ((size (- end start)))
+    (with-builder ((class-of seq) add! get :size size)
+      (with-iterator (seq end? next :start start)
+        (dotimes (i size (get)) (add! (next)))))))
 
 
 (provide "gauche/sequence")
