@@ -1,3 +1,10 @@
+2001-12-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : dynamic-wind properly returns multiple values.
+	  Fixed bad continuation frame handling in user_eval_inner and
+	  Scm_VMDefaultErrorHandler.  Fixed bad order of thunk to be
+	  called in the nested dynamic wind.
+
 2001-12-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c : reorganized exception handling scheme.  merged SRFI-18
