@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.187 2002-04-29 20:01:37 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.188 2002-04-30 00:53:11 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5623,16 +5623,25 @@ string pointer objects, for portability.
 
 @deftp {Builtin Class} <regexp>
 @clindex regexp
+@c EN
 Regular expression object.  You can construct a regexp object
 from a string by @code{string->regexp} at run time.  Gauche also 
 has a special syntax to denote regexp literals, which construct
-regexp object at reading time.
+regexp object at loading time.
 
 Gauche's regexp engine is fully aware of multibyte characters.
+@c JP
+正規表現オブジェクトのクラスです。@code{string->regexp}を使って実行時に
+作成できます。また、Gaucheはリテラルの正規表現を表す構文を持っており、
+ロード時に作成することもできます。
+
+Gaucheの正規表現エンジンはマルチバイト文字列に対応しています。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <regmatch>
 @clindex regmatch
+@c EN
 Regexp match object.  A regexp matcher @code{rxmatch} returns
 this object if match.  This object contains all the information
 about the match, including submatches.
@@ -5640,95 +5649,226 @@ about the match, including submatches.
 The advantage of using match object, rather than substrings or
 list of indices is efficiency.  The regmatch object keeps internal
 state of match, and computes indices and/or substrings only when
-requested.
+requested.  This is particularly effective for mutibyte strings,
+for index access is slow on them.
+@c JP
+正規表現マッチオブジェクトのクラスです。正規表現エンジン@code{rxmatch}は、
+一致した場合にこのオブジェクトを返します。部分一致の情報を含めた
+全てのマッチに関する情報がこのオブジェクトに含まれています。
+
+一致した部分文字列やそのインデックスのリストではなく
+マッチオブジェクトを返すことの利点は効率です。
+regmatchオブジェクトはマッチの内部状態を保持しており、
+要求された時にはじめて該当する部分文字列やインデックスを計算します。
+これは特にマルチバイト文字列に有効です。マルチバイト文字列
+へのインデックスアクセスは遅いからです。
+@c COMMON
 @end deftp
 
 @deftp {Reader Syntax} @code{#/@i{regexp-spec}/}
+@c EN
 Denotes literal regular expression object.  When read, it becomes
 an instance of @code{<regexp>}.
+@c JP
+リテラルの正規表現オブジェクトを表記します。読まれた際に@code{<regexp>}の
+インスタンスとなります。
+@c COMMON
 
+@c EN
 The advantage of using this syntax over @code{string->regexp} is
 that the regexp is compiled only once.  You can use literal regexp
 inside loop without worring about regexp compilation overhead.
 If you want to construct regexp on-the-fly, however, use @code{string->regexp}.
+@c JP
+@code{string->regexp}に対してこの構文を使う利点は、
+正規表現のコンパイルが一度しか行われない点です。この構文は、
+内部ループの中でも、正規表現のコンパイルのオーバヘッドを気にせずに
+使うことができます。動的に正規表現を作成したい場合のみ@code{string->regexp}を
+使って下さい。
+@c COMMON
 
+@c EN
 The recognized syntax is a subset of POSIX extended regular expression,
 with a bit of extension taken from Perl.  Specifically, Gauche supports:
+@c JP
+認識される構文はPOSIX拡張正規表現のサブセットに、Perlの拡張の一部を
+採り入れたものです。具体的には以下の構文がサポートされます。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 Repetition by @code{*}, @code{+} and @code{?}.
+@c JP
+@code{*}、@code{+}、@code{?}による繰り返しの指定。
+@c COMMON
 @item
+@c EN
 Grouping by @code{()}.  No backslash escape is needed.
+@c JP
+@code{()}によるグルーピング。括弧の前にバックスラッシュは不要です。
+@c COMMON
 @item
+@c EN
 Alternative by @code{|}.
+@c JP
+@code{|}による選択。
+@c COMMON
 @item 
+@c EN
 Character class by @code{[]}.
+@c JP
+@code{[]}による文字クラス。
+@c COMMON
 @item
+@c EN
 Beginning of line @code{^} and end of line @code{$} assertions.
+@c JP
+文字列の先頭@code{^}、および末尾@code{$}へのマッチ。
+@c COMMON
 @item
+@c EN
 Several special character class abbreviations;
 @code{\d} for digits, @code{\D} for non-digits, @code{\w} for alfphanumeric
 characters, @code{\W} for non-alphanumeric characters, @code{\s} for
 whitespace characters, and @code{\S} for non-whitespace characters.
 These can be used both inside and outside of @code{[]}.
+@c JP
+いくつかの特定の文字クラスの略記。
+数字@code{\d}、数字の補集合@code{\D}、アルファベットと数字@code{\w}、
+その補集合@code{\W}、空白文字@code{\s}、その補集合@code{\S}が使えます。
+これらは通常のコンテクストでも、文字クラス@code{[]}の中でも使えます。
+@c COMMON
 @end itemize
 
+@c EN
 And Gauche does not supports:
+@c JP
+以下の機能はサポートされていません。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 Symbolic character class notation, e.g. @code{[:alpha:]}.
+@c JP
+@code{[:alpha:]}のような、シンボリックな文字クラス表記。
+@c COMMON
 @item
+@c EN
 Collating elements, e.g. @code{[=e=]} and @code{[.ll.]}.
+@c JP
+@code{[=e=]}や@code{[.ll.]}のような、コレーティングエレメント。
+@c COMMON
 @item
+@c EN
 Beginning/end of word assertions.
+@c JP
+単語の先頭/終了へのマッチ。
+@c COMMON
 @item
+@c EN
 Fixed-number repetition, @code{@{m,n@}}.
+@c JP
+@code{@{m,n@}}のような、回数を指定した繰り返し。
+@c COMMON
 @item
+@c EN
 Back reference of submatches.
+@c JP
+部分一致へのバックリファレンス。
+@c COMMON
 @end itemize
 
+@c EN
 Among those unsupported features, the first four will eventually
 be supported.  It is unlikely to support back reference, however.
 If you use back reference, you're not dealing with regular grammer
 any more.  And if you're dealing with higher class of grammer,
 there should be appropriate tools rather than regular expressions.
+@c JP
+これらのサポートされていない機能のうち、最初の4つはいずれサポートする予定です。
+但し、バックリファレンスに関してはおそらくサポートしないでしょう。
+バックリファレンスを使わなければならないということは、
+その対象は正規文法では表現できないということです。
+それならばより複雑なクラスの文法を扱うのに適したツールを使うべきであって、
+無理矢理正規表現を使おうとするのは良くありません。
+@c COMMON
 @end deftp
 
 @defun string->regexp string
+@c EN
 Takes @var{string} as a regexp specification, and constructs
 an instance of @code{<regexp>} object.
+@c JP
+文字列@var{string}を正規表現とみなして、@code{<regexp>}のインスタンスを
+作成して返します。
+@c COMMON
 @end defun
 
 @defun rxmatch regexp string
+@c EN
 @var{Regexp} is a regular expression object.
 A string @var{string} is matched by
 @var{regexp}.  If it matches, the function returns a @code{<regmatch>}
 object.  Otherwise it returns @code{#f}.
 
-This corresponds to scsh's @code{regexp-search}.
+This is called @code{match}, @code{regexp-search} or @code{string-match}
+in some other Scheme implementations.
+@c JP
+正規表現オブジェクト@var{regexp}に一致するものを文字列@var{string}から
+探します。一致が見付かった場合は@code{<regmatch>}オブジェクトを返し、
+見付からなかった場合は@code{#f}を返します。
+
+他のScheme処理系ではこれは
+@code{match}、@code{regexp-search}、@code{string-match}など
+様々な名で呼ばれています。
+@c COMMON
 @end defun
 
-@defun rxmatch-substring match &optional (i 0)
-@defunx rxmatch-start match &optional (i 0)
+@defun rxmatch-start match &optional (i 0)
 @defunx rxmatch-end match &optional (i 0)
+@defunx rxmatch-substring match &optional (i 0)
+@c EN
 @var{Match} is a match object returned by @code{rxmatch}.
 If @var{i} equals to zero, the functions return
 start, end or the substring of entire match, respectively.
 With positive integer @var{I}, it returns those of @var{I}-th
 submatches.  It is an error to pass other values to @var{I}.
+@c JP
+@code{rxmatch}が返すマッチオブジェクト@var{match}から情報を取り出します。
+@var{i}が省略されるか0の場合、これらの手続きはそれぞれ一致した
+文字列の開始インデックス、終了インデックス、および一致した部分文字列を
+返します。@var{i}に正の整数が与えられた場合は、@var{i}番目のサブマッチ
+に関する情報を返します。@var{i}にそれ以外の値を与えるのはエラーです。
+@c COMMON
 
+@c EN
 It is allowed to pass @code{#f} to @var{match} for convenience.
 The functions return @code{#f} in such case.
+@c JP
+簡便のために、@var{match}に@code{#f}を渡すことも許されています。
+その場合、これらの手続きは@code{#f}を返します。
+@c COMMON
 
+@c EN
 These functions correspond to scsh's @code{match:start}, @code{match:end}
 and @code{match:substring}.
+@c JP
+これらの手続きはScshで@code{match:start}、@code{match:end}、
+@code{match:substring}と呼ばれているものと等価です。
+@c COMMON
 @end defun
 
 @defun rxmatch-after match &optional (i 0)
 @defunx rxmatch-before match &optional (i 0)
+@c EN
 Returns substring of the input string after or before @var{match}.
 If optional argument is given, the @var{i}-th submatch is used
 (0-th submatch is the entire match).
+@c JP
+マッチオブジェクト@var{match}の前および後の文字列を返します。
+正の整数が@var{i}に与えられた場合はi番目のサブマッチの前および後の
+文字列を返します。
+@c COMMON
 @example
 (define match (rxmatch #/(\d+)\.(\d+)/ "pi=3.14..."))
 
@@ -5740,8 +5880,13 @@ If optional argument is given, the @var{i}-th submatch is used
 @end example
 @end defun
 
+@c EN
 Seel also @ref{Regular expression utilities}, which defines
 useful macros and functions to deal with regular expression matching.
+@c JP
+また、@ref{Regular expression utilities}には、正規表現検索に便利な
+マクロや手続きが定義されています。参照して下さい。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Vectors, Hashtables, Regular expression, Core library
