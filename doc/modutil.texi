@@ -9832,37 +9832,77 @@ uses @code{eq?} and @code{eqv?}, respectively.
 
 @deftp {Module} util.match
 @mdindex util.match
+@c EN
 This module is a port of Andrew Wright's pattern matching macro library.
 It is widely used in Scheme world, and ported to various Scheme
 implementations, including Chez Scheme, PLT Scheme, Scheme48, Chicken,
 and SLIB.
 It provides a similar feature of Common Lisp's @code{destructuring-bind}.
+@c JP
+このモジュールは Andrew Wright のパターンマッチングマクロライブラリを
+ポートしたものです。このライブラリは Scheme 界では広くつかわれており、
+Chez Scheme、PLT Scheme、Scheme48、Chicken および SLIB を含む、様々な
+Scheme の実装にポートされています。このライブラリは Common Lisp の
+@code{destructuring-bind} に似た機能を提供します。
+@c COMMON
 
+@c EN
 This version retains compatibility of the original Wright's macro,
 except (1) @var{box} is not supported since Gauche doesn't have one,
 and (2) structure matching is integrated to Gauche's object system.
+@c JP
+この版では、オリジナルの Wright's macro のマクロとの互換性が保たれて
+います。ただし、例外がふたつあって、それは、(1) @var{box} はサポートされて
+いません。Gauche にそれがないからです。(2) 構造のマッチングは Gauche の
+オブジェクトシステムに統合されています。
+@c COMMON
 @end deftp
 
-We show a list of APIs first, then the table of complete syntax
-of patterns, followed by examples.
+@c EN
+We show a list of APIs first, then the table of complete syntax of 
+patterns, folowed by examples.
+@c JP
+まず API のリストを示し、それからパターンの完全な構文のテーブルを示し、
+そして例を示します。
+@c COMMON
 
+@c EN
 @subheading Pattern matching API
+@c JP
+@subheading パターンマッチング API
+@c COMMON
 
 @defmac match expr clause @dots{}
 
+@c EN
 Each @var{clause} is either one of the followings:
+@c JP
+それぞれの @var{clause} は以下のうちどちらかです。
+@c COMMON
 @example
 (@var{pat} @var{expr} @dots{})
 (@var{pat} (=> @var{identifier}) @var{expr} @dots{})
 @end example
 
+@c EN
 First, the @var{expr} is matched against @var{pat} of each clauses.
 The detailed syntax of the pattern is explained below.
+@c JP
+まず、@var{expr} を各節の @var{pat} に照合します。パターンの詳しい
+構文については後述します。
+@c COMMON
 
+@c EN
 If a matching @var{pat} is found, the @emph{pattern variables} in
 @var{pat} are bound to the corresponding elements in @var{expr}, then
 @var{expr} @dots{} are evaluated.
+@c JP
+@var{pat} にマッチする部分が見つかれば、@var{pat} 中の @emph{パターン変数}
+は、@var{expr} 中の対応する要素に束縛され、その後、@var{expr} @dots{} 
+が評価されます。
+@c COMMON
 
+@c EN
 If the clause is the second form, @var{identifier} is also bound
 to the failure continuation of the @var{clause}.  It is a
 procedure with no arguments, and when called, it jumps back to
@@ -9872,23 +9912,46 @@ So you can perform extra tests
 within @var{expr} @dots{} and if you're not satisfied you can reject
 the match by calling @code{(@var{identifier})}.  See the examples
 below for more details.
+@c JP
+節が 2つ目の形式である場合、@var{identifier} も @var{clause} の失敗継続
+に束縛されます。これは引数をもたない手続きで、呼ばれると、あたかも、
+@var{pat} の照合に失敗したかの如くマッチャーに戻り、@code{match} が
+残りの節について試行を続けます。それゆえ、@var{expr} @dots{} 内部で
+追加のテストを実行することが可能で、もし、満足いくものでなければ、
+@code{(@var{identifier})} を呼ぶことで、照合結果を拒絶することができます。
+より詳しくは、後述の例を見てください。
+@c COMMON
 
+@c EN
 If no @var{pat} matches, @code{match} reports an error.
+@c JP
+どの @var{pat} もマッチしなければ、@code{match} はエラーを報告します。
+@c COMMON
 @end defmac
 
 @defmac match-lambda clause @dots{}
-Creates a function that takes one argument and performs @code{match} on it.
+@c EN
+Creates a function that takes one argument and performs @code{match} on it,
 using @var{clause} @dots{}.  It's functionally equivalent to the following
 expression:
+@c JP
+ひとつの引数をとり、それに対して @var{clause} @dots{} を用いて、
+@code{match} を実行する関数を生成します。機能としては以下の式と同等です。
+@c COMMON
 @example
 (lambda (expr) (match expr @var{clause} @dots{}))
 @end example
 @end defmac
 
 @defmac match-lambda* clause @dots{}
+@c EN
 Like @code{match-lambda}, but performs @code{match} on the list of
 whole arguments.
 It's functionally equivalent to the following expression:
+@c JP
+@code{match-lambda} と同じですが、@code{match} をすべての引数のリスト
+に対して実行します。機能としては以下の式と同等です。
+@c COMMON
 @example
 (lambda expr (match expr @var{clause} @dots{}))
 @end example
@@ -9898,11 +9961,18 @@ It's functionally equivalent to the following expression:
 @defmacx match-let name ((pat expr) @dots{}) body-expr @dots{}
 @defmacx match-let* ((pat expr) @dots{}) body-expr @dots{}
 @defmacx match-letrec ((pat expr) @dots{}) body-expr @dots{}
+@c EN
 Generalize @code{let}, @code{let*}, and @code{letrec} to allow
 patterns in the binding position rather than just variables.
 Each @var{expr} is evaluated, and then matched to @var{pat},
 and the bound pattern variables are visible in 
 @var{body-expr} @dots{}.
+@c JP
+束縛部分が単なる変数ではなく、パターンを許す、一般化された @code{let}、
+@code{let*} および @code{letrec} です。
+各 @var{expr} が評価され、その後、@var{pat} と照合され、束縛された
+パターン変数が @var{body-expr} @dots{} から見えるようになります。
+@c COMMON
 
 @example
 (match-let (
@@ -9912,30 +9982,59 @@ and the bound pattern variables are visible in
  @result{} ((a b c) (0 1 2))
 @end example
 
+@c EN
 If you're sick of parenthesis, try @code{match-let1} below.
+@c JP
+括弧はうんざりという向きには、以下の @code{match-let1} をおためしあれ。
+@c COMMON
 @end defmac
 
 @defmac match-let1 pat expr body-expr @dots{}
+@c EN
 This is a Gauche extension and isn't found in the original Wright's code.
 This one is equivalent to the following code:
+@c JP
+これは Gauche での拡張で、オリジナルの Wright のコードにはありません。
+これは以下のコードと同等です。
+@c COMMON
 @example
 (match-let ((@var{pat} @var{expr})) @var{body-expr} @dots{})
 @end example
 
+@c EN
 Syntactically, @code{match-let1} is very close to the Common Lisp's
 @code{destructuring-bind}.
+@c JP
+構文としては @code{match-let1} は Common Lisp の @code{destructuring-bind}
+に非常によく似ています。
+@c COMMON
 @end defmac
 
 @defmac match-define pat expr
+@c EN
 Like toplevel @code{define}, but allows a pattern instead of variables.
+@c JP
+トップレベルの @code{define} と同様ですが、変数の代りにパターンが許されます。
+@c COMMON
 @end defmac
 
+@c EN
 @subheading Pattern syntax
+@c JP
+@subheading パターンの構文
+@c COMMON
 
-Here's a summary of pattern syntax.  The asterisk @code{(*)} after
-the explanation means Gauche's extension which does not present
+@c EN
+Here's a summary of pattern syntax. The asterisk @code{(*)}
+after explanation means Gauche's extension which does not present
 in the original Wright's code.
+@c JP
+ここにあるのはパターンの構文の要約です。説明の後にあるアスタリスク
+@code{(*)} はオリジナルの Wright のコードにはない、Gauche の拡張で
+あることを意味します。
+@c COMMON
 
+@c EN
 @example
 pat : patvar                       ;; anything, and binds pattern var
     | _                            ;; anything
@@ -9962,7 +10061,7 @@ pat : patvar                       ;; anything, and binds pattern var
     | (= proc pat)                 ;; apply proc, match the result to pat
     | (and pat ...)                ;; if all of pats match
     | (or pat ...)                 ;; if any of pats match
-    | (not pat ...)                ;; if all pats don't match
+    | (not pat ...)                ;; if all pats don't match at all
     | (? predicate pat ...)        ;; if predicate true and all pats match
     | (set! patvar)                ;; anything, and binds setter
     | (get! patvar)                ;; anything, and binds getter
@@ -9976,9 +10075,52 @@ ooo : ...                          ;; zero or more
     | ..k                          ;; k or more
     | __k                          ;; k or more
 @end example
+@c JP
+@example
+pat : patvar                       ;; すべて、かつ、パターン変数を束縛
+    | _                            ;; すべて
+    | ()                           ;; 空リスト
+    | #t                           ;; #t
+    | #f                           ;; #f
+    | string                       ;; 文字列
+    | number                       ;; 数
+    | character                    ;; 文字
+    | keyword                      ;; キーワード (*)
+    | 'sexp                        ;; Ｓ式
+    | 'symbol                      ;; シンボル(Ｓ式の特殊ケース)
+    | (pat1 ... patN)              ;; n 要素のリスト
+    | (pat1 ... patN . patN+1)     ;; n 以上の要素を含むリスト
+    | (pat1 ... patN patN+1 ooo)   ;; n 以上の要素を含むリスト、残りの各要素は
+                                   ;; patN+1 にマッチしなければならない
+    | #(pat1 ... patN)             ;; n 要素のベクタ
+    | #(pat1 ... patN patN+1 ooo)  ;; n 以上の要素を含むベクタ、残りの各要素は
+                                   ;; patN+1 にマッチしなければならない
+    | ($ class pat1 ... patN)      ;; オブジェクト (patK はスロット順でマッチ)
+    | (struct class pat1 ... patN) ;; 同上 (*)
+    | (@@ class (slot1 pat1) ...)  ;; オブジェクト (スロット名を使う) (*)
+    | (object class (slot1 pat1) ...) ;; 同上 (*)
+    | (= proc pat)                 ;; procを適用し、結果を pat にマッチさせる
+    | (and pat ...)                ;; すべての pat にマッチするか
+    | (or pat ...)                 ;; マッチする pat があるか
+    | (not pat ...)                ;; どの pat もマッチしないか
+    | (? predicate pat ...)        ;; predicate が真、かつ、全 pat がマッチ
+    | (set! patvar)                ;; すべて、かつ、セッタを束縛
+    | (get! patvar)                ;; すべて、かつ、ゲッタを束縛
+    | `qp                          ;; 擬似パターン
+
+patvar : a symbol except _, quote, $, struct, @@, object, =, and, or,
+         not, ?, set!, get!, backquote, ..., ___, ..k, __k.
+
+ooo : ...                          ;; ゼロまたはそれ以上
+    | ___                          ;; ゼロまたはそれ以上
+    | ..k                          ;; k またはそれ以上
+    | __k                          ;; k またはそれ以上
+@end example
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 A bare symbol is a "pattern variable"; it matches anything, and
 the matched part of the expression is bound to the symbol.
 The following symbols have special meanings and cannot be used
@@ -9987,91 +10129,208 @@ as a pattern variable: @code{_}, @code{quote}, @code{$}, @code{struct},
 @code{not}, @code{?}, @code{set!}, @code{get!}, @code{backquote},
 @code{...}, @code{___}, and @code{..k} and @code{__k} where @emph{k} is
 an integer.
+@c JP
+素のシンボルは「パターン変数」で、あらゆるものとマッチし、
+式のマッチした部分がそのシンボルに束縛されます。
+以下のシンボルは特別な意味をもち、パターン変数としては使えません。
+@code{_}、@code{quote}、@code{$}、@code{struct}、@code{@@}、@code{object}、
+@code{=}、@code{and}、@code{or}、@code{not}、@code{?}、@code{set!}、
+@code{get!}、@code{backquote}、@code{...}、@code{___} および
+@code{..k} と @code{__k} (ここで、@emph{k} は整数)。
+@c COMMON
 
 @item
+@c EN
 A symbol @code{_} matches anything, without binding a patter variable.
 It can be used to show "don't care" placeholoder.
+@c JP
+シンボル @code{_} はあらゆるものマッチし、パターン変数は束縛しません。
+「鎌○ぬ」プレースホルダであることを示すのに用います。
+@c COMMON
 
 @item
+@c EN
 Literals such as emptylist, booleans, strings, numbers, characters and
 keywords match the same object (in the sense of @code{equal?}).
+@c JP
+空リスト、真偽値、文字列、数、文字およびキーワードのリテラルは
+(@code{equal?}という意味で)同じオブジェクトとマッチします。
+@c COMMON
 
 @item
+@c EN
 Quoted expression matches the same experssion (in the sense of @code{equal?}).
 You can use a quoted symbol to match the symbol itself.
+@c JP
+クウォートされた式は(@code{equal?} という意味で)同じ式とマッチします。
+クウォートされたシンボルをそれ自身とマッチさせるのに使えます。
+@c COMMON
 
 @item
+@c EN
 A list and a vector in general match a list or a vector whose elements
 matches the elements in the pattern recursively, unless the first element
 of the list is one of the special symbols listed above, it has a special
 meaning.
+@c JP
+通常リストおよびベクタは、それぞれ、パターン中の要素にマッチする要素を
+もつリストまたはベクタとマッチします。ただし、最初の要素が上であげた
+特別なシンボルではない限りです。そのような場合には特別な意味を持ちます。
+@c COMMON
 
+@c EN
 As a special case, the last element of a vector or a list can be
 followed by a symbol @code{...}.  In that case, the pattern just before
 the symbol @code{...} can be applied repeatedly until it consumes all the
 elements in the given expression.  A symbol @code{___} can be used
 in place of @code{...}; it is useful when you want to produce a pattern
 by syntax-rules macro.
+@c JP
+特別な場合として、ベクタあるいはリストの最後の要素のあとにシンボル
+@code{...} を付加することができます。この場合には、@code{...} シンボル
+直前のパターンが与えられた式のすべての要素を尽すまで繰り返し適用されます。
+シンボル @code{___} は @code{...} の場所で使えます。構文規則マクロによって
+パターンを生成したいときに便利です。
+@c COMMON
 
+@c EN
 For a list pattern, you can also use a symbol @code{..1}, @code{..2},
 @dots{}, which specifies the minimum number of repetition.
+@c JP
+リストのパターンに対しては、シンボル @code{..1}、@code{..2}、@dots{} が
+使えます。これは繰り返しの最小値を指定するものです。
+@c COMMON
 
 @item
+@c EN
 @code{($ class pat1 @dots{})} matches an instance of a class @code{class}.
 Each pattern @code{pat1} @dots{} matches each value of slots,
 in order of @code{(class-slots class)}.
+@c JP
+@code{($ class pat1 @dots{})} は @code{class} クラスのインスタンスと
+マッチします。各パターン @code{pat1} @dots{} はスロットの各値と
+@code{(class-slots class)} の順にマッチします。
+@c COMMON
 
+@c EN
 @code{(struct class pat1 @dots{})} has the same meaning.  Although
 the original Wright's code doesn't have @code{struct}, PLT Scheme has
 it in its extended match feature, and it is more descriptive.
+@c JP
+@code{(struct class pat1 @dots{})} は同じ意味です。オリジナルの
+Wright のコードには、@code{struct} はありませんが、PLT Scheme の拡張
+照合機能にはそなわっています。こちらの方がより説明的です。
+@c COMMON
 
+@c EN
 This is an adaptation of the original feature that can match structures.
 It is useful to match a simple instance that you know the order of
 slots; for example, a simple record created by srfi-9
 (@xref{Record types}) would be easy to match by positioned values.
+@c JP
+これはオリジナルの機能を構造(structure)にもマッチするように調整した
+ものです。スロットの順番が予め分るような単純なインスタンスをマッチする
+のに便利です。たとえば、SRFI-9 (@ref{Record types}参照)で作成した
+簡単なレコードは簡単に位置指定された値でマッチすることができます。
+@c COMMON
 
+@c EN
 If the instance's class uses inheritances, it is a bit difficult to
 match by positions.  You can use @code{@@} or @code{object} pattern
 below to match using slot names.
+@c JP
+インスタンスのクラスが継承を使っている場合、位置によるマッチを
+おこなうのは少々難しくなります。以下の @code{@@} あるいは @code{object}
+パターンを使って、スロット名でマッチを行うことができます。
+@c COMMON
 
 @item
+@c EN
 @code{(object class (slot1 pat1) @dots{})} matches an instance
 of a class @code{class} whose value of @var{slot1} @dots{} matches
 @var{pat1} @dots{}.  This is Gauche's extension.  @code{@@} can be
 used in place of @code{object}, but @code{object} is recommended
 because of descriptiveness.
+@c JP
+@code{(object class (slot1 pat1) @dots{})} は
+@var{slot1} @dots{} の値が @var{pat1} @dots{} にマッチするような
+@code{class} クラスのインスタンスとマッチします。これは、
+Gauche の拡張です。@code{@@} は @code{object} と同じ場所で使えます。
+ただし、@code{object} の方が説明的でわかりやすいので、こちらを
+推奨します。
+@c COMMON
 
 @item
+@c EN
 @code{(= proc pat)} first applies @var{proc} to the corresponding
 expression, then match the result with @var{pat}.
+@c JP
+@code{(= proc pat)} は最初に @var{proc} を対応する式に適用し、
+その結果と @var{pat} をマッチさせます。
+@c COMMON
 
 @item
+@c EN
 @code{(and pat @dots{})}, @code{(or pat @dots{})}, and
 @code{(not pat @dots{})} are boolean operations of patterns.
+@c JP
+@code{(and pat @dots{})}、@code{(or pat @dots{})} および 
+@code{(not pat @dots{})} はパターンの真偽値演算子です。
+@c COMMON
 
 @item
+@c EN
 @code{(? predicate pat @dots{})} first applies a predicate to the
 corresponding expression, and if it returns true, applies each
 @code{pat} @dots{} to the expression.
+@c JP
+@code{(? predicate pat @dots{})} は最初、述語を対応する式に適用し、
+真が返れば、各 @code{pat} @dots{} をその式に適用します。
+@c COMMON
 
 @item
+@c EN
 @code{(set! patvar)} matches anything, and binds an one-argument
 procedure to a pattern variable @var{patvar}.  If the procedure is
 called, it replaces the value of matched pattern for the given argument.
+@c JP
+@code{(set! patvar)} はあらゆるものにマッチし、一引数の手続きを
+パターン変数 @var{patvar} に束縛します。その手続きが呼ばれると、
+マッチしたパターンの値を与えられた引数で置き換えます。
+@c COMMON
 
 @item
+@c EN
 @code{(get! patvar)} matches anything, and binds a zero-argument
 procedure to a pattern variable @var{patvar}.  If the procedure is
 called, it returns the matched value.
+@c JP
+@code{(get! patvar)} はあらゆるものにマッチし、引数なしの手続きを
+パターン変数 @var{patvar} に束縛します。その手続きが呼ばれると、
+マッチしたパターンの値を返します。
+@c COMMON
 
 @item
+@c EN
 @code{`qp} works like a quasiquote.  You can insert patterns within
 @code{qp} by unquote and unquote-splicing.
+@c JP
+@code{`qp} は擬似クウォートと似た働きをします。アンクウォートや
+アンクウォートスプライシングを使って、@code{qp} 内部にパターンを挿入できます。
+@c COMMON
 @end itemize
 
+@c EN
 @subheading Pattern examples
+@c JP
+@subheading パターン例
+@c COMMON
 
+@c EN
 A simple structure decomposition:
+@c JP
+単純な構造の分解
+@c COMMON
 @example
 (match '(0 (1 2) (3 4 5))
   ((a (b c) (d e f))
@@ -10079,7 +10338,11 @@ A simple structure decomposition:
  @result{} (0 1 2 3 4 5)
 @end example
 
+@c EN
 Using predicate patterns:
+@c JP
+述語パターンの使用
+@c COMMON
 @example
 (match 123
   ((? string? x) (list 'string x))
@@ -10087,8 +10350,13 @@ Using predicate patterns:
  @result{} (number 123)
 @end example
 
+@c EN
 Extracting variables and expressions from @code{let}.
 Uses repetition and predicate patterns:
+@c JP
+@code{let} から変数と式を取り出す
+反復および述語パターンの利用
+@c COMMON
 @example
 (define let-analyzer
   (match-lambda
@@ -10112,8 +10380,12 @@ Uses repetition and predicate patterns:
  @result{} "malformed let"
 @end example
 
+@c EN
 Using @code{=} function application.  The pattern variable @var{m}
 is matched to the result of application of the regular expression.
+@c JP
+@code{=} 関数適用。パターン変数 @var{m} は正規表現の適用結果にマッチする
+@c COMMON
 @example
 (match "gauche-ref.texi"
   ((? string? (= #/(.*)\.([^.]+)$/ m))
