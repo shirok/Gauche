@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.67 2001-03-09 09:48:38 shiro Exp $
+ *  $Id: gauche.h,v 1.68 2001-03-10 05:34:59 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -644,14 +644,6 @@ extern ScmObj Scm_VectorToList(ScmVector *v);
  * PORT
  */
 
-/* Since a character is no longer the same as a byte, there is a subtle
-   problem in I/O.  What will happen if you mix read-byte and read-char
-   from the same port?  What will happen if you try to read a character
-   and then found the input stream contains invalid character?
-
-   The strategy is to optimize for the common case.
-*/
-
 struct ScmPortRec {
     SCM_HEADER;
     char direction;
@@ -681,16 +673,25 @@ struct ScmPortRec {
     } src;
 };
 
+typedef struct ScmProcPortInfoRec {
+    ScmObj name;
+    int line;
+    int position;
+    int fd;
+    FILE *fp;
+} ScmProcPortInfo;
+    
 typedef struct ScmPortVTableRec {
-    ScmByte   (*Getb)(void *);
-    ScmChar   (*Getc)(void *);
-    ScmString (*Gets)(void *);
-    int       (*Ready)(void *);
-    int       (*Putb)(void *, ScmByte);
-    int       (*Putc)(void *, ScmChar);
-    int       (*Putcstr)(void *, const char *);
-    int       (*Puts)(void *, ScmString *);
-    int       (*Close)(void *);
+    int       (*Getb)(ScmPort *);
+    int       (*Getc)(ScmPort *);
+    ScmObj    (*Getline)(ScmPort *);
+    int       (*Ready)(ScmPort *);
+    int       (*Putb)(ScmPort *, ScmByte);
+    int       (*Putc)(ScmPort *, ScmChar);
+    int       (*Putcstr)(ScmPort *, const char *);
+    int       (*Puts)(ScmPort *, ScmString *);
+    int       (*Close)(ScmPort *);
+    ScmProcPortInfo *(*Info)(ScmPort *);
 } ScmPortVTable;
 
 enum ScmPortDirection {
@@ -1094,6 +1095,9 @@ extern ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
 extern ScmObj Scm_FindModule(ScmSymbol *name, int createp);
 extern ScmObj Scm_AllModules(void);
 extern void   Scm_SelectModule(ScmModule *mod);
+
+#define SCM_FIND_MODULE(name, createp) \
+    Scm_FindModule(SCM_SYMBOL(SCM_INTERN(name)), createp)
 
 extern ScmModule *Scm_NullModule(void);
 extern ScmModule *Scm_SchemeModule(void);

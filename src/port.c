@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.8 2001-03-08 10:22:00 shiro Exp $
+ *  $Id: port.c,v 1.9 2001-03-10 05:34:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -32,7 +32,6 @@ SCM_DEFCLASS(Scm_PortClass, "<port>", port_print, SCM_CLASS_DEFAULT_CPL);
         port->bufcnt = 0;                       \
         port->ungotten = SCM_CHAR_INVALID;      \
     } while (0)
-
 
 /*
  * Close
@@ -77,8 +76,10 @@ ScmObj Scm_PortName(ScmPort *port)
         z = SCM_MAKE_STR("(closed port)");
         break;
     case SCM_PORT_PROC:
-        /* TODO: add getinfo protocol to proc port */
-        z = SCM_MAKE_STR("(proc port)");
+        {
+            ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+            z = info ? info->name : SCM_MAKE_STR("(proc port)");
+        }
         break;
     default:
         Scm_Panic("Scm_PortName: something screwed up");
@@ -100,8 +101,10 @@ int Scm_PortLine(ScmPort *port)
         l = -1;
         break;
     case SCM_PORT_PROC:
-        /* TODO: add getinfo protocol to proc port */
-        l = -1;
+        {
+            ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+            l = info ? info->line : -1;
+        }
         break;
     default:
         Scm_Panic("Scm_PortLine: something screwed up");
@@ -126,8 +129,10 @@ int Scm_PortPosition(ScmPort *port)
         pos = -1;
         break;
     case SCM_PORT_PROC:
-        /* TODO: add getinfo protocol to proc port */
-        pos = -1;
+        {
+            ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+            pos = info ? info->position : -1;
+        }
         break;
     default:
         Scm_Panic("Scm_PortLine: something screwed up");
@@ -150,6 +155,13 @@ int Scm_PortFileNo(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
         return fileno(port->src.file.fp);
+    } else if (SCM_PORT_TYPE(port) == SCM_PORT_PROC) {
+        ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+        if (info) {
+            if (info->fd >= 0) return info->fd;
+            if (info->fp) return fileno(info->fp);
+        }
+        return -1;
     } else {
         return -1;
     }
@@ -354,6 +366,107 @@ int Scm_Getc(ScmPort *port)
     int c;
     SCM_GETC(c, port);
     return c;
+}
+
+/*
+ * Procedural port protocol
+ */
+
+/* default dummy procedures */
+static int null_getb(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return EOF;
+}
+
+static int null_getc(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return EOF;
+}
+
+static ScmObj null_getline(ScmPort *port)
+{
+    ScmPortVTable *vt = port->src.proc.vtable;
+    int ch = vt->Getc(port);
+    ScmDString ds;
+
+    if (ch == SCM_CHAR_INVALID) return SCM_EOF;
+
+    Scm_DStringInit(&ds);
+    for (;;) {
+        SCM_DSTRING_PUTC(&ds, ch);
+        ch = vt->Getc(port);
+        if (ch == '\n' || ch == SCM_CHAR_INVALID)
+            return Scm_DStringGet(&ds);
+    }
+    /*NOTREACHED*/
+}
+
+static int null_ready(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return TRUE;
+}
+
+static int null_putb(ScmPort *dummy, ScmByte b)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_putc(ScmPort *dummy, ScmChar c)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_putcstr(ScmPort *dummy, const char *str)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_puts(ScmPort *dummy, ScmString *str)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_close(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static ScmProcPortInfo *null_info(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return NULL;
+}
+
+ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable, void *data)
+{
+    ScmPortVTable *vt;
+    ScmPort *port;
+    
+    /* Copy vtable, and ensure all entries contain some ptr */
+    *vt = *vtable;
+    if (!vt->Getb) vt->Getb = null_getb;
+    if (!vt->Getc) vt->Getc = null_getc;
+    if (!vt->Getline) vt->Getline = null_getline;
+    if (!vt->Ready) vt->Ready = null_ready;
+    if (!vt->Putb) vt->Putb = null_putb;
+    if (!vt->Putc) vt->Putc = null_putc;
+    if (!vt->Putcstr) vt->Putcstr = null_putcstr;
+    if (!vt->Puts) vt->Puts = null_puts;
+    if (!vt->Close) vt->Close = null_close;
+    if (!vt->Info) vt->Info = null_info;
+
+    PORTINIT(port, direction, SCM_PORT_PROC);
+    port->src.proc.vtable = vt;
+    port->src.proc.clientData = data;
+    return SCM_OBJ(port);
 }
 
 /*
