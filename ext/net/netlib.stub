@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.16 2002-07-22 18:37:20 shirok Exp $
+;;  $Id: netlib.stub,v 1.17 2002-07-23 14:06:13 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -139,30 +139,30 @@
 (define-cproc socket-shutdown (sock &optional (how 2))
   (assert (socket? sock))
   (assert (small-integer? how))
-  "  SCM_RETURN(Scm_SocketShutdown(sock, how));")
+  (return "Scm_SocketShutdown"))
   
 (define-cproc socket-close (sock)
   (assert (socket? sock))
-  "  SCM_RETURN(Scm_SocketClose(sock));")
+  (return "Scm_SocketClose"))
 
 (define-cproc socket-bind (sock addr)
   (assert (socket? sock))
   (assert (socket-address? addr))
-  "  SCM_RETURN(Scm_SocketBind(sock, addr));")
+  (return "Scm_SocketBind"))
 
 (define-cproc socket-listen (sock backlog)
   (assert (socket? sock))
   (assert (small-integer? backlog))
-  "  SCM_RETURN(Scm_SocketListen(sock, backlog));")
+  (return "Scm_SocketListen"))
 
 (define-cproc socket-accept (sock)
   (assert (socket? sock))
-  "  SCM_RETURN(Scm_SocketAccept(sock));")
+  (return "Scm_SocketAccept"))
 
 (define-cproc socket-connect (sock addr)
   (assert (socket? sock))
   (assert (socket-address? addr))
-  "  SCM_RETURN(Scm_SocketConnect(sock, addr));")
+  (return "Scm_SocketConnect"))
 
 ;; socket option interface
 
@@ -170,14 +170,14 @@
   (assert (socket? sock))
   (assert (small-integer? level))
   (assert (small-integer? option))
-  "  SCM_RETURN(Scm_SocketSetOpt(sock, level, option, value));")
+  (return "Scm_SocketSetOpt"))
 
 (define-cproc socket-getsockopt (sock level option rsize)
   (assert (socket? sock))
   (assert (small-integer? level))
   (assert (small-integer? option))
   (assert (small-integer? rsize))
-  "  SCM_RETURN(Scm_SocketGetOpt(sock, level, option, rsize));")
+  (return "Scm_SocketGetOpt"))
 
 ;;----------------------------------------------------------
 ;; netdb routines

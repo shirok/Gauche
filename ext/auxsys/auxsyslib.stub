@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.8 2002-05-23 09:17:54 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.9 2002-07-23 14:06:13 shirok Exp $
 ;;;
 
 "
@@ -38,8 +38,7 @@
 "
 
 ;; stdlib.h
-(define-cproc sys-abort ()
-  "abort();  SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc sys-abort ()  (return void "abort"))
 
 ;; math.h
 (define-cproc fmod (x y)
@@ -63,11 +62,11 @@
 (define-cproc ldexp (x exp)
   (assert (real? x))
   (assert (exact? exp))
-  "SCM_RETURN(Scm_MakeFlonum(ldexp(x, exp)));")
+  (return real "ldexp"))
 
 (define-cproc log10 (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(log10(x)));")
+  (return real "log10"))
 
 ;; sys/time.h
 (if "defined HAVE_GETTIMEOFDAY"

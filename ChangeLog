@@ -1,7 +1,9 @@
 2002-07-22  Shiro Kawai  <shiro@acm.org>
 
-	* src/genstub : added include, define-const and define-enum forms.
-	* various *.stub : rewrote C-enum stuff by define-enum form.
+	* src/genstub : added include, define-const, define-enum and return
+	  forms.
+	* various *.stub : rewrote C-enum stuff by define-enum form,
+	  and many SCM_RETURNs by return form.
 
 2002-07-21  Shiro Kawai  <shiro@acm.org>
 

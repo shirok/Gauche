@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.164 2002-07-15 23:20:43 shirok Exp $
+;;; $Id: extlib.stub,v 1.165 2002-07-23 14:06:13 shirok Exp $
 ;;;
 
 "
@@ -47,8 +47,7 @@
    Scm_Error(\"unrecognized compare mode: %S\", opt);
    return 0; /* dummy */ }"
 
-(define-cproc compare (x y)
-  "SCM_RETURN(SCM_MAKE_INT(Scm_Compare(x, y)));")
+(define-cproc compare (x y) (return small-integer "Scm_Compare"))
 
 ;;
 ;; 6.2  Numbers
@@ -56,9 +55,10 @@
 
 (define-cproc ash (num cnt)
   (assert (small-integer? cnt))
-  "  SCM_RETURN(Scm_Ash(num, cnt));")
+  (return "Scm_Ash"))
+
 (define-cproc lognot (x)
-  "  SCM_RETURN(Scm_LogNot(x));")
+  (return "Scm_LogNot"))
 (define-cproc logand (x y &rest args)
   "  ScmObj cp, r = Scm_LogAnd(x, y);
   SCM_FOR_EACH(cp, args) {
@@ -150,17 +150,17 @@
 
 (define-cproc make-list (len &optional (fill #f)) ; SRFI-1
   (assert (small-integer? len))
-  "  SCM_RETURN(Scm_MakeList(len, fill));")
+  (return "Scm_MakeList"))
 
 (define-cproc acons (caa cda cd)
-  "  SCM_RETURN(Scm_Acons(caa, cda, cd));")
+  (return "Scm_Acons"))
 
 (define-cproc last-pair (list)          ; SRFI-1
   (assert (pair? list))
-  "  SCM_RETURN(Scm_LastPair(list));")
+  (return "Scm_LastPair"))
 
 (define-cproc list-copy (list)          ; SRFI-1
-  "  SCM_RETURN(Scm_CopyList(list));")
+  (return "Scm_CopyList"))
 
 (define-cproc list* (&rest args)
   (inliner "SCM_VM_LIST_STAR")
@@ -217,13 +217,13 @@
   SCM_RETURN(h);")
 
 (define-cproc reverse! (list)
-  "  SCM_RETURN(Scm_ReverseX(list));")
+  (return "Scm_ReverseX"))
 
 (define-cproc sort (list &optional (fn #f))
-  "  SCM_RETURN(Scm_SortList(list, fn));")
+  (return "Scm_SortList"))
 
 (define-cproc sort! (list &optional (fn #f))
-  "  SCM_RETURN(Scm_SortListX(list, fn));")
+  (return "Scm_SortListX"))
 
 ;(define-cproc topological-sort (edges)
 ;  (assert (list? edges))
@@ -246,7 +246,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc pair-attributes (pair)
   (assert (pair? pair))
-  "  SCM_RETURN(SCM_PAIR_ATTR(pair));")
+  (return "SCM_PAIR_ATTR"))
 
 (define-cproc pair-attribute-get (pair key &optional fallback)
   (assert (pair? pair))
@@ -283,8 +283,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   SCM_RETURN(Scm_Gensym(p));")
 
 ;; keywords
-(define-cproc keyword? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_KEYWORDP(obj)));")
+(define-cproc keyword? (obj) (return boolean "SCM_KEYWORDP"))
 
 (define-cproc make-keyword (name)
   "   ScmString *sname = NULL;
@@ -294,11 +293,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   SCM_RETURN(Scm_MakeKeyword(sname));")
 
 (define-cproc get-keyword (key list &optional fallback)
-  "  SCM_RETURN(Scm_GetKeyword(key, list, fallback));")
+  (return "Scm_GetKeyword"))
 
 ;; identifiers
-(define-cproc identifier? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_IDENTIFIERP(obj)));")
+(define-cproc identifier? (obj) (return boolean "SCM_IDENTIFIERP"))
 
 (define-cproc identifier->symbol (obj)
   (assert (identifier? obj))
@@ -339,7 +337,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   else SCM_RETURN(Scm_MakeInteger(ucs));")
 
 (define-cproc gauche-character-encoding ()
-  "  SCM_RETURN(Scm_CharEncodingName());")
+  (return "Scm_CharEncodingName"))
 
 (define-cproc supported-character-encodings ()
   "  SCM_RETURN(Scm_ConstCStringArrayToList(Scm_SupportedCharacterEncodings(), -1));")
@@ -352,11 +350,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;   not all of srfi-14 functions are defined in C.  you need to load
 ;;   srfi-14.scm to get a full set of functions.
 
-(define-symbol *char-code-max* "char_code_max"
+(define-const *char-code-max* "char_code_max"
   "Scm_MakeInteger(SCM_CHAR_MAX)")
 
-(define-cproc char-set? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHARSETP(obj)));")
+(define-cproc char-set? (obj) (return boolean "SCM_CHARSETP"))
 
 "static void char_set_add(ScmCharSet *cs, ScmObj chars)
  {  ScmObj cp; ScmChar ch;
@@ -371,7 +368,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc %char-set-equal? (x y)
   (assert (char-set? x))
   (assert (char-set? y))
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_CharSetEq(x, y)));")
+  (return boolean "Scm_CharSetEq"))
 
 (define-cproc char-set (&rest chars)
   "  ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());
@@ -380,7 +377,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc char-set-copy (cs)
   (assert (char-set? cs))
-  "  SCM_RETURN(Scm_CopyCharSet(cs));")
+  (return "Scm_CopyCharSet"))
 
 (define-cproc %char-set-add-chars! (cs chars)
   (assert (char-set? cs))
@@ -403,24 +400,24 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc %char-set-add! (dst src)
   (assert (char-set? dst))
   (assert (char-set? src))
-  "  SCM_RETURN(Scm_CharSetAdd(dst, src));")
+  (return "Scm_CharSetAdd"))
 
 (define-cproc char-set-contains? (cs ch)
   (assert (char-set? cs))
   (assert (char? ch))
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_CharSetContains(cs, ch)));")
+  (return boolean "Scm_CharSetContains"))
 
 (define-cproc %char-set-complement! (cs)
   (assert (char-set? cs))
-  "  SCM_RETURN(Scm_CharSetComplement(cs));")
+  (return "Scm_CharSetComplement"))
 
 (define-cproc %char-set-ranges (cs)
   (assert (char-set? cs))
-  "  SCM_RETURN(Scm_CharSetRanges(cs));")
+  (return "Scm_CharSetRanges"))
 
 (define-cproc %char-set-predefined (num)
   (assert (small-integer? num))
-  "  SCM_RETURN(Scm_GetStandardCharSet(num));")
+  (return "Scm_GetStandardCharSet"))
 
 ;; for debug
 (if "SCM_DEBUG_HELPER"
@@ -440,20 +437,20 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc string-complete->incomplete! (str) ;gauche specific
   (assert (string? str))
-  "  SCM_RETURN(Scm_StringCompleteToIncompleteX(str));")
+  (return "Scm_StringCompleteToIncompleteX"))
 (define-cproc string-incomplete->complete! (str) ;gauche specific
   (assert (string? str))
-  "  SCM_RETURN(Scm_StringIncompleteToCompleteX(str));")
+  (return "Scm_StringIncompleteToCompleteX"))
 (define-cproc string-complete->incomplete (str) ;gauche specific
   (assert (string? str))
-  "  SCM_RETURN(Scm_StringCompleteToIncomplete(str));")
+  (return "Scm_StringCompleteToIncomplete"))
 (define-cproc string-incomplete->complete (str) ;gauche specific
   (assert (string? str))
-  "  SCM_RETURN(Scm_StringIncompleteToComplete(str));")
+  (return "Scm_StringIncompleteToComplete"))
 
 (define-cproc string-size (str)         ;gauche specific
   (assert (string? str))
-  "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_SIZE(str)));")
+  (return small-integer "SCM_STRING_SIZE"))
 
 (define-cproc string-byte-ref (str k &optional fallback)   ;gauche specific
   (assert (string? str))
@@ -470,7 +467,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (string? str))
   (assert (small-integer? k))
   (assert (small-integer? b))
-  "  SCM_RETURN(Scm_StringByteSet(str, k, b));")
+  (return "Scm_StringByteSet"))
 
 (define-cproc string-substitute! (target start str)
   (assert (string? target))
@@ -482,7 +479,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc %maybe-substring (str &optional start end)
   (assert (string? str))
-  "  SCM_RETURN(Scm_MaybeSubstring(str, start, end));")
+  (return "Scm_MaybeSubstring"))
 
 (define-symbol infix "sym_infix")
 (define-symbol strict-infix "sym_strict_infix")
@@ -517,7 +514,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc string-split (s ch)
   (assert (string? s))
   (assert (char? ch))
-  "  SCM_RETURN(Scm_StringSplitByChar(s, ch));")
+  (return "Scm_StringSplitByChar"))
 
 ;; primitive scanner
 (define-symbol index   "sym_index")
@@ -558,20 +555,20 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (small-integer? index))
   (assert (small-integer? start))
   (assert (small-integer? end))
-  "  SCM_RETURN(Scm_MakeStringPointer(str, index, start, end));")
+  (return "Scm_MakeStringPointer"))
 (define-cproc string-pointer? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRING_POINTERP(obj)));")
+  (return boolean "SCM_STRING_POINTERP"))
 
 (define-cproc string-pointer-next! (sp)
   (assert (string-pointer? sp))
-  "  SCM_RETURN(Scm_StringPointerNext(sp));")
+  (return "Scm_StringPointerNext"))
 (define-cproc string-pointer-prev! (sp)
   (assert (string-pointer? sp))
-  "  SCM_RETURN(Scm_StringPointerPrev(sp));")
+  (return "Scm_StringPointerPrev"))
 (define-cproc string-pointer-set! (sp index)
   (assert (string-pointer? sp))
   (assert (small-integer? index))
-  "  SCM_RETURN(Scm_StringPointerSet(sp, index));")
+  (return "Scm_StringPointerSet"))
 (define-cproc string-pointer-substring (sp &keyword (after #f))
   (assert (string-pointer? sp))
   "  SCM_RETURN(Scm_StringPointerSubstring(sp, !SCM_FALSEP(after)));")
@@ -582,7 +579,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; Regexp
 (define-cproc string->regexp (str)
   (assert (string? str))
-  "  SCM_RETURN(Scm_RegComp(str));")
+  (return "Scm_RegComp"))
 
 (define-cproc rxmatch (regexp str)
   (assert (string? str))
@@ -648,12 +645,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (vector? v))
   (assert (small-integer? start))
   (assert (small-integer? end))
-  "SCM_RETURN(Scm_VectorCopy(v, start, end));")
+  (return "Scm_VectorCopy"))
 
 ;; weak vector
 (define-cproc make-weak-vector (size)
   (assert (small-integer? size))
-  "SCM_RETURN(Scm_MakeWeakVector(size));")
+  (return "Scm_MakeWeakVector"))
 
 (define-cproc weak-vector-length (wv)
   (assert (weak-vector? wv))
@@ -662,13 +659,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc weak-vector-ref (wv index &optional fallback)
   (assert (weak-vector? wv))
   (assert (small-integer? index))
-  "SCM_RETURN(Scm_WeakVectorRef(wv, index, fallback));")
+  (return "Scm_WeakVectorRef"))
   
 (define-cproc weak-vector-set! (wv index val)
   (assert (weak-vector? wv))
   (assert (small-integer? index))
-  "SCM_RETURN(Scm_WeakVectorSet(wv, index, val));")
-  
+  (return "Scm_WeakVectorSet"))
 
 ;;
 ;; 6.4  Control Features
@@ -677,7 +673,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc setter (proc)             ;SRFI-17
   (assert (procedure? proc))
   (inliner "SCM_VM_SETTER")
-  "  SCM_RETURN(Scm_Setter(proc));"
+  (return "Scm_Setter")
   (setter (proc setter)
     (assert (procedure? proc))
     (assert (procedure? setter))
@@ -693,10 +689,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; String port
 (define-cproc open-input-string (string) ;SRFI-6
   (assert (string? string))
-  "  SCM_RETURN(Scm_MakeInputStringPort(string));")
+  (return "Scm_MakeInputStringPort"))
 
 (define-cproc open-output-string ()      ;SRFI-6
-  "  SCM_RETURN(Scm_MakeOutputStringPort());")
+  (return "Scm_MakeOutputStringPort"))
 
 (define-cproc get-output-string (oport) ;SRFI-6
   (assert (output-port? oport))
@@ -777,26 +773,26 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc flush (&optional (oport (current-output-port)))
   (assert (output-port? oport))
-  "  Scm_Flush(oport); SCM_RETURN(SCM_UNDEFINED);")
+  (return void "Scm_Flush"))
 
 (define-cproc flush-all-ports ()
   "  Scm_FlushAllPorts(FALSE); SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc port-closed? (obj)
   (assert (port? obj))
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PORT_CLOSED_P(obj)));")
+  (return boolean "SCM_PORT_CLOSED_P"))
 
 (define-cproc current-error-port ()     ;gauche extention
   "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
 
 (define-cproc standard-input-port ()
-  "  SCM_RETURN(Scm_Stdin());")
+  (return "Scm_Stdin"))
 
 (define-cproc standard-output-port ()
-  "  SCM_RETURN(Scm_Stdout());")
+  (return "Scm_Stdout"))
 
 (define-cproc standard-error-port ()
-  "  SCM_RETURN(Scm_Stderr());")
+  (return "Scm_Stderr"))
 
 (define-cproc with-input-from-port (port thunk)
   (assert (input-port? port))
@@ -815,17 +811,15 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc port-name (port)
   (assert (port? port))
-  "  SCM_RETURN(Scm_PortName(port));")
+  (return "Scm_PortName"))
 
 (define-cproc port-current-line (port)
   (assert (port? port))
-  "  int i = Scm_PortLine(port);
-  SCM_RETURN(Scm_MakeInteger(i));")
+  (return small-integer "Scm_PortLine"))
 
 (define-cproc port-current-column (port)
   (assert (port? port))
-  "  int i = Scm_PortPosition(port);
-  SCM_RETURN(Scm_MakeInteger(i));")
+  (return small-integer "Scm_PortPosition"))
 
 (define-cproc port-file-number (port)
   (assert (port? port))
@@ -846,10 +840,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
    }
    SCM_RETURN(type);")
 
-;; NB: these are also in stdlib.stub -- can we merge them?
 (define-cproc port-buffering (port)
   (assert (port? port))
-  "SCM_RETURN(Scm_GetBufferingMode(port));"
+  (return "Scm_GetBufferingMode")
   (setter (port mode)
     (assert (port? port))
     "if (SCM_PORT_TYPE(port) != SCM_PORT_FILE) {
@@ -947,7 +940,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc read-line (&optional (port (current-input-port)))
   (assert (input-port? port))
-  "  SCM_RETURN(Scm_ReadLine(port));")
+  (return "Scm_ReadLine"))
 
 (define-cproc read-block (bytes &optional (port (current-input-port)))
   (assert (input-port? port))
@@ -967,7 +960,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "SCM_RETURN(Scm_ReadList(port, closer));")
 
 (define-cproc define-reader-ctor (symbol proc)
-  "  SCM_RETURN(Scm_DefineReaderCtor(symbol, proc));")
+  (return "Scm_DefineReaderCtor"))
 
 ;;
 ;; 6.6.3  Output
@@ -1004,12 +997,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (string? file))
   "  SCM_RETURN(Scm_DynLoad(file, init_function, !SCM_FALSEP(export_symbols)));")
 
-(define-cproc %require (feature)
-  "  SCM_RETURN(Scm_Require(feature));")
-(define-cproc provide (feature)
-  "  SCM_RETURN(Scm_Provide(feature));")
-(define-cproc provided? (feature)
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_ProvidedP(feature)));")
+(define-cproc %require (feature)  (return "Scm_Require"))
+(define-cproc provide (feature)   (return "Scm_Provide"))
+(define-cproc provided? (feature) (return boolean "Scm_ProvidedP"))
 
 (define-cproc %make-autoload (sym path &optional import-from)
   (assert (symbol? sym))
@@ -1020,12 +1010,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc undefined ()
   "  SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc undefined? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_UNDEFINEDP(obj)));")
+(define-cproc undefined? (obj)    (return boolean "SCM_UNDEFINEDP"))
 
 (define-cproc warn (fmt &rest args)
   (assert (string? fmt))
-  "  Scm_FWarn(fmt, args); SCM_RETURN(SCM_UNDEFINED);")
+  (return void "Scm_FWarn"))
 
 ;;
 ;; Hashtable
@@ -1140,8 +1129,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; Modules
 ;;
 
-(define-cproc module? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_MODULEP(obj)));")
+(define-cproc module? (obj) (return boolean "SCM_MODULEP"))
 
 (define-cproc module-name (mod)
   (assert (module? mod))
@@ -1198,8 +1186,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc exit (&optional (code 0))
   (assert (small-integer? code))
-  "  Scm_Exit(code);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (return void "Scm_Exit"))
 
 ;;
 ;; External view of VM.

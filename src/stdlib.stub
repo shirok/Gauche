@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.89 2002-06-25 06:28:04 shirok Exp $
+;;; $Id: stdlib.stub,v 1.90 2002-07-23 14:06:13 shirok Exp $
 ;;;
 
 
@@ -33,35 +33,29 @@
 
 (define-cproc eqv? (obj1 obj2)
   (inliner "SCM_VM_EQV")
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_EqvP(obj1, obj2)));")
+  (return boolean "Scm_EqvP"))
 
 (define-cproc eq? (obj1 obj2)
   (inliner "SCM_VM_EQ")
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EQ(obj1, obj2)));")
+  (return boolean "SCM_EQ"))
 
 (define-cproc equal? (obj1 obj2)
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_EqualP(obj1, obj2)));")
+  (return boolean "Scm_EqualP"))
 
 ;;
 ;; 6.2  Numbers
 ;;
 
-(define-cproc number? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_NUMBERP(obj)));")
-(define-cproc complex? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_NUMBERP(obj)));")
-(define-cproc real? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_REALP(obj)));")
-(define-cproc rational? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_REALP(obj)));")
+(define-cproc number? (obj)   (return boolean "SCM_NUMBERP"))
+(define-cproc complex? (obj)  (return boolean "SCM_NUMBERP"))
+(define-cproc real? (obj)     (return boolean "SCM_REALP"))
+(define-cproc rational? (obj) (return boolean "SCM_REALP"))
 (define-cproc integer? (obj)
   "  if (!SCM_NUMBERP(obj)) SCM_RETURN(SCM_FALSE);
   else SCM_RETURN(SCM_MAKE_BOOL(Scm_IntegerP(obj)));")
 
-(define-cproc exact? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EXACTP(obj)));")
-(define-cproc inexact? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INEXACTP(obj)));")
+(define-cproc exact? (obj)    (return boolean "SCM_EXACTP"))
+(define-cproc inexact? (obj)  (return boolean "SCM_INEXACTP"))
 
 (define-cproc = (arg0 arg1 &rest args)
   (inliner (case-nargs (2 "SCM_VM_NUMEQ2") (else #f)))
@@ -111,10 +105,8 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) > 0));")
 (define-cproc negative? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) < 0));")
-(define-cproc odd? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_OddP(obj)));")
-(define-cproc even? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(!Scm_OddP(obj)));")
+(define-cproc odd? (obj)   (return boolean "Scm_OddP"))
+(define-cproc even? (obj)  (return boolean "!Scm_OddP"))
 
 (define-cproc max (arg0 &rest args)
   "ScmObj r; Scm_MinMax(arg0, args, NULL, &r); SCM_RETURN(r);")
@@ -219,8 +211,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   else r = Scm_Divide(arg1, SCM_CAR(args), SCM_CDR(args));
   SCM_RETURN(r);")
 
-(define-cproc abs (obj)
-  "  SCM_RETURN(Scm_Abs(obj));")
+(define-cproc abs (obj) (return "Scm_Abs"))
 
 (define-cproc quotient (n1 n2)
   "  SCM_RETURN(Scm_Quotient(n1, n2, NULL));")
@@ -247,7 +238,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc %exp (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(exp(x)));")
+  (return real "exp"))
 
 (define-cproc %log (x)
   "  int sign;
@@ -262,13 +253,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc %sin (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(sin(x)));")
+  (return real "sin"))
 (define-cproc %cos (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(cos(x)));")
+  (return real "cos"))
 (define-cproc %tan (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(tan(x)));")
+  (return real "tan"))
 (define-cproc %asin (x)
   (assert (real? x))
   "if (x > 1.0) {
@@ -299,13 +290,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc %sinh (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(sinh(x)));")
+  (return real "sinh"))
 (define-cproc %cosh (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(cosh(x)));")
+  (return real "cosh"))
 (define-cproc %tanh (x)
   (assert (real? x))
-  "SCM_RETURN(Scm_MakeFlonum(tanh(x)));")
+  (return real "tanh"))
 ;; asinh and acosh are not in POSIX.
 ;(define-cproc %asinh (x)
 ;  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
@@ -319,8 +310,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "if (x < 0) SCM_RETURN(Scm_MakeComplex(0.0, sqrt(-x)));
   else        SCM_RETURN(Scm_MakeFlonum(sqrt(x)));")
 
-(define-cproc %expt (x y)
-  "  SCM_RETURN(Scm_Expt(x, y));")
+(define-cproc %expt (x y) (return "Scm_Expt"))
 
 (define-cproc make-rectangular (a b)
   (assert (real? a))
@@ -345,16 +335,11 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
     
 ;; real-part, imag-part - defined in gauche/numeric.scm
 
-(define-cproc magnitude (z)
-  "  SCM_RETURN(Scm_Magnitude(z));")
-(define-cproc angle (z)
-  "  SCM_RETURN(Scm_Angle(z));")
+(define-cproc magnitude (z)  (return "Scm_Magnitude"))
+(define-cproc angle (z)      (return "Scm_Angle"))
 
-(define-cproc exact->inexact (obj)
-  "  SCM_RETURN(Scm_ExactToInexact(obj));")
-
-(define-cproc inexact->exact (obj)
-  "  SCM_RETURN(Scm_InexactToExact(obj));")
+(define-cproc exact->inexact (obj) (return "Scm_ExactToInexact"))
+(define-cproc inexact->exact (obj) (return "Scm_InexactToExact"))
 
 (define-cproc number->string (obj &optional (radix 10) (use-upper? #f))
   (assert (small-integer? radix))
@@ -371,10 +356,10 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc not (obj)
   (inliner "SCM_VM_NOT")
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_FALSEP(obj)));")
+  (return boolean "SCM_FALSEP"))
 
 (define-cproc boolean? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_BOOLP(obj)));")
+  (return boolean "SCM_BOOLP"))
 
 ;;
 ;; 6.3.2  Pairs and lists
@@ -382,33 +367,31 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc pair? (obj)
   (inliner "SCM_VM_PAIRP")
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PAIRP(obj)));")
+  (return boolean "SCM_PAIRP"))
 
 (define-cproc cons (obj1 obj2)
   (inliner "SCM_VM_CONS")
-  "  SCM_RETURN(Scm_Cons(obj1, obj2));")
+  (return "Scm_Cons"))
 
 (define-cproc car (obj)
   (inliner "SCM_VM_CAR")
   (assert (pair? obj))
-  "  SCM_RETURN(SCM_CAR(obj));"
+  (return "SCM_CAR")
   (setter set-car!))
 
 (define-cproc cdr (obj)
   (inliner "SCM_VM_CDR")
   (assert (pair? obj))
-  "  SCM_RETURN(SCM_CDR(obj));"
+  (return "SCM_CDR")
   (setter set-cdr!))
 
 (define-cproc set-car! (obj value)
   (assert (pair? obj))
-  "  SCM_SET_CAR(obj, value);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (return void "SCM_SET_CAR"))
 
 (define-cproc set-cdr! (obj value)
   (assert (pair? obj))
-  "  SCM_SET_CDR(obj, value);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (return void "SCM_SET_CDR"))
 
 "#define CXR_SETTER(PRE, pre, tail) \\
   ScmObj cell = Scm_C##tail##r(obj); \\
@@ -475,7 +458,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc null? (obj)
   (inliner "SCM_VM_NULLP")
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_NULLP(obj)));")
+  (return boolean "SCM_NULLP"))
 
 (define-cproc list? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Length(obj) >= 0));")
@@ -492,30 +475,30 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc append (&rest lists)
   (inliner "SCM_VM_APPEND")
-  "  SCM_RETURN(Scm_Append(lists));")
+  (return "Scm_Append"))
 
 (define-cproc reverse (list)
   (assert (list? list))
   (inliner "SCM_VM_REVERSE")
-  "  SCM_RETURN(Scm_Reverse(list));")
+  (return "Scm_Reverse"))
 
 (define-cproc list-tail (list k)
   (assert (small-integer? k))
-  "  SCM_RETURN(Scm_ListTail(list, k));")
+  (return "Scm_ListTail"))
 
 (define-cproc list-ref (list k &optional fallback)
   (assert (small-integer? k))
-  "  SCM_RETURN(Scm_ListRef(list, k, fallback));")
+  (return "Scm_ListRef"))
 
 (define-cproc memq (obj list)
   (assert (list? list))
   (inliner "SCM_VM_MEMQ")
-  "  SCM_RETURN(Scm_Memq(obj, list));")
+  (return "Scm_Memq"))
 
 (define-cproc memv (obj list)
   (assert (list? list))
   (inliner "SCM_VM_MEMV")
-  "  SCM_RETURN(Scm_Memv(obj, list));")
+  (return "Scm_Memv"))
 
 (define-cproc member (obj list)
   (assert (list? list))
@@ -524,12 +507,12 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc assq (obj alist)
   (assert (list? alist))
   (inliner "SCM_VM_ASSQ")
-  "  SCM_RETURN(Scm_Assq(obj, alist));")
+  (return "Scm_Assq"))
 
 (define-cproc assv (obj alist)
   (assert (list? alist))
   (inliner "SCM_VM_ASSV")
-  "  SCM_RETURN(Scm_Assv(obj, alist));")
+  (return "Scm_Assv"))
 
 (define-cproc assoc (obj alist)
   (assert (list? alist))
@@ -541,7 +524,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc symbol? (obj)
   (inliner "SCM_VM_SYMBOLP")
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_SYMBOLP(obj)));")
+  (return boolean "SCM_SYMBOLP"))
 
 (define-cproc symbol->string (obj)
   (assert (symbol? obj))
@@ -549,7 +532,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc string->symbol (obj)
   (assert (string? obj))
-  "  SCM_RETURN(Scm_Intern(obj));")
+  (return "Scm_Intern"))
 
 ;;
 ;; 6.3.4  Characters
@@ -557,12 +540,12 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc char? (obj)
   (inliner "SCM_VM_CHARP")
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHARP(obj)));")
+  (return boolean "SCM_CHARP"))
 
 (define-cproc char=? (c1 c2)
   (assert (char? c1))
   (assert (char? c2))
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EQ(c1, c2)));")
+  (return boolean "SCM_EQ"))
 (define-cproc char<? (c1 c2)
   (assert (char? c1))
   (assert (char? c2))
@@ -639,19 +622,19 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc string? (obj)
   (inliner "SCM_VM_STRINGP")
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)));")
+  (return boolean "SCM_STRINGP"))
 
 (define-cproc make-string (len &optional (c #\ ))
   (assert (small-integer? len))
   (assert (char? c))
-  "  SCM_RETURN(Scm_MakeFillString(len, c));")
+  (return "Scm_MakeFillString"))
 
 (define-cproc string (&rest chars)
-  "  SCM_RETURN(Scm_ListToString(chars));")
+  (return "Scm_ListToString"))
 
 (define-cproc string-length (str)
   (assert (string? str))
-  "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_LENGTH(str)));")
+  (return small-integer "SCM_STRING_LENGTH"))
 
 (define-cproc string-ref (str k &optional fallback)
   (assert (string? str))
@@ -720,10 +703,10 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   (assert (string? str))
   (assert (small-integer? start))
   (assert (small-integer? end))
-  "  SCM_RETURN(Scm_Substring(str, start, end));")
+  (return "Scm_Substring"))
 
 (define-cproc string-append (&rest args)
-  "  SCM_RETURN(Scm_StringAppend(args));")
+  (return "Scm_StringAppend"))
 
 (define-cproc string->list (str &optional start end) ;optional arg in SRFI-13
   (assert (string? str))
@@ -732,7 +715,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc list->string (list)
   (assert (list? list))
-  "  SCM_RETURN(Scm_ListToString(list));")
+  (return "Scm_ListToString"))
 
 (define-cproc string-copy (str &optional start end) ;optional arg in SRFI-13
   (assert (string? str))
@@ -742,65 +725,61 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc string-fill! (str c &optional start end) ;optional arg in SRFI-13
   (assert (string? str))
   (assert (char? c))
-  "  SCM_RETURN(Scm_StringFill(str, c, start, end));")
+  (return "Scm_StringFill"))
 
 ;;
 ;; 6.3.6  Vectors
 ;;
 
-(define-cproc vector? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VECTORP(obj)));")
+(define-cproc vector? (obj) (return boolean "SCM_VECTORP"))
 
 (define-cproc make-vector (k &optional fill)
   (assert (small-integer? k))
-  "  SCM_RETURN(Scm_MakeVector(k, fill));")
+  (return "Scm_MakeVector"))
 
 (define-cproc vector (&rest args)
   (inliner "SCM_VM_VEC")
-  "  SCM_RETURN(Scm_ListToVector(args));")
+  (return "Scm_ListToVector"))
 
 (define-cproc vector-length (vec)
   (inliner "SCM_VM_VEC_LEN")
   (assert (vector? vec))
-  "  SCM_RETURN(Scm_MakeInteger(SCM_VECTOR_SIZE(vec)));")
+  (return exact "SCM_VECTOR_SIZE"))
 
 (define-cproc vector-ref (vec k &optional fallback)
   (inliner (case-nargs (2 "SCM_VM_VEC_REF") (else #f)))
   (assert (vector? vec))
   (assert (small-integer? k))
-  (setter vector-set!)
-  "  SCM_RETURN(Scm_VectorRef(vec, k, fallback));")
+  (return "Scm_VectorRef")
+  (setter vector-set!))
 
 (define-cproc vector-set! (vec k obj)
   (inliner "SCM_VM_VEC_SET")
   (assert (vector? vec))
   (assert (small-integer? k))
-  "  Scm_VectorSet(vec, k, obj);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (return void "Scm_VectorSet"))
 
 (define-cproc vector->list (vec &optional (start 0) (end -1))
   (assert (vector? vec))
   (assert (small-integer? start))
   (assert (small-integer? end))
-  "  SCM_RETURN(Scm_VectorToList(vec, start, end));")
+  (return "Scm_VectorToList"))
 
 (define-cproc list->vector (list)
   (assert (list? list))
-  "  SCM_RETURN(Scm_ListToVector(list));")
+  (return "Scm_ListToVector"))
 
 (define-cproc vector-fill! (vec fill &optional (start 0) (end -1))
   (assert (vector? vec))
   (assert (small-integer? start))
   (assert (small-integer? end))
-  "  Scm_VectorFill(vec, fill, start, end);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (return void "Scm_VectorFill"))
 
 ;;
 ;; 6.4  Control Features
 ;;
 
-(define-cproc procedure? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PROCEDUREP(obj)));")
+(define-cproc procedure? (obj) (return boolean "SCM_PROCEDUREP"))
 
 (define-cproc apply (proc arg1 &rest args)
   "  ScmObj head, tail, cp;
@@ -823,31 +802,30 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc map (proc args &rest moreargs)
   (assert (procedure? proc))
   (assert (list? args))
-  "  SCM_RETURN(Scm_Map(proc, args, moreargs));")
+  (return "Scm_Map"))
 
 (define-cproc for-each (proc args &rest moreargs)
   (assert (procedure? proc))
   (assert (list? args))
-  "  SCM_RETURN(Scm_ForEach(proc, args, moreargs));")
+  (return "Scm_ForEach"))
           
 (define-cproc force (p)
-  "  return Scm_Force(p);")
+  (return "Scm_Force"))
 
 (define-cproc call-with-current-continuation (proc)
-  "  Scm_VMCallCC(proc);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (return void "Scm_VMCallCC"))
 
 (define-cproc values (&rest args)
   (inliner "SCM_VM_VALUES")
-  "  SCM_RETURN(Scm_Values(args));")
+  (return "Scm_Values"))
 
 ;; call-with-values - defined in gauche-init.scm
 
 (define-cproc dynamic-wind (pre body post)
-  "  SCM_RETURN(Scm_VMDynamicWind(pre, body, post));")
+  (return "Scm_VMDynamicWind"))
 
 (define-cproc eval (expr env)
-  "  SCM_RETURN(Scm_VMEval(expr, env));")
+  (return "Scm_VMEval"))
 
 ;; for now, just return a module.
 (define-cproc null-environment (version)
@@ -873,14 +851,9 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-keyword character "key_character")
 (define-keyword binary "key_binary")
 
-(define-cproc input-port? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_IPORTP(obj)));")
-
-(define-cproc output-port? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_OPORTP(obj)));")
-
-(define-cproc port? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PORTP(obj)));")
+(define-cproc input-port? (obj)  (return boolean "SCM_IPORTP"))
+(define-cproc output-port? (obj) (return boolean "SCM_OPORTP"))
+(define-cproc port? (obj)        (return boolean "SCM_PORTP"))
 
 (define-cproc current-input-port ()
   "  SCM_RETURN(SCM_OBJ(SCM_CURIN));")

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.69 2002-07-22 18:37:20 shirok Exp $
+;;;  $Id: genstub,v 1.70 2002-07-23 14:06:13 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -122,14 +122,17 @@
 ;; process type definition in stub file
 ;; (this keeps backward compatibility)
 (define (process-define-type form)
-  (unless (= (length form) 6) (error "malformed define-type:" form))
-  (receive (name pred c-type c-pred unbox) (apply values (cdr form))
+  (unless (<= 6 (length form) 7)
+    (error "malformed define-type:" form))
+  (receive (name pred c-type c-pred unbox . maybe-box)
+      (apply values (cdr form))
     (make <type>
       :scheme-name (string->symbol (string-drop-right (symbol->string pred) 1))
       :c-name name
       :c-type c-type
       :c-predicate c-pred
-      :unboxer unbox)))
+      :unboxer unbox
+      :boxer (if (null? maybe-box) "SCM_OBJ_SAFE" (car maybe-box)))))
 
 ;;===================================================================
 ;; Stub
@@ -468,6 +471,9 @@
                    (error "bad 'setter' spec:" form))
                  (process-setter cproc (cdr form))
                  (loop next))
+                ((eq? (car form) 'return)
+                 (process-return-spec cproc form)
+                 (loop next))
                 (else
                  (error "unknown body form:" form)))))))
 
@@ -497,6 +503,21 @@
         (emit-inliner setter)
         (emit-record setter)))
     )))
+
+(define-method process-return-spec ((cproc <cproc>) form)
+  (define (err) (error "malformed return spec" form))
+  (define (args)
+    (string-join (map c-name-of (args-of cproc)) ", "))
+  (case (length (cdr form))
+    ((1)
+     (unless (string? (cadr form)) (err))
+     (push-stmt! cproc #`"SCM_RETURN(,(cadr form)(,(args)));"))
+    ((2)
+     (unless (and (symbol? (cadr form)) (string? (caddr form))) (err))
+     (if (eq? (cadr form) 'void)
+         (push-stmt! cproc #`",(caddr form)(,(args)); SCM_RETURN(SCM_UNDEFINED);")
+         (push-stmt! cproc #`"SCM_RETURN(,(boxer-of (scheme-name->type (cadr form)))(,(caddr form)(,(args))));")))
+    (else (err))))
 
 ;;; emit code
 
@@ -832,6 +853,7 @@
 ;;             |  (slot-name
 ;;                  [:type <type>]
 ;;                  [:c-name <c-name>]
+;;                  [:c-spec <c-spec>]
 ;;                  [:getter <proc-spec>]
 ;;                  [:setter <proc-spec>])
 ;;                  
@@ -855,6 +877,7 @@
   ((cclass      :init-keyword :cclass :accessor cclass-of)
    (scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
    (c-name      :init-keyword :c-name :accessor c-name-of)
+   (c-spec      :init-keyword :c-spec :accessor c-spec-of)
    (type        :init-keyword :type   :accessor type-of :init-value 'scheme-object)
    (getter      :init-keyword :getter :accessor getter-of :init-value #t)
    (setter      :init-keyword :setter :accessor setter-of :init-value #t)
@@ -953,11 +976,12 @@
          (let* ((name (car spec))
                 (type   (get-keyword :type (cdr spec) 'scheme-object))
                 (c-name (get-keyword :c-name (cdr spec) (get-c-name "" name)))
+                (c-spec (get-keyword :c-spec (cdr spec) #f))
                 (getter (get-keyword :getter (cdr spec) #t))
                 (setter (get-keyword :setter (cdr spec) #t)))
            (make <cslot>
              :cclass cclass :scheme-name name :c-name c-name
-             :type (scheme-name->type type)
+             :c-spec c-spec :type (scheme-name->type type)
              :getter getter :setter setter)))
        slot-spec))
 
@@ -982,9 +1006,11 @@
   (let ((type (type-of slot)))
     (print #`"static ScmObj ,(slot-getter-name slot)(,(c-type-of (cclass-of slot)) *obj)")
     (print "{")
-    (if (string? (getter-of slot))
-        (print (getter-of slot))
-        (f "  return ~a(obj->~a);" (boxer-of type) (c-name-of slot)))
+    (cond ((string? (getter-of slot)) (print (getter-of slot)))
+          ((string? (c-spec-of slot))
+           (f "  return ~a(~a);" (boxer-of type) (c-spec-of slot)))
+          (else
+           (f "  return ~a(obj->~a);" (boxer-of type) (c-name-of slot))))
     (print "}")
     (newline)))
 
@@ -998,7 +1024,9 @@
           (unless (eq? type *scm-type*)
             (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
                (c-predicate-of type) (c-type-of type)))
-          (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type))))
+          (if (c-spec-of slot)
+              (f "  ~a = ~a(value);" (c-spec-of slot) (unboxer-of type))
+              (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type)))))
     (print "}")
     (newline)))
 

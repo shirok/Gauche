@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.79 2002-07-22 18:37:20 shirok Exp $
+;;; $Id: syslib.stub,v 1.80 2002-07-23 14:06:13 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -46,11 +46,11 @@
 
 (define-cproc sys-readdir (pathname)
   (assert (string? pathname))
-  "  SCM_RETURN(Scm_ReadDirectory(pathname));")
+  (return "Scm_ReadDirectory"))
 
 (define-cproc sys-glob (pattern)
   (assert (string? pattern))
-  "  SCM_RETURN(Scm_GlobDirectory(pattern));")
+  (return "Scm_GlobDirectory"))
 
 ;; Bonus
 
@@ -67,11 +67,11 @@
 
 (define-cproc sys-basename (pathname)
   (assert (string? pathname))
-  "  SCM_RETURN(Scm_BaseName(pathname));")
+  (return "Scm_BaseName"))
 
 (define-cproc sys-dirname (pathname)
   (assert (string? pathname))
-  "  SCM_RETURN(Scm_DirName(pathname));")
+  (return "Scm_DirName"))
 
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
@@ -81,10 +81,10 @@
 
 (define-cproc sys-getgrgid (gid)
   (assert (small-integer? gid))         ;TODO: make sure it covers all gids
-  "  SCM_RETURN(Scm_GetGroupById(gid));")
+  (return "Scm_GetGroupById"))
 (define-cproc sys-getgrnam (name)
   (assert (string? name))
-  "  SCM_RETURN(Scm_GetGroupByName(name));")
+  (return "Scm_GetGroupByName"))
 
 ;; faster functions; bypassing creation of group object
 (define-cproc sys-gid->group-name (gid)
@@ -173,10 +173,10 @@
 
 (define-cproc sys-getpwuid (uid)
   (assert (small-integer? uid))         ;TODO: make sure it covers all gids
-  "  SCM_RETURN(Scm_GetPasswdById(uid));")
+  (return "Scm_GetPasswdById"))
 (define-cproc sys-getpwnam (name)
   (assert (string? name))
-  "  SCM_RETURN(Scm_GetPasswdByName(name));")
+  (return "Scm_GetPasswdByName"))
 
 ;; faster functions; bypassing creation of passwd object
 (define-cproc sys-uid->user-name (uid)
@@ -219,7 +219,7 @@
 
 (define-cproc sys-signal-name (sig)
   (assert (small-integer? sig))
-  "SCM_RETURN(Scm_SignalName(sig));")
+  (return "Scm_SignalName"))
 
 (define-cproc sys-kill (pid sig)
   (assert (exact? pid))
@@ -229,27 +229,27 @@
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc set-signal-handler! (sig proc)
-  "SCM_RETURN(Scm_SetSignalHandler(sig, proc));")
+  (return "Scm_SetSignalHandler"))
 
 (define-cproc get-signal-handler (sig)
   (assert (exact? sig))
-  "SCM_RETURN(Scm_GetSignalHandler(sig));")
+  (return "Scm_GetSignalHandler"))
 
 (define-cproc get-signal-handlers ()
-  "SCM_RETURN(Scm_GetSignalHandlers());")
+  (return "Scm_GetSignalHandlers"))
 
-(define-symbol SIG_SETMASK "sym_sig_setmask" "Scm_MakeInteger(SIG_SETMASK)")
-(define-symbol SIG_BLOCK   "sym_sig_block"   "Scm_MakeInteger(SIG_BLOCK)")
-(define-symbol SIG_UNBLOCK "sym_sig_unblock" "Scm_MakeInteger(SIG_UNBLOCK)")
+(define-enum SIG_SETMASK)
+(define-enum SIG_BLOCK)
+(define-enum SIG_UNBLOCK)
 
 (define-cproc sys-sigmask (how mask)
   (assert (small-integer? how))
   (assert (sys-sigset? mask))
-  "SCM_RETURN(Scm_SysSigmask(how, mask));")
+  (return "Scm_SysSigmask"))
 
 (define-cproc sys-sigsuspend (mask)
   (assert (sys-sigset? mask))
-  "SCM_RETURN(Scm_SigSuspend(mask));")
+  (return "Scm_SigSuspend"))
 
 ;(define-cproc %with-signal-handlers (handlers thunk)
 ;  (assert (procedure? thunk))
@@ -320,7 +320,7 @@
 
 (define-cproc sys-exit (code)
   (assert (small-integer? code))
-  "  _exit(code); SCM_RETURN(SCM_FALSE);")
+  (return void "_exit"))
 
 (define-cproc sys-getenv (name)
   (assert (string? name))
@@ -457,18 +457,18 @@
   "SCM_RETURN(Scm_MakeSysTime(time(NULL)));")
 
 (define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21
-  "SCM_RETURN(Scm_CurrentTime());")
+  (return "Scm_CurrentTime"))
 
 (define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21
-  "SCM_RETURN(SCM_MAKE_BOOL(SCM_TIMEP(obj)));")
+  (return boolean "SCM_TIMEP"))
 
 (define-cproc time->seconds (t)         ;SRFI-18
   (assert (time? t))
-  "SCM_RETURN(Scm_TimeToSeconds(t));")
+  (return "Scm_TimeToSeconds"))
 
 (define-cproc seconds->time (t)         ;SRFI-18
   (assert (real? t))
-  "SCM_RETURN(Scm_RealSecondsToTime(t));")
+  (return "Scm_RealSecondsToTime"))
 
 (define-cproc sys-asctime (tm)
   (assert (sys-tm? tm))
@@ -558,17 +558,10 @@
   s = SCM_MAKE_STR_COPYING(p);
   SCM_RETURN(s);")
 
-(define-cproc sys-getegid ()
-  "  SCM_RETURN(Scm_MakeInteger(getegid()));")
-
-(define-cproc sys-getgid ()
-  "  SCM_RETURN(Scm_MakeInteger(getgid()));")
-
-(define-cproc sys-geteuid ()
-  "  SCM_RETURN(Scm_MakeInteger(geteuid()));")
-
-(define-cproc sys-getuid ()
-  "  SCM_RETURN(Scm_MakeInteger(getuid()));")
+(define-cproc sys-getegid () (return exact "getegid"))
+(define-cproc sys-getgid ()  (return exact "getgid"))
+(define-cproc sys-geteuid () (return exact "geteuid"))
+(define-cproc sys-getuid ()  (return exact "getuid"))
 
 (define-cproc sys-getgroups ()
   "
@@ -598,12 +591,8 @@
   if (p) SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   else SCM_RETURN(SCM_FALSE);")
 
-(define-cproc sys-getpid ()
-  "  SCM_RETURN(Scm_MakeInteger(getpid()));")
-
-(define-cproc sys-getppid ()
-  "  SCM_RETURN(Scm_MakeInteger(getppid()));")
-
+(define-cproc sys-getpid ()  (return exact "getpid"))
+(define-cproc sys-getppid () (return exact "getppid"))
 
 (define-cproc sys-link (existing new)
   (assert (string? existing))
@@ -616,7 +605,7 @@
   ;; We can't simply use pause().  If a signal is delivered after the last
   ;; Scm_SigCheck and before the call of pause(), the signal will just sit
   ;; in a queue and pause() may not return.
-  "SCM_RETURN(Scm_Pause());")
+  (return "Scm_Pause"))
 
 (define-cproc sys-alarm (seconds)
   (assert (small-integer? seconds))
