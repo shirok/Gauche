@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.17 2001-03-05 00:54:30 shiro Exp $
+ *  $Id: macro.c,v 1.18 2001-03-06 08:54:10 shiro Exp $
  */
 
 #include "gauche.h"
@@ -120,6 +120,46 @@ ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
 {
     return Scm_MakeSyntax(name, macro_transform, (void*)proc);
 }
+
+static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
+                                   void *data)
+{
+    ScmObj name, args, body, proc, mt, code, info;
+    if (Scm_Length(form) < 3)  goto badsyn;
+    if (!SCM_PAIRP(SCM_CADR(form))) goto badsyn;
+    name = SCM_CAR(SCM_CADR(form));
+    args = SCM_CADR(form);
+    body = SCM_CDDR(form);
+
+    /* TODO: think more about the case that name is an identifier */
+    if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
+    else if (!SCM_SYMBOLP(name)) goto badsyn;
+
+    /* TODO: what we need is to create a closure at compile time rather than
+       run time.  This implementation is ugly.  Need a better way. */
+    code = Scm_Compile(Scm_Cons(SCM_SYM_LAMBDA, Scm_Cons(args, body)),
+                       env, SCM_COMPILE_NORMAL);
+    proc = Scm_MakeClosure(SCM_VM_INSN_ARG0(SCM_CAR(code)),
+                           SCM_VM_INSN_ARG1(SCM_CAR(code)),
+                           SCM_CAR(SCM_CDDR(code)),
+                           Scm_VM()->env,
+                           SCM_CADR(code));
+    mt = Scm_MakeMacroTransformer(SCM_SYMBOL(name), SCM_PROCEDURE(proc));
+
+    Scm_Define(SCM_CURRENT_MODULE(), SCM_SYMBOL(name), mt);
+    return SCM_LIST1(mt);
+
+  badsyn:
+    Scm_Error("syntax error: %S", form);
+    return SCM_NIL;             /* dummy */
+}
+
+static ScmSyntax syntax_define_macro = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_DEFINE_MACRO),
+    compile_define_macro,
+    NULL
+};
 
 /*===================================================================
  * R5RS Macro
@@ -803,6 +843,41 @@ static ScmSyntax syntax_syntax_rules = {
 };
 
 /*-------------------------------------------------------------------
+ * define-syntax
+ */
+
+static ScmObj compile_define_syntax(ScmObj form, ScmObj env, int ctx,
+                                    void *data)
+{
+    ScmObj var, body, synrule;
+    if (Scm_Length(form) != 3) Scm_Error("malformed define-syntax: %S", form);
+    var = SCM_CADR(form);
+    body = SCM_CAR(SCM_CDDR(form));
+
+    /* strip off syntactic wrapping.  shall we? --- need more thoughts. */
+    if (SCM_IDENTIFIERP(var)) var = SCM_OBJ(SCM_IDENTIFIER(var)->name);
+    if (!SCM_SYMBOLP(var))
+        Scm_Error("define-syntax needs a symbol, but got %S", var);
+    if (Scm_Length(body) <= 2
+        || !Scm_FreeVariableEqv(SCM_CAR(body), SCM_SYM_SYNTAX_RULES, env))
+        Scm_Error("define-syntax needs a syntax-rules form, but got %S", body);
+    synrule = compile_syntax_rules(Scm_Cons(SCM_SYM_SYNTAX_RULES_INT,
+                                            Scm_Cons(var, SCM_CDR(body))),
+                                   env, ctx, NULL);
+    SCM_ASSERT(SCM_PAIRP(synrule));
+    Scm_Define(SCM_CURRENT_MODULE(), var, SCM_CAR(synrule));
+    return synrule;
+
+}
+
+static ScmSyntax syntax_define_syntax = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_DEFINE_SYNTAX),
+    compile_define_syntax,
+    NULL
+};
+
+/*-------------------------------------------------------------------
  * let-syntax, letrec-syntax
  */
 
@@ -962,10 +1037,12 @@ void Scm__InitMacro(void)
 
 #define DEFSYN(symbol, syntax) \
     Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
-    
+
     DEFSYN(SCM_SYM_SYNTAX_RULES_INT, syntax_syntax_rules);
+    DEFSYN(SCM_SYM_DEFINE_SYNTAX, syntax_define_syntax);
     DEFSYN(SCM_SYM_LET_SYNTAX, syntax_let_syntax);
     DEFSYN(SCM_SYM_LETREC_SYNTAX, syntax_letrec_syntax);
+    DEFSYN(SCM_SYM_DEFINE_MACRO, syntax_define_macro);
     DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
     DEFSYN(SCM_SYM_MACRO_EXPAND_1, syntax_macro_expand_1);
 }
