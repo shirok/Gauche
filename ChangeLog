@@ -1,3 +1,10 @@
+2004-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (Scm_Putb, Scm_Putc): size argument of the
+	  bufport_flush call was not good, causing excess flusing of
+	  buffer to make buffered output inefficient.
+	* ext/vport/* : supported bufferd-input|output-port.
+
 2004-11-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/util.scm (directory-list): fix not to include "." and

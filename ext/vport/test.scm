@@ -6,6 +6,9 @@
 
 (test-start "vport")
 (use gauche.vport)
+(use gauche.uvector)
+(use srfi-13)
+(use file.util)
 (test-module 'gauche.vport)
 
 ;;-----------------------------------------------------------
@@ -165,5 +168,45 @@
              (write-char #\f p)
              (display "xyz" p)
              (get-output-string o)))))
+
+;;-----------------------------------------------------------
+(test-section "buffered-input-port")
+
+(let ()
+  (define (test-biport file)
+    (let* ((src (open-input-file file))
+           (p (make <buffered-input-port>
+                :fill  (lambda (buf) (read-block! buf src))
+                :close (lambda () (close-input-port src))))
+           (a (file->string-list file))
+           (b (port->string-list p)))
+      (close-input-port p)
+      (list (equal? a b) (port-closed? src))))
+
+  (test* "read from vport.c" '(#t #t) (test-biport "vport.c"))
+  (test* "read from vport_head.c" '(#t #t) (test-biport "vport_head.c"))
+  )
+
+;;-----------------------------------------------------------
+(test-section "buffered-output-port")
+
+(let ()
+  (define (test-boport file)
+    (let* ((src  (file->string file))
+           (sink (open-output-string))
+           (closed? #f)
+           (p (make <buffered-output-port>
+                :flush (lambda (buf force?)
+                         (write-block buf sink)
+                         (u8vector-length buf))
+                :close (lambda () (set! closed? #t)))))
+      (string-for-each (lambda (c) (write-char c p)) src)
+      (close-output-port p)
+      (list (equal? src (get-output-string sink))
+            closed?)))
+  
+  (test* "vport_head.c" '(#t #t) (test-boport "vport_head.c"))
+  (test* "vport.c" '(#t #t) (test-boport "vport.c"))
+  )
 
 (test-end)

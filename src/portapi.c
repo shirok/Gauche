@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.25 2004-10-10 05:34:30 shirok Exp $
+ *  $Id: portapi.c,v 1.26 2004-11-03 13:09:39 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-
@@ -108,7 +108,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current >= p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, 1, FALSE));
+            SAFE_CALL(p, bufport_flush(p, p->src.buf.current - p->src.buf.buffer, FALSE));
         }
         SCM_ASSERT(p->src.buf.current < p->src.buf.end);
         *p->src.buf.current++ = b;
@@ -152,7 +152,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
     case SCM_PORT_FILE:
         nb = SCM_CHAR_NBYTES(c);
         if (p->src.buf.current+nb > p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, nb, FALSE));
+            SAFE_CALL(p, bufport_flush(p, p->src.buf.current - p->src.buf.buffer, FALSE));
         }
         SCM_ASSERT(p->src.buf.current+nb <= p->src.buf.end);
         SCM_CHAR_PUT(p->src.buf.current, c);
