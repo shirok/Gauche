@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.92 2004-09-17 23:32:16 shirok Exp $
+ *  $Id: load.c,v 1.93 2004-11-20 11:54:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -256,13 +256,13 @@ static ScmObj try_suffixes(ScmObj base, ScmObj suffixes)
 }
 
 ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
-                    ScmObj suffixes, int error_if_not_found)
+                    ScmObj suffixes, int flags)
 {
     int size = SCM_STRING_LENGTH(filename);
     const char *ptr = SCM_STRING_START(filename);
     int use_load_paths = TRUE;
     ScmObj file = SCM_OBJ(filename), fpath = SCM_FALSE;
-    
+
     if (size == 0) Scm_Error("bad filename to load: \"\"");
     if (*ptr == '~') {
         file = Scm_NormalizePathname(filename, SCM_PATH_EXPAND);
@@ -292,7 +292,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
         if (SCM_PAIRP(lpath)) {
             *paths = SCM_CDR(lpath);
             return SCM_OBJ(fpath);
-        } else if (error_if_not_found) {
+        } else if (!(flags&SCM_LOAD_QUIET_NOFILE)) {
             Scm_Error("cannot find file %S in *load-path* %S", file, *paths);
         } else {
             *paths = SCM_NIL;
@@ -301,7 +301,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
         *paths = SCM_NIL;
         fpath = try_suffixes(file, suffixes);
         if (!SCM_FALSEP(fpath)) return fpath;
-        if (error_if_not_found) {
+        if (!(flags&SCM_LOAD_QUIET_NOFILE)) {
             Scm_Error("cannot find file %S to load", file);
         }
     }
@@ -332,7 +332,7 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
 
     suffixes = SCM_GLOC_GET(ldinfo.load_suffixes_rec);
     if (!SCM_PAIRP(load_paths)) load_paths = Scm_GetLoadPath();
-    truename = Scm_FindFile(filename, &load_paths, suffixes, errorp);
+    truename = Scm_FindFile(filename, &load_paths, suffixes, flags);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
 
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
@@ -370,7 +370,7 @@ static ScmObj load(ScmObj *args, int argc, void *data)
     file = SCM_STRING(args[0]);
     paths = Scm_GetKeyword(key_paths, args[1], SCM_FALSE);
     env   = Scm_GetKeyword(key_environment, args[1], SCM_FALSE);
-    if (SCM_FALSEP(Scm_GetKeyword(key_error_if_not_found, args[1], SCM_FALSE)))
+    if (SCM_FALSEP(Scm_GetKeyword(key_error_if_not_found, args[1], SCM_TRUE)))
         flags |= SCM_LOAD_QUIET_NOFILE;
     if (!SCM_FALSEP(Scm_GetKeyword(key_ignore_coding, args[1], SCM_FALSE)))
         flags |= SCM_LOAD_IGNORE_CODING;
