@@ -262,11 +262,15 @@ Content-Length: 4349
         "multipart/alternative; boundary=\"=_alternative 006EBAA488256DF0_=\"")
        )
 
-(test* "mime-decode-word" "this is some text"
-       (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?="))
-(test* "mime-decode-word" "Keith_Moore"
-       (mime-decode-word "=?US-ASCII?Q?Keith_Moore?="))
-(when (memq (gauche-character-encoding) '(euc-jp sjis utf8))
+(use gauche.charconv)
+(when (ces-conversion-supported? "iso-8859-1" #f)
+  (test* "mime-decode-word" "this is some text"
+         (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?=")))
+(when (ces-conversion-supported? "us-ascii" #f)
+  (test* "mime-decode-word" "Keith_Moore"
+         (mime-decode-word "=?US-ASCII?Q?Keith_Moore?=")))
+(when (and (memq (gauche-character-encoding) '(euc-jp sjis utf8))
+           (ces-conversion-supported? "iso-2022-jp" #f))
   (test* "mime-decode-word" "\u5ddd\u5408 \u53f2\u6717"
          (mime-decode-word "=?ISO-2022-JP?B?GyRCQG45ZxsoQiAbJEI7S08vGyhC?="))
   )
