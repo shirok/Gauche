@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.8 2002-05-09 09:52:21 shirok Exp $
+;;;  $Id: util.scm,v 1.9 2002-05-10 20:35:56 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -30,7 +30,8 @@
   (export current-directory directory-list directory-list2 directory-fold
           make-directory* create-directory* remove-directory* delete-directory*
           build-path resolve-path expand-path simplify-path
-          absolute-path? relative-path? decompose-path
+          absolute-path? relative-path? decompose-path find-file-in-paths
+          file-is-readable? file-is-writable? file-is-executable?
           file-type file-perm file-mode file-ino file-dev file-rdev file-nlink
           file-uid file-gid file-size file-mtime file-atime file-ctime
           file-eq? file-eqv? file-equal? file-device=?
@@ -200,6 +201,24 @@
 
 (define (relative-path? path)
   (not (absolute-path? path)))
+
+(define (find-file-in-paths name . opts)
+  (let* ((paths (get-keyword :path-list opts
+                             (cond ((sys-getenv "PATH")
+                                    => (l_ (string-split _ #\:)))
+                                   (else '()))))
+         (pred  (get-keyword :pred opts file-is-executable?)))
+    (if (absolute-path? name)
+        (and (file-exists? name)
+             (pred name)
+             name)
+        (let loop ((paths paths))
+          (and (not (null? paths))
+               (let1 p (build-path (car paths) name)
+                 (if (and (file-exists? p) (pred p))
+                     p
+                     (loop (cdr paths))))))
+        )))
 
 ;;;=============================================================
 ;;; File attributes
@@ -398,5 +417,10 @@
       (errorf "source ~s and destination ~s are the same file" src dst))
     (do-copy)
     ))
+
+;; move-file
+
+;; copy-directory
+;; move-directory
 
 (provide "file/util")
