@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.1 2004-05-20 04:50:34 shirok Exp $
+;; $Id: exception.scm,v 1.2 2004-05-20 11:46:28 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -46,6 +46,13 @@
                ((is-a? x <error>) 'caught-error))
          (raise 4)))
 
+(test* "guard (uncaught error)" '(else . 4)
+       (guard (x
+               ((symbol? x) (cons 'symbol x))
+               ((is-a? x <error>) 'caught-error)
+               (else (cons 'else x)))
+         (raise 4)))
+
 (test* "guard (nested)" 'exn
        (with-error-handler
            values
@@ -55,6 +62,38 @@
              (guard (ball
                      (#f (raise ball)))
                (raise 'exn))))))
+
+;;--------------------------------------------------------------------
+(test-section "subtype")
+
+(define-class <my-error> (<error>)
+  ((info :init-keyword :info)))
+
+(define-class <my-exc> (<exception>)
+  ((type :init-keyword :type)))
+
+(test* "<my-error>" '(#t "msg" "info")
+       (let ((e (make <my-error> :message "msg" :info "info")))
+         (list (is-a? e <error>)
+               (ref e 'message)
+               (ref e 'info))))
+
+(test* "catching <my-error>" '(caught . "ok")
+       (guard (x
+               ((is-a? x <error>) (cons 'caught (ref x 'message))))
+         (raise (make <my-error> :message "ok"))))
+
+(test* "<my-exc>" '(#t #f type)
+       (let ((e (make <my-exc> :type 'type)))
+         (list (is-a? e <exception>)
+               (is-a? e <error>)
+               (ref e 'type))))
+
+(test* "catching <my-exc>" 'exception
+       (guard (x
+               ((is-a? x <error>) 'error)
+               ((is-a? x <exception>) 'exception))
+         (raise (make <my-exc>))))
 
 (test-end)
 
