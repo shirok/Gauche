@@ -82,7 +82,7 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(GENERATED) $(ALLOBKS) *.o *~ test.log so_locations
+	rm -rf core $(TARGET) $(GENERATED) $(ALLOBJS) *.o *~ test.log so_locations
 	rm -rf .libs _libs
 
 distclean : clean
