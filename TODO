@@ -7,9 +7,10 @@ List of things I'm planning to do.
 Runtime library
 ---------------
 
-* port.c: add character count that keeps # of chars input/output from/to the
-          port.  This allows print protocol keep simple.
-* serial.c: realize native serializer.
+* comparison interface; give compare virtual method an extra parameter
+  to tell if it is called for comparison or just for equivalence checking.
+
+o serial.c: realize native serializer.
 
 Compiler and VM
 ---------------
@@ -36,16 +37,17 @@ o Stack garbage collection.
 Modules
 -------
 
-* module net & ext/net/net.so : socket and network communication extention
-
-* module gauche.regexp : regexp interface (first in Scheme, then part of
-      it will be moved to the core)
-
 * extension dbm : dbm interface
 
 * module dbi/* : unified DB interface
 
-* module rfc/url : url parsing
+* module math/mt-random : Mersenne Twister random number generator
+
+* module math/perlin-noise : Ken Perlin's noise function
+
+* module math/quaternion : Quaternions
+
+* module rfc/uri : url parsing
 
 * module rfc/http : http parsing
 
@@ -53,7 +55,5 @@ Modules
 
 * module rfc/ftp : ftp interface
 
-* moudle rfc/822 : rfc-822 type message parsing
-
-o module xml/* : xml parsing
+o module w3c/xml : xml parsing
 
