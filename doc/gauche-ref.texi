@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.70 2001-09-26 11:37:32 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.71 2001-09-27 09:25:55 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -768,9 +768,6 @@ Unlike CommonLisp's packages, which map names to symbols,
 in Gauche symbols are always @code{eq?} if two have the
 same name.  However, different bindings can be associated
 to the same symbol, that yield different values.
-
-
-
 
 @menu
 * Module syntax::               
@@ -7831,17 +7828,7 @@ To include double-quote character in a quoted field, use two
 consecutive double-quote character.   Usually, the whitespaces around
 the field are ignored.
 
-The following example contains three records, and each record has five fields:
-@example
-"serial number","title","authors","description"
-6943,"Structure of Computer Programming","Abelson, Sussman and Sussman","`Must read' of the students who wants to
-capture the spirit of programming."
-2113,"The C++ Programming Language, 3rd Ed.","Strouptrup","The definite book from
-the creator of the language.
-3rd edition covers ""modern"" features of the language,
-such as namespaces."
-@end example
-@end deftp
+@c example here
 
 Right now, the following two low-level procedures are exported.
 A plan is to provide higher features, such as labelling fields

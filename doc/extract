@@ -1,0 +1,65 @@
+#! ../src/gosh
+;;;
+;;; extract - filter bilingual texinfo document
+;;;
+;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;
+;;;  Permission to use, copy, modify, distribute this software and
+;;;  accompanying documentation for any purpose is hereby granted,
+;;;  provided that existing copyright notices are retained in all
+;;;  copies and that this notice is included verbatim in all
+;;;  distributions.
+;;;  This software is provided as is, without express or implied
+;;;  warranty.  In no circumstances the author(s) shall be liable
+;;;  for any damages arising out of the use of this software.
+;;;
+;;;  $Id: extract,v 1.1 2001-09-27 09:25:55 shirok Exp $
+;;;
+
+(use gauche.regexp)
+(use gauche.parseopt)
+
+(define *outfile* #f)
+(define *lang* 'en)
+
+(define (filter pattern-in pattern-out)
+  (define (in line)
+    (rxmatch-case line
+      (test eof-object?)
+      (pattern-out () (out (read-line)))
+      (else (display line) (newline) (in (read-line)))))
+  (define (out line)
+    (rxmatch-case line
+      (test eof-object?)
+      (pattern-in ()  (in (read-line)))
+      (#/^@c COMMON$/ () (in (read-line)))
+      (else (out (read-line)))))
+  (in (read-line)))
+
+(define (usage)
+  (display "Usage: extract [-en|-ja][-o outfile] infile\n")
+  (exit 1))
+
+(define (main args)
+  (let ((a (parse-options args
+             (("o=s" (outfile) (set! *outfile* outfile))
+              ("en"  () (set! *lang* 'en))
+              ("ja"  () (set! *lang* 'ja))
+              (else _ (usage))))))
+
+    (define (do-it)
+      (case *lang*
+        ((en) (filter #/^@c EN$/ #/^@c JP$/))
+        ((jp) (filter #/^@c JP$/ #/^@c EN$/))))
+    
+    (unless (= (length a) 1) (usage))
+    (with-input-from-file (car a)
+      (lambda ()
+        (if *outfile*
+            (with-output-to-file *outfile* do-it)
+            (do-it))))
+    0))
+
+;; Local variables:
+;; mode: Scheme
+;; end:
