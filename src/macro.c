@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.47 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: macro.c,v 1.48 2004-06-28 04:24:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -138,16 +138,20 @@ ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
     return Scm_MakeSyntax(name, macro_transform, (void*)proc);
 }
 
-static ScmObj macro_autoload(ScmObj form, ScmObj env, int ctx,
-                             int *depth, void *data)
+static ScmSyntax *resolve_macro_autoload(ScmAutoload *adata)
 {
-    ScmAutoload *adata = SCM_AUTOLOAD(data);
     ScmObj syn = Scm_LoadAutoload(adata);
     if (!SCM_SYNTAXP(syn)) {
         Scm_Error("tried to autoload macro %S, but it yields non-macro object: %S", adata->name, syn);
     }
-    return SCM_SYNTAX(syn)->compiler(form, env, ctx, depth,
-                                     SCM_SYNTAX(syn)->data);
+    return SCM_SYNTAX(syn);
+}
+
+static ScmObj macro_autoload(ScmObj form, ScmObj env, int ctx,
+                             int *depth, void *data)
+{
+    ScmSyntax *syn = resolve_macro_autoload(SCM_AUTOLOAD(data));
+    return syn->compiler(form, env, ctx, depth, syn->data);
 }
 
 ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
@@ -1056,6 +1060,9 @@ ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
             }
         }
         if (syn) {
+            if (syn->compiler == macro_autoload) {
+                syn = resolve_macro_autoload(SCM_AUTOLOAD(syn->data));
+            }
             if (syn->compiler == macro_transform) {
                 ScmObj proc = SCM_OBJ(syn->data);
                 expr = Scm_Apply(proc, SCM_CDR(expr));
