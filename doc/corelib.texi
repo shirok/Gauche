@@ -5381,6 +5381,48 @@ Similar to an error, but the error message is formatted by
 @subsection Handling errors
 @c NODE エラーの処理
 
+@defmac guard (var clause @dots{}) body @dots{}
+[SRFI-34]
+This is @emph{the} high-level form to handle errors in Gauche.
+It is built on top of @code{with-error-handler} function below.
+
+@var{var} is a symbol, and @var{clause}s are the same form as
+@code{cond}'s clauses, i.e. each clause can be either one of
+the following forms:
+@enumerate
+@item
+@code{(@var{test} @var{expr} @dots{})}
+@item
+@code{(@var{test} => @var{proc})}
+@end enumerate
+
+The last @var{clause} may be @code{(else @var{expr} @dots{})}.
+
+This form evaluates @var{body} @dots{} and returns the value(s) of
+the last @var{body} expression in normal case.
+If an exception is raised during the evaluation of body expressions,
+the raised exception is bound to a variable @var{var}, then
+evaluates @var{test} expression of each clause.  If one of @var{test}
+expression returns true value, then the corresponding @var{expr}s
+are evaluated if the clause is the first form above, or an @var{proc}
+is evaluated and the result of @var{test} is passed to the result of
+@var{proc} which is expected to be a procedure.
+
+When the @var{test}(s) and @var{expr}(s) in the clauses are evaluated,
+the exception handler that is in effect of the caller of @code{guard} are
+installed; that is, if an exception is raised again within @var{clause}s,
+it is handled by the @emph{outer} exception handler or @code{guard} form.
+
+If no @var{test} returns true value and the last @code{clause} is
+@code{else} clause, then the associated @var{expr}s are evaluated.
+If no @var{test} returns true value and there's no @code{else} clause,
+the raised exception is re-raised, to be handled by the outer exception
+handler.
+
+When the exception is handled by one of @code{clause}s, @code{guard}
+returns the value(s) of the last @var{expr} in the handling clause.
+@end defmac
+
 @defun with-error-handler handler thunk
 @c EN
 Makes @var{handler} the active error handler and executes @var{thunk}.
