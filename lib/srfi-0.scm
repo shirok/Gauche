@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.17 2004-01-19 22:30:05 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.18 2004-01-20 23:29:45 fuyuki Exp $
 ;;;
 
 (define-module srfi-0
@@ -110,7 +110,7 @@
     ((cond-expand (srfi-37 body ...) more-clauses ...)
      (begin (use srfi-37) body ...))
     ((cond-expand (srfi-39 body ...) more-clauses ...)
-     (begin (use srfi-39) body ...))
+     (begin (use gauche.parameter) body ...))
     ((cond-expand (feature-id body ...) more-clauses ...)
      (cond-expand more-clauses ...))))
 
