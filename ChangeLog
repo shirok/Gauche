@@ -1,5 +1,6 @@
 2002-05-26  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.5.5
 	* ext/mt-random : fixed missing initialization code.
 	* src/compare.c : changed sort algorithm from simple quicksort to
 	  the hybrid of quicksort and heapsort.

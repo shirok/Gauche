@@ -74,7 +74,7 @@ if [ "$test" = "yes" ]; then
   make install
   cd ..
   for tt in `cat ./Gauche-$VERSION/test/TESTS`; do
-    gosh -I./Gauche-$VERSION/test $tt >> test.log
+    /usr/local/bin/gosh -I./Gauche-$VERSION/test $tt >> test.log
   done
 fi
 

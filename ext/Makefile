@@ -24,7 +24,7 @@ link :
 	@for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) link); done
 
 unlink :
-	@if [ -x ../src/gosh ]; then for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) unlink); done; fi
+	@if [ -x ../src/gosh && ../src/gosh -V > /dev/null 2>&1 ]; then for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) unlink); done; fi
 
 
 
