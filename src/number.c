@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.18 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: number.c,v 1.19 2001-04-01 09:18:25 shiro Exp $
  */
 
 #include <math.h>
@@ -877,200 +877,70 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int reminder)
  * Comparison
  */
 
-/* We support more than two args, but optmize for two-arg case.
- * Expecially, the third and after args are not checked until 
- * they are actually used, so (= 3 2 #f) doesn't report an error,
- * for example.
- */
-ScmObj Scm_NumEq(ScmObj arg0, ScmObj arg1, ScmObj args)
+/* 2-arg comparison */
+int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 {
-    int nc0 = NUMBER_CLASS(arg0);
-    int nc1 = NUMBER_CLASS(arg1);
-
-    /* deal with the most common case first. */
-    if (nc0 == nc1) {
-        if (nc0 == FIXNUM) {
-            if (arg0 != arg1)   /* we can use EQ here */
-                return SCM_FALSE;
-            if (SCM_PAIRP(args))
-                return Scm_NumEq(arg1, SCM_CAR(args), SCM_CDR(args));
-            else
-                return SCM_TRUE;
-        }
-        if (nc0 == BIGNUM) {
-            if (Scm_BignumCmp(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1)) != 0)
-                return SCM_FALSE;
-            if (SCM_PAIRP(args))
-                return Scm_NumEq(arg1, SCM_CAR(args), SCM_CDR(args));
-            else
-                return SCM_TRUE;
-        }
-        if (nc0 == FLONUM) {
-            if (SCM_FLONUM_VALUE(arg0) != SCM_FLONUM_VALUE(arg1))
-                return SCM_FALSE;
-            if (SCM_PAIRP(args))
-                return Scm_NumEq(arg1, SCM_CAR(args), SCM_CDR(args));
-            else
-                return SCM_TRUE;
-        }
-        if (nc0 == COMPLEX) {
-            if (SCM_COMPLEX_REAL(arg0) != SCM_COMPLEX_REAL(arg1)
-                || SCM_COMPLEX_IMAG(arg0) != SCM_COMPLEX_IMAG(arg1))
-                return SCM_FALSE;
-            if (SCM_PAIRP(args))
-                return Scm_NumEq(arg1, SCM_CAR(args), SCM_CDR(args));
-            else
-                return SCM_TRUE;
-        }
-        Scm_Error("number required: %S", arg0);
+    ScmObj badnum;
+    
+    if (SCM_INTP(arg0)) {
+        if (SCM_INTP(arg1))
+            return (SCM_INT_VALUE(arg0) - SCM_INT_VALUE(arg1));
+        if (SCM_FLONUMP(arg1))
+            return ((double)SCM_INT_VALUE(arg0) - SCM_FLONUM_VALUE(arg1));
+        if (SCM_BIGNUMP(arg1))
+            return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(arg0))),
+                                 SCM_BIGNUM(arg1));
+        badnum = arg1;
     }
-
-    /* Need type coertion.  I assume this is less common case,
-       so forgetaboutspeed. */
-    if (nc0 < nc1) {            /* let arg0 be higher class */
-        int tmpi; ScmObj tmps;
-        tmpi = nc0;  nc0 = nc1;   nc1 = tmpi;
-        tmps = arg0; arg0 = arg1; arg1 = tmps;
+    else if (SCM_FLONUMP(arg0)) {
+        if (SCM_INTP(arg1))
+            return (SCM_FLONUM_VALUE(arg0) - (double)SCM_INT_VALUE(arg1));
+        if (SCM_FLONUMP(arg1))
+            return (SCM_FLONUM_VALUE(arg0) - SCM_FLONUM_VALUE(arg1));
+        if (SCM_BIGNUMP(arg1))
+            return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(arg0))),
+                                 SCM_BIGNUM(arg1));
+        badnum = arg1;
     }
-    if (nc0 == BIGNUM) {
-        return Scm_NumEq(arg0, Scm_PromoteToBignum(arg1), args);
+    else if (SCM_BIGNUMP(arg0)) {
+        if (SCM_INTP(arg1))
+            return Scm_BignumCmp(SCM_BIGNUM(arg0),
+                                 SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(arg1))));
+        if (SCM_FLONUMP(arg1))
+            return Scm_BignumCmp(SCM_BIGNUM(arg0),
+                                 SCM_BIGNUM(Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(arg1))));
+        if (SCM_BIGNUMP(arg1))
+            return Scm_BignumCmp(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
+        badnum = arg1;
     }
-    if (nc0 == FLONUM) {
-        return Scm_NumEq(arg0, Scm_PromoteToFlonum(arg1), args);
-    }
-    if (nc0 == COMPLEX) {
-        return Scm_NumEq(arg0, Scm_PromoteToComplex(arg1), args);
-    }
-    Scm_Error("number required: %S", arg0);
-    return SCM_UNDEFINED;       /* NOTREACHED */
+    else badnum = arg0;
+    Scm_Error("real number required: %S", badnum);
+    return 0;                    /* dummy */
 }
-
-#define NUMCMP(FN, OP)                                                  \
-ScmObj FN(ScmObj arg0, ScmObj arg1, ScmObj args)                        \
-{                                                                       \
-    int nc0 = NUMBER_CLASS(arg0);                                       \
-    int nc1 = NUMBER_CLASS(arg1);                                       \
-                                                                        \
-    if (nc0 == nc1) {                                                   \
-        if (nc0 == FIXNUM) {                                            \
-            if (SCM_INT_VALUE(arg0) OP SCM_INT_VALUE(arg1))             \
-                return SCM_FALSE;                                       \
-            if (SCM_PAIRP(args))                                        \
-                return FN(arg1, SCM_CAR(args), SCM_CDR(args));          \
-            else return SCM_TRUE;                                       \
-        }                                                               \
-        if (nc0 == BIGNUM) {                                            \
-            if (Scm_BignumCmp(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1)) OP 0) \
-                return SCM_FALSE;                                       \
-            if (SCM_PAIRP(args))                                        \
-                return FN(arg1, SCM_CAR(args), SCM_CDR(args));          \
-            else return SCM_TRUE;                                       \
-        }                                                               \
-        if (nc0 == FLONUM) {                                            \
-            if (SCM_FLONUM_VALUE(arg0) OP SCM_FLONUM_VALUE(arg1))       \
-                return SCM_FALSE;                                       \
-            if (SCM_PAIRP(args))                                        \
-                return FN(arg1, SCM_CAR(args), SCM_CDR(args));          \
-            else return SCM_TRUE;                                       \
-        }                                                               \
-        Scm_Error("real number required: %S", arg0);                    \
-    }                                                                   \
-                                                                        \
-    if (nc0 < nc1) {                                                    \
-        if (nc1 == BIGNUM)                                              \
-            return FN(Scm_PromoteToBignum(arg0), arg1, args);           \
-        if (nc1 == FLONUM)                                              \
-            return FN(Scm_PromoteToFlonum(arg0), arg1, args);           \
-        else                                                            \
-            Scm_Error("real number required: %S", arg1);                \
-    } else {                                                            \
-        if (nc0 == BIGNUM)                                              \
-            return FN(arg0, Scm_PromoteToBignum(arg1), args);           \
-        if (nc0 == FLONUM)                                              \
-            return FN(arg0, Scm_PromoteToFlonum(arg1), args);           \
-        else                                                            \
-            Scm_Error("real number required: %S", arg0);                \
-    }                                                                   \
-    /*NOTREACHED*/                                                      \
-    return SCM_UNDEFINED;                                               \
-}
-
-NUMCMP(Scm_NumLt, >=)
-NUMCMP(Scm_NumLe, >)
-NUMCMP(Scm_NumGt, <=)
-NUMCMP(Scm_NumGe, <)
 
 ScmObj Scm_Max(ScmObj arg0, ScmObj args)
 {
-    int nc0 = NUMBER_CLASS(arg0), nc1;
-    ScmObj arg1;
-
-    if (nc0 > FLONUM) Scm_Error("real number required, but got %S", arg0);
-
+    if (NUMBER_CLASS(arg0) > FLONUM)
+        Scm_Error("real number required, but got %S", arg0);
     for (;;) {
         if (SCM_NULLP(args)) return arg0;
-
-        arg1 = SCM_CAR(args);
+        if (Scm_NumCmp(arg0, SCM_CAR(args)) < 0) {
+            arg0 = SCM_CAR(args);
+        }
         args = SCM_CDR(args);
-        nc1 = NUMBER_CLASS(arg1);
-
-        if (nc0 < nc1) {
-            if (nc1 == FLONUM) {
-                arg0 = Scm_PromoteToFlonum(arg0);
-                nc0 = FLONUM;
-            } else {
-                Scm_Error("real number required, but got %S", arg1);
-            }
-        } else if (nc0 > nc1) {
-            arg1 = Scm_PromoteToFlonum(arg1);
-        }
-
-        if (nc0 == FIXNUM) {
-            if (SCM_INT_VALUE(arg0) < SCM_INT_VALUE(arg1)) {
-                arg0 = arg1;
-            }
-        } else {
-            if (SCM_FLONUM_VALUE(arg0) < SCM_FLONUM_VALUE(arg1)) {
-                arg0 = arg1;
-            }
-        }
     }
 }
 
 ScmObj Scm_Min(ScmObj arg0, ScmObj args)
 {
-    int nc0 = NUMBER_CLASS(arg0), nc1;
-    ScmObj arg1;
-
-    if (nc0 > FLONUM) Scm_Error("real number required, but got %S", arg0);
-
+    if (NUMBER_CLASS(arg0) > FLONUM)
+        Scm_Error("real number required, but got %S", arg0);
     for (;;) {
         if (SCM_NULLP(args)) return arg0;
-
-        arg1 = SCM_CAR(args);
+        if (Scm_NumCmp(arg0, SCM_CAR(args)) > 0) {
+            arg0 = SCM_CAR(args);
+        }
         args = SCM_CDR(args);
-        nc1 = NUMBER_CLASS(arg1);
-
-        if (nc0 < nc1) {
-            if (nc1 == FLONUM) {
-                arg0 = Scm_PromoteToFlonum(arg0);
-                nc0 = FLONUM;
-            } else {
-                Scm_Error("real number required, but got %S", arg1);
-            }
-        } else if (nc0 > nc1) {
-            arg1 = Scm_PromoteToFlonum(arg1);
-        }
-
-        if (nc0 == FIXNUM) {
-            if (SCM_INT_VALUE(arg0) > SCM_INT_VALUE(arg1)) {
-                arg0 = arg1;
-            }
-        } else {
-            if (SCM_FLONUM_VALUE(arg0) > SCM_FLONUM_VALUE(arg1)) {
-                arg0 = arg1;
-            }
-        }
     }
 }
 
