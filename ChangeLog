@@ -1,5 +1,7 @@
 2002-11-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c (read_internal): Finally, make old incomplete syntax
+	  #"..." obsolete.  The reader signals an error.
 	* lib/gauche/portutil.scm, src/gauche/extlib.stub : Renamed
 	  gauche/port.scm to gauche/portutil.scm.  Implemented copy-port
 	  in Scheme instead of C (actually, it became faster by

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.58 2002-10-13 23:30:31 shirok Exp $
+ *  $Id: read.c,v 1.59 2002-11-13 08:48:51 shirok Exp $
  */
 
 #include <stdio.h>
@@ -281,8 +281,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 /* #"..." explicit incomplete string */
                 /* NB: this syntax will be taken by string interpolation
                    in future.  Use #*"..." instead. */
-                Scm_Warn("syntax #\"...\" for incomplete string is obsoleted.  use #*\"...\" instead.");
-                return read_string(port, TRUE);
+                Scm_ReadError(port, "syntax #\"...\" for incomplete string is obsoleted.  use #*\"...\" instead.");
+                return SCM_UNDEFINED;
             case ',':
                 /* #,(form) - SRFI-10 read-time macro */
                 {
