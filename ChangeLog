@@ -1,5 +1,9 @@
 2004-08-28  Kimura Fuyuki  <fuyuki@hadaly.org>
 
+	* src/bignum.c (Scm_BignumToUI64): Avoid using `a=a=1' style
+	assignment. Newer gcc versions don't like it and say that
+	operation "may be undefined".
+
 	* ext/termios/gauche/termios.h, ext/uvector/uvlib.stub.sh,
 	src/bignum.c: Include more header files to suppress compiler
 	warnings such like "implicit declaration".

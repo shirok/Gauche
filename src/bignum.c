@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.57 2004-08-28 09:27:56 fuyuki Exp $
+ *  $Id: bignum.c,v 1.58 2004-08-28 10:05:25 fuyuki Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -367,7 +367,7 @@ ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamphi, int clamplo)
     if (b->sign > 0) {
         if (b->size > 2) {
             if (!clamphi) goto err;
-            r = SCM_SET_UINT64_MAX(r);
+            SCM_SET_UINT64_MAX(r);
         } else if (b->size == 2) {
             r = ((uint64_t)b->values[1] << 32) + (uint64_t)b->values[0];
         } else {
