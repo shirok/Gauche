@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.5 2001-02-16 06:58:22 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.6 2001-02-19 23:25:14 shiro Exp $
 ;;;
 
 ;;
@@ -57,3 +57,10 @@
 (define (PROVIDED? feature)
   (member feature *provided*))
 
+;;
+;; Autoload
+;;
+
+(define-macro (AUTOLOAD file . vars)
+  (cons 'begin (map (lambda (v) `(define ,v (%make-autoload ',v ,file)))
+                    vars)))
