@@ -1,5 +1,6 @@
 2004-10-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/error.c (Scm_PortError): added utility function.
 	* src/vm.c (Scm_VMThrowException): changed the non-continuable
 	  exception check according to the new condition hierarchy.
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.52 2004-10-09 11:57:36 shirok Exp $
+ *  $Id: error.c,v 1.53 2004-10-09 23:06:34 shirok Exp $
  */
 
 #include <errno.h>
@@ -445,18 +445,13 @@ void Scm_Error(const char *msg, ...)
  * after the provided message.
  */
 
-void Scm_SysError(const char *msg, ...)
+static ScmObj get_syserrmsg(int en)
 {
-    ScmObj e;
-    va_list args;
-    int en;
     ScmObj syserr;
 #ifndef __MINGW32__
-    en = errno;
     syserr = SCM_MAKE_STR_COPYING(strerror(en));
 #else  /*__MINGW32__*/
     LPTSTR msgbuf;
-    en = GetLastError();
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
 		  NULL,
 		  en,
@@ -466,6 +461,24 @@ void Scm_SysError(const char *msg, ...)
     syserr = SCM_MAKE_STR_COPYING(msgbuf);
     LocalFree(msgbuf);
 #endif /*__MINGW32__*/
+    return syserr;
+}
+
+static int get_errno(void)
+{
+#ifndef __MINGW32__
+    return errno;
+#else  /*__MINGW32__*/
+    return GetLastError();
+#endif /*__MINGW32__*/
+}
+
+void Scm_SysError(const char *msg, ...)
+{
+    ScmObj e;
+    va_list args;
+    int en = get_errno();
+    ScmObj syserr = get_syserrmsg(en);
     
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
@@ -475,6 +488,62 @@ void Scm_SysError(const char *msg, ...)
         SCM_PUTZ(": ", -1, ostr);
         SCM_PUTS(syserr, ostr);
         e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr)), en);
+    }
+    SCM_WHEN_ERROR {
+        /* TODO: should check continuation */
+        e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
+    }
+    SCM_END_PROTECT;
+    Scm_VMThrowException(e);
+}
+
+/*
+ * A convenience function to throw port-relates errors.
+ * It creates either one of <port-error>, <io-read-error>,
+ * <io-write-error>, or <io-closed-error>, depending on the 'reason'
+ * argument being SCM_PORT_ERROR_{OTHER,INPUT,OUTPUT,CLOSED}, respectively.
+ * If errno isn't zero, it also creates a <system-error> and throws
+ * a compound condition of both.
+ */
+void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
+{
+    ScmObj e, smsg, pe;
+    ScmClass *peclass;
+    va_list args;
+    int en = get_errno();
+
+    SCM_UNWIND_PROTECT {
+        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+        va_start(args, msg);
+        Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
+        va_end(args);
+        if (en != 0) {
+            ScmObj syserr = get_syserrmsg(en);
+            SCM_PUTZ(": ", -1, ostr);
+            SCM_PUTS(syserr, ostr);
+        }
+        smsg = Scm_GetOutputString(SCM_PORT(ostr));
+
+        switch (reason) {
+        case SCM_PORT_ERROR_INPUT:
+            peclass = SCM_CLASS_IO_READ_ERROR; break;
+        case SCM_PORT_ERROR_OUTPUT:
+            peclass = SCM_CLASS_IO_WRITE_ERROR; break;
+        case SCM_PORT_ERROR_CLOSED:
+            peclass = SCM_CLASS_IO_CLOSED_ERROR; break;
+        default:
+            peclass = SCM_CLASS_PORT_ERROR; break;
+        }
+        pe = porterror_allocate(peclass, SCM_NIL);
+        SCM_ERROR(pe)->message = smsg;
+        SCM_PORT_ERROR(pe)->port = port;
+        
+        if (en != 0) {
+            e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeSystemError(smsg, en),
+                                                    pe));
+        } else {
+            e = pe;
+        }
     }
     SCM_WHEN_ERROR {
         /* TODO: should check continuation */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.389 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: gauche.h,v 1.390 2004-10-09 23:06:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2168,9 +2168,19 @@ SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 /* Condition classes are defined in a separate file */
 #include <gauche/exception.h>
 
+/* 'reason' flag for Scm_PortError */
+enum {
+    SCM_PORT_ERROR_INPUT,
+    SCM_PORT_ERROR_OUTPUT,
+    SCM_PORT_ERROR_CLOSED,
+    SCM_PORT_ERROR_OTHER
+};
+
 /* Throwing error */
 SCM_EXTERN void Scm_Error(const char *msg, ...);
 SCM_EXTERN void Scm_SysError(const char *msg, ...);
+SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, const char *msg, ...);
+
 SCM_EXTERN ScmObj Scm_SError(ScmObj reason, ScmObj args);
 SCM_EXTERN ScmObj Scm_FError(ScmObj fmt, ScmObj args);
 
