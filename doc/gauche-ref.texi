@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.3 2001-05-17 09:04:21 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.4 2001-05-19 22:51:33 shirok Exp $
 
 @iftex
 @finalout
@@ -548,7 +548,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
-@defun numebr->string z [radix]
+@defun number->string z [radix]
 @defunx string->number string [radix]
 [R5RS]
 @end defun
@@ -885,7 +885,10 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
-@defun string-complete? obj
+@defun string-immutable? obj
+@end defun
+
+@defun string-incomplete? obj
 @end defun
 
 @node String Constructors
@@ -996,6 +999,15 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defun string-pointer-index sp
 @end defun
 
+@node Incomplete strings
+@subsection Incomplete strings
+
+@defun string-complete->incomplete str
+@end defun
+
+@defun string-incomplete->complete str
+@end defun
+
 @c ----------------------------------------------------------------------
 @node Regular Expression
 @section Regular Expression
@@ -1010,11 +1022,33 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 @defun rxmatch regexp str
+@code{regexp} is a regular expression object.
+ A string @code{string} is matched by
+@code{regexp}.  If it matches, the function returns a @code{<regmatch>}
+object.  Otherwise it returns @code{#f}.
+
+This method can be extended to accept other types in @code{regexp},
+to extend matching functionality.
+
+This corresponds to scsh's @code{regexp-search}.
+@end deffn
+
 @end defun
 
 @defun rxmatch-substring match &optional (i 0)
 @defunx rxmatch-start match &optional (i 0)
 @defunx rxmatch-end match &optional (i 0)
+@code{MATCH} is a match object returned by @code{rxmatch}.
+If @code{I} equals to zero, the functions return
+start, end or the substring of entire match, respectively.
+With positive integer @code{I}, it returns those of @code{I}-th
+submatches.  It is an error to pass other values to @code{I}.
+
+It is allowed to pass @code{#f} to @code{MATCH} for convenience.
+The functions return @code{#f} in such case.
+
+These functions correspond to scsh's @code{match:start}, @code{match:end}
+and @code{match:substring}.
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -1809,6 +1843,10 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @node Libarary Modules
 @chapter Library Modules
 
+@c ----------------------------------------------------------------------
+@node Networking
+@section @code{gauche.net} - Networking
+
 
 @c ----------------------------------------------------------------------
 @node Process interface
@@ -1857,6 +1895,88 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @c ----------------------------------------------------------------------
 @node Regular expression library
 @section @code{gauche.regexp} - Regular expression library
+
+This module defines some macros useful in regexp match.
+
+The interface is borrowed from scsh, but I changed the name of
+macros since scsh's @code{match-cond} can be confusing
+(e.g. Bigloo has @code{match-lambda} and @code{match-case} in
+pattern match library, that sounds too similar).
+
+In the following macros, @code{match-expr} is an expression
+which produces a match object or @code{#f}. 
+
+@defmac rxmatch-let MATCH-EXPR (VAR @dots{}) FORM @dots{}
+
+Evaluates @code{match-expr}, and if matched, binds @code{VAR @dots{}}
+to the matched strings, then evaluates @code{FORM}s.
+The first @code{VAR} receives the entire match, and subsequent
+variables receive submatches.  If the number of submatches are
+smaller than the number of variables to receive them, the rest
+of variables will get @code{#f}.
+
+It is possible to put @code{#f} in variable position, which says
+you don't care that variable
+
+This macro corresponds to scsh's @code{let-match}.
+@end defmac
+
+@defmac rxmatch-if MATCH-EXPR (VAR @dots{}) THEN-FORM ELSE-FORM
+Evaluates @code{match-expr}, and if matched, binds @code{VAR @dots{}}
+to the matched strings and evaluate @code{THEN-FORM}.
+Otherwise evaluate @code{ELSE-FORM}.
+
+This macro corresponds to scsh's @code{if-match}.
+@end defmac
+
+@defmac rxmatch-cond CLAUSE @dots{}
+@code{CLAUSE} may be one of the following pattern.
+
+@table @code
+@item (MATCH-EXPR (VAR @dots{}) FORM @dots{})
+If @code{MATCH-EXPR} returns a match, works like @code{rxmatch-let}.
+
+@item (test EXPR FORM @dots{})
+Nothing with regexp.  Evaluates @code{EXPR} and if it is true
+evaluates @code{FORM}s.
+
+@item (test EXPR => PROC)
+Nothing with regexp.  Evaluates @code{EXPR} and if it is true,
+calls @code{PROC} with the result of @code{EXPR} as the only argument.
+
+@item (else FORM @dots{})
+If other clauses fail, @code{FORM}s are 
+evaluated.
+@end table
+
+This macro corresponds to scsh's @code{match-cond}.
+@end defmac
+
+@defmac rxmatch-case STRING CLAUSE @dots{}
+@code{CLAUSE} may be one of the following pattern.
+
+@table @code
+@item (RE (VAR @dots{}) FORM @dots{})
+@code{RE} must be either a literal string describing a
+regexp, or a regexp object.  If it matches with given @code{STRING},
+the rest of clause works like @code{rxmatch-let}.
+
+@item (test EXPR FORM @dots{})
+Nothing with regexp.  Evaluates @code{EXPR} and if it is true
+evaluates @code{FORM}s.
+
+@item (test EXPR => PROC)
+Nothing with regexp.  Evaluates @code{EXPR} and if it is true,
+calls @code{PROC} with the result of @code{EXPR} as the only argument.
+
+@item (else FORM @dots{})
+If other clauses fail, @code{FORM}s are 
+evaluated.
+
+@end table
+
+@end defmac
+
 
 @c ----------------------------------------------------------------------
 @node Serializer
@@ -1914,6 +2034,19 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @node Homogeneous Vectors
 @section @code{srfi-4} - Homogeneous Vectors
 
+@c ----------------------------------------------------------------------
+@node SRFI String ports
+@section @code{srfi-6} - String ports
+
+String ports, defined in SRFI-6, are builtin feature of Gauche.
+The form @code{(use srfi-6)} doesn't do anything.
+
+@c ----------------------------------------------------------------------
+@node Syntax to receive multiple values
+@section @code{srfi-8} - Syntax to receive multiple values
+
+Syntax @code{receive}, defined in SRFI-8, is builtin feature of Gauche.
+The form @code{(use srfi-8)} doesn't do anything.
 
 @c ----------------------------------------------------------------------
 @node Let-values
