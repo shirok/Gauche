@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.6 2001-03-26 10:24:20 shiro Exp $
+;;;  $Id: object.scm,v 1.7 2001-03-27 06:27:37 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -226,18 +226,39 @@
     (reverse slots)))
 
 (define-method compute-get-n-set ((class <class>) slot)
-  (let ((alloc (get-keyword :allocation (cdr slot) :instance)))
+  (define (make-class-slot)
+    (let ((cell #f))         ; TODO:need to be unbound value, but how?
+      (cons (lambda (o) cell) (lambda (o v) (set! cell v)))))
+  
+  (let ((slot-name (slot-definition-name slot))
+        (alloc (slot-definition-allocation slot)))
     (case alloc
       ((:instance)
        (let ((num (slot-ref class 'num-instance-slots)))
          (slot-set! class 'num-instance-slots (+ num 1))
          num))
+      ((:class)
+       (if (assq slot-name (class-direct-slots class))
+           (make-class-slot)
+           (let loop ((cpl (class-precedence-list class)))
+             (cond ((null? cpl)
+                    (error "something wrong with slot inheritance of ~s" class))
+                   ((assq slot-name (class-direct-slots (car cpl)))
+                    (class-slot-accessor (car cpl) slot-name))
+                   (else (loop (cdr cpl)))))))
+      ((:each-subclass)
+       (make-class-slot))
+      ((:virtual)
+       (let ((getter (slot-definition-option slot :slot-ref #f))
+             (setter (slot-definition-option slot :slot-set! #f)))
+         (unless (and (procedure? getter) (procedure? setter))
+           (error "virtual slot requires both :slot-ref and :slot-set!: ~s"
+                  slot))
+         (cons getter setter)))
       ((:builtin)
-       (let ((acc (get-keyword :slot-accessor (cdr slot) #f)))
-         (unless acc
+       (or (slot-definition-option slot :slot-accessor #f)
            (error "builtin slot ~s of class ~s doesn't have associated slot accessor"
-                  (car slot) class))
-         acc))
+                  (car slot) class)))
       (else
        (error "unsupported slot allocation: ~s" alloc)))))
 
@@ -258,15 +279,23 @@
 (define (class-slots class) (slot-ref class 'slots))
 
 (define (slot-definition-name slot) (car slot))
-
-(define (slot-definition-alocation slot)
-  (get-keyword :allocation (cdr slot) #f))
+(define (slot-definition-options slot) (cdr slot))
+(define (slot-definition-option slot key . default)
+  (apply get-keyword key (cdr slot) default))
+(define (slot-definition-allocation slot)
+  (get-keyword :allocation (cdr slot) :instance))
 (define (slot-definition-getter slot)
   (get-keyword :getter (cdr slot) #f))
 (define (slot-definition-setter slot)
   (get-keyword :setter (cdr slot) #f))
 (define (slot-definition-accessor slot)
   (get-keyword :accessor (cdr slot) #f))
+
+(define (class-slot-definition class slot-name)
+  (assq slot-name (slot-ref class 'slots)))
+(define (class-slot-accessor class slot-name)
+  (cond ((assq slot-name (slot-ref class 'accessors)) => cdr)
+        (else #f)))
 
 ;;----------------------------------------------------------------
 ;; Handy for debug (just for now)
