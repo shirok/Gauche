@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.401 2003-06-06 05:15:27 nobsun Exp $
+@c $Id: gauche-ref.texi,v 1.402 2003-06-06 06:23:51 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24590,16 +24590,33 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 @node SRFI-13 General conventions, SRFI-13 String predicates, srfi-13 - String library, srfi-13 - String library
 @subsection General conventions
 
+@c EN
 There are a few common factors in string library API, which I don't
 repeat in each function description
+@c JP
+文字列ライブラリのAPIにはいくつか共通するものがありますが、
+それぞれの関数の説明において繰り返しません。
+@c COMMON
 
 @table @emph
+@c EN
 @item argument convention
+@c JP
+@item 引数の仕様
+@c EN
 The following argument names imply their types.
+@c JP
+以下の引数名はその型を暗に表しています。
+@c COMMON
 @table @var
 @item s, s1, s2
+@c EN
 Those arguments must be strings.
+@c JP
+これらの引数は文字列でなければなりません。
+@c COMMON
 @item char/char-set/pred
+@c EN
 This argument can be a character, a character-set object,
 or a predicate that takes a single character and returns a boolean value.
 ``Applying @var{char/char-set/pred} to a character'' means,
@@ -24609,8 +24626,18 @@ checked if the character set contains the given character; if
 @var{char/char-set/pred} is a procedure, it is applied
 to the given character.  ``A character satisfies @var{char/char-set/pred}''
 means such application to the character yields true value.
+@c JP
+この引数は、文字、文字セットオブジェクト、あるいは1つの文字を引数に取り
+真偽値を返す述語のいずれかです。``文字に@var{char/char-set/pred}を適用する''
+の意味はそれぞれ、@var{char/char-set/pred}が文字ならば与えられた文字と比較される、
+@var{char/char-set/pred}が文字セットならばその文字セットに与えられた文字が
+含まれるかを検査する、@var{char/char-set/pred}が述語ならばそれを与えられた
+文字に適用する、となります。``ある文字が@var{char/char-set/pred}を満足する''
+とは、その文字への前述のような適用が真値を返すという意味になります。
+@c COMMON
 
 @item start, end
+@c EN
 Lots of SRFI-13 functions takes these two optional arguments, which
 limit the area of input string from @var{start}-th character
 (inclusive) to @var{end}-th character (exclusive),
@@ -24619,9 +24646,22 @@ When specified, the condition
 0 <= @var{start} <= @var{end} <= @var{length of the string} must be
 satisfied.  Default value of @var{start} and @var{end} is
 0 and the length of the string, respectively.
+@c JP
+SRFI-13の関数の多くは、その操作が実行される対象入力文字列の
+範囲を限定する開始インデックスと終了インデックスをオプショナルな
+引数として取ります。開始(@var{start}番目)の文字は含まれ、
+終了(@var{end}番目)の文字は含まれません。
+これらが指定されるとき、0 <= @var{start} <= @var{end} <= @var{length of the string}が
+満たされなければなりません。@var{start}と@var{end}のデフォルト値は、
+それぞれ0と文字列の長さです。
+@c COMMON
 @end table
 
+@c EN
 @item `shared' variant
+@c JP
+@item `shared'バージョン
+@c EN
 Some functions have variants with ``/shared'' attached to its name.
 SRFI-13 defines those functions to allow to share the part of input
 string, for better performance.  Gauche doesn't have a concept of
@@ -24629,11 +24669,30 @@ shared string, and these functions are mere synonyms of their
 non-shared variants.  However, Gauche @emph{internally} shares
 the storage of strings, so generally you don't need to worry
 about the overhead of copying substrings.
+@c JP
+いくつかの関数は、その名前に``/shared''が付きます。
+SRFI-13では、それらの関数はより良いパフォーマンスのために
+入力文字列の一部を共有しても良いと定義しています。
+Gaucheは、共有文字列という概念を持っていませんし、
+それらの関数は単に共有でないバージョンの変名に過ぎません。
+しかし、Gaucheは@emph{内部的には}文字列の保存場所を共有しているので、
+一般的には部分文字列をコピーするオーバヘッドについて心配する
+必要はありません。
+@c COMMON
 
+@c EN
 @item `right' variant
+@c JP
+@item `right'バージョン
+@c EN
 Most functions works from left to right of the input string.
 Some functions have variants with ``-right'' to its name, 
 that works from right to left.
+@c JP
+ほとんどの関数は、入力文字列を左から右へと扱います。
+いくつかの関数は、その名前に``-right''が付き、右から左へと
+扱うものがあります。
+@c COMMON
 
 @end table
 
