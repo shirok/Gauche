@@ -548,10 +548,12 @@
               (if (= pid 0)
                   (begin
                     (sys-kill (sys-getppid) SIGINT)
+                    (sys-sleep 1) ;; solaris seems to lose SIGHUP without this
                     (sys-kill (sys-getppid) SIGHUP)
                     (sys-exit 0))
                   (begin
                     (let loop ()
+                      (sys-sleep 1)
                       (unless sig (loop)))
                     (set-signal-handler! SIGINT #f)
                     (sys-sigmask SIG_UNBLOCK mask1)
