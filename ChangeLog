@@ -1,6 +1,7 @@
 2001-03-14  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.2
+	* COPYING: clearify the copyright and distributing condition.
         * src/class.c, src/moplib.stub: added some OO stuff.  not quite
 	  working.
 	* src/hash.c, src/extlib.stub: added Scm_HashTableKeys and
