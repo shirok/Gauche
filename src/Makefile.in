@@ -6,6 +6,7 @@ CFLAGS = -g -O2 -I. -I../gc -I../gc/include @SHLIB_SO_CFLAGS@
 #CFLAGS = -O2 -I. -I../gc -I../gc/include
 LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 AR = ar
+RANLIB = @RANLIB@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -84,9 +85,10 @@ moplib.c : moplib.stub genstub
 libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) x $(GCLIB)
 	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
+	$(RANLIB) libgauche.a
 
-libgauche.@SHLIB_SO_SUFFIX@ : $(OBJS) $(GCLIB)
-	$(CC) @SHLIB_SO_LDFLAGS@ libgauche.@SHLIB_SO_SUFFIX@ $(OBJS) `$(AR) t $(GCLIB)` $(LIBS)
+libgauche.@SHLIB_DYLIB_SUFFIX@ : $(OBJS) $(GCLIB)
+	$(CC) @SHLIB_DYLIB_LDFLAGS@ libgauche.@SHLIB_DYLIB_SUFFIX@ $(OBJS) `$(AR) t $(GCLIB) | sed '/__.SYMDEF/d'` $(LIBS)
 
 gauche/arch.h : Makefile
 	@rm -f gauche/arch.h
