@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: interactive.scm,v 1.12 2003-09-13 07:45:17 shirok Exp $
+;;;  $Id: interactive.scm,v 1.13 2003-12-09 19:45:47 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
@@ -139,5 +139,10 @@
 ;; Autoload module reloader
 (autoload gauche.reload reload reload-modified-modules
                         module-reload-rules reload-verbose)
+
+;; For convenience
+(let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
+  (when (sys-access dotfile |F_OK|)
+    (load dotfile :environment (find-module 'user))))
 
 (provide "gauche/interactive")

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.209 2003-12-08 08:38:31 shirok Exp $
+;;; $Id: extlib.stub,v 1.210 2003-12-09 19:45:48 shirok Exp $
 ;;;
 
 "
@@ -933,6 +933,9 @@
                               &optional import-from)
   "ScmSymbol *from = SCM_SYMBOLP(import_from)? SCM_SYMBOL(import_from) : NULL;
    SCM_RETURN(Scm_MakeAutoload(sym, path, from));")
+
+(define-cproc %autoload (mod::<module> file-or-module entries)
+  (return <void> "Scm_DefineAutoload"))
 
 (define-cproc undefined ()
   "  SCM_RETURN(SCM_UNDEFINED);")

@@ -32,6 +32,7 @@ if [ "$tgz" = "yes" ]; then
   (cd gc; autoconf)
   ./configure --enable-threads=pthreads -C || exit 1
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done) || exit 1
+  (cd src; make autoloads.c) || exit 1
   (cd ext/charconv/; make GOSH=gosh eucj2ucs.c) || exit 1
   (cd ext/charconv/; make GOSH=gosh guess_tab.c) || exit 1
   (cd ext/charconv/data; make GOSH=gosh) || exit 1

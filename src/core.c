@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.51 2003-07-15 11:10:31 shirok Exp $
+ *  $Id: core.c,v 1.52 2003-12-09 19:45:48 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -72,6 +72,7 @@ extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
 extern void Scm__InitVM(void);
 extern void Scm__InitRepl(void);
+extern void Scm__InitAutoloads(void);
 
 extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
@@ -117,7 +118,12 @@ void Scm_Init(void)
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
     Scm_Init_moplib(Scm_GaucheModule());
+
+    Scm_SelectModule(Scm_GaucheModule());
+    Scm__InitAutoloads();
+
     Scm_SelectModule(Scm_UserModule());
+
 #ifdef GAUCHE_USE_PTHREADS
     /* a trick to make sure the gc thread object is linked */
     ptr_pthread_create = (int (*)(void))GC_pthread_create;

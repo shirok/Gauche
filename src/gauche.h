@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.356 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: gauche.h,v 1.357 2003-12-09 19:45:48 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -354,6 +354,7 @@ typedef struct ScmRegexpRec    ScmRegexp;
 typedef struct ScmRegMatchRec  ScmRegMatch;
 typedef struct ScmErrorRec     ScmError;
 typedef struct ScmWriteContextRec ScmWriteContext;
+typedef struct ScmAutoloadRec  ScmAutoload;
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -390,6 +391,8 @@ SCM_EXTERN ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2,
 
 SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
 					   ScmProcedure *proc);
+SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
+                                        ScmAutoload *al);
 
 SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
@@ -2348,7 +2351,7 @@ SCM_EXTERN ScmObj Scm_Require(ScmObj feature);
 SCM_EXTERN ScmObj Scm_Provide(ScmObj feature);
 SCM_EXTERN int    Scm_ProvidedP(ScmObj feature);
 
-typedef struct ScmAutoloadRec {
+struct ScmAutoloadRec {
     SCM_HEADER;
     ScmSymbol *name;            /* variable to be autoloaded */
     ScmModule *module;          /* where the binding should be inserted.
@@ -2370,7 +2373,7 @@ typedef struct ScmAutoloadRec {
     ScmInternalMutex mutex;     /* mutex to resolve this autoload */
     ScmInternalCond cv;         /* ... and condition variable. */
     ScmVM *locker;              /* The thread that is resolving the autoload.*/
-} ScmAutoload;
+};
 
 SCM_CLASS_DECL(Scm_AutoloadClass);
 #define SCM_CLASS_AUTOLOAD      (&Scm_AutoloadClass)
@@ -2379,6 +2382,8 @@ SCM_CLASS_DECL(Scm_AutoloadClass);
 
 SCM_EXTERN ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path,
 				   ScmSymbol *import_from);
+SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
+                                     ScmObj list);
 SCM_EXTERN ScmObj Scm_LoadAutoload(ScmAutoload *autoload);
 
 /*---------------------------------------------------

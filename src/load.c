@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.78 2003-11-27 17:10:41 shirok Exp $
+ *  $Id: load.c,v 1.79 2003-12-09 19:45:48 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -79,6 +79,7 @@ static struct {
 static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
+static ScmObj key_macro              = SCM_UNBOUND;
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -853,6 +854,43 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name,
     return SCM_OBJ(adata);
 }
 
+void Scm_DefineAutoload(ScmModule *where,
+                        ScmObj file_or_module,
+                        ScmObj list)
+{
+    ScmString *path = NULL;
+    ScmSymbol *import_from = NULL;
+    ScmObj ep;
+
+    if (SCM_STRINGP(file_or_module)) {
+        path = SCM_STRING(file_or_module);
+    } else if (SCM_SYMBOLP(file_or_module)) {
+        import_from = SCM_SYMBOL(file_or_module);
+        path = SCM_STRING(Scm_ModuleNameToPath(import_from));
+    } else {
+        Scm_Error("autoload: string or symbol required, but got %S",
+                  file_or_module);
+    }
+    SCM_FOR_EACH(ep, list) {
+        ScmObj entry = SCM_CAR(ep);
+        if (SCM_SYMBOLP(entry)) {
+            Scm_Define(where, SCM_SYMBOL(entry),
+                       Scm_MakeAutoload(SCM_SYMBOL(entry), path, import_from));
+        } else if (SCM_PAIRP(entry)
+                   && SCM_EQ(key_macro, SCM_CAR(entry))
+                   && SCM_PAIRP(SCM_CDR(entry))
+                   && SCM_SYMBOLP(SCM_CADR(entry))) {
+            ScmSymbol *sym = SCM_SYMBOL(SCM_CADR(entry));
+            ScmObj autoload = Scm_MakeAutoload(sym, path, import_from);
+            Scm_Define(where, sym,
+                       Scm_MakeMacroAutoload(sym, SCM_AUTOLOAD(autoload)));
+        } else {
+            Scm_Error("autoload: bad autoload symbol entry: %S", entry);
+        }
+    }
+}
+
+
 ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 {
     int error = FALSE;
@@ -968,6 +1006,7 @@ void Scm__InitLoad(void)
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
     key_environment = SCM_MAKE_KEYWORD("environment");
+    key_macro = SCM_MAKE_KEYWORD("macro");
     
     SCM_DEFINE(m, "load-from-port", SCM_OBJ(&load_from_port_STUB));
     SCM_DEFINE(m, "load", SCM_OBJ(&load_STUB));
