@@ -14,6 +14,7 @@ dnl Checks for libraries.
 AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
 AC_CHECK_LIB(dl, dlopen)
 AC_CHECK_FUNCS(trunc rint)
+AC_CHECK_FUNCS(symlink)
 
 dnl Checks for header files.
 AC_HEADER_STDC
