@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.254 2002-05-15 11:17:52 shirok Exp $
+ *  $Id: gauche.h,v 1.255 2002-05-16 09:53:53 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1979,6 +1979,25 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
  */
 
 /*
+ * Scheme condition variable.
+ */
+typedef struct ScmConditionVariableRec {
+    SCM_HEADER;
+    ScmInternalCond cv;
+    ScmObj name;
+    ScmObj specific;
+} ScmConditionVariable;
+
+SCM_CLASS_DECL(Scm_ConditionVariableClass);
+#define SCM_CLASS_CONDITION_VARIABLE  (&Scm_ConditionVariableClass)
+#define SCM_CONDITION_VARIABLE(obj)   ((ScmConditionVariable*)obj)
+#define SCM_CONDITION_VARIABLE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CONDITION_VARIABLE)
+
+ScmObj Scm_MakeConditionVariable(ScmObj name);
+ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond);
+ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond);
+
+/*
  * Scheme mutex.
  *    locked=FALSE  owner=dontcare       unlocked/not-abandoned
  *    locked=TRUE   owner=NULL           locked/not-owned
@@ -2002,26 +2021,7 @@ SCM_CLASS_DECL(Scm_MutexClass);
 
 ScmObj Scm_MakeMutex(ScmObj name);
 ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner);
-ScmObj Scm_MutexUnlock(ScmMutex *mutex);
-
-/*
- * Scheme condition variable.
- */
-typedef struct ScmConditionVariableRec {
-    SCM_HEADER;
-    ScmInternalCond cv;
-    ScmObj name;
-    ScmObj specific;
-} ScmConditionVariable;
-
-SCM_CLASS_DECL(Scm_ConditionVariableClass);
-#define SCM_CLASS_CONDITION_VARIABLE  (&Scm_ConditionVariableClass)
-#define SCM_CONDITION_VARIABLE(obj)   ((ScmConditionVariable*)obj)
-#define SCM_CONDITION_VARIABLE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CONDITION_VARIABLE)
-
-ScmObj Scm_MakeConditionVariable(ScmObj name);
-ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond);
-ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond);
+ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout);
 
 /*
  * Scheme reader/writer lock.

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.6 2002-05-15 11:45:56 shirok Exp $
+ *  $Id: mutex.c,v 1.7 2002-05-16 09:53:53 shirok Exp $
  */
 
 #include <math.h>
@@ -133,25 +133,24 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 {
 #ifdef GAUCHE_USE_PTHREAD
     struct timespec ts, *pts;
-    ScmObj r;
-    int intr = FALSE;
+    ScmObj r = SCM_TRUE;
+    int intr = FALSE, abandoned = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-lock!: failed to lock");
     }
-    if (pts) {
-        r = SCM_TRUE;
-        while (mutex->locked) {
+    while (mutex->locked) {
+        if (mutex->owner && mutex->owner->state == SCM_VM_TERMINATED) {
+            abandoned = TRUE;
+        }
+        if (pts) {
             int tr = pthread_cond_timedwait(&(mutex->cv), &(mutex->mutex), pts);
             if (tr == ETIMEDOUT) { r = SCM_FALSE; break; }
             else if (tr == EINTR) { intr = TRUE; break; }
-        }
-    } else {
-        while (mutex->locked) {
+        } else {
             pthread_cond_wait(&(mutex->cv), &(mutex->mutex));
         }
-        r = SCM_TRUE;
     }
     if (SCM_TRUEP(r)) {
         mutex->locked = TRUE;
@@ -159,25 +158,42 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
     if (intr) Scm_SigCheck(Scm_VM());
+    /*TODO: need to throw abandoned mutex exception */
+    if (abandoned) Scm_Error("abandoned mutex exception");
     return r;
 #else  /* !GAUCHE_USE_PTHREAD */
     return SCM_TRUE;            /* dummy */
 #endif /* !GAUCHE_USE_PTHREAD */
 }
 
-ScmObj Scm_MutexUnlock(ScmMutex *mutex)
+ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout)
 {
+    ScmObj r = SCM_TRUE;
 #ifdef GAUCHE_USE_PTHREAD
+    struct timespec ts, *pts;
     ScmVM *vm = Scm_VM();
+    int intr = FALSE;
+    
+    pts = Scm_GetTimeSpec(timeout, &ts);
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-unlock!: failed to lock");
     }
     mutex->locked = FALSE;
     mutex->owner = NULL;
     pthread_cond_signal(&(mutex->cv));
+    if (cv) {
+        if (pts) {
+            int tr = pthread_cond_timedwait(&(cv->cv), &(mutex->mutex), pts);
+            if (tr == ETIMEDOUT)  { r = SCM_FALSE; }
+            else if (tr == EINTR) { intr = TRUE; }
+        } else {
+            pthread_cond_wait(&(cv->cv), &(mutex->mutex));
+        }
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
+    if (intr) Scm_SigCheck(Scm_VM());
 #endif /* GAUCHE_USE_PTHREAD */
-    return SCM_OBJ(mutex);
+    return r;
 }
 
 /*=====================================================

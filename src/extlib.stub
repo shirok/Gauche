@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.150 2002-05-15 11:17:52 shirok Exp $
+;;; $Id: extlib.stub,v 1.151 2002-05-16 09:53:53 shirok Exp $
 ;;;
 
 "
@@ -1274,9 +1274,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   else if (!SCM_FALSEP(thread)) Scm_Error(\"thread or #f required, but got %S\", thread);
   SCM_RETURN(Scm_MutexLock(mutex, timeout, owner));")
   
-(define-cproc mutex-unlock! (mutex)
+(define-cproc mutex-unlock! (mutex &optional (cv #f) (timeout #f))
   (assert (mutex? mutex))
-  "SCM_RETURN(Scm_MutexUnlock(mutex));")
+  "ScmConditionVariable *cond = NULL;
+  if (SCM_CONDITION_VARIABLE_P(cv)) cond = SCM_CONDITION_VARIABLE(cv);
+  else if (!SCM_FALSEP(cv)) Scm_Error(\"condition variable or #f required, but got %S\", cv);
+  SCM_RETURN(Scm_MutexUnlock(mutex, cond, timeout));")
 
 (define-cproc mutex-specific (mutex)
   (assert (mutex? mutex))

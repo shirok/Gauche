@@ -1,3 +1,8 @@
+2002-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/mutex.c : fixed mutex-unlock! to handle timeout and condition
+	  variable.
+
 2002-05-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/mutex.c : fixed mutex-lock! to handle timeout and owner-thread
