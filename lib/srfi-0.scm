@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.13 2002-06-26 11:38:39 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.14 2002-07-17 10:39:23 shirok Exp $
 ;;;
 
 (define-module srfi-0
@@ -11,7 +11,7 @@
 ;;; The following features are supported in all Gauche versions.
 ;;;
 ;;;   srfi-0, srfi-1, srfi-2, srfi-4, srfi-6, srfi-8,
-;;;   srfi-9, srfi-11, srfi-13, srfi-14, srfi-17, srfi-19,
+;;;   srfi-9, srfi-11, srfi-13, srfi-14, srfi-17, srfi-18, srfi-19,
 ;;;   srfi-22, srfi-23, srfi-25, srfi-27, srfi-28,  gauche
 ;;;
 
@@ -73,6 +73,8 @@
      (begin (use srfi-13) body ...))
     ((cond-expand (srfi-14 body ...) more-clauses ...)
      (begin (use srfi-14) body ...))
+    ((cond-expand (srfi-18 body ...) more-clauses ...)
+     (begin (use gauche.threads) body ...))
     ((cond-expand (srfi-19 body ...) more-clauses ...)
      (begin (use srfi-19) body ...))
     ((cond-expand (srfi-17 body ...) more-clauses ...)
