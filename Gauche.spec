@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.34 2004-05-23 04:00:22 shirok Exp $
+# $Id: Gauche.spec,v 1.35 2004-08-02 13:41:22 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -12,7 +12,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.8
+%define version  0.8.1
 %define encoding eucjp
 %define threads  pthreads
 
@@ -88,8 +88,8 @@ rm -rf ${RPM_BUILD_ROOT}/usr/lib/gauche
 rm -rf ${RPM_BUILD_ROOT}/usr/share/gauche
 rm -rf ${RPM_BUILD_ROOT}/usr/share/man/man1
 mkdir -p ${RPM_BUILD_ROOT}/usr
-make prefix=${RPM_BUILD_ROOT}/usr install-pkg
-make prefix=${RPM_BUILD_ROOT}/usr install-doc
+make DESTDIR=${RPM_BUILD_ROOT}/ install-pkg
+make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 
 %clean
 
@@ -117,13 +117,16 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 #/usr/lib/libgauche.a
 /usr/lib/libgauche.so
 /usr/lib/libgauche.so.0
-/usr/lib/libgauche.so.0.0.0
+/usr/lib/libgauche.so.%{version}
 /usr/lib/gauche/site/
 
 %files gdbm-%{encoding} -f rpmfiles-gdbm.txt
 %defattr(-,root,root)
 
 %changelog
+* Tue Aug  2 2004 Shiro Kawai
+- Gauche release 0.8.1.
+
 * Tue May 22 2004 Shiro Kawai
 - Gauche release 0.8.
 

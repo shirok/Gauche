@@ -1,6 +1,15 @@
+2004-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.8.1
+
+	* ext/net/net.h : moved to ext/net/gauche/net.h, for consistency.
+	* ext/net/*.c : adapted to the above change
+	* ext/Makefile.ext.in : fixed header installation.
+
 2004-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac : disable using -rpath if --with-rpath=no is given.
+	  disable using makeverslink on cygwin.
 
 	* Makefile.in (install-pkg): make install under lib/ and ext/ before
 	  src/.	 Since "make install" under lib and ext requires gosh, we want

@@ -8813,6 +8813,22 @@ condition, as in the follwing example (it is taken from SRFI-18 document):
 @end example
 @end defun
 
+@defun with-locking-mutex mutex thunk
+@c EN
+Calls @var{thunk} with locking a mutex @var{mutex}.  This is defined as
+follows.
+@c JP
+@var{mutex}をロックして@var{thunk}を呼びます。次のように実装されています。
+@c COMMON
+@example
+(define (with-locking-mutex mutex thunk)
+  (dynamic-wind
+   (lambda () (mutex-lock! mutex))
+   thunk
+   (lambda () (mutex-unlock! mutex))))
+@end example
+@end defun
+
 @deftp {Builtin Class} <condition-variable>
 @clindex condition-variable
 @c EN
