@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.32 2002-09-18 05:55:10 shirok Exp $
+ *  $Id: proc.c,v 1.33 2002-09-19 05:22:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -298,12 +298,26 @@ ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter, int lock)
     return SCM_OBJ(proc);
 }
 
-ScmObj Scm_Setter(ScmProcedure *proc)
+static ScmObj object_setter(ScmObj *args, int nargs, void *data)
 {
-    if (SCM_FALSEP(proc->setter)) {
-        Scm_Error("no setter defined for procedure %S", proc);
+    SCM_ASSERT(nargs == 1);
+    return Scm_VMApply(SCM_OBJ(&Scm_GenericObjectSetter),
+                       Scm_Cons(SCM_OBJ(data), args[0]));
+}
+
+static SCM_DEFINE_STRING_CONST(object_setter__NAME, "object-setter", 13, 13);
+
+ScmObj Scm_Setter(ScmObj proc)
+{
+    if (SCM_PROCEDUREP(proc)) {
+        /* NB: This used to signal an error if no setter procedure is associated
+           to proc; now it returns #f in such case */
+        return SCM_PROCEDURE(proc)->setter;
+    } else {
+        /* fallback to (setter object-apply) */
+        return Scm_MakeSubr(object_setter, (void*)proc, 0, 1,
+                            SCM_OBJ(&object_setter__NAME));
     }
-    return SCM_OBJ(proc->setter);
 }
 
 /*=================================================================

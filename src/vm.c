@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.177 2002-09-18 05:55:10 shirok Exp $
+ *  $Id: vm.c,v 1.178 2002-09-19 05:22:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1091,10 +1091,7 @@ static void run_loop()
             }
             CASE(SCM_VM_SETTER) {
                 SAVE_REGS();
-                if (!SCM_PROCEDUREP(val0))
-                    VM_ERR(("procedure required, but got %S\n", val0));
-                val0 = Scm_Setter(SCM_PROCEDURE(val0));
-                RESTORE_REGS();
+                val0 = Scm_Setter(val0);
                 vm->numVals = 1;
                 continue;
             }

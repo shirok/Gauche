@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.26 2002-09-10 21:57:14 shirok Exp $
+ *  $Id: class.h,v 1.27 2002-09-19 05:22:51 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -100,6 +100,7 @@ SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 SCM_EXTERN ScmGeneric Scm_GenericObjectApply;
+SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.85 2002-09-10 21:57:14 shirok Exp $
+ *  $Id: class.c,v 1.86 2002-09-19 05:22:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -122,6 +122,7 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectSetter, Scm_InvalidApply, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -1953,6 +1954,11 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericObjectEqualP, "object-equal?");
     GINIT(&Scm_GenericObjectCompare, "object-compare");
     GINIT(&Scm_GenericObjectApply, "object-apply");
+    GINIT(&Scm_GenericObjectSetter, "setter of object-apply");
+
+    Scm_SetterSet(SCM_PROCEDURE(&Scm_GenericObjectApply),
+                  SCM_PROCEDURE(&Scm_GenericObjectSetter),
+                  TRUE);
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);
