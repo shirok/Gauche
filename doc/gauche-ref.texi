@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.153 2002-02-12 07:43:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.154 2002-02-13 06:15:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7978,6 +7978,10 @@ symbols, according to the information of the mode word of @var{stat}.
 @item @code{socket} @tab a socket
 @end multitable
 If the file type is none of the above, @code{#f} is returned.
+
+Note: Some operating systems don't have the @code{socket} file type
+and returns @code{fifo} for socket files.   Portable programs should
+check both possibilities to see if the given file is a socket.
 @end defun
 
 @defun sys-access pathname amode
@@ -11143,6 +11147,14 @@ Some examples:
 (apropos 'char 'srfi-14)
 @end example
 @end defmac
+
+@deffn {Generic Function} describe obj
+@deffnx {Generic Function} d obj
+Prints the detail information about a Scheme object @var{obj}.
+The default method shows @var{obj}'s class, and if it has
+any slots, the list of slot names and their values.
+You can specialize this method for customized display.
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node User-level logging, Networking, Interactive session, Library modules
