@@ -1,10 +1,10 @@
 SCM = snow
 CC = @CC@
-LIBS = @LIBS@
+LIBS = @LIBS@ -lm
 DEFS = @DEFS@
 CFLAGS = -DSCM_INSTALL_DIR=\"$(SCM_INSTALL_DIR)\" $(DEFS) -g -O2 -I. -I../gc -I../gc/include
 #CFLAGS = -O2 -I. -I../gc -I../gc/include
-LDFLAGS = -lm
+LDFLAGS = -rdynamic		# TODO: need to check by configure
 AR = ar
 
 prefix = @prefix@
@@ -46,7 +46,7 @@ HDRS = gauche.h
 all : gosh
 
 gosh : libgauche.a main.o
-	$(CC) $(CFLAGS) -o gosh main.o -L. -lgauche $(LDFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o gosh main.o -L. -lgauche $(LIBS)
 
 $(OBJS) main.o : $(HDRS)
 
