@@ -1,3 +1,15 @@
+2001-03-14  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.2
+        * src/class.c, src/moplib.stub: added some OO stuff.  not quite
+	  working.
+	* src/hash.c, src/extlib.stub: added Scm_HashTableKeys and
+	  Scm_HashTableValues.  hash-table-keys and hash-table-values
+	  in Scheme.
+	* src/main.c: expose argv[0] to Scheme as *program-name*.
+	* configure.in, src/system.c, src/syslib.stub: include time.h and
+	  sys/time.h, depending on the system configuration.
+
 2001-03-13  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.1
