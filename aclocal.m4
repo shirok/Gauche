@@ -1,5 +1,5 @@
 dnl Gauche-specific aucotonf macros.
-dnl $Id: aclocal.m4,v 1.22 2003-10-05 02:41:31 shirok Exp $
+dnl $Id: aclocal.m4,v 1.23 2003-10-05 03:30:11 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -67,6 +67,8 @@ ac_gauche_DYLIBEXT=${DYLIBEXT+set}
 if test -z "$ac_gauche_DYLIBEXT"; then
   DYLIBEXT="`$GAUCHE_CONFIG --dylib-suffix`"
 fi
+AC_SUBST(SOEXT)
+AC_SUBST(DYLIBEXT)
 ])
 
 dnl AC_GAUCHE_FLAGS
