@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.107 2003-09-07 12:37:11 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.108 2003-09-11 19:51:13 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -125,9 +125,7 @@
     (and (pair? v) (eq? (car v) :macro) (symbol? (cadr v))))
   (receive (path module)
       (cond ((string? file) (values file #f))
-            ((symbol? file)
-             (values (string-join (%string-split-by-char (symbol->string file) #\.) "/")
-                     file))
+            ((symbol? file) (values (module-name->path file) file))
             (else (bad)))
     `(begin ,@(map (lambda (v)
                      (cond ((symbol? v)
