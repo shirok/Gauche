@@ -1,3 +1,8 @@
+2004-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uri.scm (uri-decompose-authority): fixed regexp to exclude
+	  the following '@' from userinfo.
+
 2004-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/char_euc_jp.h (Scm_CharBackwardEUC): made the algorithm

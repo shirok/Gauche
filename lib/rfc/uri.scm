@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uri.scm,v 1.15 2003-07-24 07:57:25 shirok Exp $
+;;;  $Id: uri.scm,v 1.16 2004-01-13 10:20:32 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -82,8 +82,8 @@
 
 (define (uri-decompose-authority authority)
   (rxmatch-if
-      (#/^([^@]*@)?([^:]*)(:(\d*))?$/ authority)
-      (#f userinfo host #f port)
+      (#/^((.*?)@)?([^:]*)(:(\d*))?$/ authority)
+      (#f #f userinfo host #f port)
     (values userinfo host port)
     (values #f #f #f)))
 
