@@ -4,9 +4,19 @@
 
 (use gauche.test)
 (test-start "hmac")
+
+;; kludge for "in-place" test
+(add-load-path ".")
+(load "md5")
+(import rfc.md5)
+(load "sha1")
+(import rfc.sha1)
+
+(add-load-path "../uvector")
+(load "uvector")
+(import gauche.uvector)
+
 (use rfc.hmac)
-(use rfc.md5)
-(use rfc.sha1)
 
 (define (hexify string)
   (with-string-io string

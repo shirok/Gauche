@@ -4,7 +4,10 @@
 
 (use gauche.test)
 (test-start "md5")
-(use rfc.md5)
+
+(add-load-path ".")
+(load "md5")
+(import rfc.md5)
 (use util.digest)
 
 (define (hexify string)
