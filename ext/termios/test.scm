@@ -125,6 +125,7 @@
                   (slot-set! iterm 'cc cc))
                 (lambda ()
                   (u8vector-set! cc ss test-char)
+                  (slot-set! iterm 'cc cc)
                   (sys-tcsetattr iport TCSANOW iterm)
                   (let ((char (u8vector-ref
                                    (slot-ref (sys-tcgetattr iport) 'cc)

@@ -7495,6 +7495,28 @@ POSIX termios(7) の構造体です。
 @end defivar
 @defivar {<sys-termios>}  lflag
 @end defivar
+@defivar {<sys-termios>}  cc
+@end defivar
+
+@c EN
+The slots @code{iflag}, @code{oflag}, @code{cflag} and @code{lflag}
+contains non-negative integers representing bitmasks.
+
+The slot @code{cc} contains a @emph{copy} of @code{c_cc} array
+of @code{struct termios}, as an u8vector (see @ref{Uniform vectors}
+for the details about u8vector).
+Since @code{cc} slot is a copy of the internal structure, you have
+to @code{set!} an u8vector to the slot explicitly to make
+changes to the @code{c_cc} array.
+@c JP
+@code{iflag}、@code{oflag}、@code{cflag}、@code{lflag}の各スロットは、
+対応するビットマスクを非負の整数で表現した値を保持しています。
+
+また、@code{cc}スロットは@code{struct termios}の@code{c_cc}配列の
+@emph{コピー}を返します。
+@code{c_cc}配列の値を変えたい場合は、変更したu8vectorを明示的に
+@code{cc}スロットに@code{set!}して下さい。
+@c COMMON
 
 @end deftp
 

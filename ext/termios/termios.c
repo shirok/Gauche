@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.13 2004-09-12 02:00:26 shirok Exp $
+ *  $Id: termios.c,v 1.14 2004-09-12 10:25:59 shirok Exp $
  */
 
 #include <string.h>
@@ -55,7 +55,6 @@ static ScmObj termios_allocate(ScmClass *klass, ScmObj initargs)
     ScmSysTermios *t = SCM_NEW(ScmSysTermios);
     SCM_SET_CLASS(t, SCM_CLASS_SYS_TERMIOS);
     memset(&t->term, 0, sizeof(t->term));
-    t->cc = Scm_MakeU8Vector(NCCS, 0);
     return SCM_OBJ(t);
 }
 
@@ -76,7 +75,7 @@ TERMIOS_GET_N_SET(c_lflag)
 
 static ScmObj termios_c_cc_get(ScmSysTermios* t)
 {
-    return t->cc;
+    return Scm_MakeU8VectorFromArray(NCCS, (const unsigned char*)t->term.c_cc);
 }
 
 static void termios_c_cc_set(ScmSysTermios* t, ScmObj val)
@@ -88,7 +87,7 @@ static void termios_c_cc_set(ScmSysTermios* t, ScmObj val)
         Scm_Error("size of cc must be %u, but got %u",
                   NCCS, SCM_U8VECTOR_SIZE(val));
     }
-    t->cc = val;
+    memcpy(t->term.c_cc, SCM_U8VECTOR_ELEMENTS(val), NCCS);
 }
 
 static ScmClassStaticSlotSpec termios_slots[] = {
@@ -103,29 +102,6 @@ static ScmClassStaticSlotSpec termios_slots[] = {
 ScmObj Scm_MakeSysTermios(void)
 {
     return termios_allocate(NULL, SCM_NIL);
-}
-
-/*
- * sync functions for cc
- */
-
-void termios_copyin_cc(ScmSysTermios* t)
-{
-    int i;
-    for (i = 0; i < NCCS; i++) {
-        Scm_U8VectorSet(SCM_U8VECTOR(t->cc), i,
-                        Scm_MakeIntegerFromUI(t->term.c_cc[i]),
-                        SCM_UVECTOR_CLAMP_NONE);
-    }
-}
-
-void termios_copyout_cc(ScmSysTermios* t)
-{
-    int i;
-    for (i = 0; i < NCCS; i++)
-        t->term.c_cc[i] =
-          Scm_GetUInteger(
-            Scm_U8VectorRef(SCM_U8VECTOR(t->cc), i, SCM_UNBOUND));
 }
 
 /*

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.h,v 1.5 2004-09-12 02:00:49 shirok Exp $
+ *  $Id: termios.h,v 1.6 2004-09-12 10:25:59 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -53,16 +53,9 @@
 #endif
 #include <unistd.h>
 
-/*
- * NB: ScmSysTermiosRec doubly holds c_cc values, ie term.c_cc and cc.
- * All functions other than syscall interfaces should use cc, not
- * term.c_cc.  When it's necessary to use term.c_cc, sync cc and term.c_cc
- * by using termios_copyin_cc() and termios_copyout_cc().
- */
 typedef struct ScmSysTermiosRec {
     SCM_HEADER;
     struct termios term;
-    ScmObj cc;
 } ScmSysTermios;
 
 SCM_CLASS_DECL(Scm_SysTermiosClass);
@@ -71,9 +64,6 @@ SCM_CLASS_DECL(Scm_SysTermiosClass);
 #define SCM_SYS_TERMIOS_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_SYS_TERMIOS))
 
 ScmObj Scm_MakeSysTermios(void);
-
-void termios_copyin_cc(ScmSysTermios* t);
-void termios_copyout_cc(ScmSysTermios* t);
 
 #ifdef HAVE_OPENPTY
 ScmObj Scm_Openpty(ScmObj slaveterm);

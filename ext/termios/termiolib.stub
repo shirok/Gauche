@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: termiolib.stub,v 1.11 2004-09-12 02:00:26 shirok Exp $
+;;; $Id: termiolib.stub,v 1.12 2004-09-12 10:25:59 shirok Exp $
 ;;;
 
 "#include \"gauche/termios.h\""
@@ -76,12 +76,10 @@
   if (tcgetattr(fd, &term->term) < 0) {
     Scm_SysError(\"tcgetattr failed\");
   }
-  termios_copyin_cc(term);
   SCM_RETURN(SCM_OBJ(term));")
 
 (define-cproc sys-tcsetattr (port-or-fd option::<fixnum> term::<sys-termios>)
   "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
-  termios_copyout_cc(term);
   if (tcsetattr(fd, option, &term->term) < 0) {
     Scm_SysError(\"tcsetattr failed\");
   }
@@ -127,32 +125,24 @@
 
 (define-cproc sys-cfgetispeed (term::<sys-termios>)
   "  speed_t s;
-  termios_copyout_cc(term);
   s = cfgetispeed(&term->term);
-  termios_copyin_cc(term);
   SCM_RETURN(Scm_MakeInteger(s));")
 
 (define-cproc sys-cfsetispeed (term::<sys-termios> speed::<int>)
-  "  termios_copyout_cc(term);
-  if (cfsetispeed(&term->term, speed) < 0) {
+  "if (cfsetispeed(&term->term, speed) < 0) {
      Scm_SysError(\"cfsetispeed\");
   }
-  termios_copyin_cc(term);
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc sys-cfgetospeed (term::<sys-termios>)
   "  speed_t s;
-  termios_copyout_cc(term);
   s = cfgetospeed(&term->term);
-  termios_copyin_cc(term);
   SCM_RETURN(Scm_MakeInteger(s));")
 
 (define-cproc sys-cfsetospeed (term::<sys-termios> speed::<int>)
-  "  termios_copyout_cc(term);
-  if (cfsetospeed(&term->term, speed) < 0) {
+  "if (cfsetospeed(&term->term, speed) < 0) {
      Scm_SysError(\"cfsetispeed\");
   }
-  termios_copyin_cc(term);
   SCM_RETURN(SCM_UNDEFINED);")
 
 ;; pty interface
