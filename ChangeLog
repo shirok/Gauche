@@ -1,3 +1,11 @@
+2002-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (sig_setup): enable SIGCHLD and SIGWINCH to be handled
+	  in Scheme.  They are ignored by default, but a handler can be set.
+	* src/signal.c, src/extlib.stub : added get-signal-handlers
+	* lib/gauche/signal.scm : made with-signal-handlers work with the
+	  new signal handling mechanism
+
 2002-07-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c, src/gauche.h, src/vm.c, src/extlib.stub: revised

@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.238 2002-07-08 01:37:21 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.239 2002-07-09 05:02:38 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11322,12 +11322,7 @@ There's no Scheme equivalence for @code{raise()}, but you can use
 @subsubsection Handling signals
 @c NODE シグナルの処理
 
-You can set one or more signal handlers in Scheme,
-using the following @code{with-signal-handlers} macro.
-The list of "active" handlers are considered as a part of
-dynamic environment; i.e. if you exit from its dynamic scope
-by call/cc the handlers are uninstalled, and if you re-enter there
-the handlers are reinstalled.
+You can set one or more signal handlers in Scheme.
 
 When you're using the @code{gosh} interpreter, all the signals
 except @code{SIGABRT}, @code{SIGILL}, @code{SIGKILL}, @code{SIGCONT},
@@ -11338,10 +11333,14 @@ the default handler is called, which raises an error (unhandled signal).
 If you're using Gauche embedded in some other application,
 it may redefine the set of signals handleable by Gauche.
 
-@emph{Note:} Sometimes it is useful to catch @code{SIGCHLD}.
-Currently it interferes the internal mechanism of Gauche
-so it is ignored.  It is purely an implementation restriction
-that should be removed later.
+@defun set-signal-handler! signum handler
+@end defun
+
+@defun get-signal-handler signum
+@end defun
+
+@defun get-signal-handlers
+@end defun
 
 @defmac with-signal-handlers (handler-clause @dots{}) thunk
 Adds signal handlers specified in @var{handler-clause}s, then

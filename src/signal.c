@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.16 2002-07-09 03:45:48 shirok Exp $
+ *  $Id: signal.c,v 1.17 2002-07-09 05:02:38 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -478,6 +478,11 @@ void Scm_SetMasterSigmask(sigset_t *set)
     sigHandlers.masterSigset = *set;
     Scm_VM()->sigMask = sigHandlers.masterSigset;
 }
+
+/*
+ * set signal mask
+ */
+
 
 /*
  * initialize
