@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.10 2001-03-04 09:17:21 shiro Exp $
+ *  $Id: write.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include <stdio.h>
@@ -122,7 +122,7 @@ static int write_internal(ScmObj obj, ScmPort *out, int mode,
         } else {
             ScmClass *c = Scm_ClassOf(obj);
             if (c->print) nc = c->print(obj, out, mode);
-            else          nc = Scm_Printf(out, "#<%s %p>", c->name, obj);
+            else          nc = Scm_Printf(out, "#<%S %p>", c->name, obj);
         }
     }
     return nc;

@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.13 2001-03-17 08:23:20 shiro Exp $
+ *  $Id: class.c,v 1.14 2001-03-17 09:17:50 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/macro.h"
 #include "gauche/class.h"
 
 /*
@@ -35,24 +36,35 @@ ScmClass *Scm_ObjectCPL[] = {
     SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL
 };
 
-SCM_DEFCLASS(Scm_TopClass,     "<top>",     NULL, NULL); /* will be patched */
-SCM_DEFCLASS(Scm_BoolClass,    "<bool>",    NULL, SCM_CLASS_DEFAULT_CPL);
-SCM_DEFCLASS(Scm_CharClass,    "<char>",    NULL, SCM_CLASS_DEFAULT_CPL);
-SCM_DEFCLASS(Scm_UnknownClass, "<unknown>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_TopClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_BoolClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UnknownClass, NULL);
 
 /* Intercessory classes */
-SCM_DEFCLASS(Scm_CollectionClass, "<collection>", NULL, SCM_CLASS_DEFAULT_CPL);
-SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
-SCM_DEFCLASS(Scm_ObjectClass, "<object>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_CollectionClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SequenceClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_COLLECTION_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ObjectClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 /* Those basic metaobjects will be initialized further in Scm__InitClass */
-SCM_DEFCLASS(Scm_ClassClass, "<class>", class_print, SCM_CLASS_OBJECT_CPL);
-SCM_DEFCLASS(Scm_GenericClass, "<generic>", NULL,  SCM_CLASS_OBJECT_CPL);
-SCM_DEFCLASS(Scm_MethodClass, "<method>", NULL, SCM_CLASS_OBJECT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ClassClass,
+                         class_print, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_GenericClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_MethodClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
 
 /* Internally used classes */
-SCM_DEFCLASS(Scm_ClassAccessorClass, "<class-accessor>", NULL,
-             SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ClassAccessorClass, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -171,7 +183,6 @@ static ScmObj class_allocate(ScmClass *klass, int nslots)
     instance = SCM_NEW2(ScmClass*,
                         sizeof(ScmClass) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
-    instance->name = "(uninitialized)";
     instance->print = class_print;
     instance->equal = NULL;
     instance->compare = NULL;
@@ -181,7 +192,7 @@ static ScmObj class_allocate(ScmClass *klass, int nslots)
     instance->cpa = NULL;
     instance->numInstanceSlots = nslots;
     instance->flags = 0;        /* ?? */
-    instance->sname = SCM_FALSE;
+    instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
     instance->cpl = SCM_NIL;
     instance->directSlots = SCM_NIL;
@@ -227,15 +238,12 @@ ScmClass *Scm_ClassOf(ScmObj obj)
 
 ScmObj Scm_ClassName(ScmClass *klass)
 {
-    if (SCM_FALSEP(klass->sname) && klass->name) {
-        klass->sname = SCM_INTERN(klass->name);
-    }
-    return klass->sname;
+    return klass->name;
 }
 
 static void class_name_set(ScmClass *klass, ScmObj val)
 {
-    klass->sname = val;
+    klass->name = val;
 }
 
 ScmObj Scm_ClassCPL(ScmClass *klass)
@@ -627,7 +635,12 @@ void bootstrap_class(ScmClass *k,
     k->directSlots = k->slots = slots;
 }
 
-
+void Scm_InitBuiltinClass(ScmClass *klass, const char *name, ScmModule *mod)
+{
+    ScmObj s = SCM_INTERN(name);
+    klass->name = s;
+    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(klass));
+}
 
 void Scm__InitClass(void)
 {
@@ -642,35 +655,83 @@ void Scm__InitClass(void)
     bootstrap_class(&Scm_ClassClass, class_slots, class_allocate);
     bootstrap_class(&Scm_GenericClass, generic_slots, generic_allocate);
     bootstrap_class(&Scm_MethodClass, method_slots, method_allocate);
+
+#define CINIT(cl, nam) \
+    Scm_InitBuiltinClass(cl, nam, mod)
     
-    SCM_DEFINE(mod, "<top>",      SCM_OBJ(SCM_CLASS_TOP));
-    SCM_DEFINE(mod, "<boolean>",  SCM_OBJ(SCM_CLASS_BOOL));
-    SCM_DEFINE(mod, "<char>",     SCM_OBJ(SCM_CLASS_CHAR));
-    SCM_DEFINE(mod, "<unknown>",  SCM_OBJ(SCM_CLASS_UNKNOWN));
-    SCM_DEFINE(mod, "<object>",   SCM_OBJ(SCM_CLASS_OBJECT));
-    SCM_DEFINE(mod, "<class>",    SCM_OBJ(SCM_CLASS_CLASS));
-    SCM_DEFINE(mod, "<generic>",  SCM_OBJ(SCM_CLASS_GENERIC));
-    SCM_DEFINE(mod, "<method>",   SCM_OBJ(SCM_CLASS_METHOD));
-    SCM_DEFINE(mod, "<collection>", SCM_OBJ(SCM_CLASS_COLLECTION));
-    SCM_DEFINE(mod, "<sequence>", SCM_OBJ(SCM_CLASS_SEQUENCE));
-    SCM_DEFINE(mod, "<string>",   SCM_OBJ(SCM_CLASS_STRING));
-    SCM_DEFINE(mod, "<symbol>",   SCM_OBJ(SCM_CLASS_SYMBOL));
-    SCM_DEFINE(mod, "<gloc>",     SCM_OBJ(SCM_CLASS_GLOC));
-    SCM_DEFINE(mod, "<syntax>",   SCM_OBJ(SCM_CLASS_SYNTAX));
-    SCM_DEFINE(mod, "<port>",     SCM_OBJ(SCM_CLASS_PORT));
-    SCM_DEFINE(mod, "<list>",     SCM_OBJ(SCM_CLASS_LIST));
-    SCM_DEFINE(mod, "<pair>",     SCM_OBJ(SCM_CLASS_PAIR));
-    SCM_DEFINE(mod, "<null>",     SCM_OBJ(SCM_CLASS_NULL));
-    SCM_DEFINE(mod, "<vector>",   SCM_OBJ(SCM_CLASS_VECTOR));
-    SCM_DEFINE(mod, "<hash-table>", SCM_OBJ(SCM_CLASS_HASHTABLE));
-    SCM_DEFINE(mod, "<module>",   SCM_OBJ(SCM_CLASS_MODULE));
-    SCM_DEFINE(mod, "<number>",   SCM_OBJ(SCM_CLASS_NUMBER));
-    SCM_DEFINE(mod, "<complex>",  SCM_OBJ(SCM_CLASS_COMPLEX));
-    SCM_DEFINE(mod, "<real>",     SCM_OBJ(SCM_CLASS_REAL));
-    SCM_DEFINE(mod, "<integer>",  SCM_OBJ(SCM_CLASS_INTEGER));
-    SCM_DEFINE(mod, "<procedure>", SCM_OBJ(SCM_CLASS_PROCEDURE));
-    SCM_DEFINE(mod, "<closure>",  SCM_OBJ(SCM_CLASS_CLOSURE));
-    SCM_DEFINE(mod, "<subr>",     SCM_OBJ(SCM_CLASS_SUBR));
-    SCM_DEFINE(mod, "<vm>",       SCM_OBJ(SCM_CLASS_VM));
-    SCM_DEFINE(mod, "<source-info>", SCM_OBJ(SCM_CLASS_SOURCE_INFO));
+    /* class.c */
+    CINIT(SCM_CLASS_TOP,              "<top>");
+    CINIT(SCM_CLASS_BOOL,             "<boolean>");
+    CINIT(SCM_CLASS_CHAR,             "<char>");
+    CINIT(SCM_CLASS_UNKNOWN,          "<unknown>");
+    CINIT(SCM_CLASS_OBJECT,           "<object>");
+    CINIT(SCM_CLASS_CLASS,            "<class>");
+    CINIT(SCM_CLASS_GENERIC,          "<generic>");
+    CINIT(SCM_CLASS_METHOD,           "<method>");
+    CINIT(SCM_CLASS_CLASS_ACCESSOR,   "<class-accessor>");
+    CINIT(SCM_CLASS_COLLECTION,       "<collection>");
+    CINIT(SCM_CLASS_SEQUENCE,         "<sequence>");
+
+    /* compile.c */
+    CINIT(SCM_CLASS_IDENTIFIER,       "<identifier>");
+    CINIT(SCM_CLASS_SOURCE_INFO,      "<source-info>");
+
+    /* error.c */
+    CINIT(SCM_CLASS_EXCEPTION,        "<exception>");
+
+    /* hash.c */
+    CINIT(SCM_CLASS_HASHTABLE,        "<hash-table>");
+
+    /* keyword.c */
+    CINIT(SCM_CLASS_KEYWORD,          "<keyword>");
+
+    /* list.c */
+    CINIT(SCM_CLASS_LIST,             "<list>");
+    CINIT(SCM_CLASS_PAIR,             "<pair>");
+    CINIT(SCM_CLASS_NULL,             "<null>");
+
+    /* macro.c */
+    CINIT(SCM_CLASS_SYNTAX,           "<syntax>");
+    CINIT(SCM_CLASS_SYNTAX_PATTERN,   "<syntax-pattern>");
+    CINIT(SCM_CLASS_SYNTAX_RULES,     "<syntax-rules>");
+
+    /* module.c */
+    CINIT(SCM_CLASS_MODULE,           "<module>");
+
+    /* number.c */
+    CINIT(SCM_CLASS_NUMBER,           "<number>");
+    CINIT(SCM_CLASS_COMPLEX,          "<complex>");
+    CINIT(SCM_CLASS_REAL,             "<real>");
+    CINIT(SCM_CLASS_INTEGER,          "<integer>");
+
+    /* port.c */
+    CINIT(SCM_CLASS_PORT,             "<port>");
+
+    /* proc.c */
+    CINIT(SCM_CLASS_PROCEDURE,        "<procedure>");
+    CINIT(SCM_CLASS_CLOSURE,          "<closure>");
+    CINIT(SCM_CLASS_SUBR,             "<subr>");
+
+    /* promise.c */
+    CINIT(SCM_CLASS_PROMISE,          "<promise>");
+
+    /* string.c */
+    CINIT(SCM_CLASS_STRING,           "<string>");
+
+    /* symbol.c */
+    CINIT(SCM_CLASS_SYMBOL,           "<symbol>");
+    CINIT(SCM_CLASS_GLOC,             "<gloc>");
+
+    /* system.c */
+    CINIT(SCM_CLASS_SYS_STAT,         "<sys-stat>");
+    CINIT(SCM_CLASS_SYS_TIME,         "<sys-time>");
+    CINIT(SCM_CLASS_SYS_TM,           "<sys-tm>");
+    CINIT(SCM_CLASS_SYS_GROUP,        "<sys-group>");
+    CINIT(SCM_CLASS_SYS_PASSWD,       "<sys-passwd>");
+    
+    /* vector.c */
+    CINIT(SCM_CLASS_VECTOR,           "<vector>");
+    
+    /* vm.c */
+    CINIT(SCM_CLASS_VM,               "<vm>");
 }

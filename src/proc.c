@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.10 2001-03-12 07:23:40 shiro Exp $
+ *  $Id: proc.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,10 +27,15 @@ static int proc_print(ScmObj obj, ScmPort *port, int mode);
 static int closure_print(ScmObj obj, ScmPort *port, int mode);
 static int subr_print(ScmObj obj, ScmPort *port, int mode);
 
-SCM_DEFCLASS(Scm_ProcedureClass, "<procedure>", proc_print,
-             SCM_CLASS_DEFAULT_CPL);
-SCM_DEFCLASS(Scm_ClosureClass, "<closure>", closure_print, proc_cpl);
-SCM_DEFCLASS(Scm_SubrClass, "<subr>", subr_print, proc_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ProcedureClass,
+                         proc_print, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ClosureClass,
+                         closure_print, NULL, NULL, NULL,
+                         proc_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SubrClass,
+                         subr_print, NULL, NULL, NULL,
+                         proc_cpl);
 
 static int proc_print(ScmObj obj, ScmPort *port, int mode)
 {

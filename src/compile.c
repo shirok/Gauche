@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.39 2001-03-11 10:01:42 shiro Exp $
+ *  $Id: compile.c,v 1.40 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -29,8 +29,7 @@ static int identifier_print(ScmObj obj, ScmPort *port, int mode)
                       SCM_IDENTIFIER(obj)->name);
 }
 
-SCM_DEFCLASS(Scm_IdentifierClass, "<identifier>",
-             identifier_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
 
 /* constructor definition comes below */
 
@@ -44,8 +43,7 @@ static int source_info_print(ScmObj obj, ScmPort *port, int mode)
                       SCM_SOURCE_INFO(obj)->info);
 }
 
-SCM_DEFCLASS(Scm_SourceInfoClass, "<source-info>",
-             source_info_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SourceInfoClass, source_info_print);
 
 ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up)
 {

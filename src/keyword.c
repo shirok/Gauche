@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: keyword.c,v 1.2 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: keyword.c,v 1.3 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -33,8 +33,9 @@ static int keyword_print(ScmObj obj, ScmPort *port, int mode)
     return nc;
 }
 
-SCM_DEFCLASS(Scm_KeywordClass, "<keyword>", keyword_print,
-             SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_KeywordClass,
+                         keyword_print, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 /* Global keyword table.  Must be protected in MT environment */
 static ScmHashTable *keywordTable;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.10 2001-03-17 08:22:11 shiro Exp $
+ *  $Id: symbol.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,7 +27,9 @@ static int symbol_print(ScmObj obj, ScmPort *port, int mode)
     return SCM_STRING_LENGTH(SCM_SYMBOL(obj)->name);
 }
 
-SCM_DEFCLASS(Scm_SymbolClass, "<symbol>", symbol_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SymbolClass,
+                         symbol_print, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 #define INITSYM(sym, nam)                       \
     sym = SCM_NEW(ScmSymbol);                   \
@@ -95,7 +97,7 @@ static int gloc_print(ScmObj obj, ScmPort *port, int mode)
                       g->module->name, g->name);
 }
 
-SCM_DEFCLASS(Scm_GlocClass, "<gloc>", gloc_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
 
 ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 {

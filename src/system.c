@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.10 2001-03-14 10:31:01 shiro Exp $
+ *  $Id: system.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include <stdio.h>
@@ -233,7 +233,9 @@ ScmObj Scm_DirName(ScmString *filename)
  * Stat (sys/stat.h)
  */
 
-SCM_DEFCLASS(Scm_SysStatClass, "<sys-stat>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysStatClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeSysStat(void)
 {
@@ -246,7 +248,9 @@ ScmObj Scm_MakeSysStat(void)
  * Time (sys/time.h)
  */
 
-SCM_DEFCLASS(Scm_SysTimeClass, "<sys-time>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysTimeClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeSysTime(time_t t)
 {
@@ -256,7 +260,9 @@ ScmObj Scm_MakeSysTime(time_t t)
     return SCM_OBJ(st);
 }
 
-SCM_DEFCLASS(Scm_SysTmClass, "<sys-tm>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysTmClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeSysTm(struct tm *tm)
 {
@@ -270,7 +276,9 @@ ScmObj Scm_MakeSysTm(struct tm *tm)
  * Groups (grp.h)
  */
 
-SCM_DEFCLASS(Scm_SysGroupClass, "<sys-group>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysGroupClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 static ScmObj make_group(struct group *g)
 {
@@ -315,7 +323,9 @@ ScmObj Scm_GetGroupByName(ScmString *name)
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
  */
 
-SCM_DEFCLASS(Scm_SysPasswdClass, "<sys-passwd>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysPasswdClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 static ScmObj make_passwd(struct passwd *pw)
 {

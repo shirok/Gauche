@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.15 2001-03-11 09:43:02 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.16 2001-03-17 09:17:51 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -70,3 +70,4 @@
   (let ((out (open-output-string)))
     (with-output-to-port out thunk)
     (get-output-string out)))
+

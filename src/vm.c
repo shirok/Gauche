@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.52 2001-03-12 07:23:17 shiro Exp $
+ *  $Id: vm.c,v 1.53 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -26,7 +26,7 @@
  *   refered by Scm_VM().
  */
 
-SCM_DEFCLASS(Scm_VMClass, "<vm>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, NULL);
 
 static ScmVM *theVM;    /* this must be thread specific in MT version */
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.8 2001-03-06 08:42:00 shiro Exp $
+ *  $Id: error.c,v 1.9 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include <errno.h>
@@ -29,8 +29,7 @@ static int exception_print(ScmObj obj, ScmPort *port, int mode)
                       obj, SCM_EXCEPTION_DATA(obj));
 }
 
-SCM_DEFCLASS(Scm_ExceptionClass, "<exception>",
-             exception_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ExceptionClass, exception_print);
 
 /*
  * Constructor

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.20 2001-03-12 07:24:42 shiro Exp $
+ *  $Id: macro.c,v 1.21 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,7 +27,7 @@ static int syntax_print(ScmObj obj, ScmPort *port, int mode)
     return Scm_Printf(port, "#<syntax %A>", SCM_SYNTAX(obj)->name);
 }
 
-SCM_DEFCLASS(Scm_SyntaxClass, "<syntax>", syntax_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxClass, syntax_print);
 
 ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
 {
@@ -53,8 +53,7 @@ static int pattern_print(ScmObj obj, ScmPort *port, int mode)
                       SCM_SYNTAX_PATTERN(obj)->repeat? " ..." : "");
 }
 
-SCM_DEFCLASS(Scm_SyntaxPatternClass, "<syntax-pattern>",
-             pattern_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxPatternClass, pattern_print);
 
 ScmSyntaxPattern *make_syntax_pattern(int level, int repeat)
 {
@@ -89,8 +88,7 @@ static int synrule_print(ScmObj obj, ScmPort *port, int mode)
     return nc;
 }
 
-SCM_DEFCLASS(Scm_SyntaxRulesClass, "<syntax-rules>", synrule_print,
-             SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxRulesClass, synrule_print);
 
 ScmSyntaxRules *make_syntax_rules(int nr) 
 {

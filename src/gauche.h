@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.80 2001-03-17 08:23:20 shiro Exp $
+ *  $Id: gauche.h,v 1.81 2001-03-17 09:17:51 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -290,7 +290,6 @@ extern ScmObj Scm_VMThrowException(ScmObj exception);
 /* See class.c for the description of function pointer members. */
 struct ScmClassRec {
     SCM_HEADER;
-    const char *name;           /* char* for static initialization */
     int (*print)(ScmObj obj, ScmPort *sink, int mode);
     int (*equal)(ScmObj x, ScmObj y);
     int (*compare)(ScmObj x, ScmObj y);
@@ -300,7 +299,7 @@ struct ScmClassRec {
     struct ScmClassRec **cpa;
     short numInstanceSlots;     /* # of instance slots */
     unsigned short flags;
-    ScmObj sname;               /* scheme name */
+    ScmObj name;                /* scheme name */
     ScmObj directSupers;        /* list of classes */
     ScmObj cpl;                 /* list of classes */
     ScmObj accessors;
@@ -324,6 +323,8 @@ enum {
 #define SCM_CLASS_BUILTIN_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_BUILTIN)
 #define SCM_CLASS_SCHEME_P(obj)  (!SCM_CLASS_BUILTIN_P(obj))
 #define SCM_CLASS_FINAL_P(obj)   (SCM_CLASS_FLAGS(obj)&SCM_CLASS_FINAL)
+
+extern void Scm_InitBuiltinClass(ScmClass *c, const char *name, ScmModule *m);
 
 extern ScmClass *Scm_ClassOf(ScmObj obj);
 extern ScmObj Scm_ClassName(ScmClass *klass);
@@ -366,30 +367,34 @@ extern ScmClass *Scm_ObjectCPL[];
 #define SCM_CLASS_COLLECTION_CPL  (Scm_CollectionCPL)
 #define SCM_CLASS_SEQUENCE_CPL    (Scm_SequenceCPL)
 #define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
-    
+
 /* define built-in class statically. */
-#define SCM_DEFCLASS(cname, sname, printer, cpa)        \
+#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, equal, compare, serialize, cpa) \
     ScmClass cname = {                                  \
-        SCM_CLASS_CLASS,        /* header */            \
-        sname,                  /* name */              \
-        printer,                /* print */             \
-        NULL,                   /* equal */             \
-        NULL,                   /* compare */           \
-        NULL,                   /* serialize */         \
-        NULL,                   /* allocate */          \
-        NULL,                   /* apply */             \
-        cpa,                    /* cpa */               \
-        0,                      /* numislots */         \
-        0,                      /* flags */             \
-        SCM_FALSE,              /* scheme name */       \
-        SCM_FALSE,              /* directsupers */      \
-        SCM_FALSE,              /* cpl */               \
-        SCM_NIL,                /* accessors */         \
-        SCM_NIL,                /* directslots */       \
-        SCM_NIL,                /* slots */             \
-        SCM_NIL,                /* directsubclasses */  \
-        SCM_NIL                 /* directmethods */     \
+        SCM_CLASS_CLASS,                                \
+        printer,                                        \
+        equal,                                          \
+        compare,                                        \
+        serialize,                                      \
+        NULL,                                           \
+        NULL,                                           \
+        cpa,                                            \
+        0,                                              \
+        SCM_CLASS_BUILTIN,                              \
+        SCM_FALSE,                                      \
+        SCM_FALSE,                                      \
+        SCM_FALSE,                                      \
+        SCM_NIL,                                        \
+        SCM_NIL,                                        \
+        SCM_NIL,                                        \
+        SCM_NIL,                                        \
+        SCM_NIL                                         \
     }
+    
+/* simpler version */
+#define SCM_DEFINE_BUILTIN_CLASS_SIMPLE(cname, printer)         \
+    SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL, NULL,  \
+                             SCM_CLASS_DEFAULT_CPL)
 
 /*--------------------------------------------------------
  * PAIR AND LIST
