@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.104 2001-04-03 08:05:13 shiro Exp $
+ *  $Id: gauche.h,v 1.105 2001-04-04 18:55:01 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -21,9 +21,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <stdarg.h>
 #include <setjmp.h>
+#include <limits.h>
 #include <gc.h>
 
 #ifdef __cplusplus
@@ -31,6 +31,17 @@ extern "C" {
 #endif
 
 #include <gauche/config.h>
+
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
 #define SCM_VM_STACK_SIZE     10000
@@ -182,6 +193,7 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define	SCM_MAKE_CHAR(ch)       SCM_OBJ(((ch) << 3) + 2)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
+#define SCM_CHAR_MAX            (LONG_MAX/8)
 
 #define SCM_CHAR_ASCII_P(ch)    ((ch) < 0x80)
 #define SCM_CHAR_UPPER_P(ch)    (('A' <= (ch)) && ((ch) <= 'Z'))
@@ -598,9 +610,11 @@ extern ScmClass Scm_CharSetClass;
 
 ScmObj Scm_MakeEmptyCharSet(void);
 ScmObj Scm_CopyCharSet(ScmCharSet *src);
-ScmObj Scm_CharSetAdd(ScmCharSet *cs, ScmChar from, ScmChar to);
-ScmObj Scm_CharSetAddCstr(ScmCharSet *cs, const char *s, int allowRange);
-ScmObj Scm_CharSetAddStr(ScmCharSet *cs, ScmString *s);
+ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to);
+ScmObj Scm_CharSetAdd(ScmCharSet *dest, ScmCharSet *src);
+ScmObj Scm_CharSetComplement(ScmCharSet *cs);
+
+int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
     
 /*--------------------------------------------------------
  * STRING
