@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.1 2001-10-11 11:55:59 shirok Exp $
+;;;  $Id: collection.scm,v 1.2 2001-10-11 20:22:02 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -20,23 +20,19 @@
 ;; A class that implements a collection generic interface must
 ;; define at least one method:
 ;;
-;;  (g-fold proc knil (obj <collection))
+;;  (g-fold proc (obj <collection) knil ...)
 ;;
 ;; The other operations are derived from the generic fold+, but
 ;; the specific collection inplementation can override some of them
 ;; for efficiency.
 
 (define-module gauche.collection
-  (export g-size
-          g-fold
-          g-map
-          g-for-each
-          g-collect
-          g-find
-          g-filter
-          g-remove
-          g-any?
-          g-every?
+  (export g-fold
+          g-size g-mutable? g-extendable?
+          g-map  g-for-each g-collect g-enumerate
+          g-find g-filter g-remove g-partition
+          g-any? g-every?
+          g-ref  g-set!
           )
   )
 (select-module gauche.collection)
@@ -49,6 +45,8 @@
 ;; Note that the order of argument is different from fold in SRFI-1.
 
 (define-generic g-fold )
+
+;; TODO: add fallback code to map n-ary version of fold to 1-ary version
 
 ;; Other generic methods.  The specific implementation of a
 ;; collection can override any of them.
@@ -134,5 +132,13 @@
              arg1 arg2 arg3))))
 
 ;; TODO g-enumerate (proc coll arg1 arg2 arg3 . rest)
-          
+
+
+(define-method g-find (pred coll)
+  (call/cc
+   (lambda (break)
+     (g-fold (lambda (elt r) (when (pred elt) (break elt))) coll '()))))
+
+
+
 (provide "gauche/collection")
