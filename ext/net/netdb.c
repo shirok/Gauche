@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.8 2004-01-28 00:28:22 fuyuki Exp $
+ *  $Id: netdb.c,v 1.9 2004-06-01 06:17:56 shirok Exp $
  */
 
 #include "net.h"
@@ -146,7 +146,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
         Scm_Error("bad inet address format: %s", addr);
     }
     
-#if defined(GETHOSTBYNAME_R_NUMARGS)
+#if defined(GETHOSTBYADDR_R_NUMARGS)
     {
         ScmObj entry = SCM_FALSE;
         int herr = 0, bufsiz = DATA_BUFSIZ;
@@ -176,7 +176,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
         entry = SCM_OBJ(make_hostent(&he));
         return entry;
     }
-#else /* !defined(GETHOSTBYNAME_R_NUMARGS) */
+#else /* !defined(GETHOSTBYADDR_R_NUMARGS) */
     {
         volatile ScmObj entry = SCM_FALSE;
         struct hostent *he;
@@ -192,7 +192,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
                          } while (0));
         return entry;
     }
-#endif /* !defined(GETHOSTBYNAME_R_NUMARGS) */
+#endif /* !defined(GETHOSTBYADDR_R_NUMARGS) */
 }
 
 static ScmObj hostent_name(ScmSysHostent *entry)
