@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.59 2001-03-05 10:45:32 shiro Exp $
+ *  $Id: gauche.h,v 1.60 2001-03-06 08:41:41 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1420,6 +1420,7 @@ extern ScmObj Scm_Force(ScmObj p);
 
 struct ScmExceptionRec {
     SCM_HEADER;
+    int continuable;
     ScmObj data;
 };
 
@@ -1434,7 +1435,6 @@ extern ScmClass Scm_ExceptionClass;
 extern void Scm_Error(const char *msg, ...);
 extern void Scm_SysError(const char *msg, ...);
 extern ScmObj Scm_SError(ScmObj fmt, ScmObj args);
-
 
 /*-------------------------------------------------------
  * STUB MACROS
