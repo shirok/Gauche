@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.390 2003-05-13 23:00:16 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.391 2003-05-22 10:55:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -28767,9 +28767,33 @@ to prepare a file to be read by Windows programs.
 
 @deftp {Module} text.diff
 @mdindex text.diff
+This module calculates the difference of two text files or strings,
+using @code{util.lcs} (@xref{util.lcs - The longest common subsequence}).
 @end deftp
 
 @defun diff src-a src-b &keyword reader eq-fn
+Each of text sources, @var{src-a} and @var{src-b}, can be either an input
+port or a string.  If it is a string, it is converted to a string input
+port internally.  Then, the text streams from both sources are converted
+to sequences by calling @var{reader} repeatedly on them; the default
+of @var{reader} is @code{read-line}.
+Finally, two sequences are passed to @code{lcs-with-positions}
+procedure to find the longest common subsequences of them.
+The function @var{eq-fn} is used to compare elements in the sequences,
+and whose default is @code{equal?}.
+
+This procedure returns three values: The first two values
+are sequences obtained from @var{src-a} and @var{src-b}, respectively.
+The last value is a list of the result of @code{lcs-with-positions},
+which is the following form:
+@example
+(@var{length} ((@var{elt} @var{a-pos} @var{b-pos}) @dots{}))
+@end example
+@var{Length} is an integer showing the length of the found LCS.
+What follows is a list of elements of LCS; each sublist
+consists of the element, the integer position of the element
+in @var{seq-a}, then the integer position of the element in @var{seq-b}.
+
 @end defun
 
 @defun diff-report src-a src-b &keyword reader eq-fn writer
@@ -29857,10 +29881,45 @@ the difference of two text files;
 see @ref{text.diff - Calculate difference of text files}.
 @end deftp
 
-@defun lcs-with-positions seq-a seq-b &optional eq-fn
+@defun lcs seq-a seq-b &optional eq-fn
+Calculates and returns the longest common sequence of
+two lists, @var{seq-a} and @var{seq-b}.
+Optional @var{eq-fn} specifies
+the comparison predicate; if omitted, @code{equal?} is used.
+
+@example
+(lcs '(x a b y) '(p a q b))
+ @result{} (a b)
+@end example
 @end defun
 
-@defun lcs seq-a seq-b &optional eq-fn
+@defun lcs-with-positions seq-a seq-b &optional eq-fn
+This is the detailed version of @code{lcs}.
+The arguments are the same.
+
+Returns a list of the following structure:
+@example
+(@var{length} ((@var{elt} @var{a-pos} @var{b-pos}) @dots{}))
+@end example
+
+@var{Length} is an integer showing the length of the found LCS.
+What follows is a list of elements of LCS; each sublist
+consists of the element, the integer position of the element
+in @var{seq-a}, then the integer position of the element in @var{seq-b}.
+
+@example
+(lcs-with-positions '(a) '(a))
+ @result{} (1 ((a 0 0)))
+
+(lcs-with-positions '(x a b y) '(p q a b))
+ @result{} (2 ((a 1 2) (b 2 3)))
+
+(lcs-with-positions '(x a b y) '(p a q b))
+ @result{} (2 ((a 1 1) (b 2 3)))
+
+(lcs-with-positions '(x y) '(p q))
+ @result{} (0 ())
+@end example
 @end defun
 
 
