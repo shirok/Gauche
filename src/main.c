@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.17 2001-03-25 03:14:34 shiro Exp $
+ *  $Id: main.c,v 1.18 2001-03-25 03:15:37 shiro Exp $
  */
 
 #include <unistd.h>
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     }
     SCM_DEFINE(Scm_UserModule(), "*program-name*",
                Scm_MakeString(argv[0], -1, -1));
-    SCM_FOR_EACH(cp, Scm_ReverseX(extra_load_paths)) {
+    SCM_FOR_EACH(cp, extra_load_paths) {
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(SCM_CAR(cp))), FALSE);
     }
 
