@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.22 2002-07-01 08:53:43 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.23 2002-07-13 06:54:25 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -59,6 +59,7 @@ emit() {
     vecttype="${VECTTAG}Vector"
     VECTTYPE="${VECTTAG}VECTOR"
     itemtype="${VECTTAG}ELTTYPE"
+    ALLOC="${VECTTAG}ALLOC"
     cat <<EOF
 
 /*---------------------------------------------------------------
@@ -106,8 +107,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_${vecttype}Class,
 static Scm${vecttype} *make_${vecttype}(int size)
 {
     Scm${vecttype} *vec =
-      SCM_NEW_ATOMIC2(Scm${vecttype} *,
-                      sizeof(Scm${vecttype}) + (size-1)*sizeof(${itemtype}));
+      ${ALLOC}(Scm${vecttype} *,
+               sizeof(Scm${vecttype}) + (size-1)*sizeof(${itemtype}));
     SCM_SET_CLASS(vec, SCM_CLASS_${VECTTYPE});
     vec->size = size;
     return vec;

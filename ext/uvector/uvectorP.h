@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: uvectorP.h,v 1.12 2002-06-22 11:06:10 shirok Exp $
+ *  $Id: uvectorP.h,v 1.13 2002-07-13 06:54:25 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -145,6 +145,7 @@
 #define S8ELTTYPE  signed char
 #define S8MIN      -128
 #define S8MAX       127
+#define S8ALLOC    SCM_NEW_ATOMIC2
 #define S8BOX(obj, elt)    (obj) = SCM_MAKE_INT(elt)
 #define S8UNBOX(elt, obj, clamp)                                        \
   do {                                                                  \
@@ -187,6 +188,7 @@
 #define U8ELTTYPE unsigned char
 #define U8MIN     0
 #define U8MAX     255
+#define U8ALLOC    SCM_NEW_ATOMIC2
 #define U8BOX(obj, elt)    (obj) = SCM_MAKE_INT(elt)
 #define U8UNBOX(elt, obj, clamp)                                        \
   do {                                                                  \
@@ -229,6 +231,7 @@
 #define S16ELTTYPE  signed short
 #define S16MIN      -32768
 #define S16MAX       32767
+#define S16ALLOC    SCM_NEW_ATOMIC2
 #define S16BOX(obj, elt)    (obj) = SCM_MAKE_INT(elt)
 #define S16UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
@@ -271,6 +274,7 @@
 #define U16ELTTYPE unsigned short
 #define U16MIN     0
 #define U16MAX     65535
+#define U16ALLOC    SCM_NEW_ATOMIC2
 #define U16BOX(obj, elt)    (obj) = SCM_MAKE_INT(elt)
 #define U16UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
@@ -313,6 +317,7 @@
 #define S32ELTTYPE SCM_UVECTOR_INT32
 #define S32MAX     2147483647L
 #define S32MIN     (-(S32MAX)-1)
+#define S32ALLOC    SCM_NEW_ATOMIC2
 #define S32BOX(obj, elt)    (obj) = Scm_MakeInteger(elt)
 #if SIZEOF_LONG == 4
 /* 32bit architecture */
@@ -391,6 +396,7 @@
 #define U32ELTTYPE SCM_UVECTOR_UINT32
 #define U32MIN     0
 #define U32MAX     4294967295UL
+#define U32ALLOC    SCM_NEW_ATOMIC2
 #define U32BOX(obj, elt)    (obj) = Scm_MakeIntegerFromUI(elt)
 #if SIZEOF_LONG == 4
 /* 32bit architecture */
@@ -475,6 +481,7 @@
 #if SIZEOF_LONG == 4
 #define S64MIN  Scm_UvectorS64Min
 #define S64MAX  Scm_UvectorS64Max
+#define S64ALLOC    SCM_NEW2
 #define S64BOX(obj, elt)  (obj) = (elt)
 #define S64UNBOX(elt, obj, clamp)               \
   do {                                          \
@@ -519,6 +526,7 @@
 #else /* SIZEOF_LONG >= 8 */
 #define S64MAX  9223372036854775807L
 #define S64MIN  (-S64MAX-1)
+#define S64ALLOC    SCM_NEW_ATOMIC2
 #define S64BOX(obj, elt)  (obj) = Scm_MakeInteger(elt)
 #define S64UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
@@ -567,6 +575,7 @@
 #if SIZEOF_LONG == 4
 #define U64MIN  Scm_UvectorU64Min
 #define U64MAX  Scm_UvectorU64Max
+#define U64ALLOC    SCM_NEW2
 #define U64BOX(obj, elt)  (obj) = (elt)
 #define U64UNBOX(elt, obj, clamp)               \
   do {                                          \
@@ -617,6 +626,7 @@
 #else /* SIZEOF_LONG >= 8 */
 #define U64MIN  0UL
 #define U64MAX  18446744073709551615UL
+#define U64ALLOC    SCM_NEW_ATOMIC2
 #define U64BOX(obj, elt)  (obj) = Scm_MakeIntegerFromUI(elt)
 #define U64UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
@@ -684,6 +694,7 @@
 #define F32ELTTYPE  float
 #define F32MIN      FLT_MIN
 #define F32MAX      FLT_MAX
+#define F32ALLOC    SCM_NEW_ATOMIC2
 #define F32BOX(obj, elt)  (obj) = Scm_MakeFlonum((double)elt)
 #define F32UNBOX(elt, obj, clamp)                                           \
     do {                                                                    \
@@ -721,6 +732,7 @@
 #define F64ELTTYPE  double
 #define F64MIN      DBL_MIN
 #define F64MAX      DBL_MAX
+#define F64ALLOC    SCM_NEW_ATOMIC2
 #define F64BOX(obj, elt)  (obj) = Scm_MakeFlonum((double)elt)
 #define F64UNBOX(elt, obj, clamp)                                           \
     do {                                                                    \
