@@ -1,3 +1,15 @@
+2002-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random : fixed missing initialization code.
+	* src/compare.c : changed sort algorithm from simple quicksort to
+	  the hybrid of quicksort and heapsort.
+
+2002-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random/mt-random.c (genrand_int_small): fixed a bug in LP64
+	  architecture.
+	* src/number.c (Scm_InexactToExact): fixed a bug in 64bit architecture
+
 2002-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c : finished the routine to detect require dependency loop.
