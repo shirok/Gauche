@@ -12,14 +12,15 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.8 2001-12-05 20:18:54 shirok Exp $
+;;;  $Id: with.scm,v 1.9 2001-12-22 21:18:32 shirok Exp $
 ;;;
 
 (select-module gauche)
 
 ;; File ports
 
-(select-module scheme)
+(with-module scheme
+
 (define (call-with-input-file filename proc . flags)
   (let ((port (apply open-input-file filename flags)))
     (dynamic-wind
@@ -48,7 +49,7 @@
      (lambda () ((with-module gauche with-output-to-port) port thunk))
      (lambda () (close-output-port port)))))
 
-(select-module gauche)
+) ;; with-module scheme
 
 ;; String ports
 
