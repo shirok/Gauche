@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parse.scm,v 1.3 2001-10-05 09:55:12 shirok Exp $
+;;;  $Id: parse.scm,v 1.4 2001-10-05 19:46:01 shirok Exp $
 ;;;
 
 ;; This module implements the input parsing utilities described in Oleg's site
@@ -97,73 +97,103 @@
               ((char-set-contains? cset c) c)
               (else (bad c)))))))
 
-(define (skip-until char-list/number . args)
+(define (skip-until char-list/number/pred . args)
   (let-optionals* args ((port (current-input-port)))
     (define (bad) (errorf "~aunexpected EOF" (port-position-prefix port)))
-    (if (number? char-list/number)
-        (if (<= 1 char-list/number)
-            (let loop ((i 1) (c (read-char port)))
-              (cond ((eof-object? c) (bad))
-                    ((>= i char-list/number) #f)
-                    (else (loop (+ i 1) (read-char port)))))
-            #f)
-        (receive (cset eof-ok?) (fold-char-list char-list/number)
-          (let loop ((c (read-char port)))
-            (cond ((eof-object? c) (if eof-ok? c (bad)))
-                  ((char-set-contains? cset c) c)
-                  (else (loop (read-char port)))))))))
+    (cond
+     ((number? char-list/number/pred)
+      (if (<= 1 char-list/number/pred)
+          (let loop ((i 1) (c (read-char port)))
+            (cond ((eof-object? c) (bad))
+                  ((>= i char-list/number/pred) #f)
+                  (else (loop (+ i 1) (read-char port)))))
+          #f))
+     ((procedure? char-list/number/pred)
+      (let loop ((c (read-char port)))
+        (cond ((char-list/number/pred c) c)
+              ((eof-object? c) (bad))
+              (else (loop (read-char port)))))
+      )
+     (else
+      (receive (cset eof-ok?) (fold-char-list char-list/number/pred)
+        (let loop ((c (read-char port)))
+          (cond ((eof-object? c) (if eof-ok? c (bad)))
+                ((char-set-contains? cset c) c)
+                (else (loop (read-char port))))))))))
 
-(define (skip-while char-list . args)
+(define (skip-while char-list/pred . args)
   (let-optionals* args ((port (current-input-port)))
-    (receive (cset eof-ok?) (fold-char-list char-list)
-      (define (bad) (errorf "~aunexpected EOF" (port-position-prefix port)))
+    (define (bad) (errorf "~aunexpected EOF" (port-position-prefix port)))
+    (cond
+     ((procedure? char-list/pred)
       (let loop ((c (peek-char port)))
-        (cond ((eof-object? c) c)
-              ((char-set-contains? cset c)
-               (read-char port)
-               (loop (peek-char port)))
-              (else c))))))
+        (cond ((char-list/pred c) (read-char port) (loop (peek-char port)))
+              (else c)))
+      )
+     (else
+      (receive (cset eof-ok?) (fold-char-list char-list/pred)
+        (let loop ((c (peek-char port)))
+          (cond ((eof-object? c) c)
+                ((char-set-contains? cset c)
+                 (read-char port)
+                 (loop (peek-char port)))
+                (else c))))))))
 
 (define (peek-next-char . args)
   (let-optionals* args ((port (current-input-port)))
     (read-char port)
     (peek-char port)))
 
-(define (next-token prefix-char-list break-char-list . args)
+(define (next-token prefix-char-list/pred break-char-list/pred . args)
   (let-optionals* args ((comment "")
                         (port (current-input-port)))
-    (receive (cs eof-ok?) (fold-char-list break-char-list)
+    (define (bad) (errorf "~aunexpected EOF" (port-position-prefix port)))
+    (let ((c (skip-while prefix-char-list/pred port)))
+      (cond
+       ((procedure? break-char-list/pred)
+        (with-output-to-string
+          (lambda ()
+            (let loop ((c c))
+              (format (current-error-port) "~s\n" c)
+              (cond ((break-char-list/pred c))
+                    ((eof-object? c) (bad))
+                    (else                    
+                     (display (read-char port))
+                     (loop (peek-char port)))))))
+        )
+       (else
+        (receive (cs eof-ok?) (fold-char-list break-char-list/pred)
+          (with-output-to-string
+            (lambda ()
+              (let loop ((c c))
+                (cond ((eof-object? c) (unless eof-ok? (bad)))
+                      ((char-set-contains? cs c))
+                      (else (display (read-char port))
+                            (loop (peek-char port))))))))
+        )))))
+
+(define (next-token-of char-list/pred . args)
+  (let-optionals* args ((port (current-input-port)))
+    (cond
+     ((procedure? char-list/pred)
       (with-output-to-string
         (lambda ()
-          (let loop ((c (skip-while prefix-char-list port)))
-            (cond ((eof-object? c)
-                   (unless eof-ok?
-                     (errorf "~aunexpected EOF" (port-position-prefix port))))
-                  ((char-set-contains? cs c))
-                  (else (display (read-char port))
-                        (loop (peek-char port))))))))
-    ))
-
-(define (next-token-of inc-charset/pred . args)
-  (let-optionals* args ((port (current-input-port)))
-    (if (procedure? inc-charset/pred)
-        (with-output-to-string
-          (lambda ()
+          (let loop ((c (peek-char port)))
+            (when (char-list/pred c)
+              (display (read-char port))
+              (unless (eof-object? c) ;prevent infinite loop
+                (loop (peek-char port))))))))
+     (else
+      (with-output-to-string
+        (lambda ()
+          (receive (cs eof-ok?) (fold-char-list char-list/pred)
             (let loop ((c (peek-char port)))
-              (when (inc-charset/pred c)
-                (display (read-char port))
-                (unless (eof-object? c) ;prevent infinite loop
-                  (loop (peek-char port)))))))
-        (with-output-to-string
-          (lambda ()
-            (receive (cs eof-ok?) (fold-char-list inc-charset/pred)
-              (let loop ((c (peek-char port)))
-                (cond ((eof-object? c)) ;ok to see EOF
-                      ((char-set-contains? cs c)
-                       (display (read-char port))
-                       (loop (peek-char port)))
-                      (else #f))))))
-        )))
+              (cond ((eof-object? c)) ;ok to see EOF
+                    ((char-set-contains? cs c)
+                     (display (read-char port))
+                     (loop (peek-char port)))
+                    (else #f))))))
+      ))))
 
 ;; read-line is built in Gauche.
 
