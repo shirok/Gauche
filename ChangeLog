@@ -1,3 +1,7 @@
+2002-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.5.6
+
 2002-06-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv.c : fixed int* and size_t* discrepancy
