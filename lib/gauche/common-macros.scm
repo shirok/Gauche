@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.3 2001-10-09 08:32:13 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.4 2001-12-01 10:58:14 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -126,19 +126,35 @@
 
 (define-syntax dotimes
   (syntax-rules ()
-    ((_ (var n res) body ...)
+    ((_ (var n res) . body)
      (do ((limit n)
           (var 0 (+ var 1)))
          ((>= var limit) res)
-       body ...))
-    ((_ (var n) body ...)
+       . body))
+    ((_ (var n) body . body)
      (do ((limit n)
           (var 0 (+ var 1)))
          ((>= var limit))
-       body ...))
+       . body))
     ((_ . other)
      (syntax-error "malformed dotimes" (dotimes . other)))))
 
+(define-syntax while
+  (syntax-rules ()
+    ((_ expr . body)
+     (do ()
+         ((not expr))
+       . body))
+    ((_ . other)
+     (syntax-error "malformed while" (while . other)))))
 
+(define-syntax until
+  (syntax-rules ()
+    ((_ expr . body)
+     (do ()
+         (expr)
+       . body))
+    ((_ . other)
+     (syntax-error "malformed until" (until . other)))))
 
 (provide "gauche/common-macros")
