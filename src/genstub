@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.86 2002-10-21 10:07:27 shirok Exp $
+;;;  $Id: genstub,v 1.87 2002-11-09 08:18:43 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -46,7 +46,7 @@
 ;;             calls C-function.  If <rettype> is omitted, C-function
 ;;             is assumed to return ScmObj.  Otherwise, a boxer of
 ;;             <rettype> is used.  As a special case, if <rettype> is
-;;             <boid>, the return value of C-function is ignored and
+;;             <void>, the return value of C-function is ignored and
 ;;             the function returns #<undef>.
 ;;        (setter <setter-name>) : specfy setter.  <setter-name> should
 ;;             be a cproc name defined in the same stub file
@@ -76,11 +76,11 @@
 ;;   define-variable scheme-name initializer
 ;;      Defines a Scheme variable.
 ;;
-;;   define-const scheme-name initializer
+;;   define-constant scheme-name initializer
 ;;      Defines a Scheme constant.
 ;;
 ;;   define-enum name
-;;      A define-const Specialized for enum values.
+;;      A define-constant Specialized for enum values.
 ;;
 ;;   initcode <c-code>
 ;;      Insert <c-code> literally in the initialization function
