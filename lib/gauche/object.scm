@@ -12,11 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.10 2001-03-31 06:53:08 shiro Exp $
+;;;  $Id: object.scm,v 1.11 2001-04-01 07:27:01 shiro Exp $
 ;;;
 
 (select-module gauche)
-(use srfi-17) ;; generalized set!.  TODO: support it natively!
 (use srfi-2)  ;; and-let*
 
 ;; Bootstrapping "make"
@@ -213,7 +212,7 @@
                                    (slot-set! obj name val))))
         ;; TODO: (set! (setter gf) gfs) doesn't work -- find the reason.
         ;; the following is a dirty trick.
-        (with-module srfi-17 (setter-set! gf gfs))))
+        (%setter-set! gf gfs)))
     ))
  
 ;;; Method COMPUTE-SLOTS (class <class>)
