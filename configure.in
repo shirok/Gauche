@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.86 2003-04-22 10:36:15 shirok Exp $
+dnl $Id: configure.in,v 1.87 2003-04-30 08:41:50 shirok Exp $
 AC_PREREQ(2.53)
 AC_INIT(Gauche, 0.7_pre2, shiro@acm.org)
-AC_REVISION($Revision: 1.86 $)
+AC_REVISION($Revision: 1.87 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -98,6 +98,7 @@ AC_ARG_WITH(local, [  --with-local=PATH:PATH...:  For each PATH, add PATH/includ
 AC_SUBST(LOCAL_INC)
 AC_SUBST(LOCAL_LIB)
 dnl need to add here, for it may be used by the tests below.
+INCLUDES="$INCLUDES $LOCAL_INC"
 CPPFLAGS="$CPPFLAGS $LOCAL_INC"
 LDFLAGS="$LDFLAGS $LOCAL_LIB"
 
@@ -301,19 +302,28 @@ AC_SEARCH_LIBS(shutdown, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
 AC_SEARCH_LIBS(gethostbyname_r, nsl)
 
-AC_SEARCH_LIBS(openpty, util, AC_DEFINE(HAVE_OPENPTY, 1, [Define if you have openpty]))
-AC_SEARCH_LIBS(forkpty, util, AC_DEFINE(HAVE_FORKPTY, 1, [Define if you have forkpty]))
+dnl Checks for pty-related fns.  It appears that recent Cygwin has them,
+dnl but only in a static library.  That prevents us from creating DLL
+dnl version of gauche.  Thus we explictly exclude them on cygwin.
+case "$target" in
+  *cygwin*)
+    : ;;
+  *)
+    AC_SEARCH_LIBS(openpty, util, AC_DEFINE(HAVE_OPENPTY, 1, [Define if you have openpty]))
+    AC_SEARCH_LIBS(forkpty, util, AC_DEFINE(HAVE_FORKPTY, 1, [Define if you have forkpty]))
+    ;;
+esac
 
 dnl Checks if crypt() exists and whether it's in libc or libcrypt.
 dnl Note: on cygwin, libcrypt is only available as a static library,
 dnl and prevents libgauche.dll from building.   We explicitly excludes it.
 dnl
-case $target in
+case "$target" in
   *cygwin*)
-     AC_MSG_NOTICE([sys-crypt not available on cygwin]);;
+     : ;;
   *)
-     AC_SEARCH_LIBS(crypt, crypt, [
-        AC_DEFINE(HAVE_CRYPT,1,[Define if uses libcrypt])]);;
+     AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT,1,[Define if uses libcrypt]))
+     ;;
 esac
 
 dnl Checks if dlopen exists, and if it's in libc or libdl.
@@ -560,6 +570,7 @@ case $host in
       darwin1.[[012]]) FLAT_NAMESPACE="" ;;
       *)               FLAT_NAMESPACE="-flat_namespace" ;;
     esac
+    CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
