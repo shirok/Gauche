@@ -12,7 +12,7 @@ LDFLAGS = @LOCAL_LIB@ @SHLIB_MAIN_LDFLAGS@
 AR = @AR@
 RANLIB = @RANLIB@
 
-GENERATED = stdlib.c extlib.c syslib.c moplib.c
+GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c
 CONFIG_GENERATED = Makefile gauche-config gauche/config.h gauche/arch.h ldwrap.sh
 
 LIB_INSTALL_DIR = @libdir@
@@ -51,7 +51,7 @@ OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o weak.o \
        symbol.o keyword.o compare.o regexp.o signal.o mutex.o \
        module.o proc.o number.o bignum.o load.o promise.o repl.o \
-       system.o stdlib.o extlib.o syslib.o moplib.o
+       system.o stdlib.o extlib.o exclib.o syslib.o moplib.o
 
 TESTFILES = `cat ../test/TESTS`
 
@@ -71,6 +71,7 @@ $(OBJS) main.o : $(HDRS)
 
 stdlib.c : stdlib.stub genstub 
 extlib.c : extlib.stub genstub
+exclib.c : exclib.stub genstub
 syslib.c : syslib.stub genstub
 moplib.c : moplib.stub genstub
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.258 2002-05-20 22:11:56 shirok Exp $
+ *  $Id: gauche.h,v 1.259 2002-05-21 04:47:15 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -288,6 +288,9 @@ typedef struct ScmHeaderRec {
 #define SCM_NEW2(type, size)  ((type)(SCM_MALLOC(size)))
 #define SCM_NEW_ATOMIC(type)  ((type*)(SCM_MALLOC_ATOMIC(sizeof(type))))
 #define SCM_NEW_ATOMIC2(type, size) ((type)(SCM_MALLOC_ATOMIC(size)))
+
+/* safe coercer */
+#define SCM_OBJ_SAFE(obj)     ((obj)?SCM_OBJ(obj):SCM_UNDEFINED)
 
 typedef struct ScmVMRec        ScmVM;
 typedef struct ScmPairRec      ScmPair;

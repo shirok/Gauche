@@ -1,0 +1,179 @@
+;;;
+;;; exclib.stub - exceptions
+;;;
+;;;   Copyright (c) 2002 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: exclib.stub,v 1.1 2002-05-21 04:47:15 shirok Exp $
+;;;
+
+"
+#include <gauche/class.h>
+#include <gauche/exception.h>
+"
+
+;;
+;; Exception procedures
+;;
+
+(define-cproc error (reason &rest args)
+  (assert (string? reason))
+  "  SCM_RETURN(Scm_SError(reason, args));")
+
+(define-cproc errorf (fmt &rest args)
+  "  SCM_RETURN(Scm_FError(fmt, args));")
+
+(define-cproc with-error-handler (handler thunk)
+  "  if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {
+    Scm_Error(\"error handler must take at least 1 argument, but got %S\",
+              handler);
+  }
+  if (!SCM_PROCEDURE_TAKE_NARG_P(thunk, 0)) {
+    Scm_Error(\"thunk required, but got %S\", thunk);
+  }
+  SCM_RETURN(Scm_VMWithErrorHandler(handler, thunk));")
+
+;; srfi-18 primitive exception mechanism
+(define-cproc current-exception-handler ()
+  "  SCM_RETURN(Scm_VM()->exceptionHandler);")
+
+(define-cproc with-exception-handler (handler thunk)
+  "  if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {
+    Scm_Error(\"exception handler must take at least 1 argument, but got %S\",
+              handler);
+  }
+  if (!SCM_PROCEDURE_TAKE_NARG_P(thunk, 0)) {
+    Scm_Error(\"thunk required, but got %S\", thunk);
+  }
+  SCM_RETURN(Scm_VMWithExceptionHandler(handler, thunk));")
+
+(define-cproc raise (exception)
+  "  SCM_RETURN(Scm_VMThrowException(exception));")
+
+;;
+;; Exception class hierarchy
+;;
+
+(define-cclass <exception> #f "Scm_ExceptionClass"
+  ()
+  ())
+
+"static ScmObj thread_exception_allocate(ScmClass *klass, ScmObj initargs)
+ {
+    ScmThreadException *e = SCM_ALLOCATE(ScmThreadException, klass);
+    SCM_SET_CLASS(e, klass);
+    e->thread = NULL;
+    e->data = SCM_UNDEFINED;
+    return SCM_OBJ(e);
+ }"
+
+"static void thread_exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ {
+   ScmClass *k = SCM_CLASS_OF(obj);
+   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
+   if (SCM_UNDEFINEDP(exc->data)) {
+     Scm_Printf(port, \"#<%A %S>\", Scm__InternalClassName(k), SCM_OBJ_SAFE(exc->thread));
+   } else {
+     Scm_Printf(port, \"#<%A %S %S>\", Scm__InternalClassName(k), SCM_OBJ_SAFE(exc->thread), exc->data);
+   }
+ }"
+
+"static ScmClass *thread_exception_cpa[] = {
+   SCM_CLASS_STATIC_PTR(Scm_ThreadExceptionClass),
+   SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
+   SCM_CLASS_STATIC_PTR(Scm_TopClass),
+   NULL
+ };"
+
+(define-cclass <thread-exception>
+  "ScmThreadException" "Scm_ThreadExceptionClass"
+  ("Scm_ExceptionClass")
+  ((thread :type thread))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+(define-cclass <join-timeout-exception>
+  "ScmThreadException" "Scm_JoinTimeoutExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
+   )
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+(define-cclass <abandoned-mutex-exception>
+  "ScmThreadException" "Scm_AbandonedMutexExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
+   (mutex  :c-name "data"))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+(define-cclass <terminated-thread-exception>
+  "ScmThreadException" "Scm_TerminatedThreadExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET")))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+(define-cclass <uncaught-exception>
+  "ScmThreadException" "Scm_UncaughtExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
+   (exception :c-name data))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+;;
+;; Error class hierarchy
+;;
+
+"static void error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ {
+    ScmClass *k = SCM_CLASS_OF(obj);
+    Scm_Printf(port, \"#<%A \\\"%30.1A\\\">\",
+               Scm__InternalClassName(k), SCM_ERROR_MESSAGE(obj));
+ }"
+
+(define-cclass <error> "ScmError" "Scm_ErrorClass"
+  ()
+  ((message))
+  (allocator
+   "ScmError *e = SCM_ALLOCATE(ScmError, klass);
+    SCM_SET_CLASS(e, klass);
+    e->message = SCM_FALSE;
+    return SCM_OBJ(e);")
+  (printer (c "error_print"))
+  )
+
+(define-cclass <system-error> "ScmSystemError" "Scm_SystemErrorClass"
+  ("Scm_ErrorClass")
+  ((message :c-name "common.message")
+   (errno   :c-name "error_number" :type small-positive-integer))
+  (allocator
+   "ScmSystemError *e = SCM_ALLOCATE(ScmSystemError, klass);
+    SCM_SET_CLASS(e, klass);
+    e->common.message = SCM_FALSE;
+    e->error_number = 0;
+    return SCM_OBJ(e);")
+  (printer (c "error_print"))
+  )
+
+;; Local variables:
+;; mode: scheme
+;; end:

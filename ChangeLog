@@ -1,3 +1,10 @@
+2002-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : define-cclass starts working.  The interface may
+	  change.
+	* src/exclib.stub, src/error.c : moved exception class hierarchy
+	  definition to exclib.stub from error.c
+
 2002-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (Scm_Format): added ~* directive.
