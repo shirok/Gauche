@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.356 2003-02-05 10:14:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.357 2003-02-05 11:45:38 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -25763,7 +25763,7 @@ of the user cannot be determined, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@defun directory-list path &keyword children? add-path? filter
+@defun directory-list path &keyword children? add-path? filter filter-add-path?
 @c EN
 Returns a list of entries in the directory @var{path}.
 The result is sorted by dictionary order.
@@ -25771,10 +25771,15 @@ The result is sorted by dictionary order.
 By default, only the basename (the last component) of the entries
 returned.   If @var{add-path?} is given and true, @var{path} is appended
 to each entry.  If @var{children?} is given and true, @code{"."} and 
-@code{".."} are excluded from the result.  If @var{filter} is given,
-it must be a predicate that takes one argument.  It is called on
-every element of the entry basename, and only the entries on which
-@code{filter} returns true are included in the result.
+@code{".."} are excluded from the result.  
+
+If @var{filter} is given, it must be a predicate that takes one argument.  
+It is called on every element of the directory entry,
+and only the entries on which
+@var{filter} returns true are included in the result.
+The argument passed to @var{filter} is a basename of the directory entry
+by default, but when @var{filter-add-path?} is true, @var{path} is 
+appended to the entry.
 
 If @var{path} is not a directory, an error is signalled.
 @c JP
@@ -25785,9 +25790,13 @@ If @var{path} is not a directory, an error is signalled.
 返されますが、キーワード引数@var{add-path?}に真の値が与えられた時は
 @var{path}が各エントリの前に追加されます。
 @var{children?}に真の値が与えられた時は、カレントディレクトリと親ディレクトリが
-リストから除かれます。@var{filter}引数は、もし与えられれば、一つの引数を取る
+リストから除かれます。
+
+@var{filter}引数は、もし与えられれば、一つの引数を取る
 手続きでなければなりません。ディレクトリ中の各エントリを引数としてその手続きが呼ばれ、
 真を返したエントリのみが結果に含まれます。
+@var{filter}に与えられるエントリはデフォルトではベース名のみですが、
+引数@var{filter-add-path?}が真ならば@var{path}が前に追加された名前となります。
 
 @var{path}がディレクトリでない場合はエラーが報告されます。
 @c COMMON
@@ -28696,6 +28705,35 @@ it is shorter than @var{k} by default, or added @var{padding} if
   @result{} ((a b c) (d e f) (g z z))
 @end example
 @end defun
+
+@defmac cond-list clause @dots{}
+Construct a list by conditionally adding entries.
+Each @var{clause} has a test and expressions.  When its test
+yields true, the result of associated expression is used to
+construct the resulting list.  When the
+test yields false, nothing is inserted.
+
+@var{Clause} must be either one of the following form:
+@table @code
+@item (@var{test} @var{expr} @dots{})
+@var{Test} is evaluated, and when it is true,
+@var{expr} @dots{} are evaluated, and the return value
+becomes a part of the result.  If no @var{expr} is given,
+the result of @var{test} is used if it is not false.
+@item (@var{test} => @var{proc})
+@var{Test} is evaluated, and when it is true,
+@var{proc} is called with the value, and the return
+value is used to construct the result.
+@end table
+
+@example
+(let ((alist '((x 3) (y -1) (z 6))))
+ (cond-list ((assoc 'x alist) 'have-x)
+            ((assoc 'w alist) 'have-w)
+            ((assoc 'z alist) => cadr)))
+  @result{} (have-x 6)
+@end example
+@end defmac
 
 @c ----------------------------------------------------------------------
 @node util.queue - Queue, util.toposort - Topological sort, util.list - Additional list library, Library modules - Utilities
