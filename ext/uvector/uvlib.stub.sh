@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.8 2002-06-19 05:52:08 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.9 2002-06-19 08:18:23 shirok Exp $
 ;;;
 
 "
@@ -39,10 +39,11 @@ EOF
 
 emit() {
     vecttag=$1
-    vecttype=$2
-    itemtype=$3
+    VECTTAG=`echo $vecttag | tr '[a-z]' '[A-Z]'`
+    vecttype="${VECTTAG}Vector"
+    itemtype="${VECTTAG}ELTTYPE"
     integer=$4
-    VECTTYPE=`echo $vecttype | tr '[a-z]' '[A-Z]'`
+    VECTTYPE="${VECTTAG}VECTOR"
     cat <<EOF
 ;;--------------------------------------------------------------------
 ;; $vecttype
@@ -56,11 +57,11 @@ emit() {
 (define-cproc make-${vecttag}vector (length &optional (fill 0))
   (assert (small-integer? length))
   "  ${itemtype} filler;
-  SCM_${VECTTYPE}_UNBOX(filler, fill);
+  ${VECTTAG}UNBOX(filler, fill, 0);
   SCM_RETURN(Scm_Make${vecttype}(length, filler));")
 
 (define-cproc ${vecttag}vector (&rest args)
-  "  SCM_RETURN(Scm_ListTo${vecttype}(args));")
+  "  SCM_RETURN(Scm_ListTo${vecttype}(args, 0));")
 
 (define-cproc ${vecttag}vector-length (v)
   (assert (${vecttag}vector? v))
@@ -72,10 +73,10 @@ emit() {
   (setter ${vecttag}vector-set!)
   "  SCM_RETURN(Scm_${vecttype}Ref(v, i, fallback));")
 
-(define-cproc ${vecttag}vector-set! (v i val)
+(define-cproc ${vecttag}vector-set! (v i val &optional clamp)
   (assert (${vecttag}vector? v))
   (assert (small-integer? i))
-  "  SCM_RETURN(Scm_${vecttype}Set(v, i, val));")
+  "  SCM_RETURN(Scm_${vecttype}Set(v, i, val, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-copy (v &optional (start 0) (end -1))
   (assert (${vecttag}vector? v))
@@ -95,16 +96,16 @@ emit() {
   (assert (small-integer? end))
   "  SCM_RETURN(Scm_${vecttype}ToList(v, start, end));")
 
-(define-cproc list->${vecttag}vector (l)
+(define-cproc list->${vecttag}vector (l &optional clamp)
   (assert (list? l))
-  "  SCM_RETURN(Scm_ListTo${vecttype}(l));")
+  "  SCM_RETURN(Scm_ListTo${vecttype}(l, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-fill! (v val &optional (start 0) (end -1))
   (assert (${vecttag}vector? v))
   (assert (small-integer? start))
   (assert (small-integer? end))
   "  ${itemtype} filler;
-  SCM_${VECTTYPE}_UNBOX(filler, val);
+  ${VECTTAG}UNBOX(filler, val, 0);
   SCM_RETURN(Scm_${vecttype}Fill(v, filler, start, end));")
 
 (define-cproc ${vecttag}vector->vector (v &optional (start 0) (end -1))
@@ -113,48 +114,48 @@ emit() {
   (assert (small-integer? end))
   "  SCM_RETURN(Scm_${vecttype}ToVector(v, start, end));")
 
-(define-cproc vector->${vecttag}vector (v &optional (start 0) (end -1))
+(define-cproc vector->${vecttag}vector (v &optional (start 0) (end -1) clamp)
   (assert (vector? v))
   (assert (small-integer? start))
   (assert (small-integer? end))
-  "  SCM_RETURN(Scm_VectorTo${vecttype}(v, start, end));")
+  "  SCM_RETURN(Scm_VectorTo${vecttype}(v, start, end, clamp_arg(clamp)));")
 
 ; Arithmetic operations
-(define-cproc ${vecttag}vector-add! (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  "SCM_RETURN(Scm_${vecttype}Add(v0, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-add! (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  "SCM_RETURN(Scm_${vecttype}Add(v0, v0, v1, clamp_arg(clamp)));")
 
-(define-cproc ${vecttag}vector-add (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
-  SCM_RETURN(Scm_${vecttype}Add(dst, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-add (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+;  SCM_RETURN(Scm_${vecttype}Add(dst, v0, v1, clamp_arg(clamp)));")
 
-(define-cproc ${vecttag}vector-sub! (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  "SCM_RETURN(Scm_${vecttype}Sub(v0, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-sub! (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  "SCM_RETURN(Scm_${vecttype}Sub(v0, v0, v1, clamp_arg(clamp)));")
 
-(define-cproc ${vecttag}vector-sub (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
-  SCM_RETURN(Scm_${vecttype}Sub(dst, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-sub (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+;  SCM_RETURN(Scm_${vecttype}Sub(dst, v0, v1, clamp_arg(clamp)));")
 
-(define-cproc ${vecttag}vector-mul! (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  "SCM_RETURN(Scm_${vecttype}Mul(v0, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-mul! (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  "SCM_RETURN(Scm_${vecttype}Mul(v0, v0, v1, clamp_arg(clamp)));")
 
-(define-cproc ${vecttag}vector-mul (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
-  SCM_RETURN(Scm_${vecttype}Mul(dst, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-mul (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+;  SCM_RETURN(Scm_${vecttype}Mul(dst, v0, v1, clamp_arg(clamp)));")
 
-(define-cproc ${vecttag}vector-div! (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  "SCM_RETURN(Scm_${vecttype}Div(v0, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-div! (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  "SCM_RETURN(Scm_${vecttype}Div(v0, v0, v1, clamp_arg(clamp)));")
 
-(define-cproc ${vecttag}vector-div (v0 v1 &optional clamp)
-  (assert (${vecttag}vector? v0))
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
-  SCM_RETURN(Scm_${vecttype}Div(dst, v0, v1, clamp_arg(clamp)));")
+;(define-cproc ${vecttag}vector-div (v0 v1 &optional clamp)
+;  (assert (${vecttag}vector? v0))
+;  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+;  SCM_RETURN(Scm_${vecttype}Div(dst, v0, v1, clamp_arg(clamp)));")
 
 EOF
 
@@ -199,14 +200,14 @@ EOF
     fi
 }
 
-emit s8  S8Vector  "char" 1
-emit u8  U8Vector  "unsigned char" 1
-emit s16 S16Vector "short" 1
-emit u16 U16Vector "unsigned short" 1
-emit s32 S32Vector SCM_UVECTOR_INT32 1
-emit u32 U32Vector SCM_UVECTOR_UINT32 1
-emit s64 S64Vector SCM_UVECTOR_INT64 1
-emit u64 U64Vector SCM_UVECTOR_UINT64 1
+emit s8  S8Vector  "char" 0
+emit u8  U8Vector  "unsigned char" 0
+emit s16 S16Vector "short" 0
+emit u16 U16Vector "unsigned short" 0
+emit s32 S32Vector SCM_UVECTOR_INT32 0
+emit u32 U32Vector SCM_UVECTOR_UINT32 0
+emit s64 S64Vector SCM_UVECTOR_INT64 0
+emit u64 U64Vector SCM_UVECTOR_UINT64 0
 emit f32 F32Vector "float"
 emit f64 F64Vector "double"
 

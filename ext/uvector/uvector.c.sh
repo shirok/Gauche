@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.17 2002-06-19 05:52:08 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.18 2002-06-19 08:18:23 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -66,10 +66,10 @@ EOF
 # template ------------------------------------------------------------
 emit() {
     vecttag=$1
-    vecttype=$2
-    itemtype=$3
-    extrafns=$4
-    VECTTYPE=`echo $vecttype | tr '[a-z]' '[A-Z]'`
+    VECTTAG=`echo $vecttag | tr '[a-z]' '[A-Z]'`
+    vecttype="${VECTTAG}Vector"
+    VECTTYPE="${VECTTAG}VECTOR"
+    itemtype="${VECTTAG}ELTTYPE"
     cat <<EOF
 
 /*---------------------------------------------------------------
@@ -87,7 +87,7 @@ static void print_${vecttype}(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     for (i=0; i<SCM_${VECTTYPE}_SIZE(obj); i++) {
         ${itemtype} elt = SCM_${VECTTYPE}_ELEMENTS(obj)[i];
         if (i != 0) Scm_Printf(out, " ");
-        SCM_${VECTTYPE}_PRINT_ELT(out, elt);
+        ${VECTTAG}ELTPRINT(out, elt);
     }
     Scm_Printf(out, ")");
 }
@@ -100,7 +100,7 @@ static int compare_${vecttype}(ScmObj x, ScmObj y)
     for (i=0; i<len; i++) {
         xx = SCM_${VECTTYPE}_ELEMENTS(x)[i];
         yy = SCM_${VECTTYPE}_ELEMENTS(y)[i];
-        if (!SCM_${VECTTYPE}_EQUAL_ELT(xx, yy)) {
+        if (!${VECTTAG}ELTEQ(xx, yy)) {
             return -1;
         }
     }
@@ -144,7 +144,7 @@ ScmObj Scm_Make${vecttype}FromArray(int size, ${itemtype} array[])
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_ListTo${vecttype}(ScmObj list)
+ScmObj Scm_ListTo${vecttype}(ScmObj list, int clamp)
 {
     int length = Scm_Length(list), i;
     Scm${vecttype} *vec;
@@ -154,13 +154,14 @@ ScmObj Scm_ListTo${vecttype}(ScmObj list)
     vec = make_${vecttype}(length);
     for (i=0, cp=list; i<length; i++, cp = SCM_CDR(cp)) {
         ${itemtype} elt;
-        SCM_${VECTTYPE}_UNBOX(elt, SCM_CAR(cp));
+        ScmObj obj = SCM_CAR(cp);
+        ${VECTTAG}UNBOX(elt, obj, clamp);
         vec->elements[i] = elt;
     }
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec, int start, int end)
+ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec, int start, int end, int clamp)
 {
     int length = SCM_VECTOR_SIZE(ivec), i;
     Scm${vecttype} *vec;
@@ -169,7 +170,8 @@ ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec, int start, int end)
     vec = make_${vecttype}(end-start);
     for (i=start; i<end; i++) {
         ${itemtype} elt;
-        SCM_${VECTTYPE}_UNBOX(elt, SCM_VECTOR_ELEMENT(ivec, i));
+        ScmObj obj = SCM_VECTOR_ELEMENT(ivec, i);
+        ${VECTTAG}UNBOX(elt, obj, clamp);
         vec->elements[i-start] = elt;
     }
     return SCM_OBJ(vec);
@@ -190,21 +192,23 @@ ScmObj Scm_${vecttype}Fill(Scm${vecttype} *vec, ${itemtype} fill, int start, int
 ScmObj Scm_${vecttype}Ref(Scm${vecttype} *vec, int index, ScmObj fallback)
 {
     ScmObj r;
+    ${itemtype} elt;
     if (index < 0 || index >= SCM_${VECTTYPE}_SIZE(vec)) {
         if (SCM_UNBOUNDP(fallback)) 
             Scm_Error("index out of range: %d", index);
         return fallback;
     }
-    SCM_${VECTTYPE}_BOX(r, vec->elements[index]);
+    elt = vec->elements[index];
+    ${VECTTAG}BOX(r, elt);
     return r;
 }
 
-ScmObj Scm_${vecttype}Set(Scm${vecttype} *vec, int index, ScmObj val)
+ScmObj Scm_${vecttype}Set(Scm${vecttype} *vec, int index, ScmObj val, int clamp)
 {
     ${itemtype} elt;
     if (index < 0 || index >= SCM_${VECTTYPE}_SIZE(vec))
         Scm_Error("index out of range: %d", index);
-    SCM_${VECTTYPE}_UNBOX(elt, val);
+    ${VECTTAG}UNBOX(elt, val, clamp);
     vec->elements[index] = elt;
     return SCM_OBJ(vec);
 }
@@ -215,9 +219,10 @@ ScmObj Scm_${vecttype}ToList(Scm${vecttype} *vec, int start, int end)
     int i, size = SCM_${VECTTYPE}_SIZE(vec);
     CHECK_START_END(start, end, size);
     for (i=start; i<end; i++) {
-        ScmObj elt;
-        SCM_${VECTTYPE}_BOX(elt, vec->elements[i]);
-        SCM_APPEND1(head, tail, elt);
+        ScmObj obj;
+        ${itemtype} elt = vec->elements[i];
+        ${VECTTAG}BOX(obj, elt);
+        SCM_APPEND1(head, tail, obj);
     }
     return head;
 }
@@ -229,9 +234,10 @@ ScmObj Scm_${vecttype}ToVector(Scm${vecttype} *vec, int start, int end)
     CHECK_START_END(start, end, size);
     ovec = Scm_MakeVector(end-start, SCM_UNDEFINED);
     for (i=start; i<end; i++) {
-        ScmObj elt;
-        SCM_${VECTTYPE}_BOX(elt, vec->elements[i]);
-        SCM_VECTOR_ELEMENT(ovec, i-start) = elt;
+        ScmObj obj;
+        ${itemtype} elt = vec->elements[i];
+        ${VECTTAG}BOX(obj, elt);
+        SCM_VECTOR_ELEMENT(ovec, i-start) = obj;
     }
     return ovec;
 }
@@ -257,16 +263,16 @@ ScmObj Scm_${vecttype}CopyX(Scm${vecttype} *dst, Scm${vecttype} *src)
 EOF
 }  # end of emit
 
-emit s8 S8Vector "signed char"
-emit u8 U8Vector "unsigned char"
-emit s16 S16Vector "short"
-emit u16 U16Vector "unsigned short"
-emit s32 S32Vector "SCM_UVECTOR_INT32"
-emit u32 U32Vector "SCM_UVECTOR_UINT32"
-emit s64 S64Vector "SCM_UVECTOR_INT64"
-emit u64 U64Vector "SCM_UVECTOR_UINT64"
-emit f32 F32Vector "float"
-emit f64 F64Vector "double"
+emit s8
+emit u8
+emit s16
+emit u16
+emit s32
+emit u32
+emit s64
+emit u64
+emit f32
+emit f64
 
 # epilogue -----------------------------------------------------------
 
@@ -283,16 +289,16 @@ static ScmObj read_uvector(ScmPort *port, const char *tag)
     SCM_GETC(c, port);
     if (c != '(') Scm_Error("bad uniform vector syntax for %s", tag);
     list = Scm_ReadList(SCM_OBJ(port), ')');
-    if (strcmp(tag, "s8") == 0)  return Scm_ListToS8Vector(list);
-    if (strcmp(tag, "u8") == 0)  return Scm_ListToU8Vector(list);
-    if (strcmp(tag, "s16") == 0) return Scm_ListToS16Vector(list);
-    if (strcmp(tag, "u16") == 0) return Scm_ListToU16Vector(list);
-    if (strcmp(tag, "s32") == 0) return Scm_ListToS32Vector(list);
-    if (strcmp(tag, "u32") == 0) return Scm_ListToU32Vector(list);
-    if (strcmp(tag, "s64") == 0) return Scm_ListToS64Vector(list);
-    if (strcmp(tag, "u64") == 0) return Scm_ListToU64Vector(list);
-    if (strcmp(tag, "f32") == 0) return Scm_ListToF32Vector(list);
-    if (strcmp(tag, "f64") == 0) return Scm_ListToF64Vector(list);
+    if (strcmp(tag, "s8") == 0)  return Scm_ListToS8Vector(list, 0);
+    if (strcmp(tag, "u8") == 0)  return Scm_ListToU8Vector(list, 0);
+    if (strcmp(tag, "s16") == 0) return Scm_ListToS16Vector(list, 0);
+    if (strcmp(tag, "u16") == 0) return Scm_ListToU16Vector(list, 0);
+    if (strcmp(tag, "s32") == 0) return Scm_ListToS32Vector(list, 0);
+    if (strcmp(tag, "u32") == 0) return Scm_ListToU32Vector(list, 0);
+    if (strcmp(tag, "s64") == 0) return Scm_ListToS64Vector(list, 0);
+    if (strcmp(tag, "u64") == 0) return Scm_ListToU64Vector(list, 0);
+    if (strcmp(tag, "f32") == 0) return Scm_ListToF32Vector(list, 0);
+    if (strcmp(tag, "f64") == 0) return Scm_ListToF64Vector(list, 0);
     Scm_Error("invalid unform vector tag: %s", tag);
     return SCM_UNDEFINED; /* dummy */
 }
