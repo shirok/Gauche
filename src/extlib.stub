@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.107 2001-10-13 11:44:42 shirok Exp $
+;;; $Id: extlib.stub,v 1.108 2001-10-22 11:18:44 shirok Exp $
 ;;;
 
 "
@@ -64,6 +64,31 @@
     r = Scm_LogXor(r, SCM_CAR(cp));
   }
   SCM_RETURN(r);")
+
+(define-cproc clamp (x &optional (min #f) (max #f))
+  " ScmObj r = x;  int maybe_exact = FALSE;
+  if (SCM_EXACTP(x)) maybe_exact = TRUE;
+  else if (!SCM_FLONUMP(x)) {
+    Scm_Error(\"real number required for x, but got %S\", x);
+  }
+  if (SCM_EXACTP(min)) {
+    if (Scm_NumCmp(x, min) < 0) r = min;
+  } else if (SCM_FLONUMP(min)) {
+    maybe_exact = FALSE;
+    if (Scm_NumCmp(x, min) < 0) r = min;
+  } else if (!SCM_FALSEP(min)) {
+    Scm_Error(\"real number or #f required for min, but got %S\", min);
+  }
+  if (SCM_EXACTP(max)) {
+    if (Scm_NumCmp(x, max) > 0) r = max;
+  } else if (SCM_FLONUMP(max)) {
+     maybe_exact = FALSE;
+    if (Scm_NumCmp(x, max) > 0) r = max;
+  } else if (!SCM_FALSEP(max)) {
+    Scm_Error(\"real number or #f required for max, but got %S\", max);
+  }
+  if (!maybe_exact && SCM_EXACTP(r)) SCM_RETURN(Scm_ExactToInexact(r));
+  else SCM_RETURN(r);")
 
 ;; just for debug...
 (define-cproc %bignum-dump (obj)
