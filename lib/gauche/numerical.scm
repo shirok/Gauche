@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.12 2002-02-26 09:05:34 shirok Exp $
+;;;  $Id: numerical.scm,v 1.13 2002-03-07 09:59:24 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -97,9 +97,8 @@
 
 (define-in-module scheme (exp z)
   (cond ((real? z) (%exp z))
-        ((complex? x)
-         (receive (x y)
-             (%complex->real/imag z)
+        ((complex? z)
+         (receive (x y) (%complex->real/imag z)
            (make-polar (%exp x) y)))
         (else (error "number required, but got" z))))
 
