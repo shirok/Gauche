@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.2 2001-10-16 11:08:28 shirok Exp $
+;; $Id: hash.scm,v 1.3 2003-01-07 12:06:53 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -198,6 +198,39 @@
 (test "hash-table-values" #t
       (lambda ()
         (lset= equal? (hash-table-values h-string) '(8 "b" 5))))
+
+;;------------------------------------------------------------------
+(test-section "iterators")
+
+(define h-it (hash-table 'eq?
+                         '(a . 3)
+                         '(c . 8)
+                         '(b . 4)
+                         '(d . 10)))
+
+(test "hash-table"
+      '(a b c d)
+      (lambda () (hash-table-keys h-it))
+      (lambda (a b) (lset= equal? a b)))
+
+(test "hash-table-map"
+      '((a . 3) (b . 4) (c . 8) (d . 10))
+      (lambda ()
+        (hash-table-map h-it cons))
+      (lambda (a b) (lset= equal? a b)))
+
+(test "hash-table-for-each"
+      '((a . 3) (b . 4) (c . 8) (d . 10))
+      (lambda ()
+        (let ((r '()))
+          (hash-table-for-each h-it (lambda (k v) (push! r (cons k v))))
+          r))
+      (lambda (a b) (lset= equal? a b)))
+
+(test "hash-table-fold"
+      '((a . 3) (b . 4) (c . 8) (d . 10))
+      (lambda () (hash-table-fold h-it acons '()))
+      (lambda (a b) (lset= equal? a b)))
 
 
       
