@@ -1,5 +1,9 @@
 2003-09-27  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.scm : added make-server-sockets and make-sockaddrs
+	  in order to open multiple server sockets (esp., when the host
+	  has both ipv4 and ipv6 interface).  Patch provided by Kimura Fuyuki.
+
 	* ext/charconv/charconv.scm : added call-with-input|output-conversion.
 
 	* src/macro.c (compile_rule1): fixed the problem of macro-defining

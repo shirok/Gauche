@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.21 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: net.scm,v 1.22 2003-09-28 12:27:27 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -42,8 +42,8 @@
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
           <sockaddr> <sockaddr-in> <sockaddr-un>
-          sockaddr-name sockaddr-family
-          make-client-socket make-server-socket
+          sockaddr-name sockaddr-family make-sockaddrs
+          make-client-socket make-server-socket make-server-sockets
           call-with-client-socket
           <sys-hostent> sys-gethostbyname sys-gethostbyaddr
           <sys-protoent> sys-getprotobyname sys-getprotobynumber
@@ -105,7 +105,7 @@
            (make-client-socket-unix path)))
         ((eq? proto 'inet)
          (let-optionals* args ((host #f) (port #f))
-           (unless (and (string? host) (integer? port))
+           (unless (and (string? host) (or (integer? port) (string? port)))
              (errorf "inet socket requires host name and port, but got ~s and ~s"
                      host port))
            (make-client-socket-inet host port)))
@@ -134,21 +134,17 @@
 (define (make-client-socket-inet host port)
   (cond (ipv6-capable
          (let1 err #f
-           (define (try-connect ai)
+           (define (try-connect address)
              (with-error-handler (lambda (e) (set! err e) #f)
                (lambda ()
-                 (let ((address (slot-ref ai 'addr))
-                       (socket (make-socket (slot-ref ai 'family)
-                                            (slot-ref ai 'socktype))))
+                 (let1 socket (make-socket (address->protocol-family address)
+					   |SOCK_STREAM|)
                    (socket-connect socket address)))))
-           (let* ((hints (make-sys-addrinfo :socktype |SOCK_STREAM|))
-                  (socket (any try-connect
-                               (sys-getaddrinfo host (number->string port)
-                                                hints))))
+           (let1 socket (any try-connect (make-sockaddrs host port))
              (unless socket (raise err))
              socket)))
         (else
-         (let ((address (make <sockaddr-in> :host host :port port))
+         (let ((address (car (make-sockaddrs host port)))
                (socket (make-socket |PF_INET| |SOCK_STREAM|)))
            (socket-connect socket address)
            socket))
@@ -162,8 +158,8 @@
            (make-server-socket-unix path)))
         ((eq? proto 'inet)
          (let-optionals* args ((port #f))
-           (unless (integer? port)
-             (error "inet socket requires port number, but got" port))
+           (unless (or (integer? port) (string? port))
+             (error "inet socket requires port, but got" port))
            (apply make-server-socket-inet port (cdr args))))
         ((is-a? proto <sockaddr>)
          ;; caller provided sockaddr
@@ -179,7 +175,7 @@
         (socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)))
     (when reuse-addr?
       (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
-    (socket-bind socket address)
+    (socket-bind socket addr)
     (socket-listen socket 5)))
 
 (define (make-server-socket-unix path)
@@ -197,25 +193,41 @@
       (socket-listen socket 5))
     (cond (ipv6-capable
            (let1 err #f
-             (define (try-bind-listen ai)
+             (define (try-bind-listen address)
                (with-error-handler (lambda (e) (set! err e) #f)
                  (lambda ()
-                   (let ((address (slot-ref ai 'addr))
-                         (socket (make-socket (slot-ref ai 'family)
-                                             (slot-ref ai 'socktype))))
-                   (bind-listen socket address)))))
-             (let* ((hints (make-sys-addrinfo :flags |AI_PASSIVE|
-                                       :socktype |SOCK_STREAM|))
-                    (socket (any try-bind-listen
-                                 (sys-getaddrinfo #f (number->string port)
-                                                  hints))))
+		   (let1 socket (make-socket (address->protocol-family address)
+					     |SOCK_STREAM|)
+		     (bind-listen socket address)))))
+             (let1 socket (any try-bind-listen (make-sockaddrs #f port))
                (unless socket (raise err))
                socket)))
           (else
-           (let ((address (make <sockaddr-in> :host :any :port port))
+           (let ((address (car (make-sockaddrs #f port)))
                  (socket (make-socket |PF_INET| |SOCK_STREAM|)))
              (bind-listen socket address))))
     ))
+
+(define (make-server-sockets host port . args)
+  (map (lambda (sockaddr) (apply make-server-socket sockaddr args))
+       (make-sockaddrs host port)))
+
+(define (make-sockaddrs host port)
+  (cond (ipv6-capable
+	 (let ((port (x->string port))
+	       (hints (make-sys-addrinfo :flags |AI_PASSIVE|
+					 :socktype |SOCK_STREAM|)))
+	   (map (lambda (ai) (slot-ref ai 'addr))
+		(sys-getaddrinfo host port hints))))
+	(else
+	 (let1 port (if (number? port)
+			port
+			(slot-ref (sys-getservbyname port "tcp") 'port))
+	   (if host
+	       (map (lambda (host)
+		      (make <sockaddr-in> :host host :port port))
+		    (slot-ref (sys-gethostbyname host) 'addresses))
+	       (list (make <sockaddr-in> :host :any :port port)))))))
 
 (define (call-with-client-socket socket proc)
   (with-error-handler
