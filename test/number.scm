@@ -243,8 +243,6 @@
 ;;------------------------------------------------------------------
 (test-section "quotient")
 
-;; TODO: need to test the "add back" part of bignum_gdiv
-
 (define (q-result x exact?) (list x (- x) (- x) x exact?))
 (define (q-tester x y)
   (list (quotient x y) (quotient (- x) y)
@@ -276,6 +274,13 @@
       (lambda () (q-tester 4020957098 1952679221)))
 (test "big[1]/big[1] -> fix" (q-result 0 #t)
       (lambda () (q-tester 1952679221 4020957098)))
+;; this tests loop in estimation phase
+(test "big[3]/big[2] -> big[1]" (q-result #xffff0001 #t)
+      (lambda () (q-tester #x10000000000000000 #x10000ffff)))
+;; this test goes through a rare case handling code ("add back") in
+;; the algorithm.
+(test "big[3]/big[2] -> fix" (q-result #xeffe #t)
+      (lambda () (q-tester #x7800000000000000 #x80008889ffff)))
 
 ;; inexact quotient
 (test "exact/inexact -> inexact" (q-result 3.0 #f)
@@ -333,6 +338,12 @@
       (lambda () (r-tester 4020957098 1952679221)))
 (test "big[1] rem big[1] -> fix" (r-result 1952679221 #t)
       (lambda () (r-tester 1952679221 4020957098)))
+;; this tests loop in estimation phase
+(test "big[3] rem big[2] -> big[1]" (r-result #xfffe0001 #t)
+      (lambda () (r-tester #x10000000000000000 #x10000ffff)))
+;; this tests "add back" code
+(test "big[3] rem big[2] -> big[2]" (r-result #x7fffb114effe #t)
+      (lambda () (r-tester #x7800000000000000 #x80008889ffff)))
 
 ;; inexact remainder
 (test "exact rem inexact -> inexact" (r-result 1.0 #f)
@@ -390,6 +401,12 @@
       (lambda () (m-tester 4020957098 1952679221)))
 (test "big[1] mod big[1] -> fix" (m-result 1952679221 2068277877 #t)
       (lambda () (m-tester 1952679221 4020957098)))
+;; this tests loop in estimation phase
+(test "big[3] mod big[2] -> big[1]" (m-result #xfffe0001 #x2fffe #t)
+      (lambda () (m-tester #x10000000000000000 #x10000ffff)))
+;; this tests "add back" code
+(test "big[3] mod big[2] -> big[2]" (m-result #x7fffb114effe #xd7751001 #t)
+      (lambda () (m-tester #x7800000000000000 #x80008889ffff)))
 
 ;; inexact modulo
 (test "exact mod inexact -> inexact" (m-result 1.0 3.0 #f)
