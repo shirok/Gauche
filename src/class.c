@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.50 2001-06-22 07:32:29 shirok Exp $
+ *  $Id: class.c,v 1.51 2001-09-07 09:59:20 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1607,6 +1607,8 @@ void Scm_InitBuiltinMethod(ScmMethod *m)
     Scm_AddMethod(m->generic, m);
 }
 
+extern ScmClassStaticSlotSpec Scm_SysTermiosSlots[];
+
 void Scm__InitClass(void)
 {
     ScmModule *mod = Scm_GaucheModule();
@@ -1723,6 +1725,8 @@ void Scm__InitClass(void)
 #ifdef HAVE_SELECT
     CINIT(SCM_CLASS_SYS_FDSET,        "<sys-fdset>");
 #endif
+    CINIT(SCM_CLASS_SYS_TERMIOS,      "<sys-termios>");
+    bootstrap_class(&Scm_SysTermiosClass, Scm_SysTermiosSlots);
     
     /* vector.c */
     CINIT(SCM_CLASS_VECTOR,           "<vector>");

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.41 2001-09-06 07:08:51 shirok Exp $
+;;; $Id: syslib.stub,v 1.42 2001-09-07 09:59:20 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -543,6 +543,166 @@
 
 ;;---------------------------------------------------------------------
 ;; termios.h
+
+(define-type "sys-termios" sys-termios?
+  "ScmSysTermios*"  "SCM_SYS_TERMIOS_P" "SCM_SYS_TERMIOS")
+
+(define-symbol IGNBRK "termios_ignbrk" "Scm_MakeIntegerFromUI(IGNBRK)")
+(define-symbol BRKINT "termios_brkint" "Scm_MakeIntegerFromUI(BRKINT)")
+(define-symbol IGNPAR "termios_ignpar" "Scm_MakeIntegerFromUI(IGNPAR)")
+(define-symbol PARMRK "termios_parmrk" "Scm_MakeIntegerFromUI(PARMRK)")
+(define-symbol INPCK  "termios_inpck"  "Scm_MakeIntegerFromUI(INPCK)")
+(define-symbol ISTRIP "termios_istrip" "Scm_MakeIntegerFromUI(ISTRIP)")
+(define-symbol INLCR  "termios_inlcr"  "Scm_MakeIntegerFromUI(INLCR)")
+(define-symbol IGNCR  "termios_igncr"  "Scm_MakeIntegerFromUI(IGNCR)")
+(define-symbol ICRNL  "termios_icrnl"  "Scm_MakeIntegerFromUI(ICRNL)")
+(define-symbol IUCLC  "termios_iuclc"  "Scm_MakeIntegerFromUI(IUCLC)")
+(define-symbol IXON   "termios_ixon"   "Scm_MakeIntegerFromUI(IXON)")
+(define-symbol IXANY  "termios_ixany"  "Scm_MakeIntegerFromUI(IXANY)")
+(define-symbol IXOFF  "termios_ixoff"  "Scm_MakeIntegerFromUI(IXOFF)")
+(define-symbol IMAXBEL "termios_imaxbel" "Scm_MakeIntegerFromUI(IMAXBEL)")
+
+(define-symbol OPOST  "termios_opost"  "Scm_MakeIntegerFromUI(OPOST)")
+(define-symbol OLCUC  "termios_olcuc"  "Scm_MakeIntegerFromUI(OLCUC)")
+(define-symbol ONLCR  "termios_onlcr"  "Scm_MakeIntegerFromUI(ONLCR)")
+(define-symbol OCRNL  "termios_ocrnl"  "Scm_MakeIntegerFromUI(OCRNL)")
+(define-symbol ONOCR  "termios_onocr"  "Scm_MakeIntegerFromUI(ONOCR)")
+(define-symbol ONLRET "termios_onlret" "Scm_MakeIntegerFromUI(ONLRET)")
+(define-symbol OFILL  "termios_ofill"  "Scm_MakeIntegerFromUI(OFILL)")
+(define-symbol OFDEL  "termios_ofdel"  "Scm_MakeIntegerFromUI(OFDEL)")
+(define-symbol NLDLY  "termios_nldly"  "Scm_MakeIntegerFromUI(NLDLY)")
+(define-symbol NL0    "termios_nl0"    "Scm_MakeIntegerFromUI(NL0)")
+(define-symbol NL1    "termios_nl1"    "Scm_MakeIntegerFromUI(NL1)")
+(define-symbol CRDLY  "termios_crdly"  "Scm_MakeIntegerFromUI(CRDLY)")
+(define-symbol CR0    "termios_cr0"    "Scm_MakeIntegerFromUI(CR0)")
+(define-symbol CR1    "termios_cr1"    "Scm_MakeIntegerFromUI(CR1)")
+(define-symbol CR2    "termios_cr2"    "Scm_MakeIntegerFromUI(CR2)")
+(define-symbol CR3    "termios_cr3"    "Scm_MakeIntegerFromUI(CR3)")
+(define-symbol BSDLY  "termios_bsdly"  "Scm_MakeIntegerFromUI(BSDLY)")
+(define-symbol BS0    "termios_bs0"    "Scm_MakeIntegerFromUI(BS0)")
+(define-symbol BS1    "termios_bs1"    "Scm_MakeIntegerFromUI(BS1)")
+(define-symbol VTDLY  "termios_vtdly"  "Scm_MakeIntegerFromUI(VTDLY)")
+(define-symbol VT0    "termios_vt0"    "Scm_MakeIntegerFromUI(VT0)")
+(define-symbol VT1    "termios_vt1"    "Scm_MakeIntegerFromUI(VT1)")
+(define-symbol FFDLY  "termios_ffdly"  "Scm_MakeIntegerFromUI(FFDLY)")
+(define-symbol FF0    "termios_ff0"    "Scm_MakeIntegerFromUI(FF0)")
+(define-symbol FF1    "termios_ff1"    "Scm_MakeIntegerFromUI(FF1)")
+
+(define-symbol CSIZE  "termios_csize"  "Scm_MakeIntegerFromUI(CSIZE)")
+(define-symbol CS5    "termios_cs5"    "Scm_MakeIntegerFromUI(CS5)")
+(define-symbol CS6    "termios_cs6"    "Scm_MakeIntegerFromUI(CS6)")
+(define-symbol CS7    "termios_cs7"    "Scm_MakeIntegerFromUI(CS7)")
+(define-symbol CS8    "termios_cs8"    "Scm_MakeIntegerFromUI(CS8)")
+(define-symbol CSTOPB "termios_cstopb" "Scm_MakeIntegerFromUI(CSTOPB)")
+(define-symbol CREAD  "termios_cread"  "Scm_MakeIntegerFromUI(CREAD)")
+(define-symbol PARENB "termios_parenb" "Scm_MakeIntegerFromUI(PARENB)")
+(define-symbol PARODD "termios_parodd" "Scm_MakeIntegerFromUI(PARODD)")
+(define-symbol HUPCL  "termios_hupcl"  "Scm_MakeIntegerFromUI(HUPCL)")
+(define-symbol CLOCAL "termios_clocal" "Scm_MakeIntegerFromUI(CLOCAL)")
+(define-symbol CIBAUD "termios_cibaud" "Scm_MakeIntegerFromUI(CIBAUD)")
+(define-symbol CRTSCTS "termios_crtscts" "Scm_MakeIntegerFromUI(CRTSCTS)")
+
+(define-symbol ISIG   "termios_isig"   "Scm_MakeIntegerFromUI(ISIG)")
+(define-symbol ICANON "termios_icanon" "Scm_MakeIntegerFromUI(ICANON)")
+(define-symbol XCASE  "termios_xcase"  "Scm_MakeIntegerFromUI(XCASE)")
+(define-symbol ECHO   "termios_echo"   "Scm_MakeIntegerFromUI(ECHO)")
+(define-symbol ECHOE  "termios_echoe"  "Scm_MakeIntegerFromUI(ECHOE)")
+(define-symbol ECHOK  "termios_echok"  "Scm_MakeIntegerFromUI(ECHOK)")
+(define-symbol ECHONL "termios_echonl" "Scm_MakeIntegerFromUI(ECHONL)")
+(define-symbol ECHOCTL "termios_echoctl" "Scm_MakeIntegerFromUI(ECHOCTL)")
+(define-symbol ECHOPRT "termios_echoprt" "Scm_MakeIntegerFromUI(ECHOPRT)")
+(define-symbol ECHOKE "termios_echoke" "Scm_MakeIntegerFromUI(ECHOKE)")
+(define-symbol FLUSHO "termios_flusho" "Scm_MakeIntegerFromUI(FLUSHO)")
+(define-symbol NOFLSH "termios_noflsh" "Scm_MakeIntegerFromUI(NOFLSH)")
+(define-symbol TOSTOP "termios_tostop" "Scm_MakeIntegerFromUI(TOSTOP)")
+(define-symbol PENDIN "termios_pendin" "Scm_MakeIntegerFromUI(PENDIN)")
+
+(define-symbol TCSANOW "termios_tcsanow" "Scm_MakeIntegerFromUI(TCSANOW)")
+(define-symbol TCSADRAIN "termios_tcsadrain" "Scm_MakeIntegerFromUI(TCSADRAIN)")
+(define-symbol TCSAFLUSH "termios_tcsaflush" "Scm_MakeIntegerFromUI(TCSAFLUSH)")
+(define-symbol TCIFLUSH "termios_tciflush" "Scm_MakeIntegerFromUI(TCIFLUSH)")
+(define-symbol TCOFLUSH "termios_tcoflush" "Scm_MakeIntegerFromUI(TCOFLUSH)")
+(define-symbol TCIOFLUSH "termios_tcioflush" "Scm_MakeIntegerFromUI(TCIOFLUSH)")
+(define-symbol TCOOFF "termios_tcooff" "Scm_MakeIntegerFromUI(TCOOFF)")
+(define-symbol TCOON  "termios_tcoon"  "Scm_MakeIntegerFromUI(TCOON)")
+(define-symbol TCIOFF "termios_tcioff" "Scm_MakeIntegerFromUI(TCIOFF)")
+(define-symbol TCION  "termios_tcion"  "Scm_MakeIntegerFromUI(TCION)")
+
+(define-symbol B0     "termios_b0"     "Scm_MakeIntegerFromUI(B0)")
+(define-symbol B50    "termios_b50"    "Scm_MakeIntegerFromUI(B50)")
+(define-symbol B75    "termios_b75"    "Scm_MakeIntegerFromUI(B75)")
+(define-symbol B110   "termios_b110"   "Scm_MakeIntegerFromUI(B110)")
+(define-symbol B134   "termios_b134"   "Scm_MakeIntegerFromUI(B134)")
+(define-symbol B150   "termios_b150"   "Scm_MakeIntegerFromUI(B150)")
+(define-symbol B200   "termios_b200"   "Scm_MakeIntegerFromUI(B200)")
+(define-symbol B300   "termios_b300"   "Scm_MakeIntegerFromUI(B300)")
+(define-symbol B600   "termios_b600"   "Scm_MakeIntegerFromUI(B600)")
+(define-symbol B1200  "termios_b1200"  "Scm_MakeIntegerFromUI(B1200)")
+(define-symbol B1800  "termios_b1800"  "Scm_MakeIntegerFromUI(B1800)")
+(define-symbol B2400  "termios_b2400"  "Scm_MakeIntegerFromUI(B2400)")
+(define-symbol B4800  "termios_b4800"  "Scm_MakeIntegerFromUI(B4800)")
+(define-symbol B9600  "termios_b9600"  "Scm_MakeIntegerFromUI(B9600)")
+(define-symbol B19200 "termios_b19200" "Scm_MakeIntegerFromUI(B19200)")
+(define-symbol B38400 "termios_b38400" "Scm_MakeIntegerFromUI(B38400)")
+
+(define-cproc sys-tcgetattr (port-or-fd)
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  ScmSysTermios *term = SCM_SYS_TERMIOS(Scm_MakeSysTermios());
+  if (tcgetattr(fd, &term->term) < 0) {
+    Scm_SysError(\"tcgetattr failed\");
+  }
+  SCM_RETURN(SCM_OBJ(term));")
+
+(define-cproc sys-tcsetattr (port-or-fd option term)
+  (assert (exact? option))
+  (assert (sys-termios? term))
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  if (tcsetattr(fd, option, &term->term) < 0) {
+    Scm_SysError(\"tcsetattr failed\");
+  }
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc sys-tcsendbreak (port-or-fd duration)
+  (assert (exact? duration))
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  SCM_RETURN(tcsendbreak(fd, duration) < 0 ? SCM_FALSE : SCM_TRUE);")
+
+(define-cproc sys-tcdrain (port-or-fd)
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  if (tcdrain(fd) < 0) {
+    Scm_SysError(\"tcdrain failed\");
+  }
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc sys-tcflush (port-or-fd queue)
+  (assert (exact? queue))
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  if (tcflush(fd, queue) < 0) {
+    Scm_SysError(\"tcflush failed\");
+  }
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc sys-tcflow (port-or-fd action)
+  (assert (exact? action))
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  if (tcflow(fd, action) < 0) {
+    Scm_SysError(\"tcflow failed\");
+  }
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc sys-tcgetpgrp (port-or-fd)
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  pid_t r = tcgetpgrp(fd);
+  if (r < 0) { Scm_SysError(\"tcgetpgrp failed\"); }
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+(define-cproc sys-tcsetpgrp (port-or-fd pgrp)
+  (assert (exact? pgrp))
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  if (tcsetpgrp(fd, pgrp) < 0) {
+    Scm_SysError(\"tcsetpgrp failed\");
+  }
+  SCM_RETURN(SCM_UNDEFINED);")
 
 ;;---------------------------------------------------------------------
 ;; time.h
