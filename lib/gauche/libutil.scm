@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: libutil.scm,v 1.1 2003-09-14 08:43:09 shirok Exp $
+;;;  $Id: libutil.scm,v 1.2 2003-09-14 10:20:45 shirok Exp $
 ;;;
 
 (define-module gauche.libutil
@@ -112,8 +112,8 @@
 
 ;; Just check existence of library.
 (define (library-exists? mod/path . opts)
-  (let-optionals* opts ((force-search? #f)
-                        (strict? #f)
+  (let-keywords* opts ((force-search? #f)
+                        (strict? #t)
                         (paths *load-path*))
     
     (or (and (not force-search?)
@@ -136,7 +136,8 @@
                    '() opts)))
 
 (define (library-for-each mod/path proc . opts)
-  (library-fold mod/path (lambda (mod path seed) (proc mod path)) '() opts))
+  (apply library-fold mod/path (lambda (mod path seed) (proc mod path))
+         '() opts))
 
 ;; Try to determine the file is a module source file
 ;;  NB: this will be more involved when we allow more than one modules

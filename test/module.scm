@@ -181,10 +181,4 @@
           (eval '(define x 13) m0)
           (eval 'x m1))))
 
-              
-          
-
-
-
-
 (test-end)
