@@ -8,8 +8,8 @@ CLEANFILES += core *~
 DISTCLEANFILES += autom4*
 
 MAINTAINERCLEANFILES += INSTALL INSTALL.eucjp aclocal.m4 VERSION \
-	configure config.guess config.sub missing mkinstalldirs ltmain.sh \
-	libltdl Makefile.in DIST_EXCLUDE_X
+	configure config.guess config.sub install-sh missing mkinstalldirs \
+	ltmain.sh libltdl Makefile.in DIST_EXCLUDE_X
 
 ## override these rules to clean up the subdirectories.
 distclean-generic:
