@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.3 2002-02-10 05:03:31 shirok Exp $
+# $Id: aclocal.m4,v 1.4 2002-02-11 09:29:05 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -77,17 +77,25 @@ LIBS="$GAUCHE_LIB `$GAUCHE_CONFIG -l` $LIBS"
 AC_SUBST(LDFLAGS)
 ])
 
-# AC_GAUCHE_EXT_FIXUP(name)
-#   Sets the shell command to generate 'head.c' and 'tail.c', needed by
-#   some platforms for GC.   NAME must be the extension module's name.
+# AC_GAUCHE_EXT_FIXUP(FILE [, MODULE])
+#   Sets the shell command to generate 'FILE_head.c' and 'FILE_tail.c',
+#   needed by some platforms for GC.  MODULE must be the extension
+#   module's name, and has to match the name given to the SCM_INIT_EXTENSION
+#   macro in the extension initialization code.   If MODULE is omitted
+#   FILE is used as the module's name.
 AC_DEFUN([AC_GAUCHE_EXT_FIXUP],
          [AC_CONFIG_COMMANDS("$1_head_n_tail",
                              [
+if test "X$2" = X; then 
+  ac_gauche_ext_fixup_name=`echo $1 | tr -c "\012A-Za-z0-9" "_"`
+else
+  ac_gauche_ext_fixup_name="$2"
+fi
 AC_MSG_NOTICE(generating $1_head.c and $1_tail.c);
 rm -f $1_head.c
-echo "void *Scm__datastart_$1 = (void*)&Scm__datastart_$1;" > $1_head.c
+echo "void *Scm__datastart_$ac_gauche_ext_fixup_name = (void*)&Scm__datastart_$ac_gauche_ext_fixup_name;" > $1_head.c
 rm -f $1_tail.c
-echo "void *Scm__dataend_$1 = (void*)&Scm__dataend_$1;" > $1_tail.c
+echo "void *Scm__dataend_$ac_gauche_ext_fixup_name = (void*)&Scm__dataend_$ac_gauche_ext_fixup_name;" > $1_tail.c
 ])])
 
 
