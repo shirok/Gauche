@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.76 2001-09-29 23:32:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.77 2001-10-03 09:53:36 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.4.6
+@subtitle version 0.4.7
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -646,6 +646,66 @@ to allow implementations to inline setters efficiently.  Gauche
 hasn't implement such optimization yet.
 @end defun
 
+A few macros that adopts the same semantics of generalized @code{set!}
+are also provided.  They are built on top of @code{set!}.
+Use of these side-effect functions are not actively encouraged.
+Nevertheless, they are sometimes quite handy.
+
+@defmac push! place item
+Conses @var{item}
+and the value of @var{place}, then sets the result to @var{place}.
+@var{place} is either a variable or a form @var{(proc arg @dots{})}, 
+as the second argument of @code{set!}.   The result of this form
+is undefined.
+
+@example
+(define x (list 2))
+(push! x 3) @result{} @r{undefined}
+x @result{} (3 2)
+
+(push! (cdr x) 4) @result{} @r{undefined}
+x @result{} (3 4 2)
+@end example
+
+When @var{place} is a list, it roughly expands like the following.
+
+@example
+(push! (foo x y) item)
+ @equiv{}
+ (let ((tfoo foo)
+       (tx x)
+       (ty y))
+   ((setter tfoo) tx ty (cons item (tfoo tx ty))))
+@end example
+
+Note: Common Lisp's @code{push} macro takes its argument reverse
+order.   I adopted this order since it is consistent with other
+destructive operations.
+@end defmac
+
+@defmac pop! place
+Retrieves the value of @var{place}, sets its cdr back to @var{place}
+and returns its car.
+
+@example
+(define x (list 1 2 3))
+(pop! x) @result{} 1
+x @result{} (2 3)
+
+(define x (vector (list 1 2 3)))
+x @result{} #((1 2 3))
+(pop! (vector-ref x 0)) @result{} 1
+x @result{} #((2 3))
+@end example
+
+Note: This works the same as Common Lisp's @code{pop}.
+@end defmac
+
+
+@defmac inc! place &optional delta
+@defmacx dec! place &optional delta
+@end defmac
+
 @c ----------------------------------------------------------------------
 @node Conditionals, Binding constructs, Assignments, Core Syntax
 @section Conditionals
@@ -726,6 +786,19 @@ value is returned.
 [R5RS]
 @end defspec
 
+
+
+@defmac dotimes (variable limit [result]) body @dots{}
+Imported from Common Lisp.  This is equivalent to
+@example
+(do ((tlimit limit)
+     (variable 0 (+ variable 1)))
+    ((>= variable tlimit) result)
+  body @dots{})
+@end example
+@end defmac
+
+There's no @code{dolist}.  Use @code{for-each}, or write your own.
 
 @c ----------------------------------------------------------------------
 @node Quasiquotation, Definitions, Iteration, Core Syntax
@@ -1209,11 +1282,11 @@ Negative @var{n} is interpreted as 2's complement numbers
 with 1's continue infinitely on the left side of the number.
 @end defun
         
-@defun logand n1 n2
-@defunx logior n1 n2
-@defunx logxor n1 n2
+@defun logand n1 n2 @dots{}
+@defunx logior n1 n2 @dots{}
+@defunx logxor n1 n2 @dots{}
 Returns bitwise and, bitwise inclusive or and bitwise exclusive or
-of two integers @var{n1} and @var{n2}.
+of two integers @var{n1}, @var{n2} @dots{}.
 @end defun
 
 @defun lognot n
