@@ -403,10 +403,10 @@
       (lambda ()
         (letrec-syntax ((o? (syntax-rules ()
                               ((o? ()) #f)
-                              ((o? (x . xs)) (not (e? xs)))))
+                              ((o? (x . xs)) (e? xs))))
                         (e? (syntax-rules ()
                               ((e? ()) #t)
-                              ((e? (x . xs)) (not (o? xs))))))
+                              ((e? (x . xs)) (o? xs)))))
           (e? '(a a a a)))))
 
 ;; This is from comp.lang.scheme posting by Antti Huima
@@ -416,6 +416,156 @@
         (define the-procedure
           (let-syntax((l(syntax-rules()((l((x(y ...))...)b ...)(let-syntax((x (syntax-rules()y ...))...) b ...)))))(l('(('(a b ...)(lambda a b ...)))`((`(a b c)(if a b c))(`(a)(car a))),((,(a b)(set! a b))(,(a)(cdr a))),@((,@z(call-with-current-continuation z))))'((ls)('((s)('((i) ('((d)('((j)('((c)('((p)('((l)('(()(l l))))'((k)`((pair?,(p))('((c) ,(p(append,(,(p))(d c)))(k k))(c`(p)`(,(p))c))`(p)))))(cons(d)(map d ls))))'((x y c),@'((-)(s x y null? - s)(j x y c)))))'((x y c)('((q)('((f)(cons`(q)(c((f x)x)((f y)y)c)))'((h)`((eq? q h)'((x),(x)) i)))),@'((-)(s x y'((z)(>=`(z)(sqrt(*`(x)`(y)))))- s))))))list)) '((z)z)))'((x y p k l),@'((-)`((p x)(k y)(l y x'((z)`((p z)-(- #f)))k l)))))))))
         (the-procedure '(5 1 9 3))))
+
+;;----------------------------------------------------------------------
+;; macro and internal define
+
+(test-section "macro and internal define")
+
+(define-macro (gen-idef-1 x)
+  `(define foo ,x))
+
+(test "define foo (legacy)" 3
+      (lambda ()
+        (gen-idef-1 3)
+        foo))
+(test "define foo (legacy)" '(3 5)
+      (lambda ()
+        (let ((foo 5))
+          (list (let () (gen-idef-1 3) foo)
+                foo))))
+(define foo 10)
+(test "define foo (legacy)" '(3 10)
+      (lambda ()
+        (list (let () (gen-idef-1 3) foo) foo)))
+(test "define foo (legacy)" '(4 5)
+      (lambda ()
+        (gen-idef-1 4)
+        (define bar 5)
+        (list foo bar)))
+(test "define foo (legacy)" '(4 5)
+      (lambda ()
+        (define bar 5)
+        (gen-idef-1 4)
+        (list foo bar)))
+
+(test "define foo (error)" *test-error*
+      (lambda ()
+        (eval '(let ()
+                 (list 3 4)
+                 (gen-idef-1 5)))))
+(test "define foo (error)" *test-error*
+      (lambda ()
+        (eval '(let ()
+                 (gen-idef-1 5)))))
+
+(test "define foo (shadow)" 10
+      (lambda ()
+        (let ((gen-idef-1 -))
+          (gen-idef-1 5)
+          foo)))
+
+(define-macro (gen-idef-2 x y)
+  `(begin (define foo ,x) (define bar ,y)))
+
+(test "define foo, bar (legacy)" '((0 1) 10)
+      (lambda ()
+        (let ((l (let () (gen-idef-2 0 1) (list foo bar))))
+          (list l foo))))
+(test "define foo, bar (legacy)" '(-1 -2 20)
+      (lambda ()
+        (define baz 20)
+        (gen-idef-2 -1 -2)
+        (list foo bar baz)))
+(test "define foo, bar (legacy)" '(-1 -2 20)
+      (lambda ()
+        (gen-idef-2 -1 -2)
+        (define baz 20)
+        (list foo bar baz)))
+(test "define foo, bar (legacy)" '(3 4 20 -10)
+      (lambda ()
+        (begin
+          (define biz -10)
+          (gen-idef-2 3 4)
+          (define baz 20))
+        (list foo bar baz biz)))
+(test "define foo, bar (legacy)" '(3 4 20 -10)
+      (lambda ()
+        (define biz -10)
+        (begin
+          (gen-idef-2 3 4)
+          (define baz 20)
+          (list foo bar baz biz))))
+(test "define foo, bar (legacy)" '(3 4 20 -10)
+      (lambda ()
+        (begin
+          (define biz -10))
+        (begin
+          (gen-idef-2 3 4))
+        (define baz 20)
+        (list foo bar baz biz)))
+(test "define foo, bar (error)" *test-error*
+      (lambda ()
+        (eval '(let ()
+                 (list 3)
+                 (gen-idef-2 -1 -2)
+                 (list foo bar)))))
+(test "define foo, bar (error)" *test-error*
+      (lambda ()
+        (eval '(let ()
+                 (gen-idef-2 -1 -2)))))
+
+(define-syntax gen-idef-3
+  (syntax-rules ()
+    ((gen-idef-3 x y)
+     (begin (define x y)))))
+
+(test "define boo (r5rs)" 3
+      (lambda ()
+        (gen-idef-3 boo 3)
+        boo))
+(test "define boo (r5rs)" '(3 10)
+      (lambda ()
+        (let ((l (let () (gen-idef-3 foo 3) foo)))
+          (list l foo))))
+
+(define-syntax gen-idef-4
+  (syntax-rules ()
+    ((gen-idef-4 x y)
+     (begin (define x y) (+ x x)))))
+
+(test "define poo (r5rs)" 6
+      (lambda ()
+        (gen-idef-4 poo 3)))
+
+(test "define poo (r5rs)" 3
+      (lambda ()
+        (gen-idef-4 poo 3) poo))
+
+(define-macro (gen-idef-5 o e)
+  `(begin
+     (define (,o n)
+       (if (= n 0) #f (,e (- n 1))))
+     (define (,e n)
+       (if (= n 0) #t (,o (- n 1))))))
+
+(test "define (legacy, mutually-recursive)" '(#t #f)
+      (lambda ()
+        (gen-idef-5 ooo? eee?)
+        (list (ooo? 5) (eee? 7))))
+
+
+(define-syntax gen-idef-6
+  (syntax-rules ()
+    ((gen-idef-6 o e)
+     (begin
+       (define (o n) (if (= n 0) #f (e (- n 1))))
+       (define (e n) (if (= n 0) #t (o (- n 1))))))))
+
+(test "define (r5rs, mutually-recursive)" '(#t #f)
+      (lambda ()
+        (gen-idef-5 ooo? eee?)
+        (list (ooo? 5) (eee? 7))))
 
 ;;----------------------------------------------------------------------
 ;; macro defining macros

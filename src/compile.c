@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.111 2004-07-12 21:58:21 shirok Exp $
+ *  $Id: compile.c,v 1.112 2004-07-13 14:01:20 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -944,8 +944,29 @@ static ScmObj compile_body(ScmObj form, ScmObj env,
     }
 
     *depth = 0;
+    /* Loop on body forms */
     for (formtail = form; SCM_PAIRP(formtail); ) {
         ScmObj expr = SCM_CAR(formtail), x;
+        /* If the explicit body hasn't started, we try to expand the macro,
+           since it may produce internal definitions.  Note that the previous
+           internal definition in the same body may shadow the macro binding,
+           so we need to check idef_vars for that */
+        if (!body_started && SCM_PAIRP(expr) && VAR_P(SCM_CAR(expr))
+            && SCM_FALSEP(Scm_Memq(SCM_CAR(expr), idef_vars))) {
+            ScmObj headvar = lookup_env(SCM_CAR(expr), env, TRUE);
+            if (SCM_MACROP(headvar)) {
+                expr = Scm_MacroExpand(expr, env, FALSE);
+            } else if (VAR_P(headvar)) {
+                ScmGloc *g = find_identifier_binding(Scm_VM(), headvar);
+                if (g != NULL) {
+                    ScmObj gv = SCM_GLOC_GET(g);
+                    if (SCM_MACROP(gv)) {
+                        expr = Scm_MacroExpand(expr, env, FALSE);
+                    }
+                }
+            }
+        }
+
         /* Begin in the body should work as if it's body is spliced in
            the current form. */
         if (SCM_PAIRP(expr) && global_eq(SCM_CAR(expr), SCM_SYM_BEGIN, env)) {
@@ -959,11 +980,13 @@ static ScmObj compile_body(ScmObj form, ScmObj env,
             ScmObj var, val;
             int llen;
 
-            if (body_started)
+            if (body_started) {
                 Scm_Error("internal define should appear at the head of the body: %S",
                           expr);
-            if ((llen = Scm_Length(expr)) < 3)
+            }
+            if ((llen = Scm_Length(expr)) < 3) {
                 Scm_Error("badly formed internal define: %S", expr);
+            }
             var = SCM_CADR(expr);
             if (SCM_PAIRP(var)) {
                 ScmObj args = SCM_CDR(var);

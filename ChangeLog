@@ -1,3 +1,8 @@
+2004-07-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c (compile_body): supports internal defines generated
+	  by macro expansion.
+
 2004-07-12  Shiro Kawai  <shiro@acm.org>
 
 	* macro.c, compile.c, gauche.h, class.c : introduced ScmMacro structure
