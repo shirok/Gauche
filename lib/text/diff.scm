@@ -10,59 +10,39 @@
   )
 (select-module text.diff)
 
-;; lcs on text, generates lists from ports (or strings)
+;; aux. fun to convert arg to a list
+(define (source->list src reader)
+  (port->list reader
+              (cond ((port? src) src)
+                    ((string? src) (open-input-string src))
+                    (else (error "don't know how to diff from:" src)))))
+
+;; lcs on text.  Returns edit-list (as defined in lcs-edit-list).
 (define (diff a b . options)
-  (define (source->list x lx)
-    (port->list
-     lx (cond ((port? x) x)
-              ((string? x) (open-input-string x))
-              (else (error "don't know how to diff from:" x)))))
   (let-keywords* options ((reader read-line)
                           (equal equal?))
-    (let ((a-ls (source->list a reader))
-          (b-ls (source->list b reader)))
-      ;;(debug "a: ~S\nb: ~S\n" a-ls b-ls)
-      (list a-ls b-ls (lcs-with-positions a-ls b-ls)))))
+    (lcs-edit-list (source->list a reader)
+                   (source->list b reader))))
 
 (define (write-line-diff line type)
   (case type
-    ((add)
-     (format #t "+~A\n" line))
-    ((remove)
-     (format #t "-~A\n" line))
-    ((same)
-     (format #t " ~A\n" line))
-    (else (error "unknown diff type:" type))))
+    ((+)
+     (format #t "+ ~A\n" line))
+    ((-)
+     (format #t "- ~A\n" line))
+    (else
+     (format #t "  ~A\n" line))))
 
 (define (diff-report a b . options)
-  (let-keywords* options ((writer write-line-diff))
-    (let* ((r (apply diff (append (list a b) options)))
-           (a-ls (car r))
-           (b-ls (cadr r))
-           (diff-res (caddr r))
-           (d-ls (cadr diff-res)))
-      ;; context diff
-      ;;(debug "diff: ~S" r)
-      (let loop ((d d-ls) (a a-ls) (a-pos 0) (b b-ls) (b-pos 0))
-        (unless (null? d)
-          (let* ((d1 (car d))
-                 (a-off (cadr d1))
-                 (a-skip (- a-off a-pos))
-                 (b-off (caddr d1))
-                 (b-skip (- b-off b-pos)))
-            ;;(debug "a-off: ~S a-pos: ~S a-skip: ~S" a-off a-pos a-skip)
-            (let-values (((a-head a-tail) (split-at a a-skip))
-                         ((b-head b-tail) (split-at b b-skip)))
-              ;;(debug "a-head: ~S a-tail: ~S" a-head a-tail)
-              ;; lines only in a have been removed
-              (if (pair? a-head)
-                (for-each (cut writer <> 'remove) (cdr a-head)))
-              ;; lines only in b have been added
-              (if (pair? b-head)
-                (for-each (cut writer <> 'add) (cdr b-head)))
-              ;; reprint this common line
-              (writer (car d1) 'same)
-              ;; recurse
-              (loop (cdr d) a-tail a-off b-tail b-off))))))))
+  (let-keywords* options ((writer write-line-diff)
+                          (reader read-line)
+                          (equal equal?))
+    (lcs-fold (lambda (line _) (writer line '-))
+              (lambda (line _) (writer line '+))
+              (lambda (line _) (writer line #f))
+              #f
+              (source->list a reader)
+              (source->list b reader)
+              equal)))
 
 (provide "text/diff")

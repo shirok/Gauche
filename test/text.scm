@@ -66,8 +66,25 @@
 (use text.diff)
 (test-module 'text.diff)
 
-(test* "diff" '("abc" "ghi")
-       (map car (cadr (caddr (diff "abc\ndef\nghi" "abc\nghi")))))
+(define diff-a "foo
+bar
+bar
+baz
+baz
+hoge
+")
+(define diff-b "foo
+bar
+baz
+fuga
+hoge
+fuga
+")
+
+(test* "diff-report"
+       "  foo\n  bar\n- bar\n  baz\n- baz\n+ fuga\n  hoge\n+ fuga\n"
+       (with-output-to-string
+         (lambda () (diff-report diff-a diff-b))))
 
 ;;-------------------------------------------------------------------
 (test-section "parse")
