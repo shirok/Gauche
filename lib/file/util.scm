@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.15 2002-09-13 02:36:09 shirok Exp $
+;;;  $Id: util.scm,v 1.16 2002-10-14 01:50:07 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -27,6 +27,7 @@
   (use srfi-13)
   (use gauche.let-opt)
   (export current-directory directory-list directory-list2 directory-fold
+          home-directory
           make-directory* create-directory* remove-directory* delete-directory*
           build-path resolve-path expand-path simplify-path
           absolute-path? relative-path? decompose-path find-file-in-paths
@@ -58,6 +59,13 @@
              (error "directory name should be a string" (car maybe-newdir))))
         (else
          (error "too many arguments for current-directory" maybe-newdir))))
+
+(define (home-directory . maybe-user)
+  (let-optionals* maybe-user ((user (sys-getuid)))
+    (and-let* ((ent (cond ((integer? user) (sys-getpwuid user))
+                          ((string? user)  (sys-getpwnam user))
+                          (else (error "bad user" user)))))
+      (slot-ref ent 'dir))))
 
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir preds)
