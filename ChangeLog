@@ -1,5 +1,9 @@
 2005-02-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_STRING_CONST_INITIALIZER): back-ported this macro
+	  from NVM branch so that I can package 0.8.3-p1 for testing
+	  (temporary).
+	
 	* configure.ac, src/gauche/config.h.in (DOUBLE_ARMENDIAN):
 	  added check to support ARM processor.
 	* src/number.c (union ieee_double), ext/binary/binary.c (SWAPD):

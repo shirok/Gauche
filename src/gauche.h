@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.404 2005-01-06 11:32:35 shirok Exp $
+ *  $Id: gauche.h,v 1.405 2005-02-02 11:41:39 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -968,12 +968,17 @@ SCM_EXTERN ScmObj Scm_ConstCStringArrayToList(const char **array, int size);
 SCM_EXTERN ScmObj Scm_CStringArrayToList(char **array, int size);
 
 /* You can allocate a constant string statically, if you calculate
-   the length by yourself. */
+   the length by yourself.  These macros are mainly used in machine-
+   generated code.
+   SCM_DEFINE_STRING_CONST can be used to define a static string,
+   and SCM_STRING_CONST_INITIALIZER can be used inside static array
+   of strings. */
+
+#define SCM_STRING_CONST_INITIALIZER(str, len, siz)             \
+    { { SCM_CLASS2TAG(SCM_CLASS_STRING) }, 0, 1, (len), (siz), (str) }
+
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)            \
-    ScmString name = {                                          \
-        { SCM_CLASS2TAG(SCM_CLASS_STRING) }, 0, 1,              \
-        (len), (siz), (str)                                     \
-    }
+    ScmString name = SCM_STRING_CONST_INITIALIZER(str, len, siz)
 
 /* Auxiliary structure to construct a string of unknown length.
    This is not an ScmObj.   See string.c for details. */
