@@ -121,7 +121,7 @@
 ;	curses				;screen management package
 ;	termcap				;terminal description package
 ;	terminfo			;sysV terminal description
-;	current-time			;returns time in seconds since 1/1/1970
+	current-time			;returns time in seconds since 1/1/1970
 	))
 
 ;;; (OUTPUT-PORT-WIDTH <port>)
@@ -151,8 +151,8 @@
 ;;; use this definition if your system doesn't have such a procedure.
 (define force-output flush)
 
-;; CURRENT-TIME - need <sys-time> to seconds conversion
-;(define current-time sys-time)
+;; CURRENT-TIME
+(define current-time sys-time)
 
 ;; PROGRAM-ARGUMENTS
 (define (program-arguments) (with-module gauche *argv*))
