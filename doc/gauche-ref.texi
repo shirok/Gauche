@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.257 2002-09-02 10:24:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.258 2002-09-02 11:01:42 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2233,7 +2233,7 @@ See the table below.
 
 The table below lists sharp-syntaxes.
 
-@multitable {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item @code{#!}
  @tab [SRFI-22] Specifies interpreter at the beginning of file.
       Scheme loader ignores the line.
@@ -8485,7 +8485,7 @@ following conditions.
 A procedure that takes no arguments.  It is supposed to read an expression
 and returns it.
 @item evaluator
-A procedure that takes two argument, an expression and an environment
+A procedure that takes two arguments, an expression and an environment
 specifier.  It is supposed to evaluate the expression and returns zero or
 more value(s).
 @item printer
@@ -8510,7 +8510,7 @@ Evaluates an expression by calling @var{evaluator}
 Prints the result by calling @var{printer}, then repeats from 1.
 @end enumerate
 
-When an error is signalled from one of those procedures, it is
+When an error is signaled from one of those procedures, it is
 captured and reported by the default escape handler, then
 the loop restarts from 1.
 
@@ -11860,48 +11860,56 @@ behavior for each signal is as in the following table.
 次のように設定されています。
 @c COMMON
 
-@multitable {aaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
-@item @code{SIGABRT}, @code{SIGILL}, @code{SIGKILL}, @code{SIGCONT}, @code{SIGSTOP}, @code{SIGSEGV}, @code{SIGBUS}
+@table @code
+@item SIGABRT, SIGILL, SIGKILL, SIGCONT, SIGSTOP, SIGSEGV, SIGBUS
 @c EN
-  @tab Cannot be handled in Scheme.  @code{Gosh} follows the system's
-       default behavior.
+Cannot be handled in Scheme.  @code{Gosh} follows the system's
+default behavior.
 @c JP
-  @tab Schemeでは処理できません。@code{gosh}ではこれらのシグナルを受けると
-       システムのデフォルトの動作をします。
+Schemeでは処理できません。@code{gosh}ではこれらのシグナルを受けると
+システムのデフォルトの動作をします。
 @c COMMON
-@item @code{SIGCHLD}, @code{SIGTSTP}, @code{SIGTTIN}, @code{SIGTTOU}, @code{SIGWINCH}
+@item SIGCHLD, SIGTSTP, SIGTTIN, SIGTTOU, SIGWINCH
 @c EN
-  @tab No signal handles are installed for these signals by @code{gosh},
+No signal handles are installed for these signals by @code{gosh},
        so the process follows the system's default behavior.
        Scheme programs can install its own signal handler if necessary.
 @c JP
-  @tab @code{gosh}は初期状態ではこれらのシグナルのハンドラを設定せず、
+@code{gosh}は初期状態ではこれらのシグナルのハンドラを設定せず、
        システムのデフォルトの振るまいに任せます。Schemeプログラムは必要ならば
        これらのシグナルのハンドラを設定できます。
 @c COMMON
-@item @code{SIGPWR}, @code{SIGXCPU}, @code{SIGUSR1}, @code{SIGUSR2}
+@item SIGHUP, SIGQUIT, SIGTERM
 @c EN
-  @tab On Linux platforms with thread support, these signals are used
+@code{Gosh} installs a signal handler for these signals
+       that exits from the application with code 0.
+@c JP
+@code{gosh}はこれらのシグナルに対して、終了コード0でアプリケーションを
+       終了するシグナルハンドラをセットします。
+@c COMMON
+@item SIGPWR, SIGXCPU, SIGUSR1, SIGUSR2
+@c EN
+On Linux platforms with thread support, these signals are used
        by the system and not available for Scheme.  On other systems,
        these signals behaves the same as described below.
 @c JP
-  @tab Linuxプラットフォームでスレッドを使用している場合は、
+Linuxプラットフォームでスレッドを使用している場合は、
        これらのシグナルはシステムで使用されるため、Schemeからは使用できません。
        他のシステムではこれらのシグナルは下記の「他のシグナル」と同じ動作と
        なります。
 @c COMMON
 @c EN
 @item other signals
-  @tab @code{Gosh} installs the default signal handler, which signals
+@code{Gosh} installs the default signal handler, which signals
        an "unhandled signal" error.  Scheme programs can override it
        by its own signal handler.
 @c JP
 @item 他のシグナル
-  @tab @code{gosh}はデフォルトのシグナルハンドラを設定します。
+@code{gosh}はデフォルトのシグナルハンドラを設定します。
        デフォルトのシグナルハンドラは "unhandled signal" エラーを通知します。
        Schemeプログラムはシグナル毎に独自のハンドラを設定することが可能です。
 @c COMMON
-@end multitable
+@end table
 
 @c EN
 If you're using Gauche embedded in some other application,
@@ -12679,6 +12687,13 @@ or the number of unslept seconds if it is woke up by a signal.
 
 To be porable across POSIX implementation, keep @var{seconds} less than
 65536.
+@end defun
+
+@defun sys-usleep microseconds
+Suspends the process until the specified number of microseconds elapses,
+or the process receives a signal.   This procedure is defined
+only if the underlying system provides usleep() call.
+You can also wayt by microsecond resolution using @code{sys-select}.
 @end defun
 
 @defun sys-random
