@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.48 2001-02-20 01:10:08 shiro Exp $
+ *  $Id: gauche.h,v 1.49 2001-02-20 10:33:07 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1176,6 +1176,8 @@ struct ScmBignumRec {
 #define SCM_BIGNUM_SIGN(obj)   SCM_BIGNUM(obj)->sign
 
 ScmObj Scm_MakeBignumFromSI(long val);
+ScmObj Scm_MakeBignumFromUI(u_long val);
+ScmObj Scm_MakeBignumFromDouble(double val);
 ScmObj Scm_BignumCopy(ScmBignum *b);
 
 long   Scm_BignumToSI(ScmBignum *b);
