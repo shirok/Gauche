@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.154 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: gauche.h,v 1.155 2001-06-17 06:52:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -753,7 +753,7 @@ extern ScmObj Scm_CStringArrayToList(char **array, int size);
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)    \
     ScmString name = {                                  \
         { SCM_CLASS_STRING }, 0, 1, (len), (siz), (str) \
-    };
+    }
 
 /* Auxiliary structure to construct a string.  This is not an ScmObj. */
 struct ScmDStringRec {
@@ -1456,6 +1456,9 @@ extern ScmClass Scm_ProcedureClass;
     SCM_PROCEDURE(obj)->type = typ,                     \
     SCM_PROCEDURE(obj)->info = inf
 
+#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf) \
+    { { (klass) }, (req), (opt), (typ), (inf) }
+
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
     ScmProcedure common;
@@ -1485,6 +1488,13 @@ struct ScmSubrRec {
 #define SCM_SUBR_INLINER(obj)      SCM_SUBR(obj)->inliner
 #define SCM_SUBR_DATA(obj)         SCM_SUBR(obj)->data
 
+#define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)       \
+    ScmSubr cvar = {                                                    \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_PROCEDURE,                 \
+                                   req, opt, SCM_PROC_SUBR, inf),       \
+        (func), (inliner), (data)                                       \
+    }
+
 extern ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
                            void *data,
                            int required, int optional,
@@ -1506,9 +1516,10 @@ extern ScmClass Scm_GenericClass;
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
-        { { SCM_CLASS_GENERIC }, 0, 0, SCM_PROC_GENERIC, SCM_FALSE },   \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_GENERIC,                   \
+                                   0, 0, SCM_PROC_GENERIC, SCM_FALSE),  \
         SCM_NIL, cfunc, data                                            \
-    };
+    }
 
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod);
 ScmObj Scm_MakeBaseGeneric(ScmObj name,
@@ -1539,9 +1550,11 @@ extern ScmClass Scm_MethodClass;
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
-        { { SCM_CLASS_METHOD }, req, opt, SCM_PROC_METHOD, SCM_FALSE }, \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_METHOD,                    \
+                                   req, opt, SCM_PROC_METHOD,           \
+                                   SCM_FALSE),                          \
         gf, specs, func, data, NULL                                     \
-    };
+    }
 
 void Scm_InitBuiltinMethod(ScmMethod *m);
 
