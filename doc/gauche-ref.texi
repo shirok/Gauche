@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.41 2001-07-08 18:17:20 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.42 2001-07-08 19:39:37 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3476,6 +3476,7 @@ of descendants of @var{class}.
 * Homogeneous Vectors::         
 * SRFI String ports::           
 * Syntax to receive multiple values::  
+* Record types::                
 * Let-values::                  
 * String library::              
 * Character-set library::       
@@ -5652,7 +5653,7 @@ The form @code{(use srfi-6)} doesn't do anything.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Syntax to receive multiple values, Let-values, SRFI String ports, Libarary Modules
+@node Syntax to receive multiple values, Record types, SRFI String ports, Libarary Modules
 @section @code{srfi-8} - Syntax to receive multiple values
 
 @deftp {Module} srfi-8
@@ -5663,7 +5664,80 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 
 @c ----------------------------------------------------------------------
-@node Let-values, String library, Syntax to receive multiple values, Libarary Modules
+@node Record types, Let-values, Syntax to receive multiple values, Libarary Modules
+@section @code{srfi-9} - Record types
+
+@deftp {Module} srfi-9
+@mdindex srfi-9
+Contains a macro to use record types.  A record type is implemented on
+top of Gauche's object system.
+
+The SRFI-9 record type is not as powerful as the object system, but
+it will be useful if you want your program to be portable.
+@end deftp
+
+@defmac define-record-type name (constructor init-tag @dots{}) predicate (field accessor [modifier]) @dots{}
+Creates a record type and binds it to @var{name}.
+In Gauche, a record type is just a subclass of @code{<record>}.
+
+@var{constructor} is bound to a procedure that creates an instance
+of the record type,
+which takes as many arguments as @var{init-tag} @dots{}.  Each
+@var{init-tag} corresponds to one of the field name, and the fields
+of the created record instance is initialized accordingly.  Not all
+of fields need to appear in @var{init-tag}; uninitialized fields remain
+unbound.
+
+@var{predicate} is bound to a procedure that takes one argument, and
+returns #t if the argument is an instance of the defined record type,
+#f otherwise.
+
+Followings are field specifications.  The record has fields
+@var{field} @dots{}, and each field can be accessed by a method
+@var{accessor}.  If @var{modifier} is given to the field, it is bound
+to a method that sets the value to the field.
+
+Example:
+@example
+(define-record-type pare
+  (kons x y) pare?
+  (x kar set-kar!)
+  (y kdr))
+ @result{} #<class pare>
+
+(pare? (kons 2 3)) @result{} #t
+(pare? (cons 2 3)) @result{} #f
+
+(kar (kons 2 3)) @result{} 2
+(kdr (kons 2 3)) @result{} 3
+
+(let ((x (kons 2 3)))
+  (set-kar! x -1)
+  (kar x)) @result{} -1
+@end example
+
+Conceptually, the above example is expanded into the following
+sequence of forms.
+@example
+(define-class pare (<record>) (x y))
+(define (kons x y)
+  (let ((obj (make pare)))
+    (slot-set! obj 'x x) 
+    (slot-set! obj 'y y)
+    obj))
+(define (pare? obj) (is-a? obj pare))
+(define-method kar ((obj pare))
+  (slot-ref obj 'x))
+(define-method set-kar! ((obj pare) value)
+  (slot-set! obj 'x value))
+(define-method kdr ((obj pare))
+  (slot-ref obj 'y))
+@end example
+
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Let-values, String library, Record types, Libarary Modules
 @section @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
