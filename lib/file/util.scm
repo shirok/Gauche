@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.13 2002-06-14 02:40:33 shirok Exp $
+;;;  $Id: util.scm,v 1.14 2002-07-11 10:44:10 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -203,19 +203,17 @@
   (not (absolute-path? path)))
 
 (define (find-file-in-paths name . opts)
-  (let* ((paths (get-keyword :path-list opts
+  (let* ((paths (get-keyword :paths opts
                              (cond ((sys-getenv "PATH")
-                                    => (l_ (string-split _ #\:)))
+                                    => (cut string-split <> #\:))
                                    (else '()))))
          (pred  (get-keyword :pred opts file-is-executable?)))
     (if (absolute-path? name)
-        (and (file-exists? name)
-             (pred name)
-             name)
+        (and (pred name) name)
         (let loop ((paths paths))
           (and (not (null? paths))
                (let1 p (build-path (car paths) name)
-                 (if (and (file-exists? p) (pred p))
+                 (if (pred p)
                      p
                      (loop (cdr paths))))))
         )))
