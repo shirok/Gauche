@@ -1,3 +1,11 @@
+2001-03-28  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.14
+	* src/class.c: added generic function write-object.
+	* src/error.c, src/vm.c, src/gauche/vm.h: added vm->errorFlags,
+	  and use SCM_ERROR_BEING_HANDLED flag to avoid inifinite loop
+	  of calling error function.
+
 2001-03-27  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.13
