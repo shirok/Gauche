@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.30 2001-12-09 09:37:57 shirok Exp $
+ *  $Id: read.c,v 1.31 2001-12-10 09:35:55 shirok Exp $
  */
 
 #include <stdio.h>
@@ -252,6 +252,9 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     ScmObj start = SCM_NIL, last = SCM_NIL, item;
     int c, dot_seen = 0;
+    int line = -1;
+
+    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
     
     for (;;) {
         c = skipws(port);
@@ -282,6 +285,12 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
             item = read_internal(port, ctx);
         }
         SCM_APPEND1(start, last, item);
+        if (start==last && (ctx->flags & SCM_READ_SOURCE_INFO) && line >= 0) {
+            /* add source information to the top of the list */
+            Scm_PairAttrSet(SCM_PAIR(start), SCM_SYM_SOURCE_INFO,
+                            SCM_LIST2(Scm_PortName(port),
+                                      SCM_MAKE_INT(line)));
+        }
     }
 }
 
