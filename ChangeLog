@@ -1,5 +1,12 @@
 2002-05-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h : fixed a bug of uninitialized ScmProcedure field.
+	* lib/gauche/procedure.scm, lib/gauche/collection.scm : added map$,
+	  for-each$, apply$.
+	* lib/math/const.scm : added.
+	
+2002-05-23  Shiro Kawai  <shiro@acm.org>
+
 	* src/srfi-19.scm, src/srfi-19/format.scm : fixes bugs.
 	* test/srfi.scm : added tests for srfi-19.
 	* src/system.c : allowed negative value in Scm_Time slots; required

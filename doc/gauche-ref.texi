@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.205 2002-05-15 02:56:02 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.206 2002-05-25 02:56:04 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1966,6 +1966,28 @@ x                    @result{} (5 2)
 @end example
 @end defspec
 
+@defmac set!-values (var @dots{}) expr
+@c EN
+Sets values of multiple variables at once.  @var{Expr} must yield
+as many values as @var{var} @dots{}.  Each value is set to
+the corresponding @var{var}.
+@c JP
+複数の変数を同時に更新します。@var{Expr}は与えられた変数と同じ
+数だけの値を生成しなけばなりません。各値が対応する@var{var}に
+セットされます。
+@c COMMON
+@example
+(define a 0)
+(define b 1)
+(set!-values (a b) (values 3 4)) @result{} @r{undefined}
+a @result{} 3
+b @result{} 4
+(set!-values (a b) (values b a)) @result{} @r{undefined}
+a @result{} 4
+b @result{} 3
+@end example
+@end defmac
+
 @defun setter proc
 [SRFI-17]
 @c EN
@@ -2138,6 +2160,24 @@ This is Common Lisp's @code{incf} and @code{decf}.
 
 Common Lispの@code{incf}と@code{decf}に当たります。
 @c COMMON
+@end defmac
+
+@defmac update! place proc
+@c EN
+Generalized form of @code{push!} etc.  @var{Proc} must be a procedure
+which takes one argument and returns one value.   The original value of
+@var{place} is passed to the @var{proc}, then its result is set to
+@var{place}.
+@c JP
+@code{push!}等のマクロの一般化された形式です。
+@var{proc}は一つの引数を取り、一つの値を返す手続きでなければなりません。
+@var{place}の値が@var{proc}に渡され、@var{proc}の結果が@var{place}に格納されます。
+@c COMMON
+@example
+(define a (cons 2 3))
+(update! (car a) (lambda (v) (* v 3))) @result{} @r{undefined}
+a @result{} (6 . 3)
+@end example
 @end defmac
 
 @c ----------------------------------------------------------------------
@@ -2528,7 +2568,7 @@ of @var{exp0}.   The name is taken from MzScheme.
 This is called @code{prog1} in CommonLisp.   
 
 Unlike @code{begin}, this @emph{does} creates a "block",
-for the @code{begin1} form is expanded as follows.
+for the @code{begin0} form is expanded as follows.
 @c JP
 @var{exp0}, @var{exp1}, @dots{} を評価し、@var{exp0}の結果を返します。
 この名前はMzSchemeから取られました。これはCommonLispで
@@ -2680,6 +2720,26 @@ lo @result{} -1
 hi @result{} 15
 @end example
 @end defmac
+
+@defspec define-constant variable expression
+@defspecx define-constant (variable . formals) body @dots{}
+@c EN
+Like @code{define}, but that the compiler assumes
+the value of @var{variable} won't change and generates 
+optimized code.
+
+An error is signalled when you use @code{set!} to change the value
+of @var{variable}.   It is allowed to redefine @var{variable},
+but a warning is printed.
+@c JP
+@code{define}と同じように動作しますが、
+コンパイラは@var{variable}の値が今後変更されないものとして
+最適化されたコードを生成します。
+
+@var{variable}の値を@code{set!}で変更しようとするとエラーとなります。
+@var{variable}を再定義することは許されますが、警告が表示されます。
+@c COMMON
+@end defspec
 
 @defspec define-in-module module variable expression
 @defspecx define-in-module module (variable . formals) body @dots{}
@@ -6402,6 +6462,17 @@ Returns (a) value(s) @var{proc} returns.
 @end example
 @end defun
 
+
+@menu
+* Mapping::                     
+* Combinators::                 
+* Procedure arity::             
+@end menu
+
+@node Mapping, Combinators, Procedures, Procedures
+@subsubsection Mapping
+@c NODE マッピング
+
 @defun map proc list1 list2 @dots{}
 [R5RS+]
 @c EN
@@ -6455,6 +6526,127 @@ extends @code{for-each} to work on any type of collection.
 @code{gauche.collection}モジュール(@ref{Collection framework}参照)
 を使うと、@code{for-each}がリスト以外のコレクション型に対しても動作するようになります。
 @c COMMON
+@end defun
+
+
+@node Combinators, Procedure arity, Mapping, Procedures
+@subsubsection Combinators
+@c NODE コンビネータ
+
+@c EN
+A combinator is a procedure that takes procedure(s) as argument(s) and
+returns another procedure and is a powerful tool of abstraction.
+@c JP
+コンビネータは手続きを引数に取って手続きを返すような手続きで、
+強力な抽象化の道具となります。
+@c COMMON
+
+
+@defun pa$ proc arg @dots{}
+@c EN
+Partial application.  Returns a procedure, and when it is
+called with arguments @var{m} @dots{}, it is equivalent to call
+@code{(proc arg @dots{} m @dots{})}.
+@c JP
+部分適用。手続きを返します。その手続きが引数@var{m} @dots{}を伴って
+呼ばれた場合、それは@code{(proc arg @dots{} m @dots{})}と等価になります。
+@c COMMON
+
+@example
+(define add3 (pa$ + 3))
+(add3 4) @result{} 7
+
+(map (pa$ * 2) '(1 2 3)) @result{} (2 4 6)
+@end example
+@end defun
+
+@defun apply$ proc
+@defunx map$ proc
+@defunx for-each$ proc
+@c EN
+Partial application version of @code{apply}, @code{map} and @code{for-each}.
+@c JP
+@code{apply}, @code{map}と@code{for-each}の部分適用版です。
+@c COMMON
+
+@example
+(define map2* (map$ (pa$ * 2)))
+(map2* '(1 2 3)) @result{} (2 4 6)
+@end example
+
+@end defun
+
+
+@defun compose f g h @dots{}
+@c EN
+Combine two or more procedures.  Arguments must be procedures.
+When two procedures are given, @code{(compose f g)} is equivalent to
+@c JP
+2つ以上の手続きを結合します。引数は全て手続きでなければなりません。
+2つの引数が渡された時、@code{(compose f g)}は次の式と等価です。
+@c COMMON
+@example
+(lambda args (call-with-values (lambda () (apply g args)) f))
+@end example
+
+@c EN
+Some examples:
+@c JP
+いくつか例を示します。
+@c COMMON
+
+@example
+(define not-zero? (compose not zero?))
+(not-zero? 3) @result{} #t
+(not-zero? 0) @result{} #f
+
+(define dot-product (compose (apply$ +) (map$ *)))
+(dot-product '(1 2 3) '(4 5 6)) @result{} 32
+@end example
+@end defun
+
+@node Procedure arity,  , Combinators, Procedures
+@subsubsection Procedure arity
+@c NODE 手続きのアリティ
+
+Interface to query procedure's arity.
+The API is taken from MzScheme (PLT Scheme).
+
+@defun arity @var{proc}
+Given procedure @var{proc,}
+returns an integer, an @emph{arity-at-least} object, or
+a list of integer(s) and @emph{arity-at-least} objects.
+
+An integer result indicates @var{proc} takes exactly that number
+of arguments.  An @emph{arity-at-least} indicats @var{proc} takes
+at least @code{(arity-at-least-value @emph{arity-at-least})}
+arguments.   The list indicates there are multiple procedures
+with different arities.
+
+Since one can add methods to an existing procedure or generic function
+at any moment in Gauche, the value returned by @code{arity} only
+indicates the current state of the procedure.  It will change
+if new method is added to the procedure/generic-function.
+
+@example
+(arity cons) @result{} 2
+(arity list) @result{} #<arity-at-least 0>
+(arity make) @result{} (#<arity-at-least 1>)
+@end example
+@end defun
+
+@defun arity-at-least? @var{obj}
+Returns true if @var{obj} is an arity-at-least object.
+@end defun
+
+@defun arity-at-least-value @var{arity-at-least}
+Returns the number of required arguments the arity-at-least object
+indicates.
+@end defun
+
+@defun procedure-arity-includes? @var{proc} @var{k}
+If a procedure @var{proc} can take @var{k} arguments, returns @code{#t}.
+Otherwise returns @code{#f}.
 @end defun
 
 @node Continuation, Multiple values, Procedures, Control features
@@ -6621,12 +6813,14 @@ scope of @code{dynamic-wind}, @var{before} is called.
 Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
 @code{receive} (@ref{Binding constructs}), or the R5Rs procedure
-@code{call-with-values} described below.  See also @ref{Let-values}.
+@code{call-with-values} described below.
+See also @ref{Let-values}.
 @c JP
 @var{obj} @dots{} を多値として返します。
 呼び出し側は、組み込み構文の @code{receive} (@ref{Binding constructs}参照)か、
 下に説明するR5RSの手続き@code{call-with-values}を使って多値を受け取ることが
-できます。@ref{Let-values}も参照してください。
+できます。
+@ref{Let-values}も参照してください。
 @c COMMON
 @example
 (values 1 2) @result{} 1 @r{and} 2
@@ -10238,14 +10432,53 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 @subsection Time
 @c NODE 時間
 
-@deftp {Builtin Class} <sys-tm>
-@clindex sys-tm
-Represents @code{struct tm}.
-@end deftp
+@c EN
+Gauche has two representations of time, one is compatible to POSIX API,
+and the other is compatible to SRFI-18, SRFI-19 and SRFI-21.
+Most procedures accept both representations; if not, the representation
+the procedure accepts is indicated as either 'POSIX time' or 'SRFI time'.
+@c JP
+Gaucheでは時間は2種類の表現を持ちます。ひとつはPOSIX APIとコンパチブルな
+表現で、もう一つはSRFI-18、SRFI-19、SRFI-21とコンパチブルな表現です。
+多くの手続きはどちらの表現も理解しますが、そうでない場合は
+適用可能な表現を'POSIX time'または'SRFI time'と表記します。
+@c COMMON
+
+@c EN
+POSIX time is represented by a real number which is a number of seconds
+since Unix Epoch (Jan 1, 1970, 0:00:00GMT).
+Procedure @code{sys-time}, which corresponds to POSIX @code{time(2)},
+returns this time representation.
+@c JP
+POSIX timeは実数で、Unix Epoch(Jan 1, 1970, 0:00:00GMT)からの秒数で
+表現されます。POSIXの@code{time(2)}に対応する@code{sys-time}手続きは
+この表現を返します。
+@c COMMON
+
+@c EN
+SRFI-compatible time is represented by an object of @code{<time>} class,
+which keeps seconds and nanoseconds, as well as the type of the time
+(UTC, TAI, duration, process time, etc).
+@code{Current-time} returns this representation.
+@c JP
+SRFI互換の時間は@code{<time>}クラスのインスタンスとして表現され、
+秒、およびナノ秒のスロットを持ちます。
+また、時間の種別(UTC、TAI、期間、プロセス時間、他)も保持しています。
+@code{Current-time}はこの表現を返します。
+@c COMMON
+
+@menu
+* POSIX time::                  
+* SRFI time::                   
+@end menu
+
+@node POSIX time, SRFI time, Time, Time
+@subsubsection POSIX time
 
 @defun sys-time
-[POSIX] Returns the time since Epoch (00:00:00 UTC, January 1, 1970),
-measured in seconds.  It may be a non-integral number, depending on
+[POSIX] Returns the current time in POSIX time
+(the time since Epoch (00:00:00 UTC, January 1, 1970),
+measured in seconds).  It may be a non-integral number, depending on
 the architecture.
 
 Note that POSIX's definition of ``seconds since the Epoch'' doesn't
@@ -10259,6 +10492,11 @@ since 1970/1/1 0:00:00 UTC.   If the system doesn't have
 @code{gettimeofday} call, this function calls @code{time()};
 in that case, microseconds portion is always zero.
 @end defun
+
+@deftp {Builtin Class} <sys-tm>
+@clindex sys-tm
+Represents @code{struct tm}.
+@end deftp
 
 @defun sys-gmtime time
 [POSIX] @var{time} is a number of seconds since Epoch.
@@ -10293,6 +10531,33 @@ local time.
 
 @defun sys-tm->alist tm
 @end defun
+
+@node SRFI time,  , POSIX time, Time
+@subsubsection SRFI time
+
+@deftp {Builtin Class} <time>
+@clindex time
+@defivar <time> type
+@end defivar
+@defivar <time> second
+@end defivar
+@defivar <time> nanosecond
+@end defivar
+@end deftp
+
+@defun current-time
+[SRFI-18][SRFI-21]
+@end defun
+
+@defun time?
+[SRFI-18][SRFI-19][SRFI-21]
+@end defun
+
+@defun time->seconds
+@defunx seconds->time
+[SRFI-18]
+@end defun
+
 
 @node Unix process management, I/O multiplexing, Time, System interface
 @subsection Unix process management
@@ -10876,6 +11141,7 @@ for the usage of metaclass.
 * Unit Testing::                
 * Slot with validator::         
 * Comparing version numbers::   
+* Mathematic constants::        
 * Mersenne Twister Random number generator::  
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
@@ -10892,6 +11158,7 @@ for the usage of metaclass.
 * Let-values::                  
 * String library::              
 * Character-set library::       
+* Time data types and procedures::  
 * CSV tables::                  
 * Simple HTML document construction::  
 * Parsing input stream::        
@@ -16288,7 +16555,7 @@ only a dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Comparing version numbers, Mersenne Twister Random number generator, Slot with validator, Library modules
+@node Comparing version numbers, Mathematic constants, Slot with validator, Library modules
 @section @code{gauche.version} - Comparing version numbers
 @c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
 
@@ -16462,7 +16729,34 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Mersenne Twister Random number generator, RFC822 Message parsing, Comparing version numbers, Library modules
+@node Mathematic constants, Mersenne Twister Random number generator, Comparing version numbers, Library modules
+@section @code{math.const} - Mathematic constants
+@c NODE 定数
+
+@deftp {Module} math.const
+@mdindex math.const
+This module defines several commonly-used mathematic constants.
+@end deftp
+
+@defvr {Constant} pi
+@defvrx {Constant} pi/2
+@defvrx {Constant} pi/4
+@defvrx {Constant} pi/180
+@defvrx {Constant} 1/pi
+@defvrx {Constant} 180/pi
+@c EN
+Bound to pi, pi/2, pi/4, pi/180, 1/pi and 180/pi, respectively.
+@c JP
+それぞれ、π、π/2、π/4、π/180、1/π、180/πです。
+@c COMMON
+@end defvr
+
+@defvr {Constant} e
+e.
+@end defvr
+
+@c ----------------------------------------------------------------------
+@node Mersenne Twister Random number generator, RFC822 Message parsing, Mathematic constants, Library modules
 @section @code{math.mt-random} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
@@ -18466,7 +18760,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library, CSV tables, String library, Library modules
+@node Character-set library, Time data types and procedures, String library, Library modules
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
@@ -18698,7 +18992,191 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Simple HTML document construction, Character-set library, Library modules
+@node Time data types and procedures, CSV tables, Character-set library, Library modules
+@section @code{srfi-19} - Time data types and procedures
+@c NODE 時間のデータ型と手続き
+
+This SRFI defines various representations of time and
+
+
+@menu
+* SRFI-19 Time types::          
+* SRFI-19 Time queries::        
+* SRFI-19 Time procedures::     
+* SRFI-19 Date::                
+* SRFI-19 Date reader and writer::  
+@end menu
+
+@node SRFI-19 Time types, SRFI-19 Time queries, Time data types and procedures, Time data types and procedures
+@subsection Time types
+@c NODE 時間のタイプ
+
+@defvr {Constant} time-utc
+@end defvr
+
+@defvr {Constant} time-tai
+@end defvr
+
+@defvr {Constant} time-monotonic
+@end defvr
+
+@defvr {Constant} time-duration
+@end defvr
+
+@defvr {Constant} time-process
+@end defvr
+
+@defvr {Constant} time-thread
+@end defvr
+
+@node SRFI-19 Time queries, SRFI-19 Time procedures, SRFI-19 Time types, Time data types and procedures
+@subsection Time queries
+@c NODE 時間に関する問い合わせ
+
+@defun current-time &optional time-type
+@end defun
+
+@defun current-date &optional tz-offset
+@end defun
+
+@defun current-julian-day 
+@end defun
+
+@defun current-modified-julian-day
+@end defun
+
+@defun time-resolution
+@end defun
+
+
+@node SRFI-19 Time procedures, SRFI-19 Date, SRFI-19 Time queries, Time data types and procedures
+@subsection Time procedures
+@c NODE 時間に関する手続き
+
+@defun make-time type seconds nanoseconds
+@end defun
+
+@defun time-type time
+@defunx time-second time
+@defunx time-nanosecond time
+@end defun
+
+@defun set-time-type! time type
+@defunx set-time-second! time second
+@defunx set-time-nanosecond! time nanosecond
+@end defun
+
+@defun copy-time time
+@end defun
+
+@defun time=? time0 time1
+@defunx time<? time0 time1
+@defunx time<=? time0 time1
+@defunx time>? time0 time1
+@defunx time>=? time0 time1
+@end defun
+
+@defun time-difference time0 time1
+@defunx time-difference! time0 time1
+@end defun
+
+@defun add-duration time0 time-duration
+@defunx add-duration! time0 time-duration
+@end defun
+
+@defun subtract-duration time0 time-duration
+@defunx subtract-duration! time0 time-duration
+@end defun
+
+
+@node SRFI-19 Date, SRFI-19 Date reader and writer, SRFI-19 Time procedures, Time data types and procedures
+@subsection Date
+@c NODE 日付
+
+@deftp {Class} <date>
+@clindex date
+@end deftp
+
+@defun make-date nanosecond second minute hour day month year zone-offset
+@end defun
+
+@defun date?
+@end defun
+
+@defun date-nanosecond date
+@defunx date-second date
+@defunx date-minute date
+@defunx date-hour date
+@defunx date-day date
+@defunx date-month date
+@defunx date-year date
+@defunx date-zone-offset date
+@end defun
+
+@defun date-year-day date
+@defunx date-week-day date
+@defunx date-week-number date day-of-week-starting-week
+@end defun
+
+@defun date->julian-day date
+@defunx date->modified-julian-day date
+@defunx date->time-monotonic date
+@defunx date->time-tai date
+@defunx date->time-utc date
+@end defun
+
+@defun julian-day->date jd &optional tz-offset
+@defunx julian-day->time-monotonic jd
+@defunx julian-day->time-tai jd
+@defunx julian-day->time-utc jd
+@end defun
+
+@defun modified-julian-day->date jd &optional tz-offset
+@defunx modified-julian-day->time-monotonic jd
+@defunx modified-julian-day->time-tai jd
+@defunx modified-julian-day->time-utc jd
+@end defun
+
+@defun time-monotonic->date time &optional tz-offset
+@defunx time-monotonic->julian-day time
+@defunx time-monotonic->modified-julian-day time
+@defunx time-monotonic->time-tai time
+@defunx time-monotonic->time-tai! time
+@defunx time-monotonic->time-utc time
+@defunx time-monotonic->time-utc! time
+@end defun
+
+@defun time-tai->date time &optional tz-offset
+@defunx time-tai->julian-day time
+@defunx time-tai->modified-julian-day time
+@defunx time-tai->time-monotonic time
+@defunx time-tai->time-monotonic! time
+@defunx time-tai->time-utc time
+@defunx time-tai->time-utc! time
+@end defun
+
+@defun time-utc->date time &optional tz-offset
+@defunx time-utc->julian-day time
+@defunx time-utc->modified-julian-day time
+@defunx time-utc->time-monotonic time
+@defunx time-utc->time-monotonic! time
+@defunx time-utc->time-tai time
+@defunx time-utc->time-tai! time
+@end defun
+
+@node SRFI-19 Date reader and writer,  , SRFI-19 Date, Time data types and procedures
+@subsection Date reader and writer
+@c NODE 日付の読み書き
+
+@defun date->string date &optional format-string
+@end defun
+
+@defun string->date string template-string
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node CSV tables, Simple HTML document construction, Time data types and procedures, Library modules
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
