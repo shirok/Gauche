@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.158 2002-07-05 02:57:00 shirok Exp $
+ *  $Id: vm.c,v 1.159 2002-07-05 09:36:56 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -30,6 +30,12 @@
 /* SRFI-22 requires this. */
 #define EX_SOFTWARE 70
 #endif
+
+/* An object to mark the boundary frame */
+static ScmObj boundaryFrameMark;
+
+/* return true if cont is a boundary continuation frame */
+#define BOUNDARY_FRAME_P(cont) (SCM_EQ((cont)->info, boundaryFrameMark))
 
 /*
  * The VM. 
@@ -209,6 +215,8 @@ void Scm__InitVM(void)
     rootVM->state = SCM_VM_RUNNABLE;
     vmList = SCM_LIST1(SCM_OBJ(rootVM));
     (void)SCM_INTERNAL_MUTEX_INIT(vmListMutex);
+
+    boundaryFrameMark = SCM_MAKE_STR("boundary-frame");
 }
 
 /*====================================================================
@@ -259,9 +267,6 @@ void Scm__InitVM(void)
 /* return true if ptr points into the stack area */
 #define IN_STACK_P(ptr)                         \
     ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
-
-/* return true if cont is a boundary continuation frame */
-#define BOUNDARY_FRAME_P(cont) (SCM_FALSEP((cont)->info))
 
 #define RESTORE_REGS()                          \
     do {                                        \
@@ -1563,12 +1568,12 @@ static ScmObj user_eval_inner(ScmObj program)
     ScmCStack cstack;
 
     /* Push extra continuation.  This continuation frame is a 'boundary
-       frame' and marked by info == SCM_FALSE.   VM loop knows it should
-       return to C frame when it sees a boundary frame.  A boundary frame
-       also keeps the unfinished argument frame at the point when
-       Scm_Eval or Scm_Apply is called. */
+       frame' and marked by info == boundaryFrameMark.   VM loop knows
+       it should return to C frame when it sees a boundary frame.
+       A boundary frame also keeps the unfinished argument frame at
+       the point when Scm_Eval or Scm_Apply is called. */
     CHECK_STACK(CONT_FRAME_SIZE);
-    PUSH_CONT(SCM_FALSE, pc);
+    PUSH_CONT(boundaryFrameMark, pc);
     pc = program;
     SAVE_REGS();
 
@@ -1607,7 +1612,6 @@ static ScmObj user_eval_inner(ScmObj program)
             }
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
-
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
                 vm->pc = SCM_NIL;
@@ -1941,7 +1945,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 {
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = vm->escapePoint;
-
+    
     vm->runtimeFlags &= ~SCM_ERROR_BEING_HANDLED;
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
