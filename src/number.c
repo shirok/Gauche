@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.12 2001-03-04 12:23:26 shiro Exp $
+ *  $Id: number.c,v 1.13 2001-03-06 08:39:06 shiro Exp $
  */
 
 #include <math.h>
@@ -20,7 +20,18 @@
 #include <string.h>
 #include "gauche.h"
 
-#define PI 3.14159265358979323
+#ifndef M_PI
+#define M_PI 3.14159265358979323
+#endif
+
+/* Linux gcc have those, but the declarations aren't included unless
+   __USE_ISOC9X is defined.  Just in case. */
+#ifdef HAVE_TRUNC
+extern double trunc(double);
+#endif
+#ifdef HAVE_ROUND
+extern double round(double);
+#endif
 
 /*
  * Classes of Numeric Tower
@@ -100,7 +111,7 @@ ScmObj Scm_Angle(ScmObj z)
 {
     double a;
     if (SCM_REALP(z)) {
-        a = (Scm_Sign(z) < 0)? PI : 0.0;
+        a = (Scm_Sign(z) < 0)? M_PI : 0.0;
     } else if (!SCM_COMPLEXP(z)) {
         Scm_Error("number required, but got %S", z);
         a = 0.0;                /* dummy */
@@ -1060,10 +1071,28 @@ ScmObj Scm_Round(ScmObj num, int mode)
     switch (mode) {
     case SCM_ROUND_FLOOR: r = floor(v); break;
     case SCM_ROUND_CEIL:  r = ceil(v); break;
-    case SCM_ROUND_TRUNC: r = trunc(v); break; /* TODO: check if trunc() is in ANSI C or POSIX */
-    case SCM_ROUND_ROUND: r = rint(v); break; /* TODO: check if rint() is in ANSI C or POSIX */
+    /* trunc and round is neither in ANSI nor in POSIX. */
+#ifdef HAVE_TRUNC
+    case SCM_ROUND_TRUNC: r = trunc(v); break;
+#else
+    case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
+#endif
+#ifdef HAVE_ROUND
+    case SCM_ROUND_ROUND: r = round(v); break;
+#else
+    case SCM_ROUND_ROUND: {
+        double frac = modf(v, &r);
+        if (v > 0.0) {
+            if (frac >= 0.5) r += 1.0;
+        } else {
+            if (frac <= -0.5) r -= 1.0;
+        }
+        break;
+    }
+#endif
     default: Scm_Panic("something screwed up");
     }
+    printf("%lf\n", r);
     return Scm_MakeFlonum(r);
 }
 
