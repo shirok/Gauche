@@ -1,3 +1,8 @@
+2001-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c : added buffered ports (not finished).
+	* ext/net/* : fixed configuration strategy.
+
 2001-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in, src/*: applied a patch by MINOURA Makoto
