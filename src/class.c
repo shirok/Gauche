@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.88 2002-12-22 12:29:58 shirok Exp $
+ *  $Id: class.c,v 1.89 2003-01-21 11:16:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1854,8 +1854,8 @@ void Scm__InitClass(void)
     /* class.c */
     BINIT(SCM_CLASS_CLASS,  "<class>", class_slots, sizeof(ScmClass));
     BINIT(SCM_CLASS_TOP,    "<top>",     NULL, 0);
-    BINIT(SCM_CLASS_BOOL,   "<boolean>", NULL, 0);
-    BINIT(SCM_CLASS_CHAR,   "<char>",    NULL, 0);
+    CINIT(SCM_CLASS_BOOL,   "<boolean>");
+    CINIT(SCM_CLASS_CHAR,   "<char>");
     BINIT(SCM_CLASS_UNKNOWN,"<unknown>", NULL, 0);
     BINIT(SCM_CLASS_OBJECT, "<object>",  NULL, 0);
     BINIT(SCM_CLASS_GENERIC,"<generic>", generic_slots, sizeof(ScmGeneric));
