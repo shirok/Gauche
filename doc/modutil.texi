@@ -39,6 +39,7 @@
 * util.lcs - The longest common subsequence::  
 * util.list - Additional list library::  
 * util.queue - Queue::          
+* util.record - SLIB-compatible record type::  
 * util.toposort - Topological sort::  
 * www.cgi - CGI Utility::       
 @end menu
@@ -8699,7 +8700,7 @@ uses @code{eq?} and @code{eqv?}, respectively.
 
 
 @c ----------------------------------------------------------------------
-@node util.queue - Queue, util.toposort - Topological sort, util.list - Additional list library, Library modules - Utilities
+@node util.queue - Queue, util.record - SLIB-compatible record type, util.list - Additional list library, Library modules - Utilities
 @section @code{util.queue} - Queue
 @c NODE util.queue - キュー, @code{util.queue} - キュー
 
@@ -8899,7 +8900,84 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node util.toposort - Topological sort, www.cgi - CGI Utility, util.queue - Queue, Library modules - Utilities
+@node util.record - SLIB-compatible record type, util.toposort - Topological sort, util.queue - Queue, Library modules - Utilities
+@section @code{util.record} - SLIB-compatible record type
+
+@deftp {Module} util.record
+@mdindex util.record
+This module provides a Guile and SLIB compatible record type API.
+It is built on top of Gauche's object system.
+
+See also @ref{srfi-9 - Record types}, which provides a convenience macro
+@code{define-record-type}.
+@end deftp
+
+@defun make-record-type type-name field-names
+Returns a new class which represents a new record type.
+(It is what is called @emph{record-type descriptor} in SLIB).
+In Gauche, the new class is a subclass of @code{<record>}
+(see @ref{srfi-9}).
+
+@var{type-name} is a string that is used for debugging purposes.
+It is converted to a symbol and set as the name of the new class.
+@var{field-names} is a list of symbols of the names of fields.
+Each field is implemented as a slot of the new class.
+@end defun
+
+In the following procedures, @var{rtd} is the record class
+created by @code{make-record-type}.
+
+@defun record-constructor rtd &optional field-names
+Returns a procedure that constructs an instance
+of the record type of given @var{rtd}.  The returned
+procedure takes exactly as many arguments as @var{field-names},
+which defaults to @code{'()}.  Each argument sets the initial
+value of the corresponding field in @var{field-names}.
+@end defun
+
+@defun record-predicate rtd
+Returns a procedure that takes one argument, which returns @code{#t}
+iff the given argument is of type of @var{rtd}.
+@end defun
+
+@defun record-accessor rtd field-name
+Returns an accessor procedure for the field named by @var{field-name}
+of type @var{rtd}.  The accessor procedure takes an instance of
+@var{rtd}, and returns the value of the field.
+@end defun
+
+@defun record-modifier rtd field-name
+Returns a modifier procedure for the field named by @var{field-name}
+of type @var{rtd}.  The modifier procedure takes two arguments,
+an instance of @var{rtd} and a value, and sets the value to
+the specified field.
+@end defun
+
+@example
+(define rtd (make-record-type "my-record" '(a b c)))
+
+rtd @result{} #<class my-record>
+
+(define make-my-record (record-constructor rtd '(a b c)))
+
+(define obj (make-my-record 1 2 3))
+
+obj @result{} #<my-record 0x819d9b0>
+
+((record-predicate? rtd) obj)  @result{} #t
+
+((record-accessor rtd 'a) obj) @result{} 1
+((record-accessor rtd 'b) obj) @result{} 2
+((record-accessor rtd 'c) obj) @result{} 3
+
+((record-modifier rtd 'a) obj -1)
+
+((record-accessor rtd 'a) obj) @result{} -1
+@end example
+
+
+@c ----------------------------------------------------------------------
+@node util.toposort - Topological sort, www.cgi - CGI Utility, util.record - SLIB-compatible record type, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
 @c NODE util.toposort - トポロジカルソート, @code{util.toposort} - トポロジカルソート
 

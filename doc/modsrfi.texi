@@ -1540,12 +1540,19 @@ top of Gauche's object system.
 
 The SRFI-9 record type is not as powerful as the object system, but
 it will be useful if you want your program to be portable.
+
+See also @ref{util.record - SLIB-compatible record type},
+which provides an SCM-compatible
+procedural interface of record types.
 @c JP
 このモジュールはレコード型を使うマクロを含んでいます。レコード型は
 Gauche のオブジェクトシステム上で実装されています。
 
 SRFI-9 のレコード型はオブジェクトシステムほどには強力ではありませんが、
 ポータブルなプログラムを書くときには役に立ちます。
+
+ちなみに、レコード型に対するSCMコンパチブルな
+手続き的APIを提供する@ref{util.record - SLIB-compatible record type}モジュールもあります。
 @c COMMON
 @end deftp
 
