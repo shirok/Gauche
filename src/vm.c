@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.14 2004-12-30 09:28:54 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.15 2005-01-07 08:26:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -968,6 +968,15 @@ pthread_key_t Scm_VMKey(void)
                 PUSH_LOCAL_ENV(nlocals, SCM_FALSE);
                 NEXT;
             }
+            CASE(SCM_VM_LOCAL_ENV) {
+                CHECK_STACK(ENV_SIZE(0));
+                FINISH_ENV(SCM_FALSE, ENV);
+                NEXT;
+            }
+            CASE(SCM_VM_POP_LOCAL_ENV) {
+                ENV = ENV->up;
+                NEXT;
+            }
             CASE(SCM_VM_GSET) {
                 ScmObj loc;
                 FETCH_OPERAND(loc);
@@ -1217,6 +1226,13 @@ pthread_key_t Scm_VMKey(void)
                 }
                 VAL0 = cp;
                 vm->numVals = 1;
+                NEXT;
+            }
+            CASE(SCM_VM_LIST2VEC) {
+                SAVE_REGS();
+                VAL0 = Scm_ListToVector(VAL0);
+                vm->numVals = 1;
+                RESTORE_REGS();
                 NEXT;
             }
             CASE(SCM_VM_NOT) {
@@ -3252,6 +3268,8 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
             pk_constant(data, SCM_CAR(cp));
             pk_emit(data, SCM_CAR(cp));
             break;
+        case SCM_VM_LOCAL_ENV:;
+        case SCM_VM_POP_LOCAL_ENV:;
         case SCM_VM_LSET0:;
         case SCM_VM_LSET1:;
         case SCM_VM_LSET2:;
@@ -3327,6 +3345,7 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
         case SCM_VM_CDR_PUSH:;
         case SCM_VM_LIST:;
         case SCM_VM_LIST_STAR:;
+        case SCM_VM_LIST2VEC:;
         case SCM_VM_NOT:;
         case SCM_VM_NULLP:;
         case SCM_VM_EQ:;

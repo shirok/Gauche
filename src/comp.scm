@@ -1,172 +1,172 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.12 2005-01-06 11:26:28 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.13 2005-01-07 08:26:11 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
   )
 (select-module gauche.internal)
 
-;; Entry
-(define (compile program . opts)
-  (let1 mod (get-optional opts #f)
-    (if mod
-      (let1 origmod (vm-current-module)
-        (dynamic-wind
-            (lambda () (vm-set-current-module mod))
-            (lambda () (compile-int program '() 'tail))
-            (lambda () (vm-set-current-module origmod))))
-      (compile-int program '() 'tail))))
+;;; Entry
+;(define (compile program . opts)
+;  (let1 mod (get-optional opts #f)
+;    (if mod
+;      (let1 origmod (vm-current-module)
+;        (dynamic-wind
+;            (lambda () (vm-set-current-module mod))
+;            (lambda () (compile-int program '() 'tail))
+;            (lambda () (vm-set-current-module origmod))))
+;      (compile-int program '() 'tail))))
 
-;; compile-int:: (Program, Env, Ctx) -> [Insn]
-(define (compile-int program env ctx)
-  (match program
-    ((op . args)
-     (cond
-      ((variable? op)
-       (let1 local (lookup-env op env #t)
-         (cond
-          ((vm-insn? local) ;; LREF
-           (compile-call (add-srcinfo (extended-list local) op)
-                         program env ctx))
-          ((is-a? local <macro>) ;; local macro
-           (compile-int (call-macro-expander local program env) env ctx))
-          ((get-global-binding op env)
-           => (lambda (gloc)
-                (let1 val (gloc-ref gloc)
-                  (cond
-                   ((is-a? val <syntax>)
-                    (call-syntax-compiler val program env ctx))
-                   ((is-a? val <macro>)
-                    (compile-int (call-macro-expander val program env)
-                                 env ctx))
-                   ((has-inliner? val)
-                    (let1 inlined (call-procedure-inliner val program env)
-                      (if inlined
-                        (compile-int inlined env ctx)
-                        (compile-call (compile-varref op '()) program env ctx))))
-                   (else
-                    (compile-call (compile-varref op '()) program env ctx))))))
-          (else
-           (compile-call (compile-varref op '()) program env ctx)))))
-      ((is-a? op <syntax>)
-       (call-syntax-compiler op program env ctx))
-      (else
-       (compile-call (compile-int op env 'normal) program env ctx))))
-    ((? variable?)
-     (compile-varref program env))
-    (else
-     (if (eq? ctx 'stmt) '() (list program)))
-    ))
+;;; compile-int:: (Program, Env, Ctx) -> [Insn]
+;(define (compile-int program env ctx)
+;  (match program
+;    ((op . args)
+;     (cond
+;      ((variable? op)
+;       (let1 local (lookup-env op env #t)
+;         (cond
+;          ((vm-insn? local) ;; LREF
+;           (compile-call (add-srcinfo (extended-list local) op)
+;                         program env ctx))
+;          ((is-a? local <macro>) ;; local macro
+;           (compile-int (call-macro-expander local program env) env ctx))
+;          ((get-global-binding op env)
+;           => (lambda (gloc)
+;                (let1 val (gloc-ref gloc)
+;                  (cond
+;                   ((is-a? val <syntax>)
+;                    (call-syntax-compiler val program env ctx))
+;                   ((is-a? val <macro>)
+;                    (compile-int (call-macro-expander val program env)
+;                                 env ctx))
+;                   ((has-inliner? val)
+;                    (let1 inlined (call-procedure-inliner val program env)
+;                      (if inlined
+;                        (compile-int inlined env ctx)
+;                        (compile-call (compile-varref op '()) program env ctx))))
+;                   (else
+;                    (compile-call (compile-varref op '()) program env ctx))))))
+;          (else
+;           (compile-call (compile-varref op '()) program env ctx)))))
+;      ((is-a? op <syntax>)
+;       (call-syntax-compiler op program env ctx))
+;      (else
+;       (compile-call (compile-int op env 'normal) program env ctx))))
+;    ((? variable?)
+;     (compile-varref program env))
+;    (else
+;     (if (eq? ctx 'stmt) '() (list program)))
+;    ))
 
-(define (compile-varref var env)
-  (let1 loc (lookup-env var env #f)
-    (add-srcinfo
-     (if (variable? loc)
-       (extended-list (vm-insn-make 'GREF) loc)
-       (extended-list loc))
-     var)))
+;(define (compile-varref var env)
+;  (let1 loc (lookup-env var env #f)
+;    (add-srcinfo
+;     (if (variable? loc)
+;       (extended-list (vm-insn-make 'GREF) loc)
+;       (extended-list loc))
+;     var)))
 
-;; Returns an insn list of function invocation 
-;;  PROGRAM = (OP . ARGS) and HEAD is the compiled insn list for OP.
-(define (compile-call head program env ctx)
-  (compile-call-finish head (compile-args (cdr program) env)
-                       (length (cdr program)) program ctx))
+;;; Returns an insn list of function invocation 
+;;;  PROGRAM = (OP . ARGS) and HEAD is the compiled insn list for OP.
+;(define (compile-call head program env ctx)
+;  (compile-call-finish head (compile-args (cdr program) env)
+;                       (length (cdr program)) program ctx))
 
-;; Finish compilation of calling sequence.  ARGCODE is an insn list
-;; to push arguments into the stack.  HEADCODE is an insn list to
-;; leave the procedure in the register.   PROGRAM is the source code
-;; to be attached to the call instruction.
-(define (compile-call-finish headcode argcode numargs program ctx)
-  (define (srcinfo insn)
-    (if program
-      (add-srcinfo (extended-list insn) program)
-      (list insn)))
-  (if (eq? ctx 'tail)
-    (append! (list (vm-insn-make 'PRE-TAIL numargs))
-             argcode
-             headcode
-             (srcinfo (vm-insn-make 'TAIL-CALL numargs)))
-    (list (vm-insn-make 'PRE-CALL numargs)
-          (append! argcode headcode
-                   (srcinfo (vm-insn-make 'CALL numargs))))))
+;;; Finish compilation of calling sequence.  ARGCODE is an insn list
+;;; to push arguments into the stack.  HEADCODE is an insn list to
+;;; leave the procedure in the register.   PROGRAM is the source code
+;;; to be attached to the call instruction.
+;(define (compile-call-finish headcode argcode numargs program ctx)
+;  (define (srcinfo insn)
+;    (if program
+;      (add-srcinfo (extended-list insn) program)
+;      (list insn)))
+;  (if (eq? ctx 'tail)
+;    (append! (list (vm-insn-make 'PRE-TAIL numargs))
+;             argcode
+;             headcode
+;             (srcinfo (vm-insn-make 'TAIL-CALL numargs)))
+;    (list (vm-insn-make 'PRE-CALL numargs)
+;          (append! argcode headcode
+;                   (srcinfo (vm-insn-make 'CALL numargs))))))
 
-;; Returns an insn list to push arguments ARGS into the stack.
-(define (compile-args args env)
-  (if (null? args)
-    '()
-    (append! (compile-int (car args) env 'normal)
-             (list (vm-insn-make 'PUSH))
-             (compile-args (cdr args) env))))
+;;; Returns an insn list to push arguments ARGS into the stack.
+;(define (compile-args args env)
+;  (if (null? args)
+;    '()
+;    (append! (compile-int (car args) env 'normal)
+;             (list (vm-insn-make 'PUSH))
+;             (compile-args (cdr args) env))))
 
-;; Returns an insn list of executing EXPRS in sequence.
-(define (compile-seq exprs env ctx)
-  (match exprs
-    (() '())
-    ((expr) (compile-int expr env ctx))
-    ((expr . exprs)
-     (append! (compile-int expr env 'stmt)
-              (compile-seq exprs env ctx)))))
+;;; Returns an insn list of executing EXPRS in sequence.
+;(define (compile-seq exprs env ctx)
+;  (match exprs
+;    (() '())
+;    ((expr) (compile-int expr env ctx))
+;    ((expr . exprs)
+;     (append! (compile-int expr env 'stmt)
+;              (compile-seq exprs env ctx)))))
 
-;; Look up local environment
-;;
-(define (lookup-env var env syntax?)
-  (let outer ((env env)
-              (depth 0))
-    (if (pair? env)
-      (let ((frame (car env)))
-        (when (and (identifier? var)
-                   (eq? (slot-ref var 'env) env))
-          (set! var (slot-ref var 'name)))
-        (if (pair? frame)
-          (if (eq? (car frame) #t)
-            ;; macro binding.
-            (if syntax?
-              (or (find-local-macro (cdr frame) var)
-                  (outer (cdr env) depth))
-              (outer (cdr env) depth))
-            ;; look for variable binding.  there may be a case that
-            ;; single frame contains more than one variable with the
-            ;; same name (in the case like '(let* ((x 1) (x 2)) ...)'),
-            ;; so we have to scan the frame until the end. */
-            (let inner ((frame frame) (offset 0) (found #f))
-              (cond ((null? frame)
-                     (if found
-                       (vm-insn-make 'LREF depth (- offset found 1))
-                       (outer (cdr env) (+ depth 1))))
-                    ((eq? (car frame) var)
-                     (inner (cdr frame) (+ offset 1) offset))
-                    (else
-                     (inner (cdr frame) (+ offset 1) found))))
-            )
-          ;; don't count empty frames.  they are omitted at runtime.
-          (outer (cdr env) depth)))
-      ;; binding not found in local env.  returns an identifier.
-      (if (and (symbol? var) (not syntax?))
-        (make-identifier-old var '())
-        var))))
+;;; Look up local environment
+;;;
+;(define (lookup-env var env syntax?)
+;  (let outer ((env env)
+;              (depth 0))
+;    (if (pair? env)
+;      (let ((frame (car env)))
+;        (when (and (identifier? var)
+;                   (eq? (slot-ref var 'env) env))
+;          (set! var (slot-ref var 'name)))
+;        (if (pair? frame)
+;          (if (eq? (car frame) #t)
+;            ;; macro binding.
+;            (if syntax?
+;              (or (find-local-macro (cdr frame) var)
+;                  (outer (cdr env) depth))
+;              (outer (cdr env) depth))
+;            ;; look for variable binding.  there may be a case that
+;            ;; single frame contains more than one variable with the
+;            ;; same name (in the case like '(let* ((x 1) (x 2)) ...)'),
+;            ;; so we have to scan the frame until the end. */
+;            (let inner ((frame frame) (offset 0) (found #f))
+;              (cond ((null? frame)
+;                     (if found
+;                       (vm-insn-make 'LREF depth (- offset found 1))
+;                       (outer (cdr env) (+ depth 1))))
+;                    ((eq? (car frame) var)
+;                     (inner (cdr frame) (+ offset 1) offset))
+;                    (else
+;                     (inner (cdr frame) (+ offset 1) found))))
+;            )
+;          ;; don't count empty frames.  they are omitted at runtime.
+;          (outer (cdr env) depth)))
+;      ;; binding not found in local env.  returns an identifier.
+;      (if (and (symbol? var) (not syntax?))
+;        (make-identifier-old var '())
+;        var))))
 
-(define (find-local-macro frame var)
-  (let loop ((frame frame))
-    (cond ((null? frame) #f)
-          ((eq? (caar frame) var) (cdar frame))
-          (else (loop (cdr frame))))))
+;(define (find-local-macro frame var)
+;  (let loop ((frame frame))
+;    (cond ((null? frame) #f)
+;          ((eq? (caar frame) var) (cdar frame))
+;          (else (loop (cdr frame))))))
 
-(define (get-global-binding name env)
-  (cond
-   ((identifier? name)
-    (find-binding (slot-ref name 'module) (slot-ref name 'name) #f))
-   ((symbol? name)
-    (find-binding (get-current-module env) name #f))
-   (else #f)))
+;(define (get-global-binding name env)
+;  (cond
+;   ((identifier? name)
+;    (find-binding (slot-ref name 'module) (slot-ref name 'name) #f))
+;   ((symbol? name)
+;    (find-binding (get-current-module env) name #f))
+;   (else #f)))
 
-(define (get-current-module env)
-  (vm-current-module))
+;(define (get-current-module env)
+;  (vm-current-module))
 
-(define (add-srcinfo form info)
-  (when info
-    (pair-attribute-set! form 'source-info info))
-  form)
+;(define (add-srcinfo form info)
+;  (when info
+;    (pair-attribute-set! form 'source-info info))
+;  form)
 
 (define (list/info info arg0 . args)
   (if info
@@ -179,80 +179,80 @@
 ;; Special forms
 ;;
 
-(define-macro (define-primitive-syntax formals . body)
-  `(define ,(car formals)
-     (make-syntax ',(car formals) (lambda ,(cdr formals) ,@body))))
+;(define-macro (define-primitive-syntax formals . body)
+;  `(define ,(car formals)
+;     (make-syntax ',(car formals) (lambda ,(cdr formals) ,@body))))
 
 ;;------------------------------------------------------------
 ;; IF family  (if, when, unless, and, or)
 ;;
 
-(define (compile-if-family test-code then-code else-code env ctx)
-  (if (eq? ctx 'tail)
-    (append! test-code
-             (list (vm-insn-make 'IF) then-code)
-             else-code)
-    (let1 merger (list (vm-insn-make 'MNOP))
-      (append! test-code
-               (list (vm-insn-make 'IF) (append! then-code merger))
-               (append! else-code merger)))))
+;(define (compile-if-family test-code then-code else-code env ctx)
+;  (if (eq? ctx 'tail)
+;    (append! test-code
+;             (list (vm-insn-make 'IF) then-code)
+;             else-code)
+;    (let1 merger (list (vm-insn-make 'MNOP))
+;      (append! test-code
+;               (list (vm-insn-make 'IF) (append! then-code merger))
+;               (append! else-code merger)))))
 
-(define-primitive-syntax (if@ form env ctx)
-  (match form
-    ((_ test then else)
-     (compile-if-family (compile-int test env 'normal)
-                        (compile-int then env ctx)
-                        (compile-int else env ctx)
-                        env ctx))
-    ((_ test then)
-     (compile-int `(,if@ ,test ,then ,(undefined)) env ctx))
-    (else
-     (error "malformed if:" form))))
+;(define-primitive-syntax (if@ form env ctx)
+;  (match form
+;    ((_ test then else)
+;     (compile-if-family (compile-int test env 'normal)
+;                        (compile-int then env ctx)
+;                        (compile-int else env ctx)
+;                        env ctx))
+;    ((_ test then)
+;     (compile-int `(,if@ ,test ,then ,(undefined)) env ctx))
+;    (else
+;     (error "malformed if:" form))))
 
-(define-primitive-syntax (when@ form env ctx)
-  (match form
-    ((_ test . body)
-     (compile-if-family (compile-int test env 'normal)
-                        (compile-seq body env ctx)
-                        (list (undefined))
-                        env ctx))
-    (else
-     (error "malformed when:" form))))
+;(define-primitive-syntax (when@ form env ctx)
+;  (match form
+;    ((_ test . body)
+;     (compile-if-family (compile-int test env 'normal)
+;                        (compile-seq body env ctx)
+;                        (list (undefined))
+;                        env ctx))
+;    (else
+;     (error "malformed when:" form))))
 
-(define-primitive-syntax (unless@ form env ctx)
-  (match form
-    ((_ test . body)
-     (compile-if-family (compile-int test env 'normal)
-                        (list (undefined))
-                        (compile-seq body env ctx)
-                        env ctx))
-    (else
-     (error "malformed unless:" form))))
+;(define-primitive-syntax (unless@ form env ctx)
+;  (match form
+;    ((_ test . body)
+;     (compile-if-family (compile-int test env 'normal)
+;                        (list (undefined))
+;                        (compile-seq body env ctx)
+;                        env ctx))
+;    (else
+;     (error "malformed unless:" form))))
 
-(define-primitive-syntax (and@ form env ctx)
-  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
-    (define (and-rec exprs)
-      (match exprs
-        (() (list #t))
-        ((expr) (append! (compile-int expr env ctx) merger))
-        ((expr . other)
-         (append! (compile-int expr env 'normal)
-                  (list (vm-insn-make 'IF)
-                        (and-rec other))
-                  merger))))
-    (and-rec (cdr form))))
+;(define-primitive-syntax (and@ form env ctx)
+;  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
+;    (define (and-rec exprs)
+;      (match exprs
+;        (() (list #t))
+;        ((expr) (append! (compile-int expr env ctx) merger))
+;        ((expr . other)
+;         (append! (compile-int expr env 'normal)
+;                  (list (vm-insn-make 'IF)
+;                        (and-rec other))
+;                  merger))))
+;    (and-rec (cdr form))))
 
-(define-primitive-syntax (or@ form env ctx)
-  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
-    (define (or-rec exprs)
-      (match exprs
-        (() (list #f))
-        ((expr) (append! (compile-int expr env ctx) merger))
-        ((expr . other)
-         (append! (compile-int expr env 'normal)
-                  (list (vm-insn-make 'IF) merger)
-                  (or-rec other)))))
-    (or-rec (cdr form))))
+;(define-primitive-syntax (or@ form env ctx)
+;  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
+;    (define (or-rec exprs)
+;      (match exprs
+;        (() (list #f))
+;        ((expr) (append! (compile-int expr env ctx) merger))
+;        ((expr . other)
+;         (append! (compile-int expr env 'normal)
+;                  (list (vm-insn-make 'IF) merger)
+;                  (or-rec other)))))
+;    (or-rec (cdr form))))
 
 ;;------------------------------------------------------------
 ;; BEGIN
@@ -261,8 +261,8 @@
 ;; NB: begins in the beginning of lambda bodies are handled
 ;; within lambda-family compiler.
 
-(define-primitive-syntax (begin@ form env ctx)
-  (compile-seq (cdr form) env ctx))
+;(define-primitive-syntax (begin@ form env ctx)
+;  (compile-seq (cdr form) env ctx))
 
 ;;------------------------------------------------------------
 ;; LAMBDA family  (lambda, let, let*, letrec, receive)
@@ -281,10 +281,14 @@
             (lambda () (vm-set-current-module mod))
             (lambda () (kompile-int program))
             (lambda () (vm-set-current-module origmod))))
-      (kompile-int program '()))))
+      (kompile-int program))))
 
 (define (kompile-int program)
-  (pass3 (pass2 (pass1 program (make-bottom-cenv))) '() 'tail))
+  (let1 p1 (pass1 program (make-bottom-cenv))
+    (display "Pass1: ") (write p1) (newline)
+    (let1 p3 (pass3 (pass2 p1) '() 'tail)
+      (display "Pass3: ") (write p3) (newline)
+      (vm-dump-code (vm-pack-code p3)))))
 
 ;; NB: for the time being, we use simple vector and manually
 ;; defined accessors/modifiers.  We can't use define-class stuff
@@ -357,8 +361,8 @@
 ;;
 ;; <top-expr> :=
 ;;    <expr>
-;;    ($define <flags> <id> <expr>)
-;;    ($define-macro <flags> <id> <expr>)
+;;    ($define <o> <flags> <id> <expr>)
+;;    ($define-macro <o> <flags> <id> <expr>)
 ;;
 ;; <expr> :=
 ;;    ($lref <lvar>)        ;; local variable reference
@@ -511,9 +515,9 @@
 ;; Returns <list of args>, <# of reqargs>, <has optarg?>
 (define (parse-lambda-args formals)
   (let loop ((formals formals) (args '()))
-    (cond ((null? formals) (values (reverse args) (length args) #f))
+    (cond ((null? formals) (values (reverse args) (length args) 0))
           ((pair? formals) (loop (cdr formals) (cons (car formals) args)))
-          (else (values (reverse (cons formals args)) (length args) #t)))))
+          (else (values (reverse (cons formals args)) (length args) 1)))))
 
 ;; Strip syntactic info from form; unlike built-in unwrap-syntax,
 ;; this can handle circular structure.
@@ -569,25 +573,25 @@
 
 ;; Definitions ........................................
 
-(define (pass1/define form flags module cenv origform)
+(define (pass1/define form oform flags module cenv origform)
   (match form
     ((_ (name . args) body ...)
-     (pass1/define-common `(define name
-                             (,(global-id 'lambda) ,args ,@body))
-                          flags module cenv origform))
+     (pass1/define `(define name
+                      (,(global-id 'lambda) ,args ,@body))
+                   oform flags module cenv origform))
     ((_ name expr)
      (unless (variable? name)
        (error "syntax-error:" origform))
-     `($define ,flags
+     `($define ,oform ,flags
                ,(make-identifier (%unwrap-syntax name) '() module)
                ,(pass1 expr cenv)))
     (else (error "syntax-error:" origform))))
 
 (define-pass1-syntax (define form cenv)
-  (pass1/define form '() (cenv-module module) cenv form))
+  (pass1/define form form '() (cenv-module cenv) cenv form))
 
 (define-pass1-syntax (define-constant form cenv)
-  (pass1/define form '(const) (cenv-module module) cenv form))
+  (pass1/define form form '(const) (cenv-module cenv) cenv form))
 
 ;; If family ........................................
 
@@ -712,10 +716,10 @@
 (define-pass1-syntax (lambda form cenv)
   (match form
     ((_ formals . body)
-     (receive (args reqargs has-optarg?) (parse-lambda-args formals)
+     (receive (args reqargs optarg) (parse-lambda-args formals)
        (let* ((lvars (map make-lvar args))
               (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
-         `($lambda ,form ,reqargs ,has-optarg?
+         `($lambda ,form ,reqargs ,optarg
                    ,lvars ,(pass1/body body form newenv)))))
     (else
      (error "syntax-error: malformed lambda:" form))))
@@ -723,11 +727,12 @@
 (define-pass1-syntax (receive form cenv)
   (match form
     ((_ formals expr body ...)
-     (receive (args reqargs has-optarg?) (parse-lambda-args formals)
+     (receive (args reqargs optarg) (parse-lambda-args formals)
        (let* ((lvars (map make-lvar args))
               (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
-         `($receive ,form ,reqargs ,has-optarg?
-                    ,lvars ,(pass1/body body form newenv)))))
+         `($receive ,form ,reqargs ,optarg
+                    ,lvars ,(pass1 expr cenv)
+                    ,(pass1/body body form newenv)))))
     (else
      (error "syntax-error: malformed receive:" form))))
 
@@ -880,6 +885,13 @@
 ;;
 (define (pass3 form renv ctx)
   (match form
+    (('$define info flags id expr)
+     (append! (pass3 expr '() 'normal/bottom)
+              (list/info info
+                         (if (memq 'const flags)
+                           (vm-insn-make 'DEFINE-CONST)
+                           (vm-insn-make 'DEFINE))
+                         id)))
     (('$lref lvar)
      (receive (depth offset) (pass3/lookup-lvar lvar renv ctx)
        (list/info (lvar-name lvar)
@@ -888,7 +900,7 @@
      (receive (depth offset) (pass3/lookup-lvar lvar renv ctx)
        (append! (pass3 expr renv (normal-context ctx))
                 (list/info (lvar-name lvar)
-                           (vm-insn-make 'LSET depth ofset)))))
+                           (vm-insn-make 'LSET depth offset)))))
     (('$gref id)
      (list/info id (vm-insn-make 'GREF) id))
     (('$gset id expr)
@@ -901,9 +913,8 @@
        (append! (pass3 test renv (normal-context ctx))
                 (list/info info
                            (vm-insn-make 'IF)
-                           (append! (pass3 then ctx) merger)
-                           (pass3 else ctx)
-                           merger))))
+                           (append! (pass3 then renv ctx) merger))
+                (append! (pass3 else renv ctx) merger))))
     (('$it) '())
     (('$let info lvars inits expr)
      (if (bottom-context? ctx)
@@ -913,23 +924,19 @@
                 (if (tail-context? ctx)
                   '()
                   (list (vm-insn-make 'POP-LOCAL-ENV))))
-       (append! (list (vm-insn-make 'PRE-CALL (length lvars)))
-                (append! (pass3/prepare-args inits renv ctx)
-                         (list/info info (vm-insn-make 'LOCAL-ENV (length lvars)))
-                         (pass3 expr (cons lvars renv) ctx)))))
-    (('$receive info nargs optarg? lvars expr body)
-     (append! (pass3 expr (normal-context ctx))
-              (if (bottom-context? ctx)
-                (append! (list/info info
-                                    (vm-insn-make 'TAIL-RECEIVE nargs optarg?))
-                         (pass3 body (cons lvars renv) ctx))
-                (list/info info
-                           (vm-insn-make 'RECEIVE nargs (if optarg? 1 0))
-                           (pass3 body (cons lvars renv) ctx)))))
-    (('$lambda info nargs optarg? lvars expr)
+       (list (vm-insn-make 'PRE-CALL (length lvars))
+             (append! (pass3/prepare-args inits renv ctx)
+                      (list/info info (vm-insn-make 'LOCAL-ENV (length lvars)))
+                      (pass3 expr (cons lvars renv) ctx)))))
+    (('$receive info nargs optarg lvars expr body)
+     (append! (pass3 expr renv (normal-context ctx))
+              (list/info info
+                         (vm-insn-make 'RECEIVE nargs optarg)
+                         (pass3 body (cons lvars renv) ctx))))
+    (('$lambda info nargs optarg lvars expr)
      (list/info info
-                (vm-insn-make 'LAMBDA nargs (if optarg? 1 0))
-                (pass3 expr renv (tail-context ctx))))
+                (vm-insn-make 'LAMBDA nargs optarg)
+                (pass3 expr (cons lvars renv) (tail-context ctx))))
     (('$seq . exprs)
      (if (null? exprs)
        '()
@@ -937,8 +944,7 @@
                   (codes '()))
          (match exprs
            ((expr)
-            (apply append! (reverse! codes)
-                   (list (pass3 expr renv (tail-context ctx)))))
+            (apply append! (reverse! (cons (pass3 expr renv ctx) codes))))
            ((expr . rest)
             (loop rest (cons (pass3 expr renv (stmt-context ctx)) codes)))))))
     (('$call info proc . args)
@@ -947,13 +953,13 @@
        (if (tail-context? ctx)
          (append! (list (vm-insn-make 'PRE-TAIL numargs))
                   argcode
-                  (pass3/prepare-args proc renv 'normal/top)
+                  (pass3 proc renv 'normal/top)
                   (list/info info (vm-insn-make 'TAIL-CALL numargs)))
-         (append! (list (vm-insn-make 'PRE-CALL numargs))
-                  (append! argcode
-                           (pass3/prepare-args proc renv 'normal/top)
-                           (list/info info (vm-insn-make 'CALL numargs)))
-                  ))))
+         (list (vm-insn-make 'PRE-CALL numargs)
+               (append! argcode
+                        (pass3 proc renv 'normal/top)
+                        (list/info info (vm-insn-make 'CALL numargs)))
+               ))))
     (('$cons info x y)
      (append! (pass3 x renv (normal-context ctx))
               (list (vm-insn-make 'PUSH))
@@ -994,14 +1000,14 @@
                   (count 1))
         (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
               ((eq? (car frame) lvar)
-               (values depth (- (length frame) count)))
+               (values depth (- (length (car renv)) count)))
               (else (inner (cdr frame) (+ count 1))))))))
 
 (define (pass3/prepare-args args renv ctx)
   ;; TODO: compose PUSH instructions
   (let loop ((args args) (r '()))
     (if (null? args)
-      (apply append! args)
+      (apply append! (reverse r))
       (loop (cdr args)
             (list* (list (vm-insn-make 'PUSH))
                    (pass3 (car args) renv (normal-context ctx))
@@ -1084,17 +1090,17 @@
 
 (define (init-compiler)
   ;; Injects syntax objects into basic modules.
-  (define (inject module name comp)
-    (%insert-binding module name comp))
+;  (define (inject module name comp)
+;    (%insert-binding module name comp))
 
-  (let ((N (find-module 'null))
-        (G (find-module 'gauche)))
+;  (let ((N (find-module 'null))
+;        (G (find-module 'gauche)))
     
-    (inject N 'if              if@)
-    (inject G 'when            when@)
-    (inject G 'unless          unless@)
-    (inject N 'and             and@)
-    (inject N 'or              or@)
+;    (inject N 'if              if@)
+;    (inject G 'when            when@)
+;    (inject G 'unless          unless@)
+;    (inject N 'and             and@)
+;    (inject N 'or              or@)
 
-    (inject N 'begin           begin@)
-    ))
+;    (inject N 'begin           begin@)
+  #f)
