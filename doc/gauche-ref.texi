@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.291 2002-10-26 08:41:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.292 2002-10-26 19:34:59 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8027,6 +8027,7 @@ Returns (a) value(s) @var{proc} returns.
 @menu
 * Mapping::                     
 * Combinators::                 
+* Macros to support optional arguments::  
 * Procedure arity::             
 @end menu
 
@@ -8090,7 +8091,7 @@ extends @code{for-each} to work on any type of collection.
 @end defun
 
 
-@node Combinators, Procedure arity, Mapping, Procedures
+@node Combinators, Macros to support optional arguments, Mapping, Procedures
 @subsubsection Combinators
 @c NODE コンビネータ
 
@@ -8222,7 +8223,109 @@ returns @code{#f} without calling further @var{pred}s.
 @end example
 @end defun
 
-@node Procedure arity,  , Combinators, Procedures
+@node Macros to support optional arguments, Procedure arity, Combinators, Procedures
+@subsubsection Macros to support optional arguments
+@c NODE 省略可能な引数のサポートマクロ
+
+To have optional arguments or keyword arguments in Scheme,
+you have to take variable arguments as a list and decompose
+them by yourself.   The following macros helps the procedure.
+
+@defmac let-optionals* restargs (var-spec @dots{}) body @dots{}
+@defmacx let-optionals* restargs (var-spec @dots{} . restvar) body @dots{}
+Given a list of values @var{restargs}, binds variables accodring
+to @var{var-spec}, then evaluates @var{body}.
+
+@var{Var-spec} can be either a symbol, or a list of two elements
+and its car is a symbol.  The symbol is the bound variable name.
+The values in @var{restargs} are bound to the symbol in order.
+If there are not as many values in @var{restargs} as @var{var-spec},
+the rest of @var{symbol}s are bound to the default values, determined
+as follows: If @var{var-spec} is just a symbol, the default value is
+undefined.  If @var{var-spec} is a list, the default value is
+the result of evaluation of the second element of the list.
+In the latter case the second
+element is only evaluated when there are not enough arguments.
+The binding proceeds in the order of @var{var-spec}, so the second
+element may refer to the bindings of previous @var{var-spec}.
+
+In the second form, @var{restvar} must be a symbol and bound to
+the list of values whatever left from @var{restargs} after binding
+to @var{var-spec}.
+
+It is not an error if @var{restarg} has more values than @var{var-spec}s.
+The extra values are simply ignored in the first form.
+
+@example
+(define (proc x . args)
+  (let-optionals* args ((a 'a)
+                        (b 'b)
+                        (c 'c))
+    (list x a b c)))
+
+(proc 0)         @result{} (0 a b c)
+(proc 0 1)       @result{} (0 1 b c)
+(proc 0 1 2)     @result{} (0 1 2 c)
+(proc 0 1 2 3)   @result{} (0 1 2 3)
+@end example
+@end defmac
+
+@defmac get-optional restargs default
+This is a short version of @var{let-optionals*} where you have only
+one optional argument.  Given the optional argument list @var{restargs},
+this macro returns the value of optional argument if one is given,
+or the result of @var{default} otherwise.  @var{Default} is not
+evaluated unless @var{restargs} is an empty list.
+
+@example
+(define (proc x . maybe-opt)
+  (let ((option (get-optional maybe-opt #f)))
+    (list x option)))
+
+(proc 0)         @result{} (0 #f)
+(proc 0 1)       @result{} (0 1)
+@end example
+@end defmac
+
+@defmac let-keywords* restarg (var-spec @dots{}) body @dots{}
+This macro is for keyword arguments.  @var{Var-spec} can be
+one of the following forms:
+
+@table @code
+@item (@var{symbol} @var{expr})
+If the @var{restrag} contains keyword which has the same name as @var{symbol},
+binds @var{symbol} to the corresponding value.  If such a keyword doesn't
+appear in @var{restarg}, binds @var{symbol} to the result of @var{expr}.
+@item (@var{symbol} @var{keyword} @var{expr})
+If the @var{restrag} contains keyword @var{keyword},
+binds @var{symbol} to the corresponding value.  If such a keyword doesn't
+appear in @var{restarg}, binds @var{symbol} to the result of @var{expr}.
+@end table
+
+The default value @var{expr} is only evaluated when the keyword is
+not given to the @var{restarg}.  The binding is done in the order
+of @var{var-spec}, so the @var{expr} can refer to the variables bound
+by preceding @var{var-spec}.
+
+If a keyword that doesn't listed in @var{var-spec} appears in @var{restarg},
+it is simply ignored.
+
+@example
+(define (proc x . options)
+  (let-keywords* options ((a 'a)
+                          (b :beta 'b)
+                          (c 'c))
+    (list x a b c)))
+
+(proc 0)         @result{} (0 a b c)
+(proc 0 :a 1)    @result{} (0 1 b c)
+(proc 0 :beta 1) @result{} (0 a 1 c)
+(proc 0 :beta 1 :c 3) @result{} (0 a 1 3)
+@end example
+@end defmac
+
+
+@node Procedure arity,  , Macros to support optional arguments, Procedures
 @subsubsection Procedure arity
 @c NODE 手続きのアリティ
 
