@@ -1,3 +1,11 @@
+2002-07-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c, src/write.c : let Scm_Read and Scm_Write (and likes)
+	  to hold the port lock so that they can call faster version of
+	  port primitives.
+	* src/port.c (PORT_UNLOCK): fixed a bug that didn't unlock mutex
+	  properly inside recursive lock.
+
 2002-07-12  Shiro Kawai  <shiro@acm.org>
 
 	* gc/configure.in : undefine GC_GCJ_SUPPORT.
