@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uvector.scm,v 1.4 2003-04-14 10:11:56 shirok Exp $
+;;;  $Id: uvector.scm,v 1.5 2003-05-28 13:17:37 shirok Exp $
 ;;;
 
 ;; This module defines the superset of SRFI-4, homogeneous numeric vector
@@ -28,7 +28,7 @@
   (export-all)
   )
 (select-module gauche.uvector)
-(dynamic-load "uvector")
+(dynamic-load "libuvector")
 
 ;; collection protocol implementation
 (define-macro (%define-srfi-4-collection-interface tag)

@@ -7,6 +7,9 @@
 
 	* INSTALL.esc : added description of --enable-ipv6
 
+	* ext/uvector/ : changed to create libuvector.la instead of uvector.la,
+	  for linking by -luvector is required by ext/mt-random.
+
 2003-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm : removed dependency on gauche.thread
