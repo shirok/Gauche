@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.142 2001-05-22 20:27:19 shirok Exp $
+ *  $Id: gauche.h,v 1.143 2001-05-24 08:51:24 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -875,13 +875,16 @@ extern ScmObj Scm_VectorToList(ScmVector *v);
     
 struct ScmPortRec {
     SCM_HEADER;
-    unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
-    unsigned int type : 3;      /* SCM_PORT_{FILE|ISTR|OSTR|PORT|CLOSED} */
-    unsigned int ownerp : 1;    /* TRUE if this ports owns underlying
+    unsigned char direction;    /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
+    unsigned char type;         /* SCM_PORT_{FILE|ISTR|OSTR|PORT|CLOSED} */
+    unsigned char scrcnt;       /* # of bytes in the scratch buffer */
+
+    unsigned int ownerp    : 1; /* TRUE if this ports owns underlying
                                    file pointer */
-    unsigned int icpolicy : 2;  /* Policy to handle incomplete characters */
-    unsigned int bufcnt : 8;    /* # of bytes in the incomplete buffer */
-    char buf[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
+    unsigned int icpolicy  : 2; /* Policy to handle incomplete characters */
+    unsigned int biop      : 1; /* byte/block I/O capable? */
+
+    char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
     
     ScmChar ungotten;           /* ungotten character */
 
@@ -896,8 +899,6 @@ struct ScmPortRec {
             const char *start;
             int rest;
             const char *current;
-            int (*fill)(struct ScmPortRec *self, int charp);
-            void *clientData;
         } istr;
         ScmDString ostr;
         struct ScmProcPort {
@@ -991,6 +992,10 @@ extern ScmObj Scm_GetOutputString(ScmPort *port);
 extern ScmObj Scm_MakeVirtualPort(int direction,
                                   ScmPortVTable *vtable,
                                   void *clientData, int ownerp);
+extern ScmObj Scm_MakeBufferedPort(int direction,
+                                   int bufsize,
+                                   int (*filler)(ScmPort *, int),
+                                   void *data);
 extern ScmObj Scm_MakePortWithFd(ScmObj name,
                                  int direction,
                                  int fd,
