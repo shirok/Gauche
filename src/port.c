@@ -1,7 +1,7 @@
 /*
  * port.c - port implementation
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.87 2002-12-14 03:22:54 shirok Exp $
+ *  $Id: port.c,v 1.88 2003-02-05 01:44:34 shirok Exp $
  */
 
 #include <unistd.h>
@@ -834,21 +834,23 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
  * String port
  */
 
-ScmObj Scm_MakeInputStringPort(ScmString *str)
+ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 {
     ScmPort *p = make_port(SCM_PORT_INPUT, SCM_PORT_ISTR);
     p->src.istr.start = SCM_STRING_START(str);
     p->src.istr.current = SCM_STRING_START(str);
     p->src.istr.end = SCM_STRING_START(str) + SCM_STRING_SIZE(str);
     SCM_PORT(p)->name = SCM_MAKE_STR("(input string port)");
+    if (privatep) PORT_LOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }
 
-ScmObj Scm_MakeOutputStringPort(void)
+ScmObj Scm_MakeOutputStringPort(int privatep)
 {
     ScmPort *p = make_port(SCM_PORT_OUTPUT, SCM_PORT_OSTR);
     Scm_DStringInit(&p->src.ostr);
     SCM_PORT(p)->name = SCM_MAKE_STR("(output string port)");
+    if (privatep) PORT_LOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }
 

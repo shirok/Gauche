@@ -1,5 +1,9 @@
 2003-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c : added privatep flag to Scm_MakeInputStringPort and
+	  Scm_MakeOutputStringPort, which pre-locks the created string port
+	  so that mutex will be omitted.  Various files that uses those
+	  functions are revised.
 	* lib/util/combinations.scm : revised to support duplicated entries.
 	* lib/util/list.scm : added.  additional list library.
 	* lib/gauche/sequence.scm : added fold-with-index, map-with-index,

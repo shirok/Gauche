@@ -2,7 +2,7 @@ cat << EOF
 ;;;
 ;;; uvlib.stub - uniform vector library
 ;;;
-;;;   Copyright (c) 2000-2002 Shiro Kawai (shiro@acm.org)
+;;;   Copyright (c) 2000-2003 Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;   Permission to use, copy, modify, distribute this software and
 ;;;   accompanying documentation for any purpose is hereby granted,
@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.22 2002-12-25 23:52:53 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.23 2003-02-05 01:44:34 shirok Exp $
 ;;;
 
 "
@@ -266,7 +266,8 @@ cat <<EOF
 (define-cproc ${z}32vector->string (v::<${z}32vector>
                                     &optional (start::<fixnum> 0)
                                               (end::<fixnum> -1))
-  "int len = SCM_${Z}32VECTOR_SIZE(v); ScmObj s = Scm_MakeOutputStringPort();
+  "int len = SCM_${Z}32VECTOR_SIZE(v);
+  ScmObj s = Scm_MakeOutputStringPort(FALSE);
   ${Z}32ELTTYPE *eltp;
   SCM_CHECK_START_END(start, end, len);
   eltp = SCM_${Z}32VECTOR_ELEMENTS(v);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.37 2002-11-02 06:47:13 shirok Exp $
+ *  $Id: write.c,v 1.38 2003-02-05 01:44:34 shirok Exp $
  */
 
 #include <stdio.h>
@@ -191,7 +191,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     
     if (!SCM_OPORTP(port))
         Scm_Error("output port required, but got %S", port);
-    out = Scm_MakeOutputStringPort();
+    out = Scm_MakeOutputStringPort(TRUE);
     ctx.mode = mode;
     ctx.flags = WRITE_LIMITED;
     ctx.limit = width;
@@ -353,7 +353,7 @@ int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
     write_scan(obj, &ctx);
 
     if (width > 0) {
-        ScmObj out = Scm_MakeOutputStringPort();
+        ScmObj out = Scm_MakeOutputStringPort(TRUE);
         /* no need to lock out, for it is private */
         write_circular(obj, SCM_PORT(out), &ctx);
         nc = outlen(SCM_PORT(out));
@@ -447,7 +447,7 @@ static void format_writer(ScmPort *out, ScmObj arg,
 {
     int mincol = 0, colinc = 1, minpad = 0, maxcol = -1, nwritten = 0, i;
     ScmChar padchar = ' ';
-    ScmObj tmpout = Scm_MakeOutputStringPort();
+    ScmObj tmpout = Scm_MakeOutputStringPort(TRUE);
     ScmString *tmpstr;
 
     if (nparams>0 && SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
@@ -542,7 +542,7 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args)
 {
     ScmChar ch = 0;
     ScmObj arg, oargs = args;
-    ScmPort *fmtstr = SCM_PORT(Scm_MakeInputStringPort(fmt));
+    ScmPort *fmtstr = SCM_PORT(Scm_MakeInputStringPort(fmt, FALSE));
     int backtracked = FALSE;    /* true if ~:* is used */
     int arglen, argcnt;
     ScmWriteContext sctx, actx; /* context for ~s and ~a */
@@ -758,7 +758,7 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
     ScmVM *vm;
     
     if (out == SCM_FALSE) {
-        out = Scm_MakeOutputStringPort();
+        out = Scm_MakeOutputStringPort(TRUE);
         /* no need to lock */
         format_proc(SCM_PORT(out), fmt, args);
         return Scm_GetOutputString(SCM_PORT(out));
@@ -782,7 +782,7 @@ ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...)
 {
     va_list ap;
     ScmString *fmtstr = SCM_STRING(SCM_MAKE_STR(fmt));
-    ScmPort *fmtport = SCM_PORT(Scm_MakeInputStringPort(fmtstr));
+    ScmPort *fmtport = SCM_PORT(Scm_MakeInputStringPort(fmtstr, FALSE));
     int nargs = 0;
     ScmChar ch = 0;
     ScmObj start = SCM_NIL, end = SCM_NIL;

@@ -1,7 +1,7 @@
 ;;
 ;; netlib.stub - network interface
 ;;
-;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
+;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;
 ;;  Permission to use, copy, modify, distribute this software and
 ;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.18 2002-07-24 15:38:50 shirok Exp $
+;;  $Id: netlib.stub,v 1.19 2003-02-05 01:44:34 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -47,7 +47,7 @@
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrInClass"))
   "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
-    ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort());
+    ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
     unsigned long inaddr = htonl(a->addr.sin_addr.s_addr);
 
     /* NB: avoid using inet_ntoa(), which uses static buffer */
@@ -57,7 +57,7 @@
                ((inaddr>>8)&0xff),
                ((inaddr>>0)&0xff),
                ntohs(a->addr.sin_port));
-    SCM_RETURN(Scm_GetOutputString(out));")
+    SCM_RETURN(Scm_GetOutputStringUnsafe(out));")
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
   "  SCM_RETURN(sym_inet);")

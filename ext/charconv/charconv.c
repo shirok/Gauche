@@ -1,7 +1,7 @@
 /*
  * charconv.c - character code conversion library
  *
- *  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.38 2002-11-13 07:25:21 shirok Exp $
+ *  $Id: charconv.c,v 1.39 2003-02-05 01:44:34 shirok Exp $
  */
 
 #include <string.h>
@@ -110,11 +110,11 @@ static int conv_ready(ScmPort *port)
 
 static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *to)
 {
-    ScmObj out = Scm_MakeOutputStringPort();
+    ScmObj out = Scm_MakeOutputStringPort(TRUE);
     Scm_Printf(SCM_PORT(out), "[conv(%s->%s) %s %S]",
                from, to, (dir == SCM_PORT_INPUT? "from" : "to"),
                Scm_PortName(remote));
-    return Scm_GetOutputString(SCM_PORT(out));
+    return Scm_GetOutputStringUnsafe(SCM_PORT(out));
 }
 
 /*------------------------------------------------------------
@@ -242,7 +242,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
             /* Input buffer is already empty or unreadable.
                Determining character code is not necessary.
                We just return a dummy empty port. */
-            return Scm_MakeInputStringPort(SCM_STRING(SCM_MAKE_STR("")));
+            return Scm_MakeInputStringPort(SCM_STRING(SCM_MAKE_STR("")), FALSE);
         }
         guessed = guess->proc(inbuf, preread, guess->data);
         if (guessed == NULL)

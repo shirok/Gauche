@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.192 2003-02-03 21:17:39 shirok Exp $
+;;; $Id: extlib.stub,v 1.193 2003-02-05 01:44:34 shirok Exp $
 ;;;
 
 "
@@ -649,10 +649,16 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 ;; String port
 (define-cproc open-input-string (string::<string>) ;SRFI-6
-  (return "Scm_MakeInputStringPort"))
+  "SCM_RETURN(Scm_MakeInputStringPort(string, FALSE));")
 
 (define-cproc open-output-string ()      ;SRFI-6
-  (return "Scm_MakeOutputStringPort"))
+  "SCM_RETURN(Scm_MakeOutputStringPort(FALSE));")
+
+(define-cproc open-input-string/private (string::<string>)
+  "SCM_RETURN(Scm_MakeInputStringPort(string, TRUE));")
+
+(define-cproc open-output-string/private ()      ;SRFI-6
+  "SCM_RETURN(Scm_MakeOutputStringPort(TRUE));")
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
   "  if (SCM_PORT_TYPE(oport) != SCM_PORT_OSTR)
@@ -822,11 +828,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc port->byte-string (port::<input-port>)
   ;; TODO: use chunked I/O if appropriate
-  " int b; ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort());
+  " int b; ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
   for (;;) {
     SCM_GETB(b, port);
     if (b == EOF) break;
-    SCM_PUTB(b, out);
+    Scm_PutbUnsafe(b, out);
   }
   SCM_RETURN(Scm_GetOutputString(out));")
 

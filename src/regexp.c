@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.36 2002-12-11 05:46:54 shirok Exp $
+ *  $Id: regexp.c,v 1.37 2003-02-05 01:44:34 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -824,7 +824,7 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
                                             SCM_STRING_LENGTH(pattern),
                                             SCM_MAKSTR_IMMUTABLE));
     cctx.pattern = rx->pattern;
-    cctx.ipat = SCM_PORT(Scm_MakeInputStringPort(pattern));
+    cctx.ipat = SCM_PORT(Scm_MakeInputStringPort(pattern, FALSE));
     cctx.sets = SCM_NIL;
     cctx.codep = 0;
 

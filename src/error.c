@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.39 2003-01-30 12:08:49 shirok Exp $
+ *  $Id: error.c,v 1.40 2003-02-05 01:44:34 shirok Exp $
  */
 
 #include <errno.h>
@@ -122,7 +122,7 @@ void Scm_Error(const char *msg, ...)
     SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);
     
     SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort();
+        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args);
         va_end(args);
@@ -150,7 +150,7 @@ void Scm_SysError(const char *msg, ...)
     ScmObj syserr = SCM_MAKE_STR_COPYING(strerror(en));
     
     SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort();
+        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args);
         va_end(args);
@@ -174,7 +174,7 @@ void Scm_SysError(const char *msg, ...)
 void Scm_Warn(const char *msg, ...)
 {
     va_list args;
-    ScmObj ostr = Scm_MakeOutputStringPort();
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     va_start(args, msg);
     Scm_Vprintf(SCM_PORT(ostr), msg, args);
     va_end(args);
@@ -192,7 +192,7 @@ ScmObj Scm_SError(ScmString *reason, ScmObj args)
     volatile ScmObj e;
 
     SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort();
+        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         ScmObj ap;
         Scm_Write(SCM_OBJ(reason), ostr, SCM_WRITE_DISPLAY);
         SCM_FOR_EACH(ap, args) {
@@ -215,7 +215,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
     volatile ScmObj e;
 
     SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort();
+        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         if (SCM_STRINGP(fmt)) {
             Scm_Format(ostr, SCM_STRING(fmt), args);
         } else {
@@ -235,7 +235,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
 /* format & warn */
 void Scm_FWarn(ScmString *fmt, ScmObj args)
 {
-    ScmObj ostr = Scm_MakeOutputStringPort();
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     Scm_Format(ostr, fmt, args);
     Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
     Scm_Flush(SCM_CURERR);

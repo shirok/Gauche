@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.62 2002-12-30 07:44:12 shirok Exp $
+ *  $Id: read.c,v 1.63 2003-02-05 01:44:34 shirok Exp $
  */
 
 #include <stdio.h>
@@ -93,10 +93,10 @@ ScmObj Scm_Read(ScmObj port)
     return Scm_ReadWithContext(port, &ctx);
 }
 
-/* convenience functions */
+/* Convenience functions */
 ScmObj Scm_ReadFromString(ScmString *str)
 {
-    ScmObj inp = Scm_MakeInputStringPort(str);
+    ScmObj inp = Scm_MakeInputStringPort(str, FALSE);
     ScmReadContext ctx;
     read_context_init(Scm_VM(), &ctx);
     return read_item(SCM_PORT(inp), &ctx);
@@ -105,7 +105,7 @@ ScmObj Scm_ReadFromString(ScmString *str)
 ScmObj Scm_ReadFromCString(const char *cstr)
 {
     ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
-    ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s));
+    ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s), FALSE);
     ScmReadContext ctx;
     read_context_init(Scm_VM(), &ctx);
     return read_item(SCM_PORT(inp), &ctx);
@@ -150,7 +150,7 @@ static void read_context_init(ScmVM *vm, ScmReadContext *ctx)
 
 void Scm_ReadError(ScmPort *port, const char *msg, ...)
 {
-    ScmObj ostr = Scm_MakeOutputStringPort();
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     ScmObj name = Scm_PortName(port);
     int line = Scm_PortLine(port);
     va_list ap;
