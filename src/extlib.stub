@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.58 2001-04-06 08:48:19 shiro Exp $
+;;; $Id: extlib.stub,v 1.59 2001-04-06 10:02:04 shiro Exp $
 ;;;
 
 "
@@ -87,6 +87,14 @@
 (define-cproc %delete! (obj list &optional cmpmode)
   (assert (list? list))
   "  SCM_RETURN(Scm_DeleteX(obj, list, getcmpmode(cmpmode)));")
+
+(define-cproc %delete-duplicates (list &optional cmpmode)
+  (assert (list? list))
+  "  SCM_RETURN(Scm_DeleteDuplicates(list, getcmpmode(cmpmode)));")
+
+(define-cproc %delete-duplicates! (list &optional cmpmode)
+  (assert (list? list))
+  "  SCM_RETURN(Scm_DeleteDuplicatesX(list, getcmpmode(cmpmode)));")
 
 (define-cproc union (&rest args)        ;use eq? to compare.
   (assert (list? args))
