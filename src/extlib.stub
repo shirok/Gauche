@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.181 2002-11-13 07:16:22 shirok Exp $
+;;; $Id: extlib.stub,v 1.182 2002-12-06 05:29:36 shirok Exp $
 ;;;
 
 "
@@ -620,6 +620,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (return "Scm_Setter")
   (setter (proc::<procedure> setter::<procedure>)
     "  Scm_SetterSet(proc, setter, FALSE); SCM_RETURN(SCM_UNDEFINED);"))
+
+(define-cproc has-setter? (proc)
+  (return <boolean> "Scm_HasSetter"))
 
 (define-cproc identity (val)            ;sometimes useful
   "SCM_RETURN(val);")

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.34 2002-11-08 13:13:41 shirok Exp $
+ *  $Id: proc.c,v 1.35 2002-12-06 05:29:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -290,14 +290,6 @@ ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter, int lock)
     if (proc->locked) {
         Scm_Error("can't change the locked setter of procedure %S", proc);
     }
-#if 0 /* this doesn't work weel for generic functions */
-    /* check setter can get at least one more argument than proc */
-    if (!SCM_PROCEDURE_OPTIONAL(setter)
-        && (SCM_PROCEDURE_REQUIRED(proc) >= SCM_PROCEDURE_REQUIRED(setter))) {
-        Scm_Error("procedure %S takes too few arguments to be a setter of procedure %S",
-                  setter, proc);
-    }
-#endif
     proc->setter = SCM_OBJ(setter);
     proc->locked = lock;
     return SCM_OBJ(proc);
@@ -322,6 +314,16 @@ ScmObj Scm_Setter(ScmObj proc)
         /* fallback to (setter object-apply) */
         return Scm_MakeSubr(object_setter, (void*)proc, 0, 1,
                             SCM_OBJ(&object_setter__NAME));
+    }
+}
+
+int Scm_HasSetter(ScmObj proc)
+{
+    if (SCM_PROCEDUREP(proc)) {
+        return !SCM_FALSEP(SCM_PROCEDURE(proc)->setter);
+    } else {
+        /* setter of object-apply is used. */
+        return TRUE;
     }
 }
 

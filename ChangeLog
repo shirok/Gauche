@@ -1,5 +1,15 @@
+2002-12-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/regexp.c (regexp-quote): added regexp-quote,
+	  contributed by Alex Shinn
+	* src/regexp.c : fixed a bug that didn't treat escaped '$' at
+	  the end of expr as a literal character.
+	* lib/gauche/time.scm : fixed misspelling of slot name (patch from
+	  Kimura Fuyuki).
+
 2002-12-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/proc.c, src/extlib.stub : added has-setter?
 	* lib/gauche/mop/propagate.scm : added <propagate-mixin>.
 
 2002-12-03  Shiro Kawai  <shiro@acm.org>

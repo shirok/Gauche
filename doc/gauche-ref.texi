@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.310 2002-12-05 09:41:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.311 2002-12-06 05:29:36 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17862,9 +17862,9 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 
 @deftp {Module} gauche.regexp
 @mdindex gauche.regexp
+@c EN
 This module defines some macros and utilities useful in regexp match.
 See @ref{Regular expression} for builtin regexp features.
-
 As of release 0.4.11, this module is set to be autoloaded in @code{gosh},
 so you don't usually need to say @code{(use gauche.regexp)}.
 
@@ -17874,23 +17874,56 @@ but I changed the name of
 macros since scsh's @code{match-cond} can be confusing
 (e.g. Bigloo has @code{match-lambda} and @code{match-case} in
 pattern match library, that sounds too similar).
+@c JP
+このモジュールは正規表現のマッチに関連する便利なマクロとユーティリティ関数を
+定義します。組み込みの正規表現機能については@ref{Regular expression}を
+参照して下さい。また、リリース0.4.11以降、このモジュールは@code{gosh}を
+使う場合はオートロードされるようになっているので、
+@code{(use gauche.regexp)}とする必要はありません。
+
+いくつかのマクロのインタフェースはscshの
+@code{if-match}、@code{let-match}、@code{match-cond} 
+を参考にしました。但し名前に関してはscshのものは正規表現以外の
+マッチライブラリと混乱しやすいため (例：Biglooのパターンマッチライブラリ
+には@code{match-case}があります)、正規表現であることを明示する
+名前に変えてあります。
+@c COMMON
 @end deftp
 
+@c EN
 In the following macros, @var{match-expr} is an expression
 which produces a match object or @code{#f}. Typically
 it is a call of @code{rxmatch}, but it can be any expression.
+@c JP
+以下のマクロにおいて、@var{match-expr}はマッチオブジェクトか
+@code{#f}を生成する式でなければなりません。通常それは
+@code{rxmatch}を呼ぶ式になりますが、それだけに限られるわけではありません。
+@c COMMON
 
 @defmac rxmatch-let match-expr (var @dots{}) form @dots{}
 
+@c EN
 Evaluates @var{match-expr}, and if matched, binds @var{var @dots{}}
 to the matched strings, then evaluates @var{form}s.
 The first @var{var} receives the entire match, and subsequent
 variables receive submatches.  If the number of submatches are
 smaller than the number of variables to receive them, the rest
 of variables will get @code{#f}.
+@c JP
+@var{match-expr}を評価し、それがマッチオブジェクトを返したら、
+マッチした文字列を@var{var @dots{}}に束縛し、@var{form}を評価します。
+最初の@var{var}はマッチした文字列全体に束縛され、
+以降の変数はサブマッチ文字列に束縛されます。実際のサブマッチ文字列が
+与えられた変数より少なかった場合は、余った変数は@code{#f}に束縛されます。
+@c COMMON
 
+@c EN
 It is possible to put @code{#f} in variable position, which says
 you don't care that match.
+@c JP
+特定のマッチ文字列を受け取る必要が無いときは、その場所の
+変数の変わりに@code{#f}を置いておくこともできます。
+@c COMMON
 
 @example
 (rxmatch-let (rxmatch #/(\d+):(\d+):(\d+)/
@@ -17906,14 +17939,26 @@ you don't care that match.
  @result{} ("23" "59")
 @end example
 
+@c EN
 This macro corresponds to scsh's @code{let-match}.
+@c JP
+このマクロはscshの@code{let-match}に相当します。
+@c COMMON
 @end defmac
 
 @defmac rxmatch-if match-expr (var @dots{}) then-form else-form
+@c EN
 Evaluates @var{match-expr}, and if matched, binds @var{var} @dots{}
 to the matched strings and evaluate @var{then-form}.
 Otherwise evaluates @var{else-form}.
 The rule of binding @var{var}s is the same as @code{rxmatch-let}.
+@c JP
+@var{match-expr}を評価し、それがマッチオブジェクトを返したら
+マッチした文字列を変数@var{var} @dots{}に束縛して@var{then-form}を
+評価します。マッチオブジェクトが返されなければ束縛は行われず、
+@var{else-form}が評価されます。変数@var{var}をマッチ文字列に
+束縛するルールは@code{rxmatch-let}と同じです。
+@c COMMON
 
 @example
 (rxmatch-if (rxmatch #/(\d+:\d+)/ "Jan 1 11:22:33")
@@ -17929,39 +17974,80 @@ The rule of binding @var{var}s is the same as @code{rxmatch-let}.
  @result{} "unknown time"
 @end example
 
+@c EN
 This macro corresponds to scsh's @code{if-match}.
+@c JP
+このマクロはscshの@code{if-match}に相当します。
+@c COMMON
 @end defmac
 
 @defmac rxmatch-cond clause @dots{}
+@c EN
 Evaluate condition in @var{clause}s one by one.
 If a condition of a clause satisfies, rest portion of the clause
 is evaluated and becomes the result of @code{rxmatch-cond}.
 @var{Clause} may be one of the following pattern.
+@c JP
+@var{clause}の条件を順に評価してゆき、条件を満たすものが現れたら
+その@var{clause}の残りのフォームを評価し、最後のフォームの値を
+@code{rxmatch-cond}の値とします。@var{clause}は以下のいずれかの
+形式でなければなりません。
+@c COMMON
 
 @table @code
 @item (@var{match-expr} (@var{var} @dots{}) @var{form} @dots{})
+@c EN
 Evaluate @var{match-expr}, which may return a regexp match
 object or @code{#f}.  If it returns a match object, the matches
 are bound to @var{var}s, like @var{rxmatch-let}, and @var{form}s
 are evaluated.
+@c JP
+@var{match-expr}を評価し、それがマッチオブジェクトを返した場合は
+マッチ文字列を変数@var{var} @dots{}に束縛した上で
+@var{form} @dots{}を評価します。
+@c COMMON
 
 @item (test @var{expr} @var{form} @dots{})
+@c EN
 Evaluates @var{expr}.  If it yields true, evaluates @var{form}s.
+@c JP
+@var{expr}を評価し、それが真の値を返した場合は@var{form} @dots{}を評価します。
+@c COMMON
 
 @item (test @var{expr} => @var{proc})
+@c EN
 Evaluates @var{expr} and if it is true,
 calls @var{proc} with the result of @var{expr} as the only argument.
+@c JP
+@var{expr}を評価し、それが真の値を返した場合は
+それを唯一の引数として手続き@var{proc}を呼びます。
+@c COMMON
 
 @item (else @var{form} @dots{})
+@c EN
 If this clause exists, it must be the last clause.
 If other clauses fail, @var{form}s are evaluated.
+@c JP
+この@var{clause}は、もし与えられたとすれば最後の@var{clause}でなければ
+なりません。全ての@var{clause}が失敗した場合に、@var{form} @dots{}が
+評価されます。
+@c COMMON
 @end table
 
-If no @code{else} clause exists, and no other clause matched the
-@var{string-expr}, an undefined value is returned.
+@c EN
+If no @code{else} clause exists, and all the other clause fail,
+an undefined value is returned.
+@c JP
+@code{else} @var{clause}が与えられず、かつ全ての@var{clause}が
+失敗した場合の戻り値は未定義です。
+@c COMMON
 
 @example
+@c EN
 ;; @r{parses several possible date format}
+@c JP
+;; @r{何通りかの日付のフォーマットをパーズする}
+@c COMMON
 (define (parse-date str)
   (rxmatch-cond
     ((rxmatch #/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ str)
@@ -17979,53 +18065,113 @@ If no @code{else} clause exists, and no other clause matched the
 (parse-date "12/25/1999") @result{} (1999 12 25)
 @end example
 
+@c EN
 This macro corresponds to scsh's @code{match-cond}.
+@c JP
+@c JP
+このマクロはscshの@code{match-cond}に相当します。
 @end defmac
 
 @defmac rxmatch-case string-expr clause @dots{}
+@c EN
 @var{String-expr} is evaluated, and @var{clause}s are interpreted
 one by one.  A @var{clause} may be one of the following pattern.
+@c JP
+@var{string-expr}がまず評価され、続いて@var{clause}が順に検査されます。
+@var{clause}は以下のいずれかの形式でなければなりません。
+@c COMMON
 
 @table @code
 @item (@var{re} (@var{var} @dots{}) @var{form} @dots{})
-@var{Re} must be either a literal string describing a
-regexp, or a regexp object.  If it matches with the result
-of @var{string-expr}, the match result is bound to @var{var}s
+@c EN
+@var{Re} must be a literal regexp object (@xref{Regular expression}).
+If the result of @var{string-expr} matches @var{re},
+the match result is bound to @var{var}s
 and @var{form}s are evaluated, and @code{rxmatch-case} returns
 the result of the last @var{form}.
+@c JP
+@var{re}はリテラル正規表現オブジェクトでなければなりません
+(@ref{Regular expression}参照)。@var{string-expr}の結果が文字列であり
+@var{re}にマッチした場合は、マッチ文字列が変数@var{var} @dots{}に
+束縛され、@var{form}が評価されます。最後の@var{form}の値が@code{rxmatch-case}
+の値となります。
+@c COMMON
 
+@c EN
 If @var{re} doesn't match the result of @var{string-expr},
 @var{string-expr} yields non-string value, the interpretation proceeds
 to the next clause.
+@c JP
+@var{string-expr}の結果の文字列が@var{re}にマッチしないか、
+@var{string-expr}の結果が文字列以外であった場合は次の@var{clause}へと
+処理が進みます。
+@c COMMON
 
 @item (test @var{proc} @var{form} @dots{})
+@c EN
 A procedure @var{proc} is applied on the result of @var{string-expr}.
 If it yields true value, @var{form}s are evaluated, and
 @code{rxmatch-case} returns the result of the last @var{form}.
+@c JP
+手続き@var{proc}が@var{string-expr}の結果を引数として呼ばれます。
+それが真の値を返した場合は@var{form}が順に評価され、最後の@var{form}の
+値が@code{rxmatch-case}の値として返されます。
+@c COMMON
 
+@c EN
 If @var{proc} yieds @code{#f}, the interpretation proceeds
 to the next clause.
+@c JP
+@var{proc}が@code{#f}を返した場合は次の@var{clause}へと
+処理が進みます。
+@c COMMON
 
 @item (test @var{proc} => @var{proc2})
+@c EN
 A procedure @var{proc} is applied on the result of @var{string-expr}.
 If it yields true value, @var{proc2} is applied on the result,
 and its result is returned as the result of @code{rxmatch-case}.
+@c JP
+手続き@var{proc}が@var{string-expr}の結果を引数として呼ばれます。
+それが真の値を返した場合は、その値を引数として@var{proc2}が呼ばれ、
+その返り値が@code{rxmatch-case}の値として返されます。
+@c COMMON
 
+@c EN
 If @var{proc} yieds @code{#f}, the interpretation proceeds
 to the next clause.
+@c JP
+@var{proc}が@code{#f}を返した場合は次の@var{clause}へと
+処理が進みます。
+@c COMMON
 
 @item (else @var{form} @dots{})
+@c EN
 This form must appear at the end of @var{clause}s, if any.
 If other clauses fail, @var{form}s are evaluated,
 and the result of the last @var{form} becomes the result of
 @code{rxmatch-case}.
+@c JP
+このフォームは、与えられる場合は最後の@var{clause}でなければなりません。
+他の全ての@var{clause}が失敗した場合に、@var{form}が順に評価され、最後の@var{form}の
+値が@code{rxmatch-case}の値として返されます。
+@c COMMON
 @end table
 
-If no @code{else} clause exists, and no other clause matched the
-@var{string-expr}, an undefined value is returned.
+@c EN
+If no @code{else} clause exists, and all other clause fail,
+an undefined value is returned.
+@c JP
+@code{else} @var{clause}が与えられず、かつ全ての@var{clause}が
+失敗した場合の戻り値は未定義です。
+@c COMMON
 
+@c EN
 The @code{parse-date} example above becomes simpler if you use
 @code{rxmatch-case}
+@c JP
+上の@code{parse-date}の例は@code{rxmatch-case}を使うとより単純になります。
+@c COMMON
 @example
 (define (parse-date2 str)
   (rxmatch-case str
@@ -18043,17 +18189,33 @@ The @code{parse-date} example above becomes simpler if you use
 
 @defun regexp-replace regexp string substitution
 @defunx regexp-replace-all regexp string substitution
+@c EN
 Replaces the part of @var{string} that matched to @var{regexp}
 for @var{substitution}.  @code{regexp-replace} just replaces
 the first match of @var{regexp}, while @code{regexp-replace-all}
 repeats the replacing throughout entire @var{string}.
+@c JP
+@var{string}中で@code{regexp}にマッチした部分を@var{substitution}で
+置き換えます。@code{regexp-replace}は最初にマッチした部分のみを置き換え、
+@code{regexp-replace-all}は全てのマッチを置き換えます。
+@c COMMON
 
+@c EN
 @var{substitution} may be a string or a procedure.  If it is a string,
 it can contain a digit sequence preceded by a backslash
 (e.g. @code{\2}) that refers the submatch.  @code{\0} refers to the
 entire match.  Note that you need two backslashes to include
 backslash character in the literal string; if you want to include a backslash
 character itself in the @var{substitution}, you need four backslashes.
+@c JP
+@var{substitution}は文字列か手続きです。
+文字列の場合、バックスラッシュに続く数値を使ってサブマッチ文字列を参照できます。
+@code{\0}はマッチ文字列全体を参照します。文字列リテラルにバックスラッシュを
+埋め込む場合は二つのバックスラッシュが必要であることに注意して下さい。
+バックスラッシュそのものを@var{substitution}中で使いたい場合は
+二つのバックスラッシュを重ねます; 文字列リテラルの場合は4つのバックスラッシュが
+必要になります。
+@c COMMON
 
 @example
 (regexp-replace #/def|DEF/ "abcdefghi" "...")
@@ -18066,10 +18228,16 @@ character itself in the @var{substitution}, you need four backslashes.
   @result{} "ab|def|hi"
 @end example
 
+@c EN
 If @var{substitution} is a procedure, for every match in @var{string}
 it is called with one argument, regexp-match object.  The returned
 value from the procedure is inserted to the output string using
 @code{display}.
+@c JP
+@var{substitution}が手続きである場合、@var{string}中の各マッチについて、
+マッチオブジェクトを引数としてその手続きが呼ばれます。その手続きが返す
+値を@code{display}で表現したものが置換文字列として使われます。
+@c COMMON
 
 @example
 (regexp-replace #/c(.*)g/ "abcdefghi" 
@@ -18079,7 +18247,19 @@ value from the procedure is inserted to the output string using
                     (string->list (rxmatch-substring m 1))))))
  @result{} "abfedhi"
 @end example
+@end defun
 
+@defun regexp-quote string
+@c EN
+Returns a string with the characters that are special to regexp escaped.
+@c JP
+@var{string}中で、正規表現において特別な意味を持つ文字を全てエスケープした
+文字列を返します。
+@c COMMON
+@example
+(regexp-quote "[2002/10/12] touched foo.h and *.c")
+ @result{} "\\[2002/10/12\\] touched foo\\.h and \\*\\.c"
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------

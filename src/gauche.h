@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.308 2002-11-03 04:26:35 shirok Exp $
+ *  $Id: gauche.h,v 1.309 2002-12-06 05:29:36 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1814,6 +1814,7 @@ SCM_EXTERN ScmObj Scm_NullProc(void);
 SCM_EXTERN ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter,
 				int lock);
 SCM_EXTERN ScmObj Scm_Setter(ScmObj proc);
+SCM_EXTERN int    Scm_HasSetter(ScmObj proc);
 
 /* Generic - Generic function */
 struct ScmGenericRec {

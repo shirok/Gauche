@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.37 2002-09-21 09:50:29 shirok Exp $
+;;;  $Id: object.scm,v 1.38 2002-12-06 05:29:36 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -105,7 +105,7 @@
                           :lambda-list ',lambda-list
                           :body (lambda ,body-args ,@body)))
            ,@(if getter-name
-                 `((unless (setter ,getter-name)
+                 `((unless (has-setter? ,getter-name)
                      (set! (setter ,getter-name) ,gf)))
                  '())
            ,gf)))
