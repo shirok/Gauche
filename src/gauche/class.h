@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.4 2001-03-18 08:05:36 shiro Exp $
+ *  $Id: class.h,v 1.5 2001-03-19 11:07:14 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -64,6 +64,12 @@ extern ScmObj Scm_ClassAllocate(ScmClass *klass, int nslots);
 extern ScmObj Scm_AllocateInstance(ScmObj klass, ScmObj initargs);
 
 extern ScmObj Scm_GetSlotAllocation(ScmObj slot);
+
+extern ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
+                                           ScmObj *args,
+                                           int nargs);
+extern ScmObj Scm_SortMethods(ScmObj methods, ScmObj args);
+extern ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
 
 #ifdef __cplusplus
 }

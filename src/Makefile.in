@@ -1,6 +1,7 @@
 CC = @CC@
 LIBS = @LIBS@
 DEFS = @DEFS@
+#CFLAGS = -g -O2 -I. -I../gc -I../gc/include @SHLIB_SO_CFLAGS@
 CFLAGS = -g -O2 -I. -I../gc -I../gc/include @SHLIB_SO_CFLAGS@
 #CFLAGS = -O2 -I. -I../gc -I../gc/include
 LDFLAGS = @SHLIB_MAIN_LDFLAGS@

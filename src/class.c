@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.15 2001-03-18 08:05:17 shiro Exp $
+ *  $Id: class.c,v 1.16 2001-03-19 11:07:14 shiro Exp $
  */
 
 #include "gauche.h"
@@ -65,6 +65,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_MethodClass,
 
 /* Internally used classes */
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ClassAccessorClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -505,6 +506,11 @@ static ScmObj generic_allocate(ScmClass *klass, int nslots)
     return SCM_OBJ(instance);
 }
 
+static ScmObj generic_apply(ScmObj g, ScmObj *args, int nargs)
+{
+    ScmGeneric *gf = SCM_GENERIC(g);
+}
+
 static ScmObj generic_name(ScmGeneric *gf)
 {
     return gf->common.info;
@@ -523,6 +529,36 @@ static ScmObj generic_methods(ScmGeneric *gf)
 static void generic_methods_set(ScmGeneric *gf, ScmObj val)
 {
     gf->methods = val;
+}
+
+ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
+{
+    ScmObj methods = gf->methods, mp;
+    ScmObj h = SCM_NIL, t;
+
+    SCM_FOR_EACH(mp, methods) {
+        ScmMethod *m = SCM_METHOD(SCM_CAR(mp));
+        ScmObj sp, *ap;
+        int n;
+        
+        if (nargs < m->common.required) continue;
+        if (!m->common.optional && nargs > m->common.required) continue;
+        for (ap = args, sp = m->specializers, n = 0;
+             n < nargs && SCM_PAIRP(sp);
+             ap++, n++, sp = SCM_CDR(sp)) {
+            ScmClass *aclass = Scm_ClassOf(*ap);
+            ScmClass *sclass = SCM_CLASS(SCM_CAR(sp));
+            if (!Scm_SubtypeP(aclass, sclass)) break;
+        }
+        if (SCM_NULLP(sp)) SCM_APPEND1(h, t, SCM_OBJ(m));
+    }
+    return h;
+}
+
+ScmObj Scm_SortMethods(ScmObj methods, ScmObj args)
+{
+    /* implement me */
+    return methods;
 }
 
 /*=====================================================================
@@ -566,6 +602,19 @@ static void method_specializers_set(ScmMethod *m, ScmObj val)
     m->specializers = val;
 }
 
+ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
+{
+    if (method->generic)
+        Scm_Error("method %S already added to a generic function %S",
+                  method, method->generic);
+    if (!SCM_FALSEP(Scm_Memq(SCM_OBJ(method), gf->methods)))
+        Scm_Error("method %S already appears in a method list of generic %S"
+                  " something wrong in MOP implementation?",
+                  method, gf);
+    method->generic = gf;
+    gf->methods = Scm_Cons(SCM_OBJ(method), gf->methods);
+    return SCM_UNDEFINED;
+}
 
 /*=====================================================================
  * Class initialization
@@ -648,7 +697,10 @@ void Scm__InitClass(void)
     Scm_TopClass.cpa = nullcpa;
     bootstrap_class(&Scm_ClassClass, class_slots, class_allocate);
     bootstrap_class(&Scm_GenericClass, generic_slots, generic_allocate);
+    Scm_GenericClass.flags |= SCM_CLASS_APPLICABLE;
     bootstrap_class(&Scm_MethodClass, method_slots, method_allocate);
+    Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
+    Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
 
 #define CINIT(cl, nam) \
     Scm_InitBuiltinClass(cl, nam, mod)

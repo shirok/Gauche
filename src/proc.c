@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: proc.c,v 1.12 2001-03-19 11:07:14 shiro Exp $
  */
 
 #include "gauche.h"
@@ -301,3 +301,11 @@ ScmObj Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args)
     }
 }
 
+/*
+ * Initialization
+ */
+void Scm__InitProc(void)
+{
+    Scm_ClosureClass.flags |= SCM_CLASS_APPLICABLE;
+    Scm_SubrClass.flags |= SCM_CLASS_APPLICABLE;
+}

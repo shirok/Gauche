@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.82 2001-03-18 08:04:59 shiro Exp $
+ *  $Id: gauche.h,v 1.83 2001-03-19 11:07:14 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -318,16 +318,16 @@ struct ScmClassRec {
 /* Class flags (bitmask) */
 enum {
     SCM_CLASS_BUILTIN = 0x01,   /* true if builtin class */
-    SCM_CLASS_FINAL = 0x02      /* true if the class is final */
+    SCM_CLASS_FINAL = 0x02,     /* true if the class is final */
+    SCM_CLASS_APPLICABLE = 0x04 /* true if the instance is an applicable
+                                   object. */
 };
 
 #define SCM_CLASS_FLAGS(obj)     (SCM_CLASS(obj)->flags)
 #define SCM_CLASS_BUILTIN_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_BUILTIN)
 #define SCM_CLASS_SCHEME_P(obj)  (!SCM_CLASS_BUILTIN_P(obj))
 #define SCM_CLASS_FINAL_P(obj)   (SCM_CLASS_FLAGS(obj)&SCM_CLASS_FINAL)
-
-#define SCM_APPLICABLEP(obj)     (SCM_CLASS_OF(obj)->apply != NULL)
-#define SCM_SERIALIZABLEP(obj)   (SCM_CLASS_OF(obj)->serialize != NULL)
+#define SCM_CLASS_APPLICABLE_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_APPLICABLE)
 
 extern void Scm_InitBuiltinClass(ScmClass *c, const char *name, ScmModule *m);
 
@@ -1415,6 +1415,7 @@ struct ScmProcedureRec {
     SCM_HEADER;
     unsigned char required;     /* # of required args */
     unsigned char optional;     /* 1 if it takes rest args */
+    unsigned char generic;      /* 1 if this is a generic func */
     ScmObj info;                /* source code info */
 };
 
@@ -1427,7 +1428,7 @@ extern ScmClass Scm_ProcedureClass;
 #define SCM_CLASS_PROCEDURE   (&Scm_ProcedureClass)
 
 #define SCM_PROCEDUREP(obj) \
-    (SCM_SUBRP(obj)||SCM_CLOSUREP(obj)||SCM_APPLICABLEP(obj))
+    (SCM_PTRP(obj) && SCM_CLASS_APPLICABLE_P(SCM_CLASS_OF(obj)))
 #define SCM_PROCEDURE_TAKE_NARG_P(obj, narg) \
     (SCM_PROCEDUREP(obj)&&SCM_PROCEDURE_REQUIRED(obj)==(narg))
 
@@ -1482,12 +1483,13 @@ extern ScmClass Scm_GenericClass;
 #define SCM_GENERICP(obj)          SCM_XTYPEP(obj, SCM_CLASS_GENERIC)
 #define SCM_GENERIC(obj)           ((ScmGeneric*)obj)
 
-/* Method - method */
+/* Method - method.
+   Receives next method object at the implicit first argument. */
 struct ScmMethodRec {
     ScmProcedure common;
     ScmGeneric *generic;
     ScmObj specializers;
-    ScmObj (*func)(ScmObj *, int, ScmObj, void *);
+    ScmObj (*func)(ScmObj *, int, void *);
     void *data;
 };
 
@@ -1495,6 +1497,21 @@ extern ScmClass Scm_MethodClass;
 #define SCM_CLASS_METHOD           (&Scm_MethodClass)
 #define SCM_METHODP(obj)           SCM_XTYPEP(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
+
+/* Next method object
+   Next method is just another callable entity, with memorizing
+   the arguments. */
+struct ScmNextMethodRec {
+    ScmProcedure common;
+    ScmObj methods;             /* list of applicable methods */
+    ScmObj *args;               /* original arguments */
+    int nargs;                  /* # of original arguments */
+};
+
+extern ScmClass Scm_NextMethodClass;
+#define SCM_CLASS_NEXT_METHOD      (&Scm_NextMethodClass)
+#define SCM_NEXT_METHODP(obj)      SCM_XTYPEP(obj, SCM_CLASS_NEXT_METHOD)
+#define SCM_NEXT_METHOD(obj)       ((ScmNextMethod*)obj)
 
 /* Other APIs */
 extern ScmObj Scm_ForEach1(ScmProcedure *proc, ScmObj args);
