@@ -1878,11 +1878,18 @@ if given, or an error is signalled otherwise.
 @subsection Class redefinition
 @c NODE クラスの再定義
 
+@c EN
 If the specified class name is bound to a class when @code{define-class}
 is used, it is regarded as @emph{redefinition} of the original class.
 
 Redefinition of a class means the following operations:
+@c JP
+@code{define-class} を使うとき、指定したクラス名がすでにあるクラスに束縛
+されている場合、これは元々のクラスの@emph{再定義}と看倣されます。
 
+クラスの再定義は以下の操作を意味します。
+@c COMMON
+@c EN
 @itemize @bullet
 @item
 A new class object is created based on the new definition,
@@ -1907,7 +1914,32 @@ as the original subclass.
 @item
 The original class is marked @emph{redefined}.
 @end itemize
+@c JP
+@itemize @bullet
+@item
+新しいクラスオブジェクトは新しい定義にもとづいて生成され、
+@code{define-class} に与えられた変数に束縛されます。
 
+@item 
+元々のクラスに対して定義されたメソッド(すなわち、特定化子の中に
+元々のクラスを持つメソッド)は新しいクラス上で定義されたように
+変更されます。
+
+@item
+元々のクラスの直接スーパークラスの直接サブクラスリンクは、
+新しいクラスを指すように変更されます。
+
+@item
+元々のクラスのすべてのサブクラスはそのクラスの変更を反映するように
+再帰的に再定義されます。各クラスはその初期化引数を覚えており、
+再定義されたサブクラスは元々のサブクラスと同じ初期化引数を受けとります。
+
+@item
+元々のクラスには@emph{再定義}マークが付きます。
+@end itemize
+@c COMMON
+
+@c EN
 Note that the original class and the new class are different objects.
 The original class object remembers which variable in which module
 it is originally bound, and replaces the binding to a new class.
@@ -1916,12 +1948,29 @@ it still refers to the original class; you might want to take extra
 care.  You can customize class redefinition behavior by
 defining the @code{class-redefinition} method; see 
 @ref{Metaobject protocol} for the details.
+@c JP
+元々のクラスと新しいクラスは別のオブジェクトであることに注意してください。
+元々のクラスオブジェクトは元々どのモジュールでどの変数に束縛されていたかを
+覚えており、この束縛を新しいクラスに置き換えます。どこかで、元々のクラスへ
+の直接参照を持っていれば、その参照は元々クラスへの参照のままです。この点
+については特に注意してください。@code{class-redefinition} メソッドを
+定義することによりクラス再定義の振舞いをカスタマイズできます。
+詳しくは @ref{Metaobject protocol}を参照してください。
+@c COMMON
 
+@c EN
 If there are instances of the original class, such instances
 are automatically @emph{updated} when it is about to be accessed or modified
 via @code{class-of}, @code{is-a?}, @code{slot-ref},
 @code{slot-set!}, @code{ref}, getter method, or setter method.  
+@c JP
+元々のクラスのインスタンスが存在している場合、それらのインスタンスは
+以下のようなメソッドでアクセスあるいは変更しようとしたときに自動的に
+更新されます。@code{class-of}、@code{is-a?}、@code{slot-ref}、
+@code{slot-set!}、@code{ref}、getterメソッド、setterメソッド。
+@c COMMON
 
+@c EN
 Updating an instance means that the class of the instance
 is changed (from the old class to the new class).
 By default, the values of the slots that are common in the original
@@ -1931,7 +1980,17 @@ of the new class, and the values of the slots that are
 removed from the original class are discarded.
 You can customize this behavior by writing the @code{change-class} method.
 See @ref{Changing classes}, for the details.
+@c JP
+インスタンスの更新とは、インスタンスのクラスを(旧いクラスから新しいクラスへ)
+変更するということです。デフォルトでは、元々のクラスと新しいクラスで
+共通のスロットの値はそのまま引き継がれます。新しいクラスで追加された
+スロットは新しいクラスでのそのスロットの仕様にしたがって初期化されます。
+元々のクラスから削除されたスロットの値は破棄されます。この振舞いは、
+@code{change-class} メソッドを書くことでカスタマイズできます。詳しくは
+@ref{Changing classes} を参照してください。
+@c COMMON
 
+@c EN
 @subsubheading Notes on thread safety
 
 Class redefinition process is non-local operation with full of side-effects.
@@ -1939,7 +1998,17 @@ It is difficult to guarantee that two threads safely run
 class redefinition protocol simultaneously.   So Gauche uses
 a process-wide lock to limit only one thread to enter the
 class redefinition protocol at a time.  
+@c JP
+@subsubheading スレッド安全性についての覚書
 
+クラス再定義処理はすっかり副作用を含み、局所的な操作ではありません。
+二つのスレッドがクラス再定義プロトコルを同時に安全に走らせるというのを
+保証するのは困難です。それゆえ、Gauche では、一度にひとつのスレッドしか
+クラス再定義プロトコルに入らないように、ひとつのプロセス全体にわたる
+ロックを仕様します。
+@c COMMON
+
+@c EN
 If a thread tries to redefine a class while another thread is in
 the redefinition protocol, the thread is blocked, even if
 it is redefining a class different from the one that are
@@ -1947,11 +2016,27 @@ being redefined; because redefinition affects all the
 subclasses, and all the methods and generic functions that
 are related to the class and subclasses, it is not trivial
 to determine two classes are completely independent or not.
+@c JP
+スレッドが、別のスレッドが再定義プロトコルにいる最中にクラスを
+再定義しようとした場合、たとえ、別々のクラスを再定義しようとしている
+場合でも、そのスレッドはブロックされます。このようにするのは、
+再定義がそのすべてのサブクラス、そのクラスとそのサブクラスに
+関わるすべてのメソッドおよびジェネリック関数に影響するからで、
+ふたつのクラスが完全に独立であるかどうかを決定するのは、自明では
+ないからです。
+@c COMMON
 
+@c EN
 If a thread tries to access an instance whose class
 is being redefined by another thread, also the thread
 is blocked until the redefinition is finished.
+@c JP
+スレッドが他のスレッドが再定義しようとしているクラスのインスタンスに
+アクセスしようとした場合にも、このスレッドは再定義が完了するまで、
+ブロックされます。
+@c COMMON
 
+@c EN
 Note that the instance update protocol isn't serialized.
 If two threads try to access an instance whose
 class has been redefined, both trigger the instance
@@ -1962,7 +2047,19 @@ instance access isn't serialized by the system anyway.
 However, an extra care is required to have mutex within
 an instance; just accessing the mutex in it may trigger
 the instance update protocol.
+@c JP
+インスタンス更新プロトコルは直列化されません。ふたつのスレッドが
+再定義されたクラスのインスタンスにアクセスしようとすると、両方の
+スレッドが更新プロトコルを起動します。これは好ましくない競合状態を
+生じる可能性があります。このような場合がおきないようにするのは
+アプリケーションの責任です。インスタンスへのアクセスはどのみち
+システムが直列化するわけではないので、これは自然なことです。
+しかし、インスタンス内に mutex を持たせると余分な注意が必要になります。
+そのなかで、mutex にアクセスすることはインスタンス更新プロトコルを
+起動することになる可能性があります。
+@c COMMON
 
+@c EN
 @subsubheading Notes on compatibility
 
 Class redefinition protocol subtlely differs among CLOS-like
@@ -1976,11 +2073,26 @@ protocol, so the reference to the original class object
 will turn to the redefined class.
 As far as the author knows, class redefinition is not thread-safe
 in both STklos 0.56 and Guile 1.6.4.
+@c JP
+@subsubheading 互換性に関する覚書
+
+クラス再定義プロトコルは CLOS風の Scheme システムとは微妙に違います。
+Gauche のものは STklos のものによく似ていますが、STklos 0.56 は再定義
+サブクラスの束縛を置き換えず、初期化引数を覚えたりはしないので、
+再定義されたサブクラスは、元々のサブクラスが持っていた情報のなにがしかを
+失ってしまう可能性があるという点にちがいがあります。Guile のオブジェクト
+システムはクラス再定義プロトコルの最後で、元々のクラスのアイデンティティと
+再定義されたクラスをアイデンティティを入れ替えてしまします。それゆえ、
+元々のクラスへの参照は、再定義されたクラスへの参照となります。筆者が
+知るかぎり、クラス再定義は、STklos 0.56 においても、Guile 1.6.4 においても
+スレッド安全ではありません。
+@c COMMON
 
 @node Class definition examples,  , Class redefinition, Class
 @subsection Class definition examples
 @c NODE クラスの定義例
 
+@c EN
 Let's see some examples.  Suppose you are defining a graphical
 toolkit.  A @code{<window>} is a rectangle region on
 the screen, so it has width and height.  It can be organized
@@ -1990,6 +2102,16 @@ window's position, x, y, by the coordinate relative to its
 parent window.  Finally, we create a "root" window that
 covers entire screen.  It also serves the default parent window.
 So far, what we get is something like this:
+@c JP
+いくつかの例をみましょう。グラフィカルツールキットを定義しているところ
+だということにしましょう。@code{<window>} はスクリーン上の矩形領域で、
+幅と高さを持ちます。これを階層構造に構成することが可能です。すなわち、
+ある window は別の window 中に置くことができ、親 window へのポインタを
+もっているものとします。window の位置は、親ウィンドウの位置からの
+相対座標、x と y で指定します。スクリーン全体を覆う「ルート」window 
+を作り、これがデフォルトの親 window にもなります。ここまでで、次のように
+なります。
+@c COMMON
 
 @example
 ;; The first version
@@ -2011,9 +2133,15 @@ So far, what we get is something like this:
   (make <window> :parent #f :width *screen-width* :height *screen-height*))
 @end example
 
+@c EN
 Note the usage of @code{:init-value} and @code{:init-form}.
 When the @code{<window>} class is defined, we haven't bound
 @code{*root-window*} yet, so we can't use @code{:init-value} here.
+@c JP
+@code{:init-value} および @code{:init-form} の使い方に注意してください。
+@code{<window>} クラスが定義されたとき、@code{*root-window*} はまだ束縛
+されていませんので、ここでは @code{:init-value} は使えません。
+@c COMMON
 
 @example
 gosh> *root-window*
@@ -2041,6 +2169,7 @@ slots:
   y         : 5
 @end example
 
+@c EN
 If you're like me, you don't want to expose a global variable
 such as @code{*root-window*} for users of your toolkit.
 One way to encapsulate it (to certain extent) is to keep
@@ -2048,6 +2177,14 @@ the pointer to the root window in a class variable.
 Add the following slot option to the definition of @code{<window>},
 and the slot @code{root-window} of the @code{<window>} class
 refers to the same storage space.
+@c JP
+筆者と同じ感覚の持ち主なら、@code{*root-window*} のようなグローバル
+変数をツールキットのユーザに見せたいとは思わないでしょう。これを
+カプセル化するひとつの方法は、ルート window へのポインタをクラス変数に
+保持させることです。@code{<window>} の定義に以下のようなスロットオプションを
+追加すると @code{<window>} クラスの @code{root-window} スロットは同じ
+格納領域を参照するようになります。
+@c COMMON
 
 @example
 (define-class <window> ()
@@ -2057,6 +2194,7 @@ refers to the same storage space.
    ...))
 @end example
 
+@c EN
 You can use @code{slot-ref} and @code{slot-set!} on an instance
 of @code{<window>},
 or use @code{class-slot-ref} and @code{class-slot-set!} on the
@@ -2067,6 +2205,16 @@ The users of the toolkit may want to get the absolute position
 of the window (the coordinates in the root window) instead of
 the relative position.  You may provide virtual slots that
 returns the absolute positions, like the following:
+@c JP
+@code{<window>} のインスタンスに対して、@code{slot-ref} および
+@code{slot-set!} を、また、@code{<window>} クラスそのものに対しては、
+@code{class-slot-ref} や @code{class-slot-set!} を使って
+@code{root-window} スロットの値を取得したり、セットしたりできます。
+
+ツールキットのユーザは window の相対座標のかわりに絶対座標(ルートウィンドウ
+中の座標)が欲しいと思うことがあるでしょう。以下のようにして、絶対座標を
+返す仮想スロットを提供することができます。
+@c COMMON
 
 @example
 (define-class <window> ()
@@ -2087,6 +2235,7 @@ returns the absolute positions, like the following:
     ...))
 @end example
 
+@c EN
 Whether providing such interface via methods or virtual slots is
 somewhat a matter of taste.   Using virtual slots has an advantage
 of being able to hide the change of implementation, i.e. you can
@@ -2097,14 +2246,32 @@ such kind of "hiding implementation" is usually achieved
 by hiding instance variables and exposing methods.  In Gauche
 and other CLOS-like systems, slots are always visible to the
 users, so the situation is a bit different.
-
+@c JP
+メソッドあるいは仮想スロット経由のこのようなインタフェースを供給することは
+いくぶんか趣味の問題です。仮想スロットは実装の変更を隠すことができるという
+利点があります。つまり、@code{root-x} を実スロットに保持するように変更し、
+@code{x} をあとで仮想スロットに変更するということを @code{<window>}を
+使うコードをだめにすることなくおこなえます。オブジェクト指向の主流の言語
+では、通常このような「実装変更の隠蔽」はインスタンス変数を隠し、メソッドを
+公開するということでおこなわれています。Gauche やその他の CLOS 風システムでは
+スロットは常にユーザから見えており状況はすこし違うのです。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Instance, Generic function and method, Class, Object system
 @section Instance
 @c NODE インスタンス
 
+@c EN
 In this section, we explain how to create and use an instance.
+@c JP
+この節では、インスタンスの生成のしかたと使い方について説明します。
+@c COMMON
+@c EN
+In this section, we explain how to create and use an instance.
+@c JP
+この節では、インスタンスの生成のしかたと使い方について説明します。
+@c COMMON
 
 @menu
 * Creating instance::           
@@ -2116,19 +2283,35 @@ In this section, we explain how to create and use an instance.
 @subsection Creating instance
 @c NODE インスタンスの作成
 
+@c EN
 Using class object, you can create an instance of the class
 by a generic function @code{make}.
 A specialized method for standard @code{<class>} is defined:
+@c JP
+クラスオブジェクトをつかうと、ジェネリック関数 @code{make} でその
+クラスのインスタンスを生成できます。標準の @code{<class>} に対して
+特定化されたメソッドは以下のとおり定義されています。
+@c COMMON
 
 @deffn {Generic Function} make
 @deffnx {Method} make (class <class>) arg @dots{}
+@c EN
 Creates an instance of @var{class} and returns it.
 @var{Arg} @dots{} is typically a keyword-value list
 to initialize the instance.
+@c JP
+@var{class} のインスタンスを生成し、それを返します。@var{arg} @dots{} は
+典型的な場合には、そのインスタンスを初期化するためのキーワード値のリストです。
+@c COMMON
 @end deffn
 
+@c EN
 Conceptually, the default @code{make} method is defined
 as follows:
+@c JP
+概念としては、デフォルトの @code{make} メソッドは以下のように定義されて
+います。
+@c COMMON
 
 @example
 (define-method make ((class <class>) . initargs)
@@ -2137,18 +2320,32 @@ as follows:
     obj))
 @end example
 
+@c EN
 That is, first it allocates memory for @var{class}'s instance,
 then initialize it with the @var{initialize} method.
+@c JP
+すなわち、最初、@code{class} のインスタンス用にメモリをアロケートし、
+それから、@var{initialize} メソッドを用いてそれを初期化します。
+@c COMMON
 
 @deffn {Generic Function} allocate-instance
 @deffnx {Method} allocate-instance (class <class>) initargs
+@c EN
 Returns a newly-allocated uninitialized instance of @var{class}.
+@c JP
+@var{class}の新規にアロケートされた、初期化されていないインスタンスを返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic Function} initialize
 @deffnx {Method} initialize (obj <object>) initargs
+@c EN
 The default initialize method for @code{<object>} works as follows:
+@c JP
+@code{<object>} に対するデフォルトの初期化メソッドは以下のように働きます。
+@c COMMON
 
+@c EN
 @itemize @bullet
 @item
 For each initializable slot of the class
@@ -2168,7 +2365,29 @@ the slot.
 Else: The slot is left unbound.
 @end itemize
 @end itemize
+@c JP
+@itemize @bullet
+@item
+そのクラスの初期化可能なスロットのそれぞれに対して、
+@itemize @bullet
+@item
+もし (そのスロットが :init-keyword スロットオプションを持ち、「かつ」
+そのキーワードが @var{initargs} 中にある)
+そのときは、対応する値がそのスロットを初期化するのに使われます。
+@item
+そうではないとき、もし、そのスロットが、:init-value スロットオプションを
+持てば、そのオプションに与えられた値がそのスロットを初期化するのに使われます。
+@item
+そうでもないとき、もし、そのスロットが、:init-thunk スロットオプションを
+持てば、その thunk が呼ばれその返り値が、そのスロットを初期化するのに
+使われます。
+@item
+さらにどれでもなければ、そのスロットは未束縛のままです。
+@end itemize
+@end itemize
+@c COMMON
 
+@c EN
 Among the default slot allocation classes, only
 instance-allocated slots are initializable and are handled by
 the above sequence.   Class-allocated slots (e.g. its
@@ -2176,17 +2395,38 @@ slot allocation is either @code{:class} or @code{:each-subclass})
 are initialized when the class object is created, if
 @code{:init-value} or @code{:init-form} slot option is given.
 Virtual slots aren't initialized at all.
+@c JP
+デフォルトのスロットアロケーションクラスのなかで、インスタンスアロケート
+スロットだけが初期化可能で、上の流れで処理されます。クラスアロケート
+スロット(すなわち、スロットアロケーションが @code{:class} あるいは
+@code{:each-subclass} のどちらかの場合)は、@code{:init-value} あるいは
+@code{:init-form} スロットオプションが与えられていれば、クラスオブジェクト
+生成時に初期化されます。仮想スロットが、初期化されることはありません。
+@c COMMON
 
+@c EN
 An user-defined allocation class can be
 configured either initializable or not initializable; see
 @ref{Metaobject protocol} for the details.
+@c JP
+ユーザ定義アロケーションクラスは、初期化可能にも不可能にも設定することが
+できます。詳しくは @ref{Metaobject protocol} を参照してください。
+@c COMMON
 
+@c EN
 If you specialize @var{initialize} method, make sure to call
 @code{next-method} so that the slots are properly initialized
 by the default sequence, before accessing any slot of the
 newly created instance.
+@c JP
+@var{initialize} メソッドを特定化する場合には @code{next-method} が
+確実に呼ばれるようにして、新しく生成されたインスタンスのすべての
+スロットにアクセスする前にデフォルトの流れで、そのスロットが正しく
+初期化されるようにしてください。
+@c COMMON
 @end deffn
 
+@c EN
 Typically you specialize @code{initialize} method for
 your class to customize how the instance is initialized.
 
@@ -2194,12 +2434,27 @@ It is not common to specialize @code{allocate-instance} method.
 However, knowing that how @code{make} works, you can specialize
 @code{make} itself to avoid allocation of instance in
 some circumstances (e.g. using pre-allocated instances).
+@c JP
+定義したクラスに対応する @code{initialize} メソッドを特定化して
+インスタンスの初期化の方法をカスタマイズするというのが、典型的な
+やりかたです。
+
+@code{allocate-instance} メソッドを特定化するというのは一般的な方法では
+ありません。しかしながら、@code{make} がどのように働くかを知っているなら、
+@code{make} そのものを特定化して、なんらかの状況(たとえば、アロケート
+前のインスタンスを使うというような状況)でインスタンスのアロケーションを
+回避できます。
+@c COMMON
 
 @node Accessing instance, Changing classes, Creating instance, Instance
 @subsection Accessing instance
 @c NODE インスタンスへのアクセス
 
+@c EN
 @subsubheading Standard accessors
+@c JP
+@subsubheading 標準アクセサ
+@c COMMON
 
 @defun slot-ref obj slot
 @c EN
@@ -2292,32 +2547,62 @@ It can be defined like the following code
 
 @deffn {Method} ref (obj <object>) (slot <symbol>)
 @deffnx {Method} {(setter ref)} (obj <object>) (slot <symbol>) value
+@c EN
 These methods just calls @code{slot-ref} and @code{slot-set!}, respectively.
 They are slightly less efficient than directly calling @code{slot-ref}
 and @code{slot-set!}, but more compact in the program code.
+@c JP
+これらのメソッドはそれぞれ、単に @code{slot-ref} および @code{slot-set!}
+を呼ぶだけです。直接 @code{slot-ref} や @code{slot-set!} を呼ぶよりも
+効率はすこしよくないですが、プログラムコードはコンパクトになります。
+@c COMMON
 @end deffn
 
+@c EN
 @subsubheading Fallback methods
+@c JP
+@subsubheading フォールバックメソッド
+@c COMMON
 
 @deffn {Generic Function} slot-unbound
 @deffnx {Method} slot-unbound (class <class>) obj slot
+@c EN
 This generic function is called when an unbound slot value is
 retrieved.  The return value of this generic function will be
 returned to the caller that tried to get the value.
 
 The default method just signals an error.
+@c JP
+このジェネリック関数は束縛されていないスロットの値を取り出そうとしたときに
+呼び出されます。このジェネリック関数の返り値は値を得ようとした呼出しもとに
+返されます。
+
+デフォルトのメソッドは単にエラーのシグナルをあげるだけです。
+@c COMMON
 @end deffn
 
 @deffn {Generic Function} slot-missing
 @deffnx {Method} slot-missing (class <class>) obj slot &optional value
+@c EN
 This generic function is called when a non-existent slot
 value is retrieved or set.  The return value of this generic
 function will be returned to the caller that tried to get the value.
 
 The default method just signals an error.
+@c JP
+このジェネリック関数は存在しないスロットの値を取り出そうとしたとき、あるいは
+設定しようとしたときに呼びだされます。このジェネリック関数の返り値は、
+値を得ようとした呼出しもとに返されます。
+
+デフォルトのメソッドは単にエラーのシグナルをあげるだけです。
+@c COMMON
 @end deffn
 
+@c EN
 @subsubheading Special accessors
+@c JP
+@subsubheading 特殊アクセサ
+@c COMMON
 
 @defun class-slot-ref class slot-name
 @defunx class-slot-set! class slot-name obj
@@ -2336,6 +2621,7 @@ get/set the value of the slot without having an instance.
 @deffn {Method} slot-ref-using-class (class <class>) (obj <object>) slot-name
 @deffnx {Method} slot-set-using-class! (class <class>) (obj <object>) slot-name value
 @deffnx {Method} slot-bound-using-class? (class <class>) (obj <object>) slot-name
+@c EN
 Generic function version of @code{slot-ref}, @code{slot-set!} and
 @code{slot-bound?}.   @var{Class} must be the class of @var{object}.
 
@@ -2344,7 +2630,17 @@ their procedural versions that they don't trigger class
 redefinition when @code{obj}'s class has been redefined
 (i.e. in which case, @var{class} should be the original class
 of @var{obj}).
+@c JP
+@code{slot-ref}、@code{slot-set!}、@code{slot-bound?} のジェネリック
+関数版です。@var{class} は @var{object} のクラスでなければなりません。
 
+これらの関数は、ジェネリックであることに加えて、
+@code{obj} のクラスが再定義されてもクラスの再定義を起動しない
+(そのような場合、@var{class}は @var{object} の元々のクラスで
+なければならない)という点で手続き版とは違います。
+@c COMMON
+
+@c EN
 Note: Unlike CLOS, @code{slot-ref} etc. don't call the generic
 function version in it, so you can't customize the behavior
 of @code{slot-ref} by specializing @code{slot-ref-using-class}.
@@ -2352,26 +2648,49 @@ So the primary puropose of those generic functions are to be
 used within @code{change-class} method; especially, @code{slot-ref} etc.
 can't be used during @var{obj}'s being redefined, since they
 trigger class redefinition again (see @ref{Changing classes} for details).
+@c JP
+覚書: CLOS とはちがい、@code{slot-ref} などは、その中でジェネリック
+関数版を呼ぶことはありません。それゆえ、@code{slot-ref-using-class} を
+特定化することによって、@code{slot-ref} をカスタマイズすることはできません。
+つまり、これらのジェネリック関数の主たる目的は @code{change-class} 
+メソッドの内部で使われることです。とくに、@code{slot-ref} などは
+クラス再定義を再度起動する(詳細については @ref{Changing classes} を
+参照)ので、@var{obj} の再定義中には使えません。
+@c COMMON
 @end deffn
 
 @node Changing classes,  , Accessing instance, Instance
 @subsection Changing classes
 @c NODE クラスの変更
 
+@c EN
 @subsubheading Class change protocol
 
 An unique feature of CLOS-family object system is that
 you can change classes of an existing instance.  The two
 classes doesn't need to be related; you can change a sewing
 machine into an umbrella, if you like.
+@c JP
+@subsubheading クラス変更プロトコル
+
+CLOS-系のオブジェクトシステムのユニークな機能は既存のインスタンスの
+クラスを変更できるということです。新旧二つのクラスに関連性がある必要は
+ありません。おのぞみなら、ミシンを雨がさに変更することもできます。
+@c COMMON
 
 @deffn {Generic Function} change-class
 @deffnx {Method} change-class (obj <object>) (new-class <class>)
+@c EN
 Changes an object @var{obj}'s class to @var{new-class}.
 The default method just calls @code{change-object-class} procedure.
+@c JP
+オブジェクト @var{obj} のクラスを @var{new-class} に変更します。
+デフォルトのメソッドは単に @code{change-object-class} 手続きを呼ぶだけです。
+@c COMMON
 @end deffn
 
 @defun change-object-class obj orig-class new-class
+@c EN
 Changes an object @var{obj}'s class from @var{orig-class} to
 @var{new-class}.  This isn't a generic function---changing object's
 class needs some secret magic, and this procedure encapsulates it.
@@ -2404,12 +2723,57 @@ Note that @code{initialize} method isn't called on @var{obj}.
 If you desire, you can call it by your own @code{change-class} method.
 
 @code{Change-object-class} returns @var{obj}.
+@c JP
+オブジェクト @var{obj} のクラスを @var{orig-class} から @var{new-class}
+に変更します。これは、オブジェクトのクラスを変更するのになんらかの
+マジックが必要なジェネリック関数ではありません。この手続きは、それを
+カプセル化しています。
+
+クラスを変更する正確なステップは以下のようになっています。
+
+@enumerate
+@item
+@var{new-class} の新しいインスタンスが @code{allocate-instance} によって
+アロケートされる。
+
+@item
+@var{new-class}の各スロットに対して、
+@enumerate
+@item
+もし、そのスロットが @var{old-class} に存在し、@var{obj} で束縛されていれば、
+その値は @var{obj} から取り出され、新しいインスタンスにセットされる。
+(そのスロットは@emph{持ち越され}ます。)
+@item
+そうでなければ、新しいインスタンスのスロットは、@ref{Creating instance} に
+あるように、標準のスロット初期化プロトコルによって初期化されます。
+@end enumerate
+
+@item
+最後に、新しいインスタンスの内容が @var{obj} に@emph{移植}されます。すなわち、
+@var{obj} がアイデンティティを変えることなく @var{new-class} のインスタンス
+となります。
+@end enumerate
+
+@code{initilize} メソッドは @var{obj} に対して呼ばれているわけではないことに
+注意してください。おのぞみなら、独自の @code{change-class} メソッドをで、
+それを呼ぶことができます。
+
+@code{change-object-class} は @var{obj} を返します。
+@c COMMON
 @end defun
 
+@c EN
 Usually a user is not supposed to call @code{change-object-class} directly.
 Instead, she can define a specialized @code{change-class}.  For example,
 if she wants to carry over the slot @code{x} of old class to the
 slot @code{y} of new class, she may write something like this:
+@c JP
+通常ユーザが @code{change-object-class} を直接呼ぶということは
+仮定していません。そのかわり、特定化した @code{change-class} を
+定義することができます。たとえば、旧いクラスのスロット @code{x} を
+新しいクラスのスロット @code{y} へ持ち越したいとすると、こんな風に
+書けます。
+@c COMMON
 
 @example
 (define-method change-class ((obj <old-class>) <new-class>)
@@ -2419,6 +2783,7 @@ slot @code{y} of new class, she may write something like this:
     obj))
 @end example
 
+@c EN
 @subsubheading Customizing instance update
 
 Updating an instance for a redefined class is also handled
@@ -2439,6 +2804,26 @@ First, the redefinition changes global binding of the class object.
 So you need to keep the reference to the old class before
 redefining the class, and use the old class to specialize 
 @code{change-class} method:
+@c JP
+@subsubheading インスタンス更新のカスタマイズ
+
+再定義されたクラスについてインスタンスを更新は、クラス変更として
+扱われます。オブジェクトが通常のスロットアクセサ/モディファイア
+経由でアクセスされるときには、クラスは再定義されたかどうかを
+チェックされます。さらに、それが確かに再定義されていれば、
+@code{change-class} は @var{new-class} として再定義された
+クラスで呼ばれます。すなわち、インスタンスの更新はオブジェクトの
+クラスを元々のものから再定義されたものへ変更することと看倣されます。
+
+@code{change-class} を特定化することで、インスタンスを再定義された
+クラス用に更新する方法をカスタマイズできます。しかし、クラス再定義
+用の @code{change-class} を書くには特別な注意が必要です。
+
+まず、再定義はクラスオブジェクトのグローバルな束縛を変更してしまいます。
+それゆえ、クラス再定義がおこる前の旧いクラスへの参照を保持しておく
+必要があり、@code{change-class} メソッドの特定化をするには、この旧い
+クラスを使う必要があります。
+@c COMMON
 
 @example
 ;; save old <myclass>
@@ -2455,6 +2840,7 @@ redefining the class, and use the old class to specialize
   ...)
 @end example
 
+@c EN
 Next, note that the above @code{change-class} method may be
 triggered implicitly when you access to @var{obj} via
 @code{slot-ref}, @code{slot-set!}, @code{class-of}, etc.
@@ -2476,10 +2862,34 @@ happens, @code{change-object-class} gives up to retrieve
 the slot value and just initializes the slot of the new instance
 as if the old slot were unbound.
 
-Customizing instance update is highly tricky busines,
+Customizing instance update is highly tricky business,
 although very powerful.   You can find some nontrivial
 cases in the test program of Gauche source tarball;
 take a look at @code{test/object.scm}.
+@c JP
+次に、上の @code{change-class} メソッドは、@code{slot-ref}、@code{slot-set!}、
+@code{class-of} などを経由して、暗黙のうちに起動される得ることに
+注意してください。もし、@code{change-class} 内で、@var{obj} に対して
+再度 @code{slot-ref} のような手続き使うと、インスタンス更新プロトコルが
+再帰的に起動され、無限ループをひきおこすことになります。インスタンス
+更新を起動しないようなメソッドしか使えません。すなわち、
+@code{slot-ref-using-class}、@code{slot-set-using-class!}、
+@code{slot-bound-using-class?}、@code{current-class-of} しか使えません。
+
+仮想スロットのように、手続きによって計算される値をもつスロットを
+持ち越したいのであれば、@code{slot-ref} その他が、そのスロットの値を
+計算している最中に、暗黙裏に @var{obj} に対して呼ばれることがありえます。
+実際のところは、@code{change-object-class} はこのような再帰を検出する
+保護機構をもっています。もし、このようなことが起これば、
+@code{change-object-class} はそのスロットの値を取り出すのを諦め、
+新しいインスタンスのスロットを旧いスロットが未束縛であるとして、
+初期化します。
+
+インスタンス更新をカスタマイズするのは非常に強力ですがたいへん
+トリッキーな仕事です。Gauche のソース tar ball 中のテストプログラム
+には自明ではないいくつかのケースが含まれています。@code{test/object.scm}
+見てみてください。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Generic function and method, Metaobject protocol, Instance, Object system
