@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.45 2001-11-03 21:15:24 shirok Exp $
+ *  $Id: load.c,v 1.46 2001-12-05 10:33:09 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -492,7 +492,8 @@ static void autoload_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_AutoloadClass, autoload_print);
 
-ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
+ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path,
+                        ScmSymbol *targetModule)
 {
     ScmObj p;
     ScmAutoload *adata = SCM_NEW(ScmAutoload);
@@ -500,6 +501,7 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
     adata->name = name;
     adata->module = SCM_CURRENT_MODULE();
     adata->path = path;
+    adata->targetModule = targetModule;
     adata->loaded = FALSE;
     return SCM_OBJ(adata);
 }
@@ -511,7 +513,16 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
     
     if (adata->loaded) Scm_Error("Autoload is not working? %S", adata);
     adata->loaded = TRUE;
-    Scm_Load(Scm_GetStringConst(adata->path), TRUE);
+    Scm_Require(SCM_OBJ(adata->path));
+    if (adata->targetModule) {
+        ScmObj m = Scm_FindModule(adata->targetModule, FALSE);
+        if (!SCM_MODULEP(m)) {
+            Scm_Error("Trying to autoload module %S from file %S, but the file doesn't define such a module",
+                      adata->targetModule, adata->path);
+        }
+        Scm_ImportModules(adata->module,
+                          SCM_LIST1(SCM_OBJ(adata->targetModule)));
+    }
     g = Scm_FindBinding(adata->module, adata->name, FALSE);
     SCM_ASSERT(g != NULL);
     if (SCM_UNBOUNDP(g->value) || SCM_AUTOLOADP(g->value)) {
