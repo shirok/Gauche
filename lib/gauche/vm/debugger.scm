@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.1 2001-09-28 10:00:44 shirok Exp $
+;;;  $Id: debugger.scm,v 1.2 2001-09-29 23:30:17 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
@@ -39,7 +39,60 @@
   (disable-debug)
   (let ((inp   (current-input-port))
         (outp  (current-error-port))
-        (stack (vm-get-stack-trace)))
+        (stack (cdddr (vm-get-stack-trace))) ;remove our stack frames
+        )
+
+    (define (current-stack level)
+      (let loop ((n 0) (stack stack))
+        (cond ((null? stack) #f)
+              ((= n level) (car stack))
+              (else (loop (+ n 1) (cdr stack))))))
+
+    (define (show-stack s level)
+      (let* ((env (cdr s))
+             (vals (vector-ref env 0)))
+        (format outp "~3d: " level)
+        (write-limit (car s) outp)
+        (if (not (= (length vals) (- (vector-length env) 1)))
+            (format outp "[Unrecognized env; compiler error?]\n")
+            (do ((i 1 (+ i 1))
+                 (vals vals (cdr vals)))
+                ((null? vals))
+              (format outp " ~10@s = " (car vals))
+              (write-limit (vector-ref env i) outp)))))
+    
+    (define (loop level)
+      (format outp "debug$ ")
+      (flush outp)
+      (let ((cmd (read inp)))
+        (cond ((eqv? cmd :show) (show level))
+              ((eqv? cmd :up)   (up   level))
+              ((eqv? cmd :down) (down level))
+              ((eqv? cmd :quit))
+              (else (help level)))))
+
+    (define (show level)
+      (show-stack (current-stack level) level)
+      (loop level))
+
+    (define (up level)
+      (cond ((current-stack (+ level 1))
+             => (lambda (s) (show-stack s (+ level 1)) (loop (+ level 1))))
+            (else
+             (format outp "No more stack.\n")
+             (loop level))))
+
+    (define (down level)
+      (if (= level 0)
+          (begin (format outp "You're already at stack bottom.\n")
+                 (loop level))
+          (begin (show-stack (current-stack (- level 1)) (- level 1))
+                 (loop (- level 1)))))
+
+    (define (help level)
+      (format outp "?\n")
+      (loop level))
+    
     (if (is-a? exn <exception>)
         (format outp "*** Error: ~a\n" (slot-ref exn 'message))
         (format outp "*** Error: ~a\n" exn))
@@ -53,6 +106,7 @@
       (format outp "~3d   " i)
       (write-limit (caar s) outp))
     (format outp "Entering debugger\n")
+    (loop 0)
     )
   (enable-debug))
 
