@@ -7,6 +7,7 @@
 
 (test-start "termios")
 (use gauche.termios)
+(use srfi-1)
 (test-module 'gauche.termios)
 
 (define (list-if-bound . cans)
@@ -87,30 +88,26 @@
           (cut sys-tcsetattr iport <> iterm)
           (list TCSANOW TCSADRAIN TCSAFLUSH))))
 
-(test "termios-set-n-get-speed" (make-list (length speeds) (if #f #f))
-      (lambda ()
-        (map
-          (lambda (speed)
-            (let ((orig-ispeed 0)
-                  (orig-ospeed 0))
-              (dynamic-wind
-                (lambda ()
-                  (set! orig-ispeed (sys-cfgetispeed iterm))
-                  (set! orig-ospeed (sys-cfgetospeed oterm)))
-                (lambda ()
-                  (sys-cfsetispeed iterm speed)
-                  (let ((result (sys-cfgetispeed iterm)))
-                    (if (not (eq? result speed))
-                      (errorf "sys-cfgetispeed expects ~a, but got ~a" speed result)))
-                  (sys-cfsetospeed oterm speed)
-                  (let ((result (sys-cfgetospeed oterm)))
-                    (if (not (eq? result speed))
-                      (errorf "sys-cfsetispeed expects ~a, but got ~a" speed result))))
-                (lambda ()
-                  (sys-cfsetispeed iterm orig-ispeed)
-                  (sys-cfsetospeed oterm orig-ospeed))
-                )))
-          (map (lambda (dot) (apply cdr (list dot))) speeds))))
+;; exclude B0 from this test, since it doesn't really set the baudrate
+;; (and some architecture such as Solaris does not set the value to
+;; termios structure).
+(let ((slist (remove zero? (map cdr speeds)))
+      (orig-ispeed (sys-cfgetispeed iterm))
+      (orig-ospeed (sys-cfgetospeed oterm)))
+  (test* "termios-set-n-get-speed" (map (lambda (x) (cons x x)) slist)
+         (with-error-handler
+             (lambda (e)
+               (sys-cfsetispeed iterm orig-ispeed)
+               (sys-cfsetospeed oterm orig-ospeed)
+               (raise e))
+           (lambda ()
+             (map
+              (lambda (speed)
+                (sys-cfsetispeed iterm speed)
+                (sys-cfsetospeed oterm speed)
+                (cons (sys-cfgetispeed iterm)
+                      (sys-cfgetospeed oterm)))
+              slist)))))
 
 (test "termios-cc" (make-list (length ccs) #t)
       (lambda ()
