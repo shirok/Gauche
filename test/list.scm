@@ -2,10 +2,10 @@
 ;;; tests for some builtin list operations
 ;;;
 
-;; $Id: list.scm,v 1.2 2001-03-06 09:07:38 shiro Exp $
+;; $Id: list.scm,v 1.3 2001-03-24 10:09:37 shiro Exp $
 
 (add-load-path "../lib")
-(require "test")
+(use gauche.test)
 
 ;; monotonic-merge is a core function to implement Dylan-style class
 ;; precedence list.  those tests are taken from examples in

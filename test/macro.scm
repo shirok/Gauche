@@ -3,7 +3,7 @@
 ;;
 
 (add-load-path "../lib")
-(use tester.tester)
+(use gauche.test)
 
 (test-start "macro")
 

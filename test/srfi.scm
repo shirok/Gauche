@@ -2,10 +2,10 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.2 2001-03-12 07:42:33 shiro Exp $
+;; $Id: srfi.scm,v 1.3 2001-03-24 10:09:37 shiro Exp $
 
 (add-load-path "../lib")
-(use tester.tester)
+(use gauche.test)
 
 (test-start "SRFIs")
 

@@ -3,7 +3,7 @@
 ;;
 
 (add-load-path "../../src")             ;allow 'in-the-place' testing
-(use tester.tester)
+(use gauche.test)
 
 (require "example")
 (import example)
