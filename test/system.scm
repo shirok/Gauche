@@ -470,5 +470,18 @@
                  (sys-sleep 2)
                  r))))))
 
+(test "sigchld" SIGCHLD
+      (lambda ()
+        (call/cc
+         (lambda (k)
+           (with-signal-handlers
+            ((SIGCHLD => k))
+            (lambda ()
+              (let ((pid (sys-fork)))
+                (if (= pid 0)
+                    (sys-exit 0)
+                    (sys-pause)))))))))
+          
+
 (test-end)
 
