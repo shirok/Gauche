@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.9 2004-10-18 20:31:32 shirok Exp $
+ *  $Id: exception.h,v 1.10 2004-11-21 09:25:36 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -175,7 +175,7 @@ SCM_CLASS_DECL(Scm_IOWriteErrorClass);
 SCM_CLASS_DECL(Scm_IOClosedErrorClass);
 #define SCM_CLASS_IO_CLOSED_ERROR    (&Scm_IOClosedErrorClass)
 SCM_CLASS_DECL(Scm_IOUnitErrorClass);
-#define SCM_CLASS_IO_UNIT_ERROR      (&Scm_IOClosedErrorClass)
+#define SCM_CLASS_IO_UNIT_ERROR      (&Scm_IOUnitErrorClass)
 
 /*---------------------------------------------------
  * Compounders
