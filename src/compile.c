@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.43 2001-03-24 09:24:05 shiro Exp $
+ *  $Id: compile.c,v 1.44 2001-03-28 09:37:58 shiro Exp $
  */
 
 #include "gauche.h"
@@ -636,7 +636,7 @@ static ScmObj compile_body(ScmObj form,
             int llen;
 
             if (body_started)
-                Scm_Error("internal define should appear at the head of teh body: %S",
+                Scm_Error("internal define should appear at the head of the body: %S",
                           expr);
             if ((llen = Scm_Length(expr)) < 3)
                 Scm_Error("badly formed internal define: %S", expr);
@@ -686,7 +686,7 @@ static ScmObj compile_body(ScmObj form,
         SCM_APPEND(body, bodytail, x);
     }
     
-    if (idefs > 0 && body_started) {
+    if (idefs > 0 && body_started && ctx != SCM_COMPILE_TAIL) {
         SCM_APPEND1(body, bodytail, SCM_VM_INSN(SCM_VM_POPENV));
     }
     return body;
@@ -1101,11 +1101,9 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     }
     
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
-    /* TODO: the last expression of body is not compiled as tail recursive
-       even the form is at tail position, because POPENV is needed.
-       I need to fix this. */
-    ADDCODE(body_compiler(body, newenv, SCM_COMPILE_NORMAL));
-    ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
+    ADDCODE(body_compiler(body, newenv, ctx));
+    if (ctx != SCM_COMPILE_TAIL)
+        ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
     return code;
 }
 
@@ -1574,12 +1572,12 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
     }
     if (!SCM_NULLP(vp)) { restvars=1; SCM_APPEND1(bind, bindtail, vp); }
     
-    /* TODO: this implementation doesn't take advantage of tail call. */
     ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
     ADDCODE1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, nvars, restvars));
     ADDCODE1(form);             /* info; should be source-inro? */
-    ADDCODE(compile_body(body, Scm_Cons(bind, env), SCM_COMPILE_NORMAL));
-    ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
+    ADDCODE(compile_body(body, Scm_Cons(bind, env), ctx));
+    if (ctx != SCM_COMPILE_TAIL)
+        ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
     return code;
 }
 
