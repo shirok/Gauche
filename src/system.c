@@ -1,7 +1,7 @@
 /*
  * system.c - system interface
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.34 2002-04-30 03:50:27 shirok Exp $
+ *  $Id: system.c,v 1.35 2002-04-30 05:35:46 shirok Exp $
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <locale.h>
 #include <errno.h>
 #include <grp.h>
 #include <pwd.h>
@@ -321,6 +322,11 @@ static ScmObj stat_type_get(ScmSysStat *stat)
   return (SCM_FALSE);
 }
 
+static ScmObj stat_perm_get(ScmSysStat *stat)
+{
+    return Scm_MakeIntegerFromUI(stat->statrec.st_mode & 0777);
+}
+
 #define STAT_GETTER_UI(name) \
   static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
   { return Scm_MakeIntegerFromUI((u_long)s->statrec.name); }
@@ -342,6 +348,7 @@ STAT_GETTER_TIME(st_ctime)
 
 static ScmClassStaticSlotSpec stat_slots[] = {
     SCM_CLASS_SLOT_SPEC("type",  stat_type_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("perm",  stat_perm_get,  NULL),
     SCM_CLASS_SLOT_SPEC("mode",  stat_st_mode_get,  NULL),
     SCM_CLASS_SLOT_SPEC("ino",   stat_st_ino_get,   NULL),
     SCM_CLASS_SLOT_SPEC("dev",   stat_st_dev_get,   NULL),
@@ -451,7 +458,13 @@ static ScmClassStaticSlotSpec tm_slots[] = {
  * Groups (grp.h)
  */
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysGroupClass, NULL);
+static void grp_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    Scm_Printf(port, "#<sys-group %S>",
+               SCM_SYS_GROUP(obj)->name);
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysGroupClass, grp_print);
 
 static ScmObj make_group(struct group *g)
 {
@@ -521,7 +534,13 @@ static ScmClassStaticSlotSpec grp_slots[] = {
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
  */
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysPasswdClass, NULL);
+static void pwd_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    Scm_Printf(port, "#<sys-passwd %S>",
+               SCM_SYS_PASSWD(obj)->name);
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysPasswdClass, pwd_print);
 
 static ScmObj make_passwd(struct passwd *pw)
 {

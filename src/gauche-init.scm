@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.71 2002-04-30 03:50:26 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.72 2002-04-30 05:35:46 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -242,6 +242,11 @@
 (define (sys-stat->mtime s) (slot-ref s 'mtime))
 (define (sys-stat->ctime s) (slot-ref s 'ctime))
 (define (sys-stat->type s)  (slot-ref s 'type))
+
+(define (sys-tm->alist tm)
+  (map (lambda (n s) (cons n (slot-ref tm s)))
+       '(tm_sec tm_min tm_hour tm_mday tm_mon tm_year tm_wday tm_yday tm_isdst)
+       '(sec min hour mday mon year wday yday isdst)))
 
 ;;
 ;; Load object system

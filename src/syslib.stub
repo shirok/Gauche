@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.69 2002-04-30 03:50:27 shirok Exp $
+;;; $Id: syslib.stub,v 1.70 2002-04-30 05:35:46 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -137,27 +137,30 @@
 
 (define-cproc sys-localeconv ()
   "  struct lconv *lc = localeconv();
-  ScmObj p = SCM_NIL;
+  ScmObj h = SCM_NIL, t = SCM_NIL;
 
-  p = Scm_Acons(sym_decimal_point, SCM_MAKE_STR_COPYING(lc->decimal_point), p);
-  p = Scm_Acons(sym_thousands_sep, SCM_MAKE_STR_COPYING(lc->thousands_sep), p);
-  p = Scm_Acons(sym_grouping, SCM_MAKE_STR_COPYING(lc->grouping), p);
-  p = Scm_Acons(sym_int_curr_symbol, SCM_MAKE_STR_COPYING(lc->int_curr_symbol), p);
-  p = Scm_Acons(sym_currency_symbol, SCM_MAKE_STR_COPYING(lc->currency_symbol), p);
-  p = Scm_Acons(sym_mon_decimal_point, SCM_MAKE_STR_COPYING(lc->mon_decimal_point), p);
-  p = Scm_Acons(sym_mon_thousands_sep, SCM_MAKE_STR_COPYING(lc->mon_thousands_sep), p);
-  p = Scm_Acons(sym_mon_grouping, SCM_MAKE_STR_COPYING(lc->mon_grouping), p);
-  p = Scm_Acons(sym_positive_sign, SCM_MAKE_STR_COPYING(lc->positive_sign), p);
-  p = Scm_Acons(sym_negative_sign, SCM_MAKE_STR_COPYING(lc->negative_sign), p);
-  p = Scm_Acons(sym_int_frac_digits, SCM_MAKE_CHAR(lc->int_frac_digits), p);
-  p = Scm_Acons(sym_frac_digits, SCM_MAKE_CHAR(lc->frac_digits), p);
-  p = Scm_Acons(sym_p_cs_precedes, SCM_MAKE_CHAR(lc->p_cs_precedes), p);
-  p = Scm_Acons(sym_p_sep_by_space, SCM_MAKE_CHAR(lc->p_sep_by_space), p);
-  p = Scm_Acons(sym_n_cs_precedes, SCM_MAKE_CHAR(lc->n_cs_precedes), p);
-  p = Scm_Acons(sym_n_sep_by_space, SCM_MAKE_CHAR(lc->n_sep_by_space), p);
-  p = Scm_Acons(sym_p_sign_posn, SCM_MAKE_CHAR(lc->p_sign_posn), p);
-  p = Scm_Acons(sym_n_sign_posn, SCM_MAKE_CHAR(lc->n_sign_posn), p);
-  return p;")
+#define APPCONS(a, b) SCM_APPEND1(h, t, Scm_Cons(a, b))
+
+  APPCONS(sym_decimal_point, SCM_MAKE_STR_COPYING(lc->decimal_point));
+  APPCONS(sym_thousands_sep, SCM_MAKE_STR_COPYING(lc->thousands_sep));
+  APPCONS(sym_grouping, SCM_MAKE_STR_COPYING(lc->grouping));
+  APPCONS(sym_int_curr_symbol, SCM_MAKE_STR_COPYING(lc->int_curr_symbol));
+  APPCONS(sym_currency_symbol, SCM_MAKE_STR_COPYING(lc->currency_symbol));
+  APPCONS(sym_mon_decimal_point, SCM_MAKE_STR_COPYING(lc->mon_decimal_point));
+  APPCONS(sym_mon_thousands_sep, SCM_MAKE_STR_COPYING(lc->mon_thousands_sep));
+  APPCONS(sym_mon_grouping, SCM_MAKE_STR_COPYING(lc->mon_grouping));
+  APPCONS(sym_positive_sign, SCM_MAKE_STR_COPYING(lc->positive_sign));
+  APPCONS(sym_negative_sign, SCM_MAKE_STR_COPYING(lc->negative_sign));
+  APPCONS(sym_int_frac_digits, SCM_MAKE_INT(lc->int_frac_digits));
+  APPCONS(sym_frac_digits, SCM_MAKE_INT(lc->frac_digits));
+  APPCONS(sym_p_cs_precedes, SCM_MAKE_BOOL(lc->p_cs_precedes));
+  APPCONS(sym_p_sep_by_space, SCM_MAKE_BOOL(lc->p_sep_by_space));
+  APPCONS(sym_n_cs_precedes, SCM_MAKE_BOOL(lc->n_cs_precedes));
+  APPCONS(sym_n_sep_by_space, SCM_MAKE_BOOL(lc->n_sep_by_space));
+  APPCONS(sym_p_sign_posn, SCM_MAKE_INT(lc->p_sign_posn));
+  APPCONS(sym_n_sign_posn, SCM_MAKE_INT(lc->n_sign_posn));
+#undef APPCONS
+  return h;")
 
 ;;---------------------------------------------------------------------
 ;; math.h
@@ -456,39 +459,6 @@
 (define-cproc sys-time ()
   "  SCM_RETURN(Scm_MakeSysTime(time(NULL)));")
 
-(define-symbol tm_sec   "sym_tm_sec")
-(define-symbol tm_min   "sym_tm_min")
-(define-symbol tm_hour  "sym_tm_hour")
-(define-symbol tm_mday  "sym_tm_mday")
-(define-symbol tm_mon   "sym_tm_mon")
-(define-symbol tm_year  "sym_tm_year")
-(define-symbol tm_wday  "sym_tm_wday")
-(define-symbol tm_yday  "sym_tm_yday")
-(define-symbol tm_isdst "sym_tm_isdst")
-
-(define-cproc sys-tm->alist (tm)
-  (assert (sys-tm? tm))
-  "  ScmObj p = SCM_NIL, val;
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_sec);
-  p = Scm_Acons(sym_tm_sec, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_min);
-  p = Scm_Acons(sym_tm_min, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_hour);
-  p = Scm_Acons(sym_tm_hour, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_mday);
-  p = Scm_Acons(sym_tm_mday, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_mon);
-  p = Scm_Acons(sym_tm_mon, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_year);
-  p = Scm_Acons(sym_tm_year, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_wday);
-  p = Scm_Acons(sym_tm_wday, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_yday);
-  p = Scm_Acons(sym_tm_yday, val, p);
-  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_isdst);
-  p = Scm_Acons(sym_tm_isdst, val, p);
-  SCM_RETURN(p);")
-    
 ;;---------------------------------------------------------------------
 ;; unistd.h - miscellaneous functions
 
