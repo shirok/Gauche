@@ -4,4 +4,4 @@ VERSION=`cat VERSION`
 autoconf
 configure
 make allclean
-cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE Gauche | gzip -9 > Gauche-$VERSION.gz
+cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE Gauche | gzip -9 > Gauche-$VERSION.tgz
