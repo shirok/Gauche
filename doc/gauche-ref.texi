@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.138 2001-12-13 10:31:53 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.139 2001-12-14 10:21:08 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -229,12 +229,9 @@ Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
 @c JP
 @item モジュラー開発
 @c COMMON
-
-@c EN
-Gauche has a simple module system to separate module namespaces,
-
-@c JP
-@c COMMON
+Gauche has a simple module system to separate namespaces,
+which allows the developers to work in parallel without
+worrying name collision.  
 
 @c EN
 @item System interface
@@ -485,49 +482,150 @@ a file on certain condition, use @code{load} or do dispatch in macro
 
 @end table
 
-
 @node Multibyte Strings, Objects, Compilation, Concepts
 @section Multibyte Strings
 @c NODE マルチバイト文字列
 
-Traditionally, a string is considered as a simple array of bytes
-until recently, and programmers tend to image a string as a simple
+@c EN
+Traditionally, a string is considered as a simple array of bytes.
+Programmers tend to image a string as a simple
 array of characters (though a character may occupy more than one byte).
 It's not the case in Gauche.
+@c JP
+伝統的に、文字列は単なるバイトの配列として長く扱われてきました。
+一文字が複数バイトを占めるようになっても、
+文字列は単純な文字の配列であると考えられがちです。
+しかしGaucheはそうではありません。
+@c COMMON
 
+@c EN
 Gauche supports @emph{multibyte string} natively,
 which means characters are represented by variable number of bytes
 in a string.   Gauche retains semantic compatibility of
 Scheme string, so such details can be hidden, but it'll helpful
 if you know a few points.
+@c JP
+Gaucheは内部的に@emph{マルチバイト文字列}をサポートします。
+すなわち、文字列中の文字が占めるバイト数は一定していません。
+Schemeの文字列プリミティブのセマンティクスは保たれているので、
+詳細を気にしないでもプログラムは書けますが、
+下にあげるいくつかの点を知っておいたほうが良いでしょう。
+@c COMMON
 
-The actual storage of string is managed in a sort of ``copy-on-write''
+A string object keeps a type tag and a pointer to the storage
+of the string body.  The storage of the body is managed in a sort of
+``copy-on-write''
 way---if you take substring, e.g. using directly by @code{substring}
 or using regular expression matcher, or even if you copy a string
-by @code{copy-string}, the underlying storage is shared.  The actual
-string is copied only if you destructively modify it.
+by @code{copy-string}, the underlying storage is shared
+(the ``anchor'' of the string is different, so the copied string
+is not @code{eq?} to the original string).
+The actual string is copied only if you destructively modify it.
+
+Consequently the algorithm like pre-allocating a string by
+@code{make-string} and filling it with @code{string-set!}
+becomes @emph{extremely} inefficient.  Don't do it.
+Sequential access of string is much more efficient
+using @emph{string ports} (@xref{String ports}).
+
+String search primitives such as @code{string-scan} (@xref{String utilities})
+and regular expression matcher (@xref{Regular expression})
+can return a matched string directly, without
+using index access at all.
+
+You can choose @emph{internal} encoding scheme at the time of compiling
+Gauche.  Conversions from other encoding scheme is provided 
+as a special port. @xref{Character code conversion}, for details.
+
+Gauche assumes the Scheme program is written in its internal
+encoding scheme.
 
 
 @node Objects, Module System, Multibyte Strings, Concepts
 @section Objects
 @c NODE オブジェクト
 
-Gauche has a CLOS-style object system, with metaobject protocol.
-For those who are familiar with SmallTalk style object system,
-the CLOS-style multimethod may look strange.  I describe several
-characteristics of Gauche object system here.
+Gauche has a STklos-style object system, similar to CLOS.
+If you have used some kind of object oriented (OO) languages,
+you'll find it easy to understand the basic usage:
+@example
+;; @r{Defines a class point, that has x and y coordinate}
+(define-class point ()
+  (x y))
+
+(define-method move ((p point) dx dy)
+  (inc! (slot-ref p 'x) dx)
+  (inc! (slot-ref p 'y) dy))
+
+(define-method write-object ((p point) port)
+  (format port "[point ~a ~a]"
+          (slot-ref p 'x)
+          (slot-ref p 'y)))
+@end example
+
+If you are familiar with mainstream OO langauges,
+however, Gauche's object system may look strange
+when you look deeper into it.
+I describe several characteristics of Gauche object system here.
 @xref{Object system}, for details.
 
 @table @emph
 @item Everything is an object.
-In Gauche, everything is an object in the sense that you can
-query its class, and various meta information of the object
-at run time.
+If you are faimiliar to the mainstream OO languages, this statement
+makes sense.   Yes, in Gauche, everything is an object in the sense
+that you can query its class, and get various meta information of
+the object at run time.  You can define a method
+on any class, although you can't subclass nor modify behavior 
+of some built-in classes.
+
+Note that, however, in CLOS-like paradigm it doesn't really matter
+whether everything is an object or not, because of the following
+characteristic.
 
 @item Method is dispatched by all of its arguments.
 Unlike other object-oriented languages such as C++, Objective-C,
 Python, Ruby, etc., in which a method always belong to a single
-class, Gauche methods don't 
+class, a Gauche method doesn't belong to a specific class.
+
+For example, suppose you define a numeric vector class
+@code{<num-vector>} and a numeric matrix class @code{<num-matrix>}.
+You can define a method @code{product} with all possible combinations
+of those type of arguments:
+
+@example
+  (product <num-vector> <num-matrix>)
+  (product <num-matrix> <num-vector>)
+  (product <num-vector> <num-vector>)
+  (product <num-matrix> <num-matrix>)
+  (product <number>     <num-vector>)
+  (product <number>     <num-matrix>)
+  (product <number>     <number>)
+@end example
+
+Each method does not belong to a specific class.  It rather belongs 
+to a @emph{generic function} @code{product}.  You can have even
+methods with different number of arguments.
+
+Since a method is not owned by a class, you can always define your
+own method on the existing class (except a few exceptional cases
+that the system prohibits altering pre-defined methods).  The above
+example already shows it; you can make @code{product} method work
+on the built-in class @code{<number>}.   That is why I said
+it doesn't make much sense to discuss whether everything is object
+or not in CLOS-style object system.
+
+@item Class is also an instance.
+By default, a class is also an instance of class
+@code{<class>}, and a generic function is an instance of class
+@code{<generic>}.  You can subclass @code{<class>} to customize
+how a class is initialized or how its slots are accessed.
+You can subclass @code{<generic>} to customize how the
+applicable methods are selected, which order those methods are
+called, etc.   The mechanism is called @emph{metaobject protocol}.
+
+Metaobject protocol allows you to extend the language by
+the language itself.  
+
 
 
 @end table
