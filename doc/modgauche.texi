@@ -3686,6 +3686,7 @@ AF_INET6ファミリのソケットアドレスです。
 @c COMMON
 @end deftp
 
+
 @node High-level network functions, Low-level socket interface, Socket address, gauche.net - Networking
 @subsection High-level network functions
 @c NODE 高レベルネットワーク手続き
@@ -3857,6 +3858,19 @@ by an instance of @code{<sockaddr>}.
 (make-server-socket 'unix "/tmp/.sock")
   @result{} #<socket (listen "/tmp/.sock")>
 @end example
+@end defun
+
+@defun make-server-sockets host port &keyword reuse-addr?
+Creates one or more sockets that listen at @var{port}
+on all available network interfaces of @var{host}.
+You can specify a service name (such as "@code{http}") to
+@var{port}, as well as an integer port number.
+Returns a list of opened, bound and listened sockets.
+
+This procedure is particularly useful when the host
+has multiple protocol stacks, such as IPv4 and IPv6; in which
+case, you can start a server that listenes both protocol
+using @code{make-server-sockets}.
 @end defun
 
 @c EN
