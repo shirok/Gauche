@@ -12,12 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: isomorph.scm,v 1.1 2001-10-19 08:13:45 shirok Exp $
+;;;  $Id: isomorph.scm,v 1.2 2001-10-19 08:16:50 shirok Exp $
 ;;;
 
 (define-module algorithm.isomorph
   (use srfi-1)
-  (use gauche.let-opt)
   (export isomorphic? object-isomorphic?)
   )
 (select-module algorithm.isomorph)
