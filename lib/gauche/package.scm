@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package.scm,v 1.4 2004-05-16 09:03:43 shirok Exp $
+;;;  $Id: package.scm,v 1.5 2004-05-16 10:52:49 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -159,9 +159,10 @@
                          (dirs (directory-list base
                                                :children? #t :add-path? #t
                                                :filter #/^\d+(\.\d+)*[^\/]*$/))
+                         (pdirs (map (cut string-append <> "/lib") dirs))
                          )
                     (set! xpaths
-                          (append (sort (delete path dirs)
+                          (append (sort (delete path pdirs)
                                         (lambda (a b)
                                           (version>? (sys-basename a)
                                                      (sys-basename b))))

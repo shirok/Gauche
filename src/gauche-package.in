@@ -30,12 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.5 2004-05-15 23:54:06 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.6 2004-05-16 10:52:49 shirok Exp $
 ;;;
 
 (use srfi-1)
 (use srfi-13)
 (use gauche.parseopt)
+(use gauche.version)
 (use gauche.package)
 (use gauche.package.build)
 (use gauche.package.fetch)
@@ -160,7 +161,7 @@ Options:
   If the package has installed .gpd (Gauche package description) file, show
   the options to the configure script when the package is built.")
   (unless (= (length args) 1) (usage-self))
-  (let1 gpd (find-gauche-package-description (car args))
+  (let1 gpd (find-gauche-package-description (car args) :all-versions #t)
     (if gpd
       (print (ref gpd 'configure))
       (print "# I don't know about package " (car args)))))
@@ -170,12 +171,24 @@ Options:
 ;;
 (define-cmd "list"
   ("list"
-   "List known installed packages")
-  (let1 gpds (map path->gauche-package-description
-                  (gauche-package-description-paths))
-    (dolist (gpd (sort gpds (lambda (a b)
-                              (string<= (ref a 'name) (ref b 'name)))))
-      (format #t "~20a ~a~%" (ref gpd 'name) (ref gpd 'version)))))
+   "List known installed packages"
+   "Shows installed packages.  Only packages that have .gpd file are listed.
+Options:
+  -a, --all    : shows all packages, even the ones that are installed for
+                 other versions of Gauche.")
+  (let-args args ((all?  "a|all"))
+    (let1 gpds (map path->gauche-package-description
+                    (gauche-package-description-paths :all-versions all?))
+      (dolist (gpd (sort gpds
+                         (lambda (a b)
+                           (string<= (ref a 'name) (ref b 'name)))))
+        (if (version=? (gauche-version) (ref gpd 'gauche-version))
+          (format #t " ~19a ~8a~%" (ref gpd 'name) (ref gpd 'version))
+          (when all?
+            (format #t "(~19a ~8a for Gauche ~a)~%"
+                    (ref gpd 'name) (ref gpd 'version)
+                    (ref gpd 'gauche-version))))
+        ))))
 
 ;;------------------------------------------------------
 ;; make-gpd
