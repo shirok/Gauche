@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.140 2001-12-15 11:01:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.141 2001-12-21 09:06:54 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -26,7 +26,7 @@
 @c JP
 @title Gauche リファレンスマニュアル
 @c COMMON
-@subtitle version 0.4.10
+@subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -40,8 +40,10 @@ Copyright @copyright{} 2001 Shiro Kawai (shiro@@acm.org)
 @ifnottex
 @c EN
 This is a reference manual of Gauche, an R5RS Scheme implementation.
+This manual is for version @VERSION@.
 @c JP
 本書は、R5RS準拠のScheme処理系、Gaucheのリファレンスマニュアルです。
+Gaucheのバージョン@VERSION@に対応します。
 @c COMMON
 @end ifnottex
 
@@ -105,7 +107,7 @@ GaucheはC言語から呼べる汎用リスト処理ライブラリとしての側面も持っていますが、
 @c EN
 For the Scheme side, I tried to make this manual self-contained
 for reader's convenience, i.e. as far as you want to look up
-Gauche's features you don't need to refer to other documents, 
+Gauche's features you don't need to refer to other documents.
 For example, description of functions defined in the standard
 documents are included in this manual, instead of saying
 ``see the standard document''.   However, this document is not a verbatim
@@ -182,7 +184,6 @@ Gaucheが長所とするべく重点を置いているのは次のようなポイントです。
 @c JP
 @item 立ち上りが速いこと
 @c COMMON
-
 @c EN
 One of the situation Gauche is aiming at is in the production
 environment, where you write ten-lines throw-away script that
@@ -204,12 +205,10 @@ Gaucheでは、言語のコアとスクリプトとして良く使いそうな機能に絞って
 @c JP
 @item マルチバイト文字列
 @c COMMON
-
 @c EN
 We can no longer live happily in ASCII-only or 1-byte-per-character world.
 The practical language implementations are required to handle
 multibyte (wide) characters.
-
 Gauche supports multibyte strings natively, providing robust and
 consistent support than @i{ad hoc} library-level implementation.
 @xref{Multibyte Strings}, for details.
@@ -217,7 +216,6 @@ consistent support than @i{ad hoc} library-level implementation.
 文字列が1バイトキャラクタのみを扱っていれば良かった時代は過ぎ去りました。
 現代のプログラミングシステムは、様々なエンコーディングによるマルチバイト文字／文字列を
 自然に扱える必要があります。
-
 Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
 マルチバイト文字列として扱います。後から付け足したライブラリレベルでの
 マルチバイト文字列のサポートよりも、一貫性がありロバストな文字列操作が可能になっています。
@@ -234,15 +232,22 @@ which allows the developers to work in parallel without
 worrying name collision.  
 
 @c EN
+@item Integrated object system
+@c JP
+@item 統合されたオブジェクトシステム
+@c COMMON
+A powerful CLOS-like object system with MetaObject protocol
+(mostly compatible with STklos) is provided.
+
+
+@c EN
 @item System interface
 @c JP
 @item システムインタフェース
 @c COMMON
-
 Although Scheme abstracts lots of details of the machine,
 sometimes you have to bypass these high-level layers and
 go down to the basement to make things work.
-
 Gauche has built-in support of most of POSIX.1 system calls.
 Other modules, such as networking module, usually provide
 both high-level abstract interface and low-level interface.
@@ -252,10 +257,8 @@ both high-level abstract interface and low-level interface.
 @c JP
 @item 強化された入出力
 @c COMMON
-
 No real application can be written without dealing with I/O.
 Scheme neatly abstracts I/O as a port, but defines least operations on it.
-
 Gauche uses a port object as a unified abstraction, providing
 utility functions to operate on the underlying I/O system.
 @xref{Input and output}, for the basic I/O support.
@@ -563,24 +566,24 @@ you'll find it easy to understand the basic usage:
           (slot-ref p 'y)))
 @end example
 
-If you are familiar with mainstream OO langauges,
-however, Gauche's object system may look strange
+However, if you are familiar with mainstream OO langauges but new to CLOS-style
+object system, Gauche's object system may look strange
 when you look deeper into it.
 I describe several characteristics of Gauche object system here.
 @xref{Object system}, for details.
 
 @table @emph
-@item Everything is an object.
-If you are faimiliar to the mainstream OO languages, this statement
-makes sense.   Yes, in Gauche, everything is an object in the sense
-that you can query its class, and get various meta information of
+@item Everything is an object (in a sense).
+You have seen this tagline for the other languages.
+And yes, in Gauche, everything is an object in the sense that you can
+query its class, and get various meta information of
 the object at run time.  You can define a method
 on any class, although you can't subclass nor modify behavior 
 of some built-in classes.
 
 Note that, however, in CLOS-like paradigm it doesn't really matter
 whether everything is an object or not, because of the following
-characteristic.
+characteristics:
 
 @item Method is dispatched by all of its arguments.
 Unlike other object-oriented languages such as C++, Objective-C,
@@ -607,7 +610,7 @@ to a @emph{generic function} @code{product}.  You can have even
 methods with different number of arguments.
 
 Since a method is not owned by a class, you can always define your
-own method on the existing class (except a few exceptional cases
+own method on the existing class (except a few cases
 that the system prohibits altering pre-defined methods).  The above
 example already shows it; you can make @code{product} method work
 on the built-in class @code{<number>}.   That is why I said
@@ -622,11 +625,14 @@ how a class is initialized or how its slots are accessed.
 You can subclass @code{<generic>} to customize how the
 applicable methods are selected, which order those methods are
 called, etc.   The mechanism is called @emph{metaobject protocol}.
-
 Metaobject protocol allows you to extend the language by
 the language itself.  
 
-
+To find examples, see the files @code{lib/gauche/singleton.scm} and
+@code{lib/gauche/validator.scm} included in the distribution.
+You can also read @code{lib/gauche/object.scm}, which actually
+defines how a class is defined in Gauche.
+For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 
 @end table
 
@@ -4953,15 +4959,16 @@ returns.
 @section Exceptions
 @c NODE 例外
 
-In Gauche, error singnaling mechanism is implemented on top
-of a simple exception system.   However, lower-level functionality
-of the exception system is not exposed to Scheme level yet.
-So far, all you can do with exceptions is to signal an error.
+In Gauche, error singnaling mechanism is implemented in multiple
+layers.   The lower layer provides very simple mechanism with which
+the user can implement various semantics.  The higher layer provides
+a way to handle common patterns like error handling in a simple way.
 
 @menu
 * Signalling errors::           
 * Handling errors::             
 * Exception object::            
+* Low-level exception mechanism::  
 @end menu
 
 @node Signalling errors, Handling errors, Exceptions, Exceptions
@@ -5018,30 +5025,30 @@ the same as the error occurs.  If @code{dynamic-wind} is used
 in @var{thunk}, its @var{after} method is called after @var{handler}
 has returned, and before @code{with-error-handler} returns.
 
-The precise behavior of @code{with-error-handler} can be
-described in the form of Scheme code shown below.  Note that
-the actual function is built in VM, using lighter mechanisms
-(similar to "one-shot continuation" in Chez Scheme).
+The behavior of @code{with-error-handler} can be
+described in the form of Scheme code shown below,
+using the low-level mechanism (@xref{Low-level exception mechanism}).
+Note that the actual function is built in VM, using lighter
+mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 
 @example
 ;; @r{conceptual implementation of with-error-handler}
 (define (with-error-handler handler thunk)
   (call/cc
     (lambda (cont)
-      (let ((prev-handler *error-handler*))
-        (dynamic-wind
-          (lambda ()
-            (set! *error-handler*
-              (lambda (exception)
-                (set! *error-handler* prev-handler)
-                (call-with-values (handler exception) cont))))
-          thunk
-          (lambda ()
-            (set! *error-handler prev-handler)))))))
+      (let* ((prev-handler (current-exception-handler))
+        (with-exception-handler
+          (lambda (exn)
+            (if (error? exn)
+                (with-exception-handler
+                  (lambda (err) (prev-handler err))
+                  (lambda () (call-with-values (handler exn) cont)))
+                (prev-handler exn)))
+          thunk))))))
 @end example
 @end defun
 
-@node Exception object,  , Handling errors, Exceptions
+@node Exception object, Low-level exception mechanism, Handling errors, Exceptions
 @subsection Exception object
 @c NODE 例外オブジェクト
 
@@ -5056,6 +5063,78 @@ For an error exception, this is the error message.
 @end defivar
 @end deftp
 
+@node Low-level exception mechanism,  , Exception object, Exceptions
+@subsection Low-level exception mechanism
+
+This layer provides SRFI-18 compatible simple exception mechanism.
+You can override the behavior of higher-level constructs such as
+@code{with-error-handler} by using @code{with-exception-handler}.
+
+Note that it is a double-edged sword.  You'll get a freedom to
+construct your own exception handling semantics, but the Gauche
+system won't save if something goes wrong.   Use these primitives
+when you want to customize the system's higher-level semantics
+or you are porting from other SRFI-18 code.
+
+@defun current-exception-handler
+[SRFI-18]
+Returns the current exception handler.
+@end defun
+
+@defun raise exception
+[SRFI-18] 
+Invokes the current exception handler with one argument, @var{exception}.
+@var{exception} can be any Scheme object; it doesn't need to be
+an instance of @code{<exception>} class.
+Combined with @code{with-exception-handler} you can give your own
+semantics to the @var{exception}.
+@code{raise} returns whatever the handler returns.
+@end defun
+
+@defun with-exception-handler handler thunk
+[SRFI-18]
+A procedure @var{handler} must take one argument.  This procedure
+sets @var{handler} to the current exception handler and calls
+@var{thunk}.
+@end defun
+
+Generally, if you want to handle non-continuable exception such as
+errors using this low-level mechanism,
+you have to transfer the control from the handler explicitly
+(See the explanation of @code{with-error-handler} above).
+@code{raise} detects if the handler resturns on the
+non-continuable exceptions and reports an error using the
+default error handler mechanism, but it is just a safety net.
+
+Note also that @var{handler} is called in the same dynamic environment
+of @code{raise}.  So if you raise an exception inside @var{handler},
+it is captured by @var{handler} again.   It is the programmer's
+responsibility to propagate the exception handling to the ``outer''
+exception handlers.
+
+The behavior of those procedures can be explained in
+the following conceptual Scheme code.
+
+@example
+;; @r{Conceptual implementation of low-level exception mechanism.}
+;; @r{Suppose %xh is a list of exception handlers}
+
+(define (current-exception-handler) (car %xh))
+
+(define (raise exn)
+  (receive r ((car %xh) exn)
+    (when (uncontinuable-exception? exn)
+      (set! %xh (cdr %xh))
+      (raise (@r{@i{make-error}} "returned from uncontinuable exception")))
+    (apply values r)))
+
+(define (with-exception-handler handler thunk)
+  (let ((prev %xh))
+    (dynamic-wind
+      (lambda () (set! %xh (cons handler)))
+      thunk
+      (lambda () (set! %xh prev)))))
+@end example
 
 @c ----------------------------------------------------------------------
 @node Eval, Input and output, Exceptions, Core library
@@ -5063,6 +5142,9 @@ For an error exception, this is the error message.
 
 @defun eval expr env
 [R5RS]
+Evaluate @var{expr}.   In the current implementation @var{env} is 
+just ignored and evaluation takes place in the toplevel environment
+of `@code{user}' module.
 @end defun
 
 @defun null-environment
@@ -6577,11 +6659,11 @@ The following is an example of autoloading procedures.
 @c EN
 (foobar '(1 2)) ; @r{"bar" is loaded at this moment}
 
-(foobar '())    ; @r{"foo" is loaded at this moment}
+(foobar #f)     ; @r{"foo" is loaded at this moment}
 @c JP
 (foobar '(1 2)) ; @r{この時点で "bar" がロードされる}
 
-(foobar '())    ; @r{この時点で "foo" がロードされる}
+(foobar #f)     ; @r{この時点で "foo" がロードされる}
 @c COMMON
 @end example
 
@@ -11238,6 +11320,9 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 This module defines some macros and utilities useful in regexp match.
 See @ref{Regular expression} for builtin regexp features.
 
+As of release 0.4.11, this module is set to be autoloaded in @code{gosh},
+so you don't usually need to say @code{(use gauche.regexp)}.
+
 The interface of some of the macros is borrowed from scsh
 (@code{if-match}, @code{let-match} and @code{match-cond}),
 but I changed the name of
@@ -15350,6 +15435,18 @@ Revised^5 Report on the Algorithmic Language Scheme,
 Higher-Order and Symbolic Computation, 11(1), September, 1998
 and ACM SIGPLAN Notices, 33(9), October, 1998. @*
 @url{http://www.schemers.org/Documents/Standards/R5RS/}.
+
+@anchor{onecont}
+@item [1CC]
+Carl Bruggeman, Oscar Waddell and R. Kent Dybvig,
+Representing control in the presence of one-shot continuations,
+in @i{Proceedings of SIGPLAN '96}, pp. 99--107, 1996.
+
+@anchor{mop}
+@item [MOP]
+Gregor Kiczales, Jim Des Rivieres, Daniel Bobrow,
+The Art of Metaobject Protocol, 
+The MIT Press.
 
 @anchor{rfc2045}
 @item [RFC2045]
