@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.100 2003-02-07 03:50:27 shirok Exp $
+;;; $Id: stdlib.stub,v 1.101 2003-05-31 11:53:55 shirok Exp $
 ;;;
 
 
@@ -289,9 +289,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int
   else SCM_RETURN(Scm_MakeComplex(a, b));")
 
 (define-cproc make-polar (r::<real> t::<real>)
-  "double real = r * cos(t), imag = r * sin(t);
-  if (imag == 0.0) SCM_RETURN(Scm_MakeFlonum(real));
-  else SCM_RETURN(Scm_MakeComplex(real, imag));")
+  (return "Scm_MakeComplexPolar"))
 
 (define-cproc %complex->real/imag (z)
   "  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }

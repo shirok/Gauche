@@ -1,3 +1,9 @@
+2003-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_number), src/stdlib.stub (make-polar): changed
+	  to use a common function Scm_MakeComplexPolar, to avoid the
+	  difference of the result due to compiler's optimization.
+
 2003-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.7

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.99 2003-04-30 20:24:11 shirok Exp $
+ *  $Id: number.c,v 1.100 2003-05-31 11:53:55 shirok Exp $
  */
 
 #include <math.h>
@@ -242,6 +242,14 @@ ScmObj Scm_MakeComplexNormalized(double r, double i)
 {
     if (i == 0.0) return Scm_MakeFlonum(r);
     else          return Scm_MakeComplex(r, i);
+}
+
+ScmObj Scm_MakeComplexPolar(double mag, double angle)
+{
+    double real = mag * cos(angle);
+    double imag = mag * sin(angle);
+    if (imag == 0.0) return Scm_MakeFlonum(real);
+    else             return Scm_MakeComplex(real, imag);
 }
 
 ScmObj Scm_Magnitude(ScmObj z)
@@ -2273,8 +2281,7 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
             CHK_EXACT_COMPLEX();
             dmag = Scm_GetDouble(realpart);
             dangle = Scm_GetDouble(angle);
-            return Scm_MakeComplexNormalized(dmag * cos(dangle),
-                                             dmag * sin(dangle));
+            return Scm_MakeComplexPolar(dmag, dangle);
         }
     case '+':;
     case '-':
