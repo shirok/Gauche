@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.13 2003-08-10 06:42:40 shirok Exp $
+ *  $Id: portapi.c,v 1.14 2003-08-10 06:43:38 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -718,11 +718,6 @@ ScmObj readline_body(ScmPort *p)
     return Scm_DStringGet(&ds);
 }
 #endif /* READLINE_AUX */
-
-/*
- * The optmized version of readline.  If the input is a buffered
- * port or an input string, it tries to avoid mb->wc->mb conversion.
- */
 
 #ifdef SAFE_PORT_OP
 ScmObj Scm_ReadLine(ScmPort *p)
