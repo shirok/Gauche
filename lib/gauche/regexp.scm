@@ -12,11 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: regexp.scm,v 1.7 2001-09-23 21:57:19 shirok Exp $
+;;;  $Id: regexp.scm,v 1.8 2001-09-23 22:37:42 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
-  (use srfi-13)
   (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
           regexp-replace regexp-replace-all))
 (select-module gauche.regexp)
@@ -97,17 +96,19 @@
   (cond
    ((string? sub)
     (let loop ((sub sub) (r '()))
-      (receive (head rest) (string-scan sub #\\ 'both)
-        (if (not head)
-            (reverse (cons sub r))
-            (let ((i (string-skip rest #[\d])))
-              (cond ((not i) (reverse (list* (string->number rest) head r)))
-                    ((= i 0) (loop rest (list* head r)))
-                    (else
-                     (loop (string-drop rest i)
-                           (list* (string->number (string-take rest i))
-                                  head r)))
-                    ))))))
+      (cond ((rxmatch #/\\((\d+)|(.))/ sub)
+             => (lambda (m)
+                  (cond ((rxmatch-substring m 2)
+                         => (lambda (d)
+                              (loop (rxmatch-after m)
+                                    (list* (string->number d)
+                                           (rxmatch-before m)
+                                           r))))
+                        ((rxmatch-substring m 3)
+                         => (lambda (c)
+                              (loop (rxmatch-after m)
+                                    (list* c (rxmatch-before m) r)))))))
+            (else (reverse (cons sub r))))))
    ((procedure? sub) sub)
    (else (error "string or procedure required, but got" sub))))
 
@@ -143,7 +144,7 @@
         (call-with-output-string
           (lambda (out)
             (define (loop str)
-              (unless (string-null? str)
+              (unless (equal? str "")
                 (cond ((rxmatch rx str)
                        => (lambda (match)
                             (regexp-replace-rec match subpat out loop)))
