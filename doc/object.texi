@@ -1226,10 +1226,9 @@ and @code{<T>} is a @emph{direct subclass} of @code{<S>}.
 When a class is defined, it and its superclasses are ordered from
 subclasses to superclasses, and a list of classes is created in such
 order.   It is called @emph{class precedence list}, or CPL.
-A CPL of a class always begins with the class, and ends with
-@code{<top>}.   @code{<object>} is a superclass of
-all Scheme-defined classes, and @code{<top>} is a superclass of
-all classes (including built-in classes).
+Every class has its own CPL.
+A CPL of a class always begins with the class itself, and ends with
+@code{<top>}.
 
 You can query a class's CPL by a procedure @code{class-precedence-list}:
 
@@ -1276,7 +1275,7 @@ It is automatically inserted by the system.
 When multiple inheritance is involved, a story becomes a bit
 complicated.  We have to merge multiple CPLs of the superclasses
 into one CPL.  It is called @emph{linearization}, and there are
-several linealization strategies.  By default, Gauche uses
+several known linealization strategies.  By default, Gauche uses
 an algorithm called @emph{C3 linearization},
 which is consistent with the local precedence order,
 monotonicity, and the extended precedence graph.
