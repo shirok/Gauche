@@ -59,11 +59,11 @@
     (thread-join! (ref threads (- n 1)))))
 (test "thread-join!" 1346269 (lambda () (mt-fib 31)))
 
-;; NB: the result of the following test is not guaranteed; theoretically,
-;; there can be indefinite delay between thread-start! and the execution
+;; NB: the result of the following test is not guaranteed.
+;; There can be indefinite delay between thread-start! and the execution
 ;; of the thunk, so the execution of t1 may be delayed and the result can
 ;; be '(a b c). 
-(test "thread-sleep!" '(b a c)
+'(test "thread-sleep!" '(b a c)
       (lambda ()
         (let* ((l '())
                (t0 (make-thread (lambda ()
