@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.35 2002-11-08 13:13:51 shirok Exp $
+ *  $Id: vminsn.h,v 1.36 2002-11-09 02:58:01 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -188,32 +188,12 @@ DEFINSN(SCM_VM_GREF, "GREF", 0)
  */
 DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
 
-#ifndef GAUCHE_USE_NVM
 /* QUOTE-INSN <INSN>
  *
  *  Quote the next VM instruction.  Needs to load VM insn to val0.
  *  It occurs when VM insn is passed to apply.
  */
 DEFINSN(SCM_VM_QUOTE_INSN, "QUOTE-INSN", 0)
-#endif /*!GAUCHE_USE_NVM*/
-
-/* Only used in NVM code */
-#if defined(GAUCHE_USE_NVM)
-/* CONST <VALUE>
- *   Load <VALUE> to the register.
- */
-DEFINSN(SCM_VM_CONST, "CONST", 0)
-
-/* RET
- *   Pop the topmost continuation frame
- */
-DEFINSN(SCM_VM_RET, "RET", 0)
-
-/* JUMP <NEXT>
- *   Transfer the control to <NEXT>
- */
-DEFINSN(SCM_VM_JUMP, "JUMP", 0)
-#endif /*GAUCHE_USE_NVM*/
 
 /* Inlined operators
  *  They work the same as corresponding Scheme primitives, but they are
