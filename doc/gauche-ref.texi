@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.248 2002-07-18 10:49:02 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.249 2002-08-15 01:03:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24122,7 +24122,7 @@ Not directly supported, but you can use
 R5RS @code{char-whitespace?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:whitespace c)}
 with @code{srfi-14}.   @xref{Character-set library}.
-@item isuppoer
+@item isupper
 R5RS @code{char-upper-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:upper-case c)}
 with @code{srfi-14}.   @xref{Character-set library}.
