@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.4 2001-07-01 02:50:03 shirok Exp $
+$Id: INSTALL.esc,v 1.5 2001-10-16 12:00:26 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -146,6 +146,52 @@ GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
 Gauche works without SLIB, anyway.  If you're not interested, you
 don't need to care about this.
 <? ) !>
+
+
+<? (header "実行時のライブラリパス" "Run-time library path") !>
+
+<? (if-lang japanese? !>
+しばしば、環境のコントロールができない箇所でGaucheを走らせなければならない
+場合があります。例えばCGIスクリプトがそうです。もし、Gaucheが標準的でない
+場所にインストールされた共有ライブラリに依存している場合、それが問題となります。
+
+例えば、最新のlibiconv.soを自分でコンパイルして /home/yours/lib に
+インストールしたとします。--with-iconv=/home/yours/lib としてconfigure
+すれば、Gaucheはあなたのiconvを使うようにコンパイルされます。実行時に適切
+な環境変数、例えばLD_LIBRARY_PATHなどを設定しておけば、Gaucheの
+インタプリタgoshはlibiconv.soを捜し出すことができます。しかし、
+CGIスクリプトはWeb serverによって起動され、Web serverはLD_LIBRARY_PATH
+を設定してくれないかもしれません。その場合、goshはlibiconv.soが見つけられずに
+起動に失敗するかもしれません。
+
+コンパイラによっては、プログラムが依存している共有ライブラリのパスをプログラム
+本体に書き込んでしまえるオプションを持っています。configureの --with-rpath
+オプションはそれを利用します。--with-rpath=DIRとすると、実行時にDIRから
+共有ライブラリを探すような設定になります。このオプションは今のところgccでしか
+動作しません。
+<? else !>
+In some cases, your have to run Gauche under the environment
+you don't have much control.  One of such cases is when your
+script is run as a CGI script.  It may become a problem that
+your build of Gauche depends on some dynamically loaded libraries
+that are installed in non-standard location.
+
+For example, suppose you install a new libiconv.so in /home/yours/lib,
+and compile Gauche with --with-iconv=/home/yours/lib.  You have
+set up correct environment variables such as LD_LIBRARY_PATH, so
+you can invoke Gauche interpreter gosh without a problem.  Now,
+you write a CGI script in C.  Unfortunately, the web server
+doesn't set LD_LIBRARY_PATH as you desired, and your script never
+runs on the server, for the interpreter can't find libiconv.so
+in the system default path.
+
+Some compilers have an option that writes exact path of shared
+libraries that the binary depends on.  A configure option --with-rpath
+utilizes the feature.  When an option --with-rpath=DIR is given,
+configure sets up a build process so that the shared libraries
+are looked from DIR.   This works only on gcc, however.
+<? ) !>
+
 
 <? (header "インストール先の指定" "Customizing install location") !>
 
