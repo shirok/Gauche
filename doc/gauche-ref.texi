@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.417 2003-06-10 02:45:57 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.418 2003-06-10 05:18:09 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13141,14 +13141,27 @@ See also @code{current-directory} (@xref{Directory utilities}).
 @end defun
 
 @defun sys-pipe &keyword (buffering :line)
+@c EN
 [POSIX] Creates a pipe, and returns two ports.
 The first returned port is an input port and the second is an output port.
 The data put to the output port can be read from the input port.
+@c JP
+[POSIX] パイプを作り、ポートを2つ返します。
+最初に返されるポートは入力ポートで、2番目に返されるポートは出力ポートです。
+出力ポートへ書き出したデータは、入力ポートから読み込めます。
+@c COMMON
 
+@c EN
 @var{Buffering} can be @code{:full}, @code{:line} or @code{:none}, 
 and specifies the buffering mode of the ports opened on the pipe.
 @xref{File ports}, for details of the buffering mode.
 The default mode is sufficient for typical cases.
+@c JP
+@var{buffering}は@code{:full}、@code{:line}、@code{:none}のいずれかで、
+パイプ上に開かれたポートのバッファリングモードを指定します。
+バッファリングモードの詳細については、@ref{File ports}を参照して下さい。
+通常のケースでは、デフォルトのモードで間に合うでしょう。
+@c COMMON
 
 @example
 (receive (in out) (sys-pipe)
@@ -13157,26 +13170,49 @@ The default mode is sufficient for typical cases.
   (read-line in)) @result{} "abc"
 @end example
 
+@c EN
 Note: the returned value is changed from version 0.3.15, in which
 @code{sys-pipe} returned a list of two ports.
+@c JP
+注意: 戻り値はバージョン0.3.15から変更されています。それまでは、
+@code{sys-pipe}は2つのポートのリストを返します。
+@c COMMON
 @end defun
 
 @defun sys-mkfifo path mode
+@c EN
 [POSIX] creates a fifo (named pipe) with a name @var{path} and mode
 @var{mode}.  @var{Mode} must be a positive exact integer to represent
 the file mode.
+@c JP
+[POSIX] 名前が@var{path}でモードが@var{mode}のFIFO(名前付きパイプ)を
+作ります。@var{mode}はファイルのモードを表す正の正確整数でなければ
+なりません。
+@c COMMON
 @end defun
 
 @defun sys-isatty port-or-fd
+@c EN
 [POSIX] @var{port-or-fd} may be a port or an integer file descriptor.
 Returns @code{#t} if the port is connected to the console, @code{#f}
 otherwise.
+@c JP
+[POSIX] @var{port-or-fd}はポートか整数のファイルディスクリプタです。
+ポートがコンソールに接続されていれば@code{#t}を、そうでなければ@code{#f}を
+返します。
+@c COMMON
 @end defun
 
 @defun sys-ttyname port-or-fd
+@c EN
 [POSIX] @var{port-or-fd} may be a port or an integer file descriptor.
 Returns the name of the terminal connected to the port,
 or @code{#f} if the port is not connected to a terminal.
+@c JP
+[POSIX] @var{port-or-fd}はポートか整数のファイルディスクリプタです。
+ポートに接続された端末の名前か、ポートが端末に接続されていなければ
+@code{#f}を返します。
+@c COMMON
 @end defun
 
 @node Unix groups and users, Locale, Filesystems, System interface
@@ -13367,10 +13403,16 @@ Convenience functions to convert between user id and user name.
 @c NODE パスワードの暗号化
 
 @defun sys-crypt key salt
+@c EN
 This is the interface to @code{crypt(3)}.   @var{Key} and @var{salt}
 must be a string, and an encrypted string is returned.
 On systems where @code{crypt(3)} is not available, call to this
 function signals an error.
+@c JP
+これは、@code{crypt(3)}へのインターフェースです。@var{key}と@var{salt}は
+文字列でなければならず、暗号化された文字列が返されます。
+@code{crypt(3)}が利用できないシステムでこの関数を呼ぶとエラーが通知されます。
+@c COMMON
 @end defun
 
 @node Locale, Signal, Unix groups and users, System interface
@@ -13904,6 +13946,7 @@ although the form may be misleading.
 @subsubsection Masking and waiting signals
 @c NODE シグナルのマスクと待機
 
+@c EN
 A Scheme program can set a signal mask, which is a set of signals
 to be blocked from delivery.   If a signal is delivered
 which is completely blocked in the process, the signal becomes
@@ -13911,68 +13954,150 @@ which is completely blocked in the process, the signal becomes
 mask is changed not to block the specified signal.
 (However, it depends on the operating system whether the pending
 signals are queued or not.)
+@c JP
+Schemeプログラムで、送出がブロックされるシグナルの集合であるシグナルマスク
+をセットできます。プロセスで完全にブロックされるシグナルが送出されると、
+そのシグナルは``保留''となります。保留されたシグナルは、指定されたシグナルを
+ブロックしないようにシグナルマスクが変更されると送出されるかもしれません。
+(しかし、保留されたシグナルがキューに入れられるかどうかはオペレーティング
+システムに依存します。)
+@c COMMON
 
+@c EN
 In multithread environment, each thread has its own signal mask.
+@c JP
+マルチスレッドの環境では、スレッド毎に独自のシグナルマスクを持ちます。
+@c COMMON
 
 @defun sys-sigmask how mask
+@c EN
 Modifies the current thread's signal mask, and returns the previous
 signal mask.   @var{Mask} should be a @code{<sys-sigset>} object.
 @var{How} argument should be one of the following
 integer constants:
+@c JP
+現在のスレッドのシグナルマスクを変更し、以前のシグナルマスクを返します。
+@var{mask}は@code{<sys-sigset>}オブジェクトでなければなりません。
+引数@var{how}は以下の整数定数のうちの1つでなければなりません。
+@c COMMON
 @table @code
 @item SIG_SETMASK
+@c EN
 Sets @var{mask} as the thread's signal mask.
+@c JP
+@var{mask}をそのスレッドのシグナルマスクとしてセットします。
+@c COMMON
 @item SIG_BLOCK
+@c EN
 Adds signals in @var{mask} to the thread's signal mask.
+@c JP
+そのスレッドのシグナルマスクに@var{mask}にあるシグナルを追加します。
+@c COMMON
 @item SIG_UNBLOCK
+@c EN
 Removes signals in @var{mask} from the thread's signal mask.
+@c JP
+そのスレッドのシグナルマスクから@var{mask}にあるシグナルを削除します。
+@c COMMON
 @end table
 @end defun
 
 @defun sys-sigsuspend mask
+@c EN
 Atomically sets thread's signal mask to @var{mask} and
 suspends the calling thread.  When a signal that is not blocked
 and has a signal handler installed is delivered, the associated
 handler is called, then @code{sys-sigsuspend} returns.
+@c JP
+アトミックに、スレッドのシグナルマスクを@var{mask}にセットし、
+呼び出しているスレッドを中断します。ブロックされておらずシグナル
+ハンドラがインストールされているシグナルが送出されると、関連
+付けられたハンドラが呼ばれ、@code{sys-sigsuspend}は戻ります。
+@c COMMON
 @end defun
 
 @node Signals and threads,  , Masking and waiting signals, Signal
 @subsubsection Signals and threads
 @c NODE シグナルとスレッド
 
+@c EN
 The semantics of signals looks a bit complicated in the multithread
 environment.   Nevertheless, it is pretty comprehensible once
 you remember a small number of rules.  Besides,
 Gauche sets up the default behavior easy to use,
 while allowing programmers to do tricky stuff.
+@c JP
+シグナルのセマンティクスはマルチスレッド環境では少々複雑に見えます。
+しかし、いくつかのルールを覚えてしまえば、とても理解しやすいものでも
+あります。さらにGaucheでは、プログラマの簡単に使えるようにデフォルトの
+振る舞いをセットアップしてくれています。
+@c COMMON
 
+@c EN
 If you don't want to be bothered by the details, just remember
 one thing, with one sidenote.
 @strong{By default}, signals are handled by the
 primordial (main) thread.  However, if the main thread
 is suspended on mutex or condition variable,
 the signal may not be handled at all, so be careful.
+@c JP
+細かいことは知りたくないという場合は、脚注付きで1つのことだけを
+覚えておいて下さい。
+@strong{デフォルトでは}、シグナルはメインスレッドで処理されます。
+しかし、メインスレッドがmutexや条件変数で中断している場合は、
+シグナルは全く処理されないので注意が必要です。
+@c COMMON
 
+@c EN
 Now, if you are curious about the details, here are the rules:
+@c JP
+詳細に興味がある場合は、ここにルールがあります。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 The signal handler setting is shared by all threads.
+@c JP
+シグナルハンドラのセッティングは、全てのスレッドで共有されます。
+@c COMMON
 @item
+@c EN
 The signal mask is thread-specific.
+@c JP
+シグナルマスクはスレッド固有です。
+@c COMMON
 @item
+@c EN
 If a process receives an asynchronous signal (think it as a signal
 delivered from other processes), one thread is chosen, out of
 threads which don't block that signal.
+@c JP
+プロセスが非同期のシグナルを受け取ったら(他のプロセスからシグナルが
+送出されたと考えて下さい)、1つのスレッドが選ばれ、他のスレッドは
+そのシグナルをブロックしません。
+@c COMMON
 @item
+@c EN
 The signal handler is run on the chosen thread.
 However, if the chosen thread is waiting for acquiring a mutex lock
 or a condition variable, the handling of signal will be delayed
 until the thread is restarted.   Signal delivery itself doesn't
 restart the thread.
+@c JP
+シグナルハンドラは選択されたスレッドにおいて実行されます。
+しかし、選択されたスレッドがmutexのロックの獲得や条件変数を待っている
+場合は、シグナルの処理はそのスレッドが再開するまで遅延されます。
+シグナルの送出自体はスレッドを再開しません。
+@c COMMON
 @end itemize
 
+@c EN
 Now, these rules have several implications.
+@c JP
+これらのルールにはいくつかの暗黙の了解があります。
+@c COMMON
 
+@c EN
 If there are more than one thread that don't block a particular
 signal, you can't know which thread receives the signal.
 Such a situation is much less useful in Gauche than C programs
@@ -13980,17 +14105,41 @@ because of the fact that the signal handling can be delayed indefinitely
 if the receiver thread is waiting on mutex or condition variable.
 So, it is recommended to make sure, for each signal, there is only one
 thread that can receive it.
+@c JP
+特定のシグナルをブロックしない1つ以上のスレッドがある場合、どのスレッドが
+そのシグナルを受け取るかを知る術はありません。
+そのような状況は、GaucheにおいてはCプログラムよりもさらに不便です。
+なぜなら、受信側のスレッドがmutexや条件変数で待機している場合、
+シグナル処理は無期限に遅延されうるからです。
+したがって、それぞれのシグナルについて、それを受け取ることのできるスレッドが
+ただの1つしかないことを確認することを推奨します。
+@c COMMON
 
+@c EN
 In Gauche, all threads created by @code{make-thread}
 (@xref{Thread procedures}) blocks all the signals by default
 (except the reserved ones).   This lets all the signals
 to be directed to the primordial (main) thread.
+@c JP
+Gaucheでは、@code{make-thread}(@ref{Thread procedures}参照)
+で作られた全てのスレッドは、デフォルトで全てのシグナル(予約済みを除く)
+をブロックします。これは、全てのシグナルがメインスレッドへ
+リダイレクトされるということです。
+@c COMMON
 
+@c EN
 Another strategy is to create a thread dedicated for handling
 signals.  To do so, you have to block the signals in the
 primordial thread, then create the signal-handling thread,
 and within that thread you unblock all the signals.
 Such a thread can just loop on @code{sys-pause}.
+@c JP
+もう1つの戦略は、シグナル処理のみを行うスレッドを作る方法です。
+そうするためには、メインスレッドでシグナルをブロックして、
+シグナル処理専用スレッドを作り、そのスレッドで全てのシグナルを
+受け付けることになります。そのようなスレッドは@code{sys-pause}
+で単にループすることだけが可能です。
+@c COMMON
 
 @example
 (thread-start!
@@ -14000,70 +14149,128 @@ Such a thread can just loop on @code{sys-pause}.
       (let loop () (sys-pause) (loop)))))
 @end example
 
+@c EN
 Complicated application may want to control per-thread signal
 handling precisely.   You can do so, just make sure that
 at any moment only the designated thread unblocks the desired
 signal.
+@c JP
+複雑なアプリケーションでは、正確にスレッド毎のシグナル処理を
+制御したいかもしれません。それは、いつでも、指定されたスレッドのみが
+望むシグナルをブロックしないことを確実にすれば、そうすることも
+可能です。
+@c COMMON
 
 @node System Inquiry, Time, Signal, System interface
 @subsection System Inquiry
 @c NODE システムへの問い合わせ
 
 @defun sys-uname
+@c EN
 [POSIX] Returns a list of five elements,
 @code{(@var{sysname} @var{nodename} @var{release} @var{version} @var{machine})}.
+@c JP
+[POSIX] 次の5要素のリストを返します。
+@code{(@var{sysname} @var{nodename} @var{release} @var{version} @var{machine})}。
+@c COMMON
 @end defun
 
 @defun sys-gethostname
+@c EN
 Returns the host name.  If the system doesn't have gethostname(),
 the second element of the list returned by @code{sys-uname} is used.
+@c JP
+ホスト名を返します。システムでgethostname()が使えない場合、
+@code{sys-uname}が返すリストの2番目の要素が使われます。
+@c COMMON
 @end defun
 
 @defun sys-getdomainname
+@c EN
 Returns the domain name.  If the system doesn't have getdomainname(),
 @code{"localdomain"} is returned.
+@c JP
+ドメイン名を返します。システムでgetdomainname()が使えない場合、
+@code{"localdomain"}が返されます。
+@c COMMON
 @end defun
 
 @defun sys-getcwd
+@c EN
 [POSIX] Returns the current working directory by a string.
 If the current working directory couldn't be obtained from the system,
 an error is signalled.   See also @code{sys-chdir}
  (@xref{Other file operations}), @code{current-directory}
 (@xref{Directory utilities}).
+@c JP
+[POSIX] 現在の作業ディレクトリを文字列で返します。
+システムから現在の作業ディレクトリが得られない場合は、エラーが通知されます。
+@code{sys-chdir}(@ref{Other file operations}参照)、@code{current-directory}
+(@ref{Directory utilities}参照)も参照して下さい。
+@c COMMON
 @end defun
 
 @defun sys-getgid
 @defunx sys-getegid
+@c EN
 [POSIX] Returns integer value of real and effective group id of the
 current process, respectively.
+@c JP
+[POSIX] 現在のプロセスの実グループIDと実効グループIDをそれぞれ整数で返します。
+@c COMMON
 @end defun
 
 @defun sys-setgid gid
+@c EN
 [POSIX] Sets the effective group id of the current process.
+@c JP
+[POSIX] 現在のプロセスの実効グループIDをセットします。
+@c COMMON
 @end defun
 
 @defun sys-getuid
 @defunx sys-geteuid
+@c EN
 [POSIX] Returns integer value of real and effective user id of the
 current process, respectively.
+@c JP
+[POSIX] 現在のプロセスの実ユーザIDと実効ユーザIDをそれぞれ整数で返します。
+@c COMMON
 @end defun
 
 @defun sys-setuid uid
+@c EN
 [POSIX] Sets the effective user id of the current process.
+@c JP
+[POSIX] 現在のプロセスの実効ユーザIDをセットします。
+@c COMMON
 @end defun
 
 @defun sys-getgroups
+@c EN
 [POSIX] Returns a list of integer ids of supplementary groups.
+@c JP
+[POSIX] 補助的なグループのIDの整数のリストを返します。
+@c COMMON
 @end defun
 
 @defun sys-getlogin
+@c EN
 [POSIX] Returns a string of the name of the user logged in on the
 controlling terminal of the current process.
 If the system can't determine the information, @code{#f} is returned.
+@c JP
+[POSIX] 現在のプロセスの制御端末にログインしているユーザの名前を文字列で
+返します。システムがその情報を決定できない場合、@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun sys-getpgrp
+@c EN
 [POSIX] Returns a process group id of the current process.
+@c JP
+[POSIX] 現在のプロセスのプロセスグループIDを返します。
+@c COMMON
 @end defun
 
 @c @defun sys-setpgrp
@@ -14072,33 +14279,63 @@ If the system can't determine the information, @code{#f} is returned.
 @c @end defun
 
 @defun sys-getpgid pid
+@c EN
 Returns a process group id of the process specified by @var{pid}.
 If @var{pid} is zero, the current process is used.
+@c JP
+@var{pid}で指定されたプロセスのプロセスグループIDを返します。
+@var{pid}が0の場合、現在のプロセスが使われます。
+@c COMMON
 
+@c EN
 Note that @code{getpgid()} call is not in POSIX.  If the system
 doesn't have @var{getpgid()}, @var{sys-getpgid} still works if
 @var{pid} is zero (it just calls @code{sys-getpgrp}), but signals
 an error if @var{pid} is not zero.
+@c JP
+@code{getpgid()}はPOSIXではないことに注意して下さい。
+システムに@var{getpgid()}がない場合、@var{pid}が0ならば
+@var{sys-getpgid}がまだ動作しますが(それは単に@code{sys-getpgrp}を呼びます)
+、@var{pid}が0でない場合はエラーが通知されます。
+@c COMMON
 @end defun
 
 @defun sys-setpgid pid pgid
+@c EN
 [POSIX] Sets the process group id of the process @var{pid} to @var{pgid}.
 If @var{pid} is zero, the process ID of the
 current process is used.  If @var{pgid} is zero, the process ID
 of the process specified by @code{pid} is used.  (Hence
 @code{sys-setpgid(0, 0)} sets the process group id of the
 current process to the current process id).
+@c JP
+[POSIX] プロセス@var{pid}のプロセスグループIDを@var{pgid}にセットします。
+@var{pid}が0ならば、現在のプロセスのプロセスIDが使われます。
+@var{pgid}が0ならば、@code{pid}で指定されたプロセスのプロセスIDが
+使われます。
+(したがって、@code{sys-getpgid(0, 0)}は、現在のプロセスのプロセス
+グループIDを現在のプロセスIDにセットします。)
+@c COMMON
 @end defun
 
 @defun sys-setsid
+@c EN
 [POSIX] Creates a new session if the calling process is
 not a process group leader.
+@c JP
+[POSIX] 呼んでいるプロセスがプロセスグループリーダでなければ、
+新しいセッションを作ります。
+@c COMMON
 @end defun
 
 @defun sys-getpid
 @defunx sys-getppid
+@c EN
 [POSIX] Returns the current process id and the parent process id,
 respectively.
+@c JP
+[POSIX] 現在のプロセスIDと親プロセスのIDをそれぞれ返します。
+@c COMMON
 @end defun
 
 @defun sys-times
@@ -14106,8 +14343,13 @@ respectively.
 @end defun
 
 @defun sys-ctermid
+@c EN
 [POSIX]  Returns the name of the controlling terminal of the process.
 This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
+@c JP
+[POSIX] プロセスの制御端末の名前を返します。
+これは単に@code{``/dev/tty''}かもしれません。@code{sys-ttyname}も参照して下さい。
+@c COMMON
 @end defun
 
 @node Time, Unix process management, System Inquiry, System interface
@@ -14333,40 +14575,77 @@ to the POSIX-time (number of seconds since Epoch).
 @subsubsection SRFI time
 
 @deftp {Builtin Class} <time>
+@c EN
 The @code{<time>} object also represents a point of time.
+@c JP
+ある時刻を表す@code{<time>}オブジェクトです。
+@c COMMON
 
 @clindex time
 @defivar <time> type
+@c EN
 Indicates time type.  @code{time-utc} is the default, and that
 represents the number of seconds since Unix Epoch.
 SRFI-19 (@xref{srfi-19 - Time data types and procedures}) adds more types.
+@c JP
+timeの型を表します。デフォルトは@code{time-utc}で、Unixエポックからの
+秒数を表します。SRFI-19(@ref{srfi-19 - Time data types and procedures}参照)
+ではさらに型が追加されています。
+@c COMMON
 @end defivar
 @defivar <time> second
+@c EN
 Second part of the time.
+@c JP
+timeの秒の部分です。
+@c COMMON
 @end defivar
 @defivar <time> nanosecond
+@c EN
 Nanosecond part of the time.
+@c JP
+timeのナノ秒の部分です。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun current-time
+@c EN
 [SRFI-18][SRFI-21]
 Returns the @code{<time>} object representing the current time in
 @code{time-utc}.   @xref{srfi-19 - Time data types and procedures}, for
 it redefines @code{current-time} to allow optional argument to
 specify time type.
+@c JP
+[SRFI-18][SRFI-21]
+現在の時間を@code{time-utc}で表す@code{<time>}オブジェクトを返します。
+@ref{srfi-19 - Time data types and procedures}では、@code{current-time}が再定義され、
+timeの型を指定するオプショナル引数を受け付けるようにされています。
+@c COMMON
 @end defun
 
 @defun time? obj
+@c EN
 [SRFI-18][SRFI-19][SRFI-21]
 Returns @code{#t} if @var{obj} is a time object.
+@c JP
+[SRFI-18][SRFI-19][SRFI-21]
+@var{obj}がtimeオブジェクトなら@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun time->seconds time
 @defunx seconds->time seconds
+@c EN
 [SRFI-18][SRFI-21]
 Converts between time object and the number of seconds (POSIX-time).
 @var{Time} argument of @code{time->seconds} has to be a @code{<time>} object.
+@c JP
+[SRFI-18][SRFI-21]
+timeオブジェクトと秒数(POSIX時間)を変換します。
+@code{time->seconds}の引数@var{time}は、@code{<time>}オブジェクトで
+なければなりません。
+@c COMMON
 @end defun
 
 
@@ -14384,52 +14663,113 @@ Converts between time object and the number of seconds (POSIX-time).
 @c NODE forkとexec
 
 @defun sys-system command
+@c EN
 [POSIX]
 Runs @var{command} in a subprocess.   @var{command} is usually passed
 to @code{sh}, so the shell metacharacters are interpreted.
+@c JP
+[POSIX]
+サブプロセスで@var{command}を実行します。@var{command}は通常、
+@code{sh}へ渡されるので、シェルのメタキャラクタは解釈されます。
+@c COMMON
 
+@c EN
 This function returns an integer value @code{system()} returned.
 Since POSIX doesn't define what @code{system()} returns, you can't
 interpret the returned value in a portable way.
+@c JP
+この関数は、@code{system()}が返した整数値を返します。
+POSIXは@code{system()}が何を返すかを定義していないので、
+戻り値をポータブルな方法で解釈することができません。
+@c COMMON
 @end defun
 
 @defun sys-fork
+@c EN
 [POSIX]
 Fork the current process.  Returns 0 if you're in the child process,
 and a child process' pid if you're in the parent process.
 All the opened file descriptors are shared between the parent and
 the child.  See @code{fork(2)} of your system for details.
+@c JP
+[POSIX]
+現在のプロセスをフォークします。子プロセスにいるならば0が返り、
+親プロセスにいるならば子プロセスのプロセスIDが返ります。
+全ての開かれているファイルディスクリプタは、親プロセスと子プロセスで
+共有されます。詳細は、システムの@code{fork(2)}を参照して下さい。
+@c COMMON
 
+@c EN
 If the forked process runs some Scheme code and exits instead of
 calling @code{sys-exec}, the forked process should call @code{sys-exit} to
 terminate itself.  Normal exit call tries to flush the file
 buffers, and on some OS it messes up the parent's file buffers.
+@c JP
+フォークされたプロセスが同じSchemeコードを実行し、@code{sys-exec}を
+呼ぶ代わりに終了すると、フォークされたプロセスは@code{sys-exit}を呼んで
+自分自身を終了させなければなりません。通常のexitの呼び出しはファイル
+バッファのフラッシュを試み、いくつかのOSでは親のファイルバッファを
+混乱させるでしょう。
+@c COMMON
 @end defun
 
 @defun sys-exec command args &optional iomap
+@c EN
 [POSIX+]
 Execute @var{command} with @var{args}, a list of arguments.
 The current process image is replaced by @var{command},
 so this function never returns.
+@c JP
+[POSIX+]
+@var{command}を引数のリストである@var{args}を伴って実行します。
+現在のプロセスイメージは@var{command}に置き換えられるので、
+この関数は戻りません。
+@c COMMON
 
+@c EN
 All elements of @var{args} must be strings.  The first element of
 @var{args} is used as @code{argv[0]}, i.e. the program name.
+@c JP
+@var{args}の全ての要素は文字列でなければなりません。
+@var{args}の最初の要素は、@code{argv[0]}、すなわちプログラム名として
+使われます。
+@c COMMON
 
+@c EN
 The optional @var{iomap} argument, when provided, specifies how the
 open file descriptors are treated.  It must be the following format:
+@c JP
+オプショナル引数の@var{iomap}は、与えられた場合は、開かれている
+ファイルディスクリプタがどのように扱われるかを指定します。
+この引数は以下のフォーマットでなければなりません。
+@c COMMON
 @example
 ((@i{to-fd} . @i{from-port-or-fd}) @dots{})
 @end example
+@c EN
 @i{To-fd} must be an integer,
 and @i{from-port-or-fd} must be an integer file descriptor or a port.
 Each element of the list makes the file descriptor of @i{from-port-or-fd}
 of the current process be mapped to the file descriptr @i{to-fd}
 in the executed process.
+@c JP
+@i{to-fd}は整数でなければならず、@i{from-port-or-fd}は整数のファイル
+ディスクリプタかポートでなければなりません。
+リストのそれぞれの要素は、現在のプロセスの@i{from-port-or-fd}の
+ファイルディスクリプタを、実行されているプロセスのファイルディスクリプタ
+@i{to-fd}にマップさせます。
+@c COMMON
 
+@c EN
 If @var{iomap} is provided,
 any file descriptors other than specified in the iomap list will be closed
 before @code{exec()}.  Otherwise, all file descriptors in the current
 process remain open.
+@c JP
+@var{iomap}が与えられると、iomapリストで指定されていないいかなるファイル
+ディスクリプタも@code{exec()}の前に閉じられます。さもなければ、現在のプロセスの
+全てのファイルディスクリプタは開かれたままになります。
+@c COMMON
 
 @example
 (sys-exec "ls" '("ls" "-l")) @result{} ;; ls is executed.
@@ -14442,14 +14782,27 @@ process remain open.
   ;; stdout redirected to the file "ls.out".
 @end example
 
+@c EN
 When it encounters an error, most of the time it raises an error condition.
 Once the file descriptors are permuted, however, it would be impractical
 to handle errors in reasonable way (you don't even know stderr is still
 available!), so Gauche simply exits on the error.
+@c JP
+エラーに遭遇すると、たいていの場合エラー条件を投げます。
+一旦ファイルディスクリプタの順番が変えられると、合理的な方法でエラーを処理する
+ことは実行不可能です(標準エラーがまだ有効かどうかさえ知る術がありません)。
+したがって、Gaucheはエラー時には単に終了するだけです。
+@c COMMON
 @end defun
 
+@c EN
 See also @ref{gauche.process - High Level Process Interface}, which provides
 more convenient process handling on top of above primitives.
+@c JP
+@ref{gauche.process - High Level Process Interface}も参照して下さい。
+上記のプリミティブの上に構築されたより便利なプロセス処理の方法が提供されて
+います。
+@c COMMON
 
 @node Wait,  , Fork and exec, Unix process management
 @subsubsection Wait
