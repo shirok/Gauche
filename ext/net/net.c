@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.23 2003-01-07 12:08:27 shirok Exp $
+ *  $Id: net.c,v 1.24 2003-01-30 12:14:19 shirok Exp $
  */
 
 #include "net.h"
@@ -126,9 +126,14 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
             Scm_Error("attempt to obtain an input port from unconnected socket: %S",
                       SCM_OBJ(sock));
         }
-        sock->inPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket input)"),
-                                                   SCM_PORT_INPUT,
-                                                   sock->fd, buffering, FALSE));
+        /* NB: I keep the socket itself in the port name, in order to avoid
+           the socket from GCed prematurely if application doesn't keep
+           pointer to the socket. */
+        sock->inPort =
+            SCM_PORT(Scm_MakePortWithFd(SCM_LIST2(SCM_MAKE_STR("socket input"),
+                                                  SCM_OBJ(sock)),
+                                        SCM_PORT_INPUT,
+                                        sock->fd, buffering, FALSE));
     }
     return SCM_OBJ(sock->inPort);
 }
@@ -141,9 +146,14 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
             Scm_Error("attempt to obtain an output port from an unconnected socket: %S",
                       SCM_OBJ(sock));
         }
-        sock->outPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket output)"),
-                                                    SCM_PORT_OUTPUT,
-                                                    sock->fd, buffering, FALSE));
+        /* NB: I keep the socket itself in the port name, in order to avoid
+           the socket from GCed prematurely if application doesn't keep
+           pointer to the socket. */
+        sock->outPort =
+            SCM_PORT(Scm_MakePortWithFd(SCM_LIST2(SCM_MAKE_STR("socket output"),
+                                                  SCM_OBJ(sock)),
+                                        SCM_PORT_OUTPUT,
+                                        sock->fd, buffering, FALSE));
     }
     return SCM_OBJ(sock->outPort);
 }

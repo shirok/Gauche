@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.321 2003-01-11 11:27:45 shirok Exp $
+ *  $Id: gauche.h,v 1.322 2003-01-30 12:14:20 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1107,7 +1107,7 @@ struct ScmPortRec {
 
     ScmChar ungotten;           /* ungotten character.
                                    SCM_CHAR_INVALID if empty. */
-    ScmObj name;                /* port's name */
+    ScmObj name;                /* port's name.  Can be any Scheme object. */
 
     ScmInternalMutex mutex;     /* for port mutex */
     ScmInternalCond  cv;        /* for port mutex */

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.14 2002-10-26 09:02:40 shirok Exp $
+;;;  $Id: net.scm,v 1.15 2003-01-30 12:14:20 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -102,10 +102,14 @@
     (socket-listen socket 5)))
 
 (define (call-with-client-socket socket proc)
-  (dynamic-wind
-   (lambda () #f)
-   (lambda () (proc (socket-input-port socket) (socket-output-port socket)))
-   (lambda () (socket-close socket))))
+  (with-error-handler
+      (lambda (e)
+        (socket-close socket)
+        (raise e))
+    (lambda ()
+      (begin0
+       (proc (socket-input-port socket) (socket-output-port socket))
+       (socket-close socket)))))
 
 ;; backward compatibility -- will be removed!
 (define pf_inet |PF_INET|)
