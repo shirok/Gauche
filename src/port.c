@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.25 2001-05-20 09:16:14 shirok Exp $
+ *  $Id: port.c,v 1.26 2001-05-21 09:14:05 shirok Exp $
  */
 
 #include <unistd.h>
@@ -38,7 +38,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
  */
 static int port_cleanup(ScmPort *port)
 {
-    if (port->ownerp) {
+    if (SCM_PORT_OWNER_P(port)) {
         switch (SCM_PORT_TYPE(port)) {
         case SCM_PORT_FILE:
             return fclose(port->src.file.fp);
@@ -281,12 +281,24 @@ int Scm__PortIstrGetb(ScmPort *port)
     return *port->src.istr.current++;
 }
 
-int Scm__PortIstrGetc(ScmPort *port)
+ScmChar Scm__PortIstrGetc(int prefetch, ScmPort *port)
 {
+    if (prefetch >= 0) {
+        /* we have small number of bytes left in the buffer.
+           move them to incomplete buffer first. */
+        SCM_ASSERT(port->src.istr.rest < SCM_CHAR_MAX_BYTES);
+        port->buf[0] = prefetch;
+        memcpy(port->buf+1, port->src.istr.current, port->src.istr.rest);
+        port->bufcnt = port->src.istr.rest+1;
+        port->src.istr.rest = 0;
+    }
     if (port->src.istr.fill) {
         if (port->src.istr.fill(port, TRUE) < 0) return EOF;
     }
     if (port->src.istr.rest <= 0) return EOF;
+    else if (prefetch >= 0) {
+        return Scm__PortGetcInternal(port);
+    }
     else {
         const char *cp = SCM_PORT(port)->src.istr.current;
         unsigned char uc = (unsigned char)*cp;
@@ -760,7 +772,7 @@ static int fdport_puts_unbuffered(ScmPort *port, ScmString *str)
 static int fdport_close_unbuffered(ScmPort *port)
 {
     DECL_FDPORT(pdata, port);
-    if (port->ownerp && pdata->info.fd >= 0)
+    if (SCM_PORT_OWNER_P(port) && pdata->info.fd >= 0)
         return close(pdata->info.fd);
     else
         return -1;
