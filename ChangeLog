@@ -1,3 +1,10 @@
+2002-07-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/exclib.stub, src/extlib.stub, ext/threads/thrlib.stub : moved
+	  the thread-exception stuff from core interpreter to ext/threads.
+	  moved back the vm debugging support procs from ext/threads to
+	  src/extlib.
+
 2002-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (Scm_Vprintf): fixed to retrieve varargs before calling
