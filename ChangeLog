@@ -1,3 +1,17 @@
+2001-06-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/gauche/portmacros.h, src/*.c : changed API of
+	  Scm_Getz to be consisntent with C's fgets (port comes last), and
+	  added len parameter to Scm_Putz.
+
+2001-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, test/euc-jp.scm : more tests and bug fixes for the
+	  buffered port.
+	* src/Makefile.in, test/mb-chars.scm : included a multibyte character
+	  test to the standard tests.  mb-chars.scm loads tests specific
+	  to the native character encoding.
+
 2001-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/extlib.stub: added open-input-buffered-port.
