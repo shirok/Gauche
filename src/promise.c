@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: promise.c,v 1.1 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: promise.c,v 1.2 2001-01-17 08:21:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -59,9 +59,17 @@ ScmObj Scm_MakePromise(ScmObj code)
 static void force_cc(ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
-    p->forced++;
-    p->code = result;
-    SCM_RETURN(result);
+    ScmObj r;
+    
+    if (p->forced) {            /* the promise has been already forced
+                                   by the recursive force. */
+        r = p->code;
+    } else {
+        p->forced++;
+        p->code = result;
+        r = result;
+    }
+    SCM_RETURN(r);
 }
 
 void Scm_Force(ScmObj obj)
