@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.7 2001-09-13 20:31:56 shirok Exp $
+;;;  $Id: uri.scm,v 1.8 2001-09-15 09:04:56 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -87,14 +87,8 @@
 (define (uri-decode . args)
   (define cgi-decode (get-keyword :cgi-decode args #f))
   (define (hex c)
-    (cond ((not (char? c)) #f)
-          ((char<?  c #\0) #f)
-          ((char<=? c #\9) (- (char->integer c) #x30))
-          ((char<?  c #\A) #f)
-          ((char<=? c #\F) (- (char->integer c) #x37))
-          ((char<?  c #\a) #f)
-          ((char<=? c #\f) (- (char->integer c) #x57))
-          (else #f)))
+    (and (char? c)
+         (string-index "0123456789ABCDEF" (char-upcase c))))
   (let loop ((c (read-char)))
     (cond ((eof-object? c))
           ((char=? c #\%)
@@ -126,7 +120,7 @@
 (define *uri-special-char-set* #[\x00-\x20<>#%\"{}|\\^\`\[\]])
 
 (define (uri-encode . args)
-  (let ((echars (get-keyword :escaped-char-set args *url-special-char-set*)))
+  (let ((echars (get-keyword :escaped-char-set args *uri-special-char-set*)))
     (let loop ((c (read-char)))
       (cond ((eof-object? c))
             ((char-set-contains? echars c)
