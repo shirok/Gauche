@@ -1,3 +1,19 @@
+2001-03-26  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.12
+	* lib/gauche/object.scm (compute-get-n-set): implemented class,
+	  each-subclass and virtual slot allocation.
+	* src/class.c: if a slot accessor returns UNDEFINED, regard it
+	  as an unbound slot and call slot-missing.  Necessary for virtual
+	  slots to tell the system that slot is unbound.
+	* src/class.c (method_more_specific): fixed a bug.
+	* src/class.c (Scm_AddMethod): check for method redefinition of
+	  the same signature.
+	* src/extlib.stub: added undefined and undefined? to treat undefined
+	  value explicitly in Scheme.
+	* src/vm.c: fixed a bug with inlined slot-ref and slot-set!, that
+	  broke VM stack when Scm_VMApply was called internally.
+
 2001-03-25  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.11
