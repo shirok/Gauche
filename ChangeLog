@@ -1,3 +1,8 @@
+2001-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/extlib.stub: added open-input-buffered-port.
+	  fixed some bugs in buffered port implementation.
+
 2001-05-29  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.13
