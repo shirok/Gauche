@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.27 2003-01-09 11:45:10 shirok Exp $
+;; $Id: srfi.scm,v 1.28 2003-01-16 23:49:43 shirok Exp $
 
 (use gauche.test)
 
@@ -1460,5 +1460,68 @@
               (when (< i 5)
                 (display (car stream))
                 (loop (+ i 1) (force (cdr stream)))))))))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-37")
+
+(use srfi-37)
+
+(define options
+  (list (option '(#\l "long-display") #f #f
+                (lambda (option name arg seed1 seed2)
+                  (values (cons 'l seed1) seed2)))
+        (option '(#\o "output-file") #t #f
+                (lambda (option name arg seed1 seed2)
+                  (values (acons 'o arg seed1) seed2)))
+        (option '(#\d "debug") #f #t
+                (lambda (option name arg seed1 seed2)
+                  (values (acons 'd arg seed1) seed2)))
+        (option '(#\b "batch") #f #f
+                (lambda (option name arg seed1 seed2)
+                  (values (cons 'b seed1) seed2)))
+        (option '(#\i "interactive") #f #f
+                (lambda (option name arg seed1 seed2)
+                  (values (cons 'i seed1) seed2)))
+        ))
+
+(define (test-options . args)
+  (receive (opts operands)
+      (args-fold args options
+                 (lambda (option name arg seed1 seed2) ;; unrecognized-proc
+                   (values (acons '? name seed1) seed2))
+                 (lambda (arg seed1 seed2)      ;; operand-proc
+                   (values seed1 (cons arg seed2)))
+                 '() '())
+    (list (reverse opts) (reverse operands))))
+
+(test* "srfi-37 (short)" '((i l b) ())
+       (test-options "-ilb"))
+
+(test* "srfi-37 (short, arg)" '((i (o . "foo") l (d . "8")) ())
+       (test-options "-iofoo" "-l" "-d8"))
+
+(test* "srfi-37 (short, arg)" '(((o . "foo") (d . #f)) ("bar"))
+       (test-options "-o" "foo" "-d" "bar"))
+
+(test* "srfi-37 (short, missing arg)" '(((o . "-d")) ("bar"))
+       (test-options "-o" "-d" "bar"))
+
+(test* "srfi-37 (short, missing arg)" '(((o . #f)) ())
+       (test-options "-o"))
+
+(test* "srfi-37 (long, arg)" '((l i (d . "v") b (d . #f)) ())
+       (test-options "--long-display" "--interactive" "--debug=v" "-bd"))
+
+(test* "srfi-37 (long, arg)" '((l i (d . "v") b (d . #f)) ())
+       (test-options "--long-display" "--interactive" "--debug=v" "-bd"))
+
+(test* "srfi-37 (operand)" '((i b) ("foo" "bar"))
+       (test-options "-i" "foo" "-b" "bar"))
+
+(test* "srfi-37 (operand)" '((i) ("foo" "-b" "bar"))
+       (test-options "-i" "--" "foo" "-b" "bar"))
+
+(test* "srfi-37 (operand)" '((i b) ("-" "foo" "bar"))
+       (test-options "-i" "-" "foo" "-b" "bar"))
 
 (test-end)
