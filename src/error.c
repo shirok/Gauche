@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.48 2004-05-22 07:07:27 shirok Exp $
+ *  $Id: error.c,v 1.49 2004-07-16 11:11:41 shirok Exp $
  */
 
 #include <errno.h>
@@ -287,8 +287,23 @@ void Scm_SysError(const char *msg, ...)
 {
     ScmObj e;
     va_list args;
-    int en = errno;
-    ScmObj syserr = SCM_MAKE_STR_COPYING(strerror(en));
+    int en;
+    ScmObj syserr;
+#ifndef __MINGW32__
+    en = errno;
+    syserr = SCM_MAKE_STR_COPYING(strerror(en));
+#else  /*__MINGW32__*/
+    LPTSTR msgbuf;
+    en = GetLastError();
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
+		  NULL,
+		  en,
+		  0,
+		  (LPTSTR)&msgbuf,
+		  0, NULL);
+    syserr = SCM_MAKE_STR_COPYING(msgbuf);
+    LocalFree(msgbuf);
+#endif /*__MINGW32__*/
     
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);

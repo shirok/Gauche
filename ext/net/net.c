@@ -30,12 +30,18 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.32 2004-07-15 09:18:10 shirok Exp $
+ *  $Id: net.c,v 1.33 2004-07-16 11:11:41 shirok Exp $
  */
 
 #include "net.h"
 #include <unistd.h>
+#include <fcntl.h>
 #include <gauche/extend.h>
+
+#ifdef __MINGW32__
+static ScmPort *make_winsock_port(ScmObj name, int dir,
+				  Socket sock, int buffering);
+#endif /*__MINGW32__*/
 
 /*==================================================================
  * Socket
@@ -50,9 +56,9 @@ static void socket_finalize(ScmObj obj, void *data)
     ScmSocket *sock = (ScmSocket*)obj;
     /* NB: at this point, sock->inPort and sock->outPort may already
        be GC-ed and finalized, so we don't flush them here. */
-    if (sock->fd >= 0) {
-        close(sock->fd);
-        sock->fd = -1;
+    if (!(SOCKET_CLOSED(sock->fd))) {
+        closeSocket(sock->fd);
+        sock->fd = INVALID_SOCKET;
         sock->status = SCM_SOCKET_STATUS_CLOSED;
     }
 }
@@ -86,7 +92,7 @@ static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, ">");
 }
 
-ScmSocket *make_socket(int fd, int type)
+ScmSocket *make_socket(Socket fd, int type)
 {
     ScmSocket *s = SCM_NEW(ScmSocket);
     SCM_SET_CLASS(s, SCM_CLASS_SOCKET);
@@ -104,7 +110,7 @@ ScmObj Scm_MakeSocket(int domain, int type, int protocol)
 {
     int sock; 
     SCM_SYSCALL(sock, socket(domain, type, protocol));
-    if (sock < 0) Scm_SysError("couldn't create socket");
+    if (SOCKET_INVALID(sock)) Scm_SysError("couldn't create socket");
     return SCM_OBJ(make_socket(sock, type));
 }
 
@@ -131,8 +137,8 @@ ScmObj Scm_SocketClose(ScmSocket *s)
        reference to the same socket. */
     if (s->inPort)  Scm_ClosePort(s->inPort);  /* ignore errors */
     if (s->outPort) Scm_ClosePort(s->outPort); /* ignore errors */
-    close(s->fd);
-    s->fd = -1;
+    closeSocket(s->fd);
+    s->fd = INVALID_SOCKET;
     s->status = SCM_SOCKET_STATUS_CLOSED;
     return SCM_TRUE;
 }
@@ -140,19 +146,25 @@ ScmObj Scm_SocketClose(ScmSocket *s)
 ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 {
     if (sock->inPort == NULL) {
+	ScmObj sockname;
+	int infd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             Scm_Error("attempt to obtain an input port from unconnected socket: %S",
                       SCM_OBJ(sock));
         }
+#ifndef __MINGW32__
+	infd = sock->fd;
+#else  /*__MINGW32__*/
+	infd = _open_osfhandle(sock->fd, O_RDONLY);
+#endif /*__MINGW32__*/
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
-        sock->inPort =
-            SCM_PORT(Scm_MakePortWithFd(SCM_LIST2(SCM_MAKE_STR("socket input"),
-                                                  SCM_OBJ(sock)),
-                                        SCM_PORT_INPUT,
-                                        sock->fd, buffering, FALSE));
+	sockname = SCM_LIST2(SCM_MAKE_STR("socket input"), SCM_OBJ(sock));
+        sock->inPort = SCM_PORT(Scm_MakePortWithFd(sockname, SCM_PORT_INPUT,
+						   infd, buffering,
+						   FALSE));
     }
     return SCM_OBJ(sock->inPort);
 }
@@ -160,19 +172,25 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 {
     if (sock->outPort == NULL) {
+	ScmObj sockname;
+	int outfd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             Scm_Error("attempt to obtain an output port from an unconnected socket: %S",
                       SCM_OBJ(sock));
         }
+#ifndef __MINGW32__
+	outfd = sock->fd;
+#else  /*__MINGW32__*/
+	outfd = _open_osfhandle(sock->fd, O_RDONLY);
+#endif /*__MINGW32__*/
+
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
-        sock->outPort =
-            SCM_PORT(Scm_MakePortWithFd(SCM_LIST2(SCM_MAKE_STR("socket output"),
-                                                  SCM_OBJ(sock)),
-                                        SCM_PORT_OUTPUT,
-                                        sock->fd, buffering, FALSE));
+	sockname = SCM_LIST2(SCM_MAKE_STR("socket output"), SCM_OBJ(sock));
+        sock->outPort = SCM_PORT(Scm_MakePortWithFd(sockname, SCM_PORT_OUTPUT,
+						    outfd, buffering, FALSE));
     }
     return SCM_OBJ(sock->outPort);
 }
@@ -186,7 +204,7 @@ ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
     ScmSockAddr *naddr;
     int r;
     
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to bind a closed socket: %S", sock);
     }
     SCM_SYSCALL(r, bind(sock->fd, &addr->addr, addr->addrlen));
@@ -210,7 +228,7 @@ ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 ScmObj Scm_SocketListen(ScmSocket *sock, int backlog)
 {
     int r;
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to listen a closed socket: %S", sock);
     }
     SCM_SYSCALL(r, listen(sock->fd, backlog));
@@ -228,11 +246,11 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
     ScmSocket *newsock;
     ScmClass *addrClass = Scm_ClassOf(SCM_OBJ(sock->address));
     
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to accept a closed socket: %S", sock);
     }
     SCM_SYSCALL(newfd, accept(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
-    if (newfd < 0) {
+    if (SOCKET_INVALID(newfd)) {
         if (errno == EAGAIN) {
             return SCM_FALSE;
         } else {
@@ -251,7 +269,7 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
 ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
 {
     int r;
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to connect a closed socket: %S", sock);
     }
     SCM_SYSCALL(r, connect(sock->fd, &addr->addr, addr->addrlen));
@@ -268,7 +286,7 @@ ScmObj Scm_SocketGetSockName(ScmSocket *sock)
     const char addrbuf[SCM_SOCKADDR_MAXLEN];
     int r, addrlen = SCM_SOCKADDR_MAXLEN;
 
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to get the name of a closed socket: %S", sock);
     }
     SCM_SYSCALL(r, getsockname(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
@@ -283,7 +301,7 @@ ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
     const char addrbuf[SCM_SOCKADDR_MAXLEN];
     int r, addrlen = SCM_SOCKADDR_MAXLEN;
 
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to get the name of a closed socket: %S", sock);
     }
     SCM_SYSCALL(r, getpeername(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
@@ -296,7 +314,7 @@ ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
 ScmObj Scm_SocketSend(ScmSocket *sock, ScmString *msg, int flags)
 {
     int r;
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to send to a closed socket: %S", sock);
     }
     SCM_SYSCALL(r, send(sock->fd,
@@ -312,7 +330,7 @@ ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmString *msg, ScmSockAddr *to,
                         int flags)
 {
     int r;
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to send to a closed socket: %S", sock);
     }
     SCM_SYSCALL(r, sendto(sock->fd,
@@ -329,7 +347,7 @@ ScmObj Scm_SocketRecv(ScmSocket *sock, int bytes, int flags)
 {
     int r;
     char *buf;
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to recv from a closed socket: %S", sock);
     }
     buf = SCM_NEW_ATOMIC2(char*, bytes);
@@ -346,7 +364,7 @@ ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
     char *buf;
     struct sockaddr from;
     int fromlen = sizeof(from);
-    if (sock->fd < 0) {
+    if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to recv from a closed socket: %S", sock);
     }
     buf = SCM_NEW_ATOMIC2(char*, bytes);
@@ -367,7 +385,7 @@ ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
 ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
 {
     int r = 0;
-    if (s->fd < 0) {
+    if (SOCKET_CLOSED(s->fd)) {
         Scm_Error("attempt to set a socket option of a closed socket: %S", s);
     }
     if (SCM_STRINGP(value)) {
@@ -386,7 +404,7 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
 ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 {
     int r = 0;
-    if (s->fd < 0) {
+    if (SOCKET_CLOSED(s->fd)) {
         Scm_Error("attempt to get a socket option of a closed socket: %S", s);
     }
     if (rsize > 0) {
@@ -408,9 +426,8 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
  */
 #ifdef __MINGW32__
 
-/* It looks like winsock2.h doesn't have inet_aton, but has
- * the obsolete inet_addr call.   With inet_addr, we can't
- * convert "255.255.255.255".
+/* 
+ * I should use WSAStringToAddress, but just for the time being...
  */
 int inet_aton(const char *cp, struct in_addr *inp)
 {
@@ -443,7 +460,28 @@ void Scm_Init_libnet(void)
     SCM_INIT_EXTENSION(net);
     mod = SCM_MODULE(SCM_FIND_MODULE("gauche.net", TRUE));
 #ifdef __MINGW32__
-    WSAStartup(MAKEWORD(2,2), &wsaData);
+    /* NB: I'm supposed to call WSACleanup when application shuts down,
+       or resource leak would happen, according to the Windows document.
+       It's just ridiculous---why can't OS itself clean up the dead process?
+       Anyway, to behave politically correctly, I need a generic callback
+       mechanism for Gauche core to call cleanup routines in Scm_Exit.
+       For now, let us behave like a wild kid.
+    */
+    {
+	int opt;
+	int r = WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (r != 0) {
+	    SetLastError(r);
+	    Scm_SysError("WSAStartup failed");
+	}
+	/* windows voodoo to make _open_osfhandle magic work */
+	opt = SO_SYNCHRONOUS_NONALERT;
+	r = setsockopt(INVALID_SOCKET, SOL_SOCKET,
+		       SO_OPENTYPE, (char*)&opt, sizeof(opt));
+	if (r == SOCKET_ERROR) {
+	    Scm_SysError("winsock initialization failed");
+	}
+    }
 #endif /*__MINGW32__*/
     Scm_InitBuiltinClass(&Scm_SocketClass, "<socket>", NULL,
                          sizeof(ScmSocket), mod);

@@ -1,3 +1,11 @@
+2004-07-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_SysError): on MinGW, retrieve error message using
+	  FormatMessage instead of strerr; the former covers wider range of
+	  Windows errors.
+	* ext/net/net.c, ext/net/net.h: adapted to winsock on MinGW. 
+	  At least TCP connection seems working.
+
 2004-07-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm__InitLoad): on MinGW, use the program path to resolve

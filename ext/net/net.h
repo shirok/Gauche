@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.20 2004-07-15 07:10:05 shirok Exp $
+ *  $Id: net.h,v 1.21 2004-07-16 11:11:41 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -47,8 +47,14 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
+typedef int Socket;
+#define closeSocket close
+#define INVALID_SOCKET  ((Socket)-1)
 #else  /*__MINGW32__*/
 #include <winsock2.h>
+#include <mswsock.h>
+typedef SOCKET Socket;
+#define closeSocket closesocket
 #endif /*__MINGW32__*/
 
 #ifdef HAVE_RPC_TYPES_H
@@ -131,7 +137,7 @@ SCM_CLASS_DECL(Scm_SockAddrIn6Class);
 
 typedef struct ScmSocketRec {
     SCM_HEADER;
-    int fd;                     /* -1 if closed */
+    Socket fd;                     /* INVALID_SOCKET if closed */
     int status;
     int type;
     ScmSockAddr *address;
@@ -139,6 +145,9 @@ typedef struct ScmSocketRec {
     ScmPort *outPort;
     ScmString *name;
 } ScmSocket;
+
+#define SOCKET_CLOSED(fd)  ((fd) == INVALID_SOCKET)
+#define SOCKET_INVALID(fd) ((fd) == INVALID_SOCKET)
 
 enum {
     SCM_SOCKET_STATUS_NONE,

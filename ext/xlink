@@ -4,7 +4,7 @@
 ;; Such links are only of developers' interest; they must be cleaned out
 ;; to create a distribution tarball.
 ;;
-;; $Id: xlink,v 1.6 2004-07-15 07:10:04 shirok Exp $
+;; $Id: xlink,v 1.7 2004-07-16 11:11:40 shirok Exp $
 ;;
 
 (use gauche.parseopt)
@@ -57,12 +57,10 @@
       (sys-system #`"cp ,file ,target"))))
 
 (define (link-exists? file target)
-  (and (file-exists? target)
-       (if (symbol-bound? 'sys-lstat)
-	   (begin
-	     (eq? (file-type target :follow-link? #f) 'symlink)
-	     (equal? file (sys-readlink target)))
-	   #t)))
+  (and (symbol-bound? 'sys-lstat)
+       (file-exists? target)
+       (eq? (file-type target :follow-link? #f) 'symlink)
+       (equal? file (sys-readlink target))))
 
 ;; Local variables:
 ;; mode: scheme
