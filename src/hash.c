@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.3 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: hash.c,v 1.4 2001-02-01 08:18:00 shiro Exp $
  */
 
 #include "gauche.h"
@@ -111,7 +111,8 @@ static unsigned int round2up(unsigned int val)
 enum {
     HASH_FIND,           /* returns NULL if not found */
     HASH_ADD,            /* add entry iff the key is not in the table */
-    HASH_UPDATE          /* modify entry if key exists; add otherwise */
+    HASH_UPDATE,         /* modify entry if key exists; add otherwise */
+    HASH_DELETE          /* remove matched entry */
 };
 
 /*
@@ -151,6 +152,15 @@ static ScmHashEntry *insert_entry(ScmHashTable *table,
     return e;
 }
 
+static ScmHashEntry *delete_entry(ScmHashTable *table,
+                                  ScmHashEntry *entry, ScmHashEntry *prev,
+                                  int index)
+{
+    if (prev) prev->next = entry->next;
+    else table->buckets[index] = entry->next;
+    return entry;
+}
+
 /*
  * Accessor function for address.   Used for EQ-type hash.
  */
@@ -158,14 +168,15 @@ static ScmHashEntry *address_access(ScmHashTable *table,
                                     ScmObj key, int mode, ScmObj value)
 {
     unsigned long hashval, index;
-    ScmHashEntry *e;
+    ScmHashEntry *e, *p;
 
     ADDRESS_HASH(hashval, key);
     index = HASH2INDEX(table, hashval);
     
-    for (e = table->buckets[index]; e; e = e->next) {
+    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         if (e->key == key) {
             if (mode == HASH_FIND || mode == HASH_ADD) return e;
+            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
             else {
                 e->value = value;
                 return e;
@@ -173,7 +184,7 @@ static ScmHashEntry *address_access(ScmHashTable *table,
         }
     }
 
-    if (mode == HASH_FIND) return NULL;
+    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
     else return insert_entry(table, key, value, index);
 }
 
@@ -197,23 +208,24 @@ static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
 {
     unsigned long hashval, index;
     int size;
-    const char *p;
-    ScmHashEntry *e;
+    const char *s;
+    ScmHashEntry *e, *p;
     
     if (!SCM_STRINGP(key)) {
         Scm_Abort("Got non-string key to the string hashtable");
     }
-    p = SCM_STRING_START(key);
+    s = SCM_STRING_START(key);
     size = SCM_STRING_SIZE(key);
-    STRING_HASH(hashval, p, size);
+    STRING_HASH(hashval, s, size);
     index = HASH2INDEX(table, hashval);
 
-    for (e = table->buckets[index]; e; e = e->next) {
+    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         ScmObj ee = e->key;
         int eesize = SCM_STRING_SIZE(ee);
         if (size == eesize
             && memcmp(SCM_STRING_START(key), SCM_STRING_START(ee), eesize) == 0){
             if (mode == HASH_FIND || mode == HASH_ADD) return e;
+            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
             else {
                 e->value = value;
                 return e;
@@ -221,7 +233,7 @@ static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
         }
     }
 
-    if (mode == HASH_FIND) return NULL;
+    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
     else return insert_entry(table, key, value, index);
 }
 
@@ -254,7 +266,7 @@ static ScmHashEntry *smallint_access(ScmHashTable *table,
 {
     unsigned long hashval, index;
     int ikey;
-    ScmHashEntry *e;
+    ScmHashEntry *e, *p;
 
     if (!SCM_INTP(key)) {
         Scm_Abort("Got non-integer key to the small integer hashtable");
@@ -263,9 +275,10 @@ static ScmHashEntry *smallint_access(ScmHashTable *table,
     SMALL_INT_HASH(hashval, ikey);
     index = HASH2INDEX(table, hashval);
     
-    for (e = table->buckets[index]; e; e = e->next) {
+    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         if (e->key == key) {
             if (mode == HASH_FIND || mode == HASH_ADD) return e;
+            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
             else {
                 e->value = value;
                 return e;
@@ -273,7 +286,7 @@ static ScmHashEntry *smallint_access(ScmHashTable *table,
         }
     }
 
-    if (mode == HASH_FIND) return NULL;
+    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
     else return insert_entry(table, key, value, index);
 }
 
@@ -300,14 +313,15 @@ static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
                                     int mode, ScmObj value)
 {
     unsigned long hashval, index;
-    ScmHashEntry *e;
+    ScmHashEntry *e, *p;
 
     hashval = table->hashfn(key);
     index = HASH2INDEX(table, hashval);
     
-    for (e = table->buckets[index]; e; e = e->next) {
+    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         if (table->cmpfn(key, e) == 0) {
             if (mode == HASH_FIND || mode == HASH_ADD) return e;
+            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
             else {
                 e->value = value;
                 return e;
@@ -315,7 +329,7 @@ static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
         }
     }
 
-    if (mode == HASH_FIND) return NULL;
+    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
     else return insert_entry(table, key, value, index);
 }
 
@@ -448,6 +462,11 @@ ScmHashEntry *Scm_HashTablePut(ScmHashTable *table,
                                ScmObj key, ScmObj value)
 {
     return table->accessfn(table, key, HASH_UPDATE, value);
+}
+
+ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, ScmObj key)
+{
+    return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
 }
 
 /*
