@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.87 2002-10-15 10:28:00 shirok Exp $
+;;; $Id: syslib.stub,v 1.88 2002-12-13 13:17:55 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -103,53 +103,6 @@
   "  char *result = setlocale(category, Scm_GetStringConst(locale));
   if (result) SCM_RETURN(SCM_MAKE_STR_COPYING(result));
   else SCM_RETURN(SCM_FALSE);")
-
-; struct lconv
-(define-symbol decimal_point "sym_decimal_point")
-(define-symbol thousands_sep "sym_thousands_sep")
-(define-symbol grouping "sym_grouping")
-(define-symbol int_curr_symbol "sym_int_curr_symbol")
-(define-symbol currency_symbol "sym_currency_symbol")
-(define-symbol mon_decimal_point "sym_mon_decimal_point")
-(define-symbol mon_thousands_sep "sym_mon_thousands_sep")
-(define-symbol mon_grouping "sym_mon_grouping")
-(define-symbol positive_sign "sym_positive_sign")
-(define-symbol negative_sign "sym_negative_sign")
-(define-symbol int_frac_digits "sym_int_frac_digits")
-(define-symbol frac_digits "sym_frac_digits")
-(define-symbol p_cs_precedes "sym_p_cs_precedes")
-(define-symbol p_sep_by_space "sym_p_sep_by_space")
-(define-symbol n_cs_precedes "sym_n_cs_precedes")
-(define-symbol n_sep_by_space "sym_n_sep_by_space")
-(define-symbol p_sign_posn "sym_p_sign_posn")
-(define-symbol n_sign_posn "sym_n_sign_posn")
-
-(define-cproc sys-localeconv ()
-  "  struct lconv *lc = localeconv();
-  ScmObj h = SCM_NIL, t = SCM_NIL;
-
-#define APPCONS(a, b) SCM_APPEND1(h, t, Scm_Cons(a, b))
-
-  APPCONS(sym_decimal_point, SCM_MAKE_STR_COPYING(lc->decimal_point));
-  APPCONS(sym_thousands_sep, SCM_MAKE_STR_COPYING(lc->thousands_sep));
-  APPCONS(sym_grouping, SCM_MAKE_STR_COPYING(lc->grouping));
-  APPCONS(sym_int_curr_symbol, SCM_MAKE_STR_COPYING(lc->int_curr_symbol));
-  APPCONS(sym_currency_symbol, SCM_MAKE_STR_COPYING(lc->currency_symbol));
-  APPCONS(sym_mon_decimal_point, SCM_MAKE_STR_COPYING(lc->mon_decimal_point));
-  APPCONS(sym_mon_thousands_sep, SCM_MAKE_STR_COPYING(lc->mon_thousands_sep));
-  APPCONS(sym_mon_grouping, SCM_MAKE_STR_COPYING(lc->mon_grouping));
-  APPCONS(sym_positive_sign, SCM_MAKE_STR_COPYING(lc->positive_sign));
-  APPCONS(sym_negative_sign, SCM_MAKE_STR_COPYING(lc->negative_sign));
-  APPCONS(sym_int_frac_digits, SCM_MAKE_INT(lc->int_frac_digits));
-  APPCONS(sym_frac_digits, SCM_MAKE_INT(lc->frac_digits));
-  APPCONS(sym_p_cs_precedes, SCM_MAKE_BOOL(lc->p_cs_precedes));
-  APPCONS(sym_p_sep_by_space, SCM_MAKE_BOOL(lc->p_sep_by_space));
-  APPCONS(sym_n_cs_precedes, SCM_MAKE_BOOL(lc->n_cs_precedes));
-  APPCONS(sym_n_sep_by_space, SCM_MAKE_BOOL(lc->n_sep_by_space));
-  APPCONS(sym_p_sign_posn, SCM_MAKE_INT(lc->p_sign_posn));
-  APPCONS(sym_n_sign_posn, SCM_MAKE_INT(lc->n_sign_posn));
-#undef APPCONS
-  return h;")
 
 ;;---------------------------------------------------------------------
 ;; math.h
@@ -501,34 +454,6 @@
 (define-cproc sys-getgid ()  (return <int> "getgid"))
 (define-cproc sys-geteuid () (return <int> "geteuid"))
 (define-cproc sys-getuid ()  (return <int> "getuid"))
-
-(define-cproc sys-getgroups ()
-  "
-#ifndef NGROUPS
-#define NGROUPS 32
-#endif
-  gid_t glist[NGROUPS], *pglist = glist;
-  int size = NGROUPS;
-  for (;;) {
-    int i, n = getgroups(size, pglist);
-    if (n >= 0) {
-      ScmObj head = SCM_NIL, tail = SCM_NIL;
-      for (i=0; i<n; i++) SCM_APPEND1(head, tail, Scm_MakeInteger(pglist[i]));
-      SCM_RETURN(head);
-    }
-    if (errno == EINVAL) {
-      size += NGROUPS;
-      pglist = (gid_t *)SCM_MALLOC(size * sizeof(gid_t));
-    } else {
-      Scm_SysError(\"getgroups failed\");
-    }
-  }
-  /* NOTREACHED */")
-
-(define-cproc sys-getlogin ()
-  "  const char *p = getlogin();
-  if (p) SCM_RETURN(SCM_MAKE_STR_COPYING(p));
-  else SCM_RETURN(SCM_FALSE);")
 
 (define-cproc sys-getpid ()  (return <int> "getpid"))
 (define-cproc sys-getppid () (return <int> "getppid"))

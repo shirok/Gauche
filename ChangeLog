@@ -1,3 +1,8 @@
+2002-12-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/* : moved sys-getgroups, sys-getlogin and sys-localeconv
+	  here.
+
 2002-12-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm, test/* : added test-error API, and rewrote

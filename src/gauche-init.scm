@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.100 2002-12-13 11:41:40 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.101 2002-12-13 13:17:55 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -189,7 +189,8 @@
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname sys-putenv
-          sys-gettimeofday sys-utime)
+          sys-gettimeofday sys-chown sys-utime
+          sys-getgroups sys-getlogin sys-localeconv)
 
 (autoload gauche.defvalues
           (:macro define-values) (:macro set!-values))
