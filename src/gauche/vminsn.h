@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vminsn.h,v 1.40.2.2 2004-12-23 09:39:56 shirok Exp $
+ *  $Id: vminsn.h,v 1.40.2.3 2004-12-23 10:01:12 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -44,6 +44,11 @@ DEFINSN(SCM_VM_NOP, "NOP", 0)
  *  NOP, but appears at the point where instruction graph merges.
  */
 DEFINSN(SCM_VM_MNOP, "MNOP", 0)
+
+/* CONST <obj>
+ *  val0 <- <obj>
+ */
+DEFINSN(SCM_VM_CONST, "CONST", 0)
 
 /* PUSH
  *
@@ -145,10 +150,13 @@ DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
  */
 DEFINSN(SCM_VM_LET, "LET", 1)
 
-/* TAIL_LET(NLOCALS)
+/* TAIL-LET(NLOCALS)
  *
  *  Let-family at the tail position.  No need to push the
  *  continuation.
+ *  Actually, TAIL-LET can be used anywhere if there's no
+ *  argument pushed after the last continuation frame.
+ *  So the name is misleading---maybe LET-BOTTOM or something.
  */
 DEFINSN(SCM_VM_TAIL_LET, "TAIL-LET", 1)
 
@@ -170,6 +178,8 @@ DEFINSN(SCM_VM_RECEIVE, "RECEIVE", 2)
 /* TAIL-RECEIVE(NARGS,RESTARG)
  *
  *  Tail position of receive.  No need to push the continuation.
+ *  Actually, TAIL-RECEIVE can be used anywhere if there's no
+ *  argument pushed after the last continuation frame.  See TAIL-LET.
  */
 DEFINSN(SCM_VM_TAIL_RECEIVE, "TAIL-RECEIVE", 2)
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.2 2004-12-23 09:39:55 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.3 2004-12-23 10:00:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -483,16 +483,23 @@ void Scm__InitVM(void)
 
         FETCH_INSN(code);
 
+#if 0
         if (!SCM_VM_INSNP(code)) {
             /* literal object */
             val0 = code;
             vm->numVals = 1;
             continue;
         }
+#endif
 
         /* VM instructions */
         SWITCH(SCM_VM_INSN_CODE(code)) {
 
+            CASE(SCM_VM_CONST) {
+                val0 = *pc++;
+                NEXT;
+            }
+            
             CASE(SCM_VM_PUSH) {
                 CHECK_STACK(0);
                 PUSH_ARG(val0);
@@ -2986,6 +2993,7 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
         if (!SCM_VM_INSNP(insn)) {
             /* constant */
             pk_constant(data, insn);
+            pk_emit(data, SCM_VM_INSN(SCM_VM_CONST));
             pk_emit(data, insn);
             continue;
         }
@@ -3282,12 +3290,6 @@ void Scm_CompiledCodeDump(ScmObj obj)
             int code;
 
             info = Scm_Assq(SCM_MAKE_INT(i), cc->info);
-
-            if (!SCM_VM_INSNP(insn)) {
-                Scm_Printf(out, "  %4d CONST %S", i, insn);
-                goto show_info;
-            }
-            
             code = SCM_VM_INSN_CODE(insn);
             Scm_Printf(out, "  %4d %A ", i, Scm_VMInsnInspect(insn));
             switch (code) {
@@ -3304,6 +3306,7 @@ void Scm_CompiledCodeDump(ScmObj obj)
             case SCM_VM_GREF:;
             case SCM_VM_GSET:;
             case SCM_VM_QUOTE_INSN:;
+            case SCM_VM_CONST:;
                 Scm_Printf(out, "%S", p[i+1]);
                 i++;
                 break;
