@@ -12,11 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_euc_jp.h,v 1.2 2001-02-05 09:51:47 shiro Exp $
+ *  $Id: char_euc_jp.h,v 1.3 2001-02-13 07:02:19 shiro Exp $
  */
 
 /*
- * For now, we ignore 3-byte encodings.
+ * Not complete, but for now...
  */
 #define SCM_CHAR_NFOLLOWS(ch) \
     ((((unsigned char)(ch)) >= 0x80) ? 1 : 0)
