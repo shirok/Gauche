@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.154 2002-05-25 09:03:34 shirok Exp $
+ *  $Id: vm.c,v 1.155 2002-06-05 22:02:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1851,6 +1851,8 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
  *  - There are messy lonjmp/setjmp stuff involved to keep C stack sane.
  */
 
+#define STACK_DEPTH_LIMIT 30
+
 /* default error reporter */
 static void report_error(ScmObj e)
 {
@@ -1883,6 +1885,10 @@ static void report_error(ScmObj e)
             }
         } else {
             Scm_Printf(SCM_PORT(err), "\n");
+        }
+        if (depth >= STACK_DEPTH_LIMIT) {
+            Scm_Printf(SCM_PORT(err), "... (more stack dump truncated)\n");
+            break;
         }
     }
     /* NB: stderr is autoflushed by default, but in case err is replaced
