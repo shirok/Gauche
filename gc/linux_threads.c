@@ -134,7 +134,6 @@
 #   undef pthread_detach
 #endif
 
-
 void GC_thr_init();
 
 #if DEBUG_THREADS
@@ -511,7 +510,11 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 #  endif
 #endif
 
-sem_t GC_suspend_ack_sem;
+sem_t *GC_suspend_ack_sem;
+
+#if !defined(GC_DARWIN_THREADS)
+sem_t GC_suspend_ack_sem_;
+#endif
 
 #if 0
 /*
@@ -675,7 +678,7 @@ void GC_suspend_handler(int sig)
     /* Tell the thread that wants to stop the world that this   */
     /* thread has been stopped.  Note that sem_post() is  	*/
     /* the only async-signal-safe primitive in LinuxThreads.    */
-    sem_post(&GC_suspend_ack_sem);
+    sem_post(GC_suspend_ack_sem);
     me -> last_stop_count = my_stop_count;
 
     /* Wait until that thread tells us to restart by sending    */
@@ -968,7 +971,7 @@ void GC_stop_world()
 	for (;;) {
 	    int ack_count;
 
-	    sem_getvalue(&GC_suspend_ack_sem, &ack_count);
+	    sem_getvalue(GC_suspend_ack_sem, &ack_count);
 	    if (ack_count == n_live_threads) break;
 	    if (wait_usecs > RETRY_INTERVAL) {
 		int newly_sent = GC_suspend_all();
@@ -979,7 +982,7 @@ void GC_stop_world()
 		               newly_sent);
 	          }
 #               endif
-	        sem_getvalue(&GC_suspend_ack_sem, &ack_count);
+	        sem_getvalue(GC_suspend_ack_sem, &ack_count);
 		if (newly_sent < n_live_threads - ack_count) {
 		    WARN("Lost some threads during GC_stop_world?!\n",0);
 		    n_live_threads = ack_count + newly_sent;
@@ -991,7 +994,7 @@ void GC_stop_world()
 	}
     }
     for (i = 0; i < n_live_threads; i++) {
-    	if (0 != sem_wait(&GC_suspend_ack_sem))
+    	if (0 != sem_wait(GC_suspend_ack_sem))
 	    ABORT("sem_wait in handler failed");
     }
 #   ifdef PARALLEL_MARK
@@ -1291,8 +1294,19 @@ void GC_thr_init()
     if (GC_thr_initialized) return;
     GC_thr_initialized = TRUE;
 
-    if (sem_init(&GC_suspend_ack_sem, 0, 0) != 0)
-    	ABORT("sem_init failed");
+#if defined(GC_DARWIN_THREADS)
+    {
+      char buffer[256];
+      GC_suspend_ack_sem = sem_open (tmpnam (buffer), O_CREAT, 0644, 0);
+      if (GC_suspend_ack_sem == SEM_FAILED)
+	ABORT("sem_open() faild");
+    }
+#else
+    GC_suspend_ack_sem = &GC_suspend_ack_sem_;
+    if (0 != sem_init(GC_suspend_ack_sem, 0, 0))
+      ABORT("sem_init failed");
+#endif /* defined(GC_DARWIN_THREADS) */
+	
 
     act.sa_flags = SA_RESTART;
     if (sigfillset(&act.sa_mask) != 0) {
@@ -1360,6 +1374,9 @@ void GC_thr_init()
 #	if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
           GC_nprocs = GC_get_nprocs();
 #	endif
+#       if defined(GC_DARWIN_THREADS)
+          GC_nprocs = 1;
+#       endif
       }
       if (GC_nprocs <= 0) {
 	WARN("GC_get_nprocs() returned %ld\n", GC_nprocs);
@@ -1496,7 +1513,7 @@ struct start_info {
     void *(*start_routine)(void *);
     void *arg;
     word flags;
-    sem_t registered;   	/* 1 ==> in our thread table, but 	*/
+    sem_t *registered;   	/* 1 ==> in our thread table, but 	*/
 				/* parent hasn't yet noticed.		*/
 };
 
@@ -1626,7 +1643,7 @@ void * GC_start_routine(void * arg)
 	GC_printf1("start_routine = 0x%lx\n", start);
 #   endif
     start_arg = si -> arg;
-    sem_post(&(si -> registered));	/* Last action on si.	*/
+    sem_post((si -> registered));	/* Last action on si.	*/
     					/* OK to deallocate.	*/
     pthread_cleanup_push(GC_thread_exit_proc, 0);
 #   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
@@ -1652,6 +1669,8 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 		  const pthread_attr_t *attr,
                   void *(*start_routine)(void *), void *arg)
 {
+  static int counter = 0;
+  char sem_name[256];
     int result;
     GC_thread t;
     pthread_t my_new_thread;
@@ -1671,7 +1690,16 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     UNLOCK();
     if (!parallel_initialized) GC_init_parallel();
     if (0 == si) return(ENOMEM);
-    sem_init(&(si -> registered), 0, 0);
+
+#if defined(GC_DARWIN_THREADS)
+    si -> registered = sem_open (tmpnam (sem_name), O_CREAT, 0644, 0);
+    if (si->registered == SEM_FAILED)
+      ABORT ("sem_open() failded");
+#else
+    si->registered = (sem_t *)GC_INTERNAL_MALLOC (sizeof (sem_t), NORMAL);
+    sem_init(si -> registered, 0, 0);
+#endif
+    
     si -> start_routine = start_routine;
     si -> arg = arg;
     LOCK();
@@ -1697,10 +1725,19 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     /* This also ensures that we hold onto si until the child is done	*/
     /* with it.  Thus it doesn't matter whether it is otherwise		*/
     /* visible to the collector.					*/
-        while (0 != sem_wait(&(si -> registered))) {
-	    if (EINTR != errno) ABORT("sem_wait failed");
+        while (0 != sem_wait((si -> registered))) {
+	  if (EINTR != errno) {
+	    ABORT("sem_wait failed");
+	  }
 	}
-        sem_destroy(&(si -> registered));
+#if defined(GC_DARWIN_THREADS)
+        sem_close(si -> registered);
+#else
+	sem_destroy(si -> registered);
+	LOCK();
+	GC_INTERNAL_FREE(si->registered);
+	UNLOCK();
+#endif
 	LOCK();
 	GC_INTERNAL_FREE(si);
 	UNLOCK();

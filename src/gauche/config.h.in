@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.32 2002-12-12 22:09:52 shirok Exp $
+ * $Id: config.h.in,v 1.33 2003-03-28 23:29:07 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -93,6 +93,7 @@
 #undef GC_SOLARIS_PTHREADS
 #undef GC_IRIX_THREADS
 #undef GC_WIN32_THREADS
+#undef GC_DARWIN_THREADS
 #undef _POSIX_C_SOURCE
 #undef _REENTRANT
 

@@ -144,6 +144,11 @@ dnl	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	INCLUDES="$INCLUDES -pthread"
 	THREADLIBS="-lpthread -lrt"
 	;;
+     *-*-darwin*)
+	AC_DEFINE(GC_DARWIN_THREADS)
+	AC_DEFINE(GC_PTHREADS)
+	INCLUDES="$INCLUDES -I/sw/include"
+	;;
     esac
     ;;
  win32)

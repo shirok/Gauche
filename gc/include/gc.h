@@ -60,6 +60,9 @@
 #if defined(WIN32_THREADS)
 # define GC_WIN32_THREADS
 #endif
+#if defined(DARWIN_THREADS)
+# define GC_DARWIN_THREADS
+#endif
 #if defined(USE_LD_WRAP)
 # define GC_USE_LD_WRAP
 #endif
@@ -84,7 +87,7 @@
 # if defined(GC_SOLARIS_PTHREADS) || defined(GC_FREEBSD_THREADS) || \
 	defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
 	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
-	defined(GC_DGUX386_THREADS) || \
+        defined(GC_DGUX386_THREADS) || defined(GC_DARWIN_THREADS) || \
         (defined(GC_WIN32_THREADS) && defined(__CYGWIN32__))
 #   define GC_PTHREADS
 # endif

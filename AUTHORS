@@ -6,11 +6,15 @@ Alex Shinn (foof@synthcode.com) - lib/gauche/reload.scm etc.
 Makoto Satoh (makotosato2@yahoo.co.jp) - document translation
 
 Patches from:
-John Kilburg
-Hiroshi INAMURA
-ODA Hideo
-Shin-ichi Hirata
 Abe Hiroshi
-MINOURA Makoto
+Grzegorz Chrupala
+Hiroshi INAMURA
+HISAZUMI Kenji
+Jiro KANAYAMA
+John Kilburg
 KIMURA Shigenobu
+MINOURA Makoto
+ODA Hideo
+OGURISU Osamu
+Shin-ichi Hirata
 Yuuki Takahashi

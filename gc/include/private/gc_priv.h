@@ -1886,11 +1886,15 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 #      define SIG_SUSPEND SIGPWR
 #    endif
 #   else  /* !GC_LINUX_THREADS */
+#    if defined(GC_DARWIN_THREADS)
+#      define SIG_SUSPEND SIGUSR2
+#    else
 #     if defined(_SIGRTMIN)
 #       define SIG_SUSPEND _SIGRTMIN + 6
 #     else
 #       define SIG_SUSPEND SIGRTMIN + 6
-#     endif       
+#     endif
+#    endif
 #   endif
 #  endif /* !SIG_SUSPEND */
   

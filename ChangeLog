@@ -1,3 +1,10 @@
+2003-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, gc/configure.in, gc/include/gc.h,
+	  gc/include/private/gc_priv.h, gc/linux_threads.c,
+	  src/gauche/config.h.in : applied a patch from HISAZUMI Kenji
+	  to make pthreads work on Darwin.
+
 2003-03-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/charset.c (Scm_CharSetLE): implemented to-arg char-set<= in C,
