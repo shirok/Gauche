@@ -1,3 +1,8 @@
+2004-02-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (readline_body): fixed a line count problem
+	  (Patch from HIRAUCHI Hideyuki).
+
 2004-02-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/src/sxpath-ext.scm (sxml:equality-cmp): replaced
