@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: reload.scm,v 1.3 2002-11-15 01:51:18 shirok Exp $
+;;;  $Id: reload.scm,v 1.4 2003-09-07 03:36:07 shirok Exp $
 ;;;
 
 ;;; Created:    <2002-11-06 16:02:55 foof>
@@ -47,25 +47,6 @@
 ;;                 | (or  <rule> ...)
 ;;                 | (not <rule>)
 (define module-reload-rules (make-parameter '()))
-
-;; make a regexp from a basic glob, handles *, ? and [] groups, adapted
-;; from the pleac_guile version
-(define (glob->regexp pat)
-  (let loop ((chars (string->list pat)) (ls '("^")))
-    (if (null? chars)
-      (string->regexp (string-concatenate (reverse (cons "$" ls))))
-      (let1 c (car chars)
-        (if (eq? c #\\)
-          (loop (cddr chars) (cons (cadr chars) ls))
-          (loop (cdr chars)
-                (cons (case c
-                        ((#\*) "[^.]*")
-                        ((#\?) "[^.]")
-                        ((#\[) "[")
-                        ((#\]) "]")
-                        ((#\.) "\\.")
-                        (else  (make-string 1 c)))
-                      ls)))))))
 
 ;; find-file-in-paths from file.util doesn't work on foo/bar searches
 (define (find-in-path file path)
@@ -119,7 +100,6 @@
            (lambda (sym value)
              (eval `(set! ,sym (quote ,value)) mod)))))))
 
-
 ;; procedure reload-modified-modules &optional <reload-rules>
 ;;   Reloads modules that are modified after this module is loaded.
 (define reload-modified-modules
@@ -130,7 +110,7 @@
       ;; regexps up front
       (define rules
         (map (lambda (x)
-               (cons (glob->regexp (symbol->string (car x))) (cdr x)))
+               (cons (glob-pattern->regexp (symbol->string (car x))) (cdr x)))
              (if (pair? rl) (car rl) (module-reload-rules))))
       ;; search for the module name in ls
       (define (find-rule name ls)
@@ -153,6 +133,23 @@
                (hash-table-put! mod-times name now)
                (reload name rule))))
          (all-modules))))))
+
+;; small util
+(define (glob-pattern->regexp pat)
+  (with-string-io pat
+    (lambda ()
+      (display "^")
+      (let loop ((c (read-char)))
+        (unless (eof-object? c)
+          (case c
+            ((#\?) (display "[^.]") (loop (read-char)))
+            ((#\*) (display "[^.]*") (loop (read-char)))
+            ((#\\) (let1 c2 (read-char)
+                     (unless (eof-object? c2)
+                       (write-char c2) (loop (read-char)))))
+            ((#\.) (display "\\.") (loop (read-char)))
+            (else (write-char c) (loop (read-char))))))
+      (display "$"))))
 
 (provide "gauche/reload")
 
