@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.161 2002-06-26 11:34:04 shirok Exp $
+;;; $Id: extlib.stub,v 1.162 2002-07-01 08:52:06 shirok Exp $
 ;;;
 
 "
@@ -45,6 +45,9 @@
    if (opt == sym_eqv) return SCM_CMP_EQV;
    Scm_Error(\"unrecognized compare mode: %S\", opt);
    return 0; /* dummy */ }"
+
+(define-cproc compare (x y)
+  "SCM_RETURN(SCM_MAKE_INT(Scm_Compare(x, y)));")
 
 ;;
 ;; 6.2  Numbers

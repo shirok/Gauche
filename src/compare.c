@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compare.c,v 1.8 2002-05-27 22:09:27 shirok Exp $
+ *  $Id: compare.c,v 1.9 2002-07-01 08:52:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -32,13 +32,16 @@ int Scm_Compare(ScmObj x, ScmObj y)
         return Scm_NumCmp(x, y);
     if (SCM_STRINGP(x) && SCM_STRINGP(y))
         return Scm_StringCmp(SCM_STRING(x), SCM_STRING(y));
+    if (SCM_CHARP(x) && SCM_CHARP(y))
+        return SCM_CHAR_VALUE(x) == SCM_CHAR_VALUE(y)? 0 :
+            SCM_CHAR_VALUE(x) < SCM_CHAR_VALUE(y)? -1 : 1;
 
     cx = Scm_ClassOf(x);
     cy = Scm_ClassOf(y);
     if (Scm_SubtypeP(cx, cy)) {
-        if (cy->compare) return cy->compare(x, y);
+        if (cy->compare) return cy->compare(x, y, FALSE);
     } else {
-        if (cx->compare) return cx->compare(x, y);
+        if (cx->compare) return cx->compare(x, y, FALSE);
     }
     Scm_Error("can't compare %S and %S", x, y);
     return 0; /* dummy */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.82 2002-07-01 00:56:25 shirok Exp $
+ *  $Id: class.c,v 1.83 2002-07-01 08:52:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -38,7 +38,7 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
 static void scheme_slot_default(ScmObj obj);
 static void initialize_builtin_cpl(ScmClass *klass);
 
-static int object_compare(ScmObj x, ScmObj y);
+static int object_compare(ScmObj x, ScmObj y, int equalp);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
@@ -120,6 +120,7 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, Scm_NoNextMethod, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -287,11 +288,12 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
  *     If this function pointer is not set, a default print method
  *     is used.
  *
- *  int klass->compare(ScmObj x, ScmObj y)
- *     X and Y are instances of klass.  If the instance is orderable,
- *     returns -1, 0, or 1, when X < Y, X == Y or X > Y, respectively.
- *     If the instance is not orderable, returns -1 if X != Y and
- *     0 if X == Y.
+ *  int klass->compare(ScmObj x, ScmObj y, int equalp)
+ *     X and Y are instances of klass.  If equalp is FALSE, 
+ *     return -1, 0, or 1, when X < Y, X == Y or X > Y, respectively.
+ *     In case if klass is not orderable, it can signal an error.
+ *     If equalp is TRUE, just test the equality: return -1 if X != Y
+ *     and 0 if X == Y.
  *
  *  int klass->serialize(ScmObj obj, ScmPort *sink, ScmObj table)
  *     OBJ is an instance of klass.  This method is only called when OBJ
@@ -1134,11 +1136,45 @@ static SCM_DEFINE_METHOD(object_initialize_rec,
 
 /* Default equal? delegates compare action to generic function object-equal?.
    We can't use VMApply here */
-static int object_compare(ScmObj x, ScmObj y)
+static int object_compare(ScmObj x, ScmObj y, int equalp)
 {
-    ScmObj r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectEqualP), SCM_LIST2(x, y));
-    return (SCM_FALSEP(r)? -1 : 0);
+    ScmObj r;
+    if (equalp) {
+        r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectEqualP), SCM_LIST2(x, y));
+        return (SCM_FALSEP(r)? -1 : 0);
+    } else {
+        r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectCompare), SCM_LIST2(x, y));
+        if (SCM_INTP(r)) {
+            int ri = SCM_INT_VALUE(r);
+            if (ri < 0) return -1;
+            if (ri > 0) return 1;
+            else return 0;
+        }
+        Scm_Error("object %S and %S can't be ordered", x, y);
+        return 0;               /* dummy */
+    }
 }
+
+/* Fallback methods */
+static ScmObj object_compare_default(ScmNextMethod *nm, ScmObj *args,
+                                     int nargs, void *data)
+{
+    return SCM_FALSE;
+}
+
+static ScmClass *object_compare_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_TopClass), SCM_CLASS_STATIC_PTR(Scm_TopClass)
+};
+static SCM_DEFINE_METHOD(object_compare_rec,
+                         &Scm_GenericObjectCompare,
+                         2, 0,
+                         object_compare_SPEC,
+                         object_compare_default, NULL);
+static SCM_DEFINE_METHOD(object_equalp_rec,
+                         &Scm_GenericObjectEqualP,
+                         2, 0,
+                         object_compare_SPEC,
+                         object_compare_default, NULL);
 
 /*=====================================================================
  * Generic function
@@ -1889,6 +1925,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
     GINIT(&Scm_GenericObjectEqualP, "object-equal?");
+    GINIT(&Scm_GenericObjectCompare, "object-compare");
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);
@@ -1899,4 +1936,6 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&method_initialize_rec);
     Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
     Scm_InitBuiltinMethod(&method_more_specific_p_rec);
+    Scm_InitBuiltinMethod(&object_equalp_rec);
+    Scm_InitBuiltinMethod(&object_compare_rec);
 }

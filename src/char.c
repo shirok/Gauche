@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.28 2002-06-17 05:43:21 shirok Exp $
+ *  $Id: char.c,v 1.29 2002-07-01 08:52:05 shirok Exp $
  */
 
 #include <ctype.h>
@@ -143,7 +143,7 @@ int Scm_CharToUcs(ScmChar ch)
  */
 
 static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext*);
-static int charset_compare(ScmObj x, ScmObj y);
+static int charset_compare(ScmObj x, ScmObj y, int equalp);
 SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
                          charset_print, charset_compare, NULL, NULL,
                          SCM_CLASS_DEFAULT_CPL);
@@ -264,7 +264,7 @@ ScmObj Scm_CopyCharSet(ScmCharSet *src)
 /*-----------------------------------------------------------------
  * Comparison
  */
-static int charset_compare(ScmObj x, ScmObj y)
+static int charset_compare(ScmObj x, ScmObj y, int equalp)
 {
     return 1;                   /* for now */
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.270 2002-06-25 06:28:04 shirok Exp $
+ *  $Id: gauche.h,v 1.271 2002-07-01 08:52:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -398,7 +398,7 @@ struct ScmClassRec {
     ScmClass **classPtr;
 #endif
     void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
-    int (*compare)(ScmObj x, ScmObj y);
+    int (*compare)(ScmObj x, ScmObj y, int equalp);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
     ScmClass **cpa;
