@@ -1,6 +1,6 @@
 2004-12-22  Shiro Kawai  <shiro@acm.org>
 
-	* src/vm.c, src/gauche/vm.h, src/gauche/vminsn.h,
+	* src/vm.c, src/gauche/vm.h,
 	  src/compile.c, src/proc.c, src/builtin-syms.scm :
 	  Changed VM to use code-vector instead of directed graph.
 	  The compiled code is now converted to ScmCompiledCode before

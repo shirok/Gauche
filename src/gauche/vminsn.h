@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vminsn.h,v 1.40.2.1 2004-12-23 06:57:36 shirok Exp $
+ *  $Id: vminsn.h,v 1.40.2.2 2004-12-23 09:39:56 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -127,22 +127,21 @@ DEFINSN(SCM_VM_RET, "RET", 0)
 DEFINSN(SCM_VM_DEFINE, "DEFINE", 0)
 DEFINSN(SCM_VM_DEFINE_CONST, "DEFINE-CONST", 0)
 
-/* LAMBDA(NARGS,RESTARG) <CODE>
+/* LAMBDA(NARGS,RESTARG) <COMPILED-CODE>
  *
  *  Create a closure capturing current environment.
  *  CODE is the compiled code.   Leaves created closure in the stack.
- *
- *  [NVM] the operand is ScmCompiledCode instance.
  */
 DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
 
-/* LET(NLOCALS) <BODY>
+/* LET(NLOCALS) <CONT-OFFSET>
  *
  *  Create a new environment frame, size of NLOCALS.  let-families
  *  like let, let* and letrec yields this instruction.
- *
- *  [NVM] the operand is an integer offset of the continuation.
- *  It may be 0 if this is the tail call.
+ *  This instruction needs to push the continuation frame to
+ *  protect the values currently pushed on the stack after the last
+ *  continuation frame.  <CONT-OFFSET> is the instruction offset
+ *  after the let form resumes.
  */
 DEFINSN(SCM_VM_LET, "LET", 1)
 
@@ -151,24 +150,28 @@ DEFINSN(SCM_VM_LET, "LET", 1)
  *  Let-family at the tail position.  No need to push the
  *  continuation.
  */
-DEFINSN(SCM_VM_TAIL_LET, "LET", 1)
+DEFINSN(SCM_VM_TAIL_LET, "TAIL-LET", 1)
 
-/* IF  <THEN-CODE>
+/* IF <ELSE-OFFSET>
  *
- *  If val0 is true, transfer control to THEN-CODE.  Otherwise
- *  it continues execution.   Test arg is popped.
- *
- *  [NVM] first operand contains the offset of the else code
- *  from the base.
+ *  If val0 is true, transfer control to next insn.  Otherwise,
+ *  jump to <ELSE-OFFSET>.
  */
 DEFINSN(SCM_VM_IF, "IF", 0)
 
-/* RECEIVE(NARGS,RESTARG) <BODY> ...
+/* RECEIVE(NARGS,RESTARG) <CONT-OFFSET>
  *
  *  Primitive operation for receive and call-with-values.
- *  Turn the multiple values into an environment, then evaluate <BODY> ...
+ *  Like LET, this pushes the continuation frame to resume the
+ *  operation from CONT-OFFSET.
  */
 DEFINSN(SCM_VM_RECEIVE, "RECEIVE", 2)
+
+/* TAIL-RECEIVE(NARGS,RESTARG)
+ *
+ *  Tail position of receive.  No need to push the continuation.
+ */
+DEFINSN(SCM_VM_TAIL_RECEIVE, "TAIL-RECEIVE", 2)
 
 /* LSET(DEPTH, OFFSET)
  *
@@ -278,6 +281,7 @@ DEFINSN(SCM_VM_APPEND, "APPEND", 1)
 DEFINSN(SCM_VM_NOT, "NOT", 0)
 DEFINSN(SCM_VM_REVERSE, "REVERSE", 0)
 DEFINSN(SCM_VM_APPLY, "APPLY", 1)
+DEFINSN(SCM_VM_TAIL_APPLY, "TAIL-APPLY", 1)
 /*DEFINSN(SCM_VM_NOT_NULLP, "NOT-NULL?", 0)*/
 /*DEFINSN(SCM_VM_FOR_EACH, "FOR-EACH", 1)*/
 /*DEFINSN(SCM_VM_MAP, "MAP", 1)*/
