@@ -1,15 +1,16 @@
-;; Tool to create symlinks from main source tree to extension modules,
+;; A tool to create symlinks from main source tree to extension modules,
 ;; or to remove them.  This is useful to test gosh in the source tree,
 ;; without installing them.
 ;; Such links are only interest of developers; they must be cleaned out
 ;; to create a distribution tarball.
 ;;
-;; $Id: xlink,v 1.1 2002-04-17 03:28:01 shirok Exp $
+;; $Id: xlink,v 1.2 2002-05-21 06:29:08 shirok Exp $
 ;;
 
 (use gauche.parseopt)
 (use srfi-1)
 (use srfi-13)
+(use file.util)
 
 (define (usage)
   (print "Usage: gosh xlink [-l|-u][-d dir] <scm-or-so-file> ...\n"
@@ -52,6 +53,8 @@
                            "/" 'suffix)
                           ""))
          (target #`"../,|target-path|ext/,|mydir|/,|file|"))
+    (when (and dir (not (file-exists? #`"../../lib/,|dir|")))
+      (make-directory* #`"../../lib/,|dir|"))
     (values name target)))
 
 (define (process-so mydir file)
