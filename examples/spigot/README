@@ -22,12 +22,16 @@ This command creates "configure" from configure.in.
 
   % autoconf -I `gauche-config --ac`
 
+Don't forget to include the generated 'configure' script when
+you distribute your extension, so that the users won't need
+autoconf.
+
 Once configure is generated, you can create Makefile by
 running configure script.
 
   % ./configure
 
-Configure script automatically finds installed Gauche,
+The configure script automatically finds installed Gauche,
 and picks right options to compile and link.
 Now, 'make' builds the extension, 'make check' runs
 the test, and 'make install' installs the extension
