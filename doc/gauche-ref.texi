@@ -4,10 +4,10 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.9 2001-05-26 21:48:46 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.10 2001-05-28 07:05:51 shirok Exp $
 
 @c module and class index
-@defcodeindex mo
+@defcodeindex md
 @defcodeindex cl
 
 @iftex
@@ -208,7 +208,7 @@ Gauche has a CLOS-style object system, with metaobject protocol.
 For those who are familiar with SmallTalk style object system,
 the CLOS-style multimethod may look strange.  I describe several
 characteristics of Gauche object system here.
-@xref{Object System} for details.
+@xref{Object System}, for details.
 
 @table @emph
 @item Everything is an object.
@@ -531,26 +531,26 @@ It is an error to pass non-module object.
 Several modules are predefined in Gauche.
 
 @deftp {Builtin Module} null
-@moindex null
+@mdindex null
 This module corresponds to the null environment referred in R5RS.
 This module contains only syntactic bindings of built-in Gauche
 special forms.
 @end deftp
 
 @deftp {Builtin Module} scheme
-@moindex scheme
+@mdindex scheme
 This module contains all the binding of @code{null} module,
 and the binding of procedures defined in R5RS.
 @end deftp
 
 @deftp {Builtin Module} gauche
-@moindex gauche
+@mdindex gauche
 This module contains all the bindings of @code{scheme} module,
 plus Gauche specific built-in procedures.
 @end deftp
 
 @deftp {Builtin Module} user
-@moindex user
+@mdindex user
 This module is the default module the user code is compiled.
 all the bindings of @code{gauche} module is imported.
 @end deftp
@@ -1157,7 +1157,7 @@ Further operations, such as set algebra, is defined in SRFI-14
 module (See @ref{Character-set library}).
 @end deftp
 
-@deftp {Reader Syntax} #\[@i{char-set-spec}]
+@deftp {Reader Syntax} @code{#\[@i{char-set-spec}]}
 @end deftp
 
 @defun char-set? obj
@@ -1219,31 +1219,45 @@ using @code{list->string} is faster than using @code{make-string} and
 @end defun
 
 @defun string char @dots{}
-[R5RS]
+[R5RS] Returns a string consisted by @var{char} @dots{}.
 @end defun
 
 @node String Accessors & Modifiers
 @subsection String Accessors & Modifiers
 
 @defun string-length string
-[R5RS]
+[R5RS] Returns a length of (possibly incomplete) string @var{string}.
 @end defun
 
 @defun string-size string
+Returns a size of (possibly incomplete) @var{string}.
+A size of string is a number of bytes @var{string} occupies on memory.
+The same string may have different sizes if the native encoding scheme
+differs.
+
+For incomplete string, its length and its size always match.
 @end defun
 
-@defun string-ref string k
-[R5RS]
+@defun string-ref cstring k
+[R5RS] Returns @var{k}-th character of a complete string @var{cstring}.
+@var{k} must be greater than or equal to zero, and less than
+@code{(string-length @var{cstring})}.
+
+It is an error to pass an incomplete string.
 @end defun
 
 @defun string-byte-ref string k
+Returns @var{k-th} byte of a (possibly incomplete) string @var{string}.
+Returned value is an integer in the range between 0 and 255.
+@var{k} must be greater than or equal to zero, and less than
+@code{(string-size @var{string})}.
 @end defun
 
 @defun string-set! string k char
 [R5RS]
 @end defun
 
-@defun string-byte=set! string k byte
+@defun string-byte-set! string k byte
 @end defun
 
 @node String Comparison
@@ -1276,20 +1290,20 @@ using @code{list->string} is faster than using @code{make-string} and
 [R5RS]
 @end defun
 
-@defun string->list string [start end]
+@defun string->list string &optional start end
 @defunx list->string list
 [R5RS+][SRFI-13]
 @end defun
 
-@defun string-copy string [start end]
+@defun string-copy string &optional start end
 [R5RS+][SRFI-13]
 @end defun
 
-@defun string-fill! string char [start end]
+@defun string-fill! string char &optional start end
 [R5RS+][SRFI-13]
 @end defun
 
-@defun string-join strs [delim grammer]
+@defun string-join strs &optional delim grammer
 [SRFI-13]
 @end defun
 
@@ -1299,6 +1313,17 @@ using @code{list->string} is faster than using @code{make-string} and
 
 @node String Pointers
 @subsection String Pointers
+
+@deftp {Builtin Class} <string-pointer>
+@clindex string-pointer
+String pointer is an object to access string efficiently in sequential
+order (either forward or backward).
+
+Higher level string iterators and accessors are constructed on top of 
+this primitive.  @xref{String library}, for details.
+It is highly recommended to use SRFI-13 functions instead of these
+string pointer objects, for portability.
+@end deftp
 
 @defun make-string-pointer str &optional index
 @end defun
@@ -2065,20 +2090,31 @@ function signals an error.
 @end defun
 
 @defun sys-getcwd
+[POSIX] Returns the current working directory by a string.
+If the current working directory couldn't be obtained from the system,
+an error is signalled.
 @end defun
 
 @defun sys-getgid
 @defunx sys-getegid
+[POSIX] Returns integer value of real and effective group id of the
+current process, respectively.
 @end defun
 
 @defun sys-getuid
 @defunx sys-geteuid
+[POSIX] Returns integer value of real and effective user id of the
+current process, respectively.
 @end defun
 
 @defun sys-getgroups
+[POSIX] Returns a list of integer ids of supplementary groups.
 @end defun
 
 @defun sys-getlogin
+[POSIX] Returns a string of the name of the user logged in on the
+controlling terminal of the current process.
+If the system can't determine the information, @code{#f} is returned.
 @end defun
 
 @defun sys-getpgrp
@@ -2408,7 +2444,7 @@ of descendants of @var{class}.
 @section @code{gauche.charconv} - Character Code Conversion
 
 @deftp {Module} gauche.charconv
-@moindex gauche.charconv
+@mdindex gauche.charconv
 
 @end deftp
 
@@ -2423,7 +2459,7 @@ of descendants of @var{class}.
 @section @code{gauche.net} - Networking
 
 @deftp {Module} gauche.net
-@moindex gauche.net
+@mdindex gauche.net
 @end deftp
 
 @node High-level functions
@@ -2489,7 +2525,7 @@ of descendants of @var{class}.
 @section @code{gauche.process} - Object-oriented interface for processes
 
 @deftp {Module} gauche.process
-@moindex gauche.process
+@mdindex gauche.process
 This module provides a higher-level API of Unix process control,
 implemented on top of low-level system calls such as @code{sys-fork}
 and @code{sys-exec}.  The interface is mostly compatible with
@@ -2545,7 +2581,7 @@ An object to keep the status of a child process.
 @section @code{gauche.regexp} - Regular expression library
 
 @deftp {Module} gauche.regexp
-@moindex gauche.regexp
+@mdindex gauche.regexp
 This module defines some macros useful in regexp match.
 
 The interface is borrowed from scsh, but I changed the name of
@@ -2634,7 +2670,7 @@ evaluated.
 @section @code{gauche.serializer} - Serializer
 
 @deftp {Module} gauche.serializer
-@moindex gauche.serializer
+@mdindex gauche.serializer
 @end deftp
 
 
@@ -2643,7 +2679,7 @@ evaluated.
 @section @code{gauche.test} - Unit Testing
 
 @deftp {Module} gauche.test
-@moindex gauche.test
+@mdindex gauche.test
 Defines a set of functions to write test scripts.
 A test script will look like this:
 @lisp
@@ -2710,7 +2746,7 @@ Prints out list of failed tests.
 @section @code{rfc.base64} - Base64 encoding/decoding
 
 @deftp {Module} rfc.base64
-@moindex rfc.base64
+@mdindex rfc.base64
 @end deftp
 
 
@@ -2732,7 +2768,7 @@ Prints out list of failed tests.
 @section @code{slib} - SLIB interface
 
 @deftp {Module} slib
-@moindex slib
+@mdindex slib
 This module is the interface to the Aubrey Jaffer's SLIB.
 To use SLIB, say @code{(use slib)}.   SLIB itself is not included
 in Gauche distribution.   If you don't have it on your system,
@@ -2753,7 +2789,7 @@ module @code{slib}.
 @section @code{srfi-0} - Feature Conditional
 
 @deftp {Module} srfi-0
-@moindex srfi-0
+@mdindex srfi-0
 @end deftp
 
 @defmac cond-expand (feature-requirement command-or-definition @dots{}) @dots{}
@@ -2765,7 +2801,7 @@ module @code{slib}.
 @section @code{srfi-1} - List library
 
 @deftp {Module} srfi-1
-@moindex srfi-1
+@mdindex srfi-1
 SRFI-1 is a rich collection of list manipulation library.
 It is available by saying @code{(use srfi-1)}.
 The implementation is based on Olin Shivers's reference implementation.
@@ -3203,7 +3239,7 @@ this function is just a synonym of @code{map}.
 @subsection List deletion
 
 @defun delete x list &optional elt=
-@defunx delete x list &optional elt=
+@defunx delete! x list &optional elt=
 [SRFI-1]
 @end defun
 
@@ -3277,7 +3313,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @section @code{srfi-2} - And-let*
 
 @deftp {Module} srfi-2
-@moindex srfi-2
+@mdindex srfi-2
 @end deftp
 
 @defmac and-let* (bindings @dots{}) body @dots{}
@@ -3288,7 +3324,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @section @code{srfi-4} - Homogeneous Vectors
 
 @deftp {Module} srfi-4
-@moindex srfi-4
+@mdindex srfi-4
 @end deftp
 
 @deftp {Builtin Class} <s8vector>
@@ -3460,7 +3496,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @section @code{srfi-6} - String ports
 
 @deftp {Module} srfi-6
-@moindex srfi-6
+@mdindex srfi-6
 String ports, defined in SRFI-6, are builtin feature of Gauche.
 The form @code{(use srfi-6)} doesn't do anything.
 @end deftp
@@ -3470,7 +3506,7 @@ The form @code{(use srfi-6)} doesn't do anything.
 @section @code{srfi-8} - Syntax to receive multiple values
 
 @deftp {Module} srfi-8
-@moindex srfi-8
+@mdindex srfi-8
 Syntax @code{receive}, defined in SRFI-8, is builtin feature of Gauche.
 The form @code{(use srfi-8)} doesn't do anything.
 @end deftp
@@ -3481,7 +3517,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 @section @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
-@moindex srfi-11
+@mdindex srfi-11
 @end deftp
 
 
@@ -3490,19 +3526,228 @@ The form @code{(use srfi-8)} doesn't do anything.
 @section @code{srfi-13} - String library
 
 @deftp {Module} srfi-13
-@moindex srfi-13
+@mdindex srfi-13
 @end deftp
-
-
 
 @c ----------------------------------------------------------------------
 @node Character-set library
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
-@moindex srfi-14
+@mdindex srfi-14
 @end deftp
 
+@node SRFI-14 Character-set constructors
+@subsection Character-set constructors
+
+@defun list->char-set char-list &optional base-cs
+@defunx list->char-set! char-list base-cs
+[SRFI-14]
+@end defun
+
+@defun string->char-set char-list &optional base-cs
+@defunx string->char-set! char-list base-cs
+[SRFI-14]
+@end defun
+
+@defun char-set-filter pred char-set &optional base-cs
+@defunx char-set-filter! pred char-set base-cs
+[SRFI-14]
+@end defun
+
+@defun ucs-range->char-set lower upper &optional error? base-cs
+@defunx ucs-range->char-set! lower upper error? base-cs
+[SRFI-14]
+@end defun
+
+@defun integer-range->char-set lower upper &optional error? base-cs
+@defunx integer-range->char-set! lower upper error? base-cs
+@end defun
+
+@defun ->char-set x
+[SRFI-14]
+@end defun
+
+@node SRFI-14 Character-set Comparison
+@subsection Character-set comparison
+
+@defun char-set= char-set1 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set<= char-set1 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-hash char-set &optional bound
+[SRFI-14]
+@end defun
+
+@node SRFI-14 Character-set iteration
+@subsection Character-set iteration
+
+@defun char-set-cursor char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-ref char-set cursor
+[SRFI-14]
+@end defun
+
+@defun char-set-cursor-next char-set cursor
+[SRFI-14]
+@end defun
+
+@defun end-of-char-set? ccursor
+[SRFI-14]
+@end defun
+
+@defun char-set-fold kons knil char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-unfold pred fun gen seed &optional base-char-set
+@defunx char-set-unfold! pred fun gen seed base-char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-for-each proc char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-map proc char-set
+[SRFI-14]
+@end defun
+
+@node SRFI-14 Character-set query
+@subsection Character-set query
+
+@defun char-set-size char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-count pred char-set
+[SRFI-14]
+@end defun
+
+@defun char-set->list char-set
+[SRFI-14]
+@end defun
+
+@defun char-set->string char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-every pred char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-any pred char-set
+[SRFI-14]
+@end defun
+
+@node SRFI-14 Character-set algebra
+@subsection Character-set algebra
+
+@defun char-set-adjoin char-set char1 @dots{}
+@defunx char-set-adjoin! char-set char1 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-delete char-set char1 @dots{}
+@defunx char-set-delete! char-set char1 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-complement char-set
+@defunx char-set-complement! char-set
+[SRFI-14]
+@end defun
+
+@defun char-set-union char-set @dots{}
+@defunx char-set-union! char-set1 char-set2 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-intersection char-set @dots{}
+@defunx char-set-intersection! char-set1 char-set2 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-difference char-set1 char-set2 @dots{}
+@defunx char-set-difference! char-set1 char-set2 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-xor char-set @dots{}
+@defunx char-set-xor! char-set1 char-set2 @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-diff+intersection char-set1 char-set2 @dots{}
+@defunx char-set-diff+intersection! char-set1 char-set2 char-set3 @dots{}
+[SRFI-14]
+@end defun
+
+
+
+@node SRFI-14 Predefined character-set
+@subsection Predefined character-set
+
+@defvar char-set:letter
+[SRFI-14]
+@end defvar
+
+@defvar char-set:blank
+[SRFI-14]
+@end defvar
+
+@defvar char-set:iso-control
+[SRFI-14]
+@end defvar
+
+@defvar char-set:digit
+@defvarx char-set:hex-digit
+[SRFI-14]
+@end defvar
+
+@defvar char-set:graphic
+[SRFI-14]
+@end defvar
+
+@defvar char-set:lower-case
+@defvarx char-set:upper-case
+@defvarx char-set:title-case
+[SRFI-14]
+@end defvar
+
+@defvar char-set:printing
+[SRFI-14]
+@end defvar
+
+@defvar char-set:punctuation
+[SRFI-14]
+@end defvar
+
+@defvar char-set:whitespace
+[SRFI-14]
+@end defvar
+
+@defvar char-set:symbol
+[SRFI-14]
+@end defvar
+
+@defvar char-set:ascii
+[SRFI-14]
+@end defvar
+
+@defvar char-set:empty
+[SRFI-14]
+@end defvar
+
+@defvar char-set:full
+[SRFI-14]
+@end defvar
 
 
 @c ======================================================================
@@ -3519,7 +3764,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 @node Module Index
 @unnumbered Module Index
-@printindex mo
+@printindex md
 
 
 @node Class Index
