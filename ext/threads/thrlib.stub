@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: thrlib.stub,v 1.2 2002-07-14 22:43:11 shirok Exp $
+;;; $Id: thrlib.stub,v 1.3 2002-07-15 23:20:50 shirok Exp $
 ;;;
 
 "
@@ -169,39 +169,94 @@
   "SCM_RETURN(Scm_ConditionVariableBroadcast(cv));")
 
 ;;===============================================================
-;; VM inspection (temporary; may be changed later)
+;; Thread exceptions
 ;;
 
-(define-cproc vm-get-stack-trace (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  SCM_RETURN(Scm_VMGetStack(SCM_VM(vm)));")
+"static ScmObj thread_exception_allocate(ScmClass *klass, ScmObj initargs)
+ {
+    ScmThreadException *e = SCM_ALLOCATE(ScmThreadException, klass);
+    SCM_SET_CLASS(e, klass);
+    e->thread = NULL;
+    e->data = SCM_UNDEFINED;
+    return SCM_OBJ(e);
+ }"
 
-(define-cproc vm-get-stack-trace-lite (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  SCM_RETURN(Scm_VMGetStackLite(SCM_VM(vm)));")
+"static void thread_exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ {
+   ScmClass *k = SCM_CLASS_OF(obj);
+   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
+   if (SCM_UNDEFINEDP(exc->data)) {
+     Scm_Printf(port, \"#<%A %S>\", Scm__InternalClassName(k), SCM_OBJ_SAFE(exc->thread));
+   } else {
+     Scm_Printf(port, \"#<%A %S %S>\", Scm__InternalClassName(k), SCM_OBJ_SAFE(exc->thread), exc->data);
+   }
+ }"
 
-(define-cproc vm-set-default-exception-handler (vm handler)
-  "  if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  if (!SCM_FALSEP(handler) && !SCM_PROCEDUREP(handler)) {
-    Scm_Error(\"a procedure or #f required, but got %S\", handler);
-  }
-  SCM_VM(vm)->defaultEscapeHandler = handler;
-  SCM_RETURN(SCM_UNDEFINED);")
+"static void uncaught_exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ {
+   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
+   Scm_Printf(port, \"#<uncaught-exception in thread %S: %S>\", SCM_OBJ_SAFE(exc->thread), exc->data);
+ }"
 
-(define-cproc vm-instruction? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_INSNP(obj)));")
+"static void terminated_thread_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ {
+   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
+   Scm_Printf(port, \"#<terminated-thread-exception: %S terminated by %S>\", SCM_OBJ_SAFE(exc->thread), exc->data);
+ }"
 
-(define-cproc vm-insn-inspect (obj)
-  "  SCM_RETURN(Scm_VMInsnInspect(obj));")
+"static ScmClass *thread_exception_cpa[] = {
+   SCM_CLASS_STATIC_PTR(Scm_ThreadExceptionClass),
+   SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
+   SCM_CLASS_STATIC_PTR(Scm_TopClass),
+   NULL
+ };"
 
-(define-cproc current-load-history ()
-  "  SCM_RETURN(Scm_VM()->load_history);")
-(define-cproc current-load-next ()
-  "  SCM_RETURN(Scm_VM()->load_next);")
-(define-cproc current-load-port ()
-  "  SCM_RETURN(Scm_VM()->load_port);")
+(define-cclass <thread-exception>
+  "ScmThreadException" "Scm_ThreadExceptionClass"
+  ("Scm_ExceptionClass")
+  ((thread :type thread))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+(define-cclass <join-timeout-exception>
+  "ScmThreadException" "Scm_JoinTimeoutExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
+   )
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+(define-cclass <abandoned-mutex-exception>
+  "ScmThreadException" "Scm_AbandonedMutexExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
+   (mutex  :c-name "data"))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "thread_exception_print")))
+
+(define-cclass <terminated-thread-exception>
+  "ScmThreadException" "Scm_TerminatedThreadExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
+   (terminator :c-name "data"))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "terminated_thread_print")))
+
+(define-cclass <uncaught-exception>
+  "ScmThreadException" "Scm_UncaughtExceptionClass"
+  (c "thread_exception_cpa")
+  ((thread :type thread
+           :getter (c "Scm_ThreadExceptionClass_thread_GET")
+           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
+   (reason :c-name data))
+  (allocator (c "thread_exception_allocate"))
+  (printer   (c "uncaught_exception_print")))
 
 ;; Local variables:
 ;; mode: scheme
