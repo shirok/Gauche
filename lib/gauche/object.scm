@@ -12,11 +12,15 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.12 2001-04-01 10:22:46 shiro Exp $
+;;;  $Id: object.scm,v 1.13 2001-04-01 22:07:27 shiro Exp $
 ;;;
 
 (select-module gauche)
 (use srfi-2)  ;; and-let*
+
+;;; I'm trying to make MOP as close to STklos and Goops as possible.
+;;; The perfect compatibility can't be done since the underlying implemenation
+;;; in C differs a bit.
 
 ;; Bootstrapping "make"
 ;;   We already have generic-function for "make" defined in C.  Just wanted
@@ -316,26 +320,32 @@
 ;; Method application
 ;;
 
-;; Like stklos or goops, we don't use the following protocol for
-;; native generic function.
+;; Like stklos or goops, pure generic is handled completely in C
+;; and the following protocol is skipped.
 ;;
 ;; apply-generic [GF]
-;;   compute-applicable-methods [GF, default defined in C]
+;;   compute-applicable-methods [GF, method defined in C]
 ;;   sort-applicable-methods [GF]
-;;     method-more-specific? [GF, default defined in C]
+;;     method-more-specific? [GF, method defined in C]
 ;;   apply-methods [GF]
 ;;     apply-method [GF]
-;;     no-applicable-method [GF, default defined in C]
-;;     no-next-method [GF, default defined in C]
+;;
+;; The protocol mimics STklos, but the underlying application mechanism
+;; differs a bit.
 
+(define-method apply-generic ((gf <generic>) args)
+  (let ((methods (compute-applicable-methods gf args)))
+    (apply-methods gf (sort-applicable-methods gf methods args) args)))
 
-;(define-method apply-generic ((gf <generic>) args)
-;  (let ((methods (compute-applicable-methods gf args)))
-;    (apply-methods gf (sort-applicable-methods gf methods args) args)))
+(define-method sort-applicable-methods ((gf <generic>) methods args)
+  (let ((types (map class-of args)))
+    (sort methods (lambda (x y) (method-more-specific? x y types)))))
 
-;(define-method apply-methods ((gf <generic>) methods args)
-;  (if (null? methods)
-;      (no-applicable-method gf args)
+(define-method apply-methods ((gf <generic>) methods args)
+  (apply-method gf methods %make-next-method args))
+
+(define-method apply-method ((gf <generic>) methods build-next args)
+  (apply (build-next gf methods args) args))
       
 ;;----------------------------------------------------------------
 ;; Introspection routines
