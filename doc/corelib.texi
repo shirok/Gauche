@@ -6568,6 +6568,31 @@ rather than using @code{string-ref} with incremental index.
 @c COMMON
 @end defun
 
+@defun get-remaining-input-string port
+@c EN
+@var{Port} must be an input string port.
+Returns the remaining content of the input port.
+The internal pointer of @var{port} isn't moved, so the
+subsequent read from @var{port} isn't affected.
+If @var{port} has already reached to EOF, a null string is returned.
+@c JP
+@var{port}は入力文字列ポートでなければなりません。
+入力ポートに残っている文字列を返します。
+@var{port}の内部ポインタは動かされないので、@var{port}に対するreadは
+影響を受けません。@var{port}が既にEOFに達していた場合は、空文字列が返されます。
+@c COMMON
+
+@example
+(define p (open-input-string "abc\ndef")
+(read-line p)                  @result{} "abc"
+(get-remaining-input-string p) @result{} "def"
+(read-char p)                  @result{} #\d
+(read-line p)                  @result{} "ef"
+(get-remaining-input-string p) @result{} ""
+@end example
+@end defun
+
+
 @defun open-output-string
 [SRFI-6]
 @c EN
@@ -6599,6 +6624,14 @@ if not, an incomplete string is returned.
 文字列を返します。バイトデータがそのポートに書き出されていた場合、
 この手続きはまず内部バッファをスキャンし、結果が完全な文字列で表現できるかどうかを
 調べます。もし表現できなければ、不完全な文字列が返されます。
+@c COMMON
+
+@c EN
+This doesn't affect the @var{port}'s operation, so you can keep
+accumulating content to @var{port} after calling @code{get-output-string}.
+@c JP
+これは@var{port}の操作には影響をあたえません。@code{get-ouptut-string}を
+呼んだ後でも、@var{port}に内容を蓄積しつづけることができます。
 @c COMMON
 @end defun
 
