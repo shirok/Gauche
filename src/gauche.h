@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.364 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: gauche.h,v 1.365 2004-02-02 12:48:55 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2350,7 +2350,8 @@ SCM_CLASS_DECL(Scm_SysPasswdClass);
 SCM_EXTERN ScmObj Scm_GetPasswdById(uid_t uid);
 SCM_EXTERN ScmObj Scm_GetPasswdByName(ScmString *name);
 
-SCM_EXTERN void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap);
+SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,
+                              ScmObj iomap, int forkp);
 
 /* select */
 #ifdef HAVE_SELECT

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.54 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: system.c,v 1.55 2004-02-02 12:48:55 shirok Exp $
  */
 
 #include <stdio.h>
@@ -866,22 +866,27 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
  *   or a port.   If a list is passed to iomap, any file descriptors other
  *   than specified in the list will be closed before exec().
  *
- *   Don't expect this function to raise a catchable error.  Once the file
- *   descriptors are set up, it's likely that Scheme's standard ports
- *   are useless, so Scm_Error() is not an option.  It just exits by
- *   Scm_Panic().
+ *   If forkp arg is TRUE, this function forks before swapping file
+ *   descriptors.  It is more reliable way to fork&exec in multi-threaded
+ *   program.  In such a case, this function returns Scheme integer to
+ *   show the children's pid.   If for arg is FALSE, this procedure
+ *   of course never returns.
  */
 
-void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
+ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
 {
-    int argc = Scm_Length(args), i;
+    int argc = Scm_Length(args), i, j, maxfd, iollen;
+    int *tofd, *fromfd, *tmpfd;
     char **argv;
+    const char *program;
     ScmObj ap, iop;
+    pid_t pid;
 
     if (argc < 1) {
         Scm_Error("argument list must have at least one element: %S", args);
     }
-    
+
+    /* make a C array of C strings */    
     argv = SCM_NEW_ARRAY(char *, argc+1);
     for (i=0, ap = args; i<argc; i++, ap = SCM_CDR(ap)) {
         if (!SCM_STRINGP(SCM_CAR(ap)))
@@ -889,16 +894,16 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
         argv[i] = Scm_GetString(SCM_STRING(SCM_CAR(ap)));
     }
     argv[i] = NULL;
+    program = Scm_GetStringConst(file);
+    iollen = Scm_Length(iomap);
 
-    /* swappling file descriptors. */
+    /* setting up iomap table */
     if (SCM_PAIRP(iomap)) {
-        int iollen = Scm_Length(iomap), maxfd, j;
-        int *tofd, *fromfd, *tmpfd;
-
         /* check argument vailidity before duping file descriptors, so that
            we can still use Scm_Error */
-        if (iollen < 0)
+        if (iollen < 0) {
             Scm_Error("proper list required for iolist, but got %S", iomap);
+        }
         tofd   = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
         fromfd = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
         tmpfd  = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
@@ -931,10 +936,21 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
             }
             i++;
         }
+    }
+    
+    /* When requested, call fork() here. */
+    if (forkp) {
+        SCM_SYSCALL(pid, fork());
+        if (pid < 0) Scm_SysError("fork failed");
+    }
 
+    /* Now we swap file descriptors and exec().
+       We can't throw an error anymore! */
+    if (!forkp || pid == 0) {
         /* TODO: use getdtablehi if available */
-        if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0)
-            Scm_Error("failed to get OPEN_MAX value from sysconf");
+        if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0) {
+            Scm_Panic("failed to get OPEN_MAX value from sysconf");
+        }
 
         for (i=0; i<iollen; i++) {
             if (tofd[i] == fromfd[i]) continue;
@@ -954,11 +970,13 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
             }
             if (j == iollen) close(i);
         }
+        execvp(program, (char *const*)argv);
+        /* here, we failed */
+        Scm_Panic("exec failed: %s", strerror(errno));
     }
 
-    execvp(Scm_GetStringConst(file), (char *const*)argv);
-    /* here, we failed */
-    Scm_Panic("exec failed: %s", strerror(errno));
+    /* We come here only when fork is requested. */
+    return Scm_MakeInteger(pid);
 }
 
 /*===============================================================

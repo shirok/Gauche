@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.17 2003-11-09 04:43:22 shirok Exp $
+;;;  $Id: process.scm,v 1.18 2004-02-02 12:48:55 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -156,22 +156,19 @@
 
 (define (%run-process proc argv iomap toclose wait fork)
   (if fork
-      (let ((pid (sys-fork)))
-        (if (zero? pid)
-            (sys-exec (car argv) argv iomap)
-            (begin
-              (slot-set! proc 'processes
-                         (cons proc (slot-ref proc 'processes)))
-              (slot-set! proc 'pid pid)
-              (map (lambda (p)
-                     (if (input-port? p)
-                         (close-input-port p)
-                         (close-output-port p)))
-                   toclose)
-              (when wait
-                (slot-set! proc 'status
-                           (receive (p code) (sys-waitpid pid) code)))
-              proc)))
+      (let ((pid (sys-fork-and-exec (car argv) argv iomap)))
+        (slot-set! proc 'processes
+                   (cons proc (slot-ref proc 'processes)))
+        (slot-set! proc 'pid pid)
+        (map (lambda (p)
+               (if (input-port? p)
+                 (close-input-port p)
+                 (close-output-port p)))
+             toclose)
+        (when wait
+          (slot-set! proc 'status
+                     (receive (p code) (sys-waitpid pid) code)))
+        proc)
       (sys-exec (car argv) argv iomap)))
 
 ;; other basic interfaces

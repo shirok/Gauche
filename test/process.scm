@@ -17,6 +17,10 @@
   (test-end)
   (exit 0))
 
+;; Avoid locale specific behavior of client programs
+(when (symbol-bound? 'sys-putenv)
+  (sys-putenv "LANG" "C"))
+
 ;;-------------------------------
 (test-section "process object")
 
