@@ -8,8 +8,9 @@
  * I modified the code in the following parts.
  *   - make it modular, esp., all the state information is kept in
  *     the allocated memory for random number generator object.
+ *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.2 2002-05-11 02:26:25 shirok Exp $
+ * $Id: mt-random.c,v 1.3 2002-05-11 10:19:43 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -56,7 +57,6 @@
    email: matumoto@math.keio.ac.jp
 */
 
-#include "gauche.h"
 #include "mt-random.h"
 #include <math.h>
 
@@ -67,8 +67,7 @@
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
 /* initializes mt[N] with a seed */
-static void
-init_genrand(ScmMersenneTwister *mt, unsigned long s)
+void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
 {
     int mti;
     mt->mt[0]= s & 0xffffffffUL;
@@ -88,12 +87,12 @@ init_genrand(ScmMersenneTwister *mt, unsigned long s)
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
 /* key_length is its length */
-static void init_by_array(ScmMersenneTwister *mt,
-                          unsigned long init_key[],
-                          unsigned long key_length)
+void Scm_MTInitByArray(ScmMersenneTwister *mt,
+                       SCM_UVECTOR_INT32 init_key[],
+                       unsigned long key_length)
 {
     int i, j, k;
-    init_genrand(mt, 19650218UL);
+    Scm_MTInitByUI(mt, 19650218UL);
     i=1; j=0;
     k = (N>key_length ? N : key_length);
     for (; k; k--) {
@@ -126,8 +125,8 @@ inline unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
     if (mti >= N) { /* generate N words at one time */
         int kk;
 
-        if (mti == N+1)   /* if init_genrand() has not been called, */
-            init_genrand(mt, 5489UL); /* a default initial seed is used */
+        if (mti == N+1)   /* if Scm_MTInitByUI() has not been called, */
+            Scm_MTInitByUI(mt, 5489UL); /* a default initial seed is used */
 
         for (kk=0;kk<N-M;kk++) {
             y = (mt->mt[kk]&UPPER_MASK)|(mt->mt[kk+1]&LOWER_MASK);
@@ -285,7 +284,7 @@ static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
     SCM_SET_CLASS(mt, &Scm_MersenneTwisterClass);
     mt->mti = N+1;
     if (SCM_EXACTP(seed)) {
-        init_genrand(mt, Scm_GetUInteger(seed));
+        Scm_MTInitByUI(mt, Scm_GetUInteger(seed));
     }
     return SCM_OBJ(mt);
 }
