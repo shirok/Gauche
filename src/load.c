@@ -12,22 +12,27 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.13 2001-02-13 06:01:40 shiro Exp $
+ *  $Id: load.c,v 1.14 2001-02-16 13:04:01 shiro Exp $
  */
 
+#include <unistd.h>
 #include "gauche.h"
+
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#endif
 
 /*
  * Load file.
  */
 
-/* To peek *load-path* variable from C */
-static ScmGloc *load_path_rec;
+/* To peek Scheme variable from C */
+static ScmGloc *load_path_rec;       /* *load-path*       */
+static ScmGloc *load_path_next_rec;  /* *load-path-next*  */
+static ScmGloc *load_history_rec;    /* *load-history*    */
+static ScmGloc *load_filename;       /* *load-filename*   */
 
-/* To peek *load-history* variable from C */
-static ScmGloc *load_history_rec;
-
-/*
+/*--------------------------------------------------------------------
  * Scm_LoadFromPort
  * 
  *   The most basic function in the load()-family.  Read an expression
@@ -60,6 +65,67 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
     if (SCM_PORT_CLOSED_P(port))
         Scm_Error("port already closed: %S", port);
     return load_cc(SCM_NIL, (void **)&port);
+}
+
+/*---------------------------------------------------------------------
+ * Scm_FindFile
+ *
+ *   Core function to search specified file from the search path *PATH.
+ *   Search rules are:
+ *   
+ *    (1) If given filename begins with "/" or "./", the file is
+ *        searched.
+ *    (2) If gievn filename begins with "~", unix-style username
+ *        expansion is done, then the resulting file is searched.
+ *    (3) Otherwise, the file is searched for each directory in
+ *        *load-path*.
+ *
+ *   If a file is found, it's pathname is returned.  *PATH is modified
+ *   to contain the remains of *load-path*, which can be used again to
+ *   find next matching filename.
+ */
+
+ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths)
+{
+    int size = SCM_STRING_LENGTH(filename);
+    const char *ptr = SCM_STRING_START(filename);
+    int use_load_paths = TRUE;
+    ScmObj path = SCM_OBJ(filename);
+    
+    if (size == 0) Scm_Error("bad filename to load: \"\"");
+    if (*ptr == '~') {
+        path = Scm_NormalizePathname(filename, SCM_PATH_EXPAND);
+        use_load_paths = FALSE;
+    } else if (*ptr == '/' || (*ptr == '.' && *(ptr+1) == '/')) {
+        use_load_paths = FALSE;
+    }
+
+    if (use_load_paths) {
+        ScmObj lpath, fpath;
+        SCM_FOR_EACH(lpath, *paths) {
+            if (!SCM_STRINGP(SCM_CAR(lpath))) {
+                /* TODO: should be warning? */
+                Scm_Error("*load-path* contains invalid element: %S", *paths);
+            }
+            fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
+            fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(path));
+            if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
+                break;
+        }
+        if (!SCM_NULLP(lpath)) {
+            *paths = SCM_CDR(lpath);
+            return SCM_OBJ(fpath);
+        } else {
+            *paths = SCM_NIL;
+            return SCM_FALSE;
+        }
+    } else {
+        *paths = SCM_NIL;
+        if (access(Scm_GetStringConst(SCM_STRING(path)), F_OK) == 0)
+            return SCM_OBJ(filename);
+        else
+            return SCM_FALSE;
+    }
 }
 
 /*
@@ -134,6 +200,25 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     }
     return load_path_rec->value;
 }
+
+/*
+ * Dynamic link
+ */
+
+/* Not finished yet! */
+ScmObj Scm_DynLink(const char *cpath)
+{
+    void *handle;
+    void (*initializer)(void);
+    
+    handle = dlopen(cpath, RTLD_LAZY);
+    if (handle == NULL) return SCM_FALSE;
+    initializer = (void (*)(void))dlsym(handle, "Initialize");
+    if (initializer == NULL) return SCM_FALSE;
+    initializer();
+    return SCM_TRUE;
+}
+
 
 /*
  * Initialization
