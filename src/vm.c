@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.44 2001-02-21 13:32:52 shiro Exp $
+ *  $Id: vm.c,v 1.45 2001-02-21 13:45:24 shiro Exp $
  */
 
 #include "gauche.h"
@@ -626,10 +626,12 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_VALUES_BIND) {
+                /* TODO: clean up stack management */
                 int reqargs = SCM_VM_INSN_ARG0(code);
                 int restarg = SCM_VM_INSN_ARG1(code);
                 int i = 0, argsize;
                 ScmObj rest = SCM_NIL, tail, info;
+                ScmEnvFrame *argpsave;
 
                 FETCH_INSN(info);
                 if (vm->numVals < reqargs) {
@@ -639,6 +641,7 @@ static void run_loop()
                 }
                 argsize = reqargs + (restarg? 1 : 0);
 
+                argpsave = argp;
                 PUSH_ENV_HDR();
                 if (reqargs > 0) {
                     PUSH_ARG(val0);
@@ -662,6 +665,7 @@ static void run_loop()
                 argp->size = argsize;
                 argp->info = info;
                 env = argp;
+                argp = argpsave;
                 continue;
             }
 
