@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.5 2001-06-08 08:53:19 shirok Exp $
+dnl $Id: configure.in,v 1.6 2001-06-08 08:54:04 shirok Exp $
 AC_INIT(charconv.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
@@ -24,7 +24,7 @@ AC_SUBST(GOSH)
 dnl A user has a choice to install the module into Gauche system directory
 dnl or site local directory, by setting environment variable INSTALL_TYPE
 dnl to either 'sys' or 'site'.   The variable can be overridden at make time.
-: ${INSTALL_TYPE=site}  dnl This sets the default.
+: ${INSTALL_TYPE=sys}  dnl This sets the default.
 AC_SUBST(INSTALL_TYPE)
 
 dnl Process extra configure argument
