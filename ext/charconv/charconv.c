@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.15 2001-06-08 08:56:06 shirok Exp $
+ *  $Id: charconv.c,v 1.16 2001-06-08 09:36:09 shirok Exp $
  */
 
 #include <string.h>
@@ -676,8 +676,9 @@ extern void Scm_Init_convlib(ScmModule *module);
 
 void Scm_Init_libcharconv(void)
 {
+    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.charconv", TRUE));
     Scm_RegisterCodeGuessingProc("*JP", guess_jp, NULL);
-    Scm_Init_convlib(Scm_GaucheModule());
+    Scm_Init_convlib(mod);
 }
 
 #ifndef HAVE_ICONV_H
