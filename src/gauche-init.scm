@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.22 2001-04-06 10:10:37 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.23 2001-04-07 06:40:44 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -65,24 +65,15 @@
 ;; Auxiliary definitions
 ;;
 
-(define CALL/CC call-with-current-continuation)
+(define call/cc call-with-current-continuation)
 
-(define (CALL-WITH-VALUES producer consumer)
-  (receive vals (producer) (apply consumer vals)))
+(with-module scheme
+  (define (call-with-values producer consumer)
+    (with-module gauche (receive vals (producer) (apply consumer vals)))))
 
-(define (WITH-OUTPUT-TO-STRING thunk)
-  (let ((out (open-output-string)))
-    (with-output-to-port out thunk)
-    (get-output-string out)))
-
-(define (CALL-WITH-OUTPUT-STRING proc)
-  (let ((out (open-output-string)))
-    (proc out)
-    (get-output-string out)))
-
-(define (CALL-WITH-INPUT-STRING str proc)
-  (let ((in (open-input-string str)))
-    (proc in)))
+(with-module gauche
+  (autoload "gauche/with" with-output-to-string call-with-output-string
+                          with-input-from-string call-with-input-string))
 
 ;; useful stuff
 (define-syntax check-arg
@@ -92,6 +83,16 @@
        (unless (?test tmp)
          (error "bad type of argument for ~s: ~s" '?arg tmp))))
     ))
+
+(define-syntax let-optional*
+  (syntax-rules ()
+    ((_ ?arg () . ?body) (begin . ?body))
+    ((_ ?arg ((?var ?default) . ?more) . ?body)
+     (receive (?var next-arg)
+              (if (pair? ?arg)
+                  (values (car ?arg) (cdr ?arg))
+                  (values ?default '()))
+        (let-optional* next-arg ?more . ?body)))))
 
 ;;
 ;; Load object system
