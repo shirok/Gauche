@@ -1,3 +1,25 @@
+2001-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.7
+	* src/read.c (read_charset): added #[...] extension for literal
+	  charset syntax.
+	* src/char.c: adapted print syntax to the literal charset syntax.
+	  added charset reading function (Scm_CharSetRead).
+	  added predefined charset.
+	* src/extlib.stub, lib/srfi-14.scm: adapted predefined charset.
+	* src/regexp.c: added \s, \S, \w, \W, \d and \D character
+	  classes.  Added stack boundary check to protect too deep
+	  recursive calls.
+	* configure.in, gc/mach_dep.c: applied a patch from Shigenobu
+	  Kimura (skimu@ti.com) in order to compile under NetBSD.
+
+2001-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* test/number.scm: added.
+	* src/vm.c: fixed a bug that related to NUMADDI, NUMSUBI.
+	* src/number.c, src/bignum.c: fixed number of bugs related to
+	  bignum reader and bignum addition/subtraction.
+
 2001-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.6
@@ -16,7 +38,7 @@
 2001-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.5
-	* src/read.c: added #/.../ extention to embed literal regexp.
+	* src/read.c: added #/.../ extension to embed literal regexp.
 	* src/regexp.c: the first version of regexp starts working.
 
 2001-04-14  Shiro Kawai  <shiro@acm.org>
