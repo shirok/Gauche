@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.27 2003-09-09 12:21:26 shirok Exp $
+ *  $Id: hash.c,v 1.28 2003-09-09 12:23:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -48,12 +48,12 @@
  * names (for intern), and integers when we want to combine hash results
  * of the components (e.g. hasing a pair).   Symbol names tend to have
  * relatively small length, and the table size tends to be small,
- * Bob's function seems a bit overkill.
+ * so Bob's function seems a bit overkill.
  *
  * I also looked at Tcl's hash function (by Ousterhout) and Perl's
  * (by Larry Wall), both uses multiplicate-and-add method.   A few test
  * over the Scheme code I have, Bob's one showed the best hash result,
- * but the lead was small.   Ousterhout's one was slightly better tha
+ * but the lead was small.   Ousterhout's one was slightly better than
  * Larry's.   So I choose Ousterhout's here.
  *
  * If you want to deal with large amount of data, the default hash function
