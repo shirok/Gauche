@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.35 2001-06-02 09:49:28 shirok Exp $
+ *  $Id: port.c,v 1.36 2001-06-05 19:53:40 shirok Exp $
  */
 
 #include <unistd.h>
@@ -860,8 +860,13 @@ static int bufport_getz(char *buf, int buflen, ScmPort *port)
 
 static void bufport_flush_internal(struct bufport *bp)
 {
-    bp->filler(bp->buffer, bp->current, bp->clientData);
-    bp->current = 0;
+    int nwritten = bp->filler(bp->buffer, bp->current, bp->clientData);
+    if (nwritten >= 0 && nwritten < bp->current) {
+        memmove(bp->buffer, bp->buffer+nwritten, bp->current-nwritten);
+        bp->current -= nwritten;
+    } else {
+        bp->current = 0;
+    }
 }
 
 static int bufport_putb(ScmByte b, ScmPort *port)
