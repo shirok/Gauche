@@ -1,11 +1,15 @@
 2001-03-09  Shiro Kawai  <shiro@scherzo>
 
+	* release 0.1.6
 	* configure.in etc.: revised configuration process.  fixed protocol
 	  of build, test and call extension modules.
 	* ext/example: example of dynamic loadable extension.
 	* src/port.c: implement procedural port protocol.
+	* src/load.c: looks environment variable GAUCHE_LOAD_PATH for
+	  initial *load-path* (in addition to the system default)
 	* src/gauche-init.scm: added USE macro, which combines function of
 	  require and import.  Changed library and test files accordingly.
+	* src/genstub: added define-symbol directive to pre-create symbols.
 
 2001-03-08  Shiro Kawai  <shiro@scherzo>
 
