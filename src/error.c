@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.57 2004-10-11 05:52:14 shirok Exp $
+ *  $Id: error.c,v 1.58 2004-10-17 10:29:39 shirok Exp $
  */
 
 #include <errno.h>
@@ -152,6 +152,9 @@ SCM_DEFINE_BASE_CLASS(Scm_IOWriteErrorClass, ScmIOWriteError,
                       message_print, NULL, NULL, 
                       porterror_allocate, porterror_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_IOClosedErrorClass, ScmIOClosedError,
+                      message_print, NULL, NULL, 
+                      porterror_allocate, porterror_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOUnitErrorClass, ScmIOUnitError,
                       message_print, NULL, NULL, 
                       porterror_allocate, porterror_cpl);
 
@@ -552,8 +555,9 @@ void Scm_SysError(const char *msg, ...)
 /*
  * A convenience function to throw port-relates errors.
  * It creates either one of <port-error>, <io-read-error>,
- * <io-write-error>, or <io-closed-error>, depending on the 'reason'
- * argument being SCM_PORT_ERROR_{OTHER,INPUT,OUTPUT,CLOSED}, respectively.
+ * <io-write-error>, <io-closed-error>, or <io-unit-error>,
+ * depending on the 'reason' argument being 
+ * SCM_PORT_ERROR_{OTHER,INPUT,OUTPUT,CLOSED,UNIT}, respectively.
  * If errno isn't zero, it also creates a <system-error> and throws
  * a compound condition of both.
  */
@@ -583,6 +587,8 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
             peclass = SCM_CLASS_IO_WRITE_ERROR; break;
         case SCM_PORT_ERROR_CLOSED:
             peclass = SCM_CLASS_IO_CLOSED_ERROR; break;
+        case SCM_PORT_ERROR_UNIT:
+            peclass = SCM_CLASS_IO_UNIT_ERROR; break;
         default:
             peclass = SCM_CLASS_PORT_ERROR; break;
         }
@@ -897,6 +903,10 @@ void Scm__InitExceptions(void)
                                 porterror_slots, 0);
     Scm_InitStaticClassWithMeta(SCM_CLASS_IO_CLOSED_ERROR,
                                 "<io-closed-error>",
+                                mod, cond_meta, SCM_FALSE,
+                                porterror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_IO_UNIT_ERROR,
+                                "<io-unit-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 porterror_slots, 0);
 

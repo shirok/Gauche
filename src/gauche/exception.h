@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.7 2004-10-13 01:55:08 shirok Exp $
+ *  $Id: exception.h,v 1.8 2004-10-17 10:29:39 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -52,6 +52,7 @@
     |              |    +- <io-read-error>   ; srfi-36
     |              |    +- <io-write-error>  ; srfi-36
     |              |    +- <io-closed-error> ; srfi-36
+    |              |    +- <io-unit-error>
     |              +- <filename-error> ; srfi-36 (*)
     |                   +- <malformed-filename-error>  ; srfi-36 (*)
     |                   +- <file-protection-error>     ; srfi-36 (*)
@@ -165,6 +166,7 @@ SCM_CLASS_DECL(Scm_PortErrorClass);
 typedef ScmPortError ScmIOReadError;
 typedef ScmPortError ScmIOWriteError;
 typedef ScmPortError ScmIOClosedError;
+typedef ScmPortError ScmIOUnitError;
 
 SCM_CLASS_DECL(Scm_IOReadErrorClass);
 #define SCM_CLASS_IO_READ_ERROR      (&Scm_IOReadErrorClass)
@@ -172,6 +174,8 @@ SCM_CLASS_DECL(Scm_IOWriteErrorClass);
 #define SCM_CLASS_IO_WRITE_ERROR     (&Scm_IOWriteErrorClass)
 SCM_CLASS_DECL(Scm_IOClosedErrorClass);
 #define SCM_CLASS_IO_CLOSED_ERROR    (&Scm_IOClosedErrorClass)
+SCM_CLASS_DECL(Scm_IOUnitErrorClass);
+#define SCM_CLASS_IO_UNIT_ERROR      (&Scm_IOClosedErrorClass)
 
 /*---------------------------------------------------
  * Compounders

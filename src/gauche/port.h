@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.10 2004-09-17 03:42:10 shirok Exp $
+ *  $Id: port.h,v 1.11 2004-10-17 10:29:39 shirok Exp $
  */
 
 /*
@@ -133,4 +133,3 @@
      p->lockCount = 1;                          \
    } while (0)
    
-
