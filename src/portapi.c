@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.4 2002-12-13 11:41:41 shirok Exp $
+ *  $Id: portapi.c,v 1.5 2002-12-13 19:36:51 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -510,6 +510,25 @@ static int getz_scratch_unsafe(char *buf, int buflen, ScmPort *p)
     }
 }
 
+#ifndef GETZ_ISTR               /* common part */
+#define GETZ_ISTR getz_istr
+static int getz_istr(ScmPort *p, char *buf, int buflen)
+{
+    int siz;
+    if (p->src.istr.current + buflen >= p->src.istr.end) {
+        if (p->src.istr.current >= p->src.istr.end) return EOF;
+        siz = (int)(p->src.istr.end - p->src.istr.current);
+        memcpy(buf, p->src.istr.current, siz);
+        p->src.istr.current = p->src.istr.end;
+        return siz;
+    } else {
+        memcpy(buf, p->src.istr.current, buflen);
+        p->src.istr.current += buflen;
+        return buflen;
+    }
+}
+#endif /*!GETZ_ISTR*/
+
 #ifdef SAFE_PORT_OP
 int Scm_Getz(char *buf, int buflen, ScmPort *p)
 #else
@@ -542,22 +561,9 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
         if (siz == 0) return EOF;
         else return siz;
     case SCM_PORT_ISTR:
-        if (p->src.istr.current + buflen >= p->src.istr.end) {
-            if (p->src.istr.current >= p->src.istr.end) {
-                UNLOCK(p);
-                return EOF;
-            }
-            siz = (int)(p->src.istr.end - p->src.istr.current);
-            memcpy(buf, p->src.istr.current, siz);
-            p->src.istr.current = p->src.istr.end;
-            UNLOCK(p);
-            return siz;
-        } else {
-            memcpy(buf, p->src.istr.current, buflen);
-            p->src.istr.current += buflen;
-            UNLOCK(p);
-            return buflen;
-        }
+        r = GETZ_ISTR(p, buf, buflen);
+        UNLOCK(p);
+        return r;
     case SCM_PORT_PROC:
         SAFE_CALL(p, r = p->src.vt.Getz(buf, buflen, p));
         UNLOCK(p);
@@ -593,7 +599,7 @@ ScmObj Scm_ReadLineUnsafe(ScmPort *p)
 
     Scm_DStringInit(&ds);
     LOCK(p);
-    c1 = Scm_GetcUnsafe(p);
+    SAFE_CALL(p, c1 = Scm_GetcUnsafe(p));
     if (c1 == EOF) {
         UNLOCK(p);
         return SCM_EOF;
@@ -601,13 +607,13 @@ ScmObj Scm_ReadLineUnsafe(ScmPort *p)
     for (;;) {
         if (c1 == EOF || c1 == '\n') break;
         if (c1 == '\r') {
-            c2 = Scm_GetcUnsafe(p);
+            SAFE_CALL(p, c2 = Scm_GetcUnsafe(p));
             if (c2 == EOF || c2 == '\n') break;
             Scm_UngetcUnsafe(c2, p);
             break;
         }
         SCM_DSTRING_PUTC(&ds, c1);
-        c1 = Scm_GetcUnsafe(p);
+        SAFE_CALL(p, c1 = Scm_GetcUnsafe(p));
     }
     UNLOCK(p);
     return Scm_DStringGet(&ds);
@@ -633,7 +639,9 @@ int Scm_CharReadyUnsafe(ScmPort *p)
         case SCM_PORT_FILE:
             if (p->src.buf.current < p->src.buf.end) r = TRUE;
             else if (p->src.buf.ready == NULL) r = TRUE;
-            else r = (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK);
+            else {
+                SAFE_CALL(p, r = (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK));
+            }
             break;
         case SCM_PORT_PROC:
             SAFE_CALL(p, r = p->src.vt.Ready(p));
@@ -649,6 +657,31 @@ int Scm_CharReadyUnsafe(ScmPort *p)
 /*=================================================================
  * PortSeek
  */
+
+#ifndef SEEK_ISTR               /* common part */
+#define SEEK_ISTR seek_istr
+static off_t seek_istr(ScmPort *p, off_t o, int whence, int nomove)
+{
+    off_t r;
+    if (nomove) {
+        r = (off_t)(p->src.istr.current - p->src.istr.start);
+    } else {
+        long z = (long)o;
+        if (whence == SEEK_CUR) {
+            z += (long)(p->src.istr.current - p->src.istr.start);
+        } else if (whence == SEEK_END) {
+            z += (long)(p->src.istr.end - p->src.istr.start);
+        }
+        if (z < 0 || z > (long)(p->src.istr.end - p->src.istr.start)) {
+            r = (off_t)-1;
+        } else {
+            p->src.istr.current = p->src.istr.start + z;
+            r = (off_t)(p->src.istr.current - p->src.istr.start);
+        }
+    }
+    return r;
+}
+#endif /*SEEK_ISTR*/
 
 #ifdef SAFE_PORT_OP
 ScmObj Scm_PortSeek(ScmPort *p, ScmObj off, int whence)
@@ -695,22 +728,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
         }
         break;
     case SCM_PORT_ISTR:
-        if (nomove) {
-            r = (off_t)(p->src.istr.current - p->src.istr.start);
-        } else {
-            long z = (long)o;
-            if (whence == SEEK_CUR) {
-                z += (long)(p->src.istr.current - p->src.istr.start);
-            } else if (whence == SEEK_END) {
-                z += (long)(p->src.istr.end - p->src.istr.start);
-            }
-            if (z < 0 || z > (long)(p->src.istr.end - p->src.istr.start)) {
-                r = (off_t)-1;
-            } else {
-                p->src.istr.current = p->src.istr.start + z;
-                r = (off_t)(p->src.istr.current - p->src.istr.start);
-            }
-        }
+        r = SEEK_ISTR(p, o, whence, nomove);
         break;
     case SCM_PORT_OSTR:
         if (nomove) {
