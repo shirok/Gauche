@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.76 2001-05-09 10:32:05 shirok Exp $
+ *  $Id: vm.c,v 1.77 2001-05-12 19:04:31 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1634,6 +1634,23 @@ ScmObj Scm_Values(ScmObj args)
     }
     vm->numVals = nvals;
     return SCM_CAR(args);
+}
+
+ScmObj Scm_Values2(ScmObj val0, ScmObj val1)
+{
+    ScmVM *vm = theVM;
+    vm->numVals = 2;
+    vm->vals[0] = val1;
+    return val0;
+}
+
+ScmObj Scm_Values3(ScmObj val0, ScmObj val1, ScmObj val2)
+{
+    ScmVM *vm = theVM;
+    vm->numVals = 3;
+    vm->vals[0] = val1;
+    vm->vals[1] = val2;
+    return val0;
 }
 
 /*==============================================================
