@@ -1,4 +1,16 @@
+2002-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/boolean.c (Scm_EqvP, Scm_EqualP): fixed a bug that made
+	  (eqv? 1 1.0) ==> #t and (equal? 1 1.0) ==> #t, which
+	  should return #f.
+
 2002-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/boolean.c, src/compare.c, src/extlib.stub : added
+	  compare procedure and object-compare generic function.  Changed
+	  the signature of ScmClass.compare so that it can be called both
+	  equality test (delegates to object-equal?) and comparison (object-
+	  compare).
 
 	* release 0.5.7
 	* src/class.c : added object-equal? generic function to extend equal?.

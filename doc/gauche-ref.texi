@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.233 2002-07-01 04:30:48 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.234 2002-07-01 11:12:41 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3634,20 +3634,162 @@ symbols.
 @section Equivalence
 @c NODE 等価
 
+@c EN
+Scheme has three different general equivalence test predicates.
+Other than these, some types have their own comarison predicates.
+@c JP
+Schemeには等価性を判定する汎用的な述語が3つあります。
+また、これらの他に、いくつかの型はその型同士で使える比較手続きを持っています。
+@c COMMON
+
 @defun eq? obj1 obj2
-@defunx eqv? obj1 obj2
 [R5RS]
 @c EN
+This is the fastest and finest predicate.
+Returns @code{#t} if @var{obj1} and @var{obj2} are allocated objects of
+the same types, and denote the same location.  Returns @code{#t}
+if both objects are @code{#f}, @code{#t}, or @code{()}.
+You can think @var{eq?} as a pointer comparison.
+Note that the result is unspecified in Scheme standard when
+both objects are characters or numbers.
 @c JP
+最も高速で、細かい区別ができる述語です。
+@var{obj1}と@var{obj2}がアロケートされる同じ型のオブジェクトで、
+かつ両者がメモリ上の全く同じ場所を占めるオブジェクトを指している場合に
+@code{#t}を返します。また、@var{obj1}と@var{obj2}がともに
+@code{#f}, @code{#t}あるいは@code{()}である場合も@code{#t}を返します。
+ポインタ比較と考えても良いでしょう。
+@var{obj1}と@var{obj2}がともに文字、あるいは数値であった場合の振るまいは
+Schemeの標準では定められていません。
 @c COMMON
+
+@example
+(eq? #t #t)               @result{} #t
+(eq? #t #f)               @result{} #f
+(eq? 'a 'a)               @result{} #t
+(eq? 'a 'b)               @result{} #f
+(eq? (list 'a) (list 'a)) @result{} #f
+(let ((x (list 'a)))
+  (eq? x x))              @result{} #t
+@end example
+@end defun
+
+@defun eqv? obj1 obj2
+[R5RS]
+@c EN
+When @var{obj1} and @var{obj2} are both exact or both inexact numbers,
+@var{eqv?} returns @code{#t} iff @code{(= @var{obj1} @var{obj2})} is true.
+When @var{obj1} and @var{obj2} are both characters,
+@var{eqv?} returns @code{#t} iff @code{(char=? @var{obj1} @var{obj2})} is true.
+Otherwise, @code{eqv?} is the same as @code{eq?} on Gauche.
+@c JP
+@var{obj1}と@var{obj2}がともに正確な数値、もしくはともに不正確な数値である場合、
+@code{(= @var{obj1} @var{obj2})}が真であれば@code{#t}が、偽であれば@code{#f}が
+返されます。
+@var{obj1}と@var{obj2}がともに文字である場合、
+@code{(char=? @var{obj1} @var{obj2})}が真であれば@code{#t}が、偽であれば@code{#f}が
+返されます。
+それ以外の場合は、Gaucheでは@code{eqv?}は@code{eq?}と同じです。
+@c COMMON
+
+@example
+(eqv? #\a #\a)             @result{} #t
+(eqv? #\a #\b)             @result{} #f
+(eqv? 1.0 1.0)             @result{} #t
+(eqv? 1 1)                 @result{} #t
+(eqv? 1 1.0)               @result{} #f
+(eqv? (list 'a) (list 'a)) @result{} #f
+(let ((x (list 'a)))
+  (eqv? x x))              @result{} #t
+@end example
 @end defun
 
 @defun equal? obj1 obj2
-[R5RS]
+[R5RS+]
 @c EN
+If @var{obj1} and @var{obj2} are both aggregate types,
+@code{equal?} compares its elements recursively.
+Otherwise, @code{equal?} behaves the same as @code{eqv?}.
+
+If @var{obj1} and @var{obj2} are other than booleans, numbers,
+characters, pairs, strings and vectors, and the class of both
+objects are the same, @code{equal?} calls the generic
+function @code{object-equal?}.
+By defining the method, users can extend the behavior of @code{equal?}
+for user-defined classes.
 @c JP
+@var{obj1}と@var{obj2}がリストやベクタなどの複合型である場合、
+@code{equal?}は再帰的に対応する要素同士を@code{equal?}で比較してゆきます。
+そうでなければ、@code{equal?}は@code{eqv?}と同じようにふるまいます。
+
+もし@code{obj1}と@var{obj2}が論理値、数値、文字、ペア、文字列、
+ベクタのいずれでもなく、かつ両者のクラスが等しい場合、@code{equal?}は
+ジェネリックファンクション@code{object-equal?}を呼びます。
+@code{object-equal?}にメソッドを定義することにより、
+ユーザ定義のデータ型に対する@code{equal?}の振るまいを拡張することができます。
 @c COMMON
+
+@example
+(equal? (list 1 2) (list 1 2)) @result{} #t
+(equal? "abc" "abc")           @result{} #t
+(equal? 100 100)               @result{} #t
+(equal? 100 100.0)             @result{} #f
+@end example
+
 @end defun
+
+@deffn {Generic Function} object-equal? obj1 obj2
+@c EN
+This generic function is called when @code{equal?} is called on the objects
+it doesn't know about.  You can define this method on your class
+so that @code{equal?} can check equivalence.   This method is supposed
+to return @code{#t} if @var{obj1} is equal to @var{obj2}, @code{#f}
+otherwise.  If you want to check equivalence of elements recursively,
+do not call @code{object-equal?} directly; call @code{equal?} on each element.
+@c JP
+@code{equal?}が未知のオブジェクトに対して呼ばれた場合、
+このジェネリックファンクションが呼ばれます。自分で定義したクラスに対して
+このメソッドを定義することにより、@code{equal?}で等価判定が行えるように
+なります。メソッドは、@var{obj1}と@var{obj2}が等価ならば@code{#t}を、
+そうでなければ@code{#f}を返さねばなりません。
+オブジェクトの各要素に対して再帰的に等価判定を行いたい場合は、
+@code{object-equal?}を直接呼ぶのではなく、@code{equal?}を各要素に対して
+呼ぶようにして下さい。
+@c COMMON
+
+@example
+(define-class <foo> ()
+  ((x :init-keyword x))
+  ((y :init-keyword y)))
+
+(define-method object-equal? ((a <foo>) (b <foo>))
+  (and (equal? (slot-ref a 'x) (slot-ref b 'x))
+       (equal? (slot-ref a 'y) (slot-ref b 'y))))
+
+(equal? (make <foo> :x 1 :y (list a b))
+        (make <foo> :x 1 :y (list a b)))
+  @result{} #t
+
+(equal? (make <foo> :x 1 :y (make <foo> :x 3 :y 4))
+        (make <foo> :x 1 :y (make <foo> :x 3 :y 4)))
+  @result{} #t
+@end example
+@end deffn
+
+@c EN
+Sometimes you want to test if two aggregate structures
+are topologically equal, i.e., if one has a shared substructure,
+the other has a shared substructure in the same way.
+@code{Equal?} can't handle it; module @code{util.isomorph} 
+provides a procedure @code{isomorphic?} which does the job
+(@xref{Determine isomorphism}).
+@c JP
+しばしば、ふたつの複合型オブジェクトに関して、両者がトポロジー的に等しいこと、
+すなわち一方が共有する部分構造を持っている場合にもう一方も同じように部分構造を
+共有しているかどうかを調べたいことがあります。@code{equal?}はその目的には
+使えません。モジュール@code{util.isomorph}の提供する@code{isomorphic?}が
+その目的に使えます。(@ref{Determine isomorphism}参照)。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Numbers, Booleans, Equivalence, Core library
