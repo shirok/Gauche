@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.1 2001-04-15 22:12:37 shiro Exp $
+;; $Id: regexp.scm,v 1.2 2001-04-16 09:33:25 shiro Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -46,5 +46,46 @@
 
 ;; not supported yet
 
+;;-------------------------------------------------------------------------
+(test-section "backslash escape")
+
+(test "a.c" '("abc")
+      (lambda () (match&list #/a.c/ "abc" 1)))
+(test "a[bc]d" '("abd")
+      (lambda () (match&list #/a[bc]d/ "abd" 1)))
+(test "a\\*c" '("a*c")
+      (lambda () (match&list #/a\*c/ "a*c" 1)))
+(test "a\\\\b" '("a\\b")
+      (lambda () (match&list #/a\\b/ "a\\b" 1)))
+(test "a\\\\\\*b" '("a\\*b")
+      (lambda () (match&list #/a\\\*b/ "a\\*b" 1)))
+(test "a\\bc" '("abc")
+      (lambda () (match&list #/a\bc/ "abc" 1)))
+(test "a\\\\bc" '("a\\bc")
+      (lambda () (match&list #/a\\bc/ "a\\bc" 1)))
+(test "a\\[b" '("a[b")
+      (lambda () (match&list #/a\[b/ "a[b" 1)))
+
+;;-------------------------------------------------------------------------
+(test-section "repetitions")
+
+(test "ab*c" '("abc")
+      (lambda () (match&list #/ab*c/ "abc" 1)))
+(test "ab*c" '("ac")
+      (lambda () (match&list #/ab*c/ "ac" 1)))
+(test "ab*c" '("abbbc")
+      (lambda () (match&list #/ab*c/ "abbbc" 1)))
+(test "ab*c" '("abbc")
+      (lambda () (match&list #/ab*c/ "abbabaabbc" 1)))
+(test "ab+c" '("abc")
+      (lambda () (match&list #/ab+c/ "abc" 1)))
+(test "ab+c" '("abbc")
+      (lambda () (match&list #/ab+c/ "abbc" 1)))
+(test "ab+c" '("abbc")
+      (lambda () (match&list #/ab+c/ "abbabaabbc" 1)))
+(test "ab?c" '("abc")
+      (lambda () (match&list #/ab?c/ "abc" 1)))
+(test "ab?c" '("ac")
+      (lambda () (match&list #/ab?c/ "abbaac" 1)))
 
 (test-end)
