@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.151 2002-01-31 08:50:29 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.152 2002-02-11 09:27:56 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -16235,9 +16235,104 @@ Oleg Kiselyov, General ways to traverse collections,,@*
 @unnumbered C to Scheme mapping
 @c NODE CとSchemeの関数の対応
 
+@c EN
 For the convenience of the programmers familiar to C, 
-I composed a simple table of C library functions with
+I composed a simple table of C operators and library functions with
 the corresponding Scheme functions.
+@c JP
+Cに馴染んだプログラマのために、Cのオペレータとライブラリ関数からSchemeの関数への
+対応表を示しておきます。
+@c COMMON
+
+@menu
+* C operators::                 
+* C functions::                 
+@end menu
+
+@node C operators, C functions, C to Scheme mapping, C to Scheme mapping
+@subsection C operators
+@c NODE Cのオペレータ
+
+@table @code
+@item +
+R5RS arithmetic procedure @code{+}.   @xref{Arithmetics}.
+@item +=
+Gauche @code{inc!} macro.  @xref{Assignments}.
+@item -
+R5RS arithmetic procedure @code{-}.   @xref{Arithmetics}.
+@item -=
+Gauche @code{dec!} macro.  @xref{Assignments}.
+@item ->
+@item * (binary)
+R5RS arithmetic procedure @code{*}.   @xref{Arithmetics}.
+@item * (unary)
+No equivalent procedure.  Scheme doesn't have explicit notation of
+pointers.
+@item *=
+No equivalent procedure.
+@item /
+R5RS arithmetic procedure @code{/}.   @xref{Arithmetics}.
+@item /=
+No equivalent procedure.
+@item & (binary)
+Gauche @code{logand}.  @xref{Bitwise operations}.
+@item & (unary)
+No equivalent procedure.  Scheme doesn't have explicit notation of
+pointers.
+@item &&
+R5RS syntax @code{and}.  @xref{Conditionals}.
+@item &=
+No equivalent procedure.
+@item |
+Gauche @code{logior}.  @xref{Bitwise operations}.
+@item ||
+R5RS syntax @code{or}.  @xref{Conditionals}.
+@item |=
+No equivalent procedure.
+@item ^
+Gauche @code{logxor}.  @xref{Bitwise operations}.
+@item =
+R5RS syntax @code{set!}.  @xref{Assignments}.
+@item ==
+R5RS equivalence procedure, @code{eq?}, @code{eqv?} and @code{equal?}.
+@xref{Equivalence}.
+@item <
+@itemx <=
+R5RS arithmetic procedure @code{<} and @code{<=}.
+@xref{Numerical comparison}.  Unlike C operator, Scheme version
+is transitive.
+@item <<
+Gauche @code{ash}.  @xref{Bitwise operations}.
+@item <<=
+No equivalent procedure.
+@item >
+@itemx >=
+R5RS arithmetic procedure @code{>} and @code{>=}.
+@xref{Numerical comparison}.  Unlike C operator, Scheme version
+is transitive.
+@item >>
+Gauche @code{ash}.  @xref{Bitwise operations}.
+@item >>=
+No equivalent procedure.
+@item %
+R5RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
+@item %=
+No equivalent procedure.
+@item []
+@item .
+@item ~
+Gauche @code{lognot}.  @xref{Bitwise operations}.
+@item ~=
+No equivalent procedure.
+@item !
+R5RS procedure @code{not}.  @xref{Booleans}.
+@item !=
+No equivalent procedure.
+@end table
+
+@node C functions,  , C operators, C to Scheme mapping
+@subsection C functions
+@c NODE Cの関数
 
 @table @code
 @item abort
@@ -16810,9 +16905,6 @@ see @ref{Character code conversion}.
 @item write
 R5RS @code{display}.   @xref{Output}.
 @end table
-
-
-
 
 @c Appendix : Common Lisp to Scheme mapping
 @c Appendix : Perl to Scheme mapping
