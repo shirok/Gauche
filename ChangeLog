@@ -1,3 +1,13 @@
+2001-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_Expt): fixed a bug that (expt 0.0 1) returned
+	  1.0 (Thanks to TAGA Yoshitaka).
+	* src/class.c : fixed a bug in method_more_specific comparing
+	  methods with optional arg (Thanks to TAGA Yoshitaka).
+	* src/vm.c, lib/gauche/vm/debugger.c : fixed a problem that the
+	  debugger printed only the innermost environment.
+	* lib/gauche/collection.scm : added experimentally.
+	  
 2001-10-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : fixed a number class hierarchy bug.
