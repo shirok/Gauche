@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.36 2001-05-06 07:43:31 shirok Exp $
+ *  $Id: number.c,v 1.37 2001-05-07 08:41:07 shirok Exp $
  */
 
 #include <math.h>
@@ -1134,24 +1134,6 @@ ScmObj Scm_Round(ScmObj num, int mode)
     default: Scm_Panic("something screwed up");
     }
     return Scm_MakeFlonum(r);
-}
-
-/*===============================================================
- * TRANSCEDENTAL FUNCTIONS
- */
-
-ScmObj Scm_Expt(ScmObj x, ScmObj y)
-{
-    if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
-    if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
-    
-    /* TODO: optimize the case where x and y is integer, y>0 */
-    {
-        double vx = Scm_GetDouble(x);
-        double vy = Scm_GetDouble(y);
-        double r = pow(vx, vy);
-        return Scm_MakeFlonum(r);
-    }
 }
 
 /*===============================================================
