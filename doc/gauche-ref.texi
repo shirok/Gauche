@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.218 2002-06-16 00:23:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.219 2002-06-16 22:00:45 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19227,9 +19227,16 @@ On the other hand, @code{string-map!} modifies @var{s}.
 
 @deftp {Module} srfi-14
 @mdindex srfi-14
+@c EN
 Implements the character set library defined in SRFI-14
 (@ref{srfi-14,,SRFI-14}).  Note that several basic character-set
 operations are Gauche's build-in functions.  @xref{Character set}.
+@c JP
+SRFI-14で定義された文字セットライブラリを実装します
+(@ref{srfi-14,,SRFI-14})。
+基本的な文字セットの操作はGauche組み込みになっています(@ref{Character set}参照)。
+このモジュールでは多くのユーティリティ手続きが追加されます。
+@c COMMON
 @end deftp
 
 @menu
@@ -19247,29 +19254,71 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 @defun list->char-set char-list &optional base-cs
 @defunx list->char-set! char-list base-cs
 [SRFI-14]
+@c EN
+Constructs a character set from a list of characters @var{char-list}.
+If @var{base-cs} is given, it must be a character set, and the characters
+in it are added to the result character set.
+@code{List->char-set!} is allowed, but not required, to reuse @var{base-cs}
+to store the result.
+@c JP
+与えられた文字のリスト@var{char-list}から文字セットを構築して返します。
+文字セット@var{base-cs}が与えられていた場合、返される文字セットは
+その文字セットに@var{char-list}中の文字を追加したものとなります。
+@code{list->char-set!}は、結果を格納するために@var{base-cs}を
+変更するかもしれません。
+@c COMMON
 @end defun
 
-@defun string->char-set char-list &optional base-cs
-@defunx string->char-set! char-list base-cs
+@defun string->char-set s &optional base-cs
+@defunx string->char-set! s base-cs
 [SRFI-14]
+@c EN
+Like @code{list->char-set} and @code{list->char-set!}, 
+but take a list of characters from a string @var{s}.
+@c JP
+追加する文字をリストでなく文字列@var{s}で与えることを除けば
+@code{list->char-set}、@code{list->char-set!}と同じです。
+@c COMMON
 @end defun
 
 @defun char-set-filter pred char-set &optional base-cs
 @defunx char-set-filter! pred char-set base-cs
 [SRFI-14]
+@c EN
+Returns a character set containing every character @var{c} in
+@var{char-set} such that @code{(@var{pred} @var{c})} returns true.
+If a character set @var{base-cs} is given, its content is added to 
+the result.  The linear update version @code{char-set-filter!}
+is allowed, but not required, to modify @var{base-cs} to store the result.
+@c JP
+@var{char-set}内の文字のうち、@code{(@var{pred} @var{c})} が真の値を
+返すような@var{c}からなる文字セットを作成して返します。
+文字セット@var{base-cs}が与えられた場合は、その内容が結果に追加されます。
+@code{char-set-filter!}は、結果を格納するために@var{base-cs}を変更するかも
+しれません。
+@c COMMON
 @end defun
 
 @defun ucs-range->char-set lower upper &optional error? base-cs
 @defunx ucs-range->char-set! lower upper error? base-cs
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun integer-range->char-set lower upper &optional error? base-cs
 @defunx integer-range->char-set! lower upper error? base-cs
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun ->char-set x
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @node SRFI-14 Character-set Comparison, SRFI-14 Character-set iteration, SRFI-14 Character-set constructors, Character-set library
@@ -19277,14 +19326,23 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 
 @defun char-set= char-set1 @dots{}
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set@code{<=} char-set1 @dots{}
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-hash char-set &optional bound
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @node SRFI-14 Character-set iteration, SRFI-14 Character-set query, SRFI-14 Character-set Comparison, Character-set library
@@ -19292,35 +19350,59 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 
 @defun char-set-cursor char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-ref char-set cursor
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-cursor-next char-set cursor
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun end-of-char-set? ccursor
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-fold kons knil char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-unfold pred fun gen seed &optional base-char-set
 @defunx char-set-unfold! pred fun gen seed base-char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-for-each proc char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-map proc char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @node SRFI-14 Character-set query, SRFI-14 Character-set algebra, SRFI-14 Character-set iteration, Character-set library
@@ -19328,26 +19410,44 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 
 @defun char-set-size char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-count pred char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set->list char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set->string char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-every pred char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun char-set-any pred char-set
 [SRFI-14]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @node SRFI-14 Character-set algebra, SRFI-14 Predefined character-set, SRFI-14 Character-set query, Character-set library
