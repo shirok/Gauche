@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.33 2001-12-16 04:35:06 shirok Exp $
+ *  $Id: read.c,v 1.34 2002-01-03 21:45:49 shirok Exp $
  */
 
 #include <stdio.h>
@@ -112,10 +112,7 @@ static void read_error(ScmPort *port, const char *msg, ...)
  * Miscellaneous routines
  */
 
-#ifdef __GNUC__
-inline
-#endif
-static int skipws(ScmPort *port)
+inline static int skipws(ScmPort *port)
 {
     int c = 0;
     for (;;) {
@@ -139,7 +136,7 @@ static int skipws(ScmPort *port)
     case '{':; case '}':; case '"':; case ';':;       \
     case ' ':; case '\n':; case '\t':; case '\r'
 
-ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
+static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
 {
     int c;
 
