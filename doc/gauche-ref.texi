@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.372 2003-02-27 07:11:56 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.373 2003-02-27 08:23:19 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18680,6 +18680,7 @@ these hook objects are shared by all threads.
 
 @deftp {Module} gauche.parseopt
 @mdindex gauche.parseopt
+@c EN
 This module defines a convenient way to parse command-line options.
 The interface is hinted by Perl, and conveniently handles long-format
 options with mutiple option arguments.
@@ -18691,25 +18692,59 @@ functional interface to parse POSIX/GNU compatible argument syntax.
 SLIB has @code{getopt}-compatible utility.
 Required features may differ from application to application,
 so choose whichever fits your requirement.
+@c JP
+このモジュールでは、コマンドラインオプションをパースするための便利な方法を定義
+しています。インタフェースは Perl にヒントを受けたもので、複数のオプション引数を
+伴う長い形式のオプションを便利に扱うことができます。
+
+実際、Gauche でコマンドラインオプションをパースするにはいくつかの選択肢が
+あります。SRFI-37 (@ref{srfi-37 - a program argument processor}参照)では、
+POSIX/GNU 互換の引数構文をパースするための機能的なインタフェースを提供しています。
+SLIB は、@code{getopt} 互換のユーティリティを持っています。
+要求される機能はアプリケーションごとに異なるので、あなたの要求にフィットするものを
+選んで下さい。
+@c COMMON
 @end deftp
 
 @defmac parse-options args (option-clause @dots{})
+@c EN
 @var{args} is an expression that contains a list of command-line arguments.
 This macro scans the command-line options (an argument that begins with
 `@code{-}') and processes it as specified in @var{option-clause}s, then
 returns the remaining arguments.
+@c JP
+@var{args} は、コマンドライン引数のリストを含む式です。
+このマクロは、コマンドラインオプション(`@code{-}' で始まる引数)をスキャンし、
+@var{option-clause} に指定されているものとして処理し、残りの引数を返します。
+@c COMMON
 
+@c EN
 Unlike typical @code{getopt} or @code{getopt_long} implementation in C,
 @code{parse-options} does not permute the given command-line arguments.
 It stops parsing when it encounters a non-option argument (argument without
 starting with a minus sign).
+@c JP
+C における典型的な @code{getopt} や @code{getopt_long} の実装とは異なり、
+@code{parse-options} は与えられたコマンドライン引数の順番を変えません。
+オプションでない引数(ハイフンで始まらない引数)に遭遇した時点でパースを
+中止します。
+@c COMMON
 
+@c EN
 If the parser encounters an argument with only two minus signs `@code{--}',
 it stops argument parsing and returns a list of arguments after `@code{--}'.
 
 Each @var{option-clause} is consisted by a pair of @var{option-spec}
 and its action.
+@c JP
+パーサは、ハイフン2つのみの引数 `@code{--}' に遭遇すると、引数パーシングを
+中止してｍ`@code{--}' の後の引数のリストを返します。
 
+それぞれの @var{option-clause} は、@var{option-spec} とそのアクションのペアで
+構成されます。
+@c COMMON
+
+@c EN
 @var{option-spec} is a string that specifies the name of the option and
 how the option takes the arguments.  An alphanumeric characters, underscore,
 plus and minus sign is allowed for option's names, except that
@@ -18718,39 +18753,85 @@ matches a regexp @code{#/[\w_+][-\w_+]*/}.
 If the option takes argument(s), it can be specified by attaching 
 equal character and the type of the argument after the name.  The option
 can take more than one arguments.
-
+@c JP
+@var{option-spec} は、オプションの名前とそのオプションがどのように引数を取るか
+を指定する文字列です。オプションの名前には、アルファベット文字、数字、
+アンダースコア、プラス記号、ハイフンが許されますが、ハイフンは最初の文字としては
+使えません。すなわち、有効なオプションの名前は、@code{#/[\w_+][-\w_+]*/} という
+正規表現にマッチするものです。
+オプションが引数を取る場合、名前の後ろに等号文字と引数の型を付けることで指定
+できます。オプションは一つ以上の引数を取ることができます。
+@c COMMON
 @table @code
 @item "@var{name}"
+@c EN
 Specifies option @var{name}, that doesn't take any argument.
+@c JP
+引数を取らないオプションの @var{name} を指定します。
+@c COMMON
 
 @item "@var{name}=s"
+@c EN
 Option @var{name} takes one argument, and it is passed as a string.
+@c JP
+オプション @var{name} は引数を一つ取り、それは文字列として渡されます。
+@c COMMON
 
 @item "@var{name}=i"
+@c EN
 Option @var{name} takes one argument, and it is passed as an exact integer.
 If the given argument is not valid string for an exact integer,
 an error is signalled.
+@c JP
+オプション @var{name} は引数を一つ取り、それは正確整数として渡されます。
+与えられた引数が正確整数として妥当な文字列でない場合は、エラーが通知されます。
+@c COMMON
 
 @item "@var{name}=f"
+@c EN
 Option @var{name} takes one argument, and it is passed as a real number.
 If the given argument is not valid string for a real number,
 an error is signalled.
+@c JP
+オプション @var{name} は引数を一つ取り、それは実数として渡されます。
+与えられた引数が実数として妥当な文字列でない場合は、エラーが通知されます。
+@c COMMON
 
 @item "@var{name}=ss"
+@c EN
 Option @var{name} takes two arguments, both string.
+@c JP
+オプション @var{name} は引数を二つ取り、両方とも文字列です。
+@c COMMON
 
 @item "@var{name}=iii"
+@c EN
 Option @var{name} takes three integer arguments.
+@c JP
+オプション @var{name} は3つの整数の引数を取ります。
+@c COMMON
 
 @item "@var{name}=sf"
+@c EN
 Option @var{name} takes two arguments, the first is a string and the
 second is a number.
+@c JP
+オプション @var{name} は2つの引数を取ります。一つ目は文字列で、
+二つ目は数値です。
+@c COMMON
 @end table
 
+@c EN
 In the command line, the option may appear with preceding
 single or double minus signs.  The option's argument may be comibined
 by the option itself with an equal sign.  For example, all the following
 command line arguments match an option spec @code{"prefix=s"}.
+@c JP
+コマンドラインでは、オプションは一つか二つのハイフンに続いて与えられるでしょう。
+オプションの引数は、オプションそのものと等号記号でつながれて与えられるでしょう。
+例えば、以下の全てのコマンドライン引数は、一つのオプションの仕様、@code{"prefix=s"} に
+マッチします。
+@c COMMON
 @example
 -prefix /home/shiro
 -prefix=/home/shiro
@@ -18758,19 +18839,34 @@ command line arguments match an option spec @code{"prefix=s"}.
 --prefix=/home/shiro
 @end example
 
+@c EN
 If a given command-line option matches one of @var{option-spec}, then
 the associated action is evaluated.  An action can be one of the
 following forms.
+@c JP
+与えられたコマンドラインオプションが @var{option-spec} の一つにマッチすると、
+関連付けられたアクションが評価されます。アクションは以下のフォームの一つです。
+@c COMMON
 
 @table @code
 @item @var{bind-spec} @var{body} @dots{}
+@c EN
 @var{bind-spec} is a proper or dotted list of variables like lambda-list.
 The option's arguments are bound to @var{bind-spec}, then
 then @var{body} @dots{} is evaluated. 
+@c JP
+@var{bind-spec} は、ラムダリストのような変数の真性リストかドット対リストです。
+オプションの引数は @var{bind-spec} に束縛され、@var{body} @dots{} が評価されます。
+@c COMMON
 
 @item => @var{proc}
+@c EN
 If a command-line option matches @var{option-spec}, calls a procedure
 @var{proc} with a list of the option's arguments.
+@c JP
+コマンドラインオプションが @var{option-spec} にマッチすると、
+@var{proc} がオプションの引数のリストとともに呼び出されます。
+@c COMMON
 @end table
 
 Examples:
@@ -18798,11 +18894,19 @@ Examples:
  @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
 @end example
 
+@c EN
 If a symbol @code{else} is at the position of @var{option-spec},
 the clause is selected when no other option clause matches a given
 command-line option.  Three ``arguments'' are associated to
 the clause; the unmatched option, the rest of arguments, and
 a procedure that represents the option parser.
+@c JP
+シンボル @code{else} が @var{option-spec} の位置にある場合、その節は、
+与えられたコマンドラインオプションにマッチする他のオプション節が
+ない場合に選択されます。その節には3つの``引数''が関連付けられます。
+それらは、マッチしなかったオプション、引数の残り、オプションパーサを
+表す手続きです。
+@c COMMON
 
 @example
 (parse-options args
@@ -18810,6 +18914,7 @@ a procedure that represents the option parser.
    (else (option . _)  (error "unrecognized option:" option))))
 @end example
 
+@c EN
 Unlike other clause, the else clause returns to the caller of
 @code{parse-options}, without looping further.  In order to
 continue looping, you have to call the third argument of the else
@@ -18817,6 +18922,14 @@ clause with the remaining arguments.  This can be used
 to implement your own sub-parser.  The following example
 just skips unrecognized option, with printing a warning,
 and continues parsing:
+@c JP
+他の節とは異なり、else 節はそれ以上繰り返しをせずに
+@code{parse-options} の呼び出し元へ戻ります。
+繰り返しを続けるためには、else 節の三つ目の引数を残りの引数を
+伴って呼び出さなければなりません。これは、あなた独自のサブパーサを
+実装するのに使うことができるでしょう。以下の例では、認識されない
+オプションを単にスキップし、警告を表示し、パーシングを続けます。
+@c COMMON
 
 @example
 (parse-options args
@@ -18829,6 +18942,7 @@ and continues parsing:
 @end defmac
 
 @defmac make-option-parser (option-clause @dots{})
+@c EN
 This is a lower-level interface.  @var{option-clause}s are the
 same as @code{parse-options}.  This macro returns a procedure
 that can be used later to parse the command line options.
@@ -18838,6 +18952,16 @@ optional argument.  The required argument is a list of strings,
 for given command-line arguments.  The optional argument may
 be a procedure that takes more than three arguments, and if given,
 the procedure is used as if it is the body of @code{else} option clause.
+@c JP
+これは低レベルのインタフェースです。@var{option-clause} は、
+@code{parse-options} と同じです。このマクロは、コマンドラインオプションを
+後でパースするために使うことができる手続きを返します。
+
+返される手続きは、一つの必須の引数と一つのオプション引数を取ります。
+必須の引数は、与えられたコマンドライン引数としての文字列のリストです。
+オプションの引数は、三つ以上の引数を取る手続きで、それが与えられると
+手続きはそれが @code{else} オプション節のボディであるかのように使われます。
+@c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
