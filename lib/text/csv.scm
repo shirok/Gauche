@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: csv.scm,v 1.7 2004-11-10 21:42:36 shirok Exp $
+;;;  $Id: csv.scm,v 1.8 2004-11-11 02:31:28 shirok Exp $
 ;;;
 
 (define-module text.csv
@@ -117,7 +117,8 @@
                               (string->list separator)
                               (list separator)))
            (special-chars
-            (apply char-set quote-char #\newline #\return separator-chars)))
+            (apply char-set quote-char #\space #\newline #\return
+                   separator-chars)))
 
       (lambda (port fields)
         (define (write-a-field field)
