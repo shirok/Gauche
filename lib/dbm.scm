@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.7 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: dbm.scm,v 1.1 2003-09-07 23:49:52 shirok Exp $
 ;;;
 
 (define-module dbm
@@ -136,5 +136,17 @@
   (when (dbm-closed? dbm) (errorf "dbm-map: dbm already closed: ~s" dbm))
   (unless (procedure? proc) (errorf "dbm-map: bad procedure: ~s" proc))
   (reverse (dbm-fold dbm (lambda (key value r) (cons (proc key value) r)) '())))
+
+;;
+;; Metainformation
+;;
+
+(define-method dbm-db-exists? ((class <dbm-meta>) name) #f)
+
+(define-method dbm-db-remove ((class <dbm-meta>) name) #f)
+
+(define-method dbm-db-copy   ((class <dbm-meta>) from to) #f)
+
+(define-method dbm-db-rename ((class <dbm-meta>) from to) #f)
 
 (provide "dbm")

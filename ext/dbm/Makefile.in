@@ -43,8 +43,5 @@ ndbm_head.c ndbm_tail.c :
 odbm_head.c odbm_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension odbm
 
-install-dbm :
-	$(INSTALL) -m 444 dbm.scm $(GAUCHE_LIBDIR)
-
-install : install-dbm install-std
+install : install-std
 
