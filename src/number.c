@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.72 2002-04-04 10:28:06 shirok Exp $
+ *  $Id: number.c,v 1.73 2002-04-04 19:45:23 shirok Exp $
  */
 
 #include <math.h>
@@ -1388,6 +1388,8 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
  * Multibyte strings are filtered out in the early stage of
  * parsing, so the subroutines assume the buffer contains
  * only ASCII chars.
+ *
+ * The '#' padding is not supported yet.
  */
 
 struct numread_packet {
@@ -1570,7 +1572,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     if (SCM_FALSEP(intpart)) {
-        if (fracdigs == 0) return SCM_FALSE;
+        if (fracdigs == 0) return SCM_FALSE; /* input was "." */
         intpart = SCM_MAKE_INT(0);
     }
 
@@ -1591,7 +1593,11 @@ static ScmObj read_real(const char **strp, int *lenp,
             (*strp)++, (*lenp)--;
             if (isdigit(c)) {
                 exponent = exponent * 10 + (c - '0');
-                if (exponent >= DBL_MAX_10_EXP) return SCM_FALSE;
+                /* just reject obviously wrong exponent.  more precise
+                   check will be done later. */
+                if (exponent >= LONG_MAX/10 - 10) {
+                    return numread_error("(exponent of floating-point number out of range)", ctx);
+                }
             }
         }
         if (exp_minusp) exponent = -exponent;
@@ -1605,16 +1611,44 @@ static ScmObj read_real(const char **strp, int *lenp,
        on Programming Language Design and Implementation, 1990.)
        For now, we trade accuracy for simplicity. */
     {
-        double realnum = Scm_GetDouble(intpart) * pow(10.0, exponent);
-        if (fracdigs) {
-            realnum += Scm_GetDouble(fraction) * pow(10.0, exponent - fracdigs);
+        double realnum = 0.0;
+
+        /* NB: watch out for overflow/underflow of power component.
+         * We can't precaulculate pow(10.0, exponent), for it will
+         * overflow in the case like:
+         *   0.00000001e310
+         * On the other hand, if exponent is very small (close to -307),
+         * pow(10.0, exponent-fracdigs) causes underflow, and floating
+         * point addition suffers loss of precision.
+         */
+        if (exponent > DBL_MIN_10_EXP) {
+            if (intpart != SCM_MAKE_INT(0)) {
+                realnum = Scm_GetDouble(intpart) * pow(10.0, exponent);
+            }
+            if (fracdigs) {
+                if (exponent - fracdigs <= DBL_MIN_10_EXP) {
+                    realnum += Scm_GetDouble(fraction)
+                        * pow(10.0, -fracdigs) * pow(10.0, exponent);
+                } else {
+                    realnum += Scm_GetDouble(fraction)
+                        * pow(10.0, exponent - fracdigs);
+                }
+            }
+        } else {
+            ScmObj f = Scm_Add(Scm_Multiply(intpart,
+                                            Scm_Expt(SCM_MAKE_INT(10),
+                                                     SCM_MAKE_INT(fracdigs)),
+                                            SCM_NIL),
+                               fraction, SCM_NIL);
+            realnum = Scm_GetDouble(f) * pow(10.0, -fracdigs) * pow(10.0, exponent);
         }
+        
         if (minusp) realnum = -realnum;
         /* check exactness */
         if (ctx->exactness == EXACT) {
             double integ;
             if (modf(realnum, &integ) != 0.0) {
-                return numread_error("(exact non-integral number is not supported",
+                return numread_error("(exact non-integral number is not supported)",
                                      ctx);
             }
             return Scm_InexactToExact(Scm_MakeFlonum(realnum));

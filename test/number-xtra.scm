@@ -7,7 +7,8 @@
   (with-output-to-file file
     (lambda ()
       (dotimes (n num)
-        (display (modulo (sys-random) #x20000000))
+;        (display (modulo (sys-random) #x20000000))
+        (display (sys-random))
         (newline)))))
 
 (define (generate-bignum-file file num)
@@ -38,3 +39,16 @@
       (receive (sec1 usec1) (sys-gettimeofday)
         (- (+ (* sec1 1000000) usec1)
            (+ (* sec0 1000000) usec0))))))
+
+;; test writer-reader invariance
+(define (test-writer-reader-invariance file)
+  (with-input-from-file file
+    (lambda ()
+      (port-for-each (lambda (input)
+                       (let* ((num (string->number input))
+                              (num2 (string->number (number->string num))))
+                         (unless (eqv? num num2)
+                           (print #`"ERROR: ,num and ,num2 (original ,input)"))))
+                     read-line))))
+
+                       

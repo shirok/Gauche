@@ -1,3 +1,9 @@
+2002-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : fixed read_real to avoid underflow of reading
+	  very small numbers.  still needs to work on denormalized flonum
+	  case.
+
 2002-04-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : improved integer reader to do bignum calculation
