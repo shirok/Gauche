@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.61 2002-02-21 08:57:24 shirok Exp $
+;;; $Id: syslib.stub,v 1.62 2002-02-22 13:03:30 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -309,7 +309,7 @@
   name[siz+6] = '\\0';
   fd = Scm_SysCall(mkstemp(name));
   if (fd < 0) Scm_SysError(\"mkstemp failed\");
-  fp = fdopen(fd, \"rw\");
+  fp = fdopen(fd, \"w\");
   sname = SCM_MAKE_STR_COPYING(name);
   SCM_RETURN(Scm_Values2(Scm_MakeFilePort(fp, sname, \"w\", TRUE), sname));
 #else
