@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.248 2002-05-12 10:39:42 shirok Exp $
+ *  $Id: gauche.h,v 1.249 2002-05-12 11:33:39 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1440,6 +1440,9 @@ struct ScmGlocRec {
 
 #define SCM_GLOC(obj)            ((ScmGloc*)(obj))
 #define SCM_GLOCP(obj)           SCM_XTYPEP(obj, SCM_CLASS_GLOC)
+SCM_CLASS_DECL(Scm_GlocClass);
+#define SCM_CLASS_GLOC          (&Scm_GlocClass)
+
 #define SCM_GLOC_GET(gloc) \
     ((gloc)->getter? (gloc)->getter(gloc) : (gloc)->value)
 #define SCM_GLOC_SET(gloc, val) \
@@ -1449,8 +1452,8 @@ SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
 SCM_EXTERN ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module);
 SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
 
-SCM_CLASS_DECL(Scm_GlocClass);
-#define SCM_CLASS_GLOC          (&Scm_GlocClass)
+#define SCM_GLOC_CONST_P(gloc) \
+    ((gloc)->setter == Scm_GlocConstSetter)
 
 /*--------------------------------------------------------
  * KEYWORD

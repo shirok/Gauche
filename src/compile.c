@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.79 2002-05-12 10:39:42 shirok Exp $
+ *  $Id: compile.c,v 1.80 2002-05-12 11:33:39 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -287,6 +287,23 @@ static inline ScmObj get_binding_frame(ScmObj var, ScmObj env)
     return SCM_NIL;
 }
 
+/* Given symbol or identifier, try to find its global binding.
+   Returns GLOC if found, or NULL otherwise. */
+static ScmGloc *find_identifier_binding(ScmVM *vm, ScmObj sym_or_id)
+{
+    ScmModule *mod;
+    ScmSymbol *sym;
+    SCM_ASSERT(VAR_P(sym_or_id));
+    if (SCM_IDENTIFIERP(sym_or_id)) {
+        sym = SCM_IDENTIFIER(sym_or_id)->name;
+        mod = SCM_IDENTIFIER(sym_or_id)->module;
+    } else { /* sym_or_id is symbol */
+        sym = SCM_SYMBOL(sym_or_id);
+        mod = vm->module;
+    }
+    return Scm_FindBinding(mod, sym, FALSE);
+}
+
 static inline int global_eq(ScmObj var, ScmObj sym, ScmObj env)
 {
     ScmObj v;
@@ -373,8 +390,6 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 
         if (VAR_P(head)) {
             ScmObj var = lookup_env(head, env, TRUE);
-            ScmSymbol *sym = NULL;
-            ScmGloc *g;
 
             if (SCM_VM_INSNP(var)) {
                 /* variable is bound locally */
@@ -388,19 +403,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 /* it's a global variable.   Let's see if the symbol is
                    bound to a global syntax, or an inlinable procedure
                    in the current module. */
-                ScmModule *mod = NULL;
-
-                if (SCM_IDENTIFIERP(var)) {
-                    sym = SCM_IDENTIFIER(var)->name;
-                    mod = SCM_IDENTIFIER(var)->module;
-                } else if (SCM_SYMBOLP(var)) {
-                    sym = SCM_SYMBOL(var);
-                    mod = vm->module;
-                } else {
-                    Scm_Panic("internal compiler error (compile_int): bad frame");
-                }
-
-                g = Scm_FindBinding(mod, sym, FALSE);
+                ScmGloc *g = find_identifier_binding(vm, var);
                 if (g != NULL) {
                     ScmObj gv = SCM_GLOC_GET(g);
                     if (SCM_SYNTAXP(gv)) {
@@ -481,8 +484,14 @@ static ScmObj compile_varref(ScmObj obj, ScmObj env)
 
     loc = lookup_env(obj, env, FALSE);
     if (VAR_P(loc)) {
-        ADDCODE1(SCM_VM_INSN(SCM_VM_GREF));
-        ADDCODE1(loc);
+        /* global variable.  see if it's constant or not */
+        ScmGloc *g = find_identifier_binding(Scm_VM(), loc);
+        if (g && SCM_GLOC_CONST_P(g)) {
+            ADDCODE1(SCM_GLOC_GET(g)); /* insert constant value */
+        } else {
+            ADDCODE1(SCM_VM_INSN(SCM_VM_GREF));
+            ADDCODE1(loc);
+        }
     } else {
         ADDCODE1(loc);
     }

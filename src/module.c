@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.27 2002-05-12 10:39:42 shirok Exp $
+ *  $Id: module.c,v 1.28 2002-05-12 11:33:39 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -121,7 +121,7 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
     ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
     if (g) {
-        if (g->setter == Scm_GlocConstSetter) {
+        if (SCM_GLOC_CONST_P(g)) {
             /* TODO: warning interface */
             Scm_Printf(SCM_CURERR, "Warning: redefining constant %S::%S",
                        g->module, g->name);
@@ -141,8 +141,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
     /* NB: this function bypasses check of gloc setter */
     if (g) {
-        if (g->setter == Scm_GlocConstSetter
-            && g->value != value) {
+        if (SCM_GLOC_CONST_P(g) && g->value != value) {
             /* TODO: warning interface */
             Scm_Printf(SCM_CURERR, "Warning: redefining constant %S::%S\n",
                        g->module->name, g->name);

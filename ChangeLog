@@ -3,6 +3,7 @@
 	* ext/mt-random/* : added mt-random-real0
 	* src/symbol.c, src/module.c, src/vm.c, etc. : added setter/getter
 	  hook to gloc.  added define-constant syntax.
+	* src/compile.c : inline constant reference defined by define-constant.
 
 2002-05-10  Shiro Kawai  <shiro@acm.org>
 
