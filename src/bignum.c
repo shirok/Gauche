@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.21 2001-05-18 09:33:17 shirok Exp $
+ *  $Id: bignum.c,v 1.22 2001-05-30 07:47:59 shirok Exp $
  */
 
 #include <math.h>
@@ -74,10 +74,9 @@ ScmObj Scm_MakeBignumFromSI(long val)
 {
     ScmBignum *b;
     if (val == LONG_MIN) {
-        b = make_bignum(2);
+        b = make_bignum(1);
         b->sign = -1;
-        b->values[0] = 0;
-        b->values[1] = 1;
+        b->values[0] = (unsigned long)LONG_MAX+1;
     } else if (val < 0) {
         b = make_bignum(1);
         b->sign = -1;
