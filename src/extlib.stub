@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.52 2001-04-01 20:18:08 shiro Exp $
+;;; $Id: extlib.stub,v 1.53 2001-04-02 02:11:49 shiro Exp $
 ;;;
 
 "
@@ -68,6 +68,15 @@
     }
   }
   SCM_RETURN(head);")
+
+(define-cproc union (&rest args)        ;use eq? to compare.
+  (assert (list? args))
+  "  ScmObj set, ap;
+  if (SCM_NULLP(args)) SCM_RETURN(SCM_NIL);
+  set = SCM_CAR(args);
+  SCM_FOR_EACH(ap, SCM_CDR(args))
+    set = Scm_Union(set, SCM_CAR(ap));
+  SCM_RETURN(set);")
 
 (define-cproc reverse! (list)
   "  SCM_RETURN(Scm_ReverseX(list));")
