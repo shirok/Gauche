@@ -1,3 +1,7 @@
+2004-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm (gauche.array): added exported symbols.
+
 2004-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.scm (regexp-replace-all): detect the case when

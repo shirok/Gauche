@@ -1,7 +1,8 @@
 ;;;
 ;;; Array operations.  This is superset of SRFI-25.
 ;;;
-;;;  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2002-2004 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2004      by Alex Shinn  (foof@synthcode.com)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.12 2004-04-02 01:16:37 foof Exp $
+;;;  $Id: array.scm,v 1.13 2004-09-13 20:22:50 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -25,6 +26,8 @@
   (use gauche.collection)
   (use gauche.sequence)
   (export <array-meta> <array>
+          <u8array> <s8array> <u16array> <s16array> <u32array> <s32array>
+          <u64array> <s64array> <f32array> <f64array>
           array? make-array shape array array-rank
           array-start array-end array-ref array-set!
           share-array subarray array-equal?
@@ -134,20 +137,6 @@
   :backing-storage-getter s16vector-ref
   :backing-storage-setter s16vector-set!
   :backing-storage-length s16vector-length)
-
-(define-class <u32array> (<array-base>)
-  ()
-  :backing-storage-creator make-u32vector
-  :backing-storage-getter u32vector-ref
-  :backing-storage-setter u32vector-set!
-  :backing-storage-length u32vector-length)
-
-(define-class <s32array> (<array-base>)
-  ()
-  :backing-storage-creator make-s32vector
-  :backing-storage-getter s32vector-ref
-  :backing-storage-setter s32vector-set!
-  :backing-storage-length s32vector-length)
 
 (define-class <u32array> (<array-base>)
   ()
