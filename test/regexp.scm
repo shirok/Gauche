@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.6 2001-06-02 06:33:13 shirok Exp $
+;; $Id: regexp.scm,v 1.7 2001-06-30 09:43:52 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -379,8 +379,8 @@
       (map string->number (list yyyy mm dd)))
     ((rxmatch #/^\d+\/\d+\/\d+$/ str)
         (#f)
-     (error "ambiguous: ~s" str))
-    (else (error "bogus: ~s" str))))
+     (error "ambiguous:" str))
+    (else (error "bogus:" str))))
 
 (test "rxmatch-cond" '(2001 2 3)
       (lambda () (test-parse-date "2001/2/3")))
@@ -396,8 +396,8 @@
      (map string->number (list yyyy mm dd)))
     (#/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ (#f yyyy mm dd)
      (map string->number (list yyyy mm dd)))
-    (#/^\d+\/\d+\/\d+$/  (#f) (error "ambiguous: ~s" str))
-    (else (error "bogus: ~s" str))))
+    (#/^\d+\/\d+\/\d+$/  (#f) (error "ambiguous:" str))
+    (else (error "bogus:" str))))
 
 (test "rxmatch-case" '(2001 2 3)
       (lambda () (test-parse-date2 "2001/2/3")))
