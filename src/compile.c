@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.119 2004-08-19 06:49:14 shirok Exp $
+ *  $Id: compile.c,v 1.120 2004-08-20 02:04:50 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -2074,18 +2074,28 @@ ScmObj Scm_MakeInlineAsmForm(ScmObj form, ScmObj insn, ScmObj args)
     return add_srcinfo(code, form);
 }
 
-ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
-                          int reqargs, int optargs, int insn, char *proc)
+/* This is the inliner function that handles most common case of
+   VM assembly code inlining of some builtin primitives.
+   The data points to an int[1] that contains the instruction number. */
+ScmObj Scm_SimpleAsmInliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 {
+    int insn, reqargs, optargs, nargs;
     ScmObj vminsn;
-    int nargs = Scm_Length(SCM_CDR(form));
+    
+    SCM_ASSERT(SCM_SUBRP(subr));
+    SCM_ASSERT(data);
+    insn = *(int*)data;
+    nargs = Scm_Length(SCM_CDR(form));
+    reqargs = SCM_PROCEDURE_REQUIRED(subr);
+    optargs = SCM_PROCEDURE_OPTIONAL(subr);
+
     if (optargs) {
         if (0 < reqargs && nargs < reqargs) {
-            Scm_Error("%s requires at least %d arg(s)", proc, reqargs);
+            Scm_Error("%S requires at least %d arg(s)", subr, reqargs);
         }
     } else {
         if (nargs != reqargs) {
-            Scm_Error("%s requires exactly %d arg(s)", proc, reqargs);
+            Scm_Error("%S requires exactly %d arg(s)", subr, reqargs);
         }
     }
     /* TODO: temporary */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.92 2004-08-19 06:49:14 shirok Exp $
+ *  $Id: vm.h,v 1.93 2004-08-20 02:04:51 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -483,9 +483,13 @@ enum {
 #define SCM_VM_COMPILER_FLAG_CLEAR(vm, flag)  ((vm)->compilerFlags &= ~(flag))
 
 /*
- * Inlinin assembler stuff
+ * Inline assembler stuff
+ *   These are used in Gauche core to inline VM assembly code for
+ *   some built-in procedures.
  */
 
 SCM_EXTERN ScmObj Scm_MakeInlineAsmForm(ScmObj form, ScmObj insn, ScmObj args);
+SCM_EXTERN ScmObj Scm_SimpleAsmInliner(ScmObj subr, ScmObj form, ScmObj env,
+                                       void *data);
 
 #endif /* GAUCHE_VM_H */

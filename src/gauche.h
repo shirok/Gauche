@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.379 2004-08-16 02:33:57 shirok Exp $
+ *  $Id: gauche.h,v 1.380 2004-08-20 02:04:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -386,9 +386,7 @@ SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 SCM_EXTERN ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
-SCM_EXTERN ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
-				     int reqargs, int optargs,
-				     int insn, char *proc);
+
 SCM_EXTERN ScmObj Scm_Eval(ScmObj form, ScmObj env);
 SCM_EXTERN ScmObj Scm_Apply(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_Values(ScmObj args);

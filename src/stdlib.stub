@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.107 2004-08-19 06:49:14 shirok Exp $
+;;; $Id: stdlib.stub,v 1.108 2004-08-20 02:04:51 shirok Exp $
 ;;;
 
 
@@ -138,8 +138,9 @@ static ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmOb
 
 static ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
 {
-  return Scm_CompileInliner(SCM_LIST3(SCM_FALSE, arg0, arg1), env,
-                            2, 0, insn, \"\");
+  ScmObj args = SCM_LIST2(arg0, arg1);
+  return Scm_MakeInlineAsmForm(Scm_Cons(SCM_FALSE, args),
+                               SCM_VM_INSN(insn), args);
 }
 
 static ScmObj plus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)

@@ -1,7 +1,7 @@
 ;;;
 ;;; genstub - simple stub generator for Gauche
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.99 2004-08-16 02:33:58 shirok Exp $
+;;;  $Id: genstub,v 1.100 2004-08-20 02:04:51 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1008,54 +1008,61 @@
 ;; TODO: arg type assertion
 (define (emit-inliner cproc)
   (let* ((insn (inline-insn-of cproc)))
-    (when insn
-      (set! (inliner-of cproc) (string-append (c-name-of cproc) "_inline"))
-      (emit-inliner-header cproc)
-      (print "{")
-      (cond ((string? insn) (emit-inliner-call cproc insn))
-            ((and (pair? insn) (eq? (car insn) 'case-nargs))
-             (print "  int nargs = Scm_Length(SCM_CDR(form));")
-             (for-each (lambda (clause)
-                         (let ((nargs (car clause))
-                               (insn  (cadr clause)))
-                           (if (eq? nargs 'else)
-                               (display "else ")
-                               (display #`"if (nargs == ,|nargs|) "))
-                           (print "{")
-                           (if insn
-                               (emit-inliner-call cproc insn)
-                               (print "  return SCM_FALSE;"))
-                           (print "}")))
-                       (cdr insn))))
-      (print "}")
-      ))
+    (cond
+     ((not insn)
+      (when (inliner-of cproc)
+        (let ((recname #`",(c-name-of cproc)__INLINER"))
+          (f "static SCM_DEFINE_INLINER(~a, ~a, NULL);"
+             recname (inliner-of cproc))
+          (set! (inliner-of cproc) recname))))
+     ((string? insn)
+      (let ((dataname #`",(c-name-of cproc)__INLINE_INSN")
+            (recname  #`",(c-name-of cproc)__INLINER"))
+        (set! (inliner-of cproc) recname)
+        (f "static int ~a[] = { ~a };" dataname insn)
+        (f "static SCM_DEFINE_INLINER(~a, Scm_SimpleAsmInliner, ~a);"
+           recname dataname)))
+     ((and (pair? insn) (eq? (car insn) 'case-nargs))
+      (let ((procname #`",(c-name-of cproc)__inline")
+            (recname  #`",(c-name-of cproc)__INLINER"))
+        (set! (inliner-of cproc) recname)
+        (emit-inliner-header cproc procname)
+        (print "{")
+        (print "  int nargs = Scm_Length(SCM_CDR(form));")
+        (for-each (lambda (clause)
+                    (let ((nargs (car clause))
+                          (insn  (cadr clause)))
+                      (if (eq? nargs 'else)
+                        (display "else ")
+                        (display #`"if (nargs == ,|nargs|) "))
+                      (print "{")
+                      (if insn
+                        (f "  return Scm_MakeInlineAsmForm(form, SCM_VM_INSN(~a), SCM_CDR(form));"
+                           insn)
+                        (print "  return SCM_FALSE;"))
+                      (print "}")))
+                  (cdr insn))
+        (print "}")
+        (f "static SCM_DEFINE_INLINER(~a, ~a, NULL);" recname procname)))
+     (else
+      (error "invalid inliner spec:" insn))))
   )
 
-(define (emit-inliner-header cproc)
-  (let ((inliner (inliner-of cproc))
-        (name (scheme-name-of cproc))
+(define (emit-inliner-header cproc inliner-name)
+  (let ((name (scheme-name-of cproc))
         (req  (num-reqargs-of cproc))
         (opt  (num-optargs-of cproc))
         )
     (f "static ScmObj ~a(ScmObj subr, ScmObj form, ScmObj env, void *data)"
-       inliner)
+       inliner-name)
     ))
-
-(define (emit-inliner-call cproc insn)
-  (f "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\");"
-     (num-reqargs-of cproc)
-     (if (or (< 0 (num-optargs-of cproc)) (have-rest-arg? cproc)) "TRUE" "FALSE")
-     insn
-     (scheme-name-of cproc)))
 
 (define (emit-record cproc)
   (let ((c-func-name (c-name-of cproc))
         (inliner-name "NULL"))
     (emit-static-string c-func-name (scheme-name-of cproc))
     (when (inliner-of cproc)
-      (set! inliner-name (format "&~a__INLINER" c-func-name))
-      (f "static SCM_DEFINE_INLINER(~a__INLINER, ~a, NULL);"
-         c-func-name (inliner-of cproc)))
+      (set! inliner-name #`"&,(inliner-of cproc)"))
     (f "static SCM_DEFINE_SUBR(~a__STUB, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
        c-func-name
        (num-reqargs-of cproc)
