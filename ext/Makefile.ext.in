@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.15 2003-10-05 02:09:55 shirok Exp $
+## $Id: Makefile.ext.in,v 1.16 2004-02-02 11:42:13 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -48,7 +48,7 @@ LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
 DATA_INSTALL_DIR = @datadir@
 
-CLEANFILES = core *~ test.log
+CLEANFILES = core *~ test.log test.out
 
 .SUFFIXES:
 .SUFFIXES: .S .c .o .obj .s .stub
