@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.10 2002-08-18 02:29:20 shirok Exp $
+;;;  $Id: debugger.scm,v 1.11 2002-09-01 20:29:46 shirok Exp $
 ;;;
 
 ;; NB: this is still a working version.  
@@ -36,19 +36,24 @@
 (define-syntax debug-print
   (syntax-rules ()
     ((_ ?form)
-     (begin
-       (or (and-let* ((info (and (pair? '?form)
-                                 (pair-attribute-get '?form 'source-info #f)))
+     (let1 f '?form
+       (or (and-let* ((info (and (pair? f)
+                                 (pair-attribute-get f 'source-info #f)))
                       ((pair? info))
-                      ((pair? (cadr info))))
+                      ((pair? (cdr info))))
              (format (current-error-port) "#?=~s:~a:~,,,,50:s\n"
-                     (cadr info) (car info) '?form)
+                     (car info) (cadr info) f)
              #t)
-           (format (current-error-port) "#?=~,,,,50:s\n" '?form))
+           (format (current-error-port) "#?=~,,,,50:s\n" f))
        (receive vals ?form
-         (for-each (lambda (elt)
-                     (format (current-error-port) "#?-    ~,,,,50:s\n" elt))
-                   vals)
+         (if (null? vals)
+             (format (current-error-port) "#?-<void>\n")
+             (begin
+               (format (current-error-port) "#?-    ~,,,,50:s\n" (car vals))
+               (for-each (lambda (elt)
+                           (format (current-error-port)
+                                   "#?+    ~,,,,50:s\n" elt))
+                         (cdr vals))))
          (apply values vals))))))
 
 ;; Print stack trace -----------------------------------------
