@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.39 2001-05-30 07:47:16 shirok Exp $
+ *  $Id: load.c,v 1.40 2001-05-30 08:19:57 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -126,6 +126,12 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
     }
     load_history_rec->value = Scm_Cons(port_info, load_history_rec->value);
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
+}
+
+void Scm_LoadFromPort(ScmPort *port)
+{
+    ScmObj l = SCM_INTERN("load-from-port");
+    Scm_Eval(SCM_LIST2(l, SCM_OBJ(port)), SCM_NIL);
 }
 
 /*---------------------------------------------------------------------
