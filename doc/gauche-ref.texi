@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.78 2001-10-03 10:16:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.79 2001-10-03 10:53:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1536,6 +1536,12 @@ See @code{length+} in @ref{SRFI-1 List miscellaneous routines}.
 @var{list} can be a proper, dotted or circular list.
 @end defun
 
+@defun list-ref+ list k &optional (fallback @code{#f})
+Like @code{list-ref}, except when @var{k} is out of range
+(negative or greater than or equal to the length of @var{list}), this
+returns @var{fallback} rather than signalling an error.
+@end defun
+
 @defun last-pair list
 [SRFI-1] Returns the last pair of @var{list}.
 @var{list} can be a proper or dotted list.
@@ -1863,6 +1869,12 @@ For incomplete string, its length and its size always match.
 @code{(string-length @var{cstring})}.
 
 It is an error to pass an incomplete string.
+@end defun
+
+@defun string-ref+ cstring k &optional (fallback @code{#f})
+Like @code{string-ref}, except when @var{k} is out of range
+(negative or greater than or equal to the length of @var{cstring}),
+this returns @var{fallback} rather than signalling an error.
 @end defun
 
 @defun string-byte-ref string k
@@ -2250,6 +2262,12 @@ useful macros and functions to deal with regular expression matching.
 
 @defun vector-ref vector k
 [R5RS]
+@end defun
+
+@defun vector-ref+ vector k &optional fallback
+Like @code{vector-ref}, except when @var{k} is out of range
+(negative or greater than or equal to the length of @var{vector}), this
+returns @var{fallback} rather than signalling an error.
 @end defun
 
 @defun vector-set! vector k obj
