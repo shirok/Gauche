@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.21 2001-02-03 09:16:35 shiro Exp $
+ *  $Id: vm.c,v 1.22 2001-02-03 09:50:07 shiro Exp $
  */
 
 #include "gauche.h"
@@ -61,7 +61,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->curout = SCM_PORT(Scm_Stdout());
     v->curerr = SCM_PORT(Scm_Stderr());
 
-    v->enableInline = 1;
+    v->enableInline = TRUE;
+    v->debugCompile = FALSE;
 
     /* initial frame */
     v->env = NULL;
@@ -716,6 +717,18 @@ static void run_loop()
             }
         case SCM_VM_APP_VEC:
             {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj cp = SCM_NIL, arg;
+                if (nargs > 0) {
+                    cp = val0;
+                    while (--nargs > 0) {
+                        POP_ARG(arg);
+                        if (Scm_Length(arg) < 0)
+                            Scm_Error("list required, but got %S\n", arg);
+                        cp = Scm_Append2(arg, cp);
+                    }
+                }
+                val0 = Scm_ListToVector(cp);
                 continue;
             }
         case SCM_VM_VEC_LEN:
@@ -845,6 +858,8 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
                    some mechanism to save the current vm state,
                    and recover it upon leaving this continuation. */
     theVM->pc = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    if (theVM->debugCompile)
+        Scm_Printf(theVM->curerr, "== %#S\n", theVM->pc);
     run_loop();
 }
 
