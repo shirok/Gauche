@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.31 2001-04-06 08:56:54 shiro Exp $
+ *  $Id: load.c,v 1.32 2001-04-14 23:07:28 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -208,28 +208,19 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
  * Load
  */
 
-ScmObj Scm_VMTryLoad(const char *cpath)
-{
-    ScmObj port;
-    if (*cpath == '~') {
-        ScmObj file = Scm_NormalizePathname(SCM_STRING(Scm_MakeString(cpath, -1, -1)),
-                                            SCM_PATH_EXPAND);
-        cpath = Scm_GetStringConst(SCM_STRING(file));
-    }
-    port = Scm_OpenFilePort(cpath, "r");
-    if (SCM_FALSEP(port)) return FALSE;
-    return Scm_VMLoadFromPort(SCM_PORT(port));
-}
-
-ScmObj Scm_VMLoad(ScmString *filename)
+ScmObj Scm_VMLoad(ScmString *filename, int errorp)
 {
     ScmObj port, truename, load_paths = Scm_GetLoadPath();
 
-    truename = Scm_FindFile(filename, &load_paths, TRUE);
+    truename = Scm_FindFile(filename, &load_paths, errorp);
+    if (SCM_FALSEP(truename)) return SCM_FALSE;
     load_next_rec->value = load_paths;
     port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)), "r");
     if (SCM_FALSEP(port)) {
-        Scm_Error("file %S exists, but couldn't open.", truename);
+        if (errorp) 
+            Scm_Error("file %S exists, but couldn't open.", truename);
+        else
+            return SCM_FALSE;
     }
     return Scm_VMLoadFromPort(SCM_PORT(port));
 }
@@ -499,7 +490,7 @@ static ScmObj autoload_sub(ScmObj *argv, int nargs, void *data)
     SCM_ASSERT(nargs == 1);
     adata->args = argv[0];
     Scm_VMPushCC(autoload_cc, (void **)&adata, 1);
-    return Scm_VMLoad(adata->path);
+    return Scm_VMLoad(adata->path, TRUE);
 }
 
 ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
