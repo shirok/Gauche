@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.14 2002-04-30 01:12:52 shirok Exp $
+;;  $Id: netlib.stub,v 1.15 2002-04-30 06:09:25 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -121,7 +121,7 @@
   if (!SCM_FALSEP(bufferedP)) { /*for backward compatibility */
     bufmode = SCM_PORT_BUFFER_FULL;
   } else {
-    bufmode = Scm_BufferedMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_LINE);
+    bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_LINE);
   }
   SCM_RETURN(Scm_SocketInputPort(sock, bufmode));")
 
@@ -132,7 +132,7 @@
   if (!SCM_FALSEP(bufferedP)) { /* for backward compatibility */
     bufmode = SCM_PORT_BUFFER_FULL;
   } else {
-    bufmode = Scm_BufferedMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_LINE);
+    bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_LINE);
   }
   SCM_RETURN(Scm_SocketOutputPort(sock, bufmode));")
 
