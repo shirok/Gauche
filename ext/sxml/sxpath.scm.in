@@ -10,7 +10,7 @@
 ;;;      sxpath-ext.scm,v 1.911
 ;;;   Public domain.
 ;;;
-;;; $Id: sxpath.scm.in,v 1.5 2003-09-25 10:06:20 shirok Exp $
+;;; $Id: sxpath.scm.in,v 1.6 2003-11-05 12:38:33 shirok Exp $
 ;;;
 
 (define-module sxml.sxpath
@@ -26,9 +26,10 @@
           node-reverse node-trace select-kids node-self node-join
           node-reduce node-or node-closure
           if-sxpath if-car-sxpath car-sxpath
+          sxml:id-alist
           sxml:string sxml:boolean sxml:number sxml:string-value
           sxml:node? sxml:attr-list sxml:id sxml:equality-cmp
-          sxml:equal? sxml:relational-cmp
+          sxml:equal? sxml:not-equal? sxml:relational-cmp
           sxml:attribute sxml:child sxml:parent sxml:ancestor
           sxml:ancestor-or-self sxml:descendant sxml:descendant-or-self
           sxml:following sxml:following-sibling sxml:namespace

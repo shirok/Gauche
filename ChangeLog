@@ -1,3 +1,10 @@
+2003-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/sxpath.scm.in, ext/sxml/tools.scm.in : added missing
+	  APIs to export list (sxml:id-alist, sxml:not-equal?,
+	  sxml:string->xml) and corrected misspelling of exported fn
+	  (sxml:attr-list-node).   Pointed by Nobuo YAMASHITA.
+
 2003-11-02  Kimura Fuyuki  <fuyuki@nigredo.org>
 
 	* aclocal.m4, acinclude.m4 : Add a description for GAUCHE_VERSION
