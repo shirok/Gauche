@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.4 2001-03-26 08:25:11 shiro Exp $
+;; $Id: object.scm,v 1.5 2001-03-27 06:28:18 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -63,7 +63,7 @@
       (lambda () (map (lambda (slot) (slot-ref x2 slot)) '(a b c))))
 
 ;;----------------------------------------------------------------
-(test-section "slot parameters")
+(test-section "slot initialization")
 
 (define-class <r> ()
   ((a :init-keyword :a :initform 4)
@@ -80,6 +80,77 @@
 (test "make <r> :a" '(9 5) (lambda () (slot-values r2)))
 (test "make <r> :a :b" '(20 100) (lambda () (slot-values r3)))
 
+;;----------------------------------------------------------------
+(test-section "slot allocations")
+
+(define-class <s> ()
+  ((i :allocation :instance      :init-keyword :i :init-value #\i)
+   (c :allocation :class         :init-keyword :c :init-value #\c)
+   (s :allocation :each-subclass :init-keyword :s :init-value #\s)
+   (v :allocation :virtual       :init-keyword :v
+      :slot-ref (lambda (o) (cons (slot-ref o 'i) (slot-ref o 'c)))
+      :slot-set! (lambda (o v)
+                   (slot-set! o 'i (car v))
+                   (slot-set! o 'c (cdr v))))
+   ))
+
+(define-method slot-values ((obj <s>))
+  (map (lambda (s) (slot-ref obj s)) '(i c s v)))
+
+(define s1 (make <s>))
+(define s2 (make <s>))
+
+(test "make <s>" '(#\i #\c #\s (#\i . #\c)) (lambda () (slot-values s1)))
+(test "slot-set! :instance"
+      '((#\I #\c #\s (#\I . #\c)) (#\i #\c #\s (#\i . #\c)))
+      (lambda ()
+        (slot-set! s1 'i #\I)
+        (list (slot-values s1) (slot-values s2))))
+(test "slot-set! :class"
+      '((#\I #\C #\s (#\I . #\C)) (#\i #\C #\s (#\i . #\C)))
+      (lambda ()
+        (slot-set! s1 'c #\C)
+        (list (slot-values s1) (slot-values s2))))
+(test "slot-set! :each-subclass"
+      '((#\I #\C #\S (#\I . #\C)) (#\i #\C #\S (#\i . #\C)))
+      (lambda ()
+        (slot-set! s1 's #\S)
+        (list (slot-values s1) (slot-values s2))))
+(test "slot-set! :virtual"
+      '((i c #\S (i . c)) (#\i c #\S (#\i . c)))
+      (lambda ()
+        (slot-set! s1 'v '(i . c))
+        (list (slot-values s1) (slot-values s2))))
+
+(define-class <ss> (<s>)
+  ())
+
+(define s3 (make <ss> :i "i" :c "c" :s "s"))
+
+(test "make <ss>"
+      '(("i" "c" "s" ("i" . "c")) (i "c" #\S (i . "c")))
+      (lambda () (list (slot-values s3) (slot-values s1))))
+(test "slot-set! :class"
+      '(("i" "C" "s" ("i" . "C")) (i "C" #\S (i . "C")))
+      (lambda ()
+        (slot-set! s3 'c "C")
+        (list (slot-values s3) (slot-values s1))))
+(test "slot-set! :each-subclass"
+      '(("i" "C" "s" ("i" . "C")) (i "C" "S" (i . "C")))
+      (lambda ()
+        (slot-set! s1 's "S")
+        (list (slot-values s3) (slot-values s1))))
+(test "slot-set! :each-subclass"
+      '(("i" "C" 5 ("i" . "C")) (i "C" "S" (i . "C")))
+      (lambda ()
+        (slot-set! s3 's 5)
+        (list (slot-values s3) (slot-values s1))))
+
+(define s4 (make <ss> :v '(1 . 0)))
+
+(test "make <ss> :v"
+      '((1 0 "s" (1 . 0)) ("i" 0 5 ("i" . 0)))
+      (lambda () (list (slot-values s4) (slot-values s3))))
 
 ;;----------------------------------------------------------------
 (test-section "next method")
