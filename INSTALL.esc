@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.6 2001-11-01 09:44:19 shirok Exp $
+$Id: INSTALL.esc,v 1.7 2001-11-14 20:23:47 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -106,6 +106,37 @@ Gauche to link against the library.
 
 You can obtain Bruno Haible's libiconv library from here:
 http://clisp.cons.org/~haible/packages-libiconv.html
+<? ) !>
+
+<? (header "ローカルライブラリパス" "Local library paths") !>
+
+<? (if-lang japanese? !>
+Gaucheのビルドに、標準でない場所にインストールされているライブラリを
+使用したい場合、次のオプションでその場所を指定することができます。
+
+  --with-local=PATH:PATH2:...
+
+これで、PATH/include、PATH2/include、... がインクルードパスに、
+PATH/lib、PATH2/lib、... がライブラリサーチパスに追加されます。
+
+例えば、/usr/localにインストールされたgdbmライブラリを使用したい
+場合は次のようにします。
+
+  --with-local=/usr/local
+<? else !>
+If you want to use some libraries installed in non-standard location
+to build Gauche, you can use the following option to specify the
+locations.
+
+  --with-local=PATH:PATH2:...
+
+This addts PATH/include, PATH2/include, ... to the include paths,
+and PATH/lib, PATH2/lib, ... to the library search paths.
+
+For example, if you want to use gdbm library in /usr/local,
+you can say:
+
+  --with-local=/usr/local
 <? ) !>
 
 <? (header "SLIBの場所" "Selecting SLIB location") !>
