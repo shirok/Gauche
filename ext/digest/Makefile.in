@@ -11,12 +11,14 @@ SCMFILES = md5.scm sha1.scm
 
 GENERATED = Makefile md5.c sha1.c *_head.c *_tail.c
 
+EXTRA_INCLUDES = -I$(srcdir)/../uvector
+
 all : $(LIBFILES)
 
 md5_OBJECTS = md5_head.$(OBJEXT) md5.$(OBJEXT) md5c.$(OBJEXT) md5_tail.$(OBJEXT)
 
 md5.$(SOEXT) : $(md5_OBJECTS) 
-	$(MODLINK) md5.$(SOEXT) $(md5_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) md5.$(SOEXT) $(md5_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 md5.c : md5.stub
 

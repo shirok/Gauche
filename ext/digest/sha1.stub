@@ -30,12 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: sha1.stub,v 1.6 2004-10-09 11:36:36 shirok Exp $
+;;;  $Id: sha1.stub,v 1.7 2004-12-15 12:46:06 shirok Exp $
 ;;;
 
 "
  #include <gauche/extend.h>
  #include <gauche/class.h>
+ #include <gauche/uvector.h>
  #include \"sha.h\"
 
  typedef struct ScmSha1Rec {
@@ -76,8 +77,15 @@
 
 (define-type <sha1> "ScmSha1*")
 
-(define-cproc %sha1-update (sha1::<sha1> data::<string>)
-  "  SHAUpdate(&sha1->ctx, Scm_GetString(data), SCM_STRING_SIZE(data));
+(define-cproc %sha1-update (sha1::<sha1> data)
+  "
+  if (SCM_U8VECTORP(data)) {
+    SHAUpdate(&sha1->ctx, SCM_UVECTOR_ELEMENTS(SCM_U8VECTOR(data)), SCM_U8VECTOR_SIZE(SCM_U8VECTOR(data)));
+  } else if (SCM_STRINGP(data)) {
+    SHAUpdate(&sha1->ctx, Scm_GetStringConst(data), SCM_STRING_SIZE(data));
+  } else {
+    Scm_Error(\"u8vector or string required, but got: %S\", data);
+  }
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc %sha1-final (sha1::<sha1>)

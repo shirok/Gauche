@@ -30,12 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: sha1.scm,v 1.5 2003-10-10 21:52:18 fuyuki Exp $
+;;;  $Id: sha1.scm,v 1.6 2004-12-15 12:46:06 shirok Exp $
 ;;;
 
 ;;; RFC 3174 US Secure Hash Algorithm 1 (SHA1)
 
 (define-module rfc.sha1
+  (use gauche.uvector)
   (extend util.digest)
   (export <sha1> sha1-digest sha1-digest-string)
   )
@@ -53,11 +54,27 @@
   (next-method)
   (slot-set! self 'context (make <sha1-context>)))
 
+;(define (sha1-digest)
+;  (let ((sha1 (make <sha1-context>)))
+;    (port-for-each
+;     (lambda (b) (%sha1-update sha1 b))
+;     (lambda () (read-block 4096)))
+;    (%sha1-final sha1)))
+
+(define-constant *sha1-unit-len* 4096)
+
 (define (sha1-digest)
-  (let ((sha1 (make <sha1-context>)))
+  (let ((sha1 (make <sha1-context>))
+        (buf (make-u8vector *sha1-unit-len*)))
     (port-for-each
-     (lambda (b) (%sha1-update sha1 b))
-     (lambda () (read-block 4096)))
+     (lambda (x) (%sha1-update sha1 x))
+     (lambda ()
+       (let1 count (read-block! buf)
+         (if (eof-object? count)
+           count
+           (if (< count *sha1-unit-len*)
+             (uvector-alias <u8vector> buf 0 count)
+             buf)))))
     (%sha1-final sha1)))
 
 (define (sha1-digest-string string)

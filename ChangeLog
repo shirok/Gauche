@@ -1,3 +1,10 @@
+2004-12-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/digest/md5.stub, ext/digest/md5.scm,
+	  ext/digest/sha1.stub, ext/digest/sha1.scm,
+	  ext/digest/Makeifle.in: modified to use u8vector as a buffer
+	  instead of string.  Based on the patch from Michal Maruška.
+	
 2004-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/collection.scm (fold2, fold3, map-accum,

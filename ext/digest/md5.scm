@@ -30,13 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: md5.scm,v 1.6 2003-10-10 21:52:18 fuyuki Exp $
+;;;  $Id: md5.scm,v 1.7 2004-12-15 12:46:06 shirok Exp $
 ;;;
 
 ;;; RFC 1321 The MD5 Message-Digest Algorithm
 
 (define-module rfc.md5
   (extend util.digest)
+  (use gauche.uvector)
   (export <md5> md5-digest md5-digest-string)
   )
 
@@ -54,11 +55,27 @@
   (next-method)
   (slot-set! self 'context (make <md5-context>)))
 
+;(define (md5-digest)
+;  (let ((md5 (make <md5-context>)))
+;    (port-for-each
+;     (lambda (b) (%md5-update md5 b))
+;     (lambda () (read-block 4096)))
+;    (%md5-final md5)))
+
+(define-constant *md5-unit-len* 4096)
+
 (define (md5-digest)
-  (let ((md5 (make <md5-context>)))
+  (let ((md5 (make <md5-context>))
+        (buf (make-u8vector *md5-unit-len*)))
     (port-for-each
-     (lambda (b) (%md5-update md5 b))
-     (lambda () (read-block 4096)))
+     (lambda (x) (%md5-update md5 x))
+     (lambda ()
+       (let1 count (read-block! buf)
+         (if (eof-object? count)
+           count
+           (if (< count *md5-unit-len*)
+             (uvector-alias <u8vector> buf 0 count)
+             buf)))))
     (%md5-final md5)))
 
 (define (md5-digest-string string)
