@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.39 2002-05-17 10:36:29 shirok Exp $
+ *  $Id: system.c,v 1.40 2002-05-24 10:20:22 shirok Exp $
  */
 
 #include <stdio.h>
@@ -396,7 +396,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_TimeClass,
                          time_print, NULL, NULL,
                          time_allocate, SCM_CLASS_DEFAULT_CPL);
 
-ScmObj Scm_MakeTime(ScmObj type, unsigned long sec, unsigned long nsec)
+ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
 {
     ScmTime *t = SCM_TIME(time_allocate(SCM_CLASS_TIME, SCM_NIL));
     t->type = type;
@@ -412,13 +412,13 @@ ScmObj Scm_CurrentTime(void)
     if (Scm_SysCall(gettimeofday(&tv, NULL)) < 0) {
         Scm_SysError("gettimeofday failed");
     }
-    return Scm_MakeTime(sym_time_utc, tv.tv_sec, tv.tv_usec*1000);
+    return Scm_MakeTime(sym_time_utc, (long)tv.tv_sec, (long)tv.tv_usec*1000);
 #else  /* !HAVE_GETTIMEOFDAY */
-    return Scm_MakeTime(sym_time_utc, (unsigned long)time(NULL), 0);
+    return Scm_MakeTime(sym_time_utc, (long)time(NULL), 0);
 #endif /* !HAVE_GETTIMEOFDAY */
 }
 
-ScmObj Scm_IntSecondsToTime(unsigned long sec)
+ScmObj Scm_IntSecondsToTime(long sec)
 {
     return Scm_MakeTime(sym_time_utc, sec, 0);
 }
@@ -430,8 +430,7 @@ ScmObj Scm_RealSecondsToTime(double sec)
         Scm_Error("seconds out of range: %f", sec);
     }
     frac = modf(sec, &s);
-    return Scm_MakeTime(sym_time_utc, (unsigned long)s,
-                        (unsigned long)(frac * 1.0e9));
+    return Scm_MakeTime(sym_time_utc, (long)s, (long)(frac * 1.0e9));
 }
 
 static ScmObj time_type_get(ScmTime *t)
@@ -449,30 +448,30 @@ static void time_type_set(ScmTime *t, ScmObj val)
 
 static ScmObj time_sec_get(ScmTime *t)
 {
-    return Scm_MakeIntegerFromUI(t->sec);
+    return Scm_MakeInteger(t->sec);
 }
 
 static void time_sec_set(ScmTime *t, ScmObj val)
 {
-    if (!SCM_EXACTP(val)) {
-        Scm_Error("exact integer required, but got %S", val);
+    if (!SCM_REALP(val)) {
+        Scm_Error("reaul number required, but got %S", val);
     }
-    t->sec = Scm_GetUInteger(val);
+    t->sec = Scm_GetInteger(val);
 }
 
 static ScmObj time_nsec_get(ScmTime *t)
 {
-    return Scm_MakeIntegerFromUI(t->nsec);
+    return Scm_MakeInteger(t->nsec);
 }
 
 static void time_nsec_set(ScmTime *t, ScmObj val)
 {
-    unsigned long l;
-    if (!SCM_EXACTP(val)) {
-        Scm_Error("exact integer required, but got %S", val);
+    long l;
+    if (!SCM_REALP(val)) {
+        Scm_Error("real number required, but got %S", val);
     }
-    if ((l = Scm_GetUInteger(val)) >= 1000000000) {
-        Scm_Error("nanoseconds out of range: %lu", l);
+    if ((l = Scm_GetInteger(val)) >= 1000000000) {
+        Scm_Error("nanoseconds out of range: %l", l);
     }
     t->nsec = l;
 }

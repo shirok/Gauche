@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.260 2002-05-22 00:52:03 shirok Exp $
+ *  $Id: gauche.h,v 1.261 2002-05-24 10:20:22 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -378,10 +378,6 @@ SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
 
-SCM_EXTERN ScmObj Scm_WithLock(ScmInternalMutex *mutex, 
-                               ScmObj (*func)(void *),
-                               void *data,
-                               const char *info);
 SCM_EXTERN ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
 SCM_EXTERN ScmObj Scm_ThreadStart(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
@@ -2116,9 +2112,9 @@ SCM_EXTERN time_t Scm_GetSysTime(ScmObj val);
  */
 typedef struct ScmTimeRec {
     SCM_HEADER;
-    ScmObj type;                /* 'time-utc by default.  see SRFI-19 */
-    unsigned long sec;          /* seconds */
-    unsigned long nsec;         /* nanoseconds */
+    ScmObj type;       /* 'time-utc by default.  see SRFI-19 */
+    long sec;          /* seconds */
+    long nsec;         /* nanoseconds */
 } ScmTime;
 
 SCM_CLASS_DECL(Scm_TimeClass);
@@ -2127,8 +2123,8 @@ SCM_CLASS_DECL(Scm_TimeClass);
 #define SCM_TIMEP(obj)        SCM_XTYPEP(obj, SCM_CLASS_TIME)
 
 SCM_EXTERN ScmObj Scm_CurrentTime(void);
-SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, unsigned long sec, unsigned long nsec);
-SCM_EXTERN ScmObj Scm_IntSecondsToTime(unsigned long sec);
+SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec);
+SCM_EXTERN ScmObj Scm_IntSecondsToTime(long sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 #ifdef GAUCHE_USE_PTHREAD
