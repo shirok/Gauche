@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.192 2002-04-30 21:25:56 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.193 2002-05-01 02:30:04 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9420,6 +9420,25 @@ if @var{path} is a symbolic link.
 場合はリンクそのものの情報を返します。
 @c COMMON
 @end defun
+
+@example
+gosh> (describe (sys-stat "gauche.h"))
+#<<sys-stat> 0x815af70> is an instance of class <sys-stat>
+slots:
+  type      : regular
+  perm      : 420
+  mode      : 33188
+  ino       : 845140
+  dev       : 774
+  rdev      : 0
+  nlink     : 1
+  uid       : 400
+  gid       : 100
+  size      : 79549
+  atime     : 1020155914
+  mtime     : 1020152005
+  ctime     : 1020152005
+@end example
 
 @defun sys-stat->mode stat
 @defunx sys-stat->ino stat
