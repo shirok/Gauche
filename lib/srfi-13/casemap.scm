@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: casemap.scm,v 1.2 2001-05-02 08:20:25 shirok Exp $
+;;;  $Id: casemap.scm,v 1.3 2001-05-03 10:28:50 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -47,7 +47,7 @@
       (cond ((eof-object? ch) (get-output-string dst))
             ((char-set-contains? *%cased-char-set* ch)
              (if title?
-                 (write-char (char-titlecase ch) dst)
+                 (write-char (char-upcase ch) dst) ;; This should be char-titlecase
                  (write-char (char-downcase ch) dst))
              (loop #f (read-char src)))
             (else
@@ -61,7 +61,7 @@
 
 (define (string-downcase! s . args)
   (let-optional* args ((start 0) end)
-    (string-substitute! s start (string-upcase s start end))))
+    (string-substitute! s start (string-downcase s start end))))
 
 (define (string-titlecase! s . args)
   (let-optional* args ((start 0) end)

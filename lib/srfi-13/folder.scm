@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: folder.scm,v 1.2 2001-05-01 06:41:43 shirok Exp $
+;;;  $Id: folder.scm,v 1.3 2001-05-03 10:28:38 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -27,7 +27,7 @@
     (let loop ((ch (read-char src)))
       (if (eof-object? ch)
           (get-output-string dest)
-          (begin (write-char (proc ch))
+          (begin (write-char (proc ch) dest)
                  (loop (read-char src)))))
     ))
 
@@ -36,7 +36,7 @@
   (check-arg string? s)
   (let-optional* args ((start 0) end)
      (let ((mapped (apply string-map proc s args)))
-       (string-substitute! s start (+ start (string-length mapped)) mapped))))
+       (string-substitute! s start mapped))))
 
 (define (string-fold kons knil s . args)
   (check-arg procedure? kons)
@@ -76,18 +76,18 @@
     ))
 
 (define (string-unfold-right p f g seed . args)
-  (string-reverse (apply string-unfold p f g seed args)))
-
-(define (string-map proc s . args)
-  (check-arg procedure? proc)
-  (check-arg string? s)
-  (let ((src (open-input-string (apply %maybe-substring s args)))
-        (dest (open-output-string)))
-    (let loop ((ch (read-char src)))
-      (if (eof-object? ch)
-          (get-output-string dest)
-          (begin (write-char (proc ch))
-                 (loop (read-char src)))))
+  (check-arg procedure? p)
+  (check-arg procedure? f)
+  (check-arg procedure? g)
+  (let-optional* args ((base "") (make-final (lambda (_) "")))
+    (let ((dest (open-output-string)))
+      (let loop ((seed seed))
+        (if (p seed)
+            (string-append (make-final seed)
+                           (string-reverse (get-output-string dest))
+                           base)
+            (begin (write-char (f seed) dest)
+                   (loop (g seed))))))
     ))
 
 (define (string-for-each proc s . args)

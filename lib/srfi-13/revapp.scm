@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: revapp.scm,v 1.1 2001-04-28 07:29:53 shirok Exp $
+;;;  $Id: revapp.scm,v 1.2 2001-05-03 10:28:24 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -20,14 +20,19 @@
 (select-module srfi-13)
 
 (define (string-reverse s . args)
-  (let ((sp (apply make-string-pointer s args))
+  (let ((sp (make-string-pointer (apply %maybe-substring s args) -1))
         (dst (open-output-string)))
-    (let loop ((ch (string-pointer-prev! s)))
+    (let loop ((ch (string-pointer-prev! sp)))
       (if (eof-object? ch)
           (get-output-string dst)
           (begin (write-char ch dst)
-                 (loop (string-pointer-prev! s)))))
+                 (loop (string-pointer-prev! sp)))))
     ))
+
+(define (string-reverse! s . args)
+  (let-optional* args ((start 0) end)
+    (let ((rev (string-reverse s start end)))
+      (string-substitute! s start rev))))
 
 (define (string-concatenate list)
   (apply string-append list)) ;; fixme
