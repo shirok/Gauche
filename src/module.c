@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.21 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: module.c,v 1.22 2001-12-02 08:56:15 shirok Exp $
  */
 
 #include "gauche.h"
@@ -115,7 +115,6 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
     ScmObj lp, head = SCM_NIL, tail = SCM_NIL, mod;
-    SCM_APPEND(head, tail, module->imported);
     SCM_FOR_EACH(lp, list) {
         if (!SCM_SYMBOLP(SCM_CAR(lp)))
             Scm_Error("module name required, but got %S", SCM_CAR(lp));
@@ -125,6 +124,7 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
         if (SCM_FALSEP(Scm_Memq(mod, head)))
             SCM_APPEND1(head, tail, mod);
     }
+    SCM_APPEND(head, tail, module->imported);
     return (module->imported = head);
 }
 
