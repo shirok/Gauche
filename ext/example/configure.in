@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.5 2001-05-30 07:50:55 shirok Exp $
+dnl $Id: configure.in,v 1.6 2001-08-06 08:02:55 shirok Exp $
 AC_INIT(example.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
@@ -32,6 +32,7 @@ CC="`$GAUCHE_CONFIG --cc`"
 AC_SUBST(CC)
 
 CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
+AC_SUBST(CFLAGS)
 
 dnl Check for other programs.
 AC_PROG_INSTALL
@@ -42,6 +43,7 @@ dnl Set LDFLAGS to generate shared library.
 dnl This has to come after all the tests that requre linking, or those test
 dnl will fail because they can't generate stand-alone executable.
 LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
+AC_SUBST(LDFLAGS)
 
 dnl Output
 AC_OUTPUT(Makefile)
