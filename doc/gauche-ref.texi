@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.348 2003-01-27 04:48:29 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.349 2003-01-27 05:25:04 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -26455,11 +26455,17 @@ Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
 
 @deftp {Module} rfc.cookie
 @mdindex rfc.cookie
+@c EN
 Defines a set of functions to parse and construct a ``cookie'' information
 defined in RFC 2965 (@ref{rfc2965,,RFC2965}).
+@c JP
+RFC 2965 (@ref{rfc2965,,RFC2965}) で定義されている「クッキー」情報を
+パースしたり構築したりするための手続きを定義しています。
+@c COMMON
 @end deftp
 
 @defun parse-cookie-string string &optional version
+@c EN
 Parse a cookie string @var{string}, which is the value of ``Cookie''
 request header.  Usually, the same information is available to CGI
 program via the environemnt variable @code{HTTP_COOKIE}.
@@ -26469,19 +26475,40 @@ the integer version must be passed to @var{version}.  Otherwise,
 @code{parse-cookie} figures out the version from @var{string}.
 
 The result has the following format.
+@c JP
+リクエスト・ヘッダの Cookie の値のクッキー文字列 @var{string} を
+パースします。通常、CGI プログラムでは、同じ情報は環境変数
+@var{HTTP_COOKIE} を通して利用できます。
+
+リクエスト・ヘッダ Cookie2 を通してクッキーのバージョンが分かる
+場合は、@var{version} へ整数のバージョンとして渡されなければなりません。
+そうでなければ、@code{parse-cookie} は @var{string} からバージョンを
+取り出します。
+
+結果は以下のフォーマットを持ちます。
+@c COMMON
 @example
 ((<name> <value> [:path <path>] [:domain <domain>] [:port <port>])
  @dots{})
 @end example
+@c EN
 where @var{<name>} is the attribute name, and @var{<value>} is
 the corresponding value.  If the attribute doesn't have value,
 @var{<value>} is @code{#f}.  (Note that it differs from the attribute
 having null value, @code{""}.)
 If the attribute has path, domain or port options, it is given
 as a form of keyword-value pair.
+@c JP
+@var{<name>} は属性名で、@var{<value>} は対応する値です。
+属性が値を持たない場合、@var{<value>} は @code{#f} になります。
+(属性が NULL 値を持つ場合は、@code{""} となることに注意。)
+属性がパスやドメイン、ポート番号のオプションを持つ場合は、
+キーワード-値のペアの形式で与えられます。
+@c COMMON
 @end defun
 
 @defun construct-cookie-string specs &optional version
+@c EN
 Given list of cookie specs, creates a cookie string suitable for
 @code{Set-cookie2} or @code{Set-cookie} header.
 
@@ -26490,6 +26517,17 @@ Optional @var{version} argument specifies cookie protocol version.
 When omitted, version 1 is assumed.
 
 Each cookie spec has the following format.
+@c JP
+与えられたクッキーの仕様のリストから、@code{Set-cookie2} か
+@code{Set-cookie} ヘッダに適切なクッキー文字列を作ります。
+
+オプションの @var{version} 引数は、クッキー・プロトコルのバージョンを
+指定するものです。0 は古い Netscape スタイルのフォーマットで、1 は
+RFC2965 スタイルのフォーマットです。省略された場合、1 が指定されたものと
+されます。
+
+クッキーの仕様は以下のフォーマットを持ちます。
+@c COMMON
 @example
 (<name> <value> [:comment <comment>] [:comment-url <url>]
                 [:discard <bool>] [:domain <domain>]
@@ -26497,6 +26535,7 @@ Each cookie spec has the following format.
                 [:port <port-list>] [:secure <bool>]
                 [:version <version>] [:expires <date>])
 @end example
+@c EN
 Where,
 @table @code
 @item <name>
@@ -26513,7 +26552,24 @@ Integers
 Either an integer (seconds since Epoch) or a formatted date string
 following the netscape cookie specification.
 @end table
+@c JP
+@table @code
+@item <name>
+文字列。クッキーの名前。
+@item <value>
+クッキーの値。文字列か、値が必要なければ @code{#f} 。
+@item <comment> <url> <domain> <path> <port-list>
+文字列。
+@item <bool>
+真偽値。
+@item <age> <version>
+整数。
+@item <date>
+整数(エポックからの秒数)か、Netscape のクッキー仕様に従うフォーマットされた
+日付文字列。
+@c COMMON
 
+@c EN
 The attribute values are quoted appropriately.  If the specified attribute
 is irrelevant for the @var{version}, it is ignored.  So you can pass
 the same specs to generate both old-style and new-style cookie strings.
@@ -26525,6 +26581,18 @@ protocol (using @code{Set-cookie2} header), you can join them
 with comma and send it at once.  See RFC2965 for further details.
 
 Some examples:
+@c JP
+属性値は適切にクォートされます。指定された属性が @var{version} に不適切な
+場合は無視されます。古いスタイルと新しいスタイルの両方のクッキー文字列を
+作るために同じ仕様を渡すことができます。
+
+戻り値はそれぞれのクッキー文字列のリストです。(@code{Set-cookie} を使う)
+古いスタイルのプロトコルでは、それぞれを独立したヘッダとして送らなければ
+なりません。(@code{Set-cookie2} ヘッダを使う)新しいプロトコルでは、
+それらをカンマで繋ぎ、一度に送ることができます。詳細は RFC2965 を見て下さい。
+
+いくつかの例を示します。
+@c COMMON
 @example
 (construct-cookie-string
    `(("name" "foo" :domain "foo.com" :path "/"
