@@ -6,15 +6,11 @@ r4rstest.scm - taken from SCM distribution by Aubrey Jaffer.
       * A test which alters global binding of '+' (since Gauche compiler
         inlines '+' by default.)
       * Tests involving bignums and float number formatting
-      * A test using string->symbol and symbol->string.  I haven't
-        figured out why this fails.
 
 nqueen.scm - A solver of N-queen problem, written by Yusuke SHINYAMA
     (http://tanaka-www.cs.titech.ac.jp/%7Eeuske/).
     I'm using this for naive benchmark.
 
-dynwind.scm - A test of dynamic-wind and call/cc.  The first function
-    in it is taken from R5RS example.
-
-primsyn.scm - A naive test for compiler.
+Other scheme files comform Gauche's standard test protocol.
+Run "make test" in src directory to run those tests.
 
