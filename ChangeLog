@@ -1,5 +1,7 @@
 2004-12-02  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.8.2.1
+
 	* lib/slib.scm.in (software-type): check architecture so that
 	  it returns MS-DOS on Windows/MinGW version.
 	* src/port.c (look_for_encoding): ignore '-(unix|dos|mac)' suffix
