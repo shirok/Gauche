@@ -34,6 +34,7 @@
 (test "cond" 3        (lambda ()  (cond (1 => (lambda (x) (+ x 2))) (else 8))))
 
 (test "case" #t (lambda ()  (case (+ 2 3) ((1 3 5 7 9) #t) ((0 2 4 6 8) #f))))
+(test "case" #t (lambda () (undefined? (case 1 ((2 3) #t)))))
 
 ;;----------------------------------------------------------------
 (test-section "closure and saved env")
@@ -87,6 +88,9 @@
 (define (fact-do n)
   (do ((n n (- n 1)) (r 1 (* n r))) ((<= n 1) r)))
 (test "loop do"           120 (lambda ()  (fact-do 5)))
+
+;; tricky case
+(test "do" #f (lambda () (do () (#t #f) #t)))
 
 ;;----------------------------------------------------------------
 (test-section "quasiquote")
