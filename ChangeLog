@@ -1,3 +1,11 @@
+2001-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/* : added workaround for glibc-2.1 iconv() bug in
+	  Shift-JIS handling.  added concept of ownership in the conversion
+	  port to control whether the conversion port should close the remote
+	  port.  changed Scheme API to use keyword arguments to specify
+	  various parameters.
+
 2001-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c : allow bufport's flusher to flush less bytes than
