@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.29 2002-05-14 09:36:03 shirok Exp $
+ *  $Id: module.c,v 1.30 2002-06-11 09:22:04 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -51,20 +51,21 @@ static ScmModule *userModule;
  * Constructor
  */
 
-/* internal */
+/* internal.  caller is responsible to lock the global module table.  */
 static ScmObj make_module(ScmSymbol *name, ScmModule *parent)
 {
-    ScmModule *z;
-    z = SCM_NEW(ScmModule);
-    SCM_SET_CLASS(z, SCM_CLASS_MODULE);
-    z->name = name;
-    z->parent = parent;
-    z->imported = SCM_NIL;
-    z->exported = SCM_NIL;
-    z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
+    ScmModule *m;
+    m = SCM_NEW(ScmModule);
+    SCM_SET_CLASS(m, SCM_CLASS_MODULE);
+    m->name = name;
+    m->parent = parent;
+    m->imported = SCM_NIL;
+    m->exported = SCM_NIL;
+    m->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
+    (void)SCM_INTERNAL_MUTEX_INIT(m->mutex);
 
-    Scm_HashTablePut(modules.table, SCM_OBJ(name), SCM_OBJ(z));
-    return SCM_OBJ(z);
+    Scm_HashTablePut(modules.table, SCM_OBJ(name), SCM_OBJ(m));
+    return SCM_OBJ(m);
 }
 
 ScmObj Scm_MakeModule(ScmSymbol *name)
@@ -79,23 +80,28 @@ ScmObj Scm_MakeModule(ScmSymbol *name)
 /*----------------------------------------------------------------------
  * Finding and modifying bindings
  */
-/* TODO: MT safeness */
 
 ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                          int stay_in_module)
 {
     ScmHashEntry *e;
-    ScmModule *m;
+    ScmModule *m = module;
     ScmObj p;
 
-    e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
+    /* fist, search from the specified module */
+    (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
+    e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
     if (e) return SCM_GLOC(e->value);
+    
     if (!stay_in_module) {
-        /* First, search from imported modules */
+        /* Next, search from imported modules */
         SCM_FOR_EACH(p, module->imported) {
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
             m = SCM_MODULE(SCM_CAR(p));
+            (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
             e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
+            (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
             if (e &&
                 (SCM_TRUEP(m->exported)
                  || !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported))))
@@ -103,7 +109,9 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
         }
         /* Then, search from parent module */
         for (m = module->parent; m; m = m->parent) {
+            (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
             e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
+            (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
             if (e) return SCM_GLOC(e->value);
         }
     }
@@ -117,14 +125,21 @@ ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol)
     else return SCM_GLOC_GET(g);
 }
 
+/*
+ * Definition.
+ */
 ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
-    ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
-    if (g) {
+    ScmGloc *g;
+    ScmHashEntry *e;
+    int redefining = FALSE;
+    
+    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+    e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
+    if (e) {
+        g = SCM_GLOC(e->value);
         if (SCM_GLOC_CONST_P(g)) {
-            /* TODO: warning interface */
-            Scm_Printf(SCM_CURERR, "Warning: redefining constant %S::%S",
-                       g->module, g->name);
+            redefining = TRUE;
             g->setter = NULL;
         }
         SCM_GLOC_SET(g, value);
@@ -133,19 +148,26 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         SCM_GLOC_SET(g, value);
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+    
+    if (redefining) {
+        Scm_Warn("redefining constant %S::%S", g->module, g->name);
+    }
     return SCM_OBJ(g);
 }
 
 ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
-    ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
+    ScmGloc *g;
+    ScmHashEntry *e;
+    int redefining = FALSE;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+    e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
     /* NB: this function bypasses check of gloc setter */
-    if (g) {
-        if (SCM_GLOC_CONST_P(g) && g->value != value) {
-            /* TODO: warning interface */
-            Scm_Printf(SCM_CURERR, "Warning: redefining constant %S::%S\n",
-                       g->module->name, g->name);
-        }
+    if (e) {
+        g = SCM_GLOC(e->value);
+        if (SCM_GLOC_CONST_P(g) && g->value != value) redefining = TRUE;
         g->setter = Scm_GlocConstSetter;
         g->value  = value;
     } else {
@@ -153,41 +175,61 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         g->value = value;
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+
+    if (redefining) {
+        Scm_Warn("redefining constant %S::%S\n", g->module->name, g->name);
+    }
     return SCM_OBJ(g);
 }
 
 ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
-    ScmObj lp, head = SCM_NIL, tail = SCM_NIL, mod;
+    ScmObj lp, mod;
     SCM_FOR_EACH(lp, list) {
         if (!SCM_SYMBOLP(SCM_CAR(lp)))
             Scm_Error("module name required, but got %S", SCM_CAR(lp));
         mod = Scm_FindModule(SCM_SYMBOL(SCM_CAR(lp)), FALSE);
         if (!SCM_MODULEP(mod))
             Scm_Error("no such module: %S", SCM_CAR(lp));
-        if (SCM_FALSEP(Scm_Memq(mod, head)))
-            SCM_APPEND1(head, tail, mod);
+        (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+        if (SCM_FALSEP(Scm_Memq(mod, module->imported))) {
+            module->imported = Scm_Cons(mod, module->imported);
+        }
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
     }
-    SCM_APPEND(head, tail, module->imported);
-    return (module->imported = head);
+    return module->imported;
 }
 
 ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
 {
-    ScmObj lp, syms = module->exported;
-    if (SCM_TRUEP(syms)) return syms; /* all symbols are exported */
-    SCM_FOR_EACH(lp, list) {
-        if (!SCM_SYMBOLP(SCM_CAR(lp)))
-            Scm_Error("symbol required, but got %S", SCM_CAR(lp));
-        if (SCM_FALSEP(Scm_Memq(SCM_CAR(lp), syms)))
-            syms = Scm_Cons(SCM_CAR(lp), syms);
+    ScmObj lp, syms, badsym;
+    int error = FALSE;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+    syms = module->exported;
+    if (!SCM_TRUEP(syms)) {
+        SCM_FOR_EACH(lp, list) {
+            if (!SCM_SYMBOLP(SCM_CAR(lp))) {
+                error = TRUE;
+                badsym = SCM_CAR(lp);
+                break;
+            }
+            if (SCM_FALSEP(Scm_Memq(SCM_CAR(lp), syms)))
+                syms = Scm_Cons(SCM_CAR(lp), syms);
+        }
+        if (!error) module->exported = syms;
     }
-    return (module->exported = syms);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+    if (error) Scm_Error("symbol required, but got %S", badsym);
+    return syms;
 }
 
 ScmObj Scm_ExportAll(ScmModule *module)
 {
+    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
     module->exported = SCM_TRUE;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
     return SCM_OBJ(module);
 }
 
