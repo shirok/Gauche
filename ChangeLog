@@ -1,3 +1,11 @@
+2001-06-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/* : made it work with Bruno Haible's libiconv as well.
+	  Added automatic character detection routine.
+	* src/regexp.c : fixed a bug with unused submatches.  added
+	  Scm_RegMatchBefore and Scm_RegMatchAfter
+	* src/extlib.stub : added rxmatch-before and rxmatch-after
+
 2001-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/* : added workaround for glibc-2.1 iconv() bug in
