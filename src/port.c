@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.89 2003-04-30 20:24:11 shirok Exp $
+ *  $Id: port.c,v 1.90 2003-06-04 09:18:05 shirok Exp $
  */
 
 #include <unistd.h>
@@ -98,7 +98,7 @@ static ScmPort *make_port(int dir, int type)
     port->error = FALSE;
     port->ownerp = FALSE;
     port->name = SCM_FALSE;
-    port->private = FALSE;
+    port->priv = FALSE;
     port->endian = SCM_PORT_BIG_ENDIAN;
     (void)SCM_INTERNAL_MUTEX_INIT(port->mutex);
     (void)SCM_INTERNAL_COND_INIT(port->cv);

@@ -1,3 +1,8 @@
+2003-06-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmPortRec): renamed a member 'private' to 'priv',
+	  to be C++ friendly.
+
 2003-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (read_number), src/stdlib.stub (make-polar): changed

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.337 2003-06-03 08:06:57 shirok Exp $
+ *  $Id: gauche.h,v 1.338 2003-06-04 09:18:05 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -178,7 +178,7 @@ typedef struct ScmClassRec ScmClass;
 /*
  * BOOLEAN
  */
-#define SCM_BOOLP(obj)       ((obj) == SCM_TRUE || (obj == SCM_FALSE))
+#define SCM_BOOLP(obj)       ((obj) == SCM_TRUE || (obj) == SCM_FALSE)
 #define SCM_BOOL_VALUE(obj)  (!SCM_FALSEP(obj))
 #define	SCM_MAKE_BOOL(obj)   ((obj)? SCM_TRUE:SCM_FALSE)
 
@@ -289,7 +289,7 @@ typedef struct ScmHeaderRec {
 #define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (k))
 #endif /* !__CYGWIN__ */
 
-/* Check if classof(OBJ) equals to an exteded class KLASS */
+/* Check if classof(OBJ) equals to an extended class KLASS */
 #define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj)==(klass)))
 
 /* Check if classof(OBJ) is a subtype of an extended class KLASS */
@@ -1098,7 +1098,7 @@ struct ScmPortRec {
                                    file pointer */
     unsigned int closed    : 1; /* TRUE if this port is closed */
     unsigned int error     : 1; /* Error has been occurred */
-    unsigned int private   : 1; /* This port is private for a thread */
+    unsigned int priv      : 1; /* This port is private for a thread */
     unsigned int endian    : 1; /* endianness; used for binary I/O */
     
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
