@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.24 2001-02-21 13:31:35 shiro Exp $
+ *  $Id: vm.h,v 1.25 2001-02-22 06:48:33 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -108,6 +108,7 @@ extern ScmClass Scm_IdentifierClass;
 #define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
 
 extern ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env);
+extern int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env);
 
 /*
  * Source info
