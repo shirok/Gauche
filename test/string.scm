@@ -253,6 +253,59 @@
                        (string-pointer-substring sp :after #t))))
 
 ;;-------------------------------------------------------------------
+(test-section "output string port")
+
+;; This effectively tests the dynamic string implemenatation.
+;; The parameter dstr-init-size and dstr-incr-factor have to
+;; match to test boundary conditions.
+
+(define *dstr-init-size* 32)
+(define *dstr-incr-factor* 3)
+
+(define (string-port-tester . args)
+  (let ((out (open-output-string)))
+    (for-each (lambda (s) (display s out)) args)
+    (get-output-string out)))
+
+(define (test-string-port signature total seg)
+  (let* ((repeat (inexact->exact (ceiling (/ total seg))))
+         (actual (* seg repeat))
+         (result (make-string actual #\?)))
+    (test (string-append "string-port " signature)
+          #t
+          (lambda ()
+            (string=? result
+                      (apply string-port-tester (make-list repeat (make-string seg #\?))))))))
+
+(define (test-string-ports signature total . segs)
+  (test-string-port signature total total)
+  (for-each (lambda (seg) (test-string-port signature total seg)) segs))
+
+(test "string-port (0)" ""
+      (lambda () (string-port-tester)))
+(test "string-port (0)" ""
+      (lambda () (string-port-tester "" "" "")))
+
+(test-string-ports "(small-1)" (- *dstr-init-size* 1) 3 2 1)
+(test-string-ports "(small)" *dstr-init-size* 3 2 1)
+(test-string-ports "(small+1)" (+ *dstr-init-size* 1) 3 2 1)
+(test-string-ports "(mid-1)"
+                   (- (* *dstr-init-size* (+ *dstr-incr-factor* 1)) 1)
+                   (- *dstr-init-size* 1) *dstr-init-size* 3)
+(test-string-ports "(mid)"
+                   (* *dstr-init-size* (+ *dstr-incr-factor* 1))
+                   (- *dstr-init-size* 1) *dstr-init-size* 3)
+(test-string-ports "(mid+1)" 
+                   (+ (* *dstr-init-size* (+ *dstr-incr-factor* 1)) 1)
+                   (- *dstr-init-size* 1) *dstr-init-size* 3)
+(test-string-ports "(large)" 10000
+                   (- *dstr-init-size* 1) *dstr-init-size*
+                   (+ *dstr-init-size* 1)
+                   (- (* *dstr-init-size* (+ *dstr-incr-factor* 1)) 1)
+                   (* *dstr-init-size* (+ *dstr-incr-factor* 1))
+                   )
+
+;;-------------------------------------------------------------------
 (test-section "string interpolation")
 
 (test "string interpolation" "string interpolation"
