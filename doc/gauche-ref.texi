@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.40 2001-07-02 11:25:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.41 2001-07-08 18:17:20 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4276,17 +4276,17 @@ If a command-line option matches @var{option-spec}, calls a procedure
 Examples:
 @example
 (parse-options '("-file" "foo")
-  (("-file=s" (file)
+  (("file=s" (file)
      (format #t "file is ~s\n"))))
  @result{} ;@r{``@code{file is "foo"}'' is printed}
 
 (parse-options '("-scale" "1.5" "2.2")
-  (("-scale=ff" (xscale yscale)
+  (("scale=ff" (xscale yscale)
      (format #t "scale is ~sx~s\n" xscale yscale)
  @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
 
 (parse-options '("-scale" "1.5" "2.2")
-  (("-scale=ff" scales
+  (("scale=ff" scales
      (format #t "scale is ~s\n" scales))))
  @result{} ;@r{``@code{scale is (1.5 2.2)}'' is printed}
 
@@ -4294,7 +4294,7 @@ Examples:
   (format #t "scale is ~sx~s\n" x y))
 
 (parse-options '("-scale" "1.5" "2.2")
-  (("-scale=ff" => scales)))
+  (("scale=ff" => scales)))
  @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
 @end example
 
@@ -4306,7 +4306,7 @@ a procedure that represents the option parser.
 
 @example
 (parse-options args
-  (("-file=s" => process-file)
+  (("file=s" => process-file)
    (else (option . _)  (error "unrecognized option:" option))))
 @end example
 
@@ -4320,7 +4320,7 @@ and continues parsing:
 
 @example
 (parse-options args
-  (("-file=s" => process-file)
+  (("file=s" => process-file)
    (else (option args continue)
      (format #t "warning: ignoring unrecognized option: ~a" option)
      (continue args))))
