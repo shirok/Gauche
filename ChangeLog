@@ -1,3 +1,9 @@
+2001-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/object.scm : added generic coercion methods,
+	  x->string, x->integer and x->number.
+	* ext/dbm : added
+
 2001-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/algorithm/isomorph.scm : added
