@@ -910,11 +910,54 @@ assumed.
 @c COMMON
 @end defun
 
+@defun call-with-input-conversion iport proc &keyword encoding conversion-buffer-size
+@defunx call-with-output-conversion oport proc &keyword encoding conversion-buffer-size
+These procedures can be used to perform character I/O with
+different encoding temporary from the original port's encoding.
+
+@code{call-with-input-conversion} takes an input port @var{iport}
+which uses the character encoding @var{encoding}, and
+calls @var{proc} with one argument, a conversion input port. 
+From the port, @var{proc} can read characters in
+Gauche's internal encoding. 
+Note that once @var{proc} is called, it has to read all the 
+characters until EOF; see the note below.
+
+@code{call-with-output-conversion} takes an output port @var{oport}
+which expects the character encoding @var{encoding}, and
+calls @var{proc} with one argument,
+a temporary conversion output port.  
+To the port, @var{proc} can write characters in
+Gauche's internal encoding.  
+When @var{proc} returns, or it exits with an error, 
+the temporary conversion output port is flushed and closed.  
+The caller of @code{call-with-output-conversion}
+can continue to use @var{oport} with original encoding afterwards.
+
+Both procedure returns the value(s) that @var{proc} returns.
+The default value of @var{encoding} is Gauche's internal
+encoding.  Those procedures don't create a conversion port
+when it is not necessary.   If @var{conversion-buffer-size} is given, 
+it is used as the @var{buffer-size} argument when the conversion
+port is open.
+
+You shouldn't use @var{iport}/@var{oport} directly
+while @var{proc} is active---character encoding is a
+stateful process, and mixing I/O from/to the conversion port and
+the underlying port will screw up the state.
+
+@emph{Note:} for the @code{call-with-input-conversion}, you can't
+use @var{iport} again unless @var{proc} reads EOF from it.
+It's because a conversion port needs to buffer the input, and
+there's no way to undo the buffered input to @var{iport}
+when @var{proc} returns.
+@end defun
+
 
 @defun wrap-with-input-conversion port from-code &keyword to-code owner? buffer-size
 @defunx wrap-with-output-conversion port to-code &keyword from-code owner? buffer-size
 @c EN
-Convenient functions to avoid adding unnecessary conversion port.
+Convenient procedures to avoid adding unnecessary conversion port.
 Each procedure works like @code{open-input-conversion-port}
 and @code{open-output-conversion-port}, respectively,
 except if system knows no conversoin is needed,
