@@ -18,19 +18,20 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$tgz" = "yes" ]; then
-  rm -f DIST_EXCLUDE_X
-  cat DIST_EXCLUDE > DIST_EXCLUDE_X
-  find . -name CVS -print -prune >> DIST_EXCLUDE_X
-
+  rm -rf ../Gauche-$VERSION
   if [ -f Makefile ]; then make realclean; fi
   ./AUTOCONF
   ./configure
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
   (cd ext/charconv/data; make)
   make distclean
+
+  rm -f DIST_EXCLUDE_X
+  cat DIST_EXCLUDE > DIST_EXCLUDE_X
+  find . -name CVS -print -prune >> DIST_EXCLUDE_X
+
   escm -o INSTALL INSTALL.esc
   LANG=ja_JP escm -o INSTALL.eucjp INSTALL.esc
-  rm -rf ../Gauche-$VERSION
   mkdir ../Gauche-$VERSION
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
