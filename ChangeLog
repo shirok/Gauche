@@ -1,3 +1,10 @@
+2004-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/link-hpux : fixed dynamic link search path problem.
+	* src/makeverslink : avoid creating links if they are already created.
+	* ext/Makefile.ext.in, src/charconv/Makefile.in, src/sxml/Makefile.in:
+	  avoid using GNU make specific feature.
+
 2004-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (Scm_UnwrapSyntax): expose this as an API.

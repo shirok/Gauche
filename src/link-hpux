@@ -3,4 +3,4 @@
 # Assumes $TARGETLIB is set by the caller.
 CCLD=$1
 shift
-$CCLD -L${TARGETLIB} "$@"
+$CCLD -Wl,+s,+b,${TARGETLIB} "$@"
