@@ -10769,6 +10769,17 @@ timeオブジェクトと秒数(POSIX時間)を変換します。
 @subsection Unix process management
 @c NODE Unixのプロセス管理
 
+@c EN
+The following procedures provide pretty raw, direct interface
+to the system calls.
+See also @ref{High Level Process Interface}, which provides
+more convenient process handling on top of these primitives.
+@c JP
+以下の手続きは、システムコールに対する直接的なインタフェースを提供します。
+@ref{High Level Process Interface}も合わせて参照して下さい。
+より高レベルの便利な手続きが定義されています。
+@c COMMON
+
 @subsubheading Fork and exec
 
 @defun sys-system command
@@ -10809,16 +10820,50 @@ the child.  See @code{fork(2)} of your system for details.
 @c COMMON
 
 @c EN
-If the forked process runs some Scheme code and exits instead of
-calling @code{sys-exec}, the forked process should call @code{sys-exit} to
-terminate itself.  Normal exit call tries to flush the file
+If the child process runs some Scheme code and exits instead of
+calling @code{sys-exec}, it should call @code{sys-exit} 
+instead of @code{exit} to terminate itself.
+Normal exit call tries to flush the file
 buffers, and on some OS it messes up the parent's file buffers.
 @c JP
-フォークされたプロセスが同じSchemeコードを実行し、@code{sys-exec}を
-呼ぶ代わりに終了すると、フォークされたプロセスは@code{sys-exit}を呼んで
-自分自身を終了させなければなりません。通常のexitの呼び出しはファイル
-バッファのフラッシュを試み、いくつかのOSでは親のファイルバッファを
-混乱させるでしょう。
+子プロセスが@code{sys-exec}を呼ぶ代わりにSchemeコードを実行して
+終了する場合は、@code{exit}ではなく@code{sys-exit}を呼ぶ必要があります。
+通常のexitの呼び出しはファイルバッファのフラッシュを試み、
+OSによっては親のファイルバッファを混乱させるでしょう。
+@c COMMON
+
+@c EN
+It should be noted that @code{sys-fork} is not safe when 
+multiple threads are running.  Because @code{fork(2)} copies
+the process' memory image which includes any mutex state,
+a mutex which is locked by another thread at the time of @code{sys-fork}
+remains locked in the child process, nevertheless the child process
+doesn't have the thread that unlock it!
+(This applies to the internal mutexes as well, so even you don't
+use Scheme multex explicitly, this situation can always happen.)
+
+If what you want is to spawn another program in a multi-threaded application,
+use @code{sys-fork-and-exec} explained below.
+If you absolutely need to run Scheme code in the
+child process, a typical technique is that you fork a manager process
+at the beginning of application, and whenever you need a new process
+you ask the manager process to fork one for you.
+@c JP
+@code{sys-fork}は複数のスレッドが走っている時には安全ではないことに
+注意してください。@code{fork(2)}システムコールはプロセスのメモリイメージを
+複製しますが、それには他のスレッドでロックされているmutexも含まれます。
+もし@code{sys-fork}の瞬間に他のスレッドが何かをロックしていたとすれば、
+子プロセスでもその資源はロックされたままになりますが、
+その時子プロセスはもはやその資源をアンロックするスレッドを持っていません。
+(これは内部で使っているmutexにも起こり得るため、Schemeレベルでmutexを
+全く使っていないとしても防ぐことはできません)。
+
+やりたいことが、マルチスレッドアプリケーションで別プログラムをspawnする
+ことであるなら、下に説明する@code{sys-fork-and-exec}を使ってください。
+どうしても別プロセスでSchemeコードを走らせたいのなら、よくある方法は、
+アプリケーションの起動後すぐにマネージャプロセスとなる子プロセスをfork
+しておき、新たなプロセスが欲しくなったらそのマネージャプロセスに
+forkを依頼するという方法です。
 @c COMMON
 @end defun
 
@@ -10904,14 +10949,31 @@ available!), so Gauche simply exits on the error.
 @c COMMON
 @end defun
 
+@defun sys-fork-and-exec command args &optional iomap
 @c EN
-See also @ref{High Level Process Interface}, which provides
-more convenient process handling on top of above primitives.
+Like @code{sys-exec}, but executes @code{fork(2)} just before
+remapping I/O and @code{execvp(2)}.
+Returns child's process id.
+
+It is strongly recommended to use this procedure instead of
+@code{sys-fork} and @code{sys-exec} combination when you need
+to spawn another program while other threads are running.
+No memory allocation nor lock acquisition is done between
+@code{fork(2)} and @code{execvp(2)},
+so it's pretty safe in the multithreaded environment.
 @c JP
-@ref{High Level Process Interface}も参照して下さい。
-上記のプリミティブの上に構築されたより便利なプロセス処理の方法が提供されて
-います。
+@code{sys-exec}と同じですが、ファイルディスクリプタを変更して
+@code{execvp(2)}を実行する直前に、@code{fork(2)}を実行します。
+子プロセスのプロセスidを返します。
+
+他のスレッドが走っている環境下で別プログラムをspawnしたい場合は、
+@code{sys-fork}と@code{sys-exec}を別々に使うのではなく、
+この手続きを使ってください。
+この手続き中では、@code{fork(2)}と@code{execvp(2)}の間で
+メモリアロケーションもロックの獲得も行われないため、
+マルチスレッド環境で実行しても安全になっています。
 @c COMMON
+@end defun
 
 @subsubheading Wait
 
