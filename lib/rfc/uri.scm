@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.2 2001-06-29 20:01:00 shirok Exp $
+;;;  $Id: uri.scm,v 1.3 2001-07-08 19:18:32 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -75,6 +75,15 @@
 ;; Encoding & decoding
 ;;
 
+(define (uri-decode)
+  (let loop ((c (read-char)))
+    (cond ((eof-object? c))
+          ((char=? c #\%)
+           (let ((c1 (read-char)))
+             (cond ((eof-object? c1) (write-char c))
+                   ((char-set-contains? #[0-9A-Fa-f] c1)
+                    (
+          
 
 
 (provide "rfc/uri")
