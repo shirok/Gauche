@@ -8370,6 +8370,7 @@ the code is executed or not.
 @subsection Operations on libraries
 @c NODE ライブラリの操作
 
+@c EN
 There are several procedures you can use to check if
 certain libraries and/or modules are installed in the system.
 
@@ -8381,8 +8382,18 @@ a string, it specifies a partial pathname of the library
 library search paths.
 You can also use glob-like metacharacters '@code{*}' and 
 '@code{?}' in @var{pattern}.
+@c JP
+ある特定のライブラリおよび/あるいはモジュールがシステムにインストールされ
+ているかどうかをチェックするための手続きがいくつかあります。
+
+以下の説明の中では、@var{pattern}はシンボルまたは文字列です。シンボル
+である場合にはモジュール名(たとえば、@code{foo.bar})を指定します。
+文字列である場合にはライブラリの部分パス(たとえば、@code{"foo/bar"})を
+指定します。これはライブラリサーチパス以下で検索されます。
+@c COMMON
 
 @defun library-fold pattern proc seed &keyword paths strict? allow-duplicates?
+@c EN
 A basic iterator for library/module files.
 This procedure searches Scheme program files which matches
 @var{pattern}, under directories listed in @var{paths} 
@@ -8393,7 +8404,19 @@ file, and the state value.  @var{Seed} is used as the initial
 state value, and the value @var{proc} returns is used as the state
 value for the next call of @var{proc}.  The value returned from
 the last @var{proc} becomes the return value of @code{library-fold}.
+@c JP
+ライブラリ/モジュールファイルに対する基本イテレータ。この手続きは
+@var{pattern} にマッチする Scheme のプログラムファイルを検索します。
+検索は @var{paths} (デフォルトは標準のファイルロードパス、
+@code{*load-path*})にリストされたディレクトリ以下でおこなわれます。
+マッチしたファイル毎に、@var{proc} が、そのマッチしたモジュール名あるいは
+ライブラリ名、そのプログラムファイルのフルパス、状態値、の3つの引数を
+ともなって呼びだされます。@var{seed}は、初期状態値として使われ、
+@var{proc} が返す値は次の @var{proc} の呼出し時に状態値として使われます。
+最後の @var{proc} から返された値は @code{library-fold} の値として返ります。
+@c COMMON
 
+@c EN
 If @var{pattern} is a symbol and the keyword argument @var{strict?}
 is @code{#t} (which is the default), this procedure calls
 @code{library-has-module?} on the files whose name seems to
@@ -8403,7 +8426,19 @@ process if you try to match large number of modules; you can pass
 @code{#f} to @var{strict?} to avoid the extra check.
 If @var{pattern} is a string, matching is done only for file names
 so @var{strict?} is ignored.
+@c JP
+@var{pattern} がシンボルでかつ、キーワード引数 @var{strict?} が
+@code{#t} (デフォルト値)であれば、この手続きは
+あたえられたモジュール名のパターンにマッチするようにみえるファイル名に
+たいして @code{library-has-module?} を適用して、
+本当にそのモジュールを実装しているファイルを見付けます。
+大量のモジュールにマッチさせようとすると、時間がかる可能性があります。
+@code{#f} を @var{strict?} に渡すことで、余分なチェックを回避できます。
+@va{pattern} が文字列だった場合、照合はファイル名に対してのみ行われ、
+@var{strict?}は無視されます。
+@c COMMON
 
+@c EN
 By default, if there are more than one files that have the same name
 that matches @var{pattern} in @var{paths}, only the first
 one appears in @var{paths} is taken.  This gives you
@@ -8412,6 +8447,15 @@ for that library.  If you want to iterate all of matching files,
 pass @code{#t} to the @var{allow-duplicates?} keyword argument.
 
 Here are some examples (the result may differ in your environment).
+@c JP
+デフォルトでは、@var{path} 中の @var{pattern} にマッチする同じ名前をもつ
+2つ以上のファイルがあるばあい、@var{path} に最初に出現したものだけが
+採用されます。そのライブラリに対して、@code{require} あるいは
+@code{use} を用いたをつかった場合に得られるのはこのファイルです。
+すべてのマッチしたファイルについて反復したければ、@var{allow-duplicates?}
+キーワード引数に @code{#t} を渡します。
+@c COMMON
+@c EN
 @example
 (library-fold 'srfi-1 acons '())
  @result{} ((srfi-1 . "../lib/srfi-1.scm"))
@@ -8441,10 +8485,42 @@ Here are some examples (the result may differ in your environment).
    (dbm.ndbm . "../lib/dbm/ndbm.scm")
    (dbm.odbm . "../lib/dbm/odbm.scm"))
 @end example
+@c JP
+@example
+(library-fold 'srfi-1 acons '())
+ @result{} ((srfi-1 . "../lib/srfi-1.scm"))
+
+(library-fold "srfi-1" acons '())
+ @result{} (("srfi-1" . "../lib/srfi-1.scm"))
+
+;; @code{acons} が呼ばれるのとは逆順のリストが
+;; 返ることに注意してください
+(library-fold 'srfi-1 acons '() :allow-duplicates? #t)
+ @result{} ((srfi-1 . "/usr/share/gauche/0.7.1/lib/srfi-1.scm")
+   (srfi-1 . "../lib/srfi-1.scm"))
+
+;; 以下の場合は、モジュール名ではマッチしませんが、
+;; ファイル名ではマッチします
+(library-fold 'srfi-19.* acons '())
+ @result{} ()
+
+(library-fold "srfi-19/*" acons '())
+ @result{} (("srfi-19/read-tai" . "../lib/srfi-19/read-tai.scm")
+   ("srfi-19/format" . "../lib/srfi-19/format.scm"))
+
+;; 利用可能な dbm の実装を見付けます
+(library-fold 'dbm.* acons '())
+ @result{} ((dbm.cdb . "/usr/share/gauche/0.7.4.2/lib/dbm/cdb.scm")
+   (dbm.gdbm . "../lib/dbm/gdbm.scm")
+   (dbm.ndbm . "../lib/dbm/ndbm.scm")
+   (dbm.odbm . "../lib/dbm/odbm.scm"))
+@end example
+@c COMMON
 @end defun
 
 @defun library-map pattern proc &keyword paths allow-duplicates? strict?
 @defunx library-for-each pattern proc &keyword paths allow-duplicates? strict?
+@c EN
 @code{Map} and @code{for-each} version of iterator over matched
 libraries/modules.  See @code{library-fold} above for deatiled
 operation of matching and the meanings of keyword arguments.
@@ -8453,6 +8529,15 @@ operation of matching and the meanings of keyword arguments.
 and full path of the file.  @code{Library-map} returns a list
 of results of @var{proc}.  @code{Library-for-each} discards
 the results.
+@c JP
+マッチしたライブラリ/モジュール上のイテレータの @code{map}版および
+@code{for-each}版。照合操作とキーワード引数の詳細については上述の
+@code{library-fold}を参照してください。
+
+@var{proc}は、マッチしたモジュール/ファイル名と、そのファイルの
+フルパスの 2 つの引数をうけとります。@code{library-for-each} は
+結果を捨てます。
+@c COMMON
 
 @example
 (library-map 'srfi-4 list :allow-duplicates? #t)
@@ -8464,8 +8549,8 @@ the results.
 @end example
 @end defun
 
-
 @defun library-exists? mod/path &keyword paths force-search? strict?
+@c EN
 Search a library or a module specified by @var{mod/path}, 
 and returns a true value if it finds one.  @var{Paths} and @var{strict?}
 keyword arguments have the same meaning as @code{library-fold}.
@@ -8475,24 +8560,49 @@ checks loaded libraries and modules in the calling process,
 and returns true if it finds @var{mod/path} in it,
 without looking into the filesystem.   Passing @code{#t} to
 @var{force-search?} keyword arguments skips the checking of
-hte 
+loaded libraries and modules.
+@c JP
+@var{mod/path} で指定されたライブラリあるいはモジュールを検索し、
+もしあれば、真値を返します。キーワード引数 @var{paths} および 
+@var{strict?} は @code{library-fold} のそれと同じ意味です。
+
+上述のイテレータ手続きとはちがい、この手続きは呼び出しの過程で
+最初に既にロードされているライブラリおよびモジュールをチェックします。
+もしそのときに @var{mod/path} を見つけたら、真値を返し、ファイル
+システムを見にいくことはありません。キーワード引数 @var{force-search?}
+に @code{#t} を渡せば、すでにロードされいるライブラリおよびモジュール
+のチェックはスキップされます。
+@c COMMON
 @end defun
 
 
 @defun library-has-module? path module
+@c EN
 Returns @code{#t} iff a file specified by @var{path} exists and 
 appears to implement a module named by @code{module}.  @var{path} must be
 an actual filename.
+@c JP
+@var{path} で指定したファイルが存在し、かつ、@code{module} で名指しされた
+モジュールが実装されている場合でその場合に限り、@code{#t} を返します。
+@var{path} は実際のファイル名でなければなりません。
+@c COMMON
 
 @example
 (library-has-module? "./test/foo/bar.scm" 'foo.bar)
  @result{} #t ;; @r{if ./test/foo/bar.scm implements module foo.bar}.
 @end example
 
+@c EN
 This procedure assumes a typical layout of the source code
 to determine if the given file implements the module, i.e.,
 it reads the first form of the code and see if it is a
 @code{define-module} form that is defining the given module.
+@c JP
+この手続きは典型的なソースコードの配置を仮定して、与えられたファイルが
+そのモジュールを実装しているかどうかを決定します。すなわち、
+まずそのコードのフォームを読み、与えられたモジュールを定義している
+@code{define-module} フォームかどうかを見ます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
