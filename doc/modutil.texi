@@ -2473,6 +2473,7 @@ The order of fields are preserved.
 フィールドの順番は保存されます。
 @c COMMON
 
+@c EN
 By default, the parser works permissively.  If EOF is encountered
 during parsing header, it is taken as the end of the message.
 And if a line that doesn't consist neither continuing (folded) line
@@ -2484,9 +2485,22 @@ for such a malformed header.
 The keyword argument @var{reader} takes a procedure that reads
 a line from @var{iport}.  Its default is @code{read-line}, which
 should be enough for most cases.
+@c JP
+デフォルトでは、パーザの動作は寛容です。ヘッダをパーズ中に EOF に
+出会うとそれをメッセージの終端とみなします。継続(畳み込み)行でもなく、
+新しいヘッダフィールドの始端でもない行は無視します。このふるまいは
+キーワード引数 @var{strict?} に真の値を渡すことで変更することができます。
+真を渡すと、このような不正な形式のヘッダに対してエラーを発生させるように
+なります。
+
+キーワード引数 @var{reader} は @var{iport} から一行読み込む手続きを
+とります。デフォルトは @code{read-line} です。ほとんどの場合これで
+十分のはずです。
+@c COMMON
 @end defun
 
 @defun rfc822-header-ref header-list field-name &optional default
+@c EN
 An utility procedure to get a specific field from the parsed
 header list, which is returned by @code{rfc822-header->list}.
 
@@ -2494,10 +2508,24 @@ header list, which is returned by @code{rfc822-header->list}.
 If the field with given name is in @var{header-list}, the procedure
 returns its value in a string.  Otherwise, if @var{default} is given,
 it is returned, and if not, @code{#f} is returned.
+@c JP
+@code{rfc822-header->list} が返すパーズ済みのヘッダリストから
+特定のフィールドを得るためのユーティリティ手続きです。
+
+@var{Field-name} は小文字の文字列でフィールド名を指定します。
+与えられた名前をもつフィールドが @var{header-list} 中にあれば、
+その値を文字列で返します。そうでない場合、もし @var{default} が
+与えられていればそれが返り、与えられていなければ @code{#f} が返されます。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Basic field parsers
+@c JP
+@subheading 基本的なフィールドパーザ
+@c COMMON
 
+@c EN
 Several procedures are provided to parse "structured" header fields
 of RFC2822 messages.  These procedures deal with the body of
 a header field, i.e. if the header field is 
@@ -2519,8 +2547,31 @@ and can't be represented by regular grammar.
 So, this layer of procedures are designed flexible enough
 to handle various syntaxes.  For the standard header types,
 high-level parsers are also provided; see "specific field parsers" below.
+@c JP
+RFC2822メッセージの「構造化」されたヘッダフィールドをパーズするために、
+いくつかの手続きが提供されています。これらの手続きはヘッダフィールドの
+本体部を処理します。たとえば、ヘッダフィールドが、
+"@code{To: Wandering Schemer <schemer@@example.com>}" であれば、これらの
+手続きは "@code{Wandering Schemer <schemer@@example.com>}" をパーズします。
+
+ほとんどの手続きは入力ポートを引数にとります。通常は最初に、ヘッダフィールド
+全部を @code{rfc822-header->list} でパーズし、ヘッダの本体を
+@code{rfc822-header-ref} で取得してから、その本体用に入力文字列ポートを
+オープンして、それをこれらの手続きを用いてパーズします。
+
+このように複雑になっているのは、フィールドのタイプによって別々の
+トークン化スキームが必要になるからです。RFC2822 では多くの場合
+トークン間にコメントがあらわれことを許しているので、初心な正規表現では
+うまくいきません。RFC2822 のコメントはネスト可能で、正規表現では表現
+しきれないからです。
+そういうわけで、このレイヤの手続きは、いろいろな構文に対応できるよう
+十分な柔軟性があるように設計されています。標準的なタイプのヘッダについては
+高水準のパーザも提供されています。後述の「特定フィールド用パーザ」を
+参照してください。
+@c COMMON
 
 @defun rfc822-next-token iport &optional tokenizer-specs
+@c EN
 A basic tokenizer.  First it skips whitespaces and/or
 comments (@code{CFWS}) from @var{iport}, if any.  Then
 reads one token according to @var{tokenizer-specs}.  If @var{iport}
@@ -2543,10 +2594,34 @@ If the head character doesn't match any char-sets,
 the character is taken from @var{iport} and returned.
 
 The default @var{tokenizer-specs} is as follows:
+@c JP
+基本的なトークナイザです。まず、もしあれば、白空白および/または
+コメント (@code{CFWS}) を @var{iport} から読み飛ばします。それから、
+@var{tokenizer-specs} にしたがってトークンをひとつ読み込みます。
+トークンを読み込む前に、@var{iport} が EOF に到達したら、EOF が
+返されます。
+
+@var{tokenizer-specs} はトークナイザ仕様のリストです。
+トークナイザ仕様は、文字集合または文字集合と手続きのペアのどちらかです。
+
+@code{CFWS} を読み飛ばしたあと、この手続きは @var{iport} の先頭の一文字
+を見て、@var{tokenizer-specs} のひとつひとつに対してチェックします。
+その文字が含まれている文字集合がみつかれば、トークンを次のようにして
+引き出します。トークナイザ仕様が文字集合だけの場合、その文字集合に
+属している文字の並びがトークンを構成します。トークナイザ仕様が文字集合と
+手続きのペアだったら、その手続きを @var{iport} とともに呼びだし、
+トークンを読み込みます。
+
+もし、先頭も文字がどの文字集合ともマッチしなければ、そも文字が
+@var{iport} から取り出され、それが返されます。
+
+デフォルトの @var{tokenizer-specs} は以下のようになっています。
+@c COMMON
 @example
 (list (cons #["] rfc822-quoted-string)
       (cons *rfc822-atext-chars* rfc822-dot-atom))
 @end example
+@c EN
 Where @code{rfc822-quoted-string} and @code{rfc822-dot-atom}
 are tokenizer procedures described below, and @code{*rfc822-atext-chars*}
 is bound to a char-set of @code{atext} specified in rfc2822.
@@ -2559,6 +2634,18 @@ field is parsed.  For example, if you want to retrieve a token
 that is either (1) a word constructed by alphabetic characters, or
 (2) a quoted string, then you can call @code{rfc822-next-token}
 by this:
+@c JP
+ここで @code{rfc822-quoted-string} および @code{rfc822-dot-atom} は
+後述するトークナイザ手続きで、@code{*rfc822-atext-chars*} は RFC2822 で
+規定された @code{atext} の文字集合に束縛されています。
+つまり、@code{rfc822-next-token} はデフォルトでは RFC2822 で規定された
+@code{quoted-string} あるいは @code{dot-atom} のトークンを引き出します。
+
+@var{tokenizer-specs} をつかって、ヘッダフィールドのパーズ方法を
+カスタマイズすることができます。たとえば、(1) 英字で構成された単語、または
+(2) クウォート文字列、のトークンを取り出したいときには、
+@code{rfc822-next-token} をこんなふうに呼べます。
+@c COMMON
 
 @example
 (rfc822-next-token iport
@@ -2567,37 +2654,69 @@ by this:
 @end defun
 
 @defun rfc822-field->tokens field &optional tokenizer-specs
+@c EN
 A convenience procedure.  Creates an input string port for
 a field body @var{field}, and calls @code{rfc822-next-token}
 repeatedly on it until it consumes all input, then returns
 a list of tokens.   @var{Tokenizer-specs} is passed to
 @code{rfc822-next-token}.
+@c JP
+これは便利関数です。フィールド本体 @var{field} に対応する入力文字列ポート
+を生成し、それに対して、@code{rfc822-next-token} を全入力を消費するまで、
+繰り返しよび、トークンのリストを返します。@var{Tokenizer-specs} は、
+@code{rfc822-next-token} に渡されます。
+@c COMMON
 @end defun
 
 @defun rfc822-skip-cfws iport
+@c EN
 A utility procedure that consumes any comments and/or whitespace
 characters from @var{iport}, and returns the head character
 that is neither a whitespece nor a comment.  The returned character
 remains in @var{iport}.
+@c JP
+@var{iport} から、すべてのコメントおよび/または白空白文字を消費し、
+白空白でもコメントでもない、先頭の文字を返します。返された文字は、
+@var{iport}に残ります。
+@c COMMON
 @end defun
 
 @defvr {Constant} *rfc822-atext-chars*
+@c EN
 Bound to a char-set that is a valid constituent of @code{atom}.
+@c JP
+@code{atom} を構成する有効な文字集合に束縛されています。
+@c COMMON
 @end defvr
 
 @defvr {Constant} *rfc822-standard-tokenizers*
+@c EN
 Bound to the default @var{tokenizer-specs}.
+@c JP
+デフォルトの @var{tokenizer-specs} に束縛されています。
+@c COMMON
 @end defvr
 
 @defun rfc822-atom iport
 @defunx rfc822-dot-atom iport
 @defunx rfc822-quoted-string iport
+@c EN
 Tokenizers for @code{atom}, @code{dot-atom} and @code{quoted-string},
 respectively.  The double-quotes and escaping backslashes within
 @code{quoted-string} are removed by @code{rfc822-quoted-string}.
+@c JP
+それぞれ、@code{atom}、@code{dot-atom} および @code{quoted-string} に
+対応するトークナイザです。@code{quoted-string} 中の二重引用符および
+エスケープのためのバックスラッシュは @code{rfc822-quoted-string} に
+よって取り除かれます。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Specific field parsers
+@c JP
+@subheading 特定フィールド用パーザ
+@c COMMON
 
 @defun rfc822-parse-date string
 @c EN
@@ -2622,12 +2741,16 @@ If the string is not parsable, all the elements are #f.
 @end defun
 
 @defun rfc822-date->date string
-Parses RFC2822 date format and returns SRFI-19 @code{<date>} object
+@c EN
+Parses RFC822 type date format and returns SRFI-19 @code{<date>} object
 (see @ref{SRFI-19 Date}).  If @var{string} can't be parsed, 
 returns @code{#f} instead.
+@c JP
+RFC822形式の日付フォーマットをパーズし、SRFI-19 の @code{<date>} オブジェクト
+(@ref{SRFI-19 Date} 参照) を返します。@var{string} がパーズできないときは
+かわりに @code{#f} を返します。
+@c COMMON
 @end defun
-
-
 
 @c ----------------------------------------------------------------------
 @node Base64 encoding/decoding, HTTP cookie handling, RFC822 message parsing, Library modules - Utilities
@@ -7128,7 +7251,7 @@ Empty list is returned if there is no list of namespaces.
 @end defun
 
 @defun sxml:ns-id->nodes obj namespace-id
-@c ENn
+@c EN
 Returns the list of namespace-assoc's for given @var{namespace-id} in 
 SXML element @var{obj}.
 Analog of @code{((sxpath '(@@@@ *NAMESPACES* namespace-id)) @var{obj})}.
@@ -7736,9 +7859,11 @@ displays:
 @c ----------------------------------------------------------------------
 @node Localized messages, Simple HTML document construction, Calculate difference of text streams, Library modules - Utilities
 @section @code{text.gettext} - Localized messages
+@c NODE 地域化メッセージ, @code{text.gettext} - 地域化メッセージ
 
 @deftp {Module} text.gettext
 @mdindex text.gettext
+@c EN
 This module provides utilities to deal with localized messages.
 The API is compatible to GNU's gettext, and the messages
 are read from @file{*.po} and @file{*.mo} files,
@@ -7746,7 +7871,16 @@ so that you can use the GNU texttext
 toolchain to prepare localized messages.
 However, the code is written from scratch by Alex Shinn and
 doesn't depend on GNU's gettext library.
+@c JP
+このモジュールは地域化メッセージを扱うユーティリティを提供します。
+API は GNU の gettext と互換性があり、メッセージは @file{*.po} および
+@file{*.mo} ファイルから読み込まれます。それゆえ、GNU の gettext toolchain
+をつかって地域化メッセージを準備することができます。しかし、このコードは
+Alex Shinn によってスクラッチから書き起こされたものであり、GNU の
+gettext ライブラリには依存していません。
+@c COMMON
 
+@c EN
 This implementation extends GNU's gettext API in the following ways:
 @itemize @bullet
 @item
@@ -7755,16 +7889,39 @@ allowing applications to share a part of message files.
 @item
 It supports multiple locale/domain simultaneously.
 @end itemize
+@c JP
+この実装は GNU の gettext API を以下のように拡張したものです。
+@itemize @bullet
+@item
+複数のメッセージファイルから、カスケードされた方法で読み込むことができます。
+これにより、アプリケーションはメッセージファイルの部分を共有できます。
+@item
+複数のロケール/ドメインを同時に扱えます。
+@end itemize
+@c COMMON
 
+@c EN
 SRFI-29 (@xref{Localization}) provides another means of message
 localization.  A portable program may wish to use srfi-29, but
 generally @code{text.gettext} is recommended in Gauche scripts
 because of its flexibility and compatibility to existing message files.
+@c JP
+SRFI-29 (@ref{Localization}参照) はこれとは別のメッセージの地域化
+機構を提供しています。ポータブルなプログラムでは、SRFI-29 の方がよいこと
+もありますが、一般には、Gauche スクリプトでは、@code{text.gettext} の
+方を推奨します。それは、既存のメッセージファイルとの互換性と柔軟性の
+ためです。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Gettext-compatible API
+@c JP
+@subheading gettext-互換の API
+@c COMMON
 
 @defun textdomain domain-name &optional locale dirs cdir cached? lookup-cached?
+@c EN
 Sets up the default domain and other parameters for
 the application.  The setting affects to the following @code{gettext}
 call.
@@ -7774,27 +7931,44 @@ call.
 You can pass @code{#f} as @var{domain-name} just to get the default
 domain accessor procedure.
 You can alo pass multiple domains to @var{domain-name}.
+@c JP
+アプリケーション用に、デフォルトのドメインとそのほかのパラメータを
+設定します。この設定は、以降の @code{gettext} の呼出しに影響を与えます。
+
+@var{domain} は文字列または文字列のリストで、ドメイン(@file{.mo} あるいは
+@file{.po} ファイル名)を C の gettext と同じように指定します。
+@code{#f} を @var{domain-name} として渡すと、デフォルトのドメインアクセサ
+手続きが得られます。また、複数のドメインを @var{domain-name}にあたえる
+ことができあす。
+@c COMMON
 @example
 (textdomain '("myapp" "gimp"))  ; search 1st myapp, then gimp
 (gettext "/File/Close")         ; "Close" from gimp unless overridden
 @end example
 
+@c EN
 @var{Locale} is a string or list of strings in the standard Unix format of
 @code{LANG[_REGION][.ENCODING]}.  You can also pass a list of locales
 to specify fallbacks.
+@c JP
+@var{locale} は文字列または文字列のリストで、標準的なUnixのフォーマット
+@code{LANG[_REGION][.ENCODING]} です。フォールバックを指定するロケール
+のリストを渡すこともできます。
+@c COMMON
 
 @example
 (textdomain "myapp" '("ru" "uk"))  ; search 1st Russian then Ukranian,
 (gettext "Hello, World!")          ; which are somewhat similar
 @end example
 
+@c EN
 @var{Dirs} is the search path of directories which should hold the
 @file{LOCALE/CDIR/} directories which contain the actual message catalogs.
 This is always appended with the system default, e.g.
 @file{"/usr/share/locale"}, and may also inherit from the 
 @code{GETTEXT_PATH} colon-delimited environment variable.
 
-@var{Cdir} is the catagory directory, defaulting to either the 
+@var{Cdir} is the category directory, defaulting to either the 
 @code{LC_CATEGORY}
 environment variable or the appropriate system default
 (e.g. @code{LC_MESSAGES}).  You generally won't need this.
@@ -7816,39 +7990,99 @@ See the description of @code{make-gettext} below.
 @code{Textdomain} returns an @emph{accessor procedure} which
 packages information of the domain.  See @code{make-gettext} below
 for the details.
+@c JP
+@var{dirs} は実際のメッセージカタログを含む @file{LOCALE/CDIR/}
+ディレクトリのサーチパスです。これは常にシステムのデフォルト(たとえば、
+@file{"/usr/share/locale"})に追加されます。そして、コロンで区切られた
+@code{GETTEXT_PATH} 環境変数を継承します。
+
+@var{cdir} はカテゴリーディレクトリで、既定値を @code{LC_CATEGORY}
+環境変数または、適当なシステム既定値(たとえば @code{LC_MESSAGES})に
+設定します。一般にはこれを指定する必要はありません。
+
+@var{cached?} は個別のメッセージをキャッシュするかを意味し、デフォルトは
+@code{#t} です。
+
+@var{lookup-cached?}
+は、これらのパラメータで生成されるディスパッチをキャッシュするかどうか
+を意味し、デフォルトは @code{#t} です。
+
+@code{textdomain} はこれらのパラメータを内部の @code{make-gettext} に
+渡し、その結果を、@code{gettext} で使われるグローバルなディスパッチに
+束縛します。これらのクロージャを複数の別々のドメインやロケールを一度に
+扱うのに便利なように、手で構築することができます。(これらは
+サーバ環境で便利です。) 後述の @code{make-gettext} を参照してください。
+
+@code{textdomain} はそのドメインの情報をもつ @emph{アクセサ手続き}を
+返します。詳細については、後述の @code{make-gettext} を参照してください。
+@c COMMON
 @end defun
 
 @defun gettext msg-id
+@c EN
 Returns a translated message of @var{msg-id}.  If there's no
 translated message, @var{msg-id} itself is returned.
+@c JP
+@var{msg-id} の翻訳されたメッセージを返します。もし、翻訳された
+メッセージがなければ、@var{msg-id} それ自身を返します。
+@c COMMON
 @end defun
 
 @defun ngettext msg-id &optional msg-id2 num
+@c EN
 Similar to @var{gettext}, but it can be used to handle
 plural forms.
 Pass a singular form to @var{msg-id}, and plural form to
 @code{msg-id2}.  The @var{num} argument is used to determine
 the plural form.  If no message catalog is found, @var{msg-id}
 is returnf when @var{num} is 1, and @var{msg-id2} otherwise.
+@c JP
+@var{gettext}と似ていますが、複数のフォームを処理するのに使うことが
+できます。単一のフォームを @var{msg-id} へ渡し、複数のフォームを
+@code{msg-id2} に渡します。@var{num} 引数は、複数のフォームを決定
+するのに使われます。もし、メッセージカタログが見つからなければ、
+@var{num} が 1 のときは、@var{msg-id} が返り、そうでなければ、
+@var{msg-id2} が返ります。
+@c COMMON
 @end defun
 
 @defun bindtextdomain domain dirs
+@c EN
 Sets the search path of domain @var{domain} to @var{dirs}, which 
 may be just a single directory name or a list of directory names.
+@c JP
+ドメイン @var{domain} のサーチパスを @var{dirs} に設定します。
+単一のディレクトリ名であったり、ディレクトリのリストであったりします。
+@c COMMON
 @end defun
 
 @defun dgettext domain msg-id
 @defunx dcgettext domain msg-id locale
+@c EN
 Returns a translated message of @var{msg-id} in @var{domain}.
 @code{Dcgettext} takes @var{locale} as well.
+@c JP
+@var{domain} 中の @var{msg-id} の翻訳されたメッセージを返します。
+@code{dcgettext} は @var{locale} も引数としてとります。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Low-level flexible API
+@c JP
+@subheading 低水準の柔軟な API
+@c COMMON
 
-The following procedure is more flexible interface,
-on top of which the gettext-compatible APIs are written.
+@c EN
+The following procedure is more flexible interface, on top of which
+the gettext-compatible APIs are written.
+@c JP
+以下の手続きはより柔軟性のあるインタフェースで、この上で、gettext-互換の
+API が書かれています。
+@c COMMON
 
 @defun make-gettext &optional domain locale dirs gettext-cached? lookup-cached?
+@c EN
 Creates and returns an @emph{accessor procedure}, which encapsulates
 methods to retrieve localized messages.
 
@@ -7858,6 +8092,15 @@ it binds the result to the global parameter.   If you wish to have
 multiple independent domains within a single program, you can
 call @code{make-gettext} directly and manage the created
 accessor procedure by yourself.
+@c JP
+@emph{アクセサ手続き} を生成して返します。返された手続きは、
+地域化されたメッセージを検索するメソッドをカプセル化しています。
+
+引数の意味は上述の @code{textdomain} と同じです。
+実際は、@code{textdomain} は @code{make-gettext} を呼び、その後、
+それは、結果をこのグローバルパラメータに束縛します。@code{make-gettext}
+を直接呼んで、自分自身で、アクセサ手続きを管理することもできます。
+@c COMMON
 
 @example
 (define my-gettext (make-gettex "myapp"))
@@ -9750,17 +9993,27 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c ----------------------------------------------------------------------
 @node SLIB-compatible record type, Topological sort, Queue, Library modules - Utilities
 @section @code{util.record} - SLIB-compatible record type
+@c NODE SLIB-互換のレコード型, @code{util.record} - SLIB-互換のレコード型
 
 @deftp {Module} util.record
 @mdindex util.record
+@c EN
 This module provides a Guile and SLIB compatible record type API.
 It is built on top of Gauche's object system.
 
 See also @ref{Record types}, which provides a convenience macro
 @code{define-record-type}.
+@c JP
+このモジュールは、Guile と SLIB とに互換性のあるレコード型 API を提供します。
+これは、Gauche のオブジェクトシステム上に構築されています。
+
+便利なマクロ @code{define-record-type} を提供する @ref{Record types} も
+参照してください。
+@c COMMON
 @end deftp
 
 @defun make-record-type type-name field-names
+@c EN
 Returns a new class which represents a new record type.
 (It is what is called @emph{record-type descriptor} in SLIB).
 In Gauche, the new class is a subclass of @code{<record>}
@@ -9770,35 +10023,77 @@ In Gauche, the new class is a subclass of @code{<record>}
 It is converted to a symbol and set as the name of the new class.
 @var{field-names} is a list of symbols of the names of fields.
 Each field is implemented as a slot of the new class.
+@c JP
+あらしいレコード型を表わす新しいクラスを返します。
+(これは SLIB では @emph{レコード型記述子}とよばれているものです。)
+Gauche では、この新しいクラスは @code{<record>} のサブクラスです
+(@ref{Record types} 参照)。
+
+@var{type-name} はデバッグの目的で使われる文字列です。
+これは、シンボルに変換され、この新しいクラスの名前として設定されます。
+@var{field-names} はフィールド名のシンボルのリストです。
+各々のフィールドはこの新しいクラスののスロットとして実装されます。
+@c COMMON
 @end defun
 
+@c EN
 In the following procedures, @var{rtd} is the record class
 created by @code{make-record-type}.
+@c JP
+以下の手続きでは、@var{rtd} は @code{make-record-type} によって
+生成されたクラスです。
+@c COMMON
 
 @defun record-constructor rtd &optional field-names
+@c EN
 Returns a procedure that constructs an instance
 of the record type of given @var{rtd}.  The returned
 procedure takes exactly as many arguments as @var{field-names},
 which defaults to @code{'()}.  Each argument sets the initial
 value of the corresponding field in @var{field-names}.
+@c JP
+与えられた @var{rtd} レコード型のインスタンスを構築する手続きを
+返します。返された手続きは @var{field-names} とちょうど同じ数の
+引数をとります。@var{field-names} のデフォルトは @code{'()} です。
+それぞれの引数は @var{field-names} の対応するフィールドの初期値を
+設定します。
+@c COMMON
 @end defun
 
 @defun record-predicate rtd
+@c EN
 Returns a procedure that takes one argument, which returns @code{#t}
 iff the given argument is of type of @var{rtd}.
+@c JP
+一つの引数をとり、与えられた引数が @var{rtd} と同じ型であり、その場合に
+限り @code{#t} を返す手続きを返します。
+@c COMMON
 @end defun
 
 @defun record-accessor rtd field-name
+@c EN
 Returns an accessor procedure for the field named by @var{field-name}
 of type @var{rtd}.  The accessor procedure takes an instance of
 @var{rtd}, and returns the value of the field.
+@c JP
+@var{rtd} 型の @var{field-name} によって名付けられたフィールドへの
+アクセサ手続きを返します。このアクセサ手続きは、@var{rtd} のインスタンスを
+一つとり、そのフィールドの値を返します。
+@c COMMON
 @end defun
 
 @defun record-modifier rtd field-name
+@c EN
 Returns a modifier procedure for the field named by @var{field-name}
 of type @var{rtd}.  The modifier procedure takes two arguments,
 an instance of @var{rtd} and a value, and sets the value to
 the specified field.
+@c JP
+@var{rtd} 型の @var{field-name} によって名付けられたフィールドへの
+モディファイア手続きを返します。このモディファイア手続きは、
+@var{rtd} のインスタンスと値のふたつの引数をとり、その引数を
+指定されたフィールドに設定します。
+@c COMMON
 @end defun
 
 @example
