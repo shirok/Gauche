@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.6 2001-03-22 10:38:10 shiro Exp $
+;;;  $Id: object.scm,v 1.1 2001-03-24 09:50:16 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -41,7 +41,6 @@
                       :specializers (list <class>)
                       :lambda-list '(class . initargs)
                       :body body)))
-
 
 ;;----------------------------------------------------------------
 ;; Generic function
@@ -111,52 +110,84 @@
 ;; Class
 ;;
 
-(define-syntax define-class
-  (syntax-rules ()
-    ((_ ?name (?super ...) (?slot ...) ?options ...)
-     (define ?name
-       (make <class>
-             :supers (list ?super ...)
-             :slots (list (%parse-slot-definition ?slot) ...)
-             ?options ...
-             :name '?name)))))
-
-(define-syntax %parse-slot-definition
-  (syntax-rules ()
-    ((_ (?name ?options ...))
-     (%parse-slot-definition "parse options" ?name (?options ...) ()))
-    ((_ "parse options" ?name () (?rest ...))
-     (?name ?rest ...))
-    ((_ "parse options" ?name (:initform ?form ?options ...) (?rest ...))
-     (%parse-slot-definition "parse options"
-                             ?name (?options ...)
-                             (?rest ... :init-thunk (lambda () ?form))))
-    ((_ "parse options" ?name (:init-form ?form ?options ...) (?rest ...))
-     (%parse-slot-definition "parse options"
-                             ?name (?options ...)
-                             (?rest ... :init-thunk (lambda () ?form))))
-    ((_ "parse options" ?name (?key ?value ?options ...) (?rest ...))
-     (%parse-slot-definition "parse options"
-                             ?name (?options ...)
-                             (?rest ... ?key ?value)))
-    ((_ "parse options" ?name (?stray) (?rest ...))
-     (error "bad slot definition (uneven keyword list) for slot ~s" '?name))
-    ((_ ?name)
-     '?name)
-    ))
+;; TODO: class redefinition
+(define-macro (define-class name supers slots . options)
+  (define (transform-slot-definition slot)
+    (if (pair? slot)
+        (let loop ((opts (cdr slot)) (r '()))
+          (cond ((null? opts) `(list ',(car slot) ,@(reverse! r)))
+                ((not (and (pair? opts) (pair? (cdr opts))))
+                 (error "bad slot specification: ~s" slot))
+                (else
+                 (case (car opts)
+                   ((:initform :init-form)
+                    (loop (cddr opts)
+                          (list* `(lambda () ,(cadr opts)) :init-thunk r)))
+                   (else
+                    (loop (cddr opts) (list* (cadr opts) (car opts) r))))
+                 )))
+        `'(,slot)))
+  (let ((slot-defs (map transform-slot-definition slots))
+        (class     (get-keyword :metaclass options '<class>)))
+    `(define ,name
+       (make ,class
+             :name ',name
+             :supers ,supers
+             :slots (list ,@slot-defs)
+             ,@options))))
 
 (define-method initialize ((class <class>) initargs)
   (let ((name   (get-keyword :name   initargs #f))
         (slots  (get-keyword :slots  initargs '()))
         (supers (let ((s (get-keyword :supers initargs '())))
                   (if (null? s) (list <object>) s))))
+    ;; The order of initialization is somewhat important, since calculation
+    ;; of values of some slots depends on the other slots.
     (slot-set! class 'name name)
     (slot-set! class 'direct-supers supers)
     (slot-set! class 'cpl (compute-cpl class))
     (slot-set! class 'direct-slots
                (map (lambda (s) (if (pair? s) s (list s))) slots))
-    (slot-set! class 'slots (compute-slots class))
+    ;; note: num-instance-slots is set up during compute-get-n-set.
+    (let* ((slots (compute-slots class)))
+      (slot-set! class 'slots slots)
+      (slot-set! class 'accessors
+                 (map (lambda (s) (%compute-accessor class s)) slots))
+      )
     ))
+
+(define (%compute-accessor class slot)
+  (let ((name (car slot))
+        (gns  (compute-get-n-set class slot)))
+    (if (is-a? gns <slot-accessor>)
+        (cons name gns)
+        (let* ((unbound "unbound")
+               (initval (get-keyword :init-value (cdr slot) unbound))
+               (initkey (get-keyword :init-keyword (cdr slot) unbound))
+               (inittnk (get-keyword :init-thunk (cdr slot) unbound)))
+          (cons name
+                (apply make <slot-accessor>
+                       `(,@(if (eq? initval unbound)
+                               '()
+                               (list :init-value initval))
+                         ,@(if (eq? initkey unbound)
+                               '()
+                               (list :init-keyword initkey))
+                         ,@(if (eq? inittnk unbound)
+                               '()
+                               (list :init-thunk inittnk))
+                         ,@(cond ((integer? gns)
+                                  (list :slot-number gns))
+                                 ((pair? gns)
+                                  (list :slot-ref (car gns)
+                                        :slot-set! (cdr gns)))
+                                 (else
+                                  (error "bad getter-and-setter returned by compute-get-n-set for ~s: ~s"
+                                         class gns)))
+                         )))
+          )
+        ))
+  )
 
 (define-method compute-slots ((class <class>))
   (let ((cpl (slot-ref class 'cpl))
@@ -168,6 +199,22 @@
                           (slot-ref c 'direct-slots)))
               cpl)
     (reverse slots)))
+
+(define-method compute-get-n-set ((class <class>) slot)
+  (let ((alloc (get-keyword :allocation (cdr slot) :instance)))
+    (case alloc
+      ((:instance)
+       (let ((num (slot-ref <class> 'num-instance-slots)))
+         (slot-set! <class> 'num-instance-slots (+ num 1))
+         num))
+      ((:builtin)
+       (let ((acc (get-keyword :accessor (cdr slot) #f)))
+         (unless acc
+           (error "builtin slot ~s of class ~s doesn't have associated accessor"
+                  (car slot) class))
+         acc))
+      (else
+       (error "unsupported slot allocation: ~s" alloc)))))
 
 ;;----------------------------------------------------------------
 ;; Introspection routines
