@@ -1,5 +1,7 @@
 2003-09-27  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/charconv.scm : added call-with-input|output-conversion.
+
 	* src/macro.c (compile_rule1): fixed the problem of macro-defining
 	  macro.
 
@@ -8,6 +10,11 @@
 	  it.  Also fixed a socket's finalizer not to refer to the ports
 	  (it is not guaranteed that they are valid when the finalizer is
 	  called).
+
+2003-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/sxpath.scm.in : fixed typo in the export list (pointed out
+	  by Makoto Satoh).
 
 2003-09-22  Shiro Kawai  <shiro@acm.org>
 
@@ -87,7 +94,7 @@
 	  process ports to allow redirection and character encoding conversion.
 	  Also extended the command syntax so that it can take a list of
 	  argv and call exec directly.
-	  (INCOMPATIVLE CHANGE) open-{input|output}-process-port now return
+	  (INCOMPATIBLE CHANGE) open-{input|output}-process-port now return
 	  two values, the port and the process object.  I found they are pretty
 	  useless without getting process object.
 
