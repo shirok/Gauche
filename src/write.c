@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.31 2002-07-14 05:54:46 shirok Exp $
+ *  $Id: write.c,v 1.32 2002-07-15 10:51:04 shirok Exp $
  */
 
 #include <stdio.h>
@@ -850,17 +850,25 @@ ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...)
 
 struct vprintf_ctx {
     const char *fmt;
-    va_list ap;
+    ScmObj args;
 };
+
+/* NB: Scm_Vprintf scans format string twice.  In the first pass, arguments
+ * are retrieved from va_list variable and pushed to a list.  In the second
+ * pass, they are printed according to the format string.
+ * It is necessary because we need to do the printing part within a closure
+ * called by Scm_WithPortLocking.  On some architecture, we can't pass
+ * va_list type of argument in a closure packet easily.
+ */
 
 static ScmObj vprintf_proc(ScmPort *out, void *data)
 {
     struct vprintf_ctx *ctx = (struct vprintf_ctx*)data;
     const char *fmtp = ctx->fmt;
-    va_list ap = ctx->ap;
+    ScmObj args = ctx->args, val;
     ScmDString argbuf;
     char buf[SPBUFSIZ];
-    int c, longp = 0;
+    int c, longp = 0, len, mode;
 
     while ((c = *fmtp++) != 0) {
         int width, prec, dot_appeared, pound_appeared;
@@ -881,42 +889,55 @@ static ScmObj vprintf_proc(ScmPort *out, void *data)
                 continue;
             case 'd':; case 'i':; case 'c':
                 {
-                    signed int val = va_arg(ap, signed int);
-
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+                    SCM_ASSERT(SCM_EXACTP(val));
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
-                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
+                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf),
+                             Scm_GetInteger(val));
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
             case 'o':; case 'u':; case 'x':; case 'X':
                 {
-                    unsigned long val = va_arg(ap, unsigned long);
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+                    SCM_ASSERT(SCM_EXACTP(val));
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
-                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
+                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf),
+                             Scm_GetUInteger(val));
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
             case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
                 {
-                    double val = va_arg(ap, double);
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+                    SCM_ASSERT(SCM_FLONUMP(val));
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
-                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
+                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf),
+                             Scm_GetDouble(val));
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
             case 's':;
                 {
-                    char *val = va_arg(ap, char *);
-                    int len;
-                    Scm_PutzUnsafe(val, -1, out);
-
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+                    SCM_ASSERT(SCM_STRINGP(val));
+                    Scm_PutsUnsafe(SCM_STRING(val), out);
+                    
                     /* TODO: support right adjustment such as %-10s.
                        Currently we ignore minus sign and pad chars
                        on the right. */
-                    for (len = strlen(val); len < width; len++) {
+                    for (len = SCM_STRING_LENGTH(val); len < width; len++) {
                         Scm_PutcUnsafe(' ', out);
                     }
                     break;
@@ -928,24 +949,31 @@ static ScmObj vprintf_proc(ScmPort *out, void *data)
                 }
             case 'p':
                 {
-                    void *val = va_arg(ap, void *);
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+                    SCM_ASSERT(SCM_EXACTP(val));
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
-                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf), val);
+                    snprintf(buf, SPBUFSIZ, Scm_DStringGetz(&argbuf),
+                             (void*)Scm_GetUInteger(val));
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
             case 'S':; case 'A':
                 {
-                    ScmObj o = va_arg(ap, ScmObj);
-                    int mode =
-                        (c == 'A')? SCM_WRITE_DISPLAY : SCM_WRITE_WRITE;
-                    ScmWriteContext ctx;
-                    ctx.mode = mode | DEFAULT_CASE;
-                    ctx.flags = 0;
+                    ScmWriteContext wctx;
+
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+
+                    mode = (c == 'A')? SCM_WRITE_DISPLAY : SCM_WRITE_WRITE;
+                    wctx.mode = mode | DEFAULT_CASE;
+                    wctx.flags = 0;
 
                     if (pound_appeared) {
-                        int n = Scm_WriteCircular(o, out, mode, width);
+                        int n = Scm_WriteCircular(val, out, mode, width);
                         if (n < 0 && prec > 0) {
                             Scm_PutzUnsafe(" ...", -1, out);
                         }
@@ -953,9 +981,9 @@ static ScmObj vprintf_proc(ScmPort *out, void *data)
                             for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
                         }
                     } else if (width == 0) {
-                        write_internal(o, out, &ctx);
+                        write_internal(val, out, &wctx);
                     } else if (dot_appeared) {
-                        int n = Scm_WriteLimited(o, SCM_OBJ(out), mode, width);
+                        int n = Scm_WriteLimited(val, SCM_OBJ(out), mode, width);
                         if (n < 0 && prec > 0) {
                             Scm_PutzUnsafe(" ...", -1, out);
                         }
@@ -963,14 +991,17 @@ static ScmObj vprintf_proc(ScmPort *out, void *data)
                             for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
                         }
                     } else {
-                        write_internal(o, out, &ctx);
+                        write_internal(val, out, &wctx);
                     }
                     break;
                 }
             case 'C':
                 {
-                    int c = va_arg(ap, int);
-                    Scm_PutcUnsafe(c, out);
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+                    SCM_ASSERT(SCM_EXACTP(val));
+                    Scm_PutcUnsafe(Scm_GetInteger(val), out);
                     break;
                 }
             case '0':; case '1':; case '2':; case '3':; case '4':;
@@ -1003,12 +1034,80 @@ static ScmObj vprintf_proc(ScmPort *out, void *data)
 void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
 {
     struct vprintf_ctx ctx;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    const char *fmtp = fmt;
+    int c;
     
     if (!SCM_OPORTP(out)) {
         Scm_Error("output port required, but got %S", out);
     }
+    /*
+     * First pass : pop vararg and make a list of arguments.
+     */
+    while ((c = *fmtp++) != 0) {
+        if (c != '%') continue;
+        while ((c = *fmtp++) != 0) {
+            switch (c) {
+            case 'd':; case 'i':; case 'c':
+                {
+                    signed int val = va_arg(ap, signed int);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(val));
+                    break;
+                }
+            case 'o':; case 'u':; case 'x':; case 'X':
+                {
+                    unsigned long val = va_arg(ap, unsigned long);
+                    SCM_APPEND1(h, t, Scm_MakeIntegerFromUI(val));
+                    break;
+                }
+            case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
+                {
+                    double val = va_arg(ap, double);
+                    SCM_APPEND1(h, t, Scm_MakeFlonum(val));
+                    break;
+                }
+            case 's':;
+                {
+                    char *val = va_arg(ap, char *);
+                    SCM_APPEND1(h, t, SCM_MAKE_STR(val));
+                    break;
+                }
+            case '%':;
+                {
+                    break;
+                }
+            case 'p':
+                {
+                    void *val = va_arg(ap, void *);
+                    SCM_APPEND1(h, t, Scm_MakeIntegerFromUI((unsigned long)val));
+                    break;
+                }
+            case 'S':; case 'A':
+                {
+                    ScmObj o = va_arg(ap, ScmObj);
+                    SCM_APPEND1(h, t, o);
+                    break;
+                }
+            case 'C':
+                {
+                    int c = va_arg(ap, int);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(c));
+                    break;
+                }
+            default:
+                continue;
+            }
+            break;
+        }
+        if (c == 0) {
+            Scm_Error("incomplete %-directive in format string: %s", fmt);
+        }
+    }
+    /*
+     * Second pass is called within Scm_WithPortLocking
+     */
     ctx.fmt = fmt;
-    ctx.ap = ap;
+    ctx.args = h;
     Scm_WithPortLocking(out, vprintf_proc, (void*)&ctx);
 }
 
