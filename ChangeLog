@@ -1,6 +1,12 @@
 2002-02-10  Shiro Kawai  <shiro@acm.org>
 
+	* aclocal.m4 (AC_GAUCHE_EXT_FIXUP): allow optional second arg.
 	* Makefile.in, src/gauche-config.in : install aclocal.m4.
+	* src/read.c : fixed a bug in the character reader so that it
+	  recognizes character name in case-insensitive way.
+	* src/syslib.stub : for freebsd, sys-access uses stat(2) instead
+	  of somewhat unreliable access(2).
+	* src/gauche-config.h : autoloads srfi-0 (cond-expand).
 
 2002-02-09  Shiro Kawai  <shiro@acm.org>
 
