@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: listener.scm,v 1.3 2002-10-23 08:01:41 shirok Exp $
+;;;  $Id: listener.scm,v 1.4 2002-10-25 04:36:08 shirok Exp $
 ;;;
 
 ;; provides functions useful to implement a repl listener
@@ -64,27 +64,28 @@
 
 (define-method listener-read-handler ((self <listener>))
   (define (repl)
-    (let ((istr (ref self 'rbuf)))
-      (string-incomplete->complete! istr)
-      (when (complete-sexp? istr)
-        (with-input-from-string istr
-          (lambda ()
-            (with-error-handler
-                (ref self 'error-handler) 
-              (lambda ()
-                (let* ((env  (ref self 'environment))
-                       (expr ((ref self 'reader))))
-                  (with-output-to-port (ref self 'ouptut-port)
-                    (lambda ()
-                      (call-with-values
-                          (lambda () ((ref self 'evaluator) expr env))
-                        (ref self 'printer)))))))
-            (set! (ref self 'rbuf)
-                  (port->string (current-input-port)))
-            (listener-show-prompt self)
-            (when (string-skip (ref self 'rbuf) #[\s]) (repl))
-            )))
-      ))
+    (with-error-handler
+     (lambda (e)
+       (set! (ref self 'rbuf) "")
+       ((ref self 'error-handler) e)
+       (listener-show-prompt self))
+     (lambda ()
+       (update! (ref self 'rbuf) (cut string-trim <> #[\s]))
+       (when (and (not (string-null? (ref self 'rbuf)))
+                  (complete-sexp? (ref self 'rbuf)))
+         (with-input-from-string (ref self 'rbuf)
+           (lambda ()
+             (let* ((env  (ref self 'environment))
+                    (expr ((ref self 'reader))))
+               (unless (eof-object? expr)
+                 (with-output-to-port (ref self 'ouptut-port)
+                   (lambda ()
+                     (call-with-values
+                      (lambda () ((ref self 'evaluator) expr env))
+                      (ref self 'printer))))
+                 (listener-show-prompt self)))
+             (set! (ref self 'rbuf) (port->string (current-input-port)))))
+         (repl)))))
 
   (lambda ()
     (let ((chunk (read-block 8192 (ref self 'input-port))))
@@ -92,6 +93,7 @@
           (cond ((ref self 'finalizer) => (lambda (f) (f))))
           (begin
             (update! (ref self 'rbuf) (cut string-append <> chunk))
+            (string-incomplete->complete! (ref self 'rbuf))
             (with-error-to-port (ref self 'error-port) repl)))))
   )
 
