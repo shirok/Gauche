@@ -5,6 +5,7 @@
 (use gauche.test)
 
 (load "charconv")
+(import gauche.charconv)
 
 (test-start "charconv")
 
@@ -160,5 +161,30 @@
 (map-test test-guess "data/jp2"
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
           '("*JP"))
+
+;;--------------------------------------------------------------------
+(test-section "string conversion")
+
+(define (test-string file from to)
+  (let ((infostr (format #f "string(~a) ~a => ~a" file from to))
+        (instr   (file->string (format #f "~a.~a" file from)))
+        (outstr  (file->string (format #f "~a.~a" file to))))
+    (if (ces-conversion-supported? from to)
+        (test infostr
+              outstr
+              (lambda ()
+                (string-complete->incomplete
+                 (ces-convert instr from to))))
+        (test infostr "(not supported)"
+              (lambda () "(not supported)")))
+    ))
+
+(map-test test-string "data/jp1"
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+(map-test test-string "data/jp2"
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+
 
 (test-end)
