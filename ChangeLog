@@ -1,3 +1,10 @@
+2001-06-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stuc, src/system.c : added sys-select[!], the select(2)
+	  interface.   added sys-mkdir, sys-umask and sys-chmod as well.
+	* doc/gauche-ref.texi : enhanced description.
+	* test/system.scm : added test for the system library.
+
 2001-06-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub: added fdset operations
