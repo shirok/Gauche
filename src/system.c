@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.55 2004-02-02 12:48:55 shirok Exp $
+ *  $Id: system.c,v 1.56 2004-04-24 11:49:22 shirok Exp $
  */
 
 #include <stdio.h>
@@ -972,7 +972,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
         }
         execvp(program, (char *const*)argv);
         /* here, we failed */
-        Scm_Panic("exec failed: %s", strerror(errno));
+        Scm_Panic("exec failed: %s: %s", program, strerror(errno));
     }
 
     /* We come here only when fork is requested. */

@@ -1,3 +1,8 @@
+2004-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_SysExec): display program name as well when
+	  failed (Patch from Kouhei Sutou).
+
 2004-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_FindBinding): avoid using cons and memq in
