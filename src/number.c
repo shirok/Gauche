@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.88 2002-04-13 11:55:18 shirok Exp $
+ *  $Id: number.c,v 1.89 2002-04-13 21:37:58 shirok Exp $
  */
 
 #include <math.h>
@@ -177,7 +177,7 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
         if (dd.components.exp > 0) {
             lf += (1L<<52);     /* hidden bit */
         }
-        f = Scm_MakeInteger(dd.components.mant);
+        f = Scm_MakeInteger(lf);
     }
 #else  /*SIZEOF_LONG < 8*/
     {
@@ -186,8 +186,6 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
         values[1] = dd.components.mant0;
         if (dd.components.exp > 0) {
             values[1] += (1L<<20); /* hidden bit */
-        } else {
-            
         }
         f = Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(1, values, 2)));
     }
@@ -513,7 +511,7 @@ ScmObj Scm_PromoteToComplex(ScmObj obj)
 ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
     ScmObj v = arg0;
-    int result_int = 0;
+    long result_int = 0;
     double result_real, result_imag;
 
     if (SCM_INTP(v)) {
@@ -602,7 +600,7 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
 
 ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    int result_int = 0;
+    long result_int = 0;
     double result_real = 0.0, result_imag = 0.0;
 
     if (SCM_INTP(arg0)) {
@@ -1181,8 +1179,12 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
     ScmObj badnum;
     
     if (SCM_INTP(arg0)) {
-        if (SCM_INTP(arg1))
-            return (SCM_INT_VALUE(arg0) - SCM_INT_VALUE(arg1));
+        if (SCM_INTP(arg1)) {
+            long r = SCM_INT_VALUE(arg0) - SCM_INT_VALUE(arg1);
+            if (r < 0) return -1;
+            if (r > 0) return 1;
+            return 0;
+        }
         if (SCM_FLONUMP(arg1)) {
             double r = SCM_INT_VALUE(arg0) - SCM_FLONUM_VALUE(arg1);
             if (r < 0) return -1;
@@ -1438,9 +1440,9 @@ static inline ScmObj iexpt10(int e)
 
 /* integer power of R by N, N is rather small.
    Assuming everything is in range. */
-static inline long ipow(int r, int n)
+static inline u_long ipow(int r, int n)
 {
-    int k;
+    u_long k;
     for (k=1; n>0; n--) k *= r;
     return k;
 }
@@ -1726,11 +1728,11 @@ static long longdigs[RADIX_MAX-RADIX_MIN+1];
 
 /* Max integer I such that reading next digit (in radix R) will overflow
    long integer.   floor(LONG_MAX/R - R). */
-static long longlimit[RADIX_MAX-RADIX_MIN+1];
+static u_long longlimit[RADIX_MAX-RADIX_MIN+1];
 
 /* An integer table of R^D, which is a "big digit" to be added
    into bignum. */
-static long bigdig[RADIX_MAX-RADIX_MIN+1];
+static u_long bigdig[RADIX_MAX-RADIX_MIN+1];
 
 static ScmObj numread_error(const char *msg, struct numread_packet *context);
 
@@ -1746,8 +1748,8 @@ static ScmObj read_uint(const char **strp, int *lenp,
     int len = *lenp;
     int radix = ctx->radix;
     int digits = 0, diglimit = longdigs[radix-RADIX_MIN];
-    long limit = longlimit[radix-RADIX_MIN], bdig = bigdig[radix-RADIX_MIN];
-    long value_int = 0;
+    u_long limit = longlimit[radix-RADIX_MIN], bdig = bigdig[radix-RADIX_MIN];
+    u_long value_int = 0;
     ScmBignum *value_big = NULL;
     char c;
     static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -1916,7 +1918,8 @@ static ScmObj read_real(const char **strp, int *lenp,
                         struct numread_packet *ctx)
 {
     int minusp = FALSE, exp_minusp = FALSE;
-    int exponent = 0, fracdigs = 0;
+    int fracdigs = 0;
+    long exponent = 0;
     ScmObj intpart, fraction;
 
     switch (**strp) {
@@ -2030,7 +2033,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         if (realnum > 0.0
             && (Scm_NumCmp(fraction, iexpt2_52) > 0
                 || exponent-fracdigs > MAX_EXACT_10_EXP
-                || exponent-fracdigs < MAX_EXACT_10_EXP)) {
+                || exponent-fracdigs < -MAX_EXACT_10_EXP)) {
             realnum = algorithmR(fraction, exponent-fracdigs, realnum);
         }
         if (minusp) realnum = -realnum;
@@ -2193,10 +2196,11 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
 
 void Scm__InitNumber(void)
 {
-    int radix, n, i;
+    int radix, i;
+    u_long n;
     for (radix = RADIX_MIN; radix <= RADIX_MAX; radix++) {
         longlimit[radix-RADIX_MIN] =
-            (int)floor((double)LONG_MAX/radix - radix);
+            (u_long)floor((double)LONG_MAX/radix - radix);
         /* Find max D where R^(D+1)-1 <= LONG_MAX */
         for (i = 0, n = 1; ; i++, n *= radix) {
             if (n >= LONG_MAX/radix) {
