@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-14.scm,v 1.11 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: srfi-14.scm,v 1.12 2003-11-20 16:12:12 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -248,12 +248,13 @@
             (%char-set-add-range! base low (- upper 1))
             (begin
               (when (< low 128)
-                (%char-set-add-range! base low 128))
-              (do ((i 128 (+ i 1)))
+                (%char-set-add-range! base low 128)
+                (set! low 128))
+              (do ((i low (+ i 1)))
                   ((>= i upper) base)
                 (let ((c (ucs->char i)))
                   (if c
-                      (%char-set-add! base c)
+                      (%char-set-add-range! base c c)
                       (if error?
                           (error "unicode character #\\u~8,'0x is not supported in the native character set (~a)"
                                  i (gauche-character-encoding)))))
