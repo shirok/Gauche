@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.10 2001-07-08 08:24:25 shirok Exp $
+;; $Id: dynwind.scm,v 1.11 2001-07-08 08:51:12 shirok Exp $
 
 (use gauche.test)
 
@@ -97,6 +97,17 @@
 
 (test "stack overflow" (/ (* 4000 4001) 2)
       (lambda () (sum-rec 4000)))
+
+(define (sum-rec-apply n)
+  (if (> n 0)
+      (apply + n (apply sum-rec (- n 1) '()) '())
+      0))
+
+(test "stack overflow (apply)" (/ (* 2000 2001) 2)
+      (lambda () (sum-rec-apply 2000)))
+      
+(test "stack overflow (apply)" (/ (* 3000 3001) 2)
+      (lambda () (sum-rec-apply 3000)))
 
 ;;-----------------------------------------------------------------------
 ;; See if port stuff is cleaned up properly
