@@ -76,7 +76,10 @@ gauche-refj.html : gauche-refj.texi
 	texi2html -number gauche-refj.texi
 
 gauche-refj_toc.html : gauche-refj.texi
-	texi2html -split section -number gauche-refj.texi
+	texi2html -split section -number gauche-refj.texi;
+	for f in gauche-refj*.html; do \
+	  sed -e 's/LANG=""/LANG="ja"/' $$f > $$f.t && mv $$f.t $$f; \
+	done
 
 gauche-refj.dvi : gauche-refj.texi
 	texi2dvi gauche-refj.texi

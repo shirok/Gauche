@@ -1,3 +1,8 @@
+2002-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* doc/Makefile.in : put a sed line in generating html docs to fix
+	  LANG attribute, as suggested by Kimura Fuyuki.
+
 2002-11-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c : fixed SRFI-30 syntax reader (Thanks to KIMURA 
