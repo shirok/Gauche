@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.51 2001-09-07 09:59:20 shirok Exp $
+ *  $Id: class.c,v 1.52 2001-09-07 10:04:41 shirok Exp $
  */
 
 #include "gauche.h"
@@ -735,7 +735,7 @@ static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *args,
 }
 
 static ScmClass *slot_bound_using_class_p_SPEC[] = {
-    SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP
+    SCM_CLASS_CLASS, SCM_CLASS_TOP, SCM_CLASS_TOP
 };
 static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
                          &Scm_GenericSlotBoundUsingClassP,
