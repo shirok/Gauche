@@ -12,12 +12,20 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.11 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: char.c,v 1.12 2001-04-07 06:39:24 shiro Exp $
  */
 
 #include "gauche.h"
 
-/* Most character stuffs are defined as macros. */
+/*
+ * Character functions
+ */
+
+/* not much here... most are in stdlib.stub */
+ScmObj Scm_CharEncodingName(void)
+{
+    return SCM_INTERN(SCM_CHAR_ENCODING_NAME);
+}
 
 /*
  * Character set (cf. SRFI-14)

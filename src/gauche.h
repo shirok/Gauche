@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.107 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: gauche.h,v 1.108 2001-04-07 06:39:04 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -200,6 +200,8 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define SCM_CHAR_LOWER_P(ch)    (('a' <= (ch)) && ((ch) <= 'z'))
 #define SCM_CHAR_UPCASE(ch)     (SCM_CHAR_LOWER_P(ch)?((ch)-('a'-'A')):(ch))
 #define SCM_CHAR_DOWNCASE(ch)   (SCM_CHAR_UPPER_P(ch)?((ch)+('a'-'A')):(ch))
+
+extern ScmObj Scm_CharEncodingName(void);
 
 /*
  * HEAP ALLOCATED OBJECTS
