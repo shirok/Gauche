@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.44 2001-03-28 09:37:58 shiro Exp $
+ *  $Id: compile.c,v 1.45 2001-03-28 09:55:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -384,7 +384,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         void *data = SCM_SYNTAX(g->value)->data;
                         return cmpl(form, env, ctx, data);
                     }
-                    if (vm->enableInline &&
+                    if (!(vm->compilerFlags & SCM_COMPILE_NOINLINE) &&
                         SCM_SUBRP(g->value) && SCM_SUBR_INLINER(g->value)) {
                         ScmObj inlined =
                             SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
@@ -415,7 +415,8 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             ADDCODE1(((ctx == SCM_COMPILE_TAIL)?
                       SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
                       SCM_VM_INSN1(SCM_VM_CALL, nargs)));
-            ADDCODE1(Scm_MakeSourceInfo(form, NULL));
+            if (!(Scm_VM()->compilerFlags & SCM_COMPILE_NOSOURCE))
+                ADDCODE1(Scm_MakeSourceInfo(form, NULL));
 
             if (ctx == SCM_COMPILE_TAIL) {
                 code = Scm_Cons(SCM_VM_INSN(SCM_VM_PRE_TAIL), code);
@@ -451,7 +452,8 @@ static ScmObj compile_varref(ScmObj obj, ScmObj env)
     } else {
         ADDCODE1(loc);
     }
-    ADDCODE1(Scm_MakeSourceInfo(obj, NULL));
+    if (!(Scm_VM()->compilerFlags & SCM_COMPILE_NOSOURCE))
+        ADDCODE1(Scm_MakeSourceInfo(obj, NULL));
     return code;
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.18 2001-03-25 03:15:37 shiro Exp $
+ *  $Id: main.c,v 1.19 2001-03-28 09:55:46 shiro Exp $
  */
 
 #include <unistd.h>
@@ -44,14 +44,17 @@ void version(void)
 void further_options(const char *optarg)
 {
     if (strcmp(optarg, "no-inline") == 0) {
-        Scm_VM()->enableInline = FALSE;        
+        Scm_VM()->compilerFlags |= SCM_COMPILE_NOINLINE;
     }
     else if (strcmp(optarg, "debug-compiler") == 0) {
-        Scm_VM()->debugCompile = TRUE;
+        Scm_VM()->compilerFlags |= SCM_COMPILE_SHOWRESULT;
+    }
+    else if (strcmp(optarg, "no-source-info") == 0) {
+        Scm_VM()->compilerFlags |= SCM_COMPILE_NOSOURCE;
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fno-inine, -fdebug-compiler\n");
+        fprintf(stderr, "supported options are: -fno-inine, -fdebug-compiler, -fno-source-info\n");
         exit(1);
     }
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.64 2001-03-28 09:38:16 shiro Exp $
+ *  $Id: vm.c,v 1.65 2001-03-28 09:55:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -50,8 +50,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->curout = SCM_PORT(Scm_Stdout());
     v->curerr = SCM_PORT(Scm_Stderr());
 
-    v->enableInline = TRUE;
-    v->debugCompile = FALSE;
+    v->compilerFlags = 0;
 
     v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
     v->sp = v->stack;
@@ -1198,7 +1197,7 @@ static ScmObj user_eval_inner(ScmObj program)
 ScmObj Scm_Eval(ScmObj expr, ScmObj e)
 {
     ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-    if (theVM->debugCompile)
+    if (theVM->compilerFlags & SCM_COMPILE_SHOWRESULT)
         Scm_Printf(theVM->curerr, "== %#S\n", v);
     return user_eval_inner(v);
 }

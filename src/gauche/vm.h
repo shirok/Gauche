@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.29 2001-03-12 07:43:15 shiro Exp $
+ *  $Id: vm.h,v 1.30 2001-03-28 09:55:46 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -155,9 +155,8 @@ struct ScmVMRec {
     ScmErrorHandler *escape;    /* current escape point */
     ScmObj errorHandler;        /* error handler */
     ScmVMActivationHistory *history; /* activation history */
-    
-    int enableInline;           /* enable inlining on compilation */
-    int debugCompile;           /* show the result of compilation for debug */
+
+    unsigned int compilerFlags; /* Compiler flags */
 
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
@@ -288,6 +287,16 @@ enum {
                                    expression will be discarded. */
     SCM_COMPILE_TAIL,           /* This is a tail expression. */
     SCM_COMPILE_NORMAL          /* Normal calling sequence. */
+};
+
+/*
+ * Compiler flags
+ */
+
+enum {
+    SCM_COMPILE_NOINLINE = (1L<<0), /* Do not inline procedures */
+    SCM_COMPILE_NOSOURCE = (1L<<1), /* Do not insert source info */
+    SCM_COMPILE_SHOWRESULT = (1L<<2) /* Display each result of compilation */
 };
 
 #endif /* GAUCHE_VM_H */
