@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.29 2003-11-20 03:13:05 shirok Exp $
+ *  $Id: hash.c,v 1.30 2003-12-08 21:13:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -163,7 +163,7 @@ static ScmHashEntry *insert_entry(ScmHashTable *table,
         ScmHashIter iter;
         int i, newsize = table->numBuckets * EXTEND_FACTOR;
         
-        newb = SCM_NEW2(ScmHashEntry **, sizeof(ScmHashEntry*) * newsize);
+        newb = SCM_NEW_ARRAY(ScmHashEntry*, newsize);
         for (i=0; i<newsize; i++) newb[i] = NULL;
         
         Scm_HashIterInit(table, &iter);
@@ -425,7 +425,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
     if (initSize != 0) initSize = round2up(initSize);
     else initSize = DEFAULT_NUM_BUCKETS;
 
-    b = SCM_NEW2(ScmHashEntry**, sizeof(ScmHashEntry)*initSize);
+    b = SCM_NEW_ARRAY(ScmHashEntry*, initSize);
     z = SCM_NEW(ScmHashTable);
     SCM_SET_CLASS(z, SCM_CLASS_HASHTABLE);
     z->buckets = b;

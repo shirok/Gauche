@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: parameter.c,v 1.4 2003-12-08 20:09:01 shirok Exp $
+ *  $Id: parameter.c,v 1.5 2003-12-08 21:13:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -70,15 +70,14 @@ void Scm_ParameterTableInit(ScmVMParameterTable *table,
     int i;
 
     if (base) {
-        table->vector = SCM_NEW2(ScmObj*,
-                                 sizeof(ScmObj*)*base->parameters.numAllocated);
+        table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.numAllocated);
         table->numAllocated = base->parameters.numAllocated;
         table->numParameters = base->parameters.numParameters;
         for (i=0; i<table->numParameters; i++) {
             table->vector[i] = base->parameters.vector[i];
         }
     } else {
-        table->vector = SCM_NEW2(ScmObj*, sizeof(ScmObj*)*PARAMETER_INIT_SIZE);
+        table->vector = SCM_NEW_ARRAY(ScmObj, PARAMETER_INIT_SIZE);
         table->numParameters = 0;
         table->numAllocated = PARAMETER_INIT_SIZE;
     }
@@ -92,8 +91,7 @@ int Scm_MakeParameterSlot(ScmVM *vm)
     ScmVMParameterTable *p = &(vm->parameters);
     if (p->numParameters == p->numAllocated) {
         int i;
-        ScmObj *newvec = SCM_NEW2(ScmObj*,
-                                  sizeof(ScmObj*)*(p->numAllocated + PARAMETER_GROW));
+        ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, p->numAllocated + PARAMETER_GROW);
         for (i=0; i<p->numParameters; i++) {
             newvec[i] = p->vector[i];
             p->vector[i] = SCM_FALSE; /*GC friendly*/

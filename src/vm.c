@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.202 2003-10-18 11:07:01 shirok Exp $
+ *  $Id: vm.c,v 1.203 2003-12-08 21:13:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -116,7 +116,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->compilerFlags = base? base->compilerFlags : 0;
     v->runtimeFlags = base? base->runtimeFlags : 0;
 
-    v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
+    v->stack = SCM_NEW_ARRAY(ScmObj, SCM_VM_STACK_SIZE);
     v->sp = v->stack;
     v->stackSize = SCM_VM_STACK_SIZE;
     v->stackBase = v->stack;
@@ -1929,7 +1929,7 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
     d[0] = (void*)result;
     d[1] = (void*)vm->numVals;
     if (vm->numVals > 1) {
-        ScmObj *array = SCM_NEW2(ScmObj*, (vm->numVals-1)*sizeof(ScmObj));
+        ScmObj *array = SCM_NEW_ARRAY(ScmObj, (vm->numVals-1));
         memcpy(array, vm->vals, sizeof(ScmObj)*(vm->numVals-1));
         d[2] = (void*)array;
     }

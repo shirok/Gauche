@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.46 2003-10-25 02:42:09 shirok Exp $
+ *  $Id: regexp.c,v 1.47 2003-12-08 21:13:17 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -761,7 +761,7 @@ static void rc_setup_charsets(ScmRegexp *rx, regcomp_ctx *ctx)
     ScmObj cp;
     int i = 0;
     rx->numSets = Scm_Length(ctx->sets);
-    rx->sets = SCM_NEW2(ScmCharSet**, sizeof(ScmCharSet*)*rx->numSets);
+    rx->sets = SCM_NEW_ARRAY(ScmCharSet*, rx->numSets);
     for (i=0, cp = Scm_Reverse(ctx->sets); !SCM_NULLP(cp); cp = SCM_CDR(cp)) {
         rx->sets[i++] = SCM_CHARSET(SCM_CAR(cp));
     }
@@ -1849,8 +1849,7 @@ static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
     ScmRegMatch *rm = SCM_NEW(ScmRegMatch);
     SCM_SET_CLASS(rm, SCM_CLASS_REGMATCH);
     rm->numMatches = rx->numGroups;
-    rm->matches = SCM_NEW2(struct ScmRegMatchSub*,
-                           sizeof(struct ScmRegMatchSub)*rx->numGroups);
+    rm->matches = SCM_NEW_ARRAY(struct ScmRegMatchSub, rx->numGroups);
     /* we keep information of original string separately, instead of
        keeping a pointer to orig; For orig may be destructively modified,
        but its elements are not. */

@@ -1,5 +1,8 @@
 2003-12-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_NEW_ARRAY), src/*.c : replaced most of SCM_NEW2
+	  to SCM_NEW_ARRAY for clearity.
+
 	* src/parameter.c (Scm_ParameterTableInit): fixed a bug that corrupts
 	  memory.
 

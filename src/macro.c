@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.44 2003-09-28 04:41:05 shirok Exp $
+ *  $Id: macro.c,v 1.45 2003-12-08 21:13:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -502,7 +502,7 @@ typedef struct {
 
 static MatchVar *alloc_matchvec(int numPvars)
 {
-    return SCM_NEW2(MatchVar*, sizeof(MatchVar)*numPvars);
+    return SCM_NEW_ARRAY(MatchVar, numPvars);
 }
 
 static void init_matchvec(MatchVar *mvec, int numPvars)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.41 2003-12-08 08:38:31 shirok Exp $
+ *  $Id: list.c,v 1.42 2003-12-08 21:13:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -165,12 +165,12 @@ ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
     int len = Scm_Length(list), i;
     if (len < 0) Scm_Error("proper list required, but got %S", list);
     if (store == NULL) {
-        array = SCM_NEW2(ScmObj *, sizeof(ScmObj)*len);
+        array = SCM_NEW_ARRAY(ScmObj, len);
     } else {
         if (*nelts < len) {
             if (!alloc)
                 Scm_Error("ListToArray: storage too small");
-            array = SCM_NEW2(ScmObj *, sizeof(ScmObj)*len);
+            array = SCM_NEW_ARRAY(ScmObj, len);
         } else {
             array = store;
         }
@@ -710,7 +710,7 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences)
     int nseqs = Scm_Length(sequences);
 
     if (nseqs < 0) Scm_Error("bad list of sequences: %S", sequences);
-    seqv = SCM_NEW2(ScmObj *, sizeof(ScmObj)*nseqs);
+    seqv = SCM_NEW_ARRAY(ScmObj, nseqs);
     for (sp=seqv; SCM_PAIRP(sequences); sp++, sequences=SCM_CDR(sequences)) {
         *sp = SCM_CAR(sequences);
     }

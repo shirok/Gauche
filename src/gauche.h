@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.355 2003-12-08 08:38:31 shirok Exp $
+ *  $Id: gauche.h,v 1.356 2003-12-08 21:13:17 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -315,6 +315,7 @@ typedef struct ScmInstanceRec {
 #define SCM_MALLOC_ATOMIC(size)   GC_MALLOC_ATOMIC(size)
 
 #define SCM_NEW(type)         ((type*)(SCM_MALLOC(sizeof(type))))
+#define SCM_NEW_ARRAY(type, nelts) ((type*)(SCM_MALLOC(sizeof(type)*(nelts))))
 #define SCM_NEW2(type, size)  ((type)(SCM_MALLOC(size)))
 #define SCM_NEW_ATOMIC(type)  ((type*)(SCM_MALLOC_ATOMIC(sizeof(type))))
 #define SCM_NEW_ATOMIC2(type, size) ((type)(SCM_MALLOC_ATOMIC(size)))

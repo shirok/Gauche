@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.50 2003-12-05 19:38:28 shirok Exp $
+ *  $Id: system.c,v 1.51 2003-12-08 21:13:17 shirok Exp $
  */
 
 #include <stdio.h>
@@ -886,7 +886,7 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
         Scm_Error("argument list must have at least one element: %S", args);
     }
     
-    argv = SCM_NEW2(char **, sizeof(char *)*(argc+1));
+    argv = SCM_NEW_ARRAY(char *, argc+1);
     for (i=0, ap = args; i<argc; i++, ap = SCM_CDR(ap)) {
         if (!SCM_STRINGP(SCM_CAR(ap)))
             Scm_Error("bad argument (string required): %S", SCM_CAR(ap));

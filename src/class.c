@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.106 2003-12-08 08:38:31 shirok Exp $
+ *  $Id: class.c,v 1.107 2003-12-08 21:13:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -194,7 +194,7 @@ static ScmClass **class_list_to_array(ScmObj classes, int len)
 {
     ScmObj cp;
     ScmClass **v, **vp;
-    v = vp = SCM_NEW2(ScmClass**, sizeof(ScmClass*)*(len+1));
+    v = vp = SCM_NEW_ARRAY(ScmClass*, len+1);
     SCM_FOR_EACH(cp, classes) {
         if (!Scm_TypeP(SCM_CAR(cp), SCM_CLASS_CLASS))
             Scm_Error("list of classes required, but found non-class object"
@@ -753,7 +753,7 @@ static ScmClass *make_implicit_meta(const char *name,
             }
         }
         if (numExtraMetas) {
-            metas = SCM_NEW2(ScmClass**, sizeof(ScmClass*)*(numExtraMetas+4));
+            metas = SCM_NEW_ARRAY(ScmClass*, numExtraMetas+4);
             for (i = 0, parent = cpa; *parent; parent++) {
                 if (SCM_CLASS_OF(*parent) != SCM_CLASS_CLASS) {
                     metas[i++] = SCM_CLASS_OF(*parent);
@@ -1085,7 +1085,7 @@ ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
 
     if (SCM_CLASS_CATEGORY(klass) == SCM_CLASS_BASE
         || SCM_CLASS_CATEGORY(klass) == SCM_CLASS_SCHEME) {
-        slots = SCM_NEW2(ScmObj*, klass->numInstanceSlots*sizeof(ScmObj));
+        slots = SCM_NEW_ARRAY(ScmObj, klass->numInstanceSlots);
 
         /* NB: actually, for Scheme instances, 'coresize' argument is
            redundant since klass->coreSize has it.  There's a historical
@@ -2014,7 +2014,7 @@ static ScmObj compute_applicable_methods(ScmNextMethod *nm,
     int n = Scm_Length(arglist), i;
     if (n < 0) Scm_Error("bad argument list: %S", arglist);
 
-    argv = SCM_NEW2(ScmObj *, sizeof(ScmObj)*n);
+    argv = SCM_NEW_ARRAY(ScmObj, n);
     i = 0;
     SCM_FOR_EACH(ap, arglist) argv[i++] = SCM_CAR(ap);
     return Scm_ComputeApplicableMethods(gf, argv, n);
@@ -2063,7 +2063,7 @@ static ScmObj method_more_specific_p(ScmNextMethod *nm, ScmObj *args,
     ScmClass **targs;
     int ntargs = Scm_Length(targlist), i;
     if (ntargs < 0) Scm_Error("bad targ list: %S", targlist);
-    targs = SCM_NEW2(ScmClass**, sizeof(ScmObj)*ntargs);
+    targs = SCM_NEW_ARRAY(ScmClass*, ntargs);
     i = 0;
     SCM_FOR_EACH(tp, targlist) {
         if (!Scm_TypeP(SCM_CAR(tp), SCM_CLASS_CLASS))
@@ -2098,9 +2098,9 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
     ScmObj mp;
 
     if (len >= STATIC_SORT_ARRAY_SIZE)
-        array = SCM_NEW2(ScmObj*, sizeof(ScmObj)*len);
+        array = SCM_NEW_ARRAY(ScmObj, len);
     if (nargs >= STATIC_SORT_ARRAY_SIZE)
-        targs = SCM_NEW2(ScmClass**, sizeof(ScmObj)*nargs);
+        targs = SCM_NEW_ARRAY(ScmClass*, nargs);
 
     SCM_FOR_EACH(mp, methods) {
         if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
@@ -2419,7 +2419,7 @@ ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
     nm->generic = gf;
     nm->methods = methods;
     if (copyArgs) {
-        nm->args = SCM_NEW2(ScmObj*, sizeof(ScmObj)*nargs);
+        nm->args = SCM_NEW_ARRAY(ScmObj, nargs);
         memcpy(nm->args, args, sizeof(ScmObj)*nargs);
     } else {
         nm->args = args;
