@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interactive.scm,v 1.9 2002-07-11 11:22:36 shirok Exp $
+;;;  $Id: interactive.scm,v 1.10 2002-08-25 06:15:24 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
@@ -75,10 +75,7 @@
         (search module)
         (begin
           (for-each search (module-imports module))
-          (let loop ((mod module))
-            (when mod
-              (search mod)
-              (loop (module-parent mod))))))
+          (for-each search (module-precedence-list module))))
     (for-each display (sort result))
     (values)
     ))
