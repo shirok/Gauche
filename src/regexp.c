@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.9 2001-04-17 09:56:31 shiro Exp $
+ *  $Id: regexp.c,v 1.10 2001-04-18 07:52:11 shiro Exp $
  */
 
 #include <setjmp.h>
@@ -330,7 +330,10 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
 /* TODO:  [:class:] and other posix weird stuff. */
 static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
 {
-    int begin = TRUE, complement = FALSE;
+#define REAL_BEGIN 2
+#define CARET_BEGIN 1
+    
+    int begin = REAL_BEGIN, complement = FALSE;
     int lastchar = -1, inrange = FALSE;
     ScmCharSet *set = SCM_CHARSET(Scm_MakeEmptyCharSet());
     ScmChar ch;
@@ -339,15 +342,19 @@ static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
         if (ctx->rxlen <= 0) Scm_Error("Unclosed bracket: %S", ctx->pattern);
         ch = fetch_pattern(ctx);
 
-        if (begin) {
-            if (ch == '^') complement = TRUE;
-            else {
-                Scm_CharSetAddRange(set, ch, ch);
-                lastchar = ch;
-            }
+        if (begin == REAL_BEGIN && ch == '^') {
+            complement = TRUE;
+            begin = CARET_BEGIN;
+            continue;
+        }
+        if (begin >= CARET_BEGIN && ch == ']') {
+            Scm_CharSetAddRange(set, ch, ch);
+            lastchar = ch;
             begin = FALSE;
             continue;
         }
+        begin = FALSE;
+
         switch (ch) {
         case '-':
             if (inrange) goto ordchar;
