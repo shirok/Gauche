@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.117 2001-11-06 09:50:28 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.118 2001-11-07 20:28:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1168,7 +1168,8 @@ It is a syntactic sugar of the following form.
 @example
 ((setter @var{proc}) @var{arg} @dots{} @var{expression})
 @end example
-Note the order of the arguments differs from CommonLisp's @code{setf}.
+Note the order of the arguments of the setter method
+differs from CommonLisp's @code{setf}.
 
 Some examples:
 @c JP
@@ -1177,7 +1178,7 @@ Some examples:
 @example
 ((setter @var{proc}) @var{arg} @dots{} @var{expression})
 @end example
-CommonLispの@code{setf}とは引数の順序が異なることに注意して下さい。
+CommonLispの@code{setf}とは、setter手続きに渡される引数の順序が異なることに注意して下さい。
 
 例：
 @c COMMON
@@ -2436,6 +2437,8 @@ The complex part is Gauche extension.
 @defunx modulo n1 n2
 [R5RS]
 @c EN
+Returns the quotient, remainder and modulo of dividing an integer @var{n1}
+by an integer @var{n2}.
 @c JP
 @c COMMON
 @end defun
@@ -2749,11 +2752,19 @@ Returns @code{#t} if @var{obj} is a boolean value.
 
 @deftp {Builtin Class} <list>
 @clindex list
+@c EN
 An abstract class respresents lists.   A parent class of @code{<null>}
 and @code{<pair>}.
 
 Note that a cirular list is also an instance of the @code{<list>} class,
-while R5RS procedure @code{list?} returns false on the circular lists.
+while R5RS procedure @code{list?} returns false on the circular lists and
+dotted lists.
+@c JP
+リストを表す抽象クラスで、クラス@code{<null>}とクラス@code{<pair>}の親クラスです。
+
+循環リストやドットリストも@code{<list>}クラスのインスタンスですが、
+@code{list?}は偽の値を返すことに注意して下さい。
+@c COMMON
 @lisp
 (use srfi-1)
 (list? (circular-list 1 2)) @result{} #f
@@ -2763,12 +2774,20 @@ while R5RS procedure @code{list?} returns false on the circular lists.
 
 @deftp {Builtin Class} <null>
 @clindex null
+@c EN
 A class of empty list.  @code{()} is the only instance.
+@c JP
+空リストのクラスです。@code{()}がこのクラスの唯一のインスタンスです。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <pair>
 @clindex pair
+@c EN
 A class of pairs.
+@c JP
+ペアのクラスです。
+@c COMMON
 @end deftp
 
 @node List predicates, List constructors, Pair and null class, Pairs and Lists
@@ -2776,20 +2795,40 @@ A class of pairs.
 @c NODE リストに関する述語
 
 @defun pair? obj
-[R5RS] Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
+[R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
+@c JP
+@var{obj}がペアなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun null? obj
-[R5RS] Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
+[R5RS] 
+@c EN
+Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
+@c JP
+@var{obj}が空リストなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun list? obj
-[R5RS] Returns @code{#t} if @var{obj} is a proper list, @code{#f} otherwise.
+[R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a proper list, @code{#f} otherwise.
 This function returns @code{#f} if @var{obj} is a dotted or circular list.
-@end defun
 
 See also @code{proper-list?}, @code{circular-list?} and
 @code{dotted-list?} in @ref{SRFI-1 List predicates}.
+@c JP
+@var{obj}が正しいリストなら@code{#t}を、そうでなければ@code{#f}を返します。
+この手続きは@var{obj}がドットリストや循環リストなら@var{#f}を返します。
+
+SRFI-1(@ref{SRFI-1 List predicates})には更に、
+@code{proper-list?}、@code{circular-list?}、@code{dotted-list?}
+といった手続きが定義されています。
+@c COMMON
+@end defun
 
 @node List constructors, List accessors and modifiers, List predicates, Pairs and Lists
 @subsection List constructors
@@ -3135,6 +3174,25 @@ Gaucheでは、全てのシンボルはintern、すなわち内部のテーブルに登録されています。
 @c COMMON
 @end  deftp
 
+@deftp {Reader Syntax} @code{|@i{name}|}
+@c EN
+Denotes a symbol that has weird name, i.e. the name including the
+characters which is not allowed in the R5RS symbol syntax.
+This syntax can also be used to denote a symbol with capital letters
+(without escaping, the capital letters are converted to the lowercase
+letters by the reader).
+
+The syntax is taken from CommonLisp.  Some other Scheme implementation
+use it as well.
+@c JP
+R5RSのシンボルの定義では許されていない文字を使った妙な名前のシンボルを表記するのに
+使う構文です。大文字を含むシンボルを表記するときにも使えます (このエスケープ構文なしだと、
+大文字は全てリーダーによって小文字に変換されてしまいます)。
+
+この表記はCommonLispから取られました。いくつかのSchemeでも同様の表記を採用しています。
+@c COMMON
+@end deftp
+
 @defun symbol? obj
 [R5RS] 
 @c EN
@@ -3142,6 +3200,13 @@ Returns true if and only if @var{obj} is a symbol.
 @c JP
 @var{obj}がシンボルなら@code{#t}を返します。
 @c COMMON
+@example
+(symbol? 'abc)     @result{} #t
+(symbol? 0)        @result{} #f
+(symbol? 'i)       @result{} #t
+(symbol? '-i)      @result{} #f
+(symbol? '|-i|)    @result{} #t
+@end example
 @end defun
 
 @defun symbol->string symbol
@@ -11377,7 +11442,6 @@ and collects the results into a string and returns it.
 On the other hand, @code{string-map!} modifies @var{s}.
 @example
 (string-map char-upcase "wikiwiki") @result{} "WIKIWIKI"
-(string-map char-upcase "wikiwiki" 4) @result{} "wikiWIKI"
 (string-map char-upcase "wikiwiki" 4) @result{} "WIKI"
 
 (let ((s (string-copy "wikiwiki")))
