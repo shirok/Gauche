@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.211 2004-01-16 23:19:58 shirok Exp $
+;;; $Id: extlib.stub,v 1.212 2004-01-20 05:10:25 shirok Exp $
 ;;;
 
 "
@@ -660,6 +660,9 @@
 (define-cproc identity (val)            ;sometimes useful
   "SCM_RETURN(val);")
 
+(define-cproc promise? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_XTYPEP(obj, SCM_CLASS_PROMISE)));")
+
 ;;
 ;; 6.6.1  Ports
 ;;
@@ -981,6 +984,9 @@
    case SCM_HASH_STRING:  SCM_RETURN(sym_string_eq);
    default: SCM_RETURN(SCM_FALSE);  /* TODO: need to think over */
   }")
+
+(define-cproc hash-table-num-entries (hash::<hash-table>)
+  "SCM_RETURN(Scm_MakeInteger(hash->numEntries));")
 
 (define-cproc hash-table-get (hash::<hash-table> key &optional defval)
   "  ScmHashEntry *e = Scm_HashTableGet(hash, key);

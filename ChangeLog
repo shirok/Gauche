@@ -1,3 +1,32 @@
+2004-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c, src/gauche.h (Scm_ReadReference) : added support of
+	  SRFI-38 reference syntax.  For the time being, circular reference
+	  is only supported for lists and vectors.
+
+	* src/compile.c (compile_quote) : added a workaround so that
+	  the quoted literal that contains circular reference won't cause
+	  circular recursion during unwrap_identifier.
+
+	* src/extlib.stub (hash-table-num-entries) : added.
+
+	* src/hash.c (STRING_HASH, HASH2INDEX) : improved hash function.
+	  the previous one isn't optimal for string keys.
+
+2004-01-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (promise?): added promise?.
+
+	* lib/gauche/procedure.scm (case-lambda): added case-lambda.
+	* lib/srfi-5.scm : added.
+	* lib/srfi-0.scm : updated to support new srfis.
+
+	* doc/*.texi : removed module name from the node names, for the dot
+	  in the module names interferes with some info browsers.  Also
+	  added detailmenu of index sections in the master menu, so that
+	  'i' command works in the emacs info mode.
+	  (Suggested by Katsuhiro Seino).
+
 2004-01-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen.scm : added experimentally.  An internal utility

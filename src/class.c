@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.108 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: class.c,v 1.109 2004-01-20 05:10:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2778,6 +2778,9 @@ void Scm__InitClass(void)
     /* promise.c */
     CINIT(SCM_CLASS_PROMISE,          "<promise>");
 
+    /* read.c */
+    BINIT(SCM_CLASS_READ_REFERENCE,   "<read-reference>", NULL);
+    
     /* regexp.c */
     CINIT(SCM_CLASS_REGEXP,           "<regexp>");
     CINIT(SCM_CLASS_REGMATCH,         "<regmatch>");

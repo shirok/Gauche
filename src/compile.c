@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.105 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: compile.c,v 1.106 2004-01-20 05:10:25 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -768,11 +768,26 @@ static ScmObj unwrap_identifier(ScmObj form)
 static ScmObj compile_quote(ScmObj form, ScmObj env, int ctx,
                             int *depth, void *data)
 {
-    ScmObj tail = SCM_CDR(form);
+    ScmObj tail = SCM_CDR(form), info;
     *depth = 0;
     if (!LIST1_P(tail)) Scm_Error("syntax error: %S", form);
     if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
-    else return SCM_LIST1(unwrap_identifier(SCM_CAR(tail)));
+    /* Kludge!  We don't want to call unwrap_identifier if the literal
+       quote form contains circle, e.g. '#0=(1 . #0#).
+       Unwrap_identifier is needed only if the form is created by
+       macro; so, for the time being, we just check if the form is
+       a literal form or not.   This still has a problem if the circular
+       form is introduced within a macro definition, but we'll get into
+       other troubles in such a case anyway. */
+    /* NB: This relies on the fact that macro expander doesn't preserve
+       the source-info.   If macro expander start handling source-info,
+       we need another strategy. */
+    info = Scm_PairAttrGet(SCM_PAIR(form), SCM_SYM_SOURCE_INFO, SCM_FALSE);
+    if (SCM_FALSEP(info)) {
+        return SCM_LIST1(unwrap_identifier(SCM_CAR(tail)));
+    } else {
+        return SCM_LIST1(SCM_CAR(tail));
+    }
 }
 
 static ScmSyntax syntax_quote = {

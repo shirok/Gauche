@@ -1,7 +1,7 @@
 /*
  * repl.c - repl
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: repl.c,v 1.29 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: repl.c,v 1.30 2004-01-20 05:10:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

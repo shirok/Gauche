@@ -30,48 +30,32 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.30 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: hash.c,v 1.31 2004-01-20 05:10:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 
-/* 
- * Finding good hash functions is an interesting topic.  I looked around
- * the net and find some valuable informations such as those:
- *
- *  http://burtleburtle.net/bob/hash/doobs.html
- *  http://www.concentric.net/~Ttwang/tech/inthash.htm
- *
- * In our case, the most frequent use of hash tables are to hash symbol
- * names (for intern), and integers when we want to combine hash results
- * of the components (e.g. hasing a pair).   Symbol names tend to have
- * relatively small length, and the table size tends to be small,
- * so Bob's function seems a bit overkill.
- *
- * I also looked at Tcl's hash function (by Ousterhout) and Perl's
- * (by Larry Wall), both uses multiplicate-and-add method.   A few test
- * over the Scheme code I have, Bob's one showed the best hash result,
- * but the lead was small.   Ousterhout's one was slightly better than
- * Larry's.   So I choose Ousterhout's here.
- *
- * If you want to deal with large amount of data, the default hash function
- * may not be suitable.
+/* Usually, "shift+add" scheme for string hasing works well.  But
+ * I found that it works well if you take the lower bits.
+ * Unfortunately, we need to take higher bits for multiplicative
+ * hashing of integers and addresses.  So, in HASH2INDEX function,
+ * I take both lower bits and higher bits.
  */
 
-#define STRING_HASH(result, chars, size)                                \
+#define STRING_HASH(hv, chars, size)                                    \
     do {                                                                \
         int i_ = (size);                                                \
-        (result) = 0;                                                   \
+        (hv) = 0;                                                       \
         while (i_-- > 0) {                                              \
-            (result) += ((result) << 3) + (unsigned char)*chars++;      \
+            (hv) = ((hv)<<5) - (hv) + ((unsigned char)*chars++);        \
         }                                                               \
     } while (0)
 
 /* Integer and address hash is a variation of "multiplicative hashing"
    scheme described in Knuth, TAOCP, section 6.4.  The final shifting
-   is done by HASH2INDEX macro (well, sort of) */
+   is done by HASH2INDEX macro  */
 
 #define SMALL_INT_HASH(result, val) \
     ((result) = (val)*2654435761UL)
@@ -81,15 +65,14 @@
 
 #define DEFAULT_NUM_BUCKETS    4
 #define MAX_AVG_CHAIN_LIMITS   3
-#define EXTEND_FACTOR          4
+#define EXTEND_BITS            2
 
-#define HALFWORD_BITS   (SIZEOF_LONG*4)
-#define HALFWORD_MASK   (1L<<(HALFWORD_BITS))
+/* NB: we fix the word length to 32bits, since the multiplication
+   constant above is fixed. */
+#define HASH2INDEX(tabsiz, bits, hashval) \
+    (((hashval)+((hashval)>>(32-(bits)))) & ((tabsiz) - 1))
 
-#define HASH2INDEX(tabsiz, hashval) \
-    (((hashval)^((hashval)>>HALFWORD_BITS)) & (tabsiz - 1))
-
-/* Combining two hash values. */
+/* Combining two hash values.  We need better one. */
 #define COMBINE(hv1, hv2)   ((hv1)*5+(hv2))
 
 static unsigned int round2up(unsigned int val)
@@ -161,19 +144,21 @@ static ScmHashEntry *insert_entry(ScmHashTable *table,
         /* Extend the table */
         ScmHashEntry **newb, *f;
         ScmHashIter iter;
-        int i, newsize = table->numBuckets * EXTEND_FACTOR;
-        
+        int i, newsize = (table->numBuckets << EXTEND_BITS);
+        int newbits = table->numBucketsLog2 + EXTEND_BITS;
+
         newb = SCM_NEW_ARRAY(ScmHashEntry*, newsize);
         for (i=0; i<newsize; i++) newb[i] = NULL;
         
         Scm_HashIterInit(table, &iter);
         while ((f = Scm_HashIterNext(&iter)) != NULL) {
             unsigned long hashval = table->hashfn(f->key);
-            index = HASH2INDEX(newsize, hashval);
+            index = HASH2INDEX(newsize, newbits, hashval);
             f->next = newb[index];
             newb[index] = f;
         }
         table->numBuckets = newsize;
+        table->numBucketsLog2 = newbits;
         table->buckets = newb;
     }
     return e;
@@ -198,7 +183,7 @@ static ScmHashEntry *address_access(ScmHashTable *table,
     ScmHashEntry *e, *p;
 
     ADDRESS_HASH(hashval, key);
-    index = HASH2INDEX(table->numBuckets, hashval);
+    index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         if (e->key == key) {
@@ -279,7 +264,7 @@ static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
     s = SCM_STRING_START(key);
     size = SCM_STRING_SIZE(key);
     STRING_HASH(hashval, s, size);
-    index = HASH2INDEX(table->numBuckets, hashval);
+    index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
 
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         ScmObj ee = e->key;
@@ -331,7 +316,7 @@ static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
     ScmHashEntry *e, *p;
 
     hashval = table->hashfn(key);
-    index = HASH2INDEX(table->numBuckets, hashval);
+    index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         if (table->cmpfn(key, e) == 0) {
@@ -431,6 +416,9 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
     z->buckets = b;
     z->numBuckets = initSize;
     z->numEntries = 0;
+    for (i=initSize, z->numBucketsLog2=0; i > 1; i /= 2) {
+        z->numBucketsLog2++;
+    }
 
     for (i=0; i<initSize; i++) z->buckets[i] = NULL;
     
@@ -566,8 +554,8 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
     SCM_APPEND1(h, t, Scm_MakeInteger(table->numEntries));
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets"));
     SCM_APPEND1(h, t, Scm_MakeInteger(table->numBuckets));
-    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("max-chain-length"));
-    SCM_APPEND1(h, t, Scm_MakeInteger(table->maxChainLength));
+    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets-log2"));
+    SCM_APPEND1(h, t, Scm_MakeInteger(table->numBucketsLog2));
     for (vp = SCM_VECTOR_ELEMENTS(v), i = 0; i<table->numBuckets; i++, vp++) {
         ScmHashEntry *e = table->buckets[i];
         for (; e; e = e->next) {

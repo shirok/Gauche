@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.66 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: read.c,v 1.67 2004-01-20 05:10:25 shirok Exp $
  */
 
 #include <stdio.h>
@@ -47,9 +47,11 @@
  */
 
 static void   read_context_init(ScmVM *vm, ScmReadContext *ctx);
+static void   read_context_flush(ScmReadContext *ctx);
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_item(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
+static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep, ScmReadContext *ctx);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
@@ -65,7 +67,6 @@ static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
 static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args);
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
-static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj, int);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
@@ -92,12 +93,19 @@ ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
+    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+        ctx->table = NULL;
+        ctx->pending = SCM_NIL;
+    }
     if (PORT_LOCKED(SCM_PORT(port), vm)) {
         r = read_item(SCM_PORT(port), ctx);
     } else {
         PORT_LOCK(SCM_PORT(port), vm);
         PORT_SAFE_CALL(SCM_PORT(port), r = read_item(SCM_PORT(port), ctx));
         PORT_UNLOCK(SCM_PORT(port));
+    }
+    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+        read_context_flush(ctx);
     }
     return r;
 }
@@ -112,19 +120,24 @@ ScmObj Scm_Read(ScmObj port)
 /* Convenience functions */
 ScmObj Scm_ReadFromString(ScmString *str)
 {
-    ScmObj inp = Scm_MakeInputStringPort(str, FALSE);
+    ScmObj inp = Scm_MakeInputStringPort(str, TRUE), r;
     ScmReadContext ctx;
     read_context_init(Scm_VM(), &ctx);
-    return read_item(SCM_PORT(inp), &ctx);
+    r = read_item(SCM_PORT(inp), &ctx);
+    read_context_flush(&ctx);
+    return r;
 }
 
 ScmObj Scm_ReadFromCString(const char *cstr)
 {
     ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
-    ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s), FALSE);
+    ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s), TRUE);
+    ScmObj r;
     ScmReadContext ctx;
     read_context_init(Scm_VM(), &ctx);
-    return read_item(SCM_PORT(inp), &ctx);
+    r = read_item(SCM_PORT(inp), &ctx);
+    read_context_flush(&ctx);
+    return r;
 }
 
 ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer, ScmReadContext *ctx)
@@ -134,12 +147,19 @@ ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer, ScmReadContext *ctx)
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
+    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+        ctx->table = NULL;
+        ctx->pending = SCM_NIL;
+    }
     if (PORT_LOCKED(SCM_PORT(port), vm)) {
         r = read_list(SCM_PORT(port), closer, ctx);
     } else {
         PORT_LOCK(SCM_PORT(port), vm);
         PORT_SAFE_CALL(SCM_PORT(port), r = read_list(SCM_PORT(port), closer, ctx));
         PORT_UNLOCK(SCM_PORT(port));
+    }
+    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+        read_context_flush(ctx);
     }
     return r;
 }
@@ -154,10 +174,11 @@ ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 static void read_context_init(ScmVM *vm, ScmReadContext *ctx)
 {
     ctx->flags = SCM_READ_SOURCE_INFO;
-    ctx->table = NULL;
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
         ctx->flags |= SCM_READ_CASE_FOLD;
     }
+    ctx->table = NULL;
+    ctx->pending = SCM_NIL;
 }
 
 /*----------------------------------------------------------------
@@ -180,6 +201,84 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
     Scm_Vprintf(SCM_PORT(ostr), msg, ap);
     va_end(ap);
     Scm_Error("%A", Scm_GetOutputString(SCM_PORT(ostr)));
+}
+
+/*----------------------------------------------------------------
+ * Read reference
+ */
+
+/* Read reference is a proxy object to for referenced object (#N=).
+ */
+
+static void read_reference_print(ScmObj obj, ScmPort *port,
+                                 ScmWriteContext *ctx);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ReadReferenceClass, read_reference_print);
+
+ScmObj Scm_MakeReadReference(void)
+{
+    ScmReadReference *a;
+    a = SCM_NEW(ScmReadReference);
+    SCM_SET_CLASS(a, SCM_CLASS_READ_REFERENCE);
+    a->value = SCM_UNBOUND;
+    return SCM_OBJ(a);
+}
+
+static void read_reference_print(ScmObj obj, ScmPort *port,
+                                 ScmWriteContext *ctx)
+{
+    Scm_Printf(port, "#<read-reference>");
+}
+
+static void ref_push(ScmReadContext *ctx, ScmObj obj)
+{
+    ctx->pending = Scm_Cons(obj, ctx->pending);
+}
+
+static ScmObj ref_val(ref)
+{
+    if (!SCM_READ_REFERENCE_REALIZED(ref)) {
+        Scm_Error("reader encontered unresolved read reference.  Implementation error?");
+    }
+    return SCM_READ_REFERENCE(ref)->value;
+}
+
+static ScmObj ref_register(ScmReadContext *ctx, ScmObj obj, int refnum)
+{
+    SCM_ASSERT(ctx->table);
+    Scm_HashTablePut(ctx->table, SCM_MAKE_INT(refnum), obj);
+    return obj;
+}
+
+/* ctx->pending contains a list of objects who contains read reference
+   which should be resolved. */
+static void read_context_flush(ScmReadContext *ctx)
+{
+    ScmObj cp, ep;
+    SCM_FOR_EACH(cp, ctx->pending) {
+        ScmObj obj = SCM_CAR(cp);
+        if (SCM_PAIRP(obj)) {
+            SCM_FOR_EACH(ep, obj) {
+                if (SCM_READ_REFERENCE_P(SCM_CAR(ep))) {
+                    SCM_SET_CAR(ep, ref_val(SCM_CAR(ep)));
+                }
+                if (SCM_READ_REFERENCE_P(SCM_CDR(ep))) {
+                    /* in case we have (... . #N#) */
+                    SCM_SET_CDR(ep, ref_val(SCM_CDR(ep)));
+                    break;
+                }
+            }
+        } else if (SCM_VECTORP(obj)) {
+            int i, len = SCM_VECTOR_SIZE(obj);
+            for (i=0; i<len; i++) {
+                ep = SCM_VECTOR_ELEMENT(obj, i);
+                if (SCM_READ_REFERENCE_P(ep)) {
+                    SCM_VECTOR_ELEMENTS(obj)[i] = ref_val(ep);
+                }
+            }
+        } else {
+            Scm_Error("read_context_flush: recursive reference only supported with vector and lists");
+        }
+    }
 }
 
 /*----------------------------------------------------------------
@@ -294,10 +393,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case 's':; case 'S': return maybe_uvector(port, 's', ctx);
             case 'u':; case 'U': return maybe_uvector(port, 'u', ctx);
             case '(':
-                {
-                    ScmObj v = read_list(port, ')', ctx);
-                    return Scm_ListToVector(v);
-                }
+                return read_vector(port, ')', ctx);
             case '\\':
                 return read_char(port, ctx);
             case 'x':; case 'X':; case 'o':; case 'O':;
@@ -440,10 +536,13 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
  * List
  */
 
-static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
+/* Internal read_list.  returns whether the list contains unresolved
+   reference or not within the flag has_ref */
+static ScmObj read_list_int(ScmPort *port, ScmChar closer,
+                            ScmReadContext *ctx, int *has_ref)
 {
     ScmObj start = SCM_NIL, last = SCM_NIL, item;
-    int c, dot_seen = 0;
+    int c, dot_seen = FALSE, ref_seen = FALSE;
     int line = -1;
 
     if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
@@ -457,7 +556,10 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
                 Scm_ReadError(port, "EOF inside a list");
             }
         }
-        if (c == closer) return start;
+        if (c == closer) {
+            *has_ref = !!ref_seen;
+            return start;
+        }
 
         if (dot_seen) Scm_ReadError(port, "bad dot syntax");
 
@@ -477,8 +579,9 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
                     Scm_ReadError(port, "bad dot syntax");
                 }
                 item = read_item(port, ctx);
+                if (SCM_READ_REFERENCE_P(item)) ref_seen = TRUE;
                 SCM_SET_CDR(last, item);
-                dot_seen++;
+                dot_seen = TRUE;
                 continue;
             }
             Scm_UngetcUnsafe(c2, port);
@@ -487,6 +590,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
             Scm_UngetcUnsafe(c, port);
             item = read_internal(port, ctx);
             if (SCM_UNDEFINEDP(item)) continue;
+            if (SCM_READ_REFERENCE_P(item)) ref_seen = TRUE;
         }
         SCM_APPEND1(start, last, item);
         if (start==last && (ctx->flags & SCM_READ_SOURCE_INFO) && line >= 0) {
@@ -498,11 +602,38 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     }
 }
 
+static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
+{
+    int has_ref;
+    ScmObj r = read_list_int(port, closer, ctx, &has_ref);
+    if (has_ref) ref_push(ctx, r);
+    return r;
+}
+
+static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
+{
+    int has_ref;
+    ScmObj r = read_list_int(port, closer, ctx, &has_ref);
+    r = Scm_ListToVector(r);
+    if (has_ref) ref_push(ctx, r);
+    return r;
+}
+
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 {
-    ScmObj item = read_item(port, ctx);
+    int line = -1;
+    ScmObj item, r;
+
+    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
+    item = read_item(port, ctx);
     if (SCM_EOFP(item)) Scm_ReadError(port, "unterminated quote");
-    return Scm_Cons(quoter, Scm_Cons(item, SCM_NIL));
+    r = Scm_Cons(quoter, Scm_Cons(item, SCM_NIL));
+    if (line >= 0) {
+        Scm_PairAttrSet(SCM_PAIR(r), SCM_SYM_SOURCE_INFO,
+                        SCM_LIST2(Scm_PortName(port), SCM_MAKE_INT(line)));
+    }
+    if (SCM_READ_REFERENCE_P(item)) ref_push(ctx, SCM_CDR(r));
+    return r;
 }
 
 /*----------------------------------------------------------------
@@ -807,20 +938,6 @@ static ScmObj read_charset(ScmPort *port)
  * Back reference (#N# and #N=)
  */
 
-/* TODO: a form can be referenced before the form itself is fully read,
-   e.g. #0=#(1 2 3 . #0#).   It is difficult to support this fully, for
-   the reference (#0#) should be read before the referenced object is
-   created.  Currently I added an ad-hoc approach for the case that
-   the reference object is a cons.  I guess I need to implement a generic
-   pointer-forwarding scheme to solve the problem. */
-
-static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj, int refnum)
-{
-    SCM_ASSERT(ctx->table);
-    Scm_HashTablePut(ctx->table, SCM_MAKE_INT(refnum), obj);
-    return obj;
-}
-
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 {
     ScmHashEntry *e = NULL;
@@ -847,26 +964,27 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             || (e = Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum))) == NULL) {
             Scm_ReadError(port, "invalid reference number in #%d#", refnum);
         }
-        return e->value;
+        if (SCM_READ_REFERENCE_P(e->value)
+            && SCM_READ_REFERENCE_REALIZED(e->value)) {
+            return SCM_READ_REFERENCE(e->value)->value;
+        } else {
+            return e->value;
+        }
     } else {
         /* #digit= - register */
-        /* Kludge: register a dummy cell to be referenced.  This only works
-           when the referenced object is a cell. */
-        ScmObj z = Scm_Cons(SCM_NIL, SCM_NIL), y;
+        ScmObj val;
+        ScmObj ref = Scm_MakeReadReference();
+
         if (ctx->table == NULL) {
             ctx->table = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_EQV, NULL, 0));
         }
         if (Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum)) != NULL) {
             Scm_ReadError(port, "duplicate back-reference number in #%d=", refnum);
         }
-        register_reference(ctx, z, refnum);
-        y = read_item(port, ctx);
-        if (!SCM_PAIRP(y)) {
-            Scm_ReadError(port, "back-reference (#digit=) to the non-cell object %S is not supported yet, sorry.", y);
-        }
-        SCM_SET_CAR(z, SCM_CAR(y));
-        SCM_SET_CDR(z, SCM_CDR(y));
-        return z;
+        ref_register(ctx, ref, refnum);
+        val = read_item(port, ctx);
+        SCM_READ_REFERENCE(ref)->value = val;
+        return val;
     }
 }
 

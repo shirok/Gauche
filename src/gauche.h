@@ -1,7 +1,7 @@
 /*
  * gauche.h - Gauche scheme system header
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.360 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: gauche.h,v 1.361 2004-01-20 05:10:25 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1380,17 +1380,36 @@ SCM_EXTERN void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
 
 typedef struct ScmReadContextRec {
     int flags;                  /* see below */
-    ScmHashTable *table;        /* used internally.  initialize with NULL. */
+    ScmHashTable *table;        /* used internally. */
+    ScmObj pending;             /* used internally. */
 } ScmReadContext;
 
 enum {
     SCM_READ_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
     SCM_READ_CASE_FOLD   = (1L<<1),  /* case-fold read */
-    SCM_READ_LITERAL_IMMUTABLE = (1L<<2) /* literal should be read as immutable */
+    SCM_READ_LITERAL_IMMUTABLE = (1L<<2), /* literal should be read as immutable */
+    SCM_READ_RECURSIVELY = (1L<<3)   /* used internally. */
 };
 
 #define SCM_READ_CONTEXT_INIT(ctx) \
-   do { (ctx)->flags = 0; (ctx)->table = NULL; } while (0)
+   do { (ctx)->flags = 0; } while (0)
+
+/* An object to keep unrealized circular reference (e.g. #N=) during
+ * 'read'.  It is replaced by the reference value before exitting 'read',
+ * and it shouldn't leak out to the normal Scheme program, except the
+ * code that handles it explicitly (like read-time constructor).
+ */
+typedef struct ScmReadReferenceRec {
+    SCM_HEADER;
+    ScmObj value;               /* realized reference.  initially UNBOUND */
+} ScmReadReference;
+
+SCM_CLASS_DECL(Scm_ReadReferenceClass);
+#define SCM_CLASS_READ_REFERENCE  (&Scm_ReadReferenceClass)
+#define SCM_READ_REFERENCE(obj)   ((ScmReadReference*)(obj))
+#define SCM_READ_REFERENCE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_READ_REFERENCE)
+#define SCM_READ_REFERENCE_REALIZED(obj) \
+   (!SCM_EQ(SCM_READ_REFERENCE(obj)->value, SCM_UNBOUND))
 
 SCM_EXTERN ScmObj Scm_Read(ScmObj port);
 SCM_EXTERN ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx);
@@ -1420,8 +1439,7 @@ struct ScmHashTableRec {
     ScmHashEntry **buckets;
     int numBuckets;
     int numEntries;
-    int maxChainLength;
-    int mask;
+    int numBucketsLog2;
     int type;
     ScmHashAccessProc accessfn;
     ScmHashProc hashfn;
