@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: threads.scm,v 1.1 2002-07-14 09:53:38 shirok Exp $
+;;;  $Id: threads.scm,v 1.2 2002-08-27 19:52:41 shirok Exp $
 ;;;
 
 (define-module gauche.threads
@@ -66,6 +66,12 @@
      (check-arg mutex? mutex)
      (slot-ref mutex 'specific))
    mutex-specific-set!))
+
+(define (with-locking-mutex mutex thunk)
+  (dynamic-wind
+   (lambda () (mutex-lock! mutex))
+   thunk
+   (lambda () (mutex-unlock! mutex))))
 
 ;;
 ;; Condition variable
