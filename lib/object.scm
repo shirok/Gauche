@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.2 2001-03-16 10:54:17 shiro Exp $
+;;;  $Id: object.scm,v 1.3 2001-03-17 09:22:37 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -28,3 +28,9 @@
 (define (class-slots class) (slot-ref class 'slots))
 
 
+(define (%inspect obj)
+  (if (is-a? obj <object>)
+      (for-each (lambda (slot)
+                  (format #t "~s: ~s\n" slot (slot-ref obj slot)))
+                (class-slots (class-of obj)))
+      obj))
