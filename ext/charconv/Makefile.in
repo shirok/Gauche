@@ -30,6 +30,14 @@ libcharconv.so : $(OBJS)
 convlib.c : convlib.stub
 	$(GOSH) genstub convlib.stub
 
+jconv.c : eucj2ucs.c ucs2eucj.c
+	touch jconv.c
+
+$(OBJS) : charconv.h
+
+eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
+	$(GOSH) cvt.scm
+
 test : all
 	@cd data; $(MAKE) all
 	@rm -f test.log

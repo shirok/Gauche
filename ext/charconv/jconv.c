@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.2 2002-06-05 00:04:17 shirok Exp $
+ *  $Id: jconv.c,v 1.3 2002-06-05 10:40:41 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -758,3 +758,111 @@ static int eucj2utf(ScmConvInfo *cinfo, const char *inptr, int inroom,
     }
     return ILLEGAL_SEQUENCE;
 }
+
+/*=================================================================
+ * JCONV - the entry
+ */
+
+static struct conv_support_rec {
+    const char *name;
+    int code;
+} conv_supports[] = {
+    { "euc_jp",         JCONV_NONE },
+    { "eucjp",          JCONV_NONE },
+    { "eucj",           JCONV_NONE },
+    { "euc_jisx0213",   JCONV_NONE },
+    { "shift_jis",      JCONV_SJIS },
+    { "shiftjis",       JCONV_SJIS },
+    { "sjis",           JCONV_SJIS },
+    { "utf-8",          JCONV_UTF8 },
+    { "utf8",           JCONV_UTF8 },
+    { NULL, 0 }
+};
+
+static int conv_name_match(const char *s, const char *t)
+{
+    const char *p, *q;
+    for (p=s, q=t; *p && *q; p++, q++) {
+        if (*p == '-' || *p == '_') {
+            if (*q != '-' && *q == '-') return FALSE;
+        } else {
+            if (tolower(*p) != tolower(*q)) return FALSE;
+        }
+    }
+    if (*p || *q) return FALSE;
+    return TRUE;
+}
+
+static int conv_name_find(const char *name)
+{
+    struct conv_support_rec *cvtab = conv_supports;
+    for (; cvtab->name; cvtab++) {
+        if (conv_name_match(name, cvtab->name)) {
+            return cvtab->code;
+        }
+    }
+    return -1;
+}
+
+/* Returns ScmConvInfo, with filling inconv, outconv and handle field.
+   Note that the other fields are not initialized.
+   If no conversion is possible, returns NULL. */
+ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
+{
+    ScmConvInfo *info;
+    int inconv, outconv;
+#if 0 /*for now*/
+    inconv = conv_name_find(fromCode);
+    outconv = conv_name_find(fromCode);
+#else
+    inconv = -1;
+    outconv = -1;
+#endif
+    if (inconv < 0 && outconv < 0) {
+#ifdef HAVE_ICONV_H        
+        iconv_t handle = iconv_open(toCode, fromCode);
+        if (handle == (iconv_t)-1) return NULL;
+        info = SCM_NEW(ScmConvInfo);
+        info->inconv = info->outconv = -1;
+        info->handle = handle;
+        info->toCode = toCode;
+        info->fromCode = fromCode;
+        return info;
+#else /*!HAVE_ICONV_H*/
+        return NULL;
+#endif
+    }
+    info = SCM_NEW(ScmConvInfo);
+    info->inconv = inconv;
+    info->outconv = outconv;
+    info->handle = (iconv_t)-1;
+    info->toCode = toCode;
+    info->fromCode = fromCode;
+    return info;
+}
+
+int jconv_close(ScmConvInfo *info)
+{
+    int r = 0;
+#ifdef HAVE_ICONV_H
+    if (info->handle != (iconv_t)-1) {
+        r = iconv_close(info->handle);
+        info->handle = (iconv_t)-1;
+    }
+#endif /*HAVE_ICONV_H*/
+    return r;
+}
+
+int jconv(ScmConvInfo *info,
+                   const char **inptr, int *inroom,
+                   char **outptr, int *outroom)
+{
+#ifdef HAVE_ICONV_H
+    if (info->handle != (iconv_t)-1) {
+        return iconv(info->handle, inptr, inroom, outptr, outroom);
+    }
+#endif /*HAVE_ICONV_H*/
+    /*WRITEME*/
+    return EINVAL;
+}
+

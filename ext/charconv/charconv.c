@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.28 2002-05-29 11:29:17 shirok Exp $
+ *  $Id: charconv.c,v 1.29 2002-06-05 10:40:41 shirok Exp $
  */
 
 #include <string.h>
@@ -62,9 +62,9 @@ const char* Scm_GetCESName(ScmObj code, const char *argname)
 
 int Scm_ConversionSupportedP(const char *from, const char *to)
 {
-    iconv_t cd = iconv_open(to, from);
-    if (cd == (iconv_t)-1) return FALSE;
-    iconv_close(cd);
+    ScmConvInfo *info = jconv_open(to, from);
+    if (info == NULL) return FALSE;
+    jconv_close(info);
     return TRUE;
 }
 
@@ -148,7 +148,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
 #ifdef DEBUG
     fprintf(stderr, "=> in(%p)%d out(%p)%d\n", inbuf, insize, outbuf, outroom);
 #endif
-    result = iconv(info->handle, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
+    result = jconv(info, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
 #ifdef DEBUG
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
             result, inbuf, inroom, outbuf, outroom);
@@ -190,7 +190,8 @@ static int conv_input_filler(ScmPort *port, int mincnt)
 
 static int conv_input_closer(ScmPort *p)
 {
-    return 0;
+    ScmConvInfo *info = (ScmConvInfo*)p->src.buf.data;
+    return jconv_close(info);
 }
 
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
@@ -230,23 +231,14 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
         fromCode = guessed;
     }
 
-    handle = iconv_open(toCode, fromCode);
-    if (handle == (iconv_t)-1) {
-        if (errno == EINVAL) {
-            Scm_Error("conversion from code %s to code %s is not supported",
-                      fromCode, toCode);
-        } else {
-            /* TODO: try to call gc to collect unused file descriptors */
-            Scm_SysError("iconv_open failed");
-        }
+    cinfo = jconv_open(toCode, fromCode);
+    if (cinfo == NULL) {
+        Scm_Error("conversion from code %s to code %s is not supported",
+                  fromCode, toCode);
     }
-    cinfo = SCM_NEW(ScmConvInfo);
-    cinfo->handle = handle;
     cinfo->remote = fromPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = bufsiz;
-    cinfo->fromCode = fromCode;
-    cinfo->toCode = toCode;
     if (preread > 0) {
         cinfo->buf = inbuf;
         cinfo->ptr = inbuf + preread;
@@ -298,7 +290,7 @@ static int conv_output_closer(ScmPort *port)
     }
     Scm_Flush(info->remote);
     if (info->ownerp) Scm_ClosePort(info->remote);
-    return 0;
+    return jconv_close(info);
 }
 
 static int conv_output_flusher(ScmPort *port, int mincnt)
@@ -320,7 +312,7 @@ static int conv_output_flusher(ScmPort *port, int mincnt)
                 inbuf, len, inroom,
                 info->buf, info->ptr, outroom);
 #endif
-        result = iconv(info->handle, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
+        result = jconv(info, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
 #ifdef DEBUG
         fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
                 result, inbuf, inroom, outbuf, outroom);
@@ -382,25 +374,16 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
     
-    handle = iconv_open(toCode, fromCode);
-    if (handle == (iconv_t)-1) {
-        if (errno == EINVAL) {
-            Scm_Error("conversion from code %s to code %s is not supported",
-                      fromCode, toCode);
-        } else {
-            /* TODO: try to call gc to collect unused file descriptors */
-            Scm_SysError("iconv_open failed");
-        }
+    cinfo = jconv_open(toCode, fromCode);
+    if (cinfo == NULL) {
+        Scm_Error("conversion from code %s to code %s is not supported",
+                  fromCode, toCode);
     }
-    cinfo = SCM_NEW(ScmConvInfo);
-    cinfo->handle = handle;
     cinfo->remote = toPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
     cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->ptr = cinfo->buf;
-    cinfo->fromCode = fromCode;
-    cinfo->toCode = toCode;
     
     bufrec.size = cinfo->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
@@ -724,24 +707,3 @@ void Scm_Init_libcharconv(void)
     Scm_RegisterCodeGuessingProc("*JP", guess_jp, NULL);
     Scm_Init_convlib(mod);
 }
-
-#ifndef HAVE_ICONV_H
-/* substitution of iconv for the platforms where it is not available */
-
-/* for now, we only have dummy functions */
-iconv_t iconv_open(const char *tocode, const char *fromcode)
-{
-    return (iconv_t)-1;
-}
-
-int iconv_close(iconv_t handle)
-{
-    return 0;
-}
-
-int iconv(iconv_t handle, char **inbuf, size_t *inroom, char **outbuf, size_t *outroom)
-{
-    return 0;
-}
-#endif /* !HAVE_ICONV_H */
-

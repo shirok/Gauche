@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.3 2002-06-04 05:42:53 shirok Exp $
+ *  $Id: charconv.h.in,v 1.4 2002-06-05 10:40:41 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -37,7 +37,10 @@ extern "C" {
 
 /* Packaging conversion context info.*/
 typedef struct ScmConvInfoRec {
-    iconv_t handle;             /* iconv handle */
+    int inconv;                 /* input conversion type */
+    int outconv;                /* output conversion type */
+    iconv_t handle;             /* iconv handle, if the conversion is
+                                   handled by iconv */
     ScmPort *remote;            /* source or drain port */
     int ownerp;                 /* do I own remote port? */
     int bufsiz;                 /* size of conversion buffer */
@@ -46,6 +49,17 @@ typedef struct ScmConvInfoRec {
     const char *fromCode;       /* convert from ... */
     const char *toCode;         /* conver to ... */
 } ScmConvInfo;
+
+/* Constants for internal conversion routine */
+enum {
+    JCONV_NONE,                 /* no conversion needed. */
+    JCONV_SJIS,
+    JCONV_UTF8,
+    JCONV_ISO2022JP,
+    JCONV_ISO2022JP_2,
+    JCONV_ISO2022JP_3,
+    JCONV_ICONV                 /* use iconv */
+};
 
 extern ScmObj Scm_MakeInputConversionPort(ScmPort *source,
                                           const char *fromCode,
@@ -73,6 +87,11 @@ extern void Scm_RegisterCodeGuessingProc(const char *code,
 extern const char *Scm_GuessCES(const char *code,
                                 const char *buf,
                                 int buflen);
+
+extern ScmConvInfo *jconv_open(const char *toCode, const char *fromCode);
+extern int jconv_close(ScmConvInfo*);
+extern int jconv(ScmConvInfo*, const char **inptr, int *inroom,
+                 char **outptr, int *outroom);
 
 #ifdef __cplusplus
 }
