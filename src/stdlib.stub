@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.58 2001-05-12 19:24:45 shirok Exp $
+;;; $Id: stdlib.stub,v 1.59 2001-05-12 21:21:42 shirok Exp $
 ;;;
 
 
@@ -185,10 +185,23 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc + (&rest args)
 ;  (inliner (case-nargs (2 "SCM_VM_NUMADD2") (else #f)))
   (inliner (proc "plus_inliner"))
-  "  SCM_RETURN(Scm_Add(args)); ")
+  "  if (SCM_NULLP(args)) SCM_RETURN(SCM_MAKE_INT(0));
+  if (!SCM_PAIRP(SCM_CDR(args))) {
+    if (!SCM_NUMBERP(SCM_CAR(args)))
+      Scm_Error(\"number required, but got %S\", SCM_CAR(args));
+    SCM_RETURN(SCM_CAR(args));
+  } else {
+    SCM_RETURN(Scm_Add(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));
+  }")
 
 (define-cproc * (&rest args)
-  "  SCM_RETURN(Scm_Multiply(args));")
+  "  if (!SCM_PAIRP(args)) return SCM_MAKE_INT(1);
+  if (!SCM_PAIRP(SCM_CDR(args))) {
+    if (!SCM_NUMBERP(SCM_CAR(args)))
+      Scm_Error(\"number required, but got %S\", SCM_CAR(args));
+      return SCM_CAR(args);
+    }
+  SCM_RETURN(Scm_Multiply(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));")
 
 (define-cproc - (arg1 &rest args)
 ;  (inliner (case-nargs (2 "SCM_VM_NUMSUB2") (else #f)))
@@ -310,23 +323,8 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   if (vx < 0) SCM_RETURN(Scm_MakeComplex(0.0, sqrt(-vx)));
   else        SCM_RETURN(Scm_MakeFlonum(sqrt(vx)));")
 
-;"static ScmObj exact_expt(ScmObj x, ScmObj y)
-; {
-;  int sign = Scm_Sign(y);
-;  if (SCM_INTP(y)) {
-;    int iy = SCM_INT_VALUE(y);
-;    ScmObj r = x;
-;    if (iy < 0) iy = -iy;
-;    while (i
-;  }
-; }"
-
 (define-cproc %expt (x y)
-  "  double vx, vy;
-  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
-  if (!SCM_REALP(y)) Scm_Error(\"real number required, but got %S\", y);
-  SCM_RETURN(Scm_MakeFlonum(pow(Scm_GetDouble(x), Scm_GetDouble(y))));
-  ")
+  "  SCM_RETURN(Scm_Expt(x, y));")
 
 (define-cproc make-rectangular (a b)
   "  ScmObj z;
