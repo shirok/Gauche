@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.26 2004-01-28 09:34:51 shirok Exp $
+dnl $Id: configure.ac,v 1.27 2004-02-03 13:33:22 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.3, shiro@acm.org)
-AC_REVISION($Revision: 1.26 $)
+AC_REVISION($Revision: 1.27 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -84,8 +84,8 @@ libraries installed in non-standard places. ]),
     case $with_local in
       yes|no|"") ;;  #no effect
       *) paths=`echo $with_local | tr ':' ' '`
-         LOCAL_INC=`for p in $paths; do echo "-I$p/include"; done`
-         LOCAL_LIB=`for p in $paths; do echo "-L$p/lib"; done`;;
+         LOCAL_INC=`for p in $paths; do echo $ECHO_N "-I$p/include $ECHO_C"; done`
+         LOCAL_LIB=`for p in $paths; do echo $ECHO_N "-L$p/lib $ECHO_C"; done`;;
     esac
   ])
 AC_SUBST(LOCAL_INC)

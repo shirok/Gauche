@@ -22,7 +22,7 @@ AC_INIT(gc,6.2,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.11 $)
+AC_REVISION($Revision: 1.12 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE
 
@@ -242,7 +242,7 @@ AC_ARG_WITH(local, [  --with-local=PATH:PATH...:  For each PATH, add PATH/includ
   case $with_local in
     yes|no|"") ;;  #no effect
     *) paths=`echo $with_local | tr ':' ' '`
-       LOCAL_INC=`for p in $paths; do echo "-I$p/include"; done`
+       LOCAL_INC=`for p in $paths; do echo $ECHO_N "-I$p/include $ECHO_C"; done`
        INCLUDES="$INCLUDES $LOCAL_INC"
   esac
 ])
