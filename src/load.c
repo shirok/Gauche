@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.27 2001-03-25 02:51:08 shiro Exp $
+ *  $Id: load.c,v 1.28 2001-03-25 03:03:42 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -246,6 +246,7 @@ ScmObj Scm_GetDynLoadPath(void)
 static ScmObj break_env_paths(const char *envname)
 {
     const char *e = getenv(envname);
+    if (geteuid() == 0) return SCM_NIL; /* don't trust env when run by root */
     if (e == NULL) return SCM_NIL;
     else return Scm_StringSplitByChar(SCM_STRING(Scm_MakeString(e, -1, -1)),
                                       ':');
