@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.48 2001-04-09 12:49:10 shiro Exp $
+ *  $Id: compile.c,v 1.49 2001-04-09 13:01:55 shiro Exp $
  */
 
 #include "gauche.h"
@@ -653,8 +653,16 @@ static ScmObj compile_body(ScmObj form,
     ScmObj idef_vals = SCM_NIL, idef_vals_tail;
     int idefs = 0, body_started = 0;
 
-    SCM_FOR_EACH(formtail, form) {
+    for (formtail = form; SCM_PAIRP(formtail); ) {
         ScmObj expr = SCM_CAR(formtail), x;
+        /* Begin in the body should work as if it's body is spliced in
+           the current form. */
+        if (SCM_PAIRP(expr) && global_eq(SCM_CAR(expr), SCM_SYM_BEGIN, env)) {
+            ScmObj beginbody = Scm_CopyList(SCM_CDR(expr));
+            formtail = Scm_Append2X(beginbody, SCM_CDR(formtail));
+            continue;
+        }
+        
         /* Check for internal define. */
         if (SCM_PAIRP(expr) && global_eq(SCM_CAR(expr), SCM_SYM_DEFINE, env)) {
             ScmObj var, val;
@@ -684,6 +692,7 @@ static ScmObj compile_body(ScmObj form,
             SCM_APPEND1(idef_vars, idef_vars_tail, var);
             SCM_APPEND1(idef_vals, idef_vals_tail, val);
             idefs++;
+            formtail = SCM_CDR(formtail);
             continue;
         } else if (!body_started && idefs > 0) {
             /* starting the `real' body */
@@ -709,6 +718,7 @@ static ScmObj compile_body(ScmObj form,
         }
         SCM_APPEND(body, bodytail, x);
         body_started = !SCM_NULLP(body);
+        formtail = SCM_CDR(formtail);
     }
     
     if (idefs > 0 && body_started && ctx != SCM_COMPILE_TAIL) {
