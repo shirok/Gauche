@@ -1,3 +1,15 @@
+2001-03-16  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.4
+	* src/*: restructured defining scheme of builtin classes.  Macro
+	  SCM_DEFINE_BUILTIN_CLASS is introduced instead of SCM_DEFCLASS.
+	  Now builtin class requires to be initialized by
+	  Scm_InitBuiltinClass.
+	* src/string.c, src/extlib.c: added string-contains (srfi-13).
+	* src/symbol.c, src/extlib.c: added apropos.
+	* src/hash.c: fixed bug in string hash function.  added
+	  hash-table-stat.
+
 2001-03-15  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.3
