@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.355 2003-02-05 02:57:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.356 2003-02-05 10:14:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10423,24 +10423,56 @@ an input port, and when omitted, the current input port is assumed.
 @defun read-char &optional iport
 [R5RS]
 @c EN
+Reads one character from @var{iport} and returns it.
+If @var{iport} has already 
+reached to the end, returns an eof object.
+If the byte stream in @var{iport} doesn't consist a valid character,
+the behavior is undefined.  (In future, a port will have a option
+to deal with invalid characters).
 @c JP
+@var{iport}から1文字読み込んで返します。
+@var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+@var{iport}にあるバイトストリームが正しい文字を構成しない場合、
+ふるまいは未定義です。(将来はポート側に、不正な文字に対する対応を決める
+オプションを設ける予定です)。
 @c COMMON
 @end defun
 
 @defun peek-char &optional iport
 [R5RS]
 @c EN
+Reads one character in @var{iport} and returns it, keeping the character
+in the @var{port}.
+If the byte stream in @var{iport} doesn't consist a valid character,
+the behavior is undefined.  (In future, a port will have a option
+to deal with invalid characters).
 @c JP
+@var{iport}から1文字読み込んで返します。文字はそのまま@var{iport}に留まります。
+@var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+@var{iport}にあるバイトストリームが正しい文字を構成しない場合、
+ふるまいは未定義です。(将来はポート側に、不正な文字に対する対応を決める
+オプションを設ける予定です)。
 @c COMMON
 @end defun
 
 @defun read-byte &optional iport
 @c EN
-Reads one byte from an input port @var{iport}, and returns an integer
+Reads one byte from an input port @var{iport}, and returns it as an integer
 in the range between 0 and 255.
 If @var{iport} has already reached EOF, an eof object is returned.
 @c JP
 入力ポート@var{iport}から1バイト読み込み、0から255までの整数値として返します。
+@var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+@c COMMON
+@end defun
+
+@defun peek-byte &optional iport
+@c EN
+Peeks one byte at the head of an input port @var{iport}, and returns 
+it as an integer in the range between 0 and 255.
+If @var{iport} has already reached EOF, an eof object is returned.
+@c JP
+入力ポート@var{iport}の先頭の1バイトを見て、それを0から255までの整数値として返します。
 @var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
 @c COMMON
 @end defun
