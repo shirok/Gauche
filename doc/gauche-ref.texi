@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.25 2001-06-20 08:51:59 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.26 2001-06-21 11:53:05 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2117,8 +2117,26 @@ provide lower level routines as well.
 @node Program termination
 @subsection Program termination
 
-@defun exit &optional code
-[POSIX]
+@defun exit &optional (code 0)
+[POSIX] Terminates the current process with the exit code @var{code}.
+This calls @code{exit(2)} and does some cleaning up, like flushing
+the opened file buffers.
+
+BUG: This procedure should also unwind the current dynamic environment
+created by @code{dynamic-wind}, but it is not implemented yet.
+Also, Gauche doesn't have an interface to register cleanup procedure
+via @code{atexit()}.
+@end defun
+
+
+@defun sys-exit &optional (code 0)
+[POSIX] Terminates the current process with the exit code @var{code}.
+This procedure calls @code{_exit(2)} directly.
+No cleanup is done.  Unflushed file output is discarded.
+
+You may use this procedure if you find the system is screwed up
+and no reasonable clean up can be done.  You should use this function
+to terminate a forked process; @ref{Fork and exec} for details.
 @end defun
 
 @node Environment Inquiry
@@ -2245,8 +2263,10 @@ it is simply ignored.
 @example
 (sys-basename "foo/bar/bar.z") @result{} "bar.z"
 (sys-basename "coo.scm") @result{} "coo.scm"
-(sys-dirname "foo/bar/bar.z") @result{} "foo/bar/"
+(sys-basename "x/y/") @result{} "y"
+(sys-dirname "foo/bar/bar.z") @result{} "foo/bar"
 (sys-dirname "coo.scm") @result{} "."
+(sys-dirname "x/y/") @result{} "x"
 @end example
 These functions doesn't check if @var{pathname} really exists.
 
@@ -2258,6 +2278,10 @@ Some boundary cases:
 (sys-basename "/") @result{} ""
 (sys-dirname "/") @result{} "/"
 @end example
+Note: The above behavior is the same as Perl's @code{basename} and
+@code{dirname}.   On some implementations, the command @code{basename}
+may return @code{"/"} for the argument @code{"/"}, and
+@code{"."} for the argument @code{"."}.
 @end defun
 
 @node File stats
@@ -2291,7 +2315,22 @@ An object that represents @code{struct stat}.
 @defunx sys-stat->ctime stat
 Accessors of @code{<sys-stat>} objects.  @code{sys-stat->mode} through
 @code{sys-stat->gid} returns an exact integer.  @code{sys-stat->atime}
-to @code{sys-stat->ctime} returns a @code{<sys-time>} object.
+to @code{sys-stat->ctime} returns a number of seconds since Epoch.
+@end defun
+
+@defun sys-stat->file-type stat
+@var{stat} is a @code{<sys-stat>} object.  Returns one of the following
+symbols, according to the information of the mode word of @var{stat}.
+@multitable {aaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @code{regular} @tab a regular file
+@item @code{directory} @tab a directory
+@item @code{character} @tab a character device
+@item @code{block} @tab a block device
+@item @code{fifo} @tab a fifo
+@item @code{symlink} @tab a symbolic link
+@item @code{socket} @tab a socket
+@end multitable
+If the file type is none of the above, @code{#f} is returned.
 @end defun
 
 @defun sys-access pathname amode
@@ -2545,6 +2584,11 @@ Fork the current process.  Returns 0 if you're in the child process,
 and a child process' pid if you're in the parent process.
 All the opened file descriptors are shared between the parent and
 the child.
+
+If the forked process runs some Scheme code and exits instead of
+calling @code{sys-exec}, the forked process should call @code{sys-exit} to
+terminate itself.  Normal exit call tries to flush the file
+buffers, and on some OS it messes up the parent's file buffers.
 @end defun
 
 @defun sys-exec command args &optional iomap
@@ -2659,18 +2703,35 @@ The interface functions for @code{select(2)}.
 
 @deftp {Builtin Class} <sys-fdset>
 @clindex sys-fdset
-Represents @code{fd_set}, a set of file descriptors.
+Represents @code{fd_set}, a set of file descriptors.  You can make
+an empty file descriptor set by make method:
+@example
+(make <sys-fdset>)
+@end example
 @end deftp
 
 @defun sys-fdset-ref fdset port-or-fd
 @defunx sys-fdset-set! fdset port-or-fd flag
+Gets and sets specific file descritor bit of @var{fdset}.
+@var{port-or-fd} may be a port or an integer file descriptor.
+If @var{port-or-fd} is a port that doesn't have associated file descriptor,
+@code{sys-fdset-ref} returns @code{#f}, and @code{sys-fdset-set!} doesn't
+modify @var{fdset}.  @var{flag} must be a boolean value.
+
+You can use generic setter of @code{sys-fdset-ref} as this:
+@example
+(set! (sys-fdset-ref fdset port-or-fd) flag)
+  @equiv{} (sys-fdset-set! fdset port-or-fd flag)
+@end example
 @end defun
 
 @defun sys-fdset-max-fd fdset
+Returns the maximum file descriptor number in @var{fdset}.
 @end defun
 
 @defun sys-select readfds writefds exceptfds &optional timeout
 @defunx sys-select! readfds writefds exceptfds &optional timeout
+
 @end defun
 
 
