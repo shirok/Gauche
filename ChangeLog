@@ -2,6 +2,9 @@
 
 	* src/compile.c : eliminated the "merger" NOP instruction at the
 	  tail position; that prevented proper tail recursion in some cases.
+	* src/gauche-init.scm (define-values):  added define-values.
+	* lib/www.cgi.scm : checks CONTENT_TYPE and CONTENT_LENGTH.
+	  Introduced cgi-metavariables parameter for better customizability.
 
 2002-04-19  Shiro Kawai  <shiro@acm.org>
 
