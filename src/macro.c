@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.31 2001-10-30 09:00:30 shirok Exp $
+ *  $Id: macro.c,v 1.32 2001-12-04 19:27:58 shirok Exp $
  */
 
 #include "gauche.h"
@@ -699,6 +699,7 @@ static ScmObj realize_template_rec(ScmObj template,
         if (!SCM_NULLP(template)) {
             r = realize_template_rec(template, mvec, level, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return r;
+            if (SCM_NULLP(h)) return r; /* (a ... . b) and a ... is empty */
             SCM_APPEND(h, t, r);
         }
         return h;
