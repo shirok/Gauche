@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.88 2002-08-20 20:47:19 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.89 2002-08-24 01:51:29 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -36,23 +36,25 @@
 (define-macro (export-all)
   `',(%export-all))
 
-(define-macro (extend . modules)
-  `',(%extend (map find-module modules)))
-
 ;; Preferred way
 ;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
-;; NB: should this be:
-;;  (use (x y z)) ==> (require "x/y/z") (import (x y z))
-;;  it's more Scheme-ish, and similar to Guile-way.
+
+(define (%module-name->path module)
+  (let ((mod (cond ((symbol? module) module)
+                   ((identifier? module) (identifier->symbol module))
+                   (else (error "module name must be a symbol" module)))))
+    ;; Here, there will be some module-name translator hook
+    (string-join (string-split (symbol->string mod) #\.) "/")))
 
 (define-macro (use module)
-  (let* ((mod  (cond ((symbol? module) module)
-                     ((identifier? module) (identifier->symbol module))
-                     (else (error "use: symbol required:" module))))
-         (path (string-join (string-split (symbol->string mod) #\.) "/")))
-    `(begin (with-module gauche (require ,path))
-            (import ,mod)))
-  )
+  `(begin (with-module gauche (require ,(%module-name->path module)))
+          (import ,module)))
+
+(define-macro (extend . modules)
+  `',(%extend (map (lambda (m)
+                     (or (find-module m)
+                         (error "undefined module" m)))
+                   modules)))
 
 ;; Inter-version compatibility.
 (define-macro (use-version version)
