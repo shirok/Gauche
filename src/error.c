@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.35 2002-06-14 01:42:42 shirok Exp $
+ *  $Id: error.c,v 1.36 2002-07-05 02:57:00 shirok Exp $
  */
 
 #include <errno.h>
@@ -239,4 +239,51 @@ void Scm_FWarn(ScmString *fmt, ScmObj args)
     Scm_Flush(SCM_CURERR);
 }
 
+/*
+ * Default error reporter
+ */
+
+#define STACK_DEPTH_LIMIT 30
+
+void Scm_ReportError(ScmObj e)
+{
+    ScmVM *vm = Scm_VM();
+    ScmObj stack = Scm_VMGetStackLite(vm), cp;
+    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
+    int depth = 0;
+
+    if (SCM_ERRORP(e) && SCM_STRINGP(SCM_ERROR_MESSAGE(e))) {
+        SCM_PUTZ("*** ERROR: ", -1, err);
+        SCM_PUTS(SCM_STRING(SCM_ERROR_MESSAGE(e)), err);
+        SCM_PUTNL(err);
+    } else {
+        SCM_PUTZ("*** ERROR: unhandled exception: ", -1, err);
+        Scm_Printf(SCM_PORT(err), "%S\n", e);
+    }
+    
+    SCM_PUTZ("Stack Trace:\n", -1, err);
+    SCM_PUTZ("_______________________________________\n", -1, err);
+    SCM_FOR_EACH(cp, stack) {
+        Scm_Printf(SCM_PORT(err), "%3d  %66.1S\n", depth++, SCM_CAR(cp));
+        if (SCM_PAIRP(SCM_CAR(cp))) {
+            ScmObj srci = Scm_PairAttrGet(SCM_PAIR(SCM_CAR(cp)),
+                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
+            if (SCM_PAIRP(srci) && SCM_PAIRP(SCM_CDR(srci))) {
+                Scm_Printf(SCM_PORT(err), "        At line %S of %S\n",
+                           SCM_CADR(srci), SCM_CAR(srci));
+            } else {
+                Scm_Printf(SCM_PORT(err), "        [unknown location]\n");
+            }
+        } else {
+            Scm_Printf(SCM_PORT(err), "\n");
+        }
+        if (depth >= STACK_DEPTH_LIMIT) {
+            Scm_Printf(SCM_PORT(err), "... (more stack dump truncated)\n");
+            break;
+        }
+    }
+    /* NB: stderr is autoflushed by default, but in case err is replaced
+       by some other port, we explicitly flush it. */
+    SCM_FLUSH(err);
+}
 

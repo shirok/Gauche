@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.273 2002-07-03 08:46:33 shirok Exp $
+ *  $Id: gauche.h,v 1.274 2002-07-05 02:57:00 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1940,6 +1940,8 @@ SCM_EXTERN ScmObj Scm_FError(ScmObj fmt, ScmObj args);
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);
 
+SCM_EXTERN void Scm_ReportError(ScmObj e);
+
 /* <application-exit> */
 typedef struct ScmApplicationExitRec {
     SCM_HEADER;
@@ -2305,7 +2307,12 @@ SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
 SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);
 
 /* repl */
+#if 0
 SCM_EXTERN void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out);
+#else
+SCM_EXTERN void Scm_Repl(ScmObj reader, ScmObj evaluator, ScmObj printer,
+                         ScmObj prompter);
+#endif
 
 /* Inspect the configuration */
 SCM_EXTERN const char *Scm_HostArchitecture(void);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.51 2002-06-08 11:00:38 shirok Exp $
+ *  $Id: main.c,v 1.52 2002-07-05 02:57:00 shirok Exp $
  */
 
 #include <unistd.h>
@@ -299,9 +299,7 @@ int main(int argc, char **argv)
     if (batch_mode || (!isatty(0) && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()));
     } else {
-        Scm_Repl(SCM_MAKE_STR("gosh> "),
-                 SCM_PORT(Scm_Stdin()),
-                 SCM_PORT(Scm_Stdout()));
+        Scm_Repl(SCM_FALSE, SCM_FALSE, SCM_FALSE, SCM_FALSE);
     }
     Scm_Exit(0);
     return 0;                   /* dummy */

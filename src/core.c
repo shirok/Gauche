@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.40 2002-06-21 19:41:39 shirok Exp $
+ *  $Id: core.c,v 1.41 2002-07-05 02:57:00 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -53,6 +53,7 @@ extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
 extern void Scm__InitVM(void);
 extern void Scm__InitMutex(void);
+extern void Scm__InitRepl(void);
 
 extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
@@ -83,6 +84,7 @@ void Scm_Init(void)
     Scm__InitSystem();
     Scm__InitVM();
     Scm__InitMutex();
+    Scm__InitRepl();
     
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());

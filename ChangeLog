@@ -1,3 +1,12 @@
+2002-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/repl.c : rewrote to use trampoline instead of C-level loop.
+	  This avoids extra C-stack overhead, and makes captured toplevel
+	  continuation valid throughout the entire session.
+	* src/error.c : added Scm_ReportError() formerly defined in vm.c as
+	  report_error.
+	* src/vm.c : fixed a bug that caused run_loop() to return prematurely.
+
 2002-07-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/gauche.h : first attempt of protecting port access
