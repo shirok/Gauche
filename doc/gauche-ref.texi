@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.283 2002-10-15 02:21:25 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.284 2002-10-15 04:06:47 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18578,8 +18578,8 @@ kernel-space CPU time, and total CPU time (user + system), respectively.
 @c COMMON
 @end deftp
 
-@defmethod <time-counter> time-counter-start! counter
-@defmethodx <time-counter> time-counter-stop! counter
+@deffn {Method} time-counter-start! (counter <time-counter>)
+@deffnx {Method} time-counter-stop! (counter <time-counter>)
 @c EN
 Starts and stops the @var{counter}.  The time during the counter is
 running is accumulated to the counter value when the counter is stopped.
@@ -18613,9 +18613,9 @@ has no effect.
 既に停止しているカウンタに対して@code{time-counter-stop!}を呼んでも
 何も起こりません。
 @c COMMON
-@end defmethod
+@end deffn
 
-@defmethod <time-counter> time-counter-reset! counter
+@deffn {Method} time-counter-reset! (counter <time-counter>)
 @c EN
 Resets the value of @var{counter}.  If @var{counter} is already
 running, it is forced to stop before being reset.
@@ -18623,9 +18623,9 @@ running, it is forced to stop before being reset.
 カウンタ@var{counter}の値をリセットします。既に@var{counter}が走っている
 場合は、リセットの前にカウンタは停止させられます。
 @c COMMON
-@end defmethod
+@end deffn
 
-@defmethod <time-counter> time-counter-value counter
+@deffn {Method} time-counter-value (counter <time-counter>)
 @c EN
 Returns the current value of the counter as the number of seconds,
 in a real number.  The resolution depends on the source of the counter.
@@ -18633,7 +18633,7 @@ in a real number.  The resolution depends on the source of the counter.
 カウンタ@var{counter}の現在の値(秒数)を実数で返します。
 分解能はそれぞれのカウンタが用いているシステムコールに依存します。
 @c COMMON
-@end defmethod
+@end deffn
 
 @defmac with-time-counter counter expr @dots{}
 @c EN
@@ -20242,10 +20242,84 @@ of supported SRFIs.
 
 @deftp {Module} srfi-0
 @mdindex srfi-0
+Provides SRFI-0 @code{cond-expand} macro form.
+Now this module is autoloaded when @code{cond-expand} is used,
+so you don't need to say @code{(use srfi-0)} explicitly; it is required to
+write a portable Scheme program.
 @end deftp
 
 @defmac cond-expand (feature-requirement command-or-definition @dots{}) @dots{}
 [SRFI-0]
+This macro expands to @var{command-or-definition} @dots{} if Gauche
+supports @var{feature-requirement}.
+In a way, it can be used to absorb the different feature sets supported by
+different Scheme implementations.
+
+@var{feature-requiremnt} must be in the following syntax:
+@example
+@var{feature-requirement}
+  : @var{feature-identifier}
+  | (and @var{feature-requirement} @dots{})
+  | (or  @var{feature-requirement} @dots{})
+  | (not @var{feature-requirement})
+@end example
+
+@var{feature-identifier} is a symbol that indicates a feature.
+If such a feature is supported in Gauche, it satisfies the
+@var{feature-requirement}.  You can do boolean combination
+of @var{feature-requirement}s to compose more complex conditions.
+
+The macro tests each @var{feature-requirement} in order, and
+if one is satisfied, the macro itself expands to the
+corresponding @var{command-or-definition} @dots{}.
+
+The last clause may begin with a symbol @code{else} instead of
+@var{feature-requirement}.  If no condition is fulfilled before
+it, then the macro expands to the @var{command-or-definition}s
+of the else clause.  If there's no else clause and no condition
+is fulfilled, an error is signalled.
+
+Currently, Gauche recognizes srfi names (e.g. @code{srfi-1})
+that it supports (@xref{Standard conformance}, for the list of
+supported SRFIs), and a symbol @code{gauche} as @var{feature-identifier}.
+
+Suppose you are writing a program that requires srfi-13 (string library).
+In Gauche, the standard way to use srfi-13 is like this:
+
+@example
+(use srfi-13)
+
+;; ... your program ...
+@end example
+
+However, the 'use' macro is Gauche specific and won't work
+on other Scheme implementations.  You can write instead:
+
+@example
+(cond-expand
+  (srfi-13
+    ;; ... your program ...
+  ))
+@end example
+
+If the implementation supports @code{srfi-13}, the form expands
+to your program.  Note that Gauche issues @code{(use srfi-13)}
+for you in this case.
+
+The above form signals an error if the implementation doesn't support
+srfi-13.  However, you might want to run your program on such implentations
+as well, by providing alternative library definitions.
+
+@example
+(cond-expand
+ (srfi-13
+   ;; ... your program ...
+ )
+ (else
+   (load "my-srfi-13-implementation")
+   ;; ... your program ...
+ ))
+@end example
 @end defmac
 
 @c ----------------------------------------------------------------------

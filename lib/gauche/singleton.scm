@@ -12,28 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: singleton.scm,v 1.1 2001-11-07 09:52:48 shirok Exp $
+;;;  $Id: singleton.scm,v 1.2 2002-10-15 04:06:47 shirok Exp $
 ;;;
 
-;; EXPERIMENTAL
+;; NB: singleton is moved to gauche.mop.singleton.
+;; This file provides backward compatibility.
 
 (define-module gauche.singleton
-  (export <singleton-meta> instance-of))
-(select-module gauche.singleton)
-
-(define-class <singleton-meta> (<class>)
-  (%the-singleton-instance)
-  )
-
-;; TODO: MT safeness
-(define-method make ((class <singleton-meta>) . initargs)
-  (if (slot-bound? class '%the-singleton-instance)
-      (slot-ref class '%the-singleton-instance)
-      (let ((ins (next-method)))
-        (slot-set! class '%the-singleton-instance ins)
-        ins)))
-
-(define-method instance-of ((class <singleton-meta>) . initargs)
-  (apply make class initargs))
+  (extend gauche.mop.singleton))
 
 (provide "gauche/singleton")

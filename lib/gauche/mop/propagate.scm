@@ -1,5 +1,5 @@
 ;;;
-;;; propagate-slot.scm - propagate slot option
+;;; propagate.scm - propagate slot option
 ;;;
 ;;;  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
 ;;;
@@ -12,16 +12,16 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: propagate-slot.scm,v 1.1 2002-10-07 08:59:43 shirok Exp $
+;;;  $Id: propagate.scm,v 1.1 2002-10-15 04:06:48 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL.   THE API MAY CHANGE.
 
-(define-module gauche.mop.propagate-slot
+(define-module gauche.mop.propagate
   (use srfi-2)
-  (export <propagate-slot-meta>)
+  (export <propagate-meta>)
   )
-(select-module gauche.mop.propagate-slot)
+(select-module gauche.mop.propagate)
 
 ;; 'propagate' slot option sends get/set request to other object.
 ;; The idea is taken from STk's "composite metaclass".
@@ -34,14 +34,15 @@
 ;; (slot-set! (slot-ref obj 'bar) 'foo value).  If a list (bar baz)
 ;; is given, baz is used as the actual slot name instead of foo.
 
-(define-class <propagate-slot-meta> (<class>)
+(define-class <propagate-meta> (<class>)
   ())
 
-(define-method compute-get-n-set ((class <propagate-slot-meta>) slot)
+(define-method compute-get-n-set ((class <propagate-meta>) slot)
   (let ((name  (slot-definition-name slot))
         (alloc (slot-definition-allocation slot)))
     (cond ((eq? alloc :propagated)
-           (let1 prop (slot-definition-option slot :propagate)
+           (let1 prop (or (slot-definition-option slot :propagate #f)
+                          (slot-definition-option slot :propagate-to #f))
              (cond ((symbol? prop)
                     (list (lambda (o)
                             (slot-ref (slot-ref o prop) name))

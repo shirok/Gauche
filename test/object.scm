@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.18 2002-10-08 20:19:01 shirok Exp $
+;; $Id: object.scm,v 1.19 2002-10-15 04:06:48 shirok Exp $
 
 (use gauche.test)
 
@@ -486,9 +486,9 @@
                             (lambda () (set! (b-of v) 3.4)))))
 
 ;;----------------------------------------------------------------
-(test-section "metaclass/propagate-slot")
+(test-section "metaclass/propagate")
 
-(use gauche.mop.propagate-slot)
+(use gauche.mop.propagate)
 
 (define-class <propagate-x> ()
   ((value :init-keyword :value :init-value 3)))
@@ -498,7 +498,7 @@
    (x1 :init-keyword :x1 :init-form (make <propagate-x> :value 1))
    (value :allocation :propagated :propagate 'x0 :init-keyword :value)
    (vv    :allocation :propagated :propagate '(x1 value)))
-  :metaclass <propagate-slot-meta>)
+  :metaclass <propagate-meta>)
 
 (test "propagate ref default" '(0 0)
       (lambda ()
@@ -530,7 +530,7 @@
           (list (slot-ref y 'vv) (slot-ref (slot-ref y 'x1) 'value)))))
 
 (define-class <propagate-validator-meta> (<validator-meta>
-                                          <propagate-slot-meta>)
+                                          <propagate-meta>)
   ())
 
 (define-class <propagate-validator> ()

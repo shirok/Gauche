@@ -1,6 +1,9 @@
 2002-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/* : added read-block!, write-block, and uvector-alias.
+	* lib/gauche/singleton.scm : moved to lib/gauche/mop/singleton,
+	  keeping the old file for compatibility.
+	* lib/gauche/propagated-slot.scm : renamed to propagate.scm.
 
 2002-10-13  Shiro Kawai  <shiro@acm.org>
 
