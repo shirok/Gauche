@@ -7203,15 +7203,29 @@ HTML に含まれる"安全でない"文字をエスケープします。
 @defun html-doctype &keyword type
 @c EN
 Returns a doctype declaration for an HTML document.
-@var{type} can be either one of @code{:strict}, @code{:transitional},
-or @code{:frameset}, corresponding HTML4.01 strict, transitional or
-frameset DTD, respectively.
+@var{type} can be either one of the followings (default is 
+@code{:html-4.01-strict}).
 @c JP
 HTML ドキュメントの文書型宣言を返します。
-@var{type} は、@code{:strict}、@code{:transitional}、@code{:frameset}
-のいずれかで、それぞれ HTML 4.01 strict、transitional、frameset の
-DTD に対応します。
+@var{type} は、以下のいずれかを指定します (デフォルトは@code{:html-4.01-strict}
+です)。
 @c COMMON
+@table @code
+@item :html-4.01-strict, :html-4.01, :strict
+HTML 4.01 Strict DTD
+@item :html-4.01-transitional, :transitional
+HTML 4.01 Transitional DTD
+@item :html-4.01-frameset, :frameset
+HTML 4.01 Frameset DTD
+@item :xhtml-1.0-strict, :xhtml-1.0
+XHTML 1.0 Strict DTD
+@item :xhtml-1.0-transitional
+XHTML 1.0 Transitional DTD
+@item :xhtml-1.0-frameset
+XHTML 1.0 Frameset DTD
+@item :xhtml-1.1
+XHTML 1.1 DTD
+@end table
 @end defun
 
 @deftp {Function} html:@var{element} @var{args} @dots{}
