@@ -12,11 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.4 2001-01-17 08:22:37 shiro Exp $
+ *  $Id: list.c,v 1.5 2001-01-18 20:24:40 shiro Exp $
  */
 
 #include "gauche.h"
-#include "gauche/mem.h"
+#include "gauche/memory.h"
 
 /*
  * Classes

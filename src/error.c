@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.1 2001-01-18 19:41:39 shiro Exp $
+ *  $Id: error.c,v 1.2 2001-01-18 20:24:40 shiro Exp $
  */
 
 #include "gauche.h"
@@ -104,6 +104,4 @@ void Scm_SError(ScmObj fmt, ScmObj args)
     SCM_POP_ERROR_HANDLER;
     Scm_ThrowException(e);
 }
-
-
 

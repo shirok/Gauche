@@ -6,6 +6,9 @@
 int show_compile = 0;
 int allow_inline = 1;
 
+
+
+
 void toplevel(void)
 {
     volatile ScmObj in, out, err, v;
@@ -36,19 +39,6 @@ void toplevel(void)
             }
         }
         SCM_WHEN_ERROR {
-            ScmObj stack = Scm_VMGetStack(vm), cp;
-            int depth = 0;
-
-            SCM_PUTCSTR("*** ERROR: ", err);
-            if (SCM_STRINGP(vm->errstr)) SCM_PUTS(vm->errstr, err);
-            SCM_PUTNL(err);
-
-            SCM_PUTCSTR("Stack Trace:\n", err);
-            SCM_PUTCSTR("_______________________________________\n", err);
-            SCM_FOR_EACH(cp, stack) {
-                Scm_Printf(SCM_PORT(err), "%3d   %66.1S\n",
-                           depth++, SCM_CAR(cp));
-            }
         }
         SCM_POP_ERROR_HANDLER;
     }

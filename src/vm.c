@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.9 2001-01-18 19:41:39 shiro Exp $
+ *  $Id: vm.c,v 1.10 2001-01-18 20:24:40 shiro Exp $
  */
 
 #include "gauche.h"
@@ -862,6 +862,28 @@ static void dynwind_after_cc(ScmObj result, void **data)
  * Exception handling
  */
 
+void default_exception_handler(ScmObj e)
+{
+    ScmObj stack = Scm_VMGetStack(theVM), cp;
+    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(theVM);
+    int depth = 0;
+    
+    if (SCM_EXCEPTIONP(e) && SCM_STRINGP(SCM_EXCEPTION_DATA(e))) {
+        SCM_PUTCSTR("*** ERROR: ", err);
+        SCM_PUTS(SCM_STRING(SCM_EXCEPTION_DATA(e)), err);
+        SCM_PUTNL(err);
+    } else {
+        SCM_PUTCSTR("*** ERROR: (unknown exception type)\n", err);
+    }
+    
+    SCM_PUTCSTR("Stack Trace:\n", err);
+    SCM_PUTCSTR("_______________________________________\n", err);
+    SCM_FOR_EACH(cp, stack) {
+        Scm_Printf(SCM_PORT(err), "%3d   %66.1S\n",
+                   depth++, SCM_CAR(cp));
+    }
+}
+
 void throw_exception_cc(ScmObj result, void **data)
 {
     ScmObj handlers = SCM_OBJ(data[0]);
@@ -890,14 +912,7 @@ void Scm_ThrowException(ScmObj exception)
         Scm_Apply1(theVM->errorHandler, exception);
         return;
     } else {
-        /* the default error handler */
-        if (SCM_EXCEPTIONP(exception)) {
-            ScmObj data = SCM_EXCEPTION_DATA(exception);
-            if (SCM_STRINGP(data)) {
-                fprintf(stderr, "%s\n", Scm_GetStringConst(SCM_STRING(data)));
-            }
-        }
-        /* TODO: need to print exception object */
+        default_exception_handler(exception);
     }   
     throw_exception_cc(SCM_UNDEFINED, &data);
 }
