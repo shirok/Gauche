@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.315 2002-12-07 03:07:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.316 2002-12-08 08:33:19 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7171,8 +7171,12 @@ character in @var{string}, and the consecutive characters that caused
 (string-split "abc" #\/) @result{} ("abc")
 (string-split ""    #\/) @result{} ("")
 @end example
-@end defun
 
+Note: When @var{splitter} is a char-set, @code{string-split} is
+equivalent to @code{string-tokenize} except the meaning of the
+char-set is reversed
+(@xref{SRFI-13 other string operations}).
+@end defun
 
 @node String Pointers, Incomplete strings, String utilities, Strings
 @subsection String Pointers
@@ -22582,6 +22586,14 @@ On the other hand, @code{string-map!} modifies @var{s}.
 
 @defun string-tokenize s &optional token-set start end
 [SRFI-13]
+Splits the string @var{s} into a list of substrings,
+where each substring is a maximal non-empty contiguous
+sequence of characters from the character set @var{token-set}.
+The default of @var{token-set} is @code{char-set:graphic}
+(@xref{SRFI-14 Predefined character-set}).
+
+See also Gauche's built-in @code{string-split} (@xref{String utilities}),
+which provides similar features but different criteria.
 @end defun
 
 @node SRFI-13 String filtering, SRFI-13 Low-level string procedures, SRFI-13 other string operations, srfi-13 - String library
