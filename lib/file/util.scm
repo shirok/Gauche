@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.19 2003-01-09 11:31:47 shirok Exp $
+;;;  $Id: util.scm,v 1.20 2003-02-05 11:26:14 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -25,6 +25,7 @@
   (use srfi-2)
   (use srfi-11)
   (use srfi-13)
+  (use util.list)
   (export current-directory directory-list directory-list2 directory-fold
           home-directory
           make-directory* create-directory* remove-directory* delete-directory*
@@ -67,37 +68,38 @@
       (slot-ref ent 'dir))))
 
 ;; utility for directory-list and directory-list2
-(define (%directory-filter dir preds)
-  (cond ((null? preds) (sys-readdir dir))
-        ((null? (cdr preds)) (filter (car preds) (sys-readdir dir)))
-        (else (filter (lambda (e)
-                        (every (lambda (p) (p e)) preds))
-                      (sys-readdir dir)))))
-(define (%directory-filter-compose opts)
-  `(,@(if (get-keyword :children? opts #f)
-          `(,(lambda (e) (not (member e '("." "..")))))
-          '())
-    ,@(cond ((get-keyword :filter opts #f) => list)
-            (else '()))))
+(define (%directory-filter dir pred filter-add-path?)
+  (if filter-add-path?
+      (filter (lambda (e) (pred (build-path dir e))) (sys-readdir dir))
+      (filter pred (sys-readdir dir))))
 
-;; directory-list DIR &keyword ADD-PATH? CHILDREN? FILTER
+(define (%directory-filter-compose opts)
+  (apply every-pred
+         (cond-list ((get-keyword :children? opts #f)
+                     (lambda (e) (not (member e '("." "..")))))
+                    ((get-keyword :filter opts #f)))))
+
+;; directory-list DIR &keyword ADD-PATH? FILTER-ADD-PATH? CHILDREN? FILTER
 (define (directory-list dir . opts)
-  (let* ((add-path? (get-keyword :add-path? opts #f))
-         (filters   (%directory-filter-compose opts)))
-    (let1 entries (sort (%directory-filter dir filters))
+  (let-keywords* opts ((add-path? #f)
+                       (filter-add-path? #f))
+    (let1 entries
+        (sort (%directory-filter dir (%directory-filter-compose opts)
+                                 filter-add-path?))
       (if add-path?
           (map (cut build-path dir <>) entries)
           entries))))
 
-;; directory-list2 DIR &optional ADD-DIR? CHILDREN? FILTER FOLLOW-LINK?
+;; directory-list2 DIR &optional ADD-DIR? FILTER-ADD-PATH? CHILDREN? FILTER FOLLOW-LINK?
 (define (directory-list2 dir . opts)
-  (let* ((add-path? (get-keyword :add-path? opts #f))
-         (filters   (%directory-filter-compose opts))
-         (selector  (let1 stat (%stat opts)
-                      (lambda (e)
-                        (and (file-exists? e)
-                             (eq? (slot-ref (stat e) 'type) 'directory))))))
-    (let1 entries (sort (%directory-filter dir filters))
+  (let-keywords* opts ((add-path? #f)
+                       (filter-add-path? #f))
+    (let* ((filters (%directory-filter-compose opts))
+           (selector (let1 stat (%stat opts)
+                       (lambda (e)
+                         (and (file-exists? e)
+                              (eq? (slot-ref (stat e) 'type) 'directory)))))
+           (entries (sort (%directory-filter dir filters filter-add-path?))))
       (if add-path?
           (partition selector
                      (map (cut build-path dir <>) entries))

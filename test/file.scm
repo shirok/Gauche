@@ -86,6 +86,13 @@
        (directory-list "test.out" :add-path? #t
                        :filter (lambda (p) (string-suffix? "o" p))))
 
+(test* "directory-list :filter"
+       '("test.out/test1.o"
+         "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
+         "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
+       (directory-list "test.out" :add-path? #t :filter-add-path? #t
+                       :filter file-is-regular?))
+
 (test* "directory-list2"
        '(("." ".." "test.d" "test2.d")
          ("test1.o" "test2.o" "test3.o" "test4.o"
