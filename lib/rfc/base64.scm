@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: base64.scm,v 1.4 2001-04-01 06:21:03 shiro Exp $
+;;;  $Id: base64.scm,v 1.5 2001-06-02 21:56:08 shirok Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine
@@ -60,34 +60,34 @@
     (define (d0 c)
       (cond ((eof-object? c))
             ((eqv? c #\=))
-            ((lookup c) => (lambda (v) (d1 (read-char) v)))
-            (else (d0 (read-char)))))
+            ((lookup c) => (lambda (v) (d1 (read-byte) v)))
+            (else (d0 (read-byte)))))
 
     (define (d1 c hi)
       (cond ((eof-object? c))
             ((eqv? c #\=))
             ((lookup c) => (lambda (lo)
                              (write-byte (+ (* hi 4) (quotient lo 16)))
-                             (d2 (read-char) (modulo lo 16))))
-            (else (d1 (read-char) hi))))
+                             (d2 (read-byte) (modulo lo 16))))
+            (else (d1 (read-byte) hi))))
 
     (define (d2 c hi)
       (cond ((eof-object? c))
             ((eqv? c #\=))
             ((lookup c) => (lambda (lo)
                              (write-byte (+ (* hi 16) (quotient lo 4)))
-                             (d3 (read-char) (modulo lo 4))))
-            (else (d2 (read-char) hi))))
+                             (d3 (read-byte) (modulo lo 4))))
+            (else (d2 (read-byte) hi))))
 
     (define (d3 c hi)
       (cond ((eof-object? c))
             ((eqv? c #\=))
             ((lookup c) => (lambda (lo)
                              (write-byte (+ (* hi 64) lo))
-                             (d0 (read-char))))
-            (else (d3 (read-char) hi))))
+                             (d0 (read-byte))))
+            (else (d3 (read-byte) hi))))
 
-    (d0 (read-char))))
+    (d0 (read-byte))))
 
 (define (base64-decode-string string)
   (with-output-to-string
@@ -98,7 +98,7 @@
 (define (base64-encode)
   (let-syntax ((emit (syntax-rules ()
                        ((_ idx)
-                        (write-char (vector-ref *encode-table* idx))))))
+                        (write-byte (vector-ref *encode-table* idx))))))
     (define (e0 c cnt)
       (if (eof-object? c)
           #t
@@ -108,15 +108,15 @@
     (define (e1 c hi cnt)
       (if (eof-object? c)
           (begin (emit (* hi 16))
-                 (write-char #\=)
-                 (write-char #\=))
+                 (write-byte #\=)
+                 (write-byte #\=))
           (begin (emit (+ (* hi 16) (quotient c 16)))
                  (e2 (read-byte) (modulo c 16) cnt))))
 
     (define (e2 c hi cnt)
       (if (eof-object? c)
           (begin (emit (* hi 4))
-                 (write-char #\=))
+                 (write-byte #\=))
           (begin (emit (+ (* hi 4) (quotient c 64)))
                  (emit (modulo c 64))
                  (if (= cnt 17)
