@@ -1,3 +1,13 @@
+2003-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/jconv.c : fixed a bug that caused buffer overflow
+	  and/or premature conversion output under certain condition.
+	  Also added test cases (jp4.*) that particularly tests the condition.
+
+	* lib/gauche/interactive.scm : added autoloads for gauche.reload,
+	  so that `reload' would be available in interactive development
+	  by default.  It's useful enough to do so.
+
 2003-09-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c, src/class.c, src/gauche.h, src/extlib.stub : Exposed
