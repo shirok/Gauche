@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.8 2001-03-28 09:41:11 shiro Exp $
+#  $Id: Makefile.in,v 1.9 2001-04-01 07:14:02 shiro Exp $
 #
 
 prefix = @prefix@
@@ -11,15 +11,17 @@ SCM_INSTALL_DIR = @datadir@/gauche/@GAUCHE_VERSION@/lib
 SCMS = srfi-0.scm srfi-1.scm srfi-2.scm srfi-11.scm srfi-17.scm \
        japanize-euc.scm \
        gauche/object.scm gauche/test.scm gauche/macroutil.scm \
-       gauche/vm/disasm.scm
-SUBDIRS = gauche gauche/vm
+       gauche/process.scm gauche/vm/disasm.scm \
+       rfc/base64.scm
+
+SUBDIRS = gauche gauche/vm rfc
 
 INSTALL=@INSTALL@
 
 all :
 
 clean :
-	rm -f core *~ gauche/*~ gauche/vm/*~
+	rm -f core *~ gauche/*~ gauche/vm/*~ rfc/*~
 
 distclean : clean
 	rm -f Makefile
