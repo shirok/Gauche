@@ -1,3 +1,20 @@
+2001-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c, src/vm.c : modified the compiler to add CHECK_STACK
+	  instructions to appropriate places.
+
+2001-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/configure.in : added check for -lnsl on Solaris
+	* ext/net/net.scm (make-server-socket): fixed bug about
+	  :reuse-addr? keyword argument.
+
+2001-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c : added :export-symbols argument to dynamic-load.
+	* lib/gauche/parseopt.scm : added yet another command-line option
+	  parser.
+
 2001-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4
@@ -91,7 +108,7 @@
 	* src/genstub : added 'setter' directive to define generalized
 	  setter in C code.
 
-2001-06-16  Shiro Kawai  <shiro@scherzo>
+2001-06-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/genstub : changed to use macros rather than
 	  bare static initializer in generated code
