@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.419 2003-06-10 06:53:11 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.420 2003-06-10 07:06:52 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19521,7 +19521,7 @@ For the inet domain address, you can pass @var{address} with port=0;
 the system assigns the port number and sets the actual address to
 the @code{address} slot of @var{socket}.
 @c JP
-@var{socket} をローカルネットワークアドレス @{address} に束縛します。
+@var{socket} をローカルネットワークアドレス @var{address} に束縛します。
 通常は、特定のアドレスをこのサーバのポートに結びつけるのに用います。
 もし、束縛が失敗したら(多くの場合、そのアドレスが既に使用されている)、
 エラーシグナルが発生します。
@@ -19666,7 +19666,7 @@ Gauche 側では渡された値が setsockopt (2) で期待された型であるかどうかは
 合計を知らないからです。
 @code{socket-getsockopt} はオプションの値をバイト列として返します。
 オプションの値が整数だと、わかっているなら @var{rsize} に0を渡すこと
-ができます。その場合 @{socket-getsockopt} は正確な整数として値を返します。
+ができます。その場合 @code{socket-getsockopt} は正確な整数として値を返します。
 
 関数名に関する註: これらの関数の名前を socket-@{set|get@}opt あるいは
 socket-@{set|get@}-option にしようかとも思いましたが、結局、命名の
@@ -26601,7 +26601,7 @@ always a copy of @var{s}, even no character is dropped.
 [SRFI-13] @code{string-take}は、@var{s}の最初の@var{nchars}文字からなる文字列を返します。
 @code{string-drop}は、@var{s}から最初の@var{nchars}文字からなる文字列を
 除いた残りを返します。@code{*-right}バージョンは、文字列の最後から数えます。
-返される文字列はいつも@vaar{s}のコピーであり、どの文字も削除されないことが
+返される文字列はいつも@var{s}のコピーであり、どの文字も削除されないことが
 保証されています。
 @c COMMON
 @example
