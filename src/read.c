@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.24 2001-09-17 01:36:39 shirok Exp $
+ *  $Id: read.c,v 1.25 2001-09-19 07:20:36 shirok Exp $
  */
 
 #include <stdio.h>
@@ -284,14 +284,6 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter)
  * String
  */
 
-static int xdigit2int(int xdigit)
-{
-    /* assuming isxdigit(xdigit) is true */
-    if (xdigit >= 'a') return ((xdigit-'a')+10)&0x0f;
-    if (xdigit >= 'A') return ((xdigit-'A')+10)&0x0f;
-    return (xdigit-'0')&0x0f;
-}
-
 static ScmObj read_string(ScmPort *port, int incompletep)
 {
     int c = 0;
@@ -335,7 +327,8 @@ static ScmObj read_string(ScmPort *port, int incompletep)
                       SCM_GETC(c3, port);
                       if (c3 == EOF) goto eof_exit;
                       if (SCM_CHAR_ASCII_P(c2) && isxdigit(c3)) {
-                          int cc = (xdigit2int(c2)<<4)+xdigit2int(c3);
+                          int cc = ((Scm_CharToDigit(c2, 16)<<4)
+                                    + Scm_CharToDigit(c3, 16));
                           ACCUMULATE(cc);
                       } else {
                           ACCUMULATE('\\');
@@ -416,7 +409,7 @@ static ScmObj read_char(ScmPort *port)
             int i = 1, cc;
             unsigned long code = 0;
             do {
-                cc = xdigit2int(cname[i]);
+                cc = Scm_CharToDigit(cname[i], 16);
                 code = code * 16 + cc; /* TODO: check overflow */
                 if (cname[++i] == '\0') return SCM_MAKE_CHAR(code);
             } while (isxdigit(cname[i]));

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.20 2001-09-18 07:57:20 shirok Exp $
+ *  $Id: char.c,v 1.21 2001-09-19 07:20:36 shirok Exp $
  */
 
 #include <ctype.h>
@@ -52,6 +52,36 @@ int Scm_SupportedCharacterEncodingP(const char *encoding)
         if (strcmp(*cs, encoding) == 0) return TRUE;
     }
     return FALSE;
+}
+
+/* '0' -> 0, 'a' -> 10, etc.
+   Radix is assumed in the range [2, 36] */
+int Scm_CharToDigit(ScmChar ch, int radix)
+{
+    if (ch < '0') return -1;
+    if (radix <= 10) {
+        if (ch <= '0' + radix) return (ch - '0');
+        return -1;
+    } else {
+        if (ch <= '9') return (ch - '0');
+        if (ch < 'A') return -1;
+        if (ch < 'A' + radix - 10) return (ch - 'A' + 10);
+        if (ch < 'a') return -1;
+        if (ch < 'a' + radix - 10) return (ch - 'a' + 10);
+    }
+}
+
+ScmChar Scm_DigitToChar(int n, int radix)
+{
+    if (n < 0) return SCM_CHAR_INVALID;
+    if (radix <= 10) {
+        if (n < radix) return (ScmChar)(n + '0');
+        else return SCM_CHAR_INVALID;
+    } else {
+        if (n < 10) return (ScmChar)(n + '0');
+        if (n < radix) return (ScmChar)(n - 10 + 'a');
+        else return SCM_CHAR_INVALID;
+    }
 }
 
 /*=======================================================================
