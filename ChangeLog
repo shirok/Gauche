@@ -1,3 +1,9 @@
+2004-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/char_euc_jp.h (Scm_CharBackwardEUC): made the algorithm
+	  more permissive, so that it will be more robust when illegal
+	  mbstring is passed accidentally.
+
 2004-01-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-truncate, sys-ftruncate): Added interface

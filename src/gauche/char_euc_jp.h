@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_euc_jp.h,v 1.13 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: char_euc_jp.h,v 1.14 2004-01-09 11:03:58 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -124,7 +124,9 @@ static const char *supportedCharacterEncodings[] = {
 };
 
 /* An ad-hoc algorithm to return a ptr to the previous character
-   boundary. */
+   boundary.  Note that it is pretty permissive---the string
+   can possibly include a illegal encoding. */
+
 const char *Scm_CharBackwardEUC(const char *cp, const char *start)
 {
     const unsigned char *t;
@@ -132,13 +134,13 @@ const char *Scm_CharBackwardEUC(const char *cp, const char *start)
     switch (cp - start) {
     default:
         t = (unsigned char*)(cp-3);
-        if (t[0] == 0x8f && t[1] > 0xa0 && t[2] > 0xa0) {
+        if (t[0] == 0x8f && t[1] >= 0x80 && t[2] >= 0x80) {
             return (const char *)t;
         }
         /*FALLTHROUGH*/
     case 2:
         t = (unsigned char*)(cp-2);
-        if ((t[0] > 0xa0 || t[0] == 0x8e) && t[1] > 0xa0) {
+        if (t[0] >= 0x80 && t[1] >= 0x80) {
             return (const char*)t;
         }
         /*FALLTHROUGH*/
