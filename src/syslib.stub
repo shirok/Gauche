@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.39 2001-06-25 11:34:49 shirok Exp $
+;;; $Id: syslib.stub,v 1.40 2001-06-26 08:05:24 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -343,14 +343,29 @@
   "  int r = system(Scm_GetStringConst(command));
   SCM_RETURN(Scm_MakeInteger(r));")
 
-(define-cproc sys-rand ()
-  "  SCM_RETURN(Scm_MakeInteger(rand()));")
+(define-cproc sys-random ()
+  "#if defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)
+  SCM_RETURN(Scm_MakeInteger(random()));
+#elif defined(LRAND48) && defined(SRAND48)
+  SCM_RETURN(Scm_MakeInteger(lrand48()));
+#else
+  Scm_Error(\"system doesn't have either random() or lrand48()\");
+  SCM_RETURN(SCM_UNDEFINED);
+#endif")
 
-(define-cproc sys-srand (seed)
+(define-cproc sys-srandom (seed)
   "  if (!SCM_EXACTP(seed)) Scm_Error(\"exact integer required: %S\", seed);
-  srand(Scm_GetUInteger(seed)); SCM_RETURN(SCM_UNDEFINED);")
+#if defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)
+  srandom(Scm_GetUInteger(seed));
+#elif defined(LRAND48) && defined(SRAND48)
+  srand48(Scm_GetUInteger(seed));
+#else
+  Scm_Error(\"system doesn't have either srandom() or srand48()\");
+#endif
+  SCM_RETURN(SCM_UNDEFINED);")
 
-(define-symbol rand_max "sym_rand_max" "Scm_MakeInteger(RAND_MAX)")
+(define-symbol rand_max "sym_rand_max"
+  "Scm_MakeInteger(LONG_MAX)")
 
 ;;---------------------------------------------------------------------
 ;; string.h
