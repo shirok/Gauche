@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.117 2004-12-02 09:04:49 shirok Exp $
+ *  $Id: port.c,v 1.118 2004-12-02 12:59:28 shirok Exp $
  */
 
 #include <unistd.h>
@@ -1093,7 +1093,19 @@ static const char *look_for_encoding(const char *buf)
         }
     }
     if (s == buf) goto comment;
-    /* Found it */
+
+    /* Here we found a matching string, starting from s and ends at buf. */
+
+    /* kludge: Emacs uses special suffix #/-(unix|dos|mac)$/ to distinguish
+       EOL variants.  For compatibility, drop such suffix if we have one. */
+    if (buf-s > 5 && (strncmp(buf-5, "-unix", 5) == 0)) {
+        buf -= 5;
+    } else if (buf-s > 4 && (strncmp(buf-4, "-dos", 4) == 0
+                             || strncmp(buf-4, "-mac", 4) == 0)) {
+        buf -= 4;
+    }
+
+    /* Copy and return the encoding string */
     encoding = SCM_NEW_ATOMIC2(char*, buf-s+1);
     memcpy(encoding, s, buf-s);
     encoding[buf-s] = '\0';

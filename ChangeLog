@@ -1,5 +1,8 @@
 2004-12-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (look_for_encoding): ignore '-(unix|dos|mac)' suffix
+	  of encoding name in the coding magic comment, for Emacs
+	  compatibility.
 	* src/number.c (Scm_PrintDouble): added API to use Burger&Dybvig
 	  algorithm.
 	* ext/uvector/uvgen.scm: fixed to print values of f32 and f64 vectors
