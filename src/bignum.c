@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.23 2001-08-30 06:58:57 shirok Exp $
+ *  $Id: bignum.c,v 1.24 2001-09-18 07:50:28 shirok Exp $
  */
 
 #include <math.h>
@@ -156,10 +156,10 @@ ScmObj Scm_NormalizeBignum(ScmBignum *b)
         if (b->sign == 0) {
             return SCM_MAKE_INT(0);
         }
-        if (b->sign > 0 && b->values[0] <= SCM_SMALL_INT_MAX) {
+        if (b->sign > 0 && b->values[0] <= (u_long)SCM_SMALL_INT_MAX) {
             return SCM_MAKE_INT(b->values[0]);
         }
-        if (b->sign < 0 && b->values[0] <= -SCM_SMALL_INT_MIN) {
+        if (b->sign < 0 && b->values[0] <= (u_long)-SCM_SMALL_INT_MIN) {
             return SCM_MAKE_INT(-b->values[0]);
         }
     }
