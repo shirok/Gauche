@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52.2.4 2005-01-11 02:54:09 shirok Exp $
+ *  $Id: macro.c,v 1.52.2.5 2005-01-12 23:38:47 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -988,6 +988,20 @@ static ScmSyntax syntax_syntax_rules = {
     compile_syntax_rules,
     NULL
 };
+
+/* NB: a stub for the new compiler (TEMPORARY) */
+ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
+                              ScmObj env)
+{
+    ScmSyntaxRules *sr;
+
+    if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
+    else if (!SCM_SYMBOLP(name)) {
+        Scm_Error("symbol required, but got %S", name);
+    }
+    sr = compile_rules(name, literals, rules, env);
+    return Scm_MakeMacro(SCM_SYMBOL(name), synrule_transform, (void*)sr);
+}
 
 /*-------------------------------------------------------------------
  * define-syntax

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.1.2.7 2005-01-11 02:54:09 shirok Exp $
+;;; $Id: intlib.stub,v 1.1.2.8 2005-01-12 23:38:46 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -41,6 +41,7 @@
 "
 #include <gauche/class.h>
 #include <gauche/vminsn.h>
+#include <gauche/macro.h>
 "
 
 ;;
@@ -100,6 +101,12 @@
 (define-cproc %insert-binding (mod::<module> name::<symbol> value)
   (return "Scm_Define"))
 
+(define-cproc %export-symbols (mod::<module> names)
+  (return "Scm_ExportSymbols"))
+
+(define-cproc %import-modules (mod::<module> mods)
+  (return "Scm_ImportModules"))
+
 (define-cproc gloc-ref (gloc)
   "if (!SCM_GLOCP(gloc)) Scm_Error(\"GLOC required, but got %S\", gloc);
    SCM_RETURN(SCM_GLOC_GET(SCM_GLOC(gloc)));")
@@ -128,7 +135,10 @@
   SCM_RETURN(Scm_CallSyntaxCompiler(syn, form, env, context));")
 
 (define-cproc make-macro-transformer (name::<symbol> proc)
-  (return "Scm_MakeMacroTransformer"))
+  (return "Scm_MakeMacroTransformerOld"))
+
+(define-cproc compile-syntax-rules (name literals rules env)
+  (return "Scm_CompileSyntaxRules"))
 
 (define-cproc call-macro-expander (mac expr env)
   "if (!SCM_MACROP(mac)) Scm_Error(\"macro required, but got %S\", mac);
@@ -155,11 +165,17 @@
 (define-cproc make-syntax (name::<symbol> proc)
   "SCM_RETURN(Scm_MakeSyntax(name, call_compile_closure, proc));")
 
+(define-cproc %internal-macro-expand (form env once::<boolean>)
+  (return "Scm_MacroExpand"))
+
 (define-cproc has-inliner? (obj)
   (return <boolean> "Scm_HasInlinerP"))
 
 (define-cproc call-procedure-inliner (obj form env)
   (return "Scm_CallProcedureInliner"))
+
+(define-cproc make-promise (thunk)
+  (return "Scm_MakePromise"))
 
 ;;
 ;; VM inspection and interface

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.11 2005-01-10 08:46:02 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.12 2005-01-12 23:38:46 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -304,7 +304,6 @@ static ScmObj compile_in_module(ScmObj, ScmModule*);
 
 #ifdef USE_NEW_COMPILER
 static ScmGloc *compile_gloc = NULL;
-static ScmGloc *compile_int_gloc = NULL;
 static ScmGloc *init_compiler_gloc = NULL;
 static ScmModule *internal_mod = NULL;
 #endif
@@ -340,12 +339,6 @@ ScmObj Scm_Compile(ScmObj program, ScmObj env)
                                        TRUE);
         if (compile_gloc == NULL) {
             Scm_Panic("no compile procedure in gauche.internal");
-        }
-        compile_int_gloc = Scm_FindBinding(internal_mod,
-                                           SCM_SYMBOL(SCM_INTERN("compile-int")),
-                                           TRUE);
-        if (compile_int_gloc == NULL) {
-            Scm_Panic("no compile-int procedure in gauche.internal");
         }
     }
 
@@ -805,19 +798,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
         else return SCM_LIST1(form);
     }
 #else   /*!USE_NEW_COMPILER*/
-    ScmObj sym_ctx;
-    switch (ctx) {
-    case SCM_COMPILE_NORMAL:
-        sym_ctx = SCM_INTERN("normal");
-        break;
-    case SCM_COMPILE_STMT:
-        sym_ctx = SCM_INTERN("stmt");
-        break;
-    default:
-        sym_ctx = SCM_INTERN("tail");
-    }
-    return Scm_Apply(SCM_GLOC_GET(compile_int_gloc),
-                     SCM_LIST3(form, env, sym_ctx));
+    Scm_Error("compile_int is called!");
 #endif  /*!USE_NEW_COMPILER*/
 }
 
