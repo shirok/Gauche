@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.14 2002-04-03 10:36:18 shirok Exp $
+;;;  $Id: numerical.scm,v 1.15 2003-05-11 08:22:24 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -85,7 +85,7 @@
 ;; number reading routine) doesn't exactly meet the calculation done
 ;; in Scheme (via Scm_Multiply), and it made the following expression fail:
 ;;
-;;   (eqv? (make-polar 7.0 -1.5) 7.0@1.5)
+;;   (eqv? (make-polar 7.0 -1.5) 7.0@-1.5)
 ;;
 ;(define-in-module scheme (make-polar r t)
 ;  (check-arg real? r)
