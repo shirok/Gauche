@@ -30,15 +30,17 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: html-lite.scm,v 1.12 2003-12-03 17:48:10 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.13 2003-12-05 01:39:42 shirok Exp $
 ;;;
 
 (define-module text.html-lite
   (use text.tree)
+  (use srfi-1)
   (export html-escape html-escape-string html-doctype)
   )
 (select-module text.html-lite)
 
+;; Escaping ---------------------------------------------
 (define (html-escape)
   (port-for-each (lambda (c)
                    (case c
@@ -53,17 +55,48 @@
 (define (html-escape-string string)
   (with-string-io (x->string string) html-escape))
 
+;; Doctype ----------------------------------------------
+
+;; Doctype database
+;;  (type ...) => (xml? doctype)
+(define-constant *doctype-alist*
+  '(((:strict :html :html-strict :html-4.01 :html-4.01-strict)
+     #f
+     "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"
+       \"http://www.w3.org/TR/html4/strict.dtd\">\n")
+    ((:transitional :html-transitional :html-4.01-transitional)
+     #f
+     "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"
+       \"http://www.w3.org/TR/html4/loose.dtd\">\n")
+    ((:frameset :html-frameset :html-4.01-frameset)
+     #f
+     "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\"
+       \"http://www.w3.org/TR/html4/frameset.dtd\">\n")
+    ((:xhtml-1.0-strict :xhtml-1.0)
+     #t
+     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"
+       \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n")
+    ((:xhtml-1.0-transitional)
+     #t
+     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
+       \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n")
+    ((:xhtml-1.0-frameset)
+     #t
+     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Frameset//EN\"
+       \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd\">\n")
+    ((:xhtml-1.1)
+     #t
+     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"
+       \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n")
+    ))
+
 (define (html-doctype . args)
-  (let ((type (get-keyword :type args :strict)))
-    (case type
-      ((:strict)
-       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n")
-      ((:transitional)
-       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n")
-      ((:frameset)
-       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\">\n")
-      (else
-       (error "Unknown doctype" type)))))
+  (let-keywords* args ((type :html-4.01-strict))
+    (cond ((find (lambda (e) (memq type (car e))) *doctype-alist*)
+           => caddr )
+          (else (error "Unknown doctype type spec" type)))))
+
+;; Elements ------------------------------------------------
 
 (define (make-html-element name . args)
   (let ((empty? (get-keyword :empty? args #f)))

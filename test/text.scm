@@ -89,6 +89,7 @@ fuga
 ;;-------------------------------------------------------------------
 (test-section "html-lite")
 (use text.html-lite)
+(use srfi-13)
 (test-module 'text.html-lite)
 
 (test* "html-escape-string"
@@ -100,16 +101,27 @@ fuga
        (html-escape-string '<class>))
 
 (test* "html-doctype"
-       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n"
-       (html-doctype))
+       '("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\""
+         "\"http://www.w3.org/TR/html4/strict.dtd\">" "")
+       (map string-trim-both (string-split (html-doctype) #\newline)))
 
 (test* "html-doctype"
-       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
-       (html-doctype :type :transitional))
+       '("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
+         "\"http://www.w3.org/TR/html4/loose.dtd\">" "")
+       (map string-trim-both
+            (string-split (html-doctype :type :transitional) #\newline)))
 
 (test* "html-doctype"
-       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\">\n"
-       (html-doctype :type :frameset))
+       '("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\""
+         "\"http://www.w3.org/TR/html4/frameset.dtd\">" "")
+       (map string-trim-both
+            (string-split (html-doctype :type :frameset) #\newline)))
+
+(test* "html-doctype"
+       '("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
+         "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">" "")
+       (map string-trim-both
+            (string-split (html-doctype :type :xhtml-1.0) #\newline)))
 
 (use srfi-13)
 

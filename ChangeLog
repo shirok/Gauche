@@ -1,5 +1,7 @@
 2003-12-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/html-lite.scm (html-doctype):  added missing dtd url.
+	  handles XHTML doctypes as well.
 	* lib/slib.scm.in : added system -> sys-system alias (Patch from
 	  KIMURA Fuyuki).
 	* src/error.c (Scm_SError) : allow non-string as a first arg.
