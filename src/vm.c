@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.62 2001-03-26 10:07:01 shiro Exp $
+ *  $Id: vm.c,v 1.63 2001-03-27 06:25:39 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1032,14 +1032,22 @@ static void run_loop()
             CASE(SCM_VM_SLOT_REF) {
                 ScmObj obj;
                 POP_ARG(obj);
+                PUSH_CONT(pc);
+                SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0);
+                RESTORE_REGS();
+                pc = SCM_NIL;
                 continue;
             }
             CASE(SCM_VM_SLOT_SET) {
                 ScmObj obj, slot;
                 POP_ARG(slot);
                 POP_ARG(obj);
+                PUSH_CONT(pc);
+                SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
+                RESTORE_REGS();
+                pc = SCM_NIL;
                 continue;
             }
             DEFAULT
