@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.41 2001-02-17 10:21:34 shiro Exp $
+ *  $Id: gauche.h,v 1.42 2001-02-17 12:18:51 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1419,21 +1419,7 @@ extern void Scm_Load(const char *file);
 extern ScmObj Scm_GetLoadPath(void);
 extern ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
 
-struct ScmDLObjRec {
-    SCM_HEADER;
-    void *handle;
-    int initialized;
-};
-
-extern ScmClass Scm_DLObjClass;
-#define SCM_CLASS_DLOBJ    (&Scm_DLObjClass)
-#define SCM_DLOBJ(obj)     ((ScmDLObj*)(obj))
-#define SCM_DLOBJP(obj)    SCM_XTYPEP(obj, SCM_CLASS_DLOBJ)
-
-extern ScmObj Scm_DynLink(ScmString *path);
-extern int Scm_DynInit(ScmDLObj *dlobj, ScmString *initfn);
-
-extern ScmObj Scm_DynLoad(ScmString *path);
+extern ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn);
 
 /*---------------------------------------------------
  * UTILITY STUFF

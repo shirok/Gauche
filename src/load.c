@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.16 2001-02-17 12:06:43 shiro Exp $
+ *  $Id: load.c,v 1.17 2001-02-17 12:18:51 shiro Exp $
  */
 
 #include <unistd.h>
@@ -194,18 +194,26 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * Dynamic link
  */
 
-SCM_DEFCLASS(Scm_DLObjClass, "<dynamic-linked-object>", NULL, SCM_CLASS_DEFAULT_CPL);
-
-ScmObj Scm_DynLink(ScmString *filename)
+/* TODO: keep catalog of loaded object to avoid loading the same object
+   more than once */
+ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
 {
 #ifdef HAVE_DLFCN_H
-    ScmDLObj *dlobj;
     ScmObj truename, load_paths = Scm_GetLoadPath();
     void *handle;
+    void (*func)(void);
+    const char *initname;
 
+    if (SCM_STRINGP(initfn)) {
+        initname = Scm_GetStringConst(SCM_STRING(initfn));
+    } else {
+        initname = "Scm_DLInit";
+    }
+    
     truename = Scm_FindFile(filename, &load_paths, TRUE);
     handle = dlopen(Scm_GetStringConst(SCM_STRING(truename)), RTLD_LAZY);
     if (handle == NULL) {
+        /* TODO: check if dlerror() is available on all platforms */
         const char *err = dlerror();
         if (err == NULL) {
             Scm_Error("failed to link %S dynamically", truename);
@@ -213,49 +221,13 @@ ScmObj Scm_DynLink(ScmString *filename)
             Scm_Error("failed to link %S dynamically: %s", truename, err);
         }
     }
-
-    dlobj = SCM_NEW(ScmDLObj);
-    SCM_SET_CLASS(dlobj, SCM_CLASS_DLOBJ);
-    dlobj->handle = handle;
-    dlobj->initialized = FALSE;
-    return SCM_OBJ(dlobj);
-#else
-    Scm_Error("dynamic linking is not supported on this architecture");
-    return SCM_FALSE;           /* dummy */
-#endif
-}
-
-int Scm_DynInit(ScmDLObj *dlobj, ScmString *initfn)
-{
-#ifdef HAVE_DLFCN_H
-    void (*func)(void);
-
-    if (!dlobj->initialized) {
-        func = (void(*)(void))dlsym(dlobj->handle, Scm_GetStringConst(initfn));
-        if (func == NULL) return FALSE;
-        func();
-        dlobj->initialized = TRUE;
+    func = (void(*)(void))dlsym(handle, initname);
+    if (func == NULL) {
+        dlclose(handle);
+        Scm_Error("dynamic linking of %S failed: couldn't find initialization function", truename);
     }
-    return TRUE;
-#else
-    Scm_Error("dynamic linking is not supported on this architecture");
-    return FALSE;               /* dummy */
-#endif
-}
-
-ScmObj Scm_DynLoad(ScmString *filename)
-{
-#ifdef HAVE_DLFCN_H
-    ScmObj dlobj = Scm_DynLink(filename);
-    if (!SCM_DLOBJP(dlobj)) {
-        Scm_Error("dynamic linking of %S failed", filename);
-    }
-    if (!Scm_DynInit(SCM_DLOBJ(dlobj),
-                     SCM_STRING(SCM_MAKE_STR("Scm_DLInit")))) {
-        dlclose(SCM_DLOBJ(dlobj)->handle);
-        Scm_Error("dynamic linking of %S failed: couldn't find initialization function", filename);
-    }
-    return dlobj;
+    func();
+    return SCM_TRUE;
 #else
     Scm_Error("dynamic linking is not supported on this architecture");
     return SCM_FALSE;           /* dummy */

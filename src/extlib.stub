@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.23 2001-02-17 12:07:05 shiro Exp $
+;;; $Id: extlib.stub,v 1.24 2001-02-17 12:18:51 shiro Exp $
 ;;;
 
 ;;
@@ -261,19 +261,9 @@
   "  const char *cpath = Scm_GetStringConst(path);
   SCM_RETURN(Scm_AddLoadPath(cpath, !SCM_FALSEP(afterp)));")
 
-(define-cproc dynamic-link (file)
+(define-cproc dynamic-load (file &keyword (init-function #f))
   (assert (string? file))
-  "  SCM_RETURN(Scm_DynLink(file));")
-
-(define-cproc dynamic-init (dlobj initfunc)
-  (assert (string? initfunc))
-  "  if (!SCM_DLOBJP(dlobj))
-       Scm_Error(\"Dynamic linked object expected, but got %S\", dlobj);
-  SCM_RETURN(SCM_MAKE_BOOL(Scm_DynInit(SCM_DLOBJ(dlobj), initfunc)));")
-
-(define-cproc dynamic-load (file)
-  (assert (string? file))
-  "  SCM_RETURN(Scm_DynLoad(file));")
+  "  SCM_RETURN(Scm_DynLoad(file, init_function));")
 
 ;;
 ;; Hashtable
