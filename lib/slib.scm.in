@@ -35,7 +35,8 @@
 ;;; the directory where any auxillary files to your Scheme
 ;;; implementation reside.
 
-(define (implementation-vicinity) (gauche-library-directory))
+(define (implementation-vicinity)
+  (string-append (gauche-library-directory) "/"))
 
 ;;; (library-vicinity) should be defined to be the pathname of the
 ;;; directory where files of Scheme library functions reside.
@@ -142,7 +143,7 @@
 (define getenv sys-getenv)
 
 ;;; (FILE-EXISTS? <string>)
-(define (file-exists? f) (sys-access f F_OK))
+(define (file-exists? f) (sys-access f |F_OK|))
 
 ;;; (DELETE-FILE <string>)
 (define (delete-file f)  (sys-unlink f))
