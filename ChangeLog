@@ -1,3 +1,8 @@
+2004-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (write_ss_rec): integrated the non-shared-structure
+	  writer inner loop and shared-structure write inner loop.
+
 2004-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in, src/gauche-install.in : added.

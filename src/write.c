@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.44 2004-02-03 13:12:28 shirok Exp $
+ *  $Id: write.c,v 1.45 2004-04-23 12:56:43 shirok Exp $
  */
 
 #include <stdio.h>
@@ -43,7 +43,6 @@
 static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
 SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
@@ -103,8 +102,7 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
 #define SPBUFSIZ   50
 
-/* Two bitmask used internally in write_internal to indicate extra
-   write mode */
+/* Two bitmask used internally to indicate extra write mode */
 #define WRITE_LIMITED   0x10    /* we're limiting the length of output. */
 #define WRITE_CIRCULAR  0x20    /* circular-safe write.  info->table
                                    is set up to look up for circular
@@ -162,7 +160,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     if (SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED) {
         PORT_SAFE_CALL(port, write_ss(obj, port, &ctx));
     } else {
-        PORT_SAFE_CALL(port, write_internal(obj, port, &ctx));
+        PORT_SAFE_CALL(port, write_ss_rec(obj, port, &ctx));
     }
     PORT_UNLOCK(port);
 }
@@ -192,7 +190,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     /* if case mode is not specified, use default taken from VM default */
     if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
     /* we don't need to lock out, for it is private. */
-    write_internal(obj, SCM_PORT(out), &ctx);
+    write_ss_rec(obj, SCM_PORT(out), &ctx);
     nc = outlen(SCM_PORT(out));
     if (nc > width) {
         ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
@@ -252,7 +250,7 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
 }
 
 /*===================================================================
- * Default writer
+ * Internal writer
  */
 
 /* character name table (first 33 chars of ASCII)*/
@@ -265,7 +263,7 @@ static const char *char_names[] = {
 };
 
 #define CASE_ITAG(obj, str) \
-    case SCM_ITAG(obj): Scm_PutzUnsafe(str, -1, out); break;
+    case SCM_ITAG(obj): Scm_PutzUnsafe(str, -1, port); break;
 
 /* Obj is PTR, except pair and vector */
 static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
@@ -273,85 +271,6 @@ static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     ScmClass *c = Scm_ClassOf(obj);
     if (c->print) c->print(obj, out, ctx); 
     else          write_object(obj, out, ctx);
-}
-
-/* Common routine. */
-static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
-{
-    if (ctx->flags & WRITE_LIMITED) {
-        if (outlen(out) >= ctx->limit) return;
-    }
-
-    if (!SCM_PTRP(obj)) {
-        if (SCM_IMMEDIATEP(obj)) {
-            switch (SCM_ITAG(obj)) {
-                CASE_ITAG(SCM_FALSE,     "#f");
-                CASE_ITAG(SCM_TRUE,      "#t");
-                CASE_ITAG(SCM_NIL,       "()");
-                CASE_ITAG(SCM_EOF,       "#<eof>");
-                CASE_ITAG(SCM_UNDEFINED, "#<undef>");
-                CASE_ITAG(SCM_UNBOUND,   "#<unbound>");
-            default:
-                Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
-            }
-        }
-        else if (SCM_INTP(obj)) {
-            char buf[SPBUFSIZ];
-            snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
-            Scm_PutzUnsafe(buf, -1, out);
-        }
-        else if (SCM_CHARP(obj)) {
-            ScmChar ch = SCM_CHAR_VALUE(obj);
-            if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
-                Scm_PutcUnsafe(ch, out);
-            } else {
-                Scm_PutzUnsafe("#\\", -1, out);
-                if (ch <= 0x20)       Scm_PutzUnsafe(char_names[ch], -1, out);
-                else if (ch == 0x7f)  Scm_PutzUnsafe("del", -1, out);
-                else                  Scm_PutcUnsafe(ch, out);
-            }
-        }
-        else if (SCM_VM_INSNP(obj)) {
-            Scm__VMInsnWrite(obj, out, ctx);
-        }
-        else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
-    } else {
-        if (SCM_PAIRP(obj)) {
-            ScmObj p;
-            /* special case for quote etc.*/
-            if (SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj))) {
-                int special = TRUE;
-                if (SCM_CAR(obj) == SCM_SYM_QUOTE) {
-                    Scm_PutcUnsafe('\'', out);
-                } else if (SCM_CAR(obj) == SCM_SYM_QUASIQUOTE) {
-                    Scm_PutcUnsafe('`', out);
-                } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE) {
-                    Scm_PutcUnsafe(',', out);
-                } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE_SPLICING) {
-                    Scm_PutzUnsafe(",@", -1, out);
-                } else {
-                    special = FALSE;
-                }
-                if (special) {
-                    write_internal(SCM_CADR(obj), out, ctx);
-                    return;
-                }
-            }
-            Scm_PutcUnsafe('(', out);
-            write_internal(SCM_CAR(obj), out, ctx);
-            SCM_FOR_EACH(p, SCM_CDR(obj)) {
-                Scm_PutcUnsafe(' ', out);
-                write_internal(SCM_CAR(p), out, ctx);
-            }
-            if (!SCM_NULLP(p)) {
-                Scm_PutzUnsafe(" . ", -1, out);
-                write_internal(p, out, ctx);
-            }
-            Scm_PutcUnsafe(')', out);
-        } else {
-            write_general(obj, out, ctx);
-        }
-    }
 }
 
 /* Default object printer delegates print action to generic function
@@ -375,10 +294,6 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
     Scm_Printf(SCM_PORT(args[1]), "#<%A %p>", klass->name, args[0]);
     return SCM_TRUE;
 }
-
-/*===================================================================
- * Write with shared structure
- */
 
 /* We need two passes to realize write/ss.
 
@@ -480,37 +395,103 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmHashEntry *e;
     char numbuf[50];  /* enough to contain long number */
-    ScmHashTable *ht;
-    ht = SCM_HASHTABLE(SCM_CDR(port->data));
+    ScmHashTable *ht = NULL;
 
-    if (!SCM_PTRP(obj)
-        || (SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) == 0)
+    if (ctx->flags & WRITE_LIMITED) {
+        if (outlen(port) >= ctx->limit) return;
+    }
+
+    if (SCM_PAIRP(port->data) && SCM_HASHTABLEP(SCM_CDR(port->data))) {
+        ht = SCM_HASHTABLE(SCM_CDR(port->data));
+    }
+
+    if (!SCM_PTRP(obj)) {
+        if (SCM_IMMEDIATEP(obj)) {
+            switch (SCM_ITAG(obj)) {
+                CASE_ITAG(SCM_FALSE,     "#f");
+                CASE_ITAG(SCM_TRUE,      "#t");
+                CASE_ITAG(SCM_NIL,       "()");
+                CASE_ITAG(SCM_EOF,       "#<eof>");
+                CASE_ITAG(SCM_UNDEFINED, "#<undef>");
+                CASE_ITAG(SCM_UNBOUND,   "#<unbound>");
+            default:
+                Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
+            }
+        }
+        else if (SCM_INTP(obj)) {
+            char buf[SPBUFSIZ];
+            snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
+            Scm_PutzUnsafe(buf, -1, port);
+        }
+        else if (SCM_CHARP(obj)) {
+            ScmChar ch = SCM_CHAR_VALUE(obj);
+            if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+                Scm_PutcUnsafe(ch, port);
+            } else {
+                Scm_PutzUnsafe("#\\", -1, port);
+                if (ch <= 0x20)       Scm_PutzUnsafe(char_names[ch], -1, port);
+                else if (ch == 0x7f)  Scm_PutzUnsafe("del", -1, port);
+                else                  Scm_PutcUnsafe(ch, port);
+            }
+        }
+        else if (SCM_VM_INSNP(obj)) {
+            Scm__VMInsnWrite(obj, port, ctx);
+        }
+        else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
+        return;
+    }
+    if ((SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) == 0)
         || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
-        write_internal(obj, port, ctx);
+        /* special case where we don't put a reference tag. */
+        write_general(obj, port, ctx);
         return;
     }
 
-    e = Scm_HashTableGet(ht, obj);
-    if (e && e->value != SCM_FALSE) {
-        if (SCM_INTP(e->value)) {
-            /* This object is already printed. */
-            snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e->value));
-            Scm_PutzUnsafe(numbuf, -1, port);
-            return;
-        } else {
-            /* This object will be seen again. Put a reference tag. */
-            int count = SCM_INT_VALUE(SCM_CAR(port->data));
-            snprintf(numbuf, 50, "#%d=", count);
-            e->value = SCM_MAKE_INT(count);
-            SCM_SET_CAR(port->data, SCM_MAKE_INT(count+1));
-            Scm_PutzUnsafe(numbuf, -1, port);
+    if (ht) {
+        e = Scm_HashTableGet(ht, obj);
+        if (e && e->value != SCM_FALSE) {
+            if (SCM_INTP(e->value)) {
+                /* This object is already printed. */
+                snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e->value));
+                Scm_PutzUnsafe(numbuf, -1, port);
+                return;
+            } else {
+                /* This object will be seen again. Put a reference tag. */
+                int count = SCM_INT_VALUE(SCM_CAR(port->data));
+                snprintf(numbuf, 50, "#%d=", count);
+                e->value = SCM_MAKE_INT(count);
+                SCM_SET_CAR(port->data, SCM_MAKE_INT(count+1));
+                Scm_PutzUnsafe(numbuf, -1, port);
+            }
         }
     }
 
     /* Writes aggregates */
     if (SCM_PAIRP(obj)) {
+        /* special case for quote etc.*/
+        if (SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj))) {
+            int special = TRUE;
+            if (SCM_CAR(obj) == SCM_SYM_QUOTE) {
+                Scm_PutcUnsafe('\'', port);
+            } else if (SCM_CAR(obj) == SCM_SYM_QUASIQUOTE) {
+                Scm_PutcUnsafe('`', port);
+            } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE) {
+                Scm_PutcUnsafe(',', port);
+            } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE_SPLICING) {
+                Scm_PutzUnsafe(",@", -1, port);
+            } else {
+                special = FALSE;
+            }
+            if (special) {
+                write_ss_rec(SCM_CADR(obj), port, ctx);
+                return;
+            }
+        }
+        
+        /* normal case */
         Scm_PutcUnsafe('(', port);
         for (;;) {
+
             write_ss_rec(SCM_CAR(obj), port, ctx);
         
             obj = SCM_CDR(obj);
@@ -521,12 +502,14 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 Scm_PutcUnsafe(')', port);
                 return;
             }
-            e = Scm_HashTableGet(ht, obj); /* check for shared cdr */
-            if (e && e->value != SCM_FALSE) {
-                Scm_PutzUnsafe(" . ", -1, port);
-                write_ss_rec(obj, port, ctx);
-                Scm_PutcUnsafe(')', port);
-                return;
+            if (ht) {
+                e = Scm_HashTableGet(ht, obj); /* check for shared cdr */
+                if (e && e->value != SCM_FALSE) {
+                    Scm_PutzUnsafe(" . ", -1, port);
+                    write_ss_rec(obj, port, ctx);
+                    Scm_PutcUnsafe(')', port);
+                    return;
+                }
             }
             Scm_PutcUnsafe(' ', port);
         }
@@ -602,7 +585,7 @@ static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
     if (sharedp) {
         write_ss(obj, port, ctx);
     } else {
-        write_internal(obj, port, ctx);
+        write_ss_rec(obj, port, ctx);
     }
 }
 
