@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.72 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: compile.c,v 1.73 2002-02-23 07:28:47 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1858,7 +1858,7 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_RECEIVE,      syntax_receive);
     DEFSYN_G(SCM_SYM_DEFINE_MODULE, syntax_define_module);
     DEFSYN_N(SCM_SYM_WITH_MODULE,  syntax_with_module);
-    DEFSYN_G(SCM_SYM_SELECT_MODULE, syntax_select_module);
+    DEFSYN_N(SCM_SYM_SELECT_MODULE, syntax_select_module);
     DEFSYN_G(SCM_SYM_CURRENT_MODULE, syntax_current_module);
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
