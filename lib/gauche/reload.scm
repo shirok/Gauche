@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: reload.scm,v 1.1 2002-11-09 23:42:33 shirok Exp $
+;;;  $Id: reload.scm,v 1.2 2002-11-10 06:50:05 shirok Exp $
 ;;;
 
 ;;; Created:    <2002-11-06 16:02:55 foof>
@@ -26,10 +26,19 @@
   (use srfi-1)
   (use srfi-2)
   (use file.util)
-  (export reload reload-modified-modules)
+  (use gauche.parameter)
+  (export reload reload-modified-modules
+          reload-verbose reload-filter-alist)
   )
 (select-module gauche.reload)
 
+;; parameter reload-verbose
+;;   If true, reload and reload-modified-modules reports what they are
+;;   doing.
+(define reload-verbose (make-parameter #f))
+
+;; procedure reload <module-name> &optional <pred> ...
+;;   
 (define (reload module-name . predicates)
   (let ((keep? (apply any-pred predicates))
         (mod (find-module module-name)))
@@ -43,7 +52,8 @@
            (lambda (sym gloc)
              (let1 value (eval sym mod)
                (when (keep? sym value)
-                 ;;(format #t "keeping ~S (~S)\n" sym (class-of value))
+                 (when (reload-verbose)
+                   (format #t "keeping value of ~S\n" sym))
                  (hash-table-put! saves sym value)))))
           ;; reload
           (load (%module-name->path module-name))
@@ -53,12 +63,8 @@
            (lambda (sym value)
              (eval `(set! ,sym ',value) mod)))))))
 
-(define (find-in-path file path)
-  (find file-is-regular?
-        (map (lambda (d)
-               (sys-normalize-pathname (string-append d "/" file)))
-             path)))
-
+;; procedure reload-modified-modules
+;;   Reloads modules that are modified after this module is loaded.
 (define reload-modified-modules
   (let ((init (sys-time))
         (mod-times (make-hash-table 'eq?)))
@@ -69,11 +75,14 @@
            (and-let* ((name (module-name mod))
                       (last-load (hash-table-get mod-times name init))
                       (p1 (string-append (%module-name->path name) ".scm"))
-                      (path (find-in-path p1 *load-path*))
+                      (path (find-file-in-paths p1
+                                                :paths *load-path*
+                                                :pred file-is-readable?))
                       (last-mod (slot-ref (sys-stat path) 'mtime)))
              (when (> last-mod last-load)
                (hash-table-put! mod-times name now)
-               ;;(format #t "reloading: ~S\n" name)
+               (when (reload-verbose)
+                 (format #t "reloading: ~S\n" name))
                (apply reload (cons name args)))))
          (all-modules))))))
 
