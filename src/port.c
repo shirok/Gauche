@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.71 2002-07-05 21:50:08 uid50821 Exp $
+ *  $Id: port.c,v 1.72 2002-07-05 22:07:56 uid50821 Exp $
  */
 
 #include <unistd.h>
@@ -48,9 +48,15 @@
  *  context until they are needed.  Consequently, in most cases
  *  operations can be performed with just a pair of mutex lock/unlock.
  *
- *  Furthermore, some port functions have 'locked' mode, which 
+ *  Furthermore, some port functions have 'unsafe' mode, which 
  *  should be called when the caller is sure that the thread
  *  already locked the port.
+ */
+
+/* TODO: what if a thread having a lock of the port died before unlocking it?
+ * Currently, PORT_LOCK checks if the lock holder is terminated or not.
+ * However, the dead thread may have left the port state inconsistent.
+ * I need to set the cancellation points carefully...
  */
 
 #define PORT_LOCK(p, vm)                                        \
@@ -58,6 +64,9 @@
         (void)SCM_INTERNAL_MUTEX_LOCK(p->mutex);                \
         if (p->lockOwner != vm) {                               \
             while (p->lockOwner != NULL) {                      \
+                if (p->lockOwner->state == SCM_VM_TERMINATED) { \
+                    break;                                      \
+                }                                               \
                 (void)SCM_INTERNAL_COND_WAIT(p->cv, p->mutex);  \
             }                                                   \
             p->lockOwner = vm;                                  \
