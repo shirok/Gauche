@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.28 2001-05-07 09:06:29 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.29 2001-05-09 05:40:55 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -113,7 +113,7 @@
 (define (atan z . x)
   (if (null? x)
       (cond ((real? z) (%atan z))
-            ((number? x) (%complex-atan z))
+            ((number? z) (%complex-atan z))
             (else (error "number required, but got ~s" z)))
       (%atan z (car x))))
 
