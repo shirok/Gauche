@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.296 2002-08-24 09:08:44 shirok Exp $
+ *  $Id: gauche.h,v 1.297 2002-09-02 01:47:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -67,7 +67,9 @@ extern "C" {
 #endif
 
 /* This defines several auxiliary routines that are useful for debugging */
+#ifndef SCM_DEBUG_HELPER
 #define SCM_DEBUG_HELPER      FALSE
+#endif
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
 #define SCM_VM_STACK_SIZE     10000
@@ -950,7 +952,7 @@ SCM_EXTERN ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
 SCM_EXTERN ScmObj Scm_StringPointerCopy(ScmStringPointer *sp);
 
 #ifdef SCM_DEBUG_HELPER
-SCM_EXTERN ScmObj Scm_StringPointerDump(ScmStringPointer *sp);
+SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
 #endif
 
 /*--------------------------------------------------------

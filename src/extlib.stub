@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.170 2002-08-29 08:13:29 shirok Exp $
+;;; $Id: extlib.stub,v 1.171 2002-09-02 01:47:35 shirok Exp $
 ;;;
 
 "
@@ -525,7 +525,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  SCM_RETURN(Scm_MakeInteger(sp->current - sp->start));")
 
 (if "SCM_DEBUG_HELPER"
-    (define-cproc string-pointer-dump (sp::<string-pointer>)
+    (define-cproc %string-pointer-dump (sp::<string-pointer>)
       (return <void> "Scm_StringPointerDump"))
     )
 
