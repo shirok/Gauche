@@ -12,12 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.18 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: proc.c,v 1.19 2001-06-17 09:32:19 shirok Exp $
  */
 
 #include "gauche.h"
 
-/*
+/*=================================================================
  * Classes
  */
 
@@ -42,7 +42,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     }
 }
 
-/*
+/*=================================================================
  * Closure
  */
 
@@ -60,7 +60,7 @@ ScmObj Scm_MakeClosure(int required, int optional,
     return SCM_OBJ(c);
 }
 
-/*
+/*=================================================================
  * Subr
  */
 
@@ -98,7 +98,7 @@ ScmObj Scm_NullProc(void)
     return SCM_OBJ(theNullProc);
 }
 
-/*
+/*=================================================================
  * Mapper family
  */
 
@@ -275,7 +275,35 @@ ScmObj Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args)
     }
 }
 
-/*
+/*=================================================================
+ * Generic setter
+ */
+
+ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter, int lock)
+{
+    if (proc->locked) {
+        Scm_Error("can't change the locked setter of procedure %S", proc);
+    }
+    /* check setter can get at least one more argument than proc */
+    if ((SCM_PROCEDURE_OPTIONAL(proc) && !SCM_PROCEDURE_OPTIONAL(setter))
+        || (SCM_PROCEDURE_REQUIRED(proc) >= SCM_PROCEDURE_REQUIRED(setter))) {
+        Scm_Error("procedure %S takes too few arguments to be a setter of procedure %S",
+                  setter, proc);
+    }
+    proc->setter = SCM_OBJ(setter);
+    proc->locked = lock;
+    return SCM_OBJ(proc);
+}
+
+ScmObj Scm_Setter(ScmProcedure *proc)
+{
+    if (SCM_FALSEP(proc->setter)) {
+        Scm_Error("no setter defined for procedure %S", proc);
+    }
+    return SCM_OBJ(proc->setter);
+}
+
+/*=================================================================
  * Initialization
  */
 void Scm__InitProc(void)

@@ -12,15 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.40 2001-06-17 06:53:33 shirok Exp $
+;;;  $Id: genstub,v 1.41 2001-06-17 09:30:31 shirok Exp $
 ;;;
 
 (use srfi-1)
 
 (define *file-prefix* "")
-(define *generics* '())
-(define *methods*  '())
-(define *cclasses* '())
 (define *insert-sharp-line* #t)         ;if #t, output #line directive
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
 
@@ -175,6 +172,8 @@
    (have-rest-arg?  :initform #f  :accessor have-rest-arg? :init-keyword :have-rest-arg?)
    (decls           :initform '() :accessor decls-of)
    (stmts           :initform '() :accessor stmts-of)
+   (setter          :initform #f  :accessor setter-of)
+   (setter-c-name   :initform #f  :accessor setter-c-name-of)
    ))
 
 ;; argument
@@ -350,8 +349,21 @@
                          (set! (inliner-of cproc) (cadadr form)))
                      (set! (inline-insn-of cproc) (cadr form)))
                  (loop next))
+                ((eq? (car form) 'setter)
+                 (unless (pair? (cdr form))
+                   (error "bad 'setter' spec: ~s" form))
+                 (process-setter cproc (cdr form))
+                 (loop next))
                 (else
                  (error "unknown body form: ~s" form)))))))
+
+(define-method process-setter ((cproc <cproc>) decl)
+  (if (symbol? (car decl))
+      (begin (set! (setter-of cproc) (car decl))
+             (set! (setter-c-name-of cproc)
+                   (get-c-name *file-prefix* (car decl))))
+      (error "anonymous setter not supported yet: ~s" decl)))
+
 
 ;;; emit code
 
@@ -384,7 +396,12 @@
 (define-method emit-initializer ((cproc <cproc>))
   (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
            (symbol->string (scheme-name-of cproc))
-           (c-name-of cproc)))
+           (c-name-of cproc))
+  (when (setter-of cproc)
+    (println "  Scm_SetterSet(SCM_PROCEDURE(&~a_STUB), SCM_PROCEDURE(&~a_STUB), TRUE);"
+             (c-name-of cproc)
+             (setter-c-name-of cproc)))
+  )
 
 (define (emit-arg-decl arg)
   (println "  ScmObj ~a;" (scm-name-of arg))
