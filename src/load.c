@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.11 2001-02-06 08:21:32 shiro Exp $
+ *  $Id: load.c,v 1.12 2001-02-09 09:19:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -91,7 +91,7 @@ ScmObj Scm_VMLoad(const char *cpath)
             if (!SCM_FALSEP(p)) break;
         }
         if (SCM_FALSEP(p)) {
-            Scm_Error("cannot find file %s in *load-path* %S",
+            Scm_Error("cannot find file \"%s\" in *load-path* %S",
                       cpath, load_paths);
         }
     }
