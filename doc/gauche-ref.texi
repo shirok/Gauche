@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.90 2001-10-09 20:48:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.91 2001-10-10 20:38:53 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -562,17 +562,127 @@ class, Gauche methods don't
 @node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
 @section Invoking Gosh
 
+@c EN
 Gauche can be used either as an independent Scheme interpreter
 or as an embedded Scheme library.   The interpreter
 which comes with Gauche distribution is a program named @code{gosh}.
+@c JP
+Gaucheは独立したSchemeインタプリタとしても、組み込みのSchemeライブラリとしても
+使うことができます。Gaucheのディストリビューションには、@code{gosh}という
+インタプリタが附属しています。
+@c COMMON
 
 @deftp {Program} gosh [options] [scheme-file arg @dots{}]
+@c EN
 Gauche's interpreter.   Without @var{scheme-file}, @code{gosh} works
 interactively, i.e. it reads a Scheme expression from the standard input,
 evaluates it, and prints the result, and repeat that until it reads EOF or
 is terminated.
+@c JP
+Gaucheのインタプリタです。  @var{scheme-file}が与えられなければ、
+@code{gosh}はインタラクティブに動作します。すなわち、標準入力からScheme式を読み込み、
+それを評価して結果をプリントするという動作を、EOFを読むか明示的に終了させられるまで
+続けます。
+@c COMMON
 
-If @var{scheme-file} is specified, @code{gosh} bounds a global varialbe
+@c EN
+If @var{scheme-file} is specified, @code{gosh} runs it as a
+Scheme program and exit.
+@xref{Writing Scheme scripts}, for details.
+@c JP
+@var{scheme-file}が与えられた場合、@code{gosh}はそれをSchemeプログラムとして
+ロードし、終了します。この動作に関しては@ref{Writing Scheme scripts}を参照して
+下さい。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -I path
+@c EN
+Prepends @var{path} to the load path list.
+You can specify this option more than once to add multiple paths.
+@c JP
+@var{path}をロードパスのリストに加えます。このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -q
+@c EN
+Makes @code{gosh} not to load the default initialization file.
+@c JP
+@code{gosh}が起動時にシステムの初期化ファイルを読まないようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -V
+@c EN
+Prints the @code{gosh} version and exits.
+@c JP
+@code{gosh}のバージョンを表示して終了します。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -u module
+@c EN
+Use @var{module}.  Before starting execution of @var{scheme-file} or entering
+the read-eval-print loop, the specified module is @var{use}d, i.e.
+it is loaded and imported (@xref{Module syntax}, for details of @code{use}).
+You can specify this option more than once to use multiple modules.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{module}を``use''します。つまりそのモジュールがロードされ
+インポートされます。(@code{use}の詳細については@ref{Module syntax}を参照して下さい)。
+このオプションは複数回指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -f compiler-option
+@c EN
+This option controls the compiler behavior.  For now we have
+following options available:
+@table @asis
+@item no-inline
+Prohibits the compiler to iniline primitive Scheme procedures.
+@end table
+@c JP
+このオプションはコンパイラの動作に影響を与えます、今のところ、次のオプションのみが
+@var{compiler-option}として有効です。
+@table @asis
+@item no-inline
+Schemeの基本関数のインライン展開を行いません。
+@end table
+@c COMMON
+@end deftp
+
+@deftp {Command Option} @code{--}
+@c EN
+When @code{gosh} sees this option, it stops processing the options
+and takes next command line argument as a script file.  It is useful
+in case if you have a script file that begins with a minus sign,
+although it is not generally recommended.
+@c JP
+このオプションに出会うと、@code{gosh}はオプションの解析を止めて、その次の引数を
+無条件に@var{scheme-file}であると見倣します。@var{scheme-file}がマイナス記号で
+始まっている場合に必要です。
+@c COMMON
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Interactive development, Debugger, Invoking Gosh, Programming in Gauche
+@section Interactive development
+
+
+@c ----------------------------------------------------------------------
+@node Debugger, Writing Scheme scripts, Interactive development, Programming in Gauche
+@section Deubgger
+
+
+
+@c ----------------------------------------------------------------------
+@node Writing Scheme scripts, Writing Gauche modules, Debugger, Programming in Gauche
+@section Writing Scheme scripts
+
+@c EN
+ bounds a global varialbe
 @code{*argv*} to the list of the remaining command-line arguments,
 then loads @var{scheme-file} as a Scheme program.
 If the first line of @var{scheme-file} begins with two character
@@ -587,6 +697,20 @@ line like these
 @end example
 The latter uses a ``shell trampoline'' technique so that the script
 works as far as @code{gosh} is in the PATH.
+@c JP
+それ以降のコマンドライン引数の
+リストをグローバル変数@code{*argv*}に束縛し、@var{scheme-file}をSchemeプログラム
+としてロードします。もし@var{scheme-file}の最初の行が``@code{#!}''で始まって
+いたら、その行は無視されます。これにより、Unix系のシステムで実行可能なSchemeスクリプト
+を書くことが出来ます。典型的なGaucheスクリプトの最初の行は次のようなものです。
+@example
+#!/usr/local/bin/gosh
+  @r{または,}
+#!/usr/bin/env gosh
+@end example
+後者は「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
+どこかにあれば起動できるようにしています。
+@c COMMON
 
 After the file is successfully loaded, @code{gosh} calls a
 procedure named `@code{main}' with the list of the remaining
@@ -607,43 +731,6 @@ The following command line options are recognized by @code{gosh}.
 The first command line argument which doesn't begin with `@minus{}'
 is recognized as the script file.  If you want to specify a file
 that begins with a minus sign, use a dummy option `@code{--}'.
-@end deftp
-
-@deftp {Command Option} -I path
-Prepends @var{path} to the load path list.
-You can specify this option more than once to add multiple paths.
-@end deftp
-
-@deftp {Command Option} -q
-Makes @code{gosh} not to load the default initialization file.
-@end deftp
-
-@deftp {Command Option} -V
-Prints the @code{gosh} version and exits.
-@end deftp
-
-@deftp {Command Option} -u module
-Use @var{module}.  Before starting execution of @var{file} or entering
-the read-eval-print loop, the specified module is @var{use}d, i.e.
-it is loaded and imported. 
-You can specify this option more than once to use multiple modules.
-@end deftp
-
-@deftp {Command Option} -f compiler-option
-This option controls the compiler behavior.  For now we have
-following options available:
-@table @asis
-@item no-inline
-Prohibits the compiler to iniline primitive Scheme procedures.
-@end table
-@end deftp
-
-@deftp {Command Option} @code{--}
-When @code{gosh} sees this option, it stops processing the options
-and takes next command line argument as a script file.  It is useful
-in case if you have a script file that begins with a minus sign,
-although it is not generally recommended.
-@end deftp
 
 @defvar *argv*
 The program arguments passed to the Scheme script is bound to this
@@ -664,21 +751,6 @@ contains the pathname of @code{gosh} itself.
 STk uses the same variable to access the program/script name.
 Other Scheme implementations use different ways.
 @end defvar
-
-@c ----------------------------------------------------------------------
-@node Interactive development, Debugger, Invoking Gosh, Programming in Gauche
-@section Interactive development
-
-
-@c ----------------------------------------------------------------------
-@node Debugger, Writing Scheme scripts, Interactive development, Programming in Gauche
-@section Deubgger
-
-
-
-@c ----------------------------------------------------------------------
-@node Writing Scheme scripts, Writing Gauche modules, Debugger, Programming in Gauche
-@section Writing Scheme scripts
 
 
 Now I show several simple examples below.
