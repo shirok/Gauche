@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.133 2002-04-13 09:43:44 shirok Exp $
+;;; $Id: extlib.stub,v 1.134 2002-04-14 01:53:58 shirok Exp $
 ;;;
 
 "
@@ -128,6 +128,11 @@
   "ScmObj min, max;
    Scm_MinMax(arg0, args, &min, &max);
    SCM_RETURN(Scm_Values2(min, max));")
+
+(define-cproc quotient&remainder (n1 n2)
+  "ScmObj q, r;
+   q = Scm_Quotient(n1, n2, &r);
+   SCM_RETURN(Scm_Values2(q, r));")
 
 ;;
 ;; 6.3.1  Booleans
