@@ -1,5 +1,8 @@
 2003-10-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/process.scm (run-process): make sure the fds opened for
+	  redirection are closed in the parent process side.
+
 	* src/gauche/extend.h (SCM_INIT_EXTENSION): under __CYGWIN__, add
 	  a region between _bss_start__ and _bss_end__ to the root set,
 	  instead of Scm__bssstart/end.  The new ld reorders bss area,

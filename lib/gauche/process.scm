@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.14 2003-09-05 09:59:32 shirok Exp $
+;;;  $Id: process.scm,v 1.15 2003-10-03 09:27:28 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -119,30 +119,38 @@
   )
 
 (define (%setup-iomap proc input output error)
-  (let* ((toclose '())
-         (iomap `(,(cons 0 (cond ((string? input) (open-input-file input))
-                                 ((eqv? input :pipe)
-                                  (receive (in out) (sys-pipe)
-                                    (slot-set! proc 'input out)
-                                    (set! toclose (cons in toclose))
-                                    in))
-                                 (else 0)))
-                  ,(cons 1 (cond ((string? output) (open-output-file output))
-                                 ((eqv? output :pipe)
-                                  (receive (in out) (sys-pipe)
-                                    (slot-set! proc 'output in)
-                                    (set! toclose (cons out toclose))
-                                    out))
-                                 (else 1)))
-                  ,(cons 2 (cond ((string? error) (open-output-file error))
-                                 ((eqv? error :pipe)
-                                  (receive (in out) (sys-pipe)
-                                    (slot-set! proc 'error in)
-                                    (set! toclose (cons out toclose))
-                                    out))
-                                 (else 2)))
-                  ))
-        )
+
+  (define toclose '())
+
+  (define (file spec opener)
+    (and (string? spec)
+         (let ((p (opener spec)))
+           (push! toclose p)
+           p)))
+
+  (define (in-pipe spec slot)
+    (and (eqv? spec :pipe)
+         (receive (in out) (sys-pipe)
+           (slot-set! proc slot out)
+           (push! toclose in)
+           in)))
+
+  (define (out-pipe spec slot)
+    (and (eqv? spec :pipe)
+         (receive (in out) (sys-pipe)
+           (slot-set! proc slot in)
+           (push! toclose out)
+           out)))
+
+  (let ((iomap `(,(cons 0 (or (file input open-input-file)
+                              (in-pipe input 'input)
+                              0))
+                 ,(cons 1 (or (file output open-output-file)
+                              (out-pipe output 'output)
+                              1))
+                 ,(cons 2 (or (file error open-output-file)
+                              (out-pipe error 'error)
+                              2)))))
     (values iomap toclose)))
 
 (define (%run-process proc argv iomap toclose wait fork)
