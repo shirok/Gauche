@@ -1,7 +1,7 @@
 ;;;
 ;;; fsdbm - dbm on filesystem
 ;;;  
-;;;   Copyright (c) 2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2003-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.6 2004-02-04 22:20:26 shirok Exp $
+;;;  $Id: fsdbm.scm,v 1.7 2004-09-12 11:05:09 shirok Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -136,7 +136,7 @@
   (next-method)
   (let ((path (value-file-path (%dbm-k2s self key) (ref self 'path))))
     (cond ((call-with-input-file path
-             (lambda (p) (and p (%dbm-s2v self (port->string p))))
+             (lambda (p) (and p (%dbm-s2v self (read-chunk p))))
              :if-does-not-exist #f))
           ((pair? args) (car args))
           (else (errorf "fsdbm: no data for key ~s in database ~s"
@@ -161,7 +161,7 @@
         (if k
           (proc (%dbm-s2k self k)
                 (call-with-input-file path
-                  (lambda (p) (%dbm-s2v self (port->string p))))
+                  (lambda (p) (%dbm-s2v self (read-chunk p))))
                 seed)
           seed))))
   (next-method)
@@ -181,8 +181,10 @@
     (errorf "given path is not an fsdbm database: ~a" name))
   (remove-directory* name))
 
+;;
+;; Internal utilities
+;;
 
-;; basic utilities
 (define (fsdbm-directory? path)
   (and (file-is-directory? path)
        (file-exists? (build-path path *version-file*))))
@@ -193,6 +195,15 @@
   (with-output-to-file (build-path path *version-file*)
     (lambda () (display *fsdbm-version*)))
   (sys-mkdir (build-path path *incoming-dir*) (dir-perm mode)))
+
+;; read everything from the port and returns potentially incomplete string
+(define (read-chunk port)
+  (let loop ((elt (read-block 1024 port))
+             (chunks '()))
+    (if (eof-object? elt)
+      (let ((s (string-concatenate-reverse chunks)))
+        (or (string-incomplete->complete! s) s))
+      (loop (read-block 1024 port) (cons elt chunks)))))
 
 (define (dir-perm file-perm)
   ;; trick: we copy 'r' bits to 'x' bits to make sure the 'readable'
