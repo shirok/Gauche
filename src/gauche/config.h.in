@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.7 2001-03-14 10:31:01 shiro Exp $
+ * $Id: config.h.in,v 1.8 2001-04-04 18:40:39 shiro Exp $
  */
 
 #undef STDC_HEADERS
@@ -30,6 +30,9 @@
 
 /* Define if the system has symlink */
 #undef HAVE_SYMLINK
+
+/* Define if the system has mkstemp */
+#undef HAVE_MKSTEMP
 
 /* Define if the system has gr_passwd defined in struct group */
 #undef HAVE_GR_PASSWD
