@@ -12,11 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.1 2001-09-05 12:09:17 shirok Exp $
+;;;  $Id: selector.scm,v 1.2 2001-09-05 19:07:33 shirok Exp $
 ;;;
 
 (define-module gauche.selector
   (use srfi-1)
+  (use gauche.let-opt)
   (export <selector> selector-add! selector-delete! selector-select)
   )
 (select-module gauche.selector)
@@ -24,7 +25,7 @@
 (define-class <selector> ()
   ((rfds :init-form #f)
    (wfds :init-form #f)
-   (efds :init-form #f)
+   (xfds :init-form #f)
    (rhandlers :init-form '())  ; list of (port-or-fd . proc)
    (whandlers :init-form '())  ; ditto
    (xhandlers :init-form '())  ; ditto
@@ -103,7 +104,7 @@
           handlers))
   
   (let-optionals* maybe-timeout ((timeout #f))
-    (receive (nfds rfds wfds efds)
+    (receive (nfds rfds wfds xfds)
         (sys-select (slot-ref selector 'rfds)
                     (slot-ref selector 'wfds)
                     (slot-ref selector 'xfds)
