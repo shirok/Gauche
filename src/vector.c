@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.6 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: vector.c,v 1.7 2001-03-20 07:10:19 shiro Exp $
  */
 
 #include "gauche.h"
@@ -59,7 +59,7 @@ ScmObj Scm_ListToVector(ScmObj l)
     ScmVector *v;
     ScmObj e;
     int size = Scm_Length(l), i = 0;
-    SCM_ASSERT(size >= 0);
+    if (size < 0) Scm_Error("bad list: %S", l);
     v = make_vector(size);
     SCM_FOR_EACH(e, l) {
         v->elements[i++] = SCM_CAR(e);
@@ -69,13 +69,7 @@ ScmObj Scm_ListToVector(ScmObj l)
 
 ScmObj Scm_VectorToList(ScmVector *v)
 {
-    ScmObj start = SCM_NIL, last, e;
-    int i;
-    
-    SCM_VECTOR_FOR_EACH(i, e, v) {
-        SCM_APPEND1(start, last, e);
-    }
-    return start;
+    return Scm_ArrayToList(SCM_VECTOR_ELEMENTS(v), SCM_VECTOR_SIZE(v));
 }
 
 /*
