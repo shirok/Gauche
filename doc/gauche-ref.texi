@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.63 2001-09-20 20:02:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.64 2001-09-21 09:59:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -97,7 +97,7 @@ recent version on the web:
 Gauche is a script interpreter based on Scheme.
 Gauche conforms the language standard
 "Revised^5 Report on the Algorithmic Language Scheme"
-(@uref{http://www.schemers.org/Documents/Standards/R5RS/HTML/}),
+(@ref{r5rs,[R5RS]}),
 and supports various common libraries defined in SRFIs
 (@uref{http://srfi.schemers.org}).
 
@@ -2332,13 +2332,9 @@ This is the default behavior.  The existing file is truncated.
 @item :append
 The output data will be appended to the existing file.
 @item :error
-An error is signalled.  When @code{:create} is given to
-@code{:if-does-not-exist} argument as well, check of existence
-and file creation are done atomically (i.e. the file is opened
-using @code{O_CREAT|O_EXCL} flag of @code{open(2)} system call),
-so you can use this behavior for exclusive locking.  Note that,
-however, @code{O_EXCL} doesn't work on NFS mounted files on some
-operating systems.
+An error is signalled.
+@item #f
+No action is taken, and the function returns @code{#f}.
 @end table
 
 @item :if-does-not-exist
@@ -2349,6 +2345,9 @@ An error is signalled.  This is the default behavior of
 @code{open-input-file}.
 @item :create
 A file is created.  This is the default behavior of @code{open-output-file}.
+The check of file existence and creation is done atomically; you can
+exclusively create the file by specifying @code{:error} or @code{#f} to
+@var{if-exists}, along this option.
 You can't specify this value for @code{open-input-file}.
 @item #f
 No action is taken, and the function returns @code{#f}.
@@ -2364,6 +2363,22 @@ The file is opened in ``binary'' mode.
 @end table
 The two makes no difference on most Unix systems.
 @end table
+
+
+By combination of @var{if-exists} and @var{if-does-not-exist} flags,
+you can implement various actions:
+@example
+(open-output-file "foo" :if-exists :error)
+ @result{} ;@r{opens "foo" exclusively, or error}
+
+(open-output-file "foo" :if-exists #f)
+ @result{} ;@r{opens "foo" exclusively, or returns} #f
+
+(open-output-file "foo" :if-exists :append
+                        :if-does-not-exist :error)
+ @result{} ;@r{opens "foo" for append only if it already exists}
+@end example
+
 
 Note for portability: Some Scheme implementations (e.g. STk) allows
 you to specify a command to @var{filename} and reads from, or
@@ -3823,7 +3838,9 @@ of descendants of @var{class}.
 * Let-values::                  
 * String library::              
 * Character-set library::       
+* CSV tables::                  
 * Transliterate characters::    
+* CGI::                         
 @end menu
 
 @node Library modules overview, Character code conversion, Libarary Modules, Libarary Modules
@@ -7121,7 +7138,7 @@ creates a string, whose @var{i}-th character is calculated by
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library, Transliterate characters, String library, Libarary Modules
+@node Character-set library, CSV tables, String library, Libarary Modules
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
@@ -7350,7 +7367,23 @@ creates a string, whose @var{i}-th character is calculated by
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters,  , Character-set library, Libarary Modules
+@node CSV tables, Transliterate characters, Character-set library, Libarary Modules
+@section @code{text.csv} - CSV tables
+
+@deftp {Module} text.csv
+@mdindex text.csv
+Provides a function to parse/generate CSV (comma separated value) tables.
+Actually, the separater is not limited to comma; you can customize it.
+
+CSV format is widely used to exchange table-type data in plain text,
+although there are apparently no ``formal'' specification.
+@end deftp
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Transliterate characters, CGI, CSV tables, Libarary Modules
 @section @code{text.tr} - Transliterate characters
 
 @deftp {Module} text.tr
@@ -7467,10 +7500,43 @@ once and apply it repeatedly, saving the overhead of initialization.
 
 @end defun
 
+@c ----------------------------------------------------------------------
+@node CGI,  , Transliterate characters, Libarary Modules
+@section @code{w3c.cgi} - CGI utility
+
+@deftp {Module} w3c.cgi
+@mdindex w3c.cgi
+Provides a few functions useful to write a CGI script.
+
+Note that, although I put this module under @code{w3c} hierarchy,
+W3C doesn't formally defines CGI specification.  Actually,
+there exists no ``formal'' specification.
+See @uref{http://w3c.org/CGI/} for more information.
+@end deftp
+
+@defun cgi-parse-parameters query-string @dots{}
+@end defun
+
+@defun cgi-get-parameter key params &keyword :default :list :convert
+@end defun
+
+
 @c ======================================================================
 @node References, C to Scheme mapping, Libarary Modules, Top
 @unnumbered References
 
+@table @asis
+@anchor{r5rs}
+@item [R5RS]
+R. Kelsey, W. Clinger, J. Rees (eds.),
+Revised^5 Report on the Algorithmic Language Scheme,
+Higher-Order and Symbolic Computation, 11(1), September, 1998
+and ACM SIGPLAN Notices, 33(9), October, 1998.
+@url{http://www.schemers.org/Documents/Standards/R5RS/}.
+
+
+
+@end table
 
 @c ======================================================================
 @node C to Scheme mapping, Function and Syntax Index, References, Top
@@ -8073,3 +8139,8 @@ For readability, the surrounding @code{<} and @code{>} are stripped off.
 
 @contents
 @bye
+
+@c Local variables:
+@c outline-regexp: "@chap\\|@unnu\\|@\\(sub\\)*section"
+@c end:
+
