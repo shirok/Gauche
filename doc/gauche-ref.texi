@@ -1,0 +1,1098 @@
+\input texinfo  @c -*-texinfo-*-
+@comment %**start of header
+@setfilename gauche-ref
+@settitle Gauche Reference Manual
+@comment %**end of header
+
+@synindex tp fn
+@synindex vr fn
+
+@c $Id: gauche-ref.texi,v 1.1 2001-05-16 10:04:33 shirok Exp $
+
+@iftex
+@finalout
+@parskip 4pt plus 1pt
+@end iftex
+
+@titlepage
+@title Gauche Reference Manual
+@subtitle version 0.3.10
+@author Shiro Kawai (shiro@@acm.org)
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2001 Shiro Kawai (shiro@@acm.org)
+
+@end titlepage
+
+@node Top, Introduction, (dir), (dir)
+@top
+
+@ifnottex
+This is a reference manual of Gauche, an R5RS Scheme implementation.
+@end ifnottex
+
+
+@node Introduction
+@chapter Introduction
+
+Gauche is an R5RS Scheme system, meant to be used
+as a handy scripting tools for programmers and system administrators,
+as well as a extensible embedded scripting language.
+
+There are lots of Scheme implementations out there.
+Some even say there are more Scheme implementations than
+the applications written in Scheme.
+Partly because Scheme is very good as a test bench 
+to explore various programming language concepts.  Partly
+because it's purely fun to write a language system, and
+Scheme is small enough to encourage it (although it's
+implementation involves lots of technically challenges).
+
+There is even a pracical reason to have lots of Scheme systems.
+When implementing a language, you always have to decide
+one strategy that fits best for your goal,
+out of some possible implementation designs.
+Since every goal requires different strategy,
+
+
+This manual focuses Gauche as a Scheme interpreter.
+If you want to use Gauche from your C/C++ code,
+as an embedded language and/or a handy list-processing library,
+see the other document (Gauche C Reference Manual).
+The installation procedure is dealt with different document.
+
+
+@node Concepts
+@chapter Concepts
+
+
+@node Module System
+@section Module System
+
+
+
+@node Multibyte Strings
+@section Multibyte Strings
+
+
+
+@node Invoking Gosh
+@chapter Invoking Gosh
+
+
+
+@node Core Syntax
+@chapter Core Syntax
+
+@node Literals
+@section Literals
+
+@defspec quote datum
+[R5RS]
+@end defspec
+
+
+@node Procedures
+@section Procedures
+
+
+@defspec lambda formals body
+[R5RS]
+@end defspec
+
+
+@node Assignments
+@section Assignments
+
+Gauche adopts the concept of "generalized set!"
+specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
+
+@defspec set! variable expression
+@defspecx set! location expression
+[R5RS][SRFI-17]
+@end defspec
+
+
+@node Conditionals
+@section Conditionals
+
+
+@defspec if test consequent alternate
+@defspecx if test consequent
+[R5RS]
+@end defspec
+
+
+@defspec cond clause1 clause2 @dots{}
+[R5RS]
+@end defspec
+
+
+@defspec case key clause1 clause2 @dots{}
+[R5RS]
+@end defspec
+
+
+@defspec and test @dots{}
+[R5RS]
+@end defspec
+
+
+@defspec or test @dots{}
+[R5RS]
+@end defspec
+
+
+@node Binding constructs
+@section Binding constructs
+
+
+@defspec let bindings body
+[R5RS]
+@end defspec
+
+@defspec let* bindings body
+[R5RS]
+@end defspec
+
+@defspec letrec bindings body
+[R5RS]
+@end defspec
+
+
+@defspec receive formals expression body
+[SRFI-8]
+@end defspec
+
+@node Sequencing
+@section Sequencing
+
+
+@defspec begin
+[R5RS]
+@end defspec
+
+
+@node Iteration
+@section Iteration
+
+@defspec do ((variable init step) @dots{}) (test expr @dots{}) body
+[R5RS]
+@end defspec
+
+
+@defspec let name bindings body
+[R5RS]
+@end defspec
+
+
+
+@node Delayed Evaludation
+@section  Delayed Evaludation
+
+
+@defspec delay expression
+[R5RS]
+@end defspec
+
+@node Quasiquotation
+@section Quasiquotation
+
+@defspec quasiquote template
+[R5RS]
+@end defspec
+
+
+@node Definitions
+@section Definitions
+
+@defspec define variable expression
+@defspecx define (variable formals) body
+[R5RS]
+@end defspec
+
+
+@node Macros
+@chapter Macros
+
+@node Hygienic Macros
+@section Hygienic Macros
+
+
+@node Traditional Macros
+@section Traditional Macros
+
+
+
+@node Core library
+@chapter Core library
+
+@node Equivalence
+@section Equivalence
+
+@defun eq? obj1 obj2
+[R5Rs]
+@end defun
+
+@defun eqv? obj1 obj2
+[R5Rs]
+@end defun
+
+@defun equal? obj1 obj2
+[R5Rs]
+@end defun
+
+@node Numbers
+@section Numbers
+
+@node Numerical predicates
+@subsection Numerical predicates
+
+@defun number? obj
+@defunx complex? obj
+@defunx real? obj
+@defunx rational? obj
+@defunx integer? obj
+[R5Rs]
+@end defun
+
+@defun exact? obj
+@defunx inexact? obj
+[R5Rs]
+@end defun
+
+@defun zero? z
+[R5Rs]
+@end defun
+
+@defun positive? x
+@defunx negative? x
+[R5Rs]
+@end defun
+
+@defun odd? n
+@defunx even? n
+[R5RS]
+@end defun
+
+@node Numerical comparison
+@subsection Numerical omparison
+
+@defun = z1 z2 z3 @dots{}
+@defunx < x1 x2 x3 @dots{}
+@defunx <= x1 x2 x3 @dots{}
+@defunx > x1 x2 x3 @dots{}
+@defunx >= x1 x2 x3 @dots{}
+[R5RS]
+@end defun
+
+
+@defun max x1 x2 @dots{}
+@defunx min x1 x2 @dots{}
+[R5RS]
+@end defun
+
+@node Arithmetics
+@subsection Arithmetics
+
+@defun + z @dots{}
+@defunx * z @dots{}
+[R5RS]
+@end defun
+
+
+@defun - z1 z2 @dots{}
+@defunx / z1 z2 @dots{}
+[R5RS]
+@end defun
+
+@defun abs z @dots{}
+[R5RS+]
+@end defun
+
+@defun quotient n1 n2
+@defunx remainder n1 n2
+@defunx modulo n1 n2
+[R5RS]
+@end defun
+
+@defun gcd n @dots{}
+@defunx lcm n @dots{}
+[R5RS]
+@end defun
+
+@defun numerator q
+@defunx denominator q
+[R5RS]
+@end defun
+
+
+@defun floor x
+@defunx ceiling x
+@defunx truncate x
+@defunx round x
+[R5RS]
+@end defun
+
+
+@defun exp z
+@defunx log z
+@defunx sin z
+@defunx cos z
+@defunx tan z
+@defunx asin z
+@defunx acos z
+@defunx atan z
+@defunx atan x y
+[R5RS]
+@end defun
+
+
+@defun sinh z
+@defunx cosh z
+@defunx tanh z
+@defunx asinh z
+@defunx acosh z
+@defunx atanh z
+
+@end defun
+
+
+@defun sqrt z
+[R5RS]
+@end defun
+
+
+@defun expt z1 z2
+[R5RS]
+@end defun
+
+@node Numericaln conversions
+@subsection Numerical conversions
+
+
+@defun make-rectangular x1 x2
+@defunx make-polar x1 x2
+@defunx real-part z
+@defunx imag-part z
+@defunx magnitude z
+@defunx angle z
+[R5RS]
+@end defun
+
+
+@defun exact->inexact z
+@defunx inexact->exact z
+[R5RS]
+@end defun
+
+@defun numebr->string z [radix]
+@defunx string->number string [radix]
+[R5RS]
+@end defun
+
+@node Logical operations
+@subsection Logical operations
+
+
+
+
+@node Booleans
+@section Booleans
+
+@defun not obj
+[R5RS]
+@end defun
+
+@defun boolean? obj
+[R5RS]
+@end defun
+
+@node Pairs and Lists
+@section Pairs and Lists
+
+@node List predicates
+@subsection List predicates
+
+@defun pair? obj
+[R5RS]
+@end defun
+
+@defun null? obj
+[R5RS]
+@end defun
+
+@defun list? obj
+[R5RS]
+@end defun
+
+@node List constructors
+@subsection List constructors
+
+@defun cons obj1 obj2
+[R5RS]
+@end defun
+
+@defun acons obj1 obj2 obj3
+[SRFI-1]
+@end defun
+
+@defun make-list len [fill]
+[SRFI-1]
+@end defun
+
+@defun list obj @dots{}
+[R5RS]
+@end defun
+
+@defun list* obj @dots{}
+@end defun
+
+@defun list-copy list
+[SRFI-1]
+@end defun
+
+
+@node List accessors and modifiers
+@subsection List accessors and modifiers
+
+@defun car pair
+@defunx cdr pair
+[R5RS]
+@end defun
+
+@defun set-car! pair obj
+@defunx set-cdr! pair obj
+[R5RS]
+@end defun
+
+@defun caar pair
+@defunx cadr pair
+@defunx cdar pair
+@defunx cddr pair
+@defunx caaar pair
+@defunx caadr pair
+@defunx cadar pair
+@defunx caddr pair
+@defunx cdaar pair
+@defunx cdadr pair
+@defunx cddar pair
+@defunx cdddr pair
+@defunx caaaar pair
+@defunx caaadr pair
+@defunx caadar pair
+@defunx caaddr pair
+@defunx cadaar pair
+@defunx cadadr pair
+@defunx caddar pair
+@defunx cadddr pair
+@defunx cdaaar pair
+@defunx cdaadr pair
+@defunx cdadar pair
+@defunx cdaddr pair
+@defunx cddaar pair
+@defunx cddadr pair
+@defunx cdddar pair
+@defunx cddddr pair
+[R5RS]
+@end defun
+
+@defun length list
+[R5RS]
+@end defun
+
+@defun list-tail list k
+[R5RS]
+@end defun
+
+@defun list-ref list k
+[R5RS]
+@end defun
+
+@defun last-pair list
+[SRFI-1]
+@end defun
+
+
+@node Other list procedures
+@subsection Other list procedures
+
+@defun append list @dots{}
+[R5RS]
+@end defun
+
+@defun append! list @dots{}
+[SRFI-1]
+@end defun
+
+
+@defun reverse list
+[R5RS]
+@end defun
+
+@defun reverse! list
+[SRFI-1]
+@end defun
+
+
+@defun memq obj list
+@defunx memv obj list
+[R5RS]
+@end defun
+
+@defun member obj list [=]
+[R5RS+][SRFI-1]
+@end defun
+
+@defun assq obj list
+@defunx assv obj list
+[R5RS]
+@end defun
+
+@defun assoc obj list [=]
+[R5RS+][SRFI-1]
+@end defun
+
+
+@node Symbols
+@section Symbols
+
+@defun symbol? obj
+[R5RS]
+@end defun
+
+@defun symbol->string symbol
+[R5RS]
+@end defun
+
+@defun string->symbol string
+[R5RS]
+@end defun
+
+@defun gensym [prefix]
+@end defun
+
+
+@node Keywords
+@section Keywords
+
+@defun keyword? obj
+@end defun
+
+@defun make-keyword name
+@end defun
+
+@defun get-keyword key list [fallback]
+@end defun
+
+@node Identifiers
+@section Identifiers
+
+@defun identifier? obj
+@end defun
+
+@defun identifier->symbol identiifer
+@end defun
+
+
+@node Characters
+@section Characters
+
+@defun char? obj
+[R5RS]
+@end defun
+
+@defun char=? char1 char2
+@defunx char<? char1 char2
+@defunx char<=? char1 char2
+@defunx char>? char1 char2
+@defunx char>=? char1 char2
+[R5RS]
+@end defun
+
+@defun char-ci=? char1 char2
+@defunx char-ci<? char1 char2
+@defunx char-ci<=? char1 char2
+@defunx char-ci>? char1 char2
+@defunx char-ci>=? char1 char2
+[R5RS]
+@end defun
+
+@defun char-alphabetic? char
+@defunx char-numeric? char
+@defunx char-whitespace? char
+@defunx char-upper-case? char
+@defunx char-loser-case? char
+[R5RS]
+@end defun
+
+@defun char->integer char
+@defunx integer->char n
+[R5RS]
+@end defun
+
+@defun char-upcase char
+@defunx char-downcase char
+[R5RS]
+@end defun
+
+@defun gauche-character-encoding
+@end defun
+
+
+@node Character Set
+@section Character Set
+
+
+
+
+@node Strings
+@section Strings
+
+@node String Predicates
+@subsection String Predicates
+
+@defun string? obj
+[R5RS]
+@end defun
+
+@defun string-complete? obj
+@end defun
+
+@node String Constructors
+@subsection String Constructors
+
+@defun make-string k [char]
+[R5RS]
+@end defun
+
+@defun string char @dots{}
+[R5RS]
+@end defun
+
+@node String Accessors & Modifiers
+@subsection String Accessors & Modifiers
+
+@defun string-length string
+[R5RS]
+@end defun
+
+@defun string-size string
+@end defun
+
+@defun string-ref string k
+[R5RS]
+@end defun
+
+@defun string-byte-ref string k
+@end defun
+
+@defun string-set! string k char
+[R5RS]
+@end defun
+
+@defun string-byte=set! string k byte
+@end defun
+
+@node String Comparison
+@subsection String Comparison
+
+@defun string=? string1 string2
+@defunx string-ci=? string1 string2
+[R5RS]
+@end defun
+
+@defun string<? string1 string2
+@defunx string<=? string1 string2
+@defunx string>? string1 string2
+@defunx string>=? string1 string2
+@defunx string-ci<? string1 string2
+@defunx string-ci<=? string1 string2
+@defunx string-ci>? string1 string2
+@defunx string-ci>=? string1 string2
+[R5RS]
+@end defun
+
+@node String Utilities
+@subsection String Utilities
+
+@defun substring string start end
+[R5RS]
+@end defun
+
+@defun string-append string @dots{}
+[R5RS]
+@end defun
+
+@defun string->list string [start end]
+@defunx list->string list
+[R5RS+][SRFI-13]
+@end defun
+
+@defun string-copy string [start end]
+[R5RS+][SRFI-13]
+@end defun
+
+@defun string-fill! string char [start end]
+[R5RS+][SRFI-13]
+@end defun
+
+@defun string-join strs [delim grammer]
+[SRFI-13]
+@end defun
+
+@defun string-split s char
+@end defun
+
+
+@node String Pointers
+@subsection String Pointers
+
+@defun make-string-pointer str [index]
+@end defun
+
+@defun string-pointer? obj
+@end defun
+
+@defun string-pointer-next! sp
+@defunx string-pointer-prev! sp
+@end defun
+
+@defun string-pointer-set! sp index
+@end defun
+
+@defun string-pointer-substring sp &keyword (after #f)
+@end defun
+
+@defun string-pointer-index sp
+@end defun
+
+@node Regular Expression
+@section Regular Expression
+
+@defun string->regexp string
+@end defun
+
+@defun rxmatch regexp str
+@end defun
+
+@defun rxmatch-substring match &optional (i 0)
+@defunx rxmatch-start match &optional (i 0)
+@defunx rxmatch-end match &optional (i 0)
+@end defun
+
+@node Vectors
+@section Vectors
+
+@defun vector? obj
+[R5RS]
+@end defun
+
+@defun make-vector k &optional fill
+[R5RS]
+@end defun
+
+@defun vector obj @dots{}
+[R5RS]
+@end defun
+
+@defun vector-length vector
+[R5RS]
+@end defun
+
+@defun vector-ref vector k
+[R5RS]
+@end defun
+
+@defun vector-set! vector k obj
+[R5RS]
+@end defun
+
+@defun vector->list vector
+@defunx list->vector list
+[R5RS]
+@end defun
+
+@defun vector-fill! vector fill
+[R5RS]
+@end defun
+
+@node Control features
+@section Control features
+
+@defun procedure? obj
+[R5RS]
+@end defun
+
+@defun apply proc arg1 @dots{} args
+[R5RS]
+@end defun
+
+@defun map proc list1 list2 @dots{}
+[R5RS]
+@end defun
+
+@defun for-each proc list1 list2 @dots{}
+[R5RS]
+@end defun
+
+@defun force promise
+[R5RS]
+@end defun
+
+@node Continuation and escaping
+@subsection Continuation and escaping
+
+
+@defun call-with-current-continuation proc
+@defunx call/cc
+[R5RS]
+@end defun
+
+@defun dynamic-wind before thunk after
+[R5RS]
+@end defun
+
+@node Multiple values
+@subsection Multiple values
+
+@defun values obj @dots{}
+[R5RS]
+@end defun
+
+@defun call-with-values producer consumer
+[R5RS]
+@end defun
+
+@node Eval
+@section Eval
+
+@defun eval expr env
+[R5RS]
+@end defun
+
+
+@node Input and Output
+@section Input and Output
+
+@defun input-port? obj
+@defunx output-port? obj
+[R5RS]
+@end defun
+
+@defun port-closed? port
+@end defun
+
+
+@defun current-input-port
+@defunx current-output-port
+[R5RS]
+@end defun
+
+@defun current-error-port
+@end defun
+
+@defun with-input-from-port port thunk
+@defunx with-output-to-port port thunk
+@defunx with-error-to-port port thunk
+@end defun
+
+@defun close-input-port port
+@defunx close-output-port port
+[R5RS]
+@end defun
+
+@defun port-name port
+@end defun
+
+@defun port-current-line
+@end defun
+
+@defun port-file-number
+@end defun
+
+@node File ports
+@subsection File ports
+
+@defun open-inupt-file filename
+[R5RS]
+@end defun
+
+@defun open-output-file filename
+[R5RS]
+@end defun
+
+@defun call-with-input-file string proc
+@defunx call-with-output-file string proc
+[R5RS]
+@end defun
+
+@defun with-input-from-file string thunk
+@defunx with-output-to-file string thunk
+[R5RS]
+@end defun
+
+
+@node String ports
+@subsection String ports
+
+@defun open-input-string string
+[SRFI-6]
+@end defun
+
+@defun open-output-string
+[SRFI-6]
+@end defun
+
+@defun get-output-string
+[SRFI-6]
+@end defun
+
+@defun call-with-input-string string proc
+@end defun
+
+@defun call-with-output-string proc
+@end defun
+
+@defun with-input-from-string string thunk
+@end defun
+
+@defun with-output-to-string thunk
+@end defun
+
+
+@node Procedural ports
+@subsection Procedural ports
+
+@node Input
+@subsection Input 
+
+@defun read &optional port
+[R5RS]
+@end defun
+
+@defun read-char &optional port
+[R5RS]
+@end defun
+
+@defun peek-char &optional port
+[R5RS]
+@end defun
+
+@defun read-byte &optional port
+@end defun
+
+@defun read-line &optional port
+@end defun
+
+@defun eof-object? obj
+[R5RS]
+@end defun
+
+@defun char-ready? port
+[R5RS]
+@end defun
+
+
+@node Output
+@subsection Output
+
+@defun write obj &optional port
+[R5RS]
+@end defun
+
+@defun display obj &optional port
+[R5RS]
+@end defun
+
+@defun newline &optional port
+[R5RS]
+@end defun
+
+@defun write-char char &optional port
+[R5RS]
+@end defun
+
+@defun write-byte byte &optional port
+@end defun
+
+@defun write* obj &optional port
+@end defun
+
+@defun format port string arg @dots{}
+@end defun
+
+
+@node Loading Programs
+@section Loading Programs
+
+
+@node System interface
+@section System interface
+
+
+@node Object System
+@chapter Object System
+
+
+
+@node Libarary Modules
+@chapter Library Modules
+
+
+@node Feature Conditional
+@section Feature Conditional (SRFI-0)
+
+
+@node List library
+@section List library (SRFI-1)
+
+
+@node And-let*
+@section And-let* (SRFI-2)
+
+
+@node Homogeneous Vectors
+@section Homogeneous Vectors (SRFI-4)
+
+
+@node Let-values
+@section Let-values (SRFI-11)
+
+
+@node String library
+@section String library (SRFI-13)
+
+
+@node Character-set library
+@section Character-set library (SRFI-14)
+
+
+@node Regular expression library
+@section  Regular expression library
+
+
+@node Testing
+@section Testing
+
+
+@node Serializer
+@section Serializer
+
+
+@node Introspection
+@section Introspection
+
+
+@node Processes
+@section Processes
+
+
+
+@node Index,  , Filters, Top
+@unnumbered Index
+@printindex fn
+
+@contents
+@bye
