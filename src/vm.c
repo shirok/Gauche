@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.208 2004-03-16 12:43:11 shirok Exp $
+ *  $Id: vm.c,v 1.209 2004-05-16 00:03:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2123,10 +2123,14 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
 /*
  * Entry point of throwing exception.
  *
- *  This function may be called from Scheme function raise or throw,
- *  or C-function Scm_Error families and signal handler.   So we can't
- *  push the handler to continuation and return; we have to use Scm_Apply
- *  to run the handler.
+ *  This function can be called from Scheme function raise,
+ *  or C-function Scm_Error families and signal handler. 
+ *  So there may be a raw C code in the continuation of this C call.
+ *  Thus we can't use Scm_VMApply to call the user-defined exception
+ *  handler.
+ *
+ *  SRFI-18 and SRFI-34 have subtle difference in the semantics of
+ *  'raise'---SRFI-18 
  */
 ScmObj Scm_VMThrowException(ScmObj exception)
 {

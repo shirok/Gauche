@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.368 2004-04-24 11:32:02 shirok Exp $
+ *  $Id: gauche.h,v 1.369 2004-05-16 00:02:53 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2067,7 +2067,7 @@ SCM_CLASS_DECL(Scm_ExceptionClass);
 
 /* <error>: root of all errors (uncontinuable exceptions). */
 struct ScmErrorRec {
-    SCM_HEADER;
+    SCM_INSTANCE_HEADER;
     ScmObj message;             /* error message */
 };
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.44 2004-02-03 13:12:28 shirok Exp $
+ *  $Id: error.c,v 1.45 2004-05-16 00:02:53 shirok Exp $
  */
 
 #include <errno.h>
@@ -89,7 +89,7 @@ ScmObj Scm_MakeThreadException(ScmClass *klass, ScmVM *thread)
 
 ScmObj Scm_MakeError(ScmObj message)
 {
-    ScmError *e = SCM_NEW(ScmError);
+    ScmError *e = SCM_ALLOCATE(ScmError, SCM_CLASS_ERROR);
     SCM_SET_CLASS(e, SCM_CLASS_ERROR);
     e->message = message;
     return SCM_OBJ(e);
@@ -97,7 +97,7 @@ ScmObj Scm_MakeError(ScmObj message)
 
 ScmObj Scm_MakeSystemError(ScmObj message, int en)
 {
-    ScmSystemError *e = SCM_NEW(ScmSystemError);
+    ScmSystemError *e = SCM_ALLOCATE(ScmSystemError, SCM_CLASS_SYSTEM_ERROR);
     SCM_SET_CLASS(e, SCM_CLASS_SYSTEM_ERROR);
     e->common.message = message;
     e->error_number = en;
