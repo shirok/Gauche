@@ -615,9 +615,10 @@ always returns @var{q} and @code{denominator} always return 1.
 [R5RS]
 @c EN
 The argument @var{x} must be a real number.
-@code{Floor} and @code{ceiling} return a minimum integer that
-is greater than @var{x} and a maximim integer that is less than @var{x},
-respectively.  @var{Truncate} returns an integer that truncates
+@code{Floor} and @code{ceiling} return a maximum integer that
+isn't greater than @var{x} and a minimum integer that isn't less
+than @var{x}, respectively.
+@var{Truncate} returns an integer that truncates
 @var{x} towards zero.  @var{Round} returns an integer that is closest
 to @var{x}.  If fractional part of @var{x} is exactly 0.5, @var{round}
 returns the closest even integer.
