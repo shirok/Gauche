@@ -1,6 +1,6 @@
 MANPAGES = gosh.1 gauche-config.1
 GENERATED = gauche-refe.texi gauche-refj.texi Makefile $(MANPAGES)
-GOSH = gosh
+GOSH = ../src/gosh -I../src -I../lib
 INSTALL = @INSTALL@
 MAKEINFO = @MAKEINFO@
 GZIP = @GZIP@
