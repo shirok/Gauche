@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.62 2002-02-22 13:03:30 shirok Exp $
+;;; $Id: syslib.stub,v 1.63 2002-03-06 08:46:39 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -683,9 +683,6 @@
   if (p) SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   else SCM_RETURN(SCM_FALSE);")
 
-(define-cproc sys-getpgrp ()
-  "  SCM_RETURN(Scm_MakeInteger(getpgrp()));")
-
 (define-cproc sys-getpid ()
   "  SCM_RETURN(Scm_MakeInteger(getpid()));")
 
@@ -772,13 +769,7 @@
 )
 
 ;; not supported yet:
-;;  fpathconf lseek pathconf read
-;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp write
-
-(define-cproc sys-ctermid ()
-  "  char buf[L_ctermid+1];
-  char *r = ctermid(buf);
-  SCM_RETURN(SCM_MAKE_STR_COPYING(r));")
+;;  fpathconf lseek pathconf read sysconf write
 
 ;;---------------------------------------------------------------------
 ;; symbolic link

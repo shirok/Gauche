@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.63 2002-03-04 19:58:30 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.64 2002-03-06 08:46:39 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -159,10 +159,12 @@
 (autoload gauche.interpolate (:macro string-interpolate))
 
 (autoload gauche.auxsys
-          sys-abort sys-fmod sys-frexp sys-modf sys-mkfifo
+          fmod frexp modf ldexp log10
+          sys-abort sys-mkfifo
           sys-setgid sys-setpgid sys-setpgrp sys-getpgid sys-getpgrp
-          sys-setsid sys-setuid sys-times sys-uname
-          sys-gethostname sys-getdomainname sys-putenv)
+          sys-setsid sys-setuid sys-times sys-uname sys-ctermid
+          sys-gethostname sys-getdomainname sys-putenv
+          sys-gettimeofday)
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
