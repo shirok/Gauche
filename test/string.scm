@@ -228,4 +228,28 @@
           (list (string-pointer-substring sp)
                 (string-pointer-substring sp :after #t)))))
 
+(test "make-string-pointer (bound)" #t
+      (lambda ()
+        (set! sp (make-string-pointer "abcdefg" 1 2 5))
+        (string-pointer? sp)))
+(test "string-pointer-next! (bound)" #\d
+      (lambda () (string-pointer-next! sp)))
+(test "string-pointer-next! (bound)" #\e
+      (lambda () (string-pointer-next! sp)))
+(test "string-pointer-next! (bound)" #t
+      (lambda () (eof-object? (string-pointer-next! sp))))
+(test "string-pointer-prev! (bound)" #\e
+      (lambda () (string-pointer-prev! sp)))
+(test "string-pointer-prev! (bound)" #\d
+      (lambda () (string-pointer-prev! sp)))
+(test "string-pointer-prev! (bound)" #\c
+      (lambda () (string-pointer-prev! sp)))
+(test "string-pointer-prev! (bound)" #t
+      (lambda () (eof-object? (string-pointer-prev! sp))))
+(test "string-pointer-next! (bound)" #\c
+      (lambda () (string-pointer-next! sp)))
+(test "string-pointer-substring (bound)" '("c" "de")
+      (lambda () (list (string-pointer-substring sp)
+                       (string-pointer-substring sp :after #t))))
+
 (test-end)
