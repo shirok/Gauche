@@ -1,15 +1,15 @@
 \input texinfo  @c -*-texinfo-*-
 @comment %**start of header
 @c EN
-@setfilename gauche-refe
+@setfilename gauche-refe.info
 @settitle Gauche Reference Manual
 @c JP
-@setfilename gauche-refj
+@setfilename gauche-refj.info
 @settitle Gauche リファレンスマニュアル
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.240 2002-07-09 09:52:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.241 2002-07-10 10:14:36 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19663,9 +19663,9 @@ hierarchical URI by @code{uri-decompose-authority}.
 It returns @var{userinfo}, @var{host} and @var{port}.
 @example
 (uri-decompose-authority "yyy.jp:8080")
-  @result[] #f@r{,} "yyy.jp" @r{and} "8080"
+  @result{} #f@r{,} "yyy.jp" @r{and} "8080"
 (uri-decompose-authority "mylogin@@yyy.jp")
-  @result[] "mylogin"@r{,} "yyy.jp" @r{and} #f
+  @result{} "mylogin"@r{,} "yyy.jp" @r{and} #f
 @end example
 @end defun
 
@@ -20035,7 +20035,7 @@ At least one of the argument lists must be finite:
 @defun count$ pred
 Partial application version of @code{count}
 @example
-((count$ pred) arg @dots{}) === (count pred arg $dots{})
+((count$ pred) arg @dots{}) === (count pred arg @dots{})
 @end example
 @end defun
 
