@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.36 2001-07-28 11:23:54 shirok Exp $
+ *  $Id: vm.h,v 1.37 2001-08-31 08:37:29 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -53,8 +53,6 @@ typedef struct ScmEnvFrameRec {
 #define ENV_HDR_SIZE   3        /* envframe header size */
 #define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
 
-extern ScmEnvFrame *Scm_VMSaveCurrentEnv(void);
-
 /*
  * Continuation
  *
@@ -72,6 +70,18 @@ typedef struct ScmContFrameRec {
 #define CONT_FRAME_SIZE  5
 
 extern void Scm_CallCC(ScmObj body);
+
+/*
+ * Frame table
+ *   Since the frames in the stack may be moved during stack GC, other
+ *   objects such as closures can't directly point to the stack.
+ */
+
+typedef struct ScmVMFrameTableRec ScmVMFrameTable;
+typedef unsigned int ScmFrameIndex;
+
+extern void Scm_FrameIndexRelease(ScmFrameIndex indeX);
+extern ScmFrameIndex Scm_VMSaveCurrentEnv(void);
 
 /*
  * VM activation history
@@ -200,6 +210,10 @@ struct ScmVMRec {
     ScmObj *stackBase;          /* base of current stack area  */
     ScmObj *stackEnd;           /* end of current stack area */
     int stackSize;
+
+    ScmVMFrameTable *frameTable; /* stack pointer table */
+    int frameTableEntries;
+    int frameTableSize;
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);

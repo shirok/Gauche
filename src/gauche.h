@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.164 2001-08-06 07:21:20 shirok Exp $
+ *  $Id: gauche.h,v 1.165 2001-08-31 08:37:29 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1471,7 +1471,7 @@ extern ScmClass Scm_ProcedureClass;
 struct ScmClosureRec {
     ScmProcedure common;
     ScmObj code;                /* compiled code */
-    ScmEnvFrame *env;           /* environment */
+    ScmFrameIndex env;          /* environment */
 };
 
 #define SCM_CLOSUREP(obj) \
@@ -1479,7 +1479,7 @@ struct ScmClosureRec {
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
 
 extern ScmObj Scm_MakeClosure(int required, int optional,
-                              ScmObj code, ScmEnvFrame *env, ScmObj info);
+                              ScmObj code, ScmFrameIndex env, ScmObj info);
 
 /* Subr - C defined procedure */
 struct ScmSubrRec {
@@ -1552,7 +1552,7 @@ struct ScmMethodRec {
     ScmClass **specializers;    /* array of specializers, size==required */
     ScmObj (*func)(ScmNextMethod *nm, ScmObj *args, int nargs, void * data);
     void *data;                 /* closure, or code */
-    ScmEnvFrame *env;           /* for Scheme-defined method */
+    ScmFrameIndex env;          /* for Scheme-defined method */
 };
 
 extern ScmClass Scm_MethodClass;
@@ -1565,7 +1565,7 @@ extern ScmClass Scm_MethodClass;
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_METHOD,                    \
                                    req, opt, SCM_PROC_METHOD,           \
                                    SCM_FALSE),                          \
-        gf, specs, func, data, NULL                                     \
+        gf, specs, func, data, 0                                        \
     }
 
 void Scm_InitBuiltinMethod(ScmMethod *m);
@@ -1858,6 +1858,9 @@ extern void Scm_Init(void);
 extern void Scm_Exit(int code);
 extern void Scm_Abort(const char *msg);
 extern void Scm_Panic(const char *msg, ...);
+
+/* repl */
+extern void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out);
 
 /* Inspect the configuration */
 extern const char *Scm_HostArchitecture(void);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.20 2001-06-17 22:05:20 shirok Exp $
+ *  $Id: proc.c,v 1.21 2001-08-31 08:37:29 shirok Exp $
  */
 
 #include "gauche.h"
@@ -50,7 +50,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    the current VM env, you should call Scm_VMSaveCurrentEnv() to move
    frames to the heap, then pass its result to Scm_MakeClosure. */
 ScmObj Scm_MakeClosure(int required, int optional,
-                       ScmObj code, ScmEnvFrame *env, ScmObj info)
+                       ScmObj code, ScmFrameIndex env, ScmObj info)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
@@ -284,7 +284,7 @@ ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter, int lock)
     if (proc->locked) {
         Scm_Error("can't change the locked setter of procedure %S", proc);
     }
-#if 0 /* this doesn't work weel for generic functions
+#if 0 /* this doesn't work weel for generic functions */
     /* check setter can get at least one more argument than proc */
     if (!SCM_PROCEDURE_OPTIONAL(setter)
         && (SCM_PROCEDURE_REQUIRED(proc) >= SCM_PROCEDURE_REQUIRED(setter))) {
