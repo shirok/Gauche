@@ -4,6 +4,12 @@
 	  SCM_SYM_LITTLE_ENDIAN.
 	* ext/binary/binarylib.stub: changed accordingly.
 
+	* ext/uvector: EXPERIMENTAL: added byte-swapping APIs
+	  (TAGvector-byte-swap, TAGvector-byte-swap!, uvector-byte-swap, 
+	  uvector-byte-swap!), and added optiona `endian' argument to
+	  read-block! and write-block.  Not completely sure they have to
+	  be here, so let's say they're experimental.
+
 2004-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_DeleteMethod): fixed a bug that caused infinite

@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.3 2004-11-05 12:02:01 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.4 2004-11-11 12:14:43 shirok Exp $
 ;;;
 
 "
@@ -183,12 +183,20 @@
   (return "Scm_${T}Vector${Opname}"))
 ///)) ;; end of tmpl-rangeop
 
+///(define *tmpl-swapb* '(
+(define-cproc ${t}vector-swap-bytes (v0::<${t}vector>)
+  (return "Scm_${T}VectorSwapBytes"))
+(define-cproc ${t}vector-swap-bytes! (v0::<${t}vector>)
+  (return "Scm_${T}VectorSwapBytesX"))
+///)) ;; end of tmpl-rangeop
+
 ///(define *extra-procedure*  ;; procedurally generates code
 ///  (lambda ()
 ///    (generate-numop)
 ///    (generate-bitop)
 ///    (generate-dotop)
 ///    (generate-rangeop)
+///    (generate-swapb)
 ///)) ;; end of extra-procedure
 
 ///(define *tmpl-epilogue* '(
@@ -199,29 +207,26 @@
                              &optional (start::<int> 0) (end::<int> -1))
   (return "Scm_UVectorAlias"))
 
+(define-cproc uvector-swap-bytes (v::<uvector>)
+  (return "Scm_UVectorSwapBytes"))
+
+(define-cproc uvector-swap-bytes! (v::<uvector>)
+  (return "Scm_UVectorSwapBytesX"))
+
+
 (define-cproc read-block! (v::<uvector>
                            &optional (port::<input-port> (current-input-port))
                                      (start::<fixnum> 0)
-                                     (end::<fixnum> -1))
-  "int len = SCM_UVECTOR_SIZE(v), eltsize, r;
-  SCM_CHECK_START_END(start, end, len);
-  SCM_UVECTOR_CHECK_MUTABLE(v);
-  eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
-  SCM_ASSERT(eltsize >= 1);
-  r = Scm_Getz((char*)v->elements + start*eltsize, (end-start)*eltsize, port);
-  if (r == EOF) SCM_RETURN(SCM_EOF);
-  else SCM_RETURN(Scm_MakeInteger((r+eltsize-1)/eltsize));")
+                                     (end::<fixnum> -1)
+                                     (endian #f))
+  (return "Scm_ReadBlockX"))
 
 (define-cproc write-block (v::<uvector>
                            &optional (port::<output-port> (current-output-port))
                                      (start::<fixnum> 0)
-                                     (end::<fixnum> -1))
-  "int len = SCM_UVECTOR_SIZE(v), eltsize;
-  SCM_CHECK_START_END(start, end, len);
-  eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
-  SCM_ASSERT(eltsize >= 1);
-  Scm_Putz((char*)v->elements + start*eltsize, (end-start)*eltsize, port);
-  SCM_RETURN(SCM_UNDEFINED);")
+                                     (end::<fixnum> -1)
+                                     (endian #f))
+  (return "Scm_WriteBlock"))
 
 ;;; String operations 
 "static ScmObj string_to_bytevector(ScmClass *klass, ScmString *s, int start, int end)

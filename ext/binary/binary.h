@@ -30,10 +30,11 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.h,v 1.1 2004-01-28 09:34:55 shirok Exp $
+ *  $Id: binary.h,v 1.2 2004-11-11 12:14:43 shirok Exp $
  */
 
 #include <gauche.h>
+#include <gauche/builtin-syms.h>
 
 /* endian check */
 typedef enum {

@@ -336,6 +336,30 @@
 (uvcopy!-newapi-test "f64vector-copy! newapi" f64vector f64vector-copy!)
 
 ;;-------------------------------------------------------------------
+(test-section "swapping bytes")
+
+(test* "swapb s16"
+       '#s16(#x0123 #x4567 #x7654 #x3210)
+       (s16vector-swap-bytes '#s16(#x2301 #x6745 #x5476 #x1032)))
+(test* "swapb u16"
+       '#u16(#x0123 #x4567 #x7654 #x3210)
+       (u16vector-swap-bytes '#u16(#x2301 #x6745 #x5476 #x1032)))
+(test* "swapb s32"
+       '#s32(#x01234567 #x76543210)
+       (s32vector-swap-bytes '#s32(#x67452301 #x10325476)))
+(test* "swapb u32"
+       '#u32(#x01234567 #x76543210)
+       (u32vector-swap-bytes '#u32(#x67452301 #x10325476)))
+(test* "swapb s64"
+       '#s64(#x0123456789abcdef #x-123456789abcdf0)
+       (s64vector-swap-bytes
+        '#s64(#x-1032547698badcff #x1032547698badcfe)))
+(test* "swapb u64"
+       '#u64(#x0123456789abcdef #xfedcba9876543210)
+       (u64vector-swap-bytes
+        '#u64(#xefcdab8967452301 #x1032547698badcfe)))
+
+;;-------------------------------------------------------------------
 (test-section "collection interface")
 
 (use gauche.collection)

@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.2 2004-11-05 12:02:01 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.3 2004-11-11 12:14:43 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -44,6 +44,7 @@
 #include <string.h>  /* for memcpy() */
 #include <gauche.h>
 #include <gauche/extend.h>
+#include <gauche/builtin-syms.h>
 #include "gauche/uvector.h"
 #include "gauche/arith.h"
 #include "gauche/scmconst.h"
@@ -136,7 +137,6 @@ ScmObj Scm_UVectorAlias(ScmClass *klass, ScmUVector *v, int start, int end)
                                    SCM_UVECTOR_IMMUTABLE_P(v),
                                    SCM_UVECTOR_OWNER(v)));
 }
-
 
 /*===========================================================
  * Helper functions
@@ -1220,6 +1220,82 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
 }
 ///)) ;; end of tmpl-rangeop
 
+///;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;; Byte swap template
+///(append! *tmpl-prologue* '(
+
+#define SWAP(x, y)   (t = dd.c[x], dd.c[x] = dd.c[y], dd.c[y] = t)
+
+static void swapb16(unsigned short *loc)
+{
+    union {
+        unsigned short s;
+        unsigned char c[2];
+    } dd;
+    unsigned char t;
+    dd.s = *loc;
+    SWAP(0, 1);
+    *loc = dd.s;
+}
+
+static void swapb32(ScmUInt32 *loc)
+{
+    union {
+        ScmUInt32 i;
+        unsigned char c[4];
+    } dd;
+    unsigned char t;
+    dd.i = *loc;
+    SWAP(0, 3);
+    SWAP(1, 2);
+    *loc = dd.i;
+}
+
+static void swapb64(ScmUInt64 *loc)
+{
+    union {
+        ScmUInt64 l;
+        unsigned char c[4];
+    } dd;
+    unsigned char t;
+    dd.l = *loc;
+    SWAP(0, 7);
+    SWAP(1, 6);
+    SWAP(2, 5);
+    SWAP(3, 4);
+    *loc = dd.l;
+}
+
+///))
+///(define *tmpl-swapb* '(
+
+static void ${t}vector_swapb(Scm${T}Vector *v)
+{
+    int i, len = SCM_UVECTOR_SIZE(v);
+    ${etype} *d = SCM_${T}VECTOR_ELEMENTS(v);
+    for (i=0; i<len; i++, d++) {
+        ${SWAPB}((void*)d);
+    }
+}
+
+ScmObj Scm_${T}VectorSwapBytes(Scm${T}Vector *v)
+{
+    ScmObj d = Scm_${T}VectorCopy(v, 0, -1);
+    ${t}vector_swapb(SCM_${T}VECTOR(d));
+    return d;
+}
+
+ScmObj Scm_${T}VectorSwapBytesX(Scm${T}Vector *v)
+{
+    SCM_UVECTOR_CHECK_MUTABLE(v);
+    ${t}vector_swapb(v);
+    return SCM_OBJ(v);
+}
+
+
+
+///))
+
 
 ///(define *extra-procedure*  ;; procedurally generates code
 ///  (lambda ()
@@ -1227,10 +1303,172 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
 ///    (generate-bitop)
 ///    (generate-dotop)
 ///    (generate-rangeop)
+///    (generate-swapb)
 ///)) ;; end of extra-procedure
 
 ///(define *tmpl-epilogue* '(
 
+/*==============================================================
+ * Some generic functions
+ */
+
+/*
+ * Generic copy
+ */
+ScmObj Scm_UVectorCopy(ScmUVector *v, int start, int end)
+{
+    switch (uvector_index(Scm_ClassOf(SCM_OBJ(v)))) {
+    case 0: return Scm_S8VectorCopy(SCM_S8VECTOR(v), start, end);
+    case 1: return Scm_U8VectorCopy(SCM_U8VECTOR(v), start, end);
+    case 2: return Scm_S16VectorCopy(SCM_S16VECTOR(v), start, end);
+    case 3: return Scm_U16VectorCopy(SCM_U16VECTOR(v), start, end);
+    case 4: return Scm_S32VectorCopy(SCM_S32VECTOR(v), start, end);
+    case 5: return Scm_U32VectorCopy(SCM_U32VECTOR(v), start, end);
+    case 6: return Scm_S64VectorCopy(SCM_S64VECTOR(v), start, end);
+    case 7: return Scm_U64VectorCopy(SCM_U64VECTOR(v), start, end);
+    case 8: return Scm_F32VectorCopy(SCM_F32VECTOR(v), start, end);
+    case 9: return Scm_F64VectorCopy(SCM_F64VECTOR(v), start, end);
+    default: Scm_Error("uniform vector required, but got %S", v);
+        return SCM_UNDEFINED;
+    }
+}
+
+/*
+ * Generic swapb
+ */
+ScmObj Scm_UVectorSwapBytes(ScmUVector *v)
+{
+    switch (uvector_index(Scm_ClassOf(SCM_OBJ(v)))) {
+    case 0: return SCM_OBJ(v);
+    case 1: return SCM_OBJ(v);
+    case 2: return Scm_S16VectorSwapBytes(SCM_S16VECTOR(v));
+    case 3: return Scm_U16VectorSwapBytes(SCM_U16VECTOR(v));
+    case 4: return Scm_S32VectorSwapBytes(SCM_S32VECTOR(v));
+    case 5: return Scm_U32VectorSwapBytes(SCM_U32VECTOR(v));
+    case 6: return Scm_S64VectorSwapBytes(SCM_S64VECTOR(v));
+    case 7: return Scm_U64VectorSwapBytes(SCM_U64VECTOR(v));
+    case 8: return Scm_F32VectorSwapBytes(SCM_F32VECTOR(v));
+    case 9: return Scm_F64VectorSwapBytes(SCM_F64VECTOR(v));
+    default: Scm_Error("uniform vector required, but got %S", v);
+        return SCM_UNDEFINED;
+    }
+}
+
+ScmObj Scm_UVectorSwapBytesX(ScmUVector *v)
+{
+    switch (uvector_index(Scm_ClassOf(SCM_OBJ(v)))) {
+    case 0: return SCM_OBJ(v);
+    case 1: return SCM_OBJ(v);
+    case 2: return Scm_S16VectorSwapBytesX(SCM_S16VECTOR(v));
+    case 3: return Scm_U16VectorSwapBytesX(SCM_U16VECTOR(v));
+    case 4: return Scm_S32VectorSwapBytesX(SCM_S32VECTOR(v));
+    case 5: return Scm_U32VectorSwapBytesX(SCM_U32VECTOR(v));
+    case 6: return Scm_S64VectorSwapBytesX(SCM_S64VECTOR(v));
+    case 7: return Scm_U64VectorSwapBytesX(SCM_U64VECTOR(v));
+    case 8: return Scm_F32VectorSwapBytesX(SCM_F32VECTOR(v));
+    case 9: return Scm_F64VectorSwapBytesX(SCM_F64VECTOR(v));
+    default: Scm_Error("uniform vector required, but got %S", v);
+        return SCM_UNDEFINED;
+    }
+}
+
+/*
+ * Block I/O
+ */
+static void endian_check(ScmObj endian)
+{
+    if (!SCM_FALSEP(endian)
+        && !SCM_EQ(endian, SCM_SYM_BIG_ENDIAN)
+        && !SCM_EQ(endian, SCM_SYM_LITTLE_ENDIAN)) {
+        Scm_Error("endian argument must be either #f, big-endian or little-endian, but got: %S", endian);
+    }
+}
+
+ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
+                      int start, int end, ScmObj endian)
+{
+    int len = SCM_UVECTOR_SIZE(v), eltsize, r;
+
+    SCM_CHECK_START_END(start, end, len);
+    SCM_UVECTOR_CHECK_MUTABLE(v);
+    endian_check(endian);
+
+    eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    SCM_ASSERT(eltsize >= 1);
+    r = Scm_Getz((char*)v->elements + start*eltsize,
+                 (end-start)*eltsize, port);
+    if (r == EOF) SCM_RETURN(SCM_EOF);
+#ifdef WORDS_BIGENDIAN
+    if (SCM_EQ(endian, SCM_SYM_BIG_ENDIAN)) {
+        Scm_UVectorSwapBytesX(SCM_UVECTOR(v));
+    }
+#else /*!WORDS_BIGENDIAN*/
+    if (SCM_EQ(endian, SCM_SYM_LITTLE_ENDIAN)) {
+        Scm_UVectorSwapBytesX(SCM_UVECTOR(v));
+    }
+#endif
+    SCM_RETURN(Scm_MakeInteger((r+eltsize-1)/eltsize));
+}
+
+ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
+                      int start, int end, ScmObj endian)
+{
+    int len = SCM_UVECTOR_SIZE(v), eltsize, swapb = FALSE;
+    SCM_CHECK_START_END(start, end, len);
+    endian_check(endian);
+    
+    eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    SCM_ASSERT(eltsize >= 1);
+#ifdef WORDS_BIGENDIAN
+    swapb = SCM_EQ(endian, SCM_SYM_LITTLE_ENDIAN);
+#else /*!WORDS_BIGENDIAN*/
+    swapb = SCM_EQ(endian, SCM_SYM_BIG_ENDIAN);
+#endif
+    if (!swapb || eltsize == 1) {
+        Scm_Putz((char*)v->elements + start*eltsize,
+                 (end-start)*eltsize, port);
+    } else {
+        /* ugly */
+        int i;
+        
+        switch (eltsize) {
+        case 2: {
+            union {
+                unsigned short n;
+                unsigned char c[2];
+            } d;
+            for (i=start; i<end; i++) {
+                d.n = ((unsigned short*)v->elements)[i];
+                swapb16(&d.n);
+                Scm_Putz(d.c, 2, port);
+            }
+        }
+        case 4: {
+            union {
+                ScmUInt32 n;
+                unsigned char c[4];
+            } d;
+            for (i=start; i<end; i++) {
+                d.n = ((ScmUInt32*)v->elements)[i];
+                swapb32(&d.n);
+                Scm_Putz(d.c, 4, port);
+            }
+        }
+        case 8:{
+            union {
+                ScmUInt64 n;
+                unsigned char c[8];
+            } d;
+            for (i=start; i<end; i++) {
+                d.n = ((ScmUInt64*)v->elements)[i];
+                swapb64(&d.n);
+                Scm_Putz(d.c, 8, port);
+            }
+        }
+        }
+    }
+    SCM_RETURN(SCM_UNDEFINED);
+}
 
 ///)) ;; end of tmpl-epilogue
 

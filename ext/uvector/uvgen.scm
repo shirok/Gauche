@@ -1,7 +1,7 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.1 2004-11-05 10:34:25 shirok Exp $
+;; $Id: uvgen.scm,v 1.2 2004-11-11 12:14:43 shirok Exp $
 ;;
 
 (use srfi-1)
@@ -366,3 +366,16 @@
                                              `(okval  .  ,(ref ops 4))
                                              rule))
                   *tmpl-rangeop*)))))
+
+(define (generate-swapb)
+  (dolist (rule (make-rules))
+    (let1 tag (string->symbol (assq-ref rule 't))
+      (define (SWAPB)
+        (case tag
+          ((s16 u16) "swapb16")
+          ((s32 u32 f32) "swapb32")
+          ((s64 u64 f64) "swapb64")))
+      (unless (memq tag '(s8 u8))
+        (for-each (cute substitute <> (list* `(SWAPB . ,SWAPB)
+                                             rule))
+                  *tmpl-swapb*)))))
