@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.16 2002-04-25 22:31:47 shirok Exp $
+ *  $Id: net.c,v 1.17 2002-04-26 10:26:08 shirok Exp $
  */
 
 #include "net.h"
@@ -129,7 +129,7 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffered)
         sock->inPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket input)"),
                                                    SCM_PORT_INPUT,
                                                    sock->fd,
-                                                   buffered ? SCM_PORT_BUFFER_ALWAYS : SCM_PORT_BUFFER_NEVER, FALSE));
+                                                   buffered ? SCM_PORT_BUFFER_FULL : SCM_PORT_BUFFER_NONE, FALSE));
     }
     return SCM_OBJ(sock->inPort);
 }
@@ -144,7 +144,7 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffered)
         sock->outPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket output)"),
                                                     SCM_PORT_OUTPUT,
                                                     sock->fd,
-                                                    buffered ? SCM_PORT_BUFFER_ALWAYS:SCM_PORT_BUFFER_NEVER, FALSE));
+                                                    buffered ? SCM_PORT_BUFFER_FULL:SCM_PORT_BUFFER_NONE, FALSE));
     }
     return SCM_OBJ(sock->outPort);
 }

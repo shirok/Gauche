@@ -2,6 +2,10 @@
 
 	* src/port.c, src/gauche.h, src/extlib.stub, ext/charconv/charconv.c,
 	  ext/net/net.c : Changed file port API.
+	* src/stdlib.stub : added port?
+	* src/extlib.stub : added weak-vector-length
+	* lib/gauche/collection.scm, lib/gauche/sequence.scm : added a
+	  weak vector to the collection and sequence framework.
 
 2002-04-24  Shiro Kawai  <shiro@acm.org>
 

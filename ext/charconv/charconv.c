@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.24 2002-04-26 05:02:14 shirok Exp $
+ *  $Id: charconv.c,v 1.25 2002-04-26 10:26:08 shirok Exp $
  */
 
 #include <string.h>
@@ -261,7 +261,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 
     bufrec.size = cinfo->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
-    bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+    bufrec.mode = SCM_PORT_BUFFER_FULL;
     bufrec.filler = conv_input_filler;
     bufrec.flusher = NULL;
     bufrec.closer = conv_input_closer;
@@ -406,7 +406,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     
     bufrec.size = cinfo->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
-    bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+    bufrec.mode = SCM_PORT_BUFFER_FULL;
     bufrec.filler = NULL;
     bufrec.flusher = conv_output_flusher;
     bufrec.closer = conv_output_closer;

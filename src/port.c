@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.55 2002-04-26 06:24:37 shirok Exp $
+ *  $Id: port.c,v 1.56 2002-04-26 10:26:08 shirok Exp $
  */
 
 #include <unistd.h>
@@ -195,6 +195,7 @@ int Scm_FdReady(int fd, int dir)
 int Scm_CharReady(ScmPort *p)
 {
     if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
+    if (SCM_PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) return TRUE;
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current < p->src.buf.end) return TRUE;
@@ -308,6 +309,35 @@ int Scm_CharReady(ScmPort *p)
  *    underlying integer file descriptor of the port, or -1 if there's
  *    no associated one.   If it is NULL, the port is assumed not to
  *    be associated to any file descriptor.
+ *
+ *  Buffering mode
+ *    {For Output}
+ *      SCM_PORT_BUFFER_FULL : Full buffering.  The buffer is flushed
+ *         only when the buffer gets full, explicitly requested, or
+ *         closed.   This is the default, and suitable for file I/O.
+ *
+ *      SCM_PORT_BUFFER_LINE : Line buffering.  The buffer is flushed
+ *         when a newline character is put, other than the normal
+ *         circumstances as in BUFFER_ALWAYS.   Unlike C stdio, the
+ *         buffer isn't flushed when an input is called on the same
+ *         terminal device.
+ *         This is natural for output of interactive communication.
+ *         This is the default of stdout.
+ *
+ *      SCM_PORT_BUFFER_NONE : data is always passed to the flusher
+ *         procedure.  The buffer is used just as a temporary storage.
+ *         This slows down port operation significantly.  Should only
+ *         be used when you want to guarantee what you write is always
+ *         passed to the lower layer.   This is the default of stderr.
+ *
+ *    {For Input}
+ *      SCM_PORT_BUFFER_FULL : Full buffering.  The filler procedure
+ *         is called only if the buffer doesn't have enough data to
+ *         satisfy the read request.
+ *
+ *      SCM_PORT_BUFFER_NONE : No buffering.  Every time the data is
+ *         requested, the filler procedure is called with exact amount
+ *         of the requested data.
  */
 
 #define SCM_PORT_DEFAULT_BUFSIZ 8192
@@ -540,7 +570,7 @@ void Scm_Putb(ScmByte b, ScmPort *p)
         if (p->src.buf.current >= p->src.buf.end) bufport_flush(p, 1);
         SCM_ASSERT(p->src.buf.current < p->src.buf.end);
         *p->src.buf.current++ = b;
-        if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) bufport_flush(p, 1);
+        if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) bufport_flush(p, 1);
         break;
     case SCM_PORT_OSTR:
         SCM_DSTRING_PUTB(&p->src.ostr, b);
@@ -567,7 +597,7 @@ void Scm_Putc(ScmChar c, ScmPort *p)
         p->src.buf.current += nb;
         if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
             if (c == '\n') bufport_flush(p, nb);
-        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) {
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
             bufport_flush(p, nb);
         }
         break;
@@ -596,7 +626,7 @@ void Scm_Puts(ScmString *s, ScmPort *p)
                     break;
                 }
             }
-        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) {
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
             bufport_flush(p, 0);
         }
         break;
@@ -626,7 +656,7 @@ void Scm_Putz(const char *s, int siz, ScmPort *p)
                     break;
                 }
             }
-        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) {
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
             bufport_flush(p, 0);
         }
         break;
@@ -918,10 +948,9 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int mode)
     else Scm_Error("unsupported file access mode %d to open %s", flags&O_ACCMODE, path);
     fd = open(path, flags, mode);
     if (fd < 0) return SCM_FALSE;
-    bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+    bufrec.mode = SCM_PORT_BUFFER_FULL;
     bufrec.buffer = NULL;
     bufrec.size = 0;
-    bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
     bufrec.filler = file_filler;
     bufrec.flusher = file_flusher;
     bufrec.closer = file_closer;
@@ -1162,11 +1191,11 @@ void Scm__InitPort(void)
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(stdin)"),
                                     SCM_PORT_INPUT, 0,
-                                    SCM_PORT_BUFFER_ALWAYS, TRUE);
+                                    SCM_PORT_BUFFER_FULL, TRUE);
     scm_stdout = Scm_MakePortWithFd(SCM_MAKE_STR("(stdout)"),
                                     SCM_PORT_OUTPUT, 1,
                                     SCM_PORT_BUFFER_LINE, TRUE);
     scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(stderr)"),
                                     SCM_PORT_OUTPUT, 2,
-                                    SCM_PORT_BUFFER_NEVER, TRUE);
+                                    SCM_PORT_BUFFER_NONE, TRUE);
 }
