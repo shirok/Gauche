@@ -17,7 +17,9 @@
 
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
 
-;;; structure to hold procedure info
+;;-----------------------------------------------------------------
+;; Procedure
+;;
 
 (define-class <cproc> ()
   ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
@@ -55,7 +57,82 @@
 (define (push-stmt! cproc stmt)
   (set! (stmts-of cproc) (cons stmt (stmts-of cproc))))
 
-;;; parse definition
+;;--------------------------------------------------------------------
+;; Types
+;;
+
+(define *type-table* '())
+
+(define-class <type> ()
+  ((name        :init-keyword :name
+                :getter name-of)
+   (predicate   :init-keyword :predicate
+                :getter predicate-of)
+   (c-type      :init-keyword :c-type
+                :getter c-type-of)
+   (c-predicate :init-keyword :c-predicate
+                :getter c-predicate-of)
+   (unboxer     :init-keyword :unboxer
+                :getter unboxer-of)
+   ))
+
+(define (make-type name predicate c-type c-predicate unboxer)
+  (let ((i (make <type> :name name :predicate predicate
+                 :c-type c-type :c-predicate c-predicate :unboxer unboxer)))
+    (set! *type-table* (cons i *type-table*))
+    i))
+
+(define-method write-object ((obj <type>) port)
+  (println port "#<type ~s>" (name-of obj)))
+
+;; predefined types
+
+(make-type "pair"    'pair?        "ScmObj"       "SCM_PAIRP"   #f)
+(make-type "list"    'list?        "ScmObj"       "SCM_LISTP"   #f)
+(make-type "vector"  'vector?      "ScmVector*"   "SCM_VECTORP" "SCM_VECTOR")
+(make-type "string"  'string?      "ScmString*"   "SCM_STRINGP" "SCM_STRING")
+(make-type "symbol"  'symbol?      "ScmSymbol*"   "SCM_SYMBOLP" "SCM_SYMBOL")
+(make-type "small integer" 'small-integer? "int" "SCM_INTP"    "SCM_INT_VALUE")
+;; TODO: bignum!
+(make-type "exact integer" 'exact? "int"          "SCM_EXACTP"  "SCM_INT_VALUE")
+(make-type "number"    'number?    "ScmObj"       "SCM_NUMBERP" #f)
+(make-type "character" 'char?      "ScmChar"      "SCM_CHARP" "SCM_CHAR_VALUE")
+
+(make-type "port"        'port?        "ScmPort*" "SCM_PORTP"  "SCM_PORT")
+(make-type "input port"  'input-port?  "ScmPort*" "SCM_IPORTP" "SCM_PORT")
+(make-type "output port" 'output-port? "ScmPort*" "SCM_OPORTP" "SCM_PORT")
+
+(make-type "procedure" 'procedure? "ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE")
+(make-type "closure"   'closure?   "ScmClosure*"   "SCM_CLOSUREP"   "SCM_CLOSURE")
+(make-type "hash table" 'hash-table? "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
+(make-type "class"     'class?     "ScmClass*"     "SCM_CLASSP" "SCM_CLASS")
+
+;; default
+(define *scm-type*
+  (make-type "scheme object" #f     "ScmObj"       #f           #f))
+
+(define (predicate->type pred)
+  (let loop ((types *type-table*))
+    (cond ((null? types) (error "unknown predicate to assert: ~s" pred))
+          ((eq? (predicate-of (car types)) pred) (car types))
+          (else (loop (cdr types))))))
+
+;;--------------------------------------------------------------------
+;; C structure
+;;
+
+(define-class <cslot> ()
+  ((name :init-keyword :name :getter name-of)
+   (type :init-keyword :type :getter type-of)))
+
+(define-class <cstruct> ()
+  ((name  :init-keyword :name :getter name-of)
+   (c-name  :init-keyword :c-name :getter c-name-of)
+   (slots :init-keyword :slots :getter slots-of)))
+
+;;--------------------------------------------------------------------
+;; Parse definition
+;;
 
 (define (process-define-cproc form)
   (unless (and (>= (length form) 4)
@@ -138,44 +215,7 @@
   (let* ((op  (car form))
          (arg (cadr form)))
     (unless (get-arg cproc arg) (error "assertion for unknown arg: ~s" form))
-    (case op
-      ((pair?)
-       (arg-attr-set! cproc arg :type :pair))
-      ((list?)
-       (arg-attr-set! cproc arg :type :list))
-      ((string?)
-       (arg-attr-set! cproc arg :type :string))
-      ((symbol?)
-       (arg-attr-set! cproc arg :type :symbol))
-      ((small-integer?)
-       (arg-attr-set! cproc arg :type :small-integer))
-      ((exact?)
-       (arg-attr-set! cproc arg :type :exact))
-      ((number?)
-       (arg-attr-set! cproc arg :type :number))
-      ((char?)
-       (arg-attr-set! cproc arg :type :char))
-      ((boolean?)
-       (arg-attr-set! cproc arg :type :boolean))
-      ((vector?)
-       (arg-attr-set! cproc arg :type :vector))
-      ((port?)
-       (arg-attr-set! cproc arg :type :port))
-      ((input-port?)
-       (arg-attr-set! cproc arg :type :input-port))
-      ((output-port?)
-       (arg-attr-set! cproc arg :type :output-port))
-      ((procedure?)
-       (arg-attr-set! cproc arg :type :procedure))
-      ((closure?)
-       (arg-attr-set! cproc arg :type :closure))
-      ((hash-table?)
-       (arg-attr-set! cproc arg :type :hash-table))
-      ((class?)
-       (arg-attr-set! cproc arg :type :class))
-      (else
-       (error "unknown assertion: ~s" form)))
-    ))
+    (arg-attr-set! cproc arg :type (predicate->type op))))
 
 ;;; emit code
 
@@ -205,22 +245,22 @@
 
 (define (emit-arg-decl arg)
   (let* ((attrs (cdr arg))
-         (type  (get-keyword :type attrs :scm))
+         (type  (get-keyword :type attrs *scm-type*))
          (cname (get-keyword :c-name attrs))
          (sname (get-keyword :s-name attrs)))
     (println "  ScmObj ~a;" sname)
-    (println "  ~a ~a;" (type->c-type type) cname)))
+    (println "  ~a ~a;" (c-type-of type) cname)))
 
 (define (emit-arg-unbox arg)
   (let* ((attrs (cdr arg))
          (category (get-keyword :category attrs))
-         (type  (get-keyword :type attrs :scm))
+         (type  (get-keyword :type attrs *scm-type*))
          (cname (get-keyword :c-name attrs))
          (sname (get-keyword :s-name attrs))
          (count (get-keyword :count attrs))
-         (tname (type->name type))
-         (pred  (type->c-predicate type))
-         (unbox (type->c-unboxer type)))
+         (tname (name-of type))
+         (pred  (c-predicate-of type))
+         (unbox (unboxer-of type)))
     (case category
       ((:required)
        (println "  ~a = SCM_ARGREF(~a);" sname count))
@@ -393,46 +433,7 @@
     )
   )
 
-(define *type-table*
-  (hash-table
-   '()
-   :pair           '("ScmObj"     "SCM_PAIRP"   #f            "pair")
-   :list           '("ScmObj"     "SCM_LISTP"   #f            "list")
-   :vector         '("ScmVector*" "SCM_VECTORP" "SCM_VECTOR"  "vector")
-   :string         '("ScmString*" "SCM_STRINGP" "SCM_STRING"  "string")
-   :symbol         '("ScmSymbol*" "SCM_SYMBOLP" "SCM_SYMBOL"  "symbol")
-   :small-integer  '("int"        "SCM_INTP"    "SCM_INT_VALUE" "small integer")
-   ;; TODO: bignum!
-   :exact          '("int"        "SCM_EXACTP"  "SCM_INT_VALUE" "exact integer")
-   :number         '("ScmObj"     "SCM_NUMBERP" ""            "number")
-   :char           '("ScmChar"    "SCM_CHARP"   "SCM_CHAR_VALUE" "character")
-   :scm            '("ScmObj"     #f            #f            #f)
-   :port           '("ScmPort*"   "SCM_PORTP"   "SCM_PORT"    "port")
-   :input-port     '("ScmPort*"   "SCM_IPORTP"  "SCM_PORT"    "input port")
-   :output-port    '("ScmPort*"   "SCM_OPORTP"  "SCM_PORT"    "output port")
-   :procedure      '("ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE" "procedure")
-   :closure        '("ScmClosure*" "SCM_CLOSUREP" "SCM_CLOSURE" "closure")
-   :hash-table     '("ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE" "hash table")
-   :class          '("ScmClass*"  "SCM_CLASSP"  "SCM_CLASS"   "class")
-   ))
-
-(define (type->c-type type)
-  (cond ((hash-table-get *type-table* type #f) => car)
-        (else (error "unknown type keyword: ~s" type))))
-
-(define (type->c-predicate type)
-  (cond ((hash-table-get *type-table* type #f) => cadr)
-        (else #f)))
-
-(define (type->c-unboxer type)
-  (cond ((hash-table-get *type-table* type #f) => caddr)
-        (else #f)))
-
-(define (type->name type)
-  (cond ((hash-table-get *type-table* type #f) => cadddr)
-        (else (error "unknown type keyword: ~s" type))))
-
-;;; main loop ===================================================
+;;; main loop ===========================================================
 
 (unless (and (= (length *argv*) 1)
              (string=? (strpad (car *argv*) -5) ".stub"))
