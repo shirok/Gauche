@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.10 2002-02-07 10:33:52 shirok Exp $
+ *  $Id: portmacros.h,v 1.11 2002-02-12 19:50:51 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
@@ -209,14 +209,14 @@ SCM_EXTERN int Scm__PortFileGetc(int prefetch, ScmPort *port);
  * String input
  */
 
-#define SCM__ISTR_GETB(b, port)                         \
-    do {                                                \
-        if (SCM_PORT(port)->src.istr.rest <= 0) {       \
-            (b) = EOF;                                  \
-        } else {                                        \
-            SCM_PORT(port)->src.istr.rest--;            \
-            (b) = *SCM_PORT(port)->src.istr.current++;  \
-        }                                               \
+#define SCM__ISTR_GETB(b, port)                                         \
+    do {                                                                \
+        if (SCM_PORT(port)->src.istr.rest <= 0) {                       \
+            (b) = EOF;                                                  \
+        } else {                                                        \
+            SCM_PORT(port)->src.istr.rest--;                            \
+            (b) = *(unsigned char*)SCM_PORT(port)->src.istr.current++;  \
+        }                                                               \
     } while (0)
 
 #define SCM__ISTR_GETC(c, port)                                         \
