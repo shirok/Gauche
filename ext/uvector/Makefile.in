@@ -15,6 +15,8 @@ SCM_INSTALL_DIR = @libdir@/gauche/@GAUCHE_VERSION@/lib
 INSTALL_HEADERS = uvector.h
 INSTALL_SO = libuvector.so
 
+GENERATED = uvector.h uvector.c uvlib.c 
+
 INSTALL = @INSTALL@
 
 OBJS = s8vector.o s16vector.o s32vector.o s64vector.o \
@@ -27,5 +29,20 @@ uvector.h : uvector.h.sh
 	rm -rf uvector.h
 	./uvector.h.sh > uvector.h
 
+uvector.c : uvector.c.sh
+	rm -rf uvector.c
+	./uvector.c.sh > uvector.c
+
 uvlib.c : uvlib.stub
 	snow $(SRCDIR)/genstub uvlib.stub
+
+clean :
+	rm -rf libuvector.so core *.o *~
+
+distclean: clean
+	rm -rf Makefile
+
+realclean: clean
+	rm -rf $(GENERATED) Makefile
+
+
