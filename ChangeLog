@@ -1,5 +1,8 @@
 2004-07-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-0.scm: typo fix
+	* src/load.c: typo fix
+
 	* src/system.c (Scm_GlobDirectory): fixed potential memory leak on
 	  error of glob() call.
 

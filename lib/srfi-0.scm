@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.21 2004-07-26 09:51:41 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.22 2004-07-28 05:13:22 shirok Exp $
 ;;;
 
 (define-module srfi-0
@@ -37,7 +37,7 @@
               '((srfi-0)
                 (srfi-1 srfi-1)
                 (srfi-2 srfi-2)
-                (srfi-4 gauche.vector)
+                (srfi-4 gauche.uvector)
                 (srfi-5 srfi-5)
                 (srfi-6)
                 (srfi-7)

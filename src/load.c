@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.90 2004-07-26 09:51:41 shirok Exp $
+ *  $Id: load.c,v 1.91 2004-07-28 05:13:22 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1088,7 +1088,7 @@ void Scm__InitLoad(void)
     SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_EUCJP));
 #elif defined(GAUCHE_CHAR_ENCODING_SJIS)
     SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_SJIS));
-#elif defnied(GAUCHE_CHAR_ENCODING_UTF8)
+#elif defined(GAUCHE_CHAR_ENCODING_UTF8)
     SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_UTF8));
 #else
     SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_NONE));
