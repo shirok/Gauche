@@ -1,3 +1,21 @@
+2001-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, lib/slib.scm.in : let configure.in to find the slib
+	  location.  the user can specify it by --with-slib=PATH,
+	  alternatively.
+
+2001-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c, src/syslib.stub, configure.in, src/gauche/config.h.in:
+	  Convert time_t to a number in Scheme world, instead of <sys-time>
+	  object.  Since time_t need not be an integer, a new configure test
+	  is added to check how to convert between time_t and Scheme number.
+
+2001-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c : finished buffered ports.
+	* ext/charconv/* : adding more
+
 2001-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c : added buffered ports (not finished).

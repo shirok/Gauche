@@ -20,6 +20,7 @@ if [ "$tgz" = "yes" ]; then
   ./AUTOCONF
   configure
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
+  (cd doc; make html)
   make distclean
   (cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE_X Gauche | gzip -9 > Gauche-$VERSION.tgz)
   mv ../Gauche-$VERSION.tgz $TGZ_DEST
