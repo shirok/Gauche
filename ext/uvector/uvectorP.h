@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: uvectorP.h,v 1.10 2002-06-20 08:49:26 shirok Exp $
+ *  $Id: uvectorP.h,v 1.11 2002-06-22 04:07:56 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -58,7 +58,7 @@
 #define BADOBJ(obj)      Scm_Error("bad type of object: %S", obj)
 #define TOOSMALLOBJ(obj) Scm_Error("value too small: %S", obj)
 #define TOOLARGEOBJ(obj) Scm_Error("value too large: %S", obj)
-#define OVERFLOW         Scm_Error("vector arithmetic overflow")
+#define UV_OVERFLOW      Scm_Error("vector arithmetic overflow")
 
 #ifdef HAVE_ISINF
 #define ISINF(x)  isinf(x)
@@ -111,7 +111,7 @@
 /* small integer binop with clamping */
 #define SMALL_BINOP_CLAMP(dst, v0, v1, op, min, max, clamp)     \
   do {                                                          \
-    long V__ = v0 op v1;                                        \
+    long V__ = (long)v0 op (long)v1;                            \
     CLAMP_INT(V__, min, max, clamp);                            \
     dst = V__;                                                  \
   } while (0)
@@ -131,9 +131,9 @@
   do {                                                          \
     dst = op(v0, v1);                                           \
     if (Scm_NumCmp(dst, min) < 0) {                             \
-        if (CLAMP_LO_P(clamp)) dst = min; else OVERFLOW;        \
+        if (CLAMP_LO_P(clamp)) dst = min; else UV_OVERFLOW;     \
     } else if (Scm_NumCmp(dst, max) > 0) {                      \
-        if (CLAMP_HI_P(clamp)) dst = max; else OVERFLOW;        \
+        if (CLAMP_HI_P(clamp)) dst = max; else UV_OVERFLOW;     \
     }                                                           \
   } while (0)
 
@@ -335,6 +335,12 @@
 #define S32ADD(dst, x, y, clamp) dst = sadd(x, y, clamp)
 #define S32SUB(dst, x, y, clamp) dst = ssub(x, y, clamp)
 #define S32MUL(dst, x, y, clamp) dst = smul(x, y, clamp)
+#define S32ADDOBJ(dst, x, y, clamp) \
+  dst = saddobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
+#define S32SUBOBJ(dst, x, y, clamp) \
+  dst = ssubobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
+#define S32MULOBJ(dst, x, y, clamp) \
+  dst = smulobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
 #else  /* SIZEOF_LONG >= 8 */
 #define S32UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
@@ -360,6 +366,12 @@
   SMALL_BINOP_CLAMP(dst, x, y, -, S32MIN, S32MAX, clamp)
 #define S32MUL(dst, x, y, clamp) \
   SMALL_BINOP_CLAMP(dst, x, y, *, S32MIN, S32MAX, clamp)
+#define S32ADDOBJ(dst, x, y, clamp) \
+  dst = saddobj_small(x, y, S32MIN, S32MAX, clamp)
+#define S32SUBOBJ(dst, x, y, clamp) \
+  dst = ssubobj_small(x, y, S32MIN, S32MAX, clamp)
+#define S32MULOBJ(dst, x, y, clamp) \
+  dst = smulobj_small(x, y, S32MIN, S32MAX, clamp)
 #endif /* SIZEOF_LONG >= 8 */
 #define S32ELTPRINT(out, elt)  Scm_Printf(out, "%d", elt)
 #define S32ELTEQ(x, y)         ((x)==(y))
@@ -368,12 +380,6 @@
 #define S32IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define S32XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
 
-#define S32ADDOBJ(dst, x, y, clamp) \
-  dst = saddobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
-#define S32SUBOBJ(dst, x, y, clamp) \
-  dst = ssubobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
-#define S32MULOBJ(dst, x, y, clamp) \
-  dst = smulobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
 #define S32DIVOBJ(dst, x, y) dst = 0
 #define S32ANDOBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, &)
 #define S32IOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, |)
@@ -412,6 +418,12 @@
 #define U32ADD(dst, x, y, clamp) dst = uadd(x, y, clamp)
 #define U32SUB(dst, x, y, clamp) dst = usub(x, y, clamp)
 #define U32MUL(dst, x, y, clamp) dst = umul(x, y, CLAMP_HI_P(clamp))
+#define U32ADDOBJ(dst, x, y, clamp) \
+  dst = uaddobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
+#define U32SUBOBJ(dst, x, y, clamp) \
+  dst = usubobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
+#define U32MULOBJ(dst, x, y, clamp) \
+  dst = umulobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
 #else  /* SIZEOF_LONG >= 8 */
 #define U32UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
@@ -437,6 +449,12 @@
   SMALL_BINOP_CLAMP(dst, x, y, -, U32MIN, U32MAX, clamp)
 #define U32MUL(dst, x, y, clamp) \
   SMALL_BINOP_CLAMP(dst, x, y, *, U32MIN, U32MAX, clamp)
+#define U32ADDOBJ(dst, x, y, clamp) \
+  dst = uaddobj_small(x, y, U32MIN, U32MAX, clamp)
+#define U32SUBOBJ(dst, x, y, clamp) \
+  dst = usubobj_small(x, y, U32MIN, U32MAX, clamp)
+#define U32MULOBJ(dst, x, y, clamp) \
+  dst = umulobj_small(x, y, U32MIN, U32MAX, clamp)
 #endif /* SIZEOF_LONG >= 8 */
 #define U32ELTPRINT(out, elt)  Scm_Printf(out, "%u", elt)
 #define U32ELTEQ(x, y)         ((x)==(y))
@@ -445,12 +463,6 @@
 #define U32IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define U32XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
 
-#define U32ADDOBJ(dst, x, y, clamp) \
-  dst = uaddobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
-#define U32SUBOBJ(dst, x, y, clamp) \
-  dst = usubobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
-#define U32MULOBJ(dst, x, y, clamp) \
-  dst = umulobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
 #define U32DIVOBJ(dst, x, y) dst = 0
 #define U32ANDOBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, &)
 #define U32IOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, |)
@@ -505,10 +517,10 @@
 #define S64XOROBJ(dst, x, y) S64XOR(dst, x, y)
 
 #else /* SIZEOF_LONG >= 8 */
-#define S64MIN -9223372036854775808L
 #define S64MAX  9223372036854775807L
+#define S64MIN  (-S64MAX-1)
 #define S64BOX(obj, elt)  (obj) = Scm_MakeInteger(elt)
-#define S64UNBOX(elt, obj, clamp) 
+#define S64UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
     if (SCM_INTP(obj)) {                                                \
       (elt) = SCM_INT_VALUE(obj);                                       \
@@ -551,7 +563,7 @@
 /*
  * U64Vector
  */
-#define U64ELTTYPE SCM_UVECTOR_INT64
+#define U64ELTTYPE SCM_UVECTOR_UINT64
 #if SIZEOF_LONG == 4
 #define U64MIN  Scm_UvectorU64Min
 #define U64MAX  Scm_UvectorU64Max
@@ -604,7 +616,7 @@
 
 #else /* SIZEOF_LONG >= 8 */
 #define U64MIN  0UL
-#define U64MAX  18446744073709551616UL
+#define U64MAX  18446744073709551615UL
 #define U64BOX(obj, elt)  (obj) = Scm_MakeIntegerFromUI(elt)
 #define U64UNBOX(elt, obj, clamp)                                       \
   do {                                                                  \
@@ -633,18 +645,18 @@
 
 #define U64ADD(dst, x, y, clamp) dst = uadd(x, y, clamp)
 #define U64SUB(dst, x, y, clamp) dst = usub(x, y, clamp)
-#define U64MUL(dst, x, y, clamp) dst = umul(x, y, clamp)
+#define U64MUL(dst, x, y, clamp) dst = umul(x, y, CLAMP_HI_P(clamp))
 #define U64DIV(dst, x, y) dst = 0
 #define U64AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define U64IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define U64XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
 
 #define U64ADDOBJ(dst, x, y, clamp) \
-    dst = saddobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
+    dst = uaddobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
 #define U64SUBOBJ(dst, x, y, clamp) \
-    dst = ssubobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
+    dst = usubobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
 #define U64MULOBJ(dst, x, y, clamp) \
-    dst = smulobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
+    dst = umulobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
 #define U64DIVOBJ(dst, x, y) dst = 0
 #define U64ANDOBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, &)
 #define U64IOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, |)
