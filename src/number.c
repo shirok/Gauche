@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.106 2004-01-28 00:50:08 shirok Exp $
+ *  $Id: number.c,v 1.107 2004-01-28 03:54:59 shirok Exp $
  */
 
 #include <math.h>
@@ -422,7 +422,7 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamphi, int clamplo)
         return Scm_BignumToSI64(SCM_BIGNUM(obj), clamphi, clamplo);
     }
     if (SCM_FLONUMP(obj)) {
-        if (Scm_NumCmp(obj, SCM_2_63) > 0) {
+        if (Scm_NumCmp(obj, SCM_2_63) >= 0) {
             if (!clamphi) goto err;
             SCM_SET_INT64_MAX(r);
             return r;
@@ -484,7 +484,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamphi, int clamplo)
         return Scm_BignumToUI64(SCM_BIGNUM(obj), clamphi, clamplo);
     }
     if (SCM_FLONUMP(obj)) {
-        if (Scm_NumCmp(obj, SCM_2_64) > 0) {
+        if (Scm_NumCmp(obj, SCM_2_64) >= 0) {
             if (!clamphi) goto err;
             SCM_SET_UINT64_MAX(r);
             return r;
