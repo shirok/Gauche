@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.19 2001-04-22 07:33:46 shiro Exp $
+ *  $Id: port.c,v 1.20 2001-04-24 19:49:34 shiro Exp $
  */
 
 #include <unistd.h>
@@ -342,7 +342,8 @@ ScmObj Scm_MakeOutputStringPort(void)
 
 ScmObj Scm_GetOutputString(ScmPort *port)
 {
-    SCM_ASSERT(SCM_PORT_TYPE(port) == SCM_PORT_OSTR);
+    if (SCM_PORT_TYPE(port) != SCM_PORT_OSTR)
+        Scm_Error("output string port required, but got %S", port);
     return Scm_DStringGet(&SCM_PORT(port)->src.ostr);
 }
 
