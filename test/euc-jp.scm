@@ -1,11 +1,45 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.1 2001-04-05 08:19:15 shiro Exp $
+;; $Id: euc-jp.scm,v 1.2 2001-04-26 20:07:42 shirok Exp $
 
 (use gauche.test)
 
 (test-start "EUC-JP")
 
+;; string-pointer
+(define sp #f)
+(test "make-string-pointer" #t
+      (lambda ()
+        (set! sp (make-string-pointer "いろはにhoへと"))
+        (string-pointer? sp)))
+(test "string-pointer-next" #\い
+      (lambda () (string-pointer-next sp)))
+(test "string-pointer-next" #\ろ
+      (lambda () (string-pointer-next sp)))
+(test "string-pointer-prev" #\ろ
+      (lambda () (string-pointer-prev sp)))
+(test "string-pointer-prev" #\い
+      (lambda () (string-pointer-prev sp)))
+(test "string-pointer-prev" #t
+      (lambda () (eof-object? (string-pointer-prev sp))))
+(test "string-pointer-index" 0
+      (lambda () (string-pointer-index sp)))
+(test "string-pointer-index" 8
+      (lambda () (do ((x (string-pointer-next sp) (string-pointer-next sp)))
+                     ((eof-object? x) (string-pointer-index sp)))))
+(test "string-pointer-substring" '("いろはにhoへと" "")
+      (lambda () (list (string-pointer-substring sp)
+                       (string-pointer-substring sp :after #t))))
+(test "string-pointer-substring" '("いろはにh" "oへと")
+      (lambda ()
+        (string-pointer-set sp 5)
+        (list (string-pointer-substring sp)
+              (string-pointer-substring sp :after #t))))
+(test "string-pointer-substring" '("" "いろはにhoへと")
+      (lambda ()
+        (string-pointer-set sp 0)
+        (list (string-pointer-substring sp)
+              (string-pointer-substring sp :after #t))))
 
 ;; char-set
 
