@@ -3,19 +3,42 @@ Comparison of Gauche, Stklos and Goops
 Class slots
 -----------
 
-STklos:                           Gauche:
-  name                              name
-  direct-supers                     direct-supers
-  direct-slots                      direct-slots
-  direct-subclasses                 direct-subclasses
-  direct-methods                    direct-methods
-  cpl                               cpl
-  slots                             slots
-  nfields
-  getters-n-setters                 accessor-table
-  redefined
+                          STklos          Goops           Gauche
+  .................................................................
+  name                      o               o               o
+  direct-supers             o               o               o
+  direct-slots              o               o               o
+  direct-subclasses         o               o               o
+  direct-methods            o               o               o
+  cpl                       o               o               o
+  slots                     o               o               o
+  nfields                   o               o               *
+  getters-n-setters         o               o               *
+  redefined                 o               o               o
+  environment               -               o               -
 
 
+* getters-n-setters field is a structure to map slot name to its
+  accessors (sort of).   STklos and Goops uses assoc list for it.
+
+  In Gauche, first I thought to use eq?-hashtable rather than alist.
+  However, I found that relatively smaller # of slots (say less than a few
+  tens) alist is faster than hashtable, even when hashtable contains no
+  conflict.  So I use assoc list as well for now.  But don't count on that.
+  There may be the case that I switch the structure depends on # of slots,
+  or introduce totally different structure (how about using perfect hash
+  function?)
+
+
+Generic function slots
+----------------------
+
+                          STklos          Goops           Gauche
+  .................................................................
+  name                      o               o               o
+  methods
+
+  
 
 Class creation protocol
 -----------------------
