@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.23 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: repl.c,v 1.24 2002-08-29 22:04:40 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -154,10 +154,11 @@ ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
 
 static ScmObj repl_proc(ScmObj *args, int nargs, void *data)
 {
-    ScmObj reader =    (nargs >= 1? args[0] : SCM_FALSE);
-    ScmObj evaluator = (nargs >= 2? args[1] : SCM_FALSE);
-    ScmObj printer =   (nargs >= 3? args[2] : SCM_FALSE);
-    ScmObj prompter =  (nargs >= 4? args[3] : SCM_FALSE);
+    int argc = Scm_Length(args[0]);
+    ScmObj reader =    (argc >= 1? SCM_CAR(args[0]) : SCM_FALSE);
+    ScmObj evaluator = (argc >= 2? SCM_CADR(args[0]) : SCM_FALSE);
+    ScmObj printer =   (argc >= 3? SCM_CAR(SCM_CDDR(args[0])) : SCM_FALSE);
+    ScmObj prompter =  (argc >= 4? SCM_CADR(SCM_CDDR(args[0])) : SCM_FALSE);
     return Scm_VMRepl(reader, evaluator, printer, prompter);
 }
 
