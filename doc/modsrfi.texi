@@ -96,17 +96,17 @@ Suppose you are writing a program that requires srfi-13 (string library).
 In Gauche, the standard way to use srfi-13 is like this:
 @c JP
 @var{feature-identifier} は機能を示すシンボルです。ある機能が Gauche で
-サポートされているなら、それは、@var{feature-requirement} を満します。
-より複雑な条件を構成するために、@var{feature-requirement} の真理値の組合せ
-を使う事ができます。
+サポートされているなら、それは、@var{feature-requirement} を満たします。
+より複雑な条件を構成するために、@var{feature-requirement} のブール代数による
+組み合わせを用いることが出来ます。
 
-このマクロは @var{feature-requirement} をその順でテストし、そのひとつが
+このマクロは @var{feature-requirement} を順にテストし、そのひとつが
 満たされたら、対応する @var{command-or-definition} @dots{} に展開されます。
 
 最後の節は、@var{feature-requirement} ではなく、@code{else} で始めることも
-できます。これ以前に満された条件がない場合には、このマクロは else 節の
+できます。これ以前に満たされた条件がない場合には、このマクロは else 節の
 @var{command-or-definition} に展開されます。もし、else 節がなく、
-満される条件節がひとつもなければ、エラーが発生します。
+満たされる条件節がひとつもなければ、エラーが発生します。
 
 現時点の Gauche では、サポートされている SRFI の機能は、srfi 名
 (たとえば、@code{srfi-1})で識別されます(サポートされている SRFI に
@@ -197,11 +197,11 @@ It is available by saying @code{(use srfi-1)}.
 The implementation is based on Olin Shivers's reference implementation.
 I splitted it into number of subfiles that will be autoloaded on demand.
 @c JP
-SRFI-1 は、リスト操作ライブラリのリッチなコレクションです
+SRFI-1 は、リスト操作ライブラリの豊富なコレクションです
 (@ref{srfi-1,[SRFI-1],SRFI-1})。
 このライブラリを使うには、@code{(use srfi-1)} として下さい。
 Olin Shivers氏のリファレンス実装に基づいて実装されています。
-要求されたときに自動的にロードされるいくつかのサブファイルに分割して
+必要に応じてオートロードされるいくつかのサブファイルに分割して
 あります。
 @c COMMON
 @end deftp
@@ -221,14 +221,14 @@ Olin Shivers氏のリファレンス実装に基づいて実装されています。
 
 @node SRFI-1 List constructors, SRFI-1 List predicates, srfi-1 - List library, srfi-1 - List library
 @subsection List constructors
-@c NODE リストの構築子
+@c NODE SRFI-1 リスト構築子, リストの構築子
 
 @defun xcons cd ca
 @c EN
 [SRFI-1] Equivalent to @code{(cons ca cd)}.  Useful to pass to
 higher-order procedures.
 @c JP
-[SRFI-1] @code{(cons ca cd)} と同等です。公開手続きへ渡すのに便利です。
+[SRFI-1] @code{(cons ca cd)} と同等です。高階手続きへ渡すのに便利です。
 @c COMMON
 @end defun
 
@@ -287,7 +287,7 @@ increasing by @var{step}.
 
 @node SRFI-1 List predicates, SRFI-1 List selectors, SRFI-1 List constructors, srfi-1 - List library
 @subsection List predicates
-@c NODE リストの述語
+@c NODE SRFI-1 リストの述語, リストの述語
 
 @defun proper-list? x
 @c EN
@@ -365,7 +365,7 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 
 @node SRFI-1 List selectors, SRFI-1 List miscellaneous routines, SRFI-1 List predicates, srfi-1 - List library
 @subsection List selectors
-@c NODE リスト選択子
+@c NODE SRFI-1 リスト選択子, リスト選択子
 
 @defun  first pair
 @defunx second pair
@@ -400,7 +400,7 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 @c JP
 [SRFI-1]
 @code{take} はリスト @var{x} の最初のi個の要素を返します。
-@code{drop} はリスト @var{x} の最初のi個の要素以外を返します。
+@code{drop} はリスト @var{x} の最初のi個の要素を除いたリストを返します。
 @c COMMON
 @example
 (take '(a b c d e)  2) => (a b)
@@ -435,10 +435,10 @@ take は、引数のリストが長さ0でないリストなら必ず新しいリストの
 領域を確保します。
 
 @var{i} がリスト @var{x} の終端を超えたらエラーが発生します。
-より丈夫なバージョンの @code{take} と @code{drop} については、
+より寛容なバージョンの @code{take} と @code{drop} については、
 @xref{util.list - Additional list library} を参照してください。
 
-あらゆる並びからの部分並びを抽出するということについては、
+あらゆる並びからの部分並びを抽出する汎用的な方法に関しては、
 @ref{Slicing sequence} にある @code{subseq} を参照してください。
 @c COMMON
 @end defun
@@ -449,9 +449,10 @@ take は、引数のリストが長さ0でないリストなら必ず新しいリストの
 [SRFI-1] @code{take-right} returns the last @var{i} elements of @var{flist}.
 @code{drop-right} returns all but the last @var{i} elements of @var{flist}. 
 @c JP
-[SRFI-1] @code{take-right} は @var{flist} の最後の @var{i}個の要素を
-返します。@code{drop-right} は @var{flist} の最後の @var{i}個の要素以外を
-返します。
+[SRFI-1] @code{take-right} は @var{flist} の最後の @var{i}個の要素
+からなるリストを返します。
+@code{drop-right} は @var{flist} の最後の @var{i}個の要素を
+除いたリスト返します。
 @c COMMON
 @example
 (take-right '(a b c d e) 2) => (d e)
@@ -460,7 +461,7 @@ take は、引数のリストが長さ0でないリストなら必ず新しいリストの
 @c EN
 @var{flist} may be any finite list.
 @c JP
-@var{flist} は有限リストであればmay be any finite list.
+@var{flist} は有限リストであればOKです。
 @c COMMON
 @example
 (take-right '(1 2 3 . d) 2) => (2 3 . d)
@@ -483,7 +484,7 @@ of @code{take-right} and @code{drop-right}.
 領域を確保します。
 
 @var{i} がリスト @var{flist} の長さより大きければエラーが発生します。
-より丈夫なバージョンの @code{take-right} と @code{drop-right} については、
+より寛容なバージョンの @code{take-right} と @code{drop-right} については、
 @xref{util.list - Additional list library} を参照してください。
 @c COMMON
 @end defun
@@ -499,9 +500,9 @@ shorter than expected.
 @c JP
 [SRFI-1] @var{take} および @var{drop-right} の
 その場で更新されるバージョンです。これらの
-手続きは @var{x} を破壊的に変更します。
+手続きは @var{x} を破壊的に変更するかもしれません。
 
-@var{x} が循環リストなら、@code{take!} は期待よりも短いリストを返す
+@var{x} が循環リストなら、@code{take!} は期待されるものより短いリストを返す
 可能性があります。
 @c COMMON
 @end defun
@@ -524,7 +525,7 @@ returning a list of the first @var{i} elements, and the remaining tail.
 modifes @var{x} to produce the result. 
 @c JP
 @code{split-at!} はその場で更新されるバージョンです。
-これは @var{x} を破壊的に更新します。
+これは @var{x} を破壊的に更新するかもしれません。
 @c COMMON
 @end defun
 
@@ -543,7 +544,7 @@ Note that @code{last-pair} is Gauche built-in procedure.
 
 @node SRFI-1 List miscellaneous routines, SRFI-1 Fold, SRFI-1 List selectors, srfi-1 - List library
 @subsection List miscellaneous routines
-@c NODE 種々のルーチン
+@c NODE 種々のリスト処理ルーチン
 
 @defun length+ x
 @ EN
@@ -586,7 +587,7 @@ comprised of the corresponding elements from the parameter lists.
 @c JP
 [SRFI-1] @code{(map list clist1 clist2 @dots{})} と同等です。
 @var{n} 本のリストが @code{zip} に渡された場合には、そのなかで一番短いものと
-同じながさのリストを返します。返されたリストは、要素が @var{n} 要素のリストで、
+同じ長さのリストを返します。返されたリストは、要素が @var{n} 要素のリストで、
 そのそれぞれが、引数として渡ってリストの対応する要素になっています。
 @c COMMON
 @example
@@ -645,9 +646,10 @@ of given lists, from @var{n} is zero to the length of the
 the shortest finite list in the given lists,
 and the count of times @var{pred} returned true is returned.
 @c JP
-[SRFI-1] @var{pred} 手続きは与えられたリストの @var{n} 番目の要素に
-適用します。@var{n} はゼロから与えられたリストのうち最も短いリストの
-長さまでです。@var{pred} が真を返した数が返ります。
+[SRFI-1] @var{n} をゼロから与えられたリストのうち最も短いリストの
+長さまでとして、@var{pred} 手続きを与えられたリストの @var{n} 番目の要素に
+それぞれ適用します。
+@var{pred} が真を返した数が返ります。
 @c COMMON
 @example
 (count even? '(3 1 4 1 5 9 2 5 6)) @result{} 3
@@ -795,8 +797,8 @@ These functions effectively do the same thing as @code{fold} or
 when @var{list} contains exactly one element, using the nature of
 @var{ridentity}.
 @c JP
-これらの関数は同じことを @code{fold} や @code{fold-right} で行うよりも、
-効率よく行います。@var{list} がひとつしか要素をもたない場合には、
+これらの関数は実質的に @code{fold} や @code{fold-right} と同じことを
+行いますが、@var{list} がひとつしか要素をもたない場合には、
 @var{ridentity} の性質を利用して @var{f} の適用を省略します。
 @c COMMON
 @end defun
@@ -960,7 +962,7 @@ and a list of elements that @var{pred} returned true on it is returned.
 modifies @var{list} to produce the result.
 @c JP
 @code{filter!} はその場で更新されるバージョンです。結果を生成するために
-@var{list} を破壊的に変更します。
+@var{list} を破壊的に変更するかもしれません。
 @c COMMON
 @end defun
 
@@ -981,7 +983,7 @@ and a list of elements that @var{pred} returned false on it is returned.
 modifies @var{list} to produce the result.
 @c JP
 @code{remove!} はその場で更新されるバージョンです。結果を生成するために
-@var{list} を破壊的に更新します。
+@var{list} を破壊的に更新するかもしれません。
 @c COMMON
 @end defun
 
@@ -1007,7 +1009,7 @@ removing elements of @var{list} by @var{pred}.
 modifies @var{list} to produce the result.
 @c JP
 @code{partition!} はその場で更新されるバージョンです。結果を生成するために
-@var{list} を破壊的に更新します。
+@var{list} を破壊的に更新するかもしれません。
 @c COMMON
 @end defun
 
@@ -1086,8 +1088,8 @@ satisfy @var{pred}, and returns the rest.
 @code{break} inverts the sense of @var{pred}.
 @c JP
 [SRFI-1]
-@code{span} は @code{(values (take-while pred clist) (drop-while pred clist))} を
-等価です。@code{break} は @var{pred} の意味を反転します。
+@code{span} は @code{(values (take-while pred clist) (drop-while pred clist))} 
+と等価です。@code{break} は @var{pred} の意味を反転します。
 @c COMMON
 @end defun
 
@@ -1404,7 +1406,7 @@ The cells in the first list argument may be reused to construct the result.
 @c JP
 [SRFI-1]
 それぞれ対応する手続きのその場で更新するバージョンです。
-最初の引数のリストのセルが結果を構築するのに再利用されます。
+最初の引数のリストのセルが結果を構築するのに再利用されるかもしれません。
 @c COMMON
 @end defun
 
@@ -1542,7 +1544,7 @@ it will be useful if you want your program to be portable.
 このモジュールはレコード型を使うマクロを含んでいます。レコード型は
 Gauche のオブジェクトシステム上で実装されています。
 
-SRFI-9 のレコード型はこのオブジェクトシステムほどには強力ではありませんが、
+SRFI-9 のレコード型はオブジェクトシステムほどには強力ではありませんが、
 ポータブルなプログラムを書くときには役に立ちます。
 @c COMMON
 @end deftp
@@ -2901,7 +2903,7 @@ not given, returns the date in local time zone.
 Returns the current julian day, a point in time as a real number of
 days since -4714-11-24T12:00:00Z (November 24, -4714 at noon, UTC). 
 @c JP
-現在のJulian dayを返します。Julian dayは
+現在のユリウス日(Julian day)を返します。Julian dayは
 -4714-11-24T12:00:00Z (November 24, -4714 at noon, UTC) からの日数を
 実数で表現したものです。
 @c COMMON
@@ -2914,7 +2916,7 @@ Returns the current modified julian day, a point in time as a real
 number of days since 1858-11-17T00:00:00Z
 (November 17, 1858 at midnight, UTC). 
 @c JP
-現在のModified julian dayを返します。Modified julian dayは
+現在の改訂ユリウス日(Modified julian day)を返します。Modified julian dayは
 1858-11-17T00:00:00Z (November 17, 1858 at midnight, UTC)
 からの日数を実数で表現したものです。
 @c COMMON
@@ -3184,7 +3186,7 @@ Conversions from date to various date/time types.
 @c EN
 Conversions from julian-day to various date/time types.
 @c JP
-ユリウス暦からから様々な様式の日付/時間に変換します。
+ユリウス日からから様々な様式の日付/時間に変換します。
 @c COMMON
 @end defun
 
@@ -3196,7 +3198,7 @@ Conversions from julian-day to various date/time types.
 @c EN
 Conversions from modified julian-day to various date/time types.
 @c JP
-改訂ユリウス暦から様々な様式の日付/時間に変換します。
+改訂ユリウス日から様々な様式の日付/時間に変換します。
 @c COMMON
 @end defun
 
@@ -3211,7 +3213,7 @@ Conversions from modified julian-day to various date/time types.
 @c EN
 Conversions from time-monotonic to various date/time types.
 @c JP
-モノトニック形式から様々な様式の日付/時間に変換します。
+time-monotonic形式から様々な様式の日付/時間に変換します。
 @c COMMON
 @end defun
 
@@ -3226,7 +3228,7 @@ Conversions from time-monotonic to various date/time types.
 @c EN
 Conversions from time-tai to various date/time types.
 @c JP
-国際原子時形式から様々な様式の日付/時間に変換します。
+time-tai形式から様々な様式の日付/時間に変換します。
 @c COMMON
 @end defun
 
@@ -3347,7 +3349,7 @@ Gets and sets the "snapshot" of the state of the random source @var{s}.
 generator.
 @c JP
 乱数発生源 @var{s} の状態の「スナップショット」を獲得あるいは設定します。
-@var{state} は背後にある発生器に依存する内容をもつ不透明な状態です。
+@var{state} は背後にある発生器に依存する内容をもつ不透明なオブジェクトです。
 @c COMMON
 @end defun
 
@@ -3497,7 +3499,7 @@ the option procedure is called as follows:
 @code{--long=foo} または @code{--long foo} です。
 
 @code{args-fold} はオプションの引数ではなく、ハイフンで始まっていない
-コマンドライン引数を@emph{オペランド}としてとりあつかう。
+コマンドライン引数を@emph{オペランド}としてとりあつかいます。
 @code{args-fold} はオペランドとオプションが交互に出現するのを許します。
 しかし、'@code{--}' に出逢うと、のこりは、ハイフンで始まっていようと
 なかろうと、オペランドとして扱われます。
