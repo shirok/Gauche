@@ -30,11 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: interactive.scm,v 1.11 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: interactive.scm,v 1.12 2003-09-13 07:45:17 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
-  (export apropos describe d info)
+  (export apropos describe d
+          ;; autoloaded symbols follow
+          info reload reload-modified-modules module-reload-rules
+          reload-verbose)
   )
 (select-module gauche.interactive)
 
@@ -132,5 +135,9 @@
 
 ;; Autoload online info viewer
 (autoload gauche.interactive.info info)
+
+;; Autoload module reloader
+(autoload gauche.reload reload reload-modified-modules
+                        module-reload-rules reload-verbose)
 
 (provide "gauche/interactive")
