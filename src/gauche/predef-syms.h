@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.1 2001-02-05 09:58:53 shiro Exp $
+ *  $Id: predef-syms.h,v 1.2 2001-02-06 06:57:30 shiro Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -39,17 +39,34 @@ DEFSYM(ScmQelse,            "else");
 DEFSYM(ScmQyields,          "=>");
 DEFSYM(ScmQdo,              "do");
 DEFSYM(ScmQdelay,           "delay");
+
 DEFSYM(ScmQmacroExpand,     "%macro-expand");
+DEFSYM(ScmQloadPath,        "*load-path*");
 
-#if 0
-DEFSYM(ScmQcons,   "cons");
-DEFSYM(ScmQcar,    "car");
-DEFSYM(ScmQcdr,    "cdr");
-DEFSYM(ScmQlist,   "list");
-DEFSYM(ScmQeq,     "eq?");
-DEFSYM(ScmQeqv,    "eqv?");
-DEFSYM(ScmQequal,  "equal");
-DEFSYM(ScmQmemv,   "memv");
-#endif
-
-
+/* cpp can't generate #define lines automatically... */
+#ifdef DEFSYM_DEFINES
+#define SCM_SYM_QUOTE            SCM_OBJ(&ScmQquote)
+#define SCM_SYM_QUASIQUOTE       SCM_OBJ(&ScmQquasiquote)
+#define SCM_SYM_UNQUOTE          SCM_OBJ(&ScmQunquote)
+#define SCM_SYM_UNQUOTE_SPLICING SCM_OBJ(&ScmQunquoteSplicing)
+#define SCM_SYM_DEFINE           SCM_OBJ(&ScmQdefine)
+#define SCM_SYM_LAMBDA           SCM_OBJ(&ScmQlambda)
+#define SCM_SYM_IF               SCM_OBJ(&ScmQif)
+#define SCM_SYM_SET              SCM_OBJ(&ScmQset)
+#define SCM_SYM_LET              SCM_OBJ(&ScmQlet)
+#define SCM_SYM_LET_STAR         SCM_OBJ(&ScmQletStar)
+#define SCM_SYM_LETREC           SCM_OBJ(&ScmQletrec)
+#define SCM_SYM_BEGIN            SCM_OBJ(&ScmQbegin)
+#define SCM_SYM_WHEN             SCM_OBJ(&ScmQwhen)
+#define SCM_SYM_UNLESS           SCM_OBJ(&ScmQunless)
+#define SCM_SYM_AND              SCM_OBJ(&ScmQand)
+#define SCM_SYM_OR               SCM_OBJ(&ScmQor)
+#define SCM_SYM_COND             SCM_OBJ(&ScmQcond)
+#define SCM_SYM_CASE             SCM_OBJ(&ScmQcase)
+#define SCM_SYM_ELSE             SCM_OBJ(&ScmQelse)
+#define SCM_SYM_YIELDS           SCM_OBJ(&ScmQyields) /* => */
+#define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
+#define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
+#define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
+#define SCM_SYM_LOAD_PATH        SCM_OBJ(&ScmQloadPath)
+#endif /*DEFSYM_DEFINES*/
