@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uri.scm,v 1.14 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: uri.scm,v 1.15 2003-07-24 07:57:25 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -148,10 +148,15 @@
     (cond ((eof-object? c))
           ((char=? c #\%)
            (let ((c1 (read-char)))
-             (cond ((digit->integer c1 16)
+             (cond ((eof-object? c1)
+                    (write-char c)) ;; just be permissive
+                   ((digit->integer c1 16)
                     => (lambda (i1)
                          (let ((c2 (read-char)))
-                           (cond ((digit->integer c2 16)
+                           (cond ((eof-object? c2)
+                                  ;; just be permissive
+                                  (write-char c) (write-char c1)) 
+                                 ((digit->integer c2 16)
                                   => (lambda (i2)
                                        (write-byte (+ (* i1 16) i2))
                                        (loop (read-char))))

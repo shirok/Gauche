@@ -226,6 +226,11 @@ Content-Length: 4349
 (test* "decode" "abc< > \" #%?{|}\\^"
        (uri-decode-string "abc%3c+%3e+%22+%23%25%3f%7b%7c%7d%5c%5e"
                           :cgi-decode #t))
+(test* "decode" "%"    (uri-decode-string "%"))
+(test* "decode" "a%"   (uri-decode-string "a%"))
+(test* "decode" "a%y"  (uri-decode-string "a%y"))
+(test* "decode" "a%ay" (uri-decode-string "a%ay"))
+(test* "decode" ""     (uri-decode-string ""))
 
 (test-end)
 
