@@ -13,10 +13,12 @@ gauche-ref.dvi : gauche-ref.texi
 	texi2dvi gauche-ref.texi
 
 clean:
-	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.mo *.pg \
-	       *.toc *.tp *.tps *.vr *.vrs
+	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.mo *.mos \
+	       *.pg *.toc *.tp *.tps *.vr *.vrs
 
 distclean : clean
 
 
 realclean : clean
+	rm -f gauche-ref.html gauche-ref.dvi
+
