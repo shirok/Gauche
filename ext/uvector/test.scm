@@ -959,7 +959,7 @@
 (test-section "clamp")
 
 (define (clamp-test tag class tagvector? tagvector-ref tagvector-length
-                   clamp v minv maxv)
+                    clamp v minv maxv)
   (define (clamp-min index v)
     (cond ((tagvector? minv)
            (max v (tagvector-ref minv index) (tag->min tag)))
@@ -976,8 +976,18 @@
                        (iota (tagvector-length v)))
     (test (format #f "~svector-clamp" tag)
           result
-          (lambda () (clamp v minv maxv))))
-  )
+          (lambda () (clamp v minv maxv)))
+    (when (or (tagvector? minv) (tagvector? maxv))
+      (test (format #f "~svector-clamp (list)" tag)
+            result
+            (lambda () (clamp v
+                              (if (tagvector? minv)
+                                  (coerce-to <list> minv)
+                                  minv)
+                              (if (tagvector? maxv)
+                                  (coerce-to <list> maxv)
+                                  maxv)))))
+    ))
 
 (define-macro (clamp-test-generate tag v minv maxv)
   `(clamp-test ',tag ,(string->symbol #`"<,|tag|vector>")
