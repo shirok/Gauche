@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.218 2002-02-10 05:11:45 shirok Exp $
+ *  $Id: gauche.h,v 1.219 2002-02-18 20:48:22 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1725,7 +1725,7 @@ SCM_CLASS_DECL(Scm_SyntaxClass);
 
 SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name,
 				 ScmCompileProc compiler, void *data);
-
+SCM_EXTERN ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep);
 
 /*--------------------------------------------------------
  * PROMISE
