@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.36 2001-02-13 12:29:38 shiro Exp $
+ *  $Id: vm.c,v 1.37 2001-02-14 10:11:24 shiro Exp $
  */
 
 #include "gauche.h"
@@ -175,17 +175,23 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     } while (0)
 
 /* pop a continuation frame, i.e. return from a procedure. */
-#define POP_CONT()                                      \
-    do {                                                \
-        if (IN_STACK_P((ScmObj*)cont)) {                \
-            sp   = (ScmObj*)cont->argp + cont->size;    \
-            env  = cont->env;                           \
-            argp = cont->argp;                          \
-            pc   = cont->pc;                            \
-        } else {                                        \
-            VM_ERR(("call/cc not supported yet."));     \
-        }                                               \
-        cont = cont->prev;                              \
+#define POP_CONT()                                                      \
+    do {                                                                \
+        if (IN_STACK_P((ScmObj*)cont)) {                                \
+            sp   = (ScmObj*)cont->argp + cont->size;                    \
+            env  = cont->env;                                           \
+            argp = cont->argp;                                          \
+            pc   = cont->pc;                                            \
+        } else {                                                        \
+            if (cont->argp) {                                           \
+                memcpy(sp, cont->argp, cont->size*sizeof(ScmObj*));     \
+                argp = (ScmEnvFrame *)sp;                               \
+                sp = (ScmObj*)argp + cont->size;                        \
+            }                                                           \
+            env = cont->env;                                            \
+            pc = cont->pc;                                              \
+        }                                                               \
+        cont = cont->prev;                                              \
     } while (0)
 
 /* push a header of an environment frame.   this is the second stage of
@@ -917,9 +923,11 @@ static ScmObj user_eval_inner(ScmObj program)
     ScmVMActivationHistory *h = SCM_NEW(ScmVMActivationHistory);
     h->prev = theVM->history;
     h->stackBase = theVM->sp;
+    h->cont = theVM->cont;
     theVM->history = h;
-
+    
     SCM_PUSH_ERROR_HANDLER {
+        theVM->cont = NULL;
         theVM->pc = program;
         run_loop();
         result = theVM->val0;
@@ -1381,6 +1389,7 @@ void Scm_VMDump(ScmVM *vm)
     char buf[50];
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
+    ScmVMActivationHistory *hist = vm->history;
     int j;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
@@ -1409,6 +1418,12 @@ void Scm_VMDump(ScmVM *vm)
         cont = cont->prev;
     }
 
+    Scm_Printf(out, "history:\n");
+    while (hist) {
+        Scm_Printf(out, "  %p: prev=%p, base=%p, cont=%p\n",
+                   hist, hist->prev, hist->stackBase, hist->cont);
+        hist = hist->prev;
+    }
     Scm_Printf(out, "dynenv: %S\n", vm->handlers);
 }
 
