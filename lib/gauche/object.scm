@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.35 2002-09-11 23:41:28 shirok Exp $
+;;;  $Id: object.scm,v 1.36 2002-09-19 05:45:28 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -96,17 +96,19 @@
                                     result))))
               ))
     (receive (true-name getter-name) (%check-setter-name name)
-      `(begin
-         (%ensure-generic-function ',true-name (current-module))
-         (add-method! ,true-name
-                      (make <method>
-                        :generic ,true-name
-                        :specializers (list ,@specializers)
-                        :lambda-list ',lambda-list
-                        :body (lambda ,body-args ,@body)))
-         ,(if getter-name
-              `(set! (setter ,getter-name) ,true-name)
-              #f)))
+      (let ((gf (gensym)))
+        `(let ((,gf (%ensure-generic-function ',true-name (current-module))))
+           (add-method! ,gf
+                        (make <method>
+                          :generic ,gf
+                          :specializers (list ,@specializers)
+                          :lambda-list ',lambda-list
+                          :body (lambda ,body-args ,@body)))
+           ,@(if getter-name
+                 `((unless (setter ,getter-name)
+                     (set! (setter ,getter-name) ,gf)))
+                 '())
+           ,gf)))
     ))
 
 ;;----------------------------------------------------------------
@@ -481,7 +483,6 @@
 ;    ((before) (rxmatch-before self))
 ;    ((after)  (rxmatch-after self))
 ;    ((
-
 
 ;;;
 ;;; Make exported symbol visible from outside
