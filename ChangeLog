@@ -1,5 +1,6 @@
 2002-11-09  Shiro Kawai  <shiro@acm.org>
 
+	* gc/* : updated to Boehm GC 6.1
 	* lib/gauche/reload.scm : added module reloading utility
 	  contributed by Alex Shinn.
 

@@ -1621,7 +1621,60 @@ Since 6.1alpha4:
    (Thanks again to Jeffrey Mark Siskind.)
  - Renamed "SUSPENDED" flag for Solaris threads support to avoid a conflict
    with a system header. (Thanks to Philp Brown.)
- 
+ - Cause win32_threads.c to handle an out of range stack pointer correctly,
+   though currently with a warning.  (Thanks to Jonathan Clark for
+   observing that win32 applications may temporarily use the stack
+   pointer for other purposes, and suggesting a fix.  Unfortunately, it's
+   not clear that there is a complete solution to this problem.)
+
+Since 6.1alpha5:
+ - Added GC_MAXIMUM_HEAP_SIZE environment variable.
+ - Fix configure.in for MIPS/LINUX. (Thanks to H.J. Lu.)
+ - Double page hash table size for -DLARGE_CONFIG.
+ - Integrated Bo Thorsen's X86-64 support.
+ - STACKBOTTOM definition for LINUX/MIPS was partially changed back.
+   (Thanks to H.J. Lu and Hiroshi Kawashima for resolving this.)
+ - Replaced all occurrences of LINUX_DATA_START in gcconfig.h with
+   SEARCH_FOR_DATA_START.  It doesn't hurt to falll back to a search.
+   And __data_start doesn't seem to get defined correctly of the GC
+   library is loaded with LD_PRELOAD, e.g. for leak detection.
+ - If the GC_find_leak environment variable is set, do a
+   atexit(GC_gcollect) to give us at least one chance to detect leaks.
+   This may report some very benign leaks, but ...
+ - Addeded REDIRECT_FREE.  It's necessary if we want leak detection with
+   LD_PRELOAD.
+ - Defer printing of leaked objects, as for smashed objects.
+ - Fixed process and descriptor leak in GC_print_callers.  Try for
+   line number even if we got function name.)
+ - Ported parallel GC support and thread local allocation to Alpha.
+   Not yet well-tested.
+ - Added GC_DUMP_REGULARLY and added finalization statistics to GC_dump().
+ - Fixed Makefile.am to mention alpha_mach_dep.S instead of the defunct
+   alpha_mach_dep.s.  (Thanks to Fergus Henderson.)
+ - Incorporated a change to new_gc_alloc.h, suggested by Johannes Schmidt,
+   which should make it work with gcc3.1.  (I would still like to encourage
+   use of gc_allocator.h instead.) 
+ - Use alpha_mach_dep.S only on Linux.  (It's not clear that this is
+   optimal, but it otherwise didn't build on Tru64.  Thanks to Fergus
+   Henderson.)
+ - Added ifdef to guard free() in os_dep.c.  Otherwise we get a
+   compilation error on Irix.  (Thanks to Dai Sato.)
+ - Added an experimental version of GC_memalign to mallocx.c.  This can't
+   always work, since we don't handle alignment requests in the hblk-level
+   allocator, and we can't handle arbitrary pointer displacements unless
+   GC_all_interior_pointers is enabled.  But it should work for alignment
+   requests up to HBLKSIZE.  This is not yet documented in the standard
+   places.
+ - Finally debugged the OSF1/Tru64 thread support.  This needs more testing,
+   since I needed to add a somewhat unconvincing workaround for signal
+   delivery issues that I don't yet completely understand.  But it does
+   pass my tests, even in parallel GC mode.  Incremental GC support is
+   disabled if thread support is enabled, due to the signal issues.
+ - Eliminated name-space-incorrect definition of _cdecl from gc_cpp.h.
+ - Added GC_debug_malloc_replacement and GC_debug_realloc_replacement
+   declarations to gc.h.  On IA64, this is required for REDIRECT_MALLOC
+   to work correctly with these.
+ - Fixed Linux USE_PROC_FOR_LIBRARIES to work with a 64-bit /proc format.
 
 To do:
  - --enable-redirect-malloc is mostly untested and known not to work

@@ -228,6 +228,8 @@ ptr_t p;
     
 #endif /* KEEP_BACK_PTRS */
 
+# define CROSSES_HBLK(p, sz) \
+	(((word)(p + sizeof(oh) + sz - 1) ^ (word)p) >= HBLKSIZE)
 /* Store debugging info into p.  Return displaced pointer. */
 /* Assumes we don't hold allocation lock.		   */
 ptr_t GC_store_debug_info(p, sz, string, integer)
@@ -243,6 +245,8 @@ word integer;
     /* But that's expensive.  And this way things should only appear	*/
     /* inconsistent while we're in the handler.				*/
     LOCK();
+    GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
+    GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK(p, sz)));
 #   ifdef KEEP_BACK_PTRS
       ((oh *)p) -> oh_back_ptr = HIDE_BACK_PTR(NOT_MARKED);
 #   endif
@@ -275,6 +279,8 @@ word integer;
     /* There is some argument that we should disable signals here.	*/
     /* But that's expensive.  And this way things should only appear	*/
     /* inconsistent while we're in the handler.				*/
+    GC_ASSERT(GC_size(p) >= sizeof(oh) + sz);
+    GC_ASSERT(!(SMALL_OBJ(sz) && CROSSES_HBLK(p, sz)));
 #   ifdef KEEP_BACK_PTRS
       ((oh *)p) -> oh_back_ptr = HIDE_BACK_PTR(NOT_MARKED);
 #   endif
@@ -798,14 +804,18 @@ unsigned GC_n_smashed = 0;
     ptr_t smashed;
 #endif
 {
+    GC_ASSERT(GC_is_marked(GC_base(smashed)));
     GC_smashed[GC_n_smashed] = smashed;
     if (GC_n_smashed < MAX_SMASHED - 1) ++GC_n_smashed;
+      /* In case of overflow, we keep the first MAX_SMASHED-1	*/
+      /* entries plus the last one.				*/
+    GC_have_errors = TRUE;
 }
 
 /* Print all objects on the list.  Clear the list.	*/
 void GC_print_all_smashed_proc ()
 {
-    int i;
+    unsigned i;
 
     GC_ASSERT(!I_HOLD_LOCK());
     if (GC_n_smashed == 0) return;

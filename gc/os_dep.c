@@ -154,6 +154,11 @@
   /* cover all versions.						*/
 
 # ifdef LINUX
+    /* Some Linux distributions arrange to define __data_start.  Some	*/
+    /* define data_start as a weak symbol.  The latter is technically	*/
+    /* broken, since the user program may define data_start, in which	*/
+    /* case we lose.  Nonetheless, we try both, prefering __data_start.	*/
+    /* We assume gcc-compatible pragmas.	*/
 #   pragma weak __data_start
     extern int __data_start[];
 #   pragma weak data_start
@@ -2201,7 +2206,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 	char * addr = (char *) (scp -> si_addr);
 #   endif
 #   ifdef LINUX
-#     ifdef I386
+#     if defined(I386) || defined (X86_64)
 	char * addr = (char *) (sc.cr2);
 #     else
 #	if defined(M68K)
@@ -3247,6 +3252,7 @@ struct callinfo info[NFRAMES];
 {
     register int i;
     static int reentry_count = 0;
+    GC_bool stop = FALSE;
 
     LOCK();
       ++reentry_count;
@@ -3257,7 +3263,7 @@ struct callinfo info[NFRAMES];
 #   else
       GC_err_printf0("\tCall chain at allocation:\n");
 #   endif
-    for (i = 0; i < NFRAMES; i++) {
+    for (i = 0; i < NFRAMES && !stop ; i++) {
      	if (info[i].ci_pc == 0) break;
 #	if NARGS > 0
 	{
@@ -3287,15 +3293,14 @@ struct callinfo info[NFRAMES];
 	    char **sym_name =
 	      backtrace_symbols((void **)(&(info[i].ci_pc)), 1);
 	    char *name = sym_name[0];
-	    GC_bool found_it = (strchr(name, '(') != 0);
 #	  else
 	    char buf[40];
 	    char *name = buf;
-	    GC_bool fount_it = FALSE:
      	    sprintf(buf, "##PC##= 0x%lx", info[i].ci_pc);
 #	  endif
-#	  ifdef LINUX
-	    if (!found_it) {
+#	  if defined(LINUX) && !defined(SMALL_CONFIG)
+	    /* Try for a line number. */
+	    {
 #	        define EXE_SZ 100
 		static char exe_name[EXE_SZ];
 #		define CMD_SZ 200
@@ -3306,8 +3311,6 @@ struct callinfo info[NFRAMES];
 		static GC_bool found_exe_name = FALSE;
 		static GC_bool will_fail = FALSE;
 		int ret_code;
-		/* Unfortunately, this is the common case for the 	*/
-		/* main executable.					*/
 		/* Try to get it via a hairy and expensive scheme.	*/
 		/* First we get the name of the executable:		*/
 		if (will_fail) goto out;
@@ -3324,19 +3327,34 @@ struct callinfo info[NFRAMES];
 		/* Then we use popen to start addr2line -e <exe> <addr>	*/
 		/* There are faster ways to do this, but hopefully this	*/
 		/* isn't time critical.					*/
-		sprintf(cmd_buf, "/usr/bin/addr2line -e %s 0x%lx", exe_name,
+		sprintf(cmd_buf, "/usr/bin/addr2line -f -e %s 0x%lx", exe_name,
 				 (unsigned long)info[i].ci_pc);
 		pipe = popen(cmd_buf, "r");
-		if (pipe < 0 || fgets(result_buf, RESULT_SZ, pipe) == 0) {
+		if (pipe == NULL
+		    || (result_len = fread(result_buf, 1, RESULT_SZ - 1, pipe))
+		       == 0) {
+		  if (pipe != NULL) pclose(pipe);
 		  will_fail = TRUE;
 		  goto out;
 		}
-		result_len = strlen(result_buf);
 		if (result_buf[result_len - 1] == '\n') --result_len;
+		result_buf[result_len] = 0;
 		if (result_buf[0] == '?'
 		    || result_buf[result_len-2] == ':' 
-		       && result_buf[result_len-1] == '0')
+		       && result_buf[result_len-1] == '0') {
+		    pclose(pipe);
 		    goto out;
+		}
+		/* Get rid of embedded newline, if any.  Test for "main" */
+		{
+		   char * nl = strchr(result_buf, '\n');
+		   if (nl != NULL && nl < result_buf + result_len) {
+		     *nl = ':';
+		   }
+		   if (strncmp(result_buf, "main", nl - result_buf) == 0) {
+		     stop = TRUE;
+		   }
+		}
 		if (result_len < RESULT_SZ - 25) {
 		  /* Add in hex address	*/
 		    sprintf(result_buf + result_len, " [0x%lx]",
@@ -3348,7 +3366,10 @@ struct callinfo info[NFRAMES];
 	    }
 #	  endif /* LINUX */
 	  GC_err_printf1("\t\t%s\n", name);
-	  free(sym_name);  /* May call GC_free; that's OK */
+#	  if defined(HAVE_BUILTIN_BACKTRACE) && \
+	     !defined(BUILTIN_BACKTRACE_BROKEN)
+	    free(sym_name);  /* May call GC_free; that's OK */
+#         endif
 	}
     }
     LOCK();

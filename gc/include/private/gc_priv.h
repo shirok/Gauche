@@ -589,9 +589,10 @@ extern GC_warn_proc GC_current_warn_proc;
  */
  
 # ifdef LARGE_CONFIG
-#   define LOG_PHT_ENTRIES  19  /* Collisions likely at 512K blocks,	*/
-				/* which is >= 2GB.  Each table takes	*/
-				/* 64KB.				*/
+#   define LOG_PHT_ENTRIES  20  /* Collisions likely at 1M blocks,	*/
+				/* which is >= 4GB.  Each table takes	*/
+				/* 128KB, some of which may never be	*/
+				/* touched.				*/
 # else
 #   ifdef SMALL_CONFIG
 #     define LOG_PHT_ENTRIES  14 /* Collisions are likely if heap grows	*/
@@ -599,7 +600,7 @@ extern GC_warn_proc GC_current_warn_proc;
 				 /* Each hash table occupies 2K bytes.   */
 #   else /* default "medium" configuration */
 #     define LOG_PHT_ENTRIES  16 /* Collisions are likely if heap grows	*/
-				 /* to more than 16K hblks >= 256MB.	*/
+				 /* to more than 64K hblks >= 256MB.	*/
 				 /* Each hash table occupies 8K bytes.  */
 #   endif
 # endif
@@ -1656,13 +1657,26 @@ extern void (*GC_check_heap) GC_PROTO((void));
 extern void (*GC_print_all_smashed) GC_PROTO((void));
 			/* Print GC_smashed if it's not empty.		*/
 			/* Clear GC_smashed list.			*/
+extern void GC_print_all_errors GC_PROTO((void));
+			/* Print smashed and leaked objects, if any.	*/
+			/* Clear the lists of such objects.		*/
 extern void (*GC_print_heap_obj) GC_PROTO((ptr_t p));
   			/* If possible print s followed by a more	*/
   			/* detailed description of the object 		*/
   			/* referred to by p.				*/
 
+extern GC_bool GC_have_errors;  /* We saw a smashed or leaked object.	*/
+				/* Call error printing routine 		*/
+				/* occasionally.			*/
 extern GC_bool GC_print_stats;	/* Produce at least some logging output	*/
 				/* Set from environment variable.	*/
+
+#ifndef NO_DEBUGGING
+  extern GC_bool GC_dump_regularly;  /* Generate regular debugging dumps. */
+# define COND_DUMP if (GC_dump_regularly) GC_dump();
+#else
+# define COND_DUMP
+#endif
 
 /* Macros used for collector internal allocation.	*/
 /* These assume the collector lock is held.		*/
@@ -1735,6 +1749,7 @@ void GC_print_block_list GC_PROTO((void));
 void GC_print_hblkfreelist GC_PROTO((void));
 void GC_print_heap_sects GC_PROTO((void));
 void GC_print_static_roots GC_PROTO((void));
+void GC_print_finalization_stats GC_PROTO((void));
 void GC_dump GC_PROTO((void));
 
 #ifdef KEEP_BACK_PTRS

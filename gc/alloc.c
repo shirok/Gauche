@@ -617,6 +617,7 @@ void GC_finish_collection()
 	  GC_print_address_map();
 	}
 #   endif
+    COND_DUMP;
     if (GC_find_leak) {
       /* Mark all objects on the free list.  All objects should be */
       /* marked when we're done.				   */
@@ -760,6 +761,7 @@ void GC_gcollect GC_PROTO(())
 {
     GC_notify_full_gc();
     (void)GC_try_to_collect(GC_never_stop_func);
+    if (GC_have_errors) GC_print_all_errors();
 }
 
 word GC_n_heap_sects = 0;	/* Number of sections currently in heap. */

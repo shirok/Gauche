@@ -134,7 +134,9 @@ by UseGC.  GC is an alias for UseGC, unless GC_NAME_CONFLICT is defined.
 #include "gc.h"
 
 #ifndef THINK_CPLUS
-#define _cdecl
+#  define GC_cdecl
+#else
+#  define GC_cdecl _cdecl
 #endif
 
 #if ! defined( GC_NO_OPERATOR_NEW_ARRAY ) \
@@ -182,7 +184,7 @@ class gc_cleanup: virtual public gc {public:
     inline gc_cleanup();
     inline virtual ~gc_cleanup();
 private:
-    inline static void _cdecl cleanup( void* obj, void* clientData );};
+    inline static void GC_cdecl cleanup( void* obj, void* clientData );};
     /*
     Instances of classes derived from "gc_cleanup" will be allocated
     in the collected heap by default.  When the collector discovers an

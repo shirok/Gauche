@@ -1245,6 +1245,19 @@ void run_one_test()
     		"GC_is_valid_displacement produced incorrect result\n");
 	FAIL;
       }
+#     if defined(__STDC__) && !defined(MSWIN32) && !defined(MSWINCE)
+        /* Harder to test under Windows without a gc.h declaration.  */
+        {
+	  size_t i;
+	  extern void *GC_memalign();
+
+	  GC_malloc(17);
+	  for (i = sizeof(GC_word); i < 512; i *= 2) {
+	    GC_word result = (GC_word) GC_memalign(i, 17);
+	    if (result % i != 0 || result == 0 || *(int *)result != 0) FAIL;
+	  } 
+	}
+#     endif
 #     ifndef ALL_INTERIOR_POINTERS
 #      if defined(RS6000) || defined(POWERPC)
         if (!TEST_FAIL_COUNT(1)) {

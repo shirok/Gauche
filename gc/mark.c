@@ -539,8 +539,8 @@ mse * mark_stack_limit;
           /* Large length.					        */
           /* Process part of the range to avoid pushing too much on the	*/
           /* stack.							*/
-	  GC_ASSERT(descr < GC_greatest_plausible_heap_addr
-			    - GC_least_plausible_heap_addr);
+	  GC_ASSERT(descr < (word)GC_greatest_plausible_heap_addr
+			    - (word)GC_least_plausible_heap_addr);
 #	  ifdef PARALLEL_MARK
 #	    define SHARE_BYTES 2048
 	    if (descr > SHARE_BYTES && GC_parallel
@@ -719,22 +719,33 @@ mse * GC_steal_mark_stack(mse * low, mse * high, mse * local,
     mse *top = local - 1;
     unsigned i = 0;
 
+    /* Make sure that prior writes to the mark stack are visible. */
+    /* On some architectures, the fact that the reads are 	  */
+    /* volatile should suffice.					  */
+#   if !defined(IA64) && !defined(HP_PA) && !defined(I386)
+      GC_memory_barrier();
+#   endif
     GC_ASSERT(high >= low-1 && high - low + 1 <= GC_mark_stack_size);
     for (p = low; p <= high && i <= max; ++p) {
 	word descr = *(volatile word *) &(p -> mse_descr);
+	/* In the IA64 memory model, the following volatile store is	*/
+	/* ordered after this read of descr.  Thus a thread must read 	*/
+	/* the original nonzero value.  HP_PA appears to be similar,	*/
+	/* and if I'm reading the P4 spec correctly, X86 is probably 	*/
+	/* also OK.  In some other cases we need a barrier.		*/
+#       if !defined(IA64) && !defined(HP_PA) && !defined(I386)
+          GC_memory_barrier();
+#       endif
 	if (descr != 0) {
 	    *(volatile word *) &(p -> mse_descr) = 0;
+	    /* More than one thread may get this entry, but that's only */
+	    /* a minor performance problem.				*/
 	    ++top;
 	    top -> mse_descr = descr;
 	    top -> mse_start = p -> mse_start;
 	    GC_ASSERT(  top -> mse_descr & GC_DS_TAGS != GC_DS_LENGTH || 
 			top -> mse_descr < GC_greatest_plausible_heap_addr
 			                   - GC_least_plausible_heap_addr);
-	    /* There is no synchronization here.  We assume that at	*/
-	    /* least one thread will see the original descriptor.	*/
-	    /* Otherwise we need a barrier.				*/
-	    /* More than one thread may get this entry, but that's only */
-	    /* a minor performance problem.				*/
 	    /* If this is a big object, count it as			*/
 	    /* size/256 + 1 objects.					*/
 	    ++i;
@@ -771,7 +782,7 @@ void GC_return_mark_stack(mse * low, mse * high)
       BCOPY(low, my_start, stack_size * sizeof(mse));
       GC_ASSERT(GC_mark_stack_top = my_top);
 #     if !defined(IA64) && !defined(HP_PA)
-        GC_memory_write_barrier();
+        GC_memory_barrier();
 #     endif
 	/* On IA64, the volatile write acts as a release barrier. */
       GC_mark_stack_top = my_top + stack_size;

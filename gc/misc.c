@@ -104,6 +104,10 @@ GC_bool GC_print_stats = 0;
 
 GC_bool GC_print_back_height = 0;
 
+#ifndef NO_DEBUGGING
+  GC_bool GC_dump_regularly = 0;  /* Generate regular debugging dumps. */
+#endif
+
 #ifdef FIND_LEAK
   int GC_find_leak = 1;
 #else
@@ -498,6 +502,11 @@ extern GC_bool GC_no_win32_dlls;
 # define GC_no_win32_dlls FALSE
 #endif
 
+void GC_exit_check GC_PROTO((void))
+{
+   GC_gcollect();
+}
+
 void GC_init_inner()
 {
 #   if !defined(THREADS) && defined(GC_ASSERTIONS)
@@ -515,8 +524,14 @@ void GC_init_inner()
     if (0 != GETENV("GC_PRINT_STATS")) {
       GC_print_stats = 1;
     } 
+    if (0 != GETENV("GC_DUMP_REGULARLY")) {
+      GC_dump_regularly = 1;
+    }
     if (0 != GETENV("GC_FIND_LEAK")) {
       GC_find_leak = 1;
+#     ifdef __STDC__
+        atexit(GC_exit_check);
+#     endif
     }
     if (0 != GETENV("GC_ALL_INTERIOR_POINTERS")) {
       GC_all_interior_pointers = 1;
@@ -636,6 +651,18 @@ void GC_init_inner()
 	  initial_heap_sz = divHBLKSZ(initial_heap_sz);
 	}
     }
+    {
+	char * sz_str = GETENV("GC_MAXIMUM_HEAP_SIZE");
+	if (sz_str != NULL) {
+	  word max_heap_sz = (word)atol(sz_str);
+	  if (max_heap_sz < initial_heap_sz * HBLKSIZE) {
+	    WARN("Bad maximum heap size %s - ignoring it.\n",
+		 sz_str);
+	  } 
+	  if (0 == GC_max_retries) GC_max_retries = 2;
+	  GC_set_max_heap_size(max_heap_sz);
+	}
+    }
     if (!GC_expand_hp_inner(initial_heap_sz)) {
         GC_err_printf0("Can't start up: not enough memory\n");
         EXIT();
@@ -671,6 +698,7 @@ void GC_init_inner()
     	GC_incremental = TRUE;
       }
 #   endif /* !SMALL_CONFIG */
+    COND_DUMP;
     /* Get black list set up and/or incrmental GC started */
       if (!GC_dont_precollect || GC_incremental) GC_gcollect_inner();
     GC_is_initialized = TRUE;
@@ -977,6 +1005,8 @@ void GC_dump()
     GC_print_hblkfreelist();
     GC_printf0("\n***Blocks in use:\n");
     GC_print_block_list();
+    GC_printf0("\n***Finalization statistics:\n");
+    GC_print_finalization_stats();
 }
 
 #endif /* NO_DEBUGGING */
