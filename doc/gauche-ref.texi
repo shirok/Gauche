@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.156 2002-02-14 19:38:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.157 2002-02-15 08:41:10 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -955,19 +955,43 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 @section Module System
 @c NODE モジュールシステム
 
+@c EN
 Gauche adopts a simple module system that allows
 modularlized development of large software.
+@c JP
+Gaucheは大きなソフトウェアをモジュール化して開発するための、
+単純なモジュールシステムを備えています。
+@c COMMON
 
+@c EN
 A higher level interface is simple enough from the user's point
-of view.   When you want to use the features provided by module
+of view.   It works like this:
+When you want to use the features provided by module
 @code{foo}, you just need to say @code{(use foo)} in your code.
 This form is a macro and interpreted at compile time.
+Usually it loads the files that defines @code{foo}'s features,
+and imports the external APIs into the calling module.
+@c JP
+高レベルのインタフェースを使うのはユーザにとっては非常に簡単です。
+モジュール@code{foo}が提供する機能を使いたければ、
+プログラム中で@code{(use foo)}と表記するだけです。
+このフォームはマクロで、コンパイル時に解釈されます。
+通常は、@code{foo}の機能を実装したファイルをロードし、
+その外部APIを呼び出したモジュール中にインポートします。
+@c COMMON
 
+@c EN
 The @code{use} mechanism is built on top of two independent
-mechanisms, namespace separation and file loading mechanism.
-Those two can be used separately, although it is much more
+lower mechanisms, namespace separation and file loading mechanism.
+Those two lower mechanisms can be used separately, although it is much more
 convenient when used together.
+@c JP
+@code{use}メカニズムは、名前空間の分離とファイルローディングという
+二つの独立な低レベルのメカニズムの上に実装されています。
+これらの低レベルメカニズムはそれぞれ別々に使うこともできます。
+@c COMMON
 
+@c EN
 The following sections in this manual describes
 modules in details.
 @itemize @bullet
@@ -979,8 +1003,17 @@ writing modules.
 define and to use modules, along the built-in functions
 to introspect module internals.
 @end itemize
-
-
+@c JP
+以下のセクションでモジュールの機能について詳しく説明しています。
+@itemize @bullet
+@item
+@ref{Writing Gauche modules} ではモジュールの書き方について
+説明します。
+@item
+@ref{Modules} ではモジュールを定義したり使うための特殊形式とマクロ、
+およびモジュールの内部を調べるための組込み手続きについて説明します。
+@end itemize
+@c COMMON
 
 @c ======================================================================
 @node Programming in Gauche, Core syntax, Concepts, Top
@@ -1198,12 +1231,19 @@ although it is not generally recommended.
 When @code{gosh} is invoked without any script files,
 it goes into interactive read-eval-print loop.
 @c JP
-
+スクリプトファイルが与えられなかった場合、
+@code{gosh}はインタラクティブなread-eval-printループに入ります。
 @c COMMON
 
+@c EN
 To exit the interpreter, type EOF (usually Control-D in Unix termials)
 or evaluate @code{(exit)}.
+@c JP
+インタプリタを終了するには、EOF文字(Unix端末では通常Control-D)をタイプするか、
+@code{(exit)}を評価します。
+@c COMMON
 
+@c EN
 I recommend you to run @code{gosh} inside Emacs, for it has
 rich features useful to interact with internal Scheme process.
 Put the following line to your @file{.emacs} file:
@@ -1211,16 +1251,39 @@ Put the following line to your @file{.emacs} file:
 (setq scheme-program-name "gosh")
 @end example
 And you can run @code{gosh} by @key{M-x run-scheme}.
+@c JP
+@code{gosh}をEmacs内部で走らせることをお勧めします。
+EmacsはSchemeサブプロセスを操作するための豊富な機能を持っています。
+次の行を@file{.emacs}に加えておくと、@key{M-x run-scheme} で
+Emacsのバッファ内で@code{gosh}が走ります。
+@example
+(setq scheme-program-name "gosh")
+@end example
+@c COMMON
 
+@c EN
 If you want to use multibyte characters in the interaction,
 make sure your terminal's settings is in sync with @code{gosh}'s
 internal character encodings.
+@c JP
+対話環境でマルチバイト文字を使う場合は、端末の文字エンコーディングを@code{gosh}の
+内部エンコーディングと合わせるようにして下さい。
+@c COMMON
 
+@c EN
 Currently @code{gosh} has no fancy features such as
 line-editing or command history.   They'll be added in future.
+@c JP
+今のところ、@code{gosh}は行編集やコマンドヒストリなどの便利な機能を
+備えていません。将来はこのへんも充実してゆくでしょう。
+@c COMMON
 
+@c EN
 @xref{Interactive session}, for some procedures useful in
 interactive session.
+@c JP
+インタラクティブセッションで便利な手続きが@ref{Interactive session}で定義されています。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Debugging, Writing Scheme scripts, Interactive development, Programming in Gauche
@@ -1448,31 +1511,97 @@ parse command-line options.
 @subsection Script compatibility before release 0.5
 @c NODE リリース0.5以前とのスクリプトの互換性
 
+@c EN
 In order to conform final SRFI-22,
 Gauche release 0.5.1 changes the way @code{main} is called.
 Unfortunately, this makes the Scheme scripts that is written for older
 Gauche no longer work.
+I decided to take this change now, in the early stage of Gauche,
+rather than keeping incomatibility to the standard (srfi).
+@c JP
+SRFI-22に準拠するために、Gaucheはリリース0.5.1から@code{main}の呼ばれ方を
+変更しました。残念ながら、この変更によりそれ以前のGaucheのために書かれたスクリプトは
+動作しなくなります。
+標準(srfi)との非互換性を後々まで引きずるよりは、まだ開発の早い段階の今の時点で
+変更をしておいたほうが良いと判断しました。
+@c COMMON
 
+@c EN
 The incompatible changes are these two points.
+@c JP
+非互換な変更は以下の2点です。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 The argument list passed to @code{main} now includes the script
 name itself as the first element.  In older version, only the
 arguments after the script file name are passed.
+@c JP
+@code{main}に渡されるコマンドライン引数リストは、その第一要素にスクリプトファイル名を
+持つようになります。古いバージョンではスクリプトファイル名以降のコマンドライン引数だけが
+渡されていました。
+@c COMMON
 @item
+@c EN
 When @code{main} returns non-integral value, @code{gosh} exits
 with code 70.  In older version, @code{gosh} exits with code 0
 in such case.
+@c JP
+@code{main}が整数でない値を返した場合、@code{gosh}は終了ステータス70で終了します。
+古いバージョンではこのような場合、終了ステータス0で終了していました。
+@c COMMON
 @end itemize
 
-To help transition, Gauche keeps the previous behavior if
+@c EN
+To help transition, @code{gosh} keeps the previous behavior if
 either (a) command line argument @code{-fcompat-0.5} is given,
 or (b) an environment variable @code{GAUCHE_COMPAT_0_5} is defined.
 You can run the Scheme scripts written for previous Gauche
 unchanged using either of these methods.
+@c JP
+移行を助けるため、@code{gosh}は (a)コマンドライン引数@code{-fcompat-0.5}が与えられるか
+(b)環境変数@code{GAUCHE_COMPAT_0_5} が定義されていた場合は
+以前のバージョンと同じ振舞いをします。このいずれかの手段を用いることにより、
+以前のGaucheのために書かれたスクリプトを走らせることができます。
+@c COMMON
 
+@c EN
 This backward compatibility feature is a temporary solution,
 and will be removed after a few releases.
+I encourage you to move to the new interface by then.
+@c JP
+この後方互換機能は一時的な解決で、いくつかリリースを重ねた時点で
+取り除かれる予定です。なるべくそれまでに新しいインタフェースに
+移行して下さい。
+@c COMMON
+
+@c EN
+To write a script that works both 0.5.1 and the previous version,
+you can use some hack like this:
+@c JP
+0.5.1とそれ以前のGaucheと両方で動作するスクリプトを書くには、
+次のようなハックが必要になります。
+@c COMMON
+@example
+(define (main args)
+  (let ((pure-args (if (string=? (gauche-version) "0.5.1")
+                       (cdr args)
+                       args)))
+    @dots{}
+   ))
+@end example
+
+@c EN
+(@code{Cond-expand} form is the mechanism supposed to be used in
+this kind of situation.  Unfortunately, the implementation of
+@code{cond-expand} in the previous versions of Gauche was broken
+and didn't work.)
+@c JP
+(@code{Cond-expand} フォームが、本来このような状況で使われるべき
+ものなのですが、以前のGaucheでは@code{cond-expand}の実装が壊れて
+いたため使えません。)
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
@@ -1763,6 +1892,18 @@ collected to form a new list and bound to @var{variable_N}.
 @var{variable_N}に束縛されます。
 @end itemize
 @c COMMON
+
+@example
+(lambda (a b) (+ a b))
+@c EN
+  @result{} @r{procedure that adds two arguments}
+@c JP
+  @result{} @r{二つの引数を加算する手続き}
+@c COMMON
+
+((lambda (a b) (+ a b)) 1 2)
+  @result{} 3
+@end example
 @end defspec
 
 @c EN
@@ -2316,6 +2457,54 @@ in SRFI-11 (@ref{Let-values}) provides
 
 @defspec begin form @dots{}
 [R5RS]
+@c EN
+Evaluates @var{form}s sequentially, and returns the last result(s).
+@c JP
+@var{form}を順に評価し、最後の値を返します。
+@c COMMON
+
+@c EN
+@code{Begin} doesn't introduce new "block" like @code{let}, that is,
+you can't place "internal define" at the beginning of @var{form}s
+generally.   Semantically @code{begin} behaves as if @var{form}s
+are spliced into the surrounding context.
+For example, topleve expression like the following is the same
+as two toplevel definitions:
+@c JP
+@code{Begin}は@code{let}のような「ブロック」を作成するわけではありません。
+すなわち、一般的には@var{form} @dots{}の先頭に「内部のdefine (internal define)」を
+置くことはできません。意味的には、@code{begin}はまるで@var{form} @dots{}が
+@code{begin}を囲むコンテクスト中に展開されているかのように振舞います。
+例えば、トップレベルに次のような式があった場合、それは2つのトップレベルのdefineと
+同等です。
+@c COMMON
+
+@example
+(begin (define x 1) (define y 2))
+@end example
+
+@c EN
+Here's a trickier example:
+@c JP
+よりトリッキーな例:
+@c COMMON
+
+@example
+(let ()
+  (begin 
+    (define x 2)
+    (begin
+      (define y 3)
+    ))
+  (+ x y))
+
+  @equiv{}
+
+(let ()
+  (define x 2)
+  (define y 3)
+  (+ x y))
+@end example
 @end defspec
 
 
@@ -2456,6 +2645,14 @@ CommonLispのパッケージは名前からシンボルへのマッピングを行いますが、
 Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
 モジュールが違えば同じシンボルは別々の束縛へとマップされ、違う値を
 返します。
+@c COMMON
+
+@c EN
+See also @ref{Writing Gauche modules}, for the conventions
+Gauche is using for its modules.
+@c JP
+Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
+併せて参照して下さい。
 @c COMMON
 
 @menu
@@ -2720,27 +2917,52 @@ Gauche起動時にいくつかのモジュールがあらかじめ定義されています。
 
 @deftp {Builtin Module} null
 @mdindex null
+@c EN
 This module corresponds to the null environment referred in R5RS.
-This module contains only syntactic bindings of built-in Gauche
-special forms.
+This module contains only syntactic bindings of R5RS syntax.
+(With one exception in the current implmenetation:
+Syntax @code{with-module} is in this module, since Gauche needed it
+for certain internal setup.  It'll be removed in future.)
+@c JP
+このモジュールはR5RSで述べられている"null environment"に相当します。
+R5RSの構文要素への束縛だけを含んだモジュールです。
+(但し現在の実装では一つだけ例外があります：Gaucheが内部処理に必要とするために、
+構文@code{with-module}がこのモジュールに含まれています。
+将来これは除かれます。)
+@c COMMON
 @end deftp
 
 @deftp {Builtin Module} scheme
 @mdindex scheme
+@c EN
 This module contains all the binding of @code{null} module,
 and the binding of procedures defined in R5RS.
+@c JP
+このモジュールは@code{null}モジュール内の束縛全てに加えて、
+R5RSで定義されている全ての手続きの束縛を含みます。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Module} gauche
 @mdindex gauche
+@c EN
 This module contains all the bindings of @code{scheme} module,
 plus Gauche specific built-in procedures.
+@c JP
+このモジュールは@code{scheme}モジュール内の全ての束縛に加え、
+Gaucheの組込み手続きや構文が含まれています。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Module} user
 @mdindex user
+@c EN
 This module is the default module the user code is compiled.
 all the bindings of @code{gauche} module is imported.
+@c JP
+このモジュールはユーザコードがコンパイルされる既定のモジュールです。
+@code{gauche}モジュール内の全ての束縛がインポートされています。
+@c COMMON
 @end deftp
 
 @c ======================================================================
@@ -6000,7 +6222,7 @@ Generally, if you want to handle non-continuable exception such as
 errors using this low-level mechanism,
 you have to transfer the control from the handler explicitly
 (See the explanation of @code{with-error-handler} above).
-@code{raise} detects if the handler resturns on the
+@code{raise} detects if the handler returns on the
 non-continuable exceptions and reports an error using the
 default error handler mechanism, but it is just a safety net.
 
@@ -7746,14 +7968,38 @@ if @code{cmpfn} is omitted.
 @section System interface
 @c NODE システムインタフェース
 
+@c EN
 Gauche supports most of POSIX.1 functions and other system functions
 popular among Unix variants as built-in procedures.
+@c JP
+GaucheはPOSIX.1の多くの関数と、さまざまなUnixで共通して使われているシステム関数へのインタフェースを
+組込み手続きとして提供しています。
+@c COMMON
 
+@c EN
 The procedures with name @code{sys-}@var{name} usually correspond to the
 system call @var{name}.  I tried to keep the interface similar
 whenever reasonable.  Sometimes Gauche has other routines that
 are higher level than system calls, nevertheless I try to
 provide lower level routines as well.
+@c JP
+@code{sys-}@var{name}という名前を持つ手続きは、多くの場合、
+システムコール@var{name}に対応しています。
+可能な限り、インタフェースが似るようにしました。
+しばしばGaucheはシステムコールよりも高機能の手続きを提供していますが、
+その場合でもなるべく低レベルのルーチンも提供するようにしています。
+@c COMMON
+
+@c EN
+If you are familiar with system programming in C,
+see also @ref{C to Scheme mapping}, which shows
+correspondence between C standard library functions
+and Gauche procedures.
+@c JP
+Cによるシステムプログラミングに慣れている方は、
+@ref{C to Scheme mapping}も参考にして下さい。
+Cの標準ライブラリとGaucheの手続きとの対応が示してあります。
+@c COMMON
 
 @menu
 * Program termination::         
@@ -7774,21 +8020,47 @@ provide lower level routines as well.
 @c NODE プログラムの終了
 
 @defun exit &optional (code 0)
-[POSIX] Terminates the current process with the exit code @var{code}.
-This procedure first invokes the @var{before} thunks of the current dynamic
+[POSIX]
+@c EN
+Terminates the current process with the exit code @var{code}.
+@var{Code} must be zero or positive exact integer.
+This procedure first invokes the @var{after} thunks of the current dynamic
 handlers (@xref{Continuation}), then This calls @code{exit(2)}
 which does some cleaning up, like flushing the opened file buffers.
+@c JP
+現在のプロセスを終了し、@var{code}を終了コードにします。
+@var{code}はゼロもしくは正の正確な整数でなければなりません。
+この手続きはまずアクティブなダイナミックハンドラの@var{after}手続きを全て呼び出し
+(@xref{Continuation})、続いて@code{exit(2)}を呼び出します。
+@c COMMON
 @end defun
 
 
 @defun sys-exit &optional (code 0)
-[POSIX] Terminates the current process with the exit code @var{code}.
+[POSIX]
+@c EN
+Terminates the current process with the exit code @var{code}.
+@var{Code} must be zero or positive exact integer.
 This procedure calls @code{_exit(2)} directly.
 No cleanup is done.  Unflushed file output is discarded.
+@c JP
+現在のプロセスを終了し、@var{code}を終了コードにします。
+@var{code}はゼロもしくは正の正確な整数でなければなりません。
+この手続きは@code{_exit(2)}を直接コールします。
+クリーンアップは一切行われません。
+フラッシュされてないファイルバッファの内容は捨てられます。
+@c COMMON
 
+@c EN
 You may use this procedure if you find the system is screwed up
 and no reasonable clean up can be done.  You should use this function
 to terminate a forked process; @ref{Fork and exec} for details.
+@c JP
+この手続きは、
+一切のクリーンアップに意味が無いほどシステムがどうしようもない状態になった時に使えます。
+また、forkした子プロセスを終了させる時にこの手続きが必要になることがあります。
+@ref{Fork and exec}を参照して下さい。
+@c COMMON
 @end defun
 
 @node Environment Inquiry, Filesystems, Program termination, System interface
@@ -8959,8 +9231,45 @@ of descendants of @var{class}.
 @section Defining class
 @c NODE クラスの定義
 
+A class is a first-class object in Gauche and you can create it
+on the fly at run-time using procedure calls.
+However, for convenience, a macro is defined to create a class
+and bind it globally.
+
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
+Creates a class object according to the arguments, and globally
+bind it to a variable @var{name}.   This macro should be used at toplevel.
+
+@var{Supers} is a list of direct superclasses from which this class
+inherits.   You can use multiple inheritance.
+See @ref{Multiple inheritance}  below, for the rule that determines
+precedence of inheritance chain.
+
+@var{Slot-spec} is a specification of a "slot", sometimes known as 
+a "field" or an "instance variable" (but you can specify "class variable"
+in @var{slot-spec} as well). 
+The simplest form of @var{slot-spec} is just a symbol, which names
+the slot.  Or you can give a list, whose first element is a symbol
+and whose rest is an interleaved list of keywords and values.
+The list form not only defines a name of the slot but specifies
+behavior of the slot.  See @ref{Slot specification}, for details.
+
+Finally, @var{option} @dots{} is an interleaved list of keywords
+and values, specifies how class object should be created.
+This macro recognizes one keyword, @code{:metaclass}, whose
+corresponding value is used for metaclass (class that instantiates
+another class).   Other options are passed to the @code{make}
+method to create the class object.  @xref{Class instantiation},
+for the usage of metaclass.
 @end defmac
+
+@node Multiple inheritance
+@subsection Multiple inheritance
+@c NODE 多重継承
+
+@node Slot specification
+@subsection Slot specification
+@c NODE スロットの記述
 
 
 @c ----------------------------------------------------------------------
@@ -9095,7 +9404,7 @@ of descendants of @var{class}.
 
 @node Slot definition,  , Class metaobject, Class introspection
 @subsubsection Slot definition
-@c NODE スロットの定義
+@c NODE スロット定義
 
 @deftp {Class} <slot-accessor>
 @clindex slot-accessor
