@@ -115,6 +115,8 @@ test-vmstack : test-vmstack.o @LIBGAUCHE_SO@
 test-arith : test-arith.o @LIBGAUCHE_SO@
 	$(CC) $(CFLAGS) $(LDFLAGS) -o test-arith test-arith.o @GOSH_LIBGAUCHE_FILES@  $(LIBS)
 
+test-arith.o : gauche/arith.h
+
 clean :
 	rm -rf core core.[0-9]* gosh test-vmstack test-arith   \
 	       @LIBGAUCHE_SO@ *.o *~ *.a *.t *.def *.exp *.exe \
