@@ -580,6 +580,49 @@
        (queue-empty? q))
 
 ;;-----------------------------------------------
+(test-section "util.record")
+(use util.record)
+(test-module 'util.record)
+
+(define record:1 (make-record-type "record:1" '(a b c)))
+
+(test* "make-record-type" #t
+       (is-a? record:1 <class>))
+
+(test* "make-record-type (error)" *test-error*
+       (make-record-type "record:1" '((x 2) y)))
+
+(test* "make-record-type (error)" *test-error*
+       (make-record-type "record:1" '(a b a)))
+
+(test* "record-constructor" #t
+       (is-a? ((record-constructor record:1)) <record>))
+
+(test* "record-constructor" '(7 8 9)
+       (let ((obj ((record-constructor record:1 '(c b a)) 9 8 7)))
+         (map (cut slot-ref obj <>) '(a b c))))
+
+(test* "record-predicate" #t
+       (let ((obj ((record-constructor record:1))))
+         ((record-predicate record:1) obj)))
+
+(test* "record-predicate" #f
+       (let ((obj ((record-constructor record:1))))
+         ((record-predicate record:1) (make <record>))))
+
+(test* "record-accessor" 1
+       (let ((obj ((record-constructor record:1 '(b)) 1))
+             (acc (record-accessor record:1 'b)))
+         (acc obj)))
+
+(test* "record-modifier" 2
+       (let ((obj ((record-constructor record:1 '(c)) 3))
+             (acc (record-accessor record:1 'c))
+             (mod (record-modifier record:1 'c)))
+         (mod obj 2)
+         (acc obj)))
+
+;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)
 (test-module 'util.toposort)

@@ -1,3 +1,9 @@
+2003-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/record.scm : added SCM compatible make-record-type
+	  and other stuff, built on top of srfi-9.  This is derived from
+	  the patch provided by Alex Shinn.
+
 2003-07-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-decode): handle gracefully the case that

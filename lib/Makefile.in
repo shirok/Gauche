@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.95 2003-07-05 03:29:11 shirok Exp $
+#  $Id: Makefile.in,v 1.96 2003-08-06 09:37:27 shirok Exp $
 
 DESTDIR =
 
@@ -59,6 +59,7 @@ SCMFILES = srfi-0.scm \
        math/const.scm \
        util/isomorph.scm util/toposort.scm util/queue.scm util/tree.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
+       util/record.scm \
        compat/jfilter.scm compat/stk.scm \
        file/filter.scm file/util.scm \
        rfc/822.scm rfc/base64.scm rfc/uri.scm rfc/cookie.scm \
