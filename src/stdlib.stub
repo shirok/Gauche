@@ -439,7 +439,23 @@
   else
      SCM_RETURN(SCM_FALSE);")
 
-; string<? string>? string<=? string>=?
+(define-cproc string<? (s1 s2)
+  (assert (string? s1))
+  (assert (string? s2))
+  "  SCM_RETURN(Scm_StringLt(s1, s2));")
+(define-cproc string<=? (s1 s2)
+  (assert (string? s1))
+  (assert (string? s2))
+  "  SCM_RETURN(Scm_StringLe(s1, s2));")
+(define-cproc string>? (s1 s2)
+  (assert (string? s1))
+  (assert (string? s2))
+  "  SCM_RETURN(Scm_StringGt(s1, s2));")
+(define-cproc string>=? (s1 s2)
+  (assert (string? s1))
+  (assert (string? s2))
+  "  SCM_RETURN(Scm_StringGe(s1, s2));")
+
 ; string-ci=? string-ci<? string-ci>? string-ci<=? string-ci>=?
 
 (define-cproc substring (str start end)
@@ -647,7 +663,15 @@
   if (ch == EOF) SCM_RETURN(SCM_EOF);
   else SCM_RETURN(SCM_MAKE_CHAR(ch));")
 
-; peek-char
+(define-cproc peek-char (&optional (port (current-input-port)))
+  (assert (input-port? port))
+  "  ScmChar ch; ScmObj r;
+  if ((ch = SCM_PORT_UNGOTTEN(port)) == SCM_CHAR_INVALID) {
+    SCM_GETC(ch, port);
+    SCM_PORT_UNGOTTEN(port) = ch;
+  }
+  r = (ch == SCM_CHAR_INVALID)? SCM_EOF : SCM_MAKE_CHAR(ch);
+  SCM_RETURN(r);")
 
 (define-cproc eof-object? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EOFP(obj)));")
