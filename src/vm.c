@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.110 2001-09-27 11:13:43 shirok Exp $
+ *  $Id: vm.c,v 1.111 2001-09-27 20:32:43 shirok Exp $
  */
 
 #include "gauche.h"
@@ -2065,13 +2065,13 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
 
     if (SCM_PAIRP(vm->pc)) {
         info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(vm->pc));
-        if (info) SCM_APPEND1(stack, stacktail, SCM_CDR(info));
+        if (SCM_PAIRP(info)) SCM_APPEND1(stack, stacktail, SCM_CDR(info));
     }
     
     while (c) {
         if (SCM_PAIRP(c->info)) {
             info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(c->info));
-            if (info) SCM_APPEND1(stack, stacktail, SCM_CDR(info));
+            if (SCM_PAIRP(info)) SCM_APPEND1(stack, stacktail, SCM_CDR(info));
         }
         c = c->prev;
     }
