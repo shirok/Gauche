@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.299 2002-11-13 00:56:58 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.300 2002-11-13 12:13:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2257,9 +2257,7 @@ The table below lists sharp-syntaxes.
 @item @code{#!}
  @tab [SRFI-22] Specifies interpreter at the beginning of file.
       Scheme loader ignores the line.
-@item @code{#"}
- @tab Introducing incomplete string.  This is deprecated; use '@code{#*"..."}'.
-@item @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
+@item @code{#"}, @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
  @tab Unused.
 @item @code{#(}
  @tab [R5RS] Introduces a vector.
@@ -24831,6 +24829,50 @@ It returns @var{userinfo}, @var{host} and @var{port}.
   @result{} #f@r{,} "yyy.jp" @r{and} "8080"
 (uri-decompose-authority "mylogin@@yyy.jp")
   @result{} "mylogin"@r{,} "yyy.jp" @r{and} #f
+@end example
+@end defun
+
+@defun uri-compose &keyword scheme userinfo host port authority path path* query fragment specific
+Compose a URI from given components.
+There can be various combinations of components to create a valid
+URI---the following diagram shows the possible 'paths' of
+combinations:
+
+@example
+        /-----------------specific-------------------\
+        |                                            |
+ scheme-+------authority-----+-+-------path*---------+-
+        |                    | |                     |
+        \-userinfo-host-port-/ \-path-query-fragment-/
+@end example
+
+If @code{#f} is given to a keyword argument, it is
+equivalent to the absense of that keyword argument.
+It is particulary useful to pass the results of
+parsed uri.
+
+If a component contains a character that is not appropriate
+for that component, it must be properly escaped before
+being passed to @code{url-compose}.
+
+Some examples:
+@example
+(uri-compose :scheme "http" :host "foo.com" :port 80
+             :path "/index.html" :fragment "top")
+  @result{} "http://foo.com:80/index.html#top"
+
+(uri-compose :scheme "http" :host "foo.net"
+             :path* "/cgi-bin/query.cgi?keyword=foo")
+  @result{} "http://foo.net/cgi-bin/query.cgi?keyword=foo"
+
+(uri-compose :scheme "mailto" :specific "a@foo.org")
+  @result{} "mailto:a@foo.org"
+
+(receive (authority path query fragment)
+   (uri-decompose-hierarchical "//foo.jp/index.html#whatsnew")
+ (uri-compose :authority authority :path path
+              :query query :fragment fragment))
+  @result{} "//foo.jp/index.html#whatsnew"
 @end example
 @end defun
 

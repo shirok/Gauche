@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: portutil.scm,v 1.1 2002-11-13 07:16:22 shirok Exp $
+;;;  $Id: portutil.scm,v 1.2 2002-11-13 12:13:44 shirok Exp $
 ;;;
 
 (define-module gauche.portutil
@@ -103,7 +103,7 @@
 (define (copy-port src dst . args)
   (check-arg input-port? src)
   (check-arg output-port? dst)
-  (let-keywords* args ((unit 0)
+  (let-keywords* args ((unit 4096)
                        (size 0))
     (cond ((eq? unit 'byte)
            (if (and (integer? size) (positive? size))
