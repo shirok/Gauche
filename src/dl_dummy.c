@@ -12,12 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: dl_dummy.c,v 1.1 2003-05-15 11:32:54 shirok Exp $
+ *  $Id: dl_dummy.c,v 1.2 2003-05-30 20:05:03 shirok Exp $
  */
 
 /* This file is included in load.c */
-
-#include <dlfcn.h>
 
 static void *dl_open(const char *path)
 {
