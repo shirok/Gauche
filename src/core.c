@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.15 2001-03-05 06:29:33 shiro Exp $
+ *  $Id: core.c,v 1.16 2001-03-07 06:58:54 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/arch.h"
 
 /*
  * out-of-memory handler.  this will be called by GC.
@@ -95,4 +96,14 @@ void Scm_Panic(const char *msg, ...)
     fputc('\n', stderr);
     exit(1);
 }
+
+/*
+ * Inspect the configuration
+ */
+
+const char *Scm_HostArchitecture(void)
+{
+    return GAUCHE_ARCH;
+}
+
 

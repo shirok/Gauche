@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.6 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: port.c,v 1.7 2001-03-07 06:58:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -142,6 +142,17 @@ static int port_print(ScmObj obj, ScmPort *port, int mode)
                       (SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT)? "o" : "",
                       Scm_PortName(SCM_PORT(obj)),
                       obj);
+}
+
+/* Returns port's associated file descriptor number, if any.
+   Returns -1 otherwise. */
+int Scm_PortFileNo(ScmPort *port)
+{
+    if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
+        return fileno(port->src.file.fp);
+    } else {
+        return -1;
+    }
 }
 
 /*

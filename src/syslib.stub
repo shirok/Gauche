@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.7 2001-02-19 14:48:49 shiro Exp $
+;;; $Id: syslib.stub,v 1.8 2001-03-07 06:58:54 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -313,8 +313,13 @@
         Scm_SysError(\"unlink failed\");
   SCM_RETURN(SCM_TRUE);")
 
+(define-cproc sys-isatty (port)
+  (assert (port? port))
+  "  int fd = Scm_PortFileNo(port);
+  SCM_RETURN(SCM_MAKE_BOOL(fd >= 0 && isatty(fd)));")
+
 ;; not supported yet:
-;;  isatty fpathconf lseek pathconf pipe read
+;;  fpathconf lseek pathconf pipe read
 ;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp
 ;;  ttyname write
 

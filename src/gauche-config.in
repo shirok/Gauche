@@ -3,25 +3,31 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.1 2001-02-03 09:17:58 shiro Exp $
+# $Id: gauche-config.in,v 1.2 2001-03-07 06:58:54 shiro Exp $
 #
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-gauche_basedir=@libdir@/gauche/@GAUCHE_VERSION@/
-gauche_incdir="-I @includedir@"
-gauche_libdir="-L @libdir@"
+
+gauche_incdir="@datadir@/gauche/@GAUCHE_VERSION@/include"
+gauche_libdir="@datadir@/gauche/@GAUCHE_VERSION@/lib"
+gauche_archdir="@datadir@/gauche/@GAUCHE_VERSION@/@host@"
+gauche_sitelibdir="@datadir@/gauche/site/lib"
+gauche_sitearchdir="@datadir@/gauche/site/@host@"
 gauche_version=@GAUCHE_VERSION@
 gauche_libs="@LIBS@"
 
 usage () {
     echo "Usage: gauche-config [-ILlVP]"
-    echo "  -I   Shows include paths required compile programs using gauche"
-    echo "  -L   Shows library paths required to link programs using gauche"
-    echo "  -B   Shows gauche library base directory"
-    echo "  -l   Shows libraries required link programs using gauche"
     echo "  -V   Shows the current gauche version"
-    echo "  -P   Shows the directory the auxiliary programs are installed"
+    echo "  -I   Shows include paths required to compile programs using gauche"
+    echo "  -L   Shows library paths required to link programs using gauche"
+    echo "  -l   Shows libraries required to link programs using gauche"
+
+    echo "  --libdir/--sitelibdir"
+    echo "       Shows directories where system/site scheme files go"
+    echo "  --archdir/--sitearchdir"
+    echo "       Shows directories where system/site DSO files go"
     exit 1
 }
 
@@ -29,10 +35,13 @@ if [ $# != 1 ]; then usage; fi;
 
 case $1 in
   -V) echo $gauche_version;;
-  -I) echo $gauche_incdir;;
-  -L) echo $gauche_libdir;;
-  -B) echo $gauche_basedir;;
+  -I) echo "-I $gauche_incdir";;
+  -L) echo "-L $gauche_archdir";;
   -l) echo $gauche_libs;;
+  --libdir) echo $gauche_libdir;;
+  --sitelibdir) echo $gauche_sitelibdir;;
+  --archdir) echo $gauche_archdir;;
+  --sitearchdir) echo $gauche_sitearchdir;;
   *)  usage;;
 esac
 

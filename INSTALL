@@ -1,0 +1,67 @@
+
+
+
+                        Compiling and Installing Gauche
+
+
+$Id: INSTALL,v 1.1 2001-03-07 06:58:53 shiro Exp $
+
+[Quick Start]
+-------------
+
+   % ./configure
+   % make
+   % make test
+   % make install
+
+Things will be installed under /usr/local/{bin,lib}, and /usr/local/lib/gauche.
+
+
+
+[Customizing install location]
+------------------------------
+
+Call configure with those parameters.
+
+   % ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
+
+
+If --prefix option is omitted, /usr/local is assumed as PREFIX.
+If --exec-prefix option is omitted, EXEC_PREFIX is set the same as PREFIX.
+
+The files are installed in those locations:
+
+  $EXEC_PREFIX/bin/*
+     The interpreter (gosh) and configuration script (gauche-config).
+
+  $EXEC_PREFIX/lib/*
+     Library (libgauche.a).   Actually, it's a symlink to
+
+  $PREFIX/share/gauche/VERSION/include/*
+     Header files required to create applications using libgauche.
+
+  $PREFIX/share/gauche/VERSION/lib/*
+     Machine-independent scheme files.
+
+  $PREFIX/share/gauche/VERSION/ARCHITECTURE/*
+     Machine-dependent files (.so files, gosh, gauche-config, and libgauche.a)
+
+  $PREFIX/share/gauche/site/lib/*
+  $PREFIX/share/gauche/site/ARCHITECTURE/*
+     These are default locations where user installed machine-indenepdent/
+     dependent files will go.
+
+
+One of the common situation is that the directories containing
+architecture dependent files are mounted on different volumes on
+the different machines.  Suppose each machine has the following
+mounting scheme:
+
+  /usr/bin, /usr/lib -> mounted to architecture-specific disks
+  /usr/share -> mounted to the common disk.
+
+Then call ./configure as follows;
+
+  ./configure --prefix=/usr
+
+

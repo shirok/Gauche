@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.60 2001-03-06 08:41:41 shiro Exp $
+ *  $Id: gauche.h,v 1.61 2001-03-07 06:58:54 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -23,6 +23,10 @@
 #include <stdarg.h>
 #include <setjmp.h>
 #include <gc.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <gauche/config.h>
 
@@ -733,6 +737,7 @@ extern ScmObj Scm_MakeVirtualPort(int direction,
 extern ScmObj Scm_PortName(ScmPort *port);
 extern int    Scm_PortLine(ScmPort *port);
 extern int    Scm_PortPosition(ScmPort *port);
+extern int    Scm_PortFileNo(ScmPort *port);
 
 extern ScmObj Scm_ClosePort(ScmPort *port);
 
@@ -1489,6 +1494,9 @@ extern void Scm_Exit(int code);
 extern void Scm_Abort(const char *msg);
 extern void Scm_Panic(const char *msg, ...);
 
+/* Inspect the configuration */
+extern const char *Scm_HostArchitecture(void);
+
 /* Assertion */
 
 #ifdef GAUCHE_RECKLESS
@@ -1517,8 +1525,9 @@ extern void Scm_Panic(const char *msg, ...);
 
 #endif /* !GAUCHE_RECKLESS */
 
-/* Interrupt handling */
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GAUCHE_H */

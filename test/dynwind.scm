@@ -2,10 +2,12 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.3 2001-03-04 22:47:47 shiro Exp $
+;; $Id: dynwind.scm,v 1.4 2001-03-07 06:58:54 shiro Exp $
 
 (add-load-path "../lib")
-(require "test")
+(require "tester/tester")
+
+(test-start "dynamic-wind and call/cc")
 
 ;;------------------------------------------------------------------------
 
@@ -103,3 +105,5 @@
                       (read)))))
           (list (port-closed? p)
                 (eq? p (current-input-port))))))
+
+(test-end)

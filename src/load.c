@@ -12,11 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.21 2001-03-06 08:55:03 shiro Exp $
+ *  $Id: load.c,v 1.22 2001-03-07 06:58:54 shiro Exp $
  */
 
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "gauche.h"
+#include "gauche/arch.h"
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
@@ -31,6 +34,7 @@ static ScmGloc *load_path_rec;       /* *load-path*       */
 static ScmGloc *load_next_rec;       /* *load-next*       */
 static ScmGloc *load_history_rec;    /* *load-history*    */
 static ScmGloc *load_filename_rec;   /* *load-filename*   */
+static ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -49,6 +53,7 @@ static ScmGloc *load_filename_rec;   /* *load-filename*   */
 struct load_packet {
     ScmPort *port;
     ScmModule *prev_module;
+    ScmObj prev_name;
 };
 
 /* Clean up */
@@ -57,6 +62,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     struct load_packet *p = (struct load_packet *)data;
     Scm_ClosePort(p->port);
     Scm_SelectModule(p->prev_module);
+    load_filename_rec->value = p->prev_name;
     return SCM_UNDEFINED;
 }
 
@@ -91,6 +97,8 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
     p = SCM_NEW(struct load_packet);
     p->port = port;
     p->prev_module = Scm_CurrentModule();
+    p->prev_name = load_filename_rec->value;
+    load_filename_rec->value = Scm_PortName(port);
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
@@ -164,13 +172,17 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
  * Load
  */
 
-/* TODO: expand ~user in the pathname */
-
 ScmObj Scm_VMTryLoad(const char *cpath)
 {
-    ScmObj p = Scm_OpenFilePort(cpath, "r");
-    if (SCM_FALSEP(p)) return FALSE;
-    return Scm_VMLoadFromPort(SCM_PORT(p));
+    ScmObj port;
+    if (*cpath == '~') {
+        ScmObj file = Scm_NormalizePathname(SCM_STRING(Scm_MakeString(cpath, -1, -1)),
+                                            SCM_PATH_EXPAND);
+        cpath = Scm_GetStringConst(SCM_STRING(file));
+    }
+    port = Scm_OpenFilePort(cpath, "r");
+    if (SCM_FALSEP(port)) return FALSE;
+    return Scm_VMLoadFromPort(SCM_PORT(port));
 }
 
 ScmObj Scm_VMLoad(ScmString *filename)
@@ -202,10 +214,26 @@ ScmObj Scm_GetLoadPath(void)
     return load_path_rec->value;
 }
 
+ScmObj Scm_GetDynLoadPath(void)
+{
+    return dynload_path_rec->value;
+}
+
+/* Add CPATH to the current list of load path.  The path is
+ * added before the current list, unless AFTERP is true.
+ * The existence of CPATH is not checked.
+ *
+ * Besides load paths, existence of directories CPATH/$ARCH and
+ * CPATH/../$ARCH is checked, where $ARCH is the system architecture
+ * signature, and if found, it is added to the dynload_path.  If
+ * no such directory is found, CPATH itself is added to the dynload_path.
+ */
 ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 {
     ScmObj spath = Scm_MakeString(cpath, -1, -1);
-    /* for safety */
+    ScmObj dpath;
+    struct stat statbuf;
+
     if (!SCM_PAIRP(load_path_rec->value)) {
         load_path_rec->value = SCM_LIST1(spath);
     } else if (afterp) {
@@ -214,6 +242,29 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     } else {
         load_path_rec->value = Scm_Cons(spath, load_path_rec->value);
     }
+
+    /* check dynload path */
+    dpath = Scm_StringAppendC(SCM_STRING(spath), "/", 1, 1);
+    dpath = Scm_StringAppendC(SCM_STRING(dpath), Scm_HostArchitecture(),-1,-1);
+    if (stat(Scm_GetStringConst(SCM_STRING(dpath)), &statbuf) < 0
+        || !S_ISDIR(statbuf.st_mode)) {
+        dpath = Scm_StringAppendC(SCM_STRING(spath), "/../", 4, 4);
+        dpath = Scm_StringAppendC(SCM_STRING(dpath), Scm_HostArchitecture(),-1,-1);
+        if (stat(Scm_GetStringConst(SCM_STRING(dpath)), &statbuf) < 0
+            || !S_ISDIR(statbuf.st_mode)) {
+            dpath = spath;
+        }
+    }
+
+    if (!SCM_PAIRP(dynload_path_rec->value)) {
+        dynload_path_rec->value = SCM_LIST1(dpath);
+    } else if (afterp) {
+        dynload_path_rec->value =
+            Scm_Append2(dynload_path_rec->value, SCM_LIST1(dpath));
+    } else {
+        dynload_path_rec->value = Scm_Cons(dpath, dynload_path_rec->value);
+    }
+    
     return load_path_rec->value;
 }
 
@@ -226,7 +277,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
 {
 #ifdef HAVE_DLFCN_H
-    ScmObj truename, load_paths = Scm_GetLoadPath();
+    ScmObj truename, load_paths = Scm_GetDynLoadPath();
     void *handle;
     void (*func)(void);
     const char *initname;
@@ -320,14 +371,20 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
 
 void Scm__InitLoad(void)
 {
-    ScmObj instdir = SCM_MAKE_STR(SCM_INSTALL_DIR);
+    ScmObj libdir = SCM_MAKE_STR(GAUCHE_LIB_DIR);
+    ScmObj archdir = SCM_MAKE_STR(GAUCHE_ARCH_DIR);
+    ScmObj sitelibdir = SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR);
+    ScmObj sitearchdir = SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR);
     ScmObj curdir = SCM_MAKE_STR(".");
     ScmModule *m = Scm_SchemeModule();
 
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
 
-    DEF(load_path_rec,    SCM_SYM_LOAD_PATH, SCM_LIST2(curdir, instdir));
+    DEF(load_path_rec,    SCM_SYM_LOAD_PATH,
+        SCM_LIST3(curdir, sitelibdir, libdir));
+    DEF(dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH,
+        SCM_LIST3(curdir, sitearchdir, archdir));
     DEF(load_history_rec, SCM_SYM_LOAD_HISTORY, SCM_NIL);
     DEF(load_next_rec,    SCM_SYM_LOAD_NEXT, SCM_NIL);
     DEF(load_filename_rec,SCM_SYM_LOAD_FILENAME, SCM_FALSE);

@@ -7,6 +7,9 @@ gc/libgc.a :
 src/gosh : gc/libgc.a
 	cd src; $(MAKE)
 
+test : src/gosh
+	cd src; $(MAKE) test
+
 clean :
 	rm -rf core *~
 	cd gc; $(MAKE) clean

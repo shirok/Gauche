@@ -1,4 +1,4 @@
 all:
 
 clean:
-	rm -f core *~ tmp?
+	rm -f core *~ tmp*

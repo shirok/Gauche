@@ -3,7 +3,9 @@
 ;;
 
 (add-load-path "../lib")
-(require "test")
+(require "tester/tester")
+
+(test-start "macro")
 
 ;; strip off syntactic information from identifiers in the macro output.
 (define (unident form)
@@ -323,3 +325,4 @@
                                ((_ ?x ?y) (+ ?x ?y)))))
             (list (a 7) (b 8))))))
 
+(test-end)
