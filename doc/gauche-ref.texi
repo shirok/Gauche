@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.149 2002-01-26 09:59:01 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.150 2002-01-27 09:35:03 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -306,77 +306,175 @@ very large scale database handling.  It is an interpreter, after all.
 @section Notations
 @c NODE 表記について
 
+@c EN
 In this manual, each entry is represented like this:
 
 @deftp {Category} foo arg1 arg2
 [spec] Description of foo @dots{}
 @end deftp
+@c JP
+このマニュアルでは、各項目は次のようなフォーマットで表記されています。
 
+@deftp {カテゴリ} foo arg1 arg2
+[spec] fooの説明
+@end deftp
+@c COMMON
+
+@c EN
 @var{Category} denotes the category of the entry @b{foo}.
 The following category will appear in this manual:
+@c JP
+@var{カテゴリ} は項目@b{foo}の種別を示します。
+次のようなカテゴリがあります。
+@c COMMON
 
 @multitable @columnfractions .4 .6
 @item Function
+@c EN
 @tab A Scheme function.
+@c JP
+@tab Scheme手続き
+@c COMMON
 @item Special Form
+@c EN
 @tab A special form (in the R5RS term, ``syntax'').
+@c JP
+@tab 特殊形式 (R5RSでは「構文」)
+@c COMMON
 @item Macro
+@c EN
 @tab A macro.
+@c JP
+@tab マクロ
+@c COMMON
 @item Module
+@c EN
 @tab A module
+@c JP
+@tab モジュール
+@c COMMON
 @item Class
+@c EN
 @tab A class.
+@c JP
+@tab クラス
+@c COMMON
 @item Generic Function
+@c EN
 @tab A generic function
+@c JP
+@tab ジェネリックファンクション
+@c COMMON
 @item Method
+@c EN
 @tab A method
+@c JP
+@tab メソッド
+@c COMMON
 @item Reader Syntax
+@c EN
 @tab A lexical syntax that is interpreted by the reader.
+@c JP
+@tab リーダによって解釈される構文要素
+@c COMMON
 @end multitable
 
+@c EN
 For functions, special forms and macros, the entry may followed
 by one or more arguments.  In the argument list, the following notations
 may appear:
+@c JP
+手続き、特殊形式、マクロに関しては、エントリの後に引数の仕様が示されます。
+引数リストの中には次のような表記が現れることがあります。
+@c COMMON
 
 @table @var
 @item arg @dots{}
-This notation may appear in special forms and macros, and indicates
-zero or more arguments.
+@c EN
+Indicates zero or more arguments.
+@c JP
+ゼロ個以上の可変個の引数。
+@c COMMON
 @item &optional x y z
 @itemx &optional (x x-default) (y y-default) z
+@c EN
 Indicates it may take up to three optional arguments.
 The second form specifies default values.
 Note that Gauche doesn't really support Common-Lisp style
 @code{&optional} argument specifier in the lambda list.
 I use this notation since it is useful to indicate valid pattern of arguments.
+@c JP
+省略可能な引数の表記。この例では3つまでの省略可能な引数が取られることを示します。
+2番目の形式では省略された場合の既定値も示しています。
+この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
+@code{&optional}のような表記を受け付けるわけではないことに注意してください。
+マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
+@c COMMON
 @item &keyword x y z
 @itemx &keyword (x x-default) (y y-default) z
+@c EN
 Indicates it may take keyword arguments @var{x}, @var{y} and @var{z.}
 Note that Gauche doesn't really support Common-Lisp style
 @code{&keyword} argument specifier in the lambda list.
 I use this notation since it is useful to indicate valid pattern of arguments.
+@c JP
+キーワード引数の表記。この例では@var{x}、@var{y}、@var{z}の3つのキーワード引数を
+取ることが示されます。2番目の形式では省略された場合の既定値も示されます。
+この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
+@code{&optional}のような表記を受け付けるわけではないことに注意してください。
+マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
+@c COMMON
 @item &rest args
+@c EN
 Indicates it may take rest arguements.
 Note that Gauche doesn't really support Common-Lisp style
 @code{&rest} argument specifier in the lambda list.
 I use this notation since it is useful to indicate valid pattern of arguments.
+@c JP
+残りの引数全てがリストになって@var{args}に束縛されることを示します。
+この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
+@code{&optional}のような表記を受け付けるわけではないことに注意してください。
+マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
+@c COMMON
 @end table
 
+@c EN
 The description of the entry follows the entry line.
 If the specification of the entry comes from some standard or
 implementation, its origin is noted in the bracket at the beginning
 of the description.  The following origins are noted:
+@c JP
+説明が項目の行に続きます。もし項目が特定の標準に準拠している場合は、
+もととなった標準が次のような形式で示されます。
+@c COMMON
 
 @table @asis
 @item [R5RS]
+@itemx [R5RS+]
+@c EN
 The entry works as specified in ``Revised^5 Report of Algorithmic Language
-Scheme.''.
+Scheme.''.  If it is marked as "[R5RS+]", the entry has additional
+functionality.
+@c JP
+この項目はR5RSに定義されるように動作します。"[R5RS+]"とマークされている場合は
+R5RSの仕様に上位互換な形で追加の機能が実装されていることを示します。
+@c COMMON
 @item [SRFI-@var{n}]
-The entry works as specified in SRFI-@var{n}.
+@itemx [SRFI-@var{n}+]
+@c EN
+The entry works as specified in SRFI-@var{n}.  If it is marked as
+"[SRFI-@var{n}+]", the entry has additional functionality.
+@c JP
+この項目はSRFI-@var{n}に定義されるように動作します。"[SRFI-@var{n}+]"とマークされている場合は
+SRFI-@var{n}の仕様に上位互換な形で追加の機能が実装されていることを示します。
+@c COMMON
 @item [POSIX]
+@c EN
 The API of the entry reflects the API specified in POSIX.
+@c JP
+この項目はPOSIXのAPIを反映していることを示します。
+@c COMMON
 @end table
-
 
 @c @node Structure of this document,  , Notations, Introduction
 @c @section Structure of this document
@@ -398,8 +496,6 @@ that help you to understand how Gauche works.
 本章では、Gauche動作の背景となるいくつかの概念を説明します。
 Gaucheの動作を正確に理解する助けになると思います。
 @c COMMON
-
----This chapter is under construction---
 
 @menu
 * Compilation::                 
@@ -992,12 +1088,21 @@ although it is not generally recommended.
 @section Interactive development
 @c NODE  インタラクティブな開発
 
+When @code{gosh} is invoked without any script files,
+it goes into interactive read-eval-print loop.
+You can type in any Scheme expressions
+
+To exit the interpreter, type EOF (usually Control-D in Unix termials)
+or evaluate @code{(exit)}.
+
+I recommend you to run @code{gosh} inside Emacs, for it has
+rich capability to 
+
 
 @c ----------------------------------------------------------------------
 @node Debugging, Writing Scheme scripts, Interactive development, Programming in Gauche
 @section Debugging
 @c NODE デバッグ
-
 
 
 @c ----------------------------------------------------------------------
@@ -2366,8 +2471,28 @@ all the bindings of @code{gauche} module is imported.
 @chapter Macros
 @c NODE マクロ
 
+@c EN
 Gauche supports both R5RS hygienic macros and
 traditional macros.
+@c JP
+Gaucheでは、R5RSに定義される「健全な(hygienic)」マクロと
+伝統的なマクロの両方が使えます。
+@c COMMON
+
+@c EN
+Macro of Lisp-family language is very different feature from
+ones of other languages, such as C preprocessor macros.
+It allows you to extend the original language syntax.
+You can use macros to change Gauche syntax
+so that you can run a Scheme program written to other Scheme
+implementations, and you can even design your own mini-language
+to solve your problem easily.
+@c JP
+Lisp系言語のマクロは、他の言語に見られるマクロ(例えばCプリプロセッサマクロ)とは
+大きく異なります。Lispのマクロは元の言語の構文を拡張する手段なのです。
+例えば、Gaucheの構文を若干変えることで他のScheme実装用に書かれたSchemeプログラムを
+走らせたり、あるいは自分の問題解決に適した「ミニ言語」をデザインすることさえできます。
+@c COMMON
 
 @menu
 * Hygienic Macros::             
@@ -2379,6 +2504,20 @@ traditional macros.
 @node Hygienic Macros, Traditional Macros, Macros, Macros
 @section Hygienic Macros
 @c NODE 健全なマクロ
+
+@c EN
+R5RS hygienic macro is based on a special pattern language,
+and guaranteed that no "variable capture" occurs.
+"Variable catpture" means that if you insert new variable
+bindings in the expanded form, the new bindings
+shadows the bindings in the form passed to the macro.
+@c JP
+R5RSの健全なマクロは特別なパターン言語に基づいていて、
+また「変数捕捉」が起こらないことが保証されています。
+「変数捕捉」とは、マクロが新しい変数束縛を導入した時に、その束縛が
+マクロに渡されたフォーム中の変数名と衝突して、その変数名の本来の束縛を隠して
+しまうことを言います。
+@c COMMON
 
 @defspec define-syntax name transformer-spec
 [R5RS]
@@ -2897,8 +3036,14 @@ The argument @var{x} must be a real number.
 is greater than @var{x} and a maximim integer that is less than @var{x},
 respectively.  @var{Truncate} returns an integer that truncates
 @var{x} towards zero.  @var{Round} returns an integer that is closest
-to @var{x}.
+to @var{x}.  If fractional part of @var{x} is exactly 0.5, @var{round}
+returns the closest even integer.
 @c JP
+引数@var{x}は実数でなければなりません。@code{floor}と@code{ceiling}はそれぞれ
+@var{x}を越えない最大の整数と、@var{x}を下回らない最小の整数を返します。
+@var{truncate}は@var{x}の小数部をゼロの方向に向かって切捨てた整数を返します。
+@var{round}は@var{x}に最も近い(四捨五入した)整数を返します。@var{x}の
+小数部が0.5ぴったりだった場合は@var{round}は最も近い偶数を返します。
 @c COMMON
 @end defun
 
@@ -3000,13 +3145,32 @@ where @var{z1} and @var{z2} are complex numbers.
 
 @defun make-rectangular x1 x2
 @defunx make-polar x1 x2
-@defunx real-part z
+[R5RS]
+@c EN
+Creates a complex number from two real numbers, @var{x1} and @var{x2}.
+@code{make-rectangular} returns @var{x1} + @b{i}@var{x2}.
+@code{make-polar} returns @var{x1}@b{e}^(@b{i}@var{x2}).
+@c JP
+二つの実数@var{x1}と@var{x2}から複素数を作ります。
+@code{make-rectangular} は @var{x1} + @b{i}@var{x2} を返します。
+@code{make-polar} は @var{x1}@b{e}^(@b{i}@var{x2}) を返します。
+@c COMMON
+@end defun
+
+@defun real-part z
 @defunx imag-part z
 @defunx magnitude z
 @defunx angle z
 [R5RS]
 @c EN
+Decompose a complex number @var{z} and returns a real number.
+@code{real-part} and @code{imag-part} return @var{z}'s real and imaginary
+part, respectively.  @code{magnitude} and @code{angle} return
+@var{z}'s magnitude and angle, respectively.
 @c JP
+複素数@var{z}を取り、実数を返します。
+@code{real-part}と@code{imag-part}は@var{z}の実数部と虚数部をそれぞれ返し、
+@code{magnitude}と@code{angle}は@var{z}の絶対値と偏角をそれぞれ返します。
 @c COMMON
 @end defun
 
@@ -3014,6 +3178,7 @@ where @var{z1} and @var{z2} are complex numbers.
 @defunx inexact->exact z
 [R5RS]
 @c EN
+
 @c JP
 @c COMMON
 @end defun
