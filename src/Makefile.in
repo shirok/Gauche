@@ -101,7 +101,7 @@ test : gosh
 	@echo "See test.log for details."
 
 clean :
-	rm -f core gosh @LIBGAUCHE_SO@ *.o *~ *.a *.t test.log so_locations gauche/*~
+	rm -rf core gosh @LIBGAUCHE_SO@ *.o *~ *.a *.t test.log test.dir so_locations gauche/*~
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
