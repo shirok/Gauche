@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.13 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: signal.c,v 1.14 2002-05-21 11:49:46 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -256,6 +256,10 @@ ScmObj Scm_SysSigsetOp(ScmSysSigset *set, ScmObj signals, int delp)
 static void sig_handle(int signum)
 {
     ScmVM *vm = Scm_VM();
+    /* It is possible that vm == NULL at this point, if the thread is
+       terminating and in the cleanup phase. */
+    if (vm == NULL) return;
+       
     if (vm->sigOverflow) return;
     
     if (vm->sigQueueHead <= vm->sigQueueTail) {
