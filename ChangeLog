@@ -1,3 +1,15 @@
+2003-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/combinations.scm : revised to support duplicated entries.
+	* lib/util/list.scm : added.  additional list library.
+	* lib/gauche/sequence.scm : added fold-with-index, map-with-index,
+	  map-to-with-index, for-each-with-index, find-index,
+	  and find-with-index.
+
+2003-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (sort, sort!): allowed sorting vectors as well.
+
 2003-01-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/charconv.scm: adjust semantics of replaced call-with*
