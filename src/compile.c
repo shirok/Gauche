@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.16 2001-02-03 10:42:11 shiro Exp $
+ *  $Id: compile.c,v 1.17 2001-02-05 00:37:08 shiro Exp $
  */
 
 #include "gauche.h"
@@ -328,7 +328,7 @@ static ScmSyntax syntax_define = {
 };
 
 /*------------------------------------------------------------------
- * QUOTE-family (QUOTE, QUASIQUOTE, UNQUOTE and UNQUOTE-SPLICING)
+ * QUOTE
  */
 static ScmObj compile_quote(ScmObj form,
                             ScmObj env, 
@@ -348,7 +348,6 @@ static ScmSyntax syntax_quote = {
     compile_quote,
     NULL
 };
-
 
 /*------------------------------------------------------------------
  * SET!
@@ -1298,6 +1297,26 @@ static ScmSyntax syntax_delay = {
     compile_delay,
     NULL
 };
+
+/*------------------------------------------------------------------
+ * Traditional Macro
+ */
+
+/* TODO: how to retain debug info? */
+/* TODO: better error message on syntax error (macro invocation with
+   bad number of arguments) */
+
+static ScmObj macro_transform(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmObj proc = SCM_OBJ(data);
+    ScmObj newform = Scm_Apply(proc, form);
+    return compile_int(newform, env, ctx);
+}
+
+ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
+{
+    return Scm_MakeSyntax(name, macro_transform, (void*)proc);
+}
 
 /*===================================================================
  * Initializer
