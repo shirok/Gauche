@@ -81,7 +81,7 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/char_euc_jp.h gauche/char_utf_8.h    \
                      gauche/char_sjis.h gauche/char_none.h       \
                      gauche/predef-syms.h gauche/extend.h        \
-		     gauche/class.h gauche/exception.h           \
+                     gauche/class.h gauche/exception.h           \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
 INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh gauche-config
@@ -213,6 +213,9 @@ install : all relink
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(BIN_INSTALL_DIR)
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(ARCH_INSTALL_DIR)
 	$(INSTALL) -m 444 $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
+	@case `$(SHELL) gauche-config --arch` in *-cygwin*) \
+	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
+	esac
 
 uninstall :
 	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
