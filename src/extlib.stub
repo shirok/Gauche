@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.53 2001-04-02 02:11:49 shiro Exp $
+;;; $Id: extlib.stub,v 1.54 2001-04-03 11:18:46 shiro Exp $
 ;;;
 
 "
@@ -156,8 +156,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_KEYWORDP(obj)));")
 
 (define-cproc make-keyword (name)
-  (assert (string? name))
-  "  SCM_RETURN(Scm_MakeKeyword(name));")
+  "   ScmString *sname;
+  if (SCM_STRINGP(name)) sname = SCM_STRING(name);
+  else if (SCM_SYMBOLP(name)) sname = SCM_SYMBOL_NAME(name);
+  else Scm_Error(\"string or symbol required, but got %S\", name);
+  SCM_RETURN(Scm_MakeKeyword(sname));")
 
 (define-cproc get-keyword (key list &optional fallback)
   "  SCM_RETURN(Scm_GetKeyword(key, list, fallback));")
