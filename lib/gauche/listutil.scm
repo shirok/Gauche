@@ -1,7 +1,7 @@
 ;;;
 ;;; auxiliary list utilities.  to be autoloaded.
 ;;;
-;;;  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2002-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,11 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: listutil.scm,v 1.1 2002-12-12 06:16:08 shirok Exp $
+;;;  $Id: listutil.scm,v 1.2 2003-01-08 09:35:21 shirok Exp $
 ;;;
 
 (define-module gauche.listutil
-  )
+  (export list-of cond-cons cond-append cond-append!))
 (select-module gauche.listutil)
 
 ;; Cxxxr and cxxxxr are less frequently used, thus stripped out

@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche-init.scm - initialize standard environment
 ;;;
-;;;  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.102 2003-01-06 04:06:08 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.103 2003-01-08 09:35:21 shirok Exp $
 ;;;
 
 (select-module gauche)

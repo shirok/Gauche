@@ -1,3 +1,8 @@
+2003-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-1.scm : added some missing autoloads.  Patch provided
+	  by Kimura Fuyuki.
+
 2003-01-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/test.scm : Made default 'test' procedure catch an error.
