@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.27 2001-02-05 10:15:36 shiro Exp $
+ *  $Id: gauche.h,v 1.28 2001-02-05 10:23:36 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -193,16 +193,16 @@ typedef struct ScmHeaderRec {
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
 #define SCM_CLASSP(obj)       SCM_XTYPEP(obj, SCM_CLASS_CLASS)
 
-#define SCM_NEW(type)         ((type*)(Scm_Malloc(sizeof(type))))
-#define SCM_NEW2(type, size)  ((type)(Scm_Malloc(size)))
-#define SCM_NEW_ATOMIC(type)  ((type*)(Scm_MallocAtomic(sizeof(type))))
-#define SCM_NEW_ATOMIC2(type, size) ((type)(Scm_MallocAtomic(size)))
+#define SCM_MALLOC(size)          GC_MALLOC(size)
+#define SCM_MALLOC_ATOMIC(size)   GC_MALLOC_ATOMIC(size)
+#define SCM_REALLOC(ptr, size)    GC_REALLOC(ptr, size)
+
+#define SCM_NEW(type)         ((type*)(SCM_MALLOC(sizeof(type))))
+#define SCM_NEW2(type, size)  ((type)(SCM_MALLOC(size)))
+#define SCM_NEW_ATOMIC(type)  ((type*)(SCM_MALLOC_ATOMIC(sizeof(type))))
+#define SCM_NEW_ATOMIC2(type, size) ((type)(SCM_MALLOC_ATOMIC(size)))
 
 #define SCM_SET_CLASS(obj, type)   (SCM_OBJ(obj)->klass = type)
-
-extern void *Scm_MallocWords(size_t words);
-extern void *Scm_Malloc(size_t size);
-extern void *Scm_MallocAtomic(size_t size);
 
 typedef struct ScmVMRec        ScmVM;
 typedef struct ScmClassRec     ScmClass;

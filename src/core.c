@@ -12,39 +12,19 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.7 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: core.c,v 1.8 2001-02-05 10:23:36 shiro Exp $
  */
 
 #include "gauche.h"
 
 /*
- * Malloc wrapper
- *   see gauche/memory.h for inlined version of small object malloc's.
+ * out-of-memory handler.  this will be called by GC.
  */
 
-void *Scm_Malloc(size_t size)
+static GC_PTR oom_handler(size_t bytes)
 {
-    void *p;
-
-    p = GC_MALLOC(size);
-    if (p == NULL) Scm_Panic("out of memory");
-    return p;
-}
-
-void *Scm_MallocAtomic(size_t size)
-{
-    void *p = GC_MALLOC_ATOMIC(size);
-    if (p == NULL) Scm_Panic("out of memory");
-    return p;
-}
-
-void *Scm_Realloc(void *ptr, size_t size)
-{
-    void *p = GC_MALLOC_ATOMIC(size);
-    int oldsize = GC_size(ptr);
-    if (p == NULL) Scm_Panic("out of memory");
-    memcpy(p, ptr, oldsize);
-    return p;
+    Scm_Panic("out of memory.  aborting...");
+    return NULL;                /* dummy */
 }
 
 /*
@@ -59,6 +39,8 @@ extern void Scm__InitPort(void);
 void Scm_Init(void)
 {
     ScmVM *vm;
+
+    GC_oom_fn = oom_handler;
     
     Scm__InitModule();
     Scm__InitSymbol();

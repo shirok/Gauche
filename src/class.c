@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.6 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: class.c,v 1.7 2001-02-05 10:23:36 shiro Exp $
  */
 
 #include "gauche.h"
@@ -111,12 +111,12 @@ ScmClass *Scm_MakeBuiltinClass(const char *name,
 {
     ScmClass *c = SCM_NEW(ScmClass);
     SCM_SET_CLASS(c, SCM_CLASS_CLASS);
-    c->name = (char *)Scm_MallocAtomic(strlen(name)+1);
+    c->name = (char *)SCM_MALLOC_ATOMIC(strlen(name)+1);
     strcpy(c->name, name);
     c->print = printer;
 
     /* TODO: need to call compute-cpl.  for now, we ignore supers */
-    c->cpl = (ScmClass **)Scm_Malloc(sizeof(ScmClass*) * 2);
+    c->cpl = (ScmClass **)SCM_MALLOC(sizeof(ScmClass*) * 2);
     c->cpl[0] = SCM_CLASS_TOP;
     c->cpl[1] = NULL;
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.10 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: string.c,v 1.11 2001-02-05 10:23:36 shiro Exp $
  */
 
 #include <stdio.h>
@@ -738,16 +738,8 @@ void Scm__DStringRealloc(ScmDString *dstr, int minincr)
     char *p;
     int newsize = dstr->end - dstr->start + DSTRING_CHUNK_ROUND_UP(minincr);
     int cursize = dstr->current - dstr->start;
-    /* TODO: Maybe we should avoid realloc.  Maybe we should use chained
-       segments of str.  So far, what I know is the program crashes
-       if we use GC_realloc here. */
-#if 0
-    p = (char *)Scm_Malloc(newsize);
-    memcpy(p, dstr->start, GC_size(dstr->start));
-#else
-    p = (char *)Scm_Realloc(dstr->start, newsize);
-#endif
 
+    p = (char *)SCM_REALLOC(dstr->start, newsize);
     dstr->start = p;
     dstr->end = p + newsize;
     dstr->current = p + cursize;
