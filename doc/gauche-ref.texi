@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.61 2001-09-19 07:43:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.62 2001-09-20 19:56:46 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3796,6 +3796,7 @@ of descendants of @var{class}.
 
 @c ----------------------------------------------------------------------
 @menu
+* Library modules overview::    
 * Character code conversion::   
 * Low-level file operations::   
 * Interactive session::         
@@ -3822,9 +3823,38 @@ of descendants of @var{class}.
 * Let-values::                  
 * String library::              
 * Character-set library::       
+* Transliterate characters::    
 @end menu
 
-@node Character code conversion, Low-level file operations, Libarary Modules, Libarary Modules
+@node Library modules overview, Character code conversion, Libarary Modules, Libarary Modules
+@section Library modules overview
+
+The modules are organized hierarchically.
+Here's a table of general guideline.
+
+@table @code
+@item gauche.*
+Stuffs more or less considered as Gauche core features.
+@item data.*
+Generic data structures.
+@item file.*
+Manipulating files and directories.
+@item math.*
+Mathematics.
+@item lang.*
+Language-related libraries (artificial and/or natural). 
+@item text.*
+Libraries dealing with text data.
+@item rfc.*
+Implementations of net protocols defined in RFC's.
+@item w3c.*
+Implementations of various protocols and formats defined by W3C.
+@item srfi-*
+SRFI implementations.
+@end table
+
+@c ----------------------------------------------------------------------
+@node Character code conversion, Low-level file operations, Library modules overview, Libarary Modules
 @section @code{gauche.charconv} - Character Code Conversion
 
 @deftp {Module} gauche.charconv
@@ -7091,7 +7121,7 @@ creates a string, whose @var{i}-th character is calculated by
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library,  , String library, Libarary Modules
+@node Character-set library, Transliterate characters, String library, Libarary Modules
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
@@ -7319,6 +7349,123 @@ creates a string, whose @var{i}-th character is calculated by
 [SRFI-14]
 @end defvar
 
+@c ----------------------------------------------------------------------
+@node Transliterate characters,  , Character-set library, Libarary Modules
+@section @code{text.tr} - Transliterate characters
+
+@deftp {Module} text.tr
+@mdindex text.tr
+This module implements a transliterate function,
+that substitutes characters of the input string.
+This functionality is realized in Unix @code{tr(1)} command,
+and incorporated in various programs such as @code{sed(1)}
+and @code{perl}.
+
+Gauche's @code{tr} is aware of multibyte characters.
+@end deftp
+
+@defun tr from-list to-list &keyword :complement :delete :squeeze :table-size
+Read from current input port and writes to current output,
+with transliterating characters in @var{from-list} to the
+corresponding ones in @var{to-list}.  Characters that doesn't
+appear in @var{from-list} are passed through.
+
+Both @var{from-list} and @var{to-list} must be strings.
+They may contain the following special syntax.
+
+@table @code
+@item @b{x-y}
+Expanded to the sequence of characters from @code{x} to @code{y},
+inclusive.  The order is determined by the internal character
+encoding system; generally it is safer to limit use of this within
+the range of the same character class.   The character @code{x}
+must be before @code{y}.
+
+@item @b{x*n}
+Repeat @code{x} for @code{n} times.   Meaningful only in
+@var{to-list}; it is an error to use this form in @var{from-list}.
+If @code{n} is omitted or zero, @code{x} is repeated until @var{to-list}
+matches the length of @var{from-list} (any character after it is ignored).
+
+@item @b{\x}
+Represents @code{x} itself.  Use this escape to avoid a special
+character to be interpreted as itself.   Note that if you place
+a backslash in a string, you must write @code{\\}, for the Scheme
+reader also interprets backslash as a special character.
+
+There's no special sequence to represent non-graphical characters,
+for you can put such characters by the string syntax.
+@end table
+
+Here's some basic examples.
+@example
+(tr "A-Za-z" "a-zA-Z")
+  @result{} @r{swaps case of input}
+(tr "\x00-\x19\x7f" "?*")
+  @result{} @r{replaces 7-bit non-graphical characters to `?'}
+@end example
+
+The @var{to-list} can be empty.  It is meaningful if @var{:delete}
+and/or @var{:squeeze} flag is specified.
+
+When a true value is specified to @var{:delete},
+characters that appear in @var{from-list} but not
+in @var{to-list} are deleted.
+
+When a true value is specified to @var{:complement},
+the character set in @var{from-list} is complemented.
+Note that it implies @emph{huge} set of characters,
+so it is not very useful unless either output character
+set is a single character (using `*') or used with
+@code{:delete} keyword.
+
+When a true value is specified to @var{:squeeze},
+the sequence of the same replaced characters is squeezed to one.
+If @var{to-list} is empty, the sequence of the same characters
+in @var{from-list} is squeezed.
+
+Internally, @code{tr} builds a table to map the characters for
+efficiency.  Since Gauche can deal with potentially huge set
+of characters, it limits the use of the table for only smaller
+characters (<256 by default).  If you want to transliterate
+multibyte characters on the large text, however, you might want 
+to use larger table, trading off the memory usage.  You can specify
+the internal table size by @code{:table-size} keyword argument.
+For example, if you transliterate lots of EUC-JP hiragana text
+to katakana, you may want to set table size greater than 42483
+(the character code of the last katakana).
+
+Note that the pre-calcuilation to build the transliterate table
+needs some overhead.  If you want to call @code{tr} many times
+inside loop, consider to use @code{build-transliterator} described below.
+@end defun
+
+@defun string-tr string from-list to-list &keyword :complement :delete :squeeze :table-size
+Works like @code{tr}, except that input is taken from a string @var{string}.
+@end defun
+
+@defun build-transliterator from-list to-list &keyword :complement :delete :squeeze :table-size
+Returns a procedure that does the actual transliteration.  This effectively
+``pre-compiles'' the internal data structure.   If you want to run
+@code{tr} with the same sets repeatedly, you may build the procedure
+once and apply it repeatedly, saving the overhead of initialization.
+
+@example
+(with-input-from-file "huge-file.txt"
+  (lambda ()
+    (let loop ((line (read-line)))
+      (unless (eof-object? line) (tr "A-Za-z" "a-zA-Z")))))
+
+;; @r{runs more efficiently...}
+
+(with-input-from-file "huge-file.txt"
+  (lambda ()
+    (let ((ptr (build-transliterator "A-Za-z" "a-zA-Z")))
+      (let loop ((line (read-line)))
+        (unless (eof-object? line) (ptr))))))
+@end example
+
+@end defun
 
 @c ======================================================================
 @node References, C to Scheme mapping, Libarary Modules, Top
