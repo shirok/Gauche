@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.20 2001-03-31 08:44:41 shiro Exp $
+ *  $Id: string.c,v 1.21 2001-04-01 10:19:54 shiro Exp $
  */
 
 #include <stdio.h>
@@ -234,34 +234,15 @@ ScmObj Scm_CopyString(ScmString *x)
  * Comparison
  */
 
-int Scm_StringEqual(ScmString *x, ScmString *y)
+int Scm_StringCmp(ScmString *x, ScmString *y)
 {
     int sizx = SCM_STRING_SIZE(x);
     int sizy = SCM_STRING_SIZE(y);
-    if (sizx == sizy) {
-        if (memcmp(SCM_STRING_START(x), SCM_STRING_START(y), sizx) == 0) {
-            return TRUE;
-        }
-    }
-    return FALSE;
+    int siz = (sizx < sizy)? sizx : sizy;
+    int r = memcmp(SCM_STRING_START(x), SCM_STRING_START(y), siz);
+    if (r == 0) return (sizx - sizy);
+    else return r;
 }
-
-#define STRCMP(fn, op1, op2)                                            \
-ScmObj fn(ScmString *x, ScmString *y)                                   \
-{                                                                       \
-    int sizx = SCM_STRING_SIZE(x);                                      \
-    int sizy = SCM_STRING_SIZE(y);                                      \
-    int siz = (sizx < sizy)? sizx : sizy;                               \
-    int r = memcmp(SCM_STRING_START(x), SCM_STRING_START(y), siz);      \
-    if (r op1 0) return SCM_TRUE;                                       \
-    if (r == 0 && sizx op2 sizy) return SCM_TRUE;                       \
-    else return SCM_FALSE;                                              \
-}
-
-STRCMP(Scm_StringLt, <, <)
-STRCMP(Scm_StringLe, <, <=)
-STRCMP(Scm_StringGt, >, >)
-STRCMP(Scm_StringGe, >, >=)
 
 /* single-byte case insensitive comparison */
 static int sb_strcasecmp(const char *px, int sizx,
@@ -298,46 +279,20 @@ static int mb_strcasecmp(const char *px, int lenx,
     return 0;
 }
 
-ScmObj Scm_StringCiEqual(ScmString *x, ScmString *y)
+int Scm_StringCiCmp(ScmString *x, ScmString *y)
 {
     int sizx = SCM_STRING_SIZE(x), lenx = SCM_STRING_SIZE(x);
     int sizy = SCM_STRING_SIZE(y), leny = SCM_STRING_SIZE(y);
     const char *px = SCM_STRING_START(x);
     const char *py = SCM_STRING_START(y);
     
-    if (sizx != sizy) return SCM_FALSE;
-    if (lenx != leny) return SCM_FALSE;
-    if (sizx == lenx || lenx < 0) {
-        /* both are SBString or incomplete string */
-        return (sb_strcasecmp(px, sizx, py, sizy) == 0)? SCM_TRUE : SCM_FALSE;
+    if ((sizx == lenx && sizy == leny)|| lenx < 0 || leny < 0) {
+        return sb_strcasecmp(px, sizx, py, sizy);
     } else {
-        /* both are MBString. */
-        return (mb_strcasecmp(px, lenx, py, leny) == 0)? SCM_TRUE : SCM_FALSE;
+        return mb_strcasecmp(px, lenx, py, leny);
     }
 }
 
-#define STRCICMP(fn, op)                                                \
-ScmObj fn(ScmString *x, ScmString *y)                                   \
-{                                                                       \
-    int sizx = SCM_STRING_SIZE(x), lenx = SCM_STRING_SIZE(x);           \
-    int sizy = SCM_STRING_SIZE(y), leny = SCM_STRING_SIZE(y);           \
-    const char *px = SCM_STRING_START(x);                               \
-    const char *py = SCM_STRING_START(y);                               \
-                                                                        \
-    if ((sizx == lenx && sizy == leny) || lenx < 0  || leny < 0) {      \
-        return (sb_strcasecmp(px, sizx, py, sizy) op 0)?                \
-            SCM_TRUE : SCM_FALSE;                                       \
-    } else {                                                            \
-        return (mb_strcasecmp(px, sizx, py, sizy) op 0)?                \
-            SCM_TRUE : SCM_FALSE;                                       \
-    }                                                                   \
-}
-
-STRCICMP(Scm_StringCiLt, <)
-STRCICMP(Scm_StringCiLe, <=)
-STRCICMP(Scm_StringCiGt, >)
-STRCICMP(Scm_StringCiGe, >=)
-    
 /*----------------------------------------------------------------
  * Reference
  */

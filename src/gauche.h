@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.98 2001-04-01 09:18:46 shiro Exp $
+ *  $Id: gauche.h,v 1.99 2001-04-01 10:20:04 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -607,17 +607,8 @@ extern ScmObj  Scm_CopyString(ScmString *str);
 extern char*   Scm_GetString(ScmString *str);
 extern const char* Scm_GetStringConst(ScmString *str);
 
-extern int     Scm_StringEqual(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringLt(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringLe(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringGt(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringGe(ScmString *x, ScmString *y);
-
-extern ScmObj  Scm_StringCiEqual(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringCiLt(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringCiLe(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringCiGt(ScmString *x, ScmString *y);
-extern ScmObj  Scm_StringCiGe(ScmString *x, ScmString *y);
+extern int     Scm_StringCmp(ScmString *x, ScmString *y);
+extern int     Scm_StringCiCmp(ScmString *x, ScmString *y);
 
 extern ScmChar Scm_StringRef(ScmString *str, int k);
 extern ScmObj  Scm_StringSet(ScmString *str, int k, ScmChar sc);
