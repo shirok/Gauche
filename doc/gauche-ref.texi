@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.282 2002-10-14 20:58:17 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.283 2002-10-15 02:21:25 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19395,6 +19395,70 @@ the range of conversion between them.
 @c JP
 省略可能な範囲引数@var{start}、@var{end}は、
 @var{vec}中の変換されるべき範囲を指定します。
+@c COMMON
+@end defun
+
+@defun uvector-alias uvector-class vec &optional start end
+@c EN
+This procedure creates an uvector of class @var{uvector-class}
+that shares the storage of the given uniform vector @var{vec}.
+If optional @var{start} and @var{end} arugments are given,
+only the specified range of @var{vec} is used for the new vector.
+Since the storage is shared, modification of the original vector
+can be seen from the new vector, or vice versa.
+@c JP
+この手続きは、クラスが@var{uvector-class}であり、
+ユニフォームベクタ@var{vec}のメモリ領域を共有するような
+新しいユニフォームベクタを作成して返します。
+省略可能な引数@var{start}と@var{end}が与えられた場合は
+@var{vec}の内容のうちそれらのインデックスで指定される範囲のみが使われます。
+メモリ領域が共有されているので、@var{vec}に加える変更は
+新しいベクタから見えますし、その逆も可能です。
+@c COMMON
+
+@c EN
+The class @var{uvector-class} must be either one of the uniform
+vector class, but is not necessary match the class of the
+source vector @var{vec}.   In such case, the new vector looks at the same
+region of @var{vec}'s memory, but interpretes it differently.
+For example, the following code determines whether Gauche
+is running on big-endian or little-endian machine:
+@c JP
+クラス@var{uvector-class}はユニフォームベクタのクラスでなければなりませんが、
+@var{vec}のクラスと一致している必要はありません。
+そのような場合は、新しいベクタは@var{vec}と同じメモリ領域の値を
+異なる値と解釈するかもしれません。
+例えば、次のコードはGaucheが走っているマシンが
+リトルエンディアンであるかビッグエンディアンであるかを判定します。
+@c COMMON
+
+@example
+(let ((u8v (uvector-alias <u8vector> #u32(1))))
+  (if (zero? (u8vector-ref u8v 0))
+      'big-endian 
+      'little-endian))
+@end example
+
+@c EN
+If the @var{uvector-class} is other than s8vector or u8vector,
+the region the new vector points has to meet the alignment
+requirement.  You can assume the beginning of the source vector
+is aligned suitable for any uniform vectors.  So, for example,
+if you're creating u32vector from u8vector, the @var{start} and
+@var{end} must be multiple of 4 (or, if they're omitted, the length
+of the original u8vector must be multiple of 4).
+An error is signalled when the given parameters doesn't satisfy
+alignment constraint.
+@c JP
+@var{uvector-class}がs8vectorかu8vector以外の場合、
+新しいベクタが指す領域は、そのベクタの要素のアラインメントの要請に
+したがっていなければなりません。
+ユニフォームベクタの開始点は常に全てのユニフォームベクタのアラインメント要請を
+満たします。したがって、例えばu8vectorからu32vectorを作成する場合、
+@var{start}および@var{end}は4の倍数でなければなりません
+(あるいは、@var{start}/@var{end}が省略された場合、@var{vec}の長さが
+4の倍数でなければなりません)。
+与えられたパラメータでアラインメントの要請が満たせない場合はエラーが通知されます。
 @c COMMON
 @end defun
 

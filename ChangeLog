@@ -1,6 +1,6 @@
 2002-10-14  Shiro Kawai  <shiro@acm.org>
 
-	* ext/uvector/* : added read-block! and write-block.
+	* ext/uvector/* : added read-block!, write-block, and uvector-alias.
 
 2002-10-13  Shiro Kawai  <shiro@acm.org>
 

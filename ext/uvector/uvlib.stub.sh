@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.19 2002-10-14 20:58:17 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.20 2002-10-15 02:21:27 shirok Exp $
 ;;;
 
 "
@@ -283,6 +283,33 @@ strlib u
 strlib s
 
 ##==============================================================
+## Sharing
+##
+
+cat <<EOF
+(define-cproc uvector-alias (klass v::<uvector>
+                             &optional (start::<fixnum> 0)
+                                       (end::<fixnum> -1))
+  "int len = SCM_UVECTOR_SIZE(v), reqalign, srcalign, dstsize;
+  if (!Scm_TypeP(klass, SCM_CLASS_CLASS)) {
+    Scm_Error(\"class required, but got %S\", klass);
+  }
+  reqalign = Scm_UVectorElementSize(SCM_CLASS(klass));
+  srcalign = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+  SCM_CHECK_START_END(start, end, len);
+  if (reqalign < 0) {
+    Scm_Error(\"uvector-alias requires uniform vector class, but got %S\", klass);
+  }
+  if ((start*srcalign)%reqalign != 0 || (end*srcalign)%reqalign != 0) {
+    Scm_Error(\"aliasing %S of range (%d, %d) to %S doesn't satisfy alignemnt requirement.\", Scm_ClassOf(SCM_OBJ(v)), start, end, klass);
+  }
+  if (reqalign >= srcalign) dstsize = (end-start) / (reqalign/srcalign);
+  else dstsize = (end-start) * (srcalign/reqalign);
+  SCM_RETURN(Scm_MakeUVector(SCM_CLASS(klass), dstsize, v->elements + start*srcalign));
+  ")
+EOF
+
+##==============================================================
 ## Input and output
 ##
 
@@ -291,11 +318,10 @@ cat <<EOF
                            &optional (port::<input-port> (current-input-port))
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1))
-  "int len = SCM_UVECTOR_SIZE(v), eltsize = 1, r;
+  "int len = SCM_UVECTOR_SIZE(v), eltsize, r;
   SCM_CHECK_START_END(start, end, len);
-  if (SCM_S16VECTORP(v) || SCM_U16VECTORP(v)) eltsize = 2;
-  else if (SCM_S32VECTORP(v) || SCM_U32VECTORP(v) || SCM_F32VECTORP(v)) eltsize = 4;
-  else if (SCM_S64VECTORP(v) || SCM_U64VECTORP(v) || SCM_F64VECTORP(v)) eltsize = 8;
+  eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+  SCM_ASSERT(eltsize >= 1);
   r = Scm_Getz(v->elements + start*eltsize, (end-start)*eltsize, port);
   if (r == EOF) SCM_RETURN(SCM_EOF);
   else SCM_RETURN(Scm_MakeInteger((r+eltsize-1)/eltsize));")
@@ -304,11 +330,10 @@ cat <<EOF
                            &optional (port::<output-port> (current-output-port))
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1))
-  "int len = SCM_UVECTOR_SIZE(v), eltsize = 1, r;
+  "int len = SCM_UVECTOR_SIZE(v), eltsize;
   SCM_CHECK_START_END(start, end, len);
-  if (SCM_S16VECTORP(v) || SCM_U16VECTORP(v)) eltsize = 2;
-  else if (SCM_S32VECTORP(v) || SCM_U32VECTORP(v) || SCM_F32VECTORP(v)) eltsize = 4;
-  else if (SCM_S64VECTORP(v) || SCM_U64VECTORP(v) || SCM_F64VECTORP(v)) eltsize = 8;
+  eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+  SCM_ASSERT(eltsize >= 1);
   Scm_Putz(v->elements + start*eltsize, (end-start)*eltsize, port);
   SCM_RETURN(SCM_UNDEFINED);")
   

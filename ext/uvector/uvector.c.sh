@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.26 2002-10-14 20:58:17 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.27 2002-10-15 02:21:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -53,6 +53,39 @@ ScmObj Scm_UvectorU64Min = SCM_NIL;
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_UVectorClass, NULL, NULL, NULL, NULL,
                          uvector_cpl+1);
+
+/* Returns the size of element of the uvector of given class */
+int Scm_UVectorElementSize(ScmClass *klass)
+{
+    if (SCM_EQ(klass, SCM_CLASS_S8VECTOR)) return sizeof(S8ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_U8VECTOR)) return sizeof(U8ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_S16VECTOR)) return sizeof(S16ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_U16VECTOR)) return sizeof(U16ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_S32VECTOR)) return sizeof(S32ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_U32VECTOR)) return sizeof(U32ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_F32VECTOR)) return sizeof(F32ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_S64VECTOR)) return sizeof(S64ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_U64VECTOR)) return sizeof(U64ELTTYPE[1]);
+    if (SCM_EQ(klass, SCM_CLASS_F64VECTOR)) return sizeof(F64ELTTYPE[1]);
+    return -1;
+}
+
+/* Generic constructor */
+ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init)
+{
+    ScmUVector *vec;
+    int eltsize = Scm_UVectorElementSize(klass);
+    SCM_ASSERT(eltsize >= 1);
+    vec = SCM_NEW(ScmUVector);
+    if (init) {
+        vec->elements = init;   /* trust the caller */
+    } else {
+        vec->elements = SCM_NEW_ATOMIC2(void*, size*eltsize);
+    }
+    SCM_SET_CLASS(vec, klass);
+    vec->size = size;
+    return SCM_OBJ(vec);
+}
 EOF
 
 # template ------------------------------------------------------------
@@ -108,15 +141,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_${vecttype}Class,
  */
 static Scm${vecttype} *make_${vecttype}(int size, ${itemtype} *eltp)
 {
-    Scm${vecttype} *vec = SCM_NEW(Scm${vecttype});
-    if (eltp) {
-        vec->elements = eltp;
-    } else {
-        vec->elements = SCM_NEW_ATOMIC2(${itemtype}*, size*sizeof(${itemtype}));
-    }
-    SCM_SET_CLASS(vec, SCM_CLASS_${VECTTYPE});
-    vec->size = size;
-    return vec;
+    return (Scm${vecttype}*)Scm_MakeUVector(SCM_CLASS_${VECTTYPE}, size, eltp);
 }
 
 ScmObj Scm_Make${vecttype}(int size, ${itemtype} fill)

@@ -1296,6 +1296,87 @@
   (else #f))
 
 ;;-------------------------------------------------------------------
+(test-section "uvector alias")
+
+(test "alias u8 u8" #u8(0 1 2 3)
+      (lambda ()
+        (let* ((src (u8vector 0 1 2 0))
+               (dst (uvector-alias <u8vector> src)))
+          (u8vector-set! src 3 3)
+          dst)))
+(test "alias u8 u8 (range)" #u8(1 2)
+      (lambda ()
+        (let* ((src (u8vector 0 1 0 1))
+               (dst (uvector-alias <u8vector> src 1 3)))
+          (u8vector-set! src 2 2)
+          dst)))
+(test "alias s8 u8" #s8(1 -1)
+      (lambda ()
+        (let* ((src (u8vector 0 0 0 0))
+               (dst (uvector-alias <s8vector> src 1 3)))
+          (s8vector-set! dst 0 1)
+          (u8vector-set! src 2 255)
+          dst)))
+;; the following test cases avoid endian complexity
+(test "alias s8 u16" '(#s8(#x11 #x11 #x22 #x22) #x1111)
+      (lambda ()
+        (let* ((src (u16vector 0 0 0))
+               (dst (uvector-alias <s8vector> src 1)))
+          (u16vector-set! src 2 #x2222)
+          (s8vector-set! dst 0 #x11)
+          (s8vector-set! dst 1 #x11)
+          (list dst (u16vector-ref src 1)))))
+(test "alias u32 u8" #u32(#xaaaaaaaa #xbbbbbbbb)
+      (lambda ()
+        (let* ((src (make-u8vector 8 #xaa))
+               (ali (uvector-alias <u8vector> src 4))
+               (dst (uvector-alias <u32vector> src)))
+          (u8vector-fill! ali #xbb)
+          dst)))
+
+;; tricky, but should work on IEEE754 compiant floats
+(test "alias u32 f32" #u32(0)
+      (lambda () (uvector-alias <u32vector> #f32(0.0))))
+(test "alias u32 f64" #u32(0 0)
+      (lambda () (uvector-alias <u32vector> #f64(0.0))))
+(test "alias f64 u32" #f64(0.0)
+      (lambda () (uvector-alias <f64vector> #u32(1 1 0 0) 2)))
+(test "alias u64 f64" #u64(0)
+      (lambda () (uvector-alias <u64vector> #f64(0.0))))
+
+(test "alias turn-around" #f32(1.5)
+      (lambda ()
+        (uvector-alias <f32vector>
+                       (uvector-alias <u8vector> #f32(1.0 1.5 2.0))
+                       4 8)))
+
+;; test alignment check
+(test "alias u32 u8 (alignment violation)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (let* ((src (make-u8vector 9))
+                   (dst (uvector-alias <u32vector>)))
+              dst)))))
+(test "alias u32 u8 (alignment violation)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (let* ((src (make-u8vector 32))
+                   (dst (uvector-alias <u32vector> 2)))
+              dst)))))
+(test "alias u32 u8 (alignment violation)" 'error
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda ()
+            (let* ((src (make-u8vector 32))
+                   (dst (uvector-alias <u32vector> 4 5)))
+              dst)))))
+
+;;-------------------------------------------------------------------
 ; (use gauche.array)
 (load "array")
 (import gauche.array)
