@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.246 2002-07-17 10:27:40 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.247 2002-07-17 19:15:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11438,7 +11438,7 @@ Such a thread can just loop on @code{sys-pause}.
   (make-thread
     (lambda ()
       (sys-sigmask SIG_SETMASK (make <sys-sigset>)) ;;empty mask
-      (let loop () (sys-pause)))))
+      (let loop () (sys-pause) (loop)))))
 @end example
 
 Complicated application may want to control per-thread signal
