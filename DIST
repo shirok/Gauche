@@ -23,7 +23,7 @@ if [ "$tgz" = "yes" ]; then
   ./AUTOCONF
   configure
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
-  (cd doc; make html)
+#  (cd doc; make html)
   (cd ext/charconv/data; make)
   make distclean
   escm -o INSTALL INSTALL.esc

@@ -1,3 +1,9 @@
+2001-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.7
+	* lib/gauche/interactive.scm : disable debugger by default.
+	* doc/* : cleaned up.  Stopped including HTML version in dist.
+
 2001-10-12  Shiro Kawai  <shiro@acm.org>
 
 	* doc/extract : added a feature to substitute node names and
