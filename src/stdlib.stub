@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.30 2001-03-05 00:54:30 shiro Exp $
+;;; $Id: stdlib.stub,v 1.31 2001-03-05 04:02:59 shiro Exp $
 ;;;
 
 
@@ -401,7 +401,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc member (obj list)
   (assert (list? list))
-  "  SCM_RETURN(Scm_Member(obj, list));")
+  "  SCM_RETURN(Scm_Member(obj, list, SCM_CMP_EQUAL));")
 
 (define-cproc assq (obj alist)
   (assert (list? alist))
@@ -413,7 +413,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc assoc (obj alist)
   (assert (list? alist))
-  "  SCM_RETURN(Scm_Assoc(obj, alist));")
+  "  SCM_RETURN(Scm_Assoc(obj, alist, SCM_CMP_EQUAL));")
 
 ;;
 ;; 6.3.3  Symbols
