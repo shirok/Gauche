@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.3 2004-05-07 09:31:58 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.4 2004-05-15 23:07:48 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -99,11 +99,13 @@
   (let-args args ((dry-run "n|dry-run")
                   (copts   "C|configure-options=s" #f)
                   (clean   "clean")
+                  (sudo    "install-as=s" #f)
                   . args)
     (unless (= (length args) 1) (usage))
     (gauche-package-build (car args)
                           :config *config*
                           :dry-run dry-run :install #t :clean clean
+                          :sudo-install sudo
                           :configure-options copts)))
 
 ;;------------------------------------------------------
