@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.90 2001-03-25 04:42:04 shiro Exp $
+ *  $Id: gauche.h,v 1.91 2001-03-25 06:33:32 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -310,11 +310,6 @@ struct ScmClassRec {
     ScmObj slots;               /* alist of slot-name & slot-definition */
     ScmObj directSubclasses;
     ScmObj directMethods;
-#ifdef __GNUC__
-    ScmObj instanceSlots[0];    /* for subclass */
-#else
-    ScmObj instanceSlots[1];    /* for subclass */
-#endif
 };
 
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
@@ -378,8 +373,13 @@ extern ScmClass *Scm_ObjectCPL[];
 #define SCM_CLASS_SEQUENCE_CPL    (Scm_SequenceCPL)
 #define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
 
-/* define built-in class statically. */
-#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, equal, compare, serialize, cpa) \
+/* Static definition of classes
+ *   SCM_DEFINE_BUILTIN_CLASS
+ *   SCM_DEFINE_BUILTIN_CLASS_SIMPLE
+ *   SCM_DEFINE_BASE_CLASS
+ */
+
+#define SCM_DEFINE_CLASS_COMMON(cname, size, flag, printer, equal, compare, serialize, cpa) \
     ScmClass cname = {                          \
         SCM_CLASS_CLASS,                        \
         printer,                                \
@@ -389,8 +389,8 @@ extern ScmClass *Scm_ObjectCPL[];
         NULL,                                   \
         cpa,                                    \
         0,                                      \
-        0,                                      \
-        SCM_CLASS_BUILTIN,                      \
+        size,                                   \
+        flag,                                   \
         SCM_FALSE,                              \
         SCM_FALSE,                              \
         SCM_FALSE,                              \
@@ -401,10 +401,23 @@ extern ScmClass *Scm_ObjectCPL[];
         SCM_NIL                                 \
     }
     
+/* define built-in class statically. */
+#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, equal, compare, serialize, cpa) \
+    SCM_DEFINE_CLASS_COMMON(cname, 0,                                   \
+                            SCM_CLASS_BUILTIN|SCM_CLASS_FINAL,          \
+                            printer, equal, compare, serialize, cpa)
+
 /* simpler version */
 #define SCM_DEFINE_BUILTIN_CLASS_SIMPLE(cname, printer)         \
     SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL, NULL,  \
                              SCM_CLASS_DEFAULT_CPL)
+
+/* define built-in class that can be subclassed by Scheme */
+#define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, equal, compare, serialize, cpa) \
+    SCM_DEFINE_CLASS_COMMON(cname,                                           \
+                            (sizeof(ctype)+sizeof(ScmObj)-1)/sizeof(ScmObj), \
+                            SCM_CLASS_BUILTIN,                               \
+                            printer, equal, compare, serialize, cpa)
 
 /*--------------------------------------------------------
  * PAIR AND LIST
@@ -1493,11 +1506,6 @@ struct ScmGenericRec {
     ScmObj methods;
     ScmObj (*fallback)(ScmObj *args, int nargs, ScmGeneric *gf);
     void *data;
-#ifdef __GNUC__
-    ScmObj instanceSlots[0];    /* for subclass */
-#else
-    ScmObj instanceSlots[1];    /* for subclass */
-#endif
 };
 
 extern ScmClass Scm_GenericClass;
@@ -1531,11 +1539,6 @@ struct ScmMethodRec {
     ScmObj (*func)(ScmNextMethod *nm, ScmObj *args, int nargs, void * data);
     void *data;                 /* closure, or code */
     ScmEnvFrame *env;           /* for Scheme-defined method */
-#ifdef __GNUC__
-    ScmObj instanceSlots[0];    /* for subclass */
-#else
-    ScmObj instanceSlots[1];    /* for subclass */
-#endif
 };
 
 extern ScmClass Scm_MethodClass;
