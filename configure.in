@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.38 2001-09-25 07:11:42 shirok Exp $
+dnl $Id: configure.in,v 1.39 2001-09-25 08:10:58 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -71,13 +71,10 @@ AC_ARG_WITH(iconv, [  --with-iconv-lib=LIB:   If your system needs to use extern
 dnl --with-rpath=PATH:...
 rpath=
 AC_ARG_WITH(rpath, [  --with-rpath=PATH:PATH... : Use -rpath option while building dynamically
-                          loadable objects.  This is needed when Gauche's
-                          extension depends on some libraries installed other
-                          than standard locations and you don't have control
-                          over LD_LIBRARY_PATH.  See INSTALL for details.], [
+                          loadable objects (experimental).], [
   case $with_rpath in
     yes|no) ;;
-    *) rpath="`echo $with_rpath | tr ':' '\012' | sed 's/^/-rpath /' | tr '\012' ' '`";;
+    *) rpath="`echo $with_rpath | tr ':' '\012' | sed 's/^/-Wl,-rpath /' | tr '\012' ' '`";;
   esac
 ])
 
@@ -197,14 +194,14 @@ case $host in
     SHLIB_SO_CFLAGS="-fpic"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
-    SHLIB_MAIN_LDFLAGS="$rpath -rdynamic"
+    SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
     ;;
   *netbsd*)
     SHLIB_SO_CFLAGS="-fPIC -DPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
-    SHLIB_MAIN_LDFLAGS="$rpath -rdynamic"
+    SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
     ;;
   *darwin*)
@@ -227,7 +224,7 @@ case $host in
     fi
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
-    SHLIB_MAIN_LDFLAGS="$rpath"
+    SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     ;;
   *solaris*)
