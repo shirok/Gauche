@@ -1,3 +1,10 @@
+2001-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/logical.scm : made big-field and copy-bit-field
+	  work even if start >= end.
+	* src/extlib.stub : added hash-table-delete!
+	* src/main.c : fixed typo (thanks for Sven Hartrumpf).
+
 2001-11-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.9
