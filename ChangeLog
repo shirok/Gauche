@@ -1,3 +1,10 @@
+2004-12-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_PrintDouble): added API to use Burger&Dybvig
+	  algorithm.
+	* ext/uvector/uvgen.scm: fixed to print values of f32 and f64 vectors
+	  accurately.
+
 2004-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (coding_port_recognize_encoding): fixed a bug that

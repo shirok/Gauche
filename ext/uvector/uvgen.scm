@@ -1,7 +1,7 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.3 2004-11-14 03:16:30 shirok Exp $
+;; $Id: uvgen.scm,v 1.4 2004-12-02 12:14:12 shirok Exp $
 ;;
 
 (use srfi-1)
@@ -236,7 +236,7 @@
          `(EQ    . ,(lambda (x y)
                       #`"(,|x| == ,|y|)"))
          `(PRINT . ,(lambda (out elt)
-                      #`"Scm_Printf(,|out|,, \"%f\",, ,|elt|)"))
+                      #`"Scm_Printf(,|out|,, \"%.9g\",, ,|elt|)"))
          (common-rules 'f32)))
 
 (define (make-f64rules)
@@ -249,7 +249,7 @@
          `(EQ    . ,(lambda (x y)
                       #`"(,|x| == ,|y|)"))
          `(PRINT . ,(lambda (out elt)
-                      #`"Scm_Printf(,|out|,, \"%f\",, ,|elt|)"))
+                      #`"Scm_PrintDouble(,|out|,, (double),|elt|,, 0)"))
          (common-rules 'f64)))
 
 (define (dummy . _) "/* not implemented */")

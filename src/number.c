@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.115 2004-11-14 03:16:31 shirok Exp $
+ *  $Id: number.c,v 1.116 2004-12-02 12:14:12 shirok Exp $
  */
 
 #include <math.h>
@@ -2130,6 +2130,15 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
         Scm_Error("number required: %S", obj);
     }
     return r;
+}
+
+/* utility to expose Burger&Dybvig algorithm.  FLAGS is not used yet,
+   but reserved for future extension. */
+void Scm_PrintDouble(ScmPort *port, double d, int flags)
+{
+    char buf[FLT_BUF];
+    double_print(buf, FLT_BUF, d, FALSE);
+    Scm_Putz(buf, strlen(buf), port);
 }
 
 /*

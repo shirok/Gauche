@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.401 2004-11-23 13:10:00 shirok Exp $
+ *  $Id: gauche.h,v 1.402 2004-12-02 12:14:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1933,6 +1933,8 @@ SCM_EXTERN ScmObj Scm_Angle(ScmObj z);
 
 SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, int use_upper);
 SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict);
+
+SCM_EXTERN void   Scm_PrintDouble(ScmPort *port, double d, int flags);
 
 /*--------------------------------------------------------
  * PROCEDURE (APPLICABLE OBJECT)
