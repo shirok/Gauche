@@ -43,12 +43,9 @@ Gauche's object system.   It is strongly influenced
 by CLOS (Common-Lisp Object System).
 If you have experience in CLOS or related systems
 such as TinyCLOS, STklos or Guile's object system,
-you may skip to tne next section.
+you may skip to the next section.
 
-You can find the code of definitions in the examples of this section
-in @code{examples/oointro.scm} of Gauche's source distribution.
-
-Three concepts plays the central role in CLOS-like object systems:
+Three concepts play the central role in CLOS-like object systems:
 A @emph{class}, a @emph{generic function}, and a @emph{method}.
 
 A @emph{class} specifies a structure of object.
@@ -69,6 +66,8 @@ The symbol @code{<2d-point>} is the name of the class, and also
 the global variable @code{<2d-point>} is bound to a class object.
 Surrounding a class name by @code{<} and @code{>} is just a
 convention; you can pass any symbol to @code{define-class}.
+(You can find the code of definitions in the examples of this section
+in @code{examples/oointro.scm} of Gauche's source distribution.)
 
 The second argument of @code{define-class} is a list of
 direct superclasses, from which you can inherit your class.
@@ -388,11 +387,11 @@ you can compare the instances by @code{equal?}:
   @result{} #t
 @end example
 
-Let's proceed for more interesting examples.
+Let's proceed to more interesting examples.
 Think of a class @code{<shape>}, 
 which is an entity that can be drawn.
 As a base class, it keeps
-common attributes such as a color and thickness in its slots.
+common attributes such as a color and line thickness in its slots.
 
 @example
 (define-class <shape> ()
@@ -579,7 +578,7 @@ Then we can write some simple figures @dots{}.
     (make <polyline-shape>
       :color '(0 1 0) :closed #t
       :points corners)
-    ;; a star-shape in blue
+    ;; a star-shape in red
     (make <polyline-shape>
       :color '(1 0 0) :closed #t
       :points (list (list-ref corners 0)
