@@ -1,5 +1,13 @@
+2002-08-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/debugger.scm : fixed an error in enable-debug
+	  (was using obsolete 'current-vm' procedure).
+	* src/genstub : recognize <short>, <ushort> as stub types.
+
 2002-08-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/module.c (Scm_DefineConst): don't issue warning if the redefined
+	  constant has the same value (in the sense of equal?) to the old one.
 	* src/port.c (file_filler): fixed a bug that file_filler returned 0
 	  when read(2) was interrupted by a signal, causing Scm_Read to
 	  return EOF in such case.  (Thanks to Julian Fondren for pointing
