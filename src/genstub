@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.80 2002-08-26 12:40:26 shirok Exp $
+;;;  $Id: genstub,v 1.81 2002-08-27 00:30:58 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -525,6 +525,8 @@
 (define-class <string-literal> (<literal>) ())
 (define-method emit-definition ((self <string-literal>))
   (emit-static-string (c-name-of self) (value-of self)))
+(define-method value-getter-of ((self <string-literal>))
+  #`"SCM_OBJ(&,(c-name-of self)__NAME)")
 
 ;; symbol literals
 (define-literal-binding <symbol> <symbol-literal>)
