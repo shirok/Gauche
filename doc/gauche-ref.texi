@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.397 2003-06-05 15:18:52 nobsun Exp $
+@c $Id: gauche-ref.texi,v 1.398 2003-06-05 21:51:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -15420,7 +15420,7 @@ JIS X 0212は、単にJIS X 0213と重ならないコードを使っているためにサポート
 なるべくJIS X 0213の使用をおすすめします。
 @c COMMON
 
-@item SJIFT_JIS, SHIFTJIS, SJIS
+@item SHIFT_JIS, SHIFTJIS, SJIS
 @c EN
 Covers Shift_JISX0213, except that 0x5c and 0x7e is mapped to ASCII
 character set (REVERSE SOLIDUS and TILDE),
