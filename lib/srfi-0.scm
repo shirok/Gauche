@@ -1,8 +1,12 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.8 2001-09-17 01:41:05 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.9 2002-01-06 22:36:06 shirok Exp $
 ;;;
+
+(define-module srfi-0
+  (export cond-expand))
+(select-module srfi-0)
 
 ;; This implementation is based on the reference implementation
 ;; by Mark Feeley.
