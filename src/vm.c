@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.34 2001-02-10 12:42:28 shiro Exp $
+ *  $Id: vm.c,v 1.35 2001-02-13 06:03:23 shiro Exp $
  */
 
 #include "gauche.h"
@@ -173,14 +173,17 @@ ScmVM *Scm_SetVM(ScmVM *vm)
         sp += CONT_FRAME_SIZE;                          \
     } while (0)
 
-/* pop a continuation frame, i.e. return from a procedure.
-   env is assumed to point the argument frame.  */
+/* pop a continuation frame, i.e. return from a procedure. */
 #define POP_CONT()                                      \
     do {                                                \
-        sp   = (ScmObj*)cont->argp + cont->size;        \
-        env  = cont->env;                               \
-        argp = cont->argp;                              \
-        pc   = cont->pc;                                \
+        if (IN_STACK_P((ScmObj*)cont)) {                \
+            sp   = (ScmObj*)cont->argp + cont->size;    \
+            env  = cont->env;                           \
+            argp = cont->argp;                          \
+            pc   = cont->pc;                            \
+        } else {                                        \
+            VM_ERR(("call/cc not supported yet."));     \
+        }                                               \
         cont = cont->prev;                              \
     } while (0)
 
@@ -686,6 +689,10 @@ static void run_loop()
                 val0 = cp;
                 continue;
             }
+            CASE(SCM_VM_REVERSE) {
+                val0 = Scm_Reverse(val0);
+                continue;
+            }
             CASE(SCM_VM_PROMISE) {
                 val0 = Scm_MakePromise(val0);
                 continue;
@@ -879,51 +886,31 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     return SCM_UNDEFINED;
 }
 
-/*
+/*-------------------------------------------------------------
  * User level eval and apply.
+ *   When the C routine wants the Scheme code to return to the
+ *   routine, instead of using C-continuation, the continuation
+ *   "cross the border" of C-stack and Scheme-stack.  This
+ *   border has peculiar characteristics.   Once the Scheme
+ *   returns, continuations saved during the execution of the
+ *   Scheme code becomes invalid.
+ *
+ *   To realize this, we make a chain of records which keeps
+ *   VM status at the border.   Call/cc captures the tail of
+ *   the chain.  And when the captured continuation is invoked,
+ *   it checks if the chain is still valid.  This chain is
+ *   placed in a C stack.
  */
+
+/* Border gate.  All the C->Scheme calls should go through here.  */
 static ScmObj user_eval_inner(ScmObj program)
 {
-    DECL_REGS;
-    pc = program;
-    SAVE_REGS();
-    run_loop();
-    return theVM->val0;
-}
-
-ScmObj Scm_Eval(ScmObj expr, ScmObj e)
-{
     DECL_REGS_VOLATILE;
-    ScmObj result = SCM_UNDEFINED;
+    volatile ScmObj result = SCM_UNDEFINED;
     SCM_PUSH_ERROR_HANDLER {
-        ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-        if (theVM->debugCompile)
-            Scm_Printf(theVM->curerr, "== %#S\n", v);
-        result = user_eval_inner(v);
-    }
-    SCM_WHEN_ERROR {
-        SAVE_REGS();            /* restore curren VM regs */
-        SCM_PROPAGATE_ERROR;
-    }
-    SCM_POP_ERROR_HANDLER;
-    return result;
-}
-
-ScmObj Scm_Apply(ScmObj proc, ScmObj args)
-{
-    DECL_REGS_VOLATILE;
-    ScmObj result = SCM_UNDEFINED;
-    SCM_PUSH_ERROR_HANDLER {
-        ScmObj code = SCM_NIL, tail, cp;
-        int nargs = 0;
-        SCM_FOR_EACH(cp, args) {
-            SCM_APPEND1(code, tail, SCM_CAR(cp));
-            SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
-            nargs++;
-        }
-        SCM_APPEND1(code, tail, proc);
-        SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, nargs));
-        result = user_eval_inner(SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL),code));
+        theVM->pc = program;
+        run_loop();
+        result = theVM->val0;
     }
     SCM_WHEN_ERROR {
         SAVE_REGS();            /* restore current VM regs */
@@ -931,6 +918,28 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
     }
     SCM_POP_ERROR_HANDLER;
     return result;
+}
+
+ScmObj Scm_Eval(ScmObj expr, ScmObj e)
+{
+    ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    if (theVM->debugCompile)
+        Scm_Printf(theVM->curerr, "== %#S\n", v);
+    return user_eval_inner(v);
+}
+
+ScmObj Scm_Apply(ScmObj proc, ScmObj args)
+{
+    ScmObj code = SCM_NIL, tail, cp;
+    int nargs = 0;
+    SCM_FOR_EACH(cp, args) {
+        SCM_APPEND1(code, tail, SCM_CAR(cp));
+        SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
+        nargs++;
+    }
+    SCM_APPEND1(code, tail, proc);
+    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, nargs));
+    return user_eval_inner(SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL),code));
 }
 
 /* Arrange C function AFTER to be called after the procedure returns.
