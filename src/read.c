@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.21 2001-07-24 19:11:03 shirok Exp $
+ *  $Id: read.c,v 1.22 2001-08-04 11:24:06 shirok Exp $
  */
 
 #include <stdio.h>
@@ -33,6 +33,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial);
 static ScmObj read_number(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
+static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim);
 static ScmObj read_keyword(ScmPort *port);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
@@ -184,8 +185,7 @@ ScmObj read_internal(ScmPort *port)
             }
         }
     case '|':
-        /* TODO: read escaped symbol */
-        read_error(port, "|-escaping not supported yet");
+        return read_escaped_symbol(port, '|');
     case '[':
         /* TODO: make it customizable */
         return read_list(port, ']');
@@ -209,7 +209,9 @@ ScmObj read_internal(ScmPort *port)
         }
     case '0':; case '1':; case '2':; case '3':; case '4':;
     case '5':; case '6':; case '7':; case '8':; case '9':;
-        return read_number(port, c);
+        /* Note: R5RS doesn't permit identifiers beginning with digits,
+           but some Scheme programs use such identifiers. */
+        return read_symbol_or_number(port, c);
     case ')':; case ']':; case '}':;
         read_error(port, "extra close parenthesis");
     case EOF:
@@ -475,6 +477,26 @@ static ScmObj read_keyword(ScmPort *port)
 {
     ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID));
     return Scm_MakeKeyword(s);
+}
+
+static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
+{
+    int c;
+    ScmDString ds;
+    Scm_DStringInit(&ds);
+    
+    for (;;) {
+        SCM_GETC(c, port);
+        if (c == EOF) {
+            read_error(port, "unterminated escaped symbol: |%s ...",
+                       Scm_DStringGetz(&ds));
+        } else if (c == delim) {
+            ScmString *s = SCM_STRING(Scm_DStringGet(&ds));
+            return Scm_Intern(s);
+        } else {
+            SCM_DSTRING_PUTC(&ds, c);
+        }
+    }
 }
 
 /*----------------------------------------------------------------
