@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.26 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: hash.c,v 1.27 2003-09-09 12:21:26 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/class.h"
 
 /* 
  * Finding good hash functions is an interesting topic.  I looked around
@@ -68,30 +69,28 @@
         }                                                               \
     } while (0)
 
+/* Integer and address hash is a variation of "multiplicative hashing"
+   scheme described in Knuth, TAOCP, section 6.4.  The final shifting
+   is done by HASH2INDEX macro (well, sort of) */
+
 #define SMALL_INT_HASH(result, val) \
     ((result) = (val)*2654435761UL)
 
 #define ADDRESS_HASH(result, val) \
     ((result) = (SCM_WORD(val) >> 3) * 2654435761UL)
 
-#define GENERAL_INT_HASH(result, val)           \
-    do {                                        \
-         (result) = (val);                      \
-         (result) += (val) << 12;               \
-         (result) ^= (val) >> 22;               \
-         (result) += (val) << 4;                \
-         (result) ^= (val) >> 9;                \
-         (result) += (val) << 10;               \
-         (result) ^= (val) >> 2;                \
-         (result) += (val) << 7;                \
-         (result) ^= (val) >> 12;               \
-    } while (0)
-
 #define DEFAULT_NUM_BUCKETS    4
 #define MAX_AVG_CHAIN_LIMITS   3
 #define EXTEND_FACTOR          4
 
-#define HASH2INDEX(table, hashval)   (hashval & (table->numBuckets - 1))
+#define HALFWORD_BITS   (SIZEOF_LONG*4)
+#define HALFWORD_MASK   (1L<<(HALFWORD_BITS))
+
+#define HASH2INDEX(tabsiz, hashval) \
+    (((hashval)^((hashval)>>HALFWORD_BITS)) & (tabsiz - 1))
+
+/* Combining two hash values. */
+#define COMBINE(hv1, hv2)   ((hv1)*5+(hv2))
 
 static unsigned int round2up(unsigned int val)
 {
@@ -128,6 +127,14 @@ static unsigned int round2up(unsigned int val)
  *                              HASH_DELETE - delete the found entry.
  */
 
+/* CAVEAT: eq?, eqv?, and string=? hash tables are guaranteed not to
+ * throw an error during hash table access (except the case that string=?
+ * hash table gets non-string key).  So the caller doesn't need to
+ * set unwind handler in case it needs cleanup (like unlocking mutex).
+ * However, equal? hash may call back to Scheme method, so it can
+ * throw Scheme error.  Be aware of that.
+ */
+
 enum {
     HASH_FIND,           /* returns NULL if not found */
     HASH_ADD,            /* add entry iff the key is not in the table */
@@ -162,7 +169,7 @@ static ScmHashEntry *insert_entry(ScmHashTable *table,
         Scm_HashIterInit(table, &iter);
         while ((f = Scm_HashIterNext(&iter)) != NULL) {
             unsigned long hashval = table->hashfn(f->key);
-            index = hashval & (newsize - 1);
+            index = HASH2INDEX(newsize, hashval);
             f->next = newb[index];
             newb[index] = f;
         }
@@ -191,7 +198,7 @@ static ScmHashEntry *address_access(ScmHashTable *table,
     ScmHashEntry *e, *p;
 
     ADDRESS_HASH(hashval, key);
-    index = HASH2INDEX(table, hashval);
+    index = HASH2INDEX(table->numBuckets, hashval);
     
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         if (e->key == key) {
@@ -272,7 +279,7 @@ static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
     s = SCM_STRING_START(key);
     size = SCM_STRING_SIZE(key);
     STRING_HASH(hashval, s, size);
-    index = HASH2INDEX(table, hashval);
+    index = HASH2INDEX(table->numBuckets, hashval);
 
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         ScmObj ee = e->key;
@@ -324,7 +331,7 @@ static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
     ScmHashEntry *e, *p;
 
     hashval = table->hashfn(key);
-    index = HASH2INDEX(table, hashval);
+    index = HASH2INDEX(table->numBuckets, hashval);
     
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         if (table->cmpfn(key, e) == 0) {
@@ -341,24 +348,35 @@ static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
     else return insert_entry(table, key, value, index);
 }
 
-/* generic scheme object hash */
+/* generic scheme object hash.
+   note that this doesn't stop if the structure is circular */
 static unsigned long general_hash(ScmObj obj)
 {
     if (!SCM_PTRP(obj)) {
-        return (unsigned long)obj;
+        unsigned long hv;
+        SMALL_INT_HASH(hv, (unsigned long)obj);
+        return hv;
     } else if (SCM_NUMBERP(obj)) {
         return eqv_hash(obj);
     } else if (SCM_STRINGP(obj)) {
         return string_hash(obj);
     } else if (SCM_PAIRP(obj)) {
-        /* Note: this diverges when we have circular structure */
-        return (general_hash(SCM_CAR(obj)) + general_hash(SCM_CDR(obj)));
+        unsigned long h = 0, h2;
+        ScmObj cp;
+        SCM_FOR_EACH(cp, obj) {
+            h2 = general_hash(SCM_CAR(cp));
+            h = COMBINE(h, h2);
+        }
+        h2 = general_hash(cp);
+        h = COMBINE(h, h2);
+        return h;
     } else if (SCM_VECTORP(obj)) {
         int i;
-        unsigned long h = 0;
+        unsigned long h = 0, h2;
         ScmObj elt;
         SCM_VECTOR_FOR_EACH(i, elt, obj) {
-            h += general_hash(elt);
+            h2 = general_hash(elt);
+            h = COMBINE(h, h2);
         }
         return h;
     } else if (SCM_SYMBOLP(obj)) {
@@ -366,8 +384,18 @@ static unsigned long general_hash(ScmObj obj)
     } else if (SCM_KEYWORDP(obj)) {
         return string_hash(SCM_OBJ(SCM_KEYWORD_NAME(obj)));
     } else {
-        /* TODO: allow to define per-object hash function */
-        Scm_Error("object not hashable: %S", obj);
+        /* Call specialized object-hash method */
+        ScmObj r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectHash),
+                             SCM_LIST1(obj));
+        if (SCM_INTP(r)) {
+            return (unsigned long)SCM_INT_VALUE(r);
+        }
+        if (SCM_BIGNUMP(r)) {
+            /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
+               but taking the LSW would give better distribution. */
+            return SCM_BIGNUM(r)->values[0];
+        }
+        Scm_Error("object-hash returned non-integer: %S", r);
         return 0;               /* dummy */
     }
 }
@@ -587,6 +615,11 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 /*
  * Exposed hash functions
  */
+
+unsigned long Scm_Hash(ScmObj obj)
+{
+    return general_hash(obj);
+}
 
 unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
 {

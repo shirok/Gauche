@@ -1,3 +1,10 @@
+2003-09-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, src/class.c, src/gauche.h, src/extlib.stub : Exposed
+	  hash procedure to Scheme.  Added object-hash generic function
+	  so that the user-defined class can be used in hash table with
+	  its own hash function.
+
 2003-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbm.scm, lib/dbm/* : moved abstract dbm implementation under lib.

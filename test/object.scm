@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.22 2003-01-07 13:28:04 shirok Exp $
+;; $Id: object.scm,v 1.23 2003-09-09 12:21:26 shirok Exp $
 
 (use gauche.test)
 
@@ -258,6 +258,99 @@
 (test* "object-compare" -1 (compare (make <cmp> :x 3) (make <cmp> :x 4)))
 (test* "object-compare" 0 (compare (make <cmp> :x 3) (make <cmp> :x 3)))
 (test* "object-compare" 1 (compare (make <cmp> :x 4) (make <cmp> :x 3)))
+
+;;----------------------------------------------------------------
+(test-section "object hash protocol")
+
+(test* "object-hash" *test-error*
+       (hash (make <cmp> :x (list 1 2))))
+
+(define-method object-hash ((obj <cmp>))
+  (+ (hash (slot-ref obj 'x)) 1))
+
+(test* "object-hash" (+ (hash (list 1 2)) 1)
+       (hash (make <cmp> :x (list 1 2))))
+(test* "object-hash" (hash (make <cmp> :x (list 1 2)))
+       (hash (make <cmp> :x (list 1 2))))
+(test* "object-hash" (+ (hash (vector 'a 'b)) 1)
+       (hash (make <cmp> :x '#(a b))))
+(test* "object-hash" (+ (hash "ab") 1)
+       (hash (make <cmp> :x "ab")))
+;; NB: the following test is not necessarily be false theoretically,
+;; but we know the two returns different values in our implementation.
+(test* "object-hash" #f
+       (equal? (hash (make <cmp> :x (cons 1 2)))
+               (hash (make <cmp> :x (cons 2 1)))))
+
+(use srfi-1)
+
+(define xht (make-hash-table 'equal?))
+
+(test* "a => 8" 8
+       (begin
+         (hash-table-put! xht (make <cmp> :x 'a) 8)
+         (hash-table-get  xht (make <cmp> :x 'a))))
+
+(test* "b => non" #t
+       (hash-table-get  xht (make <cmp> :x 'b) #t))
+
+(test* "b => error" *test-error*
+       (hash-table-get  xht (make <cmp> :x 'b)))
+
+(test* "b => \"b\"" "b"
+       (begin
+         (hash-table-put! xht (make <cmp> :x 'b) "b")
+         (hash-table-get  xht (make <cmp> :x 'b))))
+
+(test* "2.0 => #\C" #\C
+       (begin
+         (hash-table-put! xht (make <cmp> :x 2.0) #\C)
+         (hash-table-get  xht (make <cmp> :x 2.0))))
+
+(test* "2.0 => #\c" #\c
+       (begin
+         (hash-table-put! xht (make <cmp> :x 2.0) #\c)
+         (hash-table-get  xht (make <cmp> :x 2.0))))
+
+(test* "87592876592374659237845692374523694756 => 0" 0
+       (begin
+         (hash-table-put! xht
+                          (make <cmp> :x 87592876592374659237845692374523694756) 0)
+         (hash-table-get  xht
+                          (make <cmp> :x 87592876592374659237845692374523694756))))
+
+(test* "87592876592374659237845692374523694756 => -1" -1
+       (begin
+         (hash-table-put! xht
+                          (make <cmp> :x 87592876592374659237845692374523694756) -1)
+         (hash-table-get  xht
+                          (make <cmp> :x 87592876592374659237845692374523694756))))
+
+(test* "equal? test" 5
+       (begin
+         (hash-table-put! xht (make <cmp> :x (string #\d)) 4)
+         (hash-table-put! xht (make <cmp> :x (string #\d)) 5)
+         (length (hash-table-keys xht))))
+
+(test* "equal? test" 6
+       (begin
+         (hash-table-put! xht (make <cmp> :x (cons 'a 'b)) 6)
+         (hash-table-put! xht (make <cmp> :x (cons 'a 'b)) 7)
+         (length (hash-table-keys xht))))
+
+(test* "equal? test" 7
+       (begin
+         (hash-table-put! xht (make <cmp> :x (vector (cons 'a 'b) 3+3i)) 60)
+         (hash-table-put! xht (make <cmp> :x (vector (cons 'a 'b) 3+3i)) 61)
+         (length (hash-table-keys xht))))
+
+(test* "hash-table-values" #t
+       (lset= equal? (hash-table-values xht) '(8 "b" #\c -1 5 7 61)))
+
+(test* "delete!" #f
+       (begin
+         (hash-table-delete! xht (make <cmp> :x (vector (cons 'a 'b) 3+3i)))
+         (hash-table-get xht (make <cmp> :x (vector (cons 'a 'b) 3+3i)) #f)))
 
 ;;----------------------------------------------------------------
 (test-section "object-apply protocol")

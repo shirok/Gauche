@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.30 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: class.h,v 1.31 2003-09-09 12:21:26 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -117,6 +117,7 @@ SCM_EXTERN void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
 SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
+SCM_EXTERN ScmGeneric Scm_GenericObjectHash;
 SCM_EXTERN ScmGeneric Scm_GenericObjectApply;
 SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.93 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: class.c,v 1.94 2003-09-09 12:21:26 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -138,6 +138,7 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectHash, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectSetter, Scm_InvalidApply, NULL);
 
@@ -1968,6 +1969,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
     GINIT(&Scm_GenericObjectEqualP, "object-equal?");
     GINIT(&Scm_GenericObjectCompare, "object-compare");
+    GINIT(&Scm_GenericObjectHash, "object-hash");
     GINIT(&Scm_GenericObjectApply, "object-apply");
     GINIT(&Scm_GenericObjectSetter, "setter of object-apply");
 

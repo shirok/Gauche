@@ -2,10 +2,16 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.5 2003-01-09 11:45:10 shirok Exp $
+;; $Id: hash.scm,v 1.6 2003-09-09 12:21:26 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
+
+;; Note: this file tests basic hash table functionarity, and does not
+;; cover the user-extended hash table (which is done by overloading
+;; object-equal? and object-hash).  It is because object system is
+;; tested _after_ this file.  See test/object.scm for extended hash table
+;; test.
 
 (test-start "hash tables")
 

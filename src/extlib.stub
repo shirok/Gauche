@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.200 2003-09-07 12:37:45 shirok Exp $
+;;; $Id: extlib.stub,v 1.201 2003-09-09 12:21:26 shirok Exp $
 ;;;
 
 "
@@ -952,7 +952,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; Hashtable
 ;;
 
-;; TODO: support user-defined hashfn and cmpfn
+(define-cproc hash (obj)
+  (return <ulong> "Scm_Hash"))
+
 (define-cproc make-hash-table (&optional (type::<symbol> (c "sym_eq")))
   "  ScmHashProc htype = 0;
   if (SCM_OBJ(type) == sym_eq)             htype = (ScmHashProc)SCM_HASH_ADDRESS;
