@@ -2,7 +2,7 @@
 ;;; Filters of SRFI-1
 ;;;
 
-;; $Id: filter.scm,v 1.2 2002-05-25 05:39:01 shirok Exp $
+;; $Id: filter.scm,v 1.3 2002-10-13 09:03:00 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -10,26 +10,28 @@
 ;; this code as long as you do not remove this copyright notice or
 ;; hold me liable for its use. Please send bug reports to shivers@ai.mit.edu.
 
+;; NB: original SRFI-1 reference implementation uses non-tail recursive
+;; calls a lot.  Unfortunately, Gauche is awkward to handle very deep
+;; non-tail recursive calls, since the stack overflow handler is not
+;; optimized well.  The simple tail-recursion and reverse!-ing the result
+;; is much much faster.
+
 (select-module srfi-1)
 
-(define (filter pred lis)			; Sleazing with EQ? makes this
-  (check-arg procedure? pred)		        ; one faster.
-  (let recur ((lis lis))		
-    (if (null-list? lis) lis			; Use NOT-PAIR? to handle dotted lists.
-	(let ((head (car lis))
-	      (tail (cdr lis)))
-	  (if (pred head)
-	      (let ((new-tail (recur tail)))	; Replicate the RECUR call so
-		(if (eq? tail new-tail) lis
-		    (cons head new-tail)))
-	      (recur tail))))))			; this one can be a tail call.
+(define (filter pred lis)
+  (let loop ((lis lis) (r '()))
+    (cond
+     ((not (pair? lis)) (reverse! r))
+     ((pred (car lis))
+      (loop (cdr lis) (cons (car lis) r)))
+     (else
+      (loop (cdr lis) r)))))
 
 (define (filter$ pred) (pa$ filter pred))
 
 (define (filter! pred lis)
-  (check-arg procedure? pred)
   (let lp ((ans lis))
-    (cond ((null-list? ans)       ans)			; Scan looking for
+    (cond ((not (pair? ans)) ans)			; Scan looking for
 	  ((not (pred (car ans))) (lp (cdr ans)))	; first cons of result.
 
 	  ;; ANS is the eventual answer.
@@ -57,18 +59,16 @@
 		  (scan-in ans (cdr ans))
 		  ans)))))
 
-;;; Answers share common tail with LIS where possible; 
-;;; the technique is slightly subtle.
+;; Avoid non-tail recursion.
 (define (partition pred lis)
-  (check-arg procedure? pred)
-  (let recur ((lis lis))
-    (if (null-list? lis) (values lis lis)	; Use NOT-PAIR? to handle dotted lists.
-	(let ((elt (car lis))
-	      (tail (cdr lis)))
-	  (receive (in out) (recur tail)
-	    (if (pred elt)
-		(values (if (pair? out) (cons elt in) lis) out)
-		(values in (if (pair? in) (cons elt out) lis))))))))
+  (let recur ((lis lis)
+              (in  '())
+              (out '()))
+    (if (not (pair? lis))
+        (values (reverse! in) (reverse! out))
+        (if (pred (car lis))
+            (recur (cdr lis) (cons (car lis) in) out)
+            (recur (cdr lis) in (cons (car lis) out))))))
 
 (define (partition$ pred) (pa$ partition pred))
 

@@ -2,7 +2,7 @@
 ;;; Folders of SRFI-1
 ;;;
 
-;; $Id: folder.scm,v 1.2 2002-05-25 05:39:01 shirok Exp $
+;; $Id: folder.scm,v 1.3 2002-10-13 09:03:00 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -13,7 +13,6 @@
 (select-module srfi-1)
 
 (define (count pred list1 . lists)
-  (check-arg procedure? pred)
   (if (pair? lists)
 
       ;; N-ary case
@@ -32,9 +31,6 @@
 (define (count$ pred) (pa$ count pred))
 
 (define (unfold-right p f g seed . maybe-tail)
-  (check-arg procedure? p)
-  (check-arg procedure? f)
-  (check-arg procedure? g)
   (let lp ((seed seed) (ans (%optional maybe-tail '())))
     (if (p seed) ans
 	(lp (g seed)
@@ -42,9 +38,6 @@
 
 
 (define (unfold p f g seed . maybe-tail-gen)
-  (check-arg procedure? p)
-  (check-arg procedure? f)
-  (check-arg procedure? g)
   (if (pair? maybe-tail-gen)
 
       (let ((tail-gen (car maybe-tail-gen)))
@@ -61,7 +54,6 @@
       
 
 (define (fold kons knil lis1 . lists)
-  (check-arg procedure? kons)
   (if (pair? lists)
       (let lp ((lists (cons lis1 lists)) (ans knil))	; N-ary case
 	(receive (cars+ans cdrs) (%cars+cdrs+ lists ans)
@@ -76,7 +68,6 @@
   (lambda lists (apply fold kons (append maybe-knil lists))))
 
 (define (fold-right kons knil lis1 . lists)
-  (check-arg procedure? kons)
   (if (pair? lists)
       (let recur ((lists (cons lis1 lists)))		; N-ary case
 	(let ((cdrs (%cdrs lists)))
@@ -92,7 +83,6 @@
   (lambda lists (apply fold-right kons (append maybe-knil lists))))
 
 (define (pair-fold-right f zero lis1 . lists)
-  (check-arg procedure? f)
   (if (pair? lists)
       (let recur ((lists (cons lis1 lists)))		; N-ary case
 	(let ((cdrs (%cdrs lists)))
@@ -103,7 +93,6 @@
 	(if (null-list? lis) zero (f lis (recur (cdr lis)))))))
 
 (define (pair-fold f zero lis1 . lists)
-  (check-arg procedure? f)
   (if (pair? lists)
       (let lp ((lists (cons lis1 lists)) (ans zero))	; N-ary case
 	(let ((tails (%cdrs lists)))
@@ -121,7 +110,6 @@
 ;;; These cannot meaningfully be n-ary.
 
 (define (reduce f ridentity lis)
-  (check-arg procedure? f)
   (if (null-list? lis) ridentity
       (fold f (car lis) (cdr lis))))
 
@@ -129,7 +117,6 @@
   (lambda args (apply reduce f (append maybe-ridentity args))))
 
 (define (reduce-right f ridentity lis)
-  (check-arg procedure? f)
   (if (null-list? lis) ridentity
       (let recur ((head (car lis)) (lis (cdr lis)))
 	(if (pair? lis)

@@ -2,7 +2,7 @@
 ;;; List generators of SRFI-1
 ;;;
 
-;; $Id: generator.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: generator.scm,v 1.2 2002-10-13 09:03:00 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -19,7 +19,6 @@
 ;;; Make a list of length LEN. Elt i is (PROC i) for 0 <= i < LEN.
 (define (list-tabulate len proc)
   (check-arg (lambda (n) (and (integer? n) (>= n 0))) len)
-  (check-arg procedure? proc)
   (do ((i (- len 1) (- i 1))
        (ans '() (cons (proc i) ans)))
       ((< i 0) ans)))
@@ -27,7 +26,6 @@
 ;;; IOTA count [start step]	(start start+step ... start+(count-1)*step)
 
 (define (iota count . args)
-  (check-arg integer? count)
   (if (< count 0) (error "Negative step count" iota count))
   (let ((start (if (pair? args) (car args) 0))
         (step  (if (and (pair? args) (pair? (cdr args))) (cadr args) 1)))

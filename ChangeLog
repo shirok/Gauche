@@ -1,5 +1,8 @@
 2002-10-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-1/* : replaced several non-tail-recursive calls for 
+	  tail-recursive calls, since tail-recursion + reverse! is faster
+	  in Gauche than simple non-tail-recursive calls.
 	* lib/gauche/time.scm : added
 
 2002-10-11  Shiro Kawai  <shiro@acm.org>

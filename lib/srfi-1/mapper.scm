@@ -2,7 +2,7 @@
 ;;; Mapper of SRFI-1
 ;;;
 
-;; $Id: mapper.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: mapper.scm,v 1.2 2002-10-13 09:03:00 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -18,7 +18,6 @@
   (really-append-map append-map! append! f lis1 lists))
 
 (define (really-append-map who appender f lis1 lists)
-  (check-arg procedure? f)
   (if (pair? lists)
       (receive (cars cdrs) (%cars+cdrs (cons lis1 lists))
 	(if (null? cars) '()
@@ -36,7 +35,6 @@
 		  (appender vals (recur (car rest) (cdr rest)))))))))
 
 (define (pair-for-each proc lis1 . lists)
-  (check-arg procedure? proc)
   (if (pair? lists)
 
       (let lp ((lists (cons lis1 lists)))
@@ -54,7 +52,6 @@
 
 ;;; We stop when LIS1 runs out, not when any list runs out.
 (define (map! f lis1 . lists)
-  (check-arg procedure? f)
   (if (pair? lists)
       (let lp ((lis1 lis1) (lists lists))
 	(if (not (null-list? lis1))
@@ -69,19 +66,18 @@
 
 ;;; Map F across L, and save up all the non-false results.
 (define (filter-map f lis1 . lists)
-  (check-arg procedure? f)
   (if (pair? lists)
-      (let recur ((lists (cons lis1 lists)))
+      (let recur ((lists (cons lis1 lists))
+                  (r '()))
 	(receive (cars cdrs) (%cars+cdrs lists)
-	  (if (pair? cars)
-	      (cond ((apply f cars) => (lambda (x) (cons x (recur cdrs))))
-		    (else (recur cdrs))) ; Tail call in this arm.
-	      '())))
+          (cond ((null-list? cars) (reverse! r))
+                ((apply f cars) => (lambda (x) (recur cdrs (cons x r))))
+                (else (recur cdrs r)))))
 	    
       ;; Fast path.
-      (let recur ((lis lis1))
-	(if (null-list? lis) lis
-	    (let ((tail (recur (cdr lis))))
-	      (cond ((f (car lis)) => (lambda (x) (cons x tail)))
-		    (else tail)))))))
+      (let recur ((lis lis1)
+                  (r   '()))
+	(cond ((null-list? lis) (reverse! r))
+              ((f (car lis)) => (lambda (x) (recur (cdr lis) (cons x r))))
+              (else (recur (cdr lis) r))))))
 
