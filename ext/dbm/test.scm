@@ -141,7 +141,9 @@
   (when (file-exists? (string-append *test-dbm* ".dir"))
     (sys-unlink (string-append *test-dbm* ".dir")))
   (when (file-exists? (string-append *test-dbm* ".pag"))
-    (sys-unlink (string-append *test-dbm* ".pag"))))
+    (sys-unlink (string-append *test-dbm* ".pag")))
+  (when (file-exists? (string-append *test-dbm* ".db"))
+    (sys-unlink (string-append *test-dbm* ".db"))))
 
 ;; a series of test per dataset and class
 (define (run-through-test class dataset serializer)
