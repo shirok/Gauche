@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: rotator.scm,v 1.4 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: rotator.scm,v 1.5 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -32,11 +32,11 @@
              (set! from from-mod)
              (set! to (+ from len)))
             ((not (and (integer? to) (exact? to)))
-             (error "argument out of domain: ~s" to))
+             (error "argument out of domain:" to))
             ((= len 0)
              (error "zero length source string is not allowed"))
             ((< to from)
-             (error "argument out of range (from, to): (~s, ~s)" from to))
+             (errorf "argument out of range (from, to): (~s, ~s)" from to))
             (else
              (set! from from-mod)
              (set! to (- to (* from-rank len)))))

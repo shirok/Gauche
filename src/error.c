@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.14 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: error.c,v 1.15 2001-06-30 09:42:38 shirok Exp $
  */
 
 #include <errno.h>
@@ -112,11 +112,36 @@ void Scm_SysError(const char *msg, ...)
 }
 
 /*
- * The version called from Scheme
+ * Those versions are called from Scheme.  Do not use them from C.
  */
-ScmObj Scm_SError(ScmObj fmt, ScmObj args)
+
+/* SRFI-23 compatible error */
+ScmObj Scm_SError(ScmString *reason, ScmObj args)
 {
-    ScmObj e;
+    volatile ScmObj e;
+
+    SCM_PUSH_ERROR_HANDLER {
+        ScmObj ostr = Scm_MakeOutputStringPort();
+        ScmObj ap;
+        Scm_Write(SCM_OBJ(reason), ostr, SCM_WRITE_DISPLAY);
+        SCM_FOR_EACH(ap, args) {
+            SCM_PUTC(' ', ostr);
+            Scm_Write(SCM_CAR(ap), ostr, SCM_WRITE_WRITE);
+        }
+        e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
+    }
+    SCM_WHEN_ERROR {
+        e = Scm_MakeException(FALSE,
+                              SCM_MAKE_STR("Error occurred in error handler"));
+    }
+    SCM_POP_ERROR_HANDLER;
+    return Scm_VMThrowException(e);
+}
+
+/* format & error */
+ScmObj Scm_FError(ScmObj fmt, ScmObj args)
+{
+    volatile ScmObj e;
 
     SCM_PUSH_ERROR_HANDLER {
         ScmObj ostr = Scm_MakeOutputStringPort();

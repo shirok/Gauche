@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.9 2001-05-12 19:25:15 shirok Exp $
+;;;  $Id: numerical.scm,v 1.10 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -36,7 +36,7 @@
         (recn (rec arg (car args)) (cdr args))))
   (let ((args (map (lambda (arg)
                      (unless (integer? arg)
-                       (error "integer required, but got %S" arg))
+                       (error "integer required, but got" arg))
                      (abs arg))
                    args)))
     (cond ((null? args) 0)
@@ -55,7 +55,7 @@
         (recn (lcm2 arg (car args)) (cdr args))))
   (let ((args (map (lambda (arg)
                      (unless (integer? arg)
-                       (error "integer required, but got %S" arg))
+                       (error "integer required, but got" arg))
                      (abs arg))
                    args)))
     (cond ((null? args) 1)
@@ -69,11 +69,11 @@
 ;; in Gauche, rational number is just the same as integer, i.e. N/1
 
 (define (numerator q)
-  (unless (integer? q) (error "integer required, but got: %S" q))
+  (unless (integer? q) (error "integer required, but got:" q))
   q)
 
 (define (denominator q)
-  (unless (integer? q) (error "integer required, but got: %S" q))
+  (unless (integer? q) (error "integer required, but got:" q))
   (if (exact? q) 1 1.0))
 
 ;;

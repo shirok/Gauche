@@ -249,9 +249,7 @@
       (for-each (lambda (x) (display x cep)) args))))
 
 ;;; define an error procedure for the library
-(define (slib:error . args)
-  (if (provided? 'trace) (print-call-stack (current-error-port)))
-  (error (string-append (with-output-to-string (for-each display args)) "\n")))
+(define slib:error error)
 
 ;;; define these as appropriate for your system.
 (define slib:tab (integer->char 9))

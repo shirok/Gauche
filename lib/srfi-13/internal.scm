@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: internal.scm,v 1.4 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: internal.scm,v 1.5 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -30,11 +30,11 @@
       (if (undefined? start)
           (values '() 0 slen)
           (if (not (and (integer? start) (exact? start) (<= 0 start slen)))
-              (error "~s: argument out of range: ~s" proc start)
+              (errorf "~s: argument out of range: ~s" proc start)
               (if (undefined? end)
                   (values '() start slen)
                   (if (not (and (integer? end) (exact? end) (<= start end slen)))
-                      (error "~s: argument out of range: ~s" proc end)
+                      (errorf "~s: argument out of range: ~s" proc end)
                       (values (cddr args) start end))
                   )
               )
@@ -48,13 +48,13 @@
       (if (undefined? start)
           (values '() 0 slen)
           (if (not (and (integer? start) (exact? start) (<= 0 start slen)))
-              (error "~s: argument out of range: ~s" proc start)
+              (errorf "~s: argument out of range: ~s" proc start)
               (if (undefined? end)
                   (values '() start slen)
                   (if (not (and (integer? end) (exact? end) (<= start end slen)))
-                      (error "~s: argument out of range: ~s" proc end)
+                      (errorf "~s: argument out of range: ~s" proc end)
                       (if (not (null? (cddr args)))
-                          (error "~s: too many arguments" proc)
+                          (errorf "~s: too many arguments" proc)
                           (values (cddr args) start end)))
                   )
               )
@@ -75,7 +75,7 @@
 
 (define (check-substring-spec proc s start end)
   (unless (substring-spec-ok? s start end)
-    (error "~s: invalid substring spec: ~s (~s, ~s)" proc s start end)))
+    (errorf "~s: invalid substring spec: ~s (~s, ~s)" proc s start end)))
 
 (define (substring-spec-ok? s start end)
   (and (string? s)

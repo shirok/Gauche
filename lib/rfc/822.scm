@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.3 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: 822.scm,v 1.4 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -76,7 +76,7 @@
        ))
     (else
      (if strict?
-         (error "bad header line: ~s" line)
+         (error "bad header line:" line)
          (read-single-field input (read-line input) #f)))))
 
 ;;------------------------------------------------------------------

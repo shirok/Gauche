@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: regexp.scm,v 1.4 2001-06-02 06:32:26 shirok Exp $
+;;;  $Id: regexp.scm,v 1.5 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
@@ -36,7 +36,7 @@
      (cond (?expr
             => (lambda (match)
                  (rxmatch-bind* 0 match (?var ...) ?form ...)))
-           (else (error "rxmatch-let: match failed: ~s" '?expr))))))
+           (else (error "rxmatch-let: match failed:" '?expr))))))
 
 (define-syntax rxmatch-if
   (syntax-rules ()

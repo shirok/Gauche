@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: aserializer.scm,v 1.1 2001-04-03 11:16:48 shiro Exp $
+;;;  $Id: aserializer.scm,v 1.2 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; This is a straightforward port from the one I wrote for STk before.
@@ -104,11 +104,11 @@
                                (write-rec #f serializer))) ;;FIXME
                          (cdr cinfo))))
             (else
-             (error "unserializable object: ~s" obj))))
+             (error "unserializable object:" obj))))
           ));;write rec
   
   (unless (eq? (direction-of self) :out)
-     (error "Output serializer required: ~s" self))
+     (error "Output serializer required:" self))
   (write-rec object))
 
 (define-method read-from-serializer ((self <aserializer>))
@@ -148,7 +148,7 @@
                                           ((>= num len) vec)
                                         (vector-set! vec num (read-rec)))))
             (else
-             (error "encountered unknown tag: ~s" tag)))))
+             (error "encountered unknown tag:" tag)))))
 
   (define (read-hash-table)
     (let ((num (read port))
@@ -180,7 +180,7 @@
         obj))
 
   (unless (eq? (direction-of self) :in)
-     (error "Input serializer required: ~s" self))
+     (error "Input serializer required:" self))
   (read-rec))
 
 (provide "gauche/serializer/aserializer")

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.43 2001-06-19 19:46:50 shirok Exp $
+;;;  $Id: genstub,v 1.44 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -91,14 +91,14 @@
 
 (define (predicate->type pred)
   (let loop ((types (class-slot-ref <type> 'all-types)))
-    (cond ((null? types) (error "unknown predicate to assert: ~s" pred))
+    (cond ((null? types) (error "unknown predicate to assert:" pred))
           ((eq? (predicate-of (car types)) pred) (car types))
           (else (loop (cdr types))))))
 
 ;; process type definition in stub file
 (define (process-define-type form)
   (unless (= (length form) 6)
-    (error "malformed define-type: ~s" form))
+    (error "malformed define-type:" form))
   (apply make-type (cdr form)))
 
 ;;===================================================================
@@ -154,7 +154,7 @@
   (unless (and (<= 3 (length form) 4)
                (symbol? (cadr form))
                (string? (caddr form)))
-    (error "malformed define-symbol: ~s" form))
+    (error "malformed define-symbol:" form))
   (let ((symbol (make <csymbol>
                   :scheme-name (cadr form) :c-name (caddr form)
                   :initializer (if (pair? (cdddr form)) (cadddr form) #f))))
@@ -221,7 +221,7 @@
 (define (process-assert cproc form)
   (let* ((op  (car form))
          (arg (get-arg cproc (cadr form))))
-    (unless arg (error "assertion for unknown arg: ~s" form))
+    (unless arg (error "assertion for unknown arg:" form))
     (set! (c-type-of arg) (predicate->type op))))
 
 ;; (define-cproc scheme-name (argspec)
@@ -240,7 +240,7 @@
   (unless (and (>= (length form) 4)
                (symbol? (cadr form))
                (list? (caddr form)))
-    (error "malformed define-cproc: ~s" form))
+    (error "malformed define-cproc:" form))
   (receive (args nreqs nopts rest?)
       (process-cproc-args (caddr form))
     (let ((cproc (make <cproc>
@@ -259,7 +259,7 @@
 
 ;; returns a list of args, # of reqargs,  # of optargs, and have-rest-arg?
 (define (process-cproc-args argspecs)
-  (define (badarg arg) (error "bad argument in argspec: ~s" arg))
+  (define (badarg arg) (error "bad argument in argspec:" arg))
   
   (define (required specs args nreqs)
     (cond ((null? specs) (values (reverse args) nreqs 0 #f))
@@ -338,28 +338,28 @@
         (let ((form (car body))
               (next (cdr body)))
           (cond ((string? form) (push-stmt! cproc form) (loop next))
-                ((not (pair? form)) (error "bad form in body: ~s" form))
+                ((not (pair? form)) (error "bad form in body:" form))
                 ((eq? (car form) 'assert)
                  (process-assert cproc (cadr form))
                  (loop next))
                 ((eq? (car form) 'inliner)
                  (unless (pair? (cdr form))
-                   (error "bad `inliner' spec: ~s" form))
+                   (error "bad `inliner' spec:" form))
                  (if (and (pair? (cadr form))
                           (eq? (caadr form) 'proc))
                      (if (not (string? (cadadr form)))
-                         (error "inliner procedure name must be a string: ~s"
+                         (error "inliner procedure name must be a string:"
                                 form)
                          (set! (inliner-of cproc) (cadadr form)))
                      (set! (inline-insn-of cproc) (cadr form)))
                  (loop next))
                 ((eq? (car form) 'setter)
                  (unless (pair? (cdr form))
-                   (error "bad 'setter' spec: ~s" form))
+                   (error "bad 'setter' spec:" form))
                  (process-setter cproc (cdr form))
                  (loop next))
                 (else
-                 (error "unknown body form: ~s" form)))))))
+                 (error "unknown body form:" form)))))))
 
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
@@ -367,7 +367,7 @@
     (set! (setter-of cproc) (car decl))
     (set! (setter-c-name-of cproc) (get-c-name *file-prefix* (car decl))))
    ((< (length decl) 2)
-    (error "bad form of anonymous setter: ~s" `(setter ,decl)))
+    (error "bad form of anonymous setter:" `(setter ,decl)))
    (else
     (receive (args nreqs nopts rest?)
         (process-cproc-args (car decl))
@@ -582,17 +582,17 @@
   (let ((gf (make <cgeneric> :scheme-name (cadr form) :c-name (caddr form))))
     (for-each (lambda (form)
                 (cond ((not (pair? form))
-                       (error "bad gf form: ~s" form))
+                       (error "bad gf form:" form))
                       ((eq? (car form) 'extern)  (set! (extern? gf) #t))
                       ((eq? (car form) 'fallback)
                        (if (and (pair? (cdr form)) (string? (cadr form)))
                            (set! (fallback-of gf) (cadr form))
-                           (error "bad fallback form: ~s" form)))
+                           (error "bad fallback form:" form)))
                       ((eq? (car form) 'setter)
                        (unless (pair? (cdr form))
-                         (error "bad setter form in ~s" form))
+                         (error "bad setter form in" form))
                        (process-setter gf (cdr form)))
-                      (else (error "bad gf form: ~s" form))))
+                      (else (error "bad gf form:" form))))
               (cdddr form))
     (emit-definition gf)))
 
@@ -602,7 +602,7 @@
     (set! (setter-of cproc) (car decl))
     (set! (setter-c-name-of cproc) (get-c-name *file-prefix* (car decl))))
    (else
-    (error "bad form of anonymous setter: ~s" `(setter ,decl)))))
+    (error "bad form of anonymous setter:" `(setter ,decl)))))
 
 (define (get-c-generic-name name)
   (cond ((find (lambda (x) (eq? (scheme-name-of x) name))
@@ -625,12 +625,12 @@
    ))
 
 (define (process-define-cmethod form)
-  (unless (>= (length form) 4) (error "malformed define-cmetihod: ~s" form))
+  (unless (>= (length form) 4) (error "malformed define-cmetihod:" form))
   (let ((scheme-name (cadr form))
         (arglist     (caddr form))
         (body        (cdddr form)))
     (unless (symbol? scheme-name)
-      (error "malformed define-cmethod: ~s" form))
+      (error "malformed define-cmethod:" form))
     (receive (args specializers numargs have-optarg?)
         (parse-specialized-args arglist)
       (let ((method (make <cmethod>
@@ -646,16 +646,16 @@
                     (cond ((string? stmt) (push-stmt! method stmt))
                           ((and (pair? stmt) (eq? (car stmt) 'c-generic-name))
                            (unless (string? (cadr stmt))
-                             (error "c-generic-name requires a string: ~s"
+                             (error "c-generic-name requires a string:"
                                     (cadr stmt)))
                            (set! (c-generic-of method) (cadr stmt)))
                           (else
-                           (error "unrecognized form in body: ~s" stmt))))
+                           (error "unrecognized form in body:" stmt))))
                   body)
         (unless (c-generic-of method)
           (set! (c-generic-of method)
                 (or (get-c-generic-name scheme-name)
-                    (error "method can't find C name of the generic function: ~s" scheme-name))))
+                    (error "method can't find C name of the generic function:" scheme-name))))
         (emit-definition method)))
     ))
 
@@ -689,7 +689,7 @@
 
 ;; returns four values: args, specializers, numreqargs, have-optarg?
 (define (parse-specialized-args arglist)
-  (define (badlist) (error "malformed arglist: ~s" arglist))
+  (define (badlist) (error "malformed arglist:" arglist))
   (let loop ((arglist arglist)
              (args    '())
              (specs   '()))
@@ -745,7 +745,7 @@
         ((equal? value '(current-error-port))
          (format #f "SCM_OBJ(SCM_CURERR)"))
         (else
-         (error "Scheme constant ~s can't be used" value))))
+         (errorf "Scheme constant ~s can't be used" value))))
 
 ;; Translate Scheme name to C name
 (define (get-c-name prefix scheme-name)
@@ -822,7 +822,7 @@
               (unless (eof-object? form)
                 (cond ((string? form) (println form))
                       ((not (pair? form))
-                       (error "bad form: ~s" form))
+                       (error "bad form:" form))
                       ((eq? (car form) 'define-cproc)
                        (process-define-cproc form))
                       ((eq? (car form) 'define-symbol)
@@ -833,7 +833,7 @@
                        (process-define-cgeneric form))
                       ((eq? (car form) 'define-cmethod)
                        (process-define-cmethod form))
-                      (else (error "bad form: ~s" form)))
+                      (else (error "bad form:" form)))
                 (loop (read))))))
         (emit-initializer (get-c-name "" prefix))
         )))

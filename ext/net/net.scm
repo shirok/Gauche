@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.8 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: net.scm,v 1.9 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -41,13 +41,13 @@
   (cond ((eq? proto 'unix)
          (let-optionals* args ((path #f))
            (unless (string? path)
-             (error "unix socket requires pathname, but got ~s" path))
+             (error "unix socket requires pathname, but got" path))
            (make-client-socket-unix path)))
         ((eq? proto 'inet)
          (let-optionals* args ((host #f) (port #f))
            (unless (and (string? host) (integer? port))
-             (error "inet socket requires host name and port, but got ~s and ~s"
-                    host port))
+             (errorf "inet socket requires host name and port, but got ~s and ~s"
+                     host port))
            (make-client-socket-inet host port)))
         ((and (string? proto)
               (pair? args)
@@ -55,7 +55,7 @@
          ;; STk compatibility
          (make-client-socket-inet proto (car args)))
         (else
-         (error "unsupported protocol: ~s" proto))))
+         (error "unsupported protocol:" proto))))
 
 (define (make-client-socket-unix path)
   (let ((address (make <sockaddr-un> :path path))
@@ -73,18 +73,18 @@
   (cond ((eq? proto 'unix)
          (let-optionals* args ((path #f))
            (unless (string? path)
-             (error "unix socket requires pathname, but got ~s" path))
+             (error "unix socket requires pathname, but got" path))
            (make-server-socket-unix path)))
         ((eq? proto 'inet)
          (let-optionals* args ((port #f))
            (unless (integer? port)
-             (error "inet socket requires port number, but got ~s" port))
+             (error "inet socket requires port number, but got" port))
            (apply make-server-socket-inet port (cdr args))))
         ((integer? proto)
          ;; STk compatibility
          (apply make-server-socket-inet proto args))
         (else
-         (error "unsupported protocol: ~s" proto))))
+         (error "unsupported protocol:" proto))))
 
 (define (make-server-socket-unix path)
   (let ((address (make <sockaddr-un> :path path))

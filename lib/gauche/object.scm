@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.16 2001-06-17 22:09:37 shirok Exp $
+;;;  $Id: object.scm,v 1.17 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -95,7 +95,7 @@
         (let loop ((opts (cdr slot)) (r '()))
           (cond ((null? opts) `(list ',(car slot) ,@(reverse! r)))
                 ((not (and (pair? opts) (pair? (cdr opts))))
-                 (error "bad slot specification: ~s" slot))
+                 (error "bad slot specification:" slot))
                 (else
                  (case (car opts)
                    ((:initform :init-form)
@@ -208,8 +208,8 @@
                                   (list :slot-ref (car gns)
                                         :slot-set! (cdr gns)))
                                  (else
-                                  (error "bad getter-and-setter returned by compute-get-n-set for ~s: ~s"
-                                         class gns)))
+                                  (errorf "bad getter-and-setter returned by compute-get-n-set for ~s: ~s"
+                                          class gns)))
                          )))
           )
         ))
@@ -296,7 +296,7 @@
            (make-class-slot)
            (let loop ((cpl (class-precedence-list class)))
              (cond ((null? cpl)
-                    (error "something wrong with slot inheritance of ~s" class))
+                    (error "something wrong with slot inheritance of" class))
                    ((assq slot-name (class-direct-slots (car cpl)))
                     (class-slot-accessor (car cpl) slot-name))
                    (else (loop (cdr cpl)))))))
@@ -306,15 +306,15 @@
        (let ((getter (slot-definition-option slot :slot-ref #f))
              (setter (slot-definition-option slot :slot-set! #f)))
          (unless (and (procedure? getter) (procedure? setter))
-           (error "virtual slot requires both :slot-ref and :slot-set!: ~s"
+           (error "virtual slot requires both :slot-ref and :slot-set!:"
                   slot))
          (cons getter setter)))
       ((:builtin)
        (or (slot-definition-option slot :slot-accessor #f)
-           (error "builtin slot ~s of class ~s doesn't have associated slot accessor"
-                  (car slot) class)))
+           (errorf "builtin slot ~s of class ~s doesn't have associated slot accessor"
+                   (car slot) class)))
       (else
-       (error "unsupported slot allocation: ~s" alloc)))))
+       (error "unsupported slot allocation:" alloc)))))
 
 ;; access class allocated slot.  API compatible with Goops.
 (define class-slot-ref  (undefined))
@@ -326,8 +326,8 @@
                    ((memv alloc '(:class :each-subclass)))
                    (acc   (class-slot-accessor class slot-name)))
           (slot-ref acc 'getter-n-setter))
-        (error "attempt to access non-existent or non-class allocated slot ~s of class ~s as a class slot."
-               slot-name class)))
+        (errorf "attempt to access non-existent or non-class allocated slot ~s of class ~s as a class slot."
+                slot-name class)))
 
   (set! class-slot-ref
         (lambda (class slot-name)
@@ -341,10 +341,10 @@
   )
 
 (define-method slot-unbound ((class <class>) obj slot)
-  (error "slot ~s of object ~s is unbound" slot obj))
+  (errorf "slot ~s of object ~s is unbound" slot obj))
 
 (define-method slot-missing ((class <class>) obj slot . value)
-  (error "object ~s doesn't have such slot: ~s" obj slot))
+  (errorf "object ~s doesn't have such slot: ~s" obj slot))
 
 (define (slot-exists? obj slot)
   (slot-exists-using-class? (class-of obj) obj slot))

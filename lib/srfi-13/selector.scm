@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.6 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: selector.scm,v 1.7 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -28,7 +28,7 @@
          (slen (string-length str))
          (tlen (string-length target)))
     (when (> (+ tstart slen) tlen)
-      (error "copy operation runs off the target string: ~s" target))
+      (error "copy operation runs off the target string:" target))
     (string-substitute! target tstart str)))
 
 (define (string-pad s len . args)
@@ -56,25 +56,25 @@
 (define (string-take s nchars)
   (check-arg string? s)
   (when (or (< nchars 0) (> nchars (string-length s)))
-    (error "argument out of range: ~s" nchars))
+    (error "argument out of range:" nchars))
   (%maybe-substring s 0 nchars))
 
 (define (string-drop s nchars)
   (check-arg string? s)
   (when (or (< nchars 0) (> nchars (string-length s)))
-    (error "argument out of range: ~s" nchars))
+    (error "argument out of range:" nchars))
   (%maybe-substring s nchars))
 
 (define (string-take-right s nchars)
   (check-arg string? s)
   (when (or (< nchars 0) (> nchars (string-length s)))
-    (error "argument out of range: ~s" nchars))
+    (error "argument out of range:" nchars))
   (%maybe-substring s (- (string-length s) nchars)))
 
 (define (string-drop-right s nchars)
   (check-arg string? s)
   (when (or (< nchars 0) (> nchars (string-length s)))
-    (error "argument out of range: ~s" nchars))
+    (error "argument out of range:" nchars))
   (%maybe-substring s 0 (- (string-length s) nchars)))
 
 (define (string-trim s . args)

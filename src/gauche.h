@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.160 2001-06-22 07:32:29 shirok Exp $
+ *  $Id: gauche.h,v 1.161 2001-06-30 09:42:38 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1652,7 +1652,8 @@ extern ScmClass Scm_ExceptionClass;
 /* Throwing error */
 extern void Scm_Error(const char *msg, ...);
 extern void Scm_SysError(const char *msg, ...);
-extern ScmObj Scm_SError(ScmObj fmt, ScmObj args);
+extern ScmObj Scm_SError(ScmString *reason, ScmObj args);
+extern ScmObj Scm_FError(ScmObj fmt, ScmObj args);
 
 /*--------------------------------------------------------
  * REGEXP

@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.9 2001-06-01 19:41:56 shirok Exp $
+;; $Id: srfi-1.scm,v 1.10 2001-06-30 09:42:38 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -83,7 +83,7 @@
 (define (null-list? l)
   (cond ((pair? l) #f)
 	((null? l) #t)
-	(else (error "null-list?: argument out of domain" l))))
+	(else (error "argument out of domain:" l))))
 
 (define map-in-order map) ; Gauche's map is already in order
 

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.7 2001-06-26 09:38:06 shirok Exp $
+;;;  $Id: process.scm,v 1.8 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -54,13 +54,13 @@
 (define (run-process command . args)
   (define (check-key args)
     (when (null? (cdr args))
-      (error "~s key requires an argument following" (car args))))
+      (errorf "~s key requires an argument following" (car args))))
 
   (define (check-iokey args)
     (check-key args)
     (unless (or (string? (cadr args)) (eqv? (cadr args) :pipe))
-      (error "~s key requires a string or :pipe following, but got ~s"
-             (car args) (cadr args))))
+      (errorf "~s key requires a string or :pipe following, but got ~s"
+              (car args) (cadr args))))
     
   (let loop ((args args) (argv '())
              (input #f) (output #f) (error #f) (wait #f) (fork #t))

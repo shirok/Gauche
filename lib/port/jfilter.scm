@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: jfilter.scm,v 1.2 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: jfilter.scm,v 1.3 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; This file defines a set of character-code conversion routine with
@@ -42,7 +42,7 @@
           ((member n '("CSISO2022JP" "ISO2022JP")) 'jis)
           ((member n '("SJIS" "SHIFTJIS")) 'sjis)
           ((equal? n "UTF8") 'utf8)
-          (else (error "unsupported encoding name: ~a" name)))))
+          (else (error "unsupported encoding name:" name)))))
 
 (define (ces-symbol->name sym default)
   (case sym
@@ -51,7 +51,7 @@
     ((utf8) "UTF-8")
     ((jis)  "CSISO2022JP")
     ((() #f) default)
-    (else (error "unsupported encoding symbol: ~a" sym))))
+    (else (error "unsupported encoding symbol:" sym))))
 
 (define (judge-file input . args)
   (let-optionals* args ((prefetch 5000))
@@ -65,8 +65,7 @@
           ((input-port? input)
            (judge-port input))
           (else
-           (error "input must be a file name or an input port, but got ~s"
-                  input)))
+           (error "input must be a file name or an input port, but got" input)))
     ))
 
 (define (cv-string str from-code to-code)

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-14.scm,v 1.5 2001-04-26 07:06:30 shiro Exp $
+;;;  $Id: srfi-14.scm,v 1.6 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -115,7 +115,7 @@
 (define (char-set-ref cs cursor)
   (if (and (pair? cursor) (integer? (car cursor)))
       (integer->char (car cursor))
-      (error "bad character-set cursor: ~s" cursor)))
+      (error "bad character-set cursor:" cursor)))
 
 (define (char-set-cursor-next cs cursor)
   (if (pair? cursor)
@@ -124,7 +124,7 @@
         (cond ((< code (cdr range))  (cons (+ code 1) (cdr cursor)))
               ((null? (cddr cursor)) #f)
               (else (cons (caaddr cursor) (cddr cursor)))))
-      (error "bad character-set cursor: ~s" cursor)))
+      (error "bad character-set cursor:" cursor)))
 
 (define (end-of-char-set? cursor) (not cursor))
 
@@ -206,11 +206,11 @@
 (define (ucs-range->char-set! low upper error? base)
   (when (< low 0)
     (if error?
-        (error "argument out of range: ~s" low)
+        (error "argument out of range:" low)
         (set! low 0)))
   (when (> upper 128)
     (if error?
-        (error "argument out of range: ~s" upper)
+        (error "argument out of range:" upper)
         (set! upper 128)))
   (%char-set-add-range! base low (- upper 1)))
 
@@ -222,11 +222,11 @@
 (define (integer-range->char-set! low upper error? base)
   (when (< low 0)
     (if error?
-        (error "argument out of range: ~s" low)
+        (error "argument out of range:" low)
         (set! low 0)))
   (when (> upper (+ *char-code-max* 1))
     (if error?
-        (error "argument out of range: ~s" upper)
+        (error "argument out of range:" upper)
         (set! upper (+ *char-code-max* 1))))
   (%char-set-add-range! base low (- upper 1)))
 
@@ -235,7 +235,7 @@
         ((string? obj) (string->char-set obj))
         ((char-set? obj) obj)
         ((char? obj) (char-set obj))
-        (else (error "cannot coersable ~s into a char-set" obj))))
+        (else (errorf "cannot coersable ~s into a char-set" obj))))
 
 ;;-------------------------------------------------------------------
 ;; Querying

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-13.scm,v 1.7 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.8 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 ;; Srfi-13 is a large set of functions, so I splitted it up to a number of
@@ -80,7 +80,7 @@
            ((char-set? char/char-set/pred)
             (lambda (x) (char-set-contains? char/char-set/pred x)))
            ((procedure? char/char-set/pred) char/char-set/pred)
-           (else (error "argument needs to be either a character, a char-set, or a procedure: %S" char/char-set/pred))))
+           (else (error "argument needs to be either a character, a char-set, or a procedure:" char/char-set/pred))))
     ))
 
 (autoload "srfi-13/pred"      string-null? string-every string-any)

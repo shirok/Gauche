@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.92 2001-06-17 22:05:20 shirok Exp $
+;;; $Id: extlib.stub,v 1.93 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 "
@@ -864,8 +864,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  Scm_Exit(code);
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc error (fmt &rest args)
-  "  SCM_RETURN(Scm_SError(fmt, args));")
+(define-cproc error (reason &rest args)
+  (assert (string? reason))
+  "  SCM_RETURN(Scm_SError(reason, args));")
+
+(define-cproc errorf (fmt &rest args)
+  "  SCM_RETURN(Scm_FError(fmt, args));")
 
 ;;
 ;; Inspecting feature

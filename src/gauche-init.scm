@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.36 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.37 2001-06-30 09:42:38 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -43,7 +43,7 @@
 ;;  it's more Scheme-ish, and similar to Guile-way.
 
 (define-macro (use module)
-  (unless (symbol? module) (error "use: symbol required: ~s" module))
+  (unless (symbol? module) (error "use: symbol required:" module))
   (let ((path (string-join (string-split (symbol->string module) #\.) "/")))
     `(begin
        (require ,path)
@@ -97,7 +97,7 @@
      (define (?name z)
        (cond ((real? z) (?real-fn z))
              ((number? z) (?complex-fn z))
-             (else (error "number required, but got ~s" z)))))
+             (else (error "number required, but got" z)))))
     ))
 
 (define-trans exp   %exp   %complex-exp)
@@ -121,14 +121,13 @@
   (if (null? x)
       (cond ((real? z) (%atan z))
             ((number? z) (%complex-atan z))
-            (else (error "number required, but got ~s" z)))
+            (else (error "number required, but got" z)))
       (%atan z (car x))))
 
 (define (expt x y)
   (cond ((and (real? x) (real? y)) (%expt x y))
         ((and (number? x) (number? y)) (%complex-expt x y))
-        (else (error "number required, but got ~s"
-                     (if (number? x) y x)))))
+        (else (error "number required, but got" (if (number? x) y x)))))
 
 (with-module scheme
   (define exp (with-module gauche exp))
@@ -147,7 +146,7 @@
     ((_ ?test ?arg)
      (let ((tmp ?arg))
        (unless (?test tmp)
-         (error "bad type of argument for ~s: ~s" '?arg tmp))))
+         (errorf "bad type of argument for ~s: ~s" '?arg tmp))))
     ))
 
 ;; srfi-17
