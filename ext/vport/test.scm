@@ -7,6 +7,7 @@
 (test-start "vport")
 (use gauche.vport)
 (use gauche.uvector)
+(use srfi-1)
 (use srfi-13)
 (use file.util)
 (test-module 'gauche.vport)
@@ -208,5 +209,78 @@
   (test* "vport_head.c" '(#t #t) (test-boport "vport_head.c"))
   (test* "vport.c" '(#t #t) (test-boport "vport.c"))
   )
+
+;;-----------------------------------------------------------
+(test-section "uvector-input-port")
+
+(let ()
+  (define (tester size)
+    (test* #`"size=,size" #t
+           (let1 v (make-u8vector size 0)
+             (dotimes (i size) (u8vector-set! v i (modulo i 256)))
+             (let* ((p (make-uvector-input-port v))
+                    (d (with-output-to-string
+                         (lambda ()
+                           (let loop ((b (read-byte p)))
+                             (unless (eof-object? b)
+                               (write-byte b)
+                               (loop (read-byte p))))))))
+               (equal? v (string->u8vector d))))))
+  (tester 0)
+  (tester 10)
+  (tester 16385))
+
+(let* ((size 1024)
+       (v (make-u8vector size 0)))
+  (dotimes (i size) (u8vector-set! v i (modulo i 256)))
+  (let1 p (make-uvector-input-port v)
+    (test* "port-seek (SEEK_SET)" (+ 128 256)
+           (port-seek p (+ 128 256) SEEK_SET))
+    (test* "read after seek" 128
+           (read-byte p))
+    (test* "port-seek (SEEK_CUR)" (+ 127 256)
+           (port-seek p -2 SEEK_CUR))
+    (test* "read after seek" 127
+           (read-byte p))
+    (test* "port-seek (SEEK_END)" (- size 5)
+           (port-seek p -5 SEEK_END))
+    (test* "read after seek" (- 256 5)
+           (read-byte p))
+    (test* "port-seek (oob)" #t
+           (begin (port-seek p 10 SEEK_END)
+                  (eof-object? (read-byte p))))
+    ))
+
+;;-----------------------------------------------------------
+(test-section "uvector-output-port")
+
+(let ()
+  (define (tester size)
+    (test* #`"size=,size" #t
+           (let1 v (make-u8vector size 0)
+             (dotimes (i size) (u8vector-set! v i (modulo i 256)))
+             (let* ((dst (make-u8vector size 0))
+                    (p (make-uvector-output-port dst)))
+               (dotimes (i size)
+                 (write-byte (u8vector-ref v i) p))
+               (close-output-port p)
+               (equal? v dst)))))
+  (tester 0)
+  (tester 10)
+  (tester 16385))
+
+(let* ((v (make-u8vector 16 0)))
+  (let1 p (make-uvector-output-port v)
+    (test* "port-seek (SEEK_SET)" 3 (port-seek p 3 SEEK_SET))
+    (test* "write after seek" '#u8(0 0 0 #xff 0 0 0 0 0 0 0 0 0 0 0 0 )
+           (begin (write-byte #xff p) (flush p) (u8vector-copy v)))
+    (test* "port-seek (SEEK_CUR)" 8 (port-seek p 4 SEEK_CUR))
+    (test* "write after seek" '#u8(0 0 0 #xff 0 0 0 0 #x77 0 0 0 0 0 0 0 )
+           (begin (write-byte #x77 p) (flush p) (u8vector-copy v)))
+    (test* "port-seek (SEEK_END)" 15 (port-seek p -1 SEEK_END))
+    (test* "write after seek" '#u8(0 0 0 #xff 0 0 0 0 #x77 0 0 0 0 0 0 #x11)
+           (begin (write-byte #x11 p) (flush p) (u8vector-copy v)))
+    ))
+
 
 (test-end)

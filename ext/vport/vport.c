@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.7 2004-11-02 02:38:22 shirok Exp $
+ *  $Id: vport.c,v 1.8 2004-11-12 02:42:28 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -51,13 +51,13 @@ static ScmClass *vport_cpa[] = {
     NULL
 };
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_VirtualInputPortClass,
-                         vport_print, NULL, NULL,
-                         vport_allocate, vport_cpa);
+SCM_DEFINE_BASE_CLASS(Scm_VirtualInputPortClass, ScmPort,
+                      vport_print, NULL, NULL,
+                      vport_allocate, vport_cpa);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_VirtualOutputPortClass,
-                         vport_print, NULL, NULL,
-                         vport_allocate, vport_cpa);
+SCM_DEFINE_BASE_CLASS(Scm_VirtualOutputPortClass, ScmPort,
+                      vport_print, NULL, NULL,
+                      vport_allocate, vport_cpa);
 
 /*
  * Scheme handlers.  They are visible from Scheme as instance slots.
@@ -477,13 +477,13 @@ static ScmClassStaticSlotSpec vioport_slots[] = {
 
 static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_BufferedInputPortClass,
-                         vport_print, NULL, NULL,
-                         bport_allocate, vport_cpa);
+SCM_DEFINE_BASE_CLASS(Scm_BufferedInputPortClass, ScmPort,
+                      vport_print, NULL, NULL,
+                      bport_allocate, vport_cpa);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_BufferedOutputPortClass,
-                         vport_print, NULL, NULL,
-                         bport_allocate, vport_cpa);
+SCM_DEFINE_BASE_CLASS(Scm_BufferedOutputPortClass, ScmPort,
+                      vport_print, NULL, NULL,
+                      bport_allocate, vport_cpa);
 
 /*
  * Scheme handlers.  They are visible from Scheme as instance slots.
@@ -558,10 +558,10 @@ static int bport_ready(ScmPort *p)
 
     if (!SCM_FALSEP(data->ready_proc)) {
         ScmObj s = Scm_Apply(data->ready_proc, SCM_NIL);
-        return !SCM_FALSEP(s);
+        return SCM_FALSEP(s)? SCM_FD_WOULDBLOCK:SCM_FD_READY;
     } else {
         /* if no method is given, always return #t */
-        return TRUE;
+        return SCM_FD_READY;
     }
 }
 

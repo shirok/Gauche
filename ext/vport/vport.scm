@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: vport.scm,v 1.2 2004-11-02 02:38:22 shirok Exp $
+;;;  $Id: vport.scm,v 1.3 2004-11-12 02:42:28 shirok Exp $
 ;;;
 
 (define-module gauche.vport
@@ -39,9 +39,79 @@
           <virtual-output-port>
           <buffered-input-port>
           <buffered-output-port>
+          make-uvector-input-port
+          make-uvector-output-port
           ))
 (select-module gauche.vport)
 
 (dynamic-load "vport")
+
+;;=======================================================
+;; A port backed up by an uniform vector
+;;
+
+(define (make-uvector-input-port uvector)
+  (let* ((src (if (u8vector? uvector)
+                uvector
+                (uvector-alias <u8vector> uvector)))
+         (index 0)
+         (len (u8vector-length src)))
+    (define (filler buf)
+      (if (>= index len)
+        #f
+        (let ((req (u8vector-length buf)))
+          (if (>= req (- len index))
+            (let ((count (- len index)))
+              (u8vector-copy! buf 0 src index)
+              (inc! index count)
+              count)
+            (begin
+              (u8vector-copy! buf 0 src index (+ index req))
+              (inc! index req)
+              req)))))
+    (define (seeker offset whence)
+      (cond
+       ((= whence SEEK_SET)
+        (set! index (clamp offset 0 len)))
+       ((= whence SEEK_CUR)
+        (set! index (clamp (+ index offset) 0 len)))
+       ((= whence SEEK_END)
+        (set! index (clamp (+ len offset) 0 len)))
+       )
+      index)
+    (make <buffered-input-port>
+      :fill filler :seek seeker)))
+
+(define (make-uvector-output-port uvector)
+  (let* ((dst (if (u8vector? uvector)
+                uvector
+                (uvector-alias <u8vector> uvector)))
+         (index 0)
+         (len (u8vector-length dst)))
+    (define (flusher buf force?)
+      (if (>= index len)
+        #f ;; overflow
+        (let ((req (u8vector-length buf)))
+          (if (> req (- len index))
+            (let ((count (- len index)))
+              (u8vector-copy! dst index buf 0 count)
+              (inc! index count)
+              count)
+            (begin
+              (u8vector-copy! dst index buf 0 req)
+              (inc! index req)
+              req)))))
+    (define (seeker offset whence)
+      (cond
+       ((= whence SEEK_SET)
+        (set! index (clamp offset 0 len)))
+       ((= whence SEEK_CUR)
+        (set! index (clamp (+ index offset) 0 len)))
+       ((= whence SEEK_END)
+        (set! index (clamp (+ len offset) 0 len)))
+       )
+      index)
+    (make <buffered-output-port>
+      :flush flusher :seek seeker)))
 
 (provide "gauche/vport")
