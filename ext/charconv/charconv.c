@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.17 2001-11-20 10:45:25 shirok Exp $
+ *  $Id: charconv.c,v 1.18 2001-12-23 03:29:23 shirok Exp $
  */
 
 #include <string.h>
@@ -478,7 +478,7 @@ static const signed char sjis[][256] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*C*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*D*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*E*/
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*F*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*F*/
     },
     /* SJIS second byte dispatch */
     {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/
