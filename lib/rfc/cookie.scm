@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cookie.scm,v 1.2 2001-09-23 06:01:14 shirok Exp $
+;;;  $Id: cookie.scm,v 1.3 2001-09-24 00:30:16 shirok Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in
@@ -28,6 +28,7 @@
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
+  (use gauche.regexp)
   (export parse-cookie-string
           construct-cookie-string)
   )
@@ -132,12 +133,90 @@
     ))
 
 ;; Construct a cookie string suitable for Set-Cookie or Set-Cookie2 header.
-;;  
-;(define (construct-cookie-string specs . version)
-;  (let ((ver (if (and (pair? version) (integer? (car version)))
-;                 (car version)
-;                 0)))
-;    (
-  
+;; specs is the following format.
+;;
+;;   ((<name> <value> [:comment <comment>] [:comment-url <comment-url>]
+;;                    [:discard <bool>] [:domain <domain>]
+;;                    [:max-age <age>] [:path <value>] [:port <port-list>]
+;;                    [:secure <bool>] [:version <version>] [:expires <date>]
+;;    ) ...)
+;;
+;; Returns a list of cookie strings for each <name>=<value> pair.  In the
+;; ``new cookie'' implementation, you can join them by comma and send it
+;; at once with Set-cookie2 header.  For the old netscape protocol, you
+;; must send each of them by Set-cookie header.
+
+(define (construct-cookie-string specs . version)
+  (let ((ver (if (and (pair? version) (integer? (car version)))
+                 (car version)
+                 1)))
+    (map (lambda (spec) (construct-cookie-string-1 spec ver)) specs)))
+
+(define (construct-cookie-string-1 spec ver)
+  (when (< (length spec) 2)
+    (error "bad cookie spec: at least <name> and <value> required" spec))
+  (let ((name (car spec))
+        (value (cadr spec)))
+    (let loop ((attr (cddr spec))
+               (r    (list (if value
+                               (string-append name "="
+                                              (quote-if-needed value))
+                               name))))
+      (define (next s) (loop (cddr attr) (cons s r)))
+      (define (ignore) (loop (cddr attr) r))
+      (cond
+       ((null? attr) (string-join (reverse r) ";"))
+       ((null? (cdr attr))
+        (errorf "bad cooke spec: attribute %s requires value" (car attr)))
+       ((eqv? :comment (car attr))
+        (if (> ver 0)
+            (next (string-append "Comment=" (quote-if-needed (cadr attr))))
+            (ignore)))
+       ((eqv? :comment-url (car attr))
+        (if (> ver 0)
+            (next (string-append "CommentURL=" (quote-value (cadr attr))))
+            (ignore)))
+       ((eqv? :discard (car attr))
+        (if (and (> ver 0) (cadr attr)) (next "Discard") (ignore)))
+       ((eqv? :domain (car attr))
+        (next (string-append "Domain=" (cadr attr))))
+       ((eqv? :max-age (car attr))
+        (if (> ver 0)
+            (next (format #f "Max-Age=~a" (cadr attr)))
+            (ignore)))
+       ((eqv? :path (car attr))
+        (next (string-append "Path=" (quote-if-needed (cadr attr)))))
+       ((eqv? :port (car attr))
+        (if (> ver 0)
+            (next (string-append "Port=" (quote-value (cadr attr))))
+            (ignore)))
+       ((eqv? :secure (car attr))
+        (if (cadr attr) (next "Secure") (ignore)))
+       ((eqv? :version (car attr))
+        (if (> ver 0)
+            (next (format #f "Version=~a" (cadr attr)))
+            (ignore)))
+       ((eqv? :expires (car attr))
+        (if (> ver 0)
+            (ignore)
+            (next (make-expires-attr (cadr attr)))))
+       (else (error "Unknown cookie attribute" (car attr))))
+      ))
+  )
+
+;; aux. function to quote value
+(define (quote-value value)
+  (string-append "\"" (regexp-replace-all #/\"|\\/ value "\\\\\\0") "\""))
+
+(define (quote-if-needed value)
+  (if (rxmatch #/[\",\;\\ \t\n]/ value)
+      (quote-value value)
+      value))
+
+(define (make-expires-attr time)
+  (format #f "Expires=~a"
+          (if (number? time)
+              (sys-strftime "%a, %d-%b-%Y %T GMT" (sys-gmtime time))
+              (time))))
 
 (provide "rfc/cookie")
