@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.8 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: list.c,v 1.9 2001-02-21 13:31:13 shiro Exp $
  */
 
 #include "gauche.h"
@@ -85,12 +85,14 @@ ScmObj Scm_VaList(va_list pvar)
     {
 	if (SCM_NULLP(start)) {
             start = SCM_OBJ(SCM_NEW(ScmPair));
+            SCM_SET_CLASS(start, SCM_CLASS_PAIR);
             SCM_SET_CAR(start, obj);
             SCM_SET_CDR(start, SCM_NIL);
             cp = start;
         } else {
             ScmObj item;
             item = SCM_OBJ(SCM_NEW(ScmPair));
+            SCM_SET_CLASS(item, SCM_CLASS_PAIR);
             SCM_SET_CDR(cp, item);
             SCM_SET_CAR(item, obj);
             SCM_SET_CDR(item, SCM_NIL);
