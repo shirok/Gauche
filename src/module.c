@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.6 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: module.c,v 1.7 2001-03-05 00:39:11 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,7 +20,7 @@
 /*
  * Modules
  *
- *   A module maps symbols to global loations.
+ *   A module maps symbols to global locations.
  */
 
 static int module_print(ScmObj obj, ScmPort *port, int mode)
@@ -32,10 +32,12 @@ static int module_print(ScmObj obj, ScmPort *port, int mode)
 SCM_DEFCLASS(Scm_ModuleClass, "<module>", module_print,
              SCM_CLASS_COLLECTION_CPL);
 
-/*
+static ScmHashTable *moduleTable; /* global, must be protected in MT env */
+
+/*----------------------------------------------------------------------
  * Constructor
  */
-ScmObj Scm_MakeModule(ScmString *name, ScmObj parentList)
+ScmObj Scm_MakeModule(ScmSymbol *name, ScmObj parentList)
 {
     ScmModule *z;
     ScmObj e;
@@ -50,13 +52,16 @@ ScmObj Scm_MakeModule(ScmString *name, ScmObj parentList)
     
     z = SCM_NEW(ScmModule);
     SCM_SET_CLASS(z, SCM_CLASS_MODULE);
-    z->name = SCM_STRING(Scm_CopyString(name));
+    z->name = name;
     z->parents = Scm_CopyList(parentList);
     z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
+
+    Scm_HashTablePut(moduleTable, SCM_OBJ(name), SCM_OBJ(z));
+
     return SCM_OBJ(z);
 }
 
-/*
+/*----------------------------------------------------------------------
  * Finding and modifying bindings
  */
 
@@ -122,16 +127,39 @@ ScmObj Scm_GlobalSet(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     }
 }
 
-/*
+/*----------------------------------------------------------------------
+ * Switching modules
+ */
+
+ScmObj Scm_FindModule(ScmSymbol *name)
+{
+    ScmHashEntry *e = Scm_HashTableGet(moduleTable, SCM_OBJ(name));
+    if (e == NULL) return SCM_FALSE;
+    else return e->value;
+}
+
+/*----------------------------------------------------------------------
  * Predefined modules and initialization
  */
 
+static ScmModule *nullModule;
 static ScmModule *schemeModule;
+static ScmModule *gaucheModule;
 static ScmModule *userModule;
+
+ScmModule *Scm_NullModule(void)
+{
+    return nullModule;
+}
 
 ScmModule *Scm_SchemeModule(void)
 {
     return schemeModule;
+}
+
+ScmModule *Scm_GaucheModule(void)
+{
+    return gaucheModule;
 }
 
 ScmModule *Scm_UserModule(void)
@@ -139,13 +167,22 @@ ScmModule *Scm_UserModule(void)
     return userModule;
 }
 
+ScmModule *Scm_CurrentModule(void)
+{
+    return Scm_VM()->module;
+}
+
+#define MAKEMOD(sym, parent) \
+    SCM_MODULE(Scm_MakeModule(SCM_SYMBOL(sym), parent))
+
+
 void Scm__InitModule(void)
 {
-    ScmString *Sscheme = SCM_STRING(Scm_MakeStringConst("scheme", -1, -1));
-    ScmString *Suser = SCM_STRING(Scm_MakeStringConst("user", -1, -1));
-    schemeModule = SCM_MODULE(Scm_MakeModule(Sscheme, SCM_NIL));
-    userModule = SCM_MODULE(Scm_MakeModule(Suser,
-                                           Scm_Cons(SCM_OBJ(schemeModule),
-                                                    SCM_NIL)));
+    moduleTable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
+
+    nullModule   = MAKEMOD(SCM_SYM_NULL, SCM_NIL);
+    schemeModule = MAKEMOD(SCM_SYM_SCHEME, SCM_LIST1(SCM_OBJ(nullModule)));
+    gaucheModule = MAKEMOD(SCM_SYM_GAUCHE, SCM_LIST1(SCM_OBJ(schemeModule)));
+    userModule   = MAKEMOD(SCM_SYM_USER, SCM_LIST1(SCM_OBJ(schemeModule)));
 }
 
