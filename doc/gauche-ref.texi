@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.58 2001-09-16 23:05:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.59 2001-09-18 07:43:27 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3775,6 +3775,7 @@ of descendants of @var{class}.
 * Character code conversion::   
 * Low-level file operations::   
 * Interactive session::         
+* User-level logging::          
 * Networking::                  
 * Parsing command-line options::  
 * High Level Process Interface::  
@@ -4087,7 +4088,7 @@ An integer process id that holding the lock; used only by @code{|F_GETLK|}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Interactive session, Networking, Low-level file operations, Libarary Modules
+@node Interactive session, User-level logging, Low-level file operations, Libarary Modules
 @section @code{gauche.interactive} - Utilities for interactive session
 
 @deftp {Module} gauche.interactive
@@ -4124,7 +4125,104 @@ Some examples:
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Networking, Parsing command-line options, Interactive session, Libarary Modules
+@node User-level logging, Networking, Interactive session, Libarary Modules
+@section @code{gauche.logger} - User-level logging
+
+@deftp {Module} gauche.logger
+@mdindex gauche.logger
+Provides a simple interface to log the program's activity.
+It writes the information directly to the specified file,
+instead of using syslog(2).  A syslog-like prefix string is added
+to each message, which is configurable.  It also takes care of
+locking of the file.
+@end deftp
+
+@deftp {Class} <log-drain>
+@clindex log-drain
+Represents the destination of log messages.
+There's one implicit global @code{<log-drain>} instance, which is
+used by default.  However, you can create as many instances
+by @code{make} method as you want, in case if you want to log
+to more than one destination.
+
+@defivar {<log-drain>} path
+Path of the log file.  It can be also @code{#t}, which means 
+the current error port, or @code{#f}, which makes @code{log-format}
+to return the formatted message but not write to any log files.
+
+By default, this slot is @code{#f}.
+@end defivar
+
+@defivar {<log-drain>} prefix
+Specifies the prefix string that is attached to the beginning of every
+message.  If the message spans to several lines, the prefix is
+attached to each line.   In the prefix, the following character sequences
+have special meanings and replaced by @code{log-format} for appropriate
+information when written out.
+
+@table @code
+@item ~T
+Current time, in the format of ``Mmm DD hh:mm:ss'' where ``Mmm'' is
+an abbreviated month, ``DD'' is the day of month, ``hh'', ``mm'' and
+``ss'' are hours (in 24 hour basis), minuts and seconds, respectively.
+This format is compatible with system logs.
+
+@item ~P
+The program name.  The default value is the basename of
+@code{*program-name*}, but you can change it by the @code{program-name}
+slot described below.
+
+@item ~$
+The process id of this program.
+
+@item ~U
+The name of the effective user of the process.
+
+@item ~H
+The hostname the process is running.
+@end table
+
+The default value of this slot is @code{~T ~P[~$]: }.  For example,
+if a string ``this is a log message.\nline 2\nline 3'' is given as the
+message, it produces something like the following log entry.
+
+@example
+Sep  1 17:30:23 myprogram[441]: this is a log message
+Sep  1 17:30:23 myprogram[441]: line 2
+Sep  1 17:30:23 myprogram[441]: line 3
+@end example
+
+@end defivar
+
+@defivar {<log-drain>} program-name
+Specifies the program name written by @code{~P} directive of
+the prefix slot.
+@end defivar
+@end deftp
+
+
+@defun log-open path &keyword prefix program-name
+Sets the destination of the default log message to the path @var{path}.
+It can be a string or a boolean, as described above.
+You can also set prefix and program name by corresponding keyword 
+arguments.
+@end defun
+
+
+@deffn {Method} log-format (format <string>) arg @dots{}
+@deffnx {Method} log-format (drain <log-drain>) (format <string>) arg @dots{}
+Formats a log message by @var{format} and @var{arg @dots{}}, by using
+@code{format} (@xref{Output}).    In the first form, the output goes
+to the default destination.  In the second form, the output goes to
+the specfied drain.
+
+The file is opened and closed every time.  Also @code{log-format}
+acquires a write lock of the log file by @code{sys-fcntl}
+(@xref{Low-level file operations}).
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Networking, Parsing command-line options, User-level logging, Libarary Modules
 @section @code{gauche.net} - Networking
 
 @deftp {Module} gauche.net
@@ -7201,7 +7299,7 @@ creates a string, whose @var{i}-th character is calculated by
 
 For the convenience of the programmers familiar to C, 
 I composed a simple table of C library functions with
-the corresponding Scheme functions.   Note that 
+the corresponding Scheme functions.
 
 @table @code
 @item abort
@@ -7267,8 +7365,8 @@ No equivalent function in Gauche.  You can use
 @itemx cosh
 @code{cos} and @code{cosh}.  @xref{Arithmetics}.
 @item creat
-A file is implictly created when you open it for writing.
-No equivalent operation for @code{O_EXCL} is implemented yet.
+A file is implictly created by default when you open it for writing.
+See @ref{File ports} for more control over the creation of files.
 @item ctermid
 Gauche @code{sys-ctermid}.  @xref{System Inquiry}.
 @item ctime
@@ -7700,7 +7798,7 @@ Gauche @code{sys-system}.   @xref{Fork and exec}.
 It is generally recommended to use the process library
 (@ref{High Level Process Interface}).
 @item tan
-@itemx tanch
+@itemx tanh
 R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
 @item tcdrain
 @item tcflow
