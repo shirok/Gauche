@@ -45,9 +45,10 @@ install : all
 	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
 	  fi; \
 	done
+	@$(INSTALL) -d $(SCM_INSTALL_DIR)/dbm
 	@for f in $(SCMFILES) _end; do \
 	  if test $$f != _end; then \
-	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
+	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
 	  fi; \
 	done
 	@for f in $(ARCHFILES) _end; do \

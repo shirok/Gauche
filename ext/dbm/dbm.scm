@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: dbm.scm,v 1.2 2001-10-21 19:33:19 shirok Exp $
+;;;  $Id: dbm.scm,v 1.3 2001-10-24 10:31:38 shirok Exp $
 ;;;
 
 (define-module dbm
@@ -26,12 +26,14 @@
   ((path       :init-keyword :path)
    (rw-mode    :init-keyword :rw-mode    :initform :write)
    (file-mode  :init-keyword :file-mode  :initform #o664)
-   (serializer :init-keyword :serializer :initform #f)
-   (deserializer :init-keyword :deserializer :initform #f)
+   (key-serializer :init-keyword :key-serializer :initform #f)
+   (value-serializer :init-keyword :value-serializer :initform #f)
    ))
 
 (define-method dbm-open ((class <class>) . initargs)
   (dbm-open (apply make class initargs)))
+
+
 
 ;;
 ;; Method prototypes.  Actual method should be defined in subclasses.

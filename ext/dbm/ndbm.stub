@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.4 2001-10-23 19:27:37 shirok Exp $
+;;  $Id: ndbm.stub,v 1.5 2001-10-24 10:31:38 shirok Exp $
 ;;
 
 "
@@ -57,6 +57,15 @@
    } while (0)
 
  #define CHECK_NDBM(g)    if (!g->dbf) Scm_Error(\"ndbm file already closed: %S\", g)
+
+ /* Hack for initialization stub */
+ void internal_init(ScmModule*);
+
+ void Scm_Init_ndbm(void)
+ {
+    internal_init(SCM_MODULE(SCM_FIND_MODULE(\"dbm.ndbm\", TRUE)));
+ }
+ #define Scm_Init_ndbm  internal_init
 "
 
 (initcode

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gdbm.scm,v 1.2 2001-10-20 11:23:00 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.3 2001-10-24 10:31:38 shirok Exp $
 ;;;
 
 (define-module dbm.gdbm
@@ -51,13 +51,13 @@
          (sync   (slot-ref self 'sync))
          (nolock (slot-ref self 'nolock))
          (rwopt  (case rwmode
-                   (:read |GDBM_READER|)
-                   (:write (+ |GDBM_WRITER|
-                               (if sync |GDBM_SYNC| 0)
-                               (if nolock |GDBM_NOLOCK| 0)))
-                   (:create (+ |GDBM_NEWDB|
-                               (if sync |GDBM_SYNC| 0)
-                               (if nolock |GDBM_NOLOCK| 0)))))
+                   ((:read) |GDBM_READER|)
+                   ((:write) (+ |GDBM_WRITER|
+                                 (if sync |GDBM_SYNC| 0)
+                                 (if nolock |GDBM_NOLOCK| 0)))
+                   ((:create) (+ |GDBM_NEWDB|
+                                 (if sync |GDBM_SYNC| 0)
+                                 (if nolock |GDBM_NOLOCK| 0)))))
          (fp     (gdbm-open path
                             (slot-ref self 'bsize)
                             rwopt
