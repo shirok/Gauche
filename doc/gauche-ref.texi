@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.364 2003-02-06 12:48:39 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.365 2003-02-07 02:42:38 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -15463,8 +15463,8 @@ assumed.
 @end defun
 
 
-@defun wrap-with-input-conversion port from-code &keyword to-code buffer-size
-@defunx wrap-with-output-conversion port to-code &keyword from-code buffer-size
+@defun wrap-with-input-conversion port from-code &keyword to-code owner? buffer-size
+@defunx wrap-with-output-conversion port to-code &keyword from-code owner? buffer-size
 @c EN
 Convenient functions to avoid adding unnecessary conversion port.
 Each procedure works like @code{open-input-conversion-port}
@@ -15473,8 +15473,15 @@ except if system knows no conversoin is needed,
 no conversion port is created and @var{port} is returned as is.
 
 When a conversion port is created, @var{port} is always owned by the port.
-@var{buffer-size} argument is passed to the @code{open-*-conversion-port}
-as is.
+When you want to close the port, always close the port returned
+by @code{wrap-with-*-conversion}, instead the original @var{port}.
+If you close the original @var{port} first, the pending conversion
+won't be flushed.  (Some conversion requires trailing sequence that
+is generated only when the conversion port is closing, so simply
+calling @code{flush} isn't enough.)
+
+The @var{buffer-size} argument is passed to 
+the @code{open-*-conversion-port}.
 @c JP
 不要な変換ポートを作らないようにする便利な手続きです。
 各手続きはそれぞれ@code{open-input-conversion-port}と
@@ -15483,7 +15490,13 @@ as is.
 変換ポートは作られず、@var{port}がそのまま返されます。
 
 変換ポートが作られた場合、@var{port}は常に変換ポートに所有されます
-(@code{:owner #t}となる)。@code{:buffer-size} 引数はそのまま
+(@code{:owner #t}となる)。ポートを閉じる場合は@var{port}ではなく
+常に@code{wrap-with-*-conversion}が返したポートを閉じるようにして下さい。
+元の@var{port}が先に閉じられた場合、変換中の結果が書き出されない可能性があります。
+(変換によっては、ポートが閉じられる時点で終了シーケンスを書き出すものがあるので、
+単にポートを@code{flush}するだけでは不十分です)。
+
+@code{:buffer-size} 引数はそのまま
 変換ポート作成手続きに渡されます。
 @c COMMON
 @end defun
