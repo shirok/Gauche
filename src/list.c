@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.17 2001-03-20 07:09:20 shiro Exp $
+ *  $Id: list.c,v 1.18 2001-03-21 08:05:06 shiro Exp $
  */
 
 #include "gauche.h"
@@ -134,9 +134,11 @@ ScmObj Scm_VaCons(va_list pvar)
 ScmObj Scm_ArrayToList(ScmObj *elts, int nelts)
 {
     ScmObj h = SCM_NIL, t;
-    int i;
-    for (i=0; i<nelts; i++) {
-        SCM_APPEND1(h, t, *elts++);
+    if (elts) {
+        int i;
+        for (i=0; i<nelts; i++) {
+            SCM_APPEND1(h, t, *elts++);
+        }
     }
     return h;
 }
