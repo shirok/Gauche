@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.16 2001-07-08 19:16:49 shirok Exp $
+;; $Id: srfi.scm,v 1.17 2001-09-17 01:37:08 shirok Exp $
 
 (use gauche.test)
 
@@ -382,6 +382,27 @@
 
 (test "xpare kons" '(1 . 2)
       (lambda () (let ((k (xkons 2 1))) (cons (kar k) (kdr k)))))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-10")
+(use srfi-10)
+
+(test "read ctor 1a" '(1 2 #f "4 5")
+      (lambda ()
+        (define-reader-ctor 'list list)
+        (with-input-from-string "#,(list 1 2 #f \"4 5\")" read)))
+(test "read ctor 1b" 3
+      (lambda ()
+        (define-reader-ctor '+ +)
+        (with-input-from-string "#,(+ 1 2)" read)))
+(define-reader-ctor 'my-vector
+  (lambda x (apply vector (cons 'my-vector x))))
+(test "read ctor 2a" '#(my-vector (my-vector 1 2))
+      (lambda ()
+        (with-input-from-string "#,(my-vector (my-vector 1 2))" read)))
+(test "read ctor 2b" '#(my-vector #(my-vector 1 2))
+      (lambda ()
+        (with-input-from-string "#,(my-vector #,(my-vector 1 2))" read)))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-13")
