@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.46 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: main.c,v 1.47 2002-02-12 07:42:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -189,14 +189,35 @@ int main(int argc, char **argv)
     if (optind < argc) {
         ScmObj av = SCM_NIL, at = SCM_NIL, mainproc;
         int ac;
+        struct stat statbuf;
+        const char *scriptfile;
+
+        /* if the script name is given in relative pathname, see if
+           it exists from the current directory.  if not, leave it
+           to load() to search in the load paths */
+        if (argv[optind][0] == '\0') Scm_Error("bad script name");
+        if (argv[optind][0] == '/') {
+            scriptfile = argv[optind];
+        } else {
+            if (stat(argv[optind], &statbuf) == 0) {
+                ScmDString ds;
+                Scm_DStringInit(&ds);
+                Scm_DStringPutz(&ds, "./", -1);
+                Scm_DStringPutz(&ds, argv[optind], -1);
+                scriptfile = Scm_DStringGetz(&ds);
+            } else {
+                scriptfile = argv[optind];
+            }
+        }
+        Scm_Load(scriptfile, TRUE);
+
+        /* sets up arguments */
         for (ac = optind+1; ac < argc; ac++) {
             SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
         }
         SCM_DEFINE(Scm_UserModule(), "*argv*", av);
         SCM_DEFINE(Scm_UserModule(), "*program-name*",
                    SCM_MAKE_STR_IMMUTABLE(argv[optind]));
-
-        Scm_Load(argv[optind], TRUE);
 
         /* if symbol 'main is bound to a procedure in the user module,
            call it.  (SRFI-22) */
