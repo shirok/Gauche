@@ -806,8 +806,13 @@ module name.
 @section Using extension packages
 @c NODE 拡張パッケージの使用
 
+@c EN
 @subheading Building and installing packages
+@c JP
+@subheading パッケージの構築とインストール
+@c COMMON
 
+@c EN
 Gauche comes with some amount of libraries, but they aren't 
 enough at all to use Gauche in the production environment. 
 There are number of additional libraries available.   We call them 
@@ -818,72 +823,158 @@ binding to other C libraries, such as graphics libraries
 or database clients.   If the package has some C code,
 it is likely that you need to compile it on your machine with
 the installed Gauche system.
+@c JP
+Gauche にはまとまったライブラリが付属していますが、
+Gauche をプロダクション環境で利用するのにはとても十分とはいえません。
+利用可能な追加ライブラリもいくつもあります。こうしたライブラリを
+@emph{拡張パッケージ}、あるいは単にパッケージといいます。それぞれの
+パッケージは追加機能を提供するひとつあるいはそれ以上のモジュールを
+提供します。ほとんどのパッケージは別のCのライブラリへのバインディングを
+提供しています。たとえば、グラフィックスライブラリとかデータベース
+クライアントなどです。もし、パッケージがいくぶんでもCのコードを含む
+場合は、利用するマシン上で、既にインストールされている Gauche システムを
+使って、そのコードをコンパイルする必要があります。
+@c COMMON
 
+@c EN
 Usually a package is in the form of compressed tarball, and the standard
 "ungzip + untar + configure + make + make install" sequence does the job.
 Read the package's document, for you may be able to tailor
 the library for your own needs by giving command-line options
 to the @code{configure} script.
+@c JP
+通常、パッケージは圧縮 tarball の形式になっています。標準的には、
+「gzの解凍 + tarの展開 + configure + make + make install」とやればよいように
+なっています。パッケージのドキュメントを読めば、必要に応じて、
+@code{configure} スクリプトに与えるコマンドラインオプションで
+ライブラリを調整できるようになっています。
+@c COMMON
 
+@c EN
 From Gauche 0.8, an utility script called @code{gauche-package} is
 installed for the convenience.  It automates the build and install
 process of packages.
+@c JP
+Gauche 0.8 より、@code{gauche-package} というユーティリティスクリプトが
+インストールされるようになっています。これはパッケージの構築と
+インストールを自動化します。
+@c COMMON
 
+@c EN
 Suppose you have downloaded a package @file{Package-1.0.tar.gz}.
 If the package follows the convention, all you have to do is
 to type this:
+@c JP
+@file{Package-1.0.tar.gz} というパッケージをダウンロードしてきた
+としましょう。もし、このパッケージが慣例に従っていれば、やることは
+@c COMMON
 
 @example
 $ gauche-package install Package-1.0.tar.gz
 @end example
 
+@c EN
 It ungzips and untars the package, @code{cd} into the @file{Package-1.0}
 subdirectory, run configure, make, and make install.
 By default, @code{gauche-package} untars the tarball in the current
 working directory.  You can change it by a customization file; see below.
+@c JP
+とタイプするだけです。
+これで、gzip圧縮ファイルの解凍、tarアーカイブファイルの展開、
+@file{Package-1.0} サブディレクトリへの移動、configure スクリプトの
+実行、make、make install が行われます。デフォルトでは、
+@code{gauche-package} はカレントディレクトリに tarball を展開します。
+これをカスタマイズファイル(後述)で変更することができます。
+@c COMMON
 
+@c EN
 If you need a special priviledge to install the files, you can
 use @code{--install-as} option which runs @code{make install} part via
 the @code{sudo} program.
+@c JP
+ファイルをインストールするのに特別な権限が必要な場合には、
+@code{--install-as} というオプションを使うと、@code{make install} 
+部分が、@code{sudo} を使って実行されます。
+@c COMMON
 
 @example
 $ gauche-package install --install-as=root Package-1.0.tar.gz
 @end example
 
+@c EN
 If it doesn't work for you, you can just build the package
 by @code{gauche-package build Package-1.0.tar.gz}, then
 manually cd to the @file{Package-1.0} directory and run 
 @code{make install}.
+@c JP
+上手くいかない場合には、@code{gauche-package build Package-1.0.tar.gz}
+とやってパッケージの構築だけすることもできます。この場合、手で
+@file{Package-1.0} ディレクトリに移動して、@code{make install} を
+実行します。
+@c COMMON
 
+@c EN
 You can give configuration optoins via @code{-C} or @code{--configure-options}
 command-line argument, like this:
+@c JP
+設定オプションを @code{-C} あるいは @code{--configure-options}
+というコマンドライン引数で与えられます。たとえば、
+@c COMMON
 
 @example
 $ gauche-package install -C "--prefix=/usr/local" Package-1.0.tar.gz
 @end example
 
+@c EN
 If the package has adopted the new package description file, 
 it can remember the configuration options you have specified, and
 it will automatically reuse them when you install the package
 again.  (If you're a package developer, check out 
 @file{examples/spigot/README} file in the Gauche source tree
 to see how to cooperate with Gauche's package management system.)
+@c JP
+もしパッケージがこの新しい記述ファイルを採用しているなら、
+以前に指定した設定オプションを記憶していて、そのパッケージを
+再度インストールするときには、自動的にそれを再利用します。
+(パッケージ開発者の方は、Gauche のソースツリーにある、
+@file{examples/spigot/README} ファイルをチェックアウトすれば、
+どのように Gauche のパッケージマネージメントシステムがやっているかを
+見られます。)
+@c COMMON
 
+@c EN
 If you don't have a tarball in your local directory, but you know
 the URL where you can download it, you can directly give the URL
 to @code{gauche-package}.  It understands @code{http} and @code{ftp},
 and uses either @code{wget} or @code{ncftpget} to download the tarball,
 then runs configure and make.
+@c JP
+tarball がローカルディレクトリにない場合でも、ダウンロードしてくる
+URL を知っているなら、その URL を直接 @code{gauche-package} に与える
+ことができます。@code{gauche-package} は @code{http} および @code{ftp}
+を理解し、@code{wget} か @code{ncftpget} のどちらかを使って、その
+tarball をダウンロードし、configure および make を実行します。
+@c COMMON
 
 @example
 $ gauche-package install http://www.example.com/download/Package-1.0.tar.gz
 @end example
 
+@c EN
 @subheading Customizing @code{gauche-package}
+@c JP
+@subheading @code{gauche-package} のカスタマイズ
+@c COMMON
 
+@c EN
 The @code{gauche-package} program reads @file{~/.gauche-package} if
 it exists.  It must contain an associative list of parameters.
 It may look like this:
+@c JP
+@code{gauche-package} プログラムは @file{~/.gauche-package} があれば、
+それを読みます。このファイルにはパラメータの連想リストが含まれて
+いなければなりません。こんな感じです。
+@c COMMON
 
 @example
 (
@@ -894,10 +985,17 @@ It may look like this:
 )
 @end example
 
+@c EN
 The following is a list of recognized parameters.
 If the program isn't given in the configuration file, @code{gauche-package}
 searches @code{PATH} to find one.
+@c JP
+以下は、認識されるパラメータのリストです。
+設定ファイルにプログラムが与えられていなければ、@code{gauche-package}
+は @code{PATH} を探します。
+@c COMMON
 
+@c EN
 @table @code
 @item build-dir
 A directory where the tarball is extracted.  If URL is given,
@@ -919,4 +1017,26 @@ Path to the program @code{tar}.
 @item wget
 Path to the program @code{wget}.
 @end table
-
+@c JP
+@table @code
+@item build-dir
+tarball が展開されるディレクトリ。もし、URL が与えられれば、
+ダウンロードされたファイルはこのディレクトリに置かれます。
+@item bzip2
+@code{bzip2} プログラムへのパス
+@item cat
+@code{cat} プログラムへのパス
+@item make
+@code{make} プログラムへのパス
+@item ncftpget
+@code{ncftpget} プログラムへのパス
+@item rm
+@code{rm} プログラムへのパス
+@item sudo
+@code{sudo} プログラムへのパス
+@item tar
+@code{tar} プログラムへのパス
+@item wget
+@code{wget} プログラムへのパス
+@end table
+@c COMMON
