@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.6 2001-03-05 00:54:30 shiro Exp $
+ *  $Id: boolean.c,v 1.7 2001-03-05 01:14:33 shiro Exp $
  */
 
 #include "gauche.h"
@@ -70,5 +70,17 @@ int Scm_EqualP(ScmObj x, ScmObj y)
     return (x == y);
 }
 
+int Scm_EqualM(ScmObj x, ScmObj y, int mode)
+{
+    switch (mode) {
+    case SCM_CMP_EQ:
+        return x == y;
+    case SCM_CMP_EQV:
+        return Scm_EqvP(x, y);
+    case SCM_CMP_EQUAL:
+        return Scm_EqualP(x, y);
+    }
+    return FALSE;
+}
 
-
+                   
