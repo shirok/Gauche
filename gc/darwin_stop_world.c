@@ -349,20 +349,21 @@ void GC_start_world()
 	        GC_printf1("Not resuming already suspended thread %p\n", thread);
 #             endif
 	      continue;
-	    }
-	    struct thread_basic_info info;
-	    mach_msg_type_number_t outCount = THREAD_INFO_MAX;
-	    kern_result = thread_info(thread, THREAD_BASIC_INFO,
-				      (thread_info_t)&info, &outCount);
-	    if(kern_result != KERN_SUCCESS) ABORT("thread_info failed");
+	    } else {
+              struct thread_basic_info info;
+              mach_msg_type_number_t outCount = THREAD_INFO_MAX;
+              kern_result = thread_info(thread, THREAD_BASIC_INFO,
+                                        (thread_info_t)&info, &outCount);
+              if(kern_result != KERN_SUCCESS) ABORT("thread_info failed");
 #           if DEBUG_THREADS
-	      GC_printf2("Thread state for 0x%lx = %d\n", thread,
-			 info.run_state);
-	      GC_printf1("Resuming 0x%lx\n", thread);
+              GC_printf2("Thread state for 0x%lx = %d\n", thread,
+                         info.run_state);
+              GC_printf1("Resuming 0x%lx\n", thread);
 #           endif
-	    /* Resume the thread */
-	    kern_result = thread_resume(thread);
-	    if(kern_result != KERN_SUCCESS) ABORT("thread_resume failed");
+              /* Resume the thread */
+              kern_result = thread_resume(thread);
+              if(kern_result != KERN_SUCCESS) ABORT("thread_resume failed");
+            }
 	  } 
 	}
       }
