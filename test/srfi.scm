@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.9 2001-04-08 20:28:53 shiro Exp $
+;; $Id: srfi.scm,v 1.10 2001-04-09 19:24:03 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -247,6 +247,77 @@
       (lambda () (receive x (span! even? (list 2 18 3 10 22 9)) x)))
 (test "break!" '((2 18) (3 10 22 9))
       (lambda () (receive x (break! odd? (list 2 18 3 10 22 9)) x)))
+(test "any" #t
+      (lambda () (any integer? '(a 3 b 2.8))))
+(test "any" #f
+      (lambda () (any integer? '(a 3.1 b 2.8))))
+(test "any" #t
+      (lambda () (any < '(3 1 4 1 5) '(2 7 1 8 2))))
+(test "every" #f
+      (lambda () (every integer? '(a 3 b 2.8))))
+(test "every" #t
+      (lambda () (every integer? '(2.0 3.0 8.0 -1.0))))
+(test "every" #t
+      (lambda () (every <= '(1 2 3 4 5) '(2 3 3 5 5))))
+(test "list-index" 2
+      (lambda () (list-index even? '(3 1 4 1 5 9))))
+(test "list-index" 1
+      (lambda () (list-index < '(3 1 4 1 5 9) '(2 7 1))))
+(test "list-index" #f
+      (lambda () (list-index = '(3 1 4 1 5 9) '(2 7 1))))
+(test "member" #f
+      (lambda () (member '"b" '("a" "b" "c") eq?)))
+(test "member" '(2.0 3.0)
+      (lambda () (member '2.0 '(1.0 2.0 3.0) eqv?)))
+(test "member" '("b" "c")
+      (lambda () (member '"b" '("a" "b" "c") equal?)))
+(test "member" '("b" "c")
+      (lambda () (member '"b" '("a" "b" "c"))))
+(test "member" '("b" "c")
+      (lambda () (member '"b" '("a" "b" "c") string=?)))
+(test "member" '("b" "c")
+      (lambda () (member '"B" '("a" "b" "c") string-ci=?)))
+(test "delete" '(b c d e)
+      (lambda () (delete 'a '(a b a c a d a e) eq?)))
+(test "delete" '(2.0 3.0 4.0 5.0)
+      (lambda () (delete '1.0 '(1.0 2.0 1.0 3.0 4.0 1.0 5.0) eqv?)))
+(test "delete" '("b" "c" "d" "e")
+      (lambda () (delete "a" '("a" "b" "a" "c" "d" "a" "e"))))
+(test "delete" '("b" "c" "d" "e")
+      (lambda () (delete "a" '("a" "b" "a" "c" "d" "a" "e") string=?)))
+(test "delete" '("b" "c" "d" "e")
+      (lambda () (delete "A" '("a" "b" "a" "c" "d" "a" "e") string-ci=?)))
+(test "delete!" '(b c d e)
+      (lambda () (delete! 'a '(a b a c a d a e) eq?)))
+(test "delete!" '(2.0 3.0 4.0 5.0)
+      (lambda () (delete! '1.0 '(1.0 2.0 1.0 3.0 4.0 1.0 5.0) eqv?)))
+(test "delete!" '("b" "c" "d" "e")
+      (lambda () (delete! "a" '("a" "b" "a" "c" "d" "a" "e"))))
+(test "delete!" '("b" "c" "d" "e")
+      (lambda () (delete! "a" '("a" "b" "a" "c" "d" "a" "e") string=?)))
+(test "delete!" '("b" "c" "d" "e")
+      (lambda () (delete! "A" '("a" "b" "a" "c" "d" "a" "e") string-ci=?)))
+(test "delete-duplicates" '(a b c d e)
+      (lambda () (delete-duplicates '(a b a c b a d d a e) eq?)))
+(test "delete-duplicates" '(1.0 2.0 3.0 4.0 5.0)
+      (lambda () (delete-duplicates '(1.0 2.0 1.0 2.0 3.0 3.0 4.0 1.0 5.0) eqv?)))
+(test "delete-duplicates" '("a" "b" "c" "d" "e")
+      (lambda () (delete-duplicates '("a" "b" "b" "a" "b" "c" "d" "a" "e"))))
+(test "delete-duplicates" '("a" "b" "c" "d" "e")
+      (lambda () (delete-duplicates '("a" "b" "a" "a" "c" "d" "a" "e") string=?)))
+(test "delete-duplicates" '("A" "b" "c" "d" "e")
+      (lambda () (delete-duplicates '("A" "b" "a" "B" "c" "d" "a" "e") string-ci=?)))
+(test "delete-duplicates!" '(a b c d e)
+      (lambda () (delete-duplicates! '(a b a c b a d d a e) eq?)))
+(test "delete-duplicates!" '(1.0 2.0 3.0 4.0 5.0)
+      (lambda () (delete-duplicates! '(1.0 2.0 1.0 2.0 3.0 3.0 4.0 1.0 5.0) eqv?)))
+(test "delete-duplicates!" '("a" "b" "c" "d" "e")
+      (lambda () (delete-duplicates! '("a" "b" "b" "a" "b" "c" "d" "a" "e"))))
+(test "delete-duplicates!" '("a" "b" "c" "d" "e")
+      (lambda () (delete-duplicates! '("a" "b" "a" "a" "c" "d" "a" "e") string=?)))
+(test "delete-duplicates!" '("A" "b" "c" "d" "e")
+      (lambda () (delete-duplicates! '("A" "b" "a" "B" "c" "d" "a" "e") string-ci=?)))
+
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")
