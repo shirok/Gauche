@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.21 2004-11-25 02:02:09 shirok Exp $
+;;;  $Id: cgi.scm,v 1.22 2004-11-25 11:44:28 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -49,6 +49,7 @@
   (use rfc.822)
   (use gauche.parameter)
   (use gauche.charconv)
+  (use gauche.vport)
   (use text.tree)
   (use text.html-lite)
   (use file.util)
@@ -102,10 +103,10 @@
 ;; If the request is multipart/mime, it just returns a symbol 'mime
 ;; without retrieving input.   cgi-parse-parameters handles the mime
 ;; message.
-(define (cgi-get-query)
-  (let* ((type   (mime-parse-content-type (get-meta "CONTENT_TYPE")))
+(define (cgi-get-query content-length)
+  (let* ((type    (mime-parse-content-type (get-meta "CONTENT_TYPE")))
          (typesig (and type (list (car type) (cadr type))))
-         (method (get-meta "REQUEST_METHOD")))
+         (method  (get-meta "REQUEST_METHOD")))
     (unless (or (not type)
                 (member typesig
                         '(("application" "x-www-form-urlencoded")
@@ -131,7 +132,8 @@
           ((string-ci=? method "POST")
            (if (equal? typesig '("multipart" "form-data"))
              'mime 
-             (or (and-let* ((lenp (get-meta "CONTENT_LENGTH"))
+             (or (and-let* ((lenp (or content-length
+                                      (get-meta "CONTENT_LENGTH")))
                             (len  (x->integer lenp)))
                    (string-incomplete->complete (read-block len)))
                  (port->string (current-input-port)))))
@@ -146,10 +148,11 @@
                        (merge-cookies #f)
                        (part-handlers '())
                        (content-type #f)
+                       (content-length #f)
                        (mime-input #f))
     (let* ((input (cond (query-string)
                         ((or mime-input content-type) 'mime)
-                        (else (cgi-get-query))))
+                        (else (cgi-get-query content-length))))
            (cookies (cond ((and merge-cookies (get-meta "HTTP_COOKIE"))
                            => parse-cookie-string)
                           (else '()))))
@@ -158,6 +161,7 @@
         ((eq? input 'mime)
          (get-mime-parts part-handlers
                          (or content-type (get-meta "CONTENT_TYPE"))
+                         (or content-length (get-meta "CONTENT_LENGTH"))
                          (or mime-input (current-input-port))))
         ((string-null? input) '())
         (else (split-query-string input)))
@@ -191,7 +195,7 @@
 ;;              : <procedure>       ;; calls <procedure> with
 ;;                                  ;;   name, part-info, input-port.
 ;;
-(define (get-mime-parts part-handlers ctype inp)
+(define (get-mime-parts part-handlers ctype clength inp)
   (define (part-ref info name)
     (rfc822-header-ref (ref info 'headers) name))
 
@@ -251,7 +255,9 @@
            )
       (if name (list name result) #f)))
 
-  (let1 result (mime-parse-message inp `(("content-type" ,ctype)) handle-part)
+  (let* ((inp (if clength (open-input-limited-length-port inp clength) inp))
+         (result (mime-parse-message inp `(("content-type" ,ctype))
+                                     handle-part)))
     (filter-map (cut ref <> 'content) (ref result 'content)))
   )
 

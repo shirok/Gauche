@@ -1,3 +1,10 @@
+2004-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-parse-parameters): use limited-length-port
+	  to read POST message body if content-length is specified.  It is
+	  necessary when the progam is communicating with persistent
+	  connection, which doesn't delimit the message body by EOF.
+
 2004-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/vport/vport.scm (open-input-limited-length-port): added
