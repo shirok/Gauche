@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.69 2002-04-04 08:16:07 shirok Exp $
+ *  $Id: number.c,v 1.70 2002-04-04 08:25:40 shirok Exp $
  */
 
 #include <math.h>
@@ -1103,9 +1103,10 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
     return 0;                    /* dummy */
 }
 
-ScmObj Scm_Max(ScmObj arg0, ScmObj args)
+ScmObj Scm_MinMax(ScmObj arg0, ScmObj args, int minp)
 {
-    int inexact = !SCM_EXACTP(arg0);
+    int inexact = !SCM_EXACTP(arg0), r;
+    
     for (;;) {
         if (!SCM_REALP(arg0))
             Scm_Error("real number required, but got %S", arg0);
@@ -1117,28 +1118,8 @@ ScmObj Scm_Max(ScmObj arg0, ScmObj args)
             }
         }
         if (!SCM_EXACTP(SCM_CAR(args))) inexact = TRUE;
-        if (Scm_NumCmp(arg0, SCM_CAR(args)) < 0) {
-            arg0 = SCM_CAR(args);
-        }
-        args = SCM_CDR(args);
-    }
-}
-
-ScmObj Scm_Min(ScmObj arg0, ScmObj args)
-{
-    int inexact = !SCM_EXACTP(arg0);
-    for (;;) {
-        if (!SCM_REALP(arg0))
-            Scm_Error("real number required, but got %S", arg0);
-        if (SCM_NULLP(args)) {
-            if (inexact && SCM_EXACTP(arg0)) {
-                return Scm_ExactToInexact(arg0);
-            } else {
-                return arg0;
-            }
-        }
-        if (!SCM_EXACTP(SCM_CAR(args))) inexact = TRUE;
-        if (Scm_NumCmp(arg0, SCM_CAR(args)) > 0) {
+        r = Scm_NumCmp(arg0, SCM_CAR(args));
+        if ((minp && r > 0) || (!minp && r < 0)) {
             arg0 = SCM_CAR(args);
         }
         args = SCM_CDR(args);

@@ -2,6 +2,7 @@
 
 	* src/number.c : improved integer reader to do bignum calculation
 	  with chunk of digits, instead of every digits.
+	* src/number.c, src/stdlib.stub : integrated Scm_Min and Scm_Max.
 
 2002-04-02  Shiro Kawai  <shiro@acm.org>
 
