@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.18 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: string.c,v 1.19 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include <stdio.h>
@@ -20,8 +20,7 @@
 #include "gauche.h"
 
 static int string_print(ScmObj obj, ScmPort *port, int mode);
-SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass,
-                         string_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
 #define INITSTR(var, len, siz, p)               \

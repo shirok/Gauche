@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.12 2001-03-20 09:56:10 shiro Exp $
+ *  $Id: symbol.c,v 1.13 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,9 +27,7 @@ static int symbol_print(ScmObj obj, ScmPort *port, int mode)
     return SCM_STRING_LENGTH(SCM_SYMBOL(obj)->name);
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SymbolClass,
-                         symbol_print, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 
 #define INITSYM(sym, nam)                       \
     sym = SCM_NEW(ScmSymbol);                   \

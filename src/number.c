@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.17 2001-03-26 07:34:00 shiro Exp $
+ *  $Id: number.c,v 1.18 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include <math.h>
@@ -47,17 +47,13 @@ static ScmClass *numeric_cpl[] = {
 
 static int number_print(ScmObj obj, ScmPort *port, int mode);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_NumberClass,
-                         number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_NumberClass, number_print, NULL, NULL,
                          numeric_cpl+4);
-SCM_DEFINE_BUILTIN_CLASS(Scm_ComplexClass,
-                         number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_ComplexClass, number_print, NULL, NULL,
                          numeric_cpl+3);
-SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass,
-                         number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass, number_print, NULL, NULL,
                          numeric_cpl+2);
-SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass,
-                         number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass, number_print, NULL, NULL,
                          numeric_cpl+1);
 
 /*=====================================================================

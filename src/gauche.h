@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.93 2001-03-25 08:45:26 shiro Exp $
+ *  $Id: gauche.h,v 1.94 2001-03-30 07:46:38 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -294,7 +294,6 @@ extern ScmObj Scm_VMThrowException(ScmObj exception);
 struct ScmClassRec {
     SCM_HEADER;
     int (*print)(ScmObj obj, ScmPort *sink, int mode);
-    int (*equal)(ScmObj x, ScmObj y);
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
@@ -379,11 +378,10 @@ extern ScmClass *Scm_ObjectCPL[];
  *   SCM_DEFINE_BASE_CLASS
  */
 
-#define SCM_DEFINE_CLASS_COMMON(cname, size, flag, printer, equal, compare, serialize, cpa) \
+#define SCM_DEFINE_CLASS_COMMON(cname, size, flag, printer, compare, serialize, cpa) \
     ScmClass cname = {                          \
         SCM_CLASS_CLASS,                        \
         printer,                                \
-        equal,                                  \
         compare,                                \
         serialize,                              \
         NULL,                                   \
@@ -402,22 +400,28 @@ extern ScmClass *Scm_ObjectCPL[];
     }
     
 /* define built-in class statically. */
-#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, equal, compare, serialize, cpa) \
-    SCM_DEFINE_CLASS_COMMON(cname, 0,                                   \
-                            SCM_CLASS_BUILTIN|SCM_CLASS_FINAL,          \
-                            printer, equal, compare, serialize, cpa)
+#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, cpa) \
+    SCM_DEFINE_CLASS_COMMON(cname, 0,                                     \
+                            SCM_CLASS_BUILTIN|SCM_CLASS_FINAL,            \
+                            printer, compare, serialize, cpa)
 
 /* simpler version */
 #define SCM_DEFINE_BUILTIN_CLASS_SIMPLE(cname, printer)         \
-    SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL, NULL,  \
+    SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL,        \
                              SCM_CLASS_DEFAULT_CPL)
 
-/* define built-in class that can be subclassed by Scheme */
-#define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, equal, compare, serialize, cpa) \
+/* define an abstract class */
+#define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)           \
+    SCM_DEFINE_CLASS_COMMON(cname, 0,                   \
+                            SCM_CLASS_BUILTIN,          \
+                            NULL, NULL, NULL, cpa)
+
+/* define a class that can be subclassed by Scheme */
+#define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, serialize, cpa) \
     SCM_DEFINE_CLASS_COMMON(cname,                                           \
                             (sizeof(ctype)+sizeof(ScmObj)-1)/sizeof(ScmObj), \
                             SCM_CLASS_BUILTIN,                               \
-                            printer, equal, compare, serialize, cpa)
+                            printer, compare, serialize, cpa)
 
 /*--------------------------------------------------------
  * PAIR AND LIST
@@ -1742,6 +1746,8 @@ extern ScmClass Scm_SysPasswdClass;
 
 extern ScmObj Scm_GetPasswdById(uid_t uid);
 extern ScmObj Scm_GetPasswdByName(ScmString *name);
+
+extern void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap);
 
 /*---------------------------------------------------
  * LOAD AND DYNAMIC LINK

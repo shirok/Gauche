@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.15 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: port.c,v 1.16 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include <errno.h>
@@ -25,9 +25,7 @@
 static int port_print(ScmObj obj, ScmPort *port, int mode);
 static void port_finalize(GC_PTR obj, GC_PTR data);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_PortClass,
-                         port_print, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
 
 /* Cleaning up:
  *   The underlying file descriptor/stream may be closed when the port
@@ -37,7 +35,6 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_PortClass,
  *   may share the same file descriptor for efficiency (e.g. stdios).
  *   In such cases, it is C code's responsibility to destroy the port.
  */
-
 static int port_cleanup(ScmPort *port)
 {
     if (port->ownerp) {
@@ -690,7 +687,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 }
 
 /*===============================================================
- * Predefined ports and initialization
+ * Standard ports
  */
 
 static ScmObj scm_stdin;

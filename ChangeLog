@@ -1,3 +1,14 @@
+2001-03-29  Shiro Kawai  <shiro@scherzo>
+
+	
+	* src/class.c, src/write.c: moved write-object stuff from class.c
+	  to write.c
+	* lib/gauche/process.scm: added.  mostly STk-compatible process
+	  module, but implemented as an object.
+	* src/system.c, src/syslib.stub: added Scm_SysExec, that calls
+	  execvp() with taking care of file discriptors.  Changed sys-exec
+	  accordingly.
+
 2001-03-28  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.14

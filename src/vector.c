@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.7 2001-03-20 07:10:19 shiro Exp $
+ *  $Id: vector.c,v 1.8 2001-03-30 07:46:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -33,8 +33,7 @@ static int vector_print(ScmObj obj, ScmPort *port, int mode)
     return nc;
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass,
-                         vector_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass, vector_print, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
 static ScmVector *make_vector(int size)
