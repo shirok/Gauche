@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.28 2003-01-16 23:49:43 shirok Exp $
+;; $Id: srfi.scm,v 1.29 2003-02-18 07:01:09 shirok Exp $
 
 (use gauche.test)
 
@@ -1175,11 +1175,11 @@
 (test-module 'srfi-19)
 
 (test* "make-time" '(#t time-utc 100 5555)
-       (let1 t (make-time time-utc 100 5555)
+       (let1 t (make-time time-utc 5555 100)
          (list (time? t) (time-type t) (time-second t)
                (time-nanosecond t))))
 (test* "copy-time" '(#t time-utc 100 5555)
-       (let1 t (copy-time (make-time time-utc 100 5555))
+       (let1 t (copy-time (make-time time-utc 5555 100))
          (list (time? t) (time-type t) (time-second t)
                (time-nanosecond t))))
 (test* "current-time" '(time-utc time-tai time-monotonic)
@@ -1192,9 +1192,9 @@
             #t #f #t #f #t
             #f #t #f #t #f
             #f #t #f #t #t)
-       (let ((t0 (make-time time-tai 23456 345676543))
-             (t1 (make-time time-tai 93853 293892851))
-             (t2 (make-time time-tai 93853 893892851)))
+       (let ((t0 (make-time time-tai 345676543 23456))
+             (t1 (make-time time-tai 293892851 93853))
+             (t2 (make-time time-tai 893892851 93853)))
          (list (time=?  t0 t0)
                (time=?  t0 t1)
                (time=?  t1 t2)
@@ -1220,7 +1220,7 @@
                (time>=? t0 t0))))
 (test* "time difference" '(#t #t #t #t #t #t)
        (let* ((t0 (current-time))
-              (t1 (make-time time-utc 1000000000 333333333))
+              (t1 (make-time time-utc 333333333 1000000000))
               (dt (time-difference t1 t0))
               (r0 (eq? (time-type dt) time-duration))
               (t2 (add-duration t0 dt))
@@ -1273,9 +1273,9 @@
 (test* "date conversion"
        '(#t #t #t #t)
        (let* ((t0 (make-time 'time-utc 0 0))
-              (t1 (make-time 'time-utc 1022191954 48375295))
+              (t1 (make-time 'time-utc 48375295 1022191954))
               (t2 (make-time 'time-tai 0 0))
-              (t3 (make-time 'time-tai 1022191954 48375295)))
+              (t3 (make-time 'time-tai 48375295 1022191954)))
          (list (time=? t0 (date->time-utc (time-utc->date t0)))
                (time=? t1 (date->time-utc (time-utc->date t1)))
                (time=? t2 (date->time-tai (time-tai->date t2)))
@@ -1285,13 +1285,13 @@
 ;; NB: in Gauche, the round-trip conversion from time -> julian-day -> time
 ;; can't be guaranteed because of the limited precision of julian-day
 ;; calcularion.
-'(let1 t0 (make-time time-utc 1022191954 0)
+'(let1 t0 (make-time time-utc 0 1022191954)
    (test "julian day number"
          t0
          (lambda ()
            (julian-day->time-utc (time-utc->julian-day t0)))
          time=?))
-'(let1 t0 (make-time time-utc 1022191954 0)
+'(let1 t0 (make-time time-utc 0 1022191954)
    (test "modified julian day number"
          t0
          (lambda ()

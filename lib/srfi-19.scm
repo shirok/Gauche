@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.10 2003-01-09 11:28:51 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.11 2003-02-18 07:01:09 shirok Exp $
 
 (define-module srfi-19
   (export time-tai time-utc time-monotonic time-thread
@@ -135,7 +135,7 @@
 (define-method set-time-nanosecond! ((t <time>) s)
   (slot-set! t 'nanosecond s))
 
-(define (make-time type second nanosecond)
+(define (make-time type nanosecond second)
   (make <time> :type type :second second :nanosecond nanosecond))
 
 (define (copy-time time)
@@ -161,7 +161,7 @@
 ;;;
 
 (define (tm:make-time-usec type sec usec)
-  (make-time type sec (* usec 1000)))
+  (make-time type (* usec 1000) sec))
 
 (define (tm:current-time-process type)
   (let* ((times (sys-times))
@@ -169,7 +169,7 @@
          (tick  (list-ref times 4))
          (sec   (quotient cpu tick))
          (nsec  (* (/ tm:nano tick) (remainder cpu tick))))
-    (make-time type sec nsec)))
+    (make-time type nsec sec)))
 
 (define (tm:current-time-tai type)
   (let* ((now (with-module gauche (current-time)))
@@ -567,12 +567,12 @@
 		     tm:tai-epoch-in-jd)) )
       (make-time 
        time-utc
+       nanosecond
        (+ (* (- jdays 1/2) 24 60 60)
 	  (* hour 60 60)
 	  (* minute 60)
 	  second
-          (- offset))
-       nanosecond))))
+          (- offset))))))
 
 (define (date->time-tai date)
   (time-utc->time-tai! (date->time-utc date)))
@@ -708,8 +708,8 @@
     (receive (seconds parts)
 	     (tm:split-real secs)
 	     (make-time time-utc 
-			(inexact->exact seconds)
-			(inexact->exact (truncate (* parts tm:nano)))))))
+			(inexact->exact (truncate (* parts tm:nano)))
+			(inexact->exact seconds)))))
 
 (define (julian-day->time-tai jdn)
   (time-utc->time-tai! (julian-day->time-utc jdn)))

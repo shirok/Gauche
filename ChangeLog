@@ -1,5 +1,12 @@
+2003-02-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-19.scm (make-time): Fix the order of argument to match
+	  SRFI specification.  This whould break existing code that depends
+	  on the wrong definition of make-time.
+
 2003-02-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_CHECK_START_END): pass through start==end case.
 	* src/load.c, src/gauche.h : made autoload MT-safe.
 	* src/vm.c, src/gauche/vm.h : renamed PCTYPE to SCM_PCTYPE to avoid
 	  namespace pollution.
