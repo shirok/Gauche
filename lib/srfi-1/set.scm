@@ -2,7 +2,7 @@
 ;;; Lists as sets of SRFI-1
 ;;;
 
-;; $Id: set.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: set.scm,v 1.2 2004-02-25 08:21:41 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -134,7 +134,7 @@
 	    ;; Compute a-b and a^b, then compute b-(a^b) and
 	    ;; cons it onto the front of a-b.
 	    (receive (a-b a-int-b)   (lset-diff+intersection = a b)
-	      (cond ((null? a-b)     (lset-difference b a =))
+	      (cond ((null? a-b)     (lset-difference = b a))
 		    ((null? a-int-b) (append b a))
 		    (else (fold (lambda (xb ans)
 				  (if (member xb a-int-b =) ans (cons xb ans)))
@@ -156,7 +156,7 @@
 	    ;; Compute a-b and a^b, then compute b-(a^b) and
 	    ;; cons it onto the front of a-b.
 	    (receive (a-b a-int-b)   (lset-diff+intersection! = a b)
-	      (cond ((null? a-b)     (lset-difference! b a =))
+	      (cond ((null? a-b)     (lset-difference! = b a))
 		    ((null? a-int-b) (append! b a))
 		    (else (pair-fold (lambda (b-pair ans)
 				       (if (member (car b-pair) a-int-b =) ans

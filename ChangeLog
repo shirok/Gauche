@@ -1,3 +1,8 @@
+2004-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-1/set.scm (lset-xor, lset-xor!): fixed bad call
+	  of lset-difference (pointed out by Ueyama Rui).
+
 2004-02-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (skipws): comment may contain unexpected character
