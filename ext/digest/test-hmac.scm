@@ -17,6 +17,7 @@
 (import gauche.uvector)
 
 (use rfc.hmac)
+(test-module 'rfc.hmac)
 
 (define hmac (make <hmac>
 	           :key (make-byte-string 16 #x0b)

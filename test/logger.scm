@@ -2,7 +2,7 @@
 ;; testing gauche.logger
 ;;
 
-;; $Id: logger.scm,v 1.4 2002-10-07 04:55:13 shirok Exp $
+;; $Id: logger.scm,v 1.5 2003-01-09 11:45:10 shirok Exp $
 
 (use gauche.test)
 
@@ -11,9 +11,9 @@
 (when (file-exists? "../ext/fcntl/fcntl.scm")
   (add-load-path "../ext/fcntl")
   (load "../ext/fcntl/fcntl"))
-(use gauche.logger)
-
 (test-start "logger")
+(use gauche.logger)
+(test-module 'gauche.logger)
 
 ;;-------------------------------------------------------------------------
 (test-section "log-open")

@@ -4,10 +4,10 @@
 
 (use gauche.test)
 
+(test-start "syslog")
 (load "syslog")
 (import gauche.syslog)
-
-(test-start "syslog")
+(test-module 'gauche.syslog)
 
 ;; TODO: writeme
 

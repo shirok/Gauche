@@ -3,11 +3,11 @@
 ;;
 
 (use gauche.test)
+(test-start "fcntl")
 
 (load "fcntl")
 (import gauche.fcntl)
-
-(test-start "fcntl")
+(test-module 'gauche.fcntl)
 
 ;; It is difficult to compose a full test that works on every situation.
 ;; Here I provide tests for some common features.

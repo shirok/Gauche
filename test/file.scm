@@ -18,6 +18,7 @@
 ;;------------------------------------------------------------------
 (test-section "file.util")
 (use file.util)
+(test-module 'file.util)
 
 (test "current-directory" '("/" "/" #t #t)
       (lambda ()
@@ -349,6 +350,7 @@
 ;;------------------------------------------------------------------
 (test-section "file.filter")
 (use file.filter)
+(test-module 'file.filter)
 
 (sys-unlink "tmp1.o")
 (sys-unlink "tmp2.o")

@@ -1,3 +1,10 @@
+2003-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-13.scm : fixed autoload typos.  Patch from Kimura Fuyuki.
+	* lib/gauche/test.scm : added test-module procedure, which tests
+	  autoloads and exported symbol bindings of the module, hopefully
+	  to catch careless typos.
+
 2003-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-1.scm : added some missing autoloads.  Patch provided

@@ -7,7 +7,7 @@
 (test-start "hook")
 
 (use gauche.hook)
-
+(test-module 'gauche.hook)
 ;;----------------------------------------------------------------
 
 (test* "<hook> creation and run-hook" #t

@@ -4,11 +4,13 @@
 
 (use gauche.test)
 ;(use srfi-4)
+(test-start "uniform vector and array")
 (load "uvector")
 (import gauche.uvector)
 (use srfi-1)
 
-(test-start "uniform vector and array")
+(test-module 'gauche.uvector)
+
 ;;-------------------------------------------------------------------
 (test-section "reader syntax")
 
@@ -1298,8 +1300,10 @@
 
 ;;-------------------------------------------------------------------
 ; (use gauche.array)
+(test-section "gauche.array")
 (load "array")
 (import gauche.array)
+(test-module 'gauche.array)
 
 (test-section "simple array op")
 

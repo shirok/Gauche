@@ -9,6 +9,7 @@
 ;;------------------------------------------------
 (test-section "www.cgi")
 (use www.cgi)
+(test-module 'www.cgi)
 
 (define params #f)
 (define qs1 "a=foo+bar&boo=baz=doo&z%3Dz=%21%26&a=+%20&#=#&z=z=8&r&r=2")

@@ -8,6 +8,7 @@
 ;;--------------------------------------------------------------------
 (test-section "rfc.822")
 (use rfc.822)
+(test-module 'rfc.822)
 
 (define rfc822-header1
   "Received: by foo.bar.com id ZZZ55555; Thu, 31 May 2001 16:38:04 -1000 (HST)
@@ -55,6 +56,7 @@ Content-Length: 4349
 ;;--------------------------------------------------------------------
 (test-section "rfc.base64")
 (use rfc.base64)
+(test-module 'rfc.base64)
 
 (test* "encode" "" (base64-encode-string ""))
 (test* "encode" "YQ==" (base64-encode-string "a"))
@@ -84,6 +86,7 @@ Content-Length: 4349
 ;;--------------------------------------------------------------------
 (test-section "rfc.quoted-printable")
 (use rfc.quoted-printable)
+(test-module 'rfc.quoted-printable)
 
 (test* "encode" "abcd=0Cefg"
        (quoted-printable-encode-string "abcd\x0cefg"))
@@ -110,6 +113,7 @@ Content-Length: 4349
 ;;--------------------------------------------------------------------
 (test-section "rfc.cookie")
 (use rfc.cookie)
+(test-module 'rfc.cookie)
 
 (test* "parse, old" '(("foo" "bar")
                       ("aaa" "bbb" :path "/a/b" :domain "a.b.com")
@@ -162,6 +166,7 @@ Content-Length: 4349
 ;;--------------------------------------------------------------------
 (test-section "rfc.uri")
 (use rfc.uri)
+(test-module 'rfc.uri)
 
 (test* "encode" "abc%3c%20%3e%20%22%20%23%25%7b%7c%7d%5c%5e"
        (uri-encode-string "abc< > \" #%{|}\\^"))

@@ -9,6 +9,7 @@
 
 (load "dbm")
 (import dbm)
+(test-module 'dbm)
 
 ;;
 ;; Common test suite
@@ -177,7 +178,10 @@
 ;; conditionally test
 (define-macro (test-if-exists file module class)
   (if (file-exists? (string-append file ".so"))
-      `(begin (require ,file) (import ,module) (full-test ,class))
+      `(begin (require ,file)
+              (import ,module)
+              (test-module ',module)
+              (full-test ,class))
       #f))
 
 ;;

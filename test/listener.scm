@@ -1,12 +1,13 @@
 ;;
 ;; test for listener
-;; $Id: listener.scm,v 1.2 2003-01-08 00:53:53 shirok Exp $
+;; $Id: listener.scm,v 1.3 2003-01-09 11:45:10 shirok Exp $
 
 (use gauche.test)
 
 (test-start "listener")
 
 (use gauche.listener)
+(test-module 'gauche.listener)
 
 (test-section "complete-sexp?")
 

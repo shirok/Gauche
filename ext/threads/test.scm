@@ -10,6 +10,7 @@
 
 (load "threads")
 (import gauche.threads)
+(test-module 'gauche.threads)
 
 (unless (eq? (gauche-thread-type) 'pthread)
   (format #t "thread not supported\n")

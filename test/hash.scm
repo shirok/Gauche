@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.4 2003-01-08 00:38:00 shirok Exp $
+;; $Id: hash.scm,v 1.5 2003-01-09 11:45:10 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -253,5 +253,7 @@
        '((a . 3) (b . 4) (c . 8) (d . 10))
        (hash-table-fold h-it acons '())
        (lambda (a b) (lset= equal? a b)))
+
+(test-module 'gauche.hashutil) ; autoloaded module
 
 (test-end)

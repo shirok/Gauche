@@ -8,6 +8,7 @@
 ;;-------------------------------------------------------------------
 (test-section "csv")
 (use text.csv)
+(test-module 'text.csv)
 
 (test* "csv-reader" '("abc" "def" "" "ghi")
        (call-with-input-string "abc  ,  def  ,, ghi  "
@@ -63,6 +64,7 @@
 ;;-------------------------------------------------------------------
 (test-section "parse")
 (use text.parse)
+(test-module 'text.parse)
 
 ;; a part of text data is taken from Oleg's vinput-parse.scm
 ;;  http://pobox.com/~oleg/ftp/Scheme/parsing.html
@@ -224,6 +226,7 @@
 ;;-------------------------------------------------------------------
 (test-section "tr")
 (use text.tr)
+(test-module 'text.tr)
 
 (test* "basic" "hELLO, wORLD!"
        (string-tr "Hello, World!" "A-Za-z" "a-zA-Z"))
@@ -294,6 +297,7 @@
 ;;-------------------------------------------------------------------
 (test-section "tree")
 (use text.tree)
+(test-module 'text.tree)
 
 (test* "tree->string" "" (tree->string '()))
 (test* "tree->string" "" (tree->string ""))

@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.26 2003-01-08 02:52:57 shirok Exp $
+;; $Id: srfi.scm,v 1.27 2003-01-09 11:45:10 shirok Exp $
 
 (use gauche.test)
 
@@ -31,6 +31,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-1")
 (use srfi-1)
+(test-module 'srfi-1)
 
 (test* "xcons" '(a . b) (xcons 'b 'a))
 (test* "cons*" '() (cons*))
@@ -355,6 +356,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")
 (use srfi-2)
+(test-module 'srfi-2)
 
 (define (srfi-2-look-up key alist)
   (and-let* ((x (assq key alist))) (cdr x)))
@@ -376,6 +378,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-9")
 (use srfi-9)
+(test-module 'srfi-9)
 
 (define-record-type pare
   (kons x y)
@@ -401,6 +404,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-10")
 (use srfi-10)
+(test-module 'srfi-10)
 
 (test "read ctor 1a" '(1 2 #f "4 5")
       (lambda ()
@@ -420,6 +424,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-13")
 (use srfi-13)
+(test-module 'srfi-13)
 
 (test* "string-null?" #f (string-null? "abc"))
 (test* "string-null?" #t (string-null? ""))
@@ -842,6 +847,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-14")
 (use srfi-14)
+(test-module 'srfi-14)
 
 ;; Test samples taken from Olin Shivers' test suite,
 ;; http://srfi.schemers.org/srfi-14/srfi-14-tests.scm
@@ -1166,6 +1172,7 @@
 (test-section "srfi-19")
 
 (use srfi-19)
+(test-module 'srfi-19)
 
 (test* "make-time" '(#t time-utc 100 5555)
        (let1 t (make-time time-utc 100 5555)
@@ -1320,6 +1327,7 @@
 (test-section "srfi-26")
 
 (use srfi-26)
+(test-module 'srfi-26)
 
 ;; The test cases are taken from the SRFI-26 test program by Sebastian Egner.
 (test* "cut list" '() ((cut list)))

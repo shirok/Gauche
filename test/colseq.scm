@@ -10,6 +10,9 @@
 (use gauche.collection)
 (use gauche.sequence)
 
+(test-module 'gauche.collection)
+(test-module 'gauche.sequence)
+
 ;; User-defined collection class test
 
 (define-class <string-seq-meta> (<class>) ())

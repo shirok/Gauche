@@ -6,6 +6,7 @@
 (test-start "parameters")
 
 (use gauche.parameter)
+(test-module 'gauche.parameter)
 
 ;;-------------------------------------------------------------------
 (test-section "basics")

@@ -8,6 +8,7 @@
 (add-load-path ".")
 (load "md5")
 (import rfc.md5)
+(test-module 'rfc.md5)
 
 (for-each
  (lambda (args)

@@ -4,11 +4,11 @@
 
 (use gauche.test)
 (use srfi-13)
+(test-start "net")
 
 (load "net")
 (import gauche.net)
-
-(test-start "net")
+(test-module 'gauche.net)
 
 ;;-----------------------------------------------------------------
 (test-section "socket address")

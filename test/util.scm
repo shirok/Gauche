@@ -10,6 +10,7 @@
 ;;-----------------------------------------------
 (test-section "util.isomorph")
 (use util.isomorph)
+(test-module 'util.isomorph)
 
 (define (make-data type)
   (let* ((z (vector #f #f #f))
@@ -28,6 +29,7 @@
 ;;-----------------------------------------------
 (test-section "util.queue")
 (use util.queue)
+(test-module 'util.queue)
 
 (test* "queue?" #f (queue? (cons 'a 'b)))
 (test* "queue?" #f (queue? 3))
@@ -83,6 +85,7 @@
 ;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)
+(test-module 'util.toposort)
 
 
 ;; using famous socks example (Corman)

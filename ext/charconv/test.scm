@@ -8,6 +8,7 @@
 (import gauche.charconv)
 
 (test-start "charconv")
+(test-module 'gauche.charconv)
 
 (define (file->string file)
   (string-complete->incomplete

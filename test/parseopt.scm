@@ -3,9 +3,10 @@
 ;;
 
 (use gauche.test)
-(use gauche.parseopt)
 
 (test-start "parseopt")
+(use gauche.parseopt)
+(test-module 'gauche.parseopt)
 
 (define (help) (display "Help message"))
 

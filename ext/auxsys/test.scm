@@ -8,6 +8,7 @@
 (import gauche.auxsys)
 
 (test-start "auxsys")
+(test-module 'gauche.auxsys)
 
 ;; It is difficult to test some functions in gauche.auxsys
 ;; This is a partial test.

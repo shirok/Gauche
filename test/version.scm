@@ -2,12 +2,13 @@
 ;; Test gauche.version
 ;;
 
-;; $Id: version.scm,v 1.2 2003-01-08 03:19:46 shirok Exp $
+;; $Id: version.scm,v 1.3 2003-01-09 11:45:10 shirok Exp $
 
 (use gauche.test)
 (test-start "gauche.version")
 
 (use gauche.version)
+(test-module 'gauche.version)
 
 (test* "relnum-compare" '(-1 0 1)
        (list (relnum-compare "1" "3")

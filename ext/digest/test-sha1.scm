@@ -8,6 +8,7 @@
 (add-load-path ".")
 (load "sha1")
 (import rfc.sha1)
+(test-module 'rfc.sha1)
 
 (for-each
  (lambda (args)
