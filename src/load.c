@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.86 2004-07-15 07:10:06 shirok Exp $
+ *  $Id: load.c,v 1.87 2004-07-16 03:16:49 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -74,7 +74,7 @@ static struct {
     ScmObj dso_suffixes;
     ScmObj dso_list;              /* List of dynamically loaded objects. */
     ScmInternalMutex dso_mutex;
-} ldinfo = { NULL, };
+} ldinfo = { (ScmGloc*)&ldinfo, };  /* trick to put ldinfo in .data section */
 
 /* keywords used for load and load-from-port surbs */
 static ScmObj key_paths              = SCM_UNBOUND;
@@ -384,6 +384,11 @@ ScmObj Scm_GetDynLoadPath(void)
 static ScmObj break_env_paths(const char *envname)
 {
     const char *e = getenv(envname);
+#ifndef __MINGW32__
+    char delim = ':';
+#else  /*__MINGW32__*/
+    char delim = ';';
+#endif /*__MINGW32__*/
 
     if (e == NULL) {
 	return SCM_NIL;
@@ -391,7 +396,8 @@ static ScmObj break_env_paths(const char *envname)
         /* don't trust env when setugid'd */
         return SCM_NIL;
     } else {
-	return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)), ':');
+	return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)),
+				     delim);
     }
 }
 
@@ -993,6 +999,34 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 }
 
 /*------------------------------------------------------------------
+ * Windows tricks
+ */
+#ifdef __MINGW32__
+
+ScmObj get_program_dir(void)
+{
+    static ScmObj dir = SCM_FALSE;
+    if (SCM_FALSEP(dir)) {
+	DWORD r;
+	char path[1024], *lastdelim;
+
+	r = GetModuleFileName(NULL, path, 1024);
+	if (r == 0) {
+	    Scm_Error("GetModuleFileName failed");
+	}
+	lastdelim = strrchr(path, '\\');
+	if (lastdelim == NULL) {
+	    Scm_Error("GetModuleFileName returned non-directory name: %s",
+		      path);
+	}
+	*lastdelim = '\0';
+	dir = SCM_MAKE_STR_COPYING(path);
+    }
+    return dir;
+}
+#endif /*__MINGW32__*/
+
+/*------------------------------------------------------------------
  * Initialization
  */
 
@@ -1003,13 +1037,21 @@ void Scm__InitLoad(void)
 
     init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
+#ifndef __MINGW32__
     SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));
     SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_LIB_DIR));
+#else  /*__MINGW32__*/
+    SCM_APPEND1(init_load_path, t, get_program_dir());
+#endif /*__MINGW32__*/
 
     init_dynload_path = t = SCM_NIL;
     SCM_APPEND(init_dynload_path, t, break_env_paths("GAUCHE_DYNLOAD_PATH"));
+#ifndef __MINGW32__
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_ARCH_DIR));
+#else  /*__MINGW32__*/
+    SCM_APPEND1(init_dynload_path, t, get_program_dir());
+#endif /*__MINGW32__*/
 
     init_load_suffixes = t = SCM_NIL;
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(LOAD_SUFFIX));

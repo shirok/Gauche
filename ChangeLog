@@ -1,5 +1,8 @@
 2004-07-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm__InitLoad): on MinGW, use the program path to resolve
+	  library/dll directories, instead of embedding them at make time.
+
 	* src/parameter.c (Scm_ParameterTableInit etc.): fixed a problem that
 	  a thread may inadvertently refer to wrong parameter which the thread
 	  does not have.
