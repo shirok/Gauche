@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.73 2001-09-28 11:28:42 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.74 2001-09-29 10:06:31 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4779,19 +4779,19 @@ the sockets.
 Returns a socket with specified parameters.
 @end defun
 
-@defvar pf_unix
-@defvarx pf_inet
+@defvar |PF_UNIX|
+@defvarx |PF_INET|
 These variables are bound to @code{PF_UNIX} and @code{PF_INET}.
 @end defvar
 
-@defvar af_unix
-@defvarx af_inet
+@defvar |AF_UNIX|
+@defvarx |AF_INET|
 These variables are bound to @code{AF_UNIX} and @code{AF_INET}.
 @end defvar
 
-@defvar sock_stream
-@defvarx sock_dgram
-@defvarx sock_raw
+@defvar |SOCK_STREAM|
+@defvarx |SOCK_DGRAM|
+@defvarx |SOCK_RAW|
 These variables are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
 and @code{SOCK_RAW}.
 @end defvar
@@ -4903,48 +4903,48 @@ See manpages @code{socket(7)}, @code{tcp(7)} or @code{ip(7)} of
 your system to find out exact specification of those values.
 
 For ``level'' argument:
-@defvar sol_socket
-@defvarx sol_tcp
-@defvarx sol_ip
+@defvar |SOL_SOCKET|
+@defvarx |SOL_TCP|
+@defvarx |SOL_IP|
 These variables are bound to @code{SOL_SOCKET}, @code{SOL_TCP} and
 @code{SOL_IP}, respectively.
 @end defvar
 
 For ``option'' argument:
-@defvar so_keepalive
+@defvar |SO_KEEPALIVE|
 Expects integer value.  If it is not zero, enables sending  of
 keep-alive messages on connection-oriented sockets.
 @end defvar
 
-@defvar so_oobinline
+@defvar |SO_OOBINLINE|
 Expects integer value.  If it is not zero, out-of-band data is
 directly placed into the receive data stream.  Oth-A­$)B
 erwise  out-of-band  data  is  only passed when the
 MSG_OOB flag is set during receiving.
 @end defvar
 
-@defvar so_reuseaddr
+@defvar |SO_REUSEADDR|
 Expects integer value.  If it is not zero, @code{socket-bind}
 allows to reuse local addresses, unless an active listening
 socket bound to the address.
 @end defvar
 
-@defvar so_type
+@defvar |SO_TYPE|
 Gets the socket type as an integer (like @code{sock_stream}).
 Can be only used with @code{socket-getsockopt}.
 @end defvar
 
-@defvar so_broadcast
+@defvar |SO_BROADCAST|
 Expects integer value.  If it is not zero, datagram sockets
 are allowed to send/receive broadcast packets.
 @end defvar
 
-@defvar so_priority
+@defvar |SO_PRIORITY|
 Expects integer value, specifying the protocol-defined priority
 for all packets to be sent on this socket.
 @end defvar
 
-@defvar so_error
+@defvar |SO_ERROR|
 Gets and clears the pending socket error as an integer.
 Can be only used with @code{socket-getsockopt}.
 @end defvar
@@ -4987,11 +4987,11 @@ Otherwise, returns @code{#f}.
 Looks up a host that has an address @var{addr} of protocol @var{proto}.
 @var{addr} is a natural string representation of the address;
 for ipv4, it is a dotted decimal notation.  @var{proto} is a
-protocol number; only @code{af_inet} is supported currently.
+protocol number; only @code{|AF_INET|} is supported currently.
 If the host is found, returns a @code{<sys-hostent>} object.
 Otherwise, returns @code{#f}.
 @example
-(let ((host (sys-gethostbyaddr "127.0.0.1" af_inet)))
+(let ((host (sys-gethostbyaddr "127.0.0.1" |AF_INET|)))
   (list (slot-ref host 'name)
         (slot-ref host 'aliases)
         (slot-ref host 'addresses))
