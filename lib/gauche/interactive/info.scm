@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: info.scm,v 1.2 2002-07-11 19:41:52 shirok Exp $
+;;;  $Id: info.scm,v 1.3 2002-07-11 20:07:41 shirok Exp $
 ;;;
 
 (define-module gauche.interactive.info
@@ -50,13 +50,16 @@
       ))
 
 (define (get-info-paths)
-  (cond ((sys-getenv "INFOPATH") => (cut string-split <> #\:))
-        (else
-         (let1 pathcomps (string-split (gauche-library-directory) #\/)
-           (if (> (length pathcomps) 3)
-               (list (apply build-path
-                            (append (drop-right pathcomps 3) '("info"))))
-               '())))))
+  (let* ((syspath (cond ((sys-getenv "INFOPATH") => (cut string-split <> #\:))
+                        (else '())))
+         (instpath 
+          (let1 pathcomps (string-split (gauche-library-directory) #\/)
+            (if (> (length pathcomps) 3)
+                (list (apply build-path
+                             (append (drop-right pathcomps 3) '("info"))))
+                '())))
+         (in-place (list "../doc")))
+    (append syspath instpath in-place)))
 
 (define (find-info-file)
   (let ((paths (get-info-paths)))
