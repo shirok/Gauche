@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.4 2004-08-19 06:49:14 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.5 2004-11-11 11:52:47 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.4 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.5 $.  DO NOT EDIT */"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
@@ -129,6 +129,8 @@
     (debug-print               SCM_SYM_DEBUG_PRINT)
     (define-reader-ctor        SCM_SYM_DEFINE_READER_CTOR)
     (string-interpolate        SCM_SYM_STRING_INTERPOLATE)
+    (big-endian                SCM_SYM_BIG_ENDIAN)    ;; for binary.io, uvector
+    (little-endian             SCM_SYM_LITTLE_ENDIAN) ;; ditto
 
     ;; regexp
     (seq                       SCM_SYM_SEQ)

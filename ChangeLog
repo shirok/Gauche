@@ -1,3 +1,9 @@
+2004-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/builtin-syms.scm: added SCM_SYM_BIG_ENDIAN and
+	  SCM_SYM_LITTLE_ENDIAN.
+	* ext/binary/binarylib.stub: changed accordingly.
+
 2004-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_DeleteMethod): fixed a bug that caused infinite

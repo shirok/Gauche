@@ -30,26 +30,23 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: binarylib.stub,v 1.1 2004-01-28 09:34:55 shirok Exp $
+;;; $Id: binarylib.stub,v 1.2 2004-11-11 11:52:47 shirok Exp $
 ;;;
 
 "#include \"binary.h\"
 "
 
-(define-symbol little-endian "sym_little_endian")
-(define-symbol big-endian "sym_big_endian")
-
-"#ifdef WORD_BIG_ENDIAN
-#define DEFAULT_ENDIAN sym_big_endian
+"#ifdef WORDS_BIGENDIAN
+#define DEFAULT_ENDIAN SCM_SYM_BIG_ENDIAN
 #else
-#define DEFAULT_ENDIAN sym_little_endian
+#define DEFAULT_ENDIAN SCM_SYM_LITTLE_ENDIAN
 #endif
 "
 
 "static Endian check_endian(ScmObj sym)
  {
-  if (SCM_EQ(sym, sym_big_endian)) return SCM_BE;
-  if (SCM_EQ(sym, sym_little_endian)) return SCM_LE;
+  if (SCM_EQ(sym, SCM_SYM_BIG_ENDIAN)) return SCM_BE;
+  if (SCM_EQ(sym, SCM_SYM_LITTLE_ENDIAN)) return SCM_LE;
   Scm_Error(\"endian must be big-endian or little-endian, but got %S\", sym);
   return SCM_BE; /* dummy */
  }
