@@ -1,3 +1,9 @@
+2002-09-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/jconv.c (jconv_iconv_reset): fixed a bug that caused
+	  infinite loop when iconv is used and the output encoding is
+	  stateful.   A bug reported by Satoru Takabayashi.
+
 2002-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/sequence.scm : make gauche.sequence inherit
