@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parameter.scm,v 1.5 2002-12-11 00:16:18 shirok Exp $
+;;;  $Id: parameter.scm,v 1.6 2002-12-11 08:57:07 shirok Exp $
 ;;;
 
 ;; The API is upper-compatible to ChezScheme and Chicken's.
@@ -29,28 +29,45 @@
 
 (define-class <parameter> ()
   (;; all slots should be private
-   (filter :init-keyword :filter :init-value identity)
+   (filter :init-keyword :filter :init-value #f)
    (setter)
    (getter)
-   (pre-observers  :init-value #f)
-   (post-observers :init-value #f)
+   (pre-observers)
+   (post-observers)
    ))
 
 (define-method initialize ((self <parameter>) initargs)
   (next-method)
   (let ((index (%vm-make-parameter-slot))
-        (filter (slot-ref self 'filter)))
+        (filter (slot-ref self 'filter))
+        (pre-hook #f)
+        (post-hook #f))
     (slot-set! self 'getter (lambda () (%vm-parameter-ref index)))
     (slot-set! self 'setter
-               (lambda (val)
-                 (let ((new (filter val))
-                       (old (%vm-parameter-ref index)))
-                   (cond ((slot-ref self 'pre-observers)
-                          => (cut run-hook <> old new)))
-                   (%vm-parameter-set! index new)
-                   (cond ((slot-ref self 'post-observers)
-                          => (cut run-hook <> old new)))
-                   old)))
+               (if filter
+                   (lambda (val)
+                     (let ((new (filter val))
+                           (old (%vm-parameter-ref index)))
+                       (when pre-hook (run-hook pre-hook old new))
+                       (%vm-parameter-set! index new)
+                       (when post-hook (run-hook post-hook old new))
+                       old))
+                   (lambda (val)
+                     (let ((old (%vm-parameter-ref index)))
+                       (when pre-hook (run-hook pre-hook old val))
+                       (%vm-parameter-set! index val)
+                       (when post-hook (run-hook post-hook old val))
+                       old))))
+    (let-syntax ((hook-ref
+                  (syntax-rules ()
+                    ((_ var)
+                     (lambda ()
+                       (or var
+                           (let ((h (make-hook 2)))
+                             (set! var h)
+                             h)))))))
+      (slot-set! self 'pre-observers (hook-ref pre-hook))
+      (slot-set! self 'post-observers (hook-ref post-hook)))
     ))
 
 (define-method object-apply ((self <parameter>) . maybe-newval)
@@ -61,7 +78,7 @@
       ((slot-ref self 'getter))))
 
 (define (make-parameter value . maybe-filter)
-  (let1 p (make <parameter> :filter (get-optional maybe-filter identity))
+  (let1 p (make <parameter> :filter (get-optional maybe-filter #f))
     (p value)
     p))
 
@@ -87,16 +104,10 @@
 ;; hooks
 
 (define-method parameter-pre-observers ((self <parameter>))
-  (or (slot-ref self 'pre-observers)
-      (let1 h (make-hook 2)
-        (slot-set! self 'pre-observers h)
-        h)))
+  ((ref self 'pre-observers)))
 
 (define-method parameter-post-observers ((self <parameter>))
-  (or (slot-ref self 'post-observers)
-      (let1 h (make-hook 2)
-        (slot-set! self 'post-observers h)
-        h)))
+  ((ref self 'post-observers)))
 
 (define-method parameter-observer-add! ((self <parameter>) proc . args)
   (let-optionals* args ((when 'after)
