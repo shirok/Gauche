@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.134.2.3 2004-12-28 11:13:22 shirok Exp $
+#  $Id: Makefile.in,v 1.134.2.4 2004-12-30 09:28:53 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -129,7 +129,7 @@ libgauche_OBJECTS = \
 	module.$(OBJEXT) proc.$(OBJEXT) number.$(OBJEXT) bignum.$(OBJEXT) \
 	load.$(OBJEXT) promise.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \
 	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
-	syslib.$(OBJEXT) moplib.$(OBJEXT)
+	syslib.$(OBJEXT) moplib.$(OBJEXT) comp.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
@@ -164,7 +164,7 @@ vminsn.c gauche/vminsn.h : vminsn.scm geninsn
 	gosh -A../lib ./geninsn
 
 comp.c : comp.scm gencomp
-	./gosh -ftest ./gencomp comp.scm
+	gosh -ftest ./gencomp comp.scm
 
 symbol.$(OBJEXT) : builtin-syms.c
 

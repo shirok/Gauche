@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.61.2.2 2004-12-28 11:13:22 shirok Exp $
+ *  $Id: core.c,v 1.61.2.3 2004-12-30 09:28:54 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -137,9 +137,7 @@ void Scm_Init(const char *signature)
     Scm_Init_syslib(Scm_GaucheModule());
     Scm_Init_moplib(Scm_GaucheModule());
 
-#ifdef NEW_COMPILER
     Scm__InitComp();
-#endif
 
     Scm_SelectModule(Scm_GaucheModule());
     Scm__InitAutoloads();

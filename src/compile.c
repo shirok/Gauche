@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.4 2004-12-27 01:15:03 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.5 2004-12-30 09:28:53 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -533,9 +533,25 @@ static ScmObj identifier_name_get(ScmObj obj)
     return SCM_OBJ(SCM_IDENTIFIER(obj)->name);
 }
 
+static void   identifier_name_set(ScmObj obj, ScmObj val)
+{
+    if (!SCM_SYMBOLP(val)) {
+        Scm_Error("symbol required, but got %S", val);
+    }
+    SCM_IDENTIFIER(obj)->name = SCM_SYMBOL(val);
+}
+
 static ScmObj identifier_module_get(ScmObj obj)
 {
     return SCM_OBJ(SCM_IDENTIFIER(obj)->module);
+}
+
+static void   identifier_module_set(ScmObj obj, ScmObj val)
+{
+    if (!SCM_MODULEP(val)) {
+        Scm_Error("module required, but got %S", val);
+    }
+    SCM_IDENTIFIER(obj)->module = SCM_MODULE(val);
 }
 
 static ScmObj identifier_env_get(ScmObj obj)
@@ -543,10 +559,18 @@ static ScmObj identifier_env_get(ScmObj obj)
     return SCM_IDENTIFIER(obj)->env;
 }
 
+static void   identifier_env_set(ScmObj obj, ScmObj val)
+{
+    if (!SCM_LISTP(val)) {
+        Scm_Error("list required, but got %S", val);
+    }
+    SCM_IDENTIFIER(obj)->env = val;
+}
+
 static ScmClassStaticSlotSpec identifier_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name", identifier_name_get, NULL),
-    SCM_CLASS_SLOT_SPEC("module", identifier_module_get, NULL),
-    SCM_CLASS_SLOT_SPEC("env", identifier_env_get, NULL),
+    SCM_CLASS_SLOT_SPEC("name", identifier_name_get, identifier_name_set),
+    SCM_CLASS_SLOT_SPEC("module", identifier_module_get, identifier_module_set),
+    SCM_CLASS_SLOT_SPEC("env", identifier_env_get, identifier_env_set),
     { NULL }
 };
 
@@ -585,9 +609,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 data = SCM_SYNTAX(var)->data;
                 return cmpl(form, env, ctx, data);
             } else if (SCM_MACROP(var)) {
-                trns = SCM_MACRO(var)->transformer;
-                data = SCM_MACRO(var)->data;
-                form = trns(var, form, env, data);
+                form = Scm_CallMacroExpander(SCM_MACRO(var), form, env);
                 goto recompile;
             } else {
                 /* it's a global variable.   Let's see if the symbol is
@@ -602,9 +624,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         return cmpl(form, env, ctx, data);
                     }
                     if (SCM_MACROP(gv)) {
-                        trns = SCM_MACRO(gv)->transformer;
-                        data = SCM_MACRO(gv)->data;
-                        form = trns(gv, form, env, data);
+                        form = Scm_CallMacroExpander(SCM_MACRO(gv), form, env);
                         goto recompile;
                     }
                     if (!NOINLINEP(vm) && SCM_PROCEDUREP(gv)

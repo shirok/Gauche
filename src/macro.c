@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52.2.1 2004-12-24 12:50:35 shirok Exp $
+ *  $Id: macro.c,v 1.52.2.2 2004-12-30 09:28:54 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1054,38 +1054,48 @@ static ScmSyntax syntax_letrec_syntax = {
 
 ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
 {
-    ScmObj sym;
+    ScmObj sym, op;
     ScmMacro *mac;
 
     for (;;) {
         if (!SCM_PAIRP(expr)) return expr;
-        if (!SCM_SYMBOLP(SCM_CAR(expr)) && !SCM_IDENTIFIERP(SCM_CAR(expr)))
+        op = SCM_CAR(expr);
+        if (SCM_MACROP(op)) {
+            mac = SCM_MACRO(op);
+        } else if (!SCM_SYMBOLP(op) && !SCM_IDENTIFIERP(op)) {
             return expr;
-
-        mac = NULL;
-        sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
-        if (SCM_MACROP(sym)) {
-            /* local syntactic binding */
-            mac = SCM_MACRO(sym);
         } else {
-            if (SCM_IDENTIFIERP(sym)) {
-                sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
-            }
-            if (SCM_SYMBOLP(sym)) {
-                ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
-                if (g) {
-                    ScmObj gv = SCM_GLOC_GET(g);
-                    if (SCM_MACROP(gv)) mac = SCM_MACRO(gv);
+            mac = NULL;
+            sym = Scm_CompileLookupEnv(op, env, TRUE);
+            if (SCM_MACROP(sym)) {
+                /* local syntactic binding */
+                mac = SCM_MACRO(sym);
+            } else {
+                if (SCM_IDENTIFIERP(sym)) {
+                    sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
+                }
+                if (SCM_SYMBOLP(sym)) {
+                    ScmGloc *g = Scm_FindBinding(Scm_VM()->module,
+                                                 SCM_SYMBOL(sym), FALSE);
+                    if (g) {
+                        ScmObj gv = SCM_GLOC_GET(g);
+                        if (SCM_MACROP(gv)) mac = SCM_MACRO(gv);
+                    }
                 }
             }
         }
         if (mac) {
-            expr = mac->transformer(SCM_OBJ(mac), expr, env, mac->data);
+            expr = Scm_CallMacroExpander(mac, expr, env);
             if (!oncep) continue;
         }
         break;
     }
     return expr;
+}
+
+ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env)
+{
+    return mac->transformer(SCM_OBJ(mac), expr, env, mac->data);
 }
 
 /*

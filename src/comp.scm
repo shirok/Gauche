@@ -11,22 +11,103 @@
 (define (compile program . opts)
   (compile-int program (get-optional opts #f) 'tail))
 
-;;
+;; (Program, Env, Ctx) -> [Insn]
 (define (compile-int program env ctx)
   (match program
     ((op . args)
-     (if (or (symbol? op) (identifier? op))
-       (let ((var (lookup-env op env #t)))
-         (compile-varref var env))))
-    ((@or (? symbol?) (? identifier?) form)
-     (compile-varref var env))
+     (let ((head 
+            (if (variable? op)
+              (match (lookup-env op env #t)
+                (('LREF detph offset) `((LREF ,depth ,offset)))
+                ((? (cut is-a? <> <macro>))
+                 (error "local macro not supported"))
+                (else
+                 ;; global variable reference.
+                 (compile-varref op '())))
+              (compile-int head env 'normal)))
+           (argcode (compile-args args env))
+           (nargs  (length args)))
+       (case ctx
+         ((tail)
+          (append `((PRE-TAIL ,nargs))
+                  argcode
+                  head
+                  `((TAIL-CALL ,nargs))))
+         (else
+          (append `((PRE-CALL ,nargs))
+                  (append argcode head `((CALL ,nargs))))))))
+    ((? variable?)
+     (compile-varref program env))
     (else
      (if (eq? ctx 'stmt) '() (list program)))
     ))
 
-;;
-(define (comp-test . arg)
-  (warn "Comp-test!!! ~s" arg))
+(define (compile-varref var env)
+  (let1 loc (lookup-env var env #f)
+    (if (variable? loc)
+      `((GREF ,loc))
+      (list loc))))
 
-           
-  
+(define (compile-args args env)
+  (if (null? args)
+    '()
+    (append (compile-int (car args) env 'normal)
+            '((PUSH))
+            (compile-args (cdr args) env))))
+
+;; Look up local environment
+;;
+(define (lookup-env var env syntax?)
+  (let outer ((env env)
+              (depth 0))
+    (if (pair? env)
+      (let ((var (if (and (identifier? var)
+                          (eq? (ref var 'env) env))
+                   (ref var 'name)
+                   var))
+            (frame (car env)))
+        (if (eq? (car frame) #t)
+          ;; macro binding.
+          (if syntax?
+            (or (find (lambda (p) (eq? var (car p))) (cdr frame))
+                (outer (cdr env) (+ depth 1)))
+            (outer (cdr env) (+ depth 1)))
+          ;; look for variable binding.  there may be a case that
+          ;; single frame contains more than one variable with the
+          ;; same name (in the case like '(let* ((x 1) (x 2)) ...)'),
+          ;; so we have to scan the frame until the end. */
+          (let inner ((frame frame) (offset 0) (found #f))
+            (cond ((null? frame)
+                   (if found
+                     `(LREF ,depth ,(- offset found 1))
+                     (outer (cdr env) (+ depth 1))))
+                  ((eq? (car frame) var)
+                   (inner (cdr frame) (+ offset 1) offset))
+                  (else
+                   (inner (cdr frame) (+ offset 1) found))))
+          ))
+      ;; binding not found in local env.  returns an identifier.
+      (if (and (symbol? var) (not syntax?))
+        (make-identifier var '())
+        var))))
+
+
+
+
+        
+;;============================================================
+;; Utilities
+;;
+
+(define (variable? arg)
+  (or (symbol? arg) (identifier? arg)))
+
+(define (find pred lis)
+  (let loop ((lis lis))
+    (cond ((null? lis) #f)
+          ((pred (car lis)))
+          (else (loop (cdr lis))))))
+
+(define (append-map proc lis)
+  (apply append (map proc lis)))
+

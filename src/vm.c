@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.13 2004-12-28 11:13:22 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.14 2004-12-30 09:28:54 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3492,10 +3492,6 @@ static ScmObj execute_toplevels_cc(ScmObj result, void **data)
 static ScmObj execute_toplevels(ScmObj *args, int nargs, void *cv)
 {
     ScmCompiledCode **cs = (ScmCompiledCode **)cv;
-    while (*cs != NULL) {
-        fprintf(stderr, "zzp %p\n", *cs++);
-    }
-    
     Scm_VMPushCC(execute_toplevels_cc, &cv, 1);
     return SCM_UNDEFINED;
 }

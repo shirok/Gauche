@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.403.2.4 2004-12-27 23:52:36 shirok Exp $
+ *  $Id: gauche.h,v 1.403.2.5 2004-12-30 09:28:54 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2220,6 +2220,7 @@ SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name,
                                 void *data);
 
 SCM_EXTERN ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep);
+SCM_EXTERN ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env);
 
 /*--------------------------------------------------------
  * PROMISE
