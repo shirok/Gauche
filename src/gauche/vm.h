@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.69 2002-07-05 00:25:21 shirok Exp $
+ *  $Id: vm.h,v 1.70 2002-07-06 07:13:20 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -267,6 +267,10 @@ SCM_EXTERN void Scm_VMDefaultExceptionHandler(ScmObj);
 
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
+
+#ifdef GAUCHE_USE_PTHREAD
+SCM_EXTERN pthread_key_t Scm_VMKey(void);
+#endif
 
 /* Value of vm->state */
 enum {

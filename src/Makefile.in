@@ -49,7 +49,7 @@ GCLIB = ../gc/.libs/libgc.a
 
 OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o weak.o \
-       symbol.o keyword.o compare.o regexp.o signal.o mutex.o \
+       symbol.o keyword.o compare.o regexp.o signal.o thread.o mutex.o \
        module.o proc.o number.o bignum.o load.o promise.o repl.o \
        system.o stdlib.o extlib.o exclib.o syslib.o moplib.o thrlib.o
 
