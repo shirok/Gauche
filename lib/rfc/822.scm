@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.14 2003-12-13 02:07:57 shirok Exp $
+;;;  $Id: 822.scm,v 1.15 2003-12-30 05:39:22 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -38,6 +38,7 @@
 
 (define-module rfc.822
   (use srfi-1)
+  (use srfi-2)
   (use srfi-13)
   (use srfi-19)
   (use text.parse)
@@ -62,20 +63,31 @@
 ;;
 (define (rfc822-header->list iport . args)
   (let-keywords* args ((strict? #f)
-                       (reader read-line))
+                       (reader (cut read-line <> #t)))
 
     (define (accum name bodies r)
       (cons (list name (string-concatenate-reverse bodies)) r))
+
+    (define (drop-leading-fws body)
+      (if (string-incomplete? body)
+        body  ;; this message is not RFC2822 compliant anyway
+        (string-trim body)))
     
     (let loop ((r '())
                (line (reader iport)))
-      (rxmatch-case line
-        (test eof-object?  (reverse! r))
-        (test string-null? (reverse! r))
-        (#/^([\x21-\x39\x3b-\x7e]+):\s*(.*)$/ (#f name body)
-            (let ((name (string-downcase name)))
+      (cond
+       ((eof-object? line) (reverse! r))
+       ((string-null? line) (reverse! r))
+       (else
+        (receive (n body) (string-scan line #\: 'both)
+          (let1 name (and-let* (((string? n))
+                                 (name (string-incomplete->complete n))
+                                 (name (string-trim-both name))
+                                 ((string-every #[\x21-\x39\x3b-\x7e] name)))
+                        (string-downcase name))
+            (if name
               (let loop2 ((nline (reader iport))
-                          (bodies (list body)))
+                          (bodies (list (drop-leading-fws body))))
                 (cond ((eof-object? nline)
                        ;; maybe premature end of the message
                        (if strict?
@@ -83,16 +95,16 @@
                          (reverse! (accum name bodies r))))
                       ((string-null? nline)     ;; end of the header
                        (reverse! (accum name bodies r)))
-                      ((char-set-contains? #[ \t] (string-ref nline 0))
+                      ((memv (string-byte-ref nline 0) '(9 32))
+                       ;; careful for byte strings
                        (loop2 (reader iport) (cons nline bodies)))
                       (else
                        (loop (accum name bodies r) nline)))
                 )
-              ))
-        (else
-         (if strict?
-           (error "bad header line:" line)
-           (loop r (reader iport))))))
+              (if strict?
+                (error "bad header line:" line)
+                (loop r (reader iport)))))))
+       ))
     ))
 
 (define (rfc822-header-ref header field-name . maybe-default)

@@ -1,3 +1,9 @@
+2003-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/822.scm (rfc822-header->list): changed to deal with
+	  the cases that header field contains illegal character sequences
+	  (thus the line reader yields incomplete strings).
+
 2003-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/list.scm (util.list): it no longer inherits srfi-1.
