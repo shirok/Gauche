@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.20 2001-07-08 22:55:22 shirok Exp $
+ *  $Id: read.c,v 1.21 2001-07-24 19:11:03 shirok Exp $
  */
 
 #include <stdio.h>
@@ -192,6 +192,8 @@ ScmObj read_internal(ScmPort *port)
     case '{':
         return read_list(port, '}');
     case '+':; case '-':
+        /* Note: R5RS doesn't permit identifiers beginning with '+' or '-',
+           but some Scheme programs use such identifiers. */
         return read_symbol_or_number(port, c);
     case '.':;
         {
@@ -202,7 +204,7 @@ ScmObj read_internal(ScmPort *port)
                 read_error(port, "dot in wrong context");
             default:
                 SCM_UNGETC(c1, port);
-                return read_symbol(port, c);
+                return read_symbol_or_number(port, c);
             }
         }
     case '0':; case '1':; case '2':; case '3':; case '4':;
@@ -249,8 +251,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer)
                 continue;
             }
             SCM_UNGETC(c2, port);
-            /* TODO: can be a number.  what should I do? */
-            item = read_symbol(port, c);
+            item = read_symbol_or_number(port, c);
         } else {
             SCM_UNGETC(c, port);
             item = read_internal(port);
