@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.301 2002-09-19 05:22:42 shirok Exp $
+ *  $Id: gauche.h,v 1.302 2002-09-20 06:54:13 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2000,13 +2000,13 @@ SCM_EXTERN ScmObj Scm_MakeApplicationExit(int);
 
 struct ScmRegexpRec {
     SCM_HEADER;
+    ScmString *pattern;
     const char *code;
     int numGroups;
     int numCodes;
     ScmCharSet **sets;
     int numSets;
-    const char *mustMatch;
-    int mustMatchLen;
+    ScmString *mustMatch;
 };
 
 SCM_CLASS_DECL(Scm_RegexpClass);

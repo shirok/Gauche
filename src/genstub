@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.84 2002-09-09 08:06:09 shirok Exp $
+;;;  $Id: genstub,v 1.85 2002-09-20 06:54:13 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -394,6 +394,10 @@
      "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
    (define-type <char-set> "ScmCharSet*" "char-set"
      "SCM_CHARSETP" "SCM_CHARSET")
+   (define-type <regexp> "ScmRegexp*" "regexp"
+     "SCM_REGEXPP" "SCM_REGEXP")
+   (define-type <regmatch> "ScmRegMatch*" "regmatch"
+     "SCM_REGMATCHP" "SCM_REGMATCH")
    (define-type <port> "ScmPort*" "port"
      "SCM_PORTP" "SCM_PORT")
    (define-type <input-port> "ScmPort*" "input port"
