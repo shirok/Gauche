@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.9 2001-04-01 09:19:58 shiro Exp $
+ *  $Id: boolean.c,v 1.10 2001-04-01 10:21:53 shiro Exp $
  */
 
 #include "gauche.h"
@@ -44,7 +44,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
     }
     if (SCM_STRINGP(x)) {
         if (SCM_STRINGP(y)) {
-            return Scm_StringEqual(SCM_STRING(x), SCM_STRING(y));
+            return (Scm_StringCmp(SCM_STRING(x), SCM_STRING(y)) == 0);
         }
         return FALSE;
     }
