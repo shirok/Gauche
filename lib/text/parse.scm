@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parse.scm,v 1.4 2001-10-05 19:46:01 shirok Exp $
+;;;  $Id: parse.scm,v 1.5 2001-10-06 07:21:20 shirok Exp $
 ;;;
 
 ;; This module implements the input parsing utilities described in Oleg's site
@@ -154,7 +154,6 @@
         (with-output-to-string
           (lambda ()
             (let loop ((c c))
-              (format (current-error-port) "~s\n" c)
               (cond ((break-char-list/pred c))
                     ((eof-object? c) (bad))
                     (else                    
