@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.47 2002-02-12 07:42:37 shirok Exp $
+ *  $Id: main.c,v 1.48 2002-02-14 09:04:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -30,6 +30,9 @@
 int load_initfile = TRUE;       /* if false, not to load init files */
 int batch_mode = FALSE;         /* force batch mode */
 int interactive_mode = FALSE;   /* force interactive mode */
+int srfi22_mode = TRUE;         /* 'main' behaves strictly as in SRFI-22,
+                                   or backward-compatible way.   This is a
+                                   temporary flag and will be removed later. */
 ScmObj extra_load_paths = SCM_NIL; /* -I path */
 ScmObj extra_loads = SCM_NIL;   /* -u modules (symbol) and -l files (string) */
 ScmObj eval_expr = SCM_NIL;     /* -e expr */
@@ -49,6 +52,8 @@ void usage(void)
             "      no-inline       don't inline primitive procedures\n"
             "      no-source-info  don't preserve source information for debug\n"
             "      load-verbose    report while loading files\n"
+            "      case-fold       uses case-insensitive reader (as in R5RS)\n"
+            "      compat-0.5      'main' behaves backward-compatible for 0.5 and before\n"
             );
     exit(1);
 }
@@ -77,46 +82,19 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "case-fold") == 0) {
         Scm_VM()->runtimeFlags |= SCM_CASE_FOLD;
     }
+    else if (strcmp(optarg, "compat-0.5") == 0) {
+        srfi22_mode = FALSE;
+    }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fno-inine, -fdebug-compiler, -fno-source-info\n");
+        fprintf(stderr, "supported options are: -fno-inine, -fdebug-compiler, -fno-source-info, -fload-verbose, -fcase-fold or -fcompat-0.5\n");
         exit(1);
     }
 }
 
-/* signal handler setup.  let's catch as many signals as possible. */
-static void sig_setup(void)
-{
-    sigset_t set;
-    sigfillset(&set);
-    sigdelset(&set, SIGABRT);
-    sigdelset(&set, SIGILL);
-    sigdelset(&set, SIGKILL);
-    sigdelset(&set, SIGCONT);
-    sigdelset(&set, SIGSTOP);
-    sigdelset(&set, SIGSEGV);
-    sigdelset(&set, SIGCHLD); /* for now */
-    Scm_SetMasterSigmask(&set);
-}
-
-/*-----------------------------------------------------------------
- * MAIN
- */
-int main(int argc, char **argv)
+int parse_options(int argc, char *argv[])
 {
     int c;
-    ScmObj cp;
-
-#ifdef __CYGWIN__
-    /* Cygwin needs explicit initialization for GC module.
-       This code is taken from gc.h and gcconfig.h (I don't want to
-       include private/gcconfig.h)
-       May not work except cygwin 1.3.x */
-    extern int _data_start__;
-    extern int _bss_end__;
-    GC_add_roots((void*)&_data_start__, (void*)&_bss_end__);
-#endif
-    Scm_Init();
     while ((c = getopt(argc, argv, "+be:iql:u:Vf:I:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
@@ -140,12 +118,54 @@ int main(int argc, char **argv)
         case '?': usage(); break;
         }
     }
+    return optind;
+}
+
+/* signal handler setup.  let's catch as many signals as possible. */
+static void sig_setup(void)
+{
+    sigset_t set;
+    sigfillset(&set);
+    sigdelset(&set, SIGABRT);
+    sigdelset(&set, SIGILL);
+    sigdelset(&set, SIGKILL);
+    sigdelset(&set, SIGCONT);
+    sigdelset(&set, SIGSTOP);
+    sigdelset(&set, SIGSEGV);
+    sigdelset(&set, SIGCHLD); /* for now */
+    Scm_SetMasterSigmask(&set);
+}
+
+/*-----------------------------------------------------------------
+ * MAIN
+ */
+int main(int argc, char **argv)
+{
+    int argind;
+    ScmObj cp;
+
+#ifdef __CYGWIN__
+    /* Cygwin needs explicit initialization for GC module.
+       This code is taken from gc.h and gcconfig.h (I don't want to
+       include private/gcconfig.h)
+       May not work except cygwin 1.3.x */
+    extern int _data_start__;
+    extern int _bss_end__;
+    GC_add_roots((void*)&_data_start__, (void*)&_bss_end__);
+#endif
+    Scm_Init();
+    sig_setup();
+
+    /* For backward compatibility -- see the notes about SRFI-22 below. */
+    if (getenv("GAUCHE_COMPAT_0_5") != NULL) {
+        srfi22_mode = FALSE;
+    }
+
+    argind = parse_options(argc, argv);
+
     SCM_FOR_EACH(cp, extra_load_paths) {
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(SCM_CAR(cp))), FALSE);
     }
-
-    /* setup signal handlers */
-    sig_setup();
 
     /* load init file */
     if (load_initfile) {
@@ -187,7 +207,7 @@ int main(int argc, char **argv)
 
     /* If script file is specified, load it. */
     if (optind < argc) {
-        ScmObj av = SCM_NIL, at = SCM_NIL, mainproc;
+        ScmObj av = SCM_NIL, at = SCM_NIL, mainproc, result;
         int ac;
         struct stat statbuf;
         const char *scriptfile;
@@ -209,23 +229,36 @@ int main(int argc, char **argv)
                 scriptfile = argv[optind];
             }
         }
-        Scm_Load(scriptfile, TRUE);
 
-        /* sets up arguments */
-        for (ac = optind+1; ac < argc; ac++) {
+        /* sets up arguments. */
+        for (ac = optind; ac < argc; ac++) {
             SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
         }
-        SCM_DEFINE(Scm_UserModule(), "*argv*", av);
-        SCM_DEFINE(Scm_UserModule(), "*program-name*",
-                   SCM_MAKE_STR_IMMUTABLE(argv[optind]));
+        SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(av));
+        SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(av));
+
+        /* load the file */
+        Scm_Load(scriptfile, TRUE);
 
         /* if symbol 'main is bound to a procedure in the user module,
-           call it.  (SRFI-22) */
+           call it.  (SRFI-22)
+           NB: prior to 0.5.1, 'main' got the cmdline arguments without
+           the script name itself.  SRFI-22 specifies the first element
+           of the arg list is the script name.   The user can set
+           -fcompat-0.5 flag or environment variable GAUCHE_COMPAT_0_5
+           to keep the previous behavior.  (This backward compatibility
+           will be removed after a while.) */
         mainproc = Scm_SymbolValue(Scm_UserModule(),
                                    SCM_SYMBOL(SCM_INTERN("main")));
         if (SCM_PROCEDUREP(mainproc)) {
-            ScmObj result = Scm_Apply(mainproc, SCM_LIST1(av));
-            if (SCM_INTP(result)) exit(SCM_INT_VALUE(result));
+            if (srfi22_mode) {
+                result = Scm_Apply(mainproc, SCM_LIST1(av));
+                if (SCM_INTP(result)) exit(SCM_INT_VALUE(result));
+                else exit(70);  /* EX_SOFTWARE, see SRFI-22. */
+            } else {
+                result = Scm_Apply(mainproc, SCM_LIST1(SCM_CDR(av)));
+                if (SCM_INTP(result)) exit(SCM_INT_VALUE(result));
+            }
         }
         exit(0);
     }
