@@ -1,4 +1,5 @@
 EXTENSIONS=@EXTENSIONS@
+.PHONY: test clean install
 
 
 all : gc/libgc.a src/gosh
