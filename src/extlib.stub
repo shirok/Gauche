@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.203 2003-09-14 21:31:47 shirok Exp $
+;;; $Id: extlib.stub,v 1.204 2003-10-03 10:55:50 shirok Exp $
 ;;;
 
 "
@@ -222,33 +222,30 @@
 (define-cproc reverse! (list)
   (return "Scm_ReverseX"))
 
-;; See comments in sort.c
-;(define-cproc sort (seq &optional (fn #f))
-;  "if (SCM_VECTORP(seq)) {
-;    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1);
-;    Scm_SortArray(SCM_VECTOR_ELEMENTS(r), SCM_VECTOR_SIZE(r), fn);
-;    SCM_RETURN(r);
-;  } else if (Scm_Length(seq) >= 0) {
-;    SCM_RETURN(Scm_SortList(seq, fn));
-;  } else {
-;    Scm_Error(\"proper list or vector required, but got %S\", seq);
-;    SCM_RETURN(SCM_UNDEFINED);
-;  }")
+;; Scheme version of 'sort' handles the case when comparison function
+;; is given.
+(define-cproc %sort (seq)
+  "if (SCM_VECTORP(seq)) {
+    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1);
+    Scm_SortArray(SCM_VECTOR_ELEMENTS(r), SCM_VECTOR_SIZE(r), SCM_FALSE);
+    SCM_RETURN(r);
+  } else if (Scm_Length(seq) >= 0) {
+    SCM_RETURN(Scm_SortList(seq, SCM_FALSE));
+  } else {
+    Scm_Error(\"proper list or vector required, but got %S\", seq);
+    SCM_RETURN(SCM_UNDEFINED);
+  }")
 
-;(define-cproc sort! (seq &optional (fn #f))
-;  "if (SCM_VECTORP(seq)) {
-;    Scm_SortArray(SCM_VECTOR_ELEMENTS(seq), SCM_VECTOR_SIZE(seq), fn);
-;    SCM_RETURN(seq);
-;  } else if (Scm_Length(seq) >= 0) {
-;    SCM_RETURN(Scm_SortList(seq, fn));
-;  } else {
-;    Scm_Error(\"proper list or vector required, but got %S\", seq);
-;    SCM_RETURN(SCM_UNDEFINED);
-;  }")
-
-;(define-cproc topological-sort (edges)
-;  (assert (list? edges))
-;  "  SCM_RETURN(Scm_TopologicalSort(edges));")
+(define-cproc %sort! (seq)
+  "if (SCM_VECTORP(seq)) {
+    Scm_SortArray(SCM_VECTOR_ELEMENTS(seq), SCM_VECTOR_SIZE(seq), SCM_FALSE);
+    SCM_RETURN(seq);
+  } else if (Scm_Length(seq) >= 0) {
+    SCM_RETURN(Scm_SortListX(seq, SCM_FALSE));
+  } else {
+    Scm_Error(\"proper list or vector required, but got %S\", seq);
+    SCM_RETURN(SCM_UNDEFINED);
+  }")
 
 ;; TODO: this doesn't work properly.  Find the cause.
 "

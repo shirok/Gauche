@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.17 2002-11-29 04:30:23 shirok Exp $
+;; $Id: dynwind.scm,v 1.18 2003-10-03 10:55:50 shirok Exp $
 
 (use gauche.test)
 
@@ -60,6 +60,10 @@
 ;;------------------------------------------------------------------------
 ;; Test for continuation thrown over C stack boundary
 ;;
+
+;; NB: these test doesn't really test the continuation and
+;; C stack boundary anymore, since 'sort' function with compare
+;; function is now implemented in Scheme.
 
 (define (callcc-over-cstack)
   (call-with-current-continuation

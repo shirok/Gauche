@@ -8189,18 +8189,22 @@ if the first argument strictly precedes the second.
 
 @c EN
 Some builtin objects have natural comparison order, and it is used
-if @code{cmpfn} is omitted.
+if @var{cmpfn} is omitted.
 @c JP
 いくつかのビルトインオブジェクトは自然な比較順を持っており、
-@code{cmpfn}が省略された場合にはそれが使われます。
+@var{cmpfn}が省略された場合にはそれが使われます。
 @c COMMON
 
 @c EN
-Built-in sort function uses quicksort and heapsort algorithm, 
-so it is not a stable sort.
+In the current implementation, quicksort and heapsort
+algorithm is used when @var{cmpfn} is omitted,
+and merge sort algorithm is used when @var{cmpfn} is given.
+This might be changed later.
 @c JP
-ビルトインのソート関数はクィックソートとヒープソートアルゴリズムを
-使うので、安定したソートとはいえません。
+現在の実装では、@var{cmpfn}が省略された場合は
+クィックソートとヒープソートを使い、
+@var{cmpfn}が与えられた場合はマージソートを使っています。
+これは将来変更されるかもしれません。
 @c COMMON
 @end defun
 

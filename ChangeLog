@@ -1,5 +1,8 @@
 2003-10-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/compare.c, lib/gauche/sortutil.scm, src/extlib.stub :
+	  use the internal sort function when a compare fn is not given.
+
 	* lib/gauche/stringutil.scm (string-split) : raises an error when
 	  splitter matches a null string.
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compare.c,v 1.11 2003-09-14 12:41:56 shirok Exp $
+ *  $Id: compare.c,v 1.12 2003-10-03 10:55:50 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -65,11 +65,11 @@ int Scm_Compare(ScmObj x, ScmObj y)
     return 0; /* dummy */
 }
 
-#if 0 /* sort is implemented in Scheme now.
-         It turns out that calling back Scheme funtion from sort routine
-         is very inefficient and runs >10 times slower than Scheme version.
-         Even if we use internal compare, Scheme version runs comparably
-         (about 50% more time), so I decided to use Scheme version. */
+/* NB: It turns out that calling back Scheme funtion from sort routine
+   is very inefficient and runs much slower than Scheme version, if
+   a Scheme comarison function is given.
+   So, as of 0.7.2, the C function is only used when a comparison
+   function is omitted. */
 
 /*
  * Basic function for sort family.  An array pointed by elts will be
@@ -221,5 +221,3 @@ ScmObj Scm_SortListX(ScmObj objs, ScmObj fn)
 {
     return sort_list_int(objs, fn, TRUE);
 }
-
-#endif /* 0 */

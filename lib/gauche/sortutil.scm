@@ -4,43 +4,38 @@
 ;;; Defines: sorted?, merge, merge!, sort, sort!
 
 ;; Public Domain.
-;; [SK]: I just added module mechanics to fit Gauche, modified API to
-;; keep backward-compatibility with Gauche's original sort function,
+;; [SK]: I just added module mechanics to fit Gauche,
 ;; and stripped the long explanatory comment.  See sort.orig.scm contained
 ;; in tarball for the original form of this file.
-;; $Id: sortutil.scm,v 1.1 2003-09-14 12:41:56 shirok Exp $
+;; $Id: sortutil.scm,v 1.2 2003-10-03 10:55:50 shirok Exp $
 
 ;; To be autoloaded
 (define-module gauche.sortutil
   (export sorted? merge merge! sort sort!))
 (select-module gauche.sortutil)
 
-(define (default-less? x y) (< (compare x y) 0))
-
 ;;; (sorted? sequence less?)
 ;;; is true when sequence is a list (x0 x1 ... xm) or a vector #(x0 ... xm)
 ;;; such that for all 1 <= i <= m,
 ;;;	(not (less? (list-ref list i) (list-ref list (- i 1)))).
 
-(define (sorted? seq . maybe-less?)
-  (let1 less? (get-optional maybe-less? default-less?)
-    (cond
-     ((null? seq) #t)
-     ((vector? seq)
-      (let ((n (vector-length seq)))
-        (if (<= n 1)
-          #t
-          (do ((i 1 (+ i 1)))
-              ((or (= i n)
-                   (less? (vector-ref seq (- i 1))
-                          (vector-ref seq i)))
-               (= i n)) )) ))
-     (else
-      (let loop ((last (car seq)) (next (cdr seq)))
-        (or (null? next)
-            (and (not (less? (car next) last))
-                 (loop (car next) (cdr next)) )) )) )))
-
+(define (sorted? seq less?)
+  (cond
+   ((null? seq) #t)
+   ((vector? seq)
+    (let ((n (vector-length seq)))
+      (if (<= n 1)
+        #t
+        (do ((i 1 (+ i 1)))
+            ((or (= i n)
+                 (less? (vector-ref seq (- i 1))
+                        (vector-ref seq i)))
+             (= i n)) )) ))
+   (else
+    (let loop ((last (car seq)) (next (cdr seq)))
+      (or (null? next)
+          (and (not (less? (car next) last))
+               (loop (car next) (cdr next)) )) )) ))
 
 ;;; (merge a b less?)
 ;;; takes two lists a and b such that (sorted? a less?) and (sorted? b less?)
@@ -104,51 +99,55 @@
 ;;; adapted it to work destructively in Scheme.
 
 (define (sort! seq . maybe-less?)
-  (let1 less? (get-optional maybe-less? default-less?)
-    (define (step n)
-      (cond
-       ((> n 2)
-        (let* ((j (ash n -1))
-               (a (step j))
-               (k (- n j))
-               (b (step k)))
-          (merge! a b less?)))
-       ((= n 2)
-        (let ((x (car seq))
-              (y (cadr seq))
-              (p seq))
-          (set! seq (cddr seq))
-          (if (less? y x) (begin
-                            (set-car! p y)
-                            (set-car! (cdr p) x)))
-          (set-cdr! (cdr p) '())
-          p))
-       ((= n 1)
-        (let ((p seq))
-          (set! seq (cdr seq))
-          (set-cdr! p '())
-          p))
-       (else
-        '()) ))
-    (if (vector? seq)
-      (let ((n (vector-length seq)))
-        (set! seq (vector->list seq))
-        (do ((p (step n) (cdr p))
-             (i 0 (+ i 1)))
-            ((null? p) vector)
-          (vector-set! vector i (car p)) ))
-      ;; otherwise, assume it is a list
-      (step (length seq)) )))
-
+  (if (null? maybe-less?)
+    (%sort! seq) ;; use internal version
+    (let ((less? (car maybe-less?)))
+      (define (step n)
+        (cond
+         ((> n 2)
+          (let* ((j (ash n -1))
+                 (a (step j))
+                 (k (- n j))
+                 (b (step k)))
+            (merge! a b less?)))
+         ((= n 2)
+          (let ((x (car seq))
+                (y (cadr seq))
+                (p seq))
+            (set! seq (cddr seq))
+            (if (less? y x) (begin
+                              (set-car! p y)
+                              (set-car! (cdr p) x)))
+            (set-cdr! (cdr p) '())
+            p))
+         ((= n 1)
+          (let ((p seq))
+            (set! seq (cdr seq))
+            (set-cdr! p '())
+            p))
+         (else
+          '()) ))
+      (if (vector? seq)
+        (let ((n (vector-length seq)))
+          (set! seq (vector->list seq))
+          (do ((p (step n) (cdr p))
+               (i 0 (+ i 1)))
+              ((null? p) vector)
+            (vector-set! vector i (car p)) ))
+        ;; otherwise, assume it is a list
+        (step (length seq)) ))))
 
 ;;; (sort sequence less?)
 ;;; sorts a vector or list non-destructively.  It does this by sorting a
 ;;; copy of the sequence.
 
 (define (sort seq . maybe-less?)
-    (if (vector? seq)
-	(list->vector (apply sort! (vector->list seq) maybe-less?))
-	(apply sort! (list-copy seq) maybe-less?)))
+  (if (null? maybe-less?)
+    (%sort seq)  ;; use internal version
+    (let ((less? (car maybe-less?)))
+      (if (vector? seq)
+	(list->vector (sort! (vector->list seq) less?))
+	(sort! (list-copy seq) less?)))))
 
 (provide "gauche/sortutil")
 
