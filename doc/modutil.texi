@@ -1965,6 +1965,17 @@ This API is taken from STk.
 @c COMMON
 @end defun
 
+@defun file-is-symlink? path
+@c EN
+Returns @code{#t} if @var{path} exists and a symbolic link.
+See also @code{file-is-regular?} and @code{file-is-directory?} in
+@ref{File stats}.
+@c JP
+@var{path}が存在して、それがシンボリックリンクなら@code{#t}を返します。
+(参照：@ref{File stats}の@code{file-is-regular?}, @code{file-is-directory?}).
+@c COMMON
+@end defun
+
 @defun file-eq? path1 path2
 @defunx file-eqv? path1 path2
 @defunx file-equal? path1 path2

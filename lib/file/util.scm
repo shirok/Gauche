@@ -1,7 +1,7 @@
 ;;;
 ;;; file/util.scm - filesystem utility functions
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.22 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: util.scm,v 1.23 2004-04-17 11:55:43 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -50,6 +50,7 @@
           build-path resolve-path expand-path simplify-path
           absolute-path? relative-path? find-file-in-paths
           file-is-readable? file-is-writable? file-is-executable?
+          file-is-symlink?
           file-type file-perm file-mode file-ino file-dev file-rdev file-nlink
           file-uid file-gid file-size file-mtime file-atime file-ctime
           file-eq? file-eqv? file-equal? file-device=?
@@ -278,6 +279,10 @@
 (define (file-is-readable? path) (sys-access path |R_OK|))
 (define (file-is-writable? path) (sys-access path |W_OK|))
 (define (file-is-executable? path) (sys-access path |X_OK|))
+
+(define (file-is-symlink? path)
+  (and (file-exists? path)
+       (eq? (slot-ref (sys-lstat path) 'type) 'symlink)))
 
 ;; compares two files are identical, in the sense that:
 ;;  file-eq?  - two files (or directories) are the same entity. symbolic
