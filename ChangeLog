@@ -1,3 +1,12 @@
+2001-04-05  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.3.1
+	* lib/srfi-1.scm, lib/srfi-1/*: splitted srfi-1.scm into a bunch of
+	  small files that will be autoloaded on demand.
+	* src/list.c, src/extlib.stub: added %delete[!], %delete-duplicates[!]
+	* src/load.c: use stat() instead of access() to check existence of
+	  the file, in order to rule out a directory with the same name.
+
 2001-04-04  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.3
