@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.101 2001-09-10 19:59:53 shirok Exp $
+ *  $Id: vm.c,v 1.102 2001-09-11 11:22:53 shirok Exp $
  */
 
 #include "gauche.h"
@@ -39,6 +39,7 @@ static ScmVM *theVM;    /* this must be thread specific in MT version */
 static void save_stack(ScmVM *vm);
 
 static ScmObj throw_cont_body(ScmObj, ScmObj, ScmEscapePoint*, ScmObj);
+static ScmObj handle_exception(ScmVM *, ScmEscapePoint *, ScmException *);
 
 /*
  * Constructor
@@ -206,11 +207,26 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 /* pop a continuation frame, i.e. return from a procedure. */
 #define POP_CONT()                                                      \
     do {                                                                \
-        if (IN_STACK_P((ScmObj*)cont)) {                                \
+        if (cont->argp == NULL) {                                       \
+            /* C continuation */                                        \
+            void *data__[SCM_CCONT_DATA_SIZE];                          \
+            ScmObj (*after__)(ScmObj, void**);                          \
+            memcpy(data__, (ScmObj*)cont + CONT_FRAME_SIZE,             \
+                   cont->size * sizeof(void*));                         \
+            after__ = (ScmObj (*)(ScmObj, void**))cont->pc;             \
+            if (IN_STACK_P((ScmObj*)cont)) sp = (ScmObj*)cont;          \
+            cont = cont->prev;                                          \
+            env = cont->env;                                            \
+            argp = (ScmEnvFrame*)sp;                                    \
+            SAVE_REGS();                                                \
+            val0 = after__(val0, data__);                               \
+            RESTORE_REGS();                                             \
+        } else if (IN_STACK_P((ScmObj*)cont)) {                         \
             sp   = (ScmObj*)cont->argp + cont->size;                    \
             env  = cont->env;                                           \
             argp = cont->argp;                                          \
             pc   = cont->pc;                                            \
+            cont = cont->prev;                                          \
         } else {                                                        \
             int size__ = cont->size;                                    \
             sp = vm->stackBase;                                         \
@@ -221,8 +237,8 @@ ScmVM *Scm_SetVM(ScmVM *vm)
                 argp = (ScmEnvFrame *)sp;                               \
                 sp = (ScmObj*)argp + size__;                            \
             }                                                           \
+            cont = cont->prev;                                          \
         }                                                               \
-        cont = cont->prev;                                              \
     } while (0)
 
 /* push a header of an environment frame.   this is the second stage of
@@ -358,23 +374,6 @@ static void run_loop()
             if (cont == NULL || cont == vm->cstack->cont) {
                 SAVE_REGS();
                 return; /* no more continuations */
-            }
-            if (cont->argp == NULL) {
-                /* C continuation */
-                void *data[SCM_CCONT_DATA_SIZE];
-                ScmObj (*after)(ScmObj, void**);
-
-                memcpy(data,
-                       (ScmObj*)cont + CONT_FRAME_SIZE,
-                       cont->size * sizeof(void*));
-                after = (ScmObj (*)(ScmObj, void**))cont->pc;
-                if (IN_STACK_P((ScmObj*)cont)) sp = (ScmObj*)cont;
-                cont = cont->prev;
-                env = cont->env;
-                SAVE_REGS();
-                val0 = after(val0, data);
-                RESTORE_REGS();
-                continue;
             }
             POP_CONT();
             continue;
@@ -1461,12 +1460,10 @@ static ScmObj user_eval_inner(ScmObj program)
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
     if (setjmp(cstack.jbuf) == 0) {
         run_loop();
-        if (!restarted) {
-            val0 = vm->val0;
-            RESTORE_REGS();
-            POP_CONT();
-            SAVE_REGS();
-        }
+        val0 = vm->val0;
+        RESTORE_REGS();
+        POP_CONT();
+        SAVE_REGS();
     } else {
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
@@ -1482,7 +1479,17 @@ static ScmObj user_eval_inner(ScmObj program)
                 goto restart;
             }
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
-            printf("Zut zut\n");
+            ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
+            ScmException *exn = (ScmException*)vm->escapeData[1];
+            
+            if (ep && ep->cstack == vm->cstack) {
+                val0 = handle_exception(vm, ep, exn);
+                RESTORE_REGS();
+                POP_CONT();
+                SAVE_REGS();
+                restarted = TRUE;
+                goto restart;
+            }
         } else {
             Scm_Panic("invalid longjmp");
         }
@@ -1494,7 +1501,6 @@ static ScmObj user_eval_inner(ScmObj program)
         }
         SCM_ASSERT(vm->cstack->prev);
         vm->cstack = vm->cstack->prev;
-        Scm_VMDump(vm);
         longjmp(vm->cstack->jbuf, 1);
     }
     vm->cstack = vm->cstack->prev;
@@ -1711,42 +1717,61 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
  * TODO: need to think over the specification of "continuable" exception.
  *       so far I assume all the exception is uncontinuable, so this routine
  *       never returns.
- *
- * Exception handler is handled on the same C stack where the handler is
- * defined.  
  */
 ScmObj Scm_VMThrowException(ScmObj exception)
 {
     ScmVM *vm = theVM;
     ScmObj handlers = vm->handlers, hp;
     ScmEscapePoint *ep = vm->escapePoint;
-    ScmObj handler
-
-    if (ep) {
-        vm->escapePoint = ep->prev;
-        Scm_Apply(ep->ehandler, SCM_LIST1(exception));
-    } else {
-        Scm_VMDefaultExceptionHandler(exception, NULL);
-    }
-
-    /* unwind the dynamic handlers */
-    SCM_FOR_EACH(hp, handlers) {
-        ScmObj proc = SCM_CDAR(hp);
-        vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
-        Scm_Apply(proc, SCM_NIL);
-    }
 
     vm->errorFlags &= ~SCM_ERROR_BEING_HANDLED;
     vm->escapeReason = SCM_VM_ESCAPE_ERROR;
+    vm->escapeData[0] = ep;
+    vm->escapeData[1] = exception;
+
     if (vm->cstack) {
+        if (ep) vm->escapePoint = ep->prev;
         longjmp(vm->cstack->jbuf, 1);
     } else {
-        /* No escape point.  Returns EX_SOFTWARE as specified in SRFI-22. */
+        /* No C stack is defined.   We're called as a library functions
+           from C program. */
+        Scm_VMDefaultExceptionHandler(exception, NULL);
+        /* unwind the dynamic handlers */
+        SCM_FOR_EACH(hp, handlers) {
+            ScmObj proc = SCM_CDAR(hp);
+            vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
+            Scm_Apply(proc, SCM_NIL);
+        }
         exit(EX_SOFTWARE);
     }
-
     /* NOTREACHED */
     return SCM_UNDEFINED;
+}
+
+static ScmObj handle_exception(ScmVM *vm, ScmEscapePoint *ep,
+                               ScmException *exception)
+{
+    ScmObj target = ep->handlers, current = vm->handlers, hp;
+    ScmObj result, rvals[SCM_VM_MAX_VALUES];
+    int numVals, i;
+
+    /* Call the error handler and save the results. */
+    result = Scm_Apply(ep->ehandler, SCM_LIST1(SCM_OBJ(exception)));
+    if ((numVals = vm->numVals) > 1) {
+        for (i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
+    }
+
+    /* Call dynamic handlers */
+    for (hp = current; SCM_PAIRP(hp) && hp != target; hp = SCM_CDR(hp)) {
+        ScmObj h = SCM_CAR(hp);
+        Scm_Apply(SCM_CDR(h), SCM_NIL);
+    }
+    
+    /* Install the continuation */
+    for (i=0; i<numVals; i++) vm->vals[i] = rvals[i];
+    vm->numVals = numVals;
+    vm->cont = ep->cont;
+    return result;
 }
 
 /*
