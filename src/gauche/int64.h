@@ -30,11 +30,11 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: int64.h,v 1.1 2004-01-27 23:52:14 shirok Exp $
+ *  $Id: int64.h,v 1.2 2004-01-30 04:05:47 shirok Exp $
  */
 
-/* Some Scheme APIs needs to deal with 64bit signed/unsigned integer
-   (such as srfi-4 vectors and/or binary I/O routine.)
+/* Some Scheme API needs to deal with 64bit signed/unsigned integer
+   (such as srfi-4 vectors and binary I/O routines.)
    This file defines some macros to help writing code without
    concerning about how the hardware/compiler supports int64. */
 
@@ -50,12 +50,17 @@
 /* typedefs ScmInt64 and ScmUInt64 to appropriate type */
 
 #if defined(HAVE_INT64_T) && defined(HAVE_UINT64_T)
+/* If the system has int64_t, it is the best way to use it.
+   Even some of ILP32 systems have int64_t. */
 typedef int64_t  ScmInt64;
 typedef uint64_t ScmUInt64;
 #elif SIZEOF_LONG >= 8
+/* NB: this would fail if sizeof(long) becomes 16; but such newer systems
+   are likely to have int64_t defined. */
 typedef long   ScmInt64;
 typedef u_long ScmUInt64;
 #else  /* SIZEOF_LONG == 4 */
+/* This is the fallback. */
 #define SCM_EMULATE_INT64 1
 #ifdef WORDS_BIGENDIAN
 typedef struct {
@@ -78,18 +83,21 @@ typedef struct {
    ((v64).hi = LONG_MAX, (v64).lo = ULONG_MAX)
 #define SCM_SET_INT64_MIN(v64)  \
    ((v64).hi = (u_long)LONG_MAX + 1, (v64).lo = 0)
-#define SCM_SET_UINT64_MAX(v64)  \
+#define SCM_SET_UINT64_MAX(v64) \
    ((v64).hi = ULONG_MAX, (v64).lo = ULONG_MAX)
+#define SCM_SET_INT64_ZERO(v64) \
+   ((v64).hi = (v64).lo = 0)
 #else  /* !SCM_EMULATE_INT64 */
 #define SCM_SET_INT64_MAX(v64)  \
    ((v64) = ((((int64_t)LONG_MAX)<<32) + (int64_t)ULONG_MAX))
 #define SCM_SET_INT64_MIN(v64)  \
    ((v64) = (((int64_t)LONG_MAX + 1) << 32))
-#define SCM_SET_UINT64_MAX(v64)  \
+#define SCM_SET_UINT64_MAX(v64) \
    ((v64) = ((((uint64_t)ULONG_MAX) << 32) + (uint64_t)ULONG_MAX))
+#define SCM_SET_INT64_ZERO(v64) \
+   ((v64) = 0)
 #endif /* !SCM_EMULATE_INT64 */
 #endif /* SIZEOF_LONG == 4 */
-
 
 /* ScmInt32 and ScmUInt32 can be used when one needs exactly 32bit int */
 
