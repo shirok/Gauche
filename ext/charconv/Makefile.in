@@ -12,7 +12,7 @@ SCMFILES = charconv.scm
 HEADERS = 
 
 TARGET = libcharconv.so
-OBJS = charconv_head.o charconv.o convlib.o charconv_tail.o
+OBJS = charconv_head.o charconv.o convlib.o jconv.o charconv_tail.o
 CONFIG_GENERATED = Makefile charconv.h config.cache config.log config.status \
 		   autom4te.cache charconv_head.c charconv_tail.c
 

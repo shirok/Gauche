@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.27 2002-05-26 01:06:13 shirok Exp $
+ *  $Id: charconv.c,v 1.28 2002-05-29 11:29:17 shirok Exp $
  */
 
 #include <string.h>
@@ -28,20 +28,6 @@
 #endif
 
 #define DEFAULT_CONVERSION_BUFFER_SIZE 1024
-
-/* NB: ilseqHandler implementation is experimental.  Maybe it'll removed
-   or replaced to something else later. */
-typedef struct conv_info_rec {
-    iconv_t handle;             /* iconv handle */
-    ScmPort *remote;            /* source or drain port */
-    int ownerp;                 /* do I own remote port? */
-    int bufsiz;                 /* size of conversion buffer */
-    char *buf;                  /* internal conversion buffer */
-    char *ptr;                  /* current ptr in the internal conv buf */
-    const char *fromCode;       /* convert from ... */
-    const char *toCode;         /* conver to ... */
-    ScmObj ilseqHandler;        /* handler for illegal byte sequence */
-} conv_info;
 
 typedef struct conv_guess_rec {
     const char *codeName;
@@ -109,13 +95,13 @@ static conv_guess *findGuessingProc(const char *code)
 
 static int conv_fileno(ScmPort *port)
 {
-    conv_info *info = (conv_info*)port->src.buf.data;
+    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     return Scm_PortFileNo(info->remote);
 }
 
 static int conv_ready(ScmPort *port)
 {
-    conv_info *info = (conv_info*)port->src.buf.data;
+    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     /* This isn't accurate, but for now ... */
     return Scm_CharReady(info->remote);
 }
@@ -137,7 +123,7 @@ static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *
 
 static int conv_input_filler(ScmPort *port, int mincnt)
 {
-    conv_info *info = (conv_info*)port->src.buf.data;
+    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     size_t insize, inroom, outroom, result;
     int nread;
     const char *inbuf = info->buf;
@@ -193,26 +179,6 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     }
     
     /* Now, it's likely that the input contains invalid sequence. */
-    if (!SCM_FALSEP(info->ilseqHandler)) {
-        ScmObj rest = Scm_MakeString(info->buf+insize-inroom,
-                                     inroom, inroom,
-                                     SCM_MAKSTR_COPYING|SCM_MAKSTR_INCOMPLETE);
-        ScmObj r = Scm_Apply(info->ilseqHandler,
-                             SCM_LIST4(SCM_MAKE_STR(info->fromCode),
-                                       SCM_MAKE_STR(info->toCode),
-                                       rest,
-                                       SCM_OBJ(info->remote)));
-        if (SCM_STRINGP(r)) {
-            if (SCM_STRING_SIZE(r) > info->bufsiz) {
-                Scm_Error("illegal sequence handler returns too long string: %S", r);
-            }
-            memcpy(info->buf, SCM_STRING_START(r), SCM_STRING_SIZE(r));
-            inroom = insize = SCM_STRING_SIZE(r);
-            goto retry;
-        }
-        /* If ilseqHandler returns non-string, fallback to the error routine */
-    }
-
     {
         int cnt = inroom >= 6 ? 6 : inroom;
         ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
@@ -234,7 +200,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                    int bufsiz,
                                    int ownerp)
 {
-    conv_info *cinfo;
+    ScmConvInfo *cinfo;
     iconv_t handle;
     conv_guess *guess;
     char *inbuf = NULL;
@@ -274,14 +240,13 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
             Scm_SysError("iconv_open failed");
         }
     }
-    cinfo = SCM_NEW(conv_info);
+    cinfo = SCM_NEW(ScmConvInfo);
     cinfo->handle = handle;
     cinfo->remote = fromPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = bufsiz;
     cinfo->fromCode = fromCode;
     cinfo->toCode = toCode;
-    cinfo->ilseqHandler = handler;
     if (preread > 0) {
         cinfo->buf = inbuf;
         cinfo->ptr = inbuf + preread;
@@ -327,7 +292,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 
 static int conv_output_closer(ScmPort *port)
 {
-    conv_info *info = (conv_info*)port->src.buf.data;
+    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     if (info->ptr > info->buf) {
         Scm_Putz(info->buf, info->ptr - info->buf, info->remote);
     }
@@ -338,7 +303,7 @@ static int conv_output_closer(ScmPort *port)
 
 static int conv_output_flusher(ScmPort *port, int mincnt)
 {
-    conv_info *info = (conv_info*)port->src.buf.data;
+    ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     size_t outsize, inroom, outroom, result, len;
     const char *inbuf;
     char *outbuf;
@@ -409,7 +374,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
                                     const char *fromCode,
                                     int bufsiz, int ownerp)
 {
-    conv_info *cinfo;
+    ScmConvInfo *cinfo;
     iconv_t handle;
     ScmPortBuffer bufrec;
     ScmObj name;
@@ -427,7 +392,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
             Scm_SysError("iconv_open failed");
         }
     }
-    cinfo = SCM_NEW(conv_info);
+    cinfo = SCM_NEW(ScmConvInfo);
     cinfo->handle = handle;
     cinfo->remote = toPort;
     cinfo->ownerp = ownerp;
@@ -436,7 +401,6 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->ptr = cinfo->buf;
     cinfo->fromCode = fromCode;
     cinfo->toCode = toCode;
-    cinfo->ilseqHandler = SCM_FALSE;
     
     bufrec.size = cinfo->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
