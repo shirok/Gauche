@@ -1,48 +1,75 @@
-TOPDIR = ../..
-SRCDIR = $(TOPDIR)/src
-
-DEFS = @DEFS@
-CFLAGS = $(DEFS) -g -O2 -I. -I$(SRCDIR) -I$(TOPDIR)/gc -I$(TOPDIR)/gc/include
-
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-
-SUBHEADER_INSTALL_DIR = @includedir@/gauche
-LIB_INSTALL_DIR = @libdir@
-BIN_INSTALL_DIR = @bindir@
-SCM_INSTALL_DIR = @libdir@/gauche/@GAUCHE_VERSION@/lib
-
-INSTALL_HEADERS = uvector.h
-INSTALL_SO = libuvector.so
-
-GENERATED = uvector.h uvector.c uvlib.c 
-
+CC = @CC@
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+GOSH = @GOSH@
+GAUCHE_CONFIG = @GAUCHE_CONFIG@
+GAUCHE_TOP = @GAUCHE_TOP@
 INSTALL = @INSTALL@
 
-OBJS = s8vector.o s16vector.o s32vector.o s64vector.o \
-       u8vector.o u16vector.o u32vector.o u64vector.o \
-       f32vector.o f64vector.o uvector.o uvlib.o
+ARCHFILES = libuvector.so
+SCMFILES  = uvector.scm
+HEADERS   = uvector.h
+
+TARGET    = libuvector.so
+OBJS      = uvector.o uvlib.o
+CONFIG_GENERATED = Makefile config.cache config.log config.status
+GENERATED = uvector.h uvector.c uvlib.c uvlib.stub
+
+INSTALL_TYPE = @INSTALL_TYPE@
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
+ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+all : $(TARGET)
+
+libuvector.so : $(OBJS)
+	$(CC) $(LDFLAGS) libuvector.so $(OBJS) $(LIBS)
 
 $(OBJS) : uvector.h
 
 uvector.h : uvector.h.sh
 	rm -rf uvector.h
-	./uvector.h.sh > uvector.h
+	sh ./uvector.h.sh > uvector.h
 
 uvector.c : uvector.c.sh
 	rm -rf uvector.c
-	./uvector.c.sh > uvector.c
+	sh ./uvector.c.sh > uvector.c
 
 uvlib.c : uvlib.stub
-	snow $(SRCDIR)/genstub uvlib.stub
+	$(GOSH) genstub uvlib.stub
+
+uvlib.stub : uvlib.stub.sh
+	rm -rf uvlib.stub
+	sh ./uvlib.stub.sh > uvlib.stub
+
+test : all
+	@rm -f test.log
+	$(GOSH) test.scm > test.log
+
+install : all
+	@for f in $(HEADERS) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
+	  fi; \
+	done
+	@for f in $(SCMFILES) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
+	  fi; \
+	done
+	@for f in $(ARCHFILES) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
+	  fi; \
+	done
 
 clean :
-	rm -rf libuvector.so core *.o *~
+	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
 
-distclean: clean
-	rm -rf Makefile
+distclean : clean
+	rm -rf $(CONFIG_GENERATED)
 
-realclean: clean
-	rm -rf $(GENERATED) Makefile
-
+realclean : clean
+	rm -rf $(CONFIG_GENERATED) $(GENERATED) configure
 
