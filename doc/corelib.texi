@@ -5380,23 +5380,46 @@ fibonacci numbers.
 @section Exceptions
 @c NODE 例外
 
+@c EN
 Gauche's exception system consists of three components;
 (1) the way to signal an exceptional case has occurred,
 (2) the way to specify how to handle such a case,
 and (3) the standard objects (@emph{conditions}) 
 to communicate the code that
 signals an exceptional case and the code that handles it.
+@c JP
+Gaucheの例外システムは次の3つのコンポーネントから構成されています。
+(1)例外状況が発生したことを通知する方法、
+(2)例外状況をどのように処理するかを指定する方法、
+(3)例外状況を知らせたコードおよびそれを処理するコードとやりとりするための
+標準オブジェクト(@emph{コンディション})。
+@c COMMON
 
+@c EN
 Those three components are typically used together, so first
 we explain the typical usage patterns using examples.  Then
 we describe each feature in detail.
+@c JP
+典型的な使い方では、これらの3つのコンポーネントを一緒につかいます。
+したがって、最初に例を用いて、典型的な使い方について説明し、そのあとで
+それぞれの機能について詳しく解説します。
+@c COMMON
 
+@c EN
 Note for terminology: some languages use the word @emph{exception}
 to refer to an object used to communicate the code that encountered
 an exceptional situation with a handler that deals with it.
 Gauche uses a term @emph{condition} to refer to such objects,
 following SRFI-35.  @emph{Exception} is the situation, and
 @emph{condition} is what describes it.
+@c JP
+用語について: いくつかの言語では@emph{例外}というと、ハンドラをつかって、
+例外的状況に遭遇したコードとやりとりをするために用いる何らかのオブジェクト
+のことを言います。Gaucheではそのようなオブジェクトのことを言うときには、
+SRFI-35にならって@emph{コンディション}を使います。
+@emph{例外}というのは、状況であり、@emph{コンディション}はそれを記述した
+ものです。
+@c COMMON
 
 @c The most common exceptional case is errors, so Gauche has
 @c a convenience API for reporting errors (e.g. @code{error}).
@@ -5438,10 +5461,16 @@ following SRFI-35.  @emph{Exception} is the situation, and
 @subsubheading 特定のエラーを捕まえる
 @c COMMON
 
+@c EN
 One of the most typical exception handling is to catch a
 specific error raised by some built-in or library procedures.
 A macro @code{guard} can be used for such a purpose.  The code
 looks like this:
+@c JP
+最もよくある例外処理のひとつは、発生した特定のエラーを組み込みあるいは
+ライブラリの手続きを使って捕捉するというものです。@code{guard}マクロが
+このような目的の場合に使えます。コードは以下のような感じになるでしょう。
+@c COMMON
 
 @example
 (guard (exc
@@ -5451,14 +5480,26 @@ looks like this:
   (read-from-string "(abc")))
 @end example
 
+@c EN
 The cadr of @code{guard} clause is a form of 
 @code{(@var{variable} @var{clause} @dots{})}.  In this example,
 the variable is @code{exc}, and it has two clauses.
 Each @var{clause} has the form like the one in @code{cond}.
+@c JP
+@code{guard}節の cadr 部は @code{(@var{variable} @var{clause} @dots{})} という
+形式です。この例では、変数は @code{exc}で、2つの節があります。
+それぞれの @var{clause} は @code{cond} と似た形式になります。
+@c COMMON
 
+@c EN
 The cddr of @code{guard} is the body, a list of expressions.  This
 example has only one expression, @code{(read-from-string "(abc")}.
+@c JP
+@code{guard} の cddr 部は本体で、式のリストです。この例では、式は
+@code{(read-from-string "(abc")} のひとつだけです。
+@c COMMON
 
+@c EN
 @code{guard} starts executing its body.
 @code{read-from-string} reaises an error of type @code{<read-error>}
 when it encounters syntactic errors.  The form @code{guard} intercepts
@@ -5468,18 +5509,44 @@ to @code{cond}---in this case, the thrown condition is of type
 @code{<read-error>}, so the test of the first clause is satisfied,
 and the rest of clause is executed, i.e. @code{"read error!"} is
 printed and a symbol @code{read-error} is returned.
+@c JP
+@code{guard} はその本体部を実行するところから始めます。
+@code{read-from-string} は構文エラーに出くわすと、@code{<read-error>}型の
+エラーを発生させます。@code{guard}フォームがこのエラーを傍受し、
+そのコンディションオブジェクトを変数@var{exc}に束縛し、@var{exc}の後の
+節を、@code{cond}と同じようにチェックします。この場合、投げられた
+コンディションは @code{<read-error>}なので、最初の節のテストを満し、
+その節の残りの部分が実行されます。すなわち、@code{"read error!"} が
+印字され、シンボル @code{read-error} が返ります。
+@c COMMON
 
+@c EN
 If you're familiar with other languages, you may recognize the
 pattern.  The cddr of @code{guard} form is like @var{try} clause
 of C++/Jave or the cadr of @code{handler-case} of Common Lisp;
 and the cdadr of @code{guard} form is like @code{catch} clauses
 or the cddr of @code{handler-case}.
+@c JP
+他の言語を使い慣れていれば、この例は解るとおもいます。
+@code{guard} フォームの cddr 部は、C++やJavaの @var{try} 節、あるいは、
+Common Lisp の @code{handler-case} の cadr 部に似ています。
+また、@code{guard} フォームの cdadr 部は、@code{catch} 節あるいは、
+@code{handler-case} の cddr 部に似ています。
+@c COMMON
 
+@c EN
 In the test expressions it is common to check the type of
 thrown condition.  The function @code{condition-has-type?} is
 defined in SRFI-35 but it's rather lengthy.  Gauche's condition
 classes can also work like a predicate, so you can write the
 above expression like this.
+@c JP
+テスト式においては、投げられたコンディションのタイプをチェックする
+というのが共通しています。@code{condition-has-type?} という関数が
+SRFI-35 で定義されていますが、これはちょっと冗長です。Gauche の
+コンディションクラスは述語のように使うこともできますので、上の
+式は以下のように書くこともができます。
+@c COMMON
 
 @example
 (guard (exc
@@ -5488,11 +5555,19 @@ above expression like this.
   (read-from-string "(abc")))
 @end example
 
+@c EN
 @emph{Note:} Generally you can't use @code{is-a?} to test if
 the thrown condition is of a specific type, since a condition
 may be @emph{compound}.  See @ref{Conditions} about compound
 conditions.
+@c JP
+@emph{注意事項:} 一般的には、@code{is-a?} を投げられたコンディションが特定の
+タイプであるかをチェックするには使えません。コンディションが合成された
+ものである可能性があるからです。合成されたコンディションについての
+詳細は @ref{Conditions} を参照してください。
+@c COMMON
 
+@c EN
 If no tests of @var{clause}s satisfy and no @code{else} clause is given,
 the exception `falls off' the @code{guard} construct, i.e. 
 it will be handled by the outer level of @code{guard} form or
@@ -5500,6 +5575,14 @@ top-level.  For example, the following @code{guard} form
 only handles @code{<read-error>} and @code{<system-error>};
 if the body throws other type of conditions, it must be handled
 by outer level.
+@c JP
+もし、@var{clause} のどのテストも満されず、かつ @code{else} 節があたえられて
+いなければ、その例外は @code{guard} から「抜け」ます。すなわち、@code{guard}
+の外側のレベルあるいはトップレベルで処理されることになります。たとえば、
+以下の @code{guard} フォームでは、@code{<read-error>} と 
+@code{<system-error>} としか処理できず、もし、本体が他のタイプのコンディション
+を投げてきたら、その外側のレベルで処理しなければなりません。
+@c COMMON
 
 @example
 (guard (exc
@@ -5509,9 +5592,13 @@ by outer level.
   body @dots{})
 @end example
 
+@c EN
 See @ref{Handling exceptions} for more details on @code{guard} and
 other lower-level exception handling constructs.
-
+@c JP
+@code{guard}および他の低レベルの例外処理の構成についての詳細は
+@ref{Handling exceptions} を参照してください。
+@c COMMON
 
 
 @c EN
@@ -5520,16 +5607,27 @@ other lower-level exception handling constructs.
 @subsubheading 自分のコードから例外を通知する
 @c COMMON
 
+@c EN
 The generic way to signal an exception is to use @code{raise} procedure.
+@c JP
+例外を通知する一般的な方法は @code{raise}手続きを使うことです。
+@c COMMON
 
 @example
 (raise @var{condition})
 @end example
 
+@c EN
 You can pass any object to @var{condition}; its interpretation
 solely depends on the exception handler.  If you know the code
 raises an integer as a condition, you can catch it by @code{guard}
 as this:
+@c JP
+@var{condition}にはどんなオブジェクトでも渡すことができます。
+それをどのように解釈するかはひとえに例外ハンドラにかかってます。
+もし、コンディションとして整数があがってくるというのが判っていれば、
+@code{guard} で以下のように捕捉することができます。
+@c COMMON
 
 @example
 (guard (exc
@@ -5537,10 +5635,17 @@ as this:
   (raise 3))
 @end example
 
+@c EN
 However, as a convention, it is preferable to use an instance
 of @code{<condition>} or one of its subclasses.  A macro @code{condition}
 can be used to create a condition object.  The following examples
 show how to create a condition with some slot values and then raise it.
+@c JP
+とはいうものの、@code{<condition>} あるいはそのサブクラスのインスタンスを
+使うのが好ましいというのが通例です。@code{condition} マクロはコンディション
+オブジェクトを作成するのに使えます。以下の例は、いくつかのスロット値をもち
+それらを発生させるコンディションの作りかたを示したものです。
+@c COMMON
 
 @example
 ;; create and raise an error condition
@@ -5553,13 +5658,25 @@ show how to create a condition with some slot values and then raise it.
                         (errno 4))))
 @end example
 
+@c EN
 See @ref{Conditions} for the details of @code{condition} macro
 and what kind of condition classes are provided.
+@c JP
+@code{condition} マクロおよび、どのようなコンディションクラスが用意
+されているかの詳細については @ref{Conditions} を参照してください。
+@c COMMON
 
+@c EN
 The most common type of condition is an error condition, so
 a convenience procedure @code{error} and @code{errorf} are
 provided.  They create an error condition with a message and
 raise it.
+@c JP
+もっとも、一般的なコンディションのタイプはエラーコンディション
+ですから、@code{error} および @code{errorf} という便利な手続きが
+用意されています。これらはメッセージ付きのエラーコンディションを
+生成し、それを発生させます。
+@c COMMON
 
 @example
 ;; `error' concatenates the arguments into a message.
@@ -5571,6 +5688,7 @@ raise it.
   (errorf "~s and ~s don't match" x y))
 @end example
 
+@c EN
 @emph{Note:} unlike the exception throwing constructs in some languages,
 such as @code{throw} of C++/Java, which abandons its continuation,
 Scheme's @code{raise} may return to its caller.   If you don't
@@ -5578,6 +5696,15 @@ want @code{raise} to return, a rule of thumb is always to pass
 one of error conditions to it; then Gauche guarantees @code{raise}
 wont return.   See the description of @code{raise} in
 @ref{Signalling exceptions} for more details.
+@c JP
+@emph{注意事項:} いくつかの言語での例外を投げる機構では、たとえば、
+Cl++やJavaの @code{throw} では継続は破棄されるます。これとは違い
+Schemeの @code{raise} はその呼び出し元へ戻ることができます。もし、
+@code{raise} で元へもどらないで欲しいのなら、簡便な方法としては、
+常にエラーコンディションの一つをわたるようにするというのがあります。
+そうすると Gauche では @code{raise} は戻らないことを保証します。
+@code{raise}の詳細については、@ref{Signalling exceptions}を参照してください。
+@c COMMON
 
 
 @c EN
@@ -5586,18 +5713,37 @@ wont return.   See the description of @code{raise} in
 @subsubheading 独自のコンディションを定義する
 @c COMMON
 
+@c EN
 You can also define your own condition classes
 to pass application-specific information from the point of
 raising exception to the handlers.
+@c JP
+独自のコンディションクラスを定義することが可能で、そうすることで、
+アプリケーション固有の情報を例外が発生した点からハンドラへ渡すことが
+できます。
+@c COMMON
 
+@c EN
 To fit to Gauche's framework (SRFI-35), it is desirable that
 the new condition class inherits a built-in @code{<condition>} class
 or one of its descendants, and also is an instance of a metaclass
 @code{<condition-meta>}.
+@c JP
+Gauche のフレームワーク(SRFI-35)に適合させるためには、新しく定義する
+コンディションクラスは組み込みの @code{<condition>} クラスあるいは
+その子孫を継承するのが望ましく、また、メタクラス @code{<condition-meta>}
+のインスタンスであることが望ましいのです。
+@c COMMON
 
+@c EN
 One way of ensuring the above convention as well as increasing 
 portability is to use @code{define-condition-type} macro, defined
 in @code{SRFI-35}.
+@c JP
+可搬性を増すと同時に上の慣例を確実にするための方法のひとつは、
+@code{define-condition-type}マクロを使うことです。これは、
+@code{SRFI-35}で定義されています。
+@c COMMON
 
 @example
 (define-condition-type <myapp-error> <error>
@@ -5606,10 +5752,17 @@ in @code{SRFI-35}.
   (reason myapp-error-reason))
 @end example
 
+@c EN
 This defines a condition type (which is a class in Gauche)
 @code{<myapp-error>}, with a predicate @code{myapp-error?}
 and slots with accessors.   Then you can use the new
 condition type like the following code:
+@c JP
+これは、(Gauche内のクラス)@code{<myapp-err>}を定義するもので、
+このクラスには@code{myapp-error?}という述語とアクセサのあるスロット
+があります。こうすれば、以下のようなコードで新しいコンディション
+型が使えます。
+@c COMMON
 
 @example
 (guard (exc
@@ -5628,12 +5781,20 @@ condition type like the following code:
   )
 @end example
 
+@c EN
 See the description of @code{define-condition-type} macro
 for how the condition type is implemented in Gauche's object system.
 Sometimes it may be desirable that you directly define a new conditon
 class instead of going through @code{define-condition-type}
 (especially since it requires names for a predicate and all
 slot accessors).
+@c JP
+Gauche のオブジェクトシステムでコンディション型がどのように実装されているかは
+@code{define-condition-type}マクロの解説を参照してください。
+場合によっては、@code{define-condition-type}を使わずに、直接、新しい
+コンディションを定義したほうが良い場合もあります(特に、述語および
+スロット名が必須であるからという理由によります)。
+@c COMMON
 
 
 @node Signalling exceptions, Handling exceptions, Exception handling overview, Exceptions
@@ -5755,7 +5916,7 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<condition>}クラス
 ユーザは任意のオブジェクトを@code{raise}に渡すこともできます。
 渡された@var{condition}の解釈は例外ハンドラに任されます。
 
-@emph{註:} いくつかの主流の言語では、例外を「投げる」と制御はそこに
+@emph{注意事項:} いくつかの主流の言語では、例外を「投げる」と制御はそこに
 戻りません。Gaucheでは@code{raise}から戻って来れるように
 セットアップすることが可能です。詳細は@ref{Handling exceptions}を
 参照してください。
@@ -5771,7 +5932,11 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<condition>}クラス
 @subsection Handling exceptions
 @c NODE 例外の処理
 
+@c EN
 @subsubheading High-level exception handling mechanism
+@c JP
+@subsubheading 上位レベルの例外処理機構
+@c COMMON
 
 @defmac guard (var clause @dots{}) body @dots{}
 [SRFI-34]
@@ -5930,7 +6095,11 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 @end example
 @end defun
 
+@c EN
 @subsubheading Low-level exception handling mechanism
+@c JP
+@subsubheading 下位レベルの例外処理機構
+@c COMMON
 
 @c EN
 This layer provides SRFI-18 compatible simple exception mechanism.
@@ -6054,10 +6223,17 @@ the following conceptual Scheme code.
 @subsubheading 組み込みコンディションクラス
 @c COMMON
 
+@c EN
 Gauche currently has the following hierarchy of built-in condition
 classes.  It approximately reflects SRFI-35 and SRFI-36 condition hierarchy,
 although they have Gauche-style class names.  If there's a corresponding
 SRFI condition type, the class has the SRFI name as well.
+@c JP
+現在のところGaucheには以下の組み込みコンディションクラスの階層があります。
+これは、おおよそのところ SRFI-35 および SRFI-36 のコンディションの階層を
+反映したものですが、Gauche風のクラス名になっています。対応する SRFI の
+コンディションタイプがあるものについては、SRFI でのクラス名も使えます。
+@c COMMON
 
 @example
   <condition>
@@ -6076,6 +6252,7 @@ SRFI condition type, the class has the SRFI name as well.
                         +- <io-unit-error>
 @end example
 
+@c EN
 Note that some conditions may occur simultaneously; for example,
 error during reading from a file because of device failure may consist
 both @code{<system-error>} @emph{and} @code{<io-read-error>}.
@@ -6085,13 +6262,29 @@ to check if @code{<io-read-error>} is thrown.
 Access to the slots of conditions should also be done by 
 @code{condition-ref} instead of @code{slot-ref}.
 See the "Condition API" section below.
-
+@c JP
+いくつかのコンディションが同時に発生することがあることに注意してください。
+たとえば、ファイルの読み込み中に、@code{<system-error>} @emph{および} 
+@code{<io-read-error>} の両方からなるデバイス不正によりエラーになる場合
+があります。このような場合、@emph{合成したコンディション} が発生します。
+したがって、たとえば、@code{<io-read-error>} が投げられたかどうかをチェック
+するのに、単に @code{(is-a? obj <io-read-error>)} を使えばよいというわけ
+にはいきません。@code{slot-ref} ではなく @code{condition-ref} によって
+コンディションのスロットにアクセスしなければなりません。
+後述の「コンディション API」の節を参照してください。
+@c COMMON
 
 @deftp {Metaclass} <condition-meta>
 @clindex condition-meta
+@c EN
 Every condition class is an instance of this class.
 This class defines @code{object-apply} so that you can use
 a condition class as a predicate, e.g.:
+@c JP
+すべてのコンディションクラスはこのクラスのインスタンスです。
+このクラスは @code{object-apply} を定義していますので、
+コンディションクラスは述語として使うことができます。たとえば、
+@c COMMON
 
 @example
 (<error> obj) @equiv{} (condition-has-type? obj <error>)
@@ -6104,17 +6297,32 @@ a condition class as a predicate, e.g.:
 @clindex condition
 @vrindex &condition
 [SRFI-35]
+@c EN
 The root class of the condition hierarchy.
+@c JP
+コンディションの階層のルートクラス
+@c COMMON
 @end deftp
 
 @deftp {Class} <compound-condition>
 @clindex compound-condition
+@c EN
 Represents a compound condition.  A compound condition can be
 created from one or more conditions by @code{make-compound-condition}.
 Don't use this class directly.
+@c JP
+合成コンディションを表現します。合成コンディションは
+@code{make-compound-condition} を用いて1つ以上のコンディションから
+生成することができます。このクラスを直接使ってはいけません。
+@c COMMON
 
+@c EN
 A compound condition returns @code{#t} for @code{condition-has-type?}
 if any of the original conditions has the given type.
+@c JP
+合成コンディションは、元のコンディションのどれかが、与えられたタイプ
+なら、@code{condition-has-type?} に対して @code{#t} を返します。
+@c COMMON
 @end deftp
 
 @deftp {Class} <serious-condition>
@@ -6122,29 +6330,54 @@ if any of the original conditions has the given type.
 @clindex serious-condition
 @vrindex &serious
 [SRFI-35]
+@c EN
 Conditions of this class are for the situations that are too serious
 to ignore or continue.  Particularly, you can safely assume that
 if you @code{raise} this type of condition, it never returns.
+@c JP
+このクラスのコンディションは無視して先を続けることはできない深刻な
+状況のためにあります。特に、このタイプのコンディションを @code{raise}
+したら、それは元には絶対に戻らないと仮定しても間違いありません。
+@c COMMON
 @end deftp
 
 @deftp {Class} <serious-compound-condition>
 @clindex serious-compound-condition
+@c EN
 This is an internal class to represent a compound condition
 with any of its component condition is serious.   Inherits both
 @code{<compound-condition>} and @code{<serious-condition>}.
 @code{make-compound-condition} uses this class if the passed
 conditions includes a serious one.  
 Don't use this class directly.
+@c JP
+深刻なコンディションを含む合成コンディションを表現するための
+内部クラスです。@code{<compound-condition>} および
+@code{<serious-condition>} の両方を継承しています。
+@code{make-compound-condition} は深刻なコンディションを含む複数の
+コンディションを渡されると、このクラスを使います。このクラスを
+直接使ってはいけません。
+@c COMMON
 @end deftp
 
 @deftp {Class} <message-condition>
 @deftpx {Condition Type} &message
 @clindex message-condition
 [SRFI-35]
+@c EN
 This class represents a condition with a message.  It has one slot.
+@c JP
+このクラスはメッセージ付のコンディションを表現し、スロットを一つ
+もっています。
+@c COMMON
 
 @defivar {<message-condition>} message
+@c EN
 A message.
+@c JP
+メッセージ
+@c COMMON
+
 @end defivar
 @end deftp
 
@@ -6153,15 +6386,32 @@ A message.
 @clindex error
 @vrindex &error
 [SRFI-35]
+@c EN
 Indicates an error.  Inherits @code{<serious-condition>}
 and @code{<message-condition>}, thus has @code{message} slot.
+@c JP
+エラーを表します。@code{<serious-condition>} および
+@code{<message-condition>} を継承しています。したがって、
+@code{message} スロットを持っています。
+@c COMMON
 
+@c EN
 Note: SRFI-35 @code{&error} condition only inherits @code{&serious}
 and not @code{&message}, so you have to use compound condition
 to attach a message to the error condition.  Gauche uses multiple
 inheritance here, largely because of backward compatibility.
 To write a portable code, an error condition should be used
 with a message condition, like this:
+@c JP
+注意事項: SRFI-35 の@code{&error}コンディションは @code{&serious}
+のみを継承し、@code{&message} は継承していません。したがって、
+このエラーコンディションにメッセージを付与するためには、
+合成コンディションを使わなければなりません。Gauche は
+バックワードコンパチビリティを確保するために、ここで、
+おおはばに、多重継承を用いています。
+可搬性のあるコードを掛くには、以下のようにメッセージコンディション
+付きのエラーコンディションを使うべきです。
+@c COMMON
 
 @example
 (condition
@@ -6194,10 +6444,17 @@ Contains an integer value of system's error number.
 @c COMMON
 @end defivar
 
+@c EN
 This class doesn't have corresponding SRFI condition type,
 but important to obtain OS's raw error code.  In some cases,
 this type of condition is compounded with other condition
 types, like @code{<io-read-error>}.
+@c JP
+このクラスには対応する SRFI のコンディションタイプがありませんが、
+OSの生のエラーコードを取得するのに重要です。いくつかのケースで
+このタイプのコンディションは他の、たとえば @code{<io-read-error>}
+のようなコンディションと合成されます。
+@c COMMON
 @end deftp
 
 @deftp {Class} <read-error>
@@ -6240,8 +6497,13 @@ track of line count.
 @defivar {<read-error>} column 
 @defivarx {<read-error>} position
 @defivarx {<read-error>} span
+@c EN
 These slots are defined in SRFI-36's @code{&read-error}.
 For the time being, these slots always hold @code{#f}.
+@c JP
+これらのスロットは、SRFI-36 の @code{&read-error} で定義されています。
+暫定的に、これらのスロットは常に @code{#f} を保持するようになっています。
+@c COMMON
 @end defivar
 
 @end deftp
@@ -6251,7 +6513,11 @@ For the time being, these slots always hold @code{#f}.
 @clindex io-error
 @vrindex &io-error
 [SRFI-36]
+@c EN
 A base class of I/O errors.  Inherits @code{<error>}.
+@c JP
+I/O エラーのベースとなるクラス。@code{<error>} を継承しています。
+@c COMMON
 @end deftp
 
 @deftp {Class} <port-error>
@@ -6259,10 +6525,18 @@ A base class of I/O errors.  Inherits @code{<error>}.
 @clindex port-error
 @vrindex &io-port-error
 [SRFI-36]
+@c EN
 An I/O error related to a port.   Inherits @code{<io-error>}.
+@c JP
+ポート関連の I/O エラー。@code{<io-error>} を継承しています。
+@c COMMON
 
 @defivar <port-error> port
+@c EN
 Holds the port where the error occurred.
+@c JP
+エラーを起したポートを保持。
+@c COMMON
 @end defivar
 @end deftp
 
@@ -6271,7 +6545,11 @@ Holds the port where the error occurred.
 @clindex io-read-error
 @vrindex &io-read-error
 [SRFI-36]
+@c EN
 An I/O error during reading from a port.  Inherits @code{<port-error>}.
+@c JP
+ポートから読み込み中の I/O エラー。@code{<port-error>} を継承しています。
+@c COMMON
 @end deftp
 
 @deftp {Class} <io-write-error>
@@ -6279,7 +6557,11 @@ An I/O error during reading from a port.  Inherits @code{<port-error>}.
 @clindex io-write-error
 @vrindex &io-write-error
 [SRFI-36]
+@c EN
 An I/O error during writing to a port.  Inherits @code{<port-error>}.
+@c JP
+ポートへの書き出し中の I/O エラー。@code{<port-error>} を継承しています。
+@c COMMON
 @end deftp
 
 @deftp {Class} <io-closd-error>
@@ -6287,17 +6569,27 @@ An I/O error during writing to a port.  Inherits @code{<port-error>}.
 @clindex io-closed-error
 @vrindex &io-closed-error
 [SRFI-36]
+@c EN
 An I/O error when read/write is attempted on a closed port.
 Inherits @code{<port-error>}.
+@c JP
+クローズされたポートで読み込み/書き出しをしようしたときの I/O エラー。
+@code{<port-error>} を継承しています。
+@c COMMON
 @end deftp
 
 @deftp {Class} <io-unit-error>
 @clindex io-unit-error
+@c EN
 An I/O error when the read/write is requested with a unit
 that is not supported by the port (e.g. a binary I/O is requested
 on a character-only port).   Inherits @code{<port-error>}.
+@c JP
+対象となるポートでサポートされていない単位での読み/書き要求
+(たとえば、キャラクタ専用ポートでのバイナリ I/O 要求)の際の I/O エラー。
+@code{<port-error>} を継承しています。
+@c COMMON
 @end deftp
-
 
 
 @c EN
@@ -6308,9 +6600,15 @@ on a character-only port).   Inherits @code{<port-error>}.
 
 @defmac define-condition-type name supertype predicate field-spec @dots{}
 [SRFI-35]
+@c EN
 Defines a new condition type.  In Gauche, a condition type is
 a class, whose metaclass is @code{<condition-meta>}.
+@c JP
+新しいコンディションタイプを定義します。Gaucheでは、コンディションタイプは
+クラスであり、そのメタクラスは @code{<condition-meta>} です。
+@c COMMON
 
+@c EN
 @var{Name} becomes the name of the new type, and also the variable
 of that name is bound to the created condition type.
 @var{Supertype} is the name of the supertype (direct superclass)
@@ -6319,84 +6617,175 @@ of this condition type.  A condition type must inherit from
 (Multiple inheritance can't be specified by this form, and generally
 should be avoided in condition type hierarchy.  Instead, you
 can use compound conditions, which don't introduce multiple inheritance.)
+@c JP
+@var{name} が新しいタイプの名前になり、この名前の変数が作成された
+コンディションタイプに束縛されます。@var{supertype} はこのコンディション
+タイプのスーパータイプ(直接のスーパークラス)の名前です。コンディション
+タイプは @code{<condition>} を継承するか、その子孫を継承しなければ
+なりません。(この形式では、多重継承を指定することはできません。
+一般的にいって、コンディションタイプの階層の中では多重継承は避ける
+べきです。そのかわりに、合成コンディションを使えます。そうしておけば、
+多重継承を入れ込むことはありません。)
+@c COMMON
 
+@c EN
 A variable @var{predicate} is bound to a predicate procedure for
 this condition type.
+@c JP
+変数 @var{predicate} はこのコンディションタイプ用の述語手続きに
+束縛されます。
+@c COMMON
 
+@c EN
 Each @code{field-spec} is a form of @code{(field-name accessor-name)},
 and the condition will have fields named by @var{field-name}, and
 a variable @var{accessor-name} will be bound to a procedure that
 accesses the field.   In Gauche, each field becomes a slot of
 the created class.
+@c JP
+各 @code{field-spec} は @code{(field-name accessor-name)} の形式で
+このコンディションは、フィールド名は @var{field-name} で決まります。
+変数 @var{accessor-name} はそのフィールドにアクセスする手続きに
+束縛されます。Gauche では、それぞれのフィールドは生成された
+クラスのスロットとなります。
+@c COMMON
 @end defmac
 
 @defun condition-type? obj
 [SRFI-35]
+@c EN
 Returns @code{#t} iff @var{obj} is a condition type.  In Gauche,
 it means @code{(is-a? obj <condition-meta>)}.
+@c JP
+@var{obj}がコンディションタイプである場合で、その場合にかぎり、
+@code{#t} を返します。Gauche では @code{(is-a? obj <condition-meta>)}
+と同じです。
+@c COMMON
 @end defun
 
 @defun make-condition-type name parent field-names
 [SRFI-35]
+@c EN
 A procedural version to create a new condition type. 
+@c JP
+新しいコンディションタイプを生成する手続き版です。
+@c COMMON
 @end defun
 
 @defun make-condition type field-name value @dots{}
 [SRFI-35]
+@c EN
 Creates a new condition of conditon-type @var{type}, and
 initializes its fields as specified by @code{field-name} and @code{value}
-pairs.
+pairs
+@c JP
+コンディションタイプ @var{type} のコンディションを生成し、
+@code{field-name} および @code{value} のペアで指定されたように
+フィールドを初期化します。
+@c COMMON.
 @end defun
 
 @defun condition? obj
 [SRFI-35]
+@c EN
 Returns @code{#t} iff @var{obj} is a condition.  In Gauche,
 it means @code{(is-a? obj <condition>)}.
+@c JP
+@var{obj} がコンディションである場合で、その場合にかぎり、
+@code{#t} を返します。Gauche では @code{(is-a? obj <condition>)} と
+同じです。
+@c COMMON
 @end defun
 
 @defun condition-has-type? obj type
 [SRFI-35]
+@c EN
 Returns @code{#t} iff @var{obj} belongs to a condition type @var{type}.
 Because of compound conditions, this is not equivalent to @code{is-a?}.
+@c JP
+@var{obj} がコンディションタイプ @var{type} に属している場合で、その
+場合にかぎり、@code{#t} を返します。合成コンディションがあるので、
+これは、@code{is-a?} と同じではありません
+@c COMMON
 @end defun
 
 @defun condition-ref condition field-name
 [SRFI-35]
+@c EN
 Retrieves the value of field @var{field-name} of @var{condition}.
 If @var{condition} is a compound condition, you can access to the
 field of its original conditions; if more than one original condition
 have @var{field-name}, the first one passed to @code{make-compound-condition}
 has precedence.
+@c JP
+@var{condition} のフィールド @var{field-name} の値を検索します。
+@var{condition} が合成コンディションであれば、元のコンディションの
+フィールドにアクセスできます。もし、複数のコンディションが、
+@var{field-name} を持つばあいには、最初に @code{make-compound-condition}
+に渡されたものが優先されます。
+@c COMMON
 
+@c EN
 You can use @var{slot-ref} and/or @var{ref} to access to the field
 of conditions; compound conditions define a @code{slot-missing} method
 so that @var{slot-ref} behaves as if the compound conditions have all the
 slots of the original conditions.  Using @code{condition-ref} increases
 portability, though.
+@c JP
+コンディションのフィールドにアクセスするには、@var{slot-ref} および
+@var{ref} の両方あるいはどちらかを使えます。合成コンディションでは、
+@code{slot-missing} メソッドが定義されますので、@var{slot-ref} は
+あたかも、合成コンディションが元になったコンディションの全てのスロットを
+もつかのように振舞います。しかしながら、@code{condition-ref} を
+使う方が可搬性が増します。
+@c COMMON
 @end defun
 
 @defun make-compound-condition condition0 condition1 @dots{}
 [SRFI-35]
+@c EN
 Returns a compound condition that has all @var{condition0} @var{condition1}
 @dots{}.  The returned condition's fields are the union of all the fields
 of given conditions; if any conditions have the same name of fields,
 the first one takes precedence.   The returned condition also has
 condition-type of all the types of given conditions.
 (This is not a multiple inheritance.  See @code{<compound-condition>} above.)
+@c JP
+@var{condition0} @var{condition1} @dots{} のすべてを持つ合成コンディション
+を返します。返されたコンディションのフィールドは、与えられたコンディション
+のすべてのフィールドの和集合になります。同じ名前のフィールドを持つ
+コンディションがある場合には最初に与えられものが優先されます。
+返されたコンディションは元になったコンディションのすべてのタイプの
+コンディションタイプをもつことになります。
+(これは多重継承ではありません。上の @code{<compound-condition>} を参照)
+@c COMMON
 @end defun
 
 @defun extract-condition condition condition-type
 [SRFI-35]
+@c EN
 @var{Condition} must be a condition and have type @var{condition-type}.
 This procedure returns a condition of @var{condition-type},
 with field values extracted from @var{condition}.
+@c JP
+@var{condition} はコンディションで、@var{condition-type}タイプで
+なければなりません。この手続きは @var{condition-type} のコンディション
+を返し、@var{condition} からとりだされた値のフィールドを持ちます。
+@c COMMON
 @end defun
 
 @defmac condition type-field-binding @dots{}
 [SRFI-35]
+@c EN
 A convenience macro to create a (possibly compound) condition.
 @var{Type-field-binding} is a form of 
 @code{(@var{condition-type} (@var{field-name} @var{value-expr}) @dots{})}.
+@c JP
+(おそらく合成された)コンディションを生成するのに便利なマクロ。
+@var{Type-field-binding} は、
+@code{(@var{condition-type} (@var{field-name} @var{value-expr}) @dots{})}
+という形式になります。
+@c COMMON
 
 @example
 (condition
