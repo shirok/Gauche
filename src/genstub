@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.88 2002-12-13 19:39:23 shirok Exp $
+;;;  $Id: genstub,v 1.89 2002-12-22 11:55:54 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -64,7 +64,7 @@
 ;;
 ;;   define-cmethod name (arg ...) body ...
 ;;
-;;   define-cclass scheme-name c-typename c-class-name cpa
+;;   define-cclass scheme-name [qualifier] c-typename c-class-name cpa
 ;;      (slot-spec ...)
 ;;      property-clause ...
 ;;
@@ -1262,7 +1262,7 @@
 ;;    If not corresponding type is defined at the time define-cclass is
 ;;    parsed, the type is created with the default parameters.
 
-;; (define-cclass scheme-name c-type-name c-class-name cpa
+;; (define-cclass scheme-name [qualifier] c-type-name c-class-name cpa
 ;;   (<slot-spec> ...)
 ;;   [(allocator <proc-spec>)]
 ;;   [(printer   <proc-spec>)]
@@ -1279,11 +1279,14 @@
 ;; <proc-spec> := <c-code> | (c <c-name>) | #f | #t
 ;;
 ;; <cpa> := (<string> ...)
+;;
+;; qualifier := :base
 
 (define-class <cclass> (<stub>)
   ((cpa       :init-keyword :cpa       :init-value '()
               :accessor cpa-of)
    (c-type    :init-keyword :c-type    :accessor c-type-of)
+   (qualifier :init-keyword :qualifier :accessor qualifier-of)
    (allocator :init-keyword :allocator :init-value #f
               :accessor allocator-of)
    (printer   :init-keyword :printer   :init-value #f
@@ -1309,19 +1312,26 @@
    (setter      :init-keyword :setter :accessor setter-of :init-value #t)
    ))
 
-(define-form-parser define-cclass (scm-name c-type c-name cpa slot-spec . more)
+(define-form-parser define-cclass (scm-name x . args)
   (check-arg symbol? scm-name)
-  (check-arg string? c-name)
-  (check-arg list? cpa)
-  (check-arg list? slot-spec)
-  (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
-         (printer   (cond ((assq 'printer more) => cadr) (else #f)))
-         (cclass (make <cclass>
-                   :scheme-name scm-name :c-type c-type :c-name c-name 
-                   :cpa cpa
-                   :allocator allocator :printer printer)))
-    (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
-    (emit-definition cclass)))
+  (receive (qual c-type c-name cpa slot-spec . more)
+      (if (keyword? x)
+          (apply values x args)
+          (apply values :built-in x args))
+    (check-arg string? c-name)
+    (check-arg list? cpa)
+    (check-arg list? slot-spec)
+    (unless (memv qual '(:built-in :base))
+      (error "unknown define-cclass qualifier" qual))
+    (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
+           (printer   (cond ((assq 'printer more) => cadr) (else #f)))
+           (cclass (make <cclass>
+                     :scheme-name scm-name :c-type c-type :c-name c-name
+                     :qualifier qual
+                     :cpa cpa
+                     :allocator allocator :printer printer)))
+      (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
+      (emit-definition cclass))))
 
 (define-method c-printer-name-of ((self <cclass>))
   (let1 printer (printer-of self)
@@ -1359,7 +1369,9 @@
     (print "}")
     (newline))
   (emit-cpa self)
-  (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));")
+  (if (eqv? (qualifier-of self) :base)
+      (print #`"SCM_DEFINE_BASE_CLASS(,(c-name-of self), ,(c-type-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));")
+      (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));"))
   (newline)
   (when (pair? (slot-spec-of self))
     (for-each emit-getter-n-setter (slot-spec-of self))
