@@ -1,5 +1,10 @@
 2002-07-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c (main): fixed a bug that didn't flush buffered ports
+	  after Scheme main procedure returns.  (Thanks to Fujii-san for
+	  pointing this out).
+	* all configure.in's and Makefile.in's : set OPTFLAGS on some
+	  platforms by default.  propagates it to submodules.
 	* src/port.c, src/write.c, src/gauche/port.h : inlined port lock
 	  primitives in write.c.
 	* gc/configure.in: disabled THREAD_LOCAL_ALLOC for now, since it
