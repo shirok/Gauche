@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.6 2001-04-18 08:26:05 shiro Exp $
+ *  $Id: bignum.c,v 1.7 2001-04-18 09:29:53 shiro Exp $
  */
 
 #include <math.h>
@@ -666,14 +666,15 @@ static inline int div_normalization_factor(u_long w)
     return 0;                   /* dummy */
 }
 
-/* General case of division.  digitsof(dividend) >= digitsof(divider) > 1.
+/* General case of division.  We use each half word as a digit. 
+   Assumes digitsof(dividend) >= digitsof(divider) > 1.
    Assumes enough digits are allocated to quotient and remainder. */
 static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divider,
                         ScmBignum *quotient, ScmBignum *remainder)
 {
     ScmBignum *u, *v;
-    int d = div_normalization_factor(divider->values[divider->size]);
-    int j, n, m;
+    int dv = div_normalization_factor(divider->values[divider->size-1]);
+    int j, k, l, n, m;
     u_long v1, v2;
 
     /* normalize */
@@ -681,16 +682,13 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divider,
     v = make_bignum(divider->size);
     bignum_lshift(u, dividend, d);
     bignum_lshift(v, divider, d);
-    n = v->size;
-    m = u->size - n - 1;
+    n = divider->size;
+    m = dividend->size - n;
     v1 = v->values[n-1];
     v2 = v->values[n-2];
 
     for (j = m; j >= 0; j++) {
-        u_long qq, rr, u1 = u->values[j+n], u2 = u->values[j+n-1];
-        /* calculare (u1*2^32 + u2)/v1, by painful way.  may be replaced
-           by a single machine instruction depending on the archtecture. */
-        
+        /* WRITEME*/
     }
 }
 
