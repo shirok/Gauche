@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.25 2002-04-20 07:51:08 shirok Exp $
+ *  $Id: regexp.c,v 1.26 2002-07-10 10:09:50 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -218,6 +218,35 @@ static int can_be_bol(ScmObj head)
     return TRUE;
 }
 
+/* Read \x, \u, \U escape sequence in the regexp spec. */
+static ScmChar read_regexp_xdigits(ScmPort *port, int ndigs, int key)
+{
+    char buf[8];
+    int nread;
+    ScmChar r;
+    SCM_ASSERT(ndigs <= 8);
+    r = Scm_ReadXdigitsFromPort(port, ndigs, buf, &nread);
+    if (r == SCM_CHAR_INVALID) {
+        ScmDString ds;
+        int c, i;
+        /* skip chars to the end of regexp, so that the reader will read
+           after the erroneous string */
+        for (;;) {
+            SCM_GETC(c, port);
+            if (c == EOF || c == '/') break;
+            if (c == '\\') SCM_GETC(c, port);
+        }
+        /* construct an error message */
+        Scm_DStringInit(&ds);
+        Scm_DStringPutc(&ds, '\\');
+        Scm_DStringPutc(&ds, key);
+        for (i=0; i<nread; i++) Scm_DStringPutc(&ds, (unsigned char)buf[i]);
+        Scm_Error("Bad '\\%c' escape sequence in a regexp literal: %s",
+                  key, Scm_DStringGetz(&ds));
+    }
+    return r;
+}
+
 /*----------------------------------------------------------------
  * pass1 - parser
  */
@@ -316,6 +345,18 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             case 't': SCM_APPEND1(head, tail, SCM_MAKE_CHAR('\t')); break;
             case 'f': SCM_APPEND1(head, tail, SCM_MAKE_CHAR('\f')); break;
             case 'e': SCM_APPEND1(head, tail, SCM_MAKE_CHAR(0x1b)); break;
+            case 'x':
+                ch = read_regexp_xdigits(ctx->ipat, 2, 'x');
+                SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
+                break;
+            case 'u':
+                ch = read_regexp_xdigits(ctx->ipat, 4, 'u');
+                SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
+                break;
+            case 'U':
+                ch = read_regexp_xdigits(ctx->ipat, 8, 'U');
+                SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
+                break;
             case 'd':
                 cs = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
                 SCM_APPEND1(head, tail, cs);

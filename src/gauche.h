@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.282 2002-07-09 10:39:32 shirok Exp $
+ *  $Id: gauche.h,v 1.283 2002-07-10 10:09:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -693,8 +693,12 @@ SCM_EXTERN ScmObj Scm_NullP(ScmObj obj);
 SCM_EXTERN ScmObj Scm_ListP(ScmObj obj);
 
 /*--------------------------------------------------------
- * CHAR-SET
+ * CHAR and CHAR-SET
  */
+
+SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *, int, const char **);
+SCM_EXTERN ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
+                                           char *buf, int *nread);
 
 #define SCM_CHARSET_MASK_CHARS 128
 #define SCM_CHARSET_MASK_SIZE  (SCM_CHARSET_MASK_CHARS/(SIZEOF_LONG*8))
