@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.37 2001-03-31 09:10:35 shiro Exp $
+ *  $Id: class.c,v 1.38 2001-04-01 09:49:42 shiro Exp $
  */
 
 #include "gauche.h"
@@ -77,6 +77,7 @@ SCM_DEFINE_GENERIC(Scm_GenericAddMethod, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeCPL, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericComputeApplicableMethods, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
@@ -1104,6 +1105,7 @@ ScmObj Scm_NoOperation(ScmObj *arg, int nargs, ScmGeneric *gf)
     return SCM_UNDEFINED;
 }
 
+/* compute-applicable-methods */
 ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
 {
     ScmObj methods = gf->methods, mp;
@@ -1126,6 +1128,33 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
     }
     return h;
 }
+
+static ScmObj compute_applicable_methods(ScmNextMethod *nm,
+                                         ScmObj *args,
+                                         int nargs,
+                                         void *data)
+{
+    ScmGeneric *gf = SCM_GENERIC(args[0]);
+    ScmObj arglist = args[1], ap;
+    ScmObj *argv;
+    int n = Scm_Length(arglist), i;
+    if (n < 0) Scm_Error("bad argument list: %S", arglist);
+
+    argv = SCM_NEW2(ScmObj *, sizeof(ScmObj)*n);
+    i = 0;
+    SCM_FOR_EACH(ap, arglist) argv[i++] = SCM_CAR(ap);
+    return Scm_ComputeApplicableMethods(gf, argv, n);
+}
+
+static ScmClass *compute_applicable_methods_SPEC[] = {
+    SCM_CLASS_GENERIC, SCM_CLASS_LIST
+};
+static SCM_DEFINE_METHOD(compute_applicable_methods_rec,
+                         &Scm_GenericComputeApplicableMethods,
+                         2, 0,
+                         compute_applicable_methods_SPEC,
+                         compute_applicable_methods, NULL);
+
 
 /* sort-methods
  *  This is a naive implementation just to make things work.
@@ -1614,6 +1643,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericComputeCPL, "compute-cpl");
     GINIT(&Scm_GenericComputeSlots, "compute-slots");
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
+    GINIT(&Scm_GenericComputeApplicableMethods, "compute-applicable-methods");
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
@@ -1625,4 +1655,5 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&generic_initialize_rec);
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
     Scm_InitBuiltinMethod(&method_initialize_rec);
+    Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
 }
