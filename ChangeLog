@@ -1,3 +1,9 @@
+2003-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in, lib/Makefile.in : recover the rule to create slibcat
+	  after installation; it was inadvertently dropped sometime
+	  since 0.6.8.
+
 2003-06-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (ScmPortRec): renamed a member 'private' to 'priv',

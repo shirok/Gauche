@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.38 2003-05-30 12:40:34 shirok Exp $
+# $Id: Makefile.in,v 1.39 2003-06-05 08:39:04 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check install uninstall clean distclean maintainer-clean install-check
@@ -31,7 +31,8 @@ check:
 
 install:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install); done
-	$(INSTALL) -m 444 acinclude.m4 $(GAUCHE_DATA_DIR)/$(GAUCHE_VERSION)/aclocal.m4
+	$(INSTALL) -m 444 acinclude.m4 `sh src/gauche-config --ac`/aclocal.m4
+	cd lib; $(MAKE) slibcat
 
 install-doc:
 	cd doc; $(MAKE) install
@@ -40,7 +41,7 @@ install-rpm:
 	cd src; $(MAKE) install
 	cd lib; $(MAKE) install
 	cd ext; $(MAKE) install
-	$(INSTALL) -m 444 aclocal.m4 `sh src/gauche-config --ac`/aclocal.m4
+	$(INSTALL) -m 444 acinclude.m4 `sh src/gauche-config --ac`/aclocal.m4
 
 uninstall:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
