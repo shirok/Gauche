@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: regexp.scm,v 1.11 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: regexp.scm,v 1.12 2003-09-06 22:33:06 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
@@ -149,11 +149,11 @@
   (let ((subpat (regexp-parse-subpattern sub))
         (match  (rxmatch rx string)))
     (if match
-        (call-with-output-string
-          (lambda (out)
-            (regexp-replace-rec match subpat out
-                                (lambda (str) (display str out)))))
-        string)))
+      (call-with-output-string
+        (lambda (out)
+          (regexp-replace-rec match subpat out
+                              (lambda (str) (display str out)))))
+      string)))
 
 ;; The inner call is awkward to avoid creation of output string
 ;; when no match at all.
@@ -161,28 +161,27 @@
   (let ((subpat (regexp-parse-subpattern sub))
         (match  (rxmatch rx string)))
     (if match
-        (call-with-output-string
-          (lambda (out)
-            (define (loop str)
-              (unless (equal? str "")
-                (cond ((rxmatch rx str)
-                       => (lambda (match)
-                            (regexp-replace-rec match subpat out loop)))
-                      (else (display str out)))))
-            (regexp-replace-rec match subpat out loop)))
-        string)))
+      (call-with-output-string
+        (lambda (out)
+          (define (loop str)
+            (unless (equal? str "")
+              (cond ((rxmatch rx str)
+                     => (lambda (match)
+                          (regexp-replace-rec match subpat out loop)))
+                    (else (display str out)))))
+          (regexp-replace-rec match subpat out loop)))
+      string)))
 
 ;; Contributed from Alex Shinn; modified a bit by shiro
 (define (regexp-quote str)
-  (with-string-io
-   str
-   (lambda ()
-     (let loop ((c (read-char)))
-       (unless (eof-object? c)
-         (when (char-set-contains? #[\\|\[\](){}.*+?^$] c) (write-char #\\))
-         (write-char c)
-         (loop (read-char)))))))
-       
+  (with-string-io str
+    (lambda ()
+      (let loop ((c (read-char)))
+        (unless (eof-object? c)
+          (when (char-set-contains? #[\\|\[\](){}.*+?^$] c) (write-char #\\))
+          (write-char c)
+          (loop (read-char)))))))
+
 ;;; scsh compatibility
 
 ;(define regexp-search rxmatch)
