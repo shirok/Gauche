@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.13 2001-03-08 10:33:10 shiro Exp $
+;;; $Id: syslib.stub,v 1.14 2001-03-08 10:33:56 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -136,7 +136,7 @@
   "  SCM_RETURN(passwd->shell);")
 (define-cproc sys-passwd->class (passwd)
   (assert (sys-passwd? passwd))
-  "  SCM_RETURN(passwd->class);")
+  "  SCM_RETURN(passwd->pwclass);")
 
 ;; faster functions; bypassing creation of passwd object
 (define-cproc sys-uid->user-name (uid)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.8 2001-03-08 10:20:18 shiro Exp $
+ *  $Id: system.c,v 1.9 2001-03-08 10:34:13 shiro Exp $
  */
 
 #include <stdio.h>
@@ -322,9 +322,9 @@ static ScmObj make_passwd(struct passwd *pw)
     sp->gecos = SCM_FALSE;
 #endif
 #ifdef HAVE_PW_CLASS
-    sp->class = Scm_MakeString(pw->pw_class, -1, -1);
+    sp->pwclass = Scm_MakeString(pw->pw_class, -1, -1);
 #else
-    sp->class = SCM_FALSE;
+    sp->pwclass = SCM_FALSE;
 #endif
     sp->dir = Scm_MakeString(pw->pw_dir, -1, -1);
     sp->shell = Scm_MakeString(pw->pw_shell, -1, -1);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.63 2001-03-08 10:19:01 shiro Exp $
+ *  $Id: gauche.h,v 1.64 2001-03-08 10:33:50 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1536,7 +1536,7 @@ typedef struct ScmSysPasswdRec {
     ScmObj gecos;
     ScmObj dir;
     ScmObj shell;
-    ScmObj class;
+    ScmObj pwclass;
 } ScmSysPasswd;
 
 extern ScmClass Scm_SysPasswdClass;
