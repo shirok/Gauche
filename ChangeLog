@@ -1,3 +1,10 @@
+2001-02-15  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.12
+	* src/vm.c, src/compile.c: implemented receive and values.
+	* src/extlib.stub: added string port functions.
+	* src/load.c: added some code to support dynamic linking
+
 2001-02-14  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.11
@@ -74,7 +81,7 @@
 
 	* release 0.0.3
 	* src/vm.c, src/gauche/vminsn.h, src/stdlib.stub: inline several
-	  number operations.
+	  numeric operations.
         * src/compile.c: fix quasiquote code and clean up.
 	* make installation procedure clearer.
 	* src/gauche-config.in: added
