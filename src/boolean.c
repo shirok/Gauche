@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.8 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: boolean.c,v 1.9 2001-04-01 09:19:58 shiro Exp $
  */
 
 #include "gauche.h"
@@ -26,7 +26,7 @@ int Scm_EqvP(ScmObj x, ScmObj y)
 {
     /* for our implementation, only the number matters. */
     if (SCM_NUMBERP(x)) {
-        if (SCM_NUMBERP(y)) return !SCM_FALSEP(Scm_NumEq(x, y, SCM_NIL));
+        if (SCM_NUMBERP(y)) return (Scm_NumCmp(x, y) == 0);
         else return FALSE;
     }
     return (x == y);
@@ -49,7 +49,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
         return FALSE;
     }
     if (SCM_NUMBERP(x)) {
-        if (SCM_NUMBERP(y)) return SCM_TRUEP(Scm_NumEq(x, y, SCM_NIL));
+        if (SCM_NUMBERP(y)) return (Scm_NumCmp(x, y) == 0);
         else return FALSE;
     }
     if (SCM_VECTORP(x)) {
