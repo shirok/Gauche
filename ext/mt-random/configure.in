@@ -1,0 +1,25 @@
+dnl
+dnl Configuring ext/mt-random
+dnl
+dnl $Id: configure.in,v 1.1 2002-05-10 10:57:48 shirok Exp $
+AC_INIT(mt-random.c)
+AC_GAUCHE_INIT_EXT
+
+# Sets the default value of INSTALL_TYPE macro.
+AC_GAUCHE_INSTALL_TYPE(sys)
+
+# Get compiler parameters which Gauche has been compiled with.
+AC_GAUCHE_CC
+AC_GAUCHE_FLAGS
+
+# Check for other programs.
+AC_PROG_INSTALL
+
+# Add more test
+
+# Set LDFLAGS to generate shared library.
+AC_GAUCHE_FIX_LIBS
+
+# Output
+AC_GAUCHE_EXT_FIXUP(mt-random)
+AC_OUTPUT(Makefile)

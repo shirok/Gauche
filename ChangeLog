@@ -1,5 +1,10 @@
+2002-05-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random/* : added math.mt-random.
+
 2002-05-08  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm : added touch-file and copy-file.
 	* lib/gauche/defvalues.scm : moved define-values here, and added
 	  set!-values.
 	* ext/auxsys/auxsyslib.stub : added sys-utime.

@@ -1,0 +1,21 @@
+;;-*-Scheme-*-
+;; 
+
+"
+#include \"mt-random.h\"
+#include \"gauche/uvector.h\"
+"
+
+(define-type "mersenne-twister" mersenne-twister?
+  "ScmMersenneTwister*" "SCM_MERSENNE_TWISTER_P" "SCM_MERSENNE_TWISTER")
+(define-type "u32vector" u32vector?
+  "ScmF32Vector*" "SCM_U32VECTORP" "SCM_U32VECTOR")
+(define-type "f32vector" f32vector?
+  "ScmF32Vector*" "SCM_F32VECTORP" "SCM_F32VECTOR")
+(define-type "f64vector" f64vector?
+  "ScmF64Vector*" "SCM_F64VECTORP" "SCM_F64VECTOR")
+
+(define-cproc mt-random-real (mt)
+  (assert (mersenne-twister? mt))
+  "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt)));")
+

@@ -1,6 +1,6 @@
 
 # the following line is examined by configure.  keep "^SUBDIRS=" pattern.
-SUBDIRS= example auxsys uvector charconv net termios fcntl dbm
+SUBDIRS= example auxsys uvector charconv net termios fcntl dbm mt-random
 
 all :
 	@for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) all); done
