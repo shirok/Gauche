@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.24 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: module.c,v 1.25 2002-05-07 08:32:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -35,7 +35,17 @@ static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass, module_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
-static ScmHashTable *moduleTable; /* global, must be protected in MT env */
+/* Global module table */
+static struct {
+    ScmHashTable *table;
+    ScmInternalMutex mutex;
+} modules;
+
+/* Predefined modules */
+static ScmModule *nullModule;
+static ScmModule *schemeModule;
+static ScmModule *gaucheModule;
+static ScmModule *userModule;
 
 /*----------------------------------------------------------------------
  * Constructor
@@ -53,26 +63,32 @@ static ScmObj make_module(ScmSymbol *name, ScmModule *parent)
     z->exported = SCM_NIL;
     z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
 
-    Scm_HashTablePut(moduleTable, SCM_OBJ(name), SCM_OBJ(z));
+    Scm_HashTablePut(modules.table, SCM_OBJ(name), SCM_OBJ(z));
     return SCM_OBJ(z);
 }
 
 ScmObj Scm_MakeModule(ScmSymbol *name)
 {
-    return make_module(name, Scm_GaucheModule());
+    ScmObj r;
+    (void)SCM_INTERNAL_MUTEX_LOCK(&modules.mutex);
+    r = make_module(name, gaucheModule);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(&modules.mutex);
+    return r;
 }
 
 /*----------------------------------------------------------------------
  * Finding and modifying bindings
  */
+/* TODO: MT safeness */
 
 ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                          int stay_in_module)
 {
-    ScmHashEntry *e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
+    ScmHashEntry *e;
     ScmModule *m;
     ScmObj p;
 
+    e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
     if (e) return SCM_GLOC(e->value);
     if (!stay_in_module) {
         /* First, search from imported modules */
@@ -154,12 +170,18 @@ ScmObj Scm_ExportAll(ScmModule *module)
 
 ScmObj Scm_FindModule(ScmSymbol *name, int createp)
 {
-    ScmHashEntry *e = Scm_HashTableGet(moduleTable, SCM_OBJ(name));
+    ScmHashEntry *e;
+    ScmObj m;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(&modules.mutex);
+    e = Scm_HashTableGet(modules.table, SCM_OBJ(name));
     if (e == NULL) {
-        if (createp) return Scm_MakeModule(name);
-        else return SCM_FALSE;
+        if (createp) m = make_module(name, gaucheModule);
+        else m = SCM_FALSE;
     }
-    else return e->value;
+    else m = e->value;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(&modules.mutex);
+    return m;
 }
 
 ScmObj Scm_AllModules(void)
@@ -167,11 +189,13 @@ ScmObj Scm_AllModules(void)
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmHashIter iter;
     ScmHashEntry *e;
-    
-    Scm_HashIterInit(moduleTable, &iter);
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(&modules.mutex);
+    Scm_HashIterInit(modules.table, &iter);
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
         SCM_APPEND1(h, t, e->value);
     }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(&modules.mutex);
     return h;
 }
 
@@ -184,11 +208,6 @@ void Scm_SelectModule(ScmModule *mod)
 /*----------------------------------------------------------------------
  * Predefined modules and initialization
  */
-
-static ScmModule *nullModule;
-static ScmModule *schemeModule;
-static ScmModule *gaucheModule;
-static ScmModule *userModule;
 
 ScmModule *Scm_NullModule(void)
 {
@@ -220,7 +239,8 @@ ScmModule *Scm_CurrentModule(void)
 
 void Scm__InitModule(void)
 {
-    moduleTable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
+    (void)SCM_INTERNAL_MUTEX_INIT(&modules.mutex);
+    modules.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
 
     nullModule   = MAKEMOD(SCM_SYM_NULL, NULL);
     schemeModule = MAKEMOD(SCM_SYM_SCHEME, nullModule);
