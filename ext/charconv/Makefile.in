@@ -14,7 +14,7 @@ HEADERS =
 TARGET = libcharconv.so
 OBJS = charconv_head.o charconv.o convlib.o charconv_tail.o
 CONFIG_GENERATED = Makefile charconv.h config.cache config.log config.status \
-		   charconv_head.c charconv_tail.c
+		   autom4te.cache charconv_head.c charconv_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche

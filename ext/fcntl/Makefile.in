@@ -14,7 +14,7 @@ HEADERS = fcntl.h
 TARGET = fcntl.so
 OBJS = fcntl_head.o fcntl.o fcntlib.o fcntl_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status fcntlib.c \
-		   fcntl_head.c fcntl_tail.c
+		   autom4te.cache fcntl_head.c fcntl_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
