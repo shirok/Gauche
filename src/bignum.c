@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.14 2001-04-23 05:08:53 shiro Exp $
+ *  $Id: bignum.c,v 1.15 2001-04-23 06:38:52 shiro Exp $
  */
 
 #include <math.h>
@@ -714,7 +714,7 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     bignum_lshift(v, divisor, d);
     vn_1 = DIGIT(v, n-1);
     vn_2 = DIGIT(v, n-2);
-#define DIV_DEBUG
+#undef DIV_DEBUG
 #ifdef DIV_DEBUG
     printf("shift=%d, n=%d, m=%d\n", d, n, m);
     printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
