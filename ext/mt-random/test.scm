@@ -5,7 +5,11 @@
 (use gauche.test)
 (use gauche.collection)
 (use srfi-1)
-(use srfi-4)
+
+;; instead of (use srfi-4) ...
+(add-load-path "../uvector")
+(load "srfi-4")
+(import srfi-4)
 
 (add-load-path ".")
 (load "mt-random")
