@@ -9,17 +9,21 @@ AR = ar
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
-GENERATED = stdlib.c extlib.c
-
-INSTALL_HEADERS = gauche.h ../gc/gc.h 
-INSTALL_SUBHEADERS = gauche/char_euc_jp.h gauche/vm.h gauche/vminsn.h \
-                     gauche/vminline.h
+GENERATED = stdlib.c extlib.c gauche-config
 
 HEADER_INSTALL_DIR = @includedir@
 SUBHEADER_INSTALL_DIR = @includedir@/gauche
 LIB_INSTALL_DIR = @libdir@
+BIN_INSTALL_DIR = @bindir@
+SCM_INSTALL_DIR = @libdir@/gauche/@GAUCHE_VERSION@/lib
 
+INSTALL_HEADERS = gauche.h ../gc/gc.h 
+INSTALL_SUBHEADERS = gauche/char_euc_jp.h gauche/vm.h gauche/vminsn.h
 INSTALL_LIBS = libgauche.a
+INSTALL_BINS = gosh gauche-config
+INSTALL_SCMS = genstub
+
+INSTALL=@INSTALL@
 
 GCLIB = ../gc/gc.a
 
@@ -53,17 +57,22 @@ clean :
 	rm -f core gosh *.o *~ *.a $(GENERATED) gauche/*~
 
 install : all
-	if [ ! -d $(HEADER_INSTALL_DIR) ]; then mkdir $(HEADER_INSTALL_DIR); fi
 	for f in $(INSTALL_HEADERS); do \
-	  cp -f $$f $(HEADER_INSTALL_DIR); \
+	  $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
 	done
-	if [ ! -d $(SUBHEADER_INSTALL_DIR) ]; then mkdir $(SUBHEADER_INSTALL_DIR); fi
 	for f in $(INSTALL_SUBHEADERS); do \
-	  cp -f $$f $(SUBHEADER_INSTALL_DIR); \
+	  $(INSTALL) -m 444 $$f $(SUBHEADER_INSTALL_DIR); \
 	done
-	if [ ! -d @libdir@ ]; then mkdir @libdir@; fi
 	for f in $(INSTALL_LIBS); do \
-	  cp -f $$f @libdir@; \
+	  $(INSTALL) -m 444 $$f $(LIB_INSTALL_DIR); \
 	done
+	for f in $(INSTALL_BINS); do \
+	  $(INSTALL) -m 555 $$f $(BIN_INSTALL_DIR); \
+	done
+	$(INSTALL) -d $(SCM_INSTALL_DIR)
+	for f in $(INSTALL_SCMS); do \
+	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
+	done
+
 
 
