@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.20 2001-02-14 10:09:26 shiro Exp $
+;;; $Id: extlib.stub,v 1.21 2001-02-16 06:58:03 shiro Exp $
 ;;;
 
 ;;
@@ -191,6 +191,19 @@
 ;;
 ;; 6.6.1  Ports
 ;;
+
+(define-cproc open-input-string (string) ;SRFI-6
+  (assert (string? string))
+  "  SCM_RETURN(Scm_MakeInputStringPort(string));")
+
+(define-cproc open-output-string ()      ;SRFI-6
+  "  SCM_RETURN(Scm_MakeOutputStringPort());")
+
+(define-cproc get-output-string (oport) ;SRFI-6
+  (assert (output-port? oport))
+  "  if (SCM_PORT_TYPE(oport) != SCM_PORT_OSTR)
+        Scm_Error(\"output string port required, but got: %S\", oport);
+  SCM_RETURN(Scm_GetOutputString(oport));")
 
 (define-cproc current-error-port ()     ;gauche extention
   "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
