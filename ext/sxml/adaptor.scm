@@ -1,14 +1,13 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.3 2003-07-21 12:19:39 shirok Exp $
+;;; $Id: adaptor.scm,v 1.4 2003-07-21 20:19:19 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
   (use srfi-1)
   (export ascii->char ucscode->char char-return char-tab char-newline
-          assert |--| *ssax:warn-handler*
-          ssax:warn parser-error))
+          assert |--| parser-error))
 (select-module sxml.adaptor)
 
 (define ascii->char integer->char)
@@ -96,31 +95,12 @@
        (else (loop (cons (car reported) exprs) (cdr reported)))))))
 )
 
-;; Macros used in sxpath.scm (increment/decrement operators) ------
+;; Macro used in sxpath.scm 
 
 ; Read-only decrement
 (define-macro (|--| x) `(- ,x 1))
 
-
-;; Warn and error procedures. ------------------------------------
-(define *ssax:warn-handler* #f)
-
-(define (ssax:warn port msg . args)
-  (when (procedure? *ssax:warn-handler*)
-    (let ((err (open-output-string)))
-      (display (port-position-prefix port) err)
-      (display "Warning: " err)
-      (if (and (string? msg) (string-prefix? "\n" msg))
-          (display (string-drop msg 1) err)
-          (display msg err))
-      (for-each (lambda (m)
-                  (cond ((equal? m "\n")) ;ignore
-                        ((string? m) (display m err))
-                        (else (write m err))))
-                args)
-      (newline err)
-      (*ssax:warn-handler* (get-output-string err)))))
-
+;; Error handler called in SSAX
 (define (parser-error  port msg . args)
   (let ((err (open-output-string)))
     (display (port-position-prefix port) err)

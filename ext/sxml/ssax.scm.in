@@ -5,7 +5,7 @@
 ;;;   Oleg Kiselyov's SSAX XML parser, SSAX.scm, v4.9.
 ;;;   Public domain.
 ;;;
-;;; $Id: ssax.scm.in,v 1.2 2003-07-21 12:19:39 shirok Exp $
+;;; $Id: ssax.scm.in,v 1.3 2003-07-21 20:19:19 shirok Exp $
 ;;;
 
 (define-module sxml.ssax
@@ -14,11 +14,49 @@
   (use srfi-13)
   (use text.parse)
   (use sxml.adaptor)
+  (use gauche.parameter)
   (export-all)
   )
 (select-module sxml.ssax)
 
+(define ssax:warn-handler (make-parameter #f))
+
+(define (ssax:warn port msg . args)
+  (when (procedure? (ssax:warn-handler))
+    (let ((err (open-output-string)))
+      (display (port-position-prefix port) err)
+      (display "Warning: " err)
+      (if (and (string? msg) (string-prefix? "\n" msg))
+          (display (string-drop msg 1) err)
+          (display msg err))
+      (for-each (lambda (m)
+                  (cond ((equal? m "\n")) ;ignore
+                        ((string? m) (display m err))
+                        (else (write m err))))
+                args)
+      (newline err)
+      ((ssax:warn-handler) (get-output-string err)))))
+
 ;#include-body "src/SSAX.scm"
+
+;; for backward compatibility - will be gone soon
+
+(define SSAX:read-markup-token ssax:read-markup-token)
+(define SSAX:read-cdata-body ssax:read-cdata-body)
+(define SSAX:read-char-ref ssax:read-char-ref)
+(define SSAX:handle-parsed-entity ssax:handle-parsed-entity)
+(define SSAX:read-attributes ssax:read-attributes)
+(define SSAX:resolve-name ssax:resolve-name)
+(define SSAX:uri-string->symbol ssax:uri-string->symbol)
+(define SSAX:complete-start-tag ssax:complete-start-tag)
+(define SSAX:read-external-id ssax:read-external-id)
+(define SSAX:scan-Misc ssax:scan-Misc)
+(define SSAX:read-char-data ssax:read-char-data)
+(define SSAX:assert-token ssax:assert-token)
+(define SSAX:make-pi-parser ssax:make-pi-parser)
+(define SSAX:make-elem-parser ssax:make-elem-parser)
+(define SSAX:make-parser ssax:make-parser)
+(define SSAX:XML->SXML ssax:xml->sxml)
 
 (provide "sxml/ssax")
 

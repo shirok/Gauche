@@ -5,7 +5,7 @@
 ;;;   Oleg Kiselyov's SXPATH SXML query language, SXPath.scm, v3.5.
 ;;;   Public domain.
 ;;;
-;;; $Id: sxpath.scm,v 1.2 2003-07-21 12:19:39 shirok Exp $
+;;; $Id: sxpath.scm,v 1.3 2003-07-21 20:19:19 shirok Exp $
 ;;;
 
 (define-module sxml.sxpath
