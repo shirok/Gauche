@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.26 2001-09-19 07:41:57 shirok Exp $
+ *  $Id: read.c,v 1.27 2001-09-26 19:53:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -39,6 +39,8 @@ static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
 static ScmObj maybe_uvector(ScmPort *port, char c);
+
+static ScmObj sym_read_sharp_comma_string;
 
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
@@ -558,8 +560,14 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmObj form)
 {
     int len = Scm_Length(form);
     ScmHashEntry *e;
-    
-    if (len <= 0) read_error(port, "bad #,-form: #,%S", form);
+
+    if (len <= 0) {
+        if (SCM_STRINGP(form)) {
+            /* #,"foo" extension */
+            return SCM_LIST2(sym_read_sharp_comma_string, form);
+        }
+        read_error(port, "bad #,-form: #,%S", form);
+    }
 
     /* TODO: MT Safeness */
     e = Scm_HashTableGet(read_ctor_table, SCM_CAR(form));
@@ -643,6 +651,8 @@ void Scm__InitRead(void)
                                                       NULL, 0));
     Scm_DefineReaderCtor(sym_reader_ctor,
                          Scm_MakeSubr(reader_ctor, NULL, 2, 0,
-                                      SCM_INTERN("sym_reader_ctor")));
+                                      sym_reader_ctor));
+
+    sym_read_sharp_comma_string = SCM_INTERN("read-#,-string");
 }
 
