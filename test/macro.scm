@@ -98,6 +98,24 @@
 (test-macro "vect2"  (a c e b d f) (vect2 #((a b) (c d) (e f))))
 (test-macro "vect2"  (#(a c e) #(b d f)) (vect2 (#(a b) #(c d) #(e f))))
 
+(define-syntax dot1 (syntax-rules ()
+                      ((_ (?a . ?b)) (?a ?b))
+                      ((_ ?loser) #f)))
+(test-macro "dot1" (1 2)     (dot1 (1 . 2)))
+(test-macro "dot1" (1 (2))   (dot1 (1 2)))
+(test-macro "dot1" (1 ())    (dot1 (1)))
+(test-macro "dot1" (1 (2 3)) (dot1 (1 2 3)))
+(test-macro "dot1" #f        (dot1 ()))
+
+(define-syntax dot2 (syntax-rules ()
+                      ((_ ?a . ?b) (?a ?b))
+                      ((_ . ?loser) #f)))
+(test-macro "dot2" (1 2)     (dot2 1 . 2))
+(test-macro "dot2" (1 (2))   (dot2 1 2))
+(test-macro "dot2" (1 ())    (dot2 1))
+(test-macro "dot2" (1 (2 3)) (dot2 1 2 3))
+(test-macro "dot2" #f        (dot2))
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
 (define-syntax %cond
