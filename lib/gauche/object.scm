@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.17 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: object.scm,v 1.18 2001-09-04 20:12:55 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -339,6 +339,11 @@
         (lambda (class slot-name val)
           (apply (cdr (class-slot-gns class slot-name)) (list #f val))))
   )
+
+;; convenient routine to push the value to the slot.
+;; this can be optimized later.
+(define (slot-push! obj slot value)
+  (slot-set! obj slot (cons value (slot-ref obj slot))))
 
 (define-method slot-unbound ((class <class>) obj slot)
   (errorf "slot ~s of object ~s is unbound" slot obj))
