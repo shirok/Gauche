@@ -1,7 +1,7 @@
 ;;;
 ;;; Debugger - terminal base debugger
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,14 +12,17 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.9 2002-02-13 06:14:15 shirok Exp $
+;;;  $Id: debugger.scm,v 1.10 2002-08-18 02:29:20 shirok Exp $
 ;;;
+
+;; NB: this is still a working version.  
 
 (define-module gauche.vm.debugger
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
   (use gauche.vm.disasm)
+  (use gauche.threads)
   (use text.parse)
   (export enable-debug disable-debug debug-print)
   )
@@ -79,7 +82,7 @@
         (format outp "*** Error: ~a\n" (slot-ref exception 'message))
         (format outp "*** Error: ~a\n" exception))
     (debug-print-stack stack *stack-show-depth*)
-    (format outp "Entering debugger.  Type :help for help.\n")
+    (format outp "Entering debugger.  Type help for help.\n")
     (debug-loop stack))
   (enable-debug))
 
@@ -167,10 +170,10 @@
     ))
 
 (define (enable-debug)
-  (vm-set-default-exception-handler (current-vm) debug))
+  (vm-set-default-exception-handler (current-thread) debug))
 
 (define (disable-debug)
-  (vm-set-default-exception-handler (current-vm) #f))
+  (vm-set-default-exception-handler (current-thread) #f))
 
 (provide "gauche/vm/debugger")
 
