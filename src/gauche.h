@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.96 2001-03-31 11:58:25 shiro Exp $
+ *  $Id: gauche.h,v 1.97 2001-04-01 07:13:18 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1005,7 +1005,8 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
     ((b) =                                                      \
       ((SCM_PORT(port)->src.istr.rest <= 0) ?                   \
         EOF :                                                   \
-        (ScmByte)(*SCM_PORT(port)->src.istr.current++)))
+        (SCM_PORT(port)->src.istr.rest--,                       \
+         (ScmByte)(*SCM_PORT(port)->src.istr.current++))))
 #define SCM__ISTR_GETC(c, port)                                 \
     do {                                                        \
        if (SCM_PORT(port)->src.istr.rest <= 0) {                \
