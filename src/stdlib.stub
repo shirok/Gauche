@@ -241,20 +241,6 @@
   (assert (list? alist))
   "  SCM_RETURN(Scm_Assoc(obj, alist));")
 
-;; gauche extention
-
-(define-cproc pair-attributes (pair)
-  (assert (pair? pair))
-  "  SCM_RETURN(SCM_PAIR_ATTR(pair));")
-
-(define-cproc pair-attribute-get (pair key &optional fallback)
-  (assert (pair? pair))
-  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
-
-(define-cproc pair-attribute-set! (pair key value)
-  (assert (pair? pair))
-  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
-
 ;;
 ;; 6.3.3  Symbols
 ;;
@@ -268,19 +254,6 @@
 
 (define-cproc string->symbol (obj)
   "  SCM_RETURN(SCM_OBJ(Scm_CopyString(SCM_SYMBOL_NAME(obj))));")
-
-(define-cproc symbol-bound? (symbol &optional module)
-  (assert (symbol? symbol))
-  "  
-  if (module == SCM_UNBOUND) {
-     module = SCM_OBJ(SCM_CURRENT_MODULE());
-  } else if (!SCM_MODULEP(module)) {
-     Scm_Error(\"module required, but got %S\", module);
-  }
-  if (Scm_SymbolValue(SCM_MODULE(module), symbol) == SCM_UNBOUND)
-     SCM_RETURN(SCM_FALSE);
-  else
-     SCM_RETURN(SCM_TRUE);")
 
 ;;
 ;; 6.3.4  Characters
@@ -352,10 +325,6 @@
   (assert (string? str))
   "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_LENGTH(str)));")
 
-(define-cproc string-size (str)         ;gauche specific
-  (assert (string? str))
-  "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_SIZE(str)));")
-
 (define-cproc string-ref (str k)
   (assert (string? str))
   (assert (small-integer? k))
@@ -368,18 +337,6 @@
   "  ScmObj r = Scm_StringSet(str, k, c);
   if (r == SCM_FALSE) Scm_Error(\"argument out of range: %d\", k);
   SCM_RETURN(SCM_UNDEFINED);")
-
-(define-cproc string-byte-ref (str k)   ;gauche specific
-  (assert (string? str))
-  (assert (small-integer? k))
-  "  int r = Scm_StringByteRef(str, k);
-  SCM_RETURN(SCM_MAKE_INT(r));")
-
-(define-cproc string-byte-set! (str k c) ;gauche specific
-  (assert (string? str))
-  (assert (small-integer? k))
-  (assert (char? c))
-  "  SCM_RETURN(Scm_StringByteSet(str, k, c));")
 
 (define-cproc string=? (s1 s2)
   (assert (string? s1))
@@ -482,7 +439,7 @@
 (define-cproc procedure? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PROCEDUREP(obj)));")
 
-(define-cproc apply (proc &rest args)
+(define-cproc apply (proc args)
   ;; Scm_Apply leaves argument pushing by the callee.
   "  Scm_Apply(proc, args);")
 
@@ -534,9 +491,6 @@
 (define-cproc current-output-port ()
   "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_OUTPUT_PORT));")
 
-(define-cproc current-error-port ()     ;gauche extention
-  "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_ERROR_PORT));")
-
 ; with-input-from-file
 ; with-output-to-file
 
@@ -560,21 +514,6 @@
   (assert (output-port? port))
   "  Scm_ClosePort(port); SCM_RETURN(SCM_UNDEFINED);")
 
-;; gauche specific
-(define-cproc port-name (port)
-  (assert (port? port))
-  "  SCM_RETURN(Scm_PortName(port));")
-
-(define-cproc port-current-line (port)
-  (assert (port? port))
-  "  int i = Scm_PortLine(port);
-  SCM_RETURN(Scm_MakeInteger(i));")
-
-(define-cproc port-current-column (port)
-  (assert (port? port))
-  "  int i = Scm_PortPosition(port);
-  SCM_RETURN(Scm_MakeInteger(i));")
-
 ;;
 ;; 6.6.2  Input
 ;;
@@ -596,7 +535,6 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EOFP(obj)));")
 
 ; char-ready?
-; read-byte
 
 ;;
 ;; 6.6.3  Output
@@ -623,21 +561,6 @@
   "  SCM_PUTC(ch, port);
   SCM_RETURN(SCM_MAKE_INT(1));")
 
-;; gauche extentions
-
-(define-cproc write-byte (byte &optional (port (current-output-port)))
-  (assert (small-integer? byte))
-  (assert (output-port? port))
-  "  if (byte < 0 || byte > 255) Scm_Error(\"argument out of range: %d\", byte);
-  SCM_PUTB(byte, port);
-  SCM_RETURN(SCM_MAKE_INT(1));")
-
-(define-cproc write-limited (obj limit &optional (port (current-output-port)))
-  (assert (output-port? port))
-  (assert (small-integer? limit))
-  "  int n = Scm_WriteLimited(obj, port, SCM_PRINT_WRITE, limit);
-  SCM_RETURN(SCM_MAKE_INT(n));")
-
 ;;
 ;; 6.6.4  System Interface
 ;;
@@ -651,52 +574,3 @@
 
 ;; gauche extention
 
-(define-cproc load-from-port (port)
-  (assert (input-port? port))
-  "  Scm_LoadFromPort(port);")
-
-;;
-;; Gauche extentions
-;;
-
-;; OO feature
-(define-cproc class-of (obj)
-  "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
-
-;; Utility procedure
-(define-cproc format (port fmt &rest args)
-  (assert (string? fmt))
-  "  SCM_RETURN(Scm_Format(port, fmt, args));")
-
-(define-cproc exit (&optional (code 0))
-  (assert (small-integer? code))
-  "  Scm_Exit(code);")
-
-;; Inspecting feature
-(define-cproc current-vm ()
-  "  SCM_RETURN(SCM_OBJ(Scm_VM()));")
-
-(define-cproc vm-dump (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  Scm_VMDump(SCM_VM(vm));
-  SCM_RETURN(SCM_UNDEFINED); ")
-
-(define-cproc vm-trace-stack (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  SCM_RETURN(Scm_VMGetStack(SCM_VM(vm)));")
-
-(define-cproc vm-instruction? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_INSNP(obj)));")
-
-;(define-cproc vm-instruction->list (obj)
-;  "  SCM_RETURN(Scm_VMInsnToList(obj));")
-
-(define-cproc closure-code (clo)
-  (assert (closure? clo))
-  "  SCM_RETURN(clo->code);")
-
-(define-cproc procedure-info (proc)
-  (assert (procedure? proc))
-  "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")

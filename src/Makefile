@@ -4,10 +4,16 @@ CFLAGS = -g -I. -I../gc
 LDFLAGS = -lm
 AR = ar
 
+GENERATED = stdlib.c extlib.c
+
 OBJS = core.o vm.o compile.o class.o boolean.o string.o list.o port.o \
        hash.o write.o read.o vector.o symbol.o module.o proc.o number.o \
-       load.o stdlib.o 
+       load.o stdlib.o extlib.o
 
+.SUFFIXES: .stub
+
+.stub.c:
+	$(SCM) genstub $<
 
 HDRS = gauche.h
 
@@ -16,14 +22,11 @@ all : gosh
 gosh : libgauche.a main.o
 	$(CC) $(CFLAGS) -o gosh main.o -L. -lgauche ../gc/gc.a $(LDFLAGS)
 
-stdlib.c : stdlib.stub genstub
-	$(SCM) genstub stdlib.stub
-
 $(OBJS) main.o : $(HDRS)
 
 libgauche.a : $(OBJS)
 	$(AR) r libgauche.a $(OBJS)
 
 clean :
-	rm -f core gosh *.o *~ *.a stdlib.c gauche/*~
+	rm -f core gosh *.o *~ *.a $(GENERATED) gauche/*~
 

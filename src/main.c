@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         case 'g': show_compile = 1;
         }
     }
-    
+
     Scm_Init();
 
     toplevel();

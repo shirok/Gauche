@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: symbol.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -111,6 +111,7 @@ ScmSymbol ScmQcond             = SYMINIT;
 ScmSymbol ScmQcase             = SYMINIT;
 ScmSymbol ScmQelse             = SYMINIT;
 ScmSymbol ScmQyields           = SYMINIT;
+ScmSymbol ScmQdo               = SYMINIT;
 
 void Scm__InitSymbol(void)
 {
@@ -136,4 +137,5 @@ void Scm__InitSymbol(void)
     SYMREG(ScmQcase,   "case");
     SYMREG(ScmQelse,   "else");
     SYMREG(ScmQyields, "=>");
+    SYMREG(ScmQdo,     "do");
 }

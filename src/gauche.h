@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: gauche.h,v 1.2 2001-01-12 11:33:37 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -165,8 +165,11 @@ typedef struct ScmHeaderRec {
 
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
-#define SCM_CLASS(obj)         (SCM_OBJ(obj)->klass)
-#define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS(obj) == (klass)))
+#define SCM_CLASS_OF(obj)      (SCM_OBJ(obj)->klass)
+#define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj) == (klass)))
+
+#define SCM_CLASS(obj)        ((ScmClass*)(obj))
+#define SCM_CLASSP(obj)       SCM_XTYPEP(obj, SCM_CLASS_CLASS)
 
 #define SCM_NEW(type)         ((type*)(Scm_Malloc(sizeof(type))))
 #define SCM_NEW2(type, size)  ((type)(Scm_Malloc(size)))
@@ -843,13 +846,22 @@ extern int Scm__PortGetcInternal(ScmPort *port);
  * WRITE
  */
 
+/* Print mode flags */
 enum {
-    SCM_PRINT_WRITE,
-    SCM_PRINT_DISPLAY,
-    SCM_PRINT_DEBUG
+    SCM_PRINT_WRITE,            /* write mode   */
+    SCM_PRINT_DISPLAY,          /* display mode */
+    SCM_PRINT_DEBUG,            /* debug mode   */
+    SCM_PRINT_SCAN              /* this mode of call is only initiated
+                                   by Scm_WriteStar (write*).
+                                */
 };
 
+#define SCM_PRINT_MODE(mode)     ((mode)&0x0f)
+
+typedef struct ScmWriteInfoRec ScmWriteInfo;
+
 extern int Scm_Write(ScmObj obj, ScmObj port, int mode);
+extern int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);
 extern ScmObj Scm_Format(ScmObj port, ScmString *fmt, ScmObj args);
 extern ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...);
 extern int Scm_Printf(ScmPort *port, const char *fmt, ...);
@@ -860,7 +872,6 @@ extern int Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
     (Scm_Write(form, Scm_Stderr(), SCM_PRINT_WRITE),            \
      Scm_Putc('\n', SCM_PORT(Scm_Stderr())),                    \
      form)
-
 
 /*---------------------------------------------------------
  * READ
@@ -1001,6 +1012,7 @@ extern ScmSymbol ScmQcond;
 extern ScmSymbol ScmQcase;
 extern ScmSymbol ScmQelse;
 extern ScmSymbol ScmQyields;
+extern ScmSymbol ScmQdo;
 
 #define SCM_SYM_QUOTE            SCM_OBJ(&ScmQquote)
 #define SCM_SYM_BACKQUOTE        SCM_OBJ(&ScmQbackquote)
@@ -1022,6 +1034,7 @@ extern ScmSymbol ScmQyields;
 #define SCM_SYM_CASE             SCM_OBJ(&ScmQcase)
 #define SCM_SYM_ELSE             SCM_OBJ(&ScmQelse)
 #define SCM_SYM_YIELDS           SCM_OBJ(&ScmQyields) /* => */
+#define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
 
 /* Gloc (global location) */
 struct ScmGlocRec {

@@ -1,0 +1,256 @@
+;; -*-Scheme-*-
+
+;;
+;; Extra built-ins
+;;
+
+;;
+;; 6.1  Equivalence predicates
+;;
+
+
+;;
+;; 6.2  Numbers
+;;
+
+;;
+;; 6.3.1  Booleans
+;;
+
+;;
+;; 6.3.2  Pairs and lists
+;;
+
+(define-cproc pair-attributes (pair)
+  (assert (pair? pair))
+  "  SCM_RETURN(SCM_PAIR_ATTR(pair));")
+
+(define-cproc pair-attribute-get (pair key &optional fallback)
+  (assert (pair? pair))
+  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
+
+(define-cproc pair-attribute-set! (pair key value)
+  (assert (pair? pair))
+  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
+
+;;
+;; 6.3.3  Symbols
+;;
+
+(define-cproc symbol-bound? (symbol &optional module)
+  (assert (symbol? symbol))
+  "  
+  if (module == SCM_UNBOUND) {
+     module = SCM_OBJ(SCM_CURRENT_MODULE());
+  } else if (!SCM_MODULEP(module)) {
+     Scm_Error(\"module required, but got %S\", module);
+  }
+  if (Scm_SymbolValue(SCM_MODULE(module), symbol) == SCM_UNBOUND)
+     SCM_RETURN(SCM_FALSE);
+  else
+     SCM_RETURN(SCM_TRUE);")
+
+;;
+;; 6.3.4  Characters
+;;
+
+;;
+;; 6.3.5 Strings
+;;
+
+(define-cproc string-size (str)         ;gauche specific
+  (assert (string? str))
+  "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_SIZE(str)));")
+
+(define-cproc string-byte-ref (str k)   ;gauche specific
+  (assert (string? str))
+  (assert (small-integer? k))
+  "  int r = Scm_StringByteRef(str, k);
+  SCM_RETURN(SCM_MAKE_INT(r));")
+
+(define-cproc string-byte-set! (str k c) ;gauche specific
+  (assert (string? str))
+  (assert (small-integer? k))
+  (assert (char? c))
+  "  SCM_RETURN(Scm_StringByteSet(str, k, c));")
+
+;;
+;; 6.3.6  Vectors
+;;
+
+;;
+;; 6.4  Control Features
+;;
+
+;;
+;; 6.6.1  Ports
+;;
+
+(define-cproc current-error-port ()     ;gauche extention
+  "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_ERROR_PORT));")
+
+(define-cproc port-name (port)
+  (assert (port? port))
+  "  SCM_RETURN(Scm_PortName(port));")
+
+(define-cproc port-current-line (port)
+  (assert (port? port))
+  "  int i = Scm_PortLine(port);
+  SCM_RETURN(Scm_MakeInteger(i));")
+
+(define-cproc port-current-column (port)
+  (assert (port? port))
+  "  int i = Scm_PortPosition(port);
+  SCM_RETURN(Scm_MakeInteger(i));")
+
+;;
+;; 6.6.2  Input
+;;
+
+; read-byte
+
+;;
+;; 6.6.3  Output
+;;
+
+(define-cproc write-byte (byte &optional (port (current-output-port)))
+  (assert (small-integer? byte))
+  (assert (output-port? port))
+  "  if (byte < 0 || byte > 255) Scm_Error(\"argument out of range: %d\", byte);
+  SCM_PUTB(byte, port);
+  SCM_RETURN(SCM_MAKE_INT(1));")
+
+(define-cproc write-limited (obj limit &optional (port (current-output-port)))
+  (assert (small-integer? limit))
+  "  int n = Scm_WriteLimited(obj, port, SCM_PRINT_WRITE, limit);
+  SCM_RETURN(SCM_MAKE_INT(n));")
+
+(define-cproc write* (obj &optional (port (current-output-port)))
+  "  int n = Scm_WriteCircular(obj, port, SCM_PRINT_WRITE);
+  SCM_RETURN(SCM_MAKE_INT(n));")
+
+;;
+;; 6.6.4  System Interface
+;;
+
+(define-cproc load-from-port (port)
+  (assert (input-port? port))
+  "  Scm_LoadFromPort(port);")
+
+;;
+;; Hashtable
+;;
+
+;; TODO: support user-defined hashfn and cmpfn
+;;  for now, we just support eq?-type hash
+(define-cproc make-hash-table (&rest args)
+  "  SCM_RETURN(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));")
+
+(define-cproc hash-table? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_HASHTABLEP(obj)));")
+
+(define-cproc hash-table-get (hash key &optional defval)
+  (assert (hash-table? hash))
+  "  ScmHashEntry *e = Scm_HashTableGet(hash, key);
+  if (!e || e->value == SCM_UNBOUND) {
+    if (defval != SCM_UNBOUND) SCM_RETURN(defval);
+    else Scm_Error(\"hash table doesn't have an entry for key %S\", key);
+  } else {
+    SCM_RETURN(e->value);
+  }")
+
+(define-cproc hash-table-put! (hash key value)
+  (assert (hash-table? hash))
+  "  Scm_HashTablePut(hash, key, value);
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc hash-table-exists? (hash key)
+  (assert (hash-table? hash))
+  " if (Scm_HashTableGet(hash, key) != NULL) 
+    SCM_RETURN(SCM_TRUE);
+  else
+    SCM_RETURN(SCM_FALSE);")
+
+"static void hash_table_for_each_cc(ScmObj result, void **data)
+ {
+  ScmHashIter *iter = (ScmHashIter*)(data[0]);
+  ScmProcedure *p = SCM_PROCEDURE(data[1]);
+  ScmHashEntry *e = Scm_HashIterNext(iter);
+
+  if (e) {
+    void *data[2]; data[0] = iter; data[1] = p;
+    Scm_VMPushCC(hash_table_for_each_cc, data, 2);
+    Scm_Apply2(SCM_OBJ(p), e->key, e->value);
+  } else {
+    SCM_RETURN(SCM_UNDEFINED);
+  }
+ }"
+
+(define-cproc hash-table-for-each (hash proc)
+  (assert (hash-table? hash))
+  (assert (procedure? proc))
+  "  void *data[2];
+  ScmHashIter *iter = SCM_NEW(ScmHashIter);
+  Scm_HashIterInit(hash, iter);
+  data[0] = iter; data[1] = proc;
+  Scm_VMPushCC(hash_table_for_each_cc, data, 2);"
+  )
+
+;;
+;; Gauche extentions
+;;
+
+;; OO feature
+(define-cproc class-of (obj)
+  "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+
+(define-cproc is-a? (obj cls)
+  (assert (class? cls))
+  "  SCM_RETURN(Scm_TypeP(obj, cls));")
+
+(define-cproc class-cpl (cls)
+  (assert (class? cls))
+  "  SCM_RETURN(Scm_ClassCPL(cls));")
+
+;; Utility procedure
+(define-cproc format (port fmt &rest args)
+  (assert (string? fmt))
+  "  SCM_RETURN(Scm_Format(port, fmt, args));")
+
+(define-cproc exit (&optional (code 0))
+  (assert (small-integer? code))
+  "  Scm_Exit(code);")
+
+;; Inspecting feature
+(define-cproc current-vm ()
+  "  SCM_RETURN(SCM_OBJ(Scm_VM()));")
+
+(define-cproc vm-dump (&optional vm)
+  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
+  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
+  Scm_VMDump(SCM_VM(vm));
+  SCM_RETURN(SCM_UNDEFINED); ")
+
+(define-cproc vm-trace-stack (&optional vm)
+  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
+  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
+  SCM_RETURN(Scm_VMGetStack(SCM_VM(vm)));")
+
+(define-cproc vm-instruction? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_INSNP(obj)));")
+
+(define-cproc vm-insn-inspect (obj)
+  "  SCM_RETURN(Scm_VMInsnInspect(obj));")
+
+(define-cproc source-info (obj)
+  "  if (!SCM_SOURCE_INFOP(obj))
+  Scm_Error(\"source-info object required, but got %S\", obj);
+  SCM_RETURN(SCM_SOURCE_INFO(obj)->info);")
+
+(define-cproc closure-code (clo)
+  (assert (closure? clo))
+  "  SCM_RETURN(clo->code);")
+
+(define-cproc procedure-info (proc)
+  (assert (procedure? proc))
+  "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: vm.h,v 1.2 2001-01-12 11:33:38 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -137,6 +137,9 @@ extern ScmClass Scm_VMClass;
 #define SCM_VM_INSN_CODE(obj)      ((SCM_WORD(obj)>>4)&0x0ff)
 #define SCM_VM_INSN_ARG(obj)       (SCM_WORD(obj) >> 12)
 
+#define SCM_VM_INSN_ARG0(obj)      ((SCM_WORD(obj) >> 12) & 0x03ff)
+#define SCM_VM_INSN_ARG1(obj)      ((SCM_WORD(obj) >> 22) & 0x03ff)
+
 #define SCM_VM_MAKE_INSN(code)     SCM_OBJ(((code)<<4)|SCM_VM_INSN_TAG)
 
 #define SCM_VM_LREF_OFFSET(obj)    ((SCM_WORD(obj) >> 12) & 0x03ff)
@@ -160,140 +163,14 @@ extern ScmClass Scm_VMClass;
     SCM_OBJ(((restarg)<<22) | ((nargs)<<12) | (SCM_VM_LAMBDA<<4) | SCM_VM_INSN_TAG)
 
 enum {
-    /* NOP
-     *   Input stack  : -
-     *   Result stack : -
-     *  Used for placeholder.
-     */
-    SCM_VM_NOP,
-
-    /* DEFINE <SYMBOL>
-     *   Input stack  : value
-     *   Result stack : SYMBOL
-     *
-     *  Defines global binding of SYMBOL in the current module.
-     *  The value is taken from the input stack.
-     *  This instruction only appears at the toplevel.  Internal defines
-     *  are recognized and eliminated by the compiling process.
-     */
-    SCM_VM_DEFINE,
-
-    /* LAMBDA(NARGS,RESTARG) <ARGLIST> <CODE>
-     *   Input stack  : -
-     *   Result stack : closure
-     *
-     *  Create a closure capturing current environment.  Two operands are
-     *  taken: ARGLIST is a form of lambda list; it is just for debug.
-     *  CODE is the compiled code.   Leaves created closure in the stack.
-     */
-    SCM_VM_LAMBDA,
-
-    /* LET(NLOCALS)
-     *   Input stack  : -
-     *   Result stack : -
-     *
-     *  Create a new environment frame, size of NLOCALS.  let-families
-     *  like let, let* and letrec yields this instruction.
-     */
-    SCM_VM_LET,
-
-    /* POPENV
-     *   Input stack  : -
-     *   Result stack : -
-     *
-     *  Pop a local environment.  Executed on the end of let-family
-     *  constructs.
-     */
-    SCM_VM_POPENV,
-
-    /* POPARG
-     *   Input stack  : arg
-     *   Result stack : -
-     *
-     *  Discard the result pushed on top of the stack.
-     */
-    SCM_VM_POPARG,
-
-    /* IF  <THEN-CODE>
-     *   Input stack  : test
-     *   Result stack : -
-     *
-     *  If test is true, transfer control to THEN-CODE.  Otherwise
-     *  it continues execution.   Test arg is popped.
-     */
-    SCM_VM_IF,
-
-    /* IFNP <THEN-CODE>
-     *   Input stack  : test
-     *   Result stack : test
-     *
-     *  Similar to IF, but leave the test on the stack.  `NP' stands
-     *  for "No-Pop".
-     */
-    SCM_VM_IFNP,
-
-    /* CALL(NARGS,NRETS)
-     *   Input stack  : arg0 ... argN proc
-     *   Result stack : ret0 ... retM
-     *
-     *  Call PROC.  If NRETS is SCM_VM_NRETS_UNKNOWN, this is a tail call.
-     */
-    SCM_VM_CALL,
-
-    /* SET  <LOCATION>
-     *   Input stack  : value
-     *   Result stack : -
-     *
-     *  LOCATION may be a symbol (in case of global set!) or LREF
-     *  instruction (local set!)
-     */
-    SCM_VM_SET,
-
-    /* LREF(DEPTH,OFFSET)
-     *   Input stack  : -
-     *   Result stack : value
-     *
-     *  Retrieve local value.
-     */
-    SCM_VM_LREF,
-
-    /* GREF <SYMBOL>
-     *   Input stack  : -
-     *   Result stack : value
-     *
-     *  Retrieve global value in the current module.
-     */
-    SCM_VM_GREF,
-    
-    SCM_VM_QUOTE,
-    SCM_VM_BACKQUOTE,
-    SCM_VM_UNQUOTE,
-    SCM_VM_UNQUOTE_SPLICING,
-
-    /* Inlined operators
-     *  They work the same as corresponding Scheme primitives, but they are
-     *  directly interpreted by VM, skipping argument processing part.
-     *  Compiler may insert these in order to fulfill the operation (e.g.
-     *  `case' needs MEMQ).  If the optimization level is high, global
-     *  reference of those primitive calls in the user code are replaced
-     *  as well.
-     */
-    SCM_VM_CONS,
-    SCM_VM_CAR,
-    SCM_VM_CDR,
-    SCM_VM_LIST,
-    SCM_VM_LIST_STAR,
-    SCM_VM_MEMQ,
-    SCM_VM_APPEND,
-    SCM_VM_NCONC,
-    SCM_VM_NOT,
-    SCM_VM_NULLP,
-    SCM_VM_NOT_NULLP,
-    SCM_VM_FOR_EACH,
-    SCM_VM_MAP
+#define DEFINSN(sym, nam, nparams)  sym,
+#include "vminsn.h"
+#undef DEFINSN
+    SCM_VM_NUM_INSNS
 };
 
 extern int Scm__VMInsnWrite(ScmObj insn, ScmPort *port, int mode);
+extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 /*
  * Debug level

@@ -157,6 +157,10 @@
        (arg-attr-set! cproc arg :type :procedure))
       ((closure?)
        (arg-attr-set! cproc arg :type :closure))
+      ((hash-table?)
+       (arg-attr-set! cproc arg :type :hash-table))
+      ((class?)
+       (arg-attr-set! cproc arg :type :class))
       (else
        (error "unknown assertion: ~s" form)))
     ))
@@ -326,6 +330,8 @@
    :output-port    '("ScmPort*"   "SCM_OPORTP"  "SCM_PORT"    "output port")
    :procedure      '("ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE" "procedure")
    :closure        '("ScmClosure*" "SCM_CLOSUREP" "SCM_CLOSURE" "closure")
+   :hash-table     '("ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE" "hash table")
+   :class          '("ScmClass*"  "SCM_CLASSP"  "SCM_CLASS"   "class")
    ))
 
 (define (type->c-type type)

@@ -12,16 +12,19 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: write.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include "gauche.h"
 
-/*
- * Standard write
+/*============================================================
+ * Writers
  */
+
+/* TODO: merge normal write and circular write natually, without
+   sacrificing the performance of normal write. */
 
 /* character name table (first 33 chars of ASCII)*/
 static const char *char_names[] = {
@@ -37,12 +40,29 @@ static const char *char_names[] = {
 
 #define SPBUFSIZ   50
 
+/* Two bitmask used internally in write_internal to indicate extra
+   write mode */
+#define WRITE_LIMITED   0x10    /* we're limiting the length of output.
+                                 */
+#define WRITE_CIRCULAR  0x20    /* circular-safe write.  info->table
+                                   is set up to look up for circular
+                                   objects.
+                                 */
+
+/* Extra context for fancier operation.  Valid if one of the above
+   flags are on. */
+struct ScmWriteInfoRec {
+    int ncirc;                  /* # of circular references */
+    ScmHashTable *table;        /* reference table */
+};
+
+/* Common routine. */
 static int write_internal(ScmObj obj, ScmPort *out, int mode,
-                              int acclen, int limit)
+                          int room, ScmWriteInfo *info)
 {
     int nc = 0;
 
-    if (limit > 0 && acclen > limit) return 0;
+    if (mode & WRITE_LIMITED && room < 0) return 0;
 
     if (!SCM_PTRP(obj)) {
         if (SCM_IMMEDIATEP(obj)) {
@@ -79,38 +99,41 @@ static int write_internal(ScmObj obj, ScmPort *out, int mode,
         else if (SCM_VM_INSNP(obj)) {
             nc = Scm__VMInsnWrite(obj, out, mode);
         }
-        else Scm_Panic("write: got bogus object: %08x", SCM_WORD(obj));
-    } else if (SCM_PAIRP(obj)) {
-        ScmObj p;
-        SCM_PUTC('(', out); nc++;
-        nc += write_internal(SCM_CAR(obj), out, mode, acclen+nc, limit);
-        SCM_FOR_EACH(p, SCM_CDR(obj)) {
-            SCM_PUTC(' ', out); nc++;
-            nc += write_internal(SCM_CAR(p), out, mode, acclen+nc, limit);
-        }
-        if (!SCM_NULLP(p)) {
-            SCM_PUTCSTR(" . ", out); nc += 3;
-            nc += write_internal(p, out, mode, acclen+nc, limit);
-        }
-        SCM_PUTC(')', out); nc++;
+        else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
     } else {
-        nc = Scm_ClassOf(obj)->print(obj, out, mode);
+        if (SCM_PAIRP(obj)) {
+            ScmObj p;
+            SCM_PUTC('(', out); nc++;
+            nc += write_internal(SCM_CAR(obj), out, mode, room-nc, info);
+            SCM_FOR_EACH(p, SCM_CDR(obj)) {
+                SCM_PUTC(' ', out); nc++;
+                nc += write_internal(SCM_CAR(p), out, mode, room-nc, info);
+            }
+            if (!SCM_NULLP(p)) {
+                SCM_PUTCSTR(" . ", out); nc += 3;
+                nc += write_internal(p, out, mode, room-nc, info);
+            }
+            SCM_PUTC(')', out); nc++;
+        } else {
+            nc = Scm_ClassOf(obj)->print(obj, out, mode);
+        }
     }
     return nc;
 }
 
 /*
- * Standard Write.  Returns # of written characters.
+ * Scm_Write - Standard Write.  Returns # of written characters.
  */
 int Scm_Write(ScmObj obj, ScmObj port, int mode)
 {
     if (!SCM_OPORTP(port))
         Scm_Error("output port required, but got %S", port);
-    return write_internal(obj, SCM_PORT(port), mode, 0, -1);
+    return write_internal(obj, SCM_PORT(port), mode, 0, NULL);
 }
 
 /* 
- *  Limit length (# of characters) to be written by WIDTH argument.
+ * Scm_WriteLimited - Write to limited length.
+ *
  *  Characters exceeding WIDTH are truncated.
  *  If the output fits within WIDTH, # of characters actually written
  *  is returned.  Othewise, -1 is returned.
@@ -118,10 +141,13 @@ int Scm_Write(ScmObj obj, ScmObj port, int mode)
  *  Current implementation is sloppy, potentially wasting time to write
  *  objects which will be just discarded.
  */
-int Scm_WriteLimited(ScmObj obj, ScmPort *port, int mode, int width)
+int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
 {
     ScmObj out = Scm_MakeOutputStringPort();
-    int nc = write_internal(obj, SCM_PORT(out), mode, 0, width);
+    int nc;
+    if (!SCM_OPORTP(port))
+        Scm_Error("output port required, but got %S", port);
+    nc = write_internal(obj, SCM_PORT(out), mode, width, NULL);
     if (nc > width) {
         ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
                                    0, width);
@@ -134,7 +160,142 @@ int Scm_WriteLimited(ScmObj obj, ScmPort *port, int mode, int width)
 }
 
 /*
- * Utility
+ * Scm_WriteCircular - circular-safe writer
+ */
+
+/* The first pass of write*.  */
+static void write_scan(ScmObj obj, ScmWriteInfo *info)
+{
+    ScmHashEntry *e;
+
+    for (;;) {
+        if (!SCM_PTRP(obj)) return;
+            
+        if (SCM_PAIRP(obj)) {
+            e = Scm_HashTableGet(info->table, obj);
+            if (e) { e->value = SCM_TRUE; return; }
+            Scm_HashTablePut(info->table, obj, SCM_FALSE);
+
+            write_scan(SCM_CAR(obj), info);
+            obj = SCM_CDR(obj);
+            continue;
+        }
+        if (SCM_VECTORP(obj)) {
+            int i, len = SCM_VECTOR_SIZE(obj);
+
+            e = Scm_HashTableGet(info->table, obj);
+            if (e) { e->value = SCM_TRUE; return; }
+            Scm_HashTablePut(info->table, obj, SCM_FALSE);
+
+            for (i=0; i<len; i++) {
+                write_scan(SCM_VECTOR_ELEMENT(obj, i), info);
+            }
+            return;
+        }
+        /* TODO: need to call class-specific print method for scan. */
+        return;
+    }
+}
+
+/* pass 2 of circular list writer. */
+static int write_circular(ScmObj obj, ScmPort *port, int mode,
+                          int room, ScmWriteInfo *info);
+
+static int write_circular_list(ScmObj obj, ScmPort *port, int mode,
+                               int room, ScmWriteInfo *info)
+{
+    int nc = 0;
+    ScmHashEntry *e;
+    for (;;) {
+        nc += write_circular(SCM_CAR(obj), port, mode, room-nc, info);
+
+        obj = SCM_CDR(obj);
+        if (SCM_NULLP(obj)) { SCM_PUTC(')', port); return ++nc; }
+        if (!SCM_PAIRP(obj)) {
+            SCM_PUTCSTR(" . ", port); nc+=3;
+            nc += write_circular(obj, port, mode, room-nc, info);
+            SCM_PUTC(')', port); nc++;
+            return nc;
+        }
+        e = Scm_HashTableGet(info->table, obj);
+        if (e && e->value != SCM_FALSE) {
+            SCM_PUTCSTR(" . ", port); nc+=3;
+            nc += write_circular(obj, port, mode, room-nc, info);
+            SCM_PUTC(')', port); nc++;
+            return nc;
+        }
+        SCM_PUTC(' ', port); nc++;
+    }
+}
+
+static int write_circular_vector(ScmObj obj, ScmPort *port, int mode,
+                                 int room, ScmWriteInfo *info)
+{
+    int nc = 0, len = SCM_VECTOR_SIZE(obj), i;
+    ScmObj *elts = SCM_VECTOR_ELEMENTS(obj);
+    for (i=0; i<len-1; i++) {
+        nc += write_circular(elts[i], port, mode, room-nc, info);
+        SCM_PUTC(' ', port); nc++;
+    }
+    nc += write_circular(elts[i], port, mode, room-nc, info);
+    SCM_PUTC(')', port); nc++;
+    return nc;
+}
+
+static int write_circular(ScmObj obj, ScmPort *port, int mode,
+                          int room, ScmWriteInfo *info)
+{
+    ScmHashEntry *e;
+    int nc = 0;
+    if (!SCM_PTRP(obj))
+        return write_internal(obj, port, mode, room, info);
+
+    if (!SCM_PAIRP(obj) && !SCM_VECTORP(obj))
+        return write_internal(obj, port, mode, room, info);
+        
+    e = Scm_HashTableGet(info->table, obj);
+    if (e && e->value != SCM_FALSE) {
+        char numbuf[50];
+        if (SCM_INTP(e->value)) {
+            /* This object is already printed. */
+            nc += snprintf(numbuf, 50, "#%d#", SCM_INT_VALUE(e->value));
+            SCM_PUTCSTR(numbuf, port);
+            return nc;
+        } else {
+            /* This object will be seen again.
+               Put a reference tag. */
+            char numbuf[50];
+            nc += snprintf(numbuf, 50, "#%d=", info->ncirc);
+            e->value = SCM_MAKE_INT(info->ncirc);
+            info->ncirc++;
+            SCM_PUTCSTR(numbuf, port);
+        }
+    }
+
+    if (SCM_PAIRP(obj)) {
+        SCM_PUTC('(', port); nc++;
+        nc += write_circular_list(obj, port, mode, room-nc, info);
+    } else if (SCM_VECTORP(obj)) {
+        SCM_PUTCSTR("#(", port); nc+=2;
+        nc += write_circular_vector(obj, port, mode, room-nc, info);
+    }
+    return nc;
+}
+
+int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode)
+{
+    ScmWriteInfo info;
+
+    if (!SCM_OPORTP(port))
+        Scm_Error("output port required, but got %S", port);
+    info.ncirc = 0;
+    info.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8));
+    write_scan(obj, &info);
+    return write_circular(obj, port, mode|WRITE_CIRCULAR, 0, &info);
+}
+
+/*===================================================================
+ * Formatters
  */
 
 /* Very simple formatter, for now.
@@ -360,9 +521,10 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                         (c == 'A')? SCM_PRINT_DISPLAY : SCM_PRINT_WRITE;
 
                     if (width == 0) {
-                        nc += write_internal(o, out, mode, 0, -1);
+                        nc += write_internal(o, out, mode, 0, NULL);
                     } else if (dot_appeared) {
-                        int n = Scm_WriteLimited(o, out, mode, width);
+                        int n = Scm_WriteLimited(o, SCM_OBJ(out),
+                                                 mode, width);
                         if (n < 0 && prec > 0) {
                             SCM_PUTCSTR(" ...", out);
                             nc += 4;
@@ -372,7 +534,7 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                         }
                         nc += width;
                     } else {
-                        int n = write_internal(o, out, mode, 0, -1);
+                        int n = write_internal(o, out, mode, 0, NULL);
                         if (n < width) {
                             for (; n < width; n++) SCM_PUTC(' ', out);
                         }

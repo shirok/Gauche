@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: class.c,v 1.2 2001-01-12 11:33:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -115,7 +115,10 @@ ScmObj Scm_ClassCPL(ScmClass *klass)
 
 ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type)
 {
-    ScmClass **p = sub->cpl;
+    ScmClass **p;
+    if (sub == type) return SCM_TRUE;
+
+    p = sub->cpl;
     while (*p) {
         if (*p++ == type) return SCM_TRUE;
     }
@@ -178,4 +181,5 @@ void Scm__InitClass(void)
     SCM_DEFINE(mod, "<closure>",  SCM_OBJ(SCM_CLASS_CLOSURE));
     SCM_DEFINE(mod, "<subr>",     SCM_OBJ(SCM_CLASS_SUBR));
     SCM_DEFINE(mod, "<vm>",       SCM_OBJ(SCM_CLASS_VM));
+    SCM_DEFINE(mod, "<source-info>", SCM_OBJ(SCM_CLASS_SOURCE_INFO));
 }

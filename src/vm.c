@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: vm.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -375,6 +375,14 @@ static void run_loop(ScmObj program)
                 DISCARD_ARG();
                 continue;
             }
+        case SCM_VM_DUPARG:
+            {
+                ScmObj arg;
+                CHECK_ARGCNT(1);
+                PEEK_ARG(arg);
+                PUSH_ARG(arg);
+                continue;
+            }
         case SCM_VM_SET:
             {
                 ScmObj location, val;
@@ -478,14 +486,37 @@ static void run_loop(ScmObj program)
                 PUSH_ARG(SCM_CDR(pair));
                 continue;
             }
-        case SCM_VM_MEMQ:
+        case SCM_VM_EQ:
+            {
+                ScmObj a, b;
+                CHECK_ARGCNT(2);
+                POP_ARG(b);
+                POP_ARG(a);
+                PUSH_ARG(SCM_MAKE_BOOL(a==b));
+                continue;
+            }
+        case SCM_VM_EQV:
+            {
+                ScmObj a, b;
+                CHECK_ARGCNT(2);
+                POP_ARG(b);
+                POP_ARG(a);
+                PUSH_ARG(Scm_EqvP(a, b));
+                continue;
+            }
+        case SCM_VM_MEMV:
             {
                 ScmObj elt, list;
                 CHECK_ARGCNT(2);
                 POP_ARG(list);
                 POP_ARG(elt);
-                PUSH_ARG(Scm_Memq(elt, list));
+                PUSH_ARG(Scm_Memv(elt, list));
                 continue;
+            }
+        default:
+            {
+                Scm_Panic("Illegal instruction: %08x",
+                          SCM_VM_INSN_CODE(code));
             }
         }
     }
@@ -805,62 +836,78 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
  * Printer of VM instruction.
  */
 
+static struct insn_info {
+    const char *name;
+    int nparams;
+} insn_table[] = {
+#define DEFINSN(sym, nam, np) { nam, np },
+#include "gauche/vminsn.h"
+#undef DEFINSN
+};
+
 int Scm__VMInsnWrite(ScmObj obj, ScmPort *out, int mode)
 {
-    int nc = 0;
-    switch (SCM_VM_INSN_CODE(obj)) {
-    case SCM_VM_NOP:      SCM_PUTCSTR("#<NOP>", out); nc += 6; break;
-    case SCM_VM_DEFINE:   SCM_PUTCSTR("#<DEFINE>", out); nc += 9; break;
-    case SCM_VM_LAMBDA:
-        {
-            int nargs = SCM_VM_LAMBDA_NARGS(obj);
-            int restarg = SCM_VM_LAMBDA_RESTARG(obj);
-            char buf[50];
-            nc += sprintf(buf, "#<LAMBDA %d%s>", nargs, (restarg? "+":""));
-            SCM_PUTCSTR(buf, out);
-            break;
-        }
-    case SCM_VM_LET:
-        {
-            int nlocals = SCM_VM_LET_NLOCALS(obj);
-            char buf[50];
-            nc += sprintf(buf, "#<LET %d>", nlocals);
-            SCM_PUTCSTR(buf, out);
-            break;
-        }
-    case SCM_VM_POPENV:   SCM_PUTCSTR("#<POPENV>", out); nc = 9; break;
-    case SCM_VM_POPARG:   SCM_PUTCSTR("#<POPARG>", out); nc = 9; break;
-    case SCM_VM_IF:       SCM_PUTCSTR("#<IF>", out); nc = 5; break;
-    case SCM_VM_IFNP:     SCM_PUTCSTR("#<IFNP>", out); nc = 7; break;
-    case SCM_VM_CALL:
-        {
-            int nargs = SCM_VM_CALL_NARGS(obj);
-            int nrets = SCM_VM_CALL_NRETS(obj);
-            char buf[50];
-            nc += sprintf(buf, "#<CALL %d,%d>", nargs,
-                          (nrets == SCM_VM_NRETS_UNKNOWN? -1 : nrets));
-            SCM_PUTCSTR(buf, out);
-            break;
-        }
-    case SCM_VM_SET:      SCM_PUTCSTR("#<SET>", out); break;
-    case SCM_VM_LREF:
-        {
-            int off = SCM_VM_LREF_OFFSET(obj);
-            int dep = SCM_VM_LREF_DEPTH(obj);
-            char buf[50];
-            nc += sprintf(buf, "#<LREF %d,%d>", dep, off);
-            SCM_PUTCSTR(buf, out);
-            break;
-        }
-    case SCM_VM_GREF:     SCM_PUTCSTR("#<GREF>", out); nc = 7; break;
-    case SCM_VM_QUOTE:    SCM_PUTCSTR("#<QUOTE>", out); nc = 8; break;
-    case SCM_VM_BACKQUOTE: SCM_PUTCSTR("#<BACKQUOTE>", out); nc = 12; break;
-    case SCM_VM_UNQUOTE:  SCM_PUTCSTR("#<UNQUOTE>", out); nc = 10; break;
-    case SCM_VM_UNQUOTE_SPLICING: SCM_PUTCSTR("#<UNQUOTE_SPLICING>", out); nc = 19; break;
-    default: Scm_Panic("write: got unknown instruction: %08x",
-                       SCM_WORD(obj));
+    struct insn_info *info;
+    int nc, param0, param1;
+    char buf[50];
+    int insn = SCM_VM_INSN_CODE(obj);
+    SCM_ASSERT(insn >= 0 && insn < SCM_VM_NUM_INSNS);
+
+    info = &insn_table[insn];
+    switch (info->nparams) {
+    case 0:
+        nc = snprintf(buf, 50, "#<%s>", info->name);
+        break;
+    case 1:
+        param0 = SCM_VM_INSN_ARG(obj);
+        nc = snprintf(buf, 50, "#<%s %d>", info->name, param0);
+        break;
+    case 2:
+        param0 = SCM_VM_INSN_ARG0(obj);
+        param1 = SCM_VM_INSN_ARG1(obj);
+        nc = snprintf(buf, 50, "#<%s %d,%d>", info->name, param0, param1);
+        break;
+    default:
+        Scm_Panic("something screwed up");
     }
+    SCM_PUTCSTR(buf, out);
     return nc;
+}
+
+/* Returns list of insn name and parameters.  Useful if you want to 
+   inspect compiled code from Scheme. */
+ScmObj Scm_VMInsnInspect(ScmObj obj)
+{
+    struct insn_info *info;
+    ScmObj r;
+    int param0, param1;
+    int insn;
+
+    if (!SCM_VM_INSNP(obj))
+        Scm_Error("VM instruction expected, but got %S", obj);
+    insn = SCM_VM_INSN_CODE(obj);
+    SCM_ASSERT(insn >= 0 && insn < SCM_VM_NUM_INSNS);
+
+    info = &insn_table[insn];
+    switch (info->nparams) {
+    case 0:
+        r = SCM_LIST1(SCM_MAKE_STR(info->name));
+        break;
+    case 1:
+        param0 = SCM_VM_INSN_ARG(obj);
+        r = SCM_LIST2(SCM_MAKE_STR(info->name), SCM_MAKE_INT(param0));
+        break;
+    case 2:
+        param0 = SCM_VM_INSN_ARG0(obj);
+        param1 = SCM_VM_INSN_ARG1(obj);
+        r = SCM_LIST3(SCM_MAKE_STR(info->name),
+                      SCM_MAKE_INT(param0), SCM_MAKE_INT(param1));
+        break;
+    default:
+        Scm_Panic("something screwed up");
+        r = SCM_UNDEFINED;      /* dummy */
+    }
+    return r;
 }
 
 /*

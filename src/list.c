@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: list.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -392,13 +392,17 @@ ScmObj Scm_Memq(ScmObj obj, ScmObj list)
 
 ScmObj Scm_Memv(ScmObj obj, ScmObj list)
 {
-    SCM_FOR_EACH(list, list) if (Scm_EqvP(obj, SCM_CAR(list))) return list;
+    SCM_FOR_EACH(list, list) {
+        if (Scm_EqvP(obj, SCM_CAR(list)) != SCM_FALSE) return list;
+    }
     return SCM_FALSE;
 }
 
 ScmObj Scm_Member(ScmObj obj, ScmObj list)
 {
-    SCM_FOR_EACH(list, list) if (Scm_EqualP(obj, SCM_CAR(list))) return list;
+    SCM_FOR_EACH(list, list) {
+        if (Scm_EqualP(obj, SCM_CAR(list)) != SCM_FALSE) return list;
+    }
     return SCM_FALSE;
 }
 
@@ -425,7 +429,7 @@ ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
     SCM_FOR_EACH(cp,alist) {
 	ScmObj entry = SCM_CAR(cp);
 	if (!SCM_PAIRP(entry)) continue;
-	if (Scm_EqvP(obj, SCM_CAR(entry))) return entry;
+	if (Scm_EqvP(obj, SCM_CAR(entry)) != SCM_FALSE) return entry;
     }
     return SCM_FALSE;
 }
@@ -436,7 +440,7 @@ ScmObj Scm_Assoc(ScmObj obj, ScmObj alist)
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
-        if (Scm_EqualP(obj, SCM_CAR(entry))) return entry;
+        if (Scm_EqualP(obj, SCM_CAR(entry)) != SCM_FALSE) return entry;
     }
     return SCM_FALSE;
 }
