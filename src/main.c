@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.73 2003-12-27 12:54:10 shirok Exp $
+ *  $Id: main.c,v 1.74 2004-01-02 13:15:57 shirok Exp $
  */
 
 #include <unistd.h>
@@ -178,7 +178,11 @@ static void sig_setup(void)
     sigdelset(&set, SIGXCPU); /* used in gc */
     sigdelset(&set, SIGUSR1); /* used in linux threads */
     sigdelset(&set, SIGUSR2); /* used in linux threads */
-#endif /*SCM_LINUX_SIGNALS&&GAUCHE_USE_PTHREADS*/
+#endif /*GC_LINUX_THREADS*/
+#if defined(GC_FREEBSD_THREADS)
+    sigdelset(&set, SIGUSR1); /* used by GC to stop the world */
+    sigdelset(&set, SIGUSR2); /* used by GC to restart the world */
+#endif /*GC_FREEBSD_THREADS*/
     Scm_SetMasterSigmask(&set);
 }
 

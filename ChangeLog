@@ -1,3 +1,8 @@
+2004-01-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (sig_setup): fixed a problem that threads hang on
+	  FreeBSD.   SIGUSR[12] is used by GC on FreeBSD!
+
 2003-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/822.scm (rfc822-header->list): changed to deal with
