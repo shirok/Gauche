@@ -1,3 +1,9 @@
+2003-07-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/dbm/gdbm.scm (dbm-fold): fixed to use %dbm-s2v to convert
+	  value field (it was %dbm-s2k).  Thanks to Alex Shinn for pointing
+	  this out.
+
 2003-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm : allow cgi-header to accept arbitrary keyword
