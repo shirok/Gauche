@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.5 2001-10-10 08:56:20 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.6 2002-06-16 01:46:43 shirok Exp $
 ;;;
 
 "
@@ -79,11 +79,13 @@ emit() {
   (assert (list? l))
   "  SCM_RETURN(Scm_ListTo${vecttype}(l));")
 
-(define-cproc ${vecttag}vector-fill! (v val)
+(define-cproc ${vecttag}vector-fill! (v val &optional (start 0) (end -1))
   (assert (${vecttag}vector? v))
+  (assert (small-integer? start))
+  (assert (small-integer? end))
   "  ${itemtype} filler;
   SCM_${VECTTYPE}_UNBOX(filler, val);
-  SCM_RETURN(Scm_${vecttype}Fill(v, filler));")
+  SCM_RETURN(Scm_${vecttype}Fill(v, filler, start, end));")
 
 (define-cproc ${vecttag}vector->vector (v)
   (assert (${vecttag}vector? v))

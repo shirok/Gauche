@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.13 2002-02-10 05:40:06 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.14 2002-06-16 01:46:43 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -157,10 +157,17 @@ ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec)
  * Accessors and modifiers
  */
 
-ScmObj Scm_${vecttype}Fill(Scm${vecttype} *vec, ${itemtype} fill)
+ScmObj Scm_${vecttype}Fill(Scm${vecttype} *vec, ${itemtype} fill, int start, int end)
 {
-    int i;
-    for (i=0; i<SCM_${VECTTYPE}_SIZE(vec); i++) {
+    int i, size = SCM_${VECTTYPE}_SIZE(vec);
+    if (start < 0 || start >= size) {
+        Scm_Error("start index out of range: %d\n", start);
+    }
+    if (end < 0) end = size;
+    else if (end < start || end >= size) {
+        Scm_Error("end index out of range: %d\n", end);
+    }
+    for (i=start; i<end; i++) {
         vec->elements[i] = fill;
     }
     return SCM_OBJ(vec);
