@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.399 2004-11-21 12:46:58 shirok Exp $
+ *  $Id: gauche.h,v 1.400 2004-11-22 14:12:43 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2319,13 +2319,6 @@ SCM_CLASS_DECL(Scm_SysSigsetClass);
 #define SCM_SYS_SIGSET(obj)    ((ScmSysSigset*)(obj))
 #define SCM_SYS_SIGSET_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYS_SIGSET)
 
-#define SCM_SIGPENDING(vm) \
-    ((vm)->sigQueueTail != (vm)->sigQueueHead)
-
-#define SCM_SIGCHECK(vm) \
-    do { if (SCM_SIGPENDING(vm)) Scm_SigCheck(vm); } while (0)
-
-SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_SysSigsetOp(ScmSysSigset*, ScmObj, int);
 SCM_EXTERN ScmObj Scm_SysSigsetFill(ScmSysSigset*, int);
 SCM_EXTERN ScmObj Scm_GetSignalHandler(int);

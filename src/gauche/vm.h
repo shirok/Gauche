@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.94 2004-11-21 21:57:53 shirok Exp $
+ *  $Id: vm.h,v 1.95 2004-11-22 14:12:43 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -47,6 +47,10 @@
 
 /* Finalizer queue size */
 #define SCM_VM_FINQ_SIZE       32
+
+/* QueueNotEmpty flag */
+#define SCM_VM_SIGQ_MASK       1
+#define SCM_VM_FINQ_MASK       2
 
 #define SCM_PCTYPE ScmObj
 
@@ -201,11 +205,33 @@ SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, int index, int id);
 SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value);
 
 /*
+ * Signal queue
+ *
+ *  Gauche installs singnal handlers that simply queues the signal.
+ *  See signal.c for the implementaiton.
+ */
+
+typedef struct ScmSignalQueueRec {
+    int queue[SCM_VM_SIGQ_SIZE];/* Ring buffer for pending signals */
+    unsigned int head;     /* points to the queue head */
+    unsigned int tail;     /* points to the queue tail */
+    unsigned int overflow; /* flag to indicate queue overflow */
+    ScmObj pending;        /* pending signal handlers */
+} ScmSignalQueue;
+
+SCM_EXTERN void Scm_SignalQueueInit(ScmSignalQueue* q);
+
+#define SCM_SIGCHECK(vm) \
+    do { if (vm->queueNotEmpty&SCM_VM_SIGQ_MASK) Scm_SigCheck(vm); } while (0)
+
+SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
+
+/*
  * Finalizer queue
  *
  *  If a finalizer needs to call Scheme procedure, it enqueues
  *  the Scheme calling part, so that it runs when VM is in consistent
- *  state.
+ *  state.  See core.c for the implementation.
  */
 typedef ScmObj (*ScmQueuedFinalizerProc)(void *data);
 
@@ -215,14 +241,15 @@ typedef struct ScmFinalizerClosureRec {
 } ScmFinalizerClosure;
 
 typedef struct ScmFinalizerQueueRec {
-    ScmFinalizerClosure finQueue[SCM_VM_FINQ_SIZE]; /* finalizer queue */
-    unsigned int finQueueHead;
-    unsigned int finQueueTail;
+    ScmFinalizerClosure queue[SCM_VM_FINQ_SIZE]; /* finalizer queue */
+    unsigned int overflow;
+    unsigned int head;
+    unsigned int tail;
 } ScmFinalizerQueue;
 
-SCM_EXTERN void Scm_FinalizerEnqueue(ScmQueuedFinalizerProc proc, void *data);
 SCM_EXTERN void Scm_FinalizerQueueInit(ScmFinalizerQueue* q);
-SCM_EXTERN void Scm_FinalizerRun(ScmVM *vm, ScmFinalizerQueue* q);
+SCM_EXTERN void Scm_FinalizerEnqueue(ScmQueuedFinalizerProc proc, void *data);
+SCM_EXTERN ScmObj Scm_VMFinalizerRun(ScmVM *vm);
 
 /*
  * VM structure
@@ -265,6 +292,7 @@ struct ScmVMRec {
                                    "C stack rewinding" below. */
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
+    unsigned int queueNotEmpty; /* Bitmask if sigq or finq is not empty */
 
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
@@ -311,11 +339,7 @@ struct ScmVMRec {
     ScmObj load_port;           /* current port from which we are loading */
 
     /* Signal information */
-    int sigQueue[SCM_VM_SIGQ_SIZE];/* Ring buffer for pending signals */
-    unsigned int sigQueueHead;  /* points to the queue head */
-    unsigned int sigQueueTail;  /* points to the queue tail */
-    unsigned int sigOverflow;   /* flag to indicate queue overflow */
-    ScmObj sigPending;          /* pending signal handlers */
+    ScmSignalQueue sigq;
     sigset_t sigMask;           /* current signal mask */
 
     /* Finalizer queue */

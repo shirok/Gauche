@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.57 2004-11-21 21:57:22 shirok Exp $
+ *  $Id: core.c,v 1.58 2004-11-22 14:12:43 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -159,12 +159,45 @@ void Scm_FinalizerQueueInit(ScmFinalizerQueue *q)
 {
     int i;
     for (i=0; i<SCM_VM_FINQ_SIZE; i++) {
-        q->finQueue[i].proc = NULL;
-        q->finQueue[i].data = NULL;
+        q->queue[i].proc = NULL;
+        q->queue[i].data = NULL;
     }
-    q->finQueueHead = q->finQueueTail = 0;
+    q->head = q->tail = 0;
 }
 
+void Scm_FinalizerEnqueue(ScmQueuedFinalizerProc proc, void *data)
+{
+    ScmVM *vm = Scm_VM();
+    ScmFinalizerQueue *q = &vm->finq;
+    
+    if (q->overflow) {
+        /* TODO: what should we do? */
+        Scm_Warn("Finalizer queue overflow");
+        return;
+    }
+    q->queue[q->tail].proc = proc;
+    q->queue[q->tail].data = data;
+    q->tail++;
+    if (q->tail >= SCM_VM_FINQ_SIZE) q->tail = 0;
+    if (q->tail == q->head) q->overflow++;
+    vm->queueNotEmpty |= SCM_VM_FINQ_MASK;
+}
+
+/* Called from VM loop.  Queue is not empty. */
+ScmObj Scm_VMFinalizerRun(ScmVM *vm)
+{
+    ScmFinalizerQueue *q = &vm->finq;
+    ScmQueuedFinalizerProc proc;
+    void *data;
+    proc = q->queue[q->head].proc;
+    data = q->queue[q->head].data;
+    q->head++;
+    if (q->head >= SCM_VM_FINQ_SIZE) q->head = 0;
+
+    if (q->head == q->tail) vm->queueNotEmpty &= ~SCM_VM_FINQ_MASK;
+
+    return proc(data);
+}
 
 /*
  * Program termination

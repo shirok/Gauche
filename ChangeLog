@@ -1,5 +1,12 @@
 2004-11-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (run_loop): fixed a bug that didn't save VM regs before
+	  calling Scm_SigCheck, which sometimes caused SEGV after getting
+	  signals.  Also changed to check queued finalizer as well.
+	* src/core.c: implemented finalizer queue.
+	* src/signal.c: slightly changed data structure.
+	* src/gauche/vm.h: ditto
+
 	* ext/uvector/array.scm (initialize): fixed write-object method
 	  to avoid stale shared-structure output.
 

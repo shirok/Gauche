@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.213 2004-11-21 21:57:22 shirok Exp $
+ *  $Id: vm.c,v 1.214 2004-11-22 14:12:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -116,6 +116,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
 
     v->compilerFlags = base? base->compilerFlags : 0;
     v->runtimeFlags = base? base->runtimeFlags : 0;
+    v->queueNotEmpty = 0;
 
     v->stack = SCM_NEW_ARRAY(ScmObj, SCM_VM_STACK_SIZE);
     v->sp = v->stack;
@@ -143,12 +144,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->load_next = SCM_NIL;
     v->load_port = SCM_FALSE;
 
-    for (i=0; i<SCM_VM_SIGQ_SIZE; i++) v->sigQueue[i] = -1;
-    v->sigQueueHead = v->sigQueueTail = 0;
-    v->sigOverflow = 0;
-    v->sigPending = SCM_NIL;
     sigemptyset(&v->sigMask);
-
+    Scm_SignalQueueInit(&v->sigq);
     Scm_FinalizerQueueInit(&v->finq);
 
     return v;
@@ -452,7 +449,21 @@ static void run_loop()
     
     for (;;) {
         /*VM_DUMP("");*/
-        SCM_SIGCHECK(vm);
+        
+        /* Check if there's a queued processing first. */
+        if (vm->queueNotEmpty) {
+            if (vm->queueNotEmpty & SCM_VM_SIGQ_MASK) {
+                SAVE_REGS();
+                Scm_SigCheck(vm);
+                RESTORE_REGS();
+            }
+            if (vm->queueNotEmpty & SCM_VM_FINQ_MASK) {
+                SAVE_REGS();
+                val0 = Scm_VMFinalizerRun(vm);
+                RESTORE_REGS();
+                continue;
+            }
+        }
 
         /* See if we're at the end of procedure.  It's safer to use
            !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.

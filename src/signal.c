@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.30 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: signal.c,v 1.31 2004-11-22 14:12:43 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -362,6 +362,10 @@ ScmObj Scm_SysSigsetFill(ScmSysSigset *set, int emptyp)
 }
 
 /*
+ * Signal handling
+ */
+
+/*
  * System's signal handler - just enqueue the signal
  */
 
@@ -372,19 +376,29 @@ static void sig_handle(int signum)
        terminating and in the cleanup phase. */
     if (vm == NULL) return;
     
-    if (vm->sigOverflow) return;
-    
-    if (vm->sigQueueHead <= vm->sigQueueTail) {
-        vm->sigQueue[vm->sigQueueTail++] = signum;
-        if (vm->sigQueueTail >= SCM_VM_SIGQ_SIZE) {
-            vm->sigQueueTail = 0;
-        }
-    } else {
-        vm->sigQueue[vm->sigQueueTail++] = signum;
+    if (vm->sigq.overflow) {
+        /* TODO: what should we do? */
+        Scm_Warn("Signal queue overflow\n");
+        return;
     }
-    if (vm->sigQueueTail == vm->sigQueueHead) {
-        Scm_Error("signal queue overflow\n");
+    vm->sigq.queue[vm->sigq.tail++] = signum;
+    if (vm->sigq.tail >= SCM_VM_SIGQ_SIZE) {
+        vm->sigq.tail = 0;
     }
+    if (vm->sigq.tail == vm->sigq.head) vm->sigq.overflow++;
+    vm->queueNotEmpty |= SCM_VM_SIGQ_MASK;
+}
+
+/*
+ * Initializes signal queue
+ */
+void Scm_SignalQueueInit(ScmSignalQueue* q)
+{
+    int i;
+    for (i=0; i<SCM_VM_SIGQ_SIZE; i++) q->queue[i] = -1;
+    q->head = q->tail = 0;
+    q->overflow = 0;
+    q->pending = SCM_NIL;
 }
 
 /*
@@ -394,6 +408,7 @@ static void sig_handle(int signum)
 void Scm_SigCheck(ScmVM *vm)
 {
     ScmObj tail, cell, sp;
+    ScmSignalQueue *q = &vm->sigq;
     sigset_t omask;
     int sigQsize, i;
     int sigQcopy[SCM_VM_SIGQ_SIZE]; /* copy of signal queue */
@@ -401,17 +416,18 @@ void Scm_SigCheck(ScmVM *vm)
     /* Copy VM's signal queue to local storage, for we can't call
        storage allocation during blocking signals. */
     SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
-    for (sigQsize = 0; vm->sigQueueHead != vm->sigQueueTail; sigQsize++) {
-        sigQcopy[sigQsize] = vm->sigQueue[vm->sigQueueHead++];
-        if (vm->sigQueueHead >= SCM_VM_SIGQ_SIZE) vm->sigQueueHead = 0;
+    for (sigQsize = 0; q->head != q->tail; sigQsize++) {
+        sigQcopy[sigQsize] = q->queue[q->head++];
+        if (q->head >= SCM_VM_SIGQ_SIZE) q->head = 0;
     }
-    vm->sigOverflow = 0; /*TODO: we should do something*/
+    q->overflow = 0; /*TODO: we should do something*/
+    vm->queueNotEmpty &= ~SCM_VM_SIGQ_MASK;
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
 
     /* Now, prepare queued signal handlers
        If an error is thrown in this loop, the queued signals will be
        lost---it doesn't look like so, but I may overlook something. */
-    tail = vm->sigPending;
+    tail = q->pending;
     if (!SCM_NULLP(tail)) tail = Scm_LastPair(tail);
     for (i=0; i<sigQsize; i++) {
         if (SCM_PROCEDUREP(sigHandlers.handlers[sigQcopy[i]])) {
@@ -419,7 +435,7 @@ void Scm_SigCheck(ScmVM *vm)
                              SCM_MAKE_INT(sigQcopy[i]),
                              SCM_NIL);
             if (SCM_NULLP(tail)) {
-                vm->sigPending = tail = cell;
+                q->pending = tail = cell;
             } else {
                 SCM_SET_CDR(tail, cell);
                 tail = SCM_CDR(tail);
@@ -431,9 +447,9 @@ void Scm_SigCheck(ScmVM *vm)
        of those handlers, the rest of handlers remain in the queue. */
     /* TODO: if VM is active, it'd be better to make the active VM to handle
        those handler procs, instead of calling Scm_Eval. */
-    SCM_FOR_EACH(sp, vm->sigPending) {
+    SCM_FOR_EACH(sp, q->pending) {
         ScmObj h = SCM_CAR(sp);
-        vm->sigPending = SCM_CDR(sp);
+        q->pending = SCM_CDR(sp);
         Scm_Apply(SCM_CAR(h), SCM_LIST1(SCM_CDR(h)));
     }
 }
@@ -609,7 +625,7 @@ static void scm_sigsuspend(sigset_t *mask)
     ScmVM *vm = Scm_VM();
     for (;;) {
         SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
-        if (vm->sigQueueTail != vm->sigQueueHead) {
+        if (vm->sigq.tail != vm->sigq.head) {
             SIGPROCMASK(SIG_SETMASK, &omask, NULL);
             Scm_SigCheck(vm);
             continue;
