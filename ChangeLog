@@ -1,5 +1,7 @@
 2003-01-14  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/gettext.scm : added text.gettext contributed from
+	  Alex Shinn.
 	* src/genstub : fix in :base qualified define-cclass, which used
 	  to pass wrong C type to calculate C object size.
 	* src/gauche/class.h : fixed a bug in the default value of

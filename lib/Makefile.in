@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.83 2003-01-06 04:06:07 shirok Exp $
+#  $Id: Makefile.in,v 1.84 2003-01-15 09:14:00 shirok Exp $
 #
 
 prefix = @prefix@
@@ -47,7 +47,7 @@ SCMS = srfi-0.scm \
        rfc/822.scm rfc/base64.scm rfc/uri.scm rfc/cookie.scm \
        rfc/quoted-printable.scm rfc/http.scm rfc/hmac.scm \
        text/csv.scm text/tr.scm text/parse.scm text/tree.scm \
-       text/html-lite.scm text/info.scm \
+       text/html-lite.scm text/info.scm text/gettext.scm \
        www/cgi.scm
 
 SUBDIRS = gauche gauche/vm gauche/serializer gauche/interactive \
