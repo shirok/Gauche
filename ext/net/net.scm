@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.25 2004-01-28 00:28:22 fuyuki Exp $
+;;;  $Id: net.scm,v 1.26 2004-02-03 22:10:09 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -38,8 +38,6 @@
   (export <socket> make-socket
           |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
-          |MSG_CTRUNC| |MSG_DONTROUTE| |MSG_EOR| |MSG_OOB| |MSG_PEEK|
-          |MSG_TRUNC| |MSG_WAITALL|
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
@@ -66,7 +64,9 @@
  |SOL_SOCKET| |SO_KEEPALIVE| |SO_OOBINLINE| |SO_REUSEADDR| |SO_TYPE|
  |SO_BROADCAST| |SO_SNDBUF| |SO_RCVBUF| |SO_PRIORITY| |SO_ERROR|
  |SOL_TCP| |TCP_NODELAY| |TCP_MAXSEG| |TCP_CORK|
- |SOL_IP| |IP_OPTIONS|)
+ |SOL_IP| |IP_OPTIONS|
+ |MSG_CTRUNC| |MSG_DONTROUTE| |MSG_EOR| |MSG_OOB| |MSG_PEEK|
+ |MSG_TRUNC| |MSG_WAITALL|)
 
 (if ipv6-capable
     (define (make-sys-addrinfo . args)
