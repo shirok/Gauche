@@ -12,14 +12,16 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: auxsys.scm,v 1.2 2002-03-04 19:59:20 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.3 2002-03-06 08:43:15 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
-  (export sys-abort sys-fmod sys-frexp sys-modf sys-mkfifo
+  (export fmod frexp modf ldexp
+          sys-abort sys-mkfifo
           sys-setgid sys-setpgid sys-setpgrp sys-getpgid sys-getpgrp
-          sys-setsid sys-setuid sys-times sys-uname
-          sys-gethostname sys-getdomainname sys-putenv)
+          sys-setsid sys-setuid sys-times sys-uname sys-ctermid
+          sys-gethostname sys-getdomainname sys-putenv
+          sys-gettimeofday sys-chown)
   )
 (select-module gauche.auxsys)
 
@@ -54,5 +56,10 @@
         (if (zero? pid)
             (sys-getpgrp)
             (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
+
+(define sys-gettimeofday
+  (if (symbol-bound? '%sys-gettimeofday)
+      %sys-gettimeofday
+      (lambda () (values (sys-time) 0))))
 
 (provide "gauche/auxsys")

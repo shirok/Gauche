@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *
- * $Id: auxsysconf.h.in,v 1.1 2002-02-21 08:55:52 shirok Exp $
+ * $Id: auxsysconf.h.in,v 1.2 2002-03-06 08:43:15 shirok Exp $
  */
 
 #undef HAVE_PUTENV
@@ -12,5 +12,6 @@
 #undef HAVE_SETHOSTNAME
 #undef HAVE_GETDOMAINNAME
 #undef HAVE_SETDOMAINNAME
+#undef HAVE_GETTIMEOFDAY
 
 

@@ -26,16 +26,20 @@
              #f))
         (else (equal? x y))))
 
-(test "sys-fmod" 0.25 (lambda () (sys-fmod 5.25 1)) nearly=)
-(test "sys-fmod" 2.3  (lambda () (sys-fmod 8.3 3))  nearly=)
-(test "sys-fmod" 8.3  (lambda () (sys-fmod 8.3 33)) nearly=)
+(test "fmod" 0.25 (lambda () (fmod 5.25 1)) nearly=)
+(test "fmod" 2.3  (lambda () (fmod 8.3 3))  nearly=)
+(test "fmod" 8.3  (lambda () (fmod 8.3 33)) nearly=)
 
-(test "sys-frexp" '(0.785 2)
-      (lambda () (receive x (sys-frexp 3.14) x))
+(test "frexp" '(0.785 2)
+      (lambda () (receive x (frexp 3.14) x))
       nearly=)
 
-(test "sys-modf" '(0.14 3.0)
-      (lambda () (receive x (sys-modf 3.14) x))
+(test "ldexp" 3.14
+      (lambda () (ldexp 0.785 2))
+      nearly=)
+
+(test "modf" '(0.14 3.0)
+      (lambda () (receive x (modf 3.14) x))
       nearly=)
 
 ;; putenv
@@ -43,7 +47,7 @@
 (test "sys-putenv" "foo"
       (lambda ()
         (with-error-handler
-         (lambda (e) "foo")
+         (lambda (e) "foo") ;need to catch if system doesn't have putenv().
          (lambda ()
            (sys-putenv "ZZGGGBBB" "foo")
            (sys-getenv "ZZGGGBBB")))))

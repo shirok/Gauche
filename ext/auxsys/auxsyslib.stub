@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.2 2002-03-04 19:59:20 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.3 2002-03-06 08:43:15 shirok Exp $
 ;;;
 
 "
@@ -42,23 +42,40 @@
   "abort();  SCM_RETURN(SCM_UNDEFINED);")
 
 ;; math.h
-(define-cproc sys-fmod (x y)
+(define-cproc fmod (x y)
   (assert (real? x))
   (assert (real? y))
   "if (y == 0.0) Scm_Error(\"Attempted to divide by zero\");
   SCM_RETURN(Scm_MakeFlonum(fmod(x, y)));")
 
-(define-cproc sys-frexp (d)
+(define-cproc frexp (d)
   (assert (real? d))
   "  double fr; int exp;
   fr = frexp(d, &exp);
   SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeInteger(exp)));")
 
-(define-cproc sys-modf (x)
+(define-cproc modf (x)
   (assert (real? x))
   "  double fr, inte;
   fr = modf(x, &inte);
   SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeFlonum(inte)));")
+
+(define-cproc ldexp (x exp)
+  (assert (real? x))
+  (assert (exact? exp))
+  "SCM_RETURN(Scm_MakeFlonum(ldexp(x, exp)));")
+
+(define-cproc log10 (x)
+  (assert (real? x))
+  "SCM_RETURN(Scm_MakeFlonum(log10(x)));")
+
+;; sys/time.h
+(if (defined? "HAVE_GETTIMEOFDAY")
+    (define-cproc %sys-gettimeofday ()
+      "struct timeval tv;
+       int r = Scm_SysCall(gettimeofday(&tv, NULL));
+       if (r < 0) Scm_SysError(\"gettimeofday failed\");
+       SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
 
 ;; sys/stat.h
 (define-cproc sys-mkfifo (path mode)
@@ -177,6 +194,20 @@
  SCM_RETURN(SCM_UNDEFINED);")
 )
 
+;; ctermid
+(define-cproc sys-ctermid ()
+  "  char buf[L_ctermid+1];
+  char *r = ctermid(buf);
+  SCM_RETURN(SCM_MAKE_STR_COPYING(r));")
+
+;; chown
+(define-cproc sys-chown (path owner group)
+  (assert (string? path))
+  (assert (exact? owner))
+  (assert (exact? group))
+  "int r = Scm_SysCall(chown(Scm_GetStringConst(path), owner, group));
+  if (r < 0) Scm_SysError(\"chown failed on %S\", path);
+  SCM_RETURN(SCM_TRUE);")
 
 ;; Local variables:
 ;; mode: scheme
