@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fetch.scm,v 1.3 2004-04-23 06:17:46 shirok Exp $
+;;;  $Id: fetch.scm,v 1.4 2004-07-26 19:57:04 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -59,7 +59,7 @@
   (let-keywords* opts ((config '()))
     (let* ((build-dir (assq-ref config 'build-dir "."))
            (wget      (assq-ref config 'wget *wget-program*))
-           (ncftpget  (assq-ref config 'ncfptget *ncftpget-program*))
+           (ncftpget  (assq-ref config 'ncftpget *ncftpget-program*))
            (dest      (build-path build-dir (sys-basename uri))))
       (rxmatch-case uri
         (#/^https?:/ (#f)
