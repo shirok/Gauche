@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.58 2002-02-11 09:24:32 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.59 2002-02-14 09:36:03 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -43,11 +43,13 @@
 ;;  it's more Scheme-ish, and similar to Guile-way.
 
 (define-macro (use module)
-  (unless (symbol? module) (error "use: symbol required:" module))
-  (let ((path (string-join (string-split (symbol->string module) #\.) "/")))
+  (let* ((mod  (cond ((symbol? module) module)
+                     ((identifier? module) (identifier->symbol module))
+                     (else (error "use: symbol required:" module))))
+         (path (string-join (string-split (symbol->string mod) #\.) "/")))
     `(begin
        (require ,path)
-       (import ,module)))
+       (import ,mod)))
   )
 
 ;; Inter-version compatibility.

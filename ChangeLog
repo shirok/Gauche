@@ -1,7 +1,9 @@
 2002-02-13  Shiro Kawai  <shiro@acm.org>
 
-	* lib/srfi-0.scm : added SRFI-22 to the feature set, and fixed a
-	  bug that prevents cond-expand from working.
+	* src/gauche-init.scm : fixed the definition of use to accept
+	  identifier; needed to make cond-expand work.
+	* lib/srfi-0.scm : added SRFI-22 to the feature set, and fixed
+	  a bug that prevents cond-expand from working.
 	* src/main.c : INCOMPATIBLE CHANGE - fix the convention to pass
 	  the list of arguments to 'main' according to the final SRFI-22.
 	  Now the argument list includes the script name itself.  For
