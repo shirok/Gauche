@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.46 2002-09-09 08:08:45 shirok Exp $
+ *  $Id: bignum.c,v 1.47 2002-10-14 12:20:24 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -70,6 +70,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount);
 static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
 static int bignum_safe_size_for_add(ScmBignum *x, ScmBignum *y);
 static ScmBignum *bignum_add_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by);
+static ScmBignum *bignum_2scmpl(ScmBignum *br);
 
 int Scm_DumpBignum(ScmBignum *b, ScmPort *out);
 
@@ -137,12 +138,27 @@ ScmObj Scm_MakeBignumFromUI(u_long val)
     return SCM_OBJ(b);
 }
 
+/* If sign > 0 or sign < 0, values[] has absolute value.
+   If sign == 0, values[] has 2's complement signed representation */
 ScmObj Scm_MakeBignumFromUIArray(int sign, u_long *values, int size)
 {
     ScmBignum *b = make_bignum(size);
     int i;
-    b->sign = (sign >= 0)? 1 : -1;
-    for (i=0; i<size; i++) b->values[i] = values[i];
+    if (sign != 0) {
+        b->sign = (sign > 0)? 1 : -1;
+        for (i=0; i<size; i++) b->values[i] = values[i];
+    } else {
+        int nonzerop = FALSE;
+        for (i=0; i<size; i++) {
+            if ((b->values[i] = values[i]) != 0) nonzerop = TRUE;
+        }
+        if (nonzerop) {
+            if (values[size-1] <= LONG_MAX) b->sign = 1;
+            else { b->sign = -1;  bignum_2scmpl(b); }
+        } else {
+            b->sign = 0;
+        }
+    }
     return SCM_OBJ(b);
 }
 

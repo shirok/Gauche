@@ -1,5 +1,10 @@
 2002-10-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/bignum.c (Scm_MakeBignumFromUIArray): accepts 2's complement
+	  representation if sign == 0.
+	* ext/uvector/* : store true 64bit integer in s64 and u64 vector
+	  on 32-bit architecture.
+	* lib/file/util.scm : added home-directory
 	* src/main.c : added -A and -E option.  makes -A, -I, -E, -e, -l, -u
 	  options be processed in the order of appearance.
 	* doc/gauche.ref.texi : added @direntry (suggested by MINOURA Makoto).

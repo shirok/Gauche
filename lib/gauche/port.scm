@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: port.scm,v 1.4 2002-10-12 13:56:01 shirok Exp $
+;;;  $Id: port.scm,v 1.5 2002-10-14 12:20:24 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -30,7 +30,6 @@
                 (loop (%read-char-unsafe port))))
             (get-output-string out)))))))
 
-;; TODO: optimize
 (define (port->list reader port)
   (let loop ((obj (reader port))
              (result '()))
@@ -43,6 +42,12 @@
 
 (define (port->sexp-list port)
   (port->list read port))
+
+;(define (copy-port src dst . args)
+;  (check-arg input-port? src)
+;  (check-arg output-port? dst)
+  
+
 
 ;; Iterators on the input stream
 ;;   These constructs take reader function that expects to return

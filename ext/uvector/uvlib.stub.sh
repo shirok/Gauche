@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.17 2002-09-27 10:01:19 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.18 2002-10-14 12:20:24 shirok Exp $
 ;;;
 
 "
@@ -37,6 +37,9 @@ cat << EOF
 "
 EOF
 
+##==============================================================
+## Common uvector operations
+##
 emit() {
     vecttag=$1
     VECTTAG=`echo $vecttag | tr '[a-z]' '[A-Z]'`
@@ -56,7 +59,8 @@ emit() {
 
 (define-cproc make-${vecttag}vector (length::<fixnum> &optional (fill 0))
   "  ${itemtype} filler;
-  ${VECTTAG}UNBOX(filler, fill, 0);
+  int clamp = SCM_UVECTOR_CLAMP_NONE;
+  ${VECTTAG}UNBOX(filler, fill);
   SCM_RETURN(Scm_Make${vecttype}(length, filler));")
 
 (define-cproc ${vecttag}vector (&rest args)
@@ -95,7 +99,8 @@ emit() {
                                       &optional (start::<fixnum> 0)
                                                 (end::<fixnum> -1))
   "  ${itemtype} filler;
-  ${VECTTAG}UNBOX(filler, val, 0);
+  int clamp = SCM_UVECTOR_CLAMP_NONE;
+  ${VECTTAG}UNBOX(filler, val);
   SCM_RETURN(Scm_${vecttype}Fill(v, filler, start, end));")
 
 (define-cproc ${vecttag}vector->vector (v::<${vecttag}vector>
@@ -114,21 +119,24 @@ emit() {
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_ADD, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-add (v0::<${vecttag}vector> v1 &optional clamp)
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+  " ${itemtype} init = ${VECTTAG}INIT;
+  Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), init));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_ADD, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-sub! (v0::<${vecttag}vector> v1 &optional clamp)
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_SUB, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-sub (v0::<${vecttag}vector> v1 &optional clamp)
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+  " ${itemtype} init = ${VECTTAG}INIT;
+  Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), init));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_SUB, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-mul! (v0::<${vecttag}vector> v1 &optional clamp)
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_MUL, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-mul (v0::<${vecttag}vector> v1 &optional clamp)
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+  " ${itemtype} init = ${VECTTAG}INIT;
+  Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), init));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_MUL, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-dot (v0::<${vecttag}vector> v1)
@@ -143,9 +151,11 @@ emit() {
 
 (define-cproc ${vecttag}vector-clamp! (v0::<${vecttag}vector> min max)
   "SCM_RETURN(Scm_${vecttype}Clamp(v0, min, max));")
-
 EOF
 
+##==============================================================
+## Arithmetic opertaions
+##
     if [ "$integer" = 1 ]; then
     cat <<EOF
 ;; Integer-only arithmetic operations
@@ -153,21 +163,24 @@ EOF
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_AND, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-and (v0::<${vecttag}vector> v1 &optional clamp)
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+  " ${itemtype} init = ${VECTTAG}INIT;
+  Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), init));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_AND, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-ior! (v0::<${vecttag}vector> v1 &optional clamp)
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_IOR, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-ior (v0::<${vecttag}vector> v1 &optional clamp)
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+  " ${itemtype} init = ${VECTTAG}INIT;
+  Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), init));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_IOR, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-xor! (v0::<${vecttag}vector> v1 &optional clamp)
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_XOR, clamp_arg(clamp)));")
 
 (define-cproc ${vecttag}vector-xor (v0::<${vecttag}vector> v1 &optional clamp)
-  " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
+  " ${itemtype} init = ${VECTTAG}INIT;
+  Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), init));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_XOR, clamp_arg(clamp)));")
 EOF
     else
@@ -195,6 +208,9 @@ emit u64 1
 emit f32
 emit f64
 
+##==============================================================
+## String conversions
+##
 strlib() {
     z=$1
     Z=`echo $z | tr '[a-z]' '[A-Z]'`
@@ -262,3 +278,10 @@ EOF
 
 strlib u
 strlib s
+
+##==============================================================
+## Input and output
+##
+
+cat <<EOF
+EOF

@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.24 2002-09-27 06:14:51 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.25 2002-10-14 12:20:24 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -59,7 +59,6 @@ emit() {
     vecttype="${VECTTAG}Vector"
     VECTTYPE="${VECTTAG}VECTOR"
     itemtype="${VECTTAG}ELTTYPE"
-    ALLOC="${VECTTAG}ALLOC"
     cat <<EOF
 
 /*---------------------------------------------------------------
@@ -110,7 +109,7 @@ static Scm${vecttype} *make_${vecttype}(int size, ${itemtype} *eltp)
     if (eltp) {
         vec->elements = eltp;
     } else {
-        vec->elements = ${ALLOC}(${itemtype}*, size*sizeof(${itemtype}));
+        vec->elements = SCM_NEW_ATOMIC2(${itemtype}*, size*sizeof(${itemtype}));
     }
     SCM_SET_CLASS(vec, SCM_CLASS_${VECTTYPE});
     vec->size = size;
@@ -154,7 +153,7 @@ ScmObj Scm_ListTo${vecttype}(ScmObj list, int clamp)
     for (i=0, cp=list; i<length; i++, cp = SCM_CDR(cp)) {
         ${itemtype} elt;
         ScmObj obj = SCM_CAR(cp);
-        ${VECTTAG}UNBOX(elt, obj, clamp);
+        ${VECTTAG}UNBOX(elt, obj);
         vec->elements[i] = elt;
     }
     return SCM_OBJ(vec);
@@ -170,7 +169,7 @@ ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec, int start, int end, int clamp)
     for (i=start; i<end; i++) {
         ${itemtype} elt;
         ScmObj obj = SCM_VECTOR_ELEMENT(ivec, i);
-        ${VECTTAG}UNBOX(elt, obj, clamp);
+        ${VECTTAG}UNBOX(elt, obj);
         vec->elements[i-start] = elt;
     }
     return SCM_OBJ(vec);
@@ -207,7 +206,7 @@ ScmObj Scm_${vecttype}Set(Scm${vecttype} *vec, int index, ScmObj val, int clamp)
     ${itemtype} elt;
     if (index < 0 || index >= SCM_${VECTTYPE}_SIZE(vec))
         Scm_Error("index out of range: %d", index);
-    ${VECTTAG}UNBOX(elt, val, clamp);
+    ${VECTTAG}UNBOX(elt, val);
     vec->elements[index] = elt;
     return SCM_OBJ(vec);
 }
