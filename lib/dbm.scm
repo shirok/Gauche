@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.2 2003-09-15 12:47:45 shirok Exp $
+;;;  $Id: dbm.scm,v 1.3 2003-10-18 05:28:37 shirok Exp $
 ;;;
 
 (define-module dbm
@@ -116,7 +116,7 @@
                   (null? (cddr spec))
                   (procedure? (car spec))
                   (procedure? (cadr spec)))
-             spec)
+             (custom spec))
             (else (errorf "bad value for ~s: has to be boolean or a list of two procedures, but got ~s" slot spec)))))
 
   (slot-set! self 'k2s (pick-proc 'key-convert write-to-string car))
