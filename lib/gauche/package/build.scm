@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.1 2004-04-23 01:20:54 shirok Exp $
+;;;  $Id: build.scm,v 1.2 2004-04-23 06:01:27 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -41,6 +41,7 @@
   (use srfi-1)
   (use srfi-2)
   (use gauche.package)
+  (use gauche.package.util)
   (use gauche.parameter)
   (use file.util)
   (use util.list)
@@ -56,16 +57,6 @@
                             (find-file-in-paths "make")))
 (define *rm-program*    (find-file-in-paths "rm"))
 
-(define dry-run (make-parameter #f))
-
-(define (run cmdline)
-  (if (dry-run)
-    (print cmdline)
-    ;; NB: theoretically this is non-portable, but practically it works
-    ;; well.
-    (unless (zero? (sys-system cmdline))
-      (errorf "command execution failed: ~a" cmdline))))
-
 (define (untar config file)
   (let ((build-dir (assq-ref config 'build-dir "."))
         (cat   (assq-ref config 'cat   *cat-program*))
@@ -73,17 +64,22 @@
         (gzip  (assq-ref config 'gzip  *gzip-program*))
         (bzip2 (assq-ref config 'bzip2 *bzip2-program*)))
     (rxmatch-case (sys-basename file)
-      (#/(.*)(?:\.tar\.gz|\.tgz|\.taz)$/ (#f name)
-       (run #`"\",cat\" \",file\" | \",gzip\" -d | \",tar\" xfC - \",build-dir\"")
-       name)
-      (#/(.*)(?:\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2)$/ (#f name)
-       (run #`"\",cat\" \",file\" | \",bzip2\" -d | \",tar\" xfC - \",build-dir\"")
-       name)
-      (#/(.*)\.tar$/ (#f name)
-       (run #`"\",tar\" xfC \",file\" \",build-dir\"")
-       name)
+      (#/(?:\.tar\.gz|\.tgz|\.taz)$/ (#f)
+       (run #`"\",cat\" \",file\" | \",gzip\" -d | \",tar\" xfC - \",build-dir\""))
+      (#/(?:\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2)$/ (#f)
+       (run #`"\",cat\" \",file\" | \",bzip2\" -d | \",tar\" xfC - \",build-dir\""))
+      (#/\.tar$/ (#f)
+       (run #`"\",tar\" xfC \",file\" \",build-dir\""))
       (else
-       (error "can't decide the package format of ~s" file)))))
+       (error "can't decide the package format of " file)))))
+
+(define (tarball->package-directory file)
+  (cond
+   ((#/(.*)(?:\.tar\.gz|\.tgz|\.taz|\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2|\.tar)$/
+       (sys-basename file))
+    => (lambda (m) (m 1)))
+   (else
+    (error "can't determine package directory from tarball " file))))
 
 ;; when reconfiguring, give package name.
 (define (configure config dir package-name configure-options)
@@ -126,22 +122,24 @@
 (define (gauche-package-build tarball . opts)
   (let-keywords* opts ((config  '())
                        (configure-options #f)
+                       (install-only? :install-only #f)
                        (dry?         :dry-run #f)
                        (reconfigure? :reconfigure #f)
                        (check?       :check #t)
                        (install?     :install #f)
                        (clean?       :clean #f))
-    (unless (file-is-readable? tarball)
-      (error "can't read the package tarball:" tarball))
     (parameterize ((dry-run dry?))
       (let* ((build-dir (assq-ref config 'build-dir "."))
-             (basename  (untar config tarball))
+             (basename  (tarball->package-directory tarball))
              (dir       (build-path build-dir basename))
              (packname  (package-name basename)))
-        (configure config dir packname configure-options)
-        (make config dir)
-        (when check?   (make-check config dir))
-        (when install? (make-install config dir))
+        (unless install-only?
+          (untar config tarball)
+          (configure config dir packname configure-options)
+          (make config dir)
+          (when check?   (make-check config dir)))
+        (when (or install? install-only?)
+          (make-install config dir))
         (when clean?   (clean config dir))))))
 
 (provide "gauche/package/build")

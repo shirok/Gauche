@@ -1,6 +1,8 @@
 2004-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/build.scm : added
+	* lib/gauche/package/util.scm : added
+	* lib/gauche/package/fetch.scm : added
 	* src/package : added
 	* acinclude.m4 (AC_GAUCHE_MAKE_GPD): a macro to create PACKAGE.gpd
 	  file.
