@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.58 2004-10-17 10:29:39 shirok Exp $
+ *  $Id: error.c,v 1.59 2004-11-29 22:06:21 shirok Exp $
  */
 
 #include <errno.h>
@@ -127,6 +127,7 @@ static ScmClass *porterror_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_PortErrorClass),
     SCM_CLASS_STATIC_PTR(Scm_IOErrorClass),
     ERROR_CPL,
+    NULL
 };
     
 

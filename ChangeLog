@@ -1,5 +1,6 @@
 2004-11-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/error.c (porterror_cpl): added missing terminating NULL of CPA.
 	* src/gauche/vm.h (SCM_SIGPENDING): recovered, for some extensions
 	  use this macro.  Should be considered deprecated.
 
