@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.13 2002-10-26 09:02:40 shirok Exp $
+;; $Id: srfi-1.scm,v 1.14 2002-11-21 12:14:23 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -73,7 +73,7 @@
                               find$ find-tail$ any$ every$)
 (autoload "srfi-1/set"        lset<= lset= lset-adjoin lset-union lset-union!
                               lset-intersection lset-intersection!
-                              lset-difference lset-differnce!
+                              lset-difference lset-difference!
                               lset-xor lset-xor!
                               lset-diff+intersection lset-diff+intersection!)
 
