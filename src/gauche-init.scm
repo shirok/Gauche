@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.9 2001-02-23 19:42:39 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.10 2001-02-28 23:49:49 shiro Exp $
 ;;;
 
 ;;
@@ -63,7 +63,8 @@
     (load (string-append feature ".scm"))))
 
 (define (PROVIDE feature)
-  (set! *provided* (cons feature *provided*)))
+  (unless (provided? feature)
+    (set! *provided* (cons feature *provided*))))
 
 (define (PROVIDED? feature)
   (member feature *provided*))
