@@ -1,3 +1,8 @@
+2003-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/Makefile.ext.in (check): make 'check' depend on 'all' (Patch
+	  from Kimura Fuyuki)
+
 2003-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c, doc/gauche-ref.texi: typo fix
