@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.1 2003-09-15 12:45:46 shirok Exp $
+;;;  $Id: fsdbm.scm,v 1.2 2003-10-07 01:25:51 fuyuki Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -69,7 +69,7 @@
 ;;; entry is prepared in Incoming directory, and then replaced to
 ;;; the current entry.
 ;;;
-;;; With this scheme, no race condigion will occur in each entry's
+;;; With this scheme, no race condition will occur in each entry's
 ;;; read/write.  It is naturally taken care of by the file system.
 ;;; It uses fcntl advisory lock to prevent race conditions that involve
 ;;; more than one entries, whenever available.

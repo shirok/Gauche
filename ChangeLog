@@ -1,3 +1,7 @@
+2003-10-07  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* lib/dbm/fsdbm.scm: typo fix
+
 2003-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, ext/auxsys/auxsys.scm, ext/auxsys/auxsyslib.stub :
