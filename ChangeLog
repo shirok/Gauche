@@ -1,3 +1,8 @@
+2003-08-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_ListTail): fixed error message when arg is out
+	  of range.
+
 2003-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/sxpath.scm.in: added missing txpath.scm (Patch from

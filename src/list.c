@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.37 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: list.c,v 1.38 2003-08-30 10:19:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -381,8 +381,9 @@ ScmObj Scm_ReverseX(ScmObj list)
 
 ScmObj Scm_ListTail(ScmObj list, int i)
 {
+    int cnt = i;
     if (i < 0) Scm_Error("argument out of range: %d", i);
-    while (i-- > 0) {
+    while (cnt-- > 0) {
         if (!SCM_PAIRP(list))
             Scm_Error("argument out of range: %d", i);
         list = SCM_CDR(list);
