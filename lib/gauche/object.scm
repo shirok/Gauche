@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.19 2001-10-20 08:19:00 shirok Exp $
+;;;  $Id: object.scm,v 1.20 2001-10-20 08:21:57 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -435,10 +435,11 @@
   (with-output-to-string (lambda () (display obj))))
 
 (define-method x->integer ((obj <integer>)) obj)
-(define-method x->integer ((obj <number>))
+(define-method x->integer ((obj <real>))
   (inexact->exact (round obj)))
+(define-method x->integer ((obj <number>)) 0) ;complex numbers to 0
 (define-method x->integer ((obj <top>))
-  (inexact->exact (round (x->number obj))))
+  (x->integer (x->number obj)))
 
 (define-method x->number  ((obj <number>)) obj)
 (define-method x->number  ((obj <string>))
