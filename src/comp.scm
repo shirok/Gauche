@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.13 2005-01-07 08:26:11 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.14 2005-01-08 09:51:52 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -338,6 +338,10 @@
   (make-cenv (cenv-module cenv)
              (acons syntax? frame (cenv-frames cenv))))
 
+;; toplevel environment == cenv has only syntactic frames
+(define (cenv-toplevel? cenv)
+  (every (lambda (frame) (eq? (car frame) #t)) (cenv-frames)))
+
 ;; Lookup compiler enviroment.  Returns either lvar, syntax, or identifier.
 ;; NB: the treatment of locally-bound identifier should be fixed.
 (define (cenv-lookup cenv sym-or-id syntax?)
@@ -573,25 +577,56 @@
 
 ;; Definitions ........................................
 
-(define (pass1/define form oform flags module cenv origform)
+(define (pass1/define form oform flags module cenv)
+  (unless (cenv-toplevel? cenv)
+    (error "syntax-error: non-toplevel define is not allowed:" oform))
   (match form
     ((_ (name . args) body ...)
      (pass1/define `(define name
                       (,(global-id 'lambda) ,args ,@body))
-                   oform flags module cenv origform))
+                   oform flags module cenv))
     ((_ name expr)
      (unless (variable? name)
        (error "syntax-error:" origform))
      `($define ,oform ,flags
                ,(make-identifier (%unwrap-syntax name) '() module)
                ,(pass1 expr cenv)))
-    (else (error "syntax-error:" origform))))
+    (else (error "syntax-error:" oform))))
 
 (define-pass1-syntax (define form cenv)
-  (pass1/define form form '() (cenv-module cenv) cenv form))
+  (pass1/define form form '() (cenv-module cenv) cenv))
 
 (define-pass1-syntax (define-constant form cenv)
-  (pass1/define form form '(const) (cenv-module cenv) cenv form))
+  (pass1/define form form '(const) (cenv-module cenv) cenv))
+
+(define-pass1-syntax (define-in-module mod form cenv)
+  (let1 module
+      (cond ((symbol? mod) (find-module mod))
+            ((module? mod) mod)
+            (else (error "malformed define-in-modue: module or module name required, but got " mod)))
+    (pass1/define form form '() module cenv)))
+
+
+(define (pass1/define-macro form oform module cenv)
+  (unless (cenv-toplevel? cenv)
+    (error "syntax-error: non-toplevel define-macro is not allowed:" oform))
+  (match form
+    ((_ (name . args) body ...)
+     (pass1/define `(define-macro name
+                      (,(global-id 'lambda) ,args ,@body))
+                   oform module cenv))
+    ((_ name expr)
+     (unless (variable? name)
+       (error "syntax-error:" origform))
+     ;; TODO: macro autoload
+     (let1 trans (make-macro-transformer (eval expr module))
+       (eval `(define ,name ,trans) module)))
+    (else (error "syntax-error:" oform))))
+
+(define-pass1-syntax (define-macro form cenv)
+  (unless (cenv-toplevel? cenv)
+    (error "syntax-error: non-toplevel define-macro is not allowed:" form))
+  (pass1/define-macro form form (cenv-module) cenv))
 
 ;; If family ........................................
 
@@ -1039,6 +1074,9 @@
     (cond ((null? lis) #f)
           ((pred (car lis)))
           (else (loop (cdr lis))))))
+
+(define (every pred lis)
+  (if (null? lis) #t (and (pref (car lis)) (every pred (cdr lis)))))
 
 (define (fold proc seed lis)
   (let loop ((lis lis) (seed seed))
