@@ -153,7 +153,7 @@ all_objs = @addobjs@ $(libgc_la_OBJECTS)
 
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(MY_CFLAGS) $(GC_CFLAGS) 
+	$(AM_CFLAGS) $(MY_CFLAGS) $(OPTFLAGS) $(GC_CFLAGS) 
 
 LINK = $(LIBTOOL) --mode=link $(CC) $(AM_CFLAGS) $(MY_CFLAGS) $(LDFLAGS) -o $@
 
