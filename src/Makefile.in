@@ -171,18 +171,21 @@ gauche/arch.h :
 
 gauche-install : gauche-install.in
 	@rm -f gauche-install
-	@echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-install
-	@cat gauche-install.in >> gauche-install
+	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-install && \
+	cat gauche-install.in >> gauche-install
+	@chmod -w gauche-install
 
 gauche-package : gauche-package.in
 	@rm -f gauche-package
-	@echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-package
-	@cat gauche-package.in >> gauche-package
+	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-package && \
+	cat gauche-package.in >> gauche-package
+	@chmod -w gauche-package
 
 gauche-cesconv : gauche-cesconv.in
 	@rm -f gauche-cesconv
-	@echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv
-	@cat gauche-cesconv.in >> gauche-cesconv
+	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv && \
+	cat gauche-cesconv.in >> gauche-cesconv
+	@chmod -w gauche-cesconv
 
 # tests -----------------------------------------------
 TESTFILES = `cat ../test/TESTS`
