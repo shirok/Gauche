@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.90 2002-12-23 11:24:52 shirok Exp $
+;;;  $Id: genstub,v 1.91 2003-01-15 06:48:46 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1386,7 +1386,11 @@
     (newline))
   (emit-cpa self)
   (if (eqv? (qualifier-of self) :base)
-      (print #`"SCM_DEFINE_BASE_CLASS(,(c-name-of self), ,(c-type-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));")
+      (let1 c-type (string-trim-right (c-type-of self))
+        (unless (string-suffix? "*" c-type)
+          (errorf "can't use C-type ~s as a base class; C-type must be a pointer type" c-type))
+        (let1 c-instance-type (string-drop-right c-type 1)
+          (print #`"SCM_DEFINE_BASE_CLASS(,(c-name-of self), ,|c-instance-type|, ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));")))
       (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));"))
   (newline)
   (when (pair? (slot-spec-of self))
