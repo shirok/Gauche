@@ -30,8 +30,10 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.14 2004-07-15 07:10:04 shirok Exp $
+ *  $Id: fcntl.c,v 1.15 2004-09-01 11:26:00 shirok Exp $
  */
+
+#define _GNU_SOURCE  /* for Linux, this enables additional features */
 
 #include <string.h>
 #include <errno.h>
@@ -94,17 +96,40 @@ ScmObj Scm_MakeSysFlock(void)
  */
 static const char *flag_name(int flag)
 {
+#define FLAG_NAME(n) case n: return #n
     switch (flag) {
-    case F_GETFD: return "F_GETFD";
-    case F_SETFD: return "F_SETFD";
-    case F_GETFL: return "F_GETFL";
-    case F_SETFL: return "F_SETFL";
-    case F_DUPFD: return "F_DUPFD";
-    case F_GETLK: return "F_GETLK";
-    case F_SETLK: return "F_SETLK";
-    case F_SETLKW: return "F_SETLKW";
+        FLAG_NAME(F_GETFD);
+        FLAG_NAME(F_SETFD);
+        FLAG_NAME(F_GETFL);
+        FLAG_NAME(F_SETFL);
+        FLAG_NAME(F_DUPFD);
+        FLAG_NAME(F_GETLK);
+        FLAG_NAME(F_SETLK);
+        FLAG_NAME(F_SETLKW);
+#if defined(F_GETOWN)
+        FLAG_NAME(F_GETOWN);
+#endif
+#if defined(F_SETOWN)
+        FLAG_NAME(F_SETOWN);
+#endif
+#if defined(F_GETSIG)
+        FLAG_NAME(F_GETSIG);
+#endif
+#if defined(F_SETSIG)
+        FLAG_NAME(F_SETSIG);
+#endif
+#if defined(F_GETLEASE)
+        FLAG_NAME(F_GETLEASE);
+#endif
+#if defined(F_SETLEASE)
+        FLAG_NAME(F_SETLEASE);
+#endif
+#if defined(F_NOTIFY)
+        FLAG_NAME(F_NOTIFY);
+#endif
     }
     return "(unknown flag)";
+#undef FLAG_NAME
 }
 
 ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
@@ -115,12 +140,33 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
     
     switch (op) {
     case F_GETFD:; case F_GETFL:;
+#if defined(F_GETOWN)           /* BSD and Linux specific */
+    case F_GETOWN:;
+#endif /*F_GETOWN*/
+#if defined(F_GETSIG)           /* Linux specific */
+    case F_GETSIG:;
+#endif /*F_GETSIG */
+#if defined(F_GETLEASE)         /* Linux specific */
+    case F_GETLEASE:;
+#endif /*F_GETLEASE */
         SCM_SYSCALL(r, fcntl(fd, op));
-        if (r < 0) {
+        if (r == -1) { /*NB: F_GETOWN may return a negative value on success*/
             Scm_SysError("fcntl(%s) failed", flag_name(op));
         }
         return Scm_MakeInteger(r);
     case F_SETFD:; case F_SETFL:; case F_DUPFD:;
+#if defined(F_SETOWN)           /* BSD and Linux specific */
+    case F_SETOWN:;
+#endif /*F_SETOWN*/
+#if defined(F_SETSIG)           /* Linux specific */
+    case F_SETSIG:;
+#endif /*F_SETSIG */
+#if defined(F_SETLEASE)         /* Linux specific */
+    case F_SETLEASE:;
+#endif /*F_SETLEASE */
+#if defined(F_NOTIFY)           /* Linux specific */
+    case F_NOTIFY:;
+#endif /*F_NOTIFY */
         if (!SCM_EXACTP(arg)) {
             Scm_Error("exact integer required for fcntl(%s), but got %S",
                       flag_name(op), arg);

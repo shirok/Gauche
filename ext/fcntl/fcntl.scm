@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fcntl.scm,v 1.4 2003-10-04 11:32:37 shirok Exp $
+;;;  $Id: fcntl.scm,v 1.5 2004-09-01 11:26:00 shirok Exp $
 ;;;
 
 
@@ -50,5 +50,12 @@
 
 (dynamic-load "fcntl" :export-symbols #t)
 
+(export-if-defined
+ |F_GETOWN| |F_SETOWN| |F_GETSIG| |F_SETSIG|
+ |F_GETLEASE| |F_SETLEASE| |F_NOTIFY|
+ |DN_ACCESS| |DN_MODIFY| |DN_CREATE| |DN_DELETE|
+ |DN_RENAME| |DN_ATTRIB| |DN_MULTISHOT|
+ |O_ASYNC|
+  )
 
 (provide "gauche/fcntl")

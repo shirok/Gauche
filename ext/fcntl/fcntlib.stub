@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: fcntlib.stub,v 1.8 2004-07-15 07:10:04 shirok Exp $
+;;; $Id: fcntlib.stub,v 1.9 2004-09-01 11:26:00 shirok Exp $
 ;;;
 
 "#include \"gauche/fcntl.h\""
@@ -50,6 +50,14 @@
 (define-enum F_WRLCK)
 (define-enum F_UNLCK)
 
+(if "defined(F_GETOWN)"   (define-enum F_GETOWN))
+(if "defined(F_SETOWN)"   (define-enum F_SETOWN))
+(if "defined(F_GETSIG)"   (define-enum F_GETSIG))
+(if "defined(F_SETSIG)"   (define-enum F_SETSIG))
+(if "defined(F_GETLEASE)" (define-enum F_GETLEASE))
+(if "defined(F_SETLEASE)" (define-enum F_SETLEASE))
+(if "defined(F_NOTIFY)"   (define-enum F_NOTIFY))
+
 (if "defined(FD_CLOEXEC)" (define-enum FD_CLOEXEC))
 
 (define-enum O_ACCMODE)
@@ -61,7 +69,20 @@
 (define-enum O_EXCL)
 (if "defined(O_NOCTTY)"   (define-enum O_NOCTTY))
 (if "defined(O_NONBLOCK)" (define-enum O_NONBLOCK))
+(if "defined(O_ASYNC)"    (define-enum O_ASYNC))
 (define-enum O_TRUNC)
+
+;; Linux specific F_NOTIFY flags (not available yet, w/o _GNU_SOURCE)
+(if "defined(F_NOTIFY)"
+  (begin
+    (define-enum DN_ACCESS)
+    (define-enum DN_MODIFY)
+    (define-enum DN_CREATE)
+    (define-enum DN_DELETE)
+    (define-enum DN_RENAME)
+    (define-enum DN_ATTRIB)
+    (define-enum DN_MULTISHOT)
+    ))
 
 (define-cproc sys-fcntl (port-or-fd op::<fixnum> &optional arg)
   (return "Scm_SysFcntl"))
