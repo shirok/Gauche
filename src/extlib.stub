@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.19 2001-02-13 20:58:37 shiro Exp $
+;;; $Id: extlib.stub,v 1.20 2001-02-14 10:09:26 shiro Exp $
 ;;;
 
 ;;
@@ -49,6 +49,13 @@
   (assert (pair? list))
   "  SCM_RETURN(Scm_LastPair(list));")
 
+(define-cproc list-tail (list k)
+  (assert (small-integer? k))
+  "  SCM_RETURN(Scm_ListTail(list, k));")
+
+(define-cproc list-copy (list)          ; SRFI-1
+  "  SCM_RETURN(Scm_CopyList(list));")
+
 (define-cproc list* (&rest args)
   (inliner "SCM_VM_LIST_STAR")
   "  ScmObj head = SCM_NIL, tail, cp;
@@ -63,6 +70,9 @@
     }
   }
   SCM_RETURN(head);")
+
+(define-cproc reverse! (list)
+  "  SCM_RETURN(Scm_Reverse(list));")
 
 (define-cproc pair-attributes (pair)
   (assert (pair? pair))
