@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.5 2002-05-03 22:20:49 shirok Exp $
+;;;  $Id: util.scm,v 1.6 2002-05-05 01:50:18 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -28,6 +28,7 @@
   (use gauche.let-opt)
   (use gauche.time)
   (export current-directory directory-list directory-list2 directory-fold
+          make-directory* create-directory* remove-directory* delete-directory*
           build-path resolve-path expand-path simplify-path
           absolute-path? relative-path? decompose-path
           file-type file-perm file-mode file-ino file-dev file-rdev file-nlink
@@ -93,7 +94,7 @@
           (partition (l_ (selector (build-path dir _)))
                      entries)))))
 
-;; directory-fold DIR PROC KNIL &keyword LISTER FOLLOW-LINK?
+;; directory-fold DIR PROC KNIL &keyword LISTER FOLDER FOLLOW-LINK?
 (define (directory-fold dir proc knil . opts)
   (let* ((follow (get-keyword :follow-link? opts #t))
          (lister (get-keyword :lister opts
@@ -101,14 +102,48 @@
                                 (directory-list path
                                                 :add-path? #t
                                                 :children? #t))))
+         (folder (get-keyword :folder opts fold))
          (selector (let1 stat (%stat opts)
                      (lambda (e)
                        (eq? (slot-ref (stat e) 'type) 'directory)))))
     (define (rec path knil)
       (if (selector path)
-          (fold rec knil (lister path knil))
+          (folder rec knil (lister path knil))
           (proc path knil)))
     (rec dir knil)))
+
+;; mkdir -p
+(define (make-directory* dir . opts)
+  (let-optionals* opts ((mode #o755))
+    (define (rec p)
+      (if (file-exists? p)
+          (if (file-is-directory? p)
+              #t
+              (errorf "non-directory ~s is found while creating a directory ~s"
+                      (sys-basename p) dir))
+          (let1 d (sys-dirname p)
+            (rec d)
+            (if (file-is-writable? d)
+                (sys-mkdir p mode)
+                (errorf "directory ~s unwritable during creating a directory ~s"
+                        d dir)))))
+    (rec dir)))
+
+;; synonym
+(define create-directory* make-directory*)
+
+;; rm -rf
+(define (remove-directory* dir)
+  (define (rec d)
+    (receive (dirs files)
+        (directory-list2 d :add-path? #t :children? #t :follow-link? #f)
+      (for-each rec dirs)
+      (for-each sys-rmdir dirs)
+      (for-each sys-unlink files)))
+  (rec dir)
+  (sys-rmdir dir))
+
+(define delete-directory* remove-directory*)
 
 ;;;=============================================================
 ;;; Pathnames
@@ -175,7 +210,7 @@
   (syntax-rules ()
     ((_ name slot)
      (define (name path . opts)
-       (and (sys-access path F_OK)
+       (and (sys-access path |F_OK|)
             (slot-ref ((%stat opts) path) slot))))))
 
 (define-stat-accessor file-type 'type)
@@ -290,42 +325,6 @@
 ;;;=============================================================
 ;;; File operation
 
-
-;; copy file.  
-;(define (copy-file src dst . opts)
-;  (check-arg string? src)
-;  (check-arg string? dst)
-;  (unless (file-is-readable? src)
-;    (error "can't read the source file" src))
-;  (let* ((if-exists (get-keyword :if-exists opts :error))
-;         (backup    (get-keyword :backup-suffix opts ".orig"))
-;         (tmp?      (get-keyword :use-temporary-file opts #f)
-;         )
-;    (unless (memq if-exists '(:error :supersede :backup))
-;      (error "value of keyword argument if-exists must be either :error, :supersede or :backup, but got" if-exists))
-;    (define (open-dst)
-;      (cond (tmp? (sys-mkstemp src))
-;            ((eq? if-exists :supersede)
-;             (values (open-output-file dst :if-exists :supersede) dst))
-;            ((eq? if-exists :backup)
-;             (begin (when (file-exists? dst)
-;                      (begin (sys-rename dst (string-append dst backup))))
-;                    (values (open-output-file dst :if-exists :error))))
-;            (else (error "copy-file: cannot be here; implementation bug?"))))
-;    (define (commit in out tmp)
-;      (cond ((eq? if-exists :backup)
-;             (begin 
-    
-
-;    (if (file-exists? dst)
-;        (cond ((file-eqv? src dst)
-;               (error "source and destination files are identical"))
-;              ((eq? if-exists :error)
-;               (error "destination file exists" dst))
-;              ((eq? if-exists :backup)
-;               (error "
-               
-           
-
+;; -- to be written --
 
 (provide "file/util")

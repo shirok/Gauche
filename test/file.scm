@@ -235,7 +235,10 @@
 (test "file-equal?" #t
       (lambda () (file-equal? "test.out/test4.o" "test.out/test5.o")))
 
-;(sys-system "rm -rf test.out")
+(test "remove-directory*" #f
+      (lambda ()
+        (remove-directory* "test.out")
+        (file-exists? "test.out")))
 
 ;;------------------------------------------------------------------
 (test-section "file.filter")

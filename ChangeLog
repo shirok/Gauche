@@ -1,3 +1,7 @@
+2002-05-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/file/util.scm : more procedures.
+
 2002-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/repl.c : clears VM val0 register after evaluating prompt

@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.196 2002-05-03 13:19:46 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.197 2002-05-05 01:50:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11684,6 +11684,20 @@ given, it operates on the link itself.
 @c COMMON
 @end deftp
 
+@c EN
+Note on the naming convention: Some Scheme implementations "create"
+new directories and files, while the others "make" them.
+Some implementations "delete" them, while the others "remove" them.
+It seems that both conventions are equally popular.
+So Gauche provides @emph{both}.
+@c JP
+名前つけ規則に関する注記：ファイルやディレクトリを
+作成するのに@code{"create"}という語を使う処理系と@code{"make"}を
+使う処理系があります。ファイルやディレクトリを削除するのにも@code{"remove"}と
+@code{"delete"}の流派があります。どちらも同じくらい広く使われているようなので、
+Gaucheでは@emph{両方の}名前を提供することにしました。
+@c COMMON
+
 @menu
 * Directory utilities::         
 * Pathname utilities::          
@@ -11880,6 +11894,37 @@ The following examble returns a list of pathnames of the emacs backup files
 @end example
 
 @end defun
+
+@defun make-directory* name &optional perm
+@defunx create-directory* name &optional perm
+@c EN
+Creates a directory @var{name}.  If the intermediate path to the
+directory doesn't exist, they are also created
+(like @code{mkdir -p} command on Unix).   If the directory
+@var{name} already exist, these procedure does nothing.
+@var{Perm} specifies the integer flag for permission bits of the
+directory.
+@c JP
+ディレクトリ@var{name}を作成します。@var{name}に至るパスが存在しない
+場合は必要なディレクトリが作成されます (Unixの@code{mkdir -p}コマンドと
+同様です)。ディレクトリ@var{name}が既に存在していた場合は何もしません。
+@var{perm}は作成されるディレクトリのパーミッションビットを指定します。
+@c COMMON
+@end defun
+
+
+@defun remove-directory* name
+@defunx delete-directory* name 
+@c EN
+Deletes directory @var{name} and its content recursively 
+(like @code{rm -rf} command on Unix).   Symbolic links are not
+followed.
+@c JP
+ディレクトリ@var{name}とその内容を再帰的に消去します
+(Unixの@code{rm -rf}コマンドと同様です)。シンボリックリンクは辿られません。
+@c COMMON
+@end defun
+
 
 @node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
 @subsection Pathname utilities
