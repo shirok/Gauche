@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.13 2001-03-10 07:51:49 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.14 2001-03-10 08:15:18 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -47,7 +47,7 @@
   `',(%require feature))
 
 ;; Preferred way
-;;  (use x.y.z) === (require "x/y/z") (import x.y.z)
+;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
 (define-macro (use module)
   (unless (symbol? module) (error "use: symbol required: ~s" module))
   (let ((path (string-join (string-split (symbol->string module) #\.) "/")))
@@ -55,6 +55,11 @@
        (require ,path)
        (import ,module)))
   )
+
+;; create built-in srfi-6 and srfi-8 modules, so that (use srfi-6)
+;; won't complain.
+(define-module srfi-6)
+(define-module srfi-8)
 
 ;;
 ;; Autoload
