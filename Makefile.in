@@ -54,6 +54,9 @@ install :
 	cd doc; $(MAKE) install
 	cd lib; $(MAKE) slibcat
 
+install-doc :
+	cd doc; $(MAKE) install
+
 install-nodoc :
 	cd src; $(MAKE) install
 	cd lib; $(MAKE) install
