@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.4 2004-07-28 23:13:17 shirok Exp $
+;; $Id: match.scm,v 1.5 2004-08-23 12:13:01 shirok Exp $
 
 (define-module util.match
   (use srfi-1)
@@ -313,7 +313,7 @@
         (case (car p)
           ((quasiquote)
            (if (and (pair? (cdr p)) (null? (cddr p)))
-             (quasi p)
+             (quasi (cadr p))
              (cons-ordinary (car p) (cdr p))))
           ((quote)
            (if (and (pair? (cdr p)) (null? (cddr p)))

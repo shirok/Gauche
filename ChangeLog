@@ -1,3 +1,7 @@
+2004-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/match.scm (validate-pattern): fixed a bug in quasipattern.
+
 2004-08-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c, src/genstub, src/stlib.stub, src/gauche.h,
