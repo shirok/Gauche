@@ -1758,6 +1758,92 @@
                  (array-ref sub 6)))
     ))
 
+;;----------------------------------------------------------------
+(test-section "array-iteration")
+
+(test* "array-for-each-index-list" '((0 0) (0 1) (1 0) (1 1))
+  (let ((ar (make-array (shape 0 2 0 2)))
+        (ls '()))
+    (array-for-each-index ar (lambda (a b) (push! ls (list a b))))
+    (reverse ls)))
+
+(test* "array-for-each-index-vector" '(#(0 0) #(0 1) #(1 0) #(1 1))
+  (let ((ar (make-array (shape 0 2 0 2)))
+        (ls '())
+        (vec (make-vector 2)))
+    (array-for-each-index ar (lambda (v) (push! ls (vector-copy v))) vec)
+    (reverse ls)))
+
+(test* "array-for-each-index-array" '(#(0 0) #(0 1) #(1 0) #(1 1))
+  (let ((ar (make-array (shape 0 2 0 2)))
+        (ls '())
+        (ind (make-array (shape 0 2))))
+    (array-for-each-index ar (lambda (a) (push! ls (array->vector a))) ind)
+    (reverse ls)))
+
+(test* "shape-for-each-list" '((0 0) (0 1) (1 0) (1 1))
+  (let ((sh (shape 0 2 0 2))
+        (ls '()))
+    (shape-for-each sh (lambda (a b) (push! ls (list a b))))
+    (reverse ls)))
+
+(test* "shape-for-each-vector" '(#(0 0) #(0 1) #(1 0) #(1 1))
+  (let ((sh (shape 0 2 0 2))
+        (ls '())
+        (vec (make-vector 2)))
+    (shape-for-each sh (lambda (v) (push! ls (vector-copy v))) vec)
+    (reverse ls)))
+
+(test* "shape-for-each-array" '(#(0 0) #(0 1) #(1 0) #(1 1))
+  (let ((sh (shape 0 2 0 2))
+        (ls '())
+        (ind (make-array (shape 0 2))))
+    (shape-for-each sh (lambda (a) (push! ls (array->vector a))) ind)
+    (reverse ls)))
+
+(test* "tabulate-array-list" #,(<array> (1 3 1 3) 11 12 21 22)
+  (tabulate-array (shape 1 3 1 3) (lambda (a b) (+ (* a 10) b))))
+
+(test* "tabulate-array-vector" #,(<array> (2 4 2 4) 12 31 17 36)
+  (let ((vec (make-vector 2))
+        (square (lambda (x) (* x x)))
+        (cube (lambda (x) (* x x x))))
+    (tabulate-array (shape 2 4 2 4) (lambda (v) (+ (square (ref v 0))
+                                                   (cube (ref v 1))))
+                    vec)))
+
+(test* "array-retabulate! list" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
+  (let ((ar #,(<array> (0 2 0 2) 1 2 4 8)))
+    (array-retabulate! ar (lambda (i j) (/ 1.0 (array-ref ar i j))))
+    ar))
+
+(test* "array-retabulate! vector" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
+  (let ((ar #,(<array> (0 2 0 2) 1 2 4 8))
+        (vec (make-vector 2)))
+    (array-retabulate! ar (lambda (v) (/ 1.0 (array-ref ar v))) vec)
+    ar))
+
+(test* "array-map-1" #,(<array> (0 2 0 2) 1 4 9 16)
+  (array-map (lambda (x) (* x x)) #,(<array> (0 2 0 2) 1 2 3 4)))
+
+(test* "array-map-2" #,(<array> (0 2 0 2) 11 22 33 44)
+  (array-map (lambda (a b) (+ a b))
+             #,(<array> (0 2 0 2) 1 2 3 4)
+             #,(<array> (0 2 0 2) 10 20 30 40)))
+
+(test* "array-map-3" #,(<array> (0 2 0 2) 11.1 22.2 33.3 44.4)
+  (array-map (lambda (a b c) (+ a b c))
+             #,(<array> (0 2 0 2) 1 2 3 4)
+             #,(<array> (0 2 0 2) 10 20 30 40)
+             #,(<array> (0 2 0 2) .1 .2 .3 .4)))
+
+(test* "array-map-4" #,(<array> (0 2 0 2) 111.0 22.2 3.33 .444)
+  (array-map (lambda (a b c d) (* d (+ a b c)))
+             #,(<array> (0 2 0 2) 1 2 3 4)
+             #,(<array> (0 2 0 2) 10 20 30 40)
+             #,(<array> (0 2 0 2) .1 .2 .3 .4)
+             #,(<array> (0 2 0 2) 10.0 1.0 0.1 0.01)))
+
 ;;-------------------------------------------------------------------
 ;; NB: copy-port uses read-block! and write-block for block copy,
 ;;     so we test it here.
