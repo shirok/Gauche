@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.122 2001-11-12 09:49:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.123 2001-11-12 11:27:51 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5201,28 +5201,58 @@ indicating that the port is closed.
 @subsection Input 
 @c NODE 入力
 
+@c EN
+For the following procedures, the optional @var{iport} argument must be
+an input port, and when omitted, the current input port is assumed.
+@c JP
+以下の手続きで、省略可能な引数@var{iport}は入力ポートでなければなりません。
+省略された場合が現在の入力ポートが使われます。
+@c COMMON
+
 @defun read &optional iport
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun read-char &optional iport
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun peek-char &optional iport
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun read-byte &optional iport
+@c EN
 Reads one byte from an input port @var{iport}, and returns an integer
 in the range between 0 and 255.
 If @var{iport} has already reached EOF, an eof object is returned.
+@c JP
+入力ポート@var{iport}から1バイト読み込み、0から255までの整数値として返します。
+@var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+@c COMMON
 @end defun
 
 @defun read-line &optional iport
-Reads one line (a sequence of bytes terminated by a newline character or EOF)
+@c EN
+Reads one line (a sequence of characters terminated by newline or EOF)
 and returns a string.  The terminating newline is not included.
+This function recognizes popular line terminators (LF only, CRLF, and CR only).
 If @var{iport} has already reached EOF, an eof object is returned.
+@c JP
+入力ポートから、行末もしくはEOFまで読み込んで文字列として返します。
+よく使われる行末 (LF only, CRLF, and CR only) を認識します。
+戻り値にはこれらの行末文字は含まれません。
+@var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+@c COMMON
 @end defun
 
 @defun read-block nbytes &optional iport
@@ -5318,7 +5348,7 @@ applies @var{fn} to each item.  The former discards the results
 
 @c EN
 For the following procedures, the optional @var{port} argument must be
-an output port, and when omitted, current output port is assumed.
+an output port, and when omitted, the current output port is assumed.
 @c JP
 以下の手続きで、省略可能な引数@var{port}は出力ポートでなければなりません。
 省略された場合が現在の出力ポートが使われます。
@@ -5326,10 +5356,16 @@ an output port, and when omitted, current output port is assumed.
 
 @defun write obj &optional port
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun display obj &optional port
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @deffn {Method} write-object (obj <object>) port
@@ -5338,6 +5374,9 @@ You can customize how the object is printed out by this method.
 
 @defun newline &optional port
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun write-char char &optional port
