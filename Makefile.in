@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.46 2003-10-22 02:04:05 shirok Exp $
+# $Id: Makefile.in,v 1.47 2003-10-24 02:48:25 fuyuki Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check install uninstall clean distclean maintainer-clean install-check
@@ -22,7 +22,7 @@ GAUCHE_DATA_DIR = $(datadir)/gauche
 DESTDIR =
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status libtool \
-	           autom4* gc/autom4*
+	           configure.lineno autom4* gc/autom4*
 AUTOCONF_GENERATED = $(CONFIG_GENERATED) configure
 
 all:
