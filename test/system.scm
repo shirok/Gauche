@@ -33,9 +33,9 @@
 (define (get-pwd-via-pwd)
   ;; use pwd command to get pwd.  avoid using shell's built-in pwd,
   ;; for it may be confused by symlinks.
-  (cond ((sys-access "/bin/pwd" x_ok) (get-command-output "/bin/pwd"))
-        ((sys-access "/usr/bin/pwd" x_ok) (get-command-output "/usr/bin/pwd"))
-        ((sys-access "/sbin/pwd" x_ok) (get-command-output "/sbin/pwd"))
+  (cond ((sys-access "/bin/pwd" |X_OK|) (get-command-output "/bin/pwd"))
+        ((sys-access "/usr/bin/pwd" |X_OK|) (get-command-output "/usr/bin/pwd"))
+        ((sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd"))
         (else (get-command-output "pwd"))))
 
 ;;-------------------------------------------------------------------
@@ -106,32 +106,32 @@
 (test "access" '(#f #f #f #f)
       (lambda ()
         (map (lambda (flag) (sys-access "test.dir" flag))
-             (list f_ok r_ok w_ok x_ok))))
+             (list |F_OK| |R_OK| |W_OK| |X_OK|))))
 (sys-system "touch test.dir")
 (sys-system "chmod 777 test.dir")
 (test "access" '(#t #t #t #t)
       (lambda ()
         (map (lambda (flag) (sys-access "test.dir" flag))
-             (list f_ok r_ok w_ok x_ok))))
+             (list |F_OK| |R_OK| |W_OK| |X_OK|))))
 (sys-system "chmod 500 test.dir")
 (test "access" '(#t #t #f #t)
       (lambda ()
         (map (lambda (flag) (sys-access "test.dir" flag))
-             (list f_ok r_ok w_ok x_ok))))
+             (list |F_OK| |R_OK| |W_OK| |X_OK|))))
 (sys-system "chmod 477 test.dir")
 (test "access" '(#t #t #f #f)
       (lambda ()
         (map (lambda (flag) (sys-access "test.dir" flag))
-             (list f_ok r_ok w_ok x_ok))))
+             (list |F_OK| |R_OK| |W_OK| |X_OK|))))
 (sys-system "chmod 000 test.dir")
 (test "access" '(#t #f #f #f)
       (lambda ()
         (map (lambda (flag) (sys-access "test.dir" flag))
-             (list f_ok r_ok w_ok x_ok))))
+             (list |F_OK| |R_OK| |W_OK| |X_OK|))))
 
 (test "unlink" #f
       (lambda ()
-        (sys-unlink "test.dir") (sys-access "test.dir" f_ok)))
+        (sys-unlink "test.dir") (sys-access "test.dir" |F_OK|)))
 
 (test "mkdir" "drwxr-x---"
       (lambda ()
@@ -149,8 +149,8 @@
 (test "rename" '(#f #t)
       (lambda ()
         (sys-rename "test.dir/xyzzy" "test.dir/zzZzz")
-        (list (sys-access "test.dir/xyzzy" f_ok)
-              (sys-access "test.dir/zzZzz" f_ok))))
+        (list (sys-access "test.dir/xyzzy" |F_OK|)
+              (sys-access "test.dir/zzZzz" |F_OK|))))
 
 (test "readdir" '("." ".." "zzZzz")
       (lambda ()
@@ -175,7 +175,7 @@
       (lambda ()
         (sys-unlink "test.dir/zzZzz")
         (sys-rmdir "test.dir")
-        (sys-access "test.dir" f_ok)))
+        (sys-access "test.dir" |F_OK|)))
 
 ;;-------------------------------------------------------------------
 (test-section "stat")
@@ -260,11 +260,11 @@
           (if (= pid 0)
               (begin (sys-pause) (sys-exit 0))
               (begin 
-                (sys-kill pid SIGINT)
+                (sys-kill pid |SIGINT|)
                 (receive (rpid code) (sys-wait)
                   (and (= rpid pid)
                        (sys-wait-signaled? code)
-                       (= (sys-wait-termsig code) SIGINT))))))))
+                       (= (sys-wait-termsig code) |SIGINT|))))))))
 
 (test "fork, wait, kill & sleep" #t
       (lambda ()
@@ -272,12 +272,12 @@
           (if (= pid 0)
               (begin (sys-sleep 1) (sys-exit 0))
               (begin 
-                (sys-kill pid SIGSTOP) 
+                (sys-kill pid |SIGSTOP|) 
                 (receive (rpid code) (sys-waitpid pid :untraced #t)
                   (and (= rpid pid)
                        (sys-wait-stopped? code)
-                       (= (sys-wait-stopsig code) SIGSTOP)
-                       (begin (sys-kill pid SIGCONT)
+                       (= (sys-wait-stopsig code) |SIGSTOP|)
+                       (begin (sys-kill pid |SIGCONT|)
                               (receive (rpid code) (sys-wait)
                                 (and (= rpid pid)
                                      (sys-wait-exited? code)

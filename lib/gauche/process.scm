@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.9 2001-09-13 09:02:12 shirok Exp $
+;;;  $Id: process.scm,v 1.10 2001-09-27 10:14:23 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -164,9 +164,9 @@
 (define (process-send-signal process signal)
   (when (process-alive? process)
     (sys-kill (process-pid process) signal)))
-(define (process-kill process) (process-send-signal process SIGKILL))
-(define (process-stop process) (process-send-signal process SIGSTOP))
-(define (process-continue process) (process-send-signal process SIGCONT))
+(define (process-kill process) (process-send-signal process |SIGKILL|))
+(define (process-stop process) (process-send-signal process |SIGSTOP|))
+(define (process-continue process) (process-send-signal process |SIGCONT|))
 
 ;; Process ports
 
@@ -185,7 +185,7 @@
      (lambda () #f)
      (lambda () (proc i))
      (lambda ()
-       (process-send-signal p SIGTERM)
+       (process-send-signal p |SIGTERM|)
        (close-input-port i)
        (process-wait p)))))
 
