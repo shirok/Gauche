@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.19 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: compile.c,v 1.20 2001-02-05 10:15:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -561,7 +561,7 @@ static ScmSyntax syntax_begin = {
    SCM_VM_IF, SCM_VM_AND or SCM_VM_OR. */
 
 static ScmObj compile_if_family(ScmObj test_code, ScmObj then_code,
-                                ScmObj else_code, int insn,
+                                ScmObj else_code,
                                 int mergep, ScmObj env)
 {
     ScmObj code = SCM_NIL, codetail;
@@ -577,7 +577,7 @@ static ScmObj compile_if_family(ScmObj test_code, ScmObj then_code,
     }
     
     ADDCODE(test_code);
-    ADDCODE1(SCM_VM_INSN(insn));
+    ADDCODE1(SCM_VM_INSN(SCM_VM_IF));
     ADDCODE1(then_code);
     ADDCODE(else_code);
     return code;
@@ -598,7 +598,7 @@ static ScmObj compile_if(ScmObj form, ScmObj env, int ctx, void *data)
     return compile_if_family(SCM_CAR(tail),
                              compile_int(then_clause, env, ctx),
                              compile_int(else_clause, env, ctx),
-                             SCM_VM_IF, 1, env);
+                             TRUE, env);
 }
 
 static ScmSyntax syntax_if = {
@@ -616,16 +616,14 @@ static ScmObj compile_when(ScmObj form, ScmObj env, int ctx, void *data)
     if (nargs < 2) Scm_Error("syntax error: %S", form);
     body = SCM_CDR(tail);
     then_code = compile_body(body, env, ctx);
-    else_code = (ctx == 0)? SCM_NIL : SCM_LIST1(SCM_UNDEFINED);
+    else_code = (ctx == SCM_COMPILE_STMT)? SCM_NIL : SCM_LIST1(SCM_UNDEFINED);
 
     if (unlessp) {
         /* for UNLESS, we just swap then and else clause. */
         ScmObj t = then_code; then_code = else_code; else_code = t;
     }
 
-    return compile_if_family(SCM_CAR(tail),
-                             then_code, else_code,
-                             SCM_VM_IF, 1, env);
+    return compile_if_family(SCM_CAR(tail), then_code, else_code, TRUE, env);
 }
 
 static ScmSyntax syntax_when = {
@@ -655,7 +653,7 @@ static ScmObj compile_and_rec(ScmObj conds, ScmObj merger, int orp,
         return compile_if_family(SCM_CAR(conds),
                                  orp? no_more_test : more_test,
                                  orp? more_test : no_more_test,
-                                 SCM_VM_IF, 0, env);
+                                 FALSE, env);
     }
 }
 
@@ -667,7 +665,7 @@ static ScmObj compile_and(ScmObj form, ScmObj env, int ctx, void *data)
     if (!SCM_PAIRP(tail)) {
         /* (and) or (or) is compiled into a literal boolean, or
            even a null if at the statement context. */
-        if (ctx == 0) return SCM_NIL;
+        if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
         else return orp ? SCM_LIST1(SCM_FALSE) : SCM_LIST1(SCM_TRUE);
     } else {
         ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
@@ -704,9 +702,9 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
 
     if (SCM_NULLP(clauses)) {
         /* If caller expects a result, let it have undefined value. */
-        if (ctx != 0) SCM_APPEND1(code, codetail, SCM_UNDEFINED);
+        if (ctx != SCM_COMPILE_STMT) ADDCODE1(SCM_UNDEFINED);
         /* merge control */
-        SCM_APPEND(code, codetail, merger);
+        ADDCODE(merger);
         return code;
     }
     if (!SCM_PAIRP(clauses)) Scm_Error("syntax error: %S", form);
@@ -785,7 +783,7 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
         test = testcode;
     }
     
-    return compile_if_family(test, code, altcode, SCM_VM_IF, 0, env);
+    return compile_if_family(test, code, altcode, FALSE, env);
 }
 
 
@@ -796,7 +794,7 @@ static ScmObj compile_cond(ScmObj form, ScmObj env, int ctx, void *data)
         Scm_Error("at least one clause is required for cond: %S", form);
     }
     merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-    return compile_cond_int(form, clauses, merger, env, ctx, 0);
+    return compile_cond_int(form, clauses, merger, env, ctx, FALSE);
 }
 
 static ScmSyntax syntax_cond = {
@@ -815,11 +813,9 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
     key = SCM_CAR(tail);
     clauses = SCM_CDR(tail);
 
-    /* First, push the value of the key on the stack */
     ADDCODE(compile_int(key, env, SCM_COMPILE_NORMAL));
-
     merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-    ADDCODE(compile_cond_int(form, clauses, merger, env, ctx, 1));
+    ADDCODE(compile_cond_int(form, clauses, merger, env, ctx, TRUE));
     return code;
 }
 
@@ -833,17 +829,6 @@ static ScmSyntax syntax_case = {
 /*------------------------------------------------------------------
  * LET family (LET, LET*, LETREC)
  */
-static const char *let_name(int type)
-{
-    const char *p = "";
-    
-    switch (type) {
-    case BIND_LET: p = "let"; break;
-    case BIND_LET_STAR: p = "let*"; break;
-    case BIND_LETREC: p = "letrec"; break;
-    }
-    return p;
-}
 
 /* Common routine to compile binding construct.   The compilation of
    body part is delegated to BODY_COMPILER function */
@@ -886,10 +871,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     return code;
 }
 
-static ScmObj compile_let(ScmObj form,
-                          ScmObj env,
-                          int ctx,
-                          void *data)
+static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
 {
     int type = (int)data;
     ScmObj tail = SCM_CDR(form);
@@ -897,8 +879,7 @@ static ScmObj compile_let(ScmObj form,
     ScmObj newenv, code = SCM_NIL, codetail, bodycode;
     int nvars;
 
-    if (!SCM_PAIRP(tail))
-        Scm_Error("syntax error: %S", form);
+    if (!SCM_PAIRP(tail)) Scm_Error("syntax error: %S", form);
     bindings = SCM_CAR(tail);
     body = SCM_CDR(tail);
 
@@ -923,7 +904,7 @@ static ScmObj compile_let(ScmObj form,
 
             if (!SCM_PAIRP(binding)
                 || !SCM_PAIRP(SCM_CDR(binding))
-                || !SCM_NULLP(SCM_CDR(SCM_CDR(binding)))
+                || !SCM_NULLP(SCM_CDDR(binding))
                 || !SCM_SYMBOLP(SCM_CAR(binding))) {
                 Scm_Error("syntax error (invalid binding form): %S", form);
             }
@@ -1023,7 +1004,8 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     if (SCM_PAIRP(SCM_CDR(test))) {
         SCM_APPEND(fincode, fintail, compile_body(SCM_CDR(test), env, ctx));
     } else {
-        if (ctx != 0) SCM_APPEND1(fincode, fintail, SCM_UNDEFINED);
+        if (ctx != SCM_COMPILE_STMT)
+            SCM_APPEND1(fincode, fintail, SCM_UNDEFINED);
     }
 
     /* Compile test part and branch.
@@ -1034,7 +1016,7 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     SCM_APPEND(code, codetail,
                compile_int(SCM_CAR(test), env, SCM_COMPILE_NORMAL));
     SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_NOT));
-    code = compile_if_family(code, bodycode, fincode, SCM_VM_IF, 0, env);
+    code = compile_if_family(code, bodycode, fincode, FALSE, env);
 
     /* Make the list circular.   */
     SCM_APPEND(bodycode, bodytail, merger);
