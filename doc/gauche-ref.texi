@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.43 2001-07-09 10:24:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.44 2001-07-14 18:58:28 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2357,7 +2357,7 @@ use @code{display}.
 @end defun
 
 @defun char-ready? port
-[R5RS]
+[R5RS] If a character is ready to be read from @var{port}, returns @code{#t}.
 @end defun
 
 @defun port->string port

@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.7 2001-07-08 08:31:17 shirok Exp $
+# $Id: gauche-config.in,v 1.8 2001-07-14 18:58:28 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -27,6 +27,10 @@ arch="@host@"
 shlib_so_suffix="@SHLIB_SO_SUFFIX@"
 shlib_so_cflags="@SHLIB_SO_CFLAGS@"
 shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
+shlib_so_libs="@SHLIB_LIBS_FOR_EXT@"
+
+shlib_dylib_suffix="@SHLIB_DYLIB_SUFFIX@"
+shlib_dylib_ldflags="@SHLIB_DYLIB_LDFLAGS@"
 shlib_main_ldflags="@SHLIB_MAIN_LDFLAGS@"
 libgauche_so="@LIBGAUCHE_SO@"
 
@@ -51,9 +55,12 @@ usage () {
     echo "       directories where system/site header files of extensions go"
     echo
     echo "Parameters to compile Gauche extention"
-    echo "  --so-suffix   shared object file suffix of the system"
-    echo "  --so-cflags   flags required to compile shared object file"
-    echo "  --so-ldflags  flags required to link shared object file"
+    echo "  --so-suffix     object file suffix of the gauche extension"
+    echo "  --so-cflags     flags required to compile shared object"
+    echo "  --so-ldflags    flags required to link a gauche extension"
+    echo "  --so-libs       libraries to be linked with a gauche extension"
+    echo "  --dylib-suffix  dynamic/shared library file suffix of the system"
+    echo "  --dylib-ldflags flags required to link dynamic/shared library file"
     exit 1
 }
 
@@ -77,6 +84,9 @@ case $1 in
   --so-suffix) echo $shlib_so_suffix;;
   --so-cflags) echo $shlib_so_cflags;;
   --so-ldflags) echo $shlib_so_ldflags;;
+  --so-libs)    echo $shlib_so_libs;;
+  --dylib-suffix) echo $shlib_dylib_suffix;;
+  --dylib-ldflags) echo $shlib_dylib_ldflags;;
   --libgauche-so) echo $libgauche_so;;
       
   *)  usage;;

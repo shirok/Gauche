@@ -316,6 +316,11 @@
 #   endif
 #   define mach_type_known
 # endif
+# if defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
+#    define MACOSX
+#    define POWERPC
+#    define mach_type_known
+# endif
 
 /* Feel free to add more clauses here */
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.41 2001-07-02 11:42:32 shirok Exp $
+ *  $Id: load.c,v 1.42 2001-07-14 18:58:28 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -347,6 +347,9 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 #ifdef HAVE_DLOPEN
 #if defined(__NetBSD__)
 #define DYNLOAD_PREFIX   ___STRING(_C_LABEL(Scm_Init_))
+#elif defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
+/* Darwin/MacOSX */
+#define DYNLOAD_PREFIX   "_Scm_Init_"
 #else
 /* We might have some other ifdefs... */
 #define DYNLOAD_PREFIX   "Scm_Init_"
