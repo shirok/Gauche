@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.12 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: signal.c,v 1.13 2002-04-25 03:15:00 shirok Exp $
  */
 
+#include <stdlib.h>
 #include <signal.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
@@ -276,7 +277,6 @@ static void sig_handle(int signum)
  */
 void Scm_SigCheck(ScmVM *vm)
 {
-    int i;
     ScmObj sp, tail;
 
     sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);
@@ -354,6 +354,7 @@ static ScmObj set_sighandlers(ScmObj *args, int nargs, void *data)
     /* NB: change sigmask of this thread */
     ScmObj handlers = SCM_OBJ(data);
     Scm_VM()->sigHandlers = handlers;
+    return handlers;
 }
 
 ScmObj Scm_VMWithSignalHandlers(ScmObj handlers, ScmProcedure *thunk)

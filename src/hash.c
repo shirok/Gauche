@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.22 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: hash.c,v 1.23 2002-04-25 03:15:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -539,8 +539,6 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmHashTable *ht = (ScmHashTable*)obj;
-    ScmHashIter iter;
-    ScmHashEntry *e;
     char *str;
 
     switch (ht->type) {

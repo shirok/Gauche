@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.48 2002-04-25 02:42:47 shirok Exp $
+ *  $Id: port.c,v 1.49 2002-04-25 03:15:00 shirok Exp $
  */
 
 #include <unistd.h>
@@ -426,7 +426,7 @@ static void unregister_buffered_port(ScmPort *port)
 void Scm_FlushAllPorts(int exitting)
 {
     ScmWeakVector *save, *ports;
-    ScmObj p;
+    ScmObj p = SCM_FALSE;
     int i, saved = 0;
 
     save = SCM_WEAKVECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
@@ -509,8 +509,6 @@ void Scm_Putc(ScmChar c, ScmPort *p)
 
 void Scm_Puts(ScmString *s, ScmPort *p)
 {
-    int nb;
-    
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -1030,7 +1028,7 @@ ScmObj Scm_Stderr(void)
 
 void Scm__InitPort(void)
 {
-    SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
+    (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
     active_buffered_ports.ports = SCM_WEAKVECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(stdin)"),

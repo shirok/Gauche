@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.56 2002-04-24 23:18:15 shirok Exp $
+ *  $Id: load.c,v 1.57 2002-04-25 03:15:00 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -513,7 +513,6 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name,
                         ScmString *path,
                         ScmSymbol *import_from)
 {
-    ScmObj p;
     ScmAutoload *adata = SCM_NEW(ScmAutoload);
     SCM_SET_CLASS(adata, SCM_CLASS_AUTOLOAD);
     adata->name = name;
@@ -526,8 +525,6 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name,
 
 ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 {
-    ScmObj r;
-    
     if (adata->loaded) Scm_Error("Autoload is not working? %S", adata);
     adata->loaded = TRUE;
     Scm_Require(SCM_OBJ(adata->path));

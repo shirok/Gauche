@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.62 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: vm.h,v 1.63 2002-04-25 03:15:02 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -366,7 +366,7 @@ SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
                    Scm_VM()->cstack = Scm_VM()->cstack->prev;   \
                    siglongjmp(Scm_VM()->cstack->jbuf, 1);       \
                }                                                \
-               else exit(1);                                    \
+               else Scm_Exit(1);                                \
            } while (0)
 
 #define SCM_END_PROTECT                                 \

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.41 2002-04-20 07:51:07 shirok Exp $
+ *  $Id: bignum.c,v 1.42 2002-04-25 03:15:00 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -34,7 +34,9 @@
  */
 /* Cf: Knuth: The Art of Computer Programming, sectin 4.3 */
 
-/* AIX requires this to be the first thing in the file.  */
+/* They say AIX requires this to be the first thing in the file, so
+   I include gauche/config.h before the real "gauche.h" */
+#include <gauche/config.h>
 #ifndef __GNUC__
 # if HAVE_ALLOCA_H
 #  include <alloca.h>
@@ -46,6 +48,10 @@
 char *alloca ();
 #   endif
 #  endif
+# endif
+#else
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
 # endif
 #endif
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.76 2002-04-24 23:18:15 shirok Exp $
+ *  $Id: class.c,v 1.77 2002-04-25 03:15:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -87,12 +87,14 @@ SCM_DEFINE_BASE_CLASS(Scm_MethodClass, ScmMethod,
                       method_print, NULL, NULL, method_allocate,
                       SCM_CLASS_OBJECT_CPL);
 
+#if 0
 static ScmClass *Scm_MetaclassCPL[] = {
     SCM_CLASS_STATIC_PTR(Scm_ClassClass),
     SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
+#endif
 
 /* Internally used classes */
 SCM_DEFINE_BUILTIN_CLASS(Scm_SlotAccessorClass,
@@ -539,7 +541,6 @@ static ScmClass *make_implicit_meta(const char *name,
 {
     ScmClass *meta = (ScmClass*)class_allocate(SCM_CLASS_CLASS, SCM_NIL);
     ScmObj s = SCM_INTERN(name);
-    ScmObj sp, h = SCM_NIL, t;
     static ScmClass *metacpa[] = { SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL };
     ScmClass **metas = metacpa;
 
@@ -911,7 +912,7 @@ static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
  */
 static ScmObj builtin_initialize(ScmObj *args, int nargs, ScmGeneric *gf)
 {
-    ScmObj instance, initargs, ip, ap;
+    ScmObj instance, initargs, ap;
     ScmClass *klass;
     SCM_ASSERT(nargs == 2);
     instance = args[0];
@@ -940,7 +941,6 @@ static ScmObj builtin_initialize(ScmObj *args, int nargs, ScmGeneric *gf)
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmSlotAccessor *sa = SCM_NEW(ScmSlotAccessor);
-    ScmObj parentklass, slotnum, slotget, slotset;
 
     SCM_SET_CLASS(sa, klass);
     sa->name = SCM_FALSE;
@@ -1682,7 +1682,6 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
     if (klass != SCM_CLASS_CLASS && SCM_XTYPEP(klass, SCM_CLASS_CLASS)) {
         int nlen = strlen(name);
         char *metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
-        ScmClass *meta;
 
         if (name[nlen - 1] == '>') {
             strncpy(metaname, name, nlen-1);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.60 2002-04-20 07:51:08 shirok Exp $
+ *  $Id: string.c,v 1.61 2002-04-25 03:15:00 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1028,7 +1028,6 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringPointerClass, NULL);
 ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
 {
     int len = SCM_STRING_LENGTH(src);
-    int siz = SCM_STRING_SIZE(src);
     int effective_size;
     const char *sptr, *ptr, *eptr;
     ScmStringPointer *sp;
@@ -1183,7 +1182,6 @@ inline int Scm_DStringSize(ScmDString *dstr)
 
 void Scm__DStringRealloc(ScmDString *dstr, int minincr)
 {
-    char *p;
     ScmDStringChunk *newchunk;
     ScmDStringChain *newchain;
     int newsize;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.94 2002-04-15 23:03:54 shirok Exp $
+ *  $Id: number.c,v 1.95 2002-04-25 03:15:00 shirok Exp $
  */
 
 #include <math.h>
@@ -1537,7 +1537,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
            note that m+ == m- for most cases, and m+ == 2*m- for the rest.
            so we calculate m+ from m- for each iteration, using the flag
            mp2 as   m+ = mp? m- : 2*m-. */
-        ScmObj f, e, r, s, mp, mm, q, rp;
+        ScmObj f, r, s, mp, mm, q;
         int exp, sign, est, tc1, tc2, tc3, digs, point, round;
         int mp2 = FALSE, fixup = FALSE;
 
@@ -2118,7 +2118,6 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
 {
     struct numread_packet ctx;
     int radix_seen = 0, exactness_seen = 0, sign_seen = 0;
-    int minusp = FALSE;
     ScmObj realpart;
 
     ctx.buffer = str;
@@ -2175,7 +2174,7 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
     /* number body.  need to check the special case of pure imaginary */
     if (*str == '+' || *str == '-') {
         if (len == 1) return SCM_FALSE;
-        if (len == 2 && str[1] == 'i' || str[1] == 'I') {
+        if (len == 2 && (str[1] == 'i' || str[1] == 'I')) {
             CHK_EXACT_COMPLEX();
             return Scm_MakeComplex(0.0, (*str == '+')? 1.0 : -1.0);
         }

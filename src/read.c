@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.44 2002-04-03 10:38:34 shirok Exp $
+ *  $Id: read.c,v 1.45 2002-04-25 03:15:00 shirok Exp $
  */
 
 #include <stdio.h>
@@ -666,7 +666,7 @@ static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj, int refnum)
 
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 {
-    ScmHashEntry *e;
+    ScmHashEntry *e = NULL;
     int refnum = Scm_DigitToInt(ch, 10);
 
     for (;;) {
@@ -719,7 +719,6 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 
 ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc)
 {
-    ScmHashEntry *e;
     if (!SCM_PROCEDUREP(proc)) {
         Scm_Error("procedure required, but got %S\n", proc);
     }

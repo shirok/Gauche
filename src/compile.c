@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.76 2002-04-21 21:14:25 shirok Exp $
+ *  $Id: compile.c,v 1.77 2002-04-25 03:15:00 shirok Exp $
  */
 
+#include <stdlib.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 
@@ -916,7 +917,7 @@ static ScmObj compile_if_family(ScmObj test_code, ScmObj then_code,
                                 ScmObj else_code,
                                 int test_compile_p, ScmObj env)
 {
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
     if (test_compile_p) {
         test_code = compile_int(test_code, env, SCM_COMPILE_NORMAL);
     }
@@ -1160,7 +1161,7 @@ static ScmSyntax syntax_cond = {
 static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj tail = SCM_CDR(form), key, clauses, merger;
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
     int nlen = Scm_Length(tail);
     if (nlen < 2) Scm_Error("bad case form: %S", form);
     key = SCM_CAR(tail);

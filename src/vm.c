@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.140 2002-04-24 23:10:02 shirok Exp $
+ *  $Id: vm.c,v 1.141 2002-04-25 03:15:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -57,7 +57,6 @@ static ScmSubr default_exception_handler_rec;
 #define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
 static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
-static ScmObj handle_exception(ScmVM *, ScmEscapePoint *, ScmObj);
 
 /*
  * Constructor
@@ -72,8 +71,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     int i;
     
     SCM_SET_CLASS(v, SCM_CLASS_VM);
-    SCM_INTERNAL_MUTEX_INIT(v->vmlock);
-    SCM_INTERNAL_COND_INIT(v->cond);
+    (void)SCM_INTERNAL_MUTEX_INIT(v->vmlock);
+    (void)SCM_INTERNAL_COND_INIT(v->cond);
     v->state = SCM_VM_NEW;
     v->name = name;
     v->specific = SCM_FALSE;
@@ -250,7 +249,7 @@ void Scm__InitVM(void)
                                SCM_MAKE_STR_IMMUTABLE("root"));
 #endif  /* !GAUCHE_USE_PTHREAD */
     vmList = SCM_LIST1(SCM_OBJ(rootVM));
-    SCM_INTERNAL_MUTEX_INIT(vmListMutex);
+    (void)SCM_INTERNAL_MUTEX_INIT(vmListMutex);
 }
 
 /*====================================================================
@@ -2352,7 +2351,7 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
    is not created. */
 static ScmObj insert_self(void *self)
 {
-    vmList = Scm_Cons(SCM_OBJ(self), vmList);
+    return vmList = Scm_Cons(SCM_OBJ(self), vmList);
 }
 
 ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)

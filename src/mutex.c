@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.1 2002-03-28 19:50:54 shirok Exp $
+ *  $Id: mutex.c,v 1.2 2002-04-25 03:15:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -57,7 +57,7 @@ static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
         GC_REGISTER_FINALIZER(mutex, mutex_finalize, NULL, &ofn, &ocd);
     }
 #else  /*!GAUCHE_USE_PTHREAD*/
-    SCM_INTERNAL_MUTEX_INIT(mutex->mutex);
+    (void)SCM_INTERNAL_MUTEX_INIT(mutex->mutex);
 #endif /*!GAUCHE_USE_PTHREAD*/
     mutex->specific = SCM_UNDEFINED;
     mutex->owner = NULL;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.38 2002-02-18 20:46:39 shirok Exp $
+ *  $Id: macro.c,v 1.39 2002-04-25 03:15:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -136,7 +136,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
                                    void *data)
 {
-    ScmObj name, trans, mt;
+    ScmObj name, trans, mt = SCM_NIL;
     int len;
     
     if ((len = Scm_Length(form)) < 3)  goto badsyn;
