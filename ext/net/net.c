@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.5 2001-06-13 10:07:10 shirok Exp $
+ *  $Id: net.c,v 1.6 2001-06-13 19:56:53 shirok Exp $
  */
 
 #include "net.h"
@@ -280,15 +280,29 @@ void Scm_Init_libnet(void)
 
     /* Constants for socket option operation.
        I define them here, instead of netlib.stub,  so that I can check
-       the symbol is defined */
+       if the symbol is defined */
 #define DEFSYM(sym, val) \
     SCM_DEFINE(mod, sym, Scm_MakeInteger(val))
 
     DEFSYM("sol_socket", SOL_SOCKET);
+    DEFSYM("so_keepalive", SO_KEEPALIVE);
+    DEFSYM("so_oobinline", SO_OOBINLINE);
+    DEFSYM("so_reuseaddr", SO_REUSEADDR);
+    DEFSYM("so_type",      SO_TYPE);
+    DEFSYM("so_broadcast", SO_BROADCAST);
+    DEFSYM("so_sndbuf",    SO_SNDBUF);
+    DEFSYM("so_rcvbuf",    SO_RCVBUF);
+    DEFSYM("so_priority",  SO_PRIORITY);
+    DEFSYM("so_error",     SO_ERROR);
+
 #ifdef SOL_TCP
     DEFSYM("sol_tcp", SOL_TCP);
+    DEFSYM("tcp_nodelay",  TCP_NODELAY);
+    DEFSYM("tcp_maxseg",   TCP_MAXSEG);
+    DEFSYM("tcp_cork",     TCO_CORK);
 #endif
 #ifdef SOL_IP
     DEFSYM("sol_ip", SOL_IP);
+    DEFSYM("ip_options",   IP_OPTIONS);
 #endif
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.4 2001-06-13 10:07:10 shirok Exp $
+ *  $Id: net.h,v 1.5 2001-06-13 19:56:53 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
 #include <gauche.h>

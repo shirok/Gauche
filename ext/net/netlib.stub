@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.3 2001-06-13 10:07:10 shirok Exp $
+;;  $Id: netlib.stub,v 1.4 2001-06-13 19:56:53 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -104,13 +104,13 @@
 
 ;; socket option interface
 
-(define-cproc socket-setopt (sock level option value)
+(define-cproc socket-setsockopt (sock level option value)
   (assert (socket? sock))
   (assert (small-integer? level))
   (assert (small-integer? option))
   "  SCM_RETURN(Scm_SocketSetOpt(sock, level, option, value));")
 
-(define-cproc socket-getopt (sock level option rsize)
+(define-cproc socket-getsockopt (sock level option rsize)
   (assert (socket? sock))
   (assert (small-integer? level))
   (assert (small-integer? option))
