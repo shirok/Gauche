@@ -1,3 +1,16 @@
+2001-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (dotimes): fixed a bug that sneaked
+	  in by the last change.
+	* src/class.c, lib/gauche/object.scm : cleaned up the SlotAccessor
+	  initialization code.  Added initializable flag to SlotAccessor
+	  to indicate whether :init-value/:init-keyword should be honored
+	  or not; this allows procedural slot to be initialized.
+	* src/gauche/sequence.scm : finalizing API of sequence framework.
+	* src/module.c (Scm_ImportModules): fixed the order of imported
+	  modules.  The last imported module should be searched first.
+	* ext/uvector/srfi-4.scm : added collection and sequence API.
+
 2001-11-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c : Correctly initialize implicit metaclass hierarchy
