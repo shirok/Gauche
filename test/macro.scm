@@ -376,6 +376,14 @@
                                ((_ ?x ?y) (+ ?x ?y)))))
             (list (a 7) (b 8))))))
 
+;; This is from comp.lang.scheme posting by Antti Huima
+;; http://groups.google.com/groups?hl=ja&selm=7qpu5ncg2l.fsf%40divergence.tcs.hut.fi
+(test "let-syntax (huima)" '(1 3 5 9)
+      (lambda ()
+        (define the-procedure
+          (let-syntax((l(syntax-rules()((l((x(y ...))...)b ...)(let-syntax((x (syntax-rules()y ...))...) b ...)))))(l('(('(a b ...)(lambda a b ...)))`((`(a b c)(if a b c))(`(a)(car a))),((,(a b)(set! a b))(,(a)(cdr a))),@((,@z(call-with-current-continuation z))))'((ls)('((s)('((i) ('((d)('((j)('((c)('((p)('((l)('(()(l l))))'((k)`((pair?,(p))('((c) ,(p(append,(,(p))(d c)))(k k))(c`(p)`(,(p))c))`(p)))))(cons(d)(map d ls))))'((x y c),@'((-)(s x y null? - s)(j x y c)))))'((x y c)('((q)('((f)(cons`(q)(c((f x)x)((f y)y)c)))'((h)`((eq? q h)'((x),(x)) i)))),@'((-)(s x y'((z)(>=`(z)(sqrt(*`(x)`(y)))))- s))))))list)) '((z)z)))'((x y p k l),@'((-)`((p x)(k y)(l y x'((z)`((p z)-(- #f)))k l)))))))))
+        (the-procedure '(5 1 9 3))))
+
 ;;----------------------------------------------------------------------
 ;; common-macros
 
@@ -492,6 +500,5 @@
       (lambda () (macro-expand '(foo 1))))
 (test "macro-expand-1" '(bar 1 1)
       (lambda () (macro-expand-1 '(foo 1))))
-
 
 (test-end)
