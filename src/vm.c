@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.89 2001-07-05 10:34:39 shirok Exp $
+ *  $Id: vm.c,v 1.90 2001-07-08 08:24:25 shirok Exp $
  */
 
 #include "gauche.h"
@@ -37,6 +37,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, NULL);
 static ScmVM *theVM;    /* this must be thread specific in MT version */
 
 static void save_cont(ScmVM*);
+static void save_stack(ScmVM*);
 
 /* base can be NULL iff called from Scm_Init. */
 
@@ -189,7 +190,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     do {                                        \
         if (sp >= vm->stackEnd - size) {        \
             SAVE_REGS();                        \
-            save_cont(vm);                      \
+            save_stack(vm);                     \
             RESTORE_REGS();                     \
         }                                       \
     } while (0)
@@ -421,6 +422,15 @@ static void run_loop()
         SWITCH(SCM_VM_INSN_CODE(code)) {
 
             CASE(SCM_VM_PUSH) {
+#ifdef ENABLE_STACK_CHECK
+#if !defined(EXPLICIT_STACK_CHECK) && !defined(FUNCTION_STACK_CHECK)
+                if (sp >= vm->stackEnd) {
+                    SAVE_REGS();
+                    save_stack(vm);
+                    RESTORE_REGS();
+                }
+#endif
+#endif
                 PUSH_ARG(val0);
                 continue;
             }
@@ -430,21 +440,50 @@ static void run_loop()
             }
             CASE(SCM_VM_DUP) {
                 ScmObj arg = *(sp-1);
+#ifdef ENABLE_STACK_CHECK
+#if !defined(EXPLICIT_STACK_CHECK) && !defined(FUNCTION_STACK_CHECK)
+                if (sp >= vm->stackEnd) {
+                    SAVE_REGS();
+                    save_stack(vm);
+                    RESTORE_REGS();
+                }
+#endif
+#endif
                 PUSH_ARG(arg);
                 continue;
             }
             CASE(SCM_VM_PRE_CALL) {
                 ScmObj prep = SCM_CAR(pc), next = SCM_CDR(pc);
+#ifdef ENABLE_STACK_CHECK
+#if !defined(FUNCTION_STACK_CHECK)
+                /* Note: The call instruction will push extra word for
+                   next-method, hence +1 */
+                int reqstack = CONT_FRAME_SIZE+ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
+                CHECK_STACK(reqstack);
+#endif
+#endif
                 PUSH_CONT(next);
                 PUSH_ENV_HDR();
                 pc = prep;
                 continue;
             }
             CASE(SCM_VM_PRE_TAIL) {
+#ifdef ENABLE_STACK_CHECK
+#if !defined(FUNCTION_STACK_CHECK)
+                /* Note: The call instruction will push extra word for
+                   next-method, hence +1 */
+                int reqstack = ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
+                CHECK_STACK(reqstack);
+#endif
+#endif
                 PUSH_ENV_HDR();
                 continue;
             }
             CASE(SCM_VM_CHECK_STACK) {
+#ifdef ENABLE_STACK_CHECK
+                int reqstack = SCM_VM_INSN_ARG(code);
+                CHECK_STACK(reqstack);
+#endif
                 continue;
             }
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
@@ -487,7 +526,9 @@ static void run_loop()
                 } else if (proctype == SCM_PROC_NEXT_METHOD) {
                     ScmNextMethod *n = SCM_NEXT_METHOD(val0);
                     if (nargs == 0) {
-                        /* TODO: check sp boundary */
+#ifdef ENABLE_STACK_CHECK
+                        CHECK_STACK(n->nargs+1);
+#endif
                         memcpy(sp, n->args, sizeof(ScmObj)*n->nargs);
                         sp += n->nargs;
                         nargs = n->nargs;
@@ -567,7 +608,6 @@ static void run_loop()
                         /* Scheme-defined method.  next-method arg is passed
                            as the last arg (note that rest arg is already
                            folded. */
-                        /* TODO: stack boundary check */
                         PUSH_ARG(SCM_OBJ(nm));
                         env->up = m->env;
                         env->size++; /* for next-method */
@@ -660,7 +700,11 @@ static void run_loop()
             CASE(SCM_VM_LET) {
                 int nlocals = SCM_VM_INSN_ARG(code);
                 ScmObj info;
-
+#ifdef ENABLE_STACK_CHECK
+#if !defined(FUNCTION_STACK_CHECK)
+                CHECK_STACK(ENV_SIZE(nlocals));
+#endif
+#endif
                 VM_ASSERT(SCM_PAIRP(pc));
                 FETCH_INSN(info);
                 PUSH_LOCAL_ENV(nlocals, info);
@@ -766,6 +810,11 @@ static void run_loop()
                 ScmObj rest = SCM_NIL, tail = SCM_NIL, info;
                 ScmEnvFrame *argpsave;
 
+#ifdef ENABLE_STACK_CHECK
+#if !defined(FUNCTION_STACK_CHECK)
+                CHECK_STACK(ENV_SIZE(reqargs + restarg));
+#endif
+#endif
                 FETCH_INSN(info);
                 if (vm->numVals < reqargs) {
                     VM_ERR(("received fewer values than expected"));
@@ -1164,6 +1213,11 @@ static void run_loop()
             CASE(SCM_VM_SLOT_REF) {
                 ScmObj obj;
                 POP_ARG(obj);
+#ifdef ENABLE_STACK_CHECK
+#if !defined(FUNCTION_STACK_CHECK)
+                CHECK_STACK(CONT_FRAME_SIZE);
+#endif
+#endif
                 PUSH_CONT(pc);
                 SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
@@ -1175,6 +1229,11 @@ static void run_loop()
                 ScmObj obj, slot;
                 POP_ARG(slot);
                 POP_ARG(obj);
+#ifdef ENABLE_STACK_CHECK
+#if !defined(FUNCTION_STACK_CHECK)
+                CHECK_STACK(CONT_FRAME_SIZE);
+#endif
+#endif
                 PUSH_CONT(pc);
                 SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
@@ -1201,7 +1260,10 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
     ScmObj cp, code = SCM_NIL, tail;
 
     /* This is inefficient, but for now ... */
-    SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PRE_TAIL));
+#if defined(FUNCTION_STACK_CHECK)
+    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CHECK_STACK, CONT_FRAME_SIZE+ENV_SIZE(numargs)));
+#endif
+    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_PRE_TAIL, numargs));
     SCM_FOR_EACH(cp, args) {
         SCM_APPEND1(code, tail, SCM_CAR(cp));
         SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
@@ -1670,6 +1732,16 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     contproc = Scm_MakeSubr(throw_continuation, data, 0, 1,
                             SCM_MAKE_STR("continuation"));
     return Scm_VMApply1(proc, contproc);
+}
+
+static void save_stack(ScmVM *vm)
+{
+    vm->env = save_env(vm, vm->env, vm->cont);
+    save_cont(vm);
+    memmove(vm->stackBase, vm->argp,
+            (vm->sp - (ScmObj*)vm->argp) * sizeof(ScmObj*));
+    vm->sp -= (ScmObj*)vm->argp - vm->stackBase;
+    vm->argp = (ScmEnvFrame*)vm->stackBase;
 }
 
 /*==============================================================

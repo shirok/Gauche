@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.9 2001-07-05 10:38:13 shirok Exp $
+;; $Id: dynwind.scm,v 1.10 2001-07-08 08:24:25 shirok Exp $
 
 (use gauche.test)
 
@@ -76,6 +76,27 @@
     
 (test "call/cc (inline)" '((1 2 3 4 5 6 7 8) (1 2 3 4 -1 6 7 8))
       callcc-test2)
+
+;;-----------------------------------------------------------------------
+;; Test for stack overflow handling
+
+;; Single call of fact-rec consumes
+;;  5 (continuation) + 1 (n) + 4 (argframe) = 10
+;; words.  With the default stack size 10000, n=1000 is enough to generate
+;; the stack overflow.  There's no way to obtain compiled-in stack size
+;; right now, so you need to adjust the parameters if you change the stack
+;; size.
+
+(define (sum-rec n)
+  (if (> n 0)
+      (+ n (sum-rec (- n 1)))
+      0))
+
+(test "stack overflow" (/ (* 1000 1001) 2)
+      (lambda () (sum-rec 1000)))
+
+(test "stack overflow" (/ (* 4000 4001) 2)
+      (lambda () (sum-rec 4000)))
 
 ;;-----------------------------------------------------------------------
 ;; See if port stuff is cleaned up properly

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.33 2001-06-30 20:42:44 shirok Exp $
+ *  $Id: vm.h,v 1.34 2001-07-08 08:24:25 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -306,5 +306,10 @@ enum {
     SCM_COMPILE_NOSOURCE = (1L<<1), /* Do not insert source info */
     SCM_COMPILE_SHOWRESULT = (1L<<2) /* Display each result of compilation */
 };
+
+/* for test */
+#define ENABLE_STACK_CHECK  1
+#undef EXPLICIT_STACK_CHECK
+#undef FUNCTION_STACK_CHECK
 
 #endif /* GAUCHE_VM_H */
