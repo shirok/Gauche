@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.67 2002-07-11 08:56:28 shirok Exp $
+dnl $Id: configure.in,v 1.68 2002-07-12 07:00:29 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.67 $)
+AC_REVISION($Revision: 1.68 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -107,7 +107,6 @@ AC_ARG_ENABLE(threads, [  --enable-threads=TYPE:  Choose thread type.  Currently
     pthreads) 
      GAUCHE_THREAD_TYPE=pthreads
      AC_DEFINE(GAUCHE_USE_PTHREADS)
-     LIBS="$LIBS -lpthread"
     ;;
     no|none)
      GAUCHE_THREAD_TYPE=none
@@ -132,6 +131,9 @@ AC_CHECK_PROGS(GZIP, gzip)
 dnl ==========================================================
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
+if test X$GAUCHE_THREAD_TYPE = Xpthreads; then
+  AC_SEARCH_LIBS(pthread_create, pthread c_r)
+fi
 
 dnl ===========================================================
 dnl Checks for header files.
