@@ -3,6 +3,8 @@
 	* ext/sxml/sxpath.scm, ext/sxml/trans.scm : incorporated Alex Shinn's
 	  patch for sxpath support, and Kiyoka Nishiyama's patch on it.
 
+	* ext/sxml/src/SSAX.scm : updated to the newest CVS version of SSAX.scm
+
 2003-07-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/dbm/dbmconf.h.in : splitted dbm-specific configure settings
