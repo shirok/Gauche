@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package.scm,v 1.2 2004-04-23 01:20:54 shirok Exp $
+;;;  $Id: package.scm,v 1.3 2004-04-23 04:46:37 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -74,6 +74,7 @@
   (export <gauche-package-description>
           path->gauche-package-description
           gauche-package-description-paths
+          write-gauche-package-description
           find-gauche-package-description
           ))
 (select-module gauche.package)
@@ -122,7 +123,7 @@
     (format out "(define-gauche-package ~s\n" (ref desc 'name))
     (for-each (lambda (slot)
                 (unless (eq? slot 'name)
-                  (format out "  :~a ~s\n" slot (ref desc 'slot))))
+                  (format out "  :~a ~s\n" slot (ref desc slot))))
               (map slot-definition-name
                    (class-slots <gauche-package-description>)))
     (format out ")\n")))

@@ -30,13 +30,15 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package,v 1.1 2004-04-23 01:20:54 shirok Exp $
+;;;  $Id: package,v 1.2 2004-04-23 04:46:37 shirok Exp $
 ;;;
 
 (use srfi-1)
+(use srfi-13)
 (use gauche.parseopt)
 (use gauche.package)
 (use gauche.package.build)
+(use gauche.collection)
 (use file.util)
 (use util.list)
 
@@ -77,6 +79,33 @@
     (unless (= (length args) 1) (usage))
     (gauche-package-build (car args) :dry-run dry-run
                           :configure-options copts)))
+
+(define-cmd "list"
+  (let1 gpds (map path->gauche-package-description
+                  (gauche-package-description-paths))
+    (dolist (gpd (sort gpds (lambda (a b)
+                              (string<= (ref a 'name) (ref b 'name)))))
+      (format #t "~20a ~a~%" (ref gpd 'name) (ref gpd 'version)))))
+
+(define-cmd "make-gpd"
+  (when (null? args)
+    (error "Usage: gosh package make-gpd NAME PARAMETERS ..."))
+  (let loop ((p (cdr args))
+             (r '()))
+    (cond ((null? p)
+           (let ((gpd (apply make <gauche-package-description>
+                             :name (car args)
+                             (reverse! r))))
+             (with-output-to-file #`",(car args).gpd"
+               (cut write-gauche-package-description gpd))))
+          ((null? (cdr p))
+           (error "make-gpd: parameter list not even"))
+          (else
+           (loop (cddr p)
+                 (list* (cadr p)
+                        (make-keyword (string-trim (car p) #[-:]))
+                        r)))
+          )))
 
 (define (main args)
   (cond ((null? (cdr args)) (usage))

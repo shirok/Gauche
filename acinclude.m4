@@ -1,5 +1,5 @@
 dnl Gauche-specific autoconf macros.
-dnl $Id: acinclude.m4,v 1.11 2003-11-21 21:27:11 shirok Exp $
+dnl $Id: acinclude.m4,v 1.12 2004-04-23 04:46:37 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -138,4 +138,14 @@ echo "void *Scm__dataend_$ac_gauche_ext_fixup_name = (void*)&Scm__dataend_$ac_ga
 echo "void *Scm__bssend_$ac_gauche_ext_fixup_name;" >> $1_tail.c
 ])])
 
-
+dnl AC_GAUCHE_MAKE_GPD
+dnl   Creates a Gauche package description file.
+dnl
+AC_DEFUN([AC_GAUCHE_MAKE_GPD],
+         [
+GAUCHE_PACKAGE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
+AC_MSG_NOTICE([creating ${PACKAGE_NAME}.gpd])
+$GOSH package make-gpd "$PACKAGE_NAME" \
+  -version "$PACKAGE_VERSION" \
+  -configure "./configure $GAUCHE_PACKAGE_CONFIGURE_ARGS"
+])
