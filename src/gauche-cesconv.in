@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche-cesconv - a simple Gauche script to convert CESes
 ;;;  
-;;;  $Id: gauche-cesconv.in,v 1.1 2004-04-23 10:17:47 shirok Exp $
+;;;  $Id: gauche-cesconv.in,v 1.2 2004-04-23 12:17:46 shirok Exp $
 ;;;
 
 ;; iconv-like script.  useful to have during make process.
@@ -11,7 +11,7 @@
 (use file.filter)
 
 (define (usage)
-  (print "Usage: gosh cesconv [options] inputfile")
+  (print "Usage: gauche-cesconv [options] inputfile")
   (print "  -f, --from-code=encoding  : input ces.  can be '*jp' to guess.")
   (print "  -t, --to-code=encoding    : output ces.")
   (print "  -o, --output=file         : output file (instead of stdout)")
@@ -28,7 +28,7 @@
   (let-args (cdr args) ((ices "f|from-code=s" (gauche-character-encoding))
                         (oces "t|to-code=s" (gauche-character-encoding))
                         (outfile "o|output=s" #f)
-                        (#f   "h|help" (usage))
+                        (#f   "h|help" => (usage))
                         . files)
     (file-filter (lambda (in out)
                    (let ((inp  (wrap-with-input-conversion in ices))
