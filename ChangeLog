@@ -1,5 +1,6 @@
 2003-02-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/list.scm : extends srfi-1, instead of uses it.
 	* src/regexp.c (Scm_RegExec): fixed a bug regarding multibyte
 	  regexp match.
 	* src/char.c (Scm_CharSetCaseFold): fixed a bug that case folding

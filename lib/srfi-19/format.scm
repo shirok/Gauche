@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.7 2003-02-26 22:09:31 shirok Exp $
+;;; $Id: format.scm,v 1.8 2003-02-28 04:02:31 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -29,7 +29,6 @@
 (select-module srfi-19)
 (use gauche.sequence)
 (use srfi-13)
-(use gauche.collection)
 (use util.list)
 
 (define tm:locale-number-separator ".")

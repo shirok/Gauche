@@ -12,13 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.5 2003-02-27 11:58:52 shirok Exp $
+;;;  $Id: list.scm,v 1.6 2003-02-28 04:02:31 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
 
 (define-module util.list
-  (use srfi-1)
+  (extend srfi-1)
   (export take* drop* take-right* drop-right* split-at*
           slices intersperse cond-list)
   )
