@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.4 2004-10-11 10:53:04 shirok Exp $
+;;;  $Id: condutil.scm,v 1.5 2004-11-29 09:06:23 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -94,8 +94,15 @@
 
 ;; macros
 
+;; we extend srfi-35 to allow #f as predicate and accessors, as well as
+;; omitting accessors.
+
 (define-syntax define-condition-type
   (syntax-rules ()
+    ;; extended - #f in predicate
+    ((define-condition-type name super #f . field-spec)
+     (define-condition-type-rec name super () field-spec))
+    ;; srfi-35
     ((define-condition-type name super pred . field-spec)
      (begin
        (define-condition-type-rec name super () field-spec)
@@ -106,8 +113,17 @@
 
 (define-syntax define-condition-type-rec
   (syntax-rules ()
+    ;; end recursion - define the class
     ((define-condition-type-rec name super slots ())
      (define-class name (super) slots :metaclass <condition-meta>))
+    ;; extended - #f accessor, or omitting accessor
+    ((define-condition-type-rec name super (slot ...)
+       ((field #f) . more-fields))
+     (define-condition-type-rec name super (slot ... field) more-fields))
+    ((define-condition-type-rec name super (slot ...)
+       ((field) . more-fields))
+     (define-condition-type-rec name super (slot ... field) more-fields))
+    ;; srfi-35 - generate accessor
     ((define-condition-type-rec name super (slot ...)
        ((field reader) . more-fields))
      (begin

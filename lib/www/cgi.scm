@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.23 2004-11-26 14:07:05 shirok Exp $
+;;;  $Id: cgi.scm,v 1.24 2004-11-29 09:06:23 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -61,7 +61,11 @@
           cgi-header
           cgi-temporary-files
           cgi-add-temporary-file 
-          cgi-main)
+          cgi-main
+          <cgi-error>
+          <cgi-request-size-error>
+          <cgi-content-type-error>
+          <cgi-request-method-error>)
   )
 (select-module www.cgi)
 
@@ -80,6 +84,26 @@
 
 ;; rename to export
 (define cgi-get-metavariable get-meta)
+
+;;----------------------------------------------------------------
+;; Error conditions
+;;
+
+(define-condition-type <cgi-error> <error>
+  #f)
+
+(define-condition-type <cgi-request-size-error> <cgi-error>
+  #f
+  (name) ;; part name or #f
+  (size))
+
+(define-condition-type <cgi-content-type-error> <cgi-error>
+  #f
+  (content-type))
+  
+(define-condition-type <cgi-request-method-error> <cgi-error>
+  #f
+  (request-method))
 
 ;;----------------------------------------------------------------
 ;; The output character encoding.  Used to generate the default
@@ -111,7 +135,10 @@
                 (member typesig
                         '(("application" "x-www-form-urlencoded")
                           ("multipart" "form-data"))))
-      (error "unsupported content-type" typesig))
+      (raise (condition
+              (<cgi-content-type-error>
+               (content-type type)
+               (message (format "Unsupported CONTENT_TYPE: ~a" type))))))
     (cond ((not method)  ;; interactive use.
            (if (sys-isatty (current-input-port))
              (begin
@@ -125,7 +152,10 @@
                          (if (string-null? line)
                            params
                            (cons line params))))))
-             (error "REQUEST_METHOD not defined")))
+             (raise (condition
+                     (<cgi-request-method-error>
+                      (request-method #f)
+                      (message "REQUEST_METHOD not defined"))))))
           ((or (string-ci=? method "GET")
                (string-ci=? method "HEAD"))
            (or (get-meta "QUERY_STRING") ""))
@@ -138,7 +168,12 @@
                             ((positive? len)))
                    (string-incomplete->complete (read-block len)))
                  (port->string (current-input-port)))))
-          (else (error "unknown REQUEST_METHOD" method)))))
+          (else
+           (raise (condition
+                   (<cgi-request-method-error>
+                    (request-method method)
+                    (message (format "Unknown REQUEST_METHOD: ~a" method))))))
+          )))
 
 ;;----------------------------------------------------------------
 ;; API: cgi-parse-parameters &keyword query-string merge-cookies
@@ -153,7 +188,8 @@
                        (mime-input #f))
     (let* ((input (cond (query-string)
                         ((or mime-input content-type) 'mime)
-                        (else (cgi-get-query content-length))))
+                        (else
+                         (cgi-get-query content-length))))
            (cookies (cond ((and merge-cookies (get-meta "HTTP_COOKIE"))
                            => parse-cookie-string)
                           (else '()))))
@@ -183,19 +219,25 @@
               '()
               (string-split input #[&\;])))
 
-;; part-handlers: ((<name-list> <action>) ...)
-;;  <name-list> : list of field names (string or symbol)
-;;  <action>    : #f                ;; return as string
-;;              : file [<prefix>]   ;; save content to a tmpfile,
-;;                                  ;;   returns filename.
-;;              : file+name [<prefix>] ;; save content to a tmpfile,
-;;                                  ;;   returns a string ",tmpfile\0,origfile"
-;;                                  ;;   where origfile is the filename given
-;;                                  ;;   from the client.
-;;              : ignore            ;; discard the value.
-;;              : <procedure>       ;; calls <procedure> with
-;;                                  ;;   name, part-info, input-port.
-;;
+;; part-handlers: ((<name-list> <action> <options> ...) ...)
+;;  <name-list> : list of field names (string, symbol, or regexp)
+;;  <action>    : #f           ;; return as string (default)
+;;              : file         ;; save content to a tmpfile,
+;;                             ;;   returns filename.
+;;              : file+name    ;; save content to a tmpfile,
+;;                             ;;   returns a list (tmpfile origfile)
+;;                             ;;   where origfile is the filename given
+;;                             ;;   from the client.
+;;              : ignore       ;; discard the value.
+;;              : <procedure>  ;; calls <procedure> with
+;;                             ;;   name, part-info, input-port.
+;;  <options>   keyword-value list. 
+;;               :prefix "prefix"  - use "prefix" for temporary file
+;;                                   (file and file+name only)
+;;               :max-length integer - limit the content-length of the
+;;                                   part.  if it is exceeded,
+;;                                   <cgi-request-size-error> is
+;;                                   thrown.  (NOT SUPPORTED)
 (define (get-mime-parts part-handlers ctype clength inp)
   (define (part-ref info name)
     (rfc822-header-ref (ref info 'headers) name))
@@ -217,44 +259,56 @@
     (let loop ((ignore (read-line inp #t)))
       (if (eof-object? ignore) #f (loop (read-line inp #t)))))
 
-  (define (get-handler part-name)
-    (let* ((handler (find (lambda (entry)
-                            (or (eq? (car entry) #t)
-                                (and (regexp? (car entry))
-                                     (rxmatch (car entry) part-name))
-                                (and (list? (car entry))
-                                     (member part-name
-                                             (map x->string (car entry))))
-                                (string=? (x->string (car entry)) part-name)))
-                          part-handlers))
-           (action  (if handler (cdr handler) '(#f))))
+  (define (get-action&opts part-name)
+    (let1 clause (find (lambda (entry)
+                         (or (eq? (car entry) #t)
+                             (and (regexp? (car entry))
+                                  (rxmatch (car entry) part-name))
+                             (and (list? (car entry))
+                                  (member part-name (map x->string (car entry))))
+                             (string=? (x->string (car entry)) part-name)))
+                       part-handlers)
       (cond
-       ((not (pair? action))
-        (error "malformed part-handler clause:" handler))
-       ((eq? (car action) #f)
-        string-handler)
-       ((memq (car action) '(file file+name))
-        (make-file-handler (if (null? (cdr action))
-                             (build-path (temporary-directory) "gauche-cgi")
-                             (cadr action))
-                           (eq? (car action) 'file+name)))
-       ((eq? (car action) 'ignore)
-        ignore-handler)
-       (else
-        (car action)))))
+       ((or (not clause)
+            (not (pair? (cdr clause))))
+        (list string-handler)) ;; default action
+       ((and (= (length clause) 3)
+             (memq (cadr clause) '(file file+name))
+             (string? (caddr clause)))
+        ;; backward compatibility - will be deleted soon
+        (list (cadr clause) :prefix (caddr clause)))
+       (else (cdr clause)))))
+               
+  (define (get-handler action . opts)
+    (cond
+     ((not action) string-handler)
+     ((memq action '(file file+name))
+      (make-file-handler (get-keyword* :prefix opts
+                                       (build-path (temporary-directory)
+                                                   "gauche-cgi-"))
+                         (eq? action 'file+name)))
+     ((eq? action 'ignore) ignore-handler)
+     (else action)))
 
   (define (handle-part part-info inp)
     (let* ((cd   (part-ref part-info "content-disposition"))
            (opts (if cd (rfc822-field->tokens cd) '()))
            (name (cond ((member "name=" opts) => cadr) (else #f)))
            (filename (cond ((member "filename=" opts) => cadr) (else #f)))
-           (handler (cond ((not name) ignore-handler)
-                          ((not filename) string-handler)
-                          ((string-null? filename) ignore-handler)
-                          (else  (get-handler name))))
-           (result (handler name filename part-info inp))
            )
-      (if name (list name result) #f)))
+      (cond
+       ((not name)      ;; if no name is given, just ignore this part.
+        (ignore-handler name filename part-info inp)
+        #f)
+       ((not filename)  ;; this is not a file uploading field.
+        (list name (string-handler name filename part-info inp)))
+       ((string-null? filename) ;; file field is empty
+        (list name (ignore-handler name filename part-info inp)))
+       (else
+        (let* ((action&opts (get-action&opts name))
+               (handler (apply get-handler action&opts))
+               (result (handler name filename part-info inp)))
+          (list name result))))))
 
   (let* ((inp (if (and clength (positive? (x->integer clength)))
                 (open-input-limited-length-port inp (x->integer clength))

@@ -86,7 +86,7 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
              (with-input-from-string ps1
                (lambda ()
                  (cgi-parse-parameters
-                  :part-handlers `(("bbb" file "./bbb")))))
+                  :part-handlers `(("bbb" file :prefix "./bbb")))))
            (let* ((tmpfile (cgi-get-parameter "bbb" r))
                   (content (file->string tmpfile)))
              (sys-unlink tmpfile)
@@ -100,7 +100,7 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
              (with-input-from-string ps1
                (lambda ()
                  (cgi-parse-parameters
-                  :part-handlers `((#/b{3}/ file "./bbb")))))
+                  :part-handlers `((#/b{3}/ file :prefix "./bbb")))))
            (let* ((tmpfile (cgi-get-parameter "bbb" r))
                   (content (file->string tmpfile)))
              (sys-unlink tmpfile)
