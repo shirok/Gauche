@@ -1567,7 +1567,7 @@ importは遷移的ではありません；importされたモジュールがimportしているモジュール…
 @c EN
 This order is important when more than one modules
 defines the same name and your module imports both.
-Assuming your module and the inherited modules don't define that name,
+Assuming your module don't define that name,
 if you first import a module @code{A} then a module @code{B},
 you'll see @code{B}'s binding.
 
@@ -1577,7 +1577,7 @@ binding.
 @c JP
 この順序は、複数のモジュールで同じ名前が定義され、あなたのモジュールが
 その両方をインポートしている場合に重要になります。
-その名前があなたのモジュールおよびあなたが継承しているモジュールで
+その名前があなたのモジュールで
 定義されていないとして、もしモジュール@code{A}がまずimportされ、
 次に@code{B}がimportされている場合、あなたのコードは@code{B}の
 束縛を見ることになります。
