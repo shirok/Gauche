@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.29 2003-11-27 11:16:03 shirok Exp $
+;; $Id: object.scm,v 1.30 2003-12-13 09:14:26 shirok Exp $
 
 (use gauche.test)
 
@@ -984,7 +984,9 @@
 ;; First version of <member>
 (define-class <member> ()
   ((name       :init-keyword :name)
-   (occupation :init-keyword :occupation)))
+   (occupation :init-keyword :occupation)
+   (cname      :allocation :class :init-value "member")
+   ))
 
 (define *member-alan*
   (make <member> :name "Alan Pangborn" :occupation "County Sheriff"))
@@ -1010,6 +1012,7 @@
                                           " "
                                           (slot-ref o 'last-name)))
                :slot-set! (lambda (o v) #f))
+   (cname      :allocation :class)
    ))
 
 (define-method change-class ((obj <old-member>) new-class)
@@ -1022,9 +1025,9 @@
 
 ;; Let's see we have done it right.
 (test* "customizing change-class" '("Alan Pangborn" "Alan" "Pangborn"
-                                    "County Sheriff")
+                                    "County Sheriff" "member")
        (map (cut slot-ref *member-alan* <>)
-            '(name first-name last-name occupation)))
+            '(name first-name last-name occupation cname)))
 
 ;; Now, we refactor part of <member> into <person>.
 ;; This also involves redefinition of the virtual slot.
@@ -1041,20 +1044,22 @@
    ))
 
 (define-class <member> (<person>)
-  ((occupation :init-keyword :occupation)))
+  ((occupation :init-keyword :occupation)
+   (cname)))  ;; changing class slot to an instance slot
 
 ;; Let's see we have done it right.
 (test* "inserting parent class" '("Alan Pangborn" "Alan" "Pangborn"
-                                  "County Sheriff")
+                                  "County Sheriff" "member")
        (map (cut slot-ref *member-alan* <>)
-            '(name first-name last-name occupation)))
+            '(name first-name last-name occupation cname)))
 
 (test* "inserting parent class" '("Mike Noonan" "Mike" "Noonan"
-                                  "Writer")
+                                  "Writer" "member")
        (map (cut slot-ref *member-mike* <>)
-            '(name first-name last-name occupation)))
+            '(name first-name last-name occupation cname)))
 
 (slot-set! *member-alan* 'sex 'what?)
+(slot-set! *member-alan* 'cname "alan")
 
 ;; Now, we change <person> to <validator> class, and validates
 ;; the value of 'sex' slot.
@@ -1108,13 +1113,15 @@
     obj))
 
 ;; Let's see we have done it right.
-(test* "reincarnating name slot" '("Alan Pangborn" "County Sheriff" unknown)
+(test* "reincarnating name slot" '("Alan Pangborn" "County Sheriff"
+                                   unknown "alan")
        (map (cut slot-ref *member-alan* <>)
-            '(name occupation sex)))
+            '(name occupation sex cname)))
 
-(test* "reincarnating name slot" '("Mike Noonan" "Writer" male)
+(test* "reincarnating name slot" '("Mike Noonan" "Writer"
+                                   male "member")
        (map (cut slot-ref *member-mike* <>)
-            '(name occupation sex)))
+            '(name occupation sex cname)))
 
 ;; Now, we reorganize the whole structure.
 (define <old-member> <member>)
@@ -1125,7 +1132,9 @@
               :propagate-to '(person name))
    (sex       :allocation :propagated
               :propagate-to 'person)
-   (occupation :init-keyword :occupation)))
+   (occupation :init-keyword :occupation)
+   (cname     :allocation :class) ;; back to class slot
+   ))
 
 (define-class <person> ()
   ((name       :init-keyword :name)
@@ -1144,17 +1153,40 @@
     obj))
 
 ;; Let's see we have done it right.
-(test* "reorganizing structure" '("Alan Pangborn" "County Sheriff" unknown)
+(test* "reorganizing structure" '("Alan Pangborn" "County Sheriff"
+                                  unknown "alan")
        (map (cut slot-ref *member-alan* <>)
-            '(full-name occupation sex)))
+            '(full-name occupation sex cname)))
 
-(test* "reorganizing structure" '("Mike Noonan" "Writer" male)
+(test* "reorganizing structure" '("Mike Noonan" "Writer"
+                                  male "alan")
        (map (cut slot-ref *member-mike* <>)
-            '(full-name occupation sex)))
+            '(full-name occupation sex cname)))
 
-(test* "reorganizing structure" '("Ted Brautigan" "Breaker" unknown)
+(test* "reorganizing structure" '("Ted Brautigan" "Breaker"
+                                  unknown "alan")
        (map (cut slot-ref *member-ted* <>)
-            '(full-name occupation sex)))
+            '(full-name occupation sex cname)))
+
+;; Another scenario.  Using customized slot spec
+
+(define <old-member> <member>)
+
+(define-class <member> ()
+  ((full-name :init-keyword :full-name)
+   (gender    :init-keyword :gender)
+   (job       :init-keyword :job)
+   (cname     :allocation :class) 
+   ))
+
+(define-method change-class ((obj <old-member>) new-class)
+  (next-method obj new-class
+               '(full-name (sex . gender) (occupation . job) cname)))
+
+(test* "using transfer slot spec" '("Alan Pangborn" "County Sheriff"
+                                    unknown "alan")
+       (map (cut slot-ref *member-alan* <>)
+            '(full-name job gender cname)))
 
 (test-end)
 

@@ -1,5 +1,15 @@
 2003-12-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/redefutil.scm (change-object-class): properly support
+	  the optional slots argument.  also made the default slot carry-over
+	  routine handles class-allocated slots.
+
+	* lib/gauche/mop/propagate.scm (compute-get-n-set): changed to
+	  support bound?-protocol, and make it robust for class redefinition.
+
+	* lib/gauche/object.scm (class-slot-bound?): added bound?-protocol
+	  to the class slot accessor.
+
 	* lib/slib.scm.in (home-vicinity): make sure it ends with directory
 	  separator.
 	  (slib:load): adjusted to SCM behavior.
