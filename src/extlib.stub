@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.66 2001-04-20 08:32:41 shiro Exp $
+;;; $Id: extlib.stub,v 1.67 2001-04-23 09:36:59 shiro Exp $
 ;;;
 
 "
@@ -322,6 +322,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (small-integer? k))
   (assert (char? c))
   "  SCM_RETURN(Scm_StringByteSet(str, k, c));")
+
+(define-cproc %maybe-substring (str &optional start end)
+  (assert (string? str))
+  "  SCM_RETURN(Scm_MaybeSubstring(str, start, end));")
 
 ;; SRFI-13's string-join takes one more argument---easier to implement
 ;; in Scheme
