@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: exception.h,v 1.1 2002-05-18 04:08:23 shirok Exp $
+ *  $Id: exception.h,v 1.2 2002-05-19 10:37:07 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -31,24 +31,25 @@ typedef struct ScmThreadExceptionRec {
 } ScmThreadException;
 
 SCM_CLASS_DECL(Scm_ThreadExceptionClass);
-#define SCM_CLASS_THREAD_EXCEPTION        (&Scm_ThreadExceptionClass)
-#define SCM_CLASS_THREAD_EXCEPTION_P(obj) Scm_TypeP(obj, SCM_CLASS_THREAD_EXCEPTION)
+#define SCM_CLASS_THREAD_EXCEPTION  (&Scm_ThreadExceptionClass)
+#define SCM_THREAD_EXCEPTION_P(obj) Scm_TypeP(obj, SCM_CLASS_THREAD_EXCEPTION)
+#define SCM_THREAD_EXCEPTION(obj)   ((ScmThreadException*)(obj))
 
 SCM_CLASS_DECL(Scm_JoinTimeoutExceptionClass);
-#define SCM_CLASS_JOIN_TIMEOUT_EXCEPTION   (&Scm_JoinTimeoutExceptionClass)
-#define SCM_CLASS_JOIN_TIMEOUT_EXCEPTION_P Scm_TypeP(obj, SCM_CLASS_JOIN_TIMEOUT_EXCEPTION)
+#define SCM_CLASS_JOIN_TIMEOUT_EXCEPTION (&Scm_JoinTimeoutExceptionClass)
+#define SCM_JOIN_TIMEOUT_EXCEPTION_P     Scm_TypeP(obj, SCM_CLASS_JOIN_TIMEOUT_EXCEPTION)
 
 SCM_CLASS_DECL(Scm_AbandonedMutexExceptionClass);
-#define SCM_CLASS_ABANDONED_MUTEX_EXCEPTION   (&Scm_AbandonedMutexExceptionClass)
-#define SCM_CLASS_ABANDONED_MUTEX_EXCEPTION_P Scm_TypeP(obj, SCM_CLASS_ABANDONED_MUTEX_EXCEPTION)
+#define SCM_CLASS_ABANDONED_MUTEX_EXCEPTION (&Scm_AbandonedMutexExceptionClass)
+#define SCM_ABANDONED_MUTEX_EXCEPTION_P     Scm_TypeP(obj, SCM_CLASS_ABANDONED_MUTEX_EXCEPTION)
 
 SCM_CLASS_DECL(Scm_TerminatedThreadExceptionClass);
-#define SCM_CLASS_TERMINATED_THREAD_EXCEPTION    (&Scm_TerminatedThreadExceptionClass)
-#define SCM_CLASS_TERMINATED_THREAD_EXCEPTION_P  Scm_TypeP(obj, SCM_CLASS_TERMINATED_THREAD_EXCEPTION)
+#define SCM_CLASS_TERMINATED_THREAD_EXCEPTION (&Scm_TerminatedThreadExceptionClass)
+#define SCM_TERMINATED_THREAD_EXCEPTION_P     Scm_TypeP(obj, SCM_CLASS_TERMINATED_THREAD_EXCEPTION)
 
 SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
-#define SCM_CLASS_UNCAUGHT_EXCEPTION    (&Scm_UncaughtExceptionClass)
-#define SCM_CLASS_UNCAUGHT_EXCEPTION_P  Scm_TypeP(obj, SCM_CLASS_UNCAUGHT_EXCEPTION)
+#define SCM_CLASS_UNCAUGHT_EXCEPTION (&Scm_UncaughtExceptionClass)
+#define SCM_UNCAUGHT_EXCEPTION_P     Scm_TypeP(obj, SCM_CLASS_UNCAUGHT_EXCEPTION)
 
 SCM_EXTERN ScmObj Scm_MakeThreadException(ScmClass*, ScmVM*);
 

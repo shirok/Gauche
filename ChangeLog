@@ -1,3 +1,17 @@
+2002-05-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : removed obsolete definition of print and println, and
+	  rewrote to use new print.  some code to support define-cclass is
+	  added, but not finished.
+	* src/gauche/exception.h : added
+	* src/error.c : adding exception hieararchy support; not finished yet.
+
+2002-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (Scm_Vprintf): the precision parameter of %S directive
+	  now specifies the minimum padding width; e.g. %50.20S prints at
+	  least 20 chars and at most 50 chars.
+
 2002-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/mutex.c (Scm_GetTimeSpec): fixed according to SRFI-18 spec

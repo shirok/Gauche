@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.148 2002-05-18 04:08:20 shirok Exp $
+ *  $Id: vm.c,v 1.149 2002-05-19 10:37:07 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/memory.h"
 #include "gauche/class.h"
+#include "gauche/exception.h"
 
 #include <unistd.h>
 #ifdef HAVE_SCHED_H
@@ -2468,10 +2469,14 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     if (intr) Scm_SigCheck(theVM);
     if (tout) {
         if (SCM_UNBOUNDP(timeoutval)) {
-            /* TODO: throw join-timeout-exception */
-            Scm_Error("thread-join! timeout waiting for %S", target);
+            /*
+            ScmObj e = Scm_MakeThreadException(SCM_CLASS_JOIN_TIMEOUT_EXCEPTION, target);
+            result = Scm_VMThrowException(e);
+            */
+            result = SCM_FALSE;
+        } else {
+            result = timeoutval;
         }
-        result = timeoutval;
     }
     return result;
 #else  /*!GAUCHE_USE_PTHREAD*/

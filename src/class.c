@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.79 2002-05-07 07:08:29 shirok Exp $
+ *  $Id: class.c,v 1.80 2002-05-19 10:37:07 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -160,6 +160,24 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
     int i;
     for (i=0; i<len; i++, array++) SCM_APPEND1(h, t, (*array)->name);
     return h;
+}
+
+/* If the class name has brackets '<' and '>', as in Gauche's convention,
+   returns a string without those brackets.  Otherwise returns the class
+   name.  This is used by some print method. */
+ScmObj Scm__InternalClassName(ScmClass *klass)
+{
+    ScmObj name = klass->name;
+    int len;
+    
+    if (SCM_SYMBOLP(name)
+        && (len = SCM_STRING_LENGTH(SCM_SYMBOL_NAME(name))) > 2 
+        && SCM_STRING_START(SCM_SYMBOL_NAME(name))[0] == '<'
+        && SCM_STRING_START(SCM_SYMBOL_NAME(name))[len-1] == '>') {
+        return Scm_Substring(SCM_SYMBOL_NAME(name), 1, len-1);
+    } else {
+        return name;
+    }
 }
 
 /*=====================================================================

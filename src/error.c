@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.30 2002-05-18 04:08:20 shirok Exp $
+ *  $Id: error.c,v 1.31 2002-05-19 10:37:07 shirok Exp $
  */
 
 #include <errno.h>
@@ -54,8 +54,12 @@
  *      +- <uncontinuable-exception-error>
  */
 
+static ScmObj thread_exception_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj error_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj sys_error_allocate(ScmClass *klass, ScmObj initargs);
+
 static ScmClass *exception_cpl[] = {
-    SCM_CLASS_STATIC_PTR(Scm_ErrorClass),
+    SCM_CLASS_STATIC_PTR(Scm_ThreadExceptionClass),
     SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
@@ -67,45 +71,63 @@ static ScmClass *error_cpl[] = {
     NULL
 };
 
-/* Exception class is just an abstract class */
+/* Abstract exception classes */
 SCM_DEFINE_ABSTRACT_CLASS(Scm_ExceptionClass, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_ABSTRACT_CLASS(Scm_ThreadExceptionClass, exception_cpl+1);
+
+/* Thread exceptions */
+
+static void thread_exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmClass *k = SCM_CLASS_OF(obj);
+    ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
+    if (SCM_UNDEFINEDP(exc->data)) {
+        Scm_Printf(port, "#<%A %S>",
+                   Scm__InternalClassName(k),
+                   exc->thread);
+    } else {
+        Scm_Printf(port, "#<%A %S %S>",
+                   Scm__InternalClassName(k),
+                   exc->thread,
+                   exc->data);
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_JoinTimeoutExceptionClass,
+                         thread_exception_print, NULL, NULL,
+                         thread_exception_allocate,
+                         exception_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_AbandonedMutexExceptionClass,
+                         thread_exception_print, NULL, NULL,
+                         thread_exception_allocate,
+                         exception_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_TerminatedThreadExceptionClass,
+                         thread_exception_print, NULL, NULL,
+                         thread_exception_allocate,
+                         exception_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_UncaughtExceptionClass,
+                         thread_exception_print, NULL, NULL,
+                         thread_exception_allocate,
+                         exception_cpl);
 
 /* Error class */
 
 static void error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmClass *k = SCM_CLASS_OF(obj);
-    ScmObj name = k->name;
-    int n;
-    
-    SCM_PUTZ("#<", 2, port);
-    if (SCM_SYMBOLP(name)
-        && SCM_STRING_LENGTH(SCM_SYMBOL_NAME(name)) > 2 
-        && SCM_STRING_START(SCM_SYMBOL_NAME(name))[0] == '<') {
-            SCM_PUTZ(SCM_STRING_START(SCM_SYMBOL_NAME(name))+1,
-                     SCM_STRING_LENGTH(SCM_SYMBOL_NAME(name))-2, port);
-    } else {
-        Scm_Write(name, SCM_OBJ(port), SCM_WRITE_DISPLAY);
-    }
-    SCM_PUTZ(" ", 1, port);
-    n = Scm_WriteLimited(SCM_ERROR_MESSAGE(obj), SCM_OBJ(port),
-                         SCM_WRITE_WRITE, 30);
-    if (n < 0) SCM_PUTZ(" ...", 4, port);
-    SCM_PUTZ(">", 1, port);
+    Scm_Printf(port, "#<%A \"%30.1A\">",
+               Scm__InternalClassName(k), SCM_ERROR_MESSAGE(obj));
 }
-
-static ScmObj error_allocate(ScmClass *klass, ScmObj initargs);
-static ScmObj sys_error_allocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_ErrorClass,
                          error_print, NULL, NULL,
                          error_allocate,
-			 exception_cpl+1);
+			 error_cpl+1);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SystemErrorClass,
                          error_print, NULL, NULL,
                          sys_error_allocate,
-			 exception_cpl);
+			 error_cpl);
 
 /* Application-exit is not exactly an error, but implemented here. */
 static void appexit_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -195,6 +217,16 @@ ScmObj Scm_MakeApplicationExit(int code)
  * Accessor 
  */
 
+static ScmObj thread_exception_thread_get(ScmThreadException *exc)
+{
+    return (exc->thread? SCM_OBJ(exc->thread) : SCM_FALSE);
+}
+
+static ScmObj thread_exception_data_get(ScmThreadException *exc)
+{
+    return exc->data;
+}
+
 static ScmObj error_message_get(ScmError *err)
 {
     return err->message;
@@ -226,6 +258,12 @@ static void appexit_code_set(ScmApplicationExit *e, ScmObj num)
     if (!SCM_INTP(num)) Scm_Error("integer required, but got %S", num);
     e->code = SCM_INT_VALUE(num);
 }
+
+
+static ScmClassStaticSlotSpec join_timeout_exception_slots[] = {
+    SCM_CLASS_SLOT_SPEC("thread", thread_exception_thread_get, NULL),
+    { NULL }
+};
 
 static ScmClassStaticSlotSpec error_slots[] = {
     SCM_CLASS_SLOT_SPEC("message",

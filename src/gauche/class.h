@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.24 2002-02-07 10:33:52 shirok Exp $
+ *  $Id: class.h,v 1.25 2002-05-19 10:37:07 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -95,6 +95,8 @@ SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
 
 SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
 SCM_EXTERN void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
+
+SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 
