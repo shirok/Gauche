@@ -1,0 +1,93 @@
+;;;
+;;; moplib.stub - extra built-ins
+;;;
+;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: moplib.stub,v 1.10 2001-04-03 08:04:56 shiro Exp $
+;;;
+
+"
+#include <gauche/class.h>
+"
+
+;;
+;; Internal routines
+;;
+
+"static ScmObj call_fallback_proc(ScmObj *args, int nargs, ScmGeneric *gf)
+ {
+  ScmObj proc = SCM_OBJ(gf->data);
+  ScmObj arglist = Scm_ArrayToList(args, nargs);
+  SCM_RETURN(Scm_VMApply(proc, arglist));
+ }
+"
+
+(define-cproc %ensure-generic-function (name module)
+  (assert (symbol? name))
+  (assert (module? module))
+  "  ScmObj val = Scm_SymbolValue(module, name);
+  if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {
+    if (SCM_SUBRP(val) || SCM_CLOSUREP(val)) {
+      val = Scm_MakeBaseGeneric(SCM_OBJ(name), call_fallback_proc, val);
+    } else {
+      val = Scm_MakeBaseGeneric(SCM_OBJ(name), NULL, NULL);
+    }
+    Scm_Define(module, name, val);
+  }
+  SCM_RETURN(val);")
+
+(define-cproc %make-next-method (gf methods args)
+  (assert (list? methods))
+  (assert (list? args))
+  "  ScmObj mp, ap, *argv; int nargs = Scm_Length(args), i;
+  if (!Scm_TypeP(gf, SCM_CLASS_GENERIC)) 
+    Scm_Error(\"generic function requied, but got %S\", gf);
+  SCM_FOR_EACH(mp, methods) {
+    if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
+      Scm_Error(\"method required, but got %S\", SCM_CAR(mp));
+  }
+  argv = Scm_ListToArray(args, &nargs, NULL, TRUE);
+  SCM_RETURN(Scm_MakeNextMethod(SCM_GENERIC(gf), methods, argv, nargs, FALSE));")
+
+(define-cproc %method-code (method)
+  "  ScmMethod *m;
+  if (!Scm_TypeP(method, SCM_CLASS_METHOD))
+    Scm_Error(\"method required, but got %S\", method);
+  m = SCM_METHOD(method);
+  if (m->func) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(SCM_OBJ(m->data));")
+
+;;
+;; Public interface
+;;
+
+(define-cproc class-of (obj)
+  "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+
+(define-cproc is-a? (obj klass)
+  (assert (class? klass))
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_TypeP(obj, klass)));")
+
+(define-cproc slot-ref (obj slot)
+  (inliner "SCM_VM_SLOT_REF")
+  "  SCM_RETURN(Scm_VMSlotRef(obj, slot, FALSE));")
+
+(define-cproc slot-set! (obj slot value)
+  (inliner "SCM_VM_SLOT_SET")
+  "  SCM_RETURN(Scm_VMSlotSet(obj, slot, value));")
+
+(define-cproc slot-bound? (obj slot)
+  "  SCM_RETURN(Scm_VMSlotBoundP(obj, slot));")
+
+;; Local variables:
+;; mode: scheme
+;; end:

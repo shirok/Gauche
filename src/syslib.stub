@@ -1,0 +1,732 @@
+;;;
+;;; syslib.stub - system interface functions
+;;;
+;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: syslib.stub,v 1.27 2001-04-04 18:39:20 shiro Exp $
+;;;
+
+;; System interface functions.   Mostly I followed POSIX.1, but included
+;; some non-posix functions which are important for programming on Unix.
+
+"#include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <locale.h>
+#include <grp.h>
+#include <pwd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/times.h>
+#include <sys/utsname.h>
+#include <sys/wait.h>
+#include <signal.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+"
+;;---------------------------------------------------------------------
+;; dirent.h - read directory
+;;   we don't have correspoinding functions, but provide these:
+
+(define-cproc sys-readdir (pathname)
+  (assert (string? pathname))
+  "  SCM_RETURN(Scm_ReadDirectory(pathname));")
+
+(define-cproc sys-glob (pattern)
+  (assert (string? pattern))
+  "  SCM_RETURN(Scm_GlobDirectory(pattern));")
+
+;; Bonus
+
+(define-cproc sys-normalize-pathname (pathname
+                                      &keyword (absolute #f)
+                                               (expand #f)
+                                               (canonicalize #f))
+  (assert (string? pathname))
+  "  int flags = 0;
+  if (!SCM_FALSEP(absolute)) flags |= SCM_PATH_ABSOLUTE;
+  if (!SCM_FALSEP(expand))   flags |= SCM_PATH_EXPAND;
+  if (!SCM_FALSEP(canonicalize)) flags |= SCM_PATH_CANONICALIZE;
+  SCM_RETURN(Scm_NormalizePathname(pathname, flags));")
+
+(define-cproc sys-basename (pathname)
+  (assert (string? pathname))
+  "  SCM_RETURN(Scm_BaseName(pathname));")
+
+(define-cproc sys-dirname (pathname)
+  (assert (string? pathname))
+  "  SCM_RETURN(Scm_DirName(pathname));")
+
+;;---------------------------------------------------------------------
+;; grp.h - groups
+
+(define-type "sys-group" sys-group?
+  "ScmSysGroup*"  "SCM_SYS_GROUP_P" "SCM_SYS_GROUP")
+
+(define-cproc sys-getgrgid (gid)
+  (assert (small-integer? gid))         ;TODO: make sure it covers all gids
+  "  SCM_RETURN(Scm_GetGroupById(gid));")
+(define-cproc sys-getgrnam (name)
+  (assert (string? name))
+  "  SCM_RETURN(Scm_GetGroupByName(name));")
+
+(define-cproc sys-group->name (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->name);")
+(define-cproc sys-group->gid (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->gid);")
+(define-cproc sys-group->passwd (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->passwd);")
+(define-cproc sys-group->mem (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->mem);")
+
+;; faster functions; bypassing creation of group object
+(define-cproc sys-gid->group-name (gid)
+  (assert (small-integer? gid))         ;TODO: make sure it covers all gids
+  "  struct group *g = getgrgid(gid);
+  if (g == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeString(g->gr_name, -1, -1));")
+(define-cproc sys-group-name->gid (name)
+  (assert (string? name))
+  "  struct group *g = getgrnam(Scm_GetStringConst(name));
+  if (g == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeInteger(g->gr_gid));")
+
+;;---------------------------------------------------------------------
+;; locale.h
+
+(define-symbol LC_ALL "lc_all" "Scm_MakeInteger(LC_ALL)")
+(define-symbol LC_COLLATE "lc_collate" "Scm_MakeInteger(LC_COLLATE)")
+(define-symbol LC_CTYPE "lc_ctype" "Scm_MakeInteger(LC_CTYPE)")
+(define-symbol LC_MONETARY "lc_monetary" "Scm_MakeInteger(LC_MONETARY)")
+(define-symbol LC_NUMERIC "lc_numeric" "Scm_MakeInteger(LC_NUMERIC)")
+(define-symbol LC_TIME "lc_time" "Scm_MakeInteger(LC_TIME)")
+
+(define-cproc sys-setlocale (category locale)
+  (assert (small-integer? category))
+  (assert (string? locale))
+  "  char *result = setlocale(category, Scm_GetStringConst(locale));
+  if (result) SCM_RETURN(Scm_MakeString(result, -1, -1));
+  else SCM_RETURN(SCM_FALSE);")
+
+; struct lconv
+(define-symbol decimal_point "sym_decimal_point")
+(define-symbol thousands_sep "sym_thousands_sep")
+(define-symbol grouping "sym_grouping")
+(define-symbol int_curr_symbol "sym_int_curr_symbol")
+(define-symbol currency_symbol "sym_currency_symbol")
+(define-symbol mon_decimal_point "sym_mon_decimal_point")
+(define-symbol mon_thousands_sep "sym_mon_thousands_sep")
+(define-symbol mon_grouping "sym_mon_grouping")
+(define-symbol positive_sign "sym_positive_sign")
+(define-symbol negative_sign "sym_negative_sign")
+(define-symbol int_frac_digits "sym_int_frac_digits")
+(define-symbol frac_digits "sym_frac_digits")
+(define-symbol p_cs_precedes "sym_p_cs_precedes")
+(define-symbol p_sep_by_space "sym_p_sep_by_space")
+(define-symbol n_cs_precedes "sym_n_cs_precedes")
+(define-symbol n_sep_by_space "sym_n_sep_by_space")
+(define-symbol p_sign_posn "sym_p_sign_posn")
+(define-symbol n_sign_posn "sym_n_sign_posn")
+
+(define-cproc sys-localeconv ()
+  "  struct lconv *lc = localeconv();
+  ScmObj p = SCM_NIL;
+
+  p = Scm_Acons(sym_decimal_point, Scm_MakeString(lc->decimal_point, -1, -1), p);
+  p = Scm_Acons(sym_thousands_sep, Scm_MakeString(lc->thousands_sep, -1, -1), p);
+  p = Scm_Acons(sym_grouping, Scm_MakeString(lc->grouping, -1, -1), p);
+  p = Scm_Acons(sym_int_curr_symbol, Scm_MakeString(lc->int_curr_symbol, -1, -1), p);
+  p = Scm_Acons(sym_currency_symbol, Scm_MakeString(lc->currency_symbol, -1, -1), p);
+  p = Scm_Acons(sym_mon_decimal_point, Scm_MakeString(lc->mon_decimal_point, -1, -1), p);
+  p = Scm_Acons(sym_mon_thousands_sep, Scm_MakeString(lc->mon_thousands_sep, -1, -1), p);
+  p = Scm_Acons(sym_mon_grouping, Scm_MakeString(lc->mon_grouping, -1, -1), p);
+  p = Scm_Acons(sym_positive_sign, Scm_MakeString(lc->positive_sign, -1, -1), p);
+  p = Scm_Acons(sym_negative_sign, Scm_MakeString(lc->negative_sign, -1, -1), p);
+  p = Scm_Acons(sym_int_frac_digits, SCM_MAKE_CHAR(lc->int_frac_digits), p);
+  p = Scm_Acons(sym_frac_digits, SCM_MAKE_CHAR(lc->frac_digits), p);
+  p = Scm_Acons(sym_p_cs_precedes, SCM_MAKE_CHAR(lc->p_cs_precedes), p);
+  p = Scm_Acons(sym_p_sep_by_space, SCM_MAKE_CHAR(lc->p_sep_by_space), p);
+  p = Scm_Acons(sym_n_cs_precedes, SCM_MAKE_CHAR(lc->n_cs_precedes), p);
+  p = Scm_Acons(sym_n_sep_by_space, SCM_MAKE_CHAR(lc->n_sep_by_space), p);
+  p = Scm_Acons(sym_p_sign_posn, SCM_MAKE_CHAR(lc->p_sign_posn), p);
+  p = Scm_Acons(sym_n_sign_posn, SCM_MAKE_CHAR(lc->n_sign_posn), p);
+  return p;")
+
+;;---------------------------------------------------------------------
+;; math.h
+
+;;---------------------------------------------------------------------
+;; pwd.h - passwords
+
+(define-type "sys-passwd" sys-passwd?
+  "ScmSysPasswd*"  "SCM_SYS_PASSWD_P" "SCM_SYS_PASSWD")
+
+(define-cproc sys-getpwuid (uid)
+  (assert (small-integer? uid))         ;TODO: make sure it covers all gids
+  "  SCM_RETURN(Scm_GetPasswdById(uid));")
+(define-cproc sys-getpwnam (name)
+  (assert (string? name))
+  "  SCM_RETURN(Scm_GetPasswdByName(name));")
+
+(define-cproc sys-passwd->name (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->name);")
+(define-cproc sys-passwd->uid (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->uid);")
+(define-cproc sys-passwd->gid (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->gid);")
+(define-cproc sys-passwd->passwd (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->passwd);")
+(define-cproc sys-passwd->gecos (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->gecos);")
+(define-cproc sys-passwd->dir (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->dir);")
+(define-cproc sys-passwd->shell (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->shell);")
+(define-cproc sys-passwd->class (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->pwclass);")
+
+;; faster functions; bypassing creation of passwd object
+(define-cproc sys-uid->user-name (uid)
+  (assert (small-integer? uid))         ;TODO: make sure it covers all uids
+  "  struct passwd *p = getpwuid(uid);
+  if (p == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeString(p->pw_name, -1, -1));")
+(define-cproc sys-user-name->uid (name)
+  (assert (string? name))
+  "  struct passwd *p = getpwnam(Scm_GetStringConst(name));
+  if (p == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeInteger(p->pw_uid));")
+
+;;---------------------------------------------------------------------
+;; setjmp.h
+
+;;  No equivalent functions --- use call/cc
+
+;;---------------------------------------------------------------------
+;; signal.h
+
+(define-symbol SIGABRT "sym_sigabrt" "Scm_MakeInteger(SIGABRT)")
+(define-symbol SIGALRM "sym_sigalrm" "Scm_MakeInteger(SIGALRM)")
+(define-symbol SIGCHLD "sym_sigchld" "Scm_MakeInteger(SIGCHLD)")
+(define-symbol SIGCONT "sym_sigcont" "Scm_MakeInteger(SIGCONT)")
+(define-symbol SIGFPE  "sym_sigfpe"  "Scm_MakeInteger(SIGFPE)")
+(define-symbol SIGHUP  "sym_sighup"  "Scm_MakeInteger(SIGHUP)")
+(define-symbol SIGILL  "sym_sigill"  "Scm_MakeInteger(SIGILL)")
+(define-symbol SIGINT  "sym_sigint"  "Scm_MakeInteger(SIGINT)")
+(define-symbol SIGKILL "sym_sigkill" "Scm_MakeInteger(SIGKILL)")
+(define-symbol SIGPIPE "sym_sigpipe" "Scm_MakeInteger(SIGPIPE)")
+(define-symbol SIGQUIT "sym_sigquit" "Scm_MakeInteger(SIGQUIT)")
+(define-symbol SIGSEGV "sym_sigsegv" "Scm_MakeInteger(SIGSEGV)")
+(define-symbol SIGSTOP "sym_sigstop" "Scm_MakeInteger(SIGSTOP)")
+(define-symbol SIGTSTP "sym_sigtstp" "Scm_MakeInteger(SIGTSTP)")
+(define-symbol SIGTTIN "sym_sigttin" "Scm_MakeInteger(SIGTTIN)")
+(define-symbol SIGTTOU "sym_sigttou" "Scm_MakeInteger(SIGTTOU)")
+(define-symbol SIGUSR1 "sym_sigusr1" "Scm_MakeInteger(SIGUSR1)")
+(define-symbol SIGUSR2 "sym_sigusr2" "Scm_MakeInteger(SIGUSR2)")
+
+(define-cproc sys-kill (pid sig)
+  (assert (exact? pid))
+  (assert (exact? sig))
+  "  int r = kill(pid, sig);
+  if (r < 0) Scm_SysError(\"kill failed\");
+  SCM_RETURN(SCM_UNDEFINED);")
+
+;; to be implemented
+;;   signal raise
+;;   sigset object, sigaction object
+;;   sigaciton, sigaddset, sigdelset, sigemptyset, sigfillset, sigismember,
+;;   sigpending, sigprocmask, sigsuspend
+;; signal handling mechanism should interact with Scheme kernel's use of
+;; setjmp/longjmp
+
+;;---------------------------------------------------------------------
+;; stdio.h
+
+(define-cproc sys-remove (filename)
+  (assert (string? filename))
+  "  if (remove(Scm_GetStringConst(filename)) < 0)
+       Scm_SysError(\"removing %S failed\", filename);
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-rename (old new)
+  (assert (string? old))
+  (assert (string? new))
+  "  if (rename(Scm_GetStringConst(old), Scm_GetStringConst(new)) < 0)
+       Scm_SysError(\"renaming %S to %S failed\", old, new);
+  SCM_RETURN(SCM_TRUE);")
+
+;; NB: Alghough tmpnam() is in POSIX, its use is discouraged because of
+;; potential security risk.  We mimic it's behavior by mkstemp() if possible.
+;; The behavior is not exactly the same, especially, in case if we use
+;; mkstemp the file is actually created...
+(define-cproc sys-tmpnam ()
+  "
+#ifdef HAVE_MKSTEMP
+  char nam[] = \"XXXXXX\";
+  int fd = mkstemp(nam);
+  if (fd < 0) Scm_SysError(\"mkstemp failed\");
+  close(fd);
+  SCM_RETURN(Scm_MakeString(nam, -1, -1));
+#else
+  char *s = tmpnam(NULL);
+  SCM_RETURN(Scm_MakeString(s, -1, -1));
+#endif")
+
+;; tmpfile
+
+;;---------------------------------------------------------------------
+;; stdlib.h
+
+(define-cproc sys-getenv (name)
+  (assert (string? name))
+  "  const char *p = getenv(Scm_GetStringConst(name));
+  if (p == NULL) {
+    SCM_RETURN(SCM_FALSE);
+  } else {
+    SCM_RETURN(Scm_MakeString(p, -1, -1));
+  }")
+
+;; Note: the return value of system() is not portable.
+(define-cproc sys-system (command)
+  (assert (string? command))
+  "  int r = system(Scm_GetStringConst(command));
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+;;---------------------------------------------------------------------
+;; string.h
+
+;;  use Scheme functions
+
+;;---------------------------------------------------------------------
+;; sys/stat.h
+
+(define-type "sys-stat" sys-stat?
+  "ScmSysStat*"  "SCM_SYS_STAT_P" "SCM_SYS_STAT")
+
+(define-cproc sys-stat (path)
+  (assert (string? path))
+  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
+  int r = stat(Scm_GetStringConst(path), &s->statrec);
+  if (r < 0) Scm_SysError(\"stat failed for %S\", path);
+  return SCM_OBJ(s);")
+
+(define-cproc sys-lstat (path)
+  (assert (string? path))
+  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
+  int r = lstat(Scm_GetStringConst(path), &s->statrec);
+  if (r < 0) Scm_SysError(\"lstat failed for %S\", path);
+  return SCM_OBJ(s);")
+
+(define-cproc sys-fstat (fd)
+  (assert (small-integer? fd))
+  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
+  int r = fstat(fd, &s->statrec);
+  if (r < 0) Scm_SysError(\"fstat failed for %d\", fd);
+  return SCM_OBJ(s);")
+
+;; TODO: check range of integer values; check non-standard fields
+(define-cproc sys-stat->mode (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_mode));")
+(define-cproc sys-stat->ino (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_ino));")
+(define-cproc sys-stat->dev (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_dev));")
+(define-cproc sys-stat->rdev (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_rdev));")
+(define-cproc sys-stat->nlink (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_nlink));")
+(define-cproc sys-stat->uid (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_uid));")
+(define-cproc sys-stat->gid (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_gid));")
+(define-cproc sys-stat->atime (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_atime));")
+(define-cproc sys-stat->mtime (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_mtime));")
+(define-cproc sys-stat->ctime (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_ctime));")
+
+;;---------------------------------------------------------------------
+;; sys/times.h
+
+(define-cproc sys-times ()
+  "  struct tms info;
+  ScmObj h = SCM_NIL, t;
+  int r = times(&info);
+  if (r < 0) Scm_SysError(\"times() failed\");
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_utime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_stime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cutime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cstime));
+#ifdef CLOCKS_PER_SEC
+  SCM_APPEND1(h, t, Scm_MakeInteger(CLOCKS_PER_SEC));
+#else
+#ifdef CLK_TCK
+  SCM_APPEND1(h, t, Scm_MakeInteger(CLK_TCK)); /* older name */
+#else
+  SCM_APPEND1(h, t, Scm_MakeInteger(1));  /* or maybe 100, we don't know ...*/
+#endif
+#endif
+  SCM_RETURN(h);")
+
+;;---------------------------------------------------------------------
+;; sys/utsname.h
+
+;; returns list of (sysname nodename release version machine)
+(define-cproc sys-uname ()
+  "  struct utsname info;
+  ScmObj head = SCM_NIL, tail;
+  if (uname(&info) < 0) Scm_SysError(\"uname() failed\");
+  SCM_APPEND1(head, tail, Scm_MakeString(info.sysname, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.nodename, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.release, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.version, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.machine, -1, -1));
+  return head;")
+
+;;---------------------------------------------------------------------
+;; sys/wait.h
+
+;; returns a pair of pid and status 
+(define-cproc sys-wait ()
+  "  int status;
+  pid_t r = wait(&status);
+  if (r < 0) Scm_SysError(\"wait() failed\");
+  SCM_RETURN(Scm_Cons(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+
+(define-cproc sys-waitpid (pid &keyword (nohang #f) (untraced #f))
+  (assert (small-integer? pid))         ;TODO: small-int is enough?
+  "  int status, options = 0;  pid_t r;
+  if (!SCM_FALSEP(nohang))   options |= WNOHANG;
+  if (!SCM_FALSEP(untraced)) options |= WUNTRACED;
+  r = waitpid(pid, &status, options);
+  if (r < 0) Scm_SysError(\"waitpid() failed\");
+  SCM_RETURN(Scm_Cons(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+
+;; status interpretation
+(define-cproc sys-wait-exited? (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(SCM_MAKE_BOOL(WIFEXITED(status)));")
+
+(define-cproc sys-wait-exit-status (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(Scm_MakeInteger(WEXITSTATUS(status)));")
+
+(define-cproc sys-wait-signaled? (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(SCM_MAKE_BOOL(WIFSIGNALED(status)));")
+
+(define-cproc sys-wait-termsig (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(Scm_MakeInteger(WTERMSIG(status)));")
+
+(define-cproc sys-wait-stopped? (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(SCM_MAKE_BOOL(WIFSTOPPED(status)));")
+
+(define-cproc sys-wait-stopsig (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(Scm_MakeInteger(WSTOPSIG(status)));")
+
+;;---------------------------------------------------------------------
+;; termios.h
+
+;;---------------------------------------------------------------------
+;; time.h
+
+(define-type "sys-time" sys-time?
+  "ScmSysTime*"   "SCM_SYS_TIME_P" "SCM_SYS_TIME")
+
+(define-type "sys-tm" sys-tm?
+  "ScmSysTm*"     "SCM_SYS_TM_P" "SCM_SYS_TM")
+
+(define-cproc sys-asctime (tm)
+  (assert (sys-tm? tm))
+  "  SCM_RETURN(Scm_MakeString(asctime(&SCM_SYS_TM_TM(tm)), -1, -1));")
+
+(define-cproc sys-ctime (time)
+  (assert (sys-time? time))
+  "  SCM_RETURN(Scm_MakeString(ctime(&SCM_SYS_TIME_TIME(time)), -1, -1));")
+
+(define-cproc sys-difftime (time1 time0)
+  (assert (sys-time? time1))
+  (assert (sys-time? time0))
+  "  SCM_RETURN(Scm_MakeFlonum(difftime(SCM_SYS_TIME_TIME(time1),
+                                        SCM_SYS_TIME_TIME(time0))));")
+
+(define-cproc sys-strftime (format tm)
+  (assert (string? format))
+  (assert (sys-tm? tm))
+  "  char tmpbuf[256];
+  strftime(tmpbuf, sizeof(tmpbuf),
+           Scm_GetStringConst(format), &SCM_SYS_TM_TM(tm));
+  SCM_RETURN(Scm_MakeString(tmpbuf, -1, -1));")
+
+(define-cproc sys-gmtime (time)
+  (assert (sys-time? time))
+  "  SCM_RETURN(Scm_MakeSysTm(gmtime(&SCM_SYS_TIME_TIME(time))));")
+
+(define-cproc sys-localtime (time)
+  (assert (sys-time? time))
+  "  SCM_RETURN(Scm_MakeSysTm(localtime(&SCM_SYS_TIME_TIME(time))));")
+
+(define-cproc sys-mktime (tm)
+  (assert (sys-tm? tm))
+  "  SCM_RETURN(Scm_MakeSysTime(mktime(&SCM_SYS_TM_TM(tm))));")
+
+(define-cproc sys-time ()
+  "  SCM_RETURN(Scm_MakeSysTime(time(NULL)));")
+
+(define-symbol tm_sec   "sym_tm_sec")
+(define-symbol tm_min   "sym_tm_min")
+(define-symbol tm_hour  "sym_tm_hour")
+(define-symbol tm_mday  "sym_tm_mday")
+(define-symbol tm_mon   "sym_tm_mon")
+(define-symbol tm_year  "sym_tm_year")
+(define-symbol tm_wday  "sym_tm_wday")
+(define-symbol tm_yday  "sym_tm_yday")
+(define-symbol tm_isdst "sym_tm_isdst")
+
+(define-cproc sys-tm->alist (tm)
+  (assert (sys-tm? tm))
+  "  ScmObj p = SCM_NIL, val;
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_sec);
+  p = Scm_Acons(sym_tm_sec, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_min);
+  p = Scm_Acons(sym_tm_min, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_hour);
+  p = Scm_Acons(sym_tm_hour, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_mday);
+  p = Scm_Acons(sym_tm_mday, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_mon);
+  p = Scm_Acons(sym_tm_mon, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_year);
+  p = Scm_Acons(sym_tm_year, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_wday);
+  p = Scm_Acons(sym_tm_wday, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_yday);
+  p = Scm_Acons(sym_tm_yday, val, p);
+  val = Scm_MakeInteger(SCM_SYS_TM_TM(tm).tm_isdst);
+  p = Scm_Acons(sym_tm_isdst, val, p);
+  SCM_RETURN(p);")
+    
+;;---------------------------------------------------------------------
+;; unistd.h - miscellaneous functions
+
+(define-symbol r_ok "sym_r_ok" "Scm_MakeInteger(R_OK)")
+(define-symbol w_ok "sym_w_ok" "Scm_MakeInteger(W_OK)")
+(define-symbol x_ok "sym_x_ok" "Scm_MakeInteger(X_OK)")
+(define-symbol f_ok "sym_f_ok" "Scm_MakeInteger(F_OK)")
+
+(define-cproc sys-access (pathname amode)
+  (assert (string? pathname))
+  (assert (exact? amode))
+  "  int r = access(Scm_GetStringConst(pathname), amode);
+  SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);")
+
+(define-cproc sys-chdir (pathname)
+  (assert (string? pathname))
+  "  if (chdir(Scm_GetStringConst(pathname)) < 0)
+    Scm_SysError(\"chdir failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-fork ()
+  "  int pid = fork();
+  SCM_RETURN(Scm_MakeInteger(pid));")
+
+(define-cproc sys-exec (command args &optional iomap)
+  (assert (string? command))
+  (assert (list? args))
+  "  Scm_SysExec(command, args, iomap);
+  SCM_RETURN(SCM_UNDEFINED); /* dummy */")
+
+(define-cproc sys-getcwd ()
+  "  char *p; ScmObj s;
+  if ((p = getcwd(NULL, -1)) == NULL) Scm_SysError(\"getcwd failed\");
+  s = Scm_MakeString(p, -1, -1);
+  free(p); /* allocated by getcwd() */
+  SCM_RETURN(s);")
+
+(define-cproc sys-getegid ()
+  "  SCM_RETURN(Scm_MakeInteger(getegid()));")
+
+(define-cproc sys-getgid ()
+  "  SCM_RETURN(Scm_MakeInteger(getgid()));")
+
+(define-cproc sys-geteuid ()
+  "  SCM_RETURN(Scm_MakeInteger(geteuid()));")
+
+(define-cproc sys-getuid ()
+  "  SCM_RETURN(Scm_MakeInteger(getuid()));")
+
+(define-cproc sys-getgroups ()
+  "
+#ifndef NGROUPS
+#define NGROUPS 32
+#endif
+  gid_t glist[NGROUPS], *pglist = glist;
+  int size = NGROUPS;
+  for (;;) {
+    int i, n = getgroups(size, pglist);
+    if (n >= 0) {
+      ScmObj head = SCM_NIL, tail;
+      for (i=0; i<n; i++) SCM_APPEND1(head, tail, Scm_MakeInteger(pglist[i]));
+      SCM_RETURN(head);
+    }
+    if (errno == EINVAL) {
+      size += NGROUPS;
+      pglist = (gid_t *)SCM_MALLOC(size * sizeof(gid_t));
+    } else {
+      Scm_SysError(\"getgroups failed\");
+    }
+  }
+  /* NOTREACHED */")
+
+(define-cproc sys-getlogin ()
+  "  const char *p = getlogin();
+  if (p) SCM_RETURN(Scm_MakeString(p, -1, -1));
+  else SCM_RETURN(SCM_FALSE);")
+
+(define-cproc sys-getpgrp ()
+  "  SCM_RETURN(Scm_MakeInteger(getpgrp()));")
+
+(define-cproc sys-getpid ()
+  "  SCM_RETURN(Scm_MakeInteger(getpid()));")
+
+(define-cproc sys-getppid ()
+  "  SCM_RETURN(Scm_MakeInteger(getppid()));")
+
+
+(define-cproc sys-link (existing new)
+  (assert (string? existing))
+  (assert (string? new))
+  "  if (link(Scm_GetStringConst(existing), Scm_GetStringConst(new)) < 0)
+        Scm_SysError(\"link failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-pause ()
+  "  pause();  SCM_RETURN(SCM_UNDEFINED);")
+
+;; returns a list of two ports
+(define-cproc sys-pipe (&keyword (name "(pipe)") (buffered? #t))
+  "  int fds[2], r; ScmObj rend, wend;
+  r = pipe(fds);
+  if (r < 0) Scm_SysError(\"pipe failed\");
+  rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0],
+                            !SCM_FALSEP(bufferedP), TRUE);
+  wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1],
+                            !SCM_FALSEP(bufferedP), TRUE);
+  SCM_RETURN(SCM_LIST2(rend, wend));")  
+
+(define-cproc sys-rmdir (pathname)
+  (assert (string? pathname))
+  "  if (rmdir(Scm_GetStringConst(pathname)) < 0)
+    Scm_SysError(\"rmdir failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-sleep (seconds)
+  (assert (exact? seconds))
+  "  sleep(seconds); SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-unlink (pathname)
+  (assert (string? pathname))
+  "  if (unlink(Scm_GetStringConst(pathname)) < 0)
+        Scm_SysError(\"unlink failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-isatty (port_or_fd)
+  "  int fd;
+  if (SCM_INTP(port_or_fd)) fd = SCM_INT_VALUE(port_or_fd);
+  else if (SCM_PORTP(port_or_fd)) fd = Scm_PortFileNo(SCM_PORT(port_or_fd));
+  else Scm_Error(\"port or small integer required, but got %S\", port_or_fd);
+  SCM_RETURN(SCM_MAKE_BOOL(fd >= 0 && isatty(fd)));")
+  
+(define-cproc sys-ttyname (port_or_fd)
+  "  int fd; const char *name;
+  if (SCM_INTP(port_or_fd)) fd = SCM_INT_VALUE(port_or_fd);
+  else if (SCM_PORTP(port_or_fd)) fd = Scm_PortFileNo(SCM_PORT(port_or_fd));
+  else Scm_Error(\"port or small integer required, but got %S\", port_or_fd);
+  if (fd < 0) SCM_RETURN(SCM_FALSE);
+  name = ttyname(fd);
+  if (name) SCM_RETURN(Scm_MakeString(name, -1, -1));
+  else SCM_RETURN(SCM_FALSE);")
+
+;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
+;; prototype.  However, it screws up something else.  Just for now I
+;; cast the return value of crypt() to avoid it...such a kludge...
+(define-cproc sys-crypt (key salt)
+  (assert (string? key))
+  (assert (string? salt))
+  "
+#ifdef HAVE_CRYPT
+  SCM_RETURN(Scm_MakeString((const char *)crypt(Scm_GetStringConst(key),
+                                          Scm_GetStringConst(salt)), -1, -1));
+#else
+  Scm_Error(\"system doesn't have crypt().\");
+  SCM_RETURN(SCM_UNDEFINED);
+#endif
+")
+
+;; not supported yet:
+;;  fpathconf lseek pathconf read
+;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp write
+
+;;---------------------------------------------------------------------
+;; symbolic link
+
+(define-cproc sys-symlink (existing new)
+  (assert (string? existing))
+  (assert (string? new))
+  "
+#ifdef HAVE_SYMLINK
+  int r = symlink(Scm_GetStringConst(existing), Scm_GetStringConst(new));
+  if (r < 0) Scm_SysError(\"link failed\");
+  SCM_RETURN(SCM_TRUE);
+#else
+  Scm_Error(\"the system doesn't support symbolic links\");
+  SCM_RETURN(SCM_FALSE);
+#endif
+")
+
+;; Local variables:
+;; mode: scheme
+;; end:
