@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.7 2004-10-10 09:52:09 shirok Exp $
+ *  $Id: uvinit.c,v 1.8 2004-11-05 10:34:25 shirok Exp $
  */
 
 #include <gauche.h>
@@ -93,20 +93,6 @@ void Scm_Init_libgauche_uvector(void)
     Scm_InitStaticClassWithMeta(&Scm_U64VectorClass, "<u64vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_F32VectorClass, "<f32vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_F64VectorClass, "<f64vector>", m, NULL, SCM_NIL, NULL, 0);
-
-    /* initialize constant values */
-    t = Scm_Ash(SCM_MAKE_INT(1), 31);  /* 2^31 */
-    Scm_UvectorS32Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
-    Scm_UvectorS32Min = Scm_Negate(t);
-    t = Scm_Ash(SCM_MAKE_INT(1), 32);  /* 2^32 */
-    Scm_UvectorU32Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
-    Scm_UvectorU32Min = SCM_MAKE_INT(0);
-    t = Scm_Ash(SCM_MAKE_INT(1), 63);  /* 2^63 */
-    Scm_UvectorS64Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
-    Scm_UvectorS64Min = Scm_Negate(t);
-    t = Scm_Ash(SCM_MAKE_INT(1), 64);  /* 2^64 */
-    Scm_UvectorU64Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
-    Scm_UvectorU64Min = SCM_MAKE_INT(0);
 
     Scm_Init_uvlib(m);
     Scm_ReadUvectorHook = read_uvector;
