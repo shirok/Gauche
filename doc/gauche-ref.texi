@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.162 2002-02-21 08:58:07 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.163 2002-02-22 11:54:56 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9638,6 +9638,7 @@ for the usage of metaclass.
 * GDBM interface::              
 * NDBM interface::              
 * Original DBM interface::      
+* Filtering file content::      
 * Character code conversion::   
 * Collection framework::        
 * Low-level file operations::   
@@ -10334,7 +10335,7 @@ APIs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Original DBM interface, Character code conversion, NDBM interface, Library modules
+@node Original DBM interface, Filtering file content, NDBM interface, Library modules
 @section @code{dbm.odbm} - Original DBM interface
 
 @deftp {Module} dbm.odbm
@@ -10384,9 +10385,147 @@ APIs.
 @c @node Pseudo DBM interface, Character code conversion, Original DBM interface, Library modules
 @c @section @code{dbm.pdbm} - Pseudo DBM interface
 
+@c ----------------------------------------------------------------------
+@node Filtering file content, Character code conversion, Original DBM interface, Library modules
+@section @code{file.filter} - Filtering file content
+@c NODE ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
+
+@defun {Module} file.filter
+@mdindex file.filter
+@c EN
+This module provides utilities for a common pattern in
+filter-type commands, that is, to take an input, to process
+the content, and to write the result.   The common occurring
+pattern is:
+
+@itemize @bullet
+@item
+Input may be a specified file, or an input port
+(the current input port by default).
+@item
+Output may be a specified file, or an output port
+(the current output port by default).
+@item
+Output may be a temporary file, which will be renamed
+upon completion of the processing.
+@item
+Output file may be removed when an error occurs
+in the processing.
+@end itemize
+@c JP
+このモジュールは、フィルター型のコマンド、
+すなわち入力を読み込み、処理をして結果を書き出すような場合に
+共通するパターンに使えるユーティリティ手続きを提供します。
+共通するパターンとは：
+
+@itemize @bullet
+@item
+入力は指定されたファイルかポートで、デフォルトはカレント入力ポート。
+@item
+出力は指定されたファイルかポートで、デフォルトはカレント出力ポート。
+@item
+出力は一時ファイルに書き出すこともできて、
+その場合は処理が終了した時点で指定されたファイルにリネーム。
+@item
+処理途中でエラーが起こった場合に出力ファイルを削除
+@end itemize
+@c COMMON
+@end defun
+
+@defun file-filter proc &keyword input output temporary-file temporary-directory keep-output?
+@c EN
+Calls @var{proc} with two arguments, an input port and 
+an output port.   Returns the result(s) of @var{proc}.
+The input port and output port are chosen depending on the keyword arguments.
+@c JP
+二つの引数、入力ポートと出力ポートを引数として@var{proc}を呼び出し、
+その結果を返します。
+入力ポートと出力ポートはキーワード引数により決定されます。
+@c COMMON
+
+@table @code
+@item input
+@c EN
+The argument must be either an input port or a string
+that specifies a file name.
+If it's an input port, it is passed to @var{proc} as is.
+If it's a string, the named file is opened for input and the resulting
+port is passed to @var{proc}, and the port is closed when @var{proc}
+returns.
+If this argument is omitted, the current input port is passed.
+@c JP
+この引数は入力ポートかファイル名を示す文字列でなければなりません。
+入力ポートの場合、それはそのまま@var{proc}に渡されます。
+文字列が渡された場合は、そのファイル名を持つファイルを入力用にオープンし、
+そのポートが@var{proc}に渡され、またこのポートは@var{proc}が戻った時に閉じられます。
+この引数が省略された場合は、現在の入力ポートが渡されます。
+@c COMMON
+@item output
+@c EN
+The argument must be either an output port or a string
+that specifies a file name.
+If it's an output port, it is passed to @var{proc} as is.
+If it's a string, the named file is opened for output
+(unless @var{temporary-file} is given, in that case
+a temporary file is opened instead), and the resulting port
+is passed to @var{proc}.  This port is closed when @var{proc} returns.
+If this argument is omitted, the current output port is passed.
+@c JP
+この引数は入力ポートかファイル名を示す文字列でなければなりません。
+出力ポートの場合、それはそのまま@var{proc}に渡されます。
+文字列が渡された場合は、そのファイル名を持つファイルを出力用にオープンし、
+そのポートが@var{proc}に渡されます (但し、@var{temporary-file}
+引数が渡された時はそれに指定されるファイルが一時ファイルとしてオープンされます)。
+オープンされたポートは@var{proc}が戻った時に閉じられます。
+この引数が省略された場合は、現在の出力ポートが渡されます。
+@c COMMON
+@item temporary-file
+@c EN
+If a string file name is given to this argument, the named file
+is opened for output during the processing, instead of the file
+name as @var{output}.   The output port @var{proc} receives
+is connected to this file.  When @var{proc}
+returns normally, the file is renamed to the name given to @var{output}
+keyword argument.
+
+If the given file name begins with characters except @code{"/"}, @code{"./"}
+or @code{"../"}, the directory of the file name given to @var{output} argument
+is attached before it.
+Furthermore, a unique is attached to the temporary file name
+(the temporary file is opened by @code{sys-mkstemp}.)
+
+This argument is ignored when @var{output} argument is not a string
+file name.
+@c JP
+文字列でファイル名が渡された場合、処理の間の出力先として@var{output}に指定された
+ファイルのかわりにそのファイルがオープンされます。
+@var{proc}にはその一時ファイルへの出力ポートが渡されます。
+@var{proc}が正常に返って来た時点で、一時ファイルは@var{output}に指定された
+ファイルへとリネームされます。
+
+もし一時ファイル名が@code{"/"}、@code{"./"}、@code{"../"}以外の
+文字で始まっていた場合は、@var{output}に与えられたファイル名のディレクトリが
+一時ファイルの前に追加されます。さらに、ユニークなサフィックスが一時ファイルの後に
+追加されます(一時ファイルは@code{sys-mkstemp}を使ってオープンされます)。
+
+この引数は、@var{output}にファイル名が与えられなかった場合は無視されます。
+@c COMMON
+@item keep-output?
+@c EN
+If a true value is given, the output is not deleted even
+when @var{proc} signals an error.
+By default, the output (or the temporary file when
+@var{temporary-file} is given) will be deleted on error.
+@c JP
+真の値が与えられた場合、@var{proc}がエラーになった場合でも出力ファイルを削除しません。
+デフォルトでは、出力ファイル(もしくは@var{temporary-file}が与えられた場合は
+そのファイル)はエラーの場合には削除されます。
+@c COMMON
+@end table
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Collection framework, Original DBM interface, Library modules
+@node Character code conversion, Collection framework, Filtering file content, Library modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
