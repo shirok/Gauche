@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.12 2001-03-05 07:13:51 shiro Exp $
+ *  $Id: predef-syms.h,v 1.13 2001-03-05 08:48:54 shiro Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -41,6 +41,10 @@ DEFSYM(ScmQdo,              "do");
 DEFSYM(ScmQdelay,           "delay");
 DEFSYM(ScmQreceive,         "receive");
 DEFSYM(ScmQwithModule,      "with-module");
+DEFSYM(ScmQselectModule,    "select-module");
+DEFSYM(ScmQcurrentModule,   "current-module");
+DEFSYM(ScmQimport,          "import");
+DEFSYM(ScmQexport,          "export");
 DEFSYM(ScmQdefineSyntax,    "define-syntax");
 DEFSYM(ScmQletSyntax,       "let-syntax");
 DEFSYM(ScmQletrecSyntax,    "letrec-syntax");
@@ -86,6 +90,10 @@ DEFSYM(ScmQloadFilename,    "*load-filename*");
 #define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
 #define SCM_SYM_RECEIVE          SCM_OBJ(&ScmQreceive)
 #define SCM_SYM_WITH_MODULE      SCM_OBJ(&ScmQwithModule)
+#define SCM_SYM_SELECT_MODULE    SCM_OBJ(&ScmQselectModule)
+#define SCM_SYM_CURRENT_MODULE   SCM_OBJ(&ScmQcurrentModule)
+#define SCM_SYM_IMPORT           SCM_OBJ(&ScmQimport)
+#define SCM_SYM_EXPORT           SCM_OBJ(&ScmQexport)
 #define SCM_SYM_DEFINE_SYNTAX    SCM_OBJ(&ScmQdefineSyntax)
 #define SCM_SYM_LET_SYNTAX       SCM_OBJ(&ScmQletSyntax)
 #define SCM_SYM_LETREC_SYNTAX    SCM_OBJ(&ScmQletrecSyntax)
