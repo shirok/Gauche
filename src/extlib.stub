@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.87 2001-06-02 21:32:11 shirok Exp $
+;;; $Id: extlib.stub,v 1.88 2001-06-03 23:11:07 shirok Exp $
 ;;;
 
 "
@@ -611,6 +611,16 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
     }
   }
   SCM_RETURN(SCM_MAKE_INT(ncopied));")
+
+(define-cproc port->string (port)       ;scsh, stk
+  (assert (input-port? port))
+  "  ScmChar ch; ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort());
+  for (;;) {
+    SCM_GETC(ch, port);
+    if (ch == EOF) break;
+    SCM_PUTC(ch, out);
+  }
+  SCM_RETURN(Scm_GetOutputString(out));")
 
 ;;
 ;; 6.6.2  Input
