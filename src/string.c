@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.50 2001-08-31 08:36:11 shirok Exp $
+ *  $Id: string.c,v 1.51 2001-09-23 04:56:52 shirok Exp $
  */
 
 #include <stdio.h>
@@ -678,69 +678,160 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
 }
 
 /* Boyer-Moore string search.  assuming siz1 > siz2, siz2 < 256. */
-static inline ScmObj boyer_moore(const char *ss1, int siz1,
-                                 const char *ss2, int siz2)
+static inline int boyer_moore(const char *ss1, int siz1,
+                              const char *ss2, int siz2)
 {
     unsigned char shift[256];
-    int i, j;
+    int i, j, k;
     for (i=0; i<256; i++) { shift[i] = siz2; }
-    for (i=0; i<siz2; i++) {
-        if (shift[(unsigned char)ss2[i]] > i)
-            shift[(unsigned char)ss2[i]] = i;
+    for (j=0; j<siz2-1; j++) {
+        shift[(unsigned char)ss2[j]] = siz2-j-1;
     }
-    for (i=j=siz2-1; i<siz1; i++) {
-        if (ss2[j] == ss1[i]) {
-            for (; j > 0; i--, j--) {
-                if (ss2[j] != ss1[i]) return SCM_FALSE;
-            }
-            return Scm_MakeInteger(i);
-        } else {
-            i += shift[(unsigned char)ss2[j]];
-        }
+    for (i=siz2-1; i<siz1; i+=shift[(unsigned char)ss1[i]]) {
+        for (j=siz2-1, k = i; j>=0 && ss1[k] == ss2[j]; j--, k--)
+            ;
+        if (j == -1) return k+1;
     }
-    return SCM_FALSE;
+    return -1;
 }
 
-/* See if s2 appears in s1.  If both strings are single-byte, and s1
-   is long, we use Boyer-Moore. */
-ScmObj Scm_StringContains(ScmString *s1, ScmString *s2)
+/* Scan s2 in s1.  If both strings are single-byte, and s1 is long,
+   we use Boyer-Moore.
+   
+   To avoid rescanning of the string, this function can return
+   various information, depends on retmode argument.
+
+   SCM_STRING_SCAN_INDEX  : return the index of s1
+        s1 = "abcde" and s2 = "cd" => 2
+   SCM_STRING_SCAN_BEFORE : return substring of s1 before s2
+        s1 = "abcde" and s2 = "cd" => "ab"
+   SCM_STRING_SCAN_AFTER  : return substring of s1 after s2
+        s1 = "abcde" and s2 = "cd" => "e"
+   SCM_STRING_SCAN_BEFORE2 : return substring of s1 before s2, and rest
+       s1 = "abcde" and s2 = "cd" => "ab" and "cde"
+   SCM_STRING_SCAN_AFTER2 : return substring of s1 up to s2 and rest
+       s1 = "abcde" and s2 = "cd" => "abcd" and "e"
+   SCM_STRING_SCAN_BOTH   : return substring of s1 before and after s2
+       s1 = "abcde" and s2 = "cd" => "ab" and "e"
+*/
+ScmObj Scm_StringScan(ScmString *s1, ScmString *s2, int retmode)
 {
-    int i;
+    int i, incomplete;
     const char *ss1 = SCM_STRING_START(s1);
     const char *ss2 = SCM_STRING_START(s2);
     int siz1 = SCM_STRING_SIZE(s1), len1 = SCM_STRING_LENGTH(s1);
     int siz2 = SCM_STRING_SIZE(s2), len2 = SCM_STRING_LENGTH(s2);
 
-    if (SCM_STRING_INCOMPLETE_P(s1)) {
-        Scm_Error("incomplete string not supported: %S", s1);
+    if (retmode < 0 || retmode > SCM_STRING_SCAN_BOTH) {
+        Scm_Error("return mode out fo range: %d", retmode);
     }
-    if (SCM_STRING_INCOMPLETE_P(s2)) {
-        Scm_Error("incomplete string not supported: %S", s2);
+
+    if (siz2 == 0) {
+        /* shortcut */
+        switch (retmode) {
+        case SCM_STRING_SCAN_INDEX: return SCM_MAKE_INT(0);
+        case SCM_STRING_SCAN_BEFORE: return SCM_MAKE_STR("");
+        case SCM_STRING_SCAN_AFTER:  return Scm_CopyString(s1);
+        case SCM_STRING_SCAN_BEFORE2:;
+        case SCM_STRING_SCAN_AFTER2:;
+        case SCM_STRING_SCAN_BOTH:
+            return Scm_Values2(SCM_MAKE_STR(""), Scm_CopyString(s1));
+        }
     }
+    
     if (siz1 == len1) {
-        if (len2 < 0 || siz2 == len2) goto sbstring;
-        return SCM_FALSE;       /* sbstring can't contain mbstring. */
+        if (siz2 == len2) goto sbstring;
+        goto failed;            /* sbstring can't contain mbstring. */   
     }
     if (len1 >= len2) {
         const char *ssp = ss1;
         for (i=0; i<=len1-len2; i++) {
-            if (memcmp(ssp, ss2, siz2) == 0) return Scm_MakeInteger(i);
-            ssp += SCM_CHAR_NFOLLOWS(*ssp);
+            if (memcmp(ssp, ss2, siz2) == 0) {
+                switch (retmode) {
+                case SCM_STRING_SCAN_INDEX:
+                    return Scm_MakeInteger(i);
+                case SCM_STRING_SCAN_BEFORE:
+                    return Scm_MakeString(ss1, ssp-ss1, i, 0);
+                case SCM_STRING_SCAN_AFTER:
+                    return Scm_MakeString(ssp+siz2, siz1-(ssp-ss1+siz2),
+                                          len1-i-len2, 0);
+                case SCM_STRING_SCAN_BEFORE2:
+                    return Scm_Values2(Scm_MakeString(ss1, ssp-ss1, i, 0),
+                                       Scm_MakeString(ssp, siz1-(ssp-ss1),
+                                                      len1-i, 0));
+                case SCM_STRING_SCAN_AFTER2:
+                    return Scm_Values2(Scm_MakeString(ss1, ssp-ss1+siz2,
+                                                      i+len2, 0),
+                                       Scm_MakeString(ssp+siz2,
+                                                      siz1-(ssp-ss1+siz2),
+                                                      len1-i-len2, 0));
+                case SCM_STRING_SCAN_BOTH:
+                    return Scm_Values2(Scm_MakeString(ss1, ssp-ss1, i, 0),
+                                       Scm_MakeString(ssp+siz2,
+                                                      siz1-(ssp-ss1+siz2),
+                                                      len1-i-len2, 0));
+                }
+            }
+            ssp += SCM_CHAR_NFOLLOWS(*ssp) + 1;
         }
     }
-    return SCM_FALSE;
+    goto failed;
 
-  sbstring: /* short cut for special case */
-    if (siz1 < siz2) return SCM_FALSE;
+  sbstring: /* short cut for single-byte strings */
+    if (siz1 < siz2) goto failed;
     if (siz1 < 256 || siz2 >= 256) {
         /* brute-force search */
         for (i=0; i<=siz1-siz2; i++) {
-            if (memcmp(ss2, ss1+i, siz2) == 0) return Scm_MakeInteger(i);
+            if (memcmp(ss2, ss1+i, siz2) == 0) break;
         }
+        if (i == siz1-siz2) goto failed;
     } else {
-        return boyer_moore(ss1, siz1, ss2, siz2);
+        i = boyer_moore(ss1, siz1, ss2, siz2);
+        if (i < 0) goto failed;
     }
-    return SCM_FALSE;
+    incomplete =
+        (SCM_STRING_INCOMPLETE_P(s1) || SCM_STRING_INCOMPLETE_P(s2))?
+        SCM_MAKSTR_INCOMPLETE : 0;
+    switch (retmode) {
+    case SCM_STRING_SCAN_INDEX:
+        return Scm_MakeInteger(i);
+    case SCM_STRING_SCAN_BEFORE:
+        return Scm_MakeString(ss1, i, i, incomplete);
+    case SCM_STRING_SCAN_AFTER:
+        return Scm_MakeString(ss1+i+siz2, siz1-(i+siz2), siz1-(i+siz2),
+                              incomplete);
+    case SCM_STRING_SCAN_BEFORE2:
+        return Scm_Values2(Scm_MakeString(ss1, i, i, incomplete),
+                           Scm_MakeString(ss1+i, siz1-i, siz1-i, incomplete));
+    case SCM_STRING_SCAN_AFTER2:
+        return Scm_Values2(Scm_MakeString(ss1, i+siz2, i+siz2, incomplete),
+                           Scm_MakeString(ss1+i+siz2, siz1-(i+siz2),
+                                          siz1-(i+siz2), incomplete));
+    case SCM_STRING_SCAN_BOTH:
+        return Scm_Values2(Scm_MakeString(ss1, i, i, incomplete),
+                           Scm_MakeString(ss1+i+siz2, siz1-(i+siz2),
+                                          siz1-(i+siz2), incomplete));
+    }
+  failed:
+    if (retmode <= SCM_STRING_SCAN_AFTER) {
+        return SCM_FALSE;
+    } else {
+        return Scm_Values2(SCM_FALSE, SCM_FALSE);
+    }
+}
+
+ScmObj Scm_StringScanChar(ScmString *s1, ScmChar ch, int retmode)
+{
+    ScmString s2;
+    char buf[SCM_CHAR_MAX_BYTES];
+    SCM_CHAR_PUT(buf, ch);
+    SCM_SET_CLASS(&s2, SCM_CLASS_STRING);
+    s2.incomplete = FALSE;
+    s2.immutable = TRUE;
+    s2.length = 1;
+    s2.size = SCM_CHAR_NBYTES(ch);
+    s2.start = buf;
+    return Scm_StringScan(s1, &s2, retmode);
 }
 
 /*----------------------------------------------------------------

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.177 2001-09-19 07:41:57 shirok Exp $
+ *  $Id: gauche.h,v 1.178 2001-09-23 04:56:52 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -750,7 +750,18 @@ extern ScmObj  Scm_StringAppend(ScmObj strs);
 extern ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer);
 
 extern ScmObj  Scm_StringSplitByChar(ScmString *str, ScmChar ch);
-extern ScmObj  Scm_StringContains(ScmString *s1, ScmString *s2);
+extern ScmObj  Scm_StringScan(ScmString *s1, ScmString *s2, int retmode);
+extern ScmObj  Scm_StringScanChar(ScmString *s1, ScmChar ch, int retmode);
+
+/* "retmode" argument for string scan */
+enum {
+    SCM_STRING_SCAN_INDEX,      /* return index */
+    SCM_STRING_SCAN_BEFORE,     /* return substring of s1 before s2 */
+    SCM_STRING_SCAN_AFTER,      /* return substring of s1 after s2 */
+    SCM_STRING_SCAN_BEFORE2,    /* return substr of s1 before s2 and rest */
+    SCM_STRING_SCAN_AFTER2,     /* return substr of s1 up to s2 and rest */
+    SCM_STRING_SCAN_BOTH        /* return substr of s1 before and after s2 */
+};
 
 extern ScmObj  Scm_StringP(ScmObj obj);
 extern ScmObj  Scm_StringToList(ScmString *str);

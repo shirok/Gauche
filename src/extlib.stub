@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.99 2001-09-19 07:41:57 shirok Exp $
+;;; $Id: extlib.stub,v 1.100 2001-09-23 04:56:52 shirok Exp $
 ;;;
 
 "
@@ -412,10 +412,35 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (char? ch))
   "  SCM_RETURN(Scm_StringSplitByChar(s, ch));")
 
-(define-cproc string-contains (s1 s2)  ;; SRFI-13 takes optional args
+;; primitive scanner
+(define-symbol index   "sym_index")
+(define-symbol before  "sym_before")
+(define-symbol after   "sym_after")
+(define-symbol before* "sym_before2")
+(define-symbol after*  "sym_after2")
+(define-symbol both    "sym_both")
+
+(define-cproc string-scan (s1 s2 &optional (mode (c "sym_index")))
   (assert (string? s1))
-  (assert (string? s2))
-  "  SCM_RETURN(Scm_StringContains(s1, s2));")
+  "  int retmode = 0;
+  if (mode == sym_index)         retmode = SCM_STRING_SCAN_INDEX;
+  else if (mode == sym_before)   retmode = SCM_STRING_SCAN_BEFORE;
+  else if (mode == sym_after)    retmode = SCM_STRING_SCAN_AFTER;
+  else if (mode == sym_before2)  retmode = SCM_STRING_SCAN_BEFORE2;
+  else if (mode == sym_after2)   retmode = SCM_STRING_SCAN_AFTER2;
+  else if (mode == sym_both)     retmode = SCM_STRING_SCAN_BOTH;
+  else {
+    Scm_Error(\"bad value in mode argumet: %S, must be one of 'index, 'before, 'after, 'before*, 'after* or 'both.\", mode);
+  }
+  if (SCM_STRINGP(s2)) {
+     SCM_RETURN(Scm_StringScan(s1, SCM_STRING(s2), retmode));
+  } else if (SCM_CHARP(s2)) {
+     SCM_RETURN(Scm_StringScanChar(s1, SCM_CHAR_VALUE(s2), retmode));
+  } else {
+     Scm_Error(\"bad type of argument for s2: %S, must be either string or character\", s2);
+     SCM_RETURN(SCM_UNDEFINED); /* dummy */
+  }")
+  
 
 ;; string pointer
 (define-type "string-pointer" string-pointer?
