@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.58 2001-03-05 06:30:38 shiro Exp $
+ *  $Id: gauche.h,v 1.59 2001-03-05 10:45:32 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1064,8 +1064,9 @@ extern ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter);
 struct ScmModuleRec {
     SCM_HEADER;
     ScmSymbol *name;
-    ScmObj parents;
-    ScmObj directParents;
+    ScmObj imported;
+    ScmObj exported;
+    ScmModule *parent;
     ScmHashTable *table;
 };
 
@@ -1077,11 +1078,12 @@ extern ScmClass Scm_ModuleClass;
 
 extern ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                                 int stay_in_module);
-extern ScmObj Scm_MakeModule(ScmSymbol *name, ScmObj parentList);
+extern ScmObj Scm_MakeModule(ScmSymbol *name);
 extern ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol);
 extern ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value);
-extern ScmObj Scm_GlobalSet(ScmModule *module, ScmSymbol *symbol, ScmObj value);
 
+extern ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);
+extern ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
 extern ScmObj Scm_FindModule(ScmSymbol *name);
 extern ScmObj Scm_AllModules(void);
 extern void   Scm_SelectModule(ScmModule *mod);

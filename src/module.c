@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.11 2001-03-05 09:29:38 shiro Exp $
+ *  $Id: module.c,v 1.12 2001-03-05 10:45:32 shiro Exp $
  */
 
 #include "gauche.h"
@@ -42,54 +42,24 @@ static ScmHashTable *moduleTable; /* global, must be protected in MT env */
  */
 
 /* internal */
-static ScmObj make_module(ScmSymbol *name, ScmObj directParents,
-                          ScmObj parents)
+static ScmObj make_module(ScmSymbol *name, ScmModule *parent)
 {
     ScmModule *z;
     z = SCM_NEW(ScmModule);
     SCM_SET_CLASS(z, SCM_CLASS_MODULE);
     z->name = name;
-    z->directParents = directParents;
-    z->parents = parents;
+    z->parent = parent;
+    z->imported = SCM_NIL;
+    z->exported = SCM_NIL;
     z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
 
     Scm_HashTablePut(moduleTable, SCM_OBJ(name), SCM_OBJ(z));
     return SCM_OBJ(z);
 }
 
-static ScmObj module_direct_supers(ScmObj mod, void *ignore)
+ScmObj Scm_MakeModule(ScmSymbol *name)
 {
-    if (SCM_MODULEP(mod)) {
-        return SCM_MODULE(mod)->directParents;
-    } else {
-        return SCM_FALSE;
-    }
-}
-
-ScmObj Scm_MakeModule(ScmSymbol *name, ScmObj parentList)
-{
-    ScmObj mod, pp, pa, pseqs = SCM_NIL, ptail, parents;
-    int pllen = Scm_Length(parentList), i = 0;
-
-    /* Assertion */
-    if (pllen < 0) Scm_Abort("improper list is given to Scm_MakeModule");
-
-    SCM_APPEND1(pseqs, ptail, parentList);
-    SCM_FOR_EACH(pp, parentList) {
-        pa = SCM_CAR(pp);
-        if (!SCM_MODULEP(pa))
-            Scm_Error("non-module is passed to Scm_MakeModule as a parent: %S",
-                      pa);
-        SCM_APPEND1(pseqs, ptail,
-                    Scm_Cons(pa, SCM_MODULE(pa)->parents));
-    }
-    
-    mod = make_module(name, Scm_CopyList(parentList), SCM_NIL);
-    parents = Scm_MonotonicMerge(mod, pseqs, module_direct_supers, NULL);
-    if (SCM_FALSEP(parents))
-        Scm_Error("module parent graph has inconsistency: %S", parentList);
-    SCM_MODULE(mod)->parents = parents;
-    return mod;
+    return make_module(name, Scm_GaucheModule());
 }
 
 /*----------------------------------------------------------------------
@@ -100,12 +70,22 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                          int stay_in_module)
 {
     ScmHashEntry *e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
+    ScmModule *m;
+    ScmObj p;
+
     if (e) return SCM_GLOC(e->value);
     if (!stay_in_module) {
-        ScmObj mod;
-        SCM_FOR_EACH(mod, module->parents) {
-            e = Scm_HashTableGet(SCM_MODULE(SCM_CAR(mod))->table,
-                                 SCM_OBJ(symbol));
+        /* First, search from imported modules */
+        SCM_FOR_EACH(p, module->imported) {
+            SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
+            m = SCM_MODULE(SCM_CAR(p));
+            e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
+            if (e && !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported)))
+                return SCM_GLOC(e->value);
+        }
+        /* Then, search from parent module */
+        for (m = module->parent; m; m = m->parent) {
+            e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
             if (e) return SCM_GLOC(e->value);
         }
     }
@@ -132,30 +112,29 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     return SCM_OBJ(g);
 }
 
-ScmObj Scm_GlobalSet(ScmModule *module, ScmSymbol *symbol, ScmObj value)
+ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
-    ScmObj mod;
-    ScmHashEntry *e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
-
-    if (e) {
-        SCM_GLOC(e->value)->value = value;
-        return value;
-    } else {
-        SCM_FOR_EACH(mod, module->parents) {
-            e = Scm_HashTableGet(SCM_MODULE(SCM_CAR(mod))->table,
-                                 SCM_OBJ(symbol));
-            if (e) {
-                SCM_GLOC(e->value)->value = value;
-                return value;
-            }
-        }
-        {
-            ScmGloc *g = SCM_GLOC(Scm_MakeGloc(symbol, module));
-            g->value = value;
-            Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
-            return value;
-        }
+    ScmObj lp, head = SCM_NIL, tail;
+    SCM_APPEND(head, tail, module->imported);
+    SCM_FOR_EACH(lp, list) {
+        if (!SCM_MODULEP(SCM_CAR(lp)))
+            Scm_Error("module required, but got %S", SCM_CAR(lp));
+        if (SCM_FALSEP(Scm_Memq(SCM_CAR(lp), head)))
+            SCM_APPEND1(head, tail, SCM_CAR(lp));
     }
+    return (module->imported = head);
+}
+
+ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
+{
+    ScmObj lp, syms = module->exported;
+    SCM_FOR_EACH(lp, list) {
+        if (!SCM_SYMBOLP(SCM_CAR(lp)))
+            Scm_Error("symbol required, but got %S", SCM_CAR(lp));
+        if (SCM_FALSEP(Scm_Memq(SCM_CAR(lp), syms)))
+            syms = Scm_Cons(SCM_CAR(lp), syms);
+    }
+    return (module->exported = syms);
 }
 
 /*----------------------------------------------------------------------
@@ -222,23 +201,16 @@ ScmModule *Scm_CurrentModule(void)
     return Scm_VM()->module;
 }
 
-#define MAKEMOD(sym, direct, parent) \
-    SCM_MODULE(make_module(SCM_SYMBOL(sym), direct, parent))
+#define MAKEMOD(sym, parent) SCM_MODULE(make_module(SCM_SYMBOL(sym), parent))
 
 
 void Scm__InitModule(void)
 {
     moduleTable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
 
-    nullModule   = MAKEMOD(SCM_SYM_NULL, SCM_NIL, SCM_NIL);
-    schemeModule = MAKEMOD(SCM_SYM_SCHEME,
-                           SCM_LIST1(SCM_OBJ(nullModule)),
-                           SCM_LIST1(SCM_OBJ(nullModule)));
-    gaucheModule = MAKEMOD(SCM_SYM_GAUCHE,
-                           SCM_LIST1(SCM_OBJ(schemeModule)),
-                           SCM_LIST2(SCM_OBJ(schemeModule), SCM_OBJ(nullModule)));
-    userModule   = MAKEMOD(SCM_SYM_USER,
-                           SCM_LIST1(SCM_OBJ(gaucheModule)),
-                           SCM_LIST3(SCM_OBJ(gaucheModule), SCM_OBJ(schemeModule), SCM_OBJ(nullModule)));
+    nullModule   = MAKEMOD(SCM_SYM_NULL, NULL);
+    schemeModule = MAKEMOD(SCM_SYM_SCHEME, nullModule);
+    gaucheModule = MAKEMOD(SCM_SYM_GAUCHE, schemeModule);
+    userModule   = MAKEMOD(SCM_SYM_USER, gaucheModule);
 }
 

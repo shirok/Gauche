@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.13 2001-03-05 08:48:54 shiro Exp $
+ *  $Id: predef-syms.h,v 1.14 2001-03-05 10:45:32 shiro Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -40,6 +40,7 @@ DEFSYM(ScmQyields,          "=>");
 DEFSYM(ScmQdo,              "do");
 DEFSYM(ScmQdelay,           "delay");
 DEFSYM(ScmQreceive,         "receive");
+DEFSYM(ScmQdefineModule,    "define-module");
 DEFSYM(ScmQwithModule,      "with-module");
 DEFSYM(ScmQselectModule,    "select-module");
 DEFSYM(ScmQcurrentModule,   "current-module");
@@ -89,6 +90,7 @@ DEFSYM(ScmQloadFilename,    "*load-filename*");
 #define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
 #define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
 #define SCM_SYM_RECEIVE          SCM_OBJ(&ScmQreceive)
+#define SCM_SYM_DEFINE_MODULE    SCM_OBJ(&ScmQdefineModule)
 #define SCM_SYM_WITH_MODULE      SCM_OBJ(&ScmQwithModule)
 #define SCM_SYM_SELECT_MODULE    SCM_OBJ(&ScmQselectModule)
 #define SCM_SYM_CURRENT_MODULE   SCM_OBJ(&ScmQcurrentModule)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.36 2001-03-05 08:48:45 shiro Exp $
+ *  $Id: compile.c,v 1.37 2001-03-05 10:45:32 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1552,7 +1552,8 @@ static ScmSyntax syntax_receive = {
 
 static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj modname, body, module, code;
+    ScmObj modname, body, module, code = SCM_NIL, codetail;
+    int createp = (int)data;
     volatile ScmModule *current;
 
     if (Scm_Length(form) < 2) Scm_Error("syntax error: %S", form);
@@ -1561,14 +1562,23 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
     if (!SCM_SYMBOLP(modname))
         Scm_Error("with-module: bad module name: %S", modname);
     module = Scm_FindModule(SCM_SYMBOL(modname));
-    if (!SCM_MODULEP(module))
-        Scm_Error("with-module: no such module: %S", modname);
+    if (!SCM_MODULEP(module)) {
+        if (createp) {
+            module = Scm_MakeModule(SCM_SYMBOL(modname));
+        } else {
+            Scm_Error("with-module: no such module: %S", modname);
+        }
+    }
 
     /* TODO: insert source-info */
     current = Scm_CurrentModule();
     SCM_PUSH_ERROR_HANDLER {
         Scm_SelectModule(SCM_MODULE(module));
-        code = compile_body(body, env, ctx);
+        SCM_FOR_EACH(body, body) {
+            ADDCODE(compile_int(SCM_CAR(body), env,
+                                SCM_NULLP(SCM_CDR(body))?
+                                ctx : SCM_COMPILE_STMT));
+        }
     }
     SCM_WHEN_ERROR {
         Scm_SelectModule(SCM_MODULE(current));
@@ -1583,7 +1593,14 @@ static ScmSyntax syntax_with_module = {
     SCM_CLASS_SYNTAX,
     SCM_SYMBOL(SCM_SYM_WITH_MODULE),
     compile_with_module,
-    NULL
+    (void*)0
+};
+
+static ScmSyntax syntax_define_module = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_DEFINE_MODULE),
+    compile_with_module,
+    (void*)1
 };
 
 static ScmObj compile_select_module(ScmObj form, ScmObj env, int ctx, void *data)
@@ -1621,6 +1638,31 @@ static ScmSyntax syntax_current_module = {
     NULL
 };
 
+static ScmObj compile_import(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmObj m = Scm_ImportModules(SCM_CURRENT_MODULE(), SCM_CDR(form));
+    return SCM_LIST1(m);
+}
+
+static ScmSyntax syntax_import = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_IMPORT),
+    compile_import,
+    NULL
+};
+
+static ScmObj compile_export(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmObj m = Scm_ExportSymbols(SCM_CURRENT_MODULE(), SCM_CDR(form));
+    return SCM_LIST1(m);
+}
+
+static ScmSyntax syntax_export = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_EXPORT),
+    compile_export,
+    NULL
+};
 
 /*===================================================================
  * Initializer
@@ -1655,7 +1697,10 @@ void Scm__InitCompiler(void)
     DEFSYN(SCM_SYM_DO,           syntax_do);
     DEFSYN(SCM_SYM_DELAY,        syntax_delay);
     DEFSYN(SCM_SYM_RECEIVE,      syntax_receive);
+    DEFSYN(SCM_SYM_DEFINE_MODULE, syntax_define_module);
     DEFSYN(SCM_SYM_WITH_MODULE,  syntax_with_module);
     DEFSYN(SCM_SYM_SELECT_MODULE, syntax_select_module);
     DEFSYN(SCM_SYM_CURRENT_MODULE, syntax_current_module);
+    DEFSYN(SCM_SYM_IMPORT,       syntax_import);
+    DEFSYN(SCM_SYM_EXPORT,       syntax_export);
 }
