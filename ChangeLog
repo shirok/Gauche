@@ -1,3 +1,8 @@
+2004-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/sortutil.scm (stable-sort!): fixed a bug when sorting
+	  vectors.
+
 2004-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/gauche/class.h, src/gauche/memory.h, 

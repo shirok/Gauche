@@ -7,7 +7,7 @@
 ;; [SK]: I just added module mechanics to fit Gauche,
 ;; and stripped the long explanatory comment.  See sort.orig.scm contained
 ;; in tarball for the original form of this file.
-;; $Id: sortutil.scm,v 1.3 2004-05-05 12:06:21 shirok Exp $
+;; $Id: sortutil.scm,v 1.4 2004-12-18 10:41:05 shirok Exp $
 
 ;; To be autoloaded
 (define-module gauche.sortutil
@@ -131,7 +131,8 @@
      (else
       '()) ))
   (if (vector? seq)
-    (let ((n (vector-length seq)))
+    (let ((n (vector-length seq))
+          (vector seq))
       (set! seq (vector->list seq))
       (do ((p (step n) (cdr p))
            (i 0 (+ i 1)))
