@@ -2,7 +2,7 @@
 
 	* ext/uvector/* : added immutability check for all destructive ops.
 	  made literal uvectors immutable.
-	* doc/gauche-ref.texi : added japanese translation of rfc.http
+	* doc/gauche-ref.texi : added japanese translation of rfc.http etc.
 	  provided by Makoto Satoh.
 
 2002-12-24  Shiro Kawai  <shiro@acm.org>

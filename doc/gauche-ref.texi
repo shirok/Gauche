@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.331 2002-12-26 02:32:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.332 2002-12-26 09:07:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -23907,21 +23907,21 @@ Gauche defines only what the system provides.
 @c EN
 GDBM library (@xref{dbm.gdbm - GDBM interface}).
 @c JP
-GDBMライブラリ (@xref{dbm.gdbm - GDBM interface}).
+GDBMライブラリ (@ref{dbm.gdbm - GDBM interface}参照).
 @c COMMON
 
 @item dbm.ndbm
 @c EN
 NDBM library (@xref{dbm.ndbm - NDBM interface}).
 @c JP
-NDBMライブラリ (@xref{dbm.ndbm - NDBM interface}).
+NDBMライブラリ (@ref{dbm.ndbm - NDBM interface}参照).
 @c COMMON
 
 @item dbm.odbm
 @c EN
 DBM library  (@xref{dbm.odbm - Original DBM interface}).
 @c JP
-DBMライブラリ  (@xref{dbm.odbm - Original DBM interface}).
+DBMライブラリ  (@ref{dbm.odbm - Original DBM interface}参照).
 @c COMMON
 @end table
 @end deftp
@@ -24267,9 +24267,16 @@ which is returned as a result of @code{dbm-map}.
 
 @deftp {Class} <gdbm>
 @clindex gdbm
+@c EN
 Inherits @code{<dbm>}.  Provides an implementation for GDBM library.
 This module is only installed when your system already has GDBM
 (1.8.0 is preferred, but works with older 1.7.x with some limitations).
+@c JP
+@code{<dbm>} を継承します。GDBM ライブラリのための実装を提供します。
+このモジュールは、すでにあなたのシステムにすでに GDBM がある場合にのみ
+インストールされます(バージョン 1.8.0 が推奨されますが、いくつかの制限が
+あるだけで古い 1.7.x でも動作します)。
+@c COMMON
 
 @defivar <gdbm> sync
 @end defivar
@@ -24279,10 +24286,17 @@ This module is only installed when your system already has GDBM
 @end defivar
 @end deftp
 
+@c EN
 Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the gdbm API.  See gdbm manual for details of these
 APIs.
+@c JP
+統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+他に、このモジュールでは GDBM API への直接のアクセスを提供する以下の
+低レベルな手続きを提供しています。これらの API の詳細については GDBM の
+マニュアルを見て下さい。
+@c COMMON
 
 @defun gdbm-open path &optional size rwmode fmode error-callback
 
@@ -24392,14 +24406,27 @@ APIs.
 
 @deftp {Class} <ndbm>
 @clindex ndbm
+@c EN
 Inherits @code{<dbm>}.  Provides an implementation for NDBM library.
 This module is only installed when your system already has NDBM.
+@c JP
+@code{<dbm>} を継承します。NDBM ライブラリのための実装を提供します。
+このモジュールはあなたのシステムにすでに NDBM がある場合にのみ
+インストールされます。
+@c COMMON
 @end deftp
 
+@c EN
 Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the ndbm API.  See ndbm manual for details of these
 APIs.
+@c JP
+統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+他に、このモジュールでは NDBM API への直接のアクセスを提供する以下の
+低レベルな手続きを提供しています。これらの API の詳細については NDBM の
+マニュアルを見て下さい。
+@c COMMON
 
 @defun ndbm-open path flags mode
 @end defun
@@ -24441,6 +24468,7 @@ APIs.
 
 @deftp {Class} <odbm>
 @clindex odbm
+@c EN
 Inherits @code{<dbm>}.  Provides an implementation for legacy DBM
 library.
 This module is only installed when your system already has DBM.
@@ -24449,12 +24477,28 @@ The biggest limitation of the legacy DBM is that you can only open
 one database at a time.  You can create a multiple @code{<odbm>}
 instances, but you can open at most one of it at a time, or
 you'll get an error.
+@c JP
+@code{<dbm>} を継承しています。レガシーな DBM ライブラリのための実装を
+提供します。このモジュールは、あなたのシステムにすでに DBM がある場合にのみ
+インストールされます。
+
+レガシー DBM の最大の制限は、データベースを一時に一つしか開けないことです。
+複数の @code{<odbm>} のインスタンスを作ることができますが、一時に一つしか
+開くことが出来ず、一つ以上開こうとするとエラーになります。
+@c COMMON
 @end deftp
 
+@c EN
 Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the dbm API.  See dbm manual for details of these
 APIs.
+@c JP
+統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+他に、このモジュールでは DBM API への直接のアクセスを提供する以下の
+低レベルな手続きを提供しています。これらの API の詳細については DBM の
+マニュアルを見て下さい。
+@c COMMON
 
 @defun odbm-init path
 @end defun
@@ -25464,6 +25508,7 @@ faster than getting one by one.
 
 @deftp {Module} rfc.822
 @mdindex rfc.822
+@c EN
 Defines a set of functions that parses and constructs the ``Internet
 Message Format'', a text format used to exchange e-mails.
 The most recent specification can be found in
@@ -25473,30 +25518,59 @@ call it ``RFC822 format'', hence I named this module.
 In the following document, I also refer to the format as ``RFC822 format''.
 
 Say @code{(use rfc.822)} to use this module.
+@c JP
+電子メールを交換する際に使用されるテキストのフォーマット、"インターネット・
+メッセージ・フォーマット" をパーズ/生成する手続きを定義しています。
+最新の仕様は、RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}) にあります。
+このフォーマットは最初 RFC 822 で定義されたため、未だに"RFC822形式"と
+呼ばれています。それがこのモジュール名の由来です。
+以下では、このフォーマットを"RFC822形式"と呼んでいます。
+
+このモジュールを使うためには、@code{(use rfc.822)} として下さい。
+@c COMMON
 @end deftp
 
 @defun rfc822-header->list iport &optional strict?
+@c EN
 Reads RFC822 format message from an input port @var{iport},
 until it reaches the end of the message header.
 The header fields are unfolded, and broken into a list of the following
 format:
+@c JP
+入力ポート @var{iport} から、メッセージ・ヘッダの終わりに達するまで、
+RFC822 形式のメッセージを読み込みます。
+ヘッダ・フィールドは以下のフォーマットのリストに展開、分離されます。
+@c COMMON
 @example
 ((name body) @dots{})
 @end example
+@c EN
 @var{Name} @dots{} are the field names, and @var{body} @dots{} are
 the corresponding field body, both as strings.
 Field names are converted to lower-case characters.
 Field bodies are not modified, except the folded line is concatenated,
 CRLFs removed.
 The order of fields are preserved.
+@c JP
+@var{Name} @dots{} はフィールド名で、@var{body} @dots{} は対応するフィールドの
+ボディ、ともに文字列です。
+フィールド名は小文字に変換されます。フィールドのボディは、たたまれている
+行が連結され CRLF が削除される以外は変更されません。
+フィールドの順番は保存されます。
+@c COMMON
 @end defun
 
 @defun rfc822-parse-date string
+@c EN
 Takes RFC-822 type date string, and returns eight values:
+@c JP
+RFC822 形式の日付文字列を取り、8つの値を返します。
+@c COMMON
 @example
 year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
 @end example
 
+@c EN
 @emph{Timezone} is an offset from UT in minutes.
 @emph{Day-of-week} is a day from sunday,
 and may be #f if that information is not available.
@@ -25505,6 +25579,15 @@ If the string is not parsable, all the elements are #f.
 Note: This function follows the new definition of date format in RFC2822,
 but may fail to recognize "obsolete" format, which allows arbitrary
 comments appear between words.
+@c JP
+@emph{Timezone} は UT(グリニッジ標準時)からの分単位のオフセットです。
+@emph{Day-of-week} は日曜日から数えた曜日で、情報が不足している場合は #f です。
+文字列がパーズ不可能ならば、全ての要素が #f になります。
+
+注意: この手続きは、RFC2822 の新しい日付形式の定義に従っています。
+ワードの間に任意のコメントが許されている「旧式の」フォーマットは
+認識しそこねるかもしれません。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -25514,37 +25597,68 @@ comments appear between words.
 
 @deftp {Module} rfc.base64
 @mdindex rfc.base64
+@c EN
 This module defines a few functions to encode/decode Base64 format,
 defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3.
+@c JP
+このモジュールでは、RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}) で
+定義されている Base64 フォーマットへエンコード/デコードするいくつかの
+手続きを定義しています。
+@c COMMON
 @end deftp
 
 @defun base64-encode
+@c EN
 Reads byte stream from the current input port, encodes it in Base64
 format and writes the result character stream to the current output port.
 The conversion ends when it reads EOF from the current input port.
+@c JP
+現在の入力ポートからバイト・ストリームを読み込み、それを Base64 フォーマットに
+エンコードし、現在の出力ポートに文字ストリームとして書き出します。
+現在の入力ポートから EOF を読み込むと変換を終了します。
+@c COMMON
 @end defun
 
 @defun base64-encode-string string
+@c EN
 Converts contents of @var{string} to Base64 encoded format.
 Input string can be either complete or incomplete string;
 it is always interpreted as a byte sequence.
+@c JP
+@var{string} の内容を Base64 でエンコードされたフォーマットに変換します。
+入力となる文字列は、完全文字列でも不完全文字列でも良いです。
+常にバイト・シーケンスとして扱われます。
+@c COMMON
 @end defun
 
 @defun base64-decode
+@c EN
 Reads character stream from the current input port, decodes it from Base64
 format and writes the result byte stream to the current output port.
 The conversion ends when it reads EOF or the termination character
 (@code{=}).  The characters which does not in legal Base64 encoded character
 set are silently ignored.
+@c JP
+現在の入力ポートから文字ストリームを読み込み、それを Base64 フォーマットとして
+デコードし、現在の出力ポートにバイトストリームとして書き出します。
+変換は EOF か、終端文字 (@code{=}) を読み込むと終了します。
+Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
+@c COMMON
 @end defun
 
 @defun base64-decode-string string
+@c EN
 Decodes a Base64 encoded string @var{string} and returns
 the result as a string.
 The conversion terminates at the end of @var{string} or
 the termination character (@code{=}).
 The characters which does not in legal Base64 encoded character
 set are silently ignored.
+@c JP
+Base64 でエンコードされた文字列 @var{string} をデコードして文字列を返します。
+変換は @var{string} の終わりか、終端文字 (@code{=}) で終了します。
+Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -26045,19 +26159,33 @@ in an incomplete string.
 
 @deftp {Module} rfc.uri
 @mdindex rfc.uri
+@c EN
 Provides a set of functions to parse Uniform Resource Identifiers
 defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}).
+@c JP
+RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396})で定義されている
+Uniform Resource Identifiers をパーズする関数を提供します。
+@c COMMON
 @end deftp
 
 @defun uri-scheme&specific uri
 @defunx uri-decompose-hierarchical specific
 @defunx uri-decompose-authority authority
+@c EN
 General parser of URI.  These functions does not decode
 URI encoding.
 
 @code{uri-scheme&specific} takes a URI @var{uri}, and
 returns two values, its scheme part and its scheme-specific part.
 If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
+@c JP
+URIの一般的なパーザです。これらの関数はURIエンコーディングを
+デコードしません。
+
+@code{uri-scheme&specific} は URI @var{uri} を引数に取り、
+スキーム部分と、そのスキーム特有の部分を表す2つの値を返します。
+@var{uri} がスキーム部分を持たない場合、@var{#f} を返します。
+@c COMMON
 @example
 (uri-scheme&specific "mailto:sclaus@@north.pole")
   @result{} "mailto" @r{and} "sclaus@@north.pole"
@@ -26065,12 +26193,20 @@ If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
   @result{} #f @r{and} "/icons/new.gif"
 @end example
 
+@c EN
 If the URI scheme uses hierarchical notation, i.e.
 ``@code{//@var{authority}/@var{path}?@var{query}#@var{fragment}}'',
 you can pass
 the scheme-specific part to @code{uri-decompose-hierarchical}
 and it returns four values, @var{authority}, @var{path}, @var{query}
 and @var{fragment}.
+@c JP
+URI が階層的な記法を用いている場合、すなわち、
+``@code{//@var{authority}/@var{path}?@var{query}#@var{fragment}}''
+のような場合、スキーム特有の部分を @code{uri-decompose-hierarchical}
+に渡すと、@var{authority}、@var{path}、@var{query}、@var{fragment}
+の4つの値が返ります。
+@c COMMON
 @example
 (uri-decompose-hierarchical "//www.foo.com/about/company.html")
   @result{} "www.foo.com"@r{,} "/about/company.html"@r{,} #f @r{and} #f
@@ -26082,9 +26218,15 @@ and @var{fragment}.
   @result{} #f@r{,} #f@r{,} #f @r{and} #f
 @end example
 
+@c EN
 Furthermore, you can parse @var{authority} part of the
 hierarchical URI by @code{uri-decompose-authority}.
 It returns @var{userinfo}, @var{host} and @var{port}.
+@c JP
+さらに、階層的 URI の @var{authority} の部分を
+@code{uri-decompose-authority} に渡すと、@var{userinfo}、
+@var{host}、@var{port} が返ります。
+@c COMMON
 @example
 (uri-decompose-authority "yyy.jp:8080")
   @result{} #f@r{,} "yyy.jp" @r{and} "8080"
@@ -26094,10 +26236,16 @@ It returns @var{userinfo}, @var{host} and @var{port}.
 @end defun
 
 @defun uri-compose &keyword scheme userinfo host port authority path path* query fragment specific
+@c EN
 Compose a URI from given components.
 There can be various combinations of components to create a valid
 URI---the following diagram shows the possible 'paths' of
 combinations:
+@c JP
+与えられたコンポーネントから URI を構成します。
+妥当な URI を作成するためのコンポーネントの組み合わせはたくさんあります。
+以下のダイアグラムは、考え得る組み合わせの方法を示しています。
+@c COMMON
 
 @example
         /-----------------specific-------------------\
@@ -26107,6 +26255,7 @@ combinations:
         \-userinfo-host-port-/ \-path-query-fragment-/
 @end example
 
+@c EN
 If @code{#f} is given to a keyword argument, it is
 equivalent to the absense of that keyword argument.
 It is particulary useful to pass the results of
@@ -26117,6 +26266,16 @@ for that component, it must be properly escaped before
 being passed to @code{url-compose}.
 
 Some examples:
+@c JP
+キーワード引数に @code{#f} が与えられた場合、それはキーワード引数が
+指定されないことと等価です。これは URI をパーズした結果を渡す場合に
+特に有用です。
+
+コンポーネントに適切でない文字が含まれている場合は、
+@code{url-compose} に渡す前に正しくエスケープされなければなりません。
+
+いくつかの例を示します。
+@c COMMON
 @example
 (uri-compose :scheme "http" :host "foo.com" :port 80
              :path "/index.html" :fragment "top")
@@ -26139,6 +26298,7 @@ Some examples:
 
 @defun uri-decode &keyword :cgi-decode
 @defunx uri-decode-string string &keyword :cgi-decode
+@c EN
 Decodes ``URI encoding'', i.e. @code{%}-escapes.
 @code{uri-decode} takes input from the current input port,
 and writes decoded result to the current output port.
@@ -26146,10 +26306,20 @@ and writes decoded result to the current output port.
 returns decoded string.
 
 If @var{cgi-decode} is true, also replaces @code{+} to a space character.
+@c JP
+URI エンコーディング、すなわち、@code{%}でエスケープされた URI 文字列を
+デコードします。@code{uri-decode} は現在の入力ポートから入力を受け取り、
+デコードした結果を現在の出力ポートに書き出します。
+@code{uri-decode-string} は @var{string} を入力とし、デコードした
+文字列を返します。
+
+@var{cgi-decode} が真の場合は、@code{+} がスペース文字に置換されます。
+@c COMMON
 @end defun
 
 @defun uri-encode &keyword :noescape
 @defunx uri-encode-string string &keyword :noescape
+@c EN
 Encodes unsafe characters by @code{%}-escape.  @code{uri-encode}
 takes input from the current input port and writes the result to
 the current output port.  @code{uri-encode-string} takes input
@@ -26161,6 +26331,20 @@ to @var{noescape} argument to keep from being encoded.
 
 The multibyte characters are encoded as the octed stream of Gauche's
 native multibyte representation.
+@c JP
+安全でない文字を、@code{%}によるエスケープでエンコードします。
+@code{uri-encode} は現在の入力ポートから入力を受け取り、
+結果を現在の出力ポートに書き出します。
+@code{uri-encode-string} は @var{string} を入力とし、エンコードした
+文字列を返します。
+
+デフォルトでは、RFC2396 で"非予約文字"として規定されていない文字は
+エスケープされます。@var{noescape} 引数に異なる文字セットを渡すことで、
+それらがエンコードされるのを抑止することができます。
+
+マルチバイト文字は、Gauche のネイティブなマルチバイト表現の
+オクテット・ストリームとしてエンコードされます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -26217,6 +26401,7 @@ module @code{slib}.
 
 @deftp {Module} text.csv
 @mdindex text.csv
+@c EN
 Provides a function to parse/generate CSV (comma separated value) tables.
 Actually, the separater is not limited to comma; you can customize it.
 
@@ -26230,29 +26415,62 @@ comma or newline if quoted, i.e. surrounded by double-quote characters.
 To include double-quote character in a quoted field, use two
 consecutive double-quote character.   Usually, the whitespaces around
 the field are ignored.
+@c JP
+CSV (カンマ区切りの値) の表をパーズ/生成するための手続きを提供します。
+実際には、区切り文字はカンマに制限されず、カスタマイズできます。
 
+CSV 形式は、「正式な」仕様が無さそうなのにも関わらず、プレーン・テキストで
+表形式のデータを交換するために広く使われています。
+
+CSV の表は、改行で区切られた @var{record} の連続で構成されます。
+それぞれのレコードは、区切り文字(デフォルトではカンマ)で区切られた
+複数の @var{field} を含みます。フィールドは、クォートされている
+(二重引用符で囲まれている)場合は、カンマや改行を含むことができます。
+クォートされたフィールドに二重引用符を含めるには、2つの連続する
+二重引用符を使います。通常、フィールドの前後の空白は無視されます。
+@c COMMON
 @c example here
 
 @end deftp
 
+@c EN
 Right now, the following two low-level procedures are exported.
 A plan is to provide higher features, such as labelling fields
 and automatic conversions.
+@c JP
+現時点では、以下の2つの低レベルな手続きが提供されています。
+フィールドにラベル付けをしたり、自動的に変換するなどの
+より高レベルな機能の提供を計画しています。
+@c COMMON
 
 @defun make-csv-reader separator
+@c EN
 Returns a procedure with one argument, input port.
 When the procedure is called, it reads one record from the port,
 and returns a list of fields.
 If input reaches EOF, it returns EOF.
+@c JP
+入力ポートを唯一の引数として取る手続きを返します。
+手続きが呼ばれると、ポートからレコードを1つ読み込み、フィールドの
+リストを返します。入力ポートが EOF に達すると、EOF を返します。
+@c COMMON
 @end defun
 
 @defun make-csv-writer separator &optional newline
+@c EN
 Returns a procedure with two arguments, output port and
 a list of fields.  When the procedure is called, it
-outputs a @var{separater}-separated fields with proper escapes,
+outputs a @var{separator}-separated fields with proper escapes,
 to the output port.   You can also specify the record delimiter
 string by @var{newline}; for example, you can pass @code{"\r\n"}
 to prepare a file to be read by Windows programs.
+@c JP
+出力ポートとフィールドのリストの2つの引数を取る手続きを返します。
+手続きが呼ばれると、@var{separator} で区切られたフィールドを
+正しくエスケープして出力ポートに出力します。レコードの区切り文字列を
+@var{newline} で指定することもできます。例えば、ファイルが Windows の
+プログラムでも読めるように、@code{"\r\n"} を渡すことができます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -26261,8 +26479,13 @@ to prepare a file to be read by Windows programs.
 
 @deftp {Module} text.html-lite
 @mdindex text.html-lite
+@c EN
 Provides procedures to construct an HTML document easily.
 For example, you can construct an HTML table by the following code:
+@c JP
+HTML ドキュメントを簡単に構築するための手続きを提供します。
+例えば、以下のコードは HTML のテーブルを構築します。
+@c COMMON
 @example
 (html:table
   (html:tr (html:th "Item No") (html:th "Quantity"))
@@ -26270,27 +26493,50 @@ For example, you can construct an HTML table by the following code:
   (html:tr (html:td 2) (html:td 30))
   (html:tr (html:td 3) (html:td 215)))
 @end example
+@c EN
 See the description of @code{html:@var{element}} below for details.
 
 This module does little check for the constructed html documents,
 such as whether the attributes are valid, and whether the content
 of the element matches DTD.  It does not provide a feature to parse
 the html document neither.  Hence the name `lite'.
+@c JP
+詳細については、以下の @code{html:@var{element}} の説明を見てください。
+
+このモジュールでは生成されたHTMLドキュメントに関して、
+例えばアトリビュートに有効な値が入っているか、要素の内容はDTDを満たしているか、
+等のチェックをほとんど行いません。また、HTMLをパーズする関数も提供されません。
+それが「lite」の名の由来です。
+@c COMMON
 @end deftp
 
 @defun html-escape
 @defunx html-escape-string string
+@c EN
 Escapes the ``unsafe'' characters in HTML.  @code{html-escape}
 reads input string from the current input port and writes the result
 to the current output port.   @code{html-escape-string} takes the
 input from @var{string} and returns the result in a string.
+@c JP
+HTML に含まれる"安全でない"文字をエスケープします。
+@code{html-escape} は、現在の入力ポートから文字列を読み込み、
+結果を現在の出力ポートへ書き出します。@code{html-escape-string} は
+@var{string} を入力とし、文字列を返します。
+@c COMMON
 @end defun
 
 @defun html-doctype &keyword type
+@c EN
 Returns a doctype declaration for an HTML document.
 @var{type} can be either one of @code{:strict}, @code{:transitional},
 or @code{:frameset}, corresponding HTML4.01 strict, transitional or
 frameset DTD, respectively.
+@c JP
+HTML ドキュメントの文書型宣言を返します。
+@var{type} は、@code{:strict}、@code{:transitional}、@code{:frameset}
+のいずれかで、それぞれ HTML 4.01 strict、transitional、frameset の
+DTD に対応します。
+@c COMMON
 @end defun
 
 @deftp {Function} html:@var{element} @var{args} @dots{}
@@ -26371,10 +26617,17 @@ frameset DTD, respectively.
 @findex html:tt
 @findex html:ul
 @findex html:var
+@c EN
 Construct an HTML element @var{element}.  Right now,
 the following elements are provided.
 (The elements defined in HTML 4.01 DTD,
 @uref{http://www.w3.org/TR/html4/sgml/dtd.html}).
+@c JP
+@var{element} の HTML 要素を構築します。現時点では以下の要素が
+サポートされています。
+(HTML 4.01 DTD @uref{http://www.w3.org/TR/html4/sgml/dtd.html}
+に定義されている要素です)。
+@c COMMON
 @example
 a        abbr       acronym    address     area      b
 base     bdo        big        blockquote  body      br
@@ -26391,6 +26644,7 @@ tbody    td         textarea   tfoot       th        thead
 title    tr         tt         ul          var
 @end example
 
+@c EN
 The result of these functions is a tree of text segments,
 which can be written out to a port by @code{write-tree} or
 can be converted to a string by @code{tree->string}
@@ -26398,6 +26652,14 @@ can be converted to a string by @code{tree->string}
 
 You can specify attributes of the element by using a keyword-value
 notation before the actual content.
+@c JP
+これらの手続きは、テキスト・セグメントのツリーを返すので、
+@code{write-tree} でポートに書き出したり、@code{tree->string} で
+文字列に変換したりできます
+(@ref{text.tree - Lazy text construction}参照)。
+
+要素のアトリビュートは要素の内容に先立つキーワード-値の表記で指定することができます。
+@c COMMON
 @example
 (tree->string (html:a :href "http://foo/bar" "foobar"))
   @result{}
@@ -26409,9 +26671,15 @@ notation before the actual content.
   "<table width=\"100%\" cellpadding=\"0\">content here</table>\n"
 @end example
 
+@c EN
 The boolean value given to the attribute has a special meaning.
 If @code{#t} is given, the attribute is rendered without a value.
 If @code{#f} is given, the attribute is not rendered.
+@c JP
+属性に与える真偽値は特別な意味を持ちます。
+@code{#t} が与えられると、属性は値なしでレンダリングされます。
+@code{#f} が与えられると、属性それ自体がレンダリングされません。
+@c COMMON
 @example
 (tree->string (html:table :border #t))
   @result{} "<table border></table>\n"
@@ -26420,6 +26688,7 @@ If @code{#f} is given, the attribute is not rendered.
   @result{} "<table></table>\n"
 @end example
 
+@c EN
 Special characters in attribute values are escaped by the function,
 but the ones in the content are not.  It is caller's responsibility
 to escape them.
@@ -26428,6 +26697,15 @@ The functions signal an error if a content is given to the
 HTML element that doesn't take a content.   They do not
 check if the given attribute is valid, neither
 if the given content is valid for the element.
+@c JP
+属性の値における特別な文字は、手続きによってエスケープされますが、
+要素の内容にある特別な文字はエスケープされません。それをエスケープ
+するのは呼び出し側の責任です。
+
+内容を持たない HTML 要素に内容を与えると手続きはエラーを通知します。
+手続きは、与えられた属性が妥当であるか、与えられた内容がその要素に
+とって妥当であるかのチェックはしません。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
