@@ -82,7 +82,7 @@ gauche-refj_toc.html : gauche-refj.texi
 	  sed -e '1d;s/LANG=""//;s|^<HEAD>$$|<html><head><meta http-equiv="Content-Type" content="text/html; charset=euc-jp">|' $$f > $$f.t && mv $$f.t $$f; \
 	done
 
-gauche-refj.dvi : gauche-refj.texi
+ngauche-refj.dvi : gauche-refj.texi
 	texi2dvi gauche-refj.texi
 
 gauche-refj.pdf : gauche-refj.texi
@@ -98,6 +98,19 @@ gauche-refj.info.gz : gauche-refj.texi
 	  $(GZIP_PROGRAM) gauche-refj.info gauche-refj.info-[0-9]*; \
 	fi
 
+libgauche-refe.texi : libgauche-ref.texi extract
+	gosh ./extract -en -o libgauche-refe.texi libgauche-ref.texi
+
+libgauche-refe.html : libgauche-refe.texi
+	texi2html -number libgauche-refe.texi
+
+libgauche-refe.info.gz : libgauche-refe.texi
+	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
+	  $(MAKEINFO) --no-warn libgauche-refe.texi; \
+	  rm -rf libgauche-refe.info*.gz; \
+	  $(GZIP_PROGRAM) libgauche-refe.info libgauche-refe.info-[0-9]*; \
+	fi
+
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
 	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info*
@@ -106,4 +119,4 @@ distclean : clean
 	rm -rf $(GENERATED)
 
 realclean : clean
-	rm -f gauche-ref*.html gauche-ref.dvi Makefile $(GENERATED) $(EXTRACTED)
+	rm -f gauche-ref*.html gauche-ref*.dvi libgauche-ref*.html libgauche-ref*.dvi Makefile $(GENERATED) $(EXTRACTED)

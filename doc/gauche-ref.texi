@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.333 2003-01-01 13:33:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.334 2003-01-04 10:23:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -39,7 +39,7 @@
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2001-2002 Shiro Kawai (shiro@@acm.org)
+Copyright @copyright{} 2001-2003 Shiro Kawai (shiro@@acm.org)
 
 @end titlepage
 

@@ -1,0 +1,759 @@
+\input texinfo  @c -*-texinfo-*-
+@comment %**start of header
+@c EN
+@setfilename libgauche-refe.info
+@settitle Libgauche Reference Manual
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Libgauche Reference: (libgauche-refe.info).	An embedded Scheme library.
+@end direntry
+@c JP
+@setfilename libgauche-refj.info
+@settitle Libgauche リファレンスマニュアル
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Libgauche Reference (ja): (libgauche-refj.info).	An embedded Scheme library.
+@end direntry
+@c COMMON
+@comment %**end of header
+
+@c $Id: libgauche-ref.texi,v 1.1 2003-01-04 10:23:19 shirok Exp $
+
+@c module and class index
+@defcodeindex md
+@defcodeindex cl
+
+@iftex
+@finalout
+@parskip 4pt plus 1pt
+@end iftex
+
+@titlepage
+@c EN
+@title Libgauche Reference Manual
+@c JP
+@title Libgauche リファレンスマニュアル
+@c COMMON
+@subtitle version @VERSION@
+@author Shiro Kawai (shiro@@acm.org)
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2003 Shiro Kawai (shiro@@acm.org)
+
+@end titlepage
+
+@node Top, Introduction, (dir), (dir)
+
+@ifnottex
+@c EN
+This is a reference manual of libgauche, a C library
+binding of Gauche Scheme implementation.
+This manual is for version @VERSION@.
+@c JP
+本書は、Gaucheを組込みScheme処理系Gaucheとして使うための
+Cライブラリに関するリファレンスマニュアルです。
+Gaucheのバージョン@VERSION@に対応します。
+@c COMMON
+@end ifnottex
+
+@menu
+* Introduction::                
+* Getting started::             
+* Getting along::               
+* C API Reference::             
+* Genstub reference::           
+* Indices::                     
+@end menu
+
+@node Introduction, Getting started, Top, Top
+@chapter Introduction
+
+Gauche Scheme system is provided as a form of
+library, libgauche.   The Scheme interpreter, @code{gosh},
+is just a small application that calls libgauche's functions.
+This manual explains how to use Scheme functionalities
+from C programs, and how to call C libraries from Scheme.
+
+If you are considering of using Gauche from C code,
+please read the following sections that explains
+the basic design policy and requirements.
+There is no single, universally correct design in embedded
+languages.  Each choice is based on certain coding style
+and assumption for applications, thus makes it easy to
+write C code following that assumtion, but makes it difficult
+to write in different assumptions.
+
+@menu
+* Choice of garbage collector::  
+* Two paths of using libgauche::  
+* Structure of this document::  
+@end menu
+
+@node Choice of garbage collector, Two paths of using libgauche, Introduction, Introduction
+@section Choice of garbage collector
+
+One big design choice of Gauche is to use
+Boehm-Demers-Weiser conservative garbage collector.
+@url{http://www.hpl.hp.com/personal/Hans_Boehm/gc/}.
+I'll call it Boehm's GC from now on.
+
+Boehm-GC works with most conventional C and C++ programs.
+However, if your C code doesn't work with Boehm-GC,
+there is no hope.
+So the author recommend you to check it out first.
+
+There are some cases that prevents your code from
+working with Boehm GC.
+
+@itemize @bullet
+@item
+If Boehm-GC is not ported to your platform,
+you can't use it, of course.
+
+Check Hans Boehm's page for the updates.
+It is actively developed, and the support of your platform
+might be added anytime.
+Or you can even contribute to development of Boehm GC.
+
+If you notice that the new release of Boehm GC that supports
+new platform which the current version of Gauche doesn't support,
+please let the author know.  
+
+@item
+If your code using threads, your code has to be recompiled
+including gc.h provided with Gauche.
+
+Since pthreads API doesn't provide enough information for
+GC, Boehm GC overrides some pthreads APIs to hook 
+thread creation etc.  The gc.h header defines macros to do so.
+
+On Linux, Boehm GC uses some signals internally,
+so your C code can't use them.
+
+@item
+If your program is using some GC which is incompatible
+to Gauche's version of Boehm GC, your mileage varies.
+
+Libgauche includes Boehm GC, for Gauche needs to set up
+some compile-time parameters of Boehm GC to work well with
+Gauche.  If your code is using Boehm GC as well, you'll get
+conflict at link time.  If your code can use Gauche's GC,
+it'll be nice (try dropping -lgc).   Gauche's specific
+GC settings are discussed in detail in @ref{Getting along}.
+
+If your library is using reference counting, 
+there can be a difficult situation of cyclic reference.
+It may not be a showstopper but you might need explicit
+destruction of objects.
+See comments in the beginning of gauche-gtk.c in Gauche-gtk package,
+if you're curious.
+@end itemize
+
+
+@node Two paths of using libgauche, Structure of this document, Choice of garbage collector, Introduction
+@section Two paths of using libgauche
+
+There are two ways for your code to work with Gauche.
+One way is that your program has @code{main()} and main logics,
+and makes call to Gauche functions much like other C libraries.
+The other way is that you package your code as a Gauche's
+extension module, and let Gauche's interpreter link the
+module and call your C functions from Scheme.
+
+If you start writing your C code now,
+it is often easier to develop and debug in the latter way,
+for you have the default interactive toplevel and you can
+test your functionality one by one, interactively.
+In this approach, the application's main logic tends to be
+written in Scheme, and C code takes the part that requires
+speed or needs to manage low-level structure.
+
+If you already have main body of your application 
+written in C, and want to plug Gauche into it as an
+extention medium, you can do so easily.  One thing
+you need to take care is that some of features available
+in @code{gosh} interpreter is defined in a Scheme file
+which is explicitly loaded inside @code{gosh}'s initialization
+routine, not by libgauche.
+
+It is up to you to choose either sharing the @code{gosh}'s
+initialization file, providing your application's specific
+initialization file.
+Take a look at @file{gauche-init.scm} in the Gauche's library
+directory to see which feature is defined in Scheme.
+
+It is possible to write some glue code so that libgauche can
+be dynamically linked as an extension of your application
+(i.e. using @code{dlopen()}).
+Sometimes it is even the only choice, for example, when you might not
+have the source of the application but you can write a plug-in for it.
+In such case, however, note that some systems have
+difficulty to let dlopen()-ed modules to do dlopen().
+Gauche sometimes needs extention modules implicitly,
+especially @code{gauche.uvector} and @code{gauche.charconv}.
+If your system doesn't allow such transitive dlopen(),
+you need to modify Gauche's build process to make some
+extension modules directly linked into libgauche.
+
+@node Structure of this document,  , Two paths of using libgauche, Introduction
+@section Structure of this document
+
+If your code can work with Boehm GC and you chose
+one of the two paths, you're ready to proceed.
+
+The next chapter, @ref{Getting started},
+go through basic steps, from creating Makefile to linking,
+of writing Gauche extension module and an application that
+embeds libgauche.
+
+In @ref{Getting along}, the gory details of C API are described.
+If you are just trying out libgauche, you can skip this chapter
+and start writing code, using the latter two chapters as a
+reference.  Once you get serious, however, you might want to
+return this chapter.  Having knowledge of internals
+would save you from stepping into pitfalls.
+
+The following two chapters are pure reference of C API
+and the stub generater @code{genstub}.
+
+
+@c ======================================================================
+@node Getting started, Getting along, Introduction, Top
+@chapter Getting started
+
+
+@menu
+* Writing Gauche extension::    
+* Plugging Gauche into your application::  
+@end menu
+
+@node Writing Gauche extension, Plugging Gauche into your application, Getting started, Getting started
+@section Writing Gauche extension
+
+@menu
+* Genesis::                     
+* Exodus::                      
+* Leviticus::                   
+* Numbers::                     
+* Deuteronomy::                 
+@end menu
+
+@node Genesis, Exodus, Writing Gauche extension, Writing Gauche extension
+@subsection Genesis
+
+In the beginning you create a directory.
+And the directory is empty and void, so you say,
+let there be configure.in and Makefile.in.
+
+It's the way I start writing Gauche extension;
+start with configure.in and Makefile.in.
+It's not the only way to go, but there are several useful autoconf
+macros defined, which saves repetitive work.
+
+You can start by just copying configure.in and Makefile.in in
+ext/examples directory of Gauche source tree.
+Three auxiliary files, install-sh, config.guess and config.sub are
+also required to run configure.  
+
+The typical configure.in looks like this.
+@example
+AC_INIT(example.c)
+AC_CANONICAL_SYSTEM
+AC_GAUCHE_INIT_EXT
+
+# Sets the default value of INSTALL_TYPE macro.
+AC_GAUCHE_INSTALL_TYPE(site)
+
+# Get compiler parameters which Gauche has been compiled with.
+AC_GAUCHE_CC
+AC_GAUCHE_FLAGS
+
+# Check for other programs.
+AC_PROG_INSTALL
+
+# Add more test
+
+# Set LDFLAGS to generate shared library.
+AC_GAUCHE_FIX_LIBS
+
+# Output
+AC_GAUCHE_EXT_FIXUP(example)
+AC_OUTPUT(Makefile)
+@end example
+
+If you don't want to be bothered by autoconf mantra, just remember
+changing two `example' for the name of your module and it works,
+and skip the next paragraph.
+
+The macros except prefix @code{AC_GAUCHE} are standard autoconf macros.
+@code{AC_GAUCHE_INIT_EXT} sets up output variables for
+installed Gauche location.
+@code{AC_GAUCHE_INSTALL_TYPE} specifies either your module is
+site-local (@code{site}), or a part of Gauche (@code{sys}).
+Unless you're developing standard Gauche modules, give @code{site}
+to this macro.
+@code{AC_GAUCHE_CC}, @code{AC_GAUCHE_FLAGS},
+and @code{AC_GAUCHE_FIX_LIBS} macro
+standard macros such like @code{CC}, @code{CFLAGS}, @code{CPPFLAGS}
+and @code{LDFLAGS}.   Do not use @code{AC_PROG_CC}; you need to 
+use the same compiler and the same compiler options that were
+used to build the installed Gauche.
+@code{AC_GAUCHE_EXT_FIXUP} automatically generates two C source
+files, @code{example_head.c} and @code{example_tail.c} in this case,
+which are required to make GC work.  Further details are discussed
+in @ref{Getting along}.
+
+And typical Makefile.in looks like this:
+
+
+@c explain makefile, and autoconf+configure.
+
+
+@node Exodus, Leviticus, Genesis, Writing Gauche extension
+@subsection Exodus
+
+Now these are names of my functions.
+
+@c explain the structure of example.c, example.h
+
+
+@node Leviticus, Numbers, Exodus, Writing Gauche extension
+@subsection Leviticus
+
+And you call unto make, saying, ye shall bring 
+my extension.
+
+@c explain compilation and testing
+
+
+
+@node Numbers, Deuteronomy, Leviticus, Writing Gauche extension
+@subsection Numbers
+
+
+@c explain stub file frequently used functions
+
+
+@node Deuteronomy,  , Numbers, Writing Gauche extension
+@subsection Deuteronomy
+
+
+@c explain new class defs
+
+
+
+@node Plugging Gauche into your application,  , Writing Gauche extension, Getting started
+@section Plugging Gauche into your application
+
+@c initialization
+
+@c Loading Scheme files
+
+@c Calling Scheme functions from C
+
+@c Accessing Scheme variables from C
+
+
+
+@c ======================================================================
+@node Getting along, C API Reference, Getting started, Top
+@chapter Getting along
+
+@c ======================================================================
+@node C API Reference, Genstub reference, Getting along, Top
+@chapter C API Reference
+
+This chapter lists public APIs of Gauche C binding.
+
+
+@menu
+* Interface conventions::       
+* Scheme objects::              
+* Core functions::              
+* Booleans::                    
+* Numeric objects::             
+* Pairs and lists::             
+* Characters and character sets::  
+* Strings::                     
+* Vectors::                     
+* Weak vectors::                
+* Ports::                       
+* Hashtables::                  
+* Modules and symbols::         
+* Procedures and VM interface::  
+* Regular expressions::         
+* System interface::            
+* Load and dynamic link::       
+@end menu
+
+@node Interface conventions, Scheme objects, C API Reference, C API Reference
+@section Interface conventions
+
+@menu
+* Naming conventions::          
+* Type checking::               
+* Error notification::          
+@end menu
+
+@node Naming conventions, Type checking, Interface conventions, Interface conventions
+@subsection Naming conventions
+
+
+@node Type checking, Error notification, Naming conventions, Interface conventions
+@subsection Type checking
+
+
+@node Error notification,  , Type checking, Interface conventions
+@subsection Error notification
+
+
+
+@node Scheme objects, Core functions, Interface conventions, C API Reference
+@section Scheme objects
+
+@deftp {typedef} ScmObj
+An opaque pointer type for all Scheme objects.
+@end deftp
+
+@menu
+* Immediate objects::           
+* Indirect objects::            
+@end menu
+
+@node Immediate objects, Indirect objects, Scheme objects, Scheme objects
+@subsection Immediate objects
+
+
+@node Indirect objects,  , Immediate objects, Scheme objects
+@subsection Indirect objects
+
+
+@node Core functions, Booleans, Scheme objects, C API Reference
+@section Core functions
+
+@menu
+* Initialization and shutdown::  
+* Memory management::           
+* Error handling::              
+* Signals::                     
+@end menu
+
+@node Initialization and shutdown, Memory management, Core functions, Core functions
+@subsection Initialization and shutdown
+
+@deftypefn Function void Scm_Init (void)
+@end deftypefn
+
+@deftypefn Function void Scm_Exit (int @var{code})
+@end deftypefn
+
+@deftypefn Funciton void Scm_Panic (const char *@var{msg}, @dots{})
+@end deftypefn
+
+@deftypefn Funciton void Scm_Abort (const char *@var{msg})
+@end deftypefn
+
+
+@node Memory management, Error handling, Initialization and shutdown, Core functions
+@subsection Memory management
+
+@deftypefn Macro ScmObj SCM_NEW (size_t @var{bytes})
+@end deftypefn
+
+@deftypefn Macro ScmObj SCM_NEW_ATOMIC (size_t @var{bytes})
+@end deftypefn
+
+@deftypefn Macro ScmObj SCM_NEW2 (@var{type}, size_t @var{bytes})
+@deftypefnx Macro ScmObj SCM_NEW_ATOMIC2 (@var{type}, size_t @var{bytes})
+@end deftypefn
+
+@deftypefn Macro ScmObj SCM_ALLOCATE (@var{type}, ScmClass* @var{class})
+@end deftypefn
+
+@deftp typedef void (*ScmFinalizerProc)(ScmObj @var{z}, void* @var{data})
+@end deftp
+
+@deftypefn Function void Scm_RegisterFinalizer (ScmObj @var{z}, ScmFinalizerProc @var{finalizer}, void* @var{data})
+@end deftypefn
+
+@deftypefn Function void Scm_GCSentinel (void* @var{obj}, const char* @var{name})
+@end deftypefn
+
+
+@node Error handling, Signals, Memory management, Core functions
+@subsection Error handling
+
+@deftypefn Function void Scm_Error (const char *@var{msg}, @dots{})
+@end deftypefn
+
+@deftypefn Function void Scm_SysError (const char *@var{msg}, @dots{})
+@end deftypefn
+
+@deftypefn Function void Scm_Warn (const char *@var{msg})
+@end deftypefn
+
+@deftypefn Function void Scm_ReportError (ScmObj @var{e})
+@end deftypefn
+
+@node Signals,  , Error handling, Core functions
+@subsection Signals
+
+@deftypefn Fucntion void Scm_SetMasterSigmask (sigset_t *@var{set})
+@end deftypefn
+
+@deftypefn Function sigset_t Scm_GetMasterSigmask (void)
+@end deftypefn
+
+@deftypefn Function Scm_SigCheck (ScmVM* @var{vm})
+@end deftypefn
+
+
+@node Booleans, Numeric objects, Core functions, C API Reference
+@section Booleans
+
+@deftypefn Macro int SCM_BOOLP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro int SCM_BOOL_VALUE (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro ScmObj SCM_MAKE_BOOL (int @var{cval})
+@end deftypefn
+
+@deftypefn Macro int SCM_EQ (ScmObj @var{x}, ScmObj @var{y})
+@end deftypefn
+
+@deftypefn Function int Scm_EqP (ScmObj @var{x}, ScmObj @var{y})
+@deftypefnx Function int Scm_EqvP (ScmObj @var{x}, ScmObj @var{y})
+@deftypefnx Function int Scm_EqualP (ScmObj @var{x}, ScmObj @var{y})
+@end deftypefn
+
+@deftypefn Functino int Scm_EqualM (ScmObj @var{x}, ScmObj @var{y}, int @var{mode})
+@end deftypefn
+
+
+@node Numeric objects, Pairs and lists, Booleans, C API Reference
+@section Numeric objects
+
+@menu
+* The numeric tower::           
+* Generic numeric functions::   
+* Fixnums::                     
+* Bignums::                     
+* Flonums::                     
+* Complex numbers::             
+@end menu
+
+@node The numeric tower, Generic numeric functions, Numeric objects, Numeric objects
+@subsection The numeric tower
+
+@deftypefn Macro int SCM_INTEGERP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro int SCM_REALP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro int SCM_NUMBERP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro int SCM_EXACTP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro int SCM_INEXACTP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro int SCM_UINTEGERP (ScmObj @var{obj})
+@end deftypefn
+
+@node Generic numeric functions, Fixnums, The numeric tower, Numeric objects
+@subsection Generic numeric functions
+
+@deftypefn Function ScmObj Scm_MakeInteger (long @var{i})
+@deftypefnx Function ScmObj Scm_MakeIntegerFromUI (u_long @var{i})
+@end deftypefn
+
+@deftypefn Function long Scm_GetInteger (ScmObj @var{obj})
+@deftypefnx Function u_long Scm_GetUInteger (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_MakeFlonum (double @var{d})
+@end deftypefn
+
+@deftypefn Function double Scm_GetDouble (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_MakeComplex (double @var{real}, double @var{imag})
+@end deftypefn
+
+@deftypefn Function int Scm_NumEq (ScmObj @var{x}, ScmObj @var{y})
+@end deftypefn
+
+@deftypefn Function int Scm_NumCmp (ScmObj @var{x}, ScmObj @var{y})
+@end deftypefn
+
+@deftypefn Function int Scm_MinMax (ScmObj @var{arg0}, ScmObj @var{args}, ScmObj *@var{min}, ScmObj *@var{max})
+@end deftypefn
+
+
+@deftypefn Function int Scm_IntegerP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function int Scm_OddP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function int Scm_Sign (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_Abs (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_Negate (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_Reciprocal (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_ExactToInexact (ScmObj @var{obj})
+@deftypefnx Function ScmObj Scm_InexactToExact (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_Add (ScmObj @var{arg1}, ScmObj @var{arg2}, ScmObj @var{args})
+@deftypefnx Function ScmObj Scm_Subtract (ScmObj @var{arg1}, ScmObj @var{arg2}, ScmObj @var{args})
+@deftypefnx Function ScmObj Scm_Multiply (ScmObj @var{arg1}, ScmObj @var{arg2}, ScmObj @var{args})
+@deftypefnx Function ScmObj Scm_Divide (ScmObj @var{arg1}, ScmObj @var{arg2}, ScmObj @var{args})
+@end deftypefn
+
+@deftypefn Macro ScmObj Scm_Add2 (ScmObj @var{arg1}, ScmObj @var{arg2})
+@deftypefnx Macro ScmObj Scm_Subtract2 (ScmObj @var{arg1}, ScmObj @var{arg2})
+@deftypefnx Macro ScmObj Scm_Multiply2 (ScmObj @var{arg1}, ScmObj @var{arg2})
+@deftypefnx Macro ScmObj Scm_Divide2 (ScmObj @var{arg1}, ScmObj @var{arg2})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_Quotient (ScmObj @var{arg1}, ScmObj @var{arg2}, ScmObj *@var{rem})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_Modulo (ScmObj @var{arg1}, ScmObj @var{arg2}, int @var{remainder})
+@end deftypefn
+
+@deftypefn Function ScmObj Scm_Expt (ScmObj @var{x}, ScmObj @var{y})
+@end deftypefn
+
+
+@node Fixnums, Bignums, Generic numeric functions, Numeric objects
+@subsection Fixnums
+
+@deftypevr Constant int SCM_SMALL_INT_SIZE
+@deftypevrx Constant int SCM_SMALL_INT_MIN
+@deftypevrx Constant int SCM_SMALL_INT_MAX
+@end deftypevr
+
+@deftypefn Macro int SCM_SMALL_INT_FITS (int @var{k})
+@end deftypefn
+
+@deftypefn Macro int SCM_INTP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro int SCM_INT_VALUE (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn Macro ScmObj SCM_MAKE_INT (int @var{cval})
+@end deftypefn
+
+@deftypefn Macro int SCM_UINTP (ScmObj @var{obj})
+@end deftypefn
+
+
+@node Bignums, Flonums, Fixnums, Numeric objects
+@subsection Bignums
+
+
+@node Flonums, Complex numbers, Bignums, Numeric objects
+@subsection Flonums
+
+
+@node Complex numbers,  , Flonums, Numeric objects
+@subsection Complex numbers
+
+
+
+@node Pairs and lists, Characters and character sets, Numeric objects, C API Reference
+@section Pairs and lists
+
+
+@node Characters and character sets, Strings, Pairs and lists, C API Reference
+@section Characters and character sets
+
+
+@node Strings, Vectors, Characters and character sets, C API Reference
+@section Strings
+
+
+@node Vectors, Weak vectors, Strings, C API Reference
+@section Vectors
+
+
+@node Weak vectors, Ports, Vectors, C API Reference
+@section Weak vectors
+
+
+@node Ports, Hashtables, Weak vectors, C API Reference
+@section Ports
+
+@node Hashtables, Modules and symbols, Ports, C API Reference
+@section Hashtables
+
+
+@node Modules and symbols, Procedures and VM interface, Hashtables, C API Reference
+@section Modules and symbols
+
+
+@node Procedures and VM interface, Regular expressions, Modules and symbols, C API Reference
+@section Procedures and VM interface
+
+
+@node Regular expressions, System interface, Procedures and VM interface, C API Reference
+@section Regular expressions
+
+
+@node System interface, Load and dynamic link, Regular expressions, C API Reference
+@section System interface
+
+@node Load and dynamic link,  , System interface, C API Reference
+@section Load and dynamic link
+
+
+@c ======================================================================
+@node Genstub reference, Indices, C API Reference, Top
+@chapter Genstub reference
+
+
+
+
+@c ======================================================================
+@node Indices,  , Genstub reference, Top
+@appendix Indices
+@c NODE 索引
+
+@menu
+* Function and Macro Index::    
+* Type Index::                  
+* Variable Index::              
+@end menu
+
+@node Function and Macro Index, Type Index, Indices, Indices
+@appendixsec Function and Macro Index
+@printindex fn
+
+
+@node Type Index, Variable Index, Function and Macro Index, Indices
+@appendixsec Type Index
+@printindex cl
+
+@node Variable Index,  , Type Index, Indices
+@appendixsec Variable Index
+@printindex vr
+
+@contents
+@bye
+
