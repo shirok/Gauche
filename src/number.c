@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.11 2001-02-20 10:32:43 shiro Exp $
+ *  $Id: number.c,v 1.12 2001-03-04 12:23:26 shiro Exp $
  */
 
 #include <math.h>
 #include <limits.h>
+#include <string.h>
 #include "gauche.h"
 
 #define PI 3.14159265358979323
@@ -1169,7 +1170,9 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
         r = Scm_GetOutputString(SCM_PORT(p));
     } else if (SCM_FLONUMP(obj)) {
         char buf[50];
-        snprintf(buf, 50, "%#lg", SCM_FLONUM_VALUE(obj));
+        snprintf(buf, 47, "%.15g", SCM_FLONUM_VALUE(obj));
+        if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
+            strcat(buf, ".0");
         r = Scm_MakeString(buf, -1, -1);
     } else if (SCM_COMPLEXP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort();
@@ -1186,218 +1189,14 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
  * Number Parser
  */
 
-static ScmObj read_real(const char *str, int len)
-{
-    char c;
-    long value_int = 0, exponent = 0, t;
-    int minusp = 0, exponent_minusp = 0, sign_seen = 0;
-    int imag_minusp, digits = 0;
-    double value_double, value_imag;
-    ScmObj value_big = SCM_FALSE;
-
-    if (*str == '+')      { minusp = 0; sign_seen = 1; str++; len--; }
-    else if (*str == '-') { minusp = 1; sign_seen = 1; str++; len--; }
-
-    if (len == 0) return SCM_FALSE;
-
-    /* fixnum loop */
-    while (len--) {
-        switch (c = *str++) {
-        case '0':; case '1':; case '2':; case '3':; case '4':;
-        case '5':; case '6':; case '7':; case '8':; case '9':;
-            digits++;
-            if (SCM_FALSEP(value_big)) {
-                t = value_int * 10 + (c - '0');
-                if (t >= 0) {
-                    value_int = t;
-                    continue;
-                } else { /* overflow */
-                    value_big = Scm_MakeBignumFromSI(value_int);
-                }
-            }
-            value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big), 10);
-            value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), c - '0');
-            continue;
-        case '.':;
-        case 'e':; case 'E':;
-        case 's':; case 'S':; case 'f':; case 'F':;
-        case 'd':; case 'D':; case 'l':; case 'L':;
-        case '+':; case '-':; case 'i':;
-            break;
-        default:
-            return SCM_FALSE;
-        }
-        break;
-    }
-    if (len < 0) {
-        if (SCM_FALSEP(value_big)) 
-            return Scm_MakeInteger(minusp? -value_int : value_int);
-        else
-            return minusp? Scm_BignumNegate(SCM_BIGNUM(value_big)) : value_big;
-    }
-
-    /* now we know the number is at least a flonum. */
-    if (SCM_FALSEP(value_big))
-        value_double = (double)value_int;
-    else
-        value_double = Scm_BignumToDouble(SCM_BIGNUM(value_big));
-
-    if (c == '.') {
-        /* fraction part */
-        double divider = 10.0;
-        while (len--) {
-            switch (c = *str++) {
-            case '0':; case '1':; case '2':; case '3':; case '4':;
-            case '5':; case '6':; case '7':; case '8':; case '9':;
-                value_double += ((double)(c - '0'))/divider;
-                divider *= 10;
-                digits++;
-                continue;
-            case 'e':; case 'E':;
-            case 's':; case 'S':; case 'f':; case 'F':;
-            case 'd':; case 'D':; case 'l':; case 'L':;
-            case '+':; case '-':; case 'i':;
-                break;
-            default:
-                return SCM_FALSE;
-            }
-            break;
-        }
-        if (len < 0 && digits==0) return SCM_FALSE; /* in case of "+.", etc */
-    }
-    if (minusp) value_double = -value_double;
-    if (len < 0) return Scm_MakeFlonum(value_double);
-
-    if (c != '+' && c != '-' && c != 'i') {
-        /* exponent part */
-        if (*str == '+')      { exponent_minusp = 0; str++; len--; }
-        else if (*str == '-') { exponent_minusp = 1; str++; len--; }
-        if (len == 0) return SCM_FALSE;
-
-        while (len--) {
-            switch (c = *str++) {
-            case '0':; case '1':; case '2':; case '3':; case '4':;
-            case '5':; case '6':; case '7':; case '8':; case '9':;
-                exponent = exponent * 10 + (c - '0');
-                continue;
-            case '+':; case '-':
-                break;
-            default:
-                return SCM_FALSE;
-            }
-            break;
-        }
-    }
-    if (exponent) {
-        if (exponent_minusp) exponent = -exponent;
-        value_double *= pow(10.0, (double)exponent);
-    }
-    if (len < 0) return Scm_MakeFlonum(value_double);
-
-    if (c == 'i') {
-        if (!sign_seen) return SCM_FALSE;
-        if (digits == 0) value_double = 1.0; /* +i or -i */
-        if (len == 0)
-            return Scm_MakeComplex(0.0, minusp? -value_double : value_double);
-        else 
-            return SCM_FALSE;
-    }
-    
-    /* now, we got a complex number. */
-    if (c == '-') imag_minusp = 1;
-    else imag_minusp = 0;
-    digits = 0;
-    value_imag = 0.0;
-
-    while (len--) {
-        switch (c = *str++) {
-        case '0':; case '1':; case '2':; case '3':; case '4':;
-        case '5':; case '6':; case '7':; case '8':; case '9':;
-            value_imag = value_imag * 10.0 + (c - '0');
-            digits++;
-            continue;
-        case '.':;
-        case 'e':; case 'E':;
-        case 's':; case 'S':; case 'f':; case 'F':;
-        case 'd':; case 'D':; case 'l':; case 'L':;
-        case 'i':
-            break;
-        default:
-            return SCM_FALSE;
-        }
-        break;
-    }
-    if (len < 0) return SCM_FALSE;
-    
-    if (c == '.') {
-        /* fraction part */
-        double divider = 10.0;
-        while (len--) {
-            switch (c = *str++) {
-            case '0':; case '1':; case '2':; case '3':; case '4':;
-            case '5':; case '6':; case '7':; case '8':; case '9':;
-                value_imag += ((double)(c - '0'))/divider;
-                divider *= 10;
-                continue;
-            case 'e':; case 'E':;
-            case 's':; case 'S':; case 'f':; case 'F':;
-            case 'd':; case 'D':; case 'l':; case 'L':;
-            case 'i':;
-                break;
-            default:
-                return SCM_FALSE;
-            }
-            break;
-        }
-    }
-    if (digits == 0 && value_imag == 0.0) value_imag = 1.0;
-    if (imag_minusp) value_imag = -value_imag;
-    if (len < 0) return Scm_MakeComplex(value_double, value_imag);
-
-    if (c != 'i') {
-        /* exponent part */
-        exponent_minusp = 0;
-        exponent = 0;
-
-        if (*str == '+')      { exponent_minusp = 0; str++; len--; }
-        else if (*str == '-') { exponent_minusp = 1; str++; len--; }
-        if (len == 0) return SCM_FALSE;
-
-        while (len--) {
-            switch (c = *str++) {
-            case '0':; case '1':; case '2':; case '3':; case '4':;
-            case '5':; case '6':; case '7':; case '8':; case '9':;
-                exponent = exponent * 10 + (c - '0');
-                continue;
-            case 'i':;
-                break;
-            default:
-                return SCM_FALSE;
-            }
-            break;
-        }
-        if (exponent) {
-            if (exponent_minusp) exponent = -exponent;
-            value_imag *= pow(10.0, (double)exponent);
-        }
-    }
-    
-    if (len < 0) return SCM_FALSE;
-    else if (value_imag == 0.0)
-        return Scm_MakeFlonum(value_double);
-    else
-        return Scm_MakeComplex(value_double, value_imag);
-}
-
-/*
- * Called for exact numbers.  Range of radix should have been checked.
- */
 static ScmObj read_integer(const char *str, int len, int radix)
 {
-    long value_int = 0; /* TODO: bignum? */
+    long value_int = 0, t;
+    ScmObj value_big = SCM_FALSE;
     int minusp = 0;
     char c;
-    const char *tab = "0123456789abcdefghijklmnopqrstuvwxyz", *ptab;
+    static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    const char *ptab;
 
     if (*str == '+')      { minusp = 0; str++; len--; }
     else if (*str == '-') { minusp = 1; str++; len--; }
@@ -1407,22 +1206,119 @@ static ScmObj read_integer(const char *str, int len, int radix)
         c = tolower(*str++);
         for (ptab = tab; ptab < tab+radix; ptab++) {
             if (c == *ptab) {
-                value_int = value_int*radix + (ptab-tab);
+                if (SCM_FALSEP(value_big)) {
+                    t = value_int*radix + (ptab-tab);
+                    if (t >= 0) {
+                        value_int = t;
+                        break;
+                    } else {    /* overflow */
+                        value_big = Scm_MakeBignumFromSI(value_int);
+                    }
+                }
+                value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big), radix);
+                value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), ptab-tab);
                 break;
             }
         }
         if (ptab >= tab+radix) return SCM_FALSE;
     }
-    if (minusp) value_int = -value_int;
-    return Scm_MakeInteger(value_int);
+    if (SCM_FALSEP(value_big)) {
+        if (minusp) return Scm_MakeInteger(-value_int);
+        else        return Scm_MakeInteger(value_int);
+    } else {
+        if (minusp) return Scm_BignumNegate(SCM_BIGNUM(value_big));
+        else        return value_big;
+    }
+}
+
+static double read_real(const char *str, int len, const char **next)
+{
+    char c;
+    ScmDString ds;
+    double value;
+    int point_seen = 0, exp_seen = 0, digits = 0;
+    
+    Scm_DStringInit(&ds);
+
+    if (*str == '+' || *str == '-') {
+        SCM_DSTRING_PUTB(&ds, *str);
+        str++;
+        len--;
+    }
+    if (len == 0) { *next = NULL; return 0.0; }
+
+    for (; len > 0; len--, str++) {
+        switch (c = *str) {
+        case '0':; case '1':; case '2':; case '3':; case '4':;
+        case '5':; case '6':; case '7':; case '8':; case '9':
+            digits++;
+            SCM_DSTRING_PUTB(&ds, c);
+            continue;
+        case '.':
+            if (point_seen) { *next = NULL; return 0.0; }
+            SCM_DSTRING_PUTB(&ds, c);
+            point_seen = 1;
+            continue;
+        case 'e':; case 'E':;
+        case 's':; case 'S':; case 'f':; case 'F':;
+        case 'd':; case 'D':; case 'l':; case 'L':;
+            if (digits == 0 || exp_seen) { *next = NULL; return 0.0; }
+            point_seen = exp_seen = 1;
+            SCM_DSTRING_PUTB(&ds, 'e');
+            if (len > 0 && (str[1] == '+' || str[1] == '-')) {
+                SCM_DSTRING_PUTB(&ds, *++str);
+                len--;
+            }
+            continue;
+        case '+':; case '-':; case 'i':
+            break;
+        default:
+            *next == NULL;
+            return 0.0;
+        }
+        break;
+    }
+    if (digits == 0) SCM_DSTRING_PUTB(&ds, '1');
+    sscanf(Scm_DStringGetCstr(&ds), "%lf", &value);
+    *next = str;
+    return value;
+}
+
+static ScmObj read_complex(const char *str, int len)
+{
+    double real, imag;
+    const char *next;
+    char sign = 0;
+
+    if (*str == '.' && len == 1) return SCM_FALSE;
+    if (*str == '+' || *str == '-') sign = *str;
+
+    real = read_real(str, len, &next);
+    if (next == NULL) return SCM_FALSE;
+
+    if (next == str+len) return Scm_MakeFlonum(real);
+
+    if (*next == 'i') {
+        if (sign && next == str+len-1) return Scm_MakeComplex(0, real);
+        else return SCM_FALSE;
+    }
+
+    if (*next == '+' || *next == '-') {
+        imag = read_real(next, len-(next-str), &next);
+        if (next == NULL || next != str+len-1) return SCM_FALSE;
+        if (*next != 'i') return SCM_FALSE;
+        return Scm_MakeComplex(real, imag);
+    }
+    return SCM_FALSE;
 }
 
 static ScmObj read_number(const char *str, int len, int radix)
 {
     int radix_seen = 0;
     int exactness = 0, exactness_seen = 0;
+    int i;
 
-    if (radix <= 1 || radix > 36) return SCM_FALSE; /* XXX:shuold be error? */
+    if (radix <= 1 || radix > 36) return SCM_FALSE; /* XXX:should be error? */
     
     /* start from prefix part */
     for (; len >= 0; len-=2) {
@@ -1459,12 +1355,13 @@ static ScmObj read_number(const char *str, int len, int radix)
     if (len <= 0) return SCM_FALSE;
 
     /* number body */
-  body:
-    if (exactness || radix != 10) {
-        return read_integer(str, len, radix);
-    } else {
-        return read_real(str, len);
+    if (exactness || radix != 10)  return read_integer(str, len, radix);
+
+    i = (*str == '+' || *str == '-')? 1 : 0;
+    for (; i<len; i++) {
+        if (!isdigit(str[i])) return read_complex(str, len);
     }
+    return read_integer(str, len, 10);
 }
 
 
