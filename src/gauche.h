@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.56 2001-03-05 04:24:14 shiro Exp $
+ *  $Id: gauche.h,v 1.57 2001-03-05 04:42:23 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1065,6 +1065,7 @@ struct ScmModuleRec {
     SCM_HEADER;
     ScmSymbol *name;
     ScmObj parents;
+    ScmObj directParents;
     ScmHashTable *table;
 };
 
