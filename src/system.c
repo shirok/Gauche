@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: system.c,v 1.12 2001-03-20 07:35:21 shiro Exp $
  */
 
 #include <stdio.h>
@@ -112,7 +112,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         struct passwd *pwd;
         int dirlen;
         
-        for (; *p != '/' && *p != '\0'; p++)
+        for (; p < str+size && *p != '/' && *p != '\0'; p++)
             ;
         if (p == str+1) {
             pwd = getpwuid(geteuid());
@@ -127,11 +127,12 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
                           user);
         }
         srcp = p;
+        SKIP_SLASH;
         dirlen = strlen(pwd->pw_dir);
         buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
         strcpy(buf, pwd->pw_dir);
         dstp = buf + dirlen;
-        if (*(dstp-1) != '/') *dstp++ = '/';
+        if (*(dstp-1) != '/') { *dstp++ = '/'; *(dstp+1) = '\0'; }
     } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/') {
         int dirlen;
         const char *p = getcwd(NULL, -1);
@@ -149,10 +150,11 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
             SKIP_SLASH;
         }
     } else {
-        return SCM_OBJ(pathname); /* nothing to do (short path) */
+        return SCM_OBJ(pathname); /* nothing to do */
     }
 
     if (!(flags & SCM_PATH_CANONICALIZE)) {
+        size -= srcp-str;
         memcpy(dstp, srcp, size);
         *(dstp + size) = '\0';
         return Scm_MakeStringConst(buf, (dstp-buf)+size, -1);
