@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.4 2001-10-13 09:31:39 shirok Exp $
+;;;  $Id: extract,v 1.5 2001-12-21 07:40:02 shirok Exp $
 ;;;
 
 (use gauche.regexp)
@@ -22,6 +22,7 @@
 
 (define *outfile* #f)
 (define *lang* 'en)
+(define *version* (gauche-version))
 (define *node-table* '())
 (define *header-table* '())
 
@@ -51,14 +52,18 @@
       (pattern-out () (out (read-line)))
       (#/^@c COMMON$/ () (in (read-line)))
       (test (lambda _ (eq? *lang* 'en))
-            (display line) (newline) (in (read-line)))
+            (display (regexp-replace-all #/@VERSION@/ line *version*))
+            (newline) (in (read-line)))
       (#/^@node\s+(.*)$/ (#f nodedesc)
         (process-node nodedesc) (in (read-line)))
       (#/^@(chapter|(sub)*section|unnumbered)\s+(.*)/ (#f cmd #f header)
         (process-header cmd header) (in (read-line)))
       (#/^\* ([^:]+)::/ (#f menu)
         (process-menu menu) (in (read-line)))
-      (else (display (regexp-replace #/(@x?ref){([^\}]+)}/ line process-ref))
+      (else (display
+             (regexp-replace-all #/@VERSION@/
+              (regexp-replace-all #/(@x?ref){([^\}]+)}/ line process-ref)
+              *version*))
             (newline)
             (in (read-line)))))
 
