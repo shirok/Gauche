@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: thrlib.stub,v 1.4 2002-07-24 15:38:50 shirok Exp $
+;;; $Id: thrlib.stub,v 1.5 2002-08-28 09:16:29 shirok Exp $
 ;;;
 
 "
@@ -205,10 +205,7 @@
 (define-cclass <join-timeout-exception>
   "ScmThreadException*" "Scm_JoinTimeoutExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type <thread>
-           :getter (c "Scm_ThreadExceptionClass_thread_GET")
-           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
-   )
+  ()
   (allocator (c "thread_exception_allocate"))
   (printer   (c "thread_exception_print")))
 
@@ -218,10 +215,7 @@
 (define-cclass <abandoned-mutex-exception>
   "ScmThreadException*" "Scm_AbandonedMutexExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type <thread>
-           :getter (c "Scm_ThreadExceptionClass_thread_GET")
-           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
-   (mutex  :c-name "data"))
+  ((mutex  :c-name "data"))
   (allocator (c "thread_exception_allocate"))
   (printer   (c "thread_exception_print")))
 
@@ -231,10 +225,7 @@
 (define-cclass <terminated-thread-exception>
   "ScmThreadException*" "Scm_TerminatedThreadExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type <thread>
-           :getter (c "Scm_ThreadExceptionClass_thread_GET")
-           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
-   (terminator :c-name "data"))
+  ((terminator :c-name "data"))
   (allocator (c "thread_exception_allocate"))
   (printer   (c "terminated_thread_print")))
 
@@ -244,10 +235,7 @@
 (define-cclass <uncaught-exception>
   "ScmThreadException*" "Scm_UncaughtExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type <thread>
-           :getter (c "Scm_ThreadExceptionClass_thread_GET")
-           :setter (c "Scm_ThreadExceptionClass_thread_SET"))
-   (reason :c-name data))
+  ((reason :c-name data))
   (allocator (c "thread_exception_allocate"))
   (printer   (c "uncaught_exception_print")))
 
