@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.102 2003-11-12 09:11:50 shirok Exp $
+ *  $Id: class.c,v 1.103 2003-11-12 14:15:49 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -940,17 +940,18 @@ void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newklass)
 }
 
 /* %check-class-binding name module
-   Return #t if name is bound in module to a class.
+   See the bindings of name in module, and iff it is bound to a class,
+   returns the class; otherwise returns #f.
    This can't be implemented in Scheme, since the class we're looking for
    may be set to autoload, and this function is invoked during the autoload
    process---in which case, the class hasn't defined yet, and referencing
    the value in Scheme triggers recursive autoload that is an error. */
-int Scm_CheckClassBinding(ScmObj name, ScmModule *module)
+ScmObj Scm_CheckClassBinding(ScmObj name, ScmModule *module)
 {
     ScmObj v;
     if (!SCM_SYMBOLP(name)) return FALSE;
     v = Scm_SymbolValue(module, SCM_SYMBOL(name));
-    return SCM_CLASSP(v);
+    return SCM_CLASSP(v) ? v : SCM_FALSE;
 }
 
 /* %replace-class-binding! klass newklass

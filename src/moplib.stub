@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.23 2003-11-12 09:11:51 shirok Exp $
+;;; $Id: moplib.stub,v 1.24 2003-11-12 14:15:50 shirok Exp $
 ;;;
 
 "
@@ -88,7 +88,7 @@
 (define-cproc %commit-class-redefinition! (k::<class> newk)
   (return <void> "Scm_CommitClassRedefinition"))
 (define-cproc %check-class-binding (name module::<module>)
-  (return <boolean> "Scm_CheckClassBinding"))
+  (return "Scm_CheckClassBinding"))
 (define-cproc %replace-class-binding! (k::<class> newk::<class>)
   (return <void> "Scm_ReplaceClassBinding"))
 (define-cproc %add-direct-subclass! (super::<class> sub::<class>)

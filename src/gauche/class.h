@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.37 2003-11-12 09:11:51 shirok Exp $
+ *  $Id: class.h,v 1.38 2003-11-12 14:16:03 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -136,7 +136,7 @@ SCM_EXTERN void   Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
 
 SCM_EXTERN void   Scm_StartClassRedefinition(ScmClass *klass);
 SCM_EXTERN void   Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newk);
-SCM_EXTERN int    Scm_CheckClassBinding(ScmObj name, ScmModule *module);
+SCM_EXTERN ScmObj Scm_CheckClassBinding(ScmObj name, ScmModule *module);
 SCM_EXTERN void   Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newk);
 SCM_EXTERN void   Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void   Scm_RemoveDirectSubclass(ScmClass *super, ScmClass *sub);
