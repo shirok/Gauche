@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.68 2001-09-24 08:40:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.69 2001-09-24 09:14:07 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.4.5
+@subtitle version 0.4.6
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -701,7 +701,7 @@ value is returned.
 @end defspec
 
 
-@defspec receive formals expression body
+@defspec receive formals expression body @dots{}
 [SRFI-8]
 @end defspec
 
@@ -709,7 +709,7 @@ value is returned.
 @section Sequencing
 
 
-@defspec begin
+@defspec begin form @dots{}
 [R5RS]
 @end defspec
 
@@ -717,7 +717,7 @@ value is returned.
 @node Iteration, Quasiquotation, Sequencing, Core Syntax
 @section Iteration
 
-@defspec do ((variable init step) @dots{}) (test expr @dots{}) body
+@defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body
 [R5RS]
 @end defspec
 
@@ -7800,10 +7800,46 @@ Actually, the separater is not limited to comma; you can customize it.
 
 CSV format is widely used to exchange table-type data in plain text,
 although there are apparently no ``formal'' specification.
+
+CSV table is consisted by a series of @var{records}, separated by
+a newline.  Each record contains number of @var{fields}, separated
+by a separator character (by default, a comma).  A field can contain
+comma or newline if quoted, i.e. surrounded by double-quote characters.
+To include double-quote character in a quoted field, use two
+consecutive double-quote character.   Usually, the whitespaces around
+the field are ignored.
+
+The following example contains three records, and each record has five fields:
+@example
+"serial number","title","authors","description"
+6943,"Structure of Computer Programming","Abelson, Sussman and Sussman","`Must read' of the students who wants to
+capture the spirit of programming."
+2113,"The C++ Programming Language, 3rd Ed.","Strouptrup","The definite book from
+the creator of the language.
+3rd edition covers ""modern"" features of the language,
+such as namespaces."
+@end example
 @end deftp
 
+Right now, the following two low-level procedures are exported.
+A plan is to provide higher features, such as labelling fields
+and automatic conversions.
 
+@defun make-csv-reader separator
+Returns a procedure with one argument, input port.
+When the procedure is called, it reads one record from the port,
+and returns a list of fields.
+If input reaches EOF, it returns EOF.
+@end defun
 
+@defun make-csv-writer separator &optional newline
+Returns a procedure with two arguments, output port and
+a list of fields.  When the procedure is called, it
+outputs a @var{separater}-separated fields with proper escapes,
+to the output port.   You can also specify the record delimiter
+string by @var{newline}; for example, you can pass @code{"\r\n"}
+to prepare a file to be read by Windows programs.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Transliterate characters, CGI, CSV tables, Libarary Modules
