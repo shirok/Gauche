@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.2 2001-05-20 08:58:15 shirok Exp $
+ *  $Id: portmacros.h,v 1.3 2001-05-21 09:14:54 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
@@ -88,7 +88,7 @@
     SCM_PORT(port)->src.proc.vtable->Flush(SCM_PORT(port))
 
 /*---------------------------------------------------------------------
- * Generic macros
+ * Generic output
  */
 
 #define SCM_PUTB(byte, port)                                            \
@@ -209,13 +209,13 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
 #define SCM__ISTR_GETC(c, port)                                         \
     do {                                                                \
        if (SCM_PORT(port)->src.istr.rest <= 0) {                        \
-           (c) = Scm__PortIstrGetc(SCM_PORT(port));                     \
+           (c) = Scm__PortIstrGetc(-1, SCM_PORT(port));                 \
        } else {                                                         \
            const char *cp__ISTR = SCM_PORT(port)->src.istr.current;     \
            unsigned char uc__ISTR = (unsigned char)*cp__ISTR;           \
            int siz__ISTR = SCM_CHAR_NFOLLOWS(uc__ISTR);                 \
            if (SCM_PORT(port)->src.istr.rest < siz__ISTR) {             \
-               (c) = EOF;                                               \
+               (c) = Scm__PortIstrGetc(uc__ISTR, SCM_PORT(port));       \
            } else {                                                     \
                SCM_CHAR_GET(cp__ISTR, c);                               \
            }                                                            \
@@ -223,6 +223,9 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
            SCM_PORT(port)->src.istr.rest -= siz__ISTR + 1;              \
        }                                                                \
     } while (0)
+
+extern int Scm__PortIstrGetb(ScmPort *port);
+extern ScmChar Scm__PortIstrGetc(int prefetch, ScmPort *port);
 
 /*--------------------------------------------------------------------
  * Procedural input
@@ -233,6 +236,10 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
 
 #define SCM__PROC_GETC(c, port) \
     ((c) = SCM_PORT(port)->src.proc.vtable->Getc(SCM_PORT(port)))
+
+/*--------------------------------------------------------------------
+ * Generic input
+ */
 
 #define SCM_GETB(var, port)                                             \
     do {                                                                \
@@ -253,10 +260,6 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
     } while (0)
 
 extern int Scm__PortGetbInternal(ScmPort *port);
-
-/*--------------------------------------------------------------------
- * Generic input
- */
 
 #define SCM_GETC(var, port)                                             \
     do {                                                                \
