@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.3 2001-06-26 09:41:42 shirok Exp $
+;;;  $Id: with.scm,v 1.4 2001-10-04 10:41:13 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -46,25 +46,3 @@
       (with-input-from-string str
         thunk))))
 
-;; Convenient port input utilities.
-
-;; TODO: allow caller to specify reading units
-(define (port->string port)
-  (with-output-to-string
-    (lambda ()
-      (let loop ((ch (read-char port)))
-        (unless (eof-object? ch) (write-char ch) (loop (read-char port)))))))
-
-;; TODO: optimize
-(define (port->list reader port)
-  (let loop ((obj (reader port))
-             (result '()))
-    (if (eof-object? obj)
-        (reverse! result)
-        (loop (reader port) (cons obj result)))))
-
-(define (port->string-list port)
-  (port->list read-line port))
-
-(define (port->sexp-list port)
-  (port->list read port))
