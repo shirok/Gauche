@@ -1,0 +1,40 @@
+dnl
+dnl Configuring spigot
+dnl  process this file with "autoconf -I `gauche-config --ac`" to
+dnl  generate 'configure'.
+dnl $Id: configure.in,v 1.1 2003-06-10 20:59:45 shirok Exp $
+dnl
+
+AC_PREREQ(2.54)
+AC_INIT(spigot, 1.0, shiro@acm.org)
+AC_CANONICAL_SYSTEM
+
+dnl Sets several Gauche-specific parameters.
+AC_GAUCHE_INIT_EXT
+dnl Sets the default value of INSTALL_TYPE macro.
+dnl You can set it either 'site' or 'sys'.  Usually, user-provided
+dnl extensions are installed as 'site' category.
+AC_GAUCHE_INSTALL_TYPE(site)
+
+dnl Check for headers.
+dnl Add your macro calls to check required headers, if you have any.
+
+dnl Get compiler parameters which Gauche has been compiled with.
+dnl Do not use AC_PROG_CC.  You need to compile and link with the
+dnl same programs as gosh.
+AC_GAUCHE_CC
+AC_GAUCHE_FLAGS
+
+dnl Check for other programs.
+AC_PROG_INSTALL
+
+dnl Check for libraries
+dnl Add your macro calls to check required libraries, if you have any.
+
+dnl Set LDFLAGS to generate dlopen-able extension.
+dnl This should come after all tests, or the tests that does link will fail.
+AC_GAUCHE_FIX_LIBS
+
+dnl Output
+AC_OUTPUT(Makefile)
+

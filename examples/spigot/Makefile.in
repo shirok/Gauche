@@ -1,0 +1,90 @@
+#
+# $Id: Makefile.in,v 1.1 2003-06-10 20:59:45 shirok Exp $
+#
+
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+VPATH       = $(srcdir)
+
+# These may be overridden by make invocators
+DESTDIR  =
+OPTFLAGS = @OPTFLAGS@
+CC       = @CC@
+LIBS     = @LIBS@
+CFLAGS   = @CFLAGS@ 
+LDFLAGS  = @LDFLAGS@
+INSTALL  = @INSTALL@
+INSTALL_TYPE = @INSTALL_TYPE@
+
+# Set by configure
+GOSH     = @GOSH@
+GAUCHE_CONFIG = @GAUCHE_CONFIG@
+
+# NB: this should also be set by configure
+OBJEXT   = o
+DSOEXT   = so
+
+MODULE   = spigot
+
+ARCHFILES = $(MODULE).$(DSOEXT)
+SCMFILES  = $(MODULE).scm
+HEADERS   = 
+
+TARGET    = $(ARCHFILES)
+OBJS      = $(MODULE)_head.$(OBJEXT) \
+            spigot.$(OBJEXT)         \
+	    spigotlib.$(OBJEXT)      \
+            $(MODULE)_tail.$(OBJEXT)
+GENERATED = spigotlib.c $(MODULE)_head.c $(MODULE)_tail.c
+CONFIG_GENERATED = Makefile config.cache config.log config.status \
+		   autom4te*.cache 
+
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+all : $(TARGET)
+
+.SUFFIXES: .o .stub
+
+.c.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.stub.c:
+	$(GOSH) genstub $<
+
+spigotlib.c : spigotlib.stub
+
+$(MODULE).$(DSOEXT): $(OBJS)
+	$(CC) -Wl,-rpath -Wl,`gauche-config --sysarchdir` $(LDFLAGS) $(MODULE).$(DSOEXT) $(OBJS) $(LIBS)
+
+$(MODULE)_head.c $(MODULE)_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension $(MODULE)
+
+check : all
+	@rm -f test.log
+	$(GOSH) -I. test.scm > test.log
+
+install : all
+	if ! -z "$(HEADERS)"; then 
+	  $(INSTALL) -m 444 $(HEADERS) $(HEADER_INSTALL_DIR); \
+	fi
+	if ! -z "$(SCMFILES)"; then \
+	  $(INSTALL) -m 444 $(SCMFILES) $(SCM_INSTALL_DIR); \
+	fi
+	if ! -z "$(ARCHFILES)"; then \
+	  $(INSTALL) -m 555 $(ARCHFILES) $(ARCH_INSTALL_DIR); \
+	fi
+
+clean :
+	rm -rf core $(TARGET) $(OBJS) $(GENERATED) *~ test.log so_locations
+
+distclean : clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : clean
+	rm -rf $(CONFIG_GENERATED) configure
+
