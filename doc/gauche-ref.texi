@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.137 2001-12-11 09:52:50 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.138 2001-12-13 10:31:53 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -376,12 +376,12 @@ Gaucheの動作を正確に理解する助けになると思います。
 
 @menu
 * Compilation::                 
-* Module System::               
-* Objects::                     
 * Multibyte Strings::           
+* Objects::                     
+* Module System::               
 @end menu
 
-@node Compilation, Module System, Concepts, Concepts
+@node Compilation, Multibyte Strings, Concepts, Concepts
 @section Compilation
 @c NODE コンパイル
 
@@ -486,27 +486,29 @@ a file on certain condition, use @code{load} or do dispatch in macro
 @end table
 
 
-@node Module System, Objects, Compilation, Concepts
-@section Module System
-@c NODE モジュールシステム
+@node Multibyte Strings, Objects, Compilation, Concepts
+@section Multibyte Strings
+@c NODE マルチバイト文字列
 
-Gauche adopts a simple module system that allows
-modularlized development of large software.
+Traditionally, a string is considered as a simple array of bytes
+until recently, and programmers tend to image a string as a simple
+array of characters (though a character may occupy more than one byte).
+It's not the case in Gauche.
 
-A higher level interface is simple enough from the user's point
-of view.   When you want to use the features provided by module
-@code{foo}, you just need to say @code{(use foo)} in your code.
-This form is a macro and interpreted at compile time.
+Gauche supports @emph{multibyte string} natively,
+which means characters are represented by variable number of bytes
+in a string.   Gauche retains semantic compatibility of
+Scheme string, so such details can be hidden, but it'll helpful
+if you know a few points.
 
-The @code{use} mechanism is built on top of two independent
-mechanisms, namespace separation and file loading mechanism.
-Those two can be used separately, although it is much more
-convenient when used together.
+The actual storage of string is managed in a sort of ``copy-on-write''
+way---if you take substring, e.g. using directly by @code{substring}
+or using regular expression matcher, or even if you copy a string
+by @code{copy-string}, the underlying storage is shared.  The actual
+string is copied only if you destructively modify it.
 
 
-
-
-@node Objects, Multibyte Strings, Module System, Concepts
+@node Objects, Module System, Multibyte Strings, Concepts
 @section Objects
 @c NODE オブジェクト
 
@@ -530,9 +532,35 @@ class, Gauche methods don't
 
 @end table
 
-@node Multibyte Strings,  , Objects, Concepts
-@section Multibyte Strings
-@c NODE マルチバイト文字列
+@node Module System,  , Objects, Concepts
+@section Module System
+@c NODE モジュールシステム
+
+Gauche adopts a simple module system that allows
+modularlized development of large software.
+
+A higher level interface is simple enough from the user's point
+of view.   When you want to use the features provided by module
+@code{foo}, you just need to say @code{(use foo)} in your code.
+This form is a macro and interpreted at compile time.
+
+The @code{use} mechanism is built on top of two independent
+mechanisms, namespace separation and file loading mechanism.
+Those two can be used separately, although it is much more
+convenient when used together.
+
+The following sections in this manual describes
+modules in details.
+@itemize @bullet
+@item
+@ref{Writing Gauche modules} explains the convention of
+writing modules.
+@item
+@ref{Modules} describes special forms and macros to
+define and to use modules, along the built-in functions
+to introspect module internals.
+@end itemize
+
 
 
 @c ======================================================================
