@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.4 2001-11-11 12:13:12 shirok Exp $
+;;;  $Id: cgi.scm,v 1.5 2001-11-12 08:24:44 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
@@ -75,8 +75,8 @@
                            (begin (set! (cdr p) (cons v (cdr p))) params)
                            (cons (list (car ss) v) params))))
                    '()
-                   (string-split input #\&))
-       (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))))
+                   (string-split input #\&))))
+     (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
 
 (define (cgi-get-parameter key params . args)
   (let* ((list?   (get-keyword :list args #f))
@@ -101,7 +101,7 @@
                    cookies)
               "\n"))))
 
-(define (cgi-main thunk . args)
+(define (cgi-main proc . args)
   (let ((eproc (get-keyword :on-error args
                             (lambda (e)
                               `(,(cgi-header)
@@ -110,7 +110,9 @@
                                   (html-body (html-h1 "Error")
                                              (html-p (html-escape-string
                                                       (slot-ref e 'message))))
-                                  ))))))
-    (write-tree (with-error-handler eproc thunk))))
+                                  )))))
+        (params (cgi-parse-parameters :merge-cookies
+                                      (get-keyword :merge-cookies args #f))))
+    (write-tree (with-error-handler eproc (lambda () (proc params))))))
 
 (provide "www/cgi")
