@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl
-dnl $Id: configure.in,v 1.8 2001-11-13 05:12:15 shirok Exp $
+dnl $Id: configure.in,v 1.9 2001-11-14 10:11:26 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 
@@ -41,43 +41,35 @@ dnl Check for other programs.
 AC_PROG_INSTALL
 
 dnl Check various dbm libraries availability
-dnl Gdbm 1.8 or later has the emulation mode of ndbm and dbm interface.
+dnl On some systems, legacy DBM and NDBM is emulated by more powerful
+dnl packages like BSD DB or GDBM.  We need to be careful to pick the
+dnl consistent header/library pair.
 AC_CHECK_HEADERS(gdbm.h, [
   ARCHFILES=gdbm.so
   SCMFILES=gdbm.scm
 ])
 AC_CHECK_HEADERS(ndbm.h gdbm/ndbm.h, [
+  NDBM_HEADER=$ac_header
   ARCHFILES="ndbm.so $ARCHFILES"
   SCMFILES="ndbm.scm $SCMFILES"
 ])
 AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
+  ODBM_HEADER=$ac_header
   ARCHFILES="odbm.so $ARCHFILES"
   SCMFILES="odbm.scm $SCMFILES"
 ])
 
-dnl Some systems have ndbm and/or dbm function in libc.  We should check
-dnl that before checking libgdbm to prevent gdbm intercepts the call for
-dnl the system native ndbm/dbm functions.
 AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
-AC_CHECK_LIB(c,    ndbm_open, [ NDBMLIB="-lc" ])
-if test -z "$NDBMLIB"; then
-  AC_CHECK_LIB(ndbm, ndbm_open, [ NDBMLIB="-lndbm" ])
+LIBSAVE="$LIBS"
+if test "$NDBM_HEADER" = "gdbm/ndbm.h"; then
+  NDBMLIB="-lgdbm"  # use emulation by gdbm
+else
+  AC_SEARCH_LIBS(dbm_open, ndbm gdbm,   [ NDBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
 fi
-if test -z "$NDBMLIB"; then
-  AC_CHECK_LIB(gdbm, dbm_open, [ NDBMLIB="-lgdbm" ])
-fi
-if test "$NDBMLIB" = "-lc"; then
-  NDBMLIB=""
-fi
-AC_CHECK_LIB(c,   dbminit,  [ ODBMLIB="-lc" ])
-if test -z "$ODBMLIB"; then
-  AC_CHECK_LIB(dbm, dbminit,  [ ODBMLIB="-ldbm" ])
-fi
-if test -z "$ODBMLIB"; then
-  AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ])
-fi
-if test "$ODBMLIB" = "-lc"; then
-  ODBMLIB=""
+if test "$ODBM_HEADER" = "gdbm/dbm.h"; then
+  ODBMLIB="-lgdbm"  # use emulation by gdbm
+else
+  AC_SEARCH_LIBS(dbminit,  dbm gdbm, [ ODBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
 fi
 
 AC_SUBST(ARCHFILES)
