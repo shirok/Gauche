@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.13 2001-06-13 06:39:07 shirok Exp $
+ * $Id: config.h.in,v 1.14 2001-06-14 09:06:32 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -14,6 +14,9 @@
 #undef GAUCHE_CHAR_ENCODING_EUC_JP
 #undef GAUCHE_CHAR_ENCODING_UTF_8
 #undef GAUCHE_CHAR_ENCODING_SJIS
+
+/* Define if the system is big-endian machine */
+#undef WORDS_BIGENDIAN
 
 /* Define if the system allows including both time.h and sys/time.h */
 #undef TIME_WITH_SYS_TIME
@@ -45,6 +48,9 @@
 
 /* Define if the system has mkstemp */
 #undef HAVE_MKSTEMP
+
+/* Define if the system has select */
+#undef HAVE_SELECT
 
 /* Define if the system has gr_passwd defined in struct group */
 #undef HAVE_GR_PASSWD
