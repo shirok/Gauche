@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.7 2002-05-16 09:53:53 shirok Exp $
+ *  $Id: mutex.c,v 1.8 2002-05-16 22:26:55 shirok Exp $
  */
 
 #include <math.h>
@@ -30,15 +30,25 @@ struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
     if (SCM_TIMEP(t)) {
         spec->tv_sec = SCM_TIME(t)->sec;
         spec->tv_nsec = SCM_TIME(t)->nsec;
-    } else if (SCM_EXACTP(t)) {
-        spec->tv_sec = Scm_GetUInteger(t);
-        spec->tv_nsec = 0;
-    } else if (SCM_FLONUMP(t)) {
-        double s;
-        spec->tv_nsec = (unsigned long)(modf(Scm_GetDouble(t), &s)*1.0e9);
-        spec->tv_sec = (unsigned long)s;
-    } else {
+    } else if (!SCM_REALP(t)) {
         Scm_Error("bad timeout spec: <time> object or real number is required, but got %S", t);
+    } else {
+        ScmTime *ct = SCM_TIME(Scm_CurrentTime());
+        spec->tv_sec = ct->sec;
+        spec->tv_nsec = ct->nsec;
+        if (SCM_EXACTP(t)) {
+            spec->tv_sec += Scm_GetUInteger(t);
+        } else if (SCM_FLONUMP(t)) {
+            double s;
+            spec->tv_nsec = (unsigned long)(modf(Scm_GetDouble(t), &s)*1.0e9);
+            spec->tv_sec = (unsigned long)s;
+            if (spec->tv_nsec >= 1000000000) {
+                spec->tv_nsec -= 1000000000;
+                spec->tv_sec += 1;
+            }
+        } else {
+            Scm_Panic("implementation error: Scm_GetTimeSpec: something wrong");
+        }
     }
     return spec;
 }
@@ -140,6 +150,7 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-lock!: failed to lock");
     }
+    //Scm_Printf(SCM_CURERR, "locking mutex %S by %p\n", mutex->name, Scm_VM());
     while (mutex->locked) {
         if (mutex->owner && mutex->owner->state == SCM_VM_TERMINATED) {
             abandoned = TRUE;
@@ -151,6 +162,7 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
         } else {
             pthread_cond_wait(&(mutex->cv), &(mutex->mutex));
         }
+        //Scm_Printf(SCM_CURERR, "cond_wait %S %d by %p\n", mutex->name, mutex->locked, Scm_VM());
     }
     if (SCM_TRUEP(r)) {
         mutex->locked = TRUE;
@@ -178,6 +190,7 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-unlock!: failed to lock");
     }
+    //Scm_Printf(SCM_CURERR, "unlocking mutex %S by %p\n", mutex->name, Scm_VM());
     mutex->locked = FALSE;
     mutex->owner = NULL;
     pthread_cond_signal(&(mutex->cv));
