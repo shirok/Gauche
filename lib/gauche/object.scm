@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.55.2.1 2004-12-27 07:25:03 shirok Exp $
+;;;  $Id: object.scm,v 1.55.2.2 2005-01-02 00:40:48 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -161,6 +161,11 @@
     (let loop ((opts (cdr sdef)) (r '()))
       (cond ((null? opts) `(list ',(car sdef) ,@(reverse! r)))
             ((not (and (pair? opts) (pair? (cdr opts))))
+             (display "poge")
+             (write (pair? opts))
+             (write (pair? (cdr opts)))
+             (write (and (pair? opts) (pair? (cdr opts))))
+             (newline)
              (error "bad slot specification:" sdef))
             (else
              (case (car opts)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.1.2.2 2005-01-01 07:22:36 shirok Exp $
+;;; $Id: intlib.stub,v 1.1.2.3 2005-01-02 00:41:00 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -57,6 +57,12 @@
 
 (define-cproc pair-attribute-set! (pair::<pair> key value)
   "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
+
+(define-cproc extended-cons (car cdr)
+  (return "Scm_ExtendedCons"))
+
+(define-cproc extended-list (elt &rest more)
+  "SCM_RETURN(Scm_ExtendedCons(elt, more));")
 
 ;;
 ;; Identifiers
@@ -111,6 +117,33 @@
 (define-cproc call-macro-expander (mac expr env)
   "if (!SCM_MACROP(mac)) Scm_Error(\"macro required, but got %S\", mac);
   SCM_RETURN(Scm_CallMacroExpander(SCM_MACRO(mac), expr, env));")
+
+"static ScmObj call_compile_closure(ScmObj form, ScmObj env, int ctx,
+                                   void *data)
+ {
+    ScmObj closure = SCM_OBJ(data);
+    ScmObj sym_ctx;
+    switch (ctx) {
+    case SCM_COMPILE_NORMAL:
+        sym_ctx = sym_normal;
+        break;
+    case SCM_COMPILE_STMT:
+        sym_ctx = sym_stmt;
+        break;
+    default:
+        sym_ctx = sym_tail;
+    }
+    return Scm_Apply(closure, SCM_LIST3(form, env, sym_ctx));
+ }"
+
+(define-cproc make-syntax (name::<symbol> proc)
+  "SCM_RETURN(Scm_MakeSyntax(name, call_compile_closure, proc));")
+
+(define-cproc has-inliner? (obj)
+  (return <boolean> "Scm_HasInlinerP"))
+
+(define-cproc call-procedure-inliner (obj form env)
+  (return "Scm_CallProcedureInliner"))
 
 ;;
 ;; VM inspection and interface

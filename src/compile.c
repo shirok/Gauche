@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.6 2005-01-01 07:22:34 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.7 2005-01-02 00:40:59 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -68,7 +68,6 @@ ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj form, ScmObj env, int ctx)
     data = SCM_SYNTAX(syn)->data;
     return cmpl(form, env, ctx, data);
 }
-
 
 /* Conventions of internal functions
  *
@@ -303,6 +302,12 @@ static ScmObj compile_in_module(ScmObj, ScmModule*);
 
 #define USE_NEW_COMPILER
 
+#ifdef USE_NEW_COMPILER
+static ScmGloc *compile_gloc = NULL;
+static ScmGloc *compile_int_gloc = NULL;
+static ScmModule *internal_mod = NULL;
+#endif
+
 ScmObj Scm_Compile(ScmObj program, ScmObj env)
 {
 #if !defined(USE_NEW_COMPILER)
@@ -316,8 +321,6 @@ ScmObj Scm_Compile(ScmObj program, ScmObj env)
     }
     return Scm_PackCode(insn_list);
 #else  /* USE_NEW_COMPILER */
-    static ScmGloc *compile_gloc = NULL;
-    static ScmModule *internal_mod = NULL;
     ScmObj insn_list;
 
     if (compile_gloc == NULL) {
@@ -328,6 +331,12 @@ ScmObj Scm_Compile(ScmObj program, ScmObj env)
                                        TRUE);
         if (compile_gloc == NULL) {
             Scm_Panic("no compile procedure in gauche.internal");
+        }
+        compile_int_gloc = Scm_FindBinding(internal_mod,
+                                           SCM_SYMBOL(SCM_INTERN("compile-int")),
+                                           TRUE);
+        if (compile_int_gloc == NULL) {
+            Scm_Panic("no compile-int procedure in gauche.internal");
         }
     }
 
@@ -626,6 +635,7 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
 
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 {
+#if !defined(USE_NEW_COMPILER)
     ScmObj code = SCM_NIL, codetail = SCM_NIL, callinsn;
     ScmVM *vm = Scm_VM();
 
@@ -730,6 +740,21 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
         if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
         else return SCM_LIST1(form);
     }
+#else   /*!USE_NEW_COMPILER*/
+    ScmObj sym_ctx;
+    switch (ctx) {
+    case SCM_COMPILE_NORMAL:
+        sym_ctx = SCM_INTERN("normal");
+        break;
+    case SCM_COMPILE_STMT:
+        sym_ctx = SCM_INTERN("stmt");
+        break;
+    default:
+        sym_ctx = SCM_INTERN("tail");
+    }
+    return Scm_Apply(SCM_GLOC_GET(compile_int_gloc),
+                     SCM_LIST3(form, env, sym_ctx));
+#endif  /*!USE_NEW_COMPILER*/
 }
 
 /* obj may be a symbol or an identifier */
@@ -2225,6 +2250,25 @@ ScmObj Scm_SimpleAsmInliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
         vminsn = SCM_VM_INSN(insn);
     }
     return Scm_MakeInlineAsmForm(form, vminsn, SCM_CDR(form));
+}
+
+/* Temporary: expose inliner to Scheme, for the new compiler */
+int Scm_HasInlinerP(ScmObj obj)
+{
+    return (SCM_PROCEDUREP(obj) && SCM_PROCEDURE_INLINER(obj));
+}
+
+ScmObj Scm_CallProcedureInliner(ScmObj obj, ScmObj form, ScmObj env)
+{
+    ScmTransformerProc trns;
+    void *data;
+    if (!Scm_HasInlinerP(obj)) {
+        Scm_Error("call-procedure-inliner: object doesn't have an inliner: %S",
+                  obj);
+    }
+    trns = SCM_PROCEDURE_INLINER(obj)->proc;
+    data = SCM_PROCEDURE_INLINER(obj)->data;
+    return trns(obj, form, env, data);
 }
 
 /*===================================================================
