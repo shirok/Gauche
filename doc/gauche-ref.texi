@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.49 2001-09-05 19:15:53 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.50 2001-09-06 07:11:58 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -42,6 +42,7 @@ This is a reference manual of Gauche, an R5RS Scheme implementation.
 * Object System::               
 * Libarary Modules::            
 * References::                  
+* C to Scheme mapping::         
 * Function and Syntax Index::   
 * Module Index::                
 * Class Index::                 
@@ -991,9 +992,9 @@ traditional macros.
 * Keywords::                    
 * Identifiers::                 
 * Characters::                  
-* Character Set::               
+* Character set::               
 * Strings::                     
-* Regular Expression::          
+* Regular expression::          
 * Vectors::                     
 * Hashtables::                  
 * Control features::            
@@ -1028,7 +1029,7 @@ traditional macros.
 * Numerical predicates::        
 * Numerical comparison::        
 * Arithmetics::                 
-* Numericaln conversions::      
+* Numerical conversions::       
 * Logical operations::          
 @end menu
 
@@ -1104,7 +1105,7 @@ class.  That is,
 [R5RS]
 @end defun
 
-@node Arithmetics, Numericaln conversions, Numerical comparison, Numbers
+@node Arithmetics, Numerical conversions, Numerical comparison, Numbers
 @subsection Arithmetics
 
 @defun @code{+} z @dots{}
@@ -1177,7 +1178,7 @@ Hyperbolic trigonometric functions.
 [R5RS]
 @end defun
 
-@node Numericaln conversions, Logical operations, Arithmetics, Numbers
+@node Numerical conversions, Logical operations, Arithmetics, Numbers
 @subsection Numerical conversions
 
 @defun make-rectangular x1 x2
@@ -1199,7 +1200,7 @@ Hyperbolic trigonometric functions.
 [R5RS]
 @end defun
 
-@node Logical operations,  , Numericaln conversions, Numbers
+@node Logical operations,  , Numerical conversions, Numbers
 @subsection Logical operations
 
 @defun ash n count
@@ -1529,7 +1530,7 @@ If the named symbol hasn't existed, this function creates one.
 
 
 @c ----------------------------------------------------------------------
-@node Characters, Character Set, Identifiers, Core library
+@node Characters, Character set, Identifiers, Core library
 @section Characters
 
 @deftp {Builtin Class} <char>
@@ -1610,7 +1611,7 @@ that are supported in the native multibyte encoding scheme.
 
 
 @c ----------------------------------------------------------------------
-@node Character Set, Strings, Characters, Core library
+@node Character set, Strings, Characters, Core library
 @section Character Set
 
 @deftp {Builtin Class} <char-set>
@@ -1645,7 +1646,7 @@ module (See @ref{Character-set library}).
 
 
 @c ----------------------------------------------------------------------
-@node Strings, Regular Expression, Character Set, Core library
+@node Strings, Regular expression, Character set, Core library
 @section Strings
 
 @deftp {Builtin Class} <string>
@@ -1850,7 +1851,7 @@ string pointer objects, for portability.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular Expression, Vectors, Strings, Core library
+@node Regular expression, Vectors, Strings, Core library
 @section Regular Expression
 
 @deftp {Builtin Class} <regexp>
@@ -1900,7 +1901,7 @@ Seel also @ref{Regular expression utilities}, which defines
 useful macros to deal with regular expression matching.
 
 @c ----------------------------------------------------------------------
-@node Vectors, Hashtables, Regular Expression, Core library
+@node Vectors, Hashtables, Regular expression, Core library
 @section Vectors
 
 @deftp {Builtin Class} <vector>
@@ -2778,8 +2779,16 @@ Returns @code{#t} if it is successfully removed, or
 
 @defun sys-symlink existing new
 Creates a symbolic link named @var{new} to the existing file @var{existing}.
-If the underlying system doesn't support symbolic links, this function
-raises an error ``feature not supported''.
+On systems that doesn't support symbolic links,
+this function is unbound.
+@end defun
+
+@defun sys-readlink path
+If a file specified by @var{path} is a symbolic link, its content is
+returned.  If @var{path} doesn't exist or is not a symbolic link, an
+error is signalled.
+On systems that don't support symbolic links,
+this function is unbound.
 @end defun
 
 @defun sys-mkdir pathname mode
@@ -2942,6 +2951,13 @@ of directories containing @var{pathname} prevents you from cheking
 @var{pathname} itself.
 @end defun
 
+@defun sys-chmod path mode
+Change the mode of the file named @var{path} to @var{mode}.
+@var{mode} must be a small positive integer whose lower 9 bits
+specifies POSIX style permission.
+@end defun
+
+
 @node Other file operations,  , File stats, Filesystems
 @subsubsection Other file operations
 
@@ -2991,19 +3007,19 @@ or @code{#f} if the port is not connected to a terminal.
 @subsection Unix groups and passwords
 
 @menu
-* Unix Group::                  
-* Unix Password::               
+* Unix group::                  
+* Unix password::               
 * Password encryption::         
 @end menu
 
-@node Unix Group, Unix Password, Unix groups and passwords, Unix groups and passwords
+@node Unix group, Unix password, Unix groups and passwords, Unix groups and passwords
 @subsubsection Unix Group
 
 @deftp {Builtin Class} <sys-group>
 @clindex sys-group
 @end deftp
 
-@defun sys-getgrid gid
+@defun sys-getgrgid gid
 @defunx sys-getgrnam name
 [POSIX]
 @end defun
@@ -3012,7 +3028,7 @@ or @code{#f} if the port is not connected to a terminal.
 @defunx sys-group-name->gid name
 @end defun
 
-@node Unix Password, Password encryption, Unix Group, Unix groups and passwords
+@node Unix password, Password encryption, Unix group, Unix groups and passwords
 @subsubsection Unix Password
 
 @deftp {Builtin Class} <sys-passwd>
@@ -3029,7 +3045,7 @@ or @code{#f} if the port is not connected to a terminal.
 @end defun
 
 
-@node Password encryption,  , Unix Password, Unix groups and passwords
+@node Password encryption,  , Unix password, Unix groups and passwords
 @subsubsection Password encryption
 
 @defun sys-crypt key salt
@@ -3135,6 +3151,11 @@ If the system can't determine the information, @code{#f} is returned.
 
 @defun sys-times
 [POSIX]
+@end defun
+
+@defun sys-ctermid
+[POSIX]  Returns the name of the controlling terminal of the process.
+This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 @end defun
 
 @node Time, Unix process management, System Inquiry, System interface
@@ -6720,17 +6741,580 @@ creates a string, whose @var{i}-th character is calculated by
 
 
 @c ======================================================================
-@node References, Function and Syntax Index, Libarary Modules, Top
+@node References, C to Scheme mapping, Libarary Modules, Top
 @unnumbered References
 
 
-@c Appendix : C to Scheme mapping
+@c ======================================================================
+@node C to Scheme mapping, Function and Syntax Index, References, Top
+@unnumbered C to Scheme mapping
+
+For the convenience of the programmers familiar to C, 
+I composed a simple table of C library functions with
+the corresponding Scheme functions.   Note that 
+
+@table @code
+@item abort
+No equivalent function in Gauche.
+@item abs
+R5RS @code{abs}.  @xref{Arithmetics}.
+@item access
+Gauche @code{sys-access}.  @xref{File stats}.
+@item acos
+R5RS @code{acos}.  @xref{Arithmetics}.
+@item alarm
+No equivalent function in Gauche.
+@item asctime
+Gauche @code{sys-asctime}.  @xref{Time}.
+@item asin
+R5RS @code{asin}.  @xref{Arithmetics}.
+@item assert
+No equivalent function in Gauche.
+@item atan
+@itemx atan2
+R5RS @code{atan}.  @xref{Arithmetics}.
+@item atexit
+No equivalent function in Gauche.
+@item atof
+@itemx atoi
+@itemx atol
+You can use @code{string->number}.  @xref{Numerical conversions}.
+@item bsearch
+No equivalent function in Gauche.
+@item calloc
+Allocation is handled automatically in Scheme.
+@item ceil
+R5RS @code{ceiling}.  @xref{Arithmetics}.
+@item cfgetispeed
+@itemx cfgetospeed
+@itemx cfsetispeed
+@itemx cfsetospeed
+Not supported yet.  Will be supported in termios extension module.
+@item chdir
+Gauche @code{sys-chdir}.   @xref{Other file operations}.
+@item chmod
+Gauche @code{sys-chmod}.   @xref{File stats}.
+@item chown
+Not supported yet.
+@item clearerr
+Not supported yet.
+@item clock
+Not supported yet.
+@item close
+You can't directly close the file descriptor, but when you use
+@code{close-input-port} or @code{close-output-port}, underlying
+file is closed.  Some port-related functions, such as
+@code{call-with-output-file}, automatically closes the file
+when operation is finished.  The file is also closed when
+its governing port is garbage collected.
+@xref{Common port operations}.
+@item closedir
+No equivalent function in Gauche.  You can use
+@code{sys-readdir} to read the directory entries at once.
+@xref{Directories}.
+@item cos
+@itemx cosh
+@code{cos} and @code{cosh}.  @xref{Arithmetics}.
+@item creat
+A file is implictly created when you open it for writing.
+No equivalent operation for @code{O_EXCL} is implemented yet.
+@item ctermid
+Gauche @code{sys-ctermid}.  @xref{System Inquiry}.
+@item ctime
+Gauche @code{sys-ctime}.  @xref{Time}.
+@item cuserid
+No equivalent function.  This is removed from the newer POSIX.
+You can use alternative functions, such as @code{sys-getlogin} or
+@code{sys-getpwuid} with @code{sys-getuid}.
+@item difftime
+Gauche @code{sys-difftime}.  @xref{Time}.
+@item div
+You can use R5RS @code{quotient} and @code{remainder}.
+@xref{Arithmetics}.
+@item dup
+@itemx dup2
+No equivalent function.  If you want to use this function to
+set up I/Os for the child process, you can use `iomap' argument
+of @code{sys-exec}.  @xref{Fork and exec}.
+@item execl
+@itemx execle
+@itemx execlp
+@itemx execv
+@itemx execve
+@itemx execvp
+Gauche @code{sys-exec}.  @xref{Fork and exec}.
+For higher level interface, @ref{High Level Process Interface}.
+@item exit
+@item _exit
+Use @code{exit} or @code{sys-exit}, depends on what you need.
+@xref{Program termination}.
+@item exp
+R5RS @code{exp}.  @xref{Arithmetics}.
+@item fabs
+R5RS @code{abs}.  @xref{Arithmetics}.
+@item fclose
+You can't directly close the file stream, but when you use
+@code{close-input-port} or @code{close-output-port}, underlying
+file is closed.  Some port-related functions, such as
+@code{call-with-output-file}, automatically closes the file
+when operation is finished.  The file is also closed when
+its governing port is garbage collected.
+@item fcntl
+Not implemented yet.
+@item fdopen
+Not supported yet.
+@item feof
+Not supported yet.
+@item ferror
+Not supported yet.
+@item fflush
+Gauche's @code{flush}.
+@item fgetc
+Use @code{read-char} or @code{read-byte}.  @xref{Input}.
+@item fgetpos
+Not supported yet.
+@item fgets
+Use @code{read-line}.    @xref{Input}.
+@item fileno
+@code{port-file-numer}.   @xref{Common port operations}.
+@item floor
+R5RS @code{floor}.   @xref{Arithmetics}.
+@item fmod
+Not directly supported.
+@item fopen
+R5RS @code{open-input-file} or @code{open-output-file}
+corresponds to this operation.  @xref{File ports}.
+@item fork
+Gauche's @code{sys-fork}.   @xref{Fork and exec}.
+@item fpathconf
+Not supported.
+@item fprintf
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@item fputc
+Use @code{write-char} or @code{write-byte}.  @xref{Output}.
+@item fputs
+Use @code{display}.  @xref{Output}.
+@item fread
+Not directly supported.  If you want to read a chunk
+of bytes, you may be able to use @code{read-block}.
+@item free
+You don't need this in Scheme.
+@item freopen
+Not supported.
+@item frexp
+Not supported.
+@item fscanf
+Not supported.  For general case, you have to write a parser.
+If you can keep the data in S-exp, you can use @code{read}.
+If the syntax is very simple, you may be able to utilize
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+and/or regular expression stuff (@ref{Regular expression},
+also @ref{Regular expression utilities}.
+@item fseek
+Not implemented yet.
+@item fsetpos
+Not implemented yet.
+@item fstat
+Gauche's @code{sys-stat}.  @xref{File stats}.
+@item ftell
+Not implemented yet.
+@item fwrite
+Not directly supported.  If you want to write a chunk of bytes,
+you can simply use @code{display}.  @xref{Output}.
+@item getc
+@itemx getchar
+Use @code{read-char} or @code{read-byte}.  @xref{Input}.
+@item getcwd
+Gauche's @code{sys-getcwd}.   @xref{System Inquiry}.
+@item getegid
+Gauche's @code{sys-getegid}.   @xref{System Inquiry}.
+@item getenv
+Gauche's @code{sys-getenv}.   @xref{Environment Inquiry}.
+@item geteuid
+Gauche's @code{sys-geteuid}.   @xref{System Inquiry}.
+@item getgid
+Gauche's @code{sys-getgid}.   @xref{System Inquiry}.
+@item getgrgid
+@itemx getgrnam
+Gauche's @code{sys-getgrgid} and @code{sys-getgrnam}.  @xref{Unix group}.
+@item getgroups
+Gauche's @code{sys-getgroups}.   @xref{System Inquiry}.
+@item getlogin
+Gauche's @code{sys-getlogin}.  @xref{System Inquiry}.
+@item getpgrp
+Gauche's @code{sys-getpgrp}.   @xref{System Inquiry}.
+@item getpid
+@itemx getppid
+Gauche's @code{sys-getpid}.   @xref{System Inquiry}.
+@item getpwnam
+@itemx getpwuid
+Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix password}.
+@item gets
+Use @code{read-line}.  @xref{Input}.
+@item getuid
+Gauche's @code{sys-getuid}.  @xref{System Inquiry}.
+@item gmtime
+Gauche's @code{sys-gmtime}.   @xref{Time}.
+@item isalnum
+Not directly supported, but you can use R5RS @code{char-alphabetic?} and
+@code{char-numeric?}.  @xref{Characters}.   You can also use
+character set.  @xref{Character set}, also @ref{Character-set library}.
+@item isalpha
+R5RS @code{char-alphabetic?}.  @xref{Characters}.  See also
+@ref{Character set} and @ref{Character-set library}.
+@item isatty
+Gauche's @code{sys-isatty}.   @xref{Other file operations}.
+@item iscntrl
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:iso-control c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@item isdigit
+R5RS @code{char-numeric?}.  @xref{Characters}. 
+You can also use @code{(char-set-contains? char-set:digit c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@item isgraph
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:graphic c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@item islower
+R5RS @code{char-lower-case?}.  @xref{Characters}.
+You can also use @code{(char-set-contains? char-set:lower-case c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@item isprint
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:printing c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@item ispunct
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:punctuation c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@item isspace
+R5RS @code{char-whitespace?}.  @xref{Characters}.
+You can also use @code{(char-set-contains? char-set:whitespace c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@item isuppoer
+R5RS @code{char-upper-case?}.  @xref{Characters}.
+You can also use @code{(char-set-contains? char-set:upper-case c)}
+with @code{srfi-14}.   @xref{Character-set library}.
+@item isxdigit
+Not directly supported, but you can use
+@code{(char-set-contains? char-set:hex-digit c)} with @code{srfi-14}.
+@xref{Character-set library}.
+@item kill
+Gauche's @code{sys-kill}.  @xref{Signal}.
+@item labs
+R5RS @code{abs}.  @xref{Arithmetics}.
+@item ldexp
+Not directly supported.   @code{ldexp(x, n)} @equiv{} @code{(* x (expt 2 n))}.
+@item ldiv
+Use R5RS @code{quotient} and @code{remainder}.
+@xref{Arithmetics}.
+@item link
+Gauche's @code{sys-link}.  @xref{Directory manipulation}.
+@item localeconv
+Gauche's @code{sys-localeconv}. 
+@item localtime
+Gauche's @code{sys-localtime}.  @xref{Time}.
+@item log
+R5RS @code{log}.  @xref{Arithmetics}.
+@item log10
+Not directly supported.  @code{log10(z)} @equiv{} @code{(/ (log z) (log 10))}.
+@item longjmp
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation and escaping}.
+@item lseek
+Not supported yet.
+@item malloc
+Not necessary in Scheme.
+@item mblen
+@itemx mbstowcs
+@itemx mbtowc
+Gauche handles multibyte strings internally, so generally you don't 
+need to care about multibyte-ness of the string.   @code{string-length}
+always returns a number of characters for a string in supported
+encoding.   If you want to convert the character encoding,
+see @ref{Character code conversion}.
+@item memcmp
+@itemx memcpy
+@itemx memmove
+@itemx memset
+No equivalent functions.
+@item mkdir
+Gauche's @code{sys-mkdir}.  @xref{Directory manipulation}.
+@item mkfifo
+Not supported yet.
+@item mktime
+Gauche's @code{sys-mktime}.  @xref{Time}.
+@item modf
+No equivalent function.
+@item open
+Not directly supported.
+R5RS @code{open-input-file} or @code{open-output-file}
+corresponds to this operation.  @xref{File ports}.
+@item opendir
+Not directly supported.
+You can use @code{sys-readdir} to read the directory entries at once.
+@xref{Directories}.
+@item pathconf
+Not supported.
+@item pause
+Gauche's @code{sys-pause}.  @xref{Miscellaneous system calls}.
+@item perror
+Not directly supported.
+@item pipe
+Gauche's @code{sys-pipe}.  @xref{Other file operations}.
+@item pow
+R5RS @code{expt}.  @xref{Arithmetics}.
+@item printf
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@item putc
+@itemx putchar
+Use @code{write-char} or @code{write-byte}.  @xref{Output}.
+@item puts
+Use @code{display}.   @xref{Output}.
+@item qsort
+Gauche's @code{sort} and @code{sort!} provides a convenient way to sort
+list of items.  @xref{Comparison and sorting}.
+@item raise
+Not supported yet.
+@item rand
+Not supported directly, but on most platforms a better RNG is available
+as @code{sys-random}.  @xref{Miscellaneous system calls}.
+@item read
+Not supported directly, but you may be able to use
+@code{read-block}.  @xref{Input}.
+@item readdir
+Not supported directly.   Gauche's @code{sys-readdir} reads
+the directly at once.  @xref{Directories}.
+@item readlink
+Gauche's @code{sys-readlink}.  @xref{Directory manipulation}.
+This function is available on systems that support symbolink links.
+@item realloc
+Not necessary in Scheme.
+@item remove
+Gauche's @code{sys-remove}.  @xref{Directory manipulation}.
+@item rename
+Gauche's @code{sys-rename}.  @xref{Directory manipulation}.
+@item rewind
+Not supported yet.
+@item rewinddir
+Not supported directly.
+You can use @code{sys-readdir} to read the directory entries at once.
+@xref{Directories}.
+@item rmdir
+Gauche's @code{sys-rmdir}.  @xref{Directory manipulation}.
+@item scanf
+Not supported.  For general case, you have to write a parser.
+If you can keep the data in S-exp, you can use @code{read}.
+If the syntax is very simple, you may be able to utilize
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+and/or regular expression stuff (@ref{Regular expression},
+also @ref{Regular expression utilities}.
+@item setbuf
+Not necessary.
+@item setgid
+Not supported yet
+@item setjmp
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation and escaping}.
+@item setlocale
+Gauche's @code{sys-setlocale}.
+@item setpgid
+Not supported yet.
+@item setsid
+Not supported yet.
+@item setuid
+Not supported yet.
+@item setvbuf
+Not necessary.
+@item sigaction
+Not supported yet.
+@item sigaddset
+@itemx sigdelset
+@itemx sigemptyset
+@itemx sigfillset
+@itemx sigismember
+Not supported yet.
+@item siglongjmp
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation and escaping}.
+@item signal
+Not supported yet.
+@item sigpending
+Not supported yet.
+@item sigprocmask
+Not supported yet.
+@item sigsetjmp
+R5RS @code{call/cc} provides similar (superior) mechanism.
+@xref{Continuation and escaping}.
+@item sigsuspend
+Not supported yet.
+@item sin
+@itemx sinh
+Use @code{sin} and @code{sinh}.   @xref{Arithmetics}.
+@item sleep
+Gauche's @code{sys-sleep}.  @xref{Miscellaneous system calls}.
+@item sprintf
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@item sqrt
+R5RS @code{sqrt}.  @xref{Arithmetics}.
+@item srand
+Not supported directly, but on most platforms a better RNG is available
+as @code{sys-srandom}.  @xref{Miscellaneous system calls}.
+@item sscanf
+Not supported.  For general case, you have to write a parser.
+If you can keep the data in S-exp, you can use @code{read}.
+If the syntax is very simple, you may be able to utilize
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+and/or regular expression stuff (@ref{Regular expression},
+also @ref{Regular expression utilities}.
+@item stat
+Gauche's @code{sys-stat}.  @xref{File stats}.
+@item strcat
+R5RS @code{string-append}.  @xref{String Utilities}.
+@item strchr
+SRFI-13 @code{string-index}.  @xref{SRFI-13 String searching}.
+@item strcmp
+R5RS @code{string=?} and other comparison functions.
+@xref{String Comparison}.
+@item strcoll
+Not supported yet.
+@item strcpy
+R5RS @code{string-copy}.    @xref{String Utilities}.
+@item strcspn
+Not directly supported, but you can use SRFI-13 @code{string-skip}
+with a character set.  @xref{SRFI-13 String searching}.
+@item strerror
+Not supported.
+@item strftime
+Gauche's @code{sys-strftime}.  @xref{Time}.
+@item strlen
+R5RS @code{string-length}.   @xref{String Accessors & Modifiers}.
+@item strncat
+Not directly supported, but you can use @code{string-append} and
+@code{substring}.
+@item strmcmp
+SRFI-13 @code{string-compare} provides the most flexible
+(but a bit difficult to use) functionality.
+@xref{SRFI-13 String Comparison}.
+If what you want is just to check the fixed-length prefixes of two
+string matches, you can use SRFI-13 @code{string-prefix?}.
+@xref{SRFI-13 String Prefixes & Suffixes}.
+@item strncpy
+SRFI-13 @code{substring}.  @xref{String Utilities}.
+@item strpbrk
+Not directly supported, but you can use SRFI-13 @code{string-skip}
+with a character set.  @xref{SRFI-13 String searching}.
+@item strrchr
+SRFI-13 @code{string-index-right}.  @xref{SRFI-13 String searching}.
+@item strspn
+Not directly supported, but you can use SRFI-13 @code{string-index}
+with a character set.  @xref{SRFI-13 String searching}.
+@item strstr
+SRFI-13 @code{string-contains}.  @xref{SRFI-13 String searching}.
+@item strtod
+You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
+@item strtok
+SRFI-13 @code{string-tokenize}.  @xref{SRFI-13 other string operations}.
+@item strtol
+@itemx strtoul
+You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
+@item strxfrm
+Not supported yet.
+@item symlink
+Gauche's @code{sys-symlink}.  @xref{Directory manipulation}.
+This function is available on systems that support symbolink links.
+@item sysconf
+Not supported yet.
+@item system
+Gauche @code{sys-system}.   @xref{Fork and exec}.
+It is generally recommended to use the process library
+(@ref{High Level Process Interface}).
+@item tan
+@itemx tanch
+R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
+@item tcdrain
+Not supported yet.
+@item tcflow
+Not supported yet.
+@item tcflush
+Not supported yet.
+@item tcgetattr
+Not supported yet.
+@item tcgetpgrp
+Not supported yet.
+@item tcsendbreak
+Not supported yet.
+@item tcsetattr
+Not supported yet.
+@item tcsetpgrp
+Not supported yet.
+@item time
+Gauche's @code{sys-time}.  @xref{Time}.
+@item times
+Gauche's @code{sys-times}.  @xref{System Inquiry}.
+@item tmpfile
+Not exactly supported.
+@item tmpnam
+Gauche's @code{sys-tmpnam}.  @xref{Directory manipulation}.
+@item tolower
+@itemx toupper
+R5RS @code{char-upcase} and @code{char-downcase}.   @xref{Characters}.
+@item ttyname
+Gauche's @code{sys-ttyname}.  @xref{Other file operations}.
+@item tzset
+Not supported yet.
+@item umask
+Gauche's @code{sys-umask}.  @xref{Directory manipulation}.
+@item uname
+Gauche's @code{sys-uname}.  @xref{System Inquiry}.
+@item ungetc
+Not directly supported.  You can use @code{peek-char} to look
+one character ahead, instead of pushing back.
+@item unlink
+Gauche's @code{sys-unlink}.  @xref{Directory manipulation}.
+@item utime
+Not supported yet.
+@item va_arg
+@itemx va_end
+@itemx va_start
+Not necessary, for Scheme handles variable number of arguments naturally.
+@item vfprintf
+@itemx vprintf
+@itemx vsprintf
+Not directly supported, but Gauche's @code{format}
+provides similar functionality.  @xref{Output}.
+SLIB has @code{printf} implementation.
+@item wait
+Gauche's @code{sys-wait}.  @xref{Wait}.
+@item waitpid
+Gauche's @code{sys-waitpid}.  @xref{Wait}.
+@item wcstombs
+@itemx wctomb
+Gauche handles multibyte strings internally, so generally you don't 
+need to care about multibyte-ness of the string.   @code{string-length}
+always returns a number of characters for a string in supported
+encoding.   If you want to convert the character encoding,
+see @ref{Character code conversion}.
+@item write
+R5RS @code{display}.   @xref{Output}.
+@end table
+
+
+
+
 @c Appendix : Common Lisp to Scheme mapping
 @c Appendix : Perl to Scheme mapping
 @c Appendix : Python to Scheme mapping?
 
 @c ======================================================================
-@node Function and Syntax Index, Module Index, References, Top
+@node Function and Syntax Index, Module Index, C to Scheme mapping, Top
 @unnumbered Function and Syntax Index
 @printindex fn
 
