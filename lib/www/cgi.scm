@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.5 2001-11-12 08:24:44 shirok Exp $
+;;;  $Id: cgi.scm,v 1.6 2001-11-22 08:35:29 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
@@ -105,10 +105,11 @@
   (let ((eproc (get-keyword :on-error args
                             (lambda (e)
                               `(,(cgi-header)
-                                ,(html-html
-                                  (html-head (html-title "Error"))
-                                  (html-body (html-h1 "Error")
-                                             (html-p (html-escape-string
+                                ,(html-doctype)
+                                ,(html:html
+                                  (html:head (html:title "Error"))
+                                  (html:body (html:h1 "Error")
+                                             (html:p (html-escape-string
                                                       (slot-ref e 'message))))
                                   )))))
         (params (cgi-parse-parameters :merge-cookies
