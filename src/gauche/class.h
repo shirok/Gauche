@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.20 2001-10-24 09:37:17 shirok Exp $
+ *  $Id: class.h,v 1.21 2001-12-01 21:36:25 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -37,6 +37,7 @@ typedef struct ScmSlotAccessorRec {
     ScmObj initValue;           /* :init-value */
     ScmObj initKeyword;         /* :init-keyword */
     ScmObj initThunk;           /* :initform or :init-thunk */
+    int initializable;          /* is this slot initializable? */
     int slotNumber;             /* for :instance slot access */
     ScmObj schemeAccessor;      /* for :virtual slot (getter . setter) */
 } ScmSlotAccessor;
@@ -63,7 +64,7 @@ struct ScmClassStaticSlotSpecRec {
               SCM_UNBOUND,                              \
               SCM_FALSE,                                \
               SCM_FALSE,                                \
-              0,                                        \
+              TRUE, 0,                                  \
               SCM_FALSE,                                \
              } }
 
