@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.21 2001-04-03 11:04:03 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.22 2001-04-06 10:10:37 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -83,6 +83,15 @@
 (define (CALL-WITH-INPUT-STRING str proc)
   (let ((in (open-input-string str)))
     (proc in)))
+
+;; useful stuff
+(define-syntax check-arg
+  (syntax-rules ()
+    ((_ ?test ?arg)
+     (let ((tmp ?arg))
+       (unless (?test tmp)
+         (error "bad type of argument for ~s: ~s" '?arg tmp))))
+    ))
 
 ;;
 ;; Load object system
