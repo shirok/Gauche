@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.7 2001-06-22 08:17:48 shirok Exp $
+ *  $Id: net.h,v 1.8 2001-07-08 08:39:39 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -28,6 +28,10 @@
 #include <gauche.h>
 #include <errno.h>
 #include "netconfig.h"
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

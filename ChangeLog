@@ -1,3 +1,8 @@
+2001-07-07  Shiro Kawai  <shiro@acm.org>
+	
+	* src/vm.c, src/compile.c, src/gauche/vm.h : refined and tested
+	  stack oevrflow handling.
+
 2001-07-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c, src/vm.c : modified the compiler to add CHECK_STACK
