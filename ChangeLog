@@ -1,3 +1,12 @@
+2002-01-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_Sign): fixed to conform its comment (thanks for
+	  Iwao KIMURA).
+	* src/gauche-config.in : -l option includes -lgauche (thanks for
+	  Iwao KIMURA).
+	* ext/charconv/charconv.scm : experimentally overloaded open-*-file
+	  functions to accept :encoding keyword argument.
+
 2002-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c : implemented case-sensitive reader.
