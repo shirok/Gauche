@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: searcher.scm,v 1.4 2001-09-23 05:05:14 shirok Exp $
+;;;  $Id: searcher.scm,v 1.5 2001-10-28 22:42:43 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -22,43 +22,47 @@
 (define (string-index s c/s/p . args)
   (check-arg string? s)
   (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (apply %maybe-substring s args))))
+        (offset (if (pair? args) (car args) 0))
+        (sp (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! sp)))
       (cond ((eof-object? ch) #f)
-            ((pred ch) (- (string-pointer-index sp) 1))
+            ((pred ch) (+ offset (- (string-pointer-index sp) 1)))
             (else (loop (string-pointer-next! sp)))))))
 
 (define (string-index-right s c/s/p . args)
   (check-arg string? s)
   (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (apply %maybe-substring s args) -1)))
+        (offset (if (pair? args) (car args) 0))
+        (sp (apply make-string-pointer s -1 args)))
     (let loop ((ch (string-pointer-prev! sp)))
       (cond ((eof-object? ch) #f)
-            ((pred ch) (string-pointer-index sp))
+            ((pred ch) (+ offset (string-pointer-index sp)))
             (else (loop (string-pointer-prev! sp)))))))
 
 (define (string-skip s c/s/p . args)
   (check-arg string? s)
   (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (apply %maybe-substring s args))))
+        (offset (if (pair? args) (car args) 0))
+        (sp (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! sp)))
       (cond ((eof-object? ch) #f)
             ((pred ch) (loop (string-pointer-next! sp)))
-            (else (- (string-pointer-index sp) 1))))))
+            (else (+ offset (- (string-pointer-index sp) 1)))))))
 
 (define (string-skip-right s c/s/p . args)
   (check-arg string? s)
   (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (apply %maybe-substring s args) -1)))
+        (offset (if (pair? args) (car args) 0))
+        (sp (apply make-string-pointer s -1 args)))
     (let loop ((ch (string-pointer-prev! sp)))
       (cond ((eof-object? ch) #f)
             ((pred ch) (loop (string-pointer-prev! sp)))
-            (else (string-pointer-index sp))))))
+            (else (+ offset (string-pointer-index sp)))))))
 
 (define (string-count s c/s/p . args)
   (check-arg string? s)
   (let ((pred (%get-char-pred c/s/p))
-        (sp (make-string-pointer (apply %maybe-substring s args))))
+        (sp (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! sp))
                (count 0))
       (cond ((eof-object? ch) count)

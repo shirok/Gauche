@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: folder.scm,v 1.4 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: folder.scm,v 1.5 2001-10-28 22:42:43 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -22,13 +22,13 @@
 (define (string-map proc s . args)
   (check-arg procedure? proc)
   (check-arg string? s)
-  (let ((src (open-input-string (apply %maybe-substring s args)))
+  (let ((src  (apply make-string-pointer s 0 args))
         (dest (open-output-string)))
-    (let loop ((ch (read-char src)))
+    (let loop ((ch (string-pointer-next! src)))
       (if (eof-object? ch)
           (get-output-string dest)
           (begin (write-char (proc ch) dest)
-                 (loop (read-char src)))))
+                 (loop (string-pointer-next! src)))))
     ))
 
 (define (string-map! proc s . args)
@@ -41,18 +41,18 @@
 (define (string-fold kons knil s . args)
   (check-arg procedure? kons)
   (check-arg string? s)
-  (let ((src (open-input-string (apply %maybe-substring s args))))
-    (let loop ((ch (read-char src))
+  (let ((src (apply make-string-pointer s 0 args)))
+    (let loop ((ch (string-pointer-next! src))
                (r  knil))
       (if (eof-object? ch)
           r
-          (loop (read-char src) (kons ch r))))
+          (loop (string-pointer-next! src) (kons ch r))))
     ))
 
 (define (string-fold-right kons knil s . args)
   (check-arg procedure? kons)
   (check-arg string? s)
-  (let ((src (make-string-pointer (apply %maybe-substring s args) -1)))
+  (let ((src (apply make-string-pointer s -1 args)))
     (let loop ((ch (string-pointer-prev! src))
                (r  knil))
       (if (eof-object? ch)
@@ -93,11 +93,11 @@
 (define (string-for-each proc s . args)
   (check-arg procedure? proc)
   (check-arg string? s)
-  (let ((src (open-input-string (apply %maybe-substring s args))))
-    (let loop ((ch (read-char src)))
+  (let ((src (apply make-string-pointer s 0 args)))
+    (let loop ((ch (string-pointer-next! src)))
       (unless (eof-object? ch)
         (proc ch)
-        (loop (read-char src)))))
+        (loop (string-pointer-next! src)))))
   )
 
 (define (string-for-each-index proc s . args)
@@ -108,9 +108,3 @@
         ((>= i end))
       (proc i)))
   )
-
-
-
-
-    
-
