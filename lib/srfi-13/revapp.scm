@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: revapp.scm,v 1.6 2004-01-25 11:11:24 shirok Exp $
+;;;  $Id: revapp.scm,v 1.7 2004-02-02 10:43:37 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -61,7 +61,7 @@
     (string-copy (car lis)))
    (else
     (let loop ((l lis)
-               (out (open-output-string/private))
+               (out (open-output-string :private? #t))
                (incomplete? #f))
       (if (pair? l)
         (let ((e (car l)))

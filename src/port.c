@@ -1,7 +1,7 @@
 /*
  * port.c - port implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.97 2003-12-18 00:45:14 shirok Exp $
+ *  $Id: port.c,v 1.98 2004-02-02 10:43:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -117,13 +117,13 @@ static ScmPort *make_port(int dir, int type)
     port->closed = FALSE;
     port->error = FALSE;
     port->ownerp = FALSE;
+    port->flags = 0;
     port->name = SCM_FALSE;
-    port->priv = FALSE;
-    port->endian = SCM_PORT_BIG_ENDIAN;
     (void)SCM_INTERNAL_MUTEX_INIT(port->mutex);
     (void)SCM_INTERNAL_COND_INIT(port->cv);
     port->lockOwner = NULL;
     port->lockCount = 0;
+    port->data = SCM_FALSE;
     switch (type) {
     case SCM_PORT_FILE: /*FALLTHROUGH*/;
     case SCM_PORT_PROC:
@@ -1101,10 +1101,17 @@ ScmObj Scm_Stderr(void)
     return scm_stderr;
 }
 
+/*===============================================================
+ * Initialization
+ */
+
 void Scm__InitPort(void)
 {
     (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
     active_buffered_ports.ports = SCM_WEAKVECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
+
+    Scm_InitBuiltinClass(&Scm_PortClass, "<port>", NULL, TRUE,
+                         Scm_GaucheModule());
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(stdin)"),
                                     SCM_PORT_INPUT, 0,

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.214 2004-01-27 23:52:14 shirok Exp $
+;;; $Id: extlib.stub,v 1.215 2004-02-02 10:43:37 shirok Exp $
 ;;;
 
 "
@@ -667,18 +667,13 @@
 ;; 6.6.1  Ports
 ;;
 
-;; String port
-(define-cproc open-input-string (string::<string>) ;SRFI-6
-  "SCM_RETURN(Scm_MakeInputStringPort(string, FALSE));")
+;; String port (srfi-6)
+(define-cproc open-input-string (string::<string>
+                                 &keyword (private?::<boolean> #f))
+  "SCM_RETURN(Scm_MakeInputStringPort(string, privateP));")
 
-(define-cproc open-output-string ()      ;SRFI-6
-  "SCM_RETURN(Scm_MakeOutputStringPort(FALSE));")
-
-(define-cproc open-input-string/private (string::<string>)
-  "SCM_RETURN(Scm_MakeInputStringPort(string, TRUE));")
-
-(define-cproc open-output-string/private ()      ;SRFI-6
-  "SCM_RETURN(Scm_MakeOutputStringPort(TRUE));")
+(define-cproc open-output-string (&keyword (private?::<boolean> #f))
+  "SCM_RETURN(Scm_MakeOutputStringPort(privateP));")
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
   (return "Scm_GetOutputString"))

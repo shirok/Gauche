@@ -34,7 +34,7 @@ Gaucheは、以下に挙げる点を除き、オプショナルな構文や手続きも含め
 @itemize @bullet
 @item
 @c EN
-By default, Gauche reads symbols by case-sensitive way.
+By default, Gauche reads symbols in case-sensitive way.
 A command-line option is provided to make the reader case-insensitive.
 (@xref{Case-sensitivity}, for details).
 @c JP
@@ -57,20 +57,19 @@ C routine) have limited extent (@xref{Continuation}, for details).
 Numeric tower of integer, real, and complex numbers are supported,
 but rational numbers are not.  The reader can read rational numbers
 but converts them to inexact real numbers.
-The number format using '@code{#}' to show insignificant digits is
-not supported.
+The reader can recognize '@code{#}' as insignificant digits.
 @c JP
 Numeric towerは整数、実数、複素数をサポートしていますが、
 有理数はサポートしていません。リーダーは有理数の構文を認識しますが、
 読む込むと不正確な実数になります。数字のフォーマットのうち、
-精度に影響を与えない桁を '@code{#}' で表す構文はサポートされていません。
+リーダは、精度に影響を与えない桁を'@code{#}'で表す表記を認識します。
 @c COMMON
 @item
 @c EN
-Procedure @code{rationalize}, @code{transcript-on} and @code{transcript-of}
+Procedure @code{rationalize}, @code{transcript-on} and @code{transcript-off}
 are not supported.
 @c JP
-手続き@code{rationalize}、@code{transcript-on}、及び@code{transcript-of}
+手続き@code{rationalize}、@code{transcript-on}、及び@code{transcript-off}
 はサポートされていません。
 @c COMMON
 @end itemize
@@ -169,7 +168,7 @@ Supported by the module @code{srfi-9}.  @xref{Record types}.
 @item SRFI-10, Sharp-comma external form.
 Built-in.  @xref{Read-time constructor}.
 @c JP
-@item SRFI-10, シャープカンマ外部フォーム
+@item SRFI-10, Sharp-comma外部フォーム
 組み込みです。@ref{Read-time constructor}参照。
 @c COMMON
 
@@ -328,6 +327,14 @@ Supported by the module @code{srfi-37}.
 @item SRFI-37, args-fold: プログラム引数処理
 モジュール@code{srfi-37}でサポートされます。
 @ref{A program argument processor}参照。
+@c COMMON
+
+@c EN
+@item SRFI-38, External Representation for Data With Shared Structure
+Built-in.  See @ref{Reading data} and @ref{Output}.
+@c JP
+@item SRFI-38, 共有されるデータの外部表現
+組み込みです。@ref{Reading data}と@ref{Output}参照。
 @c COMMON
 
 @c EN

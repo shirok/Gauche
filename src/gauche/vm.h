@@ -1,7 +1,7 @@
 /*
  * vm.h - Virtual machine
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.87 2004-01-17 09:25:19 shirok Exp $
+ *  $Id: vm.h,v 1.88 2004-02-02 10:43:37 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -410,9 +410,9 @@ enum {
     SCM_ERROR_BEING_REPORTED = (1L<<1), /* we're in an error reporter */
     SCM_LOAD_VERBOSE         = (1L<<2), /* report loading files */
     SCM_CASE_FOLD            = (1L<<3), /* symbols are case insensitive */
-    SCM_LIMIT_MODULE_MUTATION = (1L<<4) /* disable set! to modify the
-                                           global binding in the other
-                                           module */
+    SCM_LIMIT_MODULE_MUTATION = (1L<<4)  /* disable set! to modify the
+                                            global binding in the other
+                                            module */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))

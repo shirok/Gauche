@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.1 2004-01-18 12:07:31 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.2 2004-02-02 10:43:37 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.1 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.2 $.  DO NOT EDIT */"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
@@ -95,10 +95,12 @@
     (%macroexpand              SCM_SYM_MACRO_EXPAND)
     (%macroexpand-1            SCM_SYM_MACRO_EXPAND_1)
 
+    ;; class category
     (builtin                   SCM_SYM_BUILTIN)
     (abstract                  SCM_SYM_ABSTRACT)
     (base                      SCM_SYM_BASE)
 
+    ;; modules
     (null                      SCM_SYM_NULL)
     (scheme                    SCM_SYM_SCHEME)
     (gauche                    SCM_SYM_GAUCHE)
@@ -106,6 +108,7 @@
     (user                      SCM_SYM_USER)
     (|#|                       SCM_SYM_SHARP)
 
+    ;; load
     (*load-path*               SCM_SYM_LOAD_PATH)
     (*load-next*               SCM_SYM_LOAD_NEXT)
     (*load-history*            SCM_SYM_LOAD_HISTORY)
@@ -113,12 +116,14 @@
     (*load-suffixes*           SCM_SYM_LOAD_SUFFIXES)
     (*dynamic-load-path*       SCM_SYM_DYNAMIC_LOAD_PATH)
 
+    ;; reader
     (source-info               SCM_SYM_SOURCE_INFO)
     (bind-info                 SCM_SYM_BIND_INFO)
     (debug-print               SCM_SYM_DEBUG_PRINT)
     (define-reader-ctor        SCM_SYM_DEFINE_READER_CTOR)
     (string-interpolate        SCM_SYM_STRING_INTERPOLATE)
 
+    ;; regexp
     (seq                       SCM_SYM_SEQ)
     (seq-case                  SCM_SYM_SEQ_CASE)
     (seq-uncase                SCM_SYM_SEQ_UNCASE)
@@ -143,6 +148,7 @@
     (open-paren                SCM_SYM_OPEN_PAREN)
     (close-paren               SCM_SYM_CLOSE_PAREN)
 
+    ;; system
     (directory                 SCM_SYM_DIRECTORY)
     (regular                   SCM_SYM_REGULAR)
     (character                 SCM_SYM_CHARACTER)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.36 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: proc.c,v 1.37 2004-02-02 10:43:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -53,9 +53,6 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         SCM_PUTZ("#<subr", -1, port);
         if (!SCM_FALSEP(info)) {
             Scm_Printf(port, " %A", info);
-        }
-        if (ctx->mode == SCM_WRITE_DEBUG) {
-            Scm_Printf(port, " %p", subr);
         }
         SCM_PUTC('>', port);
     } else {

@@ -1,7 +1,7 @@
 ;;;
 ;;; charconv - character code conversion module
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: charconv.scm,v 1.17 2003-10-23 09:15:52 shirok Exp $
+;;;  $Id: charconv.scm,v 1.18 2004-02-02 10:43:36 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -136,9 +136,10 @@
 ;; Convert string
 (define (ces-convert string fromcode . args)
   (let-optionals* args ((tocode #f))
-    (let ((out (open-output-string/private)))
+    (let ((out (open-output-string :private? #t)))
       (copy-port
-       (open-input-conversion-port (open-input-string/private string) fromcode
+       (open-input-conversion-port (open-input-string string :private? #t)
+                                   fromcode
                                    :to-code tocode
                                    :buffer-size (string-size string))
        out :unit 'byte)

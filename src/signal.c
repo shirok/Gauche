@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.27 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: signal.c,v 1.28 2004-02-02 10:43:37 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -235,7 +235,7 @@ static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
 }
 
 static SCM_DEFINE_STRING_CONST(default_sighandler_name,
-                               "%default-signal-handler", 22, 22);
+                               "%default-signal-handler", 24, 24);
 static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
                        SCM_OBJ(&default_sighandler_name),
                        default_sighandler,
@@ -251,7 +251,7 @@ static ScmObj exit_sighandler(ScmObj *args, int nargs, void *data)
 }
 
 static SCM_DEFINE_STRING_CONST(exit_sighandler_name,
-                               "%exit-signal-handler", 22, 22);
+                               "%exit-signal-handler", 20, 20);
 static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
                        SCM_OBJ(&exit_sighandler_name),
                        exit_sighandler,

@@ -7415,13 +7415,7 @@ an output port, and when omitted, the current output port is assumed.
 @c COMMON
 
 @defun write obj &optional port
-[R5RS]
-@c EN
-@c JP
-@c COMMON
-@end defun
-
-@defun display obj &optional port
+@defunx display obj &optional port
 [R5RS]
 @c EN
 @c JP

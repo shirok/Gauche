@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: portutil.scm,v 1.6 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: portutil.scm,v 1.7 2004-02-02 10:43:36 shirok Exp $
 ;;;
 
 (define-module gauche.portutil
@@ -44,16 +44,14 @@
 ;; port->something
 ;;   TODO: allow caller to specify reading units
 (define (port->string port)
-  (let ((out (open-output-string)))
+  (let ((out (open-output-string :private? #t)))
     (with-port-locking port
       (lambda ()
-        (with-port-locking out
-          (lambda ()
-            (let loop ((ch (read-char port)))
-              (unless (eof-object? ch)
-                (write-char ch out)
-                (loop (read-char port))))
-            (get-output-string out)))))))
+        (let loop ((ch (read-char port)))
+          (unless (eof-object? ch)
+            (write-char ch out)
+            (loop (read-char port))))
+        (get-output-string out)))))
 
 (define (port->list reader port)
   (with-port-locking port

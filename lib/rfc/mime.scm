@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.7 2004-01-27 06:24:34 shirok Exp $
+;;;  $Id: mime.scm,v 1.8 2004-02-02 10:43:37 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -253,7 +253,7 @@
       (with-input-from-string string
         (cut with-port-locking (current-input-port)
              (cut with-output-to-port out base64-decode))))
-    (let ((buf (open-output-string/private)))
+    (let ((buf (open-output-string :private? #t)))
       (let loop ((line (reader inp)))
 	(unless (eof-object? line)
           (display line buf)
@@ -273,7 +273,7 @@
   )
 
 (define (mime-body->string packet reader inp)
-  (let ((s (open-output-string/private)))
+  (let ((s (open-output-string :private? #t)))
     (mime-retrieve-body packet reader inp s)
     (get-output-string s)))
 

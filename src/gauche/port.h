@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.6 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: port.h,v 1.7 2004-02-02 10:43:37 shirok Exp $
  */
 
 /*
@@ -77,41 +77,48 @@
 
 #define PORT_LOCK(p, vm)                                        \
     do {                                                        \
+      if (!(p->flags&SCM_PORT_PRIVATE)) {                       \
         if (p->lockOwner != vm) {                               \
-            (void)SCM_INTERNAL_MUTEX_LOCK(p->mutex);            \
-            while (p->lockOwner != NULL) {                      \
-                if (p->lockOwner->state == SCM_VM_TERMINATED) { \
-                    break;                                      \
-                }                                               \
-                (void)SCM_INTERNAL_COND_WAIT(p->cv, p->mutex);  \
+          (void)SCM_INTERNAL_MUTEX_LOCK(p->mutex);              \
+          while (p->lockOwner != NULL) {                        \
+            if (p->lockOwner->state == SCM_VM_TERMINATED) {     \
+              break;                                            \
             }                                                   \
-            p->lockOwner = vm;                                  \
-            p->lockCount = 0;       /* for safety */            \
-            (void)SCM_INTERNAL_MUTEX_UNLOCK(p->mutex);          \
+            (void)SCM_INTERNAL_COND_WAIT(p->cv, p->mutex);      \
+          }                                                     \
+          p->lockOwner = vm;                                    \
+          p->lockCount = 0;       /* for safety */              \
+          (void)SCM_INTERNAL_MUTEX_UNLOCK(p->mutex);            \
         } else {                                                \
-            p->lockCount++;                                     \
+          p->lockCount++;                                       \
         }                                                       \
+      }                                                         \
     } while (0)
 
 /* Assumes the calling thread has the lock */
 #define PORT_UNLOCK(p)                                  \
     do {                                                \
+      if (!(p->flags&SCM_PORT_PRIVATE)) {               \
         if (--p->lockCount <= 0) {                      \
-            p->lockOwner = NULL;                        \
-            (void)SCM_INTERNAL_COND_SIGNAL(p->cv);      \
+          p->lockOwner = NULL;                          \
+          (void)SCM_INTERNAL_COND_SIGNAL(p->cv);        \
         }                                               \
+      }                                                 \
     } while (0) 
 
-#define PORT_SAFE_CALL(p, call)                         \
-    do {                                                \
-        SCM_UNWIND_PROTECT {                            \
-            call;                                       \
-        } SCM_WHEN_ERROR {                              \
-            PORT_UNLOCK(p);                             \
-            SCM_NEXT_HANDLER;                           \
-        } SCM_END_PROTECT;                              \
+#define PORT_SAFE_CALL(p, call)                 \
+    do {                                        \
+      if (!(p->flags&SCM_PORT_PRIVATE)) {       \
+        SCM_UNWIND_PROTECT {                    \
+          call;                                 \
+        } SCM_WHEN_ERROR {                      \
+          PORT_UNLOCK(p);                       \
+          SCM_NEXT_HANDLER;                     \
+        } SCM_END_PROTECT;                      \
+      }                                         \
     } while (0)
 
-#define PORT_LOCKED(p, vm)  ((p)->lockOwner == (vm))
+#define PORT_LOCKED(p, vm) \
+   (((p)->flags&SCM_PORT_PRIVATE)||((p)->lockOwner == (vm)))
 
 

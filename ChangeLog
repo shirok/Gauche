@@ -1,4 +1,14 @@
+2004-02-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/port.c, src/write.c, src/gauche-init.scm :
+	  first batch of proper srfi-38 support w/ user-defined writers.
+
 2004-01-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/port.c, ...: rearranged port structure.
+	  dropped open-*-string/private, and used keyword arg :private?
+	  instead. (NB: it is still an experimental feature and shouldn't
+	  be relied on).  some fixups.
 
 	* lib/gauche/listener.scm (output-port): typo fix.
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.363 2004-01-27 23:52:14 shirok Exp $
+ *  $Id: gauche.h,v 1.364 2004-02-02 10:43:37 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1136,16 +1136,16 @@ typedef struct ScmPortVTableRec {
 
 struct ScmPortRec {
     SCM_HEADER;
-    unsigned char direction;    /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
-    unsigned char type;         /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
-    unsigned char scrcnt;       /* # of bytes in the scratch buffer */
+    unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
+    unsigned int type      : 2; /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
+    unsigned int scrcnt    : 3; /* # of bytes in the scratch buffer */
 
     unsigned int ownerp    : 1; /* TRUE if this port owns underlying
                                    file pointer */
     unsigned int closed    : 1; /* TRUE if this port is closed */
     unsigned int error     : 1; /* Error has been occurred */
-    unsigned int priv      : 1; /* This port is private for a thread */
-    unsigned int endian    : 1; /* endianness; used for binary I/O */
+
+    unsigned int flags     : 5; /* see ScmPortFlags below */
     
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
 
@@ -1157,6 +1157,8 @@ struct ScmPortRec {
     ScmInternalCond  cv;        /* for port mutex */
     ScmVM *lockOwner;           /* for port mutex; owner of the lock */
     int lockCount;              /* for port mutex; # of recursive locks */
+
+    ScmObj data;                /* used internally */
 
     union {
         ScmPortBuffer buf;      /* buffered port */
@@ -1176,7 +1178,8 @@ enum ScmPortDirection {
     SCM_PORT_OUTPUT = 2
 };
 
-/* Port types */
+/* Port types.  The type is also represented by a port's class, but
+   C routine can dispatch quicker using these flags.  */
 enum ScmPortType {
     SCM_PORT_FILE,              /* file (buffered) port */
     SCM_PORT_ISTR,              /* input string port */
@@ -1191,17 +1194,20 @@ enum ScmPortBufferMode {
     SCM_PORT_BUFFER_NONE        /* flush the buffer for every output */
 };
 
-/* Port native endianness */
-enum ScmPortEndian {
-    SCM_PORT_BIG_ENDIAN,
-    SCM_PORT_LITTLE_ENDIAN
-};
-
 /* Return value from Scm_FdReady */
 enum ScmFdReadyResult {
     SCM_FD_WOULDBLOCK,
     SCM_FD_READY,
     SCM_FD_UNKNOWN
+};
+
+/* Other flags used internally */
+enum ScmPortFlags {
+    SCM_PORT_WRITESS = (1L<<0), /* write/ss on by default? */
+    SCM_PORT_WALKING = (1L<<1), /* this port is a special port only used in
+                                   the 'walk' phase of write/ss. */
+    SCM_PORT_PRIVATE = (1L<<2)  /* this port is for 'private' use within
+                                   a thread, so never need to be locked. */
 };
 
 #if 0 /* not implemented */
@@ -1352,9 +1358,8 @@ struct ScmWriteContextRec {
 enum {
     SCM_WRITE_WRITE = 0,        /* write mode   */
     SCM_WRITE_DISPLAY = 1,      /* display mode */
-    SCM_WRITE_DEBUG = 2,        /* debug mode   */
-    SCM_WRITE_SCAN = 3,         /* this mode of call is only initiated
-                                   by Scm_WriteStar (write*). */
+    SCM_WRITE_SHARED = 2,       /* write/ss mode   */
+    SCM_WRITE_WALK = 3,         /* this is a special mode in write/ss */
     SCM_WRITE_MODE_MASK = 0x3,
 
     SCM_WRITE_CASE_FOLD = 4,    /* case-fold mode.  need to escape capital
@@ -2442,12 +2447,8 @@ SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
 SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);
 
 /* repl */
-#if 0
-SCM_EXTERN void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out);
-#else
 SCM_EXTERN void Scm_Repl(ScmObj reader, ScmObj evaluator, ScmObj printer,
                          ScmObj prompter);
-#endif
 
 /* Inspect the configuration */
 SCM_EXTERN const char *Scm_HostArchitecture(void);

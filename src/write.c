@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.42 2004-01-25 11:11:45 shirok Exp $
+ *  $Id: write.c,v 1.43 2004-02-02 10:43:37 shirok Exp $
  */
 
 #include <stdio.h>
@@ -40,6 +40,10 @@
 #include "gauche/port.h"
 #include "gauche/builtin-syms.h"
 
+static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
+static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
+static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
+static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
 SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
@@ -51,20 +55,47 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 /* Note: all internal routine (static functions) assumes the output
    port is properly locked. */
 
-/* TODO: merge normal write and circular write natually, without
-   sacrificing the performance of normal write. */
+/* Note: in order to support write/ss, we need to pass down the context
+   along the call tree.  We can think of a few strategies:
+   
+  (a) Use separate context argument : this is logically the most natural way.
+      The problem is that the legacy code didn't take the context into
+      account (especially in the printer of user-defined objects).
+    
+  (b) Attach context information to the port : this isn't "right", because
+      theoretically a user program may want to mix output of write/ss and
+      other writes into a single port.  However, it isn't likely a problem,
+      since (1) the outmost write() call locks the port, hence only one
+      thread can write to the port during a single write/ss call, and
+      (2) the purpose of write/ss is to produce an output which can be
+      read back, so you don't want to mix up other output.
 
-/* character name table (first 33 chars of ASCII)*/
-static const char *char_names[] = {
-    "null",   "x01",   "x02",    "x03",   "x04",   "x05",   "x06",   "x07",
-    "x08",    "tab",   "newline","x0b",   "x0c",   "return","x0e",   "x0f",
-    "x10",    "x11",   "x12",    "x13",   "x14",   "x15",   "x16",   "x17",
-    "x18",    "x19",   "x1a",    "escape","x1c",   "x1d",   "x1e",   "x1f",
-    "space"
-};
+      Another possible drawback is the overhead of dynamic wind in the
+      toplevel write() call (since we need to remove the context information
+      from the port when write() exits non-locally).  If the port hasn't
+      been locked, we need a C-level unwind-protect anyway, so it's not
+      a problem.   If the port is already locked, extra dynamic wind may
+      impact performance.
 
-#define CASE_ITAG(obj, str) \
-    case SCM_ITAG(obj): Scm_PutzUnsafe(str, -1, out); break;
+      Furthermore, I feel it isn't "right" to modify longer-living data
+      (port) for the sake of local, dynamically-scoped information (context).
+      
+      The advantage of this method is that legacy code will work unchanged.
+
+  (c) A variation of (b) is to "wrap" the port by a transient procedural
+      port, which passes through output data to the original port, _and_
+      keeps the context info.  This is clean in the sense that it doesn't
+      contaminate the longer-living data (original port) by the transient
+      info.  We don't need to worry about dynamic winding as well (we can
+      leave the transient port to be GCed).
+
+      The concern is the overhead of forwarding output via procedural
+      port interface.
+
+   I'm not sure which is the best way in long run; so, as a temporary
+   solution, I use the strategy (b), since it is compatible to the current
+   version.  Let's see how it works.
+ */
 
 #define SPBUFSIZ   50
 
@@ -88,6 +119,156 @@ static inline int outlen(ScmPort *out)
     } else {
         return out->src.ostr.length;
     }
+}
+
+/*
+ * Scm_Write - Standard Write.
+ */
+void Scm_Write(ScmObj obj, ScmObj p, int mode)
+{
+    ScmWriteContext ctx;
+    ScmVM *vm;
+    ScmPort *port;
+    
+    if (!SCM_OPORTP(p)) {
+        Scm_Error("output port required, but got %S", p);
+    }
+    port = SCM_PORT(p);
+    ctx.mode = mode;
+    ctx.flags = 0;
+
+    /* if this is a "walk" pass of write/ss, dispatch to the walker */
+    if (port->flags & SCM_PORT_WALKING) {
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        write_walk(obj, port, &ctx);
+        return;
+    }
+    /* if this is a "output" pass of write/ss, call the recursive routine */
+    if (port->flags & SCM_PORT_WRITESS) {
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        write_ss_rec(obj, port, &ctx);
+        return;
+    }
+    
+    /* if case mode is not specified, use default taken from VM default */
+    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
+
+    vm = Scm_VM();
+    PORT_LOCK(port, vm);
+    if (SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED) {
+        PORT_SAFE_CALL(port, write_ss(obj, port, &ctx));
+    } else {
+        PORT_SAFE_CALL(port, write_internal(obj, port, &ctx));
+    }
+    PORT_UNLOCK(port);
+}
+
+/* 
+ * Scm_WriteLimited - Write to limited length.
+ *
+ *  Characters exceeding WIDTH are truncated.
+ *  If the output fits within WIDTH, # of characters actually written
+ *  is returned.  Othewise, -1 is returned.
+ * 
+ *  Current implementation is sloppy, potentially wasting time to write
+ *  objects which will be just discarded.
+ */
+int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
+{
+    ScmWriteContext ctx;
+    ScmObj out;
+    int nc;
+    
+    if (!SCM_OPORTP(port))
+        Scm_Error("output port required, but got %S", port);
+    out = Scm_MakeOutputStringPort(TRUE);
+    ctx.mode = mode;
+    ctx.flags = WRITE_LIMITED;
+    ctx.limit = width;
+    /* if case mode is not specified, use default taken from VM default */
+    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
+    /* we don't need to lock out, for it is private. */
+    write_internal(obj, SCM_PORT(out), &ctx);
+    nc = outlen(SCM_PORT(out));
+    if (nc > width) {
+        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
+                                   0, width);
+        SCM_PUTS(sub, port);    /* this locks port */
+        return -1;
+    } else {
+        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
+        return nc;
+    }
+}
+
+/*
+ * Scm_WriteCircular - circular-safe writer
+ */
+
+int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
+{
+    ScmWriteContext ctx;
+    int nc;
+
+    if (!SCM_OPORTP(port)) {
+        Scm_Error("output port required, but got %S", port);
+    }
+    ctx.mode = mode;
+    ctx.flags = WRITE_CIRCULAR;
+    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
+    if (width > 0) {
+        ctx.flags |= WRITE_LIMITED;
+        ctx.limit = width;
+    }
+    ctx.ncirc = 0;
+    ctx.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8));
+
+    if (width > 0) {
+        ScmObj out = Scm_MakeOutputStringPort(TRUE);
+        /* no need to lock out, for it is private */
+        write_ss(obj, SCM_PORT(out), &ctx);
+        nc = outlen(SCM_PORT(out));
+        if (nc > width) {
+            ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
+                                       0, width);
+            SCM_PUTS(sub, port); /* this locks port */
+            return -1;
+        } else {
+            SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
+            return nc;
+        }
+    } else {
+        ScmVM *vm = Scm_VM();
+        PORT_LOCK(SCM_PORT(port), vm);
+        PORT_SAFE_CALL(SCM_PORT(port),
+                       write_ss(obj, SCM_PORT(port), &ctx));
+        PORT_UNLOCK(SCM_PORT(port));
+    }
+    return 0;
+}
+
+/*===================================================================
+ * Default writer
+ */
+
+/* character name table (first 33 chars of ASCII)*/
+static const char *char_names[] = {
+    "null",   "x01",   "x02",    "x03",   "x04",   "x05",   "x06",   "x07",
+    "x08",    "tab",   "newline","x0b",   "x0c",   "return","x0e",   "x0f",
+    "x10",    "x11",   "x12",    "x13",   "x14",   "x15",   "x16",   "x17",
+    "x18",    "x19",   "x1a",    "escape","x1c",   "x1d",   "x1e",   "x1f",
+    "space"
+};
+
+#define CASE_ITAG(obj, str) \
+    case SCM_ITAG(obj): Scm_PutzUnsafe(str, -1, out); break;
+
+/* Obj is PTR, except pair and vector */
+static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+{
+    ScmClass *c = Scm_ClassOf(obj);
+    if (c->print) c->print(obj, out, ctx); 
+    else          write_object(obj, out, ctx);
 }
 
 /* Common routine. */
@@ -164,236 +345,9 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
             }
             Scm_PutcUnsafe(')', out);
         } else {
-            ScmClass *c = Scm_ClassOf(obj);
-            if (c->print) c->print(obj, out, ctx);
-            else          write_object(obj, out, ctx);
+            write_general(obj, out, ctx);
         }
     }
-}
-
-/*
- * Scm_Write - Standard Write.
- */
-void Scm_Write(ScmObj obj, ScmObj port, int mode)
-{
-    ScmWriteContext ctx;
-    ScmVM *vm = Scm_VM();
-    if (!SCM_OPORTP(port)) {
-        Scm_Error("output port required, but got %S", port);
-    }
-    ctx.mode = mode;
-    ctx.flags = 0;
-    /* if case mode is not specified, use default taken from VM default */
-    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
-
-    PORT_LOCK(SCM_PORT(port), vm);
-    PORT_SAFE_CALL(SCM_PORT(port),
-                   write_internal(obj, SCM_PORT(port), &ctx));
-    PORT_UNLOCK(SCM_PORT(port));
-}
-
-/* 
- * Scm_WriteLimited - Write to limited length.
- *
- *  Characters exceeding WIDTH are truncated.
- *  If the output fits within WIDTH, # of characters actually written
- *  is returned.  Othewise, -1 is returned.
- * 
- *  Current implementation is sloppy, potentially wasting time to write
- *  objects which will be just discarded.
- */
-int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
-{
-    ScmWriteContext ctx;
-    ScmObj out;
-    int nc;
-    
-    if (!SCM_OPORTP(port))
-        Scm_Error("output port required, but got %S", port);
-    out = Scm_MakeOutputStringPort(TRUE);
-    ctx.mode = mode;
-    ctx.flags = WRITE_LIMITED;
-    ctx.limit = width;
-    /* if case mode is not specified, use default taken from VM default */
-    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
-    /* we don't need to lock out, for it is private. */
-    write_internal(obj, SCM_PORT(out), &ctx);
-    nc = outlen(SCM_PORT(out));
-    if (nc > width) {
-        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
-                                   0, width);
-        SCM_PUTS(sub, port);    /* this locks port */
-        return -1;
-    } else {
-        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
-        return nc;
-    }
-}
-
-/*
- * Scm_WriteCircular - circular-safe writer
- */
-
-/* The first pass of write*.  */
-static void write_scan(ScmObj obj, ScmWriteContext *ctx)
-{
-    ScmHashEntry *e;
-
-    for (;;) {
-        if (!SCM_PTRP(obj)) return;
-            
-        if (SCM_PAIRP(obj)) {
-            e = Scm_HashTableGet(ctx->table, obj);
-            if (e) { e->value = SCM_TRUE; return; }
-            Scm_HashTablePut(ctx->table, obj, SCM_FALSE);
-
-            write_scan(SCM_CAR(obj), ctx);
-            obj = SCM_CDR(obj);
-            continue;
-        }
-        if (SCM_VECTORP(obj)) {
-            int i, len = SCM_VECTOR_SIZE(obj);
-
-            e = Scm_HashTableGet(ctx->table, obj);
-            if (e) { e->value = SCM_TRUE; return; }
-            Scm_HashTablePut(ctx->table, obj, SCM_FALSE);
-
-            for (i=0; i<len; i++) {
-                write_scan(SCM_VECTOR_ELEMENT(obj, i), ctx);
-            }
-            return;
-        }
-        /* TODO: need to call class-specific print method for scan. */
-        return;
-    }
-}
-
-/* pass 2 of circular list writer. */
-static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-
-static void write_circular_list(ScmObj obj, ScmPort *port,
-                                ScmWriteContext *ctx)
-{
-    ScmHashEntry *e;
-    for (;;) {
-        write_circular(SCM_CAR(obj), port, ctx);
-
-        obj = SCM_CDR(obj);
-        if (SCM_NULLP(obj)) { Scm_PutcUnsafe(')', port); return; }
-        if (!SCM_PAIRP(obj)) {
-            Scm_PutzUnsafe(" . ", -1, port);
-            write_circular(obj, port, ctx);
-            Scm_PutcUnsafe(')', port);
-            return;
-        }
-        e = Scm_HashTableGet(ctx->table, obj);
-        if (e && e->value != SCM_FALSE) {
-            Scm_PutzUnsafe(" . ", -1, port);
-            write_circular(obj, port, ctx);
-            Scm_PutcUnsafe(')', port);
-            return;
-        }
-        Scm_PutcUnsafe(' ', port);
-    }
-}
-
-static void write_circular_vector(ScmObj obj, ScmPort *port,
-                                  ScmWriteContext *ctx)
-{
-    int len = SCM_VECTOR_SIZE(obj), i;
-    ScmObj *elts = SCM_VECTOR_ELEMENTS(obj);
-    if (len > 0) {
-        for (i=0; i<len-1; i++) {
-            write_circular(elts[i], port, ctx);
-            Scm_PutcUnsafe(' ', port);
-        }
-        write_circular(elts[i], port, ctx);
-    }
-    Scm_PutcUnsafe(')', port);
-}
-
-static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    ScmHashEntry *e;
-    if (!SCM_PTRP(obj)) {
-        write_internal(obj, port, ctx);
-        return;
-    }
-
-    if (!SCM_PAIRP(obj) && !SCM_VECTORP(obj)) {
-        write_internal(obj, port, ctx);
-        return;
-    }
-        
-    e = Scm_HashTableGet(ctx->table, obj);
-    if (e && e->value != SCM_FALSE) {
-        char numbuf[50];
-        if (SCM_INTP(e->value)) {
-            /* This object is already printed. */
-            snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e->value));
-            Scm_PutzUnsafe(numbuf, -1, port);
-            return;
-        } else {
-            /* This object will be seen again.
-               Put a reference tag. */
-            char numbuf[50];
-            snprintf(numbuf, 50, "#%d=", ctx->ncirc);
-            e->value = SCM_MAKE_INT(ctx->ncirc);
-            ctx->ncirc++;
-            Scm_PutzUnsafe(numbuf, -1, port);
-        }
-    }
-
-    if (SCM_PAIRP(obj)) {
-        Scm_PutcUnsafe('(', port);
-        write_circular_list(obj, port, ctx);
-    } else if (SCM_VECTORP(obj)) {
-        Scm_PutzUnsafe("#(", -1, port);
-        write_circular_vector(obj, port, ctx);
-    }
-}
-
-int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
-{
-    ScmWriteContext ctx;
-    int nc;
-
-    if (!SCM_OPORTP(port)) {
-        Scm_Error("output port required, but got %S", port);
-    }
-    ctx.mode = mode;
-    ctx.flags = WRITE_CIRCULAR;
-    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
-    if (width > 0) {
-        ctx.flags |= WRITE_LIMITED;
-        ctx.limit = width;
-    }
-    ctx.ncirc = 0;
-    ctx.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8));
-    write_scan(obj, &ctx);
-
-    if (width > 0) {
-        ScmObj out = Scm_MakeOutputStringPort(TRUE);
-        /* no need to lock out, for it is private */
-        write_circular(obj, SCM_PORT(out), &ctx);
-        nc = outlen(SCM_PORT(out));
-        if (nc > width) {
-            ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
-                                       0, width);
-            SCM_PUTS(sub, port); /* this locks port */
-            return -1;
-        } else {
-            SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
-            return nc;
-        }
-    } else {
-        ScmVM *vm = Scm_VM();
-        PORT_LOCK(SCM_PORT(port), vm);
-        PORT_SAFE_CALL(SCM_PORT(port),
-                       write_circular(obj, SCM_PORT(port), &ctx));
-        PORT_UNLOCK(SCM_PORT(port));
-    }
-    return 0;
 }
 
 /* Default object printer delegates print action to generic function
@@ -419,6 +373,196 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
 }
 
 /*===================================================================
+ * Write with shared structure
+ */
+
+/* We need two passes to realize write/ss.
+
+   The first pass ("walk" pass) traverses the data and finds out
+   all shared substructures and/or cyclic references.  It builds a
+   hash table of objects that need special treatment.
+
+   The second pass ("output" pass) writes out the data.
+   
+   For the walk pass, we can't use generic traversal algorithm
+   if the data contains user-defined structures.  In which case,
+   we delegate the walk task to the user-defined print routine.
+   In the walk pass, a special dummy port is created.  It is a
+   procedural port to which all output is discarded.  If the
+   user-defined routine needs to traverse substructure, it calls
+   back system's writer routine such as Scm_Write, Scm_Printf, 
+   so we can effectively traverse entire data to be printed.
+
+*/
+
+/* Dummy port for the walk pass */
+static ScmPortVTable walker_port_vtable = {
+    NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL
+};
+
+static ScmPort *make_walker_port(void)
+{
+    ScmPort *port;
+    ScmObj ht;
+                                          
+    port = SCM_PORT(Scm_MakeVirtualPort(SCM_PORT_OUTPUT, &walker_port_vtable));
+    ht = Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0);
+    port->data = Scm_Cons(SCM_MAKE_INT(0), ht);
+    port->flags = SCM_PORT_WALKING;
+    return port;
+}
+
+/* pass 1 */
+static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmHashEntry *e;
+    ScmHashTable *ht;
+    ScmObj elt;
+    
+    ht = SCM_HASHTABLE(SCM_CDR(port->data));
+
+    for (;;) {
+        if (!SCM_PTRP(obj) || SCM_SYMBOLP(obj) || SCM_KEYWORDP(obj)) {
+            return;
+        }
+            
+        if (SCM_PAIRP(obj)) {
+            e = Scm_HashTableGet(ht, obj);
+            if (e) { e->value = SCM_TRUE; return; }
+            Scm_HashTablePut(ht, obj, SCM_FALSE);
+
+            elt = SCM_CAR(obj);
+            if (SCM_PTRP(elt)) write_walk(SCM_CAR(obj), port, ctx);
+            obj = SCM_CDR(obj);
+            continue;
+        }
+        if (SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) > 0) {
+            e = Scm_HashTableGet(ht, obj);
+            if (e) { e->value = SCM_TRUE; return; }
+            Scm_HashTablePut(ht, obj, SCM_FALSE);
+            return;
+        }
+        if (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) > 0) {
+            int i, len = SCM_VECTOR_SIZE(obj);
+
+            e = Scm_HashTableGet(ht, obj);
+            if (e) { e->value = SCM_TRUE; return; }
+            Scm_HashTablePut(ht, obj, SCM_FALSE);
+
+            for (i=0; i<len; i++) {
+                elt = SCM_VECTOR_ELEMENT(obj, i);
+                if (SCM_PTRP(elt)) write_walk(elt, port, ctx);
+            }
+            return;
+        }
+        else {
+            /* Now we have user-defined object.
+               Call the user's print routine. */
+            ScmClass *c;
+            e = Scm_HashTableGet(ht, obj);
+            if (e) { e->value = SCM_TRUE; return; }
+            Scm_HashTablePut(ht, obj, SCM_FALSE);
+
+            write_general(obj, port, ctx);
+            return;
+        }
+    }
+}
+
+/* pass 2 */
+static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmHashEntry *e;
+    char numbuf[50];  /* enough to contain long number */
+    ScmHashTable *ht;
+    ht = SCM_HASHTABLE(SCM_CDR(port->data));
+
+    if (!SCM_PTRP(obj)
+        || (SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) == 0)
+        || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
+        write_internal(obj, port, ctx);
+        return;
+    }
+
+    e = Scm_HashTableGet(ht, obj);
+    if (e && e->value != SCM_FALSE) {
+        if (SCM_INTP(e->value)) {
+            /* This object is already printed. */
+            snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e->value));
+            Scm_PutzUnsafe(numbuf, -1, port);
+            return;
+        } else {
+            /* This object will be seen again. Put a reference tag. */
+            int count = SCM_INT_VALUE(SCM_CAR(port->data));
+            snprintf(numbuf, 50, "#%d=", count);
+            e->value = SCM_MAKE_INT(count);
+            SCM_SET_CAR(port->data, SCM_MAKE_INT(count+1));
+            Scm_PutzUnsafe(numbuf, -1, port);
+        }
+    }
+
+    /* Writes aggregates */
+    if (SCM_PAIRP(obj)) {
+        Scm_PutcUnsafe('(', port);
+        for (;;) {
+            write_ss_rec(SCM_CAR(obj), port, ctx);
+        
+            obj = SCM_CDR(obj);
+            if (SCM_NULLP(obj)) { Scm_PutcUnsafe(')', port); return; }
+            if (!SCM_PAIRP(obj)) {
+                Scm_PutzUnsafe(" . ", -1, port);
+                write_ss_rec(obj, port, ctx);
+                Scm_PutcUnsafe(')', port);
+                return;
+            }
+            e = Scm_HashTableGet(ht, obj); /* check for shared cdr */
+            if (e && e->value != SCM_FALSE) {
+                Scm_PutzUnsafe(" . ", -1, port);
+                write_ss_rec(obj, port, ctx);
+                Scm_PutcUnsafe(')', port);
+                return;
+            }
+            Scm_PutcUnsafe(' ', port);
+        }
+    } else if (SCM_VECTORP(obj)) {
+        int len, i;
+        ScmObj *elts;
+        
+        Scm_PutzUnsafe("#(", -1, port);
+        len = SCM_VECTOR_SIZE(obj);
+        elts = SCM_VECTOR_ELEMENTS(obj);
+        for (i=0; i<len-1; i++) {
+            write_ss_rec(elts[i], port, ctx);
+            Scm_PutcUnsafe(' ', port);
+        }
+        write_ss_rec(elts[i], port, ctx);
+        Scm_PutcUnsafe(')', port);
+    } else {
+        /* string or user-defined object */
+        write_general(obj, port, ctx);
+    }
+}
+
+/* Write/ss main driver
+   NB: this should never be called recursively. */
+static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmPort *walker_port = make_walker_port();
+    
+    /* pass 1 */
+    write_walk(obj, walker_port, ctx);
+
+    /* pass 2 */
+    port->data = walker_port->data;
+    port->flags |= SCM_PORT_WRITESS;
+    write_ss_rec(obj, port, ctx);
+    port->data = SCM_FALSE;
+    port->flags &= ~SCM_PORT_WRITESS;
+}
+
+/*===================================================================
  * Formatters
  */
 
@@ -435,6 +579,22 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
 
 /* max # of parameters for a format directive */
 #define MAX_PARAMS 5
+
+/* dispatch to proper writer */
+static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    if (port->flags & SCM_PORT_WALKING) {
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        write_walk(obj, port, ctx);
+        return;
+    }
+    if (port->flags & SCM_PORT_WRITESS) {
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        write_ss_rec(obj, port, ctx);
+        return;
+    }
+    write_internal(obj, port, ctx);
+}
 
 /* output string with padding */
 static void format_pad(ScmPort *out, ScmString *str,
@@ -461,9 +621,9 @@ static void format_pad(ScmPort *out, ScmString *str,
 }
 
 /* ~s and ~a writer */
-static void format_writer(ScmPort *out, ScmObj arg,
-                          ScmObj *params, int nparams,
-                          int rightalign, int dots, int mode)
+static void format_sexp(ScmPort *out, ScmObj arg,
+                        ScmObj *params, int nparams,
+                        int rightalign, int dots, int mode)
 {
     int mincol = 0, colinc = 1, minpad = 0, maxcol = -1, nwritten = 0, i;
     ScmChar padchar = ' ';
@@ -517,7 +677,7 @@ static void format_integer(ScmPort *out, ScmObj arg,
         ScmWriteContext ictx;
         ictx.mode = SCM_WRITE_DISPLAY;
         ictx.flags = 0;
-        write_internal(arg, out, &ictx);
+        format_write(arg, out, &ictx);
         return;
     }
     if (SCM_FLONUMP(arg)) arg = Scm_InexactToExact(arg);
@@ -605,26 +765,26 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args)
             case 's':; case 'S':;
                 NEXT_ARG(arg, args);
                 if (numParams == 0) {
-                    write_internal(arg, out, &sctx);
+                    format_write(arg, out, &sctx);
                 } else {
-                    format_writer(out, arg, params, numParams, atflag,
-                                  colonflag, SCM_WRITE_WRITE);
+                    format_sexp(out, arg, params, numParams, atflag,
+                                colonflag, SCM_WRITE_WRITE);
                 }
                 break;
             case 'a':; case 'A':;
                 NEXT_ARG(arg, args);
                 if (numParams == 0) {
                     /* short path */
-                    write_internal(arg, out, &actx);
+                    format_write(arg, out, &actx);
                 } else {
-                    format_writer(out, arg, params, numParams, atflag,
-                                  colonflag, SCM_WRITE_DISPLAY);
+                    format_sexp(out, arg, params, numParams, atflag,
+                                colonflag, SCM_WRITE_DISPLAY);
                 }
                 break;
             case 'd':; case 'D':;
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
-                    write_internal(arg, out, &actx);
+                    format_write(arg, out, &actx);
                 } else {
                     format_integer(out, arg, params, numParams, 10,
                                    colonflag, atflag, FALSE);
@@ -634,10 +794,10 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args)
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        write_internal(Scm_NumberToString(arg, 2, FALSE), out,
+                        format_write(Scm_NumberToString(arg, 2, FALSE), out,
                                        &actx);
                     } else {
-                        write_internal(arg, out, &actx);
+                        format_write(arg, out, &actx);
                     }
                 } else {
                     format_integer(out, arg, params, numParams, 2,
@@ -648,10 +808,10 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args)
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        write_internal(Scm_NumberToString(arg, 8, FALSE), out,
+                        format_write(Scm_NumberToString(arg, 8, FALSE), out,
                                        &actx);
                     } else {
-                        write_internal(arg, out, &actx);
+                        format_write(arg, out, &actx);
                     }
                 } else {
                     format_integer(out, arg, params, numParams, 8,
@@ -662,11 +822,11 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args)
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        write_internal(Scm_NumberToString(arg, 16, ch == 'X'),
+                        format_write(Scm_NumberToString(arg, 16, ch == 'X'),
                                        out,
                                        &actx);
                     } else {
-                        write_internal(arg, out, &actx);
+                        format_write(arg, out, &actx);
                     }
                 } else {
                     format_integer(out, arg, params, numParams, 16,
@@ -789,7 +949,7 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
     } else if (!SCM_OPORTP(out)) {
         Scm_Error("output port required, but got %S", out);
     }
-    
+
     vm = Scm_VM();
     PORT_LOCK(SCM_PORT(out), vm);
     PORT_SAFE_CALL(SCM_PORT(out), format_proc(SCM_PORT(out), fmt, args));
@@ -987,7 +1147,7 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args)
                             for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
                         }
                     } else if (width == 0) {
-                        write_internal(val, out, &wctx);
+                        format_write(val, out, &wctx);
                     } else if (dot_appeared) {
                         int n = Scm_WriteLimited(val, SCM_OBJ(out), mode, width);
                         if (n < 0 && prec > 0) {
@@ -997,7 +1157,7 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args)
                             for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
                         }
                     } else {
-                        write_internal(val, out, &wctx);
+                        format_write(val, out, &wctx);
                     }
                     break;
                 }

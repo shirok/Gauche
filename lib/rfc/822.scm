@@ -1,7 +1,7 @@
 ;;;
 ;;; 822.scm - parsing RFC2822 style message
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.15 2003-12-30 05:39:22 shirok Exp $
+;;;  $Id: 822.scm,v 1.16 2004-02-02 10:43:37 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -143,7 +143,7 @@
 
 ;; Assuming the first char in input is DQUOTE
 (define (rfc822-quoted-string input)
-  (let1 r (open-output-string/private)
+  (let1 r (open-output-string :private? #t)
     (define (finish) (get-output-string r))
     (let loop ((c (peek-next-char input)))
       (cond ((eof-object? c) (finish));; tolerate missing closing DQUOTE
