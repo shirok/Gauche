@@ -1,3 +1,9 @@
+2003-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/Makefile.in (slibcat-in-place): use $(top_builddir)
+	  instead of $(exec_prefix), since at this moment gosh isn't
+	  installed there yet.
+
 2003-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (is_distinct): fixed a bug in the optimizer, which
