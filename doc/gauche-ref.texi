@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.250 2002-08-16 23:27:29 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.251 2002-08-24 08:37:54 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3964,6 +3964,22 @@ respectively.  It is an error to pass a non-integral number.
 (even? 3)    @result{} #f
 (odd? 3.0)   @result{} #t
 @end example
+@end defun
+
+@defun fixnum? n
+@defunx bignum? n
+@c EN
+Returns @code{#t} iff @var{n} is an exact integer whose internal
+representation is @var{fixnum} and @var{bignum}, respectively.
+Portable Scheme programs don't need to care about the internal
+representation of integer.   These are for certain low-level
+routines that does particular optimization.
+@c JP
+@var{n}が正確な整数で、かつ内部的にそれぞれ@var{fixnum}もしくは@var{bignum}
+で表現されているときに@code{#t}を返します。
+通常のSchemeプログラムは整数の内部表現を気にする必要はありません。
+これらの手続きは、ある種の最適化を行う低レベル手続きのために用意されています。
+@c COMMON
 @end defun
 
 @node Numerical comparison, Arithmetics, Numerical predicates, Numbers
