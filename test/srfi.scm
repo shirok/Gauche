@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.37 2004-07-26 09:51:42 shirok Exp $
+;; $Id: srfi.scm,v 1.38 2004-08-19 06:49:14 shirok Exp $
 
 (use gauche.test)
 
@@ -523,10 +523,10 @@
        (eval '(program
                (requires no-such-feature))
              (make-module #f)))
-(test* "program (files (empty))" 3
+(test* "program (files (empty))" '(1 . 2)
        (eval '(program
                (files)
-               (code (+ 1 2)))
+               (code (cons 1 2)))
              (make-module #f)))
 (test* "program (files)" 6
        (eval '(program

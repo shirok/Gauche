@@ -1,3 +1,10 @@
+2004-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c, src/stdlib.stub, src/gauche/vm.h:
+	  making an inliner into a generic compiler macro, stage 3.
+	  Now the inliner is (Sexpr, Env, Context) -> (Sexpr), which is
+	  the same as the macro transformer.
+	
 2004-08-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c, src/macro.c, src/genstub, src/gauche.h:

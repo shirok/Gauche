@@ -30,12 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.118 2004-08-16 02:33:57 shirok Exp $
+ *  $Id: compile.c,v 1.119 2004-08-19 06:49:14 shirok Exp $
  */
 
 #include <stdlib.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/vm.h"
 #include "gauche/builtin-syms.h"
 
 /* constructor definition comes below */
@@ -46,6 +47,7 @@ static ScmObj id_lambda = SCM_UNBOUND;
 static ScmObj id_if     = SCM_UNBOUND;
 static ScmObj id_begin  = SCM_UNBOUND;
 static ScmObj id_letrec = SCM_UNBOUND;
+static ScmObj id_asm    = SCM_UNBOUND;
 
 /*#define GAUCHE_USE_NVM*/
 
@@ -557,14 +559,15 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                     }
                     if (!NOINLINEP(vm) && SCM_PROCEDUREP(gv)
                         && SCM_PROCEDURE_INLINER(gv)) {
-                        ScmInliner *inliner = SCM_PROCEDURE_INLINER(gv);
-                        trns = inliner->proc;
-                        data = inliner->data;
-                        ScmObj inlined = trns(gv, form, env, data);
+                        ScmObj inlined;
+                        trns = SCM_PROCEDURE_INLINER(gv)->proc;
+                        data = SCM_PROCEDURE_INLINER(gv)->data;
+                        inlined = trns(gv, form, env, data);
                         if (!SCM_FALSEP(inlined)) {
-                            add_srcinfo(Scm_LastPair(inlined), form);
-                            return inlined;
+                            form = inlined;
+                            goto recompile;
                         }
+                        /* FALLTHROUGH */
                     }
                 }
                 /* Symbol doesn't have syntactic bindings.  It must be
@@ -2039,12 +2042,43 @@ static ScmSyntax syntax_export = {
  *   These routine are called from genstub-generated C code at
  *   compile time to generate a code to inline it.
  */
+
+/* NB: the special form (%asm <insn> <args> ...) should be considered
+   transitional and temporary. */
+static ScmObj compile_asm(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmObj insn, args;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
+    SCM_ASSERT(SCM_PAIRP(SCM_CDR(form)));
+    insn = SCM_CADR(form);
+    SCM_FOR_EACH(args, SCM_CDDR(form)) {
+        ADDCODE(compile_int(SCM_CAR(args), env, SCM_COMPILE_NORMAL));
+        if (SCM_PAIRP(SCM_CDR(args))) ADDPUSH();
+    }
+    ADDCODE1(insn);
+    return code;
+}
+
+static ScmSyntax syntax_asm = {
+    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    SCM_SYMBOL(SCM_SYM_ASM),
+    compile_asm,
+    NULL
+};
+
+ScmObj Scm_MakeInlineAsmForm(ScmObj form, ScmObj insn, ScmObj args)
+{
+    /* The representation of inline assembly directive may be changed
+       later.  The current form is temporary. */
+    ScmObj code = Scm_Cons(id_asm, Scm_Cons(insn, args));
+    return add_srcinfo(code, form);
+}
+
 ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
                           int reqargs, int optargs, int insn, char *proc)
 {
-    ScmObj cp = SCM_CDR(form);
-    ScmObj code = SCM_NIL, codetail = SCM_NIL;
-    int nargs = Scm_Length(cp);
+    ScmObj vminsn;
+    int nargs = Scm_Length(SCM_CDR(form));
     if (optargs) {
         if (0 < reqargs && nargs < reqargs) {
             Scm_Error("%s requires at least %d arg(s)", proc, reqargs);
@@ -2054,16 +2088,13 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
             Scm_Error("%s requires exactly %d arg(s)", proc, reqargs);
         }
     }
-    SCM_FOR_EACH(cp, cp) {
-        ADDCODE(compile_int(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));
-        if (SCM_PAIRP(SCM_CDR(cp))) ADDPUSH();
-    }
+    /* TODO: temporary */
     if (optargs) {
-        ADDCODE1(SCM_VM_INSN1(insn, nargs));
+        vminsn = SCM_VM_INSN1(insn, nargs);
     } else {
-        ADDCODE1(SCM_VM_INSN(insn));
+        vminsn = SCM_VM_INSN(insn);
     }
-    return code;
+    return Scm_MakeInlineAsmForm(form, vminsn, SCM_CDR(form));
 }
 
 /*===================================================================
@@ -2248,10 +2279,13 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_CURRENT_MODULE, syntax_current_module);
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
+    DEFSYN_G(SCM_SYM_ASM,          syntax_asm);
 
     id_lambda = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LAMBDA), SCM_NIL);
     id_if = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_IF), SCM_NIL);
     id_begin = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_BEGIN), SCM_NIL);
     id_letrec = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LETREC), SCM_NIL);
+    id_asm = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_ASM), SCM_NIL);
+    SCM_IDENTIFIER(id_asm)->module = Scm_GaucheModule(); /* hack */
 }
 

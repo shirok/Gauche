@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.106 2004-08-16 02:33:58 shirok Exp $
+;;; $Id: stdlib.stub,v 1.107 2004-08-19 06:49:14 shirok Exp $
 ;;;
 
 
@@ -133,8 +133,7 @@
 "/* inliner for `+' */
 static ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env)
 {
-  return Scm_Append2X(Scm_Compile(arg1, env, SCM_COMPILE_NORMAL),
-                      Scm_Cons(SCM_VM_INSN1(insn, arg0), SCM_NIL));
+  return Scm_MakeInlineAsmForm(SCM_NIL, SCM_VM_INSN1(insn, arg0), SCM_LIST1(arg1));
 }
 
 static ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
@@ -152,7 +151,7 @@ static ScmObj plus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   arg1 = SCM_CADR(args);
   if (SCM_INTP(arg0)) {
     if (SCM_INTP(arg1)) {
-      return(SCM_LIST1(Scm_MakeInteger(SCM_INT_VALUE(arg0)+SCM_INT_VALUE(arg1))));
+      return(Scm_MakeInteger(SCM_INT_VALUE(arg0)+SCM_INT_VALUE(arg1)));
     }
     imm = SCM_INT_VALUE(arg0);
     if (SCM_VM_INSN_ARG_FITS(imm))
@@ -174,7 +173,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   arg1 = SCM_CADR(args);
   if (SCM_INTP(arg0)) {
     if (SCM_INTP(arg1)) {
-      return(SCM_LIST1(Scm_MakeInteger(SCM_INT_VALUE(arg0)-SCM_INT_VALUE(arg1))));
+      return(Scm_MakeInteger(SCM_INT_VALUE(arg0)-SCM_INT_VALUE(arg1)));
     }
     imm = SCM_INT_VALUE(arg0);
     if (SCM_VM_INSN_ARG_FITS(imm))
@@ -379,13 +378,11 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 "static ScmObj cxxr_inliner(ScmObj form, ScmObj env,
                             const char *name, int insn1, int insn2)
  {
-   ScmObj h = SCM_NIL, t = SCM_NIL;
+   ScmObj step1;
    if (Scm_Length(form) != 2)
      Scm_Error(\"%s requires exactly one argument\", name);
-   SCM_APPEND(h, t, Scm_Compile(SCM_CADR(form), env, SCM_COMPILE_NORMAL));
-   SCM_APPEND1(h, t, SCM_VM_INSN(insn1));
-   SCM_APPEND1(h, t, SCM_VM_INSN(insn2));
-   return h;
+   step1 = Scm_MakeInlineAsmForm(form, SCM_VM_INSN(insn1), SCM_CDR(form));
+   return Scm_MakeInlineAsmForm(form, SCM_VM_INSN(insn2), SCM_LIST1(step1));
  }
  static ScmObj caar_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
  { return cxxr_inliner(form, env, \"caar\", SCM_VM_CAR, SCM_VM_CAR); }

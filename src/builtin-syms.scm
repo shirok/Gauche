@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.3 2004-07-26 09:51:41 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.4 2004-08-19 06:49:14 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.3 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.4 $.  DO NOT EDIT */"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
@@ -94,6 +94,7 @@
     (...                       SCM_SYM_ELLIPSIS)
     (%macroexpand              SCM_SYM_MACRO_EXPAND)
     (%macroexpand-1            SCM_SYM_MACRO_EXPAND_1)
+    (%asm                      SCM_SYM_ASM)
 
     ;; class category
     (builtin                   SCM_SYM_BUILTIN)

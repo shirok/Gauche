@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.91 2004-08-12 20:39:50 shirok Exp $
+ *  $Id: vm.h,v 1.92 2004-08-19 06:49:14 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -481,5 +481,11 @@ enum {
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))
 #define SCM_VM_COMPILER_FLAG_SET(vm, flag)    ((vm)->compilerFlags |= (flag))
 #define SCM_VM_COMPILER_FLAG_CLEAR(vm, flag)  ((vm)->compilerFlags &= ~(flag))
+
+/*
+ * Inlinin assembler stuff
+ */
+
+SCM_EXTERN ScmObj Scm_MakeInlineAsmForm(ScmObj form, ScmObj insn, ScmObj args);
 
 #endif /* GAUCHE_VM_H */
