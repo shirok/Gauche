@@ -587,8 +587,15 @@
 ;; 6.6.1  Ports
 ;;
   
-; call-with-input-file
-; call-with-output-file
+(define-cproc call-with-input-file (file proc)
+  (assert (string? file))
+  (assert (procedure? proc))
+  "  Scm_CallWithFile(file, proc, 1);")
+
+(define-cproc call-with-output-file (file proc)
+  (assert (string? file))
+  (assert (procedure? proc))
+  "  Scm_CallWithFile(file, proc, 0);")
 
 (define-cproc input-port? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_IPORTP(obj)));")
