@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.44 2001-11-14 10:10:11 shirok Exp $
+dnl $Id: configure.in,v 1.45 2001-11-14 11:13:37 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -217,7 +217,7 @@ dnl                      system supports dso.  empty otherwise.
 AC_MSG_CHECKING(how to make dynamic loadable module)
 case $host in
   *-linux-gnu|*freebsd*)
-    SHLIB_SO_CFLAGS="-fpic"
+    SHLIB_SO_CFLAGS="-fPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS="-rdynamic"
@@ -249,7 +249,7 @@ case $host in
     ;;
   mips-sgi-irix*)
     if test "$CC" = gcc; then
-      SHLIB_SO_CFLAGS="-fpic"
+      SHLIB_SO_CFLAGS="-fPIC"
     else
       SHLIB_SO_CFLAGS="-KPIC"
     fi
