@@ -24,9 +24,10 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.11 2003-02-18 07:01:09 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.12 2003-02-26 06:48:49 shirok Exp $
 
 (define-module srfi-19
+  (use srfi-1)
   (export time-tai time-utc time-monotonic time-thread
           time-process time-duration current-time time-resolution
           make-time time? time-type time-second time-nanosecond
@@ -112,13 +113,16 @@
     (78796800  . 11)
     (63072000  . 10)))
 
+(define-constant tm:leap-second-base
+  (* (- 1972 1970) 365 tm:sid))
+
 (define (tm:leap-second-delta utc-seconds)
-  (letrec ( (lsd (lambda (table)
-		   (cond ((>= utc-seconds (caar table))
-			  (cdar table))
-			 (else (lsd (cdr table)))))) )
-    (if (< utc-seconds  (* (- 1972 1970) 365 tm:sid)) 0
-	(lsd  tm:leap-second-table))))
+  (if (< utc-seconds tm:leap-second-base)
+      0
+      (let loop ((table tm:leap-second-table))
+        (if (>= utc-seconds (caar table))
+            (cdar table)
+            (loop (cdr table))))))
 
 ;;;----------------------------------------------------------
 ;;; TIME strcture interface
