@@ -6,17 +6,10 @@
 (use gauche.collection)
 (use srfi-1)
 (use srfi-13)
+(use gauche.uvector)
 
 (test-start "mt-random")
-;; instead of (use srfi-4) ...
-(if (member "." *load-path*)
-  (begin (eval '(add-load-path "../uvector") (interaction-environment))
-         (load "uvector")
-         (load "mt-random"))
-  (begin (load "gauche/uvector")
-         (load "math/mt-random")))
-(import gauche.uvector)
-(import math.mt-random)
+(use math.mt-random)
 (test-module 'math.mt-random)
 
 (define (value-in-range? range)

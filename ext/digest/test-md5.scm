@@ -2,13 +2,9 @@
 ;; test for md5 module
 ;;
 
-(use gauche.test)
-(test-start "md5")
+(test-section "md5")
 
-(if (member "." *load-path*) ;; trick to allow in-place test
-  (load "md5")
-  (load "rfc/md5"))
-(import rfc.md5)
+(use rfc.md5)
 (test-module 'rfc.md5)
 
 (for-each
@@ -25,4 +21,3 @@
    ("d174ab98d277d9f5a5611c2c9f419d9f" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
    ("57edf4a22be3c955ac49da2e2107b67a" "12345678901234567890123456789012345678901234567890123456789012345678901234567890")))
 
-(test-end)

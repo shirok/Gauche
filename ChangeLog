@@ -1,5 +1,9 @@
 2003-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/*/test.scm : removed kludge code that allowed to load modules
+	  from the testing directory---now 'make' creates links so we
+	  no longer need them.
+
 	* lib/srfi-1.scm : added missing autoload fro list=  (Patch from
 	  Michal Maru-B¹ka.$)B
 

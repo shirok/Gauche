@@ -3,15 +3,10 @@
 ;;
 
 (use gauche.test)
-
-(test-start "uniform vector and array")
-
-(if (member "." *load-path*) ;; trick to allow in-place test
-  (load "uvector")
-  (load "gauche/uvector"))
-(import gauche.uvector)
 (use srfi-1)
 
+(test-start "uniform vector and array")
+(use gauche.uvector)
 (test-module 'gauche.uvector)
 
 ;;-------------------------------------------------------------------

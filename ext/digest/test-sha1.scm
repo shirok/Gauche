@@ -2,13 +2,9 @@
 ;; test for sha1 module
 ;;
 
-(use gauche.test)
-(test-start "sha1")
+(test-section "sha1")
 
-(if (member "." *load-path*) ;; trick to allow in-place test
-  (load "sha1")
-  (load "rfc/sha1"))
-(import rfc.sha1)
+(use rfc.sha1)
 (test-module 'rfc.sha1)
 
 (for-each
@@ -23,5 +19,3 @@
     ,(make-string 1000000 #\a))
    ("dea356a2cddd90c7a7ecedc5ebb563934f460452"
     ,(with-output-to-string (lambda () (dotimes (n 10) (display "0123456701234567012345670123456701234567012345670123456701234567")))))))
-
-(test-end)

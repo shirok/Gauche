@@ -4,12 +4,8 @@
 
 (use gauche.test)
 
-(if (member "." *load-path*) ;; trick to allow in-place test
-  (load "charconv")
-  (load "gauche/charconv"))
-(import gauche.charconv)
-
 (test-start "charconv")
+(use gauche.charconv)
 (test-module 'gauche.charconv)
 
 (define (file->string file)

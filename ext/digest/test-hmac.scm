@@ -2,22 +2,11 @@
 ;; test for hmac module
 ;;
 
-(use gauche.test)
-(test-start "hmac")
+(test-section "hmac")
 
-;; kludge for "in-place" test
-(if (member "." *load-path*)
-  (load "md5")
-  (load "rfc/md5"))
-(import rfc.md5)
-(if (member "." *load-path*)
-  (load "sha1")
-  (load "rfc/sha1"))
-(import rfc.sha1)
-
-(add-load-path "../uvector")
-(load "uvector")
-(import gauche.uvector)
+(use gauche.uvector)
+(use rfc.md5)
+(use rfc.sha1)
 
 (use rfc.hmac)
 (test-module 'rfc.hmac)

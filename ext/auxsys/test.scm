@@ -4,12 +4,8 @@
 
 (use gauche.test)
 
-(if (member "." *load-path*) ;; trick to allow in-place test
-  (load "auxsys")
-  (load "gauche/auxsys"))
-(import gauche.auxsys)
-
 (test-start "auxsys")
+(use gauche.auxsys)
 (test-module 'gauche.auxsys)
 
 ;; It is difficult to test some functions in gauche.auxsys
