@@ -1,5 +1,6 @@
 2002-05-04  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.5.4
 	* src/gauche.h, src/system.c : rename some tokens to avoid name
 	  conflicts to macros in Darwin.
 	* lib/file/util.scm : more procedures.

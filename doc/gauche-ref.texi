@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.197 2002-05-05 01:50:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.198 2002-05-05 07:15:17 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11917,11 +11917,11 @@ directory.
 @defunx delete-directory* name 
 @c EN
 Deletes directory @var{name} and its content recursively 
-(like @code{rm -rf} command on Unix).   Symbolic links are not
+(like @code{rm -r} command on Unix).   Symbolic links are not
 followed.
 @c JP
 ディレクトリ@var{name}とその内容を再帰的に消去します
-(Unixの@code{rm -rf}コマンドと同様です)。シンボリックリンクは辿られません。
+(Unixの@code{rm -r}コマンドと同様です)。シンボリックリンクは辿られません。
 @c COMMON
 @end defun
 
