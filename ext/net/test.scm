@@ -224,7 +224,11 @@
 
 (test "inet client socket" #t
       (lambda ()
-        (call-with-client-socket (make-client-socket (make <sockaddr-in> :host "localhost" :port *inet-port*))
+        (call-with-client-socket
+         (make-client-socket (make (if (symbol-bound? '<sockaddr-in6>)
+                                     <sockaddr-in6>
+                                     <sockaddr-in>)
+                               :host "localhost" :port *inet-port*))
           (lambda (in out)
             (display (make-string *chunk-size* #\a) out)
             (newline out)
