@@ -12,21 +12,16 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.13 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: symbol.c,v 1.14 2001-03-31 09:18:07 shiro Exp $
  */
 
 #include "gauche.h"
 
-/*
+/*-----------------------------------------------------------
  * Symbols
  */
 
-static int symbol_print(ScmObj obj, ScmPort *port, int mode)
-{
-    SCM_PUTS(SCM_SYMBOL(obj)->name, port);
-    return SCM_STRING_LENGTH(SCM_SYMBOL(obj)->name);
-}
-
+static int symbol_print(ScmObj obj, ScmPort *port, int mode);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 
 #define INITSYM(sym, nam)                       \
@@ -37,6 +32,8 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 /* These two are global resource.  Must be protected in MT environment. */
 static ScmHashTable *obtable;   /* name -> symbol mapper */
 static int gensym_count = 0;
+
+/* Intern */
 
 ScmObj Scm_Intern(ScmString *name)
 {
@@ -84,7 +81,94 @@ ScmObj Scm_Gensym(ScmString *prefix)
     return SCM_OBJ(sym);
 }
 
-/*
+/* Print */
+
+/* table of special chars.
+   bit 0: bad char for symbol to begin with
+   bit 1: bad char for symbol to contain
+   bit 2: bad char for symbol, and should be written as \nnn
+   bit 3: bad char for symbol, and should be written as \c */
+static char special[] = {
+ /* NUL .... */
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+ /* .... */
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+ /*    !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /  */
+    3, 0, 3, 3, 0, 0, 0, 3, 3, 3, 0, 1, 3, 1, 1, 0,
+ /* 0  1  2  3  4  5  6  7  8  9  :  ;  <  =  >  ?  */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0, 0, 0, 0,
+ /* @  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  */
+    1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+ /* P  Q  R  S  T  U  V  W  X  Y  Z  [  \  ]  ^  _  */
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 11,3, 0, 0,
+ /* `  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  */
+    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ /* p  q  r  s  t  u  v  w  x  y  z  {  |  }  ~  ^? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 11,3, 0, 7
+};
+
+static int symbol_print(ScmObj obj, ScmPort *port, int mode)
+{
+    if (mode == SCM_PRINT_DISPLAY) {
+        SCM_PUTS(SCM_SYMBOL(obj)->name, port);
+        return SCM_STRING_LENGTH(SCM_SYMBOL(obj)->name);
+    } else {
+        /* See if we have special characters, and use |-escape if necessary. */
+        /* TODO: For now, we regard chars over 0x80 is all "printable".
+           Need a more consistent mechanism. */
+        ScmString *snam = SCM_SYMBOL(obj)->name;
+        const char *p = SCM_STRING_START(snam), *q;
+        int siz = SCM_STRING_SIZE(snam), i;
+        int escape = FALSE;
+        
+        if (siz == 0) {         /* special case */
+            SCM_PUTCSTR("||", port);
+            return 2;
+        }
+        if (siz == 1 && (*p == '+' || *p == '-')) {
+            SCM_PUTC((unsigned)*p, port);
+            return 1;
+        }
+        if ((unsigned int)*p < 128 && (special[(unsigned int)*p]&1)) {
+            escape = TRUE;
+        } else {
+            for (i=0, q=p; i<siz; i++, q++) {
+                if ((unsigned int)*q < 128 && (special[(unsigned int)*q]&2)) {
+                    escape = TRUE;
+                    break;
+                }
+            }
+        }
+        if (escape) {
+            int nc = 0;
+            SCM_PUTC('|', port); nc++;
+            for (q=p; q<p+siz; ) {
+                unsigned int ch;
+                SCM_STR_GETC(q, ch);
+                q += SCM_CHAR_NBYTES(ch);
+                if (ch < 128) {
+                    if (special[ch] & 8) {
+                        SCM_PUTC('\\', port); nc++;
+                        SCM_PUTC(ch, port); nc++;
+                    } else if (special[ch] & 4) {
+                        nc += Scm_Printf(port, "\\x%02x", ch);
+                    } else {
+                        SCM_PUTC(ch, port); nc++;
+                    }
+                } else {
+                    SCM_PUTC(ch, port); nc++;
+                }
+            }
+            SCM_PUTC('|', port); nc++;
+            return nc;
+        } else {
+            SCM_PUTS(snam, port);
+            return SCM_STRING_LENGTH(snam);
+        }
+    }
+}
+
+/*---------------------------------------------------------------
  * GLOCs
  */
 
@@ -119,7 +203,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     } while (0)
 
 #define DEFSYM(cname, sname) \
-    ScmSymbol cname = { SCM_CLASS_SYMBOL, NULL }
+    ScmSymbol cname = { { SCM_CLASS_SYMBOL }, NULL }
 #include "gauche/predef-syms.h"
 #undef DEFSYM
 
