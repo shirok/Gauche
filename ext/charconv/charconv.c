@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.16 2001-06-08 09:36:09 shirok Exp $
+ *  $Id: charconv.c,v 1.17 2001-11-20 10:45:25 shirok Exp $
  */
 
 #include <string.h>
@@ -203,8 +203,12 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
         
         inbuf = SCM_NEW_ATOMIC2(char *, bufsiz);
         preread = Scm_Getz(inbuf, bufsiz, fromPort);
-        if (preread <= 0)
-            Scm_Error("input port is already empty: %S", fromPort);
+        if (preread <= 0) {
+            /* Input buffer is already empty or unreadable.
+               Determining character code is not necessary.
+               We just return a dummy empty port. */
+            return Scm_MakeInputStringPort(SCM_STRING(SCM_MAKE_STR("")));
+        }
         guessed = guess->proc(inbuf, preread, guess->data);
         if (guessed == NULL)
             Scm_Error("%s: failed to guess input encoding", fromCode);
@@ -255,7 +259,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
  * There's no way to detect that unless I scan the output by myself
  * to see the last byte of conversion is invalid or not.
  *
- * As a walkaround, I flush the output buffer more frequently than
+ * As a workaround, I flush the output buffer more frequently than
  * needed, avoiding the situation that the output buffer overflow.
  * Hoping the bugs are fixed in the future release of glibc.
  */
