@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.254 2002-08-28 00:05:45 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.255 2002-09-01 20:54:50 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -728,6 +728,12 @@ SRFI-28 @code{format}.  @xref{Output}.
 @c JP
 Gauche組み込みの@code{format}がSRFI-28のもののスーパーセットに
 なっています。@ref{Output}参照。
+
+@item SRFI-30, Nested multi-line comments.
+@c EN
+Supported by the native reader.  @xref{Lexical structure}.
+@c JP
+ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 @c COMMON
 @end table
 
@@ -1151,6 +1157,45 @@ convenient when used together.
 @c COMMON
 
 @c EN
+The @code{use} mechanism is not transitive; that is,
+if a module B uses a module A, and a module C uses the module B,
+C doesn't see the bindings in A.  It is because B and A is not in the
+@var{is-a} relationship.
+Suppose the module A implements a low-level functionality and
+the module B implements a high-level abstraction; if C is using
+B, what C wants to see is just a high-level abstraction, and
+doesn't concern how B implements such functionality.  If C wants
+to access low-level stuff, C has to @var{use} A explicitly.
+@c JP
+@code{use}メカニズムは非遷移的です。すなわち、
+モジュールBがモジュールAを'use'し、さらにモジュールCがモジュールBを
+'use'している場合、モジュールCからはモジュールA内の束縛は見えません。
+BとAは@var{is-a}関係ではないためです。
+例えばモジュールAが低レベルの操作を実装し、
+モジュールBがその上に高レベルの抽象的なインタフェースを実装しているとしましょう。
+モジュールCがモジュールBを'use'しているということは、
+CはBの提供する抽象レイヤに興味があるということです。
+もしCがさらに低レベルの層にもアクセスしたいならば、CはAを明示的に'use'しなければ
+なりません。
+@c COMMON
+
+@c EN
+There is another type of relationship, though.  You might want to
+take an exiting module A, and add some interface to it and provide
+the resulting module B as an extension of A.  In such a case,
+B is-a A, and it'd be natural that the module that uses B can also
+see A's bindings.   In Gauche, it is called @emph{module inheritance}
+and realized by @code{extend} form.
+@c JP
+しかし、別の形の関係が必要な場合もあります。例えば既存のモジュールAに
+ちょっと新しいインタフェースを付け加えたモジュールBをAの拡張として
+提供したいという場合です。この時、BとAは@var{is-a}関係であり、Bを'use'
+しているモジュールからA内の束縛も見えるのが自然です。
+Gaucheでは、これをモジュールの継承と呼び、
+@code{extend}フォームにより実現しています。
+@c COMMON
+
+@c EN
 The following sections in this manual describes
 modules in details.
 @itemize @bullet
@@ -1161,6 +1206,7 @@ writing modules.
 @ref{Modules} describes special forms and macros to
 define and to use modules, along the built-in functions
 to introspect module internals.
+@item
 @end itemize
 @c JP
 以下のセクションでモジュールの機能について詳しく説明しています。
@@ -1381,12 +1427,12 @@ Prints the @code{gosh} version and exits.
 @c EN
 Use @var{module}.  Before starting execution of @var{scheme-file} or entering
 the read-eval-print loop, the specified module is @var{use}d, i.e.
-it is loaded and imported (@xref{Module syntax}, for details of @code{use}).
+it is loaded and imported (@xref{Defining and selecting modules}, for details of @code{use}).
 You can specify this option more than once to use multiple modules.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
 をロードする前に@var{module}を``use''します。つまりそのモジュールがロードされ
-インポートされます。(@code{use}の詳細については@ref{Module syntax}を参照して下さい)。
+インポートされます。(@code{use}の詳細については@ref{Defining and selecting modules}を参照して下さい)。
 このオプションは複数回指定できます。
 @c COMMON
 @end deftp
@@ -1410,7 +1456,7 @@ Evaluate @var{scheme-expression}
 before starting execution of @var{scheme-file} or entering
 the read-eval-print loop.   Evaluation is done in the
 @var{interaction-environment} (@xref{Eval}).
-You can specify this option more than once to load multiple files.
+You can specify this option more than once to evaluate multiple experssions.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
 をロードする前に@var{scheme-expression}を評価します。評価は
@@ -1551,8 +1597,68 @@ interactive session.
 @section Debugging
 @c NODE デバッグ
 
+@c EN
+Gauche doesn't have much support for debugging yet.
+The idea of good debugging interfaces are welcome.
+@c JP
+Gaucheにはまだデバッグをサポートする機能があまり実装されていません。
+デバッギングのインタフェースに関して良いアイディアがあればお寄せください。
+@c COMMON
 
+@c EN
+For now, the author uses the classic 'debug print stub' technique
+when necessary.  A special reader syntax @code{#?=@var{expr}} is
+defined, which is read as @code{(debug-print @var{expr})}.
+The macro @code{debug-print} evaluates and returns the result(s),
+printing messages before and after evaluation of @var{expr}.
+@c JP
+今のところ、作者は必要な時は古典的な「プリントスタブ」方式を使っています。
+そのためのリーダーマクロ @code{#?=@var{expr}} が定義されています。
+これは @code{(debug-print @var{expr})} のように読まれ、
+マクロ @code{debug-print} は@var{expr}を評価してその値を返しますが、
+評価前と評価後にメッセージを出力します。
+@c COMMON
 
+@example
+gosh> #?=(+ 2 3)
+#?="(stdin)":1:(+ 2 3)
+#?-    5
+5
+gosh> #?=(begin (print "foo") (values 'a 'b 'c))
+#?="(stdin)":2:(begin (print "foo") (values 'a 'b 'c))
+foo
+#?-    a
+#?+    b
+#?+    c
+a
+b
+c
+gosh> (define (fact n)
+        (if (zero? n)
+            1
+            (* n #?=(fact (- n 1)))))
+fact
+gosh> (fact 5)
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?-    1
+#?-    1
+#?-    2
+#?-    6
+#?-    24
+120
+@end example
+
+@c EN
+You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c JP
+また、木村栄伸さんがGauche用のtrace/untraceマクロを書いてくれました：
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Writing Scheme scripts, Writing Gauche modules, Debugging, Programming in Gauche
@@ -1932,13 +2038,13 @@ The @code{define-module} form creates a module @code{foo}.
 It also loads and imports some other modules by `@code{use}' macros,
 and declares which symbols the @code{foo} module exports, by `@code{export}'
 syntax.
-(See section @ref{Module syntax}, for detailed specification of those
+(See section @ref{Defining and selecting modules}, for detailed specification of those
 syntaxes).
 @c JP
 まず、@code{define-module}フォームがモジュール@code{foo}を作成します。
 @code{define-module}フォーム内で、このモジュールが依存している他のモジュール
 を `@code{use}' マクロを使ってロードし、このモジュールがエクスポートするシンボルを
-`@code{export}' 構文を使って指定します。(これらの構文の詳細は@ref{Module syntax}を
+`@code{export}' 構文を使って指定します。(これらの構文の詳細は@ref{Defining and selecting modules}を
 参照して下さい)。
 @c COMMON
 
@@ -2049,6 +2155,43 @@ module name.
 * Modules::                     
 @end menu
 
+@node Lexical structure
+@section Lexical structure
+@c NODE 字句構造
+
+@c EN
+Gauche extends R5RS Scheme parser in some ways:
+@c JP
+GaucheはR5RS Schemeのパーザをいくつかの点で拡張しています。
+@c COMMON
+
+@table @emph
+@c EN
+@item Nested block comments (SRFI-30)
+A text surrounded by '@code{#|}' and '@code{|#}' becomes a comment.
+It can be nested.
+@c JP
+@item ネスト可能なブロックコメント (SRFI-30)
+'@code{#|}' と '@code{|#}' で囲まれたテキストはコメントになります。
+ネスト可能です。
+@c COMMON
+
+@c EN
+@item Numeric literals
+Either integral part or fraction part of inexact real numbers can be omitted
+if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as 
+real numbers.   Using '@code{#}' as insignificant digits is not supported.
+@c JP
+@c COMMON
+
+@c EN
+@item
+@c JP
+@item
+@c COMMON
+@end table
+
+@c ----------------------------------------------------------------------
 @node Literals, Making Procedures, Core syntax, Core syntax
 @section Literals
 @c NODE リテラル
@@ -3139,14 +3282,18 @@ Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
 @c COMMON
 
 @menu
-* Module syntax::               
+* Defining and selecting modules::  
+* Using modules::               
+* Module inheritance::          
 * Module introspection::        
 * Predefined modules::          
 @end menu
 
-@node Module syntax, Module introspection, Modules, Modules
-@subsection Module syntax
-@c NODE モジュール構文
+@node Defining and selecting modules, Using modules, Modules, Modules
+@subsection Defining and selecting modules
+@c NODE モジュールの定義と選択
+
+A module can be created by the @code{define-module} special form.
 
 @defspec define-module name body @dots{}
 @c EN
@@ -3190,6 +3337,38 @@ If no moudle named @var{name}, an error is signalled.
 @c COMMON
 @end defspec
 
+@defspec current-module
+@c EN
+Evaluates to the current module in the compile context.
+Note that this is a special form, not a function.
+Module in Gauche is statically determined at compile time.
+@c JP
+コンパイル時点でのカレントモジュールに評価されます。
+これは手続きではなく特殊形式です。
+Gaucheではモジュールはコンパイル時に静的に決定されます。
+@c COMMON
+@lisp
+(define-module foo
+  (export get-current-module)
+  (define (get-current-module) (module-name (current-module))))
+
+(define-module bar
+  (import foo)
+  (get-current-module)) @result{} foo @r{; not bar}
+@end lisp
+@end defspec
+
+
+@node Using modules, Module inheritance, Defining and selecting modules, Modules
+@subsection Using modules
+@c NODE モジュールの使用
+
+A module should @var{export} symbols in order to make them 'visible' from
+others that uses the module.
+Exported symbols are visible when the user of the module @var{import}s 
+the module.  A convenience macro @var{use} does on-demand file loading
+and importing.
+
 @defspec export symbol @dots{}
 @c EN
 Makes bindings of @var{symbol}s in the current module available
@@ -3219,27 +3398,6 @@ when the compiler sees this special form.
 カレントモジュール中で使えるようにします。該当するモジュールが既に定義されて
 いなければなりません。
 @c COMMON
-@end defspec
-
-@defspec current-module
-@c EN
-Evaluates to the current module in the compile context.
-Note that this is a special form, not a function.
-Module in Gauche is statically determined at compile time.
-@c JP
-コンパイル時点でのカレントモジュールに評価されます。
-これは手続きではなく特殊形式です。
-Gaucheではモジュールはコンパイル時に静的に決定されます。
-@c COMMON
-@lisp
-(define-module foo
-  (export get-current-module)
-  (define (get-current-module) (module-name (current-module))))
-
-(define-module bar
-  (import foo)
-  (get-current-module)) @result{} foo @r{; not bar}
-@end lisp
 @end defspec
 
 @defmac use name
@@ -3318,7 +3476,19 @@ hierarchical file/module configuration, as in Guile.)
 @c COMMON
 @end defmac
 
-@node Module introspection, Predefined modules, Module syntax, Modules
+@node Module inheritance, Module introspection, Using modules, Modules
+@subsection Module inheritance
+@c NODE モジュールの継承
+
+
+
+@defmac extend name @dots{}
+@c EN
+@c JP
+@c COMMON
+@end defmac
+
+@node Module introspection, Predefined modules, Module inheritance, Modules
 @subsection Module introspection
 @c NODE モジュールイントロスペクション
 
@@ -9437,7 +9607,7 @@ called in @var{file}, the module in which @code{load} is called
 is restored afterwards.
 
 If you want to load a library file, it's better to use `@code{use}'
-(@xref{Module syntax}), or `@code{require}' described below.
+(@xref{Defining and selecting modules}), or `@code{require}' described below.
 @xref{Compilation}, for difference between @code{load} and @code{require}.
 @c JP
 @var{file}をロードします。すなわち、@var{file}に書かれたScheme式を順次読み込んで
@@ -9457,7 +9627,7 @@ If you want to load a library file, it's better to use `@code{use}'
 カレントモジュールを変更しても、@code{load}が終わったら@code{load}を読んだ時点の
 モジュールに戻ります。
 
-ライブラリファイルをロードする場合は、`@code{use}' (@ref{Module syntax}参照) を
+ライブラリファイルをロードする場合は、`@code{use}' (@ref{Defining and selecting modules}参照) を
 使うか、下に説明する`@code{require}' を使う方が良いでしょう。
 @code{load}と@code{require}の違いについては@ref{Compilation}を参照してください。
 @c COMMON
@@ -9722,13 +9892,13 @@ to @var{file/module}.  If it is a string, the named file is
 loaded.  If it is a symbol, the named module is loaded (using the
 same rule as of @code{use}), then the binding of @var{item} in the
 @var{file/module} is imported to the module used the autoload
-(@xref{Module syntax}, for details of @code{use}).
+(@xref{Defining and selecting modules}, for details of @code{use}).
 @c JP
 引数@var{file/module}には、文字列かシンボルを指定できます。文字列の場合は
 そのファイルがロードされます。シンボルの場合、その名のモジュールが(@code{use}と
 同じルールで)ロードされ、@var{item}が@var{file/module}から
 オートロードを呼び出したモジュールへとインポートされます。
-(モジュールの@code{use}の詳細については@ref{Module syntax}を参照して下さい)。
+(モジュールの@code{use}の詳細については@ref{Defining and selecting modules}を参照して下さい)。
 @c COMMON
 
 @c EN
