@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.54 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: load.c,v 1.55 2002-02-12 19:52:22 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -361,6 +361,11 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 #define DYNLOAD_PREFIX   ___STRING(_C_LABEL(Scm_Init_))
 #elif defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
 /* Darwin/MacOSX */
+#define DYNLOAD_PREFIX   "_Scm_Init_"
+#elif defined(__FreeBSD__) && __FreeBSD__ < 3
+/* FreeBSD 2.x   (patch from Abe Hiroshi) */
+#define RTLD_NOW         1
+#define RTLD_GLOBAL      4
 #define DYNLOAD_PREFIX   "_Scm_Init_"
 #else
 /* We might have some other ifdefs... */
