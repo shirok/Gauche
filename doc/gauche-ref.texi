@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.215 2002-06-14 11:22:41 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.216 2002-06-14 22:36:10 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12967,17 +12967,38 @@ Gauche recognizes escape sequences of any of CES.
 ISO2022JP-2 defines several non-Japanese escape sequences, and
 they are recognized by Gauche, but mapped to substitution character
 ('?' or geta mark).
+@c JP
+これらのエンコーディングは、CSISO2022JPがISO2022JPのエイリアスであることを除き
+異なるエスケープシーケンスを使いますが、Gaucheの中では同じルーチンで処理されます。
+これらのエンコーディングのいずれかが入力CESに指定された場合、
+Gaucheは全てのバリエーションのエスケープシーケンスを認識します。
+ISO2022JP-2は日本語以外の言語のエスケープシーケンスも定義していますが、
+それらに関してはGaucheでは認識はされますが、文字は'?'あるいは'〓' に置換されます。
+@c COMMON
+
+@c EN
 For output, Gauche assumes ISO2022JP first, and uses ISO2022JP-1
 escape sequence to put JIS X 0212 character, or uses ISO2022JP-3
 escape sequence to put JIS X 0213 plane 2 character.
 Thus, if the string contains only JIS X 0208 characters, 
 the output is compatible to ISO2022JP.
-Precisely speaking, JIS X 0213 specifies some characters within
-plane 1 that should be put with 
+Precisely speaking, JIS X 0213 specifies some characters in JIS X 0208
+codepoint that shouldn't be mixed with JIS X 0208 characters;
+Gauche output those characters as JIS X 0208 for compatibility.
+(This is the same policy as Emacs-Mule's iso2022jp-3-compatible mode).
 @c JP
+出力に関してはGaucheは出来る限りISO2022JPでエンコードし、
+JIS X 0212文字に出会ったらISO2022JP-1のエスケープシーケンスを、
+JIS X 0213の第2面の文字に出会ったらISO2022JP-3のエスケープシーケンスを
+用います。したがって、文字列がJIS X 0208の範囲だけで構成されていた場合は
+出力はISO2022JP互換となります。
+厳密には、JIS X 0213では包摂基準の変更により、
+「JIS X 0208と同じコードポイントを用いるがJIS X 0208のエスケープシーケンスを
+使ってはいけない文字」というのが定義されています。
+Gaucheでは互換性のため、これらの文字もJIS X 0208のエスケープシーケンスを
+用いてエンコードします (これは、Emacs-Muleにおけるiso2022jp-3-compatible
+モードと同じ方針です)。
 @c COMMON
-
-
 @end table
 
 @node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, Character code conversion
@@ -13000,9 +13021,9 @@ algorithm implemented:
 @item "*JP"
 @c EN
 To guess the character encoding from japanese text, among either
-ISO-2022-JP, EUC-JP, ShiftJIS or UTF-8.
+ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS or UTF-8.
 @c JP
-日本語のテキストのCESを、ISO-2022-JP, EUC-JP, ShiftJIS または UTF-8の
+日本語のテキストのCESを、ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS または UTF-8の
 いずれかであるとして推測する。
 @c COMMON
 @end table
@@ -13027,8 +13048,8 @@ usually in favor of the native CES.
 文字列@var{string}のCESを、CES推測アルゴリズム@var{scheme} ("*JP"など)
 を使って推測し、結果のCES名を返します。もしどのCESにも該当しないデータが
 含まれていれば@code{#f}が返されます。複数のCESが可能である場合、
-ネイティブエンコーディングが含まれていればそれを、そうでなければ可能なCESからどれか
-ひとつが選んで返されます。
+ネイティブエンコーディングが含まれていればそれを、
+そうでなければ可能なCESからどれかひとつが選んで返されます。
 @c COMMON
 @end defun
 
@@ -13036,12 +13057,6 @@ usually in favor of the native CES.
 @node Conversion ports, Extended port procedures, Autodetecting the encoding scheme, Character code conversion
 @subsection Conversion ports
 @c NODE 変換ポート
-
-@c EN
-And the followings are the conversion function.
-@c JP
-そして以下が変換手続きです。
-@c COMMON
 
 @defun open-input-conversion-port source from-code &keyword to-code buffer-size owner?
 @c EN
