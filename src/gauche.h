@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.179 2001-09-27 11:13:43 shirok Exp $
+ *  $Id: gauche.h,v 1.180 2001-10-03 10:42:40 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -579,6 +579,7 @@ extern ScmObj Scm_ReverseX(ScmObj list);
 extern ScmObj Scm_Reverse(ScmObj list);
 extern ScmObj Scm_ListTail(ScmObj list, int i);
 extern ScmObj Scm_ListRef(ScmObj list, int i);
+extern ScmObj Scm_ListRefSafe(ScmObj list, int i, ScmObj fallback);
 extern ScmObj Scm_LastPair(ScmObj list);
 
 extern ScmObj Scm_Memq(ScmObj obj, ScmObj list);
@@ -872,6 +873,7 @@ extern ScmClass Scm_VectorClass;
 
 extern ScmObj Scm_MakeVector(int size, ScmObj fill);
 extern ScmObj Scm_VectorRef(ScmVector *vec, int i);
+extern ScmObj Scm_VectorRefSafe(ScmVector *vec, int i, ScmObj fallback);
 extern ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj);
 extern ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill);
 

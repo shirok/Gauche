@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.104 2001-10-01 09:42:00 shirok Exp $
+;;; $Id: extlib.stub,v 1.105 2001-10-03 10:42:40 shirok Exp $
 ;;;
 
 "
@@ -86,6 +86,10 @@
 (define-cproc last-pair (list)          ; SRFI-1
   (assert (pair? list))
   "  SCM_RETURN(Scm_LastPair(list));")
+
+(define-cproc list-ref+ (list k &optional fallback)
+  (assert (small-integer? k))
+  "  SCM_RETURN(Scm_ListRefSafe(list, k, fallback));")
 
 (define-cproc list-copy (list)          ; SRFI-1
   "  SCM_RETURN(Scm_CopyList(list));")
@@ -367,6 +371,15 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (string? str))
   "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_SIZE(str)));")
 
+(define-cproc string-ref+ (str k &optional (fallback #f))
+  (assert (string? str))
+  (assert (small-integer? k))
+  "  if (k < 0 || k >= SCM_STRING_LENGTH(str)) {
+     SCM_RETURN(fallback);
+   } else {
+     SCM_RETURN(SCM_MAKE_CHAR(Scm_StringRef(str, k)));
+   }")
+
 (define-cproc string-byte-ref (str k)   ;gauche specific
   (assert (string? str))
   (assert (small-integer? k))
@@ -543,6 +556,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 ;; 6.3.6  Vectors
 ;;
+
+(define-cproc vector-ref+ (vec k &optional fallback)
+  (assert (vector? vec))
+  (assert (small-integer? k))
+  "  SCM_RETURN(Scm_VectorRefSafe(vec, k, fallback));")
 
 ;;
 ;; 6.4  Control Features

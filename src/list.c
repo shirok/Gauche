@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.27 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: list.c,v 1.28 2001-10-03 10:42:40 shirok Exp $
  */
 
 #include "gauche.h"
@@ -403,6 +403,18 @@ ScmObj Scm_ListRef(ScmObj list, int i)
     while (i-- > 0) {
         if (!SCM_PAIRP(list))
             Scm_Error("argument out of range: %d", i);
+        list = SCM_CDR(list);
+    }
+    return SCM_CAR(list);
+}
+
+/* safe version of list-ref. */
+ScmObj Scm_ListRefSafe(ScmObj list, int i, ScmObj fallback)
+{
+    if (SCM_UNBOUNDP(fallback)) fallback = SCM_FALSE;
+    if (i < 0) return fallback;
+    while (i-- > 0) {
+        if (!SCM_PAIRP(list)) return fallback;
         list = SCM_CDR(list);
     }
     return SCM_CAR(list);
