@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.133 2001-12-02 22:04:08 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.134 2001-12-03 20:39:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9168,7 +9168,7 @@ If the collection is not a sequence, the iteration order is
 arbtrary, and @var{start} argument has no effect.
 @c JP
 コレクションがシーケンスでもある場合、インクリメント手続きはシーケンスの順番に要素を取り出します。
-キーワード引数@var{start}が与えられていれイテレーションの範囲は
+キーワード引数@var{start}が与えられていればイテレーションの範囲は
 @var{start}番目の要素から最後の要素までとなります。シーケンスでないコレクションに
 対しては@var{start}引数は意味を持ちません。
 @c COMMON
@@ -9339,13 +9339,14 @@ A convenience macro to call @code{call-with-builder}.
 
 @emph{Discussion}:
 @c EN
-Other iterator methods are built on top of these primitive methods.
+Other iterator methods are built on top of call-with-iterator and
+call-with-builder.
 By implementing those methods, you can easily adapt your own collection
 class to all of those iterative
 operations.   Optionally you can overload some of higher-level
 methods for efficiency.
 @c JP
-他のイテレータメソッドは全てこの二つの基礎的なメソッドの上に構築可能です。
+他のイテレータメソッドは全てこのcall-with-iteratorとcall-with-builderの上に構築可能です。
 最低限これらのメソッドを定義すれば、そのクラスはコレクションとして振舞うことができます。
 もちろん最適化のために他のイテレータメソッドを定義しても構いませんが。
 @c COMMON
