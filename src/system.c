@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.2 2001-02-12 12:52:07 shiro Exp $
+ *  $Id: system.c,v 1.3 2001-02-13 06:04:35 shiro Exp $
  */
 
 #include <stdio.h>
@@ -86,11 +86,12 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
     const char *str = SCM_STRING_START(pathname), *srcp = str;
     int size = SCM_STRING_SIZE(pathname);
-    char buf[PATH_MAX*2+1], *dstp = buf;
+    char *buf = NULL, *dstp;
+    int bottomp = FALSE;
+    
 #define SKIP_SLASH \
     while (*srcp == '/' && srcp < str+size) { srcp++; }
 
-    if (size >= PATH_MAX) Scm_Error("pathname too long");
     if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
         /* ~user magic */
         const char *p = str+1;
@@ -113,20 +114,28 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         }
         srcp = p;
         dirlen = strlen(pwd->pw_dir);
-        if (dirlen >= PATH_MAX) Scm_Error("pathname too long\n");
+        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
         strcpy(buf, pwd->pw_dir);
         dstp = buf + dirlen;
         if (*(dstp-1) != '/') *dstp++ = '/';
     } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/') {
-        const char *p = getcwd(buf, PATH_MAX);
+        int dirlen;
+        const char *p = getcwd(NULL, -1);
         if (p == NULL) Scm_Error("couldn't get current directory.");
-        dstp = buf + strlen(p);
+        dirlen = strlen(p);
+        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
+        strcpy(buf, p);
+        free(p);                /* allocated by getcwd() */
+        dstp = buf + dirlen;
         if (*(dstp-1) != '/') *dstp++ = '/';
-    } else if (*str == '/') {
-        *dstp++ = '/';
-        SKIP_SLASH;
+    } else {
+        dstp = buf = SCM_NEW_ATOMIC2(char*, size+1);
+        if (*str == '/') {
+            *dstp++ = '/';
+            SKIP_SLASH;
+        }
     }
-    
+
     while (srcp < str+size) {
         if (*srcp == '.') {
             if (srcp == str+size-1) {
@@ -138,23 +147,24 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
                 SKIP_SLASH;
                 continue;
             }
-            if (*(srcp+1) == '.' && (srcp == str+size-2 || *(srcp+2) == '/')) {
-                /* TODO: this implementation is buggy! */
+            if (!bottomp
+                && *(srcp+1) == '.'
+                && (srcp == str+size-2 || *(srcp+2) == '/')) {
+
                 /* back up to parent dir */
                 char *q = dstp-2;
                 for (;q >= buf; q--) {
                     if (*q == '/') break;
                 }
-                fprintf(stderr, "twak, buf=%x, dstp=%x, q=%x\n", buf, dstp, q);
                 if (q >= buf) {
                     dstp = q+1;
                 } else {
+                    bottomp = TRUE;
                     *dstp++ = '.';
                     *dstp++ = '.';
                     *dstp++ = '/';
                 }
                 srcp += 3;
-                fprintf(stderr, "watk, buf=%x, dstp=%x, q=%x\n", buf, dstp, q);
                 continue;
             }
         }
