@@ -56,7 +56,8 @@ TESTFILES = ../test/primsyn.scm \
 	    ../test/srfi.scm \
 	    ../test/object.scm \
 	    ../test/regexp.scm \
-	    ../test/mb-chars.scm
+	    ../test/mb-chars.scm \
+	    ../test/system.scm
 
 .SUFFIXES: .stub
 
