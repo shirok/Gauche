@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.9 2001-02-06 06:56:37 shiro Exp $
+ *  $Id: load.c,v 1.10 2001-02-06 08:04:19 shiro Exp $
  */
 
 #include "gauche.h"
@@ -63,47 +63,46 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
  * Load
  */
 
-ScmObj Scm_VMTryLoad(const char *s)
+/* TODO: expand ~user in the pathname */
+
+ScmObj Scm_VMTryLoad(const char *cpath)
 {
-    ScmObj p = Scm_OpenFilePort(s, "r");
+    ScmObj p = Scm_OpenFilePort(cpath, "r");
     if (SCM_FALSEP(p)) return FALSE;
     return Scm_VMLoadFromPort(SCM_PORT(p));
 }
 
-ScmObj Scm_VMLoad(const char *s)
+ScmObj Scm_VMLoad(const char *cpath)
 {
-    ScmObj p, lpath;
+    ScmObj p, lpath, spath, fpath;
 
-    /* TODO: expand ~user */
-    if (*s == '/') {
-        p = Scm_OpenFilePort(s, "r");
-        if (SCM_FALSEP(p)) {
-            Scm_Error("cannot open file: %s", s);
-        }
-    } else {
+    p = Scm_OpenFilePort(cpath, "r");
+    if (SCM_FALSEP(p)) {
+        if (cpath[0] == '/') Scm_Error("cannot open file: %s", cpath);
         /* TODO: more efficient pathname handling */
-        ScmObj spath = Scm_MakeString(s, -1, -1), fullpath;
+        spath = Scm_MakeString(cpath, -1, -1);
         SCM_FOR_EACH(lpath, load_path_rec->value) {
             if (!SCM_STRINGP(SCM_CAR(lpath))) {
                 /* TODO: should be warning? */
                 Scm_Error("*load-path* contains invalid element: %S",
                           load_path_rec->value);
             }
-            fullpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
-            fullpath = Scm_StringAppend2(SCM_STRING(fullpath), SCM_STRING(spath));
-            p = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(fullpath)), "r");
-            if (SCM_FALSEP(p)) continue;
-            return Scm_VMLoadFromPort(SCM_PORT(p));
+            fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
+            fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(spath));
+            p = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(fpath)), "r");
+            if (!SCM_FALSEP(p)) break;
         }
-        Scm_Error("cannot find file %s in *load-path* %S",
-                  s, load_path_rec->value);
-        return SCM_UNDEFINED;
+        if (SCM_FALSEP(p)) {
+            Scm_Error("cannot find file %s in *load-path* %S",
+                      cpath, load_path_rec->value);
+        }
     }
+    return Scm_VMLoadFromPort(SCM_PORT(p));
 }
 
-void Scm_Load(const char *s)
+void Scm_Load(const char *cpath)
 {
-    ScmObj f = SCM_MAKE_STR(s);
+    ScmObj f = Scm_MakeString(cpath, -1, -1);
     ScmObj l = SCM_INTERN("load");
     Scm_Eval(SCM_LIST2(l, f), SCM_NIL);
 }
