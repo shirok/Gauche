@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.55 2004-01-28 08:36:26 shirok Exp $
+ *  $Id: bignum.c,v 1.56 2004-06-17 23:42:37 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -957,10 +957,10 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     vn_2 = DIGIT(v, n-2);
 #undef DIV_DEBUG
 #ifdef DIV_DEBUG
-    printf("shift=%d, n=%d, m=%d\n", d, n, m);
-    printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
-    printf("v="); Scm_DumpBignum(v, SCM_CUROUT); printf("\n");
-    printf("vn_1=%08lx, vn_2=%08lx\n", vn_1, vn_2);
+    Scm_Printf(SCM_CUROUT, "shift=%d, n=%d, m=%d\n", d, n, m);
+    Scm_Printf(SCM_CUROUT, "u="); Scm_DumpBignum(u, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "\nv="); Scm_DumpBignum(v, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "\nvn_1=%08lx, vn_2=%08lx\n", vn_1, vn_2);
 #endif
 
     for (j = m; j >= 0; j--) {
@@ -968,14 +968,16 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
         u_long qq = uu/vn_1;
         u_long rr = uu%vn_1;
 #ifdef DIV_DEBUG
-        printf("loop on j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);
+        Scm_Printf(SCM_CUROUT, "loop on j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n",
+                   j, uu, qq, rr);
 #endif
-        if (qq == HALF_WORD) { qq--; rr += vn_1; }
+        while (qq >= HALF_WORD) { qq--; rr += vn_1; }
         while ((qq*vn_2 > (rr<<HALF_BITS)+DIGIT(u, j+n-2)) && (rr < HALF_WORD)) {
             qq--; rr += vn_1;
         }
 #ifdef DIV_DEBUG
-        printf("estimate uu=%08lx, qq=%08lx, rr=%08lx\n", uu, qq, rr);
+        Scm_Printf(SCM_CUROUT, "estimate uu=%08lx, qq=%08lx, rr=%08lx\n",
+                   uu, qq, rr);
 #endif
         cy = 0;
         for (k = 0; k < n; k++) {
@@ -986,8 +988,9 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
             SETDIGIT2(u, j+k, uj2);
         }
 #ifdef DIV_DEBUG
-        printf("subtract cy = %d, ", cy);
-        printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
+        Scm_Printf(SCM_CUROUT, "subtract cy = %d, ", cy);
+        Scm_Printf(SCM_CUROUT, "u="); Scm_DumpBignum(u, SCM_CUROUT);
+        Scm_Printf(SCM_CUROUT, "\n");
 #endif
         if (cy) {
             qq--;
@@ -1005,8 +1008,9 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     }
     bignum_rshift(u, u, d);
 #ifdef DIV_DEBUG
-    printf("quot q="); Scm_DumpBignum(quotient, SCM_CUROUT); printf("\n");
-    printf("rem  u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
+    Scm_Printf(SCM_CUROUT, "quot q="); Scm_DumpBignum(quotient, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "\nrem  u="); Scm_DumpBignum(u, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "\n");
 #endif
     return u;
 }

@@ -910,6 +910,19 @@
 (test* "inexact mod inexact -> inexact" (m-result 1113.0 26240.0 #f)
       (m-tester 3735928559.0 27353.0))
 
+;; test by mersenne prime? - code by 'hipster'
+
+(define (mersenne-prime? p)
+  (let ((m (- (expt 2 p) 1)))
+    (do ((i 3 (+ i 1))
+         (s 4 (modulo (- (* s s) 2) m)))
+        ((= i (+ p 1)) (= s 0)))))
+
+(test* "mersenne prime"
+       '(#t #t #t #t #t #t #t #t #t #t #t #t #t #t)
+       (map mersenne-prime? '(3 5 7 13 17 19 31 61 89 107 127 521 607 1279)))
+
+
 ;;------------------------------------------------------------------
 (test-section "expt")
 

@@ -1,3 +1,9 @@
+2004-06-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/bignum.c (bignum_gdiv): fixed the problem of bignum division,
+	  when the estimated quotient becomes greater than one digit value
+	  (e.g. #x10001).  Pointed out by 'hipster'.
+
 2004-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (compile_cond_int): fixed a bug that 'case' didn't
