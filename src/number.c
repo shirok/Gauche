@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.53 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: number.c,v 1.54 2001-07-09 09:42:35 shirok Exp $
  */
 
 #include <math.h>
@@ -1347,13 +1347,18 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
     char buf[FLT_BUF];
     
     if (SCM_INTP(obj)) {
-        char buf[50];
+        char buf[50], *pbuf = buf;
+        long value = SCM_INT_VALUE(obj);
+        if (value < 0) {
+            *pbuf++ = '-';
+            value = -value;     /* this won't overflow */
+        }
         if (radix == 10) {
-            snprintf(buf, 50, "%ld", SCM_INT_VALUE(obj));
+            snprintf(pbuf, 49, "%ld", value);
         } else if (radix == 16) {
-            snprintf(buf, 50, "%lx", SCM_INT_VALUE(obj));
+            snprintf(pbuf, 49, "%lx", value);
         } else if (radix == 8) {
-            snprintf(buf, 50, "%lo", SCM_INT_VALUE(obj));
+            snprintf(pbuf, 49, "%lo", value);
         } else {
             /* sloppy way ... */
             r = Scm_BignumToString(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(obj))),
