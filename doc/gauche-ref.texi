@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.92 2001-10-12 11:29:03 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.93 2001-10-13 09:32:27 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -64,6 +64,7 @@ This is a reference manual of Gauche, an R5RS Scheme implementation.
 
 @node Introduction, Concepts, Top, Top
 @chapter Introduction
+@c NODE はじめに
 
 @c EN
 This is a programmers' guide and reference manual of
@@ -140,6 +141,7 @@ recent version on the web:
 
 @node Overview of Gauche, Notations, Introduction, Introduction
 @section Overview of Gauche
+@c NODE  Gaucheの概要
 
 @c EN
 Gauche is a script interpreter based on Scheme.
@@ -274,6 +276,7 @@ very large scale database handling.  It is an interpreter, after all.
 
 @node Notations, Structure of this document, Overview of Gauche, Introduction
 @section Notations
+@c NODE 表記について
 
 In this manual, each entry is represented like this:
 
@@ -349,6 +352,7 @@ The API of the entry reflects the API specified in POSIX.
 
 @node Structure of this document,  , Notations, Introduction
 @section Structure of this document
+@c NODE 本書の構成
 
 ---To be written---
 
@@ -356,6 +360,7 @@ The API of the entry reflects the API specified in POSIX.
 @c ======================================================================
 @node Concepts, Programming in Gauche, Introduction, Top
 @chapter Concepts
+@c NODE 主要な概念
 
 @c EN
 In this chapter I describe a few Gauche's design concepts
@@ -376,6 +381,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 
 @node Compilation, Module System, Concepts, Concepts
 @section Compilation
+@c NODE コンパイル
 
 @c EN
 Gauche is a Scheme interpreter, in the sense that it reads
@@ -477,6 +483,7 @@ such behavior.
 
 @node Module System, Objects, Compilation, Concepts
 @section Module System
+@c NODE モジュールシステム
 
 Gauche adopts a simple module system that allows
 modularlized development of large software.
@@ -496,6 +503,7 @@ convenient when used together.
 
 @node Objects, Multibyte Strings, Module System, Concepts
 @section Objects
+@c NODE オブジェクト
 
 Gauche has a CLOS-style object system, with metaobject protocol.
 For those who are familiar with SmallTalk style object system,
@@ -519,11 +527,13 @@ class, Gauche methods don't
 
 @node Multibyte Strings,  , Objects, Concepts
 @section Multibyte Strings
+@c NODE マルチバイト文字列
 
 
 @c ======================================================================
 @node Programming in Gauche, Core Syntax, Concepts, Top
 @chapter  Programming in Gauche
+@c NODE Gaucheでのプログラミング
 
 @menu
 * Invoking Gosh::               
@@ -535,6 +545,7 @@ class, Gauche methods don't
 
 @node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
 @section Invoking Gosh
+@c NODE Gaucheを起動する
 
 @c EN
 Gauche can be used either as an independent Scheme interpreter
@@ -655,17 +666,20 @@ although it is not generally recommended.
 @c ----------------------------------------------------------------------
 @node Interactive development, Debugger, Invoking Gosh, Programming in Gauche
 @section Interactive development
+@c NODE  インタラクティブな開発
 
 
 @c ----------------------------------------------------------------------
 @node Debugger, Writing Scheme scripts, Interactive development, Programming in Gauche
 @section Debugger
+@c NODE デバッガ
 
 
 
 @c ----------------------------------------------------------------------
 @node Writing Scheme scripts, Writing Gauche modules, Debugger, Programming in Gauche
 @section Writing Scheme scripts
+@c NODE Schemeスクリプトを書く
 
 @c EN
 When a Scheme program file is given to @code{gosh}, it
@@ -864,11 +878,13 @@ parse command-line options.
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
 @section Writing Gauche modules
+@c NODE Gaucheのモジュールを書く
 
 
 @c ======================================================================
 @node Core Syntax, Macros, Programming in Gauche, Top
 @chapter Core Syntax
+@c NODE 基本的な構文
 
 @c ----------------------------------------------------------------------
 @menu
@@ -886,6 +902,7 @@ parse command-line options.
 
 @node Literals, Making Procedures, Core Syntax, Core Syntax
 @section Literals
+@c NODE リテラル
 
 @defspec quote datum
 [R5RS]
@@ -916,6 +933,7 @@ Equivalent to @code{(quote datum)}.
 @c ----------------------------------------------------------------------
 @node Making Procedures, Assignments, Literals, Core Syntax
 @section Making Procedures
+@c NODE  手続きを作る
 
 @defspec lambda formals body @dots{}
 [R5RS]
@@ -925,6 +943,7 @@ Equivalent to @code{(quote datum)}.
 @c ----------------------------------------------------------------------
 @node Assignments, Conditionals, Making Procedures, Core Syntax
 @section Assignments
+@c NODE  代入
 
 @defspec set! symbol expression
 @defspecx set! (proc arg @dots{}) expression
@@ -1143,6 +1162,7 @@ Common Lispの@code{incf}と@code{decf}に当たります。
 @c ----------------------------------------------------------------------
 @node Conditionals, Binding constructs, Assignments, Core Syntax
 @section Conditionals
+@c NODE 条件式
 
 @defspec if test consequent alternative
 @defspecx if test consequent
@@ -1352,6 +1372,7 @@ value is returned.
 
 @node Binding constructs, Sequencing, Conditionals, Core Syntax
 @section Binding constructs
+@c NODE 変数束縛
 
 @defspec let bindings body
 [R5RS]
@@ -1372,6 +1393,7 @@ value is returned.
 
 @node Sequencing, Iteration, Binding constructs, Core Syntax
 @section Sequencing
+@c NODE 順次実行
 
 
 @defspec begin form @dots{}
@@ -1381,6 +1403,7 @@ value is returned.
 
 @node Iteration, Quasiquotation, Sequencing, Core Syntax
 @section Iteration
+@c NODE 繰り返し
 
 @defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body
 [R5RS]
@@ -1417,6 +1440,7 @@ Common Lispの@code{dolist}は提供されていません。@code{for-each}を使うか、
 @c ----------------------------------------------------------------------
 @node Quasiquotation, Definitions, Iteration, Core Syntax
 @section Quasiquotation
+@c NODE 準クオート, 準クオート(Quasiquote)
 
 @defspec quasiquote template
 [R5RS]
@@ -1426,6 +1450,7 @@ Common Lispの@code{dolist}は提供されていません。@code{for-each}を使うか、
 @c ----------------------------------------------------------------------
 @node Definitions, Modules, Quasiquotation, Core Syntax
 @section Definitions
+@c NODE 定義
 
 @defspec define variable expression
 @defspecx define (variable formals) body @dots{}
@@ -1496,6 +1521,7 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @c ----------------------------------------------------------------------
 @node Modules,  , Definitions, Core Syntax
 @section Modules
+@c NODE モジュール
 
 @c EN
 Module is an object that maps symbols onto @emph{bindings}.
@@ -1521,6 +1547,7 @@ Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
 
 @node Module syntax, Module introspection, Modules, Modules
 @subsection Module syntax
+@c NODE モジュール構文
 
 @defspec define-module name body @dots{}
 @c EN
@@ -1694,6 +1721,7 @@ hierarchical file/module configuration, as in Guile.)
 
 @node Module introspection, Predefined modules, Module syntax, Modules
 @subsection Module introspection
+@c NODE モジュールイントロスペクション
 
 @deftp {Builtin Class} <module>
 @clindex module
@@ -1730,6 +1758,7 @@ It is an error to pass a non-module object.
 
 @node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
+@c NODE 組み込みモジュール
 
 Several modules are predefined in Gauche.
 
@@ -1761,6 +1790,7 @@ all the bindings of @code{gauche} module is imported.
 @c ======================================================================
 @node Macros, Core library, Core Syntax, Top
 @chapter Macros
+@c NODE マクロ
 
 Gauche supports both R5RS hygienic macros and
 traditional macros.
@@ -1774,6 +1804,7 @@ traditional macros.
 
 @node Hygienic Macros, Traditional Macros, Macros, Macros
 @section Hygienic Macros
+@c NODE 健全なマクロ
 
 @defspec define-syntax name transformer-spec
 [R5RS]
@@ -1791,6 +1822,7 @@ traditional macros.
 
 @node Traditional Macros, Macro expansion, Hygienic Macros, Macros
 @section Traditional Macros
+@c NODE 伝統的なマクロ
 
 @defspec define-macro (name formals) body @dots{}
 
@@ -1798,6 +1830,7 @@ traditional macros.
 
 @node Macro expansion, Macro utilities, Traditional Macros, Macros
 @section Macro expansion
+@c NODE マクロの展開
 
 @defspec %macro-expand form
 @defspecx %macro-expand1 form
@@ -1805,6 +1838,7 @@ traditional macros.
 
 @node Macro utilities,  , Macro expansion, Macros
 @section Macro utilities
+@c NODE マクロユーティリティ
 
 @defmac syntax-error msg arg @dots{}
 @defmacx syntax-errorf fmt arg @dots{}
@@ -1847,6 +1881,7 @@ symbols.
 @c ======================================================================
 @node Core library, Object System, Macros, Top
 @chapter Core library
+@c NODE 組み込みライブラリ
 
 @c ----------------------------------------------------------------------
 @menu
@@ -1874,15 +1909,10 @@ symbols.
 
 @node Equivalence, Numbers, Core library, Core library
 @section Equivalence
+@c NODE 等価
 
 @defun eq? obj1 obj2
-[R5RS]
-@c EN
-@c JP
-@c COMMON
-@end defun
-
-@defun eqv? obj1 obj2
+@defunx eqv? obj1 obj2
 [R5RS]
 @c EN
 @c JP
@@ -1899,6 +1929,7 @@ symbols.
 @c ----------------------------------------------------------------------
 @node Numbers, Booleans, Equivalence, Core library
 @section Numbers
+@c NODE 数値
 
 @c EN
 Gauche supports the following types of numbers
@@ -1929,11 +1960,12 @@ Gaucheは次のタイプの数値をサポートしています。
 * Numerical comparison::        
 * Arithmetics::                 
 * Numerical conversions::       
-* Logical operations::          
+* Bitwise operations::          
 @end menu
 
 @node Number classes, Numerical predicates, Numbers, Numbers
 @subsection Number classes
+@c NODE 数値クラス
 
 @deftp {Builtin Class} <number>
 @deftpx {Builtin Class} <complex>
@@ -1976,6 +2008,7 @@ class.  That is,
 
 @node Numerical predicates, Numerical comparison, Number classes, Numbers
 @subsection Numerical predicates
+@c NODE 数値に関する述語
 
 @defun number? obj
 @defunx complex? obj
@@ -2073,6 +2106,7 @@ respectively.  It is an error to pass a non-integral number.
 
 @node Numerical comparison, Arithmetics, Numerical predicates, Numbers
 @subsection Numerical comparison
+@c NODE 数値の比較
 
 @defun @code{=} z1 z2 z3 @dots{}
 [R5RS]
@@ -2119,6 +2153,7 @@ Returns a maximum or minimum number in the given real numbers, respectively.
 
 @node Arithmetics, Numerical conversions, Numerical comparison, Numbers
 @subsection Arithmetics
+@c NODE 数値の演算
 
 @defun @code{+} z @dots{}
 @defunx @code{*} z @dots{}
@@ -2257,8 +2292,9 @@ Hyperbolic trigonometric functions.
 @c COMMON
 @end defun
 
-@node Numerical conversions, Logical operations, Arithmetics, Numbers
+@node Numerical conversions, Bitwise operations, Arithmetics, Numbers
 @subsection Numerical conversions
+@c NODE 数値の変換
 
 @defun make-rectangular x1 x2
 @defunx make-polar x1 x2
@@ -2288,8 +2324,9 @@ Hyperbolic trigonometric functions.
 @c COMMON
 @end defun
 
-@node Logical operations,  , Numerical conversions, Numbers
-@subsection Logical operations
+@node Bitwise operations,  , Numerical conversions, Numbers
+@subsection Bitwise operations
+@c NODE ビット演算
 
 @c EN
 These procedures treat integers as half-open bit vectors.
@@ -2346,6 +2383,7 @@ Returns bitwise not of an integer @var{n}.
 @c ----------------------------------------------------------------------
 @node Booleans, Pairs and Lists, Numbers, Core library
 @section Booleans
+@c NODE 論理値
 
 @deftp {Builtin Class} <boolean>
 @clindex boolean
@@ -2379,6 +2417,7 @@ Returns @code{#t} if @var{obj} is a boolean value.
 @c ----------------------------------------------------------------------
 @node Pairs and Lists, Symbols, Booleans, Core library
 @section Pairs and Lists
+@c NODE ペアとリスト
 
 @menu
 * Pair and null class::         
@@ -2390,6 +2429,7 @@ Returns @code{#t} if @var{obj} is a boolean value.
 
 @node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
 @subsection Pair and null class
+@c NODE pairクラスとnullクラス
 
 @deftp {Builtin Class} <list>
 @clindex list
@@ -2417,6 +2457,7 @@ A class of pairs.
 
 @node List predicates, List constructors, Pair and null class, Pairs and Lists
 @subsection List predicates
+@c NODE リストに関する述語
 
 @defun pair? obj
 [R5RS] Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
@@ -2436,6 +2477,7 @@ See also @code{proper-list?}, @code{circular-list?} and
 
 @node List constructors, List accessors and modifiers, List predicates, Pairs and Lists
 @subsection List constructors
+@c NODE リストの作成
 
 @defun cons obj1 obj2
 [R5RS] 
@@ -2518,6 +2560,7 @@ this function diverges.
 
 @node List accessors and modifiers, Other list procedures, List constructors, Pairs and Lists
 @subsection List accessors and modifiers
+@c NODE リストへのアクセスと変更
 
 @defun car pair
 @defunx cdr pair
@@ -2656,6 +2699,7 @@ Returns the last pair of @var{list}.
 
 @node Other list procedures,  , List accessors and modifiers, Pairs and Lists
 @subsection Other list procedures
+@c NODE 他のリスト手続き
 
 @defun append list @dots{}
 [R5RS]
@@ -2758,26 +2802,60 @@ returned.   Otherwise, @code{#f} is returned.
 @c ----------------------------------------------------------------------
 @node Symbols, Keywords, Pairs and Lists, Core library
 @section Symbols
+@c NODE シンボル
 
 @deftp {Builtin Class} <symbol>
 @clindex symbol
+@c EN
 A class for symbols.
+
+In Gauche, all symbols are @emph{interned}, i.e. two symbols with
+the same print name are always @code{eq?}.
+@c JP
+シンボルを表すクラスです。
+
+Gaucheでは、全てのシンボルはintern、すなわち内部のテーブルに登録されています。
+そのため、同じ外部表記を持つシンボルは常に@code{eq?}です。
+@c COMMON
 @end  deftp
 
 @defun symbol? obj
-[R5RS] Returns true if and only if @var{obj} is a symbol.
-In Gauche, all symbols are @emph{interned}, i.e. two symbols with
-the same print name are always @code{eq?}.
+[R5RS] 
+@c EN
+Returns true if and only if @var{obj} is a symbol.
+@c JP
+@var{obj}がシンボルなら@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun symbol->string symbol
-[R5RS] Returns the name of @var{symbol} in a string.  Returned
+[R5RS]
+@c EN
+Returns the name of @var{symbol} in a string.  Returned
 string is immutable.
+@c JP
+@var{symbol}の名前を文字列で返します。返される文字列は変更不可です。
+@c COMMON
+
+@example
+(symbol->string 'foo) @result{} foo
+@end example
 @end defun
 
 @defun string->symbol string
-[R5RS] Returns a symbol whose name is @var{string}.
-If the named symbol hasn't existed, this function creates one.
+[R5RS]
+@c EN
+Returns a symbol whose name is a string @var{string}.
+@var{String} may contain weird characters.
+@c JP
+文字列@var{string}を名前に持つシンボルを返します。
+@c COMMON
+
+@example
+(string->symbol "a") @result{} a
+(string->symbol "A") @result{} |A|
+(string->symbol "weird symbol name" @rseult{} |weird symbol name|
+@end example
 @end defun
 
 @defun gensym &optional prefix
@@ -2786,6 +2864,7 @@ If the named symbol hasn't existed, this function creates one.
 @c ----------------------------------------------------------------------
 @node Keywords, Identifiers, Symbols, Core library
 @section Keywords
+@c NODE キーワード
 
 @deftp {Builtin Class} <keyword>
 @clindex keyword
@@ -2803,6 +2882,7 @@ If the named symbol hasn't existed, this function creates one.
 @c ----------------------------------------------------------------------
 @node Identifiers, Characters, Keywords, Core library
 @section Identifiers
+@c NODE Identifier
 
 @deftp {Builtin Class} <identifier>
 @clindex identifier
@@ -2818,6 +2898,7 @@ If the named symbol hasn't existed, this function creates one.
 @c ----------------------------------------------------------------------
 @node Characters, Character set, Identifiers, Core library
 @section Characters
+@c NODE 文字
 
 @deftp {Builtin Class} <char>
 @clindex char
@@ -2858,7 +2939,12 @@ character encoding.
 @end deftp
 
 @defun char? obj
-[R5RS] Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
+[R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
+@c JP
+@var{obj}が文字なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun char@code{=}? char1 char2
@@ -2867,6 +2953,12 @@ character encoding.
 @defunx char@code{>}? char1 char2
 @defunx char@code{>=}? char1 char2
 [R5RS]
+@c EN
+Compares characters.  Character comparison is done in internal
+character encoding.
+@c JP
+文字を比較します。比較は内部の文字エンコーディングで行われます。
+@c COMMON
 @end defun
 
 @defun char-ci@code{=}? char1 char2
@@ -2896,27 +2988,46 @@ character encoding.
 @end defun
 
 @defun digit->integer char &optional (radix 10)
+@c EN
 If given character @var{char} is a valid digit character in radix
 @var{radix} number, the corresponding integer is returned.  Otherwise
 @code{#f} is returned.
+@c JP
+文字@var{char}が @var{radix}進数の数字を構成するのに有効な文字であれば、
+対応する整数が、そうでなければ@code{#f}が返されます。
+@c COMMON
 @example
 (digit->integer #\4) @result{} 4
 (digit->integer #\e 16) @result{} 14
 (digit->integer #\9 8) @result{} #f
 @end example
+@c EN
 Note: CommonLisp has a similar function in rather confusing name,
 @code{digit-char-p}.
+@c JP
+Common Lispには同様の手続きが@code{digit-char-p}というやや曖昧な名で定義されています。
+@c COMMON
 @end defun
 
 @defun integer->digit integer &optional (radix 10)
+@c EN
 Reverse operation of @code{digit->integer}.  Returns a character that
 represents the number @var{integer} in the radix @var{radix} system.
 If @var{integer} is out of the valid range, @code{#f} is returned.
+@c JP
+@code{digit->integer}の逆です。整数@var{integer}を @var{radix}進数 ひと桁で
+表現するのに使われる文字を返します。@var{integer}がひと桁で表現できない数値の場合は
+@code{#f}が返されます。
+@c COMMON
 @example
 (integer->digit 13 16) @result{} #\d
 (integer->digit 10) @result{} #f
 @end example
+@c EN
 Note: CommonLisp's @code{digit-char}.
+@c JP
+Common Lispの@code{digit-char}に当たります。
+@c COMMON
 @end defun
 
 @defun gauche-character-encoding
@@ -2945,6 +3056,7 @@ that are supported in the native multibyte encoding scheme.
 @c ----------------------------------------------------------------------
 @node Character set, Strings, Characters, Core library
 @section Character Set
+@c NODE 文字集合
 
 @deftp {Builtin Class} <char-set>
 @clindex char-set
@@ -2980,6 +3092,7 @@ module (See @ref{Character-set library}).
 @c ----------------------------------------------------------------------
 @node Strings, Regular expression, Character set, Core library
 @section Strings
+@c NODE 文字列
 
 @deftp {Builtin Class} <string>
 @clindex string
@@ -3003,6 +3116,7 @@ defined in SRFI-13.   @xref{String library}, for details.
 
 @node String Predicates, String Constructors, Strings, Strings
 @subsection String Predicates
+@c NODE 文字列に関する述語
 
 @defun string? obj
 [R5RS] Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
@@ -3018,26 +3132,60 @@ Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 
 @node String Constructors, String Accessors & Modifiers, String Predicates, Strings
 @subsection String Constructors
+@c NODE 文字列の作成
 
 @defun make-string k &optional char
-[R5RS] Returns a string of length @var{k}.  If optional @var{char} is given,
+[R5RS]
+@c EN
+Returns a string of length @var{k}.  If optional @var{char} is given,
 the new string is filled with it.  Otherwise, the string is filled with
 a whitespace.  The result string is always complete.
 
+@example
+(make-string 5 #\x) @result{} "xxxxx"
+@end example
+
 Note that the algorithm to allocate a string by @code{make-string} and
 then fills it one character at a time is @emph{extremely} inefficient
-in Gauche, and should be avoided.   You can use an output string port
-for a string construction.   Even creating a list of characters and
+in Gauche, and should be avoided.   That kind of algorithms unnecessarily
+assumes underlying string allocation and representation mechanism,
+which Gauche doesn't follow.
+You can use an output string port for a string construction.
+Even creating a list of characters and
 using @code{list->string} is faster than using @code{make-string} and
 @code{string-set!}.
+@c JP
+長さ@var{k}の文字列を作成して返します。
+@var{char}が与えられればそれで内容を満たします。@var{char}が与えられなければ
+空白文字で満たされます。常に完全な文字列が返されます。
+
+@example
+(make-string 5 #\x) @result{} "xxxxx"
+(make-string 5 #\ふ) @result{} "ふふふふふ"
+@end example
+
+@code{make-string}で必要な長さの文字列をアロケートして、@code{string-set!}
+で順番に埋めて行くアルゴリズムは、Gaucheでは@emph{極めて}不効率であることに
+注意してください。そのようなアルゴリズムは、文字列の内部表現とアロケーションメカニズムに
+関して不必要な仮定を置いており、Gaucheはその仮定とは合致しません。
+文字列の順次作成に適しているのは文字列ポートです。それが使えない場合、
+文字のリストを作成し、@code{list->string}で変換する方がまだ@code{make-string}と
+@code{string-set!}を使うより良いでしょう。
+@c COMMON
 @end defun
 
 @defun string char @dots{}
-[R5RS] Returns a string consisted by @var{char} @dots{}.
+[R5RS]
+@c EN
+Returns a string consisted by @var{char} @dots{}.
+@c JP
+文字@var{char} @dots{} から構成された文字列を返します。
+@c COMMON
 @end defun
 
 @node String Accessors & Modifiers, String Comparison, String Constructors, Strings
 @subsection String Accessors & Modifiers
+@c NODE 文字列のアクセスと変更
 
 @defun string-length string
 [R5RS] Returns a length of (possibly incomplete) string @var{string}.
@@ -3096,6 +3244,7 @@ Return value is undefined.
 
 @node String Comparison, String utilities, String Accessors & Modifiers, Strings
 @subsection String Comparison
+@c NODE 文字列の比較
 
 @defun string=? string1 string2
 @defunx string-ci@code{=}? string1 string2
@@ -3115,6 +3264,7 @@ Return value is undefined.
 
 @node String utilities, String Pointers, String Comparison, Strings
 @subsection String utilities
+@c NODE 文字列を扱うその他の手続き
 
 @defun substring string start end
 [R5RS]
@@ -3258,6 +3408,7 @@ after @var{item}.  If @var{item} is not found, returns
 
 @node String Pointers, Incomplete strings, String utilities, Strings
 @subsection String Pointers
+@c NODE 文字列ポインタ
 
 @deftp {Builtin Class} <string-pointer>
 @clindex string-pointer
@@ -3301,6 +3452,7 @@ string pointer objects, for portability.
 @c ----------------------------------------------------------------------
 @node Regular expression, Vectors, Strings, Core library
 @section Regular expression
+@c NODE 正規表現
 
 @deftp {Builtin Class} <regexp>
 @clindex regexp
@@ -3427,6 +3579,7 @@ useful macros and functions to deal with regular expression matching.
 @c ----------------------------------------------------------------------
 @node Vectors, Hashtables, Regular expression, Core library
 @section Vectors
+@c NODE ベクター
 
 @deftp {Builtin Class} <vector>
 @clindex vector
@@ -3473,6 +3626,7 @@ it is returned for such case.  This is an extension of Gauche.
 @c ----------------------------------------------------------------------
 @node Hashtables, Control features, Vectors, Core library
 @section Hashtables
+@c NODE ハッシュテーブル
 
 @deftp {Builtin Class} <hash-table>
 @clindex hash-table
@@ -3507,16 +3661,18 @@ it is returned for such case.  This is an extension of Gauche.
 @c ----------------------------------------------------------------------
 @node Control features, Exceptions, Hashtables, Core library
 @section Control features
+@c NODE 制御
 
 @menu
 * Procedures::                  
-* Continuation and escaping::   
+* Continuation::                
 * Multiple values::             
 * Delayed Evaludation::         
 @end menu
 
-@node Procedures, Continuation and escaping, Control features, Control features
+@node Procedures, Continuation, Control features, Control features
 @subsection Procedures
+@c NODE 手続き
 
 @deftp {Builtin Class} <procedure>
 @clindex procedure
@@ -3538,21 +3694,106 @@ it is returned for such case.  This is an extension of Gauche.
 [R5RS]
 @end defun
 
-@node Continuation and escaping, Multiple values, Procedures, Control features
-@subsection Continuation and escaping
+@node Continuation, Multiple values, Procedures, Control features
+@subsection Continuation
+@c NODE 継続
 
 
 @defun call-with-current-continuation proc
 @defunx call/cc proc
 [R5RS]
+@c EN
+Encapsulates the current continuation to a procedure
+(``continuation procedure''), and calls @var{proc} with it.
+When @var{proc} returns, its value becomes @code{call/cc}'s value.
+When the continuation procedure is invoked with zero or more arguments
+somewhere, the further calculation is abandoned and @code{call/cc} returns
+with the arguments given to the continuation procedure.
+
+First class continuation is one of the most distinct feature of Scheme, but
+this margin is too small to contain explanation.
+Please consult to the appropriate documents.
+@c JP
+現在の継続を手続き (継続手続き) にパッケージ化して、それを引数として
+@var{proc}を呼び出します。@var{proc}が戻ったら、その返り値が@code{call/cc}の
+値となります。作成された継続手続きがどこかで0個または複数個の引数を伴って呼ばれたら、
+あたかも@code{call/cc}から戻ったかのように実行が継続されます。その場合、
+@code{call/cc}は、継続手続きに与えられた引数を複数の値とし返します。
+
+ファーストクラスの継続はSchemeの最も特徴的な機能のひとつですが、それを
+十分に説明するにはこの本の余白は狭すぎます。適切なドキュメントを参照してください。
+@c COMMON
+
+@c EN
+Gauche supports full continuation, with a few limitations in rare
+cases.   Normally a continuation has an unlimited extent.  However,
+if a continuation is created during ``callback'' from C code---
+that is, you call some C-implemented function that calls Scheme
+code again---the continuation's extent is limited until the Scheme
+evaluation returns to the C code.   If you try to invoke the continuation
+from out of its extent, Gauche detects it and signals an error.
+This is a fundamental limitation and not likely to be addressed.
+@c JP
+Gaucheはわずかの例外を除いて、完全な継続をサポートしています。つまり継続は通常
+無制限のエクステントを持ちます。しかし、継続がCコードからの「コールバック」
+---SchemeがCで書かれたコードを呼び出し、それが再びSchemeコードを呼び出した場合---
+で作られたら、その継続のエクステントはコールバックが呼び出したCコードに戻るまでと
+なります。エクステントの切れた継続を呼ぼうとするとGaucheはエラーを報告します。
+これは根本的な制限であり、おそらく解決されないでしょう。
+@c COMMON
+
+@c EN
+Note that it is still allowed to invoke a continuation from
+such callbacks.
+Also, the typical higher-order functions such as @code{map}, @code{for-each}
+or @code{apply} are not using callbacks, and not affected by this limitation
+@c JP
+なお、コールバックコードから有効な継続を呼ぶことは常に可能です。また、
+高階関数を使う@code{map}や@code{for-each}、@code{apply}といった手続きは
+Cからのコールバックを使っておらず、この制限の影響を受けません。
+@c COMMON
+
+@c EN
+Fortunately, there are not much cases that you need to create an
+unlimited extent continuation in such callbacks.
+So far, the following code is executed in such callbacks.  Besides them,
+typical callback functions from external C libraries, like GUI toolkit,
+obeys the same limitation.
+@itemize
+@item
+A @code{write-object} method that is invoked from @code{write},
+@code{display} or @code{format}.
+@item
+A comparison function invoked from @code{sort}.
+@item
+A filler and a flusher callbacks of buffered ports.
+@end itemize
+@c JP
+@c COMMON
+
+@example
+(define *oob-cont* #f)
+
+(call/cc (lambda (valid-cont)
+           (sort '(1 2 3 4 5 6)
+                 (lambda (a b)
+                   (call/cc (lambda (oob-cont)
+                              (set! *oob-cont* oob-cont)))
+                   (valid-cont 'ok)))))
+ @result{} ok  ;@r{callback can call a continuation}
+
+(*oob-cont* 'not-ok)
+ @result{} ;@r{error -- *oob-cont* is out of its extent}.
+@end example
 @end defun
 
 @defun dynamic-wind before thunk after
 [R5RS]
 @end defun
 
-@node Multiple values, Delayed Evaludation, Continuation and escaping, Control features
+@node Multiple values, Delayed Evaludation, Continuation, Control features
 @subsection Multiple values
+@c NODE 多値
 
 @defun values obj @dots{}
 [R5RS] Returns @var{obj} @dots{} as multiple values.
@@ -3580,6 +3821,7 @@ Caller can capture multiple values by a built-in syntax
 @c ----------------------------------------------------------------------
 @node Exceptions, Eval, Control features, Core library
 @section Exceptions
+@c NODE 例外
 
 In Gauche, error singnaling mechanism is implemented on top
 of a simple exception system.   However, lower-level functionality
@@ -3594,6 +3836,7 @@ So far, all you can do with exceptions is to signal an error.
 
 @node Signalling errors, Handling errors, Exceptions, Exceptions
 @subsection Signalling errors
+@c NODE エラーの発生
 
 @defun error string arg @dots{}
 [SRFI-23] Signals an error.   Internally the action is realized
@@ -3626,6 +3869,7 @@ Similar to an error, but the error message is formatted by
 
 @node Handling errors, Exception object, Signalling errors, Exceptions
 @subsection Handling errors
+@c NODE エラーの処理
 
 @defun with-error-handler handler thunk
 Makes @var{handler} the active error handler and executes @var{thunk}.
@@ -3669,6 +3913,7 @@ the actual function is built in VM, using lighter mechanisms
 
 @node Exception object,  , Handling errors, Exceptions
 @subsection Exception object
+@c NODE 例外オブジェクト
 
 @deftp {Class} <exception>
 @clindex exception
@@ -3699,6 +3944,7 @@ For an error exception, this is the error message.
 @c ----------------------------------------------------------------------
 @node Input and output, Loading Programs, Eval, Core library
 @section Input and Output
+@c NODE 入出力
 
 @menu
 * Ports::                       
@@ -3712,6 +3958,7 @@ For an error exception, this is the error message.
 
 @node Ports, Common port operations, Input and output, Input and output
 @subsection Ports
+@c NODE ポート
 
 @deftp {Builtin Class} <port>
 @clindex port
@@ -3791,6 +4038,7 @@ to implement other functionality.
 
 @node Common port operations, File ports, Ports, Input and output
 @subsection Common port operations
+@c NODE ポート共通の操作
 
 @defun input-port? obj
 @defunx output-port? obj
@@ -3927,6 +4175,7 @@ the copying is done character by character, using C-version of
 
 @node File ports, String ports, Common port operations, Input and output
 @subsection File ports
+@c NODE ファイルポート
 
 @defun open-input-file filename &keyword if-does-not-exist element-type
 @defunx open-output-file filename &keyword if-does-not-exist if-exists element-type
@@ -4025,17 +4274,77 @@ Returns the value(s) @code{proc} returned.
 
 @node String ports, Procedural ports, File ports, Input and output
 @subsection String ports
+@c NODE 文字列ポート
+
+@c EN
+String ports are the ports that you can read from or write to
+memory.
+@c JP
+文字列ポートは、メモリ上のデータと関連付けられたポートです。
+@c COMMON
 
 @defun open-input-string string
 [SRFI-6]
+@c EN
+Creates an input string port that has the content @var{string}.
+This is a more efficient way to access a string in order
+rather than using @code{string-ref} with incremental index.
+
+@example
+(define p (open-input-string "foo x"))
+(read p) @result{} foo
+(read-char p) @result{} #\space
+(read-char p) @result{} #\x
+(read-char p) @result{} #<eof>
+(read-char p) @result{} #<eof>
+@end example
+@c JP
+@var{string}を内容とする入力文字列ポートを作って返します。
+文字列に逐次的にアクセスする場合、インデックスをインクリメントしながら
+@code{string-ref}を呼び出すより効率の良い方法です。
+@example
+(define p (open-input-string "文字 列"))
+(read p) @result{} 文字
+(read-char p) @result{} #\space
+(read-char p) @result{} #\列
+(read-char p) @result{} #<eof>
+(read-char p) @result{} #<eof>
+@end example
+@c COMMON
 @end defun
 
 @defun open-output-string
 [SRFI-6]
+@c EN
+Creates an output string port.   Anything written to the
+port is accumulated in the buffer, and can be obtained
+as a string by @code{get-output-string}.
+This is a far more efficient way to construct a string
+sequentially than pre-allocate a string and fill it with
+@code{string-set!}.
+@c JP
+出力文字列ポートを作成して返します。このポートに書き出された文字列は
+内部のバッファにたくわえられ、@code{get-output-string} で取り出すことが
+できます。
+これは、順番に文字列を構成する方法として、あらかじめ文字列をアロケートして
+@code{string-set!}で埋めて行くよりもずっと効率の良い方法です。
+@c COMMON
 @end defun
 
 @defun get-output-string
 [SRFI-6]
+@c EN
+Takes an output string port @code{port} and returns a string
+that has been accumulated to @code{port} so far.
+If a byte data has been written to the port, this function
+re-scans the buffer to see if it can consist a complete string;
+if not, an incomplete string is returned.
+@c JP
+出力文字列ポート@code{port}を取り、それまでそのポートに蓄積された
+文字列を返します。バイトデータがそのポートに書き出されていた場合、
+この手続きはまず内部バッファをスキャンし、結果が完全な文字列で表現できるかどうかを
+調べます。もし表現できなければ、不完全な文字列が返されます。
+@c COMMON
 @end defun
 
 @defun call-with-input-string string proc
@@ -4053,6 +4362,7 @@ Returns the value(s) @code{proc} returned.
 
 @node Procedural ports, Input, String ports, Input and output
 @subsection Procedural ports
+@c NODE 手続き的ポート
 
 The underlying mechanism of procedural ports is very flexible,
 but I don't have Scheme interface yet, except the following ones:
@@ -4092,6 +4402,7 @@ indicating that the port is closed.
 
 @node Input, Output, Procedural ports, Input and output
 @subsection Input 
+@c NODE 入力
 
 @defun read &optional iport
 [R5RS]
@@ -4206,6 +4517,7 @@ applies @var{fn} to each item.  The former discards the results
 
 @node Output,  , Input, Input and output
 @subsection Output
+@c NODE 出力
 
 @defun write obj &optional port
 [R5RS]
@@ -4393,6 +4705,7 @@ the @code{~D} directive.
 @c ----------------------------------------------------------------------
 @node Loading Programs, Comparison and sorting, Input and output, Core library
 @section Loading Programs
+@c NODE プログラムのロード
 
 @defun load file &keyword (error-if-not-found #t)
 [R5RS+]
@@ -4423,6 +4736,7 @@ the @code{~D} directive.
 @c ----------------------------------------------------------------------
 @node Comparison and sorting, System interface, Loading Programs, Core library
 @section Comparison and sorting
+@c NODE 比較とソート
 
 @defun sort list &optional cmfpn
 @defunx sort! list &optional cmfpn
@@ -4450,6 +4764,7 @@ if @code{cmpfn} is omitted.
 @c ----------------------------------------------------------------------
 @node System interface,  , Comparison and sorting, Core library
 @section System interface
+@c NODE システムインタフェース
 
 Gauche supports most of POSIX.1 functions and other system functions
 popular among Unix variants as built-in procedures.
@@ -4476,6 +4791,7 @@ provide lower level routines as well.
 
 @node Program termination, Environment Inquiry, System interface, System interface
 @subsection Program termination
+@c NODE プログラムの終了
 
 @defun exit &optional (code 0)
 [POSIX] Terminates the current process with the exit code @var{code}.
@@ -4540,6 +4856,7 @@ interpreter itself.
 
 @node Filesystems, Unix groups and passwords, Environment Inquiry, System interface
 @subsection Filesystems
+@c NODE ファイルシステム
 
 @menu
 * Directories::                 
@@ -4551,6 +4868,7 @@ interpreter itself.
 
 @node Directories, Directory manipulation, Filesystems, Filesystems
 @subsubsection Directories
+@c NODE ディレクトリ
 
 @defun sys-readdir path
 @c EN
@@ -4601,6 +4919,7 @@ Gaucheではいずれ、自前のglob()実装を持つ予定です。
 
 @node Directory manipulation, Pathnames, Directories, Filesystems
 @subsubsection Directory manipulation
+@c NODE ディレクトリ操作
 
 @defun sys-remove filenmae
 [POSIX] 
@@ -4741,6 +5060,7 @@ umaskについては@code{man umask}を参照してください。
 
 @node Pathnames, File stats, Directory manipulation, Filesystems
 @subsubsection Pathnames
+@c NODE パス名
 
 @defun sys-normalize-pathname pathname &keyword absolute expand canonicalize
 @c EN
@@ -4858,6 +5178,7 @@ may return @code{"/"} for the argument @code{"/"}, and
 
 @node File stats, Other file operations, Pathnames, Filesystems
 @subsubsection File stats
+@c NODE ファイルの状態
 
 @defun file-exists? path
 @defunx file-is-regular? path
@@ -4960,6 +5281,7 @@ specifies POSIX style permission.
 
 @node Other file operations,  , File stats, Filesystems
 @subsubsection Other file operations
+@c NODE 他のファイル操作
 
 @defun sys-chdir dir
 [POSIX]
@@ -5005,6 +5327,7 @@ or @code{#f} if the port is not connected to a terminal.
 
 @node Unix groups and passwords, Locale, Filesystems, System interface
 @subsection Unix groups and passwords
+@c NODE Unixのグループとパスワード
 
 @menu
 * Unix group::                  
@@ -5014,6 +5337,7 @@ or @code{#f} if the port is not connected to a terminal.
 
 @node Unix group, Unix password, Unix groups and passwords, Unix groups and passwords
 @subsubsection Unix Group
+@c NODE Unixのグループ
 
 @deftp {Builtin Class} <sys-group>
 @clindex sys-group
@@ -5030,6 +5354,7 @@ or @code{#f} if the port is not connected to a terminal.
 
 @node Unix password, Password encryption, Unix group, Unix groups and passwords
 @subsubsection Unix Password
+@c NODE Unixのパスワード
 
 @deftp {Builtin Class} <sys-passwd>
 @clindex sys-passwd
@@ -5047,6 +5372,7 @@ or @code{#f} if the port is not connected to a terminal.
 
 @node Password encryption,  , Unix password, Unix groups and passwords
 @subsubsection Password encryption
+@c NODE パスワードの暗号化
 
 @defun sys-crypt key salt
 This is the interface to @code{crypt(3)}.   @var{Key} and @var{salt}
@@ -5057,6 +5383,7 @@ function signals an error.
 
 @node Locale, Signal, Unix groups and passwords, System interface
 @subsection Locale
+@c NODE ロケール
 
 @defun sys-setlocate category locale
 [POSIX]
@@ -5065,6 +5392,7 @@ function signals an error.
 
 @node Signal, System Inquiry, Locale, System interface
 @subsection Signal
+@c NODE  シグナル
 
 @deftp {Variable} |SIGABRT|
 @deftpx {Variable} |SIGALRM|
@@ -5126,6 +5454,7 @@ the process group @var{-pid}.
 
 @node System Inquiry, Time, Signal, System interface
 @subsection System Inquiry
+@c NODE システムへの問い合わせ
 
 @defun sys-uname
 [POSIX]
@@ -5179,6 +5508,7 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 
 @node Time, Unix process management, System Inquiry, System interface
 @subsection Time
+@c NODE 時間
 
 @deftp {Builtin Class} <sys-tm>
 @clindex sys-tm
@@ -5230,6 +5560,7 @@ local time.
 
 @node Unix process management, I/O multiplexing, Time, System interface
 @subsection Unix process management
+@c NODE Unixのプロセス管理
 
 @menu
 * Fork and exec::               
@@ -5238,6 +5569,7 @@ local time.
 
 @node Fork and exec, Wait, Unix process management, Unix process management
 @subsubsection Fork and exec
+@c NODE forkとexec
 
 @defun sys-system command
 [POSIX]
@@ -5306,6 +5638,7 @@ more convenient process handling on top of above primitives.
 
 @node Wait,  , Fork and exec, Unix process management
 @subsubsection Wait
+@c NODE Wait
 
 @defun sys-wait
 [POSIX] Calls system's @code{wait(2)}.  The process suspends its execution
@@ -5370,6 +5703,7 @@ signum number that stopped the child.
 
 @node I/O multiplexing, Miscellaneous system calls, Unix process management, System interface
 @subsection I/O multiplexing
+@c NODE I/Oの多重化
 
 The interface functions for @code{select(2)}.
 The higher level interface is provided on top of these
@@ -5438,6 +5772,7 @@ doesn't modify its arguments.
 
 @node Miscellaneous system calls,  , I/O multiplexing, System interface
 @subsection Miscellaneous system calls
+@c NODE その他のシステムコール
 
 @defun sys-pause
 [POSIX] Suspends the process until it receives a signal whose
@@ -5482,6 +5817,7 @@ Bound to a positive integer that @code{sys-random} may return.
 @c ======================================================================
 @node Object System, Libarary Modules, Core library, Top
 @chapter Object System
+@c NODE オブジェクトシステム
 
 @c ----------------------------------------------------------------------
 @menu
@@ -5495,6 +5831,7 @@ Bound to a positive integer that @code{sys-random} may return.
 
 @node General Inquiry, Defining class, Object System, Object System
 @section  General Inquiry
+@c NODE 一般的な問い合わせ
 
 @defun class-of obj
 Returns a class metaobject of @var{obj}.
@@ -5508,6 +5845,7 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @node Defining class, Defining methods, General Inquiry, Object System
 @section Defining class
+@c NODE クラスの定義
 
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
 @end defmac
@@ -5516,6 +5854,7 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @node Defining methods, Creating Instance, Defining class, Object System
 @section Defining methods
+@c NODE メソッドの定義
 
 @defmac define-generic name
 @end defmac
@@ -5526,6 +5865,7 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @node Creating Instance, Accessing Instance, Defining methods, Object System
 @section Creating Instance
+@c NODE インスタンスの作成
 
 @deffn {Generic Function} make class arg @dots{}
 @end deffn
@@ -5543,6 +5883,7 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @node Accessing Instance, Metaobject protocol, Creating Instance, Object System
 @section Accessing Instance
+@c NODE インスタンスへのアクセス
 
 @defun slot-ref obj slot
 @end defun
@@ -5576,6 +5917,7 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @node Metaobject protocol,  , Accessing Instance, Object System
 @section Metaobject procotol
+@c NODE メタオブジェクトプロトコル
 
 @menu
 * System metaclasses::          
@@ -5588,6 +5930,7 @@ of descendants of @var{class}.
 
 @node System metaclasses, Class introspection, Metaobject protocol, Metaobject protocol
 @subsection System metaclasses
+@c NODE システムメタクラス
 
 @deftp {Class} <top>
 @clindex top
@@ -5612,6 +5955,7 @@ of descendants of @var{class}.
 
 @node Class introspection, Class instantiation, System metaclasses, Metaobject protocol
 @subsection Class introspection
+@c NODE クラスのイントロスペクション
 
 @menu
 * Class metaobject::            
@@ -5620,6 +5964,7 @@ of descendants of @var{class}.
 
 @node Class metaobject, Slot definition, Class introspection, Class introspection
 @subsubsection Class metaobject
+@c NODE クラスメタオブジェクト
 
 @defun class-name class
 @end defun
@@ -5638,6 +5983,7 @@ of descendants of @var{class}.
 
 @node Slot definition,  , Class metaobject, Class introspection
 @subsubsection Slot definition
+@c NODE スロットの定義
 
 @defun class-slot-definition class slot-name
 @end defun
@@ -5661,21 +6007,25 @@ of descendants of @var{class}.
 
 @node Class instantiation, Customizing slot access, Class introspection, Metaobject protocol
 @subsection Class instantiation
+@c NODE クラスのインスタンシエーション
 
 @node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
 @subsection Customizing slot access
+@c NODE スロットアクセスのカスタマイズ
 
 @node Method instantiation, Customizing method application, Customizing slot access, Metaobject protocol
 @subsection Method instantiation
+@c NODE メソッドのインスタンシエーション
 
 @node Customizing method application,  , Method instantiation, Metaobject protocol
 @subsection Customizing method application
-
+@c NODE メソッド適用のカスタマイズ
 
 
 @c ======================================================================
 @node Libarary Modules, References, Object System, Top
 @chapter Library Modules
+@c NODE ライブラリモジュール
 
 @c ----------------------------------------------------------------------
 @menu
@@ -5715,6 +6065,7 @@ of descendants of @var{class}.
 
 @node Library modules overview, Character code conversion, Libarary Modules, Libarary Modules
 @section Library modules overview
+@c NODE ライブラリモジュールの概要
 
 The modules are organized hierarchically.
 Here's a table of general guideline.
@@ -5743,6 +6094,7 @@ SRFI implementations.
 @c ----------------------------------------------------------------------
 @node Character code conversion, Low-level file operations, Library modules overview, Libarary Modules
 @section @code{gauche.charconv} - Character Code Conversion
+@c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
 @deftp {Module} gauche.charconv
 @mdindex gauche.charconv
@@ -5876,6 +6228,7 @@ usually in favor of the native CES.
 @c ----------------------------------------------------------------------
 @node Low-level file operations, Interactive session, Character code conversion, Libarary Modules
 @section @code{gauche.fcntl} - Low-level file operations
+@c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
 @deftp {Module} gauche.fcntl
 @mdindex gauche.fcntl
@@ -6031,6 +6384,7 @@ An integer process id that holding the lock; used only by @code{|F_GETLK|}.
 @c ----------------------------------------------------------------------
 @node Interactive session, User-level logging, Low-level file operations, Libarary Modules
 @section @code{gauche.interactive} - Utilities for interactive session
+@c NODE インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 
 @deftp {Module} gauche.interactive
 @mdindex gauche.interactive
@@ -6068,6 +6422,7 @@ Some examples:
 @c ----------------------------------------------------------------------
 @node User-level logging, Networking, Interactive session, Libarary Modules
 @section @code{gauche.logger} - User-level logging
+@c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
 @deftp {Module} gauche.logger
 @mdindex gauche.logger
@@ -6172,6 +6527,7 @@ Also @code{log-format} acquires a write lock of the log file by
 @c ----------------------------------------------------------------------
 @node Networking, Parsing command-line options, User-level logging, Libarary Modules
 @section @code{gauche.net} - Networking
+@c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
 @deftp {Module} gauche.net
 @mdindex gauche.net
@@ -6770,6 +7126,7 @@ Otherwise, @code{#f} is returned.
 @c ----------------------------------------------------------------------
 @node Parsing command-line options, High Level Process Interface, Networking, Libarary Modules
 @section @code{gauche.parseopt} - Parsing command-line options
+@c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
 @deftp {Module} gauche.parseopt
 @mdindex gauche.parseopt
@@ -6931,6 +7288,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @c ----------------------------------------------------------------------
 @node High Level Process Interface, Regular expression utilities, Parsing command-line options, Libarary Modules
 @section @code{gauche.process} - High Level Process Interface
+@c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
 @deftp {Module} gauche.process
 @mdindex gauche.process
@@ -7173,6 +7531,7 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 @c ----------------------------------------------------------------------
 @node Regular expression utilities, Simple dispatcher, High Level Process Interface, Libarary Modules
 @section @code{gauche.regexp} - Regular expression utilities
+@c NODE 正規表現ユーティリティ, @code{gauche.regexp} - 正規表現ユーティリティ
 
 @deftp {Module} gauche.regexp
 @mdindex gauche.regexp
@@ -7396,6 +7755,7 @@ value from the procedure is inserted to the output string using
 @c ----------------------------------------------------------------------
 @node Simple dispatcher, Serializer, Regular expression utilities, Libarary Modules
 @section @code{gauche.selector} - Simple dispatcher
+@c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
 @deftp {Module} gauche.selector
 @mdindex gauche.selector
@@ -7510,6 +7870,7 @@ This is a simple example of "echo" server:
 @c ----------------------------------------------------------------------
 @node Termios, Unit Testing, Serializer, Libarary Modules
 @section @code{gauche.termios} - Termios
+@c NODE Termios, @code{gauche.termios} - Termios
 
 @deftp {Module} gauche.termios
 @mdindex gauche.termios
@@ -7665,6 +8026,7 @@ without echoing:
 @c ----------------------------------------------------------------------
 @node Unit Testing, RFC822 Message parsing, Termios, Libarary Modules
 @section @code{gauche.test} - Unit Testing
+@c NODE 単体テスト, @code{gauche.test} - 単体テスト
 
 @deftp {Module} gauche.test
 @mdindex gauche.test
@@ -7732,6 +8094,7 @@ Prints out list of failed tests.
 @c ----------------------------------------------------------------------
 @node RFC822 Message parsing, Base64 encoding/decoding, Unit Testing, Libarary Modules
 @section @code{rfc.822} - RFC822 message parsing
+@c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
 @deftp {Module} rfc.822
 @mdindex rfc.822
@@ -7766,6 +8129,7 @@ The order of fields are preserved.
 @c ----------------------------------------------------------------------
 @node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Libarary Modules
 @section @code{rfc.base64} - Base64 encoding/decoding
+@c NODE Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
 
 @deftp {Module} rfc.base64
 @mdindex rfc.base64
@@ -7805,6 +8169,7 @@ set are silently ignored.
 @c ----------------------------------------------------------------------
 @node HTTP cookie handling, URI parsing and construction, Base64 encoding/decoding, Libarary Modules
 @section @code{rfc.cookie} - HTTP cookie handling
+@c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
 @deftp {Module} rfc.cookie
 @mdindex rfc.cookie
@@ -7896,6 +8261,7 @@ Some examples:
 @c ----------------------------------------------------------------------
 @node URI parsing and construction, SLIB, HTTP cookie handling, Libarary Modules
 @section @code{rfc.uri} - URI parsing and construction
+@c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
 @deftp {Module} rfc.uri
 @mdindex rfc.uri
@@ -7976,6 +8342,7 @@ native multibyte representation.
 @c ----------------------------------------------------------------------
 @node SLIB, Feature Conditional, URI parsing and construction, Libarary Modules
 @section @code{slib} - SLIB interface
+@c NODE SLIB, @code{slib} - SLIB
 
 @deftp {Module} slib
 @mdindex slib
@@ -10279,7 +10646,7 @@ R5RS @code{log}.  @xref{Arithmetics}.
 Not directly supported.  @code{log10(z)} @equiv{} @code{(/ (log z) (log 10))}.
 @item longjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation and escaping}.
+@xref{Continuation}.
 @item lseek
 Not supported yet.
 @item malloc
@@ -10381,7 +10748,7 @@ Not necessary.
 Not supported yet
 @item setjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation and escaping}.
+@xref{Continuation}.
 @item setlocale
 Gauche's @code{sys-setlocale}.
 @item setpgid
@@ -10402,7 +10769,7 @@ Not supported yet.
 Not supported yet.
 @item siglongjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation and escaping}.
+@xref{Continuation}.
 @item signal
 Not supported yet.
 @item sigpending
@@ -10411,7 +10778,7 @@ Not supported yet.
 Not supported yet.
 @item sigsetjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
-@xref{Continuation and escaping}.
+@xref{Continuation}.
 @item sigsuspend
 Not supported yet.
 @item sin
