@@ -3995,14 +3995,14 @@ For the hashing of primitive objects are done in @code{hash}.
 @defun eq-hash obj
 @defunx eqv-hash obj
 These are hash functions used for @code{eq?}-type and @code{eqv?}-type
-hash tables.  Returns a non-negative integer up to 2^@em{n}-1, where
-@em{n} is system-dependent value no less than 32.
+hash tables.  Returns a non-negative integer up to 2^@emph{n}-1, where
+@emph{n} is system-dependent value no less than 32.
 The returned hash value is system- and process-dependent,
 and can't be carried over the boundary of the running process.
 
-Note: don't hash numbers by @code{eq-hash}.  Two numbers (including integers)
+Note: don't hash numbers by @code{eq-hash}.  Two numbers
 are not guaranteed to be @code{eq?} even if they are numerically equal,
-so it is not supposed to be used as a key in @code{eq?}-type hash table.
+so they are not supposed to be used as a key in @code{eq?}-type hash table.
 @end defun
 
 @defun hash-table? obj
