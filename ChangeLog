@@ -1,3 +1,23 @@
+2001-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/cookie.scm : added
+	* src/string.c, src/extlib.stub : made string-scan in place of
+	  the broken string-contains.
+	* lib/gauche/regexp.scm : added regexp-replace and
+	  regexp-replace-all.
+
+2001-09-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub : added sys-putenv if the system has putenv().
+	* lib/text/tr.scm : finished.
+
+2001-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi.scm (defmacro) : fixed a bug.
+	* lib/w3c/cgi.scm : moved under w3c.
+	* lib/text/csv.scm : added.
+	* src/stdlib.stub (open-output-string) : allow #f to :if-exists
+
 2001-09-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c : fixed a bug in format (thanks to Abe Hiroshi)
