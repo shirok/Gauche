@@ -1,3 +1,13 @@
+2002-06-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/extlib.stub : added ucs<->char conversion routine
+	  scheme: ucs->char, char->ucs, c: Scm_UcsToChar, Scm_CharToUcs.
+	* ext/charconv/cvt.scm (generate-utf8->eucj): bug fix: the table for
+	  utf8 [d0 xx] and [d1 xx] sequence was missing in utf8->eucjp table.
+	* ext/xlink : avoid calling sys-symlink when there's already a link.
+	* src/read.c (maybe_uvector): use Scm_Require instead of Scm_Load
+	  to initialize Scm_ReadUvectorHook.
+
 2002-06-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.5.6

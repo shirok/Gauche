@@ -8,7 +8,7 @@ cat <<EOF
 /*
  * uvector.c - Homogeneous vector
  *
- *  Copyright(C) 1999-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 1999-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.14 2002-06-16 01:46:43 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.15 2002-06-17 05:48:05 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -30,10 +30,6 @@ cat <<EOF
 #include <gauche/extend.h>
 #include "gauche/uvector.h"
 #include "uvectorP.h"
-
-#ifndef EPSILON
-#define EPSILON  10e-5
-#endif /*EPSILON*/
 
 static ScmClass *sequence_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_SequenceClass),

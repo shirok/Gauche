@@ -12,10 +12,10 @@ SCMFILES  = srfi-4.scm
 HEADERS   = uvector.h
 
 TARGET    = libuvector.so
-OBJS      = uvector_head.o uvector.o uvlib.o uvector_tail.o
+OBJS      = uvector_head.o uvector.o uvutil.o uvlib.o uvector_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   autom4te.cache uvector_head.c uvector_tail.c
-GENERATED = gauche/uvector.h uvector.c uvlib.c uvlib.stub
+GENERATED = gauche/uvector.h uvector.c uvutil.c uvlib.c uvlib.stub
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
@@ -37,6 +37,10 @@ gauche/uvector.h : uvector.h.sh
 uvector.c : uvector.c.sh
 	rm -rf uvector.c
 	sh ./uvector.c.sh > uvector.c
+
+uvutil.c : uvutil.c.sh
+	rm -rf uvutil.c
+	sh ./uvutil.c.sh > uvutil.c
 
 uvlib.c : uvlib.stub
 	$(GOSH) genstub uvlib.stub
