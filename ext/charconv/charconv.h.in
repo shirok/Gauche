@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.9 2002-06-17 05:41:04 shirok Exp $
+ *  $Id: charconv.h.in,v 1.10 2002-11-10 21:22:07 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -53,6 +53,7 @@ typedef struct ScmConvInfoRec {
     int ostate;                 /* current output state */
     ScmPort *remote;            /* source or drain port */
     int ownerp;                 /* do I own remote port? */
+    int eofread;                /* true if EOF is read from remote port */
     int bufsiz;                 /* size of conversion buffer */
     char *buf;                  /* internal conversion buffer */
     char *ptr;                  /* current ptr in the internal conv buf */

@@ -1,5 +1,8 @@
 2002-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/charconv.c (conv_input_filler): fixed a bug
+	  of attempting to read from closed remote port.  (pointed out
+	  by Kimura Fuyuki).
 	* lib/srfi-19.scm : added missing exports (pointed out by
 	  Kimura Fuyuki).
 

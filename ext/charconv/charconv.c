@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.35 2002-09-26 05:24:44 shirok Exp $
+ *  $Id: charconv.c,v 1.36 2002-11-10 21:22:07 shirok Exp $
  */
 
 #include <string.h>
@@ -131,6 +131,8 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     const char *inbuf = info->buf;
     char *outbuf = port->src.buf.end;
 
+    if (info->eofread) return 0;
+
     /* Fill the input buffer.  There may be some remaining bytes in the
        inbuf from the last conversion (insize), so we try to fill the
        rest. */
@@ -138,6 +140,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     nread = Scm_Getz(info->ptr, info->bufsiz - insize, info->remote);
     if (nread <= 0) {
         /* input reached EOF.  finish the output state */
+        info->eofread = TRUE;
         if (insize == 0) {
             outroom = SCM_PORT_BUFFER_ROOM(port);
             result = jconv_reset(info, outbuf, outroom);
@@ -253,6 +256,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     cinfo->remote = fromPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = bufsiz;
+    cinfo->eofread = FALSE;
     if (preread > 0) {
         cinfo->buf = inbuf;
         cinfo->ptr = inbuf + preread;
@@ -407,6 +411,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->remote = toPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
+    cinfo->eofread = FALSE;
     cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->ptr = cinfo->buf;
     
