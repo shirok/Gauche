@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.6 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: read.c,v 1.7 2001-02-06 06:58:28 shiro Exp $
  */
 
 #include <stdio.h>
@@ -33,6 +33,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial);
 static ScmObj read_number(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
+static ScmObj read_keyword(ScmPort *port);
 
 ScmObj Scm_Read(ScmObj port)
 {
@@ -132,9 +133,7 @@ ScmObj read_internal(ScmPort *port)
     case '\'': return read_quoted(port, SCM_SYM_QUOTE);
     case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE);
     case ':':
-        /* TODO: need to deal with keywords.
-           For now, just make them as symbols. */
-        return read_symbol(port, c);
+        return read_keyword(port);
     case ',':
         {
             int c1;
@@ -379,4 +378,10 @@ static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial)
         return Scm_Intern(s);
     else
         return num;
+}
+
+static ScmObj read_keyword(ScmPort *port)
+{
+    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID));
+    return Scm_MakeKeyword(s);
 }
