@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.23 2001-03-24 10:47:17 shiro Exp $
+ *  $Id: class.c,v 1.24 2001-03-25 04:42:20 shiro Exp $
  */
 
 #include "gauche.h"
@@ -87,6 +87,7 @@ SCM_DEFINE_GENERIC(Scm_GenericComputeSetterMethod, Scm_NoNextMethod, NULL);
 static ScmObj key_allocation;
 static ScmObj key_instance;
 static ScmObj key_accessor;
+static ScmObj key_slot_accessor;
 static ScmObj key_builtin;
 static ScmObj key_name;
 static ScmObj key_supers;
@@ -743,6 +744,20 @@ static void generic_methods_set(ScmGeneric *gf, ScmObj val)
     gf->methods = val;
 }
 
+/* Make base generic function from C */
+ScmObj Scm_MakeBaseGeneric(ScmObj name,
+                           ScmObj (*fallback)(ScmObj *, int, ScmGeneric*),
+                           void *data)
+{
+    ScmGeneric *gf = SCM_GENERIC(generic_allocate(SCM_CLASS_GENERIC, SCM_NIL));
+    gf->common.info = name;
+    if (fallback) {
+        gf->fallback = fallback;
+        gf->data = data;
+    }
+    return SCM_OBJ(gf);
+}
+
 /* default "default method" */
 ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf)
 {
@@ -1030,7 +1045,7 @@ void bootstrap_class(ScmClass *k,
             SCM_APPEND1(slots, t,
                         Scm_List(snam,
                                  key_allocation, key_builtin,
-                                 key_accessor, SCM_OBJ(&specs->accessor),
+                                 key_slot_accessor, SCM_OBJ(&specs->accessor),
                                  NULL));
         }
     }
@@ -1069,6 +1084,7 @@ void Scm__InitClass(void)
     key_instance = SCM_MAKE_KEYWORD("instance");
     key_builtin = SCM_MAKE_KEYWORD("builtin");
     key_accessor = SCM_MAKE_KEYWORD("accessor");
+    key_slot_accessor = SCM_MAKE_KEYWORD("slot-accessor");
     key_name = SCM_MAKE_KEYWORD("name");
     key_supers = SCM_MAKE_KEYWORD("supers");
     key_slots = SCM_MAKE_KEYWORD("slots");

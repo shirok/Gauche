@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.89 2001-03-25 03:09:28 shiro Exp $
+ *  $Id: gauche.h,v 1.90 2001-03-25 04:42:04 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1512,6 +1512,9 @@ extern ScmClass Scm_GenericClass;
     };
 
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod);
+ScmObj Scm_MakeBaseGeneric(ScmObj name,
+                           ScmObj (*fallback)(ScmObj *, int, ScmGeneric*),
+                           void *data);
 ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf);
 ScmObj Scm_NoOperation(ScmObj *args, int nargs, ScmGeneric *gf);
 
