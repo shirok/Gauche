@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.66 2001-03-09 08:38:14 shiro Exp $
+ *  $Id: gauche.h,v 1.67 2001-03-09 09:48:38 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1091,7 +1091,7 @@ extern ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value);
 
 extern ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);
 extern ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
-extern ScmObj Scm_FindModule(ScmSymbol *name);
+extern ScmObj Scm_FindModule(ScmSymbol *name, int createp);
 extern ScmObj Scm_AllModules(void);
 extern void   Scm_SelectModule(ScmModule *mod);
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.37 2001-03-05 10:45:32 shiro Exp $
+ *  $Id: compile.c,v 1.38 2001-03-09 09:48:31 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1561,15 +1561,10 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
     body = SCM_CDDR(form);
     if (!SCM_SYMBOLP(modname))
         Scm_Error("with-module: bad module name: %S", modname);
-    module = Scm_FindModule(SCM_SYMBOL(modname));
+    module = Scm_FindModule(SCM_SYMBOL(modname), createp);
     if (!SCM_MODULEP(module)) {
-        if (createp) {
-            module = Scm_MakeModule(SCM_SYMBOL(modname));
-        } else {
-            Scm_Error("with-module: no such module: %S", modname);
-        }
+        Scm_Error("with-module: no such module: %S", modname);
     }
-
     /* TODO: insert source-info */
     current = Scm_CurrentModule();
     SCM_PUSH_ERROR_HANDLER {
@@ -1586,6 +1581,9 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
     }
     SCM_POP_ERROR_HANDLER;
     Scm_SelectModule(SCM_MODULE(current));
+
+    /* if the body is empty, just return the module itself. */
+    if (SCM_NULLP(code)) ADDCODE1(module);
     return code;
 }
 
@@ -1610,7 +1608,7 @@ static ScmObj compile_select_module(ScmObj form, ScmObj env, int ctx, void *data
     modname = SCM_CADR(form);
     if (!SCM_SYMBOLP(modname))
         Scm_Error("select-module: bad module name: %S", modname);
-    module = Scm_FindModule(SCM_SYMBOL(modname));
+    module = Scm_FindModule(SCM_SYMBOL(modname), FALSE);
     if (!SCM_MODULEP(module))
         Scm_Error("select-module: no such module: %S", modname);
     Scm_SelectModule(SCM_MODULE(module));

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.13 2001-03-07 06:58:54 shiro Exp $
+ *  $Id: module.c,v 1.14 2001-03-09 09:46:34 shiro Exp $
  */
 
 #include "gauche.h"
@@ -119,7 +119,7 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
     SCM_FOR_EACH(lp, list) {
         if (!SCM_SYMBOLP(SCM_CAR(lp)))
             Scm_Error("module name required, but got %S", SCM_CAR(lp));
-        mod = Scm_FindModule(SCM_SYMBOL(SCM_CAR(lp)));
+        mod = Scm_FindModule(SCM_SYMBOL(SCM_CAR(lp)), FALSE);
         if (!SCM_MODULEP(mod))
             Scm_Error("no such module: %S", SCM_CAR(lp));
         if (SCM_FALSEP(Scm_Memq(mod, head)))
@@ -144,10 +144,13 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
  * Finding modules
  */
 
-ScmObj Scm_FindModule(ScmSymbol *name)
+ScmObj Scm_FindModule(ScmSymbol *name, int createp)
 {
     ScmHashEntry *e = Scm_HashTableGet(moduleTable, SCM_OBJ(name));
-    if (e == NULL) return SCM_FALSE;
+    if (e == NULL) {
+        if (createp) return Scm_MakeModule(name);
+        else return SCM_FALSE;
+    }
     else return e->value;
 }
 

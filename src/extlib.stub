@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.41 2001-03-09 08:33:42 shiro Exp $
+;;; $Id: extlib.stub,v 1.42 2001-03-09 09:46:27 shiro Exp $
 ;;;
 
 "
@@ -403,7 +403,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc find-module (name)
   (assert (symbol? name))
-  "  SCM_RETURN(Scm_FindModule(name));")
+  "  SCM_RETURN(Scm_FindModule(name, FALSE));")
 
 (define-cproc all-modules ()
   "  SCM_RETURN(Scm_AllModules());")
