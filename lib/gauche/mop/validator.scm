@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: validator.scm,v 1.6 2003-11-11 09:35:31 shirok Exp $
+;;;  $Id: validator.scm,v 1.7 2003-11-12 09:11:50 shirok Exp $
 ;;;
 
 (define-module gauche.mop.validator
@@ -47,6 +47,7 @@
     (if (or pre post)
         (let* ((acc (compute-slot-accessor class slot (next-method)))
                (getter (lambda (o) (slot-ref-using-accessor o acc)))
+               (bound? (lambda (o) (slot-bound-using-accessor? o acc)))
                (setter (cond ((and pre post)
                               (lambda (o v)
                                 (slot-set-using-accessor! o acc (pre o v))
@@ -59,7 +60,7 @@
                                 (slot-set-using-accessor! o acc v)
                                 (post o (slot-ref-using-accessor o acc)))))))
           ;; the last #t enables initialization by :initform etc.
-          (list getter setter #t))
+          (list getter setter bound? #t))
         (next-method))))
 
 ;; convenience base class.  you can either inherit <validator-mixin>,

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.47 2003-11-12 07:42:51 shirok Exp $
+;;;  $Id: object.scm,v 1.48 2003-11-12 09:11:49 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -292,6 +292,10 @@
     (reverse slots)))
 
 ;;; Method COMPUTE-GET-N-SET (class <class>) slot
+;;;   May return:
+;;;      integer for instance slot
+;;;      list    (getter [setter [bound? [allocate?]]])
+;;;      slot accessor
 (define-method compute-get-n-set ((class <class>) slot)
 
   ;; NB: STklos ignores :initform slot option for class slots, but
@@ -328,11 +332,11 @@
        (make-class-slot))
       ((:virtual)
        (let ((getter (slot-definition-option slot :slot-ref #f))
-             (setter (slot-definition-option slot :slot-set! #f)))
-         (unless (and (procedure? getter) (procedure? setter))
-           (error "virtual slot requires both :slot-ref and :slot-set!:"
-                  slot))
-         (list getter setter)))
+             (setter (slot-definition-option slot :slot-set! #f))
+             (bound? (slot-definition-option slot :slot-bound? #f)))
+         (unless (procedure? getter)
+           (error "virtual slot requires at least :slot-ref:" slot))
+         (list getter setter bound?)))
       ((:builtin)
        (or (slot-definition-option slot :slot-accessor #f)
            (errorf "builtin slot ~s of class ~s doesn't have associated slot accessor"
@@ -350,32 +354,33 @@
              `(,@(cond
                   ((integer? gns) (list :slot-number gns :initializable #t))
                   ((list? gns)
-                   (list :getter-n-setter (cons (car gns) (list-ref gns 1 #f))
-                         :initializable (list-ref gns 2 #f)))
+                   (list :getter (car gns)
+                         :setter (list-ref gns 1 #f)
+                         :bound? (list-ref gns 2 #f)
+                         :initializable (list-ref gns 3 #f)))
                   (else
                    (errorf "bad getter-and-setter returned by compute-get-n-set for ~s ~s: ~s"
                            class slot gns)))
                ,@(cdr slot)))))
 
 ;; access class allocated slot.  API compatible with Goops.
-(define (%class-slot-gns class slot-name)
+(define (%class-slot-gns class slot-name acc-type)
   (cond ((class-slot-definition class slot-name)
          => (lambda (slot)
               (if (memv (slot-definition-allocation slot)
                         '(:class :each-subclass))
-                  (slot-ref (class-slot-accessor class slot-name)
-                            'getter-n-setter)
-                  (errorf "attempt to access non-class allocated slot ~s of class ~s as a class slot." slot-name class))))
+                (slot-ref (class-slot-accessor class slot-name) acc-type)
+                (errorf "attempt to access non-class allocated slot ~s of class ~s as a class slot." slot-name class))))
         (else
          (errorf "attempt to access non-existent slot ~s of class ~s as a class slot." slot-name class))))
 
 (define (class-slot-set! class slot-name val)
-  (apply (cdr (%class-slot-gns class slot-name)) (list #f val)))
+  (apply (%class-slot-gns class slot-name 'setter) (list #f val)))
 
 (define class-slot-ref
   (getter-with-setter
    (lambda (class slot-name)
-     (let ((val (apply (car (%class-slot-gns class slot-name)) '(#f))))
+     (let ((val (apply (%class-slot-gns class slot-name 'getter) '(#f))))
        (if (undefined? val)
            (slot-unbound class slot-name)
            val)))
@@ -629,6 +634,7 @@
                 class-direct-methods class-direct-subclasses
                 class-direct-slots class-slots
                 redefine-class! class-redefinition
+                change-class update-direct-subclass!
                 slot-definition-name slot-definition-options
                 slot-definition-option
                 slot-definition-allocation slot-definition-getter

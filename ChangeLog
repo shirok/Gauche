@@ -1,9 +1,14 @@
 2003-11-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/mop/validator.scm : make slot-bound? work on a slot
+	  with validator, using new :slot-bound? protocol of virtual slots.
+
 	* lib/gauche/object.scm (change-class) : exclude builtin slots
 	  from processing.  They are copied by %transplant-instance
 	  anyway, and sometimes cause problems if we copy them in Scheme
 	  level.
+	  (compute-slot-accessor) : Changed according to <slot-accessor>
+	  class change.  Virtual slot now can have :slot-bound? option.
 
 	* lib/gauche/mop/instance-pool.scm : export some accessors; without
 	  them, weird things happen when other modules creates subclasses
@@ -12,7 +17,9 @@
 	  namespaces.
 
 	* src/class.c : added missing delete-method! generic function
-	  registration.
+	  registration.   Changed Scm_SlotAccessor structure to have
+	  Scheme-defined bound? procedure, so that the virtual slot can
+	  specify a way to determine whether the slot is bound or not.
 
 2003-11-10  Shiro Kawai  <shiro@acm.org>
 

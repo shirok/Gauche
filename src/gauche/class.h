@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.36 2003-11-12 07:37:39 shirok Exp $
+ *  $Id: class.h,v 1.37 2003-11-12 09:11:51 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -55,7 +55,9 @@ typedef struct ScmSlotAccessorRec {
     ScmObj initThunk;           /* :initform or :init-thunk */
     int initializable;          /* is this slot initializable? */
     int slotNumber;             /* for :instance slot access */
-    ScmObj schemeAccessor;      /* for :virtual slot (getter . setter) */
+    ScmObj schemeGetter;        /* for :virtual slot getter; #f if N/A */
+    ScmObj schemeSetter;        /* for :virtual slot setter; #f if N/A */
+    ScmObj schemeBoundp;        /* for :virtual slot bound?; #f if N/A */
 } ScmSlotAccessor;
 
 typedef ScmObj (*ScmNativeGetterProc)(ScmObj);
@@ -81,7 +83,7 @@ struct ScmClassStaticSlotSpecRec {
               SCM_FALSE,					\
               SCM_FALSE,					\
               TRUE, -1,						\
-              SCM_FALSE,					\
+              SCM_FALSE, SCM_FALSE, SCM_FALSE,			\
              } }
 
 #define SCM_CLASS_SLOT_SPEC_END()   { NULL }

@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.27 2003-11-12 07:42:51 shirok Exp $
+;; $Id: object.scm,v 1.28 2003-11-12 09:11:51 shirok Exp $
 
 (use gauche.test)
 
@@ -201,6 +201,23 @@
          (class-slot-set! <ss> 's 55)
          (list (class-slot-ref <s> 'c)  (class-slot-ref <s> 's)
                (class-slot-ref <ss> 'c) (class-slot-ref <ss> 's))))
+
+(define-class <sss> ()
+  ((v :allocation :virtual
+      :slot-ref  (lambda (o) (slot-ref o 'vv))
+      :slot-set! (lambda (o v) (slot-set! o 'vv v))
+      :slot-bound? (lambda (o) (slot-bound? o 'vv)))
+   vv))
+
+(define s5 (make <sss>))
+
+(test* "slot-bound? protocol" #f
+       (slot-bound? s5 'v))
+
+(test* "slot-bound? protocol" '(#t 8)
+       (begin (slot-set! s5 'v 8)
+              (list (slot-bound? s5 'v)
+                    (slot-ref s5 'v))))
 
 ;;----------------------------------------------------------------
 (test-section "next method")
@@ -813,6 +830,21 @@
 
 (test* "validator" *test-error* (slot-set! v 'b 3.4))
 (test* "validator" *test-error* (set! (b-of v) 3.4))
+
+(define-class <validator2> (<validator-mixin>)
+  ((a :validator (lambda (o v)
+                   (if (slot-bound? o 'a) "oops" v)))
+   ))
+
+(define vv (make <validator2>))
+(test* "validator/slot-bound" #f
+       (slot-bound? vv 'a))
+(test* "validator/slot-bound" 'foo
+       (begin (slot-set! vv 'a 'foo) (slot-ref vv 'a)))
+(test* "validator/slot-bound" #t
+       (slot-bound? vv 'a))
+(test* "validator/slot-bound" "oops"
+       (begin (slot-set! vv 'a 'bar) (slot-ref vv 'a)))
 
 ;;----------------------------------------------------------------
 (test-section "metaclass/propagate")

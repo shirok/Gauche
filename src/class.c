@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.101 2003-11-12 07:37:32 shirok Exp $
+ *  $Id: class.c,v 1.102 2003-11-12 09:11:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1244,6 +1244,11 @@ static ScmObj slot_ref_using_accessor_cc(ScmObj result, void **data)
     }
 }
 
+static ScmObj slot_boundp_using_accessor_cc(ScmObj result, void **data)
+{
+    return SCM_FALSEP(result)? SCM_FALSE:SCM_TRUE;
+}
+
 static ScmObj slot_ref_using_accessor(ScmObj obj,
                                       ScmSlotAccessor *sa,
                                       int boundp)
@@ -1253,14 +1258,20 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
         val = sa->getter(obj);
     } else if (sa->slotNumber >= 0) {
         val = scheme_slot_ref(obj, sa->slotNumber);
-    } else if (SCM_PAIRP(sa->schemeAccessor)
-               && SCM_PROCEDUREP(SCM_CAR(sa->schemeAccessor))) {
+    } else if (boundp && SCM_PROCEDUREP(sa->schemeBoundp)) {
+        void *data[3];
+        data[0] = obj;
+        data[1] = sa->name;
+        data[2] = (void*)(long)boundp;
+        Scm_VMPushCC(slot_boundp_using_accessor_cc, data, 3);
+        return Scm_VMApply(sa->schemeBoundp, SCM_LIST1(obj));
+    } else if (SCM_PROCEDUREP(sa->schemeGetter)) {
         void *data[3];
         data[0] = obj;
         data[1] = sa->name;
         data[2] = (void*)(long)boundp;
         Scm_VMPushCC(slot_ref_using_accessor_cc, data, 3);
-        return Scm_VMApply(SCM_CAR(sa->schemeAccessor), SCM_LIST1(obj));
+        return Scm_VMApply(sa->schemeGetter, SCM_LIST1(obj));
     } else {
         Scm_Error("don't know how to retrieve value of slot %S of object %S (MOP error?)",
                   sa->name, obj);
@@ -1386,7 +1397,7 @@ static SCM_DEFINE_METHOD(slot_ref_using_class_rec,
                          3, 0, slot_ref_using_class_SPEC,
                          slot_ref_using_class, NULL);
 
-/* (internal) SLOT-REF-USING-ACCESSOR
+/* (internal) SLOT-SET-USING-ACCESSOR
  *
  * - assumes accessor belongs to the proper class.
  * - no class redefinition check is done
@@ -1399,9 +1410,8 @@ ScmObj slot_set_using_accessor(ScmObj obj,
         sa->setter(obj, val);
     } else if (sa->slotNumber >= 0) {
         scheme_slot_set(obj, sa->slotNumber, val);
-    } else if (SCM_PAIRP(sa->schemeAccessor)
-               && SCM_PROCEDUREP(SCM_CDR(sa->schemeAccessor))) {
-        return Scm_VMApply(SCM_CDR(sa->schemeAccessor), SCM_LIST2(obj, val));
+    } else if (SCM_PROCEDUREP(sa->schemeSetter)) {
+        return Scm_VMApply(sa->schemeSetter, SCM_LIST2(obj, val));
     } else {
         Scm_Error("slot %S of class %S is read-only", sa->name,
                   SCM_OBJ(Scm_ClassOf(obj)));
@@ -1635,7 +1645,9 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
     sa->initThunk = SCM_FALSE;
     sa->initializable = FALSE;
     sa->slotNumber = -1;
-    sa->schemeAccessor = SCM_FALSE;
+    sa->schemeGetter = SCM_FALSE;
+    sa->schemeSetter = SCM_FALSE;
+    sa->schemeBoundp = SCM_FALSE;
     return SCM_OBJ(sa);
 }
 
@@ -1647,7 +1659,7 @@ static void slot_accessor_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
                (sa->klass? sa->klass->name : SCM_FALSE),
                sa->name);
     if (sa->getter) Scm_Printf(out, "native");
-    else if (SCM_PAIRP(sa->schemeAccessor)) Scm_Printf(out, "proc");
+    else if (!SCM_FALSEP(sa->schemeGetter)) Scm_Printf(out, "proc");
     else if (sa->slotNumber >= 0) Scm_Printf(out, "%d", sa->slotNumber);
     else Scm_Printf(out, "unknown");
     if (!SCM_FALSEP(sa->initKeyword))
@@ -1732,15 +1744,37 @@ static void slot_accessor_initializable_set(ScmSlotAccessor *sa, ScmObj v)
     sa->initializable = SCM_FALSEP(v)? FALSE : TRUE;
 }
 
-static ScmObj slot_accessor_scheme_accessor(ScmSlotAccessor *sa)
+static ScmObj slot_accessor_scheme_getter(ScmSlotAccessor *sa)
 {
-    return sa->schemeAccessor;
+    return sa->schemeGetter;
 }
 
-static void slot_accessor_scheme_accessor_set(ScmSlotAccessor *sa, ScmObj p)
+static void slot_accessor_scheme_getter_set(ScmSlotAccessor *sa, ScmObj p)
 {
     /* TODO: check */
-    sa->schemeAccessor = p;
+    sa->schemeGetter = p;
+}
+
+static ScmObj slot_accessor_scheme_setter(ScmSlotAccessor *sa)
+{
+    return sa->schemeSetter;
+}
+
+static void slot_accessor_scheme_setter_set(ScmSlotAccessor *sa, ScmObj p)
+{
+    /* TODO: check */
+    sa->schemeSetter = p;
+}
+
+static ScmObj slot_accessor_scheme_boundp(ScmSlotAccessor *sa)
+{
+    return sa->schemeBoundp;
+}
+
+static void slot_accessor_scheme_boundp_set(ScmSlotAccessor *sa, ScmObj p)
+{
+    /* TODO: check */
+    sa->schemeBoundp = p;
 }
 
 /*=====================================================================
@@ -2544,8 +2578,12 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
                         slot_accessor_initializable_set),
     SCM_CLASS_SLOT_SPEC("slot-number", slot_accessor_slot_number,
                         slot_accessor_slot_number_set),
-    SCM_CLASS_SLOT_SPEC("getter-n-setter", slot_accessor_scheme_accessor,
-                        slot_accessor_scheme_accessor_set),
+    SCM_CLASS_SLOT_SPEC("getter", slot_accessor_scheme_getter,
+                        slot_accessor_scheme_getter_set),
+    SCM_CLASS_SLOT_SPEC("setter", slot_accessor_scheme_setter,
+                        slot_accessor_scheme_setter_set),
+    SCM_CLASS_SLOT_SPEC("bound?", slot_accessor_scheme_boundp,
+                        slot_accessor_scheme_boundp_set),
     { NULL }
 };
 
