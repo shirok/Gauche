@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.19 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: load.c,v 1.20 2001-02-19 22:54:36 shiro Exp $
  */
 
 #include <unistd.h>
@@ -238,34 +238,53 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
  * Autoload
  */
 
-ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
-{
-    ScmAutoload *a = SCM_NEW(ScmAutoload);
-    a->name = name;
-    a->path = path;
-    a->module = SCM_CURRENT_MODULE();
-    return SCM_OBJ(a);
-}
+struct autoload_data {
+    ScmSymbol *name;
+    ScmModule *module;
+    ScmString *path;
+    ScmObj args;
+    int loaded;
+};
 
 static ScmObj autoload_cc(ScmObj result, void *data[])
 {
-    ScmSymbol *name = (ScmSymbol*)data[0];
-    ScmModule *module = (ScmModule*)data[1];
-
-    ScmGloc *g = Scm_FindBinding(module, name, FALSE);
-    if (g == NULL || SCM_UNBOUNDP(g->value)) {
-        Scm_Error("symbol unbound even after autoloaded: %S", name);
-    }
-    return g->value;
+    struct autoload_data *a = (struct autoload_data *)data[0];
+    ScmGloc *g = Scm_FindBinding(a->module, a->name, FALSE);
+    SCM_ASSERT(g != NULL && !SCM_UNBOUNDP(g->value));
+    return Scm_VMApply(g->value, a->args);
 }
 
-ScmObj Scm_ResolveAutoload(ScmAutoload *a)
+static ScmObj autoload_sub(ScmObj *argv, int nargs, void *data)
 {
-    void *data[2];
-    data[0] = a->name;
-    data[1] = a->module;
-    Scm_VMPushCC(autoload_cc, data, 2);
-    return Scm_VMLoad(a->path);
+    struct autoload_data *adata = (struct autoload_data *)data;
+    if (adata->loaded) {
+        /* If we're here, the autoloader procedure hasn't properly
+           overwritten by loading. */
+        Scm_Error("symbol %S is not redefined by autoloading %S",
+                  adata->name, adata->path);
+    }
+    adata->loaded = TRUE;
+    SCM_ASSERT(nargs == 1);
+    adata->args = argv[0];
+    Scm_VMPushCC(autoload_cc, (void **)&adata, 1);
+    return Scm_VMLoad(adata->path);
+}
+
+ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
+{
+    struct autoload_data *adata = SCM_NEW(struct autoload_data);
+    ScmObj p;
+    adata->name = name;
+    adata->module = SCM_CURRENT_MODULE();
+    adata->path = path;
+    adata->args = SCM_NIL;
+    adata->loaded = FALSE;
+
+    p = Scm_MakeOutputStringPort();
+    Scm_Printf(SCM_PORT(p), "autoload %A::%A (%A)",
+               adata->module->name, adata->name, adata->path);
+    return Scm_MakeSubr(autoload_sub, (void*)adata, 0, 1,
+                        Scm_GetOutputString(SCM_PORT(p)));
 }
 
 /*------------------------------------------------------------------
