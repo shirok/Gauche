@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.41 2002-07-09 10:39:32 shirok Exp $
+ *  $Id: system.c,v 1.42 2002-07-17 19:16:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -48,8 +48,9 @@
 int Scm_SysCall(int r)
 {
     if (r < 0 && errno == EINTR) {
+        ScmVM *vm = Scm_VM();
         errno = 0;
-        Scm_SigCheck(Scm_VM());
+        SCM_SIGCHECK(vm);
     }
     return r;
 }
@@ -57,8 +58,9 @@ int Scm_SysCall(int r)
 void *Scm_PtrSysCall(void *r)
 {
     if (r == NULL && errno == EINTR) {
+        ScmVM *vm = Scm_VM();
         errno = 0;
-        Scm_SigCheck(Scm_VM());
+        SCM_SIGCHECK(vm);
     }
     return r;
 }
@@ -97,18 +99,19 @@ int Scm_GetPortFd(ScmObj port_or_fd, int needfd)
 ScmObj Scm_ReadDirectory(ScmString *pathname)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL;
+    ScmVM *vm = Scm_VM();
     struct dirent *dire;
     DIR *dirp = opendir(Scm_GetStringConst(pathname));
     
     if (dirp == NULL) {
-        Scm_SigCheck(Scm_VM());
+        SCM_SIGCHECK(vm);
         Scm_SysError("couldn't open directory %S", pathname);
     }
     while ((dire = readdir(dirp)) != NULL) {
         ScmObj ent = SCM_MAKE_STR_COPYING(dire->d_name);
         SCM_APPEND1(head, tail, ent);
     }
-    Scm_SigCheck(Scm_VM());
+    SCM_SIGCHECK(vm);
     closedir(dirp);
     return head;
 }

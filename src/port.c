@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.74 2002-07-14 05:07:19 shirok Exp $
+ *  $Id: port.c,v 1.75 2002-07-17 19:16:47 shirok Exp $
  */
 
 #include <unistd.h>
@@ -757,7 +757,8 @@ static int file_filler(ScmPort *p, int cnt)
         r = read(fd, datptr, cnt-nread);
         if (r < 0) {
             if (errno == EINTR) {
-                Scm_SigCheck(Scm_VM());
+                ScmVM *vm = Scm_VM();
+                SCM_SIGCHECK(vm);
                 continue;
             } else {
                 p->error = TRUE;
@@ -787,7 +788,8 @@ static int file_flusher(ScmPort *p, int cnt)
         r = write(fd, datptr, datsiz-nwrote);
         if (r < 0) {
             if (errno == EINTR) {
-                Scm_SigCheck(Scm_VM());
+                ScmVM *vm = Scm_VM();
+                SCM_SIGCHECK(vm);
                 continue;
             } else {
                 p->error = TRUE;

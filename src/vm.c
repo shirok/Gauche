@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.163 2002-07-09 10:39:32 shirok Exp $
+ *  $Id: vm.c,v 1.164 2002-07-17 19:16:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -426,14 +426,6 @@ void Scm__InitVM(void)
     argp->size = callee_args;                                           \
     } while (0)
 
-/* Signal check */
-#define SIGCHECK                                        \
-    do {                                                \
-        if (vm->sigQueueTail != vm->sigQueueHead) {     \
-            Scm_SigCheck(vm);                           \
-        }                                               \
-    } while (0)
-
 /*
  * main loop of VM
  */
@@ -453,7 +445,7 @@ static void run_loop()
     
     for (;;) {
         /*VM_DUMP("");*/
-        SIGCHECK;
+        SCM_SIGCHECK(vm);
 
         /* See if we're at the end of procedure.  It's safer to use
            !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.

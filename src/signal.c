@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.21 2002-07-17 05:35:38 shirok Exp $
+ *  $Id: signal.c,v 1.22 2002-07-17 19:16:47 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -539,9 +539,7 @@ static void scm_sigsuspend(sigset_t *mask)
     }
     sigsuspend(mask);
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
-    if (vm->sigQueueTail != vm->sigQueueHead) {
-        Scm_SigCheck(vm);
-    }
+    SCM_SIGCHECK(vm);
 }
 
 ScmObj Scm_SigSuspend(ScmSysSigset *mask)
