@@ -1,3 +1,23 @@
+2004-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c, src/bignum.c: fixed bugs in boundary cases of
+	  integer conversions.  changed API of Scm_GetInteger* to allow
+	  more flexible handling of clamping behavior.  See the comment
+	  in src/gauche.h (`Converting a Scheme number to a C number'
+	  for the details.
+	* src/gauche.h: changed accodringly.
+	* src/extlib.stub: changed acoodringly.
+	* src/test-arith.c : added test for integer conversion APIs.
+	* src/gauche/scmconst.h, src/number.c (SCM_2_64_MINUS_1): new constant.
+
+	* ext/uvector/*: replaced the dreaded shell scripts for friendy
+	  Scheme scripts (uvgen.scm) to generate C code.  The API is
+	  cleaned up a lot, particularly the humble task of conversions
+	  and clamping between Scheme integers and 32/64-bit C integers 
+	  are integrated to the Gauche core.
+
+	* ext/mt-random/*: changed according to the modification of uvector.
+
 2004-11-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (Scm_Putb, Scm_Putc): size argument of the
