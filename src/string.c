@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.39 2001-05-19 23:06:16 shirok Exp $
+ *  $Id: string.c,v 1.40 2001-05-20 08:21:53 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1074,7 +1074,7 @@ void Scm_DStringAdd(ScmDString *dstr, ScmString *str)
     }
     memcpy(dstr->current, SCM_STRING_START(str), size);
     dstr->current += size;
-    if (dstr->length >= 0 && SCM_STRING_LENGTH(str) >= 0) {
+    if (dstr->length >= 0 && SCM_STRING_INCOMPLETE_P(str)) {
         dstr->length += SCM_STRING_LENGTH(str);
     } else {
         dstr->length = -1;
