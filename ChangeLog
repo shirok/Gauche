@@ -1,3 +1,16 @@
+2004-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (write-object): fixed output of display.
+
+	* lib/gauche/common-macro.scm (guard): added srfi-34 guard.
+	* src/autoloads.scm (guard): added guard as a autoloaded macro.
+	* test/exception.scm: added.
+
+	* src/exclib.stub:
+	* src/error.scm: moved the definitions of exception classes from
+	  exclib.stub to error.scm.  Needed to allow user-defined error
+	  types.
+
 2004-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in: added --reconfigure option for install

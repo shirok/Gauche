@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.11 2004-05-14 12:06:35 shirok Exp $
+;;; $Id: autoloads.scm,v 1.12 2004-05-20 04:50:33 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.11 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.12 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -134,7 +134,8 @@
           (:macro check-arg) (:macro get-keyword*)
           (:macro let1) (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref)
-          (:macro dotimes) (:macro dolist) (:macro while) (:macro until))
+          (:macro dotimes) (:macro dolist) (:macro while) (:macro until)
+          (:macro guard))
 
 (autoload gauche.regexp
           (:macro rxmatch-let) (:macro rxmatch-if)

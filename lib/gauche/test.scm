@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.test - test framework
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.12 2004-05-11 10:22:31 shirok Exp $
+;;;  $Id: test.scm,v 1.13 2004-05-20 04:50:33 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -77,7 +77,7 @@
 (define-method write-object ((obj <test-error>) out)
   (if (ref obj 'message)
       (format out "#<error ~s>" (ref obj 'message))
-      (display "#<error>")))
+      (display "#<error>" out)))
 
 (define-method object-equal? ((x <test-error>) (y <test-error>))
   #t)

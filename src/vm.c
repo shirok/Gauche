@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.209 2004-05-16 00:03:00 shirok Exp $
+ *  $Id: vm.c,v 1.210 2004-05-20 04:50:33 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1988,16 +1988,39 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
 
 /* Conceptually, exception handling is nothing more than a particular
  * combination of dynamic-wind and call/cc.   Gauche implements a parts
- * of it so that it will be efficient and safer to use.
+ * of it in C so that it will be efficient and safer to use.
  *
- * The most basic layer consists of those three functions (SRFI-18).
+ * The most basic layer consists of these two functions:
  *
- *  current-exception-handler
  *  with-exception-handler
  *  raise
  *
- * Their behavior is explained well in the following Scheme code,
- * if we ignore the messy part to keep C stack sane.
+ * There is a slight problem, though.  These two functions are defined
+ * both in srfi-18 (multithreads) and srfi-34 (exception handling), and
+ * two disagrees in the semantics of raise.
+ *
+ * Srfi-18 requires an exception handler to be called with the same dynamic
+ * environment as the one of the primitive that raises the exception.
+ * That means when an exception handler is running, the current
+ * exception handler is the running handler itself.  Naturally, calling
+ * raise unconditionally within the exception handler causes infinite loop.
+ *
+ * Srfi-34 says that an exception handler is called with the same dynamic
+ * envionment where the exception is raised, _except_ that the current
+ * exception handler is "popped", i.e. when an exception handler is running,
+ * the current exception handler is the "outer" or "old" one.  Calling
+ * raise within an exception handler passes the control to the outer
+ * exception handler.
+ *
+ * At this point I haven't decided which model Gauche should support natively.
+ * The current implementation predates srfi-34 and roughly follows srfi-18.
+ * It appears that srfi-18's mechanism is more "primitive" or "lightweight"
+ * than srfi-34's, so it's likely that Gauche will continue to support
+ * srfi-18 model natively, and maybe provides srfi-34's interface by an
+ * additional module.
+ *
+ * The following is a model of the current implementation, sans the messy
+ * part of handling C stacks.
  * Suppose a system variable %xh keeps the list of exception handlers.
  *
  *  (define (current-exception-handler) (car %xh))
@@ -2022,8 +2045,9 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
  * Note that this model assumes an exception handler returns unless it
  * explictly invokes continuation captured elsewhere.   In reality,
  * "error" exceptions are not supposed to return (hence it is checked
- * in raise).  Gauche provides two more useful exception handling
- * constructs that automates such continuation capturing.
+ * in raise).  Gauche provides another useful exception handling
+ * constructs that automates such continuation capturing.  It can be
+ * explained by the following code.
  *
  * (define (with-error-handler handler thunk)
  *   (call/cc
@@ -2128,9 +2152,6 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
  *  So there may be a raw C code in the continuation of this C call.
  *  Thus we can't use Scm_VMApply to call the user-defined exception
  *  handler.
- *
- *  SRFI-18 and SRFI-34 have subtle difference in the semantics of
- *  'raise'---SRFI-18 
  */
 ScmObj Scm_VMThrowException(ScmObj exception)
 {

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.17 2004-04-01 12:13:27 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.18 2004-05-20 04:50:33 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -289,5 +289,36 @@
        . body))
     ((_ . other)
      (syntax-error "malformed until" (until . other)))))
+
+;;;-------------------------------------------------------------
+;;; guard (srfi-34)
+
+(define-syntax guard
+  (syntax-rules ()
+    ((guard (var . clauses) . body)
+     (with-error-handler
+         (lambda (e)
+           (let ((var e))
+             (%guard-rec var e . clauses)))
+       (lambda () . body)))
+    ))
+
+(define-syntax %guard-rec
+  (syntax-rules (else =>)
+    ((%guard-rec var exc)
+     (raise exc))
+    ((%guard-rec var exc (else . exprs))
+     (begin . exprs))
+    ((%guard-rec var exc (test => proc) . more)
+     (let ((tmp test))
+       (if tmp
+         (proc tmp)
+         (%guard-rec var exc . more))))
+    ((%guard-rec var exc (test . exprs) . more)
+     (if test
+       (begin . exprs)
+       (%guard-rec var exc . more)))
+    ((%guard-rec var exc other . more)
+     (syntax-error "malformed guard clause" other))))
 
 (provide "gauche/common-macros")

@@ -12,6 +12,7 @@ dynwind.scm
 load.scm
 srfi.scm
 object.scm
+exception.scm
 colseq.scm
 regexp.scm
 mb-chars
