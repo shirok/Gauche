@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.43 2001-04-22 11:42:47 shiro Exp $
+;;; $Id: stdlib.stub,v 1.44 2001-04-23 06:33:46 shiro Exp $
 ;;;
 
 
@@ -214,15 +214,6 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc modulo (n1 n2)
   "  SCM_RETURN(Scm_Modulo(n1, n2, FALSE));")
-
-
-(define-cproc gcd (&rest args)
-  ;; TODO: implement me!
-  "  SCM_RETURN(SCM_MAKE_INT(1));")
-
-(define-cproc lcm (&rest args)
-  ;; TODO: implement me!
-  "  SCM_RETURN(SCM_MAKE_INT(1));")
 
 ;; in Gauche, rational number is exact integer, i.e. N/1
 (define-cproc numerator (q)
