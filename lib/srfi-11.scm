@@ -34,6 +34,11 @@
 ;; Adapted to Gauche by Shiro Kawai (shiro@acm.org) to adapt to Gauche.
 ;;  - Gauche prefers receive to call-with-values
 ;;  - Added a call to provide, so that this file can be "require"d.
+;;  - Added module stuff.
+
+(define-module srfi-11)
+(select-module srfi-11)
+(export let-values let*-values)
 
 (define-syntax let-values
   (syntax-rules ()
