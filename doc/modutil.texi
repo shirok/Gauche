@@ -2250,6 +2250,22 @@ it to @var{dst}, then removes @var{src}.
 @c COMMON
 @end defun
 
+@defun file->string filename options @dots{}
+@defunx file->list reader filename options @dots{}
+@defunx file->string-list filename options @dots{}
+@defunx file->sexp-list filename options @dots{}
+Convenience procedures to read from a file @var{filename}.
+They first open the named file, then call @code{port->string},
+@code{port->list}, @code{port->string-list} and @code{port->sexp-list}
+on the opened file, respectively.  (@xref{Input utility functions}).
+The file is closed if all the content is read or an error is
+signalled during reading.
+
+All the optional arguments @var{options} @dots{} are passed
+to @code{call-with-input-file} as they are.
+@end defun
+
+
 @c ----------------------------------------------------------------------
 @node Mathematic constants, Mersenne-Twister random number generator, Filesystem utilities, Library modules - Utilities
 @section @code{math.const} - Mathematic constants

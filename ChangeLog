@@ -1,5 +1,8 @@
 2004-05-14  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm (file->string, file->string-list, file->ilst,
+	  file->sexp-list): added convenience procedures.
+
 	* lib/gauche/ioutil.scm, src/gauche-init.scm: moved contents of
 	  ioutil to gauche-init.scm, and removed ioutil.scm.
 	* src/autoloads.scm: removed reference to ioutil.  added autoload

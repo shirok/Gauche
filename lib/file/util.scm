@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.23 2004-04-17 11:55:43 shirok Exp $
+;;;  $Id: util.scm,v 1.24 2004-05-14 12:26:17 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -58,7 +58,7 @@
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
           touch-file copy-file move-file
-          ;;file->string file->string-list file->list file->sexp-list
+          file->string file->string-list file->list file->sexp-list
           ))
 (select-module file.util)
 
@@ -494,21 +494,18 @@
 ;; move-directory
 
 ;; file->string, file->list, file->string-list, file->sexp-list
-;; shortcuts of port->string, port->list, port->string-list adn port->sexp-list
+;; shortcuts of port->string etc.
 
-;; NB: this doesn't work well with gauche.charconv.  Redefinition of
-;; call-with-input-file isn't reflected to these definitions.
+(define (file->string file . opts)
+  (apply call-with-input-file file port->string opts))
 
-;(define (file->string file . opts)
-;  (apply call-with-input-file file port->string opts))
+(define (file->list reader file . opts)
+  (apply call-with-input-file file (cut port->list reader <>) opts))
 
-;(define (file->list reader file . opts)
-;  (apply call-with-input-file file (pa$ port->list reader) opts))
+(define (file->string-list file . opts)
+  (apply call-with-input-file file (cut port->list read-line <>) opts))
 
-;(define (file->string-list file . opts)
-;  (apply call-with-input-file file (pa$ port->list read-line) opts))
-
-;(define (file->sexp-list file . opts)
-;  (apply call-with-input-file file (pa$ port->list read) opts))
+(define (file->sexp-list file . opts)
+  (apply call-with-input-file file (cut port->list read <>) opts))
 
 (provide "file/util")
