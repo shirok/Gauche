@@ -1,3 +1,10 @@
+2001-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.9
+	* src/syslib.stub (sys-symlink) : typo fix
+	* lib/gauche/logical.scm, src/gauche-init.scm : added a bunch of
+	  bitwise operations.
+
 2001-11-13  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in : fixed the support of --with-local.  added support

@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.7 2001-11-14 20:23:47 shirok Exp $
+$Id: INSTALL.esc,v 1.8 2001-11-15 09:27:10 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -294,4 +294,41 @@ The files are installed in those locations:
      These are default locations where user installed machine-indenpedent/
      dependent files will go.
 <? ) !>
+
+
+<? (header "機種依存の情報" "Machine-dependent information") !>
+
+<? (if-lang japanese? !>
+* MacOS X - dlcompatライブラリ(libdl)がインストールされていることが必要です。
+      http://fink.sourceforge.netからダウンロードできます。システム標準の
+      場所以外にdlcompatライブラリをインストールした場合は、configureの
+      --with-localオプションで場所を指定して下さい。
+      (例：$HOME/include に dlfcn.h が、 $HOME/lib に libdl.aがある場合は
+
+         ./configure --with-local=$HOME
+
+       とする)
+<? else !>
+* MacOS X - You need to install dlcompat library (libdl) from Fink project
+       (http://fink.sourceforge.net) before configuring Gauche.
+       If the dlcompat library is installed in non-standard location,
+       you have to tell configure the place by --with-local.  For
+       example, if you have dlfcn.h in $HOME/include and libdl.a in
+       $HOME/lib, you should do:
+
+         ./configure --with-local=$HOME
+<? ) !>
+
+<? (if-lang japanese? !>
+* IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
+       したい場合は次のようにして下さい。
+
+         CC="cc -64" AS="as -64" ./configure
+<? else !>
+* IRIX with 64bit binary - If you want to compile for 64bit ABI instead
+       of the default 32bit ABI, run configure like this:
+
+         CC="cc -64" AS="as -64" ./configure
+<? ) !>
+
 
