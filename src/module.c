@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.30 2002-06-11 09:22:04 shirok Exp $
+ *  $Id: module.c,v 1.31 2002-06-14 01:41:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -178,7 +178,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
 
     if (redefining) {
-        Scm_Warn("redefining constant %S::%S\n", g->module->name, g->name);
+        Scm_Warn("redefining constant %S::%S", g->module->name, g->name);
     }
     return SCM_OBJ(g);
 }
