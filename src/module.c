@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.48 2004-04-24 09:58:14 shirok Exp $
+ *  $Id: module.c,v 1.49 2004-04-24 11:32:03 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -54,6 +54,22 @@
  *  expression sent over the network during a session.
  *  The anonymous namespace will be garbage-collected if nobody references
  *  it, recovering its resouces.
+ */
+
+/* Mutex of module operation
+ *
+ * [SK] Each module used to have a mutex for accesses to it.  I changed it
+ * to use a single global lock (modules.mutex), based on the following
+ * observations:
+ *
+ *  - Profiling shows mutex_lock takes around 10% of program loading
+ *    phase.
+ *
+ *  - Module operations almost always occur during program loading and
+ *    interactive session.  Having giant lock for module operations won't
+ *    affect normal runtime performance.
+ *
+ * Benchmark showed the change made program loading 30% faster.
  */
 
 static ScmObj anon_module_name = SCM_UNBOUND; /* Name used for anonymous
@@ -100,7 +116,6 @@ static void init_module(ScmModule *m, ScmSymbol *name)
     m->parents = defaultParents;
     m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
     m->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
-    (void)SCM_INTERNAL_MUTEX_INIT(m->mutex);
 }
 
 /* Internal */
@@ -173,18 +188,19 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
     ScmHashEntry *e;
     ScmModule *m = module;
     ScmObj p, mp;
+    ScmGloc *gloc = NULL;
 
     /* keep record of searched modules.  we use stack array for small # of
-       modules, in order to avoid consing for common cases. */
+       modules, in order to avoid consing for typical cases. */
     ScmObj searched[SEARCHED_ARRAY_SIZE];
     int num_searched = 0, i;
     ScmObj more_searched = SCM_NIL;
 
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+
     /* fist, search from the specified module */
-    (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
     e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
-    if (e) return SCM_GLOC(e->value);
+    if (e) { gloc = SCM_GLOC(e->value); goto found; }
     
     if (!stay_in_module) {
         /* Next, search from imported modules */
@@ -203,13 +219,12 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                 }
                 
                 m = SCM_MODULE(SCM_CAR(mp));
-                (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
                 e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-                (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
                 if (e &&
                     (SCM_TRUEP(m->exported)
                      || !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported)))) {
-                    return SCM_GLOC(e->value);
+                    gloc = SCM_GLOC(e->value);
+                    goto found;
                 }
 
                 if (num_searched < SEARCHED_ARRAY_SIZE) {
@@ -225,13 +240,13 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
         SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
             m = SCM_MODULE(SCM_CAR(mp));
-            (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
             e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-            (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
-            if (e) return SCM_GLOC(e->value);
+            if (e) { gloc = SCM_GLOC(e->value); goto found; }
         }
     }
-    return NULL;
+  found:
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+    return gloc;
 }
 
 ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol)
@@ -250,7 +265,7 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     ScmHashEntry *e;
     int redefining = FALSE;
     
-    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
     if (e) {
         g = SCM_GLOC(e->value);
@@ -264,7 +279,7 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         SCM_GLOC_SET(g, value);
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     
     if (redefining) {
         Scm_Warn("redefining constant %S::%S", g->module, g->name);
@@ -279,7 +294,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     ScmObj oldval = SCM_UNDEFINED;
     int redefining = FALSE;
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
     /* NB: this function bypasses check of gloc setter */
     if (e) {
@@ -295,7 +310,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         g->value = value;
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
 
     if (redefining && !Scm_EqualP(value, oldval)) {
         Scm_Warn("redefining constant %S::%S", g->module->name, g->name);
@@ -317,10 +332,10 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
         }
         mod = Scm_FindModule(name, FALSE);
         if (!SCM_MODULEP(mod)) Scm_Error("no such module: %S", SCM_CAR(lp));
-        (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+        (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
         module->imported =
             Scm_Cons(mod, Scm_DeleteX(mod, module->imported, SCM_CMP_EQ));
-        (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     }
     return module->imported;
 }
@@ -330,7 +345,7 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
     ScmObj lp, syms, badsym = SCM_FALSE;
     int error = FALSE;
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     syms = module->exported;
     if (!SCM_TRUEP(syms)) {
         SCM_FOR_EACH(lp, list) {
@@ -344,16 +359,16 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
         }
         if (!error) module->exported = syms;
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     if (error) Scm_Error("symbol required, but got %S", badsym);
     return syms;
 }
 
 ScmObj Scm_ExportAll(ScmModule *module)
 {
-    (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     module->exported = SCM_TRUE;
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return SCM_OBJ(module);
 }
 

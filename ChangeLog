@@ -2,6 +2,9 @@
 
 	* src/module.c (Scm_FindBinding): avoid using cons and memq in
 	  temporary data.  It speeds up loading quite a bit.
+	  (other fns): changed to use global lock instead of per-module
+	  lock for module operations.  It is faster.
+	* src/gauche.h (ScmModule) : dropped mutex according to above change.
 
 	* src/port.c, src/gauche/port.h: added PORT_PRELOCK macro for
 	  'pre-owned' private port, i.e. the ports that are known to be

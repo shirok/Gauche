@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.367 2004-02-05 03:01:23 shirok Exp $
+ *  $Id: gauche.h,v 1.368 2004-04-24 11:32:02 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1514,7 +1514,6 @@ struct ScmModuleRec {
     ScmObj parents;             /* direct parent modules */
     ScmObj mpl;                 /* module precedence list */
     ScmHashTable *table;
-    ScmInternalMutex mutex;
 };
 
 #define SCM_MODULE(obj)       ((ScmModule*)(obj))
