@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.75 2002-04-06 09:58:45 shirok Exp $
+ *  $Id: number.c,v 1.76 2002-04-06 19:52:48 shirok Exp $
  */
 
 #include <math.h>
@@ -1391,12 +1391,13 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
     } else {
         /* variable names follows Burger&Dybvig paper */
         ScmObj f, e, r, s, mp, mm, q;
-        int exp, sign, est, tc1, tc2, digs;
+        int exp, sign, est, tc1, tc2, digs, round;
 
         if (val < 0) val = -val;
         
         /* initialize r, s, m+ and m- */
         f = Scm_DecodeFlonum(val, &exp, &sign);
+        round = !Scm_OddP(f);
         if (exp >= 0) {
             ScmObj be = Scm_Ash(SCM_MAKE_INT(1), exp);
             ScmObj be1 = Scm_Ash(be, 1);
@@ -1439,10 +1440,18 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         }
 
         /* fixup */
-        if (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) >= 0) {
-            s = Scm_Multiply(s, SCM_MAKE_INT(10), SCM_NIL);
-            est++;
+        if (round) {
+            if (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) >= 0) {
+                s = Scm_Multiply(s, SCM_MAKE_INT(10), SCM_NIL);
+                est++;
+            }
+        } else {
+            if (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) > 0) {
+                s = Scm_Multiply(s, SCM_MAKE_INT(10), SCM_NIL);
+                est++;
+            }
         }
+        
         /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
            est, r, s, mp, mm); */
 
@@ -1458,8 +1467,13 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                q, r, mp, mm); */
 
             SCM_ASSERT(SCM_INTP(q));
-            tc1 = (Scm_NumCmp(r, mm) < 0);
-            tc2 = (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) > 0);
+            if (round) {
+                tc1 = (Scm_NumCmp(r, mm) <= 0);
+                tc2 = (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) >= 0);
+            } else {
+                tc1 = (Scm_NumCmp(r, mm) < 0);
+                tc2 = (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) > 0);
+            }
             if (!tc1) {
                 if (!tc2) {
                     *buf++ = SCM_INT_VALUE(q) + '0';
@@ -1483,6 +1497,11 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                     }
                 }
             }
+        }
+
+        if (digs == 0) {
+            *buf++ = '.';
+            *buf++ = '0';
         }
 
         /* prints exponent.  we shifted decimal point, so -1. */
