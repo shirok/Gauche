@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.14 2001-02-16 13:04:01 shiro Exp $
+ *  $Id: load.c,v 1.15 2001-02-17 10:23:26 shiro Exp $
  */
 
 #include <unistd.h>
@@ -28,9 +28,9 @@
 
 /* To peek Scheme variable from C */
 static ScmGloc *load_path_rec;       /* *load-path*       */
-static ScmGloc *load_path_next_rec;  /* *load-path-next*  */
+static ScmGloc *load_next_rec;       /* *load-next*       */
 static ScmGloc *load_history_rec;    /* *load-history*    */
-static ScmGloc *load_filename;       /* *load-filename*   */
+static ScmGloc *load_filename_rec;   /* *load-filename*   */
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -73,7 +73,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
  *   Core function to search specified file from the search path *PATH.
  *   Search rules are:
  *   
- *    (1) If given filename begins with "/" or "./", the file is
+ *    (1) If given filename begins with "/", "./" or "../", the file is
  *        searched.
  *    (2) If gievn filename begins with "~", unix-style username
  *        expansion is done, then the resulting file is searched.
@@ -85,18 +85,20 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
  *   find next matching filename.
  */
 
-ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths)
+ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
 {
     int size = SCM_STRING_LENGTH(filename);
     const char *ptr = SCM_STRING_START(filename);
     int use_load_paths = TRUE;
-    ScmObj path = SCM_OBJ(filename);
+    ScmObj file = SCM_OBJ(filename);
     
     if (size == 0) Scm_Error("bad filename to load: \"\"");
     if (*ptr == '~') {
-        path = Scm_NormalizePathname(filename, SCM_PATH_EXPAND);
+        file = Scm_NormalizePathname(filename, SCM_PATH_EXPAND);
         use_load_paths = FALSE;
-    } else if (*ptr == '/' || (*ptr == '.' && *(ptr+1) == '/')) {
+    } else if (*ptr == '/'
+               || (*ptr == '.' && *(ptr+1) == '/')
+               || (*ptr == '.' && *(ptr+1) == '.' && *(ptr+2) == '/')) {
         use_load_paths = FALSE;
     }
 
@@ -108,24 +110,27 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths)
                 Scm_Error("*load-path* contains invalid element: %S", *paths);
             }
             fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
-            fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(path));
+            fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(file));
             if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
                 break;
         }
-        if (!SCM_NULLP(lpath)) {
+        if (SCM_PAIRP(lpath)) {
             *paths = SCM_CDR(lpath);
             return SCM_OBJ(fpath);
+        } else if (error_if_not_found) {
+            Scm_Error("cannot find file %S in *load-path* %S", file, *paths);
         } else {
             *paths = SCM_NIL;
-            return SCM_FALSE;
         }
     } else {
         *paths = SCM_NIL;
-        if (access(Scm_GetStringConst(SCM_STRING(path)), F_OK) == 0)
-            return SCM_OBJ(filename);
-        else
-            return SCM_FALSE;
+        if (access(Scm_GetStringConst(SCM_STRING(file)), F_OK) == 0) {
+            return SCM_OBJ(file);
+        } else if (error_if_not_found) {
+            Scm_Error("cannot find file %S to load", file);
+        }
     }
+    return SCM_FALSE;
 }
 
 /*
@@ -141,33 +146,17 @@ ScmObj Scm_VMTryLoad(const char *cpath)
     return Scm_VMLoadFromPort(SCM_PORT(p));
 }
 
-ScmObj Scm_VMLoad(const char *cpath)
+ScmObj Scm_VMLoad(ScmString *filename)
 {
-    ScmObj p, lpath, spath, fpath, load_paths;
+    ScmObj port, truename, load_paths = Scm_GetLoadPath();
 
-    p = Scm_OpenFilePort(cpath, "r");
-    if (SCM_FALSEP(p)) {
-        if (cpath[0] == '/') Scm_Error("cannot open file: %s", cpath);
-        /* TODO: more efficient pathname handling */
-        spath = Scm_MakeString(cpath, -1, -1);
-        load_paths = Scm_GetLoadPath();
-        SCM_FOR_EACH(lpath, load_paths) {
-            if (!SCM_STRINGP(SCM_CAR(lpath))) {
-                /* TODO: should be warning? */
-                Scm_Error("*load-path* contains invalid element: %S",
-                          load_paths);
-            }
-            fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
-            fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(spath));
-            p = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(fpath)), "r");
-            if (!SCM_FALSEP(p)) break;
-        }
-        if (SCM_FALSEP(p)) {
-            Scm_Error("cannot find file \"%s\" in *load-path* %S",
-                      cpath, load_paths);
-        }
+    truename = Scm_FindFile(filename, &load_paths, TRUE);
+    load_next_rec->value = load_paths;
+    port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)), "r");
+    if (SCM_FALSEP(port)) {
+        Scm_Error("file %S exists, but couldn't open.", truename);
     }
-    return Scm_VMLoadFromPort(SCM_PORT(p));
+    return Scm_VMLoadFromPort(SCM_PORT(port));
 }
 
 void Scm_Load(const char *cpath)
@@ -205,20 +194,42 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * Dynamic link
  */
 
-/* Not finished yet! */
-ScmObj Scm_DynLink(const char *cpath)
+SCM_DEFCLASS(Scm_DLObjClass, "<dynamic-linked-object>", NULL, SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_DynLink(ScmString *filename)
 {
+#ifdef HAVE_DLFCN_H
+    ScmDLObj *dlobj;
+    ScmObj truename, load_paths = Scm_GetLoadPath();
     void *handle;
-    void (*initializer)(void);
-    
-    handle = dlopen(cpath, RTLD_LAZY);
+
+    truename = Scm_FindFile(filename, &load_paths, FALSE);
+    handle = dlopen(Scm_GetStringConst(SCM_STRING(truename)), RTLD_LAZY);
     if (handle == NULL) return SCM_FALSE;
-    initializer = (void (*)(void))dlsym(handle, "Initialize");
-    if (initializer == NULL) return SCM_FALSE;
-    initializer();
-    return SCM_TRUE;
+
+    dlobj = SCM_NEW(ScmDLObj);
+    SCM_SET_CLASS(dlobj, SCM_CLASS_DLOBJ);
+    dlobj->handle = handle;
+    dlobj->initialized = FALSE;
+    return SCM_OBJ(dlobj);
+#else
+    Scm_Error("dynamic linking is not supported on this architecture");
+    return SCM_FALSE;           /* dummy */
+#endif
 }
 
+int Scm_DynInit(ScmDLObj *dlobj, ScmString *initfn)
+{
+    void (*func)(void);
+
+    if (!dlobj->initialized) {
+        func = (void(*)(void))dlsym(dlobj->handle, Scm_GetStringConst(initfn));
+        if (func == NULL) return FALSE;
+        func();
+        dlobj->initialized = TRUE;
+    }
+    return TRUE;
+}
 
 /*
  * Initialization
@@ -227,10 +238,14 @@ ScmObj Scm_DynLink(const char *cpath)
 void Scm__InitLoad(void)
 {
     ScmObj instdir = SCM_MAKE_STR(SCM_INSTALL_DIR);
+    ScmObj curdir = SCM_MAKE_STR(".");
     ScmModule *m = Scm_SchemeModule();
 
-    Scm_Define(m, SCM_SYMBOL(SCM_SYM_LOAD_PATH), SCM_LIST1(instdir));
-    Scm_Define(m, SCM_SYMBOL(SCM_SYM_LOAD_HISTORY), SCM_NIL);
-    load_path_rec = Scm_FindBinding(m, SCM_SYMBOL(SCM_SYM_LOAD_PATH), TRUE);
-    load_history_rec = Scm_FindBinding(m, SCM_SYMBOL(SCM_SYM_LOAD_HISTORY), TRUE);
+#define DEF(rec, sym, val) \
+    rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
+
+    DEF(load_path_rec,    SCM_SYM_LOAD_PATH, SCM_LIST2(curdir, instdir));
+    DEF(load_history_rec, SCM_SYM_LOAD_HISTORY, SCM_NIL);
+    DEF(load_next_rec,    SCM_SYM_LOAD_NEXT, SCM_NIL);
+    DEF(load_filename_rec,SCM_SYM_LOAD_FILENAME, SCM_FALSE);
 }
