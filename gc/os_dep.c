@@ -3934,16 +3934,16 @@ kern_return_t catch_exception_raise_state_identity(
 	long	fr_argx[0];
      };
 #  else
-#    if defined(SUNOS4)
+#    if defined(SUNOS4) || defined(NETBSD)
 #      include <machine/frame.h>
 #    else
 #      if defined (DRSNX)
 #	 include <sys/sparc/frame.h>
 #      else
-#	 if defined(OPENBSD) || defined(NETBSD)
+#	 if defined(OPENBSD)
 #	   include <frame.h>
-#	 else
-#	   include <sys/frame.h>
+#        else
+#          include <sys/frame.h>
 #	 endif
 #      endif
 #    endif

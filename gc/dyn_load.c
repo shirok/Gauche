@@ -80,6 +80,11 @@
 #   define l_name	lm_name
 #endif
 
+#if defined(NETBSD)
+#   include <machine/elf_machdep.h>
+#   define ELFSIZE ARCH_ELFSIZE
+#endif
+
 #if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
     (defined(FREEBSD) && defined(__ELF__)) || defined(DGUX) || \
     (defined(NETBSD) && defined(__ELF__)) || defined(HURD)
@@ -91,7 +96,7 @@
 /* Newer versions of GNU/Linux define this macro.  We
  * define it similarly for any ELF systems that don't.  */
 #  ifndef ElfW
-#    ifdef __NetBSD__
+#    ifdef NetBSD
 #      if ELFSIZE == 32
 #        define ElfW(type) Elf32_##type
 #      else
