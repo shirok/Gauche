@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: info.scm,v 1.3 2002-07-11 20:07:41 shirok Exp $
+;;;  $Id: info.scm,v 1.4 2002-07-12 06:57:01 shirok Exp $
 ;;;
 
 (define-module gauche.interactive.info
@@ -32,21 +32,28 @@
 (define *pager* (or (sys-getenv "PAGER")
                     (find-file-in-paths "less")
                     (find-file-in-paths "more")))
+
 (define viewer
   (if (or (equal? (sys-getenv "TERM") "emacs")
           (not (sys-isatty (current-output-port)))
           (not *pager*))
       display
       (lambda (s)
-        (let1 mask (sys-sigset-add! (make <sys-sigset>) SIGPIPE)
-          (dynamic-wind
-           (lambda () (sys-sigmask SIG_BLOCK mask))
-           (lambda ()
-             (let1 p (run-process *pager* :input :pipe)
-               (display s (process-input p))
+        (let1 p (run-process *pager* :input :pipe)
+          ;; NB: ignore SIGPIPE, for the pager may be terminated prematurely.
+          ;; This is not MT safe.
+          (let1 h #f
+            (dynamic-wind
+             (lambda ()
+               (set! h (get-signal-handler SIGPIPE))
+               (set-signal-handler! SIGPIPE #f))
+             (lambda ()
+               (with-error-handler values
+                 (lambda () (display s (process-input p))))
                (close-output-port (process-input p))
-               (process-wait p)))
-           (lambda () (sys-sigmask SIG_UNBLOCK mask)))))
+               (process-wait p))
+             (lambda ()
+               (set-signal-handler! SIGPIPE h))))))
       ))
 
 (define (get-info-paths)
