@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.198 2003-02-15 12:08:21 shirok Exp $
+ *  $Id: vm.c,v 1.199 2003-03-01 02:30:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1654,6 +1654,7 @@ static ScmObj eval_restore_env(ScmObj *args, int argc, void *data)
 ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
     ScmObj v = SCM_NIL;
+    ScmVM *vm = Scm_VM();
     int restore_module = FALSE;
         
     if (SCM_UNBOUNDP(e)) {
@@ -1669,10 +1670,10 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         Scm_Printf(theVM->curerr, "== %#S\n", v);
     }
 
+    vm->numVals = 1;
     if (restore_module) {
         /* if we swap the module, we need to make sure it is recovered
            after eval */
-        ScmVM *vm = Scm_VM();
         ScmObj body = Scm_MakeClosure(0, 0, v, SCM_FALSE);
         ScmObj before = Scm_MakeSubr(eval_restore_env, SCM_MODULE(e),
                                      0, 0, SCM_FALSE);
@@ -1681,7 +1682,6 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         return Scm_VMDynamicWind(before, body, after);
     } else {
         /* shortcut */
-        ScmVM *vm = Scm_VM();
         SCM_ASSERT(SCM_NULLP(vm->pc));
         vm->pc = v;
         return SCM_UNDEFINED;
