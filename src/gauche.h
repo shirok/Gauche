@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.262 2002-05-24 22:52:24 shirok Exp $
+ *  $Id: gauche.h,v 1.263 2002-06-07 22:07:43 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -769,7 +769,7 @@ struct ScmStringRec {
 #define SCM_STRING(obj)         ((ScmString*)(obj))
 #define SCM_STRING_LENGTH(obj)  (SCM_STRING(obj)->length)
 #define SCM_STRING_SIZE(obj)    (SCM_STRING(obj)->size)
-#define SCM_STRING_START(obj)   (SCM_STRING(obj)->start)
+#define SCM_STRING_START(obj)   ((unsigned char *)SCM_STRING(obj)->start)
 
 #define SCM_STRING_INCOMPLETE_P(obj) (SCM_STRING(obj)->incomplete)
 #define SCM_STRING_IMMUTABLE_P(obj)  (SCM_STRING(obj)->immutable)

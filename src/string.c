@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.61 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: string.c,v 1.62 2002-06-07 22:07:43 shirok Exp $
  */
 
 #include <stdio.h>
@@ -880,7 +880,7 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     int len, i, start, end, prelen, midlen, postlen;
     int chlen = SCM_CHAR_NBYTES(ch);
     char *newstr, *p;
-    const char *s, *r;
+    const unsigned char *s, *r;
 
     CHECK_MUTABLE(str);
     if (SCM_STRING_INCOMPLETE_P(str)) {
