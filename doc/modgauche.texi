@@ -11014,13 +11014,33 @@ always return @code{#t} on the port
 @end defivar
 
 @defivar {<virtual-input-port>} close
-If set, the value must be a procedure that takes not arguments.
+If set, the value must be a procedure that takes no arguments.
 It is called when the port is closed.  Return value is discarded.
+You can leave this unset
+if you don't need to take an action when the port is closed.
 
-NOTE: RESOLVE FINALIZER SEMANTICS!!!
+This procedure may be called from a finalizer.  See the note about
+finalizing below.
 @end defivar
 
+@defivar {<virtual-input-port>} seek
+If set, the value must be a procedure that takes two arguments,
+offset and whence.  The meaning of them is the same as the arguments
+to @code{port-seek} (@xref{Common port operations}).
+The procedure must adjust the port's internal read pointer
+so that the next read begins from the new pointer.
+It should return the updated pointer (the byte offset from the
+beginning of the port).
 
+If unset, call of @code{port-seek} and @code{port-tell} on this
+port will return @code{#f}.
+
+Note that this procedure may be called for the purpose of merely
+querying the current position, with 0 as @code{offset} and @code{SEEK_CUR}
+as @code{whence}.  If your port knows the read pointer but cannot move it,
+you can still provide this procedure, which returns the current pointer
+position for such queries and returns @code{#f} for other arguments.
+@end defivar
 
 @end deftp
 
