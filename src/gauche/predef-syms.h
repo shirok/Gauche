@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.6 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: predef-syms.h,v 1.7 2001-02-20 12:02:26 shiro Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -40,6 +40,11 @@ DEFSYM(ScmQyields,          "=>");
 DEFSYM(ScmQdo,              "do");
 DEFSYM(ScmQdelay,           "delay");
 DEFSYM(ScmQreceive,         "receive");
+DEFSYM(ScmQdefineSyntax,    "define-syntax");
+DEFSYM(ScmQletSyntax,       "let-syntax");
+DEFSYM(ScmQletrecSyntax,    "letrec-syntax");
+DEFSYM(ScmQsyntaxRules,     "syntax-rules");
+DEFSYM(ScmQellipsis,        "...");
 
 DEFSYM(ScmQmacroExpand,     "%macro-expand");
 DEFSYM(ScmQloadPath,        "*load-path*");
@@ -72,6 +77,11 @@ DEFSYM(ScmQloadFilename,    "*load-filename*");
 #define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
 #define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
 #define SCM_SYM_RECEIVE          SCM_OBJ(&ScmQreceive)
+#define SCM_SYM_DEFINE_SYNTAX    SCM_OBJ(&ScmQdefineSyntax)
+#define SCM_SYM_LET_SYNTAX       SCM_OBJ(&ScmQletSyntax)
+#define SCM_SYM_LETREC_SYNTAX    SCM_OBJ(&ScmQletrecSyntax)
+#define SCM_SYM_SYNTAX_RULES     SCM_OBJ(&ScmQsyntaxRules)
+#define SCM_SYM_ELLIPSIS         SCM_OBJ(&ScmQellipsis) /* ... */
 #define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
 #define SCM_SYM_LOAD_PATH        SCM_OBJ(&ScmQloadPath)
 #define SCM_SYM_LOAD_NEXT        SCM_OBJ(&ScmQloadNext)
