@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.34 2001-07-08 08:24:25 shirok Exp $
+ *  $Id: vm.h,v 1.35 2001-07-27 19:17:03 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -120,6 +120,8 @@ extern int Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
  *   It is inserted in the compiled code by the compiler, and used
  *   by error handlers to obtain debugging information.  See compile.c
  *   for details.
+ *
+ *   Will be obsoleted.
  */
 
 typedef struct ScmSourceInfoRec {
@@ -137,12 +139,16 @@ extern ScmClass Scm_SourceInfoClass;
 extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 
 /*
- * C-level escape handler
+ * Escape handler
  */
-typedef struct ScmEscapeHandlerRec {
-    struct ScmEscapeHandlerRec *prev;
+
+/*
+ * C stack record
+ */
+typedef struct ScmEscapePointRec {
+    struct ScmEscapePointRec *prev;
     jmp_buf jbuf;
-} ScmEscapeHandler;
+} ScmEscapePoint;
 
 /*
  * VM structure
@@ -152,7 +158,7 @@ struct ScmVMRec {
     SCM_HEADER;
     ScmVM *parent;
     ScmModule *module;          /* current global namespace */
-    ScmEscapeHandler *escape;    /* current escape point */
+    ScmEscapePoint *escape;     /* current escape point */
     void (*errorHandler)(ScmObj, void*); /* error handler */
     void *errorHandlerData;     /* error handler data */
     ScmVMActivationHistory *history; /* activation history */
@@ -237,10 +243,10 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 #define SCM_PUSH_ERROR_HANDLER                  \
     do {                                        \
-       ScmEscapeHandler handler;                \
-       handler.prev = Scm_VM()->escape;         \
-       Scm_VM()->escape = &handler;             \
-       if (setjmp(handler.jbuf) == 0) {
+       ScmEscapePoint escape;                   \
+       escape.prev = Scm_VM()->escape;          \
+       Scm_VM()->escape = &escape;              \
+       if (setjmp(escape.jbuf) == 0) {
            
 #define SCM_WHEN_ERROR                          \
        } else {
