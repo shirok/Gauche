@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.10 2001-05-28 07:05:51 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.11 2001-05-29 08:39:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2445,7 +2445,7 @@ of descendants of @var{class}.
 
 @deftp {Module} gauche.charconv
 @mdindex gauche.charconv
-
+@emph{--- NOT IMPLEMENTED ---}
 @end deftp
 
 @defun open-input-conversion-port from-port from-code &optional to-code
@@ -2460,6 +2460,7 @@ of descendants of @var{class}.
 
 @deftp {Module} gauche.net
 @mdindex gauche.net
+@emph{--- NOT IMPLEMENTED ---}
 @end deftp
 
 @node High-level functions
@@ -3528,6 +3529,256 @@ The form @code{(use srfi-8)} doesn't do anything.
 @deftp {Module} srfi-13
 @mdindex srfi-13
 @end deftp
+
+@node SRFI-13 String predicates
+@subsection String predicates
+
+@defun string-null? s
+[SRFI-13]
+@end defun
+
+@defun string-every char/char-set/pred s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-any char/char-set/pred s &optional start end
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String Constructors
+@subsection String Constructors
+
+@defun string-tabulate proc len
+[SRFI-13]
+@end defun
+
+@defun reverse-list->string char-list
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String Selection
+@subsection String selection
+
+@defun substring/shared s start &optional end
+[SRFI-13]
+@end defun
+
+@defun string-copy! target tstart s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-take s nchars
+@defunx string-drop s nchars
+@defunx string-take-right s nchars
+@defunx string-drop-right s nchars
+[SRFI-13]
+@end defun
+
+@defun string-pad s len &optional char start end
+@defunx string-pad-right s len &optional char start end
+[SRFI-13]
+@end defun
+
+@defun string-trim s &optional char/char-set/pred start end
+@defunx string-trim-right s &optional char/char-set/pred start end
+@defunx string-trim-both s &optional char/char-set/pred start end
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String Comparison
+@subsection String comparison
+
+@defun string-compare s1 s2 proc< proc= proc> &optional start1 end1 start2 end2
+@defunx string-compare-ci s1 s2 proc< proc= proc> &optional start1 end1 start2 end2
+[SRFI-13]
+@end defun
+
+@defun string= s1 s2 &optional start1 end1 start2 end2
+@defunx string<> s1 s2 &optional start1 end1 start2 end2
+@defunx string< s1 s2 &optional start1 end1 start2 end2
+@defunx string<= s1 s2 &optional start1 end1 start2 end2
+@defunx string> s1 s2 &optional start1 end1 start2 end2
+@defunx string>= s1 s2 &optional start1 end1 start2 end2
+[SRFI-13]
+@end defun
+
+@defun string-ci= s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci<> s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci< s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci<= s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci> s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci>= s1 s2 &optional start1 end1 start2 end2
+[SRFI-13]
+@end defun
+
+@defun string-hash s &optional bound start end 
+@defunx string-hash-ci s &optional bound start end 
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String Prefixes & Suffixes
+@subsection String Prefixes & Suffixes
+
+@defun string-prefix-length s1 s2 &optional start1 end1 start2 end2
+@defunx string-suffix-length s1 s2 &optional start1 end1 start2 end2
+@defunx string-prefix-length-ci s1 s2 &optional start1 end1 start2 end2
+@defunx string-suffix-length-ci s1 s2 &optional start1 end1 start2 end2
+[SRFI-13]
+@end defun
+
+@defun string-prefix? s1 s2 &optional start1 end1 start2 end2
+@defunx string-suffix? s1 s2 &optional start1 end1 start2 end2
+@defunx string-prefix-ci? s1 s2 &optional start1 end1 start2 end2
+@defunx string-suffix-ci? s1 s2 &optional start1 end1 start2 end2
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String searching
+@subsection String searching
+
+@defun string-index s char/char-set/pred &optional start end
+@defunx string-index-right s char/char-set/pred &optional start end
+@defunx string-skip s char/char-set/pred &optional start end
+@defunx string-skip-right s char/char-set/pred &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-count s char/char-set/pred &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-contains s1 s2 &optional start1 end1 start2 end2
+@defunx string-contains-ci s1 s2 &optional start1 end1 start2 end2
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String case mapping
+@subsection String case mapping
+
+@defun string-titlecase s &optional start end
+@defunx string-titlecase! s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-upcase s &optional start end
+@defunx string-upcase! s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-downcase s &optional start end
+@defunx string-downcase! s &optional start end
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String reverse & append
+@subsection String reverse & append
+
+@defun string-reverse s &optional start end
+@defunx string-reverse! s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-concatenate string-list
+[SRFI-13]
+@end defun
+
+@defun string-concatenate/shared string-list
+@defunx string-append/shared s @dots{}
+[SRFI-13]
+@end defun
+
+@defun string-concatenate-reverse string-list
+@defunx string-concatenate-reverse/shared string-list
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String mapping
+@subsection String mapping
+
+@defun string-map proc s &optional start end
+@deufnx string-map! proc s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-fold kons knil s &optional start end
+@defunx string-fold-right kons knil s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-unfold p f g seed &optional base make-final
+[SRFI-13]
+@end defun
+
+@defun string-unfold-right p f g seed &optional base make-final
+[SRFI-13]
+@end defun
+
+@defun string-for-each proc s &optional start end
+[SRFI-13]
+@end defun
+
+@defun string-for-each-index proc s &optional start end
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String rotation
+@subsection String rotation
+
+@defun xsubstring s from &optional to start end
+[SRFI-13]
+@end defun
+
+@defun string-xcopy! target tstart s sfrom &optional sto start end
+[SRFI-13]
+@end defun
+
+@node SRFI-13 other string operations
+@subsection Other string operations
+
+@defun string-replace s1 s2 start1 end2 &optional start2 end2
+[SRFI-13]
+@end defun
+
+@defun string-tokenize s &optional token-set start end
+[SRFI-13]
+@end defun
+
+@node SRFI-13 String filtering
+@subsection String filtering
+
+@defun string-filter s char/char-set/pred &optional start end
+@defunx string-delete s char/char-set/pred &optional start end
+[SRFI-13]
+@end defun
+
+@node SRFI-13 Low-level string procedures
+@subsection Low-level string procedures
+
+@defun string-parse-start+end proc s args
+@defunx string-parse-final-start+end proc s args
+[SRFI-13]
+@end defun
+
+@defmac let-string-start+end (start end [rest]) proc-exp s-exp args-exp body @dots{}
+[SRFI-13]
+@end defmac
+
+@defun check-substring-spec proc s start end
+@defunx substring-spec-ok? s start end
+[SRFI-13]
+@end defun
+
+@defun make-kmp-restart-vector s &optional c= start end
+[SRFI-13]
+@end defun
+
+@defun kmp-step pat rv c i c= p-start
+[SRFI-13]
+@end defun
+
+@defun string-kmp-partial-search pat rv s i &optional c= p-start s-start s-end
+[SRFI-13]
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Character-set library
