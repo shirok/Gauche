@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.12 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: core.c,v 1.13 2001-02-20 01:09:21 shiro Exp $
  */
 
 #include "gauche.h"
@@ -36,6 +36,8 @@ extern void Scm__InitSymbol(void);
 extern void Scm__InitKeyword(void);
 extern void Scm__InitClass(void);
 extern void Scm__InitPort(void);
+extern void Scm__InitCompiler(void);
+extern void Scm__InitMacro(void);
 extern void Scm__InitLoad(void);
 
 void Scm_Init(const char *initfile)
@@ -50,6 +52,7 @@ void Scm_Init(const char *initfile)
     Scm__InitClass();
     Scm__InitPort();
     Scm__InitCompiler();
+    Scm__InitMacro();
     Scm__InitLoad();
 
     vm = Scm_NewVM(NULL, Scm_UserModule());
