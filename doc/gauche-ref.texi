@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.420 2003-06-10 07:06:52 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.421 2003-06-10 07:33:25 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6566,13 +6566,22 @@ UTF-8
 @item sjis
 Shift JIS
 @item none
+@c EN
 No multibyte character support (8-bit fixed-length character).
+@c JP
+マルチバイトキャラクタをサポートしない(8ビット固定長文字)。
+@c COMMON
 @end table
 @end defun
 
 @defun supported-character-encodings
+@c EN
 Returns a list of string names of character encoding schemes
 that are supported in the native multibyte encoding scheme.
+@c JP
+ネイティブなマルチバイトエンコーディングスキームでサポートされている
+文字エンコーディングスキームの名前を表す文字列のリストを返します。
+@c COMMON
 @end defun
 
 
@@ -6947,7 +6956,11 @@ Returns @code{#t} if @var{obj} is an immutable string, @code{#f} otherwise
 @end defun
 
 @defun string-incomplete? obj
+@c EN
 Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
+@c JP
+@var{obj}が不完全文字列なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @node String Constructors, String interpolation, String Predicates, Strings
@@ -7237,13 +7250,20 @@ it is returned in such case.  This is Gauche's extension.
 @end defun
 
 @defun string-byte-ref string k
+@c EN
 Returns @var{k-th} byte of a (possibly incomplete) string @var{string}.
 Returned value is an integer in the range between 0 and 255.
 @var{k} must be greater than or equal to zero, and less than
 @code{(string-size @var{string})}.
+@c JP
+(多分、不完全な)文字列@var{string}の@var{k番目}のバイトを返します。
+戻り値は、0から255の範囲の整数です。@var{k}は0以上、
+@code{(string-size @var{string})}以下でなければなりません。
+@c COMMON
 @end defun
 
 @defun string-set! string k char
+@c EN
 [R5RS] Substitute @var{string}'s @var{k}-th character by @var{char}.
 @var{k} must be greater than or equal to zero, and less than
 @code{(string-length @var{string})}.
@@ -7253,9 +7273,20 @@ If @var{string} is an incomplete string, integer value of the lower 8 bits
 of @var{char} is used to set @var{string}'s @var{k}-th byte.
 
 See the notes in @code{make-string} about performance consideration.
+@c JP
+[R5RS] @var{string}の@var{k}番目の文字を@var{char}で置き換えます。
+@var{k}は0以上、@code{(string-length @var{string})}以下でなければ
+なりません。戻り値は未定義です。
+
+@var{string}が不完全文字列の場合、@var{char}の下位8ビットの整数値は、
+@var{string}の@var{k}番目のバイトをセットするために使われます。
+
+パフォーマンス上の考慮点について、@code{make-string}の説明を参照して下さい。
+@c COMMON
 @end defun
 
 @defun string-byte-set! string k byte
+@c EN
 Substitute @var{string}'s @var{k}-th byte by integer @var{byte}.
 @var{byte} must be in the range between 0 to 255, inclusive.
 @var{k} must be greater than or equal to zero, and less than
@@ -7263,6 +7294,13 @@ Substitute @var{string}'s @var{k}-th byte by integer @var{byte}.
 If @var{string} is a complete string, it is turned to incomplete string
 by this operation.
 Return value is undefined.
+@c JP
+@var{string}の@var{k}番目のバイトを整数@var{byte}で置き換えます。
+@var{byte}は0から255の範囲(255を含む)でなければなりません。
+@var{k}は0以上、@code{(string-size @var{string})}以下である必要があります。
+@var{string}が完全文字列の場合、この操作により不完全文字列になります。
+戻り値は未定義です。
+@c COMMON
 @end defun
 
 @node String Comparison, String utilities, String Accessors & Modifiers, Strings
@@ -8798,10 +8836,16 @@ Some examples:
 @end defun
 
 @defun any-pred pred @dots{}
+@c EN
 Returns a procedure which applies given argument(s) to
 each predicate @var{pred}.  If any @var{pred} returns
 a non-@code{#f} value, the value is returned.  If all the @var{pred}s
 return @code{#f}, @code{#f} is returned.
+@c JP
+与えられた引数をそれぞれ述語@var{pred}に適用する手続きを返します。
+いずれかの@var{pred}が@code{#f}でない値を返す場合、その値を返します。
+全ての@var{pred}が@code{#f}を返す場合、@code{#f}を返します。
+@c COMMON
 
 @example
 (define string-or-symbol? (any-pred string? symbol?))
@@ -8820,11 +8864,19 @@ return @code{#f}, @code{#f} is returned.
 @end defun
 
 @defun every-pred pred @dots{}
+@c EN
 Returns a procedure which applies given argument(s) to
 each predicate @var{pred}.  If every @var{pred} returns
 a non-@code{#f} value, the value returned by the last @var{pred}
 is returned.  If any @var{pred} returns @code{#f}, @code{every-pred}
 returns @code{#f} without calling further @var{pred}s.
+@c JP
+与えられた引数をそれぞれ述語@var{pred}に適用する手続きを返します。
+全ての@var{pred}が@code{#f}でない値を返す場合、戻り値は最後の
+@var{pred}の戻り値になります。いずれかの@var{pred}が@code{#f}を
+返す場合、@code{every-pred}はそれ以降の@var{pred}を呼び出さずに
+@code{#f}を返します。
+@c COMMON
 
 @example
 ((every-pred odd? positive?) 3)  @result{} #t
