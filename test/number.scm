@@ -4,15 +4,6 @@
 
 (use gauche.test)
 
-(define *word-bits* 32)  ;; # of bits used for long 
-
-(define *small-int-bits* (- *word-bits* 3))  ;; # of bits used to represent
-                                             ;; small integer constant
-                                             ;; (except sign bit)
-(define *inum-bits* (- *word-bits* 13)) ;; # of bits used for immediate
-                                        ;; integer constant in the compiled
-                                        ;; code (except sign bit)
-
 (define (exp2 pow)
   (do ((i 0 (+ i 1))
        (m 1 (+ m m)))
@@ -21,7 +12,7 @@
 (test-start "numbers")
 
 ;;==================================================================
-;; Integers
+;; Reader/writer
 ;;
 
 ;;------------------------------------------------------------------
@@ -66,28 +57,34 @@
 (test "peculiarity around 2^32"
       (* 477226729 10) (lambda () 4772267290))
 
-(define x #xffffffff00000000ffffffff00000000)
-(define xx (- x))
-(define y #x00000002000000000000000200000000)
-(define yy (- y))
-(define z #x00000000000000010000000000000001)
-(test "bignum + bignum" #x100000001000000010000000100000000
-      (lambda () (+ x y)))
-(test "bignum + -bignum" #xfffffffd00000000fffffffd00000000
-      (lambda () (+ x yy)))
-(test "bignum - bignum" #xfffffffefffffffffffffffeffffffff
-      (lambda () (- x z)))
-(test "bignum - bignum" x
-      (lambda () (- (+ x y) y)))
-(test "-bignum + bignum" (- #xfffffffd00000000fffffffd00000000)
-      (lambda () (+ xx y)))
-(test "-bignum + -bignum" (- #x100000001000000010000000100000000)
-      (lambda () (+ xx yy)))
-(test "-bignum - bignum" (- #x100000001000000010000000100000000)
-      (lambda () (- xx y)))
-(test "-bignum - -bignum" (- #xfffffffd00000000fffffffd00000000)
-      (lambda () (- xx yy)))
-      
+;;------------------------------------------------------------------
+(test-section "complex reader")
+
+(define (decompose-complex z)
+  (if (complex? z)
+      (list (real-part z) (imag-part z))
+      z))
+
+(test "complex reader" '(1 1) (lambda () (decompose-complex '1+i)))
+(test "complex reader" '(1 1) (lambda () (decompose-complex '1+1i)))
+(test "complex reader" '(1 1) (lambda () (decompose-complex '1.0+1i)))
+(test "complex reader" '(1 1) (lambda () (decompose-complex '1.0+1.0i)))
+(test "complex reader" '(1e-5 1) (lambda () (decompose-complex '1e-5+1i)))
+(test "complex reader" '(1e+5 1) (lambda () (decompose-complex '1e+5+1i)))
+(test "complex reader" '(1 1e-5) (lambda () (decompose-complex '1+1e-5i)))
+(test "complex reader" '(1 1e+5) (lambda () (decompose-complex '1+1e+5i)))
+(test "complex reader" '(0.1 1e+4) (lambda () (decompose-complex '0.1+0.1e+5i)))
+(test "complex reader" '(0 1) (lambda () (decompose-complex '+i)))
+(test "complex reader" '(0 -1) (lambda () (decompose-complex '-i)))
+(test "complex reader" '(0 1) (lambda () (decompose-complex '+1i)))
+(test "complex reader" '(0 -1) (lambda () (decompose-complex '-1i)))
+(test "complex reader" '(0 1) (lambda () (decompose-complex '+1.0i)))
+(test "complex reader" '(0 -1) (lambda () (decompose-complex '-1.0i)))
+(test "complex reader" '(1 0) (lambda () (decompose-complex '1+0.0i)))
+(test "complex reader" '(1 0) (lambda () (decompose-complex '1+0.0e-43i)))
+(test "complex reader" 'i (lambda () (decompose-complex 'i)))
+(test "complex reader" 'i+1 (lambda () (decompose-complex 'i+1)))
+
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
 
@@ -127,8 +124,128 @@
       (lambda () (i-tester2 (exp2 127))))
 
 
+;;==================================================================
+;; Predicates
+;;
+
+(test-section "predicates")
+
+(test "integer?" #t (lambda () (integer? 0)))
+(test "integer?" #t (lambda () (integer? 85736847562938475634534245)))
+(test "integer?" #f (lambda () (integer? 85736.534245)))
+(test "integer?" #f (lambda () (integer? 3.14)))
+(test "integer?" #f (lambda () (integer? 3+4i)))
+(test "integer?" #t (lambda () (integer? 3+0i)))
+(test "integer?" #f (lambda () (integer? #f)))
+
+(test "rational?" #t (lambda () (rational? 0)))
+(test "rational?" #t (lambda () (rational? 85736847562938475634534245)))
+(test "rational?" #t (lambda () (rational? 85736.534245)))
+(test "rational?" #t (lambda () (rational? 3.14)))
+(test "rational?" #f (lambda () (rational? 3+4i)))
+(test "rational?" #t (lambda () (rational? 3+0i)))
+(test "rational?" #f (lambda () (rational? #f)))
+
+(test "real?" #t (lambda () (real? 0)))
+(test "real?" #t (lambda () (real? 85736847562938475634534245)))
+(test "real?" #t (lambda () (real? 857368.4756293847)))
+(test "real?" #t (lambda () (real? 3+0i)))
+(test "real?" #f (lambda () (real? 3+4i)))
+(test "real?" #f (lambda () (real? +4.3i)))
+(test "real?" #f (lambda () (real? '())))
+
+(test "complex?" #t (lambda () (complex? 0)))
+(test "complex?" #t (lambda () (complex? 85736847562938475634534245)))
+(test "complex?" #t (lambda () (complex? 857368.4756293847)))
+(test "complex?" #t (lambda () (complex? 3+0i)))
+(test "complex?" #t (lambda () (complex? 3+4i)))
+(test "complex?" #t (lambda () (complex? +4.3i)))
+(test "complex?" #f (lambda () (complex? '())))
+
+(test "number?" #t (lambda () (number? 0)))
+(test "number?" #t (lambda () (number? 85736847562938475634534245)))
+(test "number?" #t (lambda () (number? 857368.4756293847)))
+(test "number?" #t (lambda () (number? 3+0i)))
+(test "number?" #t (lambda () (number? 3+4i)))
+(test "number?" #t (lambda () (number? +4.3i)))
+(test "number?" #f (lambda () (number? '())))
+
+(test "exact?" #t (lambda () (exact? 1)))
+(test "exact?" #t (lambda () (exact? 4304953480349304983049304953804)))
+(test "exact?" #f (lambda () (exact? 1.0)))
+(test "exact?" #f (lambda () (exact? 4304953480349304983.049304953804)))
+(test "exact?" #f (lambda () (exact? 1.0+0i)))
+(test "exact?" #f (lambda () (exact? 1.0+5i)))
+(test "inexact?" #f (lambda () (inexact? 1)))
+(test "inexact?" #f (lambda () (inexact? 4304953480349304983049304953804)))
+(test "inexact?" #t (lambda () (inexact? 1.0)))
+(test "inexact?" #t (lambda () (inexact? 4304953480349304983.049304953804)))
+(test "inexact?" #t (lambda () (inexact? 1.0+0i)))
+(test "inexact?" #t (lambda () (inexact? 1.0+5i)))
+
+(test "odd?" #t (lambda () (odd? 1)))
+(test "odd?" #f (lambda () (odd? 2)))
+(test "even?" #f (lambda () (even? 1)))
+(test "even?" #t (lambda () (even? 2)))
+(test "odd?" #t (lambda () (odd? 1.0)))
+(test "odd?" #f (lambda () (odd? 2.0)))
+(test "even?" #f (lambda () (even? 1.0)))
+(test "even?" #t (lambda () (even? 2.0)))
+(test "odd?" #t (lambda () (odd? 10000000000000000000000000000000000001)))
+(test "odd?" #f (lambda () (odd? 10000000000000000000000000000000000002)))
+(test "even?" #f (lambda () (even? 10000000000000000000000000000000000001)))
+(test "even?" #t (lambda () (even? 10000000000000000000000000000000000002)))
+
+(test "zero?" #t (lambda () (zero? 0)))
+(test "zero?" #t (lambda () (zero? 0.0)))
+(test "zero?" #t (lambda () (zero? (- 10 10.0))))
+(test "zero?" #t (lambda () (zero? 0+0i)))
+(test "zero?" #f (lambda () (zero? 1.0)))
+(test "zero?" #f (lambda () (zero? +5i)))
+(test "positive?" #t (lambda () (positive? 1)))
+(test "positive?" #f (lambda () (positive? -1)))
+(test "positive?" #t (lambda () (positive? 3.1416)))
+(test "positive?" #f (lambda () (positive? -3.1416)))
+(test "positive?" #t (lambda () (positive? 134539485343498539458394)))
+(test "positive?" #f (lambda () (positive? -134539485343498539458394)))
+(test "negative?" #f (lambda () (negative? 1)))
+(test "negative?" #t (lambda () (negative? -1)))
+(test "negative?" #f (lambda () (negative? 3.1416)))
+(test "negative?" #t (lambda () (negative? -3.1416)))
+(test "negative?" #f (lambda () (negative? 134539485343498539458394)))
+(test "negative?" #t (lambda () (negative? -134539485343498539458394)))
+
+;;==================================================================
+;; Arithmetics
+;;
+
 ;;------------------------------------------------------------------
-(test-section "small integer literals")
+(test-section "integer addition")
+
+(define x #xffffffff00000000ffffffff00000000)
+(define xx (- x))
+(define y #x00000002000000000000000200000000)
+(define yy (- y))
+(define z #x00000000000000010000000000000001)
+(test "bignum + bignum" #x100000001000000010000000100000000
+      (lambda () (+ x y)))
+(test "bignum + -bignum" #xfffffffd00000000fffffffd00000000
+      (lambda () (+ x yy)))
+(test "bignum - bignum" #xfffffffefffffffffffffffeffffffff
+      (lambda () (- x z)))
+(test "bignum - bignum" x
+      (lambda () (- (+ x y) y)))
+(test "-bignum + bignum" (- #xfffffffd00000000fffffffd00000000)
+      (lambda () (+ xx y)))
+(test "-bignum + -bignum" (- #x100000001000000010000000100000000)
+      (lambda () (+ xx yy)))
+(test "-bignum - bignum" (- #x100000001000000010000000100000000)
+      (lambda () (- xx y)))
+(test "-bignum - -bignum" (- #xfffffffd00000000fffffffd00000000)
+      (lambda () (- xx yy)))
+
+;;------------------------------------------------------------------
+(test-section "small immediate integer additions")
 
 ;; small literal integer x (-2^19 <= x < 2^19 on 32bit architecture)
 ;; in binary addition/subtraction is compiled in special instructuions,
@@ -161,6 +278,30 @@
 (test "NUMSUBI" #xfffffffd (lambda () (- x 3)))
 (test "NUMSUBI" (- #x100000003) (lambda () (- -3 x)))
 (test "NUMSUBI" #x100000003 (lambda () (- x -3)))
+
+;;------------------------------------------------------------------
+(test-section "promotions in addition")
+
+(define (+-tester x) (list x (exact? x)))
+
+(test "+" '(0 #t) (lambda () (+-tester (+))))
+(test "+" '(1 #t) (lambda () (+-tester (+ 1))))
+(test "+" '(3 #t) (lambda () (+-tester (+ 1 2))))
+(test "+" '(6 #t) (lambda () (+-tester (+ 1 2 3))))
+(test "+" '(1.0 #f) (lambda () (+-tester (+ 1.0))))
+(test "+" '(3.0 #f) (lambda () (+-tester (+ 1.0 2))))
+(test "+" '(3.0 #f) (lambda () (+-tester (+ 1 2.0))))
+(test "+" '(6.0 #f) (lambda () (+-tester (+ 1 2 3.0))))
+(test "+" '(1+i #f) (lambda () (+-tester (+ 1 +i))))
+(test "+" '(3+i #f) (lambda () (+-tester (+ 1 2 +i))))
+(test "+" '(3+i #f) (lambda () (+-tester (+ +i 1 2))))
+(test "+" '(3+i #f) (lambda () (+-tester (+ 1.0 2 +i))))
+(test "+" '(3+i #f) (lambda () (+-tester (+ +i 1.0 2))))
+(test "+" '(4294967298.0 #f) (lambda () (+-tester (+ 4294967297 1.0))))
+(test "+" '(4294967299.0 #f) (lambda () (+-tester (+ 4294967297 1 1.0))))
+(test "+" '(4294967298.0-i #f) (lambda () (+-tester (+ 4294967297 1.0 -i))))
+(test "+" '(4294967298.0-i #f) (lambda () (+-tester (+ -i 4294967297 1.0))))
+(test "+" '(4294967298.0-i #f) (lambda () (+-tester (+ 1.0 4294967297 -i))))
 
 ;;------------------------------------------------------------------
 (test-section "integer multiplication")
@@ -421,96 +562,5 @@
       (lambda () (m-tester 3735928559.0 27353)))
 (test "inexact mod inexact -> inexact" (m-result 1113.0 26240.0 #f)
       (lambda () (m-tester 3735928559.0 27353.0)))
-
-;;==================================================================
-;; Predicates
-;;
-
-(test-section "predicates")
-
-(test "integer?" #t (lambda () (integer? 0)))
-(test "integer?" #t (lambda () (integer? 85736847562938475634534245)))
-(test "integer?" #f (lambda () (integer? 85736.534245)))
-(test "integer?" #f (lambda () (integer? 3.14)))
-(test "integer?" #f (lambda () (integer? 3+4i)))
-(test "integer?" #t (lambda () (integer? 3+0i)))
-(test "integer?" #f (lambda () (integer? #f)))
-
-(test "rational?" #t (lambda () (rational? 0)))
-(test "rational?" #t (lambda () (rational? 85736847562938475634534245)))
-(test "rational?" #t (lambda () (rational? 85736.534245)))
-(test "rational?" #t (lambda () (rational? 3.14)))
-(test "rational?" #f (lambda () (rational? 3+4i)))
-(test "rational?" #t (lambda () (rational? 3+0i)))
-(test "rational?" #f (lambda () (rational? #f)))
-
-(test "real?" #t (lambda () (real? 0)))
-(test "real?" #t (lambda () (real? 85736847562938475634534245)))
-(test "real?" #t (lambda () (real? 857368.4756293847)))
-(test "real?" #t (lambda () (real? 3+0i)))
-(test "real?" #f (lambda () (real? 3+4i)))
-(test "real?" #f (lambda () (real? +4.3i)))
-(test "real?" #f (lambda () (real? '())))
-
-(test "complex?" #t (lambda () (complex? 0)))
-(test "complex?" #t (lambda () (complex? 85736847562938475634534245)))
-(test "complex?" #t (lambda () (complex? 857368.4756293847)))
-(test "complex?" #t (lambda () (complex? 3+0i)))
-(test "complex?" #t (lambda () (complex? 3+4i)))
-(test "complex?" #t (lambda () (complex? +4.3i)))
-(test "complex?" #f (lambda () (complex? '())))
-
-(test "number?" #t (lambda () (number? 0)))
-(test "number?" #t (lambda () (number? 85736847562938475634534245)))
-(test "number?" #t (lambda () (number? 857368.4756293847)))
-(test "number?" #t (lambda () (number? 3+0i)))
-(test "number?" #t (lambda () (number? 3+4i)))
-(test "number?" #t (lambda () (number? +4.3i)))
-(test "number?" #f (lambda () (number? '())))
-
-(test "exact?" #t (lambda () (exact? 1)))
-(test "exact?" #t (lambda () (exact? 4304953480349304983049304953804)))
-(test "exact?" #f (lambda () (exact? 1.0)))
-(test "exact?" #f (lambda () (exact? 4304953480349304983.049304953804)))
-(test "exact?" #f (lambda () (exact? 1.0+0i)))
-(test "exact?" #f (lambda () (exact? 1.0+5i)))
-(test "inexact?" #f (lambda () (inexact? 1)))
-(test "inexact?" #f (lambda () (inexact? 4304953480349304983049304953804)))
-(test "inexact?" #t (lambda () (inexact? 1.0)))
-(test "inexact?" #t (lambda () (inexact? 4304953480349304983.049304953804)))
-(test "inexact?" #t (lambda () (inexact? 1.0+0i)))
-(test "inexact?" #t (lambda () (inexact? 1.0+5i)))
-
-(test "odd?" #t (lambda () (odd? 1)))
-(test "odd?" #f (lambda () (odd? 2)))
-(test "even?" #f (lambda () (even? 1)))
-(test "even?" #t (lambda () (even? 2)))
-(test "odd?" #t (lambda () (odd? 1.0)))
-(test "odd?" #f (lambda () (odd? 2.0)))
-(test "even?" #f (lambda () (even? 1.0)))
-(test "even?" #t (lambda () (even? 2.0)))
-(test "odd?" #t (lambda () (odd? 10000000000000000000000000000000000001)))
-(test "odd?" #f (lambda () (odd? 10000000000000000000000000000000000002)))
-(test "even?" #f (lambda () (even? 10000000000000000000000000000000000001)))
-(test "even?" #t (lambda () (even? 10000000000000000000000000000000000002)))
-
-(test "zero?" #t (lambda () (zero? 0)))
-(test "zero?" #t (lambda () (zero? 0.0)))
-(test "zero?" #t (lambda () (zero? (- 10 10.0))))
-(test "zero?" #t (lambda () (zero? 0+0i)))
-(test "zero?" #f (lambda () (zero? 1.0)))
-(test "zero?" #f (lambda () (zero? +5i)))
-(test "positive?" #t (lambda () (positive? 1)))
-(test "positive?" #f (lambda () (positive? -1)))
-(test "positive?" #t (lambda () (positive? 3.1416)))
-(test "positive?" #f (lambda () (positive? -3.1416)))
-(test "positive?" #t (lambda () (positive? 134539485343498539458394)))
-(test "positive?" #f (lambda () (positive? -134539485343498539458394)))
-(test "negative?" #f (lambda () (negative? 1)))
-(test "negative?" #t (lambda () (negative? -1)))
-(test "negative?" #f (lambda () (negative? 3.1416)))
-(test "negative?" #t (lambda () (negative? -3.1416)))
-(test "negative?" #f (lambda () (negative? 134539485343498539458394)))
-(test "negative?" #t (lambda () (negative? -134539485343498539458394)))
 
 (test-end)
