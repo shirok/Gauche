@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.1 2001-09-11 11:22:11 shirok Exp $
+;;  $Id: error.scm,v 1.2 2001-09-13 09:53:29 shirok Exp $
 
 (use gauche.test)
 (test-start "error handlers")
@@ -52,5 +52,17 @@
                (lambda ()
                  (sort '(1 8 3 7 4)
                        (lambda (a b) (car a))))))))
+
+(test "with dynamic wind" '(a b c)
+      (lambda ()
+        (let ((x '()))
+          (with-error-handler
+           (lambda (e) (set! x (cons 'b x)))
+           (lambda ()
+             (dynamic-wind
+              (lambda () (set! x (cons 'c x)))
+              (lambda () (car 3))
+              (lambda () (set! x (cons 'a x))))))
+          x)))
 
 (test-end)
