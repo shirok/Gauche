@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.204 2004-01-17 05:27:09 shirok Exp $
+ *  $Id: vm.c,v 1.205 2004-01-17 09:25:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -118,9 +118,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
 
     v->stack = SCM_NEW_ARRAY(ScmObj, SCM_VM_STACK_SIZE);
     v->sp = v->stack;
-    v->stackSize = SCM_VM_STACK_SIZE;
     v->stackBase = v->stack;
-    v->stackEnd = v->stack + v->stackSize;
+    v->stackEnd = v->stack + SCM_VM_STACK_SIZE;
 
     v->env = NULL;
     v->argp = v->stack;
@@ -260,7 +259,7 @@ void Scm__InitVM(void)
 
 /* return true if ptr points into the stack area */
 #define IN_STACK_P(ptr)                         \
-    ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
+      ((unsigned long)((ptr) - vm->stackBase) < SCM_VM_STACK_SIZE)
 
 #define RESTORE_REGS()                          \
     do {                                        \

@@ -30,13 +30,19 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.86 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: vm.h,v 1.87 2004-01-17 09:25:19 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
 #define GAUCHE_VM_H
 
+/* Size of stack per VM (in words). */
+#define SCM_VM_STACK_SIZE      10000
+
+/* Maximum # of values allowed for multiple value return */
 #define SCM_VM_MAX_VALUES      20
+
+/* Signal queue size */
 #define SCM_VM_SIGQ_SIZE       32
 
 #define SCM_PCTYPE ScmObj
@@ -245,7 +251,6 @@ struct ScmVMRec {
     ScmObj *stack;              /* bottom of allocated stack area */
     ScmObj *stackBase;          /* base of current stack area  */
     ScmObj *stackEnd;           /* end of current stack area */
-    int stackSize;
 
     /* Escape handling */
     ScmObj exceptionHandler;    /* the current exception handler installed by

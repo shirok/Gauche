@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.358 2003-12-16 09:50:46 shirok Exp $
+ *  $Id: gauche.h,v 1.359 2004-01-17 09:25:17 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -98,7 +98,6 @@ SCM_DECL_BEGIN
 #endif
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
-#define SCM_VM_STACK_SIZE     10000
 
 #ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
