@@ -2,7 +2,7 @@
 ;;; tests for some builtin list operations
 ;;;
 
-;; $Id: list.scm,v 1.1 2001-03-05 04:00:06 shiro Exp $
+;; $Id: list.scm,v 1.2 2001-03-06 09:07:38 shiro Exp $
 
 (add-load-path "../lib")
 (require "test")
@@ -10,6 +10,27 @@
 ;; monotonic-merge is a core function to implement Dylan-style class
 ;; precedence list.  those tests are taken from examples in
 ;;   http://www.webcom.com/~haahr/dylan/linearization-oopsla96.html
+
+(define (get-super elt)
+  (let ((p (assq elt
+                 '((popup-menu menu popup-mixin)
+                   (menu choice-widget)
+                   (popup-mixin object)
+                   (pedalo pedal-wheel-boat small-catamaran)
+                   (pedal-wheel-boat engineless wheel-boat)
+                   (engineless day-boat)
+                   (day-boat boat)
+                   (boat object)
+                   (wheel-boat boat)
+                   (small-catamaran small-multihull)
+                   (small-multihull day-boat)
+                   (confused-grid hv-grid vh-grid)
+                   (hv-grid horizontal-grid vertical-grid)
+                   (vh-grid vertical-grid horizontal-grid)
+                   (horizontal-grid grid-layout)
+                   (vertical-grid grid-layout)
+                   (grid-layout object)))))
+    (if (pair? p) (cdr p) #f)))
 
 (test "monotonic-merge"
       '(popup-menu menu choice-widget popup-mixin object)
@@ -19,9 +40,7 @@
          '((menu popup-mixin)
            (menu choice-widget object)
            (popup-mixin object))
-         '((popup-menu menu popup-mixin)
-           (menu choice-widget)
-           (popup-mixin object)))))
+         get-super)))
 
 (test "monotonic-merge"
       '(pedalo pedal-wheel-boat engineless small-catamaran
@@ -32,14 +51,7 @@
          '((pedal-wheel-boat small-catamaran)
            (pedal-wheel-boat engineless day-boat wheel-boat boat object)
            (small-catamaran small-multihull day-boat boat object))
-         '((pedalo pedal-wheel-boat small-catamaran)
-           (pedal-wheel-boat engineless wheel-boat)
-           (engineless day-boat)
-           (day-boat boat)
-           (boat object)
-           (wheel-boat boat)
-           (small-catamaran small-multihull)
-           (small-multihull day-boat)))))
+         get-super)))
 
 (test "monotonic-merge"
       #f
@@ -49,10 +61,6 @@
          '((hv-grid vh-grid)
            (hv-grid horizontal-grid vertical-grid grid-layout object)
            (vh-grid vertical-grid horizontal-grid grid-layout object))
-         '((confused-grid hv-grid vh-grid)
-           (hv-grid horizontal-grid vertical-grid)
-           (vh-grid vertical-grid horizontal-grid)
-           (horizontal-grid grid-layout)
-           (vertical-grid grid-layout)
-           (grid-layout object)))))
+         get-super)))
+
 
