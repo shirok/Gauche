@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.11 2001-03-06 08:54:30 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.12 2001-03-09 08:34:26 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -31,29 +31,26 @@
   (receive vals (producer) (apply consumer vals)))
 
 ;;
-;; Require and provide (temporary solution)
+;; Loading, require and provide
 ;;
 
-(define *provided*
-  '("srfi-6"                            ; string ports (builtin)
-    "srfi-8"                            ; receive (builtin)
-    ))
+;; Load path needs to be dealt with at the compile time.  this is a
+;; hack to do so.   Don't modify *load-path* directly, since it causes
+;; weird compiler-evaluator problem.
+;; I don't like the current name "add-load-path", though---looks like
+;; more a procedure than a compiler syntax---any ideas?
+(define-macro (add-load-path path)
+  `',(%add-load-path path))
 
-(define (REQUIRE feature)
-  (unless (member feature *provided*)
-    (load (string-append feature ".scm"))))
-
-(define (PROVIDE feature)
-  (unless (provided? feature)
-    (set! *provided* (cons feature *provided*))))
-
-(define (PROVIDED? feature)
-  (member feature *provided*))
+;; Same as above.
+(define-macro (require feature)
+  `',(%require feature))
 
 ;;
 ;; Autoload
 ;;
 
+;; autoload doesn't work for syntactic binding...
 (define-macro (AUTOLOAD file . vars)
   (cons 'begin (map (lambda (v) `(define ,v (%make-autoload ',v ,file)))
                     vars)))
