@@ -1,3 +1,16 @@
+2002-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/* : allow a list and a vector as the second operand
+	  of most vector arithmetic procedures.
+
+2002-06-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/* : added TAGvector-range-check, TAGvector-clamp,
+	  and TAGvector-clamp!.
+	* src/vector.c, src/extlib.stub : added start/end optional argument
+	  for vector->list (consistency with SRFI-13 string->list), and
+	  added vector-copy.
+
 2002-06-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/array.scm : added.  right now, it is just a prototype.
