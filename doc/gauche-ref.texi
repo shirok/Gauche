@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.225 2002-06-22 11:11:13 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.226 2002-06-26 11:50:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8536,14 +8536,18 @@ Write a byte @var{byte} to the port.
 @end defun
 
 @defun format port string arg @dots{}
+@defunx format string arg @dots{}
+[SRFI-28+]
 @c EN
 Format @var{arg} @dots{} according to @var{string}.
 This function is a subset of CommonLisp's @code{format} function,
-with a bit of extension.
+with a bit of extension.  It is also a superset of SRFi-28,
+Basic format strings (@ref{srfi-28,[SRFI-28],SRFI-28}).
 @c JP
 @var{string} の指示に従い、@var{arg} @dots{}をフォーマットします。
 この手続きはCommonLispの@code{format}のサブセットに、Gauche独自の拡張を
-加えたものです。
+加えたものです。また、これはSRFI-28 "Basic format strings" のスーパーセットに
+なっています (@ref{srfi-28,[SRFI-28],SRFI-28})。
 @c COMMON
 
 @c EN
@@ -8551,11 +8555,15 @@ with a bit of extension.
 formatted result is written to it; if it is @code{#t},
 the result is written to the current output port;
 if it is @code{#f}, the formatted result is returned as a string.
+@var{Port} can be omitted, as SRFI-28 @code{format};
+it has the same effects as giving @code{#f} to the @var{port}.
 @c JP
 @var{port}は出力先を指定します。それが出力ポートであれば、フォーマットされた
 結果はそのポートに書き出されます。@var{port}が@code{#t}であれば、結果は
 現在の出力ポートに書き出されます。@var{port}が@code{#f}であれば、結果は
 文字列として@code{format}から返されます。
+@var{port}は省略することもできます。その場合は、@code{port}に@code{#f}
+を指定したのと同じ動作をします(SRFI-28の@code{format})。
 @c COMMON
 
 @c EN
@@ -21827,10 +21835,25 @@ Running Scheme Scripts on Unix, January 2002. @*
 Stephan Housen, Error reporting mechanism, April 2001.@*
 @url{http://srfi.schemers.org/srfi-23/srfi-23.html}.
 
+@anchor{srfi-25}
+@item [SRFI-25]
+Jussi Piitulainen, Multi-dimensional Array Primitives, June 2002.@*
+@url{http://srfi.schemers.org/srfi-25/srfi-25.html}.
+
+@anchor{srfi-26}
+@item [SRFI-26]
+Sebastian Egner, Notation for Specializing Parameters without Currying, June 2002.@*
+@url{http://srfi.schemers.org/srfi-26/srfi-26.html}.
+
 @anchor{srfi-27}
 @item [SRFI-27]
 Sebastian Egner, Sources of Random Bits, June 2002.@*
 @url{http://srfi.schemers.org/srfi-27/srfi-27.html}.
+
+@anchor{srfi-28}
+@item [SRFI-28]
+Scott G. Miller, Basic Format Strings, June 2002.@*
+@url{http://srfi.schemers.org/srfi-28/srfi-28.html}.
 
 @anchor{ssax}
 @item [SSAX]
