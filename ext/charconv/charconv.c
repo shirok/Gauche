@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.9 2001-06-05 19:52:46 shirok Exp $
+ *  $Id: charconv.c,v 1.10 2001-06-05 20:17:25 shirok Exp $
  */
 
 #include <errno.h>
@@ -111,9 +111,16 @@ static int conv_input_filler(char *buf, int len, void *data)
         }
     } else {
         /* Conversion is done completely. */
-        /*SCM_ASSERT(inroom == 0);*/
-        info->inptr = info->inbuf;
-        return info->bufsiz - outroom;
+        /* NB: There are cases that some bytes are left in the input buffer
+           even iconv returns positive value.  We need to shift those bytes. */
+        if (inroom > 0) {
+            memmove(info->inbuf, info->inbuf+insize-inroom, inroom);
+            info->inptr = info->inbuf + inroom;
+            return info->bufsiz - outroom;
+        } else {
+            info->inptr = info->inbuf;
+            return info->bufsiz - outroom;
+        }
     }
 }
 
