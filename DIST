@@ -1,7 +1,11 @@
 #!/bin/sh
 VERSION=`cat VERSION`
+TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
+CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 
 autoconf
 configure
 make distclean
-cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE Gauche | gzip -9 > Gauche-$VERSION.tgz
+(cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE Gauche | gzip -9 > Gauche-$VERSION.tgz)
+mv ../Gauche-$VERSION.tgz $TGZ_DEST
+cp ChangeLog $CHANGELOG_DEST
