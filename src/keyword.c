@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: keyword.c,v 1.10 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: keyword.c,v 1.11 2002-05-07 08:15:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -33,23 +33,32 @@ static void keyword_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_KeywordClass, keyword_print);
 
-/* Global keyword table.  Must be protected in MT environment */
-static ScmHashTable *keywordTable;
+/* Global keyword table. */
+static struct {
+    ScmHashTable *table;
+    ScmInternalMutex mutex;
+} keywords;
 
 /* Returns a keyword whose name is NAME.  Note that preceding ':' is not
  * a part of the keyword name.
  */
 ScmObj Scm_MakeKeyword(ScmString *name)
 {
-    ScmHashEntry *e = Scm_HashTableGet(keywordTable, SCM_OBJ(name));
-    if (e) return e->value;
+    ScmHashEntry *e;
+    ScmObj r;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
+    e = Scm_HashTableGet(keywords.table, SCM_OBJ(name));
+    if (e) r = e->value;
     else {
         ScmKeyword *k = SCM_NEW(ScmKeyword);
         SCM_SET_CLASS(k, SCM_CLASS_KEYWORD);
         k->name = SCM_STRING(Scm_CopyString(name));
-        Scm_HashTablePut(keywordTable, SCM_OBJ(name), SCM_OBJ(k));
-        return SCM_OBJ(k);
+        Scm_HashTablePut(keywords.table, SCM_OBJ(name), SCM_OBJ(k));
+        r = SCM_OBJ(k);
     }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
+    return r;
 }
 
 ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback)
@@ -68,5 +77,6 @@ ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback)
 
 void Scm__InitKeyword(void)
 {
-    keywordTable = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 256));
+    (void)SCM_INTERNAL_MUTEX_INIT(keywords.mutex);
+    keywords.table = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 256));
 }
