@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.29 2001-05-09 05:40:55 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.30 2001-05-11 10:19:01 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -106,9 +106,10 @@
 (define-trans sinh  %sinh  %complex-sinh)
 (define-trans cosh  %cosh  %complex-cosh)
 (define-trans tanh  %tanh  %complex-tanh)
-(define-trans asinh %asinh %complex-asinh)
-(define-trans acosh %acosh %complex-acosh)
-(define-trans atanh %atanh %complex-atanh)
+
+(define (asinh z) (%complex-asinh z))
+(define (acosh z) (%complex-acosh z))
+(define (atanh z) (%complex-atanh z))
 
 (define (atan z . x)
   (if (null? x)
