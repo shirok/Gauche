@@ -1,3 +1,7 @@
+2003-10-27  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* configure.ac : Add a missing comma.
+
 2003-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/class.c, src/gauche/class.h, src/moplib.stub,
