@@ -1,3 +1,8 @@
+2002-06-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/string.c : fixed a problem of signed/unsigned
+	  char inconsistency (bug pointed out by Sven Hartrumpf).
+
 2002-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/jconv.c : wrapping up.  passes the current tests.
