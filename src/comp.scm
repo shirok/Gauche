@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.17 2005-01-10 08:46:02 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.18 2005-01-10 16:52:11 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -151,7 +151,6 @@
 ;; <top-expr> :=
 ;;    <expr>
 ;;    ($define <o> <flags> <id> <expr>)
-;;    ($define-macro <o> <flags> <id> <expr>)
 ;;
 ;; <expr> :=
 ;;    ($lref <lvar>)        ;; local variable reference
@@ -397,21 +396,31 @@
     (error "syntax-error: non-toplevel define-macro is not allowed:" oform))
   (match form
     ((_ (name . args) body ...)
-     (pass1/define `(define-macro name
-                      (,(global-id 'lambda) ,args ,@body))
-                   oform module cenv))
+     (pass1/define-macro `(define-macro name
+                            (,(global-id 'lambda) ,args ,@body))
+                         oform module cenv))
     ((_ name expr)
      (unless (variable? name)
        (error "syntax-error:" origform))
      ;; TODO: macro autoload
      (let1 trans (make-macro-transformer (eval expr module))
-       (eval `(define ,name ,trans) module)))
+       (%insert-binding module name trans)))
     (else (error "syntax-error:" oform))))
 
 (define-pass1-syntax (define-macro form cenv)
   (unless (cenv-toplevel? cenv)
     (error "syntax-error: non-toplevel define-macro is not allowed:" form))
   (pass1/define-macro form form (cenv-module) cenv))
+
+
+(define-pass1-syntax (define-syntax form cenv)
+  (unless (cenv-toplevel? cenv)
+    (error "syntax-error: non-toplevel define-syntax is not allowed:" oform))
+  (match form
+    ((_ name expr)
+     (%insert-binding name (cenv-module cenv)
+                      
+
 
 ;; If family ........................................
 
@@ -836,31 +845,6 @@
             (list* (list (vm-insn-make 'PUSH))
                    (pass3 (car args) renv (normal-context ctx))
                    r)))))
-
-;;------------------------------------------------------------
-;; Macros for the new compiler
-;;
-
-;; Hygienic macro pattern-matching & binding
-;;
-
-;; Generating pattern matcher:
-;;
-;;   Given set of pattern templates, generate a program that
-;;   (1) matches the pattern, and (2) create a pattern variable
-;;   binding frame.
-;;   NB: the generated program is evaled in the compiler's toplevel
-;;   environment, so we don't care about shadowing global identifiers
-;;   such as lambda.
-
-;(define (generate-matcher patterns literals)
-
-;  (define (generate-1 pattern)
-;    (cond
-;     ((
-
-
-
 
          
 ;;============================================================

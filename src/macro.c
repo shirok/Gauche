@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52.2.2 2004-12-30 09:28:54 shirok Exp $
+ *  $Id: macro.c,v 1.52.2.3 2005-01-10 16:52:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -141,6 +141,16 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 }
 
 /*===================================================================
+ * Macro for the new compiler
+ */
+
+/* In the new compiler, macro transformers for hygienic and traditional
+ * macros are integrated.
+ * The lowest-level macro transformer can be introduced by
+ */
+
+
+/*===================================================================
  * Traditional Macro
  */
 
@@ -155,7 +165,7 @@ static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env, void *data)
     return Scm_Apply(proc, SCM_CDR(form));
 }
 
-ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
+ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 {
     return Scm_MakeMacro(name, macro_transform, (void*)proc);
 }
@@ -211,7 +221,8 @@ static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
     }
     trans = Scm_Eval(trans, SCM_OBJ(SCM_CURRENT_MODULE()));
     if (SCM_PROCEDUREP(trans)) {
-        mt = Scm_MakeMacroTransformer(SCM_SYMBOL(name), SCM_PROCEDURE(trans));
+        mt = Scm_MakeMacroTransformerOld(SCM_SYMBOL(name),
+                                         SCM_PROCEDURE(trans));
     } else if (SCM_AUTOLOADP(trans)) {
         mt = Scm_MakeMacroAutoload(SCM_SYMBOL(name), SCM_AUTOLOAD(trans));
     } else {
