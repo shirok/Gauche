@@ -1,3 +1,8 @@
+2004-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netlib.stub (socket-output-port): fixed buffering keyword
+	  argument handling.  (Pointed by Yoshiharu Fujisawa).
+
 2004-01-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (sig_setup): fixed a problem that threads hang on
