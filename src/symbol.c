@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.21 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: symbol.c,v 1.22 2001-08-06 07:20:37 shirok Exp $
  */
 
 #include "gauche.h"
@@ -46,20 +46,6 @@ ScmObj Scm_Intern(ScmString *name)
         Scm_HashTablePut(obtable, n, SCM_OBJ(sym));
         return SCM_OBJ(sym);
     }
-}
-
-/* Returns a list of symbols whose name contains substr */
-ScmObj Scm_Apropos(ScmString *substr)
-{
-    ScmHashIter iter;
-    ScmHashEntry *e;
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    Scm_HashIterInit(obtable, &iter);
-    while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        if (!SCM_FALSEP(Scm_StringContains(SCM_STRING(e->key), substr)))
-            SCM_APPEND1(h, t, e->value);
-    }
-    return h;
 }
 
 /* Default prefix string. */
