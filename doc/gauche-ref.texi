@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.369 2003-02-25 02:48:43 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.370 2003-02-25 08:19:42 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7268,8 +7268,14 @@ Return value is undefined.
 @end defun
 
 @defun string-fill! string char &optional start end
+@c EN
 [R5RS+][SRFI-13] Fills @var{string} by @var{char}.  Optional
 @var{start} and @var{end} limits the effective area.
+@c JP
+[R5RS+][SRFI-13] @var{string} を @var{char} で埋めます。
+オプションの @var{start} と @var{end} は、影響を受ける領域を
+制限します。
+@c COMMON
 @example
 (string-fill! "orange" #\X)
   @result{} "XXXXXX"
@@ -7279,16 +7285,30 @@ Return value is undefined.
 @end defun
 
 @defun string-join strs &optional delim grammer
+@c EN
 [SRFI-13] Concatenate strings in the list @var{strs},
 with a string @var{delim} as `glue'.
 
 The argument @var{grammer} may be one of the following symbol
 to specify how the strings are concatenated.
+@c JP
+[SRFI-13] リスト @var{strs} 中にある文字列を、文字列 @var{delim} を'糊'
+として連結します。
+
+引数 @var{grammer} は、文字列がどのように連結されるかを指定する
+シンボルで、以下のうちの一つです。
+@c COMMON
 @table @code
 @item infix
+@c EN
 Use @var{delim} between each string.  This mode is default.
 Note that this mode introduce ambiguity when @var{strs}
 is an empty string or a list with a null string.
+@c JP
+それぞれの文字列の間に @var{delim} を使います。このモードが
+デフォルトです。@var{strs} が空文字列かヌル文字列を含むリスト
+である場合は、曖昧に(適当に)動作します。
+@c COMMON
 @example
 (string-join '("apple" "mango" "banana") ", ") 
   @result{} "apple, mango, banana"
@@ -7298,10 +7318,19 @@ is an empty string or a list with a null string.
   @result{} ""
 @end example
 @item strict-infix
+@c EN
 Works like @code{infix}, but empty list is not allowed to @var{strs},
 thus avoiding ambiguity.
+@c JP
+@code{infix} のように動作しますが、@var{strs} には空リストは
+許されません。したがって、曖昧さはありません。
+@c COMMON
 @item prefix
+@c EN
 Use @var{delim} before each string.
+@c JP
+@var{delim} をそれぞれの文字列の前に補います。
+@c COMMON
 @example
 (string-join '("usr" "local" "bin") "/" 'prefix)
   @result{} "/usr/local/bin"
@@ -7311,7 +7340,11 @@ Use @var{delim} before each string.
   @result{} "/"
 @end example
 @item suffix
+@c EN
 Use @var{delim} after each string.
+@c JP
+@var{delim} をそれぞれの文字列の後ろに補います。
+@c COMMON
 @example
 (string-join '("a" "b" "c") "&" 'suffix)
   @result{} "a&b&c&"
@@ -7325,38 +7358,66 @@ Use @var{delim} after each string.
 @end defun
 
 @defun string-scan string item &optional return
+@c EN
 Scan @var{item} (either a string or a character) in @var{string}.
 The @var{return} argument specifies what value should be returned
 when @var{item} is found in @var{string}.  It must be one of the
 following symbols.
+@c JP
+@var{string} にある @var{item} (文字列あるいは文字)を探します。
+引数 @var{return} は、@var{string} 中に @var{item} が見つかった
+場合にどの値が返されるかを指定します。それは以下のシンボルのうちの
+一つでなければなりません。
+@c COMMON
 
 @table @code
 @item index
+@c EN
 Returns the index in @var{string} if @var{item} is found, or @code{#f}.
 This is the default behavior.
+@c JP
+@var{item} が見つかった場合は@var{string} 内でのインデックス、
+そうでなければ @code{#f} を返します。これがデフォルトの振る舞いです。
+@c COMMON
 @example
 (string-scan "abracadabra" "ada") @result{} 5
 (string-scan "abracadabra" #\c) @result{} 4
 (string-scan "abracadabra" "aba") @result{} #f
 @end example
 @item before
+@c EN
 Returns a substring of @var{string} before @var{item}, or
 @code{#f} if @var{item} is not found.
+@c JP
+@var{item} よりも前にある @var{string} の部分文字列、あるいは
+@var{item} が見つからなければ @code{#f} を返します。
+@c COMMON
 @example
 (string-scan "abracadabra" "ada" 'before) @result{} "abrac"
 (string-scan "abracadabra" #\c 'before) @result{} "abra"
 @end example
 @item after
+@c EN
 Returns a substring of @var{string} after @var{item}, or
 @code{#f} if @var{item} is not found.
+@c JP
+@var{item} より後ろにある @var{string} の部分文字列、あるいは
+@var{item} が見つからなければ @code{#f} を返します。
+@c COMMON
 @example
 (string-scan "abracadabra" "ada" 'after) @result{} "bra"
 (string-scan "abracadabra" #\c 'after) @result{} "adabra"
 @end example
 @item before*
+@c EN
 Returns a substring of @var{string} before @var{item}, and
 the substring after it.  If @var{item} is not found, returns
 @code{(values #f #f)}.
+@c JP
+@var{item} の前にある @var{string} の部分文字列と後ろにある
+@var{string} の部分文字列を返します。@var{item} が見つからない場合は、
+@code{(values #f #f)} を返します。
+@c COMMON
 @example
 (string-scan "abracadabra" "ada" 'before*)
   @result{} "abrac" @r{and} "adabra"
@@ -7364,9 +7425,15 @@ the substring after it.  If @var{item} is not found, returns
   @result{} "abra" @r{and} "cadabra"
 @end example
 @item after*
+@c EN
 Returns a substring of @var{string} up to the end of @var{item},
 and the rest.  If @var{item} is not found, returns
 @code{(values #f #f)}.
+@c JP
+@var{string} のうち、@var{item} の終端までの部分文字列とその残りを
+返します。@var{item} が見つからなかった場合は、@code{(values #f #f)}
+を返します。
+@c COMMON
 @example
 (string-scan "abracadabra" "ada" 'after*)
   @result{} "abracada" @r{and} "bra"
@@ -7374,9 +7441,15 @@ and the rest.  If @var{item} is not found, returns
   @result{} "abrac" @r{and} "adabra"
 @end example
 @item both
+@c EN
 Returns a substring of @var{string} before @var{item} and
 after @var{item}.  If @var{item} is not found, returns
 @code{(values #f #f)}.
+@c JP
+@var{string} のうち、@var{item} の前と @var{item} の後ろの
+部分文字列を返します。@var{item} が見つからない場合、
+@code{(values #f #f)} を返します。
+@c COMMON
 @example
 (string-scan "abracadabra" "ada" 'both)
   @result{} "abrac" @r{and} "bra"
@@ -7387,6 +7460,7 @@ after @var{item}.  If @var{item} is not found, returns
 @end defun
 
 @defun string-split string splitter
+@c EN
 Splits @var{string} by @var{splitter} and returns a list of strings.
 @var{splitter} can be a character, a character set, a string,
 a regexp, or a procedure.
@@ -7399,6 +7473,19 @@ that are member of the character set are used as a delimiter.
 If a procedure is given to @var{splitter}, it is called for each
 character in @var{string}, and the consecutive characters that caused
 @var{splitter} to return a true value are used as a delimiter.
+@c JP
+@var{string} を @var{splitter} で分割し、文字列のリストを返します。
+@var{splitter} には、文字、文字セット、文字列、正規表現、手続きが
+使えます。
+
+@var{splitter} が文字の場合、その文字がデリミタとして使われます。
+
+@var{splitter} が文字セットの場合は、その文字セットに含まれる文字の
+連続がデリミタとして使われます。
+
+@var{splitter} に手続きが与えられた場合、@var{string} にある各文字に
+対してその手続きが呼ばれ、@var{splitter} が真の値を返すような連続した
+文字群がデリミタとして使われます。
 @c COMMON
 
 @example
@@ -7415,10 +7502,16 @@ character in @var{string}, and the consecutive characters that caused
 (string-split ""    #\/) @result{} ("")
 @end example
 
+@c EN
 Note: When @var{splitter} is a char-set, @code{string-split} is
 equivalent to @code{string-tokenize} except the meaning of the
 char-set is reversed
 (@xref{SRFI-13 other string operations}).
+@c JP
+注意: @var{splitter} が文字セットの場合、@code{string-split} は、
+文字セットが反転されることを除いて、@code{string-tokenize} と
+等価です。(@ref{SRFI-13 other string operations}参照)
+@c COMMON
 @end defun
 
 @node String Pointers, Incomplete strings, String utilities, Strings
