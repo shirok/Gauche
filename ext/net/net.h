@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.2 2001-05-25 09:07:24 shirok Exp $
+ *  $Id: net.h,v 1.3 2001-06-12 10:20:45 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -22,8 +22,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/un.h>
 #include <gauche.h>
+#include <errno.h>
 #include "netconfig.h"
 
 #ifdef __cplusplus
@@ -40,11 +42,8 @@ extern "C" {
 
 typedef struct ScmSockAddrRec {
     SCM_HEADER;
-    union {
-        struct sockaddr common;
-        struct sockaddr_in addr_in;
-        struct sockaddr_un addr_un;
-    } addr;
+    int addrlen;
+    struct sockaddr addr;
 } ScmSockAddr;
 
 extern ScmClass Scm_SockAddrClass;
@@ -52,10 +51,14 @@ extern ScmClass Scm_SockAddrClass;
 #define SCM_SOCKADDR(obj)     ((ScmSockAddr*)(obj))
 #define SCM_SOCKADDRP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOCKADDR)
 
-void Scm_StringToSockAddr(ScmString *address, ScmSockAddr *result);
+#define SCM_SOCKADDR_FAMILY(obj)   SCM_SOCKADDR(obj)->addr.sa_family
 
-ScmObj Scm_MakeSockAddrInet(ScmString *host, ScmString *port);
-ScmObj Scm_MakeSockAddrUnix(ScmString *path);
+int    Scm_SockAddrP(ScmObj obj);
+ScmObj Scm_SockAddrName(ScmSockAddr *addr);
+ScmObj Scm_SockAddrFamily(ScmSockAddr *addr);
+ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *addr, int len);
+
+#define SCM_SOCKADDR_MAXLEN    128
 
 /*------------------------------------------------------------------
  * Socket
@@ -65,7 +68,7 @@ typedef struct ScmSocketRec {
     SCM_HEADER;
     int fd;                     /* -1 if closed */
     int status;
-    struct sockaddr *address;
+    ScmSockAddr *address;
     ScmPort *inPort;
     ScmPort *outPort;
     ScmString *name;
@@ -92,8 +95,8 @@ extern ScmObj Scm_SocketClose(ScmSocket *s);
 extern ScmObj Scm_SocketInputPort(ScmSocket *s);
 extern ScmObj Scm_SocketOutputPort(ScmSocket *s);
 
-extern ScmObj Scm_SocketBind(ScmSocket *s, ScmObj address);
-extern ScmObj Scm_SocketConnect(ScmSocket *s);
+extern ScmObj Scm_SocketBind(ScmSocket *s, ScmSockAddr *addr);
+extern ScmObj Scm_SocketConnect(ScmSocket *s, ScmSockAddr *addr);
 extern ScmObj Scm_SocketListen(ScmSocket *s, int backlog);
 extern ScmObj Scm_SocketAccept(ScmSocket *s);
 

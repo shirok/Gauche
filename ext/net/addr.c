@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.1 2001-06-12 09:46:43 shirok Exp $
+ *  $Id: addr.c,v 1.2 2001-06-12 10:20:45 shirok Exp $
  */
 
 #include "net.h"
@@ -49,6 +49,11 @@ void sockaddr_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, "#<sockaddr%S %S>",
                Scm_SockAddrFamily(SCM_SOCKADDR(obj)),
                Scm_SockAddrName(SCM_SOCKADDR(obj)));
+}
+
+int Scm_SockAddrP(ScmObj obj)
+{
+    return Scm_SubtypeP(Scm_ClassOf(obj), SCM_CLASS_SOCKADDR);
 }
 
 /* C interface of sockaddr-name and sockaddr-family */
@@ -112,6 +117,7 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
 
 typedef struct {
     SCM_HEADER;
+    int addrlen;
     struct sockaddr_un addr;
 } scm_sockaddr_un;
 
@@ -140,6 +146,7 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
         memcpy(addr->addr.sun_path, SCM_STRING_START(path), size);
         addr->addr.sun_path[size] = '\0';
     }
+    addr->addrlen = SUN_LEN(&addr->addr);
     return SCM_OBJ(addr);
 }
 
@@ -174,6 +181,7 @@ static SCM_DEFINE_METHOD(sockaddr_un_family_rec, &Scm_GenericSockAddrFamily,
 
 typedef struct {
     SCM_HEADER;
+    int addrlen;
     struct sockaddr_in addr;
 } scm_sockaddr_in;
 
@@ -214,6 +222,7 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     } else {
         Scm_Error("bad :host parameter: %S", host);
     }
+    addr->addrlen = sizeof(struct sockaddr_in);
     return SCM_OBJ(addr);
 }
 
@@ -256,7 +265,7 @@ static SCM_DEFINE_METHOD(sockaddr_in_family_rec, &Scm_GenericSockAddrFamily,
  * Initialization stuff
  */
 
-void Scm__InitNetAddr(ScmModule *mod)
+void Scm_Init_NetAddr(ScmModule *mod)
 {
     key_unknown   = SCM_MAKE_KEYWORD("unknown");
     key_inet      = SCM_MAKE_KEYWORD("inet");

@@ -12,7 +12,7 @@ SCMFILES = net.scm
 HEADERS = 
 
 TARGET = net.so
-OBJS = net.o netlib.o
+OBJS = net.o addr.o netlib.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 	netconfig.h netlib.c
 
