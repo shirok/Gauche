@@ -890,7 +890,7 @@ The following method returns the sum of all the integer values.
 次の例は、データベース中の整数の値を全て加算します。
 @c COMMON
 @example
-(dbm-fold dbm (lambda (k v r) (if (integer? v) (+ v r) r) 0))
+(dbm-fold dbm (lambda (k v r) (if (integer? v) (+ v r) r)) 0)
 @end example
 @end deffn
 
