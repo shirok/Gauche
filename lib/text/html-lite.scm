@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: html-lite.scm,v 1.8 2002-03-01 18:57:16 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.9 2003-02-06 22:03:20 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -72,10 +72,10 @@
           (receive (attr args) (get-attr args '())
             (unless (null? args)
               (error "element ~s can't have content: ~s" args))
-            (list "<" name attr ">\n")))
+            (list "<" name attr ">")))
         (lambda args
           (receive (attr args) (get-attr args '())
-            (list "<" name attr ">" args "</" name ">\n"))))))
+            (list "<" name attr ">" args "\n</" name ">"))))))
 
 (define-macro (define-html-elements . elements)
   (define (make-scheme-name name)
