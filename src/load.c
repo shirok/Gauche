@@ -12,12 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.22 2001-03-07 06:58:54 shiro Exp $
+ *  $Id: load.c,v 1.23 2001-03-08 10:18:43 shiro Exp $
  */
 
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
+#include <ctype.h>
 #include "gauche.h"
 #include "gauche/arch.h"
 
@@ -30,10 +32,10 @@
  */
 
 /* To peek Scheme variable from C */
-static ScmGloc *load_path_rec;       /* *load-path*       */
-static ScmGloc *load_next_rec;       /* *load-next*       */
-static ScmGloc *load_history_rec;    /* *load-history*    */
-static ScmGloc *load_filename_rec;   /* *load-filename*   */
+static ScmGloc *load_path_rec;       /* *load-path*         */
+static ScmGloc *load_next_rec;       /* *load-next*         */
+static ScmGloc *load_history_rec;    /* *load-history*      */
+static ScmGloc *load_port_rec;       /* *load-port*         */
 static ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
 
 /*--------------------------------------------------------------------
@@ -53,7 +55,8 @@ static ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
 struct load_packet {
     ScmPort *port;
     ScmModule *prev_module;
-    ScmObj prev_name;
+    ScmObj prev_port;
+    ScmObj prev_history;
 };
 
 /* Clean up */
@@ -62,7 +65,8 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     struct load_packet *p = (struct load_packet *)data;
     Scm_ClosePort(p->port);
     Scm_SelectModule(p->prev_module);
-    load_filename_rec->value = p->prev_name;
+    load_port_rec->value = p->prev_port;
+    load_history_rec->value = p->prev_history;
     return SCM_UNDEFINED;
 }
 
@@ -88,6 +92,7 @@ static ScmObj load_body(ScmObj *args, int nargs, void *data)
 ScmObj Scm_VMLoadFromPort(ScmPort *port)
 {
     struct load_packet *p;
+    ScmObj port_info;
     
     if (!SCM_IPORTP(port))
         Scm_Error("input port required, but got: %S", port);
@@ -97,8 +102,17 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
     p = SCM_NEW(struct load_packet);
     p->port = port;
     p->prev_module = Scm_CurrentModule();
-    p->prev_name = load_filename_rec->value;
-    load_filename_rec->value = Scm_PortName(port);
+    p->prev_port = load_port_rec->value;
+    p->prev_history = load_history_rec->value;
+
+    load_port_rec->value = SCM_OBJ(port);
+    if (SCM_PORTP(p->prev_port)) {
+        port_info = SCM_LIST2(p->prev_port,
+                              Scm_MakeInteger(Scm_PortLine(SCM_PORT(p->prev_port))));
+    } else {
+        port_info = SCM_LIST1(SCM_FALSE);
+    }
+    load_history_rec->value = Scm_Cons(port_info, load_history_rec->value);
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
@@ -272,6 +286,53 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * Dynamic link
  */
 
+/* Problem of transitive dynamic linking:
+ *
+ * Suppose you wrote a useful extention library for Gauche, named useful.so.
+ * It can be loaded into Gauche by dynamic linking feature.   Then, the 
+ * other person wrote another extention library, another.so, from which
+ * he wants to call a C function defined in useful.so.  What shall he do?
+ * Since generally, symbols in dlopen-ed useful.so is not visible from
+ * other dlopen-ed libraries.  Using RTLD_GLOBAL in Scm_DynLoad allows
+ * another.so to see global symbols in useful.so, but do we really want
+ * to open all of the global symbols of dynloaded libraries?
+ * Furthermore, how can another.so ensure useful.so has been loaded before it?
+ * 
+ * The other option is to name an extention library lib*.so, if it exposes
+ * C-level functions meant to be called by the others.  Using the above
+ * example, useful.so should be libuseful.so, and when the other person
+ * compiles another.so, he/she specify "`gauche-config -L` -luseful".
+ * Then another.so can see libuseful.so, and the latter is loaded
+ * automatically (as far as LD_LIBRARY_PATH contains the location of
+ * libuseful.so) if it has not already been loaded.
+ *
+ * In initialize routine of another.so, he/she must call Scm_Init_libuseful()
+ * as well, to ensure the initialization of the useful module.
+ * Consequently, Scm_Init_* function should be prepared to be called more than
+ * one time.
+ */
+
+#ifdef HAVE_DLFCN_H
+static const char *get_dynload_initfn(const char *filename)
+{
+    const char *head, *tail, *s;
+    char *name, *d;
+    head = strrchr(filename, '/');
+    if (head == NULL) head = filename;
+    else head++;
+    tail = strchr(head, '.');
+    if (tail == NULL) tail = filename + strlen(filename);
+
+    name = SCM_NEW_ATOMIC2(char *, tail-head+1);
+    for (s = head, d = name; s < tail; s++, d++) {
+        if (isalnum(*s)) *d = tolower(*s);
+        else *d = '_';
+    }
+    *d = '\0';
+    return name;
+}
+#endif /* HAVE_DLFCN_H */
+
 /* TODO: keep catalog of loaded object to avoid loading the same object
    more than once */
 ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
@@ -280,16 +341,11 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
     ScmObj truename, load_paths = Scm_GetDynLoadPath();
     void *handle;
     void (*func)(void);
-    const char *initname;
+    const char *cpath, *initname;
 
-    if (SCM_STRINGP(initfn)) {
-        initname = Scm_GetStringConst(SCM_STRING(initfn));
-    } else {
-        initname = "Scm_DLInit";
-    }
-    
     truename = Scm_FindFile(filename, &load_paths, TRUE);
-    handle = dlopen(Scm_GetStringConst(SCM_STRING(truename)), RTLD_LAZY);
+    cpath = Scm_GetStringConst(SCM_STRING(truename));
+    handle = dlopen(cpath, RTLD_LAZY);
     if (handle == NULL) {
         /* TODO: check if dlerror() is available on all platforms */
         const char *err = dlerror();
@@ -299,6 +355,12 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
             Scm_Error("failed to link %S dynamically: %s", truename, err);
         }
     }
+    if (SCM_STRINGP(initfn)) {
+        initname = Scm_GetStringConst(SCM_STRING(initfn));
+    } else {
+        initname = get_dynload_initfn(cpath);
+    }
+    
     func = (void(*)(void))dlsym(handle, initname);
     if (func == NULL) {
         dlclose(handle);
@@ -387,5 +449,5 @@ void Scm__InitLoad(void)
         SCM_LIST3(curdir, sitearchdir, archdir));
     DEF(load_history_rec, SCM_SYM_LOAD_HISTORY, SCM_NIL);
     DEF(load_next_rec,    SCM_SYM_LOAD_NEXT, SCM_NIL);
-    DEF(load_filename_rec,SCM_SYM_LOAD_FILENAME, SCM_FALSE);
+    DEF(load_port_rec,    SCM_SYM_LOAD_PORT, SCM_FALSE);
 }
