@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.146 2002-01-24 20:44:17 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.147 2002-01-25 11:13:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7562,12 +7562,26 @@ function signals an error.
 @subsection Signal
 @c NODE  シグナル
 
-In Gauche, you can write signal handlers in Scheme.
+Gauche can send out POSIX signals to the other processes
+(including itself) and can handle the incoming signals.
 
+@menu
+* Signals and signal sets::     
+* Sending signals::             
+* Handling signals::            
+@end menu
 
+@node Signals and signal sets, Sending signals, Signal, Signal
+@subsubsection Signals and signal sets
+@c NODE シグナルとシグナルセット
 
+POSIX signals are referred by its signal number (a small integer)
+defined on the system.
+Variables are pre-defined to the system's signal number.
+System's signal numbers may be architecture dependent, so you should
+use those variables rather than using literal integers.
 
-@defvar SIGABRT
+@defvar  SIGABRT
 @defvarx SIGALRM
 @defvarx SIGCHLD
 @defvarx SIGCONT
@@ -7586,8 +7600,60 @@ In Gauche, you can write signal handlers in Scheme.
 @defvarx SIGTTOU
 @defvarx SIGUSR1
 @defvarx SIGUSR2
-These variables are bound to the corresponding signal numbers.
+These variables are bound to the signal numbers of POSIX signals.
 @end defvar
+
+@defvar  SIGTRAP
+@defvarx SIGIOT
+@defvarx SIGBUS
+@defvarx SIGSTKFLT
+@defvarx SIGURG
+@defvarx SIGXCPU
+@defvarx SIGXFSZ
+@defvarx SIGVTALRM
+@defvarx SIGPROF
+@defvarx SIGWINCH
+@defvarx SIGPOLL
+@defvarx SIGIO
+@defvarx SIGPWR
+These variables are bound to the signal numbers of system-dependent
+signals.  Not all of them may be defined on some systems.
+@end defvar
+
+Besides each signal numbers, you can refer to a set of signals
+using @code{<sys-sigset>} object.  It is used in the low-level
+handlers inside Gauche and usual applications may not need to use it.
+
+@deftp {Class} <sys-sigset>
+@clindex sys-sigset
+A set of signals.   An empty sigset can be created by
+@example
+(make <sys-sigset>)
+@end example
+@end deftp
+
+@defun sys-sigset-add! sigset signal @dots{}
+@defunx sys-sigset-delete! sigset signal @dots{}
+@var{sigset} must be a @code{<sys-sigset>} object.
+Those procedures adds and removes the specified signals from
+@var{sigset} respectively, and returns the result.  @var{sigset} itself
+is also modified.
+
+@var{signal} may be either a signal number, another @code{<sys-sigset>}
+object, or @code{#t} for all available signals.
+@end defun
+
+@defun sys-signal-name signal
+Returns the human-readable name of the signal.
+@end defun
+
+
+@node Sending signals, Handling signals, Signals and signal sets, Signal
+@subsubsection Sending signals
+@c NODE シグナルの送出
+
+To send a signal, you can use @code{sys-kill} which works like
+@code{kill(2)}.
 
 @defun sys-kill pid sig
 [POSIX] Sends a signal @var{sig} to the specified process.  @var{sig}
@@ -7604,6 +7670,65 @@ If @var{pid} is less than -1, the signal is sent to every process in
 the process group @var{-pid}.
 @end itemize
 @end defun
+
+There's no Scheme equivalence for @code{raise()}, but you can use
+@code{(sys-kill (sys-getpid) @var{sig})}.
+
+
+@node Handling signals,  , Sending signals, Signal
+@subsubsection Handling signals
+@c NODE シグナルの処理
+
+You can set one or more signal handlers in Scheme,
+using the following @code{with-signal-handlers} macro.
+The list of "active" handlers are considered as a part of
+dynamic environment; i.e. if you exit from its dynamic scope
+by call/cc the handlers are uninstalled, and if you re-enter there
+the handlers are reinstalled.
+
+When you're using the @code{gosh} interpreter, all the signals
+except @code{SIGABRT}, @code{SIGILL}, @code{SIGKILL}, @code{SIGCONT},
+@code{SIGSTOP}, @code{SIGSEGV} and @code{SIGCHLD} can be handled
+in Scheme.  If no handlers are available when a signal is delivered,
+the default handler is called, which raises an error.
+
+If you're using Gauche embedded in some other application,
+it may redefine the set of signals handleable by Gauche.
+
+@emph{Note:} Sometimes it is useful to catch @code{SIGCHLD}.
+Currently it interferes the internal mechanism of Gauche
+so it is ignored.  It is purely an implementation restriction
+that should be removed later.
+
+Note that when Gauche's VM gets a signal it just queues the
+signal, and handles them when evaluation of Scheme expression
+is safe.  So the invocation of handler may be delayed from
+the actual delivery of the signal.
+
+@defmac with-signal-handlers (handler-clause @dots{}) thunk
+Adds signal handlers specified in @var{handler-clause}s, then
+call @var{thunk}.  After the control leaves @var{thunk},
+the previous signal handlers are restored.
+
+@var{handler-clause} may have one of the following forms.
+@table @code
+@item (@var{signals} @var{expr} @dots{})
+When one of @var{signals} is delivered, @var{expr} @dots{} are
+evaluated.
+
+@item (@var{signals} => @var{proc})
+When one of @var{signals} is delivered, a procedure @var{proc} is
+called with one argument, the delivered signal.
+@end table
+
+In @var{handler-clause}, @var{signals} may be an expression that
+will yield either a signal, a list of signals, or a @code{<sys-sigset>}
+object.
+
+
+
+
+@end defmac
 
 
 @node System Inquiry, Time, Signal, System interface
