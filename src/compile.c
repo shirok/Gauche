@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.67 2001-10-30 09:00:30 shirok Exp $
+ *  $Id: compile.c,v 1.68 2001-12-04 08:52:03 shirok Exp $
  */
 
 #include "gauche.h"
@@ -112,7 +112,6 @@ enum {
 };
 
 /*================================================================
- *
  * Compiler
  *
  *   Statically analyzes given form recursively, converting it
@@ -122,11 +121,12 @@ enum {
 /* Semantics of global (free) reference:
  *
  *   We compile each toplevel form one-by-one.  Since the free
- *   reference binding can be inserted into this module after the
- *   current toplevel form, we can't resolve binding at the compilation time.
- *   (If we had only one module, we could insert bindings whenever
- *   we saw free variables; in our hierarchical module system, we can't
- *   do that.)
+ *   reference binding can be inserted into the module after the
+ *   current toplevel form, we can't resolve such bindings at the
+ *   compilation time.  (If we had only one module, we could insert
+ *   bindings whenever we saw free variables; in our hierarchical
+ *   module system, we don't know if that binding will exist in the
+ *   current module or the imported module).
  *
  *   So we just put a [GREF <id>] or [GSET <id>] in the compiled code,
  *   where <id> is an identifier.
