@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.15 2001-04-26 07:06:00 shiro Exp $
+ *  $Id: char.c,v 1.16 2001-05-28 11:55:48 shirok Exp $
  */
 
 #include <ctype.h>
@@ -40,6 +40,10 @@ ScmObj Scm_CharEncodingName(void)
 #include "gauche/char_none.h"
 #endif
 
+const char **Scm_SupportedCharacterEncodings(void)
+{
+    return supportedCharacterEncodings;
+}
 
 /*=======================================================================
  * Character set (cf. SRFI-14)
