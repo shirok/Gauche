@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.200 2002-05-09 02:45:19 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.201 2002-05-09 06:22:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2403,6 +2403,19 @@ where @var{var}s are already bound (to an undefined value, initially).
 @end example
 @end defspec
 
+@defmac let1 var expr body @dots{}
+@c EN
+A convenient macro when you have only one variable.
+Expanded as follows.
+@c JP
+変数が一つしか無い場合の便利なマクロです。次のように展開されます。
+@c COMMON
+
+@example
+(let ((@var{var} @var{expr})) @var{body} @dots{})
+@end example
+@end defmac
+
 @defspec receive formals expression body @dots{}
 [SRFI-8]
 @c EN
@@ -2507,6 +2520,30 @@ Here's a trickier example:
   (+ x y))
 @end example
 @end defspec
+
+@defmac begin0 exp0 exp1 @dots{}
+@c EN
+Evaluates @var{exp0}, @var{exp1}, @dots{}, then returns the result(s)
+of @var{exp0}.   The name is taken from MzScheme.
+This is called @code{prog1} in CommonLisp.   
+
+Unlike @code{begin}, this @emph{does} creates a "block",
+for the @code{begin1} form is expanded as follows.
+@c JP
+@var{exp0}, @var{exp1}, @dots{} を評価し、@var{exp0}の結果を返します。
+この名前はMzSchemeから取られました。これはCommonLispで
+@code{prog1}と呼ばれているものです。
+
+@code{begin}と違って、これは「ブロック」を構成します。
+@code{begin1}フォームは次のように展開されるからです。
+@c COMMON
+
+@example
+(receive tmp @var{exp0}
+  @var{exp1} @dots{}
+  (apply values tmp))
+@end example
+@end defmac
 
 
 @node Iteration, Quasiquotation, Sequencing, Core syntax
@@ -9588,11 +9625,13 @@ omitted, they are set to the current time.
 
 @defun sys-chdir dir
 [POSIX]
-An interface to @code{chdir(2)}.  Change the process's current
-working directory to @var{dir}.   An error is signalled if
-@var{dir} doesn't exist, or you don't have enough permission to
-access @var{dir}.
-See also @code{current-directory} (@xref{Directory utiilties}).
+@c EN
+An interface to @code{chdir(2)}. 
+See also @code{current-directory} (@xref{Directory utilities}).
+@c JP
+@code{chdir(2)}へのインタフェースです。
+@code{current-direoctry}(@ref{Directory utilities})も参照して下さい。
+@c COMMON
 @end defun
 
 @defun sys-pipe &keyword (buffering :line)
@@ -10114,7 +10153,7 @@ Returns the domain name.  If the system doesn't have getdomainname(),
 If the current working directory couldn't be obtained from the system,
 an error is signalled.   See also @code{sys-chdir}
  (@xref{Other file operations}), @code{current-directory}
-(@xref{Directory utiilties}).
+(@xref{Directory utilities}).
 @end defun
 
 @defun sys-getgid
