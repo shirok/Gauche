@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.6 2002-06-09 09:38:42 shirok Exp $
+ *  $Id: jconv.c,v 1.7 2002-06-10 00:26:09 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -1295,6 +1295,7 @@ static int jconv_2tier(ScmConvInfo *info, const char **iptr, int *iroom,
 }
 
 /* case (5) */
+#ifdef HAVE_ICONV_H
 static int jconv_iconv(ScmConvInfo *info, const char **iptr, int *iroom,
                        char **optr, int *oroom)
 {
@@ -1304,10 +1305,9 @@ static int jconv_iconv(ScmConvInfo *info, const char **iptr, int *iroom,
 #endif
     r = iconv(info->handle, (char **)iptr, iroom, optr, oroom);
     if (r == (size_t)-1) {
-        if (errno == EILSEQ) return ILLEGAL_SEQUENCE;
         if (errno == EINVAL) return INPUT_NOT_ENOUGH;
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
-        Scm_Panic("jconv_iconv: unknown error number %d\n", errno);
+	return ILLEGAL_SEQUENCE;
     } else {
         return (int)r;
     }
@@ -1325,6 +1325,7 @@ static int jconv_iconv_reset(ScmConvInfo *info, char *optr, int oroom)
         return oroom_prev - oroom;
     }
 }
+#endif /*HAVE_ICONV_H*/
 
 /*------------------------------------------------------------------
  * JCONV_OPEN

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.30 2002-06-09 09:38:41 shirok Exp $
+ *  $Id: charconv.c,v 1.31 2002-06-10 00:26:09 shirok Exp $
  */
 
 #include <string.h>
@@ -20,12 +20,6 @@
 #include <gauche.h>
 #include <gauche/extend.h>
 #include "charconv.h"
-
-#ifdef ICONV_CONST_INPUT
-#define INBUFCAST /*none*/
-#else
-#define INBUFCAST (char **)
-#endif
 
 #define DEFAULT_CONVERSION_BUFFER_SIZE 1024
 
@@ -159,11 +153,11 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     inroom = insize;
     outroom = SCM_PORT_BUFFER_ROOM(port);
   retry:
-#ifdef DEBUG
+#ifdef JCONV_DEBUG
     fprintf(stderr, "=> in(%p)%d out(%p)%d\n", inbuf, insize, outbuf, outroom);
 #endif
-    result = jconv(info, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
-#ifdef DEBUG
+    result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
+#ifdef JCONV_DEBUG
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
             result, inbuf, inroom, outbuf, outroom);
 #endif
@@ -335,13 +329,13 @@ static int conv_output_flusher(ScmPort *port, int mincnt)
         outbuf = info->ptr;
         outsize = info->bufsiz - (info->ptr - info->buf);
         outroom = outsize;
-#ifdef DEBUG
+#ifdef JCONV_DEBUG
         fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
                 inbuf, len, inroom,
                 info->buf, info->ptr, outroom);
 #endif
-        result = jconv(info, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
-#ifdef DEBUG
+        result = jconv(info, &inbuf, &inroom, &outbuf, &outroom);
+#ifdef JCONV_DEBUG
         fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
                 result, inbuf, inroom, outbuf, outroom);
 #endif
