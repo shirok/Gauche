@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.68 2001-12-04 08:52:03 shirok Exp $
+ *  $Id: compile.c,v 1.69 2001-12-18 11:02:29 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1687,7 +1687,7 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
     }
     /* TODO: insert source-info */
     current = Scm_CurrentModule();
-    SCM_PUSH_ERROR_HANDLER {
+    SCM_UNWIND_PROTECT {
         Scm_SelectModule(SCM_MODULE(module));
         SCM_FOR_EACH(body, body) {
             ADDCODE(compile_int(SCM_CAR(body), env,
@@ -1697,9 +1697,9 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
     }
     SCM_WHEN_ERROR {
         Scm_SelectModule(SCM_MODULE(current));
-        SCM_PROPAGATE_ERROR;
+        SCM_NEXT_HANDLER;
     }
-    SCM_POP_ERROR_HANDLER;
+    SCM_END_PROTECT;
     Scm_SelectModule(SCM_MODULE(current));
 
     /* if the body is empty, just return the module itself. */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.22 2001-12-07 07:31:30 shirok Exp $
+ *  $Id: error.c,v 1.23 2001-12-18 11:02:29 shirok Exp $
  */
 
 #include <errno.h>
@@ -23,19 +23,16 @@
 /*-----------------------------------------------------------
  * Exception class hierarchy
  *
- * The terminology about exceptions and errors are not well
- * established across various languages.  I define them here
- * for Gauche.
- *
- * <exception> is the base class of all the "throwable" entity.
- * SRFI-18 defines the ter
- *
- *
  *  <exception>
- *     +-- <signal>
- *     +-- <error>
- *           +-- <system-error>
- *           +-- <type-error>
+ *    +- <continuable-exception>
+ *    |    +- <debug-break-exception>
+ *    |    +- <signal-exception>
+ *    +- <uncontinuable-exception>
+ *         +- <application-exit>
+ *         +- <error>
+ *              +- <simple-error>
+ *              +- <system-error>
+ *              +- <reader-error>
  */
 
 static void exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -213,7 +210,7 @@ void Scm_Error(const char *msg, ...)
     }
     Scm_VM()->runtimeFlags |= SCM_ERROR_BEING_HANDLED;
     
-    SCM_PUSH_ERROR_HANDLER {
+    SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort();
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args);
@@ -224,7 +221,7 @@ void Scm_Error(const char *msg, ...)
         /* TODO: should check continuation? */
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
-    SCM_POP_ERROR_HANDLER;
+    SCM_END_PROTECT;
     Scm_VMThrowException(e);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
@@ -241,7 +238,7 @@ void Scm_SysError(const char *msg, ...)
     int en = errno;
     ScmObj syserr = SCM_MAKE_STR_COPYING(strerror(en));
     
-    SCM_PUSH_ERROR_HANDLER {
+    SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort();
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args);
@@ -254,7 +251,7 @@ void Scm_SysError(const char *msg, ...)
         /* TODO: should check continuation */
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
-    SCM_POP_ERROR_HANDLER;
+    SCM_END_PROTECT;
     Scm_VMThrowException(e);
 }
 
@@ -267,7 +264,7 @@ ScmObj Scm_SError(ScmString *reason, ScmObj args)
 {
     volatile ScmObj e;
 
-    SCM_PUSH_ERROR_HANDLER {
+    SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort();
         ScmObj ap;
         Scm_Write(SCM_OBJ(reason), ostr, SCM_WRITE_DISPLAY);
@@ -281,7 +278,7 @@ ScmObj Scm_SError(ScmString *reason, ScmObj args)
         /* TODO: should check continuation? */
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
-    SCM_POP_ERROR_HANDLER;
+    SCM_END_PROTECT;
     return Scm_VMThrowException(e);
 }
 
@@ -290,7 +287,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
 {
     volatile ScmObj e;
 
-    SCM_PUSH_ERROR_HANDLER {
+    SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort();
         if (SCM_STRINGP(fmt)) {
             Scm_Format(ostr, SCM_STRING(fmt), args);
@@ -304,7 +301,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
         /* TODO: should check continuation? */
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
-    SCM_POP_ERROR_HANDLER;
+    SCM_END_PROTECT;
     return Scm_VMThrowException(e);
 }
 

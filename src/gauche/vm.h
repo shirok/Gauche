@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.48 2001-12-10 10:03:06 shirok Exp $
+ *  $Id: vm.h,v 1.49 2001-12-18 11:02:31 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -167,7 +167,8 @@ struct ScmVMRec {
     SCM_HEADER;
     ScmVM *parent;
     ScmModule *module;          /* current global namespace */
-    ScmCStack *cstack;     /* current escape point */
+    ScmCStack *cstack;          /* current escape point.  see the comment of
+                                   "C stack rewinding" below. */
 
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
@@ -254,13 +255,40 @@ extern void Scm__VMInsnWrite(ScmObj insn, ScmPort *port, ScmWriteContext *ctx);
 extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 /*
- * Error handling
+ * C stack rewinding
+ *  (These macros interacts with VM internals, so must be used
+ *  with care.)
  *
- *  These macros interacts with VM internals, so must be used
- *  with care.
+ *  These macros should be used if you want to guarantee certain
+ *  cleanup is called when the C-stack is "rewind".   So it's like
+ *  C-version of dynamic-wind.   The typical usage will be like
+ *  the following:
+ *
+ *   SCM_UNWIND_PROTECT {
+ *     preprocess
+ *     main operation
+ *   } SCM_WHEN_ERROR {
+ *     clean up code on abnormal situation
+ *     SCM_NEXT_HANDLER;
+ *   } SCM_END_PROTECT;
+ *   clean up code on normal situation
+ * 
+ *  Note that this construct does not install exception handler or
+ *  error handler by itself.   The handler installed by with-error-handler
+ *  or with-exception-handler is invoked, and then the SCM_WHEN_ERROR
+ *  part is called while the C stack is rewind.
+ *  If you want to handle error as well, you should install error handler
+ *  by yourself (and deinstall it in the cleanup code).
+ *  
+ *  If you don't call SCM_NEXT_HANDLER in the SCM_WHEN_ERROR clause,
+ *  the control is transferred after SCM_END_PROTECT.  It is not recommended
+ *  unless you know what you're doing.   The C stack is rewind not only
+ *  at the error situation, but also a continuation is thrown in the main
+ *  operation.  Except certain special occasions, stopping C-stack rewinding
+ *  may cause semantic inconsistency.
  */
 
-#define SCM_PUSH_ERROR_HANDLER                  \
+#define SCM_UNWIND_PROTECT                      \
     do {                                        \
        ScmCStack cstack;                        \
        cstack.prev = Scm_VM()->cstack;          \
@@ -271,7 +299,7 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 #define SCM_WHEN_ERROR                          \
        } else {
 
-#define SCM_PROPAGATE_ERROR                                     \
+#define SCM_NEXT_HANDLER                                        \
            do {                                                 \
                if (Scm_VM()->cstack->prev) {                    \
                    Scm_VM()->cstack = Scm_VM()->cstack->prev;   \
@@ -280,7 +308,7 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
                else exit(1);                                    \
            } while (0)
 
-#define SCM_POP_ERROR_HANDLER                           \
+#define SCM_END_PROTECT                                 \
        }                                                \
        Scm_VM()->cstack = Scm_VM()->cstack->prev;       \
     } while (0)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.117 2001-12-15 09:44:49 shirok Exp $
+ *  $Id: vm.c,v 1.118 2001-12-18 11:02:29 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1756,11 +1756,10 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
     }
 }
 
-/* Throw exception.
+/* Entry point of throwing exception.
  *
- * TODO: need to think over the specification of "continuable" exception.
- *       so far I assume all the exception is uncontinuable, so this routine
- *       never returns.
+ * There are 
+ *
  */
 ScmObj Scm_VMThrowException(ScmObj exception)
 {
