@@ -12,12 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.2 2001-04-26 08:23:42 shiro Exp $
+;;;  $Id: selector.scm,v 1.3 2001-04-27 08:28:14 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
 
-(use srfi-14)                           ;for char-set:whitespace
+(select-module srfi-13)
 
 (define substring/shared string-copy)  ; same in Gauche
 
@@ -53,7 +53,81 @@
              (string-take str len))
             (else str)))))
 
+(define (string-take s nchars)
+  (check-arg string? s)
+  (when (or (< nchars 0) (<= nchars (string-length s)))
+    (error "argument out of range: ~s" nchars))
+  (%maybe-substring s 0 nchars))
 
-    
+(define (string-drop s nchars)
+  (check-arg string? s)
+  (when (or (< nchars 0) (<= nchars (string-length s)))
+    (error "argument out of range: ~s" nchars))
+  (%maybe-substring s nchars))
 
-    
+(define (string-take-right s nchars)
+  (check-arg string? s)
+  (when (or (< nchars 0) (<= nchars (string-length s)))
+    (error "argument out of range: ~s" nchars))
+  (%maybe-substring s (- (string-length s) nchars)))
+
+(define (string-drop-right s nchars)
+  (check-arg string? s)
+  (when (or (< nchars 0) (<= nchars (string-length s)))
+    (error "argument out of range: ~s" nchars))
+  (%maybe-substring s 0 (- (string-length s) nchars)))
+
+(define (string-trim s . args)
+  (check-arg string? s)
+  (let-optional* args ((c/s/p #[\s]) start end)
+    (let ((pred (%get-char-pred c/s/p))
+          (sp (make-string-pointer (%maybe-substring s start end))))
+      (let loop ((ch (string-pointer-next! sp)))
+        (cond ((eof-object? ch) "")
+              ((pred ch) (loop (string-pointer-next! sp)))
+              (else (string-pointer-prev! sp)
+                    (string-pointer-substring sp :after #t))))
+      ))
+  )
+
+(define (string-trim-right s . args)
+  (check-arg string? s)
+  (let-optional* args ((c/s/p #[\s]) start end)
+    (let ((pred (%get-char-pred c/s/p))
+          (sp (make-string-pointer (%maybe-substring s start end) -1)))
+      (let loop ((ch (string-pointer-prev! sp)))
+        (cond ((eof-object? ch) "")
+              ((pred ch) (loop (string-pointer-prev! sp)))
+              (else (string-pointer-next! sp)
+                    (string-pointer-substring sp))))
+      ))
+  )
+
+(define (string-trim-both s . args)
+  (check-arg string? s)
+  (let-optional* args ((c/s/p #[\s]) start end)
+    (let ((pred (%get-char-pred c/s/p))
+          (sp (make-string-pointer (%maybe-substring s start end))))
+      (let loop ((ch (string-pointer-next! sp)))
+        (cond ((eof-object? ch) "")
+              ((pred ch) (loop (string-pointer-next! sp)))
+              (else (string-pointer-prev! sp)
+                    (let ((sp (make-string-pointer
+                               (string-pointer-substring sp :after #t) -1)))
+                      (let loop ((ch (string-pointer-prev! sp)))
+                        (cond ((eof-object? ch) "")
+                              ((pred ch) (loop (string-pointer-prev! sp)))
+                              (else (string-pointer-next! sp)
+                                    (string-pointer-substring sp))))
+                      ))))
+      ))
+  )
+
+
+
+
+
+
+
+
+
