@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.66 2001-12-02 05:56:01 shirok Exp $
+ *  $Id: class.c,v 1.67 2001-12-23 01:36:38 shirok Exp $
  */
 
 #include "gauche.h"
@@ -969,7 +969,7 @@ static ScmObj slot_accessor_name(ScmSlotAccessor *sa)
     return sa->name;
 }
 
-static ScmObj slot_accessor_name_set(ScmSlotAccessor *sa, ScmObj v)
+static void slot_accessor_name_set(ScmSlotAccessor *sa, ScmObj v)
 {
     sa->name = v;
 }
@@ -989,7 +989,7 @@ static ScmObj slot_accessor_init_keyword(ScmSlotAccessor *sa)
     return sa->initKeyword;
 }
 
-static ScmObj slot_accessor_init_keyword_set(ScmSlotAccessor *sa, ScmObj v)
+static void slot_accessor_init_keyword_set(ScmSlotAccessor *sa, ScmObj v)
 {
     sa->initKeyword = v;
 }
@@ -999,7 +999,7 @@ static ScmObj slot_accessor_init_thunk(ScmSlotAccessor *sa)
     return sa->initThunk;
 }
 
-static ScmObj slot_accessor_init_thunk_set(ScmSlotAccessor *sa, ScmObj v)
+static void slot_accessor_init_thunk_set(ScmSlotAccessor *sa, ScmObj v)
 {
     sa->initThunk = v;
 }
