@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.81 2001-10-04 11:13:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.82 2001-10-04 11:51:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2899,7 +2899,7 @@ Suppose @var{reader} returns a series of items
 @end example
 while @var{port-fold-right} returns the following:
 @example
-(fn (fn @dots{} (fn (fn knil X0) X1) @dots{} Xn-1) Xn)
+(fn X0 (fn X1 @dots{} (fn Xn knil)))
 @end example
 That is, @code{(port-fold cons '() read)} returns a reverse
 list of all the inputs, while @code{(port-fold-right cons '() read)}
