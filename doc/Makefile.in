@@ -1,4 +1,5 @@
-GENERATED = gauche-refe.texi gauche-refj.texi
+MANPAGES = gosh.1 gauche-config.1
+GENERATED = gauche-refe.texi gauche-refj.texi Makefile $(MANPAGES)
 GOSH = gosh
 INSTALL = @INSTALL@
 
@@ -8,8 +9,6 @@ INSTALL = @INSTALL@
 prefix  = @prefix@
 datadir = @datadir@
 mandir  = $(datadir)/man/man1
-
-MANPAGES = gosh.1 gauche-config.1
 
 all:
 
@@ -63,12 +62,10 @@ gauche-refj.texi : gauche-ref.texi extract
 
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
-	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi
+	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi \
 
 distclean : clean
 	rm -rf $(GENERATED)
 
 realclean : clean
-	rm -f gauche-ref*.html gauche-ref.dvi $(GENERATED)
-
-
+	rm -f gauche-ref*.html gauche-ref.dvi Makefile $(GENERATED)

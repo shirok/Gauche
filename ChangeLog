@@ -1,5 +1,6 @@
 2002-03-06  Shiro Kawai  <shiro@acm.org>
 
+	* Makefile.in, doc/Makefile.in : makes realclean really clean.
 	* doc/gosh.1.in, doc/gauche-config.1.in : added manpages.
 
 2002-03-05  Shiro Kawai  <shiro@acm.org>

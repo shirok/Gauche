@@ -51,5 +51,5 @@ realclean : clean
 	cd lib; $(MAKE) realclean
 	cd doc; $(MAKE) realclean
 	cd ext; $(MAKE) realclean
-	rm -rf $(CONFIG_GENERATED) configure INSTALL INSTALL.eucjp
+	rm -rf $(CONFIG_GENERATED) configure INSTALL INSTALL.eucjp DIST_EXCLUDE_X
 
