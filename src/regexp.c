@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.8 2001-04-16 09:42:28 shiro Exp $
+ *  $Id: regexp.c,v 1.9 2001-04-17 09:56:31 shiro Exp $
  */
 
 #include <setjmp.h>
@@ -20,10 +20,6 @@
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
-
-#ifndef CHAR_MAX
-#define CHAR_MAX 256
-#endif
 
 /* I don't like to reinvent wheels, so I looked for a regexp implementation
  * that can handle multibyte encodings and not bound to Unicode.
@@ -66,21 +62,33 @@ enum {
     RE_TRY,                     /* followed by offset.  try matching
                                    the following sequence, and if fails,
                                    jump to offset. */
-    RE_SET,                     /* followed by a number of charset */
+    RE_SET,                     /* followed by charset #.  match any char in
+                                   the charset. */
+    RE_SET1,                    /* followed by charset #.  match any char in
+                                   the charset.  guaranteed that the charset
+                                   holds only range 0-127; possible
+                                   optimization. */
+    RE_NSET1,                   /* followed by charset #.  match any char
+                                   but the ones in the charset.  guaranteed
+                                   that the charset holds only range 0-127. */
     RE_JUMP,                    /* followed by offset.  jump to that
                                    bytecode. */
     RE_FAIL,                    /* fail */
     RE_SUCCESS,                 /* success */
     RE_BEGIN,                   /* followed by a group number.  start the
                                    group. */
-    RE_END                      /* followed by a group number.  end the
+    RE_END,                     /* followed by a group number.  end the
                                    group. */
+    RE_BOL,                     /* beginning of line assertion */
+    RE_EOL,                     /* end of line assertion */
+    RE_NUM_INSN
 };
 
 /* symbols used internally */
 ScmObj sym_alt;                 /* alt */
 ScmObj sym_rep;                 /* rep */
 ScmObj sym_any;                 /* any */
+ScmObj sym_bol;                 /* bol */
 
 static ScmRegexp *make_regexp(void)
 {
@@ -95,6 +103,10 @@ static ScmRegexp *make_regexp(void)
     rx->mustMatchLen = 0;
     return rx;
 }
+
+#ifndef CHAR_MAX
+#define CHAR_MAX 256
+#endif
 
 /*=======================================================================
  * Compiler
@@ -148,16 +160,19 @@ static ScmObj last_item(struct comp_ctx *ctx, ScmObj head, ScmObj tail,
         } else {
             /* just after open parenthesis or beginning. */
             if (ch == '|') {
-                /* notimpl */
-                Scm_Error("not implemented");
+                /* insert a placeholder */
+                SCM_SET_CDR(tail, Scm_Cons(SCM_FALSE, SCM_NIL));
+                return SCM_CDR(tail);
             } else {
                 Scm_Error("bad regexp pattern: %S", ctx->pattern);
             }
         }
     } else {
         if (ch == '|') {
+            /* '(foo|' : returns the beginning of the current group */
             return SCM_CDAR(gstack);
         } else {
+            /* '(foo*' : returns the last char */
             return tail;
         }
     }
@@ -183,6 +198,20 @@ static ScmObj fold_alternatives(ScmObj head, ScmObj tail, ScmObj grpnum)
         }
     }
     return tail;
+}
+
+/* Are we at the place where '^' can be a BOL assertion?
+   NB: EOL marker '$' is treated at pass 2. */
+static int can_be_bol(ScmObj head)
+{
+    ScmObj cp;
+    if (SCM_NULLP(head)) return TRUE;
+    SCM_FOR_EACH(cp, head) {
+        if (SCM_INTP(SCM_CAR(cp))) continue; /* group */
+        if (SCM_PAIRP(SCM_CAR(cp)) && SCM_CAAR(cp) == sym_alt) continue;
+        return FALSE;
+    }
+    return TRUE;
 }
 
 /*----------------------------------------------------------------
@@ -265,6 +294,14 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             SCM_APPEND1(head, tail, re_compile_charset(rx, ctx));
             insncount++;
             continue;
+        case '^':
+            if (can_be_bol(head)) {
+                SCM_APPEND1(head, tail, sym_bol);
+                insncount++;
+                continue;
+            } else {
+                goto ordchar;
+            }
         case '\\':
             /* TODO: handle special excape sequences */
             if (ctx->rxlen <= 0)
@@ -273,6 +310,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             ch = fetch_pattern(ctx);
             /* FALLTHROUGH */
         default:
+        ordchar:
             insncount += SCM_CHAR_NBYTES(ch);
             SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
         }
@@ -312,21 +350,25 @@ static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
         }
         switch (ch) {
         case '-':
-            if (lastchar < 0) {
-                Scm_Error("bad character range spec: %S", ctx->pattern);
-            }
+            if (inrange) goto ordchar;
             inrange = TRUE;
             continue;
         case ']':
             if (inrange) {
-                SCM_ASSERT(lastchar >= 0);
-                Scm_CharSetAddRange(set, lastchar, lastchar);
-                Scm_CharSetAddRange(set, '-', '-');
+                if (lastchar >= 0) {
+                    Scm_CharSetAddRange(set, lastchar, lastchar);
+                    Scm_CharSetAddRange(set, '-', '-');
+                } else {
+                    Scm_CharSetAddRange(set, '-', '-');
+                }
             }
             break;
+        ordchar:
         default:
             if (inrange) {
-                SCM_ASSERT(lastchar >= 0);
+                if (lastchar < 0) {
+                    Scm_Error("bad character range spec: %S", ctx->pattern);
+                }
                 Scm_CharSetAddRange(set, lastchar, ch);
                 lastchar = -1;
                 inrange = FALSE;
@@ -375,23 +417,49 @@ static inline void re_compile_emit(struct comp_ctx *ctx, char code)
     ctx->code[ctx->codep++] = code;
 }
 
+/* check to see if we're at the tail of the tree */
+static int can_be_eol(ScmObj cp)
+{
+    SCM_FOR_EACH(cp, cp) {
+        /* only "end group" can appear */
+        if (!SCM_INTP(SCM_CAR(cp))) return FALSE;
+    }
+    return TRUE;
+}
+
+/* check for special case of EOL marker */
+static int eol_marker_p(ScmObj cp, int lastp, ScmObj item) 
+{
+    return (SCM_CHARP(item)
+            && SCM_CHAR_VALUE(item) == '$'
+            && can_be_eol(SCM_CDR(cp))
+            && lastp);
+}
+
 /*-------------------------------------------------------------
  * pass 2 - code generation
  */
-void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
+void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
+                      struct comp_ctx *ctx, int lastp)
 {
     ScmObj cp, item;
     ScmChar ch;
     char chbuf[SCM_CHAR_MAX_BYTES];
 
     SCM_FOR_EACH(cp, compiled) {
-        if (SCM_NULLP(cp)) break;
         item = SCM_CAR(cp);
 
         /* literal characters */
         if (SCM_CHARP(item)) {
-            /* find out the longest run of bytes */
             int nrun = 0, ocodep = ctx->codep, nb, i;
+
+            /* check for the special case for EOL handling */
+            if (eol_marker_p(cp, lastp, item)) {
+                re_compile_emit(ctx, RE_EOL);
+                continue;
+            }
+            
+            /* find out the longest run of bytes */
             re_compile_emit(ctx, RE_MATCH);
             re_compile_emit(ctx, 0); /* patched later */
             do {
@@ -400,10 +468,12 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
                 SCM_STR_PUTC(chbuf, SCM_CHAR_VALUE(item));
                 for (i=0; i<nb; i++) re_compile_emit(ctx, chbuf[i]);
                 nrun += nb;
-                if (SCM_NULLP(SCM_CDR(cp))) break;
                 cp = SCM_CDR(cp);
+                if (SCM_NULLP(cp)) break;
                 item = SCM_CAR(cp);
-            } while (SCM_CHARP(item) && nrun < CHAR_MAX);
+            } while (SCM_CHARP(item)
+                     && !eol_marker_p(cp, lastp, item)
+                     && nrun < CHAR_MAX);
             if (nrun == 1) {
                 ctx->code[ocodep] = RE_MATCH1;
                 ctx->code[ocodep+1] = ctx->code[ocodep+2];
@@ -411,7 +481,8 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
             } else {
                 ctx->code[ocodep+1] = (char)nrun;
             }
-            if (!SCM_CHARP(item)) cp = Scm_Cons(item, cp); /* pushback */
+            if (SCM_NULLP(cp)) break;
+            cp = Scm_Cons(item, cp); /* pushback */
             continue;
         }
 
@@ -430,7 +501,11 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
 
         /* charset */
         if (SCM_CHARSETP(item)) {
-            re_compile_emit(ctx, RE_SET);
+            if (SCM_CHARSET_SMALLP(item)) {
+                re_compile_emit(ctx, RE_SET1);
+            } else {
+                re_compile_emit(ctx, RE_SET);
+            }
             re_compile_emit(ctx, re_compile_charset_index(rx, item));
             continue;
         }
@@ -439,6 +514,10 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
         if (SCM_SYMBOLP(item)) {
             if (item == sym_any) {
                 re_compile_emit(ctx, RE_ANY);
+                continue;
+            }
+            if (item == sym_bol) {
+                re_compile_emit(ctx, RE_BOL);
                 continue;
             }
             /* fallback to error */
@@ -452,7 +531,7 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
                 ocodep = ctx->codep;
                 re_compile_emit(ctx, RE_TRY);
                 re_compile_emit(ctx, 0); /* will be patched */
-                re_compile_pass2(SCM_CDR(item), rx, ctx);
+                re_compile_pass2(SCM_CDR(item), rx, ctx, FALSE);
                 re_compile_emit(ctx, RE_JUMP);
                 re_compile_emit(ctx, ocodep);
                 ctx->code[ocodep+1] = ctx->codep;
@@ -469,13 +548,15 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
                     re_compile_emit(ctx, RE_TRY);
                     patchp = ctx->codep;
                     re_compile_emit(ctx, 0); /* will be patched */
-                    re_compile_pass2(SCM_CAR(clause), rx, ctx);
+                    re_compile_pass2(SCM_CAR(clause), rx, ctx,
+                                     can_be_eol(SCM_CDR(cp)));
                     re_compile_emit(ctx, RE_JUMP);
                     jumps = Scm_Cons(SCM_MAKE_INT(ctx->codep), jumps);
                     re_compile_emit(ctx, 0); /* will be patched */
                     ctx->code[patchp] = ctx->codep;
                 }
-                re_compile_pass2(SCM_CAR(clause), rx, ctx);
+                re_compile_pass2(SCM_CAR(clause), rx, ctx,
+                                 can_be_eol(SCM_CDR(cp)));
                 SCM_FOR_EACH(jumps, jumps) {
                     ctx->code[SCM_INT_VALUE(SCM_CAR(jumps))] = ctx->codep;
                 }
@@ -484,6 +565,11 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx, struct comp_ctx *ctx)
             /* fallback to error */
         }
 
+        if (SCM_FALSEP(item)) {
+            /* this is a placeholder.  do nothing. */
+            continue;
+        }
+        
         Scm_Error("internal error while rexexp compilation: item %S\n", item);
     }
 }
@@ -533,6 +619,14 @@ void Scm_RegDump(ScmRegexp *rx)
             codep++;
             printf("%4d  SET  %d\n", codep-1, rx->code[codep]);
             continue;
+        case RE_SET1:
+            codep++;
+            printf("%4d  SET1 %d\n", codep-1, rx->code[codep]);
+            continue;
+        case RE_NSET1:
+            codep++;
+            printf("%4d  NSET1 %d\n", codep-1, rx->code[codep]);
+            continue;
         case RE_JUMP:
             codep++;
             printf("%4d  JUMP %d\n", codep-1, rx->code[codep]);
@@ -550,6 +644,12 @@ void Scm_RegDump(ScmRegexp *rx)
         case RE_END:
             codep++;
             printf("%4d  END %d\n", codep-1, rx->code[codep]);
+            continue;
+        case RE_BOL:
+            printf("%4d  BOL\n", codep);
+            continue;
+        case RE_EOL:
+            printf("%4d  EOL\n", codep);
             continue;
         default:
             Scm_Error("regexp screwed up\n");
@@ -581,7 +681,7 @@ ScmObj Scm_RegComp(ScmString *pattern)
 
     cctx.code = SCM_NEW_ATOMIC2(char *, rx->numCodes*2+1);
     cctx.codemax = rx->numCodes*2+1;
-    re_compile_pass2(compiled, rx, &cctx);
+    re_compile_pass2(compiled, rx, &cctx, TRUE);
     re_compile_emit(&cctx, RE_SUCCESS);
     rx->code = cctx.code;
     rx->numCodes = cctx.codep;
@@ -616,6 +716,7 @@ struct match_list {
 struct match_ctx {
     ScmRegexp *rx;
     const char *codehead;
+    const char *input;          /* start of input */
     const char *stop;           /* end of input */
     const char *last;
     struct match_list *matches;
@@ -655,8 +756,8 @@ void re_exec_rec(const char *code,
             if (*code++ != *input++) return;
             continue;
         case RE_ANY:
-            param = SCM_CHAR_NFOLLOWS(*input);
-            input += param+1;
+            if (ctx->stop == input) return;
+            input += SCM_CHAR_NFOLLOWS(*input) + 1;
             continue;
         case RE_TRY:
             param = (unsigned char)*code++;
@@ -667,7 +768,15 @@ void re_exec_rec(const char *code,
             param = (unsigned char)*code++;
             code = ctx->codehead + param;
             continue;
+        case RE_SET1:
+            if (ctx->stop == input) return;
+            if ((unsigned char)*input >= 128) return;
+            param = (unsigned char)*code++;
+            if (!Scm_CharSetContains(ctx->rx->sets[param], *input)) return;
+            input++;
+            continue;
         case RE_SET:
+            if (ctx->stop == input) return;
             param = (unsigned char)*code++;
             SCM_STR_GETC(input, ch);
             cset = ctx->rx->sets[param];
@@ -682,6 +791,12 @@ void re_exec_rec(const char *code,
             param = (unsigned char)*code++;
             mlist = push_match(mlist, -param, input);
             continue;
+        case RE_BOL:
+            if (input != ctx->input) return;
+            continue;
+        case RE_EOL:
+            if (input != ctx->stop) return;
+            continue;
         case RE_SUCCESS:
             ctx->last = input;
             ctx->matches = mlist;
@@ -689,6 +804,9 @@ void re_exec_rec(const char *code,
             /*NOTREACHED*/
         case RE_FAIL:
             return;
+        default:
+            /* shouldn't be here */
+            Scm_Error("regexp implementation seems broken\n");
         }
     }
 }
@@ -736,6 +854,7 @@ static ScmObj re_exec(ScmRegexp *rx, ScmString *orig,
     struct match_ctx ctx;
     ctx.rx = rx;
     ctx.codehead = rx->code;
+    ctx.input = SCM_STRING_START(orig);
     ctx.stop = end;
     ctx.matches = NULL;
 
@@ -758,7 +877,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
     if (SCM_STRING_LENGTH(str) < 0)
         Scm_Error("incomplete string is not allowed: %S", str);
     /* TODO: prescreening */
-    for (; start < end - rx->mustMatchLen; start++) {
+    for (; start <= end - rx->mustMatchLen; start++) {
         ScmObj r = re_exec(rx, str, start, end);
         if (!SCM_FALSEP(r)) return r;
     }
@@ -847,4 +966,5 @@ void Scm__InitRegexp(void)
     sym_alt = SCM_INTERN("alt");
     sym_rep = SCM_INTERN("rep");
     sym_any = SCM_INTERN("any");
+    sym_bol = SCM_INTERN("bol");
 }
