@@ -1,7 +1,7 @@
 ;;;
 ;;; collection.scm - collection generics
 ;;;
-;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.11 2003-01-06 03:19:33 shirok Exp $
+;;;  $Id: collection.scm,v 1.12 2003-02-04 12:42:20 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -41,26 +41,25 @@
 (define-method call-with-iterator ((coll <list>) proc . args)
   (let* ((start (get-keyword :start args #f))
          (p (if start (list-tail coll start) coll)))
-    (proc (lambda () (null? p))
-          (lambda () (pop! p)))))
+    (proc (cut null? p) (lambda () (pop! p)))))
 
 (define-method call-with-iterator ((coll <vector>) proc . args)
   (let ((len (vector-length coll))
         (i   (get-keyword :start args 0)))
-    (proc (lambda () (>= i len))
+    (proc (cut >= i len)
           (lambda () (begin0 (vector-ref coll i) (inc! i))))))
 
 (define-method call-with-iterator ((coll <weak-vector>) proc . args)
   (let ((len (weak-vector-length coll))
         (i   (get-keyword :start args 0)))
-    (proc (lambda () (>= i len))
+    (proc (cut >= i len)
           (lambda () (begin0 (weak-vector-ref coll i) (inc! i))))))
 
 (define-method call-with-iterator ((coll <string>) proc . args)
   (let* ((start (get-keyword :start args #f))
          (s     (open-input-string (if start (string-copy coll start) coll)))
          (ch    (read-char s)))
-    (proc (lambda () (eof-object? ch))
+    (proc (cut eof-object? ch)
           (lambda () (let ((c ch))
                        (set! ch (read-char s))
                        c)))))
@@ -68,7 +67,7 @@
 (define-method call-with-iterator ((coll <hash-table>) proc . args)
   (let* ((iter (%hash-table-iter coll))
          (kv   (call-with-values iter cons)))
-    (proc (lambda () (eof-object? (car kv)))
+    (proc (cut eof-object? (car kv))
           (lambda () (let ((r kv))
                        (set! kv (call-with-values iter cons))
                        r)))))
@@ -79,7 +78,7 @@
              (eprocs '())
              (nprocs '()))
     (if (null? colls)
-        (proc (reverse eprocs) (reverse nprocs))
+        (proc (reverse! eprocs) (reverse! nprocs))
         (with-iterator ((car colls) end? next)
           (loop (cdr colls) (cons end? eprocs) (cons next nprocs))))))
 
@@ -94,8 +93,7 @@
 
 (define-method call-with-builder ((class <list-meta>) proc . args)
   (let ((q (make-queue)))
-    (proc (lambda (item) (enqueue! q item))
-          (lambda () (dequeue-all! q)))))
+    (proc (cut enqueue! q <>) (cut dequeue-all! q))))
 
 (define-method call-with-builder ((class <vector-meta>) proc . args)
   (let ((size (get-keyword :size args #f)))
@@ -108,8 +106,8 @@
                     (inc! i)))
                 (lambda () v)))
         (let ((q (make-queue)))
-          (proc (lambda (item) (enqueue! q item))
-                (lambda () (list->vector (dequeue-all! q))))))))
+          (proc (cut enqueue! q <>)
+                (cut list->vector (dequeue-all! q)))))))
 
 (define-method call-with-builder ((class <weak-vector-meta>) proc . args)
   (let ((size (get-keyword :size args #f)))
@@ -167,7 +165,7 @@
          (do ((r knil (apply proc (fold-right (lambda (p r) (cons (p) r))
                                               (list r)
                                               nexts))))
-             ((any (lambda (p) (p)) ends?) r)
+             ((any (cut <>) ends?) r)
            #f)))))
 
 ;; for list arguments, SRFI-1 implementation is slightly faster.
@@ -197,9 +195,9 @@
          (cons coll more)
          (lambda (ends? nexts)
            (do ((q (make-queue)))
-               ((any (lambda (p) (p)) ends?)
+               ((any (cut <>) ends?)
                 (dequeue-all! q))
-             (enqueue! q (apply proc (%map (lambda (p) (p)) nexts))))))
+             (enqueue! q (apply proc (%map (cut <>) nexts))))))
         )))
 
 ;; for list arguments, built-in map is much faster.
@@ -229,8 +227,8 @@
          (cons coll more)
          (lambda (ends? nexts)
            (do ()
-               ((any (lambda (p) (p)) ends?) (get))
-             (add! (apply proc (map (lambda (p) (p)) nexts)))))))))
+               ((any (cut <>) ends?) (get))
+             (add! (apply proc (map (cut <>) nexts)))))))))
 
 ;; map-to <list> is equivalent to map.
 (define-method map-to ((class <list-meta>) proc coll . more)
@@ -248,8 +246,8 @@
         (call-with-iterators
          (cons coll more)
          (lambda (ends? nexts)
-           (until (any (lambda (p) (p)) ends?)
-             (apply proc (%map (lambda (p) (p)) nexts))))))))
+           (until (any (cut <>) ends?)
+             (apply proc (%map (cut <>) nexts))))))))
 
 ;; for list arguments, built-in for-each is much faster.
 (define-method for-each (proc (coll <list>) . more)
