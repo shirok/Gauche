@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.43 2002-08-24 04:14:42 shirok Exp $
+ *  $Id: system.c,v 1.44 2002-09-02 21:19:19 shirok Exp $
  */
 
 #include <stdio.h>
@@ -402,7 +402,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_TimeClass,
 ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
 {
     ScmTime *t = SCM_TIME(time_allocate(SCM_CLASS_TIME, SCM_NIL));
-    t->type = type;
+    t->type = SCM_FALSEP(type)? sym_time_utc : type;
     t->sec = sec;
     t->nsec = nsec;
     return SCM_OBJ(t);

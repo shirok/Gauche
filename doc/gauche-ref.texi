@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.259 2002-09-02 11:08:38 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.260 2002-09-02 21:19:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12689,11 +12689,22 @@ To be porable across POSIX implementation, keep @var{seconds} less than
 65536.
 @end defun
 
-@defun sys-usleep microseconds
-Suspends the process until the specified number of microseconds elapses,
-or the process receives a signal.   This procedure is defined
-only if the underlying system provides usleep() call.
-You can also wayt by microsecond resolution using @code{sys-select}.
+@defun sys-nanosleep nanoseconds
+[POSIX] 
+Suspends the process until the specified number of nanoseconds elapses,
+or the process receives a signal.  The argument @var{nanoseconds} can be
+a @code{<time>} object (@xref{SRFI time}), or a real number.
+Returns @code{#f} if @var{nanoseconds} elapsed, or a @code{<time>}
+object that indicates the remaining time if @code{sys-nanosleep}
+is interrupted by a signal.
+
+@example
+;@r{wait for 0.5 sec}
+(sys-nanosleep 500000000)
+
+;@r{wait for 1.3 sec}
+(sys-nanosleep (make <time> :second 1 :nanosecond 300000000)
+@end example
 @end defun
 
 @defun sys-random

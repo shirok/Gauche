@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.84 2002-08-29 08:13:29 shirok Exp $
+;;; $Id: syslib.stub,v 1.85 2002-09-02 21:19:19 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <math.h>
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -577,13 +578,28 @@
 (define-cproc sys-sleep (seconds::<fixnum>)
   (return <int> "sleep"))
 
-(if "defined(HAVE_USLEEP)"
-    (define-cproc sys-usleep (microseconds::<uint32>)
-      "int r = Scm_SysCall(usleep(microseconds));
-    if (r < 0 && errno == EINVAL) {
-      Scm_Error(\"invalid value for usleep: %d\", microseconds);
-    }
-    return SCM_MAKE_INT(r);"))
+(if "defined(HAVE_NANOSLEEP)"
+    (define-cproc sys-nanosleep (nanoseconds)
+      "struct timespec spec, rem; int r;
+       if (SCM_TIMEP(nanoseconds)) {
+           spec.tv_sec = SCM_TIME(nanoseconds)->sec;
+           spec.tv_nsec = SCM_TIME(nanoseconds)->nsec;
+       } else if (!SCM_REALP(nanoseconds)) {
+           Scm_Error(\"bad timeout spec: <time> object or real number is required, but got %S\", nanoseconds);
+       } else {
+           double v = Scm_GetDouble(nanoseconds);
+           if (v < 0) Scm_Error(\"bad timeout spec: positive number required, but got %S\", nanoseconds);
+           spec.tv_sec = (ulong)floor(v/1.0e9);
+           spec.tv_nsec = (ulong)fmod(v, 1.0e9);
+           while (spec.tv_nsec >= 1000000000) {
+               spec.tv_nsec -= 1000000000;
+               spec.tv_sec += 1;
+           }
+       }
+       rem.tv_sec = rem.tv_nsec = 0;
+       Scm_SysCall(nanosleep(&spec, &rem));
+       if (rem.tv_sec == 0 && rem.tv_nsec == 0) SCM_RETURN(SCM_FALSE);
+       else SCM_RETURN(Scm_MakeTime(SCM_FALSE, rem.tv_sec, rem.tv_nsec));"))
 
 (define-cproc sys-unlink (pathname::<string>)
   "  if (Scm_SysCall(unlink(Scm_GetStringConst(pathname))) < 0) {
