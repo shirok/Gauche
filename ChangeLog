@@ -1,9 +1,24 @@
+2001-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.3
+	* */configure.in : adapted to autoconf-2.52
+	* lib/gauche/interactive.scm : added.  defines useful functions
+	  for the interactive session.
+	* src/main.c : loads gauche.interactive when in the interactive
+	  mode.
+	
+2001-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/symbol.c : removed Scm_Apropos - it'll be implemented in Scheme.
+	* src/extlib.stub : added hash-table-map
+
 2001-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c : prevent a continuation from being thrown across C
 	  stack boundary for now.  Supporting it requires lots of VM
 	  modification.
-
+	* src/read.c : arrow more flexible symbol syntax.
+	
 2001-07-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (compile_do): fixed a bug that reported an error
