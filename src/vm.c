@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.168 2002-09-10 10:12:37 shirok Exp $
+ *  $Id: vm.c,v 1.169 2002-09-10 10:36:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1028,6 +1028,26 @@ static void run_loop()
             CASE(SCM_VM_REVERSE) {
                 SAVE_REGS();
                 val0 = Scm_Reverse(val0);
+                continue;
+            }
+            CASE(SCM_VM_APPLY) {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj cp;
+                while (--nargs > 1) {
+                    POP_ARG(cp);
+                    SAVE_REGS();
+                    val0 = Scm_Cons(cp, val0);
+                }
+                cp = val0;     /* now cp has arg list */
+                POP_ARG(val0); /* get proc */
+                if (!SCM_NULLP(pc)) {
+                    CHECK_STACK(CONT_FRAME_SIZE);
+                    PUSH_CONT(prevpc, pc);
+                    pc = SCM_NIL;
+                }
+                SAVE_REGS();
+                val0 = Scm_VMApply(val0, cp);
+                RESTORE_REGS();
                 continue;
             }
             CASE(SCM_VM_PROMISE) {

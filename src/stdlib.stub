@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.92 2002-09-10 10:12:37 shirok Exp $
+;;; $Id: stdlib.stub,v 1.93 2002-09-10 10:36:41 shirok Exp $
 ;;;
 
 
@@ -660,6 +660,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc procedure? (obj) (return <boolean> "SCM_PROCEDUREP"))
 
 (define-cproc apply (proc arg1 &rest args)
+  (inliner "SCM_VM_APPLY")
   "  ScmObj head, tail, cp;
   if (SCM_NULLP(args)) return Scm_VMApply(proc, arg1);
   else {
