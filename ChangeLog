@@ -1,7 +1,7 @@
 2002-05-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/mutex.c : fixed mutex-lock! to handle timeout and owner-thread
-	  properly.
+	  properly.  Added condition variable.
 	* ext/mt-random/test.scm : make test work without installing srfi-4
 	* configure.in, src/gauche/config.h.in : moved check of gettimeofday
 	  here

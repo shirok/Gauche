@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.253 2002-05-15 10:49:39 shirok Exp $
+ *  $Id: gauche.h,v 1.254 2002-05-15 11:17:52 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1980,6 +1980,10 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 
 /*
  * Scheme mutex.
+ *    locked=FALSE  owner=dontcare       unlocked/not-abandoned
+ *    locked=TRUE   owner=NULL           locked/not-owned
+ *    locked=TRUE   owner=active vm      locked/owned
+ *    locked=TRUE   owner=terminated vm  unlocked/abandoned
  */
 typedef struct ScmMutexRec {
     SCM_HEADER;
@@ -1999,6 +2003,45 @@ SCM_CLASS_DECL(Scm_MutexClass);
 ScmObj Scm_MakeMutex(ScmObj name);
 ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner);
 ScmObj Scm_MutexUnlock(ScmMutex *mutex);
+
+/*
+ * Scheme condition variable.
+ */
+typedef struct ScmConditionVariableRec {
+    SCM_HEADER;
+    ScmInternalCond cv;
+    ScmObj name;
+    ScmObj specific;
+} ScmConditionVariable;
+
+SCM_CLASS_DECL(Scm_ConditionVariableClass);
+#define SCM_CLASS_CONDITION_VARIABLE  (&Scm_ConditionVariableClass)
+#define SCM_CONDITION_VARIABLE(obj)   ((ScmConditionVariable*)obj)
+#define SCM_CONDITION_VARIABLE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CONDITION_VARIABLE)
+
+ScmObj Scm_MakeConditionVariable(ScmObj name);
+ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond);
+ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond);
+
+/*
+ * Scheme reader/writer lock.
+ */
+typedef struct ScmRWLockRec {
+    SCM_HEADER;
+    ScmInternalMutex mutex;
+    ScmInternalCond cond;
+    ScmObj name;
+    ScmObj specific;
+    int numReader;
+    int numWriter;
+} ScmRWLock;
+
+SCM_CLASS_DECL(Scm_RWLockClass);
+#define SCM_CLASS_RWLOCK       (&Scm_RWLockClass)
+#define SCM_RWLOCK(obj)        ((ScmRWLock*)obj)
+#define SCM_RWLOCKP(obj)       SCM_XTYPEP(obj, SCM_CLASS_RWLOCK)
+
+ScmObj Scm_MakeRWLock(ScmObj name);
 
 /*---------------------------------------------------
  * SIGNAL

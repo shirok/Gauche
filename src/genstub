@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.59 2002-04-25 03:21:43 shirok Exp $
+;;;  $Id: genstub,v 1.60 2002-05-15 11:17:52 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -86,6 +86,7 @@
 (make-type "module"    'module?    "ScmModule*"    "SCM_MODULEP" "SCM_MODULE")
 (make-type "thread"    'thread?    "ScmVM*"        "SCM_VMP"     "SCM_VM")
 (make-type "mutex"     'mutex?     "ScmMutex*"     "SCM_MUTEXP"  "SCM_MUTEX")
+(make-type "condition variable" 'condition-variable? "ScmConditionVariable*" "SCM_CONDITION_VARIABLE_P"  "SCM_CONDITION_VARIABLE")
 (make-type "weak vector" 'weak-vector? "ScmWeakVector*" "SCM_WEAKVECTORP" "SCM_WEAKVECTOR")
 
 ;; default

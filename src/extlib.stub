@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.149 2002-05-15 10:49:39 shirok Exp $
+;;; $Id: extlib.stub,v 1.150 2002-05-15 11:17:52 shirok Exp $
 ;;;
 
 "
@@ -1260,6 +1260,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (thread? vm))
   "SCM_RETURN(Scm_ThreadJoin(vm));")
 
+(define-cproc make-mutex (&optional (name #f))
+  "SCM_RETURN(Scm_MakeMutex(name));")
+
 (define-cproc mutex? (obj)
   "SCM_RETURN(SCM_MAKE_BOOL(SCM_MUTEXP(obj)));")
 
@@ -1286,6 +1289,32 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc mutex-name (mutex)
   (assert (mutex? mutex))
   "SCM_RETURN(mutex->name);")
+
+(define-cproc make-condition-variable (&optional (name #f))
+  "SCM_RETURN(Scm_MakeConditionVariable(name));")
+
+(define-cproc condition-variable? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_CONDITION_VARIABLE_P(obj)));")
+
+(define-cproc condition-variable-name (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(cv->name);")
+
+(define-cproc condition-variable-specific (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(cv->specific);")
+
+(define-cproc condition-variable-specific-set! (cv obj)
+  (assert (condition-variable? cv))
+  "cv->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc condition-variable-signal! (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(Scm_ConditionVariableSignal(cv));")
+
+(define-cproc condition-variable-broadcast! (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(Scm_ConditionVariableBroadcast(cv));")
 
 (define-cproc vm-dump (&optional vm)
   " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());

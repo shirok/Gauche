@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.4 2002-05-15 10:49:40 shirok Exp $
+ *  $Id: mutex.c,v 1.5 2002-05-15 11:17:52 shirok Exp $
  */
 
 #include <math.h>
@@ -179,4 +179,76 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex)
 #endif /* GAUCHE_USE_PTHREAD */
     return SCM_OBJ(mutex);
 }
+
+/*=====================================================
+ * Condition variable
+ */
+
+static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs);
+static void   cv_print(ScmObj cv, ScmPort *port, ScmWriteContext *ctx);
+
+SCM_DEFINE_BASE_CLASS(Scm_ConditionVariableClass, ScmConditionVariable,
+                      cv_print, NULL, NULL, cv_allocate,
+                      SCM_CLASS_DEFAULT_CPL);
+
+#ifdef GAUCHE_USE_PTHREAD
+static void cv_finalize(GC_PTR obj, GC_PTR data)
+{
+    ScmConditionVariable *cv = SCM_CONDITION_VARIABLE(obj);
+    pthread_cond_destroy(&(cv->cv));
+}
+#endif /* GAUCHE_USE_PTHREAD */
+
+static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmConditionVariable *cv = SCM_ALLOCATE(ScmConditionVariable, klass);
+    SCM_SET_CLASS(cv, klass);
+#ifdef GAUCHE_USE_PTHREAD
+    {
+        GC_finalization_proc ofn; GC_PTR ocd;
+        pthread_cond_init(&(cv->cv), NULL);
+        GC_REGISTER_FINALIZER(cv, cv_finalize, NULL, &ofn, &ocd);
+    }
+#else  /*!GAUCHE_USE_PTHREAD*/
+    (void)SCM_INTERNAL_CV_INIT(cv->cv);
+#endif /*!GAUCHE_USE_PTHREAD*/
+    cv->name = SCM_FALSE;
+    cv->specific = SCM_UNDEFINED;
+    return SCM_OBJ(cv);
+}
+
+static void cv_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmConditionVariable *cv = SCM_CONDITION_VARIABLE(obj);
+    ScmObj name = cv->name;
+    if (SCM_FALSEP(name)) Scm_Printf(port, "#<condition-variable %p>", cv);
+    else                  Scm_Printf(port, "#<condition-variable %S>", name);
+}
+
+/*
+ * Make condition variable
+ */
+ScmObj Scm_MakeConditionVariable(ScmObj name)
+{
+    ScmObj cv = cv_allocate(SCM_CLASS_CONDITION_VARIABLE, SCM_NIL);
+    SCM_CONDITION_VARIABLE(cv)->name = name;
+    return cv;
+}
+
+ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond)
+{
+#ifdef GAUCHE_USE_PTHREAD
+    pthread_cond_signal(&(cond->cv));
+#endif
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond)
+{
+#ifdef GAUCHE_USE_PTHREAD
+    pthread_cond_broadcast(&(cond->cv));
+#endif
+    return SCM_UNDEFINED;
+}
+
 
