@@ -69,6 +69,11 @@ recent version on the web:
 @uref{http://www.shiro.dreamhost.com/scheme/gauche/}.
 @end example
 
+@c JP
+なお、本マニュアルの日本語版製作には、
+佐藤 信 氏、山下 伸夫 氏の協力を頂きました。
+@c COMMON
+
 @menu
 * Overview of Gauche::          
 * Notations::                   

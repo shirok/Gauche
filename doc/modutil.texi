@@ -2103,7 +2103,7 @@ See @ref{MT,,MT}, for details about the algorithm.
 Makoto MatsumotoとTakuji Nishimuraにより開発された、
 ``Mersenne Twister''アルゴリズムに基づく、
 仮想的な乱数発生器(RNG)を提供します。
-高速で、2^19937-1までの範囲を持ちます。
+高速で、2^19937-1という極めて長大な周期を持ちます。
 アルゴリズムの詳細については、@ref{MT,,MT}を参照して下さい。
 @c COMMON
 @end deftp

@@ -5215,10 +5215,10 @@ system won't save if something goes wrong.   Use these primitives
 when you want to customize the system's higher-level semantics
 or you are porting from other SRFI-18 code.
 @c JP
-それは諸刃の剣であることに注意して下さい。あなた独自の例外処理
+これは諸刃の剣であることに注意して下さい。あなたは独自の例外処理
 セマンティクスを構築する自由がありますが、Gaucheシステムは何か
-間違いがあっても何も保存しません。システムの高次元のセマンティクスを
-カスタマイズしたいか、他のSRFI-18準拠のコードを移植している場合は、
+間違いがあっても救ってくれません。システムの高次元のセマンティクスを
+カスタマイズしたいか、他のSRFI-18準拠のコードを移植している場合にのみ、
 これらのプリミティブを使って下さい。
 @c COMMON
 
@@ -5324,7 +5324,7 @@ the following conceptual Scheme code.
 (define (with-exception-handler handler thunk)
   (let ((prev %xh))
     (dynamic-wind
-      (lambda () (set! %xh (cons handler)))
+      (lambda () (set! %xh (cons handler %xh)))
       thunk
       (lambda () (set! %xh prev)))))
 @end example
@@ -6975,10 +6975,10 @@ the defined @var{tag} in the same file.   It is desirable to separate
 the call of @code{define-reader-ctor} and the use of @var{tag}
 in the different files if possible.
 @c JP
-他の実装では@code{define-reader-ctor}の呼び出しが効力を持つようにする
+他の実装では、@code{define-reader-ctor}の呼び出しが効力を持つようにする
 前にファイル全体を読み込むことを要求するかも知れません。
-その場合は、@code{define-reader-ctor}と定義された@var{tag}の使用が
-同じファイルに存在することを効果的に回避されることになります。
+その場合は、@code{define-reader-ctor}と定義された@var{tag}の使用を
+同じファイルに置く事は実質的に不可能です。
 可能ならば、@code{define-reader-ctor}の呼び出しと、@var{tag}の使用は
 異なるファイルに分離されることが望まれます。
 @c COMMON
@@ -6993,11 +6993,11 @@ the author doesn't have clear idea yet.
 @c JP
 現在の@code{define-reader-ctor}に関するもう1つの問題は、それが
 Gaucheシステムのグローバルテーブルを変更してしまうことで、それゆえに
-モジュール化されていません。
+モジュール性が良くありません。
 複数人によって書かれたコードは同じタグを使っているかも知れず、
 期待されない結果を引き起こすかも知れません。
-将来のバージョンでは、作者にはまだ明確なアイデアがありませんが、
-Gaucheには@var{tag}のスコープをカプセル化するほうほうが導入されるかも
+作者にはまだ明確なアイデアがありませんが、将来のバージョンでは、
+Gaucheには@var{tag}のスコープをカプセル化する方法が導入されるかも
 しれません。
 @c COMMON
 

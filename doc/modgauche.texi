@@ -2056,8 +2056,8 @@ without any argument from the shell, to find out the valid options.
 Provides an interface to @code{fcntl(2)}, including
 advisory file locking.
 @c JP
-@code{ncntl(2)}へのインタフェースを提供します。勧告方式のファイルロックを
-含みます。
+アドバイザリ・ファイルロックを含む、
+@code{fcntl(2)}へのインタフェースを提供します。
 @c COMMON
 @end deftp
 
@@ -2066,7 +2066,8 @@ advisory file locking.
 Performs certain operation on the file specfied by @var{port-or-fd},
 which should be a port object or an integer
 that specifies a system file descriptor.  If it is a port, it must
-be associated to the opened file.
+be associated to the opened file (i.e. @code{port-type}
+returns @code{file}, see @ref{Common port operations}).
 
 The operation is specified by an integer @var{operation}.
 Several variables are defined for valid @var{operation}.
@@ -2075,6 +2076,8 @@ Several variables are defined for valid @var{operation}.
 ファイル指定は、ポートオブジェクトもしくはシステムのファイルディスクリプタ
 である整数でなくてはなりません。それがポートである場合には、すでにオープン
 されたファイルを結びついていなければなりません。
+(@code{port-type} が @code{file} を返すようなポートということです。
+@ref{Common port operations}参照。)
 
 操作は整数 @var{operation} で指定します。
 いくつかの変数が定義されいて、@var{operation} に使用できます。
@@ -2089,12 +2092,15 @@ Returns flags associated to the file descriptor of @var{port-or-fd}.
 The optional argument @var{arg} is not used.   The return value is 
 an integer whose definition is system specific, except one flag,
 @code{FD_CLOEXEC}, which indicates the file descriptor should be
-closed on @code{exec}.
+closed on @code{exec}.  See the manual entry of @code{fcntl(2)} of
+your system for the details.
 @c JP
 @var{port-or-fd} のファイルディスクリプタに結びついているフラグを返します。
 オプション引数の@var{arg}は使われません。返り値は整数で、その定義はシステム
 によります。ただし、@code{FD_CLOEXEC}だけは例外で、これは@code{exec}で
 クローズされたことを示しています。
+詳しくはあなたのシステムの@code{fcntl(2)}のマニュアルエントリを
+参照してください。
 @c COMMON
 
 @item F_SETFD
@@ -2239,7 +2245,7 @@ the lock is available.
 @c JP
 3つめの引数を与えなければなりません。これは、以下に述べる@code{<sys-flock>}
 オブジェクトのインスタンスでなければなりません。@var{arg}にしたがって、
-勧告方式のロックを設定します。ロックの取得に成功すれば、@code{#t}が
+アドバイザリロックを設定します。ロックの取得に成功すれば、@code{#t}が
 返ります。もし、別のプロセスがロックをもっていて要求したものと衝突した
 場合には @code{F_SETLK} のときは @code{#f} を返します。一方、@code{F_SETLKW}
 のときはロックが利用可能になるまで待ちます。
@@ -2264,9 +2270,9 @@ before it operates on the files that may be shared.
 
 The following slots are defined.
 @c JP
-POSIX の勧告方式レコードロックを表わす構造体です。勧告方式レコードロック
-ということは、システムが適切なロックをもたないファイルを操作することを
-防ぐことができないということです。すべてのプロセスが共有されている可能性
+POSIX のアドバイザリレコードロックを表わす構造体です。アドバイザリレコードロック
+というのは、適切なロックをもたないプロセスが対象ファイルを操作しても
+システムは関知しない、ということです。すべてのプロセスが、共有される可能性
 のあるファイルを操作する前にロックを@code{fcntl}を使って検査することが
 期待されています。
 @c COMMON
@@ -2320,7 +2326,7 @@ Indicates from where @code{start} is measured.
 @c EN
 The offset of beginning of the locked region.
 @c JP
-ロックされるリージョンの開始位置オフセット
+ロックされる領域の開始位置オフセット
 @c COMMON
 @end defivar
 
@@ -2328,7 +2334,7 @@ The offset of beginning of the locked region.
 @c EN
 The number of bytes to lock.  Zero means ``until EOF''.
 @c JP
-ロックされるバイト数。ゼロは「EOF」までという意味。
+ロックされるバイト数。ゼロは「EOFまで」という意味。
 @c COMMON
 @end defivar
 
@@ -5105,10 +5111,30 @@ and continues parsing:
 @c EN
 This macro wraps @code{parse-options} to make it look more
 like ordinary Scheme construct.
-@var{Bind-spec} must be one of the following forms.
+For example, a simple script can be written as follows:
 @c JP
 このマクロは@code{parse-options}のラッパーで、
 より通常のScheme構文に近い形式を提供します。
+例えば、簡単なスクリプトが次のように書けるでしょう。
+@c COMMON
+
+@example
+(define (main args)
+  (let-args (cdr args)
+      ((quiet   "q|quiet" #t)
+       (verbose "v|verbose" #f)
+       (outfile "o|outfile=s")
+       (help    "h|help" => (cut show-help (car args)))
+      )
+    ....))
+
+(define (show-help progname)
+  ...)
+@end example
+
+@c EN
+@var{Bind-spec} must be one of the following forms.
+@c JP
 @var{Bind-spec}は次のいずれかの形式でなければなりません。
 @c COMMON
 
@@ -6122,9 +6148,9 @@ Take a look at the code if you want to know the exact behavior.
 変数の束縛は保護されます。@code{<rule>} が正規表現の場合、この正規表現に
 マッチする名前の変数は保護されます。
 
-再定義からの保護機構は、ばあたりなもので、セマンティクスとしても
+再定義からの保護機構は、場当たり的なもので、セマンティクスとしても
 不透明なものであることに注意してください。利便のためだけのものです。
-正確な振舞いをしれたければ、コードを満てください。
+正確な振舞いをしれたければ、コードを見てください。
 @c COMMON
 @end deftp
 
@@ -6829,8 +6855,8 @@ has an associated terminal by @code{sys-isatty?}.
 @c JP
 このセクションを通じて、引数 @var{port-or-fd} はポートオブジェクトか
 システムのファイルディスクリプタを表現する小さい整数かのどちらかです。
-@var{port}がシステム端末に結びついていないければ、エラーを示すシグナルが
-あがります。(@code{sys-isatty?}を使えば@var{port}が端末と結びついているか
+@var{port}がシステム端末に結びついていないければ、エラーになります。
+(@code{sys-isatty?}を使えば@var{port}が端末と結びついているか
 どうかチェックできます。 @ref{Other file operations}参照)
 @c COMMON
 
@@ -6911,7 +6937,7 @@ Waits until all output written to @var{port-or-fd} is transmitted.
 Discards data in the buffer of @var{port-or-fd}, specified by 
 @var{queue}, which may be one of the following values.
 @c JP
-@var{port-or-fd}のバッファ内のデータを破棄する。@var{queue}には以下の値の
+@var{port-or-fd}のバッファ内のデータを破棄します。@var{queue}には以下の値の
 どれかを指定します。
 @c COMMON
 @table @code
@@ -7047,9 +7073,9 @@ To obtain pseudo tty's name, use @code{sys-ttyname}
 
 This function is available only if the system supports @code{openpty(3)}.
 @c JP
-擬似 tty のペア、マスターとスレーブをオープンし、これらの
+擬似 tty のペア、マスターとスレーブをオープンし、2つの
 ファイルディスクリプタの整数を返します。オプション引数 @var{term} 
-は通るなら、@code{<sys-termios>}オブジェクトでなければなりません。
+が渡される場合は、@code{<sys-termios>}オブジェクトでなければなりません。
 これは、pty パラメータを設定します。
 
 @code{open-input-fd-port}と@code{open-output-fd-port}の両方またはどちらか
@@ -7083,7 +7109,7 @@ This function is available only if the system supports @code{forkpty(3)}.
 子プロセスです。ふたつ目の値はマスター pty のファイルディスクリプタの
 値です。
 
-オプション引数 @var{term}は、通るなら、@code{<sys-termios>}オブジェクト
+オプション引数 @var{term}が渡される場合は、それは@code{<sys-termios>}オブジェクト
 でなければなりません。これはスレーブ pty のパラメータを設定します。
 
 この関数はシステムが @code{forkpty(3)} をサポートしている場合にのみ利用
@@ -7394,10 +7420,10 @@ are realized in the underlying system.
 その機能の潜在的な力を活用するためには、スレッドがどのように
 実装されているかを知る必要があります。
 いくつかの言語では言語組み込みの機能としてスレッドをサポートし、
-プログラマによるスレッドの利用を支援します。
+プログラマによるスレッドの利用を推奨しています。
 しかし、多くの場合、実現したいアルゴリズムをスレッドを使わずに
-実装する方法があるということに注意すべきで、またスレッドを
-使うことの利点と欠点を、そのスレッドがシステムによってどのように
+実装する方法があります。
+スレッドを使うことの利点と欠点を、そのスレッドがシステムによってどのように
 実現されているかを考慮した上で比較する必要があります。
 @c COMMON
 
@@ -7430,9 +7456,9 @@ for fine-grained calculation.
 @c JP
 それぞれのGaucheのスレッドには、個別の仮想マシンが割り当てられ、
 専用のPOSIXスレッドにより実行されます。したがって、コンテキスト
-スイッチにおいてネイティブスレッドよりもオーバヘッドを
-抑えることができます。しかし、スレッドの生成は例えば
-call/ccによる軽量スレッドよりはコストのかかる処理です。
+スイッチのオーバヘッドは、ネイティブスレッドとほとんど変わりません。
+しかし、スレッドの生成は、例えばcall/ccによる軽量スレッドよりは
+ずっとコストのかかる処理です。
 このように、Gaucheのプリエンプティブなスレッドは、
 きめ細かい計算のために幾千ものスレッドを生成したいアプリケーション
 向けでは@emph{ありません}。
@@ -7496,7 +7522,7 @@ higher "shield" between the subsystem and the main system
 (e.g. the main system can keep running even if subsystem segfaults).
 @c JP
 サブシステムにおけるリソースの消費をコントロールする必要がある場合で、
-サブシステムがメインシステムとは独立公平に動作する場合は、
+サブシステムがメインシステムとほとんど独立に動作する場合は、
 スレッドの代わりにUnixプロセスが使えることでしょう。
 時代に逆行するように聞こえますが、Unixプロセスはサブシステムと
 メインシステムの間に高度な``防御壁''を提供します。
@@ -7537,10 +7563,11 @@ to the thread calling @code{thread-join!} on the terminated thread.
 スレッドを表すクラスです。それぞれのスレッドは、POSIXスレッドにより
 評価される関連付けられた手続きを持ちます。手続きが正常に戻ると、
 その結果は内部的な``結果''スロットに格納され、@code{thread-join!}により
-取得することができます。手続きが異常終了すると、例外が投げられるか
-@code{thread-terminate!}により終了され、例外条件が内部的な``結果としての例外''
-スロットに格納され、その終了したスレッドに対して@code{thread-join!}を
-呼ぶスレッドに渡されます。
+取得することができます。例外が投げられるか
+@code{thread-terminate!}により終了されるかで、手続きが異常終了すると、
+例外条件が内部的な``結果としての例外''スロットに格納され、
+その例外条件は終了したスレッドに対して@code{thread-join!}を
+呼ぶスレッドへと渡されます。
 @c COMMON
 
 @c EN
@@ -7549,7 +7576,7 @@ When a thread is created, its dynamic environment is initialized by
 the creator's dynamic environment.  The thread's dynamic handler
 stack is initially empty.
 @c JP
-それぞれのスレッドは独自の動的な環境と動的なハンドラスタックを持っています。
+それぞれのスレッドは独自の動的環境と動的なハンドラスタックを持っています。
 あるスレッドが生成されると、その動的な環境は生成者の動的な環境によって
 初期化されます。そのスレッドの動的なハンドラスタックは初期においては空です。
 @c COMMON
@@ -8086,17 +8113,17 @@ condition, as in the follwing example (it is taken from SRFI-18 document):
 オプショナル引数の@var{conditional-variable}が与えられている場合、
 @code{mutex-unlock!}は``条件変数待機''の動作も行います(例えば、POSIXスレッドの
 @code{pthread_cond_wait})。
-現在のスレッドは@var{condition-variable}をアトミックに待ち、@var{mutex}を
-アンロックします。
+現在のスレッドは@var{mutex}をアンロックし、
+@var{condition-variable}の待ち状態に入る動作をアトミックに行います。
 スレッドは、他のスレッドが@var{condition-variable}にシグナルを通知するか
 (下記の@code{condition-variable-signal!}と@code{condition-variable-broadcast!}を
 見て下さい)、
 @var{timeout}が与えられていてそれに達すると、ブロックが解除されます。
 引数@var{timeout}は、絶対的な時間を表す@code{<time>}オブジェクト(@ref{SRFI time}参照)、
 相対的な時間を秒数で表す実数、タイムアウトしないことを表す@code{#f}のいずれかです。
-呼び出しているスレッドは繰り上げてブロックを解除するかも知れないので、
+ブロックが解除された時に、必ずしも条件が満たされているとは限らないので、
 次に挙げる例(SRFI-18のドキュメントより引用)のように、
-@var{mutex}のロックを再獲得して条件を検査するべきです。
+呼び出したスレッドは@var{mutex}のロックを再獲得して条件を検査するべきです。
 @c COMMON
 
 @example
