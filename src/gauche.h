@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.152 2001-06-04 02:26:10 shirok Exp $
+ *  $Id: gauche.h,v 1.153 2001-06-07 07:09:40 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1655,6 +1655,8 @@ extern void Scm_RegDump(ScmRegexp *rx);
 struct ScmRegMatchRec {
     SCM_HEADER;
     const char *input;
+    int inputSize;
+    int inputLen;
     int numMatches;
     struct ScmRegMatchSub {
         int start;
@@ -1672,6 +1674,8 @@ extern ScmClass Scm_RegMatchClass;
 extern ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, int i);
 extern ScmObj Scm_RegMatchStart(ScmRegMatch *rm, int i);
 extern ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, int i);
+extern ScmObj Scm_RegMatchAfter(ScmRegMatch *rm, int i);
+extern ScmObj Scm_RegMatchBefore(ScmRegMatch *rm, int i);
 extern void Scm_RegMatchDump(ScmRegMatch *match);
 
 /*-------------------------------------------------------
