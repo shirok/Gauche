@@ -107,6 +107,10 @@ test-vmstack : test-vmstack.c libgauche.a
 	$(CC) $(CFLAGS) $(LDFLAGS) -o test-vmstack test-vmstack.c libgauche.a $(LIBS)
 	./test-vmstack >> test.log
 
+test-arith : test-arith.c libgauche.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o test-arith test-arith.c libgauche.a $(LIBS)
+	./test-arith >> test.log
+
 clean :
 	rm -rf core core.[0-9]* gosh test-vmstack @LIBGAUCHE_SO@ *.o *~ *.a *.t *.def *.exp *.exe test.log test.dir so_locations gauche/*~
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.42 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: bignum.c,v 1.43 2002-06-18 06:06:14 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -59,31 +59,7 @@ char *alloca ();
 #include <limits.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-
-#define SCM_ULONG_MAX      ((u_long)(-1L)) /* to be configured */
-#define WORD_BITS          (SIZEOF_LONG * 8)
-#define HALF_BITS          (WORD_BITS/2)
-#define HALF_WORD          (1L<<HALF_BITS)
-
-#ifndef LONG_MIN
-#define LONG_MIN           ((long)(1L<<(WORD_BITS-1)))
-#endif
-#ifndef LONG_MAX
-#define LONG_MAX           (-(LONG_MIN+1))
-#endif
-
-#define LOMASK             (HALF_WORD-1)
-#define HIMASK             (~LOMASK)
-#define LO(word)           ((word) & LOMASK)
-#define HI(word)           (((word) >> HALF_BITS)&LOMASK)
-
-#define UADD(r, c, x, y)                        \
-    r = x + y + c;                              \
-    c = (r<x || (r==x && (y>0||c>0)))? 1 : 0
-
-#define USUB(r, c, x, y)                        \
-    r = x - y - c;                              \
-    c = (r>x || (r==x && (y>0||c>0)))? 1 : 0
+#include "gauche/arith.h"
 
 #undef min
 #define min(x, y)   (((x) < (y))? (x) : (y))
@@ -668,37 +644,6 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
 /*-----------------------------------------------------------------------
  * Multiplication
  */
-
-/* Multiply two unsigned long x and y, and save higher bits of result
-   to hi and lower to lo.   Most modern CPUs must have a special instruction
-   to do this.  The following is a portable, but extremely slow, version. */
-#define UMUL(hi, lo, x, y)                                              \
-    do {                                                                \
-        u_long xl_ = LO(x), xh_ = HI(x), yl_ = LO(y), yh_ = HI(y);      \
-        u_long t1_, t2_, t3_, t4_;                                      \
-        lo = xl_ * yl_;                                                 \
-        t1_ = xl_ * yh_;                                                \
-        t2_ = xh_ * yl_;                                                \
-        hi = xh_ * yh_;                                                 \
-        t3_ = t1_ + t2_;                                                \
-        if (t3_ < t1_) hi += HALF_WORD;                                 \
-        hi += HI(t3_);                                                  \
-        t4_ = LO(t3_) << HALF_BITS;                                     \
-        lo += t4_;                                                      \
-        if (lo < t4_) hi++;                                             \
-    } while (0)
-
-#if 0
-#undef UMUL
-/* example of processor-specific optimization */
-#define UMUL(hi, lo, x, y)                                              \
-    do {                                                                \
-        asm("movl %2, %%eax; mull %3; movl %%edx, %0; movl %%eax, %1"   \
-            : "=g" (hi), "=g" (lo)                                      \
-            : "g" (x), "g" (y)                                          \
-            : "%eax", "%edx");                                          \
-    } while (0)
-#endif
 
 /* br += bx * (y << off*WORD_BITS).   br must have enough size. */
 static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx,
