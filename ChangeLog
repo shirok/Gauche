@@ -1,3 +1,9 @@
+2002-03-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_integer): allow ratinal number syntax (when read,
+	  it is converted to real number).  Still it doesn't accept
+	  complex number with rational coefficients.
+
 2002-03-07  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.5.2

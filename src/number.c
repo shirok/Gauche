@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.63 2002-02-12 07:41:54 shirok Exp $
+ *  $Id: number.c,v 1.64 2002-03-09 10:58:20 shirok Exp $
  */
 
 #include <math.h>
@@ -1305,28 +1305,11 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTS(SCM_STRING(s), port);
 }
 
-#if 0
-/* C's printf may not be accurate enough to guarantee read/write identity
- * of floating point numbers.
- */
-static double expt10_tab[8] = { 1.0e0, 1.0e1, 1.0e2, 1.0e3, 
-                                1.0e4, 1.0e5, 1.0e6, 1.0e7 };
-
-static inline double expt10(u_int k)
-{
-    double v = expt10_tab[k & 0x07];
-    int l = k >> 3;
-    while (l-- > 0) v *= 1.0e8;
-    return v;
-}
-
-/** more to come **/
-#endif
-
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
-    /* TODO: Look at the algorithm of Burger & Dybvig :"Priting Floating-Point
-       Numbers Quickly and Accurately", PLDI '96, pp108--116. */
+    /* TODO: Look at the algorithm of Burger & Dybvig :
+      "Priting Floating-Point Numbers Quickly and Accurately",
+      PLDI '96, pp108--116. */
     if (SCM_IS_INF(val)) {
         if (plus_sign) *buf++ = '+';
         strcpy(buf, "#<inf>");
@@ -1390,19 +1373,24 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
  * Number Parser
  */
 
-static ScmObj read_integer(const char *str, int len, int radix)
+/* NB: multibyte strings are filtered out in the early stage of
+   parsing, so these routines can assume the input string contains
+   only ASCII chars. */
+static ScmObj read_integer(const char *str, int len, int radix);
+static ScmObj read_rational(const char *str, int len, ScmObj numerator);
+static double read_real(const char *str, int len, const char **next);
+static ScmObj read_complex(const char *str, int len);
+
+static ScmObj read_uinteger(const char **strp, int *lenp, int radix)
 {
+    const char *str = *strp;
+    int len = *lenp;
     long value_int = 0;
     ScmObj value_big = SCM_FALSE;
-    int minusp = 0;
     char c;
     static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     const char *ptab;
 
-    if (*str == '+')      { minusp = 0; str++; len--; }
-    else if (*str == '-') { minusp = 1; str++; len--; }
-    if (len == 0) return SCM_FALSE;
-    
     while (len--) {
         c = tolower(*str++);
         for (ptab = tab; ptab < tab+radix; ptab++) {
@@ -1421,15 +1409,41 @@ static ScmObj read_integer(const char *str, int len, int radix)
                 break;
             }
         }
-        if (ptab >= tab+radix) return SCM_FALSE;
+        if (ptab >= tab+radix) break;
     }
-    if (SCM_FALSEP(value_big)) {
-        if (minusp) return Scm_MakeInteger(-value_int);
-        else        return Scm_MakeInteger(value_int);
-    } else {
-        if (minusp) return Scm_BignumNegate(SCM_BIGNUM(value_big));
-        else        return value_big;
+    *strp = str-1;
+    *lenp = len+1;
+    if (SCM_FALSEP(value_big)) return Scm_MakeInteger(value_int);
+    else                       return value_big;
+}
+
+static ScmObj read_integer(const char *str, int len, int radix)
+{
+    int minusp = 0, lensave = len;
+    const char *strsave = str;
+    ScmObj r, d;
+
+    if (*str == '+')      { minusp = 0; str++; len--; }
+    else if (*str == '-') { minusp = 1; str++; len--; }
+    if (len == 0) return SCM_FALSE;
+
+    r = read_uinteger(&str, &len, radix);
+    if (len != 0) {
+        if (*str != '/' || len == 1) return SCM_FALSE;
+        /* potentially rational number */
+        str++; len--;
+        d = read_uinteger(&str, &len, radix);
+        if (len != 0) return SCM_FALSE;
+        if (d == SCM_MAKE_INT(0)) {
+            Scm_Error("zero in denominator of rational number: %A",
+                      Scm_MakeString(strsave, lensave, lensave, SCM_MAKSTR_IMMUTABLE));
+        }
+        /* Gauche doesn't support rational number, so we convert it
+           to real. */
+        r = Scm_Divide(r, d, SCM_NIL);
     }
+    if (minusp) return Scm_Negate(r);
+    else        return r;
 }
 
 static double read_real(const char *str, int len, const char **next)
@@ -1566,7 +1580,9 @@ static ScmObj read_number(const char *str, int len, int radix)
 
     i = (*str == '+' || *str == '-')? 1 : 0;
     for (; i<len; i++) {
-        if (!isdigit(str[i])) return read_complex(str, len);
+        if (!isdigit(str[i]) && str[i] != '/') {
+            return read_complex(str, len);
+        }
     }
     return read_integer(str, len, 10);
 }
