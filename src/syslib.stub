@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.26 2001-03-30 07:42:48 shiro Exp $
+;;; $Id: syslib.stub,v 1.27 2001-04-04 18:39:20 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -284,10 +284,22 @@
        Scm_SysError(\"renaming %S to %S failed\", old, new);
   SCM_RETURN(SCM_TRUE);")
 
-;; TODO: check reentrancy
+;; NB: Alghough tmpnam() is in POSIX, its use is discouraged because of
+;; potential security risk.  We mimic it's behavior by mkstemp() if possible.
+;; The behavior is not exactly the same, especially, in case if we use
+;; mkstemp the file is actually created...
 (define-cproc sys-tmpnam ()
-  "  char *s = tmpnam(NULL);
-  SCM_RETURN(Scm_MakeString(s, -1, -1));")
+  "
+#ifdef HAVE_MKSTEMP
+  char nam[] = \"XXXXXX\";
+  int fd = mkstemp(nam);
+  if (fd < 0) Scm_SysError(\"mkstemp failed\");
+  close(fd);
+  SCM_RETURN(Scm_MakeString(nam, -1, -1));
+#else
+  char *s = tmpnam(NULL);
+  SCM_RETURN(Scm_MakeString(s, -1, -1));
+#endif")
 
 ;; tmpfile
 
