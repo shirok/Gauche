@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.13 2002-02-08 09:10:58 shirok Exp $
+# $Id: gauche-config.in,v 1.14 2002-02-10 19:28:02 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -16,6 +16,7 @@ archdir=@libdir@/gauche
 
 gauche_incdir="$datadir/@GAUCHE_VERSION@/include"
 gauche_libdir="$datadir/@GAUCHE_VERSION@/lib"
+gauche_aclocaldir="$datadir/@GAUCHE_VERSION@/"
 gauche_archdir="$archdir/@GAUCHE_VERSION@/@host@"
 gauche_siteincdir="$datadir/site/include"
 gauche_sitelibdir="$datadir/site/lib"
@@ -48,6 +49,12 @@ usage () {
     echo "  -L   library paths required to link programs using gauche"
     echo "  -l   libraries required to link programs using gauche"
     echo "  --cc name of the compiler"
+    echo "  --ac directory that contains Gauche specific autoconf macro"
+    echo "  --reconfigure"
+    echo "       prints the command line used to configure the current"
+    echo "       installation."
+    echo "  --arch"
+    echo "       prints the architecture signature"
     echo
     echo "Parameters to install files"
     echo "  --syslibdir/--sitelibdir"
@@ -64,6 +71,7 @@ usage () {
     echo "  --so-libs       libraries to be linked with a gauche extension"
     echo "  --dylib-suffix  dynamic/shared library file suffix of the system"
     echo "  --dylib-ldflags flags required to link dynamic/shared library file"
+    echo "  --libgauche-so  the name of shared library of libgauche"
     exit 1
 }
 
@@ -79,6 +87,7 @@ case $1 in
         echo "$gauche_libs"
       fi;;
   --cc) echo $cc;;
+  --ac) echo $gauche_aclocaldir;;
   --reconfigure) echo ./configure $gauche_configure_args;;
 
   --sysincdir) echo $gauche_incdir;;
