@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.41 2003-03-25 06:18:39 shirok Exp $
+ *  $Id: regexp.c,v 1.42 2003-03-29 21:13:31 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -337,11 +337,11 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             rc_register_charset(ctx, SCM_CHARSET(cs));
             return Scm_Cons(sym_comp, cs);
         case 'w':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+            cs = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
             rc_register_charset(ctx, SCM_CHARSET(cs));
             return cs;
         case 'W':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+            cs = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
             rc_register_charset(ctx, SCM_CHARSET(cs));
             return Scm_Cons(sym_comp, cs);
         case 's':

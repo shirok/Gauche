@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.331 2003-03-25 06:18:38 shirok Exp $
+ *  $Id: gauche.h,v 1.332 2003-03-29 21:13:31 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -743,6 +743,7 @@ enum {
     SCM_CHARSET_SPACE,
     SCM_CHARSET_UPPER,
     SCM_CHARSET_XDIGIT,
+    SCM_CHARSET_WORD,           /* internal use: word constituent char. */
     SCM_CHARSET_NUM_PREDEFINED_SETS
 };
 SCM_EXTERN ScmObj Scm_GetStandardCharSet(int id);

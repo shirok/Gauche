@@ -1,7 +1,7 @@
 /*
  * char.c - character and character set operations
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.35 2003-03-25 06:18:38 shirok Exp $
+ *  $Id: char.c,v 1.36 2003-03-29 21:13:30 shirok Exp $
  */
 
 #include <ctype.h>
@@ -699,11 +699,11 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                 break;
             case 'w':
                 moreset_complement = FALSE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+                moreset = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
                 break;
             case 'W':
                 moreset_complement = TRUE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+                moreset = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
                 break;
             default:
                 goto ordchar;
@@ -811,10 +811,14 @@ ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
 
 /* !!!MT WARNING!!! */
 static ScmCharSet *predef_charsets[SCM_CHARSET_NUM_PREDEFINED_SETS];
+static ScmInternalMutex predef_charsets_mutex;
 
 static void install_charsets(void)
 {
     int i, code;
+
+    SCM_INTERNAL_MUTEX_LOCK(predef_charsets_mutex);
+
 #define CS(n)  predef_charsets[n]
     for (i = 0; i < SCM_CHARSET_NUM_PREDEFINED_SETS; i++) {
         CS(i) = SCM_CHARSET(Scm_MakeEmptyCharSet());
@@ -831,11 +835,16 @@ static void install_charsets(void)
         if (isspace(code)) MASK_SET(CS(SCM_CHARSET_SPACE), code);
         if (isupper(code)) MASK_SET(CS(SCM_CHARSET_UPPER), code);
         if (isxdigit(code)) MASK_SET(CS(SCM_CHARSET_XDIGIT), code);
+        /* Default word constituent chars #[\w].  NB: in future versions,
+           a parameter might be introduced to customize this set. */
+        if (isalnum(code)||code=='_')
+            MASK_SET(CS(SCM_CHARSET_WORD), code);
         /* isblank() is not in posix.  for now, I hardcode it. */
         if (code == ' ' || code == '\t')
             MASK_SET(CS(SCM_CHARSET_BLANK), code);
     }
 #undef CS
+    SCM_INTERNAL_MUTEX_UNLOCK(predef_charsets_mutex);
 }
 
 ScmObj Scm_GetStandardCharSet(int id)
@@ -846,4 +855,9 @@ ScmObj Scm_GetStandardCharSet(int id)
         install_charsets();
     }
     return SCM_OBJ(predef_charsets[id]);
+}
+
+ScmObj Scm__InitChar(void)
+{
+    SCM_INTERNAL_MUTEX_INIT(predef_charsets_mutex);
 }
