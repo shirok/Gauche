@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.18 2003-05-10 23:50:16 shirok Exp $
+;;;  $Id: net.scm,v 1.19 2003-05-18 06:57:30 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -40,7 +40,11 @@
 (define ipv6-capable (symbol-bound? 'sys-getaddrinfo))
 
 (export-if-defined
- |IPPROTO_IP| |IPPROTO_ICMP| |IPPROTO_TCP| |IPPROTO_UDP| |IPPROTO_IPV6|)
+ |IPPROTO_IP| |IPPROTO_ICMP| |IPPROTO_TCP| |IPPROTO_UDP| |IPPROTO_IPV6|
+ |SOL_SOCKET| |SO_KEEPALIVE| |SO_OOBINLINE| |SO_REUSEADDR| |SO_TYPE|
+ |SO_BROADCAST| |SO_SNDBUF| |SO_RCVBUF| |SO_PRIORITY| |SO_ERROR|
+ |SOL_TCP| |TCP_NODELAY| |TCP_MAXSEG| |TCP_CORK|
+ |SOL_IP| |IP_OPTIONS|)
 
 (if ipv6-capable
     (define (make-sys-addrinfo . args)
