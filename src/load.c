@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.51 2002-01-14 04:51:18 shirok Exp $
+ *  $Id: load.c,v 1.52 2002-01-15 11:38:19 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -240,16 +240,18 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths, int errorp)
     return Scm_VMLoadFromPort(SCM_PORT(port), load_paths);
 }
 
-void Scm_Load(const char *cpath, int errorp)
+int Scm_Load(const char *cpath, int errorp)
 {
     ScmObj f = SCM_MAKE_STR_COPYING(cpath);
     ScmObj l = SCM_INTERN("load");
+    ScmObj r;
     if (errorp) {
-        Scm_Eval(SCM_LIST2(l, f), SCM_UNBOUND);
+        r = Scm_Eval(SCM_LIST2(l, f), SCM_UNBOUND);
     } else {
         ScmObj k = SCM_MAKE_KEYWORD("error-if-not-found");
-        Scm_Eval(SCM_LIST4(l, f, k, SCM_FALSE), SCM_UNBOUND);
+        r = Scm_Eval(SCM_LIST4(l, f, k, SCM_FALSE), SCM_UNBOUND);
     }
+    return !SCM_FALSEP(r);
 }
 
 /*

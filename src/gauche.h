@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.203 2002-01-14 04:51:18 shirok Exp $
+ *  $Id: gauche.h,v 1.204 2002-01-15 11:38:19 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1922,7 +1922,7 @@ typedef struct ScmHeaderRec ScmSysFdset;
 extern ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths);
 extern ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, int error_if_not_exist);
 extern void Scm_LoadFromPort(ScmPort *port);
-extern void Scm_Load(const char *file, int error_if_not_found);
+extern int Scm_Load(const char *file, int error_if_not_found);
 
 extern ScmObj Scm_GetLoadPath(void);
 extern ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
