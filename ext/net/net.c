@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.26 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: net.c,v 1.27 2003-09-28 04:25:36 shirok Exp $
  */
 
 #include "net.h"
@@ -44,24 +44,16 @@ static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SocketClass, socket_print);
 
-static void socket_cleanup(ScmSocket *sock)
+static void socket_finalize(ScmObj obj, void *data)
 {
-    if (sock->status != SCM_SOCKET_STATUS_CLOSED && sock->fd >= 0) {
-        if (sock->status == SCM_SOCKET_STATUS_CONNECTED) {
-            shutdown(sock->fd, 2);  /* intentionally ignore errors */
-            sock->status = SCM_SOCKET_STATUS_SHUTDOWN;
-        }
-        if (sock->inPort)  Scm_ClosePort(sock->inPort);  /* ignore errors */
-        if (sock->outPort) Scm_ClosePort(sock->outPort); /* ignore errors */
+    ScmSocket *sock = (ScmSocket*)obj;
+    /* NB: at this point, sock->inPort and sock->outPort may already
+       be GC-ed and finalized, so we don't flush them here. */
+    if (sock->fd >= 0) {
         close(sock->fd);
         sock->fd = -1;
         sock->status = SCM_SOCKET_STATUS_CLOSED;
     }
-}
-
-static void socket_finalize(ScmObj obj, void *data)
-{
-    socket_cleanup((ScmSocket *)obj);
 }
 
 static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -132,7 +124,13 @@ ScmObj Scm_SocketClose(ScmSocket *s)
     if (s->status == SCM_SOCKET_STATUS_CLOSED) {
         return SCM_FALSE;
     }
-    socket_cleanup(s);
+    /* We don't shutdown the connection; forked process may have
+       reference to the same socket. */
+    if (s->inPort)  Scm_ClosePort(s->inPort);  /* ignore errors */
+    if (s->outPort) Scm_ClosePort(s->outPort); /* ignore errors */
+    close(s->fd);
+    s->fd = -1;
+    s->status = SCM_SOCKET_STATUS_CLOSED;
     return SCM_TRUE;
 }
 
