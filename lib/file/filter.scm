@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: filter.scm,v 1.1 2002-02-22 11:54:56 shirok Exp $
+;;;  $Id: filter.scm,v 1.2 2002-02-22 13:05:36 shirok Exp $
 ;;;
 
 ;;; This module provides utilities for a common pattern in
@@ -37,8 +37,8 @@
 (define (file-filter proc . options)
   (let ((input  (get-keyword :input options (current-input-port)))
         (output (get-keyword :output options (current-output-port)))
-        (temporary-file (get-keyword :temporary-file? options #f))
-        (keep-output? (get-keyword :keep-output-on-error? options #f)))
+        (temporary-file (get-keyword :temporary-file options #f))
+        (keep-output? (get-keyword :keep-output? options #f)))
 
     (define (process-with-output oport)
       (cond
@@ -67,6 +67,7 @@
            (raise e))
          (lambda ()
            (receive r (process-with-output tport)
+             (close-output-port tport)
              (sys-rename tfile ofile)
              (apply values r))))))
 

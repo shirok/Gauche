@@ -18,3 +18,5 @@ parseopt.scm
 text.scm
 util.scm
 version.scm
+file.scm
+
