@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.94 2003-11-25 04:41:42 shirok Exp $
+ *  $Id: port.c,v 1.95 2003-11-27 14:09:55 shirok Exp $
  */
 
 #include <unistd.h>
@@ -935,7 +935,7 @@ ScmObj Scm_GetOutputStringUnsafe(ScmPort *port)
 
 ScmObj Scm_GetRemainingInputString(ScmPort *port)
 {
-    char *cp, *ep;
+    const char *cp, *ep;
     if (SCM_PORT_TYPE(port) != SCM_PORT_ISTR)
         Scm_Error("input string port required, but got %S", port);
     /* NB: we don't need to lock the port, since the string body
