@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.37 2002-04-14 03:12:01 shirok Exp $
+ *  $Id: bignum.c,v 1.38 2002-04-14 20:06:13 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -67,6 +67,7 @@ char *alloca ();
 #endif
 
 #define LOMASK             (HALF_WORD-1)
+#define HIMASK             (~LOMASK)
 #define LO(word)           ((word) & LOMASK)
 #define HI(word)           (((word) >> HALF_BITS)&LOMASK)
 
@@ -823,14 +824,23 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     u_long vn_1, vn_2, vv, uj, uj2;
 
 #define DIGIT(num, n) (((n)%2)? HI((num)->values[(n)/2]) : LO((num)->values[(n)/2]))
+#define DIGIT2(num, n) \
+    (((n)%2)?  \
+     ((LO((num)->values[(n)/2+1])<<HALF_BITS)|HI((num)->values[(n)/2])): \
+     (num)->values[(n)/2])
 #define SETDIGIT(num, n, v) \
     (((n)%2)? \
      (num->values[(n)/2] = (num->values[(n)/2] & LOMASK)|((v) << HALF_BITS)) :\
-     (num->values[(n)/2] = (num->values[(n)/2] & ~LOMASK)|((v) & LOMASK)))\
+     (num->values[(n)/2] = (num->values[(n)/2] & HIMASK)|((v) & LOMASK)))
+#define SETDIGIT2(num, n, v)                                             \
+    (((n)%2)?                                                            \
+     ((num->values[(n)/2] = LO(num->values[(n)/2])|((v)<<HALF_BITS)),    \
+      (num->values[(n)/2+1] = (num->values[(n)/2+1] & HIMASK)|HI(v))) : \
+     (num->values[(n)/2] = (v)))
 
     /* normalize */
-    u = make_bignum(dividend->size + 1);
-    v = make_bignum(divisor->size);
+    u = make_bignum(dividend->size + 1); /*will be returned as a remainder */
+    ALLOC_TEMP_BIGNUM(v, divisor->size);
     if (d >= HALF_BITS) {
         d -= HALF_BITS;
         n = divisor->size*2 - 1;
@@ -868,11 +878,10 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
         cy = 0;
         for (k = 0; k < n; k++) {
             vv = qq * DIGIT(v, k);
-            uj = (DIGIT(u, j+k+1)<<HALF_BITS) + DIGIT(u, j+k);
+            uj = DIGIT2(u, j+k);
             uj2 = uj - vv - cy*HALF_WORD;
             cy =  (uj2 > uj)? 1 : 0;
-            SETDIGIT(u, j+k, LO(uj2));
-            SETDIGIT(u, j+k+1, HI(uj2));
+            SETDIGIT2(u, j+k, uj2);
         }
 #ifdef DIV_DEBUG
         printf("subtract cy = %d, ", cy);
