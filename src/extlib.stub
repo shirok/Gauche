@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.159 2002-06-17 05:43:21 shirok Exp $
+;;; $Id: extlib.stub,v 1.160 2002-06-25 06:28:04 shirok Exp $
 ;;;
 
 "
@@ -639,6 +639,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 ;; 6.3.6  Vectors
 ;;
+
+(define-cproc vector-copy (v &optional (start 0) (end -1))
+  (assert (vector? v))
+  (assert (small-integer? start))
+  (assert (small-integer? end))
+  "SCM_RETURN(Scm_VectorCopy(v, start, end));")
 
 ;; weak vector
 (define-cproc make-weak-vector (size)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.269 2002-06-21 19:41:39 shirok Exp $
+ *  $Id: gauche.h,v 1.270 2002-06-25 06:28:04 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -969,13 +969,30 @@ struct ScmVectorRec {
 SCM_CLASS_DECL(Scm_VectorClass);
 #define SCM_CLASS_VECTOR     (&Scm_VectorClass)
 
+/* Utility to check start/end range in string and vector operation */
+#define SCM_CHECK_START_END(start, end, len)                            \
+    do {                                                                \
+        if ((start) < 0 || (start) > (len)) {                           \
+            Scm_Error("start argument out of range: %d\n", (start));    \
+        }                                                               \
+        if ((end) < 0) (end) = (len);                                   \
+        else if ((end) > (len)) {                                       \
+            Scm_Error("end argument out of range: %d\n", (end));        \
+        } else if ((end) <= (start)) {                                  \
+            Scm_Error("end argument (%d) must be greater than or "      \
+                      "equal to the start argument (%d)",               \
+                      (end), (start));                                  \
+        }                                                               \
+    } while (0)
+
 SCM_EXTERN ScmObj Scm_MakeVector(int size, ScmObj fill);
 SCM_EXTERN ScmObj Scm_VectorRef(ScmVector *vec, int i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj);
 SCM_EXTERN ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end);
 
 SCM_EXTERN ScmObj Scm_ListToVector(ScmObj l);
-SCM_EXTERN ScmObj Scm_VectorToList(ScmVector *v);
+SCM_EXTERN ScmObj Scm_VectorToList(ScmVector *v, int start, int end);
+SCM_EXTERN ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end);
 
 #define SCM_VECTOR_FOR_EACH(cnt, obj, vec)           \
     for (cnt = 0, obj = SCM_VECTOR_ELEMENT(vec, 0);  \
@@ -2278,10 +2295,10 @@ SCM_EXTERN void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out);
 SCM_EXTERN const char *Scm_HostArchitecture(void);
 
 /* Compare and Sort */
-int Scm_Compare(ScmObj x, ScmObj y);
-void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn);
-ScmObj Scm_SortList(ScmObj objs, ScmObj fn);
-ScmObj Scm_SortListX(ScmObj objs, ScmObj fn);
+SCM_EXTERN int Scm_Compare(ScmObj x, ScmObj y);
+SCM_EXTERN void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn);
+SCM_EXTERN ScmObj Scm_SortList(ScmObj objs, ScmObj fn);
+SCM_EXTERN ScmObj Scm_SortListX(ScmObj objs, ScmObj fn);
 
 /* Assertion */
 

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.88 2002-06-11 10:48:36 shirok Exp $
+;;; $Id: stdlib.stub,v 1.89 2002-06-25 06:28:04 shirok Exp $
 ;;;
 
 
@@ -778,9 +778,11 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  Scm_VectorSet(vec, k, obj);
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc vector->list (vec)
+(define-cproc vector->list (vec &optional (start 0) (end -1))
   (assert (vector? vec))
-  "  SCM_RETURN(Scm_VectorToList(vec));")
+  (assert (small-integer? start))
+  (assert (small-integer? end))
+  "  SCM_RETURN(Scm_VectorToList(vec, start, end));")
 
 (define-cproc list->vector (list)
   (assert (list? list))

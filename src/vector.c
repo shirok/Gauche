@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.17 2002-06-11 10:48:36 shirok Exp $
+ *  $Id: vector.c,v 1.18 2002-06-25 06:28:04 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -66,9 +66,12 @@ ScmObj Scm_ListToVector(ScmObj l)
     return SCM_OBJ(v);
 }
 
-ScmObj Scm_VectorToList(ScmVector *v)
+ScmObj Scm_VectorToList(ScmVector *v, int start, int end)
 {
-    return Scm_ArrayToList(SCM_VECTOR_ELEMENTS(v), SCM_VECTOR_SIZE(v));
+    int i, len = SCM_VECTOR_SIZE(v);
+    SCM_CHECK_START_END(start, end, len);
+    return Scm_ArrayToList(SCM_VECTOR_ELEMENTS(v)+start,
+                           end-start);
 }
 
 /*
@@ -97,15 +100,22 @@ ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj)
 ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end)
 {
     int i, len = SCM_VECTOR_SIZE(vec);
-    if (start < 0 || start > len) {
-        Scm_Error("start argument out of range: %d", start);
-    }
-    if (end < 0) end = len;
-    else if (end > len || end < start) {
-        Scm_Error("end argument out of range: %d", start);
-    }
+    SCM_CHECK_START_END(start, end, len);
     for (i=start; i < end; i++) {
         SCM_VECTOR_ELEMENT(vec, i) = fill;
     }
     return SCM_OBJ(vec);
 }
+
+ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end)
+{
+    int i, len = SCM_VECTOR_SIZE(vec);
+    ScmVector *v;
+    SCM_CHECK_START_END(start, end, len);
+    v = make_vector(end - start);
+    for (i=0; i<end-start; i++) {
+        SCM_VECTOR_ELEMENT(v, i) = SCM_VECTOR_ELEMENT(vec, i+start);
+    }
+    return SCM_OBJ(v);
+}
+

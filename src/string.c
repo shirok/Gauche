@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.62 2002-06-07 22:07:43 shirok Exp $
+ *  $Id: string.c,v 1.63 2002-06-25 06:28:04 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1032,13 +1032,7 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
     const char *sptr, *ptr, *eptr;
     ScmStringPointer *sp;
 
-    if (start < 0 || start > len)
-        Scm_Error("start argument out of range: %d", start);
-    if (end == -1) end = len; /* special */
-    if (end < 0 || end > len)
-        Scm_Error("end argument out of range: %d", end);
-    if (end < start)
-        Scm_Error("end (%d) must comes after start(%d)", end, start);
+    SCM_CHECK_START_END(start, end, len);
     while (index < 0) index += (end - start) + 1;
     if (index > (end - start)) goto badindex;
     

@@ -1,7 +1,7 @@
 /*
  * macro.c - macro implementation
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.40 2002-05-12 06:35:20 shirok Exp $
+ *  $Id: macro.c,v 1.41 2002-06-25 06:28:04 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -351,7 +351,7 @@ static ScmObj compile_rule1(ScmObj form,
     else if (SCM_VECTORP(form)) {
         /* TODO: this is a sloppy implementation.
            Eliminate intermediate list structure! */
-        ScmObj l = Scm_VectorToList(SCM_VECTOR(form));
+        ScmObj l = Scm_VectorToList(SCM_VECTOR(form), 0, -1);
         return Scm_ListToVector(compile_rule1(l, spat, ctx, patternp));
     }
     else if (patternp && SCM_IDENTIFIERP(form)) {
