@@ -12,12 +12,15 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: md5.scm,v 1.1 2002-12-03 01:19:16 shirok Exp $
+;;;  $Id: md5.scm,v 1.2 2002-12-03 01:25:01 shirok Exp $
 ;;;
 
+;;; RFC 1321 The MD5 Message-Digest Algorithm
+
 (define-module rfc.md5
-  (extend util.digest)
-  (export-all))
+  (use util.digest)
+  (export <md5>
+	  md5-update md5-final md5-digest md5-digest-string))
 
 (select-module rfc.md5)
 (dynamic-load "md5")
@@ -41,10 +44,9 @@
 
 (define (md5-digest)
   (let ((md5 (make <md5-context>)))
-    (let loop ((b (read-block 8192)))
-      (unless (eof-object? b)
-	(%md5-update md5 b)
-	(loop (read-block 8192))))
+    (port-for-each
+     (lambda (b) (%md5-update md5 b))
+     (lambda () (read-block 4096)))
     (%md5-final md5)))
 
 (define (md5-digest-string string)

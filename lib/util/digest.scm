@@ -12,11 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: digest.scm,v 1.1 2002-12-03 01:19:16 shirok Exp $
+;;;  $Id: digest.scm,v 1.2 2002-12-03 01:25:01 shirok Exp $
 ;;;
 
 (define-module util.digest
-  (export-all))
+  (export <message-digest-algorithm> <message-digest-algorithm-meta>
+	  digest-update digest-final digest digest-string))
 
 (select-module util.digest)
 
@@ -35,22 +36,5 @@
   #f)
 (define-method digest-string ((class <message-digest-algorithm-meta>) string)
   #f)
-
-;; these are just examples, can be removed safely
-(define (hexify string)
-  (with-string-io string
-    (lambda ()
-      (let loop ((b (read-byte)))
-	(unless (eof-object? b)
-	  (format #t "~2,'0x" b)
-	  (loop (read-byte)))))))
-
-(define-method digest-hex ((class <message-digest-algorithm-meta>))
-  (hexify (digest class)))
-
-(define-method digest-string-hex ((class <message-digest-algorithm-meta>)
-				  string)
-  (hexify (digest-string class string)))
-;; end
 
 (provide "util/digest")

@@ -4,30 +4,20 @@
 
 (use gauche.test)
 (test-start "hmac")
-
-;; kludge to run "in-place" test
-(add-load-path ".")
-(add-load-path "../uvector")
-
-(load "md5")
-(import rfc.md5)
-(load "uvector")
-(import gauche.uvector)
 (use rfc.hmac)
-
+(use rfc.md5)
+(use rfc.sha1)
 
 (define (hexify string)
   (with-string-io string
     (lambda ()
-      (let loop ((b (read-byte)))
-	(unless (eof-object? b)
-	  (format #t "~2,'0x" b)
-	  (loop (read-byte)))))))
+      (port-for-each (lambda (x) (format #t "~2,'0x" x)) read-byte))))
 
 (define hmac (make <hmac>
 	           :key (make-byte-string 16 #x0b)
 	           :hasher <md5>))
-(hmac-update hmac "Hi There")
+(hmac-update hmac "Hi ")
+(hmac-update hmac "There")
 (test "hmac-final" "9294727a3638bb1c13f48ef8158bfc9d"
       (lambda () (hexify (hmac-final hmac))))
 
@@ -54,5 +44,17 @@
 	(hexify (hmac-digest-string "Test Using Larger Than Block-Size Key - Hash Key First"
 				    :key (make-byte-string 80 #xaa)
 				    :hasher <md5>))))
+
+(test "hmac-digest-string" "b617318655057264e28bc0b6fb378c8ef146be00"
+      (lambda ()
+	(hexify (hmac-digest-string "Hi There"
+				    :key (make-byte-string 20 #x0b)
+				    :hasher <sha1>))))
+
+(test "hmac-digest-string" "aa4ae5e15272d00e95705637ce8a3b55ed402112"
+      (lambda ()
+	(hexify (hmac-digest-string "Test Using Larger Than Block-Size Key - Hash Key First"
+				    :key (make-byte-string 80 #xaa)
+				    :hasher <sha1>))))
 
 (test-end)

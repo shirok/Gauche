@@ -12,13 +12,16 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: hmac.scm,v 1.1 2002-12-03 01:19:16 shirok Exp $
+;;;  $Id: hmac.scm,v 1.2 2002-12-03 01:25:01 shirok Exp $
 ;;;
+
+;;; RFC 2104 HMAC: Keyed-Hashing for Message Authentication
 
 (define-module rfc.hmac
   (use util.digest)
   (use gauche.uvector)
-  (export-all))
+  (export <hmac> make-byte-string
+	  hmac-update hmac-final hmac-digest hmac-digest-string))
 
 (select-module rfc.hmac)
 
@@ -62,10 +65,9 @@
 
 (define (hmac-digest . args)
   (let ((hmac (apply make <hmac> args)))
-    (let loop ((b (read-block 8192)))
-      (unless (eof-object? b)
-	(hmac-update hmac b)
-	(loop (read-block 8192))))
+    (port-for-each
+     (lambda (b) (hmac-update hmac b))
+     (lambda () (read-block 4096)))
     (hmac-final hmac)))
 
 (define (hmac-digest-string string . args)
