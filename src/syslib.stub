@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.88 2002-12-13 13:17:55 shirok Exp $
+;;; $Id: syslib.stub,v 1.89 2003-05-29 10:16:01 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -589,19 +589,15 @@
 
 (define-type <sys-fdset> "ScmSysFdset*")
 
+(if "defined(HAVE_SELECT)" (begin
 (define-cproc sys-fdset-ref (fdset::<sys-fdset> pf)
-  "#ifdef HAVE_SELECT
-  int fd = Scm_GetPortFd(pf, FALSE);
+  "int fd = Scm_GetPortFd(pf, FALSE);
   if (fd < 0) SCM_RETURN(SCM_TRUE);
-  else SCM_RETURN(SCM_MAKE_BOOL(FD_ISSET(fd, &fdset->fdset)));
-#else
-  SCM_RETURN(SCM_UNDEFINED); /* can't be here */
-#endif"
+  else SCM_RETURN(SCM_MAKE_BOOL(FD_ISSET(fd, &fdset->fdset)));"
   (setter sys-fdset-set!))
   
 (define-cproc sys-fdset-set! (fdset::<sys-fdset> pf flag::<boolean>)
-  "#ifdef HAVE_SELECT
-  int fd = Scm_GetPortFd(pf, FALSE);
+  "int fd = Scm_GetPortFd(pf, FALSE);
   if (fd >= 0) {
     if (flag) {
       FD_SET(fd, &fdset->fdset);
@@ -617,7 +613,6 @@
       }
     }
   }
-#endif
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc sys-fdset-max-fd (fdset::<sys-fdset>)
@@ -629,6 +624,7 @@
 (define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
   (return "Scm_SysSelectX"))
 
+)) ;; if defined(HAVE_SELECT)
 
 ;; Local variables:
 ;; mode: scheme
