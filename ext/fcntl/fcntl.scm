@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fcntl.scm,v 1.3 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: fcntl.scm,v 1.4 2003-10-04 11:32:37 shirok Exp $
 ;;;
 
 
@@ -38,7 +38,7 @@
   (export <sys-flock>
           sys-fcntl
 
-          |F_DUPFD|  |F_GETFD|  |F_GETLK|  |F_GETFL|  |F_SETFL|
+          |F_DUPFD|  |F_GETFD|  |F_SETFD|  |F_GETFL|  |F_SETFL|
           |F_GETLK|  |F_SETLK|  |F_SETLKW|
           |F_RDLCK|  |F_WRLCK|  |F_UNLCK|  |FD_CLOEXEC|
           |O_RDONLY| |O_WRONLY| |O_RDWR|   |O_APPEND| |O_CREAT|
