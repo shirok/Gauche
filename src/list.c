@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.30 2001-10-04 10:33:00 shirok Exp $
+ *  $Id: list.c,v 1.31 2001-11-29 07:48:32 shirok Exp $
  */
 
 #include "gauche.h"
@@ -398,6 +398,7 @@ ScmObj Scm_ListRef(ScmObj list, int i, ScmObj fallback)
         if (!SCM_PAIRP(list)) goto err;
         list = SCM_CDR(list);
     }
+    if (!SCM_PAIRP(list)) goto err;
     return SCM_CAR(list);
   err:
     if (SCM_UNBOUNDP(fallback)) {
