@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.45 2001-04-23 07:09:54 shiro Exp $
+;;; $Id: stdlib.stub,v 1.46 2001-04-23 09:36:38 shiro Exp $
 ;;;
 
 
@@ -586,22 +586,24 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc string-append (&rest args)
   "  SCM_RETURN(Scm_StringAppend(args));")
 
-(define-cproc string->list (str)
+(define-cproc string->list (str &optional start end) ;optional arg in SRFI-13
   (assert (string? str))
-  "  SCM_RETURN(Scm_StringToList(str));")
+  "  ScmObj xstr = Scm_MaybeSubstring(str, start, end);
+  SCM_RETURN(Scm_StringToList(SCM_STRING(xstr)));")
 
 (define-cproc list->string (list)
   (assert (list? list))
   "  SCM_RETURN(Scm_ListToString(list));")
 
-(define-cproc string-copy (str)
+(define-cproc string-copy (str &optional start end) ;optional arg in SRFI-13
   (assert (string? str))
-  "  SCM_RETURN(Scm_CopyString(str));")
+  "  ScmObj xstr = Scm_MaybeSubstring(str, start, end);
+  SCM_RETURN(Scm_CopyString(SCM_STRING(xstr)));")
 
-(define-cproc string-fill! (str c)
+(define-cproc string-fill! (str c &optional start end) ;optional arg in SRFI-13
   (assert (string? str))
   (assert (char? c))
-  "  SCM_RETURN(Scm_StringFill(str, c));")
+  "  SCM_RETURN(Scm_StringFill(str, c, start, end));")
 
 ;;
 ;; 6.3.6  Vectors

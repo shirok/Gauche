@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.24 2001-04-22 07:31:05 shiro Exp $
+ *  $Id: string.c,v 1.25 2001-04-23 09:36:26 shiro Exp $
  */
 
 #include <stdio.h>
@@ -552,18 +552,30 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
     return SCM_OBJ(z);
 }
 
-/* auxiliary procedure to support optional start/end parameter specified
-   in lots of SRFI-13 functions.   If at least one of START or END is
-   SCM_UNBOUND, it returns the string itself.  Otherwise, it returns
-   a substring. */
-ScmObj Scm_QuasiSubstring(ScmString *x, ScmObj start, ScmObj end)
+/* Auxiliary procedure to support optional start/end parameter specified
+   in lots of SRFI-13 functions.   If start and end is specified and restricts
+   string range, call substring.  Otherwise returns x itself. */
+ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 {
-    if (SCM_UNBOUNDP(start) || SCM_UNBOUNDP(end)) return SCM_OBJ(x);
-    if (!SCM_INTP(start))
-        Scm_Error("exact integer required for start, but got %S", start);
-    if (!SCM_INTP(end))
-        Scm_Error("exact integer required for start, but got %S", end);
-    return Scm_Substring(x, SCM_INT_VALUE(start), SCM_INT_VALUE(end));
+    int istart, iend;
+    if (SCM_UNBOUNDP(start) || SCM_UNDEFINEDP(start)) {
+        istart = 0;
+    } else {
+        if (!SCM_INTP(start))
+            Scm_Error("exact integer required for start, but got %S", start);
+        istart = SCM_INT_VALUE(start);
+    }
+
+    if (SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end)) {
+        if (istart == 0) return SCM_OBJ(x);
+        iend = (SCM_STRING_LENGTH(x) < 0) ?
+            SCM_STRING_SIZE(x) : SCM_STRING_LENGTH(x);
+    } else {
+        if (!SCM_INTP(end))
+            Scm_Error("exact integer required for start, but got %S", end);
+        iend = SCM_INT_VALUE(end);
+    }
+    return Scm_Substring(x, istart, iend);
 }
 
 /* SRFI-13 string-take and string-drop */
@@ -729,20 +741,62 @@ ScmObj Scm_ListToString(ScmObj chars)
     return makestring_from_list(chars);
 }
 
-ScmObj Scm_StringFill(ScmString *str, ScmChar ch)
+ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
+                      ScmObj maybe_start, ScmObj maybe_end)
 {
-    int len = SCM_STRING_LENGTH(str), i;
+    int completep, len, i, start, end, prelen, midlen, postlen;
     int chlen = SCM_CHAR_NBYTES(ch);
-    char *newstr = SCM_NEW_ATOMIC2(char *, len * chlen + 1);
-    char *p = newstr;
+    char *newstr, *p;
+    const char *s, *r;
 
-    for (i=0; i<len; i++) {
+    completep = (SCM_STRING_LENGTH(str) >= 0);
+    len = completep ? SCM_STRING_SIZE(str) : SCM_STRING_LENGTH(str);
+
+    if (SCM_UNBOUNDP(maybe_start) || SCM_UNDEFINEDP(maybe_start)) {
+        start = 0;
+    } else {
+        if (!SCM_INTP(maybe_start))
+            Scm_Error("exact integer required for start, but got %S",
+                      maybe_start);
+        start = SCM_INT_VALUE(maybe_start);
+    }
+    if (SCM_UNBOUNDP(maybe_end) || SCM_UNDEFINEDP(maybe_end)) {
+        end = len;
+    } else {
+        if (!SCM_INTP(maybe_end))
+            Scm_Error("exact integer required for end, but got %S",
+                      maybe_end);
+        end = SCM_INT_VALUE(maybe_end);
+    }
+    if (start < 0 || start > end || end > len) {
+        Scm_Error("start/end pair is out of range: (%d %d)", start, end);
+    }
+    if (start == end) return SCM_OBJ(str);
+    
+    s = SCM_STRING_START(str);
+    for (i = 0; i < start; i++) {
+        s += (completep? SCM_CHAR_NFOLLOWS(*s)+1 : 1);
+    }
+    prelen = s - SCM_STRING_START(str);
+    r = s;
+    for (; i < end; i++) {
+        s += (completep? SCM_CHAR_NFOLLOWS(*s)+1 : 1);
+    }
+    midlen = s - r;
+    postlen = SCM_STRING_SIZE(str) - midlen - prelen;
+
+    p = newstr = SCM_NEW_ATOMIC2(char *,
+                                 prelen + (end-start)*chlen + postlen + 1);
+    memcpy(p, SCM_STRING_START(str), prelen);
+    p += prelen;
+    for (i=0; i < end-start; i++) {
         SCM_STR_PUTC(p, ch);
         p += chlen;
     }
-    p[len*chlen] = '\0';
+    memcpy(p, SCM_STRING_START(str) + prelen + midlen, postlen);
+    p[postlen] = '\0';          /* be friendly to C */
     /* modify str */
-    str->size = len * chlen;
+    str->size = prelen + (end-start)*chlen + postlen;
     str->start = newstr;
     return SCM_OBJ(str);
 }
