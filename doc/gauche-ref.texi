@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.64 2001-09-21 09:59:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.65 2001-09-23 05:28:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -97,7 +97,7 @@ recent version on the web:
 Gauche is a script interpreter based on Scheme.
 Gauche conforms the language standard
 "Revised^5 Report on the Algorithmic Language Scheme"
-(@ref{r5rs,[R5RS]}),
+(@ref{r5rs,[R5RS],R5RS}),
 and supports various common libraries defined in SRFIs
 (@uref{http://srfi.schemers.org}).
 
@@ -1827,7 +1827,111 @@ Return value is undefined.
 @end defun
 
 @defun string-join strs &optional delim grammer
-[SRFI-13]
+[SRFI-13] Concatenate strings in the list @var{strs},
+with a string @var{delim} as `glue'.
+
+The argument @var{grammer} may be one of the following symbol
+to specify how the strings are concatenated.
+@table @code
+@item infix
+Use @var{delim} between each string.  This mode is default.
+Note that this mode introduce ambiguity when @var{strs}
+is an empty string or a list with a null string.
+@example
+(string-join '("apple" "mango" "banana") ", ") 
+  @result{} "apple, mango, banana"
+(string-join '() ":")
+  @result{} ""
+(string-join '("") ":")
+  @result{} ""
+@end example
+@item strict-infix
+Works like @code{infix}, but empty list is not allowed to @var{strs},
+thus avoiding ambiguity.
+@item prefix
+Use @var{delim} before each string.
+@example
+(string-join '("usr" "local" "bin") "/" 'prefix)
+  @result{} "/usr/local/bin"
+(string-join '() "/" 'prefix)
+  @result{} ""
+(string-join '("") "/" 'prefix)
+  @result{} "/"
+@end example
+@item suffix
+Use @var{delim} after each string.
+@example
+(string-join '("a" "b" "c") "&" 'suffix)
+  @result{} "a&b&c&"
+(string-join '() "&" 'suffix)
+  @result{} ""
+(string-join '("") "&" 'suffix)
+  @result{} "&"
+@end example
+@end table
+
+@end defun
+
+@defun string-scan string item &optional return
+Scan @var{item} (either a string or a character) in @var{string}.
+The @var{return} argument specifies what value should be returned
+when @var{item} is found in @var{string}.  It must be one of the
+following symbols.
+
+@table @code
+@item index
+Returns the index in @var{string} if @var{item} is found, or @code{#f}.
+This is the default behavior.
+@example
+(string-scan "abracadabra" "ada") @result{} 5
+(string-scan "abracadabra" #\c) @result{} 4
+(string-scan "abracadabra" "aba") @result{} #f
+@end example
+@item before
+Returns a substring of @var{string} before @var{item}, or
+@code{#f} if @var{item} is not found.
+@example
+(string-scan "abracadabra" "ada" 'before) @result{} "abrac"
+(string-scan "abracadabra" #\c 'before) @result{} "abra"
+@end example
+@item after
+Returns a substring of @var{string} after @var{item}, or
+@code{#f} if @var{item} is not found.
+@example
+(string-scan "abracadabra" "ada" 'after) @result{} "bra"
+(string-scan "abracadabra" #\c 'after) @result{} "adabra"
+@end example
+@item before*
+Returns a substring of @var{string} before @var{item}, and
+the substring after it.  If @var{item} is not found, returns
+@code{(values #f #f)}.
+@example
+(string-scan "abracadabra" "ada" 'before*)
+  @result{} "abrac" @r{and} "adabra"
+(string-scan "abracadabra" #\c 'before*)
+  @result{} "abra" @r{and} "cadabra"
+@end example
+@item after*
+Returns a substring of @var{string} up to the end of @var{item},
+and the rest.  If @var{item} is not found, returns
+@code{(values #f #f)}.
+@example
+(string-scan "abracadabra" "ada" 'after*)
+  @result{} "abracada" @r{and} "bra"
+(string-scan "abracadabra" #\c 'after*)
+  @result{} "abrac" @r{and} "adabra"
+@end example
+@item both
+Returns a substring of @var{string} before @var{item} and
+after @var{item}.  If @var{item} is not found, returns
+@code{(values #f #f)}.
+@example
+(string-scan "abracadabra" "ada" 'both)
+  @result{} "abrac" @r{and} "bra"
+(string-scan "abracadabra" #\c 'both)
+  @result{} "abra" @r{and} "adabra"
+@end example
+@end table
 @end defun
 
 @defun string-split s char
@@ -2857,6 +2961,12 @@ Returns the value of the environment variable @var{name} as a string,
 or @code{#f} if the environment variable is not defined.
 @end defun
 
+@defun sys-putenv name value
+Add environment variable @var{name} with @var{value} to the current
+process's environment.  This function is only available if the
+platform supports putenv(3).
+@end defun
+
 @defun gauche-version
 @defunx gauche-architecture
 @defunx gauche-library-directory
@@ -3826,6 +3936,7 @@ of descendants of @var{class}.
 * Unit Testing::                
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
+* HTTP cookie handling::        
 * URI parsing and construction::  
 * SLIB::                        
 * Feature Conditional::         
@@ -5807,7 +5918,7 @@ Prints out list of failed tests.
 Defines a set of functions that parses and constructs the ``Internet
 Message Format'', a text format used to exchange e-mails.
 The most recent specification can be found in
-@uref{http://www.rfc-editor.org/rfc/rfc2822.txt, RFC2822}.
+RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}).
 The format was originally defined in RFC 822, and people still 
 call it ``RFC822 format'', hence I named this module.
 In the following document, I also refer to the format as ``RFC822 format''.
@@ -5833,14 +5944,13 @@ The order of fields are preserved.
 
 
 @c ----------------------------------------------------------------------
-@node Base64 encoding/decoding, URI parsing and construction, RFC822 Message parsing, Libarary Modules
+@node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Libarary Modules
 @section @code{rfc.base64} - Base64 encoding/decoding
 
 @deftp {Module} rfc.base64
 @mdindex rfc.base64
 This module defines a few functions to encode/decode Base64 format,
-defined in @uref{http://www.rfc-editor.org/rfc/rfc2045.txt, RFC 2045},
-section 6.3.
+defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3.
 @end deftp
 
 @defun base64-encode
@@ -5873,13 +5983,48 @@ set are silently ignored.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, SLIB, Base64 encoding/decoding, Libarary Modules
+@node HTTP cookie handling, URI parsing and construction, Base64 encoding/decoding, Libarary Modules
+@section @code{rfc.cookie} - HTTP cookie handling
+
+@deftp {Module} rfc.cookie
+@mdindex rfc.cookie
+Defines a set of functions to parse and construct a ``cookie'' information
+defined in RFC 2965 (@ref{rfc2965,,[RFC2965]}).
+@end deftp
+
+@defun parse-cookie-string string &optional version
+Parse a cookie string @var{string}, which is the value of ``Cookie''
+request header.  Usually, the same information is available to CGI
+program via the environemnt variable @code{HTTP_COOKIE}.
+
+If the cookie version is known, via ``Cookie2'' request header,
+the integer version must be passed to @var{version}.  Otherwise,
+@code{parse-cookie} figures out the version from @var{string}.
+
+The result is a list of the following format.
+@example
+((<name> <value> [:path <path>] [:domain <domain>] [:port <port>])
+ @dots{})
+@end example
+where @var{<name>} is the attribute name, and @var{<value>} is
+the corresponding value.  If the attribute doesn't have value,
+@var{<value>} is @code{#f}.  (Note that it differs from the attribute
+having null value, @code{""}.)
+If the attribute has path, domain or port options, it is given
+as a form of keyword-value pair.
+@end defun
+
+@defun construct-cookie-string specs &optional version
+@end defun
+
+@c ----------------------------------------------------------------------
+@node URI parsing and construction, SLIB, HTTP cookie handling, Libarary Modules
 @section @code{rfc.uri} - URI parsing and construction
 
 @deftp {Module} rfc.uri
 @mdindex rfc.uri
 Defines a set of functions to parse Uniform Resource Identifiers,
-defined in @uref{http://www.rfc-editor.org/rfc/rfc2396.txt, RFC 2396}.
+defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}).
 @end deftp
 
 
@@ -5922,13 +6067,13 @@ module @code{slib}.
 
 @deftp {Module} srfi-1
 @mdindex srfi-1
-SRFI-1 is a rich collection of list manipulation library.
+SRFI-1 is a rich collection of list manipulation library
+(@ref{srfi-1,[SRFI-1],SRFI-1}).
 It is available by saying @code{(use srfi-1)}.
 The implementation is based on Olin Shivers's reference implementation.
 I splitted it into number of subfiles that will be autoloaded on demand.
 
 Detailed specificaion of SRFI-1 is available at
-@uref{http://srfi.schemers.org/srfi-1/srfi-1.html}.
 @end deftp
 
 @menu
@@ -6728,7 +6873,7 @@ sequence of forms.
 @deftp {Module} srfi-11
 @mdindex srfi-11
 Defines two macros, @code{let-values} and @code{let*-values}.
-They are convenient to use with multiple values.
+They are convenient to use with multiple values (@ref{srfi-11,,[SRFI-11]}).
 
 
 @end deftp
@@ -6793,8 +6938,7 @@ In Gauche, those functions are splitted to number of files
 and the form @code{(use srfi-13)} merely sets up autoloading of
 those files.  So it is not likely to slow down the script startup.
 
-See the
-@uref{http://srfi.schemers.org/srfi-13/srfi-13.html, SRFI-13 document}
+See SRFI-13 (@ref{srfi-13, [SRFI-13], SRFI-13})
 for the detailed specification and discussion of design issues.
 This manual serves as a reference of function API.
 Some SRFI-13 functions are Gauche built-in and not listed here.
@@ -7531,9 +7675,99 @@ See @uref{http://w3c.org/CGI/} for more information.
 R. Kelsey, W. Clinger, J. Rees (eds.),
 Revised^5 Report on the Algorithmic Language Scheme,
 Higher-Order and Symbolic Computation, 11(1), September, 1998
-and ACM SIGPLAN Notices, 33(9), October, 1998.
+and ACM SIGPLAN Notices, 33(9), October, 1998. @*
 @url{http://www.schemers.org/Documents/Standards/R5RS/}.
 
+@anchor{rfc2045}
+@item [RFC2045]
+N. Freed, N. Borenstein: Multipurpose Internet Mail Extension
+(MIME) Part One: Format of Internet Message Bodies,
+November 1996. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc2045.txt}.
+
+@anchor{rfc2396}
+@item [RFC2396]
+T. Berners-Lee, R. Fielding, L. Masinter,
+Uniform Resource Identifiers (URI): Generic Syntax,
+August 1998. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc2396.txt}.
+
+@anchor{rfc2822}
+@item [RFC2822]
+P. Resnick (ed.), Internet Message Format, April 2001. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc2822.txt}.
+
+@anchor{rfc2965}
+@item [RFC2965]
+D. Kristol, L. Montulli, HTTP State Management Mechanism,
+October 2000. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc2965.txt}.
+
+@anchor{srfi-0}
+@item [SRFI-0]
+Marc Feeley, Feature-based conditional expansion construct, May  1999.@*
+@url{http://srfi.schemers.org/srfi-0/srfi-0.html}.
+
+@anchor{srfi-1}
+@item [SRFI-1]
+Olin Shivers, List Library, October 1999. @*
+@url{http://srfi.schemers.org/srfi-1/srfi-1.html}.
+
+@anchor{srfi-2}
+@item [SRFI-2]
+Oleg Kiselyov, @code{AND-LET*}: an @code{AND} with local bindings, a guarded 
+@code{LET*} special form, March 1998. @*
+@url{http://srfi.schemers.org/srfi-2/srfi-2.html}.
+
+@anchor{srfi-4}
+@item [SRFI-4]
+Marc Feeley, Homogeneous numeric vector types, May 1999.@*
+@url{http://srfi.schemers.org/srfi-4/srfi-4.html}.
+
+@anchor{srfi-6}
+@item [SRFI-6]
+William D Clinger, Basic String Ports, July 1999. @*
+@url{http://srfi.schemers.org/srfi-6/srfi-6.html}.
+
+@anchor{srfi-8}
+@item [SRFI-8]
+John David Stone, receive: Binding to multiple values, August 1999. @*
+@url{http://srfi.schemers.org/srfi-8/srfi-8.html}.
+
+@anchor{srfi-9}
+@item [SRFI-9]
+Richard Kelsey, Defining Record Types, September 1999.@*
+@url{http://srfi.schemers.org/srfi-9/srfi-9.html}.
+
+@anchor{srfi-10}
+@item [SRFI-10]
+Oleg Kiselyov, @code{#,} external form, January 2000.@*
+@url{http://srfi.schemers.org/srfi-10/srfi-10.html}.
+
+@anchor{srfi-11}
+@item [SRFI-11]
+Lars T Hansen, Syntax for receiving multiple values, March 2000. @*
+@url{http://srfi.schemers.org/srfi-11/srfi-11.html}.
+
+@anchor{srfi-13}
+@item [SRFI-13]
+Olin Shivers, String Libraries, December 2000. @*
+@url{http://srfi.schemers.org/srfi-13/srfi-13.html}.
+
+@anchor{srfi-14}
+@item [SRFI-14]
+Olin Shivers, Character-set Library, December 2000. @*
+@url{http://srfi.schemers.org/srfi-14/srfi-14.html}.
+
+@anchor{srfi-17}
+@item [SRFI-17]
+Per Bothner, Generalized @code{set!}, July 2000. @*
+@url{http://srfi.schemers.org/srfi-17/srfi-17.html}.
+
+@anchor{srfi-23}
+@item [SRFI-23]
+Stephan Housen, Error reporting mechanism, April 2001.@*
+@url{http://srfi.schemers.org/srfi-23/srfi-23.html}.
 
 
 @end table
