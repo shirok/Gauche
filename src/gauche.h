@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.86 2001-03-21 19:31:50 shiro Exp $
+ *  $Id: gauche.h,v 1.87 2001-03-24 09:45:58 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -297,7 +297,7 @@ struct ScmClassRec {
     int (*equal)(ScmObj x, ScmObj y);
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
-    ScmObj (*allocate)(ScmClass *klass);
+    ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
     struct ScmClassRec **cpa;
     short numInstanceSlots;     /* # of instance slots */
     unsigned short flags;
@@ -1502,6 +1502,7 @@ extern ScmClass Scm_GenericClass;
 
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod);
 ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf);
+ScmObj Scm_NoOperation(ScmObj *args, int nargs, ScmGeneric *gf);
 
 /* Method - method
    A method can be defined either by C or by Scheme.  C-defined method
