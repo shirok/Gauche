@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: weak.c,v 1.1 2002-04-24 23:18:15 shirok Exp $
+ *  $Id: weak.c,v 1.2 2002-07-12 19:59:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -75,7 +75,7 @@ ScmObj Scm_MakeWeakVector(int size)
     p = SCM_NEW_ATOMIC2(ScmObj*, size * sizeof(ScmObj));
     for (i=0; i<size; i++) p[i] = SCM_FALSE;
     v->pointers = (void*)p;
-    GC_register_finalizer((GC_PTR)v, weakvector_finalize, NULL, &ofn, &ocd);
+    GC_REGISTER_FINALIZER((GC_PTR)v, weakvector_finalize, NULL, &ofn, &ocd);
     return SCM_OBJ(v);
 }
 
