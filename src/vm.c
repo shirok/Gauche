@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.116 2001-12-10 10:03:03 shirok Exp $
+ *  $Id: vm.c,v 1.117 2001-12-15 09:44:49 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1733,8 +1733,19 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
     SCM_PUTZ("Stack Trace:\n", -1, err);
     SCM_PUTZ("_______________________________________\n", -1, err);
     SCM_FOR_EACH(cp, stack) {
-        Scm_Printf(SCM_PORT(err), "%3d   %66.1S\n",
-                   depth++, SCM_CAR(cp));
+        Scm_Printf(SCM_PORT(err), "%3d  %66.1S\n", depth++, SCM_CAR(cp));
+        if (SCM_PAIRP(SCM_CAR(cp))) {
+            ScmObj srci = Scm_PairAttrGet(SCM_PAIR(SCM_CAR(cp)),
+                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
+            if (SCM_PAIRP(srci) && SCM_PAIRP(SCM_CDR(srci))) {
+                Scm_Printf(SCM_PORT(err), "        At line %S of %S\n",
+                           SCM_CADR(srci), SCM_CAR(srci));
+            } else {
+                Scm_Printf(SCM_PORT(err), "        [unknown location]\n");
+            }
+        } else {
+            Scm_Printf(SCM_PORT(err), "\n");
+        }
     }
 
     /* unwind the dynamic handlers */
