@@ -12,8 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.5 2001-03-30 10:11:23 shiro Exp $
+ *  $Id: char.c,v 1.6 2001-04-01 08:13:19 shiro Exp $
  */
 
 #include "gauche.h"
+
+void Scm__InitChar(void)
+{
+    /* nothing to do for now */
+}
 
