@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.8 2001-07-08 08:39:39 shirok Exp $
+ *  $Id: net.h,v 1.9 2001-08-09 09:43:30 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -118,8 +118,8 @@ extern ScmObj Scm_MakeSocket(int domain, int type, int protocol);
 extern ScmObj Scm_SocketShutdown(ScmSocket *s, int how);
 extern ScmObj Scm_SocketClose(ScmSocket *s);
 
-extern ScmObj Scm_SocketInputPort(ScmSocket *s);
-extern ScmObj Scm_SocketOutputPort(ScmSocket *s);
+extern ScmObj Scm_SocketInputPort(ScmSocket *s, int buffered);
+extern ScmObj Scm_SocketOutputPort(ScmSocket *s, int buffered);
 
 extern ScmObj Scm_SocketBind(ScmSocket *s, ScmSockAddr *addr);
 extern ScmObj Scm_SocketConnect(ScmSocket *s, ScmSockAddr *addr);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.10 2001-06-23 11:05:15 shirok Exp $
+ *  $Id: net.c,v 1.11 2001-08-09 09:43:30 shirok Exp $
  */
 
 #include "net.h"
@@ -118,32 +118,32 @@ ScmObj Scm_SocketClose(ScmSocket *s)
     return SCM_TRUE;
 }
 
-ScmObj Scm_SocketInputPort(ScmSocket *sock)
+ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffered)
 {
     if (sock->inPort == NULL) {
         if (sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             Scm_Error("attempt to obtain an input port from unconnected socket: %S",
                       SCM_OBJ(sock));
         }
-        sock->inPort = SCM_PORT(Scm_MakePortWithFd(SCM_FALSE,
+        sock->inPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket input)"),
                                                    SCM_PORT_INPUT,
                                                    sock->fd,
-                                                   TRUE, FALSE));
+                                                   buffered, FALSE));
     }
     return SCM_OBJ(sock->inPort);
 }
 
-ScmObj Scm_SocketOutputPort(ScmSocket *sock)
+ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffered)
 {
     if (sock->outPort == NULL) {
         if (sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             Scm_Error("attempt to obtain an output port from an unconnected socket: %S",
                       SCM_OBJ(sock));
         }
-        sock->outPort = SCM_PORT(Scm_MakePortWithFd(SCM_FALSE,
+        sock->outPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket output)"),
                                                     SCM_PORT_OUTPUT,
                                                     sock->fd,
-                                                    TRUE, FALSE));
+                                                    buffered, FALSE));
     }
     return SCM_OBJ(sock->outPort);
 }

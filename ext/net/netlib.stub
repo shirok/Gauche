@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.8 2001-06-30 10:09:13 shirok Exp $
+;;  $Id: netlib.stub,v 1.9 2001-08-09 09:43:30 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -108,13 +108,13 @@
            SCM_RETURN(SCM_UNDEFINED); /* dummy */
   }")
 
-(define-cproc socket-input-port (sock)
+(define-cproc socket-input-port (sock &keyword (buffered? #t))
   (assert (socket? sock))
-  "  SCM_RETURN(Scm_SocketInputPort(sock));")
+  "  SCM_RETURN(Scm_SocketInputPort(sock, !SCM_FALSEP(bufferedP)));")
 
-(define-cproc socket-output-port (sock)
+(define-cproc socket-output-port (sock &keyword (buffered? #t))
   (assert (socket? sock))
-  "  SCM_RETURN(Scm_SocketOutputPort(sock));")
+  "  SCM_RETURN(Scm_SocketOutputPort(sock, !SCM_FALSEP(bufferedP)));")
 
 (define-cproc socket-shutdown (sock &optional (how 2))
   (assert (socket? sock))
