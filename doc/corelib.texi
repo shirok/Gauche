@@ -6858,7 +6858,7 @@ If @var{iport} has already reached EOF, an eof object is returned.
 @c COMMON
 @end defun
 
-@defun read-line &optional iport
+@defun read-line &optional iport allow-byte-string?
 @c EN
 Reads one line (a sequence of characters terminated by newline or EOF)
 and returns a string.  The terminating newline is not included.
@@ -6869,6 +6869,26 @@ If @var{iport} has already reached EOF, an eof object is returned.
 よく使われる行末 (LF only, CRLF, and CR only) を認識します。
 戻り値にはこれらの行末文字は含まれません。
 @var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+@c COMMON
+@c EN
+If a byte sequence is read from @var{iport}
+which doesn't constitute a valid character in the native encoding,
+@code{read-line} signals an error by default.  However, if a true value
+is given to the argument @var{allow-byte-string?}, 
+@code{read-line} returns a byte string (incomplete string) in such case,
+without reporting an error.
+It is particulary useful if you read from a source whose
+character encoding is not yet known; for example, to read XML document,
+you need to check the first line to see if there is a charset parameter
+so that you can then use an appropriate character conversion port.
+@c JP
+@var{iport}から、内部文字エンコーディングでは文字を構成し得ないバイトシーケンスが
+読まれた場合、デフォルトでは@code{read-line}はエラーを通知します。
+しかし、省略可能な引数@var{allow-byte-string?}に真の値が与えられた場合は、
+@code{read-line}はエラーを通知せず、かわりにバイト文字列 (不完全な文字列) を
+返します。この動作は、特に文字エンコーディングが不明なソースから読み込む際に
+便利です。例えばXMLドキュメントを読み込む際、最初の行のcharsetパラメータを
+チェックしてから適切な文字エンコーディング変換ポートを使うといった用途などです。
 @c COMMON
 @end defun
 

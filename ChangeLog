@@ -1,3 +1,10 @@
+2003-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (Scm_ReadLine):
+	* src/extlib.stub (read-line): Added allow-byte-string parameter
+	so that read-line can be used for a port whose character encoding
+	is unknown.
+
 2003-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-14.scm (ucs-range->char-set!) : this procedure didn't

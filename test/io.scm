@@ -200,6 +200,18 @@
 
 (with-output-to-file "tmp1.o"
   (lambda ()
+    (for-each write-byte '(#x80 #xff #x80 #xff #x80 #x0d #x0a #x0d #x0a))))
+(test* "read-line (bad sequence)" '(5 0)
+       (call-with-input-file "tmp1.o"
+         (lambda (_)
+           (let* ((s1 (read-line _ #t))
+                  (s2 (read-line _ #t))
+                  (s3 (read-line _ #t)))
+             (and (eof-object? s3)
+                  (list (string-size s1) (string-size s2)))))))
+
+(with-output-to-file "tmp1.o"
+  (lambda ()
     (display "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n")))
 
 (test* "port->string" "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n"

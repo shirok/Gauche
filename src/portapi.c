@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.15 2003-10-21 14:13:09 shirok Exp $
+ *  $Id: portapi.c,v 1.16 2003-11-21 18:06:20 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -407,7 +407,7 @@ int Scm_GetbUnsafe(ScmPort *p)
     LOCK(p);
     CLOSE_CHECK(p);
 
-    /* check if there's "pushded back" stuff */
+    /* check if there's "pushed back" stuff */
     if (p->scrcnt) {
         b = getb_scratch(p);
     } else if (p->ungotten != SCM_CHAR_INVALID) {
@@ -696,24 +696,27 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
 #define READLINE_AUX
 /* Assumes the port is locked, and the caller takes care of unlocking
    even if an error is signalled within this body */
+/* NB: this routine reads bytes, not chars.  It allows to readline
+   from a port in unknown character encoding (e.g. reading the first
+   line of xml doc to find out charset parameter). */
 ScmObj readline_body(ScmPort *p)
 {
-    int c1 = 0, c2 = 0;
+    int b1 = 0, b2 = 0;
     ScmDString ds;
 
     Scm_DStringInit(&ds);
-    c1 = Scm_GetcUnsafe(p);
-    if (c1 == EOF) return SCM_EOF;
+    b1 = Scm_GetbUnsafe(p);
+    if (b1 == EOF) return SCM_EOF;
     for (;;) {
-        if (c1 == EOF || c1 == '\n') break;
-        if (c1 == '\r') {
-            c2 = Scm_GetcUnsafe(p);
-            if (c2 == EOF || c2 == '\n') break;
-            Scm_UngetcUnsafe(c2, p);
+        if (b1 == EOF || b1 == '\n') break;
+        if (b1 == '\r') {
+            b2 = Scm_GetbUnsafe(p);
+            if (b2 == EOF || b2 == '\n') break;
+            Scm_UngetbUnsafe(b2, p);
             break;
         }
-        SCM_DSTRING_PUTC(&ds, c1);
-        c1 = Scm_GetcUnsafe(p);
+        SCM_DSTRING_PUTB(&ds, b1);
+        b1 = Scm_GetbUnsafe(p);
     }
     return Scm_DStringGet(&ds);
 }

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.206 2003-11-20 03:13:05 shirok Exp $
+;;; $Id: extlib.stub,v 1.207 2003-11-21 18:06:20 shirok Exp $
 ;;;
 
 "
@@ -875,8 +875,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  int b = Scm_Peekb(port);
   SCM_RETURN((b < 0)? SCM_EOF : SCM_MAKE_INT(b));")
 
-(define-cproc read-line (&optional (port::<input-port> (current-input-port)))
-  (return "Scm_ReadLine"))
+(define-cproc read-line (&optional (port::<input-port> (current-input-port))
+                                   (allowbytestr #f))
+  "ScmObj r = Scm_ReadLine(port);
+  if (SCM_FALSEP(allowbytestr)&&SCM_STRINGP(r)&&SCM_STRING_INCOMPLETE_P(r)) {
+    Scm_ReadError(port, \"read-line: encountered illegal byte sequence: %S\", r);
+  }
+  SCM_RETURN(r);")
 
 (define-cproc read-block (bytes::<fixnum>
                           &optional (port::<input-port> (current-input-port)))
