@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.20 2003-02-05 11:26:14 shirok Exp $
+;;;  $Id: util.scm,v 1.21 2003-04-17 20:49:11 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -130,16 +130,16 @@
   (let-optionals* opts ((mode #o755))
     (define (rec p)
       (if (file-exists? p)
-          (if (file-is-directory? p)
-              #t
-              (errorf "non-directory ~s is found while creating a directory ~s"
-                      (sys-basename p) dir))
+          (unless (file-is-directory? p)
+            (errorf "non-directory ~s is found while creating a directory ~s"
+                    (sys-basename p) dir))
           (let1 d (sys-dirname p)
             (rec d)
-            (if (file-is-writable? d)
-                (sys-mkdir p mode)
-                (errorf "directory ~s unwritable during creating a directory ~s"
-                        d dir)))))
+            (unless (file-is-writable? d)
+              (errorf "directory ~s unwritable during creating a directory ~s"
+                      d dir))
+            (sys-mkdir p mode)
+            )))
     (rec dir)))
 
 ;; synonym
