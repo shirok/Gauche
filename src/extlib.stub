@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.143 2002-04-29 23:58:58 shirok Exp $
+;;; $Id: extlib.stub,v 1.144 2002-04-30 00:11:59 shirok Exp $
 ;;;
 
 "
@@ -835,12 +835,23 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   )
 
 ;; Open port from fd
-;(define-cproc open-input-fd-port (fd &keyword buffering owner? name)
-;  (assert (small-integer? fd))
-;  (assert (string? name))
-  
+(define-cproc open-input-fd-port (fd &keyword (buffering #f)
+                                              (owner? #f)
+                                              (name #f))
+  (assert (small-integer? fd))
+  (assert (boolean? owner?))
+  "int bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_FULL);
+   if (fd < 0) Scm_Error(\"bad file descriptor: %d\", fd);
+   return Scm_MakePortWithFd(name, SCM_PORT_INPUT, fd, bufmode, ownerP);")
 
- 
+(define-cproc open-output-fd-port (fd &keyword (buffering #f)
+                                               (owner? #f)
+                                               (name #f))
+  (assert (small-integer? fd))
+  (assert (boolean? owner?))
+  "int bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_FULL);
+   if (fd < 0) Scm_Error(\"bad file descriptor: %d\", fd);
+   return Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fd, bufmode, ownerP);")
 
 ;; transfer units for copy-port
 (define-symbol char "sym_char")
