@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.30 2001-09-26 10:44:36 shirok Exp $
+ *  $Id: main.c,v 1.31 2001-10-02 10:55:19 shirok Exp $
  */
 
 #include <unistd.h>
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     ScmObj cp;
 
     Scm_Init();
-    while ((c = getopt(argc, argv, "biqu:Vf:I:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+biqu:Vf:I:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
