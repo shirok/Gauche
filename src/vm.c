@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.85 2001-06-30 09:22:50 shirok Exp $
+ *  $Id: vm.c,v 1.86 2001-06-30 20:04:52 shirok Exp $
  */
 
 #include "gauche.h"
@@ -264,6 +264,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 #define VM_ASSERT(expr)                                                 \
     do {                                                                \
         if (!(expr))  {                                                 \
+            SAVE_REGS();                                                \
             fprintf(stderr, "\"%s\", line %d: Assertion failed: %s\n",  \
                     __FILE__, __LINE__, #expr);                         \
             Scm_VMDump(theVM);                                          \
@@ -946,7 +947,7 @@ static void run_loop()
                 int nargs = SCM_VM_INSN_ARG(code), i;
                 if (nargs >= SCM_VM_MAX_VALUES)
                     VM_ERR(("values got too many args"));
-                VM_ASSERT(nargs < sp - vm->stackBase);
+                VM_ASSERT(nargs -1 <= sp - vm->stackBase);
                 if (nargs > 0) {
                     for (i = nargs-1; i>0; i--) {
                         vm->vals[i-1] = val0;
