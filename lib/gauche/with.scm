@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.10 2002-01-14 09:01:49 shirok Exp $
+;;;  $Id: with.scm,v 1.11 2002-01-14 09:05:52 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -37,17 +37,19 @@
 
 (define (with-input-from-file filename thunk . flags)
   (let ((port (apply open-input-file filename flags)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () ((with-module gauche with-input-from-port) port thunk))
-     (lambda () (close-input-port port)))))
+    (and port
+         (dynamic-wind
+          (lambda () #f)
+          (lambda () ((with-module gauche with-input-from-port) port thunk))
+          (lambda () (close-input-port port))))))
 
 (define (with-output-to-file filename thunk . flags)
   (let ((port (apply open-output-file filename flags)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () ((with-module gauche with-output-to-port) port thunk))
-     (lambda () (close-output-port port)))))
+    (and port
+         (dynamic-wind
+          (lambda () #f)
+          (lambda () ((with-module gauche with-output-to-port) port thunk))
+          (lambda () (close-output-port port))))))
 
 ) ;; with-module scheme
 
