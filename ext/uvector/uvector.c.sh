@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.21 2002-06-27 10:41:40 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.22 2002-07-01 08:53:43 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -81,7 +81,7 @@ static void print_${vecttype}(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     Scm_Printf(out, ")");
 }
 
-static int compare_${vecttype}(ScmObj x, ScmObj y)
+static int compare_${vecttype}(ScmObj x, ScmObj y, int equalp)
 {
     int len = SCM_${VECTTYPE}_SIZE(x), i;
     ${itemtype} xx, yy;
