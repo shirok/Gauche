@@ -1,0 +1,71 @@
+CC = @CC@
+OPTFLAGS = @OPTFLAGS@
+CFLAGS = @CFLAGS@ $(OPTFLAGS)
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+GOSH = @GOSH@
+GAUCHE_CONFIG = @GAUCHE_CONFIG@
+GAUCHE_TOP = @GAUCHE_TOP@
+INSTALL = @INSTALL@
+
+ARCHFILES = syslog.so
+SCMFILES = syslog.scm
+HEADERS =
+
+TARGET = syslog.so
+OBJS = syslog_head.o syslog.o syslog_tail.o
+CONFIG_GENERATED = Makefile config.cache config.log config.status syslog.c \
+		   autom4te*.cache syslog_head.c syslog_tail.c
+
+INSTALL_TYPE = @INSTALL_TYPE@
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
+SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
+ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+all : $(TARGET)
+
+syslog.so : $(OBJS)
+	$(CC) $(LDFLAGS) syslog.so $(OBJS) $(LIBS)
+
+syslog.c : syslog.stub
+	$(GOSH) genstub syslog.stub
+
+test : all
+	@rm -f test.log
+	$(GOSH) -I. test.scm > test.log
+
+install : all
+	@for f in $(HEADERS) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
+	  fi; \
+	done
+	@for f in $(SCMFILES) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
+	  fi; \
+	done
+	@for f in $(ARCHFILES) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
+	  fi; \
+	done
+
+clean :
+	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+
+distclean : clean
+	rm -rf $(CONFIG_GENERATED)
+
+realclean : clean
+	rm -rf $(CONFIG_GENERATED) configure
+
+# 'link' creates symlinks from source tree to extension modules, so that
+# it can be tested within the source tree.  'unlink' removes them.
+# these are only for developer's.
+
+link : $(TARGET) $(SCMFILES)
+	$(GOSH) ../xlink -d gauche -l $(TARGET) $(SCMFILES)
+
+unlink :
+	-$(GOSH) ../xlink -d gauche -u $(TARGET) $(SCMFILES)

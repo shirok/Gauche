@@ -1,0 +1,31 @@
+dnl
+dnl configure termios extension
+dnl  process this file with "autoconf -l ../.." to generate 'configure'.
+dnl $Id: configure.in,v 1.1 2002-09-21 20:56:30 shirok Exp $
+AC_INIT(syslog.stub)
+AC_CANONICAL_SYSTEM
+AC_GAUCHE_INIT_EXT
+
+# Sets the default value of INSTALL_TYPE macro.
+AC_GAUCHE_INSTALL_TYPE(sys)
+
+# Get compiler parameters which Gauche has been compiled with.
+AC_GAUCHE_CC
+AC_GAUCHE_FLAGS
+
+# Check for other programs.
+AC_PROG_INSTALL
+
+# Check for headers
+AC_CHECK_HEADERS(syslog.h)
+
+# check for libraries
+AC_SEARCH_LIBS(syslog,, AC_DEFINE(HAVE_SYSLOG))
+AC_SEARCH_LIBS(setlogmask,, AC_DEFINE(HAVE_SETLOGMASK))
+
+# Set LDFLAGS to generate shared library.
+AC_GAUCHE_FIX_LIBS
+
+# Output
+AC_GAUCHE_EXT_FIXUP(syslog)
+AC_OUTPUT(Makefile)

@@ -1,0 +1,99 @@
+;;
+;; syslog.stub - syslog interface
+;;
+;;  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
+;;
+;;  Permission to use, copy, modify, distribute this software and
+;;  accompanying documentation for any purpose is hereby granted,
+;;  provided that existing copyright notices are retained in all
+;;  copies and that this notice is included verbatim in all
+;;  distributions.
+;;  This software is provided as is, without express or implied
+;;  warranty.  In no circumstances the author(s) shall be liable
+;;  for any damages arising out of the use of this software.
+;;
+;;  $Id: syslog.stub,v 1.1 2002-09-21 20:56:30 shirok Exp $
+;;
+
+"
+#include <gauche/extend.h>
+#ifdef HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+
+/* Hack for initialization stub */
+static void internal_init(ScmModule*);
+
+void Scm_Init_syslog(void)
+ {
+   SCM_INIT_EXTENSION(syslog);
+   internal_init(Scm_GaucheModule());
+ }
+
+#define Scm_Init_syslog internal_init
+"
+
+(if "defined(HAVE_SYSLOG)"
+    (begin
+      (define-cproc sys-openlog (ident::<string> option::<fixnum>
+                                 facility::<fixnum>)
+        "openlog(Scm_GetStringConst(ident), option, facility);
+         SCM_RETURN(SCM_UNDEFINED);")
+      (define-cproc sys-syslog (prio::<fixnum> message::<string>)
+        "syslog(prio, \"%s\", Scm_GetStringConst(message));
+         SCM_RETURN(SCM_UNDEFINED);")
+      (define-cproc sys-closelog ()
+        (return <void> "closelog"))
+      ))
+
+(if "defined(HAVE_SETLOGMASK)"
+    (begin
+      (define-cproc sys-logmask (prio::<fixnum>)
+        (return <fixnum> "LOG_MASK"))
+      (define-cproc sys-setlogmask (mask::<fixnum>)
+        (return <fixnum> "setlogmask"))))
+
+;; openlog options
+(if "defined(LOG_CONS)"   (define-enum LOG_CONS))
+(if "defined(LOG_NDELAY)" (define-enum LOG_NDELAY))
+(if "defined(LOG_NOWAIT)" (define-enum LOG_NOWAIT))
+(if "defined(LOG_ODELAY)" (define-enum LOG_ODELAY))
+(if "defined(LOG_PERROR)" (define-enum LOG_PERROR))
+(if "defined(LOG_PID)"    (define-enum LOG_PID))
+
+;; facility
+(if "defined(LOG_AUTH)"   (define-enum LOG_AUTH))
+(if "defined(LOG_AUTHPRIV)" (define-enum LOG_AUTHPRIV))
+(if "defined(LOG_CRON)"   (define-enum LOG_CRON))
+(if "defined(LOG_DAEMON)" (define-enum LOG_DAEMON))
+(if "defined(LOG_FTP)"    (define-enum LOG_FTP))
+(if "defined(LOG_KERN)"   (define-enum LOG_KERN))
+(if "defined(LOG_LOCAL0)" (define-enum LOG_LOCAL0))
+(if "defined(LOG_LOCAL1)" (define-enum LOG_LOCAL1))
+(if "defined(LOG_LOCAL2)" (define-enum LOG_LOCAL2))
+(if "defined(LOG_LOCAL3)" (define-enum LOG_LOCAL3))
+(if "defined(LOG_LOCAL4)" (define-enum LOG_LOCAL4))
+(if "defined(LOG_LOCAL5)" (define-enum LOG_LOCAL5))
+(if "defined(LOG_LOCAL6)" (define-enum LOG_LOCAL6))
+(if "defined(LOG_LOCAL7)" (define-enum LOG_LOCAL7))
+(if "defined(LOG_LPR)"    (define-enum LOG_LPR))
+(if "defined(LOG_MAIL)"   (define-enum LOG_MAIL))
+(if "defined(LOG_NEWS)"   (define-enum LOG_NEWS))
+(if "defined(LOG_SYSLOGS)" (define-enum LOG_SYSLOGS))
+(if "defined(LOG_SUER)"   (define-enum LOG_SUER))
+(if "defined(LOG_UUCP)"   (define-enum LOG_UUCP))
+
+;; level
+(if "defined(LOG_EMERG)"  (define-enum LOG_EMERG))
+(if "defined(LOG_ALERT)"  (define-enum LOG_ALERT))
+(if "defined(LOG_CRIT)"   (define-enum LOG_CRIT))
+(if "defined(LOG_ERR)"    (define-enum LOG_ERR))
+(if "defined(LOG_WARNING)" (define-enum LOG_WARNING))
+(if "defined(LOG_NOTICE)" (define-enum LOG_NOTICE))
+(if "defined(LOG_INFO)"   (define-enum LOG_INFO))
+(if "defined(LOG_DEBUG)"  (define-enum LOG_DEBUG))
+
+
+;; Local variables:
+;; mode: scheme
+;; end:
