@@ -8,6 +8,8 @@
 	* configure.ac, gc/configure.in (LOCAL_INC, LOCAL_LIB): avoid
 	  putting newlines in the command line when more than one paths
 	  are given to --with-local.
+	  (CFLAGS): when the architecture is alpha, add -mieee option to
+	  avoid SIGFPE on denormalized/infinity numbers.
 
 	* src/read.c (define-reader-ctor): Experimental feature to process
 	  srfi-38 syntax in srfi-10 read-time constructor.  define-reader-ctor
