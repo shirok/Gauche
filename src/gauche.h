@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.403.2.6 2005-01-01 07:22:35 shirok Exp $
+ *  $Id: gauche.h,v 1.403.2.7 2005-01-09 04:28:49 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -735,6 +735,16 @@ SCM_CLASS_DECL(Scm_NullClass);
 #define SCM_LIST4(a,b,c,d)       Scm_Cons(a, SCM_LIST3(b, c, d))
 #define SCM_LIST5(a,b,c,d,e)     Scm_Cons(a, SCM_LIST4(b, c, d, e))
 
+/* special return value of Scm_Length */
+enum {
+    SCM_LIST_DOTTED = -1,       /* dotted list */
+    SCM_LIST_CIRCULAR = -2      /* circular list */
+};
+
+#define SCM_PROPER_LIST_P(obj)   (Scm_Length(obj) >= 0)
+#define SCM_DOTTED_LIST_P(obj)   (Scm_Length(obj) == SCM_LIST_DOTTED)
+#define SCM_CIRCULAR_LIST_P(obj) (Scm_Length(obj) == SCM_LIST_CIRCULAR)
+
 SCM_EXTERN ScmObj Scm_Cons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_List(ScmObj elt, ...);
@@ -787,9 +797,6 @@ SCM_EXTERN ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_PairAttr(ScmPair *pair);
 SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
-
-SCM_EXTERN ScmObj Scm_NullP(ScmObj obj);
-SCM_EXTERN ScmObj Scm_ListP(ScmObj obj);
 
 /*--------------------------------------------------------
  * CHAR and CHAR-SET

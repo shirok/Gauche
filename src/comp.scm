@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.14 2005-01-08 09:51:52 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.15 2005-01-09 04:28:49 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -360,6 +360,24 @@
                (make-identifier sym-or-id '() (cenv-module cenv))))
             ((find-lvar (car frames)))
             (else (loop (cdr frames)))))))
+
+;; Syntactic closure (sc)
+;;   The input of hygienic syntactic transformer.  It encapsulates
+;;   the compile-time environment and the input S-expr.
+
+(define (make-sc form cenv) (vector 'sc form cenv))
+
+(define (sc-form sc)    (vector-ref sc 1))
+(define (sc-cenv sc)    (vector-ref sc 2))
+
+(define (sc-apply-op op)
+  (lambda (sc) (make-sc (op (sc-form sc)) (sc-cenv sc))))
+
+(define (sc-pair? sc)   (pair? (sc-form sc)))
+(define sc-car          (sc-apply-op car))
+(define sc-cdr          (sc-apply-op cdr))
+
+
 
 ;; Intermediate form
 ;;
@@ -1051,6 +1069,8 @@
 ;;------------------------------------------------------------
 ;; Macros for the new compiler
 ;;
+
+
 
 
          

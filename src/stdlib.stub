@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.108.2.1 2004-12-24 12:50:35 shirok Exp $
+;;; $Id: stdlib.stub,v 1.108.2.2 2005-01-09 04:28:49 shirok Exp $
 ;;;
 
 
@@ -415,11 +415,10 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   (return <boolean> "SCM_NULLP"))
 
 (define-cproc list? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Length(obj) >= 0));")
+  (return <boolean> "SCM_PROPER_LIST_P"))
 
 (define-cproc list (&rest args)
   (inliner "SCM_VM_LIST")
-  ;; TODO: check to see if we don't need to copy args?
   "  SCM_RETURN(args);")
 
 (define-cproc length (list)

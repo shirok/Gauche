@@ -1,3 +1,15 @@
+2005-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_Length): changed API to return distinct values for
+	  dotted and circulare lists (SCM_LIST_DOTTED and SCM_LIST_CIRCULAR,
+	  respectively).  This shouldn't affect existing code, since they
+	  all checks if the return value is negative or not.
+	* src/gauche.h : added the enums for above change, and also added
+	  three macros, SCM_PROPER_LIST_P, SCM_DOTTED_LIST_P and
+	  SCM_CIRCULAR_LIST_P.
+	* src/extlib.stub : included srfi-1's proper-list?, dotted-list?
+	  and circular-list?.
+
 2004-12-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/intlib.stub : moved some APIs from extlib which are only intended
