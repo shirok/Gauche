@@ -1,3 +1,15 @@
+2003-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/class.c, src/genstub, src/moplib.stub,
+	  src/gauche/class.h : fixed low-level mechanism for class
+	  redefinition, still a snapshot.  Cleaned up the meaning of
+	  "flags" of class---now the role of class categories are well
+	  defined and commented in gauche.h, and the class category is
+	  visible from Scheme as well.
+
+	* lib/gauche/object.scm : a snapshot of skeleton code for
+	  class redefinition stuff.  Not active yet.
+
 2003-10-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/charconv.scm (with-input-conversion,

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.43 2003-10-18 11:07:00 shirok Exp $
+;;;  $Id: object.scm,v 1.44 2003-10-23 14:06:01 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -403,10 +403,64 @@
   (not (not (assq slot (class-slots class)))))
 
 ;;----------------------------------------------------------------
-;; Class Redifinition
+;; Class Redefinition
 ;;
 
-;; Not implemented yet.
+;; The MOP requires the following control flow:
+;;
+;;   class-redefinition old new    [gf]
+;;      remove-class-accessors! old          [gf]
+;;      update-direct-method! method new old [gf]
+;;      update-direct-subclass! c old new    [gf]
+;;
+;; NB: we don't change the identity of old-class.  So if a reference to
+;; old class is stored in somewhere, it keeps pointing the old class.
+;; (It is the same behavior as stklos; guile, on the other hand, swaps
+;; identity of old and new classes).
+;; The instances will be updated whenever it is "touched".  See class.c.
+
+(define-method class-redefinition ((old <class>) (new <class>))
+  (%start-class-redefinition! old)
+  (with-error-handler
+      (lambda (e)
+        ;; NB: this isn't right, but we don't have a right semantics
+        ;; to roll back the changes.  So just for now...
+        (%commit-class-redefinition! old new)
+        (raise e))
+    (lambda ()
+      (remove-class-accessors! old)
+      (for-each (lambda (m)
+                  (update-direct-method! m old new)
+                  (%add-direct-method! new m))
+                (reverse (class-direct-method old)))
+      (for-each (lambda (sup)
+                  (%delete-direct-subclass! sup old))
+                (class-direct-supers old))
+      (for-each (lambda (sub)
+                  (update-direct-subclass! sub old new))
+                (class-direct-subclasses old))
+      (%commit-class-redefinition! old new))))
+
+(define-method remove-class-accessors! (c <class>)
+  ;; to be written
+  #f
+  )
+    
+(define-method update-direct-method! ((m <method>) (old <class>) (new <class>))
+  ;; to be written
+  #f
+  )
+
+(define-method update-direct-subclass! ((sub <class>) (old <class>) (new <class>))
+  ;; to be written
+  #f
+  )
+  
+(define-method change-class ((old-instance <object>)
+                             (new-class <class>)
+                             . initargs)
+  ;; to be written
+  old-instance)
 
 ;;----------------------------------------------------------------
 ;; Method Application
@@ -539,6 +593,7 @@
                 apply-methods apply-method
                 class-name class-precedence-list class-direct-supers
                 class-direct-slots class-slots
+                class-redefinition
                 slot-definition-name slot-definition-options
                 slot-definition-option
                 slot-definition-allocation slot-definition-getter

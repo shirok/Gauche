@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.346 2003-10-21 14:13:09 shirok Exp $
+ *  $Id: gauche.h,v 1.347 2003-10-23 14:06:02 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -417,7 +417,9 @@ SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
  * CLASS
  */
 
-/* See class.c for the description of function pointer members. */
+/* See class.c for the description of function pointer members.
+   There's a lot of voodoo magic in class structure, so don't touch
+   those fields casually. */
 struct ScmClassRec {
     SCM_INSTANCE_HEADER;
     void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
@@ -452,22 +454,54 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
 #define SCM_CLASSP(obj)       SCM_ISA(obj, SCM_CLASS_CLASS)
 
-/* Class flags (bitmask) */
+/* Class categories
+
+   In C level, there are four categories of classes.  The category of
+   class can be obtained by masking the lower two bits of flags field.
+
+   SCM_CLASS_BUILTIN
+       An instance of this class doesn't have "slots" member (thus
+       cannot be casted to ScmInstance).   From Scheme level, this
+       class cannot be inherited, nor redefined.  In C you can create
+       subclasses, by making sure the subclass' instance structure
+       to include this class's instance structure.  Such "hard-wired"
+       inheritance only forms a tree, i.e. no multiple inheritance.
+
+   SCM_CLASS_ABSTRACT 
+       This class is defined in C, but doesn't allowed to create an
+       instance by its own.  It is intended to be used as a mixin from
+       both C and Scheme-defined class.  This class cannot be redefined.
+
+   SCM_CLASS_BASE
+       This class is defined in C, and can be subclassed in Scheme.
+       An instance of this class must have "slots" member and be
+       able to be casted to ScmInstance.  The instance may have other
+       C members.  This class cannot be redefined.
+
+   SCM_CLASS_SCHEME
+       A Scheme-defined class.  This class should have at most one
+       SCM_CLASS_BASE class in its CPL, except the <object> class,
+       which is always in the CPL of Scheme-defined class.  All other
+       classes in CPL must be either SCM_CLASS_ABSTRACT or
+       SCM_CLASS_SCHEME.  This class can be redefined.
+*/
+         
+
 enum {
-    SCM_CLASS_NATIVE = 0x01,    /* True for "native class" - from which you
-                                   cannot define a subclass in Scheme.
-                                   An instance of a native class doesn't
-                                   have "slots" field, i.e. can't be cast
-                                   to ScmInstance.  */
-    SCM_CLASS_APPLICABLE = 0x04 /* True if the instance is "natively
-                                   applicable" object, such as suprs, closures
-                                   or generic functions.  Other objects are
-                                   applicable only if object-apply method
-                                   is defined. */
+    SCM_CLASS_BUILTIN  = 0,
+    SCM_CLASS_ABSTRACT = 1,
+    SCM_CLASS_BASE     = 2,
+    SCM_CLASS_SCHEME   = 3,
+
+    /* A special flag that only be used for "natively applicable"
+       objects, which basically inherits ScmProcedure. */
+    SCM_CLASS_APPLICABLE = 0x04
 };
 
 #define SCM_CLASS_FLAGS(obj)     (SCM_CLASS(obj)->flags)
 #define SCM_CLASS_APPLICABLE_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_APPLICABLE)
+
+#define SCM_CLASS_CATEGORY(obj)  (SCM_CLASS_FLAGS(obj)&3)
 
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
 				     ScmClassStaticSlotSpec *slots,
@@ -512,6 +546,7 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 /* Static definition of classes
  *   SCM_DEFINE_BUILTIN_CLASS
  *   SCM_DEFINE_BUILTIN_CLASS_SIMPLE
+ *   SCM_DEFINE_ABSTRACT_CLASS
  *   SCM_DEFINE_BASE_CLASS
  */
 
@@ -538,8 +573,8 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
     
 /* Define built-in class statically -- full-featured version */
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
-    SCM__DEFINE_CLASS_COMMON(cname,                                    \
-                             SCM_CLASS_NATIVE,           \
+    SCM__DEFINE_CLASS_COMMON(cname,                       \
+                             SCM_CLASS_BUILTIN,           \
                              printer, compare, serialize, allocate, cpa)
 
 /* Define built-in class statically -- simpler version */
@@ -547,15 +582,15 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
     SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL, NULL, NULL)
 
 /* define an abstract class */
-#define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)            \
-    SCM__DEFINE_CLASS_COMMON(cname,                   \
-                             0,          \
+#define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)             \
+    SCM__DEFINE_CLASS_COMMON(cname,                       \
+                             SCM_CLASS_ABSTRACT,          \
                              NULL, NULL, NULL, NULL, cpa)
 
 /* define a class that can be subclassed by Scheme */
 #define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, serialize, allocate, cpa) \
-    SCM__DEFINE_CLASS_COMMON(cname,                                           \
-                             0,                               \
+    SCM__DEFINE_CLASS_COMMON(cname,                       \
+                             SCM_CLASS_BASE,              \
                              printer, compare, serialize, allocate, cpa)
 
 /*--------------------------------------------------------

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.96 2003-10-18 11:07:00 shirok Exp $
+ *  $Id: class.c,v 1.97 2003-10-23 14:06:01 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -151,6 +151,11 @@ static ScmObj key_lambda_list    = SCM_FALSE;
 static ScmObj key_generic        = SCM_FALSE;
 static ScmObj key_specializers   = SCM_FALSE;
 static ScmObj key_body           = SCM_FALSE;
+
+static ScmObj sym_builtin        = SCM_FALSE;
+static ScmObj sym_abstract       = SCM_FALSE;
+static ScmObj sym_base           = SCM_FALSE;
+static ScmObj sym_scheme         = SCM_FALSE;
 
 /*=====================================================================
  * Auxiliary utilities
@@ -335,7 +340,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
-    instance->flags = 0;        /* ?? */
+    instance->flags = SCM_CLASS_SCHEME;
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
     instance->accessors = SCM_NIL;
@@ -554,6 +559,16 @@ static void class_numislots_set(ScmClass *klass, ScmObj snf)
     klass->numInstanceSlots = nf;
 }
 
+static ScmObj class_category(ScmClass *klass)
+{
+    switch (SCM_CLASS_CATEGORY(klass)) {
+    case SCM_CLASS_BUILTIN:  return sym_builtin;
+    case SCM_CLASS_ABSTRACT: return sym_abstract;
+    case SCM_CLASS_BASE:     return sym_base;
+    default:                 return sym_scheme;
+    }
+}
+
 /* 
  * The following slots should only be modified by a special MT-safe procedures.
  */
@@ -713,6 +728,9 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
 int Scm_StartClassRedefinition(ScmClass *klass)
 {
     int success = FALSE;
+    if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
+        Scm_Error("cannot redefine class %S, which is not a Scheme-defined class", klass);
+    }
     (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
     if (SCM_FALSEP(klass->redefined)) {
         klass->redefined = SCM_OBJ(Scm_VM());
@@ -725,50 +743,60 @@ int Scm_StartClassRedefinition(ScmClass *klass)
 /* %commit-class-redefinition klass */
 void Scm_CommitClassRedefinition(ScmClass *klass, ScmClass *newklass)
 {
-    (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
-    if (SCM_EQ(klass->redefined, SCM_OBJ(Scm_VM()))) {
-        klass->redefined = SCM_OBJ(newklass);
-        (void)SCM_INTERNAL_COND_BROADCAST(klass->cv);
+    if (SCM_CLASS_CATEGORY(klass) == SCM_CLASS_SCHEME) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
+        if (SCM_EQ(klass->redefined, SCM_OBJ(Scm_VM()))) {
+            klass->redefined = SCM_OBJ(newklass);
+            (void)SCM_INTERNAL_COND_BROADCAST(klass->cv);
+        }
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
 }
 
 /* %add-direct-subclass! super sub */
 void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub)
 {
-    ScmObj p = Scm_Cons(SCM_OBJ(sub), SCM_NIL);
-    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
-    SCM_SET_CDR(p, super->directSubclasses);
-    super->directSubclasses = p;
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
+        ScmObj p = Scm_Cons(SCM_OBJ(sub), SCM_NIL);
+        (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+        SCM_SET_CDR(p, super->directSubclasses);
+        super->directSubclasses = p;
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    }
 }
 
 /* %delete-direct-subclass! super sub */
 void Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub)
 {
-    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
-    super->directSubclasses =
-        Scm_DeleteX(super->directSubclasses, SCM_OBJ(sub), SCM_CMP_EQ);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+        super->directSubclasses =
+            Scm_DeleteX(super->directSubclasses, SCM_OBJ(sub), SCM_CMP_EQ);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    }
 }
 
 /* %add-direct-method! super sub */
-void Scm_AddDirectMethod(ScmClass *super, ScmClass *sub)
+void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m)
 {
-    ScmObj p = Scm_Cons(SCM_OBJ(sub), SCM_NIL);
-    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
-    SCM_SET_CDR(p, super->directMethods);
-    super->directMethods = p;
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
+        ScmObj p = Scm_Cons(SCM_OBJ(m), SCM_NIL);
+        (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+        SCM_SET_CDR(p, super->directMethods);
+        super->directMethods = p;
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    }
 }
 
 /* %delete-direct-method! super sub */
-void Scm_DeleteDirectMethod(ScmClass *super, ScmClass *sub)
+void Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m)
 {
-    (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
-    super->directMethods =
-        Scm_DeleteX(super->directMethods, SCM_OBJ(sub), SCM_CMP_EQ);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
+        super->directMethods =
+            Scm_DeleteX(super->directMethods, SCM_OBJ(m), SCM_CMP_EQ);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
+    }
 }
 
 /*=====================================================================
@@ -1558,7 +1586,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     ScmObj body = Scm_GetKeyword(key_body, initargs, SCM_FALSE);
     ScmClass **specarray;
     ScmObj lp;
-    int speclen = 0, req = 0, opt = 0;
+    int speclen = 0, req = 0, opt = 0, i;
 
     if (!Scm_TypeP(generic, SCM_CLASS_GENERIC))
         Scm_Error("generic function required for :generic argument: %S",
@@ -1578,7 +1606,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
         Scm_Error("body doesn't match with lambda list: %S", body);
     if (speclen != req)
         Scm_Error("specializer list doesn't match with lambda list: %S",specs);
-    
+
     m->common.required = req;
     m->common.optional = opt;
     m->common.info = Scm_Cons(g->common.info,
@@ -1588,6 +1616,12 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     m->func = NULL;
     m->data = SCM_CLOSURE(body)->code;
     m->env = SCM_CLOSURE(body)->env;
+
+    /* Register this method to all classes in the specializers.
+       This has to come after the part that may throw an error. */
+    for (i=0; i<speclen; i++) {
+        Scm_AddDirectMethod(specarray[i], m);
+    }
     return SCM_OBJ(m);
 }
 
@@ -1744,6 +1778,7 @@ static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("direct-subclasses", class_direct_subclasses, NULL),
     SCM_CLASS_SLOT_SPEC("direct-methods", class_direct_methods, NULL),
     SCM_CLASS_SLOT_SPEC("redefined", class_redefined, NULL),
+    SCM_CLASS_SLOT_SPEC("category", class_category, NULL),
     { NULL }
 };
 
@@ -1904,6 +1939,11 @@ void Scm__InitClass(void)
     key_generic = SCM_MAKE_KEYWORD("generic");
     key_specializers = SCM_MAKE_KEYWORD("specializers");
     key_body = SCM_MAKE_KEYWORD("body");
+
+    sym_builtin = SCM_INTERN("builtin");
+    sym_abstract = SCM_INTERN("abstract");
+    sym_base = SCM_INTERN("base");
+    sym_scheme = SCM_INTERN("scheme");
 
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;

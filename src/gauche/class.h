@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.32 2003-10-18 11:07:01 shirok Exp $
+ *  $Id: class.h,v 1.33 2003-10-23 14:06:02 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -118,8 +118,8 @@ SCM_EXTERN int  Scm_StartClassRedefinition(ScmClass *klass);
 SCM_EXTERN void Scm_CommitClassRedefinition(ScmClass *klass, ScmClass *newk);
 SCM_EXTERN void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void Scm_RemoveDirectSubclass(ScmClass *super, ScmClass *sub);
-SCM_EXTERN void Scm_AddDirectMethod(ScmClass *super, ScmClass *sub);
-SCM_EXTERN void Scm_RemoveDirectMethod(ScmClass *super, ScmClass *sub);
+SCM_EXTERN void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m);
+SCM_EXTERN void Scm_RemoveDirectMethod(ScmClass *super, ScmMethod *m);
 
 SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 
