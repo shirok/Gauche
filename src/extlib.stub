@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.86 2001-06-02 09:51:59 shirok Exp $
+;;; $Id: extlib.stub,v 1.87 2001-06-02 21:32:11 shirok Exp $
 ;;;
 
 "
@@ -574,6 +574,43 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (port? port))
   "  int i = Scm_PortFileNo(port);
   SCM_RETURN((i < 0)? SCM_FALSE : Scm_MakeInteger(i));")
+
+;; transfer units for copy-port
+(define-symbol char "sym_char")
+(define-symbol byte "sym_byte")
+"#define COPY_PORT_BUFSIZ 1024"
+
+(define-cproc copy-port (src dst &keyword (unit 0))
+  (assert (input-port? src))
+  (assert (output-port? dst))
+  "  int ncopied = 0, bufsiz; char buf[COPY_PORT_BUFSIZ], *p = buf;
+  if (SCM_SYMBOLP(unit)) {
+    if (SCM_EQ(unit, sym_char)) {
+      ScmChar c;
+      for (;;) {
+        SCM_GETC(c, src); if (c == EOF) break; SCM_PUTC(c, dst); ncopied++;
+      }
+    } else if (SCM_EQ(unit, sym_byte)) {
+      int b;
+      for (;;) {
+        SCM_GETB(b, src); if (b == EOF) break; SCM_PUTB(b, dst); ncopied++;
+      }
+    } else {
+      Scm_Error(\"unknown unit specification: %S\", unit);
+    }
+  } else if (!(SCM_INTP(unit) && (bufsiz = SCM_INT_VALUE(unit)) >= 0)) {
+    Scm_Error(\"unit must be 'char, 'byte, or zero or positive integer: %S\", unit);
+  } else {
+    if (bufsiz == 0) bufsiz = COPY_PORT_BUFSIZ;
+    else if (bufsiz > COPY_PORT_BUFSIZ) p = SCM_NEW_ATOMIC2(char*, bufsiz);
+    for (;;) {
+      int nread = Scm_Getz(p, bufsiz, src);
+      if (nread <= 0) break;
+      Scm_Putz(p, nread, dst);
+      ncopied += nread;
+    }
+  }
+  SCM_RETURN(SCM_MAKE_INT(ncopied));")
 
 ;;
 ;; 6.6.2  Input
