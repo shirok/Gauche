@@ -87,6 +87,54 @@ fuga
          (lambda () (diff-report diff-a diff-b))))
 
 ;;-------------------------------------------------------------------
+(test-section "html-lite")
+(use text.html-lite)
+(test-module 'text.html-lite)
+
+(test* "html-escape-string"
+       "&lt;a href=&quot;http://abc/def?ghi&amp;jkl&quot;&gt;"
+       (html-escape-string "<a href=\"http://abc/def?ghi&jkl\">"))
+
+(test* "html-doctype"
+       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n"
+       (html-doctype))
+
+(test* "html-doctype"
+       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
+       (html-doctype :type :transitional))
+
+(test* "html-doctype"
+       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\">\n"
+       (html-doctype :type :frameset))
+
+(use srfi-13)
+
+(let ()
+  ;; NB: avoid using tree->string, for we haven't tested it yet.
+  (define (tos x) (string-delete (string-downcase (x->string x)) #\newline))
+  (define (flatten-rec x r)
+    (cond ((null? x) r)
+          ((not (pair? x)) (cons (tos x) r))
+          ((pair? (car x))
+           (flatten-rec (cdr x) (flatten-rec (car x) r)))
+          ((null? (car x)) (flatten-rec (cdr x) r))
+          (else (flatten-rec (cdr x) (cons (tos (car x)) r)))))
+  (define (flatten x) (string-concatenate-reverse (flatten-rec x '())))
+  
+  (test* "html, head, body"
+         "<html><head><title>foo</title></head><body>foo</body></html>"
+         (flatten (html:html (html:head (html:title "foo"))
+                             (html:body "foo"))))
+  (test* "attributes"
+         "<a href=\"http://foo/bar?a&amp;b\" id=\"aabb\">zzdd</a>"
+         (flatten (html:a :href "http://foo/bar?a&b" :id "aabb" "zzdd")))
+
+  (test* "empty element"
+         "<img src=\"foo\" alt=\"bar baz\" />"
+         (flatten (html:img :src "foo" :alt "bar baz")))
+  )
+
+;;-------------------------------------------------------------------
 (test-section "parse")
 (use text.parse)
 (test-module 'text.parse)
