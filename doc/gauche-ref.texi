@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.203 2002-05-11 23:17:41 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.204 2002-05-12 03:24:45 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10549,8 +10549,8 @@ the system.
 The intension of these functions are to provide an off-the-stock handy
 random number generator (RNG) for applications that doens't
 sensitive to the quality and/or speed of RNG.  For serious statistics
-analysis, better RNGs should be used.  Gauche will provide an
-extention module of Mersenne Twister RNG soon.
+analysis, use Mersenne Twister RNG in @code{math.mt-random}
+module (@xref{Mersenne Twister Random number generator}).
 @end defun
 
 @defvar RAND_MAX
@@ -16468,27 +16468,74 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 
 @deftp {Module} math.mt-random
 @mdindex math.mt-random
+Provides a pseudo random number generator (RNG) based on 
+"Mersenne Twister" algorithm developed by Makoto Matsumoto and
+Takuji Nishimura.   It is fast, and has huge period of 2^19937-1.
+See @ref{MT,,MT}, for details about the algorithm.
 @end deftp
 
 @deftp {Class} <mersenne-twister>
+A class to encapsulate the state of Mersenne Twister RNG.
+Each instance of this class has its own state, and can be used
+as an independent source of random bits if initialized
+by individual seed.
+
+The random seed value can be given at the instantiation time
+by @code{:seed} initialization argument, or by using
+@code{mt-random-set-seed!} described below.
+
+@example
+(define m (make <mersenne-twister> :seed (sys-time)))
+
+(mt-random-real m) @result{} 0.10284287848537865
+(mt-random-real m) @result{} 0.463227748348805
+(mt-random-real m) @result{} 0.8628500643709712
+@dots{}
+@end example
 @end deftp
 
 @defun mt-random-set-seed! mt seed
+Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
+@var{Seed} can be an arbitrary positive exact integer,
+or arbitrary length of u32vector (@xref{Homogeneous Vectors}).
+If it is an integer, the lower 32bits are used for initialization.
+If it is a u32vector, up to 624 elements are used for initialization.
 @end defun
 
 @defun mt-random-get-state mt
 @defunx mt-random-set-state! mt state
+Retrieves and reinstalls the state of Mersenne Twister RNG @var{mt}.
+The state is represented by a u32vector of 625 elements.  The state
+can be stored elsewhere, and then restored to an instance of
+@code{<mersenne-twister>} to continue to generate the pseudo random
+sequence.
 @end defun
 
 @defun mt-random-real mt
+@defunx mt-random-real0 mt
+Returns a random real number between 0.0 and 1.0.
+1.0 is not included in the range.  @code{Mt-random-real} doesn't
+include 0.0 either, while @code{mt-random-real0} does.
+Excluding 0.0 is from the draft SRFI-27.
 @end defun
 
 @defun mt-random-integer mt range
+Returns a random exact positive integer between 0 and @var{range}-1.
+@var{Range} can be any positive exact integer.
 @end defun
 
-@defun mt-random-fill-u32vector! mt vec
-@defunx mt-random-fill-f32vector! mt vec
-@defunx mt-random-fill-f64vector! mt vec
+@defun mt-random-fill-u32vector! mt u32vector
+@defunx mt-random-fill-f32vector! mt f32vector
+@defunx mt-random-fill-f64vector! mt f64vector
+Fills the given uniform vector by the random numbers.
+For @code{mt-random-fill-u32vector!}, the elements are filled
+by exact positive integers between 0 and 2^32-1.
+For @code{mt-random-fill-f32vector!} and
+@code{mt-random-fill-f64vector!}, it is filled by an inexact
+real number between 0.0 and 1.0, exclusive.
+
+If you need a bunch of random numbers at once, these are much
+faster than getting one by one.
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -19907,6 +19954,13 @@ Oleg Kiselyov, XML and Scheme, @*
 @url{http://pobox.com/~oleg/ftp/Scheme/xml.html}.@*
 The SSAX distribution is also available at sourceforge:@*
 @url{http://ssax.sourceforge.net/}.
+
+@anchor{MT}
+@item [MT]
+M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
+equidistributed uniform pseudorandom number generator", ACM Trans. on
+Modeling and Computer Simulation Vol. 8, No. 1, Januray pp.3-30 1998.@*
+@url{http://www.math.keio.ac.jp/~matumoto/emt.html}
 
 @anchor{oleg1}
 @item [OLEG1]
