@@ -3,7 +3,7 @@
  *
  *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,11 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: vm.h,v 1.30 2001-03-28 09:55:46 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
 #define GAUCHE_VM_H
+
+#define SCM_VM_MAX_VALUES      20
 
 /* Local variable access:
  *   Regardless of frame allocation scheme, local variables are always
@@ -48,28 +50,69 @@ typedef struct ScmEnvFrameRec {
     ScmObj data[1];             /* variable length */
 } ScmEnvFrame;
 
+#define ENV_HDR_SIZE   3        /* envframe header size */
+#define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
+
+extern ScmEnvFrame *Scm_VMSaveCurrentEnv(void);
+
 /*
  * Continuation
  *
  *  Continuation is represented as a chain of ScmContFrames.
- *  At non-tail procedure call, current environment, accumulated argument
- *  and program pointer are saved into the frame.  When procedure returns,
- *  Environment and program pointer is restored.  (Argument pointer is
- *  not restored by the normal procedure return, since the normal return
- *  may have pushed more arguments.  When a captured continuation is
- *  invoked, however, the argument pointer is restored.)
- *
- *  Capturing continuation is just a simple matter of saving the chain.
  */
 
 typedef struct ScmContFrameRec {
-    struct ScmContFrameRec *prev; /* dynamic link */
-    ScmEnvFrame *env;           /* current environment */
-    ScmObj argp;                /* current accumulated arglist */
-    ScmObj next;                /* next PC */
+    struct ScmContFrameRec *prev; /* previous frame */
+    ScmEnvFrame *env;             /* saved environment */
+    ScmEnvFrame *argp;            /* saved argument pointer */
+    int size;                     /* size of argument frame */
+    ScmObj pc;                    /* next PC */
 } ScmContFrame;
 
+#define CONT_FRAME_SIZE  5
+
 extern void Scm_CallCC(ScmObj body);
+
+/*
+ * VM activation history
+ *
+ *   Activation history keeps the chain of C calls from where
+ *   VM is activated (by run_loop()).  Only "upward" continuation
+ *   can be thrown across this record.  See vm.c for details.
+ */
+
+typedef struct ScmVMActivationHistoryRec {
+    struct ScmVMActivationHistoryRec *prev; /* previous history */
+    ScmObj *stackBase;          /* saved stack base */
+    ScmContFrame *cont;         /* saved continuation frame chain */
+} ScmVMActivationHistory;
+
+/*
+ * Identifier
+ *
+ *   Identifier wraps a symbol with its lexical environment.  This
+ *   object is used in hygienic macro expansion (see macro.c), and
+ *   also used as a placeholder in a global variable reference/assignment
+ *   (see compile.c).
+ */
+
+typedef struct ScmIdentifierRec {
+    SCM_HEADER;
+    ScmSymbol *name;
+    ScmModule *module;
+    ScmObj env;
+} ScmIdentifier;
+
+extern ScmClass Scm_IdentifierClass;
+#define SCM_CLASS_IDENTIFIER    (&Scm_IdentifierClass)
+
+#define SCM_IDENTIFIER(obj)     ((ScmIdentifier*)(obj))
+#define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
+
+extern ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env);
+extern ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
+extern int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env);
+extern int Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
 
 /*
  * Source info
@@ -91,7 +134,7 @@ extern ScmClass Scm_SourceInfoClass;
 #define SCM_SOURCE_INFO(obj)     ((ScmSourceInfo*)(obj))
 #define SCM_SOURCE_INFOP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOURCE_INFO)
 
-ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
+extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 
 /*
  * C-level error handler
@@ -101,26 +144,44 @@ typedef struct ScmErrorHandlerRec {
     jmp_buf jbuf;
 } ScmErrorHandler;
 
+/*
+ * VM structure
+ */
+
 struct ScmVMRec {
     SCM_HEADER;
     ScmVM *parent;
     ScmModule *module;          /* current global namespace */
     ScmErrorHandler *escape;    /* current escape point */
-    ScmObj errstr;              /* error string */
+    ScmObj errorHandler;        /* error handler */
+    ScmVMActivationHistory *history; /* activation history */
 
-    int debugLevel;             /* debug level */
+    unsigned int compilerFlags; /* Compiler flags */
 
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
     ScmPort *curerr;            /* current error port */
 
-    ScmObj pc;                  /* program pointer.  only used when
-                                   SUBR is called. */
-    ScmObj argp;                /* accumulated argument */
-    ScmEnvFrame *env;           /* environment */
-    ScmContFrame *cont;         /* continuation */
+    /* Registers */
+    ScmObj pc;                  /* Program pointer.  Points list of
+                                   instructions to be executed.              */
+    ScmEnvFrame *env;           /* Current environment.                      */
+    ScmContFrame *cont;         /* Current continuation.                     */
+    ScmEnvFrame *argp;          /* Current argument pointer.  Points
+                                   to the incomplete environment frame
+                                   being accumulated.  This is a part of
+                                   continuation.                             */
+    ScmObj val0;                /* Value register.                           */
+    ScmObj vals[SCM_VM_MAX_VALUES]; /* Value register for multiple values */
+    int    numVals;             /* # of values */
 
-    ScmObj handlers;            /* chain of active dynamic handlers */
+    ScmObj handlers;            /* chain of active dynamic handlers          */
+
+    ScmObj *sp;                 /* stack pointer */
+    ScmObj *stack;              /* bottom of allocated stack area */
+    ScmObj *stackBase;          /* base of current stack area  */
+    ScmObj *stackEnd;           /* end of current stack area */
+    int stackSize;
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);
@@ -130,211 +191,65 @@ extern void Scm_VMDump(ScmVM *vm);
 extern ScmClass Scm_VMClass;
 #define SCM_CLASS_VM              (&Scm_VMClass)
 
-/* Instructions */
+/*
+ * VM instructions
+ */
 #define SCM_VM_INSN_TAG            0x0e
 
-#define SCM_VM_INSNP(obj)          ((SCM_WORD(obj)&0x0f) == SCM_VM_INSN_TAG)
-#define SCM_VM_INSN_CODE(obj)      ((SCM_WORD(obj)>>4)&0x0ff)
-#define SCM_VM_INSN_ARG(obj)       (SCM_WORD(obj) >> 12)
+#define SCM_VM_INSNP(obj)            ((SCM_WORD(obj)&0x0f) == SCM_VM_INSN_TAG)
+#define SCM_VM_INSN_CODE(obj)        ((SCM_WORD(obj)>>4)&0x0ff)
+#define SCM_VM_INSN_ARG(obj)         ((signed long)SCM_WORD(obj) >> 12)
 
-#define SCM_VM_MAKE_INSN(code)     SCM_OBJ(((code)<<4)|SCM_VM_INSN_TAG)
+#define SCM_VM_INSN_ARG0(obj)        ((SCM_WORD(obj) >> 12) & 0x03ff)
+#define SCM_VM_INSN_ARG1(obj)        ((SCM_WORD(obj) >> 22) & 0x03ff)
 
-#define SCM_VM_LREF_OFFSET(obj)    ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_LREF_DEPTH(obj)     ((SCM_WORD(obj) >> 22) & 0x03ff)
-#define SCM_VM_MAKE_LREF(depth, off)  \
-    SCM_OBJ(((depth)<<22) | ((off)<<12) | (SCM_VM_LREF<<4) | SCM_VM_INSN_TAG)
+#define SCM_VM_INSN(code) \
+    SCM_OBJ(((code)<<4)|SCM_VM_INSN_TAG)
+#define SCM_VM_INSN1(code, arg) \
+    SCM_OBJ(((arg) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
+#define SCM_VM_INSN2(code, arg0, arg1) \
+    SCM_OBJ(((arg1) << 22) | ((arg0) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
 
-#define SCM_VM_CALL_NARGS(obj)     ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_CALL_NRETS(obj)     ((SCM_WORD(obj) >> 22) & 0x03ff)
-#define SCM_VM_NRETS_UNKNOWN       0x03ff
-#define SCM_VM_MAKE_CALL(nargs, nrets) \
-    SCM_OBJ(((nrets)<<22) | ((nargs)<<12) | (SCM_VM_CALL<<4) | SCM_VM_INSN_TAG)
-
-#define SCM_VM_LET_NLOCALS(obj)    SCM_VM_INSN_ARG(obj)
-#define SCM_VM_MAKE_LET(nlocals) \
-    SCM_OBJ(((nlocals)<<12) | (SCM_VM_LET<<4) | SCM_VM_INSN_TAG)
-
-#define SCM_VM_LAMBDA_NARGS(obj)   ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_LAMBDA_RESTARG(obj) ((SCM_WORD(obj) >> 22) & 0x03ff)
-#define SCM_VM_MAKE_LAMBDA(nargs, restarg) \
-    SCM_OBJ(((restarg)<<22) | ((nargs)<<12) | (SCM_VM_LAMBDA<<4) | SCM_VM_INSN_TAG)
+#define SCM_VM_INSN_ARG_MAX          ((1L<<((SIZEOF_LONG*8)-13))-1)
+#define SCM_VM_INSN_ARG_MIN          (-SCM_VM_INSN_ARG_MAX)
+#define SCM_VM_INSN_ARG_FITS(k) \
+    (((k)<=SCM_VM_INSN_ARG_MAX)&&((k)>=SCM_VM_INSN_ARG_MIN))
 
 enum {
-    /* NOP
-     *   Input stack  : -
-     *   Result stack : -
-     *  Used for placeholder.
-     */
-    SCM_VM_NOP,
-
-    /* DEFINE <SYMBOL>
-     *   Input stack  : value
-     *   Result stack : SYMBOL
-     *
-     *  Defines global binding of SYMBOL in the current module.
-     *  The value is taken from the input stack.
-     *  This instruction only appears at the toplevel.  Internal defines
-     *  are recognized and eliminated by the compiling process.
-     */
-    SCM_VM_DEFINE,
-
-    /* LAMBDA(NARGS,RESTARG) <ARGLIST> <CODE>
-     *   Input stack  : -
-     *   Result stack : closure
-     *
-     *  Create a closure capturing current environment.  Two operands are
-     *  taken: ARGLIST is a form of lambda list; it is just for debug.
-     *  CODE is the compiled code.   Leaves created closure in the stack.
-     */
-    SCM_VM_LAMBDA,
-
-    /* LET(NLOCALS)
-     *   Input stack  : -
-     *   Result stack : -
-     *
-     *  Create a new environment frame, size of NLOCALS.  let-families
-     *  like let, let* and letrec yields this instruction.
-     */
-    SCM_VM_LET,
-
-    /* POPENV
-     *   Input stack  : -
-     *   Result stack : -
-     *
-     *  Pop a local environment.  Executed on the end of let-family
-     *  constructs.
-     */
-    SCM_VM_POPENV,
-
-    /* POPARG
-     *   Input stack  : arg
-     *   Result stack : -
-     *
-     *  Discard the result pushed on top of the stack.
-     */
-    SCM_VM_POPARG,
-
-    /* IF  <THEN-CODE>
-     *   Input stack  : test
-     *   Result stack : -
-     *
-     *  If test is true, transfer control to THEN-CODE.  Otherwise
-     *  it continues execution.   Test arg is popped.
-     */
-    SCM_VM_IF,
-
-    /* IFNP <THEN-CODE>
-     *   Input stack  : test
-     *   Result stack : test
-     *
-     *  Similar to IF, but leave the test on the stack.  `NP' stands
-     *  for "No-Pop".
-     */
-    SCM_VM_IFNP,
-
-    /* CALL(NARGS,NRETS)
-     *   Input stack  : arg0 ... argN proc
-     *   Result stack : ret0 ... retM
-     *
-     *  Call PROC.  If NRETS is SCM_VM_NRETS_UNKNOWN, this is a tail call.
-     */
-    SCM_VM_CALL,
-
-    /* SET  <LOCATION>
-     *   Input stack  : value
-     *   Result stack : -
-     *
-     *  LOCATION may be a symbol (in case of global set!) or LREF
-     *  instruction (local set!)
-     */
-    SCM_VM_SET,
-
-    /* LREF(DEPTH,OFFSET)
-     *   Input stack  : -
-     *   Result stack : value
-     *
-     *  Retrieve local value.
-     */
-    SCM_VM_LREF,
-
-    /* GREF <SYMBOL>
-     *   Input stack  : -
-     *   Result stack : value
-     *
-     *  Retrieve global value in the current module.
-     */
-    SCM_VM_GREF,
-    
-    SCM_VM_QUOTE,
-    SCM_VM_BACKQUOTE,
-    SCM_VM_UNQUOTE,
-    SCM_VM_UNQUOTE_SPLICING,
-
-    /* Inlined operators
-     *  They work the same as corresponding Scheme primitives, but they are
-     *  directly interpreted by VM, skipping argument processing part.
-     *  Compiler may insert these in order to fulfill the operation (e.g.
-     *  `case' needs MEMQ).  If the optimization level is high, global
-     *  reference of those primitive calls in the user code are replaced
-     *  as well.
-     */
-    SCM_VM_CONS,
-    SCM_VM_CAR,
-    SCM_VM_CDR,
-    SCM_VM_LIST,
-    SCM_VM_LIST_STAR,
-    SCM_VM_MEMQ,
-    SCM_VM_APPEND,
-    SCM_VM_NCONC,
-    SCM_VM_NOT,
-    SCM_VM_NULLP,
-    SCM_VM_NOT_NULLP,
-    SCM_VM_FOR_EACH,
-    SCM_VM_MAP
+#define DEFINSN(sym, nam, nparams)  sym,
+#include "vminsn.h"
+#undef DEFINSN
+    SCM_VM_NUM_INSNS
 };
 
 extern int Scm__VMInsnWrite(ScmObj insn, ScmPort *port, int mode);
+extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 /*
- * Debug level
+ * Error handling
+ *
+ *  These macros interacts with VM internals, so must be used
+ *  with care.
  */
 
-enum {
-    /* Full debug level
-     *  This level allows the programmer to track the execution process
-     *  precisely mapped onto the corresponding source code.  Importantly,
-     *  the tail call is not eliminated at this level.
-     */
-    SCM_VM_DEBUG_FULL,
-
-    /* Default debug level
-     *
-     */          
-    SCM_VM_DEBUG_DEFAULT,
-
-    /* Faster execution
-     *  At this level, some important information is not available at
-     *  run time.  Notably, SUBR calls don't push activation record,
-     *  so that you don't see them from the stack trace.
-     */          
-    SCM_VM_DEBUG_LESS,
-    SCM_VM_DEBUG_NONE
-};
-
-
-/*
- * Error handling 
- */
-
-#define SCM_PUSH_ERROR_HANDLER                    \
-    do {                                          \
-       ScmErrorHandler handler;                   \
-       handler.prev = Scm_VM()->escape;           \
-       Scm_VM()->escape = &handler;               \
+#define SCM_PUSH_ERROR_HANDLER                  \
+    do {                                        \
+       ScmErrorHandler handler;                 \
+       handler.prev = Scm_VM()->escape;         \
+       Scm_VM()->escape = &handler;             \
        if (setjmp(handler.jbuf) == 0) {
            
-#define SCM_WHEN_ERROR \
+#define SCM_WHEN_ERROR                          \
        } else {
+
+#define SCM_PROPAGATE_ERROR                                     \
+           do {                                                 \
+               if (Scm_VM()->escape->prev) {                    \
+                   Scm_VM()->escape = Scm_VM()->escape->prev;   \
+                   longjmp(Scm_VM()->escape->jbuf, 1);          \
+               }                                                \
+               else exit(1);                                    \
+           } while (0)
 
 #define SCM_POP_ERROR_HANDLER                     \
        }                                          \
@@ -349,7 +264,7 @@ enum {
 
 typedef struct ScmCContinuation {
     SCM_HEADER;
-    void (*func)(ScmObj value, void **data);
+    ScmObj (*func)(ScmObj value, void **data);
     void *data[SCM_CCONT_DATA_SIZE];
 } ScmCContinuation;
 
@@ -359,8 +274,29 @@ typedef struct ScmCContinuation {
 extern ScmClass Scm_CContClass;
 #define SCM_CLASS_CCONT           (&Scm_CContClass)
 
-extern void Scm_VMPushCC(void (*func)(ScmObj value, void **data),
+extern void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
                          void **data,
                          int datasize);
+
+/*
+ * Compiler context
+ */
+
+enum {
+    SCM_COMPILE_STMT,           /* Statement context.  The value of this
+                                   expression will be discarded. */
+    SCM_COMPILE_TAIL,           /* This is a tail expression. */
+    SCM_COMPILE_NORMAL          /* Normal calling sequence. */
+};
+
+/*
+ * Compiler flags
+ */
+
+enum {
+    SCM_COMPILE_NOINLINE = (1L<<0), /* Do not inline procedures */
+    SCM_COMPILE_NOSOURCE = (1L<<1), /* Do not insert source info */
+    SCM_COMPILE_SHOWRESULT = (1L<<2) /* Display each result of compilation */
+};
 
 #endif /* GAUCHE_VM_H */

@@ -1,34 +1,110 @@
 ;;;
-;;; simple stub generator
+;;; Simple stub generator
 ;;;
 
+;;; $Id: genstub,v 1.29 2001-03-20 08:47:04 shiro Exp $
+
+(add-load-path "../lib")
 
 ;; (define-cproc scheme-name (argspec)
 ;;   assertions ...
 ;;   body)
 ;;
+;; (define-symbol scheme-name c-name [value])
 ;;
-
-(require "textutils")
-(require "hashutils")
+;; (define-type name assert-predicate c-type c-predicate unboxer)
 
 (define *file-prefix* "")
 (define *cprocs* '())
-
+(define *symbols* '())
+(define *cclasses* '())
+(define *insert-sharp-line* #t)         ;if #t, output #line directive
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
 
-;;; structure to hold procedure info
+(define (print fmt . args)
+  (if (null? args) (display fmt) (apply format #t fmt args)))
 
-(define-class <cproc> ()
+(define (println fmt . args)
+  (if (null? args) (display fmt) (apply format #t fmt args))
+  (newline))
+
+(define (ensure-string stuff)
+  (cond ((string? stuff) stuff)
+        ((symbol? stuff) (symbol->string stuff))
+        (else (with-output-to-string (lambda () (write stuff))))))
+
+(define (file-exists? file) (sys-access file F_OK))
+
+;;-----------------------------------------------------------------
+;; poor man's fake object system
+;;   These are only here to make the rest of program, originally written
+;;   for STk, work under the current gosh.
+;;   I'll remove them once Gauche has a proper OO.
+
+(use srfi-17)                           ;generalized set!
+
+(define-syntax define-klass
+  (syntax-rules ()
+    ((_ ?name () ((?slot ?spec ...) ...))
+     (begin
+       (define ?name
+         (lambda ()
+           (let ((slots (list (cons '?slot (slot-initform ?spec ...)) ...)))
+             (cons '?name slots))))
+       (define-slots (?slot ?spec ...) ...)))
+    ))
+
+(define-syntax define-slots
+  (syntax-rules ()
+    ((_) '())
+    ((_ (?slot) ?more ...)
+     (define-slots ?more ...))
+    ((_ (?slot :accessor ?acc ?spec ...) ?more ...)
+     (begin
+       (define ?acc
+         (getter-with-setter
+          (lambda (obj) (cdr (assq '?slot (cdr obj))))
+          (lambda (obj value)
+            (set-cdr! (assq '?slot (cdr obj)) value))))
+       (define-slots ?more ...)))
+    ((_ (?slot ?key ?val ?spec ...) ?more ...)
+     (define-slots (?slot ?spec ...) ?more ...))
+    ))
+
+(define-syntax slot-initform
+  (syntax-rules ()
+    ((_) #f)
+    ((_ :initform ?val ?spec ...) ?val)
+    ((_ ?spec ?val ?spec2 ...) (slot-initform ?spec2 ...))))
+
+(define (make klass)
+  (klass))
+
+;;-----------------------------------------------------------------
+;; Procedure
+;;
+
+(define-klass <cproc> ()
   ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
    (args            :initform '() :accessor args-of)
    (num-reqargs     :initform 0   :accessor num-reqargs-of)
    (num-optargs     :initform 0   :accessor num-optargs-of)
    (have-rest-arg?  :initform #f  :accessor have-rest-arg?)
+   (keyword-args    :initform '() :accessor keyword-args-of)
    (decls           :initform '() :accessor decls-of)
    (stmts           :initform '() :accessor stmts-of)
+   (inliner         :initform #f  :accessor inliner-of)
+   (inline-insn     :initform #f  :accessor inline-insn-of)
    (c-name          :accessor c-name-of)
    ))
+
+;(define (make-cproc scheme-name)
+;  (make <cproc> :scheme-name scheme-name))
+
+(define (make-cproc scheme-name)
+  (let ((cproc (make <cproc>)))
+    (set! (scheme-name-of cproc) scheme-name)
+    cproc))
 
 (define (push-arg! cproc arg)
   (let* ((argname   (car arg))
@@ -53,29 +129,204 @@
 (define (push-stmt! cproc stmt)
   (set! (stmts-of cproc) (cons stmt (stmts-of cproc))))
 
-;;; parse definition
+;;-----------------------------------------------------------------
+;; Built-in class
+;;
+
+(define *super-table* '())
+
+(define-klass <cclass> ()
+  ((scheme-class-name :accessor scheme-class-name-of)
+   (c-class-name      :accessor c-class-name-of)
+   (slots             :accessor slots-of)
+   (super             :accessor super-of)
+   (extensible?       :accessor extensible?)
+  ))
+
+(define (make-cclass scheme-class-name c-class-name super slots)
+  (let ((cclass (make <cclass>)))
+    (set! (scheme-class-name-of cclass) scheme-class-name)
+    (set! (c-class-name-of cclass) c-class-name)
+    (set! (super-of cclass) super)
+    (set! (slots-of cclass) slots)
+    (set! *cclasses* (cons cclass *cclasses*))
+    cclass))
+
+(define (register-inheritance class cplname supers)
+  (let ((p (assq class *super-table*)))
+    (if p
+        (unless (equal? (cdr p) (cons cplname supers))
+          (error "conflicting built-in class inheritance: ~s vs ~s"
+                 (cdr p) (cons cplname supers)))
+        (set! *super-table* (acons class (cons cplname supers) *super-table*))
+        )))
+
+(register-inheritance '<top> "Scm_DefaultCPL" '())
+(register-inheritance '<collection> "Scm_CollectionCPL" '(<top>))
+(register-inheritance '<sequence> "Scm_SequenceCPL" '(<collection> <top>))
+(register-inheritance '<object> "Scm_ObjectCPL" '(<top>))
+
+;;--------------------------------------------------------------------
+;; Types
+;;
+
+(define *type-table* '())
+
+(define-klass <type> ()
+  ((name        :init-keyword :name        :accessor name-of)
+   (predicate   :init-keyword :predicate   :accessor predicate-of)
+   (c-type      :init-keyword :c-type      :accessor c-type-of)
+   (c-predicate :init-keyword :c-predicate :accessor c-predicate-of)
+   (unboxer     :init-keyword :unboxer     :accessor unboxer-of)
+   ))
+
+;(define (make-type name predicate c-type c-predicate unboxer)
+;  (let ((i (make <type> :name name :predicate predicate
+;                 :c-type c-type :c-predicate c-predicate :unboxer unboxer)))
+;    (set! *type-table* (cons i *type-table*))
+;    i))
+
+(define (make-type name predicate c-type c-predicate unboxer)
+  (let ((i (make <type>)))
+    (set! (name-of i) name)
+    (set! (predicate-of i) predicate)
+    (set! (c-type-of i) c-type)
+    (set! (c-predicate-of i) c-predicate)
+    (set! (unboxer-of i) unboxer)
+    (set! *type-table* (cons i *type-table*))
+    i))
+
+;; predefined types
+
+(make-type "pair"    'pair?        "ScmObj"       "SCM_PAIRP"   #f)
+(make-type "list"    'list?        "ScmObj"       "SCM_LISTP"   #f)
+(make-type "vector"  'vector?      "ScmVector*"   "SCM_VECTORP" "SCM_VECTOR")
+(make-type "string"  'string?      "ScmString*"   "SCM_STRINGP" "SCM_STRING")
+(make-type "symbol"  'symbol?      "ScmSymbol*"   "SCM_SYMBOLP" "SCM_SYMBOL")
+(make-type "keyword" 'keyword?     "ScmKeyword*"  "SCM_KEYWORDP" "SCM_KEYWORD")
+(make-type "identifier" 'identifier? "ScmIdentifier*" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
+(make-type "small integer" 'small-integer? "int" "SCM_INTP"    "SCM_INT_VALUE")
+;; TODO: bignum!
+(make-type "exact integer" 'exact? "int"          "SCM_EXACTP"  "Scm_GetInteger")
+(make-type "number"    'number?    "ScmObj"       "SCM_NUMBERP" #f)
+(make-type "character" 'char?      "ScmChar"      "SCM_CHARP" "SCM_CHAR_VALUE")
+
+(make-type "port"        'port?        "ScmPort*" "SCM_PORTP"  "SCM_PORT")
+(make-type "input port"  'input-port?  "ScmPort*" "SCM_IPORTP" "SCM_PORT")
+(make-type "output port" 'output-port? "ScmPort*" "SCM_OPORTP" "SCM_PORT")
+
+(make-type "procedure" 'procedure? "ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE")
+(make-type "closure"   'closure?   "ScmClosure*"   "SCM_CLOSUREP"   "SCM_CLOSURE")
+(make-type "hash table" 'hash-table? "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
+(make-type "class"     'class?     "ScmClass*"     "SCM_CLASSP" "SCM_CLASS")
+(make-type "module"    'module?    "ScmModule*"    "SCM_MODULEP" "SCM_MODULE")
+
+;; default
+(define *scm-type*
+  (make-type "scheme object" #f     "ScmObj"       #f           #f))
+
+(define (predicate->type pred)
+  (let loop ((types *type-table*))
+    (cond ((null? types) (error "unknown predicate to assert: ~s" pred))
+          ((eq? (predicate-of (car types)) pred) (car types))
+          (else (loop (cdr types))))))
+
+;; process type definition in stub file
+(define (process-define-type form)
+  (unless (= (length form) 6)
+    (error "malformed define-type: ~s" form))
+  (apply make-type (cdr form)))
+
+;;--------------------------------------------------------------------
+;; C structure
+;;
+
+;(define-class <cslot> ()
+;  ((name :init-keyword :name :getter name-of)
+;   (type :init-keyword :type :getter type-of)))
+
+;(define-class <cstruct> ()
+;  ((name  :init-keyword :name :getter name-of)
+;   (c-name  :init-keyword :c-name :getter c-name-of)
+;   (slots :init-keyword :slots :getter slots-of)))
+
+;;--------------------------------------------------------------------
+;; Symbol definition
+;;
+
+(define (process-define-symbol form)
+  (unless (and (<= 3 (length form) 4)
+               (symbol? (cadr form))
+               (string? (caddr form)))
+    (error "malformed define-symbol: ~s" form))
+  (let* ((scheme-name (cadr form))
+         (c-name (caddr form))
+         (value  (cdddr form))
+         (scheme-name-len (string-length (symbol->string scheme-name))))
+    (println "static ScmString ~a_NAME = { SCM_CLASS_STRING, ~a, ~a, \"~a\" };"
+             c-name scheme-name-len scheme-name-len scheme-name)
+    (println "static ScmObj ~a;" c-name)
+    (newline)
+    (set! *symbols* (cons (cdr form) *symbols*))
+    ))
+
+;;--------------------------------------------------------------------
+;; Cclass definition
+;;
+
+;; NOT OPERATIONAL YET
+(define (process-define-cclass form)
+  (unless (and (> (length form) 4)
+               (symbol? (cadr form))
+               (list? (caddr form))
+               (list? (cadddr form)))
+    (error "malformed define-cclass: ~s" form))
+  (let* ((scheme-class (cadr form))
+         (super (caddr form))
+         (slots (cadddr form))
+         (c-class (get-keyword :c-name (cddddr form) #f))
+         (c-class-sym (string-append c-class "_SYM"))
+         (scheme-name-len (string-length (symbol->string scheme-class))))
+    (unless c-class (error "C-class name unspecified: ~s" form))
+    (case (length super)
+      ((0) (set! super '<top>))
+      ((1) (set! super (car suprt)))
+      (else (error "built-in class can't use multiple inheritance: ~s" form)))
+    ;; TODO: check slot vailidity
+    (make-cclass scheme-class c-class super slots)
+    (newline))
+  )
+
+;;--------------------------------------------------------------------
+;; Cproc definition
+;;
 
 (define (process-define-cproc form)
   (unless (and (>= (length form) 4)
                (symbol? (cadr form))
                (list? (caddr form)))
     (error "malformed define-cproc: ~s" form))
-  (let ((cproc (make <cproc> :scheme-name (cadr form))))
+  (let ((cproc (make-cproc (cadr form))))
     (set! (c-name-of cproc)
           (get-c-name *file-prefix* (scheme-name-of cproc)))
     (process-args cproc (caddr form))
     (process-body cproc (cdddr form))
     (set! *cprocs* (cons cproc *cprocs*))
     (emit-definition cproc)
+    (emit-inliner cproc)
     (emit-record cproc)))
 
-(define-method process-args ((cproc <cproc>) argspec)
+(define (process-args cproc argspec)
   (define (push-mandatory-arg! arg)
     (set! (num-reqargs-of cproc) (+ (num-reqargs-of cproc) 1))
     (push-arg! cproc (list arg :category :required)))
   (define (push-optional-arg! arg default)
     (set! (num-optargs-of cproc) (+ (num-optargs-of cproc) 1))
     (push-arg! cproc (list arg :category :optional :default default)))
+  (define (push-keyword-arg! arg default)
+    (set! (num-optargs-of cproc) (+ (num-optargs-of cproc) 1))
+    (set! (keyword-args-of cproc) (cons arg (keyword-args-of cproc)))
+    (push-arg! cproc (list arg :category :keyword :default default)))
   (define (push-rest-arg! arg)
     (set! (have-rest-arg? cproc) #t)
     (push-arg! cproc (list arg :category :rest)))
@@ -90,17 +341,32 @@
             ((initial)
              (cond ((eq? arg '&optional)  (loop next 'optional))
                    ((eq? arg '&rest)      (loop next 'rest))
+                   ((eq? arg '&keyword)   (loop next 'keyword))
                    ((symbol? arg) (push-mandatory-arg! arg)
                                   (loop next state))
                    (else (error "bad argument in argspec: ~s" arg))))
             ((optional)
              (cond ((eq? arg '&optional)  (error "extra &optional parameter"))
+                   ((eq? arg '&keyword)
+                    (error "&keyword and &optional can't be used together"))
                    ((eq? arg '&rest)      (loop next 'rest))
                    ((symbol? arg) (push-optional-arg! arg *unbound*)
                                   (loop next state))
                    ((and (list? arg)
                          (= (length arg) 2))
                     (push-optional-arg! (car arg) (cadr arg))
+                    (loop next state))
+                   (else (error "bad argument in argspec: ~s" arg))))
+            ((keyword)
+             (cond ((eq? arg '&keyword)  (error "extra &keyword parameter"))
+                   ((eq? arg '&optional)
+                    (error "&keyword and &optional can't be used together"))
+                   ((eq? arg '&rest)      (loop next 'rest))
+                   ((symbol? arg) (push-keyword-arg! arg *unbound*)
+                                  (loop next state))
+                   ((and (list? arg)
+                         (= (length arg) 2))
+                    (push-keyword-arg! (car arg) (cadr arg))
                     (loop next state))
                    (else (error "bad argument in argspec: ~s" arg))))
             ((rest)
@@ -112,7 +378,7 @@
         ))
   )
 
-(define-method process-body ((cproc <cproc>) body)
+(define (process-body cproc body)
   (let loop ((body body))
     (if (null? body)
         (set! (stmts-of cproc) (reverse (stmts-of cproc)))
@@ -123,48 +389,30 @@
                 ((eq? (car form) 'assert)
                  (process-assert cproc (cadr form))
                  (loop next))
+                ((eq? (car form) 'inliner)
+                 (unless (pair? (cdr form))
+                   (error "bad `inliner' spec: ~s" form))
+                 (if (and (pair? (cadr form))
+                          (eq? (caadr form) 'proc))
+                     (if (not (string? (cadadr form)))
+                         (error "inliner procedure name must be a string: ~s"
+                                form)
+                         (set! (inliner-of cproc) (cadadr form)))
+                     (set! (inline-insn-of cproc) (cadr form)))
+                 (loop next))
                 (else
                  (error "unknown body form: ~s" form)))))))
 
-(define-method process-assert ((cproc <cproc>) form)
+(define (process-assert cproc form)
   (let* ((op  (car form))
          (arg (cadr form)))
     (unless (get-arg cproc arg) (error "assertion for unknown arg: ~s" form))
-    (case op
-      ((pair?)
-       (arg-attr-set! cproc arg :type :pair))
-      ((list?)
-       (arg-attr-set! cproc arg :type :list))
-      ((string?)
-       (arg-attr-set! cproc arg :type :string))
-      ((symbol?)
-       (arg-attr-set! cproc arg :type :symbol))
-      ((small-integer?)
-       (arg-attr-set! cproc arg :type :small-integer))
-      ((char?)
-       (arg-attr-set! cproc arg :type :char))
-      ((boolean?)
-       (arg-attr-set! cproc arg :type :boolean))
-      ((vector?)
-       (arg-attr-set! cproc arg :type :vector))
-      ((port?)
-       (arg-attr-set! cproc arg :type :port))
-      ((input-port?)
-       (arg-attr-set! cproc arg :type :input-port))
-      ((output-port?)
-       (arg-attr-set! cproc arg :type :output-port))
-      ((procedure?)
-       (arg-attr-set! cproc arg :type :procedure))
-      ((closure?)
-       (arg-attr-set! cproc arg :type :closure))
-      (else
-       (error "unknown assertion: ~s" form)))
-    ))
+    (arg-attr-set! cproc arg :type (predicate->type op))))
 
 ;;; emit code
 
-(define-method emit-definition ((cproc <cproc>))
-  (println "static void ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
+(define (emit-definition cproc)
+  (println "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
            (c-name-of cproc))
   (println "{")
   ;; argument decl
@@ -172,8 +420,10 @@
   (when (> (num-optargs-of cproc) 0)
     (println "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (println "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
-  ;; argument conut check (for optargs)
-  (when (and (> (num-optargs-of cproc) 0) (not (have-rest-arg? cproc)))
+  ;; argument count check (for optargs)
+  (when (and (> (num-optargs-of cproc) 0)
+             (null? (keyword-args-of cproc))
+             (not (have-rest-arg? cproc)))
     (println "  if (Scm_Length(SCM_OPTARGS) > ~a)" (num-optargs-of cproc))
     (println "    Scm_Error(\"too many arguments: up to ~s is expected, %d given.\", Scm_Length(SCM_OPTARGS));"
              (num-optargs-of cproc)))
@@ -184,27 +434,27 @@
   (for-each (lambda (stmt) (println stmt)) (reverse (stmts-of cproc)))
   (println "  }")
   (println "}")
-  (linebreak)
+  (newline)
   )
 
 (define (emit-arg-decl arg)
   (let* ((attrs (cdr arg))
-         (type  (get-keyword :type attrs :scm))
+         (type  (get-keyword :type attrs *scm-type*))
          (cname (get-keyword :c-name attrs))
          (sname (get-keyword :s-name attrs)))
     (println "  ScmObj ~a;" sname)
-    (println "  ~a ~a;" (type->c-type type) cname)))
+    (println "  ~a ~a;" (c-type-of type) cname)))
 
 (define (emit-arg-unbox arg)
   (let* ((attrs (cdr arg))
          (category (get-keyword :category attrs))
-         (type  (get-keyword :type attrs :scm))
+         (type  (get-keyword :type attrs *scm-type*))
          (cname (get-keyword :c-name attrs))
          (sname (get-keyword :s-name attrs))
          (count (get-keyword :count attrs))
-         (tname (type->name type))
-         (pred  (type->c-predicate type))
-         (unbox (type->c-unboxer type)))
+         (tname (name-of type))
+         (pred  (c-predicate-of type))
+         (unbox (unboxer-of type)))
     (case category
       ((:required)
        (println "  ~a = SCM_ARGREF(~a);" sname count))
@@ -217,6 +467,11 @@
        (println "    ~a = SCM_CAR(SCM_OPTARGS);" sname)
        (println "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
        (println "  }"))
+      ((:keyword)
+       (println "  ~a = Scm_GetKeyword(SCM_MAKE_KEYWORD(\"~a\"), SCM_OPTARGS, ~a);"
+                sname (car arg)
+                (scheme-constant->c-constant
+                 (get-keyword :default attrs))))
       ((:rest)
        (println "  ~a = SCM_ARGREF(SCM_ARGCNT-1);" sname)))
     (when pred
@@ -234,16 +489,82 @@
                  (char->integer value) value))
         ((integer? value)
          (format #f "Scm_MakeInteger(~a)" value))
+        ((string? value)
+         (format #f "SCM_MAKE_STR(~s)" value))
         ((eq? value *unbound*)
          "SCM_UNBOUND")
         ((equal? value '(current-input-port))
-         (format #f "SCM_OBJ(SCM_CURRENT_INPUT_PORT)"))
+         (format #f "SCM_OBJ(SCM_CURIN)"))
         ((equal? value '(current-output-port))
-         (format #f "SCM_OBJ(SCM_CURRENT_OUTPUT_PORT)"))
+         (format #f "SCM_OBJ(SCM_CUROUT)"))
         ((equal? value '(current-error-port))
-         (format #f "SCM_OBJ(SCM_CURRENT_ERROR_PORT)"))
+         (format #f "SCM_OBJ(SCM_CURERR)"))
         (else
          (error "Scheme constant ~s can't be used" value))))
+
+(define (emit-inliner cproc)
+  (let* ((insn (inline-insn-of cproc)))
+    (when insn
+      (let ((inliner (string-append (c-name-of cproc) "_inline"))
+            (name (scheme-name-of cproc))
+            (req  (num-reqargs-of cproc))
+            (opt  (num-optargs-of cproc))
+            )
+        (set! (inliner-of cproc) inliner)
+        (emit-inliner-header cproc)
+        (cond ((string? insn)
+               (println "  SCM_APPEND1(code, tail, ~a);"
+                        (if (or (have-rest-arg? cproc) (> opt 0))
+                            (format #f "SCM_VM_INSN1(~a, nargs)" insn)
+                            (format #f "SCM_VM_INSN(~a)" insn)))
+               (println "  return code;"))
+              ((and (pair? insn) (eq? (car insn) 'case-nargs))
+               (for-each (lambda (clause)
+                           (let ((nargs (car clause))
+                                 (insn  (cadr clause)))
+                             (if (eq? nargs 'else)
+                                 (print "else ")
+                                 (print "if (nargs == ~a) " nargs))
+                             (println "{")
+                             (if insn
+                                 (println "  SCM_APPEND1(code, tail, SCM_VM_INSN(~a)); return code;" insn)
+                                 (println "  return SCM_FALSE;"))
+                             (println "}")))
+                         (cdr insn))))
+        (println "}")
+        ))
+    ))
+
+(define (emit-inliner-header cproc)
+  (let ((inliner (inliner-of cproc))
+        (name (scheme-name-of cproc))
+        (req  (num-reqargs-of cproc))
+        (opt  (num-optargs-of cproc))
+        )
+    (println "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)" inliner)
+    (println "{")
+    (println "  ScmObj cp = SCM_CDR(form);")
+    (println "  ScmObj code = SCM_NIL, tail;")
+    (println "  int nargs = Scm_Length(cp);")
+    (cond ((have-rest-arg? cproc)
+           (println "  if (nargs < ~a)" req)
+           (println "     Scm_Error(\"~s requires at least ~s arg(s)\");" name req)
+           )
+          ((> opt 0)
+           (Println "  if (nargs < ~a || nargs >= ~a" req (+ req opt))
+           (println "     Scm_Error(\"~s requires at least ~s arg(s), and at most ~s arg(s)\");" name req (+ req opt))
+           )
+          (else
+           (println "  if (nargs != ~a)" req)
+           (println "     Scm_Error(\"~s requires exactly ~s arg(s)\");" name req)
+           ))
+    (println "  SCM_FOR_EACH(cp, cp) {")
+    (println "    SCM_APPEND(code, tail, Scm_Compile(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));")
+    (println "    if (SCM_PAIRP(SCM_CDR(cp))) {")
+    (println "      SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));")
+    (println "    }")
+    (println "  }")
+    ))
 
 (define (emit-record cproc)
   (let* ((scm-func-name (symbol->string (scheme-name-of cproc)))
@@ -254,25 +575,32 @@
              (string-length scm-func-name)
              scm-func-name)
     (println "static ScmSubr ~a_STUB = {" c-func-name)
-    (println "  SCM_CLASS_SUBR,")
-    (println "  ~a, ~a, "
+    (println "  SCM_CLASS_PROCEDURE,")
+    (println "  ~a, ~a, SCM_PROC_SUBR,"
              (num-reqargs-of cproc)
              (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0))
     (println "  SCM_OBJ(&~a_NAME)," c-func-name)
     (println "  ~a," c-func-name)
+    (println "  ~a, " (or (inliner-of cproc) "NULL"))
     (println "  NULL")
     (println "};")
-    (linebreak)))
+    (newline)))
 
 (define (emit-initializer name)
-  (println "void Scm_Init_~a()" name)
+  (println "void Scm_Init_~a(ScmModule *module)" name)
   (println "{")
-  (println "  ScmModule *module = Scm_VM()->module;")
   (for-each (lambda (cproc)
               (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
                        (symbol->string (scheme-name-of cproc))
                        (c-name-of cproc)))
             (reverse *cprocs*))
+  (for-each (lambda (symdef)
+              (println "  ~a = Scm_Intern(&~a_NAME);"
+                       (cadr symdef) (cadr symdef))
+              (unless (null? (cddr symdef))
+                (println "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
+                         (cadr symdef) (caddr symdef))))
+            (reverse *symbols*))
   (println "}")
   )
 
@@ -310,51 +638,19 @@
     )
   )
 
-(define *type-table*
-  (hash-table
-   '()
-   :pair           '("ScmObj"     "SCM_PAIRP"   #f            "pair")
-   :list           '("ScmObj"     "SCM_LISTP"   #f            "list")
-   :vector         '("ScmVector*" "SCM_VECTORP" "SCM_VECTOR"  "vector")
-   :string         '("ScmString*" "SCM_STRINGP" "SCM_STRING"  "string")
-   :symbol         '("ScmSymbol*" "SCM_SYMBOLP" "SCM_SYMBOL"  "symbol")
-   :small-integer  '("int"        "SCM_INTP"    "SCM_INT_VALUE" "small integer")
-   :char           '("ScmChar"    "SCM_CHARP"   "SCM_CHAR_VALUE" "character")
-   :scm            '("ScmObj"     #f            #f            #f)
-   :port           '("ScmPort*"   "SCM_PORTP"   "SCM_PORT"    "port")
-   :input-port     '("ScmPort*"   "SCM_IPORTP"  "SCM_PORT"    "input port")
-   :output-port    '("ScmPort*"   "SCM_OPORTP"  "SCM_PORT"    "output port")
-   :procedure      '("ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE" "procedure")
-   :closure        '("ScmClosure*" "SCM_CLOSUREP" "SCM_CLOSURE" "closure")
-   ))
-
-(define (type->c-type type)
-  (cond ((hash-table-get *type-table* type #f) => car)
-        (else (error "unknown type keyword: ~s" type))))
-
-(define (type->c-predicate type)
-  (cond ((hash-table-get *type-table* type #f) => cadr)
-        (else #f)))
-
-(define (type->c-unboxer type)
-  (cond ((hash-table-get *type-table* type #f) => caddr)
-        (else #f)))
-
-(define (type->name type)
-  (cond ((hash-table-get *type-table* type #f) => cadddr)
-        (else (error "unknown type keyword: ~s" type))))
-
-;;; main loop ===================================================
+;;; main loop ===========================================================
 
 (unless (and (= (length *argv*) 1)
-             (string=? (strpad (car *argv*) -5) ".stub"))
+             (> (string-length (car *argv*)) 5))
   (println "Usage: genstub FILE.stub")
   (exit 1))
 
 (let* ((file (car *argv*))
-       (base (basename file))
-       (prefix (strchop base -5))
-       (outfile (string-append (strchop file -5) ".c")))
+       (base (sys-basename file))
+       (filelen (string-length file))
+       (baselen (string-length base))
+       (prefix (substring base 0 (- baselen 5)))
+       (outfile (string-append (substring file 0 (- filelen 5)) ".c")))
   (unless (file-exists? file)
     (println "Couldn't open ~a" file)
     (exit 1))
@@ -364,14 +660,23 @@
       (println "/* Generated by genstub.  Do not edit. */")
       (println "/* source: ~a */" file)
       (println "#include <gauche.h>")
-      (linebreak)
+      (newline)
       (with-input-from-file file
         (lambda ()
           (let loop ((form (read)))
             (unless (eof-object? form)
-              (if (pair? form)
-                  (process-define-cproc form)
-                  (print form))
+              (cond ((string? form) (println form))
+                    ((not (pair? form))
+                     (error "bad form: ~s" form))
+                    ((eq? (car form) 'define-cproc)
+                     (process-define-cproc form))
+                    ((eq? (car form) 'define-symbol)
+                     (process-define-symbol form))
+                    ((eq? (car form) 'define-type)
+                     (process-define-type form))
+                    ((eq? (car form) 'define-cclass)
+                     (process-define-cclass form))
+                    (else (error "bad form: ~s" form)))
               (loop (read))))))
       (emit-initializer (get-c-name "" prefix))
       ))

@@ -1,0 +1,95 @@
+Comparison of Gauche, Stklos and Goops
+
+Class slots
+-----------
+
+                          STklos          Goops           Gauche
+  .................................................................
+  name                      o               o               o
+  direct-supers             o               o               o
+  direct-slots              o               o               o
+  direct-subclasses         o               o               o
+  direct-methods            o               o               o
+  cpl                       o               o               o
+  slots                     o               o               o
+  nfields                   o               o               *
+  getters-n-setters         o               o               *
+  redefined                 o               o               o
+  environment               -               o               -
+
+
+* getters-n-setters field is a structure to map slot name to its
+  accessors (sort of).   STklos and Goops uses assoc list for it.
+
+  In Gauche, first I thought to use eq?-hashtable rather than alist.
+  However, I found that relatively smaller # of slots (say less than a few
+  tens) alist is faster than hashtable, even when hashtable contains no
+  conflict.  So I use assoc list as well for now.  But don't count on that.
+  There may be the case that I switch the structure depends on # of slots,
+  or introduce totally different structure (how about using perfect hash
+  function?)
+
+
+Generic function slots
+----------------------
+
+                          STklos          Goops           Gauche
+  .................................................................
+  name                      o               o               o
+  methods
+
+  
+
+Class creation protocol
+-----------------------
+
+STklos:
+
+  define-class [macro]
+    ensure-class (name supers slots metaclass options)   [procedure]
+      make (metaclass . initargs)                        [generic]
+        class-redifinition (old new)                     [generic]
+
+Goops:
+
+  define-class [macro]
+    class [macro]
+      make-class (supers slot-defs . options)            [procedure]
+        make (metaclass . initargs)                      [generic]
+    class-redefinition (old new)                         [generic]
+
+
+      
+Instance creation protocol
+--------------------------
+
+Goops:
+
+   make (class . initargs)                          [generic]
+     allocate-instance (class initargs)             [generic]
+     initialize (instance initargs)                 [generic]
+
+
+
+Generic function invocation protocol
+------------------------------------
+
+STklos:
+
+  apply-generic (gf args)                       [generic, w/C shortcut]
+    compute-applicable-methods (gf args)        [generic]
+      find-method (gf args)                     [C]
+    sort-applicable-methods (gf methods args)   [generic]
+      method-more-specific? (m1 m2 arg-classes) [generic, w/C default]
+    apply-methods (gf methods args)             [generic]
+      apply-method (gf methods next args)       [generic]
+
+Goops:
+
+  apply-generic (gf args)                       [generic, w/C shortcut]
+    compute-applicable-methods (gf args)        [generic, w/C default]
+    sort-applicable-methods(gf methods args)    [generic]
+      method-more-specific? (m1 m2 arg-classes) [generic, w/C default]
+    apply-methods (gf methods args)             [generic]
+      apply-method (gf methods next args)       [generic]
+
