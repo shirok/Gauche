@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.38 2001-06-15 10:35:22 shirok Exp $
+;;;  $Id: genstub,v 1.39 2001-06-15 20:09:55 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -538,26 +538,32 @@
    (apply make <cgeneric> :scheme-name (cadr form) :c-name (caddr form)
           (cdddr form))))
 
+(define (get-c-generic-name name)
+  (cond ((find (lambda (x) (eq? (scheme-name-of x) name))
+               (get-stubs <cgeneric>))
+         => c-name-of)
+        (else #f)))
+
 ;;-----------------------------------------------------------------
 ;; Methods
 ;;
 
-;; (define-cmethod scheme-name c-generic (argspec ...)
+;; (define-cmethod scheme-name (argspec ...)
+;;    [ (c-generic-name "CGenericName") ]
 ;;    assertions ...
 ;;    body ...)
 
 (define-class <cmethod> (<procstub>)
   ((specializers :init-keyword :specializers :accessor specializers-of)
-   (c-generic    :init-keyword :c-generic    :accessor c-generic-of)
+   (c-generic    :initform #f    :accessor c-generic-of)
    ))
 
 (define (process-define-cmethod form)
-  (unless (>= (length form) 5) (error "malformed define-cmetihod: ~s" form))
+  (unless (>= (length form) 4) (error "malformed define-cmetihod: ~s" form))
   (let ((scheme-name (cadr form))
-        (c-generic   (caddr form))
-        (arglist     (cadddr form))
-        (body        (cddddr form)))
-    (unless (and (symbol? scheme-name) (string? c-generic))
+        (arglist     (caddr form))
+        (body        (cdddr form)))
+    (unless (symbol? scheme-name)
       (error "malformed define-cmethod: ~s" form))
     (receive (args specializers numargs have-optarg?)
         (parse-specialized-args arglist)
@@ -569,9 +575,21 @@
                           :num-reqargs numargs
                           :args args
                           :have-rest-arg? have-optarg?
-                          :c-generic c-generic
                           )))
-        (for-each (lambda (stmt) (push-stmt! method stmt)) body)
+        (for-each (lambda (stmt)
+                    (cond ((string? stmt) (push-stmt! method stmt))
+                          ((and (pair? stmt) (eq? (car stmt) 'c-generic-name))
+                           (unless (string? (cadr stmt))
+                             (error "c-generic-name requires a string: ~s"
+                                    (cadr stmt)))
+                           (set! (c-generic-of method) (cadr stmt)))
+                          (else
+                           (error "unrecognized form in body: ~s" stmt))))
+                  body)
+        (unless (c-generic-of method)
+          (set! (c-generic-of method)
+                (or (get-c-generic-name scheme-name)
+                    (error "method can't find C name of the generic function: ~s" scheme-name))))
         (emit-definition method)))
     ))
 
