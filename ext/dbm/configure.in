@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl
-dnl $Id: configure.in,v 1.4 2001-10-29 00:57:51 shirok Exp $
+dnl $Id: configure.in,v 1.5 2001-10-29 06:38:55 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 
@@ -59,7 +59,7 @@ if test -z "$NDBMLIB"; then
 fi
 AC_CHECK_LIB(dbm, dbminit,  [ ODBMLIB="-ldbm" ])
 if test -z "$ODBMLIB"; then
-  AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ]])
+  AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ])
 fi
 
 AC_SUBST(ARCHFILES)
