@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.64 2001-04-15 21:46:30 shiro Exp $
+;;; $Id: extlib.stub,v 1.65 2001-04-18 09:30:47 shiro Exp $
 ;;;
 
 "
@@ -38,6 +38,11 @@
 ;;
 ;; 6.2  Numbers
 ;;
+
+;; just for debug...
+(define-cproc %bignum-dump (obj)
+  "  if (SCM_BIGNUMP(obj)) Scm_DumpBignum(SCM_BIGNUM(obj), SCM_CUROUT);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 ;;
 ;; 6.3.1  Booleans
