@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.31 2001-05-05 20:42:42 shirok Exp $
+ *  $Id: number.c,v 1.32 2001-05-05 21:22:08 shirok Exp $
  */
 
 #include <math.h>
@@ -253,7 +253,9 @@ int Scm_Sign(ScmObj obj)
             r = (v > 0.0)? 1 : -1;
         }
     } else {
-        Scm_Error("real number required: %S", obj);
+        /* NB: zero? can accept a complex number, but it is processed in
+           the stub function.   see stdlib.stub */
+        Scm_Error("real number required, but got %S", obj);
     }
     return r;
 }
@@ -1357,7 +1359,10 @@ static ScmObj read_complex(const char *str, int len)
         imag = read_real(next, len-(next-str), &next);
         if (next == NULL || next != str+len-1) return SCM_FALSE;
         if (*next != 'i') return SCM_FALSE;
-        return Scm_MakeComplex(real, imag);
+        if (imag == 0.0)
+            return Scm_MakeFlonum(real);
+        else
+            return Scm_MakeComplex(real, imag);
     }
     return SCM_FALSE;
 }
