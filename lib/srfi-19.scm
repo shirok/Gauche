@@ -24,10 +24,9 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.3 2002-04-13 12:06:23 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.4 2002-05-15 05:09:03 shirok Exp $
 
 (define-module srfi-19
-  (use gauche.time)
   (use gauche.let-opt)
   (export time-tai time-utc time-monotonic time-thread
           time-process time-duration current-time
@@ -126,9 +125,16 @@
 ;;; The <time> class is defined in gauche.time.  We define
 ;;; several APIs here.
 
-(define set-time-type! (setter time-type))
-(define set-time-second! (setter time-second))
-(define set-time-nanosecond! (setter time-nanosecond))
+(define-method time-type       ((t <time>)) (slot-ref t 'type))
+(define-method time-second     ((t <time>)) (slot-ref t 'second))
+(define-method time-nanosecond ((t <time>)) (slot-ref t 'nanosecond))
+
+(define-method set-time-type!  ((t <time>) s)
+  (slot-set! t 'type s))
+(define-method set-time-second! ((t <time>) s)
+  (slot-set! t 'second s))
+(define-method set-time-nanosecond! ((t <time>) s)
+  (slot-set! t 'nanosecond s))
 
 (define (make-time type second nanosecond)
   (make <time> :type type :second second :nanosecond nanosecond))
