@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.237 2002-07-07 10:47:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.238 2002-07-08 01:37:21 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7988,31 +7988,76 @@ if given, or raises @code{<join-timeout-exception>}.
 
 @deftp {Builtin Class} <mutex>
 @clindex mutex
+A primitive synchronization device.  It can take one of four states:
+locked/owned, locked/not-owned, unlocked/abandoned and unlocked/not-abandoned.
+A mutex can be locked (by @code{mutex-lock!}) only if it is in unlocked state.
+An 'owned' mutex keeps a thread that owns it.
+Typically an owner thread is the one that locked the mutex,
+but you can make a thread other than the locking thread own a mutex.
+A mutex becomes unlocked either by @code{mutex-unlock!} or the owner
+thread terminates.  In the former case, a mutex becomes unlocked/not-abandoned
+state.  In the latter case, a mutex becomes unlocked/abandoned state.
+
+A mutex has the following external slots.
+
+@defivar <mutex> name
+The name of the mutex.
+@end defivar
+
+@defivar <mutex> state
+The state of the mutex.  This is a read-only slot.
+See the descrption of @code{mutex-state} below.
+@end defivar
+
+@defivar <mutex> specific
+A slot an application can keep arbitrary data.  For example, an application
+can implement a 'recursive' mutex using the specific field.
+@end defivar
+
 @end deftp
 
 @defun mutex? obj
 [SRFI-18], [SRFI-21]
+Returns @code{#t} if @var{obj} is a mutex, @code{#f} otherwise.
 @end defun
 
 @defun make-mutex &optional name
 [SRFI-18], [SRFI-21]
+Creates and returns a new mutex object.
+When created, the mutex is in unlocked/not-abandoned state.
+Optionally, you can give a name to the mutex.
 @end defun
 
 @defun mutex-name mutex
 [SRFI-18], [SRFI-21]
+Returns the name of the mutex.
 @end defun
 
 @defun mutex-specific mutex
 @defunx mutex-specific-set! mutex value
 [SRFI-18], [SRFI-21]
+Gets/sets the specific value of the mutex.
 @end defun
 
 @defun mutex-state mutex
 [SRFI-18], [SRFI-21]
+Returns the state of @var{mutex}, which may be one of the followings:
+
+@table @asis
+@item a thread
+The mutex is locked/owned, and the owner is the returned thread.
+@item symbol @code{not-owned}
+The mutex is locked/not-owned.
+@item symbol @code{abandoned}
+The mutex is unlocked/abandoned.
+@item symbol @code{not-abandoned}
+The mutex is unlocked/not-abandoned.
+@end table
 @end defun
 
 @defun mutex-lock! mutex &optional timeout thread
 [SRFI-18], [SRFI-21]
+Locks @var{mutex}.
 @end defun
 
 @defun mutex-unlock! mutex &optional condition-variable timeout
