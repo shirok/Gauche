@@ -89,6 +89,7 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h      \
                      gauche/char_sjis.h gauche/char_none.h            \
                      gauche/extend.h gauche/int64.h gauche/scmconst.h \
                      gauche/class.h gauche/exception.h                \
+                     gauche/builtin-syms.h                            \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
 INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh gauche-config gauche-install gauche-package \
@@ -97,7 +98,7 @@ INSTALL_SCMS = gauche-init.scm genstub cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
-PRIVATE_HEADERS = gauche/arith.h gauche/builtin-syms.h
+PRIVATE_HEADERS = gauche/arith.h 
 
 
 # build -----------------------------------------------
