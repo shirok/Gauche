@@ -136,7 +136,8 @@
           (string-byte-set! s 2 (char->integer #\Q))
           s)))
 
-;(test "substring" 
+(test "substring" #"ab"
+      (lambda () (substring #"abcde" 0 2)))
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")
