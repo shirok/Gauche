@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.38 2001-03-09 09:48:31 shiro Exp $
+ *  $Id: compile.c,v 1.39 2001-03-11 10:01:42 shiro Exp $
  */
 
 #include "gauche.h"
@@ -318,12 +318,12 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
         /* we have a pair.  This is either a special form
            or a function call */
         ScmObj head = SCM_CAR(form);
-        
+
         if (VAR_P(head)) {
             ScmObj var = lookup_env(head, env, TRUE);
             ScmSymbol *sym;
             ScmGloc *g;
-            
+
             if (SCM_VM_INSNP(var)) {
                 /* variable is bound locally */
                 head = SCM_LIST1(var);
@@ -336,15 +336,19 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 /* it's a global variable.   Let's see if the symbol is
                    bound to a global syntax, or an inlinable procedure
                    in the current module. */
+                ScmModule *mod;
+
                 if (SCM_IDENTIFIERP(var)) {
                     sym = SCM_IDENTIFIER(var)->name;
+                    mod = SCM_IDENTIFIER(var)->module;
                 } else if (SCM_SYMBOLP(var)) {
                     sym = SCM_SYMBOL(var);
+                    mod = vm->module;
                 } else {
                     Scm_Panic("internal compiler error (compile_int): bad frame");
                 }
-            
-                g = Scm_FindBinding(vm->module, sym, FALSE);
+
+                g = Scm_FindBinding(mod, sym, FALSE);
                 if (g != NULL) {
                     if (SCM_SYNTAXP(g->value)) {
                         ScmCompileProc cmpl = SCM_SYNTAX(g->value)->compiler;
