@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.22 2001-05-30 07:47:59 shirok Exp $
+ *  $Id: bignum.c,v 1.23 2001-08-30 06:58:57 shirok Exp $
  */
 
 #include <math.h>
@@ -899,7 +899,7 @@ ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
 {
     int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
     int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
-    int zsize, i, minsize = min(xsize, ysize);
+    int zsize, minsize = min(xsize, ysize);
     ScmBignum *xx, *yy, *z;
 
     if (xsign > 0) {
@@ -950,7 +950,7 @@ ScmObj Scm_BignumLogIor(ScmBignum *x, ScmBignum *y)
 {
     int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
     int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
-    int zsize, i, minsize = min(xsize, ysize);
+    int zsize, minsize = min(xsize, ysize);
     ScmBignum *xx, *yy, *z;
 
     if (xsign >= 0) {
