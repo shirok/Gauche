@@ -1,3 +1,13 @@
+2001-02-26  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.18
+	* src/macro.c: finished implementing syntax-rules
+	* src/vm.c: added immediate integer arithmetic instructions
+	  (NUMADDI and NUMSUBI)
+	* src/genstub, src/stdlib.stub: experimentally added a feature
+	  to write arbitrary inliner function in C.  Inliner functions
+	  for immediate integer addition/subtraction is added to stdlib.stub.
+
 2001-02-23  Shiro Kawai  <shiro@scherzo>
 
         * release 0.0.17
