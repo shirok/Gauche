@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.7 2001-03-15 06:48:07 shiro Exp $
+ *  $Id: hash.c,v 1.8 2001-03-17 06:46:12 shiro Exp $
  */
 
 #include "gauche.h"
@@ -40,13 +40,13 @@
  * may not be suitable.
  */
 
-#define STRING_HASH(result, chars, size)                \
-    do {                                                \
-        int i_ = (size);                                \
-        (result) = 0;                                   \
-        while (i_-- > 0) {                              \
-            (result) += (result) << 3 + *chars++;       \
-        }                                               \
+#define STRING_HASH(result, chars, size)                                \
+    do {                                                                \
+        int i_ = (size);                                                \
+        (result) = 0;                                                   \
+        while (i_-- > 0) {                                              \
+            (result) += ((result) << 3) + (unsigned char)*chars++;      \
+        }                                                               \
     } while (0)
 
 #define SMALL_INT_HASH(result, val) \
@@ -106,6 +106,7 @@ static unsigned int round2up(unsigned int val)
  *                              HASH_UPDATE - if the entry is found, update
  *                                          the entry.  Otherwise, add a
  *                                          new entry with the given value.
+ *                              HASH_DELETE - delete the found entry.
  */
 
 enum {
@@ -485,6 +486,30 @@ ScmObj Scm_HashTableValues(ScmHashTable *table)
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
         SCM_APPEND1(h, t, e->value);
     }
+    return h;
+}
+
+ScmObj Scm_HashTableStat(ScmHashTable *table)
+{
+    ScmObj h = SCM_NIL, t;
+    ScmVector *v = SCM_VECTOR(Scm_MakeVector(table->numBuckets, SCM_NIL));
+    ScmObj *vp;
+    int i;
+    
+    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-entries"));
+    SCM_APPEND1(h, t, Scm_MakeInteger(table->numEntries));
+    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets"));
+    SCM_APPEND1(h, t, Scm_MakeInteger(table->numBuckets));
+    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("max-chain-length"));
+    SCM_APPEND1(h, t, Scm_MakeInteger(table->maxChainLength));
+    for (vp = SCM_VECTOR_ELEMENTS(v), i = 0; i<table->numBuckets; i++, vp++) {
+        ScmHashEntry *e = table->buckets[i];
+        for (; e; e = e->next) {
+            *vp = Scm_Acons(e->key, e->value, *vp);
+        }
+    }
+    SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("contents"));
+    SCM_APPEND1(h, t, SCM_OBJ(v));
     return h;
 }
 
