@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.3 2002-10-15 10:28:00 shirok Exp $
+ *  $Id: mutex.c,v 1.4 2003-01-07 12:08:45 shirok Exp $
  */
 
 #include <math.h>
@@ -37,7 +37,7 @@ SCM_DEFINE_BASE_CLASS(Scm_MutexClass, ScmMutex,
                       default_cpl);
 
 #ifdef GAUCHE_USE_PTHREADS
-static void mutex_finalize(GC_PTR obj, GC_PTR data)
+static void mutex_finalize(ScmObj obj, void* data)
 {
     ScmMutex *mutex = SCM_MUTEX(obj);
     pthread_mutex_destroy(&(mutex->mutex));
@@ -51,10 +51,9 @@ static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
     SCM_SET_CLASS(mutex, klass);
 #ifdef GAUCHE_USE_PTHREADS
     {
-        GC_finalization_proc ofn; GC_PTR ocd;
         pthread_mutex_init(&(mutex->mutex), NULL);
         pthread_cond_init(&(mutex->cv), NULL);
-        GC_REGISTER_FINALIZER(mutex, mutex_finalize, NULL, &ofn, &ocd);
+        Scm_RegisterFinalizer(SCM_OBJ(mutex), mutex_finalize, NULL);
     }
 #else  /*!GAUCHE_USE_PTHREADS*/
     (void)SCM_INTERNAL_MUTEX_INIT(mutex->mutex);
@@ -246,7 +245,7 @@ SCM_DEFINE_BASE_CLASS(Scm_ConditionVariableClass, ScmConditionVariable,
                       default_cpl);
 
 #ifdef GAUCHE_USE_PTHREADS
-static void cv_finalize(GC_PTR obj, GC_PTR data)
+static void cv_finalize(ScmObj obj, void *data)
 {
     ScmConditionVariable *cv = SCM_CONDITION_VARIABLE(obj);
     pthread_cond_destroy(&(cv->cv));
@@ -259,9 +258,8 @@ static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
     SCM_SET_CLASS(cv, klass);
 #ifdef GAUCHE_USE_PTHREADS
     {
-        GC_finalization_proc ofn; GC_PTR ocd;
         pthread_cond_init(&(cv->cv), NULL);
-        GC_REGISTER_FINALIZER(cv, cv_finalize, NULL, &ofn, &ocd);
+        Scm_RegisterFinalizer(SCM_OBJ(cv), cv_finalize, NULL);
     }
 #else  /*!GAUCHE_USE_PTHREADS*/
     (void)SCM_INTERNAL_COND_INIT(cv->cv);

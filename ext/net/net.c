@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.22 2003-01-04 23:51:47 shirok Exp $
+ *  $Id: net.c,v 1.23 2003-01-07 12:08:27 shirok Exp $
  */
 
 #include "net.h"
@@ -23,7 +23,6 @@
  */
 
 static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-static void socket_finalize(GC_PTR obj, GC_PTR data);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SocketClass, socket_print);
 
@@ -42,7 +41,7 @@ static void socket_cleanup(ScmSocket *sock)
     }
 }
 
-static void socket_finalize(GC_PTR obj, GC_PTR data)
+static void socket_finalize(ScmObj obj, void *data)
 {
     socket_cleanup((ScmSocket *)obj);
 }
@@ -79,7 +78,6 @@ static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 ScmSocket *make_socket(int fd, int type)
 {
     ScmSocket *s = SCM_NEW(ScmSocket);
-    GC_finalization_proc ofn; GC_PTR ocd;
     SCM_SET_CLASS(s, SCM_CLASS_SOCKET);
     s->fd = fd;
     s->status = SCM_SOCKET_STATUS_NONE;
@@ -87,7 +85,7 @@ ScmSocket *make_socket(int fd, int type)
     s->address = NULL;
     s->name = NULL;
     s->type = type;
-    GC_REGISTER_FINALIZER(s, socket_finalize, NULL, &ofn, &ocd);
+    Scm_RegisterFinalizer(SCM_OBJ(s), socket_finalize, NULL);
     return s;
 }
 
