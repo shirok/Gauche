@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.43 2001-05-11 09:50:06 shirok Exp $
+ *  $Id: number.c,v 1.44 2001-05-12 20:41:53 shirok Exp $
  */
 
 #include <math.h>
@@ -396,101 +396,94 @@ ScmObj Scm_PromoteToComplex(ScmObj obj)
 /*===============================================================
  * Arithmetics
  */
+/* The code of addition, subtraction, multiplication and division
+   are somewhat ugly (they use the harmful goto!).  My intention is
+   to keep intermediate result in C-native types whenever possible,
+   so that I can avoid boxing/unboxing those numbers. */
 
 /*
  * Addition and subtraction
  */
 
-ScmObj Scm_Add(ScmObj args)
+ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    ScmObj v;
+    ScmObj v = arg0;
     int result_int = 0;
     double result_real, result_imag;
 
-    if (!SCM_PAIRP(args)) return SCM_MAKE_INT(0);
-
-    v = SCM_CAR(args);
-    args = SCM_CDR(args);
-
+  retry:
     if (SCM_INTP(v)) {
-        if (!SCM_PAIRP(args)) return v;
         result_int = SCM_INT_VALUE(v);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
         for (;;) {
-            if (SCM_INTP(v)) {
-                result_int += SCM_INT_VALUE(v);
+            if (SCM_INTP(arg1)) {
+                result_int += SCM_INT_VALUE(arg1);
                 if (result_int > SCM_SMALL_INT_MAX 
                     || result_int < SCM_SMALL_INT_MIN) {
-                    ScmObj big = Scm_MakeBignumFromSI(result_int);
-                    return Scm_BignumAddN(SCM_BIGNUM(big), args);
+                    v = Scm_MakeBignumFromSI(result_int);
+                    break;
                 }
-            } else if (SCM_BIGNUMP(v)) {
+            } else if (SCM_BIGNUMP(arg1)) {
                 v = Scm_BignumAdd(SCM_BIGNUM(Scm_MakeBignumFromSI(result_int)),
-                                  SCM_BIGNUM(v));
-                if (SCM_NULLP(args)) return v;
-                else return Scm_BignumAddN(SCM_BIGNUM(v), args);
-            } else if (SCM_FLONUMP(v)) {
+                                  SCM_BIGNUM(arg1));
+                break;
+            } else if (SCM_FLONUMP(arg1)) {
                 result_real = (double)result_int;
                 goto DO_FLONUM;
-            } else if (SCM_COMPLEXP(v)) {
+            } else if (SCM_COMPLEXP(arg1)) {
                 result_real = (double)result_int;
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", v);
+                Scm_Error("number required, but got: %S", arg1);
             }
-            if (SCM_NULLP(args)) return Scm_MakeInteger(result_int);
-            v = SCM_CAR(args);
+            if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
+            arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
+        if (!SCM_PAIRP(args)) return v;
+        arg1 = SCM_CAR(args);
+        args = SCM_CDR(args);
     }
     if (SCM_BIGNUMP(v)) {
-        return Scm_BignumAddN(SCM_BIGNUM(v), args);
+        return Scm_BignumAddN(SCM_BIGNUM(v), Scm_Cons(arg1, args));
     }
     if (SCM_FLONUMP(v)) {
-        if (!SCM_PAIRP(args)) return v;
         result_real = SCM_FLONUM_VALUE(v);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
       DO_FLONUM:
         for (;;) {
-            if (SCM_INTP(v)) {
-                result_real += (double)SCM_INT_VALUE(v);
-            } else if (SCM_BIGNUMP(v)) {
-                result_real += Scm_BignumToDouble(SCM_BIGNUM(v));
-            } else if (SCM_FLONUMP(v)) {
-                result_real += SCM_FLONUM_VALUE(v);
-            } else if (SCM_COMPLEXP(v)) {
+            if (SCM_INTP(arg1)) {
+                result_real += (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_BIGNUMP(arg1)) {
+                result_real += Scm_BignumToDouble(SCM_BIGNUM(arg1));
+            } else if (SCM_FLONUMP(arg1)) {
+                result_real += SCM_FLONUM_VALUE(arg1);
+            } else if (SCM_COMPLEXP(arg1)) {
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", v);
+                Scm_Error("number required, but got: %S", arg1);
             }
-            if (SCM_NULLP(args)) return Scm_MakeFlonum(result_real);
-            v = SCM_CAR(args);
+            if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_real);
+            arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
     }
     if (SCM_COMPLEXP(v)) {
-        if (!SCM_PAIRP(args)) return v;
         result_real = SCM_COMPLEX_REAL(v);
         result_imag = SCM_COMPLEX_IMAG(v);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
       DO_COMPLEX:
         for (;;) {
-            if (SCM_INTP(v)) {
-                result_real += (double)SCM_INT_VALUE(v);
-            } else if (SCM_BIGNUMP(v)) {
-                result_real += Scm_BignumToDouble(SCM_BIGNUM(v));
-            } else if (SCM_FLONUMP(v)) {
-                result_real += SCM_FLONUM_VALUE(v);
-            } else if (SCM_COMPLEXP(v)) {
-                result_real += SCM_COMPLEX_REAL(v);
-                result_imag += SCM_COMPLEX_IMAG(v);
+            if (SCM_INTP(arg1)) {
+                result_real += (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_BIGNUMP(arg1)) {
+                result_real += Scm_BignumToDouble(SCM_BIGNUM(arg1));
+            } else if (SCM_FLONUMP(arg1)) {
+                result_real += SCM_FLONUM_VALUE(arg1);
+            } else if (SCM_COMPLEXP(arg1)) {
+                result_real += SCM_COMPLEX_REAL(arg1);
+                result_imag += SCM_COMPLEX_IMAG(arg1);
             } else {
-                Scm_Error("number required, but got: %S", v);
+                Scm_Error("number required, but got: %S", arg1);
             }
             if (!SCM_PAIRP(args)) {
                 if (result_imag == 0.0)
@@ -498,7 +491,7 @@ ScmObj Scm_Add(ScmObj args)
                 else
                     return Scm_MakeComplex(result_real, result_imag);
             }
-            v = SCM_CAR(args);
+            arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
     }
@@ -594,107 +587,97 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
  * Multiplication
  */
 
-ScmObj Scm_Multiply(ScmObj args)
+ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    ScmObj v;
+    ScmObj v = arg0;
     long result_int;
     double result_real, result_imag;
 
-    if (!SCM_PAIRP(args)) return SCM_MAKE_INT(1);
-
-    v = SCM_CAR(args);
-    args = SCM_CDR(args);
-
   retry:
     if (SCM_INTP(v)) {
-        if (!SCM_PAIRP(args)) return v;
         result_int = SCM_INT_VALUE(v);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
         for (;;) {
-            if (SCM_INTP(v)) {
-                long vv = SCM_INT_VALUE(v);
+            if (SCM_INTP(arg1)) {
+                long vv = SCM_INT_VALUE(arg1);
                 long k = result_int * vv;
                 /* TODO: need a better way to check overflow */
                 if ((vv != 0 && k/vv != result_int)
                     || k < SCM_SMALL_INT_MIN
                     || k > SCM_SMALL_INT_MAX) {
                     ScmObj big = Scm_MakeBignumFromSI(result_int);
-                    big = Scm_BignumMulSI(SCM_BIGNUM(big), vv);
-                    return Scm_BignumMulN(SCM_BIGNUM(big), args);
+                    v = Scm_BignumMulSI(SCM_BIGNUM(big), vv);
+                    break;
                 }
                 result_int = k;
-            } else if (SCM_BIGNUMP(v)) {
-                v = Scm_BignumMulSI(SCM_BIGNUM(v), result_int);
-                goto retry;
-            } else if (SCM_FLONUMP(v)) {
+            } else if (SCM_BIGNUMP(arg1)) {
+                v = Scm_BignumMulSI(SCM_BIGNUM(arg1), result_int);
+                break;
+            } else if (SCM_FLONUMP(arg1)) {
                 result_real = (double)result_int;
                 goto DO_FLONUM;
-            } else if (SCM_COMPLEXP(v)) {
+            } else if (SCM_COMPLEXP(arg1)) {
                 result_real = (double)result_int;
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", v);
+                Scm_Error("number required, but got: %S", arg1);
             }
-            if (SCM_NULLP(args)) return Scm_MakeInteger(result_int);
-            v = SCM_CAR(args);
+            if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
+            arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
+        if (!SCM_PAIRP(args)) return v;
+        arg1 = SCM_CAR(args);
+        args = SCM_CDR(args);
+        goto retry;
     }
     if (SCM_BIGNUMP(v)) {
-        return Scm_BignumMulN(SCM_BIGNUM(v), args);
+        return Scm_BignumMulN(SCM_BIGNUM(v), Scm_Cons(arg1, args));
     }
     if (SCM_FLONUMP(v)) {
-        if (!SCM_PAIRP(args)) return v;
         result_real = SCM_FLONUM_VALUE(v);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
       DO_FLONUM:
         for (;;) {
-            if (SCM_INTP(v)) {
-                result_real *= (double)SCM_INT_VALUE(v);
-            } else if (SCM_BIGNUMP(v)) {
-                result_real *= Scm_BignumToDouble(SCM_BIGNUM(v));
-            } else if (SCM_FLONUMP(v)) {
-                result_real *= SCM_FLONUM_VALUE(v);
-            } else if (SCM_COMPLEXP(v)) {
+            if (SCM_INTP(arg1)) {
+                result_real *= (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_BIGNUMP(arg1)) {
+                result_real *= Scm_BignumToDouble(SCM_BIGNUM(arg1));
+            } else if (SCM_FLONUMP(arg1)) {
+                result_real *= SCM_FLONUM_VALUE(arg1);
+            } else if (SCM_COMPLEXP(arg1)) {
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", v);
+                Scm_Error("number required, but got: %S", arg1);
             }
-            if (SCM_NULLP(args)) return Scm_MakeFlonum(result_real);
-            v = SCM_CAR(args);
+            if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_real);
+            arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
     }
     if (SCM_COMPLEXP(v)) {
-        if (!SCM_PAIRP(args)) return v;
         result_real = SCM_COMPLEX_REAL(v);
         result_imag = SCM_COMPLEX_IMAG(v);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
       DO_COMPLEX:
         for (;;) {
-            if (SCM_INTP(v)) {
-                result_real *= (double)SCM_INT_VALUE(v);
-                result_imag *= (double)SCM_INT_VALUE(v);
-            } else if (SCM_BIGNUMP(v)) {
-                double dd = Scm_BignumToDouble(SCM_BIGNUM(v));
+            if (SCM_INTP(arg1)) {
+                result_real *= (double)SCM_INT_VALUE(arg1);
+                result_imag *= (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_BIGNUMP(arg1)) {
+                double dd = Scm_BignumToDouble(SCM_BIGNUM(arg1));
                 result_real *= dd;
                 result_imag *= dd;
-            } else if (SCM_FLONUMP(v)) {
-                result_real *= SCM_FLONUM_VALUE(v);
-                result_imag *= SCM_FLONUM_VALUE(v);
-            } else if (SCM_COMPLEXP(v)) {
-                double r = SCM_COMPLEX_REAL(v);
-                double i = SCM_COMPLEX_IMAG(v);
+            } else if (SCM_FLONUMP(arg1)) {
+                result_real *= SCM_FLONUM_VALUE(arg1);
+                result_imag *= SCM_FLONUM_VALUE(arg1);
+            } else if (SCM_COMPLEXP(arg1)) {
+                double r = SCM_COMPLEX_REAL(arg1);
+                double i = SCM_COMPLEX_IMAG(arg1);
                 double t = result_real * r - result_imag * i;
                 result_imag   = result_real * i + result_imag * r;
                 result_real = t;
             } else {
-                Scm_Error("number required, but got: %S", v);
+                Scm_Error("number required, but got: %S", arg1);
             }
             if (!SCM_PAIRP(args)) {
                 if (result_imag == 0.0)
@@ -702,7 +685,7 @@ ScmObj Scm_Multiply(ScmObj args)
                 else
                     return Scm_MakeComplex(result_real, result_imag);
             }
-            v = SCM_CAR(args);
+            arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
     }
@@ -1162,6 +1145,22 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTS(SCM_STRING(s), port);
 }
 
+#if 0
+/* C's printf may not be accurate enough to guarantee read/write identity
+ * of floating point numbers.
+ */
+static double expt10_tab[8] = { 1.0e0, 1.0e1, 1.0e2, 1.0e3, 
+                                1.0e4, 1.0e5, 1.0e6, 1.0e7 };
+
+static inline double expt10(u_int k)
+{
+    double v = expt10_tab[k & 0x07];
+    int l = k >> 3;
+    while (l-- > 0) v *= 1.0e8;
+    return v;
+}
+#endif
+
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
     /* TODO: Look at the algorithm of Burger & Dybvig :"Priting Floating-Point
@@ -1174,7 +1173,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         strcpy(buf, "#<nan>");
     } else {
         if (plus_sign && val > 0) { *buf++ = '+'; buflen--; }
-        snprintf(buf, buflen - 3, "%.20g", val);
+        snprintf(buf, buflen - 3, "%.17g", val);
         if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
             strcat(buf, ".0");
     }
