@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: io.c,v 1.1 2001-01-15 10:59:00 shiro Exp $
+ *  $Id: io.c,v 1.2 2001-01-16 06:41:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -39,6 +39,7 @@ static void wrapper1(ScmObj *args, int nargs, void *data)
 static void port_closer(ScmObj *args, int nargs, void *data)
 {
     Scm_ClosePort(SCM_PORT(data));
+    SCM_RETURN(SCM_UNDEFINED);
 }
 
 void Scm_CallWithFile(ScmString *path, ScmProcedure *proc, int inputp)
