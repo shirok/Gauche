@@ -1,3 +1,18 @@
+2001-03-23  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.9
+	* lib/*: reorganized library structure.  gauche-specific stuff
+	  go into gauche/ subdirectory, and can be used by
+	  "(use gauche.something)".
+	* src/class.c, src/gauche/class.h: changed ScmClassAccessor to
+	  ScmSlotAccessor and made it have more information for slot
+	  initialization and access.   Basic features such as defining
+	  class in Scheme, instancing it, and accessing slots, start
+	  working---a lot has to be done for completeness.
+	* src/compile.c (compile_qq_list): fixed a bug that messed up
+	  the stack by quasiquoted forms with unquote and unquote-splicing
+	  intertwined.
+
 2001-03-21  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.8
