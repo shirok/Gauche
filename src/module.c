@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.20 2001-05-22 20:27:39 shirok Exp $
+ *  $Id: module.c,v 1.21 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include "gauche.h"
@@ -31,7 +31,7 @@ static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, "#<module %S>", SCM_MODULE(obj)->name);
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass, module_print, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass, module_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
 static ScmHashTable *moduleTable; /* global, must be protected in MT env */

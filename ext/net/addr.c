@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.4 2001-06-14 07:16:42 shirok Exp $
+ *  $Id: addr.c,v 1.5 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include "net.h"
@@ -38,7 +38,9 @@ static ScmObj sockaddr_family(ScmNextMethod *, ScmObj *, int, void *);
 
 ScmClass *Scm_SockAddrCPL[] = { &Scm_SockAddrClass, &Scm_TopClass, NULL };
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SockAddrClass, sockaddr_print);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrClass, sockaddr_print,
+                         NULL, NULL, sockaddr_allocate,
+                         SCM_CLASS_DEFAULT_CPL);
 
 SCM_DEFINE_GENERIC(Scm_GenericSockAddrName, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSockAddrFamily, Scm_NoNextMethod, NULL);
@@ -121,9 +123,10 @@ typedef struct {
 } scm_sockaddr_un;
 
 #define UNIX_ADDRESS_PATH_MAX  108
+static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrUnixClass, sockaddr_print,
-                         NULL, NULL, Scm_SockAddrCPL);
+                         NULL, NULL, sockaddr_un_allocate, Scm_SockAddrCPL);
 
 static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -184,8 +187,10 @@ typedef struct {
     struct sockaddr_in addr;
 } scm_sockaddr_in;
 
+static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs);
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrInetClass, sockaddr_print,
-                         NULL, NULL, Scm_SockAddrCPL);
+                         NULL, NULL, sockaddr_in_allocate, Scm_SockAddrCPL);
 
 static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -274,7 +279,6 @@ void Scm_Init_NetAddr(ScmModule *mod)
     key_broadcast = SCM_MAKE_KEYWORD("broadcast");
     key_loopback  = SCM_MAKE_KEYWORD("loopback");
 
-    Scm_SockAddrClass.allocate = sockaddr_allocate;
     Scm_InitBuiltinClass(&Scm_SockAddrClass, "<sockaddr>", mod);
     Scm_InitBuiltinGeneric(&Scm_GenericSockAddrName,
                            "sockaddr-name", mod);
@@ -283,12 +287,10 @@ void Scm_Init_NetAddr(ScmModule *mod)
     Scm_InitBuiltinMethod(&sockaddr_name_rec);
     Scm_InitBuiltinMethod(&sockaddr_family_rec);
     
-    Scm_SockAddrUnixClass.allocate = sockaddr_un_allocate;
     Scm_InitBuiltinClass(&Scm_SockAddrUnixClass, "<sockaddr-un>", mod);
     Scm_InitBuiltinMethod(&sockaddr_un_name_rec);
     Scm_InitBuiltinMethod(&sockaddr_un_family_rec);
     
-    Scm_SockAddrInetClass.allocate = sockaddr_in_allocate;
     Scm_InitBuiltinClass(&Scm_SockAddrInetClass, "<sockaddr-in>", mod);
     Scm_InitBuiltinMethod(&sockaddr_in_name_rec);
     Scm_InitBuiltinMethod(&sockaddr_in_family_rec);

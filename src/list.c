@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.26 2001-04-22 07:32:40 shiro Exp $
+ *  $Id: list.c,v 1.27 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include "gauche.h"
@@ -28,8 +28,8 @@ static ScmClass *list_cpl[] = {
 };
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ListClass, NULL);
-SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, list_cpl);
-SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, list_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, NULL, list_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl);
 
 /*
  * CONSTRUCTOR

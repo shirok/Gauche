@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.18 2001-05-26 21:38:57 shirok Exp $
+ *  $Id: system.c,v 1.19 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include <stdio.h>
@@ -473,3 +473,10 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
     Scm_Panic("exec failed: %s", strerror(errno));
 }
 
+/*
+ * select
+ */
+
+#ifdef HAVE_SELECT
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysFdsetClass, NULL);
+#endif /* HAVE_SELECT */

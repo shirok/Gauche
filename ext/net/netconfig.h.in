@@ -2,11 +2,13 @@
  *
  * Configuration parmateres
  *  
- * $Id: netconfig.h.in,v 1.1 2001-05-25 09:07:24 shirok Exp $
+ * $Id: netconfig.h.in,v 1.2 2001-06-14 09:07:14 shirok Exp $
  */
 
-/* Define if the system has those functions */
-#undef HAVE_GETHOSTBYNAME_R
-#undef HAVE_GETHOSTBYADDR_R
+/* Define # of args gethostbyname_r takes, or #undef if the system doesn't
+   have the function. */
+#undef GETHOSTBYNAME_R_NUMARGS
 
+/* Define if the system has those functions */
+#undef HAVE_GETHOSTBYADDR_R
 #undef HAVE_GETPROTOBYNAME_R

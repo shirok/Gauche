@@ -1,8 +1,17 @@
+2001-06-13  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in : made work with Solaris
+	* ext/net/configure.in : made work with IRIX and Solaris
+	* src/* : changed SCM_DEFINE_BUILTIN_CLASS macro to allow to set
+	  allocation routine.
+
 2001-06-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/* : added more functions.
 	* doc/gauche-ref.texi : added gauche.net description
-
+	* src/main.c : when invoked with a script file, call "main" procedure
+	  if defined.  proposed SRFi-22 behavior.
+	
 2001-06-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/* : made low-level functions work

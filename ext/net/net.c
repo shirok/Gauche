@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.7 2001-06-14 07:14:48 shirok Exp $
+ *  $Id: net.c,v 1.8 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include "net.h"
@@ -285,13 +285,27 @@ void Scm_Init_libnet(void)
     SCM_DEFINE(mod, sym, Scm_MakeInteger(val))
 
     DEFSYM("sol_socket", SOL_SOCKET);
+#ifdef SO_KEEPALIVE
     DEFSYM("so_keepalive", SO_KEEPALIVE);
+#endif
+#ifdef SO_OOBINLINE
     DEFSYM("so_oobinline", SO_OOBINLINE);
+#endif
+#ifdef SO_REUSEADDR
     DEFSYM("so_reuseaddr", SO_REUSEADDR);
+#endif
+#ifdef SO_TYPE
     DEFSYM("so_type",      SO_TYPE);
+#endif
+#ifdef SO_BROADCAST
     DEFSYM("so_broadcast", SO_BROADCAST);
+#endif
+#ifdef SO_SNDBUF
     DEFSYM("so_sndbuf",    SO_SNDBUF);
+#endif
+#ifdef SO_RCVBUF
     DEFSYM("so_rcvbuf",    SO_RCVBUF);
+#endif
 #ifdef SO_PRIORITY
     DEFSYM("so_priority",  SO_PRIORITY);
 #endif
@@ -299,12 +313,21 @@ void Scm_Init_libnet(void)
 
 #ifdef SOL_TCP
     DEFSYM("sol_tcp", SOL_TCP);
+#ifdef TCP_NODELAY
     DEFSYM("tcp_nodelay",  TCP_NODELAY);
-    DEFSYM("tcp_maxseg",   TCP_MAXSEG);
-    DEFSYM("tcp_cork",     TCO_CORK);
 #endif
+#ifdef TCP_MAXSEG
+    DEFSYM("tcp_maxseg",   TCP_MAXSEG);
+#endif
+#ifdef TCP_CORK
+    DEFSYM("tcp_cork",     TCP_CORK);
+#endif
+#endif /* SOL_TCP */
+
 #ifdef SOL_IP
     DEFSYM("sol_ip", SOL_IP);
+#ifdef IP_OPTIONS
     DEFSYM("ip_options",   IP_OPTIONS);
 #endif
+#endif /* SOL_IP */
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.46 2001-06-04 02:26:10 shirok Exp $
+ *  $Id: string.c,v 1.47 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include <stdio.h>
@@ -21,7 +21,7 @@
 #include "gauche.h"
 
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
-SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
 #define CHECK_MUTABLE(str)                                              \

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.15 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: hash.c,v 1.16 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include "gauche.h"
@@ -350,7 +350,7 @@ static int general_cmp(ScmObj key, ScmHashEntry *e)
  */
 
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
 ScmObj Scm_MakeHashTable(ScmHashProc hashfn,

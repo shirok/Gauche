@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.6 2001-05-30 07:42:01 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.7 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -80,7 +80,7 @@ static int compare_${vecttype}(ScmObj x, ScmObj y)
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_${vecttype}Class,
-                         print_${vecttype}, compare_${vecttype}, NULL,
+                         print_${vecttype}, compare_${vecttype}, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
 /*

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.48 2001-05-26 21:38:57 shirok Exp $
+ *  $Id: class.c,v 1.49 2001-06-14 09:07:14 shirok Exp $
  */
 
 #include "gauche.h"
@@ -29,7 +29,11 @@ static void method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void next_method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void slot_accessor_print(ScmObj, ScmPort *, ScmWriteContext*);
 
+static ScmObj class_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj method_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
+static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
 static void scheme_slot_default(ScmObj obj);
 
 ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
@@ -52,22 +56,25 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UnknownClass, NULL);
 
 SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmObj,
-                      NULL, NULL, NULL,
+                      NULL, NULL, NULL, object_allocate,
                       SCM_CLASS_DEFAULT_CPL);
 
 /* Those basic metaobjects will be initialized further in Scm__InitClass */
 SCM_DEFINE_BASE_CLASS(Scm_ClassClass, ScmClass,
-                      class_print, NULL, NULL, 
+                      class_print, NULL, NULL, class_allocate,
                       SCM_CLASS_OBJECT_CPL);
 SCM_DEFINE_BASE_CLASS(Scm_GenericClass, ScmGeneric,
-                      generic_print, NULL, NULL,
+                      generic_print, NULL, NULL, generic_allocate,
                       SCM_CLASS_OBJECT_CPL);
 SCM_DEFINE_BASE_CLASS(Scm_MethodClass, ScmMethod,
-                      method_print, NULL, NULL,
+                      method_print, NULL, NULL, method_allocate,
                       SCM_CLASS_OBJECT_CPL);
 
 /* Internally used classes */
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SlotAccessorClass, slot_accessor_print);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SlotAccessorClass,
+                         slot_accessor_print, NULL, NULL,
+                         slot_accessor_allocate,
+                         SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, next_method_print);
 
 /* Builtin generic functions */
@@ -986,7 +993,7 @@ static void slot_accessor_scheme_accessor_set(ScmSlotAccessor *sa, ScmObj p)
 
 static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
 {
-    int size = sizeof(ScmObj)*(klass->numInstanceSlots+1);
+    int size = sizeof(ScmObj)*(klass->numInstanceSlots) + sizeof(ScmHeader);
     ScmObj obj = SCM_NEW2(ScmObj, size);
     SCM_SET_CLASS(obj, klass);
     scheme_slot_default(obj);
@@ -1542,13 +1549,11 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
 
 /* booting class metaobject */
 void bootstrap_class(ScmClass *k,
-                     ScmClassStaticSlotSpec *specs,
-                     ScmObj (*allocate)(ScmClass*, ScmObj initargs))
+                     ScmClassStaticSlotSpec *specs)
 {
     ScmObj slots = SCM_NIL, t = SCM_NIL;
     ScmObj acc = SCM_NIL;
 
-    k->allocate = allocate;
     if (specs) {
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
@@ -1625,15 +1630,13 @@ void Scm__InitClass(void)
 
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
-    Scm_ObjectClass.allocate = object_allocate;
-    bootstrap_class(&Scm_ClassClass, class_slots, class_allocate);
-    bootstrap_class(&Scm_GenericClass, generic_slots, generic_allocate);
+    bootstrap_class(&Scm_ClassClass, class_slots);
+    bootstrap_class(&Scm_GenericClass, generic_slots);
     Scm_GenericClass.flags |= SCM_CLASS_APPLICABLE;
-    bootstrap_class(&Scm_MethodClass, method_slots, method_allocate);
+    bootstrap_class(&Scm_MethodClass, method_slots);
     Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
     Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
-    bootstrap_class(&Scm_SlotAccessorClass, slot_accessor_slots,
-                    slot_accessor_allocate);
+    bootstrap_class(&Scm_SlotAccessorClass, slot_accessor_slots);
 
 #define CINIT(cl, nam) \
     Scm_InitBuiltinClass(cl, nam, mod)
@@ -1706,6 +1709,9 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_SYS_TM,           "<sys-tm>");
     CINIT(SCM_CLASS_SYS_GROUP,        "<sys-group>");
     CINIT(SCM_CLASS_SYS_PASSWD,       "<sys-passwd>");
+#ifdef HAVE_SELECT
+    CINIT(SCM_CLASS_SYS_FDSET,        "<sys-fdset>");
+#endif
     
     /* vector.c */
     CINIT(SCM_CLASS_VECTOR,           "<vector>");

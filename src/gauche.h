@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.153 2001-06-07 07:09:40 shirok Exp $
+ *  $Id: gauche.h,v 1.154 2001-06-14 09:07:14 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -399,13 +399,14 @@ extern ScmClass *Scm_ObjectCPL[];
  *   SCM_DEFINE_BASE_CLASS
  */
 
-#define SCM_DEFINE_CLASS_COMMON(cname, size, flag, printer, compare, serialize, cpa) \
+/* internal macro. do not use directly */
+#define SCM__DEFINE_CLASS_COMMON(cname, size, flag, printer, compare, serialize, allocate, cpa) \
     ScmClass cname = {                          \
         { SCM_CLASS_CLASS },                    \
         printer,                                \
         compare,                                \
         serialize,                              \
-        NULL,                                   \
+        allocate,                               \
         cpa,                                    \
         0,                                      \
         size,                                   \
@@ -421,29 +422,29 @@ extern ScmClass *Scm_ObjectCPL[];
         SCM_FALSE                               \
     }
     
-/* define built-in class statically. */
-#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, cpa) \
-    SCM_DEFINE_CLASS_COMMON(cname, 0,                                     \
-                            SCM_CLASS_BUILTIN|SCM_CLASS_FINAL,            \
-                            printer, compare, serialize, cpa)
+/* Define built-in class statically -- full-featured version */
+#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
+    SCM__DEFINE_CLASS_COMMON(cname, 0,                                    \
+                             SCM_CLASS_BUILTIN|SCM_CLASS_FINAL,           \
+                             printer, compare, serialize, allocate, cpa)
 
-/* simpler version */
+/* Define built-in class statically -- simpler version */
 #define SCM_DEFINE_BUILTIN_CLASS_SIMPLE(cname, printer)         \
-    SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL,        \
+    SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL, NULL,  \
                              SCM_CLASS_DEFAULT_CPL)
 
 /* define an abstract class */
-#define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)           \
-    SCM_DEFINE_CLASS_COMMON(cname, 0,                   \
-                            SCM_CLASS_BUILTIN,          \
-                            NULL, NULL, NULL, cpa)
+#define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)            \
+    SCM__DEFINE_CLASS_COMMON(cname, 0,                   \
+                             SCM_CLASS_BUILTIN,          \
+                             NULL, NULL, NULL, NULL, cpa)
 
 /* define a class that can be subclassed by Scheme */
-#define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, serialize, cpa) \
-    SCM_DEFINE_CLASS_COMMON(cname,                                           \
-                            (sizeof(ctype)+sizeof(ScmObj)-1)/sizeof(ScmObj), \
-                            SCM_CLASS_BUILTIN,                               \
-                            printer, compare, serialize, cpa)
+#define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, serialize, allocate, cpa) \
+    SCM__DEFINE_CLASS_COMMON(cname,                                           \
+                             (sizeof(ctype)+sizeof(ScmObj)-1)/sizeof(ScmObj), \
+                             SCM_CLASS_BUILTIN,                               \
+                             printer, compare, serialize, allocate, cpa)
 
 /*--------------------------------------------------------
  * PAIR AND LIST
@@ -1777,6 +1778,19 @@ extern ScmObj Scm_GetPasswdByName(ScmString *name);
 
 extern void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap);
 
+/* select */
+#ifdef HAVE_SELECT
+typedef struct ScmSysFdsetRec {
+    SCM_HEADER;
+    fd_set fdset;
+} ScmSysFdset;
+
+extern ScmClass Scm_SysFdsetClass;
+#define SCM_CLASS_SYS_FDSET     (&Scm_SysFdsetClass)
+#define SCM_SYS_FDSET(obj)      ((ScmSysFdset*)(obj)
+#define SCM_SYS_FDSET_P(obj)    (SCM_XTYPEP(obj, SCM_CLASS_SYS_FDSET))
+#endif /*HAVE_SELECT*/
+    
 /*---------------------------------------------------
  * LOAD AND DYNAMIC LINK
  */

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.29 2001-05-26 21:38:57 shirok Exp $
+;;; $Id: syslib.stub,v 1.30 2001-06-14 09:07:14 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -726,6 +726,12 @@
   SCM_RETURN(SCM_FALSE);
 #endif
 ")
+
+;;---------------------------------------------------------------------
+;; select
+
+
+
 
 ;; Local variables:
 ;; mode: scheme
