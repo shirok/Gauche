@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.113 2001-11-02 12:17:40 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.114 2001-11-03 09:16:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1168,6 +1168,8 @@ It is a syntactic sugar of the following form.
 ((setter @var{proc}) @var{arg} @dots{} @var{expression})
 @end example
 Note the order of the arguments differs from CommonLisp's @code{setf}.
+
+Some examples:
 @c JP
 2番目の形式はSRFI-17に定義されている「一般化されたset!」です。
 これは構文的な装飾であり、実際は以下のように解釈されます。
@@ -1175,6 +1177,8 @@ Note the order of the arguments differs from CommonLisp's @code{setf}.
 ((setter @var{proc}) @var{arg} @dots{} @var{expression})
 @end example
 CommonLispの@code{setf}とは引数の順序が異なることに注意して下さい。
+
+例：
 @c COMMON
 
 @example
@@ -1299,12 +1303,15 @@ order.   I adopted this order since it is consistent with other
 destructive operations.  Perl's @code{push} function takes the same
 argument order, but it appends @var{item} at the end of the array
 (Perl's @code{unshift} is closer to @code{push!}).
+You can use a queue (@xref{Queue}) if you need a behavior of Perl's
+@code{push}.
 @c JP
 註：Common Lispの@code{push}マクロは引数を逆の順番で取ります。
 @code{push!}は他の副作用を持つ形式との互換性を考えてこの順番としました。
 Perlの@code{push}関数は@code{push!}マクロと同じ引数順ですが、
 @var{item}はシーケンスの末尾に追加されます (Perlの@code{unshift}の方が
 @code{push!}の動作に近いです)。
+Perlのpushオペレータの動作が必要ならQueueが使えます (@ref{Queue}参照)。
 @c COMMON
 @end defmac
 
@@ -11772,6 +11779,7 @@ Here's some basic examples.
 (tr "\x00-\x19\x7f" "?*")
 @end example
 @c JP
+いくつか例を挙げます。
 @example
 ;; @r{大文字と小文字を交換します}
 (tr "A-Za-z" "a-zA-Z")
@@ -11784,50 +11792,97 @@ Here's some basic examples.
 @end example
 @c COMMON
 
-The @var{to-list} can be empty.  It is meaningful if @var{:delete}
-and/or @var{:squeeze} flag is specified.
+@c EN
+If @var{to-list} is shorter than @var{from-list}, the behavior
+depends on the keyword argument @var{delete}.  If a true value is
+given,  characters that appear in @var{from-list} but not
+in @var{to-list} are deleted.   Otherwise, 
+the extra characters in @var{from-list} are just passed through.
+@c JP
+@var{to-list}が@var{from-list}より短い場合、動作はキーワード引数@var{delete}に
+依存します。もし真の値が@var{delete}に与えられれば、@var{from-list}に現われて
+@var{to-list}に対応するものがない文字は入力から取り除かれます。そうでなければ
+そのような文字はそのまま出力されます。
+@c COMMON
 
-When a true value is specified to @var{:delete},
-characters that appear in @var{from-list} but not
-in @var{to-list} are deleted.
-
-When a true value is specified to @var{:complement},
+@c EN
+When a true value is specified to @var{complement},
 the character set in @var{from-list} is complemented.
 Note that it implies @emph{huge} set of characters,
 so it is not very useful unless either output character
 set is a single character (using `*') or used with
-@code{:delete} keyword.
+@code{delete} keyword.
+@c JP
+真の値が@var{complement}に与えられた場合、@var{from-list}の文字の
+補集合が@var{from-list}として使われます。この文字集合は極めて大きくなる
+可能性があることに注意してください。従って、一般にこのオプションは
+@var{to-list}に`*'を使ってそれらの文字を一文字にマッピングするか、
+@code{delete}オプションと併用するかしないとあまり意味がありません。
+@c COMMON
 
-When a true value is specified to @var{:squeeze},
+@c EN
+When a true value is specified to @var{squeeze},
 the sequence of the same replaced characters is squeezed to one.
 If @var{to-list} is empty, the sequence of the same characters
 in @var{from-list} is squeezed.
+@c JP
+真の値が@var{squeeze}に与えられた場合、同じ文字への置換が2つ以上並ぶ場合に
+2つめ以降の文字が削除されます。@var{to-list}が空の場合は、@var{from-list}
+に含まれる文字で同一文字が並んだ場合に2つめ以降の文字が削除されます。
+@c COMMON
 
+@c EN
 Internally, @code{tr} builds a table to map the characters for
 efficiency.  Since Gauche can deal with potentially huge set
 of characters, it limits the use of the table for only smaller
 characters (<256 by default).  If you want to transliterate
 multibyte characters on the large text, however, you might want 
 to use larger table, trading off the memory usage.  You can specify
-the internal table size by @code{:table-size} keyword argument.
+the internal table size by @var{table-size} keyword argument.
 For example, if you transliterate lots of EUC-JP hiragana text
 to katakana, you may want to set table size greater than 42483
 (the character code of the last katakana).
+@c JP
+内部的に、@code{tr}はキャラクタのマッピングのためにテーブルを使用します。
+但し、Gaucheでは極めて大きな文字セットを扱うため、テーブルはキャラクタコードの
+小さい文字のみに対して使われます(デフォルトではコード255以下の文字)。
+もし、より大きな文字を頻繁に変換することが分かっていて、メモリを余分に使っても
+速度を上げたい場合は、このテーブルの大きさを@var{table-size}キーワード引数で
+指定することができます。例えばEUC-JPコードで大量の平仮名と片仮名を変換する場合は、
+@var{table-size}を42483以上にすると、全ての変換がテーブルルックアップで
+行われます。
+@c COMMON
 
-Note that the pre-calcuilation to build the transliterate table
+@c EN
+Note that the pre-calculation to build the transliterate table
 needs some overhead.  If you want to call @code{tr} many times
 inside loop, consider to use @code{build-transliterator} described below.
+@c JP
+@code{tr}が変換テーブルを計算するのにいくらかオーバーヘッドがあることに
+注意して下さい。内側のループで@code{tr}を繰り返し呼ぶような場合は
+下に示す@code{build-transliterator}を使った方が良いでしょう。
+@c COMMON
 @end defun
 
 @defun string-tr string from-list to-list &keyword :complement :delete :squeeze :table-size
+@c EN
 Works like @code{tr}, except that input is taken from a string @var{string}.
+@c JP
+入力を@var{string}から取って変換結果を文字列で返す以外は@code{tr}と同じです。
+@c COMMON
 @end defun
 
 @defun build-transliterator from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
+@c EN
 Returns a procedure that does the actual transliteration.  This effectively
 ``pre-compiles'' the internal data structure.   If you want to run
 @code{tr} with the same sets repeatedly, you may build the procedure
 once and apply it repeatedly, saving the overhead of initialization.
+@c JP
+実際の変換動作をする手続きを作成して返します。内部データのセットアップを済ませるため、
+同じ文字変換セットに対して@code{tr}を繰り返し呼ぶような場合は、この手続きを用いることで
+初期化のオーバヘッドを軽減することができます。
+@c COMMON
 
 @example
 (with-input-from-file "huge-file.txt"
@@ -11835,7 +11890,11 @@ once and apply it repeatedly, saving the overhead of initialization.
     (let loop ((line (read-line)))
       (unless (eof-object? line) (tr "A-Za-z" "a-zA-Z")))))
 
+@c EN
 ;; @r{runs more efficiently...}
+@c JP
+;; @r{以下の方が効率良く動作します...}
+@c COMMON
 
 (with-input-from-file "huge-file.txt"
   (lambda ()
