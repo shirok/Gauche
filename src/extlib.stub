@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.116 2001-11-16 11:24:16 shirok Exp $
+;;; $Id: extlib.stub,v 1.117 2001-11-19 11:29:49 shirok Exp $
 ;;;
 
 "
@@ -865,6 +865,16 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc hash-table? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_HASHTABLEP(obj)));")
+
+(define-cproc hash-table-type (hash)
+  (assert (hash-table? hash))
+  "switch (hash->type) {
+   case SCM_HASH_ADDRESS: SCM_RETURN(sym_eq);
+   case SCM_HASH_EQV:     SCM_RETURN(sym_eqv);
+   case SCM_HASH_EQUAL:   SCM_RETURN(sym_equal);
+   case SCM_HASH_STRING:  SCM_RETURN(sym_string_eq);
+   default: SCM_RETURN(SCM_FALSE);  /* TODO: need to think over */
+  }")
 
 (define-cproc hash-table-get (hash key &optional defval)
   (assert (hash-table? hash))
