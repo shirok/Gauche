@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.17 2003-11-27 17:10:41 shirok Exp $
+ *  $Id: portapi.c,v 1.18 2004-02-17 13:56:46 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -708,7 +708,8 @@ ScmObj readline_body(ScmPort *p)
     b1 = Scm_GetbUnsafe(p);
     if (b1 == EOF) return SCM_EOF;
     for (;;) {
-        if (b1 == EOF || b1 == '\n') break;
+        if (b1 == EOF) return Scm_DStringGet(&ds);
+        if (b1 == '\n') break;
         if (b1 == '\r') {
             b2 = Scm_GetbUnsafe(p);
             if (b2 == EOF || b2 == '\n') break;
@@ -718,6 +719,7 @@ ScmObj readline_body(ScmPort *p)
         SCM_DSTRING_PUTB(&ds, b1);
         b1 = Scm_GetbUnsafe(p);
     }
+    if(SCM_PORT_TYPE(p) == SCM_PORT_FILE) p->src.buf.line++;
     return Scm_DStringGet(&ds);
 }
 #endif /* READLINE_AUX */
