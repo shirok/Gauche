@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: sha1.stub,v 1.7 2004-12-15 12:46:06 shirok Exp $
+;;;  $Id: sha1.stub,v 1.8 2004-12-18 05:03:05 shirok Exp $
 ;;;
 
 "
@@ -82,7 +82,7 @@
   if (SCM_U8VECTORP(data)) {
     SHAUpdate(&sha1->ctx, SCM_UVECTOR_ELEMENTS(SCM_U8VECTOR(data)), SCM_U8VECTOR_SIZE(SCM_U8VECTOR(data)));
   } else if (SCM_STRINGP(data)) {
-    SHAUpdate(&sha1->ctx, Scm_GetStringConst(data), SCM_STRING_SIZE(data));
+    SHAUpdate(&sha1->ctx, Scm_GetStringConst(SCM_STRING(data)), SCM_STRING_SIZE(data));
   } else {
     Scm_Error(\"u8vector or string required, but got: %S\", data);
   }
