@@ -1,3 +1,13 @@
+2001-05-12  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.10
+	* src/number.c (Scm_Expt): properly handles fraction power of
+	  negative real numbers, and exact powers.
+	* src/vm.c: added Scm_Values2 and Scm_Values3, C-interfaces to
+	  return multiple values.
+	* src/stdlib.stub, lib/gauche/numerical.scm: made
+	  %complex->real/imag to return multiple values, avoiding consing.
+
 2001-05-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm : fixed more numeric instability of
