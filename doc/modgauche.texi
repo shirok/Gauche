@@ -2204,75 +2204,151 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @c ----------------------------------------------------------------------
 @node gauche.hook - Hooks, gauche.interactive - Interactive session, gauche.fcntl - Low-level file operations, Library modules - Gauche extensions
 @section @code{gauche.hook} - Hooks
+@c NODE gauche.hook - フック
 
 @deftp {Module} gauche.hook
 @mdindex gauche.hook
+@c EN
 Provides a hook object, which manages a list of closures to be
 called at certain time.
 
 This API of hooks are upper-compatible of Guile's, with the
 following extensions.
+@c JP
+フックオブジェクトを提供します。これは、特定のタイミングで
+呼び出されるクロージャのリストを管理するものです。
+
+フックのAPIはGuileのそれと上方互換で、下記のように拡張されています。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 Based on Gauche's object system.  Most APIs are methods
 so you can extend the hook features.
+@c JP
+Gaucheのオブジェクトシステムをベースにしています。
+ほとんどのAPIはメソッドなので、フックの機能を拡張することが
+できます。
+@c COMMON
 @item
+@c EN
 Hook object itself is applicable.  You don't need to use @code{run-hook}.
+@c JP
+フックオブジェクトはそれ自身適用可能です。@code{run-hook}を使う必要は
+ありません。
+@c COMMON
 @item
+@c EN
 The method to remove a procedure from a hook is called @code{delete-hook!},
 for consistency with SRFI-1 and others.  @code{remove-hook!} is
 defined as an alias of @code{delete-hook!} for compability with Guile.
+@c JP
+フックから手続きを削除するメソッドは、SRFI-1やその他との一貫性の
+ために@code{delete-hook!}と呼ばれます。
+Guileとの互換性のために、@code{remove-hook!}が@code{delete-hook!}の
+エイリアスとして定義されています。
+@c COMMON
 @end itemize
 @end deftp
 
 @deftp {Class} <hook>
 @clindex hook
+@c EN
 A hook class, which keeps a list of procedures to be called at once.
 
 The @code{object-apply} method is defined on @code{<hook>} class,
 so you can "apply" a hook object as if it were a procedure---which
 causes all the registered procedure to be invoked.
+@c JP
+フックのクラスで、一度に呼び出される手続きのリストを保持しています。
+
+@code{<hook>}クラスには@code{object-apply}メソッドが定義されているので、
+あたかもそれが手続きであるかのようにフックオブジェクトを``適用''できます。
+フックオブジェクトを適用すると、登録されている全ての手続きが呼び出されます。
+@c COMMON
 @end deftp
 
 @defun make-hook &optional (arity 0)
+@c EN
 Creates a new hook object with given arity, which should be a
 non-negative integer.
+@c JP
+与えられたアリティ(正の整数でなければなりません)とともに新しい
+フックオブジェクトを作成します。
+@c COMMON
 @end defun
 
 @defun hook? obj
+@c EN
 Returns true if @var{obj} is a hook object.
+@c JP
+@var{obj}がフックオブジェクトであれば、真を返します。
+@c COMMON
 @end defun
 
 @defun hook-empty? hook
+@c EN
 Returns true if @var{hook}'s procedure list is empty.
+@c JP
+@var{hook}の手続きリストが空なら、真を返します。
+@c COMMON
 @end defun
 
 @deffn {Method} add-hook! (hook <hook>) proc &optional (append? #f)
+@c EN
 Adds a procedure @var{proc} to @var{hook}.  If @var{append?}
 is given and true, @var{proc} is added at the end of the list.
 Otherwise, @var{proc} is added at the front of the list.
 The @var{proc} has to be called with the arity given 
 at the @code{make-hook}.
+@c JP
+手続き@var{proc}を@var{hook}に追加します。
+@var{append?}が与えられ真であれば、@var{proc}はリストの最後に
+追加されます。そうでなければ、@var{proc}はリストの最初に追加
+されます。
+@var{proc}は、@code{make-hook}時に与えられたアリティとともに
+呼ばれなければなりません。
+@c COMMON
 @end deffn
 
 @deffn {Method} delete-hook! (hook <hook>) proc
 @deffnx {Method} remove-hook! (hook <hook>) proc
+@c EN
 Removes @var{proc} from the procedure list of @var{hook}.
 @code{Remove-hook!} is an alias of @code{delete-hook!} just for
 compability with Guile.
+@c JP
+@var{hook}の手続きリストから@var{proc}を削除します。
+Guileとの互換性のためだけに、@code{remove-hook!}が@code{delete-hook!}の
+エイリアスとなっています。
+@c COMMON
 @end deffn
 
 @deffn {Method} reset-hook! (hook <hook>)
+@c EN
 Empties @var{hook}'s procedure list.
+@c JP
+@var{hook}の手続きリストを空にします。
+@c COMMON
 @end deffn
 
 @deffn {Method} hook->list (hook <hook>)
+@c EN
 Returns a copy of @var{hook}'s procedure list.
+@c JP
+@var{hook}の手続きリストのコピーを返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} run-hook (hook <hook>) arg @dots{}
+@c EN
 Calls @var{hook}'s procedures in order, with arguments @var{arg} @dots{}.
 The number of arguments must match the arity given at @code{make-hook}.
+@c JP
+@var{hook}の手続きを、@var{arg} @dots{}を引数として順番に呼び出します。
+引数の数は、@code{make-hook}時に与えられたアリティにマッチしなければ
+なりません。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
@@ -4481,6 +4557,7 @@ Some examples:
 @end example
 
 @deffn {Method} parameter-observer-add! (p <parameter>) proc &optional when where
+@c EN
 Adds @var{proc} to "observer" procedures of a parameter @var{p}.
 Observer procedures are called either (1) just before
 a new value is set to the parameter, or (2) just after the new value
@@ -4489,37 +4566,80 @@ already applied before a callback is called.
 In either case, observer procedures are called with two arguments,
 the old value and the new value.  The return value(s) of observer
 procedures are discarded.
+@c JP
+@var{proc}をパラメータ@var{p}の``オブザーバ''手続きに追加します。
+オブザーバ手続きは、(1)パラメータに新しい値がセットされる直前、
+あるいは(2)パラメータに新しい値がセットされた直後、に呼ばれます。
+(1)の場合、コールバックが呼ばれる前にフィルタ手続きがすでに適用
+されています。どちらの場合も、オブザーバ手続きは、古い値と新しい
+値の2引数を伴って呼ばれます。オブザーバ手続きの戻り値は無視されます。
+@c COMMON
 
+@c EN
 The optional @var{when} argument must be either a symbol @code{before}
 or @code{after}, to specify whether @var{proc} should be called
 before or after the value is changed.   If omitted, @code{after} is
 assumed.
+@c JP
+オプショナル引数@var{when}は、シンボル@code{before}か@code{after}の
+いずれかでなければならず、値が変更された前と後のどちらで@var{proc}が
+呼ばれるかを指定します。省略されると、@code{after}を指定したものと
+されます。
+@c COMMON
 
+@c EN
 The optional @var{where} argument must be either a symbol
 @code{append} or @code{prepend}, to specify whether @var{proc} should
 be prepended or appended to the existing observer procedure list.
 If omitted, @code{append} is assumed.
+@c JP
+オプショナル引数@var{where}は、シンボル@code{append}か@code{prepend}の
+いずれかでなければならず、@var{proc}が既存のオブザーバ手続きのリストの
+前に追加されるか後に追加されるかを指定します。省略されると、@code{append}
+を指定したものとされます。
+@c COMMON
 
+@c EN
 @emph{Note}: Although the parameter value itself is thread-local,
 the observer list is shared by all threads.
+@c JP
+@emph{注意}: パラメータの値自身がスレッドローカルであっても、
+オブザーバのリストは全てのスレッドで共有されます。
+@c COMMON
 @end deffn
 
 @deffn {Method} parameter-observer-delete! (p <parameter>) proc &optional when
+@c EN
 Deletes @var{proc} from observer procedure list of a parameter @var{p}.
 If @var{proc} is not in the list, nothing happens.
 You can give either a symbol @code{before} or @code{after} to
 @var{when} argument to specify from which list @var{proc} should be
 deleted.  If @var{when} argument is omitted, @var{proc} is deleted
-from both lists. 
+from both lists.
+@c JP
+パラメータ@var{p}のオブザーバ手続きのリストから@var{proc}を削除します。
+@var{proc}がリストになければ、何も起こりません。
+@var{when}引数にシンボル@code{before}か@code{after}を与えて、
+@var{proc}をどちらのリストから削除するかを指定することができます。
+@var{when}引数が省略されると、@var{proc}は両方のリストから削除されます。
+@c COMMON
 @end deffn
 
 @deffn {Method} parameter-pre-observers (p <parameter>)
 @deffnx {Method} parameter-post-observers (p <parameter>)
+@c EN
 Returns a hook object (@xref{gauche.hook - Hooks}) that keeps
 "before" or "after" observers, respectively.
 
 @emph{Note}: Although the parameter value itself is thread-local,
 these hook objects are shared by all threads.
+@c JP
+``before''か``after''オブザーバをそれぞれキープするフックオブジェクト
+(@ref{gauche.hook - Hooks}参照)を返します。
+
+@emph{注意}: パラメータの値自身がスレッドローカルであっても、
+オブザーバのリストは全てのスレッドで共有されます。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
@@ -6203,15 +6323,29 @@ s @result{} #(#\a #\b 5 6 e)
 @subsection Mapping over sequences
 @c NODE シーケンス上のマップ
 
+@c EN
 You can use extended @code{fold}, @code{map}, @code{for-each} and other
 generic functions on sequences, since a sequence is also a collection.
 However, sometimes you want to have index as well as the element itself
 during iteration.   There are several generic functions for it.
+@c JP
+シーケンスはまたコレクションでもあるので、シーケンスについて
+@code{fold}、@code{map}、@code{for-each}や他のジェネリック関数を
+拡張することができます。しかし、時にはイテレーション中に要素そのものと
+そのインデックスを知りたいことでしょう。そのためのジェネリック関数が
+いくつかあります。
+@c COMMON
 
 @deffn {Generic function} fold-with-index kons knil (seq <sequence>) @dots{}
+@c EN
 Like generic @code{fold}, except @var{kons} is given
 the index within @var{seq}, as the first argument,
 as well as each element from @var{seq}s and the accrued value.
+@c JP
+ジェネリックな@code{fold}と似ていますが、@var{kons}には@var{seq}の
+インデックス内から、第1引数として@var{seq}の要素と増加する値が渡る
+点が異なります。
+@c COMMON
 
 @example
 (fold-with-index acons '() '(a b c))
@@ -6222,8 +6356,13 @@ as well as each element from @var{seq}s and the accrued value.
 @deffn {Generic function} map-with-index proc (seq <sequence>) @dots{}
 @deffnx {Generic function} map-to-with-index class proc (seq <sequence>) @dots{}
 @deffnx {Generic function} for-each-with-index proc (seq <sequence>) @dots{}
+@c EN
 Like @code{map}, @code{map-to} and @code{for-each}, except @var{proc}
 receives the index as the first argument.
+@c JP
+@code{map}、@code{map-to}、@code{for-each}と似ていますが、@var{proc}が
+第1引数としてインデックスを受け取る点が違います。
+@c COMMON
 
 @example
 (map-with-index list '(a b c d) '(e f g h))
@@ -6235,10 +6374,16 @@ receives the index as the first argument.
 @end deffn
 
 @deffn {Generic function} find-with-index pred (seq <sequence>)
+@c EN
 Finds the first element in @var{seq} that satisfies @var{pred}
 like @code{find}, but returns two values, the index of the element
 and the element itself.   If no element satisfies @var{pred},
 two @code{#f}'s are returned.
+@c JP
+@code{find}のように、@var{seq}の中で@var{pred}を満足する最初の要素を
+探しますが、2つの値、要素のインデックスと要素自身を返します。
+@var{pred}を満足する要素がなかったら、2つの@code{#f}が返ります。
+@c COMMON
 
 @example
 (find-with-index char-upper-case? "abraCadabra")
@@ -6250,9 +6395,15 @@ two @code{#f}'s are returned.
 @end deffn
 
 @deffn {Generic function} find-index pred (seq <sequence>)
+@c EN
 Like @code{find}, but returns the index of the first element
 that satisfies @var{pred} in @var{seq}, instead of the element itself.
 If no element in @var{seq} satisfies @var{pred}, @code{#f} is returned.
+@c JP
+@code{find}に似ていますが、@var{seq}の中で@var{pred}を満足する最初の、
+要素自身ではなくインデックスを返す点が異なります。
+@var{seq}の中に@var{pred}を満足する要素がなかったら、@code{#f}が返ります。
+@c COMMON
 
 @example
 (find-index char-upper-case? "abraCadabra")
@@ -6262,11 +6413,16 @@ If no element in @var{seq} satisfies @var{pred}, @code{#f} is returned.
   @result{} #f
 @end example
 
+@c EN
 See also @code{list-index} in SRFI-1 (@xref{SRFI-1 Searching}).
+@c JP
+SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
+@c COMMON
 @end deffn
 
 @node Implementing sequence,  , Mapping over sequences, gauche.sequence - Sequence framework
 @subsection Implementing sequence
+@c NODE シーケンスを実装する
 
 
 
@@ -6797,6 +6953,7 @@ SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポート''
 
 @node Thread programming tips, Thread procedures, gauche.threads - Threads, gauche.threads - Threads
 @subsection Thread programming tips
+@c NODE スレッドプログラミングTips
 
 @c EN
 Although the surface API of threads looks simple and portable,
@@ -6941,6 +7098,7 @@ are not only but one of the ways to realize those features.
 
 @node Thread procedures, Synchronization primitives, Thread programming tips, gauche.threads - Threads
 @subsection Thread procedures
+@c NODE スレッド手続き
 
 @deftp {Builtin Class} <thread>
 @clindex thread
@@ -7244,6 +7402,7 @@ if given, or raises @code{<join-timeout-exception>}.
 
 @node Synchronization primitives, Thread exceptions, Thread procedures, gauche.threads - Threads
 @subsection Synchronization primitives
+@c NODE 同期プリミティブ
 
 @deftp {Builtin Class} <mutex>
 @clindex mutex
@@ -7637,6 +7796,7 @@ Unblocks all the threads waiting on @var{cv}.
 
 @node Thread exceptions,  , Synchronization primitives, gauche.threads - Threads
 @subsection Thread exceptions
+@c NODE スレッド例外
 
 @c EN
 Some types of exceptions may be thrown from thread-related procedures.
