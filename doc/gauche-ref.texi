@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.399 2003-06-05 22:00:32 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.400 2003-06-06 04:06:37 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24505,19 +24505,40 @@ the preceding @var{vars}.
 
 @deftp {Module} srfi-13
 @mdindex srfi-13
+@c EN
 Defines a large set of string-related functions.
 In Gauche, those functions are splitted to number of files
 and the form @code{(use srfi-13)} merely sets up autoloading of
 those files.  So it is not likely to slow down the script startup.
-
+@c JP
+文字列に関連する関数の大きなセットを定義しています。
+Gaucheでは、それらの関数はいくつかのファイルに分割されており、
+@code{(use srfi-13)}というフォームは単にそれらのファイルの
+オートロードのセットアップをするだけです。
+したがって、スクリプトのスタートアップを遅くするようなことは
+ありません。
+@c COMMON
+@c EN
 See SRFI-13 (@ref{srfi-13, [SRFI-13], SRFI-13})
 for the detailed specification and discussion of design issues.
 This manual serves as a reference of function API.
 Some SRFI-13 functions are Gauche built-in and not listed here.
-
+@c JP
+詳細な仕様とデザインに関する議論については、SRFI-13 (@ref{srfi-13, [SRFI-13], SRFI-13})
+を参照して下さい。
+このマニュアルは、関数のAPIのリファレンスとして提供されます。
+いくつかのSRFI-13の関数は、Gaucheのビルトインになっており、
+ここにはリストされていないものもあります。
+@c COMMON
+@c EN
 Note: SRFI-13 documents suggests the name of the module that
 implements these functions to be ``string-lib'' and ``string-lib-internals''.
 Gauche uses the name ``srfi-13'' for consistency.
+@c JP
+注意: SRFI-13のドキュメントは、これらの関数を実装するモジュールの
+名前を``string-lib''と``string-lib-internals''とすることを推奨しています。
+Gaucheでは、一貫性のために``srfi-13''と名付けています。
+@c COMMON
 @end deftp
 
 @menu
