@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.9 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: proc.c,v 1.10 2001-03-12 07:23:40 shiro Exp $
  */
 
 #include "gauche.h"
@@ -41,6 +41,9 @@ static int proc_print(ScmObj obj, ScmPort *port, int mode)
  * Closure
  */
 
+/* NOTE: env shouldn't point to the VM stack. If you want to capture
+   the current VM env, you should call Scm_VMSaveCurrentEnv() to move
+   frames to the heap, then pass its result to Scm_MakeClosure. */
 ScmObj Scm_MakeClosure(int required, int optional,
                        ScmObj code, ScmEnvFrame *env, ScmObj info)
 {
