@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.32 2001-05-05 21:22:08 shirok Exp $
+ *  $Id: number.c,v 1.33 2001-05-06 01:26:03 shirok Exp $
  */
 
 #include <math.h>
@@ -982,6 +982,20 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
 /*===============================================================
  * Comparison
  */
+
+int Scm_NumEq(ScmObj arg0, ScmObj arg1)
+{
+    if (SCM_COMPLEXP(arg0)) {
+        if (SCM_COMPLEXP(arg1)) {
+            return ((SCM_COMPLEX_REAL(arg0) == SCM_COMPLEX_REAL(arg1))
+                    && (SCM_COMPLEX_IMAG(arg0) == SCM_COMPLEX_IMAG(arg1)));
+        }
+        return FALSE;
+    } else {
+        if (SCM_COMPLEXP(arg1)) return FALSE;
+        return (Scm_NumCmp(arg0, arg1) == 0);
+    }
+}
 
 /* 2-arg comparison */
 int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
