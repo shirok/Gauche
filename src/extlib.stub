@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.160 2002-06-25 06:28:04 shirok Exp $
+;;; $Id: extlib.stub,v 1.161 2002-06-26 11:34:04 shirok Exp $
 ;;;
 
 "
@@ -1174,9 +1174,23 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 
 ;; Utility procedure
-(define-cproc format (port fmt &rest args)
-  (assert (string? fmt))
-  "  SCM_RETURN(Scm_Format(port, fmt, args));")
+
+(define-cproc format (fmt &rest args)
+  "ScmObj port = SCM_FALSE;
+  if (SCM_OPORTP(fmt) || SCM_BOOLP(fmt)) {
+    if (!SCM_PAIRP(args)) {
+      Scm_Error(\"wrong number of arguments: format string required after port %S\", fmt);
+    }
+    port = fmt;
+    fmt = SCM_CAR(args);
+    args = SCM_CDR(args);
+    if (!SCM_STRINGP(fmt)) {
+      Scm_Error(\"format string required after port, but got %S\", fmt);
+    }
+  } else if (!SCM_STRINGP(fmt)) {
+    Scm_Error(\"format string required, but got %S\", fmt);
+  }
+  SCM_RETURN(Scm_Format(port, SCM_STRING(fmt), args));")
 
 (define-cproc exit (&optional (code 0))
   (assert (small-integer? code))
