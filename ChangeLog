@@ -1,6 +1,17 @@
+2002-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/* : reorganized to make jconv intercept iconv (but
+	  jconv itself is inactivated yet).
+
+2002-06-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-init.scm, lib/gauche/common-macros.scm : added dolist
+	* src/write.c (Scm_Format): fixed a problem that raises a "too many
+	  argument" error when ~:* is used.
+
 2002-05-28  Shiro Kawai  <shiro@acm.org>
 
-	* ext/charconv/jcode.c, ext/charconv/cvt.scm : added for japanese
+	* ext/charconv/jconv.c, ext/charconv/cvt.scm : added for japanese
 	  characte encoding conversions.
 
 2002-05-27  Shiro Kawai  <shiro@acm.org>
