@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.3 2004-10-18 20:28:25 shirok Exp $
+ *  $Id: vport.c,v 1.4 2004-10-22 05:59:14 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -222,7 +222,8 @@ static int vport_putb(ScmByte b, ScmPort *p)
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->putb_proc)) {
-        Scm_PortError(p, SCM_PORT_ERROR_UNIT, "cannot perform binary output to the port %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_UNIT,
+                      "cannot perform binary output to the port %S", p);
     }
     r = Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(b)));
     if (!SCM_INTP(r)) return 0;

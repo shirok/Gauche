@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.109 2004-10-10 05:34:30 shirok Exp $
+ *  $Id: port.c,v 1.110 2004-10-22 05:59:14 shirok Exp $
  */
 
 #include <unistd.h>
@@ -982,28 +982,24 @@ static int null_ready(ScmPort *dummy, int charp)
     return TRUE;
 }
 
-static int null_putb(ScmByte b, ScmPort *dummy)
+static void null_putb(ScmByte b, ScmPort *dummy)
     /*ARGSUSED*/
 {
-    return 0;
 }
 
-static int null_putc(ScmChar c, ScmPort *dummy)
+static void null_putc(ScmChar c, ScmPort *dummy)
     /*ARGSUSED*/
 {
-    return 0;
 }
 
-static int null_putz(const char *str, int len, ScmPort *dummy)
+static void null_putz(const char *str, int len, ScmPort *dummy)
     /*ARGSUSED*/
 {
-    return 0;
 }
 
-static int null_puts(ScmString *s, ScmPort *dummy)
+static void null_puts(ScmString *s, ScmPort *dummy)
     /*ARGSUSED*/
 {
-    return 0;
 }
 
 static int null_flush(ScmPort *dummy)

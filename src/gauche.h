@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.393 2004-10-17 10:29:39 shirok Exp $
+ *  $Id: gauche.h,v 1.394 2004-10-22 05:59:14 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1164,10 +1164,10 @@ typedef struct ScmPortVTableRec {
     int       (*Getz)(char *buf, int buflen, ScmPort *p);
     ScmObj    (*Getline)(ScmPort *p);
     int       (*Ready)(ScmPort *p, int charp);
-    int       (*Putb)(ScmByte b, ScmPort *p);
-    int       (*Putc)(ScmChar c, ScmPort *p);
-    int       (*Putz)(const char *buf, int len, ScmPort *p);
-    int       (*Puts)(ScmString *s, ScmPort *p);
+    void      (*Putb)(ScmByte b, ScmPort *p);
+    void      (*Putc)(ScmChar c, ScmPort *p);
+    void      (*Putz)(const char *buf, int len, ScmPort *p);
+    void      (*Puts)(ScmString *s, ScmPort *p);
     int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
     off_t     (*Seek)(ScmPort *p, off_t off, int whence);
