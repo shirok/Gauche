@@ -5137,10 +5137,8 @@ obeys the same limitation.
 A @code{write-object} method that is invoked from @code{write},
 @code{display} or @code{format} (@xref{Output}).
 @item
-A comparison function invoked from @code{sort} (@xref{Comparison and sorting}).
-@item
 A filler and a flusher callbacks of buffered ports
-(@xref{Procedural ports}).
+(@xref{Virtual ports}).
 @end itemize
 @c JP
 おそらく、そのようなコールバック内で無制限のエクステントを持つ継続を作る必要というのは
@@ -5153,7 +5151,7 @@ A filler and a flusher callbacks of buffered ports
 @code{write-object}メソッド (@ref{Output}参照)。
 @item
 バッファードポートから呼び出されるfillerとflusher手続き。
-(@ref{Procedural ports}参照)。
+(@ref{Virtual ports}参照)。
 @end itemize
 @c COMMON
 
@@ -6590,7 +6588,6 @@ and re-invoke them afterwards.
 * File ports::                  
 * String ports::                
 * Coding-aware ports::          
-* Procedural ports::            
 * Input::                       
 * Output::                      
 @end menu
@@ -7654,7 +7651,7 @@ STkには@code{read-from-string}がありますが、省略可能な引数は取りません。
 @c COMMON
 @end defun
 
-@node Coding-aware ports, Procedural ports, String ports, Input and output
+@node Coding-aware ports, Input, String ports, Input and output
 @subsection Coding-aware ports
 @c NODE コーディング認識ポート
 
@@ -7724,89 +7721,7 @@ magic comment.
 @c COMMON
 @end defun
 
-@node Procedural ports, Input, Coding-aware ports, Input and output
-@subsection Procedural ports
-@c NODE 手続き的ポート
-
-@c EN
-The underlying mechanism of procedural ports is very flexible,
-but I don't have Scheme interface yet, except the following ones:
-@c JP
-手続き的ポートの下層のメカニズムは大変柔軟ですが、以下を除いて
-まだSchemeインターフェースは実装されていません。
-@c COMMON
-
-@defun open-input-buffered-port filler buffer-size
-@defunx open-output-buffered-port flusher buffer-size
-@c EN
-@b{These procedures are deprecated and will be replaced by more general procedural APIs.}
-@c JP
-@b{これらの手続きは利用が推奨されず、より一般的な手続き的なAPIに置き換えられるでしょう。}
-@c COMMON
-
-@c EN
-These are the Scheme interface to the ``buffered port''.
-@c JP
-これらは``バッファされるポート''へのSchemeインターフェースです。
-@c COMMON
-
-@c EN
-@code{open-input-buffered-port} creates and returns an input port,
-with associated buffer of size @var{buffer-size}.
-The data is read from the buffer.
-When the port is read and the buffer is empty, a procedure @var{filler}
-is called with one argument, the size of required data.
-@var{filler} must return a string (either complete or incomplete)
-of the specified size.  It is permitted for @var{filler}
-to return a string shorter than the size, if not enough data is available.
-The behavior is undefined if @var{filler} returns larger string than
-specified.  Note that the @var{size} of string matters, not the @var{length}
-of string.
-If @var{filler} finds that it reached EOF of its data source, it can
-return EOF.  Retuning zero size string has the same effect as EOF.
-Initially, the buffer is empty, so @var{filler} is always called
-at the first attempt of reading from the port.
-@c JP
-@code{open-input-buffered-port}は、@var{buffer-size}の大きさを持つ
-バッファを伴う入力ポートを作成して返します。
-データはバッファから読み込まれます。
-ポートが読まれバッファが空のとき、手続き@var{filler}が要求されるデータの
-サイズを1引数として呼ばれます。
-@var{filler}は指定されたサイズの(完全、あるいは不完全)文字列を返さなければ
-なりません。十分なデータがない場合に、@var{filler}が指定されたサイズよりも
-短い文字列を返すことは許されています。文字列の@var{size}が問題で、
-文字列の@var{length}ではないことに注意して下さい。
-@var{filler}がそのデータソースの終わり(EOF)に達したことを検知したら、
-EOFを返すことができます。
-@c COMMON
-
-@c EN
-@code{open-output-buffered-port} creates and returns an output port,
-with associated buffer of size @var{buffer-size}.
-The data output to the port is accumulated in the buffer.
-When the buffer gets full, or @code{flush} is called on the port,
-a procedure @var{flusher} is called with an @emph{incomplete} string
-to be flushed.   @var{flusher} must return a number of bytes flushed,
-which must be the same as the size of the passed string.
-The string may shorter than @var{buffer-size}.
-When the port is closed, @var{flusher} is called with any data
-remaining in the buffer, then it is called again with @code{#f} to
-indicate the port is closed.
-@c JP
-@code{open-output-buffered-port}は、@var{buffer-size}の大きさのバッファを
-伴う出力ポートを作成して返します。
-このポートに出力されたデータはバッファに溜められます。
-バッファが一杯になるか、そのポートに対して@code{flush}が呼ばれると、
-フラッシュされる@emph{不完全}な文字列とともに手続き@var{flusher}が呼ばれます。
-@var{flusher}はフラッシュされたバイト数を返さなければならず、そのバイト数は
-渡された文字列のサイズと同じでなければなりません。
-このポートが閉じられると、バッファに残っているデータとともに
-@var{flusher}が呼ばれ、ポートが閉じられたことを示すために
-@code{#f}を伴って再度@var{flusher}が呼ばれます。
-@c COMMON
-@end defun
-
-@node Input, Output, Procedural ports, Input and output
+@node Input, Output, Coding-aware ports, Input and output
 @subsection Input 
 @c NODE 入力
 

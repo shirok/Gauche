@@ -4,32 +4,33 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Arrays::                        (gauche.array)
-* Character code conversion::     (gauche.charconv)
-* Collection framework::          (gauche.collection)
-* Configuration parameters::      (gauche.config)
-* Low-level file operations::     (gauche.fcntl)
-* Hooks::                         (gauche.hook)
-* Interactive session::           (gauche.interactive)
-* Listener::                      (gauche.listener)
-* User-level logging::            (gauche.logger)
-* Singleton::                     (gauche.mop.singleton)
-* Slot with validator::           (gauche.mop.validator)
-* Networking::                    (gauche.net)
-* Parameters::                    (gauche.parameter)
-* Parsing command-line options::  (gauche.parseopt)
-* High Level Process Interface::  (gauche.process)
-* Regular expression utilities::  (gauche.regexp)
-* Reloading modules::             (gauche.reload)
-* Simple dispatcher::             (gauche.selector)
-* Sequence framework::            (gauche.sequence)
-* Syslog::                        (gauche.syslog)
-* Termios::                       (gauche.termios)
-* Unit testing::                  (gauche.test)
-* Threads::                       (gauche.threads)
-* Measure timings::               (gauche.time)
-* Uniform vectors::               (gauche.uvector)
-* Comparing version numbers::     (gauche.version)
+* Arrays::                      
+* Character code conversion::   
+* Collection framework::        
+* Configuration parameters::    
+* Low-level file operations::   
+* Hooks::                       
+* Interactive session::         
+* Listener::                    
+* User-level logging::          
+* Singleton::                   
+* Slot with validator::         
+* Networking::                  
+* Parameters::                  
+* Parsing command-line options::  
+* High Level Process Interface::  
+* Regular expression utilities::  
+* Reloading modules::           
+* Simple dispatcher::           
+* Sequence framework::          
+* Syslog::                      
+* Termios::                     
+* Unit testing::                
+* Threads::                     
+* Measure timings::             
+* Uniform vectors::             
+* Comparing version numbers::   
+* Virtual ports::               
 @end menu
 
 @node Arrays, Character code conversion, Library modules - Gauche extensions, Library modules - Gauche extensions
@@ -10690,7 +10691,7 @@ as the byte sequence @code{#x01, #x02, #x03, #x04} or
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Comparing version numbers,  , Uniform vectors, Library modules - Gauche extensions
+@node Comparing version numbers, Virtual ports, Uniform vectors, Library modules - Gauche extensions
 @section @code{gauche.version} - Comparing version numbers
 @c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
 
@@ -10918,3 +10919,112 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 -1、0、1 を返します。
 @c COMMON
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Virtual ports,  , Comparing version numbers, Library modules - Gauche extensions
+@section @code{gauche.vport} - Virtual ports
+@c NODE 仮想ポート, @code{gauche.vport} - 仮想ポート
+
+@deftp {Module} gauche.vport
+@mdindex gauche.vport
+@emph{Virtual ports}, or procedural ports, are the ports
+whose behavior can be written in Scheme.  You can customize
+the behavior of a port by wrapping the port by virtual ports.
+
+This module provides two kind of virtual ports:
+Fully virtual ports, in which every I/O operation invokes
+user-provided procedures, and virtual buffered ports,
+in which I/O operations are done on an internal buffer and
+user-provided procddures are called only when the buffer
+needs to be filled or flushed.
+@end deftp
+
+@subsubheading Fully virtual ports
+
+This type of virtual ports are realized by classes
+@code{<virtual-input-port>} and @code{<virtual-output-port>}.
+You can customize the port behavior by setting 
+appropriate slots with procedures.
+
+@deftp {Class} <virtual-input-port>
+@clindex virtual-input-port
+An instance of this class can be used as an input port.
+The behavior of the port depends on the settings of those
+slot values.
+
+To work as a meaningful input port, at least either one of
+@code{getb} or @code{getc} slot must be set.  Otherwise,
+the port returns EOF for all input requests.
+
+@defivar {<virtual-input-port>} getb
+If set, the value must be a proceture that takes no arguments.
+Every time binary input is required, the procedure is called.
+
+The procedure must return an exact integer between 0 and 255
+inclusive, or @code{#f} or an EOF object.  If it returns an
+integer, it becomes the value read from the port.  If it returns
+other values, the port returns EOF.
+
+If the port is requested a character input and it doesn't have
+@code{getc} slot, the port calls this procedure, possibly
+multiple times, to construct a whole character.
+@end defivar
+
+@defivar {<virtual-input-port>} getc
+If set, the value must be a proceture that takes no arguments.
+Every time character input is required, the procedure is called.
+
+The procedure must return a character,
+@code{#f} or an EOF object.  If it returns a character,
+it becomes the value read from the port.  If it returns
+other values, the port returns EOF.
+
+If the port is requested a binary input and it doesn't have
+@code{getb} slot, the port calls this procedure, then converts
+a character into a byte sequence, and use it as the binary
+value(s) read from the port.
+@end defivar
+
+@defivar {<virtual-input-port>} gets
+If set, the value must be a procedure that takes one argument,
+a positive exact integer.  It is called when the block binary
+input, such as @code{read-block}, is requested.
+
+The reason of this procedure is efficiency; if this procedure
+is not provided, the port calls @code{getb} procedure repeatedly
+to prepare the block of data.  In some cases, providing block input
+can be much more efficient (e.g. suppose you're reading from
+a block of memory chunk).
+
+You can leave this slot unset if you don't need to take such
+advantage.
+@end defivar
+
+@defivar {<virtual-input-port>} ready
+If set, the value must be a procedure that takes one boolean argument.
+It is called when @code{char-ready?} or @code{byte-ready?} is
+called on the port.   The value returned from your procedure will
+be the result of these procedures.
+
+The boolean argument is @code{#t} if
+@code{char-ready?} is called, or @code{#f} if @code{byte-ready?} is called.
+
+If unset, @code{char-ready?} and @code{byte-ready?}
+always return @code{#t} on the port
+@end defivar
+
+@defivar {<virtual-input-port>} close
+If set, the value must be a procedure that takes not arguments.
+It is called when the port is closed.  Return value is discarded.
+
+NOTE: RESOLVE FINALIZER SEMANTICS!!!
+@end defivar
+
+
+
+@end deftp
+
+
+@subsubheading Virtual buffered ports
+
+
