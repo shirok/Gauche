@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.26 2002-09-01 23:43:43 shirok Exp $
+ *  $Id: repl.c,v 1.27 2002-10-22 09:45:22 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -26,7 +26,7 @@
  *    (let loop1 ()
  *      (and
  *        (with-error-handler
- *          (lambda (e) (print-error e) #t)
+ *          (lambda (e) (report-error e) #t)
  *          (lambda ()
  *            (prompter)
  *            (let loop2 ((exp (reader)))

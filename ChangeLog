@@ -1,5 +1,6 @@
 2002-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/exclib.stub (report-error): exposed Scm_ReportError to Scheme.
 	* lib/gauche/mop/* : added <singleton-mixin> and <validator-mixin>
 	  classes, to use the features of <singleton-meta> and
 	  <validator-meta> conveniently.

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: exclib.stub,v 1.7 2002-07-24 16:09:17 shirok Exp $
+;;; $Id: exclib.stub,v 1.8 2002-10-22 09:45:22 shirok Exp $
 ;;;
 
 "
@@ -55,6 +55,9 @@
   SCM_RETURN(Scm_VMWithExceptionHandler(handler, thunk));")
 
 (define-cproc raise (exception) (return "Scm_VMThrowException"))
+
+(define-cproc report-error (exception)
+  (return <void> "Scm_ReportError"))
 
 ;;
 ;; Exception class hierarchy
