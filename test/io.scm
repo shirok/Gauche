@@ -97,6 +97,34 @@
             (close-input-port i)
             s))))
 
+(sys-system "rm -f tmp2.o")
+
+(test "call-with-input-file :if-does-not-exist #f" '(#f #f)
+      (lambda ()
+        (call-with-input-file "tmp2.o" (lambda (p) (list p p))
+                              :if-does-not-exist #f)))
+
+(test "with-input-from-file :if-does-not-exist #f" #f
+      (lambda ()
+        (with-input-from-file "tmp2.o" (lambda () 5)
+                              :if-does-not-exist #f)))
+
+(call-with-output-file "tmp2.o" (lambda (p) (display "stu" p)))
+
+(test "call-with-output-file :if-exists #f" 'stu
+      (lambda ()
+        (call-with-output-file "tmp2.o" (lambda (p)
+                                          (and p (display "vwx" p)))
+                              :if-exists #f)
+        (call-with-input-file "tmp2.o" read)))
+
+(test "with-output-to-file :if-exists #f" 'stu
+      (lambda ()
+        (or (with-output-to-file "tmp2.o"
+              (lambda () (display "yz" p) 4)
+              :if-exists #f)
+            (call-with-input-file "tmp2.o" read))))
+
 ;;-------------------------------------------------------------------
 (test-section "input ports")
 
