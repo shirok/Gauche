@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.10 2002-02-11 09:26:40 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.11 2002-02-14 09:05:11 shirok Exp $
 ;;;
 
 (define-module srfi-0
@@ -12,13 +12,13 @@
 ;;;
 ;;;   srfi-0, srfi-1, srfi-2, srfi-4, srfi-6, srfi-8,
 ;;;   srfi-9, srfi-11, srfi-13, srfi-14, srfi-17,
-;;;   srfi-23, gauche
+;;;   srfi-22, srfi-23, gauche
 ;;;
 
 (define-syntax cond-expand
   (syntax-rules (and or not else gauche
                  srfi-0 srfi-1 srfi-2 srfi-4 srfi-6 srfi-8 srfi-9
-                 srfi-11 srfi-13 srfi-14 srfi-17 srfi-23)
+                 srfi-11 srfi-13 srfi-14 srfi-17 srfi-22 srfi-23)
     ((cond-expand) (error "Unfulfilled cond-expand"))
 
     ((cond-expand (else body ...))
@@ -63,8 +63,6 @@
      (begin body ...))
     ((cond-expand (srfi-9 body ...) more-clauses ...)
      (begin (use srfi-9) body ...))
-    ((cond-expand (srfi-10 body ...) more-clauses ...)
-     (begin body ...))
     ((cond-expand (srfi-11 body ...) more-clauses ...)
      (begin (use srfi-11) body ...))
     ((cond-expand (srfi-13 body ...) more-clauses ...)
@@ -72,6 +70,8 @@
     ((cond-expand (srfi-14 body ...) more-clauses ...)
      (begin (use srfi-14) body ...))
     ((cond-expand (srfi-17 body ...) more-clauses ...)
+     (begin body ...))
+    ((cond-expand (srfi-22 body ...) more-clauses ...)
      (begin body ...))
     ((cond-expand (srfi-23 body ...) more-clauses ...)
      (begin body ...))
