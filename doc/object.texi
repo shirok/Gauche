@@ -1521,6 +1521,13 @@ It can be defined like the following code
 @end example
 @end defun
 
+@deffn {Method} ref (obj <object>) (slot <symbol>)
+@deffnx {Method} (setter ref) (obj <object>) (slot <symbol>) value
+These methods just calls @code{slot-ref} and @code{slot-set!}, respectively.
+They are slightly less efficient than directly calling @code{slot-ref}
+and @code{slot-set!}, but more compact in the program code.
+@end deffn
+
 @subsubheading Fallback methods
 
 @deffn {Generic Function} slot-unbound
