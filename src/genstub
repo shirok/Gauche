@@ -251,6 +251,8 @@
                  (char->integer value) value))
         ((integer? value)
          (format #f "Scm_MakeInteger(~a)" value))
+        ((string? value)
+         (format #f "SCM_MAKE_STR(~s)" value))
         ((eq? value *unbound*)
          "SCM_UNBOUND")
         ((equal? value '(current-input-port))
