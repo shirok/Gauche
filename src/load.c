@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.10 2001-02-06 08:04:19 shiro Exp $
+ *  $Id: load.c,v 1.11 2001-02-06 08:21:32 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,9 +20,6 @@
 /*
  * Load file.
  */
-
-/* To peek *load-path* variable from C */
-static ScmGloc *load_path_rec;
 
 /*
  * Scm_LoadFromPort
@@ -74,18 +71,19 @@ ScmObj Scm_VMTryLoad(const char *cpath)
 
 ScmObj Scm_VMLoad(const char *cpath)
 {
-    ScmObj p, lpath, spath, fpath;
+    ScmObj p, lpath, spath, fpath, load_paths;
 
     p = Scm_OpenFilePort(cpath, "r");
     if (SCM_FALSEP(p)) {
         if (cpath[0] == '/') Scm_Error("cannot open file: %s", cpath);
         /* TODO: more efficient pathname handling */
         spath = Scm_MakeString(cpath, -1, -1);
-        SCM_FOR_EACH(lpath, load_path_rec->value) {
+        load_paths = Scm_GetLoadPath();
+        SCM_FOR_EACH(lpath, load_paths) {
             if (!SCM_STRINGP(SCM_CAR(lpath))) {
                 /* TODO: should be warning? */
                 Scm_Error("*load-path* contains invalid element: %S",
-                          load_path_rec->value);
+                          load_paths);
             }
             fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
             fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(spath));
@@ -94,7 +92,7 @@ ScmObj Scm_VMLoad(const char *cpath)
         }
         if (SCM_FALSEP(p)) {
             Scm_Error("cannot find file %s in *load-path* %S",
-                      cpath, load_path_rec->value);
+                      cpath, load_paths);
         }
     }
     return Scm_VMLoadFromPort(SCM_PORT(p));
@@ -108,16 +106,42 @@ void Scm_Load(const char *cpath)
 }
 
 /*
+ * Utilities
+ */
+
+/* To peek *load-path* variable from C */
+static ScmGloc *load_path_rec;
+
+ScmObj Scm_GetLoadPath(void)
+{
+    return load_path_rec->value;
+}
+
+ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
+{
+    ScmObj spath = Scm_MakeString(cpath, -1, -1);
+    /* for safety */
+    if (!SCM_PAIRP(load_path_rec->value)) {
+        load_path_rec->value = SCM_LIST1(spath);
+    } else if (afterp) {
+        load_path_rec->value =
+            Scm_Append2(load_path_rec->value, SCM_LIST1(spath));
+    } else {
+        load_path_rec->value = Scm_Cons(spath, load_path_rec->value);
+    }
+    return load_path_rec->value;
+}
+
+/*
  * Initialization
  */
 
 void Scm__InitLoad(void)
 {
     ScmObj instdir = SCM_MAKE_STR(SCM_INSTALL_DIR);
-    ScmObj curdir = SCM_MAKE_STR(".");
 
     Scm_Define(Scm_SchemeModule(), SCM_SYMBOL(SCM_SYM_LOAD_PATH),
-               SCM_LIST2(instdir, curdir));
+               SCM_LIST1(instdir));
     load_path_rec = Scm_FindBinding(Scm_SchemeModule(),
                                     SCM_SYMBOL(SCM_SYM_LOAD_PATH),
                                     TRUE);

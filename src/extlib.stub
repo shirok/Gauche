@@ -187,6 +187,11 @@
   (assert (input-port? port))
   "  SCM_RETURN(Scm_VMLoadFromPort(port));")
 
+(define-cproc add-load-path (path &optional (afterp #f))
+  (assert (string? path))
+  "  const char *cpath = Scm_GetStringConst(path);
+  SCM_RETURN(Scm_AddLoadPath(cpath, !SCM_FALSEP(afterp)));")
+
 (define-cproc parse-pathname (path &optional (absolute #f) (normalize #f))
   (assert (string? path))
   " ScmObj p;
