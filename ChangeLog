@@ -10,6 +10,7 @@
 	* src/extlib.stub :added make-byte-string.
 	* lib/util/digest.scm, lib/rfc/hmac.scm, ext/digest/* : renamed
 	  *-update and *-final for *-update! and *-final!, respectively.
+	* lib/srfi-31.scm : added srfi-31.
 
 2002-12-05  Shiro Kawai  <shiro@acm.org>
 

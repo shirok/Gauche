@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.313 2002-12-06 13:26:31 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.314 2002-12-07 03:02:38 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -755,6 +755,14 @@ Gauche組み込みの@code{format}がSRFI-28のもののスーパーセットに
 Supported by the native reader.  @xref{Lexical structure}.
 @c JP
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
+@c COMMON
+@end table
+
+@item SRFI-31, A special form rec for recursive evaluation
+@c EN
+Defined as an autoloaded macro.  @xref{Binding constructs}.
+@c JP
+オートロードされるマクロとして定義されています。@ref{Binding constructs}参照。
 @c COMMON
 @end table
 
@@ -3150,6 +3158,44 @@ in SRFI-11 (@ref{srfi-11 - Let-values}) provides
 @code{let*-values}は@code{let}のような形式で多値を扱うことができます。
 @c COMMON
 @end defspec
+
+@defmac rec var expr
+@defmacx rec (name . vars) expr @dots{}
+[SRFI-31]
+@c EN
+A macro to evaluate an expression with recursive reference.
+
+In the first form, evaluates expr while @var{var} in @var{expr} is
+bound to the result of @var{expr}.
+The second form is equivalent to the followings.
+@c JP
+再帰的な参照のある式の評価を行うマクロです。
+
+最初の形式は、@var{var}が@var{expr}の結果に束縛される状態で@var{expr}を
+評価します。
+2番目の形式は以下の形式と等価です。
+@c COMMON
+@example
+(rec @var{name} (lambda @var{vars} @var{expr} @dots{}))
+@end example
+
+@c EN
+Some examples:
+@c JP
+例：
+@c COMMON
+
+@example
+;; constant infinite stream
+(rec s (cons 1 (delay s)))
+
+;; factorial function
+(rec (f n) 
+  (if (zero? n)
+      1 
+      (* n (f (- n 1)))))
+@end example
+@end defmac
 
 @node Sequencing, Iteration, Binding constructs, Core syntax
 @section Sequencing

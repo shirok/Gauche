@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.24 2002-12-06 12:47:06 shirok Exp $
+;; $Id: srfi.scm,v 1.25 2002-12-07 03:02:48 shirok Exp $
 
 (use gauche.test)
 
@@ -1529,5 +1529,31 @@ finally, this closes the comment |#
       (lambda ()
         (let ((x 1) (y 2))
           `(#|foo|# ,x #|foo|# #(#|,|# ,y ,(+ #|x|# x y #|y|#) #|foo|#)))))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-31")
+
+;; srfi-31 is autoloaded
+
+;; taken from srfi-31 document
+
+(define f (rec (f n)
+            ((rec (g k l)
+               (if (zero? k)
+                   l
+                   (g (- k 1) (* k l)))) n 1)))
+
+(test "srfi-31" 1 (lambda () (f 0)))
+(test "srfi-31" 3628800 (lambda () (f 10)))
+
+(test "srfi-31" "11111"
+      (lambda ()
+        (with-output-to-string
+          (lambda ()
+            (let loop ((i 0)
+                       (stream (rec s (cons 1 (delay s)))))
+              (when (< i 5)
+                (display (car stream))
+                (loop (+ i 1) (force (cdr stream)))))))))
 
 (test-end)
