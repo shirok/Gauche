@@ -1,0 +1,53 @@
+dnl
+dnl Configure ext/dbm
+dnl This file is included by the toplevel configure.in
+dnl
+dnl $Id: dbm.ac,v 1.1 2003-07-09 11:37:26 shirok Exp $
+
+# ext/dbm -------------------------------------------------
+
+dnl Check for various dbm libraries availability
+dnl On some systems, legacy DBM and NDBM is emulated by more powerful
+dnl packages like BSD DB or GDBM.  We need to be careful to pick the
+dnl consistent header/library pair.
+AC_CHECK_HEADERS(gdbm.h, [
+  DBM_ARCHFILES=gdbm.$SHLIB_SO_SUFFIX
+  DBM_SCMFILES=gdbm.scm
+])
+AC_CHECK_HEADERS(ndbm.h gdbm/ndbm.h, [
+  NDBM_HEADER=$ac_header
+  DBM_ARCHFILES="ndbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
+  DBM_SCMFILES="ndbm.scm $DBM_SCMFILES"
+])
+AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
+  ODBM_HEADER=$ac_header
+  DBM_ARCHFILES="odbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
+  DBM_SCMFILES="odbm.scm $DBM_SCMFILES"
+])
+
+AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
+LIBSAVE="$LIBS"
+if test "$NDBM_HEADER" = "gdbm/ndbm.h"; then
+  NDBMLIB="-lgdbm"  # use emulation by gdbm
+else
+  AC_SEARCH_LIBS(dbm_open, ndbm gdbm gdbm_compat,
+    [ NDBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
+fi
+if test "$ODBM_HEADER" = "gdbm/dbm.h"; then
+  ODBMLIB="-lgdbm"  # use emulation by gdbm
+else
+  AC_SEARCH_LIBS(dbminit,  dbm gdbm gdbm_compat,
+    [ ODBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
+fi
+
+AC_SUBST(DBM_ARCHFILES)
+AC_SUBST(DBM_SCMFILES)
+AC_SUBST(GDBMLIB)
+AC_SUBST(NDBMLIB)
+AC_SUBST(ODBMLIB)
+
+
+
+dnl Local variables:
+dnl mode: autoconf
+dnl end:

@@ -1,4 +1,9 @@
-2003-07-09  Shiro Kawai  <shiro@acm.org>
+2003-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, configure.ac, ext/charconv/charconv.ac,
+	  ext/dbm/dbm.ac, ext/net/net.ac : renamed configure.in to
+	  configure.ac.  Splitted out the extension-specific tests
+	  into ext/*/*.ac files.
 
 	* src/main.c (main): changed to set up *program-name* and *argv*
 	  before evaluating -u, -l, and -e options, so that the files

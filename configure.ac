@@ -1,48 +1,51 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.99 2003-06-26 09:49:54 shirok Exp $
+dnl $Id: configure.ac,v 1.1 2003-07-09 11:37:25 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7, shiro@acm.org)
-AC_REVISION($Revision: 1.99 $)
+AC_REVISION($Revision: 1.1 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
 dnl ==========================================================
 dnl Process args given to configre
+dnl
 
 dnl ----------------------------------------------------------
 dnl   enable-multibyte
 dnl
-AC_ARG_ENABLE(multibyte, [  --enable-multibyte[=ENCODING]:  Enables multibyte string handling.
-                          This option is ON by default.  Following encodings
-                          are currently recognized:
-                             euc-jp     EUC-JP code (default)
-                             utf-8      UTF-8
-                             sjis       Shift-JIS
-                             no         No multibyte support ], [
- case $enable_multibyte in
-   euc-jp|eucjp|yes)  AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP,1,[Define if Gauche handles multi-byte character as EUC-JP]);;
-   utf-8|utf8)        AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,1,[Define if Gauche handles multi-byte character as UTF-8]);;
-   sjis|shift-jis)    AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,1,[Define if Gauche handles multi-byte character as Shift JIS]);;
-   no|none) ;;
-   *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
-      exit 1;;
- esac], [ AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP,1,[Define if Gauche handles multi-byte character as EUC-JP])])
+AC_ARG_ENABLE(multibyte,
+  AC_HELP_STRING([--enable-multibyte=ENCODING],
+                 [Use ENCODING as the internal multibyte string encoding.
+Following encodings are currently recognized:
+'euc-jp' (EUC-JP code, default), 'utf-8' (UTF-8), 'sjis' (Shift-JIS), 
+or 'no' (No multibyte support)]),
+  [
+   case $enable_multibyte in
+     euc-jp|eucjp|yes)  AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
+     utf-8|utf8)        AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
+     sjis|shift-jis)    AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
+     no|none) ;;
+     *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
+        exit 1;;
+   esac
+  ], [AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP)])
 
 dnl ----------------------------------------------------------
 dnl  with-slib
 dnl
 SLIB_DIR=/usr/local/slib
-AC_ARG_WITH(slib, [  --with-slib[=PATH]:     Configure Gauche's slib module to use Aubrey
-                          Jaffer's SLIB installed under PATH.  If PATH is
-                          not specified, or this option is omitted, Gauche
-                          still tries to find your slib installation from
-                          some typical places.], [
- case $with_slib in 
-   no)  search_slib=no;;
-   yes) search_slib=yes;;
-   *)   search_slib=no; SLIB_DIR=$with_slib;;
- esac
-], [ search_slib=yes ])
+AC_ARG_WITH(slib,
+  AC_HELP_STRING[--with-slib=PATH]
+                [Configure Gauche's slib module to use Aubrey Jaffer's SLIB
+installed under PATH.  If PATH is not specified, or this option is omitted,
+Gauche still tries to find your slib installation from some typical places.]),
+  [
+    case $with_slib in 
+      no)  search_slib=no;;
+      yes) search_slib=yes;;
+      *)   search_slib=no; SLIB_DIR=$with_slib;;
+    esac
+  ], [ search_slib=yes ])
 
 if test $search_slib = "yes"; then
   AC_MSG_CHECKING(slib)
@@ -64,17 +67,19 @@ AC_SUBST(SLIB_DIR)
 dnl ----------------------------------------------------------
 dnl  with-local=PATH:...
 dnl  
-AC_ARG_WITH(local, [  --with-local=PATH:PATH...:  For each PATH, add PATH/include
-                          to the include search paths and PATH/lib to the
-                          library search paths.  Useful if you have some
-                          libraries installed in non-standard places. ], [
-  case $with_local in
-    yes|no|"") ;;  #no effect
-    *) paths=`echo $with_local | tr ':' ' '`
-       LOCAL_INC=`for p in $paths; do echo "-I$p/include"; done`
-       LOCAL_LIB=`for p in $paths; do echo "-L$p/lib"; done`;;
-  esac
-])
+AC_ARG_WITH(local,
+  AC_HELP_STRING([--with-local=PATH:PATH...],
+                 [For each PATH, add PATH/include to the include search
+paths and PATH/lib to the library search paths.  Useful if you have some
+libraries installed in non-standard places. ]),
+  [
+    case $with_local in
+      yes|no|"") ;;  #no effect
+      *) paths=`echo $with_local | tr ':' ' '`
+         LOCAL_INC=`for p in $paths; do echo "-I$p/include"; done`
+         LOCAL_LIB=`for p in $paths; do echo "-L$p/lib"; done`;;
+    esac
+  ])
 AC_SUBST(LOCAL_INC)
 AC_SUBST(LOCAL_LIB)
 dnl need to add here, for it may be used by the tests below.
@@ -83,70 +88,40 @@ CPPFLAGS="$CPPFLAGS $LOCAL_INC"
 LDFLAGS="$LDFLAGS $LOCAL_LIB"
 
 dnl ----------------------------------------------------------
-dnl   with-iconv, with-iconv-lib
-dnl
-
-dnl Use iconv unless explicitly 
-ac_cv_use_iconv=yes
-ICONV_NAME=iconv
-ICONV_LIB=
-ICONV_CPPFLAGS=
-ICONV_LDFLAGS=
-
-AC_ARG_WITH(iconv, [  --with-iconv[=PATH]:    Use iconv function installed under PATH.
-                          Gauche's charconv module uses iconv if it is
-                          available.   If your system has iconv function
-                          in non-trivial location, specify this option.
-                          If you don't want to use iconv for some reason,
-                          say --without-iconv. ], [
-  case $with_iconv in
-    no)  ac_cv_use_iconv=no;;
-    yes) ;;
-    *)   ICONV_CPPFLAGS="-I$with_iconv/include";
-         ICONV_LDFLAGS="-L$with_iconv/lib";;
-  esac])
-
-AC_ARG_WITH(iconv-lib, [  --with-iconv-lib=LIB:   If your system needs to use external library for
-                          iconv and which is not libiconv, specify it.  For
-                          example, if you need -lconv to use iconv, say
-                            --with-iconv-lib=conv], [
-  ICONV_NAME="$with_iconv_lib"; ICONV_LIB="-l$with_iconv_lib" 
-  ])
-
-dnl NB: we'll probe iconv library name later if it is not specified
-dnl by --with-iconv-lib
-
-dnl ----------------------------------------------------------
 dnl   with-rpath=PATH:...
 dnl
 rpath=
-AC_ARG_WITH(rpath, [  --with-rpath=PATH:PATH... : Use -rpath option while building dynamically
-                          loadable objects (experimental).], [
-  case $with_rpath in
-    yes|no) ;;
-    *) rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath /' -e 's/:/ -Wl,-rpath /g'`";;
-  esac
-])
+AC_ARG_WITH(rpath,
+  AC_HELP_STRING([--with-rpath=PATH:PATH...],
+                 [Use -rpath option while building dynamically loadable objects (experimental).]),
+  [
+    case $with_rpath in
+      yes|no) ;;
+      *) rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath /' -e 's/:/ -Wl,-rpath /g'`";;
+    esac
+  ])
 
 dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
 dnl  
 GAUCHE_THREAD_TYPE=none
-AC_ARG_ENABLE(threads, [  --enable-threads=TYPE:  Choose thread type.  Currently only 'none' or
-                           'pthreads' is supported. ], [
-  case $enableval in
-    pthreads) 
-     GAUCHE_THREAD_TYPE=pthreads
-     AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
-    ;;
-    no|none)
-     GAUCHE_THREAD_TYPE=none
-    ;;
-    *)
-     AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none or pthreads])
-    ;;
-  esac
-], [])
+AC_ARG_ENABLE(threads,
+  AC_HELP_STRING([--enable-threads=TYPE],
+                 [Choose thread type.  Currently only 'none' or 'pthreads' is supported. ]),
+  [
+    case $enableval in
+      pthreads) 
+       GAUCHE_THREAD_TYPE=pthreads
+       AC_DEFINE(GAUCHE_USE_PTHREADS,1,[Define if we use pthreads])
+      ;;
+      no|none)
+       GAUCHE_THREAD_TYPE=none
+      ;;
+      *)
+       AC_MSG_ERROR([invalid value $enableval for --enable-threads option (must be either none or pthreads])
+      ;;
+    esac
+  ], [])
 
 dnl Platform-dependent thread configuration.  This must be in sync
 dnl with gc's configure.in.
@@ -191,17 +166,6 @@ if test $GAUCHE_THREAD_TYPE = pthreads; then
 fi
 LIBS="$LIBS $THREADLIBS"
 
-dnl ----------------------------------------------------------
-dnl  enable-ipv6
-dnl   Even if you specify --enable-ipv6, we'll check if they are
-dnl   really available later, and disable the support if not.
-AC_ARG_ENABLE(ipv6, AC_HELP_STRING(--enable-ipv6, [enable IPv6 support]), [
-  case $enableval in
-    no) enable_ipv6=no ;;
-    *) enable_ipv6=yes ;;
-  esac
-], enable_ipv6=no)
-
 dnl ==========================================================
 dnl Checks for programs.
 AC_PROG_CC
@@ -228,29 +192,6 @@ AC_CHECK_HEADERS(sys/time.h glob.h dlfcn.h stdint.h getopt.h sched.h unistd.h)
 AC_CHECK_HEADERS(rpc/types.h)
 AC_CHECK_HEADERS(syslog.h)
 AC_CHECK_HEADERS(pty.h util.h libutil.h)
-
-if test "$ac_cv_use_iconv" != no; then
-  save_cppflags=$CPPFLAGS
-  CPPFLAGS="$CPPFLAGS $ICONV_CPPFLAGS"
-  AC_CHECK_HEADER($ICONV_NAME.h,
-     AC_DEFINE(HAVE_ICONV_H,1,[Define if you have iconv.h and want to use it]),
-     [AC_MSG_WARN("Can't find $ICONV_NAME.h so I turned off using iconv; you may want to use --with-iconv=PATH.")
-      ac_cv_use_iconv=no])
-  CPPFLAGS=$save_cppflags
-fi
-
-dnl Checks availability of ipv6 support
-if test $enable_ipv6 = yes; then
-  AC_CACHE_CHECK([for IPv6], ac_cv_ipv6, [
-  AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/socket.h>], [
-  socket(AF_INET6, SOCK_STREAM, 0);
-  ], ac_cv_ipv6=yes, ac_cv_ipv6=no)])
-  if test "$ac_cv_ipv6" = yes; then
-    AC_DEFINE(HAVE_IPV6,1,[Define if you have IPv6 support])
-  fi
-fi
 
 dnl ===========================================================
 dnl Checks processor type, for processor-specific optimization
@@ -324,29 +265,6 @@ if test "$ac_cv_type_time_t_integral" = yes; then
 AC_DEFINE(INTEGRAL_TIME_T,1,[Define if time_t is typedef'ed to an integral type])
 fi
 
-dnl checks if sockaddr_in and sockaddr_in6 has *_len field
-AC_CACHE_CHECK(struct sockaddr_in has sin_len, ac_cv_struct_sockaddr_in_len, [
-AC_TRY_COMPILE([#include <netinet/in.h>], [
-struct sockaddr_in addr;
-int z = addr.sin_len;
-], ac_cv_struct_sockaddr_in_len=yes, ac_cv_struct_sockaddr_in_len=no)])
-
-if test "$ac_cv_struct_sockaddr_in_len" = yes; then
-AC_DEFINE(HAVE_SIN_LEN,1,[Define if struct sockaddr_in has sin_len])
-fi
-
-if test "$ac_cv_ipv6" = yes; then
- AC_CACHE_CHECK(struct sockaddr_in6 has sin6_len, ac_cv_struct_sockaddr_in6_len, [
-AC_TRY_COMPILE([#include <netinet/in.h>], [
-struct sockaddr_in6 addr;
-int z = addr.sin6_len;
-], ac_cv_struct_sockaddr_in6_len=yes, ac_cv_struct_sockaddr_in6_len=no)])
-
-if test "$ac_cv_struct_sockaddr_in6_len" = yes; then
-AC_DEFINE(HAVE_SIN6_LEN,1,[Define if struct sockaddr_in6 has sin6_len])
-fi
-fi
-
 dnl ===========================================================
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
@@ -370,10 +288,6 @@ case "$target" in
   *)
     AC_CHECK_FUNCS(select);;
 esac
-
-AC_SEARCH_LIBS(shutdown, socket)
-AC_SEARCH_LIBS(inet_aton, resolv)
-AC_SEARCH_LIBS(gethostbyname_r, nsl)
 
 dnl Checks for pty-related fns.  It appears that recent Cygwin has them,
 dnl but only in a static library.  That prevents us from creating DLL
@@ -608,211 +522,15 @@ AC_SUBST(GAUCHE_CONFIGURE_ARGS)
 dnl ===========================================================
 dnl Tests for extensions
 
-dnl ext/charconv --------------------------------------------
-
-dnl Check for iconv library, if it is not specified by --with-iconv-lib.
-dnl 
-if test "$ac_cv_use_iconv" = yes; then
-  if test "$ICONV_LIB" = ""; then
-    save_cflags="$CFLAGS"
-    save_ldflags="$LDFLAGS"
-    save_libs="$LIBS"
-    CFLAGS="$CFLAGS $ICONV_CPPFLAGS"
-    LDFLAGS="$LDFLAGS $ICONV_LDFLAGS"
-    AC_LINK_IFELSE(
-      [AC_LANG_PROGRAM([#include <$ICONV_NAME.h>],
-                       [[iconv_t r = iconv_open("", "");]])],
-      [dont_need_iconv=yes],
-      [dont_need_iconv=no]
-      )
-    if test "$dont_need_iconv" = no; then
-      LIBS="$LIBS -liconv"
-      AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM([#include <$ICONV_NAME.h>],
-                         [[iconv_t r = iconv_open("", "");]])],
-        [ICONV_LIB="-liconv"],
-        [AC_MSG_WARN("Can't find library of iconv_open so I turned off using iconv; you may want to use --with-iconv-lib")
-         ac_cv_use_iconv=no])
-    fi
-    CFLAGS="$save_cflags"
-    LDFLAGS="$save_ldflags"
-    LIBS="$save_libs"
-  fi
-fi
-
-if test "$ac_cv_use_iconv" = yes; then
-  AC_DEFINE(USE_ICONV)
-fi
-AC_SUBST(ICONV_NAME)
-AC_SUBST(ICONV_LIB)
-AC_SUBST(ICONV_CPPFLAGS)
-AC_SUBST(ICONV_LDFLAGS)
-
-dnl ext/dbm -------------------------------------------------
-dnl Check for various dbm libraries availability
-dnl On some systems, legacy DBM and NDBM is emulated by more powerful
-dnl packages like BSD DB or GDBM.  We need to be careful to pick the
-dnl consistent header/library pair.
-AC_CHECK_HEADERS(gdbm.h, [
-  DBM_ARCHFILES=gdbm.$SHLIB_SO_SUFFIX
-  DBM_SCMFILES=gdbm.scm
-])
-AC_CHECK_HEADERS(ndbm.h gdbm/ndbm.h, [
-  NDBM_HEADER=$ac_header
-  DBM_ARCHFILES="ndbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
-  DBM_SCMFILES="ndbm.scm $DBM_SCMFILES"
-])
-AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
-  ODBM_HEADER=$ac_header
-  DBM_ARCHFILES="odbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
-  DBM_SCMFILES="odbm.scm $DBM_SCMFILES"
-])
-
-AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
-LIBSAVE="$LIBS"
-if test "$NDBM_HEADER" = "gdbm/ndbm.h"; then
-  NDBMLIB="-lgdbm"  # use emulation by gdbm
-else
-  AC_SEARCH_LIBS(dbm_open, ndbm gdbm gdbm_compat,
-    [ NDBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
-fi
-if test "$ODBM_HEADER" = "gdbm/dbm.h"; then
-  ODBMLIB="-lgdbm"  # use emulation by gdbm
-else
-  AC_SEARCH_LIBS(dbminit,  dbm gdbm gdbm_compat,
-    [ ODBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
-fi
-
-AC_SUBST(DBM_ARCHFILES)
-AC_SUBST(DBM_SCMFILES)
-AC_SUBST(GDBMLIB)
-AC_SUBST(NDBMLIB)
-AC_SUBST(ODBMLIB)
+m4_include([ext/charconv/charconv.ac])
+m4_include([ext/dbm/dbm.ac])
+m4_include([ext/net/net.ac])
 
 dnl ext/digest ----------------------------------------------
 dnl Check for some types
-AC_C_BIGENDIAN
 AC_CHECK_TYPES([u_int8_t, uint8_t])
 AC_CHECK_TYPES([u_int32_t, uint32_t])
 AC_CHECK_TYPES([u_int64_t, uint64_t])
-
-dnl ext/net -------------------------------------------------
-dnl Check for reentrant version synopsis of netdb functions.
-dnl   The calling synopsis of netdb functions like gethostbyname_r differ
-dnl   among platforms.
-AC_CHECK_FUNC(gethostbyname_r)
-if test $ac_cv_func_gethostbyname_r = 'yes'; then
-  AC_CACHE_CHECK(number of arguments for gethostbyname_r,
-                 ac_cv_func_gethostbyname_r_nargs, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n; struct hostent *h, *r; char buf[4096]; int len=4096; int err;
-      (void)gethostbyname_r(n, h, buf, len, &r, &err);
-      ], ac_cv_func_gethostbyname_r_nargs=6, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n; struct hostent *h; char buf[4096]; int len=4096; int err;
-      (void)gethostbyname_r(n, h, buf, len, &err);
-      ], ac_cv_func_gethostbyname_r_nargs=5, [
-    ac_cv_func_gethostbyname_r=no])])])
-fi
-
-if test $ac_cv_func_gethostbyname_r != no; then
-  AC_DEFINE_UNQUOTED(GETHOSTBYNAME_R_NUMARGS, $ac_cv_func_gethostbyname_r_nargs, [Define number of args gethostbyname_r takes])
-fi
-
-AC_CHECK_FUNC(gethostbyaddr_r)
-if test $ac_cv_func_gethostbyaddr_r = 'yes'; then
-  AC_CACHE_CHECK(number of arguments for gethostbyaddr_r,
-                 ac_cv_func_gethostbyaddr_r_nargs, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n; int addrlen, type; struct hostent *h, *r; char buf[4096]; int len=4096; int err;
-      (void)gethostbyaddr_r(n, addrlen, type, h, buf, len, &r, &err);
-      ], ac_cv_func_gethostbyaddr_r_nargs=8, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n; int addrlen, type; struct hostent *h; char buf[4096]; int len=4096; int err;
-      (void)gethostbyaddr_r(n, addrlen, type, h, buf, len, &err);
-      ], ac_cv_func_gethostbyaddr_r_nargs=7, [
-    ac_cv_func_gethostbyaddr_r=no])])])
-fi
-
-if test $ac_cv_func_gethostbyaddr_r != no; then
-  AC_DEFINE_UNQUOTED(GETHOSTBYADDR_R_NUMARGS, $ac_cv_func_gethostbyaddr_r_nargs, [Define number of args gethostbyaddr_r takes])
-fi
-
-AC_CHECK_FUNC(getprotobyname_r)
-if test $ac_cv_func_getprotobyname_r = 'yes'; then
-  AC_CACHE_CHECK(number of arguments for getprotobyname_r,
-                 ac_cv_func_getprotobyname_r_nargs, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n; struct protoent *h, *r; char buf[4096]; int len=4096;
-      (void)getprotobyname_r(n, h, buf, len, &r);
-      ], ac_cv_func_getprotobyname_r_nargs=5, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n; struct protoent *h; char buf[4096]; int len=4096;
-      (void)getprotobyname_r(n, h, buf, len);
-      ], ac_cv_func_getprotobyname_r_nargs=4, [
-    ac_cv_func_getprotobyname_r=no])])])
-fi
-
-if test $ac_cv_func_getprotobyname_r != no; then
-  AC_DEFINE_UNQUOTED(GETPROTOBYNAME_R_NUMARGS, $ac_cv_func_getprotobyname_r_nargs, [Define number of args getprotobyname_r takes])
-fi
-
-AC_CHECK_FUNC(getprotobynumber_r)
-if test $ac_cv_func_getprotobynumber_r = 'yes'; then
-  AC_CACHE_CHECK(number of arguments for getprotobynumber_r,
-                 ac_cv_func_getprotobynumber_r_nargs, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      int n; struct protoent *h, *r; char buf[4096]; int len=4096;
-      (void)getprotobynumber_r(n, h, buf, len, &r);
-      ], ac_cv_func_getprotobynumber_r_nargs=5, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      int n; struct protoent *h; char buf[4096]; int len=4096;
-      (void)getprotobynumber_r(n, h, buf, len);
-      ], ac_cv_func_getprotobynumber_r_nargs=4, [
-    ac_cv_func_getprotobynumber_r=no])])])
-fi
-
-if test $ac_cv_func_getprotobynumber_r != no; then
-  AC_DEFINE_UNQUOTED(GETPROTOBYNUMBER_R_NUMARGS, $ac_cv_func_getprotobynumber_r_nargs, [Define number of args getprotobynumber_r takes])
-fi
-
-AC_CHECK_FUNC(getservbyname_r)
-if test $ac_cv_func_getservbyname_r = 'yes'; then
-  AC_CACHE_CHECK(number of arguments for getservbyname_r,
-                 ac_cv_func_getservbyname_r_nargs, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n, *p; struct servent *h, *r; char buf[4096]; int len=4096;
-      (void)getservbyname_r(n, p, h, buf, len, &r);
-      ], ac_cv_func_getservbyname_r_nargs=6, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      char *n, *p; struct servent *h; char buf[4096]; int len=4096;
-      (void)getservbyname_r(n, p, h, buf, len);
-      ], ac_cv_func_getservbyname_r_nargs=5, [
-    ac_cv_func_getservbyname_r=no])])])
-fi
-
-if test $ac_cv_func_getservbyname_r != no; then
-  AC_DEFINE_UNQUOTED(GETSERVBYNAME_R_NUMARGS, $ac_cv_func_getservbyname_r_nargs, [Define number of args getservbyname_r takes])
-fi
-
-AC_CHECK_FUNC(getservbyport_r)
-if test $ac_cv_func_getservbyport_r = 'yes'; then
-  AC_CACHE_CHECK(number of arguments for getservbyport_r,
-                 ac_cv_func_getservbyport_r_nargs, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      int n; char *p; struct servent *h, *r; char buf[4096]; int len=4096;
-      (void)getservbyport_r(n, p, h, buf, len, &r);
-      ], ac_cv_func_getservbyport_r_nargs=6, [
-    AC_TRY_COMPILE([#include <netdb.h>], [
-      int n; char *p; struct servent *h; char buf[4096]; int len=4096;
-      (void)getservbyport_r(n, p, h, buf, len);
-      ], ac_cv_func_getservbyport_r_nargs=5, [
-    ac_cv_func_getservbyport_r=no])])])
-fi
-
-if test $ac_cv_func_getservbyport_r != no; then
-  AC_DEFINE_UNQUOTED(GETSERVBYPORT_R_NUMARGS, $ac_cv_func_getservbyport_r_nargs, [Define number of args getservbyport_r takes])
-fi
 
 
 dnl ===========================================================
