@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.253 2002-08-27 12:07:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.254 2002-08-28 00:05:45 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -20379,7 +20379,7 @@ Detailed specificaion of SRFI-1 is available at
 * SRFI-1 List selectors::       
 * SRFI-1 List miscellaneous routines::  
 * SRFI-1 Fold::                 
-* SRFI-1 Filterling & partitioning::  
+* SRFI-1 Filtering & Partitioning::  
 * SRFI-1 Searching::            
 * SRFI-1 Deletion::             
 * SRFI-1 Association lists::    
@@ -20641,7 +20641,7 @@ Partial application version of @code{count}
 @end example
 @end defun
 
-@node SRFI-1 Fold, SRFI-1 Filterling & partitioning, SRFI-1 List miscellaneous routines, List library
+@node SRFI-1 Fold, SRFI-1 Filtering & Partitioning, SRFI-1 List miscellaneous routines, List library
 @subsection List fold, unfold & map
 
 @defun fold kons knil clist1 clist2 @dots{}
@@ -20796,7 +20796,7 @@ Partial application versions of @code{fold}, @code{fold-right},
 @code{reduce}, and @code{reduce-right}.
 @end defun
 
-@node SRFI-1 Filterling & partitioning, SRFI-1 Searching, SRFI-1 Fold, List library
+@node SRFI-1 Filtering & Partitioning, SRFI-1 Searching, SRFI-1 Fold, List library
 @subsection List filtering & partitioning
 
 @defun filter pred list
@@ -20843,7 +20843,7 @@ Partial application versions of @code{filter}, @code{remove} and
 @end defun
 
 
-@node SRFI-1 Searching, SRFI-1 Deletion, SRFI-1 Filterling & partitioning, List library
+@node SRFI-1 Searching, SRFI-1 Deletion, SRFI-1 Filtering & Partitioning, List library
 @subsection List searching
 
 @defun find pred clist
@@ -23403,11 +23403,11 @@ predicate @var{pred}.  The order of arguments follows
 Removes all items in the queue that satisfies @var{pred}.
 Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
 The order of arguments follows
-@code{remove} in SRFI-1 (@xref{SRFI-1 Filtering}).
+@code{remove} in SRFI-1 (@xref{SRFI-1 Filtering & Partitioning}).
 @c JP
 キューから、述語@var{pred}を満たす要素を全て取り除きます。
 要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
-引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 Filtering}参照)。
+引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 Filtering & Partitioning}参照)。
 @c COMMON
 @end defun
 
