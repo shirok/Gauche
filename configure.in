@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.69 2002-07-12 11:12:46 shirok Exp $
+dnl $Id: configure.in,v 1.70 2002-07-17 07:17:54 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.69 $)
+AC_REVISION($Revision: 1.70 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -258,10 +258,13 @@ dnl Checks if crypt() exists and whether it's in libc or libcrypt.
 AC_SEARCH_LIBS(crypt, crypt, HAVE_CRYPT=yes, HAVE_CRYPT=no)
 AC_DEFINE(HAVE_CRYPT)
 
-dnl Checs if dlopen exists, and if it's in libc or libdl.
+dnl Checks if dlopen exists, and if it's in libc or libdl.
 AC_SEARCH_LIBS(dlopen, dl, HAVE_DLOPEN=yes, HAVE_DLOPEN=no)
 AC_CHECK_LIB(dyld, dlopen, HAVE_DLOPEN=yes; LIBS="-ldyld $LIBS", HAVE_DLOPEN=no)
 AC_DEFINE(HAVE_DLOPEN)
+
+dnl Checks for sched_yield.
+AC_SEARCH_LIBS(sched_yield, rt, AC_DEFINE(HAVE_SCHED_YIELD))
 
 dnl Checks compiler options for dynamic link and thread support.
 dnl

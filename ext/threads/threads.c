@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: threads.c,v 1.2 2002-07-14 22:43:11 shirok Exp $
+ *  $Id: threads.c,v 1.3 2002-07-17 07:17:54 shirok Exp $
  */
 
 #include <gauche.h>
@@ -207,7 +207,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 ScmObj Scm_ThreadYield(void)
 {
 #ifdef GAUCHE_USE_PTHREADS
-#if defined(HAVE_SCHED_H) && defined(_POSIX_PRIORITY_SCHEDULING)
+#if defined(HAVE_SCHED_H) && defined(_POSIX_PRIORITY_SCHEDULING) && defined(HAVE_SCHED_YIELD)
     sched_yield();
 #else  /*!HAVE_SCHED_H*/
     /* what can I do? */
