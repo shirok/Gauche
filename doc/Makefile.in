@@ -105,7 +105,7 @@ gauche-refj.html : gauche-refj.texi
 gauche-refj_toc.html : gauche-refj.texi
 	texi2html -split section -number gauche-refj.texi;
 	for f in gauche-refj*.html; do \
-	  sed -e '1d;s/LANG=""//;s|^<HEAD>$$|<html><head><meta http-equiv="Content-Type" content="text/html; charset=euc-jp">|' $$f > $$f.t && mv $$f.t $$f; \
+	  sed -e 's/LANG="en"/LANG="ja"/;s|^<HEAD>$$|<head><meta http-equiv="Content-Type" content="text/html; charset=euc-jp">|' $$f > $$f.t && mv $$f.t $$f; \
 	done
 
 ngauche-refj.dvi : gauche-refj.texi
