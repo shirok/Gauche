@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.13 2003-09-01 20:30:34 shirok Exp $
+;;;  $Id: cgi.scm,v 1.14 2004-02-25 10:19:42 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -88,15 +88,18 @@
       (error "unsupported content-type" type))
     (cond ((not method)  ;; interactive use.
            (if (sys-isatty (current-input-port))
-               (begin
-                 (display "Enter parameters (name=value).  ^D to stop.\n")
-                 (flush)
-                 (let loop ((line (read-line))
-                            (params '()))
-                   (if (eof-object? line)
-                       (string-join (reverse params) "&")
-                       (loop (read-line) (cons line params)))))
-               (error "REQUEST_METHOD not defined")))
+             (begin
+               (display "Enter parameters (name=value).  ^D to stop.\n")
+               (flush)
+               (let loop ((line (read-line))
+                          (params '()))
+                 (if (eof-object? line)
+                   (string-join (reverse params) "&")
+                   (loop (read-line)
+                         (if (string-null? line)
+                           params
+                           (cons line params))))))
+             (error "REQUEST_METHOD not defined")))
           ((or (string-ci=? method "GET")
                (string-ci=? method "HEAD"))
            (or (get-meta "QUERY_STRING") ""))
