@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: quoted-printable.scm,v 1.1 2001-09-16 08:05:02 shirok Exp $
+;;;  $Id: quoted-printable.scm,v 1.2 2001-09-19 07:46:49 shirok Exp $
 ;;;
 
 
@@ -31,8 +31,6 @@
 ;          ((= c #x0d)
 
 (define (quoted-printable-decode)
-  (define (hex c)
-    (string-index "0123456789ABCDEF" (char-upcase c)))
   (let loop ((c (read-char)))
     (cond ((eof-object? c))
           ((char=? c #\=)
@@ -42,11 +40,11 @@
              ((char=? c1 #\return)      ; soft newline
               (let ((c2 (read-char)))
                 (if (char=? c2 #\newline) (loop (read-char)) (loop c2))))
-             ((hex c1)
+             ((digit->integer c1 16)
               => (lambda (num1)
                    (let ((c2 (read-char)))
                      (cond ((eof-object? c2) (write-char c) (write-char c1))
-                           ((hex c2)
+                           ((digit->integer c2 16)
                             => (lambda (num2)
                                  (write-byte (+ (* num1 16) num2))
                                  (loop (read-char))))

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.8 2001-09-15 09:04:56 shirok Exp $
+;;;  $Id: uri.scm,v 1.9 2001-09-19 07:46:49 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -86,17 +86,14 @@
 
 (define (uri-decode . args)
   (define cgi-decode (get-keyword :cgi-decode args #f))
-  (define (hex c)
-    (and (char? c)
-         (string-index "0123456789ABCDEF" (char-upcase c))))
   (let loop ((c (read-char)))
     (cond ((eof-object? c))
           ((char=? c #\%)
            (let ((c1 (read-char)))
-             (cond ((hex c1)
+             (cond ((digit->integer c1 16)
                     => (lambda (i1)
                          (let ((c2 (read-char)))
-                           (cond ((hex c2)
+                           (cond ((digit->integer c2 16)
                                   => (lambda (i2)
                                        (write-byte (+ (* i1 16) i2))
                                        (loop (read-char))))
