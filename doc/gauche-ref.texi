@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.384 2003-04-17 08:08:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.385 2003-04-17 21:28:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18828,18 +18828,72 @@ how the option takes the arguments.  An alphanumeric characters, underscore,
 plus and minus sign is allowed for option's names, except that
 minus sign can't be the first character, i.e. the valid option name
 matches a regexp @code{#/[\w+][-\w+]*/}.
-If the option takes argument(s), it can be specified by attaching 
-equal character and the type of the argument after the name.  The option
-can take more than one arguments.
 @c JP
 @var{option-spec} は、オプションの名前とそのオプションがどのように引数を取るか
 を指定する文字列です。オプションの名前には、アルファベット文字、数字、
 アンダースコア、プラス記号、ハイフンが許されますが、ハイフンは最初の文字としては
 使えません。すなわち、有効なオプションの名前は、@code{#/[\w+][-\w+]*/} という
 正規表現にマッチするものです。
-オプションが引数を取る場合、名前の後ろに等号文字と引数の型を付けることで指定
-できます。オプションは一つ以上の引数を取ることができます。
 @c COMMON
+
+@c EN
+If the option takes argument(s), it can be specified by attaching 
+equal character and a character (or characters) that represents
+the type of the argument(s) after the name.  The option
+can take more than one arguments.
+The following characters are recognized as a type specifier of
+the option's argument.
+@c JP
+オプションが引数を取る場合、名前の後ろに等号文字と引数の型を表現する文字を
+付けることで指定できます。オプションは一つ以上の引数を取ることができます。
+以下の文字がオプションの引数の型を表現するものとして認識されます。
+@c COMMON
+
+@table @code
+@item s
+@c EN
+String.
+@c JP
+文字列。
+@c COMMON
+@item n
+@c EN
+Number.
+@c JP
+数値。
+@c COMMON
+@item f
+@c EN
+Real number (flonum).
+@c JP
+実数 (flonum)。
+@c COMMON
+@item i
+@c EN
+Exact integer.
+@c JP
+正確な整数。
+@c COMMON
+@item e
+@c EN
+S-expression.
+@c JP
+S式。
+@c COMMON
+@item y
+@c EN
+Symbol (argument is converted by @code{string->symbol}).
+@c JP
+シンボル (引数は@code{string->symbol}により変換される)。
+@c COMMON
+@end table
+
+@c EN
+Let's see some examples of @var{option-spec}:
+@c JP
+@var{option-spec}の例を見てみましょう：
+@c COMMON
+
 @table @code
 @item "@var{name}"
 @c EN
@@ -18858,21 +18912,8 @@ Option @var{name} takes one argument, and it is passed as a string.
 @item "@var{name}=i"
 @c EN
 Option @var{name} takes one argument, and it is passed as an exact integer.
-If the given argument is not valid string for an exact integer,
-an error is signalled.
 @c JP
 オプション @var{name} は引数を一つ取り、それは正確整数として渡されます。
-与えられた引数が正確整数として妥当な文字列でない場合は、エラーが通知されます。
-@c COMMON
-
-@item "@var{name}=f"
-@c EN
-Option @var{name} takes one argument, and it is passed as a real number.
-If the given argument is not valid string for a real number,
-an error is signalled.
-@c JP
-オプション @var{name} は引数を一つ取り、それは実数として渡されます。
-与えられた引数が実数として妥当な文字列でない場合は、エラーが通知されます。
 @c COMMON
 
 @item "@var{name}=ss"
@@ -19044,8 +19085,9 @@ like ordinary Scheme construct.
 1. (@var{var} @var{option-spec})
 2. (@var{var} @var{option-spec} @var{default})
 3. (@var{var} @var{option-spec} => @var{callback})
+4. (@var{var} @var{option-spec} @var{default} => @var{callback})
 
-4. (else @var{formals} @var{form} ...)
+5. (else @var{formals} @var{form} ...)
 @end example
 
 @c EN
@@ -19059,7 +19101,7 @@ is given, a variable @var{var} is bound to a value as follows:
        the argument:
   (a3) If @var{option-spec} requires more than one argument,
        the list of the values of the arguments.
-(b) If the @var{bind-spec} is 3., then @var{callback} is called with
+(b) If the @var{bind-spec} is 3. or 4., then @var{callback} is called with
   the value(s) of arguments, and its return value.
 @end example
 @c JP
@@ -19071,7 +19113,7 @@ is given, a variable @var{var} is bound to a value as follows:
   (a1) @var{option-spec}が引数を要求しない場合は、@code{#t}。
   (a2) @var{option-spec}がひとつの引数を要求する場合は、その引数の値。
   (a3) @var{option-spec}がそれ以上の引数を要求する場合は、引数の値のリスト。
-(b) @var{bind-spec}の形式が上の3. の場合、@var{callback}を
+(b) @var{bind-spec}の形式が上の3. または4. の場合、@var{callback}を
   引数の値を伴って呼び出し、その戻り値。
 @end example
 @c COMMON
@@ -19088,20 +19130,20 @@ the value is ignored.  It is only useful for side effects in
 
 @c EN
 If the corresponding option is not given in @var{args},
-@var{var} is bound to @var{default} in the form 2., or
-@code{#f} in the form 1 and 3.
+@var{var} is bound to @var{default} if it is given, or
+@code{#f} otherwise.
 @c JP
 対応するオプションが@var{args}に与えられなかった場合、
-@var{var}は2.形式の場合は@var{default}の値に、
+@var{var}は@var{default}が与えられていればその値に、
 そうでなければ@code{#f}に束縛されます。
 @c COMMON
 
 @c EN
-The last @var{bind-spec} may be the form 4. in which case
+The last @var{bind-spec} may be the form 5. in which case
 it is treated in the same way as @code{else} clause
 of @code{parse-options}.
 @c JP
-最後の@var{bind-spec}は4.の形式であっても良く、
+最後の@var{bind-spec}は5.の形式であっても良く、
 その場合は@code{parse-options}の@code{else}節と同様に処理されます。
 @c COMMON
 

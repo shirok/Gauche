@@ -167,6 +167,12 @@
                    (bar "bar"))
                   foo))
 
+(test* "let-args (callback)" 8
+       (let-args '()
+                  ((foo "foo=n" 8 => (lambda (x) (* x x)))
+                   (bar "bar"))
+                  foo))
+
 (test* "let-args (side-effect)" 5
        (let ((boo 0))
          (let-args '("-foo" "5")

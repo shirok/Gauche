@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parseopt.scm,v 1.3 2003-04-17 08:07:48 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.4 2003-04-17 21:28:31 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
@@ -71,6 +71,12 @@
           num)
         (errorf "an integer is required for option ~a, but got ~a"
                 option arg)))
+  (define (get-sexp arg)
+    (with-error-handler
+        (lambda (e)
+          (errorf "the argument for option ~a is not valid sexp: ~s"
+                  option arg))
+      (lambda () (read-from-string arg))))
   
   (let loop ((spec argspec)
              (args args)
@@ -87,6 +93,10 @@
                           (cons (get-real (car args)) optargs)))
              ((#\i) (loop (cdr spec) (cdr args)
                           (cons (get-integer (car args)) optargs)))
+             ((#\e) (loop (cdr spec) (cdr args)
+                          (cons (get-sexp (car args)) optargs)))
+             ((#\y) (loop (cdr spec) (cdr args)
+                          (cons (string->symbol (car args)) optargs)))
              (else (error "unknown option argument spec:" (car spec))))))
     )
   )
@@ -158,7 +168,7 @@
 ;;  where varspec can be
 ;;   (var spec [default])
 ;;  or
-;;   (var spec => callback)
+;;   (var spec [default] => callback)
 ;;
 ;;  varspec can be an improper list, as
 ;;
@@ -175,6 +185,12 @@
     ;; Handle var == #f case first.  This is only useful for side-effects
     ;; or recognizing option (and then discard).
     ;;
+    ((_ args binds (opts ...) ((#f spec1 def => callback) . varspecs) body)
+     (let-args-internal args
+        binds
+        (opts ... (spec1 => callback))
+        varspecs
+        body))
     ((_ args binds (opts ...) ((#f spec1 => callback) . varspecs) body)
      (let-args-internal args
         binds
@@ -212,13 +228,18 @@
     ;;
     ;; Handle explicit callbacks.
     ;;
-    ((_ args binds (opts ...) ((var1 spec1 => callback) . varspecs) body)
+    ((_ args binds (opts ...) ((var1 spec1 default1 => callback) . varspecs) body)
      (let-args-internal args
-         ((var1 #f) (cb1 callback) . binds)
+         ((var1 default1) (cb1 callback) . binds)
          (opts ... (spec1 => (lambda x (set! var1 (apply cb1 x)))))
          varspecs
          body))
-    ;;
+    ((_ args binds (opts ...) ((var1 spec1 => callback) . varspecs) body)
+     (let-args-internal args
+         binds
+         (opts ...)
+         ((var1 spec1 #f => callback) . varspecs)
+         body))
     ;; Normal case.
     ;; Transform base form into a let w/ a callback to set its value
     ;; we don't know # of values to receive unless we parse the optspec,
