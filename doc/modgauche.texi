@@ -4462,32 +4462,66 @@ Returns a @code{<sockaddr>} instance that is the peer address of
 
 @defun socket-send socket msg &optional flags
 @defunx socket-sendto socket msg to-address &optional flags.
+@c EN
 Interfaces to @code{send(2)} and @code{sendto(2)}, respectively.
 Transmits the content of @var{msg} (string) through @var{socket}.
 When @code{socket-send} is used, @var{socket} must already be connected.
 On the other hand, @code{socket-setdto} can be used for non-connected
 socket, and the destination address is specified by 
 a @code{<sockaddr>} instance @var{to-address}.
+@c JP
+それぞれ、@code{send(2)} および @code{sendto(2)} へのインタフェース。
+@var{msg} の内容(文字列)を @var{socket} を通じて送出します。
+@code{socket-send} を使うときには、@var{socket} は既に接続されて
+いなければなりません。他方、@code{socket-setdto} は未接続の
+ソケットに対して使用でき、送出先アドレスは @code{<sockaddr>} のインスタンス
+@var{to-address} で指定します。
+@c COMMON
 
+@c EN
 The optional @var{flags} can be a bitwise OR of the integer
 constants @code{MSG_*}.  See the system's manpage of @code{send(2)}
 and @code{sendto(2)} for the details.
+@c JP
+オプション引数 @var{flags} は整数定数 @code{MSG_*} のビット毎のORで
+指定できます。詳しくはシステムの man ページ @code{send(2)} および
+@code{sendto(2)} を見て下さい。
+@c COMMON
 @end defun
 
 @defun socket-recv socket bytes &optional flags
 @defunx socket-recvfrom socket bytes &optional flags
+@c EN
 Interfaces to @code{recv(2)} and @code{recvfrom(2)}, respectively.
 Receives a message up to the @var{bytes} bytes from a socket
 @var{socket}.  @code{socket-recv} should be used with a connected socket,
 whereas @code{socket-recvfrom} can be used with non-connected socket.
+@c JP
+それぞれ、@code{recv(2)} および @code{recvfrom(2)} へのインタフェース。
+ソケット @var{socket} から @var{bytes} バイトまでのメッセージを受信します。
+@code{socket-recv} は接続済みのソケットを使わなければなりませんが、
+他方、@code{socket-recvfrom} は未接続のソケットを使えます。
+@c COMMON
 
+@c EN
 @code{socket-recv} returns a received message as a (possibly incomplete)
 string.   @code{socket-recvfrom} returns two values, a received message
 and the sender's socket address.
+@c JP
+@code{socket-recv} は(不完全なものである可能性もある)文字列として受信した
+メッセージを返します。@code{socket-recvfrom} は値を2つ返し、一つは受信した
+メッセージ、もうひとつは送信者のソケットアドレスです。
+@c COMMON
 
+@c EN
 The optional @var{flags} can be a bitwise OR of the integer
 constants @code{MSG_*}.  See the system's manpage of @code{recv(2)}
 and @code{recvfrom(2)} for the details.
+@c JP
+オプション引数 @var{flags} は整数定数 @code{MSG_*} のビット毎のORで
+指定できます。詳しくはシステムの man ページ @code{recv(2)} および
+@code{recvfrom(2)} を見て下さい。
+@c COMMON
 @end defun
 
 @defvar MSG_CTRUNC
@@ -4497,10 +4531,17 @@ and @code{recvfrom(2)} for the details.
 @defvarx MSG_PEEK
 @defvarx MSG_TRUNC
 @defvarx MSG_WAITALL
+@c EN
 Pre-defined integer constants to be used as @var{flags} values
 for @code{socket-send}, @code{socket-sendto}, @code{socket-recv}
 and @code{socket-recvfrom}.   Some of these constants may not be
 defined if the underlying operating system doesn't provide them.
+@c JP
+@code{socket-send}、@code{socket-sendto}、@code{socket-recv} および
+@code{socket-recvfrom} の @var{flag} として使う定義済み整数定数。
+これらの定数のいくつかは、基盤のＯＳが提供していなければ未定義に
+なっています。
+@c COMMON
 @end defvar
 
 @c EN
