@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.58 2004-11-22 14:12:43 shirok Exp $
+ *  $Id: core.c,v 1.59 2004-11-23 04:56:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -157,29 +157,41 @@ void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer, void *data)
 
 void Scm_FinalizerQueueInit(ScmFinalizerQueue *q)
 {
-    int i;
-    for (i=0; i<SCM_VM_FINQ_SIZE; i++) {
-        q->queue[i].proc = NULL;
-        q->queue[i].data = NULL;
-    }
+    q->queue = NULL;
+    q->size = 0;
     q->head = q->tail = 0;
+    q->full = TRUE;
 }
 
 void Scm_FinalizerEnqueue(ScmQueuedFinalizerProc proc, void *data)
 {
     ScmVM *vm = Scm_VM();
     ScmFinalizerQueue *q = &vm->finq;
-    
-    if (q->overflow) {
-        /* TODO: what should we do? */
-        Scm_Warn("Finalizer queue overflow");
-        return;
+
+    if (q->full) {
+        /* Extend finalizer queue */
+        int i, j;
+        ScmFinalizerClosure *newq =
+            SCM_NEW_ARRAY(ScmFinalizerClosure, q->size + SCM_VM_FINQ_SIZE);
+        for (i=0, j=q->head; i<q->size; i++, j++) {
+            if (j >= q->size) j = 0;
+            newq[i].proc = q->queue[j].proc;
+            newq[i].data = q->queue[j].data;
+            /* nullify the old array, so that the finalized obj will be
+               collected earlier. */
+            q->queue[j].proc = NULL;
+            q->queue[j].data = NULL;
+        }
+        q->queue = newq;
+        q->head = q->tail = q->size;
+        q->size += SCM_VM_FINQ_SIZE;
+        q->full = FALSE;
     }
     q->queue[q->tail].proc = proc;
     q->queue[q->tail].data = data;
     q->tail++;
-    if (q->tail >= SCM_VM_FINQ_SIZE) q->tail = 0;
-    if (q->tail == q->head) q->overflow++;
+    if (q->tail >= q->size) q->tail = 0;
+    if (q->tail == q->head) q->full = TRUE;
     vm->queueNotEmpty |= SCM_VM_FINQ_MASK;
 }
 
@@ -189,10 +201,16 @@ ScmObj Scm_VMFinalizerRun(ScmVM *vm)
     ScmFinalizerQueue *q = &vm->finq;
     ScmQueuedFinalizerProc proc;
     void *data;
+
+    if (q->head == q->tail && !q->full) return; /* sanity check */
+    
     proc = q->queue[q->head].proc;
     data = q->queue[q->head].data;
+    q->queue[q->head].proc = NULL;
+    q->queue[q->head].data = NULL;
     q->head++;
-    if (q->head >= SCM_VM_FINQ_SIZE) q->head = 0;
+    if (q->head >= q->size) q->head = 0;
+    q->full = FALSE;
 
     if (q->head == q->tail) vm->queueNotEmpty &= ~SCM_VM_FINQ_MASK;
 

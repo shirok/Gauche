@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.215 2004-11-22 23:21:13 shirok Exp $
+ *  $Id: vm.c,v 1.216 2004-11-23 04:56:07 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -82,6 +82,7 @@ static ScmSubr default_exception_handler_rec;
 #define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
 static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
+static void   process_queued_requests(ScmVM *vm);
 
 /*
  * Constructor
@@ -452,17 +453,12 @@ static void run_loop()
         
         /* Check if there's a queued processing first. */
         if (vm->queueNotEmpty) {
-            if (vm->queueNotEmpty & SCM_VM_SIGQ_MASK) {
-                SAVE_REGS();
-                Scm_SigCheck(vm);
-                RESTORE_REGS();
-            }
-            if (vm->queueNotEmpty & SCM_VM_FINQ_MASK) {
-                SAVE_REGS();
-                Scm_VMFinalizerRun(vm);
-                RESTORE_REGS();
-                continue;
-            }
+            PUSH_CONT(prevpc, pc);
+            SAVE_REGS();
+            process_queued_requests(vm);
+            RESTORE_REGS();
+            POP_CONT();
+            continue;
         }
 
         /* See if we're at the end of procedure.  It's safer to use
@@ -2474,6 +2470,72 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
     vm->vals[2] = val3;
     vm->vals[3] = val4;
     return val0;
+}
+
+/*==================================================================
+ * Queued handler processing.
+ */
+
+/* Signal handlers and finalizers are queued in VM when they
+ * are requested, and processed when VM is in consistent state.
+ * process_queued_requests() are called near the beginning of
+ * VM loop, when the VM checks if there's any queued request.
+ *
+ * When this procedure is called, VM is in middle of any two
+ * VM instructions.  We need to make sure the handlers won't
+ * disturb the VM state.
+ *
+ * Conceptually, this procedure inserts handler invocations before
+ * the current continuation.
+ */
+
+static ScmObj process_queued_requests_cc(ScmObj result, void **data)
+{
+    /* restore the saved continuation of normal execution flow of VM */
+    int i;
+    ScmObj cp;
+    ScmVM *vm = theVM;
+    vm->numVals = (int)data[0];
+    vm->val0 = data[1];
+    if (vm->numVals > 1) {
+        cp = SCM_OBJ(data[2]);
+        for (i=0; i<vm->numVals-1; i++) {
+            vm->vals[i] = SCM_CAR(cp);
+            cp = SCM_CDR(cp);
+        }
+    }
+    return vm->val0;
+}
+
+static void process_queued_requests(ScmVM *vm)
+{
+    void *data[3];
+
+    /* preserve the current continuation */
+    data[0] = (void*)vm->numVals;
+    data[1] = vm->val0;
+    if (vm->numVals > 1) {
+        int i;
+        ScmObj h = SCM_NIL, t = SCM_NIL;
+
+        for (i=0; i<vm->numVals-1; i++) {
+            SCM_APPEND1(h, t, vm->vals[i]);
+        }
+        data[2] = h;
+    } else {
+        data[2] = NULL;
+    }
+    Scm_VMPushCC(process_queued_requests_cc, data, 3);
+
+    /* Process queued stuff.  Currently they call VM recursively,
+       but we'd better to arrange them to be processed in the same
+       VM level. */
+    if (vm->queueNotEmpty & SCM_VM_SIGQ_MASK) {
+        Scm_SigCheck(vm);
+    }
+    if (vm->queueNotEmpty & SCM_VM_FINQ_MASK) {
+        Scm_VMFinalizerRun(vm);
+    }
 }
 
 /*==============================================================

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.95 2004-11-22 14:12:43 shirok Exp $
+ *  $Id: vm.h,v 1.96 2004-11-23 04:56:08 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -209,6 +209,9 @@ SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value);
  *
  *  Gauche installs singnal handlers that simply queues the signal.
  *  See signal.c for the implementaiton.
+ *  Signal queue is a fixed size, since we can't really extend it
+ *  within the system's signal handler.  For the time being, overflowed
+ *  signals are simply discarded.
  */
 
 typedef struct ScmSignalQueueRec {
@@ -232,6 +235,10 @@ SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
  *  If a finalizer needs to call Scheme procedure, it enqueues
  *  the Scheme calling part, so that it runs when VM is in consistent
  *  state.  See core.c for the implementation.
+ *  The finalizer queue can be temporarily big (when the program creates
+ *  large amount of temporary objects that requires finalization in
+ *  a short period of time).   We extend the finalizer queue on demand,
+ *  but currently we do not shrink it.  See if it becomes a problem.
  */
 typedef ScmObj (*ScmQueuedFinalizerProc)(void *data);
 
@@ -241,10 +248,11 @@ typedef struct ScmFinalizerClosureRec {
 } ScmFinalizerClosure;
 
 typedef struct ScmFinalizerQueueRec {
-    ScmFinalizerClosure queue[SCM_VM_FINQ_SIZE]; /* finalizer queue */
-    unsigned int overflow;
-    unsigned int head;
-    unsigned int tail;
+    ScmFinalizerClosure *queue; /* queue array */
+    unsigned int size;          /* allocated size of queue array */
+    unsigned int full;          /* flag if queue is full */
+    unsigned int head;          /* ring buffer head index */
+    unsigned int tail;          /* ring buffer tail index */
 } ScmFinalizerQueue;
 
 SCM_EXTERN void Scm_FinalizerQueueInit(ScmFinalizerQueue* q);

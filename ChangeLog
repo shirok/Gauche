@@ -2,10 +2,11 @@
 
 	* src/write.c (write_ss): close temporary port to avoid unnecessary
 	  finalizer call.
-
 	* src/vm.c (run_loop): fixed a bug that didn't save VM regs before
 	  calling Scm_SigCheck, which sometimes caused SEGV after getting
 	  signals.  Also changed to check queued finalizer as well.
+	  (process_queued_requests): handles queued signal handlers and
+	  finalizers properly.
 	* src/core.c: implemented finalizer queue.
 	* src/signal.c: slightly changed data structure.
 	* src/gauche/vm.h: ditto
