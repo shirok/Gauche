@@ -63,7 +63,7 @@ TESTFILES = ../test/primsyn.scm \
 	    ../test/rfc.scm \
 	    ../test/parseopt.scm \
 	    ../test/text.scm \
-	    ../test/algorithm.scm
+	    ../test/util.scm
 
 .SUFFIXES: .stub
 
