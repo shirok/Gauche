@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.195 2002-05-03 04:26:59 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.196 2002-05-03 13:19:46 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8965,6 +8965,16 @@ interpreter itself.
 @subsection Filesystems
 @c NODE ファイルシステム
 
+@c EN
+System calls that deal with filesystems.
+See also @ref{Filesystem utilities}, which defines high-level APIs
+on top of the procedures described here.
+@c JP
+ファイルシステムに関するシステムコール郡です。
+ここで述べる手続きの上に、より高レベルなAPIがモジュール@code{file.util}として
+実装されています。@ref{Filesystem utilities}を参照して下さい。
+@c COMMON
+
 @menu
 * Directories::                 
 * Directory manipulation::      
@@ -8976,6 +8986,12 @@ interpreter itself.
 @node Directories, Directory manipulation, Filesystems, Filesystems
 @subsubsection Directories
 @c NODE ディレクトリ
+
+@c EN
+See also @ref{Directory utilities} for high-level API.
+@c JP
+高レベルAPIに関しては@ref{Directory utilities}も参照して下さい。
+@c COMMON
 
 @defun sys-readdir path
 @c EN
@@ -9169,6 +9185,12 @@ umaskについては@code{man umask}を参照してください。
 @subsubsection Pathnames
 @c NODE パス名
 
+@c EN
+See also @ref{Pathname utilities}, for high-level APIs.
+@c JP
+高レベルのAPIに関しては@ref{Pathname utilities}も参照して下さい。
+@c COMMON
+
 @defun sys-normalize-pathname pathname &keyword absolute expand canonicalize
 @c EN
 Converts @var{pathname} according to the way specified by keyword arguments.
@@ -9286,6 +9308,12 @@ may return @code{"/"} for the argument @code{"/"}, and
 @node File stats, Other file operations, Pathnames, Filesystems
 @subsubsection File stats
 @c NODE ファイルの状態
+
+@c EN
+See also @ref{File attribute utilities}, for high-level APIs.
+@c JP
+高レベルのAPIに関しては@ref{File attribute utilities}も参照して下さい。
+@c COMMON
 
 @defun file-exists? path
 @defunx file-is-regular? path
@@ -11704,7 +11732,7 @@ If @var{path} is not a directory, an error is signalled.
 ディレクトリ@var{path}中のエントリのリストを返します。
 リストは文字列順にソートされます。
 
-デフォルトでは、エントリのベースネーム(パスの最後のコンポーネント)のみが
+デフォルトではエントリのベースネーム(パスの最後のコンポーネント)のみが
 返されますが、キーワード引数@var{add-path?}に真の値が与えられた時は
 @var{path}が各エントリの前に追加されます。
 @var{children?}に真の値が与えられた時は、カレントディレクトリと親ディレクトリが
@@ -12012,7 +12040,13 @@ content, that is, when two are not the identical file in the sense of
 @c COMMON
 
 @c EN
+The behavior of @code{file-equal?} is undefined
+when @var{path1} and @var{path2} are both directories.
+Later, it may be extended to scan the directory contents.
 @c JP
+@var{path1}と@var{path2}ともにディレクトリが与えられた場合の
+@code{file-equal?}の動作は未定義です。将来、ディレクトリ内容を
+スキャンするような拡張が加えられるかもしれません。
 @c COMMON
 @end defun
 
@@ -12082,12 +12116,13 @@ stat構造体から変更時間が取られます。
 @findex file-atime>?
 @findex file-atime>=?
 @c EN
-Same as @code{file-mtime=?}, except these checks file's creation time
+Same as @code{file-mtime=?}, except these checks file's change time
 and access time, respectively.
 All the variants of @code{<}, @code{<=}, @code{>}, @code{>=} are also
 defined.
 @c JP
-@code{file-mtime=?}と同じですが、ファイルの作成時間とアクセス時間に関して比較します。
+@code{file-mtime=?}と同じですが、ファイルの属性変更時間とアクセス時間に
+関して比較します。
 @code{<}, @code{<=}, @code{>}, @code{>=}を使う関数も同様に定義されています。
 @c COMMON
 @end deftp
