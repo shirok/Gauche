@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: pthread.h,v 1.1 2002-03-04 19:58:35 shirok Exp $
+ *  $Id: pthread.h,v 1.2 2002-03-13 10:45:54 shirok Exp $
  */
 
 #ifndef GAUCHE_PTHREAD_H
@@ -20,9 +20,7 @@
 
 #include <pthread.h>
 
-typedef pthread_mutex_t ScmInternalMultex;
-
-
-
+typedef pthread_t       ScmInternalThread;
+typedef pthread_mutex_t ScmInternalMutex;
 
 #endif /* GAUCHE_PTHREAD_H */

@@ -1,7 +1,7 @@
 /*
  * vm.c - evaluator
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.132 2002-02-12 19:51:33 shirok Exp $
+ *  $Id: vm.c,v 1.133 2002-03-13 10:45:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -30,12 +30,18 @@
  *
  *   VM encapsulates the dynamic status of the current exection.
  *   In Gauche, there's always one active virtual machine per thread,
- *   refered by Scm_VM().
+ *   referred by Scm_VM().
  */
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, NULL);
 
-static ScmVM *theVM;    /* this must be thread specific in MT version */
+#ifdef GAUCHE_USE_PTHREAD
+static pthread_key_t vm_key;
+#define theVM   ((ScmVM*)pthread_getspecific(vm_key))
+static ScmVM *rootVM;           /* VM for primodial thread */
+#else
+static ScmVM *theVM;
+#endif  /* !GAUCHE_USE_PTHREAD */
 
 static void save_stack(ScmVM *vm);
 
@@ -58,6 +64,12 @@ ScmVM *Scm_NewVM(ScmVM *base,
     
     SCM_SET_CLASS(v, SCM_CLASS_VM);
     v->parent = base;
+    v->children = SCM_NIL;
+#ifdef GAUCHE_USE_PTHREAD
+    pthread_mutex_init(&v->vmlock, NULL);
+#else  /* !GAUCHE_USE_PTHREAD */
+    v->vmlock = 0;
+#endif /* !GAUCHE_USE_PTHREAD */
     v->module = module ? module : base->module;
     v->cstack = base ? base->cstack : NULL;
     
@@ -131,11 +143,42 @@ ScmVM *Scm_VM(void)
     return theVM;
 }
 
-ScmVM *Scm_SetVM(ScmVM *vm)
+/*
+ * Clean up VM when thread exits.
+ */
+#ifdef GAUCHE_USE_PTHREAD
+static void vm_cleanup(void *data)
 {
-    ScmVM *prev = theVM;
-    theVM = vm;
-    return prev;
+    ScmVM *vm = SCM_VM(data);
+    if (vm->parent) {
+        int r = pthread_mutex_lock(&vm->parent->vmlock);
+        /* TODO: take appropriate action */
+        if (r != 0) Scm_Panic("mutex error");
+        vm->parent->children = Scm_DeleteX(SCM_OBJ(vm), vm->parent->children, SCM_CMP_EQ);
+        r = pthread_mutex_unlock(&vm->parent->vmlock);
+        /* TODO: take appropriate action */
+        if (r != 0) Scm_Panic("mutex error");
+        vm->parent = NULL;
+    }
+}
+#endif /* GAUCHE_USE_PTHREAD */
+
+/*
+ * Initialization.  This should be called after modules are initialized.
+ */
+void Scm__InitVM(void)
+{
+#ifdef GAUCHE_USE_PTHREAD
+    if (pthread_key_create(&vm_key, vm_cleanup) != 0) {
+        Scm_Panic("pthread_key_create failed.");
+    }
+    rootVM = Scm_NewVM(NULL, Scm_SchemeModule());
+    if (pthread_setspecific(vm_key, rootVM) != 0) {
+        Scm_Panic("pthread_setspecific failed.");
+    }
+#else   /* !GAUCHE_USE_PTHREAD */
+    theVM = Scm_NewVM(NULL, Scm_SchemeModule());
+#endif  /* !GAUCHE_USE_PTHREAD */
 }
 
 /*====================================================================

@@ -1,3 +1,8 @@
+2002-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, src/gauche/config.h.in : added --with-pthread.
+	* src/vm.c, src/vm.h : adding pthread support.
+
 2002-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* aclocal.m4 (AC_GAUCHE_INIT_EXT) : substitute GAUCHE_VERSION as well.

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.34 2002-02-17 07:25:03 shirok Exp $
+ *  $Id: core.c,v 1.35 2002-03-13 10:45:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -48,6 +48,7 @@ extern void Scm__InitRegexp(void);
 extern void Scm__InitRead(void);
 extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
+extern void Scm__InitVM(void);
 
 extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
@@ -56,9 +57,10 @@ extern void Scm_Init_moplib(ScmModule *);
 
 void Scm_Init(void)
 {
-    ScmVM *vm;
     GC_oom_fn = oom_handler;
-    
+
+    /* Initialize components.  The order is important, for some components
+       rely on the other components to be initialized. */
     Scm__InitSymbol();
     Scm__InitModule();
     Scm__InitKeyword();
@@ -74,13 +76,12 @@ void Scm_Init(void)
     Scm__InitRead();
     Scm__InitSignal();
     Scm__InitSystem();
+    Scm__InitVM();
 
     /* This is required in some platforms in order to link
        dyn_load.o properly. */
     GC_register_dlopen_data(NULL, NULL);
 
-    vm = Scm_NewVM(NULL, Scm_SchemeModule());
-    Scm_SetVM(vm);
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
