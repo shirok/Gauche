@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.37 2002-01-28 03:15:57 shirok Exp $
+ *  $Id: read.c,v 1.38 2002-01-29 11:39:40 shirok Exp $
  */
 
 #include <stdio.h>
@@ -41,17 +41,8 @@ static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
-static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj);
+static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj, int);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
-
-/* Trick: a form can be referenced before the form itself is fully read,
-   e.g. #0=#(1 2 3 . #0#).  Thus registering to the reference table
-   should be done _before_ the form after #digit= is read.
-   read_reference doesn't know how to parse the form after it,
-   so it delegates the responsibility of registration to the
-   each form reader. */
-#define REFCHK(ctx, obj) \
-    ((ctx->table)? register_reference(ctx, (obj)) : (obj))
 
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
@@ -200,7 +191,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             switch (c1) {
             case EOF:
                 Scm_ReadError(port, "premature #-sequence at EOF");
-            case 't':; case 'T': return REFCHK(ctx,SCM_TRUE);
+            case 't':; case 'T': return SCM_TRUE;
             case 'f':; case 'F': return maybe_uvector(port, 'f', ctx);
             case 's':; case 'S': return maybe_uvector(port, 's', ctx);
             case 'u':; case 'U': return maybe_uvector(port, 'u', ctx);
@@ -633,13 +624,17 @@ static ScmObj read_charset(ScmPort *port)
  * Back reference (#N# and #N=)
  */
 
-static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj)
+/* TODO: a form can be referenced before the form itself is fully read,
+   e.g. #0=#(1 2 3 . #0#).   It is difficult to support this fully, for
+   the reference (#0#) should be read before the referenced object is
+   created.  Currently I added an ad-hoc approach for the case that
+   the reference object is a cons.  I guess I need to implement a generic
+   pointer-forwarding scheme to solve the problem. */
+
+static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj, int refnum)
 {
     SCM_ASSERT(ctx->table);
-    if (ctx->reference >= 0) {
-        Scm_HashTablePut(ctx->table, Scm_MakeInteger(ctx->reference), obj);
-        ctx->reference = -1;
-    }
+    Scm_HashTablePut(ctx->table, SCM_MAKE_INT(refnum), obj);
     return obj;
 }
 
@@ -672,15 +667,23 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         return e->value;
     } else {
         /* #digit= - register */
-        ScmObj z;
+        /* Kludge: register a dummy cell to be referenced.  This only works
+           when the referenced object is a cell. */
+        ScmObj z = Scm_Cons(SCM_NIL, SCM_NIL), y;
         if (ctx->table == NULL) {
             ctx->table = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_EQV, NULL, 0));
         }
         if (Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum)) != NULL) {
             Scm_ReadError(port, "duplicate back-reference number in #%d=", refnum);
         }
-        ctx->reference = refnum;
-        return read_internal(port, ctx);
+        register_reference(ctx, z, refnum);
+        y = read_internal(port, ctx);
+        if (!SCM_PAIRP(y)) {
+            Scm_ReadError(port, "back-reference (#digit=) to the non-cell object %S is not supported yet, sorry.", y);
+        }
+        SCM_SET_CAR(z, SCM_CAR(y));
+        SCM_SET_CDR(z, SCM_CDR(y));
+        return z;
     }
 }
 
