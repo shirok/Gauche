@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.62 2002-02-11 09:54:41 shirok Exp $
+ *  $Id: number.c,v 1.63 2002-02-12 07:41:54 shirok Exp $
  */
 
 #include <math.h>
@@ -336,7 +336,7 @@ ScmObj Scm_ExactToInexact(ScmObj obj)
         obj = Scm_MakeFlonum((double)SCM_INT_VALUE(obj));
     } else if (SCM_BIGNUMP(obj)) {
         obj = Scm_MakeFlonum(Scm_BignumToDouble(SCM_BIGNUM(obj)));
-    } else if (!SCM_FLONUMP(obj) || !SCM_COMPLEXP(obj)) {
+    } else if (!SCM_FLONUMP(obj) && !SCM_COMPLEXP(obj)) {
         Scm_Error("number required: %S", obj);
     }
     return obj;
