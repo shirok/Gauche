@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.10 2004-11-21 09:15:42 shirok Exp $
+;;;  $Id: mime.scm,v 1.11 2004-11-25 22:00:43 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -172,10 +172,13 @@
        (else
         (case b
           ((#x0d) ;; CR, check to see LF
-           (let1 b2 (read-byte srcport)
+           (let1 b2 (peek-byte srcport)
              (if (eqv? b2 #x0a)
-               (begin (enqueue! q b b2) (check-boundary))
-               (begin (enqueue! q b2) b))))
+               (begin
+                 (read-byte srcport)
+                 (enqueue! q b #x0a)
+                 (check-boundary))
+               b)))
           ((#x0a) ;; LF, check boundary
            (enqueue! q b) (check-boundary))
           (else b))))))

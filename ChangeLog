@@ -1,5 +1,8 @@
 2004-11-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/mime.scm (make-mime-port): fixed a bug that incorrectly
+	  treated CR-CR-LF sequence just before a boundary.
+
 	* lib/www/cgi.scm (cgi-parse-parameters): use limited-length-port
 	  to read POST message body if content-length is specified.  It is
 	  necessary when the progam is communicating with persistent
