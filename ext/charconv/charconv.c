@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.6 2001-06-02 09:54:07 shirok Exp $
+ *  $Id: charconv.c,v 1.7 2001-06-04 03:59:57 shirok Exp $
  */
 
 #include <errno.h>
@@ -40,65 +40,75 @@ typedef struct conv_info_rec {
 } conv_info;
 
 /*------------------------------------------------------------
-  Input conversion
+ * Query
+ */
 
-   Scheme <-- Bufferd port       conv_info      remote
-                    ^              |  ^           |
-                    |              |  |           |
-                    \--- outbuf <--/  \-- inbuf --/
-   
+int Scm_ConversionSupportedP(const char *from, const char *to)
+{
+    iconv_t cd = iconv_open(to, from);
+    if (cd == (iconv_t)-1) return FALSE;
+    iconv_close(cd);
+    return TRUE;
+}
+
+/*------------------------------------------------------------
+ * Input conversion
+ *
+ *  <-- Bufferd port <--outbuf-- filler <--inbuf--- getz(remote)
  */
 
 static int conv_input_filler(char *buf, int len, void *data)
 {
     conv_info *info = (conv_info*)data;
-    size_t insize = info->inptr - info->inbuf, inroom;
-    size_t outroom = info->bufsiz;
-    size_t result;
+    size_t insize, inroom, outroom, result;
     int nread;
     const char *inbuf = info->inbuf;
     char *outbuf = info->outbuf;
 
-    printf("in(%p,%p)%d out(%p,%p)%d\n",
-           info->inbuf, info->inptr, insize,
-           info->outbuf, info->outptr, outroom);
-    
-    /* fill the input buffer */
-    nread = Scm_Getz(info->remote, info->inptr, info->bufsiz - insize);
+    /* Fill the input buffer.  There are some remaining bytes in the
+       inbuf from the last conversion (insize), so we try to fill the
+       rest. */
+    insize = info->inptr - info->inbuf, 
+    nread = Scm_Getz(info->inptr, info->bufsiz - insize, info->remote);
     if (nread <= 0) {
-        if (insize == 0) return 0; /* EOF */
+        if (insize == 0) return 0; /* All done. */
     } else {
         insize += nread;
     }
-    inroom = insize;
 
-    /* conversion */
+    /* Conversion. */
+    inroom = insize;
+    outroom = info->bufsiz;
+    fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
+            info->inbuf, info->inptr, insize,
+            info->outbuf, info->outptr, outroom);
+
     result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
 
-    printf("in(%p)%d out(%p)%d\n",
-           inbuf, inroom, outbuf, outroom);
+    fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
+           result, inbuf, inroom, outbuf, outroom);
     
     if (result == (size_t)-1) {
-        if (errno == EINVAL) {
-            /* conversion stopped due to an incomplete character at the
-               end of the input buffer. */
-            
-        } else if (errno == E2BIG) {
-            /* output buffer is full. */
+        if (errno == EINVAL || errno == E2BIG) {
+            /* Conversion stopped due to an incomplete character at the
+               end of the input buffer, or the output buffer is full.
+               We shift the unconverted bytes to the beginning of input
+               buffer. */
+            memmove(info->inbuf, info->inbuf+insize-inroom, inroom);
+            info->inptr = info->inbuf + inroom;
+            return info->bufsiz - outroom;
         } else {
-            /* it's likely that input contains invalid sequence. */
+            /* it's likely that input contains invalid sequence.
+               TODO: we should handle this case gracefully. */
+            Scm_Error("invalid character sequence in the input stream");
+            return 0;           /* dummy */
         }
     } else {
-        /* shift unconverted input bytes */
-        if (inroom > 0) {
-            memmove(info->inbuf, inbuf, inroom);
-            info->inptr = info->inbuf + inroom;
-        } else {
-            info->inptr = info->inbuf;
-        }
+        /* Conversion is done completely. */
+        SCM_ASSERT(inroom == 0);
+        info->inptr = info->inbuf;
         return info->bufsiz - outroom;
     }
-    return 0;
 }
 
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
@@ -128,9 +138,9 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     cinfo->handle = handle;
     cinfo->remote = fromPort;
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
-    cinfo->inbuf = SCM_NEW_ATOMIC2(char *, bufsiz);
+    cinfo->inbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->inptr = cinfo->inbuf;
-    cinfo->outbuf = SCM_NEW_ATOMIC2(char *, bufsiz);
+    cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->outptr = cinfo->outbuf;
     
     return Scm_MakeBufferedPort(SCM_PORT_INPUT, cinfo->bufsiz, 0,

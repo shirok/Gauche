@@ -20,6 +20,9 @@ HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+TESTTXTS = test.1.euc-jp test.1.sjis test.1.utf-8 test.1.iso2022jp
+
+
 all : $(TARGET)
 
 charconv.so : $(OBJS)
@@ -29,6 +32,7 @@ convlib.c : convlib.stub
 	$(GOSH) genstub convlib.stub
 
 test : all
+	@cd data; make all
 	@rm -f test.log
 	$(GOSH) test.scm > test.log
 
@@ -54,10 +58,9 @@ clean :
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+	cd data; $(MAKE) distclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure
-
-
-
+	cd data; $(MAKE) realclean
 

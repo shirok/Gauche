@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h,v 1.3 2001-05-26 09:55:53 shirok Exp $
+ *  $Id: charconv.h,v 1.4 2001-06-04 03:59:57 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+extern int Scm_ConversionSupportedP(const char *from, const char *to);
+    
 extern ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                           ScmString *fromCode,
                                           ScmString *toCode,
