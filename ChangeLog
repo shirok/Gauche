@@ -1,3 +1,20 @@
+2001-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.5
+	* src/read.c: added #/.../ extention to embed literal regexp.
+	* src/regexp.c: the first version of regexp starts working.
+
+2001-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/*: finished the first version of uvector module.
+	* src/read.c (Scm_Read): added a hook function for srfi-4 extended
+	  syntax when uvector module is loaded.
+	* src/load.c (Scm_Load): added a second parameter that specifies
+	  whether an error should be signalled when the file is not found.
+	* ext/example/*.in: for "in-place" configuration, automatically
+	  give appropriate -I option to gosh.
+	* ext/Makefile: added uvector
+
 2001-04-12  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.4
