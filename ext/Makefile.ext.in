@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.18 2004-06-01 05:56:46 shirok Exp $
+## $Id: Makefile.ext.in,v 1.19 2004-08-01 11:09:33 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -13,10 +13,10 @@ VPATH       = $(srcdir)
 DESTDIR  =
 CC       = @CC@
 AR       = @AR@
-LIBS     = @LIBS@
-CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@
-CPPFLAGS = @CPPFLAGS@
-LDFLAGS  = @LOCAL_LIB@ @SHLIB_SO_LDFLAGS@
+LIBS     = $(XLIBS) @LIBS@ 
+CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@ $(XCFLAGS)
+CPPFLAGS = @CPPFLAGS@ $(XCPPFLAGS)
+LDFLAGS  = @LOCAL_LIB@ $(XLDFLAGS) @SHLIB_SO_LDFLAGS@
 
 # These are set by configure
 DEFS     = @DEFS@
@@ -47,7 +47,7 @@ LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
 DATA_INSTALL_DIR = @datadir@
 
-CLEANFILES = core *~ test.log test.out
+CLEANFILES = core *~ test.log test.out $(XCLEANFILES)
 
 .SUFFIXES:
 .SUFFIXES: .S .c .o .obj .s .stub
