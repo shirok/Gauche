@@ -1,6 +1,12 @@
-2002-05-26  Shiro Kawai  <shiro@acm.org>
+2002-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.5.5
+	* ext/mt-random : more fix for cygwin.  right now, some procedures that
+	  refer to uvector don't work on cygwin, because of DLL problem.
+	* src/compare.c : further improvement.
+
+2002-05-26  Shiro Kawai  <shiro@acm.org>
+
 	* ext/mt-random : fixed missing initialization code.
 	* src/compare.c : changed sort algorithm from simple quicksort to
 	  the hybrid of quicksort and heapsort.
