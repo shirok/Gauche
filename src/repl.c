@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: repl.c,v 1.30 2004-01-20 05:10:25 shirok Exp $
+ *  $Id: repl.c,v 1.31 2004-01-25 11:11:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -90,7 +90,11 @@ static ScmObj repl_eval_cc(ScmObj result, void **data)
     } else {
         ScmObj result = Scm_VMGetResult(vm), cp;
         SCM_FOR_EACH(cp, result) {
+#if 0
             Scm_Write(SCM_CAR(cp), SCM_OBJ(SCM_CUROUT), SCM_WRITE_WRITE);
+#else
+            Scm_WriteCircular(SCM_CAR(cp), SCM_OBJ(SCM_CUROUT), SCM_WRITE_WRITE, 0);
+#endif
             Scm_Putc('\n', SCM_CUROUT);
         }
         Scm_Flush(SCM_CUROUT);

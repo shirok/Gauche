@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.4 2004-01-19 23:14:32 shirok Exp $
+;;; $Id: autoloads.scm,v 1.5 2004-01-25 11:11:25 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.4 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.5 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -148,6 +148,7 @@
           enable-debug disable-debug (:macro debug-print))
 
 (autoload srfi-0 (:macro cond-expand))
+(autoload srfi-7 (:macro program))
 (autoload srfi-26 (:macro cut) (:macro cute))
 (autoload srfi-31 (:macro rec))
 

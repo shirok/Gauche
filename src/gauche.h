@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.361 2004-01-20 05:10:25 shirok Exp $
+ *  $Id: gauche.h,v 1.362 2004-01-25 11:11:41 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1367,7 +1367,7 @@ enum {
 #define SCM_WRITE_CASE(ctx)   ((ctx)->mode & SCM_WRITE_CASE_MASK)
 
 SCM_EXTERN void Scm_Write(ScmObj obj, ScmObj port, int mode);
-SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width);
+SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width);
 SCM_EXTERN int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);
 SCM_EXTERN ScmObj Scm_Format(ScmObj port, ScmString *fmt, ScmObj args);
 SCM_EXTERN ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...);
@@ -1674,6 +1674,8 @@ SCM_EXTERN ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper);
 
 SCM_EXTERN long   Scm_BignumToSI(ScmBignum *b);
 SCM_EXTERN u_long Scm_BignumToUI(ScmBignum *b);
+SCM_EXTERN long   Scm_BignumToSICheck(ScmBignum *b);
+SCM_EXTERN u_long Scm_BignumToUICheck(ScmBignum *b);
 SCM_EXTERN double Scm_BignumToDouble(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_NormalizeBignum(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumNegate(ScmBignum *b);
@@ -1728,8 +1730,10 @@ struct ScmComplexRec {
 
 SCM_EXTERN ScmObj Scm_MakeInteger(long i);
 SCM_EXTERN ScmObj Scm_MakeIntegerFromUI(u_long i);
-SCM_EXTERN long Scm_GetInteger(ScmObj obj);
+SCM_EXTERN long   Scm_GetInteger(ScmObj obj);
 SCM_EXTERN u_long Scm_GetUInteger(ScmObj obj);
+SCM_EXTERN long   Scm_GetIntegerCheck(ScmObj obj);
+SCM_EXTERN u_long Scm_GetUIntegerCheck(ScmObj obj);
 
 SCM_EXTERN ScmObj Scm_MakeFlonum(double d);
 SCM_EXTERN double Scm_GetDouble(ScmObj obj);

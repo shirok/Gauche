@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-13/revapp - string library (reverse, append)
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: revapp.scm,v 1.5 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: revapp.scm,v 1.6 2004-01-25 11:11:24 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -52,11 +52,28 @@
     (let ((rev (apply string-reverse s args)))
       (string-substitute! s start rev))))
 
-(define (string-concatenate list)
-  (apply string-append list)) ;; fixme
+(define (string-concatenate lis)
+  (cond
+   ((null? lis) "")
+   ((not (pair? lis))
+    (error "string-concatenate: argument ouf of domain:" lis))
+   ((and (null? (cdr lis)) (string? (car lis)))
+    (string-copy (car lis)))
+   (else
+    (let loop ((l lis)
+               (out (open-output-string/private))
+               (incomplete? #f))
+      (if (pair? l)
+        (let ((e (car l)))
+          (unless (string? e)
+            (error "string-concatenate: argument contains non-string:" e))
+          (display e out)
+          (loop (cdr l) out (or incomplete? (string-incomplete? e))))
+        (if incomplete?
+          (string-complete->incomplete (get-output-string out))
+          (get-output-string out)))))))
 
-(define (string-concatenate/shared list)
-  (apply string-append list)) ;; fixme
+(define string-concatenate/shared string-concatenate)
 
 (define string-append/shared string-append)
 

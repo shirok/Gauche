@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.427 2004-01-19 22:28:35 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.428 2004-01-25 11:09:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -41,7 +41,7 @@
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2001-2003 Shiro Kawai (shiro@@acm.org)
+Copyright @copyright{} 2001-2004 Shiro Kawai (shiro@@acm.org)
 
 @end titlepage
 
@@ -71,14 +71,10 @@ Gaucheのバージョン@VERSION@に対応します。
 * Library modules - Utilities::  
 * References::                  
 * C to Scheme mapping::         
-* Indices::                     
-
-@detailmenu
 * Function and Syntax Index::   
 * Module Index::                
 * Class Index::                 
 * Variable Index::              
-@end detailmenu
 @end menu
 
 @include intro.texi
@@ -94,8 +90,10 @@ Gaucheのバージョン@VERSION@に対応します。
 @include modutil.texi
 @include references.texi
 @include mapping.texi
-@include index.texi
-
+@include indexfn.texi
+@include indexmd.texi
+@include indexcl.texi
+@include indexvr.texi
 
 @contents
 @bye

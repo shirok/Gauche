@@ -44,6 +44,7 @@
 * SLIB-compatible record type::  (util.record)
 * Topological sort::            (util.toposort)
 * CGI Utility::                 (www.cgi)
+* CGI testing::                 (www.cgi-test)
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -9779,7 +9780,7 @@ If the graph contains circular reference, an error is signalled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CGI Utility,  , Topological sort, Library modules - Utilities
+@node CGI Utility, CGI testing, Topological sort, Library modules - Utilities
 @section @code{www.cgi} - CGI utility
 @c NODE CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
 
@@ -10101,3 +10102,121 @@ The following example shows the parameters given to the CGI program.
        ))))
 @end example
 @end defun
+
+@c ----------------------------------------------------------------------
+@node CGI testing,  , CGI Utility, Library modules - Utilities
+@section @code{www.cgi-test} - CGI testing
+
+@deftp {Module} www.cgi-test
+@mdindex www.cgi-test
+This module defines a useful procedures to test CGI script.
+The test actually runs the named script, with specified enviornment
+variable settings, and retrieve the output.  Your test procedure
+then examine whether the output is as expected or not.
+@end deftp
+
+@defun cgi-test-enviornment-ref envvar-name
+@defunx {(setter cgi-test-enviornment-ref)} envvar-name value
+The module keeps a table of default values of enviornment variables
+with which the cgi script will be run.  These procedures allow
+the programmer to get/set those default values.
+
+Note that you can override these default values and/or pass additional
+environment variables for each call of cgi script.
+
+The following environment variables are set by default.
+@multitable @columnfractions .5 .5
+@item Name @tab Value
+@item @code{SERVER_SOFTWARE}   
+@tab @code{cgitest/1.0}
+@item @code{SERVER_NAME}       
+@tab @code{localhost}
+@item @code{GATEWAY_INTERFACE} 
+@tab @code{CGI/1.1}
+@item @code{SERVER_PROTOCOL}   
+@tab @code{HTTP/1.1}
+@item @code{SERVER_PORT}       
+@tab @code{80}
+@item @code{REQUEST_METHOD}    
+@tab @code{GET}
+@item @code{REMOTE_HOST}       
+@tab @code{remote}
+@item @code{REMOTE_ADDR}       
+@tab @code{127.0.0.1}
+@end multitable
+@end defun
+
+@defun call-with-cgi-script script proc &keyword (environment ()) (parameters #f)
+Runs a script with given enviornment, and calls @var{proc} with
+one argument, an input port which is connected to the pipe of script's
+standard output.
+
+The argument @var{script} should be a list of 
+program name and its arguments.  Each element are
+passed to @code{x->string} first to stringify.
+
+The script is run under the enviornment given by @var{enviornment}
+variable and the default test environment described above.
+The @var{environment} argument must be an associative list, in which each
+key (@code{car}) is the name of the enviornment variable and
+its @code{cdr} is the value.  Both are passed to @code{x->string} first.
+If the same environment variable appears in @var{environment} and
+the default test enviornment, the one in @var{environment} is used.
+
+Additionally, if an associative list is given to the @var{parameters}
+argument, a query string is built from it and passed the script.
+The actual method to pass the query string depends on the value
+of @code{REQUEST_METHOD} environment variable in hte setting.
+If @code{REQUEST_METHOD} is either @code{GET} or @code{HEAD},
+the query string is put in an environment variable @code{QUERY_STRING}.
+If it is @code{POST}, the query string is fed to the standard
+input of the script.  In the latter case, @code{CONTENT_TYPE}
+is set to @code{application/x-www-form-urlencoded} and
+@code{CONTENT_LENGTH} are set to the length of @code{QUERY_STRING}
+automatically.  If @code{REQUEST_METHOD} is other values,
+@var{parameters} is ignored.
+You can bypass this mechanism and set up enviornment variable
+@code{QUERY_STRING} directly, if you wish.
+@end defun
+
+@defun run-cgi-script->header&body script reader &keyword environment parameters
+A convenient wrapper of @code{call-with-cgi-script}.
+The @var{script}, @var{environment} and @var{parameters} are passed
+to @code{call-with-cgi-script} as they are.
+The output of the script is parsed by 
+@code{run-cgi-script->header&body}.  
+First, the RFC2822 header fields are parsed by 
+@code{rfc822-header->list} (@xref{RFC822 message parsing}).
+Then, the @var{reader} is called with an input port which
+is piped to the script's output.
+
+@code{Run-cgi-script->header&body} returns two values,
+the list of headers (as parsed by @code{rfc822-header->list}),
+and the return value of @var{reader}.
+@end defun
+
+
+@defun run-cgi-script->sxml script &keyword environment parameters
+This is a procedure that uses @code{ssax:xml->sxml}
+(@xref{Functional XML parser}) as the @var{reader}
+in @code{run-cgi-script->header&body}.  
+Useful when you're testing a cgi script that produces
+well-formed HTML and/or XML document.
+@end defun
+
+@defun run-cgi-script->string script &keyword environment parameters
+@defunx run-cgi-script->string-list script &keyword environment parameters
+These procedures use @code{port->string} 
+and @code{port->string-list}
+(@xref{Input utility functions}) as the @var{reader}
+in @code{run-cgi-script->header&body}, respectively.
+@end defun
+
+An example:
+@example
+(run-cgi-script->string-list "bbs.cgi"
+                             :environment '((REMOTE_ADDR . "12.34.56.78"))
+                             :parameters '((command . "view")
+                                           (page . 1234)))
+@end example
+

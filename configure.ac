@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.23 2003-12-18 01:52:40 shirok Exp $
+dnl $Id: configure.ac,v 1.24 2004-01-25 11:09:11 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.3, shiro@acm.org)
-AC_REVISION($Revision: 1.23 $)
+AC_REVISION($Revision: 1.24 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -197,7 +197,7 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h glob.h dlfcn.h stdint.h getopt.h sched.h unistd.h)
-AC_CHECK_HEADERS(rpc/types.h)
+AC_CHECK_HEADERS(inttypes.h rpc/types.h)
 AC_CHECK_HEADERS(syslog.h)
 AC_CHECK_HEADERS(pty.h util.h libutil.h)
 
@@ -217,6 +217,7 @@ AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_TYPES([struct timespec])
+
 dnl Checks non-POSIX members of system structure
 AC_CACHE_CHECK(struct group has gr_passwd, ac_cv_struct_gr_passwd, [
 AC_TRY_COMPILE([#include <grp.h>], [

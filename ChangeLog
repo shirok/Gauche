@@ -1,3 +1,29 @@
+2004-01-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi-test.scm : documented officially.
+
+	* src/gauche.h, src/number.c (Scm_GetIntegerCheck etc), src/bignum.c
+	  (Scm_BignumToSICheck etc): added boundary-checking integer
+	  extraction primitives.
+
+2004-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* doc/*.texi : reorganized a bit.  Made each index to an individual
+	  appendix, so texinfo-multiple-files-update won't mangle the toplevel
+	  menu.
+	
+	* lib/srfi-7.scm (program) : added srfi-7 support
+	* lib/srfi-29.scm, lib/srfi-29/bundle.scm, lib/srfi-29/format.scm:
+	  added srfi-29 support
+	* above two changes are based on the code form Alex Shinn.
+	* lib/srfi-0.scm : updated accordingly.
+	
+	* lib/srfi-13/revapp.scm (string-concatenate): made it robust for
+	  long list.
+	* lib/rfc/mime.scm (mime-retrieve-body): use string-port for
+	  intermediate buffer.
+	* above two changes are based on the patch from Tatsuya BIZENN.
+	
 2004-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c, src/gauche.h (Scm_ReadReference) : added support of

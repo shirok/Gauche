@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.103 2003-11-21 20:22:45 shirok Exp $
+ *  $Id: number.c,v 1.104 2004-01-25 11:11:43 shirok Exp $
  */
 
 #include <math.h>
@@ -336,6 +336,35 @@ u_long Scm_GetUInteger(ScmObj obj)
     else if (SCM_BIGNUMP(obj)) return Scm_BignumToUI(SCM_BIGNUM(obj));
     else if (SCM_FLONUMP(obj)) return (u_long)SCM_FLONUM_VALUE(obj);
     else return 0;
+}
+
+/* Convert scheme integer to C integer, checking overflow */
+long Scm_GetIntegerCheck(ScmObj obj)
+{
+    if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
+    else if (SCM_BIGNUMP(obj)) return Scm_BignumToSICheck(SCM_BIGNUM(obj));
+    else if (SCM_FLONUMP(obj)) {
+        double v = SCM_FLONUM_VALUE(obj);
+        if (v < (double)LONG_MAX && v >= (double)LONG_MIN) {
+            return (long)v;
+        }
+    }
+    Scm_Error("argument out of range: %S", obj);
+    return 0; /* dummy */
+}
+
+u_long Scm_GetUIntegerCheck(ScmObj obj)
+{
+    if (SCM_INTP(obj) && SCM_INT_VALUE(obj) >= 0) return SCM_INT_VALUE(obj);
+    else if (SCM_BIGNUMP(obj)) return Scm_BignumToUICheck(SCM_BIGNUM(obj));
+    else if (SCM_FLONUMP(obj)) {
+        double v = SCM_FLONUM_VALUE(obj);
+        if (v < (double)ULONG_MAX && v >= 0.0) {
+            return (u_long)v;
+        }
+    }
+    Scm_Error("argument out of range: %S", obj);
+    return 0; /* dummy */
 }
 
 double Scm_GetDouble(ScmObj obj)

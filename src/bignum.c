@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.52 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: bignum.c,v 1.53 2004-01-25 11:11:37 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -262,6 +262,22 @@ long Scm_BignumToSI(ScmBignum *b)
     }
 }
 
+/* ... with check */
+long Scm_BignumToSICheck(ScmBignum *b) 
+{
+    if (b->sign >= 0) {
+        if (b->size <= 1 && b->values[0] < LONG_MAX) {
+            return (long)b->values[0];
+        }
+    } else {
+        if (b->size <= 1 && b->values[0] < (u_long)LONG_MAX+1) {
+            return -(long)b->values[0];
+        }
+    }
+    Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    return 0; /* dummy */
+}
+
 /* b must be normalized.  result is rounded between [0, ULONG_MAX] */
 u_long Scm_BignumToUI(ScmBignum *b) 
 {
@@ -274,6 +290,18 @@ u_long Scm_BignumToUI(ScmBignum *b)
     } else {
         return 0;
     }
+}
+
+/* ... with check */
+u_long Scm_BignumToUICheck(ScmBignum *b) 
+{
+    if (b->sign >= 0) {
+        if (b->size <= 1) {
+            return b->values[0];
+        }
+    }
+    Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    return 0; /* dummy */
 }
 
 double Scm_BignumToDouble(ScmBignum *b) /* b must be normalized */

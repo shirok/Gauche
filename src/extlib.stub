@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.212 2004-01-20 05:10:25 shirok Exp $
+;;; $Id: extlib.stub,v 1.213 2004-01-25 11:11:40 shirok Exp $
 ;;;
 
 "
@@ -913,7 +913,7 @@
   SCM_RETURN(SCM_MAKE_INT(n));")
 
 (define-cproc write* (obj &optional (port (current-output-port)))
-  "  int n = Scm_WriteCircular(obj, SCM_PORT(port), SCM_WRITE_WRITE, 0);
+  "  int n = Scm_WriteCircular(obj, port, SCM_WRITE_WRITE, 0);
   SCM_RETURN(SCM_MAKE_INT(n));")
 
 ;;

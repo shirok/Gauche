@@ -1,7 +1,7 @@
 ;;;
 ;;; mime.scm - parsing MIME (rfc2045) message
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.5 2003-12-16 06:05:19 shirok Exp $
+;;;  $Id: mime.scm,v 1.6 2004-01-25 11:11:22 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -245,13 +245,17 @@
         (loop (reader inp) #t))))
 
   (define (read-base64)
-    (let ((lines (port->list reader inp)))
-      (with-output-to-port outp
-        (lambda ()
-          (with-input-from-string (string-concatenate lines)
-            (lambda ()
-              (with-port-locking (current-input-port)
-                base64-decode)))))))
+    (define (base64-output string out)
+      (with-input-from-string string
+        (cut with-port-locking (current-input-port)
+             (cut with-output-to-port out base64-decode))))
+    (let ((buf (open-output-string/private)))
+      (let loop ((line (reader inp)))
+	(unless (eof-object? line)
+          (display line buf)
+          (loop (reader inp))))
+      (base64-output (get-output-string buf) outp))
+    )
 
   (with-port-locking inp
     (lambda ()

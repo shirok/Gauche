@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.18 2004-01-20 23:29:45 fuyuki Exp $
+;;; $Id: srfi-0.scm,v 1.19 2004-01-25 11:11:21 shirok Exp $
 ;;;
 
 (define-module srfi-0
@@ -10,24 +10,31 @@
 
 ;;; The following features are supported in all Gauche versions.
 ;;;
-;;;   srfi-0, srfi-1, srfi-2, srfi-4, srfi-6, srfi-8,
-;;;   srfi-9, srfi-11, srfi-13, srfi-14, srfi-17, srfi-18, srfi-19,
-;;;   srfi-22, srfi-23, srfi-25, srfi-27, srfi-28, srfi-30,
-;;;   srfi-31,  gauche
+;;;   srfi-0, srfi-1, srfi-2, srfi-4, srfi-5, 
+;;;   srfi-6, srfi-7, srfi-8, srfi-9, srfi-10,
+;;;   srfi-11, srfi-13, srfi-14, 
+;;;   srfi-16, srfi-17, srfi-18, srfi-19,
+;;;   srfi-22, srfi-23, srfi-25, 
+;;;   srfi-26, srfi-27, srfi-28, srfi-29, srfi-30,
+;;;   srfi-31,
+;;;   srfi-37, srfi-39
+;;;   gauche
 ;;;
 
 (define-syntax cond-expand
   (syntax-rules (and or not else gauche
                  srfi-0  srfi-1  srfi-2  srfi-3  srfi-4
-                 srfi-5  srfi-6  srfi-8  srfi-9  srfi-10
-                 srfi-11 srfi-12 srfi-13 srfi-14 srfi-15
-                 srfi-16 srfi-17 srfi-18 srfi-19 srfi-20
-                 srfi-21 srfi-22 srfi-23 srfi-24 srfi-25
-                 srfi-26 srfi-27 srfi-28 srfi-29 srfi-30
-                 srfi-31 srfi-32 srfi-33 srfi-34 srfi-35
-                 srfi-36 srfi-37 srfi-38 srfi-39 srfi-40
-                 srfi-41 srfi-42 srfi-43 srfi-44 srfi-45
-                 srfi-46 srfi-47 srfi-48 srfi-49 srfi-50
+                 srfi-5  srfi-6  srfi-7  srfi-8  srfi-9
+                 srfi-10 srfi-11 srfi-12 srfi-13 srfi-14
+                 srfi-15 srfi-16 srfi-17 srfi-18 srfi-19
+                 srfi-20 srfi-21 srfi-22 srfi-23 srfi-24
+                 srfi-25 srfi-26 srfi-27 srfi-28 srfi-29
+                 srfi-30 srfi-31 srfi-32 srfi-33 srfi-34
+                 srfi-35 srfi-36 srfi-37 srfi-38 srfi-39
+                 srfi-40 srfi-41 srfi-42 srfi-43 srfi-44
+                 srfi-45 srfi-46 srfi-47 srfi-48 srfi-49
+                 srfi-50 srfi-51 srfi-52 srfi-53 srfi-54
+                 srfi-55 srfi-56 srfi-57 srfi-58 srfi-59
                  )
     ((cond-expand) (error "Unfulfilled cond-expand"))
 
@@ -71,6 +78,8 @@
      (begin (use srfi-5) body ...))
     ((cond-expand (srfi-6 body ...) more-clauses ...)
      (begin body ...))
+    ((cond-expand (srfi-7 body ...) more-clauses ...)
+     (begin body ...))
     ((cond-expand (srfi-8 body ...) more-clauses ...)
      (begin body ...))
     ((cond-expand (srfi-9 body ...) more-clauses ...)
@@ -103,6 +112,8 @@
      (begin (use srfi-27) body ...))
     ((cond-expand (srfi-28 body ...) more-clauses ...)
      (begin body ...))
+    ((cond-expand (srfi-29 body ...) more-clauses ...)
+     (begin (use srfi-29) body ...))
     ((cond-expand (srfi-30 body ...) more-clauses ...)
      (begin body ...))
     ((cond-expand (srfi-31 body ...) more-clauses ...)

@@ -1,0 +1,5 @@
+@node Variable Index, , Class Index, Top
+@appendix Variable Index
+@c NODE Index - ÊÑ¿ôº÷°ú
+@printindex vr
+

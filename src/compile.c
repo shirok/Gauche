@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.106 2004-01-20 05:10:25 shirok Exp $
+ *  $Id: compile.c,v 1.107 2004-01-25 11:11:38 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -523,6 +523,10 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx, int *depth)
         void *data;
         int headdepth = 0;
 
+        if (Scm_Length(form) < 0) {
+            Scm_Error("improper list can't be evaluated: %S", form);
+        }
+
         if (VAR_P(head)) {
             ScmObj var = lookup_env(head, env, TRUE);
 
@@ -897,7 +901,6 @@ static ScmSyntax syntax_set = {
  */
 
 /* Common routine for lambda, let-family and begin, to compile its body.
- * Assumes FORM is a proper list.
  */
 static ScmObj compile_body(ScmObj form, ScmObj env,
                            int ctx, int *depth)
@@ -906,6 +909,10 @@ static ScmObj compile_body(ScmObj form, ScmObj env,
     ScmObj idef_vars = SCM_NIL, idef_vars_tail = SCM_NIL, idef_save = SCM_NIL;
     ScmObj idef_vals = SCM_NIL, idef_vals_tail = SCM_NIL;
     int idefs = 0, body_started = 0, maxdepth = 0, subdepth;
+
+    if (Scm_Length(form) < 0) {
+        Scm_Error("body must be a proper list, but got %S", form);
+    }
 
     *depth = 0;
     for (formtail = form; SCM_PAIRP(formtail); ) {

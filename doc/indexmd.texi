@@ -1,0 +1,4 @@
+@node Module Index, Class Index, Function and Syntax Index, Top
+@appendix Module Index
+@c NODE Index - モジュール索引
+@printindex md

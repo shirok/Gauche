@@ -16,6 +16,10 @@ TEXIS = concepts.texi      \
 	corelib.texi       \
 	coresyn.texi       \
 	gauche-ref.texi    \
+	indexcl.texi       \
+	indexfn.texi       \
+	indexmd.texi       \
+	indexvr.texi       \
 	intro.texi         \
 	libgauche-ref.texi \
 	macro.texi         \

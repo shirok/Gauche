@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.32 2004-01-19 23:13:04 shirok Exp $
+;; $Id: srfi.scm,v 1.33 2004-01-25 11:11:56 shirok Exp $
 
 (use gauche.test)
 
@@ -481,6 +481,92 @@
   )
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-7")
+
+;; NB: srfi-7 is a "meta-language".   The 'program' form doesn't need
+;; to be evaluated within Scheme---an implementation can use a preprocessor
+;; to produce an evaluatable form from the 'program' form.
+;; Gauche directly expands it within the macro processor and evaluates it.
+;;
+;; These tests also relies on how Gauche compiles the empty begin form.
+;; See the notes in lib/srfi-7.scm for the details.
+
+(sys-system "rm -rf test.o")
+(sys-system "mkdir test.o")
+(with-output-to-file "test.o/a.scm"
+  (lambda ()
+    (write '(define x 3))))
+(with-output-to-file "test.o/b.scm"
+  (lambda ()
+    (write '(define (y) (+ x x)))))
+
+(test* "program (empty)" 'ok
+       (begin (eval '(program) (make-module #f))
+              'ok))
+
+(test* "program (requires, code)" #t
+       (eval '(program
+               (requires srfi-1)
+               (code (procedure? list-tabulate)))
+             (make-module #f)))
+(test* "program (requires, multiple code)" '(1 2 1)
+       (eval '(program
+               (requires srfi-1)
+               (code (define foo (circular-list 1 2)))
+               (requires srfi-2)
+               (code (and-let* ((x (circular-list? foo)))
+                       (take foo 3))))
+             (make-module #f)))
+(test* "program (requires, no such feature)" *test-error*
+       (eval '(program
+               (requires no-such-feature))
+             (make-module #f)))
+(test* "program (files (empty))" 3
+       (eval '(program
+               (files)
+               (code (+ 1 2)))
+             (make-module #f)))
+(test* "program (files)" 6
+       (eval '(program
+               (files "./test.o/a")
+               (files "./test.o/b")
+               (code (y)))
+             (make-module #f)))
+(test* "program (files (multi))" 6
+       (eval '(program
+               (files "./test.o/a" "./test.o/b")
+               (code (y)))
+             (make-module #f)))
+(test* "program (feature-cond)" 2
+       (eval '(program
+               (feature-cond
+                ((and srfi-1 srfi-2) (code (define x 1)))
+                (else (code (define x 2))))
+               (code (+ x x)))
+             (make-module #f)))
+(test* "program (feature-cond)" 4
+       (eval '(program
+               (feature-cond
+                ((and srfi-1 no-such-feature) (code (define x 1)))
+                (else (code (define x 2))))
+               (code (+ x x)))
+             (make-module #f)))
+(test* "program (feature-cond)" 6
+       (eval '(program
+               (feature-cond
+                ((or srfi-1 no-such-feature) (code (define x 3)))
+                (else (code (define x 2))))
+               (code (+ x x)))
+             (make-module #f)))
+(test* "program (feature-cond w/o else)" *test-error*
+       (eval '(program
+               (feature-cond
+                ((not srfi-1) (code (define x 5)))))
+             (make-module #f)))
+
+(sys-system "rm -rf test.o")
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-9")
 (use srfi-9)
 (test-module 'srfi-9)
@@ -741,6 +827,7 @@
 
 (test* "string-append" #f
        (let ((s "test")) (eq? s (string-append s))))
+(test* "string-concatenate" "" (string-concatenate '()))
 (test* "string-concatenate" #f
        (let ((s "test")) (eq? s (string-concatenate (list s)))))
 (test* "string-concatenate" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -751,6 +838,9 @@
           "a" "b" "c" "d" "e" "f" "g" "h"
           "i" "j" "k" "l" "m" "n" "o" "p"
           "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")))
+(test* "string-concatenate (long list)" #t
+       (string=? (make-string 20000 #\a)
+                 (string-concatenate (make-list 20000 "a"))))
 (test* "string-concatenate/shared" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
        (string-concatenate/shared
         '("A" "B" "C" "D" "E" "F" "G" "H"
@@ -1505,6 +1595,52 @@
          (map (cute + (begin (set! a (+ a 1)) a) <>)
               '(1 2))
          a))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-29")
+
+(define-module srfi-29-test
+  (use srfi-29)
+  (use gauche.test)
+  (test-module 'srfi-29)
+
+  ;; test taken from the example of srfi-29 document.
+  (let ((translations
+         '(((en) . ((time . "Its ~a, ~a.")
+                    (goodbye . "Goodbye, ~a.")))
+           ((fr) . ((time . "~1@*~a, c'est ~a.")
+                    (goodbye . "Au revoir, ~a."))))))
+    (for-each (lambda (translation)
+                (let ((bundle-name (cons 'hello-program (car translation))))
+                  (if (not (load-bundle! bundle-name))
+                    (begin
+                      (declare-bundle! bundle-name (cdr translation))
+                      (store-bundle! bundle-name)))))
+              translations))
+
+  (define localized-message
+    (lambda (message-name . args)
+      (apply format (cons (localized-template 'hello-program
+                                              message-name)
+                          args))))
+
+  (let ((myname "Fred"))
+    (test* "localized-message (en)"
+           '("Its 12:00, Fred."  "Goodbye, Fred.")
+           (begin
+             (current-language 'en)
+             (current-country 'us)
+             (list (localized-message 'time "12:00" myname)
+                   (localized-message 'goodbye myname))))
+
+    (test* "localized-message (fr)"
+           '("Fred, c'est 12:00."  "Au revoir, Fred.")
+           (begin
+             (current-language 'fr)
+             (current-country 'fr)
+             (list (localized-message 'time "12:00" myname)
+                   (localized-message 'goodbye myname))))
+    ))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-30")

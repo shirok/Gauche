@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.109 2004-01-19 22:31:09 shirok Exp $
+#  $Id: Makefile.in,v 1.110 2004-01-25 11:11:18 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place clean distclean \
         maintainer-clean
@@ -25,15 +25,15 @@ SLIB_DIR        = @SLIB_DIR@
 CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
-           srfi-1 srfi-13 srfi-14 srfi-19 binary dbm math util compat \
-	   file rfc text www
+           srfi-1 srfi-13 srfi-14 srfi-19 srfi-29 \
+           binary dbm math util compat file rfc text www
 
 SCMFILES = srfi-0.scm \
        srfi-1.scm srfi-1/cat.scm srfi-1/filter.scm srfi-1/finder.scm \
        srfi-1/folder.scm srfi-1/generator.scm srfi-1/mapper.scm \
        srfi-1/nary.scm srfi-1/nth.scm srfi-1/pred.scm srfi-1/selector.scm \
        srfi-1/set.scm srfi-1/zipper.scm \
-       srfi-2.scm srfi-4.scm srfi-5.scm srfi-9.scm srfi-11.scm \
+       srfi-2.scm srfi-4.scm srfi-5.scm srfi-7.scm srfi-9.scm srfi-11.scm \
        srfi-13.scm srfi-13/casemap.scm srfi-13/comparer.scm \
        srfi-13/filter.scm srfi-13/folder.scm srfi-13/generator.scm \
        srfi-13/internal.scm srfi-13/kmp.scm srfi-13/misc.scm srfi-13/hash.scm \
@@ -41,7 +41,9 @@ SCMFILES = srfi-0.scm \
        srfi-13/rotator.scm srfi-13/searcher.scm srfi-13/selector.scm \
        srfi-14.scm srfi-14/query.scm srfi-14/set.scm \
        srfi-19.scm srfi-19/format.scm srfi-19/read-tai.scm \
-       srfi-26.scm srfi-27.scm srfi-31.scm srfi-37.scm \
+       srfi-26.scm srfi-27.scm \
+       srfi-29.scm srfi-29/bundle.scm srfi-29/format.scm \
+       srfi-31.scm srfi-37.scm \
        slib.scm	 \
        gauche/object.scm gauche/redefutil.scm gauche/test.scm \
        gauche/macroutil.scm gauche/listutil.scm gauche/stringutil.scm \

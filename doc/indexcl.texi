@@ -1,0 +1,8 @@
+@node Class Index, Variable Index, Module Index, Top
+@appendix Class Index
+@c NODE Index - クラス索引
+
+For readability, the surrounding @code{<} and @code{>} are stripped off.
+
+@printindex cl
+

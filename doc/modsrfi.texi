@@ -21,12 +21,14 @@ of supported SRFIs.
 * And-let*::                    (srfi-2)
 * Homogeneous vectors::         (srfi-4)
 * A compatible let form with signatures and rest arguments::  (srfi-5)
+* Feature-based program configuration language:: (srfi-7)
 * Record types::                (srfi-9)
 * Let-values::                  (srfi-11)
 * String library::              (srfi-13)
 * Character-set library::       (srfi-14)
 * Time data types and procedures::  (srfi-19)
 * Sources of random bits::      (srfi-27)
+* Localization::                (srfi-29)
 * A program argument processor::  (srfi-37)
 @end menu
 
@@ -1529,7 +1531,7 @@ SRFI-4は、@code{gauche.uvector}モジュールとして実装されています。
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node A compatible let form with signatures and rest arguments, Record types, Homogeneous vectors, Library modules - SRFIs
+@node A compatible let form with signatures and rest arguments, Feature-based program configuration language, Homogeneous vectors, Library modules - SRFIs
 @section @code{srfi-5} - A compatible let form with signatures and rest arguments
 @c NODE シグネチャとrest引数に互換性のあるlet形式, @code{srfi-5} - シグネチャとrest引数に互換性のあるlet形式
 
@@ -1558,7 +1560,96 @@ See SRFI-5 document for rationale of this extension.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Record types, Let-values, A compatible let form with signatures and rest arguments, Library modules - SRFIs
+@node Feature-based program configuration language, Record types, A compatible let form with signatures and rest arguments, Library modules - SRFIs
+@section @code{srfi-7} - Feature-based program configuration language
+
+@deftp {Module} srfi-7
+@mdindex srfi-7
+This module provides a program configuration metalanguage
+(@code{program} form) defined in srfi-7.
+
+Gauche autoloads srfi-7 module, so you don't need
+to say @code{(use srfi-7)} explicitly.
+
+Note that the @code{program} form isn't necessary to be a
+Scheme expression.  Srfi-7 allows an implementation to preprocess
+the @code{program} form to produce a Scheme program, then
+executes it with different means.
+
+Gauche implements @code{program} form as a macro, so it can
+evaluates the form directly.  Nonetheless, it doesn't make sense
+to mix @code{program} form and other forms in one file,
+or expecting a return value of @code{program} form.
+
+A typical usage of @code{program} form is to prepare a single
+file which just contains @code{program} form.  (It can load
+other files using @code{files} clause (see below) within the
+@code{program} form.)   To execute such a program file in Gauche,
+you can just load it.
+@end deftp
+
+@deffn {Configuration Language} program program-clause program-clause2 @dots{}
+[SRFI-7] 
+This is a configuration language to structure a Scheme program,
+based on availability of the features.
+
+A Scheme program is constructed from the @code{program} form.
+Gauche evaluates the constructed Scheme program on-the-fly.
+
+Each @var{program-clause} needs to be one of the "Program Clauses" below.
+@end deffn
+
+@deffn {Program Clause} requires feature-id feature-id2 @dots{}
+[SRFI-7] 
+The @var{feature-id}'s are the same as @code{srfi-0}'s
+(@xref{Feature conditional}).
+It tells that the following code requires these @var{feature-id}'s.
+
+If a feature-id which is not supported in Gauche is given,
+an error is signaled.
+@end deffn
+
+@deffn {Program Clause} files filename @dots{}
+[SRFI-7] 
+Inserts the content of the @var{filename}s into a program.
+In Gauche, this clause just causes @var{filename}s to be loaded
+into the current module.
+@end deffn
+
+@deffn {Program Clause} code scheme-expression @dots{}
+[SRFI-7] 
+The @var{scheme-expression}s are inserted into a program.
+@end deffn
+
+@deffn {Program Clause} feature-cond clause clause2 @dots{}
+[SRFI-7] 
+@var{Clause} is a following form:
+
+@example
+(@var{requirement} @var{program-clause} @var{program-clause2} @dots{})
+@end example
+
+Where @var{requirement} should be one of the following:
+@itemize @bullet
+@item
+@var{feature-id}
+@item
+@code{(and @var{requirement} @dots{})}
+@item
+@code{(or @var{requirement} @dots{})}
+@item
+@code{(not @var{requirement})}
+@end itemize
+
+The requirement of the last @var{clause} may be @code{else}.
+
+Gauche checks each @var{requirement} one by one, and if it finds
+a fulfilled @var{requirement}, inserts the @var{program-clause}s
+in that @var{clause} into the program.
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Record types, Let-values, Feature-based program configuration language, Library modules - SRFIs
 @section @code{srfi-9} - Record types
 @c NODE レコード型, @code{srfi-9} - レコード型
 
@@ -3318,7 +3409,7 @@ UTC 形式から様々な様式の日付/時間に変換します。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Sources of random bits, A program argument processor, Time data types and procedures, Library modules - SRFIs
+@node Sources of random bits, Localization, Time data types and procedures, Library modules - SRFIs
 @section @code{srfi-27} - Sources of Random Bits
 @c NODE ランダムビットのソース, @code{srfi-27} - ランダムビットのソース
 
@@ -3470,7 +3561,131 @@ generates will be quantized by the given @var{unit}, where
 @end defun
 
 @c ----------------------------------------------------------------------
-@node A program argument processor,  , Sources of random bits, Library modules - SRFIs
+@node Localization, A program argument processor, Sources of random bits, Library modules - SRFIs
+@section @code{srfi-29} - Localization
+
+@deftp {Module} srfi-29
+@mdindex srfi-29
+@mdindex srfi-29.bundle
+@mdindex srfi-29.format
+This module implements the message localization mechanism
+defined in SRFI-29.
+
+In fact, this module consists of two submodules, 
+@code{srfi-29.bundle} and @code{srfi-29.format}.
+The module @code{srfi-29} extends both submodules.
+It is because srfi-29's definition of the @code{format}
+procedure is incompabile to Gauche's native @code{format}
+(thus Common Lisp's @code{format}) in the handling of 
+@code{~@@*} directive.
+
+So I splitted the module into two, @code{srfi-29.format}
+which contains srfi-29's @code{format}, and @code{srfi-29.bundle}
+which contains the rest ("bundle" API).
+If a program wish a complete compatibility of
+srfi-29, use @code{srfi-29} module, which overrides
+Gauche's native @code{format}.   If a program just want
+srfi-29's "bundle" API, but want to keep Gauche's @code{format},
+use @code{srfi-29.bundle}.
+
+A similar feature is provided by @code{text.gettext} module,
+which is a preferable way of message localication in Gauche.
+This module is provided mainly for porting code that uses
+srfi-29 features.
+@end deftp
+
+@subheading Bundle specifier
+
+A @emph{bundle specifier} is an arbitrary list of symbols,
+but typically it takes the form like:
+@example
+@code{(@var{package} @var{language} @var{country} @var{details} @dots{})}
+@end example
+Where @var{package} specifies the software package,
+@var{language} and @var{country} specifies language and country code,
+and @var{details} gives other informations like encoding.
+
+The values for the default bundle specifier can be obtained
+by the following parameters.
+
+@deffn {Parameter} current-language
+@deffnx {Parameter} current-country
+@deffnx {Parameter} current-locale-details
+[SRFI-29]
+The @code{current-language} and @code{current-country} parameters
+keep the ISO 639-1 language code and ISO 3166-1 country code
+respectively, both as symbols.
+The @code{current-locale-details} keeps a list of auxiliary
+local informations, such as encodings.
+
+These parameters are initialized if @code{LANG} environment
+variable is set in the form of @code{lang_country.encoding} format.
+For example, if the @code{LANG} setting is @code{ja_JP.eucJP},
+those parameters are @code{ja}, @code{jp}, and @code{(eucjp)}, 
+respectively.   If @code{LANG} is @code{C} or undefined,
+the default values are @code{en}, @code{us}, and @code{()}, respectively.
+@end deffn
+
+@subheading Bundle preparation
+
+@defun declare-bundle! bundle-specifier association-list
+[SRFI-29]
+Put the association list of template key (symbol) and the locale-specific
+message (string) into the bundle database, with @var{bundle-specifier}
+as the key.
+@end defun
+
+Gauche currently supports only in-memory bundle database.
+That is, you have to call @code{declare-bundle!} within the application
+in order to lookup the localized messages.
+
+@defun save-bundle! bundle-specifier
+@defunx load-bundle! bundle-specifier
+[SRFI-29]
+Since Gauche doesn't support persistent bundle database yet,
+these procedures does nothing and returns @code{#f}.
+(It is still conforming behavior of srfi-29).
+@end defun
+
+@subheading Retrieving localized message
+
+@defun localized-template package-name message-template-name
+[SRFI-29]
+Retrieves localized message, associated with a symbol
+@var{message-template-name} in the package @var{package-name}.
+@end defun
+
+@subheading Extended format procedure
+
+@defun format format-string args
+[SRFI-29]
+SRFI-29 extends SRFI-28's @code{format} procedure spec
+(which supports @code{~a}, @code{~s}, @code{~%} and @code{~~} directives),
+in order to support argument repositioning.  
+
+A directive @code{~N@@*}, where N is an integer or can be omitted,
+causes the next directive to retrieve a value from @var{N}-th
+optional argument.  The referenced value isn't consumed,
+and won't affect the processing of subsequent directives.
+
+Although SRFI-28 spec is compatible to 
+Gauche's native @code{format} (@xref{Output}),
+this SRFI-29 extention isn't.
+Specifically, the @code{~N@@*} directive of Gauche's @code{format}
+changes the argument pointer to points @var{N}-th optional argument,
+thus it affects all the subsequent arugments.
+
+Because of this incompatibility, this function is defined in
+a separate module, @code{srfi-29.format}.  If you use @code{srfi-29},
+which extends @code{srfi-29.bundle} and @code{srfi-29.format},
+the @code{format} procedure will be overriden by srfi-29's @code{format}
+in your module.  If you want to keep Gauche's native @code{format},
+use @code{srfi-29.bundle} only.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node A program argument processor,  , Localization, Library modules - SRFIs
 @section @code{srfi-37} - args-fold: a program argument processor
 @c NODE args-fold プログラム引数処理, @code{srfi-37} - args-fold プログラム引数処理
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.41 2004-01-18 12:07:32 shirok Exp $
+ *  $Id: write.c,v 1.42 2004-01-25 11:11:45 shirok Exp $
  */
 
 #include <stdio.h>
@@ -353,13 +353,14 @@ static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     }
 }
 
-int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
+int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
 {
     ScmWriteContext ctx;
     int nc;
 
-    if (!SCM_OPORTP(port))
+    if (!SCM_OPORTP(port)) {
         Scm_Error("output port required, but got %S", port);
+    }
     ctx.mode = mode;
     ctx.flags = WRITE_CIRCULAR;
     if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
@@ -978,7 +979,7 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args)
                     wctx.flags = 0;
 
                     if (pound_appeared) {
-                        int n = Scm_WriteCircular(val, out, mode, width);
+                        int n = Scm_WriteCircular(val, SCM_OBJ(out), mode, width);
                         if (n < 0 && prec > 0) {
                             Scm_PutzUnsafe(" ...", -1, out);
                         }
