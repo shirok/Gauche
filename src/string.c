@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.53 2001-10-28 22:39:27 shirok Exp $
+ *  $Id: string.c,v 1.54 2001-10-29 07:16:34 shirok Exp $
  */
 
 #include <stdio.h>
@@ -531,7 +531,7 @@ static ScmObj string_substitute(ScmString *x, int start,
         if (start > 0) memcpy(p, SCM_STRING_START(x), start);
         memcpy(p+start, str, sizey);
         memcpy(p+start+sizey, SCM_STRING_START(x)+end, sizex-end);
-        p[sizez+1] = '\0';
+        p[sizez] = '\0';
     } else {
         /* x is mbstring */
         const char *s, *e;
@@ -542,7 +542,7 @@ static ScmObj string_substitute(ScmString *x, int start,
         if (start > 0) memcpy(p, x->start, s - x->start);
         memcpy(p + (s - x->start), str, sizey);
         memcpy(p + (s - x->start) + sizey, e, x->start + sizex - e);
-        p[sizez+1] = '\0';
+        p[sizez] = '\0';
     }
     /* modify x */
     x->incomplete = SCM_STRING_INCOMPLETE_P(x) || incompletep;
