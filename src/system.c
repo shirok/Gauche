@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.44 2002-09-02 21:19:19 shirok Exp $
+ *  $Id: system.c,v 1.45 2002-12-12 22:09:52 shirok Exp $
  */
 
 #include <stdio.h>
@@ -40,6 +40,57 @@
  * Auxiliary system interface functions.   See syslib.stub for
  * Scheme binding.
  */
+
+/*
+ * Convertion between off_t and Scheme integer.
+ * off_t might be either 31bit or 63bit.   Absorb dependency here.
+ */
+off_t Scm_IntegerToOffset(ScmObj i)
+{
+#if SIZEOF_OFF_T == SIZEOF_LONG
+    if (SCM_INTP(i)) {
+        return (off_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i)) {
+        if (SCM_BIGNUM_SIGN(i) < 0) return (off_t)-1;
+        if (SCM_BIGNUM_SIZE(i) > 1) {
+            Scm_Error("offset value too large: %S", i);
+        }
+        return (off_t)Scm_GetInteger(i);
+    }
+#else
+    if (SCM_INTP(i)) {
+        return (off_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i)) {
+        off_t r;
+        if (SCM_BIGNUM_SIGN(i) < 0) return (off_t)-1;
+        if (SCM_BIGNUM_SIZE(i) > 2) {
+            Scm_Error("offset value too large: %S", i);
+        }
+        r = SCM_BIGNUM(i)->values[1];
+        r <<= SIZEOF_LONG*8;
+        r += SCM_BIGNUM(i)->values[0];
+        return r;
+    }
+#endif
+    Scm_Error("bad value as offset: %S", i);
+    return (off_t)-1;       /* dummy */
+}
+
+ScmObj Scm_OffsetToInteger(off_t off)
+{
+#if SIZEOF_OFF_T == SIZEOF_LONG
+    return Scm_MakeInteger(off);
+#else
+    if (off < LONG_MAX) {
+        return Scm_MakeInteger(off);
+    } else {
+        u_long l[2];
+        l[0] = r & (u_long)-1;
+        l[1] = (r >> SIZEOF_LONG*8);
+        return Scm_MakeBignumFromUIArray(1, l, 2);
+    }
+#endif
+}
 
 /*===============================================================
  * Wrapper to the system call to handle signals.

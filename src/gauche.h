@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.312 2002-12-12 06:16:08 shirok Exp $
+ *  $Id: gauche.h,v 1.313 2002-12-12 22:09:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2086,6 +2086,9 @@ SCM_EXTERN ScmObj Scm_SignalName(int signum);
 /*---------------------------------------------------
  * SYSTEM
  */
+
+SCM_EXTERN off_t  Scm_IntegerToOffset(ScmObj i);
+SCM_EXTERN ScmObj Scm_OffsetToInteger(off_t o);
 
 SCM_EXTERN int Scm_SysCall(int r);
 SCM_EXTERN void *Scm_PtrSysCall(void *r);
