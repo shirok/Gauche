@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.9 2001-04-19 08:58:04 shiro Exp $
+ *  $Id: bignum.c,v 1.10 2001-04-20 08:46:33 shiro Exp $
  */
 
 #include <math.h>
@@ -677,30 +677,30 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     int j, k, l, n, m, cy;
     u_long vn_1, vn_2, vv, uj;
 
-#define U(n)   ((n%2)? LO(u->values[n/2]) : HI(u->values[n/2]))
-#define SETU(n, v) \
+#define DIGIT(num, n) ((n%2)? LO((num)->values[n/2]) : HI((num)->values[n/2]))
+#define SETDIGIT(num, n, v) \
     ((n%2)? \
-     (u->values[n/2] = (u->values[n/2] & ~LOMASK)|(v & LOMASK)) : \
-     (u->values[n/2] = (u->values[n/2] & LOMASK)|(v << HALF_BITS)))
-#define V(n)   ((n%2)? LO(v->values[n/2]) : HI(v->values[n/2]))
-#define SETQ(n, v) \
-    ((n%2)? \
-     (quotient->values[n/2] = (quotient->values[n/2] & ~LOMASK)|(v & LOMASK)) : \
-     (quotient->values[n/2] = (quotient->values[n/2] & LOMASK)|(v << HALF_BITS)))
-#define R(n)   ((n%2)? LO(remainder->values[n/2]) : HI(remainder->values[n/2]))
+     (num->values[n/2] = (num->values[n/2] & ~LOMASK)|(v & LOMASK)) : \
+     (num->values[n/2] = (num->values[n/2] & LOMASK)|(v << HALF_BITS)))
 
     /* normalize */
     u = make_bignum(dividend->size + 1);
     v = make_bignum(divisor->size);
+    if (d > HALF_BITS) {
+        d -= HALF_BITS;
+        n = divisor->size*2 - 1;
+        m = dividend->size*2 - n;
+    } else {
+        n = divisor->size*2;
+        m = dividend->size*2 - n;
+    }
     bignum_lshift(u, dividend, d);
     bignum_lshift(v, divisor, d);
-    n = divisor->size*2;
-    m = dividend->size*2 - n;
-    vn_1 = V(n-1);
-    vn_2 = V(n-2);
+    vn_1 = DIGIT(v, n-1);
+    vn_2 = DIGIT(v, n-2);
 
     for (j = m; j >= 0; j++) {
-        u_long uu = (U(j+n) << HALF_BITS) + U(j+n-1);
+        u_long uu = (DIGIT(u, j+n) << HALF_BITS) + DIGIT(u, j+n-1);
         u_long qq = uu/vn_1;
         u_long rr = uu%vn_1;
         if (qq == (1L<<HALF_BITS)) { qq--; rr += vn_1; }
@@ -709,31 +709,31 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
         }
         cy = 0;
         for (k = 0; k < n; k++) {
-            vv = qq * V(k);
-            uj = U(j+k) - vv - cy;
-            cy =  (uj > U(j+k))? -1 : 0;
-            SETU(j+k, uj);
+            vv = qq * DIGIT(v, k);
+            uj = DIGIT(u, j+k) - vv - cy;
+            cy =  (uj > (1L<<HALF_BITS))? -1 : 0;
+            SETDIGIT(u, j+k, uj);
         }
-        uj = U(j+n) - cy;
-        cy = (uj > U(j+n))? -1 : 0;
-        SETU(j+n, uj);
+        uj = DIGIT(u, j+n) - cy;
+        cy = (uj > DIGIT(u, j+n))? -1 : 0;
+        SETDIGIT(u, j+n, uj);
         
         if (cy < 0) {
             qq--;
             cy = 0;
             for (k = 0; k < n; k++) {
-                vv = V(k);
-                uj = U(j+k) + vv + cy;
-                cy = (uj < U(j+k))? 1 : 0;
-                SETU(j+k, uj);
+                vv = DIGIT(v, k);
+                uj = DIGIT(u, j+k) + vv + cy;
+                cy = (uj > (1L<<HALF_BITS))? 1 : 0;
+                SETDIGIT(u, j+k, uj);
             }
-            uj = U(j+n) + cy;
-            SETU(j+n, uj);
+            uj = DIGIT(u, j+n) + cy;
+            SETDIGIT(u, j+n, uj);
         }
-        SETQ(j, qq);
+        SETDIGIT(quotient, j, qq);
+        SETDIGIT(remainder, j, rr);
     }
-
-    
+    bignum_rshift(remainder, remainder, d);
 }
 
 /* Fast path if divisor fits in a half word.  Quotient remains in the
