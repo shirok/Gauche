@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.46 2001-02-19 22:54:43 shiro Exp $
+ *  $Id: gauche.h,v 1.47 2001-02-20 00:49:04 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -24,8 +24,9 @@
 #include <setjmp.h>
 #include <gc.h>
 
+#include <gauche/config.h>
+
 #define SCM_INLINE_MALLOC_PRIMITIVES
-#undef SCM_VM_USE_STACK
 #define SCM_VM_STACK_SIZE     10000
 #define CHARCODE_EUC_JP
 
