@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.8 2001-05-02 08:20:25 shirok Exp $
+;; $Id: dynwind.scm,v 1.9 2001-07-05 10:38:13 shirok Exp $
 
 (use gauche.test)
 
@@ -44,7 +44,7 @@
       dynwind-test2)
 
 ;;-----------------------------------------------------------------------
-;; Test for continuation with the saved environment is altered.
+;; Test for continuation
 
 (define (callcc-test1)
   (let ((r '()))
@@ -56,15 +56,26 @@
                v)))
       (if (<= w 1024) (c w) r))))
 
-(test "call/cc" '(2048 1024 512 256 128 64 32 16 8 4 2)
+(test "call/cc (env)" '(2048 1024 512 256 128 64 32 16 8 4 2)
       callcc-test1)
 
 ;; continuation with multiple values
 
-(test "call/cc" '(1 2 3)
+(test "call/cc (values)" '(1 2 3)
       (lambda () (receive x (call-with-current-continuation
                              (lambda (c) (c 1 2 3)))
                           x)))
+
+(define (callcc-test2)
+  (let ((cc #f)
+        (r '()))
+    (let ((s (list 1 2 3 4 (call/cc (lambda (c) (set! cc c) 5)) 6 7 8)))
+      (if (null? r)
+          (begin (set! r s) (cc -1))
+          (list r s)))))
+    
+(test "call/cc (inline)" '((1 2 3 4 5 6 7 8) (1 2 3 4 -1 6 7 8))
+      callcc-test2)
 
 ;;-----------------------------------------------------------------------
 ;; See if port stuff is cleaned up properly
