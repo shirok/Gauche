@@ -3,6 +3,8 @@
 	* src/extlib.stub, src/gauche/predef-syms.h : changed macro-expand
 	  -> macroexpand etc.
 	* ext/auxsys: added sys-gettimeofday.  moved sys-ctermid here.
+	* lib/gauche/time.scm : added <time> class, commonly used by
+	  SRFI-18 and SRFI-19.
 
 2002-03-03  Shiro Kawai  <shiro@acm.org>
 
