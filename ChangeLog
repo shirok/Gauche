@@ -1,3 +1,8 @@
+2004-02-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (skipws): fixed a bug that didn't increment line count
+	  after comments.
+
 2004-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.7.4.2
