@@ -33,7 +33,7 @@ GCLIB = ../gc/gc.a
 OBJS = core.o vm.o compile.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o \
        symbol.o keyword.o \
-       module.o proc.o number.o io.o load.o promise.o repl.o \
+       module.o proc.o number.o bignum.o io.o load.o promise.o repl.o \
        system.o stdlib.o extlib.o syslib.o
 
 .SUFFIXES: .stub
