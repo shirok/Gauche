@@ -1,5 +1,6 @@
 2002-05-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-init.scm : added compose
 	* src/port.c : fixed a memory-overwriting bug in bufport_read.
 	* lib/file/util.scm : more procedures.
 
