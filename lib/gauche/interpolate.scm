@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interpolate.scm,v 1.3 2002-07-10 21:26:07 shirok Exp $
+;;;  $Id: interpolate.scm,v 1.4 2002-11-21 06:05:04 shirok Exp $
 ;;;
 
 ;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
@@ -23,12 +23,12 @@
   )
 (select-module gauche.interpolate)
 
-(define-macro string-interpolate (lambda (str)
+(define (string-interpolate str)
   (if (string? str)
       (%string-interpolate str)
       (errorf "malformed string-interpolate: ~s"
-              (cons 'string-interpolate str)))
-  ))
+              (list 'string-interpolate str)))
+  )
 
 (define (%string-interpolate str)
   (define (accum c acc)

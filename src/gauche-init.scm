@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.94 2002-11-13 07:16:22 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.95 2002-11-21 06:05:04 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -173,7 +173,9 @@
 
 (autoload srfi-26 (:macro cut) (:macro cute))
 
-(autoload gauche.interpolate (:macro string-interpolate))
+(autoload gauche.interpolate string-interpolate)
+
+(define-reader-ctor 'string-interpolate string-interpolate)
 
 (autoload gauche.auxsys
           fmod frexp modf ldexp

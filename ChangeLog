@@ -1,5 +1,12 @@
 2002-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c, src/gauche-init.scm, lib/gauche/interpolate.scm :
+	  made string interpolation syntax is expanded in reader instead
+	  of in macro; if it is done in macro, the read symbols do not
+	  properly "see" their surrounding environment, and fail to work
+	  if the referenced symbols are introduced by R5RS macro.
+	  For example: (define-syntax foo (syntax-rules () ((_ a) #`",a")))
+	  fails in the previous version.
 	* src/main.c : removed the special treatment of argv[0]=="./gosh"
 	  for in-place test; instead, added -ftest option to do the job.
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.59 2002-11-13 08:48:51 shirok Exp $
+ *  $Id: read.c,v 1.60 2002-11-21 06:05:04 shirok Exp $
  */
 
 #include <stdio.h>
@@ -43,12 +43,16 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
+static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args);
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
 static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj, int);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
+
+/* A symbol to look up string interpolator */
+ScmObj sym_string_interpolate = SCM_NIL;
 
 /* Table of 'read-time constructor' in SRFI-10 */
 static struct {
@@ -294,10 +298,11 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 read_nested_comment(port, ctx);
                 goto restart;
             case '`':
-                /* #`"..." - (string-interpolate "...") */
+                /* #`"..." is a special syntax of #,(string-interpolate "...") */
                 {
                     ScmObj form = read_internal(port, ctx);
-                    return SCM_LIST2(SCM_INTERN("string-interpolate"), form);
+                    return process_sharp_comma(port, sym_string_interpolate,
+                                               SCM_LIST1(form));
                 }
             case '?':
                 /* #? - debug directives */
@@ -834,20 +839,21 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc)
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form)
 {
     int len = Scm_Length(form);
-    ScmHashEntry *e;
-
     if (len <= 0) {
         Scm_ReadError(port, "bad #,-form: #,%S", form);
     }
+    return process_sharp_comma(port, SCM_CAR(form), SCM_CDR(form));
+}
 
+static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args)
+{
+    ScmHashEntry *e;
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
-    e = Scm_HashTableGet(readCtorData.table, SCM_CAR(form));
+    e = Scm_HashTableGet(readCtorData.table, key);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
-    if (e == NULL) {
-        Scm_ReadError(port, "unknown #,-key: %S", SCM_CAR(form));
-    }
+    if (e == NULL) Scm_ReadError(port, "unknown #,-key: %S", key);
     SCM_ASSERT(SCM_PROCEDUREP(e->value));
-    return Scm_Apply(e->value, SCM_CDR(form));
+    return Scm_Apply(e->value, args);
 }
 
 static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
@@ -921,6 +927,7 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 void Scm__InitRead(void)
 {
     ScmObj sym_reader_ctor = SCM_INTERN("define-reader-ctor");
+    sym_string_interpolate = SCM_INTERN("string-interpolate");
     readCtorData.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS,
                                                          NULL, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(readCtorData.mutex);
