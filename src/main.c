@@ -12,12 +12,19 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.23 2001-06-02 08:50:08 shirok Exp $
+ *  $Id: main.c,v 1.24 2001-06-13 06:39:35 shirok Exp $
  */
 
 #include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifdef HAVE_SYSEXITS_H
+#include <sys/exits.h>
+#else
+/* SRFI-22 requires these values. */
+#define EX_USAGE    64
+#define EX_SOFTWARE 70
+#endif
 #include "gauche.h"
 
 int load_initfile = TRUE;
@@ -28,11 +35,11 @@ ScmObj use_modules = SCM_NIL;
 void usage(void)
 {
     fprintf(stderr,
-            "Usage: gosh [-qV][-I<path>][-u<module>] [--] [file]\n"
+            "Usage: gosh [-qV][-I<path>][-u<module>][--] [file]\n"
             "options:\n"
             "  -V       print version and exit.\n"
             "  -q       don't read the default initiailzation file.\n"
-            "  -I<path> add <path> to the head of load path (multiple -I's are allowed).\n"
+            "  -I<path> add <path> to the head of load path.\n"
             "  -u<module> (use) load and import <module>\n"
             );
     exit(1);
@@ -88,8 +95,6 @@ int main(int argc, char **argv)
         case '?': usage(); break;
         }
     }
-    SCM_DEFINE(Scm_UserModule(), "*program-name*",
-               SCM_MAKE_STR_IMMUTABLE(argv[0]));
     SCM_FOR_EACH(cp, extra_load_paths) {
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(SCM_CAR(cp))), FALSE);
     }
@@ -130,17 +135,37 @@ int main(int argc, char **argv)
         }
     }
 
+    /* if script file is specified, load it. */
     if (optind < argc) {
-        ScmObj av = SCM_NIL, at;
+        ScmObj av = SCM_NIL, at, mainproc;
         int ac;
         for (ac = optind+1; ac < argc; ac++) {
             SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
         }
         SCM_DEFINE(Scm_UserModule(), "*argv*", av);
+        SCM_DEFINE(Scm_UserModule(), "*program-name*",
+                   SCM_MAKE_STR_IMMUTABLE(argv[optind]));
         Scm_Load(argv[optind], TRUE);
+
+        /* if symbol 'main is bound to a procedure in the user module,
+           call it.  (SRFI-22) */
+        mainproc = Scm_SymbolValue(Scm_UserModule(),
+                                   SCM_SYMBOL(SCM_INTERN("main")));
+        if (SCM_PROCEDUREP(mainproc)) {
+            if (   (SCM_PROCEDURE_OPTIONAL(mainproc)
+                    && argc-optind-1 < SCM_PROCEDURE_REQUIRED(mainproc))
+                || (!SCM_PROCEDURE_OPTIONAL(mainproc)
+                    && argc-optind-1 != SCM_PROCEDURE_REQUIRED(mainproc))) {
+                fprintf(stderr, "%s: bad number of arguments\n", argv[optind]);
+                exit(EX_USAGE);
+            }
+            Scm_Apply(mainproc, av);
+        }
         exit(0);
     } else {
         SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_NIL);
+        SCM_DEFINE(Scm_UserModule(), "*program-name*",
+                   SCM_MAKE_STR_IMMUTABLE(argv[0]));
     }
 
     if (batch_mode || !isatty(0)) {
