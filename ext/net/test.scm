@@ -173,6 +173,15 @@
             (flush out)
             (string=? (read-line in) (make-string *chunk-size* #\A))))))
 
+(test "unix client socket" #t
+      (lambda ()
+        (call-with-client-socket (make-client-socket (make <sockaddr-un> :path "sock.o"))
+          (lambda (in out)
+            (display (make-string *chunk-size* #\a) out)
+            (newline out)
+            (flush out)
+            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+
 (test "unix client socket" 33
       (lambda ()
         (call-with-client-socket (make-client-socket 'unix "sock.o")
@@ -180,6 +189,7 @@
             (display "END\n" out) (flush out)
             (receive (pid code) (sys-wait)
               (sys-wait-exit-status code))))))
+
 
 (sys-unlink "sock.o")
 
@@ -204,6 +214,15 @@
 (test "inet client socket" #t
       (lambda ()
         (call-with-client-socket (make-client-socket "localhost" *inet-port*)
+          (lambda (in out)
+            (display (make-string *chunk-size* #\a) out)
+            (newline out)
+            (flush out)
+            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+
+(test "inet client socket" #t
+      (lambda ()
+        (call-with-client-socket (make-client-socket (make <sockaddr-in> :host "localhost" :port *inet-port*))
           (lambda (in out)
             (display (make-string *chunk-size* #\a) out)
             (newline out)

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.19 2003-05-18 06:57:30 shirok Exp $
+;;;  $Id: net.scm,v 1.20 2003-05-28 10:48:06 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -69,6 +69,14 @@
  sys-getnameinfo
  |NI_NOFQDN| |NI_NUMERICHOST| |NI_NAMEREQD| |NI_NUMERICSERV| |NI_DGRAM|)
 
+;; Utility
+(define (address->protocol-family addr)
+  (case (sockaddr-family addr)
+    ((unix)  |PF_UNIX|)
+    ((inet)  |PF_INET|)
+    ((inet6) |PF_INET6|) ;;this can't happen if !ipv6-capable
+    (else (error "unknown family of socket address" addr))))
+
 ;; High-level interface.  We need some hardcoded heuristics here.
 
 (define (make-client-socket proto . args)
@@ -83,6 +91,9 @@
              (errorf "inet socket requires host name and port, but got ~s and ~s"
                      host port))
            (make-client-socket-inet host port)))
+        ((is-a? proto <sockaddr>)
+         ;; caller provided sockaddr
+         (make-client-socket-from-addr proto))
         ((and (string? proto)
               (pair? args)
               (integer? (car args)))
@@ -90,6 +101,11 @@
          (make-client-socket-inet proto (car args)))
         (else
          (error "unsupported protocol:" proto))))
+
+(define (make-client-socket-from-addr addr)
+  (let1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
+    (socket-connect socket addr)
+    socket))
 
 (define (make-client-socket-unix path)
   (let ((address (make <sockaddr-un> :path path))
@@ -131,11 +147,22 @@
            (unless (integer? port)
              (error "inet socket requires port number, but got" port))
            (apply make-server-socket-inet port (cdr args))))
+        ((is-a? proto <sockaddr>)
+         ;; caller provided sockaddr
+         (apply make-server-socket-from-addr proto args))
         ((integer? proto)
          ;; STk compatibility
          (apply make-server-socket-inet proto args))
         (else
          (error "unsupported protocol:" proto))))
+
+(define (make-server-socket-from-addr addr . args)
+  (let ((reuse-addr? (get-keyword :reuse-addr? args #f))
+        (socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)))
+    (when reuse-addr?
+      (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
+    (socket-bind socket address)
+    (socket-listen socket 5)))
 
 (define (make-server-socket-unix path)
   (let ((address (make <sockaddr-un> :path path))
