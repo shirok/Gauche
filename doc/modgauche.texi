@@ -6647,6 +6647,7 @@ SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
 
 @deftp {Module} gauche.syslog
 @mdindex gauche.syslog
+@c EN
 This module provides syslog(3) system logger interface.
 
 For the common applications, you might find @code{gauche.logger} module
@@ -6654,10 +6655,21 @@ easier to use (@xref{gauche.logger - User-level logging}).  This module is for t
 who need direct access to the syslog API.
 
 The procedures are only defined if the undelying system supports them.
+@c JP
+このモジュールは syslog(3) のシステムロガーのインタフェースを提供します。
+
+一般的なアプリケーションについては、@code{gauche.logger} モジュールの
+ほうが使いやすいでしょう(@ref{gauche.logger - User-level logging}参照)。
+このモジュールは syslog の API に直接アクセスする必要のある人向きです。
+
+手続き群は基盤になっているシステムで syslog がサポートされている場合に
+のみ定義されます。
+@c COMMON
 @end deftp
 
 @defun sys-openlog ident option facility
 [POSIX]
+@c EN
 Opens a connection to the system logger.  A string argument
 @var{ident} is used for the prefix of the log, and usually is
 the program name.  @var{Option} is an integer flag to control
@@ -6681,10 +6693,35 @@ doesn't support them).
 
 See your system's manpage of openlog(3) for detail description about
 these constants.
+@c JP
+システムロガーへのコネクションをオープンします。文字列の引数 @var{ident}
+はログの接頭辞に使われます。通常はプログラムを名前にします。@var{option}
+は整数のフラグで、ログの振舞いを制御します。@var{facility} はプログラムの
+タイプを指定する整数です。
+
+@var{option}のフラグは以下の整数定数の1つまたは複数を @code{logior} で
+合成することができます：
+@code{LOG_CONS}、@code{LOG_NDELAY}、@code{LOG_NOWAIT}、
+@code{LOG_ODELAY}、@code{LOG_PERROR} および @code{LOG_PID} です
+(これらの定数のいくつかは基盤となるシステムがサポートしていなければ
+定義されません)。
+
+@var{facility} 引数は以下の整数定数のどれかひとつです。
+@code{LOG_AUTH}、@code{LOG_AUTHPRIV}、@code{LOG_CRON},
+@code{LOG_DAEMON}、@code{LOG_FTP}、@code{LOG_KERN}、@code{LOG_LOCAL0}、
+から @code{LOG_LOCAL7}、@code{LOG_LPR}、@code{LOG_MAIL}、@code{LOG_NEWS},
+@code{LOG_SYSLOG}、@code{LOG_USER}、@code{LOG_UUCP} までです。
+(これらの定数のいくつかは基盤となるシステムがサポートしていなければ
+定義されません)。
+
+これらの定数の詳しい説明については、システムの openlog(3) の
+マニュアル・ページを見てください。
+@c COMMO
 @end defun
 
 @defun sys-syslog priority message
 [POSIX]
+@c EN
 Log the string @var{message}.  Unlike syslog(3), this procedure doesn't
 do formatting---you can use @code{format} (@xref{Output}) to create
 a formatted message, or use higher-level routine @code{log-format}
@@ -6695,27 +6732,54 @@ one of the @var{facility} constants described above and
 the @var{level} constants: @code{LOG_EMERG}, @code{LOG_ALERT},
 @code{LOG_CRIT}, @code{LOG_ERR}, @code{LOG_WARNING}, @code{LOG_NOTICE},
 @code{LOG_INFO}, @code{LOG_DEBUG}.
+@c JP
+文字列 @var{message} をログに記録します。syslog(3) とは違って、この手続きは
+フォーマットを行いません。フォーマットされた文字列を生成するなら
+@code{format} (@ref{Output}参照)が使えます。あるいは、より高水準の
+ルーチン @code{log-format} (@ref{gauche.logger - User-level logging}参照)
+を使うこともできます。
+
+整数の引数 @var{priority} は上述の @var{facility} 定数のどれかひとつ
+と、以下の@var{level}定数と@code{logior}して、合成することができます：
+@code{LOG_EMERG}、@code{LOG_ALERT}、@code{LOG_CRIT}、@code{LOG_ERR}、
+@code{LOG_WARNING}、@code{LOG_NOTICE}、@code{LOG_INFO}、@code{LOG_DEBUG}
+@c COMMON
+
 @end defun
 
 @defun sys-closelog
 [POSIX]
+@c EN
 Closes the connection to the logging system.
+@c JP
+ロギングシステムとのコネクションをクローズします。
+@c COMMON
 @end defun
 
 @defun sys-setlogmask mask
 [POSIX]
+@c EN
 Sets the process's log priority mask that determines which calls to
 @code{sys-syslog} may be logged.
 An priority @var{mask} can be composed by @code{logior}-ing
 bitmasks corresponding to the @var{level} argument of @code{sys-syslog}.
 You can use @code{sys-logmask} below to obtain a bitmask
 from the level.
+@c JP
+@c COMMON
+どの @code{sys-syslog}への呼び出しを記録できるかを決める、プロセスのログ
+優先度マスクを設定します。
 @end defun
 
 @defun sys-logmask level
 [POSIX]
+@c EN
 Returns an integer bitmask for @code{sys-setlogmask} from 
 the log level @var{level}.
+@c JP
+ログレベル @var{level} から @code{sys-setlogmask} に対する
+ビットマスク整数を返す。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
