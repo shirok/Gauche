@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.15 2001-04-26 07:06:00 shiro Exp $
+ *  $Id: read.c,v 1.16 2001-05-19 11:04:56 shirok Exp $
  */
 
 #include <stdio.h>
@@ -278,7 +278,7 @@ static ScmObj read_string(ScmPort *port)
         SCM_GETC(c, port);
         switch (c) {
           case EOF: goto eof_exit;
-          case '"': return Scm_DStringGet(&ds);
+          case '"': return Scm_StringMakeImmutable(SCM_STRING(Scm_DStringGet(&ds)));
           case '\\': {
             int c1 = 0;
             SCM_GETC(c1, port);
