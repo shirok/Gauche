@@ -1,0 +1,87 @@
+#! /bin/sh
+
+#
+# Retrieve configuration parameters
+#
+# $Id: gauche-config.in,v 1.4 2001-03-13 08:35:39 shiro Exp $
+#
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+cc=@CC@
+
+datadir=@datadir@/gauche
+archdir=@libdir@/gauche
+
+gauche_incdir="$datadir/@GAUCHE_VERSION@/include"
+gauche_libdir="$datadir/@GAUCHE_VERSION@/lib"
+gauche_archdir="$archdir/@GAUCHE_VERSION@/@host@"
+gauche_siteincdir="$datadir/site/include"
+gauche_sitelibdir="$datadir/site/lib"
+gauche_sitearchdir="$archdir/site/@host@"
+gauche_version=@GAUCHE_VERSION@
+gauche_libs="@LIBS@"
+arch="@host@"
+
+shlib_so_suffix="@SHLIB_SO_SUFFIX@"
+shlib_so_cflags="@SHLIB_SO_CFLAGS@"
+shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
+shlib_main_ldflags="@SHLIB_MAIN_LDFLAGS@"
+libgauche_so="@LIBGAUCHE_SO@"
+
+usage () {
+    echo "Usage: gauche-config [option]"
+    echo
+    echo "General parameter"
+    echo "  -V   the current gauche version"
+    echo
+    echo "Parameters to compile an application using Gauche"
+    echo "  -I   include paths required to compile programs using gauche"
+    echo "  -L   library paths required to link programs using gauche"
+    echo "  -l   libraries required to link programs using gauche"
+    echo "  --cc name of the compiler"
+    echo
+    echo "Parameters to install stuff related to Gauche"
+    echo "  --syslibdir/--sitelibdir"
+    echo "       directories where system/site scheme files go"
+    echo "  --sysarchdir/--sitearchdir"
+    echo "       directories where system/site DSO files go"
+    echo "  --sysincdir/--siteincdir"
+    echo "       directories where system/site header files of extensions go"
+    echo
+    echo "Parameters to compile Gauche extention"
+    echo "  --so-suffix   shared object file suffix of the system"
+    echo "  --so-cflags   flags required to compile shared object file"
+    echo "  --so-ldflags  flags required to link shared object file"
+    exit 1
+}
+
+if [ $# != 1 ]; then usage; fi;
+
+case $1 in
+  -V) echo $gauche_version;;
+  -I) echo "-I $gauche_incdir";;
+  -L) echo "-L $gauche_archdir";;
+  -l) echo $gauche_libs;;
+  --cc) echo $cc;;
+
+  --sysincdir) echo $gauche_incdir;;
+  --siteincdir) echo $gauche_siteincdir;;
+  --syslibdir) echo $gauche_libdir;;
+  --sitelibdir) echo $gauche_sitelibdir;;
+  --sysarchdir) echo $gauche_archdir;;
+  --sitearchdir) echo $gauche_sitearchdir;;
+  --arch) echo $arch;;
+
+  --so-suffix) echo $shlib_so_suffix;;
+  --so-cflags) echo $shlib_so_cflags;;
+  --so-ldflags) echo $shlib_so_ldflags;;
+  --libgauche-so) echo $libgauche_so;;
+      
+  *)  usage;;
+esac
+
+# Local variables:
+# mode: shell-script
+# end:
