@@ -1,3 +1,13 @@
+2001-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm : added several useful macros,
+	  such as push! and dotimes.  They are ugly, but sometimes its
+	  so convenient that I couldn't regist adding them.  It also
+	  has the convenient macro syntax-error.
+	* src/list.c, src/vector.c, src/string.c, src/extlib.stub :
+	  added safe version of accessors: list-ref+, vector-ref+ and
+	  string-ref+.
+
 2001-10-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c : inhibit argument permutation of getopt, so that the
