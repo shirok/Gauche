@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.90 2001-07-08 08:24:25 shirok Exp $
+ *  $Id: vm.c,v 1.91 2001-07-08 08:52:02 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1395,6 +1395,9 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
 {
     ScmObj code = SCM_NIL, tail = SCM_NIL, cp;
     int nargs = 0;
+#ifdef ENABLE_STACK_CHECK
+    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CHECK_STACK, Scm_Length(args)));
+#endif
     SCM_FOR_EACH(cp, args) {
         SCM_APPEND1(code, tail, SCM_CAR(cp));
         SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
@@ -1413,7 +1416,11 @@ void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
 {
     DECL_REGS;
     int i;
-    ScmContFrame *cc = (ScmContFrame*)sp;
+    ScmContFrame *cc;
+#ifdef ENABLE_STACK_CHECK
+    CHECK_STACK(CONT_FRAME_SIZE+datasize);
+#endif
+    cc = (ScmContFrame*)sp;
     sp += CONT_FRAME_SIZE;
     cc->prev = cont;
     cc->argp = NULL;
