@@ -125,7 +125,7 @@ generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 Supported by the module @code{srfi-5}.  
 @xref{A compatible let form with signatures and rest arguments}.
 @c JP
-@item SRFI-6, シグネチャとrest引数に互換性のあるlet形式
+@item SRFI-5, シグネチャとrest引数に互換性のあるlet形式
 モジュール@code{srfi-5}でサポートされます。
 @ref{A compatible let form with signatures and rest arguments}参照。
 @c COMMON
