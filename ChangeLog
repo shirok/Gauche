@@ -1,3 +1,8 @@
+2001-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c : inhibit argument permutation of getopt, so that the
+	  options after script file name can be passed to the users' script.
+
 2001-09-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub : make logand, logior and logxor take more than
