@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.199 2002-05-09 00:22:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.200 2002-05-09 02:45:19 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9498,45 +9498,89 @@ Use @code{slot-ref} to access information of @code{<sys-stat>} object.
 
 @defun sys-access pathname amode
 [POSIX]
+@c EN
 An interface to @code{access(2)}.
-Returns a boolean value of indicating whether @var{pathname} is allowed
-in @var{amode}.  @var{amode} can be a combinations (logical or) of
+Returns a boolean value of indicating whether access of @var{pathname}
+is allowed in @var{amode}.  @var{amode} can be a combinations (logical or) of
 following predefined flags.
+@c JP
+@code{access(2)}へのインタフェースです。@var{pathname}へのアクセスが
+@var{mode}に示されるモードで許可されているかどうかを示す真偽値を返します。
+@var{mode}は以下に示す定数のコンビネーション(logical or)です。
+@c COMMON
 @table @code
 @item R_OK
 @vindex R_OK
+@c EN
 Checks whether @var{pathname} is readable by the current user.
+@c JP
+@var{pathname}をカレントユーザが読み出し可能かどうか
+@c COMMON
 @item W_OK
 @vindex W_OK
+@c EN
 Checks whether @var{pathname} is writable by the current user.
+@c JP
+@var{pathname}へカレントユーザが書き込み可能かどうか
+@c COMMON
 @item X_OK
 @vindex X_OK
+@c EN
 Checks whether @var{pathname} is executable (or searchable in case
 @var{pathname} is a directory) by the current user.
+@c JP
+@var{pathname}をカレントユーザが実行可能かどうか(@var{pathname}が
+ディレクトリの場合はサーチ可能かどうか)
+@c COMMON
 @item F_OK
 @vindex F_OK
+@c EN
 Checks whether @var{pathname} exists or not, regardless of
 the access permissions of @var{pathname}.  (But you need to have
 access permissions of the directories containing @var{pathname}).
+@c JP
+@var{pathname}のパーミッションフラグにかかわらず、@var{pathname}が
+存在するかどうか (但し@var{pathname}があるディレクトリの読みだし許可は必要)。
+@c COMMON
 @end table
-An error is signalled if @var{pathname} does not exist, or the permissions
-of directories containing @var{pathname} prevents you from cheking
-@var{pathname} itself.
 @end defun
 
 @defun sys-chmod path mode
+@c EN
 Change the mode of the file named @var{path} to @var{mode}.
 @var{mode} must be a small positive integer whose lower 9 bits
 specifies POSIX style permission.
+@c JP
+ファイル@var{path}のパーミッションビットを@var{mode}に変更します。
+@var{mode}は小さな正の正確な整数で、POSIXスタイルのパーミッションビットマスク
+でなければなりません。
+@c COMMON
 @end defun
 
 @defun sys-chown path owner-id group-id
+@c EN
 Change the owner and/or group of the file named @var{path}
 to @var{owner-id} and @var{group-id} respectively.
 @var{owner-id} and @var{group-id} must be an exact integer.
 If either of them is -1, the corresponding ownership is not changed.
+@c JP
+ファイル@var{path}のオーナーとグループを@var{owner-id}と@var{gruop-id}
+で示されるものに変更します。@var{owner-id}と@var{gruop-id}は正確な整数で
+なければなりません。どちらかに-1が渡された場合は、対応する情報は変更されません。
+@c COMMON
 @end defun
 
+@defun sys-utime path &optional atime mtime
+@c EN
+Change the file's access time and modification time to @var{atime}
+and @var{mtime}, respectively.   If @var{atime} and @var{mtime} is
+omitted, they are set to the current time.
+@c JP
+ファイルのアクセスタイムと変更タイムを@var{atime}と@var{mtime}が示す
+値にセットします。@var{atime}と@var{mtime}が省略された場合は現在の時刻が
+使われます。
+@c COMMON
+@end defun
 
 @node Other file operations,  , File stats, Filesystems
 @subsubsection Other file operations

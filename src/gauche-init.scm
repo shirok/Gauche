@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.76 2002-05-07 20:17:24 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.77 2002-05-09 02:45:20 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -169,7 +169,7 @@
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname sys-putenv
-          sys-gettimeofday)
+          sys-gettimeofday sys-utime)
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
