@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.1 2001-05-19 22:29:51 shirok Exp $
+dnl $Id: configure.in,v 1.2 2001-05-30 07:43:42 shirok Exp $
 AC_INIT(charconv.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
@@ -27,18 +27,31 @@ dnl to either 'sys' or 'site'.   The variable can be overridden at make time.
 : ${INSTALL_TYPE=site}  dnl This sets the default.
 AC_SUBST(INSTALL_TYPE)
 
+dnl Process extra configure argument
+AC_ARG_WITH(iconv, , [
+  case $with_iconv in
+    no|yes) ;;
+    *) CPPFLAGS="$CPPFLAGS -I$with_iconv" ;;
+  esac], [with_iconv=yes])
+
 dnl Get compiler parameters which Gauche has been compiled with.
 CC="`$GAUCHE_CONFIG --cc`"
 AC_SUBST(CC)
 
-CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
-LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
+CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags` $CPPFLAGS"
 
 dnl Check for other programs.
 AC_PROG_INSTALL
 
 dnl Add more test
+if test $with_iconv != no; then
+  AC_CHECK_HEADERS(iconv.h)
+fi
 
+dnl Set LDFLAGS to generate shared library.
+dnl This has to come after all the tests that requre linking, or those test
+dnl will fail because they can't generate stand-alone executable.
+LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
 
 dnl Output
 AC_OUTPUT(Makefile)
