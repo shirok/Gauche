@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.12 2002-09-21 09:50:29 shirok Exp $
+;; $Id: regexp.scm,v 1.13 2002-12-06 05:26:54 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -202,6 +202,10 @@
       (lambda () (match&list #/(abc$|def)$/ "aaabc" 1)))
 (test "(abc$|def)$" '("abc$")
       (lambda () (match&list #/(abc$|def)$/ "aaabc$" 1)))
+(test "a$b" '("a$b")
+      (lambda () (match&list #/a$b/ "aa$bb" 1)))
+(test "ab\\$" '("ab$")
+      (lambda () (match&list #/ab\$/ "ab$cd" 1)))
 
 ;;-------------------------------------------------------------------------
 (test-section "backslash escape")
@@ -540,5 +544,13 @@
       (lambda ()
         (list (match 'after) (match 'after 1)
               (match 'before) (match 'before 2))))
+
+;;-------------------------------------------------------------------------
+(test-section "regexp quote")
+
+(test "regexp-quote" #t
+      (lambda ()
+        (let ((str "^(#$%#}{)\\-+?^$"))
+          (regmatch? (rxmatch (string->regexp (regexp-quote str)) str)))))
 
 (test-end)
