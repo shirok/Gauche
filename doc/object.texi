@@ -2896,16 +2896,28 @@ take a look at @code{test/object.scm}.
 @section Generic function and method
 @c NODE ジェネリックファンクションとメソッド
 
+@c EN
 @subheading Defining methods
+@c JP
+@subheading メソッドの定義
+@c COMMON
 
 @defmac define-generic name
+@c EN
 Creates a generic function and bind it to @var{name}.
 
 You don't usually need to use this, since the @code{define-method}
 macro implicitly creates a generic function if it doesn't exist yet.
+@c JP
+ジェネリック関数を生成し、@var{name} に束縛します。
+
+通常は、これを使う必要はありません。もし、まだ存在していなければ、
+@code{define-method} マクロが暗黙裏にジェネリック関数を生成してくれるからです。
+@c COMMON
 @end defmac
 
 @defmac define-method name specs body
+@c EN
 Defines a method whose name is @var{name}.  If there's already
 a generic function object globally bound to @var{name}, the created
 method is added to the generic function.  If @var{name} is unbound,
@@ -2916,6 +2928,17 @@ added to it.
 @var{Specs} specifies the arguments and their types for this method.
 It's like the argument list of lambda form, except you can specify
 the type of each argument.
+@c JP
+@var{name} という名前のメソッドを定義します。すでにグローバルに @var{name}
+に束縛されているジェネリック関数オブジェクトが存在していれば、生成された
+メソッドはそのジェネリック関数に追加されます。@var{name} が未束縛であるか
+またはジェネリック関数以外に束縛されているなら、新しいジェネリック関数が
+生成され、@var{name} に束縛されて、新しいメソッドがそれに追加されます。
+
+@var{space} はこのメソッドに対応する引数とその型を指定します。これは
+lambda 形式の引数リストに似ていますが、それぞれの引数の型を指定できる
+ところが違います。
+@c COMMON
 
 @example
 @i{specs} : ( @i{arg} @dots{} )
@@ -2926,6 +2949,7 @@ the type of each argument.
       | @i{symbol}
 @end example
 
+@c EN
 @i{Class} specifies the class that the argument has to belong to.
 If @code{@i{arg}} is just a symbol, it is equivalent to 
 @code{(@i{arg} <top>)}.  You can't specify the type for
@@ -2936,6 +2960,15 @@ The list of classes of the argument list is called
 function will select appropriate methods(s).
 Here are some examples of @var{specs} and the corresponding 
 specializer list:
+@c JP
+@i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
+シンボルであれば、@code{(@i{arg} <top>)} と同じです。rest 引数の
+型を指定することはできません。それは常にリストに束縛されるからです。
+
+引数リストのクラスのリストは@emph{メソッド特定化子リスト}といい、
+これを基に、ジェネリック関数は適切なメソッドを選択します。@var{specs} と
+それに対応する特定化子リストの例をあげておきます。
+@c COMMON
 
 @example
 specs:        ((self <myclass>) (index <integer>) value)
@@ -2951,13 +2984,24 @@ specs:        args
 specializers: <top>
 @end example
 
+@c EN
 If you define a method on @var{name} whose specializer list matches with
 one in the generic function's methods, then the existing method is
 replaced by the newly defined one.
+@c JP
+その特定化子リストがジェネリック関数の中のメソッドの一つに一致するような
+@var{name} 上のメソッドを定義すると、既存のメソッドは新しく定義された
+メソッドに置き換えられます。
+@c COMMON
 @end defmac
 
+@c EN
 @subheading Applying generic function
+@c JP
+@subheading ジェネリック関数の適用
+@c COMMON
 
+@c EN
 When a generic function is applied, first it selects
 methods whose specializer list matches the given arguments.
 For example, suppose a generic function @code{foo} has
@@ -2970,8 +3014,20 @@ the first and the third method will be selected.
 Then the selected methods are sorted from the most
 @emph{specific} method to the least specific method.
 It is calculated as follows:
+@c JP
+ジェネリック関数は適用されると、まず、与えられた引数に適合する
+特定化子リストを持つメソッドを選択します。たとえば、ジェネリック関数 
+@code{foo} が 3つのメソッドを持っており、それらの特定化子リストが
+それぞれ、@code{(<string> <top>)}、@code{(<string> <string>)}、
+@code{(<top> <top>)} であるとします。@code{foo} が @code{(foo "abc" 3)} の
+ように適用されたとき、最初と 3番目のメソッドが選択されます。
+
+選択されたメソッドは、もっとも{特定化された}ものから、もっとも一般的なものへ
+の順でソートされます。これは以下のように計算されます。
+@c COMMON
 
 @itemize
+@c EN
 @item
 Suppose we have a method @code{a} that has 
 specializers @code{(A1 A2 @dots{})}, and
@@ -2990,16 +3046,42 @@ If all the specializers of @code{a} and @code{b} are the same,
 except that one has an improper tail ("rest" argument)
 and another doesn't, then the method that doesn't have an improper
 tail is more specific than the one that has.
+@c JP
+@item
+@code{(A1 A2 @dots{})} という特定化子リストをもつメソッド @code{a} と
+@code{(B1 B2 @dots{})} という特定化子リストをもつメソッド @code{b} とが
+あるとします。
+
+@item
+@code{An} と @code{Bn} とが異る最小の @var{n} を見つけます。@var{n} 番目の
+引数のクラスをとり、そのクラスの順位リストをチェックします。もし、
+その CPL の中で、@code{An} が @code{Bn} より先にくれば、method @code{a} は
+メソッド @code{b} より特定化されているということにし、さもなければ、
+@code{b} が @code{a} がより特定化されているということにします。
+
+@item
+もし、@code{a} および @code{b} のすべての特定化子が、一方は rest 引数
+をもち、もう一方はもたないという以外同じであれば、rest 引数をもつ
+メソッドのほうがそうでないものより特定化されているとします。
+@c COMMON
 @end itemize
 
+@c EN
 Once methods are sorted, the body of the first method is
 called with the actual argument.
 
 Within the method body, a special local variable @code{next-method}
 is bound implicitly.
+@c JP
+メソッドがソートされたら、最初のメソッドの本体が実引数で呼ばれます。
+
+メソッド本体内部では、特別なローカル変数 @code{next-method}が暗黙裏に
+束縛されます。
+@c COMMON
 
 @deffn {Next method} next-method 
 @deffnx {Next method} next-method args @dots{}
+@c EN
 This variable is bound within a method body
 to a special object that encapsulates
 the next method in the sorted method list.
@@ -3011,6 +3093,17 @@ with the passed arguments.
 
 If @code{next-method} is called in the least specific method,
 i.e. there's no "next method", an error is signalled.
+@c JP
+この変数は、メソッド本体内部で、ソートされたメソッドリストで次のメソッド
+をカプセル化した特別なオブジェクトに束縛されます。
+
+引数なしで呼ぶと、次のメソッドがこのメソッドよばれたときとと同じ引数で
+起動されます。@var{args} @dots{} を明示的にわたすと、次のメソッドがその
+渡された引数で起動されます。
+
+@code{next-method} がもっとも特定化されていないメソッドで呼ばれた場合、
+すなわち、「次のメソッド」がない場合、エラーシグナルがあがります。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
@@ -3018,6 +3111,7 @@ i.e. there's no "next method", an error is signalled.
 @section Metaobject protocol
 @c NODE メタオブジェクトプロトコル
 
+@c EN
 In CLOS-like object systems, the object system is built on
 top of itself---that is, things such as the structure of the class,
 how a class is created, how an instance is created and initialized,
@@ -3034,6 +3128,23 @@ and the names and orders of generic functions to be called
 during operations of the object system.  Subclassing these classes
 and specializing these methods are the means of customizing object
 system behaviors.
+@c JP
+CLOS 風のオブジェクトシステムでは、オブジェクトシステムがそれ自身の上に
+構築されます。すなわち、クラス構造のようなもの、クラスをどのように
+生成するか、インスタンスをどのように生成し初期化するか、メソッドをどのように
+ディスパッチし呼び出すか、これらはすべてオブジェクトシステムによって、
+定義されます。たとえば、クラスはジェネリックな構造と標準的クラスの
+振舞いを定義する @code{<class>} クラスのインスタンスです。@code{<class>}
+のサブクラス化すると、デフォルトのものとは違う振舞いをする、独自の
+クラス集合をつくることができます。これは結局、独自のオブジェクトシステムを
+つくることになります。
+
+@emph{メタオブジェクトプロトコル}は、どのようにオブジェクトシステムを
+構築するかに関連する API 群の定義です。ブロック構築のクラス、オブジェクト
+システムを操作するあいだに呼ばれるジェネリック関数の名前と順序などです。
+これらのクラスをサブクラス化し、これらのメソッドを特定化することは、
+オブジェクトシステムの振舞いをカスタマイズすることを意味します。
+@c COMMON
 
 @menu
 * Class instantiation::         
@@ -3043,11 +3154,11 @@ system behaviors.
 @end menu
 
 
-
 @node Class instantiation, Customizing slot access, Metaobject protocol, Metaobject protocol
 @subsection Class instantiation
 @c NODE クラスのインスタンシエーション
 
+@c EN
 Every class is an instance of a group of special classes.
 A class that can be a class of another class is called @emph{metaclass}.
 In Gauche, only the @code{<class>} class or its subclasses
@@ -3059,15 +3170,34 @@ The @code{define-class} macro is basically a wrapper of
 the code that creates an instance of @code{<class>} 
 (or specified metaclass) and bind it to the given name.
 Suppose you have the following @code{define-class} form.
+@c JP
+すべてのクラスはある特殊なクラスのグループのインスタンスになっています。
+他のクラスのクラスになれるようなクラスのことを @emph{メタクラス} と呼びます。
+Gauche では @code{<class>} クラスおよびそのサブクラスのみがメタクラスに
+なれます。
+
+@subsubheading @code{define-class} の展開
+
+@code{define-class} マクロは基本的には @code{<class>} (あるいは指定された
+メタクラス)のインスタンスを生成するコードのラッパーで、それを与えられた
+名前に束縛します。以下のような @code{define-class} 形式を前提とします。
+
+@c COMMON
 @example
 (define-class @var{name} (@var{supers})
   @var{slot-specs}
   @var{options} @dots{})
 @end example
 
+@c EN
 It is expanded into a form like this (you can see the exact form 
 by looking at the definition of @code{define-class} macro in
 @file{`gauche-config --syslibdir`/gauche/object.scm}).
+@c JP
+これを次のように展開します。
+(@file{`gauche-config --syslibdir`/gauche/object.scm} の @code{define-class}
+マクロの定義をみれば展開形式を見ることができます。)
+@c COMMON
 @example
 (define @var{name}
   (let ((tmp1 (make @var{metaclass} 
@@ -3081,10 +3211,16 @@ by looking at the definition of @code{define-class} macro in
     tmp1))
 @end example
 
+@c EN
 The created class's class, i.e. @var{metaclass}, 
 is determined by the following rules.
+@c JP
+生成されるクラスのクラス、つまり、@var{metaclass} は以下のルールで
+決定されます。
+@c COMMON
 
 @enumerate
+@c EN
 @item
 If @code{:metaclass} option is given to the @code{define-class}
 macro, its value is used.  The value must be the @code{<class>}
@@ -3106,8 +3242,31 @@ then the created class' metaclass
 is a metaclass that inherits all of those metaclasses
 @code{A}, @code{B}, @code{C} @dots{}.
 @end itemize
+@c JP
+@item
+もし、@code{:metaclass} オプションが @code{define-class} マクロに
+与えられていれば、その値を使います。その値は、@code{<class>} クラスか
+あるいはその子孫でなければなりません。
+@item
+さもなければ、クラス順位リスト中のクラスのメタクラスが試されます。
+@itemize @bullet
+@item
+もし、すべてのメタクラスが @code{<class>} であるなら、生成される
+クラスのメタクラスも @code{<class>} になります。
+@item
+もし、すべてのメタクラスが @code{<class>} かあるいは別のメタクラス
+@code{A} のどちらかであれば、生成されるクラスのメタクラスは、@code{A} に
+なります。
+@item
+もしメタクラスの集合が @code{<class>} 以外の 2つ以上のメタクラス
+(@code{A}, @code{B}, @code{C} @dots{})を含む場合、生成されるクラスの
+メタクラスはこれらのメタクラス @code{A}, @code{B}, @code{C} @dots{} すべてを
+継承したメタクラスになります。
+@end itemize
+@c COMMON
 @end enumerate
 
+@c EN
 The class's name, superclasses, and slot definitions are passed
 as the initialization arguments to the @code{make} generic function,
 with other arguments passed to @code{define-class}.
@@ -3131,91 +3290,189 @@ to a class, then the class redefinition protocol is invoked
 Then, the methods given to @code{:getter}, @code{:setter} 
 and @code{:accessor} slot options in @var{slot-spec} are
 collected and registered to the corresponding generic functions.
+@c JP
+クラスの名前、スーパークラス、スロットの定義は初期化引数として
+ジェネリック関数 @code{make} に引き渡され、それ以外の引数は
+@code{define-class} に引き渡されます。初期化引数 @code{define-modules} は
+どのモジュールでそのクラスが定義されたかを覚えておくために引き渡されます。
+これはこのクラスの再定義のとき用です。
 
+スロットの仕様 @var{slot-specs} は内部メソッド @var{process-slot-definitions}
+(これは直接呼び出すことはできません)で処理され、スロット定義になります。
+厳密には、@code{:init-form} スロットオプションは、@code{:init-thunk} オプション
+になり、@code{:getter}、@code{:setter}、@code{:accessor} のスロットオプションは
+引用されます。
+
+クラス(@var{metaclass} のインスタンス)が生成された後、@var{name} のグローバル
+な束縛がチェックされます。それが、クラスに束縛されていれば、クラスの再定義
+プロトコルが起動されます(@ref{Class redefinition} 参照)。
+
+その後、@var{slot-specs} 中で、@code{:getter}、@code{:setter}、
+@code{:accessor} スロットオプションに与えられたメソッドが集められ、対応する
+ジェネリック関数に登録されます。
+@c COMMON
+
+@c EN
 @subsubheading Class structure
+@c JP
+@subsubheading クラス構造
+@c COMMON
 
 @deftp {Class} <class>
 @clindex class
+@c EN
 The base class of all metaclasses, @code{<class>}, has
 the following slots.  Note that these slots are for internal management,
 and users shouldn't change their values after
 the class is initialized.  It is recommended to obtain information
 about a class by procedures described in @ref{Class object}, instead
 of directly accessing those slots.
+@c JP
+すべてのメタクラスのベースクラスである @code{<class>} は以下のような
+スロットを持っています。これらのスロットは内部的な管理のためにあるので
+クラスが初期化された後に、これらの値を変更すべきではないということに
+注意してください。クラスの情報を得るには、これらのスロットに直接
+アクセスするのではなく、@ref{Class object} にある手続きを使うことをおすすめ
+します。
+@c COMMON
 
 @defivar <class> name
+@c EN
 The name of the class; the symbol given to @code{define-class} macro.
 @code{class-name} returns this value.
+@c JP
+クラスの名前、@code{define-class} マクロに与えられたシンボルです。
+@code{class-name} はこの値を返します。
+@c COMMON
 @end defivar
 
 @defivar <class> cpl
+@c EN
 Class precedence list.  @code{class-precedence-list} returns this value.
+@c JP
+クラス順位リストです。@code{class-precedence-list} はこの値を返します。
+@c COMMON
 @end defivar
 
 @defivar <class> direct-supers
+@c EN
 The list of direct superclasses.
 @code{class-direct-supers} returns this value.
+@c JP
+直接スーパークラスのリストです。
+@code{class-direct-supers} はこの値を返します。
+@c COMMON
 @end defivar
 
 @defivar <class> accessors
+@c EN
 An assoc list of slot accessors---it encapsulates how each slot
 should be accessed.
+@c JP
+スロットアクセサの連想リストです。これは各スロットがどのようにアクセスされる
+べきかをカプセル化しています。
+@c COMMON
 @end defivar
 
 @defivar <class> slots
+@c EN
 A list of slot definitions.  @code{class-slots} returns this value.
 See @ref{Slot definition object}, for the details of slot definitions.
+@c JP
+スロット定義のリストです。@code{class-slots} はこの値を返します。
+スロット定義についての詳細は、@ref{Slot definition object} を参照してください。
+@c COMMON
 @end defivar
 
 @defivar <class> direct-slots
+@c EN
 A list of slot definitions that is directly specified in this
 class definition (i.e. not inherited).
 @code{class-direct-slots} returns this value.
+@c JP
+このクラスの定義で直接指定された(つまり継承したものではない)スロット定義の
+リストです。@code{class-direct-slots} はこの値を返します。
+@c COMMON
 @end defivar
 
 @defivar <class> num-instance-slots
+@c EN
 The number of instance allocated slots.
+@c JP
+インスタンスにアロケートされるスロットの数です。
+@c COMMON
 @end defivar
 
 @defivar <class> direct-subclasses
+@c EN
 A list of classes that directly inherits this class.
 @code{class-direct-subclasses} returns this value.
+@c JP
+このクラスを直接継承しているクラスのリストです。
+@code{class-direct-subclasses} はこの値を返します。
+@c COMMON
 @end defivar
 
 @defivar <class> direct-methods
+@c EN
 A list of methods that has this class in its specializer list.
 @code{class-direct-methods} returns this value.
+@c JP
+このクラスを特定化子リスト中にもつメソッドのリストです。
+@code{class-direct-methods} はこの値を返します。
+@c COMMON
 @end defivar
 
 @defivar <class> initargs
+@c EN
 The initialization argument list when this class is created.
 The information is used to initialize redefined class
 (see @ref{Class redefinition}).
+@c JP
+このクラスが生成されるときの初期化引数リストです。この情報は
+再定義されたクラスを初期化するのに使います(@ref{Class redefinition} 参照)。
+@c COMMON
 @end defivar
 
 @defivar <class> defined-modules
+@c EN
 A list of modules where this class has a global binding.
+@c JP
+このクラスがグローバル束縛をもつモジュールのリストです。
+@c COMMON
 @end defivar
 
 @defivar <class> redefined
+@c EN
 If this class has been redefined, this slot contains a reference
 to the new class.  Otherwise, this slot has @code{#f}.
+@c JP
+このクラスが再定義された場合、このスロットは新しいクラスへの参照を含みます。
+そうでない場合にはこのスロットは @code{#f} をもっています。
+@c COMMON
 @end defivar
 
 @defivar <class> category
+@c EN
 The value of this slot indicates how this class is created.
 Scheme defined class has a symbol @code{scheme}.  Other values
 are for internal use.
+@c JP
+このスロットの値は、このクラスがどのように生成されたかを示しています。
+Scheme 定義のクラスは、@code{scheme} というシンボルを持っています。それ以外の
+値は内部的に使用するだけです。
+@c COMMON
 @end defivar
 @end deftp
 
+@c EN
 @subsubheading The make method for @code{<class>}
+@c JP
+@subsubheading @code{<class>} 用の make メソッド
+@c COMMON
 
 @deffn {Method} make (class <class>) &rest initargs
 @end deffn
-
-
-
 
 
 @node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
@@ -3258,4 +3515,3 @@ are for internal use.
 
 @deffn {Generic Function} apply-method gf method build-next args
 @end deffn
-
