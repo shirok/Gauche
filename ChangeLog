@@ -1,11 +1,20 @@
+2001-02-02  Shiro Kawai  <shiro@scherzo>
+
+	* src/vm.c, src/gauche/vminsn.h, src/stdlib.stub: inline several
+	  number operations.
+        * src/compile.c: fix quasiquote code and clean up.
+	* make installation procedure clearer.
+	* src/gauche-config.in: added
+	* release 0.0.3
+
 2001-02-01  Shiro Kawai  <shiro@scherzo>
 
-	* src/class.c : added Scm_MakeBuiltinClass.
+	* src/class.c: added Scm_MakeBuiltinClass.
 	* src/string.c, extlib.stub: added string-append, string-join
-	* src/file.c : added
+	* src/file.c: added
 	* release 0.0.2
 	
 2001-01-31  Shiro Kawai  <shiro@scherzo>
 
-	* internal release (0.0.1)
+	* internal release 0.0.1
 
