@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.9 2001-04-26 07:04:40 shiro Exp $
+ * $Id: config.h.in,v 1.10 2001-05-10 08:36:36 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -26,6 +26,10 @@
 
 /* Define if the system has dlfcn.h */
 #undef HAVE_DLFCN_H
+
+/* Define if the system has isinf() and isnan() */
+#undef HAVE_ISINF
+#undef HAVE_ISNAN
 
 /* Define if the system has trunc */
 #undef HAVE_TRUNC
