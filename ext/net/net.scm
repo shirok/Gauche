@@ -12,12 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.4 2001-06-22 08:17:48 shirok Exp $
+;;;  $Id: net.scm,v 1.5 2001-06-23 07:04:10 shirok Exp $
 ;;;
 
 (define-module gauche.net
-  (use srfi-2)
-  (use srfi-13)
   (export <socket> make-socket
           pf_unix pf_inet af_unix af_inet sock_stream sock_dgram sock_raw
           socket-address socket-status socket-input-port socket-output-port
@@ -37,46 +35,68 @@
 
 ;; High-level interface.  We need some hardcoded heuristics here.
 
-(define (addr-spec->address addr-spec port server?)
-  (cond ((is-a? addr-spec <sockaddr>) addr-spec)
-        ((not (string? addr-spec))
-         (error "illegal address-spec: ~s" addr-spec))
-        ((string-prefix? "unix:" addr-spec)
-         (make <sockaddr-un> :path (string-drop addr-spec 5)))
-        ((string-prefix? "inet:" addr-spec)
-         (if server?
-             (make <sockaddr-in>
-               :host :any
-               :port (or (string->number (string-drop addr-spec 5))
-                         (error "bad inet server address spec: ~s" addr-spec)))
-             (let ((host-n-port (string-split addr-spec #\:)))
-               (or (and-let* (((= (length host-n-port) 3))
-                              (port (string->number (caddr host-n-port))))
-                     (make <sockaddr-in>
-                       :host (cadr host-n-port) :port port))
-                   (error "bad inet client address: ~s" addr-spec)))
-             ))
+(define (make-client-socket proto . args)
+  (cond ((eq? proto 'unix)
+         (let-optional* args ((path #f))
+           (unless (string? path)
+             (error "unix socket requires pathname, but got ~s" path))
+           (make-client-socket-unix path)))
+        ((eq? proto 'inet)
+         (let-optional* args ((host #f) (port #f))
+           (unless (and (string? host) (integer? port))
+             (error "inet socket requires host name and port, but got ~s and ~s"
+                    host port))
+           (make-client-socket-inet host port)))
+        ((and (string? proto)
+              (pair? args)
+              (integer? (car args)))
+         ;; STk compatibility
+         (make-client-socket-inet proto (car args)))
         (else
-         (unless (and (integer? port) (>= port 0))
-           (error "bad port number for inet client address: ~s" port))
-         (make <sockaddr-in> :host addr-spec :port port))
-        ))
+         (error "unsupported protocol: ~s" proto))))
 
-(define (address->protocol-family address)
-  (cond ((is-a? address <sockaddr-in>) pf_inet)
-        ((is-a? address <sockaddr-un>) pf_unix)
-        (else (error "this socket address is unknown to the high-level socket library" address))))
+(define (make-client-socket-unix path)
+  (let ((address (make <sockaddr-un> :path path))
+        (socket  (make-socket pf_unix sock_stream)))
+    (socket-connect socket address)
+    socket))
+  
+(define (make-client-socket-inet host port)
+  (let ((address (make <sockaddr-in> :host host :port port))
+        (socket (make-socket pf_inet sock_stream)))
+    (socket-connect socket address)
+    socket))
 
-(define (make-client-socket addr-spec . args)
-  (let-optional* args ((port #f))
-    (let* ((address (addr-spec->address addr-spec port #f))
-           (family  (address->protocol-family address))
-           (socket  (make-socket family sock_stream)))
-      (socket-connect socket address)
-      socket)))
+(define (make-server-socket proto . args)
+  (cond ((eq? proto 'unix)
+         (let-optional* args ((path #f))
+           (unless (string? path)
+             (error "unix socket requires pathname, but got ~s" path))
+           (make-server-socket-unix path)))
+        ((eq? proto 'inet)
+         (let-optional* args ((port #f))
+           (unless (integer? port)
+             (error "inet socket requires port number, but got ~s" port))
+           (apply make-server-socket-inet port args)))
+        ((integer? proto)
+         ;; STk compatibility
+         (apply make-server-socket-inet proto args))
+        (else
+         (error "unsupported protocol: ~s" proto))))
 
-(define (make-server-socket addr-spec . args)
-  #f
-  )
+(define (make-server-socket-unix path)
+  (let ((address (make <sockaddr-un> :path path))
+        (socket (make-socket pf_unix sock_stream)))
+    (socket-bind socket address)
+    (socket-listen socket 5)))
+
+(define (make-server-socket-inet port . args)
+  (let ((reuse-addr? (get-keyword :reuse-addr args #f))
+        (address (make <sockaddr-un> :host :any :port port))
+        (socket (make-socket pf_inet sock_stream)))
+    (when reuse-addr?
+      (socket-setsockopt socket sol_socket so_reuseaddr 1))
+    (socket-bind socket address)
+    (socket-listen socket 5)))
 
 (provide "gauche/net")
