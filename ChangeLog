@@ -1,3 +1,12 @@
+2001-05-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-init.scm: fixed a bug in the definition of atan.
+	* src/stdlib.stub: fixed a bug in =, which made it fail for
+	  complex numbers.
+	* src/vm.c (run_loop): fixed a bug that caused SEGV when the error
+	  handler tries to obtain stack trace.   fixed a bug in NUMEQ2
+	  instruction.
+
 2001-05-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/stdlib.stub (symbol->string): fixed a bug that didn't check
