@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.35 2001-03-05 07:14:03 shiro Exp $
+ *  $Id: compile.c,v 1.36 2001-03-05 08:48:45 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1547,7 +1547,7 @@ static ScmSyntax syntax_receive = {
 };
 
 /*------------------------------------------------------------------
- * With-module
+ * Module related routines
  */
 
 static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
@@ -1564,6 +1564,7 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
     if (!SCM_MODULEP(module))
         Scm_Error("with-module: no such module: %S", modname);
 
+    /* TODO: insert source-info */
     current = Scm_CurrentModule();
     SCM_PUSH_ERROR_HANDLER {
         Scm_SelectModule(SCM_MODULE(module));
@@ -1585,12 +1586,49 @@ static ScmSyntax syntax_with_module = {
     NULL
 };
 
+static ScmObj compile_select_module(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmObj modname, module;
+    if (Scm_Length(form) != 2) Scm_Error("syntax error: %S", form);
+    modname = SCM_CADR(form);
+    if (!SCM_SYMBOLP(modname))
+        Scm_Error("select-module: bad module name: %S", modname);
+    module = Scm_FindModule(SCM_SYMBOL(modname));
+    if (!SCM_MODULEP(module))
+        Scm_Error("select-module: no such module: %S", modname);
+    Scm_SelectModule(SCM_MODULE(module));
+    /* TODO: insert source-info */
+    return SCM_LIST1(module);
+}
+
+static ScmSyntax syntax_select_module = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_SELECT_MODULE),
+    compile_select_module,
+    NULL
+};
+
+static ScmObj compile_current_module(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    if (Scm_Length(form) != 1) Scm_Error("syntax error: %S", form);
+    return SCM_LIST1(SCM_OBJ(SCM_CURRENT_MODULE()));
+}
+
+static ScmSyntax syntax_current_module = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_CURRENT_MODULE),
+    compile_current_module,
+    NULL
+};
+
+
 /*===================================================================
  * Initializer
  */
 
 void Scm__InitCompiler(void)
 {
+    /* TODO: use different modules for R5RS syntax and others */
     ScmModule *m = SCM_MODULE(Scm_SchemeModule());
 
 #define DEFSYN(symbol, syntax) \
@@ -1618,4 +1656,6 @@ void Scm__InitCompiler(void)
     DEFSYN(SCM_SYM_DELAY,        syntax_delay);
     DEFSYN(SCM_SYM_RECEIVE,      syntax_receive);
     DEFSYN(SCM_SYM_WITH_MODULE,  syntax_with_module);
+    DEFSYN(SCM_SYM_SELECT_MODULE, syntax_select_module);
+    DEFSYN(SCM_SYM_CURRENT_MODULE, syntax_current_module);
 }
