@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.30 2001-06-14 09:07:14 shirok Exp $
+;;; $Id: syslib.stub,v 1.31 2001-06-19 19:44:20 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -41,6 +41,23 @@
 # endif
 #endif
 "
+
+;; a common utility function which expects file descriptor number or
+;; a port, and returns integer fd.
+
+"static int get_port_or_fd(ScmObj pf, int needfd)
+ {
+   int fd = -1;
+   if (SCM_INTP(pf)) { fd = SCM_INT_VALUE(pf); }
+   else if (SCM_PORTP(pf)) { fd = Scm_PortFileNo(SCM_PORT(pf)); }
+   else Scm_Error(\"port or small integer required, but got %S\", pf);
+   if (needfd && fd < 0) {
+     Scm_Error(\"the port is not associated with a system file descriptor: %S\", pf);
+   }
+   return fd;
+ }
+"
+
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory
 ;;   we don't have correspoinding functions, but provide these:
@@ -674,17 +691,11 @@
   SCM_RETURN(SCM_TRUE);")
 
 (define-cproc sys-isatty (port_or_fd)
-  "  int fd;
-  if (SCM_INTP(port_or_fd)) fd = SCM_INT_VALUE(port_or_fd);
-  else if (SCM_PORTP(port_or_fd)) fd = Scm_PortFileNo(SCM_PORT(port_or_fd));
-  else Scm_Error(\"port or small integer required, but got %S\", port_or_fd);
+  "  int fd = get_port_or_fd(port_or_fd, FALSE);
   SCM_RETURN(SCM_MAKE_BOOL(fd >= 0 && isatty(fd)));")
   
 (define-cproc sys-ttyname (port_or_fd)
-  "  int fd; const char *name;
-  if (SCM_INTP(port_or_fd)) fd = SCM_INT_VALUE(port_or_fd);
-  else if (SCM_PORTP(port_or_fd)) fd = Scm_PortFileNo(SCM_PORT(port_or_fd));
-  else Scm_Error(\"port or small integer required, but got %S\", port_or_fd);
+  "  int fd = get_port_or_fd(port_or_fd, FALSE); const char *name;
   if (fd < 0) SCM_RETURN(SCM_FALSE);
   name = ttyname(fd);
   if (name) SCM_RETURN(SCM_MAKE_STR_COPYING(name));
@@ -730,8 +741,43 @@
 ;;---------------------------------------------------------------------
 ;; select
 
+(define-type "sys-fdset" sys-fdset?
+  "ScmSysFdset*"  "SCM_SYS_FDSET_P" "SCM_SYS_FDSET")
 
+(define-cproc sys-fdset-ref (fdset pf)
+  (assert (sys-fdset? fdset))
+  "#ifdef HAVE_SELECT
+  int fd = get_port_or_fd(pf, TRUE);
+  SCM_RETURN(SCM_MAKE_BOOL(FD_ISSET(fd, &fdset->fdset)));
+#else
+  SCM_RETURN(SCM_UNDEFINED); /* can't be here */
+#endif"
+  (setter sys-fdset-set!))
+  
+(define-cproc sys-fdset-set! (fdset pf flag)
+  (assert (sys-fdset? fdset))
+  (assert (boolean? flag))
+  "#ifdef HAVE_SELECT
+  int fd = get_port_or_fd(pf, TRUE);
+  if (flag) {
+    FD_SET(fd, &fdset->fdset);
+    if (fdset->maxfd < fd) fdset->maxfd = fd;
+  } else {
+    FD_CLR(fd, &fdset->fdset);
+    if (fdset->maxfd == fd) {
+      int i;
+      for (i=fdset->maxfd-1; i>=0; i--) {
+        if (FD_ISSET(i, &fdset->fdset)) break;
+      }
+      fdset->maxfd = i;
+    }
+  }
+#endif
+  SCM_RETURN(SCM_UNDEFINED);")
 
+(define-cproc sys-fdset-maxfd (fdset)
+  (assert (sys-fdset? fdset))
+  "  SCM_RETURN(Scm_MakeInteger(fdset->maxfd));")
 
 ;; Local variables:
 ;; mode: scheme

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.19 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: system.c,v 1.20 2001-06-19 19:45:02 shirok Exp $
  */
 
 #include <stdio.h>
@@ -478,5 +478,15 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
  */
 
 #ifdef HAVE_SELECT
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysFdsetClass, NULL);
+static ScmObj fdset_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmSysFdset *set = SCM_NEW(ScmSysFdset);
+    SCM_SET_CLASS(set, SCM_CLASS_SYS_FDSET);
+    set->maxfd = -1;
+    FD_ZERO(&set->fdset);
+    return SCM_OBJ(set);
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysFdsetClass, NULL, NULL, NULL,
+                         fdset_allocate, SCM_CLASS_DEFAULT_CPL);
 #endif /* HAVE_SELECT */

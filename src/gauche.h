@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.156 2001-06-17 09:30:06 shirok Exp $
+ *  $Id: gauche.h,v 1.157 2001-06-19 19:45:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1802,14 +1802,20 @@ extern void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap);
 #ifdef HAVE_SELECT
 typedef struct ScmSysFdsetRec {
     SCM_HEADER;
+    int maxfd;
     fd_set fdset;
 } ScmSysFdset;
 
 extern ScmClass Scm_SysFdsetClass;
 #define SCM_CLASS_SYS_FDSET     (&Scm_SysFdsetClass)
-#define SCM_SYS_FDSET(obj)      ((ScmSysFdset*)(obj)
+#define SCM_SYS_FDSET(obj)      ((ScmSysFdset*)(obj))
 #define SCM_SYS_FDSET_P(obj)    (SCM_XTYPEP(obj, SCM_CLASS_SYS_FDSET))
-#endif /*HAVE_SELECT*/
+#else  /*!HAVE_SELECT*/
+/* dummy definitions */
+typedef struct ScmHeaderRec ScmSysFdset;
+#define SCM_SYS_FDSET(obj)      (obj)
+#define SCM_SYS_FDSET_P(obj)    (FALSE)
+#endif /*!HAVE_SELECT*/
     
 /*---------------------------------------------------
  * LOAD AND DYNAMIC LINK
