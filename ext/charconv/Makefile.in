@@ -7,11 +7,11 @@ GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
 INSTALL = @INSTALL@
 
-ARCHFILES = charconv.so
+ARCHFILES = libcharconv.so
 SCMFILES =
 HEADERS = 
 
-TARGET = charconv.so
+TARGET = libcharconv.so
 OBJS = charconv.o convlib.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status
 
@@ -25,8 +25,8 @@ TESTTXTS = test.1.euc-jp test.1.sjis test.1.utf-8 test.1.iso2022jp
 
 all : $(TARGET)
 
-charconv.so : $(OBJS)
-	$(CC) $(LDFLAGS) charconv.so $(OBJS) $(LIBS)
+libcharconv.so : $(OBJS)
+	$(CC) $(LDFLAGS) libcharconv.so $(OBJS) $(LIBS)
 
 convlib.c : convlib.stub
 	$(GOSH) genstub convlib.stub

@@ -38,18 +38,20 @@
 ;;--------------------------------------------------------------------
 (test-section "input conversion")
 
-(define (test-input file from to)
-  (let ((infostr  (format #f "~a ~a => ~a" file from to))
-        (fromfile (format #f "~a.~a" file from))
-        (tofile   (format #f "~a.~a" file to)))
+(define (test-input file from to . guesser)
+  (let* ((realfrom (if (null? guesser) from (car guesser)))
+         (infostr  (format #f "~a.~a (~a) => ~a" file from realfrom to))
+         (fromfile (format #f "~a.~a" file from))
+         (tofile   (format #f "~a.~a" file to)))
     (if (ces-conversion-supported? from to)
         (if (supported-character-encoding? to)
             (test infostr
                   (file->string tofile)
-                  (lambda () (file->string-conv/in fromfile from)))
+                  (lambda () (file->string-conv/in fromfile realfrom)))
             (test infostr
                   (file->string tofile)
-                  (lambda () (file->string-conv/in fromfile from :to-code to))))
+                  (lambda () (file->string-conv/in fromfile realfrom
+                                                   :to-code to))))
         (test infostr "(not supported)"
               (lambda () "(not supported)")))
     ))
@@ -63,6 +65,18 @@
 (map-test test-input "data/kr1"
           '("EUCKR" "UTF-8" "CSISO2022KR")
           '("EUCKR" "UTF-8" "CSISO2022KR"))
+
+;; autodetect tester
+(map-test (lambda (file from to)
+            (test-input file from to "*JP"))
+          "data/jp1"
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+(map-test (lambda (file from to)
+            (test-input file from to "*JP"))
+          "data/jp2"
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
 
 ;;--------------------------------------------------------------------
 (test-section "output conversion")
