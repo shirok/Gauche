@@ -47,9 +47,6 @@
 /* Define to use Linux threads */
 #undef GC_LINUX_THREADS
 
-/* Define to use pthreads */
-#undef GC_PTHREADS
-
 /* Define to use Solaris pthreads */
 #undef GC_SOLARIS_PTHREADS
 
@@ -296,21 +293,6 @@
 
 /* Define if time_t is typedef'ed to an integral type */
 #undef INTEGRAL_TIME_T
-
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the version of this package. */
-#undef PACKAGE_VERSION
 
 /* Directory where libtool places the compiled libraries */
 #undef SCM_LIBTOOL_OBJDIR
