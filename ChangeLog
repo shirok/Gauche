@@ -4,7 +4,7 @@
 	  complete-string addition to DString.
 	* src/write.c : fixed a format problem that counts # of characters
 	  incorrectly when maxcol argument is given to the ~a or ~s directive
-	  (a bug pointed out by Kimura Fuyuki).  Test cases for this is
+	  (a bug pointed out by Kimura Shigenobu).  Test cases for this is
 	  also added.
 
 2002-10-30  Shiro Kawai  <shiro@acm.org>
