@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.13 2003-08-26 09:57:09 shirok Exp $
+## $Id: Makefile.ext.in,v 1.14 2003-08-26 10:00:59 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -22,7 +22,6 @@ LDFLAGS  = @LOCAL_LIB@ @SHLIB_SO_LDFLAGS@
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
 INCLUDES = -I$(srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/gc/include @LOCAL_INC@ $(EXTRA_INCLUDES)
-LN_S     = @LN_S@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 SOEXT    = @SHLIB_SO_SUFFIX@
