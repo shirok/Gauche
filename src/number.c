@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.37 2001-05-07 08:41:07 shirok Exp $
+ *  $Id: number.c,v 1.38 2001-05-07 08:56:32 shirok Exp $
  */
 
 #include <math.h>
@@ -1301,7 +1301,10 @@ static ScmObj read_complex(const char *str, int len)
     if (next == str+len) return Scm_MakeFlonum(real);
 
     if (*next == 'i') {
-        if (sign && next == str+len-1) return Scm_MakeComplex(0, real);
+        if (sign && next == str+len-1) {
+            if (real == 0.0) return Scm_MakeFlonum(0.0);
+            else return Scm_MakeComplex(0, real);
+        }
         else return SCM_FALSE;
     }
 
