@@ -12,14 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: threads.scm,v 1.2 2002-08-27 19:52:41 shirok Exp $
+;;;  $Id: threads.scm,v 1.3 2002-09-18 22:20:58 shirok Exp $
 ;;;
 
 (define-module gauche.threads
   (export-all))
 (select-module gauche.threads)
 
-(dynamic-load "threads")
+(dynamic-load "threads" :export-symbols #t)
 
 ;;
 ;; Thread
