@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.181 2002-04-26 09:24:25 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.182 2002-04-26 09:30:42 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6790,6 +6790,18 @@ to implement other functionality.
 Returns true if @var{obj} is an input port and an output port, respectively.
 @c JP
 @var{obj} がそれぞれ入力ポートと出力ポートなら真を返します。
+@c COMMON
+@end defun
+
+@defun port? obj
+[R5RS]
+@c EN
+Returns true if @var{obj} is a port.  This is not listed in the
+R5RS standard procedures, but mentioned in the "Disjointness of Types"
+section.
+@c JP
+@var{obj} がポートなら真を返します。この手続きはR5RSの"Standard Procedures"の項には
+載っていませんが、"Disjointness of Types"の項に挙げられています。
 @c COMMON
 @end defun
 
