@@ -39,13 +39,6 @@
   )
 (select-module srfi-37)
 
-(define option #f)
-(define option-names #f)
-(define option-required-arg? #f)
-(define option-optional-arg? #f)
-(define option-processor #f)
-(define option? #f)
-
 (define-class <option-type> ()
   ((names :init-keyword :names :getter option-names)
    (required-arg? :init-keyword :required-arg? :getter option-required-arg?)
