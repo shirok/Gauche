@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.127 2001-11-16 11:39:55 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.128 2001-11-29 19:24:04 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -26,7 +26,7 @@
 @c JP
 @title Gauche リファレンスマニュアル
 @c COMMON
-@subtitle version 0.4.9
+@subtitle version 0.4.10
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -7376,8 +7376,10 @@ of descendants of @var{class}.
 * High Level Process Interface::  
 * Regular expression utilities::  
 * Simple dispatcher::           
+* Singleton::                   
 * Termios::                     
 * Unit Testing::                
+* Slot with validator::         
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
 * HTTP cookie handling::        
@@ -9784,7 +9786,7 @@ value from the procedure is inserted to the output string using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple dispatcher, Termios, Regular expression utilities, Library modules
+@node Simple dispatcher, Singleton, Regular expression utilities, Library modules
 @section @code{gauche.selector} - Simple dispatcher
 @c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
@@ -9899,7 +9901,43 @@ This is a simple example of "echo" server:
 @c @end deftp
 
 @c ----------------------------------------------------------------------
-@node Termios, Unit Testing, Simple dispatcher, Library modules
+@node Singleton, Termios, Simple dispatcher, Library modules
+@section @code{gauche.singleton} - Singleton
+
+@deftp {Module} gauche.singleton
+@mdindex gauche.singleton
+Provides a metaclass to define a singleton class.
+@end deftp
+
+@deftp {Class} <singleton-meta>
+@clindex singleton-meta
+Creates a singleton class.  A singleton class is a class that is
+guaranteed to create only one instance.
+The first invocation of @code{make} creates the single instance,
+and further attempt of creation returns the same instance.
+
+@example
+(define-class single () () :metaclass <singleton-meta>)
+
+(define a (make single))
+(define b (make single))
+
+(eq? a b) @result{} #t
+@end example
+
+The slots of the instance are initialized at the first invocation
+of @code{make}.  Initargs of @code{make} are effective only in the
+fist invocation, and ignored in the subsequent invocation.
+@end deftp
+
+@deffn {Method} instance-of (class <singleton-meta>) &rest initargs
+This method just calls @code{make} with the passed arguments.
+It is more obvious in the program that you're dealing with singleton.
+@end deffn
+
+
+@c ----------------------------------------------------------------------
+@node Termios, Unit Testing, Singleton, Library modules
 @section @code{gauche.termios} - Termios
 @c NODE Termios, @code{gauche.termios} - Termios
 
@@ -10055,7 +10093,7 @@ without echoing:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Unit Testing, RFC822 Message parsing, Termios, Library modules
+@node Unit Testing, Slot with validator, Termios, Library modules
 @section @code{gauche.test} - Unit Testing
 @c NODE 単体テスト, @code{gauche.test} - 単体テスト
 
@@ -10123,7 +10161,60 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node RFC822 Message parsing, Base64 encoding/decoding, Unit Testing, Library modules
+@node Slot with validator, RFC822 Message parsing, Unit Testing, Library modules
+@section @code{gauche.validator} - Slot with validator
+@c NODE Validator付きスロット, @code{gauche.validator} - Validator付きスロット
+
+@deftp {Module} gauche.validator
+@mdindex gauche.validator
+@c EN
+Provides a metaclass that adds @code{:validator} slot option.
+@c JP
+@code{:validator}スロットオプションを追加するメタクラスを提供するモジュールです。
+@c COMMON
+@end deftp
+
+@deftp {Class} <validator-meta>
+@clindex validator-meta
+This metaclass adds a feature that the class can validate a value
+before being set to the slot.   For example, if you want to guarantee
+that a certain slot always holds a string value, you can make a procedure
+be called before the slot is modified, either by @code{slot-ref} or
+by a setter method.  In the procedure you can either rejects a
+value except string, or coerce the value to a string.   See the
+following example:
+
+@example
+(define-class <v> ()
+  ((a :accessor a-of
+      :validator (lambda (obj value) (x->string value)))
+   (b :accessor b-of
+      :validator (lambda (obj value)
+                   (if (integer? value)
+                       value
+                       (error "integer required for slot b")))))
+  :metaclass <validator-meta>)
+
+(define v (make <v>))
+(slot-set! v 'a 'foo)
+(slot-ref v 'a) @result{} "foo"
+
+(set! (a-of v) 1234)
+(a-of v) @result{} "1234"
+
+(slot-set! v 'b 55)
+(slot-ref v 'b) @result{} 55
+
+(slot-set! v 'b 3.4) @result{} @r{error}
+(set! (b-of v) 3.4)  @result{} @r{error}
+@end example
+
+
+
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node RFC822 Message parsing, Base64 encoding/decoding, Slot with validator, Library modules
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
