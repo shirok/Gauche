@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.16 2002-07-19 02:21:47 shirok Exp $
+# $Id: gauche-config.in,v 1.17 2002-10-17 02:42:29 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -21,6 +21,8 @@ gauche_archdir="$archdir/@GAUCHE_VERSION@/@host@"
 gauche_siteincdir="$archdir/site/include"
 gauche_sitelibdir="$datadir/site/lib"
 gauche_sitearchdir="$archdir/site/@GAUCHE_VERSION@/@host@"
+gauche_mandir="@mandir@"
+gauche_infodir="@infodir@"
 gauche_version=@GAUCHE_VERSION@
 gauche_libs="@LIBS@"
 gauche_configure_args="@GAUCHE_CONFIGURE_ARGS@"
@@ -64,6 +66,9 @@ usage () {
     echo "       directories where system/site DSO files go"
     echo "  --sysincdir/--siteincdir"
     echo "       directories where system/site header files of extensions go"
+    echo "  --mandir"
+    echo "  --infodir"
+    echo "       directories where gauche manpage and info docs are installed"
     echo
     echo "Parameters to compile Gauche extention"
     echo "  --so-suffix     object file suffix of the gauche extension"
@@ -97,6 +102,8 @@ case $1 in
   --sitelibdir) echo $gauche_sitelibdir;;
   --sysarchdir) echo $gauche_archdir;;
   --sitearchdir) echo $gauche_sitearchdir;;
+  --mandir) echo $mandir;;
+  --infodir) echo $infodir;;
   --arch) echo $arch;;
 
   --local-incdir) echo $local_incdir;;
