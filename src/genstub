@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.51 2002-02-08 09:10:58 shirok Exp $
+;;;  $Id: genstub,v 1.52 2002-02-09 21:52:43 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -606,7 +606,7 @@
 
 (define-class <cgeneric> (<setter-mixin> <stub>)
   ((extern?  :initform #f :init-keyword :extern? :accessor extern?)
-   (fallback :initform "Scm_NoNextMethod" :init-keyword :fallback
+   (fallback :initform "NULL" :init-keyword :fallback
              :accessor fallback-of)
    ))
 
@@ -721,7 +721,7 @@
   (println "}")
   (newline)
   (print "static ScmClass *~a_SPEC[] = { " (c-name-of method))
-  (for-each (lambda (spec) (print "~a, " spec))
+  (for-each (lambda (spec) (print "SCM_CLASS_STATIC_PTR(~a), " spec))
             (reverse (specializers-of method)))
   (println "};")
   (println "static SCM_DEFINE_METHOD(~a_STUB, &~a, ~a, ~a, ~a_SPEC, ~a, NULL);"
@@ -745,7 +745,7 @@
           ((symbol? arglist)
            (values (cons (make <rest-arg> :name arglist :count (length args))
                          args)
-                   (cons "SCM_CLASS_LIST" specs)
+                   (cons "Scm_ListClass" specs)
                    (length args) #t))
           ((not (pair? arglist)) (badlist))
           ((symbol? (car arglist))
@@ -753,7 +753,7 @@
                  (cons (make <required-arg>
                              :name (car arglist) :count (length args))
                        args)
-                 (cons "SCM_CLASS_TOP" specs)))
+                 (cons "Scm_TopClass" specs)))
           ((not (and (pair? (car arglist))
                      (= (length (car arglist)) 2)
                      (symbol? (caar arglist))

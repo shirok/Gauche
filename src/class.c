@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.71 2002-02-08 09:10:58 shirok Exp $
+ *  $Id: class.c,v 1.72 2002-02-09 21:52:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1228,8 +1228,6 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
         }
         if (n == m->common.required) SCM_APPEND1(h, t, SCM_OBJ(m));
     }
-    //    Scm_Printf(SCM_CURERR, ">>> gf=%S args=%S h=%S\n", gf,
-    //	       Scm_ArrayToList(args, nargs), h);
     return h;
 }
 
@@ -1701,6 +1699,9 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 {
     ScmObj s = SCM_INTERN(name);
     gf->common.info = s;
+    if (gf->fallback == NULL) {
+	gf->fallback = Scm_NoNextMethod;
+    }
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(gf));
 }
 
@@ -1787,6 +1788,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_NULL,             "<null>");
 
     /* macro.c */
+    CINIT(SCM_CLASS_AUTOLOAD,         "<autoload>");
     CINIT(SCM_CLASS_SYNTAX,           "<syntax>");
     CINIT(SCM_CLASS_SYNTAX_PATTERN,   "<syntax-pattern>");
     CINIT(SCM_CLASS_SYNTAX_RULES,     "<syntax-rules>");

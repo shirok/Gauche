@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.216 2002-02-08 09:10:58 shirok Exp $
+ *  $Id: gauche.h,v 1.217 2002-02-09 21:52:42 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -503,7 +503,7 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 
 /* Define built-in class statically -- simpler version */
 #define SCM_DEFINE_BUILTIN_CLASS_SIMPLE(cname, printer)         \
-    SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL, NULL, SCM_CLASS_DEFAULT_CPL)
+    SCM_DEFINE_BUILTIN_CLASS(cname, printer, NULL, NULL, NULL, NULL)
 
 /* define an abstract class */
 #define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)            \
