@@ -193,6 +193,32 @@
          (lambda () (eval '(car '(3 2)) (null-environment 5))))))
 
 ;;----------------------------------------------------------------
+(test-section "delay & force")
+
+(test "simple delay" 3
+      (lambda () (force (delay (+ 1 2)))))
+
+(test "delay w/state" 3
+      (lambda ()
+        (let ((x 9))
+          (let ((d (delay (/ x 3))))
+            (force d)
+            (set! x 99)
+            (force d)))))
+
+(test "delay recursive" 6  ;; R5RS 6.4
+      (lambda ()
+        (letrec ((count 0)
+                 (x 5)
+                 (p (delay (begin (set! count (+ count 1))
+                                  (if (> count x)
+                                      count
+                                      (force p))))))
+          (force p)
+          (set! x 10)
+          (force p))))
+
+;;----------------------------------------------------------------
 (test-section "optimized frames")
 
 ;; Empty environment frame is omitted by compiler optimization.
