@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.155 2002-02-14 07:40:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.156 2002-02-14 19:38:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1194,8 +1194,12 @@ although it is not generally recommended.
 @section Interactive development
 @c NODE  インタラクティブな開発
 
+@c EN
 When @code{gosh} is invoked without any script files,
 it goes into interactive read-eval-print loop.
+@c JP
+
+@c COMMON
 
 To exit the interpreter, type EOF (usually Control-D in Unix termials)
 or evaluate @code{(exit)}.
@@ -1215,10 +1219,15 @@ internal character encodings.
 Currently @code{gosh} has no fancy features such as
 line-editing or command history.   They'll be added in future.
 
+@xref{Interactive session}, for some procedures useful in
+interactive session.
+
 @c ----------------------------------------------------------------------
 @node Debugging, Writing Scheme scripts, Interactive development, Programming in Gauche
 @section Debugging
 @c NODE デバッグ
+
+
 
 
 @c ----------------------------------------------------------------------
@@ -2212,17 +2221,34 @@ value is returned.
 @defspecx let* ((var expr) @dots{}) body @dots{}
 @defspecx letrec ((var expr) @dots{}) body @dots{}
 [R5RS]
+@c EN
 Creates a local scope where @var{var} @dots{} are bound to the
 value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
 @var{var}s must be symbols, and there shouldn't be a duplication.
+The value(s) of the last expression of @var{body} @dots{} becomes
+the value(s) of this form.
+@c JP
+各変数@var{var}が@var{expr}の値に束縛されてているローカルな環境を作成し、
+その中で@var{body} @dots{}を評価します。@var{var}はシンボルでなければ
+ならず、重複があってはなりません。@var{body} @dots{}の最後の式の値が
+このフォームの値となります。
+@c COMMON
 
+@c EN
 The three forms differ in terms of the scope @var{expr}s are evaluated.
-@code{let} evaluates @var{expr}s before (outside of) @code{let} form.
-@code{let*} evaluates @var{expr}s in the scope where @var{var}s before
-it are bound.   @code{letrec} evaluates @var{expr}s in the environment
+@code{Let} evaluates @var{expr}s before (outside of) @code{let} form.
+@code{Let*} evaluates @var{expr}s in the scope where @var{var}s before
+it are bound.   @code{Letrec} evaluates @var{expr}s in the environment
 where @var{var}s are already bound (to an undefined value, initially).
 @code{letrec} is necessary to define mutually recursive local procedures.
-
+@c JP
+これらの3つのフォームの違いは、@var{expr}が評価される時点のスコープにあります。
+@code{let}は@var{expr}を@var{let}フォームに入る前の環境において評価します。
+@code{let*}は@var{expr}を順に、それ以前の@var{var}が束縛された環境において評価して
+ゆきます。@var{letrec}は全ての@var{var}が仮想的に不定の値に束縛された環境において
+各@var{expr}を評価します。@var{letrec}は相互再帰的なローカル関数を定義する場合に
+必要です。
+@c COMMON
 @example
 (define x 'top-x)
 
@@ -2241,11 +2267,19 @@ where @var{var}s are already bound (to an undefined value, initially).
 
 @defspec receive formals expression body @dots{}
 [SRFI-8]
+@c EN
 This is the way to receive multiple values.
-@var{formals} can be a (maybe-improper) list of symbols.
-@var{expression} is evaluated, and the returned value(s)
-are bound to @var{formals}, then @var{body} @dots{} are
-evaluated.
+@var{Formals} can be a (maybe-improper) list of symbols.
+@var{Expression} is evaluated, and the returned value(s)
+are bound to @var{formals} like the binding of lambda formals,
+then @var{body} @dots{} are evaluated.
+@c JP
+この構文により、多値を受け取ることができます。
+@var{formals}はシンボルのリストです。不完全なリストであっても構いません。
+@var{expression}が評価され、返された値がlambda形式の引数の束縛と
+同じようにして@var{formals}内の変数と束縛され、その環境下で@var{body} @dots{}が
+評価されます。
+@c COMMON
 
 @example
 (define (divrem n m)
@@ -2253,13 +2287,26 @@ evaluated.
 
 (receive (q r) (divrem 13 4) (list q r))
   @result{} (3 1)
+
+(receive all (divrem 13 4) all)
+  @result{} (3 1)
+
+(receive (q . rest) (divrem 13 4) (list q rest)
+  @result{} (3 (1))
 @end example
 
+@c EN
 See also @code{call-with-values} in @ref{Multiple values}
 which is the procedural equivalent of @code{receive}.
 Also @code{let-values} and @code{let*-values} 
 in SRFI-11 (@ref{Let-values}) provides
 @code{let}-like syntax with multiple values.
+@c JP
+なお、@ref{Multiple values}の@var{call-with-values}は
+@code{receive}と等価な手続き的インタフェースです。
+また、SRFI-11 (@ref{Let-values}) の@code{let-values}と
+@code{let*-values}は@code{let}のような形式で多値を扱うことができます。
+@c COMMON
 @end defspec
 
 @node Sequencing, Iteration, Binding constructs, Core syntax
@@ -2767,7 +2814,19 @@ R5RSの健全なマクロは特別なパターン言語に基づいていて、
 @section Traditional Macros
 @c NODE 伝統的なマクロ
 
-@defspec define-macro (name formals) body @dots{}
+@defspec define-macro name procedure
+@defspecx define-macro (name formals) body @dots{}
+Defines @var{name} to be a global macro whose transformer is @var{procedure}.
+The second form is a shorthand notation of the following form:
+@example
+(define-macro name (lambda formals body @dots{}))
+@end example
+
+When a form @code{(name @var{arg} @dots{})} is seen by the compiler,
+it calls @var{procedure} with @var{arg} @dots{}.  When @var{procedure}
+returns, the compiler inserts the returned form in place of the original
+form, and compile it again.
+
 
 @end defspec
 
@@ -2813,7 +2872,7 @@ the internal syntactic binding informations.
 @defun unwrap-syntax form
 Removes internal syntactic information from @var{form}.
 In order to implement a hygienic macro, macro expander replaces
-symbols in the macro from for identifiers, which captures the
+symbols in the macro form for identifiers, which captures the
 syntactic environment where they are defined.  Although it is
 necessary information for the compiler, it is rather confusing
 for users if it appears in the messages.  This function
@@ -5200,40 +5259,112 @@ to use SRFI-4 homogenous vectors (@xref{Homogeneous Vectors}).
 
 @defun vector? obj
 [R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
+@c JP
+@var{obj}がベクタなら@code{#t}を、そうでなければ@var{#f}を返します。
+@c COMMON
 @end defun
 
 @defun make-vector k &optional fill
 [R5RS]
+@c EN
+Creates and returns a vector with length @var{k}.
+If optional argument @var{fill} is given, each element of the vector
+is initialized by it.  Otherwise, the initial value of each element
+is undefined.
+@c JP
+長さ@var{k}のベクタを作成して返します。
+省略可能な引数@var{fill}が与えられていれば、ベクタの各要素はその値で
+初期化されます。そうでなければベクタの各要素の値は不定です。
+@c COMMON
 @end defun
 
 @defun vector obj @dots{}
 [R5RS]
+@c EN
+Creates a vector whose elements are @var{obj} @dots{}.
+@c JP
+要素が@var{obj} @dots{}であるようなベクタを作成して返します。
+@c COMMON
 @end defun
 
 @defun vector-length vector
 [R5RS]
+@c EN
+Returns the length of a vector @var{vector}.
+
+With @code{gauche.collection} module,
+you can also use a method @code{size-of}.
+@c JP
+ベクタ@var{vector}の長さを返します。
+
+@code{gauche.collection}モジュールをロードしていれば、
+メソッド@code{size-of}も同じ目的で使えます。
+@c COMMON
 @end defun
 
 @defun vector-ref vector k &optional fallback
-[R5RS+] Returhs @var{k}-th element of vector @var{vector}.
+[R5RS+]
+@c EN
+Returns @var{k}-th element of vector @var{vector}.
 
 By default, @code{vector-ref} signals an error if @var{k} is
 negative, or greater than or equal to the length of @var{vector}.
 However, if an optional argument @var{fallback} is given,
 it is returned for such case.  This is an extension of Gauche.
+
+With @code{gauche.sequence} module,
+you can also use a method @code{ref}.
+@c JP
+ベクタ@var{vector}の@var{k}番目の要素を返します。
+
+@code{vector-ref}は@var{k}が負の値であったりベクタの長さより
+大きかったりした場合はエラーを通知します。但し、省略可能な引数@var{fallback}
+が与えられている場合はその値が返されます。これはGaucheの拡張です。
+
+@code{gauche.sequence}モジュールをロードしていれば、
+メソッド@code{ref}も同じ目的で使えます。
+@c COMMON
 @end defun
 
 @defun vector-set! vector k obj
 [R5RS]
+@c EN
+Sets @var{k}-th element of the vector @var{vector} to @var{obj}.
+It is an error if @var{k} is negative or greater than or equal to the
+length of @var{vector}.
+@c JP
+@c COMMON
+ベクタ@var{vector}の@var{k}番目の要素を@var{obj}に変更します。
+@var{k}が負数であったりベクタの長さより大きい場合はエラーとなります。
 @end defun
 
 @defun vector->list vector
 @defunx list->vector list
 [R5RS]
+@c EN
+Converts a vector to a list, or vice versa.
+
+With @var{gauche.collection} module, you can use
+@code{(coerce-to <list> @var{vector})} and 
+@code{(coerce-to <vector> @var{list})} as well.
+@c JP
+ベクタをリストに変換したり、その逆を行う手続きです。
+
+@code{gauche.collection}モジュールをロードしていれば、
+@code{(coerce-to <list> @var{vector})} と
+@code{(coerce-to <vector> @var{list})} も同じ目的で使えます。
+@c COMMON
 @end defun
 
 @defun vector-fill! vector fill
 [R5RS]
+@c EN
+Sets all elements in a vector @var{vector} to @var{fill}.
+@c JP
+ベクタ@var{vector}の全ての要素を@var{fill}に変更します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -13450,6 +13581,21 @@ CRLFs removed.
 The order of fields are preserved.
 @end defun
 
+@defun rfc822-parse-date string
+Takes RFC-822 type date string, and returns eight values:
+@example
+year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
+@end example
+
+@emph{Timezone} is an offset from UT in minutes.
+@emph{Day-of-week} is a day from sunday,
+and may be #f if that information is not available.
+If the string is not parsable, all the elements are #f.
+
+Note: This function follows the new definition of date format in RFC2822,
+but may fail to recognize "obsolete" format, which allows arbitrary
+comments appear between words.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Library modules
@@ -16949,7 +17095,9 @@ No equivalent function in Gauche.
 @itemx atan2
 R5RS @code{atan}.  @xref{Arithmetics}.
 @item atexit
-No equivalent function in Gauche.
+No equivalent function in Gauche, but the "after" thunk of active
+dynamic handlers are called when @code{exit} is called.
+@xref{Program termination}, and @xref{Continuation}.
 @item atof
 @itemx atoi
 @itemx atol
