@@ -1,21 +1,26 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.9 2002-01-06 22:36:06 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.10 2002-02-11 09:26:40 shirok Exp $
 ;;;
 
 (define-module srfi-0
   (export cond-expand))
 (select-module srfi-0)
 
-;; This implementation is based on the reference implementation
-;; by Mark Feeley.
+;;; The following features are supported in all Gauche versions.
+;;;
+;;;   srfi-0, srfi-1, srfi-2, srfi-4, srfi-6, srfi-8,
+;;;   srfi-9, srfi-11, srfi-13, srfi-14, srfi-17,
+;;;   srfi-23, gauche
+;;;
 
 (define-syntax cond-expand
-  (syntax-rules (and or not else
+  (syntax-rules (and or not else gauche
                  srfi-0 srfi-1 srfi-2 srfi-4 srfi-6 srfi-8 srfi-9
                  srfi-11 srfi-13 srfi-14 srfi-17 srfi-23)
     ((cond-expand) (error "Unfulfilled cond-expand"))
+
     ((cond-expand (else body ...))
      (begin body ...))
     ((cond-expand ((and) body ...) more-clauses ...)
@@ -42,6 +47,8 @@
       (req
        (cond-expand more-clauses ...))
       (else body ...)))
+    ((cond-expand (gauche body ...) more-clauses ...)
+     (begin body ...))
     ((cond-expand (srfi-0 body ...) more-clauses ...)
      (begin body ...))
     ((cond-expand (srfi-1 body ...) more-clauses ...)
