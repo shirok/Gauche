@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.11 2004-03-12 01:53:11 foof Exp $
+;;;  $Id: array.scm,v 1.12 2004-04-02 01:16:37 foof Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -27,7 +27,7 @@
   (export <array-meta> <array>
           array? make-array shape array array-rank
           array-start array-end array-ref array-set!
-          share-array subarray
+          share-array subarray array-equal?
           array-valid-index?  shape-valid-index?
           array-shape array-length array-size
           array-for-each-index shape-for-each
@@ -38,9 +38,20 @@
           make-u8array make-s8array make-u16array make-s16array
           make-u32array make-s32array make-u64array make-s64array
           make-f32array make-f64array
-          )
-  )
+          array-concatenate array-transpose array-rotate-90 array-flip array-flip!
+          identity-array array-inverse determinant determinant! array-mul array-expt
+          array-div-left array-div-right array-add-elements array-add-elements!
+          array-sub-elements array-sub-elements! array-mul-elements array-mul-elements!
+          array-div-elements array-div-elements! pretty-print-array
+          ))
 (select-module gauche.array)
+
+(autoload "gauche/matrix"
+  array-concatenate array-transpose array-rotate-90 array-flip array-flip!
+  identity-array array-inverse determinant determinant! array-mul array-expt
+  array-div-left array-div-right array-add-elements array-add-elements!
+  array-sub-elements array-sub-elements! array-mul-elements array-mul-elements!
+  array-div-elements array-div-elements! pretty-print-array)
 
 (define-class <array-meta> (<class>)
   ((backing-storage-creator :init-keyword :backing-storage-creator
@@ -65,7 +76,7 @@
         (display ")" port))
       (define-reader-ctor name
         (lambda (sh . inits)
-          (list-fill-array! (make class :shape (apply shape sh)) inits))))))
+          (list-fill-array! (make-array-internal class (apply shape sh)) inits))))))
 
 
 (define-class <array-base> ()
@@ -79,32 +90,15 @@
   :metaclass <array-meta>)
 
 (define-method initialize ((self <array-base>) initargs)
-  (let-keywords* initargs
-      ((shape #f)
-       (start-vector #f)
-       (end-vector #f)
-       (mapper #f)
-       (backing-storage #f)
-       (create-args '()))
-    (unless (and start-vector end-vector)
-      (set!-values (start-vector end-vector) (shape->start/end-vector shape)))
-    (unless mapper
-      (set! mapper (generate-amap start-vector end-vector)))
-    (unless backing-storage
-      (set! backing-storage
-            (apply (backing-storage-creator-of (class-of self))
-                   (fold * 1 (s32vector-sub end-vector start-vector))
-                   create-args)))
-    (next-method self `(:start-vector ,start-vector :end-vector ,end-vector
-                        :mapper ,mapper :backing-storage ,backing-storage ,@initargs))
-    (let ((get   (backing-storage-getter-of (class-of self)))
-          (set   (backing-storage-setter-of (class-of self)))
-          (store (backing-storage-of self)))
-      (set! (slot-ref self 'getter)
-            (lambda (index) (get store index)))
-      (set! (slot-ref self 'setter)
-            (lambda (index value) (set store index value)))
-      )))
+  (next-method)
+  (let ((get   (backing-storage-getter-of (class-of self)))
+        (set   (backing-storage-setter-of (class-of self)))
+        (store (backing-storage-of self)))
+    (set! (slot-ref self 'getter)
+          (lambda (index) (get store index)))
+    (set! (slot-ref self 'setter)
+          (lambda (index value) (set store index value)))
+    ))
 
 (define-class <array> (<array-base>)
   ()
@@ -207,6 +201,26 @@
 ;; NB: these should be built-in; but here for now.
 (define-method copy-object ((self <vector>))
   (vector-copy self))
+(define-method copy-object ((self <u8vector>))
+  (u8vector-copy self))
+(define-method copy-object ((self <s8vector>))
+  (s8vector-copy self))
+(define-method copy-object ((self <u16vector>))
+  (u16vector-copy self))
+(define-method copy-object ((self <s16vector>))
+  (s16vector-copy self))
+(define-method copy-object ((self <u32vector>))
+  (u32vector-copy self))
+(define-method copy-object ((self <s32vector>))
+  (s32vector-copy self))
+(define-method copy-object ((self <u64vector>))
+  (u64vector-copy self))
+(define-method copy-object ((self <s64vector>))
+  (s64vector-copy self))
+(define-method copy-object ((self <f32vector>))
+  (f32vector-copy self))
+(define-method copy-object ((self <f64vector>))
+  (f64vector-copy self))
 
 ;;-------------------------------------------------------------
 ;; Affine mapper
@@ -331,28 +345,38 @@
 ;; Make general array
 ;;
 
+(define (make-array-internal class shape . maybe-init)
+  (receive (Vb Ve) (shape->start/end-vector shape)
+    (make class
+      :start-vector Vb
+      :end-vector Ve
+      :mapper (generate-amap Vb Ve)
+      :backing-storage (apply (backing-storage-creator-of class)
+                              (fold * 1 (s32vector-sub Ve Vb))
+                              maybe-init))))
+
 (define (make-array shape . opt)
-  (make <array> :shape shape :create-args opt))
+  (apply make-array-internal <array> shape opt))
 (define (make-u8array shape . opt)
-  (make <u8array> :shape shape :create-args opt))
+  (apply make-array-internal <u8array> shape opt))
 (define (make-s8array shape . opt)
-  (make <s8array> :shape shape :create-args opt))
+  (apply make-array-internal <s8array> shape opt))
 (define (make-u16array shape . opt)
-  (make <u16array> :shape shape :create-args opt))
+  (apply make-array-internal <u16array> shape opt))
 (define (make-s16array shape . opt)
-  (make <s16array> :shape shape :create-args opt))
+  (apply make-array-internal <s16array> shape opt))
 (define (make-u32array shape . opt)
-  (make <u32array> :shape shape :create-args opt))
+  (apply make-array-internal <u32array> shape opt))
 (define (make-s32array shape . opt)
-  (make <s32array> :shape shape :create-args opt))
+  (apply make-array-internal <s32array> shape opt))
 (define (make-u64array shape . opt)
-  (make <u64array> :shape shape :create-args opt))
+  (apply make-array-internal <u64array> shape opt))
 (define (make-s64array shape . opt)
-  (make <s64array> :shape shape :create-args opt))
+  (apply make-array-internal <s64array> shape opt))
 (define (make-f32array shape . opt)
-  (make <f32array> :shape shape :create-args opt))
+  (apply make-array-internal <f32array> shape opt))
 (define (make-f64array shape . opt)
-  (make <f64array> :shape shape :create-args opt))
+  (apply make-array-internal <f64array> shape opt))
 
 (define (list-fill-array! a inits)
   (let* ((bv  (backing-storage-of a))
@@ -499,8 +523,9 @@
 (define (array-size ar)
   (reduce * 1 (map (cute array-length ar <>) (iota (array-rank ar)))))
 
-(define-method object-equal? ((a <array-base>) (b <array-base>))
-  (let ((r   (array-rank a)))
+(define (array-equal? a b . opt)
+  (let ((eq (get-optional opt equal?))
+        (r (array-rank a)))
     (and (= r (array-rank b))
          (every (lambda (dim)
                   (and (= (array-start a dim) (array-start b dim))
@@ -510,11 +535,14 @@
           (lambda (break)
             (array-for-each-index a
               (lambda (index)
-                (unless (equal? (array-ref a index)
-                                (array-ref b index))
+                (unless (eq (array-ref a index)
+                            (array-ref b index))
                   (break #f)))
-              (make-vector r 0))
+              (make-vector r))
             #t)))))
+
+(define-method object-equal? ((a <array-base>) (b <array-base>))
+  (array-equal? a b equal?))
 
 ;; returns a proc that applies proc to indices that is given by a vector.
 
