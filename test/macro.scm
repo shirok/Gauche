@@ -20,6 +20,9 @@
 
 ;;----------------------------------------------------------------------
 ;; basic tests
+
+(test-section "basic expansion")
+
 (define-syntax simple (syntax-rules ()
                         ((_ "a" ?a) (a ?a))
                         ((_ "b" ?a) (b ?a))
@@ -135,8 +138,12 @@
 (test-macro "dot2" ((2 3) . 1) (dot2 1 2 3))
 (test-macro "dot2" #f          (dot2))
 
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
+
+(test-section "recursive expansion")
+
 (define-syntax %cond
   (syntax-rules (else =>)
     ((cond (else result1 result2 ...))
@@ -278,6 +285,8 @@
 ;;----------------------------------------------------------------------
 ;; local syntactic bindings.
 
+(test-section "local syntactic bindings")
+
 (test "let-syntax"                      ; R5RS 4.3.1
       'now
       (lambda ()
@@ -361,5 +370,40 @@
                                ((_ ?x)    (a ?x 3))
                                ((_ ?x ?y) (+ ?x ?y)))))
             (list (a 7) (b 8))))))
+
+;;----------------------------------------------------------------------
+;; common-macros
+
+(test-section "common-macros utilities")
+
+(test "push!" '(1 2 3)
+      (lambda ()
+        (let ((a '()))
+          (push! a 3) (push! a 2) (push! a 1)
+          a)))
+
+(test "push!" '(0 1 2 3)
+      (lambda ()
+        (let ((a (list 0)))
+          (push! (cdr a) 3) (push! (cdr a) 2) (push! (cdr a) 1)
+          a)))
+
+(test "push!" '#((1 2) (3 . 0))
+      (lambda ()
+        (let ((a (vector '() 0)))
+          (push! (vector-ref a 0) 2)
+          (push! (vector-ref a 0) 1)
+          (push! (vector-ref a 1) 3)
+          a)))
+
+(test "dotimes" '(0 1 2 3 4 5 6 7 8 9)
+      (lambda ()
+        (let ((m '()))
+          (dotimes (n 10) (push! m n))
+          (reverse m))))
+(test "dotimes" '(0 1 2 3 4 5 6 7 8 9)
+      (lambda ()
+        (let ((m '()))
+          (dotimes (n 10 (reverse m)) (push! m n)))))
 
 (test-end)
