@@ -1,3 +1,9 @@
+2002-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* various files: snapshot of further modification for cygwin.
+	  the core part is working.   works on other platforms.
+	  need more work for extensions.
+
 2002-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* various files: snapshot of further modification for cygwin.
