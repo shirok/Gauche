@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: arith_i386.h,v 1.1 2002-09-09 08:08:45 shirok Exp $
+ *  $Id: arith_i386.h,v 1.2 2002-12-04 06:16:28 shirok Exp $
  */
 
 #ifdef __GNUC__
@@ -24,14 +24,23 @@
  *  c <- 1 if carry, 0 otherwise
  */
 
+/* NB: in some context, the compiler failed to allocate registers
+ * for 'r' and 'c', so I can't use "r" constraint for them.
+ * The following code assumes 'r', 'c', 'x' and 'y' are stack-allocated
+ * and to avoid both operands from being on memory.
+ */
 #define UADD(r, c, x, y) \
-    asm("shrl $1, %2;" \
-        "movl %3, %0;" \
-        "adcl %4, %0;" \
-        "movl $0, %1;" \
-        "rcll $1, %1;" \
-           :"=&r" (r), "=&r" (c) \
-           :"1" (c), "g"(x), "g"(y))
+    asm("cmpl $1, %2;"    \
+        "cmc;"            \
+        "movl %3, %%eax;" \
+        "adcl %4, %%eax;" \
+        "movl %%eax, %0;" \
+        "movl $0, %%eax;" \
+        "adcl $0, %%eax;" \
+        "movl %%eax, %1;" \
+           :"=&g" (r), "=&g" (c) \
+           :"1" (c), "g"(x), "g"(y) \
+           :"%eax")
 
 /*-----------------------------------------------------------------
  * UADDOV(r, v, x, y)    unsigned word add with overflow check
