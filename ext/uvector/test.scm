@@ -1758,6 +1758,41 @@
                  (array-ref sub 6)))
     ))
 
+;;-------------------------------------------------------------------
+;; NB: copy-port uses read-block! and write-block for block copy,
+;;     so we test it here.
+(test-section "copy-port")
 
+(define s (make-string 10000 #\z))
+
+(test* "copy-port (default)" #t
+       (equal? s
+               (call-with-string-io s
+                 (lambda (in out)
+                   (copy-port in out)))))
+
+(test* "copy-port (unit byte)" #t
+       (equal? s
+               (call-with-string-io s
+                 (lambda (in out)
+                   (copy-port in out :unit 'byte)))))
+
+(test* "copy-port (unit char)" #t
+       (equal? s
+               (call-with-string-io s
+                 (lambda (in out)
+                   (copy-port in out :unit 'char)))))
+
+(test* "copy-port (unit 10)" #t
+       (equal? s
+               (call-with-string-io s
+                 (lambda (in out)
+                   (copy-port in out :unit 10)))))
+
+(test* "copy-port (unit 100000)" #t
+       (equal? s
+               (call-with-string-io s
+                 (lambda (in out)
+                   (copy-port in out :unit 100000)))))
 
 (test-end)

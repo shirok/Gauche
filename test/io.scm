@@ -228,44 +228,6 @@
          (lambda () (port-map (lambda (x) x) read))))
 
 ;;-------------------------------------------------------------------
-(test-section "copy-port")
-
-(test* "copy-port" "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n"
-       (call-with-output-string
-         (lambda (out)
-           (call-with-input-file "tmp1.o"
-             (lambda (in)
-               (copy-port in out))))))
-
-(test* "copy-port" "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n"
-       (call-with-output-string
-         (lambda (out)
-           (call-with-input-file "tmp1.o"
-             (lambda (in)
-               (copy-port in out :unit 'byte))))))
-
-(test* "copy-port" "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n"
-       (call-with-output-string
-         (lambda (out)
-           (call-with-input-file "tmp1.o"
-             (lambda (in)
-               (copy-port in out :unit 'char))))))
-
-(test* "copy-port" "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n"
-       (call-with-output-string
-         (lambda (out)
-           (call-with-input-file "tmp1.o"
-             (lambda (in)
-               (copy-port in out :unit 10))))))
-
-(test* "copy-port" "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n"
-       (call-with-output-string
-         (lambda (out)
-           (call-with-input-file "tmp1.o"
-             (lambda (in)
-               (copy-port in out :unit 10000000))))))
-
-;;-------------------------------------------------------------------
 (test-section "seeking")
 
 (define (seek-tester1 p)
