@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.31 2001-06-19 19:44:20 shirok Exp $
+;;; $Id: syslib.stub,v 1.32 2001-06-20 10:44:01 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -674,15 +674,26 @@
                             !SCM_FALSEP(bufferedP), TRUE);
   SCM_RETURN(SCM_LIST2(rend, wend));")  
 
+(define-cproc sys-mkdir (pathname mode)
+  (assert (string? pathname))
+  (assert (small-integer? mode))
+  "  if (mkdir(Scm_GetStringConst(pathname), mode) < 0)
+    Scm_SysError(\"mkdir failed\");
+  SCM_RETURN(SCM_TRUE);")
+
 (define-cproc sys-rmdir (pathname)
   (assert (string? pathname))
   "  if (rmdir(Scm_GetStringConst(pathname)) < 0)
     Scm_SysError(\"rmdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
+(define-cproc sys-umask (mode)
+  (assert (small-integer? mode))
+  "  SCM_RETURN(Scm_MakeInteger(umask(mode)));")
+
 (define-cproc sys-sleep (seconds)
   (assert (exact? seconds))
-  "  sleep(seconds); SCM_RETURN(SCM_TRUE);")
+  "  SCM_RETURN(Scm_MakeInteger(sleep(seconds)));")
 
 (define-cproc sys-unlink (pathname)
   (assert (string? pathname))
@@ -747,8 +758,9 @@
 (define-cproc sys-fdset-ref (fdset pf)
   (assert (sys-fdset? fdset))
   "#ifdef HAVE_SELECT
-  int fd = get_port_or_fd(pf, TRUE);
-  SCM_RETURN(SCM_MAKE_BOOL(FD_ISSET(fd, &fdset->fdset)));
+  int fd = get_port_or_fd(pf, FALSE);
+  if (fd < 0) SCM_RETURN(SCM_TRUE);
+  else SCM_RETURN(SCM_MAKE_BOOL(FD_ISSET(fd, &fdset->fdset)));
 #else
   SCM_RETURN(SCM_UNDEFINED); /* can't be here */
 #endif"
@@ -758,26 +770,35 @@
   (assert (sys-fdset? fdset))
   (assert (boolean? flag))
   "#ifdef HAVE_SELECT
-  int fd = get_port_or_fd(pf, TRUE);
-  if (flag) {
-    FD_SET(fd, &fdset->fdset);
-    if (fdset->maxfd < fd) fdset->maxfd = fd;
-  } else {
-    FD_CLR(fd, &fdset->fdset);
-    if (fdset->maxfd == fd) {
-      int i;
-      for (i=fdset->maxfd-1; i>=0; i--) {
-        if (FD_ISSET(i, &fdset->fdset)) break;
+  int fd = get_port_or_fd(pf, FALSE);
+  if (fd > 0) {
+    if (flag) {
+      FD_SET(fd, &fdset->fdset);
+      if (fdset->maxfd < fd) fdset->maxfd = fd;
+    } else {
+      FD_CLR(fd, &fdset->fdset);
+      if (fdset->maxfd == fd) {
+        int i;
+        for (i=fdset->maxfd-1; i>=0; i--) {
+          if (FD_ISSET(i, &fdset->fdset)) break;
+        }
+        fdset->maxfd = i;
       }
-      fdset->maxfd = i;
     }
   }
 #endif
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc sys-fdset-maxfd (fdset)
+(define-cproc sys-fdset-max-fd (fdset)
   (assert (sys-fdset? fdset))
   "  SCM_RETURN(Scm_MakeInteger(fdset->maxfd));")
+
+(define-cproc sys-select (rfds wfds efds &optional (timeout #f))
+  "  SCM_RETURN(Scm_SysSelect(rfds, wfds, efds, timeout));")
+
+(define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
+  "  SCM_RETURN(Scm_SysSelectX(rfds, wfds, efds, timeout));")
+
 
 ;; Local variables:
 ;; mode: scheme

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.158 2001-06-20 09:49:16 shirok Exp $
+ *  $Id: gauche.h,v 1.159 2001-06-20 10:44:01 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1812,6 +1812,11 @@ extern ScmClass Scm_SysFdsetClass;
 #define SCM_CLASS_SYS_FDSET     (&Scm_SysFdsetClass)
 #define SCM_SYS_FDSET(obj)      ((ScmSysFdset*)(obj))
 #define SCM_SYS_FDSET_P(obj)    (SCM_XTYPEP(obj, SCM_CLASS_SYS_FDSET))
+
+extern ScmObj Scm_SysSelect(ScmObj rfds, ScmObj wfds, ScmObj efds,
+                            ScmObj timeout);
+extern ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds,
+                             ScmObj timeout);
 #else  /*!HAVE_SELECT*/
 /* dummy definitions */
 typedef struct ScmHeaderRec ScmSysFdset;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.20 2001-06-19 19:45:02 shirok Exp $
+ *  $Id: system.c,v 1.21 2001-06-20 10:44:01 shirok Exp $
  */
 
 #include <stdio.h>
@@ -487,6 +487,105 @@ static ScmObj fdset_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(set);
 }
 
+static ScmSysFdset *fdset_copy(ScmSysFdset *fdset)
+{
+    ScmSysFdset *set = SCM_NEW(ScmSysFdset);
+    SCM_SET_CLASS(set, SCM_CLASS_SYS_FDSET);
+    set->maxfd = fdset->maxfd;
+    set->fdset = fdset->fdset;
+    return set;
+}
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_SysFdsetClass, NULL, NULL, NULL,
                          fdset_allocate, SCM_CLASS_DEFAULT_CPL);
+
+static ScmSysFdset *select_checkfd(ScmObj fds)
+{
+    if (SCM_FALSEP(fds)) return NULL;
+    if (!SCM_SYS_FDSET_P(fds))
+        Scm_Error("sys-fdset object or #f is required, but got %S", fds);
+    return SCM_SYS_FDSET(fds);
+}
+
+static struct timeval *select_timeval(ScmObj timeout, struct timeval *tm)
+{
+    if (SCM_FALSEP(timeout)) return NULL;
+    if (SCM_INTP(timeout)) {
+        int val = SCM_INT_VALUE(timeout);
+        if (val < 0) goto badtv;
+        tm->tv_sec = val / 1000000;
+        tm->tv_usec = val % 1000000;
+        return tm;
+    } else if (SCM_BIGNUMP(timeout)) {
+        long usec;
+        ScmObj sec;
+        if (Scm_Sign(timeout) < 0) goto badtv;
+        sec = Scm_BignumDivSI(SCM_BIGNUM(timeout), 1000000, &usec);
+        tm->tv_sec = Scm_GetInteger(sec);
+        tm->tv_usec = usec;
+        return tm;
+    } else if (SCM_FLONUMP(timeout)) {
+        long val = Scm_GetInteger(timeout);
+        if (val < 0) goto badtv;
+        tm->tv_sec = val / 1000000;
+        tm->tv_usec = val % 1000000;
+        return tm;
+    } else if (SCM_PAIRP(timeout) && SCM_PAIRP(SCM_CDR(timeout))) {
+        ScmObj sec = SCM_CAR(timeout);
+        ScmObj usec = SCM_CADR(timeout);
+        long isec, iusec;
+        if (!Scm_IntegerP(sec) || !Scm_IntegerP(usec)) goto badtv;
+        isec = Scm_GetInteger(sec);
+        iusec = Scm_GetInteger(usec);
+        if (isec < 0 || iusec < 0) goto badtv;
+        tm->tv_sec = isec;
+        tm->tv_usec = iusec;
+        return tm;
+    }
+  badtv:
+    Scm_Error("timeval needs to be a real number (in microseconds) or a list of two integers (seconds and microseconds), but got %S", timeout);
+    return NULL;                /* dummy */
+}
+
+static ScmObj select_int(ScmSysFdset *rfds, ScmSysFdset *wfds,
+                         ScmSysFdset *efds, ScmObj timeout)
+{
+    int numfds, maxfds = 0;
+    struct timeval tm;
+    if (rfds) maxfds = rfds->maxfd;
+    if (wfds && wfds->maxfd > maxfds) maxfds = wfds->maxfd;
+    if (efds && efds->maxfd > maxfds) maxfds = efds->maxfd;
+    
+    numfds = select(maxfds+1,
+                    (rfds? &rfds->fdset : NULL),
+                    (wfds? &wfds->fdset : NULL),
+                    (efds? &efds->fdset : NULL),
+                    select_timeval(timeout, &tm));
+    
+    if (numfds < 0) Scm_SysError("select failed");
+    return Scm_Values4(Scm_MakeInteger(numfds),
+                       (rfds? SCM_OBJ(rfds) : SCM_FALSE),
+                       (wfds? SCM_OBJ(wfds) : SCM_FALSE),
+                       (efds? SCM_OBJ(efds) : SCM_FALSE));
+}
+
+ScmObj Scm_SysSelect(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
+{
+    ScmSysFdset *r = select_checkfd(rfds);
+    ScmSysFdset *w = select_checkfd(rfds);
+    ScmSysFdset *e = select_checkfd(rfds);
+    return select_int((r? fdset_copy(r) : NULL),
+                      (w? fdset_copy(w) : NULL),
+                      (e? fdset_copy(e) : NULL),
+                      timeout);
+}
+
+ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
+{
+    ScmSysFdset *r = select_checkfd(rfds);
+    ScmSysFdset *w = select_checkfd(rfds);
+    ScmSysFdset *e = select_checkfd(rfds);
+    return select_int(r, w, e, timeout);
+}
+
 #endif /* HAVE_SELECT */
