@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.44 2001-10-29 00:35:03 shirok Exp $
+ *  $Id: load.c,v 1.45 2001-11-03 21:15:24 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -90,9 +90,10 @@ static ScmObj load_cc(ScmObj result, void **data)
 
     if (!SCM_EOFP(expr)) {
         Scm_VMPushCC(load_cc, (void **)&port, 1);
-        Scm_VMEval(expr, SCM_UNBOUND);
+        return Scm_VMEval(expr, SCM_UNBOUND);
+    } else {
+        return SCM_TRUE;
     }
-    SCM_RETURN(result);
 }
 
 static ScmObj load_body(ScmObj *args, int nargs, void *data)
