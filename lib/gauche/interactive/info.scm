@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: info.scm,v 1.1 2002-07-11 11:22:36 shirok Exp $
+;;;  $Id: info.scm,v 1.2 2002-07-11 19:41:52 shirok Exp $
 ;;;
 
 (define-module gauche.interactive.info
@@ -33,13 +33,21 @@
                     (find-file-in-paths "less")
                     (find-file-in-paths "more")))
 (define viewer
-  (if (or (equal? (sys-getenv "TERM") "emacs") (not *pager*))
+  (if (or (equal? (sys-getenv "TERM") "emacs")
+          (not (sys-isatty (current-output-port)))
+          (not *pager*))
       display
       (lambda (s)
-        (let1 p (run-process *pager* :input :pipe)
-          (display s (process-input p))
-          (close-output-port (process-input p))
-          (process-wait p)))))
+        (let1 mask (sys-sigset-add! (make <sys-sigset>) SIGPIPE)
+          (dynamic-wind
+           (lambda () (sys-sigmask SIG_BLOCK mask))
+           (lambda ()
+             (let1 p (run-process *pager* :input :pipe)
+               (display s (process-input p))
+               (close-output-port (process-input p))
+               (process-wait p)))
+           (lambda () (sys-sigmask SIG_UNBLOCK mask)))))
+      ))
 
 (define (get-info-paths)
   (cond ((sys-getenv "INFOPATH") => (cut string-split <> #\:))
@@ -70,7 +78,7 @@
   (let1 nodename (hash-table-get *info-index* (x->string fn) #f)
     (unless nodename (errorf "no info document for ~a" fn))
     (viewer (ref (info-get-node *info* nodename) 'content)))
-  )
+  (values))
 
 (provide "gauche/interactive/info")
 
