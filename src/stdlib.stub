@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.56 2001-05-10 20:21:04 shirok Exp $
+;;; $Id: stdlib.stub,v 1.57 2001-05-11 09:49:01 shirok Exp $
 ;;;
 
 
@@ -233,15 +233,18 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc %exp (x)
   "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   SCM_RETURN(Scm_MakeFlonum(exp(Scm_GetDouble(x))));")
+
 (define-cproc %log (x)
   "  int sign;
   if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   sign = Scm_Sign(x);
-  if (sign == 0) Scm_Error(\"can't take log of 0\");
   if (sign < 0)
     SCM_RETURN(Scm_MakeComplex(log(-Scm_GetDouble(x)), M_PI));
   else
+    /* NB: I intentionally delegate handling of the case x==0.0 to the
+       system log() function.  Most systems should yield NaN or Inf. */
     SCM_RETURN(Scm_MakeFlonum(log(Scm_GetDouble(x))));")
+
 (define-cproc %sin (x)
   "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   SCM_RETURN(Scm_MakeFlonum(sin(Scm_GetDouble(x))));")
