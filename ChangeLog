@@ -1,5 +1,7 @@
 2002-03-06  Shiro Kawai  <shiro@acm.org>
 
+	* ext/auxsyslib.stub : removed sys-setpgrp, for the function 
+	  prototype differs among platforms.  it is redundant anyways.
 	* Makefile.in, doc/Makefile.in : makes realclean really clean.
 	* doc/gosh.1.in, doc/gauche-config.1.in : added manpages.
 

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.64 2002-03-06 08:46:39 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.65 2002-03-07 10:39:00 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -159,9 +159,9 @@
 (autoload gauche.interpolate (:macro string-interpolate))
 
 (autoload gauche.auxsys
-          fmod frexp modf ldexp log10
+          fmod frexp modf ldexp
           sys-abort sys-mkfifo
-          sys-setgid sys-setpgid sys-setpgrp sys-getpgid sys-getpgrp
+          sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname sys-putenv
           sys-gettimeofday)

@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.170 2002-03-06 08:47:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.171 2002-03-07 10:38:59 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9174,10 +9174,10 @@ If the system can't determine the information, @code{#f} is returned.
 [POSIX] Returns a process group id of the current process.
 @end defun
 
-@defun sys-setpgrp
-Sets the process group id of the current process to the current
-process id.   Equivalent to @code{sys-setpgid(0, 0)}.
-@end defun
+@c @defun sys-setpgrp
+@c Sets the process group id of the current process to the current
+@c process id.   Equivalent to @code{sys-setpgid(0, 0)}.
+@c @end defun
 
 @defun sys-getpgid pid
 Returns a process group id of the process specified by @var{pid}.
@@ -9195,8 +9195,7 @@ If @var{pid} is zero, the process ID of the
 current process is used.  If @var{pgid} is zero, the process ID
 of the process specified by @code{pid} is used.  (Hence
 @code{sys-setpgid(0, 0)} sets the process group id of the
-current process to the current process id, and equivalent to
-@code{setpgrp}).
+current process to the current process id).
 @end defun
 
 @defun sys-setsid
