@@ -376,6 +376,17 @@
                                ((_ ?x ?y) (+ ?x ?y)))))
             (list (a 7) (b 8))))))
 
+(test "letrec-syntax (recursive)"
+      #t
+      (lambda ()
+        (letrec-syntax ((o? (syntax-rules ()
+                              ((o? ()) #f)
+                              ((o? (x . xs)) (not (e? xs)))))
+                        (e? (syntax-rules ()
+                              ((e? ()) #t)
+                              ((e? (x . xs)) (not (o? xs))))))
+          (e? '(a a a a)))))
+
 ;; This is from comp.lang.scheme posting by Antti Huima
 ;; http://groups.google.com/groups?hl=ja&selm=7qpu5ncg2l.fsf%40divergence.tcs.hut.fi
 (test "let-syntax (huima)" '(1 3 5 9)
@@ -420,6 +431,75 @@
                                                     ((x z) (cons z y)))))
                                     body)))))
           (mdm-foo3 list 3 (list 4)))))
+
+;; this doesn't work for now, due to the bug of macro expander
+'(test "let-syntax - let-syntax" 3
+      (lambda ()
+        (let-syntax ((mdm-foo4
+                      (syntax-rules ()
+                        ((mdm-foo4 () n) n)
+                        ((mdm-foo4 (x . xs) n)
+                         (let-syntax ((mdm-foo5
+                                       (syntax-rules ()
+                                         ((mdm-foo5)
+                                          (mdm-foo4 xs (+ n 1))))))
+                           (mdm-foo5))))))
+          (mdm-foo4 (#f #f #f) 0))))
+
+(define-syntax mdm-foo3
+  (syntax-rules ()
+    ((mdm-foo3 y)
+     (letrec-syntax ((o? (syntax-rules ()
+                           ((o? ()) #f)
+                           ((o? (x . xs)) (not (e? xs)))))
+                     (e? (syntax-rules ()
+                           ((e? ()) #t)
+                           ((e? (x . xs)) (not (o? xs))))))
+       (%macroexpand (e? y))))))
+
+;; this doesn't work for now, due to the bug of macro expander
+'(test "define-syntax - letrec-syntax" #t
+      (lambda () (mdm-foo3 (a))))
+
+;; Examples from "Two pitfalls in programming nested R5RS macros"
+;; by Oleg Kiselyov
+;;  http://pobox.com/~oleg/ftp/Scheme/r5rs-macros-pitfalls.txt
+
+(define-syntax mdm-bar-m
+  (syntax-rules ()
+    ((_ x y)
+     (let-syntax
+	 ((helper
+	   (syntax-rules ()
+	     ((_ u) (+ x u)))))
+       (helper y)))))
+
+(test "lexical scope" 5
+      (lambda () (mdm-bar-m 4 1)))
+
+(define-syntax mdm-bar-m1
+  (syntax-rules ()
+    ((_ var body)
+     (let-syntax
+	 ((helper
+	   (syntax-rules ()
+	     ((_) (lambda (var) body)))))
+       (helper)))))
+
+(test "lexical scope" 5
+      (lambda () ((mdm-bar-m1 z (+ z 1)) 4)))
+
+(define-syntax mdm-bar-m3
+  (syntax-rules ()
+    ((_ var body)
+     (let-syntax
+	 ((helper
+	   (syntax-rules ()
+	     ((_ vvar bbody) (lambda (vvar) bbody)))))
+       (helper var body)))))
+
+(test "passing by parameters" 5
+      (lambda () ((mdm-bar-m3 z (+ z 1)) 4)))
 
 ;;----------------------------------------------------------------------
 ;; common-macros
