@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.4 2001-03-07 08:23:29 shiro Exp $
+ * $Id: config.h.in,v 1.5 2001-03-08 10:21:10 shiro Exp $
  */
 
 #undef STDC_HEADERS
@@ -25,8 +25,23 @@
 /* Define if the system has symlink */
 #undef HAVE_SYMLINK
 
+/* Define if the system has gr_passwd defined in struct group */
+#undef HAVE_GR_PASSWD
+
+/* Define if the system has pw_passwd defined in struct passwd */
+#undef HAVE_PW_PASSWD
+
+/* Define if the system has pw_gecos defined in struct passwd */
+#undef HAVE_PW_GECOS
+
+/* Define if the system has pw_class defined in struct passwd */
+#undef HAVE_PW_CLASS
+
 /* Define if the system needs -ldl for dynamic loading */
 #undef HAVE_LIBDL
+
+/* Define if the system have -lcrypt */
+#undef HAVE_LIBCRYPT
 
 /* set sizeof(long) */
 #define SIZEOF_LONG  4

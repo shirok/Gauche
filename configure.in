@@ -13,6 +13,7 @@ AC_PROG_INSTALL
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
 AC_CHECK_LIB(dl, dlopen)
+AC_CHECK_LIB(crypt, crypt)
 AC_CHECK_FUNCS(trunc rint)
 AC_CHECK_FUNCS(symlink)
 
@@ -25,6 +26,54 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 AC_STRUCT_TM
 AC_CHECK_SIZEOF(long)
+dnl Checks non-POSIX members of system structure
+AC_MSG_CHECKING(struct group has gr_passwd)
+AC_TRY_COMPILE([
+#include <grp.h>
+], [
+struct group g;
+const char *p = g.gr_passwd;
+], ac_cv_struct_gr_passwd=yes, ac_cv_struct_gr_passwd=no)
+if test "$ac_cv_struct_gr_passwd" = yes; then
+AC_DEFINE(HAVE_GR_PASSWD)
+fi
+AC_MSG_RESULT($ac_cv_struct_gr_passwd)
+
+AC_MSG_CHECKING(struct passwd has pw_passwd)
+AC_TRY_COMPILE([
+#include <pwd.h>
+], [
+struct passwd pw;
+const char *p = pw.pw_passwd;
+], ac_cv_struct_pw_passwd=yes, ac_cv_struct_pw_passwd=no)
+if test "$ac_cv_struct_pw_passwd" = yes; then
+AC_DEFINE(HAVE_PW_PASSWD)
+fi
+AC_MSG_RESULT($ac_cv_struct_pw_passwd)
+
+AC_MSG_CHECKING(struct passwd has pw_gecos)
+AC_TRY_COMPILE([
+#include <pwd.h>
+], [
+struct passwd pw;
+const char *p = pw.pw_gecos;
+], ac_cv_struct_pw_gecos=yes, ac_cv_struct_pw_gecos=no)
+if test "$ac_cv_struct_pw_gecos" = yes; then
+AC_DEFINE(HAVE_PW_GECOS)
+fi
+AC_MSG_RESULT($ac_cv_struct_pw_gecos)
+
+AC_MSG_CHECKING(struct passwd has pw_class)
+AC_TRY_COMPILE([
+#include <pwd.h>
+], [
+struct passwd pw;
+const char *p = pw.pw_class;
+], ac_cv_struct_pw_class=yes, ac_cv_struct_pw_class=no)
+if test "$ac_cv_struct_pw_class" = yes; then
+AC_DEFINE(HAVE_PW_CLASS)
+fi
+AC_MSG_RESULT($ac_cv_struct_pw_class)
 
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
