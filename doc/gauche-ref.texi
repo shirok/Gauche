@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.101 2001-10-18 09:41:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.102 2001-10-18 10:06:43 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10754,9 +10754,11 @@ as many characters available.
 @c ----------------------------------------------------------------------
 @node Transliterate characters, CGI, Parsing input stream, Library modules
 @section @code{text.tr} - Transliterate characters
+@c NODE 文字変換, @code{text.tr} - 文字変換
 
 @deftp {Module} text.tr
 @mdindex text.tr
+@c EN
 This module implements a transliterate function,
 that substitutes characters of the input string.
 This functionality is realized in Unix @code{tr(1)} command,
@@ -10764,6 +10766,14 @@ and incorporated in various programs such as @code{sed(1)}
 and @code{perl}.
 
 Gauche's @code{tr} is aware of multibyte characters.
+@c JP
+このモジュールは、入力ストリームから指定の文字を置き換えて出力する、
+文字変換(transliterate)機能を提供します。
+Unixの@code{tr(1)}コマンドで実装され、@code{sed}や@code{perl}にも
+採り入れられている機能です。
+
+Gaucheの@code{tr}はマルチバイト文字／文字列を正しく扱います。
+@c COMMON
 @end deftp
 
 @defun tr from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
@@ -10874,15 +10884,13 @@ once and apply it repeatedly, saving the overhead of initialization.
 
 @c ----------------------------------------------------------------------
 @node CGI,  , Transliterate characters, Library modules
-@section @code{w3c.cgi} - CGI utility
+@section @code{www.cgi} - CGI utility
 
-@deftp {Module} w3c.cgi
-@mdindex w3c.cgi
+@deftp {Module} www.cgi
+@mdindex www.cgi
 Provides a few basic functions useful to write a CGI script.
 
-Note that, although I put this module under @code{w3c} hierarchy,
-W3C doesn't formally defines CGI specification.  Actually,
-there exists no ``formal'' specification.
+Note: it seems that there is no active formal specification for CGI.
 See @uref{http://w3c.org/CGI/} for more information.
 @end deftp
 
@@ -11052,6 +11060,7 @@ Oleg Kiselyov, Making sense of an input stream,@*
 @c ======================================================================
 @node C to Scheme mapping, Function and Syntax Index, References, Top
 @unnumbered C to Scheme mapping
+@c NODE CとSchemeの関数の対応
 
 For the convenience of the programmers familiar to C, 
 I composed a simple table of C library functions with
@@ -11635,15 +11644,18 @@ R5RS @code{display}.   @xref{Output}.
 @c ======================================================================
 @node Function and Syntax Index, Module Index, C to Scheme mapping, Top
 @unnumbered Function and Syntax Index
+@c NODE 手続きと構文索引
 @printindex fn
 
 @node Module Index, Class Index, Function and Syntax Index, Top
 @unnumbered Module Index
+@c NODE モジュール索引
 @printindex md
 
 
 @node Class Index, Variable Index, Module Index, Top
 @unnumbered Class Index
+@c NODE クラス索引
 
 For readability, the surrounding @code{<} and @code{>} are stripped off.
 
@@ -11651,6 +11663,7 @@ For readability, the surrounding @code{<} and @code{>} are stripped off.
 
 @node Variable Index,  , Class Index, Top
 @unnumbered Variable Index
+@c NODE 変数索引
 @printindex vr
 
 
