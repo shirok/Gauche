@@ -1,3 +1,17 @@
+2001-05-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : fixed number reader to recognize x+0i as x (real
+	  number).  added Scm_OddP to deal with inexact numbers.
+	* src/stdlib.stub : fixed several domain bugs in numeric predicates.
+	* test/number.scm : added tests for numeric predicates.
+
+2001-05-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : fixed Scm_Max and Scm_Min to treat exactness
+	  correctly (at least one arg is inexact, result is always inexact).
+	* src/string.c : Scm_ListToString and Scm_MakeStringFromList were
+	  using the same routines.  Integrated them to one function.
+
 2001-05-03  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.9
