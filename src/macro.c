@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.45 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: macro.c,v 1.46 2003-12-13 19:48:26 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -259,7 +259,7 @@ static inline ScmObj add_pvar(PatternContext *ctx,
                               ScmObj pvar)
 {
     ScmObj pvref = SCM_VM_INSN2(SCM_VM_LREF, pat->level, ctx->pvcnt);
-    if (!SCM_FALSEP(Scm_Memq(pvar, ctx->pvars))) {
+    if (!SCM_FALSEP(Scm_Assq(pvar, ctx->pvars))) {
         Scm_Error("pattern variable %S appears more than once in the macro definition of %S: %S", 
                   pvar, ctx->name, ctx->form);
     }
@@ -359,10 +359,23 @@ static ScmObj compile_rule1(ScmObj form,
                 nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
                                                patternp);
                 SCM_APPEND1(h, t, SCM_OBJ(nspat));
-                if (!patternp && SCM_NULLP(nspat->vars)) {
-                    Scm_Error("in definition of macro %S: "
-                              "template contains repetition of constant form: %S",
-                              ctx->name, form);
+                if (!patternp) {
+                    ScmObj vp;
+                    if (SCM_NULLP(nspat->vars)) {
+                        Scm_Error("in definition of macro %S: "
+                                  "a template contains repetition "
+                                  "of constant form: %S",
+                                  ctx->name, form);
+                    }
+                    SCM_FOR_EACH(vp, nspat->vars) {
+                        if (PVREF_LEVEL(SCM_CAR(vp)) >= nspat->level) break;
+                    }
+                    if (SCM_NULLP(vp)) {
+                        Scm_Error("in definition of macro %S: "
+                                  "template's ellipsis nesting"
+                                  " is deeper than pattern's: %S",
+                                  ctx->name, form);
+                    }
                 }
                 spat->vars = Scm_Append2(spat->vars, nspat->vars);
                 pp = SCM_CDR(pp);

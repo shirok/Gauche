@@ -100,6 +100,28 @@
                          ((1 7 8) (1 7 9) (1 7 10)))
             (mixlevel3 1 (2 3 4 5 6) (7 8 9 10)))
 
+;; test that wrong usage of ellipsis is correctly identified
+(test "bad epplisis 1" *test-error*
+      (lambda () 
+        (eval '(define-syntax badellipsis
+                 (syntax-rules () (t) (3 ...)))
+              (interaction-environment))))
+(test "bad epplisis 2" *test-error*
+      (lambda ()
+        (eval '(define-syntax badellipsis
+                 (syntax-rules () (t a) (a ...)))
+              (interaction-environment))))
+(test "bad epplisis 3" *test-error*
+      (lambda ()
+        (eval '(define-syntax badellipsis
+                 (syntax-rules () (t a b ...) (a ...)))
+              (interaction-environment))))
+(test "bad epplisis 4" *test-error*
+      (lambda ()
+        (eval '(define-syntax badellipsis
+                 (syntax-rules () (t a ...) ((a ...) ...)))
+              (interaction-environment))))
+
 (define-syntax hygiene (syntax-rules ()
                          ((_ ?a) (+ ?a 1))))
 (test "hygiene" 3
