@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.17 2001-06-04 19:32:12 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.18 2001-06-05 19:55:39 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1947,6 +1947,10 @@ use @code{display}.
 @defun display obj &optional port
 [R5RS]
 @end defun
+
+@deffn {Method} write-object (obj <object>) port
+You can customize how the object is printed out by this method.
+@end deffn
 
 @defun newline &optional port
 [R5RS]

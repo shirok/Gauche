@@ -24,7 +24,7 @@ gauche-ref.pdf : gauche-ref.texi
 
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
-	       *.pg *.toc *.tp *.tps *.vr *.vrs
+	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi
 
 distclean : clean
 
