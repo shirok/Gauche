@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.39 2001-02-16 06:57:44 shiro Exp $
+ *  $Id: vm.c,v 1.40 2001-02-17 10:19:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1100,6 +1100,24 @@ static ScmObj dynwind_after_cc(ScmObj result, void **data)
 {
     return SCM_OBJ(data[0]);
 }
+
+/* C-friendly wrapper */
+ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
+                          ScmObj (*body)(ScmObj *args, int nargs, void *data),
+                          ScmObj (*after)(ScmObj *args, int nargs, void *data),
+                          void *data)
+{
+    ScmObj beforeproc, bodyproc, afterproc;
+    beforeproc =
+        before ? Scm_MakeSubr(before, data, 0, 0, SCM_FALSE) : Scm_NullProc();
+    afterproc =
+        after ? Scm_MakeSubr(after, data, 0, 0, SCM_FALSE) : Scm_NullProc();
+    bodyproc =
+        body ? Scm_MakeSubr(body, data, 0, 0, SCM_FALSE) : Scm_NullProc();
+    
+    return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
+}
+
 
 /*=================================================================
  * Exception handling
