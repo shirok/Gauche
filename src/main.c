@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.19 2001-03-28 09:55:46 shiro Exp $
+ *  $Id: main.c,v 1.20 2001-04-14 23:52:20 shiro Exp $
  */
 
 #include <unistd.h>
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
     }
     if (load_initfile) {
         SCM_PUSH_ERROR_HANDLER {
-            Scm_Load("gauche-init.scm");
+            Scm_Load("gauche-init.scm", TRUE);
         }
         SCM_WHEN_ERROR {
             fprintf(stderr, "Error in initialization file.\n");
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
             SCM_APPEND1(av, at, Scm_MakeString(argv[ac], -1, -1));
         }
         SCM_DEFINE(Scm_UserModule(), "*argv*", av);
-        Scm_Load(argv[optind]);
+        Scm_Load(argv[optind], TRUE);
         exit(0);
     } else {
         SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_NIL);

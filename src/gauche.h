@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.111 2001-04-14 23:07:45 shiro Exp $
+ *  $Id: gauche.h,v 1.112 2001-04-14 23:52:04 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1835,7 +1835,7 @@ extern void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap);
 
 extern ScmObj Scm_VMLoadFromPort(ScmPort *port);
 extern ScmObj Scm_VMLoad(ScmString *file, int error_if_not_found);
-extern void Scm_Load(const char *file);
+extern void Scm_Load(const char *file, int error_if_not_found);
 
 extern ScmObj Scm_GetLoadPath(void);
 extern ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
