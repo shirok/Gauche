@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.87 2002-10-20 05:32:23 shirok Exp $
+ *  $Id: class.c,v 1.88 2002-12-22 12:29:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -331,7 +331,6 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->slots = SCM_NIL;
     instance->directSubclasses = SCM_NIL;
     instance->directMethods = SCM_NIL;
-    scheme_slot_default(SCM_OBJ(instance));
     return SCM_OBJ(instance);
 }
 
@@ -686,8 +685,23 @@ typedef struct ScmInstanceRec {
     ScmObj slots[1];
 } ScmInstance;
 
-
 #define SCM_INSTANCE(obj)      ((ScmInstance *)obj)
+
+/* A common routine to be used to allocate object that is possibly
+   be subclassed by Scheme.  Coresize should be a size of base C structure
+   in bytes.  Klass may be a subclass.  This routine allocates extra
+   bytes than coresize to store Scheme-defined slots, and initializes
+   them with SCM_UNBOUND. */
+ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
+{
+    int i, offset_words = (coresize+sizeof(ScmObj)-1)/sizeof(ScmObj);
+    ScmObj obj = SCM_NEW2(ScmObj,
+                          (offset_words + klass->numInstanceSlots) * sizeof(ScmObj));
+    for (i=0; i<klass->numInstanceSlots; i++) {
+        SCM_INSTANCE(obj)->slots[i+offset_words-1] = SCM_UNBOUND;
+    }
+    return obj;
+}
 
 static inline int scheme_slot_index(ScmObj obj, int number)
 {
@@ -724,18 +738,6 @@ ScmObj Scm_InstanceSlotRef(ScmObj obj, int number)
 void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val)
 {
     scheme_slot_set(obj, number, val);
-}
-
-static void scheme_slot_default(ScmObj obj)
-{
-    int count = SCM_CLASS_OF(obj)->numInstanceSlots;
-    if (count > 0) {
-        int index = scheme_slot_index(obj, 0);
-        int i;
-        for (i=0; i<count; i++, index++) {
-            SCM_INSTANCE(obj)->slots[index] = SCM_UNBOUND;
-        }
-    }
 }
 
 /* initialize slot according to its accessor spec */
@@ -1090,10 +1092,8 @@ static void slot_accessor_scheme_accessor_set(ScmSlotAccessor *sa, ScmObj p)
 
 static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
 {
-    int size = sizeof(ScmObj)*(klass->numInstanceSlots) + sizeof(ScmHeader);
-    ScmObj obj = SCM_NEW2(ScmObj, size);
+    ScmObj obj = Scm_AllocateInstance(klass, sizeof(ScmHeader));
     SCM_SET_CLASS(obj, klass);
-    scheme_slot_default(obj);
     return SCM_OBJ(obj);
 }
 
@@ -1190,7 +1190,6 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     instance->methods = SCM_NIL;
     instance->fallback = Scm_NoNextMethod;
     instance->data = NULL;
-    scheme_slot_default(SCM_OBJ(instance));
     return SCM_OBJ(instance);
 }
 
@@ -1442,7 +1441,6 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
     instance->generic = NULL;
     instance->specializers = NULL;
     instance->func = NULL;
-    scheme_slot_default(SCM_OBJ(instance));
     return SCM_OBJ(instance);
 }
 

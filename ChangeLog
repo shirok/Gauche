@@ -1,5 +1,14 @@
+2002-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/gauche/class.h : made generic allocation macro
+	  SCM_ALLOCATE to call Scm_AllocateInstance, which initializes
+	  Scheme-slots defined in Scheme subclasses safely.  The task used
+	  to be a responsibility of *_allocate method, which was error-prone.
+
 2002-12-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/genstub : supports :base qualifier in define-cclass to allow
+	  to define base class in stub file.
 	* lib/text/csv.scm : provisional fix for the problem that the
 	  consecutive tabs are ignored even if the separator is a tab.
 	  The real fix should be to add the flag to csv-reader to
