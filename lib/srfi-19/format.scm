@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.4 2002-12-03 02:13:52 shirok Exp $
+;;; $Id: format.scm,v 1.5 2003-02-05 02:55:10 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -30,6 +30,7 @@
 (use gauche.sequence)
 (use srfi-13)
 (use gauche.collection)
+(use util.list)
 
 (define tm:locale-number-separator ".")
 
@@ -78,14 +79,6 @@
 
 (define (tm:locale-long-month n)
   (vector-ref tm:locale-long-month-vector n))
-
-(define (find-index pred seq)
-  (let loop ((size (size-of seq))
-             (i 0))
-    (cond ((>= i size) #f)
-          ((pred (ref seq i)) i)
-          (else (loop size (+ i 1))))
-    ))
 
 (define (tm:locale-abbr-weekday->index string)
   (find-index (pa$ string=? string) tm:locale-abbr-weekday-vector))
