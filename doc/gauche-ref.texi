@@ -3,13 +3,21 @@
 @c EN
 @setfilename gauche-refe.info
 @settitle Gauche Reference Manual
+@dircategory The Algorithmic Language Scheme
+@directory
+* Gauche Reference: (gauche-refe.info).	An R5RS Scheme implementation.
+@end direntry
 @c JP
 @setfilename gauche-refj.info
 @settitle Gauche リファレンスマニュアル
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Gauche Reference (ja): (gauche-refj.info).	An R5RS Scheme implementation.
+@end direntry
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.276 2002-10-13 07:36:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.277 2002-10-13 20:06:48 shirok Exp $
 
 @c module and class index
 @defcodeindex md
