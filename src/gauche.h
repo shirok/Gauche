@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.163 2001-07-09 20:12:46 shirok Exp $
+ *  $Id: gauche.h,v 1.164 2001-08-06 07:21:20 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1218,7 +1218,6 @@ struct ScmSymbolRec {
 
 extern ScmObj Scm_Intern(ScmString *name);
 #define SCM_INTERN(cstr)  Scm_Intern(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
-extern ScmObj Scm_Apropos(ScmString *substr);
 extern ScmObj Scm_Gensym(ScmString *prefix);
 
 extern ScmClass Scm_SymbolClass;
