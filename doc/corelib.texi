@@ -5391,7 +5391,7 @@ signals an exceptional case and the code that handles it.
 Gaucheの例外システムは次の3つのコンポーネントから構成されています。
 (1)例外状況が発生したことを通知する方法、
 (2)例外状況をどのように処理するかを指定する方法、
-(3)例外状況を知らせたコードおよびそれを処理するコードとやりとりするための
+(3)例外状況を知らせたコードとそれを処理するコードがやりとりするための
 標準オブジェクト(@emph{コンディション})。
 @c COMMON
 
@@ -5400,9 +5400,9 @@ Those three components are typically used together, so first
 we explain the typical usage patterns using examples.  Then
 we describe each feature in detail.
 @c JP
-典型的な使い方では、これらの3つのコンポーネントを一緒につかいます。
-したがって、最初に例を用いて、典型的な使い方について説明し、そのあとで
-それぞれの機能について詳しく解説します。
+普通これらの3つのコンポーネントは一緒に使われます。
+そこで、最初に例を用いて典型的な使い方について説明し、
+そのあとでそれぞれの機能について詳しく解説します。
 @c COMMON
 
 @c EN
@@ -5413,10 +5413,10 @@ Gauche uses a term @emph{condition} to refer to such objects,
 following SRFI-35.  @emph{Exception} is the situation, and
 @emph{condition} is what describes it.
 @c JP
-用語について: いくつかの言語では@emph{例外}というと、ハンドラをつかって、
-例外的状況に遭遇したコードとやりとりをするために用いる何らかのオブジェクト
-のことを言います。Gaucheではそのようなオブジェクトのことを言うときには、
-SRFI-35にならって@emph{コンディション}を使います。
+用語について: いくつかの言語では@emph{例外(exception)}というと、
+例外的状況に遭遇したコードとそのハンドラがやりとりをするために用られる
+オブジェクトのことを指します。Gaucheではそのようなオブジェクトのことを言うときには、
+SRFI-35にならって@emph{コンディション(condition)}を使います。
 @emph{例外}というのは、状況であり、@emph{コンディション}はそれを記述した
 ものです。
 @c COMMON
@@ -5467,9 +5467,10 @@ specific error raised by some built-in or library procedures.
 A macro @code{guard} can be used for such a purpose.  The code
 looks like this:
 @c JP
-最もよくある例外処理のひとつは、発生した特定のエラーを組み込みあるいは
-ライブラリの手続きを使って捕捉するというものです。@code{guard}マクロが
-このような目的の場合に使えます。コードは以下のような感じになるでしょう。
+最もよくある例外処理のひとつは、組み込みあるいは
+ライブラリの手続きから発生した特定のエラーを捕捉するというものです。
+@code{guard}マクロがこのような目的の場合に使えます。
+コードは以下のような感じになるでしょう。
 @c COMMON
 
 @example
@@ -5512,7 +5513,7 @@ printed and a symbol @code{read-error} is returned.
 @c JP
 @code{guard} はその本体部を実行するところから始めます。
 @code{read-from-string} は構文エラーに出くわすと、@code{<read-error>}型の
-エラーを発生させます。@code{guard}フォームがこのエラーを傍受し、
+エラーを発生させます。@code{guard}フォームがこのエラーを捕捉し、
 そのコンディションオブジェクトを変数@var{exc}に束縛し、@var{exc}の後の
 節を、@code{cond}と同じようにチェックします。この場合、投げられた
 コンディションは @code{<read-error>}なので、最初の節のテストを満し、
@@ -5527,7 +5528,7 @@ of C++/Jave or the cadr of @code{handler-case} of Common Lisp;
 and the cdadr of @code{guard} form is like @code{catch} clauses
 or the cddr of @code{handler-case}.
 @c JP
-他の言語を使い慣れていれば、この例は解るとおもいます。
+他の言語を使い慣れていれば、同じパターンであることがわかると思います。
 @code{guard} フォームの cddr 部は、C++やJavaの @var{try} 節、あるいは、
 Common Lisp の @code{handler-case} の cadr 部に似ています。
 また、@code{guard} フォームの cdadr 部は、@code{catch} 節あるいは、
@@ -5542,9 +5543,9 @@ classes can also work like a predicate, so you can write the
 above expression like this.
 @c JP
 テスト式においては、投げられたコンディションのタイプをチェックする
-というのが共通しています。@code{condition-has-type?} という関数が
+のが普通です。@code{condition-has-type?} という関数が
 SRFI-35 で定義されていますが、これはちょっと冗長です。Gauche の
-コンディションクラスは述語のように使うこともできますので、上の
+コンディションクラスは述語のようも使えるようになっており、上の
 式は以下のように書くこともができます。
 @c COMMON
 
@@ -5561,9 +5562,10 @@ the thrown condition is of a specific type, since a condition
 may be @emph{compound}.  See @ref{Conditions} about compound
 conditions.
 @c JP
-@emph{注意事項:} 一般的には、@code{is-a?} を投げられたコンディションが特定の
-タイプであるかをチェックするには使えません。コンディションが合成された
-ものである可能性があるからです。合成されたコンディションについての
+@emph{注意事項:} 一般的には、投げられたコンディションが特定の
+タイプであるかをチェックするのに@code{is-a?}は使えません。
+コンディションが合成されたものである可能性があるからです。
+合成されたコンディションについての
 詳細は @ref{Conditions} を参照してください。
 @c COMMON
 
@@ -5697,8 +5699,8 @@ one of error conditions to it; then Gauche guarantees @code{raise}
 wont return.   See the description of @code{raise} in
 @ref{Signalling exceptions} for more details.
 @c JP
-@emph{注意事項:} いくつかの言語での例外を投げる機構では、たとえば、
-Cl++やJavaの @code{throw} では継続は破棄されるます。これとは違い
+@emph{注意事項:} いくつかの言語での例外を投げる機構、たとえば、
+Cl++やJavaの @code{throw} はその継続を破棄します。これとは違い
 Schemeの @code{raise} はその呼び出し元へ戻ることができます。もし、
 @code{raise} で元へもどらないで欲しいのなら、簡便な方法としては、
 常にエラーコンディションの一つをわたるようにするというのがあります。
@@ -5731,8 +5733,8 @@ or one of its descendants, and also is an instance of a metaclass
 @c JP
 Gauche のフレームワーク(SRFI-35)に適合させるためには、新しく定義する
 コンディションクラスは組み込みの @code{<condition>} クラスあるいは
-その子孫を継承するのが望ましく、また、メタクラス @code{<condition-meta>}
-のインスタンスであることが望ましいのです。
+その子孫を継承し、また、メタクラス @code{<condition-meta>}
+のインスタンスであることが望まれます。
 @c COMMON
 
 @c EN
@@ -5784,18 +5786,10 @@ condition type like the following code:
 @c EN
 See the description of @code{define-condition-type} macro
 for how the condition type is implemented in Gauche's object system.
-Sometimes it may be desirable that you directly define a new conditon
-class instead of going through @code{define-condition-type}
-(especially since it requires names for a predicate and all
-slot accessors).
 @c JP
 Gauche のオブジェクトシステムでコンディション型がどのように実装されているかは
 @code{define-condition-type}マクロの解説を参照してください。
-場合によっては、@code{define-condition-type}を使わずに、直接、新しい
-コンディションを定義したほうが良い場合もあります(特に、述語および
-スロット名が必須であるからという理由によります)。
 @c COMMON
-
 
 @node Signalling exceptions, Handling exceptions, Exception handling overview, Exceptions
 @subsection Signalling exceptions
@@ -6259,18 +6253,16 @@ both @code{<system-error>} @emph{and} @code{<io-read-error>}.
 In such cases, a @emph{compound condition} is raised.
 So you can't just use, for instance, @code{(is-a? obj <io-read-error>)}
 to check if @code{<io-read-error>} is thrown. 
-Access to the slots of conditions should also be done by 
-@code{condition-ref} instead of @code{slot-ref}.
 See the "Condition API" section below.
 @c JP
 いくつかのコンディションが同時に発生することがあることに注意してください。
-たとえば、ファイルの読み込み中に、@code{<system-error>} @emph{および} 
-@code{<io-read-error>} の両方からなるデバイス不正によりエラーになる場合
-があります。このような場合、@emph{合成したコンディション} が発生します。
+たとえば、ファイルの読み込がデバイスの欠陥により失敗した場合は、
+@code{<system-error>} @emph{および} @code{<io-read-error>} の両方からなる
+エラーとなるでしょう。
+このような場合、@emph{合成したコンディション (compound condition)} が発生します。
 したがって、たとえば、@code{<io-read-error>} が投げられたかどうかをチェック
 するのに、単に @code{(is-a? obj <io-read-error>)} を使えばよいというわけ
-にはいきません。@code{slot-ref} ではなく @code{condition-ref} によって
-コンディションのスロットにアクセスしなければなりません。
+にはいきません。
 後述の「コンディション API」の節を参照してください。
 @c COMMON
 
@@ -6300,7 +6292,7 @@ a condition class as a predicate, e.g.:
 @c EN
 The root class of the condition hierarchy.
 @c JP
-コンディションの階層のルートクラス
+コンディションの階層のルートクラスです。
 @c COMMON
 @end deftp
 
@@ -6320,8 +6312,8 @@ Don't use this class directly.
 A compound condition returns @code{#t} for @code{condition-has-type?}
 if any of the original conditions has the given type.
 @c JP
-合成コンディションは、元のコンディションのどれかが、与えられたタイプ
-なら、@code{condition-has-type?} に対して @code{#t} を返します。
+合成コンディションは@code{condition-has-type?} に対して、
+元のコンディションのどれかが、与えられたタイプなら、@code{#t} を返します。
 @c COMMON
 @end deftp
 
@@ -6337,7 +6329,7 @@ if you @code{raise} this type of condition, it never returns.
 @c JP
 このクラスのコンディションは無視して先を続けることはできない深刻な
 状況のためにあります。特に、このタイプのコンディションを @code{raise}
-したら、それは元には絶対に戻らないと仮定しても間違いありません。
+したら、それは元には絶対に戻らないと考えて問題ありません。
 @c COMMON
 @end deftp
 
@@ -6407,8 +6399,8 @@ with a message condition, like this:
 のみを継承し、@code{&message} は継承していません。したがって、
 このエラーコンディションにメッセージを付与するためには、
 合成コンディションを使わなければなりません。Gauche は
-バックワードコンパチビリティを確保するために、ここで、
-おおはばに、多重継承を用いています。
+主として過去のバージョンとの互換性を確保するために、
+ここで多重継承を用いています。
 可搬性のあるコードを掛くには、以下のようにメッセージコンディション
 付きのエラーコンディションを使うべきです。
 @c COMMON
@@ -6477,7 +6469,7 @@ A port from which the reader is reading.
 (NB: SRFI-36's @code{&read-error} doesn't have this slot.  Portable
 program shouldn't rely on this slot).
 @c JP
-リーダが読むポート。
+リーダがS式を読みこんでいたポート。
 (註: SRFI-36 の @code{&read-error} はこのスロットを定義していません。
 ポータブルなプログラムを書く場合はこのスロットを使わないで下さい)。
 @c COMMON
@@ -6502,7 +6494,7 @@ These slots are defined in SRFI-36's @code{&read-error}.
 For the time being, these slots always hold @code{#f}.
 @c JP
 これらのスロットは、SRFI-36 の @code{&read-error} で定義されています。
-暫定的に、これらのスロットは常に @code{#f} を保持するようになっています。
+今のところ、これらのスロットは常に @code{#f} を保持するようになっています。
 @c COMMON
 @end defivar
 
@@ -6599,7 +6591,7 @@ on a character-only port).   Inherits @code{<port-error>}.
 @c COMMON
 
 @defmac define-condition-type name supertype predicate field-spec @dots{}
-[SRFI-35]
+[SRFI-35+]
 @c EN
 Defines a new condition type.  In Gauche, a condition type is
 a class, whose metaclass is @code{<condition-meta>}.
@@ -6624,8 +6616,8 @@ can use compound conditions, which don't introduce multiple inheritance.)
 タイプは @code{<condition>} を継承するか、その子孫を継承しなければ
 なりません。(この形式では、多重継承を指定することはできません。
 一般的にいって、コンディションタイプの階層の中では多重継承は避ける
-べきです。そのかわりに、合成コンディションを使えます。そうしておけば、
-多重継承を入れ込むことはありません。)
+べきです。そのかわりに、合成コンディションを使えます。合成コンディションは
+多重継承を使いません。)
 @c COMMON
 
 @c EN
@@ -6642,12 +6634,20 @@ and the condition will have fields named by @var{field-name}, and
 a variable @var{accessor-name} will be bound to a procedure that
 accesses the field.   In Gauche, each field becomes a slot of
 the created class.
+
+Gauche extends srfi-35 to allow @var{predicate} and/or @code{accessor-name}
+to be @code{#f}, or @code{accessor-name} to be omitted,
+if you don't need to them to be defined.
 @c JP
 各 @code{field-spec} は @code{(field-name accessor-name)} の形式で
 このコンディションは、フィールド名は @var{field-name} で決まります。
 変数 @var{accessor-name} はそのフィールドにアクセスする手続きに
 束縛されます。Gauche では、それぞれのフィールドは生成された
 クラスのスロットとなります。
+
+Gaucheはsrfi-35を拡張して、@var{predicate}や@var{accessor-name}を
+定義する必要が無い場合はその位置に@code{#f}を指定できるようにしています。
+@var{accessor-name}が必要無い場合はそれを省略することもできます。
 @c COMMON
 @end defmac
 
@@ -6720,8 +6720,8 @@ has precedence.
 @c JP
 @var{condition} のフィールド @var{field-name} の値を検索します。
 @var{condition} が合成コンディションであれば、元のコンディションの
-フィールドにアクセスできます。もし、複数のコンディションが、
-@var{field-name} を持つばあいには、最初に @code{make-compound-condition}
+フィールドにアクセスできます。もし、複数の元のコンディションが、
+@var{field-name} を持つ場合には、最初に @code{make-compound-condition}
 に渡されたものが優先されます。
 @c COMMON
 
@@ -6781,7 +6781,8 @@ A convenience macro to create a (possibly compound) condition.
 @var{Type-field-binding} is a form of 
 @code{(@var{condition-type} (@var{field-name} @var{value-expr}) @dots{})}.
 @c JP
-(おそらく合成された)コンディションを生成するのに便利なマクロ。
+コンディションを生成するのに便利なマクロ。
+合成されたコンディションも生成できます。
 @var{Type-field-binding} は、
 @code{(@var{condition-type} (@var{field-name} @var{value-expr}) @dots{})}
 という形式になります。
