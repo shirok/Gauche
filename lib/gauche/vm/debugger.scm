@@ -12,35 +12,84 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.4 2001-10-11 09:35:11 shirok Exp $
+;;;  $Id: debugger.scm,v 1.5 2001-12-15 10:59:20 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
   (use srfi-1)
+  (use srfi-2)
   (use srfi-13)
   (use gauche.vm.disasm)
-  (export enable-debug disable-debug)
+  (use text.parse)
+  (export enable-debug disable-debug debug-print)
   )
 (select-module gauche.vm.debugger)
 
 (define *stack-show-depth* 20)
 (define *expr-show-length* 65)
 
-(define (write-limit expr port)
-  (let ((s (with-output-to-string (lambda () (write expr)))))
-    (if (> (string-length s) *expr-show-length*)
-        (begin (display (string-take s *expr-show-length*) port)
-               (display " ...\n" port))
-        (begin (display s port) (newline port)))))
+;; Debug print stub ------------------------------------------
+;; (this is temporary implementation)
+(define-syntax debug-print
+  (syntax-rules ()
+    ((_ ?form)
+     (receive (tmp . more) ?form
+       (or (and-let* ((info (and (pair? '?form)
+                                 (pair-attribute-get '?form 'source-info)))
+                      ((pair? info))
+                      ((pair? (cadr info))))
+             (format (current-error-port) "#?~s:~a:~,,,,50:s\n"
+                     (cadr info) (car info) '?form)
+             #t)
+           (format (current-error-port) "#?~,,,,50:s\n" '?form))
+       (format (current-error-port) "   [~,,,,50:s" tmp)
+       (for-each (lambda (elt)
+                   (format (current-error-port) " ~,,,,50:s\n" elt))
+                 more)
+       (format (current-error-port) "]\n")
+       (apply values tmp more)))))
 
-;; Called when uncaptured error occurs
-(define (debug exn)
+;; Print stack trace -----------------------------------------
+;; NB: the same code is in vm.c.  Should be refactored.
+(define (debug-print-stack stack max-depth)
+  (let ((outp (current-error-port)))
+    (format outp "Stack trace\n")
+    (format outp "________________________________________________\n")
+    (do ((s stack (cdr s))
+         (i 0     (+ i 1)))
+        ((or (null? s) (> i max-depth))
+         (unless (null? s) (format outp "...\n")))
+      (let ((code (caar s)))
+        (format outp "~3d  ~,,,,v:s\n" i *expr-show-length* code)
+        (or (and-let* (((pair? code))
+                       (info (pair-attribute-get code 'source-info))
+                       ((pair? info))
+                       ((pair? (cdr info))))
+              (format outp "       At line ~a of ~s\n" (cadr info) (car info))
+              #t)
+            (format outp "       [unknown location]\n"))))
+    ))
+
+;; Debugger entry point ---------------------------------------
+;; Called when an error occurs
+(define (debug exception)
+  (disable-debug) ;; prevent to enter debugger again
+  (let ((stack (cdddr (vm-get-stack-trace))) ;remove our stack frames
+        (outp  (current-error-port)))
+    (if (is-a? exception <exception>)
+        (format outp "*** Error: ~a\n" (slot-ref exception 'message))
+        (format outp "*** Error: ~a\n" exception))
+    (debug-print-stack stack *stack-show-depth*)
+    (format outp "Entering debugger.  Type :help for help.\n")
+    (debug-loop stack))
+  (enable-debug))
+
+;; Internal debug command loop --------------------------------
+;; 
+(define (debug-loop stack)
   ;; TODO: we need to gain terminal I/O.
-  (disable-debug)
   (let ((inp   (standard-input-port))
-        (outp  (standard-error-port))
-        (stack (cdddr (vm-get-stack-trace))) ;remove our stack frames
-        )
+        (outp  (standard-error-port)))
 
     (define (current-stack level)
       (let loop ((n 0) (stack stack))
@@ -59,25 +108,35 @@
                (do ((i 2 (+ i 1))
                     (vals vals (cdr vals)))
                    ((null? vals) (when up (show-env up)))
-                 (format outp " ~10@s = " (car vals))
-                 (write-limit (vector-ref env i) outp))))))
+                 (format outp " ~10@s = ~,,,,v:s\n" (car vals)
+                         *expr-show-length*  (vector-ref env i))))
+              )))
 
     (define (show-stack s level)
-      (format outp "~3d: " level)
-      (write-limit (car s) outp)
+      (format outp "~3d:  ~,,,,v:s\n" level *expr-show-length* (car s))
+      (and-let* (((pair? (car s)))
+                 (info (pair-attribute-get (car s) 'source-info))
+                 ((pair? info))
+                 ((pair? (cdr info))))
+        (format outp "       At line ~a of ~s\n" (cadr info) (car info)))
       (show-env (cdr s)))
     
     (define (loop level)
       (format outp "debug$ ")
       (flush outp)
-      (let ((cmd (read inp)))
-        (cond ((eqv? cmd :show) (show level))
-              ((eqv? cmd :up)   (up   level))
-              ((eqv? cmd :down) (down level))
-              ((eqv? cmd :quit))
-              ((eqv? cmd :q))
-              ((eof-object? cmd) (newline outp))
-              (else (help level)))))
+      (let ((line (read-line inp)))
+        (if (eof-object? line)
+            (newline outp)
+            (let ((cmd (with-input-from-string line
+                         (lambda () (next-token #[\s] '(#[\s] *eof*))))))
+              (debug-print cmd)
+              (cond
+               ((equal? cmd "") (loop level))
+               ((member cmd '("s" "sh" "sho" "show")) (show level))
+               ((member cmd '("u" "up"))              (up   level))
+               ((member cmd '("d" "do" "dow" "down")) (down level))
+               ((member cmd '("q" "qu" "qui" "quit")))
+               (else (help level)))))))
 
     (define (show level)
       (show-stack (current-stack level) level)
@@ -99,28 +158,14 @@
 
     (define (help level)
       (format outp "Commands:\n")
-      (format outp "  :show       show current frame\n")
-      (format outp "  :up         up one frame\n")
-      (format outp "  :down       down one frame\n")
-      (format outp "  :quit       return to toplevel\n")
+      (format outp "  show       show current frame\n")
+      (format outp "  up         up one frame\n")
+      (format outp "  down       down one frame\n")
+      (format outp "  quit       return to toplevel\n")
       (loop level))
-    
-    (if (is-a? exn <exception>)
-        (format outp "*** Error: ~a\n" (slot-ref exn 'message))
-        (format outp "*** Error: ~a\n" exn))
-    (format outp "Stack trace\n")
-    (format outp "________________________________________________\n")
-    (do ((s stack (cdr s))
-         (i 0     (+ i 1)))
-        ((or (null? s) (> i *stack-show-depth*))
-         (unless (null? s)
-           (format outp "...\n")))
-      (format outp "~3d   " i)
-      (write-limit (caar s) outp))
-    (format outp "Entering debugger.  Type :help for help.\n")
+
     (loop 0)
-    )
-  (enable-debug))
+    ))
 
 (define (enable-debug)
   (vm-set-default-exception-handler (current-vm) debug))
