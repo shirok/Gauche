@@ -1,6 +1,6 @@
 /*
  * Test/arith.h macros
- * $Id: test-arith.c,v 1.3 2002-06-22 08:39:03 shirok Exp $
+ * $Id: test-arith.c,v 1.4 2002-06-22 09:25:59 shirok Exp $
  */
 
 #include <stdio.h>
@@ -57,7 +57,7 @@ void message(FILE *out, const char *m, int filler)
                    " expects " numfmt " =>", x_, y_, rexp);     \
         op(r, c, x, y);                                         \
         if (c) {                                                \
-            if (cexp) printf("ok\n");                           \
+            if (cexp == c) printf("ok\n");                      \
             else {                                              \
                 errcount++;                                     \
                 printf("ERROR: got r=" numfmt                   \
@@ -175,14 +175,14 @@ void test_saddov(void)
     TEST_SADDOV(0, -SMAX, -SMAX, 0);
     /* -1 + -SMAX => SMIN */
     TEST_SADDOV(-1, -SMAX, SMIN, 0);
-    /* -2 + -SMAX => overflow */
-    TEST_SADDOV(-2, -SMAX, 0, 1);
-    /* -SMAX + -2 => overflow */
-    TEST_SADDOV(-SMAX, -2, 0, 1);
-    /* -SMAX + -SMAX => overflow */
-    TEST_SADDOV(-SMAX, -SMAX, 0, 1);
-    /* -SMAX + SMIN => overflow */
-    TEST_SADDOV(-SMAX, SMIN, 0, 1);
+    /* -2 + -SMAX => -overflow */
+    TEST_SADDOV(-2, -SMAX, 0, -1);
+    /* -SMAX + -2 => -overflow */
+    TEST_SADDOV(-SMAX, -2, 0, -1);
+    /* -SMAX + -SMAX => -overflow */
+    TEST_SADDOV(-SMAX, -SMAX, 0, -1);
+    /* -SMAX + SMIN => -overflow */
+    TEST_SADDOV(-SMAX, SMIN, 0, -1);
 }
 
 /*
@@ -288,8 +288,8 @@ void test_ssubov(void)
     TEST_SSUBOV(1, -SMAX, 0, 1);
     /* 0 - -SMAX => SMAX */
     TEST_SSUBOV(0, -SMAX, SMAX, 0);
-    /* SMIN - 1 => overflow */
-    TEST_SSUBOV(SMIN, 1, 0, 1);
+    /* SMIN - 1 => -overflow */
+    TEST_SSUBOV(SMIN, 1, 0, -1);
     /* SMIN - -1 => SMIN+1 */
     TEST_SSUBOV(SMIN, -1, SMIN+1, 0);
     /* -SMAX - -SMAX => 0 */
@@ -399,10 +399,10 @@ void test_smulov(void)
     TEST_SMULOV(-1, SMIN, 0, 1);
     /* 2 * SMAX => overflow */
     TEST_SMULOV(2, SMAX, 0, 1);
-    /* 2 * -SMAX => overflow */
-    TEST_SMULOV(2, -SMAX, 0, 1);
-    /* -2 * SMAX => overflow */
-    TEST_SMULOV(-2, SMAX, 0, 1);
+    /* 2 * -SMAX => -overflow */
+    TEST_SMULOV(2, -SMAX, 0, -1);
+    /* -2 * SMAX => -overflow */
+    TEST_SMULOV(-2, SMAX, 0, -1);
     /* -2 * -SMAX => overflow */
     TEST_SMULOV(-2, -SMAX, 0, 1);
     /* SMAX/2 * 2 => SMAX-1 */
@@ -423,10 +423,10 @@ void test_smulov(void)
     TEST_SMULOV(-(SMAX/2+1), -2, 0, 1);
     /* SMAX * SMAX => overflow */
     TEST_SMULOV(SMAX, SMAX, 0, 1);
-    /* SMAX * -SMAX => overflow */
-    TEST_SMULOV(SMAX, -SMAX, 0, 1);
-    /* -SMAX * SMAX => overflow */
-    TEST_SMULOV(-SMAX, SMAX, 0, 1);
+    /* SMAX * -SMAX => -overflow */
+    TEST_SMULOV(SMAX, -SMAX, 0, -1);
+    /* -SMAX * SMAX => -overflow */
+    TEST_SMULOV(-SMAX, SMAX, 0, -1);
     /* -SMAX * -SMAX => overflow */
     TEST_SMULOV(-SMAX, -SMAX, 0, 1);
 }

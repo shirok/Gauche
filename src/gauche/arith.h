@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: arith.h,v 1.2 2002-06-22 08:39:10 shirok Exp $
+ *  $Id: arith.h,v 1.3 2002-06-22 09:26:06 shirok Exp $
  */
 
 #ifndef GAUCHE_ARITH_H
@@ -62,39 +62,39 @@
 #endif /*UADD*/
 
 /*-----------------------------------------------------------------
- * UADDOV(r, c, x, y)    unsigned word add with overflow check
- *  u_long : r, c, x, y;
- *  if x + y overflows, c = 1
- *  else r <- x + y, c = 0
+ * UADDOV(r, v, x, y)    unsigned word add with overflow check
+ *  u_long : r, v, x, y;
+ *  if x + y overflows, v = 1
+ *  else r <- x + y, v = 0
  */
 
 #ifndef UADDOV
 /* Portable version */
-#define UADDOV(r, c, x, y)                      \
+#define UADDOV(r, v, x, y)                      \
   do {                                          \
     (r) = (x) + (y);                            \
-    (c) = (r) < (x);                            \
+    (v) = ((r) < (x))? 1 : 0;                   \
   } while (0)
 #endif /*UADDOV*/
 
 /*-----------------------------------------------------------------
- * SADDOV(r, c, x, y)     signed word addition with overflow check
- *  long : r, c, x, y;
- *  if x + y overflows, c = 1,
- *  else r <- x + y, c = 0
+ * SADDOV(r, v, x, y)     signed word addition with overflow check
+ *  long : r, v, x, y;
+ *  if x + y overflows, v = 1 or -1 depending on the sign of the result
+ *  else r <- x + y, v = 0
  */
 
 #ifndef SADDOV
 /* Portable version */
-#define SADDOV(r, c, x, y)                      \
+#define SADDOV(r, v, x, y)                      \
   do {                                          \
     (r) = (x) + (y);                            \
     if ((x) >= 0) {                             \
-      if ((y) >= 0 && (r) < 0) (c) = 1;         \
-      else (c) = 0;                             \
+      if ((y) >= 0 && (r) < 0) (v) = 1;         \
+      else (v) = 0;                             \
     } else {                                    \
-      if ((y) < 0 && (r) >= 0) (c) = 1;         \
-      else (c) = 0;                             \
+      if ((y) < 0 && (r) >= 0) (v) = -1;        \
+      else (v) = 0;                             \
     }                                           \
   } while (0)
 #endif /*SADDOV*/
@@ -116,40 +116,39 @@
 #endif /*USUB*/
 
 /*-----------------------------------------------------------------
- * USUBOV(r, c, x, y)      unsigned word subtract with overflow check
- *  u_long : r, c, x, y;
- *  if x - y overflows, c = 1
- *  else r <- x - y, c = 0
+ * USUBOV(r, v, x, y)      unsigned word subtract with overflow check
+ *  u_long : r, v, x, y;
+ *  if x - y overflows, v = 1
+ *  else r <- x - y, v = 0
  */
 
 #ifndef USUBOV
 /* Portable version */
-#define USUBOV(r, c, x, y)                      \
+#define USUBOV(r, v, x, y)                      \
   do {                                          \
     (r) = (x) - (y);                            \
-    (c) = (r) > (x);                            \
+    (v) = ((r) > (x))? 1 : 0;                   \
   } while (0)
 #endif /*USUBOV*/
 
 /*-----------------------------------------------------------------
- * SSUBOV(r, c, x, y)     signed word subtract without borrow
- *  long : r, c, x, y;
- *  if x - y overflows, c = 1,
- *  else r <- x - y, c = 0
- *  Note that borrow is _not_ propagated.
+ * SSUBOV(r, v, x, y)     signed word subtract without borrow
+ *  long : r, v, x, y;
+ *  if x - y overflows, c = 1 or -1 depending on the sign of the result
+ *  else r <- x - y, v = 0
  */
 
 #ifndef SSUBOV
 /* Portable version */
-#define SSUBOV(r, c, x, y)                      \
+#define SSUBOV(r, v, x, y)                      \
   do {                                          \
     (r) = (x) - (y);                            \
     if ((x) >= 0) {                             \
-      if ((y) < 0 && (r) <= 0) (c) = 1;         \
-      else (c) = 0;                             \
+      if ((y) < 0 && (r) <= 0) (v) = 1;         \
+      else (v) = 0;                             \
     } else {                                    \
-      if ((y) >= 0 && (r) > 0) (c) = 1;         \
-      else (c) = 0;                             \
+      if ((y) >= 0 && (r) > 0) (v) = -1;        \
+      else (v) = 0;                             \
     }                                           \
   } while (0)
 #endif /*SSUBOV*/
@@ -180,57 +179,57 @@
 #endif /*UMUL*/
 
 /*-----------------------------------------------------------------
- * UMULOV(r, c, x, y)      unsigned word multiply with overflow check
+ * UMULOV(r, v, x, y)      unsigned word multiply with overflow check
  *  u_long : r, x, y
- *  int : c
- *  if x * y overflows, c = 1
- *  else r <- x * y, c = 0
+ *  int : v
+ *  if x * y overflows, v = 1
+ *  else r <- x * y, v = 0
  */
 
 #ifndef UMULOV
-#define UMULOV(r, c, x, y)                              \
+#define UMULOV(r, v, x, y)                              \
     do {                                                \
-        if ((x)==0 || (y)==0) { (c) = (r) = 0; }        \
+        if ((x)==0 || (y)==0) { (v) = (r) = 0; }        \
         else {                                          \
             (r) = (x) * (y);                            \
-            (c) = ((r)<(x) || (r)<(y));                 \
+            (v) = ((r)<(x) || (r)<(y))? 1 : 0;          \
         }                                               \
     } while (0)
 #endif /*UMULOV*/
 
 /*-----------------------------------------------------------------
- * SMULOV(r, c, x, y)      signed word multiply with overflow check
+ * SMULOV(r, v, x, y)      signed word multiply with overflow check
  *  long : r, x, y
- *  int : c
- *  if x * y overflows, c = 1
- *  else r <- x * y, c = 0
+ *  int : v
+ *  if x * y overflows, v = 1 or -1 depending on the sign of the result
+ *  else r <- x * y, v = 0
  */
 
 #ifndef SMULOV
-#define SMULOV(r, c, x, y)                              \
-    do {                                                \
-        u_long t0_;                                     \
-        if ((x) >= 0) {                                 \
-            if ((y) >= 0) {                             \
-                UMULOV(t0_, c, x, y);                   \
-                if (t0_ > LONG_MAX) (c) = 1;            \
-                else (r) = t0_;                         \
-            } else {                                    \
-                UMULOV(t0_, c, x, -y);                  \
-                if (t0_ > LONG_MAX+1UL) (c) = 1;        \
-                else (r) = -t0_;                        \
-            }                                           \
-        } else {                                        \
-            if ((y) >= 0) {                             \
-                UMULOV(t0_, c, -x, y);                  \
-                if (t0_ > LONG_MAX+1UL) (c) = 1;        \
-                else (r) = -t0_;                        \
-            } else {                                    \
-                UMULOV(t0_, c, -x, -y);                 \
-                if (t0_ > LONG_MAX) (c) = 1;            \
-                else (r) = t0_;                         \
-            }                                           \
-        }                                               \
+#define SMULOV(r, v, x, y)                                      \
+    do {                                                        \
+        u_long t0_;                                             \
+        if ((x) >= 0) {                                         \
+            if ((y) >= 0) {                                     \
+                UMULOV(t0_, v, x, y);                           \
+                if ((v) || t0_ > LONG_MAX) (v) = 1;             \
+                else (r) = t0_;                                 \
+            } else {                                            \
+                UMULOV(t0_, v, x, -y);                          \
+                if ((v) || t0_ > LONG_MAX+1UL) (v) = -1;        \
+                else (r) = -t0_;                                \
+            }                                                   \
+        } else {                                                \
+            if ((y) >= 0) {                                     \
+                UMULOV(t0_, v, -x, y);                          \
+                if ((v) || t0_ > LONG_MAX+1UL) (v) = -1;        \
+                else (r) = -t0_;                                \
+            } else {                                            \
+                UMULOV(t0_, v, -x, -y);                         \
+                if ((v) || t0_ > LONG_MAX) (v) = 1;             \
+                else (r) = t0_;                                 \
+            }                                                   \
+        }                                                       \
     } while (0)
 #endif /*SMULOV*/
 
