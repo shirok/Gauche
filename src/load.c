@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.88 2004-07-16 06:03:19 shirok Exp $
+ *  $Id: load.c,v 1.89 2004-07-21 07:25:17 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -260,10 +260,10 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
     } else if (*ptr == '/'
                || (*ptr == '.' && *(ptr+1) == '/')
                || (*ptr == '.' && *(ptr+1) == '.' && *(ptr+2) == '/')
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32__)
 	       /* support for wicked legacy DOS drive letter */
 	       || (isalpha(*ptr) && *(ptr+1) == ':')
-#endif /* __CYGWIN__ */
+#endif /* __CYGWIN__ || __MINGW32__ */
 	       ) {
         use_load_paths = FALSE;
     }
@@ -1003,7 +1003,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
  */
 #ifdef __MINGW32__
 
-ScmObj get_program_dir(void)
+ScmObj get_install_dir(void)
 {
     static ScmObj dir = SCM_FALSE;
     if (SCM_FALSEP(dir)) {
@@ -1019,12 +1019,31 @@ ScmObj get_program_dir(void)
 	if (r == 0) {
 	    Scm_Error("GetModuleFileName failed");
 	}
+	/* remove \libgauche.dll */
+	if (!PathRemoveFileSpec(path)) {
+	    Scm_Error("PathRemoveFileSpec failed on %s", path);
+	}
+	/* remobe \bin */
 	if (!PathRemoveFileSpec(path)) {
 	    Scm_Error("PathRemoveFileSpec failed on %s", path);
 	}
 	dir = SCM_MAKE_STR_COPYING(path);
     }
     return dir;
+}
+
+ScmObj get_archdir(void)
+{
+    return Scm_StringAppendC(SCM_STRING(get_install_dir()),
+			     "\\lib\\gauche\\"GAUCHE_VERSION"\\"GAUCHE_ARCH,
+			     -1, -1);
+}
+
+ScmObj get_scmdir(void)
+{
+    return Scm_StringAppendC(SCM_STRING(get_install_dir()),
+			     "\\share\\gauche\\"GAUCHE_VERSION"\\lib",
+			     -1, -1);
 }
 #endif /*__MINGW32__*/
 
@@ -1043,7 +1062,7 @@ void Scm__InitLoad(void)
     SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));
     SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_LIB_DIR));
 #else  /*__MINGW32__*/
-    SCM_APPEND1(init_load_path, t, get_program_dir());
+    SCM_APPEND1(init_load_path, t, get_scmdir());
 #endif /*__MINGW32__*/
 
     init_dynload_path = t = SCM_NIL;
@@ -1052,7 +1071,7 @@ void Scm__InitLoad(void)
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_ARCH_DIR));
 #else  /*__MINGW32__*/
-    SCM_APPEND1(init_dynload_path, t, get_program_dir());
+    SCM_APPEND1(init_dynload_path, t, get_archdir());
 #endif /*__MINGW32__*/
 
     init_load_suffixes = t = SCM_NIL;

@@ -256,7 +256,7 @@ install : all relink
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(BIN_INSTALL_DIR)
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(ARCH_INSTALL_DIR)
 	$(INSTALL) -m 444 $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
-	@case `$(SHELL) gauche-config --arch` in *-cygwin*) \
+	@case `$(SHELL) gauche-config --arch` in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
 	$(POSTINSTALL)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.98 2004-07-16 11:45:47 shirok Exp $
+;;; $Id: syslib.stub,v 1.99 2004-07-21 07:25:17 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -236,27 +236,7 @@
 #endif")
 
 (define-cproc sys-mkstemp (template::<string>)
-  "
-#ifdef HAVE_MKSTEMP
-#define MKSTEMP_PATH_MAX 1025  /* Gee, remove me */
-  char name[MKSTEMP_PATH_MAX];
-  ScmObj sname;
-  int siz = SCM_STRING_SIZE(template), fd;
-  if (siz >= MKSTEMP_PATH_MAX-6) { 
-    Scm_Error(\"pathname too long: %S\", template);
-  }
-  memcpy(name, SCM_STRING_START(template), siz);
-  memcpy(name + siz, \"XXXXXX\", 6);
-  name[siz+6] = '\\0';
-  SCM_SYSCALL(fd, mkstemp(name));
-  if (fd < 0) Scm_SysError(\"mkstemp failed\");
-  sname = SCM_MAKE_STR_COPYING(name);
-  SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd, SCM_PORT_BUFFER_FULL, TRUE), sname));
-#else
-  /* TODO: provide alternative */
-  Scm_Error(\"mkstemp() is not supported on this platform (yet)\");
-  SCM_RETURN(SCM_UNDEFINED);
-#endif")
+  "SCM_RETURN(Scm_SysMkstemp(template));")
 
 ;; tmpfile
 

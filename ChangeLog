@@ -1,3 +1,11 @@
+2004-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub, src/system.c (Scm_SysMkstemp): provides alternative
+	  of mkstemp() for platforms that don't have one (e.g. Win32).
+	* src/load.c : for MinGW, changed the default load path to look for
+	  subdirectories.
+	* DIST: preparing MinGW packaging (not quite working yet).
+
 2004-07-20  Kimura Fuyuki  <fuyuki@hadaly.org>
 
 	* ext/charconv/Makefile.in: Add three C files to the GENERATED

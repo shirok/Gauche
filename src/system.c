@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.58 2004-07-16 11:45:47 shirok Exp $
+ *  $Id: system.c,v 1.59 2004-07-21 07:25:17 shirok Exp $
  */
 
 #include <stdio.h>
@@ -372,6 +372,55 @@ ScmObj Scm_DirName(ScmString *filename)
     while (*p == '/' && i > 0) { p--; i--; } /* delete trailing '/' */
     if (i == 0) return SCM_MAKE_STR("/");
     return Scm_MakeString(str, i, -1, 0);
+}
+
+/* Make mkstemp() work even if the system doesn't have one. */
+ScmObj Scm_SysMkstemp(ScmString *template)
+{
+#define MKSTEMP_PATH_MAX 1025  /* Geez, remove me */
+    char name[MKSTEMP_PATH_MAX];
+    ScmObj sname;
+    int siz = SCM_STRING_SIZE(template), fd;
+    if (siz >= MKSTEMP_PATH_MAX-6) { 
+	Scm_Error("pathname too long: %S", template);
+    }
+    memcpy(name, SCM_STRING_START(template), siz);
+#if defined(HAVE_MKSTEMP)
+    memcpy(name + siz, "XXXXXX", 6);
+    name[siz+6] = '\0';
+    SCM_SYSCALL(fd, mkstemp(name));
+    if (fd < 0) Scm_SysError("mkstemp failed");
+    sname = SCM_MAKE_STR_COPYING(name);
+    SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
+					      SCM_PORT_BUFFER_FULL, TRUE),
+			   sname));
+#else   /*!defined(HAVE_MKSTEMP)*/
+    /* Emulate mkstemp. */
+#define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
+    {
+	u_long seed = (u_long)time(NULL);
+	int numtry;
+	char suffix[7];
+	for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
+	    snprintf(suffix, 7, "%06x", seed&0xffffff);
+	    memcpy(name+siz, suffix, 7);
+#ifndef __MINGW32__
+	    SCM_SYSCALL(fd, open(name, O_CREAT|O_EXCL|O_WRONLY, 0600));
+#else  /*__MINGW32__*/
+ 	    SCM_SYSCALL(fd, open(name, _O_CREAT|_O_EXCL|_O_WRONLY, 0600));
+#endif /*__MINGW32__*/
+	    if (fd >= 0) break;
+	    seed *= 2654435761UL;
+	}
+	if (numtry == MKSTEMP_MAX_TRIALS) {
+	    Scm_Error("mkstemp failed");
+	}
+	sname = SCM_MAKE_STR_COPYING(name);
+	SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
+						  SCM_PORT_BUFFER_FULL, TRUE),
+			       sname));
+    }
+#endif /*!defined(HAVE_MKSTEMP)*/
 }
 
 /*===============================================================

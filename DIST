@@ -17,6 +17,7 @@ while [ $# -gt 0 ]; do
     testclean) testclean=yes; shift ;;
     rpm)  rpm=yes; shift;;
     rpmfiles) rpmfiles=yes; shift;;
+    mingw) mingw=yes; shift;;
     *) echo "DIST [doc][docs][tgz][test][testclean][rpm][rpmfiles]"; exit 0;;
   esac
 done
@@ -33,8 +34,7 @@ if [ "$tgz" = "yes" ]; then
   if [ -f examples/spigot/Makefile ]; then 
     (cd examples/spigot; make maintainer-clean);
   fi
-  autoconf
-  (cd gc; autoconf)
+  ./DIST gen
   ./configure --enable-threads=pthreads -C || exit 1
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done) || exit 1
   (cd src; make autoloads.c) || exit 1
@@ -186,4 +186,28 @@ if [ "$rpm" = "yes" ]; then
 #  mv $RPMDIR/RPMS/i686/Gauche-eucjp-*.rpm $TGZ_DEST
 #  mv $RPMDIR/RPMS/i686/Gauche-utf8-*.rpm $TGZ_DEST
 #  mv $RPMDIR/SRPMS/Gauche-*.rpm $TGZ_DEST
+fi
+
+if [ "$mingw" = "yes" ]; then
+  # create a MinGW distribution
+  case `gcc --version` in
+    *mingw*) ;;
+    *) echo "Set PATH to have MinGW bin directory first"
+       exit 1;;
+  esac
+  if [ -f Makefile ]; then make maintainer-clean; fi
+  if [ -f examples/spigot/Makefile ]; then 
+    (cd examples/spigot; make maintainer-clean);
+  fi
+  tempdir=/cygdrive/c/temp
+  rm -rf $tempdir/mingw-dist
+  ./DIST gen
+  ./configure --build=i686-pc-mingw32 --prefix=$tempdir/mingw-dist
+  if [ ! -f VERSION ]; then echo "No VERSION; something wrong?"; exit 1; fi
+  VERSION=`cat VERSION`
+  make
+  make install
+  rm -rf $tempdir/mingw-dist/lib/libgauche.dll*
+  rm -rf $tempdir/mingw-dist/lib/gauche/$VERSION/*/gosh.exe
+  rm -rf $tempdir/mingw-dist/lib/gauche/$VERSION/*/libgauche.dll
 fi
