@@ -1,3 +1,15 @@
+2002-01-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/class.h, src/class.c, src/error.c, src/system.c :
+	  defined SCM_ALLOCATE macro for cliche in the *_allocate methods.
+	* ext/charconv/configure.in : fixed a bug that didn't find iconv.h
+	  even --with-iconv is given.
+	* test/TESTS, src/Makefile.in : list tests in a separate file.
+
+2002-01-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c : added some error classes.
+
 2001-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c, src/macro.c : intern syntactic bindings to the
