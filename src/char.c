@@ -1,7 +1,7 @@
 /*
  * char.c - character and character set operations
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.27 2002-04-20 07:51:07 shirok Exp $
+ *  $Id: char.c,v 1.28 2002-06-17 05:43:21 shirok Exp $
  */
 
 #include <ctype.h>
@@ -23,7 +23,6 @@
  * Character functions
  */
 
-/* not much here... most are in stdlib.stub */
 ScmObj Scm_CharEncodingName(void)
 {
     return SCM_INTERN(SCM_CHAR_ENCODING_NAME);
@@ -83,6 +82,56 @@ ScmChar Scm_IntToDigit(int n, int radix)
         if (n < radix) return (ScmChar)(n - 10 + 'a');
         else return SCM_CHAR_INVALID;
     }
+}
+
+/*
+ * Convert UCS4 code <-> character
+ * If the native encoding is not utf-8, gauche.charconv module is loaded.
+ */
+ScmChar (*Scm_UcsToCharHook)(int ucs4) = NULL;  /* filled by ext/charconv */
+int (*Scm_CharToUcsHook)(ScmChar ch) = NULL;    /* filled by ext/charconv */
+
+ScmChar Scm_UcsToChar(int n)
+{
+    if (n < 0) Scm_Error("bad character code: %d", n);
+#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
+    return (ScmChar)n;
+#elif defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+    if (n < 0x80) return (ScmChar)n; /*ASCII range*/
+    if (Scm_UcsToCharHook == NULL) {
+        /* NB: we don't need mutex here, for the loading of gauche.charconv
+           is serialized in Scm_Require. */
+        Scm_Require(SCM_MAKE_STR("gauche/charconv"));
+        if (Scm_UcsToCharHook == NULL) {
+            Scm_Error("couldn't autoload gauche.charconv");
+        }
+    }
+    return Scm_UcsToCharHook(n);
+#else
+    if (n < 0x100) return (ScmChar)n; /* ISO8859-1 */
+    else return SCM_CHAR_INVALID;
+#endif
+}
+
+int Scm_CharToUcs(ScmChar ch)
+{
+    if (ch == SCM_CHAR_INVALID) Scm_Error("bad character");
+#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
+    return (int)ch;
+#elif defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+    if (ch < 0x80) return (int)ch; /*ASCII range*/
+    if (Scm_CharToUcsHook == NULL) {
+        /* NB: we don't need mutex here, for the loading of gauche.charconv
+           is serialized in Scm_Require. */
+        Scm_Require(SCM_MAKE_STR("gauche/charconv"));
+        if (Scm_CharToUcsHook == NULL) {
+            Scm_Error("couldn't autoload gauche.charconv");
+        }
+    }
+    return Scm_CharToUcsHook(ch);
+#else
+    return (int)ch;             /* ISO8859-1 */
+#endif /*!GAUCHE_CHAR_ENCODING_UTF_8*/
 }
 
 /*=======================================================================

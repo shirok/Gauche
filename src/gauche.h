@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.267 2002-06-14 01:42:42 shirok Exp $
+ *  $Id: gauche.h,v 1.268 2002-06-17 05:43:21 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -224,6 +224,8 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 
 SCM_EXTERN int Scm_DigitToInt(ScmChar ch, int radix);
 SCM_EXTERN ScmChar Scm_IntToDigit(int n, int radix);
+SCM_EXTERN int Scm_CharToUcs(ScmChar ch);
+SCM_EXTERN ScmChar Scm_UcsToChar(int ucs);
 SCM_EXTERN ScmObj Scm_CharEncodingName(void);
 SCM_EXTERN const char **Scm_SupportedCharacterEncodings(void);
 SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);

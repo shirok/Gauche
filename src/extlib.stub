@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.158 2002-06-14 01:42:42 shirok Exp $
+;;; $Id: extlib.stub,v 1.159 2002-06-17 05:43:21 shirok Exp $
 ;;;
 
 "
@@ -321,6 +321,18 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
      Scm_Error(\"radix must be between 2 and 36, but got %d\", radix);
   r = Scm_IntToDigit(n, radix);
   return (r == SCM_CHAR_INVALID? SCM_FALSE : SCM_MAKE_CHAR(r));")
+
+(define-cproc ucs->char (n)
+  (assert (exact? n))
+  "ScmChar ch = Scm_UcsToChar(n);
+  if (ch == SCM_CHAR_INVALID) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(SCM_MAKE_CHAR(ch));")
+
+(define-cproc char->ucs (c)
+  (assert (char? c))
+  "int ucs = Scm_CharToUcs(c);
+  if (ucs < 0) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeInteger(ucs));")
 
 (define-cproc gauche-character-encoding ()
   "  SCM_RETURN(Scm_CharEncodingName());")
