@@ -641,6 +641,27 @@ of descendants of @var{class}.
 @end example
 @end defun
 
+If @var{obj}'s class has been redefined, these procedures
+first updates @var{obj} to change its class to the new class.
+So @code{class-of} always returns the new class.
+This behavior is different from stklos 0.55, which @code{class-of}
+returns an old class if @var{obj} hasn't been updated.
+If you need to get the old class, you should use @code{current-class-of}
+below.  
+See @ref{Class redefinition} for the details of the semantics
+of redefined class.
+
+@defun current-class-of obj
+Returns a class metaobject of @var{obj}.  If @var{obj}'s class
+has been redefined, but @var{obj} is not updated for the change,
+then this procedure returns the original class of @var{obj}
+without updating @var{obj}.
+
+You need this procedure in rare occasions, such as within
+@code{change-class} method, in which you don't want to trigger
+updating @var{obj} (which would cause infinite loop).
+@end defun
+
 @c ----------------------------------------------------------------------
 @node Defining class, Defining methods, General Inquiry, Object system
 @section Defining class
@@ -658,6 +679,16 @@ and bind it globally.
 定義されています。
 @c COMMON
 
+@menu
+* define-class macro::          
+* Inheritance::        
+* Class redefinition::          
+@end menu
+
+@node define-class macro, Inheritance, Defining class, Defining class
+@subsection @code{define-class} macro
+@c NODE define-class マクロ
+
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
 @c EN
 Creates a class object according to the arguments, and globally
@@ -665,8 +696,7 @@ bind it to a variable @var{name}.   This macro should be used at toplevel.
 
 @var{Supers} is a list of direct superclasses from which this class
 inherits.   You can use multiple inheritance.
-See @ref{Multiple inheritance}  below, for the rule that determines
-precedence of inheritance chain.
+See @ref{Inheritance}  below, for the details abount inheritance.
 
 @var{Slot-spec} is a specification of a "slot", sometimes known as 
 a "field" or an "instance variable" (but you can specify "class variable"
@@ -675,7 +705,7 @@ The simplest form of @var{slot-spec} is just a symbol, which names
 the slot.  Or you can give a list, whose first element is a symbol
 and whose rest is an interleaved list of keywords and values.
 The list form not only defines a name of the slot but specifies
-behavior of the slot.  See @ref{Slot specification}, for details.
+behavior of the slot.  It is explained below.
 
 Finally, @var{option} @dots{} is an interleaved list of keywords
 and values, specifies how class object should be created.
@@ -689,18 +719,17 @@ for the usage of metaclass.
 グローバルに束縛します。このマクロはトップレベルでのみ使うことができます。
 
 @var{Supers} はそのクラスが継承する直接のスーパークラスのリストです。
-多重継承も使えます。継承関係の優先についてのルールについては、
-@ref{多重継承} を参照して下さい。
+多重継承も使えます。継承の詳細については@ref{Inheritance} を参照して下さい。
 
-@var{Slot-spec} は「スロット」の仕様で、「フィールド」や「インスタンス
-変数」と呼ばれるものです (@var{slot-spec} を使って「クラス変数」
-を指定することもできます)。
+@var{Slot-spec} は「スロット」の仕様で、他の言語ではよく
+「フィールド」や「インスタンス変数」と呼ばれるものです 
+(@var{slot-spec} を使って「クラス変数」を指定することもできます)。
 @var{slot-spec} の最も単純なフォームはシンボルそのもので、その名前が
 スロットであるものです。あるいは、最初の要素がシンボルで残りの要素が
 キーワードと値が交互に来るリストを渡すこともできます。
 
 このリストフォームは、スロットの名前を定義するだけでなく、そのスロットの
-振る舞いも定義します。詳細は、@ref{Slot specification} を参照して下さい。
+振る舞いも定義します。スロットの定義については以下で説明します。
 
 最後に、@var{option} @dots{} は、クラスオブジェクトがどのように
 作られるかを指定する、キーワードと値が交互に来るリストです。
@@ -710,22 +739,126 @@ for the usage of metaclass.
 他のオプションはクラスオブジェクトを作成するために、@code{make}
 メソッドに渡されます。メタクラスの使用方法については、
 @ref{Class instantiation}を参照。
-
 @c COMMON
 @end defmac
 
-@menu
-* Multiple inheritance::        
-* Slot specification::          
-@end menu
+If a slot specification is a list, it should be in the following form:
 
-@node Multiple inheritance, Slot specification, Defining class, Defining class
-@subsection Multiple inheritance
-@c NODE 多重継承
+@example
+(@var{slot-name} :option1 value1 :option2 value2 @dots{})
+@end example
 
-@node Slot specification,  , Multiple inheritance, Defining class
-@subsection Slot specification
-@c NODE スロットの記述
+Each keyword (@code{option1} etc.) gives a @emph{slot option}.
+By default, the following slot options are recognized.
+
+@table @code
+
+@item :allocation
+Specifies an allocation type of this slot, which specifies how the
+value for this slot is stored.  The following keyword values are
+recognized by the standard class.  A programmer can define his own
+metaclass to extend the class to recognize other allocation types.
+@table @code
+@item :instance
+A slot is allocated for each instance, so that every instance can have
+distinct value.  This realizes so-called "instance variable" behavior.
+If @code{:allocation} slot option is omitted, this is the default.
+@item :class
+A slot is allocated in per class object, so that every instance will
+share the same value for this slot.  This realizes so-called
+"class variable" behavior.  The slot value is also shared by all
+subclasses (unless a subclass definition shadows the slot).
+@item :each-subclass
+Similar to @code{class} allocation, but a slot is allocated for each
+class; that is, it is shared by every instance of the class, but
+not shared by the instances of its subclasses.
+@item :virtual
+No storage is allocated for this type of slot.  Accessing the slot
+calls procedures given in @code{:slot-ref} and @code{:slot-set!} options
+described below.  In other words, you can make a procedural slot.
+If a slot's allocation is specified as virtual, @code{:slot-ref} and
+@code{:slot-set!} options have to be specified as well, or @code{define-class}
+raises an error.
+@end table
+
+@item :init-keyword
+A keyword value given to this slot option can be used to pass an
+initial value to @code{make} method when an instance is created.
+
+@item :init-value
+Gives an initial value of the slot, if the slot is not initialized
+by the keyword argument at the creation time.   The value is
+evaluated when @code{define-class} is evaluated.
+
+@item :init-form
+Like @code{init-value}, but the value given is wrapped in a thunk,
+and evaluated each time when the value is required.
+If both @code{init-value} and @code{init-form} are given, @code{init-form}
+is ignored.
+
+@item :initform
+A synonym of @code{init-form}.  This is kept for compatibility to
+STk, and shouldn't be used in the new code.
+
+@item :init-thunk
+Gives a thunk, which will be evaluated to obtain an initial value
+of the slot, if the slot is not initialized by the keyword argument
+at the creation time.  To give a value to @code{:init-form}
+is equivalent to give @code{(lambda () value)} to @code{:init-thunk}.
+
+@item :getter
+Takes a symbol, and a getter method is created and bound to the
+generic function of that name.  The getter method takes an instance
+of the class and returns the value of the slot.
+
+@item :setter
+Takes a symbol, and a setter method is created and bound to
+the generic function of that name.  The setter method takes an instance
+of the class and a value, and sets the value to the slot of the instance.
+
+@item :accessor
+Takes a symbol, and create two methods; a getter method and a setter method.
+A getter method is bound to the generic function of the given name,
+and a setter method is added as the @code{setter} of that generic function
+(see @ref{Assignments} for generic setters).
+
+@item :slot-ref
+Specifies a value that evaluates to a procedure which takes one argument,
+an instance.  This slot option must be specified if the allocation of
+the slot is @code{virtual}.  Whenever a program tries to get the value
+of the slot, either using @code{slot-ref} or the getter method,
+the specified procedure is called, and its result is returned as
+the value of the slot.  The procedure can return an undef value
+(the return value of @code{undefined}) to indicate the slot doesn't
+have a value.
+If the slot allocation is not @code{virtual} this slot option is ignored.
+
+@item :slot-set!
+Specifies a value that evaluates to a procedure which takes two arguments,
+an instance and a value.  This slot option must be specified if the
+allocation of the slot is @code{virtual}.  Whenever a program tries
+to set the value of the slot, either using @code{slot-set!} or the
+setter method, the specified procedure is called with the value to be set.
+If the slot allocation is not @code{virtual} this slot option is ignored.
+
+@item :slot-bound?
+Specifies a value that evaluates to a procedure which takes one argument,
+an instance.  This slot option is only meaningful when the slot allocation
+is @code{virtual}.  Whenever a program tries to determine whether
+the slot has a value, this procedure is called.  It should return
+a true value if the slot has a value, or @code{#f} otherwise.
+If this slot option is omitted for a virtual slot, the system
+calls the procedure given to @code{slot-ref} instead, and see whether
+its return value is @code{#<undef>} or not.
+@end table
+
+@node Inheritance, Class redefinition, define-class macro, Defining class
+@subsection Inheritance
+@c NODE 継承
+
+@node Class redefinition,  , Inheritance, Defining class
+@subsection Class redefinition
+@c NODE クラスの再定義
 
 
 @c ----------------------------------------------------------------------
