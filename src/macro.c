@@ -30,12 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: macro.c,v 1.52.2.1 2004-12-24 12:50:35 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/macro.h"
+#include "gauche/vminsn.h"
 #include "gauche/builtin-syms.h"
 
 /*===================================================================

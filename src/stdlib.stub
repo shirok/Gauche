@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.108 2004-08-20 02:04:51 shirok Exp $
+;;; $Id: stdlib.stub,v 1.108.2.1 2004-12-24 12:50:35 shirok Exp $
 ;;;
 
 
 "
+#include <gauche/vminsn.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>

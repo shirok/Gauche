@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.4 2004-12-24 11:06:31 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.5 2004-12-24 12:50:36 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -443,13 +443,14 @@ enum {
 #define SCM_NVM_INSN2(code, arg0, arg1)  \
     SCM_WORD((long)((arg1) << 18) | ((arg0) << 8) | (code))
 
-
+#if 0
 enum {
 #define DEFINSN(sym, nam, nparams, type)  sym,
-#include "vminsn.h"
+#include "gauche/vminsn.h"
 #undef DEFINSN
     SCM_VM_NUM_INSNS
 };
+#endif
 
 /* Operand type */
 enum {

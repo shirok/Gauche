@@ -1,3 +1,14 @@
+2004-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm, src/geninsn: added.  manage VM insn definition
+	  in Scheme format instead of *.h and cpp trick.
+	* src/gauche/vminsn.h: removed.  Now it is generated from vminsn.scm.
+	* src/gauche/vm.h: no longer include vminsn.h.  The C files that needs
+	  vminsn symbols must include gauche/vminsn.h explicitly.
+	* src/vm.c, src/compile.c, src/macro.c, src/stdlib.stub,
+	  src/extlib.stub, src/moplib.stub: changed accordingly.
+	* src/Makefile.in: added rules to generate vminsn.[ch].
+
 2004-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/gauche/vm.h,

@@ -30,13 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.1 2004-12-23 06:57:21 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.2 2004-12-24 12:50:35 shirok Exp $
  */
 
 #include <stdlib.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/vminsn.h"
 #include "gauche/builtin-syms.h"
 
 /* constructor definition comes below */

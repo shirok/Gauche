@@ -157,6 +157,9 @@ autoloads.c : autoloads.scm
 builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
 	gosh -A../lib ./builtin-syms.scm
 
+vminsn.c gauche/vminsn.h : vminsn.scm geninsn
+	gosh -A../lib ./geninsn
+
 symbol.$(OBJEXT) : builtin-syms.c
 
 port.$(OBJEXT) : port.c portapi.c
@@ -226,7 +229,8 @@ install-check :
 
 # clean ------------------------------------------------
 GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c thrlib.c \
-	    autoloads.c builtin-syms.c gauche/builtin-syms.h
+	    autoloads.c builtin-syms.c gauche/builtin-syms.h \
+            vminsn.c gauche/vminsn.h
 CONFIG_GENERATED = Makefile gauche-config gauche/config.h
 
 clean :

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.7 2004-12-24 11:06:17 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.8 2004-12-24 12:50:35 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -39,6 +39,7 @@
 #include "gauche/class.h"
 #include "gauche/exception.h"
 #include "gauche/builtin-syms.h"
+#include "gauche/vminsn.h"
 
 #include <unistd.h>
 #ifdef HAVE_SCHED_H
@@ -59,6 +60,7 @@ static ScmWord boundaryFrameMark = SCM_NVM_INSN(SCM_VM_HALT);
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_NVM_INSN(SCM_VM_RET) };
 #define PC_TO_RETURN  return_code
+
 
 /*
  * The VM. 
@@ -579,7 +581,7 @@ void Scm__InitVM(void)
 #ifdef __GNUC__
     static void *dispatch_table[256] = {
 #define DEFINSN(insn, name, nargs, type)   && CAT2(LABEL_, insn),
-#include "gauche/vminsn.h"
+#include "vminsn.c"
 #undef DEFINSN
     };
 #endif /* __GNUC__ */
@@ -2879,7 +2881,7 @@ static struct insn_info {
 } insn_table[] = {
 #define DEFINSN(sym, nam, np, type) \
     { nam, np, SCM_CPP_CAT(SCM_VM_OPERAND_, type) },
-#include "gauche/vminsn.h"
+#include "vminsn.c"
 #undef DEFINSN
 };
 
