@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.60 2001-04-07 06:40:07 shiro Exp $
+;;; $Id: extlib.stub,v 1.61 2001-04-10 07:01:28 shiro Exp $
 ;;;
 
 "
@@ -95,6 +95,14 @@
 (define-cproc %delete-duplicates! (list &optional cmpmode)
   (assert (list? list))
   "  SCM_RETURN(Scm_DeleteDuplicatesX(list, getcmpmode(cmpmode)));")
+
+(define-cproc %alist-delete (elt list &optional cmpmode)
+  (assert (list? list))
+  "  SCM_RETURN(Scm_AssocDelete(elt, list, getcmpmode(cmpmode)));")
+
+(define-cproc %alist-delete! (elt list &optional cmpmode)
+  (assert (list? list))
+  "  SCM_RETURN(Scm_AssocDeleteX(elt, list, getcmpmode(cmpmode)));")
 
 (define-cproc union (&rest args)        ;use eq? to compare.
   (assert (list? args))
@@ -660,6 +668,14 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc procedure-info (proc)
   (assert (procedure? proc))
   "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")
+
+;; for test
+"extern ScmObj re_compile(const char *, int);"
+
+(define-cproc %rx-compile (str)
+  (assert (string? str))
+  "  SCM_RETURN(re_compile(SCM_STRING_START(str), SCM_STRING_LENGTH(str)));")
+
 
 ;; Local variables:
 ;; mode: scheme
