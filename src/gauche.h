@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.33 2001-02-07 08:52:52 shiro Exp $
+ *  $Id: gauche.h,v 1.34 2001-02-10 12:41:45 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1133,6 +1133,10 @@ extern ScmClass Scm_KeywordClass;
 ScmObj Scm_MakeKeyword(ScmString *name);
 ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 
+#define SCM_MAKE_KEYWORD(cstr)  Scm_MakeKeyword(Scm_MakeString(cstr, -1, -1))
+#define SCM_GET_KEYWORD(cstr, list, fallback) \
+    Scm_GetKeyword(SCM_MAKE_KEYWORD(cstr), list, fallback)
+
 /*--------------------------------------------------------
  * NUMBER
  */
@@ -1370,6 +1374,7 @@ extern ScmClass Scm_ExceptionClass;
 
 /* Throwing error */
 extern void Scm_Error(const char *msg, ...);
+extern void Scm_SysError(const char *msg, ...);
 extern ScmObj Scm_SError(ScmObj fmt, ScmObj args);
 
 
@@ -1381,6 +1386,15 @@ extern ScmObj Scm_SError(ScmObj fmt, ScmObj args);
 #define SCM_ARGREF(count)           (SCM_FP[count])
 #define SCM_RETURN(value)           return value
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
+
+/*---------------------------------------------------
+ * SYSTEM
+ */
+
+extern ScmObj Scm_ReadDirectory(ScmString *pathname);
+extern ScmObj Scm_GlobDirectory(ScmString *pattern);
+extern ScmObj Scm_GetGroupById(gid_t gid);
+extern ScmObj Scm_GetGroupByName(ScmString *name);
 
 /*---------------------------------------------------
  * UTILITY STUFF
