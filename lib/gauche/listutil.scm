@@ -30,11 +30,10 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: listutil.scm,v 1.3 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: listutil.scm,v 1.4 2003-08-06 07:21:10 shirok Exp $
 ;;;
 
-(define-module gauche.listutil
-  (export list-of cond-cons cond-append cond-append!))
+(define-module gauche.listutil )
 (select-module gauche.listutil)
 
 ;; Cxxxr and cxxxxr are less frequently used, thus stripped out
