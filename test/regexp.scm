@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.9 2001-09-23 22:47:47 shirok Exp $
+;; $Id: regexp.scm,v 1.10 2002-09-02 03:35:21 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -80,6 +80,32 @@
       '("weeknights" "wee" "knights")
       (lambda () (match&list #/(we|wee|week|frob)(knights|night|day)/
                              "weeknights" 3)))
+(test "aa|(bb)|cc" '("aa" #f)
+      (lambda () (match&list #/aa|(bb)|cc/ "aabb" 2)))
+(test "aa|(bb)|cc" '("bb" "bb")
+      (lambda () (match&list #/aa|(bb)|cc/ "abbaa" 2)))
+(test "aa|(bb)|cc" '("cc" #f)
+      (lambda () (match&list #/aa|(bb)|cc/ "bccaa" 2)))
+(test "aa|a(b)|cc" '("ab" "b")
+      (lambda () (match&list #/aa|a(b)|cc/ "abaab" 2)))
+(test "aa|a(b)" '("ab" "b")
+      (lambda () (match&list #/aa|a(b)/ "abaab" 2)))
+(test "aa|(a(b))|ac" '("ab" "ab" "b")
+      (lambda () (match&list #/aa|(a(b))|cc/ "abaabcc" 3)))
+(test "(ab)|ac" '("ab" "ab")
+      (lambda () (match&list #/(ab)|ac/ "aaaabcc" 2)))
+(test "(a(b))|ac" '("ab" "ab" "b")
+      (lambda () (match&list #/(a(b))|ac/ "abaabcc" 3)))
+(test "ab|(ac)" '("ab" #f)
+      (lambda () (match&list #/ab|(ac)/ "aaaabcc" 2)))
+(test "ab|(ac)" '("ac" "ac")
+      (lambda () (match&list #/ab|(ac)/ "aaaacbc" 2)))
+(test "aa|(ab|(ac))|ad" '("ac" "ac" "ac")
+      (lambda () (match&list #/aa|(ab|(ac))|ad/ "cac" 3)))
+(test "(aa|(a(b)|a(c))|ad)" '("ac" "ac" "ac" #f "c")
+      (lambda () (match&list #/(aa|(a(b)|a(c))|ad)/ "cac" 5)))
+(test "b|()|a" '("" "")
+      (lambda () (match&list #/b|()|a/ "cac" 2)))
 
 ;;-------------------------------------------------------------------------
 (test-section "simple meta")
