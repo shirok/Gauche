@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.82 2002-08-24 04:14:42 shirok Exp $
+;;; $Id: syslib.stub,v 1.83 2002-08-26 02:42:55 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -322,8 +322,7 @@
 #endif
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-const RAND_MAX "sym_rand_max"
-  "Scm_MakeInteger(RAND_MAX)")
+(define-const RAND_MAX (c "Scm_MakeIntegerFromUI(RAND_MAX)"))
 
 ;;---------------------------------------------------------------------
 ;; string.h
