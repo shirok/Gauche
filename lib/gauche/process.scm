@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.8 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: process.scm,v 1.9 2001-09-13 09:02:12 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -20,6 +20,7 @@
 
 (define-module gauche.process
   (use srfi-1)
+  (use srfi-13)
   (export <process> run-process process? process-alive? process-pid
           process-input process-output process-error
           process-wait process-exit-status
@@ -29,7 +30,9 @@
           open-input-process-port   open-output-process-port
           call-with-input-process   call-with-output-process
           with-input-from-process   with-output-to-process
-          call-with-process-io))
+          call-with-process-io
+          process-output->string    process-output->string-list
+          ))
 (select-module gauche.process)
 
 (define-class <process> ()
@@ -224,5 +227,15 @@
        (close-output-port o)
        (close-input-port i)
        (process-wait p)))))
+
+;; Convenient thingies that can be used like `command` in shell scripts
+
+(define (process-output->string command)
+  (call-with-input-process command
+    (lambda (p)
+      (string-join (string-tokenize (port->string p)) " "))))
+
+(define (process-output->string-list command)
+  (call-with-input-process command port->string-list))
 
 (provide "gauche/process")
