@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.25 2002-10-14 12:20:24 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.26 2002-10-14 20:58:17 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -31,7 +31,8 @@ cat <<EOF
 #include "gauche/uvector.h"
 #include "uvectorP.h"
 
-static ScmClass *sequence_cpl[] = {
+static ScmClass *uvector_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_UVectorClass),
     SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
     SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
@@ -50,6 +51,8 @@ ScmObj Scm_UvectorS64Min = SCM_NIL;
 ScmObj Scm_UvectorU64Max = SCM_NIL;
 ScmObj Scm_UvectorU64Min = SCM_NIL;
 
+SCM_DEFINE_BUILTIN_CLASS(Scm_UVectorClass, NULL, NULL, NULL, NULL,
+                         uvector_cpl+1);
 EOF
 
 # template ------------------------------------------------------------
@@ -98,7 +101,7 @@ static int compare_${vecttype}(ScmObj x, ScmObj y, int equalp)
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_${vecttype}Class,
                          print_${vecttype}, compare_${vecttype}, NULL, NULL,
-                         sequence_cpl);
+                         uvector_cpl);
 
 /*
  * Constructor
@@ -314,6 +317,7 @@ void Scm_Init_libuvector(void)
 
     SCM_INIT_EXTENSION(uvector);
     m = SCM_MODULE(SCM_FIND_MODULE("gauche.uvector", TRUE));
+    Scm_InitBuiltinClass(&Scm_UVectorClass,   "<uvector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_U8VectorClass,  "<u8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_S16VectorClass, "<s16vector>", NULL, 0, m);

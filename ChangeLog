@@ -1,3 +1,7 @@
+2002-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/* : added read-block! and write-block.
+
 2002-10-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/bignum.c (Scm_MakeBignumFromUIArray): accepts 2's complement

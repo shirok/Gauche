@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.281 2002-10-14 12:20:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.282 2002-10-14 20:58:17 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18870,6 +18870,7 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 * Uvector basic operations::    
 * Uvector conversion operations::  
 * Uvector numeric operations::  
+* Uvector block I/O::           
 @end menu
 
 @node Uvector basic operations, Uvector conversion operations, Uniform vectors, Uniform vectors
@@ -19398,7 +19399,7 @@ the range of conversion between them.
 @end defun
 
 
-@node Uvector numeric operations,  , Uvector conversion operations, Uniform vectors
+@node Uvector numeric operations, Uvector block I/O, Uvector conversion operations, Uniform vectors
 @subsection Uvector numeric operations
 @c NODE ユニフォームベクタの数値演算
 
@@ -19759,6 +19760,106 @@ Both return the clamped vector.
 @end example
 @end deftp
 
+@node Uvector block I/O,  , Uvector numeric operations, Uniform vectors
+@subsection Uvector block I/O
+@c NODE ユニフォームベクタのブロック入出力
+
+@c EN
+A uniform vector can be seen as an abstraction of a chunk of memory.
+So you might want to use it for binary I/O.  Yes, you can do it.
+@c JP
+ユニフォームベクタは、メモリの固まりを抽象化しているものと考えることも
+できます。それなら、それをバイナリI/Oに使えないでしょうか。もちろんできます。
+@c COMMON
+
+@defun read-block! vec &optional iport start end
+@c EN
+Reads a chunk of data from the given input port @var{iport},
+and stores it to the uniform vector @var{vec}.
+You can give any uniform vector.
+If optional @var{start} and @var{end}
+arguments are given, they specify the index range in @var{vec}
+that is to be filled, and the rest of the vector remains untouched.
+Otherwise, entire vector is used.
+If @var{iport} is omitted, the current input port is used.
+@c JP
+与えられた入力ポート@var{iport}からデータの固まりを読みだし、それを
+ユニフォームベクタ@var{vec}に格納します。
+どんな種類のユニフォームベクタでも与えることができます。
+省略可能な引数@var{start}と@var{end}が与えられた場合は、
+それらが@var{vec}中でデータが格納されるべき領域のインデックスの範囲を
+示します。その範囲外の@var{vec}の値は変更されません。
+@var{start}、@var{end}が与えられなかった場合は@var{vec}全体が使われます。
+@var{iport}が省略された場合はカレント入力ポートが使われます。
+@c COMMON
+
+@c EN
+If the input reached EOF before the required region of @var{vec}
+is filled, the rest of the vector is untouched.
+@c JP
+要求された領域を埋め終る前に入力がEOFに達した場合は、ベクタの残りの部分は
+変更されません。
+@c COMMON
+
+@c EN
+If @var{iport} is already reached EOF when @code{read-block!} is
+called, an EOF object is returned.  Otherwise,
+the procedure returns the number of @emph{elements} read (not bytes).
+@c JP
+@code{read-block!}が呼ばれた時既に@var{iport}がEOFに達していた場合は
+EOFが、そうでなければ読まれた要素の数 (バイト数ではありません) が返されます。
+@c COMMON
+
+@c EN
+The data is read as a byte stream, so if you give uniform vectors
+other than s8vector or u8vector, your result may affected by
+the endianness of the platform.    Suppose the input stream
+has a byte sequence @code{#x01, #x02, #x03, #x04}.  If you read
+it into u32vector, the first element you'll get may be
+@code{#x01020304} if you're using big-endian architecture,
+or @code{#x04030201} if you're using little-endian architecture.
+@c JP
+データはバイトストリームとして読まれるので、
+s8vectorとu8vector以外のユニフォームベクタを与えた場合は
+結果がプラットフォームのエンディアンに影響を受けることに注意して下さい。
+例えば入力が@code{#x01, #x02, #x03, #x04}というバイトシーケンスだったと
+します。これをu32vectorに読み込んだ場合、最初の要素は
+ビッグエンディアンアーキテクチャでは@code{#x01020304}になりますが、
+リトルエンディアンアーキテクチャでは@code{#x04030201}となるでしょう。
+@c COMMON
+@end defun
+
+
+@defun write-block vec &optional oport start end
+@c EN
+Writes out the content of the uniform vector @var{vec} 'as is'
+to the output port @var{oport}.   If @var{oport} is omitted,
+the current output port is used.
+If optional @var{start} and @var{end} arguments are given,
+they specify the index range in @var{vec} to be written out.
+This procedure returns an unspecified value.
+@c JP
+ユニフォームベクタ@var{vec}の内容を「そのまま」@var{oport}に書き出します。
+@var{oport}が省略された場合はカレント出力ポートが使われます。
+省略可能な引数@var{start}と@var{end}が与えられた場合は、
+それらのインデックスの範囲が示す@var{vec}の内容のみが出力されます。
+この手続きの返す値は未定義です。
+@c COMMON
+
+@c EN
+If you write out a uniform vector except s8vector and u8vector, the 
+care should be taken about the endianness, as in @code{read-block!}.
+The number @code{#x01020304} in your u32vector may be written out
+as the byte sequence @code{#x01, #x02, #x03, #x04} or
+@code{#x04, #x03, #x02, #x01}, depending on your architecture.
+@c JP
+@code{s8vector}と@code{u8vector}以外のユニフォームベクタを与えた場合、
+@code{read-block!}と同じようにエンディアンの影響を受けることに注意して
+下さい。u32vector中の数値@code{#x01020304}は、
+プラットフォームによってバイトシーケンス@code{#x01, #x02, #x03, #x04}と
+なるかもしれませんし、@code{#x04, #x03, #x02, #x01}となるかもしれません。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Slot with validator, Comparing version numbers, Uniform vectors, Library modules - Gauche extensions

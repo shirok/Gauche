@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.18 2002-10-14 12:20:24 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.19 2002-10-14 20:58:17 shirok Exp $
 ;;;
 
 "
@@ -35,6 +35,9 @@ cat << EOF
    return SCM_UVECTOR_CLAMP_NONE;
  }
 "
+
+(define-type <uvector> "ScmUVector*")
+
 EOF
 
 ##==============================================================
@@ -284,4 +287,29 @@ strlib s
 ##
 
 cat <<EOF
+(define-cproc read-block! (v::<uvector>
+                           &optional (port::<input-port> (current-input-port))
+                                     (start::<fixnum> 0)
+                                     (end::<fixnum> -1))
+  "int len = SCM_UVECTOR_SIZE(v), eltsize = 1, r;
+  SCM_CHECK_START_END(start, end, len);
+  if (SCM_S16VECTORP(v) || SCM_U16VECTORP(v)) eltsize = 2;
+  else if (SCM_S32VECTORP(v) || SCM_U32VECTORP(v) || SCM_F32VECTORP(v)) eltsize = 4;
+  else if (SCM_S64VECTORP(v) || SCM_U64VECTORP(v) || SCM_F64VECTORP(v)) eltsize = 8;
+  r = Scm_Getz(v->elements + start*eltsize, (end-start)*eltsize, port);
+  if (r == EOF) SCM_RETURN(SCM_EOF);
+  else SCM_RETURN(Scm_MakeInteger((r+eltsize-1)/eltsize));")
+
+(define-cproc write-block (v::<uvector>
+                           &optional (port::<output-port> (current-output-port))
+                                     (start::<fixnum> 0)
+                                     (end::<fixnum> -1))
+  "int len = SCM_UVECTOR_SIZE(v), eltsize = 1, r;
+  SCM_CHECK_START_END(start, end, len);
+  if (SCM_S16VECTORP(v) || SCM_U16VECTORP(v)) eltsize = 2;
+  else if (SCM_S32VECTORP(v) || SCM_U32VECTORP(v) || SCM_F32VECTORP(v)) eltsize = 4;
+  else if (SCM_S64VECTORP(v) || SCM_U64VECTORP(v) || SCM_F64VECTORP(v)) eltsize = 8;
+  Scm_Putz(v->elements + start*eltsize, (end-start)*eltsize, port);
+  SCM_RETURN(SCM_UNDEFINED);")
+  
 EOF
