@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.65 2002-05-20 22:11:56 shirok Exp $
+;;;  $Id: genstub,v 1.66 2002-05-21 04:46:45 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -58,7 +58,7 @@
    (c-predicate :init-keyword :c-predicate :accessor c-predicate-of)
    (unboxer     :init-keyword :unboxer     :accessor unboxer-of)
    (boxer       :init-keyword :boxer       :accessor boxer-of
-                :init-value "SCM_OBJ")
+                :init-value "SCM_OBJ_SAFE")
    (all-types   :allocation :class :initform '())
    ))
 
@@ -73,7 +73,7 @@
    (receive (name c-name c-type c-pred unbox . box) (apply values data)
      (make <type> :scheme-name name :c-name c-name :c-type c-type
            :c-predicate c-pred :unboxer unbox
-           :boxer (if (null? box) "SCM_OBJ" (car box)))))
+           :boxer (if (null? box) "SCM_OBJ_SAFE" (car box)))))
  '((pair "pair" "ScmObj" "SCM_PAIRP" "")
    (list "list" "ScmObj" "SCM_LISTP" "")
    (vector "vector" "ScmVector*" "SCM_VECTORP" "SCM_VECTOR")
@@ -785,10 +785,15 @@
 ;;   )
 ;;
 ;; <slot-spec> := slot-name
-;;             |  (slot-name [:getter <proc-spec>] [:setter <proc-spec>])
-;; <proc-spec> := <c-code> | (cproc <c-name>)
+;;             |  (slot-name
+;;                  [:type <type>]
+;;                  [:c-name <c-name>]
+;;                  [:getter <proc-spec>]
+;;                  [:setter <proc-spec>])
+;;                  
+;; <proc-spec> := <c-code> | (c <c-name>) | #f | #t
 ;;
-;; 
+;; <cpa> := (<string> ...)
 
 (define-class <cclass> (<stub>)
   ((cpa       :init-keyword :cpa       :init-value '()
@@ -796,13 +801,10 @@
    (c-type    :init-keyword :c-type    :accessor c-type-of)
    (allocator :init-keyword :allocator :init-value #f
               :accessor allocator-of)
-   (c-allocator-name :accessor c-allocator-name-of :init-value "NULL")
    (printer   :init-keyword :printer   :init-value #f
               :accessor printer-of)
-   (c-printer-name :accessor c-printer-name-of :init-value "NULL")
    (slot-spec :init-keyword :slot-spec :init-value '()
               :accessor slot-spec-of)
-   (c-slot-spec-name :init-value "NULL" :accessor c-slot-spec-name-of)
    ))
 
 (define-class <cslot> ()
@@ -827,28 +829,45 @@
                      :cpa cpa
                      :allocator allocator :printer printer)))
       (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
-      (unless (null? (slot-spec-of cclass))
-        (set! (c-slot-spec-name-of cclass) #`",|c-type|_SLOTS"))
-      (when (string? printer)
-        (set! (c-printer-name-of cclass) #`",|c-type|_PRINT"))
-      (when (string? allocator)
-        (set! (c-allocator-name-of cclass) #`",|c-type|_ALLOCATE"))
       (emit-definition cclass))))
 
+(define-method c-printer-name-of ((self <cclass>))
+  (let1 printer (printer-of self)
+    (cond ((string? printer) #`",(c-name-of self)_PRINT")
+          ((c-literal? printer) (cadr printer))
+          ((not printer) "NULL")
+          (else (errorf "bad printer specification ~s in class ~s" printer self)))))
+
+(define-method c-allocator-name-of ((self <cclass>))
+  (let1 allocator (allocator-of self)
+    (cond ((string? allocator) #`",(c-name-of self)_ALLOCATE")
+          ((c-literal? allocator) (cadr allocator))
+          ((not allocator) "NULL")
+          (else (errorf "bad allocator specification ~s in class ~s" allocator self)))))
+
+(define-method c-slot-spec-name-of ((self <cclass>))
+  (if (null? (slot-spec-of self))
+      "NULL"
+      #`",(c-name-of self)_SLOTS"))
+
+(define-method c-type-size-of ((self <cclass>))
+  (if (c-type-of self) #`"sizeof(,(c-type-of self))" 0))
+      
 (define-method emit-definition ((self <cclass>))
-  (when (allocator-of self)
+  (when (string? (allocator-of self))
     (print #`"static ScmObj ,(c-allocator-name-of self)(ScmClass *klass, ScmObj initargs)")
     (print "{")
     (print (allocator-of self))
     (print "}")
     (newline))
-  (when (printer-of self)
+  (when (string? (printer-of self))
     (print #`"static void ,(c-printer-name-of self)(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
     (print "{")
     (print (printer-of self))
     (print "}")
     (newline))
-  (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), NULL);")
+  (emit-cpa self)
+  (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));")
   (newline)
   (when (pair? (slot-spec-of self))
     (for-each emit-getter-n-setter (slot-spec-of self))
@@ -860,13 +879,29 @@
   )
 
 (define-method emit-initializer ((self <cclass>))
-  (print #`"  Scm_InitBuiltinClass(,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self),")
-  (print (if (c-type-of self)
-             #`"                       sizeof(,(c-type-of self)), module);"
-             #`"                       NULL, module);"))
-  )
+  (print #`"  Scm_InitBuiltinClass(&,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self), ,(c-type-size-of self), module);"))
 
-;; slot
+;; cpa ----------
+;;  For now, cpa should be a list of C class names, or c literal
+
+(define-method cpa-name-of ((self <cclass>))
+  (cond ((null? (cpa-of self)) "SCM_CLASS_DEFAULT_CPL")
+        ((c-literal? (cpa-of self)) (cadr (cpa-of self)))
+        (else #`",(c-name-of self)_CPL")))
+
+(define-method emit-cpa ((self <cclass>))
+  (let1 cpa (cpa-of self)
+    (unless (or (null? cpa) (c-literal? (cpa-of self)))
+      (print #`"static ScmClass *,(c-name-of self)_CPL[] = {")
+      (for-each (lambda (class)
+                  (print #`"  SCM_CLASS_STATIC_PTR(,|class|),"))
+                cpa)
+      (unless (equal? (car (last-pair cpa)) "Scm_TopClass")
+        (print "  SCM_CLASS_STATIC_PTR(Scm_TopClass),"))
+      (print "  NULL")
+      (print "};"))))
+
+;; slot ---------
 
 (define (process-cclass-slots cclass slot-spec)
   (map (lambda (spec)
@@ -883,16 +918,21 @@
        slot-spec))
 
 (define-method slot-getter-name ((slot <cslot>))
-  #`",(c-type-of (cclass-of slot))_,(c-name-of slot)_GET")
+  (let1 getter (getter-of slot)
+    (if (c-literal? getter)
+        (cadr getter)
+        #`",(c-name-of (cclass-of slot))_,(get-c-name \"\" (scheme-name-of slot))_GET")))
 
 (define-method slot-setter-name ((slot <cslot>))
-  (if (setter-of slot)
-      #`",(c-type-of (cclass-of slot))_,(c-name-of slot)_SET"
-      "NULL"))
+  (let1 setter (setter-of slot)
+    (cond ((c-literal? setter) (cadr setter))
+          ((not setter) "NULL")
+          (else #`",(c-name-of (cclass-of slot))_,(get-c-name \"\" (scheme-name-of slot))_SET"))))
 
 (define-method emit-getter-n-setter ((slot <cslot>))
-  (emit-getter slot)
-  (when (setter-of slot) (emit-setter slot)))
+  (unless (c-literal? (getter-of slot)) (emit-getter slot))
+  (when (and (setter-of slot) (not (c-literal? (setter-of slot))))
+    (emit-setter slot)))
 
 (define-method emit-getter ((slot <cslot>))
   (let ((type (type-of slot)))
@@ -912,7 +952,7 @@
         (print (setter-of slot))
         (begin
           (unless (eq? type *scm-type*)
-            (f "  if (!~a(obj)) Scm_Error(\"~a required, but got %S\", obj);"
+            (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
                (c-predicate-of type) (c-type-of type)))
           (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type))))
     (print "}")
@@ -963,7 +1003,7 @@
          (format #f "SCM_OBJ(SCM_CUROUT)"))
         ((equal? value '(current-error-port))
          (format #f "SCM_OBJ(SCM_CURERR)"))
-        ((and (pair? value) (eq? (car value) 'c))
+        ((c-literal? value)
          (format #f "~a" (cadr value)))
         (else
          (errorf "Scheme constant ~s can't be used" value))))
@@ -1006,6 +1046,10 @@
   (let1 len (string-length (x->string scm-name))
     (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
        c-name scm-name len len)))
+
+;; Check if item is in the form (c <string>)
+(define (c-literal? item)
+  (and (pair? item) (= (length item) 2) (eq? (car item) 'c) (string? (cadr item))))
 
 ;;===================================================================
 ;; Main parser
