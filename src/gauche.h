@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.285 2002-07-12 11:26:38 shirok Exp $
+ *  $Id: gauche.h,v 1.286 2002-07-14 05:54:46 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1218,6 +1218,10 @@ SCM_EXTERN int    Scm_CharReadyUnsafe(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_ClosePort(ScmPort *port);
 
+SCM_EXTERN ScmObj Scm_WithPortLocking(ScmPort *port,
+                                      ScmObj (*proc)(ScmPort*, void*),
+                                      void *data);
+
 SCM_EXTERN void Scm_Putb(ScmByte b, ScmPort *port);
 SCM_EXTERN void Scm_Putc(ScmChar c, ScmPort *port);
 SCM_EXTERN void Scm_Puts(ScmString *s, ScmPort *port);
@@ -1276,6 +1280,7 @@ struct ScmWriteContextRec {
     int limit;                  /* internal */
     int ncirc;                  /* internal */
     ScmHashTable *table;        /* internal */
+    ScmObj obj;                 /* internal */
 };
 
 /* Print mode flags */
@@ -1311,7 +1316,8 @@ SCM_EXTERN void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
 
 typedef struct ScmReadContextRec {
     int flags;
-    ScmHashTable *table;
+    ScmHashTable *table;        /* used internally */
+    ScmChar closer;             /* used internally */
 } ScmReadContext;
 
 enum {

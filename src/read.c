@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.49 2002-07-10 10:09:50 shirok Exp $
+ *  $Id: read.c,v 1.50 2002-07-14 05:54:46 shirok Exp $
  */
 
 #include <stdio.h>
@@ -54,7 +54,11 @@ ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
 static ScmHashTable *read_ctor_table;
 
 /*----------------------------------------------------------------
- * Entry point
+ * Entry points
+ *   Note: Entire read operation are done while locking the input port.
+ *   So we can use 'unsafe' version of port operations inside this file.
+ *   The lock is removed if reader routine signals an error.  It is OK
+ *   to call read routine recursively; the port lock handles it properly.
  */
 ScmObj Scm_Read(ScmObj port)
 {
@@ -63,17 +67,9 @@ ScmObj Scm_Read(ScmObj port)
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-    return read_internal(SCM_PORT(port), &ctx);
-}
-
-ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
-{
-    ScmReadContext ctx;
-    read_context_init(&ctx);
-    if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
-        Scm_Error("input port required: %S", port);
-    }
-    return read_list(SCM_PORT(port), closer, &ctx);
+    return Scm_WithPortLocking(SCM_PORT(port),
+                               (ScmObj (*)(ScmPort*,void*))read_internal,
+                               (void*)&ctx);
 }
 
 /* convenience functions */
@@ -88,6 +84,23 @@ ScmObj Scm_ReadFromCString(const char *cstr)
     ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
     ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s));
     return Scm_Read(inp);
+}
+
+static ScmObj read_list_proc(ScmPort *port, void *data)
+{
+    return read_list(port, ((ScmReadContext*)data)->closer,
+                     (ScmReadContext*)data);
+}
+
+ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
+{
+    ScmReadContext ctx;
+    read_context_init(&ctx);
+    ctx.closer = closer;
+    if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
+        Scm_Error("input port required: %S", port);
+    }
+    return Scm_WithPortLocking(SCM_PORT(port), read_list_proc, (void*)&ctx);
 }
 
 static void read_context_init(ScmReadContext *ctx)
@@ -165,12 +178,12 @@ inline static int skipws(ScmPort *port)
 {
     int c = 0;
     for (;;) {
-        SCM_GETC(c, port);
+        c = Scm_GetcUnsafe(port);
         if (c == EOF) return c;
         if (c <= 256 && isspace(c)) continue;
         if (c == ';') {
             for (;;) {
-                SCM_GETC(c, port);
+                c = Scm_GetcUnsafe(port);
                 if (c == '\n') break;
                 if (c == EOF) return EOF;
             }
@@ -192,8 +205,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
         return read_string(port, FALSE);
     case '#':
         {
-            int c1 = 0;
-            SCM_GETC(c1, port);
+            int c1 = Scm_GetcUnsafe(port);
             switch (c1) {
             case EOF:
                 Scm_ReadError(port, "premature #-sequence at EOF");
@@ -211,12 +223,12 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case 'x':; case 'X':; case 'o':; case 'O':;
             case 'b':; case 'B':; case 'd':; case 'D':;
             case 'e':; case 'E':; case 'i':; case 'I':;
-                SCM_UNGETC(c1, port);
+                Scm_UngetcUnsafe(c1, port);
                 return read_number(port, c, ctx);
             case '!':
                 /* allow `#!' magic of executable */
                 for (;;) {
-                    SCM_GETC(c, port);
+                    c = Scm_GetcUnsafe(port);
                     if (c == '\n') return read_internal(port, ctx);
                     if (c == EOF) return SCM_EOF;
                 }
@@ -244,10 +256,10 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case '?':
                 /* #? - debug directives */
                 {
-                    int c2 = 0;
+                    int c2;
                     ScmObj form;
                     
-                    SCM_GETC(c2, port);
+                    c2 = Scm_GetcUnsafe(port);
                     switch (c2) {
                     case '=':
                         /* #?=form - debug print */
@@ -273,14 +285,13 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
         return read_keyword(port, ctx);
     case ',':
         {
-            int c1 = 0;
-            SCM_GETC(c1, port);
+            int c1 = Scm_GetcUnsafe(port);
             if (c1 == EOF) {
                 Scm_ReadError(port, "unterminated unquote");
             } else if (c1 == '@') {
                 return read_quoted(port, SCM_SYM_UNQUOTE_SPLICING, ctx);
             } else {
-                SCM_UNGETC(c1, port);
+                Scm_UngetcUnsafe(c1, port);
                 return read_quoted(port, SCM_SYM_UNQUOTE, ctx);
             }
         }
@@ -297,12 +308,11 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
         return read_symbol_or_number(port, c, ctx);
     case '.':;
         {
-            int c1;
-            SCM_GETC(c1, port);
+            int c1 = Scm_GetcUnsafe(port);
             if (!char_word_constituent(c1)) {
                 Scm_ReadError(port, "dot in wrong context");
             }
-            SCM_UNGETC(c1, port);
+            Scm_UngetcUnsafe(c1, port);
             return read_symbol_or_number(port, c, ctx);
         }
     case '0':; case '1':; case '2':; case '3':; case '4':;
@@ -345,8 +355,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
         if (dot_seen) Scm_ReadError(port, "bad dot syntax");
 
         if (c == '.') {
-            int c2 = 0;
-            SCM_GETC(c2, port);
+            int c2 = Scm_GetcUnsafe(port);
             if (c2 == closer) { 
                 Scm_ReadError(port, "bad dot syntax");
             } else if (c2 == EOF) {
@@ -365,10 +374,10 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
                 dot_seen++;
                 continue;
             }
-            SCM_UNGETC(c2, port);
+            Scm_UngetcUnsafe(c2, port);
             item = read_symbol_or_number(port, c, ctx);
         } else {
-            SCM_UNGETC(c, port);
+            Scm_UngetcUnsafe(c, port);
             item = read_internal(port, ctx);
         }
         SCM_APPEND1(start, last, item);
@@ -406,12 +415,12 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
         /* skip chars to the end of string, so that the reader will read
            after the erroneous string */
         for (;;) {
-            if (incompletep) SCM_GETB(c, port);
-            else SCM_GETC(c, port);
+            if (incompletep) c = Scm_GetbUnsafe(port);
+            else c = Scm_GetcUnsafe(port);
             if (c == EOF || c == '"') break;
             if (c == '\\') {
-                if (incompletep) SCM_GETB(c, port);
-                else SCM_GETC(c, port);
+                if (incompletep) c = Scm_GetbUnsafe(port);
+                else c = Scm_GetcUnsafe(port);
             }
         }
         /* construct an error message */
@@ -431,9 +440,9 @@ static ScmObj read_string(ScmPort *port, int incompletep)
     ScmDString ds;
     Scm_DStringInit(&ds);
 
-#define FETCH(var)                              \
-    if (incompletep) { SCM_GETB(var, port); }   \
-    else             { SCM_GETC(var, port); }
+#define FETCH(var)                                      \
+    if (incompletep) { var = Scm_GetbUnsafe(port); }    \
+    else             { var = Scm_GetcUnsafe(port); }
 #define ACCUMULATE(var)                                 \
     if (incompletep) { SCM_DSTRING_PUTB(&ds, var); }    \
     else             { SCM_DSTRING_PUTC(&ds, var); }
@@ -450,8 +459,7 @@ static ScmObj read_string(ScmPort *port, int incompletep)
               return Scm_StringMakeImmutable(s);
           }
           case '\\': {
-            int c1 = 0;
-            SCM_GETC(c1, port);
+            int c1 = Scm_GetcUnsafe(port);
             switch (c1) {
               case EOF: goto eof_exit;
               case 'n': ACCUMULATE('\n'); break;
@@ -516,12 +524,12 @@ static struct char_name {
 
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 {
-    int c = 0;
+    int c;
     ScmString *name;
     const char *cname;
     struct char_name *cntab = char_names;
     
-    SCM_GETC(c, port);
+    c = Scm_GetcUnsafe(port);
     switch (c) {
     case EOF: Scm_ReadError(port, "EOF encountered in character literal");
     case '(':; case ')':; case '[':; case ']':; case '{':; case '}':;
@@ -584,9 +592,9 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
     }
     
     for (;;) {
-        SCM_GETC(c, port);
+        c = Scm_GetcUnsafe(port);
         if (c == EOF || !char_word_constituent(c)) {
-            SCM_UNGETC(c, port); 
+            Scm_UngetcUnsafe(c, port); 
             return Scm_DStringGet(&ds);
         }
         if (case_fold && char_word_case_fold(c)) c = tolower(c);
@@ -632,7 +640,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
     Scm_DStringInit(&ds);
     
     for (;;) {
-        SCM_GETC(c, port);
+        c = Scm_GetcUnsafe(port);
         if (c == EOF) {
             Scm_ReadError(port, "unterminated escaped symbol: |%s ...",
                        Scm_DStringGetz(&ds));
@@ -656,13 +664,13 @@ static ScmObj read_regexp(ScmPort *port)
     ScmDString ds;
     Scm_DStringInit(&ds);
     for (;;) {
-        SCM_GETC(c, port);
+        c = Scm_GetcUnsafe(port);
         if (c == SCM_CHAR_INVALID) {
             Scm_ReadError(port, "unterminated literal regexp");
         }
         if (c == '\\') {
             SCM_DSTRING_PUTC(&ds, c);
-            SCM_GETC(c, port);
+            c = Scm_GetcUnsafe(port);
             if (c == SCM_CHAR_INVALID) {
                 Scm_ReadError(port, "unterminated literal regexp");
             }
@@ -705,7 +713,7 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
     int refnum = Scm_DigitToInt(ch, 10);
 
     for (;;) {
-        SCM_GETC(ch, port);
+        ch = Scm_GetcUnsafe(port);
         if (ch == EOF) {
             Scm_ReadError(port, "unterminated reference form (#digits)");
         }
@@ -794,30 +802,30 @@ static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
 
 static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 {
-    ScmChar c1 = 0, c2 = SCM_CHAR_INVALID;
+    ScmChar c1, c2 = SCM_CHAR_INVALID;
     char *tag = NULL;
 
-    SCM_GETC(c1, port);
+    c1 = Scm_GetcUnsafe(port);
     if (ch == 'f') {
         if (c1 != '3' && c1 != '6') {
-            SCM_UNGETC(c1, port);
+            Scm_UngetcUnsafe(c1, port);
             return SCM_FALSE;
         }
-        SCM_GETC(c2, port);
+        c2 = Scm_GetcUnsafe(port);
         if (c1 == '3' && c2 == '2') tag = "f32";
         else if (c1 == '6' && c2 == '4') tag = "f64";
     } else {
         if (c1 == '8') tag = (ch == 's')? "s8" : "u8";
         else if (c1 == '1') {
-            SCM_GETC(c2, port);
+            c2 = Scm_GetcUnsafe(port);
             if (c2 == '6') tag = (ch == 's')? "s16" : "u16";
         }
         else if (c1 == '3') {
-            SCM_GETC(c2, port);
+            c2 = Scm_GetcUnsafe(port);
             if (c2 == '2') tag = (ch == 's')? "s32" : "u32";
         }
         else if (c1 == '6') {
-            SCM_GETC(c2, port);
+            c2 = Scm_GetcUnsafe(port);
             if (c2 == '4') tag = (ch == 's')? "s64" : "u64";
         }
     }
