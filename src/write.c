@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.35 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: write.c,v 1.36 2002-08-29 00:41:09 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1052,7 +1052,9 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
             case 's':;
                 {
                     char *val = va_arg(ap, char *);
-                    SCM_APPEND1(h, t, SCM_MAKE_STR(val));
+                    /* for safety */
+                    if (val != NULL) SCM_APPEND1(h, t, SCM_MAKE_STR(val));
+                    else SCM_APPEND1(h, t, SCM_MAKE_STR("(null)"));
                     break;
                 }
             case '%':;
