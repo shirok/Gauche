@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.5 2001-06-25 08:09:08 shirok Exp $
+;;;  $Id: process.scm,v 1.6 2001-06-26 09:29:43 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -211,7 +211,7 @@
   (call-with-output-process command
     (lambda (p) (with-output-to-port p thunk))))
 
-(define (call-with-io-process command proc)
+(define (call-with-process-io command proc)
   (let* ((p (run-process "/bin/sh" "-c" command
                          :input :pipe :output :pipe
                          :error "/dev/null"))
