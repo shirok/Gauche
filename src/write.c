@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.17 2001-07-09 09:51:12 shirok Exp $
+ *  $Id: write.c,v 1.18 2001-09-20 19:14:10 shirok Exp $
  */
 
 #include <stdio.h>
@@ -405,7 +405,7 @@ static void format_writer(ScmObj out, ScmObj arg,
     ScmObj tmpout = Scm_MakeOutputStringPort();
     ScmString *tmpstr;
 
-    if (SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
+    if (nparams>0 && SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
     if (nparams>1 && SCM_INTP(params[1])) colinc = SCM_INT_VALUE(params[1]);
     if (nparams>2 && SCM_INTP(params[2])) minpad = SCM_INT_VALUE(params[2]);
     if (nparams>3 && SCM_CHARP(params[3])) padchar = SCM_CHAR_VALUE(params[3]);
@@ -434,7 +434,7 @@ static void format_integer(ScmObj out, ScmObj arg,
         return;
     }
     if (SCM_FLONUMP(arg)) arg = Scm_InexactToExact(arg);
-    if (SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
+    if (nparams>0 && SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
     if (nparams>1 && SCM_CHARP(params[1])) padchar = SCM_CHAR_VALUE(params[1]);
     if (nparams>2 && SCM_CHARP(params[2])) commachar = SCM_CHAR_VALUE(params[2]);
     if (nparams>3 && SCM_INTP(params[3])) commainterval = SCM_INT_VALUE(params[3]);
