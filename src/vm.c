@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.146 2002-05-17 10:36:29 shirok Exp $
+ *  $Id: vm.c,v 1.147 2002-05-17 22:25:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2481,6 +2481,7 @@ ScmObj Scm_ThreadYield(void)
     return SCM_UNDEFINED;
 }
 
+/* Thread sleep */
 ScmObj Scm_ThreadSleep(ScmObj timeout)
 {
 #ifdef GAUCHE_USE_PTHREAD
@@ -2499,6 +2500,13 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
 #else  /*!GAUCHE_USE_PTHREAD*/
     Scm_Error("not implemented!\n");
 #endif /*!GAUCHE_USE_PTHREAD*/
+    return SCM_UNDEFINED;
+}
+
+/* Thread terminate */
+ScmObj Scm_ThreadTerminate(ScmVM *target)
+{
+    Scm_Error("not implemented!\n");
     return SCM_UNDEFINED;
 }
 
