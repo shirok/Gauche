@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: logical.scm,v 1.1 2001-11-15 08:33:36 shirok Exp $
+;;;  $Id: logical.scm,v 1.2 2001-11-16 11:31:22 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -33,19 +33,19 @@
 (define (bit-field n start end)
   (check-arg integer? start)
   (check-arg integer? end)
-  (unless (< start end)
-    (errorf "start ~a must be smaller than end ~a" start end))
-  (let ((mask (- (ash 1 (- end start)) 1)))
-    (logand (ash n (- start)) mask)))
+  (if (< start end)
+      (let ((mask (- (ash 1 (- end start)) 1)))
+        (logand (ash n (- start)) mask))
+      0))
 
 (define (copy-bit-field to start end from)
   (check-arg integer? start)
   (check-arg integer? end)
-  (unless (< start end)
-    (errorf "start ~a must be smaller than end ~a" start end))
-  (let ((mask (- (ash 1 (- end start)) 1)))
-    (logior (logand to (lognot (ash mask start)))
-            (ash (logand from mask) start))))
+  (if (< start end)
+      (let ((mask (- (ash 1 (- end start)) 1)))
+        (logior (logand to (lognot (ash mask start)))
+                (ash (logand from mask) start)))
+      from))
 
 ;;; The following code uses the algorithm from SLIB's logical.scm,
 ;;; adapted to Gauche
