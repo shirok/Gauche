@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.216 2002-06-14 22:36:10 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.217 2002-06-15 03:33:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12911,6 +12911,9 @@ conversion whenever possible.  This even maps the undefined codepoint
 properly.  Between Unicode (UTF-8) and EUC_JP, Gauche uses lookup tables.
 Between Unicode and Shift JIS or ISO2022JP, Gauche converts the
 input CES to EUC_JP, then convert it to the output CES.
+If the same CES is specified for input and output, Gauche's conversion
+routine just copies input characters to output characters, without 
+checking the validity of the encodings.
 @c JP
 @strong{Gaucheの内部変換アルゴリズムの詳細:}
 EUC_JP、Shift JIS、及びISO2022JP間の変換は可能な限り計算で行います。
@@ -12918,6 +12921,9 @@ EUC_JP、Shift JIS、及びISO2022JP間の変換は可能な限り計算で行います。
 Unicode(UTF-8)とEUC_JP間の変換はテーブルルックアップによって行われます。
 UnicodeとShift JISまたはISO2022JP間の変換は、入力CESを一度EUC_JPに
 変換し、それを出力CESに変換することによって行います。
+入力と出力のCESがGaucheの内部アルゴリズムがサポートする範囲で等しかった場合、
+Gaucheの変換ルーチンはエンコーディングの正当性はチェックせず、
+単に入力を出力にコピーします。
 @c COMMON
 
 @table @code
@@ -19637,37 +19643,67 @@ This SRFI defines various representations of time and
 
 @deftp {Module} srfi-27
 @mdindex srfi-27
+This module provides SRFI-27 pseudo random generator interface,
+using Mersenne Twister algorithm 
+(@xref{Mersenne Twister Random number generator}) as the backbone.
 @end deftp
 
 @defun random-integer n
+[SRFI-27]
+Returns a random exact integer between [0, @var{n}-1], inclusive,
+using the default random source.
+To set a random seed for this procedure, use @code{random-source-randomize!}
+or @code{random-source-pseudo-randomize!} on @code{default-random-source}.
 @end defun
 
 @defun random-real
+[SRFI-27]
+Returns a random real number between (0, 1), exclusive,
+using the default random source.
+To set a random seed for this procedure, use @code{random-source-randomize!}
+or @code{random-source-pseudo-randomize!} on @code{default-random-source}.
 @end defun
 
 @defvar default-random-source
+[SRFI-27]
+Keeps the default random source that is used by @code{random-integer}
+and @code{random-real}.
 @end defvar
 
 @defun make-random-source
+[SRFI-27]
+Creates and returns a new random source.
+In the current Gauche implementation, it is just a @code{<mersenne-twister>}
+object.  It may be changed in the future implementation.
 @end defun
 
 @defun random-source? obj
+[SRFI-27]
+Returns @code{#t} if @var{obj} is a random source object.
 @end defun
 
 @defun random-source-state-ref s
 @defunx random-source-state-set! s state
+[SRFI-27]
+Gets and sets the "snapshot" of the state of the random source @var{s}.
+@var{State} is an opaque object whose content depends on the backbone
+generator.
 @end defun
 
 @defun random-source-randomize! s
+[SRFI-27]
 @end defun
 
 @defun random-source-pseudo-randomize! s i j
+[SRFI-27]
 @end defun
 
 @defun random-source-make-integers s
+[SRFI-27]
 @end defun
 
 @defun ransom-source-make-reals s &optional unit
+[SRFI-27]
 @end defun
 
 @c ----------------------------------------------------------------------
