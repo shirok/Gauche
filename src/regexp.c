@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.20 2001-11-03 21:15:48 shirok Exp $
+ *  $Id: regexp.c,v 1.21 2001-11-10 10:00:59 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -53,10 +53,12 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
  * large character sets.
  *
  * The engine is a sort of NFA, by keeping state information for backtrack
- * in C stack.  It'll bust the C stack if you try to match (..)* with
- * long input string.  A possible fix is to check if recursion level
- * exceeds some limit, then save the C stack into heap (as in the
- * C-stack-copying continuation does) and reuse the stack area.
+ * in C stack.  It'll bust the C stack if you try to match something like
+ * (..)* with a long input string (there's a code to check the stack size
+ * and aborts matching when the recursion goes too deep).
+ * A possible fix is to check if recursion level exceeds some limit,
+ * then save the C stack into heap (as in the C-stack-copying continuation
+ * does) and reuse the stack area.
  */
 
 /* Instructions */
@@ -224,7 +226,6 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
     ScmObj grpstack;            /* group stack. */
     ScmChar ch = 0;
     int grpcount = 0;
-    int insncount = 0;
     int open_alternative = FALSE;
 
     /* default group == entire match*/
@@ -238,7 +239,6 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
         switch (ch) {
         case '(':
             grpcount++;
-            insncount++;
             SCM_APPEND1(head, tail, SCM_MAKE_INT(grpcount));
             grpstack = Scm_Cons(tail, grpstack);
             continue;
@@ -252,7 +252,6 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
                 tail = fold_alternatives(head, tail, gnum);
                 SCM_APPEND1(head, tail, SCM_MAKE_INT(-g));
                 grpstack = SCM_CDR(grpstack);
-                insncount++;
             }
             continue;
         case '|':
@@ -269,12 +268,10 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
                     open_alternative = TRUE;
                 }
             }
-            insncount += 6;
             continue;
         case '+':  /* x+ === xx* */
             elt = Scm_CopyList(last_item(ctx, head, tail, grpstack, ch));
             SCM_APPEND1(head, tail, Scm_Cons(sym_rep, elt));
-            insncount += 6;
             continue;
         case '?':  /* x? === (x|) */
             elt = last_item(ctx, head, tail, grpstack, ch);
@@ -282,7 +279,6 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             SCM_SET_CAR(elt, SCM_LIST3(sym_alt, cell, SCM_NIL));
             SCM_SET_CDR(elt, SCM_NIL);
             tail = elt;
-            insncount += 7;
             continue;
         case '*':
             elt = last_item(ctx, head, tail, grpstack, ch);
@@ -290,20 +286,18 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             SCM_SET_CAR(elt, Scm_Cons(sym_rep, cell));
             SCM_SET_CDR(elt, SCM_NIL);
             tail = elt;
-            insncount += 5;
             continue;
         case '.':
             SCM_APPEND1(head, tail, sym_any);
-            insncount++;
             continue;
         case '[':
+        {
             SCM_APPEND1(head, tail, re_compile_charset(rx, ctx));
-            insncount++;
             continue;
+        }
         case '^':
             if (can_be_bol(head)) {
                 SCM_APPEND1(head, tail, sym_bol);
-                insncount++;
                 continue;
             } else {
                 goto ordchar;
@@ -354,11 +348,9 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             default:
                 goto ordchar;
             }
-            insncount+=2;
             continue;
         default:
         ordchar:
-            insncount += SCM_CHAR_NBYTES(ch);
             SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
         }
     }
@@ -369,7 +361,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
         Scm_Error("extra open parenthesis in regexp: %S", ctx->pattern);
 
     rx->numGroups = grpcount+1;
-    rx->numCodes = insncount+1;
+    rx->numCodes = 0;
     return head;
 }
 
@@ -422,10 +414,14 @@ static int re_compile_charset_index(ScmRegexp *rx, ScmObj cs)
     return 0;                   /* dummy */
 }
 
-static inline void re_compile_emit(struct comp_ctx *ctx, char code)
+static inline void re_compile_emit(struct comp_ctx *ctx, char code, int emitp)
 {
-    SCM_ASSERT(ctx->codep < ctx->codemax);
-    ctx->code[ctx->codep++] = code;
+    if (emitp) {
+        SCM_ASSERT(ctx->codep < ctx->codemax);
+        ctx->code[ctx->codep++] = code;
+    } else {
+        ctx->codemax++;
+    }
 }
 
 /* check to see if we're at the tail of the tree */
@@ -449,9 +445,15 @@ static int eol_marker_p(ScmObj cp, int lastp, ScmObj item)
 
 /*-------------------------------------------------------------
  * pass 2 - code generation
+ *          This pass actually called twice; the first run counts
+ *          the size of the bytecode, and the second run fills
+ *          the bytecode.   EMITP == FALSE for the first, EMITP == TRUE
+ *          for the second.
+ *          LASTP indicates this call is dealing with the last part of
+ *          the compiled tree, thus need to deal with EOL marker.
  */
-void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
-                      struct comp_ctx *ctx, int lastp)
+static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
+                             struct comp_ctx *ctx, int lastp, int emitp)
 {
     ScmObj cp, item;
     ScmChar ch;
@@ -466,18 +468,18 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
 
             /* check for the special case for EOL handling */
             if (eol_marker_p(cp, lastp, item)) {
-                re_compile_emit(ctx, RE_EOL);
+                re_compile_emit(ctx, RE_EOL, emitp);
                 continue;
             }
             
             /* find out the longest run of bytes */
-            re_compile_emit(ctx, RE_MATCH);
-            re_compile_emit(ctx, 0); /* patched later */
+            re_compile_emit(ctx, RE_MATCH, emitp);
+            re_compile_emit(ctx, 0, emitp); /* patched later */
             do {
                 ch = SCM_CHAR_VALUE(item);
                 nb = SCM_CHAR_NBYTES(ch);
                 SCM_CHAR_PUT(chbuf, SCM_CHAR_VALUE(item));
-                for (i=0; i<nb; i++) re_compile_emit(ctx, chbuf[i]);
+                for (i=0; i<nb; i++) re_compile_emit(ctx, chbuf[i], emitp);
                 nrun += nb;
                 cp = SCM_CDR(cp);
                 if (SCM_NULLP(cp)) break;
@@ -485,12 +487,16 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
             } while (SCM_CHARP(item)
                      && !eol_marker_p(cp, lastp, item)
                      && nrun < CHAR_MAX);
-            if (nrun == 1) {
-                ctx->code[ocodep] = RE_MATCH1;
-                ctx->code[ocodep+1] = ctx->code[ocodep+2];
-                ctx->codep = ocodep+2;
-            } else {
-                ctx->code[ocodep+1] = (char)nrun;
+            if (emitp) {
+                /* patches the jump offset.  if we are matching to a
+                   single byte char, use MATCH1 insn. */
+                if (nrun == 1) {
+                    ctx->code[ocodep] = RE_MATCH1;
+                    ctx->code[ocodep+1] = ctx->code[ocodep+2];
+                    ctx->codep = ocodep+2;
+                } else {
+                    ctx->code[ocodep+1] = (char)nrun;
+                }
             }
             if (SCM_NULLP(cp)) break;
             cp = Scm_Cons(item, cp); /* pushback */
@@ -501,11 +507,11 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
         if (SCM_INTP(item)) {
             int grpnum = SCM_INT_VALUE(item);
             if (grpnum < 0) {
-                re_compile_emit(ctx, RE_END);
-                re_compile_emit(ctx, -grpnum);
+                re_compile_emit(ctx, RE_END, emitp);
+                re_compile_emit(ctx, -grpnum, emitp);
             } else {
-                re_compile_emit(ctx, RE_BEGIN);
-                re_compile_emit(ctx, grpnum);
+                re_compile_emit(ctx, RE_BEGIN, emitp);
+                re_compile_emit(ctx, grpnum, emitp);
             }
             continue;
         }
@@ -513,22 +519,22 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
         /* charset */
         if (SCM_CHARSETP(item)) {
             if (SCM_CHARSET_SMALLP(item)) {
-                re_compile_emit(ctx, RE_SET1);
+                re_compile_emit(ctx, RE_SET1, emitp);
             } else {
-                re_compile_emit(ctx, RE_SET);
+                re_compile_emit(ctx, RE_SET, emitp);
             }
-            re_compile_emit(ctx, re_compile_charset_index(rx, item));
+            re_compile_emit(ctx, re_compile_charset_index(rx, item), emitp);
             continue;
         }
 
         /* special stuff */
         if (SCM_SYMBOLP(item)) {
             if (item == sym_any) {
-                re_compile_emit(ctx, RE_ANY);
+                re_compile_emit(ctx, RE_ANY, emitp);
                 continue;
             }
             if (item == sym_bol) {
-                re_compile_emit(ctx, RE_BOL);
+                re_compile_emit(ctx, RE_BOL, emitp);
                 continue;
             }
             /* fallback to error */
@@ -540,15 +546,17 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
 
             if (car == sym_rep) {
                 ocodep = ctx->codep;
-                re_compile_emit(ctx, RE_TRY);
-                re_compile_emit(ctx, 0); /* will be patched */
-                re_compile_emit(ctx, 0); /* will be patched */
-                re_compile_pass2(SCM_CDR(item), rx, ctx, FALSE);
-                re_compile_emit(ctx, RE_JUMP);
-                re_compile_emit(ctx, (ocodep>>8));
-                re_compile_emit(ctx, (ocodep&0xff));
-                ctx->code[ocodep+1] = (ctx->codep>>8);
-                ctx->code[ocodep+2] = (ctx->codep&0xff);
+                re_compile_emit(ctx, RE_TRY, emitp);
+                re_compile_emit(ctx, 0, emitp); /* will be patched */
+                re_compile_emit(ctx, 0, emitp); /* will be patched */
+                re_compile_pass2(SCM_CDR(item), rx, ctx, FALSE, emitp);
+                re_compile_emit(ctx, RE_JUMP, emitp);
+                re_compile_emit(ctx, (ocodep>>8), emitp);
+                re_compile_emit(ctx, (ocodep&0xff), emitp);
+                if (emitp) {
+                    ctx->code[ocodep+1] = (ctx->codep>>8);
+                    ctx->code[ocodep+2] = (ctx->codep&0xff);
+                }
                 continue;
             }
             if (car == sym_alt) {
@@ -559,25 +567,31 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                 for (clause = SCM_CDR(item);
                      SCM_PAIRP(SCM_CDR(clause));
                      clause = SCM_CDR(clause)) {
-                    re_compile_emit(ctx, RE_TRY);
+                    re_compile_emit(ctx, RE_TRY, emitp);
                     patchp = ctx->codep;
-                    re_compile_emit(ctx, 0); /* will be patched */
-                    re_compile_emit(ctx, 0); /* will be patched */
+                    re_compile_emit(ctx, 0, emitp); /* will be patched */
+                    re_compile_emit(ctx, 0, emitp); /* will be patched */
                     re_compile_pass2(SCM_CAR(clause), rx, ctx,
-                                     can_be_eol(SCM_CDR(cp)));
-                    re_compile_emit(ctx, RE_JUMP);
-                    jumps = Scm_Cons(SCM_MAKE_INT(ctx->codep), jumps);
-                    re_compile_emit(ctx, 0); /* will be patched */
-                    re_compile_emit(ctx, 0); /* will be patched */
-                    ctx->code[patchp] = (ctx->codep>>8);
-                    ctx->code[patchp+1] = (ctx->codep&0xff);
+                                     can_be_eol(SCM_CDR(cp)), emitp);
+                    re_compile_emit(ctx, RE_JUMP, emitp);
+                    if (emitp) {
+                        jumps = Scm_Cons(SCM_MAKE_INT(ctx->codep), jumps);
+                    }
+                    re_compile_emit(ctx, 0, emitp); /* will be patched */
+                    re_compile_emit(ctx, 0, emitp); /* will be patched */
+                    if (emitp) {
+                        ctx->code[patchp] = (ctx->codep>>8);
+                        ctx->code[patchp+1] = (ctx->codep&0xff);
+                    }
                 }
                 re_compile_pass2(SCM_CAR(clause), rx, ctx,
-                                 can_be_eol(SCM_CDR(cp)));
-                SCM_FOR_EACH(jumps, jumps) {
-                    patchp = SCM_INT_VALUE(SCM_CAR(jumps));
-                    ctx->code[patchp] = ctx->codep >> 8;
-                    ctx->code[patchp+1] = ctx->codep & 0xff;
+                                 can_be_eol(SCM_CDR(cp)), emitp);
+                if (emitp) {
+                    SCM_FOR_EACH(jumps, jumps) {
+                        patchp = SCM_INT_VALUE(SCM_CAR(jumps));
+                        ctx->code[patchp] = ctx->codep >> 8;
+                        ctx->code[patchp+1] = ctx->codep & 0xff;
+                    }
                 }
                 continue;
             }
@@ -585,11 +599,11 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                 ScmObj cs = SCM_CDR(item);
                 SCM_ASSERT(SCM_CHARSETP(cs));
                 if (SCM_CHARSET_SMALLP(cs)) {
-                    re_compile_emit(ctx, RE_NSET1);
+                    re_compile_emit(ctx, RE_NSET1, emitp);
                 } else {
-                    re_compile_emit(ctx, RE_NSET);
+                    re_compile_emit(ctx, RE_NSET, emitp);
                 }
-                re_compile_emit(ctx, re_compile_charset_index(rx, cs));
+                re_compile_emit(ctx, re_compile_charset_index(rx, cs), emitp);
                 continue;
             }
             /* fallback to error */
@@ -717,17 +731,21 @@ ScmObj Scm_RegComp(ScmString *pattern)
     cctx.sets = SCM_NIL;
     cctx.codep = 0;
 
+    /* pass 1 : parse regexp spec */
     compiled = re_compile_pass1(rx, &cctx);
-/*    Scm_Printf(SCM_CUROUT, "~~ %S %d\n", compiled, rx->numCodes);*/
     re_compile_setup_charsets(rx, &cctx);
 
-    cctx.code = SCM_NEW_ATOMIC2(char *, rx->numCodes*2+1);
-    cctx.codemax = rx->numCodes*2+1;
-    re_compile_pass2(compiled, rx, &cctx, TRUE);
-    re_compile_emit(&cctx, RE_SUCCESS);
+    /* pass 2 : count required bytecode size */
+    cctx.codemax = 1;
+    re_compile_pass2(compiled, rx, &cctx, TRUE, FALSE);
+    
+    /* pass 3 : generate bytecodes */
+    cctx.code = SCM_NEW_ATOMIC2(char *, cctx.codemax);
+    rx->numCodes = cctx.codemax;
+    re_compile_pass2(compiled, rx, &cctx, TRUE, TRUE);
+    re_compile_emit(&cctx, RE_SUCCESS, TRUE);
     rx->code = cctx.code;
     rx->numCodes = cctx.codep;
-
     return SCM_OBJ(rx);
 }
 
@@ -1073,4 +1091,5 @@ void Scm__InitRegexp(void)
     sym_rep = SCM_INTERN("rep");
     sym_any = SCM_INTERN("any");
     sym_bol = SCM_INTERN("bol");
+    sym_comp = SCM_INTERN("comp");
 }
