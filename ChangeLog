@@ -1,3 +1,8 @@
+2004-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (get-optargs, compose-entry): added support
+	  for "optional option-argument".
+
 2004-04-10  Kimura Fuyuki  <fuyuki@hadaly.org>
 
 	* configure.ac, ext/auxsys/*, src/autoloads.scm,

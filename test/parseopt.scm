@@ -21,6 +21,8 @@
     ("ffff=si"  (arg1 arg2) (format #t "ffff=(~a ~s)," arg1 arg2))
     ("ggggg=fff" args       (format #t "ggggg=~s," args))
     ("h|hh|hhh" ()          (format #t "h*,"))
+    ("j:s"      (arg)       (format #t "j=~a," arg))
+    ("k:sss"    args        (format #t "k=~a," args))
     (else (option args looper)
           (format #t "?=~a," option)
           (looper args))
@@ -76,6 +78,12 @@
 (test "-h"   '("h*,") (tester "-h"))
 (test "-hh"  '("h*,") (tester "-hh"))
 (test "-hhh" '("h*,") (tester "-hhh"))
+
+(test "-j"   '("j=jj,a,") (tester "-j" "jj" "-a"))
+(test "-j"   '("j=#f,a,") (tester "-j" "-a"))
+(test "-j"   '("j=#f,")  (tester "-j"))
+(test "-k"   '("k=(1 2 3),a,") (tester "-k" "1" "2" "3" "-a"))
+(test "-k"   '("k=(#f #f #f),a,") (tester "-k" "-a"))
 
 (test "--" '("bb=x," "-a" "-cc") (tester "-bb" "x" "--" "-a" "-cc"))
 (test "--" '("" "-bb" "x" "--" "-a" "-cc") (tester "--" "-bb" "x" "--" "-a" "-cc"))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parseopt.scm,v 1.5 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.6 2004-04-12 04:27:19 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
@@ -40,21 +40,34 @@
   (export make-option-parser parse-options let-args))
 (select-module gauche.parseopt)
 
+;; Represents each option info
+(define-class <option-spec> ()
+  ((name :init-keyword :name) ;; option name
+   (args :init-keyword :args) ;; option agrspecs (list of chars)
+   (arg-optional? :init-keyword :arg-optional?) ;; option's arg optional?
+   (handler :init-keyword :handler) ;; handler closure
+   (help :init-keyword :help) ;; help string
+   ))
+
 ;; Helper functions
 
 ;; Parse optspec clause, and returns
-;;  ((option-string argument-specs procedure) ...)
+;;  ((option-string argument-specs optional? handler) ...)
+;; <a-spec> is (<optspec> <handler>).
 (define (compose-entry a-spec)
-  (unless (string? (car a-spec))
-    (error "option spec must be a string, but got" (car a-spec)))
-  (unless (procedure? (cadr a-spec))
-    (error "action spec must be a procedure, but got" (cadr a-spec)))
-  (rxmatch-if (rxmatch #/^-*([-+\w|]+)(=(.+))?$/ (car a-spec))
-      (#f opt #f argspec)
-    (let ((argspecs (if argspec (string->list argspec) '()))
-          (proc     (cadr a-spec)))
-      (map (cut list <> argspecs proc) (string-split opt #\|)))
-    (error "unrecognized option spec:" (car a-spec))))
+  (receive (optspec handler) (apply values a-spec)
+    (unless (string? optspec)
+      (error "option spec must be a string, but got" optspec))
+    (rxmatch-if (rxmatch #/^-*([-+\w|]+)(?:([=:])(.+))?$/ optspec)
+        (#f optnames optional?  argspec)
+      (map (cute make <option-spec>
+                 :name <>
+                 :args (if argspec (string->list argspec) '())
+                 :arg-optional? (equal? optional? ":")
+                 :handler handler
+                 :help "")
+           (string-split optnames #\|))
+      (error "unrecognized option spec:" optspec))))
 
 ;; From the args given at the command line, get a next option.
 ;; Returns option string and rest args.
@@ -72,51 +85,58 @@
 
 ;; From the list of optarg spec and given command line arguments,
 ;; get a list of optargs.  Returns optargs and unconsumed args.
-(define (get-optargs option args argspec)
+(define (get-optargs optspec args)
   (define (get-number arg)
     (or (string->number arg)
         (errorf "a number is required for option ~a, but got ~a"
-                option arg)))
+                (ref optspec 'name) arg)))
   (define (get-real arg)
     (or (and-let* ((num (string->number arg))
                    ((real? num)))
           num)
         (errorf "a real number is required for option ~a, but got ~a"
-                option arg)))
+                (ref optspec 'name) arg)))
   (define (get-integer arg)
     (or (and-let* ((num (string->number arg))
                    ((exact? num)))
           num)
         (errorf "an integer is required for option ~a, but got ~a"
-                option arg)))
+                (ref optspec 'name) arg)))
   (define (get-sexp arg)
     (with-error-handler
         (lambda (e)
           (errorf "the argument for option ~a is not valid sexp: ~s"
-                  option arg))
+                  (ref optspec 'name) arg))
       (lambda () (read-from-string arg))))
-  
-  (let loop ((spec argspec)
-             (args args)
-             (optargs '()))
-    (cond ((null? spec) (values (reverse! optargs) args))
-          ((null? args) (error "running out the arguments for option"
-                               option))
-          (else
-           (case (car spec)
-             ((#\s) (loop (cdr spec) (cdr args) (cons (car args) optargs)))
-             ((#\n) (loop (cdr spec) (cdr args)
-                          (cons (get-number (car args)) optargs)))
-             ((#\f) (loop (cdr spec) (cdr args)
-                          (cons (get-real (car args)) optargs)))
-             ((#\i) (loop (cdr spec) (cdr args)
-                          (cons (get-integer (car args)) optargs)))
-             ((#\e) (loop (cdr spec) (cdr args)
-                          (cons (get-sexp (car args)) optargs)))
-             ((#\y) (loop (cdr spec) (cdr args)
-                          (cons (string->symbol (car args)) optargs)))
-             (else (error "unknown option argument spec:" (car spec))))))
-    )
+  (define (process-args)
+    (let loop ((spec (ref optspec 'args))
+               (args args)
+               (optargs '()))
+      (cond ((null? spec) (values (reverse! optargs) args))
+            ((null? args) (error "running out the arguments for option"
+                                 (ref optspec 'name)))
+            (else
+             (case (car spec)
+               ((#\s) (loop (cdr spec) (cdr args) (cons (car args) optargs)))
+               ((#\n) (loop (cdr spec) (cdr args)
+                            (cons (get-number (car args)) optargs)))
+               ((#\f) (loop (cdr spec) (cdr args)
+                            (cons (get-real (car args)) optargs)))
+               ((#\i) (loop (cdr spec) (cdr args)
+                            (cons (get-integer (car args)) optargs)))
+               ((#\e) (loop (cdr spec) (cdr args)
+                            (cons (get-sexp (car args)) optargs)))
+               ((#\y) (loop (cdr spec) (cdr args)
+                            (cons (string->symbol (car args)) optargs)))
+               (else (error "unknown option argument spec:" (car spec))))))
+      ))
+
+  (if (ref optspec 'arg-optional?)
+    (if (or (null? args)
+            (#/^-/ (car args)))
+      (values (make-list (length (ref optspec 'args)) #f) args)
+      (process-args))
+    (process-args))
   )
 
 ;; Now, this is the argument parser body.
@@ -124,11 +144,11 @@
   (let loop ((args args))
     (receive (option nextargs) (next-option args)
       (if option
-          (cond ((assoc option speclist)
+          (cond ((find (lambda (e) (equal? option (ref e 'name))) speclist)
                  => (lambda (entry)
                       (receive (optargs nextargs)
-                          (get-optargs option nextargs (cadr entry))
-                        (apply (caddr entry) optargs)
+                          (get-optargs entry nextargs)
+                        (apply (ref entry 'handler) optargs)
                         (loop nextargs))))
                 (else (fallback option nextargs loop)))
           nextargs))))
@@ -137,14 +157,7 @@
 (define (build-option-parser spec fallback)
   (let ((speclist (append-map compose-entry spec)))
     (lambda (args . maybe-fallback)
-      (let ((fallback
-             (if (pair? maybe-fallback)
-                 (if (procedure? (car maybe-fallback))
-                     (car maybe-fallback)
-                     (error "fallback needs to be a procedure:"
-                            (car maybe-fallback)))
-                 fallback)))
-        (parse-cmdargs args speclist fallback)))))
+      (parse-cmdargs args speclist (get-optional maybe-fallback fallback)))))
 
 ;;;
 ;;; The main body of the macros
@@ -169,7 +182,7 @@
      (make-option-parser-int clause (spec ... (list optspec proc))))
     ((_ ((optspec vars . body) . clause) (spec ...))
      (make-option-parser-int clause
-                                (spec ... (list optspec (lambda vars . body)))))
+                             (spec ... (list optspec (lambda vars . body)))))
     ))
 
 (define-syntax parse-options
