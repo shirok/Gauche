@@ -1,3 +1,8 @@
+2002-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* various files: started nvm-experiment branch for next VM
+	  experiments.
+
 2002-11-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_DStringAdd): fixed a bug that didn't handle
