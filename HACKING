@@ -6,16 +6,14 @@ In order to build Gauche from CVS sources, instead of from
 distribution, you need to have autoconf 2.54 or higher.
 The author using autoconf 2.57.
 
-CVS source tree doesn't include some files that comes with
-autotools.  Run the "DIST" script in the toplevel directory
-with "gen" argument:
+You also need to have the latest Gauche installed on your
+machine, for it is required to run a stub generator to create
+some C files.
+
+CVS source tree doesn't include "configure" scripts.  You can use
+the DIST script like the following to generate them.
 
   % ./DIST gen
 
-It is like "autogen.sh" found in some opensource packages.
-This creates missing files, including libltdl, and then
-runs aclocal, automake and autoconf in the source tree
-to generate Makefile.in's and configure's.  You need to
-run "./DIST gen" whenever you change one of Makefile.am's.
 
 
