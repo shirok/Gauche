@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.24 2001-07-02 08:49:51 shirok Exp $
+ *  $Id: vminsn.h,v 1.25 2001-07-05 10:34:39 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -54,11 +54,11 @@ DEFINSN(SCM_VM_PRE_CALL, "PRE-CALL", 1)
  */
 DEFINSN(SCM_VM_PRE_TAIL, "PRE-TAIL", 1)
 
-/* PRE-INLINE(nargs)
+/* CHECK-STACK(size)
  *
- *  Prepare for an inline call
+ *  Check for stack overflow
  */
-DEFINSN(SCM_VM_PRE_INLINE, "PRE-INLINE", 1)
+DEFINSN(SCM_VM_CHECK_STACK, "CHECK-STACK", 1)
 
 /* CALL(NARGS)
  *
@@ -180,7 +180,7 @@ DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
  *  They work the same as corresponding Scheme primitives, but they are
  *  directly interpreted by VM, skipping argument processing part.
  *  Compiler may insert these in order to fulfill the operation (e.g.
- *  `case' needs MEMQ).  If the optimization level is high, global
+ *  `case' needs MEMV).  If the optimization level is high, global
  *  reference of those primitive calls in the user code are replaced
  *  as well.
  */

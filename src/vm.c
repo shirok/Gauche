@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.88 2001-07-02 08:49:50 shirok Exp $
+ *  $Id: vm.c,v 1.89 2001-07-05 10:34:39 shirok Exp $
  */
 
 #include "gauche.h"
@@ -444,7 +444,7 @@ static void run_loop()
                 PUSH_ENV_HDR();
                 continue;
             }
-            CASE(SCM_VM_PRE_INLINE) {
+            CASE(SCM_VM_CHECK_STACK) {
                 continue;
             }
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */

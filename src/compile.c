@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.52 2001-07-02 08:49:50 shirok Exp $
+ *  $Id: compile.c,v 1.53 2001-07-05 10:34:39 shirok Exp $
  */
 
 #include "gauche.h"
@@ -392,10 +392,17 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                     }
                     if (!(vm->compilerFlags & SCM_COMPILE_NOINLINE) &&
                         SCM_SUBRP(g->value) && SCM_SUBR_INLINER(g->value)) {
-                        ScmObj inlined =
-                            SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
-                                                       form, env, ctx);
-                        if (!SCM_FALSEP(inlined)) return inlined;
+                        ScmObj inlined
+                            = SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
+                                                         form, env, ctx);
+                        if (!SCM_FALSEP(inlined)) {
+                            int nargs = Scm_Length(SCM_CDR(form));
+                            if (nargs >= 2) {
+                                return Scm_Cons(SCM_VM_INSN1(SCM_VM_CHECK_STACK, nargs-1), inlined);
+                            } else {
+                                return inlined;
+                            }
+                        }
                     }
                 }
                 /* Symbol doesn't have syntactic bindings.  It must be
@@ -1114,6 +1121,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
     key = SCM_CAR(tail);
     clauses = SCM_CDR(tail);
 
+    ADDCODE1(SCM_VM_INSN1(SCM_VM_CHECK_STACK, 2));
     ADDCODE(compile_int(key, env, SCM_COMPILE_NORMAL));
     ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
     merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
@@ -1396,7 +1404,7 @@ static ScmObj compile_qq(ScmObj form, ScmObj env, int level)
 
 static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
 {
-    int len = 0, splice = 0, last_spliced = FALSE;
+    int len = 0, splice = 0, last_spliced = FALSE, stacksize = 0;
     ScmObj car = SCM_CAR(form), cp;
     ScmObj code = SCM_NIL, codetail = SCM_NIL;
 
@@ -1406,6 +1414,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
         if (level == 0) {
             return compile_int(SCM_CADR(form), env, SCM_COMPILE_NORMAL);
         } else {
+            ADDCODE1(SCM_VM_INSN1(SCM_VM_CHECK_STACK, 1));
             ADDCODE1(car);
             ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
             ADDCODE(compile_qq(SCM_CADR(form), env, level-1));
@@ -1419,6 +1428,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
     } else if (QUASIQUOTEP(car, env)) {
         if (!VALID_QUOTE_SYNTAX_P(form))
             Scm_Error("badly formed quasiquote: %S\n", form);
+        ADDCODE1(SCM_VM_INSN1(SCM_VM_CHECK_STACK, 1));
         ADDCODE1(car);
         ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
         ADDCODE(compile_qq(SCM_CADR(form), env, level+1));
@@ -1428,6 +1438,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
 
     /* ordinary list */
     SCM_FOR_EACH(cp, form) {
+        stacksize++;
         car = SCM_CAR(cp);
         if (UNQUOTEP(car, env)) {
             break;
@@ -1471,6 +1482,9 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
     if (splice) {
         ADDCODE1(SCM_VM_INSN1(SCM_VM_APPEND, splice+1));
     }
+    if (stacksize > 1) {
+        code = Scm_Cons(SCM_VM_INSN1(SCM_VM_CHECK_STACK, stacksize-1), code);
+    }
     return code;
 }
 
@@ -1479,6 +1493,8 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
     ScmObj code = SCM_NIL, codetail = SCM_NIL;
     int vlen = SCM_VECTOR_SIZE(form), i, alen = 0;
     int spliced = 0, last_spliced = FALSE;
+
+    if (vlen > 1) ADDCODE1(SCM_VM_INSN1(SCM_VM_CHECK_STACK, vlen-1));
     for (i=0; i<vlen; i++) {
         ScmObj p = SCM_VECTOR_ELEMENT(form, i);
         if (SCM_PAIRP(p)) {
