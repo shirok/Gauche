@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.2 2001-01-12 11:33:38 shiro Exp $
+ *  $Id: vm.h,v 1.3 2001-01-13 10:31:13 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -156,6 +156,14 @@ extern ScmClass Scm_VMClass;
 #define SCM_VM_LET_NLOCALS(obj)    SCM_VM_INSN_ARG(obj)
 #define SCM_VM_MAKE_LET(nlocals) \
     SCM_OBJ(((nlocals)<<12) | (SCM_VM_LET<<4) | SCM_VM_INSN_TAG)
+#define SCM_VM_MAKE_TAILBIND(nlocals) \
+    SCM_OBJ(((nlocals)<<12) | (SCM_VM_TAILBIND<<4) | SCM_VM_INSN_TAG)
+#define SCM_VM_MAKE_LIST(nargs) \
+    SCM_OBJ(((nargs)<<12) | (SCM_VM_LIST<<4) | SCM_VM_INSN_TAG)
+#define SCM_VM_MAKE_LIST_STAR(nargs) \
+    SCM_OBJ(((nargs)<<12) | (SCM_VM_LIST_STAR<<4) | SCM_VM_INSN_TAG)
+#define SCM_VM_MAKE_APPEND(nargs) \
+    SCM_OBJ(((nargs)<<12) | (SCM_VM_APPEND<<4) | SCM_VM_INSN_TAG)
 
 #define SCM_VM_LAMBDA_NARGS(obj)   ((SCM_WORD(obj) >> 12) & 0x03ff)
 #define SCM_VM_LAMBDA_RESTARG(obj) ((SCM_WORD(obj) >> 22) & 0x03ff)

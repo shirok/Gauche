@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.2 2001-01-12 11:33:37 shiro Exp $
+ *  $Id: gauche.h,v 1.3 2001-01-13 10:31:13 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -144,14 +144,23 @@ extern ScmObj Scm_EqualP(ScmObj x, ScmObj y);
  *
  *  A character is represented by (up to) 29-bit integer.  The actual
  *  encoding depends on compile-time flags.
+ *
+ *  For character cases, I only care about ASCII chars (at least for now)
  */
 
 #define	SCM_CHAR(obj)           ((ScmChar)(obj))
 #define	SCM_CHARP(obj)          ((SCM_WORD(obj)&0x07L) == 2)
 #define	SCM_CHAR_VALUE(obj)     SCM_CHAR(SCM_WORD(obj) >> 3)
-#define	SCM_MAKE_CHAR(wchar)    SCM_OBJ(((wchar) << 3) + 2)
+#define	SCM_MAKE_CHAR(ch)       SCM_OBJ(((ch) << 3) + 2)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
+
+#define SCM_CHAR_ASCII_P(ch)    ((ch) < 0x80)
+#define SCM_CHAR_UPPER_P(ch)    (('A' <= (ch)) && ((ch) <= 'Z'))
+#define SCM_CHAR_LOWER_P(ch)    (('a' <= (ch)) && ((ch) <= 'z'))
+#define SCM_CHAR_UPCASE(ch)     (SCM_CHAR_LOWER_P(ch)?((ch)-('a'-'A')):(ch))
+#define SCM_CHAR_DOWNCASE(ch)   (SCM_CHAR_UPPER_P(ch)?((ch)+('a'-'A')):(ch))
+
 
 /*
  * HEAP ALLOCATED OBJECTS
@@ -195,6 +204,7 @@ typedef struct ScmSymbolRec    ScmSymbol;
 typedef struct ScmGlocRec      ScmGloc;
 typedef struct ScmProcedureRec ScmProcedure;
 typedef struct ScmSyntaxRec    ScmSyntax;
+typedef struct ScmPromiseRec   ScmPromise;
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -277,6 +287,11 @@ struct ScmPairRec {
 #define SCM_PAIR(obj)           ((ScmPair*)(obj))
 #define SCM_CAR(obj)            (SCM_PAIR(obj)->car)
 #define SCM_CDR(obj)            (SCM_PAIR(obj)->cdr)
+#define SCM_CAAR(obj)           (SCM_CAR(SCM_CAR(obj)))
+#define SCM_CADR(obj)           (SCM_CAR(SCM_CDR(obj)))
+#define SCM_CDAR(obj)           (SCM_CDR(SCM_CAR(obj)))
+#define SCM_CDDR(obj)           (SCM_CDR(SCM_CDR(obj)))
+
 #define SCM_SET_CAR(obj, value) (SCM_CAR(obj) = (value))
 #define SCM_SET_CDR(obj, value) (SCM_CDR(obj) = (value))
 #define SCM_PAIR_ATTR(obj)      (SCM_PAIR(obj)->attributes)
@@ -368,6 +383,7 @@ extern ScmObj Scm_CopyList(ScmObj list);
 extern ScmObj Scm_MakeList(int len, ScmObj fill);
 extern ScmObj Scm_Append2X(ScmObj list, ScmObj obj);
 extern ScmObj Scm_Append2(ScmObj list, ScmObj obj);
+extern ScmObj Scm_Append(ScmObj args);
 extern ScmObj Scm_ReverseX(ScmObj list);
 extern ScmObj Scm_Reverse(ScmObj list);
 extern ScmObj Scm_ListTail(ScmObj list, int i);
@@ -439,8 +455,14 @@ extern ScmObj  Scm_StringAppendC(ScmString *x, const char *s, int size, int len)
 extern ScmObj  Scm_StringP(ScmObj obj);
 extern ScmObj  Scm_StringToList(ScmString *str);
 extern ScmObj  Scm_ListToString(ScmObj chars);
+extern ScmObj  Scm_StringFill(ScmString *str, ScmChar c);
 
-
+/* You can allocate a constant string statically, if you calculate
+   the length by yourself. */
+#define SCM_DEFINE_STRING_CONST(name, str, len, siz)        \
+    static ScmString name = {                           \
+        SCM_CLASS_STRING, (len), (siz), (str)           \
+    };
 
 /* Auxiliary structure to construct a string.  This is not an ScmObj. */
 struct ScmDStringRec {
@@ -988,12 +1010,14 @@ struct ScmSymbolRec {
 extern ScmObj Scm_Intern(ScmString *name);
 #define SCM_INTERN(cstr)       Scm_Intern(SCM_STRING(SCM_MAKE_STR(cstr)))
 
+extern ScmObj Scm_Gensym(ScmString *prefix);
+
 extern ScmClass Scm_SymbolClass;
 #define SCM_CLASS_SYMBOL        (&Scm_SymbolClass)
 
 /* predefined symbols */
 extern ScmSymbol ScmQquote;
-extern ScmSymbol ScmQbackquote;
+extern ScmSymbol ScmQquasiquote;
 extern ScmSymbol ScmQunquote;
 extern ScmSymbol ScmQunquoteSplicing;
 extern ScmSymbol ScmQdefine;
@@ -1013,9 +1037,19 @@ extern ScmSymbol ScmQcase;
 extern ScmSymbol ScmQelse;
 extern ScmSymbol ScmQyields;
 extern ScmSymbol ScmQdo;
+extern ScmSymbol ScmQdelay;
+
+extern ScmSymbol ScmQcons;
+extern ScmSymbol ScmQcar;
+extern ScmSymbol ScmQcdr;
+extern ScmSymbol ScmQlist;
+extern ScmSymbol ScmQeq;
+extern ScmSymbol ScmQeqv;
+extern ScmSymbol ScmQequal;
+extern ScmSymbol ScmQmemv;
 
 #define SCM_SYM_QUOTE            SCM_OBJ(&ScmQquote)
-#define SCM_SYM_BACKQUOTE        SCM_OBJ(&ScmQbackquote)
+#define SCM_SYM_QUASIQUOTE       SCM_OBJ(&ScmQquasiquote)
 #define SCM_SYM_UNQUOTE          SCM_OBJ(&ScmQunquote)
 #define SCM_SYM_UNQUOTE_SPLICING SCM_OBJ(&ScmQunquoteSplicing)
 #define SCM_SYM_DEFINE           SCM_OBJ(&ScmQdefine)
@@ -1035,6 +1069,16 @@ extern ScmSymbol ScmQdo;
 #define SCM_SYM_ELSE             SCM_OBJ(&ScmQelse)
 #define SCM_SYM_YIELDS           SCM_OBJ(&ScmQyields) /* => */
 #define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
+#define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
+
+#define SCM_SYM_CONS             SCM_OBJ(&ScmQcons)
+#define SCM_SYM_CAR              SCM_OBJ(&ScmQcar)
+#define SCM_SYM_CDR              SCM_OBJ(&ScmQcdr)
+#define SCM_SYM_LIST             SCM_OBJ(&ScmQlist)
+#define SCM_SYM_EQ               SCM_OBJ(&ScmQeq)
+#define SCM_SYM_EQV              SCM_OBJ(&ScmQeqv)
+#define SCM_SYM_EQUAL            SCM_OBJ(&ScmQequal)
+#define SCM_SYM_MEMV             SCM_OBJ(&ScmQmemv)
 
 /* Gloc (global location) */
 struct ScmGlocRec {
@@ -1061,10 +1105,10 @@ extern ScmClass Scm_GlocClass;
 #define SCM_SMALL_INT_MIN          (-SCM_SMALL_INT_MAX-1)
 
 #define SCM_INTEGERP(obj)          (SCM_INTP(obj) || SCM_BIGNUMP(obj))
-
-#define SCM_NUMBERP(obj)           (SCM_INTP(obj)||SCM_BIGNUMP(obj)||SCM_FLONUMP(obj))
+#define SCM_REALP(obj)             (SCM_INTEGERP(obj)||SCM_FLONUMP(obj))
+#define SCM_NUMBERP(obj)           (SCM_REALP(obj)||SCM_COMPLEXP(obj))
 #define SCM_EXACTP(obj)            SCM_INTEGERP(obj)
-#define SCM_INEXACTP(obj)          SCM_FLONUMP(obj)
+#define SCM_INEXACTP(obj)          (SCM_FLONUMP(obj)||SCM_COMPLEXP(obj))
 
 extern ScmClass  Scm_NumberClass;
 extern ScmClass  Scm_ComplexClass;
@@ -1131,6 +1175,9 @@ extern ScmObj Scm_NumLt(ScmObj arg0, ScmObj arg1, ScmObj args); /* < */
 extern ScmObj Scm_NumLe(ScmObj arg0, ScmObj arg1, ScmObj args); /* <= */
 extern ScmObj Scm_NumGt(ScmObj arg0, ScmObj arg1, ScmObj args); /* > */
 extern ScmObj Scm_NumGe(ScmObj arg0, ScmObj arg1, ScmObj args); /* >= */
+
+extern ScmObj Scm_Max(ScmObj arg0, ScmObj args);
+extern ScmObj Scm_Min(ScmObj arg0, ScmObj args);
 
 extern ScmObj Scm_NumberToString(ScmObj num);
 extern ScmObj Scm_StringToNumber(ScmString *str);
@@ -1216,6 +1263,22 @@ extern ScmClass Scm_SyntaxClass;
 extern ScmObj Scm_MakeSyntax(ScmSymbol *name,
                              ScmCompileProc compiler, void *data);
 
+
+/*--------------------------------------------------------
+ * PROMISE
+ */
+
+struct ScmPromiseRec {
+    SCM_HEADER;
+    int forced;
+    ScmObj code;
+};
+
+extern ScmClass Scm_PromiseClass;
+#define SCM_CLASS_PROMISE           (&Scm_PromiseClass)
+
+extern ScmObj Scm_MakePromise(ScmObj code);
+extern void Scm_Force(ScmObj p);
 
 /*-------------------------------------------------------
  * STUB MACROS

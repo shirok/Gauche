@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.1 2001-01-12 11:34:07 shiro Exp $
+ *  $Id: vminsn.h,v 1.2 2001-01-13 10:31:13 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -105,6 +105,20 @@ DEFINSN(SCM_VM_IFNP, "IFNP", 0)
  */
 DEFINSN(SCM_VM_CALL, "CALL", 2)
 
+/* TAILBIND(NARGS) <INFO>
+ *   Input stack  : value0 ... valueN-1
+ *   Result stack : -
+ *
+ *  Lightweight tail call.  This instruction appears in the loop body
+ *  and the tail call to inlined procedures.
+ *  Discards current environment, allocates NARGS size of environment,
+ *  then sets values to the envionment.   It is equivalent to the following
+ *  instruction sequence:
+ *
+ *    POPENV  LET(NARGS)  SET  LREF(N-1,0) ... SET LREF(0,0)
+ */
+DEFINSN(SCM_VM_TAILBIND, "TAILBIND", 1)
+
 /* SET <LOCATION>
  *   Input stack  : value
  *   Result stack : -
@@ -131,11 +145,14 @@ DEFINSN(SCM_VM_LREF, "LREF", 2)
  */
 DEFINSN(SCM_VM_GREF, "GREF", 0)
 
-/* Quote families */
-DEFINSN(SCM_VM_QUOTE, "QUOTE", 0)
-DEFINSN(SCM_VM_BACKQUOTE, "BACKQUOTE", 0)
-DEFINSN(SCM_VM_UNQUOTE, "UNQUOTE", 0)
-DEFINSN(SCM_VM_UNQUOTE_SPLICING, "UNQUOTE_SPLICING", 0)
+/* PROMISE
+ *   Input stack  : procedure
+ *   Result stack : promise
+ *
+ *  Delay syntax emits this instruction.  Wrap a procedure into promise
+ *  object.
+ */
+DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
 
 /* Inlined operators
  *  They work the same as corresponding Scheme primitives, but they are

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
+ *  $Id: symbol.c,v 1.3 2001-01-13 10:31:13 shiro Exp $
  */
 
 #include "gauche.h"
@@ -36,19 +36,44 @@ ScmClass Scm_SymbolClass = {
     cpl
 };
 
+#define INITSYM(sym, nam)                       \
+    sym = SCM_NEW(ScmSymbol);                   \
+    sym->hdr.klass = SCM_CLASS_SYMBOL;          \
+    sym->name = SCM_STRING(nam)
+
+/* These two are global resource.  Must be protected in MT environment. */
 static ScmHashTable *obtable;   /* name -> symbol mapper */
+static int gensym_count = 0;
 
 ScmObj Scm_Intern(ScmString *name)
 {
     ScmHashEntry *e = Scm_HashTableGet(obtable, SCM_OBJ(name));
     if (e) return e->value;
     else {
-        ScmSymbol *sym = SCM_NEW(ScmSymbol);
-        sym->hdr.klass = SCM_CLASS_SYMBOL;
-        sym->name = SCM_STRING(Scm_CopyString(name));
+        ScmSymbol *sym;
+        INITSYM(sym, Scm_CopyString(name));
         Scm_HashTablePut(obtable, SCM_OBJ(name), SCM_OBJ(sym));
         return SCM_OBJ(sym);
     }
+}
+
+/* Default prefix string. */
+SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
+
+/* Returns uninterned symbol.
+   PREFIX can be NULL*/
+ScmObj Scm_Gensym(ScmString *prefix)
+{
+    ScmString *name;
+    ScmSymbol *sym;
+    char numbuf[50];
+    int nc;
+
+    if (prefix == NULL) prefix = &default_prefix;
+    nc = snprintf(numbuf, 50, "%d", gensym_count++);
+    name = SCM_STRING(Scm_StringAppendC(prefix, numbuf, nc, nc));
+    INITSYM(sym, name);
+    return SCM_OBJ(sym);
 }
 
 /*
@@ -92,7 +117,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     } while (0)
 
 ScmSymbol ScmQquote            = SYMINIT;
-ScmSymbol ScmQbackquote        = SYMINIT;
+ScmSymbol ScmQquasiquote       = SYMINIT;
 ScmSymbol ScmQunquote          = SYMINIT;
 ScmSymbol ScmQunquoteSplicing  = SYMINIT;
 ScmSymbol ScmQdefine           = SYMINIT;
@@ -112,13 +137,23 @@ ScmSymbol ScmQcase             = SYMINIT;
 ScmSymbol ScmQelse             = SYMINIT;
 ScmSymbol ScmQyields           = SYMINIT;
 ScmSymbol ScmQdo               = SYMINIT;
+ScmSymbol ScmQdelay            = SYMINIT;
+
+ScmSymbol ScmQcons             = SYMINIT;
+ScmSymbol ScmQcar              = SYMINIT;
+ScmSymbol ScmQcdr              = SYMINIT;
+ScmSymbol ScmQlist             = SYMINIT;
+ScmSymbol ScmQeq               = SYMINIT;
+ScmSymbol ScmQeqv              = SYMINIT;
+ScmSymbol ScmQequal            = SYMINIT;
+ScmSymbol ScmQmemv             = SYMINIT;
 
 void Scm__InitSymbol(void)
 {
     obtable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_STRING, NULL, 2000));
 
     SYMREG(ScmQquote, "quote");
-    SYMREG(ScmQbackquote, "backquote");
+    SYMREG(ScmQquasiquote, "quasiquote");
     SYMREG(ScmQunquote, "unquote");
     SYMREG(ScmQunquoteSplicing, "unquote-splicing");
     SYMREG(ScmQdefine, "define");
@@ -138,4 +173,14 @@ void Scm__InitSymbol(void)
     SYMREG(ScmQelse,   "else");
     SYMREG(ScmQyields, "=>");
     SYMREG(ScmQdo,     "do");
+    SYMREG(ScmQdelay,  "delay");
+
+    SYMREG(ScmQcons,   "cons");
+    SYMREG(ScmQcar,    "car");
+    SYMREG(ScmQcdr,    "cdr");
+    SYMREG(ScmQlist,   "list");
+    SYMREG(ScmQeq,     "eq?");
+    SYMREG(ScmQeqv,    "eqv?");
+    SYMREG(ScmQequal,  "equal");
+    SYMREG(ScmQmemv,   "memv");
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
+ *  $Id: vm.c,v 1.3 2001-01-13 10:31:13 shiro Exp $
  */
 
 #include "gauche.h"
@@ -166,7 +166,12 @@ void Scm_Run(ScmObj program)
     vm_reset();
     run_loop(program);
 }
-    
+
+void Scm_Cont(void)
+{
+    run_loop(theVM->pc);
+}
+
 static void run_loop(ScmObj program)
 {
     register ScmObj pc = program, code;
@@ -349,18 +354,36 @@ static void run_loop(ScmObj program)
                 }
                 continue;
             }
+        case SCM_VM_TAILBIND:
+            {
+                int nlocals = SCM_VM_INSN_ARG(code);
+                ScmObj info, arg;
+                CHECK_ARGCNT(nlocals);
+                SCM_ASSERT(vm->env != NULL);
+                SCM_ASSERT(SCM_PAIRP(pc));
+
+                info = SCM_CAR(pc);
+                pc = SCM_CDR(pc);
+
+                if (SCM_NULLP(info)) info = vm->env->info; /* in case of loop */
+                vm->env = vm->env->up;
+                vm->env = newenv(info, nlocals, vm->env);
+                while (nlocals-- > 0) {
+                    POP_ARG(arg);
+                    vm->env->data[nlocals] = arg;
+                }
+                continue;
+            }
         case SCM_VM_LET:
             {
                 int nlocals = SCM_VM_LET_NLOCALS(code);
-                ScmEnvFrame *e;
                 ScmObj info;
 
                 SCM_ASSERT(SCM_PAIRP(pc));
                 info = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
                 
-                e = newenv(info, nlocals, vm->env);
-                vm->env = e;
+                vm->env = newenv(info, nlocals, vm->env);
                 continue;
             }
         case SCM_VM_POPENV:
@@ -461,6 +484,15 @@ static void run_loop(ScmObj program)
                 PUSH_ARG(closure);
                 continue;
             }
+        case SCM_VM_NOT:
+            {
+                ScmObj arg;
+                CHECK_ARGCNT(1);
+                POP_ARG(arg);
+                if (SCM_FALSEP(arg)) PUSH_ARG(SCM_TRUE);
+                else PUSH_ARG(SCM_FALSE);
+                continue;
+            }
         case SCM_VM_CONS:
             {
                 ScmObj car, cdr;
@@ -484,6 +516,34 @@ static void run_loop(ScmObj program)
                 CHECK_ARGCNT(1);
                 POP_ARG(pair);
                 PUSH_ARG(SCM_CDR(pair));
+                continue;
+            }
+        case SCM_VM_LIST:
+            {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj head = SCM_NIL, arg;
+                CHECK_ARGCNT(nargs);
+                while (nargs-- > 0) {
+                    POP_ARG(arg);
+                    head = Scm_Cons(arg, head);
+                }
+                PUSH_ARG(head);
+                continue;
+            }
+        case SCM_VM_LIST_STAR:
+            {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj head, arg;
+                CHECK_ARGCNT(nargs);
+                if (nargs > 0) {
+                    POP_ARG(head);
+                    nargs--;
+                    while (nargs-- > 0) {
+                        POP_ARG(arg);
+                        head = Scm_Cons(arg, head);
+                    }
+                    PUSH_ARG(head);
+                }
                 continue;
             }
         case SCM_VM_EQ:
@@ -511,6 +571,30 @@ static void run_loop(ScmObj program)
                 POP_ARG(list);
                 POP_ARG(elt);
                 PUSH_ARG(Scm_Memv(elt, list));
+                continue;
+            }
+        case SCM_VM_APPEND:
+            {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj arg, head;
+                CHECK_ARGCNT(nargs);
+                if (nargs > 0) {
+                    POP_ARG(head); nargs--;
+                    while (nargs-- > 0) {
+                        POP_ARG(arg);
+                        head = Scm_Append2(arg, head);
+                    }
+                    PUSH_ARG(head);
+                }
+                continue;
+            }
+        case SCM_VM_PROMISE: 
+            {
+                ScmObj code, p;
+                CHECK_ARGCNT(1);
+                POP_ARG(code);
+                p = Scm_MakePromise(code);
+                PUSH_ARG(p);
                 continue;
             }
         default:

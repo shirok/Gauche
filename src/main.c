@@ -63,6 +63,13 @@ int main(int argc, char **argv)
 
     Scm_Init();
 
+    if (optind < argc) {
+        /* file name passed. */
+        Scm_Load(argv[optind]);
+        Scm_Cont();
+        exit(0);
+    }
+
     toplevel();
 
     return 0;

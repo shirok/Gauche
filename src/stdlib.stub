@@ -23,22 +23,17 @@
 
 (define-cproc number? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_NUMBERP(obj)));")
-
 (define-cproc complex? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_NUMBERP(obj)));")
-
 (define-cproc real? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_FLONUMP(obj)));")
-
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_REALP(obj)));")
 (define-cproc rational? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INTEGERP(obj)));")
-
 (define-cproc integer? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INTEGERP(obj)));")
 
 (define-cproc exact? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EXACTP(obj)));")
-
 (define-cproc inexact? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INEXACTP(obj)));")
 
@@ -59,12 +54,20 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) > 0));")
 (define-cproc negative? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) < 0));")
+(define-cproc odd? (obj)
+  (assert (exact? obj))
+  ;; TODO: bignum
+  "  SCM_RETURN(SCM_MAKE_BOOL(obj&1));")
+(define-cproc even? (obj)
+  (assert (exact? obj))
+  ;; TODO: bignum
+  "  SCM_RETURN(SCM_MAKE_BOOL(!(obj&1)));")
 
-;; odd?
-;; even?
+(define-cproc max (arg0 &rest args)
+  "  SCM_RETURN(Scm_Max(arg0, args));")
+(define-cproc min (arg0 &rest args)
+  "  SCM_RETURN(Scm_Min(arg0, args));")
 
-;; max
-;; min
 
 (define-cproc + (&rest args)
   "  SCM_RETURN(Scm_Sum(args)); ")
@@ -203,7 +206,8 @@
   if (i < 0) Scm_Error(\"bad list: %S\", list);
   SCM_RETURN(Scm_MakeInteger(i));")
 
-;(define-cproc append (&rest lists))
+(define-cproc append (&rest lists)
+  "  SCM_RETURN(Scm_Append(lists));")
 
 (define-cproc reverse (list)
   (assert (list? list))
@@ -249,11 +253,11 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_SYMBOLP(obj)));")
 
 (define-cproc symbol->string (obj)
-  (assert (string? obj))
-  "  SCM_RETURN(Scm_Intern(obj));")
+  "  SCM_RETURN(SCM_OBJ(Scm_CopyString(SCM_SYMBOL_NAME(obj))));")
 
 (define-cproc string->symbol (obj)
-  "  SCM_RETURN(SCM_OBJ(Scm_CopyString(SCM_SYMBOL_NAME(obj))));")
+  (assert (string? obj))
+  "  SCM_RETURN(Scm_Intern(obj));")
 
 ;;
 ;; 6.3.4  Characters
@@ -266,34 +270,59 @@
   (assert (char? c1))
   (assert (char? c2))
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EQ(c1, c2)));")
-
 (define-cproc char<? (c1 c2)
   (assert (char? c1))
   (assert (char? c2))
   "  SCM_RETURN(SCM_MAKE_BOOL(c1 < c2));")
-
 (define-cproc char>? (c1 c2)
   (assert (char? c1))
   (assert (char? c2))
   "  SCM_RETURN(SCM_MAKE_BOOL(c1 > c2));")
-
 (define-cproc char<=? (c1 c2)
   (assert (char? c1))
   (assert (char? c2))
   "  SCM_RETURN(SCM_MAKE_BOOL(c1 <= c2));")
-
 (define-cproc char>=? (c1 c2)
   (assert (char? c1))
   (assert (char? c2))
   "  SCM_RETURN(SCM_MAKE_BOOL(c1 >= c2));")
 
-; char-ci*
+(define-cproc char-ci=? (c1 c2)
+  (assert (char? c1))
+  (assert (char? c2))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EQ(SCM_CHAR_UPCASE(c1),SCM_CHAR_UPCASE(c2))));")
+(define-cproc char-ci<? (c1 c2)
+  (assert (char? c1))
+  (assert (char? c2))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_UPCASE(c1)<SCM_CHAR_UPCASE(c2)));")
+(define-cproc char-ci<=? (c1 c2)
+  (assert (char? c1))
+  (assert (char? c2))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_UPCASE(c1)<=SCM_CHAR_UPCASE(c2)));")
+(define-cproc char-ci>? (c1 c2)
+  (assert (char? c1))
+  (assert (char? c2))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_UPCASE(c1)>SCM_CHAR_UPCASE(c2)));")
+(define-cproc char-ci>=? (c1 c2)
+  (assert (char? c1))
+  (assert (char? c2))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_UPCASE(c1)>=SCM_CHAR_UPCASE(c2)));")
 
-; char-alphabetic?
-; char-numeric?
-; char-whitespace?
-; char-upper-case?
-; char-lower-case?
+(define-cproc char-alphabetic? (c)
+  (assert (char? c))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_ASCII_P(c)&&isalpha(c)));")
+(define-cproc char-numeric? (c)
+  (assert (char? c))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_ASCII_P(c)&&isdigit(c)));")
+(define-cproc char-whitespace? (c)
+  (assert (char? c))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_ASCII_P(c)&&isspace(c)));")
+(define-cproc char-upper-case? (c)
+  (assert (char? c))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_UPPER_P(c)));")
+(define-cproc char-lower-case? (c)
+  (assert (char? c))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHAR_LOWER_P(c)));")
 
 (define-cproc char->integer (c)
   (assert (char? c))
@@ -303,8 +332,13 @@
   (assert (small-integer? c))
   "  SCM_RETURN(SCM_MAKE_CHAR((ScmChar)c));")
 
-; char-upcase
-; char-downcase
+(define-cproc char-upcase (c)
+  (assert (char? c))
+  "  SCM_RETURN(SCM_MAKE_CHAR(SCM_CHAR_UPCASE(c)));")
+
+(define-cproc char-downcase (c)
+  (assert (char? c))
+  "  SCM_RETURN(SCM_MAKE_CHAR(SCM_CHAR_DOWNCASE(c)));")
 
 ;;
 ;; 6.3.5 Strings
@@ -388,7 +422,10 @@
   (assert (string? str))
   "  SCM_RETURN(Scm_CopyString(str));")
 
-; string-fill!
+(define-cproc string-fill! (str c)
+  (assert (string? str))
+  (assert (char? c))
+  "  SCM_RETURN(Scm_StringFill(str, c));")
 
 ;;
 ;; 6.3.6  Vectors
@@ -401,8 +438,8 @@
   (assert (small-integer? k))
   "  SCM_RETURN(Scm_MakeVector(k, fill));")
 
-; again, need a method to access &rest arg without making a list.
-;vector
+(define-cproc vector (&rest args)
+  "  SCM_RETURN(Scm_ListToVector(args));")
 
 (define-cproc vector-length (vec)
   (assert (vector? vec))
@@ -453,7 +490,8 @@
   (assert (list? args))
   "  Scm_ForEach(proc, args, moreargs);")
           
-; force
+(define-cproc force (p)
+  "  Scm_Force(p);")
 
 (define-proc call/cc (proc)
   "  Scm_CallCC(proc);")
@@ -571,6 +609,4 @@
 
 ; transcript-on
 ; transcript-off
-
-;; gauche extention
 

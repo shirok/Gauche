@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
+ *  $Id: list.c,v 1.3 2001-01-13 10:31:13 shiro Exp $
  */
 
 #include "gauche.h"
@@ -292,7 +292,26 @@ ScmObj Scm_Append2(ScmObj list, ScmObj obj)
     SCM_SET_CDR(last, obj);
 
     return start;
-}    
+}
+
+ScmObj Scm_Append(ScmObj args)
+{
+    ScmObj start = SCM_NIL, last, cp;
+    SCM_FOR_EACH(cp, args) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            if (SCM_NULLP(start)) return SCM_CAR(cp);
+            SCM_SET_CDR(last, SCM_CAR(cp));
+            break;
+        } else if (SCM_NULLP(SCM_CAR(cp))) {
+            continue;
+        } else if (!SCM_PAIRP(SCM_CAR(cp))) {
+            Scm_Error("pair required, but got %S", SCM_CAR(cp));
+        } else {
+            SCM_GROW_LIST_SPLICING(start, last, Scm_CopyList(SCM_CAR(cp)));
+        }
+    }
+    return start;
+}
 
 /* Scm_Reverse(list)
  *    Reverse LIST.  If LIST is not a pair, return LIST itself.

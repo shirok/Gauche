@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: string.c,v 1.2 2001-01-13 10:31:13 shiro Exp $
  */
 
 #include <stdio.h>
@@ -369,9 +369,9 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
         } else {                /* x is complete sbstring */
             if (sizey < 0 || leny < 0)
                 count_size_and_length(str, &sizey, &leny);
-            lenz = lenx + leny;
+            lenz = lenx - (end - start) + leny;
         }
-        if (end >= sizex) return SCM_FALSE;
+        if (end > sizex) return SCM_FALSE;
         sizez = sizex - (end - start) + sizey;
 
         p = SCM_NEW_ATOMIC2(char *, sizez+1);
@@ -491,6 +491,23 @@ ScmObj Scm_StringToList(ScmString *str)
 ScmObj Scm_ListToString(ScmObj chars)
 {
     return makestring_from_list(chars);
+}
+
+ScmObj Scm_StringFill(ScmString *str, ScmChar ch)
+{
+    int len = SCM_STRING_LENGTH(str), i;
+    int chlen = SCM_CHAR_NBYTES(ch);
+    char *newstr = SCM_NEW_ATOMIC2(char *, len * chlen);
+    char *p = newstr;
+
+    for (i=0; i<len; i++) {
+        SCM_STR_PUTC(p, ch);
+        p += chlen;
+    }
+    /* modify str */
+    str->size = len * chlen;
+    str->start = newstr;
+    return SCM_OBJ(str);
 }
 
 static int string_print(ScmObj obj, ScmPort *port, int mode)

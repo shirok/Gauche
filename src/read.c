@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: read.c,v 1.2 2001-01-13 10:31:13 shiro Exp $
  */
 
 #include <stdio.h>
@@ -130,7 +130,7 @@ ScmObj read_internal(ScmPort *port)
             }
         }
     case '\'': return read_quoted(port, SCM_SYM_QUOTE);
-    case '`': return read_quoted(port, SCM_SYM_BACKQUOTE);
+    case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE);
     case ':':
         /* TODO: need to deal with keywords.
            For now, just make them as symbols. */

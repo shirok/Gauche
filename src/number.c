@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: number.c,v 1.2 2001-01-13 10:31:13 shiro Exp $
  */
 
 #include <math.h>
@@ -606,6 +606,81 @@ NUMCMP(Scm_NumLe, >)
 NUMCMP(Scm_NumGt, <=)
 NUMCMP(Scm_NumGe, <)
 
+ScmObj Scm_Max(ScmObj arg0, ScmObj args)
+{
+    int nc0 = NUMBER_CLASS(arg0), nc1;
+    ScmObj arg1;
+
+    if (nc0 > FLONUM) Scm_Error("real number required, but got %S", arg0);
+
+    for (;;) {
+        if (SCM_NULLP(args)) return arg0;
+
+        arg1 = SCM_CAR(args);
+        args = SCM_CDR(args);
+        nc1 = NUMBER_CLASS(arg1);
+
+        if (nc0 < nc1) {
+            if (nc1 == FLONUM) {
+                arg0 = Scm_PromoteToFlonum(arg0);
+                nc0 = FLONUM;
+            } else {
+                Scm_Error("real number required, but got %S", arg1);
+            }
+        } else if (nc0 > nc1) {
+            arg1 = Scm_PromoteToFlonum(arg1);
+        }
+
+        if (nc0 == FIXNUM) {
+            if (SCM_INT_VALUE(arg0) < SCM_INT_VALUE(arg1)) {
+                arg0 = arg1;
+            }
+        } else {
+            if (SCM_FLONUM_VALUE(arg0) < SCM_FLONUM_VALUE(arg1)) {
+                arg0 = arg1;
+            }
+        }
+    }
+}
+
+ScmObj Scm_Min(ScmObj arg0, ScmObj args)
+{
+    int nc0 = NUMBER_CLASS(arg0), nc1;
+    ScmObj arg1;
+
+    if (nc0 > FLONUM) Scm_Error("real number required, but got %S", arg0);
+
+    for (;;) {
+        if (SCM_NULLP(args)) return arg0;
+
+        arg1 = SCM_CAR(args);
+        args = SCM_CDR(args);
+        nc1 = NUMBER_CLASS(arg1);
+
+        if (nc0 < nc1) {
+            if (nc1 == FLONUM) {
+                arg0 = Scm_PromoteToFlonum(arg0);
+                nc0 = FLONUM;
+            } else {
+                Scm_Error("real number required, but got %S", arg1);
+            }
+        } else if (nc0 > nc1) {
+            arg1 = Scm_PromoteToFlonum(arg1);
+        }
+
+        if (nc0 == FIXNUM) {
+            if (SCM_INT_VALUE(arg0) > SCM_INT_VALUE(arg1)) {
+                arg0 = arg1;
+            }
+        } else {
+            if (SCM_FLONUM_VALUE(arg0) > SCM_FLONUM_VALUE(arg1)) {
+                arg0 = arg1;
+            }
+        }
+    }
+}
+
+     
 /*===============================================================
  * Number I/O
  */

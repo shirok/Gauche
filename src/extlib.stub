@@ -50,6 +50,15 @@
   else
      SCM_RETURN(SCM_TRUE);")
 
+(define-cproc gensym (&optional prefix)
+  "  ScmString *p = NULL;
+  if (prefix != SCM_UNBOUND) {
+    if (!SCM_STRINGP(prefix))
+      Scm_Error(\"string expected, but got %S\", prefix);
+    p = SCM_STRING(prefix);
+  }
+  SCM_RETURN(Scm_Gensym(p));")
+
 ;;
 ;; 6.3.4  Characters
 ;;
