@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.10 2001-07-03 09:17:40 shirok Exp $
+;;;  $Id: net.scm,v 1.11 2001-07-12 20:38:59 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -33,7 +33,7 @@
           
 (select-module gauche.net)
 
-(dynamic-load "libnet")
+(dynamic-load "libnet" :export-symbols #t)
 
 ;; High-level interface.  We need some hardcoded heuristics here.
 

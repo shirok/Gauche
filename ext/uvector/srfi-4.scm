@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-4.scm,v 1.1 2001-04-15 08:16:52 shiro Exp $
+;;;  $Id: srfi-4.scm,v 1.2 2001-07-12 20:38:59 shirok Exp $
 ;;;
 
 ;; This is a wrapper of libuvector.so
@@ -46,7 +46,7 @@
           f64vector->list list->f64vector f64vector->vector vector->f64vector
           )
 
-  (dynamic-load "libuvector")
+  (dynamic-load "libuvector" :export-symbols #t)
 
   )
 

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: charconv.scm,v 1.5 2001-06-29 20:32:47 shirok Exp $
+;;;  $Id: charconv.scm,v 1.6 2001-07-12 20:38:58 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -25,7 +25,7 @@
 
 (select-module gauche.charconv)
 
-(dynamic-load "libcharconv")
+(dynamic-load "libcharconv" :export-symbols #t)
 
 (define (ces-convert string fromcode . args)
   (let-optionals* args ((tocode #f))
