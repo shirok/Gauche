@@ -7,6 +7,8 @@
 (load "fcntl")
 (import gauche.fcntl)
 
+(test-start "fcntl")
+
 ;; It is difficult to compose a full test that works on every situation.
 ;; Here I provide tests for some common features.
 
