@@ -1,3 +1,11 @@
+2001-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c : revised for handling of incomplete string.
+	* src/symbol.c (Scm_Intern): make symbol name immutable string.
+	* src/* : renamed <something>CStr, <something>Cstr and <something>CSTR
+	  to <something>z or <something>Z, for consistency.  This made
+	  incompatible change in API.
+
 2001-05-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c, src/gauche.h and other files : changed ScmString
