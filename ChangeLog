@@ -1,6 +1,8 @@
 2002-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* various files : fixes to LP64 architecture.
+	* Makefile.in, lib/Makefile.in : run slib initialization routine after
+	  installation to generate slibcat.
 
 2002-04-14  Shiro Kawai  <shiro@acm.org>
 

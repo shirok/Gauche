@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.48 2002-04-16 05:39:25 shirok Exp $
+#  $Id: Makefile.in,v 1.49 2002-04-16 09:14:40 shirok Exp $
 #
 
 prefix = @prefix@
@@ -48,13 +48,6 @@ INSTALL=@INSTALL@
 
 all : $(SCMS)
 
-# If we have slib, creates catalog file for Gauche.   This should be called
-# after everything is installed.
-slibcat : 
-	if test -f $(SLIB_DIR)/require.scm; then \
-	  ../src/gosh -uslib -e "(load (in-vicinity (library-vicinity) \"mklibcat\"))" -e "(exit 0)";\
-	fi
-
 clean :
 	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ port/*~ rfc/*~ srfi-1/*~
 
@@ -71,3 +64,13 @@ install : all
 	for f in $(SCMS); do \
 	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
 	done
+
+# If we have slib, creates catalog file for Gauche.   This should be called
+# after everything is installed.
+# For RPM, this has to be called in the postprocess script instead of
+# installation script.
+slibcat : 
+	if test -f $(SLIB_DIR)/require.scm; then \
+	  $(exec_prefix)/bin/gosh -uslib -e "(load (in-vicinity (library-vicinity) \"mklibcat\"))" -e "(exit 0)";\
+	fi
+
