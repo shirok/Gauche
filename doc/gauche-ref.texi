@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.21 2001-06-13 10:08:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.22 2001-06-13 19:46:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3077,6 +3077,93 @@ The socket is closed by @code{socket-close}.
 
 @defun socket-close socket
 @end defun
+
+Further control over sockets and protocol layers is possible
+by getsockopt/setsockopt interface, as described below.
+
+@defun socket-setsockopt socket level option value
+@defunx socket-getsockopt socket level option rsize
+These are the interface to setsockopt() and getsockopt() calls.
+The interface is a bit clumsy, in order to allow full access to
+those low-level calls.
+
+@var{socket} must be a non-closed socket object.
+@var{level} and @var{option} is an exact integer to specify
+the level of protocol stack and the option you want to deal with.
+There are several variables pre-bound to system constants listed below.
+
+To set the socket option, you can pass either an exact integer or
+a string to @var{value}.  If it is an integer, the value is passed
+to setsockopt(2) as C @code{int} value.  If it is a string, the
+byte sequence is passed as is.  The required type of value depends on
+the option, and Gauche can't know if the value you passed is expected
+by setsockopt(2); it is your responsibility to pass the correct values.
+
+To get the socket option, you need to tell the maximum length of expected
+result by @var{rsize} parameter, for Gauche doesn't know the amount
+of data each option returns.
+@code{socket-getsockopt} returns the option value as a byte string.
+If you know the option value is an integer, you can pass 0 to @var{rsize};
+in that case @code{socket-getsockopt} returns the value as an exact integer.
+
+Note about the name: I tempted to name these function socket-@{set|get@}opt
+or socket-@{set|get@}-option,
+but I rather took the naming consistency.  Hence duplicated "sock"s.
+
+@end defun
+
+The following predefined variables are provided.
+Note that some of them are not available on all platforms.
+See manpages @code{socket(7)}, @code{tcp(7)} or @code{ip(7)} of
+your system to find out exact specification of those values.
+
+For ``level'' argument:
+@defvar sol_socket
+@defvarx sol_tcp
+@defvarx sol_ip
+These variables are bound to @code{SOL_SOCKET}, @code{SOL_TCP} and
+@code{SOL_IP}, respectively.
+@end defvar
+
+For ``option'' argument:
+@defvar so_keepalive
+Expects integer value.  If it is not zero, enables sending  of
+keep-alive messages on connection-oriented sockets.
+@end defvar
+
+@defvar so_oobinline
+Expects integer value.  If it is not zero, out-of-band data is
+directly placed into the receive data stream.  Oth-A­$)B
+erwise  out-of-band  data  is  only passed when the
+MSG_OOB flag is set during receiving.
+@end defvar
+
+@defvar so_reuseaddr
+Expects integer value.  If it is not zero, @code{socket-bind}
+allows to reuse local addresses, unless an active listening
+socket bound to the address.
+@end defvar
+
+@defvar so_type
+Gets the socket type as an integer (like @code{sock_stream}).
+Can be only used with @code{socket-getsockopt}.
+@end defvar
+
+@defvar so_broadcast
+Expects integer value.  If it is not zero, datagram sockets
+are allowed to send/receive broadcast packets.
+@end defvar
+
+@defvar so_priority
+Expects integer value, specifying the protocol-defined priority
+for all packets to be sent on this socket.
+@end defvar
+
+@defvar so_error
+Gets and clears the pending socket error as an integer.
+Can be only used with @code{socket-getsockopt}.
+@end defvar
+
 
 
 @node Netdb interface
