@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl
-dnl $Id: configure.in,v 1.7 2001-11-09 08:28:40 shirok Exp $
+dnl $Id: configure.in,v 1.8 2001-11-13 05:12:15 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 
@@ -41,6 +41,7 @@ dnl Check for other programs.
 AC_PROG_INSTALL
 
 dnl Check various dbm libraries availability
+dnl Gdbm 1.8 or later has the emulation mode of ndbm and dbm interface.
 AC_CHECK_HEADERS(gdbm.h, [
   ARCHFILES=gdbm.so
   SCMFILES=gdbm.scm
@@ -54,14 +55,29 @@ AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
   SCMFILES="odbm.scm $SCMFILES"
 ])
 
+dnl Some systems have ndbm and/or dbm function in libc.  We should check
+dnl that before checking libgdbm to prevent gdbm intercepts the call for
+dnl the system native ndbm/dbm functions.
 AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
-AC_CHECK_LIB(ndbm, ndbm_open, [ NDBMLIB="-lndbm" ])
+AC_CHECK_LIB(c,    ndbm_open, [ NDBMLIB="-lc" ])
+if test -z "$NDBMLIB"; then
+  AC_CHECK_LIB(ndbm, ndbm_open, [ NDBMLIB="-lndbm" ])
+fi
 if test -z "$NDBMLIB"; then
   AC_CHECK_LIB(gdbm, dbm_open, [ NDBMLIB="-lgdbm" ])
 fi
-AC_CHECK_LIB(dbm, dbminit,  [ ODBMLIB="-ldbm" ])
+if test "$NDBMLIB" = "-lc"; then
+  NDBMLIB=""
+fi
+AC_CHECK_LIB(c,   dbminit,  [ ODBMLIB="-lc" ])
+if test -z "$ODBMLIB"; then
+  AC_CHECK_LIB(dbm, dbminit,  [ ODBMLIB="-ldbm" ])
+fi
 if test -z "$ODBMLIB"; then
   AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ])
+fi
+if test "$ODBMLIB" = "-lc"; then
+  ODBMLIB=""
 fi
 
 AC_SUBST(ARCHFILES)
