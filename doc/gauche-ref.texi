@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.226 2002-06-26 11:50:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.227 2002-06-29 04:12:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -503,118 +503,235 @@ Gaucheの動作を正確に理解する助けになると思います。
 @c COMMON
 
 @menu
-* Compilation::                 
+* Standard conformance::        
 * Multibyte Strings::           
 * Case-sensitivity::            
 * Integerated Object System::   
 * Module System::               
+* Compilation::                 
 @end menu
 
-@node Compilation, Multibyte Strings, Concepts, Concepts
-@section Compilation
-@c NODE コンパイル
+@node Standard conformance, Multibyte Strings, Concepts, Concepts
+@section Standard conformance
+@c NODE 標準への準拠
 
 @c EN
-Gauche is a Scheme interpreter, in the sense that it reads
-a Scheme form at a time and evaluates it.   Actually,
-Gauche compiles every toplevel form into an intermediate form
-before executing.
+Gauche conforms "Revised^5 Report of Algorithmic Language Scheme,"
+including optional syntax and procedures, except the following features.
 @c JP
-Gaucheは、Schemeフォームをひとつづつ読み込んでは評価するという意味では
-インタプリタです。しかし内部では、Gaucheはひとつひとつのフォームを中間形式に
-コンパイルして仮想マシンで実行しています。
+Gaucheは、以下に挙げる点を除き、オプショナルな構文や手続きも含め
+"Revised^5 Report of Algorithmic Language Scheme" に準拠しています。
 @c COMMON
+
+@itemize @bullet
+@item
+@c EN
+By default, Gauche's reads symbols by case-sensitive way.
+A command-line option is provided to make the reader case-insensitive.
+(@xref{Case-sensitivity}, for details).
+@c JP
+デフォルトで、Gaucheはシンボルの名前の大文字小文字を区別します。
+コマンドラインオプションによって、大文字小文字を区別しないモードに
+切替えることができます(@ref{Case-sensitivity}参照)。
+@c COMMON
+@item
+@c EN
+Continuations created in a certain situation
+(specifcally, inside a Scheme code that is called from external
+C routine) have limited extent (@xref{Continuation}, for details).
+@c JP
+ある条件下で作られた継続は限られたエクステントを持ちます
+(具体的には、Cのコードからコールバックとして呼ばれるSchemeコード内で作られる継続
+がこれにあたります)。詳しくは@ref{Continuation}を参照して下さい。
+@c COMMON
+@item
+@c EN
+Numeric tower of integer, real, and complex numbers are supported,
+but rational numbers are not.  The reader can read rational numbers
+but converts them to inexact real numbers.
+The number format using '@code{#}' to show insignificant digits is
+not supported.
+@c JP
+Numeric towerは整数、実数、複素数をサポートしていますが、
+有理数はサポートしていません。リーダーは有理数の構文を認識しますが、
+読む込むと不正確な実数になります。数字のフォーマットのうち、
+精度に影響を与えない桁を '@code{#}' で表す構文はサポートされていません。
+@c COMMON
+@item
+@c EN
+Procedure @code{rationalize}, @code{transcript-on} and @code{transcript-of}
+are not supported.
+@c JP
+手続き@code{rationalize}、@code{transcript-on}、及び@code{transcript-of}
+はサポートされていません。
+@c COMMON
+@end itemize
 
 @c EN
-Built-in sytanxes and macros are recognized and expanded
-at the compilation time.  Some built-in procedures are
-expanded in-line as far as the compiler can see the global
-binding is not altered at the time the form is compiled.
+Gauche also supports the following SRFIs (Scheme Request for Implementation).
 @c JP
-組み込みの構文とマクロはコンパイル時に認識されて展開されます。
-よく使われる組み込み関数は、コンパイル時にグローバルな束縛が置き換わっていない場合に、
-インライン展開されます。
+Gaucheはまた、以下のSRFIをサポートしています。
 @c COMMON
 
+@table @asis
+@item SRFI-0, Feature-based conditional expansion construct.
 @c EN
-This raises a few problems you should care.
+As an autoloaded macro.   @xref{Feature Conditional}.
 @c JP
-プログラマは通常、コンパイラの動作を気にする必要はほとんどありませんが、
-いくつかの点に注意する必要があります。
+オートロードされるマクロとしてサポートされます。@ref{Feature Conditional}参照。
 @c COMMON
 
-@table @emph
+@item SRFI-1, List library.
 @c EN
-@item load is done at run time.
-@code{load} is a procedure in Gauche, therefore evaluated at run time.
-If the loaded program defines a macro, which is available for the compiler
-after the toplevel form containing @code{load} is evaluated.  So, suppose
-@code{foo.scm} defines a macro @code{foo}, and you use the macro
-like this:
+Supported by the module @code{srfi-1}.  @xref{List library}.
+(Some of SRFI-1 procedures are built-in).
 @c JP
-@item loadは実行時に評価される
-@code{load}はGaucheでは一般の関数なので、実行時に評価されます。
-ロードされるファイル中でマクロを定義している場合、そのマクロは
-その@code{load}の呼び出しを含むトップレベルフォームが評価された後で
-有効になります。例えば、@code{foo.scm}がマクロ@code{foo}を定義しているとして、
-次のような用法を考えてみてください。
+モジュール@code{srfi-1}でサポートされます。@ref{List library}参照。
+SRFI-1の手続きのうちいくつかは組み込みになっています。
 @c COMMON
-@example
-;; @r{in ``foo.scm''}
-(define-syntax foo
-  (syntax-rules () (_ arg) (quote arg)))
 
-;; @r{in your program}
-(begin (load "foo") (foo (1 2 3)))
-  @result{} @r{error, bad procedure: `1'}
-
-(load "foo")
-(foo (1 2 3)) @result{} '(1 2 3)
-@end example
+@item SRFI-2, AND-LET*: an AND with local bindings, a guarded LET* special form.
 @c EN
-The @code{(begin (load ...))} form fails,  because the compiler
-doesn't know @code{foo} is a special form at the compilation time
-and compiles @code{(1 2 3)} as if it is a normal procedure call.
-The latter example works, however, since the execution
-of the toplevel form @code{(load "foo")} is done before
-@code{(foo (1 2 3))} is compiled.
+Supported by the module @code{srfi-2}.  @xref{And-let*}.
 @c JP
-@code{begin}で@code{load}と@code{foo}の呼び出しを囲んだ場合、
-コンパイラはまず@code{begin}全体をコンパイルします。その時点でマクロ
-@code{foo}は定義されていませんから、これは評価時にエラーになります。
-一方、後者では@code{load}が評価されてから@code{foo}がコンパイルされるので、
-問題は起きません。
+モジュール@code{srfi-2}でサポートされます。@ref{And-let*}参照。
 @c COMMON
 
+@item SRFI-4, Homogeneous numeric vector datatypes.
 @c EN
-To avoid this kind of subtleties, use @code{require} or @code{use}
-to load a program fragments.  Those are recognized by the compiler.
+The module @code{gauche.uvector} provides a superset of
+@code{srfi-4} procedures, including arithmetic operations and
+generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 @c JP
-このような混乱を避けるために、別のプログラムファイルを読み込む必要がある時は
-@code{require}か@code{use}を使うことを勧めます。これらは構文であり、
-コンパイラに認識されます。
+モジュール@code{gauche.uvector}が、
+@code{srfi-4}の手続きのスーパーセットを提供します。
+同モジュールにはSRFI-4の手続きに加え、
+算術演算やジェネリックなインタフェースが定義されています。@ref{Uniform vectors}参照。
 @c COMMON
 
+@item SRFI-6, Basic String Ports.
 @c EN
-@item require is done at compile time
-On the other hand, since @code{require} and @code{use} is recognized
-by the compiler, the specified file is loaded even if the form
-is in the conditional expression.   If you really need to load
-a file on certain condition, use @code{load} or do dispatch in macro
-(i.e. at compile time).
+SRFI-6 procedures are built-in.  @xref{String ports}.
 @c JP
-@item require はコンパイル時に評価される
-上記の裏返しですが、@code{require}と@code{use}はコンパイル時に
-解釈されます。したがって、@code{if}などの条件文のボディにこれらのフォームを
-置いておいても、指定されたファイルは条件にかかわらず読み込まれてしまいます。
-どうしてももし条件によって読み込むかどうかを変えたい場合は、@code{load}を使うか、
-条件判断自体をマクロで行うようにしてください。
+SRFI-6の手続きは組み込みになっています。@ref{String ports}参照。
 @c COMMON
 
 
+@item SRFI-8, receive: Binding to multiple values.
+@c EN
+Syntax @code{receive} is built-in.  @xref{Binding constructs}.
+@c JP
+構文@code{receive}は組み込みになっています。@ref{Binding constructs}参照。
+@c COMMON
+
+@item SRFI-9, Defining record types.
+@c EN
+Supported by the module @code{srfi-9}.  @xref{Record types}.
+@c JP
+モジュール@code{srfi-9}でサポートされます。@ref{Record types}参照。
+@c COMMON
+
+@item SRFI-10, Sharp-comma external form.
+@c EN
+Built-in.
+@c JP
+組み込みです。
+@c COMMON
+
+@item SRFI-11, Syntax for receiving multiple values.
+@c EN
+Supported by the module @code{srfi-11}.  @xref{Let-values}.
+@c JP
+モジュール@code{srfi-11}でサポートされます。@ref{Let-values}参照。
+@c COMMON
+
+@item SRFI-13, String library
+@c EN
+Supported by the module @code{srfi-13}.  @xref{String library}.
+(Some of SRFI-13 procedures are built-in).
+@c JP
+モジュール@code{srfi-13}でサポートされます。@ref{String library}参照。
+(SRFI-13の手続きのいくつかは組み込みになっています)。
+@c COMMON
+
+@item SRFI-14, Character-set library
+@c EN
+Character-set object and a few SRFI-14 procedures are built-in.
+@xref{Character set}.
+Complete set of SRFI-14 is supported by the module @code{srfi-14}.
+@xref{Character-set library}.
+@c JP
+文字集合と基本的なSRFI-14手続きは組み込みになっています。
+@ref{Character set}参照。SRFI-14の完全なサポートはモジュール@code{srfi-14}
+で提供されています。@ref{Character-set library}参照。
+@c COMMON
+
+@item SRFI-17, Generalized set!
+@c EN
+Built-in.  @xref{Assignments}.
+@c JP
+組み込みです。@ref{Assignments}参照。
+@c COMMON
+
+@item SRFI-19, Time Data Types and Procedures.
+@c EN
+Time data type is Gauche built-in (@xref{SRFI time}).
+Complete set of SRFI-19 is supported by the module @code{srfi-19}.
+@xref{Time data types and procedures}.
+@c JP
+時間のデータ型はGauche組み込みです(@ref{SRFI time}参照)。
+SRFI-19の完全なサポートはモジュール@code{srfi-19}で提供されています。
+@ref{Time data types and procedures}参照。
+@c COMMON
+
+@item SRFI-22, Running Scheme scripts on Unix
+@c EN
+Supported.  @xref{Writing Scheme scripts}.
+@c JP
+サポートされています。@ref{Writing Scheme scripts}参照。
+@c COMMON
+
+@item SRFI-23, Error reporting mechanism.
+@c EN
+Built-in.   @xref{Signalling errors}.
+@c JP
+組み込みです。@ref{Signalling errors}参照。
+@c COMMON
+
+@item SRFI-25, Multi-dimensional array primitives. 
+@c EN
+Supported by the module @code{gauche.array}, which defines
+superset of SRFI-25.  @xref{Arrays}.
+@c JP
+モジュール@code{gauche.array}が、SRFI-25のスーパーセットと
+なっています。@ref{Arrays}参照。
+@c COMMON
+
+@item SRFI-26, Notation for specializing parameters without currying.
+@c EN
+As an autoloaded macro.  @xref{Making Procedures}.
+@c JP
+オートロードされるマクロとして定義されています。@ref{Making Procedures}参照。
+@c COMMON
+
+@item SRFI-27, Sources of Random Bits.
+@c EN
+Supported by the module @code{srfi-27}.  @xref{Sources of Random Bits}.
+@c JP
+モジュール@code{srfi-27}でサポートされます。@ref{Sources of Random Bits}参照。
+@c COMMON
+
+@item SRFI-28, Basic format strings.
+@c EN
+Gauche's built-in @code{format} procedure is a superset of
+SRFI-28 @code{format}.  @xref{Output}.
+@c JP
+Gauche組み込みの@code{format}がSRFI-28のもののスーパーセットに
+なっています。@ref{Output}参照。
+@c COMMON
 @end table
 
-@node Multibyte Strings, Case-sensitivity, Compilation, Concepts
+@node Multibyte Strings, Case-sensitivity, Standard conformance, Concepts
 @section Multibyte Strings
 @c NODE マルチバイト文字列
 
@@ -627,7 +744,7 @@ It's not the case in Gauche.
 伝統的に、文字列は単なるバイトの配列として長く扱われてきました。
 一文字が複数バイトを占めるようになっても、
 文字列は単純な文字の配列であると考えられがちです。
-しかしGaucheはそうではありません。
+しかしGaucheにおいては、そうではありません。
 @c COMMON
 
 @c EN
@@ -993,7 +1110,7 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 @c COMMON
 @end table
 
-@node Module System,  , Integerated Object System, Concepts
+@node Module System, Compilation, Integerated Object System, Concepts
 @section Module System
 @c NODE モジュールシステム
 
@@ -1056,6 +1173,108 @@ to introspect module internals.
 およびモジュールの内部を調べるための組込み手続きについて説明します。
 @end itemize
 @c COMMON
+
+@node Compilation,  , Module System, Concepts
+@section Compilation
+@c NODE コンパイル
+
+@c EN
+Gauche is a Scheme interpreter, in the sense that it reads
+a Scheme form at a time and evaluates it.   Actually,
+Gauche compiles every toplevel form into an intermediate form
+before executing.
+@c JP
+Gaucheは、Schemeフォームをひとつづつ読み込んでは評価するという意味では
+インタプリタです。しかし内部では、Gaucheはひとつひとつのフォームを中間形式に
+コンパイルして仮想マシンで実行しています。
+@c COMMON
+
+@c EN
+Built-in sytanxes and macros are recognized and expanded
+at the compilation time.  Some built-in procedures are
+expanded in-line as far as the compiler can see the global
+binding is not altered at the time the form is compiled.
+@c JP
+組み込みの構文とマクロはコンパイル時に認識されて展開されます。
+よく使われる組み込み関数は、コンパイル時にグローバルな束縛が置き換わっていない場合に、
+インライン展開されます。
+@c COMMON
+
+@c EN
+This raises a few problems you should care.
+@c JP
+プログラマは通常、コンパイラの動作を気にする必要はほとんどありませんが、
+いくつかの点に注意する必要があります。
+@c COMMON
+
+@table @emph
+@c EN
+@item load is done at run time.
+@code{load} is a procedure in Gauche, therefore evaluated at run time.
+If the loaded program defines a macro, which is available for the compiler
+after the toplevel form containing @code{load} is evaluated.  So, suppose
+@code{foo.scm} defines a macro @code{foo}, and you use the macro
+like this:
+@c JP
+@item loadは実行時に評価される
+@code{load}はGaucheでは一般の関数なので、実行時に評価されます。
+ロードされるファイル中でマクロを定義している場合、そのマクロは
+その@code{load}の呼び出しを含むトップレベルフォームが評価された後で
+有効になります。例えば、@code{foo.scm}がマクロ@code{foo}を定義しているとして、
+次のような用法を考えてみてください。
+@c COMMON
+@example
+;; @r{in ``foo.scm''}
+(define-syntax foo
+  (syntax-rules () (_ arg) (quote arg)))
+
+;; @r{in your program}
+(begin (load "foo") (foo (1 2 3)))
+  @result{} @r{error, bad procedure: `1'}
+
+(load "foo")
+(foo (1 2 3)) @result{} '(1 2 3)
+@end example
+@c EN
+The @code{(begin (load ...))} form fails,  because the compiler
+doesn't know @code{foo} is a special form at the compilation time
+and compiles @code{(1 2 3)} as if it is a normal procedure call.
+The latter example works, however, since the execution
+of the toplevel form @code{(load "foo")} is done before
+@code{(foo (1 2 3))} is compiled.
+@c JP
+@code{begin}で@code{load}と@code{foo}の呼び出しを囲んだ場合、
+コンパイラはまず@code{begin}全体をコンパイルします。その時点でマクロ
+@code{foo}は定義されていませんから、これは評価時にエラーになります。
+一方、後者では@code{load}が評価されてから@code{foo}がコンパイルされるので、
+問題は起きません。
+@c COMMON
+
+@c EN
+To avoid this kind of subtleties, use @code{require} or @code{use}
+to load a program fragments.  Those are recognized by the compiler.
+@c JP
+このような混乱を避けるために、別のプログラムファイルを読み込む必要がある時は
+@code{require}か@code{use}を使うことを勧めます。これらは構文であり、
+コンパイラに認識されます。
+@c COMMON
+
+@c EN
+@item require is done at compile time
+On the other hand, since @code{require} and @code{use} is recognized
+by the compiler, the specified file is loaded even if the form
+is in the conditional expression.   If you really need to load
+a file on certain condition, use @code{load} or do dispatch in macro
+(i.e. at compile time).
+@c JP
+@item require はコンパイル時に評価される
+上記の裏返しですが、@code{require}と@code{use}はコンパイル時に
+解釈されます。したがって、@code{if}などの条件文のボディにこれらのフォームを
+置いておいても、指定されたファイルは条件にかかわらず読み込まれてしまいます。
+どうしてももし条件によって読み込むかどうかを変えたい場合は、@code{load}を使うか、
+条件判断自体をマクロで行うようにしてください。
+@c COMMON
+@end table
 
 @c ======================================================================
 @node Programming in Gauche, Core syntax, Concepts, Top
@@ -1957,6 +2176,84 @@ CommonLisp's.  Gauche doesn't have such extensions now.
 CommonLispのように省略可能引数やキーワード引数などの表記を可能にしているものが
 あります。Gaucheには今のところそのような拡張はありません。
 @c COMMON
+
+@defmac cut expr-or-slot expr-or-slot2 @dots{}
+@defmacx cute expr-or-slot expr-or-slot2 @dots{}
+[SRFI-26]
+@c EN
+Convenience macros to notate a procedure compactly.
+This form can be used to realize partial application, 
+a.k.a sectioning or projection.
+@c JP
+手続きを簡潔に書ける便利なマクロです。
+いわゆる部分適用を実現するために使えます。
+@c COMMON
+
+@c EN
+Each @var{expr-or-slot} must be either an expression or a symbol @code{<>},
+indicating a 'slot'.
+The last @var{expr-or-slot} can be a symbol @code{<...>},
+indicating a 'rest-slot'.
+@code{Cut} expands into a @code{lambda} form that takes as many arguments
+as the number of slots in the given form, and 
+whose body is an expression
+@example
+  (@var{expr-or-slot} @var{expr-or-slot2} @dots{})
+@end example
+where each occurrence of @code{<>} is replaced to the corresponding
+argument.
+In case there is a rest-slot symbol, the resulting procedure is also
+of variable arity, and all the extra arguments are passed
+to the call of @var{expr-or-slot}.  See the fourth example below.
+@c JP
+各@var{expr-or-slot}は式またはシンボル@code{<>}でなければなりません。
+最後の@var{expr-or-slot}はシンボル@code{<...>}であっても構いません。
+@code{cut}は、そのフォーム中にある@code{<>}と同じ数の引数を取る
+@code{lambda}フォームに展開されます。そのフォームのボディには次の式が置かれます。
+@example
+  (@var{expr-or-slot} @var{expr-or-slot2} @dots{})
+@end example
+但し、各@code{<>}は対応する仮引数に置き換えられます。
+もしシンボル@code{<...>}が与えられていた場合、展開された@code{lambda}フォームは
+可変長引数を取る手続きとなり、作成される手続きに与えられたすべての引数が
+@var{expr-or-slot}を呼び出すのに使われます(下の4番目の例を参照のこと)。
+@c COMMON
+
+@example
+(cut cons (+ a 1) <>)  @equiv{} (lambda (x2) (cons (+ a 1) x2))
+(cut list 1 <> 3 <> 5) @equiv{} (lambda (x2 x4) (list 1 x2 3 x4 5))
+(cut list)             @equiv{} (lambda () (list))
+(cut list 1 <> 3 <...>)
+   @equiv{} (lambda (x2 . xs) (apply list 1 x2 3 xs))
+(cut <> a b)           @equiv{} (lambda (f) (f a b))
+
+;; Usage
+(map (cut * 2 <>) '(1 2 3 4)
+(for-each (cut write <> port) exprs)
+@end example
+
+@c EN
+@code{Cute} is a variation of @code{cut} that evaluates @code{expr-or-slot}s
+before creating the procedure.
+@c JP
+@code{cute}は@code{cut}とほぼ同じですが、@code{expr-or-slot}に与えられた
+フォームが手続きを作る前に評価される点が異なります。
+@c COMMON
+
+@example
+(cute cons (+ a 1) <>)
+   @equiv{} (let ((xa (+ a 1))) (lambda (x2 (cons xa x2))))
+@end example
+
+@c EN
+Gauche also has a built-in procedure @code{pa$} for partial application
+(@xref{Combinators}).
+@c JP
+Gaucheはまた、部分適用を行う@code{pa$}という組み込み手続きを持っています
+(@xref{Combinators}参照)。
+@c COMMON
+@end defmac
+
 
 @c ----------------------------------------------------------------------
 @node Assignments, Conditionals, Making Procedures, Core syntax
@@ -6798,6 +7095,16 @@ called with arguments @var{m} @dots{}, it is equivalent to call
 
 (map (pa$ * 2) '(1 2 3)) @result{} (2 4 6)
 @end example
+
+@c EN
+Macros @code{cut} and @code{cute} defined in SRFI-26 provide
+a similar abstraction, with a bit more flexible but less compact
+notation.  @xref{Making Procedures}.
+@c JP
+SRFI-26で定義されているマクロ@code{cut}と@code{cute}も似たような抽象化の
+方法を提供しますが、@code{pa$}より多少柔軟性が高く、その分やや冗長です。
+@ref{Making Procedures}を参照して下さい。
+@c COMMON
 @end defun
 
 @defun apply$ proc
@@ -6922,7 +7229,7 @@ Please consult to the appropriate documents.
 @var{proc}を呼び出します。@var{proc}が戻ったら、その返り値が@code{call/cc}の
 値となります。作成された継続手続きがどこかで0個または複数個の引数を伴って呼ばれたら、
 あたかも@code{call/cc}から戻ったかのように実行が継続されます。その場合、
-@code{call/cc}は、継続手続きに与えられた引数を複数の値とし返します。
+@code{call/cc}は、継続手続きに与えられた引数を複数の値として返します。
 
 ファーストクラスの継続はSchemeの最も特徴的な機能のひとつですが、それを
 十分に説明するにはこの本の余白は狭すぎます。適切なドキュメントを参照してください。
@@ -11425,6 +11732,7 @@ for the usage of metaclass.
 * Original DBM interface::      
 * Filtering file content::      
 * Filesystem utilities::        
+* Arrays::                      
 * Character code conversion::   
 * Collection framework::        
 * Low-level file operations::   
@@ -11440,6 +11748,7 @@ for the usage of metaclass.
 * Singleton::                   
 * Termios::                     
 * Unit Testing::                
+* Uniform vectors::             
 * Slot with validator::         
 * Comparing version numbers::   
 * Mathematic constants::        
@@ -12315,7 +12624,7 @@ By default, the output (or the temporary file when
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Filesystem utilities, Character code conversion, Filtering file content, Library modules
+@node Filesystem utilities, Arrays, Filtering file content, Library modules
 @section @code{file.util} - Filesystem utilities
 @c NODE ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
 
@@ -13029,9 +13338,98 @@ it to @var{dst}, then removes @var{src}.
 @c COMMON
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Arrays, Character code conversion, Filesystem utilities, Library modules
+@section @code{gauche.array} - Arrays
+@c NODE 配列, @code{gauche.array} - 配列
+
+@deftp {Module} gauche.array
+@mdindex gauche.array
+@c EN
+@c JP
+@c COMMON
+@end deftp
+
+@deftp {Builtin Class} <array>
+@clindex array
+@end deftp
+
+@defun array? obj
+[SRFI-25]
+@end defun
+
+@defun make-array shape &optional init
+[SRFI-25]
+@end defun
+
+@defun shape bound @dots{}
+[SRFI-25]
+@end defun
+
+@defun array shape init @dots{}
+[SRFI-25]
+@end defun
+
+@defun array-rank array
+[SRFI-25]
+@end defun
+
+@defun array-shape array
+@end defun
+
+@defun array-start array dim
+@defunx array-end array dim
+@defunx array-length array dim
+[SRFI-25+]
+@end defun
+
+@defun array-size array
+@end defun
+
+@defun array-equal? array1 array2
+@end defun
+
+@defun array-ref array k @dots{}
+@defunx array-ref array k index
+[SRFI-25]
+@end defun
+
+@defun array-set! array k @dots{} value
+@defunx array-set! array k index value
+[SRFI-25]
+@end defun
+
+@defun share-array array shape proc
+[SRFI-25]
+@end defun
+
+@defun array-for-each-index array proc &optional index
+@end defun
+
+@defun shape-for-each shape proc &optional index
+@end defun
+
+@defun tabulate-array shape proc &optional index
+@end defun
+
+@defun array-retabulate! array shape proc &optional index
+@defunx array-retabulate! array proc &optional index
+@end defun
+
+@defun array-map! array shape proc array0 array1 @dots{}
+@defunx array-map! array proc array0 array1 @dots{}
+@end defun
+
+@defun array-map shape proc array0 array1 @dots{}
+@defunx array-map proc array0 array1 @dots{}
+@end defun
+
+@defun array->vector array
+@defunx array->list array
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Collection framework, Filesystem utilities, Library modules
+@node Character code conversion, Collection framework, Arrays, Library modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
@@ -13213,8 +13611,9 @@ they are recognized by Gauche, but mapped to substitution character
 異なるエスケープシーケンスを使いますが、Gaucheの中では同じルーチンで処理されます。
 これらのエンコーディングのいずれかが入力CESに指定された場合、
 Gaucheは全てのバリエーションのエスケープシーケンスを認識します。
-ISO2022JP-2は日本語以外の言語のエスケープシーケンスも定義していますが、
-それらに関してはGaucheでは認識はされますが、文字は'?'あるいは'〓' に置換されます。
+但し、ISO2022JP-2に定義された日本語以外の言語のエスケープシーケンスに関しては、
+Gaucheはエスケープシーケンスの認識だけを行い、
+文字は'?'あるいは'〓' に置換します。
 @c COMMON
 
 @c EN
@@ -16783,7 +17182,7 @@ without echoing:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Unit Testing, Slot with validator, Termios, Library modules
+@node Unit Testing, Uniform vectors, Termios, Library modules
 @section @code{gauche.test} - Unit Testing
 @c NODE 単体テスト, @code{gauche.test} - 単体テスト
 
@@ -16907,7 +17306,949 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Slot with validator, Comparing version numbers, Unit Testing, Library modules
+@node Uniform vectors, Slot with validator, Unit Testing, Library modules
+@section @code{gauche.uvector} - Uniform vectors
+@c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
+
+@deftp {Module} gauche.uvector
+@mdindex gauche.uvector
+@c EN
+Provides vectors whose elements are of the same numeric type,
+as defined in SRFI-4 (@ref{srfi-4,,SRFI-4}).
+
+Gauche's implementation is a superset of SRFI-4 in a few ways:
+@itemize @bullet
+@item
+Some routines takes optional parameters: @code{@var{TAG}vector->list}
+takes optional start and end indices, and @code{@var{TAG}vector-ref}
+takes optional fallback value.
+@item
+Additional functions: copy procedures (@code{@var{TAG}vector-copy} and
+@code{@var{TAG}vector-copy!}), conversion procedures
+(@code{@var{TAG}vector->vector} and @code{vector->@var{TAG}vector}),
+and some arithmetic functions (@code{@var{TAG}vector-add}, etc.)
+@item
+Implements the collection framework (@xref{Collection framework})
+and the sequence framework (@xref{Sequence framework}).  So the
+methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
+can be used on the SRFI-4 vector types.
+@end itemize
+@c JP
+SRFI-4(@ref{srfi-4,,SRFI-4})に定義されている、
+要素が同一の数値型であるようなベクタを提供します。
+
+Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
+@itemize
+@item
+いくつかの手続きはSRFI-4に無い省略可能な引数を取ります。
+@code{@var{TAG}vector->list}は省略可能なstartとendのインデックスを取り、
+@code{@var{TAG}vector-ref}は省略可能なデフォルト値を取ります。
+@item
+追加の手続き： コピー(@code{@var{TAG}vector-copy},
+@code{@var{TAG}vector-copy!})、
+変換 (@code{@var{TAG}vector->vector}, @code{vector->@var{TAG}vector})、
+及び各種算術演算(@code{@var{TAG}vector-add}等)。
+@item
+コレクションフレームワーク (@ref{Collection framework}参照)と
+シーケンスフレームワーク (@ref{Sequence framework}参照)の実装。
+例えば @code{map}, @code{for-each}, @code{ref}, @code{subseq}等の
+メソッドがSRFI-4ベクタに対して使えます。
+@end itemize
+@c COMMON
+
+@c EN
+There are some advantages of using SRFI-4 vectors over normal
+(heterogeneous) vectors.  It may be more compact than the normal
+vectors.  Some operations (especially Gauche's extension of vector
+arithmetic operations) can bypass type check and conversion of
+individual elements, thus be more efficient.  And it is much easier
+and efficient to communicate with external libraries that require
+homogeneous array of numbers; for example, OpenGL binding of Gauche
+uses SRFI-4 vectors extensively.
+@c JP
+通常のベクタではなくSRFI-4ベクタを使うことにより得られる利点がいくつかあります。
+まず、SRFI-4ベクタは通常のベクタよりもコンパクトです。
+いくつかのオペレーション(特に、Gaucheの拡張仕様であるベクタ上の数値演算)では、
+型検査と型変換を個々の要素に対して行わなくても良いため、
+極めて効率の良い演算が可能です。さらに、
+数値の配列を扱う外部のライブラリとのインタフェースが容易です。
+例えば、GaucheのOpenGLバインディングではSRFI-4ベクタを多用しています。
+@c COMMON
+@end deftp
+@c EN
+The following ten types of vectors are defined.
+@table @emph
+@item s8vector
+Elements are exact integers in the range between -2^7 and 2^7-1
+@item u8vector
+Elements are exact integers in the range between 0 and 2^8-1
+@item s16vector
+Elements are exact integers in the range between -2^15 and 2^15-1
+@item u16vector
+Elements are exact integers in the range between 0 and 2^16-1
+@item s32vector
+Elements are exact integers in the range between -2^31 and 2^31-1
+@item u32vector
+Elements are exact integers in the range between 0 and 2^32-1
+@item s64vector
+Elements are exact integers in the range between -2^63 and 2^63-1
+@item u64vector
+Elements are exact integers in the range between 0 and 2^64-1
+@item f32vector
+Elements are inexact real numbers representable in the @code{float} of
+C compiler that compiles Gauche.  Usually it is a single precision
+IEEE floating point number.
+@item f64vector
+Elements are inexact real numbers representable in the @code{double} of
+C compiler that compiles Gauche.  Usually it is a double precision
+IEEE floating point number.
+@end table
+@c JP
+以下の10タイプのベクタが定義されます。
+@table @emph
+@item s8vector
+要素が -2^7 から 2^7-1 の間の正確な整数であるベクタ
+@item u8vector
+要素が 0 から 2^8-1 の間の正確な整数であるベクタ
+@item s16vector
+要素が -2^15 から 2^15-1 の間の正確な整数であるベクタ
+@item u16vector
+要素が 0 から 2^16-1 の間の正確な整数であるベクタ
+@item s32vector
+要素が -2^31 から 2^31-1 の間の正確な整数であるベクタ
+@item u32vector
+要素が 0 から 2^32-1 の間の正確な整数であるベクタ
+@item s64vector
+要素が -2^63 から 2^63-1 の間の正確な整数であるベクタ
+@item u64vector
+要素が 0 から 2^64-1 の間の正確な整数であるベクタ
+@item f32vector
+要素が、GaucheをコンパイルしたCコンパイラの@code{float}で表現し得るような
+不正確な実数(通常IEEE単精度浮動少数点数)であるベクタ
+@item f64vector
+要素が、GaucheをコンパイルしたCコンパイラの@code{double}で表現し得るような
+不正確な実数(通常IEEE倍精度浮動少数点数)であるベクタ
+@end table
+@c COMMON
+
+@c EN
+When you try to store a number out of the range of the vector type,
+an error is signalled by default.  However, some procedures take
+an optional argument @var{clamp} that specifies alternative behavior
+in such a case.  @var{Clamp} argument may take one of the following values.
+@c JP
+ベクタの型が許す範囲外の値を格納しようとした場合、通常はエラーとなります。
+いくつかの手続きは省略可能な引数@var{clamp}によって、
+そのような場合に別のふるまいを指定することができます。
+@var{clamp}には以下のいずれかの値を与えることが出来ます。
+@c COMMON
+@table @code
+@item #f
+@c EN
+Default behavior (signals an error).
+@c JP
+デフォルト (エラーを通知)
+@c COMMON
+@item high
+@c EN
+Clamps high bound; i.e. if the value to be stored is beyond the higher bound
+of the range, the maximum value is stored instead.
+@c JP
+高い方の値をクランプ、すなわち、格納しようとする値が許される値の最大値より大きかった
+場合は、可能な最大値を代わりに格納します。
+@c COMMON
+@item low
+@c EN
+Clamps low bound; i.e. if the value to be stored is below the lower bound
+of the range, the minimum value is stored instead.
+@c JP
+低い方の値をクランプ、すなわち、格納しようとする値が許される値の最小値より大きかった
+場合は、可能な最小値を代わりに格納します。
+@c COMMON
+@item both
+@c EN
+Clamps both sides; does both @code{high} and @code{low}.
+@c JP
+高いほうと低いほうの両方の値をクランプします。
+@c COMMON
+@end table
+
+@example
+(list->u8vector '(-1))         @result{} @r{error}
+(list->u8vector '(-1) 'low)    @result{} #u8(0)
+(list->u8vector '(-1) 'high)   @result{} @r{error}
+(list->u8vector '(3000) 'high) @result{} #u8(255)
+(list->u8vector '(-100 20 300) 'both) @result{} #u8(0 20 255)
+@end example
+
+@c EN
+In the following description, @code{@var{TAG}} can be replaced
+for any of @code{s8}, @code{u8}, @code{s16}, @code{u16}, 
+@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}.
+@c JP
+以下の記述では、@code{@var{TAG}}は
+@code{s8}, @code{u8}, @code{s16}, @code{u16}, 
+@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}
+のいずれにも置き換えて読むことができるものとします。
+@c COMMON
+
+@deftp {Builtin Class} <@var{TAG}vector>
+@clindex s8vector
+@clindex u8vector
+@clindex s16vector
+@clindex u16vector
+@clindex s32vector
+@clindex u32vector
+@clindex s64vector
+@clindex u64vector
+@clindex f32vector
+@clindex f64vector
+@c EN
+A class for @var{TAG}vector.  It inherits @code{<sequence>}.
+@c JP
+@var{TAG}vectorのクラス。@code{<sequence>}を継承します。
+@c COMMON
+@end deftp
+
+@deftp {Reader Syntax} @code{#@var{TAG}(@var{n} @dots{})}
+@c EN
+Denotes a literal homogeneous vector.
+@c JP
+リテラルの単一型のベクタを記述します。
+@c COMMON
+@example
+#s8(3 -2 4)
+#u32(4154 88357 2 323)
+#f32(3.14 0.554525 -3.342)
+@end example
+@end deftp
+
+@deftp {Function} {@var{TAG}vector?} @r{@var{obj}}
+@findex s8vector?
+@findex u8vector?
+@findex s16vector?
+@findex u16vector?
+@findex s32vector?
+@findex u32vector?
+@findex s64vector?
+@findex u64vector?
+@findex f32vector?
+@findex f64vector?
+[SRFI-4]
+@c EN
+Returns @code{#t} if @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
+@c JP
+@var{obj}が@var{TAG}vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end deftp
+
+@deftp {Function} {@var{TAG}vector} @r{@var{x} @dots{}}
+@findex s8vector 
+@findex u8vector
+@findex s16vector
+@findex u16vector
+@findex s32vector
+@findex u32vector
+@findex s64vector
+@findex u64vector
+@findex f32vector
+@findex f64vector
+[SRFI-4]
+@c EN
+Constructs @var{TAG}vector whose elements are numbers @var{x} @dots{}.
+The numbers must be exact integer for exact integer vectors, 
+and in the valid range of the vector.
+@c JP
+数値@var{x} @dots{} を要素に持つ@var{TAG}vectorを作成して返します。
+正確な整数のベクタに対しては、数値は正確な整数でなければならず、
+また有効な範囲内の値でなければなりません。
+@c COMMON
+@example
+(s8vector 1 2 3) @result{} #s8(1 2 3)
+@end example
+@end deftp
+
+@deftp {Function} make-@var{TAG}vector @r{@var{len} @var{&optional} @var{fill}}
+@findex make-s8vector
+@findex make-u8vector
+@findex make-s16vector
+@findex make-u16vector
+@findex make-s32vector
+@findex make-u32vector
+@findex make-s64vector
+@findex make-u64vector
+@findex make-f32vector
+@findex make-f64vector
+[SRFI-4]
+@c EN
+Constructs a @var{TAG}vector of length @var{len}.  The elements are
+initialized by a number @var{fill}.   For exact integer vectors,
+@var{fill} must be an exact integer and in the valid range.
+If @var{fill} is omitted, the content of the vector is undefined.
+@c JP
+長さ@var{len}の@var{TAG}vectorを作成して返します。各要素は@var{fill}で
+初期化されます。正確な整数のベクタに対しては、@var{fill}は正確な整数でなければならず、
+また有効な範囲内の値でなければなりません。
+@var{fill}が省略された場合、各要素の初期値は不定です。
+@c COMMON
+@example
+(make-u8vector 4 0) @result{} #u8(0 0 0 0)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-length @r{@var{vec}}
+@findex s8vector-length 
+@findex u8vector-length
+@findex s16vector-length
+@findex u16vector-length
+@findex s32vector-length
+@findex u32vector-length
+@findex s64vector-length
+@findex u64vector-length
+@findex f32vector-length
+@findex f64vector-length
+[SRFI-4]
+@c EN
+Returns the length of the @var{TAG}vector @var{vec}.
+
+Note that the generic function @code{size-of} can be used 
+to obtain the length of @var{vec} as well,
+if you import @code{gauche.collection}
+(@xref{Collection framework}).
+@c JP
+@var{TAG}vector @var{vec}の長さを返します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+@var{vec}の長さを知るのに、総称関数@code{size-of}を使うこともできます
+(@ref{Collection framework}参照)。
+@c COMMON
+@example
+(s16vector-length '#s16(111 222 333)) @result{} 3
+
+(use gauche.collection)
+(size-of '#s16(111 222 333)) @result{} 3
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} &optional @var{fallback}}
+@findex s8vector-ref
+@findex u8vector-ref
+@findex s16vector-ref
+@findex u16vector-ref
+@findex s32vector-ref
+@findex u32vector-ref
+@findex s64vector-ref
+@findex u64vector-ref
+@findex f32vector-ref
+@findex f64vector-ref
+[SRFI-4+]
+@c EN
+Returns the @var{k}-th element of @var{TAG}vector @var{vec}.
+
+If the index @var{k} is out of the valid range, an error is signalled
+unless an optional argument @var{fallback} is given; in that case,
+@var{fallback} is returned.
+
+Note that the generic function @code{ref} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}の@var{k}番目の要素を返します。
+
+@var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
+省略可能な引数@var{fallback}が与えられている場合はそれが返されます。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{ref}を使うこともできます。
+@c COMMON
+
+@example
+(u16vector-ref '#u16(111 222 333) 1) @result{} 222
+
+(use gauche.collection)
+(ref '#u16(111 222 333) 1) @result{} 222
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n} &optional @var{clamp}}
+@findex s8vector-set!
+@findex u8vector-set!
+@findex s16vector-set!
+@findex u16vector-set!
+@findex s32vector-set!
+@findex u32vector-set!
+@findex s64vector-set!
+@findex u64vector-set!
+@findex f32vector-set!
+@findex f64vector-set!
+[SRFI-4+]
+@c EN
+Sets a number @var{n} to the @var{k}-th element of @var{TAG}vector @var{vec}.
+Optional @var{clamp} argument specifies the behavior when
+@var{n} is out of valid range.   Default is to signal an error.
+
+Note that the setter of the generic function @code{ref} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}の@var{k}番目の要素に数値@var{n}をセットします。
+省略可能な引数@var{clamp}が、@var{n}が正しい範囲外の数であった場合の動作を指定します。
+デフォルトではエラーが通知されます。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{ref}のsetter手続きを使うこともできます。
+@c COMMON
+@example
+(let ((v (s32vector -439 852 8933)))
+  (s32vector-set! v 1 4)
+  v)
+ @result{} #s32vector(-439 4 8933)
+
+(use gauche.collection)
+(let ((v (s32vector -439 852 8933)))
+  (set! (ref v 1) 4)
+  v)
+ @result{} #s32vector(-439 4 8933)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector->list @r{@var{vec} &optional @var{start} @var{end}}
+@findex s8vector->list
+@findex u8vector->list
+@findex s16vector->list
+@findex u16vector->list
+@findex s32vector->list
+@findex u32vector->list
+@findex s64vector->list
+@findex u64vector->list
+@findex f32vector->list
+@findex f64vector->list
+[SRFI-4+]
+@c EN
+Converts @var{TAG}vector @var{vec} to a list.
+If @var{start} and/or @var{end} are given, they limit the range of
+@var{vec} to be extracted.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}をリストに変換します。
+省略可能な引数@var{start}と@var{end}が与えられた場合、
+それらは取り出される要素の範囲を制限します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(u32vector->list '#u32(9 2 5)) @result{} (9 2 5)
+
+(use gauche.collection)
+(coerce-to <list> '#u32(9 2 5)) @result{} (9 2 5)
+@end example
+@end deftp
+
+@deftp {Function} list->@var{TAG}vector @r{@var{list} &optional @var{clamp}}
+@findex list->s8vector
+@findex list->u8vector
+@findex list->s16vector
+@findex list->u16vector
+@findex list->s32vector
+@findex list->u32vector
+@findex list->s64vector
+@findex list->u64vector
+@findex list->f32vector
+@findex list->f64vector
+[SRFI-4+]
+@c EN
+Converts a list @var{list} to a @var{TAG}vector.
+Optional argument @var{clamp} specifies the behavior when
+the element of @var{list} is out of the valid range.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+リスト@var{list}を@var{TAG}vectorに変換します。
+省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
+動作を指定します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(list->s64vector '(9 2 5)) @result{} #s64(9 2 5)
+
+(use gauche.collection)
+(coerce-to <s64vector> '(9 2 5)) @result{} #s64(9 2 5)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-copy @r{@var{vec} &optional @var{start} @var{end}}
+@findex s8vector-copy
+@findex u8vector-copy
+@findex s16vector-copy
+@findex u16vector-copy
+@findex s32vector-copy
+@findex u32vector-copy
+@findex s64vector-copy
+@findex u64vector-copy
+@findex f32vector-copy
+@findex f64vector-copy
+@c EN
+Copies the srfi-4 vector @var{vec}.
+If @var{start} and/or @var{end} are given, they limit the range of
+@var{vec} to be copied.
+@c JP
+ベクタ@var{vec}をコピーします。
+省略可能な引数@var{start}と@var{end}が与えられた場合、
+それらは取り出される要素の範囲を制限します。
+@c COMMON
+
+@example
+(u8vector-copy '#u8(1 2 3 4))     @result{} #u8(1 2 3 4)
+(u8vector-copy '#u8(1 2 3 4) 2)   @result{} #u8(3 4)
+(u8vector-copy '#u8(1 2 3 4) 1 3) @result{} #u8(2 3)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-copy! @r{@var{dstvec} @var{srcvec}}
+@findex s8vector-copy!
+@findex u8vector-copy!
+@findex s16vector-copy!
+@findex u16vector-copy!
+@findex s32vector-copy!
+@findex u32vector-copy!
+@findex s64vector-copy!
+@findex u64vector-copy!
+@findex f32vector-copy!
+@findex f64vector-copy!
+@c EN
+@c JP
+@c COMMON
+@end deftp
+
+@deftp {Function} @var{TAG}vector->vector @r{@var{vec} &optional @var{start} @var{end}}
+@findex s8vector->vector
+@findex u8vector->vector
+@findex s16vector->vector
+@findex u16vector->vector
+@findex s32vector->vector
+@findex u32vector->vector
+@findex s64vector->vector
+@findex u64vector->vector
+@findex f32vector->vector
+@findex f64vector->vector
+@c EN
+Converts @var{TAG}vector @var{vec} to a vector.
+If @var{start} and/or @var{end} are given, they limit the range of
+@var{vec} to be copied.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}をベクタに変換します。
+省略可能な引数@var{start}と@var{end}が与えられた場合、
+それらは取り出される要素の範囲を制限します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(f32vector->vector '#f32(9.3 2.2 5.5))   @result{} #(9.3 2.2 5.5)
+(f32vector->vector '#f32(9.3 2.2 5.5) 2) @result{} #(5.5)
+
+(use gauche.collection)
+(coerce-to <vector> '#f32(9.3 2.2 5.5)) @result{} #(9.3 2.2 5.5)
+@end example
+@end deftp
+
+@deftp {Function} vector->@var{TAG}vector @r{@var{vec} &optional @var{start} @var{end} @var{clamp}}
+@findex vector->s8vector
+@findex vector->u8vector
+@findex vector->s16vector
+@findex vector->u16vector
+@findex vector->s32vector
+@findex vector->u32vector
+@findex vector->s64vector
+@findex vector->u64vector
+@findex vector->f32vector
+@findex vector->f64vector
+@c EN
+Converts a vector @var{vec} to a @var{TAG}vector.
+If @var{start} and/or @var{end} are given, they limit the range of
+@var{vec} to be copied.
+Optional argument @var{clamp} specifies the behavior when
+the element of @var{vec} is out of the valid range.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+ベクタ@var{vec}を@var{TAG}vectorに変換します。
+省略可能な引数@var{start}と@var{end}が与えられた場合、
+それらは取り出される要素の範囲を制限します。
+省略可能な引数@var{clamp}が、ベクタ内の要素が正しい範囲外の数であった場合の
+動作を指定します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(vector->f64vector '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
+
+(use gauche.collection)
+(coerce-to <f64vector> '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
+@end example
+@end deftp
+
+@c EN
+Using collection and sequence framework, you can perform
+various operations on the homogeneous vectors.
+@c JP
+コレクションやシーケンスフレームワークを使うと、さらに様々な操作を
+行うことができます。
+@c COMMON
+
+@example
+(use gauche.collection)
+(use gauche.sequence)
+
+(fold + 0 '#s32(1 2 3 4)) @result{} 10
+
+(map-to <f32vector> * '#f32(3.2 1.1 4.3) '#f32(-4.3 2.2 9.4))
+  @result{} #f32(-13.760001 2.420000 40.420002)
+
+(subseq #u32(1 4 3 4 5) 2 4) @result{} #u32(3 4)
+@end example
+
+
+@deftp {Function} @var{TAG}vector-add @r{@var{vec} @var{val} &optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-add! @r{@var{vec} @var{val} &optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-sub @r{@var{vec} @var{val} &optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-sub! @r{@var{vec} @var{val} &optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-mul @r{@var{vec} @var{val} &optional @var{clamp}}
+@deftpx {Function} @var{TAG}vector-mul! @r{@var{vec} @var{val} &optional @var{clamp}}
+@findex s8vector-add
+@findex s8vector-add!
+@findex s8vector-sub
+@findex s8vector-sub!
+@findex s8vector-mul
+@findex s8vector-mul!
+@findex u8vector-add
+@findex u8vector-add!
+@findex u8vector-sub
+@findex u8vector-sub!
+@findex u8vector-mul
+@findex u8vector-mul!
+@findex s16vector-add
+@findex s16vector-add!
+@findex s16vector-sub
+@findex s16vector-sub!
+@findex s16vector-mul
+@findex s16vector-mul!
+@findex u16vector-add
+@findex u16vector-add!
+@findex u16vector-sub
+@findex u16vector-sub!
+@findex u16vector-mul
+@findex u16vector-mul!
+@findex s32vector-add
+@findex s32vector-add!
+@findex s32vector-sub
+@findex s32vector-sub!
+@findex s32vector-mul
+@findex s32vector-mul!
+@findex u32vector-add
+@findex u32vector-add!
+@findex u32vector-sub
+@findex u32vector-sub!
+@findex u32vector-mul
+@findex u32vector-mul!
+@findex s64vector-add
+@findex s64vector-add!
+@findex s64vector-sub
+@findex s64vector-sub!
+@findex s64vector-mul
+@findex s64vector-mul!
+@findex u64vector-add
+@findex u64vector-add!
+@findex u64vector-sub
+@findex u64vector-sub!
+@findex u64vector-mul
+@findex u64vector-mul!
+@findex f32vector-add
+@findex f32vector-add!
+@findex f32vector-sub
+@findex f32vector-sub!
+@findex f32vector-mul
+@findex f32vector-mul!
+@findex f64vector-add
+@findex f64vector-add!
+@findex f64vector-sub
+@findex f64vector-sub!
+@findex f64vector-mul
+@findex f64vector-mul!
+@c EN
+Element-wise arithmetic.  @var{Vec} must be a @var{TAG}vector,
+and @var{val} must be either a @var{TAG}vector, a vector, or a list
+of the same length as @var{vec}, or a number
+(an exact integer for integer vectors, 
+and a real number for f32- and f64-vectors).
+@c JP
+要素毎の計算手続きです。@var{vec}は@var{TAG}vectorでなければなりません。
+また、@var{val}は@var{vec}と同じ長さの@var{TAG}vectorかベクタかリスト、
+あるいは数値(整数ベクタに対しては正確な整数、実数ベクタに対しては実数)
+でなければなりません。
+@c COMMON
+
+@c EN
+If @var{val} is a @var{TAG}vector, its elements are 
+added to, subtracted from, or multiplied by the corresponding
+elements of @var{vec}, respectively,
+and the results are gathered to a @var{TAG}vector 
+and returned.  The destructive version (those have bang `!' in the name)
+reuses @var{vec} to store the result.
+If the result of calculation goes out of the range of @var{TAG}vector's
+element, the behavior is specified by @var{clamp} optional argument.
+(For f32vector and f64vector, @var{clamp} argument is ignored and
+the result may contain infinity).
+@c JP
+@var{val}が@var{TAG}vectorの場合、
+@var{vec}と対応する要素毎に加算、減算、乗算が行われ、
+結果が@var{TAG}vectorとして返されます。
+破壊的なバージョン(名前に`!'がついているもの)では、@var{vec}が
+結果を格納するために再利用されます。
+演算の結果が@var{TAG}vectorの要素の値域外になった場合の動作は
+省略可能な引数@var{clamp}によって指定されます。
+(f32vectorとf64vectorでは、値域外になった要素にはinfinityが格納され、
+@var{clamp}の値は無視されます)。
+@c COMMON
+
+@c EN
+If @var{val} is a number, it is added to, subtracted from, or
+multiplied by each element of @var{vec}, respectively.
+@c JP
+@var{val}が数値である場合、@var{vec}の各要素とその数値の間で演算が行われます。
+@c COMMON
+
+@example
+(s8vector-add '#s8(1 2 3 4) '#s8(5 6 7 8)) @result{} #s8(6 8 10 12)
+(u8vector-sub '#u8(1 2 3 4) '#u8(2 2 2 2)) @result{} @r{error}
+(u8vector-sub '#u8(1 2 3 4) '#u8(2 2 2 2) 'both) @result{} #u8(0 0 1 2)
+
+(f32vector-mul '#f32(3.0 2.0 1.0) 1.5) @result{} #f32(4.5 3.0 1.5)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-div @r{@var{vec} @var{val}}
+@deftpx {Function} @var{TAG}vector-div! @r{@var{vec} @var{val}}
+@findex f32vector-div
+@findex f32vector-div!
+@findex f64vector-div
+@findex f64vector-div!
+@c EN
+Element-wise division of flonum vectors.   These are only defined
+for f32vector and f64vector.  @var{val} must be a @var{TAG}vector,
+a vector or a list of the same length as @var{vec}, or a real number.
+@c JP
+要素毎の除算です。これらはf32vectorとf64vectorのみに対して定義されます。
+@var{val}は@var{vec}と同じ大きさの@var{TAG}vectorかベクタかリスト、
+あるいは実数でなければなりません。
+@c COMMON
+
+@example
+(f32vector-div '#f32(1.0 2.0 3.0) 2.0) @result{} #f32(0.5 1.0 1.5)
+@end example
+@end deftp
+
+
+@deftp {Function} @var{TAG}vector-and @r{@var{vec} @var{val}}
+@deftpx {Function} @var{TAG}vector-and! @r{@var{vec} @var{val}}
+@deftpx {Function} @var{TAG}vector-ior @r{@var{vec} @var{val}}
+@deftpx {Function} @var{TAG}vector-ior! @r{@var{vec} @var{val}}
+@deftpx {Function} @var{TAG}vector-xor @r{@var{vec} @var{val}}
+@deftpx {Function} @var{TAG}vector-xor! @r{@var{vec} @var{val}}
+@findex s8vector-and
+@findex s8vector-and!
+@findex s8vector-ior
+@findex s8vector-ior!
+@findex s8vector-xor
+@findex s8vector-xor!
+@findex u8vector-and
+@findex u8vector-and!
+@findex u8vector-ior
+@findex u8vector-ior!
+@findex u8vector-xor
+@findex u8vector-xor!
+@findex s16vector-and
+@findex s16vector-and!
+@findex s16vector-ior
+@findex s16vector-ior!
+@findex s16vector-xor
+@findex s16vector-xor!
+@findex u16vector-and
+@findex u16vector-and!
+@findex u16vector-ior
+@findex u16vector-ior!
+@findex u16vector-xor
+@findex u16vector-xor!
+@findex s32vector-and
+@findex s32vector-and!
+@findex s32vector-ior
+@findex s32vector-ior!
+@findex s32vector-xor
+@findex s32vector-xor!
+@findex u32vector-and
+@findex u32vector-and!
+@findex u32vector-ior
+@findex u32vector-ior!
+@findex u32vector-xor
+@findex u32vector-xor!
+@findex s64vector-and
+@findex s64vector-and!
+@findex s64vector-ior
+@findex s64vector-ior!
+@findex s64vector-xor
+@findex s64vector-xor!
+@findex u64vector-and
+@findex u64vector-and!
+@findex u64vector-ior
+@findex u64vector-ior!
+@findex u64vector-xor
+@findex u64vector-xor!
+@c EN
+Element-wise logical (bitwise) operation.
+These procedures are only defined for integral vectors.
+@var{val} must be a @var{TAG}vector, a vector or a list
+of the same length as @var{vec},
+or an exact integer.  Bitwise and, inclusive or or exclusive or
+is calculated between each element in @var{vec} and the corresponding
+element of @var{val} (when @var{val} is a non-scalar value),
+or @var{val} itself (when @var{val} is an integer).
+The result is returned in a @var{TAG}vector.
+The destructive version reuses @var{vec} to store the result.
+@c JP
+要素毎の論理(ビット)演算です。
+これらの手続きは整数ベクタに対してのみ定義されています。
+@var{val}は@var{vec}と同じ大きさの@var{TAG}vectorかベクタかリスト、
+あるいは正確な整数でなければなりません。@var{vec}の各要素と、対応する@var{val}の要素
+(@var{val}が非スカラー値の場合)もしくは@var{val}自身
+(@var{val}が整数の場合)とのビット毎のand, inclusive orまたはexclusive or
+が計算され、結果が@var{TAG}vectorで返されます。
+破壊的なバージョン(名前に`!'がついているもの)では、@var{vec}が
+結果を格納するために再利用されます。
+@c COMMON
+@end deftp
+
+@deftp {Function} @var{TAG}vector-dot @r{@var{vec0} @var{vec1}}
+@findex s8vector-dot
+@findex s16vector-dot
+@findex s32vector-dot
+@findex s64vector-dot
+@findex u8vector-dot
+@findex u16vector-dot
+@findex u32vector-dot
+@findex u64vector-dot
+@findex f32vector-dot
+@findex f64vector-dot
+@c EN
+Calculates the dot product of two @var{TAG}vectors.
+The length of @var{vec0} and @var{vec1} must be the same.
+@c JP
+ふたつの@var{TAG}vectorの内積を計算します。
+@var{vec0}と@var{vec1}の長さは等しくなければなりません。
+@c COMMON
+@end deftp
+
+@deftp {Function} @var{TAG}vector-range-check @r{@var{vec} @var{min} @var{max}}
+@findex s8vector-range-check
+@findex s16vector-range-check
+@findex s32vector-range-check
+@findex s64vector-range-check
+@findex u8vector-range-check
+@findex u16vector-range-check
+@findex u32vector-range-check
+@findex u64vector-range-check
+@findex f32vector-range-check
+@findex f64vector-range-check
+@c EN
+@var{Vec} must be a @var{TAG}vector, and each of @var{min} and @var{max}
+must be either a @var{TAG}vector, a vector or a list of the same length
+as @var{vec}, or a number, or @code{#f}.
+
+For each element in @var{vec}, this procedure checks if the value
+is between @var{minval} and @var{maxval} inclusive, where
+@var{minval} and @var{maxval} are the corresponding values of
+@var{min} and @var{max} (when @var{min} and/or @var{max} is/are
+non-scalar value) or @var{min} and @var{max} themselves (when
+@var{min} and/or @var{max} is/are a number).
+When @var{min} is @code{#f}, negative infinity is assumed.
+When @var{max} is @code{#f}, positive infinity is assumed.
+
+If all the elements in @var{vec} are within the range, @code{#f} is
+returned.  Otherwise, the index of the leftmost element of @var{vec}
+that is out of range is returned.
+@c JP
+@var{vec}は@var{TAG}vectorでなければなりません。
+@var{min}と@var{max}はそれぞれ、@var{vec}と同じ長さの@var{TAG}vector、
+ベクタ、リストのいずれかか、実数もしくは@code{#f}でなければなりません。
+
+@var{vec}の各要素に対して、この手続きはそれが対応する@var{minval}と@var{maxval}
+の間にあるかどうかを検査します。@var{minval}と@var{maxval}も範囲に含みます。
+ここで、@var{minval}と@var{maxval}は、@var{min}/@var{max}が非スカラー値
+であれば@var{vec}の要素に対応するそれぞれの要素、
+@var{min}/@var{max}が数値であればその数値そのものです。
+@var{min}が@code{#f}の場合、最小値はマイナス無限大と考えられます。
+@var{max}が@code{#f}の場合、最大値はプラス無限大と考えられます。
+
+@var{vec}の全ての要素が範囲内であった場合は@var{#f}が返されます。
+そうでなければ、範囲を外れた要素のうちもっとも左のものの@var{vec}内での
+インデックスが返されます。
+@c COMMON
+
+@example
+(u8vector-range-check '#u8(3 1 0 2) 0 3)  @result{} #f
+(u8vector-range-check '#u8(3 1 0 2) 1 3)  @result{} 2
+
+(u8vector-range-check '#u8(4 32 64 98) 0 '#u8(10 40 70 90))
+  @result{} 3
+
+;; Range check in a program
+(cond
+ ((u8vector-range-check u8v 1 31)
+  => (lambda (i)
+      (errorf "~sth vector element is out of range: ~s"
+              i (u8vector-ref u8v i))))
+ (else (do-something u8v)))
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-clamp @r{@var{vec} @var{min} @var{max}}
+@deftpx {Function} @var{TAG}vector-clamp! @r{@var{vec} @var{min} @var{max}}
+@findex s8vector-clamp
+@findex s16vector-clamp
+@findex s32vector-clamp
+@findex s64vector-clamp
+@findex u8vector-clamp
+@findex u16vector-clamp
+@findex u32vector-clamp
+@findex u64vector-clamp
+@findex f32vector-clamp
+@findex f64vector-clamp
+@findex s8vector-clamp!
+@findex s16vector-clamp!
+@findex s32vector-clamp!
+@findex s64vector-clamp!
+@findex u8vector-clamp!
+@findex u16vector-clamp!
+@findex u32vector-clamp!
+@findex u64vector-clamp!
+@findex f32vector-clamp!
+@findex f64vector-clamp!
+@c EN
+@c JP
+@c COMMON
+@end deftp
+
+
+@c ----------------------------------------------------------------------
+@node Slot with validator, Comparing version numbers, Uniform vectors, Library modules
 @section @code{gauche.validator} - Slot with validator
 @c NODE Validator付きスロット, @code{gauche.validator} - Validator付きスロット
 
@@ -18373,835 +19714,9 @@ number from a few possibilities (environment variable, configuration file,
 
 @deftp {Module} srfi-4
 @mdindex srfi-4
-@c EN
-Provides vectors whose elements are of the same numeric type.
-
-Gauche's implementation extends SRFI-4 specification in a few ways:
-@itemize @bullet
-@item
-Some routines takes optional parameters: @code{@var{TAG}vector->list}
-takes optional start and end indices, and @code{@var{TAG}vector-ref}
-takes optional fallback value.
-@item
-Additional functions: copy procedures (@code{@var{TAG}vector-copy} and
-@code{@var{TAG}vector-copy!}), conversion procedures
-(@code{@var{TAG}vector->vector} and @code{vector->@var{TAG}vector}),
-and some arithmetic functions (@code{@var{TAG}vector-add}, etc.)
-@item
-Implements the collection framework (@xref{Collection framework})
-and the sequence framework (@xref{Sequence framework}).  So the
-methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
-can be used on the SRFI-4 vector types.
-@end itemize
-@c JP
-要素が同一の数値型であるようなベクタを提供します。
-
-Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
-@itemize
-@item
-いくつかの手続きはSRFI-4に無い省略可能な引数を取ります。
-@code{@var{TAG}vector->list}は省略可能なstartとendのインデックスを取り、
-@code{@var{TAG}vector-ref}は省略可能なデフォルト値を取ります。
-@item
-追加の手続き： コピー(@code{@var{TAG}vector-copy},
-@code{@var{TAG}vector-copy!})、
-変換 (@code{@var{TAG}vector->vector}, @code{vector->@var{TAG}vector})、
-及び各種算術演算(@code{@var{TAG}vector-add}等)。
-@item
-コレクションフレームワーク (@ref{Collection framework}参照)と
-シーケンスフレームワーク (@ref{Sequence framework}参照)の実装。
-例えば @code{map}, @code{for-each}, @code{ref}, @code{subseq}等の
-メソッドがSRFI-4ベクタに対して使えます。
-@end itemize
-@c COMMON
-
-@c EN
-There are some advantages of using SRFI-4 vectors over normal
-(heterogeneous) vectors.  It may be more compact than the normal
-vectors.  Some operations (especially Gauche's extension of vector
-arithmetic operations) can bypass type check and conversion of
-individual elements, thus be more efficient.  And it is much easier
-and efficient to communicate with external libraries that require
-homogeneous array of numbers; for example, OpenGL binding of Gauche
-uses SRFI-4 vectors extensively.
-@c JP
-通常のベクタではなくSRFI-4ベクタを使うことにより得られる利点がいくつかあります。
-まず、SRFI-4ベクタは通常のベクタよりもコンパクトです。
-いくつかのオペレーション(特に、Gaucheの拡張仕様であるベクタ上の数値演算)では、
-型検査と型変換を個々の要素に対して行わなくても良いため、
-極めて効率の良い演算が可能です。さらに、
-数値の配列を扱う外部のライブラリとのインタフェースが容易です。
-例えば、GaucheのOpenGLバインディングではSRFI-4ベクタを多用しています。
-@c COMMON
-@end deftp
-
-@c EN
-The following ten types of vectors are defined.
-@table @emph
-@item s8vector
-Elements are exact integers in the range between -2^7 and 2^7-1
-@item u8vector
-Elements are exact integers in the range between 0 and 2^8-1
-@item s16vector
-Elements are exact integers in the range between -2^15 and 2^15-1
-@item u16vector
-Elements are exact integers in the range between 0 and 2^16-1
-@item s32vector
-Elements are exact integers in the range between -2^31 and 2^31-1
-@item u32vector
-Elements are exact integers in the range between 0 and 2^32-1
-@item s64vector
-Elements are exact integers in the range between -2^63 and 2^63-1
-@item u64vector
-Elements are exact integers in the range between 0 and 2^64-1
-@item f32vector
-Elements are inexact real numbers representable in the @code{float} of
-C compiler that compiles Gauche.  Usually it is a single precision
-IEEE floating point number.
-@item f64vector
-Elements are inexact real numbers representable in the @code{double} of
-C compiler that compiles Gauche.  Usually it is a double precision
-IEEE floating point number.
-@end table
-@c JP
-以下の10タイプのベクタが定義されます。
-@table @emph
-@item s8vector
-要素が -2^7 から 2^7-1 の間の正確な整数であるベクタ
-@item u8vector
-要素が 0 から 2^8-1 の間の正確な整数であるベクタ
-@item s16vector
-要素が -2^15 から 2^15-1 の間の正確な整数であるベクタ
-@item u16vector
-要素が 0 から 2^16-1 の間の正確な整数であるベクタ
-@item s32vector
-要素が -2^31 から 2^31-1 の間の正確な整数であるベクタ
-@item u32vector
-要素が 0 から 2^32-1 の間の正確な整数であるベクタ
-@item s64vector
-要素が -2^63 から 2^63-1 の間の正確な整数であるベクタ
-@item u64vector
-要素が 0 から 2^64-1 の間の正確な整数であるベクタ
-@item f32vector
-要素が、GaucheをコンパイルしたCコンパイラの@code{float}で表現し得るような
-不正確な実数(通常IEEE単精度浮動少数点数)であるベクタ
-@item f64vector
-要素が、GaucheをコンパイルしたCコンパイラの@code{double}で表現し得るような
-不正確な実数(通常IEEE倍精度浮動少数点数)であるベクタ
-@end table
-@c COMMON
-
-@c EN
-When you try to store a number out of the range of the vector type,
-an error is signalled by default.  However, some procedures take
-an optional argument @var{clamp} that specifies alternative behavior
-in such a case.  @var{Clamp} argument may take one of the following values.
-@c JP
-ベクタの型が許す範囲外の値を格納しようとした場合、通常はエラーとなります。
-いくつかの手続きは省略可能な引数@var{clamp}によって、
-そのような場合に別のふるまいを指定することができます。
-@var{clamp}には以下のいずれかの値を与えることが出来ます。
-@c COMMON
-@table @code
-@item #f
-@c EN
-Default behavior (signals an error).
-@c JP
-デフォルト (エラーを通知)
-@c COMMON
-@item high
-@c EN
-Clamps high bound; i.e. if the value to be stored is beyond the higher bound
-of the range, the maximum value is stored instead.
-@c JP
-高い方の値をクランプ、すなわち、格納しようとする値が許される値の最大値より大きかった
-場合は、可能な最大値を代わりに格納します。
-@c COMMON
-@item low
-@c EN
-Clamps low bound; i.e. if the value to be stored is below the lower bound
-of the range, the minimum value is stored instead.
-@c JP
-低い方の値をクランプ、すなわち、格納しようとする値が許される値の最小値より大きかった
-場合は、可能な最小値を代わりに格納します。
-@c COMMON
-@item both
-@c EN
-Clamps both sides; does both @code{high} and @code{low}.
-@c JP
-高いほうと低いほうの両方の値をクランプします。
-@c COMMON
-@end table
-
-@c EN
-In the following description, @code{@var{TAG}} can be replaced
-for any of @code{s8}, @code{u8}, @code{s16}, @code{u16}, 
-@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}.
-@c JP
-以下の記述では、@code{@var{TAG}}は
-@code{s8}, @code{u8}, @code{s16}, @code{u16}, 
-@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}
-のいずれにも置き換えて読むことができるものとします。
-@c COMMON
-
-@deftp {Builtin Class} <@var{TAG}vector>
-@clindex s8vector
-@clindex u8vector
-@clindex s16vector
-@clindex u16vector
-@clindex s32vector
-@clindex u32vector
-@clindex s64vector
-@clindex u64vector
-@clindex f32vector
-@clindex f64vector
-@c EN
-A class for @var{TAG}vector.  It inherits @code{<sequence>}.
-@c JP
-@var{TAG}vectorのクラス。@code{<sequence>}を継承します。
-@c COMMON
-@end deftp
-
-@deftp {Reader Syntax} @code{#@var{TAG}(@var{n} @dots{})}
-@c EN
-Denotes a literal homogeneous vector.
-@c JP
-リテラルの単一型のベクタを記述します。
-@c COMMON
-@example
-#s8(3 -2 4)
-#u32(4154 88357 2 323)
-#f32(3.14 0.554525 -3.342)
-@end example
-@end deftp
-
-@deftp {Function} {@var{TAG}vector?} @r{@var{obj}}
-@findex s8vector?
-@findex u8vector?
-@findex s16vector?
-@findex u16vector?
-@findex s32vector?
-@findex u32vector?
-@findex s64vector?
-@findex u64vector?
-@findex f32vector?
-@findex f64vector?
-[SRFI-4]
-@c EN
-Returns @code{#t} if @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
-@c JP
-@var{obj}が@var{TAG}vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
-@c COMMON
-@end deftp
-
-@deftp {Function} {@var{TAG}vector} @r{@var{x} @dots{}}
-@findex s8vector 
-@findex u8vector
-@findex s16vector
-@findex u16vector
-@findex s32vector
-@findex u32vector
-@findex s64vector
-@findex u64vector
-@findex f32vector
-@findex f64vector
-[SRFI-4]
-@c EN
-Constructs @var{TAG}vector whose elements are numbers @var{x} @dots{}.
-The numbers must be exact integer for exact integer vectors, 
-and in the valid range of the vector.
-@c JP
-数値@var{x} @dots{} を要素に持つ@var{TAG}vectorを作成して返します。
-正確な整数のベクタに対しては、数値は正確な整数でなければならず、
-また有効な範囲内の値でなければなりません。
-@c COMMON
-@example
-(s8vector 1 2 3) @result{} #s8(1 2 3)
-@end example
-@end deftp
-
-@deftp {Function} make-@var{TAG}vector @r{@var{len} @var{&optional} @var{fill}}
-@findex make-s8vector
-@findex make-u8vector
-@findex make-s16vector
-@findex make-u16vector
-@findex make-s32vector
-@findex make-u32vector
-@findex make-s64vector
-@findex make-u64vector
-@findex make-f32vector
-@findex make-f64vector
-[SRFI-4]
-@c EN
-Constructs a @var{TAG}vector of length @var{len}.  The elements are
-initialized by a number @var{fill}.   For exact integer vectors,
-@var{fill} must be an exact integer and in the valid range.
-If @var{fill} is omitted, the content of the vector is undefined.
-@c JP
-長さ@var{len}の@var{TAG}vectorを作成して返します。各要素は@var{fill}で
-初期化されます。正確な整数のベクタに対しては、@var{fill}は正確な整数でなければならず、
-また有効な範囲内の値でなければなりません。
-@var{fill}が省略された場合、各要素の初期値は不定です。
-@c COMMON
-@example
-(make-u8vector 4 0) @result{} #u8(0 0 0 0)
-@end example
-@end deftp
-
-@deftp {Function} @var{TAG}vector-length @r{@var{vec}}
-@findex s8vector-length 
-@findex u8vector-length
-@findex s16vector-length
-@findex u16vector-length
-@findex s32vector-length
-@findex u32vector-length
-@findex s64vector-length
-@findex u64vector-length
-@findex f32vector-length
-@findex f64vector-length
-[SRFI-4]
-@c EN
-Returns the length of the @var{TAG}vector @var{vec}.
-
-Note that the generic function @code{size-of} can be used 
-to obtain the length of @var{vec} as well,
-if you import @code{gauche.collection}
-(@xref{Collection framework}).
-@c JP
-@var{TAG}vector @var{vec}の長さを返します。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-@var{vec}の長さを知るのに、総称関数@code{size-of}を使うこともできます
-(@ref{Collection framework}参照)。
-@c COMMON
-@example
-(s16vector-length '#s16(111 222 333)) @result{} 3
-
-(use gauche.collection)
-(size-of '#s16(111 222 333)) @result{} 3
-@end example
-@end deftp
-
-@deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} &optional @var{fallback}}
-@findex s8vector-ref
-@findex u8vector-ref
-@findex s16vector-ref
-@findex u16vector-ref
-@findex s32vector-ref
-@findex u32vector-ref
-@findex s64vector-ref
-@findex u64vector-ref
-@findex f32vector-ref
-@findex f64vector-ref
-[SRFI-4+]
-@c EN
-Returns the @var{k}-th element of @var{TAG}vector @var{vec}.
-
-If the index @var{k} is out of the valid range, an error is signalled
-unless an optional argument @var{fallback} is given; in that case,
-@var{fallback} is returned.
-
-Note that the generic function @code{ref} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-@var{TAG}vector @var{vec}の@var{k}番目の要素を返します。
-
-@var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
-省略可能な引数@var{fallback}が与えられている場合はそれが返されます。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{ref}を使うこともできます。
-@c COMMON
-
-@example
-(u16vector-ref '#u16(111 222 333) 1) @result{} 222
-
-(use gauche.collection)
-(ref '#u16(111 222 333) 1) @result{} 222
-@end example
-@end deftp
-
-@deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n} &optional @var{clamp}}
-@findex s8vector-set!
-@findex u8vector-set!
-@findex s16vector-set!
-@findex u16vector-set!
-@findex s32vector-set!
-@findex u32vector-set!
-@findex s64vector-set!
-@findex u64vector-set!
-@findex f32vector-set!
-@findex f64vector-set!
-[SRFI-4+]
-@c EN
-Sets a number @var{n} to the @var{k}-th element of @var{TAG}vector @var{vec}.
-Optional @var{clamp} argument specifies the behavior when
-@var{n} is out of valid range.   Default is to signal an error.
-
-Note that the setter of the generic function @code{ref} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-@var{TAG}vector @var{vec}の@var{k}番目の要素に数値@var{n}をセットします。
-省略可能な引数@var{clamp}が、@var{n}が正しい範囲外の数であった場合の動作を指定します。
-デフォルトではエラーが通知されます。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{ref}のsetter手続きを使うこともできます。
-@c COMMON
-@example
-(let ((v (s32vector -439 852 8933)))
-  (s32vector-set! v 1 4)
-  v)
- @result{} #s32vector(-439 4 8933)
-
-(use gauche.collection)
-(let ((v (s32vector -439 852 8933)))
-  (set! (ref v 1) 4)
-  v)
- @result{} #s32vector(-439 4 8933)
-@end example
-@end deftp
-
-@deftp {Function} @var{TAG}vector->list @r{@var{vec} &optional @var{start} @var{end}}
-@findex s8vector->list
-@findex u8vector->list
-@findex s16vector->list
-@findex u16vector->list
-@findex s32vector->list
-@findex u32vector->list
-@findex s64vector->list
-@findex u64vector->list
-@findex f32vector->list
-@findex f64vector->list
-[SRFI-4+]
-@c EN
-Converts @var{TAG}vector @var{vec} to a list.
-If @var{start} and/or @var{end} are given, they limit the range of
-@var{vec} to be extracted.
-
-Note that the generic function @code{coerce-to} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-@var{TAG}vector @var{vec}をリストに変換します。
-省略可能な引数@var{start}と@var{end}が与えられた場合、
-それらは取り出される要素の範囲を制限します。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{coerce-to}を使うこともできます。
-@c COMMON
-@example
-(u32vector->list '#u32(9 2 5)) @result{} (9 2 5)
-
-(use gauche.collection)
-(coerce-to <list> '#u32(9 2 5)) @result{} (9 2 5)
-@end example
-@end deftp
-
-@deftp {Function} list->@var{TAG}vector @r{@var{list} &optional @var{clamp}}
-@findex list->s8vector
-@findex list->u8vector
-@findex list->s16vector
-@findex list->u16vector
-@findex list->s32vector
-@findex list->u32vector
-@findex list->s64vector
-@findex list->u64vector
-@findex list->f32vector
-@findex list->f64vector
-[SRFI-4+]
-@c EN
-Converts a list @var{list} to a @var{TAG}vector.
-Optional argument @var{clamp} specifies the behavior when
-the element of @var{list} is out of the valid range.
-
-Note that the generic function @code{coerce-to} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-リスト@var{list}を@var{TAG}vectorに変換します。
-省略可能な引数@var{clamp}が、リスト内の要素が正しい範囲外の数であった場合の
-動作を指定します。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{coerce-to}を使うこともできます。
-@c COMMON
-@example
-(list->s64vector '(9 2 5)) @result{} #s64(9 2 5)
-
-(use gauche.collection)
-(coerce-to <s64vector> '(9 2 5)) @result{} #s64(9 2 5)
-@end example
-@end deftp
-
-@deftp {Function} @var{TAG}vector-copy @r{@var{vec} &optional @var{start} @var{end}}
-@findex s8vector-copy
-@findex u8vector-copy
-@findex s16vector-copy
-@findex u16vector-copy
-@findex s32vector-copy
-@findex u32vector-copy
-@findex s64vector-copy
-@findex u64vector-copy
-@findex f32vector-copy
-@findex f64vector-copy
-@c EN
-Copies the srfi-4 vector @var{vec}.
-If @var{start} and/or @var{end} are given, they limit the range of
-@var{vec} to be copied.
-@c JP
-ベクタ@var{vec}をコピーします。
-省略可能な引数@var{start}と@var{end}が与えられた場合、
-それらは取り出される要素の範囲を制限します。
-@c COMMON
-
-@example
-(u8vector-copy '#u8(1 2 3 4))     @result{} #u8(1 2 3 4)
-(u8vector-copy '#u8(1 2 3 4) 2)   @result{} #u8(3 4)
-(u8vector-copy '#u8(1 2 3 4) 1 3) @result{} #u8(2 3)
-@end example
-@end deftp
-
-@deftp {Function} @var{TAG}vector-copy! @r{@var{dstvec} @var{srcvec}}
-@findex s8vector-copy!
-@findex u8vector-copy!
-@findex s16vector-copy!
-@findex u16vector-copy!
-@findex s32vector-copy!
-@findex u32vector-copy!
-@findex s64vector-copy!
-@findex u64vector-copy!
-@findex f32vector-copy!
-@findex f64vector-copy!
-@c EN
-@c JP
-@c COMMON
-@end deftp
-
-@deftp {Function} @var{TAG}vector->vector @r{@var{vec} &optional @var{start} @var{end}}
-@findex s8vector->vector
-@findex u8vector->vector
-@findex s16vector->vector
-@findex u16vector->vector
-@findex s32vector->vector
-@findex u32vector->vector
-@findex s64vector->vector
-@findex u64vector->vector
-@findex f32vector->vector
-@findex f64vector->vector
-@c EN
-Converts @var{TAG}vector @var{vec} to a vector.
-If @var{start} and/or @var{end} are given, they limit the range of
-@var{vec} to be copied.
-
-Note that the generic function @code{coerce-to} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-@var{TAG}vector @var{vec}をベクタに変換します。
-省略可能な引数@var{start}と@var{end}が与えられた場合、
-それらは取り出される要素の範囲を制限します。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{coerce-to}を使うこともできます。
-@c COMMON
-@example
-(f32vector->vector '#f32(9.3 2.2 5.5))   @result{} #(9.3 2.2 5.5)
-(f32vector->vector '#f32(9.3 2.2 5.5) 2) @result{} #(5.5)
-
-(use gauche.collection)
-(coerce-to <vector> '#f32(9.3 2.2 5.5)) @result{} #(9.3 2.2 5.5)
-@end example
-@end deftp
-
-@deftp {Function} vector->@var{TAG}vector @r{@var{vec} &optional @var{start} @var{end} @var{clamp}}
-@findex vector->s8vector
-@findex vector->u8vector
-@findex vector->s16vector
-@findex vector->u16vector
-@findex vector->s32vector
-@findex vector->u32vector
-@findex vector->s64vector
-@findex vector->u64vector
-@findex vector->f32vector
-@findex vector->f64vector
-@c EN
-Converts a vector @var{vec} to a @var{TAG}vector.
-If @var{start} and/or @var{end} are given, they limit the range of
-@var{vec} to be copied.
-Optional argument @var{clamp} specifies the behavior when
-the element of @var{vec} is out of the valid range.
-
-Note that the generic function @code{coerce-to} can be used as well,
-if you import @code{gauche.collection}.
-@c JP
-ベクタ@var{vec}を@var{TAG}vectorに変換します。
-省略可能な引数@var{start}と@var{end}が与えられた場合、
-それらは取り出される要素の範囲を制限します。
-省略可能な引数@var{clamp}が、ベクタ内の要素が正しい範囲外の数であった場合の
-動作を指定します。
-
-モジュール@code{gauche.collection}をインポートしていれば、
-総称関数@code{coerce-to}を使うこともできます。
-@c COMMON
-@example
-(vector->f64vector '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
-
-(use gauche.collection)
-(coerce-to <f64vector> '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
-@end example
-@end deftp
-
-@c EN
-Using collection and sequence framework, you can perform
-various operations on the homogeneous vectors.
-@c JP
-コレクションやシーケンスフレームワークを使うと、さらに様々な操作を
-行うことができます。
-@c COMMON
-
-@example
-(use gauche.collection)
-(use gauche.sequence)
-
-(fold + 0 '#s32(1 2 3 4)) @result{} 10
-
-(map-to <f32vector> * '#f32(3.2 1.1 4.3) '#f32(-4.3 2.2 9.4))
-  @result{} #f32(-13.760001 2.420000 40.420002)
-
-(subseq #u32(1 4 3 4 5) 2 4) @result{} #u32(3 4)
-@end example
-
-
-@deftp {Function} @var{TAG}vector-add @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-add! @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-sub @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-sub! @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-mul @r{@var{vec} @var{val} &optional @var{clamp}}
-@deftpx {Function} @var{TAG}vector-mul! @r{@var{vec} @var{val} &optional @var{clamp}}
-@findex s8vector-add
-@findex s8vector-add!
-@findex s8vector-sub
-@findex s8vector-sub!
-@findex s8vector-mul
-@findex s8vector-mul!
-@findex u8vector-add
-@findex u8vector-add!
-@findex u8vector-sub
-@findex u8vector-sub!
-@findex u8vector-mul
-@findex u8vector-mul!
-@findex s16vector-add
-@findex s16vector-add!
-@findex s16vector-sub
-@findex s16vector-sub!
-@findex s16vector-mul
-@findex s16vector-mul!
-@findex u16vector-add
-@findex u16vector-add!
-@findex u16vector-sub
-@findex u16vector-sub!
-@findex u16vector-mul
-@findex u16vector-mul!
-@findex s32vector-add
-@findex s32vector-add!
-@findex s32vector-sub
-@findex s32vector-sub!
-@findex s32vector-mul
-@findex s32vector-mul!
-@findex u32vector-add
-@findex u32vector-add!
-@findex u32vector-sub
-@findex u32vector-sub!
-@findex u32vector-mul
-@findex u32vector-mul!
-@findex s64vector-add
-@findex s64vector-add!
-@findex s64vector-sub
-@findex s64vector-sub!
-@findex s64vector-mul
-@findex s64vector-mul!
-@findex u64vector-add
-@findex u64vector-add!
-@findex u64vector-sub
-@findex u64vector-sub!
-@findex u64vector-mul
-@findex u64vector-mul!
-@findex f32vector-add
-@findex f32vector-add!
-@findex f32vector-sub
-@findex f32vector-sub!
-@findex f32vector-mul
-@findex f32vector-mul!
-@findex f64vector-add
-@findex f64vector-add!
-@findex f64vector-sub
-@findex f64vector-sub!
-@findex f64vector-mul
-@findex f64vector-mul!
-@c EN
-Element-wise arithmetic.  @var{Vec} must be a @var{TAG}vector,
-and @var{val} must be either a @var{TAG}vector of the same length
-as @var{vec}, or a number (an exact integer for integer vectors, 
-and a real number for f32- and f64-vectors).
-@c JP
-要素毎の計算手続きです。@var{vec}は@var{TAG}vectorでなければなりません。
-また、@var{val}は@var{vec}と同じ大きさの@var{TAG}vectorか、
-数値(整数ベクタに対しては正確な整数、実数ベクタに対しては実数)でなければなりません。
-@c COMMON
-
-@c EN
-If @var{val} is a @var{TAG}vector, its elements are 
-added to, subtracted from, or multiplied by the corresponding
-elements of @var{vec}, respectively,
-and the results are gathered to a @var{TAG}vector 
-and returned.  The destructive version (those have bang `!' in the name)
-reuses @var{vec} to store the result.
-If the result of calculation goes out of the range of @var{TAG}vector's
-element, the behavior is specified by @var{clamp} optional argument.
-(For f32vector and f64vector, @var{clamp} argument is ignored and
-the result may contain infinity).
-@c JP
-@var{val}が@var{TAG}vectorの場合、
-@var{vec}と対応する要素毎に加算、減算、乗算が行われ、
-結果が@var{TAG}vectorとして返されます。
-破壊的なバージョン(名前に`!'がついているもの)では、@var{vec}が
-結果を格納するために再利用されます。
-演算の結果が@var{TAG}vectorの要素の値域外になった場合の動作は
-省略可能な引数@var{clamp}によって指定されます。
-(f32vectorとf64vectorでは、値域外になった要素にはinfinityが格納され、
-@var{clamp}の値は無視されます)。
-@c COMMON
-
-@c EN
-If @var{val} is a number, it is added to, subtracted from, or
-multiplied by each element of @var{vec}, respectively.
-@c JP
-@var{val}が数値である場合、@var{vec}の各要素とその数値の間で演算が行われます。
-@c COMMON
-
-@example
-(s8vector-add '#s8(1 2 3 4) '#s8(5 6 7 8)) @result{} #s8(6 8 10 12)
-(u8vector-sub '#u8(1 2 3 4) '#u8(2 2 2 2)) @result{} @r{error}
-(u8vector-sub '#u8(1 2 3 4) '#u8(2 2 2 2) 'both) @result{} #u8(0 0 1 2)
-
-(f32vector-mul '#f32(3.0 2.0 1.0) 1.5) @result{} #f32(4.5 3.0 1.5)
-@end example
-@end deftp
-
-@deftp {Function} @var{TAG}vector-div @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-div! @r{@var{vec} @var{val}}
-@findex f32vector-div
-@findex f32vector-div!
-@findex f64vector-div
-@findex f64vector-div!
-@c EN
-Element-wise division of flonum vectors.   These are only defined
-for f32vector and f64vector.  @var{val} must be a @var{TAG}vector
-of the same length as @var{vec}, or a real number.
-@c JP
-要素毎の除算です。これらはf32vectorとf64vectorのみに対して定義されます。
-@var{val}は@var{vec}と同じ大きさの@var{TAG}vectorか、実数でなければなりません。
-@c COMMON
-
-@example
-(f32vector-div '#f32(1.0 2.0 3.0) 2.0) @result{} #f32(0.5 1.0 1.5)
-@end example
-@end defun
-
-
-@deftp {Function} @var{TAG}vector-and @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-and! @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-ior @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-ior! @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-xor @r{@var{vec} @var{val}}
-@deftpx {Function} @var{TAG}vector-xor! @r{@var{vec} @var{val}}
-@findex s8vector-and
-@findex s8vector-and!
-@findex s8vector-ior
-@findex s8vector-ior!
-@findex s8vector-xor
-@findex s8vector-xor!
-@findex u8vector-and
-@findex u8vector-and!
-@findex u8vector-ior
-@findex u8vector-ior!
-@findex u8vector-xor
-@findex u8vector-xor!
-@findex s16vector-and
-@findex s16vector-and!
-@findex s16vector-ior
-@findex s16vector-ior!
-@findex s16vector-xor
-@findex s16vector-xor!
-@findex u16vector-and
-@findex u16vector-and!
-@findex u16vector-ior
-@findex u16vector-ior!
-@findex u16vector-xor
-@findex u16vector-xor!
-@findex s32vector-and
-@findex s32vector-and!
-@findex s32vector-ior
-@findex s32vector-ior!
-@findex s32vector-xor
-@findex s32vector-xor!
-@findex u32vector-and
-@findex u32vector-and!
-@findex u32vector-ior
-@findex u32vector-ior!
-@findex u32vector-xor
-@findex u32vector-xor!
-@findex s64vector-and
-@findex s64vector-and!
-@findex s64vector-ior
-@findex s64vector-ior!
-@findex s64vector-xor
-@findex s64vector-xor!
-@findex u64vector-and
-@findex u64vector-and!
-@findex u64vector-ior
-@findex u64vector-ior!
-@findex u64vector-xor
-@findex u64vector-xor!
-@c EN
-Element-wise logical (bitwise) operation.
-These procedures are only defined for integral vectors.
-@var{val} must be a @var{TAG}vector of the same length as @var{vec},
-or an exact integer.  Bitwise and, inclusive or or exclusive or
-is calculated between each element in @var{vec} and the corresponding
-element of @var{val} (when @var{val} is a @var{TAG}vector)
-or @var{val} itself (when @var{val} is an integer).
-The result is returned in a @var{TAG}vector.
-The destructive version reuses @var{vec} to store the result.
-@c JP
-要素毎の論理(ビット)演算です。
-これらの手続きは整数ベクタに対してのみ定義されています。
-@var{val}は@var{vec}と同じ大きさの@var{TAG}vectorか、
-正確な整数でなければなりません。@var{vec}の各要素と、対応する@var{val}の要素
-(@var{val}が@var{TAG}vectorの場合0もしくは@var{val}自身
-(@var{val}が整数の場合)とのビット毎のand, inclusive orまたはexclusive or
-が計算され、結果が@var{TAG}vectorで返されます。
-破壊的なバージョン(名前に`!'がついているもの)では、@var{vec}が
-結果を格納するために再利用されます。
-@c COMMON
-@end deftp
-
-@deftp {Function} @var{TAG}vector-dot @r{@var{vec0} @var{vec1}}
-@findex s8vector-dot
-@findex s16vector-dot
-@findex s32vector-dot
-@findex s64vector-dot
-@findex u8vector-dot
-@findex u16vector-dot
-@findex u32vector-dot
-@findex u64vector-dot
-@findex f32vector-dot
-@findex f64vector-dot
-@c EN
-Calculates the dot product of two @var{TAG}vectors.
-The length of @var{vec0} and @var{vec1} must be the same.
-@c JP
-ふたつの@var{TAG}vectorの内積を計算します。
-@var{vec0}と@var{vec1}の長さは等しくなければなりません。
-@c COMMON
+SRFI-4 is now implemented in @code{gauche.uvector} module
+@xref{Uniform vectors}.
+This module simply inherits @code{gauche.uvector} for backward-compatibility.
 @end deftp
 
 @c ----------------------------------------------------------------------
