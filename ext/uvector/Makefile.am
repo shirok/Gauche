@@ -1,24 +1,21 @@
 include ../Makefile.ext
 
-pkghdrdir  = $(GAUCHE_HDRDIR)/gauche
-pkgdatadir = $(GAUCHE_LIBDIR)/gauche
-pkglibdir  = $(GAUCHE_ARCHDIR)
+SCM_CATEGORY = gauche
 
-pkglib_LTLIBRARIES = libgauche-uvector.la uvector.la
+SCM_INSTHDRS  = gauche/uvector.h
+
+pkgarch_LTLIBRARIES = libgauche-uvector.la uvector.la
+pkgdata_DATA        = array.scm uvector.scm
 
 libgauche_uvector_la_SOURCES = uvector.c uvutil.c
 libgauche_uvector_la_LIBADD  = $(top_builddir)/src/libgauche.la
 
 uvector_la_SOURCES = uvector_head.c uvinit.c uvlib.c uvector_tail.c
 uvector_la_LDFLAGS = -no-undefined -module -avoid-version
-uvector_la_LIBADD  = $(top_builddir)/src/libgauche.la -L. -lgauche-uvector
+uvector_la_LIBADD  = $(top_builddir)/src/libgauche.la $(srcdir)/libgauche-uvector.la
 
 GENERATED = Makefile uvlib.c uvlib.stub uvector.c gauche/uvector.h \
             uvutil.c uvector_head.c uvector_tail.c
-
-pkgdata_SCRIPTS = array.scm uvector.scm
-
-pkgdata_HEADERS = gauche/uvector.h
 
 uvector_head.c uvector_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension uvector

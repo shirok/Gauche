@@ -1,5 +1,4 @@
-GAUCHE_DATA_DIR = $(pkgdatadir)
-GAUCHE_ARCH_DIR = $(pkglibdir)
+SUBDIRS = gauche
 
 ARCH = @target@
 SCM_INSTALL_DIR       = $(DESTDIR)$(pkgdatadir)/$(VERSION)/lib
@@ -12,23 +11,11 @@ SUFFIXES = .stub
 INCLUDES += @INCLTDL@
 AM_CFLAGS  = -I../gc -I../gc/include
 
-INST_HDR = gauche.h gauche-config.h
-INST_SUBHDR = gauche/vm.h gauche/vminsn.h \
-	     gauche/char_euc_jp.h gauche/char_utf_8.h	 \
-	     gauche/char_sjis.h gauche/char_none.h	 \
-	     gauche/predef-syms.h gauche/extend.h	 \
-	     gauche/class.h gauche/exception.h		 \
-	     gauche/pthread.h gauche/uthread.h
-# Header installs by special method.
-noinst_HEADERS = $(INST_HDR)
-
 #
 # Main program section
 #
 bin_PROGRAMS = gosh
 bin_SCRIPTS  = gauche-config
-
-SCMS = genstub gauche-init.scm
 
 gosh_SOURCES = main.c
 gosh_LDADD   = libgauche.la @LIBLTDL@
@@ -61,6 +48,15 @@ moplib.c : moplib.stub genstub
 port.o : port.c portapi.c
 
 $(OBJECTS): gauche/arch.h
+
+# other files
+pkgscmdir = $(SCM_INSTALL_DIR)
+
+pkgscm_DATA = genstub gauche-init.scm
+
+pkggauchehdrdir = $(pkglibdir)/$(VERSION)/include
+
+pkggauchehdr_HEADERS = gauche.h gauche-config.h
 
 #
 # test section
@@ -100,26 +96,10 @@ gauche/arch.h :
 	echo '#define GAUCHE_SITE_LIB_DIR  "$(SITE_SCM_DIR)"'     >> gauche/arch.h
 	echo '#define GAUCHE_SITE_ARCH_DIR "$(SITE_ARCH_DIR)"'    >> gauche/arch.h
 
-
-#
-# installation
-#
-install-data-local: 
-	$(mkinstalldirs) $(DESTDIR)$(pkglibdir)/$(VERSION)/include/gauche \
-			 $(SCM_INSTALL_DIR)
-	for i in $(INST_HDR) $(INST_SUBHDR) ; \
-	do \
-		$(INSTALL_DATA) $${i} $(DESTDIR)$(pkglibdir)/$(VERSION)/include/$${i} ; \
-	done
-	for i in $(SCMS) ; \
-	do \
-		$(INSTALL_DATA) $${i} $(SCM_INSTALL_DIR)/$${i} ; \
-	done
-
 #
 # cleaning
 #
-CLEANFILES += test.log
+CLEANFILES += test.log $(GENERATED)
 DISTCLEANFILES += $(GENERATED) gauche/stamp-h gauche/stamp-h.in gauche/stamp-h[0-9]*
 MAINTAINERCLEANFILES += Makefile.in configure gauche-config.h.in $(STUBS:.stub=.c)
 

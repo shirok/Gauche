@@ -43,22 +43,13 @@ pkgdataversion_DATA = srfi-0.scm \
        www/cgi.scm
 
 install-pkgdataversionDATA:
-	for i in $(DATA) ; \
-	do \
-		d=`echo $${i} | sed -e 's,/[^/]*$$,,'` ; \
-		if test -d $${d}; \
-		then \
-			$(mkinstalldirs) "$(DESTDIR)$(pkgdataversiondir)/$${d}" ; \
-		fi ; \
-		\
-		if test -f "$(srcdir)/$${i}" ; \
-		then \
-			p=$(srcdir)/$${i} ; \
-		else \
-			p=$${i} ; \
-		fi ; \
-		\
-		$(INSTALL_DATA) $${p} "$(DESTDIR)$(pkgdataversiondir)/$${i}" ; \
+	for p in $(DATA) ; do \
+	  _dirname=`dirname $$p` ; \
+	  _target="$(DESTDIR)$(pkgdataversiondir)/$$_dirname"; \
+	  if test ! -d $$_target; then $(mkinstalldirs) $$_target ; fi; \
+	  if test -f "$(srcdir)/$$p"; then d=$(srcdir)/; else d= ; fi; \
+	  echo "$(INSTALL_DATA) $$d$$p $(DESTDIR)$(pkgdataversiondir)/$$p" ; \
+	  $(INSTALL_DATA) $$d$$p "$(DESTDIR)$(pkgdataversiondir)/$$p" ; \
 	done
 
 CLEANFILES += core *~
