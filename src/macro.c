@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.37 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: macro.c,v 1.38 2002-02-18 20:46:39 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -980,28 +980,15 @@ static ScmSyntax syntax_letrec_syntax = {
  * macro-expand
  */
 
-/*
- * To capture locally-bound macros, macro-expand needs to be a syntax.
- * From scheme, this syntax is visible as %macro-expand.
- * The procedure version, which works only for globally defined macros,
- * can be defined as
- *  (define (macro-expand form) (%macro-expand form))
- */
-static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
-                                   int ctx, void *data)
+ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
 {
-    ScmObj expr, sym;
+    ScmObj sym;
     ScmSyntax *syn;
-    int oncep = (data != NULL);
-
-    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
-        Scm_Error("syntax error: %S", form);
-    expr = SCM_CADR(form);
 
     for (;;) {
-        if (!SCM_PAIRP(expr)) return SCM_LIST1(expr);
+        if (!SCM_PAIRP(expr)) return expr;
         if (!SCM_SYMBOLP(SCM_CAR(expr)) && !SCM_IDENTIFIERP(SCM_CAR(expr)))
-            return SCM_LIST1(expr);
+            return expr;
 
         syn = NULL;
         sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
@@ -1023,7 +1010,7 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
         if (syn) {
             if (syn->compiler == macro_transform) {
                 ScmObj proc = SCM_OBJ(syn->data);
-                expr = Scm_Apply(proc, expr);
+                expr = Scm_Apply(proc, SCM_CDR(expr));
                 if (!oncep) continue;
             }
             if (syn->compiler == synrule_transform) {
@@ -1034,7 +1021,20 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
         }
         break;
     }
-    return SCM_LIST1(expr);
+    return expr;
+}
+
+/*
+ * To capture locally-bound macros, we need a syntax version of macro-expand.
+ * From scheme, this syntax is visible as %macro-expand.
+ */
+static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
+                                   int ctx, void *data)
+{
+    int oncep = (data != NULL);
+    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
+        Scm_Error("syntax error: %S", form);
+    return SCM_LIST1(Scm_MacroExpand(SCM_CADR(form), env, oncep));
 }
 
 static ScmSyntax syntax_macro_expand = {

@@ -12,12 +12,21 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.125 2002-01-14 04:51:18 shirok Exp $
+;;; $Id: extlib.stub,v 1.126 2002-02-18 20:46:39 shirok Exp $
 ;;;
 
 "
 #include <gauche/arch.h>
 "
+
+;;
+;; Macros
+;;
+
+(define-cproc macro-expand (form)
+  "SCM_RETURN(Scm_MacroExpand(form, SCM_NIL, FALSE));")
+(define-cproc macro-expand-1 (form)
+  "SCM_RETURN(Scm_MacroExpand(form, SCM_NIL, TRUE));")
 
 ;;
 ;; 6.1  Equivalence predicates
@@ -799,6 +808,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   } else {
     SCM_RETURN(Scm_MakeString(buf, nread, nread, SCM_MAKSTR_INCOMPLETE));
   }")
+
+(define-cproc read-list (closer &optional (port (current-input-port)))
+  (assert (char? closer))
+  "SCM_RETURN(Scm_ReadList(port, closer));")
 
 (define-cproc define-reader-ctor (symbol proc)
   "  SCM_RETURN(Scm_DefineReaderCtor(symbol, proc));")
