@@ -1,3 +1,18 @@
+2001-03-03  Shiro Kawai  <shiro@scherzo>
+	
+	* release 0.1: almost covered R5RS
+	* src/compile.c: fixed lookup_env to lookup identifiers with
+	  local environment.   fixed a problem in nested quasiquotes.
+	* src/macro.c: implemented let-syntax and letrec-syntax.  make
+	  vector pattern and template work correctly.
+	* src/macrotest.c: more tests
+	* src/boolean.c (Scm_EqualP): fixed a bug.
+	* src/write.c (write_internal): fixed a bug which didn't print
+	  a character in "display" mode.
+	* src/symbol.c (Scm_Intern): fixed a bug which inserted given string
+	  into obtable without copying.
+	* src/number.c: revised string->number algorithm
+
 2001-03-02  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.20
