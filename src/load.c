@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.29 2001-04-01 07:18:49 shiro Exp $
+ *  $Id: load.c,v 1.30 2001-04-03 08:04:41 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -151,7 +151,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
     int size = SCM_STRING_LENGTH(filename);
     const char *ptr = SCM_STRING_START(filename);
     int use_load_paths = TRUE;
-    ScmObj file = SCM_OBJ(filename);
+    ScmObj file = SCM_OBJ(filename), fpath;
     
     if (size == 0) Scm_Error("bad filename to load: \"\"");
     if (*ptr == '~') {
@@ -164,7 +164,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
     }
 
     if (use_load_paths) {
-        ScmObj lpath, fpath;
+        ScmObj lpath;
         SCM_FOR_EACH(lpath, *paths) {
             if (!SCM_STRINGP(SCM_CAR(lpath))) {
                 /* TODO: should be warning? */
@@ -188,9 +188,12 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
         }
     } else {
         *paths = SCM_NIL;
-        if (access(Scm_GetStringConst(SCM_STRING(file)), F_OK) == 0) {
+        if (access(Scm_GetStringConst(SCM_STRING(file)), F_OK) == 0)
             return SCM_OBJ(file);
-        } else if (error_if_not_found) {
+        fpath = Scm_StringAppendC(SCM_STRING(file), LOAD_SUFFIX, -1, -1);
+        if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
+            return fpath;
+        if (error_if_not_found) {
             Scm_Error("cannot find file %S to load", file);
         }
     }
