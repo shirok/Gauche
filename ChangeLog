@@ -1,9 +1,16 @@
 2001-05-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : fixed number reader to recognize x+0i as x (real
-	  number).  added Scm_OddP to deal with inexact numbers.
+	  number).  added Scm_OddP to deal with inexact numbers.  re-added
+	  Scm_NumEq, for Scm_NumCmp doesn't handle complex numbers.
+	  Moved most of transcendental functions to stdlib.stub.
 	* src/stdlib.stub : fixed several domain bugs in numeric predicates.
-	* test/number.scm : added tests for numeric predicates.
+	  Implemented most of real transcendental functions here.
+	* src/gauche-init.scm, lib/gauche/numerical.scm : Implemented
+	  transcendental functions for complex domain.
+	* src/boolean.c : use Scm_NumEq instead of Scm_NumCmp.
+	* test/number.scm : added tests for numeric predicates, complex
+	  readers, and arithmetic functions.
 
 2001-05-04  Shiro Kawai  <shiro@acm.org>
 
