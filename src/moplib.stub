@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.10 2001-04-03 08:04:56 shiro Exp $
+;;; $Id: moplib.stub,v 1.11 2001-04-22 08:02:49 shiro Exp $
 ;;;
 
 "
@@ -48,7 +48,7 @@
 (define-cproc %make-next-method (gf methods args)
   (assert (list? methods))
   (assert (list? args))
-  "  ScmObj mp, ap, *argv; int nargs = Scm_Length(args), i;
+  "  ScmObj mp, *argv; int nargs = Scm_Length(args);
   if (!Scm_TypeP(gf, SCM_CLASS_GENERIC)) 
     Scm_Error(\"generic function requied, but got %S\", gf);
   SCM_FOR_EACH(mp, methods) {
