@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.31 2001-03-05 00:39:27 shiro Exp $
+;;; $Id: extlib.stub,v 1.32 2001-03-05 04:00:35 shiro Exp $
 ;;;
 
 ;;
@@ -80,6 +80,11 @@
 (define-cproc topological-sort (edges)
   (assert (list? edges))
   "  SCM_RETURN(Scm_TopologicalSort(edges));")
+
+(define-cproc monotonic-merge (start sequences parents)
+  (assert (list? sequences))
+  (assert (list? parents))
+  "  SCM_RETURN(Scm_MonotonicMerge(start, sequences, parents));")
 
 (define-cproc pair-attributes (pair)
   (assert (pair? pair))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.12 2001-03-05 01:15:01 shiro Exp $
+ *  $Id: list.c,v 1.13 2001-03-05 04:00:25 shiro Exp $
  */
 
 #include "gauche.h"
@@ -346,7 +346,6 @@ ScmObj Scm_ReverseX(ScmObj list)
     return result;
 }
 
-
 /* Scm_ListTail(list, i)
  * Scm_ListRef(list, i)
  *    Note that i is C-INTEGER.  If i is out of bound, signal error.
@@ -412,10 +411,10 @@ ScmObj Scm_Memv(ScmObj obj, ScmObj list)
     return SCM_FALSE;
 }
 
-ScmObj Scm_Member(ScmObj obj, ScmObj list)
+ScmObj Scm_Member(ScmObj obj, ScmObj list, int cmpmode)
 {
     SCM_FOR_EACH(list, list) {
-        if (Scm_EqualP(obj, SCM_CAR(list))) return list;
+        if (Scm_EqualM(obj, SCM_CAR(list), cmpmode)) return list;
     }
     return SCM_FALSE;
 }
@@ -448,13 +447,13 @@ ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
     return SCM_FALSE;
 }
 
-ScmObj Scm_Assoc(ScmObj obj, ScmObj alist)
+ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode)
 {
     ScmObj cp;
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
-        if (Scm_EqualP(obj, SCM_CAR(entry))) return entry;
+        if (Scm_EqualM(obj, SCM_CAR(entry), cmpmode)) return entry;
     }
     return SCM_FALSE;
 }
@@ -478,6 +477,19 @@ ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
         prev = cp;
     }
     return alist;
+}
+
+/* DeleteDuplicates.  preserve the order of original list.   N^2 algorithm */
+
+ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode)
+{
+    ScmObj result = SCM_NIL, tail, lp;
+    SCM_FOR_EACH(lp, list) {
+        if (SCM_FALSEP(Scm_Member(SCM_CAR(lp), result, cmpmode))) {
+            SCM_APPEND(result, tail, SCM_CAR(lp));
+        }
+    }
+    return result;
 }
 
 /* Return union of two lists.
@@ -562,6 +574,82 @@ ScmObj Scm_TopologicalSort(ScmObj lists)
     }
 
     return result;
+}
+
+/*
+ * Monotonic Merge
+ *
+ *  Merge lists, keeping the order of elements (left to right) in each
+ *  list.  Returns SCM_FALSE if the lists are inconsistent to be ordered
+ *  in the way.
+ *
+ *  Two lists of lists must be provided.  SEQUENCES is a list of lists
+ *  describing the order of preference.  For each distinct element appears
+ *  in sequence there's an assoc list entry in PARENTS, which associates
+ *  the element with its direct ascendants.
+ *
+ *  The algorithm is used in class precedence list calculation of
+ *  Dylan, described in the paper
+ *    http://www.webcom.com/~haahr/dylan/linearization-oopsla96.html.
+ *  Since the algorithm is generally useful, I implement the core routine
+ *  of the algorithm here.
+ */
+
+ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences, ScmObj parents)
+{
+    ScmObj result = Scm_Cons(start, SCM_NIL), rp, next;
+    ScmObj *seqv, *sp;
+    int nseqs = Scm_Length(sequences), i;
+
+    if (nseqs < 0) Scm_Error("bad list of sequences: %S", sequences);
+    seqv = SCM_NEW2(ScmObj *, sizeof(ScmObj)*nseqs);
+    for (sp=seqv; SCM_PAIRP(sequences); sp++, sequences=SCM_CDR(sequences)) {
+        *sp = SCM_CAR(sequences);
+    }
+
+    for (;;) {
+        /* have we consumed all the inputs? */
+        for (sp=seqv; sp<seqv+nseqs; sp++) {
+            if (!SCM_NULLP(*sp)) break;
+        }
+        if (sp == seqv+nseqs) return Scm_ReverseX(result);
+
+        /* select candidate */
+        next = SCM_FALSE;
+        SCM_FOR_EACH(rp, result) {
+            ScmObj e = SCM_CAR(rp);
+            ScmObj p = Scm_Assq(e, parents);
+            ScmObj supers;
+            if (!SCM_PAIRP(p)) continue;
+            SCM_FOR_EACH(supers, SCM_CDR(p)) {
+                ScmObj s = SCM_CAR(supers);
+                /* see if s can go to the result */
+                for (sp = seqv; sp < seqv+nseqs; sp++) {
+                    if (SCM_PAIRP(*sp) && s == SCM_CAR(*sp)) break;
+                }
+                if (sp == seqv+nseqs) continue;
+                for (sp = seqv; sp < seqv+nseqs; sp++) {
+                    if (SCM_PAIRP(*sp) && !SCM_FALSEP(Scm_Memq(s, SCM_CDR(*sp))))
+                        break;
+                }
+                if (sp != seqv+nseqs) continue;
+                next = s;
+                break;
+            }
+            if (!SCM_FALSEP(next)) break;
+        }
+
+        if (SCM_FALSEP(next)) return SCM_FALSE; /* inconsistent */
+
+        /* move the candidate to the result */
+        result = Scm_Cons(next, result);
+        for (sp = seqv; sp < seqv+nseqs; sp++) {
+            if (SCM_PAIRP(*sp) && next == SCM_CAR(*sp)) {
+                *sp = SCM_CDR(*sp);
+            }
+        }
+    }
+    /* NOTREACHED */
 }
 
 /*
