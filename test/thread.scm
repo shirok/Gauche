@@ -438,7 +438,8 @@
 ;;---------------------------------------------------------------------
 (test-section "thread and signal")
 
-
+;(test "catching signal by primordial thread" (make-list 10 'int)
+      
 
 (test-end)
 

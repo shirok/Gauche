@@ -1,5 +1,17 @@
+2002-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (version): the output of gosh -V shows pthreads
+	  availability.
+	* lib/text/info.scm : added text.info module that can read and
+	  parse info files.
+	* lib/gauche/interpolate.scm (%string-interpolate): fixed a bug
+	  that doesn't interpolate variables starting with 'f' properly.
+
 2002-07-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h, src/char.c, src/regexp.c, src/read.c : consolidated
+	  \x, \u and \U escape sequence reader of literal string, regexp and
+	  char-set.
 	* various files: changed macro GAUCHE_USE_PTHREAD to
 	  GAUCHE_USE_PTHREADS.
 
