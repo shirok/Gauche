@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.99 2001-10-16 20:57:03 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.100 2001-10-17 20:30:40 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -49,11 +49,11 @@ This is a reference manual of Gauche, an R5RS Scheme implementation.
 * Introduction::                
 * Concepts::                    
 * Programming in Gauche::       
-* Core Syntax::                 
+* Core syntax::                 
 * Macros::                      
 * Core library::                
-* Object System::               
-* Libarary Modules::            
+* Object system::               
+* Library modules::             
 * References::                  
 * C to Scheme mapping::         
 * Function and Syntax Index::   
@@ -136,7 +136,6 @@ recent version on the web:
 @menu
 * Overview of Gauche::          
 * Notations::                   
-* Structure of this document::  
 @end menu
 
 @node Overview of Gauche, Notations, Introduction, Introduction
@@ -274,7 +273,7 @@ very large scale database handling.  It is an interpreter, after all.
 @c COMMON
 
 
-@node Notations, Structure of this document, Overview of Gauche, Introduction
+@node Notations,  , Overview of Gauche, Introduction
 @section Notations
 @c NODE 表記について
 
@@ -350,21 +349,13 @@ The API of the entry reflects the API specified in POSIX.
 @end table
 
 
-@node Structure of this document,  , Notations, Introduction
-@section Structure of this document
-@c NODE 本書の構成
+@c @node Structure of this document,  , Notations, Introduction
+@c @section Structure of this document
+@c @c NODE 本書の構成
 
-@c EN
-This document is consisted of the following chapters.
-Chapter 2, ``Concepts'', explains several features that are
-specific to Gauche.  Chapter 3, ``Programming in Gauche'',
-describes how to invoke the interpreter and to develop 
-Scheme scripts.  Chapter 4 ``Core syntax'', Chapter 5 ``Macros''
-and Chapter 6 ``Core libraries'' covers Gauche's built-in syntaxes and
-libraries.  Chapter 7, ``Object System''
-
-@c JP
-@c COMMON
+@c @c EN
+@c @c JP
+@c @c COMMON
 
 @c ======================================================================
 @node Concepts, Programming in Gauche, Introduction, Top
@@ -477,16 +468,19 @@ to load a program fragments.  Those are recognized by the compiler.
 @item require is done at compile time
 On the other hand, since @code{require} and @code{use} is recognized
 by the compiler, the specified file is loaded even if the form
-is in the conditional expression.  Use @code{load} if you need
-such behavior.
+is in the conditional expression.   If you really need to load
+a file on certain condition, use @code{load} or do dispatch in macro
+(i.e. at compile time).
 @c JP
 @item require はコンパイル時に評価される
 上記の裏返しですが、@code{require}と@code{use}はコンパイル時に
 解釈されます。したがって、@code{if}などの条件文のボディにこれらのフォームを
 置いておいても、指定されたファイルは条件にかかわらず読み込まれてしまいます。
-もし条件によって読み込むかどうかを変えたい場合は、@code{load}を使うか、
+どうしてももし条件によって読み込むかどうかを変えたい場合は、@code{load}を使うか、
 条件判断自体をマクロで行うようにしてください。
 @c COMMON
+
+
 @end table
 
 
@@ -518,7 +512,7 @@ Gauche has a CLOS-style object system, with metaobject protocol.
 For those who are familiar with SmallTalk style object system,
 the CLOS-style multimethod may look strange.  I describe several
 characteristics of Gauche object system here.
-@xref{Object System}, for details.
+@xref{Object system}, for details.
 
 @table @emph
 @item Everything is an object.
@@ -540,7 +534,7 @@ class, Gauche methods don't
 
 
 @c ======================================================================
-@node Programming in Gauche, Core Syntax, Concepts, Top
+@node Programming in Gauche, Core syntax, Concepts, Top
 @chapter  Programming in Gauche
 @c NODE Gaucheでのプログラミング
 
@@ -921,10 +915,170 @@ parse command-line options.
 @section Writing Gauche modules
 @c NODE Gaucheのモジュールを書く
 
+@c EN
+Gauche's libraries are organized by modules.   Although Gauche
+can load any valid Scheme programs, there is a convention that
+Gauche library follows.    When you write a chunk of Scheme
+code for Gauche, it is convenient to make it a module,
+so that it can be shared and/or reused.
+@c JP
+Gaucheのライブラリはモジュール毎に整理されています。Gaucheはどんな形式でも、
+有効なScheme式が書かれてさえいればロードすることができますが、
+Gaucheのライブラリは一定の形式を保って書かれています。
+Gauche用にまとまったSchemeコードを書いたら、それをモジュール形式にしておくと
+再利用がしやすくなるでしょう。
+@c COMMON
+
+@c EN
+Usually a module is contained in a file, but you can make
+a multi-file module.   
+First I explain the structure of a single-file module.
+The following template is the convention used in Gauche's libraries.
+@c JP
+通常ひとつのファイルで
+ひとつのモジュールを定義しますが、モジュールを複数のファイルに分けることもできます。
+まずひとつのファイルでモジュールを定義する方法を説明します。
+Gaucheのライブラリで使われているテンプレートは次のような形式です。
+@c COMMON
+
+@example
+@c EN
+;; Define the module interface
+@c JP
+;; モジュールのインタフェースの定義
+@c COMMON
+(define-module foo
+  (use xxx)
+  (use yyy)
+  (export foo1 foo2 foo3)
+  )
+@c EN
+;; Enter the module
+@c JP
+;; モジュール本体
+@c COMMON
+(select-module foo)
+
+@dots{} module body @dots{}
+
+@c EN
+;; Make `require' happy
+@c JP
+;; `require' に対応するprovide
+@c COMMON
+(provide "foo")
+@end example
+
+@c EN
+This file must be saved as ``foo.scm'' in some directory in the
+@code{*load-path*}.
+@c JP
+このファイルは``foo.scm''という名で、@code{*load-path*}にあるディレクトリの
+いずれかに置かれなければなりません。
+@c COMMON
+
+@c EN
+The @code{define-module} form creates a module @code{foo}.
+It also loads and imports some other modules by `@code{use}' macros,
+and declares which symbols the @code{foo} module exports, by `@code{export}'
+syntax.
+(See section @ref{Module syntax}, for detailed specification of those
+syntaxes).
+@c JP
+まず、@code{define-module}フォームがモジュール@code{foo}を作成します。
+@code{define-module}フォーム内で、このモジュールが依存している他のモジュール
+を `@code{use}' マクロを使ってロードし、このモジュールがエクスポートするシンボルを
+`@code{export}' 構文を使って指定します。(これらの構文の詳細は@ref{Module syntax}を
+参照して下さい)。
+@c COMMON
+
+@c EN
+Those @code{use} forms or @code{export} forms are not required to appeare
+in the @code{define-module} form, but it is a good convention to keep
+them in there at the head of the file so that it is visually recognizable
+which modules @code{foo} depends and which symbols it exports.
+@c JP
+これらの@code{use}フォームや@code{export}フォームは必ずしも@code{define-module}
+フォームの先頭に置く必要はありませんが、このようにファイルの最初の方に固めておくことで、
+@code{foo}が依存しているモジュール群や@code{foo}が提供するシンボル等が
+一覧しやすくなります。
+@c COMMON
+
+@c EN
+The second form, `@code{select-module}', 
+specifies the rest of the file is evaluated in the
+module @code{foo} you just defined.   Again, this is just a
+convention; you can write entire module body inside @code{define-module}.
+However, I think it is error-prone, for the closing parenthesis
+can be easily forgotten or the automatic indentation mechanism of
+editor will be confused.
+@c JP
+次の、`@code{select-module}' フォームにより、、それ以降のScheme式が
+モジュール@code{foo}の中で評価されます。モジュールの内容を全て@code{define-module}の中に
+書いてしまうことも出来ますが、最後の括弧を閉じ忘れやすいことや、エディタのインデントが
+狂うことなどから、あまりお薦めしません。
+@c COMMON
+
+@c EN
+If you don't place @code{select-module}, the rest of the body
+is evaluated in the module that loads your file.   In some tricky cases
+you may want to utilize such a behavior, or even switch modules in the
+module body.   In general, it is a good custom just to follow the above
+template.
+@c JP
+もし@code{select-module}フォームがなければ、
+書かれた式はこのモジュールをロードしたモジュール内で評価されます。
+そのような振舞いを利用する特殊な場合もあり得ますが、
+通常は上のテンプレートにしたがっておくのが無難です。
+@c COMMON
+
+@c EN
+After @code{select-module} you can write whatever Scheme expression.
+It is evaluated in the selected module, @code{foo}.   Only the bindings
+of the exported symbols will be directly accessible from outside.
+@c JP
+@code{select-module}フォームの後には、モジュールの内容であるScheme式を自由に書けます。
+それらはモジュール@code{foo}の中で評価されます。モジュール内で定義するトップレベルの
+束縛のうち、明示的に`export'
+@c COMMON
+
+@c EN
+The last @code{provide} form is just a cliche.  It is needed since
+the `use' mechanism uses traditional require-provide mechanism (if you
+don't know about it, it's ok--just put it as a magic spell).
+@c JP
+@c COMMON
+
+@c EN
+So, that's it.   Other programs can use your module by just saying
+`@code{(use foo)}'.   If you want to make your module available on your site,
+you can put it to the site library location, which can be obtained by
+@example
+(gauche-site-library-directory)
+@end example
+in gosh, or
+@example
+gauche-config --sitelibdir
+@end example
+from shell.
+@c JP
+@c COMMON
+
+@c EN
+If you feel like to conserve global module name space, you can organize
+modules hierarchically.   Some Gauche libraries already does so.
+For example, @code{text.tr} module is implemented in "text/tr.scm" file.
+@c JP
+@c COMMON
+
+@c EN
+Now, suppose your module gets too big to be in a single file.  
+@c JP
+@c COMMON
 
 @c ======================================================================
-@node Core Syntax, Macros, Programming in Gauche, Top
-@chapter Core Syntax
+@node Core syntax, Macros, Programming in Gauche, Top
+@chapter Core syntax
 @c NODE 基本的な構文
 
 @c ----------------------------------------------------------------------
@@ -941,7 +1095,7 @@ parse command-line options.
 * Modules::                     
 @end menu
 
-@node Literals, Making Procedures, Core Syntax, Core Syntax
+@node Literals, Making Procedures, Core syntax, Core syntax
 @section Literals
 @c NODE リテラル
 
@@ -972,7 +1126,7 @@ Equivalent to @code{(quote datum)}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Making Procedures, Assignments, Literals, Core Syntax
+@node Making Procedures, Assignments, Literals, Core syntax
 @section Making Procedures
 @c NODE  手続きを作る
 
@@ -982,7 +1136,7 @@ Equivalent to @code{(quote datum)}.
 
 
 @c ----------------------------------------------------------------------
-@node Assignments, Conditionals, Making Procedures, Core Syntax
+@node Assignments, Conditionals, Making Procedures, Core syntax
 @section Assignments
 @c NODE  代入
 
@@ -1201,7 +1355,7 @@ Common Lispの@code{incf}と@code{decf}に当たります。
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Conditionals, Binding constructs, Assignments, Core Syntax
+@node Conditionals, Binding constructs, Assignments, Core syntax
 @section Conditionals
 @c NODE 条件式
 
@@ -1411,7 +1565,7 @@ value is returned.
 @c COMMON
 @end defspec
 
-@node Binding constructs, Sequencing, Conditionals, Core Syntax
+@node Binding constructs, Sequencing, Conditionals, Core syntax
 @section Binding constructs
 @c NODE 変数束縛
 
@@ -1432,7 +1586,7 @@ value is returned.
 [SRFI-8]
 @end defspec
 
-@node Sequencing, Iteration, Binding constructs, Core Syntax
+@node Sequencing, Iteration, Binding constructs, Core syntax
 @section Sequencing
 @c NODE 順次実行
 
@@ -1442,7 +1596,7 @@ value is returned.
 @end defspec
 
 
-@node Iteration, Quasiquotation, Sequencing, Core Syntax
+@node Iteration, Quasiquotation, Sequencing, Core syntax
 @section Iteration
 @c NODE 繰り返し
 
@@ -1479,7 +1633,7 @@ Common Lispの@code{dolist}は提供されていません。@code{for-each}を使うか、
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Quasiquotation, Definitions, Iteration, Core Syntax
+@node Quasiquotation, Definitions, Iteration, Core syntax
 @section Quasiquotation
 @c NODE 準クオート, 準クオート(Quasiquote)
 
@@ -1489,7 +1643,7 @@ Common Lispの@code{dolist}は提供されていません。@code{for-each}を使うか、
 
 
 @c ----------------------------------------------------------------------
-@node Definitions, Modules, Quasiquotation, Core Syntax
+@node Definitions, Modules, Quasiquotation, Core syntax
 @section Definitions
 @c NODE 定義
 
@@ -1561,7 +1715,7 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @end defspec
 
 @c ----------------------------------------------------------------------
-@node Modules,  , Definitions, Core Syntax
+@node Modules,  , Definitions, Core syntax
 @section Modules
 @c NODE モジュール
 
@@ -1830,7 +1984,7 @@ all the bindings of @code{gauche} module is imported.
 @end deftp
 
 @c ======================================================================
-@node Macros, Core library, Core Syntax, Top
+@node Macros, Core library, Core syntax, Top
 @chapter Macros
 @c NODE マクロ
 
@@ -1921,7 +2075,7 @@ symbols.
 @end defun
 
 @c ======================================================================
-@node Core library, Object System, Macros, Top
+@node Core library, Object system, Macros, Top
 @chapter Core library
 @c NODE 組み込みライブラリ
 
@@ -4748,50 +4902,92 @@ You can customize how the object is printed out by this method.
 @end defun
 
 @defun format port string arg @dots{}
+@c EN
 Format @var{arg} @dots{} according to @var{string}.
-This function is a subset of CommonLisp's @code{format} function.
+This function is a subset of CommonLisp's @code{format} function,
+with a bit of extension.
+@c JP
+@var{string} の指示に従い、@var{arg} @dots{}をフォーマットします。
+この手続きはCommonLispの@code{format}のサブセットに、Gauche独自の拡張を
+加えたものです。
+@c COMMON
 
+@c EN
 @var{port} specifies the destination; if it is an output port, the
 formatted result is written to it; if it is @code{#t},
 the result is written to the current output port;
 if it is @code{#f}, the formatted result is returned as a string.
+@c JP
+@var{port}は出力先を指定します。それが出力ポートであれば、フォーマットされた
+結果はそのポートに書き出されます。@var{port}が@code{#t}であれば、結果は
+現在の出力ポートに書き出されます。@var{port}が@code{#f}であれば、結果は
+文字列として@code{format}から返されます。
+@c COMMON
 
+@c EN
 @var{string} is a string that contains format directives.
 A format directive is a character sequence begins with tilda, `@code{~}',
 and ends with some specific characters.  A format directive takes
 the corresponding @var{arg} and formats it.  The rest of string is
 copied to the output as is.
+@c JP
+@var{string}はフォーマット指示子を含んだ文字列です。
+フォーマット指示子はチルダ`@code{~}'から始まり、特定の文字で終了する文字の並びで、
+それぞれのフォーマット指示子が対応する@var{arg}を取りフォーマットします。
+@var{string}内のフォーマット指示子以外の文字列はそのまま出力されます。
+@c COMMON
 
 @example
 (format #f "the answer is ~s" 42)
   @result{} "the answer is 42"
 @end example
 
+@c EN
 The format directive can take one or more @var{parameters}, separated
 by comma characters.  A parameter may be an integer or a character;
 if it is a character, it should be preceded by a quote character.
 Parameter can be omitted, in such case the system default value is
 used.  The interpretation of the parameters depends on the 
 format directive.
+@c JP
+フォーマット指示子は一つ以上のコンマで区切られたパラメータを取ることもできます。
+パラメータは整数か文字です。文字の場合、クオート文字に続けてその文字を置きます。
+パラメータが省略された場合は既定値が使われます。パラメータの意味はフォーマット指示子毎に
+異なります。
+@c COMMON
 
+@c EN
 Furthermore, a format directive can take two
 additional flags: atmark `@code{@@}' and colon `@code{:}'.  One or
 both of them may modify the behavior of the format directive.
 Those flags must be placed immediately before the directive
 character.
+@c JP
+さらに、フォーマット指示子は2種類のフラグ、`@code{@@}' と `@code{:}' を
+取ることができます。これらの組合せでフォーマットの動作が変わります。フラグは
+(もしあれば)パラメータの後、指示子の文字の直前に置かれなければなりません。
+@c COMMON
 
+@c EN
 If a character `@code{v}' or `@code{V}' is in the place of the
 parameter, the value of the parameter is taken from the format's
 argument.  The argument must be either an integer, a character, or
 @code{#f} (indicating that the parameter is effectively omitted).
+@c JP
+パラメータの位置に文字 `@code{v}' か `@code{V}' を置くこともできます。
+その場合、パラメータの値が引数リストから取られます。対応する引数は整数か
+文字、または@code{#f}でなければなりません。@code{#f}の場合はそのパラメータが
+省略されたのと同じになります。
+@c COMMON
 
+@c EN
 Some examples:
 
 @table @code
 @item ~10,2s
 A format directive @code{~s}, with two parameters, 10 and 2.
 @item ~12,,,'*A
-A format directive @code{~a}, with 10 for the first parameter and
+A format directive @code{~a}, with 12 for the first parameter and
 a character `@code{*}' for the fourth parameter.  The second and
 third parameters are omitted.
 @item ~10@@d
@@ -4801,8 +4997,30 @@ A format directive @code{~d}, with 10 for the first parameter and
 A format directive @code{~x}, whose first and second parameter will
 be taken from the arguments.
 @end table
+@c JP
+いくつかの例です。
 
+@table @code
+@item ~10,2s
+パラメータ10と2を伴う、フォーマット指示子@code{~s}。
+@item ~12,,,'*A
+第1パラメータに数値12、第4パラメータに文字`@code{*}'を取るフォーマット指示子@code{~a}。
+第2と第3のパラメータは省略されています。
+@item ~10@@d
+フォーマット指示子@code{~d}。パラメータ10と`@code{@@}'フラグがついています。
+@item ~v,vx
+フォーマット指示子@code{~x}。第1パラメータと第2パラメータは引数リストから取られます。
+@end table
+@c COMMON
+
+@c EN
 The following is a complete list of the supported format directives.
+Either upper case or lower case character can be used for the format
+directive; usually they have no distinction, except noted.
+@c JP
+以下にサポートされているフォーマット指示子を示します。フォーマット指示子の文字自体は
+大文字であっても小文字であっても構いません。特に断りのない限り両者は同じ動作をします。
+@c COMMON
 
 @table @asis
 @item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar}@b{A}
@@ -4894,11 +5112,21 @@ The semantics of parameters and flags are the same as
 the @code{~D} directive.
 
 @item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{X}
+@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{x}
 Hexadecimal output.
 The argument is formatted as a hexadecimal integer.
+If `@code{X}' is used, upper case alphabets are used for
+the digits larger than 10.  If `@code{x}' is used, lower case
+alphabets are used.
 The semantics of parameters and flags are the same as
 the @code{~D} directive.
 
+@example
+(format #f "~8,'0x" 259847592)
+  @result{} "0f7cf5a8"
+(format #f "~8,'0X" 259847592)
+  @result{} "0F7CF5A8"
+@end example
 @end table
 
 @end defun
@@ -4911,9 +5139,71 @@ the @code{~D} directive.
 
 @defun load file &keyword (error-if-not-found #t)
 [R5RS+]
+@c EN
+Loads @var{file}, that is, read Scheme expressions in @var{file} and
+evaluates them.
+An extension ``@code{.scm}'' may be omitted from @var{file}.
+
+If @var{file} is a relative pathname, it is searched from the
+system file search list, stored in a variable @code{*load-path*}.
+
+On success, @code{load} returns @code{#t}.
+If the specified file is not found, an error is signalled unless
+the keyword argument @code{error-if-not-found} is @code{#f}, in
+which case @code{load} returns @code{#f}.
+
+The current module is preserved; even @code{select-module} is
+called in @var{file}, the module in which @code{load} is called
+is restored afterwards.
+
+If you want to load a library file, it's better to use `@code{use}'
+(@xref{Module syntax}), or `@code{require}' described below.
+@xref{Compilation}, for difference between @code{load} and @code{require}.
+@c JP
+@var{file}をロードします。すなわち、@var{file}に書かれたScheme式を順次読み込んで
+評価します。@var{file}の拡張子 (``@code{.scm}'') は省略できます。
+
+@var{file}が相対パスで与えられた場合は、システムファイルサーチパス (変数
+@code{*load-path*} に格納されています) の中から該当ファイルが探されます。
+
+ロードに成功した場合は@code{#t}が返されます。
+指定ファイルがみつからない場合はエラーとなりますが、もしキーワード引数
+@code{error-if-not-found}に@code{#f}が与えられていれば単に@code{load}から
+@code{#f}が返されます。
+
+カレントモジュールは保存されます。つまり、@var{file}中で@code{select-module}によって
+カレントモジュールを変更しても、@code{load}が終わったら@code{load}を読んだ時点の
+モジュールに戻ります。
+
+ライブラリファイルをロードする場合は、`@code{use}' (@ref{Module syntax}参照) を
+使うか、下に説明する`@code{require}' を使う方が良いでしょう。
+@code{load}と@code{require}の違いについては@ref{Compilation}を参照してください。
+@c COMMON
 @end defun
 
+@defvar *load-path*
+@c EN
+Keeps a list of directories that are searched by @code{load} and
+@code{require}.
+
+If you want to add other directories to the search path,
+do not modify this variable directly; use @code{add-load-path},
+described below, instead.
+@c JP
+@code{load}と@code{require}がファイルを探すディレクトリのリストを保持しています。
+
+もしサーチパスにディレクトリを追加したい場合は、この変数を直接変更せずに、下に説明する
+@code{add-load-path}を用いて下さい。
+@c COMMON
+@end defvar
+
 @defun load-from-port port
+@c EN
+Reads Scheme expressions from an input port @var{port} and evaluates
+them, until EOF is read.
+@c JP
+入力ポート@var{port}から、EOFを読むまで繰り返しScheme式を読み込み評価します。
+@c COMMON
 @end defun
 
 @defun dynamic-load file &keyword init-function
@@ -6018,8 +6308,8 @@ Bound to a positive integer that @code{sys-random} may return.
 @end deftp
 
 @c ======================================================================
-@node Object System, Libarary Modules, Core library, Top
-@chapter Object System
+@node Object system, Library modules, Core library, Top
+@chapter Object system
 @c NODE オブジェクトシステム
 
 @c ----------------------------------------------------------------------
@@ -6032,7 +6322,7 @@ Bound to a positive integer that @code{sys-random} may return.
 * Metaobject protocol::         
 @end menu
 
-@node General Inquiry, Defining class, Object System, Object System
+@node General Inquiry, Defining class, Object system, Object system
 @section  General Inquiry
 @c NODE 一般的な問い合わせ
 
@@ -6046,7 +6336,7 @@ of descendants of @var{class}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Defining class, Defining methods, General Inquiry, Object System
+@node Defining class, Defining methods, General Inquiry, Object system
 @section Defining class
 @c NODE クラスの定義
 
@@ -6055,7 +6345,7 @@ of descendants of @var{class}.
 
 
 @c ----------------------------------------------------------------------
-@node Defining methods, Creating Instance, Defining class, Object System
+@node Defining methods, Creating Instance, Defining class, Object system
 @section Defining methods
 @c NODE メソッドの定義
 
@@ -6066,7 +6356,7 @@ of descendants of @var{class}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Creating Instance, Accessing Instance, Defining methods, Object System
+@node Creating Instance, Accessing Instance, Defining methods, Object system
 @section Creating Instance
 @c NODE インスタンスの作成
 
@@ -6084,7 +6374,7 @@ of descendants of @var{class}.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Accessing Instance, Metaobject protocol, Creating Instance, Object System
+@node Accessing Instance, Metaobject protocol, Creating Instance, Object system
 @section Accessing Instance
 @c NODE インスタンスへのアクセス
 
@@ -6118,7 +6408,7 @@ of descendants of @var{class}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Metaobject protocol,  , Accessing Instance, Object System
+@node Metaobject protocol,  , Accessing Instance, Object system
 @section Metaobject procotol
 @c NODE メタオブジェクトプロトコル
 
@@ -6226,8 +6516,8 @@ of descendants of @var{class}.
 
 
 @c ======================================================================
-@node Libarary Modules, References, Object System, Top
-@chapter Library Modules
+@node Library modules, References, Object system, Top
+@chapter Library modules
 @c NODE ライブラリモジュール
 
 @c ----------------------------------------------------------------------
@@ -6266,7 +6556,7 @@ of descendants of @var{class}.
 * CGI::                         
 @end menu
 
-@node Library modules overview, Character code conversion, Libarary Modules, Libarary Modules
+@node Library modules overview, Character code conversion, Library modules, Library modules
 @section Library modules overview
 @c NODE ライブラリモジュールの概要
 
@@ -6295,7 +6585,7 @@ SRFI implementations.
 @end table
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Low-level file operations, Library modules overview, Libarary Modules
+@node Character code conversion, Low-level file operations, Library modules overview, Library modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
@@ -6429,7 +6719,7 @@ usually in favor of the native CES.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Interactive session, Character code conversion, Libarary Modules
+@node Low-level file operations, Interactive session, Character code conversion, Library modules
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -6585,7 +6875,7 @@ An integer process id that holding the lock; used only by @code{|F_GETLK|}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Interactive session, User-level logging, Low-level file operations, Libarary Modules
+@node Interactive session, User-level logging, Low-level file operations, Library modules
 @section @code{gauche.interactive} - Utilities for interactive session
 @c NODE インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 
@@ -6623,7 +6913,7 @@ Some examples:
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node User-level logging, Networking, Interactive session, Libarary Modules
+@node User-level logging, Networking, Interactive session, Library modules
 @section @code{gauche.logger} - User-level logging
 @c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
@@ -6728,7 +7018,7 @@ Also @code{log-format} acquires a write lock of the log file by
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Networking, Parsing command-line options, User-level logging, Libarary Modules
+@node Networking, Parsing command-line options, User-level logging, Library modules
 @section @code{gauche.net} - Networking
 @c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
@@ -7327,7 +7617,7 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parsing command-line options, High Level Process Interface, Networking, Libarary Modules
+@node Parsing command-line options, High Level Process Interface, Networking, Library modules
 @section @code{gauche.parseopt} - Parsing command-line options
 @c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
@@ -7489,7 +7779,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Libarary Modules
+@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Library modules
 @section @code{gauche.process} - High Level Process Interface
 @c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
@@ -7732,7 +8022,7 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular expression utilities, Simple dispatcher, High Level Process Interface, Libarary Modules
+@node Regular expression utilities, Simple dispatcher, High Level Process Interface, Library modules
 @section @code{gauche.regexp} - Regular expression utilities
 @c NODE 正規表現ユーティリティ, @code{gauche.regexp} - 正規表現ユーティリティ
 
@@ -7956,7 +8246,7 @@ value from the procedure is inserted to the output string using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple dispatcher, Serializer, Regular expression utilities, Libarary Modules
+@node Simple dispatcher, Serializer, Regular expression utilities, Library modules
 @section @code{gauche.selector} - Simple dispatcher
 @c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
@@ -8063,7 +8353,7 @@ This is a simple example of "echo" server:
 
 
 @c ----------------------------------------------------------------------
-@node Serializer, Termios, Simple dispatcher, Libarary Modules
+@node Serializer, Termios, Simple dispatcher, Library modules
 @section @code{gauche.serializer} - Serializer
 
 @deftp {Module} gauche.serializer
@@ -8071,7 +8361,7 @@ This is a simple example of "echo" server:
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Termios, Unit Testing, Serializer, Libarary Modules
+@node Termios, Unit Testing, Serializer, Library modules
 @section @code{gauche.termios} - Termios
 @c NODE Termios, @code{gauche.termios} - Termios
 
@@ -8227,7 +8517,7 @@ without echoing:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Unit Testing, RFC822 Message parsing, Termios, Libarary Modules
+@node Unit Testing, RFC822 Message parsing, Termios, Library modules
 @section @code{gauche.test} - Unit Testing
 @c NODE 単体テスト, @code{gauche.test} - 単体テスト
 
@@ -8295,7 +8585,7 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node RFC822 Message parsing, Base64 encoding/decoding, Unit Testing, Libarary Modules
+@node RFC822 Message parsing, Base64 encoding/decoding, Unit Testing, Library modules
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
@@ -8330,7 +8620,7 @@ The order of fields are preserved.
 
 
 @c ----------------------------------------------------------------------
-@node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Libarary Modules
+@node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Library modules
 @section @code{rfc.base64} - Base64 encoding/decoding
 @c NODE Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
 
@@ -8370,7 +8660,7 @@ set are silently ignored.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node HTTP cookie handling, URI parsing and construction, Base64 encoding/decoding, Libarary Modules
+@node HTTP cookie handling, URI parsing and construction, Base64 encoding/decoding, Library modules
 @section @code{rfc.cookie} - HTTP cookie handling
 @c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
@@ -8462,7 +8752,7 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, SLIB, HTTP cookie handling, Libarary Modules
+@node URI parsing and construction, SLIB, HTTP cookie handling, Library modules
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
@@ -8543,7 +8833,7 @@ native multibyte representation.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SLIB, Feature Conditional, URI parsing and construction, Libarary Modules
+@node SLIB, Feature Conditional, URI parsing and construction, Library modules
 @section @code{slib} - SLIB interface
 @c NODE SLIB, @code{slib} - SLIB
 
@@ -8565,7 +8855,7 @@ module @code{slib}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Feature Conditional, List library, SLIB, Libarary Modules
+@node Feature Conditional, List library, SLIB, Library modules
 @section @code{srfi-0} - Feature Conditional
 
 @deftp {Module} srfi-0
@@ -8577,7 +8867,7 @@ module @code{slib}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node List library, And-let*, Feature Conditional, Libarary Modules
+@node List library, And-let*, Feature Conditional, Library modules
 @section @code{srfi-1} - List library
 
 @deftp {Module} srfi-1
@@ -9105,7 +9395,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node And-let*, Homogeneous Vectors, List library, Libarary Modules
+@node And-let*, Homogeneous Vectors, List library, Library modules
 @section @code{srfi-2} - And-let*
 
 @deftp {Module} srfi-2
@@ -9116,7 +9406,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Homogeneous Vectors, SRFI String ports, And-let*, Libarary Modules
+@node Homogeneous Vectors, SRFI String ports, And-let*, Library modules
 @section @code{srfi-4} - Homogeneous Vectors
 
 @deftp {Module} srfi-4
@@ -9288,7 +9578,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, Libarary Modules
+@node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, Library modules
 @section @code{srfi-6} - String ports
 
 @deftp {Module} srfi-6
@@ -9298,7 +9588,7 @@ The form @code{(use srfi-6)} doesn't do anything.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Syntax to receive multiple values, Record types, SRFI String ports, Libarary Modules
+@node Syntax to receive multiple values, Record types, SRFI String ports, Library modules
 @section @code{srfi-8} - Syntax to receive multiple values
 
 @deftp {Module} srfi-8
@@ -9309,7 +9599,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 
 @c ----------------------------------------------------------------------
-@node Record types, Let-values, Syntax to receive multiple values, Libarary Modules
+@node Record types, Let-values, Syntax to receive multiple values, Library modules
 @section @code{srfi-9} - Record types
 
 @deftp {Module} srfi-9
@@ -9382,7 +9672,7 @@ sequence of forms.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Let-values, String library, Record types, Libarary Modules
+@node Let-values, String library, Record types, Library modules
 @section @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
@@ -9443,7 +9733,7 @@ the preceding @var{vars}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node String library, Character-set library, Let-values, Libarary Modules
+@node String library, Character-set library, Let-values, Library modules
 @section @code{srfi-13} - String library
 
 @deftp {Module} srfi-13
@@ -9880,7 +10170,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library, CSV tables, String library, Libarary Modules
+@node Character-set library, CSV tables, String library, Library modules
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
@@ -10112,7 +10402,7 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Parsing input stream, Character-set library, Libarary Modules
+@node CSV tables, Parsing input stream, Character-set library, Library modules
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -10156,7 +10446,7 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parsing input stream, Transliterate characters, CSV tables, Libarary Modules
+@node Parsing input stream, Transliterate characters, CSV tables, Library modules
 @section @code{text.parse} - Parsing input stream
 
 @deftp {Module} text.parse
@@ -10272,7 +10562,7 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, CGI, Parsing input stream, Libarary Modules
+@node Transliterate characters, CGI, Parsing input stream, Library modules
 @section @code{text.tr} - Transliterate characters
 
 @deftp {Module} text.tr
@@ -10393,7 +10683,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CGI,  , Transliterate characters, Libarary Modules
+@node CGI,  , Transliterate characters, Library modules
 @section @code{w3c.cgi} - CGI utility
 
 @deftp {Module} w3c.cgi
@@ -10453,7 +10743,7 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 
 
 @c ======================================================================
-@node References, C to Scheme mapping, Libarary Modules, Top
+@node References, C to Scheme mapping, Library modules, Top
 @unnumbered References
 
 @table @asis
