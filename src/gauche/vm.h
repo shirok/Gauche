@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.7 2004-12-25 00:37:03 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.8 2004-12-27 01:15:50 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -142,6 +142,9 @@ SCM_EXTERN void Scm_CallCC(ScmObj body);
  *   object is used in hygienic macro expansion (see macro.c), and
  *   also used as a placeholder in a global variable reference/assignment
  *   (see compile.c).
+ *
+ *   NB: Identifier's API and usage will likely be changed in future.
+ *   It shouldn't be used directly from applications.
  */
 
 typedef struct ScmIdentifierRec {
