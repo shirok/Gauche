@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.91 2004-07-28 05:13:22 shirok Exp $
+ *  $Id: load.c,v 1.92 2004-09-17 23:32:16 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -82,6 +82,7 @@ static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
+static ScmObj key_ignore_coding      = SCM_UNBOUND;
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -95,6 +96,10 @@ static ScmObj key_macro              = SCM_UNBOUND;
  *   No matter how the load terminates, either normal or abnormal,
  *   the port is closed, and the current module is restored to the
  *   one when load is called.
+ *
+ *   FLAGS argument is ignored for now, but reserved for future
+ *   extension.  SCM_LOAD_QUIET_NOFILE and SCM_LOAD_IGNORE_CODING
+ *   won't have any effect for LoadFromPort; see Scm_Load below.
  */
 
 struct load_packet {
@@ -138,13 +143,15 @@ static ScmObj load_body(ScmObj *args, int nargs, void *data)
     return load_cc(SCM_NIL, &data);
 }
 
-ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths, ScmObj env)
+ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
+                          ScmObj env, int flags)
 {
     struct load_packet *p;
     ScmObj port_info;
     ScmVM *vm = Scm_VM();
     ScmModule *module = vm->module;
-    
+
+    /* Sanity check */
     if (!SCM_IPORTP(port))
         Scm_Error("input port required, but got: %S", port);
     if (SCM_PORT_CLOSED_P(port))
@@ -186,13 +193,15 @@ static ScmObj load_from_port(ScmObj *args, int argc, void *data)
 {
     ScmPort *port;
     ScmObj paths, env;
+    int flags = 0;
+    
     if (!SCM_IPORTP(args[0])) {
         Scm_Error("input port required, but got %S", args[0]);
     }
     port = SCM_PORT(args[0]);
     paths = Scm_GetKeyword(key_paths, args[1], SCM_FALSE);
     env   = Scm_GetKeyword(key_environment, args[1], SCM_FALSE);
-    return Scm_VMLoadFromPort(port, paths, env);
+    return Scm_VMLoadFromPort(port, paths, env, flags);
 }
 
 static SCM_DEFINE_STRING_CONST(load_from_port_NAME, "load-from-port", 14, 14);
@@ -200,7 +209,7 @@ static SCM_DEFINE_SUBR(load_from_port_STUB, 1, 1,
                        SCM_OBJ(&load_from_port_NAME), load_from_port,
                        NULL, NULL);
 
-void Scm_LoadFromPort(ScmPort *port)
+void Scm_LoadFromPort(ScmPort *port, int flags)
 {
     Scm_Apply(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)));
 }
@@ -299,64 +308,94 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
     return SCM_FALSE;
 }
 
-/*
- * Load
+/*---------------------------------------------------------------------
+ * Scm_Load
+ *
+ *  Scheme's load().
+ * 
+ *  filename   - name of the file.  can be sans suffix.
+ *  load_paths - list of pathnames or #f.   If #f, system's load path
+ *               is used.
+ *  env        - a module where the forms are evaluated, or #f.
+ *               If #f, the current module is used.
+ *  flags      - combination of bit flags
+ *               SCM_LOAD_QUIET_NOFILE, SCM_LOAD_IGNORE_CODING
  */
 
 ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
-                  ScmObj env, int errorp)
+                  ScmObj env, int flags)
 {
     ScmObj port, truename, suffixes;
     ScmVM *vm = Scm_VM();
+    int errorp = !(flags&SCM_LOAD_QUIET_NOFILE);
+    int ignore_coding = flags&SCM_LOAD_IGNORE_CODING;
 
     suffixes = SCM_GLOC_GET(ldinfo.load_suffixes_rec);
     if (!SCM_PAIRP(load_paths)) load_paths = Scm_GetLoadPath();
     truename = Scm_FindFile(filename, &load_paths, suffixes, errorp);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
+
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
         int len = Scm_Length(vm->load_history);
         SCM_PUTZ(";;", 2, SCM_CURERR);
         while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
         Scm_Printf(SCM_CURERR, "Loading %A...\n", truename);
     }
+
     port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)),
                             O_RDONLY, SCM_PORT_BUFFER_FULL, 0);
     if (SCM_FALSEP(port)) {
         if (errorp) Scm_Error("file %S exists, but couldn't open.", truename);
         else        return SCM_FALSE;
     }
-    return Scm_VMLoadFromPort(SCM_PORT(port), load_paths, env);
+
+    if (!ignore_coding) {
+        port = Scm_MakeCodingAwarePort(SCM_PORT(port));
+    }
+    
+    return Scm_VMLoadFromPort(SCM_PORT(port), load_paths, env, flags);
 }
 
-/* Scheme subr (%load filename &keyword paths error-if-not-found environment) */
+/* Scheme subr (%load filename &keyword paths error-if-not-found
+                                        environment aware-coding) */
 static ScmObj load(ScmObj *args, int argc, void *data)
 {
     ScmString *file;
     ScmObj paths, env;
-    int errorp;
+    int flags = 0;
+    
     if (!SCM_STRINGP(args[0])) {
         Scm_Error("string required, but got %S", args[0]);
     }
     file = SCM_STRING(args[0]);
-    paths  = Scm_GetKeyword(key_paths, args[1], SCM_FALSE);
-    errorp = !SCM_FALSEP(Scm_GetKeyword(key_error_if_not_found, args[1], SCM_TRUE));
-    env    = Scm_GetKeyword(key_environment, args[1], SCM_FALSE);
-    return Scm_VMLoad(file, paths, env, errorp);
+    paths = Scm_GetKeyword(key_paths, args[1], SCM_FALSE);
+    env   = Scm_GetKeyword(key_environment, args[1], SCM_FALSE);
+    if (SCM_FALSEP(Scm_GetKeyword(key_error_if_not_found, args[1], SCM_FALSE)))
+        flags |= SCM_LOAD_QUIET_NOFILE;
+    if (!SCM_FALSEP(Scm_GetKeyword(key_ignore_coding, args[1], SCM_FALSE)))
+        flags |= SCM_LOAD_IGNORE_CODING;
+    return Scm_VMLoad(file, paths, env, flags);
 }
 
 static SCM_DEFINE_STRING_CONST(load_NAME, "load", 4, 4);
 static SCM_DEFINE_SUBR(load_STUB, 1, 1, SCM_OBJ(&load_NAME), load, NULL, NULL);
 
 
-int Scm_Load(const char *cpath, int errorp)
+int Scm_Load(const char *cpath, int flags)
 {
     ScmObj r, f = SCM_MAKE_STR_COPYING(cpath);
-    if (errorp) {
-        r = Scm_Apply(SCM_OBJ(&load_STUB), SCM_LIST1(f));
-    } else {
-        r = Scm_Apply(SCM_OBJ(&load_STUB),
-                      SCM_LIST3(f, key_error_if_not_found, SCM_FALSE));
+    ScmObj options = SCM_NIL;
+    
+    if (!(flags&SCM_LOAD_QUIET_NOFILE)) {
+        options = Scm_Cons(key_error_if_not_found,
+                           Scm_Cons(SCM_FALSE, options));
     }
+    if (flags&SCM_LOAD_IGNORE_CODING) {
+        options = Scm_Cons(key_ignore_coding,
+                           Scm_Cons(SCM_TRUE, options));
+    }
+    
+    r = Scm_Apply(SCM_OBJ(&load_STUB), Scm_Cons(f, options));
     return !SCM_FALSEP(r);
 }
 
@@ -804,7 +843,7 @@ ScmObj Scm_Require(ScmObj feature)
     if (!SCM_FALSEP(provided)) return SCM_TRUE;
     SCM_UNWIND_PROTECT {
         filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
-        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), TRUE);
+        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), 0);
     } SCM_WHEN_ERROR {
         (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
         ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
@@ -1103,6 +1142,7 @@ void Scm__InitLoad(void)
     key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
     key_environment = SCM_MAKE_KEYWORD("environment");
     key_macro = SCM_MAKE_KEYWORD("macro");
+    key_ignore_coding = SCM_MAKE_KEYWORD("ignore-coding");
     
     SCM_DEFINE(m, "load-from-port", SCM_OBJ(&load_from_port_STUB));
     SCM_DEFINE(m, "load", SCM_OBJ(&load_STUB));

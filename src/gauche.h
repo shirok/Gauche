@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.383 2004-09-17 10:39:04 shirok Exp $
+ *  $Id: gauche.h,v 1.384 2004-09-17 23:32:16 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1144,7 +1144,7 @@ typedef struct ScmPortVTableRec {
 } ScmPortVTable;
 
 struct ScmPortRec {
-    SCM_HEADER;
+    SCM_INSTANCE_HEADER;
     unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT.
                                    There may be I/O port in future. */
     unsigned int type      : 2; /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
@@ -1256,6 +1256,9 @@ enum ScmPortICPolicy {
 SCM_CLASS_DECL(Scm_PortClass);
 #define SCM_CLASS_PORT      (&Scm_PortClass)
 
+SCM_CLASS_DECL(Scm_CodingAwarePortClass);
+#define SCM_CLASS_CODING_AWARE_PORT (&Scm_CodingAwarePortClass)
+
 SCM_EXTERN ScmObj Scm_Stdin(void);
 SCM_EXTERN ScmObj Scm_Stdout(void);
 SCM_EXTERN ScmObj Scm_Stderr(void);
@@ -1274,9 +1277,11 @@ SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port);
 SCM_EXTERN ScmObj Scm_GetOutputStringUnsafe(ScmPort *port);
 SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port);
 
-SCM_EXTERN ScmObj Scm_MakeVirtualPort(int direction,
+SCM_EXTERN ScmObj Scm_MakeVirtualPort(ScmClass *klass,
+                                      int direction,
 				      ScmPortVTable *vtable);
-SCM_EXTERN ScmObj Scm_MakeBufferedPort(ScmObj name, int direction,
+SCM_EXTERN ScmObj Scm_MakeBufferedPort(ScmClass *klass,
+                                       ScmObj name, int direction,
                                        int ownerp,
                                        ScmPortBuffer *bufrec);
 SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
@@ -2468,12 +2473,20 @@ SCM_EXTERN ScmObj Scm_SysMkstemp(ScmString *template);
  * LOAD AND DYNAMIC LINK
  */
 
+/* Flags for Scm_VMLoad and Scm_Load. (not for Scm_VMLoadPort) */
+enum ScmLoadFlags {
+    SCM_LOAD_QUIET_NOFILE = (1L<<0),  /* do not signal an error if the file
+                                         does not exist; just return #f. */
+    SCM_LOAD_IGNORE_CODING = (1L<<1)  /* do not use coding-aware port to honor
+                                         'coding' magic comment */
+};
+
 SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
-                                     ScmObj env);
+                                     ScmObj env, int flags);
 SCM_EXTERN ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, ScmObj env,
-			     int error_if_not_exist);
-SCM_EXTERN void Scm_LoadFromPort(ScmPort *port);
-SCM_EXTERN int Scm_Load(const char *file, int error_if_not_found);
+			     int flags);
+SCM_EXTERN void Scm_LoadFromPort(ScmPort *port, int flags);
+SCM_EXTERN int  Scm_Load(const char *file, int flags);
 
 SCM_EXTERN ScmObj Scm_GetLoadPath(void);
 SCM_EXTERN ScmObj Scm_AddLoadPath(const char *cpath, int afterp);

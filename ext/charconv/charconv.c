@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.48 2004-09-17 10:00:00 shirok Exp $
+ *  $Id: charconv.c,v 1.49 2004-09-17 23:32:15 shirok Exp $
  */
 
 #include <string.h>
@@ -303,7 +303,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     bufrec.data = (void*)cinfo;
 
     name = conv_name(SCM_PORT_INPUT, fromPort, fromCode, toCode);
-    return Scm_MakeBufferedPort(name, SCM_PORT_INPUT, TRUE, &bufrec);
+    return Scm_MakeBufferedPort(SCM_CLASS_PORT, name, SCM_PORT_INPUT, TRUE, &bufrec);
 }
 
 /* a special case of input conversion port --- coding-aware port coversion.
@@ -478,7 +478,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     bufrec.data = (void*)cinfo;
     
     name = conv_name(SCM_PORT_OUTPUT, toPort, fromCode, toCode);
-    return Scm_MakeBufferedPort(name, SCM_PORT_OUTPUT, TRUE, &bufrec);
+    return Scm_MakeBufferedPort(SCM_CLASS_PORT, name, SCM_PORT_OUTPUT, TRUE, &bufrec);
 }
 
 /*------------------------------------------------------------

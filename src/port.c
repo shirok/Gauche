@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.104 2004-09-17 10:39:04 shirok Exp $
+ *  $Id: port.c,v 1.105 2004-09-17 23:32:16 shirok Exp $
  */
 
 #include <unistd.h>
@@ -39,6 +39,7 @@
 #include <errno.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/class.h"
 #include "gauche/port.h"
 
 #undef MAX
@@ -60,6 +61,16 @@ static int file_closer(ScmPort *p);
 SCM_DEFINE_BASE_CLASS(Scm_PortClass,
                       ScmPort, /* instance type */
                       port_print, NULL, NULL, NULL, NULL);
+
+static ScmClass *port_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_PortClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+SCM_DEFINE_BASE_CLASS(Scm_CodingAwarePortClass,
+                      ScmPort, /* instance type */
+                      port_print, NULL, NULL, NULL, port_cpl);
 
 /*================================================================
  * Common
@@ -104,12 +115,12 @@ static void port_finalize(ScmObj obj, void* data)
  *   If this port owns the underlying file descriptor/stream, 
  *   ownerp must be TRUE.
  */
-static ScmPort *make_port(int dir, int type)
+static ScmPort *make_port(ScmClass *klass, int dir, int type)
 {
     ScmPort *port;
 
-    port = SCM_NEW(ScmPort);
-    SCM_SET_CLASS(port, SCM_CLASS_PORT);
+    port = SCM_ALLOCATE(ScmPort, klass);
+    SCM_SET_CLASS(port, klass);
     port->direction = dir;
     port->type = type;
     port->scrcnt = 0;
@@ -426,7 +437,8 @@ int Scm_FdReady(int fd, int dir)
 
 #define SCM_PORT_DEFAULT_BUFSIZ 8192
 
-ScmObj Scm_MakeBufferedPort(ScmObj name,
+ScmObj Scm_MakeBufferedPort(ScmClass *klass,
+                            ScmObj name,
                             int dir,     /* direction */
                             int ownerp,  /* owner flag*/
                             ScmPortBuffer *bufrec)
@@ -437,7 +449,7 @@ ScmObj Scm_MakeBufferedPort(ScmObj name,
     
     if (size <= 0) size = SCM_PORT_DEFAULT_BUFSIZ;
     if (buf == NULL) buf = SCM_NEW_ATOMIC2(char*, size);
-    p = make_port(dir, SCM_PORT_FILE);
+    p = make_port(klass, dir, SCM_PORT_FILE);
     p->name = name;
     p->ownerp = ownerp;
     p->src.buf.buffer = buf;
@@ -844,7 +856,8 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     bufrec.filenum = file_filenum;
     bufrec.seeker = file_seeker;
     bufrec.data = (void*)fd;
-    p = Scm_MakeBufferedPort(SCM_MAKE_STR_COPYING(path), dir, TRUE, &bufrec);
+    p = Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_MAKE_STR_COPYING(path),
+                             dir, TRUE, &bufrec);
     return p;
 }
 
@@ -872,7 +885,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     bufrec.seeker = NULL;
     bufrec.data = (void*)fd;
     
-    p = Scm_MakeBufferedPort(name, direction, ownerp, &bufrec);
+    p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, ownerp, &bufrec);
     return p;
 }
 
@@ -882,7 +895,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 
 ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 {
-    ScmPort *p = make_port(SCM_PORT_INPUT, SCM_PORT_ISTR);
+    ScmPort *p = make_port(SCM_CLASS_PORT, SCM_PORT_INPUT, SCM_PORT_ISTR);
     p->src.istr.start = SCM_STRING_START(str);
     p->src.istr.current = SCM_STRING_START(str);
     p->src.istr.end = SCM_STRING_START(str) + SCM_STRING_SIZE(str);
@@ -893,7 +906,7 @@ ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 
 ScmObj Scm_MakeOutputStringPort(int privatep)
 {
-    ScmPort *p = make_port(SCM_PORT_OUTPUT, SCM_PORT_OSTR);
+    ScmPort *p = make_port(SCM_CLASS_PORT, SCM_PORT_OUTPUT, SCM_PORT_OSTR);
     Scm_DStringInit(&p->src.ostr);
     SCM_PORT(p)->name = SCM_MAKE_STR("(output string port)");
     if (privatep) PORT_PRELOCK(p, Scm_VM());
@@ -996,9 +1009,10 @@ static int null_flush(ScmPort *dummy)
     return 0;
 }
 
-ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable)
+ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
+                           ScmPortVTable *vtable)
 {
-    ScmPort *p = make_port(direction, SCM_PORT_PROC);
+    ScmPort *p = make_port(klass, direction, SCM_PORT_PROC);
     
     /* Copy vtable, and ensure all entries contain some ptr */
     p->src.vt = *vtable;
@@ -1243,7 +1257,8 @@ ScmObj Scm_MakeCodingAwarePort(ScmPort *iport)
     bufrec.filenum = coding_filenum;
     bufrec.seeker = NULL;
     bufrec.data = (void*)data;
-    p = Scm_MakeBufferedPort(Scm_PortName(iport), SCM_PORT_INPUT,
+    p = Scm_MakeBufferedPort(SCM_CLASS_CODING_AWARE_PORT,
+                             Scm_PortName(iport), SCM_PORT_INPUT,
                              TRUE, &bufrec);
     return p;
 }
@@ -1340,8 +1355,10 @@ void Scm__InitPort(void)
     (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
     active_buffered_ports.ports = SCM_WEAKVECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
 
-    Scm_InitBuiltinClass(&Scm_PortClass, "<port>", NULL, TRUE,
-                         Scm_GaucheModule());
+    Scm_InitBuiltinClass(&Scm_PortClass, "<port>",
+                         NULL, TRUE, Scm_GaucheModule());
+    Scm_InitBuiltinClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
+                         NULL, TRUE, Scm_GaucheModule());
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(stdin)"),
                                     SCM_PORT_INPUT, 0,

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.224 2004-09-17 10:00:00 shirok Exp $
+;;; $Id: extlib.stub,v 1.225 2004-09-17 23:32:16 shirok Exp $
 ;;;
 
 "
@@ -807,7 +807,7 @@
   bufrec.ready = NULL;
   bufrec.filenum = NULL;
   bufrec.data = (void*)filler;
-  SCM_RETURN(Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_INPUT, TRUE, &bufrec));
+  SCM_RETURN(Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_FALSE, SCM_PORT_INPUT, TRUE, &bufrec));
   ")
 
 "static int bufport_flusher(ScmPort *p, int cnt, int forcep)
@@ -831,7 +831,7 @@
   bufrec.ready = NULL;
   bufrec.filenum = NULL;
   bufrec.data = (void*)flusher;
-  SCM_RETURN(Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_OUTPUT, TRUE, &bufrec));
+  SCM_RETURN(Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_FALSE, SCM_PORT_OUTPUT, TRUE, &bufrec));
   ")
 
 (define-cproc flush (&optional (oport::<output-port> (current-output-port)))

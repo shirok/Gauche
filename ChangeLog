@@ -1,5 +1,10 @@
 2004-09-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm_VMLoad): use coding-aware port to load source file
+	  by default.  Changed the API to take bitmask flags.
+	* src/port.c : changed some API to allow port subclasses.
+	* src/gauche.h : changed accordingly.
+
 	* src/gauche.h (ScmPort): supports line counting feature in generic
 	  port level, instead of only in buffered ports.
 	* src/port.c, src/portapi.c, src/read.c : changed accordingly.

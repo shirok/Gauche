@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.75 2004-07-15 07:10:06 shirok Exp $
+ *  $Id: main.c,v 1.76 2004-09-17 23:32:16 shirok Exp $
  */
 
 #include <unistd.h>
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
     /* load init file */
     if (load_initfile) {
         SCM_UNWIND_PROTECT {
-            Scm_Load("gauche-init.scm", TRUE);
+            Scm_Load("gauche-init.scm", 0);
         }
         SCM_WHEN_ERROR {
             fprintf(stderr, "Error in initialization file.\n");
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
             Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(v)), TRUE);
             break;
         case 'l':
-            Scm_Load(Scm_GetStringConst(SCM_STRING(v)), TRUE);
+            Scm_Load(Scm_GetStringConst(SCM_STRING(v)), 0);
             break;
         case 'u':
             Scm_Require(Scm_StringJoin(Scm_StringSplitByChar(SCM_STRING(v),
@@ -330,7 +330,7 @@ int main(int argc, char **argv)
     if (scriptfile != NULL) {
         ScmObj result, mainproc;
         
-        Scm_Load(scriptfile, TRUE);
+        Scm_Load(scriptfile, 0);
 
         /* if symbol 'main is bound to a procedure in the user module,
            call it.  (SRFI-22) */
@@ -358,7 +358,7 @@ int main(int argc, char **argv)
     }
 
     if (batch_mode || (!isatty(0) && !interactive_mode)) {
-        Scm_LoadFromPort(SCM_PORT(Scm_Stdin()));
+        Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), 0);
     } else {
         Scm_Repl(SCM_FALSE, SCM_FALSE, SCM_FALSE, SCM_FALSE);
     }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.46 2004-07-19 09:19:07 shirok Exp $
+ *  $Id: write.c,v 1.47 2004-09-17 23:32:16 shirok Exp $
  */
 
 #include <stdio.h>
@@ -326,7 +326,8 @@ static ScmPort *make_walker_port(void)
     ScmPort *port;
     ScmObj ht;
                                           
-    port = SCM_PORT(Scm_MakeVirtualPort(SCM_PORT_OUTPUT, &walker_port_vtable));
+    port = SCM_PORT(Scm_MakeVirtualPort(SCM_CLASS_PORT, SCM_PORT_OUTPUT,
+                                        &walker_port_vtable));
     ht = Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0);
     port->data = Scm_Cons(SCM_MAKE_INT(0), ht);
     port->flags = SCM_PORT_WALKING;
