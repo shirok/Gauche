@@ -7,7 +7,9 @@
 ;; SLIB module exports all symbols for compatibility.
 (define-module slib
   (use srfi-0)
+  (use srfi-13)
   (extend util.record)  ;; SLIB-compatible make-record-type
+  (use file.util)
   (use gauche.uvector)  ;; Used to implement 'byte' API
   (export-all))
 (select-module slib)
@@ -58,13 +60,18 @@
 	    (else "")))))
     (lambda () library-path)))
 
+(define-constant *dir-sep* "/")
+
 ;;; (home-vicinity) should return the vicinity of the user's HOME
 ;;; directory, the directory which typically contains files which
 ;;; customize a computer environment for a user.
 
 (define home-vicinity
-  (let ((home-path (sys-getenv "HOME")))
-    (lambda () home-path)))
+  (let* ((home-path (or (home-directory) (sys-getenv "HOME")))
+         (home-dir  (if (string-suffix? *dir-sep* home-path)
+                      home-path
+                      (string-append home-path *dir-sep*))))
+    (lambda () home-dir)))
 
 ;;; *FEATURES* should be set to a list of symbols describing features
 ;;; of this implementation.  Suggestions for features are:
@@ -334,7 +341,7 @@
 
 ;;; At this point SLIB:LOAD must be able to load SLIB files.
 
-(define slib:load slib:load-source)
+(define slib:load load)
 
 (slib:load (in-vicinity (library-vicinity) "require"))
 
