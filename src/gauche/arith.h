@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: arith.h,v 1.3 2002-06-22 09:26:06 shirok Exp $
+ *  $Id: arith.h,v 1.4 2002-06-22 10:59:08 shirok Exp $
  */
 
 #ifndef GAUCHE_ARITH_H
@@ -191,8 +191,9 @@
     do {                                                \
         if ((x)==0 || (y)==0) { (v) = (r) = 0; }        \
         else {                                          \
-            (r) = (x) * (y);                            \
-            (v) = ((r)<(x) || (r)<(y))? 1 : 0;          \
+            u_long t5_;                                 \
+            UMUL(t5_, r, x, y);                         \
+            (v) = (t5_)? 1 : 0;                         \
         }                                               \
     } while (0)
 #endif /*UMULOV*/
@@ -208,26 +209,26 @@
 #ifndef SMULOV
 #define SMULOV(r, v, x, y)                                      \
     do {                                                        \
-        u_long t0_;                                             \
+        u_long t6_;                                             \
         if ((x) >= 0) {                                         \
             if ((y) >= 0) {                                     \
-                UMULOV(t0_, v, x, y);                           \
-                if ((v) || t0_ > LONG_MAX) (v) = 1;             \
-                else (r) = t0_;                                 \
+                UMULOV(t6_, v, x, y);                           \
+                if ((v) || t6_ > LONG_MAX) (v) = 1;             \
+                else (r) = t6_;                                 \
             } else {                                            \
-                UMULOV(t0_, v, x, -y);                          \
-                if ((v) || t0_ > LONG_MAX+1UL) (v) = -1;        \
-                else (r) = -t0_;                                \
+                UMULOV(t6_, v, x, -y);                          \
+                if ((v) || t6_ > LONG_MAX+1UL) (v) = -1;        \
+                else (r) = -t6_;                                \
             }                                                   \
         } else {                                                \
             if ((y) >= 0) {                                     \
-                UMULOV(t0_, v, -x, y);                          \
-                if ((v) || t0_ > LONG_MAX+1UL) (v) = -1;        \
-                else (r) = -t0_;                                \
+                UMULOV(t6_, v, -x, y);                          \
+                if ((v) || t6_ > LONG_MAX+1UL) (v) = -1;        \
+                else (r) = -t6_;                                \
             } else {                                            \
-                UMULOV(t0_, v, -x, -y);                         \
-                if ((v) || t0_ > LONG_MAX) (v) = 1;             \
-                else (r) = t0_;                                 \
+                UMULOV(t6_, v, -x, -y);                         \
+                if ((v) || t6_ > LONG_MAX) (v) = 1;             \
+                else (r) = t6_;                                 \
             }                                                   \
         }                                                       \
     } while (0)

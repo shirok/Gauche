@@ -1,6 +1,6 @@
 /*
  * Test/arith.h macros
- * $Id: test-arith.c,v 1.4 2002-06-22 09:25:59 shirok Exp $
+ * $Id: test-arith.c,v 1.5 2002-06-22 10:58:59 shirok Exp $
  */
 
 #include <stdio.h>
@@ -356,6 +356,10 @@ void test_umulov(void)
     TEST_UMULOV(UMAX/2, 2, UMAX-1, 0);
     /* UMAX/2 * 3 => overflow */
     TEST_UMULOV(UMAX/2, 3, 0, 1);
+    /* UMAX>>4 * UMAX>>4 => overflow */
+    TEST_UMULOV((UMAX>>4), (UMAX>>4), 0, 1);
+    /* UMAX>>8 * UMAX>>8 => overflow */
+    TEST_UMULOV((UMAX>>8), (UMAX>>8), 0, 1);
     /* UMAX * UMAX => overflow */
     TEST_UMULOV(UMAX, UMAX, 0, 1);
     /* UMAX-1 * UMAX-1 => overflow */
@@ -421,6 +425,22 @@ void test_smulov(void)
     TEST_SMULOV(-(SMAX/2+1), 2, SMIN, 0);
     /* -(SMAX/2+1) * -2 => overflow */
     TEST_SMULOV(-(SMAX/2+1), -2, 0, 1);
+    /* SMAX>>4 * SMAX>>4 => overflow */
+    TEST_SMULOV((SMAX>>4), (SMAX>>4), 0, 1);
+    /* SMAX>>4 * -SMAX>>4 => -overflow */
+    TEST_SMULOV((SMAX>>4), -(SMAX>>4), 0, -1);
+    /* -SMAX>>4 * SMAX>>4 => -overflow */
+    TEST_SMULOV(-(SMAX>>4), (SMAX>>4), 0, -1);
+    /* -SMAX>>4 * -SMAX>>4 => overflow */
+    TEST_SMULOV(-(SMAX>>4), -(SMAX>>4), 0, 1);
+    /* SMAX>>8 * SMAX>>8 => overflow */
+    TEST_SMULOV((SMAX>>8), (SMAX>>8), 0, 1);
+    /* SMAX>>8 * -SMAX>>8 => -overflow */
+    TEST_SMULOV((SMAX>>8), -(SMAX>>8), 0, -1);
+    /* -SMAX>>8 * SMAX>>8 => -overflow */
+    TEST_SMULOV(-(SMAX>>8), (SMAX>>8), 0, -1);
+    /* -SMAX>>8 * -SMAX>>8 => overflow */
+    TEST_SMULOV(-(SMAX>>8), -(SMAX>>8), 0, 1);
     /* SMAX * SMAX => overflow */
     TEST_SMULOV(SMAX, SMAX, 0, 1);
     /* SMAX * -SMAX => -overflow */
