@@ -1,3 +1,7 @@
+2003-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/822.scm : added basic tokenizers.
+
 2003-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/autoloads.scm, src/gauche-init.scm, lib/gauche/fileutil.scm,

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.12 2003-12-10 20:35:47 shirok Exp $
+;;;  $Id: 822.scm,v 1.13 2003-12-12 07:53:50 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -39,11 +39,15 @@
 (define-module rfc.822
   (use srfi-1)
   (use srfi-13)
+  (use srfi-19)
+  (use text.parse)
   (use gauche.regexp)
-  (export rfc822-header->list
+  (export rfc822-header->list rfc822-header-ref
           rfc822-skip-cfws
-          rfc822-next-word
-          rfc822-parse-date
+          *rfc822-atext-chars* *rfc822-standard-tokenizers*
+          rfc822-atom rfc822-dot-atom rfc822-quoted-string
+          rfc822-next-token rfc822-field->tokens
+          rfc822-parse-date rfc822-date->date
           )
   )
 
@@ -90,95 +94,75 @@
            (loop r (read-line iport))))))
     ))
 
+(define (rfc822-header-ref header field-name . maybe-default)
+  (cond ((assoc field-name header) => cadr)
+        (else (get-optional maybe-default #f))))
+
 ;;------------------------------------------------------------------
 ;; Comments, quoted pairs, atoms and quoted string.  Section 3.2
 ;;
 
-(define (rfc822-atext-char? ch)
-  (and (char? ch)
-       (char-set-contains? #[A-Za-z0-9!#$%&'*+/=?^_`{|}~-] ch)))
-
-(define (rfc822-skip-cfws input prefetch)
+;; skip comments and white spaces, then returns the head char.
+(define (rfc822-skip-cfws input)
   (define (scan c)
     (cond ((eof-object? c) c)
-          ((char=? c #\( ) (in-comment (read-char input)))
-          ((char-whitespace? c) (scan (read-char input)))
+          ((char=? c #\( ) (in-comment (peek-next-char input)))
+          ((char-whitespace? c) (scan (peek-next-char input)))
           (else c)))
   (define (in-comment c)
     (cond ((eof-object? c) c)
-          ((char=? c #\) ) (scan (read-char input)))
-          ((char=? c #\\ ) (read-char input) (in-comment (read-char input)))
-          ((char=? c #\( ) (in-comment (in-comment (read-char input))))
-          (else (in-comment (read-char input)))))
-  (scan (or prefetch (read-char input))))
+          ((char=? c #\) ) (scan (peek-next-char input)))
+          ((char=? c #\\ ) (read-char input) (in-comment (peek-next-char input)))
+          ((char=? c #\( ) (in-comment (in-comment (peek-next-char input))))
+          (else (in-comment (peek-next-char input)))))
+  (scan (peek-char input)))
 
-(define (rfc822-atom input prefetch out cont)
-  (let loop ((c (or prefetch (read-char input))))
-    (cond ((eof-object? c) (cont c))
-          ((rfc822-atext-char? c)
-           (when out (write-char c out))
-           (loop (read-char input)))
-          (else (cont c)))))
+;; Basic tokenizers.  Supposed to be used for higher-level parsers.
 
-(define (rfc822-dot-atom input prefetch out cont)
-  (let loop ((c (or prefetch (read-char input))))
-    (cond ((eof-object? c) (cont c))
-          ((rfc822-atext-char? c)
-           (when out (write-char c out))
-           (loop (read-char input)))
-          ((char=? c #\.)
-           (let1 c2 (read-char input)
-             (if (rfc822-atext-char? c2)
-               (begin
-                 (when out (write-char c out) (write-char c2 out))
-                 (loop (read-char input)))
-               #f)))
-          (else (cont c)))))
+(define-constant *rfc822-atext-chars* #[A-Za-z0-9!#$%&'*+/=?^_`{|}~-])
 
-;; preceding DQUOTE has already been read
-(define (rfc822-quoted-string input out cont)
-  (let loop ((c (read-char input)))
-    (cond ((eof-object? c) (cont c)) ;; tolerate missing closing DQUOTE
-          ((char=? c #\") (cont #f))
-          ((char=? c #\\)
-           (let1 c (read-char input)
-             (cond ((eof-object? c) (cont #f)) ;; tolerate stray backslash
-                   (else (when out (write-char c out))
-                         (loop (read-char input)))))
-           (else (when out (write-char c out))
-                 (loop (read-char input)))))))
+(define (rfc822-atom input)
+  (next-token-of *rfc822-atext-chars* input))
 
-;(define (rfc822-word input prefetch out cont)
-;  (let loop ((c (or prefetch (read-char input))))
-;    (cond ((eof-object? c) (cont c))
-;          (
+;; NB: this is loose, but usually OK.
+(define (rfc822-dot-atom input)
+  (next-token-of (list *rfc822-atext-chars* #\.) input))
 
-(define (rfc822-next-word input prefetch)
-  (let ((out (open-output-string)))
-    (define (finish c) (values (get-output-string out) c))
-    (define (atom c)
-      (cond ((eof-object? c) (finish c))
-            ((char-set-contains? #[A-Za-z0-9!#$%&'*+/=?^_`{|}~-] c)
-             (write-char c out) (atom (read-char input)))
-            (else (finish c))))
-    (define (quoted c)
-      (cond ((eof-object? c) (finish c)) ;tolerate
-            ((char=? c #\") (finish #f))
+;; Assuming the first char in input is DQUOTE
+(define (rfc822-quoted-string input)
+  (let1 r (open-output-string/private)
+    (define (finish) (get-output-string r))
+    (let loop ((c (peek-next-char input)))
+      (cond ((eof-object? c) (finish));; tolerate missing closing DQUOTE
+            ((char=? c #\") (read-char input) (finish)) ;; discard DQUOTE
             ((char=? c #\\)
-             (let ((c (read-char input)))
-               (cond ((eof-object? c) (finish c)) ;tolerate
-                     (else (write-char c out) (quoted (read-char input))))))
-            (else (write-char c out) (quoted (read-char input)))))
+             (let1 c (peek-next-char input)
+               (cond ((eof-object? c) (finish)) ;; tolerate stray backslash
+                     (else (write-char c r) (loop (peek-next-char input))))))
+            (else (write-char c r) (loop (peek-next-char input)))))))
 
-    (let ((c (rfc822-skip-cfws input prefetch)))
-      (cond ((eof-object? c) (values "" c))
-            ((char=? c #\") (quoted (read-char input)))
-            (else (atom c))))
-    ))
+;; Default tokenizer table
+(define-constant *rfc822-standard-tokenizers*
+  `((#[\"] . ,rfc822-quoted-string)
+    (,*rfc822-atext-chars* . ,rfc822-dot-atom)))
 
-;(define (rfc822-next-dot-atom 
+;; Returns the next token or EOF
+(define (rfc822-next-token input . opts)
+  (let ((toktab (map (lambda (e)
+                       (cond
+                        ((char-set? e) (cons e (cut next-token-of e <>)))
+                        (else e)))
+                     (get-optional opts *rfc822-standard-tokenizers*)))
+        (c (rfc822-skip-cfws input)))
+    (cond ((eof-object? c) c)
+          ((find (lambda (e) (char-set-contains? (car e) c)) toktab)
+           => (lambda (e) ((cdr e) input)))
+          (else (read-char input)))))
 
-    
+;; returns a list of tokens, for convenience
+(define (rfc822-field->tokens field . opts)
+  (call-with-input-string field
+    (cut port->list (cut apply rfc822-next-token <> opts) <>)))
 
 ;;------------------------------------------------------------------
 ;; Date and time, section 3.3
@@ -230,11 +214,24 @@
                (and dow (dow->number dow))))
      (else (values #f #f #f #f #f #f #f #f))))
 
-;(define (rfc822-date->time string)
-;  (receive (year month day hour min sez tz . rest)
-;      (rfc822-parse-date string)
-;    (and year
-;         (
-  
+;; returns it by srfi-19 date
+(define (rfc822-date->date string)
+  (receive (year month day hour min sec tz . rest)
+      (rfc822-parse-date string)
+    (and year
+         (make-date 0 sec min hour day month year
+                    (receive (quot rem) (quotient&remainder tz 100)
+                      (+ (* quot 3600) (* (abs rem) 60)))))))
+
+;;------------------------------------------------------------------
+;; Address specification (Section 3.4)
+;;
+
+;; The EBNF syntax in RFC2822 requires arbitrary lookahead,
+;; so straight recursive-descent parser won't work.
+;; 
+
+;; to be written
+
 
 (provide "rfc/822")
