@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.52 2002-01-15 21:05:26 shirok Exp $
+ *  $Id: vm.h,v 1.53 2002-01-22 11:13:24 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -136,7 +136,7 @@ extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 typedef struct ScmCStackRec {
     struct ScmCStackRec *prev;
     ScmContFrame *cont;
-    jmp_buf jbuf;
+    sigjmp_buf jbuf;
 } ScmCStack;
 
 /*
@@ -312,7 +312,7 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
        cstack.prev = Scm_VM()->cstack;          \
        cstack.cont = Scm_VM()->cont;            \
        Scm_VM()->cstack = &cstack;              \
-       if (setjmp(cstack.jbuf) == 0) {
+       if (sigsetjmp(cstack.jbuf, TRUE) == 0) {
            
 #define SCM_WHEN_ERROR                          \
        } else {
@@ -321,7 +321,7 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
            do {                                                 \
                if (Scm_VM()->cstack->prev) {                    \
                    Scm_VM()->cstack = Scm_VM()->cstack->prev;   \
-                   longjmp(Scm_VM()->cstack->jbuf, 1);          \
+                   siglongjmp(Scm_VM()->cstack->jbuf, 1);       \
                }                                                \
                else exit(1);                                    \
            } while (0)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.21 2001-11-10 10:00:59 shirok Exp $
+ *  $Id: regexp.c,v 1.22 2002-01-22 11:13:24 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -781,7 +781,7 @@ struct match_ctx {
     const char *last;
     struct match_list *matches;
     void *begin_stack;          /* C stack pointer the match began from. */
-    jmp_buf cont;
+    sigjmp_buf cont;
 };
 
 #define MAX_STACK_USAGE   0x100000 /* 1MB */
@@ -890,7 +890,7 @@ void re_exec_rec(const char *code,
         case RE_SUCCESS:
             ctx->last = input;
             ctx->matches = mlist;
-            longjmp(ctx->cont, 1);
+            siglongjmp(ctx->cont, 1);
             /*NOTREACHED*/
         case RE_FAIL:
             return;
@@ -955,7 +955,7 @@ static ScmObj re_exec(ScmRegexp *rx, ScmString *orig,
     ctx.matches = NULL;
     ctx.begin_stack = (void*)&ctx;
 
-    if (setjmp(ctx.cont) == 0) {
+    if (sigsetjmp(ctx.cont, TRUE) == 0) {
         re_exec_rec(ctx.codehead, start, &ctx, NULL);
         return SCM_FALSE;
     } else {

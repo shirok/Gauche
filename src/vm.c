@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.127 2002-01-15 21:05:22 shirok Exp $
+ *  $Id: vm.c,v 1.128 2002-01-22 11:13:24 shirok Exp $
  */
 
 #include "gauche.h"
@@ -394,7 +394,7 @@ static void run_loop()
     
     for (;;) {
         /*VM_DUMP("");*/
-        
+        SIGCHECK;
 
         /* See if we're at the end of procedure.  It's safer to use
            !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.
@@ -1524,7 +1524,7 @@ static ScmObj user_eval_inner(ScmObj program)
     
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
-    if (setjmp(cstack.jbuf) == 0) {
+    if (sigsetjmp(cstack.jbuf, TRUE) == 0) {
         run_loop();
         val0 = vm->val0;
         if (vm->cont == cstack.cont) {
@@ -1549,7 +1549,7 @@ static ScmObj user_eval_inner(ScmObj program)
                 POP_CONT();
                 SAVE_REGS();
                 vm->cstack = vm->cstack->prev;
-                longjmp(vm->cstack->jbuf, 1);
+                siglongjmp(vm->cstack->jbuf, 1);
             }
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
@@ -1574,7 +1574,7 @@ static ScmObj user_eval_inner(ScmObj program)
                 POP_CONT();
                 SAVE_REGS();
                 vm->cstack = vm->cstack->prev;
-                longjmp(vm->cstack->jbuf, 1);
+                siglongjmp(vm->cstack->jbuf, 1);
             }
         } else {
             Scm_Panic("invalid longjmp");
@@ -1893,7 +1893,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         vm->escapeReason = SCM_VM_ESCAPE_ERROR;
         vm->escapeData[0] = ep;
         vm->escapeData[1] = e;
-        longjmp(vm->cstack->jbuf, 1);
+        siglongjmp(vm->cstack->jbuf, 1);
     } else {
         exit(EX_SOFTWARE);
     }
@@ -2123,7 +2123,7 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
             vm->escapeReason = SCM_VM_ESCAPE_CONT;
             vm->escapeData[0] = ep;
             vm->escapeData[1] = args;
-            longjmp(vm->cstack->jbuf, 1);
+            siglongjmp(vm->cstack->jbuf, 1);
         }
     } else {
         ScmObj handlers_to_call = throw_cont_calculate_handlers(ep, vm);
