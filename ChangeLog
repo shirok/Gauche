@@ -1,3 +1,11 @@
+2002-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/*/configure.in : modified to use aclocal.m4
+	* aclocal.m4, gc/dyn_load.c, src/gauche/extend.c: for the platforms
+	  that GC doesn't support dlopened object, added the way of explicit
+	  registration of the data section. (Thanks for this idea from
+	  Abe Hiroshi).
+
 2002-02-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub, src/class.c : fixed to compile extensions under cygwin.
