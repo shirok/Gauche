@@ -1174,8 +1174,11 @@ The direct-subclasses link of the direct superclasses of the
 original class is modified so that they points to the new class.
 
 @item
-All the subclasses of the original class are redefined
+All the subclasses of the original class are redefined recursively
 so that they reflect the changes of the class.
+Each class remembers its initialization arguments, and
+each redefined subclass gets the same initalization arguments
+as the original subclass. 
 
 @item
 The original class is marked @emph{redefined}.
@@ -1205,8 +1208,50 @@ are discarded.
 You can customize this behavior by writing the @code{change-class} method.
 See @ref{Changing classes}, for the details.
 
+@subsubheading Notes on thread safety
 
+Class redefinition process is non-local operation with full of side-effects.
+It is difficult to guarantee that two threads safely run
+class redefinition protocol simultaneously.   So Gauche uses
+a process-wide lock to limit only one thread to enter the
+class redefinition protocol at a time.  
 
+If a thread tries to redefine a class while another thread is in
+the redefinition protocol, the thread is blocked, even if
+it is redefining a different class with the one that are
+being redefined; because redefinition affects all the
+subclasses, and all the methods and generic functions that
+are related to the class and subclasses, it is not trivial
+to determine two classes are completely independent or not.
+
+If a thread tries to access an instance whose class
+is being redefined by another thread, also the thread
+is blocked until the redefinition is finished.
+
+Note that instance update protocol isn't serialized.
+If two threads tries to access to an instance whose
+class has been redefined, both trigger the instance
+update protocol, which would cause an undesired race condition.
+It is application's responsibility to ensure
+such case won't happen.  It is natural since the
+instance access isn't serialized by the system anyway.
+However, an extra care is required to have mutex within
+an instance; just accessing the mutex in it may trigger
+the instance update protocol.
+
+@subsubheading Notes on compatibility
+
+Class redefinition protocol subtlely differs among CLOS-like
+Scheme systems.   Gauche's is very similar to STklos's, except
+that STklos 0.56 doesn't replace bindings of redefined subclasses,
+and also it doesn't remember initialization arguments so the
+redefined subclass may lose some of the information that the original
+subclass has.  Guile's object system swaps identities of the original
+class and the redefined class at the end of class redefinition
+protocol, so the reference to the original class object
+will turn to the redefined class.
+As far as the author knows, class redefinition is not thread-safe
+in both STklos 0.56 and Guile 1.6.4.
 
 @node Class definition examples,  , Class redefinition, Class
 @subsection Class definition examples
@@ -1522,7 +1567,7 @@ It can be defined like the following code
 @end defun
 
 @deffn {Method} ref (obj <object>) (slot <symbol>)
-@deffnx {Method} (setter ref) (obj <object>) (slot <symbol>) value
+@deffnx {Method} {(setter ref)} (obj <object>) (slot <symbol>) value
 These methods just calls @code{slot-ref} and @code{slot-set!}, respectively.
 They are slightly less efficient than directly calling @code{slot-ref}
 and @code{slot-set!}, but more compact in the program code.
