@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compare.c,v 1.6 2002-05-27 06:12:59 shirok Exp $
+ *  $Id: compare.c,v 1.7 2002-05-27 12:46:44 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -111,23 +111,28 @@ static void sort_h(ScmObj *elts, int nelts,
 static void sort_q(ScmObj *elts, int lo, int hi, int depth, int limit,
                    int (*cmp)(ScmObj, ScmObj, ScmObj), ScmObj data)
 {
-    if (lo >= hi) return;
-    
-    if (depth >= limit) {
-        sort_h(elts+lo, (hi-lo+1), cmp, data);
-    } else {
-        int l = lo, r = hi;
-        ScmObj pivot = elts[lo], tmp;
-        while (l <= r) {
-            while (cmp(elts[l], pivot, data) < 0) l++;
-            while (cmp(pivot, elts[r], data) < 0) r--;
-            if (l > r) break;
-            tmp = elts[l]; elts[l] = elts[r]; elts[r] = tmp;
-            l++;
-            r--;
+    for (;;) {
+        if (lo >= hi) return;
+        if (depth >= limit) {
+            sort_h(elts+lo, (hi-lo+1), cmp, data);
+            break;
+        } else {
+            int l = lo, r = hi;
+            ScmObj pivot = elts[lo], tmp;
+            while (l <= r) {
+                while (l <= r && cmp(elts[l], pivot, data) < 0) l++;
+                while (l <= r && cmp(pivot, elts[r], data) < 0) r--;
+                if (l > r) break;
+                tmp = elts[l]; elts[l] = elts[r]; elts[r] = tmp;
+                l++;
+                r--;
+            }
+            sort_q(elts, lo, r, depth+1, limit, cmp, data);
+            /* tail call to
+               sort_q(elts, l, hi, depth+1, limit, cmp, data); */
+            lo = l;
+            depth++;
         }
-        sort_q(elts, lo, r, depth+1, limit, cmp, data);
-        sort_q(elts, l, hi, depth+1, limit, cmp, data);
     }
 }
 
