@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.221 2002-06-17 20:45:54 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.222 2002-06-17 22:36:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4804,6 +4804,14 @@ A character whose internal encoding is the integer @var{N},
 when @var{N} is a hexadecimal integer.
 Note that this notation is not portable among different
 internal encoding schemes except ASCII character range.
+@item u@var{N}
+A character whose UCS character code is the integer @var{N},
+where @var{N} is 4-digit or 8-digit hexadecimal number.
+If Gauche is compiled with the internal encoding other than UTF-8,
+the reader uses @code{gauche.charconv} module to convert Unicode
+to the internal character code.  Note that the specified character
+may not be defined in the internal encoding; in which case, either
+a substitution character is used, or an error is signalled.
 @end table
 @c JP
 リテラルの文字オブジェクトを表現します。
@@ -4836,9 +4844,33 @@ NUL文字 (ASCII #x00)
 @item x@var{N}
 @var{N} が16進表記の整数であるとき、内部エンコーディングが整数@var{N}
 であるような文字。この表記はASCII文字の範囲の外では、内部エンコーディングが異なる
-処理系間で互換性が無いことに注意。
+処理系間で互換性が無いことに注意して下さい。
+@item u@var{N}
+@var{N}が4桁または8桁の16進数整数であるとき、UCSコード@var{N}であるような文字。
+Gaucheの内部エンコーディングがUTF-8以外でコンパイルされている場合には、
+リーダーは@code{gauche.charconv}モジュールを使ってUnicodeを内部エンコーディングへと
+変換します。Unicodeの該当する文字が内部エンコーディングで定義されていない場合、
+代替文字に置換されるか、エラーとなります。
 @end table
 @c COMMON
+
+@example
+@c EN
+#\newline @result{} #\newline ; @r{newline character}
+#\x0a     @result{} #\newline ; @r{ditto}
+#\x41     @result{} #\A       ; @r{ASCII letter 'A'}
+#\u0041   @result{} #\A       ; @r{ASCII letter 'A', specified by UCS}
+#\u3042   @result{} ; @r{Hiragana letter A, specified by UCS}
+#\u0002a6b2 @result{} ; @r{JISX0213 Kanji 2-94-86, specified by UCS4}
+@c JP
+#\newline @result{} #\newline ; @r{改行文字}
+#\x0a     @result{} #\newline ; @r{改行文字}
+#\x41     @result{} #\A       ; @r{ASCII文字 'A'}
+#\u0041   @result{} #\A       ; @r{ASCII文字 'A', UCSコード}
+#\u3042   @result{} #\あ      ; @r{平仮名「あ」, UCSコード}
+#\u0002a6b2 @result{} ; @r{JISX0213 2-94-86 UCS4コード}
+@c COMMON
+@end example
 
 @c EN
 You can denote multibyte characters with this syntax if
@@ -4899,6 +4931,18 @@ outside the ASCII character range.
 @defunx char-upper-case? char
 @defunx char-lower-case? char
 [R5RS]
+@c EN
+Returns true if a character @var{char} is an alphabetic character
+(@code{[A-Za-z]}), a numeric character (@code{[0-9]}), a whitespace
+character, an upper case character or a lower case character, respectively.
+Currently, these procedures works only for ASCII characters.  They
+return @code{#f} for all other characters.
+@c JP
+文字@var{char}がそれぞれ英字(@code{[A-Za-z]})、数字(@code{[0-9]})、
+空白文字、大文字および小文字の時に真の値を返します。
+今のところ、これらの手続きはASCII文字のみで動作します。
+それ以外の文字に対しては@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun char->integer char
@@ -5247,6 +5291,7 @@ SRFI-13については@ref{String library}を参照してください。
 @c COMMON
 
 @menu
+* String syntax::               
 * String Predicates::           
 * String Constructors::         
 * String Interpolation::        
@@ -5257,7 +5302,110 @@ SRFI-13については@ref{String library}を参照してください。
 * Incomplete strings::          
 @end menu
 
-@node String Predicates, String Constructors, Strings, Strings
+@node String syntax, String Predicates, Strings, Strings
+@subsection String syntax
+@c NODE 文字列の表記
+
+@deftp {Reader syntax} @code{"}@dots{}@code{"}
+[R5RS+]
+@c EN
+Denotes a literal string.  Inside the double quotes, the following
+backslash escape sequences are recognized.
+@c JP
+リテラル文字列です。ダブルクオートの中では、
+以下のエスケープシーケンスが認識されます。
+@c COMMON
+
+@table @code
+@item \"
+@c EN
+[R5RS] Double-quote character
+@c JP
+[R5RS] ダブルクオート文字
+@c COMMON
+@item \\
+@c EN
+[R5RS] Backslash character
+@c JP
+[R5RS] バックスラッシュ文字
+@c COMMON
+@item \n
+@c EN
+Newline character (ASCII 0x0a).
+@c JP
+改行文字 (ASCII 0x0a)
+@c COMMON
+@item \r
+@c EN
+Return character (ASCII 0x0d).
+@c JP
+復帰文字 (ASCII 0x0d)
+@c COMMON
+@item \f
+@c EN
+Form-feed character (ASCII 0x0c).
+@c JP
+フォームフィード (ASCII 0x0c)
+@c COMMON
+@item \t
+@c EN
+Tab character (ASCII 0x09)
+@c JP
+タブ文字 (ASCII 0x09)
+@c COMMON
+@item \0
+@c EN
+ASCII NUL character (ASCII 0x00).
+@c JP
+NUL文字 (ASCII 0x00)
+@c COMMON
+@item \x@var{NN}
+@c EN
+A byte represented by two-digit hexadecimal number @var{NN}.
+The byte is interpreted as the internal multibyte encoding.
+@c JP
+2桁の16進数@var{NN}で指定されるバイト。
+このバイトは内部エンコーディングによって解釈されます。
+@c COMMON
+@item \u@var{NNNN}
+@c EN
+A character whose UCS2 code is represented by four-digit
+hexadecimal number @var{NNNN}.
+@c JP
+4桁の16進数@var{NNNN}によって示されるUCS2コードを持つ文字。
+@c COMMON
+@item \U@var{NNNNNNNN}
+@c EN
+A character whose UCS4 code is represented by eight-digit
+hexadecimal number @var{NNNNNNNN}.
+@c JP
+8桁の16進数@var{NNNNNNNN}によって示されるUCS4コードを持つ文字。
+@c COMMON
+@end table
+
+@c EN
+If Gauche is compiled with internal encoding other than UTF-8,
+the reader uses @code{gauche.charconv} module to interpret
+@code{\uNNNN} and @code{\UNNNNNNNN} escape sequence.
+@c JP
+GaucheがUTF-8以外の内部エンコーディングでコンパイルされていた場合、
+リーダーは@code{gauche.charconv}モジュールを使って
+エスケープシーケンス@code{\uNNNN}と@code{\UNNNNNNNN}の解釈を行います。
+@c COMMON
+@end deftp
+
+@deftp {Reader syntax} @code{#"}@dots{}@code{"}
+@c EN
+Denotes incomplete string.  The same escape sequences as the complete
+string syntax are recognized.
+@c JP
+不完全な文字列のリテラル表記です。完全な文字列と同様のエスケープシーケンスが
+使えます。
+@c COMMON
+@end deftp
+
+
+@node String Predicates, String Constructors, String syntax, Strings
 @subsection String Predicates
 @c NODE 文字列に関する述語
 
@@ -5382,7 +5530,6 @@ Schemeはそのような機能を定義していませんが、Gaucheではリーダーマクロを使って
 @c COMMON
 
 @deftp {Reader syntax} @code{#`}@var{string-literal}
-
 @c EN
 Evaluates to a string.  If @var{string-literal} contains the
 character sequence @code{,@var{expr}}, where 
