@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.115 2001-04-15 21:46:39 shiro Exp $
+ *  $Id: gauche.h,v 1.116 2001-04-17 09:57:55 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -612,6 +612,8 @@ extern ScmClass Scm_CharSetClass;
 #define SCM_CLASS_CHARSET  (&Scm_CharSetClass)
 #define SCM_CHARSET(obj)   ((ScmCharSet*)obj)
 #define SCM_CHARSETP(obj)  SCM_XTYPEP(obj, SCM_CLASS_CHARSET)
+
+#define SCM_CHARSET_SMALLP(obj)  (SCM_CHARSET(obj)->ranges == NULL)
 
 ScmObj Scm_MakeEmptyCharSet(void);
 ScmObj Scm_CopyCharSet(ScmCharSet *src);
