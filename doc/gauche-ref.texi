@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.131 2001-12-02 12:52:52 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.132 2001-12-02 22:00:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4500,6 +4500,48 @@ A filler and a flusher callbacks of buffered ports
 
 @defun dynamic-wind before thunk after
 [R5RS]
+@c EN
+@var{Before}, @var{thunk} and @var{after} are all procedures with
+no arguments.
+In normal situation, @code{dynamic-wind} calls @var{before}, then @var{thunk},
+then @var{after}, then returns whatever value(s) @var{thunk} returned.
+
+If a control flow goes out from @var{thunk} by invoking a continuation
+captured outside of the dynamic scope of @code{dynamic-wind}
+(for example, an error is signalled in @var{thunk}),
+@var{after} is called.  
+
+If a control flow goes into @var{thunk} by invoking a continuation
+captured inside @var{thunk} from outside of the dynamic
+scope of @code{dynamic-wind}, @var{before} is called.
+@c JP
+@var{before}、@var{thunk}および@var{after} は引数を取らない手続きです。
+@code{dynamic-wind}はまず@var{before}を呼び出し、続いて@var{thunk}を呼び出し、
+続いて@var{after}を呼び出します。そして@var{thunk}が返した値を返します。
+
+もし@code{dynamic-wind}のダイナミックスコープの外で捕捉された継続が
+@var{thunk}の中で呼ばれることにより制御が@var{thunk}から飛び出した場合、
+(@var{thunk}の中でエラーが起こった場合などが考えられます)、
+@var{after}が呼ばれます。
+
+もし、@var{thunk}の中で捕捉された継続が@var{dynamic-wind}のダイナミックスコープの
+外で呼ばれることにより制御が@var{thunk}の中へ飛び込んだ場合、
+@var{before}が呼ばれます。
+@c COMMON
+@example
+(letrec ((paths '())
+         (c #f)
+         (add (lambda (s) (push! paths s))))
+  (dynamic-wind
+   (lambda () (add 'connect))
+   (lambda ()
+     (add (call/cc (lambda (c0) (set! c c0) 'talk1))))
+   (lambda () (add 'disconnect)))
+  (if (< (length paths) 4)
+      (c 'talk2)
+      (reverse paths)))
+ @result{} (connect talk1 disconnect connect talk2 disconnect)
+@end example
 @end defun
 
 @node Multiple values, Delayed Evaludation, Continuation, Control features
@@ -4507,16 +4549,39 @@ A filler and a flusher callbacks of buffered ports
 @c NODE 多値
 
 @defun values obj @dots{}
-[R5RS] Returns @var{obj} @dots{} as multiple values.
+[R5RS]
+@c EN
+Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
 @code{receive} (@ref{Binding constructs}), or the R5Rs procedure
 @code{call-with-values} described below.  See also @ref{Let-values}.
+@c JP
+@var{obj} @dots{} を多値として返します。
+呼び出し側は、組み込み構文の @code{receive} (@ref{Binding constructs}参照)か、
+下に説明するR5RSの手続き@code{call-with-values}を使って多値を受け取ることが
+できます。@ref{Let-values}も参照してください。
+@c COMMON
+@example
+(values 1 2) @result{} 1 @r{and} 2
+@end example
 @end defun
 
 @defun call-with-values producer consumer
 [R5RS]
+@c EN
+Call a procedure @var{producer} with no argument.
+Then applies a procedure @var{consumer} on the
+value(s) @var{producer} returned.  Returns the value(s) @var{consumer}
+returns.
+@c JP
+手続き@var{producer}を引数無しで呼びます。そして、それが返した値
+を引数として@var{consumer}を呼びます。@var{consumer}が返す値を
+返します。
+@c COMMON
+@example
+(call-with-values (values 1 2) cons) @result{} (1 . 2)
+@end example
 @end defun
-
 
 @node Delayed Evaludation,  , Multiple values, Control features
 @subsection  Delayed Evaludation
@@ -9073,6 +9138,7 @@ as fundamental methods are explained at the bottom of this subsection.
 @c COMMON
 
 @deffn {Generic function} call-with-iterator collection proc &keyword start
+@c EN
 A fundamental iterator creator.   This creates two procedures
 from @var{collection}, both take no argument, and then call
 @var{proc} with those two procedures.   The first procedure is
@@ -9083,13 +9149,48 @@ which returns one element from the collection and sets the
 internal pointer to the next element.
 The behavior is undefined if you call the incrementer after
 the terminate predicate returns @code{#t}.
+@c JP
+基礎となるイテレータ構築メソッドです。このメソッドはコレクション@var{collection}
+から繰り返しのための二つの手続きを作成し、それらを引数として手続き@var{proc}を
+呼びます。作られる最初の手続きは終了判定手続きで、引数無しで呼び出され、繰り返しが
+終了していれば@code{#t}を、まだ要素が残っていれば@code{#f}を返します。
+作られる二番目の手続きはインクリメント手続きで、呼ばれる度に現在の要素を返し、
+内部のポインタを次の要素へと進めます。終了判定手続きが@code{#t}を返した後に
+インクリメント手続きを呼んだ場合の動作は未定義です。
+@c COMMON
 
-If the collection is actually a sequence, this method takes
-optional @var{start} keyword argument, which specifies
-the index from where iteration begins.  It has no effect
-if the collection is not a sequence.
+@c EN
+If the collection is actually a sequence, the incrementer is guaranteed
+to return elements in order, from 0-th element to the last element.
+If a keyword argument @var{start} is given, however, the iteration
+begins from @var{start}-th element and ends at the last element.
+If the collection is not a sequence, the iteration order is
+arbtrary, and @var{start} argument has no effect.
+@c JP
+コレクションがシーケンスでもある場合、インクリメント手続きはシーケンスの順番に要素を取り出します。
+キーワード引数@var{start}が与えられていれイテレーションの範囲は
+@var{start}番目の要素から最後の要素までとなります。シーケンスでないコレクションに
+対しては@var{start}引数は意味を持ちません。
+@c COMMON
 
-This method returns the value(s) @var{proc} returned.
+@c EN
+An implementation of @var{call-with-iterator} method may
+limit the extent of the iterator inside the dynamic scope of the method.
+For example, it allocates some resource (e.g. connect to a database)
+before calling @var{proc}, and deallocates it (e.g. disconnect from a database)
+after @var{proc} returns.
+@c JP
+@var{call-with-iterator}のメソッド実装は、イテレータのエクステントを
+そのメソッドのダイナミックスコープ内に限ることを許されます。例えば、
+メソッドは@var{proc}を呼ぶ前に何らかのリソースを確保し(データベースへのコネクションなど)、
+@var{proc}から戻った後でそれを解放するということができます。
+@c COMMON
+
+@c EN
+This method returns the value(s) @var{proc} returns.
+@c JP
+このメソッドは @var{proc} が返した値をそのまま返します。
+@c COMMON
 
 @example
 (call-with-iterator '(1 2 3 4 5)
@@ -9097,14 +9198,22 @@ This method returns the value(s) @var{proc} returned.
     (do ((odd-nums 0))
         ((end?) odd-nums)
       (when (odd? (next)) (inc! odd-nums)))))
- @result{} 5
+ @result{} 3
 @end example
 
-See also @code{with-iterator} macro below, for it is much easier to use.
+@c EN
+See also @code{with-iterator} macro below, for it is easier to use.
+@c JP
+下に示す@code{with-iterator}マクロも参照してください。
+@c COMMON
 @end deffn
 
 @deffn {Macro} with-iterator (collection end? next args @dots{}) body @dots{}
+@c EN
 A convenience macro to call @code{call-with-iterator}.
+@c JP
+@code{call-with-iterator}を簡潔に呼び出すマクロです。
+@c COMMON
 @example
 (with-iterator (coll end? next args @dots{}) body @dots{})
  @equiv{}
@@ -9115,32 +9224,84 @@ A convenience macro to call @code{call-with-iterator}.
 @end deffn
 
 @defun call-with-iterators collections proc
+@c EN
 A helper function to write n-ary iterator method.
 This function applies @code{call-with-iterator} for each @var{collection}s,
 and makes two lists, the first consists of terminate predicates
 and the second of incrementers.  Then @var{proc} is called
 with those two lists.  Returns whatever @var{proc} returns.
+@c JP
+N-aryのイテレータメソッドを書くのに便利な手続きです。
+この手続きはコレクションのリスト@var{collections}の各コレクションに対して
+@code{call-with-iterator}を呼び、二つのリストを作ります。最初のリストには
+終了判定手続きが順に集められており、二つ目のリストにはインクリメント手続きが
+順に集められています。そして、これらのリストを引数として@var{proc}を呼び出します。
+@var{proc}が返した値を返します。
+@c COMMON
 @end defun
 
 @deffn {Generic function} call-with-builder collection-class proc &keyword size
-A fundamental builder creator.   Builder is a way to construct
-a collection incrementally.
+@c EN
+A fundamental builder creator.  Builder is a way to construct
+a collection incrementally.  Not all collection classes provide
+this method.
+@c JP
+基礎的なビルダー構築メソッドです。ビルダーはコレクションをインクリメンタルに
+作成する方法です。コレクションクラスによってはこの手続きを提供しないものもあります。
+@c COMMON
 
+@c EN
 @var{Collection-class} is a class of the collection to be built.
-This method creates two procedures, adder and getter.
+This method creates two procedures, adder and getter, then calls
+@var{proc} with those procedures.
 Adder procedure takes one argument and adds it to the collection
 being built.  Getter takes no argument and returns a built collection object.
 The effect is undefined if adder is called after getter is called.
+@c JP
+@var{Collection-class}は作成されるコレクションのクラスです。
+このメソッドは、追加手続きと結果手続きの二つの手続きを作成し、それらを
+引数として@var{proc}を呼びます。追加手続きは一つ引数を取り、それを作成中の
+コレクションに追加します。結果手続きは引数を取らず、作成されたコレクションを返します。
+結果手続きが呼ばれた後で追加手続きを呼んだ場合の動作は未定義です。
+@c COMMON
 
+@c EN
 A keyword argument @var{size} may be specified if the size of
 the result collection is known.  Certain collections may be
 built much more efficiently if the size is known; other collections
-may just ignore it.
+may just ignore it.   The behavior is undefined if more than
+@var{size} elements are added, or the collection is retrieved before
+@var{size} elements are accumulated.
+@c JP
+作られるコレクションのサイズが分かっている場合、キーワード引数@var{size}を与える
+ことができます。コレクションクラスによってはその情報を使って効率的にコレクションを
+作成することができます。その情報を単に無視するコレクションクラスもあります。
+@var{size}個より多くの要素が追加されたり、@var{size}個の要素が追加される前に
+結果手続きが呼ばれたりした場合の動作は未定義です。
+@c COMMON
 
+@c EN
+If the collection class is actually a sequence class,
+adder is guaranteed to add elements in order.  Otherwise,
+the order of elements are insignificant.
+@c JP
+コレクションクラスがシーケンスクラスであった場合、追加手続きは要素を
+シーケンスの順に追加してゆきます。
+@c COMMON
+
+@c EN
 Some collection class may take more keyword arguments to
 initialize the collection.
+@c JP
+コレクションクラスによっては、コレクションオブジェクトの初期化のために
+他のキーワード引数を取るかもしれません。
+@c COMMON
 
+@c EN
 This method returns the value(s) @var{proc} returned.
+@c JP
+このメソッドは@var{proc}が返す値を返します。
+@c COMMON
 
 @example
 (call-with-builder <list>
@@ -9154,11 +9315,19 @@ This method returns the value(s) @var{proc} returned.
  @result{} #(a b c)
 @end example
 
+@c EN
 See also @code{with-builder} macro below, for it is much easier to use.
+@c JP
+下に示す@code{with-builder}マクロも参照してください。
+@c COMMON
 @end deffn
 
 @deffn {Macro} with-builder (collection add! get args @dots{}) body @dots{}
+@c EN
 A convenience macro to call @code{call-with-builder}.
+@c JP
+@code{call-with-builder}を簡潔に呼び出すマクロです。
+@c COMMON
 @example
 (with-builder (coll add! get args @dots{}) body @dots{})
  @equiv{}
@@ -9169,53 +9338,111 @@ A convenience macro to call @code{call-with-builder}.
 @end deffn
 
 @emph{Discussion}:
-Most of the iterator GFs are built on top of these primitive GFs.
-By implementing those GFs, you can easily adapt your own collection
+@c EN
+Other iterator methods are built on top of these primitive methods.
+By implementing those methods, you can easily adapt your own collection
 class to all of those iterative
 operations.   Optionally you can overload some of higher-level
-generic functions for efficiency.
+methods for efficiency.
+@c JP
+他のイテレータメソッドは全てこの二つの基礎的なメソッドの上に構築可能です。
+最低限これらのメソッドを定義すれば、そのクラスはコレクションとして振舞うことができます。
+もちろん最適化のために他のイテレータメソッドを定義しても構いませんが。
+@c COMMON
 
+@c EN
 It is debatable that which set of operations should be primitives.
 I chose call-with-iterator style for efficiency of the applications
-I write most.   The following is a discussion of other possible
+I see most.   The following is a discussion of other possible
 primitive iterators.
+@c JP
+どの操作を基礎的なメソッドとするかには議論の余地があります。
+Gaucheでは、作者がよく見るパターンで最も効率が良くなるように考えて現在のスタイルを
+選びました。以下に、他の基礎的なメソッドの可能性を検討します。
+@c COMMON
 
 @table @asis
 @item @code{fold}
-It is possible to make @code{fold} a primitive GFs.
-It can hide collection-specific iterating parameters neatly and
-efficiently.  However, it is rather cumbersome to derive
+@c EN
+It is possible to make @code{fold} a primitive method, and
+build other iterator method on top of it.
+Collection-specific iterating states can be kept in the
+stack of @code{fold}, thus it runs efficiently.  The method
+to optimize a procedure that uses @code{fold} as a basic
+iterator construct.
+However, it is rather cumbersome to derive
 generator-style interface from it.   It is also tricky
 to iterate irregulary over more than one collections.
+@c JP
+@code{fold}を最も基礎的なメソッドとして、他のイテレータメソッドをその上に
+構築することも可能です。繰り返しの状態はスタックに置かれるので効率良く走ります。
+@code{fold}を基礎とした繰り返し関数を最適化する方法は良く知られています。
+しかし、@code{fold}を元にしてジェネレータスタイルのインタフェースを
+作成するのは複雑です。また、複数のコレクションに対しての繰り返しを書くのも
+面倒です。
+@c COMMON
 
 @item CPS
+@c EN
 Passes iteratee the continuation procedure that continues
-the iteration.   Unfortunately it is not very efficient
-on Gauche.  And it has resource management problem described in
-Oleg's article.
+the iteration.   The iteratee just returns when it want
+to terminate the iteration.
+It has resource management problem described in
+Oleg Kiselyov's article (@ref{oleg2,,OLEG2}).
+@c JP
+繰り返しの中身の手続きに対し、繰り返しを続けるための継続手続きを渡す方法です。
+繰り返しを続けたくなければ、手続きは継続を呼ばすにそのまま戻ります。
+Oleg Kiselyovの記事(@ref{oleg2,,OLEG2})に指摘されているような、
+リソース管理の問題があります。
+@c COMMON
 
 @item Iterator object
-Like C++ iterator or CL generator.
+@c EN
+Like C++ iterator or Common Lisp generator.
 Easy to write loop.   The problem is that every call of
 checking termination or getting next element must be dispatched.
+@c JP
+C++のイテレータやCommon Lispのジェネレータのようなオブジェクトを使う方法です。
+ループを書くのは容易ですが、終了判定や要素取り出しの度にメソッドディスパッチが
+起こってしまいます。
+@c COMMON
 
 @item Series
-CL's series can be very efficient if the compiler can statically
+@c EN
+Common Lisp's series can be very efficient if the compiler can statically
 analyze the usage of series.  Unfortunately it is not the case in
 Gauche.  Even if it could, the extension mechanism doesn't blend well
 with Gauche's object system.
+@c JP
+Common Lispのシリーズはコンパイラがシリーズの使われかたを追跡できれば
+非常に効率の良いコードに変換できます。Gaucheのコンパイラはそこまでのデータフロー解析を
+行っていません。また、それをやったとしても、コレクションクラスを拡張するための方法が
+Gaucheのオブジェクトシステムとはうまく調和しません。
+@c COMMON
 
 @item Macros
+@c EN
 Iterator can be implemented as macros, and that will be very efficient;
 e.g. Scheme48's iterator macro.  It uses macros to extend, however,
 and that doesn't blend well with Gauche's object system.
+@c JP
+効率を気にするなら、イテレータをマクロで書いてしまう方法もあります
+(例えばScheme48の@code{iterator}マクロなど)。
+効率は良いのですが、拡張するにはマクロを書くことが必要となり、
+Gaucheのオブジェクトシステムとうまく調和しません。
+@c COMMON
 @end table
 
+@c EN
 The current implementation is close to the iterator object approach,
-but using closures instead of iterators so that avoiding
+but using closures instead of iterator objects so that avoiding
 dispatching in the inner loop.  Also it allows the iterator
 implementator to take care of the resource problem.
-
+@c JP
+現在の実装はイテレータオブジェクトアプローチに近いですが、イテレータオブジェクトを
+作る代わりにクロージャを使うことで内部のループでのメソッドディスパッチを
+避けています。また、現在のインタフェースはリソース管理の問題を解決しています。
+@c COMMON
 
 @node Implementing collections,  , Fundamental iterator creators, Collection framework
 @subsection Implementing collections
@@ -10921,22 +11148,45 @@ types, such as SRFI-4 uniform vector, have the methods as well.
 @node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
 @subsection Fundamental sequence accessors
 
+@deffn {Generic function} ref (seq <sequence>) index &optional fallback
+@example
+(ref '(a b c) 1)  @result{} b
+(ref '#(a b c) 1) @result{} b
+(ref "abc" 1)     @result{} #\b
+@end example
+@end deffn
+
+@deffn {Generic function} {(setter ref)} (seq <sequence>) index value
+@example
+(let ((x (list a b c)))
+  (set! (ref x 1) 'z)
+  x) @result{} (a z c)
+
+(let ((x (vector a b c)))
+  (set! (ref x 1) 'z)
+  x) @result{} #(a z c)
+
+(let ((x (string #\a #\b #\c)))
+  (set! (ref x 1) #\z)
+  x) @result{} "azc"
+@end example
+@end deffn
+
 @deffn {Generic function} referencer (seq <sequence>)
 @end deffn
 
 @deffn {Generic function} modifier (seq <sequence>)
 @end deffn
 
-@deffn {Generic function} ref (seq <sequence>) index &optional fallback
-@end deffn
-
-@deffn {Generic function} {(setter ref)} (seq <sequence>) index value
-@end deffn
-
 @node Slicing sequence, Implementing sequence, Fundamental sequence accessors, Sequence framework
 @subsection Slicing sequence
 
 @deffn {Generic function} subseq (seq <sequence>) &optional start end
+@example
+(subseq '(a b c d e) 1 4)   @result{} (b c d)
+(subseq '#(a b c d e) 1 4)  @result{} #(b c d)
+(subseq "abcde" 1 4)        @result{} "bcd"
+@end example
 @end deffn
 
 @node Implementing sequence,  , Slicing sequence, Sequence framework
@@ -13745,7 +13995,7 @@ if the given content is valid for the element.
 @mdindex text.parse
 A collection of utilities that does simple parsing from
 the input port.   The API is inspired, and compatible with
-Oleg Kiselyov's input parsing library (@ref{olegp,,OLEGP}).
+Oleg Kiselyov's input parsing library (@ref{oleg1,,OLEG1}).
 His library is used in lots of other libraries, notably,
 a full-Scheme XML parser/generator SSAX (@ref{ssax,,SSAX}).
 
@@ -14759,10 +15009,16 @@ Oleg Kiselyov, XML and Scheme, @*
 The SSAX distribution is also available at sourceforge:@*
 @url{http://ssax.sourceforge.net/}.
 
-@anchor{olegp}
-@item [OLEGP]
+@anchor{oleg1}
+@item [OLEG1]
 Oleg Kiselyov, Making sense of an input stream,@*
 @url{http://pobox.com/~oleg/ftp/Scheme/parsing.html}.
+
+@anchor{oleg2}
+@item [OLEG2]
+Oleg Kiselyov, General ways to traverse collections,,@*
+@url{http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc.html}.
+2000.
 @end table
 
 @c ======================================================================
