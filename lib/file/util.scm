@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.17 2002-10-26 09:02:41 shirok Exp $
+;;;  $Id: util.scm,v 1.18 2002-12-02 01:07:37 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -318,17 +318,17 @@
        (define-method name ((a <sys-stat>) (b <number>))
          (cmp (slot-ref a slot) b))
        (define-method name ((a <number>) (b <sys-stat>))
-         (cmp a (slot-ref a slot)))
+         (cmp a (slot-ref b slot)))
        (define-method name ((a <string>) (b <string>))
-         (cmp (sys-stat a) (sys-stat b)))
+         (name (sys-stat a) (sys-stat b)))
        (define-method name ((a <string>) b)
-         (cmp (sys-stat a) b))
+         (name (sys-stat a) b))
        (define-method name (a (b <string>))
-         (cmp a (sys-stat b)))
+         (name a (sys-stat b)))
        (define-method name ((a <time>) b)
-         (cmp (slot-ref a 'second) b))
+         (name (slot-ref a 'second) b))
        (define-method name (a  (b <time>))
-         (cmp a (slot-ref b 'second)))
+         (name a (slot-ref b 'second)))
        ))))
 
 (define-time-comparer file-mtime=?  'mtime =)
