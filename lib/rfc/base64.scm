@@ -12,15 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: base64.scm,v 1.3 2001-03-31 09:33:25 shiro Exp $
+;;;  $Id: base64.scm,v 1.4 2001-04-01 06:21:03 shiro Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine
 ;; Ref: RFC2045 section 6.8  <http://www.rfc-editor.org/rfc/rfc2045.txt>
 
-;; NOT IMPLEMENTED YET
-
 (define-module rfc.base64
+  (use srfi-2)
   (export base64-encode base64-encode-string
           base64-decode base64-decode-string))
 (select-module rfc.base64)
@@ -51,25 +50,86 @@
     #\w #\x #\y #\z #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\+ #\/
   ))
 
-(define *decode-table-0*  (make-vector 96 #f))
-(define *decode-table-1a* (make-vector 96 #f))
-(define *decode-table-1b* (make-vector 96 #f))
-(define *decode-table-2a* (make-vector 96 #f))
-(define *decode-table-2b* (make-vector 96 #f))
-(define *decode-table-3*  *decode-table*)
+(define (base64-decode)
+  (let-syntax ((lookup (syntax-rules ()
+                         ((_ c)
+                          (let ((i (char->integer c)))
+                            (and (< 32 i 128)
+                                 (vector-ref *decode-table* (- i 32)))))))
+               )
+    (define (d0 c)
+      (cond ((eof-object? c))
+            ((eqv? c #\=))
+            ((lookup c) => (lambda (v) (d1 (read-char) v)))
+            (else (d0 (read-char)))))
 
-(define (setup-decode-table)
-  (do ((i 0 (+ i 1)))
-      ((> i 96))
-    (let ((v (vector-ref *decode-table* i)))
-      (when v
-        (vector-set! *decode-table-0* i  (* v 4))
-        (vector-set! *decode-table-1a* i (quotient v 16))
-        (vector-set! *decode-table-1b* i (* (modulo v 16) 16))
-        (vector-set! *decode-table-2a* i (quotient v 4))
-        (vector-set! *decode-table-2b* i (* (modulo v 4) 64))))))
+    (define (d1 c hi)
+      (cond ((eof-object? c))
+            ((eqv? c #\=))
+            ((lookup c) => (lambda (lo)
+                             (write-byte (+ (* hi 4) (quotient lo 16)))
+                             (d2 (read-char) (modulo lo 16))))
+            (else (d1 (read-char) hi))))
+
+    (define (d2 c hi)
+      (cond ((eof-object? c))
+            ((eqv? c #\=))
+            ((lookup c) => (lambda (lo)
+                             (write-byte (+ (* hi 16) (quotient lo 4)))
+                             (d3 (read-char) (modulo lo 4))))
+            (else (d2 (read-char) hi))))
+
+    (define (d3 c hi)
+      (cond ((eof-object? c))
+            ((eqv? c #\=))
+            ((lookup c) => (lambda (lo)
+                             (write-byte (+ (* hi 64) lo))
+                             (d0 (read-char))))
+            (else (d3 (read-char) hi))))
+
+    (d0 (read-char))))
+
+(define (base64-decode-string string)
+  (with-output-to-string
+    (lambda ()
+      (with-input-from-string string base64-decode))))
 
 
+(define (base64-encode)
+  (let-syntax ((emit (syntax-rules ()
+                       ((_ idx)
+                        (write-char (vector-ref *encode-table* idx))))))
+    (define (e0 c cnt)
+      (if (eof-object? c)
+          #t
+          (begin (emit (quotient c 4))
+                 (e1 (read-byte) (modulo c 4) cnt))))
+
+    (define (e1 c hi cnt)
+      (if (eof-object? c)
+          (begin (emit (* hi 16))
+                 (write-char #\=)
+                 (write-char #\=))
+          (begin (emit (+ (* hi 16) (quotient c 16)))
+                 (e2 (read-byte) (modulo c 16) cnt))))
+
+    (define (e2 c hi cnt)
+      (if (eof-object? c)
+          (begin (emit (* hi 4))
+                 (write-char #\=))
+          (begin (emit (+ (* hi 4) (quotient c 64)))
+                 (emit (modulo c 64))
+                 (if (= cnt 17)
+                     (begin (newline)
+                            (e0 (read-byte) 0))
+                     (e0 (read-byte) (+ cnt 1))))))
+
+    (e0 (read-byte) 0)))
+
+(define (base64-encode-string string)
+  (with-output-to-string
+    (lambda ()
+      (with-input-from-string string base64-encode))))
 
 (provide "rfc/base64")
 
