@@ -1,5 +1,10 @@
 2002-02-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (Scm_InexactToExact): fixed the case when an inexact
+	  number is passed.
+	* src/main.c (main): if the script file name is given in relative
+	  path, search it from the current directory even "." is not in the
+	  load path.
 	* configure.in : recovered GOSH_USE_SHLIB substitution that was
 	  accidentally dropped.
 	* lib/rfc/cookie.scm : avoid using %T in strftime, for it's not POSIX.
