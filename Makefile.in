@@ -49,6 +49,7 @@ install :
 	cd lib; $(MAKE) install
 	cd ext; $(MAKE) install
 	$(INSTALL) -m 444 aclocal.m4 `sh src/gauche-config --ac`/aclocal.m4
+	cd doc; $(MAKE) install
 	cd lib; $(MAKE) slibcat
 
 install-doc :
@@ -70,3 +71,4 @@ realclean : clean
 
 uninstall :
 	cd src; $(MAKE) uninstall
+	cd doc; $(MAKE) uninstall

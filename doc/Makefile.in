@@ -3,6 +3,7 @@ GENERATED = gauche-refe.texi gauche-refj.texi Makefile $(MANPAGES)
 GOSH = gosh
 INSTALL = @INSTALL@
 MAKEINFO = @MAKEINFO@
+GZIP = @GZIP@
 
 # Manual page destination.  Default @mandir@ doesn't include 'share'
 # in the path, so I redefine it---a user can still override it by
@@ -21,7 +22,7 @@ install: all
 	for m in $(MANPAGES); do \
 	  $(INSTALL) -m 444 $$m $(mandir); \
 	done
-	if test -f gauche-refe.info -a -f gauche-refj.info; then \
+	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
 	  for info in *.info *.info-*; do \
 	    $(INSTALL) -m 444 $$info $(infodir); \
 	  done; \
@@ -29,7 +30,13 @@ install: all
 
 uninstall:
 	(cd $(mandir); rm -rf $(MANPAGES))
-	(cd $(infodir); if test -f gauche-refe.info; then rm -rf gauche-refe.* gauche-refj.*; fi)
+	(cd $(infodir); \
+	 if test -f gauche-refe.info -o -f gauche-refe.info.gz; \
+	   then rm -rf gauche-refe.*; \
+	 fi; \
+	 if test -f gauche-refj.info -o -f gauche-refj.info.gz; \
+	   then rm -rf gauche-refj.*; \
+	 fi)
 
 texi : gauche-refe.texi gauche-refj.texi
 
@@ -41,7 +48,7 @@ dvi : gauche-refe.dvi
 
 pdf : gauche-refe.pdf
 
-info : gauche-refe.info gauche-refj.info
+info : gauche-refe.info.gz gauche-refj.info.gz
 
 gauche-refe.html : gauche-refe.texi
 	texi2html -number gauche-refe.texi
@@ -58,8 +65,11 @@ gauche-refe.pdf : gauche-refe.texi
 gauche-refe.texi : gauche-ref.texi extract
 	$(GOSH) ./extract -en -o gauche-refe.texi gauche-ref.texi
 
-gauche-refe.info : gauche-refe.texi
-	$(MAKEINFO) gauche-refe.texi
+gauche-refe.info.gz : gauche-refe.texi
+	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
+	  $(MAKEINFO) --no-warn gauche-refe.texi; \
+	  $(GZIP) gauche-refe.info gauche-refe.info-[0-9]*; \
+	fi
 
 gauche-refj.html : gauche-refj.texi
 	texi2html -number gauche-refj.texi
@@ -76,8 +86,11 @@ gauche-refj.pdf : gauche-refj.texi
 gauche-refj.texi : gauche-ref.texi extract
 	$(GOSH) ./extract -jp -o gauche-refj.texi gauche-ref.texi
 
-gauche-refj.info : gauche-refj.texi
-	$(MAKEINFO) gauche-refj.texi
+gauche-refj.info.gz : gauche-refj.texi
+	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
+	  $(MAKEINFO) --no-warn gauche-refj.texi; \
+	  $(GZIP) gauche-refj.info gauche-refj.info-[0-9]*; \
+	fi
 
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \

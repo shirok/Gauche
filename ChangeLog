@@ -1,5 +1,6 @@
 2002-07-10  Shiro Kawai  <shiro@acm.org>
 
+	* doc/Makefile.in : added rule to create gzipped info files
 	* src/main.c (version): the output of gosh -V shows pthreads
 	  availability.
 	* lib/text/info.scm : added text.info module that can read and
