@@ -388,6 +388,13 @@
 (test* "slices (fill)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12 -1 -1 -1))
        (slices (iota 13) 4 #t -1))
 
+(test* "cond-list" '() (cond-list))
+(test* "cond-list" '(a) (cond-list ('a)))
+(test* "cond-list" '(a) (cond-list (#t 'a) (#f 'b)))
+(test* "cond-list" '(b) (cond-list (#f 'a) (#t 'b)))
+(test* "cond-list" '(a b d) (cond-list (#t 'a) (#t 'b) (#f 'c) (#t 'd)))
+(test* "cond-list" '((b)) (cond-list (#f 'a) ('b => list)))
+
 ;;-----------------------------------------------
 (test-section "util.queue")
 (use util.queue)

@@ -12,14 +12,15 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.2 2003-02-04 13:44:49 shirok Exp $
+;;;  $Id: list.scm,v 1.3 2003-02-05 10:55:40 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
 
 (define-module util.list
   (use srfi-1)
-  (export take* drop* take-right* drop-right* split-at* slices)
+  (export take* drop* take-right* drop-right* split-at* slices
+          cond-list)
   )
 (select-module util.list)
 
@@ -84,5 +85,30 @@
         (reverse! r)
         (receive (h t) (apply split-at* lis k args)
           (loop t (cons h r))))))
+
+;;-----------------------------------------------------------------
+;; cond-list - a syntax to construct a list
+;;
+;;   (cond-list clause clause2 ...)
+;;
+;;   clause : (test expr ...)
+;;          | (test => proc)
+
+(define-syntax cond-list
+  (syntax-rules (=>)
+    ((_) '())
+    ((_ (test) . rest)
+     (let* ((tmp test)
+            (r (cond-list . rest)))
+       (if tmp (cons tmp r) r)))
+    ((_ (test => proc) . rest)
+     (let* ((tmp test)
+            (r (cond-list . rest)))
+       (if tmp (cons (proc tmp) r) r)))
+    ((_ (test . expr) . rest)
+     (let* ((tmp test)
+            (r (cond-list . rest)))
+       (if tmp (cons (begin . expr) r) r)))
+    ))
 
 (provide "util/list")
