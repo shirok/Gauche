@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.18 2001-09-12 20:04:49 shirok Exp $
+ *  $Id: error.c,v 1.19 2001-09-16 01:37:02 shirok Exp $
  */
 
 #include <errno.h>
@@ -80,8 +80,6 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SysErrorClass,
                          exception_allocate,
                          exception_cpl);
 
-static ScmObj key_message;
-
 /*
  * Constructors
  */
@@ -95,7 +93,7 @@ static ScmObj exception_allocate(ScmClass *klass, ScmObj initargs)
     e = SCM_NEW2(ScmException*,
                  sizeof(ScmException) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(e, klass);
-    e->message = Scm_GetKeyword(key_message, initargs, SCM_FALSE);
+    e->message = SCM_FALSE;
     e->data = SCM_FALSE;
     return SCM_OBJ(e);
 }
@@ -140,17 +138,17 @@ static ScmObj sys_error_errno_get(ScmException *exn)
 static ScmClassStaticSlotSpec exception_slots[] = {
     SCM_CLASS_SLOT_SPEC("message",
                         exception_message_get,
-                        exception_message_set, SCM_FALSE),
+                        exception_message_set),
     { NULL }
 };
 
 static ScmClassStaticSlotSpec sys_error_slots[] = {
     SCM_CLASS_SLOT_SPEC("message",
                         exception_message_get,
-                        exception_message_set, SCM_FALSE),
+                        exception_message_set),
     SCM_CLASS_SLOT_SPEC("errno",
                         sys_error_errno_get,
-                        NULL, SCM_FALSE),
+                        NULL),
     { NULL }
 };
 
@@ -175,7 +173,6 @@ int Scm_ContinuableExceptionP(ScmObj e)
 void Scm__InitExceptions(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    key_message = SCM_MAKE_KEYWORD("message");
     Scm_InitBuiltinClass(&Scm_ExceptionClass, "<exception>",
                          exception_slots, mod);
     Scm_InitBuiltinClass(&Scm_ErrorClass, "<error>",

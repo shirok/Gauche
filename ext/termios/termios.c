@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.c,v 1.2 2001-09-08 11:16:49 shirok Exp $
+ *  $Id: termios.c,v 1.3 2001-09-16 01:37:14 shirok Exp $
  */
 
 #include "termios.h"
@@ -49,18 +49,10 @@ TERMIOS_GET_N_SET(c_cflag)
 TERMIOS_GET_N_SET(c_lflag)
 
 static ScmClassStaticSlotSpec termios_slots[] = {
-    SCM_CLASS_SLOT_SPEC("iflag",
-                        termios_c_iflag_get,
-                        termios_c_iflag_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("oflag",
-                        termios_c_oflag_get,
-                        termios_c_oflag_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("cflag",
-                        termios_c_cflag_get,
-                        termios_c_cflag_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("lflag",
-                        termios_c_lflag_get,
-                        termios_c_lflag_set, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("iflag", termios_c_iflag_get, termios_c_iflag_set),
+    SCM_CLASS_SLOT_SPEC("oflag", termios_c_oflag_get, termios_c_oflag_set),
+    SCM_CLASS_SLOT_SPEC("cflag", termios_c_cflag_get, termios_c_cflag_set),
+    SCM_CLASS_SLOT_SPEC("lflag", termios_c_lflag_get, termios_c_lflag_set),
     { NULL }
 };
 

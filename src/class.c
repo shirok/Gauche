@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.54 2001-09-12 10:46:23 shirok Exp $
+ *  $Id: class.c,v 1.55 2001-09-16 01:37:02 shirok Exp $
  */
 
 #include "gauche.h"
@@ -35,6 +35,8 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
 static void scheme_slot_default(ScmObj obj);
+
+static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
 ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
 ScmClass *Scm_CollectionCPL[] = {
@@ -80,7 +82,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, next_method_print);
 /* Builtin generic functions */
 SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericAllocate, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericInitialize, Scm_NoOperation, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericInitialize, builtin_initialize, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericAddMethod, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeCPL, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
@@ -899,6 +901,35 @@ ScmObj Scm_GetSlotSetProc(ScmClass *klass, ScmObj slot)
 }
 #endif
 
+/*
+ * Builtin object initializer
+ * This is the fallback method of generic initialize.  Since all the
+ * Scheme-defined objects will be initialized by object_initialize,
+ * this method is called only for built-in classes.
+ */
+static ScmObj builtin_initialize(ScmObj *args, int nargs, ScmGeneric *gf)
+{
+    ScmObj instance, initargs, ip, ap;
+    ScmClass *klass;
+    SCM_ASSERT(nargs == 2);
+    instance = args[0];
+    initargs = args[1];
+    if (Scm_Length(initargs) % 2) {
+        Scm_Error("initializer list is not even: %S", initargs);
+    }
+    klass = Scm_ClassOf(instance);
+    SCM_FOR_EACH(ap, klass->accessors) {
+        ScmSlotAccessor *acc = SCM_SLOT_ACCESSOR(SCM_CDAR(ap));
+        if (acc->setter && SCM_KEYWORDP(acc->initKeyword)) {
+            ScmObj val = Scm_GetKeyword(acc->initKeyword, initargs, SCM_UNDEFINED);
+            if (!SCM_UNDEFINEDP(val)) {
+                acc->setter(instance, val);
+            }
+        }
+    }
+    return instance;
+}
+
 /*--------------------------------------------------------------
  * Slot accessor object
  */
@@ -1492,58 +1523,35 @@ static void next_method_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 /* static declaration of some structures */
 
 static ScmClassStaticSlotSpec class_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name",
-                        class_name, class_name_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("cpl",
-                        class_cpl, class_cpl_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("direct-supers", 
-                        class_direct_supers, class_direct_supers_set,
-                        SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("accessors",
-                        class_accessors, class_accessors_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("slots",
-                        class_slots_ref, class_slots_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("direct-slots",
-                        class_direct_slots, class_direct_slots_set,
-                        SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("direct-subclasses", 
-                        class_direct_subclasses,
-                        class_direct_subclasses_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("num-instance-slots",
-                        class_numislots, class_numislots_set, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("name", class_name, class_name_set),
+    SCM_CLASS_SLOT_SPEC("cpl",  class_cpl, class_cpl_set),
+    SCM_CLASS_SLOT_SPEC("direct-supers",  class_direct_supers, class_direct_supers_set),
+    SCM_CLASS_SLOT_SPEC("accessors", class_accessors, class_accessors_set),
+    SCM_CLASS_SLOT_SPEC("slots", class_slots_ref, class_slots_set),
+    SCM_CLASS_SLOT_SPEC("direct-slots", class_direct_slots, class_direct_slots_set),
+    SCM_CLASS_SLOT_SPEC("direct-subclasses", class_direct_subclasses, class_direct_subclasses_set),
+    SCM_CLASS_SLOT_SPEC("num-instance-slots", class_numislots, class_numislots_set),
     { NULL }
 };
 
 static ScmClassStaticSlotSpec generic_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name",
-                        generic_name, generic_name_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("methods",
-                        generic_methods, generic_methods_set, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("name", generic_name, generic_name_set),
+    SCM_CLASS_SLOT_SPEC("methods", generic_methods, generic_methods_set),
     { NULL }
 };
 
 static ScmClassStaticSlotSpec method_slots[] = {
-    SCM_CLASS_SLOT_SPEC("generic",
-                        method_generic, method_generic_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("specializers",
-                        method_specializers, method_specializers_set,
-                        SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
+    SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     { NULL }
 };
 
 static ScmClassStaticSlotSpec slot_accessor_slots[] = {
-    SCM_CLASS_SLOT_SPEC("init-value",
-                        slot_accessor_init_value, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("init-keyword",
-                        slot_accessor_init_keyword, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("init-thunk",
-                        slot_accessor_init_thunk, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("slot-number",
-                        slot_accessor_slot_number,
-                        slot_accessor_slot_number_set, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("getter-n-setter",
-                        slot_accessor_scheme_accessor,
-                        slot_accessor_scheme_accessor_set, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("init-value", slot_accessor_init_value, NULL),
+    SCM_CLASS_SLOT_SPEC("init-keyword", slot_accessor_init_keyword, NULL),
+    SCM_CLASS_SLOT_SPEC("init-thunk", slot_accessor_init_thunk, NULL),
+    SCM_CLASS_SLOT_SPEC("slot-number", slot_accessor_slot_number, slot_accessor_slot_number_set),
+    SCM_CLASS_SLOT_SPEC("getter-n-setter", slot_accessor_scheme_accessor, slot_accessor_scheme_accessor_set),
     { NULL }
 };
 
@@ -1558,6 +1566,7 @@ void bootstrap_class(ScmClass *k,
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
             acc = Scm_Acons(snam, SCM_OBJ(&specs->accessor), acc);
+            specs->accessor.initKeyword = SCM_MAKE_KEYWORD(specs->name);
             SCM_APPEND1(slots, t,
                         Scm_List(snam,
                                  key_allocation, key_builtin,

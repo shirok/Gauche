@@ -149,9 +149,9 @@ static ScmObj hostent_addresses(ScmSysHostent *entry)
 }
 
 static ScmClassStaticSlotSpec hostent_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name", hostent_name, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("aliases", hostent_aliases, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("addresses", hostent_addresses, NULL, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("name", hostent_name, NULL),
+    SCM_CLASS_SLOT_SPEC("aliases", hostent_aliases, NULL),
+    SCM_CLASS_SLOT_SPEC("addresses", hostent_addresses, NULL),
     { NULL }
 };
 
@@ -273,9 +273,9 @@ static ScmObj protoent_proto(ScmSysProtoent *entry)
 }
 
 static ScmClassStaticSlotSpec protoent_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name", protoent_name, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("aliases", protoent_aliases, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("proto", protoent_proto, NULL, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("name", protoent_name, NULL),
+    SCM_CLASS_SLOT_SPEC("aliases", protoent_aliases, NULL),
+    SCM_CLASS_SLOT_SPEC("proto", protoent_proto, NULL),
     { NULL }
 };
 
@@ -404,10 +404,10 @@ static ScmObj servent_proto(ScmSysServent *entry)
 }
 
 static ScmClassStaticSlotSpec servent_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name", servent_name, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("aliases", servent_aliases, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("port", servent_port, NULL, SCM_FALSE),
-    SCM_CLASS_SLOT_SPEC("proto", servent_proto, NULL, SCM_FALSE),
+    SCM_CLASS_SLOT_SPEC("name", servent_name, NULL),
+    SCM_CLASS_SLOT_SPEC("aliases", servent_aliases, NULL),
+    SCM_CLASS_SLOT_SPEC("port", servent_port, NULL),
+    SCM_CLASS_SLOT_SPEC("proto", servent_proto, NULL),
     { NULL }
 };
 

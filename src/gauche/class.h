@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.18 2001-06-22 07:32:29 shirok Exp $
+ *  $Id: class.h,v 1.19 2001-09-16 01:37:02 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -48,15 +48,16 @@ struct ScmClassStaticSlotSpecRec {
     ScmSlotAccessor accessor;
 };
 
-#define SCM_CLASS_SLOT_SPEC(name, getter, setter, initkey)      \
-    { name, { { SCM_CLASS_SLOT_ACCESSOR },                      \
-              (ScmNativeGetterProc)getter,                      \
-              (ScmNativeSetterProc)setter,                      \
-              SCM_UNBOUND,                                      \
-              initkey,                                          \
-              SCM_FALSE,                                        \
-              0,                                                \
-              SCM_FALSE } }
+#define SCM_CLASS_SLOT_SPEC(name, getter, setter)       \
+    { name, { { SCM_CLASS_SLOT_ACCESSOR },              \
+              (ScmNativeGetterProc)getter,              \
+              (ScmNativeSetterProc)setter,              \
+              SCM_UNBOUND,                              \
+              SCM_FALSE,                                \
+              SCM_FALSE,                                \
+              0,                                        \
+              SCM_FALSE,                                \
+             } }
 
 #define SCM_CLASS_SLOT_SPEC_END()   { NULL }
 
