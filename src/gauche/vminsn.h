@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.13 2001-02-15 10:29:56 shiro Exp $
+ *  $Id: vminsn.h,v 1.14 2001-02-16 06:57:03 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -67,8 +67,6 @@ DEFINSN(SCM_VM_CALL, "CALL", 1)
 DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
 
 /* DEFINE <SYMBOL>
- *   Input stack  : value
- *   Result stack : SYMBOL
  *
  *  Defines global binding of SYMBOL in the current module.
  *  The value is taken from the input stack.
@@ -78,8 +76,6 @@ DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
 DEFINSN(SCM_VM_DEFINE, "DEFINE", 0)
 
 /* LAMBDA(NARGS,RESTARG) <ARGLIST> <CODE>
- *   Input stack  : -
- *   Result stack : closure
  *
  *  Create a closure capturing current environment.  Two operands are
  *  taken: ARGLIST is a form of lambda list; it is just for debug.
@@ -88,8 +84,6 @@ DEFINSN(SCM_VM_DEFINE, "DEFINE", 0)
 DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
 
 /* LET(NLOCALS)
- *   Input stack  : -
- *   Result stack : -
  *
  *  Create a new environment frame, size of NLOCALS.  let-families
  *  like let, let* and letrec yields this instruction.
@@ -97,8 +91,6 @@ DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
 DEFINSN(SCM_VM_LET, "LET", 1)
 
 /* POPENV
- *   Input stack  : -
- *   Result stack : -
  *
  *  Pop a local environment.  Executed on the end of let-family
  *  constructs.
@@ -106,55 +98,45 @@ DEFINSN(SCM_VM_LET, "LET", 1)
 DEFINSN(SCM_VM_POPENV, "POPENV", 0)
 
 /* IF  <THEN-CODE>
- *   Input stack  : test
- *   Result stack : -
  *
- *  If test is true, transfer control to THEN-CODE.  Otherwise
+ *  If val0 is true, transfer control to THEN-CODE.  Otherwise
  *  it continues execution.   Test arg is popped.
  */
 DEFINSN(SCM_VM_IF, "IF", 0)
 
 /* TAILBIND(NARGS) <INFO>
- *   Input stack  : value0 ... valueN-1
- *   Result stack : -
  *
  *  Lightweight tail call.  This instruction appears in the loop body
  *  and the tail call to inlined procedures.
- *  Discards current environment, allocates NARGS size of environment,
- *  then sets values to the envionment.   It is equivalent to the following
- *  instruction sequence:
- *
- *    POPENV  LET(NARGS)  SET  LREF(N-1,0) ... SET LREF(0,0)
  */
 DEFINSN(SCM_VM_TAILBIND, "TAILBIND", 1)
 
+/* VALUES-BIND(NARGS,RESTARG) <BODY> ...
+ *
+ *  Primitive operation for receive and call-with-values.
+ *  Turn the multiple values into an environment, then evaluate <BODY> ...
+ */
+DEFINSN(SCM_VM_VALUES_BIND, "VALUES-BIND", 2)
+
 /* LSET(DEPTH, OFFSET)
- *   Input stack  : value
- *   Result stack : -
  *
  *  Local set
  */
 DEFINSN(SCM_VM_LSET, "LSET", 2)
 
 /* GSET <LOCATION>
- *   Input stack  : value
- *   Result stack : -
  *
  *  LOCATION may be a symbol or gloc
  */
 DEFINSN(SCM_VM_GSET, "GSET", 0)
 
 /* LREF(DEPTH,OFFSET)
- *   Input stack  : -
- *   Result stack : value
  *
  *  Retrieve local value.
  */
 DEFINSN(SCM_VM_LREF, "LREF", 2)
 
 /* GREF <LOCATION>
- *   Input stack  : -
- *   Result stack : value
  *
  *  LOCATION may be a symbol or GLOC object.
  *  Retrieve global value in the current module.
@@ -162,8 +144,6 @@ DEFINSN(SCM_VM_LREF, "LREF", 2)
 DEFINSN(SCM_VM_GREF, "GREF", 0)
 
 /* PROMISE
- *   Input stack  : procedure
- *   Result stack : promise
  *
  *  Delay syntax emits this instruction.  Wrap a procedure into promise
  *  object.

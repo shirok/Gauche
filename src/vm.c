@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.38 2001-02-15 08:56:25 shiro Exp $
+ *  $Id: vm.c,v 1.39 2001-02-16 06:57:44 shiro Exp $
  */
 
 #include "gauche.h"
@@ -397,14 +397,9 @@ static void run_loop()
         FETCH_INSN(code);
         
         if (!SCM_VM_INSNP(code)) {
-            if (SCM_SOURCE_INFOP(code)) {
-                /* source info.  ignore it. */
-                continue;
-            } else {
-                /* load literal object to the register */
-                val0 = code;
-                continue;
-            }
+            /* literal object or source info. */
+            if (!SCM_SOURCE_INFOP(code)) { val0 = code; }
+            continue;
         }
 
         /* VM instructions */
@@ -523,6 +518,7 @@ static void run_loop()
                 FETCH_INSN(info); /* dummy info. discard it for now. */
                 
                 /* shift env frame. */
+                /* TODO: check if continuation was captured */
                 argp->size = env->size;
                 argp->up = env->up;
                 argp->info = env->info;
@@ -568,7 +564,8 @@ static void run_loop()
                         VM_ERR(("symbol not defined: %S", location));
                     }
                     gloc->value = val0;
-                    /* memorize looked up gloc */
+                    /* memorize gloc */
+                    /* TODO: make it MT safe! */
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
                 } else {
                     Scm_Panic("SET instruction got invalid operand");
@@ -628,6 +625,44 @@ static void run_loop()
                                        vm->env,
                                        info);
                 RESTORE_REGS();
+                continue;
+            }
+            CASE(SCM_VM_VALUES_BIND) {
+                int reqargs = SCM_VM_INSN_ARG0(code);
+                int restarg = SCM_VM_INSN_ARG1(code);
+                int i = 0, argsize;
+                ScmObj rest = SCM_NIL, tail, info;
+
+                FETCH_INSN(info);
+                if (vm->numVals < reqargs) {
+                    VM_ERR(("received fewer values than expected"));
+                } else if (!restarg && vm->numVals > reqargs) {
+                    VM_ERR(("received more values than expected"));
+                }
+                argsize = reqargs + (restarg? 1 : 0);
+
+                PUSH_ENV_HDR();
+                if (reqargs > 0) {
+                    PUSH_ARG(val0);
+                    i++;
+                } else if (restarg && vm->numVals > 0) {
+                    SCM_APPEND1(rest, tail, val0);
+                }
+                for (; i < reqargs; i++) {
+                    PUSH_ARG(vm->vals[i-1]);
+                }
+                if (restarg) {
+                    for (; i < vm->numVals; i++) {
+                        SCM_APPEND1(rest, tail, vm->vals[i-1]);
+                    }
+                    PUSH_ARG(rest);
+                }
+                vm->numVals = 1;
+
+                argp->up = env;
+                argp->size = argsize;
+                argp->info = info;
+                env = argp;
                 continue;
             }
 
@@ -1305,6 +1340,21 @@ ScmObj Scm_Values(ScmObj args)
     }
     vm->numVals = nvals;
     return SCM_CAR(args);
+}
+
+static ScmObj call_with_values_cc(ScmObj result, void *data[])
+{
+    return result;
+}
+
+ScmObj Scm_VMCallWithValues(ScmObj generator, ScmObj consumer)
+{
+    if (!SCM_PROCEDURE_TAKE_NARG_P(generator, 0))
+        Scm_Error("thunk required, but got: %S", generator);
+    if (!SCM_PROCEDUREP(consumer))
+        Scm_Error("procedure required, but got: %S", consumer);
+    Scm_VMPushCC(call_with_values_cc, (void**)&consumer, 1);
+    return Scm_VMApply0(generator);
 }
 
 /*==============================================================
