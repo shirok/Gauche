@@ -16,6 +16,8 @@ all : $(LIBFILES)
 fcntl.la : $(OBJECTS) 
 	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
+fcntlib.c : fcntlib.stub
+
 fcntl_head.c fcntl_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension fcntl
 

@@ -16,6 +16,8 @@ all : $(LIBFILES)
 libnet.la : $(OBJECTS) 
 	$(MODLINK)  $(OBJECTS) $(EXT_LIBGAUCHE)
 
+netlib.c : netlib.stub
+
 net_head.c net_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension net
 

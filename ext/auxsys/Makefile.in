@@ -19,6 +19,8 @@ auxsys.la : $(OBJECTS)
 auxsys_head.c auxsys_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension auxsys
 
+auxsyslib.c : auxsyslib.stub
+
 install : install-std
 
 include ../Makefile.ext

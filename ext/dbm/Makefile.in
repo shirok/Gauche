@@ -16,15 +16,21 @@ gdbm_OBJECTS   = gdbm_head.lo gdbm.lo gdbm_tail.lo
 gdbm.la : $(gdbm_OBJECTS)
 	$(MODLINK) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@
 
+gdbm.c : gdbm.stub
+
 ndbm_OBJECTS   = ndbm_head.lo ndbm.lo ndbm_tail.lo
 
 ndbm.la : $(ndbm_OBJECTS)
 	$(MODLINK) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@
 
+ndbm.c : ndbm.stub
+
 odbm_OBJECTS   = odbm_head.lo odbm.lo odbm_tail.lo
 
 odbm.la : $(odbm_OBJECTS)
 	$(MODLINK) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@
+
+odbm.c : odbm.stub
 
 gdbm_head.c gdbm_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gdbm

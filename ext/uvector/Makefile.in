@@ -38,7 +38,6 @@ uvutil.c : uvutil.c.sh
 	sh ./uvutil.c.sh > uvutil.c
 
 uvlib.c : uvlib.stub
-	$(GOSH) genstub uvlib.stub
 
 uvlib.stub : uvlib.stub.sh
 	rm -rf uvlib.stub

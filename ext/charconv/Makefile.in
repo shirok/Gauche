@@ -20,6 +20,8 @@ libcharconv.la : $(OBJECTS)
 charconv_head.c charconv_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension charconv
 
+convlib.c : convlib.stub
+
 jconv.lo : eucj2ucs.c ucs2eucj.c jconv.c
 
 guess.lo : guess_tab.c guess.c

@@ -16,6 +16,8 @@ all : $(LIBFILES)
 termios.la : $(OBJECTS) 
 	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
+termiolib.c : termiolib.stub
+
 termios_head.c termios_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension termios
 

@@ -16,6 +16,8 @@ all : $(LIBFILES)
 threads.la : $(OBJECTS) 
 	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
+thrlib.c : thrlib.stub
+
 threads_head.c threads_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension threads
 

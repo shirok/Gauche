@@ -16,6 +16,8 @@ all : $(LIBFILES)
 syslog.la : $(OBJECTS) 
 	$(MODLINK)  $(OBJECTS) $(EXT_LIBGAUCHE)
 
+syslog.c : syslog.stub
+
 syslog_head.c syslog_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension syslog
 

@@ -18,6 +18,8 @@ all : $(LIBFILES)
 mt-random.la : $(OBJECTS) 
 	$(MODLINK) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) 
 
+mt-lib.c : mt-lib.stub
+
 mt-random_head.c mt-random_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension mt-random mtrandom
 
