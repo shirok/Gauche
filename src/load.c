@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.20 2001-02-19 22:54:36 shiro Exp $
+ *  $Id: load.c,v 1.21 2001-03-06 08:55:03 shiro Exp $
  */
 
 #include <unistd.h>
@@ -40,7 +40,25 @@ static ScmGloc *load_filename_rec;   /* *load-filename*   */
  *   EOF.  Then the port is closed.
  *
  *   The result of the last evaluation remains on VM.
+ *
+ *   No matter how the load terminates, either normal or abnormal,
+ *   the port is closed, and the current module is restored to the
+ *   one when load is called.
  */
+
+struct load_packet {
+    ScmPort *port;
+    ScmModule *prev_module;
+};
+
+/* Clean up */
+static ScmObj load_after(ScmObj *args, int nargs, void *data)
+{
+    struct load_packet *p = (struct load_packet *)data;
+    Scm_ClosePort(p->port);
+    Scm_SelectModule(p->prev_module);
+    return SCM_UNDEFINED;
+}
 
 /* C-continuation of the loading */
 static ScmObj load_cc(ScmObj result, void **data)
@@ -48,23 +66,32 @@ static ScmObj load_cc(ScmObj result, void **data)
     ScmObj port = SCM_OBJ(data[0]);
     ScmObj expr = Scm_Read(port);
 
-
     if (!SCM_EOFP(expr)) {
         Scm_VMPushCC(load_cc, (void **)&port, 1);
         Scm_VMEval(expr, SCM_UNBOUND);
-    } else {
-        Scm_ClosePort(SCM_PORT(port));
     }
     SCM_RETURN(result);
 }
 
+static ScmObj load_body(ScmObj *args, int nargs, void *data)
+{
+    struct load_packet *p = (struct load_packet *)data;
+    return load_cc(SCM_NIL, (void **)&p->port);
+}
+
 ScmObj Scm_VMLoadFromPort(ScmPort *port)
 {
+    struct load_packet *p;
+    
     if (!SCM_IPORTP(port))
         Scm_Error("input port required, but got: %S", port);
     if (SCM_PORT_CLOSED_P(port))
         Scm_Error("port already closed: %S", port);
-    return load_cc(SCM_NIL, (void **)&port);
+
+    p = SCM_NEW(struct load_packet);
+    p->port = port;
+    p->prev_module = Scm_CurrentModule();
+    return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
 /*---------------------------------------------------------------------
