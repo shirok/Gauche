@@ -1,3 +1,12 @@
+2001-07-14  Shiro Kawai  <shiro@acm.ogr>
+
+	* release 0.4.2
+
+2001-07-13  Shiro Kawai  <shiro@acm.ogr>
+
+	* various files: applied a patch for MacOS X provided from
+	  KIMURA Shigenobu.
+
 2001-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (compile_case): fixed a bug that reported an error
