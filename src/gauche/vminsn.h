@@ -1,7 +1,7 @@
 /*
  * vminsn.h - Virtual machine instruction definition
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, ditribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.9 2001-02-06 07:00:02 shiro Exp $
+ *  $Id: vminsn.h,v 1.10 2001-02-06 12:04:55 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.28 2001-02-06 11:38:26 shiro Exp $
+ *  $Id: vm.c,v 1.29 2001-02-06 12:04:55 shiro Exp $
  */
 
 #include "gauche.h"
@@ -329,7 +329,7 @@ static void run_loop()
     int nvals;                  /* # of values */
     
     for (;;) {
-        VM_DUMP("");
+        /*VM_DUMP("");*/
         
         if (!SCM_PAIRP(pc)) {
             /* We are at the end of procedure.  Activate the most recent
@@ -485,19 +485,23 @@ static void run_loop()
         case SCM_VM_TAILBIND:
             {
                 int nlocals = SCM_VM_INSN_ARG(code);
-                ScmObj *newenv;
+                ScmObj *to, *from;
                 ScmObj info;
+                int env_size;
                 FETCH_INSN(info); /* dummy info. discard it for now. */
                 
                 /* shift env frame. */
                 argp->size = env->size;
                 argp->up = env->up;
                 argp->info = env->info;
-                newenv = (ScmObj*)argp - ENV_SIZE(argp->size);
+                to = (ScmObj*)argp - ENV_SIZE(argp->size) - CONT_FRAME_SIZE;
+                from = (ScmObj *)argp;
+                env_size = env->size;
 
-                memmove(newenv, argp, ENV_SIZE(argp->size) * sizeof(ScmObj *));
-                env = argp = (ScmEnvFrame *)newenv;
-                sp = newenv + ENV_SIZE(argp->size);
+                POP_CONT();     /* recover argp */
+                memmove(to, from, ENV_SIZE(env_size) * sizeof(ScmObj *));
+                env = (ScmEnvFrame *)to;
+                sp = to + ENV_SIZE(env_size);
                 continue;
             }
         case SCM_VM_LET:

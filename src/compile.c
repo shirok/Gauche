@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.21 2001-02-06 07:00:40 shiro Exp $
+ *  $Id: compile.c,v 1.22 2001-02-06 12:04:55 shiro Exp $
  */
 
 #include "gauche.h"
@@ -985,6 +985,7 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     ScmObj code = SCM_NIL, codetail;
     ScmObj fincode = SCM_NIL, fintail;
     ScmObj bodycode = SCM_NIL, bodytail;
+    ScmObj updcode = SCM_NIL, updtail;
     int varcnt;
 
     /* Compile body */
@@ -993,15 +994,17 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     varcnt = 0;
     /* Compile updates.  We need to calculate all the updates first,
        discard current env, allocates new env then put the updates. */
-    SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN(SCM_VM_PRE_TAIL));
+    SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN(SCM_VM_PRE_CALL));
+    
     SCM_FOR_EACH(updtsp, updts) {
-        SCM_APPEND(bodycode, bodytail,
+        SCM_APPEND(updcode, updtail,
                    compile_int(SCM_CAR(updtsp), env, SCM_COMPILE_NORMAL));
-        SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN(SCM_VM_PUSH));
+        SCM_APPEND1(updcode, updtail, SCM_VM_INSN(SCM_VM_PUSH));
         varcnt++;
     }
-    SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN1(SCM_VM_TAILBIND, varcnt));
-    SCM_APPEND1(bodycode, bodytail, SCM_NIL); /* dbg info */
+    SCM_APPEND1(updcode, updtail, SCM_VM_INSN1(SCM_VM_TAILBIND, varcnt));
+    SCM_APPEND1(updcode, updtail, SCM_NIL); /* dbg info */
+    SCM_APPEND1(bodycode, bodytail, updcode);
 
     /* Compile finalization code */
     if (SCM_PAIRP(SCM_CDR(test))) {
