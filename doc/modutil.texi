@@ -3337,17 +3337,29 @@ module @code{slib}.
 @c ----------------------------------------------------------------------
 @node sxml.ssax - Functional XML parser, sxml.sxpath - SXML Query Language, slib - SLIB, Library modules - Utilities
 @section @code{sxml.ssax} - Functional XML parser
+@c NODE sxml.ssax - 機能的なXMLパーザ, @code{sxml.ssax} - 機能的なXMLパーザ
 
 @deftp {Module} sxml.ssax
 @mdindex sxml.ssax
+@c EN
 @code{sxml.*} modules are the adaptation of
 Oleg Kiselyov's SXML framework (@ref{ssax,,SSAX}),
 which is based on S-expression representation of XML structure.
+@c JP
+@code{sxml.*}モジュールは、XML構造のS式表現に基づく
+Oleg KiselyovのSXMLフレームワーク(@ref{ssax,,SSAX}参照)の適合です。
+@c COMMON
 
+@c EN
 SSAX is a parser part of SXML framework.
 This is a quote from SSAX webpage:
+@c JP
+SSAXは、SXMLフレームワークのパーザ部分です。以下は、
+SSAXのウェブページからの引用です。
+@c COMMON
 
 @quotation
+@c EN
 A SSAX functional XML parsing framework consists of a DOM/SXML parser,
 a SAX parser, and a supporting library of lexing and parsing procedures.
 The procedures in the package can be used separately to tokenize or parse
@@ -3357,8 +3369,19 @@ and external parsed entities, attribute value normalization,
 processing instructions and CDATA sections. The package includes
 a semi-validating SXML parser : a DOM-mode parser that is an
 instantiation of a SAX parser (called SSAX).
+@c JP
+SSAX機能的XMLパージングフレームワークは、DOM/SXMLパーザ、SAXパーザ、
+字句解析・構文解析手続きのサポートライブラリから構成されます。
+パッケージ内の手続きは、XML文書の様々な部分をトークナイズ、あるいは
+パーズするために独立して使うことができます。
+このフレームワークは、XML名前空間、文字、内部および外部解析済み実体、
+属性値の正規化、処理命令とCDATAセクションをサポートしています。
+パッケージは、ある程度の妥当性検査を行うSXMLパーザ: SAXパーザの
+インスタンスであるDOMモードのパーザ(SSAXと呼ばれます)を含んでいます。
+@c COMMON
 @end quotation
 
+@c EN
 The current version is based on the SSAX CVS version newer than
 the last 'official' release of SXML toolset (4.9), and
 SXML-gauche-0.9 package which was based on SXML-4.9.
@@ -3368,18 +3391,45 @@ instead of uppercase @code{SSAX:}---the difference matters since
 Gauche is case sensitive by default.
 Alias names are defined for backward compatibility,
 but the use of uppercase suffixed names are deprecated.
+@c JP
+現在のバージョンは、SXMLツールセットの最新の'公式な'リリース(4.9)よりも
+新しい、SSAXのCVSバージョンをベースにしており、パッケージSXML-gauche-0.9は、
+SXML-4.9をベースにしています。
+SXMLのリリース4.9以降では、重要な変更があります。
+現在ではAPIは、大文字の接頭辞@code{SSAX:}の代わりに小文字の@code{ssax:}を
+使います。Gaucheはデフォルトで文字の大小を区別するために、この違いは
+問題となります。
+後方互換性のためにエイリアスされた名前が定義されていますが、
+大文字の接頭辞付きの名前の使用は推奨されません。
+@c COMMON
 @end deftp
 
+@c EN
 I derived the content of this part of the manual from SSAX
 source code, just by converting its comments into texinfo format.
 The original text is by Oleg Kiselyov.  Shiro Kawai
 should be responsible for any typographical error or formatting error
 introduced by conversion.
+@c JP
+マニュアルのこのパートの内容はSSAXのソースコードから抽出されたもので、
+単にそのコメントをTexinfoのフォーマットに変換しただけです。
+オリジナルのテキストは、Oleg Kiselyovによるものです。
+変換により生じた誤字・誤植やフォーマットエラーの責任は、
+Shiro Kawaiにあります。
+@c COMMON
 
+@c EN
 The manual entries are ordered in "bottom-up" way, beginning from
 the lower-level constructs towards the high-level utilities.
 If you just want to parse XML document and obtain SXML,
 check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML}.
+@c JP
+このマニュアルのエントリは、低レベルの構造から高レベルのユーティリティへと
+``ボトムアップ''の方法で並べられています。
+もし、あなたが単にXMLドキュメントをパーズしたりSXMLを得たいだけならば、
+@ref{SSAX Highest-level parsers - XML to SXML}の@code{ssax:xml->sxml}を
+チェックして下さい。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @menu
@@ -3391,26 +3441,52 @@ check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML
 
 @node SSAX data types, SSAX low-level parsing code, sxml.ssax - Functional XML parser, sxml.ssax - Functional XML parser
 @subsection SSAX data types
+@c NODE SSAXデータタイプ
 
 @table @emph
 @item TAG-KIND
+@c EN
 a symbol '@code{START}, '@code{END}, '@code{PI}, '@code{DECL}, '@code{COMMENT}, '@code{CDSECT}
 or '@code{ENTITY-REF} that identifies a markup token.
+@c JP
+シンボル'@code{START}、'@code{END}、'@code{PI}、'@code{DECL}、'@code{COMMENT}、
+'@code{CDSECT}は、マークアップトークンを識別するものです。
+@c COMMON
 @item UNRES-NAME
+@c EN
 a name (called @code{GI} in the XML Recommendation) as given in an xml
 document for a markup token: start-tag, @code{PI} target, attribute name.
 If a @code{GI} is an @code{NCName}, @var{UNRES-NAME} is this @code{NCName} converted into
 a Scheme symbol. If a @code{GI} is a @code{QName}, @var{UNRES-NAME} is a pair of
 symbols: (@var{PREFIX} . @var{LOCALPART})
+@c JP
+XML文書で、マークアップトークン: 開始タグ、@code{PI}ターゲット、属性名に
+与えられる名前(XML勧告では@code{GI}と呼ばれます)です。
+@code{GI}が@code{NCName}である場合、@var{UNRES-NAME}はこの@code{NCName}が
+Schemeのシンボルに変換されたものになります。
+@code{GI}が@code{QName}ならば、@var{UNRES-NAME}は、シンボルのペア、
+(@var{PREFIX} . @var{LOCALPART})となります。
+@c COMMON
 @item RES-NAME
+@c EN
 An expanded name, a resolved version of an @var{UNRES-NAME}.
 For an element or an attribute name with a non-empty namespace URI,
 @var{RES-NAME} is a pair of symbols, (@var{URI-SYMB} . @var{LOCALPART}).
 Otherwise, it's a single symbol.
-@item ELEM-CONTENT-MODEL 
+@c JP
+展開された名前、つまり@var{UNRES-NAME}の解決されたバージョンです。
+名前空間URIが空でない場合の要素や属性名では、@var{RES-NAME}はシンボルのペア、
+(@var{URI-SYMB} . @var{LOCALPART})です。そうでない場合は、1つのシンボルです。
+@c COMMON
+@item ELEM-CONTENT-MODEL
+@c EN
 A symbol:
+@c JP
+以下のシンボルのうちの1つです。
+@c COMMON
+@c EN
 @multitable @columnfractions .3 .7
-@item @code{ANY} 
+@item @code{ANY}
 @tab anything goes, expect an END tag.
 @item @code{EMPTY-TAG} 
 @tab no content, and no END-tag is coming.
@@ -3423,14 +3499,42 @@ A symbol:
 @item @code{ELEM-CONTENT}
 @tab
 @end multitable
+@c JP
+@multitable @columnfractions .3 .7
+@item @code{ANY}
+@tab 何でもよく、ENDタグがあるもの。
+@item @code{EMPTY-TAG}
+@tab 内容がなく、ENDタグのないもの。
+@item @code{EMPTY}
+@tab 内容がなく、次のトークンがENDタグであるもの。
+@item @code{PCDATA}
+@tab 文字データのみで、子要素がないもの。
+@item @code{MIXED}
+@tab
+@item @code{ELEM-CONTENT}
+@tab
+@end multitable
+@c COMMON
 @item URI-SYMB
+@c EN
 A symbol representing a namespace URI -- or other symbol chosen
 by the user to represent URI. In the former case,
 @var{URI-SYMB} is created by @code{%}-quoting of bad URI characters and
 converting the resulting string into a symbol.
+@c JP
+名前空間を表すシンボル、あるいはURIを表すためにユーザが選んだ他のシンボル。
+前者の場合、@var{URI-SYMB}は不正なURI文字が@code{%}でクォートされ、その結果の
+文字列をシンボルに変換したもの。
+@c COMMON
 @item NAMESPACES
+@c EN
 A list representing namespaces in effect. An element of the list
 has one of the following forms:
+@c JP
+効力を持つ名前空間を表すリスト。リストの要素は、以下のフォームのうちの1つ。
+@c COMMON
+
+@c EN
 @table @code
 @item (@var{prefix} @var{uri-symb} . @var{uri-symb})
 or,
@@ -3445,19 +3549,55 @@ Declaration of the default namespace
 Un-declaration of the default namespace. This notation
 represents overriding of the previous declaration
 @end table
+@c JP
+@table @code
+@item (@var{prefix} @var{uri-symb} . @var{uri-symb})
+あるいは、
+@item (@var{prefix} @var{user-prefix} . @var{uri-symb})
+@var{user-prefix}は、そのURIを表現するためにユーザにより選ばれたシンボル。
+@item (#f @var{user-prefix} . @var{uri-symb})
+ユーザが選んだプリフィックスと@var{uri-symbol}の指定。
+@item (*DEFAULT* @var{user-prefix} . @var{uri-symb})
+デフォルト名前空間の宣言。
+@item (*DEFAULT* #f . #f)
+デフォルト名前空間を宣言しない。この記法は、それ以前の宣言を上書き
+することを表す。
+@end table
+@c COMMON
+
+@c EN
 A @var{NAMESPACES} list may contain several elements for the same @var{PREFIX}.
 The one closest to the beginning of the list takes effect.
+@c JP
+@var{NAMESPACES}のリストは、同じ@var{PREFIX}についていくつかの要素を含むかも
+しれない。リストの先頭に近いものが効力を持つ。
+@c COMMON
+
 @item ATTLIST
+@c EN
 An ordered collection of (@var{NAME} . @var{VALUE}) pairs, where @var{NAME} is
 a @var{RES-NAME} or an @var{UNRES-NAME}. The collection is an ADT.
+@c JP
+ペア(@var{NAME} . @var{VALUE})の順序付きのコレクションで、@var{NAME}は
+@var{RES-NAME}か@var{UNRES-NAME}。このコレクションはADTである。
+@c COMMON
 @item STR-HANDLER
+@c EN
 A procedure of three arguments:
 @code{(@var{string1} @var{string2} @var{seed})}
 returning a new @var{seed}.
 The procedure is supposed to handle a chunk of character data
 @var{string1} followed by a chunk of character data @var{string2}.
 @var{string2} is a short string, often "\n" and even ""
+@c JP
+3引数の手続き @code{(@var{string1} @var{string2} @var{seed})}で、
+新しい@var{seed}を返します。
+この手続きは、文字データ@var{string2}が続く文字データ@var{string1}を
+扱うものと前提されています。@var{string2}は、``\n''や``''であるような
+短い文字列です。
+@c COMMON
 @item ENTITIES
+@c EN
 An assoc list of pairs:
 @example
   (@var{named-entity-name} . @var{named-entity-body})
@@ -3470,18 +3610,45 @@ input port (from which the entity can be read).
 @var{named-entity-name} is currently being expanded. A reference to
 this @var{named-entity-name} will be an error: violation of the
 WFC nonrecursion.
+@c JP
+ペア (@var{named-entity-name} . @var{named-entity-body})の連想リストで、
+@var{named-entity-name}はその実体が宣言されたシンボル、
+@var{named-entity-body}は文字列か、(外部実体の場合は)
+(そこから実体が読み込める)入力ポートを返す手続きです。
+@var{named-entity-body}はまた、@code{#f}かも知れません。
+これは、@var{named-entity-name}がその時点で展開されていることを
+示します。
+この@var{named-entity-name}への参照は、WFC非再帰の違反としてエラーに
+なります。
+@c COMMON
 @item XML-TOKEN
+@c EN
 A record with two slots, @var{kind} and @var{token}.
 This record represents a markup, which is, according to the XML
 Recommendation, "takes the form of start-tags, end-tags, empty-element tags,
 entity references, character references, comments, CDATA section delimiters,
 document type declarations, and processing instructions."
+@c JP
+@var{kind}と@var{token}という2つのスロットを持つレコードです。
+このレコードは、XML勧告によれば、「開始タグ、終了タグ、空要素タグ、
+実体参照、文字参照、コメント、CDATAセクションの区切り、
+文書型宣言、処理命令の形を取る」マークアップを表します。
+@c COMMON
 @table @var
 @item kind
+@c EN
 a @var{TAG-KIND}
+@c JP
+@var{TAG-KIND}。
+@c COMMON
 @item head
+@c EN
 an @var{UNRES-NAME}. For xml-tokens of kinds '@code{COMMENT} and
 '@code{CDSECT}, the head is @code{#f}
+@c JP
+@var{UNRES-NAME}。'@code{COMMENT}と'@code{CDSECT}というkindのXMLトークンでは、
+そのheadは@code{#f}になります。
+@c COMMON
 @end table
 For example,
 @example
@@ -3492,9 +3659,15 @@ For example,
 <?xml version="1.0"?> => kind='PI, head='xml
 &my-ent; => kind = 'ENTITY-REF, head='my-ent
 @end example
+@c EN
 Character references are not represented by xml-tokens as these references
 are transparently resolved into the corresponding characters.
+@c JP
+文字参照は、対応する文字へ透過的に解決されるので、XMLトークンとしては
+表現されません。
+@c COMMON
 @item XML-DECL
+@c EN
 A record with three slots, @var{elems}, @var{entities}, and @var{notations}.
 
 The record represents a datatype of an XML document: the list of
@@ -3503,10 +3676,26 @@ replacement strings or loading procedures for parsed general
 entities, etc. Normally an xml-decl record is created from a DTD or
 an XML Schema, although it can be created and filled in in many other
 ways (e.g., loaded from a file).
+@c JP
+@var{elems}、@var{entities}、@var{notations}という3つのスロットを持つレコードです。
 
+このレコードはXML文書のデータタイプを表現します。それは、
+宣言された要素とその属性のリスト、宣言された記法、
+解析済み一般実体の置換文字列やロードされる手続きのリスト、などです。
+通常、xml-declレコードは、それを作るには他にたくさんの方法があるにも
+関わらず(例えばファイルからロードするなど)、DTDかXML Schemaから
+作られます。
+@c COMMON
+
+@c EN
 @var{elems}: an (assoc) list of decl-elem or @code{#f}. The latter instructs
 the parser to do no validation of elements and attributes.
+@c JP
+@var{elems}: decl-elemか@code{#f}の(連想)リスト。後者は、パーザに、
+要素と属性の妥当性検査を行わないように指示する。
+@c COMMON
 
+@c EN
 @var{decl-elem}: declaration of one element:
 @code{(@var{elem-name} @var{elem-content} @var{decl-attrs})};
 @var{elem-name} is an @var{UNRES-NAME} for the element.
@@ -3516,7 +3705,19 @@ of @code{(@var{attr-name} . @var{value})} associations.
 This element can declare a user procedure to handle parsing of an
 element (e.g., to do a custom validation, or to build a hash of
 IDs as they're encountered).
+@c JP
+@var{decl-elem}: 1つの要素の宣言:
+@code{(@var{elem-name} @var{elem-content} @var{decl-attrs})};
+@var{elem-name}はその要素の@var{UNRES-NAME}。
+@var{elem-content}は@var{ELEM-CONTENT-MODEL}。
+@var{decl-attrs}は@var{ATTLIST}か、@code{(@attr-name} . @var{value})}の
+連想リスト。
+この要素は、要素のパージングを扱うユーザ手続きを宣言できる。
+(例えば、カスタムな妥当性検査を行ったり、タグに出会うたびに
+IDのハッシュを構築するなど。)
+@c COMMON
 
+@c EN
 @var{decl-attr}: an element of an @var{ATTLIST}, declaration of one attribute
 @code{(@var{attr-name} @var{content-type} @var{use-type} @var{default-value})}:
 @var{attr-name} is an @var{UNRES-NAME} for the declared attribute;
@@ -3524,6 +3725,16 @@ IDs as they're encountered).
 or a list of strings for the enumerated type.
 @var{use-type} is a symbol: @code{REQUIRED}, @code{IMPLIED}, @code{FIXED}
 default-value is a string for the default value, or @code{#f} if not given.
+@c JP
+@var{decl-attr}: @var{ATTLIST}の要素で、1つの属性
+@code{(@var{attr-name} @var{content-type} @var{use-type} @var{default-value})}
+の宣言:
+@var{attr-name}はその宣言された属性の@var{UNRES-NAME}、
+@var{content-type}はシンボル@code{CDATA}、@var{NMTOKEN}、@var{NMTOKENS}などか、
+列挙されたタイプの文字列のリスト。
+@var{use-type}はシンボル@code{REQUIRED}、@code{IMPLIED}、@code{FIXED}。
+default-valueは、デフォルト値としての文字列か、与えられなければ@code{#f}。
+@c COMMON
 @end table
 
 @defun make-empty-attlist
@@ -3532,68 +3743,122 @@ default-value is a string for the default value, or @code{#f} if not given.
 @defunx attlist-remoev-top attlist
 @defunx attlist->alist attlist
 @defunx attlist-fold
+@c EN
 Utility procedures to deal with attribute list, which
 keeps name-value association.
+@c JP
+名前-値の関連を保つ属性リストを扱うユーティリティ手続き。
+@c COMMON
 @end defun
 
 @defun make-xml-token kind head
 @defunx xml-token? token
+@c EN
 A constructor and a predicate for a @var{XML-TOKEN} record.
+@c JP
+@var{XML-TOKEN}レコードのコンストラクタと述語。
+@c COMMON
 @end defun
 
 @defmac xml-token-kind token
 @defmacx xml-token-head token
+@c EN
 Accessor macros of a @var{XML-TOKEN} record.
+@c JP
+@var{XML-TOKEN}レコードのアクセッサマクロ。
+@c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
 @node SSAX low-level parsing code, SSAX higher-level parsers and scanners, SSAX data types, sxml.ssax - Functional XML parser
 @subsection SSAX low-level parsing code
+@c NODE SSAXの低レベルパージングコード
 
+@c EN
 They deal with primitive lexical units (Names, whitespaces, tags)
 and with pieces of more generic productions. Most of these parsers
 must be called in appropriate context. For example, @code{ssax:complete-start-tag}
 must be called only when the start-tag has been detected and its @code{GI}
 has been read.
+@c JP
+これらは、プリミティブな字句解析ユニット(名前、空白、タグ)や、
+より一般的な生成物の断片を扱います。
+これらのパーザのほとんどは、適切な文脈で呼ばれなければなりません。
+例えば、@code{ssax:complete-start-tag}は、開始タグが検知されその@code{GI}が
+読み込まれたときにのみ呼ばれなければなりません。
+@c COMMON
 
 @defun ssax:skip-S port
+@c EN
 Skip the S (whitespace) production as defined by
+@c JP
+次のように定義されるS(空白)をスキップします。
+@c COMMON
 @example
  [3] S ::= (#x20 | #x9 | #xD | #xA)
 @end example
+@c EN
 The procedure returns the first not-whitespace character it
 encounters while scanning the @var{port}. This character is left
 on the input stream.
+@c JP
+この手続きは、@var{port}のスキャン中に遭遇した最初の空白ではない文字を
+返します。この文字は、入力ストリームに残されます。
+@c COMMON
 @end defun
 
 @defun ssax:ncname-starting-char? a-char
+@c EN
 Check to see if a-char may start a @code{NCName}.
+@c JP
+@code{NCName}がa-charで始まるかどうかを検査します。
+@c COMMON
 @end defun
 
 @defun ssax:read-NCName port
+@c EN
 Read a @code{NCName} starting from the current position in the @var{port} and
 return it as a symbol.
+@c JP
+@var{port}で現在の位置から始まる@code{NCName}を読み込み、それをシンボルとして
+返します。
+@c COMMON
 @end defun
 
 @defun ssax:read-QName port
+@c EN
 Read a (namespace-) Qualified Name, @code{QName}, from the current
 position in the @var{port}.
 
 From REC-xml-names:
+@c JP
+(名前空間)完全修飾名、@code{QName}を@var{port}の現在の位置から読み込みます。
+
+REC-xml-namesは、
+@c COMMON
 @example
  [6] QName ::= (Prefix ':')? LocalPart
  [7] Prefix ::= NCName
  [8] LocalPart ::= NCName
 @end example
 
+@c EN
 Return: an @var{UNRES-NAME}.
+@c JP
+戻り値は、@var{UNRES-NAME}です。
+@c COMMON
 @end defun
 
 @defvar ssax:Prefix-XML
+@c EN
 The prefix of the pre-defined XML namespace, i.e. '@code{xml}.
+@c JP
+定義済みのXML名前空間の接頭辞、つまり、'@code{xml}です。
+@c COMMON
 @end defvar
 
 @defun ssax:read-markup-token port
+@c EN
 This procedure starts parsing of a markup token. The current position
 in the stream must be @code{#\<}. This procedure scans enough of the input stream
 to figure out what kind of a markup token it is seeing. The procedure returns
@@ -3603,61 +3868,134 @@ the start-tag token are scanned.
 
 Here's a detailed break out of the return values and the position in the @var{port}
 when that particular value is returned:
+@c JP
+この手続きは、マークアップトークンのパージングを開始します。
+ストリームの現在の位置は、@code{#\<}でなければなりません。
+この手続きは、見ているマークアップトークンがどの種類のものか見当を
+つけるに十分な程度、入力ストリームをスキャンします。
+この手続きは、そのトークンを表現するxml-token構造を返します。
+通常、現在のマークアップの読み込みは完了していないことに注意して下さい。
+特に、開始タグトークンの属性はスキャンされていません。
+
+特定の値が返されたときの戻り値と@var{port}での位置を詳細に説明します。
+@c COMMON
 @table @code
 @item PI-token
+@c EN
 only @code{PI}-target is read.
 To finish the Processing Instruction and disregard it,
 call @code{ssax:skip-pi}. @code{ssax:read-attributes} may be useful
 as well (for @code{PI}s whose content is attribute-value
 pairs)
+@c JP
+@code{PI}ターゲットのみが読み込まれました。
+処理命令を完了してそれを無視するためには、@code{ssax:skip-pi}を呼びます。
+(@code{PI}の内容が、属性-値のペアの場合は、)@code{ssax:read-attributes}も
+便利です。
+@c COMMON
 @item END-token
+@c EN
 The end tag is read completely; the current position
-is right after the terminating @code{#\>} character.	
+is right after the terminating @code{#\>} character.
+@c JP
+終了タグが完全に読み込まれました。
+現在の位置は、終了の@code{#\>}文字の直後です。
+@c COMMON
 @item COMMENT
+@c EN
 is read and skipped completely. The current position
 is right after "@code{-->}" that terminates the comment.
+@c JP
+コメントが完全に読み込まれスキップされました。
+現在の位置は、コメントが終了する``@code{-->}''の直後です。
+@c COMMON
 @item CDSECT
+@c EN
 The current position is right after "@code{<!CDATA[}".
 Use @code{ssax:read-cdata-body} to read the rest.
+@c JP
+現在の位置は、``@code{<!CDATA[}''の直後です。
+残りを読むためには、@code{ssax:read-cdata-body}を使います。
+@c COMMON
 @item DECL
+@c EN
 We have read the keyword (the one that follows "@code{<!}")
 identifying this declaration markup. The current
 position is after the keyword (usually a
 whitespace character)
+@c JP
+この宣言マークアップを識別するキーワード(``@code{<!}''に続くもの)を
+読み込んだところです。現在の位置は、(通常は空白文字である)
+そのキーワードの直後です。
+@c COMMON
 @item START-token
+@c EN
 We have read the keyword (@code{GI}) of this start tag.
 No attributes are scanned yet. We don't know if this
 tag has an empty content either.
 Use @code{ssax:complete-start-tag} to finish parsing of
 the token.
+@c JP
+この開始タグのキーワード(@code{GI})を読み込んだところです。
+属性はまだスキャンされていません。
+また、このタグが空の要素を持つかも分かりません。
+このトークンのパージングを終了するためには、
+@code{ssax:complete-start-tag}を使います。
+@c COMMON
 @end table
 @end defun
 
 @defun ssax:skip-pi port
+@c EN
 The current position is inside a @code{PI}. Skip till the rest of the @code{PI}.
+@c JP
+現在の位置は、@code{PI}の内側です。
+@code{PI}の残りをスキップします。
+@c COMMON
 @end defun
 
 @defun ssax:read-pi-body-as-string port
+@c EN
 The current position is right after reading the @code{PITarget}. We read the
-body of @code{PI} and return is as a string. The port will point to the
-character right sfter '@code{?>}' combination that terminates @code{PI}.
+body of @code{PI} and return it as a string. The port will point to the
+character right after '@code{?>}' combination that terminates @code{PI}.
+@c JP
+現在の位置は、@code{PITarget}を読んだ直後です。
+@code{PI}のボディを読んで、それを文字列として返します。
+ポートでは、@code{PI}を終了する'@code{?>}'の直後の文字を指します。
+@c COMMON
 @example
  [16] PI ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
 @end example
 @end defun
 
 @defun ssax:skip-internal-dtd port
+@c EN
 The current pos in the port is inside an internal DTD subset
 (e.g., after reading @code{#\[ }that begins an internal DTD subset)
 Skip until the "@code{]>}" combination that terminates this DTD
+@c JP
+ポートでの現在の位置は、内部DTDサブセットの内側です。
+(例えば、内部DTDサブセットの始まりである@code{#\[ }を読み込んだところです。)
+このDTDを終了する、組み合わせとなる``@code{]>}''までをスキップします。
+@c COMMON
 @end defun
 
 @defun ssax:read-cdata-body port str-handler seed
+@c EN
 This procedure must be called after we have read a string "@code{<![CDATA[}"
 that begins a @code{CDATA} section. The current position must be the first
 position of the @code{CDATA} body. This function reads @emph{lines} of the @code{CDATA}
 body and passes them to a @var{STR-HANDLER}, a character data consumer.
+@c JP
+この手続きは、@code{CDATA}セクションを開始する文字列、``@code{<![CDATA[}''を
+読み込んだ後に呼ばれなければなりません。
+現在の位置は、@code{CDATA}のボディの最初の位置です。
+この手続きは、@code{CDATA}ボディの@emph{行}を読み込み、それらを
+@var{STR-HANDLER}(文字データのコンシューマ)へ渡します。
+@c COMMON
 
+@c EN
 The str-handler is a @var{STR-HANDLER}, a procedure @code{string1} @var{string2} @var{seed}.
 The first @var{string1} argument to @var{STR-HANDLER} never contains a newline.
 The second @var{string2} argument often will. On the first invocation of
@@ -3667,18 +4005,52 @@ passed as the seed argument to the second invocation of the line
 consumer, and so on. The result of the last invocation of the
 @var{STR-HANDLER} is returned by the @code{ssax:read-cdata-body}.  Note a
 similarity to the fundamental '@code{fold}' iterator.
+@c JP
+str-handlerは、@code{string1} @var{string2} @var{seed}を取る手続き、
+@var{STR-HANDLER}です。
+@var{STR-HANDLER}の最初の引数@var{string1}は、改行を含みません。
+2番目の引数@var{string2}は、改行を含むことがよくあります。
+@var{STR-HANDLER}の最初の呼び出しでは、seedは、@code{ssax:read-cdata-body}の
+第3引数として渡されるものです。
+この最初の呼び出しの結果は、行のコンシューマの引数seedとして渡され、
+以降同じように続きます。
+@var{STR-HANDLER}の最後の呼び出しの結果は、@code{ssax:read-cdata-body}
+から返されるものです。
+基本的な'@code{fold}'イテレータに似ています。
+@c COMMON
 
+@c EN
 Within a @code{CDATA} section all characters are taken at their face value,
 with only three exceptions:
+@c JP
+@code{CDATA}セクションでは、以下の3つだけの例外を除いて、全ての文字は
+その表面上の値を持ちます。
+@c COMMON
 @itemize @bullet
-@item 
+@item
+@c EN
 @code{CR}, @code{LF}, and @code{CRLF} are treated as line delimiters, and passed
 as a single @code{#\newline} to the @var{STR-HANDLER}.
+@c JP
+@code{CR}、@code{LF}、@code{CRLF}は行区切として扱われ、@var{STR-HANDLER}へは
+1つの@code{#\newline}として渡されます。
+@c COMMON
 @item
+@c EN
 "@code{]]>}" combination is the end of the @code{CDATA} section.
+@c JP
+組み合わせとなる``@code{]]>}''は、@code{CDATA}セクションの終わりであると
+されます。
+@c COMMON
 @item
+@c EN
 @code{&gt;} is treated as an embedded @code{#\>} character.
 Note, @code{&lt;} and @code{&amp;} are not specially recognized (and are not expanded)!
+@c JP
+@code{&gt;}は、@code{#\>}文字の埋め込みとして扱われます。
+@code{&lt;}と@code{&amp;}は特別なものとして認識されない(よって展開されない)ことに
+注意が必要です!
+@c COMMON
 @end itemize
 @end defun
 
@@ -3687,44 +4059,101 @@ Note, @code{&lt;} and @code{&amp;} are not specially recognized (and are not exp
  [66]  CharRef ::=  '&#' [0-9]+ ';' 
                   | '&#x' [0-9a-fA-F]+ ';'
 @end example
+@c EN
 This procedure must be called after we we have read "@code{&#}" 
 that introduces a char reference.
-The procedure reads this reference and returns the corresponding char
+The procedure reads this reference and returns the corresponding char.
 The current position in @var{port} will be after "@code{;}" that terminates
 the char reference.
 Faults detected: @code{WFC: XML-Spec.html#wf-Legalchar}.
+@c JP
+この手続きは、文字参照を表す``@code{&#}''を読み込んだ後に呼ばれなければ
+なりません。
+この手続きはこの参照を読み込んで、対応する文字を返します。
+@var{port}での現在の位置は、文字参照の終わりとなる``@code{;}''の後と
+なります。
+@code{WFC: XML-Spec.html#wf-Legalchar}も参照のこと。
+@c COMMON
 
-According to Secttion "4.1 Character and Entity References"
+@c EN
+According to Section "4.1 Character and Entity References"
 of the XML Recommendation:
+@c JP
+XML勧告のセクション``4.1 文字と実体参照''によると、
+@c COMMON
 @quotation
+@c EN
 "[Definition: A character reference refers to a specific character
  in the ISO/IEC 10646 character set, for example one not directly
  accessible from available input devices.]"
+@c JP
+``[定義: 文字参照は、ISO/IEC 10646文字セットにある特定の文字を参照する。
+例えば、利用できる入力デバイスからは直接アクセスできないものなど。]''
+@c COMMON
 @end quotation
+@c EN
 Therefore, we use a @code{ucscode->char} function to convert a character
 code into the character -- @emph{regardless} of the current character
 encoding of the input stream.
+@c JP
+したがって、入力ストリームの現在の文字エンコーディングに@emph{関係なく}、
+文字コードを文字に変換するために関数@code{ucscode->char}を使います。
+@c COMMON
 @end defun
 
 @defun ssax:handle-parsed-entity port name entities content-handler str-handler seed
+@c EN
 Expand and handle a parsed-entity reference
+@c JP
+解析済み実体参照を展開し処理します。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 @var{port} - a PORT
+@c JP
+@var{port} - ポート
+@c COMMON
 @item
+@c EN
 @var{name} - the name of the parsed entity to expand, a symbol.
+@c JP
+@var{name} - 展開する解析済み実体の名前、シンボル。
+@c COMMON
 @item
+@c EN
 @var{entities} - see @var{ENTITIES}
+@c JP
+@var{entities} - @var{ENTITIES}を参照。
+@c COMMON
 @item
-@var{content-handler} -- procedure @var{port} @var{entities} @var{seed}
+@c EN
+@var{content-handler} - procedure @var{port} @var{entities} @var{seed}
 that is supposed to return a @var{seed}.
+@c JP
+@var{content-handler} - @var{port} @var{entities} @var{seed}を取る手続きで、
+@var{seed}を返すものと前提される。
+@c COMMON
 @item
+@c EN
 @var{str-handler} - a @var{STR-HANDLER}. It is called if the entity in question
 turns out to be a pre-declared entity
+@c JP
+@var{str-handler} - @var{STR-HANDLER}。対象となる実体が宣言済み実体となった
+場合に呼ばれる。
+@c COMMON
 @end itemize
+@c EN
 The result is the one returned by @var{content-handler} or @var{str-handler}.
+@c JP
+戻り値は、@var{content-handler}か@var{str-handler}から返されたものです。
+@c COMMON
 
+@c EN
 Faults detected:
+@c JP
+こちらも参照のこと。
+@c COMMON
 @example
   WFC: XML-Spec.html#wf-entdeclared
   WFC: XML-Spec.html#norecursion
@@ -3732,39 +4161,80 @@ Faults detected:
 @end defun
 
 @defun ssax:read-attributes port entities
+@c EN
 This procedure reads and parses a production @code{Attribute*}
+@c JP
+この手続きは、@code{Attribute*}を読み込みパーズします。
+@c COMMON
 @example
  [41] Attribute ::= Name Eq AttValue
  [10] AttValue ::=  '"' ([^<&"] | Reference)* '"' 
                  | "'" ([^<&'] | Reference)* "'"
  [25] Eq ::= S? '=' S?
 @end example
+@c EN
 The procedure returns an @var{ATTLIST}, of @var{Name} (as @var{UNRES-NAME}),
 @var{Value} (as string) pairs.
 The current character on the @var{port} is a non-whitespace character
 that is not an ncname-starting character.
+@c JP
+この手続きは、@var{Name}(@var{UNRES-NAME})と@var{Value}(文字列)のペアである
+@var{ATTLIST}を返します。
+@var{port}での現在の文字は、NCNameの開始文字ではない、空白ではない文字です。
+@c COMMON
 
+@c EN
 Note the following rules to keep in mind when reading an 'AttValue'
 "Before the value of an attribute is passed to the application
 or checked for validity, the XML processor must normalize it as follows:
+@c JP
+'AttValue'を読み込むときには、以下のルールに留意して下さい。
+``属性の値がアプリケーションに渡されるか妥当性が検査される前に、
+XMLプロセッサはそれを以下のように正規化しなければならない:
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 a character reference is processed by appending the referenced
-character to the attribute value 
+character to the attribute value
+@c JP
+文字参照は、属性値に参照された文字を追加することで処理される。
+@c COMMON
 @item
+@c EN
 an entity reference is processed by recursively processing the
 replacement text of the entity [see @var{ENTITIES}]
 [named entities amp lt gt quot apos are assumed pre-declared]
+@c JP
+実体参照は、その実体のテキストの置換を再帰的に行うことにより
+処理される。[@var{ENTITIES}参照] [名前付きのエンティティ、amp lt gt
+quot aposは定義済みと想定される]
+@c COMMON
 @item
+@c EN
 a whitespace character (@code{#x20}, @code{#xD}, @code{#xA}, @code{#x9}) is processed by appending @code{#x20}
 to the normalized value, except that only a single @code{#x20} is appended for a
 "@code{#xD#xA}" sequence that is part of an external parsed entity or the
 literal entity value of an internal parsed entity
+@c JP
+空白文字(@code{#x20}、@code{#xD}、@code{#xA}、@code{#x9})は、
+外部解析済み実体か内部解析済み実体のリテラルの実体の値の一部である
+``@code{#xD#xA}''のシーケンスにただ1つの@code{#x20}が追加されることを
+除いて、正規化された値に@code{#x20}を追加することで処理される。
+@c COMMON
 @item
+@c EN
 other characters are processed by appending them to the normalized value "
+@c JP
+他の文字は、正規化された値をそれらに追加することにより処理される''
+@c COMMON
 @end itemize
 
+@c EN
 Faults detected:
+@c JP
+こちらも参照のこと。
+@c COMMON
 @example
  WFC: XML-Spec.html#CleanAttrVals
  WFC: XML-Spec.html#uniqattspec
@@ -3772,6 +4242,7 @@ Faults detected:
 @end defun
 
 @defun ssax:resolve-name port unres-name namespaces apply-default-ns?
+@c EN
 Convert an @var{unres-name} to a @var{res-name} given the appropriate @var{namespaces}
 declarations.
 The last parameter @var{apply-default-ns?} determines if the default
@@ -3782,37 +4253,90 @@ and bound to the namespace name "@url{http://www.w3.org/XML/1998/namespace}".
 
 This procedure tests for the namespace constraints:
 @url{http://www.w3.org/TR/REC-xml-names/#nsc-NSDeclared}.
+@c JP
+与えられた適切な@var{namespaces}の宣言を用いて、@var{unres-name}を
+@var{res-name}に変換する。
+最後の引数@var{apply-default-ns?}は、デフォルト名前空間の適用を行うか
+どうかを決めます(例えば、属性名には適用しないなど)。
+
+@code{REC-xml-names/#nsc-NSDeclared}によれば、接頭辞``xml''は
+名前空間名``@url{http://www.w3.org/XML/1998/namespace}''に定義済みで束縛されていると
+されます。
+
+この手続きは、名前空間の制約をテストします:
+@url{http://www.w3.org/TR/REC-xml-names/#nsc-NSDeclared}。
+@c COMMON
 @end defun
 
 @defun ssax:uri-string->symbol uri-str
+@c EN
 Convert a @var{uri-str} to an appropriate symbol.
+@c JP
+@var{uri-str}を適切なシンボルに変換します。
+@c COMMON
 @end defun
 
 @defun ssax:complete-start-tag tag port elems entities namespaces
+@c EN
 This procedure is to complete parsing of a start-tag markup. The
 procedure must be called after the start tag token has been
 read. @var{Tag} is an @var{UNRES-NAME}.
 @var{Elems} is an instance of @code{xml-decl::elems};
 it can be @code{#f} to tell the function to do @emph{no} validation of elements
 and their attributes.
+@c JP
+この手続きは、開始タグのマークアップのパージングを完了するためのものです。
+この手続きは、開始タグトークンが読み込まれた後に呼ばれなければなりません。
+@var{tag}は@var{UNRES-NAME}です。
+@var{elems}は@code{xml-decl::elems}のインスタンスで、
+手続きに、要素とそれらの属性の妥当性検査を@emph{行わない}ように
+指示するために、@code{#f}を指定することができます。
+@c COMMON
 
+@c EN
 This procedure returns several values:
+@c JP
+この手続きはいくつかの値を返します。
+@c COMMON
 @table @var
 @item elem-gi
+@c EN
 a @var{RES-NAME}.
+@c JP
+@var{RES-NAME}。
+@c COMMON
 @item attributes
+@c EN
 element's attributes, an @var{ATTLIST} of @code{(@var{res-name} . @var{string})}
 pairs. The list does @emph{not} include @code{xmlns} attributes.
+@c JP
+要素の属性。@code{(@var{res-name} . @var{string})}というペアの@var{ATTLIST}。
+このリストは、@code{xmlns}属性を@emph{含みません}。
+@c COMMON
 @item namespaces
+@c EN
 the input list of namespaces amended with namespace
 (re-)declarations contained within the start-tag under parsing
 @var{ELEM-CONTENT-MODEL}.
+@c JP
+パージング中の開始タグに含まれる名前空間(再)宣言により修正後の
+名前空間の入力リスト。
+@c COMMON
 @end table
 
+@c EN
 On exit, the current position in @var{port} will be the first character after
 @code{#\>} that terminates the start-tag markup.
+@c JP
+終了時に、@var{port}での現在の位置は、開始タグのマークアップを終了する
+@code{#\>}の後になります。
+@c COMMON
 
+@c EN
 Faults detected:
+@c JP
+こちらも参照のこと。
+@c COMMON
 @example
  VC: XML-Spec.html#enum 
  VC: XML-Spec.html#RequiredAttr
@@ -3823,13 +4347,23 @@ Faults detected:
  WFC: REC-xml-names/#dt-NSName
 @end example
 
+@c EN
 Note, although XML Recommendation does not explicitly say it,
 @var{xmlns} and @var{xmlns:} attributes don't have to be declared (although they
 can be declared, to specify their default value).
+@c JP
+XML勧告では明示されていませんが、@var{xmlns}と@var{xmlns:}属性は、
+(そのデフォルト値を指定するために、宣言されることが出来ますが)
+宣言される必要がないことに注意して下さい。
+@c COMMON
 @end defun
 
 @defun ssax:read-external-id port
+@c EN
 This procedure parses an @code{ExternalID} production.
+@c JP
+この手続きは、@code{ExternalID}をパーズします。
+@c COMMON
 @example
  [75] ExternalID ::= 'SYSTEM' S SystemLiteral
                  | 'PUBLIC' S PubidLiteral S SystemLiteral
@@ -3838,76 +4372,157 @@ This procedure parses an @code{ExternalID} production.
  [13] PubidChar ::=  #x20 | #xD | #xA | [a-zA-Z0-9]
                 | [-'()+,./:=?;!*#@@$_%]
 @end example
+@c EN
 This procedure is supposed to be called when an @code{ExternalID} is expected;
 that is, the current character must be either @code{#\S} or @code{#\P} that start
 correspondingly a @code{SYSTEM} or @code{PUBLIC} token. This procedure returns the
 @code{SystemLiteral} as a string. A @code{PubidLiteral} is disregarded if present.
+@c JP
+この手続きは、@code{ExternalID}が期待されるところで呼ばれるものと前提されています。
+つまり、現在の文字は、それぞれ@code{SYSTEM}か@code{PUBLIC}トークンを開始する
+@code{#\S}か@code{#\P}でなければなりません。
+この手続きは、@code{SystemLiteral}を文字列として返します。
+@code{PubidLiteral}は、もし存在しても無視されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SSAX higher-level parsers and scanners, SSAX Highest-level parsers - XML to SXML, SSAX low-level parsing code, sxml.ssax - Functional XML parser
 @subsection SSAX higher-level parsers and scanners
+@c NODE SSAXの高レベルのパーザとスキャナ
 
+@c EN
 They parse productions corresponding to the whole (document) entity
 or its higher-level pieces (prolog, root element, etc).
+@c JP
+これらは、全体的な実体(ドキュメント)あるいはその高レベルな断片
+(プロローグ、ルート要素など)をパーズします。
+@c COMMON
 
 @defun ssax:scan-Misc port
+@c EN
 Scan the @code{Misc} production in the context:
+@c JP
+そのコンテキストでの@code{Misc}をスキャンします。
+@c COMMON
 @example
 [1]  document ::=  prolog element Misc*
 [22] prolog ::= XMLDecl? Misc* (doctypedec l Misc*)?
 [27] Misc ::= Comment | PI |  S
 @end example
+@c EN
 The following function should be called in the prolog or epilog contexts.
 In these contexts, whitespaces are completely ignored.
 The return value from @code{ssax:scan-Misc} is either a @code{PI}-token,
 a @code{DECL}-token, a @code{START} token, or EOF.
 Comments are ignored and not reported.
+@c JP
+以下の関数は、プロローグかエピローグのコンテキストで呼ばれます。
+これらのコンテキストでは、空白文字は完全に無視されます。
+@code{ssax:scan-Misc}からの戻り値は、@code{PI}トークンか、@code{DECL}トークン、
+@code{START}トークン、EOFのいずれかです。
+コメントは無視され報告されません。
+@c COMMON
 @end defun
 
 @defun ssax:read-char-data port expect-eof? str-handler seed
+@c EN
 This procedure is to read the character content of an XML document
 or an XML element.
+@c JP
+この手続きは、XML文書かXML要素の文字内容を読むためのものです。
+@c COMMON
 @example
  [43] content ::= 
         (element | CharData | Reference | CDSect | PI
          | Comment)*
 @end example
+@c EN
 To be more precise, the procedure reads @code{CharData}, expands @code{CDSect}
 and character entities, and skips comments. The procedure stops
 at a named reference, EOF, at the beginning of a @code{PI} or a start/end tag.
+@c JP
+具体的には、この手続きは@code{CharData}を読み込み、@code{CDSect}と
+文字実体を展開し、コメントをスキップします。
+この手続きは、名前付き参照、EOF、@code{PI}あるいは開始/終了タグの開始地点で
+停止します。
+@c COMMON
 
 @table @var
 @item port
+@c EN
 a port to read
+@c JP
+読み込むポート。
+@c COMMON
 @item expect-eof?
+@c EN
 a boolean indicating if EOF is normal, i.e., the character
 data may be terminated by the EOF. EOF is normal
 while processing a parsed entity.
+@c JP
+EOFがノーマルかどうか、つまり、文字データがEOFで終わるかどうかを
+表す真偽値。解析済み実体を処理している間はEOFはノーマル。
+@c COMMON
 @item str-handler
+@c EN
 a @var{STR-HANDLER}.
+@c JP
+@var{STR-HANDLER}。
+@c COMMON
 @item seed
+@c EN
 an argument passed to the first invocation of @var{STR-HANDLER}.
+@c JP
+@var{STR-HANDLER}の最初の呼び出し時に渡される引数。
+@c COMMON
 @end table
 
+@c EN
 The procedure returns two results: @var{seed} and @var{token}.
 
 The @var{seed} is the result of the last invocation of @var{str-handler}, or the
 original seed if @var{str-handler} was never called.
+@c JP
+この手続きは2つの結果、@var{seed}と@var{token}を返します。
 
+@var{seed}は@var{str-handler}の最後の呼び出しの結果、あるいは
+@var{str-handler}が一度も呼ばれなかった場合はオリジナルのseedです。
+@c COMMON
+
+@c EN
 @var{Token} can be either an eof-object (this can happen only if
 @var{expect-eof?} was @code{#t}), or:
+@c JP
+@var{token}はEOFオブジェクト(これは@var{expect-eof?}が@code{#t}の場合のみ)か、
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 an xml-token describing a @var{START} tag or an @var{END}-tag;
 For a start token, the caller has to finish reading it.
+@c JP
+@var{START}タグか@var{END}タグを表すxml-token。
+開始トークンの場合は、呼び出し側が読み込みを完了する必要がある。
+@c COMMON
 @item
+@c EN
 an xml-token describing the beginning of a @code{PI}. It's up to an
 application to read or skip through the rest of this @code{PI};
+@c JP
+@code{PI}の開始を表すxml-token。
+この@code{PI}の残りを読み込むかスキップするかはアプリケーションに
+任される。
+@c COMMON
 @item
+@c EN
 an xml-token describing a named entity reference.
+@c JP
+名前付き実体参照を表すxml-token。
+@c COMMON
 @end itemize
 
+@c EN
 @code{CDATA} sections and character references are expanded inline and
 never returned. Comments are silently disregarded.
 
@@ -3916,31 +4531,65 @@ must be preserved. However, a @code{CR} character (@code{#xD}) must be disregard
 if it appears before a @code{LF} character (@code{#xA}), or replaced by a @code{#xA} character
 otherwise. See Secs. 2.10 and 2.11 of the XML Recommendation. See also
 the canonical XML Recommendation.
+@c JP
+@code{CDATA}セクションと文字参照はインラインで展開され返されません。
+コメントは無視されます。
+
+XML勧告が要求するように、文字データ中の全ての空白文字は保存されなければなりません。
+しかし、@code{CR}文字(@code{#xD})は、@code{LF}文字(@code{#A})の前に現れるか、
+@code{#xA}文字で置き換えられた場合は無視されなければなりません。
+XML勧告のセクション2.10と2.11を参照して下さい。
+また、正規のXML勧告も参照して下さい。
+@c COMMON
 @end defun
 
 @defun ssax:assert-token token kind gi error-cont
+@c EN
 Make sure that @var{token} is of anticipated @var{kind} and has anticipated @var{gi}.
 Note @var{gi} argument may actually be a pair of two symbols, Namespace
 URI or the prefix, and of the localname.
 If the assertion fails, @var{error-cont} is evaluated by passing it
 three arguments: @var{token} @var{kind} @var{gi}.
 The result of @var{error-cont} is returned.
+@c JP
+@var{token}は、予想された@var{kind}のもので、予想された@var{gi}を
+持つことを確認します。@var{gi}引数は、実際には2つのシンボル、
+名前空間URIかその接頭辞とそのローカル名のペアでしょう。
+アサーションが失敗したら、@var{error-cont}が3つの引数、@var{token} @var{kind} @var{gi}
+を渡されて評価されます。
+@var{error-cont}の結果が返されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SSAX Highest-level parsers - XML to SXML,  , SSAX higher-level parsers and scanners, sxml.ssax - Functional XML parser
 @subsection SSAX Highest-level parsers - XML to SXML
+@c NODE SSAXの高レベルのパーザ - XMLからSXMLへ
 
+@c EN
 These parsers are a set of syntactic forms to instantiate a SSAX parser.
 A user can instantiate the parser to do the full validation, or
 no validation, or any particular validation. The user specifies
 which @code{PI} he wants to be notified about. The user tells what to do
 with the parsed character and element data. The latter handlers
 determine if the parsing follows a SAX or a DOM model.
+@c JP
+これらのパーザは、SSAXパーザをインスタンス化するための構文的フォームのセットです。
+ユーザは、完全な妥当性検査、妥当性検査なし、特定の妥当性検査を行うために
+このパーザをインスタンス化できます。
+ユーザは、どの@code{PI}について通知されたいかを指定します。
+ユーザは、解析済み文字と要素のデータで何をしたいかを知らせます。
+後者のハンドラは、パージングがSAXやDOMモデルに従うかを決定します。
+@c COMMON
 
 @defmac ssax:make-pi-parser my-pi-handlers
+@c EN
 Create a parser to parse and process one Processing Element (@code{PI}).
+@c JP
+1つの処理命令(@code{PI})をパーズして処理するパーザを作ります。
+@c COMMON
 
+@c EN
 @var{My-pi-handlers}:
 An assoc list of pairs (@var{PI-TAG} . @var{PI-HANDLER})
 where @var{PI-TAG} is an @var{NCName} symbol, the @code{PI} target, and
@@ -3954,29 +4603,60 @@ handler will handle @code{PI}s that no other handler will. If the
 @code{*DEFAULT*} @var{PI-TAG} is not specified,
 @code{ssax:make-pi-parser} will make
 one, which skips the body of the @code{PI}.
+@c JP
+@var{my-pi-handlers}:
+(@var{PI-TAG} . @var{PI-HANDLER})のペアの連想リスト。
+@var{PI-TAG}は、@var{NCName}のシンボル、@code{PI}ターゲットで、
+@var{PI-HANDLER}は、@var{port} @var{pi-tag} @var{seed}を引数とする手続きで
+@var{port}は@code{PI}ターゲットのあとの最初のシンボルを指しています。
+ハンドラは、@code{PI}を終了する組み合わせとなる'@code{?>}'を含む
+@code{PI}の残りを読み込みます。ハンドラは新しいseedを返します。
+@var{PI-TAG}の1つは、シンボル@code{*DEFAULT*}でしょう。
+対応するハンドラは、他のハンドラが扱わない@code{PI}を処理します。
+@code{*DEFAULT*} @var{PI-TAG}が指定されていない場合は、
+@code{ssax:make-pi-parser}は、@code{PI}のボディをスキップするパーザを
+作ります。
+@c COMMON
 
+@c EN
 The output of the @code{ssax:make-pi-parser} is a procedure
 @var{port} @var{pi-tag} @var{seed},
 that will parse the current @code{PI} accoding to user-specified handlers.
+@c JP
+@code{ssax:make-pi-parser}の出力は、@var{port} @var{pi-tag} @var{seed}を
+取る手続きで、ユーザ指定のハンドラに従い、現在の@code{PI}をパーズします。
+@c COMMON
 @end defmac
 
 @defmac ssax:make-elem-parser my-new-level-seed my-finish-element my-char-data-handler my-pi-handlers
+@c EN
 Create a parser to parse and process one element, including its
 character content or children elements. The parser is typically
 applied to the root element of a document.
+@c JP
+1つの要素を、その文字内容や子要素を含んでパーズし処理するパーザを作ります。
+このパーザは通常、ドキュメントのルート要素の適用されます。
+@c COMMON
 
 @table @var
 @item my-new-level-seed
+@c EN
 procedure @var{elem-gi} @var{attributes} @var{namespaces} @var{expected-content} @var{seed} @*
 where @var{elem-gi} is a @var{RES-NAME} of the element
 about to be processed.
 This procedure is to generate the seed to be passed
 to handlers that process the content of the element.
+@c JP
+@var{elem-gi} @var{attributes} @var{namespaces} @var{expected-content} @var{seed} @*
+取る手続きで、@var{elem-gi}は処理されようとしている要素の@var{RES-NAME}です。
+この手続きは、要素の内容を処理するハンドラに渡されるseedを生成します。
+@c COMMON
 @c This is the function identified as 'fdown' in the denotational
 @c semantics of the XML parser given in the title comments to this
 @c file.
 
 @item my-finish-element
+@c EN
 procedure @var{elem-gi} @var{attributes} @var{namespaces} @var{parent-seed} @var{seed} @*
 This procedure is called when parsing of @var{elem-gi} is finished.
 The @var{seed} is the result from the last content parser (or
@@ -3984,17 +4664,35 @@ from @var{my-new-level-seed} if the element has the empty content).
 @var{Parent-seed} is the same seed as was passed to @var{my-new-level-seed}.
 The procedure is to generate a seed that will be the result
 of the element parser.
+@c JP
+@var{elem-gi} @var{attributes} @var{namespaces} @var{parent-seed} @var{seed} @*
+を取る手続きです。この手続きは、@var{elem-gi}のパージングが完了したときに
+呼ばれます。
+@var{seed}は、最後に呼ばれた内容のパーザからの(あるいは、
+要素が空要素であった場合は、@var{my-new-level-seed}からの)結果です。
+@var{parent-seed}は、@var{my-new-level-seed}へ渡されたのと同じseedです。
+この手続きは、要素パーザの結果となるseedを生成するためのものです。
+@c COMMON
 @c This is the function identified as 'fup' in the denotational
 @c semantics of the XML parser given in the title comments to this
 @c file.
 
 @item my-char-data-handler
+@c EN
 A @var{STR-HANDLER}.
+@c JP
+@var{STR-HANDLER}。
+@c COMMON
 
 @item my-pi-handlers
+@c EN
 See @code{ssax:make-pi-handler} above.
+@c JP
+@code{ssax:make-pi-handler}を参照して下さい。
+@c COMMON
 @end table
 
+@c EN
 The generated parser is a:
 procedure @var{start-tag-head} @var{port} @var{elems} @var{entities}
 @var{namespaces} @var{preserve-ws?} @var{seed}. @*
@@ -4002,8 +4700,22 @@ The procedure must be called after the start tag token has been
 read. @var{Start-tag-head} is an @var{UNRES-NAME} from the start-element tag.
 @var{Elems} is an instance of @code{xml-decl::elems}.
 See @code{ssax:complete-start-tag::preserve-ws?}
+@c JP
+生成されたパーザは:
+@var{start-tag-head} @var{port} @var{elems} @var{entities} @var{namespaces}
+@var{preserve-ws?} @var{seed} @*
+を取る手続きです。
+この手続きは、開始タグのトークンが読み込まれた後に呼ばれなければなりません。
+@var{start-tag-head}は要素の開始タグの@var{UNRES-NAME}です。
+@var{elems}は@code{xml-decl::elems}のインスタンスです。
+@code{ssax:complete-start-tag::preserve-ws?}も参照して下さい。
+@c COMMON
 
+@c EN
 Faults detected:
+@c JP
+こちらも参照のこと。
+@c COMMON
 @example
  VC: XML-Spec.html#elementvalid 
  WFC: XML-Spec.html#GIMatch
@@ -4011,6 +4723,7 @@ Faults detected:
 @end defmac
 
 @defmac ssax:make-parser user-handler-tag user-handler-proc ...
+@c EN
 Create an XML parser, an instance of the XML parsing framework.
 This will be a SAX, a DOM, or a specialized parser depending
 on the supplied user-handlers.
@@ -4019,9 +4732,20 @@ on the supplied user-handlers.
 that follows the tag. Given below are tags and signatures of the
 corresponding procedures. Not all tags have to be specified. If some
 are omitted, reasonable defaults will apply.
+@c JP
+XMLパージングフレームワークのインスタンスである、XMLパーザを作ります。
+これは、提供されるユーザハンドラによって、SAX、DOM、あるいは特化された
+パーザになります。
+
+@var{user-handler-tag}はシンボルで、タグに続く手続き的な式を識別します。
+以下にタグと対応する手続きのシグネチャを示します。
+全てのタグが指定される必要はありません。
+いくつかが省略されると、合理的なデフォルトのものが適用されます。
+@c COMMON
 
 @table @code
 @item tag: @var{DOCTYPE}
+@c EN
 handler-procedure: @var{port} @var{docname} @var{systemid} @var{internal-subset?} @var{seed}
 
 If @var{internal-subset?} is @code{#t}, the current position in the port
@@ -4038,8 +4762,28 @@ It may be @code{#f} to switch off the validation.
 @var{namespaces} will typically contain @var{USER-PREFIX}es for selected @var{URI-SYMB}s.
 The default handler-procedure skips the internal subset,
 if any, and returns @code{(values #f '() '() seed)}.
+@c JP
+ハンドラ手続きの引数: @var{port} @var{docname} @var{systemid} @var{internal-subset?} @var{seed}
+
+@var{internal-subset?}が@code{#t}なら、ポートでの現在の位置は内部DTDサブセットの
+開始となる@code{#\[}を読んだ直後です。
+手続きから戻る前に、このサブセットの残りの読み込みを完了しなければなりません
+(あるいは、それを読むことに興味がなければ、skip-internal-subsetを呼ばなければなりません)。
+終了時のポートは、DOCTYPE宣言全体のあとの最初のシンボルでなければなりません。
+
+ハンドラ手続きは4つの値: @*
+@var{elems} @var{entities} @var{namespaces} @var{seed} @*
+を生成しなければなりません。
+@var{elems}については、@code{xml-decl::elems}を参照して下さい。
+妥当性検査をオフにするためには、@code{#f}になるでしょう。
+@var{namespaces}は、通常、選択された@var{URI-SYMB}に対して@var{USER-PREFIX}を含む
+でしょう。
+デフォルトのハンドラ手続きは、内部サブセットがあってもそれをスキップし、
+@code{(values #f '() '() seed)}を返します。
+@c COMMON
 
 @item tag: @var{UNDECL-ROOT}
+@c EN
 handler-procedure: @var{elem-gi} @var{seed} @*
 where @var{elem-gi} is an @var{UNRES-NAME} of the root element. This procedure
 is called when an XML document under parsing contains @emph{no} @code{DOCTYPE}
@@ -4048,8 +4792,19 @@ The handler-procedure, as a DOCTYPE handler procedure above,
 must generate four values: @*
 @var{elems} @var{entities} @var{namespaces} @var{seed}@*
 The default handler-procedure returns @code{(values #f '() '() seed)}.
+@c JP
+ハンドラ手続きの引数: @var{elem-gi} @var{seed} @*
+@var{elem-gi}はルート要素の@var{UNRES-NAME}。
+この手続きは、パージング中のXML文書が@code{DOCTYPE}宣言を@emph{含まない}時に
+呼ばれます。
+ハンドラ手続きは、上ではDOCTYPEハンドラですが、4つの値: @*
+@var{elems} @var{entities} @var{namespaces} @var{seed}@*
+を生成しなければなりません。
+デフォルトのハンドラ手続きは、@code{(values #f '() '() seed)}を返します。
+@c COMMON
 
 @item tag: @var{DECL-ROOT}
+@c EN
 handler-procedure: @var{elem-gi} @var{seed} @*
 where @var{elem-gi} is an @var{UNRES-NAME} of the root element. This procedure
 is called when an XML document under parsing does contains the @code{DOCTYPE}
@@ -4058,27 +4813,62 @@ The handler-procedure must generate a new @code{seed} (and verify
 that the name of the root element matches the doctype, if the handler
 so wishes). 
 The default handler-procedure is the identity function.
+@c JP
+ハンドラ手続きの引数: @var{elem-gi} @var{seed} @*
+@var{elem-gi}は、ルート要素の@var{UNRES-NAME}。
+この手続きは、パージング中のXML文書が@code{DOCTYPE}宣言を含む場合に呼ばれます。
+このハンドラ手続きは、新しい@code{seed}を生成しなければなりません
+(そして、ハンドラがそう望めば、ルート要素の名前がDOCTYPEにマッチするかを
+検証します)。
+デフォルトのハンドラ手続きは、それ自身を返す手続きです。
+@c COMMON
 
 @item tag: @var{NEW-LEVEL-SEED}
+@c EN
 handler-procedure: see @code{ssax:make-elem-parser}, @var{my-new-level-seed}
+@c JP
+ハンドラ手続きの引数: @code{ssax:make-elem-parser}と@var{my-new-level-seed}を参照して下さい。
+@c COMMON
 
 @item tag: @var{FINISH-ELEMENT}
+@c EN
 handler-procedure: see @code{ssax:make-elem-parser}, @var{my-finish-element}
+@c JP
+ハンドラ手続きの引数: @code{ssax:make-elem-parser}と@var{my-finish-element}を参照して下さい。
+@c COMMON
 
 @item tag: @var{CHAR-DATA-HANDLER}
+@c EN
 handler-procedure: see @code{ssax:make-elem-parser}, @var{my-char-data-handler}
+@c JP
+ハンドラ手続きの引数: @code{ssax:make-elem-parser}と@var{my-char-data-handler}を参照して下さい。
+@c COMMON
 
 @item tag: @var{PI}
+@c EN
 handler-procedure: see @code{ssax:make-pi-parser}. @*
 The default value is @code{'()}.
+@c JP
+ハンドラ手続きの引数: @code{ssax:make-pi-parser}を参照して下さい。@*
+デフォルトの値は、@code{'()}です。
+@c COMMON
 @end table
- 
+
+@c EN
 The generated parser is a @*
 procedure @var{PORT} @var{SEED}
 
 This procedure parses the document prolog and then exits to
 an element parser (created by ssax:make-elem-parser) to handle
 the rest.
+@c JP
+生成されるパーザは、@*
+@var{PORT} @var{SEED}を取る手続き、です。
+
+この手続きは、ドキュメントのプロローグをパーズして、
+その残りを処理するために(ssax:make-elem-parserで作られた)要素パーザへ
+引き継いで終了します。
+@c COMMON
 
 @example
  [1]  document ::=  prolog element Misc*
@@ -4094,14 +4884,24 @@ the rest.
 @end example
 @end defmac
 
+@c EN
 A few utility procedures that turned out useful.
+@c JP
+いくつかの便利なユーティリティ手続きがあります。
+@c COMMON
 
 @defun ssax:reverse-collect-str fragments
+@c EN
 given the list of @var{fragments} (some of which are text strings)
 reverse the list and concatenate adjacent text strings.
+@c JP
+@var{fragments}(そのいくつかはテキスト文字列)のリストを渡すと、
+そのリストを逆順にして隣り合ったテキスト文字列を連結します。
+@c COMMON
 @end defun
 
 @defun ssax:reverse-collect-str-drop-ws fragments
+@c EN
 given the list of fragments (some of which are text strings)
 reverse the list and concatenate adjacent text strings.
 We also drop "unsignificant" whitespace, that is, whitespace
@@ -4111,9 +4911,20 @@ We use this procedure to "intelligently" drop "insignificant"
 whitespace in the parsed SXML. If the strict compliance with
 the XML Recommendation regarding the whitespace is desired, please
 use the @code{ssax:reverse-collect-str} procedure instead.
+@c JP
+fragments(そのいくつかはテキスト文字列)のリストを渡すと、
+そのリストを逆順にして隣り合ったテキスト文字列を連結します。
+``重要でない''空白文字、つまり、最初や最後、要素の間にある空白文字を
+削除します。文字データの中に含まれる空白文字には影響を与えません。
+この手続きを、パーズされたSXMLにある、``重要でない''空白文字を
+``知的に''削除するために使います。空白文字に関して厳密に
+XML勧告に準拠したい場合は、代わりに手続き
+@code{ssax:reverse-collect-str}を使って下さい。
+@c COMMON
 @end defun
 
 @defun ssax:xml->sxml port namespace-prefix-assig
+@c EN
 This is an instance of a SSAX parser above that returns an SXML
 representation of the XML document to be read from @var{port}.
 @var{Namespace-prefix-assig} is a list of
@@ -4122,6 +4933,15 @@ that assigns @var{USER-PREFIX}es to certain namespaces identified by
 particular @var{URI-STRING}s. It may be an empty list.
 The procedure returns an SXML tree. The port points out to the
 first character after the root element.
+@c JP
+これは、上のSSAXパーザのインスタンスで、@var{port}から読み込まれる
+XMLドキュメントのSXML表現を返します。
+@var{namespace-pregix-assig}は、@code{(@var{USER-PREFIX} . @var{URI-STRING})}
+のリストで、特定の@var{URI-STRING}で識別されるある名前空間を
+@var{USER-PREFIX}に割り当てます。空リストでも構いません。
+この手続きは、SXMLツリーを返します。
+ポートは、ルート要素の後の最初の文字を指します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
