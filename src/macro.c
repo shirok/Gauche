@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.13 2001-03-01 20:03:20 shiro Exp $
+ *  $Id: macro.c,v 1.14 2001-03-03 11:01:04 shiro Exp $
  */
 
 #include "gauche.h"
@@ -432,18 +432,26 @@ static void init_matchvec(MatchVar *mvec, int numPvars)
     }
 }
 
-/* get value associated to the pvref */
-static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec, int *indices)
+/* get value associated to the pvref.  if exhausted, return SCM_UNBOUND
+   and set exhaust level in *exlev. */
+static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec,
+                              int *indices, int *exlev)
 {
     int level = PVREF_LEVEL(pvref), count = PVREF_COUNT(pvref);
     int i, j;
     ScmObj tree = mvec[count].root;
-    for (i=0; i<level; i++) {
-        for (j=0; j<indices[level]; j++) {
-            if (!SCM_PAIRP(tree)) return SCM_UNBOUND; /* exhausted */
+    for (i=1; i<=level; i++) {
+        for (j=0; j<indices[i]; j++) {
+            if (!SCM_PAIRP(tree)) {
+                *exlev = i;
+                return SCM_UNBOUND;
+            }
             tree = SCM_CDR(tree);
         }
-        if (!SCM_PAIRP(tree)) return SCM_UNBOUND;
+        if (!SCM_PAIRP(tree)) {
+            *exlev = i;
+            return SCM_UNBOUND;
+        }
         tree = SCM_CAR(tree);
     }
     return tree;
@@ -639,45 +647,62 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
 static ScmObj realize_template_rec(ScmObj template,
                                    MatchVar *mvec,
                                    int level,
-                                   int *indices)
+                                   int *indices,
+                                   ScmObj *idlist,
+                                   int *exlev)
 {
     if (SCM_PAIRP(template)) {
         ScmObj h = SCM_NIL, t, r, e;
         while (SCM_PAIRP(template)) {
             e = SCM_CAR(template);
             if (SCM_SYNTAX_PATTERN_P(e)) {
-                r = realize_template_rec(e, mvec, level, indices);
+                r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
+                if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND(h, t, r);
             } else {
-                r = realize_template_rec(e, mvec, level, indices);
+                r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND1(h, t, r);
             }
             template = SCM_CDR(template);
         }
         if (!SCM_NULLP(template)) {
-            r = realize_template_rec(template, mvec, level, indices);
+            r = realize_template_rec(template, mvec, level, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return r;
             SCM_APPEND(h, t, r);
         }
         return h;
     }
     if (PVREF_P(template)) {
-        return get_pvref_value(template, mvec, indices);
+        return get_pvref_value(template, mvec, indices, exlev);
     }
     if (SCM_SYNTAX_PATTERN_P(template)) {
         ScmSyntaxPattern *pat = SCM_SYNTAX_PATTERN(template);
         ScmObj h = SCM_NIL, t, r;
         indices[level+1] = 0;
         for (;;) {
-            r = realize_template_rec(pat->pattern, mvec, level+1, indices);
-            if (SCM_UNBOUNDP(r)) return h;
+            r = realize_template_rec(pat->pattern, mvec, level+1, indices, idlist, exlev);
+            if (SCM_UNBOUNDP(r)) return (*exlev < pat->level)? r : h;
             SCM_APPEND1(h, t, r);
             indices[level+1]++;
         }
     }
     if (SCM_VECTORP(template)) {
         Scm_Error("!!! NOT SUPPORTED YET!!!");
+    }
+    if (SCM_IDENTIFIERP(template)) {
+        /* we copy the identifier, so that the symbol bindings introduced
+           by recursive macro call won't interfere each other.
+           (e.g. the macro definitions of "letrec" and "do" shown in R5RS
+           use the fact that the symbol "newtemp" introduced in each
+           iteration of macro expansion are distinct. */
+        ScmObj p = Scm_Assq(template, *idlist);
+        if (SCM_PAIRP(p)) return SCM_CDR(p);
+        else {
+            ScmObj id = Scm_CopyIdentifier(SCM_IDENTIFIER(template));
+            *idlist = Scm_Acons(template, id, *idlist);
+            return id;
+        }
     }
     return template;
 }
@@ -688,10 +713,13 @@ static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
                                MatchVar *mvec)
 {
     int index[DEFAULT_MAX_LEVEL], *indices = index, i, lev;
+    int exlev = 0;
+    ScmObj idlist = SCM_NIL;
+    
     if (branch->maxLevel > DEFAULT_MAX_LEVEL)
         indices = SCM_NEW_ATOMIC2(int*, (branch->maxLevel+1) * sizeof(int));
     for (i=0; i<=branch->maxLevel; i++) indices[i] = 0;
-    return realize_template_rec(branch->template, mvec, 0, indices);
+    return realize_template_rec(branch->template, mvec, 0, indices, &idlist, &exlev);
 }
 
 static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
