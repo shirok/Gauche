@@ -1,3 +1,8 @@
+2003-10-28  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* ext/mt-random/mt-random.c (genrand_int_small): Add a special
+	  case for n==0. Now (random-integer 1) correctly returns 0.
+
 2003-10-27  Kimura Fuyuki  <fuyuki@nigredo.org>
 
 	* configure.ac : Add a missing comma.
