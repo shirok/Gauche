@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.309 2002-12-05 05:34:20 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.310 2002-12-05 09:41:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -23173,7 +23173,9 @@ generates will be quantized by the given @var{unit}, where
 * rfc.base64 - Base64 encoding/decoding::  
 * rfc.cookie - HTTP cookie handling::  
 * rfc.http - HTTP::             
+* rfc.md5 - MD5 message digest::  
 * rfc.quoted-printable - Quoted-printable encoding/decoding::  
+* rfc.sha1 - SHA1 message digest::  
 * rfc.uri - URI parsing and construction::  
 * slib - SLIB::                 
 * text.csv - CSV tables::       
@@ -23181,6 +23183,7 @@ generates will be quantized by the given @var{unit}, where
 * text.parse - Parsing input stream::  
 * text.tr - Transliterate characters::  
 * text.tree - Lazy text construction::  
+* util.digest - Message digester framework::  
 * util.isomorph - Determine isomorphism::  
 * util.queue - Queue::          
 * util.toposort - Topological sort::  
@@ -24966,7 +24969,7 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.http - HTTP, rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.cookie - HTTP cookie handling, Library modules - Utilities
+@node rfc.http - HTTP, rfc.md5 - MD5 message digest, rfc.cookie - HTTP cookie handling, Library modules - Utilities
 @section @code{rfc.http} - HTTP
 
 @deftp {Module} rfc.http
@@ -25092,9 +25095,23 @@ without allocating (potentially very big) string buffer.
 
 @end defun
 
+@c ----------------------------------------------------------------------
+@node rfc.md5 - MD5 message digest, rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.http - HTTP, Library modules - Utilities
+@section @code{rfc.md5} - MD5 message digest
+@c NODE rfc.md5 - MD5メッセージダイジェスト, @code{rfc.md5} - MD5メッセージダイジェスト
+
+@deftp {Module} rfc.md5
+@mdindex rfc.md5
+This module implements MD5 message digest algorithm, defined in
+RFC 1321 (@ref{rfc1321, [RFC1321], RFC1321}).
+The module extends util.digest 
+(@xref{util.digest - Message digester framework}).
+@end deftp
+
+
 
 @c ----------------------------------------------------------------------
-@node rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.uri - URI parsing and construction, rfc.http - HTTP, Library modules - Utilities
+@node rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.sha1 - SHA1 message digest, rfc.md5 - MD5 message digest, Library modules - Utilities
 @section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
 @c NODE rfc.quoted-printable - Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
 
@@ -25131,7 +25148,20 @@ the result as a string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.uri - URI parsing and construction, slib - SLIB, rfc.quoted-printable - Quoted-printable encoding/decoding, Library modules - Utilities
+@node rfc.sha1 - SHA1 message digest, rfc.uri - URI parsing and construction, rfc.quoted-printable - Quoted-printable encoding/decoding, Library modules - Utilities
+@section @code{rfc.sha1} - SHA1 message digest
+@c NODE rfc.sha1 - SHA1メッセージダイジェスト, @code{rfc.sha1} - SHA1メッセージダイジェスト
+
+@deftp {Module} rfc.sha1
+@mdindex rfc.sha1
+This module implements US Secure Hash Algorithm 1 (SHA1), 
+defined in RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}).
+The module extends util.digest 
+(@xref{util.digest - Message digester framework}).
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node rfc.uri - URI parsing and construction, slib - SLIB, rfc.sha1 - SHA1 message digest, Library modules - Utilities
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
@@ -25877,7 +25907,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.tree - Lazy text construction, util.isomorph - Determine isomorphism, text.tr - Transliterate characters, Library modules - Utilities
+@node text.tree - Lazy text construction, util.digest - Message digester framework, text.tr - Transliterate characters, Library modules - Utilities
 @section @code{text.tree} - Lazy text construction
 
 @deftp {Module} text.tree
@@ -25970,7 +26000,44 @@ an output string port, and returns the result string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.isomorph - Determine isomorphism, util.queue - Queue, text.tree - Lazy text construction, Library modules - Utilities
+@node util.digest - Message digester framework, util.isomorph - Determine isomorphism, text.tree - Lazy text construction, Library modules - Utilities
+@section @code{util.digest} - Message digester framework
+@c NODE util.digest - メッセージダイジェストフレームワーク, @code{util.digest} - メッセージダイジェストフレームワーク
+
+@deftp {Module} util.digest
+@mdindex util.digest
+This module provides a base class and common interface for 
+message digest algorithms, such as MD5 (@xref{rfc.md5 - MD5 message digest})
+and SHA1 (@xref{rfc.sha1 - SHA1 message digest}).
+@end deftp
+
+@deftp {Class} <message-digest-algorithm-meta>
+@clindex <message-digest-algorithm-meta>
+A metaclass of message digest algorithm implmentation.
+@end deftp
+
+@deftp {Class} <message-digest-algorithm>
+@clindex <message-digest-algorithm>
+A base class of message digest algorithm implementation.
+@end deftp
+
+The concrete subclass of message digest algorithm has to
+implement the following methods.
+
+@deffn {Generic function} digest-update algorithm data
+@end deffn
+
+@deffn {Generic function} digest-final algorithm
+@end deffn
+
+@deffn {Generic function} digest algorithm-meta
+@end deffn
+
+@deffn {Generic function} digest-string algorithm-meta
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node util.isomorph - Determine isomorphism, util.queue - Queue, util.digest - Message digester framework, Library modules - Utilities
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE util.isomorph - 同型判定, @code{util.isomorph} - 同型判定
 
@@ -26542,6 +26609,13 @@ Gregor Kiczales, Jim Des Rivieres, Daniel Bobrow,
 The Art of Metaobject Protocol, 
 The MIT Press.
 
+@anchor{rfc1321}
+@item [RFC1321]
+R. Rivest,
+The MD5 Message-Digest Algorithm. @*
+April 1992. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc1321.txt}.
+
 @anchor{rfc2045}
 @item [RFC2045]
 N. Freed, N. Borenstein: Multipurpose Internet Mail Extension
@@ -26571,6 +26645,13 @@ P. Resnick (ed.), Internet Message Format, April 2001. @*
 D. Kristol, L. Montulli, HTTP State Management Mechanism,
 October 2000. @*
 @url{ftp://ftp.isi.edu/in-notes/rfc2965.txt}.
+
+@anchor{rfc3174}
+@item [RFC3174]
+D. Eastlake, 3rd and P. Jones,
+US Secure Hash Algorithm 1 (SHA1). @*
+September 2001. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc3174.txt}.
 
 @anchor{srfi-0}
 @item [SRFI-0]
