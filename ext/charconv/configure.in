@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.charconv extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.14 2002-02-10 05:40:04 shirok Exp $
+dnl $Id: configure.in,v 1.15 2002-05-23 05:47:36 shirok Exp $
 AC_INIT(charconv.c)
 AC_GAUCHE_INIT_EXT
 
@@ -13,8 +13,8 @@ ICONV_NAME=iconv
 AC_ARG_WITH(iconv, , [
   case $with_iconv in
     no|yes) iconv_lib="" ;;
-    *)   CPPFLAGS="$CPPFLAGS -I$with_iconv/include";
-         LDFLAGS="$LDFLAGS -L$with_iconv/lib";
+    *)   iconv_ipath="-I$with_iconv/include";
+         iconv_lpath="$LDFLAGS -L$with_iconv/lib";
          iconv_lib="-liconv";;
   esac], [with_iconv=yes])
 AC_ARG_WITH(iconv-lib, , [ ICONV_NAME="$with_iconv_lib"; iconv_lib="-l$with_iconv_lib" ])
@@ -29,6 +29,10 @@ AC_GAUCHE_FLAGS
 AC_PROG_INSTALL
 
 # Add more test
+CFLAGS="$CFLAGS $iconv_ipath"
+CPPFLAGS="$CFLAGS $iconv_ipath"
+LDFLAGS="$LDFLAGS $iconv_lpath"
+
 if test $with_iconv != no; then
   AC_CHECK_HEADER($ICONV_NAME.h, AC_DEFINE(HAVE_ICONV_H))
 fi
@@ -46,6 +50,7 @@ iconv((iconv_t)0, &inbuf, &inroom, &outbuf, &outroom);
 if test "$ac_cv_iconv_const_input" = yes; then
 AC_DEFINE(ICONV_CONST_INPUT)
 fi
+
 
 # Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS
