@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.49 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: system.c,v 1.50 2003-12-05 19:38:28 shirok Exp $
  */
 
 #include <stdio.h>
@@ -98,11 +98,12 @@ ScmObj Scm_OffsetToInteger(off_t off)
 }
 
 /*===============================================================
- * Wrapper to the system call to handle signals.
- * Use like Scm_SysCall(write(...)) etc.
+ * OBSOLETED: Wrapper to the system call to handle signals.
+ * Use SCM_SYSCALL_{I|P} macro instead.
  */
 int Scm_SysCall(int r)
 {
+    Scm_Warn("Obsoleted API Scm_SysCall is called.");
     if (r < 0 && errno == EINTR) {
         ScmVM *vm = Scm_VM();
         errno = 0;
@@ -113,6 +114,7 @@ int Scm_SysCall(int r)
 
 void *Scm_PtrSysCall(void *r)
 {
+    Scm_Warn("Obsoleted API Scm_PtrSysCall is called.");
     if (r == NULL && errno == EINTR) {
         ScmVM *vm = Scm_VM();
         errno = 0;
@@ -180,7 +182,7 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     glob_t globbed;
     ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i, r;
-    r = Scm_SysCall(glob(Scm_GetStringConst(pattern), 0, NULL, &globbed));
+    SCM_SYSCALL(r, glob(Scm_GetStringConst(pattern), 0, NULL, &globbed));
     if (r < 0) Scm_Error("Couldn't glob %S", pattern);
     for (i = 0; i < globbed.gl_pathc; i++) {
         ScmObj path = SCM_MAKE_STR_COPYING(globbed.gl_pathv[i]);
@@ -474,9 +476,9 @@ ScmObj Scm_CurrentTime(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
-    if (Scm_SysCall(gettimeofday(&tv, NULL)) < 0) {
-        Scm_SysError("gettimeofday failed");
-    }
+    int r;
+    SCM_SYSCALL(r, gettimeofday(&tv, NULL));
+    if (r < 0) Scm_SysError("gettimeofday failed");
     return Scm_MakeTime(sym_time_utc, (long)tv.tv_sec, (long)tv.tv_usec*1000);
 #else  /* !HAVE_GETTIMEOFDAY */
     return Scm_MakeTime(sym_time_utc, (long)time(NULL), 0);
@@ -1045,13 +1047,13 @@ static ScmObj select_int(ScmSysFdset *rfds, ScmSysFdset *wfds,
     if (rfds) maxfds = rfds->maxfd;
     if (wfds && wfds->maxfd > maxfds) maxfds = wfds->maxfd;
     if (efds && efds->maxfd > maxfds) maxfds = efds->maxfd;
-    
-    numfds = Scm_SysCall(select(maxfds+1,
-                                (rfds? &rfds->fdset : NULL),
-                                (wfds? &wfds->fdset : NULL),
-                                (efds? &efds->fdset : NULL),
-                                select_timeval(timeout, &tm)));
-    
+
+    SCM_SYSCALL(numfds, 
+                select(maxfds+1,
+                       (rfds? &rfds->fdset : NULL),
+                       (wfds? &wfds->fdset : NULL),
+                       (efds? &efds->fdset : NULL),
+                       select_timeval(timeout, &tm)));
     if (numfds < 0) Scm_SysError("select failed");
     return Scm_Values4(Scm_MakeInteger(numfds),
                        (rfds? SCM_OBJ(rfds) : SCM_FALSE),

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.95 2003-11-27 14:09:55 shirok Exp $
+ *  $Id: port.c,v 1.96 2003-12-05 19:38:28 shirok Exp $
  */
 
 #include <unistd.h>
@@ -248,9 +248,9 @@ int Scm_FdReady(int fd, int dir)
     FD_SET(fd, &fds);
     tm.tv_sec = tm.tv_usec = 0;
     if (dir == SCM_PORT_OUTPUT) {
-        r = Scm_SysCall(select(fd+1, NULL, &fds, NULL, &tm));
+        SCM_SYSCALL(r, select(fd+1, NULL, &fds, NULL, &tm));
     } else {
-        r = Scm_SysCall(select(fd+1, &fds, NULL, NULL, &tm));
+        SCM_SYSCALL(r, select(fd+1, &fds, NULL, NULL, &tm));
     }
     if (r < 0) Scm_SysError("select failed");
     if (r > 0) return SCM_FD_READY;
@@ -760,16 +760,10 @@ static int file_filler(ScmPort *p, int cnt)
     SCM_ASSERT(fd >= 0);
     while (nread == 0) {
         errno = 0;
-        r = read(fd, datptr, cnt-nread);
+        SCM_SYSCALL(r, read(fd, datptr, cnt-nread));
         if (r < 0) {
-            if (errno == EINTR) {
-                ScmVM *vm = Scm_VM();
-                SCM_SIGCHECK(vm);
-                continue;
-            } else {
-                p->error = TRUE;
-                Scm_SysError("read failed on %S", p);
-            }
+            p->error = TRUE;
+            Scm_SysError("read failed on %S", p);
         } else if (r == 0) {
             /* EOF is read */
             break;
@@ -792,16 +786,10 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
     while ((!forcep && nwrote == 0)
            || (forcep && nwrote < cnt)) {
         errno = 0;
-        r = write(fd, datptr, datsiz-nwrote);
+        SCM_SYSCALL(r, write(fd, datptr, datsiz-nwrote));
         if (r < 0) {
-            if (errno == EINTR) {
-                ScmVM *vm = Scm_VM();
-                SCM_SIGCHECK(vm);
-                continue;
-            } else {
-                p->error = TRUE;
-                Scm_SysError("write failed on %S", p);
-            }
+            p->error = TRUE;
+            Scm_SysError("write failed on %S", p);
         } else {
             datptr += r;
             nwrote += r;

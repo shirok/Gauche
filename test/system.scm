@@ -447,6 +447,35 @@
              (sys-alarm 1)
              (sys-pause))))))
 
+(test* "sigalrm4 (interrupting syscall)" SIGALRM
+       (call/cc
+        (lambda (k)
+          (with-signal-handlers
+           ((SIGALRM => k))
+           (lambda ()
+             (receive (in out) (sys-pipe)
+               (sys-alarm 1)
+               (read in)))))))
+
+(test* "sigalrm5 (interrupting syscall - restart)" '(a)
+       (receive (in out) (sys-pipe)
+         (with-signal-handlers
+          ((SIGALRM (write '(a) out) (flush out)))
+          (lambda ()
+            (sys-alarm 1)
+            (read in)))))
+
+(when (symbol-bound? 'sys-select)
+  (test* "sigalrm6 (interrupting syscall - restart)" '(#t 0)
+         (let1 r #f
+           (with-signal-handlers
+            ((SIGALRM (set! r #t)))
+            (lambda ()
+              (sys-alarm 1)
+              (let1 s (sys-select #f #f #f 1500000)
+                (list r s))))))
+  )
+
 (test* "fork & sigint" #t
        (let ((pid (sys-fork))
              (sigint  #f)

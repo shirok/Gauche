@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.17 2003-11-27 17:10:39 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.18 2003-12-05 19:38:28 shirok Exp $
 ;;;
 
 "
@@ -84,13 +84,14 @@
 (if "defined HAVE_GETTIMEOFDAY"
     (define-cproc %sys-gettimeofday ()
       "struct timeval tv;
-       int r = Scm_SysCall(gettimeofday(&tv, NULL));
+       int r; SCM_SYSCALL(r, gettimeofday(&tv, NULL));
        if (r < 0) Scm_SysError(\"gettimeofday failed\");
        SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
 
 ;; sys/stat.h
 (define-cproc sys-mkfifo (path::<string> mode::<int>)
-  "  int r = Scm_SysCall(mkfifo(Scm_GetStringConst(path), mode));
+  "  int r;
+  SCM_SYSCALL(r, mkfifo(Scm_GetStringConst(path), mode));
   if (r < 0) Scm_SysError(\"mkfifo failed on %S\", path);
   SCM_RETURN(Scm_MakeInteger(r));")
 
@@ -99,11 +100,11 @@
 (define-cproc sys-utime (path::<string> &optional (atime #f) (mtime #f))
   "  struct utimbuf tim; int r;
   if (SCM_FALSEP(atime)&&SCM_FALSEP(mtime)) {
-    r = Scm_SysCall(utime(Scm_GetStringConst(path), NULL));
+    SCM_SYSCALL(r, utime(Scm_GetStringConst(path), NULL));
   } else {
     tim.actime  = SCM_FALSEP(atime)? time(NULL) : Scm_GetUInteger(atime);
     tim.modtime = SCM_FALSEP(mtime)? time(NULL) : Scm_GetUInteger(mtime);
-    r = Scm_SysCall(utime(Scm_GetStringConst(path), &tim));
+    SCM_SYSCALL(r, utime(Scm_GetStringConst(path), &tim));
   }
   if (r < 0) Scm_SysError(\"utime failed on %S\", path);
   SCM_RETURN(SCM_UNDEFINED);")
@@ -111,12 +112,12 @@
 ;; set*
 
 (define-cproc sys-setgid (gid::<int>)
-  "  int r = Scm_SysCall(setgid(gid));
+  "  int r; SCM_SYSCALL(r, setgid(gid));
   if (r < 0) Scm_SysError(\"setgid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
 
 (define-cproc sys-setpgid (pid::<int> pgid::<int>)
-  "  int r = Scm_SysCall(setpgid(pid, pgid));
+  "  int r; SCM_SYSCALL(r, setpgid(pid, pgid));
   if (r < 0) Scm_SysError(\"setpgid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
 
@@ -130,22 +131,22 @@
 
 (if "defined HAVE_GETPGID"
     (define-cproc %sys-getpgid (pid::<int>)
-      "  int r = (int)Scm_SysCall(getpgid(pid));
+      "  int r; SCM_SYSCALL(r, (int)getpgid(pid));
       if (r < 0) Scm_SysError(\"getpgid failed\");
       SCM_RETURN(Scm_MakeInteger(r));"))
 
 (define-cproc sys-getpgrp ()
-  "int r = (int)Scm_SysCall(getpgrp());
+  "int r; SCM_SYSCALL(r, (int)getpgrp());
   if (r < 0) Scm_SysError(\"getpgrp failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
 
 (define-cproc sys-setsid ()
-  "  int r = Scm_SysCall(setsid());
+  "  int r; SCM_SYSCALL(r, setsid());
   if (r < 0) Scm_SysError(\"setsid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
 
 (define-cproc sys-setuid (uid::<int>)
-  "  int r = Scm_SysCall(setuid(uid));
+  "  int r; SCM_SYSCALL(r, setuid(uid));
   if (r < 0) Scm_SysError(\"setuid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
 
@@ -220,14 +221,14 @@
 (if "defined HAVE_GETHOSTNAME"
     (define-cproc %sys-gethostname ()
       "  char buf[HOSTNAMELEN]; int r;
-         r = Scm_SysCall(gethostname(buf, HOSTNAMELEN));
+         SCM_SYSCALL(r, gethostname(buf, HOSTNAMELEN));
          if (r < 0) Scm_SysError(\"gethostname failed\");
          SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
 
 (if "defined HAVE_GETDOMAINNAME"
     (define-cproc %sys-getdomainname ()
       "  char buf[HOSTNAMELEN]; int r;
-         r = Scm_SysCall(getdomainname(buf, HOSTNAMELEN));
+         SCM_SYSCALL(r, getdomainname(buf, HOSTNAMELEN));
          if (r < 0) Scm_SysError(\"getdomainname failed\");
          SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
 
@@ -269,7 +270,7 @@
 
 ;; chown
 (define-cproc sys-chown (path::<string> owner::<int> group::<int>)
-  "int r = Scm_SysCall(chown(Scm_GetStringConst(path), owner, group));
+  "int r; SCM_SYSCALL(r, chown(Scm_GetStringConst(path), owner, group));
   if (r < 0) Scm_SysError(\"chown failed on %S\", path);
   SCM_RETURN(SCM_TRUE);")
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.353 2003-12-05 01:11:12 shirok Exp $
+ *  $Id: gauche.h,v 1.354 2003-12-05 19:38:28 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2172,8 +2172,26 @@ SCM_EXTERN ScmObj Scm_SignalName(int signum);
 SCM_EXTERN off_t  Scm_IntegerToOffset(ScmObj i);
 SCM_EXTERN ScmObj Scm_OffsetToInteger(off_t o);
 
+/* System call wrapper */
+#define SCM_SYSCALL3(result, expr, check)       \
+  do {                                          \
+    (result) = (expr);                          \
+    if ((check) && errno == EINTR) {            \
+      ScmVM *vm__ = Scm_VM();                   \
+      errno = 0;                                \
+      SCM_SIGCHECK(vm__);                       \
+    } else {                                    \
+      break;                                    \
+    }                                           \
+  } while (1)
+
+#define SCM_SYSCALL(result, expr) \
+  SCM_SYSCALL3(result, expr, (result < 0))
+
+/* Obsoleted 
 SCM_EXTERN int Scm_SysCall(int r);
 SCM_EXTERN void *Scm_PtrSysCall(void *r);
+*/
 
 SCM_EXTERN int Scm_GetPortFd(ScmObj port_or_fd, int needfd);
 

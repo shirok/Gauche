@@ -1,3 +1,13 @@
+2003-12-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (SCM_SYSCALL), src/system.c, src/syslib.stub,
+	  src/port.c, ext/net/net.c, ext/fcntl/fcntl.c,
+	  ext/auxsys/auxsyslib.stub: Wrapped system call by a macro
+	  so that signal-interrupted system calls are restarted unless
+	  signal handler throws an exception.   The old wrappers,
+	  Scm_SysCall and Scm_PreSysCall, which didn't restart syscall,
+	  are obsoleted.
+	
 2003-12-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub : updated according to Scm_InitBuiltinClass change.

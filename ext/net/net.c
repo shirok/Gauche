@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.28 2003-11-27 17:10:40 shirok Exp $
+ *  $Id: net.c,v 1.29 2003-12-05 19:38:28 shirok Exp $
  */
 
 #include "net.h"
@@ -102,17 +102,20 @@ ScmSocket *make_socket(int fd, int type)
 
 ScmObj Scm_MakeSocket(int domain, int type, int protocol)
 {
-    int sock = Scm_SysCall(socket(domain, type, protocol));
+    int sock; 
+    SCM_SYSCALL(sock, socket(domain, type, protocol));
     if (sock < 0) Scm_SysError("couldn't create socket");
     return SCM_OBJ(make_socket(sock, type));
 }
 
 ScmObj Scm_SocketShutdown(ScmSocket *s, int how)
 {
+    int r;
     if (s->status != SCM_SOCKET_STATUS_CONNECTED) {
         return SCM_FALSE;
     }
-    if (Scm_SysCall(shutdown(s->fd, how)) < 0) {
+    SCM_SYSCALL(r, shutdown(s->fd, how));
+    if (r < 0) {
         Scm_SysError("socket shutdown failed for %S", SCM_OBJ(s));
     }
     s->status = SCM_SOCKET_STATUS_SHUTDOWN;
@@ -181,11 +184,13 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 {
     ScmSockAddr *naddr;
+    int r;
     
     if (sock->fd < 0) {
         Scm_Error("attempt to bind a closed socket: %S", sock);
     }
-    if (Scm_SysCall(bind(sock->fd, &addr->addr, addr->addrlen)) < 0) {
+    SCM_SYSCALL(r, bind(sock->fd, &addr->addr, addr->addrlen));
+    if (r < 0) {
         Scm_SysError("bind failed to %S", addr);
     }
     /* The system may assign different address than <addr>, especially when
@@ -193,7 +198,8 @@ ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
        to obtain the exact address.   Patch provided by ODA Hideo */
     naddr = SCM_SOCKADDR(Scm_MakeSockAddr(SCM_CLASS_OF(addr),
                                           &addr->addr, addr->addrlen));
-    if (Scm_SysCall(getsockname(sock->fd, &naddr->addr, &naddr->addrlen)) < 0) {
+    SCM_SYSCALL(r, getsockname(sock->fd, &naddr->addr, &naddr->addrlen));
+    if (r < 0) {
         Scm_SysError("getsockname failed to %S", addr);
     }
     sock->address = naddr;
@@ -203,10 +209,12 @@ ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 
 ScmObj Scm_SocketListen(ScmSocket *sock, int backlog)
 {
+    int r;
     if (sock->fd < 0) {
         Scm_Error("attempt to listen a closed socket: %S", sock);
     }
-    if (Scm_SysCall(listen(sock->fd, backlog)) < 0) {
+    SCM_SYSCALL(r, listen(sock->fd, backlog));
+    if (r < 0) {
         Scm_SysError("listen(2) failed");
     }
     sock->status = SCM_SOCKET_STATUS_LISTENING;
@@ -223,7 +231,7 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
     if (sock->fd < 0) {
         Scm_Error("attempt to accept a closed socket: %S", sock);
     }
-    newfd = Scm_SysCall(accept(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
+    SCM_SYSCALL(newfd, accept(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
     if (newfd < 0) {
         if (errno == EAGAIN) {
             return SCM_FALSE;
@@ -242,10 +250,12 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
 
 ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
 {
+    int r;
     if (sock->fd < 0) {
         Scm_Error("attempt to connect a closed socket: %S", sock);
     }
-    if (Scm_SysCall(connect(sock->fd, &addr->addr, addr->addrlen)) < 0) {
+    SCM_SYSCALL(r, connect(sock->fd, &addr->addr, addr->addrlen));
+    if (r < 0) {
         Scm_SysError("connect failed to %S", addr);
     }
     sock->address = addr;
@@ -266,11 +276,11 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
         Scm_Error("attempt to set a socket option of a closed socket: %S", s);
     }
     if (SCM_STRINGP(value)) {
-        r = Scm_SysCall(setsockopt(s->fd, level, option, SCM_STRING_START(value),
-                                   SCM_STRING_SIZE(value)));
+        SCM_SYSCALL(r, setsockopt(s->fd, level, option, SCM_STRING_START(value),
+                                    SCM_STRING_SIZE(value)));
     } else if (SCM_INTP(value) || SCM_BIGNUMP(value)) {
         int v = Scm_GetInteger(value);
-        r = Scm_SysCall(setsockopt(s->fd, level, option, &v, sizeof(int)));
+        SCM_SYSCALL(r, setsockopt(s->fd, level, option, &v, sizeof(int)));
     } else {
         Scm_Error("socket option must be a string or an integer: %S", value);
     }
@@ -286,13 +296,13 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
     }
     if (rsize > 0) {
         char *buf = SCM_NEW_ATOMIC2(char *, rsize);
-        r = Scm_SysCall(getsockopt(s->fd, level, option, buf, &rsize));
+        SCM_SYSCALL(r, getsockopt(s->fd, level, option, buf, &rsize));
         if (r < 0) Scm_SysError("getsockopt failed");
         return Scm_MakeString(buf, rsize, rsize, SCM_MAKSTR_INCOMPLETE);
     } else {
         int val;
         rsize = sizeof(int);
-        r = Scm_SysCall(getsockopt(s->fd, level, option, &val, &rsize));
+        SCM_SYSCALL(r, getsockopt(s->fd, level, option, &val, &rsize));
         if (r < 0) Scm_SysError("getsockopt failed");
         return Scm_MakeInteger(val);
     }

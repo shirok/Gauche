@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.12 2003-11-27 17:10:40 shirok Exp $
+ *  $Id: fcntl.c,v 1.13 2003-12-05 19:38:28 shirok Exp $
  */
 
 #include <string.h>
@@ -114,7 +114,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
     
     switch (op) {
     case F_GETFD:; case F_GETFL:;
-        r = Scm_SysCall(fcntl(fd, op));
+        SCM_SYSCALL(r, fcntl(fd, op));
         if (r < 0) {
             Scm_SysError("fcntl(%s) failed", flag_name(op));
         }
@@ -124,7 +124,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
             Scm_Error("exact integer required for fcntl(%s), but got %S",
                       flag_name(op), arg);
         }
-        r = Scm_SysCall(fcntl(fd, op, Scm_GetInteger(arg)));
+        SCM_SYSCALL(r, fcntl(fd, op, Scm_GetInteger(arg)));
         if (r < 0) {
             Scm_SysError("fcntl(%s) failed", flag_name(op));
         }
@@ -135,7 +135,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
                       flag_name(op), arg);
         }
         fl = SCM_SYS_FLOCK(arg);
-        r = Scm_SysCall(fcntl(fd, op, &fl->lock));
+        SCM_SYSCALL(r, fcntl(fd, op, &fl->lock));
         if (op == F_SETLK) {
             if (r >= 0) return SCM_TRUE;
             if (errno == EAGAIN) return SCM_FALSE;
