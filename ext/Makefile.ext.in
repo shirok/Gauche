@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.4 2003-05-13 23:00:23 shirok Exp $
+## $Id: Makefile.ext.in,v 1.5 2003-05-16 10:15:35 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -29,14 +29,16 @@ OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 
 # Main definition of compilation commands
+#  NB: we don't use -no-undefined flag to link, since it causes a problem
+#  on MacOSX, on which we need to make gosh statically linked.
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 CCLD      = $(CC)
-LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -no-undefined -o $@ -rpath $(GAUCHE_ARCHDIR)
-MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -no-undefined $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
+LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
+MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
 INSTALL   = $(LIBTOOL) --mode=install @INSTALL@
 
-GOSH = $(top_srcdir)/src/gosh -ftest
+GOSH = $(top_builddir)/src/gosh -ftest
 GAUCHE_CONFIG = $(SHELL) $(top_srcdir)/src/gauche-config
 INSTALL_TYPE = sys
 

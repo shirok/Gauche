@@ -1,4 +1,15 @@
+2003-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, ext/Makefile.ext.in, ext/mt-random/Makefile.in,
+	  src/Makefile.in : more support for compiling on MacOSX
+
 2003-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* gc/include/private/gcconfig.h: undef MPROTECT_VDB on MACOSX, for
+	  it caused 'make check' to stall.  This flag is undefined in newer
+	  boehm gc anyway.
+
+	* src/dl_darwin.c: include <mach-o/dyld.h>
 
 	* src/load.c : changed DynLoad stuff so that the platform-dependent
 	  code are in separate files and #included in src/load.c conditionally.

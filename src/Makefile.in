@@ -53,7 +53,7 @@ LDFLAGS  = @LDFLAGS@
 
 
 # These are set by configure
-LIBTOOL  = @LIBTOOL@
+LIBTOOL  = @LIBTOOL@ @MAIN_LIBTOOL_OPTION@
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
 INCLUDES = -I$(srcdir) -I$(srcdir)/../gc/include @LOCAL_INC@

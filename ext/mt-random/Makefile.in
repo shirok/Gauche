@@ -16,7 +16,7 @@ EXTRA_INCLUDES = -I$(srcdir)/../uvector
 all : $(LIBFILES)
 
 mt-random.la : $(OBJECTS) 
-	$(MODLINK) $(OBJECTS) $(LIBGAUCHE) $(top_builddir)/ext/uvector/uvector.la
+	$(MODLINK) $(OBJECTS) $(LIBGAUCHE) @EXT_UVECTOR@
 
 mt-random_head.c mt-random_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension mt-random mtrandom
