@@ -12,11 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: validator.scm,v 1.1 2002-10-07 08:59:43 shirok Exp $
+;;;  $Id: validator.scm,v 1.2 2002-10-21 10:44:54 shirok Exp $
 ;;;
 
 (define-module gauche.mop.validator
-  (export <validator-meta>)
+  (export <validator-meta> <validator-mixin>)
   )
 (select-module gauche.mop.validator)
 
@@ -36,5 +36,11 @@
                       ;; the last #t enables initialization by :initform etc.
                       #t))))
         (else (next-method))))
+
+;; convenience base class.  you can either inherit <validator-mixin>,
+;; or specifying :metaclass <validator-meta> to your class.
+(define-class <validator-mixin> ()
+  ()
+  :metaclass <validator-meta>)
 
 (provide "gauche/mop/validator")

@@ -1,3 +1,9 @@
+2002-10-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/mop/* : added <singleton-mixin> and <validator-mixin>
+	  classes, to use the features of <singleton-meta> and
+	  <validator-meta> conveniently.
+
 2002-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub : renamed ulong -> u_long etc. in the generated

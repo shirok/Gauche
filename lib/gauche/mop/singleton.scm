@@ -12,13 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: singleton.scm,v 1.1 2002-10-15 04:09:13 shirok Exp $
+;;;  $Id: singleton.scm,v 1.2 2002-10-21 10:44:54 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL
 
 (define-module gauche.mop.singleton
-  (export <singleton-meta> instance-of))
+  (export <singleton-meta> <singleton-mixin> instance-of))
 (select-module gauche.mop.singleton)
 
 (define-class <singleton-meta> (<class>)
@@ -35,5 +35,11 @@
 
 (define-method instance-of ((class <singleton-meta>) . initargs)
   (apply make class initargs))
+
+;; convenience mixin class.  you can either inherit <singleton-mixin>,
+;; or specifying :metaclass <singleton-meta> to your class.
+(define-class <singleton-mixin> ()
+  ()
+  :metaclass <singleton-meta>)
 
 (provide "gauche/mop/singleton")
