@@ -2052,11 +2052,17 @@ without any argument from the shell, to find out the valid options.
 
 @deftp {Module} gauche.fcntl
 @mdindex gauche.fcntl
+@c EN
 Provides an interface to @code{fcntl(2)}, including
 advisory file locking.
+@c JP
+@code{ncntl(2)}へのインタフェースを提供します。勧告方式のファイルロックを
+含みます。
+@c COMMON
 @end deftp
 
 @defun sys-fcntl port-or-fd operation &optional arg
+@c EN
 Performs certain operation on the file specfied by @var{port-or-fd},
 which should be a port object or an integer
 that specifies a system file descriptor.  If it is a port, it must
@@ -2064,22 +2070,44 @@ be associated to the opened file.
 
 The operation is specified by an integer @var{operation}.
 Several variables are defined for valid @var{operation}.
+@c JP
+@var{port-or-fd} で指定されたファイルに対して特定の操作をおこないます。
+ファイル指定は、ポートオブジェクトもしくはシステムのファイルディスクリプタ
+である整数でなくてはなりません。それがポートである場合には、すでにオープン
+されたファイルを結びついていなければなりません。
+
+操作は整数 @var{operation} で指定します。
+いくつかの変数が定義されいて、@var{operation} に使用できます。
+@c COMMON
 
 @table @code
 @item F_GETFD
 @vindex F_GETFD
 @vindex FD_CLOEXEC
+@c EN
 Returns flags associated to the file descriptor of @var{port-or-fd}.
 The optional argument @var{arg} is not used.   The return value is 
 an integer whose definition is system specific, except one flag,
 @code{FD_CLOEXEC}, which indicates the file descriptor should be
 closed on @code{exec}.
+@c JP
+@var{port-or-fd} のファイルディスクリプタに結びついているフラグを返します。
+オプション引数の@var{arg}は使われません。返り値は整数で、その定義はシステム
+によります。ただし、@code{FD_CLOEXEC}だけは例外で、これは@code{exec}で
+クローズされたことを示しています。
+@c COMMON
 
 @item F_SETFD
 @vindex F_SETFD
+@c EN
 Sets the file descriptor flags given as @var{arg} to @var{port-or-fd}.
 For example, the portable way of setting @code{FL_CLOEXEC} flag is
 as follows:
+@c JP
+@var{port-or-fd}のファイルディスクリプタのフラグを与えられた@var{arg}に
+します。たとえば、@code{FL_CLOEXEC}フラグを設定する、互換性のある方法では
+次のようにします。
+@c COMMON
 @example
 (sys-fcntl port F_SETFD
           (logior FD_CLOEXEC
@@ -2088,8 +2116,13 @@ as follows:
 
 @item F_GETFL
 @vindex F_GETFL
+@c EN
 Returns flags associated to the open files specified by @var{port-or-fd}.
 The flags includes the following information:
+@c JP
+@var{port-or-fd}によって指定されたオープンしたファイルに結びついている
+フラグを返します。このフラグには以下のような情報が含まれています。
+@c COMMON
 
 @itemize @bullet
 @item
@@ -2097,29 +2130,55 @@ The flags includes the following information:
 @vindex O_RDONLY
 @vindex O_WRONLY
 @vindex O_RDWR
+@c EN
 File access mode.  When masked by @code{O_ACCMODE}, 
 it's either one of @code{O_RDONLY}, @code{O_WRONLY} or @code{O_RDWR}.
+@c JP
+ファイルのアクセスモード。@code{O_ACCMODE} でマスクしたとき、
+これは、@code{O_RDONLY}、@code{O_WRONLY}、@code{O_RDWR}のうちどれかひとつです。
+@c COMMON
 @item
 @vindex O_CREAT
 @vindex O_EXCL
 @vindex O_TRUNC
+@c EN
 File creation options.  @code{O_CREAT}, @code{O_EXCL} and/or
+@c JP
+ファイルの作成オプション。@code{O_CREAT}、@code{O_EXCL}のどちらか、または両方。
+@c COMMON
 @code{O_TRUNC}.
 @item
 @vindex O_APPEND
+@c EN
 Whether appending is allowed or not, by @code{O_APPEND}
+@c JP
+@code{O_APPEND}でマスクしたとき、追記が許されているかどうか。
+@c COMMON
 @item
 @vindex O_NONBLOCK
+@c EN
 Whether I/O is blocking or non-blocking, by @code{O_NONBLOCK}.
+@c JP
+@code{O_NONBLOCK}でマスクしたとき、I/O が非ブロックモードかブロックモードか。
+@c COMMON
 @item
 @vindex O_NOCTTY
+@c EN
 Whether it grabs terminal control, by @code{O_NOCTTY}.
+@c JP
+@code{O_NOCTTY}でマスクしたとき、端末制御を切離しているかどうか。
+@c COMMON
 @end itemize
 
+@c EN
 The system may define system-specific flags.
+@c JP
+システムが、そのシステム特有のフラグを定義していることがあります。
+@c COMMON
 
 @item F_SETFL
 @vindex F_SETFL
+@c EN
 Sets flags to the open files specified by @var{port-or-fd}.
 Among the flags listed above, only @code{O_NONBLOCK} and @code{O_APPEND}
 can be changed.
@@ -2128,37 +2187,75 @@ Note that @code{F_GETFD}/@code{F_SETFD} concern flags associated
 to the file descriptor itself, while @code{F_GETFL}/@code{F_SETFL}
 concern flags associated to the opened file itself.  This makes difference
 when more than one file descriptor points to the same opened file.
+@c JP
+@var{port-or-fd}で指定したオープンされたファイルのフラグを設定します。
+上に列挙されたフラグのうち、@code{O_NONBLOCK} と @code{O_APPEND} だけが
+変更可能です。
+
+@code{F_GETFD}/@code{F_SETFD} はファイルディスクリプタそのものに結びついた
+フラグについてであり、一方、@code{F_GETFL}/@code{F_SETFL} はオープンされた
+ファイルそのものに結びついているフラグについての操作であることに注意して
+ください。この違いは、2つ以上のファイルディスクリプタが同じオープンされた
+ファイルを指しているような場合にあらわれます。
+@c COMMON
 
 @item F_DUPFD
 @vindex F_DUPFD
+@c EN
 Creates new file descriptor that points to the same file referred by
 @var{port-or-fd}.
 An integer must be provided as @var{arg}, and that specifies
 the minimum value of file descriptor to be assigned.
+@c JP
+@var{port-or-fd}で参照しているのと同じファイルを指す新しいファイル
+ディスクリプタを生成します。
+@var{arg}で整数を与えなければなりません。この数は割り当てられる
+ファイルディスクリプタの最小値を指定します。
+@c COMMON
 
 @item F_GETLK
 @vindex F_GETLK
+@c EN
 The third argument must be provided and be an instance of @code{<sys-flock>}
 object described below.  It searches the lock information specified by
 @var{arg}, and modifies @var{arg} accordingly.
+@c JP
+3つめの引数を与えなければなりません。これは、以下に述べる@code{<sys-flock>}
+オブジェクトのインスタンスでなければなりません。@var{arg}で指定された
+ロック情報を検索し、それにしかるべく変更します。
+@c COMMON
 
 @item F_SETLK
 @itemx F_SETLKW
 @vindex F_SETLK
 @vindex F_SETLKW
+@c EN
 The third argument must be provided and be an instance of @code{<sys-flock>}
 object described below.  Sets the advisory file lock according to 
 @var{arg}.   If the lock is successfully obtained, @code{#t} is returned.
 If the other process has the lock conflicting the request,
 @code{F_SETLK} returns @code{#f}, while @code{F_SETLKW} waits until
 the lock is available.
+@c JP
+3つめの引数を与えなければなりません。これは、以下に述べる@code{<sys-flock>}
+オブジェクトのインスタンスでなければなりません。@var{arg}にしたがって、
+勧告方式のロックを設定します。ロックの取得に成功すれば、@code{#t}が
+返ります。もし、別のプロセスがロックをもっていて要求したものと衝突した
+場合には @code{F_SETLK} のときは @code{#f} を返します。一方、@code{F_SETLKW}
+のときはロックが利用可能になるまで待ちます。
+@c COMMON
 @end table
 
+@c EN
 Other value for @var{operation} causes an error.
+@c JP
+これ以外の値を @var{operation} で指定しようとするとエラーになります。
+@c COMMON
 @end defun
 
 @deftp {Builtin Class} <sys-flock>
 @clindex sys-flock
+@c EN
 A structure represents POSIX advisory record locking.
 Advisory record locking means the system may not prevents the process
 from operating on files that it doesn't have an appropriate lock.
@@ -2166,38 +2263,81 @@ All the processes are expected to use @code{fcntl} to check locks
 before it operates on the files that may be shared.
 
 The following slots are defined.
+@c JP
+POSIX の勧告方式レコードロックを表わす構造体です。勧告方式レコードロック
+ということは、システムが適切なロックをもたないファイルを操作することを
+防ぐことができないということです。すべてのプロセスが共有されている可能性
+のあるファイルを操作する前にロックを@code{fcntl}を使って検査することが
+期待されています。
+@c COMMON
 
 @defivar {<sys-flock>} type
+@c EN
 An integer represents lock type.  Following variables are predefined
 for the valid values:
+@c JP
+ロックのタイプを表す整数です。利用可能な値として以下の変数があらかじめ
+定義されています。
+@c COMMON
+
 @table @code
 @item F_RDLCK
 @vindex F_RDLCK
+@c EN
 Read locking
+@c JP
+読み込みのロック
+@c COMMON
 @item F_WRLCK
 @vindex F_WRLCK
+@c EN
 Write locking
+@c JP
+書き込みのロック
+@c COMMON
 @item F_UNLCK
 @vindex F_UNLCK
+
+@c EN
 To remove a lock by @code{F_SETLK}, or to indicate the record is not
 locked by @code{F_GETLK}.
+@c JP
+@code{F_SETLK}によるロックを除去するか、あるいはレコードが@code{F_GETLK}
+でロックされていないことを示す。
+@c COMMON
 @end table
 @end defivar
 
 @defivar {<sys-flock>} whence
+@c EN
 Indicates from where @code{start} is measured.
+@c JP
+@code{start}の計測が開始される位置を示す。
+@c COMMON
 @end defivar
 
 @defivar {<sys-flock>} start
+@c EN
 The offset of beginning of the locked region.
+@c JP
+ロックされるリージョンの開始位置オフセット
+@c COMMON
 @end defivar
 
 @defivar {<sys-flock>} len
+@c EN
 The number of bytes to lock.  Zero means ``until EOF''.
+@c JP
+ロックされるバイト数。ゼロは「EOF」までという意味。
+@c COMMON
 @end defivar
 
 @defivar {<sys-flock>} pid
+@c EN
 An integer process id that holding the lock; used only by @code{F_GETLK}.
+@c JP
+当該のロックをもっている整数のプロセスID。@code{F_GETLK}でのみ使用。
+@c COMMON
 @end defivar
 @end deftp
 
