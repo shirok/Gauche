@@ -2,7 +2,7 @@
 ;;; Simple test routine
 ;;;
 
-;;; $Id: test.scm,v 1.1 2001-03-24 09:50:16 shiro Exp $
+;;; $Id: test.scm,v 1.2 2002-02-14 07:39:07 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -87,7 +87,7 @@
           (fmt "discrepancies found.  Errors are:\n")
           (for-each (lambda (r)
                       (apply fmt "test ~a: expects ~s => got ~s\n" r))
-                    *discrepancy-list*)))
+                    (reverse *discrepancy-list*))))
     ))
 
 (provide "tester/tester")
