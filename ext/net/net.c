@@ -1,7 +1,7 @@
 /*
  * net.c - network interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,18 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.33 2004-07-16 11:11:41 shirok Exp $
+ *  $Id: net.c,v 1.34 2004-07-16 11:16:09 shirok Exp $
  */
 
 #include "net.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <gauche/extend.h>
-
-#ifdef __MINGW32__
-static ScmPort *make_winsock_port(ScmObj name, int dir,
-				  Socket sock, int buffering);
-#endif /*__MINGW32__*/
 
 /*==================================================================
  * Socket
