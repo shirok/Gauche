@@ -37,6 +37,29 @@
 (test "case" #t (lambda () (undefined? (case 1 ((2 3) #t)))))
 
 ;;----------------------------------------------------------------
+(test-section "binding")
+
+(test "let" 35
+      (lambda ()
+        (let ((x 2) (y 3))
+          (let ((x 7) (z (+ x y)))
+            (* z x)))))
+(test "let*" 70
+      (lambda ()
+        (let ((x 2) (y 3))
+          (let* ((x 7) (z (+ x y)))
+            (* z x)))))
+(test "let*" 2
+      (lambda ()
+        (let* ((x 1) (x (+ x 1))) x)))
+
+(test "named let" -3
+      (lambda ()
+        (let ((f -))
+          (let f ((a (f 3)))
+            a))))
+
+;;----------------------------------------------------------------
 (test-section "closure and saved env")
 
 (test "lambda" 5  (lambda ()  ((lambda (x) (car x)) '(5 6 7))))
