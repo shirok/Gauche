@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.82 2002-11-08 13:13:51 shirok Exp $
+ *  $Id: vm.h,v 1.83 2002-12-10 12:39:25 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -21,32 +21,7 @@
 #define SCM_VM_MAX_VALUES      20
 #define SCM_VM_SIGQ_SIZE       32
 
-/*#define GAUCHE_USE_NVM 1*/
-
-/* NB: experment of 'new VM' implementation */
-#ifdef GAUCHE_USE_NVM
-#define PCTYPE ScmObj*
-#else
 #define PCTYPE ScmObj
-#endif
-
-#if defined(GAUCHE_USE_NVM)
-/*
- * Instruction vector (only for "new VM")
- */
-typedef struct ScmIVectorRec {
-    SCM_HEADER;
-    int size;
-    ScmObj info;
-    ScmObj insn[1];             /* variable length */
-} ScmIVector;
-
-SCM_CLASS_DECL(Scm_IVectorClass);
-#define SCM_CLASS_IVECTOR   (&Scm_IVectorClass)
-#define SCM_IVECTORP(obj)   SCM_XTYPEP(obj, SCM_CLASS_IVECTOR)
-#define SCM_IVECTOR(obj)    ((ScmIVector*)(obj))
-
-#endif /*GAUCHE_USE_NVM*/
 
 /*
  * Environment frame
@@ -90,11 +65,7 @@ typedef struct ScmContFrameRec {
     ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
     PCTYPE pc;                    /* next PC */
-#ifndef GAUCHE_USE_NVM
     ScmObj info;                  /* debug info */
-#else  /*GAUCHE_USE_NVM*/
-    ScmIVector *ivec;
-#endif /*GAUCHE_USE_NVM*/
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
@@ -170,6 +141,27 @@ typedef struct ScmEscapePointRec {
 #define SCM_VM_ESCAPE_EXIT   3
 
 /*
+ * Parameters
+ *
+ *  Parameters keep thread-local state.   It is called 'fluids' in some
+ *  Scheme implementations.  A thread inherits the parameters from its
+ *  creator.   
+ */
+
+typedef struct ScmVMParameterTableRec {
+    int numParameters;
+    int numAllocated;
+    ScmObj *vector;
+} ScmVMParameterTable;
+
+SCM_EXTERN void Scm_ParameterTableInit(ScmVMParameterTable *table,
+                                       ScmVM *base);
+
+SCM_EXTERN int Scm_MakeParameterSlot(ScmVM *vm);
+SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, int index);
+SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, ScmObj value);
+
+/*
  * VM structure
  *
  *  In Gauche, each thread has a VM.  Indeed, the Scheme object
@@ -214,10 +206,7 @@ struct ScmVMRec {
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
     ScmPort *curerr;            /* current error port */
-
-#ifdef GAUCHE_USE_NVM
-    ScmIVector *ivec;           /* current instruction vector */
-#endif
+    ScmVMParameterTable parameters; /* parameter table */
 
     /* Registers */
     PCTYPE pc;                  /* Program pointer.  Points list of

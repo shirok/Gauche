@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.192 2002-12-10 10:07:49 shirok Exp $
+ *  $Id: vm.c,v 1.193 2002-12-10 12:39:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -92,6 +92,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->curin  = SCM_PORT(Scm_Stdin());
     v->curout = SCM_PORT(Scm_Stdout());
     v->curerr = SCM_PORT(Scm_Stderr());
+
+    Scm_ParameterTableInit(&(v->parameters), base);
 
     v->compilerFlags = 0;
     v->runtimeFlags = 0;

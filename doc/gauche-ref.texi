@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.318 2002-12-10 03:52:10 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.319 2002-12-10 12:39:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13891,6 +13891,7 @@ WWWで主として使われるプロトコルやデータフォーマットの実装。
 * gauche.collection - Collection framework::  
 * gauche.config - Configuration parameters::  
 * gauche.fcntl - Low-level file operations::  
+* gauche.hook - Hooks::         
 * gauche.interactive - Interactive session::  
 * gauche.listener - Listener::  
 * gauche.logger - User-level logging::  
@@ -15728,7 +15729,7 @@ without any argument from the shell, to find out the valid options.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.fcntl - Low-level file operations, gauche.interactive - Interactive session, gauche.config - Configuration parameters, Library modules - Gauche extensions
+@node gauche.fcntl - Low-level file operations, gauche.hook - Hooks, gauche.config - Configuration parameters, Library modules - Gauche extensions
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE gauche.fcntl - 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -15884,7 +15885,81 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node gauche.interactive - Interactive session, gauche.listener - Listener, gauche.fcntl - Low-level file operations, Library modules - Gauche extensions
+@node gauche.hook - Hooks, gauche.interactive - Interactive session, gauche.fcntl - Low-level file operations, Library modules - Gauche extensions
+@section @code{gauche.hook} - Hooks
+
+@deftp {Module} gauche.hook
+@mdindex gauche.hook
+Provides a hook object, which manages a list of closures to be
+called at certain time.
+
+This API of hooks are upper-compatible of Guile's, with the
+following extensions.
+@itemize
+@item
+Based on Gauche's object system.  Most APIs are methods
+so you can extend the hook features.
+@item
+Hook object itself is applicable.  You don't need to use @code{run-hook}.
+@item
+The method to remove a procedure from a hook is called @code{delete-hook!},
+for consistency with SRFI-1 and others.  @code{remove-hook!} is
+defined as an alias of @code{delete-hook!} for compability with Guile.
+@end itemize
+@end deftp
+
+@deftp {Class} <hook>
+@clindex hook
+A hook class, which keeps a list of procedures to be called at once.
+
+The @code{object-apply} method is defined on @code{<hook>} class,
+so you can "apply" a hook object as if it were a procedure---which
+causes all the registered procedure to be invoked.
+@end deftp
+
+@defun make-hook &optional (arity 0)
+Creates a new hook object with given arity, which should be a
+non-negative integer.
+@end defun
+
+@defun hook? obj
+Returns true if @var{obj} is a hook object.
+@end defun
+
+@defun hook-empty? hook
+Returns true if @var{hook}'s procedure list is empty.
+@end defun
+
+@deffn {Method} add-hook! (hook <hook>) proc &optional (append? #f)
+Adds a procedure @var{proc} to @var{hook}.  If @var{append?}
+is given and true, @var{proc} is added at the end of the list.
+Otherwise, @var{proc} is added at the front of the list.
+The @var{proc} has to be called with the arity given 
+at the @code{make-hook}.
+@end deffn
+
+@deffn {Method} delete-hook! (hook <hook>) proc
+@deffnx {Method} remove-hook! (hook <hook>) proc
+Removes @var{proc} from the procedure list of @var{hook}.
+@code{Remove-hook!} is an alias of @code{delete-hook!} just for
+compability with Guile.
+@end deffn
+
+@deffn {Method} reset-hook! (hook <hook>)
+Empties @var{hook}'s procedure list.
+@end deffn
+
+@deffn {Method} hook->list (hook <hook>)
+Returns a copy of @var{hook}'s procedure list.
+@end deffn
+
+@deffn {Method} run-hook (hook <hook>) arg @dots{}
+Calls @var{hook}'s procedures in order, with arguments @var{arg} @dots{}.
+The number of arguments must match the arity given at @code{make-hook}.
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node gauche.interactive - Interactive session, gauche.listener - Listener, gauche.hook - Hooks, Library modules - Gauche extensions
 @section @code{gauche.interactive} - Utilities for interactive session
 @c NODE gauche.interactive - インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 

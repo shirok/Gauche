@@ -4,6 +4,8 @@
 	* src/port.c, src/vm.c, src/extlib.stub : allow with-*-to-port and
 	  dynamic-wind to take non-procedure objects, enables object-apply
 	  hook.
+	* src/gauche/vm.h, src/vm.c, src/parameter.c : added per-thread
+	  parameter support.
 
 2002-12-08  Shiro Kawai  <shiro@acm.org>
 
