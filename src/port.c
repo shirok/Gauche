@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.28 2001-05-24 08:55:46 shirok Exp $
+ *  $Id: port.c,v 1.29 2001-05-25 09:00:52 shirok Exp $
  */
 
 #include <unistd.h>
@@ -761,6 +761,164 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
         vt.Info = fdport_info;
         return Scm_MakeVirtualPort(direction, &vt, pdata, ownerp);
     }
+}
+
+/*===============================================================
+ * Buffered port
+ */
+
+struct bufport {
+    int (*filler)(char*, int, void*);
+    void *clientData;
+    char *buffer;
+    int bufsiz;                 /* size of the buffer */
+    int chars;                  /* # of chars currently in the buffer.
+                                   -1 if reached to EOF. */
+    int current;                /* current character pointer */
+};
+
+#define PORT_BUFPORT(port)  \
+   ((struct bufport*)SCM_PORT(port)->src.proc.clientData)
+
+static void bufport_fill(struct bufport *bp)
+{
+    bp->chars = bp->filler(bp->buffer, bp->bufsiz, bp->clientData);
+    bp->current = 0;
+}
+
+static int bufport_getb(ScmPort *port)
+{
+    struct bufport *bp = PORT_BUFPORT(port);
+    if (bp->chars <= 0) return EOF;
+    if (bp->current >= bp->chars) bufport_fill(bp);
+    if (bp->chars <= 0) return EOF;
+    return bp->buffer[bp->current++];
+}
+
+static int bufport_getc(ScmPort *port)
+{
+    struct bufport *bp = PORT_BUFPORT(port);
+    ScmChar ch;
+    int nbytes;
+
+    for (;;) {
+        if (bp->chars <= 0) return EOF;
+        if (bp->current >= bp->chars) {
+            bufport_fill(bp);
+            continue;
+        }
+        nbytes = SCM_CHAR_NFOLLOWS(bp->buffer[bp->current]) + 1;
+        if (bp->current + nbytes >= bp->chars) {
+            /* We don't have enough bytes to consist a character. Move
+               incomplete character to the scratch, and repeat filling
+               until we have enough bytes or encounters EOF. */
+            port->scrcnt = 0;   /* should already be 0, but for safety. */
+            for (;;) {
+                int i, nc = bp->chars - bp->current;
+                for (i=0; i<nc; i++) {
+                    port->scratch[port->scrcnt++] = bp->buffer[bp->current++];
+                }
+                bufport_fill(bp);
+                if (bp->chars <= 0) return EOF;
+                if (bp->chars + port->scrcnt >= nbytes) break;
+            }
+            while (port->scrcnt < nbytes) {
+                port->scratch[port->scrcnt++] = bp->buffer[bp->current++];
+            }
+            SCM_CHAR_GET(port->scratch, ch);
+            return ch;
+        } else {
+            SCM_CHAR_GET(bp->buffer+bp->current, ch);
+            bp->current += nbytes;
+            return ch;
+        }
+    }
+}
+
+static int bufport_getz(ScmPort *port, char *buf, int buflen)
+{
+    struct bufport *bp = PORT_BUFPORT(port);
+    int nread = 0;
+    
+    if (bp->chars <= 0) return 0;
+    /*WRITEME*/
+    return 0;
+}
+
+static int bufport_putb(ScmPort *port, ScmByte b)
+{
+    return 0;
+}
+
+static int bufport_putc(ScmPort *port, ScmChar b)
+{
+    return 0;
+}
+
+static int bufport_putz(ScmPort *port, const char *buf)
+{
+    return 0;
+}
+
+static int bufport_puts(ScmPort *port, ScmString *s)
+{
+    return 0;
+}
+
+static int bufport_flush(ScmPort *port)
+{
+    return 0;
+}
+
+static int bufport_close(ScmPort *port)
+{
+    return 0;
+}
+
+ScmObj Scm_MakeBufferedPort(int direction, /* SCM_PORT_{INPUT|OUTPUT} */
+                            int bufsiz,    /* size of the buffer. */
+                            int chars,     /* # of chars already exist
+                                              in the buffer. */
+                            char *buffer,  /* the buffer.  when NULL,
+                                              this function allocates it. */
+                            int (*filler)(char *buf, int siz, void *data),
+                                           /* a procedure to do block I/O.
+                                              For input port, this function
+                                              should fill the buffer from
+                                              the begining, up to at most
+                                              SIZ bytes.  Returns # of 
+                                              actual bytes read.  Returns -1
+                                              if reached to EOF.  For output
+                                              port, this function should flush
+                                              SIZ characters in the buffer.
+                                            */
+                            void *data)
+{
+    ScmPortVTable vt;
+    struct bufport *packet;
+
+    if (buffer == NULL) buffer = SCM_NEW_ATOMIC2(char*, bufsiz);
+    packet = SCM_NEW(struct bufport);
+    packet->filler = filler;
+    packet->clientData = data;
+    packet->bufsiz = bufsiz;
+    packet->buffer = buffer;
+    packet->chars = chars;
+    packet->current = 0;
+
+    vt.Getb = (direction == SCM_PORT_INPUT)? bufport_getb : NULL;
+    vt.Getc = (direction == SCM_PORT_INPUT)? bufport_getc : NULL;
+    vt.Getz = (direction == SCM_PORT_INPUT)? bufport_getz : NULL;
+    vt.Getline = NULL;
+    vt.Ready = NULL;
+    vt.Putb = (direction == SCM_PORT_OUTPUT)? bufport_putb : NULL;
+    vt.Putc = (direction == SCM_PORT_OUTPUT)? bufport_putc : NULL;
+    vt.Putz = (direction == SCM_PORT_OUTPUT)? bufport_putz : NULL;
+    vt.Puts = (direction == SCM_PORT_OUTPUT)? bufport_puts : NULL;
+    vt.Flush = (direction == SCM_PORT_OUTPUT)? bufport_flush : NULL;
+    vt.Close = (direction == SCM_PORT_OUTPUT)? bufport_close : NULL;
+    vt.Info = NULL;            /* TODO */
+    return Scm_MakeVirtualPort(direction, &vt, packet, FALSE);
 }
 
 /*===============================================================
