@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.2 2004-10-11 05:52:03 shirok Exp $
+;;;  $Id: condutil.scm,v 1.3 2004-10-11 10:30:13 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -118,14 +118,18 @@
   (syntax-rules ()
     ((condition (type . bindings) ...)
      (make-compound-condition
-      (condition-sub type () bindings) ...))))
+      (condition-sub type () bindings) ...))
+    ((_ . other)
+     (syntax-error "malformed condition:" (condition . other)))))
 
 (define-syntax condition-sub
   (syntax-rules ()
     ((condition-sub type inits ())
      (make-condition type . inits))
     ((condition-sub type (init ...) ((field expr) . more))
-     (condition-sub type (init ... 'field expr) more))))
+     (condition-sub type (init ... 'field expr) more))
+    ((condition-sub type inits (other . more))
+     (syntax-error "malformed condition field initializer:" other))))
 
 ;; A trick to allow slot-ref to be used for compound condition.
 (define-method slot-missing ((class <condition-meta>)

@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.6 2004-10-11 07:06:11 shirok Exp $
+;; $Id: exception.scm,v 1.7 2004-10-11 10:30:36 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -175,6 +175,12 @@
                ((is-a? x <error>) 'caught-error))
          (car 'a)))
 
+(test* "guard" 'caught-error
+       (guard (x
+               ((symbol? x) (cons 'symbol x))
+               ((<error> x) 'caught-error))
+         (car 'a)))
+
 (test* "guard (uncaught error)" *test-error*
        (guard (x
                ((symbol? x) (cons 'symbol x))
@@ -190,9 +196,9 @@
 
 (test* "guard (subtype)" 'read-error
        (guard (x
-               ((is-a? x <read-error>) 'read-error)
-               ((is-a? x <system-error>) 'system-error)
-               ((is-a? x <error>) 'error)
+               ((<read-error> x) 'read-error)
+               ((<system-error> x) 'system-error)
+               ((<error> x) 'error)
                (else (cons 'else x)))
          (read-from-string "(abc")))
 
@@ -205,6 +211,17 @@
              (guard (ball
                      (#f (raise ball)))
                (raise 'exn))))))
+
+(test* "guard (compound)" 'read-error
+       (guard (x
+               ((<read-error> x) 'read-error)
+               ((<system-error> x) 'system-error)
+               ((<error> x) 'error)
+               (else (cons 'else x)))
+         (raise (condition
+                 (<io-error> (message "z"))
+                 (<read-error> (message "foo"))
+                 (<system-error> (message "bar"))))))
 
 ;;--------------------------------------------------------------------
 (test-section "subtype")
