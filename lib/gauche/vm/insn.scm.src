@@ -18,8 +18,8 @@
   (define (insert)
     (dolist (def insn-defs)
       (match-let1 (_ name num-params optype) def
-        (write `(make <vm-insn> :name ,name :num-params ,num-params
-                      :operand-type ,optype)
+        (write `(make <vm-insn-info> :name ',name :num-params ,num-params
+                      :operand-type ',optype)
                out)
         (newline out)))
     (body (read-line in)))
@@ -68,7 +68,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: insn.scm.src,v 1.1.2.2 2004-12-25 03:12:12 shirok Exp $
+;;;  $Id: insn.scm.src,v 1.1.2.3 2004-12-25 03:34:14 shirok Exp $
 ;;;
 
 (define-module gauche.vm.insn
@@ -84,7 +84,7 @@
    (operand-type :init-keyword :operand-type) ; operand type
    
    (all-insns :allocation :class          ; alist of all instructions,
-              :init-keyword :all-insns)   ;   keyed by name.
+              :init-value '())            ;   keyed by name.
    ))
 
 (define-method initialize ((self <vm-insn-info>) initargs)
