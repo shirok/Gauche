@@ -12,11 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interactive.scm,v 1.1 2001-08-06 07:24:27 shirok Exp $
+;;;  $Id: interactive.scm,v 1.2 2001-09-06 07:05:43 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
-  (export apropos)
+  (export apropos a describe d)
   )
 (select-module gauche.interactive)
 
@@ -83,6 +83,32 @@
     (values)
     ))
 
-                               
+;; Describe - describe object
+;;
+
+(define-method describe (object)
+  (let* ((class (class-of object))
+         (slots (class-slots class)))
+    (format #t "~s is an instance of class ~a\n"
+            object (class-name class))
+    (unless (null? slots)
+      (format #t "slots:\n")
+      (for-each (lambda (s)
+                  (format #t "  ~10s: ~a\n" s
+                          (if (slot-bound? object s)
+                              (with-output-to-string
+                                (lambda () (write-limited (slot-ref object s)
+                                                          60)))
+                              "#unbound")))
+                (map slot-definition-name slots)))
+    (values)
+    ))
+
+;; For convenience
+(define-syntax a
+  (syntax-rules ()
+    ((_ . ?args) (apropos . ?args))))
+
+(define d describe)
 
 (provide "gauche/interactive")
