@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.12 2001-05-02 08:20:25 shirok Exp $
+;; $Id: srfi.scm,v 1.13 2001-05-03 10:28:07 shirok Exp $
 
 (use gauche.test)
 
@@ -511,6 +511,10 @@
       (lambda () (string-count "abc def\tghi jkl" #\space)))
 (test "string-count" 3
       (lambda () (string-count "abc def\tghi jkl" #[\s])))
+(test "string-count" 2
+      (lambda () (string-count "abc def\tghi jkl" #[\s] 4)))
+(test "string-count" 1
+      (lambda () (string-count "abc def\tghi jkl" #[\s] 4 9)))
 (test "string-contains" 3
       (lambda () (string-contains "Ma mere l'oye" "mer")))
 (test "string-contains" #f
@@ -520,6 +524,278 @@
 (test "string-contains-ci" #f
       (lambda () (string-contains-ci "Ma mere l'oye" "Meer")))
 
+(test "string-titlecase" "--Capitalize This Sentence."
+      (lambda () (string-titlecase "--capitalize tHIS sentence.")))
+(test "string-titlecase" "3Com Makes Routers."
+      (lambda () (string-titlecase "3com makes routers.")))
+(test "string-titlecase!" "alSo Whatever"
+      (lambda ()
+        (let ((s (string-copy "also whatever")))
+          (string-titlecase! s 2 9)
+          s)))
+
+(test "string-upcase" "SPEAK LOUDLY"
+      (lambda () (string-upcase "speak loudly")))
+(test "string-upcase" "PEAK"
+      (lambda () (string-upcase "speak loudly" 1 5)))
+(test "string-upcase!" "sPEAK loudly"
+      (lambda ()
+        (let ((s (string-copy "speak loudly")))
+          (string-upcase! s 1 5)
+          s)))
+
+(test "string-downcase" "speak softly"
+      (lambda () (string-downcase "SPEAK SOFTLY")))
+(test "string-downcase" "peak"
+      (lambda () (string-downcase "SPEAK SOFTLY" 1 5)))
+(test "string-downcase!" "Speak SOFTLY"
+      (lambda ()
+        (let ((s (string-copy "SPEAK SOFTLY")))
+          (string-downcase! s 1 5)
+          s)))
+
+(test "string-reverse" "nomel on nolem on"
+      (lambda () (string-reverse "no melon no lemon")))
+(test "string-reverse" "nomel on"
+      (lambda () (string-reverse "no melon no lemon" 9)))
+(test "string-reverse" "on"
+      (lambda () (string-reverse "no melon no lemon" 9 11)))
+(test "string-reverse!" "nomel on nolem on"
+      (lambda ()
+        (let ((s (string-copy "no melon no lemon")))
+          (string-reverse! s) s)))
+(test "string-reverse!" "no melon nomel on"
+      (lambda ()
+        (let ((s (string-copy "no melon no lemon")))
+          (string-reverse! s 9) s)))
+(test "string-reverse!" "no melon on lemon"
+      (lambda ()
+        (let ((s (string-copy "no melon no lemon")))
+          (string-reverse! s 9 11) s)))
+
+(test "string-append" #f
+      (lambda () (let ((s "test")) (eq? s (string-append s)))))
+(test "string-concatenate" #f
+      (lambda () (let ((s "test")) (eq? s (string-concatenate (list s))))))
+(test "string-concatenate" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+      (lambda () (string-concatenate
+                  '("A" "B" "C" "D" "E" "F" "G" "H"
+                    "I" "J" "K" "L" "M" "N" "O" "P"
+                    "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                    "a" "b" "c" "d" "e" "f" "g" "h"
+                    "i" "j" "k" "l" "m" "n" "o" "p"
+                    "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))))
+(test "string-concatenate/shared" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+      (lambda () (string-concatenate/shared
+                  '("A" "B" "C" "D" "E" "F" "G" "H"
+                    "I" "J" "K" "L" "M" "N" "O" "P"
+                    "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                    "a" "b" "c" "d" "e" "f" "g" "h"
+                    "i" "j" "k" "l" "m" "n" "o" "p"
+                    "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))))
+(test "string-concatenate-reverse" "zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA"
+      (lambda () (string-concatenate-reverse
+                  '("A" "B" "C" "D" "E" "F" "G" "H"
+                    "I" "J" "K" "L" "M" "N" "O" "P"
+                    "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                    "a" "b" "c" "d" "e" "f" "g" "h"
+                    "i" "j" "k" "l" "m" "n" "o" "p"
+                    "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))))
+(test "string-concatenate-reverse" #f
+      (lambda () (let ((s "test"))
+                   (eq? s (string-concatenate-reverse (list s))))))
+(test "string-concatenate-reverse/shared" "zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA"
+      (lambda () (string-concatenate-reverse/shared
+                  '("A" "B" "C" "D" "E" "F" "G" "H"
+                    "I" "J" "K" "L" "M" "N" "O" "P"
+                    "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                    "a" "b" "c" "d" "e" "f" "g" "h"
+                    "i" "j" "k" "l" "m" "n" "o" "p"
+                    "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))))
+
+(test "string-map" "svool"
+      (lambda () (string-map (lambda (c)
+                               (integer->char (- 219 (char->integer c))))
+                             "hello")))
+(test "string-map" "vool"
+      (lambda () (string-map (lambda (c)
+                               (integer->char (- 219 (char->integer c))))
+                             "hello" 1)))
+(test "string-map" "vo"
+      (lambda () (string-map (lambda (c)
+                               (integer->char (- 219 (char->integer c))))
+                             "hello" 1 3)))
+(test "string-map!" "svool"
+      (lambda ()
+        (let ((s (string-copy "hello")))
+          (string-map! (lambda (c)
+                         (integer->char (- 219 (char->integer c))))
+                       s)
+          s)))
+(test "string-map!" "hvool"
+      (lambda ()
+        (let ((s (string-copy "hello")))
+          (string-map! (lambda (c)
+                         (integer->char (- 219 (char->integer c))))
+                       s 1)
+          s)))
+(test "string-map!" "hvolo"
+      (lambda ()
+        (let ((s (string-copy "hello")))
+          (string-map! (lambda (c)
+                         (integer->char (- 219 (char->integer c))))
+                       s 1 3)
+          s)))
+
+(test "string-fold" '(#\o #\l #\l #\e #\h . #t)
+      (lambda () (string-fold cons #t "hello")))
+(test "string-fold" '(#\l #\e . #t)
+      (lambda () (string-fold cons #t "hello" 1 3)))
+(test "string-fold-right" '(#\h #\e #\l #\l #\o . #t)
+      (lambda () (string-fold-right cons #t "hello")))
+(test "string-fold-right" '(#\e #\l . #t)
+      (lambda () (string-fold-right cons #t "hello" 1 3)))
+
+(test "string-unfold" "hello"
+      (lambda () (string-unfold null? car cdr '(#\h #\e #\l #\l #\o))))
+(test "string-unfold" "hi hello"
+      (lambda () (string-unfold null? car cdr '(#\h #\e #\l #\l #\o) "hi ")))
+(test "string-unfold" "hi hello ho"
+      (lambda () (string-unfold null? car cdr
+                                '(#\h #\e #\l #\l #\o) "hi "
+                                (lambda (x) " ho"))))
+
+(test "string-unfold-right" "olleh"
+      (lambda () (string-unfold-right null? car cdr '(#\h #\e #\l #\l #\o))))
+(test "string-unfold-right" "olleh hi"
+      (lambda () (string-unfold-right null? car cdr '(#\h #\e #\l #\l #\o) " hi")))
+(test "string-unfold-right" "ho olleh hi"
+      (lambda () (string-unfold-right null? car cdr
+                                '(#\h #\e #\l #\l #\o) " hi"
+                                (lambda (x) "ho "))))
+
+(test "string-for-each" "CLtL"
+      (lambda ()
+        (let ((out (open-output-string))
+              (prev #f))
+          (string-for-each (lambda (c)
+                             (if (or (not prev)
+                                     (char-whitespace? prev))
+                                 (write-char c out))
+                             (set! prev c))
+                           "Common Lisp, the Language")
+
+          (get-output-string out))))
+(test "string-for-each" "oLtL"
+      (lambda ()
+        (let ((out (open-output-string))
+              (prev #f))
+          (string-for-each (lambda (c)
+                             (if (or (not prev)
+                                     (char-whitespace? prev))
+                                 (write-char c out))
+                             (set! prev c))
+                           "Common Lisp, the Language" 1)
+          (get-output-string out))))
+(test "string-for-each" "oL"
+      (lambda ()
+        (let ((out (open-output-string))
+              (prev #f))
+          (string-for-each (lambda (c)
+                             (if (or (not prev)
+                                     (char-whitespace? prev))
+                                 (write-char c out))
+                             (set! prev c))
+                           "Common Lisp, the Language" 1 10)
+          (get-output-string out))))
+(test "string-for-each-index" '(4 3 2 1 0)
+      (lambda ()
+        (let ((r '()))
+          (string-for-each-index (lambda (i) (set! r (cons i r))) "hello")
+          r)))
+(test "string-for-each-index" '(4 3 2 1)
+      (lambda ()
+        (let ((r '()))
+          (string-for-each-index (lambda (i) (set! r (cons i r))) "hello" 1)
+          r)))
+(test "string-for-each-index" '(2 1)
+      (lambda ()
+        (let ((r '()))
+          (string-for-each-index (lambda (i) (set! r (cons i r))) "hello" 1 3)
+          r)))
+
+(test "xsubstring" "cdefab"
+      (lambda () (xsubstring "abcdef" 2)))
+(test "xsubstring" "efabcd"
+      (lambda () (xsubstring "abcdef" -2)))
+(test "xsubstring" "abcabca"
+      (lambda () (xsubstring "abc" 0 7)))
+(test "xsubstring" "abcabca"
+      (lambda () (xsubstring "abc"
+                             30000000000000000000000000000000
+                             30000000000000000000000000000007)))
+(test "xsubstring" "defdefd"
+      (lambda () (xsubstring "abcdefg" 0 7 3 6)))
+(test "xsubstring" ""
+      (lambda () (xsubstring "abcdefg" 9 9 3 6)))
+
+(test "string-xcopy!" "ZZcdefabZZ"
+      (lambda ()
+        (let ((s (make-string 10 #\Z)))
+          (string-xcopy! s 2 "abcdef" 2)
+          s)))
+(test "string-xcopy!" "ZZdefdefZZ"
+      (lambda ()
+        (let ((s (make-string 10 #\Z)))
+          (string-xcopy! s 2 "abcdef" 0 6 3)
+          s)))
+
+(test "string-replace" "abcdXYZghi"
+      (lambda () (string-replace "abcdefghi" "XYZ" 4 6)))
+(test "string-replace" "abcdZghi"
+      (lambda () (string-replace "abcdefghi" "XYZ" 4 6 2)))
+(test "string-replace" "abcdZefghi"
+      (lambda () (string-replace "abcdefghi" "XYZ" 4 4 2)))
+(test "string-replace" "abcdefghi"
+      (lambda () (string-replace "abcdefghi" "XYZ" 4 4 1 1)))
+(test "string-replace" "abcdhi"
+      (lambda () (string-replace "abcdefghi" "" 4 7)))
+
+(test "string-tokenize" '("Help" "make" "programs" "run," "run," "RUN!")
+      (lambda () (string-tokenize "Help make programs run, run, RUN!")))
+(test "string-tokenize" '("Help" "make" "programs" "run" "run" "RUN")
+      (lambda ()
+        (string-tokenize "Help make programs run, run, RUN!"
+                         #[a-zA-Z])))
+(test "string-tokenize" '("programs" "run" "run" "RUN")
+      (lambda ()
+        (string-tokenize "Help make programs run, run, RUN!"
+                         #[a-zA-Z] 10)))
+(test "string-tokenize" '("elp" "make" "programs" "run" "run")
+      (lambda ()
+        (string-tokenize "Help make programs run, run, RUN!"
+                         #[a-z])))
+
+(test "string-filter" "rrrr"
+      (lambda () (string-filter "Help make programs run, run, RUN!" #\r )))
+(test "string-filter" "HelpmakeprogramsrunrunRUN"
+      (lambda () (string-filter "Help make programs run, run, RUN!"
+                                #[a-zA-Z])))
+(test "string-filter" "programsrunrun"
+      (lambda () (string-filter "Help make programs run, run, RUN!"
+                                (lambda (c) (char-lower-case? c)) 10)))
+(test "string-filter" ""
+      (lambda () (string-filter "" (lambda (c) (char-lower-case? c)))))
+(test "string-delete" "Help make pogams un, un, RUN!"
+      (lambda () (string-delete "Help make programs run, run, RUN!" #\r)))
+(test "string-delete" "   , , !"
+      (lambda () (string-delete "Help make programs run, run, RUN!"
+                                #[a-zA-Z])))
+(test "string-delete" " , , RUN!"
+      (lambda () (string-delete "Help make programs run, run, RUN!"
+                                (lambda (c) (char-lower-case? c)) 10)))
+(test "string-delete" ""
+      (lambda () (string-delete "" (lambda (c) (char-lower-case? c)))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-14")
