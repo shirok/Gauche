@@ -4,7 +4,7 @@
  *  Written by Shiro Kawai (shiro@acm.org)
  *  I put this program in public domain.  Use it as you like.
  *
- *  $Id: spigot.c,v 1.2 2003-06-12 11:09:23 shirok Exp $
+ *  $Id: spigot.c,v 1.3 2003-06-29 08:21:07 shirok Exp $
  */
 
 #include <math.h>
@@ -66,6 +66,8 @@ ScmObj Spigot_calculate_pi(int digits)
     int k, i, j, l, b, q, r, *array;
     ScmObj rvec, *relts;
 
+    if (digits <= 0) Scm_Error("digits must be a positive integer");
+
     /* Scheme vector to keep the result */
     rvec = Scm_MakeVector(digits, SCM_MAKE_INT(0));
     relts = SCM_VECTOR_ELEMENTS(rvec);
@@ -107,6 +109,8 @@ ScmObj Spigot_calculate_e(int digits)
 {
     int k, i, j, l, b, q, r, *array;
     ScmObj rvec, *relts;
+
+    if (digits <= 0) Scm_Error("digits must be a positive integer");
 
     /* Scheme vector to keep the result */
     rvec = Scm_MakeVector(digits, SCM_MAKE_INT(0));

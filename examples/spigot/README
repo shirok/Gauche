@@ -1,0 +1,40 @@
+This directory contains sources of "spigot" extension module.
+You can use these files as a template of your extension.
+
+The extension isn't built by default.  You can build the
+extension _after installing Gauche_.  See below.
+
+The sources include:
+
+  configure.in   - source of "configure" script
+  Makefile.in    - template makefile
+  spigot.h       - common declaration within the spigot module
+  spigot.c       - main logic 
+  spigot.stub    - a "stub" file to generate Scheme-C glue
+  spigot.scm     - Scheme part of the module
+  test.scm       - unit test
+
+This is a typical construction of a simple extension.
+
+As a developer, you have to start from generating "configure"
+script by autoconf.   You need autoconf version 2.54 or later.
+This command creates "configure" from configure.in.
+
+  % autoconf -I `gauche-config --ac`
+
+Once configure is generated, you can create Makefile by
+running configure script.
+
+  % ./configure
+
+Configure script automatically finds installed Gauche,
+and picks right options to compile and link.
+Now, 'make' builds the extension, 'make check' runs
+the test, and 'make install' installs the extension
+in the Gauche's standard location.
+
+  % make
+  % make check
+  % make install
+
+
