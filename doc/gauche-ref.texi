@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.287 2002-10-23 08:01:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.288 2002-10-23 08:07:32 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -15765,7 +15765,7 @@ Prints the prompt by prompter procedure to @code{output-port},
 then flush @code{output-port}.
 @item
 Repeats from 2.
-@end itemize
+@end enumerate
 @end deffn
 
 @deffn {Method} listener-show-prompt (listener <listener>)
