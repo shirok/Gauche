@@ -31,10 +31,11 @@ cat << EOF
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.sh,v 1.24 2003-07-05 03:29:11 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.25 2004-08-28 09:27:51 fuyuki Exp $
 ;;;
 
 "
+#include <math.h>
 #include \\"gauche/uvector.h\\"
 #include \\"uvectorP.h\\"
 "

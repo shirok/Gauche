@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.h,v 1.3 2004-07-15 07:10:05 shirok Exp $
+ *  $Id: termios.h,v 1.4 2004-08-28 09:27:46 fuyuki Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -50,6 +50,7 @@
 #ifdef HAVE_LIBUTIL_H
 #include <libutil.h>
 #endif
+#include <unistd.h>
 
 typedef struct ScmSysTermiosRec {
     SCM_HEADER;

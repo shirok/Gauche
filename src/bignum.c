@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.56 2004-06-17 23:42:37 shirok Exp $
+ *  $Id: bignum.c,v 1.57 2004-08-28 09:27:56 fuyuki Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -73,6 +73,7 @@ char *alloca ();
 # endif
 #endif
 
+#include <stdlib.h>
 #include <math.h>
 #include <limits.h>
 #define LIBGAUCHE_BODY
