@@ -19,6 +19,7 @@ AC_CHECK_HEADERS(dlfcn.h)
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 AC_STRUCT_TM
+AC_CHECK_SIZEOF(long)
 
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
@@ -27,4 +28,7 @@ dnl Add version macro
 GAUCHE_VERSION=`cat VERSION`
 AC_SUBST(GAUCHE_VERSION)
 
-AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile Makefile)
+AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile 
+          ext/uvector/Makefile
+          Makefile)
+

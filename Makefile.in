@@ -13,10 +13,12 @@ clean :
 	cd src; $(MAKE) clean
 	cd lib; $(MAKE) clean
 	cd test; $(MAKE) clean
+	cd ext/uvector; $(MAKE) clean
 
 distclean : clean
 	cd src; $(MAKE) distclean
 	cd lib; $(MAKE) distclean
+	cd ext/uvector; $(MAKE) distclean
 	rm -rf Makefile config.cache config.log config.status
 
 install :
@@ -26,5 +28,6 @@ install :
 realclean : clean
 	cd src; $(MAKE) realclean
 	cd lib; $(MAKE) realclean
+	cd ext/uvector; $(MAKE) realclean
 	rm -rf configure Makefile config.cache config.log config.status
 

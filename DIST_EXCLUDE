@@ -11,3 +11,5 @@ Gauche/doc/CVS
 Gauche/test/CVS
 Gauche/lib/CVS
 Gauche/lib/vm/CVS
+Gauche/ext/CVS
+Gauche/ext/uvector/CVS
