@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.186 2002-11-07 00:05:15 shirok Exp $
+ *  $Id: vm.c,v 1.187 2002-11-07 11:44:49 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -414,7 +414,8 @@ void Scm__InitVM(void)
 #endif
 
 #ifdef GAUCHE_USE_NVM
-#define NEXT        goto *(void*)++pc
+/*#define NEXT        goto *(void*)++pc* */
+#define NEXT        continue
 #else  /* !GAUCHE_USE_NVM */
 #define NEXT        continue
 #endif /* !GAUCHE_USE_NVM */
@@ -455,6 +456,7 @@ static void run_loop()
         /*VM_DUMP("");*/
         SCM_SIGCHECK(vm);
 
+#ifndef GAUCHE_USE_NVM
         /* See if we're at the end of procedure.  It's safer to use
            !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.
            (the former makes nqueen.scm 2% slower) */
@@ -477,6 +479,10 @@ static void run_loop()
             continue;
         }
 
+#else  /* GAUCHE_USE_NVM */
+        SCM_ASSERT(pc < vm->ivec->insn[vm->ivec->size]);
+        code = *pc++;
+#endif /* GAUCHE_USE_NVM */
         /* VM instructions */
         SWITCH(SCM_VM_INSN_CODE(code)) {
 
@@ -496,6 +502,7 @@ static void run_loop()
                 NEXT;
             }
             CASE(SCM_VM_PRE_CALL) {
+#ifndef GAUCHE_USE_NVM
                 ScmObj prep = SCM_CAR(pc), next = SCM_CDR(pc);
                 /* Note: The call instruction will push extra word for
                    next-method, hence +1 */
@@ -506,6 +513,10 @@ static void run_loop()
                 }
                 pc = prep;
                 NEXT;
+#else  /* GAUCHE_USE_NVM */
+                int reqstack = CONT_FRAME_SIZE+ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
+                CHECK_STACK(reqstack);
+#endif
             }
             CASE(SCM_VM_PRE_TAIL) {
                 /* Note: The call instruction will push extra word for

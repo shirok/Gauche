@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.178 2002-11-07 00:05:15 shirok Exp $
+;;; $Id: extlib.stub,v 1.179 2002-11-07 11:44:49 shirok Exp $
 ;;;
 
 "
@@ -1216,8 +1216,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (if "defined(GAUCHE_TEST_NVM)"
     (begin
       "extern ScmObj Scm_CompileNVM(ScmObj);"
+      "extern ScmObj Scm_IVectorToVector(ScmIVector*);"
       (define-cproc compile-nvm (code)
-        (return "Scm_CompileNVM"))))
+        (return "Scm_CompileNVM"))
+      (define-cproc ivector->vector (ivec)
+        "if (!SCM_IVECTORP(ivec)) Scm_Error(\"ivector required, but got %S\", ivec);
+        SCM_RETURN(Scm_IVectorToVector(SCM_IVECTOR(ivec)));")
+      ))
 
 ;; Local variables:
 ;; mode: scheme

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.91 2002-11-07 00:05:15 shirok Exp $
+ *  $Id: compile.c,v 1.92 2002-11-07 11:44:49 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1974,7 +1974,7 @@ static ScmIVector *make_ivec(int size)
     SCM_SET_CLASS(iv, SCM_CLASS_IVECTOR);
     iv->size = size;
     iv->info = SCM_NIL;
-    for (i=0; i<size; i++) iv->insn[i] = NULL;
+    for (i=0; i<size; i++) iv->insn[i] = SCM_FALSE;
     return iv;
 }
 
@@ -2023,8 +2023,10 @@ static inline void emitInsn1(ScmObj insn, ScmCompileContext *ctx)
 
 static inline void pushLabel(ScmObj target, ScmCompileContext *ctx)
 {
-    ctx->labelList = Scm_Acons(target, SCM_MAKE_INT(ctx->insnCount),
-                               ctx->labelList);
+    if (SCM_FALSEP(Scm_Assq(target, ctx->labelList))) {
+        ctx->labelList = Scm_Acons(target, SCM_MAKE_INT(ctx->insnCount),
+                                   ctx->labelList);
+    }
 }
 
 static inline void pushJump(ScmObj target, ScmCompileContext *ctx)
@@ -2067,8 +2069,8 @@ static void serialize_graph(ScmObj graph, ScmCompileContext *ctx)
             emit(item, ctx);
             pushJump(then_path, ctx);
             serialize_graph(else_path, ctx);
-            pushLabel(then_path, ctx);
             graph = then_path;
+            pushLabel(then_path, ctx);
             break;
         }
         case SCM_VM_PRE_CALL: {
@@ -2093,7 +2095,9 @@ static void serialize_graph(ScmObj graph, ScmCompileContext *ctx)
         case SCM_VM_TAIL_CALL:
             emit(item, ctx);
             return;
-        case SCM_VM_GREF:
+        case SCM_VM_GREF:;
+        case SCM_VM_DEFINE:;
+        case SCM_VM_DEFINE_CONST:
             emit(item, ctx);
             emit(SCM_CADR(graph), ctx);
             graph = SCM_CDDR(graph);
@@ -2124,6 +2128,17 @@ static void fix_jumps(ScmCompileContext *ctx)
     }
 }
 
+static ScmObj vectorize_code(ScmCompileContext *ctx)
+{
+    ScmIVector *ivec = make_ivec(ctx->insnCount);
+    int i;
+    ScmObj cp = ctx->head;
+    for (i=0; i<ctx->insnCount; i++, cp = SCM_CDR(cp)) {
+        ivec->insn[i] = SCM_CAR(cp);
+    }
+    return SCM_OBJ(ivec);
+}
+
 ScmObj Scm_CompileNVM(ScmObj code)
 {
     ScmCompileContext ctx;
@@ -2132,7 +2147,18 @@ ScmObj Scm_CompileNVM(ScmObj code)
     ctx.head = ctx.tail = SCM_NIL;
     serialize_graph(code, &ctx);
     fix_jumps(&ctx);
-    return Scm_Values2(ctx.head, ctx.labelList);
+    return vectorize_code(&ctx);
+}
+
+ScmObj Scm_IVectorToVector(ScmIVector *ivec)
+{
+    ScmVector *v = SCM_VECTOR(Scm_MakeVector(ivec->size+1, SCM_FALSE));
+    int i = 0;
+    SCM_VECTOR_ELEMENTS(v)[0] = ivec->info;
+    for (i=0; i<ivec->size; i++) {
+        SCM_VECTOR_ELEMENTS(v)[i+1] = ivec->insn[i];
+    }
+    return SCM_OBJ(v);
 }
 #endif /*GAUCHE_USE_NVM*/
 
