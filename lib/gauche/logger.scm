@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: logger.scm,v 1.3 2002-09-22 02:35:33 shirok Exp $
+;;;  $Id: logger.scm,v 1.4 2002-09-22 05:41:11 shirok Exp $
 ;;;
 
 (define-module gauche.logger
@@ -79,7 +79,17 @@
                         (display (slot-ref drain 'program-name))
                         (loop (read-char)))
                        ((char=? c1 #\T)
-                        (display (sys-strftime "%b %e %T" (sys-localtime (sys-time))))
+                        ;; NB: I used to use (sys-strftime "%b %e %H:%M:%S"), but
+                        ;; not all implementations supports %e, which is like
+                        ;; %d (day of the month) but suppressing the leading
+                        ;; zeros.  It is necessary to match syslog date format.
+                        (let1 t (sys-localtime (sys-time))
+                          (format #t "~a ~2d ~2,'0d:~2,'0d:~2,'0d"
+                                  (sys-strftime "%b" t)
+                                  (slot-ref t 'mday)
+                                  (slot-ref t 'hour)
+                                  (slot-ref t 'min)
+                                  (slot-ref t 'sec)))
                         (loop (read-char)))
                        ((char=? c1 #\Y)
                         (display (sys-strftime "%Y" (sys-localtime (sys-time))))
