@@ -23,7 +23,7 @@ clean:
 	rm -rf core *~
 
 distclean: clean
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) distclean); done
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
