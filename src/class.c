@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.115 2004-10-10 09:52:09 shirok Exp $
+ *  $Id: class.c,v 1.116 2004-11-11 02:44:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2390,6 +2390,7 @@ ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method)
                     method->generic = NULL;
                     break;
                 }
+                mp = SCM_CDR(mp);
             }
         }
     }

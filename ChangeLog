@@ -1,5 +1,8 @@
 2004-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c (Scm_DeleteMethod): fixed a bug that caused infinite
+	  loop during class redefinition.
+
 	* lib/text/csv.scm (make-csv-reader|writer): made quote-char
 	  customizable (Patch from Alex Shinn).
 
