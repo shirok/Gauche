@@ -1,5 +1,5 @@
 ;;;
-;;; genstub - simple stub generator
+;;; genstub - simple stub generator for Gauche
 ;;;
 ;;;  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.73 2002-08-18 02:16:40 shirok Exp $
+;;;  $Id: genstub,v 1.74 2002-08-20 08:00:39 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -30,6 +30,54 @@
 (define cpp-condition (make-parameter #f))
 
 (define (f fmt . args) (apply format #t fmt args) (newline))
+
+;; Summary of forms
+;;
+;;   define-type name c-type [desc c-predicate unboxer boxer]
+;;
+;;      Register a new type to be recognized.  This is rather a declaration
+;;      than definition; no C code will be generated directly by this form.
+;;
+;;   define-cproc name (args ...) body ...
+;;
+;;      Create a subr function.  Body can be:
+;;        a string : becomes the body of C code.
+;;        (return [<rettype>] <C-function>) :
+;;             calls C-function.  If <rettype> is omitted, C-function
+;;             is assumed to return ScmObj.  Otherwise, a boxer of
+;;             <rettype> is used.  As a special case, if <rettype> is
+;;             <boid>, the return value of C-function is ignored and
+;;             the function returns #<undef>.
+;;        (setter <setter-name>) : specfy setter.  <setter-name> should
+;;             be a cproc name defined in the same stub file
+;;        (setter (args ...) body ...) : specify setter anonymously.
+;;
+;;   define-cgeneric name c-name property-clause ...)
+;;
+;;      Defines generic function.   C-name specifies a C variable name
+;;      that keeps the generic function structure.  One or more of
+;;      the following clauses can appear in property-clause ...:
+;;        (extern) : makes c-name visible from other file (i.e. do
+;;             not define the structure as 'static').
+;;        (fallback "fallback") : specifies the fallback function.
+;;        (setter . setter-spec) : specifies the setter.
+;;
+;;   define-cmethod name (arg ...) body ...
+;;
+;;   define-cclass scheme-name c-typename c-class-name cpa
+;;      (slot-spec ...)
+;;      property-clause ...
+;;
+;;   define-symbol scheme-name [c-name]
+;;      Defines a symbol that is bound to a C variable c-name.
+;;
+;;   define-const scheme-name initializer
+;;
+;;   define-enum name
+;;
+;;   initcode <c-code>
+;;      Insert <c-code> literally in the initialization function
+;;
 
 ;;===================================================================
 ;; Type handling
@@ -140,7 +188,7 @@
 (define (name->type name)
   (or (find-type-by-name name) (error "unknown type" name)))
 
-;; [Genstub Form] define-type name c-type [desc c-predicate unboxer boxer]
+;; define-type name c-type [desc c-predicate unboxer boxer]
 ;;
 ;;   Creates a new stub type for existing scheme type.
 
@@ -294,7 +342,7 @@
       (error "unknown predicate to assert" pred)))
 
 ;;===================================================================
-;; Stub
+;; Stub : base class of declarations
 ;;
 ;;   - Each declaration makes a stub.
 ;;   - Stub is used to generate three things: immediate definition,
@@ -330,7 +378,7 @@
        (when cpp (f "#endif /*~a*/" cpp))
        ))))
 
-;;--------------------------------------------------------------------
+;;===================================================================
 ;; Symbol and keyword definition
 ;;
 
@@ -364,7 +412,7 @@
     (emit-definition symbol)
     ))
 
-;; (define-const scheme-name c-name [init])
+;; (define-const scheme-name c-name init)
 
 (define-class <cconst> (<csymbol>)
   ()
@@ -437,8 +485,7 @@
   (emit-definition (make <ckeyword>
                      :scheme-name (cadr form) :c-name (caddr form))))
     
-
-;;-----------------------------------------------------------------
+;;===================================================================
 ;; Procedure
 ;;
 
@@ -497,9 +544,9 @@
     (unless arg (error "assertion for unknown arg:" form))
     (set! (type-of arg) (predicate->type op))))
 
-;; (define-cproc scheme-name (argspec)
-;;   assertions ...
-;;   body)
+;;-----------------------------------------------------------------
+;; (define-cproc scheme-name (argspec) body)
+;;
 
 (define-class <cproc> (<procstub>)
   ((num-optargs     :initform 0   :accessor num-optargs-of
@@ -905,7 +952,6 @@
 
 ;; (define-cmethod scheme-name (argspec ...)
 ;;    [ (c-generic-name "CGenericName") ]
-;;    assertions ...
 ;;    body ...)
 
 (define-class <cmethod> (<procstub>)
@@ -1009,7 +1055,7 @@
                  (cons (cadar arglist) specs)))
           )))
 
-;;-----------------------------------------------------------------
+;;===================================================================
 ;; Class
 ;;
 ;;  - Generates C stub for static class definition, slot accessors and
@@ -1222,7 +1268,7 @@
 (define-method emit-spec-definition ((slot <cslot>))
   (print #`"  SCM_CLASS_SLOT_SPEC(\",(scheme-name-of slot)\", ,(slot-getter-name slot), ,(slot-setter-name slot)),"))
 
-;;-----------------------------------------------------------------
+;;===================================================================
 ;; Extra initializers
 ;;
 
@@ -1239,7 +1285,7 @@
 (define (process-initcode form)
   (make <initcode> :code (cdr form)))
 
-;;---------------------------------------------------------------
+;;===================================================================
 ;; Miscellaneous utilities
 ;;
 
