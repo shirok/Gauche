@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.86 2002-06-27 08:08:23 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.87 2002-07-17 10:56:21 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -173,15 +173,6 @@
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname sys-putenv
           sys-gettimeofday sys-utime)
-
-(autoload gauche.thread
-          thread? thread-name thread-specific thread-specific-set!
-          mutex? mutex-name mutex-specific mutex-specific-set!
-          condition-variable? condition-variable-name
-          condition-variable-specific condition-variable-specific-set!
-          join-timeout-exception? abandoned-mutex-exception?
-          terminated-thread-exception? uncaught-exception?
-          uncaught-exception-reason)
 
 (autoload gauche.defvalues
           (:macro define-values) (:macro set!-values))
