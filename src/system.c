@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.36 2002-05-05 05:00:50 shirok Exp $
+ *  $Id: system.c,v 1.37 2002-05-15 02:56:52 shirok Exp $
  */
 
 #include <stdio.h>
@@ -40,7 +40,7 @@
  * Scheme binding.
  */
 
-/*
+/*===============================================================
  * Wrapper to the system call to handle signals.
  * Use like Scm_SysCall(write(...)) etc.
  */
@@ -85,7 +85,7 @@ int Scm_GetPortFd(ScmObj port_or_fd, int needfd)
     return fd;
 }
 
-/*
+/*===============================================================
  * Directory primitives (dirent.h)
  *   We don't provide the iterator primitives, but a function which
  *   reads entire directory.
@@ -283,7 +283,7 @@ ScmObj Scm_DirName(ScmString *filename)
     return Scm_MakeString(str, i, -1, 0);
 }
 
-/*
+/*===============================================================
  * Stat (sys/stat.h)
  */
 
@@ -363,10 +363,111 @@ static ScmClassStaticSlotSpec stat_slots[] = {
     { NULL }
 };
 
-/*
+/*===============================================================
  * Time (sys/time.h)
  */
 
+/* Gauche has two notion of time.  A simple number is used by the low-level
+ * system interface (sys-time, sys-gettimeofday).  An object of <time> class
+ * is used for higher-level interface, including threads.
+ */
+
+/* <time> object */
+
+static ScmObj sym_time_utc = SCM_FALSE;
+
+static ScmObj time_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmTime *t = SCM_ALLOCATE(ScmTime, klass);
+    SCM_SET_CLASS(t, SCM_CLASS_TIME);
+    t->type = sym_time_utc;
+    t->sec = t->nsec = 0;
+    return SCM_OBJ(t);
+}
+
+static void time_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmTime *t = SCM_TIME(obj);
+    Scm_Printf(port, "#<%S %lu.%09lu>", t->type, t->sec, t->nsec);
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_TimeClass,
+                         time_print, NULL, NULL,
+                         time_allocate, SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_MakeTime(ScmObj type, unsigned long sec, unsigned long nsec)
+{
+    ScmTime *t = SCM_TIME(time_allocate(SCM_CLASS_TIME, SCM_NIL));
+    t->type = type;
+    t->sec = sec;
+    t->nsec = nsec;
+    return SCM_OBJ(t);
+}
+
+ScmObj Scm_CurrentTime(void)
+{
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval tv;
+    if (Scm_SysCall(gettimeofday(&tv, NULL)) < 0) {
+        Scm_SysError("gettimeofday failed");
+    }
+    return Scm_MakeTime(sym_time_utc, tv.tv_sec, tv.tv_usec*1000);
+#else  /* !HAVE_GETTIMEOFDAY */
+    return Scm_MakeTime(sym_time_utc, (unsigned long)time(NULL), 0);
+#endif /* !HAVE_GETTIMEOFDAY */
+}
+
+static ScmObj time_type_get(ScmTime *t)
+{
+    return t->type;
+}
+
+static void time_type_set(ScmTime *t, ScmObj val)
+{
+    if (!SCM_SYMBOLP(val)) {
+        Scm_Error("time type must be a symbol, but got %S", val);
+    }
+    t->type = val;
+}
+
+static ScmObj time_sec_get(ScmTime *t)
+{
+    return Scm_MakeIntegerFromUI(t->sec);
+}
+
+static void time_sec_set(ScmTime *t, ScmObj val)
+{
+    if (!SCM_EXACTP(val)) {
+        Scm_Error("exact integer required, but got %S", val);
+    }
+    t->sec = Scm_GetUInteger(val);
+}
+
+static ScmObj time_nsec_get(ScmTime *t)
+{
+    return Scm_MakeIntegerFromUI(t->nsec);
+}
+
+static void time_nsec_set(ScmTime *t, ScmObj val)
+{
+    unsigned long l;
+    if (!SCM_EXACTP(val)) {
+        Scm_Error("exact integer required, but got %S", val);
+    }
+    if ((l = Scm_GetUInteger(val)) >= 1000000000) {
+        Scm_Error("nanoseconds out of range: %lu", l);
+    }
+    t->nsec = l;
+}
+
+static ScmClassStaticSlotSpec time_slots[] = {
+    SCM_CLASS_SLOT_SPEC("type",       time_type_get, time_type_set),
+    SCM_CLASS_SLOT_SPEC("second",     time_sec_get, time_sec_set),
+    SCM_CLASS_SLOT_SPEC("nanosecond", time_nsec_get, time_nsec_set),
+    {NULL}
+};
+
+/* time_t and conversion routines */
 /* NB: I assume time_t is typedefed to either an integral type or
  * a floating point type.  As far as I know it is true on most
  * current architectures.  POSIX doesn't specify so, however; it
@@ -385,12 +486,26 @@ ScmObj Scm_MakeSysTime(time_t t)
 
 time_t Scm_GetSysTime(ScmObj val)
 {
+    if (SCM_TIMEP(val)) {
 #ifdef INTEGRAL_TIME_T
-    return (time_t)Scm_GetUInteger(val);
+        return (time_t)SCM_TIME(val)->sec;
 #else
-    return (tiem_t)Scm_GetDouble(val);
+        return (time_t)((double)SCM_TIME(val)->sec +
+                        (double)SCM_TIME(val)->nsec/1.0e-9);
 #endif
+    } else if (SCM_NUMBERP(val)) {
+#ifdef INTEGRAL_TIME_T
+        return (time_t)Scm_GetUInteger(val);
+#else
+        return (time_t)Scm_GetDouble(val);
+#endif
+    } else {
+        Scm_Error("bad time value: either a <time> object or a real number is required, but got %S", val);
+        return (time_t)0;       /* dummy */
+    }
 }
+
+/* <sys-tm> object */
 
 static ScmObj tm_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -454,7 +569,7 @@ static ScmClassStaticSlotSpec tm_slots[] = {
     { NULL }
 };
 
-/*
+/*===============================================================
  * Groups (grp.h)
  */
 
@@ -529,7 +644,7 @@ static ScmClassStaticSlotSpec grp_slots[] = {
     { NULL }
 };
 
-/*
+/*===============================================================
  * Passwords (pwd.h)
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
  */
@@ -619,7 +734,7 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
     { NULL }
 };
 
-/*
+/*===============================================================
  * Exec
  *   execvp(), with optionally setting stdios correctly.
  *
@@ -726,7 +841,7 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
     Scm_Panic("exec failed: %s", strerror(errno));
 }
 
-/*
+/*===============================================================
  * select
  */
 
@@ -843,7 +958,7 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 
 #endif /* HAVE_SELECT */
 
-/*
+/*===============================================================
  * Initialization
  */
 void Scm__InitSystem(void)
@@ -856,7 +971,9 @@ void Scm__InitSystem(void)
     sym_fifo      = SCM_INTERN("fifo");
     sym_symlink   = SCM_INTERN("symlink");
     sym_socket    = SCM_INTERN("socket");
+    sym_time_utc  = SCM_INTERN("time-utc");
     Scm_InitBuiltinClass(&Scm_SysStatClass, "<sys-stat>", stat_slots, 0, mod);
+    Scm_InitBuiltinClass(&Scm_TimeClass, "<time>", time_slots, 0, mod);
     Scm_InitBuiltinClass(&Scm_SysTmClass, "<sys-tm>", tm_slots, 0, mod);
     Scm_InitBuiltinClass(&Scm_SysGroupClass, "<sys-group>", grp_slots, 0, mod);
     Scm_InitBuiltinClass(&Scm_SysPasswdClass, "<sys-passwd>", pwd_slots, 0, mod);

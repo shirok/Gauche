@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.250 2002-05-14 09:36:03 shirok Exp $
+ *  $Id: gauche.h,v 1.251 2002-05-15 02:56:52 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1978,21 +1978,6 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
  *  (ScmInternalMutex and ScmInternalCond).
  */
 
-/*
- * Time object, as specified in SRFI-18, SRFI-19 and SRFI-21.
- */
-typedef struct ScmTimeRec {
-    SCM_HEADER;
-    int type;
-    unsigned long second;
-    unsigned long nanosecond;
-} ScmTime;
-
-SCM_CLASS_DECL(Scm_TimeClass);
-#define SCM_CLASS_TIME        (&Scm_TimeClass)
-#define SCM_TIME(obj)         ((ScmTime*)obj)
-#define SCM_TIMEP(obj)        SCM_XTYPEP(obj, SCM_CLASS_TIME)
-
 /* Scheme mutex.
  *  If locker == NULL, the mutex is unlocked/not-abandoned
  *  If locker != NULL
@@ -2079,6 +2064,26 @@ SCM_EXTERN ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
  */
 SCM_EXTERN ScmObj Scm_MakeSysTime(time_t time);
 SCM_EXTERN time_t Scm_GetSysTime(ScmObj val);
+
+/* Gauche also has a <time> object, as specified in SRFI-18, SRFI-19
+ * and SRFI-21.  It can be constructed from the basic system interface
+ * such as sys-time or sys-gettimeofday. 
+ */
+typedef struct ScmTimeRec {
+    SCM_HEADER;
+    ScmObj type;                /* 'time-utc by default.  see SRFI-19 */
+    unsigned long sec;          /* seconds */
+    unsigned long nsec;         /* nanoseconds */
+} ScmTime;
+
+SCM_CLASS_DECL(Scm_TimeClass);
+#define SCM_CLASS_TIME        (&Scm_TimeClass)
+#define SCM_TIME(obj)         ((ScmTime*)obj)
+#define SCM_TIMEP(obj)        SCM_XTYPEP(obj, SCM_CLASS_TIME)
+
+SCM_EXTERN ScmObj Scm_CurrentTime(void);
+SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, unsigned long sec, unsigned long nsec);
+SCM_EXTERN ScmObj Scm_SecondsToTime(time_t seconds);
 
 /* struct tm */
 typedef struct ScmSysTmRec {
