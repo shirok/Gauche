@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.19 2001-06-07 20:26:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.20 2001-06-08 10:11:59 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2716,7 +2716,14 @@ ISO-2022-JP
 
 There are cases that you know the input is encoded in one of
 several possible encodings.  The charconv module has a mechanism
-to guess the input encoding. 
+to guess the input encoding.  There can be multiple algorithms,
+and each algorithm has the name.  Right now, there's only one
+algorithm implemented:
+@table @code
+@item *JP
+To guess the character encoding from japanese text, among either
+ISO-2022-JP, EUC-JP, ShiftJIS or UTF-8.
+@end table
 @end deftp
 
 You can check whether the specific conversion is supported on
@@ -2725,9 +2732,6 @@ your system or not, by the following function.
 @defun ces-conversion-supported? from-ces to-ces
 Returns @code{#t} if conversion from the character encoding scheme
 (CES) @var{from-ces} to @var{to-ces} is supported in this system.
-@end defun
-
-@defun ces-guess-from-string string scheme
 @end defun
 
 @defun open-input-conversion-port source from-code &keyword to-code buffer-size owner?
@@ -2754,9 +2758,59 @@ the document.
 By default, @code{open-input-conversion-port} leaves @var{source} open.
 If you specify true value to @var{owner?}, the function closes
 @var{source} after it reads EOF from the port.
+
+For example, the following code copies a file @code{unknown.txt} to a file
+@code{eucjp.txt}, converting unknown japanese CES to EUC-JP.
+@example
+(call-with-output-file "eucjp.txt"
+  (lambda (out)
+    (copy-port (open-input-conversion-port
+                 (open-input-file "unknown.txt")
+                 "*jp"             ;@r{guess code}
+                 :to-code "eucjp"
+                 :owner? #t)       ;@r{close unknown.txt afterwards}
+               out)))
+@end example
+
 @end defun
 
 @defun open-output-conversion-port sink to-code &keyword from-code buffer-size owner?
+Creates and returns an output port that converts
+given characters from @var{from-code} to @var{to-code}
+and feed to an output port @var{sink}.
+If @var{from-code} is omitted, the native CES is assumed.
+You can't specify a character guessing scheme (such as "*JP") to
+neither @var{from-code} nor @var{to-code}.
+
+@var{buffer-size} specifies the size of internal conversion buffer.
+The characters put to the returned port may stay in the buffer,
+until the port is explicity flushed (by @code{flush}) or
+the port is closed.
+
+By default, the returned port doesn't closes @var{sink} when
+itself is closed.  If a keyword argument @var{owner?} is provided
+and true, however, it closes @var{sink} when it is closed.
+@end defun
+
+@defun ces-convert string from-code &optional to-code
+Convert @var{string}'s character encoding from @var{from-code}
+to @var{to-code}, and returns the converted string.
+The returned string may be a byte-string if @var{to-code}
+is different from the native CES.
+
+@var{from-code} can be a name of character guessing scheme
+(e.g. "*JP").  when @var{to-code} is omitted, the native CES is
+assumed.
+@end defun
+
+@defun ces-guess-from-string string scheme
+Guesses the CES of @var{string} by the character guessing scheme
+@var{scheme} (e.g. "*JP").  Returns CES name that can be used
+by other charconv functions.   It may return @code{#f} if the
+guessing scheme finds no possible encoding in @var{string}.
+Note that if there may be more than one possible encoding in
+@var{string}, the guessing scheme returns one of them,
+usually in favor of the native CES.
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2812,7 +2866,7 @@ If you specify true value to @var{owner?}, the function closes
 @end defun
 
 @node Netdb interface
-@subsection Socket interface
+@subsection  Netdb interface
 
 @deftp {Builtin Class} <sys-hostent>
 @clindex sys-hostent
