@@ -33,7 +33,7 @@
 ;;; sync/write options so you can use the set functionality to offer
 ;;; other interfaces to editing messages and easily save the results.
 
-;; $Id: gettext.scm,v 1.2 2003-01-30 10:44:38 shirok Exp $
+;; $Id: gettext.scm,v 1.3 2003-02-05 02:56:16 shirok Exp $
 
 (define-module text.gettext
   (use srfi-1)    ;; list library
@@ -114,15 +114,26 @@
 (define message-path (make-parameter '("/usr/share/locale")))
 (define domain-message-paths (make-hash-table 'equal?))
 
-(define default-accessor (make-parameter #f))
+(define %default-accessor (make-parameter #f))
+
+;; trick to delay creation of default accessor until needed.
+(define (default-accessor . new-accessor)
+  (if (null? new-accessor)
+      (or (%default-accessor)
+          (begin (%default-accessor (make-gettext))
+                 (%default-accessor)))
+      (%default-accessor (car new-accessor))))
+
 (define (gettext msgid)
   ((default-accessor) 'get msgid))
 
 ;; rebind the default domain
 (define (textdomain domain)
-  (let ((accessor (make-gettext domain)))
-    (default-accessor accessor)
-    accessor))
+  (if domain
+      (let ((accessor (make-gettext domain)))
+        (default-accessor accessor)
+        accessor)
+      (default-accessor)))
 
 (define (bindtextdomain domain dirs)
   (hash-table-put! domain-message-paths domain (listify dirs)))

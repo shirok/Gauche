@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.354 2003-02-05 00:54:55 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.355 2003-02-05 02:57:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24823,6 +24823,7 @@ A simple example:
 * rfc.uri - URI parsing and construction::  
 * slib - SLIB::                 
 * text.csv - CSV tables::       
+* text.gettext - Dealing with localized messages::  
 * text.html-lite - Simple HTML document construction::  
 * text.parse - Parsing input stream::  
 * text.tr - Transliterate characters::  
@@ -27440,7 +27441,7 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node text.csv - CSV tables, text.html-lite - Simple HTML document construction, slib - SLIB, Library modules - Utilities
+@node text.csv - CSV tables, text.gettext - Dealing with localized messages, slib - SLIB, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -27518,7 +27519,63 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.csv - CSV tables, Library modules - Utilities
+@node text.gettext - Dealing with localized messages, text.html-lite - Simple HTML document construction, text.csv - CSV tables, Library modules - Utilities
+@section @code{text.gettext} - Dealing with localized messages
+
+@deftp {Module} text.gettext
+@mdindex text.gettext
+A module that provides a utility to deal with localized messages.
+The API is pretty similar to GNU's gettext, and the messages
+are read from @file{*.po} file, so that you can use the GNU texttext
+toolchain to prepare localized messages.
+However, the code is written from scratch by Alex Shinn and
+doesn't depend on GNU's gettext library.
+
+This implementation extends GNU's gettext API in the following ways:
+@itemize @bullet
+@item It can read from multiple message files in cascaded way,
+      allowing applications to share a part of message files.
+@item It supports multiple locale/domain simultaneously.
+@end itemize
+@end deftp
+
+The following procedures are gettext-like APIs.
+
+@defun textdomain domain-name
+Selects the domain named by @var{domain-name} as the default domain.
+
+Returns an @emph{accessor procedure} which packages information of
+the domain, instead of just a domain name.
+
+You can pass @code{#f} as @var{domain-name} just to get the default
+domain accessor procedure.
+@end defun
+
+@defun gettext msg-id
+Returns a translated message of @var{msg-id}.  If there's no
+translated message, @var{msg-id} itself is returned.
+@end defun
+
+@defun bindtextdomain domain dirs
+Sets the search path of domain @var{domain} to @var{dirs}, which 
+may be just a single directory name or a list of directory names.
+@end defun
+
+@defun dgettext domain msg-id
+@defunc dcgettext domain msg-id locale
+Returns a translated message of @var{msg-id} in @var{domain}.
+@code{Dcgettext} takes @var{locale} as well.
+@end defun
+
+The following procedure is more flexible interface, on top of which
+the above APIs.
+
+@defun make-gettext &optional domain locale dirs gettext-cached? lookup-cached?
+Returns a @emph{access procedure}, which can be called like this:
+@end defun
+
+@c ----------------------------------------------------------------------
+@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.gettext - Dealing with localized messages, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
 
 @deftp {Module} text.html-lite
