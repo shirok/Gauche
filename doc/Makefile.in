@@ -17,15 +17,14 @@ infodir = $(datadir)/info
 all: info
 
 install: all
-	if test ! -d $(mandir); then\
-	  $(INSTALL) -d $(mandir); \
-	fi
+	if test ! -d $(mandir); then $(INSTALL) -d $(mandir); fi
 	for m in $(MANPAGES); do \
-	  $(INSTALL) -m 444 $$m $(mandir); \
+	  $(INSTALL) -m 444 $$m $(mandir)/; \
 	done
+	if test ! -d $(infodir); then $(INSTALL) -d $(infodir); fi
 	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
 	  for info in *.info*; do \
-	    $(INSTALL) -m 444 $$info $(infodir); \
+	    $(INSTALL) -m 444 $$info $(infodir)/; \
 	  done; \
 	fi
 
