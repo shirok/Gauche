@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.20 2001-03-12 07:55:59 shiro Exp $
+;;; $Id: syslib.stub,v 1.21 2001-03-12 08:05:12 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -318,13 +318,18 @@
 (define-cproc sys-stat->gid (stat)
   (assert (sys-stat? stat))
   "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_gid));")
-;; TODO: check timespec_t
+(define-cproc sys-stat->atime (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_atime));")
+(define-cproc sys-stat->mtime (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_mtime));")
+(define-cproc sys-stat->ctime (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_ctime));")
 
 ;;---------------------------------------------------------------------
 ;; sys/times.h
-
-(define-type "sys-time" sys-time?
-  "ScmSysTime*"   "SCM_SYS_TIME_P" "SCM_SYS_TIME")
 
 (define-cproc sys-times ()
   "  struct tms info;
@@ -410,6 +415,9 @@
 
 ;;---------------------------------------------------------------------
 ;; time.h
+
+(define-type "sys-time" sys-time?
+  "ScmSysTime*"   "SCM_SYS_TIME_P" "SCM_SYS_TIME")
 
 (define-type "sys-tm" sys-tm?
   "ScmSysTm*"     "SCM_SYS_TM_P" "SCM_SYS_TM")
