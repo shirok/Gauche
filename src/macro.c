@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.29 2001-10-04 10:33:00 shirok Exp $
+ *  $Id: macro.c,v 1.30 2001-10-05 08:36:57 shirok Exp $
  */
 
 #include "gauche.h"
@@ -121,20 +121,29 @@ static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
                                    void *data)
 {
     ScmObj name, args, body, proc, mt, code;
-    if (Scm_Length(form) < 3)  goto badsyn;
-    if (!SCM_PAIRP(SCM_CADR(form))) goto badsyn;
-    name = SCM_CAR(SCM_CADR(form));
-    args = SCM_CADR(form);
-    body = SCM_CDDR(form);
+    int len;
+    
+    if ((len = Scm_Length(form)) < 3)  goto badsyn;
+    name = SCM_CADR(form);
+    if (SCM_SYMBOLP(name) || SCM_IDENTIFIERP(name)) {
+        /* (define-macro foo (lambda (..) ...)) */
+        if (len != 3) goto badsyn;
+        if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
+        code = Scm_Compile(SCM_CAR(SCM_CDDR(form)), env, SCM_COMPILE_NORMAL);
+    } else {
+        /* (define-macro (foo ..) ... */
+        if (!SCM_PAIRP(name)) goto badsyn;
+        name = SCM_CAR(name);
+        args = SCM_CADR(form);
+        body = SCM_CDDR(form);
 
-    /* TODO: think more about the case that name is an identifier */
-    if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-    else if (!SCM_SYMBOLP(name)) goto badsyn;
+        /* TODO: think more about the case that name is an identifier */
+        if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
+        else if (!SCM_SYMBOLP(name)) goto badsyn;
 
-    /* TODO: what we need is to create a closure at compile time rather than
-       run time.  This implementation is ugly.  Need a better way. */
-    code = Scm_Compile(Scm_Cons(SCM_SYM_LAMBDA, Scm_Cons(args, body)),
-                       env, SCM_COMPILE_NORMAL);
+        code = Scm_Compile(Scm_Cons(SCM_SYM_LAMBDA, Scm_Cons(args, body)),
+                           env, SCM_COMPILE_NORMAL);
+    }
     proc = Scm_MakeClosure(SCM_VM_INSN_ARG0(SCM_CAR(code)),
                            SCM_VM_INSN_ARG1(SCM_CAR(code)),
                            SCM_CAR(SCM_CDDR(code)),
