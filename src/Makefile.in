@@ -22,7 +22,7 @@ INSTALL_SUBHEADERS = gauche/char_euc_jp.h gauche/vm.h gauche/vminsn.h \
 	             gauche/predef-syms.h
 INSTALL_LIBS = libgauche.a
 INSTALL_BINS = gosh gauche-config
-INSTALL_SCMS = genstub
+INSTALL_SCMS = genstub gauche-init.scm
 
 INSTALL=@INSTALL@
 

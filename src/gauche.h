@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.30 2001-02-06 08:21:32 shiro Exp $
+ *  $Id: gauche.h,v 1.31 2001-02-06 08:46:02 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1388,7 +1388,7 @@ extern ScmObj Scm_SError(ScmObj fmt, ScmObj args);
 
 /* Program start and termination */
 
-extern void Scm_Init(void);
+extern void Scm_Init(const char *initfile);
 extern void Scm_Exit(int code);
 extern void Scm_Abort(const char *msg);
 extern void Scm_Panic(const char *msg, ...);
