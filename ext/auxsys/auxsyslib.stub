@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.6 2002-05-09 02:45:19 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.7 2002-05-09 02:52:54 shirok Exp $
 ;;;
 
 "
@@ -87,7 +87,7 @@
 
 ;; utime.h
 
-(define-cproc sys-utime (path &optional (atime #t) (mtime #t))
+(define-cproc sys-utime (path &optional (atime #f) (mtime #f))
   (assert (string? path))
   "  struct utimbuf tim; int r;
   if (SCM_FALSEP(atime)&&SCM_FALSEP(mtime)) {
