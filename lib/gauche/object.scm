@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.27 2001-11-23 01:01:59 shirok Exp $
+;;;  $Id: object.scm,v 1.28 2001-11-23 01:03:14 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -469,7 +469,7 @@
     ))
 
 (insert-symbols define-generic define-method define-class
-                compute-slots compute-get-n-set
+                compute-slots compute-get-n-set compute-slot-accessor
                 class-slot-ref class-slot-set!
                 slot-push! slot-unbound slot-missing
                 slot-exists? slot-exists-using-class?
