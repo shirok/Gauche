@@ -1,5 +1,8 @@
 2002-02-12  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/test.scm : allow sys-stat->file-type to return 'fifo
+	  instead of 'socket, for some OSes doesn't distinguish them.
+	* src/read.c : change debug-print shorthand syntax from #? to #?=
 	* src/vm.c (arrange_application), src/gauche/vminsn.h : fix a bug
 	  that confused Scm_VMApply when VM instruction is given to arguments.
 	  (patch from Abe Hiroshi).
