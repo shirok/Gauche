@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.45 2002-08-10 01:06:18 shirok Exp $
+ *  $Id: bignum.c,v 1.46 2002-09-09 08:08:45 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -329,7 +329,8 @@ int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
             if (bx->values[xsize-1] < by->values[ysize-1]-1) return -1;
         } else {
             /* osize == xsize */
-            UADD(w, c, bx->values[xsize-1], off->values[osize-1]);
+            u_long xx = bx->values[xsize-1], oo = off->values[osize-1];
+            UADD(w, c, xx, oo);
             if (c > 0 || w > by->values[ysize-1]) return 1;
             if (w < by->values[ysize-1] - 1) return -1;
         }

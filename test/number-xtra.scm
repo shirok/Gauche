@@ -61,3 +61,15 @@
                            (print #`"ERROR: ,num and ,num2 (original ,input)"))))
                      read-line))))
 
+
+;; benchmarking bignum arithmetic
+(define (test-bignum-arith file repeat)
+  (let ((input (call-with-input-file file port->sexp-list)))
+    (receive (sec0 usec0) (sys-gettimeofday)
+      (dotimes (i repeat)
+        (for-each (lambda (x) (- (* (+ x x) x) x))
+                  input))
+      (receive (sec1 usec1) (sys-gettimeofday)
+        (- (+ (* sec1 1000000) usec1)
+           (+ (* sec0 1000000) usec0))))))
+

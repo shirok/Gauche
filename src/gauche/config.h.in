@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.29 2002-08-24 04:14:42 shirok Exp $
+ * $Id: config.h.in,v 1.30 2002-09-09 08:08:45 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -20,6 +20,9 @@
 
 /* Define if the system is big-endian machine */
 #undef WORDS_BIGENDIAN
+
+/* Define target processor type */
+#undef SCM_TARGET_I386
 
 /* Define if the system allows including both time.h and sys/time.h */
 #undef TIME_WITH_SYS_TIME

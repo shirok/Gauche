@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: arith.h,v 1.4 2002-06-22 10:59:08 shirok Exp $
+ *  $Id: arith.h,v 1.5 2002-09-09 08:08:45 shirok Exp $
  */
 
 #ifndef GAUCHE_ARITH_H
@@ -44,6 +44,11 @@
 #define HIMASK             (~LOMASK)
 #define LO(word)           ((word) & LOMASK)
 #define HI(word)           (((word) >> HALF_BITS)&LOMASK)
+
+/* Include processor-specific macros */
+#if defined(SCM_TARGET_I386)
+#include "arith_i386.h"
+#endif
 
 /*-----------------------------------------------------------------
  * UADD(r, c, x, y)      unsigned word add with carry

@@ -1,5 +1,13 @@
+2002-09-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub (get-c-name): changed to preserve case of the input
+	  scheme name.
+	* src/gauche/arith_i386.h, configure.in, src/gauche/config.h.in :
+	  use some inline asm for primitive ops of bignum arithmetic.
+
 2002-09-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/pango-lib.hints : added some more pango support.
 	* configure.in, doc/Makefile.in : changed autoconf variable GZIP to
 	  GZIP_PROGRAM, for it interferes gzip's operation.
 
