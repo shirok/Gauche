@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.38 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: char.c,v 1.39 2003-11-27 17:10:40 shirok Exp $
  */
 
 #include <ctype.h>
@@ -874,7 +874,7 @@ ScmObj Scm_GetStandardCharSet(int id)
     return SCM_OBJ(predef_charsets[id]);
 }
 
-ScmObj Scm__InitChar(void)
+void Scm__InitChar(void)
 {
     SCM_INTERNAL_MUTEX_INIT(predef_charsets_mutex);
 }

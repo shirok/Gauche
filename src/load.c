@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.77 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: load.c,v 1.78 2003-11-27 17:10:41 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -249,7 +249,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
     int size = SCM_STRING_LENGTH(filename);
     const char *ptr = SCM_STRING_START(filename);
     int use_load_paths = TRUE;
-    ScmObj file = SCM_OBJ(filename), fpath;
+    ScmObj file = SCM_OBJ(filename), fpath = SCM_FALSE;
     
     if (size == 0) Scm_Error("bad filename to load: \"\"");
     if (*ptr == '~') {
@@ -598,7 +598,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
     ScmObj reqname, truename, load_paths = Scm_GetDynLoadPath();
     void *handle;
     ScmDynLoadInitFn func;
-    const char *cpath, *initname, *err = NULL, *suff;
+    const char *cpath, *initname, *err = NULL;
     enum  {
         DLERR_NONE,             /* no error */
         DLERR_DLOPEN,           /* failure in dlopen */
@@ -692,6 +692,8 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
     case DLERR_NOINITFN:
         Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", filename, initname);
         /*NOTREACHED*/
+    case DLERR_NONE:
+        break;
     }
     return SCM_TRUE;
 }

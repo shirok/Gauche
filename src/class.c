@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.104 2003-11-15 03:36:17 shirok Exp $
+ *  $Id: class.c,v 1.105 2003-11-27 17:10:40 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -302,27 +302,16 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
  *
  *      void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
  *                                ScmClassStaticSlotSpec *slots,
- *                                int instanceSize, ScmModule *mod)
+ *                                int withMeta, ScmModule *mod)
  *
  *         This function fills the ScmClass structure that can't be
  *         defined statically, and inserts the binding from the named
  *         symbol to the class object in the specified module.
+ *         If withMeta is true, a metaclass is also created for
+ *         this class.
  *
- *    There may be three types of classes defined in C.
- *
- *    * A class that is not intended to be instantiated from Scheme.
- *      To define this type of class, leave its allocate() field NULL.
- *
- *    * A class that can be instantiated from Scheme, but can't be
- *      inherited in the Scheme level.
- *      Provide allocate() function, and sets SCM_CLASS_FINAL flag.
- *      Note that SCM_CLASS_FINAL won't prevent you from creating
- *      the subclass in C.
- *
- *    * A class that can be instantiated from Scheme and can be
- *      inherited in Scheme.
- *      Provide allocate() function.  Be sure to honor numInstanceSlots
- *      field of the class structure.
+ *    See comments in gauche.h (around "Class categories") about
+ *    the categories of C-defined classes.
  */
 
 /*
@@ -369,8 +358,8 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
-    instance->coreSize = sizeof(ScmInstance);
-    instance->flags = SCM_CLASS_SCHEME;
+    instance->coreSize = 0;     /* will be set when CPL is set */
+    instance->flags = SCM_CLASS_SCHEME; /* default */
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
     instance->accessors = SCM_NIL;
@@ -553,15 +542,19 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
                     Scm_Error("class precedence list has more than one C-defined base class (except <object>): %S", val);
                 }
                 klass->allocate = (*p)->allocate;
+                klass->coreSize = (*p)->coreSize;
             } else {
                 object_inherited = TRUE;
             }
         }
     }
-    if (!object_inherited)
+    if (!object_inherited) {
         Scm_Error("class precedence list doesn't have a base class: %S", val);
-    if (!klass->allocate)
+    }
+    if (!klass->allocate) {
         klass->allocate = object_allocate; /* default */
+        klass->coreSize = sizeof(ScmInstance);
+    }
     return;
   err:
     Scm_Error("class precedence list must be a proper list of class "
@@ -777,6 +770,7 @@ static ScmClass *make_implicit_meta(const char *name,
     meta->allocate = class_allocate;
     meta->print = class_print;
     meta->cpa = metas;
+    meta->flags = SCM_CLASS_ABSTRACT;
     initialize_builtin_cpl(meta);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(meta));
     meta->slots = Scm_ClassClass.slots;
@@ -1035,9 +1029,6 @@ void Scm_TransplantInstance(ScmObj src, ScmObj dst)
     ScmClass *srcklass = Scm_ClassOf(src);
     ScmClass *dstklass = Scm_ClassOf(dst);
     ScmClass *base;
-    int i;
-    size_t size;
-    void *buf;
 
     /* Extra check.  We can't transplant the contents to different
        an instance that has different base class. */
@@ -1080,25 +1071,39 @@ ScmObj Scm_VMTouchInstance(ScmObj obj)
  * make slot unbound, especially needed for procedural slots.
  */
 
-/* A common routine to be used to allocate object that is possibly
-   be subclassed by Scheme.  Coresize should be a size of base C structure
-   in bytes.  Klass may be a subclass.  This routine allocates core
-   structure and slots vector, and initializes the slots vector with
-   with SCM_UNBOUND.
+/* A common routine to be used to allocate object.
+   Coresize should be a size of base C structure in bytes.
+   Klass may be a subclass.   If klass is inheritable by Scheme
+   (i.e. it's category is either SCM_CLASS_BASE or SCM_CLASS_SCHEME),
+   This routine also allocates a slot vector, and initializes the
+   slot vector with SCM_UNBOUND.
    We don't care class redefinition at this point.  If the class is
    redefined simultaneously, it will be handled by the subsequent initialize
    method.
 */
 ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
 {
-    int i, offset_words = (coresize+sizeof(ScmObj)-1)/sizeof(ScmObj);
+    int i;
     ScmObj obj = SCM_NEW2(ScmObj, coresize);
-    ScmObj *slots = SCM_NEW2(ScmObj*, klass->numInstanceSlots*sizeof(ScmObj));
-    
-    for (i=0; i<klass->numInstanceSlots; i++) {
-        slots[i] = SCM_UNBOUND;
+    ScmObj *slots;
+
+    if (SCM_CLASS_CATEGORY(klass) == SCM_CLASS_BASE
+        || SCM_CLASS_CATEGORY(klass) == SCM_CLASS_SCHEME) {
+        slots = SCM_NEW2(ScmObj*, klass->numInstanceSlots*sizeof(ScmObj));
+
+        /* NB: actually, for Scheme instances, 'coresize' argument is
+           redundant since klass->coreSize has it.  There's a historical
+           confusion in the class protocol.  We should clear it out someday.
+        */
+        if (coresize != klass->coreSize) {
+            Scm_Printf(SCM_CURERR, "WARNING: allocating instance of class %S: coresize argument %d doesn't match the class definition's (%d)\n", klass, coresize, klass->coreSize);
+        }
+
+        for (i=0; i<klass->numInstanceSlots; i++) {
+            slots[i] = SCM_UNBOUND;
+        }
+        SCM_INSTANCE(obj)->slots = slots;
     }
-    SCM_INSTANCE(obj)->slots = slots;
     return obj;
 }
 
@@ -1164,7 +1169,6 @@ ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
                                          ScmSlotAccessor *sa,
                                          ScmObj initargs)
 {
-    ScmObj slot = sa->name;
     /* (1) see if we have init-keyword */
     if (SCM_KEYWORDP(sa->initKeyword)) {
         ScmObj v = Scm_GetKeyword(sa->initKeyword, initargs, SCM_UNDEFINED);
@@ -1341,13 +1345,13 @@ static ScmObj slot_ref_using_accessor_cc1(ScmObj result, void **data)
 ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, int boundp)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    void *data[3];
     if (klass != sa->klass) {
         Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
                   SCM_OBJ(sa), obj);
     }
 #if 0
     if (!SCM_FALSEP(klass->redefined)) {
+        void *data[3];
         data[0] = obj;
         data[1] = sa;
         data[2] = (void*)boundp;
@@ -1472,13 +1476,13 @@ static ScmObj slot_set_using_accessor_cc(ScmObj result, void **data)
 ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, ScmObj val)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    void *data[3];
     if (klass != sa->klass) {
         Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
                   SCM_OBJ(sa), obj);
     }
 #if 0
     if (!SCM_FALSEP(klass->redefined)) {
+        void *data[3];
         data[0] = obj;
         data[1] = sa;
         data[2] = val;
@@ -1821,7 +1825,6 @@ static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     ScmObj obj = args[0];
     ScmObj initargs = args[1];
     ScmObj accs = Scm_ClassOf(obj)->accessors;
-    void *next[3];
     if (SCM_NULLP(accs)) return obj;
     return object_initialize1(obj, accs, initargs);
 }
@@ -2604,28 +2607,29 @@ static void initialize_builtin_cpl(ScmClass *klass)
     }
 }
 
-static void initialize_builtin_class(ScmClass *k, const char *name,
-                                     ScmClassStaticSlotSpec *specs,
-                                     int instanceSize, ScmModule *mod)
+void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
+                          ScmClassStaticSlotSpec *specs,
+                          int withMeta, ScmModule *mod)
 {
     ScmObj slots = SCM_NIL, t = SCM_NIL;
     ScmObj acc = SCM_NIL, sp;
-    ScmObj s = SCM_INTERN(name);
+    ScmObj s;
     ScmClass **super;
 
-    if (k->cpa == NULL) {
-	k->cpa = SCM_CLASS_DEFAULT_CPL;
+    /* initialize slots and CPL */
+    if (klass->cpa == NULL) {
+	klass->cpa = SCM_CLASS_DEFAULT_CPL;
     }
 
-    k->name = s;
-    initialize_builtin_cpl(k);
-    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(k));
+    klass->name = s = SCM_INTERN(name);
+    initialize_builtin_cpl(klass);
+    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(klass));
 
     /* initialize direct slots */
     if (specs) {
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
-            specs->accessor.klass = k;
+            specs->accessor.klass = klass;
             specs->accessor.name = snam;
             acc = Scm_Acons(snam, SCM_OBJ(&specs->accessor), acc);
             specs->accessor.initKeyword = SCM_MAKE_KEYWORD(specs->name);
@@ -2636,10 +2640,10 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
                                  NULL));
         }
     }
-    k->directSlots = slots;
+    klass->directSlots = slots;
 
     /* compute other slots inherited from supers */
-    for (super = k->cpa; *super; super++) {
+    for (super = klass->cpa; *super; super++) {
         SCM_FOR_EACH(sp, (*super)->directSlots) {
             ScmObj slot = SCM_CAR(sp), snam, p, a;
             SCM_ASSERT(SCM_PAIRP(slot));
@@ -2653,19 +2657,11 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
             }
         }
     }
-    k->slots = slots;
-    k->accessors = acc;
-}
-
-void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
-                          ScmClassStaticSlotSpec *slots,
-                          int instanceSize, ScmModule *mod)
-{
-    /* initialize slots and CPL */
-    initialize_builtin_class(klass, name, slots, instanceSize, mod);
+    klass->slots = slots;
+    klass->accessors = acc;
 
     /* calculate metaclass */
-    if (klass != SCM_CLASS_CLASS && SCM_XTYPEP(klass, SCM_CLASS_CLASS)) {
+    if (withMeta) {
         int nlen = strlen(name);
         char *metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
 
@@ -2724,30 +2720,30 @@ void Scm__InitClass(void)
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
 
-#define BINIT(cl, nam, slots, instsiz) \
-    initialize_builtin_class(cl, nam, slots, instsiz, mod)
+#define BINIT(cl, nam, slots) \
+    Scm_InitBuiltinClass(cl, nam, slots, FALSE, mod)
 
 #define CINIT(cl, nam) \
-    Scm_InitBuiltinClass(cl, nam, NULL, 0, mod)
+    Scm_InitBuiltinClass(cl, nam, NULL, TRUE, mod)
     
     /* class.c */
-    BINIT(SCM_CLASS_CLASS,  "<class>", class_slots, sizeof(ScmClass));
-    BINIT(SCM_CLASS_TOP,    "<top>",     NULL, 0);
+    BINIT(SCM_CLASS_CLASS,  "<class>", class_slots);
+    BINIT(SCM_CLASS_TOP,    "<top>",     NULL);
     CINIT(SCM_CLASS_BOOL,   "<boolean>");
     CINIT(SCM_CLASS_CHAR,   "<char>");
-    BINIT(SCM_CLASS_UNKNOWN,"<unknown>", NULL, 0);
-    BINIT(SCM_CLASS_OBJECT, "<object>",  NULL, 0);
-    BINIT(SCM_CLASS_GENERIC,"<generic>", generic_slots, sizeof(ScmGeneric));
+    BINIT(SCM_CLASS_UNKNOWN,"<unknown>", NULL);
+    BINIT(SCM_CLASS_OBJECT, "<object>",  NULL);
+    BINIT(SCM_CLASS_GENERIC,"<generic>", generic_slots);
     Scm_GenericClass.flags |= SCM_CLASS_APPLICABLE;
-    BINIT(SCM_CLASS_METHOD, "<method>",  method_slots, sizeof(ScmMethod));
+    BINIT(SCM_CLASS_METHOD, "<method>",  method_slots);
     Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
-    BINIT(SCM_CLASS_NEXT_METHOD, "<next-method>", NULL, 0);
+    BINIT(SCM_CLASS_NEXT_METHOD, "<next-method>", NULL);
     Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
-    BINIT(SCM_CLASS_ACCESSOR_METHOD, "<accessor-method>",  accessor_method_slots, sizeof(ScmAccessorMethod));
+    BINIT(SCM_CLASS_ACCESSOR_METHOD, "<accessor-method>", accessor_method_slots);
     Scm_AccessorMethodClass.flags |= SCM_CLASS_APPLICABLE;
-    BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots, sizeof(ScmSlotAccessor));
-    BINIT(SCM_CLASS_COLLECTION, "<collection>", NULL, 0);
-    BINIT(SCM_CLASS_SEQUENCE,   "<sequence>", NULL, 0);
+    BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots);
+    BINIT(SCM_CLASS_COLLECTION, "<collection>", NULL);
+    BINIT(SCM_CLASS_SEQUENCE,   "<sequence>", NULL);
 
     /* char.c */
     CINIT(SCM_CLASS_CHARSET,          "<char-set>");

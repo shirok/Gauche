@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.351 2003-11-25 04:41:42 shirok Exp $
+ *  $Id: gauche.h,v 1.352 2003-11-27 17:10:41 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -474,7 +474,8 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
    SCM_CLASS_ABSTRACT 
        This class is defined in C, but doesn't allowed to create an
        instance by its own.  It is intended to be used as a mixin from
-       both C and Scheme-defined class.  This class cannot be redefined.
+       both C and Scheme-defined class.   This class shouldn't have
+       C members other than SCM_HEADER.   This class cannot be redefined.
 
    SCM_CLASS_BASE
        This class is defined in C, and can be subclassed in Scheme.
@@ -508,7 +509,8 @@ enum {
 
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
 				     ScmClassStaticSlotSpec *slots,
-				     int instanceSize, ScmModule *m);
+				     int withMeta,
+                                     ScmModule *m);
 SCM_EXTERN ScmClass *Scm_ClassOf(ScmObj obj);
 SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);

@@ -37,7 +37,7 @@ cat <<EOF
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  \$Id: uvector.c.sh,v 1.32 2003-07-05 03:29:11 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.33 2003-11-27 17:10:40 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -216,7 +216,6 @@ ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec, int start, int end, int clamp)
 {
     int length = SCM_VECTOR_SIZE(ivec), i;
     Scm${vecttype} *vec;
-    ScmObj cp;
     SCM_CHECK_START_END(start, end, length);
     vec = make_${vecttype}(end-start, NULL);
     for (i=start; i<end; i++) {

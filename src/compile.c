@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.103 2003-10-18 11:07:01 shirok Exp $
+ *  $Id: compile.c,v 1.104 2003-11-27 17:10:40 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -48,7 +48,7 @@ static ScmObj id_letrec = SCM_UNBOUND;
 
 /*#define GAUCHE_USE_NVM*/
 
-#define GAUCHE_NVM_VECTORIZATION
+/*#define GAUCHE_NVM_VECTORIZATION*/
 
 /* Conventions of internal functions
  *

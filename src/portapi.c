@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.16 2003-11-21 18:06:20 shirok Exp $
+ *  $Id: portapi.c,v 1.17 2003-11-27 17:10:41 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -728,7 +728,7 @@ ScmObj Scm_ReadLine(ScmPort *p)
 ScmObj Scm_ReadLineUnsafe(ScmPort *p)
 #endif
 {
-    ScmObj r;
+    ScmObj r = SCM_UNDEFINED;
     VMDECL;
     SHORTCUT(p, return Scm_ReadLineUnsafe(p));
 

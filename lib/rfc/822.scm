@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.10 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: 822.scm,v 1.11 2003-11-27 17:10:40 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -103,6 +103,10 @@
 ;; Comments, quoted pairs, atoms and quoted string.  Section 3.2
 ;;
 
+(define (rfc822-atext-char? ch)
+  (and (char? ch)
+       (char-set-contains? #[A-Za-z0-9!#$%&'*+/=?^_`{|}~-] ch)))
+
 (define (rfc822-skip-cfws input prefetch)
   (define (scan c)
     (cond ((eof-object? c) c)
@@ -116,6 +120,47 @@
           ((char=? c #\( ) (in-comment (in-comment (read-char input))))
           (else (in-comment (read-char input)))))
   (scan (or prefetch (read-char input))))
+
+(define (rfc822-atom input prefetch out cont)
+  (let loop ((c (or prefetch (read-char input))))
+    (cond ((eof-object? c) (cont c))
+          ((rfc822-atext-char? c)
+           (when out (write-char c out))
+           (loop (read-char input)))
+          (else (cont c)))))
+
+(define (rfc822-dot-atom input prefetch out cont)
+  (let loop ((c (or prefetch (read-char input))))
+    (cond ((eof-object? c) (cont c))
+          ((rfc822-atext-char? c)
+           (when out (write-char c out))
+           (loop (read-char input)))
+          ((char=? c #\.)
+           (let1 c2 (read-char input)
+             (if (rfc822-atext-char? c2)
+               (begin
+                 (when out (write-char c out) (write-char c2 out))
+                 (loop (read-char input)))
+               #f)))
+          (else (cont c)))))
+
+;; preceding DQUOTE has already been read
+(define (rfc822-quoted-string input out cont)
+  (let loop ((c (read-char input)))
+    (cond ((eof-object? c) (cont c)) ;; tolerate missing closing DQUOTE
+          ((char=? c #\") (cont #f))
+          ((char=? c #\\)
+           (let1 c (read-char input)
+             (cond ((eof-object? c) (cont #f)) ;; tolerate stray backslash
+                   (else (when out (write-char c out))
+                         (loop (read-char input)))))
+           (else (when out (write-char c out))
+                 (loop (read-char input)))))))
+
+;(define (rfc822-word input prefetch out cont)
+;  (let loop ((c (or prefetch (read-char input))))
+;    (cond ((eof-object? c) (cont c))
+;          (
 
 (define (rfc822-next-word input prefetch)
   (let ((out (open-output-string)))
@@ -140,6 +185,10 @@
             (else (atom c))))
     ))
 
+;(define (rfc822-next-dot-atom 
+
+    
+
 ;;------------------------------------------------------------------
 ;; Date and time, section 3.3
 ;;
@@ -162,7 +211,7 @@
     (list-index (cut string=? <> mon)
                 '("Jan" "Feb" "Mar" "Apr" "May" "Jun"
                   "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")))
-  (define (year->number year) ;; see obs-year definition of RFC-2822
+  (define (year->number year) ;; see obs-year definition of RFC2822
     (let ((y (string->number year)))
       (and y
            (cond ((< y 50)  (+ y 2000))

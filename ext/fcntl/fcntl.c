@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.11 2003-08-08 19:39:15 shirok Exp $
+ *  $Id: fcntl.c,v 1.12 2003-11-27 17:10:40 shirok Exp $
  */
 
 #include <string.h>
@@ -109,7 +109,7 @@ static const char *flag_name(int flag)
 
 ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 {
-    int fd = Scm_GetPortFd(port_or_fd, TRUE), iarg, r;
+    int fd = Scm_GetPortFd(port_or_fd, TRUE), r;
     ScmSysFlock *fl;
     
     switch (op) {

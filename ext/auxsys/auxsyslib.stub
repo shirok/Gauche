@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.16 2003-10-06 12:18:50 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.17 2003-11-27 17:10:39 shirok Exp $
 ;;;
 
 "
@@ -238,7 +238,7 @@
 ;;  again for the same variable, but it's the same case as in C programs.
 (if "defined HAVE_PUTENV"
     (define-cproc %sys-putenv (name::<string> value::<string>)
-      "  ScmObj s; char *buf; int namelen, valuelen, len;
+      "  char *buf; int namelen, valuelen, len;
  namelen = SCM_STRING_SIZE(name);
  valuelen = SCM_STRING_SIZE(value);
  len = namelen + valuelen + 2;

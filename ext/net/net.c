@@ -30,10 +30,11 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.27 2003-09-28 04:25:36 shirok Exp $
+ *  $Id: net.c,v 1.28 2003-11-27 17:10:40 shirok Exp $
  */
 
 #include "net.h"
+#include <unistd.h>
 #include <gauche/extend.h>
 
 /*==================================================================
@@ -101,7 +102,6 @@ ScmSocket *make_socket(int fd, int type)
 
 ScmObj Scm_MakeSocket(int domain, int type, int protocol)
 {
-    ScmSocket *s;
     int sock = Scm_SysCall(socket(domain, type, protocol));
     if (sock < 0) Scm_SysError("couldn't create socket");
     return SCM_OBJ(make_socket(sock, type));

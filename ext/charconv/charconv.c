@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.44 2003-10-21 14:13:09 shirok Exp $
+ *  $Id: charconv.c,v 1.45 2003-11-27 17:10:40 shirok Exp $
  */
 
 #include <string.h>
@@ -507,7 +507,8 @@ static ScmChar ucstochar(int ucs4)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ucsconv.mutex);
     if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
         Scm_Error("can't convert UCS4 code %d to a character: implementation problem?", ucs4);
-    } else if (r == ILLEGAL_SEQUENCE) {
+    }
+    if (r == ILLEGAL_SEQUENCE) {
         return SCM_CHAR_INVALID;
     } else {
         ScmChar out;
@@ -538,7 +539,8 @@ static int chartoucs(ScmChar ch)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ucsconv.mutex);
     if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
         Scm_Error("can't convert character %u to UCS4 code: implementation problem?", ch);
-    } else if (r == ILLEGAL_SEQUENCE) {
+    }
+    if (r == ILLEGAL_SEQUENCE) {
         return -1;
     } else {
         unsigned char *ucp = (unsigned char*)outbuf;

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.38 2003-11-12 14:16:03 shirok Exp $
+ *  $Id: class.h,v 1.39 2003-11-27 17:10:41 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -144,6 +144,9 @@ SCM_EXTERN void   Scm_AddDirectMethod(ScmClass *super, ScmMethod *m);
 SCM_EXTERN void   Scm_RemoveDirectMethod(ScmClass *super, ScmMethod *m);
 SCM_EXTERN void   Scm_TransplantInstance(ScmObj src, ScmObj dst);
 SCM_EXTERN ScmObj Scm_VMTouchInstance(ScmObj obj);
+
+SCM_EXTERN void   Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub);
+SCM_EXTERN void   Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m);
 
 SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 

@@ -1,5 +1,9 @@
 2003-11-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c : cleaned up internal protocols.  The fourth
+	  argument of Scm_InitBuiltinClass is changed to a flag withMeta.
+	  Treatment of ScmClass.coreSize is straighten up.
+
 	* lib/gauche/object.scm, lib/gauche/redefutil.scm : splitted
 	  class-redefinition implementation into an autoloaded file.
 	  Fix instance update protocol so that only instance-allocated
