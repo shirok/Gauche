@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.16 2003-01-09 11:43:56 shirok Exp $
+;; $Id: srfi-1.scm,v 1.17 2003-11-10 13:09:46 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -49,7 +49,8 @@
 (select-module srfi-1)
 
 (autoload "srfi-1/generator"  list-tabulate iota circular-list)
-(autoload "srfi-1/pred"       proper-list? dotted-list? circular-list? length+)
+(autoload "srfi-1/pred"       proper-list? dotted-list? circular-list? length+
+                              list=)
 (autoload "srfi-1/zipper"     zip unzip1 unzip2 unzip3 unzip4 unzip5)
 (autoload "srfi-1/nth"        first second third fourth fifth sixth
                               seventh eighth ninth tenth)

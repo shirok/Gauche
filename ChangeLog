@@ -1,3 +1,8 @@
+2003-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-1.scm : added missing autoload fro list=  (Patch from
+	  Michal Maru-B¹ka.$)B
+
 2003-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/adaptor.scm (make-char-quotator) : the signature didn't
