@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.5 2001-04-20 08:34:50 shiro Exp $
+;; $Id: regexp.scm,v 1.6 2001-06-02 06:33:13 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -336,5 +336,74 @@
       (lambda () (match&list #/[\s\d]+/ "a 1 2 3 b " 1)))
 (test "[\\s\\D]+" '("a ")
       (lambda () (match&list #/[\s\D]+/ "a 1 2 3 b " 1)))
+
+;;-------------------------------------------------------------------------
+(test-section "regexp macros")
+
+(use gauche.regexp)
+
+(test "rxmatch-let" '("23:59:58" "23" "59" "58")
+      (lambda ()
+        (rxmatch-let (rxmatch #/(\d+):(\d+):(\d+)/
+                              "Jan  1 23:59:58, 2001")
+            (time hh mm ss)
+          (list time hh mm ss))))
+(test "rxmatch-let" '("23" "59")
+      (lambda ()
+        (rxmatch-let (rxmatch #/(\d+):(\d+):(\d+)/
+                              "Jan  1 23:59:58, 2001")
+            (#f hh mm)
+          (list hh mm))))
+
+(test "rxmatch-if" "time is 11:22"
+      (lambda ()
+        (rxmatch-if (rxmatch #/(\d+:\d+)/ "Jan 1 11:22:33")
+            (time)
+          (format #f "time is ~a" time)
+          "unknown time")))
+(test "rxmatch-if" "unknown time"
+      (lambda ()
+        (rxmatch-if (rxmatch #/(\d+:\d+)/ "Jan 1 11-22-33")
+            (time)
+          (format #f "time is ~a" time)
+          "unknown time")))
+
+(define (test-parse-date str)
+  (rxmatch-cond
+    (test (not (string? str)) #f)
+    ((rxmatch #/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ str)
+        (#f mm dd yyyy)
+      (map string->number (list yyyy mm dd)))
+    ((rxmatch #/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ str)
+        (#f yyyy mm dd)
+      (map string->number (list yyyy mm dd)))
+    ((rxmatch #/^\d+\/\d+\/\d+$/ str)
+        (#f)
+     (error "ambiguous: ~s" str))
+    (else (error "bogus: ~s" str))))
+
+(test "rxmatch-cond" '(2001 2 3)
+      (lambda () (test-parse-date "2001/2/3")))
+(test "rxmatch-cond" '(1999 12 25)
+      (lambda () (test-parse-date "1999/12/25")))
+(test "rxmatch-cond" #f
+      (lambda () (test-parse-date 'abc)))
+
+(define (test-parse-date2 str)
+  (rxmatch-case str
+    (test (lambda (s) (not (string? s))) #f)
+    (#/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ (#f mm dd yyyy)
+     (map string->number (list yyyy mm dd)))
+    (#/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ (#f yyyy mm dd)
+     (map string->number (list yyyy mm dd)))
+    (#/^\d+\/\d+\/\d+$/  (#f) (error "ambiguous: ~s" str))
+    (else (error "bogus: ~s" str))))
+
+(test "rxmatch-case" '(2001 2 3)
+      (lambda () (test-parse-date2 "2001/2/3")))
+(test "rxmatch-case" '(1999 12 25)
+      (lambda () (test-parse-date2 "1999/12/25")))
+(test "rxmatch-case" #f
+      (lambda () (test-parse-date2 'abc)))
 
 (test-end)
