@@ -68,3 +68,5 @@ realclean : clean
 	cd ext; $(MAKE) realclean
 	rm -rf $(CONFIG_GENERATED) configure INSTALL INSTALL.eucjp DIST_EXCLUDE_X
 
+uninstall :
+	cd src; $(MAKE) uninstall
