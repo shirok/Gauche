@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.122 2001-12-20 11:46:43 shirok Exp $
+ *  $Id: vm.c,v 1.123 2001-12-21 07:03:39 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1679,45 +1679,55 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
  * Exception handling
  */
 
-/* Exception handling is an issue that Scheme community hasn't quite
- * fully agreed, although there have been a few ideas floating around
- * for years.
+/* Conceptually, exception handling is nothing more than a particular
+ * combination of dynamic-wind and call/cc.   Gauche implements a parts
+ * of it so that it will be efficient and safer to use.
  *
- * One of the mechanism described in SRFI-18 uses the following primitives:
+ * The most basic layer consists of those three functions (SRFI-18).
  *
  *  current-exception-handler
  *  with-exception-handler
  *  raise
  *
- * Cf. discussion of withdrawn SRFI-12.
- * The original proposal of these can be found at 
- * http://www.cs.indiana.edu/scheme-repository/doc.proposals.exceptions.html
- * which defines with-handlers, more high-level derived syntax.
- * See also the notes of Scheme Workshop at ICFP 98
- * http://www.schemers.org/Events/Workshops/Sep1998/minutes
+ * Their behavior is explained well in the following Scheme code,
+ * if we ignore the messy part to keep C stack sane.
+ * Suppose a system variable %xh keeps the list of exception handlers.
  *
- * Some Scheme implementations use catch and throw.  It can be implemented
- * easily with call/cc and the above primitives.
+ *  (define (current-exception-handler) (car %xh))
  *
- * In Gauche, I provide a function that is in middle of high-level
- * catch/throw and low-level stuff.
+ *  (define (raise exn)
+ *    (receive r ((car %xh) exn)
+ *      (when (uncontinuable-exception? exn)
+ *        (set! %xh (cdr %xh))
+ *        (error "returned from uncontinuable exception"))
+ *      (apply values r)))
  *
- * (with-error-handler handler thunk)
+ *  (define (with-exception-handler handler thunk)
+ *    (let ((prev %xh))
+ *      (dynamic-wind
+ *        (lambda () (set! %xh (cons handler)))
+ *        thunk
+ *        (lambda () (set! %xh prev)))))
  *
- * It is conceptually equivalent to:
+ * In C level, the chain of the handlers are represented in the chain
+ * of ScmExcapePoints.
  *
- * (call/cc
- *   (lambda (cont)
- *     (let ((prev-handler *error-handler*))
- *       (dynamic-wind
- *         (lambda ()
- *           (set! *error-handler*
- *             (lambda (exception)
- *               (set! *error-handler prev-handler)
- *               (call-with-values (handler exception) cont))))
- *         thunk
- *         (lambda ()
- *           (set! *error-handler* prev-handler))))))
+ * Note that this model assumes an exception handler returns unless it
+ * explictly invokes continuation captured elsewhere.   In reality,
+ * "error" exceptions are not supposed to return (hence it is checked
+ * in raise).  Gauche provides two more useful exception handling
+ * constructs that automates such continuation capturing.
+ *
+ * (define (with-error-handler handler thunk)
+ *   (call/cc
+ *     (lambda (cont)
+ *       (let ((prev-handler (current-exception-handler)))
+ *         (with-exception-handler
+ *           (lambda (exn)
+ *             (if (error? exn)
+ *                 (call-with-values (handler exn) cont)
+ *                 (prev-handler exn)))
+ *           thunk)))))
  *
  * In the actual implementation,
  *
@@ -1766,6 +1776,8 @@ static void report_error(ScmObj e)
 
 /*
  * Default exception handler
+ *  This is what we have as the system default, and also
+ *  what with-error-handler installs as an exception handler.
  */
 
 void Scm_VMDefaultExceptionHandler(ScmObj e)
@@ -1855,7 +1867,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_Apply(vm->exceptionHandler, SCM_LIST1(exception));
-        if (!Scm_ContinuableExceptionP(exception)) {
+        if (Scm_NoncontinuableExceptionP(exception)) {
             /* the user-installed exception handler returned while it
                shouldn't.  In order to prevent infinite loop, we should
                pop the erroneous handler.  For now, we just reset
@@ -1863,12 +1875,20 @@ ScmObj Scm_VMThrowException(ScmObj exception)
             vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
-        /* this may return. */
-    } else {
-        Scm_VMDefaultExceptionHandler(exception);
-        /* this does not return. */
+        return vm->val0;
+    } else if (!Scm_NoncontinuableExceptionP(exception)) {
+        /* The system's default handler does't care about
+           continuable exception.  See if there's a user-defined
+           exception handler in the chain.  */
+        for (; ep; ep = ep->prev) {
+            if (ep->xhandler != DEFAULT_EXCEPTION_HANDLER) {
+                return Scm_Apply(ep->xhandler, SCM_LIST1(exception));
+            }
+        }
     }
-    return vm->val0;
+    Scm_VMDefaultExceptionHandler(exception);
+    /* this never returns */
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /*
