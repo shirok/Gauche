@@ -12,11 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.h,v 1.1 2001-02-22 19:41:29 shiro Exp $
+ *  $Id: macro.h,v 1.2 2001-02-23 12:59:38 shiro Exp $
  */
 
-#ifndef GAUCHE_SYNTAX_PATTERN_H
-#define GAUCHE_SYNTAX_PATTERN_H
+#ifndef GAUCHE_MACRO_H
+#define GAUCHE_MACRO_H
 
 /*
  * SyntaxPattern object is an internal object used to expand r5rs macro.
@@ -36,4 +36,28 @@ extern ScmClass Scm_SyntaxPatternClass;
 #define SCM_SYNTAX_PATTERN(obj)   ((ScmSyntaxPattern*)(obj))
 #define SCM_SYNTAX_PATTERN_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_PATTERN)
 
-#endif /* GAUCHE_SYNTAX_PATTERN_H */
+/*
+ * SyntaxRules keeps a compiled rules of macro transformation.
+ */
+
+typedef struct ScmSyntaxRuleBranchRec {
+    ScmObj pattern;             /* pattern to match */
+    ScmObj template;            /* template to be expanded */
+    int numPvars;               /* # of pattern variables */
+} ScmSyntaxRuleBranch;
+
+typedef struct ScmSyntaxRules {
+    SCM_HEADER;
+    ScmObj name;                  /* name of the macro (for debug) */
+    int numRules;                 /* # of rules */
+    int maxNumPvars;              /* max # of pattern variables */
+    ScmSyntaxRuleBranch rules[1]; /* variable length */
+} ScmSyntaxRules;
+
+extern ScmClass Scm_SyntaxRulesClass;
+#define SCM_CLASS_SYNTAX_RULES   (&Scm_SyntaxRulesClass)
+
+#define SCM_SYNTAX_RULES(obj)    ((ScmSyntaxRules*)(obj))
+#define SCM_SYNTAX_RULES_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_RULES)
+
+#endif /* GAUCHE_MACRO_H */
