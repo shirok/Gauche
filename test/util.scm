@@ -73,6 +73,13 @@
 (test "queue-pop!" 'a (lambda () (queue-pop! q)))
 (test "queue-empty?" #t (lambda () (queue-empty? q)))
 
+(test "dequeue-all!" '(a b c d e)
+      (lambda () (enqueue! q 'a 'b 'c 'd 'e) (dequeue-all! q)))
+(test "dequeue-all!" '()
+      (lambda () (dequeue-all! q)))
+(test "dequeue-all!" #t
+      (lambda () (queue-empty? q)))
+
 ;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)
