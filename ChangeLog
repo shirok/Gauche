@@ -1,3 +1,7 @@
+2001-12-02  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.10
+	
 2001-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (dotimes): fixed a bug that sneaked

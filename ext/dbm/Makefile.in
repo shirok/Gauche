@@ -15,6 +15,7 @@ HEADERS =
 
 TARGET = @ARCHFILES@
 CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h
+GENERATED = gdbm.c ndbm.c odbm.c bsddb.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
@@ -59,7 +60,7 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) *.o *.c *~ test.log so_locations
+	rm -rf core $(TARGET) $(GENERATED) *.o *~ test.log so_locations
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)

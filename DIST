@@ -50,7 +50,7 @@ if [ "$test" = "yes" ]; then
   make test
   make install
   cd ..
-  for tt in primsyn module macro number dynwind object string srfi regexp system rfc parseopt; do
+  for tt in primsyn module macro number dynwind object colseq string srfi regexp system rfc parseopt; do
     gosh Gauche/test/$tt.scm >> test.log
   done
 fi
