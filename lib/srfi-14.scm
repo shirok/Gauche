@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-14.scm - character set
 ;;;
-;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,21 +12,19 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-14.scm,v 1.6 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: srfi-14.scm,v 1.7 2002-12-06 12:39:16 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
 ;; defines auxiliary procedures.
 ;;
 ;; Some of the procedures are implemented with no optimizaiton
-;; effort, since I don't see any real needs to optimize them.
-;; I included them just for completeness.
+;; effort.   I included them just for completeness.
 ;; If you think you need faster operation, please optimize it and
 ;; send me a patch.
 ;;
-;; ucs-range->char-set currently works only for ASCII character range.
-;; I need to write mapping between Unicode and internal character encoding
-;; for it to work.
+;; ucs-range->char-set performs poorly if the given charcter code
+;; is outside ASCII and the native character encoding is not utf-8.
 
 ;; Functions supported by the core interpreter:
 ;;    char-set char-set? char-set-contains? char-set-copy
@@ -187,7 +185,7 @@
   (%char-set-add-chars! base (string->list str)))
 
 (define (char-set-filter pred cs . args)
-  (let ((base (if (pair? args) (car args) (char-set))))
+  (let ((base (if (pair? args) (char-set-copy (car args)) (char-set))))
     (char-set-filter! pred cs base)))
 
 (define (char-set-filter! pred cs base)
@@ -198,25 +196,11 @@
           (when (pred c) (%char-set-add-range! base c c))
           (loop (char-set-cursor-next cs cursor))))))
 
-(define (ucs-range->char-set low upper . args)
-  (let ((error? (and (pair? args) (car args)))
-        (base (or (and (pair? args) (pair? (cdr args)) (cadr args)) (char-set))))
-    (integer-range->char-set! low upper error? base)))
-
-(define (ucs-range->char-set! low upper error? base)
-  (when (< low 0)
-    (if error?
-        (error "argument out of range:" low)
-        (set! low 0)))
-  (when (> upper 128)
-    (if error?
-        (error "argument out of range:" upper)
-        (set! upper 128)))
-  (%char-set-add-range! base low (- upper 1)))
-
 (define (integer-range->char-set low upper . args)
   (let ((error? (and (pair? args) (car args)))
-        (base (or (and (pair? args) (pair? (cdr args)) (cadr args)) (char-set))))
+        (base (if (and (pair? args) (pair? (cdr args)))
+                  (char-set-copy (cadr args))
+                  (char-set))))
     (integer-range->char-set! low upper error? base)))
 
 (define (integer-range->char-set! low upper error? base)
@@ -230,12 +214,44 @@
         (set! upper (+ *char-code-max* 1))))
   (%char-set-add-range! base low (- upper 1)))
 
+(define (ucs-range->char-set low upper . args)
+  (let ((error? (and (pair? args) (car args)))
+        (base (if (and (pair? args) (pair? (cdr args)))
+                  (char-set-copy (cadr args))
+                  (char-set))))
+    (ucs-range->char-set! low upper error? base)))
+
+(define ucs-range->char-set!
+  (if (eq? (gauche-character-encoding) 'utf-8)
+      integer-ragne->char-set!
+      (lambda (low upper error? base)
+        (when (< low 0)
+          (if error?
+              (error "argument out of range:" low)
+              (set! low 0)))
+        (if (< upper 128)
+            (%char-set-add-range! base low (- upper 1))
+            (begin
+              (when (< low 128)
+                (%char-set-add-range! base low 128))
+              (do ((i 128 (+ i 1)))
+                  ((>= i upper) base)
+                (let ((c (ucs->char i)))
+                  (if c
+                      (%char-set-add! base c)
+                      (if error?
+                          (error "unicode character #\\u~8,'0x is not supported in the native character set (~a)"
+                                 i (gauche-character-encoding)))))
+                )))
+        )
+      ))
+                  
 (define (->char-set obj)
   (cond ((list? obj)   (list->char-set obj))
         ((string? obj) (string->char-set obj))
         ((char-set? obj) obj)
         ((char? obj) (char-set obj))
-        (else (errorf "cannot coersable ~s into a char-set" obj))))
+        (else (errorf "cannot coerse ~s into a char-set" obj))))
 
 ;;-------------------------------------------------------------------
 ;; Querying
