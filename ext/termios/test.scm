@@ -7,3 +7,8 @@
 (load "termios")
 (import gauche.termios)
 
+(test-start "termios")
+
+;; TODO: writeme
+
+(test-end)
