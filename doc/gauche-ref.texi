@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.89 2001-10-09 10:33:28 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.90 2001-10-09 20:48:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -48,7 +48,7 @@ This is a reference manual of Gauche, an R5RS Scheme implementation.
 @menu
 * Introduction::                
 * Concepts::                    
-* Writing Scheme program using Gauche::  
+* Programming in Gauche::       
 * Core Syntax::                 
 * Macros::                      
 * Core library::                
@@ -379,7 +379,7 @@ The API of the entry reflects the API specified in POSIX.
 
 
 @c ======================================================================
-@node Concepts, Writing Scheme program using Gauche, Introduction, Top
+@node Concepts, Programming in Gauche, Introduction, Top
 @chapter Concepts
 
 @c EN
@@ -548,8 +548,19 @@ class, Gauche methods don't
 
 
 @c ======================================================================
-@node Writing Scheme program using Gauche, Core Syntax, Concepts, Top
-@chapter  Writing Scheme program using Gauche
+@node Programming in Gauche, Core Syntax, Concepts, Top
+@chapter  Programming in Gauche
+
+@menu
+* Invoking Gosh::               
+* Interactive development::     
+* Debugger::                    
+* Writing Scheme scripts::      
+* Writing Gauche modules::      
+@end menu
+
+@node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
+@section Invoking Gosh
 
 Gauche can be used either as an independent Scheme interpreter
 or as an embedded Scheme library.   The interpreter
@@ -654,6 +665,22 @@ STk uses the same variable to access the program/script name.
 Other Scheme implementations use different ways.
 @end defvar
 
+@c ----------------------------------------------------------------------
+@node Interactive development, Debugger, Invoking Gosh, Programming in Gauche
+@section Interactive development
+
+
+@c ----------------------------------------------------------------------
+@node Debugger, Writing Scheme scripts, Interactive development, Programming in Gauche
+@section Deubgger
+
+
+
+@c ----------------------------------------------------------------------
+@node Writing Scheme scripts, Writing Gauche modules, Debugger, Programming in Gauche
+@section Writing Scheme scripts
+
+
 Now I show several simple examples below.
 First, this script works like @code{cat(1)}, without any command-line
 option processing and error handling.
@@ -713,9 +740,13 @@ The following script is a simple grep command.
 See also @ref{Parsing command-line options}, for a convenient way to
 parse command-line options.
 
+@c ----------------------------------------------------------------------
+@node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
+@section Writing Gauche modules
+
 
 @c ======================================================================
-@node Core Syntax, Macros, Writing Scheme program using Gauche, Top
+@node Core Syntax, Macros, Programming in Gauche, Top
 @chapter Core Syntax
 
 @c ----------------------------------------------------------------------
@@ -1612,19 +1643,51 @@ symbols.
 
 @defun eq? obj1 obj2
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun eqv? obj1 obj2
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun equal? obj1 obj2
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node Numbers, Booleans, Equivalence, Core library
 @section Numbers
+
+@c EN
+Gauche supports the following types of numbers
+@table @asis
+@item multi-precision exact integer
+There's no limit of the size of number except the memory of the machine.
+@item inexact floating-point real number
+Using @code{double}-type of underlying C compiler, usually IEEE 64-bit
+floating point number.
+@item inexact floating-point complex number
+A pair of floating point numbers.
+@end table
+@c JP
+Gaucheは次のタイプの数値をサポートしています。
+@table @asis
+@item 多倍長の完全な整数
+メモリの許す限りの精度が扱えます。
+@item 浮動少数点の不完全な実数
+実装に使われるC言語の@code{double}型で表現されます。通常IEEE 64bit浮動少数点数です。
+@item 浮動少数点の不完全な複素数
+内部では浮動少数点数のペアで表現されます。
+@end table
+@c COMMON
 
 @menu
 * Number classes::              
@@ -1646,17 +1709,34 @@ symbols.
 @clindex complex
 @clindex real
 @clindex integer
-These classes consist a hierarchy of representation of numbers.
+@c EN
+These classes consist a class hierarchy of number objects.
+@code{<complex>} inherits @code{<number>}, @code{<real>} inherits
+@code{<complex>} and @code{<integer>} inherits @code{<real>}.
+
 Note that these classes does not exactly corresponds to the
 number hierarchy defined in R5RS.  Especially, 
 only exact integers are the instances of the @code{<integer>}
 class.  That is,
-@lisp
-(integer? 1) @result{} #t
-(is-a? 1 <integer>) @result{} #t
+@c JP
+数値オブジェクトのクラス階層を構成します。@code{<complex>}は
+@code{<number>}を継承し、@code{<real>}は@code{<complex>}を継承し、
+@code{<integer>}は@code{<real>}を継承します。
 
-(integer? 1.0) @result{} #t
+これらのクラスはR5RSで定義されている数値の階層とは必ずしも対応しません。
+特に、@code{<integer>}クラスのインスタンスはR5RSでいうexact integerのみになります。
+@c COMMON
+@lisp
+(integer? 1)        @result{} #t
+(is-a? 1 <integer>) @result{} #t
+(is-a? 1 <real>)    @result{} #t
+
+(integer? 1.0)        @result{} #t
 (is-a? 1.0 <integer>) @result{} #f
+(is-a? 1.0 <real>)    @result{} #t
+
+(class-of (expt 2 100)) @result{} #<class <integer>>
+(class-of (sqrt -3)) @result{} #<class <complex>>
 @end lisp
 @end deftp
 
@@ -1669,42 +1749,138 @@ class.  That is,
 @defunx rational? obj
 @defunx integer? obj
 [R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a number, a complex number, a real number,
+a rational number or an integer, respectively.   In Gauche, a set of
+numbers is the same as a set of complex numbers, and a set of
+rational numbers is the same as a set of integers.
+@c JP
+@var{obj}がそれぞれ数、複素数、実数、有理数、整数ならば@code{#t}を返します。
+Gaucheでは、数の集合は複素数の集合と同一であり、有理数の集合は整数の集合と同一です。
+@c COMMON
+
+@example
+(complex? 3+4i)   @result{} #t
+(complex? 3)      @result{} #t
+(real? 3)         @result{} #t
+(real? -2.5+0.0i) @result{} #t
+(real? #e1e10)    @result{} #t
+(integer? 3+0i)   @result{} #t
+(integer? 3.0)    @result{} #t
+@end example
 @end defun
 
 @defun exact? obj
 @defunx inexact? obj
 [R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is an exact number and an inexact number,
+respectively.
+@c JP
+@var{obj}がそれぞれ完全数、非完全数ならば@code{#t}を返します。
+@c COMMON
+
+@example
+(exact? 1)       @result{} #t
+(exact? 1.0)     @result{} #f
+(inexact? 1)     @result{} #f
+(inexact? 1.0)   @result{} #t
+
+(exact? (modulo 5 3)) @result{} #t
+(inexact? (modulo 5 3.0)) @result{} #f
+@end example
 @end defun
 
 @defun zero? z
 [R5RS]
+@c EN
+Returns @code{#t} if a number @var{z} equals to zero.
+@c JP
+数値@var{z}がゼロに等しければ@code{#t}を返します。
+@c COMMON
+
+@example
+(zero? 1)        @result{} #f
+(zero? 0)        @result{} #t
+(zero? 0.0)      @result{} #t
+(zero? 0.0+0.0i) @result{} #t
+@end example
 @end defun
 
 @defun positive? x
 @defunx negative? x
 [R5RS]
+@c EN
+Returns @code{#t} if a real number @var{x} is positive and negative,
+respectively.  It is an error to pass a non-real number.
+@c JP
+実数@var{x}がそれぞれ正または負なら@code{#t}を返します。
+非実数を渡すとエラーになります。
+@c COMMON
 @end defun
 
 @defun odd? n
 @defunx even? n
 [R5RS]
+@c EN
+Returns @code{#t} if an integer @var{n} is odd and even, 
+respectively.  It is an error to pass a non-integral number.
+@c JP
+整数@var{n}がそれぞれ奇数または偶数なら@code{#t}を返します。
+非整数を渡すとエラーになります。
+@c COMMON
+
+@example
+(odd? 3)     @result{} #t
+(even? 3)    @result{} #f
+(odd? 3.0)   @result{} #t
+@end example
 @end defun
 
 @node Numerical comparison, Arithmetics, Numerical predicates, Numbers
 @subsection Numerical comparison
 
 @defun @code{=} z1 z2 z3 @dots{}
-@defunx @code{<} x1 x2 x3 @dots{}
+[R5RS]
+@c EN
+If all the numbers @var{z} are equal, returns @code{#t}.
+@c JP
+与えられた全ての数値@var{z}が等しければ@code{#t}を返します。
+@c COMMON
+
+@example
+(= 2 2)          @result{} #t
+(= 2 3)          @result{} #f
+(= 2 2.0)        @result{} #t
+(= 2 2.0 2.0+0i) @result{} #t
+@end example
+@end defun
+
+@defun @code{<} x1 x2 x3 @dots{}
 @defunx @code{<=} x1 x2 x3 @dots{}
 @defunx @code{>} x1 x2 x3 @dots{}
 @defunx @code{>=} x1 x2 x3 @dots{}
 [R5RS]
+@c EN
+Returns @code{#t} If all the real numbers @var{x} are
+monotonically increasing,
+monotonically nondecreasing, monotonically decreasing, or monotonically
+nonincreasing, respectively.
+@c JP
+与えられた全ての実数@var{x}がそれぞれ単調増加、単調非減少、単調減少、単調非増加している
+場合に@code{#t}を返します。
+@c COMMON
 @end defun
 
 
 @defun max x1 x2 @dots{}
 @defunx min x1 x2 @dots{}
 [R5RS]
+@c EN
+Returns a maximum or minimum number in the given real numbers, respectively.
+@c JP
+与えられた実数のうち、それぞれ最大と最小のものを返します。
+@c COMMON
 @end defun
 
 @node Arithmetics, Numerical conversions, Numerical comparison, Numbers
@@ -1713,32 +1889,83 @@ class.  That is,
 @defun @code{+} z @dots{}
 @defunx @code{*} z @dots{}
 [R5RS]
+@c EN
+Returns the sum or the product of given numbers, respectively.
+If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
+@c JP
+与えられた数の和と積をそれぞれ返します。引数が与えられない場合、
+@code{(+)} は 0、 @code{(*)} は 1 となります。
+@c COMMON
 @end defun
-
 
 @defun @code{-} z1 z2 @dots{}
 @defunx @code{/} z1 z2 @dots{}
 [R5RS]
+@c EN
+If only one number @var{z1} is given, returns its
+negation and reciprocal, respectively.
+
+If more than one number are given, returns:
+@example
+@var{z1} - @var{z2} - @var{z3} @dots{}
+@var{z1} / @var{z2} / @var{z3} @dots{}
+@end example
+respectively.
+@c JP
+一つだけ数値が与えられた場合、それぞれnegationと逆数を返します。
+
+2つ以上の数値が与えられた場合、それぞれ次の結果を返します。
+@example
+@var{z1} - @var{z2} - @var{z3} @dots{}
+@var{z1} / @var{z2} / @var{z3} @dots{}
+@end example
+@c COMMON
+
+@example
+(- 3)       @result{} -3
+(- -3.0)    @result{} 3.0
+(- 5+2i)    @result{} -5.0-2.0i
+(/ 3)       @result{} 0.333333333333333
+(/ 5+2i)    @result{} 0.172413793103448-0.0689655172413793i
+
+(- 5 2 1)     @result{} 2
+(- 5 2.0 1)   @result{} 2.0
+(- 5+3i -i)   @result{} 5.0+2.0i
+(/ 6+2i 2)    @result{} 3.0+1.0i
+@end example
 @end defun
 
 @defun abs z @dots{}
 [R5RS+]
+@c EN
+
+@c JP
+@c COMMON
 @end defun
 
 @defun quotient n1 n2
 @defunx remainder n1 n2
 @defunx modulo n1 n2
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun gcd n @dots{}
 @defunx lcm n @dots{}
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun numerator q
 @defunx denominator q
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 
@@ -1747,6 +1974,9 @@ class.  That is,
 @defunx truncate x
 @defunx round x
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 
@@ -1760,6 +1990,9 @@ class.  That is,
 @defunx atan z
 @defunx atan x y
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 
@@ -1769,15 +2002,25 @@ class.  That is,
 @defunx asinh z
 @defunx acosh z
 @defunx atanh z
+@c EN
 Hyperbolic trigonometric functions.
+@c JP
+双曲線関数です。
+@c COMMON
 @end defun
 
 @defun sqrt z
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun expt z1 z2
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @node Numerical conversions, Logical operations, Arithmetics, Numbers
@@ -1790,38 +2033,80 @@ Hyperbolic trigonometric functions.
 @defunx magnitude z
 @defunx angle z
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun exact->inexact z
 @defunx inexact->exact z
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
-@defun number->string z [radix]
-@defunx string->number string [radix]
+@defun number->string z &optional radix
+@defunx string->number string &optional radix
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @node Logical operations,  , Numerical conversions, Numbers
 @subsection Logical operations
 
+@c EN
+These procedures treat integers as half-open bit vectors.
+If an integer is positive, it is regarded as if infinite number
+of zeros are padded to the left.  If an integer is negative,
+it is regarded in 2's complement form, and infinite number of
+1's are padded to the left.
+@c JP
+これらの手続きは整数を半無限のビットベクタとして扱います。
+正の整数の場合、数値の左側に無限に0が続いていると見倣されます。
+負の整数の場合、数値は2の補数で表現され、左側に無限に1が続いていると見倣されます。
+@c COMMON
+
 @defun ash n count
+@c EN
 Shifts integer @var{n} left with @var{count} bits.
 If @var{count} is negative, @code{ash} shifts @var{n} right with
 @minus{}@var{count} bits.
-Negative @var{n} is interpreted as 2's complement numbers
-with 1's continue infinitely on the left side of the number.
+@c JP
+整数@var{n}を左に整数@var{count}ビットだけシフトします。
+@var{count}が負であれば、@minus{}@var{count}だけ@var{n}を右にシフトします。
+@c COMMON
+
+@example
+; @r{Note: 6  @equiv{} [...00110], and}
+; @r{      -6 @equiv{} [...11010]}
+(ash 6 2)   @result{} 24  ;@r{[...0011000]}
+(ash 6 -2)  @result{} 1   ;@r{[...0000001]}
+(ash -6 2)  @result{} -24 ;@r{[...1101000]}
+(ash -6 -2) @result{} -2  ;@r{[...1111110]}
+@end example
 @end defun
         
 @defun logand n1 n2 @dots{}
 @defunx logior n1 n2 @dots{}
 @defunx logxor n1 n2 @dots{}
+@c EN
 Returns bitwise and, bitwise inclusive or and bitwise exclusive or
-of two integers @var{n1}, @var{n2} @dots{}.
+of two or more integers @var{n1}, @var{n2} @dots{}.
+@c JP
+2つ以上の整数@var{n1}, @var{n2} @dots{}の、それぞれ論理和、論理積、
+排他的論理積を返します。
+@c COMMON
 @end defun
 
 @defun lognot n
+@c EN
 Returns bitwise not of an integer @var{n}.
+@c JP
+整数@var{n}のビット否定を返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2146,20 +2431,47 @@ The cells of @var{list} may be reused to construct the returned list.
 @defun memq obj list
 @defunx memv obj list
 [R5RS]
+@c EN
+Searches @var{obj} in the @var{list}.  If @code{n}-th element of
+@var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
+@code{eqv?} for @code{memv}), @code{(list-tail @var{list} @var{n})} is
+returned.   Otherwise, @code{#f} is returned.
+@c JP
+@var{list}から@var{obj}を探します。もし@var{list}の@var{n}番目の要素が
+@var{obj}と同一ならば、@code{(list-tail @var{list} @var{n})}を返します。
+@code{memq}は同一性の判定に@code{eq?}を、@code{memv}は@code{eqv?}を使います。
+@var{obj}が@var{list}中に見つからなければ@code{#f}が返されます。
+@c COMMON
 
+@example
+(memq 'a '(a b c))          @result{} (a b c)
+(memq 'b '(a b c))          @result{}  (b c)
+(memq 'a '(b c d))          @result{} #f
+(memq (list 'a) '(b (a) c)) @result{} #f
+(memv 101 '(100 101 102))   @result{} (101 102)
+@end example
 @end defun
 
 @defun member obj list [=]
 [R5RS+][SRFI-1]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun assq obj list
 @defunx assv obj list
 [R5RS]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun assoc obj list [=]
 [R5RS+][SRFI-1]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 
