@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.104 2001-10-20 21:52:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.105 2001-10-22 19:59:25 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2432,7 +2432,10 @@ The complex part is Gauche extension.
 @defunx lcm n @dots{}
 [R5RS]
 @c EN
+Returns the greatest common divisor or the least common multiplier
+of the given integers, respectively
 @c JP
+与えられた整数の、最大公約数と最小公倍数をそれぞれ返します。
 @c COMMON
 @end defun
 
@@ -2455,6 +2458,36 @@ The complex part is Gauche extension.
 @c COMMON
 @end defun
 
+@defun clamp x &optional min max
+@c EN
+Returns
+@example
+ @var{min} @r{if} @var{x} @code{<} @var{min}
+ @var{x}   @r{if} @var{min} @code{<=} @var{x} @code{<=} @var{max}
+ @var{max} @r{if} @var{max} @code{<} @var{x}
+@end example
+If @var{min} or @var{max} is omitted or @code{#f}, it is regarded
+as @var{-infinity} or @var{+infinity}, respectively.
+Returns an exact integer only if all the given numbers are exact integers.
+@c JP
+@example
+ @var{min} @r{if} @var{x} @code{<} @var{min}
+ @var{x}   @r{if} @var{min} @code{<=} @var{x} @code{<=} @var{max}
+ @var{max} @r{if} @var{max} @code{<} @var{x}
+@end example
+を返します。もし@var{min}または@var{max}が省略されるか@code{#f}が与えられたら、
+それぞれ @var{-∞} もしくは @var{+∞} と解釈されます。
+与えられた全ての数値が完全な整数の場合に限り完全な整数を返します。
+@c COMMON
+@example
+(clamp 3.1 0.0 1.0) @result{} 1.0
+(clamp 0.5 0.0 1.0) @result{} 0.5
+(clamp -0.3 0.0 1.0) @result{} 0.0
+(clamp -5 0)        @result{} 0
+(clamp 3724 #f 256) @result{} 256
+@end example
+@end defun
+
 
 @defun exp z
 @defunx log z
@@ -2464,13 +2497,22 @@ The complex part is Gauche extension.
 @defunx asin z
 @defunx acos z
 @defunx atan z
-@defunx atan x y
 [R5RS]
 @c EN
+Transcedental functions.  Work for complex numbers as well.
 @c JP
+超越関数です。複素数も扱えます。
 @c COMMON
 @end defun
 
+@defunx atan x y
+[R5RS]
+@c EN
+For real numbers @var{x} and @var{y}, returns @code{atan(@var{y}/@var{x})}.
+@c JP
+実数@var{x}と@var{y}に対して@code{atan(@var{y}/@var{x})}を返します。
+@c COMMON
+@end defun
 
 @defun sinh z
 @defunx cosh z
@@ -2479,9 +2521,9 @@ The complex part is Gauche extension.
 @defunx acosh z
 @defunx atanh z
 @c EN
-Hyperbolic trigonometric functions.
+Hyperbolic trigonometric functions.  Work for complex numbers as well.
 @c JP
-双曲線関数です。
+双曲線関数です。複素数も扱えます。
 @c COMMON
 @end defun
 
@@ -6835,11 +6877,30 @@ SRFI implementations.
 @c ----------------------------------------------------------------------
 @node Determine isomorphism, Topological sort, Library modules overview, Library modules
 @section @code{algorithm.isomorph} - Determine isomorphism
+@c NODE 同型判定, @code{algorithm.isomorph} - 同型判定
+
+@deftp {Module} algorithm.isomorph
+@mdindex algorithm.isomorph
+
+@end deftp
+
+@defun isomorph? obj1 obj2 &optional context
+@end defun
+
+@deffn {Generic Method} object-isomorph? obj1 obj2 context
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node Topological sort, Generic DBM interface, Determine isomorphism, Library modules
 @section @code{algorithm.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{algorithm.toposort} - トポロジカルソート
+
+@deftp {Module} algorithm.toposort
+@mdindex algorithm.toposort
+
+@end deftp
+
+
 
 
 @c ----------------------------------------------------------------------
