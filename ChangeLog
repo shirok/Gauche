@@ -1,3 +1,10 @@
+2002-03-07  Shiro Kawai  <shiro@acm.org>
+
+	* Gauche.spec : added.
+	* src/Makefile.in, src/gauche-config.in : changed the installaion
+	  directory of header files from share to lib --- header files contain
+	  configured information that may be architecture specific.
+
 2002-03-06  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsyslib.stub : removed sys-setpgrp, for the function 

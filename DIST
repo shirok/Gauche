@@ -3,6 +3,7 @@ VERSION=`cat VERSION`
 TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
 MAN_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/man/"
 DOC_DEST="../test"
+RPMDIR="$HOME/rpm"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 
 while [ $# -gt 0 ]; do
@@ -13,7 +14,8 @@ while [ $# -gt 0 ]; do
     test) test=yes; shift ;;
     testcode) testcode=yes; shift ;;
     testclean) testclean=yes; shift ;;
-    *) echo "DIST [doc][docs][tgz][test][testclean]"; exit 0;;
+    rpm)  rpm=yes; shift;;
+    *) echo "DIST [doc][docs][tgz][test][testclean][rpm]"; exit 0;;
   esac
 done
 
@@ -106,4 +108,24 @@ fi
 if [ "$testclean" = "yes" ]; then
   rm -rf ../test/Gauche ../test/Gauche-$VERSION
   rm -rf ../test/test.log ../test/temp.o ../test/tmp1.o
+fi
+
+if [ "$rpm" = "yes" ]; then
+  spec=$RPMDIR/SPECS/Gauche.spec
+  echo "UTF8, i386 ----------------------------------------------"
+  rm -f $spec
+  cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
+  rpm -bb --clean $spec
+  echo "UTF8, i686 ----------------------------------------------"
+  rm -f $spec
+  cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
+  rpm -bb --clean --target i686 $spec
+  echo "EUC, i386 -----------------------------------------------"
+  rm -f $spec
+  cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
+  rpm -bb --clean $spec
+  echo "EUC, i686 -----------------------------------------------"
+  rm -f $spec
+  cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
+  rpm -ba --clean --target i686 $spec
 fi
