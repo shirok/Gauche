@@ -2,7 +2,7 @@
 ;;; Simple test routine
 ;;;
 
-;;; $Id: test.scm,v 1.3 2002-05-12 10:59:36 shirok Exp $
+;;; $Id: test.scm,v 1.4 2002-05-12 11:00:11 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -96,4 +96,4 @@
                     (reverse *discrepancy-list*))))
     ))
 
-(provide "tester/tester")
+(provide "gauche/test")
