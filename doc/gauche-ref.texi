@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.29 2001-06-23 10:30:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.30 2001-06-23 19:36:04 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4040,8 +4040,8 @@ stdout of @var{command}.   The stdin and stderr of @var{command}
 is redirected from/to @code{/dev/null}.  If you need to get
 an error output, you can use shell's redirection.
 @example
-(let ((port (open-input-process-port "ls -l Makefile")))
-  (read-line port))
+(define port (open-input-process-port "ls -l Makefile"))
+(read-line port)
  @result{} "-rw-r--r--   1 shiro    users        1013 Jun 22 21:09 Makefile"
 
 (open-input-process-port "command 2>&1")
@@ -4066,22 +4066,59 @@ to an input port, then call @var{proc} with the port as an argument.
 When @var{proc} returns, it collects its exit status,
 then returns the result @var{proc} returned.
 The cleanup is done even if @var{proc} raises an error.
+@example
+(call-with-input-process "ls -l *"
+  (lambda (p) (read-line p)))
+@end example
 @end defun
 
 @defun with-input-from-process command thunk
+Runs @var{command} via @code{/bin/sh}, and calls @var{thunk}
+with its current input port connected to the command's stdout.
+The command is terminated and its exit status is collected
+when @var{thunk} returns, or it raises an error.
+@example
+(with-input-from-process "ls -l *" read-line)
+@end example
 @end defun
 
-
 @defun open-output-process-port command
+Runs @code{command} via @code{/bin/sh}, and returns an output
+port which is connected to the stdin of the command.
+The stdout and stderr of the command is redirected to @var{/dev/null}.
+
+The exit status of the subprocess is not automatically collected.
+The caller should call @code{process-wait} on the subprocess
+at appropriate time.
 @end defun
 
 @defun call-with-output-process command proc
+Runs @code{command} via @code{/bin/sh}, and calls @var{proc} 
+with an output port which is conected to the stdin of the command.
+The exit status of the command is collected after @var{proc}
+returns, or it raises an error.
+
+@example
+(call-with-output-process "/usr/sbin/sendmail"
+  (lambda (out) (display mail-body out)))
+@end example
 @end defun
 
 @defun with-output-to-process command thunk
+Same as @code{call-with-output-process}, except that the
+output port which is connected to the stdin of the command
+is set to the current output port while executing @var{thunk}.
 @end defun
 
 @defun call-with-io-process command proc
+Runs @var{command} via @code{/bin/sh}, and calls @var{proc}
+with two arguments; the first argument is an input port which
+is connected to the command's stdout, and the second is an output
+port connected to the command's stdin.  The error output from
+the command is redirected to @code{/dev/null}.
+
+The exit status of the command is collected when @var{proc}
+returns or raises an error.
 @end defun
 
 
