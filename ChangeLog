@@ -1,5 +1,6 @@
 2002-11-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/uri.scm (uri-compose) : added uri-compose.
 	* src/read.c (read_internal): Finally, make old incomplete syntax
 	  #"..." obsolete.  The reader signals an error.
 	* lib/gauche/portutil.scm, src/gauche/extlib.stub : Renamed

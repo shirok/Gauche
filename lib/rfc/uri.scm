@@ -1,7 +1,7 @@
 ;;;
 ;;; uri.scm - parse and construct URIs
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.11 2002-10-26 09:02:43 shirok Exp $
+;;;  $Id: uri.scm,v 1.12 2002-11-13 11:03:31 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -32,6 +32,7 @@
   (use gauche.regexp)
   (export uri-scheme&specific uri-decompose-hierarchical
           uri-decompose-authority
+          uri-compose
           uri-decode uri-decode-string
           uri-encode uri-encode-string
           )
@@ -49,27 +50,67 @@
 ;; their interpretation is dependent on the scheme.
 
 (define (uri-scheme&specific uri)
-  (cond ((rxmatch #/^([A-Za-z][A-Za-z0-9+.-]*):/ uri)
-         => (lambda (match)
-              (values (string-downcase (rxmatch-substring match 1))
-                      (rxmatch-after match))))
+  (cond ((#/^([A-Za-z][A-Za-z0-9+.-]*):/ uri)
+         => (lambda (m)
+              (values (string-downcase (m 1)) (m 'after))))
         (else (values #f uri))))
 
 (define (uri-decompose-hierarchical specific)
   (rxmatch-if
-      (rxmatch #/^(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$/ specific)
+      (#/^(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$/ specific)
       (#f #f authority path #f query #f fragment)
     (values authority path query fragment)
     (values #f #f #f #f)))
 
 (define (uri-decompose-authority authority)
   (rxmatch-if
-      (rxmatch #/^([^@]*@)?([^:]*)(:(\d*))?$/ authority)
+      (#/^([^@]*@)?([^:]*)(:(\d*))?$/ authority)
       (#f userinfo host #f port)
     (values userinfo host port)
     (values #f #f #f)))
 
+;;==============================================================
+;; Generic constructor
+;;
 
+(define (uri-compose . args)
+  (let-keywords* args ((scheme     #f)
+                       (userinfo   #f)
+                       (host       #f)
+                       (port       #f)
+                       (authority  #f)
+                       (path       #f)
+                       (path*      #f)
+                       (query      #f)
+                       (fragment   #f)
+                       (specific   #f))
+    (with-output-to-string
+      (lambda ()
+        (when scheme (display scheme) (display ":"))
+        (if specific
+            (display specific)
+            (begin
+              (display "//")
+              (if authority
+                  (begin (display authority))
+                  (begin
+                    (when userinfo (display userinfo) (display "@"))
+                    (when host     (display host))
+                    (when port     (display ":") (display port))))
+              (if path*
+                  (begin
+                    (unless (string-prefix? "/" path*) (display "/"))
+                    (display path*))
+                  (begin
+                    (if path
+                        (begin (unless (string-prefix? "/" path) (display "/"))
+                               (display path))
+                        (display "/"))
+                    (when query (display "?") (display query))
+                    (when fragment (display "#") (display fragment))))
+              ))
+        ))
+    ))
 
 ;;==============================================================
 ;; Relative -> Absolute
@@ -111,7 +152,7 @@
 (define (uri-decode-string string . args)
   (with-string-io string (lambda () (apply uri-decode args))))
 
-;; Default set of characters that can passed without escaping.
+;; Default set of characters that can be passed without escaping.
 ;; See 2.3 "Unreserved Characters" of RFC 2396.
 (define *uri-unreserved-char-set* #[-_.!~*'()0-9A-Za-z])
 
