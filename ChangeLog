@@ -1,6 +1,13 @@
+2001-05-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c, src/gauche.h and other files : changed ScmString
+	  structure to handle incomplete and/or immutable string in
+	  better way.  API of string construction is changed in incompatible
+	  way.
+
 2001-05-17  Shiro Kawai  <shiro@acm.org>
 
-	* src/bignu.c, src/extlib.stub, test/number.scm : finished logand
+	* src/bignum.c, src/extlib.stub, test/number.scm : finished logand
 	  and logior
 
 2001-05-16  Shiro Kawai  <shiro@acm.org>

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.49 2001-05-17 20:21:16 shirok Exp $
+ *  $Id: number.c,v 1.50 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include <math.h>
@@ -1359,12 +1359,12 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
             r = Scm_BignumToString(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(obj))),
                                    radix);
         }
-        if (r == SCM_NIL) r = Scm_MakeString(buf, -1, -1);
+        if (r == SCM_NIL) r = SCM_MAKE_STR_COPYING(buf);
     } else if (SCM_BIGNUMP(obj)) {
         r = Scm_BignumToString(SCM_BIGNUM(obj), radix);
     } else if (SCM_FLONUMP(obj)) {
         double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE);
-        r = Scm_MakeString(buf, -1, -1);
+        r = SCM_MAKE_STR_COPYING(buf);
     } else if (SCM_COMPLEXP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort();
         double_print(buf, FLT_BUF, SCM_COMPLEX_REAL(obj), FALSE);

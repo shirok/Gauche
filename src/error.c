@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.11 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: error.c,v 1.12 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include <errno.h>
@@ -92,7 +92,7 @@ void Scm_SysError(const char *msg, ...)
 {
     ScmObj e;
     va_list args;
-    ScmObj syserr = Scm_MakeString(strerror(errno), -1, -1);
+    ScmObj syserr = SCM_MAKE_STR_COPYING(strerror(errno));
     
     SCM_PUSH_ERROR_HANDLER {
         ScmObj ostr = Scm_MakeOutputStringPort();

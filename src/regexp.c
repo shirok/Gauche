@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.13 2001-04-26 07:06:00 shiro Exp $
+ *  $Id: regexp.c,v 1.14 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -946,9 +946,9 @@ ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, int i)
     sub = &rm->matches[i];
     if (sub->length >= 0) {
         return Scm_MakeString(sub->startp, sub->endp - sub->startp,
-                              sub->length);
+                              sub->length, 0);
     } else {
-        ScmObj s = Scm_MakeString(sub->startp, sub->endp - sub->startp, -1);
+        ScmObj s = Scm_MakeString(sub->startp, sub->endp - sub->startp, -1, 0);
         sub->length = SCM_STRING_LENGTH(s);
         return s;
     }
@@ -994,9 +994,7 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
         Scm_Printf(SCM_CUROUT, "[%3d-%3d]  %S\n",
                    sub->startp - rm->input,
                    sub->endp - rm->input,
-                   Scm_MakeStringConst(sub->startp,
-                                       sub->endp - sub->startp,
-                                       -1));
+                   Scm_MakeString(sub->startp, sub->endp-sub->startp, -1, 0));
     }
 }
 

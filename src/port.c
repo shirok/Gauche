@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.22 2001-05-15 10:11:23 shirok Exp $
+ *  $Id: port.c,v 1.23 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include <unistd.h>
@@ -233,7 +233,7 @@ ScmObj Scm_OpenFilePort(const char *path, const char *mode)
     
     fp = fopen(path, mode);
     if (fp == NULL) return SCM_FALSE;
-    return Scm_MakeFilePort(fp, Scm_MakeString(path, -1, -1), mode, TRUE);
+    return Scm_MakeFilePort(fp, SCM_MAKE_STR_COPYING(path), mode, TRUE);
 }
 
 /*

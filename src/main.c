@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.20 2001-04-14 23:52:20 shiro Exp $
+ *  $Id: main.c,v 1.21 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include <unistd.h>
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
         case 'V': version(); break;
         case 'f': further_options(optarg); break;
         case 'I':
-            extra_load_paths = Scm_Cons(Scm_MakeString(optarg, -1, -1),
+            extra_load_paths = Scm_Cons(SCM_MAKE_STR_COPYING(optarg),
                                         extra_load_paths);
             break;
         case '-': break;
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
         }
     }
     SCM_DEFINE(Scm_UserModule(), "*program-name*",
-               Scm_MakeString(argv[0], -1, -1));
+               SCM_MAKE_STR_IMMUTABLE(argv[0]));
     SCM_FOR_EACH(cp, extra_load_paths) {
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(SCM_CAR(cp))), FALSE);
     }
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
         ScmObj av = SCM_NIL, at;
         int ac;
         for (ac = optind+1; ac < argc; ac++) {
-            SCM_APPEND1(av, at, Scm_MakeString(argv[ac], -1, -1));
+            SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
         }
         SCM_DEFINE(Scm_UserModule(), "*argv*", av);
         Scm_Load(argv[optind], TRUE);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.16 2001-04-22 07:51:37 shiro Exp $
+ *  $Id: system.c,v 1.17 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include <stdio.h>
@@ -53,7 +53,7 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
     
     if (dirp == NULL) Scm_SysError("couldn't open directory %S", pathname);
     while ((dire = readdir(dirp)) != NULL) {
-        ScmObj ent = Scm_MakeString(dire->d_name, -1, -1);
+        ScmObj ent = SCM_MAKE_STR_COPYING(dire->d_name);
         SCM_APPEND1(head, tail, ent);
     }
     closedir(dirp);
@@ -70,7 +70,7 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     int i, r = glob(Scm_GetStringConst(pattern), 0, NULL, &globbed);
     if (r < 0) Scm_Error("Couldn't glob %S", pattern);
     for (i = 0; i < globbed.gl_pathc; i++) {
-        ScmObj path = Scm_MakeString(globbed.gl_pathv[i], -1, -1);
+        ScmObj path = SCM_MAKE_STR_COPYING(globbed.gl_pathv[i]);
         SCM_APPEND1(head, tail, path);
     }
     globfree(&globbed);
@@ -146,7 +146,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         size -= srcp-str;
         memcpy(dstp, srcp, size);
         *(dstp + size) = '\0';
-        return Scm_MakeStringConst(buf, (dstp-buf)+size, -1);
+        return Scm_MakeString(buf, (dstp-buf)+size, -1, SCM_MAKSTR_COPYING);
     }
 
     while (srcp < str+size) {
@@ -186,7 +186,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         SKIP_SLASH;
     }
     *dstp = '\0';
-    return Scm_MakeString(buf, dstp-buf, -1);
+    return Scm_MakeString(buf, dstp-buf, -1, SCM_MAKSTR_COPYING);
 }
 
 ScmObj Scm_BaseName(ScmString *filename)
@@ -200,7 +200,7 @@ ScmObj Scm_BaseName(ScmString *filename)
     for (i = 0; i < size; i++, p--) {
         if (*p == '/') break;
     }
-    return Scm_MakeString(p+1, i, -1);
+    return Scm_MakeString(p+1, i, -1, 0);
 }
 
 ScmObj Scm_DirName(ScmString *filename)
@@ -217,7 +217,7 @@ ScmObj Scm_DirName(ScmString *filename)
         if (*p == '/') break;
     }
     if (i == 0) return SCM_MAKE_STR(".");
-    return Scm_MakeString(str, i, -1);
+    return Scm_MakeString(str, i, -1, 0);
 }
 
 /*
@@ -270,15 +270,15 @@ static ScmObj make_group(struct group *g)
     ScmSysGroup *sg = SCM_NEW(ScmSysGroup);
     SCM_SET_CLASS(sg, SCM_CLASS_SYS_GROUP);
     
-    sg->name = Scm_MakeString(g->gr_name, -1, -1);
+    sg->name = SCM_MAKE_STR_COPYING(g->gr_name);
 #ifdef HAVE_GR_PASSWD
-    sg->passwd = Scm_MakeString(g->gr_passwd, -1, -1);
+    sg->passwd = SCM_MAKE_STR_COPYING(g->gr_passwd);
 #else
     sg->passwd = SCM_FALSE;
 #endif
     sg->gid = Scm_MakeInteger(g->gr_gid);
     for (memp = g->gr_mem; *memp; memp++) {
-        p = Scm_MakeString(*memp, -1, -1);
+        p = SCM_MAKE_STR_COPYING(*memp);
         SCM_APPEND1(head, tail, p);
     }
     sg->mem = head;
@@ -313,26 +313,26 @@ static ScmObj make_passwd(struct passwd *pw)
     ScmSysPasswd *sp = SCM_NEW(ScmSysPasswd);
     SCM_SET_CLASS(sp, SCM_CLASS_SYS_PASSWD);
 
-    sp->name = Scm_MakeString(pw->pw_name, -1, -1);
+    sp->name = SCM_MAKE_STR_COPYING(pw->pw_name);
     sp->uid = Scm_MakeInteger(pw->pw_uid);
     sp->gid = Scm_MakeInteger(pw->pw_gid);
 #ifdef HAVE_PW_PASSWD
-    sp->passwd = Scm_MakeString(pw->pw_passwd, -1, -1);
+    sp->passwd = SCM_MAKE_STR_COPYING(pw->pw_passwd);
 #else
     sp->passwd = SCM_FALSE;
 #endif
 #ifdef HAVE_PW_GECOS
-    sp->gecos = Scm_MakeString(pw->pw_gecos, -1, -1);
+    sp->gecos = SCM_MAKE_STR_COPYING(pw->pw_gecos);
 #else
     sp->gecos = SCM_FALSE;
 #endif
 #ifdef HAVE_PW_CLASS
-    sp->pwclass = Scm_MakeString(pw->pw_class, -1, -1);
+    sp->pwclass = SCM_MAKE_STR_COPYING(pw->pw_class);
 #else
     sp->pwclass = SCM_FALSE;
 #endif
-    sp->dir = Scm_MakeString(pw->pw_dir, -1, -1);
-    sp->shell = Scm_MakeString(pw->pw_shell, -1, -1);
+    sp->dir = SCM_MAKE_STR_COPYING(pw->pw_dir);
+    sp->shell = SCM_MAKE_STR_COPYING(pw->pw_shell);
     return SCM_OBJ(sp);
 }
 

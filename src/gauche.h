@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.137 2001-05-15 10:09:33 shirok Exp $
+ *  $Id: gauche.h,v 1.138 2001-05-19 10:56:28 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -651,8 +651,10 @@ ScmObj Scm_GetStandardCharSet(int id);
 
 struct ScmStringRec {
     SCM_HEADER;
-    long length;
-    long size;
+    unsigned int incomplete : 1;
+    unsigned int immutable : 1;
+    unsigned int length : (SIZEOF_INT*CHAR_BIT-2);
+    unsigned int size;
     const char *start;
 };
 
@@ -662,11 +664,22 @@ struct ScmStringRec {
 #define SCM_STRING_SIZE(obj)    (SCM_STRING(obj)->size)
 #define SCM_STRING_START(obj)   (SCM_STRING(obj)->start)
 
-#define SCM_STRING_COMPLETE_P(obj) (SCM_STRING_LENGTH(obj) >= 0)
+#define SCM_STRING_INCOMPLETE_P(obj) (SCM_STRING(obj)->incomplete)
+#define SCM_STRING_IMMUTABLE_P(obj)  (SCM_STRING(obj)->immutable)
 #define SCM_STRING_SINGLE_BYTE_P(obj) \
-    (SCM_STRING_SIZE(obj)==SCM_STRING_LENGTH(obj)||SCM_STRING_LENGTH(obj)<0)
+    (SCM_STRING_SIZE(obj)==SCM_STRING_LENGTH(obj))
 
-#define SCM_MAKE_STR(cstr)   Scm_MakeStringConst(cstr, -1, -1)
+/* constructor flags */
+#define SCM_MAKSTR_COPYING     (1L<<0)
+#define SCM_MAKSTR_INCOMPLETE  (1L<<1)
+#define SCM_MAKSTR_IMMUTABLE   (1L<<2)
+
+#define SCM_MAKE_STR(cstr) \
+    Scm_MakeString(cstr, -1, -1, 0)
+#define SCM_MAKE_STR_COPYING(cstr) \
+    Scm_MakeString(cstr, -1, -1, SCM_MAKSTR_COPYING)
+#define SCM_MAKE_STR_IMMUTABLE(cstr) \
+    Scm_MakeString(cstr, -1, -1, SCM_MAKSTR_IMMUTABLE)
 
 extern ScmClass Scm_StringClass;
 #define SCM_CLASS_STRING        (&Scm_StringClass)
@@ -681,13 +694,17 @@ enum {
 
 extern int     Scm_MBLen(const char *str, const char *stop);
 
-extern ScmObj  Scm_MakeString(const char *str, int size, int len);
-extern ScmObj  Scm_MakeStringConst(const char *str, int size, int len);
+extern ScmObj  Scm_MakeString(const char *str, int size, int len, int flags);
 extern ScmObj  Scm_MakeFillString(int len, ScmChar fill);
 extern ScmObj  Scm_CopyString(ScmString *str);
 
 extern char*   Scm_GetString(ScmString *str);
 extern const char* Scm_GetStringConst(ScmString *str);
+
+extern ScmObj  Scm_StringCompleteToIncompleteX(ScmString *str);
+extern ScmObj  Scm_StringIncompleteToCompleteX(ScmString *str);
+extern ScmObj  Scm_StringCompleteToIncomplete(ScmString *str);
+extern ScmObj  Scm_StringIncompleteToComplete(ScmString *str);
 
 extern int     Scm_StringCmp(ScmString *x, ScmString *y);
 extern int     Scm_StringCiCmp(ScmString *x, ScmString *y);
@@ -721,7 +738,7 @@ extern ScmObj  Scm_StringFill(ScmString *str, ScmChar c,
    the length by yourself. */
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)    \
     ScmString name = {                                  \
-        { SCM_CLASS_STRING }, (len), (siz), (str)       \
+        { SCM_CLASS_STRING }, 0, 1, (len), (siz), (str) \
     };
 
 /* Auxiliary structure to construct a string.  This is not an ScmObj. */
@@ -1114,9 +1131,9 @@ extern ScmModule *Scm_GaucheModule(void);
 extern ScmModule *Scm_UserModule(void);
 extern ScmModule *Scm_CurrentModule(void);
 
-#define SCM_DEFINE(module, cstr, val)                                     \
-    Scm_Define(SCM_MODULE(module),                                        \
-               SCM_SYMBOL(Scm_Intern(SCM_STRING(Scm_MakeStringConst(cstr, -1, -1)))), \
+#define SCM_DEFINE(module, cstr, val)           \
+    Scm_Define(SCM_MODULE(module),              \
+               SCM_SYMBOL(SCM_INTERN(cstr)),    \
                SCM_OBJ(val))
 
 /*--------------------------------------------------------
@@ -1133,7 +1150,7 @@ struct ScmSymbolRec {
 #define SCM_SYMBOL_NAME(obj)   (SCM_SYMBOL(obj)->name)
 
 extern ScmObj Scm_Intern(ScmString *name);
-#define SCM_INTERN(cstr)       Scm_Intern(SCM_STRING(SCM_MAKE_STR(cstr)))
+#define SCM_INTERN(cstr)  Scm_Intern(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
 extern ScmObj Scm_Apropos(ScmString *substr);
 extern ScmObj Scm_Gensym(ScmString *prefix);
 
@@ -1184,7 +1201,7 @@ ScmObj Scm_MakeKeyword(ScmString *name);
 ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 
 #define SCM_MAKE_KEYWORD(cstr) \
-    Scm_MakeKeyword(SCM_STRING(Scm_MakeString(cstr, -1, -1)))
+    Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
 #define SCM_GET_KEYWORD(cstr, list, fallback) \
     Scm_GetKeyword(SCM_MAKE_KEYWORD(cstr), list, fallback)
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.34 2001-05-05 10:07:58 shirok Exp $
+ *  $Id: string.c,v 1.35 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include <stdio.h>
@@ -24,11 +24,22 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
+#define CHECK_MUTABLE(str)                                              \
+    do {                                                                \
+        if (SCM_STRING_IMMUTABLE_P(str))                                \
+            Scm_Error("attempted to modify immutable string: %S", str); \
+    } while (0)
+
+/* internal primitive constructor.   the created string is mutable
+   by default.  len can be negative value, indicating the string
+   is incomplete. */
 static ScmString *make_str(int len, int siz, const char *p)
 {
     ScmString *s = SCM_NEW(ScmString);
     SCM_SET_CLASS(s, SCM_CLASS_STRING);
-    s->length = len;
+    s->immutable = 0;
+    s->incomplete = (len < 0)? 1 : 0;
+    s->length = (len < 0)? siz : len;
     s->size = siz;
     s->start = p;
     return s;
@@ -115,22 +126,27 @@ int Scm_MBLen(const char *str, const char *stop)
  * Constructors
  */
 
-ScmObj Scm_MakeStringConst(const char *str, int size, int len)
+/* General constructor. */
+ScmObj Scm_MakeString(const char *str, int size, int len, int flags)
 {
+    ScmString *s;
+    
     if (size < 0) count_size_and_length(str, &size, &len);
     else if (len < 0) len = count_length(str, size);
-    return SCM_OBJ(make_str(len, size, str));
-}
-
-ScmObj Scm_MakeString(const char *str, int size, int len)
-{
-    char *nstr;
-
-    if (size < 0) count_size_and_length(str, &size, &len);
-    else if (len < 0) len = count_length(str, size);
-    nstr = SCM_NEW_ATOMIC2(char *, size + 1);
-    memcpy(nstr, str, size+1);  /* includes \0 */
-    return SCM_OBJ(make_str(len, size, nstr));
+    if (flags & SCM_MAKSTR_COPYING) {
+        char *nstr = SCM_NEW_ATOMIC2(char *, size + 1);
+        memcpy(nstr, str, size);
+        nstr[size] = '\0';          /* be kind to C */
+        s = make_str(len, size, nstr);
+    } else {
+        s = make_str(len, size, str);
+    }
+    s->immutable = (flags & SCM_MAKSTR_IMMUTABLE);
+    if ((flags&SCM_MAKSTR_INCOMPLETE) || len < 0) {
+        s->incomplete = TRUE;
+        s->length = s->size;
+    }
+    return SCM_OBJ(s);
 }
 
 ScmObj Scm_MakeFillString(int len, ScmChar fill)
@@ -167,7 +183,7 @@ ScmObj Scm_ListToString(ScmObj chars)
         bufp += SCM_CHAR_NBYTES(ch);
     }
     *bufp = '\0';
-    return Scm_MakeStringConst(buf, size, len);
+    return Scm_MakeString(buf, size, len, 0);
 }
 
 char *Scm_GetString(ScmString *str)
@@ -198,10 +214,46 @@ const char *Scm_GetStringConst(ScmString *str)
     }
 }
 
+/* returned string is always mutable. */
 ScmObj Scm_CopyString(ScmString *x)
 {
-    return SCM_OBJ(make_str(SCM_STRING_LENGTH(x), SCM_STRING_SIZE(x),
-                            SCM_STRING_START(x)));
+    if (SCM_STRING_INCOMPLETE_P(x)) {
+        return SCM_OBJ(make_str(-1, SCM_STRING_SIZE(x), SCM_STRING_START(x)));
+    } else {
+        return SCM_OBJ(make_str(SCM_STRING_LENGTH(x), SCM_STRING_SIZE(x),
+                                SCM_STRING_START(x)));
+    }
+}
+
+/* string-complete->incomplete! */
+ScmObj Scm_StringCompleteToIncompleteX(ScmString *x)
+{
+    CHECK_MUTABLE(x);
+    x->incomplete = TRUE;
+    x->length = x->size;
+    return SCM_OBJ(x);
+}
+
+ScmObj Scm_StringCompleteToIncomplete(ScmString *x)
+{
+    return Scm_StringCompleteToIncompleteX(SCM_STRING(Scm_CopyString(x)));
+}
+
+ScmObj Scm_StringIncompleteToCompleteX(ScmString *x)
+{
+    CHECK_MUTABLE(x);
+    if (SCM_STRING_INCOMPLETE_P(x)) {
+        int len = count_length(SCM_STRING_START(x), SCM_STRING_SIZE(x));
+        if (len < 0) return SCM_FALSE;
+        x->incomplete = FALSE;
+        x->length = len;
+    }
+    return SCM_OBJ(x);
+}
+
+ScmObj Scm_StringIncompleteToComplete(ScmString *x)
+{
+    return Scm_StringIncompleteToCompleteX(SCM_STRING(Scm_CopyString(x)));
 }
 
 /*----------------------------------------------------------------
@@ -210,10 +262,16 @@ ScmObj Scm_CopyString(ScmString *x)
 
 int Scm_StringCmp(ScmString *x, ScmString *y)
 {
-    int sizx = SCM_STRING_SIZE(x);
-    int sizy = SCM_STRING_SIZE(y);
-    int siz = (sizx < sizy)? sizx : sizy;
-    int r = memcmp(SCM_STRING_START(x), SCM_STRING_START(y), siz);
+    int sizx, sizy, siz, r;
+    if ((SCM_STRING_INCOMPLETE_P(x) && !SCM_STRING_INCOMPLETE_P(y))
+        || (!SCM_STRING_INCOMPLETE_P(x) && SCM_STRING_INCOMPLETE_P(y))){
+        Scm_Error("cannot compare incomplete vs complete string: %S, %S",
+                  SCM_OBJ(x), SCM_OBJ(y));
+    }
+    sizx = SCM_STRING_SIZE(x);
+    sizy = SCM_STRING_SIZE(y);
+    siz = (sizx < sizy)? sizx : sizy;
+    r = memcmp(SCM_STRING_START(x), SCM_STRING_START(y), siz);
     if (r == 0) return (sizx - sizy);
     else return r;
 }
@@ -255,12 +313,20 @@ static int mb_strcasecmp(const char *px, int lenx,
 
 int Scm_StringCiCmp(ScmString *x, ScmString *y)
 {
-    int sizx = SCM_STRING_SIZE(x), lenx = SCM_STRING_SIZE(x);
-    int sizy = SCM_STRING_SIZE(y), leny = SCM_STRING_SIZE(y);
-    const char *px = SCM_STRING_START(x);
-    const char *py = SCM_STRING_START(y);
+    int sizx, lenx, sizy, leny;
+    const char *px, *py;
     
-    if ((sizx == lenx && sizy == leny)|| lenx < 0 || leny < 0) {
+    if ((SCM_STRING_INCOMPLETE_P(x) && !SCM_STRING_INCOMPLETE_P(y))
+        || (!SCM_STRING_INCOMPLETE_P(x) && SCM_STRING_INCOMPLETE_P(y))){
+        Scm_Error("cannot compare incomplete vs complete string: %S, %S",
+                  SCM_OBJ(x), SCM_OBJ(y));
+    }
+    sizx = SCM_STRING_SIZE(x); lenx = SCM_STRING_SIZE(x);
+    sizy = SCM_STRING_SIZE(y); leny = SCM_STRING_SIZE(y);
+    px = SCM_STRING_START(x);
+    py = SCM_STRING_START(y);
+    
+    if (sizx == lenx && sizy == leny) {
         return sb_strcasecmp(px, sizx, py, sizy);
     } else {
         return mb_strcasecmp(px, lenx, py, leny);
@@ -287,24 +353,17 @@ ScmChar Scm_StringRef(ScmString *str, int pos)
 {
     int len = SCM_STRING_LENGTH(str);
     int size = SCM_STRING_SIZE(str);
-    
-    if (pos >= 0) {
-        if (len > 0 && len != size) {
-            if (pos < len) {
-                const char *p = forward_pos(SCM_STRING_START(str), pos);
-                ScmChar c;
-                SCM_CHAR_GET(p, c);
-                return c;
-            }
-        } else {
-            if (pos < size) {
-                return (ScmChar)(SCM_STRING_START(str)[pos]);
-            }
-        }
+
+    if (pos < 0 || pos >= len) Scm_Error("argument out of range: %d", pos);
+
+    if (SCM_STRING_SINGLE_BYTE_P(str)) {
+        return (ScmChar)(SCM_STRING_START(str)[pos]);
+    } else {
+        const char *p = forward_pos(SCM_STRING_START(str), pos);
+        ScmChar c;
+        SCM_CHAR_GET(p, c);
+        return c;
     }
-    Scm_Error("argument out of range: %d", pos);
-    /* NOTREACHED */
-    return (ScmChar)-1;
 }
 
 int Scm_StringByteRef(ScmString *str, int offset)
@@ -312,7 +371,7 @@ int Scm_StringByteRef(ScmString *str, int offset)
     if (offset < 0 || offset >= SCM_STRING_SIZE(str)) {
         Scm_Error("argument out of range: %d", offset);
     }
-    return (ScmByte)SCM_STRING(str)->start[offset];
+    return (ScmByte)SCM_STRING_START(str)[offset];
 }
 
 /*----------------------------------------------------------------
@@ -330,7 +389,7 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     memcpy(p+sizex, y->start, sizey);
     p[sizex + sizey] = '\0';
 
-    if (lenx < 0 || leny < 0) {
+    if (SCM_STRING_INCOMPLETE_P(x) || SCM_STRING_INCOMPLETE_P(y)) {
         lenz = -1;              /* yields incomplete string */
     } else {
         lenz = lenx + leny;
@@ -352,7 +411,7 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
     memcpy(p+sizex, str, sizey);
     p[sizex+sizey] = '\0';
 
-    if (lenx < 0 || leny < 0) {
+    if (SCM_STRING_INCOMPLETE_P(x) || leny < 0) {
         lenz = -1;
     } else {
         lenz = lenx + leny;
@@ -363,13 +422,14 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
 ScmObj Scm_StringAppend(ScmObj strs)
 {
     ScmObj cp;
-    int size = 0, len = 0;
+    int size = 0, len = 0, completep = TRUE;
     char *buf, *bufp;
     SCM_FOR_EACH(cp, strs) {
         ScmObj str = SCM_CAR(cp);
         if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
         size += SCM_STRING_SIZE(str);
-        if (len >= 0 && SCM_STRING_LENGTH(str) >= 0) {
+        if (completep) {
+            if (SCM_STRING_INCOMPLETE_P(str)) completep = FALSE;
             len += SCM_STRING_LENGTH(str);
         }
     }
@@ -381,7 +441,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
         bufp += SCM_STRING_SIZE(str);
     }
     *bufp = '\0';
-    return SCM_OBJ(make_str(len, size, buf));
+    return SCM_OBJ(make_str(completep? len : -1, size, buf));
 }
 
 ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
@@ -401,7 +461,9 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
         ScmObj str = SCM_CAR(cp);
         if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
         size += SCM_STRING_SIZE(str);
-        if (len >= 0 && SCM_STRING_LENGTH(str) >= 0 && dlen > 0) {
+        if (SCM_STRING_INCOMPLETE_P(str)) {
+            len = -1;
+        } else {
             len += SCM_STRING_LENGTH(str);
         }
         nstrs++;
@@ -413,7 +475,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
         ndelim = nstrs;
     }
     size += dsize * ndelim;
-    if (len >= 0) len += dlen * ndelim;
+    if (len >= 0 && !SCM_STRING_INCOMPLETE_P(delim)) len += dlen * ndelim;
 
     bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
     if (grammer == SCM_STRING_JOIN_PREFIX) {
@@ -441,28 +503,23 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
  * Substitution
  */
 
-ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
-                                const char *str, int sizey, int leny)
+static ScmObj string_substitute(ScmString *x, int start,
+                                const char *str, int sizey, int leny,
+                                int incompletep)
 {
     int sizex = SCM_STRING_SIZE(x), lenx = SCM_STRING_LENGTH(x);
-    int sizez, lenz;
+    int end = start + leny, sizez;
     char *p;
 
-    if (start < 0 || end < start) return SCM_FALSE;
-    if (lenx < 0 || sizex == lenx) {
-        /* x is sbstring */
-        if (lenx < 0) {         /* x is incomplete.  length doesn't matter. */
-            if (sizey < 0) sizey = strlen(str);
-            lenz = -1;
-        } else {                /* x is complete sbstring */
-            if (sizey < 0) count_size_and_length(str, &sizey, &leny);
-            else if (leny < 0) leny = count_length(str, sizey);
-            if (leny >= 0) lenz = lenx - (end - start) + leny;
-            else lenz = -1;
-        }
-        if (end > sizex) return SCM_FALSE;
-        sizez = sizex - (end - start) + sizey;
+    CHECK_MUTABLE(x);
+    if (start < 0) Scm_Error("start index out of range: %d", start);
+    if (end > lenx) {
+        Scm_Error("substitution string too long: %S", make_str(leny, sizey, str));
+    }
 
+    if (SCM_STRING_SINGLE_BYTE_P(x)) {
+        /* x is sbstring */
+        sizez = sizex - leny + sizey;
         p = SCM_NEW_ATOMIC2(char *, sizez+1);
         if (start > 0) memcpy(p, SCM_STRING_START(x), start);
         memcpy(p+start, str, sizey);
@@ -471,14 +528,9 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
     } else {
         /* x is mbstring */
         const char *s, *e;
-        if (sizey < 0) count_size_and_length(str, &sizey, &leny);
-        else if (leny < 0) leny = count_length(str, sizey);
         s = forward_pos(x->start, start);
         e = forward_pos(s, end - start);
         sizez = sizex + sizey - (e - s);
-        if (leny >= 0) lenz = lenx + leny - (end - start);
-        else lenz = -1;
-
         p = SCM_NEW_ATOMIC2(char *, sizez+1);
         if (start > 0) memcpy(p, x->start, s - x->start);
         memcpy(p + (s - x->start), str, sizey);
@@ -486,7 +538,8 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
         p[sizez+1] = '\0';
     }
     /* modify x */
-    x->length = lenz;
+    x->incomplete = SCM_STRING_INCOMPLETE_P(x) || incompletep;
+    x->length = x->incomplete? sizez : lenx;
     x->size = sizez;
     x->start = p;
     return SCM_OBJ(x);
@@ -496,8 +549,8 @@ ScmObj Scm_StringSubstitute(ScmString *x, int start, ScmString *y)
 {
     int sizey = SCM_STRING_SIZE(y), leny = SCM_STRING_LENGTH(y);
 
-    return Scm_StringSubstituteCstr(x, start, start + (leny < 0 ? sizey : leny),
-                                    y->start, sizey, leny);
+    return string_substitute(x, start, y->start, sizey, leny,
+                             SCM_STRING_INCOMPLETE_P(y));
 }
 
 ScmObj Scm_StringSet(ScmString *x, int k, ScmChar ch)
@@ -505,22 +558,22 @@ ScmObj Scm_StringSet(ScmString *x, int k, ScmChar ch)
     char buf[SCM_CHAR_MAX_BYTES+1];
     int size = SCM_CHAR_NBYTES(ch);
     SCM_CHAR_PUT(buf, ch);
-    return Scm_StringSubstituteCstr(x, k, k+1, buf, size, 1);
+    return string_substitute(x, k, buf, size, 1, FALSE);
 }
 
 ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
 {
     int size = SCM_STRING_SIZE(x);
     char *p;
-    
+    CHECK_MUTABLE(x);
     if (k < 0 || k >= size) Scm_Error("argument out of range: %d", k);
     p = SCM_NEW_ATOMIC2(char *, size+1);
     memcpy(p, x->start, size);
     p[size] = '\0';
     p[k] = (char)b;
-    /* needs to rescan the string */
-    x->length = count_length(p, size);
     x->start = p;
+    x->incomplete = TRUE;
+    x->length = x->size;
     return SCM_OBJ(x);
 }
 
@@ -530,19 +583,22 @@ ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
 
 ScmObj Scm_Substring(ScmString *x, int start, int end)
 {
-    const char *s, *e;
-    int lenx = SCM_STRING_LENGTH(x);
-    
     if (start < 0)
         Scm_Error("start argument needs to be positive: %d", start);
-    if (end > lenx)
+    if (end > SCM_STRING_LENGTH(x))
         Scm_Error("end argument is out of range: %d", end);
     if (end < start)
         Scm_Error("end argument must be equal to or greater than the start argument: start=%d, end=%d", start, end);
-    /* TODO: incomplete string case? */
-    if (start) s = forward_pos(x->start, start); else s = x->start;
-    e = forward_pos(s, end - start);
-    return SCM_OBJ(make_str(end - start, e - s, s));
+    if (SCM_STRING_SINGLE_BYTE_P(x)) {
+        return SCM_OBJ(make_str(SCM_STRING_INCOMPLETE_P(x)? -1 : (end-start),
+                                end-start,
+                                SCM_STRING_START(x) + start));
+    } else {
+        const char *s, *e;
+        if (start) s = forward_pos(x->start, start); else s = x->start;
+        e = forward_pos(s, end - start);
+        return SCM_OBJ(make_str(end - start, e - s, s));
+    }
 }
 
 /* Auxiliary procedure to support optional start/end parameter specified
@@ -561,8 +617,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 
     if (SCM_UNBOUNDP(end) || SCM_UNDEFINEDP(end)) {
         if (istart == 0) return SCM_OBJ(x);
-        iend = (SCM_STRING_LENGTH(x) < 0) ?
-            SCM_STRING_SIZE(x) : SCM_STRING_LENGTH(x);
+        iend = SCM_STRING_LENGTH(x);
     } else {
         if (!SCM_INTP(end))
             Scm_Error("exact integer required for start, but got %S", end);
@@ -584,7 +639,7 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
     const char *s = SCM_STRING_START(str), *p = s, *e = s + size;
     ScmObj head = SCM_NIL, tail = SCM_NIL;
 
-    if (len < 0) {
+    if (SCM_STRING_INCOMPLETE_P(str)) {
         /* TODO: fix the policy of handling incomplete string */
         Scm_Error("incomplete string not accepted: %S", str);
     }
@@ -596,7 +651,7 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
         SCM_CHAR_GET(p, cc);
         ncc = SCM_CHAR_NBYTES(cc);
         if (ch == cc) {
-            SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
+            SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt, 0));
             sizecnt = lencnt = 0;
             p += ncc;
             s = p;
@@ -606,7 +661,7 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
             lencnt ++;
         }
     }
-    SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
+    SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt, 0));
     return head;
 }
 
@@ -644,19 +699,16 @@ ScmObj Scm_StringContains(ScmString *s1, ScmString *s2)
     int siz1 = SCM_STRING_SIZE(s1), len1 = SCM_STRING_LENGTH(s1);
     int siz2 = SCM_STRING_SIZE(s2), len2 = SCM_STRING_LENGTH(s2);
 
-    if (len1 < 0) {
-        if (len2 < 0 || siz2 == len2) goto sbstring;
-        Scm_Error("can't handle incomplete string %S with complete string %S",
-                  s1, s2);
+    if (SCM_STRING_INCOMPLETE_P(s1)) {
+        Scm_Error("incomplete string not supported: %S", s1);
+    }
+    if (SCM_STRING_INCOMPLETE_P(s2)) {
+        Scm_Error("incomplete string not supported: %S", s2);
     }
     if (siz1 == len1) {
         if (len2 < 0 || siz2 == len2) goto sbstring;
         return SCM_FALSE;       /* sbstring can't contain mbstring. */
     }
-    if (len2 < 0)
-        Scm_Error("can't handle complete string %S with incomplete stirng %S",
-                  s1, s2);
-    
     if (len1 < len2) return SCM_FALSE;
     else {
         const char *ssp = ss1;
@@ -700,7 +752,9 @@ ScmObj Scm_StringToList(ScmString *str)
     const char *bufp = SCM_STRING_START(str);
     int len = SCM_STRING_LENGTH(str);
     ScmChar ch;
-    
+
+    if (SCM_STRING_INCOMPLETE_P(str))
+        Scm_Error("incomplete string not supported: %S", str);
     while (len-- > 0) {
         SCM_CHAR_GET(bufp, ch);
         bufp += SCM_CHAR_NBYTES(ch);
@@ -712,13 +766,16 @@ ScmObj Scm_StringToList(ScmString *str)
 ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
                       ScmObj maybe_start, ScmObj maybe_end)
 {
-    int completep, len, i, start, end, prelen, midlen, postlen;
+    int len, i, start, end, prelen, midlen, postlen;
     int chlen = SCM_CHAR_NBYTES(ch);
     char *newstr, *p;
     const char *s, *r;
 
-    completep = (SCM_STRING_LENGTH(str) >= 0);
-    len = completep ? SCM_STRING_SIZE(str) : SCM_STRING_LENGTH(str);
+    CHECK_MUTABLE(str);
+    if (SCM_STRING_INCOMPLETE_P(str)) {
+        Scm_Error("incomplete string not allowed: %S", str);
+    }
+    len = SCM_STRING_LENGTH(str);
 
     if (SCM_UNBOUNDP(maybe_start) || SCM_UNDEFINEDP(maybe_start)) {
         start = 0;
@@ -742,14 +799,10 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     if (start == end) return SCM_OBJ(str);
     
     s = SCM_STRING_START(str);
-    for (i = 0; i < start; i++) {
-        s += (completep? SCM_CHAR_NFOLLOWS(*s)+1 : 1);
-    }
+    for (i = 0; i < start; i++) s += SCM_CHAR_NFOLLOWS(*s)+1;
     prelen = s - SCM_STRING_START(str);
     r = s;
-    for (; i < end; i++) {
-        s += (completep? SCM_CHAR_NFOLLOWS(*s)+1 : 1);
-    }
+    for (; i < end; i++)        s += SCM_CHAR_NFOLLOWS(*s)+1;
     midlen = s - r;
     postlen = SCM_STRING_SIZE(str) - midlen - prelen;
 
@@ -769,6 +822,30 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     return SCM_OBJ(str);
 }
 
+/*----------------------------------------------------------------
+ * printer
+ */
+static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
+{
+    char buf[5];
+    switch (ch) {
+    case '\\': SCM_PUTCSTR("\\\\", port); break;
+    case '"':  SCM_PUTCSTR("\\\"", port); break;
+    case '\n': SCM_PUTCSTR("\\n", port); break;
+    case '\t': SCM_PUTCSTR("\\t", port); break;
+    case '\r': SCM_PUTCSTR("\\r", port); break;
+    case '\f': SCM_PUTCSTR("\\f", port); break;
+    case '\0': SCM_PUTCSTR("\\0", port); break;
+    default:
+        if (ch < ' ' || ch == 0x7f || (bytemode && ch >= 0x80)) {
+            snprintf(buf, 5, "\\x%02x", (unsigned char)ch);
+            SCM_PUTCSTR(buf, port);
+        } else {
+            SCM_PUTC(ch, port);
+        }
+    }
+}
+
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmString *str = SCM_STRING(obj);
@@ -776,46 +853,27 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(str, port);
     } else {
-        SCM_PUTC('"', port);
-        if (SCM_STRING_COMPLETE_P(str)) {
+        if (SCM_STRING_SINGLE_BYTE_P(str)) {
+            const char *cp = SCM_STRING_START(str);
+            int size = SCM_STRING_SIZE(str);
+            if (SCM_STRING_INCOMPLETE_P(str)) {
+                SCM_PUTCSTR("#\"", port);
+            } else {
+                SCM_PUTC('"', port);
+            }
+            while (size--) {
+                string_putc(*cp++, port, SCM_STRING_INCOMPLETE_P(str));
+            }
+        } else {
             ScmChar ch;
             const char *cp = SCM_STRING_START(str);
             int len = SCM_STRING_LENGTH(str);
 
+            SCM_PUTC('"', port);
             while (len--) {
                 SCM_CHAR_GET(cp, ch);
-                switch (ch) {
-                case '\\': SCM_PUTCSTR("\\\\", port); break;
-                case '"':  SCM_PUTCSTR("\\\"", port); break;
-                case '\n': SCM_PUTCSTR("\\n", port); break;
-                case '\t': SCM_PUTCSTR("\\t", port); break;
-                case '\r': SCM_PUTCSTR("\\r", port); break;
-                case '\f': SCM_PUTCSTR("\\f", port); break;
-                case '\0': SCM_PUTCSTR("\\0", port); break;
-                default:
-                    /* TODO: need to escape control chars */
-                    SCM_PUTC(ch, port);
-                }
+                string_putc(ch, port, FALSE);
                 cp += SCM_CHAR_NBYTES(ch);
-            }
-        } else {
-            const char *cp = SCM_STRING_START(str);
-            int size = SCM_STRING_SIZE(str);
-            int c;
-            while (size--) {
-                switch (c = *cp) {
-                case '\\': SCM_PUTCSTR("\\\\", port); break;
-                case '"':  SCM_PUTCSTR("\\\"", port); break;
-                case '\n': SCM_PUTCSTR("\\n", port); break;
-                case '\t': SCM_PUTCSTR("\\t", port); break;
-                case '\r': SCM_PUTCSTR("\\r", port); break;
-                case '\f': SCM_PUTCSTR("\\f", port); break;
-                case '\0': SCM_PUTCSTR("\\0", port); break;
-                default:
-                    /* TODO: need to escape control chars */
-                    SCM_PUTC(c, port);
-                }
-                cp++;
             }
         }
         SCM_PUTC('"', port);

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.34 2001-04-22 07:51:06 shiro Exp $
+;;;  $Id: genstub,v 1.35 2001-05-19 10:56:28 shirok Exp $
 ;;;
 
 ;; (define-cproc scheme-name (argspec)
@@ -190,14 +190,49 @@
 ;; C structure
 ;;
 
-;(define-class <cslot> ()
-;  ((name :init-keyword :name :getter name-of)
-;   (type :init-keyword :type :getter type-of)))
+;; (define-c-struct <sys-hostent> "struct hostent"
+;;   ((h-name      :c-type "char*")
+;;    (h-aliases   :c-type "char**")
+;;    (h-addrtype  :c-type "int")
+;;    (h-length    :c-type "int")
+;;    (h-addr-list :c-type "char**"))
 
-;(define-class <cstruct> ()
-;  ((name  :init-keyword :name :getter name-of)
-;   (c-name  :init-keyword :c-name :getter c-name-of)
-;   (slots :init-keyword :slots :getter slots-of)))
+(define-class <c-type-mapping> ()
+  ((c-type-name :init-keyword :c-name  :getter c-name-of)
+   (boxer       :init-keyword :boxer   :getter boxer-of)
+   (unboxer     :init-keyword :unboxer :getter unboxer-of)
+   (mappings    :allocation :class :init-value '())))
+
+(define-method initialize ((self <c-type-mapping>) initargs)
+  (next-method)
+  (set! (mappings-of self) (cons self (mappings-of self))))
+
+(define (make-c-type-mapping c-type-name boxer unboxer)
+  (make <c-type-mapping>
+    :c-type-name c-type-name
+    :boxer boxer
+    :unboxer unboxer))
+
+(define-class <c-slot> ()
+  ((name   :init-keyword :name :getter name-of)
+   (c-name :init-keyword :name :getter c-name-of)
+   (type   :init-keyword :name :getter type-of)
+   (c-type :init-keyword :type :getter c-type-of)
+   (getter :init-keyword :getter :getter getter-of)
+   (setter :init-keyword :setter :setter setter-of)))
+
+(define-class <c-struct> ()
+  ((name    :init-keyword :name :getter name-of)
+   (c-name  :init-keyword :c-name :getter c-name-of)
+   (slots   :init-keyword :slots :getter slots-of)))
+
+(define (make-c-struct name c-name slots . options)
+  (apply make <cstruct>
+         :nanem name
+         :c-name c-name
+         :slots (map make-c-slot slots)
+         options))
+
 
 ;;--------------------------------------------------------------------
 ;; Symbol definition
@@ -212,7 +247,7 @@
          (c-name (caddr form))
          (value  (cdddr form))
          (scheme-name-len (string-length (symbol->string scheme-name))))
-    (println "static ScmString ~a_NAME = { {SCM_CLASS_STRING}, ~a, ~a, \"~a\" };"
+    (println "static ScmString ~a_NAME = { {SCM_CLASS_STRING}, 0, 1, ~a, ~a, \"~a\" };"
              c-name scheme-name-len scheme-name-len scheme-name)
     (println "static ScmObj ~a;" c-name)
     (newline)
@@ -518,7 +553,7 @@
 (define (emit-record cproc)
   (let* ((scm-func-name (symbol->string (scheme-name-of cproc)))
          (c-func-name (c-name-of cproc)))
-    (println "static ScmString ~a_NAME = { { SCM_CLASS_STRING }, ~a, ~a, \"~a\" };"
+    (println "static ScmString ~a_NAME = { { SCM_CLASS_STRING }, 0, 1, ~a, ~a, \"~a\" };"
              c-func-name
              (string-length scm-func-name)
              (string-length scm-func-name)

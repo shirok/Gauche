@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.17 2001-04-26 07:06:00 shiro Exp $
+ *  $Id: symbol.c,v 1.18 2001-05-19 10:56:28 shirok Exp $
  */
 
 #include "gauche.h"
@@ -193,7 +193,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 
 #define SYMREG(var, nam)                                                \
     do {                                                                \
-        ScmObj snam = Scm_MakeStringConst(nam, -1, -1);                 \
+        ScmObj snam = SCM_MAKE_STR_IMMUTABLE(nam);                      \
         var.name = SCM_STRING(snam);                                    \
         Scm_HashTablePut(obtable, SCM_OBJ(snam), SCM_OBJ(&var));        \
     } while (0)

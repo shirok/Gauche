@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.27 2001-04-04 18:39:20 shiro Exp $
+;;; $Id: syslib.stub,v 1.28 2001-05-19 10:56:28 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -105,7 +105,7 @@
   (assert (small-integer? gid))         ;TODO: make sure it covers all gids
   "  struct group *g = getgrgid(gid);
   if (g == NULL) SCM_RETURN(SCM_FALSE);
-  else SCM_RETURN(Scm_MakeString(g->gr_name, -1, -1));")
+  else SCM_RETURN(SCM_MAKE_STR_COPYING(g->gr_name));")
 (define-cproc sys-group-name->gid (name)
   (assert (string? name))
   "  struct group *g = getgrnam(Scm_GetStringConst(name));
@@ -126,7 +126,7 @@
   (assert (small-integer? category))
   (assert (string? locale))
   "  char *result = setlocale(category, Scm_GetStringConst(locale));
-  if (result) SCM_RETURN(Scm_MakeString(result, -1, -1));
+  if (result) SCM_RETURN(SCM_MAKE_STR_COPYING(result));
   else SCM_RETURN(SCM_FALSE);")
 
 ; struct lconv
@@ -153,16 +153,16 @@
   "  struct lconv *lc = localeconv();
   ScmObj p = SCM_NIL;
 
-  p = Scm_Acons(sym_decimal_point, Scm_MakeString(lc->decimal_point, -1, -1), p);
-  p = Scm_Acons(sym_thousands_sep, Scm_MakeString(lc->thousands_sep, -1, -1), p);
-  p = Scm_Acons(sym_grouping, Scm_MakeString(lc->grouping, -1, -1), p);
-  p = Scm_Acons(sym_int_curr_symbol, Scm_MakeString(lc->int_curr_symbol, -1, -1), p);
-  p = Scm_Acons(sym_currency_symbol, Scm_MakeString(lc->currency_symbol, -1, -1), p);
-  p = Scm_Acons(sym_mon_decimal_point, Scm_MakeString(lc->mon_decimal_point, -1, -1), p);
-  p = Scm_Acons(sym_mon_thousands_sep, Scm_MakeString(lc->mon_thousands_sep, -1, -1), p);
-  p = Scm_Acons(sym_mon_grouping, Scm_MakeString(lc->mon_grouping, -1, -1), p);
-  p = Scm_Acons(sym_positive_sign, Scm_MakeString(lc->positive_sign, -1, -1), p);
-  p = Scm_Acons(sym_negative_sign, Scm_MakeString(lc->negative_sign, -1, -1), p);
+  p = Scm_Acons(sym_decimal_point, SCM_MAKE_STR_COPYING(lc->decimal_point), p);
+  p = Scm_Acons(sym_thousands_sep, SCM_MAKE_STR_COPYING(lc->thousands_sep), p);
+  p = Scm_Acons(sym_grouping, SCM_MAKE_STR_COPYING(lc->grouping), p);
+  p = Scm_Acons(sym_int_curr_symbol, SCM_MAKE_STR_COPYING(lc->int_curr_symbol), p);
+  p = Scm_Acons(sym_currency_symbol, SCM_MAKE_STR_COPYING(lc->currency_symbol), p);
+  p = Scm_Acons(sym_mon_decimal_point, SCM_MAKE_STR_COPYING(lc->mon_decimal_point), p);
+  p = Scm_Acons(sym_mon_thousands_sep, SCM_MAKE_STR_COPYING(lc->mon_thousands_sep), p);
+  p = Scm_Acons(sym_mon_grouping, SCM_MAKE_STR_COPYING(lc->mon_grouping), p);
+  p = Scm_Acons(sym_positive_sign, SCM_MAKE_STR_COPYING(lc->positive_sign), p);
+  p = Scm_Acons(sym_negative_sign, SCM_MAKE_STR_COPYING(lc->negative_sign), p);
   p = Scm_Acons(sym_int_frac_digits, SCM_MAKE_CHAR(lc->int_frac_digits), p);
   p = Scm_Acons(sym_frac_digits, SCM_MAKE_CHAR(lc->frac_digits), p);
   p = Scm_Acons(sym_p_cs_precedes, SCM_MAKE_CHAR(lc->p_cs_precedes), p);
@@ -219,7 +219,7 @@
   (assert (small-integer? uid))         ;TODO: make sure it covers all uids
   "  struct passwd *p = getpwuid(uid);
   if (p == NULL) SCM_RETURN(SCM_FALSE);
-  else SCM_RETURN(Scm_MakeString(p->pw_name, -1, -1));")
+  else SCM_RETURN(SCM_MAKE_STR_COPYING(p->pw_name));")
 (define-cproc sys-user-name->uid (name)
   (assert (string? name))
   "  struct passwd *p = getpwnam(Scm_GetStringConst(name));
@@ -295,10 +295,10 @@
   int fd = mkstemp(nam);
   if (fd < 0) Scm_SysError(\"mkstemp failed\");
   close(fd);
-  SCM_RETURN(Scm_MakeString(nam, -1, -1));
+  SCM_RETURN(SCM_MAKE_STR_COPYING(nam));
 #else
   char *s = tmpnam(NULL);
-  SCM_RETURN(Scm_MakeString(s, -1, -1));
+  SCM_RETURN(SCM_MAKE_STRNIG_COPYING(s));
 #endif")
 
 ;; tmpfile
@@ -312,7 +312,7 @@
   if (p == NULL) {
     SCM_RETURN(SCM_FALSE);
   } else {
-    SCM_RETURN(Scm_MakeString(p, -1, -1));
+    SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   }")
 
 ;; Note: the return value of system() is not portable.
@@ -416,11 +416,11 @@
   "  struct utsname info;
   ScmObj head = SCM_NIL, tail;
   if (uname(&info) < 0) Scm_SysError(\"uname() failed\");
-  SCM_APPEND1(head, tail, Scm_MakeString(info.sysname, -1, -1));
-  SCM_APPEND1(head, tail, Scm_MakeString(info.nodename, -1, -1));
-  SCM_APPEND1(head, tail, Scm_MakeString(info.release, -1, -1));
-  SCM_APPEND1(head, tail, Scm_MakeString(info.version, -1, -1));
-  SCM_APPEND1(head, tail, Scm_MakeString(info.machine, -1, -1));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.sysname));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.nodename));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.release));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.version));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.machine));
   return head;")
 
 ;;---------------------------------------------------------------------
@@ -481,11 +481,11 @@
 
 (define-cproc sys-asctime (tm)
   (assert (sys-tm? tm))
-  "  SCM_RETURN(Scm_MakeString(asctime(&SCM_SYS_TM_TM(tm)), -1, -1));")
+  "  SCM_RETURN(SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm))));")
 
 (define-cproc sys-ctime (time)
   (assert (sys-time? time))
-  "  SCM_RETURN(Scm_MakeString(ctime(&SCM_SYS_TIME_TIME(time)), -1, -1));")
+  "  SCM_RETURN(SCM_MAKE_STR_COPYING(ctime(&SCM_SYS_TIME_TIME(time))));")
 
 (define-cproc sys-difftime (time1 time0)
   (assert (sys-time? time1))
@@ -499,7 +499,7 @@
   "  char tmpbuf[256];
   strftime(tmpbuf, sizeof(tmpbuf),
            Scm_GetStringConst(format), &SCM_SYS_TM_TM(tm));
-  SCM_RETURN(Scm_MakeString(tmpbuf, -1, -1));")
+  SCM_RETURN(SCM_MAKE_STR_COPYING(tmpbuf));")
 
 (define-cproc sys-gmtime (time)
   (assert (sys-time? time))
@@ -582,7 +582,7 @@
 (define-cproc sys-getcwd ()
   "  char *p; ScmObj s;
   if ((p = getcwd(NULL, -1)) == NULL) Scm_SysError(\"getcwd failed\");
-  s = Scm_MakeString(p, -1, -1);
+  s = SCM_MAKE_STR_COPYING(p);
   free(p); /* allocated by getcwd() */
   SCM_RETURN(s);")
 
@@ -623,7 +623,7 @@
 
 (define-cproc sys-getlogin ()
   "  const char *p = getlogin();
-  if (p) SCM_RETURN(Scm_MakeString(p, -1, -1));
+  if (p) SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   else SCM_RETURN(SCM_FALSE);")
 
 (define-cproc sys-getpgrp ()
@@ -687,7 +687,7 @@
   else Scm_Error(\"port or small integer required, but got %S\", port_or_fd);
   if (fd < 0) SCM_RETURN(SCM_FALSE);
   name = ttyname(fd);
-  if (name) SCM_RETURN(Scm_MakeString(name, -1, -1));
+  if (name) SCM_RETURN(SCM_MAKE_STR_COPYING(name));
   else SCM_RETURN(SCM_FALSE);")
 
 ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
@@ -698,8 +698,8 @@
   (assert (string? salt))
   "
 #ifdef HAVE_CRYPT
-  SCM_RETURN(Scm_MakeString((const char *)crypt(Scm_GetStringConst(key),
-                                          Scm_GetStringConst(salt)), -1, -1));
+  SCM_RETURN(SCM_MAKE_STR_COPYING((const char *)crypt(Scm_GetStringConst(key),
+                                                      Scm_GetStringConst(salt))));
 #else
   Scm_Error(\"system doesn't have crypt().\");
   SCM_RETURN(SCM_UNDEFINED);

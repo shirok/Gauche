@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.79 2001-05-18 09:39:10 shirok Exp $
+;;; $Id: extlib.stub,v 1.80 2001-05-19 10:56:28 shirok Exp $
 ;;;
 
 "
@@ -313,8 +313,21 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; 6.3.5 Strings
 ;;
 
-(define-cproc string-complete? (obj)    ;gauche specific
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)&&SCM_STRING_COMPLETE_P(obj)));")
+(define-cproc string-incomplete? (obj)    ;gauche specific
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)&&SCM_STRING_INCOMPLETE_P(obj)));")
+
+(define-cproc string-complete->incomplete! (str) ;gauche specific
+  (assert (string? str))
+  "  SCM_RETURN(Scm_StringCompleteToIncompleteX(str));")
+(define-cproc string-incomplete->complete! (str) ;gauche specific
+  (assert (string? str))
+  "  SCM_RETURN(Scm_StringIncompleteToCompleteX(str));")
+(define-cproc string-complete->incomplete (str) ;gauche specific
+  (assert (string? str))
+  "  SCM_RETURN(Scm_StringCompleteToIncomplete(str));")
+(define-cproc string-incomplete->complete (str) ;gauche specific
+  (assert (string? str))
+  "  SCM_RETURN(Scm_StringIncompleteToComplete(str));")
 
 (define-cproc string-size (str)         ;gauche specific
   (assert (string? str))

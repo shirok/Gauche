@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.22 2001-05-10 08:36:16 shirok Exp $
+dnl $Id: configure.in,v 1.23 2001-05-19 10:56:28 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -28,6 +28,7 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 AC_STRUCT_TM
 AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(int)
 dnl Checks non-POSIX members of system structure
 AC_CACHE_CHECK(struct group has gr_passwd, ac_cv_struct_gr_passwd, [
 AC_TRY_COMPILE([#include <grp.h>], [
