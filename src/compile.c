@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.9 2005-01-03 01:08:33 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.10 2005-01-06 11:26:28 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -300,7 +300,7 @@ enum {
  */
 static ScmObj compile_in_module(ScmObj, ScmModule*);
 
-#define USE_NEW_COMPILER
+/*#define USE_NEW_COMPILER*/
 
 #ifdef USE_NEW_COMPILER
 static ScmGloc *compile_gloc = NULL;

@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.11 2005-01-06 08:43:41 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.12 2005-01-06 11:26:28 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -272,6 +272,19 @@
 ;;============================================================
 ;; Some experiment
 ;;
+
+(define (kompile program . opts)
+  (let1 mod (get-optional opts #f)
+    (if mod
+      (let1 origmod (vm-current-module)
+        (dynamic-wind
+            (lambda () (vm-set-current-module mod))
+            (lambda () (kompile-int program))
+            (lambda () (vm-set-current-module origmod))))
+      (kompile-int program '()))))
+
+(define (kompile-int program)
+  (pass3 (pass2 (pass1 program (make-bottom-cenv))) '() 'tail))
 
 ;; NB: for the time being, we use simple vector and manually
 ;; defined accessors/modifiers.  We can't use define-class stuff
@@ -809,12 +822,6 @@
 
 ;; Module related ............................................
 
-
-  
-
-
-
-
 ;; Bridge to dispatch new compiler pass-1 syntax handler based on
 ;; original binding
 
@@ -899,10 +906,17 @@
                            merger))))
     (('$it) '())
     (('$let info lvars inits expr)
-     ;;TBD
-     (append! (pass3/prepare-args inits renv)
-              (list/info info (vm-insn-make 'LOCAL-ENV))
-              (pass3 expr (cons lvars renv) ctx)))
+     (if (bottom-context? ctx)
+       (append! (pass3/prepare-args inits renv ctx)
+                (list/info info (vm-insn-make 'LOCAL-ENV (length lvars)))
+                (pass3 expr (cons lvars renv) ctx)
+                (if (tail-context? ctx)
+                  '()
+                  (list (vm-insn-make 'POP-LOCAL-ENV))))
+       (append! (list (vm-insn-make 'PRE-CALL (length lvars)))
+                (append! (pass3/prepare-args inits renv ctx)
+                         (list/info info (vm-insn-make 'LOCAL-ENV (length lvars)))
+                         (pass3 expr (cons lvars renv) ctx)))))
     (('$receive info nargs optarg? lvars expr body)
      (append! (pass3 expr (normal-context ctx))
               (if (bottom-context? ctx)
@@ -928,16 +942,16 @@
            ((expr . rest)
             (loop rest (cons (pass3 expr renv (stmt-context ctx)) codes)))))))
     (('$call info proc . args)
-     (let ((argcode (pass3/args args renv ctx))
+     (let ((argcode (pass3/prepare-args args renv ctx))
            (numargs (length args)))
        (if (tail-context? ctx)
          (append! (list (vm-insn-make 'PRE-TAIL numargs))
                   argcode
-                  (pass3/args proc renv 'normal/top)
+                  (pass3/prepare-args proc renv 'normal/top)
                   (list/info info (vm-insn-make 'TAIL-CALL numargs)))
          (append! (list (vm-insn-make 'PRE-CALL numargs))
                   (append! argcode
-                           (pass3/args proc renv 'normal/top)
+                           (pass3/prepare-args proc renv 'normal/top)
                            (list/info info (vm-insn-make 'CALL numargs)))
                   ))))
     (('$cons info x y)
@@ -983,15 +997,21 @@
                (values depth (- (length frame) count)))
               (else (inner (cdr frame) (+ count 1))))))))
 
-(define (pass3/prepare-args args renv)
+(define (pass3/prepare-args args renv ctx)
   ;; TODO: compose PUSH instructions
   (let loop ((args args) (r '()))
     (if (null? args)
       (apply append! args)
       (loop (cdr args)
             (list* (list (vm-insn-make 'PUSH))
-                   (pass3 (car args) renv 'normal)
+                   (pass3 (car args) renv (normal-context ctx))
                    r)))))
+
+;;------------------------------------------------------------
+;; Macros for the new compiler
+;;
+
+
          
 ;;============================================================
 ;; Utilities
