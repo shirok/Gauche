@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.83 2002-11-12 02:23:22 shirok Exp $
+ *  $Id: port.c,v 1.84 2002-12-10 10:07:49 shirok Exp $
  */
 
 #include <unistd.h>
@@ -974,15 +974,12 @@ static ScmObj port_restorer(ScmObj *args, int nargs, void *data)
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_WithPort(ScmPort *port[], ScmProcedure *thunk, int mask, int closep)
+ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk, int mask, int closep)
 {
     ScmObj finalizer;
     struct with_port_packet *packet;
     int pcnt = 0;
-    
-    if (SCM_PROCEDURE_REQUIRED(thunk) != 0) {
-        Scm_Error("thunk required: %S", thunk);
-    }
+
     packet = SCM_NEW(struct with_port_packet);
     if (mask & SCM_PORT_CURIN) {
         packet->origport[pcnt] = SCM_CURIN;

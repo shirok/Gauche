@@ -1,3 +1,10 @@
+2002-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/hook.scm : added gauche.hook.
+	* src/port.c, src/vm.c, src/extlib.stub : allow with-*-to-port and
+	  dynamic-wind to take non-procedure objects, enables object-apply
+	  hook.
+
 2002-12-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/mop/validator.scm (compute-get-n-set): added

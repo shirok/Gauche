@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.191 2002-11-29 04:05:14 shirok Exp $
+ *  $Id: vm.c,v 1.192 2002-12-10 10:07:49 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1813,12 +1813,14 @@ ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 {
     void *data[3];
 
+#if 0 /* allow object-apply hook for all thunks */
     if (!SCM_PROCEDUREP(before) || SCM_PROCEDURE_REQUIRED(before) != 0)
         Scm_Error("thunk required for BEFORE argument, but got %S", before);
     if (!SCM_PROCEDUREP(body) || SCM_PROCEDURE_REQUIRED(body) != 0)
         Scm_Error("thunk required for BODY argument, but got %S", body);
     if (!SCM_PROCEDUREP(after) || SCM_PROCEDURE_REQUIRED(after) != 0)
         Scm_Error("thunk required for AFTER argument, but got %S", after);
+#endif
 
     data[0] = (void*)before;
     data[1] = (void*)body;
