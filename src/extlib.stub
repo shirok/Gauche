@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.85 2001-06-01 20:39:24 shirok Exp $
+;;; $Id: extlib.stub,v 1.86 2001-06-02 09:51:59 shirok Exp $
 ;;;
 
 "
@@ -511,6 +511,23 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (procedure? filler))
   (assert (small-integer? buffer-size))
   "  SCM_RETURN(Scm_MakeBufferedPort(SCM_PORT_INPUT, buffer_size, 0, NULL, bufport_filler, filler));")
+
+"static int bufport_flusher(char *buf, int siz, void *data)
+ {
+   if (buf == NULL) {
+     Scm_Apply(SCM_OBJ(data), SCM_LIST1(SCM_FALSE));
+     return 0;
+   } else {
+     ScmObj s = Scm_MakeString(buf, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING);
+     Scm_Apply(SCM_OBJ(data), SCM_LIST1(s));
+     return siz;
+   }
+ }"
+
+(define-cproc open-output-buffered-port (flusher buffer-size)
+  (assert (procedure? flusher))
+  (assert (small-integer? buffer-size))
+  "  SCM_RETURN(Scm_MakeBufferedPort(SCM_PORT_OUTPUT, buffer_size, 0, NULL, bufport_flusher, flusher));")
 
 (define-cproc flush (&optional (oport (current-output-port)))
   (assert (output-port? oport))
