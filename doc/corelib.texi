@@ -6058,8 +6058,8 @@ the following conceptual Scheme code.
 
 Gauche currently has the following hierarchy of built-in condition
 classes.  It approximately reflects SRFI-35 and SRFI-36 condition hierarchy,
-although they have Gauche-style class names (SRFI-compatible names
-are also defined; see below).
+although they have Gauche-style class names.  If there's a corresponding
+SRFI condition type, the class has the SRFI name as well.
 
 @example
   <condition>
@@ -6083,8 +6083,11 @@ error during reading from a file because of device failure may consist
 both @code{<system-error>} @emph{and} @code{<io-read-error>}.
 In such cases, a @emph{compound condition} is raised.
 So you can't just use, for instance, @code{(is-a? obj <io-read-error>)}
-to check if @code{<io-read-error>} is thrown.  See 
-the description of @code{condition-has-type?} below.
+to check if @code{<io-read-error>} is thrown. 
+Access to the slots of conditions should also be done by 
+@code{condition-ref} instead of @code{slot-ref}.
+See the "Condition API" section below.
+
 
 @deftp {Metaclass} <condition-meta>
 @clindex condition-meta
@@ -6099,29 +6102,59 @@ a condition class as a predicate, e.g.:
 
 
 @deftp {Class} <condition>
+@deftpx {Condition Type} &condition
 @clindex condition
+@vrindex &condition
+[SRFI-35]
 The root class of the condition hierarchy.
 @end deftp
 
 @deftp {Class} <compound-condition>
 @clindex compound-condition
-Represents a compound condition.  
+Represents a compound condition.  A compound condition can be
+created from one or more conditions by @code{make-compound-condition}.
+Don't use this class directly.
+
+A compound condition returns @code{#t} for @code{condition-has-type?}
+if any of the original conditions has the given type.
 @end deftp
 
 @deftp {Class} <serious-condition>
+@deftpx {Condition Type} &serious
 @clindex serious-condition
+@vrindex &serious
+[SRFI-35]
+Conditions of this class are for the situations that are too serious
+to ignore or continue.  Particularly, you can safely assume that
+if you @code{raise} this type of condition, it never returns.
 @end deftp
 
 @deftp {Class} <serious-compound-condition>
 @clindex serious-compound-condition
+This is an internal class to represent a compound condition
+with any of its component condition is serious.   Inherits both
+@code{<compound-condition>} and @code{<serious-condition>}.
+@code{make-compound-condition} uses this class if the passed
+conditions includes a serious one.  
+Don't use this class directly.
 @end deftp
 
 @deftp {Class} <message-condition>
+@deftpx {Condition Type} &message
 @clindex message-condition
+[SRFI-35]
+This class represents a condition with a message.  It has one slot.
+
+@defivar {<message-condition>} message
+A message.
+@end defivar
 @end deftp
 
 @deftp {Class} <error>
+@deftpx {Condition Type} &error
 @clindex error
+@vrindex &error
+[SRFI-35]
 Indicates an error.  Inherits @code{<serious-condition>}
 and @code{<message-condition>}, thus has @code{message} slot.
 
@@ -6140,6 +6173,7 @@ with a message condition, like this:
 @end deftp
 
 @deftp {Class} <system-error>
+@clindex system-error
 @c EN
 A subclass of @code{<error>}.
 When a system call returns an error, this type of exception is
@@ -6161,27 +6195,36 @@ Contains an integer value of system's error number.
 システムのエラー番号の整数値を持ちます。
 @c COMMON
 @end defivar
+
+This class doesn't have corresponding SRFI condition type,
+but important to obtain OS's raw error code.  In some cases,
+this type of condition is compounded with other condition
+types, like @code{<io-read-error>}.
 @end deftp
 
 @deftp {Class} <read-error>
+@deftpx {Condition Type} &read-error
+@clindex read-error
+@vrindex &read-error
+[SRFI-36]
 @c EN
 A subclass of @code{<error>}.
 When the reader detects a lexical or syntactic error during
 reading an S-expression, this type of exception is thrown.
-Besides the @code{message} slot that contains the description of the error,
-this class provides two other slots:
 @c JP
-@code{<error>} のサブクラス。リーダがＳ式を読み込み中に、字句エラー
+@code{<error>} のサブクラス。リーダがS式を読み込み中に、字句エラー
 または構文エラーを検出したとき、この型の例外が投げられます。
-エラーの説明を含む @code{message} スロットの他に、このクラスには 2つの
-スロットが用意されています。
 @c COMMON
 
 @defivar {<read-error>} port
 @c EN
 A port from which the reader is reading.
+(NB: SRFI-36's @code{&read-error} doesn't have this slot.  Portable
+program shouldn't rely on this slot).
 @c JP
 リーダが読むポート。
+(註: SRFI-36 の @code{&read-error} はこのスロットを定義していません。
+ポータブルなプログラムを書く場合はこのスロットを使わないで下さい)。
 @c COMMON
 @end defivar
 
@@ -6195,24 +6238,66 @@ track of line count.
 リーダが行カウントを保持しないポートから読み込むときには、-1 となる。
 @c COMMON
 @end defivar
+
+@defivar {<read-error>} column 
+@defivarx {<read-error>} position
+@defivarx {<read-error>} span
+These slots are defined in SRFI-36's @code{&read-error}.
+For the time being, these slots always hold @code{#f}.
+@end defivar
+
 @end deftp
 
 @deftp {Class} <io-error>
+@deftpx {Condition Type} &io-error
+@clindex io-error
+@vrindex &io-error
+[SRFI-36]
+A base class of I/O errors.  Inherits @code{<error>}.
 @end deftp
 
 @deftp {Class} <port-error>
+@deftpx {Condition Type} &io-port-error
+@clindex port-error
+@vrindex &io-port-error
+[SRFI-36]
+An I/O error related to a port.   Inherits @code{<io-error>}.
+
+@defivar <port-error> port
+Holds the port where the error occurred.
+@end defivar
 @end deftp
 
 @deftp {Class} <io-read-error>
+@deftpx {Condition Type} &io-read-error
+@clindex io-read-error
+@vrindex &io-read-error
+[SRFI-36]
+An I/O error during reading from a port.  Inherits @code{<port-error>}.
 @end deftp
 
 @deftp {Class} <io-write-error>
+@deftpx {Condition Type} &io-write-error
+@clindex io-write-error
+@vrindex &io-write-error
+[SRFI-36]
+An I/O error during writing to a port.  Inherits @code{<port-error>}.
 @end deftp
 
 @deftp {Class} <io-closd-error>
+@deftpx {Condition Type} &io-closed-error
+@clindex io-closed-error
+@vrindex &io-closed-error
+[SRFI-36]
+An I/O error when read/write is attempted on a closed port.
+Inherits @code{<port-error>}.
 @end deftp
 
 @deftp {Class} <io-unit-error>
+@clindex io-unit-error
+An I/O error when the read/write is requested with a unit
+that is not supported by the port (e.g. a binary I/O is requested
+on a character-only port).   Inherits @code{<port-error>}.
 @end deftp
 
 
@@ -6225,57 +6310,108 @@ track of line count.
 
 @defmac define-condition-type name supertype predicate field-spec @dots{}
 [SRFI-35]
+Defines a new condition type.  In Gauche, a condition type is
+a class, whose metaclass is @code{<condition-meta>}.
+
+@var{Name} becomes the name of the new type, and also the variable
+of that name is bound to the created condition type.
+@var{Supertype} is the name of the supertype (direct superclass)
+of this condition type.  A condition type must inherit from
+@code{<condition>} or its descendants.
+(Multiple inheritance can't be specified by this form, and generally
+should be avoided in condition type hierarchy.  Instead, you
+can use compound conditions, which don't introduce multiple inheritance.)
+
+A variable @var{predicate} is bound to a predicate procedure for
+this condition type.
+
+Each @code{field-spec} is a form of @code{(field-name accessor-name)},
+and the condition will have fields named by @var{field-name}, and
+a variable @var{accessor-name} will be bound to a procedure that
+accesses the field.   In Gauche, each field becomes a slot of
+the created class.
 @end defmac
 
 @defun condition-type? obj
 [SRFI-35]
+Returns @code{#t} iff @var{obj} is a condition type.  In Gauche,
+it means @code{(is-a? obj <condition-meta>)}.
 @end defun
 
 @defun make-condition-type name parent field-names
 [SRFI-35]
+A procedural version to create a new condition type. 
 @end defun
-
 
 @defun make-condition type field-name value @dots{}
 [SRFI-35]
+Creates a new condition of conditon-type @var{type}, and
+initializes its fields as specified by @code{field-name} and @code{value}
+pairs.
 @end defun
 
 @defun condition? obj
 [SRFI-35]
+Returns @code{#t} iff @var{obj} is a condition.  In Gauche,
+it means @code{(is-a? obj <condition>)}.
 @end defun
 
-@defun condition-has-type? obj
+@defun condition-has-type? obj type
 [SRFI-35]
+Returns @code{#t} iff @var{obj} belongs to a condition type @var{type}.
+Because of compound conditions, this is not equivalent to @code{is-a?}.
 @end defun
 
 @defun condition-ref condition field-name
 [SRFI-35]
+Retrieves the value of field @var{field-name} of @var{condition}.
+If @var{condition} is a compound condition, you can access to the
+field of its original conditions; if more than one original condition
+have @var{field-name}, the first one passed to @code{make-compound-condition}
+has precedence.
+
+You can use @var{slot-ref} and/or @var{ref} to access to the field
+of conditions; compound conditions define a @code{slot-missing} method
+so that @var{slot-ref} behaves as if the compound conditions have all the
+slots of the original conditions.  Using @code{condition-ref} increases
+portability, though.
 @end defun
 
 @defun make-compound-condition condition0 condition1 @dots{}
 [SRFI-35]
+Returns a compound condition that has all @var{condition0} @var{condition1}
+@dots{}.  The returned condition's fields are the union of all the fields
+of given conditions; if any conditions have the same name of fields,
+the first one takes precedence.   The returned condition also has
+condition-type of all the types of given conditions.
+(This is not a multiple inheritance.  See @code{<compound-condition>} above.)
 @end defun
 
 @defun extract-condition condition condition-type
 [SRFI-35]
+@var{Condition} must be a condition and have type @var{condition-type}.
+This procedure returns a condition of @var{condition-type},
+with field values extracted from @var{condition}.
 @end defun
 
 @defmac condition type-field-binding @dots{}
 [SRFI-35]
+A convenience macro to create a (possibly compound) condition.
+@var{Type-field-binding} is a form of 
+@code{(@var{condition-type} (@var{field-name} @var{value-expr}) @dots{})}.
+
+@example
+(condition
+  (type0 (field00 value00) ...)
+  (type1 (field10 value10) ...)
+  ...)
+ @equiv{}
+(make-compound-condition
+  (make-condition type0 'field00 value00 ...)
+  (make-condition type1 'field10 value10 ...)
+  ...)
+@end example
 @end defmac
-
-
-
-
-
-@c EN
-@subsubheading Condition class aliases
-@c JP
-@subsubheading コンディションクラスの別名
-@c COMMON
-
-
-
 
 
 @c ----------------------------------------------------------------------
