@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.147 2002-05-14 09:36:03 shirok Exp $
+;;; $Id: extlib.stub,v 1.148 2002-05-15 02:47:05 shirok Exp $
 ;;;
 
 "
@@ -1221,7 +1221,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-symbol uthread "sym_uthread")
 
 (define-cproc gauche-thread-type ()
-  "#ifdef GAUCHE_USE_PTHREADS
+  "#ifdef GAUCHE_USE_PTHREAD
   SCM_RETURN(sym_pthread);
 #else
   SCM_RETURN(sym_uthread);
