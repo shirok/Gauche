@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: hmac.scm,v 1.3 2002-12-07 00:23:41 shirok Exp $
+;;;  $Id: hmac.scm,v 1.4 2002-12-15 10:01:57 shirok Exp $
 ;;;
 
 ;;; RFC 2104 HMAC: Keyed-Hashing for Message Authentication
@@ -35,8 +35,8 @@
 			   (block-size 64))
     (unless (and key hasher)
       (error "key and hasher must be given"))
-    (if (> (string-size key) block-size)
-	(set! key (digest-string hasher key)))
+    (when (> (string-size key) block-size)
+      (set! key (digest-string hasher key)))
     (slot-set! self 'key
 	       (string-append key
 			      (make-byte-string (- block-size

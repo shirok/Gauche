@@ -5,6 +5,14 @@
 
 #define MD5_HASHBYTES 16
 
+#if !defined(HAVE_U_INT32_T)
+#  if  !defined(HAVE_UINT32_T)
+#    define u_int32_t int
+#  else
+#    define u_int32_t uint32_t
+#  endif
+#endif /*!HAVE_U_INT32_T*/
+
 typedef struct MD5Context {
 	u_int32_t buf[4];
 	u_int32_t bits[2];

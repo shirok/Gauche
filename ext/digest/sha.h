@@ -5,6 +5,33 @@
 
 #include <sys/types.h>
 
+#if !defined(HAVE_U_INT32_T)
+#  if  !defined(HAVE_UINT32_T)
+#    define u_int32_t int
+#  else
+#    define u_int32_t uint32_t
+#  endif
+#endif /*!HAVE_U_INT32_T*/
+
+#ifdef __GNUC__
+#define HAVE64 1
+#if !defined(HAVE_U_INT64_T)
+#  if  !defined(HAVE_UINT64_T)
+#    undef HAVE64
+#  else
+#    define u_int64_t uint64_t
+#  endif
+#endif /*!HAVE_U_INT64_T*/
+#endif /*__GNUC__*/
+
+#if !defined(HAVE_U_INT8_T)
+#  if  !defined(HAVE_UINT8_T)
+#    define u_int8_t u_char
+#  else
+#    define u_int8_t uint8_t
+#  endif
+#endif /*!HAVE_U_INT8_T*/
+
 /*
 * Define to 1 for FIPS 180.1 version (with extra rotate in prescheduling),
 * 0 for FIPS 180 version (with the mysterious "weakness" that the NSA
@@ -22,7 +49,7 @@
 typedef struct SHAContext {
  unsigned int key[SHA_BLOCKWORDS];
  u_int32_t iv[SHA_HASHWORDS];
-#ifdef __GNUC__
+#if defined(HAVE64)
  u_int64_t bytes;
 #else
  u_int32_t bytesHi, bytesLo;

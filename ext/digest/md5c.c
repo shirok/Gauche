@@ -18,14 +18,10 @@
 #include <string.h>		/* for memcpy() */
 #include "md5.h"
 
-#if __BYTE_ORDER == 1234
-#define byteReverse(buf, len)	/* Nothing */
+#if !defined(WORDS_BIGENDIAN)
+/* on little endian machines, we can skip this part */
+#define byteReverse(buf, len)
 #else
-void byteReverse(unsigned char *buf, unsigned longs);
-
-/*
- * Note: this code is harmless on little-endian machines.
- */
 void byteReverse(unsigned char *buf, unsigned longs)
 {
     u_int32_t t;

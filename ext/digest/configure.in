@@ -2,7 +2,7 @@ dnl
 dnl Configuring Gauche-md5
 dnl  process this file with "autoconf --include `gauche-config --ac`"
 dnl  to generate 'configure'.
-dnl $Id: configure.in,v 1.1 2002-12-03 01:19:16 shirok Exp $
+dnl $Id: configure.in,v 1.2 2002-12-15 10:01:57 shirok Exp $
 
 AC_INIT(md5.stub)
 AC_CANONICAL_SYSTEM
@@ -17,6 +17,12 @@ AC_GAUCHE_FLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL
+
+# Check for types
+AC_C_BIGENDIAN
+AC_CHECK_TYPES([u_int8_t, uint8_t])
+AC_CHECK_TYPES([u_int32_t, uint32_t])
+AC_CHECK_TYPES([u_int64_t, uint64_t])
 
 # Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS

@@ -20,10 +20,16 @@
 #include <string.h>
 #include "sha.h"
 
-#ifdef __GNUC__
-#define HAVE64 1
-#endif
-
+#if defined(WORDS_BIGENDIAN)
+/* On big-endian machines, we can use memcpy. */
+static void
+shaByteSwap (u_int32_t * dest, u_int8_t const *src, unsigned int words)
+{
+    if ((const void *)dest != (const void*)src) {
+        memcpy(dest, src, words*sizeof(u_int32_t));
+    }
+}
+#else
 /*
    Shuffle the bytes into big-endian order within words, as per the
    SHA spec.
@@ -39,6 +45,7 @@ shaByteSwap (u_int32_t * dest, u_int8_t const *src, unsigned int words)
     }
   while (--words);
 }
+#endif /*!WORDS_BIGENDIAN*/
 
 /* Initialize the SHA values */
 void
@@ -340,7 +347,7 @@ SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
 #endif
   SHATransform (ctx);
 
-  memcpy (digest, ctx->iv, sizeof (digest));
+/*  memcpy (digest, ctx->iv, sizeof (digest));*/
   for (i = 0; i < SHA_HASHWORDS; i++)
     {
       t = ctx->iv[i];
