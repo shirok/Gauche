@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.40 2002-12-11 05:56:51 shirok Exp $
+;;;  $Id: object.scm,v 1.41 2002-12-15 01:15:01 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -87,7 +87,7 @@
               ((pair? (car ss))
                (receive result (loop (cdr ss))
                  (apply values (map cons
-                                    (list (cadar ss) (caar ss) (caar ss))
+                                    (list (car (cdar ss)) (caar ss) (caar ss))
                                     result))))
               (else
                (receive result (loop (cdr ss))
