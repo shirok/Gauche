@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.100 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: compile.c,v 1.101 2003-08-17 23:26:45 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -2024,10 +2024,6 @@ void Scm__InitCompiler(void)
 #define DEFSYN_G(symbol, syntax) \
     Scm_Define(g, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
 
-    /* NB: with-module shouldn't be in scheme module, but without it
-     * we can't define r5rs procedure using gauche features for now.
-     * Just leave that until I find a better way.
-     */
     DEFSYN_N(SCM_SYM_DEFINE,       syntax_define);
     DEFSYN_G(SCM_SYM_DEFINE_CONSTANT,  syntax_define_constant);
     DEFSYN_G(SCM_SYM_DEFINE_IN_MODULE, syntax_define_in_module);
@@ -2052,8 +2048,8 @@ void Scm__InitCompiler(void)
     DEFSYN_N(SCM_SYM_DELAY,        syntax_delay);
     DEFSYN_G(SCM_SYM_RECEIVE,      syntax_receive);
     DEFSYN_G(SCM_SYM_DEFINE_MODULE, syntax_define_module);
-    DEFSYN_N(SCM_SYM_WITH_MODULE,  syntax_with_module);
-    DEFSYN_N(SCM_SYM_SELECT_MODULE, syntax_select_module);
+    DEFSYN_G(SCM_SYM_WITH_MODULE,  syntax_with_module);
+    DEFSYN_G(SCM_SYM_SELECT_MODULE, syntax_select_module);
     DEFSYN_G(SCM_SYM_CURRENT_MODULE, syntax_current_module);
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);

@@ -1,3 +1,10 @@
+2003-08-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c (Scm__InitCompiler): moved with-module and
+	  select-module from 'null' module to gauche module.  This makes
+	  'null' and 'scheme' module pure R5RS.  Side-effect: once
+	  you enter these modules, there will be no way to 
+
 2003-08-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/test.scm : adapted to ipv6

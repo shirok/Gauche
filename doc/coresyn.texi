@@ -2063,15 +2063,9 @@ Gauche起動時にいくつかのモジュールがあらかじめ定義されています。
 @c EN
 This module corresponds to the null environment referred in R5RS.
 This module contains only syntactic bindings of R5RS syntax.
-(With one exception in the current implementation:
-Syntax @code{with-module} is in this module, since Gauche needed it
-for certain internal setup.  It'll be removed in future.)
 @c JP
 このモジュールはR5RSで述べられている"null environment"に相当します。
 R5RSの構文要素への束縛だけを含んだモジュールです。
-(但し現在の実装では一つだけ例外があります：Gaucheが内部処理に必要とするために、
-構文@code{with-module}がこのモジュールに含まれています。
-将来これは除かれます。)
 @c COMMON
 @end deftp
 
