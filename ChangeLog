@@ -10,6 +10,8 @@
 	* src/*.c : includes builtin-syms.h necessary, and replaced the code
 	  that creates symbols at init time for static references.
 
+	* src/autoloads.scm : revised using gauche.cgen.
+
 2004-01-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/boolean.c (Scm_EqualP) : loop over list spine instead of

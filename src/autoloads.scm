@@ -1,104 +1,75 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.2 2003-12-16 08:34:18 shirok Exp $
+;;; $Id: autoloads.scm,v 1.3 2004-01-18 12:55:48 shirok Exp $
 ;;;
 
 (use srfi-1)
 (use util.list)
+(use gauche.cgen)
 
 (define *autoloads* '())
 
-;; Override autoload macro
-(define-macro (autoload file . vars)
-  (push! *autoloads* (list #f file vars))
-  #f)
+(cgen-current-unit
+ (make <cgen-unit>
+   :name "autoloads"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.3 $.  DO NOT EDIT */"
+   :init-prologue "void Scm__InitAutoloads(void)\n{"
+   ))
 
-(define-macro (autoload-scheme file . vars)
-  (push! *autoloads* (list 'scheme file vars))
-  #f)
-
-;; Collect stuff
-(define (all-symbols)
-  (delete-duplicates (apply append
-                            (filter symbol? (map cadr *autoloads*))
-                            )))
+(define (register-autoload target path entries)
+  (push! *autoloads*
+         (list target path
+               (map (lambda (entry)
+                      (if (pair? entry)
+                        (cons (cadr entry) #t) ;; :macro
+                        (cons entry #f)))
+                    entries))))
 
 ;; Emit code
-(define (emit)
-  (let* ((strs (filter string? (map cadr *autoloads*)))
-         (str-alist (map (lambda (cnt str)
-                           (cons (string->symbol #`"str,cnt") str))
-                         (iota (length strs)) strs))
-         (mods (filter symbol? (map cadr *autoloads*)))
-         (mod-alist (map (lambda (cnt sym)
-                           (cons (string->symbol #`"mod,cnt") sym))
-                         (iota (length mods)) mods))
-         (syms (append-map (lambda (al)
-                             (map (lambda (v)
-                                    (if (symbol? v) v (cadr v)))
-                                  (caddr al)))
-                           *autoloads*))
-         (sym-alist (map (lambda (cnt sym)
-                           (cons (string->symbol #`"sym,cnt") sym))
-                         (iota (length syms)) syms))
-         )
-    (print "/* Generated automatically.  DO NOT EDIT */")
-    (print "#define LIBGAUCHE_BODY")
-    (print "#include \"gauche.h\"")
-    ;; declarations
-    (dolist (sym sym-alist)
-      (format #t "static SCM_DEFINE_STRING_CONST(~a_STR, ~s, ~a, ~:*~a);\n"
-              (car sym) (x->string (cdr sym))
-              (string-size (x->string (cdr sym)))))
-    (dolist (mod mod-alist)
-      (format #t "static SCM_DEFINE_STRING_CONST(~a_STR, ~s, ~a, ~:*~a);\n"
-              (car mod) (x->string (cdr mod))
-              (string-size (x->string (cdr mod))))
-      (format #t "static ScmObj ~a = SCM_FALSE;\n" (car mod)))
-    (dolist (str str-alist)
-      (format #t "static SCM_DEFINE_STRING_CONST(~a, ~s, ~a, ~:*~a);\n"
-              (car str) (cdr str) (string-size (cdr str))))
-    ;; init
-    (print "void Scm__InitAutoloads(void)")
-    (print "{")
-    (print "  ScmModule *scheme = Scm_SchemeModule();")
-    (print "  ScmModule *gauche = Scm_GaucheModule();")
-    (print "  ScmObj key_macro = SCM_MAKE_KEYWORD(\"macro\");")
-    (print "  ScmSymbol *sym;")
-    (print "  ScmObj al;")
-    (print "  ScmString *path = NULL;")
-    (print "  ScmSymbol *import_from = NULL;")
-    (dolist (mod mod-alist)
-      (format #t "  ~a = Scm_Intern(&~:*~a_STR);\n" (car mod)))
-    (dolist (al (reverse *autoloads*))
-      (let ((where (if (eq? (car al) 'scheme) 'scheme 'gauche))
-            (path (if (string? (cadr al))
-                    (format "&~a" (rassoc-ref str-alist (cadr al)))
-                    (format "SCM_STRING(Scm_ModuleNameToPath(SCM_SYMBOL(~a)))"
-                            (rassoc-ref mod-alist (cadr al)))))
-            (from (if (string? (cadr al))
-                    "NULL"
-                    #`"SCM_SYMBOL(,(rassoc-ref mod-alist (cadr al)))"))
-            )
-        (format #t "  path = ~a;\n" path)
-        (format #t "  import_from = ~a;\n" from)
-        (dolist (ent (caddr al))
-          (if (symbol? ent)
-            (let ((str (rassoc-ref sym-alist ent)))
-              (format #t "  sym = SCM_SYMBOL(Scm_Intern(&~a_STR));\n" str)
-              (format #t "  al = Scm_MakeAutoload(sym, path, import_from);\n")
-              (format #t "  Scm_Define(~a, sym, al);\n" where))
-            (let ((str (rassoc-ref sym-alist (cadr ent))))
-              (format #t "  sym = SCM_SYMBOL(Scm_Intern(&~a_STR));\n" str)
-              (format #t "  al = Scm_MakeAutoload(sym, path, import_from);\n")
-              (format #t "  Scm_Define(~a, sym, Scm_MakeMacroAutoload(sym, SCM_AUTOLOAD(al)));\n" where))))))
-    (print "}")
-    ))
-
 (define (main args)
-  (with-output-to-file "autoloads.c" emit)
+  (cgen-decl "#define LIBGAUCHE_BODY"
+             "#include \"gauche.h\"")
+  ;; init
+  (cgen-init "  ScmModule *scheme = Scm_SchemeModule();"
+             "  ScmModule *gauche = Scm_GaucheModule();"
+             "  ScmSymbol *sym, *import_from;"
+             "  ScmObj al, path;")
+  ;; loop
+  (dolist (al (reverse *autoloads*))
+    (let* ((where     (if (eq? (car al) 'scheme) 'scheme 'gauche))
+           (path&from (if (string? (cadr al))
+                        (let1 str (cgen-literal (cadr al))
+                          (cons (cgen-cexpr str) "NULL"))
+                        (let1 sym (cgen-literal (cadr al))
+                          (cons (format "Scm_ModuleNameToPath(SCM_SYMBOL(~a))"
+                                        (cgen-cexpr sym))
+                                (format "SCM_SYMBOL(~a)" (cgen-cexpr sym))))))
+           )
+      (cgen-init #`"  path = ,(car path&from);"
+                 #`"  import_from = ,(cdr path&from);")
+      (dolist (ent (caddr al))
+        (let ((str (cgen-literal (symbol->string (car ent)))))
+          (cgen-init
+           #`"  sym = SCM_SYMBOL(Scm_Intern(SCM_STRING(,(cgen-cexpr str))));"
+           #`"  al = Scm_MakeAutoload(sym, SCM_STRING(path), import_from);")
+          (if (cdr ent) ;; macro?
+            (cgen-init
+             #`"  Scm_Define(,|where|,, sym,, Scm_MakeMacroAutoload(sym,, SCM_AUTOLOAD(al)));")
+            (cgen-init
+             #`"  Scm_Define(,|where|,, sym,, al);"))))
+      ))
+  ;; emit
+  (cgen-emit-c (cgen-current-unit))
   0)
+
+;; Override autoload macro
+(define-macro (autoload file . vars)
+  `(register-autoload #f ',file ',vars))
+
+(define-macro (autoload-scheme file . vars)
+  `(register-autoload 'scheme ',file ',vars))
+
 
 ;;==========================================================
 (autoload-scheme "gauche/listutil"
