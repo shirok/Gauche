@@ -1,5 +1,7 @@
 2002-09-02  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.6.2
+	* src/module.c : fixed for cygwin.
 	* src/syslib.stub : dropped sys-usleep, for the prototype of usleep(3)
 	  doesn't agree among BSD and SysV, and it's obsolete anyway.
 	  Instead, added sys-nanosleep.
