@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.344 2003-01-16 03:41:26 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.345 2003-01-16 03:52:53 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -23436,7 +23436,8 @@ which provides similar features but different criteria.
 @c JP
 [SRFI-13]
 文字列 @var{s} を、@var{token-set} で指定される文字セットで
-構成される、空でない最大限連続した文字のシーケンスに分割します。
+構成される、空でない最大限連続した文字のシーケンスのそれぞれを
+要素とするリストを返します。
 @var{token-set} のデフォルト値は @code{char-set:graphic}
 (@ref{SRFI-14 Predefined character-set}参照)。
 
