@@ -1,5 +1,7 @@
 2002-12-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/collection.scm (call-with-iterator): fixed a bug
+	  (patch provided from Kimura Fuyuki).
 	* ext/digest/*, lib/util/digest.scm : revise some APIs.
 
 2002-12-09  Shiro Kawai  <shiro@acm.org>
