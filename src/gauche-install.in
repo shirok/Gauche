@@ -1,0 +1,186 @@
+;;;
+;;; install - Generic installation utility
+;;;  
+;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;;  $Id: gauche-install.in,v 1.1 2004-04-23 10:17:47 shirok Exp $
+;;;
+
+;; This is intended to replace 'install' program, in order to avoid
+;; variations of system's install program.  Although most 'install'
+;; programs have various extensions, we can't reliably use those
+;; extended features since we don't know such extended install program
+;; is avilable on the target system.  Assuming minimum featured install
+;; program makes makefile messy.
+
+(use srfi-1)
+(use srfi-2)
+(use gauche.parseopt)
+(use gauche.parameter)
+(use file.util)
+
+(define (p . args) (for-each print args))
+
+(define (usage)
+  (p "Usage: gauche-install [options] file dest             (1st format)"
+     "       gauche-install [options] file ... directory    (2nd format)"
+     "       gauche-install -d [options] directory ...      (3rd format)"
+     "       gauche-install -T directory [options] file ... (4th format)"
+     "Options:"
+     "  -T, --target=DIR  : installs files to the DIR, creating paths if needed."
+     "                      Partial path of files are preserved. (4th format only)"
+     "  -S, --srcdir=DIR  : look for files within DIR; useful if VPATH is used"
+     "      --shebang=PATH : adds #!PATH before the file contents."
+     "                       useful to install scripts."
+     "  -d, --directory   : creates directories.  (3rd format only)."
+     "  -m, --mode=MODE   : change mode of the installed file."
+     "  -o, --owner=OWNER : change owner of the installed file (root only)."
+     "  -g, --group=GROUP : change owner of the installed file (root only)."
+     "  -v, --verbose     : work verbosely"
+     "  -n, --dry-run     : just prints what actions to be done."
+     )
+  (exit 0))
+
+(define verbose (make-parameter #f))
+(define dry-run (make-parameter #f))
+
+(define-syntax do-it
+  (syntax-rules ()
+    ((_ mesg . actions)
+     (begin (when (and (verbose) mesg) (print mesg))
+            (unless (dry-run) . actions)))))
+
+(define (app-errorf fmt msg)
+  (format (current-error-port) fmt msg)
+  (newline (current-error-port))
+  (exit 1))
+
+(define (ensure-directory path)
+  (if (file-exists? path)
+      (unless (file-is-directory? path)
+        (app-errorf "non-directory file gets in my way: ~s" path))
+      (do-it #`"creating directory ,path"
+             (with-error-handler
+                 (lambda (e)
+                   (app-errorf "can't create directory: ~s" (ref e 'message)))
+               (lambda () (make-directory* path))))))
+
+;; user/group -> uid/gid
+(define (->ugid str->id arg type)
+  (cond ((not arg) -1)
+        ((integer? arg) arg)
+        ((and (string? arg) (str->id arg)))
+        (else (app-errorf #`"bad ,type name: ~a" arg))))
+
+;; find source path
+(define (ensure-src file srcdir)
+  (or (and-let* ((srcdir)
+                 (srcpath (build-path srcdir file))
+                 ((file-exists? srcpath)))
+        srcpath)
+      file))
+
+;; copy, possibly with appending prelude
+(define (cp src dest prelude)
+  (if prelude
+    (receive (out name) (sys-mkstemp src)
+      (display prelude out)
+      (call-with-input-file src
+        (lambda (in)
+          (copy-port in out :unit 65536)))
+      (close-output-port out)
+      (move-file name dest :if-exists :supersede))
+    (copy-file src dest :if-exists :supersede :safe #t)))
+
+;; standard install
+(define (install src dest prelude mode owner group)
+  (do-it #`"installing ,src to ,dest"
+         (and (cp src dest prelude)
+              (sys-chmod dest mode)
+              (when (or owner group)
+                (sys-chown dest
+                           (->ugid sys-user-name->uid owner "user")
+                           (->ugid sys-group-name->gid group "group"))))))
+
+
+;; Entry point
+(define (main args)
+  (let-args (cdr args)
+      ((#f      "c")        ;; ignore for historical reason
+       (mkdir   "d|directory")
+       (mode    "m|mode=s" #o755 => (cut string->number <> 8))
+       (owner   "o|owner=s")
+       (group   "g|group=s")
+       (srcdir  "S|srcdir=s")
+       (target  "T|target=s")
+       (shebang "shebang=s")
+       (verb    "v")
+       (dry     "n|dry-run")
+       (#f      "h|help" => usage)
+       (else (opt . _) (print "Unknown option : " opt) (usage))
+       . args)
+
+    (parameterize ((verbose (or verb dry))
+                   (dry-run dry))
+      (when shebang (set! shebang #`"#!,shebang\n"))
+      (cond
+       (mkdir  (for-each ensure-directory args))
+       (target (for-each (lambda (src)
+                           (let1 dst (build-path target src)
+                             (ensure-directory (sys-dirname dst))
+                             (install (ensure-src src srcdir) dst
+                                      shebang mode owner group)))
+                         args))
+       (else
+        (case (length args)
+          ((0) (usage))
+          ((1) #f)          ;; no-op
+          ((2) ;; file to file or file to dir
+           (let* ((src (car args))
+                  (dst (if (file-is-directory? (cadr args))
+                         (build-path (cadr args) (sys-basename src))
+                         (cadr args))))
+             (ensure-directory (sys-dirname dst))
+             (install (ensure-src src srcdir) dst
+                      shebang mode owner group)))
+          (else
+           (let ((target (car (last-pair args))))
+             (for-each (lambda (src)
+                         (let1 dst (build-path target (sys-basename src))
+                           (ensure-directory (sys-dirname dst))
+                           (install (ensure-src src srcdir) dst
+                                    shebang mode owner group)))
+                       (drop-right args 1)))))))
+      ))
+  0)
+
+;; Local variables:
+;; mode: scheme
+;; end:

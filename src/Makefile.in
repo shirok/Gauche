@@ -91,8 +91,11 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h      \
                      gauche/class.h gauche/exception.h                \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
 INSTALL_LIBS = libgauche.$(SOEXT)
-INSTALL_BINS = gosh gauche-config
-INSTALL_SCMS = gauche-init.scm genstub cesconv package
+INSTALL_BINS = gosh gauche-config gauche-install gauche-package \
+               gauche-cesconv
+INSTALL_SCMS = gauche-init.scm genstub cesconv
+
+GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
 PRIVATE_HEADERS = gauche/arith.h gauche/builtin-syms.h
 
@@ -124,7 +127,7 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-all : gosh$(EXEEXT) libgauche.$(SOEXT)
+all : gosh$(EXEEXT) libgauche.$(SOEXT) $(GENERATED_SCRIPTS)
 
 gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
@@ -165,6 +168,21 @@ gauche/arch.h :
 	@echo '#define GAUCHE_SITE_LIB_DIR "$(SITE_SCM_DIR)"' >> gauche/arch.h
 	@echo '#define GAUCHE_SITE_ARCH_DIR "$(SITE_ARCH_DIR)"' >> gauche/arch.h
 
+gauche-install : gauche-install.in
+	@rm -f gauche-install
+	@echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-install
+	@cat gauche-install.in >> gauche-install
+
+gauche-package : gauche-package.in
+	@rm -f gauche-package
+	@echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-package
+	@cat gauche-package.in >> gauche-package
+
+gauche-cesconv : gauche-cesconv.in
+	@rm -f gauche-cesconv
+	@echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv
+	@cat gauche-cesconv.in >> gauche-cesconv
+
 # tests -----------------------------------------------
 TESTFILES = `cat ../test/TESTS`
 
@@ -203,6 +221,7 @@ CONFIG_GENERATED = Makefile gauche-config gauche/config.h
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
+	       $(GENERATED_SCRIPTS) \
 	       libgauche.$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h
 

@@ -2,7 +2,7 @@ dnl
 dnl Configuring spigot
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.in,v 1.1 2003-06-10 20:59:45 shirok Exp $
+dnl $Id: configure.in,v 1.2 2004-04-23 10:17:47 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)
@@ -36,5 +36,6 @@ dnl This should come after all tests, or the tests that does link will fail.
 AC_GAUCHE_FIX_LIBS
 
 dnl Output
+AC_GAUCHE_MAKE_GPD
 AC_OUTPUT(Makefile)
 

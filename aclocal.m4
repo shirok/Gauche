@@ -1,5 +1,5 @@
 dnl Gauche-specific autoconf macros.
-dnl $Id: aclocal.m4,v 1.28 2004-04-23 04:46:37 shirok Exp $
+dnl $Id: aclocal.m4,v 1.29 2004-04-23 10:17:21 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -16,6 +16,8 @@ AC_DEFUN([AC_GAUCHE_INIT_EXT],
          [
 AC_PATH_PROG([GOSH], gosh)
 AC_PATH_PROG([GAUCHE_CONFIG], gauche-config)
+AC_PATH_PROG([GAUCHE_PACKAGE], gauche-package)
+AC_PATH_PROG([GAUCHE_INSTALL], gauche-install)
 GAUCHE_TOP=
 GAUCHE_INC="`gauche-config -I`"
 GAUCHE_LIB="`gauche-config -L`"
@@ -145,7 +147,7 @@ AC_DEFUN([AC_GAUCHE_MAKE_GPD],
          [
 GAUCHE_PACKAGE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
 AC_MSG_NOTICE([creating ${PACKAGE_NAME}.gpd])
-$GOSH package make-gpd "$PACKAGE_NAME" \
+$GAUCHE_PACKAGE make-gpd "$PACKAGE_NAME" \
   :version "$PACKAGE_VERSION" \
   :configure "./configure $GAUCHE_PACKAGE_CONFIGURE_ARGS"
 ])

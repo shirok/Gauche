@@ -1,9 +1,14 @@
 2004-04-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in, src/gauche-install.in : added.
+	* src/gauche-cesconv.in : renamed from cesconv.
+	* src/Makefile.in : installs gauche-* scripts to bindir.
+
+	* examples/spigot/configure.in : adapted to the package manager
+
 	* lib/gauche/package/build.scm : added
 	* lib/gauche/package/util.scm : added
 	* lib/gauche/package/fetch.scm : added
-	* src/package : added
 	* acinclude.m4 (AC_GAUCHE_MAKE_GPD): a macro to create PACKAGE.gpd
 	  file.
 

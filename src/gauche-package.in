@@ -1,5 +1,5 @@
 ;;;
-;;; package - Gauche package builder/manager
+;;; gauche-package - Gauche package builder/manager
 ;;;  
 ;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
 ;;;   
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package,v 1.4 2004-04-23 06:17:53 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.1 2004-04-23 10:17:47 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -47,7 +47,7 @@
 
 (define (usage)
   (p
-   "Usage: gosh package <command> [options] <args> ..."
+   "Usage: gauche-package <command> [options] <args> ..."
    "Commands:"
    "  install <tarball> - extract, build, and install a package"
    "  build <tarball>   - extract, and build the package."

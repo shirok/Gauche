@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.6 2003-11-21 21:27:17 shirok Exp $
+# $Id: Makefile.in,v 1.7 2004-04-23 10:17:47 shirok Exp $
 #
 
 SHELL       = @SHELL@
@@ -16,7 +16,6 @@ CC       = @CC@
 LIBS     = @LIBS@
 CFLAGS   = @CFLAGS@ 
 LDFLAGS  = @LDFLAGS@
-INSTALL  = @INSTALL@
 INSTALL_TYPE = @INSTALL_TYPE@
 
 # Set by configure
@@ -24,6 +23,8 @@ GOSH     = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 OBJEXT   = @OBJEXT@
 DSOEXT   = @SOEXT@
+
+INSTALL  = @GAUCHE_INSTALL@
 
 MODULE   = spigot
 
@@ -38,7 +39,7 @@ OBJS      = $(MODULE)_head.$(OBJEXT) \
             $(MODULE)_tail.$(OBJEXT)
 GENERATED = spigotlib.c $(MODULE)_head.c $(MODULE)_tail.c
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   configure.lineno autom4te*.cache
+		   configure.lineno autom4te*.cache spigot.gpd
 
 HEADER_INSTALL_DIR  = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
@@ -67,18 +68,10 @@ check : all
 	$(GOSH) -I. test.scm > test.log
 
 install : all
-	if test ! -z "$(HEADERS)"; then \
-	  $(INSTALL) -d $(HEADER_INSTALL_DIR); \
-	  $(INSTALL) -m 444 $(HEADERS) $(HEADER_INSTALL_DIR); \
-	fi
-	if test ! -z "$(SCMFILES)"; then \
-	  $(INSTALL) -d $(SCM_INSTALL_DIR); \
-	  $(INSTALL) -m 444 $(SCMFILES) $(SCM_INSTALL_DIR); \
-	fi
-	if test ! -z "$(ARCHFILES)"; then \
-	  $(INSTALL) -d $(ARCH_INSTALL_DIR); \
-	  $(INSTALL) -m 555 $(ARCHFILES) $(ARCH_INSTALL_DIR); \
-	fi
+	$(INSTALL) -m 444 -T $(HEADER_INSTALL_DIR) $(HEADERS)
+	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) $(SCMFILES) 
+	$(INSTALL) -m 555 -T $(ARCH_INSTALL_DIR) $(ARCHFILES)
+	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR)/.packages spigot.gpd
 
 clean :
 	rm -rf core $(TARGET) $(OBJS) $(GENERATED) *~ test.log so_locations
