@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.289 2002-07-17 19:16:47 shirok Exp $
+ *  $Id: gauche.h,v 1.290 2002-07-18 10:50:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -69,7 +69,7 @@ extern "C" {
 /* This defines several auxiliary routines that are useful for debugging */
 #define SCM_DEBUG_HELPER      FALSE
 
-#undef  SCM_INLINE_MALLOC_PRIMITIVES
+#define SCM_INLINE_MALLOC_PRIMITIVES
 #define SCM_VM_STACK_SIZE     10000
 
 #ifdef GAUCHE_USE_PTHREADS
