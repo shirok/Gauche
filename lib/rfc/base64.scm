@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: base64.scm,v 1.6 2001-06-02 22:00:30 shirok Exp $
+;;;  $Id: base64.scm,v 1.7 2001-06-03 09:43:20 shirok Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine
@@ -60,34 +60,34 @@
     (define (d0 c)
       (cond ((eof-object? c))
             ((eqv? c #\=))
-            ((lookup c) => (lambda (v) (d1 (read-byte) v)))
-            (else (d0 (read-byte)))))
+            ((lookup c) => (lambda (v) (d1 (read-char) v)))
+            (else (d0 (read-char)))))
 
     (define (d1 c hi)
       (cond ((eof-object? c))
             ((eqv? c #\=))
             ((lookup c) => (lambda (lo)
                              (write-byte (+ (* hi 4) (quotient lo 16)))
-                             (d2 (read-byte) (modulo lo 16))))
-            (else (d1 (read-byte) hi))))
+                             (d2 (read-char) (modulo lo 16))))
+            (else (d1 (read-char) hi))))
 
     (define (d2 c hi)
       (cond ((eof-object? c))
             ((eqv? c #\=))
             ((lookup c) => (lambda (lo)
                              (write-byte (+ (* hi 16) (quotient lo 4)))
-                             (d3 (read-byte) (modulo lo 4))))
-            (else (d2 (read-byte) hi))))
+                             (d3 (read-char) (modulo lo 4))))
+            (else (d2 (read-char) hi))))
 
     (define (d3 c hi)
       (cond ((eof-object? c))
             ((eqv? c #\=))
             ((lookup c) => (lambda (lo)
                              (write-byte (+ (* hi 64) lo))
-                             (d0 (read-byte))))
-            (else (d3 (read-byte) hi))))
+                             (d0 (read-char))))
+            (else (d3 (read-char) hi))))
 
-    (d0 (read-byte))))
+    (d0 (read-char))))
 
 (define (base64-decode-string string)
   (with-output-to-string
@@ -98,7 +98,7 @@
 (define (base64-encode)
   (let-syntax ((emit (syntax-rules ()
                        ((_ idx)
-                        (write-byte (vector-ref *encode-table* idx))))))
+                        (write-char (vector-ref *encode-table* idx))))))
     (define (e0 c cnt)
       (if (eof-object? c)
           #t
