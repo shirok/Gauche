@@ -1,5 +1,6 @@
 2003-02-06  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.6.7
 	* lib/charconv/charconv.scm : fixed bug in wrap-* (keyword typo)
 	* doc/extract : fixed extract script so that it can deal with the
 	  euc-jp document under gosh with any internal encodings.
