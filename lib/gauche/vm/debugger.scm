@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.7 2002-01-05 11:08:18 shirok Exp $
+;;;  $Id: debugger.scm,v 1.8 2002-01-06 06:25:13 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
@@ -113,13 +113,14 @@
               )))
 
     (define (show-stack s level)
-      (format outp "~3d:  ~,,,,v:s\n" level *expr-show-length* (car s))
-      (and-let* (((pair? (car s)))
-                 (info (pair-attribute-get (car s) 'source-info #f))
-                 ((pair? info))
-                 ((pair? (cdr info))))
-        (format outp "       At line ~a of ~s\n" (cadr info) (car info)))
-      (show-env (cdr s)))
+      (when (pair? s)
+        (format outp "~3d:  ~,,,,v:s\n" level *expr-show-length* (car s))
+        (and-let* (((pair? (car s)))
+                   (info (pair-attribute-get (car s) 'source-info #f))
+                   ((pair? info))
+                   ((pair? (cdr info))))
+          (format outp "       At line ~a of ~s\n" (cadr info) (car info)))
+        (show-env (cdr s))))
     
     (define (loop level)
       (format outp "debug$ ")
