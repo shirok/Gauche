@@ -1,5 +1,6 @@
 2002-12-23  Shiro Kawai  <shiro@acm.org>
 
+	* ext/digest/sha.h : removed dependency on sys/cdefs.h
 	* src/genstub : added support of direct-supers specifier in
 	  define-cclass.  NB: this is an ad hoc kludge.  Define-cclass
 	  need to be redesigned.

@@ -56,15 +56,11 @@ typedef struct SHAContext {
 #endif
 } SHA_CTX;
 
-#include <sys/cdefs.h>
-
-__BEGIN_DECLS
 extern void   SHAInit(SHA_CTX *);
 extern void   SHAUpdate(SHA_CTX *, const unsigned char *, unsigned int);
 extern void   SHAFinal(unsigned char [SHA_HASHBYTES], SHA_CTX *);
 extern char * SHAEnd(SHA_CTX *, char *);
 extern char * SHAFile(const char *, char *);
 extern char * SHAData(const unsigned char *, unsigned int, char *);
-__END_DECLS
 
 #endif /* _SHA_H_ */
