@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.219 2002-06-16 22:00:45 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.220 2002-06-17 08:33:57 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4881,6 +4881,41 @@ that doesn't have a corresponding character.
 
 対応する内部エンコーディングを持つ文字が無い数値を@var{integer->char}に渡した
 場合の結果は不定です。
+@c COMMON
+@end defun
+
+@defun char->ucs char
+@defunx ucs->char n
+@c EN
+Converts a character @var{char} to integer UCS codepoint,
+and integer UCS codepoint @var{n} to a character, respectively.
+
+If Gauche is compiled with UTF-8 encoding, these procedures are the 
+same as @code{char->integer} and @code{integer->char}.
+
+When Gauche's internal encoding differs from UTF-8, these procedures
+implicitly loads @code{gauche.charconv} module to convert internal
+character code to UCS or vice versa (@xref{Character code conversion}).
+If @var{char} doesn't have corresponding UCS codepoint, 
+@code{char->ucs} returns @code{#f}.  If UCS codepoint @var{n} can't
+be represented in the internal character encoding, @code{ucs->char}
+returns @code{#f}, unless the conversion routine provides a substitution
+character.
+@c JP
+それぞれ、文字@var{char}をUCSコードポイントを表す整数へ変換し、
+またUCSコードポイントを表す整数@var{n}を文字へと変換する手続きです。
+
+Gaucheの内部文字エンコーディングがUTF-8でコンパイルされている場合は、
+これらの手続きはそれぞれ@var{char->integer}および@code{integer->char}
+と等価です。
+
+Gaucheの内部文字エンコーディングがUTF-8でない場合、
+これらの手続きは@code{gauche.charconv}モジュールを使って
+内部文字コードとUCSとの変換を行います (@ref{Character code conversion}参照)。
+@var{char}が対応するUCSコードを持っていない場合、@code{char->ucs}は@code{#f}を
+返します。UCSコード@code{n}に対応する文字が内部エンコーディングで定義されていない
+場合、変換ルーチンが代替文字を提供していればそれを、そうでなければ@code{#f}
+が返されます。
 @c COMMON
 @end defun
 
