@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.167 2002-09-10 08:24:54 shirok Exp $
+ *  $Id: vm.c,v 1.168 2002-09-10 10:12:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1256,10 +1256,10 @@ static void run_loop()
                 POP_ARG(obj);
                 CHECK_STACK(CONT_FRAME_SIZE);
                 PUSH_CONT(prevpc, pc);
+                pc = SCM_NIL;
                 SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
                 RESTORE_REGS();
-                pc = SCM_NIL;
                 continue;
             }
             CASE(SCM_VM_SLOT_SET) {
@@ -1268,10 +1268,10 @@ static void run_loop()
                 POP_ARG(obj);
                 CHECK_STACK(CONT_FRAME_SIZE);
                 PUSH_CONT(prevpc, pc);
+                pc = SCM_NIL;
                 SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
                 RESTORE_REGS();
-                pc = SCM_NIL;
                 continue;
             }
 #ifndef __GNUC__
@@ -1407,32 +1407,6 @@ ScmEnvFrame *Scm_GetCurrentEnv(void)
  * Function application from C
  */
 
-/* called from Scm_VMApply, this effectively generates the VM code
-   to call proc with args, and sets up the continuation so that
-   the code will be executed after the current executing subr returns. */
-static void arrange_application(ScmObj proc, ScmObj args, int numargs)
-{
-    DECL_REGS;
-    ScmObj cp, code = SCM_NIL, tail;
-
-    /* This is inefficient, but for now ... */
-#if defined(FUNCTION_STACK_CHECK)
-    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CHECK_STACK, CONT_FRAME_SIZE+ENV_SIZE(numargs)));
-#endif
-    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_PRE_TAIL, numargs));
-    SCM_FOR_EACH(cp, args) {
-        if (SCM_VM_INSNP(SCM_CAR(cp))) {
-            SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_QUOTE_INSN));
-        }
-        SCM_APPEND1(code, tail, SCM_CAR(cp));
-        SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
-    }
-    SCM_APPEND1(code, tail, proc);
-    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, numargs));
-    PUSH_CONT(code, code);
-    SAVE_REGS();
-}
-
 /* The Scm_VMApply family is supposed to be called in SUBR.  It doesn't really
    applies the function in it.  Instead, it modifies the VM state so that
    the specified function will be called immediately after this SUBR
@@ -1442,32 +1416,54 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
  */
 ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 {
+    DECL_REGS;
+    ScmObj cp;
     int numargs = Scm_Length(args);
+    int reqstack;
     
-    if (!SCM_PROCEDUREP(proc))
-        Scm_Error("procedure required, but got %S", proc);
-    if (numargs < 0)
-        Scm_Error("improper list not allowed: %S", args);
-    arrange_application(proc, args, numargs);
+    SCM_ASSERT(SCM_NULLP(pc));
+    if (!SCM_PROCEDUREP(proc)) Scm_Error("procedure required, but got %S", proc);
+    if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
+    reqstack = ENV_SIZE(numargs) + 1;
+    CHECK_STACK(reqstack);
+    SCM_FOR_EACH(cp, args) {
+        PUSH_ARG(SCM_CAR(cp));
+    }
+    pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, numargs));
+    SAVE_REGS();
     return proc;
 }
 
+/* shortcuts for common cases */
 ScmObj Scm_VMApply0(ScmObj proc)
 {
-    /* TODO: can be optimized */
-    return Scm_VMApply(proc, SCM_NIL);
+    ScmVM *vm = theVM;
+    SCM_ASSERT(SCM_NULLP(vm->pc));
+    vm->pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 0));
+    return proc;
 }
 
 ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
 {
-    /* TODO: can be optimized */
-    return Scm_VMApply(proc, SCM_LIST1(arg));
+    DECL_REGS;
+    SCM_ASSERT(SCM_NULLP(pc));
+    CHECK_STACK(1);
+    PUSH_ARG(arg);
+    pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 1));
+    SAVE_REGS();
+    return proc;
 }
 
 ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 {
-    /* TODO: can be optimized */
-    return Scm_VMApply(proc, SCM_LIST2(arg1, arg2));
+    DECL_REGS;
+    SCM_ASSERT(SCM_NULLP(pc));
+    CHECK_STACK(2);
+    PUSH_ARG(arg1);
+    PUSH_ARG(arg2);
+    pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 2));
+    SAVE_REGS();
+    return proc;
 }
 
 /* support proc. for eval.  compile expr in the module nmodule,
@@ -1565,8 +1561,8 @@ static ScmObj user_eval_inner(ScmObj program)
              ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
                 ScmObj handlers = throw_cont_calculate_handlers(ep, vm);
-                vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
                 vm->pc = SCM_NIL;
+                vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
                 goto restart;
             } else {
                 SCM_ASSERT(vm->cstack && vm->cstack->prev);

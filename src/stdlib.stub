@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.91 2002-07-24 16:09:18 shirok Exp $
+;;; $Id: stdlib.stub,v 1.92 2002-09-10 10:12:37 shirok Exp $
 ;;;
 
 
@@ -687,7 +687,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   (return "Scm_Force"))
 
 (define-cproc call-with-current-continuation (proc)
-  (return void "Scm_VMCallCC"))
+  (return "Scm_VMCallCC"))
 
 (define-cproc values (&rest args)
   (inliner "SCM_VM_VALUES")
