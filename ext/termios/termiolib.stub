@@ -12,23 +12,10 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: termiolib.stub,v 1.2 2001-09-08 11:16:49 shirok Exp $
+;;; $Id: termiolib.stub,v 1.3 2001-09-16 07:00:45 shirok Exp $
 ;;;
 
 "#include \"termios.h\""
-
-"static int get_port_or_fd(ScmObj pf, int needfd)
- {
-   int fd = -1;
-   if (SCM_INTP(pf)) { fd = SCM_INT_VALUE(pf); }
-   else if (SCM_PORTP(pf)) { fd = Scm_PortFileNo(SCM_PORT(pf)); }
-   else Scm_Error(\"port or small integer required, but got %S\", pf);
-   if (needfd && fd < 0) {
-     Scm_Error(\"the port is not associated with a system file descriptor: %S\", pf);
-   }
-   return fd;
- }
-"
 
 ;;---------------------------------------------------------------------
 ;; termios.h
@@ -65,7 +52,7 @@
 (define-symbol |B38400| "termios_b38400" "Scm_MakeIntegerFromUI(B38400)")
 
 (define-cproc sys-tcgetattr (port-or-fd)
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   ScmSysTermios *term = SCM_SYS_TERMIOS(Scm_MakeSysTermios());
   if (tcgetattr(fd, &term->term) < 0) {
     Scm_SysError(\"tcgetattr failed\");
@@ -75,7 +62,7 @@
 (define-cproc sys-tcsetattr (port-or-fd option term)
   (assert (exact? option))
   (assert (sys-termios? term))
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcsetattr(fd, option, &term->term) < 0) {
     Scm_SysError(\"tcsetattr failed\");
   }
@@ -83,11 +70,11 @@
 
 (define-cproc sys-tcsendbreak (port-or-fd duration)
   (assert (exact? duration))
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   SCM_RETURN(tcsendbreak(fd, duration) < 0 ? SCM_FALSE : SCM_TRUE);")
 
 (define-cproc sys-tcdrain (port-or-fd)
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcdrain(fd) < 0) {
     Scm_SysError(\"tcdrain failed\");
   }
@@ -95,7 +82,7 @@
 
 (define-cproc sys-tcflush (port-or-fd queue)
   (assert (exact? queue))
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcflush(fd, queue) < 0) {
     Scm_SysError(\"tcflush failed\");
   }
@@ -103,21 +90,21 @@
 
 (define-cproc sys-tcflow (port-or-fd action)
   (assert (exact? action))
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcflow(fd, action) < 0) {
     Scm_SysError(\"tcflow failed\");
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc sys-tcgetpgrp (port-or-fd)
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   pid_t r = tcgetpgrp(fd);
   if (r < 0) { Scm_SysError(\"tcgetpgrp failed\"); }
   SCM_RETURN(Scm_MakeInteger(r));")
 
 (define-cproc sys-tcsetpgrp (port-or-fd pgrp)
   (assert (exact? pgrp))
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcsetpgrp(fd, pgrp) < 0) {
     Scm_SysError(\"tcsetpgrp failed\");
   }
