@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.92 2003-02-07 03:50:27 shirok Exp $
+;;;  $Id: genstub,v 1.93 2003-05-01 08:48:42 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1347,7 +1347,8 @@
                      :cpa cpa :direct-supers dsupers
                      :allocator allocator :printer printer)))
       (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
-      (emit-definition cclass))))
+      (with-cpp-condition cclass
+        (emit-definition cclass)))))
 
 (define-method c-printer-name-of ((self <cclass>))
   (let1 printer (printer-of self)
