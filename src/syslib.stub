@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.48 2001-10-04 20:09:40 shirok Exp $
+;;; $Id: syslib.stub,v 1.49 2001-10-04 20:11:38 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -380,7 +380,7 @@
 #endif
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-symbol rand_max "sym_rand_max"
+(define-symbol |RAND_MAX| "sym_rand_max"
   "Scm_MakeInteger(LONG_MAX)")
 
 ;;---------------------------------------------------------------------
