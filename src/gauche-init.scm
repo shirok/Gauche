@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.55 2001-12-15 10:59:05 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.56 2002-01-05 11:09:10 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -107,7 +107,9 @@
 
 ;; 
 (define (call-with-values producer consumer)
-  (with-module gauche (receive vals (producer) (apply consumer vals))))
+  (receive vals (producer) (apply consumer vals)))
+(with-module scheme
+  (define call-with-values (with-module gauche call-with-values)))
 
 (%autoload-scheme "gauche/with"
                   call-with-input-file call-with-output-file
