@@ -1,3 +1,10 @@
+2001-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c : write 'a instead of (quote a), etc.
+	* lib/text/tree.scm : handles dotted list as well.
+	* ext/charconv.c : fixed a bug that didn't allow to open an empty
+	  port for automatic conversion.
+	
 2001-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c : fixed a bug in MakeHashTable that sets incorrect type
