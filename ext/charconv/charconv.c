@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.42 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: charconv.c,v 1.43 2003-09-13 11:36:22 shirok Exp $
  */
 
 #include <string.h>
@@ -339,7 +339,7 @@ static int conv_output_closer(ScmPort *port)
     /* sends out the closing sequence, if any */
     r = jconv_reset(info, info->buf, info->bufsiz);
     if (r < 0) {
-        Scm_Error("something wrong in resetting output character encoding conversion (%s -> %s).  possibly implementation error.",
+        Scm_Error("something wrong in resetting output character encoding conversion (%s -> %s).  possibly an implementation error.",
                   info->fromCode, info->toCode);
     }
     if (r > 0) {

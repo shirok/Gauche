@@ -4,6 +4,7 @@
 GENERATED = jp1.SJIS jp1.UTF-8 jp1.ISO2022JP \
 	    jp2.SJIS jp2.ISO2022JP \
             jp3.SJIS jp3.UTF-8 jp3.ISO2022JP \
+            jp4.SJIS jp4.UTF-8 jp4.ISO2022JP \
 	    kr1.UTF-8 kr1.ISO2022KR
 
 .EUCJP.SJIS:

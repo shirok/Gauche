@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.14 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: jconv.c,v 1.15 2003-09-13 11:36:23 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -993,8 +993,11 @@ static size_t jis_ensure_state(ScmConvInfo *cinfo, int newstate, size_t outbytes
 {
     const char *escseq = NULL;
     size_t esclen = 0;
-    
-    if (cinfo->ostate == newstate) return 0;
+
+    if (cinfo->ostate == newstate) {
+        OUTCHK(outbytes);
+        return 0;
+    }
     switch (newstate) {
     case JIS_ASCII:
         escseq = "\033(B";  esclen = 3; break;
@@ -1186,20 +1189,6 @@ static int conv_name_find(const char *name)
     return -1;
 }
 
-/* Auxiliary routine for jconv */
-static size_t jconv_error(ScmConvInfo *info, size_t retval, size_t converted)
-{
-    if (retval == ILLEGAL_SEQUENCE) {
-        return retval;
-    } if (retval == INPUT_NOT_ENOUGH || retval == OUTPUT_NOT_ENOUGH) {
-        return converted;
-    } else {
-        Scm_Error("conversion routine from %s to %s returned irregular error code %d: implementation error?",
-                  info->fromCode, info->toCode, retval);
-        return -1;              /* dummy */
-    }
-}
-
 /* Internal conversion handler.
    There are five cases to handle:
    (1) fromCode === toCode
@@ -1235,7 +1224,7 @@ static size_t jconv_ident(ScmConvInfo *info, const char **iptr,
         *iptr += outroom;
         *iroom -= outroom;
         *oroom = 0;
-        return outroom;
+        return OUTPUT_NOT_ENOUGH;
     }
 }
    
@@ -1246,8 +1235,8 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
     ScmConvProc cvt = info->convproc[0];
     const char *inp = *iptr;
     char *outp = *optr;
-    size_t inr = *iroom, outr = *oroom, outchars, inchars;
-    size_t converted = 0;
+    int inr = *iroom, outr = *oroom; 
+    size_t outchars, inchars, converted = 0;
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_1tier %s->%s\n", info->fromCode, info->toCode);
@@ -1256,7 +1245,7 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
     while (inr > 0 && outr > 0) {
         inchars = cvt(info, inp, inr, outp, outr, &outchars);
         if (ERRP(inchars)) {
-            converted = jconv_error(info, inchars, converted);
+            converted = inchars;
             break;
         } else {
             converted += inchars;
@@ -1283,8 +1272,8 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
     ScmConvProc ocvt = info->convproc[1];
     const char *inp = *iptr;
     char *outp = *optr;
-    size_t inr = *iroom, outr = *oroom, outchars, inchars, bufchars;
-    size_t converted = 0;
+    int inr = *iroom, outr = *oroom;
+    size_t outchars, inchars, bufchars, converted = 0;
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_2tier %s->%s\n", info->fromCode, info->toCode);
@@ -1292,7 +1281,7 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
     while (inr > 0 && outr > 0) {
         inchars  = icvt(info, inp, inr, buf, INTBUFSIZ, &bufchars);
         if (ERRP(inchars)) {
-            converted = jconv_error(info, inchars, converted);
+            converted = inchars;
             break;
         }
         if (bufchars == 0) {
@@ -1300,7 +1289,7 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
         } else {
             bufchars = ocvt(info, buf, bufchars, outp, outr, &outchars);
             if (ERRP(bufchars)) {
-                converted = jconv_error(info, bufchars, converted);
+                converted = bufchars;
                 break;
             }
         }

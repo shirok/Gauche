@@ -101,6 +101,9 @@
 (map-test test-input "data/jp3"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-input "data/jp4"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-input "data/kr1"
           '("EUCKR" "UTF-8" "ISO2022KR")
           '("EUCKR" "UTF-8" "ISO2022KR"))
@@ -196,6 +199,19 @@
           internal-enc
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
+(map-test test-output/byte "data/jp4"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-output/chunk256 "data/jp4"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-output/chunk20 "data/jp4"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-output/char "data/jp4"
+          internal-enc
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+
 (map-test test-output/byte "data/kr1"
           '("EUCKR" "UTF-8" "ISO2022KR")
           '("EUCKR" "UTF-8" "ISO2022KR"))
@@ -250,6 +266,9 @@
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-string "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-string "data/jp4"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
