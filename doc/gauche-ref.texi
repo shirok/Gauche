@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.128 2001-11-29 19:24:04 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.129 2001-12-01 12:19:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7368,6 +7368,7 @@ of descendants of @var{class}.
 * NDBM interface::              
 * Original DBM interface::      
 * Character code conversion::   
+* Collection framework::        
 * Low-level file operations::   
 * Interactive session::         
 * User-level logging::          
@@ -8125,7 +8126,7 @@ APIs.
 
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Low-level file operations, Original DBM interface, Library modules
+@node Character code conversion, Collection framework, Original DBM interface, Library modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
@@ -8259,7 +8260,322 @@ usually in favor of the native CES.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Interactive session, Character code conversion, Library modules
+@node Collection framework, Low-level file operations, Character code conversion, Library modules
+@section @code{gauche.collection} - Collection framework
+@c NODE コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
+
+@deftp {Module} gauche.collection
+@mdindex gauche.collection
+This module provides a set of generic functions (GFs) that iterate over
+various collections.   The Scheme standard [R5RS] has some iterative
+primitives such as @code{map} and @code{for-each}, and SRFI-1 adds
+rich set of such functions, but they work only on lists.
+Using the object system, this module efficiently extends those
+functions for other collection classes such as vectors and hash tables.
+
+Those iterative GFs work on @emph{collections} and its subclass,
+@emph{sequences}.  A collection is a certain form of a set
+of objects that you can traverse all the object in it in a certain way.
+A sequence is a collection that all its elements are ordered, so that
+you can retrieve its element by index.
+
+The following Gauche built-in objects are treated as collections and/or
+sequences.
+@table @code
+@item <list>
+A sequence.
+@item <vector>
+A sequence.   SRFI-4 homogeneous vectors (@code{<s8vector>} and so on)
+are also sequences.
+@item <string>
+A sequence (of characters)
+@item <hash-table>
+A collection.  Each element is a pair of a key and a value.
+@item <char-set>
+A collection of characters.
+@end table
+
+Other extension modules that defines some sort of collections
+also provides collection interface (e.g. @code{<dbm>} families,
+@xref{Generic DBM interface}).
+
+The following table quickly shows the list of GFs this module
+provides.
+@table @asis
+@item Fundamental iterators
+@code{call-with-iterator}, @code{call-with-builder},
+@code{with-iterator}, @code{with-builder}, @code{call-with-iterators}.
+@item Mapping
+@code{fold}, @code{map}, @code{map-to}, @code{for-each}
+@item Selection and searching
+@code{find}, @code{filter}, @code{filter-to},
+@code{remove}, @code{remove-to}, @code{partition}, @code{partition-to},
+@code{delete}, @code{delete-to}
+@item Miscellaneous
+@code{size-of}, @code{lazy-size-of},
+@code{coerce-to}
+@item Sequence-specific operations
+@code{ref}, @code{(setter ref)}, @code{subseq}
+@end table
+
+The GFs that needs to return a set of objects, i.e. 
+@code{map}, @code{filter}, @code{remove}, @code{partition} and
+@code{delete}, 
+returns a list (or lists).  The corresponding ``-to'' variant
+(@code{map-to}, @code{filter-to}, @code{remove-to}, @code{partition-to}
+and @code{delete-to})
+takes a collection class argument and returns the collection of the class.
+@end deftp
+
+@menu
+* Fundamental iterator generic functions::  
+* Mapping over collection::     
+* Selection and searching in collection::  
+* Miscellaneous operations on collection::  
+* Operations on sequence::      
+* Creating your own collection class::  
+@end menu
+
+@node Fundamental iterator generic functions, Mapping over collection, Collection framework, Collection framework
+@subsection Fundamental iterator generic functions
+
+These are fundamental GFs on which all the rest of
+iterative method are built.  The API is not intended
+to be called from general code, but suitable for building
+other iterator construct.   The reason why I chose this API
+as fundamental GFs are explained at the bottom of this subsection.
+
+@deffn {Generic function} call-with-iterator collection proc &keyword start
+A fundamental iterator creator.   This creates two procedures
+from @var{collection}, both take no argument, and then call
+@var{proc} with those two procedures.   The first procedure is
+terminate predicate, which returns @code{#t} if the iteration
+is exhausted, or @code{#f} if there are still elements to be visited.
+The second procedure is an incrementer,
+which returns one element from the collection and sets the
+internal pointer to the next element.
+The behavior is undefined if you call the incrementer after
+the terminate predicate returns @code{#t}.
+
+If the collection is actually a sequence, this method takes
+optional @var{start} keyword argument, which specifies
+the index from where iteration begins.  It has no effect
+if the collection is not a sequence.
+
+This method returns the value(s) @var{proc} returned.
+
+@example
+(call-with-iterator '(1 2 3 4 5)
+  (lambda (end? next)
+    (do ((odd-nums 0))
+        ((end?) odd-nums)
+      (when (odd? (next)) (inc! odd-nums)))))
+ @result{} 5
+@end example
+
+See also @code{with-iterator} macro below, for it is much easier to use.
+@end deffn
+
+@deffn {Macro} with-iterator (collection end? next args @dots{}) body @dots{}
+A convenience macro to call @code{call-with-iterator}.
+@example
+(with-iterator (coll end? next args @dots{}) body @dots{})
+ @equiv{}
+(call-with-iterator coll
+  (lambda (end? next) body @dots{})
+   args @dots{})
+@end example
+@end deffn
+
+@defun call-with-iterators collections proc
+A helper function to write n-ary iterator method.
+This function applies @code{call-with-iterator} for each @var{collection}s,
+and makes two lists, the first consists of terminate predicates
+and the second of incrementers.  Then @var{proc} is called
+with those two lists.  Returns whatever @var{proc} returns.
+@end defun
+
+@deffn {Generic function} call-with-builder collection-class proc &keyword size
+A fundamental builder creator.   Builder is a way to construct
+a collection incrementally.
+
+@var{Collection-class} is a class of the collection to be built.
+This method creates two procedures, adder and getter.
+Adder procedure takes one argument and adds it to the collection
+being built.  Getter takes no argument and returns a built collection object.
+The effect is undefined if adder is called after getter is called.
+
+A keyword argument @var{size} may be specified if the size of
+the result collection is known.  Certain collections may be
+built much more efficiently if the size is known; other collections
+may just ignore it.
+
+Some collection class may take more keyword arguments to
+initialize the collection.
+
+This method returns the value(s) @var{proc} returned.
+
+@example
+(call-with-builder <list>
+  (lambda (add! get)
+    (add! 'a) (add! 'b) (add! 'c) (get)))
+ @result{} (a b c)
+
+(call-with-builder <vector>
+  (lambda (add! get)
+    (add! 'a) (add! 'b) (add! 'c) (get)))
+ @result{} #(a b c)
+@end example
+
+See also @code{with-builder} macro below, for it is much easier to use.
+@end deffn
+
+@deffn {Macro} with-builder (collection add! get args @dots{}) body @dots{}
+A convenience macro to call @code{call-with-builder}.
+@example
+(with-builder (coll add! get args @dots{}) body @dots{})
+ @equiv{}
+(call-with-builder coll
+  (lambda (add! get) body @dots{})
+  args @dots{})
+@end example
+@end deffn
+
+
+Most of the iterator GFs are built on top of these primitive GFs.
+By implementing those GFs, you can easily adapt your own collection
+class to all of those iterative
+operations.   Optionally you can overload some of higher-level
+generic functions for efficiency.
+
+It is debatable that which set of operations should be primitives.
+I chose call-with-iterator style for efficiency of the applications
+I write most.   The following is a discussion of other possible
+primitive iterators.
+
+@table @asis
+@item @code{fold}
+It is possible to make @code{fold} a primitive GFs.
+It can hide collection-specific iterating parameters neatly and
+efficiently.  However, it is rather cumbersome to derive
+generator-style interface from it.   It is also tricky
+to iterate irregulary over more than one collections.
+
+@item CPS
+Passes iteratee the continuation procedure that continues
+the iteration.   Unfortunately it is not very efficient
+on Gauche.  And it has resource management problem described in
+Oleg's article.
+
+@item Iterator object
+Like C++ iterator or CL generator.
+Easy to write loop.   The problem is that every call of
+checking termination or getting next element must be dispatched.
+
+@item Series
+CL's series can be very efficient if the compiler can statically
+analyze the usage of series.  Unfortunately it is not the case in
+Gauche.  Even if it could, the extension mechanism doesn't blend well
+with Gauche's object system.
+
+@item Macros
+Iterator can be implemented as macros, and that will be very efficient;
+e.g. Scheme48's iterator macro.  It uses macros to extend, however,
+and that doesn't blend well with Gauche's object system.
+@end table
+
+The current implementation is close to the iterator object approach,
+but using closures instead of iterators so that avoiding
+dispatching in the inner loop.  Also it allows the iterator
+implementator to take care of the resource problem.
+
+
+@node Mapping over collection, Selection and searching in collection, Fundamental iterator generic functions, Collection framework
+@subsection Mapping over collection
+
+@deffn {Generic function} fold proc knil coll @dots{}
+This is a natural extension of @var{fold} in SRFI-1 (@xref{SRFI-1 Fold}).
+@end deffn
+
+@deffn {Generic function} map proc coll
+@end deffn
+
+@deffn {Generic function} for-each proc coll
+@end deffn
+
+@deffn {Generic function} map-to class proc coll
+@end deffn
+
+
+@node Selection and searching in collection, Miscellaneous operations on collection, Mapping over collection, Collection framework
+@subsection Selection and searching in collection
+
+@deffn {Generic function} find pred coll
+@end deffn
+
+@deffn {Generic function} filter pred coll
+@end deffn
+
+@deffn {Generic function} filter-to class pred coll
+@end deffn
+
+@deffn {Generic function} remove pred coll
+@end deffn
+
+@deffn {Generic function} remove-to class pred coll
+@end deffn
+
+@deffn {Generic function} partition pred coll
+@end deffn
+
+@deffn {Generic function} partition-to class pred coll
+@end deffn
+
+@node Miscellaneous operations on collection, Operations on sequence, Selection and searching in collection, Collection framework
+@subsection Miscellaneous operations on collection
+
+@deffn {Generic function} size-of coll
+Returns the size of the collection.  Default method iterates over
+the collection to calculate the size, which is not very efficient
+and may diverge if the collection is infinite.
+You can overload the method for faster calculation.
+@end deffn
+
+@deffn {Generic function} lazy-size-of coll
+Returns either the size of the collection, or a promise to
+calculate it.  The intent of this method is to avoid
+size calculation if it is expensive.  In some cases, the caller
+wants to have size just for optimization, and it is not desirable
+to spend time to calculate the size.  Such caller uses this method
+and just discards the information if it is a promise.
+@end deffn
+
+@deffn {Generic function} coerce-to class coll
+Convert a collection @var{coll} to another collection
+which is an instance of @var{class}.
+@end deffn
+
+@node Operations on sequence, Creating your own collection class, Miscellaneous operations on collection, Collection framework
+@subsection Operations on sequence
+
+@deffn {Generic function} ref sequence index &optional fallback
+@end deffn
+
+@deffn {Generic function} {(setter ref)} sequence index value
+@end deffn
+
+@deffn {Generic function} subseq sequence &optional start end
+@end deffn
+
+
+@node Creating your own collection class,  , Operations on sequence, Collection framework
+@subsection Creating your own collection class
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Low-level file operations, Interactive session, Collection framework, Library modules
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -10099,13 +10415,14 @@ without echoing:
 
 @deftp {Module} gauche.test
 @mdindex gauche.test
+@c EN
 Defines a set of functions to write test scripts.
 A test script will look like this:
 @lisp
 (use gauche.test)
 (test-start "my feature")
-(load "my-feature")         ; @r{load your program}
-(select-module my-feature)  ; @r{if your program defines a module.}
+(load "my-feature")  ; @r{load your program}
+(import my-feature)  ; @r{if your program defines a module.}
 
 (test-section "feature group 1")
 (test "feature 1-1" EXPECT (lambda () TEST-BODY))
@@ -10119,7 +10436,30 @@ A test script will look like this:
 
 (test-end)
 @end lisp
+@c JP
+テストスクリプトを書くための手続きを提供します。
+テストスクリプトは次のような形になります。
+@lisp
+(use gauche.test)
+(test-start "my feature")
+(load "my-feature")  ; @r{テストすべきプログラムをロード}
+(import my-feature)  ; @r{モジュールを定義している場合はインポート}
 
+(test-section "feature group 1")
+(test "feature 1-1" EXPECT (lambda () TEST-BODY))
+(test "feature 1-2" EXPECT (lambda () TEST-BODY))
+ @dots{}
+
+(test-section "feature group 2")
+(define test-data ...)
+(test "feature 2-1" EXPECT (lambda () TEST-BODY))
+ @dots{}
+
+(test-end)
+@end lisp
+@c COMMON
+
+@c EN
 With this convention, you can run test both interactively or
 in batch.   To run a test interactively, just load the file
 and it reports a result of each test, as well as the summary
@@ -10127,10 +10467,23 @@ of failed test at the end.  To run a test in batch, it is
 convenient to redirect the stdout to some file
 If stdout is redirected to other than tty, all the verbose logs will go
 there, and only a small amount of messages go to stderr.
+@c JP
+このテストスクリプトは、バッチ処理でもインタラクティブセッションからでも
+実行できます。インタラクティブセッションの場合はこのテストスクリプトを
+ただロードすれば、各テストの結果とサマリーが報告されます。
+バッチテストの場合は、標準出力を別のファイルにリダイレクトしておくと良いでしょう。
+標準出力が端末でない場合、テスト手続きは詳しい結果をstdoutに出力し、簡単な
+メッセージを標準エラー出力に書き出します。
+@c COMMON
 
+@c EN
 It is recommended to have a "test" target always in Makefile
 of your module/program, so that the user of your program can run a
 test easily.  The rule may look like this:
+@c JP
+モジュールやプログラムを書いたら、Makefileに"test"ターゲットを作ることを
+お薦めします。ルールはこんな感じになるでしょう：
+@c COMMON
 
 @example
 test :
@@ -10140,24 +10493,43 @@ test :
 @end deftp
 
 @defun test name expected thunk &optional =
+@c EN
 Calls @var{thunk}, and compares its result with @var{expected}.
-The comparison predicate is @var{equal?} by default, but you can
+The comparison predicate is @code{equal?} by default, but you can
 specify your own predicate by the argument @var{=}.
 @var{Name} is a name of the test, for logging purpose.
+@c JP
+@var{thunk}を呼び、その結果を@var{expected}と比較します。
+比較手続きには、引数@var{=}が与えられていればそれを用い、そうでなければ@code{equal?}
+を用います。@var{name}はログに残すためのテストの名前です。
+@c COMMON
 @end defun
 
 @defun test-start module-name
+@c EN
 Initializes internal state and prints a log header.
 This should be called before any tests.
 @var{Module-name} is used only for logging purpose.
+@c JP
+テストの状態を初期化して、ヘッダをログに書き出します。テストを呼ぶ前に呼んで下さい。
+@var{module-name}はログのために使われる文字列です。
+@c COMMON
 @end defun
 
 @defun test-section section-name
+@c EN
 Marks beginning of the group of tests.  This is just for logging.
+@c JP
+一群のテストの開始をマークします。単にログに使われるだけです。
+@c COMMON
 @end defun
 
 @defun test-end
+@c EN
 Prints out list of failed tests.
+@c JP
+失敗したテストのリストを報告します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -10176,13 +10548,33 @@ Provides a metaclass that adds @code{:validator} slot option.
 
 @deftp {Class} <validator-meta>
 @clindex validator-meta
+@c EN
 This metaclass adds a feature that the class can validate a value
 before being set to the slot.   For example, if you want to guarantee
 that a certain slot always holds a string value, you can make a procedure
 be called before the slot is modified, either by @code{slot-ref} or
 by a setter method.  In the procedure you can either rejects a
-value except string, or coerce the value to a string.   See the
-following example:
+value except string, or coerce the value to a string.
+
+The validator procedure can be set per each slot by using @code{:validator}
+slot option.  The procedure takes two values, the instance and
+the value to be set.  Whatever the procedure returns is set to
+the actual slot value.
+See the following example:
+@c JP
+このメタクラスは、スロットに対して値がセットされようとする時にその値の正当性を
+検査する手続きを指定する機能を提供します。例えば、あるスロットに常に文字列のみが
+セットされているようにしたい場合、そのスロットに、@code{slot-ref}経由であれ
+アクセサメソッド経由であれ値がセットされようとした時に指定の手続きが呼ばれるように
+し、その手続きの中で、値が文字列でなかったらエラーとするか、強制的に値を
+文字列に変換してしまうことができます。その手続きが返した値が実際にスロットに
+セットされます。
+
+検査手続きは@code{:validator}スロットオプションによってスロット毎に指定できます。
+手続きは、インスタンスとセットされようとしている値の二つを引数に取ります。
+その手続きが返した値が実際にスロットにセットされる値となります。
+下の例を参照して下さい。
+@c COMMON
 
 @example
 (define-class <v> ()
@@ -10209,8 +10601,14 @@ following example:
 (set! (b-of v) 3.4)  @result{} @r{error}
 @end example
 
-
-
+@c EN
+It looks similar to the virtual slot, but note that a slot with
+validator has an actual storage in the instance, while a virtual
+slot doesn't.
+@c JP
+仮想スロットに似ていますが、validatorを持つスロットはインスタンス内に実際に
+値を格納している点が異なります。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
