@@ -19,3 +19,10 @@
   (assert (mersenne-twister? mt))
   "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt)));")
 
+(define-cproc %mt-random-integer (mt n)
+  (assert (mersenne-twister? mt))
+  "SCM_RETURN(Scm_MTGenrandInt(mt, n));")
+
+(define-cproc %mt-random-uint32 (mt)
+  (assert (mersenne-twister? mt))
+  "SCM_RETURN(Scm_MakeIntegerFromUI(Scm_MTGenrandU32(mt)));")

@@ -9,7 +9,7 @@
  *   - make it modular, esp., all the state information is kept in
  *     the allocated memory for random number generator object.
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.1 2002-05-10 10:57:48 shirok Exp $
+ * $Id: mt-random.c,v 1.2 2002-05-11 02:26:25 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -182,7 +182,7 @@ double Scm_MTGenrandF64(ScmMersenneTwister *mt)
 } 
 
 /*
- * Generic integer routine for [0, n-1]
+ * Generic integer routine for [0, n-1], 0 < n <= 2^32
  */
 
 /* if integer N is 2^e, returns e; otherwise, returns -1. */
@@ -227,35 +227,41 @@ static ScmObj genrand_int_small(ScmMersenneTwister *mt, unsigned long n)
     if ((e = xlog2(n)) >= 0) {
         /* optimize for 2^e case */
         r = Scm_MTGenrandU32(mt);
-        return Scm_MakeInteger(r >> e);
+        return Scm_MakeInteger(r >> (31-e));
     } else {
-        double q = (double)0xffffffff / (double)(n-1);
-        r = Scm_MTGenrandU32(mt);
+        double q = floor((double)0xffffffff / (double)n);
+        double qn = q * n;
+        do {
+            r = Scm_MTGenrandU32(mt);
+        } while (r >= qn);
         return Scm_MakeInteger((unsigned long)(r/q));
     }
 }
 
-#if 0
 ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n)
 {
-    /* special optimization if n == 2^e */
-    if (SCM_BIGNUMP(n)) {
-        
-    }
-    
     if (SCM_INTP(n)) {
-        long m = SCM_INT_VALUE(n), q, r;
-        int i;
-        /* 
-        
-
-    } else if (SCM_BIGNUMP(n)) {
+        long m = SCM_INT_VALUE(n);
+        if (m <= 0) goto err;
+        return genrand_int_small(mt, m);
     }
+#if SIZEOF_LONG == 4
+    if (SCM_BIGNUMP(n)) {
+        if (SCM_BIGNUM_SIGN(n) <= 0) goto err;
+        if (SCM_BIGNUM_SIZE(n) == 1) {
+            return genrand_int_small(mt, SCM_BIGNUM(n)->values[0]);
+        }
+        if (SCM_BIGNUM_SIZE(n) == 2
+            && SCM_BIGNUM(n)->values[0] == 0
+            && SCM_BIGNUM(n)->values[1] == 1) {
+            return Scm_MakeInteger(Scm_MTGenrandU32(mt));
+        }
+    }
+#endif
   err:
-    Scm_Error("bad type of argument for n: positive integer required, but got %S", n);
+    Scm_Error("bad type of argument for n: positive integer up to 2^32 is required, but got %S", n);
     return SCM_UNDEFINED; /*dummy*/
 }
-#endif
 
 /*
  * Gauche specific stuff

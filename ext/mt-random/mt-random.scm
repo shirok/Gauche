@@ -12,16 +12,40 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: mt-random.scm,v 1.1 2002-05-10 10:57:48 shirok Exp $
+;;;  $Id: mt-random.scm,v 1.2 2002-05-11 02:26:25 shirok Exp $
 ;;;
 
 (define-module math.mt-random
+  (use srfi-4)
   (export <mersenne-twister>
           mt-random-real
-          mt-random-integer)
+          mt-random-integer
+          mt-random-fill-u32vector!
+          mt-random-fill-s32vector!
+          mt-random-fill-f32vector!
+          mt-random-fill-f64vector!)
   )
 (select-module math.mt-random)
 
 (dynamic-load "mt-random")
+
+(define (%get-nword-random-int mt n)
+  (let loop ((i 0) (r (%mt-random-uint32 mt)))
+    (if (= i n)
+        r
+        (loop (+ i 1)
+              (+ (ash r 32) (%mt-random-uint32 mt))))))
+
+(define (mt-random-integer mt n)
+  (when (not (positive? n)) (error "invalid range" n))
+  (if (<= n #x100000000)
+      (%mt-random-integer mt n)
+      (let* ((siz (ash (integer-length n) -5))
+             (q   (quotient (ash 1 (* 32 (+ siz 1))) n))
+             (qn  (* q n)))
+        (let loop ((r (%get-nword-random-int mt siz)))
+          (if (< r qn)
+              (quotient r q)
+              (loop #(%get-nword-random-int mt siz)))))))
 
 (provide "math/mt-random")
