@@ -12,17 +12,8 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.38 2001-03-05 10:45:32 shiro Exp $
+;;; $Id: extlib.stub,v 1.39 2001-03-06 08:55:58 shiro Exp $
 ;;;
-
-;;
-;; Macros
-;;
-
-(define-cproc %make-macro-transformer (name proc)
-  (assert (symbol? name))
-  (assert (procedure? proc))
-  "  SCM_RETURN(Scm_MakeMacroTransformer(name, proc));")
 
 ;;
 ;; 6.1  Equivalence predicates
