@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.373 2003-02-27 08:23:19 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.374 2003-02-27 10:25:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -22971,7 +22971,7 @@ Olin Shivers氏のリファレンス実装に基づいて実装されています。
 * SRFI-1 Searching::            
 * SRFI-1 Deletion::             
 * SRFI-1 Association lists::    
-* SRFI-1 set operations::       
+* SRFI-1 Set operations::       
 @end menu
 
 @node SRFI-1 List constructors, SRFI-1 List predicates, srfi-1 - List library, srfi-1 - List library
@@ -23629,7 +23629,7 @@ is the same as in the original list.
 The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @end defun
 
-@node SRFI-1 Association lists, SRFI-1 set operations, SRFI-1 Deletion, srfi-1 - List library
+@node SRFI-1 Association lists, SRFI-1 Set operations, SRFI-1 Deletion, srfi-1 - List library
 @subsection Association lists
 
 @defun alist-cons key datum alist
@@ -23639,52 +23639,103 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 
 @defun alist-copy alist
 [SRFI-1] Returns a fresh copy of @var{alist}.
+The spine of @var{alist} and each cell that points a key and a value
+is copied.
+@example
+(define a (list (cons 'a 'b) (cons 'c 'd)))
+a @result{} ((a . b) (c . d))
+
+(definea b (alist-copy a))
+b @result{} ((a . b) (c . d))
+
+(set-cdr! (car a) 'z)
+a @result{} ((a . z) (c . d))
+b @result{} ((a . b) (c . d))
+@end example
 @end defun
 
 @defun alist-delete key alist &optional =
 @defunx alist-delete! key alist &optional =
 [SRFI-1]
+Deletes all cells in @var{alist} whose key is the same as @var{key}.
+Comparison is done by a procedure @var{=}.  The default is @code{eqv?}.
+
+The linear-update version @code{alist-delete!} may or may not modify
+@var{alist}.
 @end defun
 
 @defun assoc$ item
 Partial application version of @code{assoc}.
 @end defun
 
-@node SRFI-1 set operations,  , SRFI-1 Association lists, srfi-1 - List library
+@node SRFI-1 Set operations,  , SRFI-1 Association lists, srfi-1 - List library
 @subsection Lists as sets
 
-These procedures use lists as a set.
+These procedures use a list as a set, that is,
+the elements in a list matter, but their order doesn't.
 
-@defun lset@code{<=} elt= list1 @dots{}
+All procedures in this category takes a comparison procedure
+@var{elt=}, as the first argument, which is used to determine
+two elements in the given sets are the same.
+
+See also @ref{util.combinations - Combination library}, which
+concerns combinations of elements in the set.
+
+@defun lset<= elt= list1 @dots{}
 [SRFI-1]
+Returns @code{#t} iff all elements in @var{list1} are also included
+in @var{list2}, and so on.
+If no lists are given, or a single list is given,
+@code{#t} is returned.
 @end defun
 
 @defun lset= elt= list1 list2 @dots{}
 [SRFI-1]
+Returns @code{#t} if all elements in @var{list1} are in @var{list2},
+and all elements in @var{list2} are in @var{list1}, and so on.
+
+@example
+(lset= eq? '(b e a) '(a e b) '(e e b a)) @result{} #t
+@end example
 @end defun
 
 @defun lset-adjoin elt= list elt @dots{}
 [SRFI-1]
+Adds @var{elt} @dots{} to the set @var{list}, if each one is not
+already a member of @var{list}.  (The order doesn't matter).
+
+@example
+(lset-adjoin eq? '(a b c) 'a 'e) @result{} '(e a b c)
+@end example
 @end defun
 
 @defun lset-union elt= list1 @dots{}
 [SRFI-1]
+Returns the union of the sets @var{list1} @dots{}.
 @end defun
 
 @defun lset-intersection elt= list1 list2 @dots{}
 [SRFI-1]
+Returns a set of elements that are in every @var{list}s.
 @end defun
 
 @defun lset-difference elt= list1 list2 @dots{}
 [SRFI-1]
+Returns a set of elements that are in @var{list1} but not
+in @var{list2}.  In n-ary case, binary differece operation is
+simply folded.
 @end defun
 
 @defun lset-xor elt= list1 @dots{}
 [SRFI-1]
+Returns the exclusive-or of given sets; that is, the returned
+set consists of the elements that are in either @var{list1} or @var{list2},
+but not in both.   In n-ary case, binary xor operation is simply folded.
 @end defun
 
 @defun lset-diff+intersection elt= list1 list2 @dots{}
 [SRFI-1]
+Returns two sets, a difference and an intersection of given sets.
 @end defun
 
 @defun lset-union! elt= list @dots{}
@@ -29226,6 +29277,17 @@ it is shorter than @var{k} by default, or added @var{padding} if
   @result{} ((a b c) (d e f) (g))
 (slices '(a b c d e f g) 3 #t 'z)
   @result{} ((a b c) (d e f) (g z z))
+@end example
+@end defun
+
+@defun intersperse item list
+Inserts @var{item} between elements in the @var{list}.
+(The order of arguments is taken from Haskell's intersperse).
+
+@example
+(intersperse '+ '(1 2 3))  @result{} (1 + 2 + 3)
+(intersperse '+ '(1))      @result{} (1)
+(intersperse '+ '())       @result{} ()
 @end example
 @end defun
 
