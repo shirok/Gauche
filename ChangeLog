@@ -1,3 +1,8 @@
+2003-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/libutil.scm, lib/gauche/reload.scm : added libutuil.
+	* src/gauche-init.scm : set autoloads for gauche.libutil.
+
 2003-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/jconv.c : fixed a bug that caused buffer overflow

@@ -1,5 +1,5 @@
 ;;;
-;;; module utilities - to be autoloaded.
+;;; library utilities - to be autoloaded.
 ;;;  
 ;;;   Copyright (c) 2003 Shiro Kawai, All rights reserved.
 ;;;   
@@ -30,14 +30,15 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: modutil.scm,v 1.2 2003-09-12 21:12:46 shirok Exp $
+;;;  $Id: libutil.scm,v 1.1 2003-09-14 08:43:09 shirok Exp $
 ;;;
 
-(define-module gauche.modutil
+(define-module gauche.libutil
   (use srfi-1)
   (use srfi-13)
-  (export library-exists? library-fold library-has-module?))
-(select-module gauche.modutil)
+  (export library-exists? library-fold library-map library-for-each
+          library-has-module?))
+(select-module gauche.libutil)
 
 ;; library-fold - iterate over the modules or libraries whose name matches
 ;;  the given pattern.
@@ -48,21 +49,16 @@
 (define (library-fold pattern proc seed . opts)
   (let-keywords* opts ((paths *load-path*)
                        (allow-duplicates? #f)
-                       (strict? #f))
-    (define pats
-      (cond ((string? pattern)
-             (string-split pattern #\/))
-            ((symbol? pattern)
-             (string-split (x->string pattern) #\.))
+                       (strict? #t))
+
+    (define search-module?
+      (cond ((string? pattern) #f)
+            ((symbol? pattern) #t)
             (else
              (error "string or symbol required for pattern, but got"
                     pattern))))
 
     (define seen '())
-
-    (define (match? pat component) ;; for now...
-      (cond ((equal? pat "*") #t)
-            (else (string=? pat component))))
 
     ;; pats - list of pattern components splitted by '.' or '/'
     ;; prefix - one of load paths, e.g. /usr/share/gauche/site/lib/
@@ -81,49 +77,71 @@
                     (string-suffix? ".scm" base)
                     (match? (car pats) (string-drop-right base 4))
                     (file-exists? path))
-               (proc file path seed))
+               (cond (allow-duplicates?  (proc (ensure path file) path seed))
+                     ((member file seen) seed)
+                     ((ensure path file)
+                      => (lambda (mod)
+                           (push! seen file)
+                           (proc mod path seed)))
+                     (else seed)))
               (else seed))))
 
+    (define (match? pat component)
+      (let1 rx (module-glob-pattern->regexp pat)
+        (cond ((rx component) => (lambda (m) (m 0)))
+              (else #f))))
+
+    (define (ensure path file)
+      (if search-module?
+        (let1 modname (path->module-name (string-drop-right file 4))
+          (and (or (not strict?)
+                   (library-has-module? path modname))
+               modname))
+        (string-drop-right file 4)))
+
     ;; main body
-    (fold (lambda (prefix seed)
-            (fold (lambda (file seed)
-                    (search pats prefix file file seed))
-                  seed (readdir prefix)))
-          seed paths)
+    (let ((pats (if search-module?
+                  (string-split (x->string pattern) #\.)
+                  (string-split pattern #\/))))
+      (fold (lambda (prefix seed)
+              (fold (lambda (file seed)
+                      (search pats prefix file file seed))
+                    seed (readdir prefix)))
+            seed paths))
     ))
 
+;; Just check existence of library.
 (define (library-exists? mod/path . opts)
   (let-optionals* opts ((force-search? #f)
                         (strict? #f)
                         (paths *load-path*))
-    (define (for-each-paths proc name)
-      (let loop ((paths paths))
-        (if (null? paths)
-          #f
-          (let1 p (string-append (car paths) "/" name ".scm")
-            (or (and (file-exists? p) (proc p))
-                (loop (cdr paths)))))))
     
     (or (and (not force-search?)
              ;; see if specified mod/path is already loaded
              (or (and (string? mod/path) (provided? mod/path))
                  (and (symbol? mod/path) (find-module mod/path))))
         ;; scan the filesystem
-        (cond ((string? mod/path)
-               (for-each-paths identity mod/path))
-              ((symbol? mod/path)
-               (let1 name (module-name->path mod/path)
-                 (for-each-paths (lambda (p)
-                                   (if strict?
-                                     (library-has-module? p mod/path)
-                                     #t))
-                                 name)))
-              (else
-               (error "string or symbol required, bot got" mod/path))))
+        (call/cc
+         (lambda (found)
+           (library-fold mod/path
+                         (lambda (mod path seed) (found #t))
+                         #f
+                         :strict? strict? :paths paths))))
     ))
 
+;; Convenience wrappers
+(define (library-map mod/path proc . opts)
+  (reverse! (apply library-fold mod/path
+                   (lambda (mod path seed) (cons (proc mod path) seed))
+                   '() opts)))
+
+(define (library-for-each mod/path proc . opts)
+  (library-fold mod/path (lambda (mod path seed) (proc mod path)) '() opts))
+
 ;; Try to determine the file is a module source file
-(define (module-file? file name)
+;;  NB: this will be more involved when we allow more than one modules
+;;  in a file.  Or should we?
+(define (library-has-module? file name)
   (let1 exp (with-error-handler (lambda (e) #f)
               (lambda ()
                 (with-input-from-file file read :if-does-not-exist #f)))
@@ -148,4 +166,25 @@
 (define (topath prefix file)
   (sys-normalize-pathname (string-append prefix "/" file) :canonicalize #t))
 
-(provide "gauche/modutil")
+;; NB: this is also used by gauche.reload
+(define (module-glob-pattern->regexp pat)
+  (with-error-handler
+      (lambda (e) (error "bad glob pattern" pat))
+    (lambda ()
+      (string->regexp
+       (with-string-io pat
+         (lambda ()
+           (display "^")
+           (let loop ((c (read-char)))
+             (unless (eof-object? c)
+               (case c
+                 ((#\?) (display "[^.]") (loop (read-char)))
+                 ((#\*) (display "[^.]*") (loop (read-char)))
+                 ((#\\) (let1 c2 (read-char)
+                          (unless (eof-object? c2)
+                            (write-char c2) (loop (read-char)))))
+                 ((#\.) (display "\\.") (loop (read-char)))
+                 (else (write-char c) (loop (read-char))))))
+           (display "$")))))))
+
+(provide "gauche/libutil")

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.108 2003-09-11 19:51:13 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.109 2003-09-14 08:43:09 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -226,6 +226,9 @@
 
 (autoload gauche.hashutil hash-table hash-table-fold
                           hash-table-for-each hash-table-map)
+
+(autoload gauche.libutil  library-fold library-map library-for-each
+                          library-exists? library-has-module?)
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)

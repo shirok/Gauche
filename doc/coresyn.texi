@@ -1597,7 +1597,7 @@ for special cases.  So, when you are writing routines that
 deal with modules and library files, do not apply the above
 default rule blindly.   Gauche provides two procedures,
 @code{module-name->path} and @code{path->module-name},
-to do mapping for you (see @ref{Using modules}, for details).
+to do mapping for you (see @ref{Module introspection}, for details).
 
 @node Defining and selecting modules, Using modules, Modules and libraries, Modules
 @subsection Defining and selecting modules
@@ -1793,15 +1793,6 @@ In future, there may be some mechanism to customize this mapping.
 @c COMMON
 @end defmac
 
-@defun module-name->path symbol
-Converts a module name @var{symbol} to a fragment of pathname string.
-@end defun
-
-@defun path->module-name string
-Reverse function of @code{module-name->path}.
-@end defun
-
-
 @node Module inheritance, Module introspection, Using modules, Modules
 @subsection Module inheritance
 @c NODE モジュールの継承
@@ -1936,6 +1927,22 @@ all exported symbols from three submodules become available.
 @node Module introspection, Predefined modules, Module inheritance, Modules
 @subsection Module introspection
 @c NODE モジュールイントロスペクション
+
+@c EN
+This subsection lists procedures that operates on modules at run-time.
+With these procedures you can introspect the modules, create new modules
+procedurally, or check the existence of certain modules/libraries, for
+example.  However, don't forget that modules are primarily
+compile-time structures.  Tweaking modules at run-time is only
+for those who know what they are doing.
+@c JP
+この節では、実行時にモジュールを操作する手続きをリストします。
+これらの手続きにより、例えばモジュールの内部を調べたり、手続き的に
+新しいモジュールを作成したり、特定のモジュールやライブラリの存在を
+調べたりすることができます。ただし、モジュールは第一にコンパイル時の
+構造であることを忘れないでください。実行時にモジュールをいじくるのは、
+十分にモジュールの構造を理解した上で行ってください。
+@c COMMON
 
 @deftp {Builtin Class} <module>
 @clindex module
@@ -2095,6 +2102,31 @@ is used.
 @c COMMON
 @end defun
 
+@defun module-name->path symbol
+@c EN
+Converts a module name @var{symbol} to a fragment of pathname string.
+@c JP
+モジュール名@var{symbol}を、パス名の一部へと変換します。
+@c COMMON
+@end defun
+
+@defun path->module-name string
+@c EN
+Reverse function of @code{module-name->path}.
+@c JP
+@code{module-name->path}の逆関数です。
+@c COMMON
+@end defun
+
+@c EN
+If you want to find out
+specific libraries and/or modules are installed in the system and
+available from the program, see @ref{Operations on libraries}.
+@c JP
+特定のライブラリやモジュールがシステムにインストールされて使える状態にあるか
+調べたりする場合は、@ref{Operations on libraries}を参照して下さい。
+@c COMMON
+
 @node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
 @c NODE 組み込みモジュール
@@ -2126,6 +2158,18 @@ and the binding of procedures defined in R5RS.
 R5RSで定義されている全ての手続きの束縛を含みます。
 @c COMMON
 @end deftp
+
+@c EN
+Note that if you change the current module to @code{null} or
+@code{scheme} by @code{select-module}, there will be no way
+to switch back to other modules, since module-related syntaxes
+and procedures are not visible from @code{null} and @code{scheme}
+modules.
+@c JP
+@code{select-module}によって一度@code{null}や@code{scheme}モジュールに
+入ると、そこから他のモジュールに移ることはできなくなることに注意してください。
+これらのモジュールからは、あらゆるモジュール操作構文が不可視だからです。
+@c COMMON
 
 @deftp {Builtin Module} gauche
 @mdindex gauche

@@ -16,6 +16,19 @@ Those modules should generally be loaded and imported (usually using @code{use}
 @c COMMON
 
 @c EN
+Some modules are described as "autoloaded".  That means you don't need
+to @code{load} or @code{use} the module explicitly; at the first time
+the bindings are used in the program, the module is automatically
+loaded and imported.  See @ref{Autoload}, for the details of autoloading.
+@c JP
+いくつかのモジュールは「オートロードされる」と表記されています。
+この場合は、そのモジュールを使うにあたってあらかじめモジュールをロードしたり
+@code{use}しておく必要はありません。そのモジュールの束縛が使われた時点で、
+モジュールが自動的にロードされインポートされます。オートロードの
+詳細については@ref{Autoload}を参照してください。
+@c COMMON
+
+@c EN
 @ref{Library modules - Gauche extensions} describes
 @code{gauche.*} modules, which are more or less considered
 the core features of Gauche but separated since less frequently used.
@@ -63,6 +76,17 @@ network protocol utilities, and more.
 インタフェース、ファイルシステムユーティリティ、ネットワークプロトコルユーティリティ
 等があります。
 @c COMMON
+
+@c EN
+There are a few procedures that helps your program to check
+the existence of certain modules or libraries at run-time.
+See @ref{Operations on libraries}, for the details.
+@c JP
+実行時にプログラムが特定のモジュールやライブラリの存在を検査できる
+手続きがいくつか提供されています。
+詳しくは@ref{Operations on libraries}を参照して下さい。
+@c COMMON
+
 
 @c EN
 The following table summarizes naming categories of the modules,

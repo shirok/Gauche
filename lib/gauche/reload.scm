@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: reload.scm,v 1.6 2003-09-11 19:57:54 shirok Exp $
+;;;  $Id: reload.scm,v 1.7 2003-09-14 08:43:09 shirok Exp $
 ;;;
 
 ;;; Created:    <2002-11-06 16:02:55 foof>
@@ -27,11 +27,16 @@
   (use srfi-2)
   (use file.util)
   (use srfi-13)
+  (use gauche.libutil)
   (use gauche.parameter)
   (export reload reload-modified-modules
           module-reload-rules reload-verbose)
   )
 (select-module gauche.reload)
+
+;; share the internal utility
+(define module-glob-pattern->regexp
+  (with-module gauche.libutil module-glob-pattern->regexp))
 
 ;; parameter reload-verbose
 ;;   If true, reload and reload-modified-modules reports what they are
@@ -110,7 +115,8 @@
       ;; regexps up front
       (define rules
         (map (lambda (x)
-               (cons (glob-pattern->regexp (symbol->string (car x))) (cdr x)))
+               (cons (module-glob-pattern->regexp (symbol->string (car x)))
+                     (cdr x)))
              (if (pair? rl) (car rl) (module-reload-rules))))
       ;; search for the module name in ls
       (define (find-rule name ls)
@@ -133,23 +139,6 @@
                (hash-table-put! mod-times name now)
                (reload name rule))))
          (all-modules))))))
-
-;; small util
-(define (glob-pattern->regexp pat)
-  (with-string-io pat
-    (lambda ()
-      (display "^")
-      (let loop ((c (read-char)))
-        (unless (eof-object? c)
-          (case c
-            ((#\?) (display "[^.]") (loop (read-char)))
-            ((#\*) (display "[^.]*") (loop (read-char)))
-            ((#\\) (let1 c2 (read-char)
-                     (unless (eof-object? c2)
-                       (write-char c2) (loop (read-char)))))
-            ((#\.) (display "\\.") (loop (read-char)))
-            (else (write-char c) (loop (read-char))))))
-      (display "$"))))
 
 (provide "gauche/reload")
 
