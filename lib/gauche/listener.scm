@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: listener.scm,v 1.2 2002-10-22 10:17:43 shirok Exp $
+;;;  $Id: listener.scm,v 1.3 2002-10-23 08:01:41 shirok Exp $
 ;;;
 
 ;; provides functions useful to implement a repl listener
@@ -38,26 +38,26 @@
 ;;   port whenever it is ready.
 
 (define-class <listener> ()
-  ((iport     :init-keyword :input-port  :init-form (current-input-port))
-   (oport     :init-keyword :output-port :init-form (current-output-port))
-   (eport     :init-keyword :error-port  :init-form (current-error-port))
-   (reader    :init-keyword :reader    :init-form read)
-   (evaluator :init-keyword :evaluator :init-form eval)
-   (printer   :init-keyword :printer
-              :init-form (lambda args
-                           (for-each (lambda (r) (write r) (newline)) args)))
-   (prompter  :init-keyword :prompter
-              :init-form (lambda () (display "listener> ")))
+  ((input-port  :init-keyword :input-port  :init-form (current-input-port))
+   (ouptut-port :init-keyword :output-port :init-form (current-output-port))
+   (error-port  :init-keyword :error-port  :init-form (current-error-port))
+   (reader      :init-keyword :reader    :init-form read)
+   (evaluator   :init-keyword :evaluator :init-form eval)
+   (printer     :init-keyword :printer
+                :init-form (lambda args
+                             (for-each (lambda (r) (write r) (newline)) args)))
+   (prompter    :init-keyword :prompter
+                :init-form (lambda () (display "listener> ")))
    (environment :init-keyword :environment
                 :init-form (interaction-environment))
-   (finalizer :init-keyword :finalizer :init-form #f)
-   (ehandler  :init-keyword :error-handler
-              :init-form (lambda (e) (report-error e)))
-   (rbuf      :init-value "")
+   (finalizer   :init-keyword :finalizer :init-form #f)
+   (error-handler :init-keyword :error-handler
+                :init-form (lambda (e) (report-error e)))
+   (rbuf        :init-value "")
    ))
 
 (define-method listener-show-prompt ((self <listener>))
-  (with-output-to-port (ref self 'oport)
+  (with-output-to-port (ref self 'ouptut-port)
     (lambda ()
       ((ref self 'prompter))
       (flush))))
@@ -70,11 +70,11 @@
         (with-input-from-string istr
           (lambda ()
             (with-error-handler
-                (ref self 'ehandler) 
+                (ref self 'error-handler) 
               (lambda ()
                 (let* ((env  (ref self 'environment))
                        (expr ((ref self 'reader))))
-                  (with-output-to-port (ref self 'oport)
+                  (with-output-to-port (ref self 'ouptut-port)
                     (lambda ()
                       (call-with-values
                           (lambda () ((ref self 'evaluator) expr env))
@@ -87,12 +87,12 @@
       ))
 
   (lambda ()
-    (let ((chunk (read-block 8192 (ref self 'iport))))
+    (let ((chunk (read-block 8192 (ref self 'input-port))))
       (if (eof-object? chunk)
           (cond ((ref self 'finalizer) => (lambda (f) (f))))
           (begin
             (update! (ref self 'rbuf) (cut string-append <> chunk))
-            (with-error-to-port (ref self 'eport) repl)))))
+            (with-error-to-port (ref self 'error-port) repl)))))
   )
 
 ;; Check if the given string can be parsed as a complete sexp.
@@ -113,6 +113,7 @@
                 ((eqv? #\{ ch) (and (rec #\} ) (rec closer)))
                 ((eqv? #\" ch) (and (rec-escaped #\") (rec closer)))
                 ((eqv? #\| ch) (and (rec-escaped #\|) (rec closer)))
+                ((eqv? #\; ch) (skip-to-nl) (rec closer))
                 ((eqv? #\# ch)
                  (let1 c2 (read-char)
                    (cond ((eof-object? c2) #f)
@@ -155,6 +156,12 @@
                   (char-set-contains? #[\S] ch))
               ch
               (loop (read-char)))))
+
+      (define (skip-to-nl)
+        (let loop ((ch (read-char)))
+          (unless (or (eof-object? ch)
+                      (eqv? ch #\newline))
+            (loop (read-char)))))
 
       ;; body
       (rec #f)

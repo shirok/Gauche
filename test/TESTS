@@ -22,4 +22,5 @@ text.scm
 util.scm
 version.scm
 file.scm
+listener.scm
 www.scm

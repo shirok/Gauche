@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.286 2002-10-18 08:13:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.287 2002-10-23 08:01:11 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13512,6 +13512,7 @@ WWWで主として使われるプロトコルやデータフォーマットの実装。
 * Collection framework::        
 * Low-level file operations::   
 * Interactive session::         
+* Listener::                    
 * User-level logging::          
 * Networking::                  
 * Parameters::                  
@@ -15469,7 +15470,7 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Interactive session, User-level logging, Low-level file operations, Library modules - Gauche extensions
+@node Interactive session, Listener, Low-level file operations, Library modules - Gauche extensions
 @section @code{gauche.interactive} - Utilities for interactive session
 @c NODE インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 
@@ -15596,7 +15597,198 @@ to parse the info file.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node User-level logging, Networking, Interactive session, Library modules - Gauche extensions
+@node Listener, User-level logging, Interactive session, Library modules - Gauche extensions
+@section @code{gauche.listener} - Listener
+@c NODE リスナー, @code{gauche.listener} - リスナー
+
+@deftp {Module} gauche.listener
+@mdindex gauche.listener
+@c EN
+This module provides a convenient way to enable multiple
+read-eval-print loop (repl) concurrently.
+@c JP
+このモジュールは、
+複数のread-eval-printループ(repl)を並行して動作させるのに便利な機能を提供します。
+@c COMMON
+
+@c EN
+An obvious way to run multiple repls is to use threads;
+creating as many threads as sessions and calling
+@code{read-eval-print-loop} (@xref{Eval and repl}) from each thread.
+Nevertheless, sometimes single threaded implementation is preferred.
+For instance, you're using a library which is not MT-safe,
+or your application already uses select/poll-based dispatching mechanism.
+@c JP
+複数のreplを実現する自明な方法は、セッション毎にスレッドを生成して
+各スレッド上で@code{read-eval-print-loop} (@ref{Eval and repl}参照)を
+呼ぶことですが、シングルスレッドでの実装が好ましい場合もあります。
+例えばアプリケーションがMT-safeでないライブラリに大きく依存していたり、
+既にアプリケーションがselectやpollをベースにしたディスパッチメカニズムを
+持っているような場合です。
+@c COMMON
+
+@c EN
+To implement repl in the single-threaded selection-base application,
+usually you register a handler that is called when data is available
+in the listening port.  The handler reads the data and add them into
+a buffer.  Then it examines if the data in the buffer consists a
+complete expression, and if so, it reads the expression from the
+buffer, evaluates it, then prints the result to the reporting port.
+The @code{<listener>} class in this module provides this handler mechanism,
+so all you need to do is to register the handler to your dispatching
+mechanism.
+@c JP
+シングルスレッドのselectionベースのアプリケーションでreplを実装するには、
+通常、listenしているポートにデータが到着した時に呼ばれるハンドラを登録します。
+ハンドラはポートからデータを読み、内部バッファに追加します。
+そして内部バッファをスキャンし、データが完全な式を構成した場合は
+それをS式として読みだし、評価して結果をポートに流します。
+このモジュールの@code{<listener>}クラスはこのハンドラのメカニズムを提供するので、
+アプリケーション側はそれを自分のディスパッチメカニズムに登録するだけで済みます。
+@c COMMON
+
+@c EN
+Note: it may also be desirable to buffer the output sometimes,
+but the current version doesn't implement it.
+@c JP
+註：場合によっては、出力もバッファリングする必要があるかもしれませんが、
+現在はそれは実装されていません。
+@c COMMON
+@end deftp
+
+@deftp {Class} <listener>
+@c EN
+An object that maintains the state of a repl session.
+It has many external slots to customize its behavior.
+Those slot values can be set at construction time
+by using the keyword of the same name as the slot,
+or can be set by @code{slot-set!} afterwards.  However,
+most of them should be set before calling 
+@code{listener-read-hander}.
+@c JP
+Replセッションの状態を維持するオブジェクトです。
+オブジェクトのふるまいをカスタマイズするためにいくつもの外部スロットがあります。
+これらのスロットの値は、スロットの名前と同名のキーワード引数を用いて
+オブジェクトの構築時に指定することもできますし、オブジェクト構築後に
+@code{slot-set!}で設定することもできますが、@code{listener-read-handler}
+を呼ぶ前に確定していなければなりません。
+@c COMMON
+
+@defivar <listener> input-port
+Specifies the input port from which the listener get the input.
+The default value is the current input port when the object is
+constructed.
+@end defivar
+
+@defivar <listener> output-port
+Specifies the output port to which the listener output will go.
+The default value is the current output port when the object is
+constructed.
+@end defivar
+
+@defivar <listener> error-port
+Specifies the output port to which the listener's error messages will go.
+The default value is the current error port when the object is
+constructed.
+@end defivar
+
+@defivar <listener> reader
+A procedure with no arguments.  It should read a Scheme expression
+from the current input port when called.
+The default value is system's @code{read} procedure.
+@end defivar
+
+@defivar <listener> evaluator
+A procedure that takes two arguments, a Scheme expression and
+an environment specifier.  It should evaluate the expression in
+the given environment and returns zero or more value(s).
+The default value is system's @code{eval} procedure.
+@end defivar
+
+@defivar <listener> printer
+A procedure that takes zero or more argument(s) and prints them
+out to the current output port.  The default value is a procedure
+that prints each value by @code{write}, followed by a newline.
+@end defivar
+
+@defivar <listener> prompter
+A procedure with no arguments.  It should prints a prompt
+to the current output port.  The output is flushed by the listener
+object so this procedure doesn't need to care about it.
+The default procedure prints @code{"listener> "}.
+@end defivar
+
+@defivar <listener> environment
+An environment specifier where the expressions will be
+evaluated.  The default value is the value returned by
+@code{(interaction-environment)}.
+@end defivar
+
+@defivar <listener> finalizer
+A thunk that will be called when EOF is read from @code{input-port}.
+It can be @code{#f} if no such procedure is needed.
+The default value is @code{#f}.
+@end defivar
+
+@defivar <listener> error-handler
+A procedure that takes one argument, an error exception.  It is
+called when an error occurs during read-eval-print stage,
+with the same dynamic environment as the error is signalled.
+The default value is a procedure that simply prints the
+error exception by @code{report-error}.
+@end defivar
+@end deftp
+
+
+@deffn {Method} listener-read-handler (listener <listener>)
+Returns a thunk that is to be called when a data is available
+from @code{input-port} of the listener.
+
+The returned thunk (read handler) does the following steps.
+Note that the first prompt is @emph{not} printed by this
+procedure.  See @code{listener-show-prompt} below.
+@enumerate
+@item
+Reads available data from @code{input-port} and appends it to the
+listener's internal buffer.
+@item
+Scans the buffer to see if it has a complete S-expression.
+If not, returns.
+@item
+Reads the S-expression from the buffer.
+The read data is removed from the buffer.
+@item
+Evaluates the S-expression, then prints the result to
+@code{output-port}.
+@item
+Prints the prompt by prompter procedure to @code{output-port},
+then flush @code{output-port}.
+@item
+Repeats from 2.
+@end itemize
+@end deffn
+
+@deffn {Method} listener-show-prompt (listener <listener>)
+Shows a prompt to the listener's output port, by using
+listener's prompter procedure.  Usually you want to use
+this procedure to print the first prompt, for instance,
+when the client is connected to the listener socket.
+@end deffn
+
+@defun complete-sexp? str
+Returns @code{#t} if @var{str} contains a complete S-expression.
+This utility procedure is exported as well, since it might be useful
+for other purposes.
+
+Note that this procedure only checks syntax of the expressions,
+and doesn't rule out erroneous expressions (such as containing
+invalid character name, unregistered SRFI-10 tag, etc.).
+This procedure may raise an error if the input contains
+'@code{#<}' character sequence.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node User-level logging, Networking, Listener, Library modules - Gauche extensions
 @section @code{gauche.logger} - User-level logging
 @c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
