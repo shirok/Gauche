@@ -119,7 +119,9 @@ realclean : clean
 	rm -f $(CONFIG_GENERATED) $(GENERATED)
 
 install : all
-	$(INSTALL) -d $(DATA_INSTALL_DIR)
+	if test ! -d $(DATA_INSTALL_DIR); then \
+	  $(INSTALL) -d $(DATA_INSTALL_DIR); \
+	fi
 	$(INSTALL) -d $(GAUCHE_DATA_DIR)
 	$(INSTALL) -d $(GAUCHE_ARCH_DIR)
 	$(INSTALL) -d $(HEADER_INSTALL_DIR)
@@ -130,13 +132,17 @@ install : all
 	for f in $(INSTALL_SUBHEADERS); do \
 	  $(INSTALL) -m 444 $$f $(SUBHEADER_INSTALL_DIR); \
 	done
-	$(INSTALL) -d $(LIB_INSTALL_DIR)
+	if test ! -d $(DATA_INSTALL_DIR); then \
+	  $(INSTALL) -d $(LIB_INSTALL_DIR); \
+	fi
 	$(INSTALL) -d $(ARCH_INSTALL_DIR)
 	for f in $(INSTALL_LIBS); do \
 	  $(INSTALL) -m 444 $$f $(LIB_INSTALL_DIR); \
 	  $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
 	done
-	$(INSTALL) -d $(BIN_INSTALL_DIR)
+	if test ! -d $(DATA_INSTALL_DIR); then \
+	  $(INSTALL) -d $(BIN_INSTALL_DIR); \
+	fi
 	for f in $(INSTALL_BINS); do \
 	  $(INSTALL) -m 555 $$f $(BIN_INSTALL_DIR); \
 	  $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
