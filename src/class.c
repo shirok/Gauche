@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.30 2001-03-26 10:03:49 shiro Exp $
+ *  $Id: class.c,v 1.31 2001-03-27 10:16:08 shiro Exp $
  */
 
 #include "gauche.h"
@@ -517,6 +517,11 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
  * the matter is that we allow any C structure to be a base class of
  * Scheme class, so there may be an offset for such slots.
  */
+/* Unbound slot: if the slot value yields either SCM_UNBOUND or
+ * SCM_UNDEFINED, a generic function slot-unbound is called.
+ * We count SCM_UNDEFINED as unbound so that a Scheme program can
+ * make slot unbound, especially needed for procedural slots.
+ */
 
 /* dummy structure to access Scheme slots */
 typedef struct ScmInstanceRec {
@@ -574,19 +579,24 @@ static ScmObj slot_initialize(ScmObj obj, ScmObj acc, ScmObj initargs)
     ScmClass *klass = SCM_CLASS_OF(obj);
     ScmObj slot = SCM_CAR(acc);
     ScmSlotAccessor *ca = SCM_SLOT_ACCESSOR(SCM_CDR(acc));
+    /* (1) see if we have init-keyword */
     if (SCM_KEYWORDP(ca->initKeyword)) {
         ScmObj v = Scm_GetKeyword(ca->initKeyword, initargs, SCM_UNDEFINED);
         if (!SCM_UNDEFINEDP(v)) return Scm_VMSlotSet(obj, slot, v);
         v = SCM_UNBOUND;
     }
-    if (!SCM_UNBOUNDP(ca->initValue))
-        return Scm_VMSlotSet(obj, slot, ca->initValue);
-    if (SCM_PROCEDUREP(ca->initThunk)) {
-        void *data[2];
-        data[0] = (void*)obj;
-        data[1] = (void*)slot;
-        Scm_VMPushCC(slot_initialize_cc, data, 2);
-        return Scm_VMApply(ca->initThunk, SCM_NIL);
+    /* (2) use init-value or init-thunk.  this only applies to the      
+       instance-allocated slot. */
+    if (ca->slotNumber >= 0) {
+        if (!SCM_UNBOUNDP(ca->initValue))
+            return Scm_VMSlotSet(obj, slot, ca->initValue);
+        if (SCM_PROCEDUREP(ca->initThunk)) {
+            void *data[2];
+            data[0] = (void*)obj;
+            data[1] = (void*)slot;
+            Scm_VMPushCC(slot_initialize_cc, data, 2);
+            return Scm_VMApply(ca->initThunk, SCM_NIL);
+        }
     }
     return SCM_UNDEFINED;
 }
@@ -612,7 +622,7 @@ static ScmObj slot_ref_cc(ScmObj result, void **data)
 {
     ScmObj obj = data[0];
     ScmObj slot = data[1];
-    if (SCM_UNBOUNDP(result))
+    if (SCM_UNBOUNDP(result) || SCM_UNDEFINEDP(result))
         return SLOT_UNBOUND(Scm_ClassOf(obj), obj, slot);
     else
         return result;
@@ -643,7 +653,8 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot)
         Scm_Error("don't know how to retrieve value of slot %S of object %S (MOP error?)",
                   slot, obj);
     }
-    if (SCM_UNBOUNDP(val)) return SLOT_UNBOUND(klass, obj, slot);
+    if (SCM_UNBOUNDP(val) | SCM_UNDEFINEDP(val))
+        return SLOT_UNBOUND(klass, obj, slot);
     return val;
 }
 
