@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.53 2002-05-09 08:58:51 shirok Exp $
+#  $Id: Makefile.in,v 1.54 2002-05-12 03:49:46 shirok Exp $
 #
 
 prefix = @prefix@
@@ -41,7 +41,7 @@ SCMS = srfi-0.scm \
        text/html-lite.scm \
        www/cgi.scm
 
-SUBDIRS = gauche gauche/vm gauche/serializer file port rfc \
+SUBDIRS = gauche gauche/vm gauche/serializer file math port rfc \
 	  srfi-1 srfi-13 srfi-14 util text www
 
 INSTALL=@INSTALL@
