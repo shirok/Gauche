@@ -75,7 +75,7 @@
 (define-cproc sys-rename (old new)
   (assert (string? old))
   (assert (string? new))
-  "  if (rename(Scm_GetStringConst(old), Scm_GetStringconst(new)) < 0)
+  "  if (rename(Scm_GetStringConst(old), Scm_GetStringConst(new)) < 0)
        Scm_SysError(\"renaming %S to %S failed\", old, new);
   SCM_RETURN(SCM_TRUE);")
 
