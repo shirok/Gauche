@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.86 2002-04-13 06:39:55 shirok Exp $
+ *  $Id: number.c,v 1.87 2002-04-13 09:44:20 shirok Exp $
  */
 
 #include <math.h>
@@ -206,6 +206,12 @@ ScmObj Scm_MakeComplex(double r, double i)
     c->real = r;
     c->imag = i;
     return SCM_OBJ(c);
+}
+
+ScmObj Scm_MakeComplexNormalized(double r, double i)
+{
+    if (i == 0.0) return Scm_MakeFlonum(r);
+    else          return Scm_MakeComplex(r, i);
 }
 
 ScmObj Scm_Magnitude(ScmObj z)
@@ -415,7 +421,7 @@ ScmObj Scm_Reciprocal(ScmObj obj)
         d = r*r + i*i;
         r1 = r/d;
         i1 = -i/d;
-        obj = Scm_MakeComplex(r1, i1);
+        obj = Scm_MakeComplexNormalized(r1, i1);
     } else {
         Scm_Error("number required: %S", obj);
     }
@@ -584,10 +590,7 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
                 Scm_Error("number required, but got: %S", arg1);
             }
             if (!SCM_PAIRP(args)) {
-                if (result_imag == 0.0)
-                    return Scm_MakeFlonum(result_real);
-                else
-                    return Scm_MakeComplex(result_real, result_imag);
+                return Scm_MakeComplexNormalized(result_real, result_imag);
             }
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
@@ -672,7 +675,7 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
                 Scm_Error("number required, but got %S", arg1);
             }
             if (SCM_NULLP(args))
-                return Scm_MakeComplex(result_real, result_imag);
+                return Scm_MakeComplexNormalized(result_real, result_imag);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
@@ -778,10 +781,7 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
                 Scm_Error("number required, but got: %S", arg1);
             }
             if (!SCM_PAIRP(args)) {
-                if (result_imag == 0.0)
-                    return Scm_MakeFlonum(result_real);
-                else
-                    return Scm_MakeComplex(result_real, result_imag);
+                return Scm_MakeComplexNormalized(result_real, result_imag);
             }
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
@@ -896,7 +896,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
             result_real = r;
             result_imag = i;
             if (SCM_NULLP(args))
-                return Scm_MakeComplex(result_real, result_imag);
+                return Scm_MakeComplexNormalized(result_real, result_imag);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
@@ -1151,7 +1151,7 @@ ScmObj Scm_Expt(ScmObj x, ScmObj y)
         */
         double mag = exp(dy * log(-dx));
         double theta = dy * M_PI;
-        return Scm_MakeComplex(mag * cos(theta), mag * sin(theta));
+        return Scm_MakeComplexNormalized(mag * cos(theta), mag * sin(theta));
     } else {
         return Scm_MakeFlonum(pow(dx, dy));
     }
@@ -1228,24 +1228,38 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
     return 0;                    /* dummy */
 }
 
-ScmObj Scm_MinMax(ScmObj arg0, ScmObj args, int minp)
+void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
 {
     int inexact = !SCM_EXACTP(arg0), r;
+    ScmObj mi = arg0;
+    ScmObj ma = arg0;
     
     for (;;) {
         if (!SCM_REALP(arg0))
             Scm_Error("real number required, but got %S", arg0);
         if (SCM_NULLP(args)) {
-            if (inexact && SCM_EXACTP(arg0)) {
-                return Scm_ExactToInexact(arg0);
-            } else {
-                return arg0;
+            if (min) {
+                if (inexact && SCM_EXACTP(mi)) {
+                    *min = Scm_ExactToInexact(mi);
+                } else {
+                    *min = mi;
+                }
             }
+            if (max) {
+                if (inexact && SCM_EXACTP(ma)) {
+                    *max = Scm_ExactToInexact(ma);
+                } else {
+                    *max = ma;
+                }
+            }
+            return;
         }
         if (!SCM_EXACTP(SCM_CAR(args))) inexact = TRUE;
-        r = Scm_NumCmp(arg0, SCM_CAR(args));
-        if ((minp && r > 0) || (!minp && r < 0)) {
-            arg0 = SCM_CAR(args);
+        if (min && Scm_NumCmp(mi, SCM_CAR(args)) > 0) {
+            mi = SCM_CAR(args);
+        } 
+        if (max && Scm_NumCmp(ma, SCM_CAR(args)) < 0) {
+            ma = SCM_CAR(args);
         }
         args = SCM_CDR(args);
     }
@@ -2106,8 +2120,8 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
             CHK_EXACT_COMPLEX();
             dmag = Scm_GetDouble(realpart);
             dangle = Scm_GetDouble(angle);
-            return Scm_MakeComplex(dmag * cos(dangle),
-                                   dmag * sin(dangle));
+            return Scm_MakeComplexNormalized(dmag * cos(dangle),
+                                             dmag * sin(dangle));
         }
     case '+':;
     case '-':
@@ -2124,8 +2138,8 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
             }
             CHK_EXACT_COMPLEX();
             if (Scm_Sign(imagpart) == 0) return realpart;
-            return Scm_MakeComplex(Scm_GetDouble(realpart), 
-                                   Scm_GetDouble(imagpart));
+            return Scm_MakeComplexNormalized(Scm_GetDouble(realpart), 
+                                             Scm_GetDouble(imagpart));
         }
     case 'i':
         /* '+' <ureal> 'i'  or '-' <ureal> 'i' */

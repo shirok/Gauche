@@ -2,6 +2,9 @@
 	
 	* configure.in, src/gauche/config.h.in : added a test for alloca().
 	* src/bignum.c, src/number.c : adding denormalized bignum APIs.
+	* src/number.c : changed Scm_MinMax interface.  canonicalize
+	  complex return (imag==0.0 coerced to flonum).
+	* src/extlib.stub : added min&max.
 
 2002-04-10  Shiro Kawai  <shiro@acm.org>
 

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.78 2002-04-04 08:25:40 shirok Exp $
+;;; $Id: stdlib.stub,v 1.79 2002-04-13 09:44:20 shirok Exp $
 ;;;
 
 
@@ -116,9 +116,9 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(!Scm_OddP(obj)));")
 
 (define-cproc max (arg0 &rest args)
-  "  SCM_RETURN(Scm_MinMax(arg0, args, FALSE));")
+  "ScmObj r; Scm_MinMax(arg0, args, NULL, &r); SCM_RETURN(r);")
 (define-cproc min (arg0 &rest args)
-  "  SCM_RETURN(Scm_MinMax(arg0, args, TRUE));")
+  "ScmObj r; Scm_MinMax(arg0, args, &r, NULL); SCM_RETURN(r);")
 
 "/* inliner for `+' */
 static inline ScmObj immediate_integer_inliner(long insn, int arg0, ScmObj arg1, ScmObj env)
