@@ -1,6 +1,6 @@
-/*
- * Test for threads
- */
+;;
+;; Test for threads
+;;
 
 (use gauche.test)
 (use gauche.sequence)
