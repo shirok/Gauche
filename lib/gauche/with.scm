@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.2 2001-06-24 23:06:10 shirok Exp $
+;;;  $Id: with.scm,v 1.3 2001-06-26 09:41:42 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -33,6 +33,18 @@
 (define (call-with-input-string str proc)
   (let ((in (open-input-string str)))
     (proc in)))
+
+(define (call-with-string-io str proc)
+  (let ((out (open-output-string))
+        (in  (open-input-string str)))
+    (proc in out)
+    (get-output-string out)))
+
+(define (with-string-io str thunk)
+  (with-output-to-string
+    (lambda ()
+      (with-input-from-string str
+        thunk))))
 
 ;; Convenient port input utilities.
 
