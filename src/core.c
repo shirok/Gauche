@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.23 2001-04-13 06:18:06 shiro Exp $
+ *  $Id: core.c,v 1.24 2001-06-21 07:34:53 shirok Exp $
  */
 
 #include "gauche.h"
@@ -100,7 +100,8 @@ void Scm_Panic(const char *msg, ...)
     vfprintf(stderr, msg, args);
     va_end(args);
     fputc('\n', stderr);
-    exit(1);
+    fflush(stderr);
+    _exit(1);
 }
 
 /*
