@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.112 2001-09-28 10:00:13 shirok Exp $
+ *  $Id: vm.c,v 1.113 2001-10-11 09:28:48 shirok Exp $
  */
 
 #include "gauche.h"
@@ -2088,13 +2088,35 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
 
 #define DEFAULT_ENV_TABLE_SIZE  64
 
-static ScmObj env2vec(ScmEnvFrame *env)
+struct EnvTab {
+    struct EnvTabEntry {
+        ScmEnvFrame *env;
+        ScmObj vec;
+    } entries[DEFAULT_ENV_TABLE_SIZE];
+    int numEntries;
+};
+
+static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
 {
     int i;
-    ScmObj vec = Scm_MakeVector(env->size+1, SCM_FALSE);
-    SCM_VECTOR_ELEMENT(vec, 0) = env->info;
+    ScmObj vec;
+    
+    if (!env) return SCM_FALSE;
+    for (i=0; i<etab->numEntries; i++) {
+        if (etab->entries[i].env == env) {
+            return etab->entries[i].vec;
+        }
+    }
+    vec = Scm_MakeVector(env->size+2, SCM_FALSE);
+    SCM_VECTOR_ELEMENT(vec, 0) = env2vec(env->up, etab);
+    SCM_VECTOR_ELEMENT(vec, 1) = env->info;
     for (i=0; i<env->size; i++) {
-        SCM_VECTOR_ELEMENT(vec, i+1) = env->data[i];
+        SCM_VECTOR_ELEMENT(vec, i+2) = env->data[i];
+    }
+    if (etab->numEntries < DEFAULT_ENV_TABLE_SIZE) {
+        etab->entries[etab->numEntries].env = env;
+        etab->entries[etab->numEntries].vec = vec;
+        etab->numEntries++;
     }
     return vec;
 }
@@ -2104,47 +2126,20 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
     ScmContFrame *c = vm->cont;
     ScmObj stack = SCM_NIL, tail = SCM_NIL;
     ScmObj info, evec;
-    struct EnvTab {
-        ScmEnvFrame *env;
-        ScmObj vec;
-    } envTab[DEFAULT_ENV_TABLE_SIZE];
-    int envTabEntries = 0;
+    struct EnvTab envTab;
 
+    envTab.numEntries = 0;
     if (SCM_PAIRP(vm->pc)) {
         info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(vm->pc));
         if (SCM_PAIRP(info)) info = SCM_CDR(info);
-        if (vm->env) {
-            envTab[envTabEntries].env = vm->env;
-            envTab[envTabEntries].vec = evec = env2vec(vm->env);
-            envTabEntries++;
-        } else {
-            evec = SCM_FALSE;
-        }
-        SCM_APPEND1(stack, tail, Scm_Cons(info, evec));
+        SCM_APPEND1(stack, tail, Scm_Cons(info, env2vec(vm->env, &envTab)));
     }
     
     for (; c; c = c->prev) {
         if (!SCM_PAIRP(c->info)) continue;
         info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(c->info));
         if (SCM_PAIRP(info)) info = SCM_CDR(info);
-        evec = SCM_FALSE;
-        if (c->env) {
-            int i;
-            for (i=0; i<envTabEntries; i++) {
-                if (envTab[i].env == c->env) {
-                    evec = envTab[i].vec;
-                    break;
-                }
-            }
-            if (i == envTabEntries) {
-                evec = env2vec(c->env);
-                if (envTabEntries < DEFAULT_ENV_TABLE_SIZE) {
-                    envTab[envTabEntries].env = c->env;
-                    envTab[envTabEntries].vec = evec;
-                    envTabEntries++;
-                }
-            }
-        }
+        evec = env2vec(c->env, &envTab);
         SCM_APPEND1(stack, tail, Scm_Cons(info, evec));
     }
     return stack;
