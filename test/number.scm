@@ -893,5 +893,47 @@
 (test "logior (-big | -big)" #x-103454301aacca9
       (lambda () (logior #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba)))
 
+(test "logtest" #t
+      (lambda () (logtest #xfeedbabe #x10000000)))
+(test "logtest" #f
+      (lambda () (logtest #xfeedbabe #x01100101)))
+
+(test "logcount" 4
+      (lambda () (logcount #b10101010)))
+(test "logcount" 13
+      (lambda () (logcount #b00010010001101000101011001111000)))
+(test "logcount" 4
+      (lambda () (logcount #b-10101010)))
+
+(test "logbit?" '(#f #t #t #f #t #f #f)
+      (lambda ()
+        (map (lambda (i) (logbit? i #b10110)) '(0 1 2 3 4 5 6))))
+(test "logbit?" '(#f #t #f #t #f #t #t)
+      (lambda ()
+        (map (lambda (i) (logbit? i #b-10110)) '(0 1 2 3 4 5 6))))
+
+(test "copy-bit" #b11010110
+      (lambda () (copy-bit 4 #b11000110 #t)))
+(test "copy-bit" #b11000110
+      (lambda () (copy-bit 4 #b11000110 #f)))
+(test "copy-bit" #b10000110
+      (lambda () (copy-bit 6 #b11000110 #f)))
+
+(test "bit-field" #b1010
+      (lambda () (bit-field #b1101101010 0 4)))
+(test "bit-field" #b10110
+      (lambda () (bit-field #b1101101010 4 9)))
+
+(test "copy-bit-field" #b1101100000
+      (lambda () (copy-bit-field #b1101101010 0 4 0)))
+(test "copy-bit-field" #b1101101111
+      (lambda () (copy-bit-field #b1101101010 0 4 -1)))
+(test "copy-bit-field" #b1111111111101010
+      (lambda () (copy-bit-field #b1101101010 5 16 -1)))
+
+(test "integer-length" 8
+      (lambda () (integer-length #b10101010)))
+(test "integer-length" 4
+      (lambda () (integer-length #b1111)))
 
 (test-end)
