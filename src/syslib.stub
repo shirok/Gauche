@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.47 2001-09-27 10:12:23 shirok Exp $
+;;; $Id: syslib.stub,v 1.48 2001-10-04 20:09:40 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -288,19 +288,39 @@
 
 ;; NB: Alghough tmpnam() is in POSIX, its use is discouraged because of
 ;; potential security risk.  We mimic it's behavior by mkstemp() if possible.
-;; The behavior is not exactly the same, especially, in case if we use
-;; mkstemp the file is actually created...
 (define-cproc sys-tmpnam ()
   "
 #ifdef HAVE_MKSTEMP
-  char nam[] = \"XXXXXX\";
+  char nam[] = \"/tmp/fileXXXXXX\";
   int fd = mkstemp(nam);
   if (fd < 0) Scm_SysError(\"mkstemp failed\");
   close(fd);
+  unlink(nam);
   SCM_RETURN(SCM_MAKE_STR_COPYING(nam));
 #else
   char *s = tmpnam(NULL);
   SCM_RETURN(SCM_MAKE_STRNIG_COPYING(s));
+#endif")
+
+(define-cproc sys-mkstemp (template)
+  (assert (string? template))
+  "
+#ifdef HAVE_MKSTEMP
+#define MKSTEMP_PATH_MAX 1025  /* Gee, remove me */
+  char name[MKSTEMP_PATH_MAX];
+  int siz = SCM_STRING_SIZE(template), fd; FILE *fp;
+  if (siz >= MKSTEMP_PATH_MAX) { 
+    Scm_Error(\"pathname too long: %S\", template);
+  }
+  memcpy(name, SCM_STRING_START(template), siz);
+  name[siz] = '\\0';
+  fd = mkstemp(name);
+  if (fd < 0) Scm_SysError(\"mkstemp failed\");
+  fp = fdopen(fd, \"rw\");
+  SCM_RETURN(Scm_MakeFilePort(fp, SCM_MAKE_STR_COPYING(name), \"w\", TRUE));
+#else
+  /* TODO: provide alternative */
+  Scm_Error(\"mkstemp() is not supported on this platform (yet)\");
 #endif")
 
 ;; tmpfile
