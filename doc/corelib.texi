@@ -4158,7 +4158,7 @@ Puts a key @var{key} with a value @var{value} to the hash table @var{ht}.
 @end defun
 
 @deffn {Method} ref (ht <hash-table>) key &optional default
-@deffnx {Method} (setter ref) (ht <hash-table>) key value
+@deffnx {Method} {(setter ref)} (ht <hash-table>) key value
 @c EN
 Method versions of @code{hash-table-get} and @code{hash-table-put!}.
 @c JP
@@ -5454,6 +5454,17 @@ Similar to an error, but the error message is formatted by
 @end example
 @end defun
 
+@c EN
+To signal an exceptional condition other than the standard
+error object (an instance of @code{<error>} class), you can
+use @code{raise}.  See @ref{Low-level exception mechanism}.
+@c JP
+標準的なエラーオブジェクト (@code{<error>}クラスのインスタンス) 以外の
+例外条件を通知するには、@code{raise}手続きが使えます。
+@ref{Low-level exception mechanism}を参照して下さい。
+@c COMMON
+
+
 @node Handling errors, Exception object, Signalling errors, Exceptions
 @subsection Handling errors
 @c NODE エラーの処理
@@ -5498,6 +5509,19 @@ handler.
 
 When the exception is handled by one of @code{clause}s, @code{guard}
 returns the value(s) of the last @var{expr} in the handling clause.
+
+The following is a pseudo example of using @code{guard} to check
+certain type of errors.  Currently, most errors Gauche raises
+are of @code{<error>} type, so it's a little bit messy
+to handle errors selectively.  The exception hierarchy will
+be refined in the future versions.
+@example
+(guard (exc
+        ((and (is-a? exc <error>)
+              (#/couldn't open/ (ref exc 'message)))
+         (do-fallback)))
+  (try-open-file))
+@end example
 @end defmac
 
 @defun with-error-handler handler thunk
@@ -5576,26 +5600,83 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 @subsection Exception object
 @c NODE 例外オブジェクト
 
+@c EN
+The complete exception class hierarchy is under construction.
+@c JP
+完全な例外クラスの階層は構築中です。
+@c COMMON
+
 @deftp {Class} <exception>
 @clindex exception
 @c EN
-Represents An exception.
-The complete exception class hierarchy is under construction.
-Right now, only the following information is available.
+An abstract base class of exception class hierarchy.
+You cannot create an instance of this class, but you can
+subclass it to define your own exception class.
 @c JP
-例外を表すクラスです。
-完全な例外クラスの階層は構築中です。
-現時点では、以下の情報のみ公開されます。
+例外クラス階層の抽象ベースクラスです。
+このクラスから直接インスタンスを作ることはできません。
+このクラスを継承して独自の例外クラスを作ることはできます。
 @c COMMON
+@end deftp
 
-@defivar {<exception>} message
-@c EN
-For an error exception, this is the error message.
-@c JP
-エラー例外におけるエラーメッセージです。
-@c COMMON
+@deftp {Class} <error>
+This class is a base class of @emph{uncontinuable} exception.
+If this type of exception is raised, the exception handler
+shouldn't return to the original place the exception was raised.
+(You don't need to worry about this if you're using high-level
+API such as @code{guard} and @code{with-error-handler}, since
+you can't "return to the original place" anyway.  It only
+matters if you're using low-level @code{with-exception-handler}).
+
+This class inherits @code{<exception>}.
+It has one instance slot.
+
+@defivar {<error>} message
+The error message.
+@end defivar
+
+The code:
+@example
+(error "something wend wrong.")
+@end example
+is conceptually equivalent to:
+@example
+(raise (make <error> :message "something went wrong"))
+@end example
+
+@end deftp
+
+
+@deftp {Class} <system-error>
+A subclass of @code{<error>}.
+When a system call returns an error, this type of exception is
+thrown.  The @code{message} slot usually contains the description
+of the error (like the one from @code{strerror(3)}).
+Besides that, this class has one more instance slot:
+
+@defivar {<system-error>} errno
+Contains an integer value of system's error number.
 @end defivar
 @end deftp
+
+@deftp {Class} <read-error>
+A subclass of @code{<error>}.
+When the reader detects a lexical or syntactic error during
+reading an S-expression, this type of exception is thrown.
+Besides the @code{message} slot that contains the description of the error,
+this class provides two other slots:
+
+@defivar {<read-error>} port
+A port from which the reader is reading.
+@end defivar
+
+@defivar {<read-error>} line
+A line count (1-base) of the input where the reader raised this error.
+It may be -1 if the reader is reading from a port that doesn't keep
+track of line count.
+@end defivar
+@end deftp
+
 
 @node Low-level exception mechanism,  , Exception object, Exceptions
 @subsection Low-level exception mechanism
