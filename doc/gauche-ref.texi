@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.244 2002-07-17 05:33:54 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.245 2002-07-17 07:16:47 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10928,6 +10928,7 @@ See @ref{Signals and threads}, for details.
 * Signals and signal sets::     
 * Sending signals::             
 * Handling signals::            
+* Masking and waiting signals::  
 * Signals and threads::         
 @end menu
 
@@ -11112,7 +11113,7 @@ POSIXの@var{raise()}に対応するScheme関数はありませんが、
 @code{(sys-kill (sys-getpid) @var{sig})} で同じことができます。
 @c COMMON
 
-@node Handling signals, Signals and threads, Sending signals, Signal
+@node Handling signals, Masking and waiting signals, Sending signals, Signal
 @subsubsection Handling signals
 @c NODE シグナルの処理
 
@@ -11276,45 +11277,99 @@ cdrにはそれらのシグナルに対応するハンドラ(手続きもしくはブール値)がセットされて
 @end defun
 
 @defmac with-signal-handlers (handler-clause @dots{}) thunk
-Adds signal handlers specified in @var{handler-clause}s, then
-call @var{thunk}.  After the control leaves @var{thunk},
-the previous signal handlers are restored.
+@c EN
+A convenience macro to install signal handlers temporarily
+during execution of @var{thunk}.
+(Note: though this is convenient, this has certain dangerous
+properties described below.  Use with caution.)
+@c JP
+@var{thunk}の実行中だけシグナルハンドラを一時的に設定する便利なマクロです
+(このマクロは便利ですが下に述べるような多少危険な性質もあるので、
+注意して使って下さい)。
+@c COMMON
 
-@var{handler-clause} may have one of the following forms.
+@c EN
+Each @var{Handler-clause} may be one of the following forms.
 @table @code
 @item (@var{signals} @var{expr} @dots{})
-When one of @var{signals} is delivered, @var{expr} @dots{} are
-evaluated.
-@var{signals} may be an expression that will yield either a signal,
+@var{Signals} must be an expression that will yield either a signal,
 a list of signals, or a @code{<sys-sigset>} object.
+Installs a signal handler for @var{signals} that evaluates
+@var{expr} @dots{} when one of the signals in @var{signals} is delivered.
 
 @item (@var{signals} => @var{proc})
-When one of @var{signals} is delivered, a procedure @var{proc} is
-called with one argument, the delivered signal.
-@var{signals} are the same as above.
+@var{Proc} must be a procedure that takes one argument.
+This form installs @var{proc} as the signal handler for @var{signals}.
 @end table
+@c JP
+@var{handler-clause}は以下のいずれかの形式です
+@table @code
+@item (@var{signals} @var{expr} @dots{})
+@var{signals}は、評価された時に単独のシグナル番号、シグナル番号のリスト、
+あるいは@code{<sys-sigset>}オブジェクトを生成する式でなければなりません。
+@var{signals}に含まれるシグナルを受け取った時に、@var{expr} @dots{}を
+評価するようなハンドラを設定します。
 
-The VM examines the chain of handlers when a signal is delivered,
-and picks up the one that catches it.  Then invokes the handler
-with the current continuation.
+@item (@var{signals} => @var{proc})
+@var{signals}は上と同じです。@var{signals}に含まれるシグナルに
+対して、一つの引数を取る手続き@var{proc}をハンドラとして設定します。
+@end table
+@c COMMON
 
-Actually, when Gauche's VM gets a signal it just queues the
-signal, and handles them when evaluation of Scheme expression
-is safe.  So the invocation of handler may be delayed from
-the actual delivery of the signal.  Unless signal handlers
-invokes other contniuations, the original control flow
-resumes after invocations of the handlers.
+@c EN
+When the control exits from @var{thunk}, the signal handler setting
+before @code{with-signal-handlers} are recovered.
+@c JP
+@var{thunk}から制御が抜けた時に、@code{with-signal-handlers}が呼ばれた時点での
+シグナルハンドラが再設定されます。
+@c COMMON
+
+@c EN
+@emph{CAVEAT:} If you're setting more than one signal handlers,
+they are installed in serial.  If a signal is delivered before
+all the handlers are installed, the signal handler state may be
+left inconsistent.  Also note that the handler setting is a global state;
+you can't set "thread local" handler by @code{with-signal-handlers},
+although the form may mislead such misunderstanding.
+@c JP
+@emph{注意：} このフォームで一つ以上のシグナルハンドラを設定する場合、
+それらは順にシステムに設定されます。全てのハンドラの設定が終る前に
+シグナルが届いた場合、シグナルハンドラの設定や再設定が不完全なままになる
+かもしれません。また、シグナルハンドラはグローバルな設定であり、
+「スレッドローカル」なハンドラを設定することはできませんが、
+@code{with-signal-handlers}の形式はそれを誤解させるかもしれません。
+@c COMMON
 @end defmac
 
-@emph{Caveat:} In the current implementation, some built-in operations
-such as system calls and read/write calls can't be continued
-after delivery of a signal.  If the signal handler returns,
-the system reports an error (interrupted system call) or
-returns prematurely (for example, read returns EOF in such case).
-In future versions of Gauche more procedures will be correctly
-restarted.
+@node Masking and waiting signals, Signals and threads, Handling signals, Signal
+@subsubsection Masking and waiting signals
+@c NODE シグナルのマスクと待機
 
-@node Signals and threads,  , Handling signals, Signal
+
+
+@defun sys-sigmask how mask
+Modifies the current thread's signal mask, and returns the previous
+signal mask.   @var{Mask} should be a @code{<sys-sigset>} object.
+@var{How} argument should be one of the following
+integer constants:
+@table @code
+@item SIG_SETMASK
+Sets @var{mask} as the thread's signal mask.
+@item SIG_BLOCK
+Adds signals in @var{mask} to the thread's signal mask.
+@item SIG_UNBLOCK
+Removes signals in @var{mask} from the thread's signal mask.
+@end table
+@end defun
+
+@defun sys-sigsuspend mask
+Atomically sets thread's signal mask to @var{mask} and
+suspends the calling thread.  When a signal that is not blocked
+and has a signal handler installed is delivered, the associated
+handler is called, then @code{sys-sigsuspend} returns.
+@end defun
+
+@node Signals and threads,  , Masking and waiting signals, Signal
 @subsubsection Signals and threads
 @c NODE シグナルとスレッド
 
