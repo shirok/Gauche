@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.9 2001-08-30 06:38:54 shirok Exp $
+# $Id: gauche-config.in,v 1.10 2001-11-09 08:28:40 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -24,6 +24,8 @@ gauche_version=@GAUCHE_VERSION@
 gauche_libs="@LIBS@"
 arch="@host@"
 
+local_incdir="@LOCAL_INC@"
+local_libdir="@LOCAL_LIB@"
 shlib_so_suffix="@SHLIB_SO_SUFFIX@"
 shlib_so_cflags="@SHLIB_SO_CFLAGS@"
 shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
@@ -68,8 +70,8 @@ if [ $# != 1 ]; then usage; fi;
 
 case $1 in
   -V) echo $gauche_version;;
-  -I) echo "-I$gauche_incdir";;
-  -L) echo "-L$gauche_archdir";;
+  -I) echo "-I$gauche_incdir $local_incdir";;
+  -L) echo "-L$gauche_archdir $local_libdir";;
   -l) echo $gauche_libs;;
   --cc) echo $cc;;
 
@@ -81,6 +83,8 @@ case $1 in
   --sitearchdir) echo $gauche_sitearchdir;;
   --arch) echo $arch;;
 
+  --local-incdir) echo $local_incdir;;
+  --local-libdir) echo $local_libdir;;
   --so-suffix) echo $shlib_so_suffix;;
   --so-cflags) echo $shlib_so_cflags;;
   --so-ldflags) echo $shlib_so_ldflags;;

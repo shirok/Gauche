@@ -1,14 +1,14 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.8 2001-10-29 09:40:29 shirok Exp $
+dnl $Id: configure.in,v 1.9 2001-11-09 08:28:40 shirok Exp $
 AC_INIT(charconv.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
 if test -f ../../src/gauche.h; then
   GAUCHE_CONFIG="sh ../../src/gauche-config"
   GAUCHE_TOP='../../'
-  GAUCHE_INC="-I../../src -I../../gc/include"
+  GAUCHE_INC="-I../../src -I../../gc/include `$GAUCHE_CONFIG --local-incdir`"
   GOSH="../../src/gosh -I../../src -I../../lib"
 else
   GAUCHE_CONFIG=gauche-config
@@ -44,6 +44,8 @@ AC_SUBST(CC)
 
 CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags` $CPPFLAGS"
 AC_SUBST(CFLAGS)
+CPPFLAGS="$GAUCHE_INC"       # some test requires this
+LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --local-libdir`"
 
 dnl Check for other programs.
 AC_PROG_INSTALL

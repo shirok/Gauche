@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.net extension
 dnl
-dnl $Id: configure.in,v 1.12 2001-10-29 09:40:29 shirok Exp $
+dnl $Id: configure.in,v 1.13 2001-11-09 08:28:40 shirok Exp $
 AC_INIT(net.c)
 AC_CONFIG_HEADER(netconfig.h)
 
@@ -9,7 +9,7 @@ dnl Determine if we're configuring inside of Gauche main source tree or not.
 if test -f ../../src/gauche.h; then
   GAUCHE_CONFIG="sh ../../src/gauche-config"
   GAUCHE_TOP='../../'
-  GAUCHE_INC="-I../../src -I../../gc/include"
+  GAUCHE_INC="-I../../src -I../../gc/include `$GAUCHE_CONFIG --local-incdir`"
   GOSH="../../src/gosh -I../../src -I../../lib"
 else
   GAUCHE_CONFIG=gauche-config
@@ -33,6 +33,8 @@ CC="`$GAUCHE_CONFIG --cc`"
 AC_SUBST(CC)
 CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
 AC_SUBST(CFLAGS)
+CPPFLAGS="$GAUCHE_INC"       # some test requires this
+LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --local-libdir`"
 
 dnl Check for other programs.
 AC_PROG_INSTALL

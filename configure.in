@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.42 2001-10-29 10:44:25 shirok Exp $
+dnl $Id: configure.in,v 1.43 2001-11-09 08:28:39 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -67,6 +67,21 @@ AC_ARG_WITH(iconv, [  --with-iconv-lib=LIB:   If your system needs to use extern
                           iconv and which is not libiconv, specify it.  For
                           example, if you need -lconv to use iconv, say
                             --with-iconv-lib=conv])
+dnl --with-local=PATH:...
+dnl  
+AC_ARG_WITH(local, [  --with-local=PATH:PATH...:  For each PATH, add PATH/include
+                          to the include search paths and PATH/lib to the
+                          library search paths.  Useful if you have some
+                          libraries installed in non-standard places. ], [
+  case $with_local in
+    yes|no|"") ;;  #no effect
+    *) paths=`echo $with_local | tr ':' ' '`
+       LOCAL_INC=`for p in $paths; do echo "-I$p/include"; done`
+       LOCAL_LIB=`for p in $paths; do echo "-L$p/lib"; done`;;
+  esac
+])
+AC_SUBST(LOCAL_INC)
+AC_SUBST(LOCAL_LIB)
 
 dnl --with-rpath=PATH:...
 rpath=
@@ -74,7 +89,7 @@ AC_ARG_WITH(rpath, [  --with-rpath=PATH:PATH... : Use -rpath option while buildi
                           loadable objects (experimental).], [
   case $with_rpath in
     yes|no) ;;
-    *) rpath="`echo $with_rpath | tr ':' '\012' | sed 's/^/-Wl,-rpath /' | tr '\012' ' '`";;
+    *) rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath /' -e 's/:/ -Wl,-rpath /'`";;
   esac
 ])
 
