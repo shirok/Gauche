@@ -1,0 +1,54 @@
+;;;
+;;; fcntlib.stub - fcntl interface
+;;;
+;;;   Copyright (c) 2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: fcntlib.stub,v 1.1 2001-09-16 06:50:43 shirok Exp $
+;;;
+
+"#include \"fcntl.h\""
+
+(define-type "sys-fcntl" sys-fcntl?
+  "ScmSysFcntl" "SCM_SYS_FCNTL_P" "SCM_SYS_FCNTL")
+
+(define-symbol |F_DUPFD| "fcntl_dupfd" "Scm_MakeInteger(F_DUPFD)")
+(define-symbol |F_GETFD| "fcntl_getfd" "Scm_MakeInteger(F_GETFD)")
+(define-symbol |F_SETFD| "fcntl_setfd" "Scm_MakeInteger(F_SETFD)")
+(define-symbol |F_GETFL| "fcntl_getfl" "Scm_MakeInteger(F_GETFL)")
+(define-symbol |F_SETFL| "fcntl_setfl" "Scm_MakeInteger(F_SETFL)")
+(define-symbol |F_GETLK| "fcntl_getlk" "Scm_MakeInteger(F_GETLK)")
+(define-symbol |F_SETLK| "fcntl_setlk" "Scm_MakeInteger(F_SETLK)")
+(define-symbol |F_SETLKW| "fcntl_setlkw" "Scm_MakeInteger(F_SETLKW)")
+
+(define-symbol |F_RDLCK| "fcntl_rdlck" "Scm_MakeInteger(F_RDLCK)")
+(define-symbol |F_WRLCK| "fcntl_wrlck" "Scm_MakeInteger(F_WRLCK)")
+(define-symbol |F_UNLCK| "fcntl_unlck" "Scm_MakeInteger(F_UNLCK)")
+
+(define-symbol |FD_CLOEXEC| "fcntl_cloexec" "Scm_MakeInteger(FD_CLOEXEC)")
+
+(define-symbol |O_RDONLY| "fcntl_rdonly" "Scm_MakeInteger(O_RDONLY)")
+(define-symbol |O_WRONLY| "fcntl_wronly" "Scm_MakeInteger(O_WRONLY)")
+(define-symbol |O_RDWR| "fcntl_rdwr" "Scm_MakeInteger(O_RDWR)")
+(define-symbol |O_APPEND| "fcntl_append" "Scm_MakeInteger(O_APPEND)")
+(define-symbol |O_CREAT| "fcntl_creat" "Scm_MakeInteger(O_CREAT)")
+(define-symbol |O_EXCL| "fcntl_excl" "Scm_MakeInteger(O_EXCL)")
+(define-symbol |O_NOCTTY| "fcntl_noctty" "Scm_MakeInteger(O_NOCTTY)")
+(define-symbol |O_NONBLOCK| "fcntl_nonblock" "Scm_MakeInteger(O_NONBLOCK)")
+(define-symbol |O_TRUNC| "fcntl_trunc" "Scm_MakeInteger(O_TRUNC)")
+
+(define-cproc sys-fcntl (port-or-fd op &optional arg)
+  (assert (small-integer? op))
+  "  SCM_RETURN(Scm_SysFcntl(port_or_fd, op, arg));")
+
+;; Local variables:
+;; mode: scheme
+;; end:
