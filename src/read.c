@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.2 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: read.c,v 1.3 2001-01-16 20:32:42 shiro Exp $
  */
 
 #include <stdio.h>
@@ -363,7 +363,7 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial)
 static ScmObj read_number(ScmPort *port, ScmChar initial)
 {
     ScmString *s = SCM_STRING(read_word(port, initial));
-    ScmObj num = Scm_StringToNumber(s);
+    ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         read_error(port, "bad numeric format: %S", s);
     return num;
@@ -372,7 +372,7 @@ static ScmObj read_number(ScmPort *port, ScmChar initial)
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial)
 {
     ScmString *s = SCM_STRING(read_word(port, initial));
-    ScmObj num = Scm_StringToNumber(s);
+    ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         return Scm_Intern(s);
     else

@@ -177,9 +177,10 @@
   (assert (small-integer? radix))
   "  SCM_RETURN(Scm_NumberToString(obj, radix));")
 
-(define-cproc string->number (obj)
+(define-cproc string->number (obj &optional (radix 10))
   (assert (string? obj))
-  "  SCM_RETURN(Scm_StringToNumber(obj));")
+  (assert (small-integer? radix))
+  "  SCM_RETURN(Scm_StringToNumber(obj, radix));")
 
 ;;
 ;; 6.3.1  Booleans

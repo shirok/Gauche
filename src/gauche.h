@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.8 2001-01-16 04:46:01 shiro Exp $
+ *  $Id: gauche.h,v 1.9 2001-01-16 20:32:42 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1207,7 +1207,7 @@ extern ScmObj Scm_Max(ScmObj arg0, ScmObj args);
 extern ScmObj Scm_Min(ScmObj arg0, ScmObj args);
 
 extern ScmObj Scm_NumberToString(ScmObj num, int radix);
-extern ScmObj Scm_StringToNumber(ScmString *str);
+extern ScmObj Scm_StringToNumber(ScmString *str, int radix);
 
 /*--------------------------------------------------------
  * PROCEDURE

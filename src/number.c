@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.4 2001-01-15 01:28:28 shiro Exp $
+ *  $Id: number.c,v 1.5 2001-01-16 20:32:42 shiro Exp $
  */
 
 #include <math.h>
@@ -1017,13 +1017,13 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
 static ScmObj read_real(const char *str, int len)
 {
     char c;
-    long value_int = 0, minusp = 0, exponent = 0, exponent_minusp = 0;
-    double value_double;
+    long value_int = 0, exponent = 0;
+    int minusp = 0, exponent_minusp = 0, sign_seen = 0;
     int imag_minusp, digits = 0;
-    double value_imag;
+    double value_double, value_imag;
 
-    if (*str == '+')      { minusp = 0; str++; len--; }
-    else if (*str == '-') { minusp = 1; str++; len--; }
+    if (*str == '+')      { minusp = 0; sign_seen = 1; str++; len--; }
+    else if (*str == '-') { minusp = 1; sign_seen = 1; str++; len--; }
 
     if (len == 0) return SCM_FALSE;
 
@@ -1049,7 +1049,7 @@ static ScmObj read_real(const char *str, int len)
     }
     if (len < 0) return Scm_MakeInteger(minusp? -value_int : value_int);
 
-    /* now we know the numebr is at least a flonum. */
+    /* now we know the number is at least a flonum. */
     value_double = (double)value_int;
 
     if (c == '.') {
@@ -1061,6 +1061,7 @@ static ScmObj read_real(const char *str, int len)
             case '5':; case '6':; case '7':; case '8':; case '9':;
                 value_double += ((double)(c - '0'))/divider;
                 divider *= 10;
+                digits++;
                 continue;
             case 'e':; case 'E':;
             case 's':; case 'S':; case 'f':; case 'F':;
@@ -1072,6 +1073,7 @@ static ScmObj read_real(const char *str, int len)
             }
             break;
         }
+        if (len < 0 && digits==0) return SCM_FALSE; /* in case of "+.", etc */
     }
     if (minusp) value_double = -value_double;
     if (len < 0) return Scm_MakeFlonum(value_double);
@@ -1103,8 +1105,8 @@ static ScmObj read_real(const char *str, int len)
     if (len < 0) return Scm_MakeFlonum(value_double);
 
     if (c == 'i') {
-        if (digits == 0 && value_double == 0.0)
-            value_double = 1.0; /* +i or -i */
+        if (!sign_seen) return SCM_FALSE;
+        if (digits == 0) value_double = 1.0; /* +i or -i */
         if (len == 0)
             return Scm_MakeComplex(0.0, minusp? -value_double : value_double);
         else 
@@ -1198,92 +1200,73 @@ static ScmObj read_real(const char *str, int len)
 }
 
 /*
- * Called for #b, #o, #x, or exact numbers
+ * Called for exact numbers.  Range of radix should have been checked.
  */
 static ScmObj read_integer(const char *str, int len, int radix)
 {
     long value_int = 0; /* TODO: bignum? */
     int minusp = 0;
     char c;
+    const char *tab = "0123456789abcdefghijklmnopqrstuvwxyz", *ptab;
 
     if (*str == '+')      { minusp = 0; str++; len--; }
     else if (*str == '-') { minusp = 1; str++; len--; }
     if (len == 0) return SCM_FALSE;
     
     while (len--) {
-        switch (c = *str++) {
-        case '0':; case '1':;
-            value_int = value_int * radix + (c - '0');
-            continue;
-        case '2':; case '3':; case '4':; case '5':; case '6':; case '7':;
-            if (radix < 8) return SCM_FALSE;
-            value_int = value_int * radix + (c - '0');
-            continue;
-        case '8':; case '9':;
-            if (radix < 10) return SCM_FALSE;
-            value_int = value_int * radix + (c - '0');
-            continue;
-        case 'a':; case 'b':; case 'c':; case 'd':; case 'e':; case 'f':;
-            if (radix < 16) return SCM_FALSE;
-            value_int = value_int * radix + (c - 'a') + 10;
-            continue;
-        case 'A':; case 'B':; case 'C':; case 'D':; case 'E':; case 'F':;
-            if (radix < 16) return SCM_FALSE;
-            value_int = value_int * radix + (c - 'A') + 10;
-            continue;
-        default:
-            return SCM_FALSE;
+        c = tolower(*str++);
+        for (ptab = tab; ptab < tab+radix; ptab++) {
+            if (c == *ptab) {
+                value_int = value_int*radix + (ptab-tab);
+                break;
+            }
         }
+        if (ptab >= tab+radix) return SCM_FALSE;
     }
     if (minusp) value_int = -value_int;
     return Scm_MakeInteger(value_int);
 }
 
-static ScmObj read_number(const char *str, int len)
+static ScmObj read_number(const char *str, int len, int radix)
 {
-    int radix = 10, radix_seen = 0;
+    int radix_seen = 0;
     int exactness = 0, exactness_seen = 0;
 
-    if (len == 0) return SCM_FALSE;
+    if (radix <= 1 || radix > 36) return SCM_FALSE; /* XXX:shuold be error? */
     
     /* start from prefix part */
-  prefix:
-    {
-        if (*str != '#') goto body;
-
-        while (len--) {
-            switch (*str++) {
-            case 'x':; case 'X':;
-                if (radix_seen) return SCM_FALSE;
-                 radix = 16; radix_seen++;
-                 continue;
-            case 'o':; case 'O':;
-                if (radix_seen) return SCM_FALSE;
-                radix = 8; radix_seen++;
-                continue;
-            case 'b':; case 'B':;
-                if (radix_seen) return SCM_FALSE;
-                radix = 2; radix_seen++;
-                continue;
-            case 'd':; case 'D':;
-                if (radix_seen) return SCM_FALSE;
-                radix = 10; radix_seen++;
-                continue;
-            case 'e':; case 'E':;
-                if (exactness_seen) return SCM_FALSE;
-                exactness = 1; exactness_seen++;
-                continue;
-            case 'i':; case 'I':;
-                if (exactness_seen) return SCM_FALSE;
-                exactness = 0; exactness_seen++;
-                continue;
-            default:
-                str--;
-                goto body;
-            }
+    for (; len >= 0; len-=2) {
+        if (*str != '#') break;
+        str++;
+        switch (*str++) {
+        case 'x':; case 'X':;
+            if (radix_seen) return SCM_FALSE;
+            radix = 16; radix_seen++;
+            continue;
+        case 'o':; case 'O':;
+            if (radix_seen) return SCM_FALSE;
+            radix = 8; radix_seen++;
+            continue;
+        case 'b':; case 'B':;
+            if (radix_seen) return SCM_FALSE;
+            radix = 2; radix_seen++;
+            continue;
+        case 'd':; case 'D':;
+            if (radix_seen) return SCM_FALSE;
+            radix = 10; radix_seen++;
+            continue;
+        case 'e':; case 'E':;
+            if (exactness_seen) return SCM_FALSE;
+            exactness = 1; exactness_seen++;
+            continue;
+        case 'i':; case 'I':;
+            if (exactness_seen) return SCM_FALSE;
+            exactness = 0; exactness_seen++;
+            continue;
         }
         return SCM_FALSE;
     }
+    if (len <= 0) return SCM_FALSE;
 
     /* number body */
   body:
@@ -1295,12 +1278,12 @@ static ScmObj read_number(const char *str, int len)
 }
 
 
-ScmObj Scm_StringToNumber(ScmString *str)
+ScmObj Scm_StringToNumber(ScmString *str, int radix)
 {
     if (SCM_STRING_LENGTH(str) != SCM_STRING_SIZE(str)) {
         /* This can't be a proper number. */
         return SCM_FALSE;
     } else {
-        return read_number(SCM_STRING_START(str), SCM_STRING_SIZE(str));
+        return read_number(SCM_STRING_START(str), SCM_STRING_SIZE(str), radix);
     }
 }
