@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.64 2002-07-03 01:09:58 shirok Exp $
+ *  $Id: string.c,v 1.65 2002-08-24 09:08:44 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1129,6 +1129,32 @@ ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int afterp)
                                     sp->start));
     }
 }
+
+/* Copy string pointer.
+   Thanks to Alex Shinn (foof@synthcode.com) */
+ScmObj Scm_StringPointerCopy(ScmStringPointer *sp1)
+{
+    ScmStringPointer *sp2 = SCM_NEW(ScmStringPointer);
+    SCM_SET_CLASS(sp2, SCM_CLASS_STRING_POINTER);
+    sp2->length  = sp1->length;
+    sp2->size    = sp1->size;
+    sp2->start   = sp1->start;
+    sp2->index   = sp1->index;
+    sp2->current = sp1->current;
+    return SCM_OBJ(sp2);
+}
+
+/* Dump string pointer info for debugging.
+   Thanks to Alex Shinn (foof@synthcode.com) */
+#if SCM_DEBUG_HELPER
+void Scm_StringPointerDump(ScmStringPointer *sp1)
+{
+    Scm_Printf(SCM_CUROUT,
+               "<sp addr: %p len: %d size: %d start: %p index: %d cur: %d>\n",
+               sp1, sp1->length, sp1->size, sp1->start, sp1->index,
+               sp1->current);
+}
+#endif /*SCM_DEBUG_HELPER*/
 
 /*==================================================================
  *
