@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: fcntlib.stub,v 1.7 2003-07-05 03:29:10 shirok Exp $
+;;; $Id: fcntlib.stub,v 1.8 2004-07-15 07:10:04 shirok Exp $
 ;;;
 
 "#include \"gauche/fcntl.h\""
@@ -50,7 +50,7 @@
 (define-enum F_WRLCK)
 (define-enum F_UNLCK)
 
-(define-enum FD_CLOEXEC)
+(if "defined(FD_CLOEXEC)" (define-enum FD_CLOEXEC))
 
 (define-enum O_ACCMODE)
 (define-enum O_RDONLY)
@@ -59,8 +59,8 @@
 (define-enum O_APPEND)
 (define-enum O_CREAT)
 (define-enum O_EXCL)
-(define-enum O_NOCTTY)
-(define-enum O_NONBLOCK)
+(if "defined(O_NOCTTY)"   (define-enum O_NOCTTY))
+(if "defined(O_NONBLOCK)" (define-enum O_NONBLOCK))
 (define-enum O_TRUNC)
 
 (define-cproc sys-fcntl (port-or-fd op::<fixnum> &optional arg)

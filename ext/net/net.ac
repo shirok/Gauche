@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.3 2004-06-01 06:24:13 shirok Exp $
+dnl $Id: net.ac,v 1.4 2004-07-15 07:10:05 shirok Exp $
 
 # ext/net -------------------------------------------------
 
@@ -218,7 +218,16 @@ if test $ac_cv_func_getservbyport_r != no; then
   AC_DEFINE_UNQUOTED(GETSERVBYPORT_R_NUMARGS, $ac_cv_func_getservbyport_r_nargs, [Define number of args getservbyport_r takes])
 fi
 
-TYPE_SOCKLEN_T
+dnl Check for socklen_t
+dnl Windows/MinGW is special and we know the answer, so we just don't 
+dnl bother checking it.
+case "$target" in
+  *mingw32*)
+    AC_DEFINE(socklen_t, int)
+    LIBS="$LIBS -lwsock32" ;;
+  *)
+    TYPE_SOCKLEN_T;;
+esac
 
 dnl Local variables:
 dnl mode: autoconf

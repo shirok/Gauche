@@ -1,7 +1,7 @@
 /*
  * main.c - interpreter main program
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.74 2004-01-02 13:15:57 shirok Exp $
+ *  $Id: main.c,v 1.75 2004-07-15 07:10:06 shirok Exp $
  */
 
 #include <unistd.h>
@@ -162,9 +162,15 @@ static void sig_setup(void)
     sigfillset(&set);
     sigdelset(&set, SIGABRT);
     sigdelset(&set, SIGILL);
+#ifdef SIGKILL
     sigdelset(&set, SIGKILL);
+#endif
+#ifdef SIGCONT
     sigdelset(&set, SIGCONT);
+#endif
+#ifdef SIGSTOP
     sigdelset(&set, SIGSTOP);
+#endif
     sigdelset(&set, SIGSEGV);
 #ifdef SIGPROF
     sigdelset(&set, SIGPROF);
@@ -196,7 +202,7 @@ int main(int argc, char **argv)
     const char *scriptfile = NULL;
     ScmObj av = SCM_NIL;
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32__)
     /* Cygwin needs explicit initialization for GC module.
        This code is taken from gc.h and gcconfig.h (I don't want to
        include private/gcconfig.h)

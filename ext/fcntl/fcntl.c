@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.13 2003-12-05 19:38:28 shirok Exp $
+ *  $Id: fcntl.c,v 1.14 2004-07-15 07:10:04 shirok Exp $
  */
 
 #include <string.h>
@@ -109,6 +109,7 @@ static const char *flag_name(int flag)
 
 ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 {
+#ifndef __MINGW32__
     int fd = Scm_GetPortFd(port_or_fd, TRUE), r;
     ScmSysFlock *fl;
     
@@ -146,6 +147,10 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
         Scm_Error("unknown operation code (%d) for fcntl", op);
         return SCM_UNDEFINED;   /* dummy */
     }
+#else  /*__MINGW32__*/
+    Scm_Error("fcntl not supported on MinGW port");
+    return SCM_UNDEFINED; /*dummy*/
+#endif /*__MINGW32__*/
 }
 
 /*

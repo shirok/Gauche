@@ -1,7 +1,7 @@
 /*
  * core.c - core kernel interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.53 2003-12-16 09:50:46 shirok Exp $
+ *  $Id: core.c,v 1.54 2004-07-15 07:10:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -169,6 +169,7 @@ void Scm_Exit(int code)
         Scm_Apply(SCM_CDAR(hp), SCM_NIL);
     }
     Scm_FlushAllPorts(TRUE);
+
     exit(code);
 }
 

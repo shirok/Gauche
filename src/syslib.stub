@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.96 2004-06-24 23:59:58 shirok Exp $
+;;; $Id: syslib.stub,v 1.97 2004-07-15 07:10:07 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -40,13 +40,15 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <locale.h>
-#include <grp.h>
-#include <pwd.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/wait.h>
 #include <signal.h>
 #include <math.h>
+#ifndef __MINGW32__
+#include <sys/wait.h>
+#include <grp.h>
+#include <pwd.h>
+#endif /*!__MINGW32__*/
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -284,8 +286,9 @@
 #elif defined(LRAND48) && defined(SRAND48)
   SCM_RETURN(Scm_MakeInteger(lrand48()));
 #else
-  Scm_Error(\"system doesn't have either random() or lrand48()\");
-  SCM_RETURN(SCM_UNDEFINED);
+  /* fallback - we don't want to use rand(), for it is not very good RNG.
+     replace it when we have time. */
+  SCM_RETURN(Scm_MakeInteger(rand()));
 #endif")
 
 (define-cproc sys-srandom (seed)
@@ -295,7 +298,9 @@
 #elif defined(LRAND48) && defined(SRAND48)
   srand48(Scm_GetUInteger(seed));
 #else
-  Scm_Error(\"system doesn't have either srandom() or srand48()\");
+  /* fallback - we don't want to use rand(), for it is not very good RNG.
+     replace it when we have time. */
+  srand(Scm_GetUInteger(seed));
 #endif
   SCM_RETURN(SCM_UNDEFINED);")
 
@@ -318,12 +323,14 @@
   if (r < 0) Scm_SysError(\"stat failed for %S\", path);
   SCM_RETURN(SCM_OBJ(s));")
 
+(if "!defined(__MINGW32__)"
 (define-cproc sys-lstat (path::<string>)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r;
   SCM_SYSCALL(r, lstat(Scm_GetStringConst(path), &s->statrec));
   if (r < 0) Scm_SysError(\"lstat failed for %S\", path);
   SCM_RETURN(SCM_OBJ(s));")
+)
 
 (define-cproc sys-fstat (port-or-fd)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
@@ -335,6 +342,8 @@
 
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
+
+(if "!defined(__MINGW32__)" (begin
 
 ;; returns pid and status 
 (define-cproc sys-wait ()
@@ -375,6 +384,8 @@
 
 (define-cproc sys-wait-stopsig (status::<int>)
   (return <int> "WSTOPSIG"))
+
+)) ;; !defined(__MINGW32__)
 
 ;;---------------------------------------------------------------------
 ;; time.h
@@ -436,7 +447,7 @@
 
 (define-cproc sys-access (pathname::<string> amode::<int>)
   "int r;
-  if (geteuid() != getuid() || getegid() != getgid()) {
+  if (Scm_IsSugid()) {
     Scm_Error(\"cannot use sys-access in suid/sgid program.\");
   }
   SCM_SYSCALL(r, access(Scm_GetStringConst(pathname), amode));
@@ -482,9 +493,9 @@
 (define-cproc sys-getpid ()  (return <int> "getpid"))
 (define-cproc sys-getppid () (return <int> "getppid"))
 
-(define-cproc sys-link (existing::<string> new::<string>)
+(define-cproc sys-link (existing::<string> newpath::<string>)
   " int r;
-  SCM_SYSCALL(r, link(Scm_GetStringConst(existing), Scm_GetStringConst(new)));
+  SCM_SYSCALL(r, link(Scm_GetStringConst(existing), Scm_GetStringConst(newpath)));
   if (r < 0) Scm_SysError(\"link failed\");
   SCM_RETURN(SCM_TRUE);")
 
@@ -515,7 +526,11 @@
 
 (define-cproc sys-mkdir (pathname::<string> mode::<int>)
   " int r;
+#ifndef __MINGW32__
   SCM_SYSCALL(r, mkdir(Scm_GetStringConst(pathname), mode));
+#else
+  SCM_SYSCALL(r, mkdir(Scm_GetStringConst(pathname)));
+#endif /*__MINGW32__*/
   if (r < 0) Scm_SysError(\"mkdir failed\");
   SCM_RETURN(SCM_TRUE);")
 

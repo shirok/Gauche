@@ -53,7 +53,7 @@
     (begin
       (with-output-to-file "test.out/test6.o" (lambda () (newline)))
       (with-output-to-file "test.out/test7.o" (lambda () (newline)))
-      (sys-mkdir "test.out/test2.d")))
+      (sys-mkdir "test.out/test2.d" #o777)))
 
 (sys-system "mkdir test.out/test.d")
 (with-output-to-file "test.out/test.d/test10.o"

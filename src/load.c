@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.85 2004-07-05 20:29:22 shirok Exp $
+ *  $Id: load.c,v 1.86 2004-07-15 07:10:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -386,12 +386,12 @@ static ScmObj break_env_paths(const char *envname)
     const char *e = getenv(envname);
 
     if (e == NULL) {
-        return SCM_NIL;
-    } else if (geteuid() != getuid() || getegid() != getgid()) {
+	return SCM_NIL;
+    } else if (Scm_IsSugid()) {
         /* don't trust env when setugid'd */
         return SCM_NIL;
     } else {
-        return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)), ':');
+	return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)), ':');
     }
 }
 
@@ -503,6 +503,8 @@ typedef void (*ScmDynLoadInitFn)(void);
    not much point to avoid dlopen here. */
 #if defined(HAVE_DLOPEN)
 #include "dl_dlopen.c"
+#elif defined(__MINGW32__)
+#include "dl_win.c"
 #else
 #include "dl_dummy.c"
 #endif

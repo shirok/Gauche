@@ -114,8 +114,19 @@
 (test-section "libutil")
 
 (sys-system "mkdir test.o")
-(sys-system "mkdir test.o/_test")
-(sys-system "mkdir test.o/_tset")
+
+(let* ((arch (gauche-architecture))
+       (len  (string-length arch)))
+  (if (and (> len 7)
+	   (string=? (substring arch (- len 7) len) "mingw32"))
+      (begin
+	;; NB: we use Windows' mkdir command, so we need to use backslashes!
+        ;; sys-mkdir isn't tested yet so we can't use it.
+	(sys-system "mkdir test.o\\_test")
+	(sys-system "mkdir test.o\\_tset"))
+      (begin
+	(sys-system "mkdir test.o/_test")
+	(sys-system "mkdir test.o/_tset"))))
 
 (with-output-to-file "test.o/_test.scm"
   (lambda ()

@@ -30,21 +30,26 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.19 2004-01-28 00:28:22 fuyuki Exp $
+ *  $Id: net.h,v 1.20 2004-07-15 07:10:05 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
 #define GAUCHE_NET_H
 
 #include <sys/types.h>
+#include <gauche.h>
+#include <errno.h>
+
+#ifndef __MINGW32__
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <sys/un.h>
-#include <gauche.h>
-#include <errno.h>
+#else  /*__MINGW32__*/
+#include <winsock2.h>
+#endif /*__MINGW32__*/
 
 #ifdef HAVE_RPC_TYPES_H
 #include <rpc/types.h>

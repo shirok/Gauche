@@ -1,3 +1,14 @@
+2004-07-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/mingw-compat.h: added for MinGW port.
+	* doc/mingw-memo.txt: added for MinGW port.
+	* DIST, configure.ac, src/system.c, src/syslib.stub, src/load.c,
+	  src/dl_win.c, src/signal.c, src/main.c, ext/auxsys/auxsys.c,
+	  ext/auxsys/auxsyslib.stub, ext/fcntl/fcntl.c, ext/net/net.c
+	  ext/net/net.h, ext/termios/termiolib.stub, ext/termios/temios.c,
+	  gc/gc.h: 
+	  added MinGW support (first stage; very rudimentatl).
+
 2004-07-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (compile_body): fixed a bug that passes

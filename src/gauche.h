@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.374 2004-07-12 21:58:21 shirok Exp $
+ *  $Id: gauche.h,v 1.375 2004-07-15 07:10:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -47,7 +47,11 @@
 #include <errno.h>
 #include <gauche/config.h>  /* read config.h _before_ gc.h */
 #include <gauche/int64.h>
-#define GC_DLL
+
+#if defined(LIBGAUCHE_BODY)
+#define GC_DLL    /* for gc.h to handle Win32 crazyness */
+#define GC_BUILD  /* ditto */
+#endif 
 #include <gc.h>
 
 #ifndef SCM_DECL_BEGIN
@@ -74,15 +78,20 @@ SCM_DECL_BEGIN
 #endif
 
 /* Ugly cliche for Win32. */
-#if defined(__CYGWIN__)
+#if defined(__CYGWIN__) || defined(__MINGW32__)
 # if defined(LIBGAUCHE_BODY)
 #  define SCM_EXTERN extern
 # else
 #  define SCM_EXTERN extern __declspec(dllimport)
 # endif
-#else  /*!__CYGWIN__*/
+#else  /*!(__CYGWIN__ || __MINGW32__)*/
 # define SCM_EXTERN extern
-#endif /*!__CYGWIN__*/
+#endif /*!(__CYGWIN__ || __MINGW32__)*/
+
+/* For Mingw32, we need some tricks */
+#if defined(__MINGW32__)
+#include <gauche/mingw-compat.h>
+#endif /*__MINGW32__*/
 
 /* Some useful macros */
 
@@ -2371,7 +2380,7 @@ SCM_CLASS_DECL(Scm_SysGroupClass);
 #define SCM_CLASS_SYS_GROUP    (&Scm_SysGroupClass)
 #define SCM_SYS_GROUP(obj)     ((ScmSysGroup*)(obj))
 #define SCM_SYS_GROUP_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_GROUP))
-    
+
 SCM_EXTERN ScmObj Scm_GetGroupById(gid_t gid);
 SCM_EXTERN ScmObj Scm_GetGroupByName(ScmString *name);
 
@@ -2395,6 +2404,8 @@ SCM_CLASS_DECL(Scm_SysPasswdClass);
 
 SCM_EXTERN ScmObj Scm_GetPasswdById(uid_t uid);
 SCM_EXTERN ScmObj Scm_GetPasswdByName(ScmString *name);
+
+SCM_EXTERN int    Scm_IsSugid(void);
 
 SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,
                               ScmObj iomap, int forkp);

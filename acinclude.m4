@@ -1,5 +1,5 @@
 dnl Gauche-specific autoconf macros.
-dnl $Id: acinclude.m4,v 1.13 2004-04-23 10:17:21 shirok Exp $
+dnl $Id: acinclude.m4,v 1.14 2004-07-15 07:09:24 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -93,12 +93,15 @@ dnl   If you use AC_GAUCHE_FLAGS, this test is included.
 dnl   The main configure and gc's configure also use this.
 AC_DEFUN([AC_GAUCHE_OPTFLAGS],
          [
-case "$host" in
+case "$target" in
   i686-*) I686OPT="-DUSE_I686_PREFETCH";;
 esac
 if test $CC = "gcc"; then
-  GCCOPT="-fomit-frame-pointer"
-  case "$host" in
+  case "$target" in
+    *mingw*) ;;
+    *)       GCCOPT="-fomit-frame-pointer";;
+  esac
+  case "$target" in
    i586-*) GCCOPT="$GCCOPT -march=i586";;
    i686-*) GCCOPT="$GCCOPT -march=i686";;
   esac

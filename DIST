@@ -22,8 +22,10 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$gen" = "yes" ]; then
+  rm -rf configure gc/configure
   autoconf
   (cd gc; autoconf)
+  patch -u -p0 < doc/mingw-memo.txt
 fi
 
 if [ "$tgz" = "yes" ]; then

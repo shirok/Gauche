@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.34 2004-05-23 04:00:22 shirok Exp $
+dnl $Id: configure.ac,v 1.35 2004-07-15 07:09:25 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8, shiro@acm.org)
-AC_REVISION($Revision: 1.34 $)
+AC_REVISION($Revision: 1.35 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -285,6 +285,12 @@ AC_PROG_GCC_TRADITIONAL
 dnl This is required to test trunc and rint below
 AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
 
+dnl For Windows/MinGW, manually adds several libraries
+case "$target" in
+  *mingw*) LIBS="$LIBS -lnetapi32";;
+  *) ;;
+esac
+
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(isnan isinf trunc rint)
 AC_CHECK_FUNCS(symlink readlink lchown mkstemp realpath nanosleep usleep)
@@ -457,7 +463,7 @@ case $target in
     SHLIB_OK=ok
     LINK_HELPER='./link-hpux'
     ;;
-  *cygwin*)
+  *cygwin*|*mingw*)
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -shared -o'
     SHLIB_SO_SUFFIX="dll"

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.30 2004-01-28 00:28:22 fuyuki Exp $
+ *  $Id: net.c,v 1.31 2004-07-15 07:10:05 shirok Exp $
  */
 
 #include "net.h"
@@ -402,6 +402,31 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
         return Scm_MakeInteger(val);
     }
 }
+
+/*==================================================================
+ * Windows/MinGW compatibility layer
+ */
+#ifdef __MINGW32__
+
+/* It looks like winsock2.h doesn't have inet_aton, but has
+ * the obsolete inet_addr call.   With inet_addr, we can't
+ * convert "255.255.255.255".
+ */
+int inet_aton(const char *cp, struct in_addr *inp)
+{
+    unsigned long r = inet_addr(cp);
+    if (r == (unsigned long)-1) {
+	return -1;
+    } else {
+	inp->s_addr = r;
+	return 0;
+    }
+}
+
+/* winsock requires some obscure initialization */
+static WSADATA wsaData;
+
+#endif /*__MINGW32__*/
                           
 /*==================================================================
  * Initialization
@@ -417,6 +442,9 @@ void Scm_Init_libnet(void)
 
     SCM_INIT_EXTENSION(net);
     mod = SCM_MODULE(SCM_FIND_MODULE("gauche.net", TRUE));
+#ifdef __MINGW32__
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+#endif /*__MINGW32__*/
     Scm_InitBuiltinClass(&Scm_SocketClass, "<socket>", NULL,
                          sizeof(ScmSocket), mod);
     Scm_Init_NetAddr(mod);

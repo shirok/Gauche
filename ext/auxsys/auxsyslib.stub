@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.20 2004-04-11 05:29:27 fuyuki Exp $
+;;; $Id: auxsyslib.stub,v 1.21 2004-07-15 07:10:04 shirok Exp $
 ;;;
 
 "
@@ -50,10 +50,12 @@
 #include <locale.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/times.h>
 #include <unistd.h>
-#include <sys/utsname.h>
 #include <utime.h>
+#ifndef __MINGW32__
+#include <sys/times.h>
+#include <sys/utsname.h>
+#endif
 "
 
 ;; stdlib.h
@@ -97,11 +99,13 @@
        SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
 
 ;; sys/stat.h
+(if "!defined(__MINGW32__)"
 (define-cproc sys-mkfifo (path::<string> mode::<int>)
   "  int r;
   SCM_SYSCALL(r, mkfifo(Scm_GetStringConst(path), mode));
   if (r < 0) Scm_SysError(\"mkfifo failed on %S\", path);
   SCM_RETURN(Scm_MakeInteger(r));")
+) ;; !defined(__MINGW32__)
 
 ;; utime.h
 
@@ -118,6 +122,8 @@
   SCM_RETURN(SCM_UNDEFINED);")
 
 ;; set*
+
+(if "!defined(__MINGW32__)" (begin
 
 (define-cproc sys-setgid (gid::<int>)
   "  int r; SCM_SYSCALL(r, setgid(gid));
@@ -183,12 +189,15 @@
   }
   /* NOTREACHED */")
 
+)) ;; !defined(__MINGW32__)
+
 (define-cproc sys-getlogin ()
   "  const char *p = getlogin();
   if (p) SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   else SCM_RETURN(SCM_FALSE);")
 
 ;; sys/times.h
+(if "!defined(__MINGW32__)"
 (define-cproc sys-times ()
   "  struct tms info;
   ScmObj h = SCM_NIL, t;
@@ -208,9 +217,11 @@
 #endif
 #endif
   SCM_RETURN(h);")
+) ;; !defined(__MINGW32__)
 
 ;; sys/utsname.h
 ;; returns list of (sysname nodename release version machine)
+(if "!defined(__MINGW32__)"
 (define-cproc sys-uname ()
   "  struct utsname info;
   ScmObj head = SCM_NIL, tail;
@@ -221,6 +232,7 @@
   SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.version));
   SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.machine));
   return head;")
+) ;; !defined(__MINGW32__)
 
 "#ifndef HOSTNAMELEN
 #define HOSTNAMELEN 1024
@@ -271,16 +283,20 @@
        SCM_RETURN(SCM_UNDEFINED);"))
 
 ;; ctermid
+(if "!defined(__MINGW32__)"
 (define-cproc sys-ctermid ()
   "  char buf[L_ctermid+1];
   char *r = ctermid(buf);
   SCM_RETURN(SCM_MAKE_STR_COPYING(r));")
+) ;; !defined(__MINGW32__)
 
 ;; chown
+(if "!defined(__MINGW32__)"
 (define-cproc sys-chown (path::<string> owner::<int> group::<int>)
   "int r; SCM_SYSCALL(r, chown(Scm_GetStringConst(path), owner, group));
   if (r < 0) Scm_SysError(\"chown failed on %S\", path);
   SCM_RETURN(SCM_TRUE);")
+) ;; !defined(__MINGW32__)
 
 ;; lchown
 (if "defined HAVE_LCHOWN"

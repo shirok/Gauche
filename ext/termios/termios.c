@@ -1,7 +1,7 @@
 /*
  * termios.c - termios interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,13 +30,15 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.11 2003-08-08 19:39:15 shirok Exp $
+ *  $Id: termios.c,v 1.12 2004-07-15 07:10:05 shirok Exp $
  */
 
 #include <string.h>
 #include "gauche/termios.h"
 #include <gauche/class.h>
 #include <gauche/extend.h>
+
+#if !defined(__MINGW32__)
 
 /*
  * Termios interface
@@ -120,6 +122,7 @@ ScmObj Scm_Forkpty(ScmObj slaveterm)
 }
 #endif /*HAVE_FORKPTY*/
 
+#endif /*!defined(__MINGW32) */
 
 /*
  * Initializaion
@@ -132,9 +135,11 @@ void Scm_Init_termios(void)
     ScmModule *mod;
     SCM_INIT_EXTENSION(termios);
     mod = SCM_MODULE(SCM_FIND_MODULE("gauche.termios", TRUE));
+    Scm_Init_termiolib(mod);
+
+#ifndef __MINGW32__
     Scm_InitBuiltinClass(&Scm_SysTermiosClass, "<sys-termios>",
                          termios_slots, sizeof(ScmSysTermios), mod);
-    Scm_Init_termiolib(mod);
 
     /* Constants for termios.  Non-POSIX symbols are guarded by #ifdef's */
 #define DEFSYM(sym) \
@@ -295,4 +300,6 @@ void Scm_Init_termios(void)
 #ifdef B230400
     DEFSYM(B230400);
 #endif
+
+#endif /*!__MINGW32__*/
 }

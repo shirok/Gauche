@@ -30,14 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: dl_win.c,v 1.3 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: dl_win.c,v 1.4 2004-07-15 07:10:06 shirok Exp $
  */
 
 /* This file is included in load.c */
 
-/* NB: This isn't really used for now, since GC requires a special wrapper
-   around dlopen() and we can't casually replace it.  I need to tweak
-   GC's external API so that we can safely wrap these calls. */
+/* NB: if we use MT, we need a special wrapper around LoadLibrary
+   (see gc/gc_dlopen.c).   For the time being we assume MT is off
+   on Windows/MinGW version. */
 
 #include <windows.h>
 
@@ -49,9 +49,9 @@ static void *dl_open(const char *path)
 static const char *dl_error(void)
 {
     char buf[80], *p;
-    DWORD code = GetLastError(void);
+    DWORD code = GetLastError();
     sprintf(buf, "error code %d", code);
-    p = SCM_NEW_ATOMIC2(strlen(buf)+1, char *);
+    p = SCM_NEW_ATOMIC2(char *, strlen(buf)+1);
     strcpy(p, buf);
     return p;
 }

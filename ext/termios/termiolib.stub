@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: termiolib.stub,v 1.9 2003-07-05 03:29:10 shirok Exp $
+;;; $Id: termiolib.stub,v 1.10 2004-07-15 07:10:05 shirok Exp $
 ;;;
 
 "#include \"gauche/termios.h\""
@@ -39,6 +39,8 @@
 ;; termios.h
 
 (define-type <sys-termios> "ScmSysTermios*")
+
+(if "!defined(__MINGW32__)" (begin
 
 (define-enum TCSANOW)
 (define-enum TCSADRAIN)
@@ -150,6 +152,8 @@
 (define-cproc sys-forkpty (&optional term)
   "SCM_RETURN(Scm_Forkpty(term));")
 )
+
+)) ;; !defined(__MINGW32__)
 
 ;; Local variables:
 ;; mode: scheme

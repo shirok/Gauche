@@ -30,13 +30,16 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.h,v 1.2 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: termios.h,v 1.3 2004-07-15 07:10:05 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
 #define GAUCHE_TERMIOS_H
 
 #include <gauche.h>
+
+#if !defined(__MINGW32__)
+
 #include <termios.h>
 #ifdef HAVE_PTY_H
 #include <pty.h>
@@ -66,5 +69,7 @@ ScmObj Scm_Openpty(ScmObj slaveterm);
 #ifdef HAVE_FORKPTY
 ScmObj Scm_Forkpty(ScmObj slaveterm);
 #endif
+
+#endif /* !defined(__MINGW32__) */
 
 #endif /* GAUCHE_TERMIOS_H */

@@ -1,7 +1,7 @@
 /*
  * signal.c - signal handling
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.28 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: signal.c,v 1.29 2004-07-15 07:10:07 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -64,11 +64,17 @@
  *  since GC uses it in the Linux/pthread environment.
  */
 
-#ifdef GAUCHE_USE_PTHREADS
-#define SIGPROCMASK pthread_sigmask
-#else
-#define SIGPROCMASK sigprocmask
-#endif
+#ifndef __MINGW32__
+  #ifdef GAUCHE_USE_PTHREADS
+  #define SIGPROCMASK pthread_sigmask
+  #else
+  #define SIGPROCMASK sigprocmask
+  #endif
+#else  /* __MINGW32__ */
+  /* This isn't correct (we need some mechanism to block the signal),
+     but just for the time being ... */
+  #define SIGPROCMASK(mode, set, omask)  (0)
+#endif /* __MINGW32__ */
 
 /* Master signal handler vector. */
 static struct sigHandlersRec {
@@ -98,9 +104,13 @@ static struct sigdesc {
     int num;
     int defaultHandle;
 } sigDesc[] = {
+#ifdef SIGHUP
     SIGDEF(SIGHUP,  SIGDEF_EXIT),     /* Hangup (POSIX) */
+#endif
     SIGDEF(SIGINT,  SIGDEF_ERROR),    /* Interrupt (ANSI) */
+#ifdef SIGQUIT
     SIGDEF(SIGQUIT, SIGDEF_EXIT),     /* Quit (POSIX) */
+#endif
     SIGDEF(SIGILL,  SIGDEF_NOHANDLE), /* Illegal instruction (ANSI) */
 #ifdef SIGTRAP
     SIGDEF(SIGTRAP, SIGDEF_ERROR),    /* Trace trap */
@@ -113,22 +123,44 @@ static struct sigdesc {
     SIGDEF(SIGBUS,  SIGDEF_NOHANDLE), /* BUS error (4.2 BSD) */
 #endif
     SIGDEF(SIGFPE,  SIGDEF_ERROR),    /* Floating-point exception (ANSI) */
+#ifdef SIGKILL
     SIGDEF(SIGKILL, SIGDEF_NOHANDLE), /* Kill, unblockable (POSIX) */
+#endif
+#ifdef SIGUSR1
     SIGDEF(SIGUSR1, SIGDEF_ERROR),    /* User-defined signal 1 (POSIX) */
+#endif
     SIGDEF(SIGSEGV, SIGDEF_NOHANDLE), /* Segmentation violation (ANSI) */
+#ifdef SIGUSR2
     SIGDEF(SIGUSR2, SIGDEF_ERROR),    /* User-defined signal 2 (POSIX) */
+#endif
+#ifdef SIGPIPE
     SIGDEF(SIGPIPE, SIGDEF_ERROR),    /* Broken pipe (POSIX) */
+#endif
+#ifdef SIGALRM
     SIGDEF(SIGALRM, SIGDEF_ERROR),    /* Alarm clock (POSIX) */
+#endif
     SIGDEF(SIGTERM, SIGDEF_EXIT),     /* Termination (ANSI) */
 #ifdef SIGSTKFLT
     SIGDEF(SIGSTKFLT, SIGDEF_ERROR),  /* Stack fault */
 #endif
+#ifdef SIGCHLD
     SIGDEF(SIGCHLD, SIGDEF_NOHANDLE), /* Child status has changed (POSIX) */
+#endif
+#ifdef SIGCONT
     SIGDEF(SIGCONT, SIGDEF_NOHANDLE), /* Continue (POSIX) */
+#endif
+#ifdef SIGSTOP
     SIGDEF(SIGSTOP, SIGDEF_NOHANDLE), /* Stop, unblockable (POSIX) */
+#endif
+#ifdef SIGTSTP
     SIGDEF(SIGTSTP, SIGDEF_NOHANDLE), /* Keyboard stop (POSIX) */
+#endif
+#ifdef SIGTTIN
     SIGDEF(SIGTTIN, SIGDEF_NOHANDLE), /* Background read from tty (POSIX) */
+#endif
+#ifdef SIGTTOU
     SIGDEF(SIGTTOU, SIGDEF_NOHANDLE), /* Background write to tty (POSIX) */
+#endif
 #ifdef SIGURG
     SIGDEF(SIGURG,  SIGDEF_NOHANDLE), /* Urgent condition on socket (4.2 BSD) */
 #endif
@@ -572,6 +604,7 @@ ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
  */
 static void scm_sigsuspend(sigset_t *mask)
 {
+#ifndef __MINGW32__
     sigset_t omask;
     ScmVM *vm = Scm_VM();
     for (;;) {
@@ -586,6 +619,9 @@ static void scm_sigsuspend(sigset_t *mask)
     sigsuspend(mask);
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
     SCM_SIGCHECK(vm);
+#else  /*__MINGW32__*/
+    Scm_Error("sigsuspend not supported on MinGW port");
+#endif /*__MINGW32__*/
 }
 
 ScmObj Scm_SigSuspend(ScmSysSigset *mask)
@@ -608,6 +644,26 @@ ScmObj Scm_Pause(void)
     scm_sigsuspend(&omask);
     return SCM_UNDEFINED;
 }
+
+/*
+ * Emulation stubs for Windows/MinGW
+ */
+#ifdef __MINGW32__
+
+int sigaction(int signum, const struct sigaction *act,
+	      struct sigaction *oact)
+{
+    if (oact != NULL) {
+	Scm_Panic("sigaction() with oldact != NULL isn't supported on MinGW port");
+    }
+    if (signal(signum, act->sa_handler) == SIG_ERR) {
+	return -1;
+    } else {
+	return 0;
+    }
+}
+#endif /* __MINGW32__ */
+
 
 /*
  * initialize

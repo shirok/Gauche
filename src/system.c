@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.56 2004-04-24 11:49:22 shirok Exp $
+ *  $Id: system.c,v 1.57 2004-07-15 07:10:07 shirok Exp $
  */
 
 #include <stdio.h>
@@ -40,11 +40,17 @@
 #include <dirent.h>
 #include <locale.h>
 #include <errno.h>
-#include <grp.h>
-#include <pwd.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef __MINGW32__
+#include <grp.h>
+#include <pwd.h>
+#else   /*__MINGW32__*/
+#include <windows.h>
+#include <lm.h>
+#include <tlhelp32.h>
+#endif  /*__MINGW32__*/
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
@@ -206,6 +212,16 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
  * Pathname manipulation
  */
 
+/* Returns the system's native pathname delimiter. */
+const char *Scm_PathDelimiter(void)
+{
+#ifndef __MINGW32__
+    return "/";
+#else  /*__MINGW32__*/
+    return "\\";
+#endif /*__MINGW32__*/
+}
+
 ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
     const char *str = SCM_STRING_START(pathname), *srcp = str;
@@ -214,9 +230,10 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
     int bottomp = FALSE;
     
 #define SKIP_SLASH \
-    while (*srcp == '/' && srcp < str+size) { srcp++; }
+    while ((*srcp == '/' || *srcp == '\\') && srcp < str+size) { srcp++; }
 
     if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
+#ifndef __MINGW32__
         /* ~user magic */
         const char *p = str+1;
         struct passwd *pwd;
@@ -248,6 +265,11 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         strcpy(buf, pwd->pw_dir);
         dstp = buf + dirlen;
         if (*(dstp-1) != '/') { *dstp++ = '/'; *(dstp+1) = '\0'; }
+#else  /* __MINGW32__ */
+	/* we don't support '~' magic on win32 native */
+	buf = SCM_NEW_ATOMIC2(char*, size+1);
+	dstp = buf;
+#endif /* __MINGW32__ */
     } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/') {
         int dirlen;
 #define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
@@ -854,6 +876,19 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
     { NULL }
 };
 
+/*
+ * check if we're suid/sgid-ed.
+ * TODO: some system has a special syscall for it; use it if so.
+ */
+int Scm_IsSugid(void)
+{
+#ifndef __MINGW32__
+    return (geteuid() != getuid() || getegid() != getgid());
+#else  /*__MINGW32__*/
+    return FALSE;
+#endif /*__MINGW32__*/
+}
+
 /*===============================================================
  * Exec
  *   execvp(), with optionally setting stdios correctly.
@@ -871,12 +906,15 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
  *   program.  In such a case, this function returns Scheme integer to
  *   show the children's pid.   If for arg is FALSE, this procedure
  *   of course never returns.
+ *
+ *   On Windows/MinGW port, I'm not sure we can do I/O swapping in
+ *   reasonable way.  For now, iomap is ignored.
  */
 
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
 {
     int argc = Scm_Length(args), i, j, maxfd, iollen;
-    int *tofd, *fromfd, *tmpfd;
+    int *tofd = NULL, *fromfd = NULL, *tmpfd = NULL;
     char **argv;
     const char *program;
     ScmObj ap, iop;
@@ -895,9 +933,10 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
     }
     argv[i] = NULL;
     program = Scm_GetStringConst(file);
-    iollen = Scm_Length(iomap);
 
+#ifndef __MINGW32__
     /* setting up iomap table */
+    iollen = Scm_Length(iomap);
     if (SCM_PAIRP(iomap)) {
         /* check argument vailidity before duping file descriptors, so that
            we can still use Scm_Error */
@@ -977,6 +1016,15 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
 
     /* We come here only when fork is requested. */
     return Scm_MakeInteger(pid);
+#else  /* __MINGW32__ */
+    if (forkp) {
+	Scm_Error("fork() not supported on MinGW port");
+    } else {
+	execvp(program, (const char *const*)argv);
+	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
+    }
+    return SCM_FALSE; /* dummy */
+#endif /* __MINGW32__ */
 }
 
 /*===============================================================
@@ -1095,6 +1143,222 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 }
 
 #endif /* HAVE_SELECT */
+
+/*===============================================================
+ * Emulation layer for MinGW port
+ */
+#ifdef __MINGW32__
+
+/* wide character string -> Scheme-owned MB string.
+   the result is utf8.  we should convert it to Gauche's internal encoding,
+   but that's the later story... */
+static char *w2mdup(LPCWSTR wstr)
+{
+    char *dst = "";
+    if (wstr) {
+	/* first, count the required length */
+	int count;
+	int mbsize = WideCharToMultiByte(CP_UTF8, 0, wstr, -1,
+					 NULL, 0, NULL, NULL);
+	SCM_ASSERT(mbsize > 0);
+	dst = SCM_NEW_ATOMIC2(char*, mbsize+1);
+	count = WideCharToMultiByte(CP_UTF8, 0, wstr, -1,
+				    dst, mbsize+1, NULL, NULL);
+	dst[mbsize] = '\0';
+	SCM_ASSERT(count == mbsize);
+    }
+    return dst;
+}
+
+static wchar_t *m2wdup(const char *mbstr)
+{
+    wchar_t *dst = NULL;
+    if (mbstr) {
+	/* first, count the required length */
+	int count;
+	int wcsize = MultiByteToWideChar(CP_UTF8, 0, mbstr, -1, NULL, 0);
+	SCM_ASSERT(wcsize >= 0);
+	dst = SCM_NEW_ATOMIC2(wchar_t *, wcsize+1);
+	count = MultiByteToWideChar(CP_UTF8, 0, mbstr, -1, dst, wcsize);
+	dst[wcsize] = 0;
+	SCM_ASSERT(count == wcsize);
+    }
+    return dst;
+}
+
+/*
+ * Users and groups
+ * Kinda Kluge, since we don't have "user id" associated with each
+ * user.  (If a domain server is active, Windows security manager seems
+ * to assign an unique user id for every user; but it doesn't seem available
+ * for stand-alone machine.)
+ */
+
+static void convert_user(const USER_INFO_2 *wuser, struct passwd *res)
+{
+    res->pw_name    = w2mdup(wuser->usri2_name);
+    res->pw_passwd  = "*";
+    res->pw_uid     = 0;
+    res->pw_gid     = 0;
+    res->pw_comment = w2mdup(wuser->usri2_comment);
+    res->pw_gecos   = w2mdup(wuser->usri2_full_name);
+    res->pw_dir     = w2mdup(wuser->usri2_home_dir);
+    res->pw_shell   = "";
+}
+
+/* Arrgh! thread unsafe!  just for the time being...*/
+static struct passwd pwbuf = { "dummy" };
+
+struct passwd *getpwnam(const char *name)
+{
+    USER_INFO_2 *res;
+    if (NetUserGetInfo(NULL, m2wdup(name), 2, (LPBYTE*)&res) != NERR_Success) {
+	return NULL;
+    }
+    convert_user(res, &pwbuf);
+    NetApiBufferFree(res);
+    return &pwbuf;
+}
+
+struct passwd *getpwuid(uid_t uid)
+{
+    /* for the time being, we just ignore uid and returns the current
+       user info. */
+#define NAMELENGTH 256
+    char buf[NAMELENGTH];
+    DWORD len = NAMELENGTH;
+    if (GetUserName(buf, &len) == 0) {
+	return NULL;
+    }
+    return getpwnam(buf);
+}
+
+static struct group dummy_group = {
+    "dummy",
+    "",
+    100,
+    NULL
+};
+
+struct group *getgrgid(gid_t gid)
+{
+    return &dummy_group;
+}
+
+struct group *getgrnam(const char *name)
+{
+    return &dummy_group;
+}
+
+/* Kluge kluge kluge */
+uid_t getuid(void)
+{
+    return 0;
+}
+
+uid_t geteuid(void)
+{
+    return 0;
+}
+
+gid_t getgid(void)
+{
+    return 0;
+}
+
+gid_t getegid(void)
+{
+    return 0;
+}
+
+/*
+ * Getting parent process ID.  I wonder why it is such a hassle, but
+ * the use of Process32First is indeed suggested in the MS document.
+ */
+pid_t getppid(void)
+{
+    HANDLE snapshot;
+    PROCESSENTRY32 entry;
+    DWORD myid = GetCurrentProcessId(), parentid;
+    int found = FALSE;
+    
+    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) {
+	Scm_Error("couldn't take process snapshot in getppid()");
+    }
+    entry.dwSize = sizeof(PROCESSENTRY32);
+    if (!Process32First(snapshot, &entry)) {
+	CloseHandle(snapshot);
+	Scm_Error("Process32First failed in getppid()");
+    }
+    do {
+	if (entry.th32ProcessID == myid) {
+	    parentid = entry.th32ParentProcessID;
+	    found = TRUE;
+	    break;
+	}
+    } while (Process32Next(snapshot, &entry));
+    CloseHandle(snapshot);
+    if (!found) {
+	Scm_Error("couldn't find the current process entry in getppid()");
+    }
+    return parentid;
+}
+
+
+/*
+ * Other obscure stuff
+ */
+
+int fork(void)
+{
+    return -1;
+}
+
+int kill(pid_t pid, int signal)
+{
+    return -1; /*TODO: is there any alternative? */
+}
+
+int pipe(int fd[])
+{
+    return -1;
+}
+
+char *ttyname(int desc)
+{
+    return NULL;
+}
+
+int truncate(const char *path, off_t len)
+{
+    return -1;
+}
+
+int ftruncate(int fd, off_t len)
+{
+    return -1;
+}
+
+unsigned int alarm(unsigned int seconds)
+{
+    Scm_Error("alarm() not supported on MinGW port");
+    return 0;
+}
+
+/* file links */
+int link(const char *existing, const char *newpath)
+{
+    Scm_Error("link() not supported on MinGW port");
+    return -1;
+#if 0 /* only on NTFS */
+    BOOL r = CreateHardLink((LPCTSTR)newpath, (LPCTSTR)existing, NULL);
+    return r? -1 : 0;
+#endif
+}
+
+#endif /*__MINGW32__*/
+
 
 /*===============================================================
  * Initialization
