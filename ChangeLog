@@ -1,10 +1,16 @@
+2001-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c : fixed a bug in MakeHashTable that sets incorrect type
+	  for eqv? hash.  removed smallint_hash stuff, for eqv?-hash covers it.
+	* src/extlib.stub: added hash-table-type
+
 2001-11-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/dbm/bsddb.[ch] : added (not quite finished).
 
 2001-11-15  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/logical.scm : made big-field and copy-bit-field
+	* lib/gauche/logical.scm : made bit-field and copy-bit-field
 	  work even if start >= end.
 	* src/extlib.stub : added hash-table-delete!
 	* src/main.c : fixed typo (thanks for Sven Hartrumpf).
