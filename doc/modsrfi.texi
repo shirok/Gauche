@@ -31,23 +31,40 @@ of supported SRFIs.
 
 @node srfi-0 - Feature conditional, srfi-1 - List library, Library modules - SRFIs, Library modules - SRFIs
 @section @code{srfi-0} - Feature conditional
+@c NODE @code{srfi-0} - 機能条件式
 
 @deftp {Module} srfi-0
 @mdindex srfi-0
+@c EN
 Provides SRFI-0 @code{cond-expand} macro form.
 Now this module is autoloaded when @code{cond-expand} is used,
 so you don't need to say @code{(use srfi-0)} explicitly; it is required to
 write a portable Scheme program.
+@c JP
+このモジュールは SRFI-0 の @code{cond-expand} マクロ形式を提供します。
+現在、このモジュールは @code{cond-expand} を使用したときに、自動的に
+ロードされますので、明示的に @code{(use srfi-0)} を書く必要はありません。
+ただし、Scheme のプログラムのポータビリティを考えるなら、書いておく必要が
+あります。
+@c COMMON
 @end deftp
 
 @defmac cond-expand (feature-requirement command-or-definition @dots{}) @dots{}
 [SRFI-0]
+@c EN
 This macro expands to @var{command-or-definition} @dots{} if Gauche
 supports @var{feature-requirement}.
 In a way, it can be used to absorb the different feature sets supported by
 different Scheme implementations.
 
 @var{feature-requiremnt} must be in the following syntax:
+@c JP
+Gauche が @var{feature-requirement} をサポートしていれば、このマクロは
+@var{command-or-definition} @dots{} を展開します。ある意味では、異る
+Scheme の実装による異る機能セットというのを緩衝するのに使うことができます。
+
+@var{feature-requiremnt} は以下のような構文でなければなりません。
+@c COMMON
 @example
 @var{feature-requirement}
   : @var{feature-identifier}
@@ -56,6 +73,7 @@ different Scheme implementations.
   | (not @var{feature-requirement})
 @end example
 
+@c EN
 @var{feature-identifier} is a symbol that indicates a feature.
 If such a feature is supported in Gauche, it satisfies the
 @var{feature-requirement}.  You can do boolean combination
@@ -77,23 +95,59 @@ supported SRFIs), and a symbol @code{gauche} as @var{feature-identifier}.
 
 Suppose you are writing a program that requires srfi-13 (string library).
 In Gauche, the standard way to use srfi-13 is like this:
+@c JP
+@var{feature-identifier} は機能を示すシンボルです。ある機能が Gauche で
+サポートされているなら、それは、@var{feature-requirement} を満します。
+より複雑な条件を構成するために、@var{feature-requirement} の真理値組合せ
+をすることができます。
+
+このマクロは @var{feature-requirement} をその順でテストし、そのひとつが
+見たされたら、対応する @var{command-or-definition} @dots{} に展開されます。
+
+最後の節は、@var{feature-requirement} ではなく、@code{else} で始められ
+ます。これ以前に、満された条件がない場合には、このマクロは else 節の
+@var{command-or-definition} に展開されます。もし、else 節がなく、
+満される条件節もなければ、エラーが発生します。
+
+現時点の Gauche では、サポートされている SRFI の機能は、srfi 名
+(たとえば、@code{srfi-1})で識別されます(サポートされている SRFI に
+ついては @xref{Standard conformance} を参照してください)。
+また、シンボル @code{gauche} は @var{feature-identifier} として認識されます。
+
+srfi-13 (文字列ライブラリ)を必要とするプログラムを書いているとしましょう。
+Gauche では、標準的には、以下のようにします。
+@c COMMON
 
 @example
 (use srfi-13)
 
+@c EN
 ;; ... your program ...
+@c JP
+;; ... あなたのプログラム ...
+@c COMMON
 @end example
 
+@c EN
 However, the 'use' macro is Gauche specific and won't work
 on other Scheme implementations.  You can write instead:
+@c JP
+しかし、この 'use' マクロは Gauche 専用で、他の Scheme の実装では
+動作しません。代りに以下のように書くことができます。
+@c COMMON
 
 @example
 (cond-expand
   (srfi-13
+@c EN
     ;; ... your program ...
+@c JP
+    ;; ... あなたのプログラム ...
+@c COMMON
   ))
 @end example
 
+@c EN
 If the implementation supports @code{srfi-13}, the form expands
 to your program.  Note that Gauche issues @code{(use srfi-13)}
 for you in this case.
@@ -101,15 +155,28 @@ for you in this case.
 The above form signals an error if the implementation doesn't support
 srfi-13.  However, you might want to run your program on such implentations
 as well, by providing alternative library definitions.
+@c JP
+その実装が @code{srfi-13} をサポートしていれば、この形式は「あなたの
+プログラムに展開されます。Gauche では、この場合は、@code{(use srfi-13)}
+が供給されます。
+@c COMMON
 
 @example
 (cond-expand
  (srfi-13
+@c EN
    ;; ... your program ...
+@c JP
+   ;; ... あなたのプログラム ...
+@c COMMON
  )
  (else
    (load "my-srfi-13-implementation")
+@c EN
    ;; ... your program ...
+@c JP
+   ;; ... あなたのプログラム ...
+@c COMMON
  ))
 @end example
 @end defmac
@@ -217,7 +284,7 @@ increasing by @var{step}.
 
 @node SRFI-1 List predicates, SRFI-1 List selectors, SRFI-1 List constructors, srfi-1 - List library
 @subsection List predicates
-@c NODE リストに関する述語
+@c NODE リストの述語
 
 @defun proper-list? x
 @c EN
