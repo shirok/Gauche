@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.7 2001-02-23 13:31:52 shiro Exp $
+ *  $Id: macro.c,v 1.8 2001-02-23 19:43:18 shiro Exp $
  */
 
 #include "gauche.h"
@@ -720,8 +720,8 @@ static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
 {
     int index[DEFAULT_MAX_LEVEL], *indices = index, i, lev;
     if (branch->maxLevel > DEFAULT_MAX_LEVEL)
-        indices = SCM_NEW_ATOMIC2(int*, branch->maxLevel * sizeof(int));
-    for (i=0; i<branch->maxLevel; i++) indices[i] = 0;
+        indices = SCM_NEW_ATOMIC2(int*, (branch->maxLevel+1) * sizeof(int));
+    for (i=0; i<=branch->maxLevel; i++) indices[i] = 0;
     return realize_template_rec(branch->template, mvec, 0, indices);
 }
 
@@ -734,7 +734,7 @@ static ScmObj synrule_transform(ScmObj form, ScmObj env,
     
     Scm_Printf(SCM_CUROUT, "**** synrule_transform: %S\n", form);
     for (i=0; i<sr->numRules; i++) {
-        Scm_Printf(SCM_CUROUT, "pattern #1: %S\n", sr->rules[i].pattern);
+        Scm_Printf(SCM_CUROUT, "pattern #%d: %S\n", i, sr->rules[i].pattern);
         init_matchvec(mvec, sr->rules[i].numPvars);
         if (match_synrule(SCM_CDR(form), sr->rules[i].pattern, env, mvec)) {
             Scm_Printf(SCM_CUROUT, "success:\n");
