@@ -1,18 +1,11 @@
 ;;;
 ;;; tree.scm - walk tree
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Written by Shiro Kawai (shiro@acm.org)  2001
+;;;  Public Domain..  I guess lots of Scheme programmers have already
+;;;  written similar code.
 ;;;
-;;;  Permission to use, copy, modify, distribute this software and
-;;;  accompanying documentation for any purpose is hereby granted,
-;;;  provided that existing copyright notices are retained in all
-;;;  copies and that this notice is included verbatim in all
-;;;  distributions.
-;;;  This software is provided as is, without express or implied
-;;;  warranty.  In no circumstances the author(s) shall be liable
-;;;  for any damages arising out of the use of this software.
-;;;
-;;;  $Id: tree.scm,v 1.1 2001-10-29 11:55:04 shirok Exp $
+;;;  $Id: tree.scm,v 1.2 2001-10-31 11:22:24 shirok Exp $
 ;;;
 
 (define-module util.tree
