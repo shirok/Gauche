@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.5 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: bignum.c,v 1.6 2001-04-18 08:26:05 shiro Exp $
  */
 
 #include <math.h>
@@ -22,6 +22,7 @@
 /* This is a very naive implementation.  For now, I think bignum
  * performance is not very important for the purpose of Gauche.
  */
+/* Cf: Knuth: The Art of Computer Programming, sectin 4.3 */
 
 #define SCM_ULONG_MAX      ((u_long)(-1L)) /* to be configured */
 #define WORD_BITS          (SIZEOF_LONG * 8)
@@ -653,10 +654,106 @@ ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args)
  * Division
  */
 
+/* returns # of bits in the leftmost '1' in the word, counting from MSB. */
+static inline int div_normalization_factor(u_long w)
+{
+    int b = (1L<<(WORD_BITS-1)), c = 0;
+    for (; b > 0; b>>=1, c++) {
+        if (w & b) return c;
+    }
+    /* something got wrong here */
+    Scm_Panic("bignum.c: div_normalization_factor: can't be here");
+    return 0;                   /* dummy */
+}
+
+/* General case of division.  digitsof(dividend) >= digitsof(divider) > 1.
+   Assumes enough digits are allocated to quotient and remainder. */
+static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divider,
+                        ScmBignum *quotient, ScmBignum *remainder)
+{
+    ScmBignum *u, *v;
+    int d = div_normalization_factor(divider->values[divider->size]);
+    int j, n, m;
+    u_long v1, v2;
+
+    /* normalize */
+    u = make_bignum(dividend->size + 1);
+    v = make_bignum(divider->size);
+    bignum_lshift(u, dividend, d);
+    bignum_lshift(v, divider, d);
+    n = v->size;
+    m = u->size - n - 1;
+    v1 = v->values[n-1];
+    v2 = v->values[n-2];
+
+    for (j = m; j >= 0; j++) {
+        u_long qq, rr, u1 = u->values[j+n], u2 = u->values[j+n-1];
+        /* calculare (u1*2^32 + u2)/v1, by painful way.  may be replaced
+           by a single machine instruction depending on the archtecture. */
+        
+    }
+}
+
+/* Fast path if divider fits in a half word.  Quotient remains in the
+   dividend's memory.   Remainder returned.  Quotient not normalized. */
+static u_long bignum_sdiv(ScmBignum *dividend, u_long divider)
+{
+    int n = dividend->size - 1;
+    u_long *pu = dividend->values;
+    u_long q0 = 0, r0 = 0, q1, r1;
+
+    for (; n > 0; n--) {
+        q1 = pu[n] / divider + q0;
+        r1 = ((pu[n] % divider) << HALF_BITS) + HI(pu[n-1]);
+        q0 = ((r1 / divider) << HALF_BITS);
+        r0 = r1 % divider;
+        pu[n] = q1;
+        pu[n-1] = (r0 << HALF_BITS) + LO(pu[n-1]);
+    }
+    q1 = pu[0] / divider + q0;
+    r1 = pu[0] % divider;
+    pu[0] = q1;
+    return r1;
+}
+
+ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divider, long *remainder)
+{
+    u_long dd = (divider < 0)? -divider : divider;
+    u_long rr;
+    ScmBignum *q = SCM_BIGNUM(Scm_BignumCopy(dividend));
+
+    if (dd < (1L<<HALF_BITS)) {
+        rr = bignum_sdiv(q, dd);
+    } else {
+        Scm_Error("sorry, not supported\n");
+    }
+    if (remainder) *remainder = (q->sign < 0)? -rr : rr;
+    return Scm_NormalizeBignum(q);
+}
 
 /*-----------------------------------------------------------------------
- * For debug
+ * Printing
  */
+
+ScmObj Scm_BignumToString(ScmBignum *b, int radix)
+{
+    static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmBignum *q;
+    long rem;
+    if (radix < 2 || radix > 36)
+        Scm_Error("radix out of range: %d", radix);
+    q = SCM_BIGNUM(Scm_BignumCopy(b));
+    for (;q->size > 0;) {
+        rem = bignum_sdiv(q, radix);
+        SCM_ASSERT(rem >= 0 && rem < radix);
+        SCM_APPEND1(h, t, SCM_MAKE_CHAR(tab[rem]));
+        for (; q->values[q->size-1] == 0 && q->size > 0; q->size--)
+            ;
+    }
+    if (q->sign < 0) SCM_APPEND1(h, t, SCM_MAKE_CHAR('-'));
+    return Scm_ListToString(Scm_ReverseX(h));
+}
 
 int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
 {
