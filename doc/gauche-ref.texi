@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.272 2002-09-22 06:12:29 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.273 2002-09-22 09:58:17 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -55,10 +55,10 @@ Gaucheのバージョン@VERSION@に対応します。
 * Macros::                      
 * Core library::                
 * Object system::               
-* Library module overview::     
-* Gauche basic extension modules::  
-* SRFI modules::                
-* Miscellaneous library modules::  
+* Library modules - Overview::  
+* Library modules - Gauche extensions::  
+* Library modules - SRFIs::     
+* Library modules - Utilities::  
 * References::                  
 * C to Scheme mapping::         
 * Indices::                     
@@ -2137,14 +2137,14 @@ from shell.
 @c EN
 If you feel like to conserve global module name space, you can organize
 modules hierarchically.   Some Gauche libraries already does so.
-@xref{Library module overview}, for examples.
+@xref{Library modules - Overview}, for examples.
 For example, @code{text.tr} module is implemented in ``text/tr.scm'' file.
 Note that the pathname separator `/' in the file becomes a period in the
 module name.
 @c JP
 モジュールの名前空間のトップに新たなモジュールを追加するのに気が引ける場合は、
 モジュールを階層的に構成することもできます。Gaucheのモジュールの多くは既に階層的に
-構成されています。具体的なモジュール例は@ref{Library module overview}を参照して下さい。
+構成されています。具体的なモジュール例は@ref{Library modules - Overview}を参照して下さい。
 例えば、@code{text.tr}モジュールは ``@code{text/tr.scm}'' ファイルに
 実装されています。パス名の区切り文字`/'がモジュール名ではピリオドになることに
 注意して下さい。
@@ -13004,7 +13004,7 @@ Bound to a positive integer that @code{sys-random} may return.
 @end defvar
 
 @c ======================================================================
-@node Object system, Library module overview, Core library, Top
+@node Object system, Library modules - Overview, Core library, Top
 @chapter Object system
 @c NODE オブジェクトシステム
 
@@ -13290,93 +13290,185 @@ for the usage of metaclass.
 @deffn {Generic Function} apply-method gf method build-next args
 @end deffn
 
-
 @c ======================================================================
-@node Library module overview, Gauche basic extension modules, Object system, Top
-@chapter Library module overview
-@c NODE ライブラリモジュールの概要
+@node Library modules - Overview, Library modules - Gauche extensions, Object system, Top
+@chapter Library modules - Overview
+@c NODE ライブラリモジュール - 概要
 
 @c EN
-The modules are organized hierarchically.
-Here's a table of general guideline.
+In the following chapters, the library modules bundled with the Gauche
+distribution are explained.
+Those modules should generally be loaded and imported (usually using @code{use}
+- @xref{Using modules}, for details), unless otherwise noted.
 @c JP
-ライブラリモジュールは階層的にまとめられています。
-今のところ、以下のように分類されています。
+続くいくつかの章で、Gaucheのディストリビューションに含まれる
+ライブラリモジュールを解説します。
+これらのモジュールを使うにあたっては、特に断りのない限り、
+モジュールをロードしてimportすることが必要です
+(通常は@code{use}マクロが使えます。@ref{Using modules}参照)。
+@c COMMON
+
+@c EN
+@ref{Library modules - Gauche extensions} describes
+@code{gauche.*} modules, which are more or less considered
+the core features of Gauche but separated since less frequently used.
+(Some modules are rather ad-hoc, but here for historically reasons).
+The modules in this category include system APIs
+(e.g. @code{gauche.fcntl}, @code{gauche.termios}),
+networking (@code{gauche.net}), thread APIs (@code{gauche.threads}),
+and some high-level routines that are built on top of Gauche
+low-level core APIs (e.g. @code{gauche.process}, @code{gauche.regexp}).
+@c JP
+@ref{Library modules - Gauche extensions}では、
+@code{gauche.*}モジュールを解説します。
+これらのモジュールはGaucheのコアの機能ですが、使用頻度が少ないために
+モジュールとして分離されたものです。
+(一部のモジュールはそれほど重要ではありませんが、
+歴史的な理由からこのカテゴリに含まれています)。
+このカテゴリに含まれるモジュールには、システムAPI (@code{gauche.fcntl}、
+@code{gauche.termios}等)、ネットワーキング(@code{gauche.net})、
+スレッドAPI (@code{gauche.threads})、
+それからGaucheの低レベルのコアAPIの上に実装された高レベルなルーチン
+(@code{gauche.process}、@code{gauche.regexp}等) があります。
+@c COMMON
+
+@c EN
+@ref{Library modules - SRFIs} describes the modules that
+provides SRFI functionalities.
+Note that some of SRFI features are built in Gauche core and
+not listed here.  @xref{Standard conformance}, for entire list
+of supported SRFIs.
+@c JP
+@ref{Library modules - SRFIs}では、SRFIの機能を提供するモジュールを
+解説します。一部のSRFIはGaucheのコアに組み込まれており、
+この章には挙げられていないことに注意して下さい。
+サポートされている全てのSRFIのリストは@ref{Standard conformance}にあります。
+@c COMMON
+
+@c EN
+@ref{Library modules - Utilities} describes the modules
+provides miscellaneous utility functions---including
+dbm-style database interface, filesystem utilities,
+network protocol utilities, and more.
+@c JP
+@ref{Library modules - Utilities} ではその他のさまざまなユーティリティ
+関数を提供するモジュールを解説します。dbmスタイルのデータベース
+インタフェース、ファイルシステムユーティリティ、ネットワークプロトコルユーティリティ
+等があります。
+@c COMMON
+
+@c EN
+The following table summarizes naming categories of the modules,
+including external ones and planned ones.
+@c JP
+下の表は、モジュールの名前付けの分類を示します。
+外部モジュール、及び将来予定されているモジュールも含みます。
 @c COMMON
 
 @table @code
-@item gauche.*
-@c EN
-Stuffs more or less considered as Gauche core features.
-@c JP
-Gauche本体の一部として考えられている機能。
-@c COMMON
 @item data.*
 @c EN
-Generic data structures.
+Generic data structures (planned).
 @c JP
-汎用的なデータ構造。
+汎用的なデータ構造。(予定)
 @c COMMON
+
 @item dbm.*
 @c EN
 DBM interface
 @c JP
 DBMインタフェース
 @c COMMON
+
+@item gauche.*
+@c EN
+Stuffs more or less considered as Gauche core features.
+@c JP
+Gauche本体の一部として考えられている機能。
+@c COMMON
+
+@item gl.*
+@c EN
+OpenGL binding and related libraries (external package).
+@c JP
+OpenGLバインディングと関連するライブラリ (外部パッケージ)。
+@c COMMON
+
+@item gtk.*
+@c EN
+GTk+ binding and related libraries (external package).
+@c JP
+GTk+バインディングと関連するライブラリ (外部パッケージ)。
+@c COMMON
+
 @item file.*
 @c EN
 Manipulating files and directories.
 @c JP
 ファイルとディレクトリの操作。
 @c COMMON
+
+@item lang.*
+@c EN
+Language-related libraries, artificial and/or natural (planned).
+@c JP
+言語に関するライブラリ(人工的なものも自然言語関連も)。(予定)
+@c COMMON
+
 @item math.*
 @c EN
 Mathematics.
 @c JP
 数学。
 @c COMMON
-@item lang.*
+
+@item port.*
 @c EN
-Language-related libraries (artificial and/or natural). 
+Portability libraries.
 @c JP
-言語に関するライブラリ(人工的なものも自然言語関連も)。
+ポータビリティに関するライブラリ。
 @c COMMON
-@item text.*
-@c EN
-Libraries dealing with text data.
-@c JP
-テキストデータを扱うライブラリ
-@c COMMON
+
 @item rfc.*
 @c EN
 Implementations of net protocols defined in RFC's.
 @c JP
 RFCで定義されているデータフォーマットやネットワークプロトコルの実装。
 @c COMMON
-@item www.*
-@c EN
-Implementations of various protocols and formats mainly used in WWW.
-@c JP
-WWWで主として使われるプロトコルやデータフォーマットの実装。
-@c COMMON
+
 @item srfi-*
 @c EN
 SRFI implementations.
 @c JP
 SRFIの実装
 @c COMMON
+
+@item text.*
+@c EN
+Libraries dealing with text data.
+@c JP
+テキストデータを扱うライブラリ
+@c COMMON
+
 @item util.*
 @c EN
 Generic implementations of various algorithms.
 @c JP
 汎用的なアルゴリズムの実装。
 @c COMMON
+
+@item www.*
+@c EN
+Implementations of various protocols and formats mainly used in WWW.
+@c JP
+WWWで主として使われるプロトコルやデータフォーマットの実装。
+@c COMMON
 @end table
 
 @c ======================================================================
-@node Gauche basic extension modules, SRFI modules, Library module overview, Top
-@chapter Gauche basic extension modules
-@c NODE Gaucheの基本拡張モジュール
+@node Library modules - Gauche extensions, Library modules - SRFIs, Library modules - Overview, Top
+@chapter Library modules - Gauche extensions
+@c NODE ライブラリモジュール - Gauche拡張モジュール
 
 @c ----------------------------------------------------------------------
 @menu
@@ -13403,7 +13495,7 @@ Generic implementations of various algorithms.
 * Comparing version numbers::   
 @end menu
 
-@node Arrays, Character code conversion, Gauche basic extension modules, Gauche basic extension modules
+@node Arrays, Character code conversion, Library modules - Gauche extensions, Library modules - Gauche extensions
 @section @code{gauche.array} - Arrays
 @c NODE 配列, @code{gauche.array} - 配列
 
@@ -13755,7 +13847,7 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Collection framework, Arrays, Gauche basic extension modules
+@node Character code conversion, Collection framework, Arrays, Library modules - Gauche extensions
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
@@ -14214,7 +14306,7 @@ meaning as @var{buffer-size} of @code{open-input-conversion-port}.
 
 
 @c ----------------------------------------------------------------------
-@node Collection framework, Low-level file operations, Character code conversion, Gauche basic extension modules
+@node Collection framework, Low-level file operations, Character code conversion, Library modules - Gauche extensions
 @section @code{gauche.collection} - Collection framework
 @c NODE コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
 
@@ -15185,7 +15277,7 @@ Optionally, you can overload other generic functions to optimize
 performance.
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Interactive session, Collection framework, Gauche basic extension modules
+@node Low-level file operations, Interactive session, Collection framework, Library modules - Gauche extensions
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -15341,7 +15433,7 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Interactive session, User-level logging, Low-level file operations, Gauche basic extension modules
+@node Interactive session, User-level logging, Low-level file operations, Library modules - Gauche extensions
 @section @code{gauche.interactive} - Utilities for interactive session
 @c NODE インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 
@@ -15468,7 +15560,7 @@ to parse the info file.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node User-level logging, Networking, Interactive session, Gauche basic extension modules
+@node User-level logging, Networking, Interactive session, Library modules - Gauche extensions
 @section @code{gauche.logger} - User-level logging
 @c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
@@ -15724,7 +15816,7 @@ the code runs without logging.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Networking, Parameters, User-level logging, Gauche basic extension modules
+@node Networking, Parameters, User-level logging, Library modules - Gauche extensions
 @section @code{gauche.net} - Networking
 @c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
@@ -16476,7 +16568,7 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parameters, Parsing command-line options, Networking, Gauche basic extension modules
+@node Parameters, Parsing command-line options, Networking, Library modules - Gauche extensions
 @section @code{gauche.parameter} - Parameters
 @c NODE パラメータ, @code{gauche.parameter} - パラメータ
 
@@ -16556,7 +16648,7 @@ Some examples:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Parsing command-line options, High Level Process Interface, Parameters, Gauche basic extension modules
+@node Parsing command-line options, High Level Process Interface, Parameters, Library modules - Gauche extensions
 @section @code{gauche.parseopt} - Parsing command-line options
 @c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
@@ -16718,7 +16810,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Gauche basic extension modules
+@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Library modules - Gauche extensions
 @section @code{gauche.process} - High Level Process Interface
 @c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
@@ -16961,7 +17053,7 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular expression utilities, Simple dispatcher, High Level Process Interface, Gauche basic extension modules
+@node Regular expression utilities, Simple dispatcher, High Level Process Interface, Library modules - Gauche extensions
 @section @code{gauche.regexp} - Regular expression utilities
 @c NODE 正規表現ユーティリティ, @code{gauche.regexp} - 正規表現ユーティリティ
 
@@ -17188,7 +17280,7 @@ value from the procedure is inserted to the output string using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple dispatcher, Sequence framework, Regular expression utilities, Gauche basic extension modules
+@node Simple dispatcher, Sequence framework, Regular expression utilities, Library modules - Gauche extensions
 @section @code{gauche.selector} - Simple dispatcher
 @c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
@@ -17294,7 +17386,7 @@ This is a simple example of "echo" server:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Sequence framework, Singleton, Simple dispatcher, Gauche basic extension modules
+@node Sequence framework, Singleton, Simple dispatcher, Library modules - Gauche extensions
 @section @code{gauche.sequence} - Sequence framework
 @c NODE シーケンスフレームワーク, @code{gauche.sequence} - シーケンスフレームワーク
 
@@ -17378,7 +17470,7 @@ types, such as SRFI-4 uniform vector, have the methods as well.
 @c @end deftp
 
 @c ----------------------------------------------------------------------
-@node Singleton, Syslog, Sequence framework, Gauche basic extension modules
+@node Singleton, Syslog, Sequence framework, Library modules - Gauche extensions
 @section @code{gauche.singleton} - Singleton
 
 @deftp {Module} gauche.singleton
@@ -17413,7 +17505,7 @@ It is more obvious in the program that you're dealing with singleton.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Syslog, Termios, Singleton, Gauche basic extension modules
+@node Syslog, Termios, Singleton, Library modules - Gauche extensions
 @section @code{gauche.syslog} - Syslog
 @c NODE Syslog, @code{gauche.syslog} - Syslog
 
@@ -17491,7 +17583,7 @@ the log level @var{level}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Termios, Unit Testing, Syslog, Gauche basic extension modules
+@node Termios, Unit Testing, Syslog, Library modules - Gauche extensions
 @section @code{gauche.termios} - Termios
 @c NODE Termios, @code{gauche.termios} - Termios
 
@@ -17677,7 +17769,7 @@ without echoing:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Unit Testing, Threads, Termios, Gauche basic extension modules
+@node Unit Testing, Threads, Termios, Library modules - Gauche extensions
 @section @code{gauche.test} - Unit Testing
 @c NODE 単体テスト, @code{gauche.test} - 単体テスト
 
@@ -17801,7 +17893,7 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Threads, Uniform vectors, Unit Testing, Gauche basic extension modules
+@node Threads, Uniform vectors, Unit Testing, Library modules - Gauche extensions
 @section @code{gauche.threads} - Threads
 @c NODE スレッド, @code{gauche.threads} - スレッド
 
@@ -18260,7 +18352,7 @@ Provided for the compatibility to SRFI-18.
 
 
 @c ----------------------------------------------------------------------
-@node Uniform vectors, Slot with validator, Threads, Gauche basic extension modules
+@node Uniform vectors, Slot with validator, Threads, Library modules - Gauche extensions
 @section @code{gauche.uvector} - Uniform vectors
 @c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
 
@@ -19231,7 +19323,7 @@ Both return the clamped vector.
 
 
 @c ----------------------------------------------------------------------
-@node Slot with validator, Comparing version numbers, Uniform vectors, Gauche basic extension modules
+@node Slot with validator, Comparing version numbers, Uniform vectors, Library modules - Gauche extensions
 @section @code{gauche.validator} - Slot with validator
 @c NODE Validator付きスロット, @code{gauche.validator} - Validator付きスロット
 
@@ -19338,7 +19430,7 @@ only a dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Comparing version numbers,  , Slot with validator, Gauche basic extension modules
+@node Comparing version numbers,  , Slot with validator, Library modules - Gauche extensions
 @section @code{gauche.version} - Comparing version numbers
 @c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
 
@@ -19512,9 +19604,21 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @end defun
 
 @c ======================================================================
-@node SRFI modules, Miscellaneous library modules, Gauche basic extension modules, Top
-@chapter SRFI modules
-@c NODE SRFIモジュール
+@node Library modules - SRFIs, Library modules - Utilities, Library modules - Gauche extensions, Top
+@chapter Library modules - SRFIs
+@c NODE ライブラリモジュール - SRFI
+
+@c EN
+This chapter lists modules that provides SRFI functionalities.
+Note that some of SRFI features are built in Gauche core and
+not listed here.  @xref{Standard conformance}, for entire list
+of supported SRFIs.
+@c JP
+この章ではSRFIの機能を提供するモジュールをリストします。
+一部のSRFIはGaucheのコアに組み込まれており、
+この章には挙げられていないことに注意して下さい。
+サポートされている全てのSRFIのリストは@ref{Standard conformance}にあります。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @menu
@@ -19522,8 +19626,6 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 * List library::                
 * And-let*::                    
 * Homogeneous Vectors::         
-* SRFI String ports::           
-* Syntax to receive multiple values::  
 * Record types::                
 * Let-values::                  
 * String library::              
@@ -19532,7 +19634,7 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 * Sources of Random Bits::      
 @end menu
 
-@node Feature Conditional, List library, SRFI modules, SRFI modules
+@node Feature Conditional, List library, Library modules - SRFIs, Library modules - SRFIs
 @section @code{srfi-0} - Feature Conditional
 
 @deftp {Module} srfi-0
@@ -19544,7 +19646,7 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node List library, And-let*, Feature Conditional, SRFI modules
+@node List library, And-let*, Feature Conditional, Library modules - SRFIs
 @section @code{srfi-1} - List library
 
 @deftp {Module} srfi-1
@@ -19554,8 +19656,6 @@ SRFI-1 is a rich collection of list manipulation library
 It is available by saying @code{(use srfi-1)}.
 The implementation is based on Olin Shivers's reference implementation.
 I splitted it into number of subfiles that will be autoloaded on demand.
-
-Detailed specificaion of SRFI-1 is available at
 @end deftp
 
 @menu
@@ -20195,7 +20295,7 @@ The cells in the first list argument may be reused to construct the result.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node And-let*, Homogeneous Vectors, List library, SRFI modules
+@node And-let*, Homogeneous Vectors, List library, Library modules - SRFIs
 @section @code{srfi-2} - And-let*
 
 @deftp {Module} srfi-2
@@ -20294,7 +20394,7 @@ number from a few possibilities (environment variable, configuration file,
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Homogeneous Vectors, SRFI String ports, And-let*, SRFI modules
+@node Homogeneous Vectors, Record types, And-let*, Library modules - SRFIs
 @section @code{srfi-4} - Homogeneous Vectors
 @c NODE 単一型のベクタ, @code{srfi-4} - 単一型のベクタ
 
@@ -20306,28 +20406,7 @@ This module simply inherits @code{gauche.uvector} for backward-compatibility.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, SRFI modules
-@section @code{srfi-6} - String ports
-
-@deftp {Module} srfi-6
-@mdindex srfi-6
-String ports, defined in SRFI-6, are builtin feature of Gauche.
-The form @code{(use srfi-6)} doesn't do anything.
-@end deftp
-
-@c ----------------------------------------------------------------------
-@node Syntax to receive multiple values, Record types, SRFI String ports, SRFI modules
-@section @code{srfi-8} - Syntax to receive multiple values
-
-@deftp {Module} srfi-8
-@mdindex srfi-8
-Syntax @code{receive}, defined in SRFI-8, is builtin feature of Gauche.
-The form @code{(use srfi-8)} doesn't do anything.
-@end deftp
-
-
-@c ----------------------------------------------------------------------
-@node Record types, Let-values, Syntax to receive multiple values, SRFI modules
+@node Record types, Let-values, Homogeneous Vectors, Library modules - SRFIs
 @section @code{srfi-9} - Record types
 
 @deftp {Module} srfi-9
@@ -20400,7 +20479,7 @@ sequence of forms.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Let-values, String library, Record types, SRFI modules
+@node Let-values, String library, Record types, Library modules - SRFIs
 @section @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
@@ -20461,7 +20540,7 @@ the preceding @var{vars}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node String library, Character-set library, Let-values, SRFI modules
+@node String library, Character-set library, Let-values, Library modules - SRFIs
 @section @code{srfi-13} - String library
 
 @deftp {Module} srfi-13
@@ -20897,7 +20976,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library, Time data types and procedures, String library, SRFI modules
+@node Character-set library, Time data types and procedures, String library, Library modules - SRFIs
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
@@ -21229,7 +21308,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node Time data types and procedures, Sources of Random Bits, Character-set library, SRFI modules
+@node Time data types and procedures, Sources of Random Bits, Character-set library, Library modules - SRFIs
 @section @code{srfi-19} - Time data types and procedures
 @c NODE 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
 
@@ -21592,7 +21671,7 @@ Conversions from time-utc to various date/time types.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Sources of Random Bits,  , Time data types and procedures, SRFI modules
+@node Sources of Random Bits,  , Time data types and procedures, Library modules - SRFIs
 @section @code{srfi-27} - Sources of Random Bits
 @c NODE ランダムビットのソース, @code{srfi-27} - ランダムビットのソース
 
@@ -21681,9 +21760,9 @@ generates will be quantized by the given @var{unit}, where
 
 
 @c ======================================================================
-@node Miscellaneous library modules, References, SRFI modules, Top
-@chapter Miscellaneous library modules
-@c NODE その他のライブラリモジュール
+@node Library modules - Utilities, References, Library modules - SRFIs, Top
+@chapter Library modules - Utilities
+@c NODE ライブラリモジュール - ユーティリティ
 
 
 @c ----------------------------------------------------------------------
@@ -21713,7 +21792,7 @@ generates will be quantized by the given @var{unit}, where
 * CGI Utility::                 
 @end menu
 
-@node Generic DBM interface, GDBM interface, Miscellaneous library modules, Miscellaneous library modules
+@node Generic DBM interface, GDBM interface, Library modules - Utilities, Library modules - Utilities
 @section @code{dbm} - Generic DBM interface
 @c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
 
@@ -22110,7 +22189,7 @@ which is returned as a result of @code{dbm-map}.
 
 
 @c ----------------------------------------------------------------------
-@node GDBM interface, NDBM interface, Generic DBM interface, Miscellaneous library modules
+@node GDBM interface, NDBM interface, Generic DBM interface, Library modules - Utilities
 @section @code{dbm.gdbm} - GDBM interface
 
 @deftp {Module} dbm.gdbm
@@ -22235,7 +22314,7 @@ APIs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node NDBM interface, Original DBM interface, GDBM interface, Miscellaneous library modules
+@node NDBM interface, Original DBM interface, GDBM interface, Library modules - Utilities
 @section @code{dbm.ndbm} - NDBM interface
 
 @deftp {Module} dbm.ndbm
@@ -22284,7 +22363,7 @@ APIs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Original DBM interface, Filtering file content, NDBM interface, Miscellaneous library modules
+@node Original DBM interface, Filtering file content, NDBM interface, Library modules - Utilities
 @section @code{dbm.odbm} - Original DBM interface
 
 @deftp {Module} dbm.odbm
@@ -22335,7 +22414,7 @@ APIs.
 @c @section @code{dbm.pdbm} - Pseudo DBM interface
 
 @c ----------------------------------------------------------------------
-@node Filtering file content, Filesystem utilities, Original DBM interface, Miscellaneous library modules
+@node Filtering file content, Filesystem utilities, Original DBM interface, Library modules - Utilities
 @section @code{file.filter} - Filtering file content
 @c NODE ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
 
@@ -22474,7 +22553,7 @@ By default, the output (or the temporary file when
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Filesystem utilities, Mathematic constants, Filtering file content, Miscellaneous library modules
+@node Filesystem utilities, Mathematic constants, Filtering file content, Library modules - Utilities
 @section @code{file.util} - Filesystem utilities
 @c NODE ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
 
@@ -23189,7 +23268,7 @@ it to @var{dst}, then removes @var{src}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Mathematic constants, Mersenne Twister Random number generator, Filesystem utilities, Miscellaneous library modules
+@node Mathematic constants, Mersenne Twister Random number generator, Filesystem utilities, Library modules - Utilities
 @section @code{math.const} - Mathematic constants
 @c NODE 定数, @code{math.const} - 定数
 
@@ -23216,7 +23295,7 @@ e.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Mersenne Twister Random number generator, RFC822 Message parsing, Mathematic constants, Miscellaneous library modules
+@node Mersenne Twister Random number generator, RFC822 Message parsing, Mathematic constants, Library modules - Utilities
 @section @code{math.mt-random} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
@@ -23294,7 +23373,7 @@ faster than getting one by one.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node RFC822 Message parsing, Base64 encoding/decoding, Mersenne Twister Random number generator, Miscellaneous library modules
+@node RFC822 Message parsing, Base64 encoding/decoding, Mersenne Twister Random number generator, Library modules - Utilities
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
@@ -23344,7 +23423,7 @@ comments appear between words.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Miscellaneous library modules
+@node Base64 encoding/decoding, HTTP cookie handling, RFC822 Message parsing, Library modules - Utilities
 @section @code{rfc.base64} - Base64 encoding/decoding
 @c NODE Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
 
@@ -23384,7 +23463,7 @@ set are silently ignored.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node HTTP cookie handling, Quoted-printable encoding/decoding, Base64 encoding/decoding, Miscellaneous library modules
+@node HTTP cookie handling, Quoted-printable encoding/decoding, Base64 encoding/decoding, Library modules - Utilities
 @section @code{rfc.cookie} - HTTP cookie handling
 @c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
@@ -23476,7 +23555,7 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Quoted-printable encoding/decoding, URI parsing and construction, HTTP cookie handling, Miscellaneous library modules
+@node Quoted-printable encoding/decoding, URI parsing and construction, HTTP cookie handling, Library modules - Utilities
 @section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
 @c NODE Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
 
@@ -23513,7 +23592,7 @@ the result as a string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, SLIB, Quoted-printable encoding/decoding, Miscellaneous library modules
+@node URI parsing and construction, SLIB, Quoted-printable encoding/decoding, Library modules - Utilities
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
@@ -23594,7 +23673,7 @@ native multibyte representation.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SLIB, CSV tables, URI parsing and construction, Miscellaneous library modules
+@node SLIB, CSV tables, URI parsing and construction, Library modules - Utilities
 @section @code{slib} - SLIB interface
 @c NODE SLIB, @code{slib} - SLIB
 
@@ -23643,7 +23722,7 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Simple HTML document construction, SLIB, Miscellaneous library modules
+@node CSV tables, Simple HTML document construction, SLIB, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -23687,7 +23766,7 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple HTML document construction, Parsing input stream, CSV tables, Miscellaneous library modules
+@node Simple HTML document construction, Parsing input stream, CSV tables, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
 
 @deftp {Module} text.html-lite
@@ -23862,7 +23941,7 @@ if the given content is valid for the element.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Parsing input stream, Transliterate characters, Simple HTML document construction, Miscellaneous library modules
+@node Parsing input stream, Transliterate characters, Simple HTML document construction, Library modules - Utilities
 @section @code{text.parse} - Parsing input stream
 
 @deftp {Module} text.parse
@@ -23978,7 +24057,7 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, Lazy text construction, Parsing input stream, Miscellaneous library modules
+@node Transliterate characters, Lazy text construction, Parsing input stream, Library modules - Utilities
 @section @code{text.tr} - Transliterate characters
 @c NODE 文字変換, @code{text.tr} - 文字変換
 
@@ -24216,7 +24295,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Lazy text construction, Determine isomorphism, Transliterate characters, Miscellaneous library modules
+@node Lazy text construction, Determine isomorphism, Transliterate characters, Library modules - Utilities
 @section @code{text.tree} - Lazy text construction
 
 @deftp {Module} text.tree
@@ -24309,7 +24388,7 @@ an output string port, and returns the result string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Determine isomorphism, Queue, Lazy text construction, Miscellaneous library modules
+@node Determine isomorphism, Queue, Lazy text construction, Library modules - Utilities
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE 同型判定, @code{util.isomorph} - 同型判定
 
@@ -24375,7 +24454,7 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Queue, Topological sort, Determine isomorphism, Miscellaneous library modules
+@node Queue, Topological sort, Determine isomorphism, Library modules - Utilities
 @section @code{util.queue} - Queue
 @c NODE キュー, @code{util.queue} - キュー
 
@@ -24575,7 +24654,7 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Topological sort, CGI Utility, Queue, Miscellaneous library modules
+@node Topological sort, CGI Utility, Queue, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
@@ -24619,7 +24698,7 @@ If the graph contains circular reference, an error is signalled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CGI Utility,  , Topological sort, Miscellaneous library modules
+@node CGI Utility,  , Topological sort, Library modules - Utilities
 @section @code{www.cgi} - CGI utility
 @c NODE CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
 
@@ -24856,7 +24935,7 @@ The following example shows the parameters given to the CGI program.
 @end defun
 
 @c ======================================================================
-@node References, C to Scheme mapping, Miscellaneous library modules, Top
+@node References, C to Scheme mapping, Library modules - Utilities, Top
 @appendix References
 @c NODE 参考文献
 
