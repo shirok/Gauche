@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.24 2001-12-21 07:08:56 shirok Exp $
+ *  $Id: error.c,v 1.25 2002-01-02 06:24:45 shirok Exp $
  */
 
 #include <errno.h>
@@ -22,20 +22,21 @@
 
 /*-----------------------------------------------------------
  * Exception class hierarchy
- *
- *  <exception>
- *    +- <continuable-exception>
- *    |    +- <debug-break-exception>
- *    |    +- <signal-exception>
- *    +- <uncontinuable-exception>
- *         +- <application-exit>
- *         +- <error>
- *              +- <simple-error>
- *              +- <system-error>
- *              +- <reader-error>
  */
 
-static void exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static ScmClass *exception_cpl[] = {
+    SCM_CLASS_ERROR,
+    SCM_CLASS_EXCEPTION,
+    SCM_CLASS_TOP,
+    NULL
+};
+
+/* Exception class is just an abstract class */
+SCM_DEFINE_ABSTRACT_CLASS(Scm_ExceptionClass, SCM_CLASS_DEFAULT_CPL);
+
+/* Error class */
+
+static void error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmClass *k = SCM_CLASS_OF(obj);
     ScmObj name = k->name;
@@ -51,74 +52,104 @@ static void exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         Scm_Write(name, SCM_OBJ(port), SCM_WRITE_DISPLAY);
     }
     SCM_PUTZ(" ", 1, port);
-    n = Scm_WriteLimited(SCM_EXCEPTION_MESSAGE(obj), SCM_OBJ(port),
+    n = Scm_WriteLimited(SCM_ERROR_MESSAGE(obj), SCM_OBJ(port),
                          SCM_WRITE_WRITE, 30);
     if (n < 0) SCM_PUTZ(" ...", 4, port);
     SCM_PUTZ(">", 1, port);
 }
 
-static ScmObj exception_allocate(ScmClass *klass, ScmObj initargs);
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_ExceptionClass,
-                         exception_print, NULL, NULL,
-                         exception_allocate,
-                         SCM_CLASS_DEFAULT_CPL);
-
-static ScmClass *exception_cpl[] = {
-    SCM_CLASS_ERROR,
-    SCM_CLASS_EXCEPTION,
-    SCM_CLASS_TOP,
-    NULL
-};
+static ScmObj error_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj sys_error_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj dom_error_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj read_error_allocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_ErrorClass,
-                         exception_print, NULL, NULL,
-                         exception_allocate,
+                         error_print, NULL, NULL,
+                         error_allocate,
                          exception_cpl+1);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SignalClass,
-                         exception_print, NULL, NULL,
-                         exception_allocate,
-                         exception_cpl+1);
+SCM_DEFINE_BUILTIN_CLASS(Scm_SystemErrorClass,
+                         error_print, NULL, NULL,
+                         sys_error_allocate,
+                         exception_cpl);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SysErrorClass,
-                         exception_print, NULL, NULL,
-                         exception_allocate,
+SCM_DEFINE_BUILTIN_CLASS(Scm_DomainErrorClass,
+                         error_print, NULL, NULL,
+                         dom_error_allocate,
+                         exception_cpl);
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_ReaderErrorClass,
+                         error_print, NULL, NULL,
+                         read_error_allocate,
                          exception_cpl);
 
 /*
  * Constructors
  */
 
-static ScmObj exception_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj error_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmException *e;
-    ScmObj obj;
-    
+    ScmError *e;
     int nslots = klass->numInstanceSlots;
-    e = SCM_NEW2(ScmException*,
-                 sizeof(ScmException) + sizeof(ScmObj)*nslots);
+    e = SCM_NEW2(ScmError*,
+                 sizeof(ScmError) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(e, klass);
     e->message = SCM_FALSE;
-    e->data = SCM_FALSE;
     return SCM_OBJ(e);
 }
 
 ScmObj Scm_MakeError(ScmObj message)
 {
-    ScmException *e = SCM_NEW(ScmException);
+    ScmError *e = SCM_NEW(ScmError);
     SCM_SET_CLASS(e, SCM_CLASS_ERROR);
     e->message = message;
-    e->data = SCM_FALSE;
     return SCM_OBJ(e);
 }
 
-ScmObj Scm_MakeSysError(ScmObj message, int en)
+static ScmObj sys_error_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmException *e = SCM_NEW(ScmException);
-    SCM_SET_CLASS(e, SCM_CLASS_SYS_ERROR);
-    e->message = message;
-    e->data = Scm_MakeInteger(en);
+    ScmSystemError *e;
+    int nslots = klass->numInstanceSlots;
+    e = SCM_NEW2(ScmSystemError*,
+                 sizeof(ScmSystemError) + sizeof(ScmObj)*nslots);
+    SCM_SET_CLASS(e, klass);
+    e->common.message = SCM_FALSE;
+    e->error_number = 0;
+    return SCM_OBJ(e);
+}
+
+ScmObj Scm_MakeSystemError(ScmObj message, int en)
+{
+    ScmSystemError *e = SCM_NEW(ScmSystemError);
+    SCM_SET_CLASS(e, SCM_CLASS_SYSTEM_ERROR);
+    e->common.message = message;
+    e->error_number = en;
+    return SCM_OBJ(e);
+}
+
+static ScmObj dom_error_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmDomainError *e;
+    int nslots = klass->numInstanceSlots;
+    e = SCM_NEW2(ScmDomainError*,
+                 sizeof(ScmDomainError) + sizeof(ScmObj)*nslots);
+    SCM_SET_CLASS(e, klass);
+    e->common.message = SCM_FALSE;
+    e->argument = NULL;
+    e->value = SCM_FALSE;
+    return SCM_OBJ(e);
+}
+
+static ScmObj read_error_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmReaderError *e;
+    int nslots = klass->numInstanceSlots;
+    e = SCM_NEW2(ScmReaderError*,
+                 sizeof(ScmReaderError) + sizeof(ScmObj)*nslots);
+    SCM_SET_CLASS(e, klass);
+    e->common.message = SCM_FALSE;
+    e->port = NULL;
+    e->line = 0;
     return SCM_OBJ(e);
 }
 
@@ -126,50 +157,77 @@ ScmObj Scm_MakeSysError(ScmObj message, int en)
  * Accessor 
  */
 
-static ScmObj exception_message_get(ScmException *exn)
+static ScmObj error_message_get(ScmError *err)
 {
-    return exn->message;
+    return err->message;
 }
 
-static void exception_message_set(ScmException *exn, ScmObj message)
+static void error_message_set(ScmError *err, ScmObj message)
 {
-    exn->message = message;
+    err->message = message;
 }
 
-static ScmObj sys_error_errno_get(ScmException *exn)
+static ScmObj sys_error_errno_get(ScmSystemError *err)
 {
-    return exn->data;
+    return Scm_MakeInteger(err->error_number);
 }
 
-static ScmClassStaticSlotSpec exception_slots[] = {
+static void sys_error_errno_set(ScmSystemError *err, ScmObj num)
+{
+    if (!SCM_INTP(num)) Scm_Error("integer required, but got %S", num);
+    err->error_number = SCM_INT_VALUE(num);
+}
+
+static ScmObj dom_error_argument_get(ScmDomainError *err)
+{
+    return SCM_MAKE_STR_IMMUTABLE(err->argument);
+}
+
+static void dom_error_argument_set(ScmDomainError *err, ScmObj arg)
+{
+    if (!SCM_STRINGP(arg)) Scm_Error("string required, but got %S", arg);
+    err->argument = Scm_GetStringConst(SCM_STRING(arg));
+}
+
+static ScmObj dom_error_value_get(ScmDomainError *err)
+{
+    return err->value;
+}
+
+static void dom_error_value_set(ScmDomainError *err, ScmObj value)
+{
+    err->value = value;
+}
+
+static ScmClassStaticSlotSpec error_slots[] = {
     SCM_CLASS_SLOT_SPEC("message",
-                        exception_message_get,
-                        exception_message_set),
+                        error_message_get,
+                        error_message_set),
     { NULL }
 };
 
 static ScmClassStaticSlotSpec sys_error_slots[] = {
     SCM_CLASS_SLOT_SPEC("message",
-                        exception_message_get,
-                        exception_message_set),
+                        error_message_get,
+                        error_message_set),
     SCM_CLASS_SLOT_SPEC("errno",
                         sys_error_errno_get,
-                        NULL),
+                        sys_error_errno_set),
     { NULL }
 };
 
-/*
- * Predicates
- */
-int Scm_ExceptionP(ScmObj e)
-{
-    return Scm_TypeP(e, SCM_CLASS_EXCEPTION);
-}
-
-int Scm_NoncontinuableExceptionP(ScmObj e)
-{
-    return (Scm_TypeP(e, SCM_CLASS_ERROR));
-}
+static ScmClassStaticSlotSpec dom_error_slots[] = {
+    SCM_CLASS_SLOT_SPEC("message",
+                        error_message_get,
+                        error_message_set),
+    SCM_CLASS_SLOT_SPEC("argument",
+                        dom_error_argument_get,
+                        dom_error_argument_set),
+    SCM_CLASS_SLOT_SPEC("value",
+                        dom_error_value_get,
+                        dom_error_value_set),
+    { NULL }
+};
 
 /*
  * Initializing
@@ -178,12 +236,15 @@ int Scm_NoncontinuableExceptionP(ScmObj e)
 void Scm__InitExceptions(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    Scm_InitBuiltinClass(&Scm_ExceptionClass, "<exception>",
-                         exception_slots, sizeof(ScmException), mod);
+    Scm_InitBuiltinClass(&Scm_ExceptionClass, "<exception>", NULL, 0, mod);
     Scm_InitBuiltinClass(&Scm_ErrorClass, "<error>",
-                         exception_slots, sizeof(ScmException), mod);
-    Scm_InitBuiltinClass(&Scm_SysErrorClass, "<sys-error>",
-                         sys_error_slots, sizeof(ScmException), mod);
+                         error_slots, sizeof(ScmError), mod);
+    Scm_InitBuiltinClass(&Scm_SystemErrorClass, "<system-error>",
+                         sys_error_slots, sizeof(ScmSystemError), mod);
+    Scm_InitBuiltinClass(&Scm_DomainErrorClass, "<domain-error>",
+                         dom_error_slots, sizeof(ScmDomainError), mod);
+    Scm_InitBuiltinClass(&Scm_ReaderErrorClass, "<reader-error>",
+                         NULL, sizeof(ScmReaderError), mod);
 }
 
 /*================================================================
@@ -244,7 +305,7 @@ void Scm_SysError(const char *msg, ...)
         va_end(args);
         SCM_PUTZ(": ", -1, ostr);
         SCM_PUTS(syserr, ostr);
-        e = Scm_MakeSysError(Scm_GetOutputString(SCM_PORT(ostr)), en);
+        e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr)), en);
     }
     SCM_WHEN_ERROR {
         /* TODO: should check continuation */

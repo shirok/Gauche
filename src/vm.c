@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.124 2001-12-22 20:51:41 shirok Exp $
+ *  $Id: vm.c,v 1.125 2002-01-02 06:24:45 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1784,12 +1784,12 @@ static void report_error(ScmObj e)
     ScmObj handlers = vm->handlers;
     int depth = 0;
 
-    if (Scm_ExceptionP(e) && SCM_STRINGP(SCM_EXCEPTION_MESSAGE(e))) {
+    if (SCM_ERRORP(e) && SCM_STRINGP(SCM_ERROR_MESSAGE(e))) {
         SCM_PUTZ("*** ERROR: ", -1, err);
-        SCM_PUTS(SCM_STRING(SCM_EXCEPTION_MESSAGE(e)), err);
+        SCM_PUTS(SCM_STRING(SCM_ERROR_MESSAGE(e)), err);
         SCM_PUTNL(err);
     } else {
-        SCM_PUTZ("*** ERROR: (unknown exception type)\n", -1, err);
+        SCM_PUTZ("*** ERROR: unhandled exception\n", -1, err);
     }
     
     SCM_PUTZ("Stack Trace:\n", -1, err);
@@ -1904,7 +1904,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_Apply(vm->exceptionHandler, SCM_LIST1(exception));
-        if (Scm_NoncontinuableExceptionP(exception)) {
+        if (SCM_ERRORP(exception)) {
             /* the user-installed exception handler returned while it
                shouldn't.  In order to prevent infinite loop, we should
                pop the erroneous handler.  For now, we just reset
@@ -1913,7 +1913,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
         return vm->val0;
-    } else if (!Scm_NoncontinuableExceptionP(exception)) {
+    } else if (!SCM_ERRORP(exception)) {
         /* The system's default handler does't care about
            continuable exception.  See if there's a user-defined
            exception handler in the chain.  */
