@@ -1,3 +1,8 @@
+2002-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/jcode.c, ext/charconv/cvt.scm : added for japanese
+	  characte encoding conversions.
+
 2002-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.5.5

@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.208 2002-05-27 23:36:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.209 2002-05-29 11:38:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17637,22 +17637,29 @@ Partial application versions of @code{filter}, @code{remove} and
 @subsection List searching
 
 @defun find pred clist
-[SRFI-1] Applies @var{pred} for each elements of @var{clist}, from 
+[SRFI-1] Applies @var{pred} for each element of @var{clist}, from 
 left to right, and returns the first element that @var{pred} returns
 true on.
 @end defun
 
 @defun find-tail pred clist
 [SRFI-1]
+Applies @var{pred} for each element of @var{clist}, from left to right,
+and when @var{pred} returns a true value, returns the pair whose car
+is the element.
 @end defun
 
 @defun take-while pred clist
 @defunx take-while! pred list
 [SRFI-1]
+Returns the longest initial prefix of @var{clist} whose elements all
+satisfy @var{pred}.
 @end defun
 
 @defun drop-while pred clist
 [SRFI-1]
+Drops the longest initial prefix of @var{clist} whose elements all
+satisfy @var{pred}, and returns the rest.
 @end defun
 
 @defun span pred clist
@@ -17660,6 +17667,9 @@ true on.
 @defunx break pred clist
 @defunx break! pred list
 [SRFI-1]
+@code{span} is equivalent to
+@code{(values (take-while pred clist) (drop-while pred clist))}.
+@code{break} inverts the sense of @var{pred}.
 @end defun
 
 @defun any pred clist1 clist2 @dots{}
