@@ -12,11 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.21 2001-02-14 10:09:46 shiro Exp $
+ *  $Id: vm.h,v 1.22 2001-02-15 08:56:42 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
 #define GAUCHE_VM_H
+
+#define SCM_VM_MAX_VALUES      20
 
 /* Local variable access:
  *   Regardless of frame allocation scheme, local variables are always
@@ -143,6 +145,8 @@ struct ScmVMRec {
                                    being accumulated.  This is a part of
                                    continuation.                             */
     ScmObj val0;                /* Value register.                           */
+    ScmObj vals[SCM_VM_MAX_VALUES]; /* Value register for multiple values */
+    int    numVals;             /* # of values */
 
     ScmObj handlers;            /* chain of active dynamic handlers          */
 
