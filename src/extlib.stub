@@ -83,6 +83,16 @@
   }
   SCM_RETURN(Scm_Gensym(p));")
 
+(define-cproc keyword? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_KEYWORDP(obj)));")
+
+(define-cproc make-keyword (name)
+  (assert (string? name))
+  "  SCM_RETURN(Scm_MakeKeyword(name));")
+
+(define-cproc get-keyword (key list &optional fallback)
+  "  SCM_RETURN(Scm_GetKeyword(key, list, fallback));")
+
 ;;
 ;; 6.3.4  Characters
 ;;
