@@ -4,10 +4,10 @@
 ;;; public domain
 ;;;
 
-;; $Id: const.scm,v 1.2 2002-05-25 00:32:03 shirok Exp $
+;; $Id: const.scm,v 1.3 2002-08-31 08:33:03 shirok Exp $
 
 (define-module math.const
-  (export pi e 1/pi pi/2 pi/4 2pi))
+  (export pi e 1/pi 180/pi pi/2 pi/4 pi/180 2pi))
 
 (select-module math.const)
 
