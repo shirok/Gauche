@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.65 2002-03-07 10:39:00 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.66 2002-03-11 00:43:02 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -144,6 +144,7 @@
 (autoload "gauche/common-macros"
           (:macro syntax-error) (:macro syntax-errorf) unwrap-syntax
           (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
+          (:macro update!)
           (:macro dotimes) (:macro while) (:macro until))
 
 (autoload gauche.regexp
@@ -207,6 +208,10 @@
   (let ((proc (lambda x (apply get x))))
     (set! (setter proc) set)
     proc))
+
+;; print (from SCM, Chicken)
+(define (print . args)
+  (for-each display args) (newline))
 
 ;;
 ;; Load object system
