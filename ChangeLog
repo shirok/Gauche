@@ -1,3 +1,8 @@
+2002-02-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub, src/class.c : fixed to compile extensions under cygwin.
+	* aclocal.m4 : added
+
 2002-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* various files: snapshot of further modification for cygwin.
