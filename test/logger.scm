@@ -2,9 +2,14 @@
 ;; testing gauche.logger
 ;;
 
-;; $Id: logger.scm,v 1.1 2002-09-21 20:29:43 shirok Exp $
+;; $Id: logger.scm,v 1.2 2002-09-22 07:25:09 shirok Exp $
 
 (use gauche.test)
+
+;; NB: logger uses gauche.fcntl.  Before 'make link', it can't be
+;; loaded by 'use'.
+(when (file-exists? "../ext/fcntl/fcntl.scm")
+  (load "../ext/fcntl/fcntl"))
 (use gauche.logger)
 
 (test-start "logger")
