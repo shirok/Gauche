@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.10 2004-12-24 22:13:30 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.11 2004-12-25 00:37:03 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2843,8 +2843,29 @@ int Scm_VMInsnOperandType(u_int code)
     return insn_table[code].operandType;
 }
 
+int Scm_VMInsnNameToCode(ScmObj name)
+{
+    const char *n;
+    struct insn_info *info;
+    int i;
+    
+    if (SCM_SYMBOLP(name))  name = SCM_OBJ(SCM_SYMBOL_NAME(name));
+    else if (!SCM_STRINGP(name)) {
+        Scm_Error("vm-insn-name->code: requires a symbol or a string, but got %S", name);
+    }
+    n = Scm_GetStringConst(SCM_STRING(name));
+    info = insn_table;
+    for (i=0; i<SCM_VM_NUM_INSNS; i++) {
+        if (strcmp(insn_table[i].name, n) == 0) {
+            return i;
+        }
+    }
+    Scm_Error("vm-insn-name->code: no such instruction: %A", name);
+    return -1;                  /* dummy */
+}
+
 /*
- * Printer of VM instruction.
+ * [To be obsoleted] Printer of VM instruction.
  */
 
 void Scm__VMInsnWrite(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
@@ -2875,7 +2896,8 @@ void Scm__VMInsnWrite(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     SCM_PUTZ(buf, -1, out);
 }
 
-/* Returns list of insn name and parameters.  Useful if you want to 
+/* [To be obsoleted]
+   Returns list of insn name and parameters.  Useful if you want to 
    inspect compiled code from Scheme. */
 ScmObj Scm_VMInsnInspect(ScmObj obj)
 {
@@ -2909,6 +2931,49 @@ ScmObj Scm_VMInsnInspect(ScmObj obj)
         r = SCM_UNDEFINED;      /* dummy */
     }
     return r;
+}
+
+/* (kind of) inversion of VMInsnInspect. */
+ScmWord Scm_VMInsnBuild(ScmObj obj)
+{
+    struct insn_info *info;
+    int len = Scm_Length(obj), code, arg0, arg1;
+    const char *name;
+    ScmWord insn = 0;
+    
+    if (len < 1 || len > 3 || !SCM_SYMBOLP(SCM_CAR(obj))) goto badspec;
+    code = Scm_VMInsnNameToCode(SCM_CAR(obj));
+    
+    switch (Scm_VMInsnNumParams(code)) {
+    case 0:
+        if (len != 1) {
+            Scm_Error("VM instruction %S takes no parameters, but got %S",
+                      SCM_CAR(obj), obj);
+        }
+        return SCM_NVM_INSN(code);
+    case 1:
+        if (len != 2) {
+            Scm_Error("VM instruction %S takes one parameter, but got %S",
+                      SCM_CAR(obj), obj);
+        }
+        if (!SCM_INTP(SCM_CADR(obj))) goto badspec;
+        arg0 = SCM_INT_VALUE(SCM_CADR(obj));
+        return SCM_NVM_INSN1(code, arg0);
+    case 2:
+        if (len != 3) {
+            Scm_Error("VM instruction %S takes two parameters, but got %S",
+                      SCM_CAR(obj), obj);
+        }
+        if (!SCM_INTP(SCM_CADR(obj))) goto badspec;
+        if (!SCM_INTP(SCM_CAR(SCM_CDDR(obj)))) goto badspec;
+        arg0 = SCM_INT_VALUE(SCM_CADR(obj));
+        arg1 = SCM_INT_VALUE(SCM_CAR(SCM_CDDR(obj)));
+        return SCM_NVM_INSN2(code, arg0, arg1);
+    }
+    /*FALLTHROUGH*/
+  badspec:    
+    Scm_Error("Bad VM insn spec: %S", obj);
+    return 0;       /* dummy */
 }
 
 /*

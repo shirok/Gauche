@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.6 2004-12-24 21:26:09 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.7 2004-12-25 00:37:03 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -444,15 +444,6 @@ enum {
 #define SCM_NVM_INSN2(code, arg0, arg1)  \
     SCM_WORD((long)((arg1) << 18) | ((arg0) << 8) | (code))
 
-#if 0
-enum {
-#define DEFINSN(sym, nam, nparams, type)  sym,
-#include "gauche/vminsn.h"
-#undef DEFINSN
-    SCM_VM_NUM_INSNS
-};
-#endif
-
 /* Operand type */
 enum {
     SCM_VM_OPERAND_NONE,        /* take no operand */
@@ -467,6 +458,8 @@ SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
 SCM_EXTERN const char *Scm_VMInsnName(u_int code);
 SCM_EXTERN int Scm_VMInsnNumParams(u_int code);
 SCM_EXTERN int Scm_VMInsnOperandType(u_int code);
+SCM_EXTERN int Scm_VMInsnNameToCode(ScmObj name);
+SCM_EXTERN ScmWord Scm_VMInsnBuild(ScmObj insn);
 
 /*
  * C stack rewinding
