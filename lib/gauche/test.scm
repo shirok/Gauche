@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.10 2004-01-27 02:50:17 shirok Exp $
+;;;  $Id: test.scm,v 1.11 2004-02-03 13:12:27 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -95,13 +95,13 @@
 ;; object system, so it can be used _before_ those constructs are tested.
 (define (prim-test msg expect thunk . compare)
   (let ((cmp (if (pair? compare) (car compare) equal?)))
-    (format #t "test ~a, expects ~s ==> " msg expect)
+    (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
     (let ((r (thunk)))
       (if (cmp expect r)
           (format #t "ok\n")
           (begin
-            (format #t "ERROR: GOT ~S\n" r)
+            (format/ss #t "ERROR: GOT ~S\n" r)
             (set! *discrepancy-list*
                   (cons (list msg expect r) *discrepancy-list*))))
       (flush)
@@ -199,9 +199,9 @@
         (o (current-output-port)))
     (define (fmt . args)
       (if (and (sys-isatty e) (sys-isatty o))
-          (apply format o args)
-          (begin (apply format e args)
-                 (apply format o args))))
+          (apply format/ss o args)
+          (begin (apply format/ss e args)
+                 (apply format/ss o args))))
     
     (if (null? *discrepancy-list*)
         (fmt "passed.\n")

@@ -124,7 +124,7 @@ The table below lists sharp-syntaxes.
 @item @code{#/}
  @tab Introduces a literal regular expression.  @xref{Regular expression}.
 @item @code{#0} @dots{} @code{#9}
- @tab Reserved for shared structure reference.
+ @tab [SRFI-38] Shared substructure definition and reference.
 @item @code{#:}, @code{#;}
  @tab Unused
 @item @code{#<}

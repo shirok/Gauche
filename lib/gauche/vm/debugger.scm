@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: debugger.scm,v 1.15 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: debugger.scm,v 1.16 2004-02-03 13:12:28 shirok Exp $
 ;;;
 
 ;; NB: this is still a working version.  
@@ -58,18 +58,18 @@
                                  (pair-attribute-get f 'source-info #f)))
                       ((pair? info))
                       ((pair? (cdr info))))
-             (format (current-error-port) "#?=~s:~a:~,,,,50:s\n"
-                     (car info) (cadr info) f)
+             (format/ss (current-error-port) "#?=~s:~a:~,,,,65:s\n"
+                        (car info) (cadr info) f)
              #t)
-           (format (current-error-port) "#?=~,,,,50:s\n" f))
+           (format (current-error-port) "#?=~,,,,65:s\n" f))
        (receive vals ?form
          (if (null? vals)
              (format (current-error-port) "#?-<void>\n")
              (begin
-               (format (current-error-port) "#?-    ~,,,,50:s\n" (car vals))
+               (format/ss (current-error-port) "#?-    ~,,,,65:s\n" (car vals))
                (for-each (lambda (elt)
-                           (format (current-error-port)
-                                   "#?+    ~,,,,50:s\n" elt))
+                           (format/ss (current-error-port)
+                                      "#?+    ~,,,,65:s\n" elt))
                          (cdr vals))))
          (apply values vals))))))
 
@@ -84,7 +84,7 @@
         ((or (null? s) (> i max-depth))
          (unless (null? s) (format outp "...\n")))
       (let ((code (caar s)))
-        (format outp "~3d  ~,,,,v:s\n" i *expr-show-length* code)
+        (format/ss outp "~3d  ~,,,,v:s\n" i *expr-show-length* code)
         (or (and-let* (((pair? code))
                        (info (pair-attribute-get code 'source-info #f))
                        ((pair? info))
@@ -142,7 +142,7 @@
 
     (define (show-stack s level)
       (when (pair? s)
-        (format outp "~3d:  ~,,,,v:s\n" level *expr-show-length* (car s))
+        (format/ss outp "~3d:  ~,,,,v:s\n" level *expr-show-length* (car s))
         (and-let* (((pair? (car s)))
                    (info (pair-attribute-get (car s) 'source-info #f))
                    ((pair? info))

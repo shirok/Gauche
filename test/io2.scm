@@ -3,7 +3,7 @@
 ;; this test is splitted from io.scm, since this one uses util.isomorph,
 ;; and has to be done after the test of util.* module.
 
-;; $Id: io2.scm,v 1.1 2004-02-02 10:43:37 shirok Exp $
+;; $Id: io2.scm,v 1.2 2004-02-03 13:12:28 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -111,6 +111,24 @@
          (write-to-string baz write/ss)))
 
 ;;---------------------------------------------------------------
+(test-section "format/ss")
+
+(test* "format/ss" "The answer is #0=(\"a\" . #0#)"
+       (let ((a (list "a")))
+         (set-cdr! a a)
+         (format/ss "The answer is ~s" a)))
+
+(test* "format/ss" "The answer is #0=(a . #0#)"
+       (let ((a (list "a")))
+         (set-cdr! a a)
+         (format/ss "The answer is ~a" a)))
+
+(test* "format/ss" "The answer is #0=(a . #0#) #0=(a . #0#)"
+       (let ((a (list 'a)))
+         (set-cdr! a a)
+         (format/ss "The answer is ~s ~s" a a)))
+
+;;---------------------------------------------------------------
 (test-section "read/ss basic")
 
 ;; NB: in gauche, read/ss is just an alias of read.
@@ -134,33 +152,43 @@
 (test* "bad syntax" *test-error*
        (read-from-string "#99999999999999999999999999999999999#"))
 
-(test* "pair 1" #t
-       (isomorphic? (circular-list 1 2)
-                    (read-from-string "#0=(1 2 . #0#)")))
-(test* "pair 2" #t
-       (isomorphic? (let1 r (list #f)
-                      (set! (car r) r)
-                      r)
-                    (read-from-string "#0=(#0#)")))
-(test* "pair 3" #t
-       (isomorphic? (let1 r '(a b)
-                      (list r r r))
-                    (read-from-string "(#0=#1=(a b) #0# #1#)")))
+(test* "pair 1" (circular-list 1 2)
+       (read-from-string "#0=(1 2 . #0#)")
+       isomorphic?)
+(test* "pair 2" (let1 r (list #f) (set! (car r) r) r)
+       (read-from-string "#0=(#0#)")
+       isomorphic?)
+(test* "pair 3" (let1 r '(a b) (list r r r))
+       (read-from-string "(#0=#1=(a b) #0# #1#)")
+       isomorphic?)
 
-(test* "vector" #t
-       (isomorphic? (let* ((r (vector 'a 'b))
-                           (s (vector 'c 'd))
-                           (t (vector r s r s 'e)))
-                      (vector-set! r 1 s)
-                      (vector-set! s 1 r)
-                      (vector-set! t 4 t)
-                      t)
-                    (read-from-string "#0=#(#1=#(a #2=#(c #1#)) #2# #1# #2# #0#)")))
+(test* "vector" (let* ((r (vector 'a 'b))
+                       (s (vector 'c 'd))
+                       (t (vector r s r s 'e)))
+                  (vector-set! r 1 s)
+                  (vector-set! s 1 r)
+                  (vector-set! t 4 t)
+                  t)
+       (read-from-string "#0=#(#1=#(a #2=#(c #1#)) #2# #1# #2# #0#)")
+       isomorphic?)
 
-(test* "string" #t
-       (isomorphic? (let* ((r (string #\a #\a))
-                           (s (string #\a #\a)))
-                      (list r s r s))
-                    (read-from-string "(#0=\"aa\" #1=\"aa\" #0# #1#)")))
+(test* "string" (let* ((r (string #\a #\a))
+                       (s (string #\a #\a)))
+                  (list r s r s))
+       (read-from-string "(#0=\"aa\" #1=\"aa\" #0# #1#)")
+       isomorphic?)
+
+;; NB: this is an experimental feature.  Do not count on this API!
+(define-reader-ctor 'foo
+  (lambda x `(quote ,x))
+  (lambda (obj)
+    (pair-for-each (lambda (p)
+                     (when (read-reference? (car p))
+                       (set-car! p (read-reference-value (car p)))))
+                   (cadr obj))))
+
+(test* "user-defined" '#0='(a #0#)
+       (read-from-string "#0=#,(foo a #0#)")
+       isomorphic?)
 
 (test-end)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.7 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: port.h,v 1.8 2004-02-03 13:12:28 shirok Exp $
  */
 
 /*
@@ -115,6 +115,8 @@
           PORT_UNLOCK(p);                       \
           SCM_NEXT_HANDLER;                     \
         } SCM_END_PROTECT;                      \
+      } else {                                  \
+        call;                                   \
       }                                         \
     } while (0)
 

@@ -1,3 +1,18 @@
+2004-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (define-reader-ctor): Experimental feature to process
+	  srfi-38 syntax in srfi-10 read-time constructor.  define-reader-ctor
+	  takes a optional procedure, which is responsible to fix up the
+	  read reference objects.  This API isn't official yet.
+	* src/write.c (Scm_Format, Scm_PrintfShared): added features
+	  to handle shared structure writing.
+	* src/extlib.stub (read-reference? etc.) : added read-reference object
+	  related API.  These are not official yet.
+	  (%format): now a part of 'format' is handled in Scheme.
+	* lib/gauche/ioutil.scm : added.  definition of 'format' API etc.
+	* lib/gauche/vm/debugger.scm, lib/gauche/test.scm, src/error.c:
+	  adapted to the changes.
+
 2004-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec): added a flag argument to enable

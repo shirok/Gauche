@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.215 2004-02-02 10:43:37 shirok Exp $
+;;; $Id: extlib.stub,v 1.216 2004-02-03 13:12:28 shirok Exp $
 ;;;
 
 "
@@ -889,8 +889,22 @@
                          &optional (port (current-input-port)))
   "SCM_RETURN(Scm_ReadList(port, closer));")
 
-(define-cproc define-reader-ctor (symbol proc)
+(define-cproc define-reader-ctor (symbol proc &optional (finisher #f))
   (return "Scm_DefineReaderCtor"))
+
+(define-type <read-reference> "ScmReadReference*" "read reference"
+  "SCM_READ_REFERENCE_P" "SCM_READ_REFERENCE" "")
+
+(define-cproc read-reference? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_READ_REFERENCE_P(obj)));")
+
+(define-cproc read-reference-has-value? (ref::<read-reference>)
+  "SCM_RETURN(SCM_MAKE_BOOL(!SCM_UNBOUNDP(ref->value)));")
+
+(define-cproc read-reference-value (ref::<read-reference>)
+  "if (SCM_UNBOUNDP(ref->value))
+    Scm_Error(\"read reference hasn't been resolved\");
+  SCM_RETURN(ref->value);")
 
 ;;
 ;; 6.6.3  Output
@@ -1123,22 +1137,9 @@
 
 ;; Utility procedure
 
-(define-cproc format (fmt &rest args)
-  "ScmObj port = SCM_FALSE;
-  if (SCM_OPORTP(fmt) || SCM_BOOLP(fmt)) {
-    if (!SCM_PAIRP(args)) {
-      Scm_Error(\"wrong number of arguments: format string required after port %S\", fmt);
-    }
-    port = fmt;
-    fmt = SCM_CAR(args);
-    args = SCM_CDR(args);
-    if (!SCM_STRINGP(fmt)) {
-      Scm_Error(\"format string required after port, but got %S\", fmt);
-    }
-  } else if (!SCM_STRINGP(fmt)) {
-    Scm_Error(\"format string required, but got %S\", fmt);
-  }
-  SCM_RETURN(Scm_Format(port, SCM_STRING(fmt), args));")
+(define-cproc %format (port::<output-port> fmt::<string>
+                       args shared::<boolean>)
+  (return <void> "Scm_Format"))
 
 (define-cproc exit (&optional (code::<fixnum> 0))
   (return <void> "Scm_Exit"))

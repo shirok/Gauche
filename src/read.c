@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.68 2004-01-28 00:54:16 shirok Exp $
+ *  $Id: read.c,v 1.69 2004-02-03 13:12:28 shirok Exp $
  */
 
 #include <stdio.h>
@@ -64,8 +64,9 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim);
 static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
-static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
-static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args);
+static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx);
+static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
+                                  ScmReadContext *ctx, int has_ref);
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
@@ -198,7 +199,7 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
         Scm_Printf(SCM_PORT(ostr), "line %d: ", line);
     }
     va_start(ap, msg);
-    Scm_Vprintf(SCM_PORT(ostr), msg, ap);
+    Scm_Vprintf(SCM_PORT(ostr), msg, ap, TRUE);
     va_end(ap);
     Scm_Error("%A", Scm_GetOutputString(SCM_PORT(ostr)));
 }
@@ -229,9 +230,9 @@ static void read_reference_print(ScmObj obj, ScmPort *port,
     Scm_Printf(port, "#<read-reference>");
 }
 
-static void ref_push(ScmReadContext *ctx, ScmObj obj)
+static void ref_push(ScmReadContext *ctx, ScmObj obj, ScmObj finisher)
 {
-    ctx->pending = Scm_Cons(obj, ctx->pending);
+    ctx->pending = Scm_Acons(obj, finisher, ctx->pending);
 }
 
 static ScmObj ref_val(ref)
@@ -249,14 +250,25 @@ static ScmObj ref_register(ScmReadContext *ctx, ScmObj obj, int refnum)
     return obj;
 }
 
-/* ctx->pending contains a list of objects who contains read reference
-   which should be resolved. */
+/* ctx->pending contains an assoc list of objects who contains read reference
+   which should be resolved.
+   The car of each entry is the object that needs to be fixed, and the
+   cdr of eacy entry may contain a finisher procedure (if the object is
+   created by read-time constructor.
+*/
 static void read_context_flush(ScmReadContext *ctx)
 {
-    ScmObj cp, ep;
+    ScmObj cp, ep, entry, obj, finisher;
+    
     SCM_FOR_EACH(cp, ctx->pending) {
-        ScmObj obj = SCM_CAR(cp);
-        if (SCM_PAIRP(obj)) {
+        entry = SCM_CAR(cp);
+        SCM_ASSERT(SCM_PAIRP(entry));
+        obj = SCM_CAR(entry);
+        finisher = SCM_CDR(entry);
+
+        if (!SCM_FALSEP(finisher)) {
+            Scm_Apply(finisher, SCM_LIST1(obj));
+        } else if (SCM_PAIRP(obj)) {
             SCM_FOR_EACH(ep, obj) {
                 if (SCM_READ_REFERENCE_P(SCM_CAR(ep))) {
                     SCM_SET_CAR(ep, ref_val(SCM_CAR(ep)));
@@ -422,10 +434,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 return SCM_UNDEFINED;
             case ',':
                 /* #,(form) - SRFI-10 read-time macro */
-                {
-                    ScmObj form = read_item(port, ctx);
-                    return read_sharp_comma(port, form);
-                }
+                return read_sharp_comma(port, ctx);
             case '|':
                 /* #| - block comment (SRFI-30)
                    it is equivalent to whitespace, so we return #<undef> */
@@ -437,7 +446,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     ScmObj form = read_item(port, ctx);
                     return process_sharp_comma(port,
                                                SCM_SYM_STRING_INTERPOLATE,
-                                               SCM_LIST1(form));
+                                               SCM_LIST1(form), ctx, FALSE);
                 }
             case '?':
                 /* #? - debug directives */
@@ -606,7 +615,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     int has_ref;
     ScmObj r = read_list_int(port, closer, ctx, &has_ref);
-    if (has_ref) ref_push(ctx, r);
+    if (has_ref) ref_push(ctx, r, SCM_FALSE);
     return r;
 }
 
@@ -615,7 +624,7 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     int has_ref;
     ScmObj r = read_list_int(port, closer, ctx, &has_ref);
     r = Scm_ListToVector(r);
-    if (has_ref) ref_push(ctx, r);
+    if (has_ref) ref_push(ctx, r, SCM_FALSE);
     return r;
 }
 
@@ -632,7 +641,7 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
         Scm_PairAttrSet(SCM_PAIR(r), SCM_SYM_SOURCE_INFO,
                         SCM_LIST2(Scm_PortName(port), SCM_MAKE_INT(line)));
     }
-    if (SCM_READ_REFERENCE_P(item)) ref_push(ctx, SCM_CDR(r));
+    if (SCM_READ_REFERENCE_P(item)) ref_push(ctx, SCM_CDR(r), SCM_FALSE);
     return r;
 }
 
@@ -1000,40 +1009,61 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
  * SRFI-10 support
  */
 
-ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc)
+ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher)
 {
+    ScmObj pair;
     if (!SCM_PROCEDUREP(proc)) {
         Scm_Error("procedure required, but got %S\n", proc);
     }
+    pair = Scm_Cons(proc, finisher);
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
-    Scm_HashTablePut(readCtorData.table, symbol, proc);
+    Scm_HashTablePut(readCtorData.table, symbol, pair);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
     return SCM_UNDEFINED;
 }
 
-static ScmObj read_sharp_comma(ScmPort *port, ScmObj form)
+static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
 {
-    int len = Scm_Length(form);
+    int len, has_ref;
+    ScmChar next;
+    ScmObj form, r;
+
+    next = Scm_GetcUnsafe(port);
+    if (next != '(') {
+        Scm_ReadError(port, "bad #,-form: '(' should be followed, but got %C",
+                      next);
+    }
+    
+    form = read_list_int(port, ')', ctx, &has_ref);
+    len = Scm_Length(form);
     if (len <= 0) {
         Scm_ReadError(port, "bad #,-form: #,%S", form);
     }
-    return process_sharp_comma(port, SCM_CAR(form), SCM_CDR(form));
+    r = process_sharp_comma(port, SCM_CAR(form), SCM_CDR(form), ctx, has_ref);
+    return r;
 }
 
-static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args)
+static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
+                                  ScmReadContext *ctx, int has_ref)
 {
     ScmHashEntry *e;
+    ScmObj r;
+
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
     e = Scm_HashTableGet(readCtorData.table, key);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
+
     if (e == NULL) Scm_ReadError(port, "unknown #,-key: %S", key);
-    SCM_ASSERT(SCM_PROCEDUREP(e->value));
-    return Scm_Apply(e->value, args);
+    SCM_ASSERT(SCM_PAIRP(e->value));
+    r = Scm_Apply(SCM_CAR(e->value), args);
+    if (has_ref) ref_push(ctx, r, SCM_CDR(e->value));
+    return r;
 }
 
 static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
 {
-    return Scm_DefineReaderCtor(args[0], args[1]);
+    ScmObj optarg = (nargs > 2? args[2] : SCM_FALSE);
+    return Scm_DefineReaderCtor(args[0], args[1], optarg);
 }
 
 /*----------------------------------------------------------------
@@ -1105,7 +1135,8 @@ void Scm__InitRead(void)
                                                          NULL, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(readCtorData.mutex);
     Scm_DefineReaderCtor(SCM_SYM_DEFINE_READER_CTOR,
-                         Scm_MakeSubr(reader_ctor, NULL, 2, 0,
-                                      SCM_SYM_DEFINE_READER_CTOR));
+                         Scm_MakeSubr(reader_ctor, NULL, 2, 1,
+                                      SCM_SYM_DEFINE_READER_CTOR),
+                         SCM_FALSE);
 }
 

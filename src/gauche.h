@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.365 2004-02-02 12:48:55 shirok Exp $
+ *  $Id: gauche.h,v 1.366 2004-02-03 13:12:28 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1375,10 +1375,11 @@ enum {
 SCM_EXTERN void Scm_Write(ScmObj obj, ScmObj port, int mode);
 SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width);
 SCM_EXTERN int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);
-SCM_EXTERN ScmObj Scm_Format(ScmObj port, ScmString *fmt, ScmObj args);
-SCM_EXTERN ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...);
+SCM_EXTERN void Scm_Format(ScmPort *port, ScmString *fmt, ScmObj args, int ss);
 SCM_EXTERN void Scm_Printf(ScmPort *port, const char *fmt, ...);
-SCM_EXTERN void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
+SCM_EXTERN void Scm_PrintfShared(ScmPort *port, const char *fmt, ...);
+SCM_EXTERN void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args,
+                            int sharedp);
 
 /*---------------------------------------------------------
  * READ
@@ -1427,7 +1428,8 @@ SCM_EXTERN ScmObj Scm_ReadFromCString(const char *string);
 
 SCM_EXTERN void   Scm_ReadError(ScmPort *port, const char *fmt, ...);
 
-SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc);
+SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,
+                                       ScmObj finisher);
     
 /*--------------------------------------------------------
  * HASHTABLE

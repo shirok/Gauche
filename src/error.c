@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.43 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: error.c,v 1.44 2004-02-03 13:12:28 shirok Exp $
  */
 
 #include <errno.h>
@@ -143,7 +143,7 @@ void Scm_Error(const char *msg, ...)
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
-        Scm_Vprintf(SCM_PORT(ostr), msg, args);
+        Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
         va_end(args);
         e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr)));
     }
@@ -171,7 +171,7 @@ void Scm_SysError(const char *msg, ...)
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
-        Scm_Vprintf(SCM_PORT(ostr), msg, args);
+        Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
         va_end(args);
         SCM_PUTZ(": ", -1, ostr);
         SCM_PUTS(syserr, ostr);
@@ -195,7 +195,7 @@ void Scm_Warn(const char *msg, ...)
     va_list args;
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     va_start(args, msg);
-    Scm_Vprintf(SCM_PORT(ostr), msg, args);
+    Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
     va_end(args);
     Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
     Scm_Flush(SCM_CURERR);
@@ -240,7 +240,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         if (SCM_STRINGP(fmt)) {
-            Scm_Format(ostr, SCM_STRING(fmt), args);
+            Scm_Format(SCM_PORT(ostr), SCM_STRING(fmt), args, TRUE);
         } else {
             /* this shouldn't happen, but we tolerate it. */
             Scm_Write(fmt, ostr, SCM_WRITE_WRITE);
@@ -259,7 +259,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
 void Scm_FWarn(ScmString *fmt, ScmObj args)
 {
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-    Scm_Format(ostr, fmt, args);
+    Scm_Format(SCM_PORT(ostr), fmt, args, TRUE);
     Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
     Scm_Flush(SCM_CURERR);
 }

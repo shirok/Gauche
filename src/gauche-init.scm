@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.113 2004-02-02 10:43:37 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.114 2004-02-03 13:12:28 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -89,18 +89,6 @@
   (let ((proc (lambda x (apply get x))))
     (set! (setter proc) set)
     proc))
-
-;; print (from SCM, Chicken)
-(define (print . args)
-  (for-each display args) (newline))
-
-;; srfi-38
-(define read-with-shared-structure read)
-(define read/ss read)
-
-(define (write-with-shared-structure obj . args)
-  (write* obj (if (pair? args) (car args) (current-output-port))))
-(define write/ss write-with-shared-structure)
 
 ;;
 ;; Load object system
