@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.2 2001-05-30 07:42:01 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.3 2001-06-26 07:39:08 shirok Exp $
 ;;;
 
 "
@@ -49,7 +49,7 @@ emit() {
 
 (define-cproc ${vecttag}vector-length (v)
   (assert (${vecttag}vector? v))
-  "  SCM_RETURN(SCM_MAKE_INT(SCM_${VECTTYPE}_LENGTH(v)));")
+  "  SCM_RETURN(SCM_MAKE_INT(SCM_${VECTTYPE}_SIZE(v)));")
 
 (define-cproc ${vecttag}vector-ref (v i)
   (assert (${vecttag}vector? v))
