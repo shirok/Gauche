@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: vport.scm,v 1.3 2004-11-12 02:42:28 shirok Exp $
+;;;  $Id: vport.scm,v 1.4 2004-11-12 02:45:54 shirok Exp $
 ;;;
 
 (define-module gauche.vport
@@ -39,8 +39,8 @@
           <virtual-output-port>
           <buffered-input-port>
           <buffered-output-port>
-          make-uvector-input-port
-          make-uvector-output-port
+          open-input-uvector
+          open-output-uvector
           ))
 (select-module gauche.vport)
 
@@ -50,7 +50,7 @@
 ;; A port backed up by an uniform vector
 ;;
 
-(define (make-uvector-input-port uvector)
+(define (open-input-uvector uvector)
   (let* ((src (if (u8vector? uvector)
                 uvector
                 (uvector-alias <u8vector> uvector)))
@@ -82,7 +82,7 @@
     (make <buffered-input-port>
       :fill filler :seek seeker)))
 
-(define (make-uvector-output-port uvector)
+(define (open-output-uvector uvector)
   (let* ((dst (if (u8vector? uvector)
                 uvector
                 (uvector-alias <u8vector> uvector)))

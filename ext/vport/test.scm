@@ -218,7 +218,7 @@
     (test* #`"size=,size" #t
            (let1 v (make-u8vector size 0)
              (dotimes (i size) (u8vector-set! v i (modulo i 256)))
-             (let* ((p (make-uvector-input-port v))
+             (let* ((p (open-input-uvector v))
                     (d (with-output-to-string
                          (lambda ()
                            (let loop ((b (read-byte p)))
@@ -233,7 +233,7 @@
 (let* ((size 1024)
        (v (make-u8vector size 0)))
   (dotimes (i size) (u8vector-set! v i (modulo i 256)))
-  (let1 p (make-uvector-input-port v)
+  (let1 p (open-input-uvector v)
     (test* "port-seek (SEEK_SET)" (+ 128 256)
            (port-seek p (+ 128 256) SEEK_SET))
     (test* "read after seek" 128
@@ -260,7 +260,7 @@
            (let1 v (make-u8vector size 0)
              (dotimes (i size) (u8vector-set! v i (modulo i 256)))
              (let* ((dst (make-u8vector size 0))
-                    (p (make-uvector-output-port dst)))
+                    (p (open-output-uvector dst)))
                (dotimes (i size)
                  (write-byte (u8vector-ref v i) p))
                (close-output-port p)
@@ -270,7 +270,7 @@
   (tester 16385))
 
 (let* ((v (make-u8vector 16 0)))
-  (let1 p (make-uvector-output-port v)
+  (let1 p (open-output-uvector v)
     (test* "port-seek (SEEK_SET)" 3 (port-seek p 3 SEEK_SET))
     (test* "write after seek" '#u8(0 0 0 #xff 0 0 0 0 0 0 0 0 0 0 0 0 )
            (begin (write-byte #xff p) (flush p) (u8vector-copy v)))
