@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.40 2001-04-01 22:07:43 shiro Exp $
+ *  $Id: class.c,v 1.41 2001-04-02 10:26:06 shiro Exp $
  */
 
 #include "gauche.h"
@@ -483,7 +483,7 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
     SCM_APPEND1(seqh, seqt, ds);
 
     SCM_FOR_EACH(dp, klass->directSupers) {
-        if (!SCM_CLASSP(SCM_CAR(dp)))
+        if (!Scm_TypeP(SCM_CAR(dp), SCM_CLASS_CLASS))
             Scm_Error("non-class found in direct superclass list: %S",
                       klass->directSupers);
         if (SCM_CAR(dp) == SCM_OBJ(SCM_CLASS_OBJECT)
