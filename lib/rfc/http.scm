@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: http.scm,v 1.3 2002-11-14 05:05:41 shirok Exp $
+;;;  $Id: http.scm,v 1.4 2002-11-14 05:08:42 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -94,7 +94,8 @@
 
 (define (request-response request server request-uri options)
   (let* ((sink    (get-keyword* :sink options (open-output-string)))
-         (flusher (get-keyword  :flusher options get-output-string))
+         (flusher (get-keyword* :flusher options
+                                (lambda (sink h) (get-output-string sink))))
          (host    (get-keyword* :host options (server->host server)))
          (follow  (not (get-keyword  :no-redirect options #f)))
          (has-content? (not (memq request '(HEAD)))))
@@ -168,7 +169,7 @@
   ;; will be sent in part of the header.  NB: host header is sent
   ;; by send-request, so we exclude it here.
   (define internal-keywords
-    '(:sink :flusher :follow-redirect :host :request-body))
+    '(:sink :flusher :no-redirect :host :request-body))
 
   (let loop ((options options))
     (cond ((null? options))
@@ -202,7 +203,7 @@
               (if (equal? (cadr p) "chunked")
                   (receive-body-chunked remote sink)
                   (error "unsupported transfer-encoding" (cadr p))))))
-  (flusher sink))
+  (flusher sink headers))
 
 (define (receive-body-nochunked size remote sink)
   (copy-port remote sink :size size))
