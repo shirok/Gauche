@@ -23,6 +23,7 @@ hook.scm
 logger.scm
 text.scm
 util.scm
+process.scm
 version.scm
 file.scm
 listener.scm

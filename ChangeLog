@@ -1,3 +1,13 @@
+2003-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm : Added various keyword arguments to
+	  process ports to allow redirection and character encoding conversion.
+	  Also extended the command syntax so that it can take a list of
+	  argv and call exec directly.
+	  (INCOMPATIVLE CHANGE) open-{input|output}-process-port now return
+	  two values, the port and the process object.  I found they are pretty
+	  useless without getting process object.
+
 2003-09-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/lcs.scm (lcs-with-positions) : rewrote to use Eugene Myers'

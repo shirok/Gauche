@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.13 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: process.scm,v 1.14 2003-09-05 09:59:32 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -52,6 +52,10 @@
           process-output->string    process-output->string-list
           ))
 (select-module gauche.process)
+
+;; Delay-load gauche.charconv 
+(autoload gauche.charconv
+          wrap-with-input-conversion wrap-with-output-conversion)
 
 (define-class <process> ()
   ((pid       :initform -1 :getter process-pid)
@@ -86,12 +90,12 @@
   (let loop ((args args) (argv '())
              (input #f) (output #f) (error #f) (wait #f) (fork #t))
     (cond ((null? args)
-           (let ((proc  (make <process> :command command)))
+           (let ((proc  (make <process> :command (x->string command))))
              (receive (iomap toclose)
                (if (or input output error)
                    (%setup-iomap proc input output error)
                    (values #f '()))
-               (%run-process proc (cons command (reverse argv))
+               (%run-process proc (cons (x->string command) (reverse argv))
                              iomap toclose wait fork))))
           ((eqv? (car args) :input)
            (check-iokey args)
@@ -109,7 +113,7 @@
            (check-key args)
            (loop (cddr args) argv input output error (cadr args) fork))
           (else
-           (loop (cdr args) (cons (car args) argv)
+           (loop (cdr args) (cons (x->string (car args)) argv)
                  input output error wait fork))
           ))
   )
@@ -188,77 +192,121 @@
 
 ;; Process ports
 
-(define (open-input-process-port command)
-  ;; TODO: how to terminate & wait the process?
-  (let ((p (run-process "/bin/sh" "-c" command
-                        :input "/dev/null" :error "/dev/null"
-                        :output :pipe)))
-    (process-output p)))
+;; Common keyword args:
+;;   :error    - specifies error destination.  filename (redirect to file),
+;;               or #t (stderr).
+;;   :encoding - if given, CES conversion port is inserted.
+;;   :conversion-buffer-size - used when CES conversion is necessary.
 
-(define (call-with-input-process command proc)
-  (let* ((p (run-process "/bin/sh" "-c" command
-                         :input "/dev/null" :output :pipe :error "/dev/null"))
-         (i (process-output p)))
-    (with-error-handler
-        (lambda (e)
-          (close-input-port i)
-          (process-wait p)
-          (raise e))
-      (lambda ()
-        (begin0 (proc i)
-                (close-input-port i)
-                (process-wait p))))))
+(define (open-input-process-port command . opts)
+   (let-keywords* opts ((input "/dev/null")
+                       (err :error #f))
+    (let1 p (apply-run-process command input :pipe err)
+      (values (wrap-input-process-port p opts) p))))
 
-(define (with-input-from-process command thunk)
-  (call-with-input-process command
-    (lambda (p) (with-input-from-port p thunk))))
+(define (call-with-input-process command proc . opts)
+  (let-keywords* opts ((input "/dev/null")
+                       (err :error #f))
+    (let* ((p (apply-run-process command input :pipe err))
+           (i (wrap-input-process-port p opts)))
+      (with-error-handler
+          (lambda (e)
+            (close-input-port i)
+            (process-wait p)
+            (raise e))
+        (lambda ()
+          (begin0 (proc i)
+                  (close-input-port i)
+                  (process-wait p)))))))
 
-(define (open-output-process-port command)
-  (let ((p (run-process "/bin/sh" "-c" command
-                        :input :pipe :output "/dev/null"
-                        :error "/dev/null")))
-    (process-input p)))
+(define (with-input-from-process command thunk . opts)
+  (apply call-with-input-process command
+         (cut with-input-from-port <> thunk)
+         opts))
 
-(define (call-with-output-process command proc)
-  (let* ((p (run-process "/bin/sh" "-c" command
-                         :input :pipe :output "/dev/null" :error "/dev/null"))
-         (o (process-input p)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () (proc o))
-     (lambda ()
-       (close-output-port o)
-       (process-wait p)))))
+(define (open-output-process-port command . opts)
+  (let-keywords* opts ((output "/dev/null")
+                       (err :error #f))
+    (let1 p (apply-run-process command :pipe output err)
+      (values (wrap-output-process-port p opts) p))))
 
-(define (with-output-to-process command thunk)
-  (call-with-output-process command
-    (lambda (p) (with-output-to-port p thunk))))
+(define (call-with-output-process command proc . opts)
+  (let-keywords* opts ((output "/dev/null")
+                       (err :error #f))
+    (let* ((p (apply-run-process command :pipe output err))
+           (o (wrap-output-process-port p opts)))
+      (with-error-handler
+          (lambda (e)
+            (close-output-port o)
+            (process-wait p)
+            (raise e))
+        (lambda ()
+          (begin0 (proc o)
+                  (close-output-port o)
+                  (process-wait p)))))))
 
-(define (call-with-process-io command proc)
-  (let* ((p (run-process "/bin/sh" "-c" command
-                         :input :pipe :output :pipe
-                         :error "/dev/null"))
-         (i (process-output p))
-         (o (process-input p)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () (proc i o))
-     (lambda ()
-       (close-output-port o)
-       (close-input-port i)
-       (process-wait p)))))
+(define (with-output-to-process command thunk . opts)
+  (apply call-with-output-process command
+         (cut with-output-to-port <> thunk)
+         opts))
+
+(define (call-with-process-io command proc . opts)
+  (let-keywords* opts ((err :error #f))
+    (let* ((p (apply-run-process command :pipe :pipe err))
+           (i (wrap-input-process-port p opts))
+           (o (wrap-output-process-port p opts)))
+      (with-error-handler
+          (lambda (e)
+            (close-output-port o)
+            (close-input-port i)
+            (process-wait p)
+            (raise e))
+        (lambda ()
+          (begin0 (proc i o)
+                  (close-output-port o)
+                  (close-input-port i)
+                  (process-wait p)))))))
 
 ;; Convenient thingies that can be used like `command` in shell scripts
 
 (define (process-output->string command)
   (call-with-input-process command
     (lambda (p)
-      (string-join (string-tokenize (port->string p)) " "))))
+      (with-port-locking p
+        (lambda ()
+          (string-join (string-tokenize (port->string p)) " "))))))
 
 (define (process-output->string-list command)
   (call-with-input-process command port->string-list))
 
-;; 
+;; A common utility for process ports.
 
+;; If the given command is a string, return an argv to use /bin/sh.
+(define (apply-run-process command stdin stdout stderr)
+  (apply run-process
+         (append
+          (cond ((string? command) `("/bin/sh" "-c" ,command))
+                ((list? command) (map x->string command))
+                (else (error "Bad command spec" command)))
+          `(:input ,stdin :output ,stdout)
+          (cond ((string? stderr) `(:error ,stderr))
+                (else '())))))
+
+;; Possibly wrap the process port by a conversion port
+(define (wrap-input-process-port process opts)
+  (let-keywords* opts ((encoding #f)
+                       (conversion-buffer-size 0))
+    (if encoding
+      (wrap-with-input-conversion (process-output process) encoding
+                                  :buffer-size conversion-buffer-size)
+      (process-output process))))
+
+(define (wrap-output-process-port process opts)
+  (let-keywords* opts ((encoding #f)
+                       (conversion-buffer-size 0))
+    (if encoding
+      (wrap-with-output-conversion (process-input process) encoding
+                                  :buffer-size conversion-buffer-size)
+      (process-input process))))
 
 (provide "gauche/process")
