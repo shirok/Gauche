@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uri.scm,v 1.16 2004-01-13 10:20:32 shirok Exp $
+;;;  $Id: uri.scm,v 1.17 2004-07-10 04:59:44 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -49,7 +49,7 @@
   (use srfi-13)
   (use gauche.regexp)
   (export uri-scheme&specific uri-decompose-hierarchical
-          uri-decompose-authority
+          uri-decompose-authority uri-parse
           uri-compose
           uri-decode uri-decode-string
           uri-encode uri-encode-string
@@ -74,18 +74,39 @@
         (else (values #f uri))))
 
 (define (uri-decompose-hierarchical specific)
-  (rxmatch-if
-      (#/^(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$/ specific)
-      (#f #f authority path #f query #f fragment)
-    (values authority path query fragment)
-    (values #f #f #f #f)))
+  (cond
+   ((and (string? specific)
+         (#/^(?:\/\/([^\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?$/ specific))
+    => (lambda (m) (values (m 1) (m 2) (m 3) (m 4))))
+   (else (values #f #f #f #f))))
 
 (define (uri-decompose-authority authority)
-  (rxmatch-if
-      (#/^((.*?)@)?([^:]*)(:(\d*))?$/ authority)
-      (#f #f userinfo host #f port)
-    (values userinfo host port)
-    (values #f #f #f)))
+  (cond
+   ((and (string? authority)
+         (#/^(?:(.*?)@)?([^:]*)(?::(\d*))?$/ authority))
+    => (lambda (m) (values (m 1) (m 2) (m 3))))
+   (else (values #f #f #f))))
+
+;; A common cliche (suggested by Kouhei Sutou)
+;; Returns: scheme, user-info, host, port, path, query, fragment
+(define (uri-parse uri)
+  (define (filter-non-empty-string str)
+    (and (string? str)
+         (not (string-null? str))
+         str))
+  (receive (scheme specific)
+      (uri-scheme&specific uri)
+    (receive (authority path query fragment)
+        (uri-decompose-hierarchical specific)
+      (receive (user-info host port)
+          (uri-decompose-authority authority)
+        (values scheme
+                user-info
+                (filter-non-empty-string host)
+                (and port (string->number port))
+                (filter-non-empty-string path)
+                query
+                fragment)))))
 
 ;;==============================================================
 ;; Generic constructor

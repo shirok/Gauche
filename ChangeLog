@@ -1,3 +1,10 @@
+2004-07-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uri.scm (uri-parse): added.
+	  (uri-decompose-hierarchical): accept #f as an argument for the
+	  convenience.
+	  (uri-decompose-authority): ditto.
+
 2004-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_MakeAutoload): fixed a bug of autoload that
