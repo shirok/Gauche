@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.18 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: port.c,v 1.19 2001-04-22 07:33:46 shiro Exp $
  */
 
 #include <unistd.h>
@@ -98,7 +98,7 @@ ScmObj Scm_ClosePort(ScmPort *port)
  */
 ScmObj Scm_PortName(ScmPort *port)
 {
-    ScmObj z;
+    ScmObj z = SCM_NIL;
     
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
@@ -129,7 +129,7 @@ ScmObj Scm_PortName(ScmPort *port)
 
 int Scm_PortLine(ScmPort *port)
 {
-    int l;
+    int l = 0;
     
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
@@ -155,7 +155,7 @@ int Scm_PortLine(ScmPort *port)
 
 int Scm_PortPosition(ScmPort *port)
 {
-    int pos;
+    int pos = 0;
     
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
@@ -293,7 +293,7 @@ int Scm__PortGetbInternal(ScmPort *port)
 /* Called from SCM_GETC, when there's a buffered incomplete char. */
 int Scm__PortGetcInternal(ScmPort *port)
 {
-    int ch, i, nfollows;
+    int ch = 0, nfollows = 0;
     char *p;
     
     if (!port->bufcnt) {
@@ -303,7 +303,7 @@ int Scm__PortGetcInternal(ScmPort *port)
         /* fill the buffer */
         nfollows = SCM_CHAR_NFOLLOWS(port->buf[0]);
         for (; port->bufcnt <= nfollows; port->bufcnt++) {
-            int b;
+            int b = 0;
             switch (SCM_PORT_TYPE(port)) {
               case SCM_PORT_FILE: SCM__FILE_GETB(b, port); break;
               case SCM_PORT_ISTR: SCM__ISTR_GETB(b, port); break;
@@ -387,14 +387,14 @@ void Scm_Ungetc(ScmChar ch, ScmPort *port)
 
 int Scm_Getb(ScmPort *port)
 {
-    int b;
+    int b = 0;
     SCM_GETB(b, port);
     return b;
 }
 
 int Scm_Getc(ScmPort *port)
 {
-    int c;
+    int c = 0;
     SCM_GETC(c, port);
     return c;
 }
@@ -406,7 +406,7 @@ int Scm_Getc(ScmPort *port)
 static inline ScmObj readline_int(ScmPort *port)
 {
     ScmDString ds;
-    int ch;
+    int ch = 0;
     SCM_GETC(ch, port);
     if (ch == SCM_CHAR_INVALID) return SCM_EOF;
     Scm_DStringInit(&ds);
@@ -659,7 +659,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 {
     if (buffered) {
         FILE *fp;
-        char *mode;
+        char *mode = NULL;
         if (direction == SCM_PORT_INPUT) mode = "r";
         else if (direction == SCM_PORT_OUTPUT) mode = "w";
         else Scm_Error("invalid port direction: %d", direction);

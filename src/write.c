@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.13 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: write.c,v 1.14 2001-04-22 07:34:59 shiro Exp $
  */
 
 #include <stdio.h>
@@ -86,7 +86,7 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
         }
         else if (SCM_INTP(obj)) {
             char buf[SPBUFSIZ];
-            snprintf(buf, SPBUFSIZ, "%d", SCM_INT_VALUE(obj));
+            snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
             SCM_PUTCSTR(buf, out);
         }
         else if (SCM_CHARP(obj)) {
@@ -272,7 +272,7 @@ static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         char numbuf[50];
         if (SCM_INTP(e->value)) {
             /* This object is already printed. */
-            snprintf(numbuf, 50, "#%d#", SCM_INT_VALUE(e->value));
+            snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e->value));
             SCM_PUTCSTR(numbuf, port);
             return;
         } else {
@@ -328,6 +328,7 @@ int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
     } else {
         write_circular(obj, port, &ctx);
     }
+    return 0;
 }
 
 /* Default object printer delegates print action to generic function
@@ -370,7 +371,7 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
 ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
 {
     ScmObj fmtstr = Scm_MakeInputStringPort(fmt);
-    ScmChar ch;
+    ScmChar ch = 0;
     ScmObj arg;
     int out_to_str = 0;
 
@@ -426,9 +427,9 @@ ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...)
     va_list ap;
     ScmString *fmtstr = SCM_STRING(SCM_MAKE_STR(fmt));
     ScmObj fmtport = Scm_MakeInputStringPort(fmtstr);
-    int nargs;
-    ScmChar ch;
-    ScmObj start = SCM_NIL, end;
+    int nargs = 0;
+    ScmChar ch = 0;
+    ScmObj start = SCM_NIL, end = SCM_NIL;
 
     /* Count # of args */
     for (;;) {

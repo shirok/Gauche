@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.12 2001-04-20 08:35:25 shiro Exp $
+ *  $Id: read.c,v 1.13 2001-04-22 07:37:22 shiro Exp $
  */
 
 #include <stdio.h>
@@ -91,7 +91,7 @@ inline
 #endif
 static int skipws(ScmPort *port)
 {
-    int c;
+    int c = 0;
     for (;;) {
         SCM_GETC(c, port);
         if (c == EOF) return c;
@@ -125,7 +125,7 @@ ScmObj read_internal(ScmPort *port)
         return read_string(port);
     case '#':
         {
-            int c1;
+            int c1 = 0;
             SCM_GETC(c1, port);
             switch (c1) {
             case EOF:
@@ -169,7 +169,7 @@ ScmObj read_internal(ScmPort *port)
         return read_keyword(port);
     case ',':
         {
-            int c1;
+            int c1 = 0;
             SCM_GETC(c1, port);
             if (c1 == EOF) {
                 read_error(port, "unterminated unquote");
@@ -192,7 +192,7 @@ ScmObj read_internal(ScmPort *port)
         return read_symbol_or_number(port, c);
     case '.':;
         {
-            int c1;
+            int c1 = 0;
             SCM_GETC(c1, port);
             switch (c1) {
             PUNCT_CASE:
@@ -220,7 +220,7 @@ ScmObj read_internal(ScmPort *port)
 
 static ScmObj read_list(ScmPort *port, ScmChar closer)
 {
-    ScmObj start = SCM_NIL, last, item;
+    ScmObj start = SCM_NIL, last = SCM_NIL, item;
     int c, dot_seen = 0;
     
     for (;;) {
@@ -231,7 +231,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer)
         if (dot_seen) read_error(port, "bad dot syntax");
 
         if (c == '.') {
-            int c2;
+            int c2 = 0;
             SCM_GETC(c2, port);
             if (c2 == closer || c2 == EOF) {
                 read_error(port, "bad dot syntax");
@@ -280,7 +280,7 @@ static ScmObj read_string(ScmPort *port)
           case EOF: goto eof_exit;
           case '"': return Scm_DStringGet(&ds);
           case '\\': {
-            int c1;
+            int c1 = 0;
             SCM_GETC(c1, port);
             switch (c1) {
               case EOF: goto eof_exit;
@@ -331,7 +331,7 @@ static struct char_name {
 
 static ScmObj read_char(ScmPort *port)
 {
-    int c;
+    int c = 0;
     ScmString *name;
     const char *cname;
     struct char_name *cntab = char_names;
@@ -366,7 +366,7 @@ static ScmObj read_char(ScmPort *port)
 
 static ScmObj read_word(ScmPort *port, ScmChar initial)
 {
-    int c;
+    int c = 0;
     ScmDString ds;
     Scm_DStringInit(&ds);
     if (initial != SCM_CHAR_INVALID) c = initial;
@@ -426,7 +426,7 @@ static ScmObj read_keyword(ScmPort *port)
 /* gauche extension :  #/regexp/ */
 static ScmObj read_regexp(ScmPort *port)
 {
-    ScmChar c;
+    ScmChar c = 0;
     ScmDString ds;
     Scm_DStringInit(&ds);
     for (;;) {
@@ -464,8 +464,8 @@ static ScmObj read_charset(ScmPort *port)
 
 static ScmObj maybe_uvector(ScmPort *port, char ch)
 {
-    ScmChar c1, c2 = SCM_CHAR_INVALID;
-    char *tag;
+    ScmChar c1 = 0, c2 = SCM_CHAR_INVALID;
+    char *tag = NULL;
 
     SCM_GETC(c1, port);
     if (ch == 'f') {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.25 2001-04-10 06:58:17 shiro Exp $
+ *  $Id: list.c,v 1.26 2001-04-22 07:32:40 shiro Exp $
  */
 
 #include "gauche.h"
@@ -93,7 +93,7 @@ ScmObj Scm_Conses(ScmObj elt, ...)
 
 ScmObj Scm_VaList(va_list pvar)
 {
-    ScmObj start = SCM_NIL, cp, obj;
+    ScmObj start = SCM_NIL, cp = SCM_NIL, obj;
     
     for (obj = va_arg(pvar, ScmObj);
 	 obj != NULL;
@@ -127,7 +127,7 @@ ScmObj Scm_VaCons(va_list pvar)
 
 ScmObj Scm_ArrayToList(ScmObj *elts, int nelts)
 {
-    ScmObj h = SCM_NIL, t;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     if (elts) {
         int i;
         for (i=0; i<nelts; i++) {
@@ -256,7 +256,7 @@ int Scm_Length(ScmObj obj)
 
 ScmObj Scm_CopyList(ScmObj list)
 {
-    ScmObj start = SCM_NIL, last;
+    ScmObj start = SCM_NIL, last = SCM_NIL;
 
     if (!SCM_PAIRP(list)) return list;
     
@@ -277,7 +277,7 @@ ScmObj Scm_CopyList(ScmObj list)
 
 ScmObj Scm_MakeList(int len, ScmObj fill)
 {
-    ScmObj start = SCM_NIL, last;
+    ScmObj start = SCM_NIL, last = SCM_NIL;
     while (len--) {
         SCM_APPEND1(start, last, fill);
     }
@@ -309,7 +309,7 @@ ScmObj Scm_Append2X(ScmObj list, ScmObj obj)
 
 ScmObj Scm_Append2(ScmObj list, ScmObj obj)
 {
-    ScmObj start = SCM_NIL, last;
+    ScmObj start = SCM_NIL, last = SCM_NIL;
 
     if (!SCM_PAIRP(list)) return obj;
 
@@ -323,7 +323,7 @@ ScmObj Scm_Append2(ScmObj list, ScmObj obj)
 
 ScmObj Scm_Append(ScmObj args)
 {
-    ScmObj start = SCM_NIL, last, cp;
+    ScmObj start = SCM_NIL, last = SCM_NIL, cp;
     SCM_FOR_EACH(cp, args) {
         if (!SCM_PAIRP(SCM_CDR(cp))) {
             if (SCM_NULLP(start)) return SCM_CAR(cp);
@@ -565,7 +565,7 @@ ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
 
 ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode)
 {
-    ScmObj result = SCM_NIL, tail, lp;
+    ScmObj result = SCM_NIL, tail = SCM_NIL, lp;
     SCM_FOR_EACH(lp, list) {
         if (SCM_FALSEP(Scm_Member(SCM_CAR(lp), result, cmpmode))) {
             SCM_APPEND1(result, tail, SCM_CAR(lp));
