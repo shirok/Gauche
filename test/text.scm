@@ -159,6 +159,15 @@
       (lambda () (test-parseutil skip-until "xxxc" '(#[def] *eof*))))
 (test "skip-until cset" '(#\c eof)
       (lambda () (test-parseutil skip-until "xxxc" '(#[c-f] *eof*))))
+(test "skip-until proc" '(#\c #\space)
+      (lambda () (test-parseutil skip-until "xxxc bcd"
+                                 (lambda (x) (not (eqv? x #\x))))))
+(test "skip-until proc" '(eof eof)
+      (lambda () (test-parseutil skip-until "xxx"
+                                 (lambda (x) (not (eqv? x #\x))))))
+(test "skip-until proc" 'error
+      (lambda () (test-parseutil skip-until "yyyy"
+                                 (lambda (x) (eqv? x #\x)))))
 (test "skip-while" '(#\d #\d)
       (lambda () (test-parseutil skip-while "xxxd" '(#\a #\space #\x))))
 (test "skip-while" '(#\d #\d)
@@ -167,6 +176,16 @@
       (lambda () (test-parseutil skip-while "yxxxd" #[ax ])))
 (test "skip-while" '(eof eof)
       (lambda () (test-parseutil skip-while "xxxa" #[ax ])))
+(test "skip-while" '(#\d #\d)
+      (lambda () (test-parseutil skip-while "xxxd"
+                                 (lambda (x) (eqv? x #\x)))))
+(test "skip-while" '(#\y #\y)
+      (lambda () (test-parseutil skip-while "yxxxd"
+                                 (lambda (x) (eqv? x #\x)))))
+(test "skip-while" '(eof eof)
+      (lambda () (test-parseutil skip-while "yxxxd"
+                                 (lambda (x) (and (char? x)
+                                                  (char-alphabetic? x))))))
 
 (test "next-token" '("" #\d)
       (lambda () (test-parseutil next-token "xxxd" #[ax ] #[d] "next token")))
@@ -178,6 +197,15 @@
       (lambda () (test-parseutil next-token "   aeio" #[\s] #[\s] "next token")))
 (test "next-token" '("aeio" eof)
       (lambda () (test-parseutil next-token "   aeio" #[\s] '(#[\s] *eof*) "next token")))
+(test "next-token" '("aeio" #\tab)
+      (lambda () (test-parseutil next-token "   aeio\tnjj"
+                                 (lambda (x) (and (char? x)
+                                                  (char-whitespace? x)))
+                                 (lambda (x) (or (eof-object? x)
+                                                 (char-whitespace? x)))
+                                 "next token"
+                                 )))
+
 (test "next-token-of" '("" #\x)
       (lambda () (test-parseutil next-token-of "xxxd" #[a-c])))
 (test "next-token-of" '("" #\x)
@@ -188,6 +216,12 @@
       (lambda () (test-parseutil next-token-of "anmb-runge" #[\w])))
 (test "next-token-of" '("rnge!rg0#$@" #\space)
       (lambda () (test-parseutil next-token-of "rnge!rg0#$@ bag" #[\S])))
+(test "next-token-of" '("xxx" #\d)
+      (lambda () (test-parseutil next-token-of "xxxd"
+                                 (lambda (x) (eqv? x #\x)))))
+(test "next-token-of" '("xxxx" eof)
+      (lambda () (test-parseutil next-token-of "xxxx"
+                                 (lambda (x) (eqv? x #\x)))))
 
 (test "read-string" '("aaaa" #\a)
       (lambda () (test-parseutil read-string "aaaaa" 4)))
