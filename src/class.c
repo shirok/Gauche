@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.98 2003-10-26 00:26:06 shirok Exp $
+ *  $Id: class.c,v 1.99 2003-11-11 09:35:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -54,7 +54,11 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
-static void initialize_builtin_cpl(ScmClass *klass);
+static void   initialize_builtin_cpl(ScmClass *klass);
+
+static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old);
+static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
+                                      ScmObj val);
 
 static int object_compare(ScmObj x, ScmObj y, int equalp);
 
@@ -99,7 +103,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_BoolClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UnknownClass, NULL);
 
-SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmObj,
+SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmInstance,
                       NULL, NULL, NULL, object_allocate,
                       SCM_CLASS_DEFAULT_CPL);
 
@@ -140,12 +144,15 @@ SCM_DEFINE_GENERIC(Scm_GenericApplyGeneric, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericMethodMoreSpecificP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericSlotRefUsingClass, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericSlotSetUsingClass, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectHash, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectSetter, Scm_InvalidApply, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericChangeClass, Scm_NoNextMethod, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation     = SCM_FALSE;
@@ -362,6 +369,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
+    instance->coreSize = sizeof(ScmInstance);
     instance->flags = SCM_CLASS_SCHEME;
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
@@ -372,7 +380,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->directSubclasses = SCM_NIL;
     instance->directMethods = SCM_NIL;
     instance->initargs = SCM_NIL;
-    instance->module = SCM_FALSE;
+    instance->modules = SCM_NIL;
     instance->redefined = SCM_FALSE;
     (void)SCM_INTERNAL_MUTEX_INIT(instance->mutex);
     (void)SCM_INTERNAL_COND_INIT(instance->cv);
@@ -427,7 +435,7 @@ static SCM_DEFINE_METHOD(class_compute_cpl_rec, &Scm_GenericComputeCPL,
                          class_compute_cpl, NULL);
 
 /*
- * Get class
+ * (class-of obj)
  */
 
 ScmClass *Scm_ClassOf(ScmObj obj)
@@ -441,6 +449,62 @@ ScmClass *Scm_ClassOf(ScmObj obj)
     } else {
         return SCM_CLASS_OF(obj);
     }
+}
+
+/* Returns the pointer of the first base class found in the given
+   class's CPA.  If the class is pure abstract or builtin, NULL is
+   returned. */
+ScmClass *Scm_BaseClassOf(ScmClass *klass)
+{
+    ScmClass **cp = klass->cpa;
+    ScmClass *k;
+    while ((k = *cp++) != NULL) {
+        if (SCM_CLASS_CATEGORY(k) == SCM_CLASS_BASE) {
+            return k;
+        }
+    }
+    return NULL;
+}
+
+/*
+ * (class-of obj class)
+ *   - if obj's class is redefined, first updates obj.
+ */
+ScmObj class_of_cc(ScmObj result, void **data)
+{
+    return Scm_VMClassOf(result);
+}
+
+ScmObj Scm_VMClassOf(ScmObj obj)
+{
+    ScmClass *k = Scm_ClassOf(obj);
+    if (!SCM_FALSEP(k->redefined)) {
+        Scm_VMPushCC(class_of_cc, NULL, 0);
+        return instance_class_redefinition(obj, k);
+    }
+    return SCM_OBJ(k);
+}
+
+/*
+ * (is-a? obj class)
+ *   - if obj's class is redefined, first updates obj.
+ */
+ScmObj is_a_cc(ScmObj result, void **data)
+{
+    return Scm_VMIsA(SCM_OBJ(data[0]), SCM_CLASS(data[1]));
+}
+
+ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass)
+{
+    ScmClass *k = Scm_ClassOf(obj);
+    if (!SCM_FALSEP(k->redefined)) {
+        void *data[2];
+        data[0] = obj;
+        data[1] = klass;
+        Scm_VMPushCC(is_a_cc, data, 2);
+        return instance_class_redefinition(obj, k);
+    }
+    return SCM_MAKE_BOOL(Scm_TypeP(obj, klass));
 }
 
 /*--------------------------------------------------------------
@@ -605,6 +669,24 @@ static void class_initargs_set(ScmClass *klass, ScmObj val)
         Scm_Error("class-initargs must be a list of even number of elements, but got %S", val);
     }
     klass->initargs = val;
+}
+
+static ScmObj class_defined_modules(ScmClass *klass)
+{
+    return klass->modules;
+}
+
+static void class_defined_modules_set(ScmClass *klass, ScmObj val)
+{
+    ScmObj cp;
+    SCM_FOR_EACH(cp, val) {
+        if (!SCM_MODULEP(SCM_CAR(cp))) goto err;
+    }
+    if (!SCM_NULLP(cp)) goto err;
+    klass->modules = val;
+    return;
+  err:
+    Scm_Error("list of modules required, bot got %S", val);
 }
 
 /* 
@@ -874,11 +956,14 @@ int Scm_CheckClassBinding(ScmObj name, ScmModule *module)
    binding, replace it to newklass. */
 void Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newklass)
 {
-    if (!SCM_MODULEP(klass->module)) return;
+    ScmObj cp;
     if (!SCM_SYMBOLP(klass->name)) return;
-    Scm_Define(SCM_MODULE(klass->module),
-               SCM_SYMBOL(klass->name),
-               SCM_OBJ(newklass));
+    SCM_FOR_EACH(cp, klass->modules) {
+        if (!SCM_MODULEP(SCM_CAR(cp))) continue;
+        Scm_Define(SCM_MODULE(SCM_CAR(cp)),
+                   SCM_SYMBOL(klass->name),
+                   SCM_OBJ(newklass));
+    }
 }
 
 /* %add-direct-subclass! super sub */
@@ -902,7 +987,7 @@ void Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub)
     if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
         (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
         super->directSubclasses =
-            Scm_DeleteX(super->directSubclasses, SCM_OBJ(sub), SCM_CMP_EQ);
+            Scm_DeleteX(SCM_OBJ(sub), super->directSubclasses, SCM_CMP_EQ);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
     }
 }
@@ -928,9 +1013,53 @@ void Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m)
     if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
         (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
         super->directMethods =
-            Scm_DeleteX(super->directMethods, SCM_OBJ(m), SCM_CMP_EQ);
+            Scm_DeleteX(SCM_OBJ(m), super->directMethods, SCM_CMP_EQ);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
     }
+}
+
+/* %transplant-instance! src dst */
+/* Copies the contents of the core structure pointed by src over
+   the contents of dst.  The contents of dst is destroyed.  This
+   astonishingly dangerous operation has to be done at the last stage
+   of change-class, in order to keep the identity of the instance
+   being updated.
+
+   Note that this procedure doesn't overwrite the Scheme slot
+   vectors. */
+void Scm_TransplantInstance(ScmObj src, ScmObj dst)
+{
+    ScmClass *srcklass = Scm_ClassOf(src);
+    ScmClass *dstklass = Scm_ClassOf(dst);
+    ScmClass *base;
+    int i;
+    size_t size;
+    void *buf;
+
+    /* Extra check.  We can't transplant the contents to different
+       an instance that has different base class. */
+    if ((base = Scm_BaseClassOf(srcklass)) == NULL
+        || !SCM_EQ(base, Scm_BaseClassOf(dstklass))) {
+        Scm_Error("%%transplant-instance: classes are incompatible between %S and %S",
+                  src, dst);
+    }
+    if (base->coreSize < sizeof(ScmInstance)) {
+        Scm_Error("%%transplant-instance: baseclass is too small (implementation error?)");
+    }
+    memcpy(dst, src, base->coreSize);
+}
+
+/* update-instance! obj 
+ * If obj's class is redefined, update obj.  Otherwise it does nothing.
+ * Handy to ensure obj is in the newest state.  Returns obj.
+ */
+ScmObj Scm_UpdateInstance(ScmObj obj)
+{
+    ScmClass *klass = Scm_ClassOf(obj);
+    if (!SCM_FALSEP(klass->redefined)) {
+        return instance_class_redefinition(obj, klass);
+    }
+    return obj;
 }
 
 /*=====================================================================
@@ -950,9 +1079,13 @@ void Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m)
 
 /* A common routine to be used to allocate object that is possibly
    be subclassed by Scheme.  Coresize should be a size of base C structure
-   in bytes.  Klass may be a subclass.  This routine allocates extra
-   bytes than coresize to store Scheme-defined slots, and initializes
-   them with SCM_UNBOUND. */
+   in bytes.  Klass may be a subclass.  This routine allocates core
+   structure and slots vector, and initializes the slots vector with
+   with SCM_UNBOUND.
+   We don't care class redefinition at this point.  If the class is
+   redefined simultaneously, it will be handled by the subsequent initialize
+   method.
+*/
 ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
 {
     int i, offset_words = (coresize+sizeof(ScmObj)-1)/sizeof(ScmObj);
@@ -966,6 +1099,24 @@ ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
     return obj;
 }
 
+/* Invoke class redefinition method */
+static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old)
+{
+    ScmObj new;
+    (void)SCM_INTERNAL_MUTEX_LOCK(old->mutex);
+    while (!SCM_ISA(old->redefined, SCM_CLASS_CLASS)) {
+        (void)SCM_INTERNAL_COND_WAIT(old->cv, old->mutex);
+    }
+    new = old->redefined;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(old->mutex);
+    if (SCM_CLASSP(new)) {
+        return Scm_VMApply2(SCM_OBJ(&Scm_GenericChangeClass), obj, new);
+    } else {
+        return SCM_OBJ(old);
+    }
+}
+
+/* most primitive internal accessor */
 static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
 {
     ScmClass *k = SCM_CLASS_OF(obj);
@@ -982,7 +1133,10 @@ static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
     SCM_INSTANCE_SLOTS(obj)[number] = val;
 }
 
-/* These two are exposed to Scheme to do some nasty things. */
+/* These two are exposed to Scheme to do some nasty things.
+   We shoudn't do class redefinition check here, since the slot number
+   is calculated based on the old class, if the class is ever redefined.
+*/
 ScmObj Scm_InstanceSlotRef(ScmObj obj, int number)
 {
     return scheme_slot_ref(obj, number);
@@ -993,34 +1147,39 @@ void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val)
     scheme_slot_set(obj, number, val);
 }
 
-/* initialize slot according to its accessor spec */
+/* Initialize a slot according to its accessor spec
+   TODO: class redefintion check
+*/
 static ScmObj slot_initialize_cc(ScmObj result, void **data)
 {
     ScmObj obj = data[0];
-    ScmObj slot = data[1];
-    return Scm_VMSlotSet(obj, slot, result);
+    ScmSlotAccessor *sa = SCM_SLOT_ACCESSOR(data[1]);
+    return slot_set_using_accessor(obj, sa, result);
 }
 
-static ScmObj slot_initialize(ScmObj obj, ScmObj acc, ScmObj initargs)
+ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
+                                         ScmSlotAccessor *sa,
+                                         ScmObj initargs)
 {
-    ScmObj slot = SCM_CAR(acc);
-    ScmSlotAccessor *ca = SCM_SLOT_ACCESSOR(SCM_CDR(acc));
+    ScmObj slot = sa->name;
     /* (1) see if we have init-keyword */
-    if (SCM_KEYWORDP(ca->initKeyword)) {
-        ScmObj v = Scm_GetKeyword(ca->initKeyword, initargs, SCM_UNDEFINED);
-        if (!SCM_UNDEFINEDP(v)) return Scm_VMSlotSet(obj, slot, v);
-        v = SCM_UNBOUND;
+    if (SCM_KEYWORDP(sa->initKeyword)) {
+        ScmObj v = Scm_GetKeyword(sa->initKeyword, initargs, SCM_UNDEFINED);
+        if (!SCM_UNDEFINEDP(v)) {
+            return slot_set_using_accessor(obj, sa, v);
+        }
     }
     /* (2) use init-value or init-thunk, if this slot is initializable. */
-    if (ca->initializable) {
-        if (!SCM_UNBOUNDP(ca->initValue))
-            return Scm_VMSlotSet(obj, slot, ca->initValue);
-        if (SCM_PROCEDUREP(ca->initThunk)) {
+    if (sa->initializable) {
+        if (!SCM_UNBOUNDP(sa->initValue)) {
+            return slot_set_using_accessor(obj, sa, sa->initValue);
+        }
+        if (SCM_PROCEDUREP(sa->initThunk)) {
             void *data[2];
             data[0] = (void*)obj;
-            data[1] = (void*)slot;
+            data[1] = (void*)sa;
             Scm_VMPushCC(slot_initialize_cc, data, 2);
-            return Scm_VMApply(ca->initThunk, SCM_NIL);
+            return Scm_VMApply(sa->initThunk, SCM_NIL);
         }
     }
     return SCM_UNDEFINED;
@@ -1028,6 +1187,26 @@ static ScmObj slot_initialize(ScmObj obj, ScmObj acc, ScmObj initargs)
 
 /*-------------------------------------------------------------------
  * slot-ref, slot-set! and families
+ */
+
+/* helper macros */
+#define SLOT_UNBOUND(klass, obj, slot)                  \
+    Scm_VMApply(SCM_OBJ(&Scm_GenericSlotUnbound),       \
+                SCM_LIST3(SCM_OBJ(klass), obj, slot))
+
+#define SLOT_MISSING3(klass, obj, slot)                 \
+    Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),       \
+                SCM_LIST3(SCM_OBJ(klass), obj, slot))
+
+#define SLOT_MISSING4(klass, obj, slot, val)            \
+    Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),       \
+                SCM_LIST4(SCM_OBJ(klass), obj, slot, val))
+
+/* GET-SLOT-ACCESSOR
+ *
+ * (define (get-slot-accessor class slot)
+ *   (cond ((assq slot (ref class 'accessors)) => cdr)
+ *         (else (error !!!))))
  */
 inline ScmSlotAccessor *Scm_GetSlotAccessor(ScmClass *klass, ScmObj slot)
 {
@@ -1039,11 +1218,12 @@ inline ScmSlotAccessor *Scm_GetSlotAccessor(ScmClass *klass, ScmObj slot)
     return SCM_SLOT_ACCESSOR(SCM_CDR(p));
 }
 
-#define SLOT_UNBOUND(klass, obj, slot)                  \
-    Scm_VMApply(SCM_OBJ(&Scm_GenericSlotUnbound),       \
-                SCM_LIST3(SCM_OBJ(klass), obj, slot))
-
-static ScmObj slot_ref_cc(ScmObj result, void **data)
+/* (internal) slot-ref-using-accessor
+ *
+ * - assumes accessor belongs to the proper class.
+ * - no class redefinition check is done
+ */
+static ScmObj slot_ref_using_accessor_cc(ScmObj result, void **data)
 {
     ScmObj obj = data[0];
     ScmObj slot = data[1];
@@ -1062,115 +1242,337 @@ static ScmObj slot_ref_cc(ScmObj result, void **data)
     }
 }
 
-/* assumes accessor belongs to the proper class */
 static ScmObj slot_ref_using_accessor(ScmObj obj,
-                                      ScmSlotAccessor *ca,
+                                      ScmSlotAccessor *sa,
                                       int boundp)
 {
     ScmObj val = SCM_UNBOUND;
-    if (ca->getter) {
-        val = ca->getter(obj);
-    } else if (ca->slotNumber >= 0) {
-        val = scheme_slot_ref(obj, ca->slotNumber);
-    } else if (SCM_PAIRP(ca->schemeAccessor)
-               && SCM_PROCEDUREP(SCM_CAR(ca->schemeAccessor))) {
+    if (sa->getter) {
+        val = sa->getter(obj);
+    } else if (sa->slotNumber >= 0) {
+        val = scheme_slot_ref(obj, sa->slotNumber);
+    } else if (SCM_PAIRP(sa->schemeAccessor)
+               && SCM_PROCEDUREP(SCM_CAR(sa->schemeAccessor))) {
         void *data[3];
         data[0] = obj;
-        data[1] = ca->name;
+        data[1] = sa->name;
         data[2] = (void*)(long)boundp;
-        Scm_VMPushCC(slot_ref_cc, data, 3);
-        return Scm_VMApply(SCM_CAR(ca->schemeAccessor), SCM_LIST1(obj));
+        Scm_VMPushCC(slot_ref_using_accessor_cc, data, 3);
+        return Scm_VMApply(SCM_CAR(sa->schemeAccessor), SCM_LIST1(obj));
     } else {
         Scm_Error("don't know how to retrieve value of slot %S of object %S (MOP error?)",
-                  ca->name, obj);
+                  sa->name, obj);
     }
     if (boundp) {
         return SCM_MAKE_BOOL(!(SCM_UNBOUNDP(val) || SCM_UNDEFINEDP(val)));
     } else {
         if (SCM_UNBOUNDP(val) || SCM_UNDEFINEDP(val)) {
-            return SLOT_UNBOUND(Scm_ClassOf(obj), obj, ca->name);
+            return SLOT_UNBOUND(Scm_ClassOf(obj), obj, sa->name);
         } else {
             return val;
         }
     }
 }
 
+/* SLOT-REF
+ *
+ *(define (slot-ref obj slot bound-check?)
+ *   (%check-class-redefined (class-of obj))
+ *   (let ((sa (get-slot-accessor (class-of obj) slot)))
+ *     (if sa
+ *         (%internal-slot-ref-using-accessor obj sa bound-check?)
+ *         (slot-missing (class-of obj) obj slot))))
+ */
+static ScmObj slot_ref_cc(ScmObj result, void **data)
+{
+    return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (int)data[2]);
+}
+
 ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
-    if (ca == NULL) {
-        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
-                           SCM_LIST3(SCM_OBJ(klass), obj, slot));
+    ScmSlotAccessor *sa;
+    void *data[3];
+
+    if (!SCM_FALSEP(klass->redefined)) {
+        data[0] = obj;
+        data[1] = slot;
+        data[2] = (void*)boundp;
+        Scm_VMPushCC(slot_ref_cc, data, 3);
+        return instance_class_redefinition(obj, klass);
     }
-    return slot_ref_using_accessor(obj, ca, boundp);
+    sa = Scm_GetSlotAccessor(klass, slot);
+    if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
+    else            return slot_ref_using_accessor(obj, sa, boundp);
 }
 
-ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj, ScmSlotAccessor *ca, int boundp)
+/* SLOT-REF-USING-ACCESSOR
+ *
+ * (define (slot-ref-using-accessor obj sa bound-check?)
+ *   (%check-if-sa-is-valid-for-object obj sa)
+ *   (%internal-slot-ref-using-accessor obj sa bound-check?))
+ *
+ * - no class redefinition check is performed.  if obj isn't updated
+ *   for the new class, sa must come from the old class.
+ */
+#if 0
+static ScmObj slot_ref_using_accessor_cc1(ScmObj result, void **data)
+{
+    return Scm_VMSlotRefUsingAccessor(SCM_OBJ(data[0]),
+                                      SCM_SLOT_ACCESSOR(data[1]),
+                                      (int)data[2]);
+}
+#endif
+
+ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, int boundp)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    if (klass != ca->klass) {
+    void *data[3];
+    if (klass != sa->klass) {
         Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
-                  SCM_OBJ(ca), obj);
+                  SCM_OBJ(sa), obj);
     }
-    return slot_ref_using_accessor(obj, ca, boundp);
+#if 0
+    if (!SCM_FALSEP(klass->redefined)) {
+        data[0] = obj;
+        data[1] = sa;
+        data[2] = (void*)boundp;
+        Scm_VMPushCC(slot_ref_using_accessor_cc1, data, 3);
+        return instance_class_redefinition(obj, klass);
+    }
+#endif
+    return slot_ref_using_accessor(obj, sa, boundp);
 }
 
+/* SLOT-REF-USING-CLASS
+ *
+ * (define-method slot-ref-using-class
+ *      ((class <class>) (obj <object>) slot)
+ *   (unless (eq? (class-of obj) class) (error !!!))
+ *   (let ((sa (get-slot-accessor class slot)))
+ *     (if sa
+ *         (%internal-slot-ref-using-accessor obj sa #f)
+ *         (slot-missing class obj slot))))
+ *
+ * - no class redefinition check is performed.  if obj isn't updated,
+ *   and class is an old class, then it can access to the old instance's
+ *   slot value.
+ */
+static ScmObj slot_ref_using_class(ScmNextMethod *nm, ScmObj *args,
+                                   int nargs, void *d)
+{
+    ScmClass *klass = SCM_CLASS(args[0]);
+    ScmObj obj = args[1];
+    ScmObj slot = args[2];
+    ScmSlotAccessor *sa;
+    
+    if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
+        Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
+    }
+    sa = Scm_GetSlotAccessor(klass, slot);
+    if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
+    else            return slot_ref_using_accessor(obj, sa, FALSE);
+}
 
-/* assumes accessor belongs to the proper class */
+static ScmClass *slot_ref_using_class_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass),
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass)
+};
+static SCM_DEFINE_METHOD(slot_ref_using_class_rec,
+                         &Scm_GenericSlotRefUsingClass,
+                         3, 0, slot_ref_using_class_SPEC,
+                         slot_ref_using_class, NULL);
+
+/* (internal) SLOT-REF-USING-ACCESSOR
+ *
+ * - assumes accessor belongs to the proper class.
+ * - no class redefinition check is done
+ */
 ScmObj slot_set_using_accessor(ScmObj obj,
-                               ScmSlotAccessor *ca,
+                               ScmSlotAccessor *sa,
                                ScmObj val)
 {
-    if (ca->setter) {
-        ca->setter(obj, val);
-    } else if (ca->slotNumber >= 0) {
-        scheme_slot_set(obj, ca->slotNumber, val);
-    } else if (SCM_PAIRP(ca->schemeAccessor)
-               && SCM_PROCEDUREP(SCM_CDR(ca->schemeAccessor))) {
-        return Scm_VMApply(SCM_CDR(ca->schemeAccessor), SCM_LIST2(obj, val));
+    if (sa->setter) {
+        sa->setter(obj, val);
+    } else if (sa->slotNumber >= 0) {
+        scheme_slot_set(obj, sa->slotNumber, val);
+    } else if (SCM_PAIRP(sa->schemeAccessor)
+               && SCM_PROCEDUREP(SCM_CDR(sa->schemeAccessor))) {
+        return Scm_VMApply(SCM_CDR(sa->schemeAccessor), SCM_LIST2(obj, val));
     } else {
-        Scm_Error("slot %S of class %S is read-only", ca->name,
+        Scm_Error("slot %S of class %S is read-only", sa->name,
                   SCM_OBJ(Scm_ClassOf(obj)));
     }
     return SCM_UNDEFINED;
 }
 
+/* SLOT-SET!
+ *
+ * (define (slot-set! obj slot val)
+ *   (%check-class-redefined (class-of obj))
+ *   (let ((sa (get-slot-accessor (class-of obj) slot)))
+ *     (if sa
+ *         (%internal-slot-set-using-accessor obj sa val)
+ *         (slot-missing (class-of obj) obj slot val))))
+ */
+static ScmObj slot_set_cc(ScmObj result, void **data)
+{
+    return Scm_VMSlotSet(SCM_OBJ(data[0]), SCM_OBJ(data[1]), SCM_OBJ(data[2]));
+}
+
 ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
-    if (ca == NULL) {
-        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
-                           SCM_LIST4(SCM_OBJ(klass), obj, slot, val));
+    ScmSlotAccessor *sa;
+    void *data[3];
+    if (!SCM_FALSEP(klass->redefined)) {
+        data[0] = obj;
+        data[1] = slot;
+        data[2] = val;
+        Scm_VMPushCC(slot_set_cc, data, 3);
+        return instance_class_redefinition(obj, klass);
     }
-    return slot_set_using_accessor(obj, ca, val);
+    sa = Scm_GetSlotAccessor(klass, slot);
+    if (sa == NULL) SLOT_MISSING4(klass, obj, slot, val);
+    return          slot_set_using_accessor(obj, sa, val);
 }
 
-ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj, ScmSlotAccessor *ca, ScmObj val)
+/* SLOT-SET-USING-ACCESSOR
+ *
+ * (define (slot-set-using-accessor obj sa val)
+ *   (%check-if-sa-is-valid-for-object obj sa)
+ *   (%internal-slot-set-using-accessor obj sa val))
+ *
+ * - no class redefinition check is performed.  if obj isn't updated
+ *   for the new class, sa must come from the old class.
+ */
+#if 0
+static ScmObj slot_set_using_accessor_cc(ScmObj result, void **data)
+{
+    return Scm_VMSlotSetUsingAccessor(SCM_OBJ(data[0]),
+                                      SCM_SLOT_ACCESSOR(data[1]),
+                                      SCM_OBJ(data[2]));
+}
+#endif
+
+ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, ScmObj val)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    if (klass != ca->klass) {
+    void *data[3];
+    if (klass != sa->klass) {
         Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
-                  SCM_OBJ(ca), obj);
+                  SCM_OBJ(sa), obj);
     }
-    return slot_set_using_accessor(obj, ca, val);
+#if 0
+    if (!SCM_FALSEP(klass->redefined)) {
+        data[0] = obj;
+        data[1] = sa;
+        data[2] = val;
+        Scm_VMPushCC(slot_set_using_accessor_cc, data, 3);
+        return instance_class_redefinition(obj, klass);
+    }
+#endif
+    return slot_set_using_accessor(obj, sa, val);
 }
 
-/* slot-bound?
- *   (define (slot-bound? obj slot)
- *      (slot-bound-using-class (class-of obj) obj slot))
+/* SLOT-SET-USING-CLASS
+ *
+ * (define-method slot-set-using-class
+ *      ((class <class>) (obj <object>) slot val)
+ *   (unless (eq? (class-of obj) class) (error !!!))
+ *   (let ((sa (get-slot-accessor class slot)))
+ *     (if sa
+ *         (%internal-slot-set-using-accessor obj sa val)
+ *         (slot-missing class obj slot val))))
+ *
+ * - no class redefinition check is performed.  if obj isn't updated,
+ *   and class is an old class, then it can access to the old instance's
+ *   slot value.
  */
+static ScmObj slot_set_using_class(ScmNextMethod *nm, ScmObj *args,
+                                   int nargs, void *d)
+{
+    ScmClass *klass = SCM_CLASS(args[0]);
+    ScmObj obj = args[1];
+    ScmObj slot = args[2];
+    ScmObj val = args[3];
+    ScmSlotAccessor *sa;
+    
+    if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
+        Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
+    }
+    sa = Scm_GetSlotAccessor(klass, slot);
+    if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
+    else            return slot_set_using_accessor(obj, sa, val);
+}
+
+static ScmClass *slot_set_using_class_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass),
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass)
+};
+static SCM_DEFINE_METHOD(slot_set_using_class_rec,
+                         &Scm_GenericSlotSetUsingClass,
+                         4, 0, slot_set_using_class_SPEC,
+                         slot_set_using_class, NULL);
+
+/* SLOT-BOUND?
+ *
+ * (define (slot-bound? obj slot)
+ *   (%check-class-redefined (class-of obj))
+ *   (slot-bound-using-class (class-of obj) obj slot))
+ */
+static ScmObj slot_boundp_cc(ScmObj result, void **data)
+{
+    ScmObj obj = SCM_OBJ(data[0]);
+    ScmObj slot = SCM_OBJ(data[1]);
+    return Scm_VMSlotBoundP(obj, slot);
+}
+
 ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot)
 {
+    ScmClass *klass = Scm_ClassOf(obj);
+    void *data[2];
+    
+    if (!SCM_FALSEP(klass->redefined)) {
+        data[0] = obj;
+        data[1] = slot;
+        Scm_VMPushCC(slot_boundp_cc, data, 2);
+        return instance_class_redefinition(obj, Scm_ClassOf(obj));
+    }
     return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotBoundUsingClassP),
-                       SCM_LIST3(SCM_OBJ(Scm_ClassOf(obj)), obj, slot));
+                       SCM_LIST3(SCM_OBJ(klass), obj, slot));
 }
 
+/* SLOT-BOUND-USING-CLASS?
+ *
+ * (define-method slot-bound-using-class? ((class <class>)
+ *                                         (obj <obj>)
+ *                                         slot)
+ *   (unless (eq? class (class-of obj)) (error !!!))
+ *   (let ((sa (get-slot-accessor class slot)))
+ *     (if sa
+ *         (%internal-slot-ref-using-accessor obj sa #t)
+ *         (slot-missing class obj slot)))
+ *
+ * - no redefinition check!
+ */
 static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *args,
                                        int nargs, void *data)
 {
-    return Scm_VMSlotRef(args[1], args[2], TRUE);
+    ScmClass *klass = SCM_CLASS(args[0]);
+    ScmObj obj = args[1];
+    ScmObj slot = args[2];
+    ScmSlotAccessor *sa;
+
+    if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
+        Scm_Error("slot-bound-using-class?: class %S is not the class of object %S", klass, obj);
+    }
+    sa = Scm_GetSlotAccessor(klass, slot);
+    if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
+    else            return slot_ref_using_accessor(obj, sa, TRUE);
 }
 
 static ScmClass *slot_bound_using_class_p_SPEC[] = {
@@ -1351,18 +1753,29 @@ static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
 }
 
 /* (initialize <object> initargs) */
+static ScmObj object_initialize_cc(ScmObj result, void **data);
+
+static ScmObj object_initialize1(ScmObj obj, ScmObj accs, ScmObj initargs)
+{
+    void *next[3];
+    if (SCM_NULLP(accs)) return obj;
+    SCM_ASSERT(SCM_PAIRP(SCM_CAR(accs))
+               && SCM_SLOT_ACCESSOR_P(SCM_CDAR(accs)));
+    next[0] = obj;
+    next[1] = SCM_CDR(accs);
+    next[2] = initargs;
+    Scm_VMPushCC(object_initialize_cc, next, 3);
+    return Scm_VMSlotInitializeUsingAccessor(obj,
+                                             SCM_SLOT_ACCESSOR(SCM_CDAR(accs)),
+                                             initargs);
+}
+
 static ScmObj object_initialize_cc(ScmObj result, void **data)
 {
     ScmObj obj = SCM_OBJ(data[0]);
     ScmObj accs = SCM_OBJ(data[1]);
     ScmObj initargs = SCM_OBJ(data[2]);
-    void *next[3];
-    if (SCM_NULLP(accs)) return obj;
-    next[0] = obj;
-    next[1] = SCM_CDR(accs);
-    next[2] = initargs;
-    Scm_VMPushCC(object_initialize_cc, next, 3);
-    return slot_initialize(obj, SCM_CAR(accs), initargs);
+    return object_initialize1(obj, accs, initargs);
 }
 
 static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
@@ -1373,11 +1786,7 @@ static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     ScmObj accs = Scm_ClassOf(obj)->accessors;
     void *next[3];
     if (SCM_NULLP(accs)) return obj;
-    next[0] = obj;
-    next[1] = SCM_CDR(accs);
-    next[2] = initargs;
-    Scm_VMPushCC(object_initialize_cc, next, 3);
-    return slot_initialize(obj, SCM_CAR(accs), initargs);
+    return object_initialize1(obj, accs, initargs);
 }
 
 static ScmClass *object_initialize_SPEC[] = {
@@ -2089,6 +2498,7 @@ static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("direct-subclasses", class_direct_subclasses, NULL),
     SCM_CLASS_SLOT_SPEC("direct-methods", class_direct_methods, NULL),
     SCM_CLASS_SLOT_SPEC("initargs", class_initargs, class_initargs_set),
+    SCM_CLASS_SLOT_SPEC("defined-modules", class_defined_modules, class_defined_modules_set),
     SCM_CLASS_SLOT_SPEC("redefined", class_redefined, NULL),
     SCM_CLASS_SLOT_SPEC("category", class_category, NULL),
     { NULL }
@@ -2381,12 +2791,15 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericApplyGeneric, "apply-generic");
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
+    GINIT(&Scm_GenericSlotRefUsingClass, "slot-ref-using-class");
+    GINIT(&Scm_GenericSlotSetUsingClass, "slot-set-using-class!");
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
     GINIT(&Scm_GenericObjectEqualP, "object-equal?");
     GINIT(&Scm_GenericObjectCompare, "object-compare");
     GINIT(&Scm_GenericObjectHash, "object-hash");
     GINIT(&Scm_GenericObjectApply, "object-apply");
     GINIT(&Scm_GenericObjectSetter, "setter of object-apply");
+    GINIT(&Scm_GenericChangeClass, "change-class");
 
     Scm_SetterSet(SCM_PROCEDURE(&Scm_GenericObjectApply),
                   SCM_PROCEDURE(&Scm_GenericObjectSetter),
@@ -2394,6 +2807,8 @@ void Scm__InitClass(void)
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);
+    Scm_InitBuiltinMethod(&slot_ref_using_class_rec);
+    Scm_InitBuiltinMethod(&slot_set_using_class_rec);
     Scm_InitBuiltinMethod(&slot_bound_using_class_p_rec);
     Scm_InitBuiltinMethod(&object_initialize_rec);
     Scm_InitBuiltinMethod(&generic_initialize_rec);
@@ -2401,6 +2816,7 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&method_initialize_rec);
     Scm_InitBuiltinMethod(&accessor_method_initialize_rec);
     Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
+    Scm_InitBuiltinMethod(&generic_updatedirectmethod_rec);
     Scm_InitBuiltinMethod(&method_more_specific_p_rec);
     Scm_InitBuiltinMethod(&object_equalp_rec);
     Scm_InitBuiltinMethod(&object_compare_rec);

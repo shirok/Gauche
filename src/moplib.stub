@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.20 2003-10-26 00:26:06 shirok Exp $
+;;; $Id: moplib.stub,v 1.21 2003-11-11 09:35:31 shirok Exp $
 ;;;
 
 "
@@ -100,18 +100,23 @@
 (define-cproc %delete-direct-method! (super::<class> m::<method>)
   (return <void> "Scm_DeleteDirectMethod"))
 
+(define-cproc %transplant-instance! (src dst)
+  (return <void> "Scm_TransplantInstance"))
+
 ;;
 ;; Public interface
 ;;
 
 (define-cproc class-of (obj)
-  "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+  (return "Scm_VMClassOf"))
 
-(define-cproc is-a? (obj klass)
-  "if (!Scm_TypeP(klass, SCM_CLASS_CLASS)) {
-    Scm_Error(\"class required, but got %S\", klass);
-  }
-  SCM_RETURN(SCM_MAKE_BOOL(Scm_TypeP(obj, SCM_CLASS(klass))));")
+;; current-class-of doesn't updates OBJ, and returns possibly the old class
+;; which has been redefined.  Should onlyl used in class redefinition routines.
+(define-cproc current-class-of (obj)
+  "SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+
+(define-cproc is-a? (obj klass::<class>)
+  (return "Scm_VMIsA"))
 
 (define-cproc slot-ref (obj slot)
   (inliner "SCM_VM_SLOT_REF")
@@ -128,14 +133,21 @@
 (define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
   "  SCM_RETURN(Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE));")
 
-(define-cproc slot-set-using-accessor (obj accessor::<slot-accessor> value)
+(define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
   (return "Scm_VMSlotSetUsingAccessor"))
+
+(define-cproc slot-initialize-using-accessor! (obj accessor::<slot-accessor>
+                                                  initargs)
+  (return "Scm_VMSlotInitializeUsingAccessor"))
 
 (define-cproc instance-slot-ref (obj num::<fixnum>)
   (return "Scm_InstanceSlotRef"))
 
 (define-cproc instance-slot-set (obj num::<fixnum> value)
   (return <void> "Scm_InstanceSlotSet"))
+
+(define-cproc update-instance! (obj)
+  (return "Scm_UpdateInstance"))
 
 ;; Local variables:
 ;; mode: scheme

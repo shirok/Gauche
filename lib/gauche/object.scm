@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.45 2003-10-26 00:26:06 shirok Exp $
+;;;  $Id: object.scm,v 1.46 2003-11-11 09:35:31 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -144,9 +144,10 @@
                        :name ',name
                        :supers (list ,@supers)
                        :slots (list ,@slot-defs)
+                       :defined-modules (list (current-module))
                        ,@options)))
-         ;(when (%check-class-binding ',name (current-module))
-         ;  (redefine-class! ,name ,class))
+         (when (%check-class-binding ',name (current-module))
+           (redefine-class! ,name ,class))
          (for-each (lambda (,slot)
                      (,%make-accessor ,class ,slot (current-module)))
                    (class-slots ,class))
@@ -430,7 +431,7 @@
   (for-each (lambda (m)
               (if (is-a? m <accessor-method>)
                 (delete-method! (slot-ref m 'generic) m)
-                (update-direct-method m old new)))
+                (update-direct-method! m old new)))
             (class-direct-methods old))
   (for-each (lambda (sup) (%delete-direct-subclass! sup old))
             (class-direct-supers old))
@@ -454,21 +455,39 @@
             (else
              (loop (cddr args) (list* (cadr args) (car args) r))))))
 
-  (let* ((initargs (class-initargs initargs))
+  (let* ((initargs (slot-ref sub 'initargs))
          (supers   (new-supers (class-direct-supers sub)))
-         ;; NB: this isn't correct!
+         ;; NB: this isn't really correct!
          (metaclass (or (get-keyword :metaclass initargs #f)
                         (%get-default-metaclass supers)))
          (new-sub  (apply make metaclass
                           (fix-initargs initargs supers metaclass))))
     (redefine-class! sub new-sub)
+    ;; Trick: redefine-class! above removes subclass form original
+    ;; superclass's direct-subclass list, but we want to keep it.
+    ;; so we add to it again.  We can't do this within class-redefinition,
+    ;; for we don't know if it is called on the top of redefinition
+    ;; or in the subclasses' redefinition.
+    (for-each (lambda (sup) (%add-direct-subclass! sup sub))
+              (class-direct-supers sub))
+    ;; If the subclass has global bindings, replace them.
     (%replace-class-binding! sub new-sub)))
-  
-(define-method change-class ((instance <object>)
-                             (old <class>)
-                             (new <class>))
-  ;; to be written
-  old)
+
+;; Change class.  Be very careful not to invoke updating obj recursively!
+(define-method change-class ((obj <object>)
+                             (new-class <class>))
+  (let ((old-class (current-class-of obj))
+        (new       (allocate-instance new-class '())))
+    (for-each (lambda (slot)
+                (if (and (slot-exists-using-class? old-class obj slot)
+                         (slot-bound-using-class? old-class obj slot))
+                  (let ((val (slot-ref-using-class old-class obj slot)))
+                    (slot-set-using-class! new-class new slot val))
+                  (let ((acc (class-slot-accessor new-class slot)))
+                    (slot-initialize-using-accessor! new acc '()))))
+              (map slot-definition-name (class-slots new-class)))
+    (%transplant-instance! new obj)
+    obj))
 
 ;;----------------------------------------------------------------
 ;; Method Application

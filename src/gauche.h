@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.348 2003-10-26 00:26:06 shirok Exp $
+ *  $Id: gauche.h,v 1.349 2003-11-11 09:35:31 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -428,8 +428,9 @@ struct ScmClassRec {
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
     ScmClass **cpa;             /* class precedence array, NULL terminated */
-    short numInstanceSlots;     /* # of instance slots */
-    unsigned char flags;
+    int numInstanceSlots;       /* # of instance slots */
+    int coreSize;               /* size of core structure; 0 == unknown */
+    unsigned int flags;
     ScmObj name;                /* scheme name */
     ScmObj directSupers;        /* list of classes */
     ScmObj cpl;                 /* list of classes */
@@ -440,7 +441,7 @@ struct ScmClassRec {
     ScmObj directMethods;       /* list of methods that has this class in
                                    its specializer */
     ScmObj initargs;            /* saved key-value list for redefinition */
-    ScmObj module;              /* module where this class is defined */
+    ScmObj modules;             /* modules where this class is defined */
     ScmObj redefined;           /* if this class is obsoleted by class
                                    redefinition, points to the new class.
                                    if this class is being redefined, points
@@ -511,6 +512,7 @@ SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
 SCM_EXTERN ScmClass *Scm_ClassOf(ScmObj obj);
 SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
+SCM_EXTERN ScmClass *Scm_BaseClassOf(ScmClass *klass);
 
 SCM_EXTERN ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp);
 SCM_EXTERN ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj value);
@@ -552,7 +554,7 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
  *   SCM_DEFINE_BASE_CLASS
  */
 
-#define SCM__DEFINE_CLASS_COMMON(cname, flag, printer, compare, serialize, allocate, cpa) \
+#define SCM__DEFINE_CLASS_COMMON(cname, coreSize, flag, printer, compare, serialize, allocate, cpa) \
     ScmClass cname = {                           \
         { SCM_CLASS_STATIC_PTR(Scm_ClassClass), NULL },\
         printer,                                 \
@@ -560,8 +562,9 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
         serialize,                               \
         allocate,                                \
         cpa,                                     \
-        0,                                       \
-        flag,                                    \
+        0,        /*numInstanceSlots*/           \
+        coreSize, /*coreSize*/                   \
+        flag,     /*flags*/                      \
         SCM_FALSE,/*name*/                       \
         SCM_NIL,  /*directSupers*/               \
         SCM_NIL,  /*cpl*/                        \
@@ -571,13 +574,13 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
         SCM_NIL,  /*directSubclasses*/           \
         SCM_NIL,  /*directMethods*/              \
         SCM_NIL,  /*initargs*/                   \
-        SCM_FALSE,/*module*/                     \
+        SCM_NIL,  /*modules*/                    \
         SCM_FALSE /*redefined*/                  \
     }
     
 /* Define built-in class statically -- full-featured version */
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
-    SCM__DEFINE_CLASS_COMMON(cname,                       \
+    SCM__DEFINE_CLASS_COMMON(cname, 0,                    \
                              SCM_CLASS_BUILTIN,           \
                              printer, compare, serialize, allocate, cpa)
 
@@ -587,13 +590,13 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 
 /* define an abstract class */
 #define SCM_DEFINE_ABSTRACT_CLASS(cname, cpa)             \
-    SCM__DEFINE_CLASS_COMMON(cname,                       \
+    SCM__DEFINE_CLASS_COMMON(cname, 0,                    \
                              SCM_CLASS_ABSTRACT,          \
                              NULL, NULL, NULL, NULL, cpa)
 
 /* define a class that can be subclassed by Scheme */
 #define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, serialize, allocate, cpa) \
-    SCM__DEFINE_CLASS_COMMON(cname,                       \
+    SCM__DEFINE_CLASS_COMMON(cname, sizeof(ctype),        \
                              SCM_CLASS_BASE,              \
                              printer, compare, serialize, allocate, cpa)
 

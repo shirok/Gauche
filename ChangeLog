@@ -1,5 +1,9 @@
 2003-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c, lib/gauche/object.scm, src/moplib.stub,
+	  src/gauche/class.h, src/gauche.h : implemented change-class
+	  method, which completes class redefinition protocol.
+
 	* ext/*/test.scm : removed kludge code that allowed to load modules
 	  from the testing directory---now 'make' creates links so we
 	  no longer need them.

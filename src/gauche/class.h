@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.34 2003-10-26 00:26:06 shirok Exp $
+ *  $Id: class.h,v 1.35 2003-11-11 09:35:31 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -116,6 +116,9 @@ SCM_EXTERN ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
 SCM_EXTERN ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
 SCM_EXTERN ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method);
 
+SCM_EXTERN ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
+                                                    ScmSlotAccessor *ca,
+                                                    ScmObj initargs);
 SCM_EXTERN ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj,
 					     ScmSlotAccessor *acc,
 					     int boundp);
@@ -123,17 +126,22 @@ SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
 					     ScmSlotAccessor *acc,
 					     ScmObj val);
 
-SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
-SCM_EXTERN void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
+SCM_EXTERN ScmObj Scm_VMClassOf(ScmObj obj);
+SCM_EXTERN ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass);
 
-SCM_EXTERN void Scm_StartClassRedefinition(ScmClass *klass);
-SCM_EXTERN void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newk);
-SCM_EXTERN int  Scm_CheckClassBinding(ScmObj name, ScmModule *module);
-SCM_EXTERN void Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newk);
-SCM_EXTERN void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub);
-SCM_EXTERN void Scm_RemoveDirectSubclass(ScmClass *super, ScmClass *sub);
-SCM_EXTERN void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m);
-SCM_EXTERN void Scm_RemoveDirectMethod(ScmClass *super, ScmMethod *m);
+SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
+SCM_EXTERN void   Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
+
+SCM_EXTERN void   Scm_StartClassRedefinition(ScmClass *klass);
+SCM_EXTERN void   Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newk);
+SCM_EXTERN int    Scm_CheckClassBinding(ScmObj name, ScmModule *module);
+SCM_EXTERN void   Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newk);
+SCM_EXTERN void   Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub);
+SCM_EXTERN void   Scm_RemoveDirectSubclass(ScmClass *super, ScmClass *sub);
+SCM_EXTERN void   Scm_AddDirectMethod(ScmClass *super, ScmMethod *m);
+SCM_EXTERN void   Scm_RemoveDirectMethod(ScmClass *super, ScmMethod *m);
+SCM_EXTERN void   Scm_TransplantInstance(ScmObj src, ScmObj dst);
+SCM_EXTERN ScmObj Scm_UpdateInstance(ScmObj obj);
 
 SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 
@@ -141,6 +149,7 @@ SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 SCM_EXTERN ScmGeneric Scm_GenericObjectHash;
 SCM_EXTERN ScmGeneric Scm_GenericObjectApply;
 SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
+SCM_EXTERN ScmGeneric Scm_GenericChangeClass;
 
 SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
                                          ScmClass *old,

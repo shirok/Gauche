@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.23 2003-09-09 12:21:26 shirok Exp $
+;; $Id: object.scm,v 1.24 2003-11-11 09:35:31 shirok Exp $
 
 (use gauche.test)
 
@@ -58,6 +58,40 @@
 
 (test* "slot-ref" '(4 5 6) (map (lambda (slot) (slot-ref x1 slot)) '(a b c)))
 (test* "slot-ref" '(7 8 9) (map (lambda (slot) (slot-ref x2 slot)) '(a b c)))
+
+(test* "slot-ref-using-class" '(4 5 6)
+       (map (lambda (slot) (slot-ref-using-class <x> x1 slot)) '(a b c)))
+(test* "slot-ref-using-class" *test-error*
+       (slot-ref-using-class <y> x1 'a))
+
+(test* "slot-ref-using-accessor" '(7 8 9)
+       (map (lambda (slot)
+              (let ((sa (class-slot-accessor <x> slot)))
+                (and sa (slot-ref-using-accessor x2 sa))))
+            '(a b c)))
+(test* "slot-ref-using-accessor" *test-error*
+       (let ((sa (class-slot-accessor <y> slot)))
+         (and sa (slot-ref-using-accessor x2 sa))))
+
+(test* "slot-set-using-class!" '(-4 -5 -6)
+       (map (lambda (slot)
+              (slot-set-using-class! <x> x1 slot
+                                     (- (slot-ref x1 slot)))
+              (slot-ref x1 slot))
+            '(a b c)))
+(test* "slot-set-using-class!" *test-error*
+       (slot-set-using-class! <y> x1 'a 3))
+
+(test* "slot-set-using-accessor!" '(-7 -8 -9)
+       (map (lambda (slot)
+              (let ((sa (class-slot-accessor <x> slot)))
+                (and sa
+                     (slot-set-using-accessor! x2 sa (- (slot-ref x2 slot)))))
+              (slot-ref x2 slot))
+            '(a b c)))
+(test* "slot-ref-using-accessor!" *test-error*
+       (let ((sa (class-slot-accessor <y> slot)))
+         (and sa (slot-set-using-accessor! x2 sa -1))))
 
 ;;----------------------------------------------------------------
 (test-section "slot initialization")
@@ -218,6 +252,207 @@
               (i (s-get-i s))
               (j (begin (set! (s-get-i s) "j") (s-get-i s))))
          (list i j)))
+
+;;----------------------------------------------------------------
+(test-section "class redefinition")
+
+;; save original <x> and <y> defined above
+(define <x>-orig <x>)
+(define <y>-orig <y>)
+(define <w>-orig <w>)
+(define <w2>-orig <w2>)
+
+;; create some more instances
+(define y1 (let ((o (make <y>)))
+             (for-each (lambda (s v) (slot-set! o s v))
+                       '(a b c d e)
+                       '(0 1 2 3 4))
+             o))
+(define y2 (let ((o (make <y>)))
+             (for-each (lambda (s v) (slot-set! o s v))
+                       '(a b c d e)
+                       '(5 6 7 8 9))
+             o))
+(define w1 (let ((o (make <w>)))
+             (for-each (lambda (s v) (slot-set! o s v))
+                       '(a b c d e f)
+                       '(100 101 102 103 104 105))
+             o))
+(define w2 (make <w>))
+
+;; set several methods
+(define-method redef-test1 ((x <x>)) 'x)
+(define-method redef-test1 ((y <y>)) 'y)
+(define-method redef-test1 ((w <w>)) 'w)
+(define-method redef-test1 ((w2 <w2>)) 'w2)
+
+(define-method redef-test2 ((x <x>) (y <y>)) 'xyz)
+(define-method redef-test2 ((z <z>) (w <w>)) 'yw)
+
+(test* "simple redefinition of <x>" #f
+       (begin
+         (eval '(define-class <x> () (a b c x)) (current-module))
+         (eval '(eq? <x> <x>-orig) (current-module))))
+
+(test* "simple redefinition of <x>" '(#t #f #t #f)
+       (list (eq? (ref <x>-orig 'redefined) <x>)
+             (ref <x> 'redefined)
+             (eq? (ref <y>-orig 'redefined) <y>)
+             (ref <y> 'redefined)))
+
+(test* "subclass redefinition <y> (links)"
+       '(#f #f #f #f #f)
+       (list (eq? <y> <y>-orig)
+             (not (memq <y> (ref <x> 'direct-subclasses)))
+             (not (memq <y>-orig (ref <x>-orig 'direct-subclasses)))
+             (not (memq <x> (ref <y> 'direct-supers)))
+             (not (memq <x>-orig (ref <y>-orig 'direct-supers)))))
+
+(test* "subclass redefinition <y> (slots)"
+       '((a b c) (a b c x) (c d e a b) (c d e a b x))
+       (map (lambda (c) (map (lambda (s) (car s)) (class-slots c)))
+            (list <x>-orig <x> <y>-orig <y>)))
+
+(test* "subclass redefinition <w> (links)"
+       '(#f #f #f #f #f)
+       (list (eq? <w> <w>-orig)
+             (not (memq <w> (ref <y> 'direct-subclasses)))
+             (not (memq <w>-orig (ref <y>-orig 'direct-subclasses)))
+             (not (memq <y> (ref <w> 'direct-supers)))
+             (not (memq <y>-orig (ref <w>-orig 'direct-supers)))))
+
+(test* "subclass redefinition <w> (slots)"
+       '((e f c d a b) (e f c d a b x) (e f c d a b) (e f c d a b x))
+       (map (lambda (c) (map (lambda (s) (car s)) (class-slots c)))
+            (list <w>-orig <w> <w2>-orig <w2>)))
+
+(test* "subclass redefinition (hierarchy)"
+       (list (list <x> <object> <top>)
+             (list <y> <x> <object> <top>)
+             (list <w> <z> <y> <x> <object> <top>)
+             (list <w2> <y> <x> <z> <object> <top>))
+       (map class-precedence-list (list <x> <y> <w> <w2>)))
+
+(test* "subclass redefinition (hierarchy, orig)"
+       (list (list <x>-orig <object> <top>)
+             (list <y>-orig <x>-orig <object> <top>)
+             (list <w>-orig <z> <y>-orig <x>-orig <object> <top>)
+             (list <w2>-orig <y>-orig <x>-orig <z> <object> <top>))
+       (map class-precedence-list
+            (list <x>-orig <y>-orig <w>-orig <w2>-orig)))
+
+;; check link consistency between class-direct-methods and method-specializer.x
+(define (method-link-check gf class)
+  (let loop ((dmeths (class-direct-methods class)))
+    (cond ((null? dmeths) #t)
+          ((memq (car dmeths) (slot-ref gf 'methods))
+           => (lambda (meth)
+                (and (memq class (slot-ref meth 'specializers))
+                     (loop (cdr dmeths)))))
+          (else #f))))
+
+(test* "method link fix"
+       '(#t #t #t #t #t #t #t)
+       (list (method-link-check redef-test1 <x>)
+             (method-link-check redef-test1 <y>)
+             (method-link-check redef-test1 <w>)
+             (method-link-check redef-test1 <w2>)
+             (method-link-check redef-test2 <x>)
+             (method-link-check redef-test2 <y>)
+             (method-link-check redef-test2 <w>)))
+
+(test* "instance update (x1)" '(#t -4 -5 -6 #f)
+       (list (is-a? x1 <x>)
+             (slot-ref x1 'a)
+             (slot-ref x1 'b)
+             (slot-ref x1 'c)
+             (slot-bound? x1 'x)))
+
+(test* "instance update (y1)" '(#f 0 1 2 3 4)
+       (list (slot-bound? y1 'x)
+             (slot-ref y1 'a)
+             (slot-ref y1 'b)
+             (slot-ref y1 'c)
+             (slot-ref y1 'd)
+             (slot-ref y1 'e)))
+
+(test* "redefine <x> again" '(a c x)
+       (begin
+         (eval '(define-class <x> () (a c (x :init-value 3))) (current-module))
+         (eval '(map car (class-slots <x>)) (current-module))))
+
+(test* "instance update (x1)" '(1 #f -6 3)
+       (begin
+         (slot-set! x1 'a 1)
+         (list (slot-ref x1 'a)
+               (slot-exists? x1 'b)
+               (slot-ref x1 'c)
+               (slot-ref x1 'x))))
+
+(test* "instance update (x2) - cascade" '(#t -7 #f -9 3)
+       (list (is-a? x2 <x>)
+             (slot-ref x2 'a)
+             (slot-exists? x2 'b)
+             (slot-ref x2 'c)
+             (slot-ref x2 'x)))
+
+(test* "redefine <y>" '(a e c x)
+       (begin
+         (eval '(define-class <y> (<x>)
+                  ((a)
+                   (e :init-value -200)))
+               (current-module))
+         (eval '(map car (class-slots <y>)) (current-module))))
+
+(test* "instance update (y2) - cascade"
+       '(5 7 9 3)
+       (map (lambda (s) (slot-ref y2 s)) '(a c e x)))
+
+(test* "redefine <y> without inheriting <x>" '(a e)
+       (begin
+         (eval '(define-class <y> ()
+                  ((a :init-keyword :a :init-value -30)
+                   (e :init-keyword :e :init-value -40)))
+               (current-module))
+         (eval '(map car (class-slots <y>)) (current-module))))
+
+(test* "link consistency <y> vs <x>" '(#f #f #f)
+       (list (memq <y> (ref <x> 'direct-subclasses))
+             (memq <y>-orig (ref <x> 'direct-subclasses))
+             (memq <x> (ref <y> 'direct-supers))))
+
+(test* "instance update (y1)" '(0 4)
+       (map (lambda (s) (slot-ref y1 s)) '(a e)))
+
+(test* "subclass redefinition <w>" '(e f a)
+       (map car (class-slots <w>)))
+
+(test* "instance update (w1)" '(#f #t #t 100 104 105)
+       (list (is-a? w1 <x>)
+             (is-a? w1 <y>)
+             (is-a? w1 <z>)
+             (slot-ref w1 'a)
+             (slot-ref w1 'e)
+             (slot-ref w1 'f)))
+
+(test* "instance update (w2)" '(#f #t #t -30 #f #f)
+       (list (is-a? w2 <x>)
+             (is-a? w2 <y>)
+             (is-a? w2 <z>)
+             (slot-ref w2 'a)
+             (slot-bound? w2 'e)
+             (slot-bound? w2 'f)))
+
+(test* "method link fix"
+       '(#t #t #t #t #t #t #t)
+       (list (method-link-check redef-test1 <x>)
+             (method-link-check redef-test1 <y>)
+             (method-link-check redef-test1 <w>)
+             (method-link-check redef-test1 <w2>)
+             (method-link-check redef-test2 <x>)
+             (method-link-check redef-test2 <y>)
+             (method-link-check redef-test2 <w>)))
+
 
 ;;----------------------------------------------------------------
 (test-section "object comparison protocol")
