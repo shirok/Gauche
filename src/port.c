@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.67 2002-07-03 01:12:19 shirok Exp $
+ *  $Id: port.c,v 1.68 2002-07-03 08:46:33 shirok Exp $
  */
 
 #include <unistd.h>
@@ -1069,7 +1069,7 @@ static int getb_ungotten(ScmPort *p)
 }
 
 /* getb body */
-int Scm_Getb(ScmPort *p)
+int Scm_GetbUnsafe(ScmPort *p)
 {
     int b = 0;
     CLOSE_CHECK(p);
@@ -1078,7 +1078,6 @@ int Scm_Getb(ScmPort *p)
     if (p->scrcnt) return getb_scratch(p);
     if (p->ungotten != SCM_CHAR_INVALID) return getb_ungotten(p);
     
-    /* TODO: ungotten char */
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current >= p->src.buf.end) {
@@ -1096,6 +1095,48 @@ int Scm_Getb(ScmPort *p)
     default:
         Scm_Error("bad port type for output: %S", p);
     }
+    return b;
+}
+
+int Scm_Getb(ScmPort *p)
+{
+    int b = 0;
+    ScmVM *vm = Scm_VM();
+
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK_SAFE(p);
+
+    /* check if there's "pushded back" stuff */
+    if (p->scrcnt) {
+        b = getb_scratch(p);
+    } else if (p->ungotten != SCM_CHAR_INVALID) {
+        b = getb_ungotten(p);
+    } else {
+        switch (SCM_PORT_TYPE(p)) {
+        case SCM_PORT_FILE:
+            if (p->src.buf.current >= p->src.buf.end) {
+                int r;
+                PORT_SAFE_CALL(p, r = bufport_fill(p, 1, FALSE));
+                if (r == 0) {
+                    PORT_UNLOCK(p);
+                    return EOF;
+                }
+            }
+            b = (unsigned char)*p->src.buf.current++;
+            break;
+        case SCM_PORT_ISTR:
+            if (p->src.istr.current >= p->src.istr.end) b = EOF;
+            else b = (unsigned char)*p->src.istr.current++;
+            break;
+        case SCM_PORT_PROC:
+            PORT_SAFE_CALL(p, b = p->src.vt.Getb(p));
+            break;
+        default:
+            PORT_UNLOCK(p);
+            Scm_Error("bad port type for output: %S", p);
+        }
+    }
+    PORT_UNLOCK(p);
     return b;
 }
 

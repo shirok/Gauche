@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.272 2002-07-03 01:12:19 shirok Exp $
+ *  $Id: gauche.h,v 1.273 2002-07-03 08:46:33 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1216,15 +1216,26 @@ SCM_EXTERN void Scm_Putb(ScmByte b, ScmPort *port);
 SCM_EXTERN void Scm_Putc(ScmChar c, ScmPort *port);
 SCM_EXTERN void Scm_Puts(ScmString *s, ScmPort *port);
 SCM_EXTERN void Scm_Putz(const char *s, int len, ScmPort *port);
-SCM_EXTERN void Scm_Putnl(ScmPort *port);
 SCM_EXTERN void Scm_Flush(ScmPort *port);
+
+SCM_EXTERN void Scm_PutbUnsafe(ScmByte b, ScmPort *port);
+SCM_EXTERN void Scm_PutcUnsafe(ScmChar c, ScmPort *port);
+SCM_EXTERN void Scm_PutsUnsafe(ScmString *s, ScmPort *port);
+SCM_EXTERN void Scm_PutzUnsafe(const char *s, int len, ScmPort *port);
+SCM_EXTERN void Scm_FlushUnsafe(ScmPort *port);
 
 SCM_EXTERN void Scm_Ungetc(ScmChar ch, ScmPort *port);
 SCM_EXTERN int Scm_Getb(ScmPort *port);
 SCM_EXTERN int Scm_Getc(ScmPort *port);
 SCM_EXTERN int Scm_Getz(char *buf, int buflen, ScmPort *port);
 
+SCM_EXTERN void Scm_UngetcUnsafe(ScmChar ch, ScmPort *port);
+SCM_EXTERN int Scm_GetbUnsafe(ScmPort *port);
+SCM_EXTERN int Scm_GetcUnsafe(ScmPort *port);
+SCM_EXTERN int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *port);
+
 SCM_EXTERN ScmObj Scm_ReadLine(ScmPort *port);
+SCM_EXTERN ScmObj Scm_ReadLineUnsafe(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_WithPort(ScmPort *port[], ScmProcedure *thunk,
 			       int mask, int closep);
