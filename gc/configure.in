@@ -100,7 +100,7 @@ case "$THREADS" in
         if test "${enable_parallel_mark}" = yes; then
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
-	AC_DEFINE(THREAD_LOCAL_ALLOC)
+dnl	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	;;
      *-*-linux*)
 	AC_DEFINE(GC_LINUX_THREADS)
@@ -113,7 +113,7 @@ case "$THREADS" in
 	if test "${enable_parallel_mark}" = yes; then
 	  AC_DEFINE(PARALLEL_MARK)
 	fi
-	AC_DEFINE(THREAD_LOCAL_ALLOC)
+dnl	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	THREADLIBS="-lpthread -lrt"
 	;;
      *-*-freebsd*)
