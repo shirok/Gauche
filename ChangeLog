@@ -1,3 +1,9 @@
+2001-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.9
+	* INSTALL: added explanation about --enable-multibyte option.
+	* test/euc-jp.scm: added Japanese tests of string-library.
+
 2001-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-13/*.scm : fixed number of bugs
