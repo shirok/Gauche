@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.88 2001-10-09 09:08:48 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.89 2001-10-09 10:33:28 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3890,14 +3890,24 @@ to terminate a forked process; @ref{Fork and exec} for details.
 
 @defun sys-getenv name
 [POSIX]
+@c EN
 Returns the value of the environment variable @var{name} as a string,
 or @code{#f} if the environment variable is not defined.
+@c JP
+環境変数@var{name}の値を文字列で返します。もし@var{name}が定義されていなければ、
+@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @defun sys-putenv name value
+@c EN
 Add environment variable @var{name} with @var{value} to the current
 process's environment.  This function is only available if the
 platform supports putenv(3).
+@c JP
+プロセスの環境変数@var{name}に値@var{value}をセットします。この関数は
+putenv()がサポートされているシステムでのみ定義されています。
+@c COMMON
 @end defun
 
 @defun gauche-version
@@ -3906,8 +3916,12 @@ platform supports putenv(3).
 @defunx gauche-architecture-directory
 @defunx gauche-site-library-directory
 @defunx gauche-site-architecture-directory
+@c EN
 These functions returns a string that tells information about Gauche
 interpreter itself.
+@c JP
+これらの手続きはGaucheインタプリタの情報を文字列で返します。
+@c COMMON
 @end defun
 
 @node Filesystems, Unix groups and passwords, Environment Inquiry, System interface
@@ -3925,13 +3939,21 @@ interpreter itself.
 @subsubsection Directories
 
 @defun sys-readdir path
+@c EN
 @var{path} must be a string that denotes valid pathname of an existing
 directory.  This function returns a list of strings of the directory
 entries.  The returned list is not sorted.  An error is signalled
 if @var{path} doesn't exists or is not a directory.
+@c JP
+@var{path}は存在するディレクトリを示すパス名でなければなりません。
+この手続きはディレクトリの全エントリを文字列のリストとして返します。
+リストはソートされません。@var{path}が存在しなかったり、ディレクトリでなかった場合は
+エラーとなります。
+@c COMMON
 @end defun
 
 @defun sys-glob pattern
+@c EN
 An interface to @code{glob(3)} function.  @var{pattern} is a file pattern
 like sh(1): a character `@code{?}' matches any single character, 
 `@code{*}' matches zero or more characters, `@code{[abc]}' matches
@@ -3940,23 +3962,56 @@ either `@code{a}', `@code{b}' or `@code{c}'.  If no pathname matches
 
 If the undelying platform doesn't have @code{glob()}, this function
 signals an error of "feature not supported".
+
+Note: it is known that on some systems glob() implementation has
+a security issue.  Gauche will eventually implment glob() functionality
+in itself.
+@c JP
+glob(3)関数へのインタフェースです。@var{pattern}はsh(1)で使われるパターンです:
+`@code{?}'は任意の一文字にマッチし、`@code{*}'は0以上の任意の文字にマッチし、
+`@code{[abc]}'は文字`@code{a}', `@code{b}', `@code{c}' のいずれにも
+マッチします。マッチするパス名が無ければ空のリストが返されます。
+
+glob()をサポートしていないシステムでは、エラーが通知されます。
+
+註：glob()の実装にセキュリティ上の問題のあるシステムがあることが知られています。
+Gaucheではいずれ、自前のglob()実装を持つ予定です。
+@c COMMON
 @end defun
 
+@c EN
 @xref{File stats}, to check if a path is actually a directory.
+@c JP
+パスがディレクトリかどうかチェックする方法は、@ref{File stats}を参照してください。
+@c COMMON
 
 @node Directory manipulation, Pathnames, Directories, Filesystems
 @subsubsection Directory manipulation
 
 @defun sys-remove filenmae
-[POSIX] If @var{filename} is a file, or an empty directory,
+[POSIX] 
+@c EN
+If @var{filename} is a file, or an empty directory,
 it is removed.   An error is signaled if @var{filename} doesn't
 exist, or is a non-empty directory.
+@c JP
+@var{filename}がファイル、もしくは空のディレクトリであればそれを消去します。
+@var{filename}が存在しなかったり、空でないディレクトリであったり、
+必要な権限が無ければエラーが通知されます。
+@c COMMON
 @end defun
 
 @defun sys-rename old new
-[POSIX] Renames a file @var{old} to @var{new}.  The new name
+[POSIX]
+@c EN
+Renames a file @var{old} to @var{new}.  The new name
 can be in different directory from the old name, but both paths
 must be on the same device.
+@c JP
+ファイル@var{old}を@var{new}にリネームします。新しい名前は
+古い名前と異なるディレクトリにあってもかまいませんが、両者は同じデバイス上に
+なければなりません。
+@c COMMON
 @end defun
 
 @defun sys-tmpnam
@@ -3998,78 +4053,157 @@ Creates a hard link named @var{new} to the existing file @var{existing}.
 @end defun
 
 @defun sys-unlink pathname
-[POSIX] Removes @var{pathname}.  It can't be a directory.
+[POSIX]
+@c EN
+Removes @var{pathname}.  It can't be a directory.
 Returns @code{#t} if it is successfully removed, or
 @var{#f} if @var{pathname} doesn't exist.
+An error is signalled otherwise.
+@c JP
+@var{pathname}で示されるファイルを消去します。
+@var{pathname}はディレクトリであってはなりません。
+もし消去に成功したら@code{#t}が、@var{pathname}が存在しなければ@code{#f}が返されます。
+他の場合はエラーが通知されます。
+@c COMMON
 @end defun
 
 @defun sys-symlink existing new
-Creates a symbolic link named @var{new} to the existing file @var{existing}.
+@c EN
+Creates a symbolic link named @var{new} to the pathname @var{existing}.
 On systems that doesn't support symbolic links,
 this function is unbound.
+@c JP
+@var{existing}を指す@var{new}という名のシンボリックを作成します。
+シンボリックリンクをサポートしないシステムでは、この手続きは定義されません。
+@c COMMON
 @end defun
 
 @defun sys-readlink path
+@c EN
 If a file specified by @var{path} is a symbolic link, its content is
 returned.  If @var{path} doesn't exist or is not a symbolic link, an
 error is signalled.
 On systems that don't support symbolic links,
 this function is unbound.
+@c JP
+@var{path}で示されるファイルがシンボリックリンクならば、それが指すパスを返します。
+もし@var{path}が存在しなかったり、シンボリックリンクでなければ、エラーが通知されます。
+シンボリックリンクをサポートしないシステムでは、この手続きは定義されません。
+@c COMMON
 @end defun
 
 @defun sys-mkdir pathname mode
-[POSIX] Makes a directory @var{pathname} with mode @var{mode}.
+[POSIX] 
+@c EN
+Makes a directory @var{pathname} with mode @var{mode}.
+The parent directory of @var{pathname} must exist and be writable
+by the process.
+@c JP
+ディレクトリ@var{pathname}をモード@var{mode}で作成します。
+@var{pathname}の親ディレクトリは存在して、プロセスが書き込めるようになっていなければ
+なりません。
+@c COMMON
 @end defun
 
 @defun sys-rmdir pathname
-[POSIX] Removes a directory @var{pathname}.  The directory must 
-be empty.
+[POSIX]
+@c EN
+Removes a directory @var{pathname}.  The directory must be empty.
+@c JP
+ディレクトリ@var{pathname}を消去します。ディレクトリは空でなければなりません。
+@c COMMON
 @end defun
 
 @defun sys-umask mode
-[POSIX] Sets umask setting to @var{mode}.  Returns previous umask setting.
+[POSIX] 
+@c EN
+Sets umask setting to @var{mode}.  Returns previous umask setting.
 See @code{man umask} for more details.
+@c JP
+umaskを@var{mode}にセットします。変更される前のumaskを返します。
+umaskについては@code{man umask}を参照してください。
+@c COMMON
 @end defun
 
 @node Pathnames, File stats, Directory manipulation, Filesystems
 @subsubsection Pathnames
 
 @defun sys-normalize-pathname pathname &keyword absolute expand canonicalize
+@c EN
 Converts @var{pathname} according to the way specified by keyword arguments.
+More than one keyword argument can be specified.
+@c JP
+与えられたキーワード引数によって@var{pathname}を以下のように変換します。
+キーワード引数は同時に複数指定できます。
+@c COMMON
 @table @code
 @item absolute
+@c EN
   If this keyword arugment is given and true, and @var{pathname} is not
   an absolute pathname, it is converted to an absolute pathname by
   appending the current working directory in front of @var{pathname}.
+@c JP
+  このキーワード引数に真の値が与えられて、@var{pathname}が絶対パスでない場合、
+  @var{pathname}の前にプロセスのワーキングディレクトリを足して絶対パスにします。
+@c COMMON
 @item expand
+@c EN
   If this keyword argument is given and true, and @var{pathname} begins
   with `@code{~}', it is expanded as follows:
+@c JP
+  このキーワード引数に真の値が与えられて、@var{pathname}が`@code{~}' で始まっていた
+  場合、以下のように展開されます。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
     If @var{pathname} is consisted entirely by ``@code{~}'', or begins
     with ``@code{~/}'', then the character ``@code{~}'' is replaced
     for the pathname of the current user's home directory.
+@c JP
+    @var{pathname}が``@code{~}''のみであるか、または``@code{~/}''で始まっている
+    場合、文字``@code{~}''が現在のプロセスのユーザのホームディレクトリに置き換えられます。
+@c COMMON
 @item
+@c EN
     Otherwise, characters following `@code{~}' until either `@code{/}' or
     the end of @var{pathname} are taken as a user name, and the user's
     home directory is replaced in place of it.  If there's no such
     user, an error is signalled.
+@c JP
+    上記以外の場合、`@code{~}'以降、`@code{/}'か@var{pathname}の終端までの文字列
+    がユーザ名とみなされ、そのユーザのホームディレクトリに置換されます。もし該当するユーザが
+    いなければエラーとなります。
+@c COMMON
 @end itemize
 @item canonicalize
+@c EN
   Tries to remove pathname components ``@code{.}'' and ``@code{..}''.
   The pathname interpretation is done purely in textural level, i.e.
   it doesn't access filesystem to see the conversion reflects the
   real files.  It may be a problem if there's a symbolic links to
   other directory in the path.
+@c JP
+  パス名から ``@code{.}'' や ``@code{..}'' を除き、単純化します。
+  この操作は実際のファイルシステムを参照せずに行われます。元のパス名がディレクトリへの
+  シンボリックリンクを含んでいた場合、単純化されたパス名は正しくないかもしれません。
+@c COMMON
 @end table
 @end defun
 
 @defun sys-basename pathname
 @defunx sys-dirname pathname
+@c EN
 @code{sys-basename} returns a basename, that is the last component of
 @var{pathname}.  @code{sys-dirname} returns the components of @var{pathname}
 but the last one.   If @var{pathname} has a trailing `@code{/}', 
 it is simply ignored.
+@c JP
+@code{sys-basename}は与えられたパスのベース名、すなわち最後のコンポーネントを返します。
+@code{sys-dirname}は与えられたパスのディレクトリ名、すなわち最後のコンポーネント以外の
+コンポーネントを返します。@var{pathname}の末尾が`@code{/}'である場合、その文字は
+無視されます。
+@c COMMON
 @example
 (sys-basename "foo/bar/bar.z") @result{} "bar.z"
 (sys-basename "coo.scm") @result{} "coo.scm"
@@ -4078,9 +4212,17 @@ it is simply ignored.
 (sys-dirname "coo.scm") @result{} "."
 (sys-dirname "x/y/") @result{} "x"
 @end example
+@c EN
 These functions doesn't check if @var{pathname} really exists.
+@c JP
+この手続きは@var{pathname}が存在するかどうかはチェックしません。
+@c COMMON
 
+@c EN
 Some boundary cases:
+@c JP
+特殊なケース：
+@c COMMON
 @example
 (sys-basename "") @result{} ""
 (sys-dirname "") @result{} "."
@@ -4088,10 +4230,16 @@ Some boundary cases:
 (sys-basename "/") @result{} ""
 (sys-dirname "/") @result{} "/"
 @end example
+@c EN
 Note: The above behavior is the same as Perl's @code{basename} and
 @code{dirname}.   On some implementations, the command @code{basename}
 may return @code{"/"} for the argument @code{"/"}, and
 @code{"."} for the argument @code{"."}.
+@c JP
+註：このふるまいはPerlの@code{basename}および@code{dirname}と同様です。
+システムによっては、コマンドの@code{basename}は@code{"/"}に対して@code{"/"}を、
+@code{"."}に対して@code{"."}を返すものがあります。
+@c COMMON
 @end defun
 
 @node File stats, Other file operations, Pathnames, Filesystems
@@ -5364,7 +5512,7 @@ The name of the effective user of the process.
 The hostname the process is running.
 @end table
 
-The default value of this slot is @code{~T ~P[~$]: }.  For example,
+The default value of this slot is ``@code{~T ~P[~$]: }''.  For example,
 if a string ``this is a log message.\nline 2\nline 3'' is given as the
 message, it produces something like the following log entry.
 
