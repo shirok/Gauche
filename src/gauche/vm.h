@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.16 2001-02-06 11:38:26 shiro Exp $
+ *  $Id: vm.h,v 1.17 2001-02-08 07:13:33 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -188,9 +188,13 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 #define SCM_WHEN_ERROR                          \
        } else {
 
-#define SCM_PROPAGATE_ERROR                             \
-           Scm_VM()->escape = Scm_VM()->escape->prev;   \
-           longjmp(Scm_VM()->escape->jbuf, 1)
+#define SCM_PROPAGATE_ERROR                                     \
+           do {                                                 \
+               Scm_VM()->escape = Scm_VM()->escape->prev;       \
+               if (Scm_VM()->escape) {                          \
+                   longjmp(Scm_VM()->escape->jbuf, 1);          \
+               }                                                \
+           } while (0)
 
 #define SCM_POP_ERROR_HANDLER                     \
        }                                          \
