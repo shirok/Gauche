@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: syslog.scm,v 1.1 2002-09-21 20:56:30 shirok Exp $
+;;;  $Id: syslog.scm,v 1.2 2002-09-22 00:40:30 shirok Exp $
 ;;;
 
 (define-module gauche.syslog
@@ -40,8 +40,8 @@
           LOG_LPR
           LOG_MAIL
           LOG_NEWS
-          LOG_SYSLOGS
-          LOG_SUER
+          LOG_SYSLOG
+          LOG_USER
           LOG_UUCP
           LOG_EMERG
           LOG_ALERT
@@ -58,6 +58,6 @@
 
 (dynamic-load "syslog")
 
-(provide "gauche/termios")
+(provide "gauche/syslog")
 
 

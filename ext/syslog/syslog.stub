@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: syslog.stub,v 1.1 2002-09-21 20:56:30 shirok Exp $
+;;  $Id: syslog.stub,v 1.2 2002-09-22 00:40:30 shirok Exp $
 ;;
 
 "
@@ -27,7 +27,7 @@ static void internal_init(ScmModule*);
 void Scm_Init_syslog(void)
  {
    SCM_INIT_EXTENSION(syslog);
-   internal_init(Scm_GaucheModule());
+   internal_init(SCM_MODULE(SCM_FIND_MODULE(\"gauche.syslog\", TRUE)));
  }
 
 #define Scm_Init_syslog internal_init
@@ -79,8 +79,8 @@ void Scm_Init_syslog(void)
 (if "defined(LOG_LPR)"    (define-enum LOG_LPR))
 (if "defined(LOG_MAIL)"   (define-enum LOG_MAIL))
 (if "defined(LOG_NEWS)"   (define-enum LOG_NEWS))
-(if "defined(LOG_SYSLOGS)" (define-enum LOG_SYSLOGS))
-(if "defined(LOG_SUER)"   (define-enum LOG_SUER))
+(if "defined(LOG_SYSLOG)" (define-enum LOG_SYSLOG))
+(if "defined(LOG_USER)"   (define-enum LOG_USER))
 (if "defined(LOG_UUCP)"   (define-enum LOG_UUCP))
 
 ;; level
@@ -92,7 +92,6 @@ void Scm_Init_syslog(void)
 (if "defined(LOG_NOTICE)" (define-enum LOG_NOTICE))
 (if "defined(LOG_INFO)"   (define-enum LOG_INFO))
 (if "defined(LOG_DEBUG)"  (define-enum LOG_DEBUG))
-
 
 ;; Local variables:
 ;; mode: scheme
