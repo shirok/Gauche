@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.11 2002-09-27 05:37:52 shirok Exp $
+ *  $Id: jconv.c,v 1.12 2003-02-06 00:21:38 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -1078,8 +1078,8 @@ static size_t jis_reset(ScmConvInfo *cinfo, char *outptr, size_t outroom)
 
 /* EUC_JP is a pivot code, so we don't need to convert.  This function
    is just a placeholder. */
-static size_t eucj2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
-                        char *outptr, size_t outroom, size_t *outchars)
+static size_t pivot(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
+                    char *outptr, size_t outroom, size_t *outchars)
 {
     return 0;
 }
@@ -1094,6 +1094,7 @@ enum {
     JCODE_SJIS,
     JCODE_UTF8,
     JCODE_ISO2022JP,
+    JCODE_NONE,    /* a special entry standing for byte stream */
 #if 0
     JCODE_ISO2022JP-2,
     JCODE_ISO2022JP-3
@@ -1107,10 +1108,11 @@ static struct conv_converter_rec {
     ScmConvProc outconv;
     ScmConvReset reset;
 } conv_converter[] = {
-    { eucj2eucj, eucj2eucj, NULL },
-    { sjis2eucj, eucj2sjis, NULL },
-    { utf2eucj,  eucj2utf,  NULL },
-    { jis2eucj,  eucj2jis,  jis_reset },
+    { pivot, pivot, NULL },              /* EUCJ */
+    { sjis2eucj, eucj2sjis, NULL },      /* SJIS */
+    { utf2eucj,  eucj2utf,  NULL },      /* UTF8 */
+    { jis2eucj,  eucj2jis,  jis_reset }, /* ISO2022JP */
+    { pivot, pivot, NULL },              /* NONE */
 };
 
 /* map convesion name to the canonical code */
@@ -1137,6 +1139,7 @@ static struct conv_support_rec {
     { "iso-2022jp-2", JCODE_ISO2022JP },
     { "iso2022jp-3",  JCODE_ISO2022JP },
     { "iso-2022jp-3", JCODE_ISO2022JP },
+    { "none",         JCODE_NONE },
     { NULL, 0 }
 };
 
@@ -1366,7 +1369,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
 #else /*!HAVE_ICONV_H*/
         return NULL;
 #endif
-    } else if (incode == outcode) {
+    } else if (incode == outcode || incode == JCODE_NONE || outcode == JCODE_NONE) {
         /* pattern (1) */
         handler = jconv_ident;
         convproc[0] = convproc[1] = NULL;

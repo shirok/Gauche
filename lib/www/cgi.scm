@@ -1,7 +1,7 @@
 ;;;
 ;;; cgi.scm - CGI utility
 ;;;
-;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.8 2002-04-29 09:20:10 shirok Exp $
+;;;  $Id: cgi.scm,v 1.9 2003-02-06 00:21:38 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -38,6 +38,7 @@
   )
 (select-module www.cgi)
 
+;;----------------------------------------------------------------
 ;; A parameter cgi-metavariables can be used to supply metavariables,
 ;; instead of via environment variables.  It is handy for debugging,
 ;; or call CGI routine from other Scheme module.
@@ -50,7 +51,16 @@
         (cadr p))
       (sys-getenv name)))
 
-;; Get query string.
+;;----------------------------------------------------------------
+;; The output character encoding.  Used to generate the default
+;; output generator.
+
+(define cgi-output-character-encoding
+  (make-parameter (gauche-character-encoding)))
+
+;;----------------------------------------------------------------
+;; Get query string. (internal)
+;;
 (define (cgi-get-query)
   (let ((type   (get-meta "CONTENT_TYPE"))
         (method (get-meta "REQUEST_METHOD")))
@@ -78,7 +88,9 @@
                (port->string (current-input-port))))
           (else (error "unknown REQUEST_METHOD" method)))))
 
+;;----------------------------------------------------------------
 ;; API: cgi-parse-parameters &keyword query-string merge-cookies
+;;
 (define (cgi-parse-parameters . args)
   (let ((input   (or (get-keyword :query-string args #f)
                      (cgi-get-query)))
@@ -105,7 +117,9 @@
                    (string-split input #\&))))
      (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
 
+;;----------------------------------------------------------------
 ;; API: cgi-get-parameter key params &keyword list default convert
+;;
 (define (cgi-get-parameter key params . args)
   (let* ((list?   (get-keyword :list args #f))
          (default (get-keyword :default args (if list? '() #f)))
@@ -117,7 +131,9 @@
                     (convert (cadr p)))))
           (else default))))
 
+;;----------------------------------------------------------------
 ;; API: cgi-header &keyword content-type location cookies
+;;
 (define (cgi-header . args)
   (let ((content-type (get-keyword :content-type args "text/html"))
         (location     (get-keyword :location args #f))
@@ -130,7 +146,9 @@
                    cookies)
               "\n"))))
 
+;;----------------------------------------------------------------
 ;; API: cgi-main proc &keyword on-error merge-cookies
+;;
 (define (cgi-main proc . args)
   (let1 eproc
       (get-keyword :on-error args

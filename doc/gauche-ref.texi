@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.358 2003-02-05 22:01:37 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.359 2003-02-06 00:21:36 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -14981,6 +14981,18 @@ Case is ignored.  There may be several aliases defined for a single encoding.
 @c JP
 CESの名前は文字列またはシンボルで指定します。大文字小文字の違いは無視されます。
 同じCESにいくつかの別名がついていることがあります。
+@c COMMON
+
+@c EN
+A CES name "none" is special.  When Gauche's native encoding is @code{none},
+Gauche just treats a string as a byte sequence, and it's up to the application
+to interpret the sequence in an appropriate encoding.  So, conversion
+to and from CES "none" does nothing.
+@c JP
+CES名 "none" は特殊です。Gaucheのネイティブエンコーディングが@code{none}の
+場合、Gaucheは文字列を単なるバイト列として扱い、そのエンコーディングの解釈は
+アプリケーションに任されます。したがって、CES "none" への変換、および "none"
+からの変換は「何もしない」変換として扱われます。
 @c COMMON
 
 @c EN

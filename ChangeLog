@@ -1,5 +1,7 @@
 2003-02-05  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/charconv.c : allows a symbol as a CES name, as well
+	  as a string.   Supports a special CES name "none".
 	* lib/file/util.scm (directory-list) : added :filter-add-path?
 	  keyword argument.  refactored using cond-list and every-pred.
 
