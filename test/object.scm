@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.10 2001-05-02 08:20:25 shirok Exp $
+;; $Id: object.scm,v 1.11 2001-10-11 09:08:39 shirok Exp $
 
 (use gauche.test)
 
@@ -181,7 +181,7 @@
 (define-method nm ((obj <z>))  (list 'z-in (next-method) 'z-out))
 (define-method nm ((obj <w>))  (list 'w-in (next-method) 'w-out))
 (define-method nm ((obj <w2>))  (list 'w2-in (next-method) 'w2-out))
-  
+
 (test "next method"
       '(y-in (x-in fallback x-out) y-out)
       (lambda () (nm (make <y>))))
@@ -191,6 +191,18 @@
 (test "next-method"
       '(w2-in (y-in (x-in (z-in fallback z-out) x-out) y-out) w2-out)
       (lambda () (nm (make <w2>))))
+
+(define-method nm (obj . a)
+  (if (null? a) (list 't*-in (next-method) 't*-out) 't*))
+(define-method nm ((obj <y>) a) (list 'y1-in (next-method) 'y1-out))
+(define-method nm ((obj <y>) . a) (list 'y*-in (next-method) 'y*-out))
+
+(test "next-method"
+      '(y1-in (y*-in t* y*-out) y1-out)
+      (lambda () (nm (make <y>) 3)))
+(test "next-method"
+      '(y-in (y*-in (x-in (t*-in fallback t*-out) x-out) y*-out) y-out)
+      (lambda () (nm (make <y>))))
 
 ;;----------------------------------------------------------------
 (test-section "metaclass")
