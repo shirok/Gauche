@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.317 2002-12-10 03:17:57 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.318 2002-12-10 03:52:10 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19126,9 +19126,9 @@ disadvantages of using threads depending on how the threads
 are realized in the underlying system.
 
 In Gauche, the primary purpose of threads is to write programs
-that @emph{requires} preemptive scheduling, therefore are
+that @emph{require} preemptive scheduling, therefore are
 difficult to express in other ways.  Preemptive threads may
-be required, for example, you have to call a module that 
+be required, for example, when you have to call a module that 
 does blocking I/O which you can't intercept, or may spend
 nondeterministic amount of calculation time that you want
 to interrupt.
@@ -19144,7 +19144,7 @@ for fine-grained calculation.
 
 The recommended usage is the technique so called "thread pool",
 that you create a set of threads and keep them around for
-long time and dispatch jobs for them as needed.
+long time and dispatch jobs to them as needed.
 
 Preemptive threads have other difficulties
 (e.g. see @ref{fairthreads,[FairThreads],FairThreads}),
