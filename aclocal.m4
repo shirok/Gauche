@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.6 2002-03-07 19:22:35 shirok Exp $
+# $Id: aclocal.m4,v 1.7 2002-03-11 08:44:49 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -14,6 +14,7 @@
 #    GAUCHE_LIB      - '-L' macros required to link extensions.
 #    GOSH            - Name of gosh executable, possibly including
 #                      options to run it from the extension directory.
+#    GAUCHE_VERSION  - The version of Gauche.
 AC_DEFUN([AC_GAUCHE_INIT_EXT],
          [
 if test -f ../../src/gauche.h; then
@@ -33,6 +34,10 @@ AC_SUBST(GAUCHE_CONFIG)
 AC_SUBST(GAUCHE_TOP)
 AC_SUBST(GAUCHE_INC)
 AC_SUBST(GOSH)
+
+GAUCHE_VERSION=`$(GAUCHE_CONFIG) --version`
+AC_SUBST(GAUCHE_VERSION)
+AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
 ])
 
 # AC_GAUCHE_INSTALL_TYPE(TYPE)
