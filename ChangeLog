@@ -1,3 +1,17 @@
+2001-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub, src/gauche-init.scm : INCOMPATIBLE CHANGE:
+	  use uppercase for all system symbols, such as |R_OK| (for 
+	  sys-access) or |SIGINT|.
+	* src/vm.c : fixed continuation stack trace in the default error
+	  handler.
+
+2001-09-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-init.scm : added file-exists?, file-is-directory? and
+	  file-is-regular?.
+	* lib/gauche/vm/disasm.scm : fixed TAILBIND
+
 2001-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c : added one word to the continuation frame for debug
@@ -6,9 +20,6 @@
 	* configure.in, src/gauche/config.h.in, src/main.c : applied a fix
 	  from Hiroshi INAMURA for cygwin.   Added -i (force interactive)
 	  option to main.c.
-	* lib/gauche/vm/disasm.scm : fixed TAILBIND
-	* src/gauche-init.scm : added file-exists?, file-is-directory? and
-	  file-is-regular?.
 
 2001-09-23  Shiro Kawai  <shiro@acm.org>
 
