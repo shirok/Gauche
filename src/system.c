@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.4 2001-02-16 06:55:54 shiro Exp $
+ *  $Id: system.c,v 1.5 2001-02-17 10:20:33 shiro Exp $
  */
 
 #include <stdio.h>
@@ -98,7 +98,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         struct passwd *pwd;
         int dirlen;
         
-        for (; *p == '/' || *p == '\0'; p++)
+        for (; *p != '/' && *p != '\0'; p++)
             ;
         if (p == str+1) {
             pwd = getpwuid(geteuid());
