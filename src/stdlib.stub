@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.55 2001-05-09 20:03:28 shirok Exp $
+;;; $Id: stdlib.stub,v 1.56 2001-05-10 20:21:04 shirok Exp $
 ;;;
 
 
@@ -255,14 +255,24 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  double v;
   if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   v = Scm_GetDouble(x);
-  if (v < -1.0 || v > 1.0) Scm_Error(\"domain error for asin: %S\", x);
-  SCM_RETURN(Scm_MakeFlonum(asin(v)));")
+  if (v > 1.0) {
+    SCM_RETURN(Scm_MakeComplex(M_PI/2.0, -log(v + sqrt(v*v-1.0))));
+  } else if (v < -1.0) {
+    SCM_RETURN(Scm_MakeComplex(-M_PI/2.0, -log(-v - sqrt(v*v-1.0))));
+  } else {
+    SCM_RETURN(Scm_MakeFlonum(asin(v)));
+  }")
 (define-cproc %acos (x)
   "  double v;
   if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   v = Scm_GetDouble(x);
-  if (v < -1.0 || v > 1.0) Scm_Error(\"domain error for acos: %S\", x);
-  SCM_RETURN(Scm_MakeFlonum(acos(Scm_GetDouble(x))));")
+  if (v > 1.0) {
+    SCM_RETURN(Scm_MakeComplex(0, log(v + sqrt(v*v-1.0))));
+  } else if (v < -1.0) {
+    SCM_RETURN(Scm_MakeComplex(M_PI, log(-v - sqrt(v*v-1.0))));
+  } else {
+    SCM_RETURN(Scm_MakeFlonum(acos(v)));
+  }")
 
 (define-cproc %atan (z &optional x)
   "  if (!SCM_REALP(z)) Scm_Error(\"real number required, but got %S\", z);
