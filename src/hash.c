@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.12 2001-04-22 07:33:36 shiro Exp $
+ *  $Id: hash.c,v 1.13 2001-05-06 23:59:12 shirok Exp $
  */
 
 #include "gauche.h"
@@ -462,7 +462,7 @@ ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, ScmObj key)
 }
 
 /*
- * Utility
+ * Utilities
  */
 
 ScmObj Scm_HashTableKeys(ScmHashTable *table)
@@ -514,7 +514,7 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
 }
 
 /*
- * print
+ * Printer
  */
 
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -534,4 +534,13 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTCSTR(">", port);
 }
 
+/*
+ * Exposed hash functions
+ */
 
+unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
+{
+    u_long hashval;
+    hashval = string_hash(SCM_OBJ(str));
+    return (hashval % modulo);
+}

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.130 2001-05-06 07:44:25 shirok Exp $
+ *  $Id: gauche.h,v 1.131 2001-05-06 23:59:36 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1276,6 +1276,8 @@ extern ScmObj Scm_HashTableStat(ScmHashTable *table);
 
 extern void Scm_HashIterInit(ScmHashTable *hash, ScmHashIter *iter);
 extern ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter);
+
+extern unsigned long Scm_HashString(ScmString *str, unsigned long bound);
 
 /*--------------------------------------------------------
  * MODULE
