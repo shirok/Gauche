@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.116 2001-04-17 09:57:55 shiro Exp $
+ *  $Id: gauche.h,v 1.117 2001-04-18 09:30:31 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1384,6 +1384,7 @@ extern ScmObj Scm_MakeBignumFromSI(long val);
 extern ScmObj Scm_MakeBignumFromUI(u_long val);
 extern ScmObj Scm_MakeBignumFromDouble(double val);
 extern ScmObj Scm_BignumCopy(ScmBignum *b);
+extern ScmObj Scm_BignumToString(ScmBignum *b, int radix);
 
 extern long   Scm_BignumToSI(ScmBignum *b);
 extern u_long Scm_BignumToUI(ScmBignum *b);
@@ -1400,6 +1401,7 @@ extern ScmObj Scm_BignumSubN(ScmBignum *bx, ScmObj args);
 extern ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by);
 extern ScmObj Scm_BignumMulSI(ScmBignum *bx, long y);
 extern ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args);
+extern ScmObj Scm_BignumDivSI(ScmBignum *bx, long y, long *r);
 
 struct ScmFlonumRec {
     SCM_HEADER;
