@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.261 2002-09-02 21:36:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.262 2002-09-03 20:03:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3786,7 +3786,7 @@ hierarchical file/module configuration, as in Guile.)
 @c EN
 The export-import mechanism doesn't work well in some cases, such as:
 @c JP
-expotr-importメカニズムは、次のような場合をうまく処理できません。
+export-importメカニズムは、次のような場合をうまく処理できません。
 @c COMMON
 
 @itemize @bullet
