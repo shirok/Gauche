@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.305 2002-09-27 10:01:19 shirok Exp $
+ *  $Id: gauche.h,v 1.306 2002-10-12 13:56:01 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1233,9 +1233,8 @@ SCM_EXTERN int    Scm_CharReadyUnsafe(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_ClosePort(ScmPort *port);
 
-SCM_EXTERN ScmObj Scm_WithPortLocking(ScmPort *port,
-                                      ScmObj (*proc)(ScmPort*, void*),
-                                      void *data);
+SCM_EXTERN ScmObj Scm_VMWithPortLocking(ScmPort *port,
+                                        ScmObj closure);
 
 SCM_EXTERN void Scm_Putb(ScmByte b, ScmPort *port);
 SCM_EXTERN void Scm_Putc(ScmChar c, ScmPort *port);

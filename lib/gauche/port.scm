@@ -12,17 +12,23 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: port.scm,v 1.3 2001-10-05 08:06:40 shirok Exp $
+;;;  $Id: port.scm,v 1.4 2002-10-12 13:56:01 shirok Exp $
 ;;;
 
 (select-module gauche)
 
 ;; TODO: allow caller to specify reading units
 (define (port->string port)
-  (with-output-to-string
-    (lambda ()
-      (let loop ((ch (read-char port)))
-        (unless (eof-object? ch) (write-char ch) (loop (read-char port)))))))
+  (let ((out (open-output-string)))
+    (%with-port-locking port
+      (lambda ()
+        (%with-port-locking out
+          (lambda ()
+            (let loop ((ch (%read-char-unsafe port)))
+              (unless (eof-object? ch)
+                (%write-char-unsafe ch out)
+                (loop (%read-char-unsafe port))))
+            (get-output-string out)))))))
 
 ;; TODO: optimize
 (define (port->list reader port)

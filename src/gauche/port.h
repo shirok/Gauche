@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.h,v 1.3 2002-07-18 10:45:41 shirok Exp $
+ *  $Id: port.h,v 1.4 2002-10-12 13:56:01 shirok Exp $
  */
 
 /*
@@ -25,7 +25,7 @@
  *  I need to implement a few tricks to avoid this requirement
  *  from affecting performance too much.
  *
- *  Each port has recursive lock, that is, the same thread can
+ *  Each port has a recursive lock, that is, the same thread can
  *  lock the port many times; the port will be fully unlocked
  *  when the thread calls unlock as many times as it called lock.
  *
@@ -35,7 +35,7 @@
  *  need to use CVs, and need to save dynamic context to revert
  *  lock state in case an error is thrown during processing.
  *
- *  If implemented naively, it costs too much, since in most
+ *  If implemented naively it costs too much, since in most
  *  cases the port operation is trivial; such as fetching some
  *  bytes from memory and incrementing a counter.   Only in some
  *  occasions the operation involves system calls or calling other

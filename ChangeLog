@@ -1,3 +1,10 @@
+2002-10-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, lib/gauche/port.scm, src/extlib.stub : exposed 'unsafe'
+	  port operations as well as %with-port-locking, for efficient port
+	  handling.  Removed redundant C-version of port->string (it hasn't
+	  been used anyway).
+
 2002-10-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/mop/propagate-slot.scm : added

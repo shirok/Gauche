@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.80 2002-09-18 20:25:37 shirok Exp $
+ *  $Id: port.c,v 1.81 2002-10-12 13:56:01 shirok Exp $
  */
 
 #include <unistd.h>
@@ -137,15 +137,28 @@ ScmObj Scm_ClosePort(ScmPort *port)
 /*
  * External routine to access port exclusively
  */
-ScmObj Scm_WithPortLocking(ScmPort *port, ScmObj (*proc)(ScmPort*, void*),
-                           void *data)
+static ScmObj with_port_locking_pre_thunk(ScmObj *args, int nargs, void *data)
 {
+    ScmPort *p = (ScmPort*)data;
     ScmVM *vm = Scm_VM();
-    ScmObj r = SCM_FALSE;
-    PORT_LOCK(port, vm);
-    PORT_SAFE_CALL(port, r = proc(port, data));
-    PORT_UNLOCK(port);
-    return r;
+    PORT_LOCK(p, vm);
+    return SCM_UNDEFINED;
+}
+
+static ScmObj with_port_locking_post_thunk(ScmObj *args, int nargs, void *data)
+{
+    ScmPort *p = (ScmPort*)data;
+    PORT_UNLOCK(p);
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_VMWithPortLocking(ScmPort *port, ScmObj closure)
+{
+    ScmObj before = Scm_MakeSubr(with_port_locking_pre_thunk, (void*)port,
+                                 0, 0, SCM_FALSE);
+    ScmObj after = Scm_MakeSubr(with_port_locking_post_thunk, (void*)port,
+                                0, 0, SCM_FALSE);
+    return Scm_VMDynamicWind(before, closure, after);
 }
 
 /*===============================================================
