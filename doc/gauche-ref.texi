@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.32 2001-06-24 22:41:51 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.33 2001-06-25 01:38:38 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.3.15
+@subtitle version 0.4
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -2143,10 +2143,12 @@ Returns the current output port.
 @defun port-name port
 @end defun
 
-@defun port-current-line
+@defun port-current-line port
 @end defun
 
-@defun port-file-number
+@defun port-file-number port
+Returns an integer file descriptor, if the @var{port} is associated
+to the system file I/O.  Returns @code{#f} otherwise.
 @end defun
 
 @defun copy-port src dst &keyword unit
@@ -2310,6 +2312,25 @@ use @code{display}.
 [R5RS]
 @end defun
 
+@defun port->string port
+@defunx port->list reader port
+@defunx port->string-list port
+@defunx port->sexp-list port
+Generally useful input procedures.  The API is taken from
+scsh and STk.
+
+@code{port->string} reads @var{port}
+until EOF and returns the accumulated data as a string.
+
+@code{port->list} applies @var{reader} on @var{port} repeatedly, until
+@var{reader} returns an EOF, then returns the list of objects
+@var{reader} returned.
+
+@code{(port->string-list port)} @equiv{}
+@code{(port->list read-line port)}, and
+@code{(port->sexp-list port)} @equiv{}
+@code{(port->list read port)}.
+@end defun
 
 @node Output,  , Input, Input and output
 @subsection Output
@@ -3718,6 +3739,49 @@ Closes @var{socket}.  All the ports associated to
 @var{socket} are closed as well.   If the socket is connected,
 it is shut down before closing.
 @end defun
+
+@defun call-with-client-socket socket proc
+@var{socket} is a connected client socket.  @var{proc} is called
+with two arguments, an input port that reads from the socket
+and an output port that writes to the socket.
+The socket is closed after @var{proc} returns or @var{proc}
+raises an error.
+@end defun
+
+This is an example of usage of high-level socket functions,
+a very simple www client.
+
+@example
+#!/usr/bin/env gosh
+(use gauche.regexp)
+(use gauche.net)
+
+(define (usage)
+  (display "Usage: swget url\n" (current-error-port))
+  (exit 1))
+
+;; Returns three values: host, port, and path.
+(define (parse-url url)
+  (rxmatch-let (rxmatch #/^http:\/\/([-A-Za-z\d.]+)(:(\d+))?(\/.*)?/ url)
+      (#f host #f port path)
+    (values host port path)))
+
+(define (get url)
+  (receive (host port path) (parse-url url)
+    (call-with-client-socket
+        (make-client-socket 'inet host (string->number (or port "80")))
+      (lambda (in out)
+        (format out "GET ~a HTTP/1.0\r\n" path)
+        (format out "host: ~a\r\n\r\n" host)
+        (flush out)
+        (copy-port in (current-output-port))))))
+
+(define (main args)
+  (if (= (length args) 1)
+      (get (car args))
+      (usage)))
+@end example
+
 
 @node Low-level socket interface, Netdb interface, High-level functions, Networking
 @subsection Low-level socket interface

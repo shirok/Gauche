@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.5 2001-06-23 07:04:10 shirok Exp $
+;;;  $Id: net.scm,v 1.6 2001-06-25 01:35:06 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -24,6 +24,7 @@
           <sockaddr> <sockaddr-in> <sockaddr-un>
           sockaddr-name sockaddr-family
           make-client-socket make-server-socket
+          call-with-client-socket
           <sys-hostent> sys-gethostbyname sys-gethostbyaddr
           <sys-protoent> sys-getprotobyname sys-getprotobynumber
           <sys-servent> sys-getservbyname sys-getservbyport
@@ -98,5 +99,11 @@
       (socket-setsockopt socket sol_socket so_reuseaddr 1))
     (socket-bind socket address)
     (socket-listen socket 5)))
+
+(define (call-with-client-socket socket proc)
+  (dynamic-wind
+   (lambda () #f)
+   (lambda () (proc (socket-input-port socket) (socket-output-port socket)))
+   (lambda () (socket-close socket))))
 
 (provide "gauche/net")
