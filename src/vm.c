@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.108 2001-09-24 11:32:01 shirok Exp $
+ *  $Id: vm.c,v 1.109 2001-09-26 10:51:20 shirok Exp $
  */
 
 #include "gauche.h"
@@ -191,7 +191,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 
 /* Push a continuation frame.  next_pc is the PC from where execution
    will be resumed.  */
-#define PUSH_CONT(next_pc)                              \
+#define PUSH_CONT(old_pc, next_pc)                      \
     do {                                                \
         ScmContFrame *newcont = (ScmContFrame*)sp;      \
         newcont->prev = cont;                           \
@@ -199,6 +199,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
         newcont->argp = argp;                           \
         newcont->size = sp - (ScmObj*)argp;             \
         newcont->pc = next_pc;                          \
+        newcont->info = old_pc;                         \
         cont = newcont;                                 \
         sp += CONT_FRAME_SIZE;                          \
         argp = (ScmEnvFrame*)sp;                        \
@@ -208,16 +209,16 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 #define POP_CONT()                                                      \
     do {                                                                \
         if (cont->argp == NULL) {                                       \
-            /* C continuation */                                        \
             void *data__[SCM_CCONT_DATA_SIZE];                          \
             ScmObj (*after__)(ScmObj, void**);                          \
             memcpy(data__, (ScmObj*)cont + CONT_FRAME_SIZE,             \
                    cont->size * sizeof(void*));                         \
             after__ = (ScmObj (*)(ScmObj, void**))cont->pc;             \
             if (IN_STACK_P((ScmObj*)cont)) sp = (ScmObj*)cont;          \
-            cont = cont->prev;                                          \
             env = cont->env;                                            \
             argp = (ScmEnvFrame*)sp;                                    \
+            pc = SCM_NIL;                                               \
+            cont = cont->prev;                                          \
             SAVE_REGS();                                                \
             val0 = after__(val0, data__);                               \
             RESTORE_REGS();                                             \
@@ -293,7 +294,11 @@ ScmVM *Scm_SetVM(ScmVM *vm)
         }                                                               \
     } while (0)
 
-#define VM_ERR(errargs) do { SAVE_REGS(); Scm_Error errargs; } while (0)
+#define VM_ERR(errargs)                         \
+   do {                                         \
+      SAVE_REGS();                              \
+      Scm_Error errargs;                        \
+   } while (0)
 
 /* to take advantage of GCC's `computed goto' feature
    (see gcc.info, "Labels as Values") */
@@ -354,6 +359,7 @@ static void run_loop()
 {
     DECL_REGS;
     ScmObj code = SCM_NIL;
+    ScmObj prevpc = SCM_NIL;
 
 #ifdef __GNUC__
     static void *dispatch_table[256] = {
@@ -379,6 +385,7 @@ static void run_loop()
             continue;
         }
 
+        prevpc = pc;
         FETCH_INSN(code);
         
         if (!SCM_VM_INSNP(code)) {
@@ -433,7 +440,7 @@ static void run_loop()
 #endif
 #endif
                 if (!SCM_NULLP(next)) {
-                    PUSH_CONT(next);
+                    PUSH_CONT(prevpc, next);
                 }
                 PUSH_ENV_HDR();
                 pc = prep;
@@ -684,7 +691,7 @@ static void run_loop()
                 VM_ASSERT(SCM_PAIRP(pc));
                 FETCH_INSN(body);
                 if (!SCM_NULLP(pc)) {
-                    PUSH_CONT(pc);
+                    PUSH_CONT(prevpc, pc);
                 }
                 PUSH_LOCAL_ENV(nlocals, info);
                 pc = body;
@@ -803,7 +810,7 @@ static void run_loop()
                 FETCH_INSN(body);
 
                 if (!SCM_NULLP(pc)) {
-                    PUSH_CONT(pc);
+                    PUSH_CONT(prevpc, pc);
                 }
 
                 PUSH_ENV_HDR();
@@ -1204,7 +1211,7 @@ static void run_loop()
                 CHECK_STACK(CONT_FRAME_SIZE);
 #endif
 #endif
-                PUSH_CONT(pc);
+                PUSH_CONT(prevpc, pc);
                 SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
                 RESTORE_REGS();
@@ -1220,7 +1227,7 @@ static void run_loop()
                 CHECK_STACK(CONT_FRAME_SIZE);
 #endif
 #endif
-                PUSH_CONT(pc);
+                PUSH_CONT(prevpc, pc);
                 SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
                 RESTORE_REGS();
@@ -1373,7 +1380,7 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
     }
     SCM_APPEND1(code, tail, proc);
     SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, numargs));
-    PUSH_CONT(code);
+    PUSH_CONT(code, code);
     SAVE_REGS();
 }
 
@@ -1421,7 +1428,7 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     DECL_REGS;
     ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
     argp = (ScmEnvFrame *)sp;
-    PUSH_CONT(v);
+    PUSH_CONT(v, v);
     vm->numVals = 1;
     SAVE_REGS();
     return SCM_UNDEFINED;
@@ -1451,7 +1458,7 @@ static ScmObj user_eval_inner(ScmObj program)
        TODO: this won't be necessary if we're called directly
        from a subr */
     CHECK_STACK(CONT_FRAME_SIZE);
-    PUSH_CONT(pc);
+    PUSH_CONT(pc, pc);
     pc = program;
     SAVE_REGS();
 
@@ -1464,9 +1471,11 @@ static ScmObj user_eval_inner(ScmObj program)
     if (setjmp(cstack.jbuf) == 0) {
         run_loop();
         val0 = vm->val0;
-        RESTORE_REGS();
-        POP_CONT();
-        SAVE_REGS();
+        if (vm->cont) {
+            RESTORE_REGS();
+            POP_CONT();
+            SAVE_REGS();
+        }
     } else {
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
@@ -1560,6 +1569,7 @@ void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
     cc->size = datasize;
     cc->pc = SCM_OBJ(after);
     cc->env = env;
+    cc->info = SCM_NIL;
     for (i=0; i<datasize; i++) {
         PUSH_ARG(SCM_OBJ(data[i]));
     }
@@ -1718,8 +1728,13 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
     SCM_PUTZ("Stack Trace:\n", -1, err);
     SCM_PUTZ("_______________________________________\n", -1, err);
     SCM_FOR_EACH(cp, stack) {
+        ScmObj frame = SCM_CAAR(cp);
+        ScmObj srcinfo;
+        if (!SCM_PAIRP(frame)) continue;
+        srcinfo = Scm_Assq(SCM_INTERN("source-info"), SCM_PAIR_ATTR(frame));
+        if (SCM_FALSEP(srcinfo)) continue;
         Scm_Printf(SCM_PORT(err), "%3d   %66.1S\n",
-                   depth++, SCM_CAR(cp));
+                   depth++, SCM_CDR(srcinfo));
     }
 
     /* unwind the dynamic handlers */
@@ -2054,7 +2069,7 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
 
     while (c) {
         ScmObj cinfo, einfo;
-        if (c->argp) cinfo = c->pc;
+        if (c->argp) cinfo = c->info;
         else         cinfo = SCM_FALSE;
         if (c->env)  einfo = c->env->info;
         else         einfo = SCM_FALSE;
@@ -2187,6 +2202,7 @@ void Scm_VMDump(ScmVM *vm)
         } else {
             Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
         }
+        Scm_Printf(out, "             info = %#50.1S\n", cont->info);
         cont = cont->prev;
     }
 
