@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.27 2002-10-15 02:21:27 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.28 2002-12-25 13:02:04 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -71,20 +71,27 @@ int Scm_UVectorElementSize(ScmClass *klass)
 }
 
 /* Generic constructor */
-ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init)
+ScmObj Scm_MakeUVectorFull(ScmClass *klass, int size, void *init, int immutable, void *owner)
 {
     ScmUVector *vec;
     int eltsize = Scm_UVectorElementSize(klass);
     SCM_ASSERT(eltsize >= 1);
     vec = SCM_NEW(ScmUVector);
+    SCM_SET_CLASS(vec, klass);
     if (init) {
         vec->elements = init;   /* trust the caller */
     } else {
         vec->elements = SCM_NEW_ATOMIC2(void*, size*eltsize);
     }
-    SCM_SET_CLASS(vec, klass);
     vec->size = size;
+    vec->immutable = immutable;
+    vec->owner = owner;
     return SCM_OBJ(vec);
+}
+
+ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init)
+{
+    return Scm_MakeUVectorFull(klass, size, init, FALSE, NULL);
 }
 EOF
 
