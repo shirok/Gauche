@@ -259,7 +259,18 @@ Content-Length: 4349
        '("multipart" "alternative"
          ("boundary" . "=_alternative 006EBAA488256DF0_="))
        (mime-parse-content-type
-        "multipart/alternative; boundary=\"=_alternative 006EBAA488256DF0_=\""))
+        "multipart/alternative; boundary=\"=_alternative 006EBAA488256DF0_=\"")
+       )
+
+(test* "mime-decode-word" "this is some text"
+       (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?="))
+(test* "mime-decode-word" "Keith_Moore"
+       (mime-decode-word "=?US-ASCII?Q?Keith_Moore?="))
+;; NB: the following tests depends on internal encodings
+(when (memq (gauche-character-encoding) '(euc-jp sjis utf8))
+  (test* "mime-decode-word" "\u5ddd\u5408 \u53f2\u6717"
+         (mime-decode-word "=?ISO-2022-JP?B?GyRCQG45ZxsoQiAbJEI7S08vGyhC?="))
+  )
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.uri")

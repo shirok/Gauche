@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.1 2003-12-13 02:28:28 shirok Exp $
+;;;  $Id: mime.scm,v 1.2 2003-12-13 03:12:19 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -50,9 +50,14 @@
   (use rfc.822)
   (use util.list)
   (export mime-parse-version mime-parse-content-type
+          mime-decode-word
           )
   )
 (select-module rfc.mime)
+
+(autoload rfc.quoted-printable quoted-printable-decode-string)
+(autoload rfc.base64 base64-decode-string)
+(autoload gauche.charconv ces-conversion-supported? ces-convert)
 
 ;;===============================================================
 ;; Basic utility
@@ -98,6 +103,22 @@
                          (string-downcase subtype)
                          (get-attributes input '()))))
            ))))
+
+;; decode rfc2047-encoded word, i.e. "=?...?="
+;; if word isn't legal encoded word, it is returned as is.
+(define (mime-decode-word word)
+  (rxmatch-case word
+    (test string-incomplete? word) ;; safety net
+    (#/^=\?([-!#-'*+\w\^-~]+)\?([-!#-'*+\w\^-~]+)\?([!->@-~]+)\?=$/
+     (#f charset encoding body)
+     (if (ces-conversion-supported? charset #f)
+       (cond ((string-ci=? encoding "q")
+              (ces-convert (quoted-printable-decode-string body) charset #f))
+             ((string-ci=? encoding "b")
+              (ces-convert (base64-decode-string body) charset #f))
+             (else word)) ;; unsupported encoding
+       word))
+    (else word)))
 
 ;;===============================================================
 ;; Basic streaming parser
