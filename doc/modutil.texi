@@ -10531,6 +10531,26 @@ for the details of @code{parameterize}).
 @end example
 @end deffn
 
+@defun cgi-get-metavariables name
+@c EN
+Returns a value of cgi metavariable @var{name}.
+This function first searches the parameter @code{cgi-metavariables},
+and if the named variable is not found, calls @code{sys-getenv}.
+
+CGI scripts may want to use @code{cgi-get-metavariables} instead
+of directly calling @code{sys-getenv}; doing so makes reuse of
+the script easier. 
+@c JP
+@var{name}で指定されるCGIメタ変数の値を返します。
+この関数はまずパラメータ@code{cgi-metavariables}を探し、
+指定されたメタ変数が見つからなければ@code{sys-getenv}を呼びます。
+
+CGIスクリプトは、なるべく@code{sys-getenv}を直接呼ぶのではなく
+@code{cgi-get-metavariable}を使うのが良いでしょう。
+スクリプトの再利用もしやすくなります。
+@c COMMON
+@end defun
+
 @defun cgi-parse-parameters &keyword :query-string :merge-cookies
 @c EN
 Parses query string and returns associative list of parameters.

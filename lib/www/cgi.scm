@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.14 2004-02-25 10:19:42 shirok Exp $
+;;;  $Id: cgi.scm,v 1.15 2004-05-13 09:30:10 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -50,6 +50,7 @@
   (use text.tree)
   (use text.html-lite)
   (export cgi-metavariables
+          cgi-get-metavariable
           cgi-output-character-encoding
           cgi-parse-parameters
           cgi-get-parameter
@@ -70,6 +71,9 @@
                  (p  (assoc name mv)))
         (cadr p))
       (sys-getenv name)))
+
+;; rename to export
+(define cgi-get-metavariable get-meta)
 
 ;;----------------------------------------------------------------
 ;; The output character encoding.  Used to generate the default
