@@ -456,6 +456,8 @@ Gauche's @code{sys-readlink}.  @xref{Directory manipulation}.
 This function is available on systems that support symbolink links.
 @item realloc
 Not necessary in Scheme.
+@item realpath
+Gauche's @code{sys-normalize-pathname} or @code{sys-realpath}.  @xref{Pathnames}.
 @item remove
 Gauche's @code{sys-remove}.  @xref{Directory manipulation}.
 @item rename

@@ -8843,7 +8843,7 @@ process's environment.  If the system doesn't support putenv(3),
 this function signals an error.
 @c JP
 プロセスの環境変数@var{name}に値@var{value}をセットします。システムが
-putenv()をサポートしていない場合はエラーが通知されます。
+putenv(3)をサポートしていない場合はエラーが通知されます。
 @c COMMON
 @end defun
 
@@ -9213,6 +9213,19 @@ may return @code{"/"} for the argument @code{"/"}, and
 註：このふるまいはPerlの@code{basename}および@code{dirname}と同様です。
 システムによっては、コマンドの@code{basename}は@code{"/"}に対して@code{"/"}を、
 @code{"."}に対して@code{"."}を返すものがあります。
+@c COMMON
+@end defun
+
+@defun sys-realpath pathname
+@c EN
+@code{sys-realpath} returns an absolute pathname of @var{pathname}
+that does not include ``@code{.}'', ``@code{..}'' or symbolic links.
+If the system does not support realpath(3), this function signals an
+error.
+@c JP
+@code{sys-realpath}は``@code{.}'', ``@code{..}''およびシンボリックリン
+クを含まない@var{pathname}の絶対パスを返します。システムがrealpath(3)
+をサポートしていない場合はエラーが通知されます。
 @c COMMON
 @end defun
 
