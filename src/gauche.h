@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.140 2001-05-20 08:58:15 shirok Exp $
+ *  $Id: gauche.h,v 1.141 2001-05-21 09:12:26 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -856,13 +856,31 @@ extern ScmObj Scm_VectorToList(ScmVector *v);
  * PORT
  */
 
+/* Port is the Scheme way of I/O abstraction.  R5RS's definition of
+ * of the port is very simple and straightforward.   Practical
+ * applications, however, require far more detailed control over
+ * the I/O channel, as well as the reasonable performance.
+ *
+ * Current implementation is a bit messy, trying to achieve both
+ * performance and feature requirements.  In the core API level,
+ * ports are categorized in one of three types: file ports, string
+ * ports and procedural ports.   A port may be an input port or
+ * an output port.   A port may handle byte (binary) streams, as
+ * well as character streams.  Some port may interchange byte (binary)
+ * I/O versus character I/O, while some may signal an error if you
+ * mix those operations.
+ * (Right now, binary/character mixed I/O is not well supported and
+ * contains some serious bugs).
+ */
+    
 struct ScmPortRec {
     SCM_HEADER;
-    char direction;             /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
-    char type;                  /* SCM_PORT_{FILE|ISTR|OSTR|PORT|CLOSED} */
-    char ownerp;                /* TRUE if this port owns underlying
-                                   file descriptor/stream */
-    unsigned char bufcnt;       /* # of bytes in the incomplete buffer */
+    unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
+    unsigned int type : 3;      /* SCM_PORT_{FILE|ISTR|OSTR|PORT|CLOSED} */
+    unsigned int ownerp : 1;    /* TRUE if this ports owns underlying
+                                   file pointer */
+    unsigned int icpolicy : 2;  /* Policy to handle incomplete characters */
+    unsigned int bufcnt : 8;    /* # of bytes in the incomplete buffer */
     char buf[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
     
     ScmChar ungotten;           /* ungotten character */
@@ -912,11 +930,13 @@ typedef struct ScmPortVTableRec {
     ScmProcPortInfo *(*Info)(ScmPort *p);
 } ScmPortVTable;
 
+/* Port direction */
 enum ScmPortDirection {
     SCM_PORT_INPUT = 1,
     SCM_PORT_OUTPUT = 2
 };
 
+/* Port types */
 enum ScmPortType {
     SCM_PORT_FILE,
     SCM_PORT_ISTR,
@@ -925,14 +945,17 @@ enum ScmPortType {
     SCM_PORT_CLOSED
 };
 
+/* Predicates & accessors */
 #define SCM_PORTP(obj)      (SCM_XTYPEP(obj, SCM_CLASS_PORT))
 
 #define SCM_PORT(obj)       ((ScmPort *)(obj))
 #define SCM_PORT_TYPE(obj)  (SCM_PORT(obj)->type)
 #define SCM_PORT_DIR(obj)   (SCM_PORT(obj)->direction)
+#define SCM_PORT_FLAGS(obj) (SCM_PORT(obj)->flags)
 #define SCM_PORT_UNGOTTEN(obj)  (SCM_PORT(obj)->ungotten)
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT_TYPE(obj) == SCM_PORT_CLOSED)
+#define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
 
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))
