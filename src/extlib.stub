@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.71 2001-05-01 09:50:15 shirok Exp $
+;;; $Id: extlib.stub,v 1.72 2001-05-03 10:31:35 shirok Exp $
 ;;;
 
 "
@@ -323,13 +323,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (char? c))
   "  SCM_RETURN(Scm_StringByteSet(str, k, c));")
 
-(define-cproc string-substitute! (target start end str)
+(define-cproc string-substitute! (target start str)
   (assert (string? target))
   (assert (string? str))
   (assert (small-integer? start))
-  (assert (small-integer? end))
-  "  ScmObj r = Scm_StringSubstitute(target, start, end, str);
-  if (!SCM_STRINGP(r)) Scm_Error(\"start/end out of range: (%d %d)\", start, end);
+  "  ScmObj r = Scm_StringSubstitute(target, start, str);
+  if (!SCM_STRINGP(r)) Scm_Error(\"argument out of range: (%d %S)\", start, str);
   SCM_RETURN(r);")
 
 (define-cproc %maybe-substring (str &optional start end)
