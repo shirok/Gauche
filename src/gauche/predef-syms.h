@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.17 2001-03-08 10:23:13 shiro Exp $
+ *  $Id: predef-syms.h,v 1.18 2001-03-09 08:36:11 shiro Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -53,14 +53,14 @@ DEFSYM(ScmQletrecSyntax,    "letrec-syntax");
 DEFSYM(ScmQsyntaxRulesInt,  "%syntax-rules");
 DEFSYM(ScmQsyntaxRules,     "syntax-rules");
 DEFSYM(ScmQellipsis,        "...");
+DEFSYM(ScmQmacroExpand,     "%macro-expand");
+DEFSYM(ScmQmacroExpand1,    "%macro-expand-1");
 
 DEFSYM(ScmQnull,            "null");
 DEFSYM(ScmQscheme,          "scheme");
 DEFSYM(ScmQgauche,          "gauche");
 DEFSYM(ScmQuser,            "user");
 
-DEFSYM(ScmQmacroExpand,     "%macro-expand");
-DEFSYM(ScmQmacroExpand1,    "%macro-expand-1");
 DEFSYM(ScmQloadPath,        "*load-path*");
 DEFSYM(ScmQloadNext,        "*load-next*");
 DEFSYM(ScmQloadHistory,     "*load-history*");
@@ -106,14 +106,14 @@ DEFSYM(ScmQdynamicLoadPath, "*dynamic-load-path*");
 #define SCM_SYM_SYNTAX_RULES_INT SCM_OBJ(&ScmQsyntaxRulesInt)
 #define SCM_SYM_SYNTAX_RULES     SCM_OBJ(&ScmQsyntaxRules)
 #define SCM_SYM_ELLIPSIS         SCM_OBJ(&ScmQellipsis) /* ... */
+#define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
+#define SCM_SYM_MACRO_EXPAND_1   SCM_OBJ(&ScmQmacroExpand1)
 
 #define SCM_SYM_NULL             SCM_OBJ(&ScmQnull)
 #define SCM_SYM_SCHEME           SCM_OBJ(&ScmQscheme)
 #define SCM_SYM_GAUCHE           SCM_OBJ(&ScmQgauche)
 #define SCM_SYM_USER             SCM_OBJ(&ScmQuser)
 
-#define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
-#define SCM_SYM_MACRO_EXPAND_1   SCM_OBJ(&ScmQmacroExpand1)
 #define SCM_SYM_LOAD_PATH        SCM_OBJ(&ScmQloadPath)
 #define SCM_SYM_LOAD_NEXT        SCM_OBJ(&ScmQloadNext)
 #define SCM_SYM_LOAD_HISTORY     SCM_OBJ(&ScmQloadHistory)
