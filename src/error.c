@@ -12,9 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.5 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: error.c,v 1.6 2001-02-10 12:42:07 shiro Exp $
  */
 
+#include <errno.h>
+#include <string.h>
 #include "gauche.h"
 
 /*
@@ -64,6 +66,33 @@ void Scm_Error(const char *msg, ...)
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args);
         va_end(args);
+        e = Scm_MakeException(Scm_GetOutputString(SCM_PORT(ostr)));
+    }
+    SCM_WHEN_ERROR {
+        e = Scm_MakeException(SCM_MAKE_STR("Error occurred in error handler"));
+    }
+    SCM_POP_ERROR_HANDLER;
+    Scm_VMThrowException(e);
+}
+
+/*
+ * Just for convenience to report a system error.   Add strerror() message
+ * after the provided message.
+ */
+
+void Scm_SysError(const char *msg, ...)
+{
+    ScmObj e;
+    va_list args;
+    ScmObj syserr = Scm_MakeString(strerror(errno), -1, -1);
+    
+    SCM_PUSH_ERROR_HANDLER {
+        ScmObj ostr = Scm_MakeOutputStringPort();
+        va_start(args, msg);
+        Scm_Vprintf(SCM_PORT(ostr), msg, args);
+        va_end(args);
+        SCM_PUTCSTR(": ", ostr);
+        SCM_PUTS(syserr, ostr);
         e = Scm_MakeException(Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
