@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.60 2001-09-24 11:32:00 shirok Exp $
+ *  $Id: compile.c,v 1.61 2001-09-24 19:58:11 shirok Exp $
  */
 
 #include "gauche.h"
@@ -56,6 +56,8 @@ static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
 #define ADDCODE1(c)   SCM_APPEND1(code, codetail, c)
 #define ADDCODE(c)    SCM_APPEND(code, codetail, c)
 
+static ScmObj sym_source_info;
+
 /* create local ref/set insn.  special instruction is used for local
    ref/set to the first frame with small number of offset (<5) for
    performance reason. */
@@ -95,6 +97,14 @@ static inline ScmObj make_lset(int depth, int offset)
     return SCM_VM_INSN2(SCM_VM_LSET, depth, offset);
 }
 
+static inline ScmObj add_srcinfo(ScmObj code, ScmObj source)
+{
+    if (SCM_PAIRP(code)) {
+        SCM_PAIR_ATTR(code) = Scm_Cons(Scm_Cons(sym_source_info, source),
+                                       SCM_PAIR_ATTR(code));
+    }
+    return code;
+}
 
 /* type of let-family bindings */
 enum {
@@ -346,7 +356,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 /* variable is bound syntactically. */
                 ScmCompileProc cmpl = SCM_SYNTAX(var)->compiler;
                 void *data = SCM_SYNTAX(var)->data;
-                return cmpl(form, env, ctx, data);
+                return add_srcinfo(cmpl(form, env, ctx, data), form);
             } else {
                 /* it's a global variable.   Let's see if the symbol is
                    bound to a global syntax, or an inlinable procedure
@@ -368,7 +378,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                     if (SCM_SYNTAXP(g->value)) {
                         ScmCompileProc cmpl = SCM_SYNTAX(g->value)->compiler;
                         void *data = SCM_SYNTAX(g->value)->data;
-                        return cmpl(form, env, ctx, data);
+                        return add_srcinfo(cmpl(form, env, ctx, data), form);
                     }
                     if (!(vm->compilerFlags & SCM_COMPILE_NOINLINE) &&
                         SCM_SUBRP(g->value) && SCM_SUBR_INLINER(g->value)) {
@@ -376,6 +386,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                             = SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
                                                          form, env, ctx);
                         if (!SCM_FALSEP(inlined)) {
+                            add_srcinfo(inlined, form);
 #ifdef EXPLICIT_STACK_CHECK
                             int nargs = Scm_Length(SCM_CDR(form));
                             if (nargs >= 2) {
@@ -1778,6 +1789,8 @@ void Scm__InitCompiler(void)
 {
     /* TODO: use different modules for R5RS syntax and others */
     ScmModule *m = SCM_MODULE(Scm_SchemeModule());
+
+    sym_source_info = SCM_INTERN("source-info");
 
 #define DEFSYN(symbol, syntax) \
     Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
