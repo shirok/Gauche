@@ -3582,15 +3582,15 @@ procedure is incompabile to Gauche's native @code{format}
 So I splitted the module into two, @code{srfi-29.format}
 which contains srfi-29's @code{format}, and @code{srfi-29.bundle}
 which contains the rest ("bundle" API).
-If a program wish a complete compatibility of
+If a program wishes a complete compatibility of
 srfi-29, use @code{srfi-29} module, which overrides
-Gauche's native @code{format}.   If a program just want
-srfi-29's "bundle" API, but want to keep Gauche's @code{format},
+Gauche's native @code{format}.   If a program just wants
+srfi-29's "bundle" API, but wants to keep Gauche's @code{format},
 use @code{srfi-29.bundle}.
 
-A similar feature is provided by @code{text.gettext} module
+A localization feature is also provided by @code{text.gettext} module
 (@xref{Localized messages}),
-which is a preferable way of message localication in Gauche.
+which is a preferable way of message localization in Gauche.
 This module is provided mainly for porting code that uses
 srfi-29 features.
 @end deftp
