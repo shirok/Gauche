@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.11 2001-03-05 00:54:30 shiro Exp $
+ *  $Id: list.c,v 1.12 2001-03-05 01:15:01 shiro Exp $
  */
 
 #include "gauche.h"
@@ -459,6 +459,27 @@ ScmObj Scm_Assoc(ScmObj obj, ScmObj alist)
     return SCM_FALSE;
 }
 
+/* Assoc-delete */
+
+ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
+{
+    ScmObj cp, prev = SCM_NIL;
+    SCM_FOR_EACH(cp, alist) {
+        ScmObj e = SCM_CAR(cp);
+        if (!SCM_PAIRP(e)) continue;
+        if (Scm_EqualM(elt, SCM_CAR(e), cmpmode)) {
+            if (SCM_NULLP(prev)) {
+                alist = SCM_CDR(cp);
+                continue;
+            } else {
+                SCM_SET_CDR(prev, SCM_CDR(cp));
+            }
+        }
+        prev = cp;
+    }
+    return alist;
+}
+
 /* Return union of two lists.
    Comparison is done by `eq?'.
  */
@@ -493,7 +514,7 @@ ScmObj Scm_TopologicalSort(ScmObj lists)
 {
     ScmObj nodes = SCM_NIL, nt;  /* list of (node indeg to ... ) */
     ScmObj result = SCM_NIL, rt; /* result list */
-    ScmObj ep, np;
+    ScmObj ep, np, nnp;
     
     /* construct node alist */
     SCM_FOR_EACH(ep, lists) {
@@ -515,23 +536,32 @@ ScmObj Scm_TopologicalSort(ScmObj lists)
             SCM_APPEND1(nodes, nt, SCM_LIST2(SCM_CDR(edge), SCM_MAKE_INT(1)));
         } else {
             int indeg = SCM_INT_VALUE(SCM_CADR(p)) + 1;
-            SCM_SET_CDR(p, Scm_Cons(SCM_MAKE_INT(indeg), SCM_CDDR(p)));
+            SCM_SET_CAR(SCM_CDR(p), SCM_MAKE_INT(indeg));
         }
     }
 
     /* construct result */
-#if 0    
     while (!SCM_NULLP(nodes)) {
         SCM_FOR_EACH(np, nodes) {
             ScmObj node = SCM_CAR(np);
             if (SCM_CADR(node) == SCM_MAKE_INT(0)) {
                 SCM_APPEND1(result, rt, SCM_CAR(node));
-                nodes = 
+                nodes = Scm_AssocDeleteX(SCM_CAR(node), nodes, SCM_CMP_EQ);
+                SCM_FOR_EACH(nnp, SCM_CDDR(node)) {
+                    ScmObj p = Scm_Assq(SCM_CAR(nnp), nodes);
+                    int indeg;
+                    
+                    if (!SCM_PAIRP(p))
+                        Scm_Error("internal error in topological-sort!");
+                    indeg = SCM_INT_VALUE(SCM_CADR(p)) - 1;
+                    SCM_SET_CAR(SCM_CDR(p), SCM_MAKE_INT(indeg));
+                }
+                break;
             }
         }
     }
-#endif
-    return nodes;
+
+    return result;
 }
 
 /*
