@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.11 2001-04-22 09:01:40 shiro Exp $
+ *  $Id: bignum.c,v 1.12 2001-04-22 09:53:20 shiro Exp $
  */
 
 #include <math.h>
@@ -227,6 +227,20 @@ int Scm_BignumCmp(ScmBignum *bx, ScmBignum *by)
     for (i=bx->size-1; i>=0; i--) {
         if (bx->values[i] < by->values[i]) return (bx->sign > 0) ? -1 : 1;
         if (bx->values[i] > by->values[i]) return (bx->sign > 0) ? 1 : -1;
+    }
+    return 0;
+}
+
+/* compare absolute values.  assume bx and by are nomalized. */
+int Scm_BignumAbsCmp(ScmBignum *bx, ScmBignum *by)
+{
+    int i;
+    
+    if (bx->size < by->size) return -1;
+    if (bx->size > by->size) return 1;
+    for (i=bx->size-1; i>=0; i--) {
+        if (bx->values[i] < by->values[i]) return -1;
+        if (bx->values[i] > by->values[i]) return 1;
     }
     return 0;
 }
@@ -658,7 +672,9 @@ static inline int div_normalization_factor(u_long w)
 
 /* General case of division.  We use each half word as a digit. 
    Assumes digitsof(dividend) >= digitsof(divisor) > 1.
-   Assumes enough digits are allocated to quotient and remainder. */
+   Assumes enough digits are allocated to quotient and remainder.
+   Note that remainder may need one more word than divisor because
+   of the temporary result. */
 static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
                         ScmBignum *quotient, ScmBignum *remainder)
 {
@@ -761,6 +777,7 @@ static u_long bignum_sdiv(ScmBignum *dividend, u_long divisor)
     return r1;
 }
 
+/* assuming dividend is normalized. */
 ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divisor, long *remainder)
 {
     u_long dd = (divisor < 0)? -divisor : divisor;
@@ -775,13 +792,31 @@ ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divisor, long *remainder)
         ScmBignum *bv = SCM_BIGNUM(Scm_MakeBignumFromSI(dd));
         ScmBignum *br = make_bignum(2);
         q = make_bignum(dividend->size + 1);
-        printf("%d\n", br->size);
         bignum_gdiv(dividend, bv, q, br);
         rr = br->values[0];
     }
     if (remainder) *remainder = (dividend->sign * d_sign < 0)? -rr : rr;
     q->sign = dividend->sign * d_sign;
     return Scm_NormalizeBignum(q);
+}
+
+/* assuming dividend and divisor is normalized.  returns quotient and
+   remainder */
+ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
+{
+    ScmBignum *q, *r;
+
+    /* special case */
+    if (Scm_BignumAbsCmp(dividend, divisor) < 0) {
+        return Scm_Cons(SCM_MAKE_INT(0), SCM_OBJ(dividend));
+    }
+
+    q = make_bignum(dividend->size - divisor->size + 1);
+    r = make_bignum(divisor->size + 1);
+    bignum_gdiv(dividend, divisor, q, r);
+    q->sign = dividend->sign * divisor->sign;
+    r->sign = dividend->sign;
+    return Scm_Cons(Scm_NormalizeBignum(q), Scm_NormalizeBignum(r));
 }
 
 /*-----------------------------------------------------------------------
