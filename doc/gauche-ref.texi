@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.55 2001-09-11 10:38:03 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.56 2001-09-13 09:10:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2062,6 +2062,7 @@ So far, all you can do with exceptions is to signal an error.
 @menu
 * Signalling errors::           
 * Handling errors::             
+* Exception object::            
 @end menu
 
 @node Signalling errors, Handling errors, Exceptions, Exceptions
@@ -2096,7 +2097,7 @@ Similar to an error, but the error message is formatted by
 @end example
 @end defun
 
-@node Handling errors,  , Signalling errors, Exceptions
+@node Handling errors, Exception object, Signalling errors, Exceptions
 @subsection Handling errors
 
 @defun with-error-handler handler thunk
@@ -2139,7 +2140,7 @@ the actual function is built in VM, using lighter mechanisms
 @end example
 @end defun
 
-@node Exception object
+@node Exception object,  , Handling errors, Exceptions
 @subsection Exception object
 
 @deftp {Class} <exception>
@@ -4881,6 +4882,31 @@ The exit status of the command is collected when @var{proc}
 returns or raises an error.
 @end defun
 
+@defun process-output->string command
+@defunx process-output->string-list command
+Runs @var{command} and collects its output (to stdout) to return them.
+@code{process-output->string} concatenates all the output from @var{command}
+to one string, replacing any sequence of whitespace characters to
+single space.   The action is similar to ``command substitution''
+in shell scripts.
+@code{process-output->string-list} collects the output from
+@var{command} line-by-line and returns the list of them.  Newline
+characters are stripped.
+
+Internally, @var{command} is run by @code{call-with-input-process}.
+
+@example
+(process-output->string "uname -smp")
+  @result{} "Linux i686 unknown"
+
+(process-output->string "ls")
+  @result{} "a.out foo.c foo.c~ foo.o"
+
+(process-output->string-list "ls")
+  @result{} ("a.out" "foo.c" "foo.c~" "foo.o")
+@end example
+
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Regular expression utilities, Simple dispatcher, High Level Process Interface, Libarary Modules
