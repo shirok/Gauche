@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: mt-random.scm,v 1.7 2002-06-27 10:41:40 shirok Exp $
+;;;  $Id: mt-random.scm,v 1.8 2002-09-18 22:12:27 shirok Exp $
 ;;;
 
 (define-module math.mt-random
@@ -30,7 +30,7 @@
   )
 (select-module math.mt-random)
 
-(dynamic-load "mt-random")
+(dynamic-load "mt-random" :export-symbols #t)
 
 (define (%get-nword-random-int mt n)
   (let loop ((i 0) (r (%mt-random-uint32 mt)))
