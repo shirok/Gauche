@@ -34,9 +34,9 @@ if [ "$tgz" = "yes" ]; then
 fi
 
 if [ "$docs" = "yes" ]; then
-  cp doc/gauche-ref.texi doc/Makefile $MAN_DEST
+  cp doc/gauche-ref.texi doc/extract doc/Makefile $MAN_DEST
   (cd $MAN_DEST; make htmls)
-  rm -f $MAN_DEST/gauche-ref.texi $MAN_DEST/Makefile
+  rm -f $MAN_DEST/*.texi $MAN_DEST/extract $MAN_DEST/Makefile
 fi
 
 if [ "$test" = "yes" ]; then
