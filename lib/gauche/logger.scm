@@ -12,14 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: logger.scm,v 1.1 2001-09-18 07:05:08 shirok Exp $
+;;;  $Id: logger.scm,v 1.2 2002-09-21 20:23:30 shirok Exp $
 ;;;
 
 (define-module gauche.logger
   (use srfi-1)
   (use srfi-13)
   (use gauche.fcntl)
-  (use gauche.process)
   (export <log-drain>
           log-open
           log-format)
@@ -44,8 +43,8 @@
 ;;   ~U   user name
 ;;   ~H   host name
 
-(define (log-format-prefix drain)
-  (with-string-io (slot-ref drain 'prefix)
+(define (log-format-prefix drain pstr)
+  (with-string-io pstr
     (lambda ()
       (let loop ((c (read-char)))
         (cond ((eof-object? c))
@@ -69,12 +68,18 @@
                                      (sys-geteuid)))
                         (loop (read-char)))
                        ((char=? c1 #\H)
-                        (display (process-output->string "hostname"))
+                        (display (sys-gethostname))
                         (loop (read-char)))
                        (else
                         (display c) (display c1) (loop (read-char))))))
               (else (display c) (loop (read-char))))
         ))))
+
+(define (log-get-prefix drain)
+  (let ((pstr (slot-ref drain 'prefix)))
+    (cond ((string? pstr) (log-format-prefix drain pstr))
+          ((not pstr) "")
+          (else (pstr drain)))))
 
 (define (with-log-output drain proc)
   (let ((path (slot-ref drain 'path)))
@@ -103,7 +108,7 @@
   (apply log-format *default-log-drain* fmtstr args))
 
 (define-method log-format ((drain <log-drain>) fmt . args)
-  (let* ((prefix (log-format-prefix drain))
+  (let* ((prefix (log-get-prefix drain))
          (str (string-concatenate
                (fold-right
                 (lambda (data rest)
