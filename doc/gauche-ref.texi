@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.130 2001-12-01 21:52:57 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.131 2001-12-02 12:52:52 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4309,18 +4309,85 @@ Returns all the keys or values of hash table @var{hash} in a list,
 
 @defun procedure? obj
 [R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a procedure, @code{#f} otherwise.
+@c JP
+@var{obj}が手続きなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun apply proc arg1 @dots{} args
 [R5RS]
+@c EN
+Calls a procedure @var{proc} with a list of arguments,
+@code{(@var{arg1} @dots{} . @var{args})}.
+The last argument @var{args} must be a proper list.
+Returns (a) value(s) @var{proc} returns.
+@c JP
+@code{(@var{arg1} @dots{} . @var{args})}を引数として手続き@var{proc}を呼びます。
+最後の引数@var{args}は正規のリストでなければなりません。 @var{proc}が返す
+値をそのまま返します。
+@c COMMON
+@example
+(apply list 'a 'b '(c d e)) @result{} (a b c d e)
+
+(apply + 1 2 '(3 4 5))      @result{} 15
+@end example
 @end defun
 
 @defun map proc list1 list2 @dots{}
-[R5RS]
+[R5RS+]
+@c EN
+Applies @var{proc} for each element(s) of given list(s),
+and returns a list of the results.  R5RS doesn't specify
+the application order of @code{map}, but Gauche guarantees
+@var{proc} is always applied in order of the list(s).
+Gauche's @code{map} also terminates as soon as one of
+the list is exhausted.
+@c JP
+与えられたリストの各要素に対して@var{proc}を適用し、その結果をリストにして
+返します。R5RSでは@var{proc}の適用順序が定められていませんが、Gaucheでは
+常に@var{proc}はリスト内の順番で呼ばれます。
+複数のリストが与えられた場合、最も短いリストが終了した時点で@var{proc}の適用を
+打ち切ります。
+@c COMMON
+
+@example
+(map car '((a b) (c d) (e f))) @result{} (a c e)
+
+(map cons '(a b c) '(d e f))
+  @result{} ((a . d) (b . e) (c . f))
+@end example
+
+@c EN
+Note that the @code{gauche.collection} module (@xref{Collection framework})
+extends @code{map} to work on any type of collection.
+@c JP
+@code{gauche.collection}モジュール(@ref{Collection framework}参照)
+を使うと、@code{map}がリスト以外のコレクション型に対しても動作するようになります。
+@c COMMON
 @end defun
 
 @defun for-each proc list1 list2 @dots{}
 [R5RS]
+@c EN
+Applies @var{proc} for each element(s) of given list(s) in order.
+The results of @var{proc} are discarded.  The return value of
+@code{for-each} is undefined.  When more than one list is given,
+@code{for-each} terminates as soon as one of the list is exhausted.
+@c JP
+手続き@var{proc}をリストの各エレメントに対して順に適用します。
+@var{proc}の結果は捨てられます。@code{for-each}の戻り値は定義されていません。
+複数のリストが与えられた場合、一番短いリストが終了した時点で@code{for-each}は終了します。
+@c COMMON
+
+@c EN
+Note that the @code{gauche.collection} module (@xref{Collection framework})
+extends @code{for-each} to work on any type of collection.
+@c JP
+@code{gauche.collection}モジュール(@ref{Collection framework}参照)
+を使うと、@code{for-each}がリスト以外のコレクション型に対しても動作するようになります。
+@c COMMON
 @end defun
 
 @node Continuation, Multiple values, Procedures, Control features
@@ -7377,6 +7444,7 @@ of descendants of @var{class}.
 * High Level Process Interface::  
 * Regular expression utilities::  
 * Simple dispatcher::           
+* Sequence framework::          
 * Singleton::                   
 * Termios::                     
 * Unit Testing::                
@@ -8132,9 +8200,15 @@ APIs.
 
 @deftp {Module} gauche.charconv
 @mdindex gauche.charconv
+@c EN
 This module defines a set of functions that converts character encoding
 of the given data stream.
+@c JP
+与えられたデータストリームの文字エンコーディングを変換するための手続き群を提供する
+モジュールです。
+@c COMMON
 
+@c EN
 Internally, charconv module uses @code{iconv(3)} character code
 conversion library.
 The supported character encoding schemes (CES) are limited to what
@@ -8142,12 +8216,26 @@ the underlying @code{iconv} supports.   Unfortunately, there is no
 standard way to query supported CES's from the system.  You have to
 check the manual of your iconv system (try @code{man iconv}) to find
 out what CES's are supported.
+@c JP
+charconvモジュールは@code{iconv(3)}ライブラリを利用して文字コードを変換します。
+従って、変換可能な文字符号化方法(CES)は使用している@code{iconv}ライブラリが
+サポートするものに制限されます。どのCESがサポートされているかをプログラムから知るための
+APIは無いので、サポートされているCESを知るにはシステムのiconvのマニュアルを
+参照してください。
+@c COMMON
 
+@c EN
 A CES is represented by its name as a string (case insignificant).
 There may be several aliases defined for a single encoding.
 For example, both @code{"EUC-JP"} and @code{"EUCJP"} may work on the EUC-JP
 encoding.  The iconv in glibc 2.1 or later recognizes following
 names for the typical Japanese CES.
+@c JP
+CESの名前は文字列で指定します。大文字小文字の違いは無視されます。
+同じCESにいくつかの名前がついていることがあります。例えば、@code{"EUC-JP"}と@code{"EUCJP"}
+はともにEUC-JPエンコーディングを指定するのに使えるかもしれません。
+glibc 2.1附属のiconvでは、次のようなCES名がよくある日本語のCESとして認識されるようです。
+@c COMMON
 
 @table @code
 @item "EUC-JP", "EUCJP"
@@ -8160,34 +8248,86 @@ UTF-8
 ISO-2022-JP
 @end table
 
-There are cases that you know the input is encoded in one of
-several possible encodings.  The charconv module has a mechanism
+@c EN
+There are cases that you don't know the CES of the input, but
+you know it is one of several possible encodings.
+The charconv module has a mechanism
 to guess the input encoding.  There can be multiple algorithms,
 and each algorithm has the name.  Right now, there's only one
 algorithm implemented:
+@c JP
+しばしば、入力のCESが未知であり、可能性のあるいくつかの候補から入力のCESを
+推測しなければならない場合があります。推測するアルゴリズムはいくつも考えられるので、
+それぞれに名前がついています。今のところ、一つのアルゴリズムしか実装されていません。
+@c COMMON
 @table @code
 @item "*JP"
+@c EN
 To guess the character encoding from japanese text, among either
 ISO-2022-JP, EUC-JP, ShiftJIS or UTF-8.
+@c JP
+日本語のテキストのCESを、ISO-2022-JP, EUC-JP, ShiftJIS または UTF-8の
+いずれかであるとして推測する。
+@c COMMON
 @end table
+
+@c EN
+This name can be used in place of CES name for some conversion functions.
+@c JP
+このアルゴリズム名は、いくつかの変換関数においてCES名の代わりに使うことができます。
+@c COMMON
 @end deftp
 
+@c EN
 You can check whether the specific conversion is supported on
 your system or not, by the following function.
+@c JP
+特定の変換がシステムでサポートされているかどうかは次の手続きで調べることができます。
+@c COMMON
 
 @defun ces-conversion-supported? from-ces to-ces
+@c EN
 Returns @code{#t} if conversion from the character encoding scheme
 (CES) @var{from-ces} to @var{to-ces} is supported in this system.
+@c JP
+符号化方法@var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
+@c EN
+And the followings are the conversion function.
+@c JP
+そして以下が変換手続きです。
+@c COMMON
+
 @defun open-input-conversion-port source from-code &keyword to-code buffer-size owner?
+@c EN
 Takes an input port @var{source}, which feeds characters
 encoded in @var{from-code}, and returns another input port,
 from which you can read characters encoded in @var{to-code}.
+@c JP
+文字が符号化方法@var{from-code}で符号化されているデータを読み出せる
+入力ポート@var{source}を取り、符号化方法@var{to-code}で符号化されたデータを
+読み出せるポートを作成して返します。
+@c COMMON
 
+@c EN
+If @var{to-code} is omitted, the native CES is assumed.
+@c JP
+@var{to-code}が省略された場合はネイティブのCESと見なされます。
+@c COMMON
+
+@c EN
 @var{buffer-size} is used to allocate internal buffer size for
-conversion.  The default size is about 1 kilobytes.
+conversion.  The default size is about 1 kilobytes and it's suitable
+for typical cases.
+@c JP
+@var{buffer-size}は変換のための内部バッファのサイズを指定します。
+省略時のサイズは1Kバイト程で、通常の使用には問題ないサイズです。
+@c COMMON
 
+@c EN
 If you don't know the @var{source}'s CES, you can specify
 CES guessing scheme, such as @code{"*JP"}, in place of @var{from-code}.
 The conversion port tries to guess the encoding, by prefetching
@@ -8200,13 +8340,41 @@ size is too small.  The default size is usually enough for most
 text documents, but it may fail if the large text contains mostly ASCII
 characters and multibyte characters appear only at the very end of
 the document.
+To be sure for the worst case,
+you have to specify the buffer size large enough to
+hold entire text.
+@c JP
+入力のCESが不明な場合、@code{"*JP"}などのCES推測アルゴリズム名を@var{from-code}
+として指定することができます。変換ポートは最高でバッファサイズまでのデータを先読みし、
+CESを推測しようとします。そのアルゴリズムで推測されるどのCESにも該当しないデータが
+検出された場合はエラーが報告されます。もし複数のCESが可能であるようなデータであった
+場合は、Gaucheのネイティブエンコーディングが可能なCESに含まれていればそれが選ばれ、
+そうでなければいずれかのCESが適当に選ばれます。従って、バッファサイズが小さすぎると
+誤った判定をする可能性が高くなります。大抵のテキストドキュメントに対して、
+既定のバッファサイズは十分ですが、大きなテキストのほとんどがASCII文字で最後だけ
+マルチバイト文字が現われるようなテキストでは誤判定の可能性があります。
+最悪の場合でも結果を保障するには、テキスト全体が格納できるバッファサイズを指定すると
+良いでしょう。
+@c COMMON
 
+@c EN
 By default, @code{open-input-conversion-port} leaves @var{source} open.
 If you specify true value to @var{owner?}, the function closes
 @var{source} after it reads EOF from the port.
+@c JP
+通常、@code{open-input-conversion-port}は変換が全て終了した後でも@var{source}
+はオープンしたままにします。キーワード引数@var{owner?}に真の値を指定すると、
+EOFが読まれた後で@var{source}はクローズされます。
+@c COMMON
 
-For example, the following code copies a file @code{unknown.txt} to a file
-@code{eucjp.txt}, converting unknown japanese CES to EUC-JP.
+@c EN
+For example, the following code copies a file @file{unknown.txt} to a file
+@file{eucjp.txt}, converting unknown japanese CES to EUC-JP.
+@c JP
+例を示しましょう。以下のコードは未知のCES(但しEUC-JP, SJIS, ISO2022-JP, UTF8の
+いずれかであることは分かっている)で書かれたテキストファイル@file{unknown.txt}を
+読みだし、文字エンコーディングをEUC-JPに変換して@file{eucjp.txt}に書き出します。
+@c COMMON
 @example
 (call-with-output-file "eucjp.txt"
   (lambda (out)
@@ -8217,39 +8385,71 @@ For example, the following code copies a file @code{unknown.txt} to a file
                  :owner? #t)       ;@r{close unknown.txt afterwards}
                out)))
 @end example
-
 @end defun
 
 @defun open-output-conversion-port sink to-code &keyword from-code buffer-size owner?
+@c EN
 Creates and returns an output port that converts
 given characters from @var{from-code} to @var{to-code}
 and feed to an output port @var{sink}.
 If @var{from-code} is omitted, the native CES is assumed.
 You can't specify a character guessing scheme (such as "*JP") to
 neither @var{from-code} nor @var{to-code}.
+@c JP
+文字のエンコーディングを@var{from-code}から@code{to-code}に変換して
+出力ポート@var{sink}に書き出すような出力変換ポートを作成して返します。
+@var{to-code}が省略された場合はネイティブのCESと見なされます。
+@var{from-code}にも@var{to-code}にも、CES推測アルゴリズム名を
+使用することはできません。
+@c COMMON
 
+@c EN
 @var{buffer-size} specifies the size of internal conversion buffer.
 The characters put to the returned port may stay in the buffer,
 until the port is explicity flushed (by @code{flush}) or
 the port is closed.
+@c JP
+@var{buffer-size}は内部で変換に使われるバッファサイズを指定します。
+出力変換ポートに書き出された文字は、@code{flush}を使って明示的に
+フラッシュするか出力変換ポートが閉じられるまで、バッファ内に残っている可能性があります。
+@c COMMON
 
+@c EN
 By default, the returned port doesn't closes @var{sink} when
 itself is closed.  If a keyword argument @var{owner?} is provided
 and true, however, it closes @var{sink} when it is closed.
+@c JP
+通常、出力変換ポートがクローズされても@var{sink}はクローズされません。
+@var{owner?}に真の値を与えれば、出力変換ポートのクローズ時に@var{sink}を
+クローズするようにできます。
+@c COMMON
 @end defun
 
 @defun ces-convert string from-code &optional to-code
+@c EN
 Convert @var{string}'s character encoding from @var{from-code}
 to @var{to-code}, and returns the converted string.
 The returned string may be a byte-string if @var{to-code}
 is different from the native CES.
+@c JP
+@var{from-code}でエンコーディングされた文字列@var{string}を
+@var{to-code}でエンコーディングされた文字列に変換します。
+@var{to-code}がネイティブエンコーディングで無い場合、返される文字列は
+バイト文字列(不完全な文字列)であるかもしれません。
+@c COMMON
 
+@c EN
 @var{from-code} can be a name of character guessing scheme
 (e.g. "*JP").  when @var{to-code} is omitted, the native CES is
 assumed.
+@c JP
+@var{from-code}にはCES推測アルゴリズム名("*JP"など)を与えることができます。
+@var{to-code}が省略された場合はネイティブエンコーディングと見なされます。
+@c COMMON
 @end defun
 
 @defun ces-guess-from-string string scheme
+@c EN
 Guesses the CES of @var{string} by the character guessing scheme
 @var{scheme} (e.g. "*JP").  Returns CES name that can be used
 by other charconv functions.   It may return @code{#f} if the
@@ -8257,6 +8457,13 @@ guessing scheme finds no possible encoding in @var{string}.
 Note that if there may be more than one possible encoding in
 @var{string}, the guessing scheme returns one of them,
 usually in favor of the native CES.
+@c JP
+文字列@var{string}のCESを、CES推測アルゴリズム@var{scheme} ("*JP"など)
+を使って推測し、結果のCES名を返します。もしどのCESにも該当しないデータが
+含まれていれば@code{#f}が返されます。複数のCESが可能である場合、
+ネイティブエンコーディングが含まれていればそれを、そうでなければ可能なCESからどれか
+ひとつが選んで返されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -8266,84 +8473,604 @@ usually in favor of the native CES.
 
 @deftp {Module} gauche.collection
 @mdindex gauche.collection
+@c EN
 This module provides a set of generic functions (GFs) that iterate over
 various collections.   The Scheme standard [R5RS] has some iterative
-primitives such as @code{map} and @code{for-each}, and SRFI-1 adds
-rich set of such functions, but they work only on lists.
-Using the object system, this module efficiently extends those
-functions for other collection classes such as vectors and hash tables.
+primitives such as @code{map} and @code{for-each},
+and SRFI-1 (@xref{List library} adds a rich set of such functions,
+but they work only on lists.
 
-Those iterative GFs work on @emph{collections} and its subclass,
+Using the method dispatch of the object system, this module
+efficiently extends those
+functions for other collection classes such as vectors and hash tables.
+It also provides a simple way for user-defined class to adapt
+those opertaions.
+So far, the following operations are defined.
+@c JP
+このモジュールは、様々なコレクションに対して繰り返し処理を行う総称関数を提供します。
+Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを定義しており、
+またSRFI-1(@ref{List library}参照)は更に数多くの繰り返し手続きを提供しますが、
+それらはリストに対してしか動作しません。
+
+このモジュールはオブジェクトシステムのメソッドディスパッチを利用して、
+これらの手続きをベクタやハッシュテーブルのような一般のコレクションタイプに対しても
+効率良く動作するように拡張します。また、ユーザ定義のクラスにこれらの操作を実装するための
+簡単な方法も提供します。今のところ、次のような総称関数が提供されています。
+@c COMMON
+
+@table @asis
+@c EN
+@item Mapping
+@c JP
+@item マッピング
+@c COMMON
+@code{fold}, @code{map}, @code{map-to}, @code{for-each}
+@c EN
+@item Selection and searching
+@c JP
+@item 選択と探索
+@c COMMON
+@code{find}, @code{filter}, @code{filter-to},
+@code{remove}, @code{remove-to}, @code{partition}, @code{partition-to}.
+@c EN
+@item Conversion
+@c JP
+@item 変換
+@c COMMON
+@code{coerce-to}
+@c EN
+@item Miscellaneous
+@c JP
+@item その他
+@c COMMON
+@code{size-of}, @code{lazy-size-of},
+@c EN
+@item Fundamental iterator creator
+@c JP
+@item 基礎的なイテレータ構築メソッド
+@c COMMON
+@code{call-with-iterator}, @code{call-with-builder},
+@code{with-iterator}, @code{with-builder}, @code{call-with-iterators}.
+@end table
+
+@c EN
+Those operations work on @emph{collections} and its subclass,
 @emph{sequences}.  A collection is a certain form of a set
 of objects that you can traverse all the object in it in a certain way.
 A sequence is a collection that all its elements are ordered, so that
 you can retrieve its element by index.
+@c JP
+これらの操作は、@emph{コレクション}とそのサブクラスである
+@emph{シーケンス}に対して動作します。コレクションは、その要素を全て
+訪れる方法が用意されているようなオブジェクトの集合です。
+シーケンスは、要素間に全順序関係が定義されておりインデックスで要素を取り出すことが
+できるようなコレクションです。
+@c COMMON
 
+@c EN
 The following Gauche built-in objects are treated as collections and/or
 sequences.
+@c JP
+次にあげるGaucheの組み込みオブジェクトはシーケンスあるいはコレクションとして動作します。
+@c COMMON
 @table @code
 @item <list>
+@c EN
 A sequence.
+@c JP
+シーケンス
+@c COMMON
 @item <vector>
-A sequence.   SRFI-4 homogeneous vectors (@code{<s8vector>} and so on)
-are also sequences.
+@c EN
+A sequence.
+@c JP
+シーケンス
+@c COMMON
 @item <string>
+@c EN
 A sequence (of characters)
+@c JP
+文字のシーケンス
+@c COMMON
 @item <hash-table>
+@c EN
 A collection.  Each element is a pair of a key and a value.
-@item <char-set>
-A collection of characters.
+@c JP
+コレクション。各要素はキーと値のペア。
+@c COMMON
+@item <s8vector>, <u8vector>, @dots{} <f64vector>
+@c EN
+A sequence (methods defined in @code{srfi-4} module,
+@xref{Homogeneous Vectors}).
+@c JP
+シーケンス。メソッドは@code{srfi-4}モジュール内で定義されます。
+@ref{Homogeneous Vectors}参照。
+@c COMMON
 @end table
 
-Other extension modules that defines some sort of collections
-also provides collection interface (e.g. @code{<dbm>} families,
-@xref{Generic DBM interface}).
+@c EN
+@xref{Sequence framework}, for it adds more sequence specific
+methods.
+@c JP
+@ref{Sequence framework}も参照してください。シーケンス特有のメソッドが
+追加されます。
+@c COMMON
 
-The following table quickly shows the list of GFs this module
-provides.
-@table @asis
-@item Fundamental iterators
-@code{call-with-iterator}, @code{call-with-builder},
-@code{with-iterator}, @code{with-builder}, @code{call-with-iterators}.
-@item Mapping
-@code{fold}, @code{map}, @code{map-to}, @code{for-each}
-@item Selection and searching
-@code{find}, @code{filter}, @code{filter-to},
-@code{remove}, @code{remove-to}, @code{partition}, @code{partition-to},
-@code{delete}, @code{delete-to}
-@item Miscellaneous
-@code{size-of}, @code{lazy-size-of},
-@code{coerce-to}
-@item Sequence-specific operations
-@code{ref}, @code{(setter ref)}, @code{subseq}
-@end table
-
-The GFs that needs to return a set of objects, i.e. 
-@code{map}, @code{filter}, @code{remove}, @code{partition} and
-@code{delete}, 
+@c EN
+The methods that needs to return a set of objects, i.e. 
+@code{map}, @code{filter}, @code{remove} and @code{partition}.
 returns a list (or lists).  The corresponding ``-to'' variant
-(@code{map-to}, @code{filter-to}, @code{remove-to}, @code{partition-to}
-and @code{delete-to})
+(@code{map-to}, @code{filter-to}, @code{remove-to} and @code{partition-to}.
 takes a collection class argument and returns the collection of the class.
+@c JP
+オブジェクトの集合を返すようなメソッド、すなわち
+@code{map}、@code{filter}、@code{remove}および@code{partition}は、
+リストを返します。対応する``-to''がつくメソッド
+(@code{map-to}、@code{filter-to}、@code{remove-to}、@code{partition-to})
+はコレクションクラスも引数に取り、そのクラスのコレクションを返します。
+@c COMMON
 @end deftp
 
 @menu
-* Fundamental iterator generic functions::  
 * Mapping over collection::     
 * Selection and searching in collection::  
 * Miscellaneous operations on collection::  
-* Operations on sequence::      
-* Creating your own collection class::  
+* Fundamental iterator creators::  
+* Implementing collections::    
 @end menu
 
-@node Fundamental iterator generic functions, Mapping over collection, Collection framework, Collection framework
-@subsection Fundamental iterator generic functions
+@node Mapping over collection, Selection and searching in collection, Collection framework, Collection framework
+@subsection Mapping over collection
+@c NODE コレクションに対するマッピング
 
-These are fundamental GFs on which all the rest of
-iterative method are built.  The API is not intended
+@deffn {Generic function} fold proc knil coll coll2 @dots{}
+@c EN
+This is a natural extension of @var{fold} in SRFI-1 (@xref{SRFI-1 Fold}).
+@c JP
+SRFI-1で定義される@var{fold} (@ref{SRFI-1 Fold}参照) の自然な拡張です。
+@c COMMON
+
+@c EN
+For each element @var{Ei} in the collection @var{coll}, @var{proc} is
+called as (@var{proc} @var{Ei} @var{Ri-1}), where @var{Ri-1} is the 
+result of (@var{i}-1)-th invocation of @var{proc} for @var{i} > 0, 
+and @var{R0} is @var{knil}.  Returns the last invocation of @var{proc}.
+@c JP
+コレクション@var{coll}の各要素@var{Ei}に対して、手続き@var{proc}が
+(@var{proc} @var{Ei} @var{Ri-1}) のように呼ばれます。ここで、
+@var{Ri-1} は @var{i} > 0 に対しては (@var{i}-1)番目の@var{proc}の呼び出しの
+結果であり、@var{R0}は@var{knil}です。最後の@var{proc}の戻り値を返します。
+@c COMMON
+@example
+(fold + 0 '#(1 2 3 4)) @result{} 10
+(fold cons '() "abc")  @result{} (#\c #\b #\a)
+@end example
+
+@c EN
+If the @var{coll} is a sequence, it is guaranteed that
+the elements are traversed in order.  Otherwise, the order
+of iteration is undefined.
+@c JP
+@var{coll}がシーケンスでもある場合、要素はシーケンスの順に@var{proc}に渡されます。
+そうでなければ繰り返しの順序は未定義です。
+@c COMMON
+
+@c EN
+You can fold more than one collection, although it doesn't make
+much sense unless all of the collections are sequences.
+Suppose @var{E(k, i)} for @var{i}-th element
+of @var{k}-th collection.  @var{proc} is called as
+@c JP
+複数のコレクションを@code{fold}に渡すこともできます (但し、その全てがシーケンスで
+なければあまり意味のある操作では無いでしょう)。
+@var{k}番目のコレクションの@var{i}番目の要素を@var{E(k, i)}とするとき、
+@var{proc}は以下のように呼ばれます。
+@c COMMON
+@example
+(@var{proc} @var{E(0,i)} @var{E(1,i)} @dots{} @var{E(K-1,i)} @var{Ri-1})
+@end example
+
+@c EN
+Different types of collections can be mixed together.
+@c JP
+異なる型のコレクションを混ぜて扱うことができます。
+@c COMMON
+
+@example
+(fold acons '() "abc" '#(1 2 3))
+  @result{} ((#\c 3) (#\b 2) (#\a 1))
+
+@c EN
+;; @r{calculates dot product of two vectors}
+@c JP
+;; @r{二つのベクタの内積を計算}
+@c COMMON
+(fold (lambda (a b r) (+ (* a b) r)) 0
+      '#(3 5 7) '#(2 4 6))
+  @result{} 68
+@end example
+
+@c EN
+When more than one collection is given, @code{fold} terminates
+as soon as at least one of the collections exhausted.
+@c JP
+複数のコレクションが与えられた場合、@code{fold}は少なくともひとつのコレクションが
+終了した時点で終了します。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} map proc coll coll2 @dots{}
+@c EN
+This extends the built-in @code{map} (@xref{Procedures}).
+Apply @var{proc} for each element in the collection @var{coll}, and
+returns a list of the results.
+@c JP
+組み込み手続き@code{map} (@ref{Procedures}参照) を拡張します。
+コレクション@var{coll}の各要素に手続き@var{proc}を適用し、その結果をリストにして
+返します。
+@c COMMON
+
+@c EN
+If the @var{coll} is a sequence, it is guaranteed that
+the elements are traversed in order.  Otherwise, the order
+of iteration is undefined.
+@c JP
+@var{coll}がシーケンスでもある場合、要素はシーケンスの順に@var{proc}に渡されます。
+そうでなければ繰り返しの順序は未定義です。
+@c COMMON
+
+@c EN
+If more than one collection is passed, @var{proc} is called with
+elements for each collection.  In such case, @code{map} terminates
+as soon as at least one of the collection is exhausted.  Note that passing
+more than one collection doesn't make much sense unless
+all the collections are sequences.
+@c JP
+複数のコレクションが与えられた場合、@var{proc}は各コレクションからの要素を引数として
+呼び出されます。@code{map}はひとつでもコレクションの最後に到達したら終了します。
+複数のコレクションを渡すのは、コレクションの全てがシーケンスでないとあまり意味がないでしょう。
+@c COMMON
+
+@example
+(map (lambda (x) (* x 2)) '#(1 2 3))
+  @result{} #(2 4 6)
+
+(map char-upcase "abc")
+  @result{} (#\A #\B #\C)
+
+(map + '#(1 2 3) '#(4 5 6))
+  @result{} (5 7 9)
+@end example
+
+@c EN
+@code{map} @emph{always} returns a list.  If you want to get the result
+in a different type of collection, use @code{map-to} described below.
+If you wonder why @code{(map char-upcase "abc")} doesn't return
+@code{"ABC"}, read the discussion in the bottom of this subsection.
+@c JP
+@code{map}は常にリストを返します。別のコレクション型で結果を得たい場合は、
+次に示す@code{map-to}を使って下さい。何故@code{(map char-upcase "abc")}が
+@code{"ABC"}を返さないのか疑問なら、この最後にあるディスカッションを参照してください。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} map-to class proc coll coll2 @dots{}
+@c EN
+This works the same as @code{map}, except the result is returned
+in a collection of class @var{class}.   @code{Class} must be a
+collection class and have a builder interface
+(@xref{Fundamental iterator creators}).
+@c JP
+@code{map}と同じように動作しますが、結果はクラス@var{class}のインスタンスとして返されます。
+@var{class}はコレクションクラスでなければなりません。
+また、構築インタフェースを持っている必要があります
+(@ref{Fundamental iterator creators}参照).
+@c COMMON
+
+@example
+(map-to <vector> + '#(1 2 3) '#(4 5 6))
+  @result{} #(5 7 9)
+
+(map-to <string> char-upcase "def")
+  @result{} "DEF"
+
+(map-to <vector> char=? "bed" "pet")
+  @result{} #(#f #t #f)
+@end example
+@end deffn
+
+@deffn {Generic function} for-each proc coll coll2 @dots{}
+@c EN
+Extension of built-in @code{for-each} (@xref{Procedures}).
+Applies @var{proc} for each elements in the collection(s).
+The result of @var{proc} is discarded.  The return value of
+@code{for-each} is undefined.
+@c JP
+組み込み手続き@code{for-each} (@ref{Procedures}参照) を拡張します。
+コレクション@var{coll}の各要素に手続き@var{proc}を適用します。
+@var{proc}の結果は捨てられます。@code{for-each}の結果は未定義です。
+@c COMMON
+
+@c EN
+If the @var{coll} is a sequence, it is guaranteed that
+the elements are traversed in order.  Otherwise, the order
+of iteration is undefined.
+@c JP
+@var{coll}がシーケンスでもある場合、要素はシーケンスの順に@var{proc}に渡されます。
+そうでなければ繰り返しの順序は未定義です。
+@c COMMON
+
+@c EN
+If more than one collection is passed, @var{proc} is called with
+elements for each collection.  In such case, @code{for-each} terminates
+as soon as one of the collection is exhausted.  Note that passing
+more than one collection doesn't make much sense unless
+all the collections are sequences.
+@c JP
+複数のコレクションが与えられた場合、@var{proc}は各コレクションからの要素を引数として
+呼び出されます。@code{for-each}はひとつでもコレクションの最後に到達したら終了します。
+複数のコレクションを渡すのは、コレクションの全てがシーケンスでないとあまり意味がないでしょう。
+@c COMMON
+@end deffn
+
+@c EN
+@emph{Discussion:}  It is debatable what type of collection @code{map}
+should return when it operates on the collections other than lists.
+It may seem more ``natural'' if @code{(map * '#(1 2) '#(3 4))}
+returns a vector, and @code{(map char-upcase "abc")} returns a string.
+@c JP
+@emph{Discussion:}  @code{map}がリスト以外に対して適用されたとき、どういう
+コレクション型を返すべきでしょう。
+@code{(map * '#(1 2) '#(3 4))} がベクタを返し、
+@code{(map char-upcase "abc")} が文字列を返すようにするほうが「自然」でしょうか。
+@c COMMON
+
+@c EN
+Although such interface seems work for simple cases, it'll become
+problematic for more general cases.  What type of collection should
+be returned if a string and a vector are passed?  Furthermore,
+some collection may only have iterator interface but no builder
+interface, so that the result can't be coerced to the argument type
+(suppose you're mapping over database records, for example).
+And Scheme programmers are used to think @code{map} returns a list,
+and the result of @code{map} are applied to the procedures that
+takes list everywhere.
+@c JP
+そのようなインタフェースは単純な場合には動作するように思えますが、
+一般的な拡張は困難です。文字列とベクタが同時に渡されたらどうします?
+更に、コレクションクラスによっては繰り返しインタフェースは持っていても
+構築インタフェースを持っていない場合があり、結果をそのコレクションクラスとして
+返せない場合もあります (データベースレコードのコレクションに対してマップする、
+といった用法を考えてみて下さい)。また、Schemeプログラマは@code{map}が
+リストを返すという事実に慣れ親しんでおり、既存のコードも@var{map}の戻り値を
+リストを受け取る手続きに渡すことがよく行われています。
+@c COMMON
+
+@c EN
+So I decided to add another method, @code{map-to}, to specify
+the return type explicitly
+The idea of passing the return type is taken from CommonLisp's @code{map}
+function, but taking a class metaobject, @code{map-to} is much flexible
+to extend using method dispatch.
+This protocol (``-to'' variant takes a class metaobject
+for the result collection) is used thoughout the collection framework.
+@c JP
+そこで、結果の型を明示的に指定する@code{map-to}という別のメソッドを定義しました。
+結果の型を渡すのは、CommonLispの@code{map}関数にならっていますが、
+Gaucheではクラスメタオブジェクトを渡すようにしたため、メソッドディスパッチを使って
+拡張することが容易です。``-to'' のつくメソッドは結果のコレクションのクラスを
+取るというインタフェースはコレクションフレームワーク中で統一的に使われています。
+@c COMMON
+
+@node Selection and searching in collection, Miscellaneous operations on collection, Mapping over collection, Collection framework
+@subsection Selection and searching in collection
+@c NODE コレクションからの選択と探索
+
+@deffn {Generic function} find pred coll
+@c EN
+Applies @var{pred} for each element of a collection @var{coll} until
+@var{pred} returns a true value.  Returns the element on which @var{pred}
+returned a true value, or @code{#f} if no element satisfies @var{pred}.
+@c JP
+@var{pred}をコレクション@var{coll}の要素に適用してゆきます。@var{pred}が
+真の値を返したらそこで打ち切り、その要素を返します。@var{pred}が真の値を返す
+要素が無かった場合は@code{#f}を返します。
+@c COMMON
+
+@c EN
+If @var{coll} is a sequence, it is guaranteed that @var{pred} is
+applied in order.  Otherwise the order of application is undefined.
+@c JP
+@var{coll}がシーケンスでもある場合、要素はシーケンスの順に@var{proc}に渡されます。
+そうでなければ繰り返しの順序は未定義です。
+@c cOMMON
+
+@example
+(find char-upper-case? "abcDe") @result{} #\D
+(find even? '#(1 3 4 6)) @result{} 4
+(find even? '(1 3 5 7))  @result{} #F
+@end example
+@end deffn
+
+@deffn {Generic function} filter pred coll
+@c EN
+Returns a list of elements of collection @var{coll} that satisfies
+the predicate @var{pred}.   If the collection is a sequence,
+the order is preserved in the result.
+@c JP
+コレクション@var{coll}中の要素のうち、述語手続き@var{pred}が真の値を返したものの
+リストを返します。コレクションがシーケンスであれば、結果の要素の順序は元のシーケンスの
+順序と同じになります。
+@c COMMON
+
+@example
+(filter char-upper-case? "Hello, World")
+  @result{} (#\H #\W)
+(filter even? '#(1 2 3 4)) @result{} (2 4)
+@end example
+@end deffn
+
+@deffn {Generic function} filter-to class pred coll
+@c EN
+Same as @code{filter}, but the result is returned 
+as a collection of class @var{class}.
+@c JP
+@code{filter}と同じですが、結果のコレクションが@var{class}のインスタンスで
+返されます。
+@c COMMON
+
+@example
+(filter-to <vector> even? '#(1 2 3 4)) @result{} #(2 4)
+(filter-to <string> char-upper-case? "Hello, World") 
+  @result{} "HW"
+@end example
+@end deffn
+
+@deffn {Generic function} remove pred coll
+@c EN
+Returns a list of elements of collection @var{coll} that does not
+satisfy the predicate @var{pred}.   If the collection is a sequence,
+the order is preserved in the result.
+@c JP
+コレクション@var{coll}中の要素のうち、述語手続き@var{pred}が偽の値を返したものの
+リストを返します。コレクションがシーケンスであれば、結果の要素の順序は元のシーケンスの
+順序と同じになります。
+@c COMMON
+
+@example
+(remove char-upper-case? "Hello, World")
+  @result{} (#\e #\l #\l #\o #\, #\space #\o #\r #\l #\d)
+(remove even? '#(1 2 3 4)) @result{} (1 3)
+@end example
+@end deffn
+
+@deffn {Generic function} remove-to class pred coll
+@c EN
+Same as @code{remove}, but the result is returned 
+as a collection of class @var{class}.
+@c JP
+@code{remove}と同じですが、結果のコレクションが@var{class}のインスタンスで
+返されます。
+@c COMMON
+
+@example
+(remove-to <vector> even? '#(1 2 3 4)) @result{} #(1 3)
+(remove-to <string> char-upper-case? "Hello, World") 
+  @result{} "ello, orld"
+@end example
+@end deffn
+
+@deffn {Generic function} partition pred coll
+@c EN
+Does @code{filter} and @code{remove} the same time.
+Returns two lists, the first consists of elements of the collection
+@var{coll} that satisfies the predicate @var{pred}, and the second
+consists of elements that doesn't.
+@c JP
+@code{filter}と@code{remove}を同時に行います。
+二つのリストを返します。最初のリストはコレクション@var{coll}の要素のうち
+述語手続き@var{pred}が真の値を返したものから構成され、二つ目のリストは
+そうでない要素から構成されます。
+@c COMMON
+
+@example
+(partition char-upper-case? "PuPu")
+  @result{} (#\P #\P) @r{and} (#\u #\u)
+(partition even? '#(1 2 3 4))
+  @result{} (2 4) @r{and} (1 3)
+@end example
+@end deffn
+
+@deffn {Generic function} partition-to class pred coll
+@c EN
+Same as @code{partition}, except the results are returned
+in the collections of class @var{class}.
+@c JP
+@code{partition}と同じですが、結果がクラス@var{class}のコレクションとして
+返されます。
+@c COMMON
+
+@example
+(partition-to <string> char-upper-case? "PuPu")
+  @result{} "PP" @r{and} "uu"
+(partition-to <vector> even? '#(1 2 3 4))
+  @result{} #(2 4) @r{and} #(1 3)
+@end example
+@end deffn
+
+@node Miscellaneous operations on collection, Fundamental iterator creators, Selection and searching in collection, Collection framework
+@subsection Miscellaneous operations on collection
+@c NODE コレクションに対する様々な操作
+
+@deffn {Generic function} size-of coll
+@c EN
+Returns the number of elements in the collection.  Default method iterates over
+the collection to calculate the size, which is not very efficient
+and may diverge if the collection is infinite.
+Some collection classes overload the method for faster calculation.
+@c JP
+コレクションの要素数を返します。
+デフォルトのメソッドは、コレクション中の要素をすべて数え上げるものですが、
+あまり効率は良くないでしょう。また、無限個の要素を持つコレクションでは
+帰ってきません。多くのコレクションクラスはより効率の良い方法でこのメソッドを定義しています。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} lazy-size-of coll
+@c EN
+Returns either the size of the collection, or a promise to
+calculate it.  The intent of this method is to avoid
+size calculation if it is expensive.  In some cases, the caller
+wants to have size just for optimization, and it is not desirable
+to spend time to calculate the size.  Such caller uses this method
+and just discards the information if it is a promise.
+@c JP
+コレクションの要素数か、もしくはそれを計算するプロミスを返します。
+このメソッドの目的は、要素数の計算が高価な場合にそれを避けることにあります。
+しばしば、呼び出し側では最適化のための参考値として要素数が欲しい場合があり、
+そういった場合は要素数を計算するために時間を費すのは望ましくありません。
+このメソッドを代わりに呼び出して、結果がプロミスであればそれを使わない、
+という選択ができます。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} coerce-to class coll
+@c EN
+Convert a collection @var{coll} to another collection
+which is an instance of @var{class}.
+If @var{coll} is a sequence and @var{class} is a sequence class,
+the order is preserved.
+@c JP
+コレクション@var{coll}を、クラス@var{class}のインスタンスである
+別のコレクションへと変換します。@var{coll}がシーケンスであり、
+@var{class}がシーケンスクラスであれば、元のシーケンスの順序は保存されます。
+@c COMMON
+
+@example
+(coerce-to <vector> '(1 2 3 4))
+  @result{} #(1 2 3 4)
+
+(coerce-to <string> '#(#\a #\b #\c))
+  @result{} "abc"
+@end example
+@end deffn
+
+@node Fundamental iterator creators, Implementing collections, Miscellaneous operations on collection, Collection framework
+@subsection Fundamental iterator creators
+@c NODE 基礎的なイテレータ構築メソッド
+
+@c EN
+These are fundamental methods on which all the rest of
+iterative method are built.  The method interface is not intended
 to be called from general code, but suitable for building
-other iterator construct.   The reason why I chose this API
-as fundamental GFs are explained at the bottom of this subsection.
+other iterator construct.   The reason why I chose this interface
+as fundamental methods are explained at the bottom of this subsection.
+@c JP
+ここに挙げるメソッドは、他のコレクションメソッドの基礎となるものです。
+メソッドのインタフェースは一般のコードで使われることよりも、
+効率良く他の繰り返しメソッドを記述するのに便利なように設計されています。
+何故このインタフェースを基礎のメソッドとして選んだかについてはこの章の最後に説明します。
+@c COMMON
 
 @deffn {Generic function} call-with-iterator collection proc &keyword start
 A fundamental iterator creator.   This creates two procedures
@@ -8441,7 +9168,7 @@ A convenience macro to call @code{call-with-builder}.
 @end example
 @end deffn
 
-
+@emph{Discussion}:
 Most of the iterator GFs are built on top of these primitive GFs.
 By implementing those GFs, you can easily adapt your own collection
 class to all of those iterative
@@ -8490,89 +9217,49 @@ dispatching in the inner loop.  Also it allows the iterator
 implementator to take care of the resource problem.
 
 
-@node Mapping over collection, Selection and searching in collection, Fundamental iterator generic functions, Collection framework
-@subsection Mapping over collection
+@node Implementing collections,  , Fundamental iterator creators, Collection framework
+@subsection Implementing collections
+@c NODE コレクションの実装
 
-@deffn {Generic function} fold proc knil coll @dots{}
-This is a natural extension of @var{fold} in SRFI-1 (@xref{SRFI-1 Fold}).
-@end deffn
+The minimum requirements of the collection class implementation
+is as follow:
+@itemize @bullet
+@item
+The class inherits @code{<collection>} abstract class.
+@item
+A method @code{call-with-iterator} is implemented.
+@end itemize
 
-@deffn {Generic function} map proc coll
-@end deffn
+This makes iterator methods such as @code{map}, @code{for-each},
+@code{find} and @code{filter} to work.
 
-@deffn {Generic function} for-each proc coll
-@end deffn
+In order to make the constructive methods (e.g. @code{map-to} to
+create your collection), you have to implement @code{call-with-builder}
+method as well.  Note that @code{call-with-builder} method must work
+a sort of class method, dispatched by class, rather than normal method
+dispatched by instance.   In Gauche, you can implement it by using a
+metaclass.   Then the minimal code will look like this:
 
-@deffn {Generic function} map-to class proc coll
-@end deffn
+@example
+(define-class <your-collection-meta> (<class>) ())
 
+(define-class <your-collection> (<collection>)
+ (...) ;; @r{slots}
+ :metaclass <your-collection-meta>)
 
-@node Selection and searching in collection, Miscellaneous operations on collection, Mapping over collection, Collection framework
-@subsection Selection and searching in collection
+(define-method call-with-iterator
+    ((coll <your-collection>) proc . options)
+  @dots{}
+  )
 
-@deffn {Generic function} find pred coll
-@end deffn
+(define-method call-with-builder
+     ((coll <your-collection-meta>) proc . options)
+  @dots{}
+  )
+@end example
 
-@deffn {Generic function} filter pred coll
-@end deffn
-
-@deffn {Generic function} filter-to class pred coll
-@end deffn
-
-@deffn {Generic function} remove pred coll
-@end deffn
-
-@deffn {Generic function} remove-to class pred coll
-@end deffn
-
-@deffn {Generic function} partition pred coll
-@end deffn
-
-@deffn {Generic function} partition-to class pred coll
-@end deffn
-
-@node Miscellaneous operations on collection, Operations on sequence, Selection and searching in collection, Collection framework
-@subsection Miscellaneous operations on collection
-
-@deffn {Generic function} size-of coll
-Returns the size of the collection.  Default method iterates over
-the collection to calculate the size, which is not very efficient
-and may diverge if the collection is infinite.
-You can overload the method for faster calculation.
-@end deffn
-
-@deffn {Generic function} lazy-size-of coll
-Returns either the size of the collection, or a promise to
-calculate it.  The intent of this method is to avoid
-size calculation if it is expensive.  In some cases, the caller
-wants to have size just for optimization, and it is not desirable
-to spend time to calculate the size.  Such caller uses this method
-and just discards the information if it is a promise.
-@end deffn
-
-@deffn {Generic function} coerce-to class coll
-Convert a collection @var{coll} to another collection
-which is an instance of @var{class}.
-@end deffn
-
-@node Operations on sequence, Creating your own collection class, Miscellaneous operations on collection, Collection framework
-@subsection Operations on sequence
-
-@deffn {Generic function} ref sequence index &optional fallback
-@end deffn
-
-@deffn {Generic function} {(setter ref)} sequence index value
-@end deffn
-
-@deffn {Generic function} subseq sequence &optional start end
-@end deffn
-
-
-@node Creating your own collection class,  , Operations on sequence, Collection framework
-@subsection Creating your own collection class
-
-
-
+Optionally, you can overload other generic functions to optimize
+performance.
 
 @c ----------------------------------------------------------------------
 @node Low-level file operations, Interactive session, Collection framework, Library modules
@@ -8764,9 +9451,6 @@ Some examples:
 (apropos 'char 'srfi-14)
 @end example
 @end defmac
-
-
-
 
 @c ----------------------------------------------------------------------
 @node User-level logging, Networking, Interactive session, Library modules
@@ -10102,7 +10786,7 @@ value from the procedure is inserted to the output string using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple dispatcher, Singleton, Regular expression utilities, Library modules
+@node Simple dispatcher, Sequence framework, Regular expression utilities, Library modules
 @section @code{gauche.selector} - Simple dispatcher
 @c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
@@ -10207,6 +10891,58 @@ This is a simple example of "echo" server:
     (do () (#f) (selector-select selector))))
 @end example
 
+@c ----------------------------------------------------------------------
+@node Sequence framework, Singleton, Simple dispatcher, Library modules
+@section @code{gauche.sequence} - Sequence framework
+@c NODE シーケンスフレームワーク, @code{gauche.sequence} - シーケンスフレームワーク
+
+@deftp {Module} gauche.sequence
+@mdindex gauche.sequence
+Provides a generic opertaions on @emph{sequences}.  A sequence is
+a collection in which elements can be accessed by integer index,
+starting with zero.
+
+Since a sequence is also a collection, all the collection generic
+operations (@xref{Collection framework}) can be applied to a sequence.
+This module defines other operations that are meaningful only for
+sequences.
+
+Among Gauche builtin class, lists, vectors and strings are sequences
+and the specialized methods are defined for them.   Other extension
+types, such as SRFI-4 uniform vector, have the methods as well.
+@end deftp
+
+@menu
+* Fundamental sequence accessors::  
+* Slicing sequence::            
+* Implementing sequence::       
+@end menu
+
+@node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
+@subsection Fundamental sequence accessors
+
+@deffn {Generic function} referencer (seq <sequence>)
+@end deffn
+
+@deffn {Generic function} modifier (seq <sequence>)
+@end deffn
+
+@deffn {Generic function} ref (seq <sequence>) index &optional fallback
+@end deffn
+
+@deffn {Generic function} {(setter ref)} (seq <sequence>) index value
+@end deffn
+
+@node Slicing sequence, Implementing sequence, Fundamental sequence accessors, Sequence framework
+@subsection Slicing sequence
+
+@deffn {Generic function} subseq (seq <sequence>) &optional start end
+@end deffn
+
+@node Implementing sequence,  , Slicing sequence, Sequence framework
+@subsection Implementing sequence
+
+
 
 @c ----------------------------------------------------------------------
 @c @node Serializer, Termios, Simple dispatcher, Library modules
@@ -10217,7 +10953,7 @@ This is a simple example of "echo" server:
 @c @end deftp
 
 @c ----------------------------------------------------------------------
-@node Singleton, Termios, Simple dispatcher, Library modules
+@node Singleton, Termios, Sequence framework, Library modules
 @section @code{gauche.singleton} - Singleton
 
 @deftp {Module} gauche.singleton
@@ -11463,21 +12199,112 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @c ----------------------------------------------------------------------
 @node Homogeneous Vectors, SRFI String ports, And-let*, Library modules
 @section @code{srfi-4} - Homogeneous Vectors
+@c NODE 単一型のベクタ, @code{srfi-4} - 単一型のベクタ
 
 @deftp {Module} srfi-4
 @mdindex srfi-4
+@c EN
+Provides classes for vectors whose elements are of the same
+numeric type.
+
+Gauche's implementation extends SRFI-4 specification in two ways:
+@itemize @bullet
+@item
+Additional functions: @code{@var{TAG}vector-copy},
+@code{@var{TAG}vector-copy!}, @code{@var{TAG}vector->vector},
+@code{vector->@var{TAG}vector}.
+@item
+Implements the collection framework (@xref{Collection framework})
+and the sequence framework (@xref{Sequence framework}).  So the
+methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
+can be used on the SRFI-4 vector types.
+@end itemize
+@c JP
+要素が同一の数値型であるようなベクタのクラスを提供します。
+
+Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
+@itemize
+@item
+追加の手続き： @code{@var{TAG}vector-copy},
+@code{@var{TAG}vector-copy!}, @code{@var{TAG}vector->vector},
+@code{vector->@var{TAG}vector}.
+@item
+コレクションフレームワーク (@ref{Collection framework}参照)と
+シーケンスフレームワーク (@ref{Sequence framework}参照)の実装。
+例えば @code{map}, @code{for-each}, @code{ref}, @code{subseq}等の
+メソッドがSRFI-4ベクタに対して使えます。
+@end itemize
+@c COMMON
 @end deftp
 
-@deftp {Builtin Class} <s8vector>
-@deftpx {Builtin Class} <u8vector>
-@deftpx {Builtin Class} <s16vector>
-@deftpx {Builtin Class} <u16vector>
-@deftpx {Builtin Class} <s32vector>
-@deftpx {Builtin Class} <u32vector>
-@deftpx {Builtin Class} <s64vector>
-@deftpx {Builtin Class} <u64vector>
-@deftpx {Builtin Class} <f32vector>
-@deftpx {Builtin Class} <f64vector>
+@c EN
+The following ten types of vectors are defined.
+@table @emph
+@item s8vector
+Elements are exact integers in the range between -2^7 and 2^7-1
+@item u8vector
+Elements are exact integers in the range between 0 and 2^8-1
+@item s16vector
+Elements are exact integers in the range between -2^15 and 2^15-1
+@item u16vector
+Elements are exact integers in the range between 0 and 2^16-1
+@item s32vector
+Elements are exact integers in the range between -2^31 and 2^31-1
+@item u32vector
+Elements are exact integers in the range between 0 and 2^32-1
+@item s64vector
+Elements are exact integers in the range between -2^63 and 2^63-1
+@item u64vector
+Elements are exact integers in the range between 0 and 2^64-1
+@item f32vector
+Elements are inexact real numbers representable in the @code{float} of
+C compiler that compiles Gauche.  Usually it is a single precision
+IEEE floating point number.
+@item f64vector
+Elements are inexact real numbers representable in the @code{double} of
+C compiler that compiles Gauche.  Usually it is a double precision
+IEEE floating point number.
+@end table
+@c JP
+以下の10タイプのベクタが定義されます。
+@table @emph
+@item s8vector
+要素が -2^7 から 2^7-1 の間の正確な整数であるベクタ
+@item u8vector
+要素が 0 から 2^8-1 の間の正確な整数であるベクタ
+@item s16vector
+要素が -2^15 から 2^15-1 の間の正確な整数であるベクタ
+@item u16vector
+要素が 0 から 2^16-1 の間の正確な整数であるベクタ
+@item s32vector
+要素が -2^31 から 2^31-1 の間の正確な整数であるベクタ
+@item u32vector
+要素が 0 から 2^32-1 の間の正確な整数であるベクタ
+@item s64vector
+要素が -2^63 から 2^63-1 の間の正確な整数であるベクタ
+@item u64vector
+要素が 0 から 2^64-1 の間の正確な整数であるベクタ
+@item f32vector
+要素が、GaucheをコンパイルしたCコンパイラの@code{float}で表現し得るような
+不正確な実数(通常IEEE単精度浮動少数点数)であるベクタ
+@item f64vector
+要素が、GaucheをコンパイルしたCコンパイラの@code{double}で表現し得るような
+不正確な実数(通常IEEE倍精度浮動少数点数)であるベクタ
+@end table
+@c COMMON
+
+@c EN
+In the following description, @code{@var{TAG}} can be replaced
+for any of @code{s8}, @code{u8}, @code{s16}, @code{u16}, 
+@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}.
+@c JP
+以下の記述では、@code{@var{TAG}}は
+@code{s8}, @code{u8}, @code{s16}, @code{u16}, 
+@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}
+のいずれにも置き換えて読むことができるものとします。
+@c COMMON
+
+@deftp {Builtin Class} <@var{TAG}vector>
 @clindex s8vector
 @clindex u8vector
 @clindex s16vector
@@ -11488,149 +12315,385 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @clindex u64vector
 @clindex f32vector
 @clindex f64vector
-[SRFI-4]
+@c EN
+A class for @var{TAG}vector.  It inherits @code{<sequence>}.
+@c JP
+@var{TAG}vectorのクラス。@code{<sequence>}を継承します。
+@c COMMON
 @end deftp
 
-@defun s8vector? obj
-@defunx u8vector? obj
-@defunx s16vector? obj
-@defunx u16vector? obj
-@defunx s32vector? obj
-@defunx u32vector? obj
-@defunx s64vector? obj
-@defunx u64vector? obj
-@defunx f32vector? obj
-@defunx f64vector? obj
+@deftp {Reader Syntax} @code{#@var{TAG}(@var{n} @dots{})}
+@c EN
+Denotes a literal homogeneous vector.
+@c JP
+リテラルの単一型のベクタを記述します。
+@c COMMON
+@example
+#s8(3 -2 4)
+#u32(4154 88357 2 323)
+#f32(3.14 0.554525 -3.342)
+@end example
+@end deftp
+
+@deftp {Function} {@var{TAG}vector?} @r{@var{obj}}
+@findex s8vector?
+@findex u8vector?
+@findex s16vector?
+@findex u16vector?
+@findex s32vector?
+@findex u32vector?
+@findex s64vector?
+@findex u64vector?
+@findex f32vector?
+@findex f64vector?
 [SRFI-4]
-@end defun
+@c EN
+Returns @code{#t} if @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
+@c JP
+@var{obj}が@var{TAG}vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end deftp
 
-@defun s8vector n @dots{}
-@defunx u8vector n @dots{}
-@defunx s16vector n @dots{}
-@defunx u16vector n @dots{}
-@defunx s32vector n @dots{}
-@defunx u32vector n @dots{}
-@defunx s64vector n @dots{}
-@defunx u64vector n @dots{}
-@defunx f32vector x @dots{}
-@defunx f64vector x @dots{}
+@deftp {Function} {@var{TAG}vector} @r{@var{x} @dots{}}
+@findex s8vector 
+@findex u8vector
+@findex s16vector
+@findex u16vector
+@findex s32vector
+@findex u32vector
+@findex s64vector
+@findex u64vector
+@findex f32vector
+@findex f64vector
 [SRFI-4]
-@end defun
+@c EN
+Constructs @var{TAG}vector whose elements are numbers @var{x} @dots{}.
+The numbers must be exact integer for exact integer vectors, 
+and in the valid range of the vector.
+@c JP
+数値@var{x} @dots{} を要素に持つ@var{TAG}vectorを作成して返します。
+正確な整数のベクタに対しては、数値は正確な整数でなければならず、
+また有効な範囲内の値でなければなりません。
+@c COMMON
+@example
+(s8vector 1 2 3) @result{} #s8(1 2 3)
+@end example
+@end deftp
 
-@defun  make-s8vector len &optional fill
-@defunx make-u8vector len &optional fill
-@defunx make-s16vector len &optional fill
-@defunx make-u16vector len &optional fill
-@defunx make-s32vector len &optional fill
-@defunx make-u32vector len &optional fill
-@defunx make-s64vector len &optional fill
-@defunx make-u64vector len &optional fill
-@defunx make-f32vector len &optional fill
-@defunx make-f64vector len &optional fill
+@deftp {Function} make-@var{TAG}vector @r{@var{len} @var{&optional} @var{fill}}
+@findex make-s8vector
+@findex make-u8vector
+@findex make-s16vector
+@findex make-u16vector
+@findex make-s32vector
+@findex make-u32vector
+@findex make-s64vector
+@findex make-u64vector
+@findex make-f32vector
+@findex make-f64vector
 [SRFI-4]
-@end defun
+@c EN
+Constructs a @var{TAG}vector of length @var{len}.  The elements are
+initialized by a number @var{fill}.   For exact integer vectors,
+@var{fill} must be an exact integer and in the valid range.
+If @var{fill} is omitted, the content of the vector is undefined.
+@c JP
+長さ@var{len}の@var{TAG}vectorを作成して返します。各要素は@var{fill}で
+初期化されます。正確な整数のベクタに対しては、@var{fill}は正確な整数でなければならず、
+また有効な範囲内の値でなければなりません。
+@var{fill}が省略された場合、各要素の初期値は不定です。
+@c COMMON
+@example
+(make-u8vector 4 0) @result{} #u8(0 0 0 0)
+@end example
+@end deftp
 
-@defun  s8vector-ref vec k
-@defunx u8vector-ref vec k
-@defunx s16vector-ref vec k
-@defunx u16vector-ref vec k
-@defunx s32vector-ref vec k
-@defunx u32vector-ref vec k
-@defunx s64vector-ref vec k
-@defunx u64vector-ref vec k
-@defunx f32vector-ref vec k
-@defunx f64vector-ref vec k
+@deftp {Function} @var{TAG}vector-length @r{@var{vec}}
+@findex s8vector-length 
+@findex u8vector-length
+@findex s16vector-length
+@findex u16vector-length
+@findex s32vector-length
+@findex u32vector-length
+@findex s64vector-length
+@findex u64vector-length
+@findex f32vector-length
+@findex f64vector-length
 [SRFI-4]
-@end defun
+@c EN
+Returns the length of the @var{TAG}vector @var{vec}.
 
-@defun  s8vector-set! vec k n
-@defunx u8vector-set! vec k n
-@defunx s16vector-set! vec k n
-@defunx u16vector-set! vec k n
-@defunx s32vector-set! vec k n
-@defunx u32vector-set! vec k n
-@defunx s64vector-set! vec k n
-@defunx u64vector-set! vec k n
-@defunx f32vector-set! vec k x
-@defunx f64vector-set! vec k x
+Note that the generic function @code{size-of} can be used 
+to obtain the length of @var{vec} as well,
+if you import @code{gauche.collection}
+(@xref{Collection framework}).
+@c JP
+@var{TAG}vector @var{vec}の長さを返します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+@var{vec}の長さを知るのに、総称関数@code{size-of}を使うこともできます
+(@ref{Collection framework}参照)。
+@c COMMON
+@example
+(s16vector-length '#s16(111 222 333)) @result{} 3
+
+(use gauche.collection)
+(size-of '#s16(111 222 333)) @result{} 3
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k}}
+@findex s8vector-ref
+@findex u8vector-ref
+@findex s16vector-ref
+@findex u16vector-ref
+@findex s32vector-ref
+@findex u32vector-ref
+@findex s64vector-ref
+@findex u64vector-ref
+@findex f32vector-ref
+@findex f64vector-ref
 [SRFI-4]
-@end defun
+@c EN
+Returns the @var{k}-th element of @var{TAG}vector @var{vec}.
 
-@defun  s8vector-copy vec
-@defunx u8vector-copy vec
-@defunx s16vector-copy vec
-@defunx u16vector-copy vec
-@defunx s32vector-copy vec
-@defunx u32vector-copy vec
-@defunx s64vector-copy vec
-@defunx u64vector-copy vec
-@defunx f32vector-copy vec
-@defunx f64vector-copy vec
+Note that the generic function @code{ref} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}の@var{k}番目の要素を返します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{ref}を使うこともできます。
+@c COMMON
+
+@example
+(u16vector-ref '#u16(111 222 333) 1) @result{} 222
+
+(use gauche.collection)
+(ref '#u16(111 222 333) 1) @result{} 222
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n}}
+@findex s8vector-set!
+@findex u8vector-set!
+@findex s16vector-set!
+@findex u16vector-set!
+@findex s32vector-set!
+@findex u32vector-set!
+@findex s64vector-set!
+@findex u64vector-set!
+@findex f32vector-set!
+@findex f64vector-set!
 [SRFI-4]
-@end defun
+@c EN
+Sets a number @var{n} to the @var{k}-th element of @var{TAG}vector @var{vec}.
+@var{n} must be an exact integer for exact integer vectors, and
+in a valid range.
 
-@defun  s8vector-copy! dstvec srcvec
-@defunx u8vector-copy! dstvec srcvec
-@defunx s16vector-copy! dstvec srcvec
-@defunx u16vector-copy! dstvec srcvec
-@defunx s32vector-copy! dstvec srcvec
-@defunx u32vector-copy! dstvec srcvec
-@defunx s64vector-copy! dstvec srcvec
-@defunx u64vector-copy! dstvec srcvec
-@defunx f32vector-copy! dstvec srcvec
-@defunx f64vector-copy! dstvec srcvec
+Note that the setter of the generic function @code{ref} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}の@var{k}番目の要素に数値@var{n}をセットします。
+正確な整数のベクタに対しては@var{n}は正確な整数でなければならず、また正しい範囲内で
+なければなりません。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{ref}のsetter手続きを使うこともできます。
+@c COMMON
+@example
+(let ((v (s32vector -439 852 8933)))
+  (s32vector-set! v 1 4)
+  v)
+ @result{} #s32vector(-439 4 8933)
+
+(use gauche.collection)
+(let ((v (s32vector -439 852 8933)))
+  (set! (ref v 1) 4)
+  v)
+ @result{} #s32vector(-439 4 8933)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector->list @r{@var{vec}}
+@findex s8vector->list
+@findex u8vector->list
+@findex s16vector->list
+@findex u16vector->list
+@findex s32vector->list
+@findex u32vector->list
+@findex s64vector->list
+@findex u64vector->list
+@findex f32vector->list
+@findex f64vector->list
 [SRFI-4]
-@end defun
+@c EN
+Converts @var{TAG}vector @var{vec} to a list.
 
-@defun  s8vector->list vec
-@defunx u8vector->list vec
-@defunx s16vector->list vec
-@defunx u16vector->list vec
-@defunx s32vector->list vec
-@defunx u32vector->list vec
-@defunx s64vector->list vec
-@defunx u64vector->list vec
-@defunx f32vector->list vec
-@defunx f64vector->list vec
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}をリストに変換します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(u32vector->list '#u32(9 2 5)) @result{} (9 2 5)
+
+(use gauche.collection)
+(coerce-to <list> '#u32(9 2 5)) @result{} (9 2 5)
+@end example
+@end deftp
+
+@deftp {Function} list->@var{TAG}vector @r{@var{list}}
+@findex list->s8vector
+@findex list->u8vector
+@findex list->s16vector
+@findex list->u16vector
+@findex list->s32vector
+@findex list->u32vector
+@findex list->s64vector
+@findex list->u64vector
+@findex list->f32vector
+@findex list->f64vector
 [SRFI-4]
-@end defun
+@c EN
+Converts a list @var{list} to a @var{TAG}vector.
+All the elements in @var{list} must be a valid number for an element
+of @var{TAG}vector.
 
-@defun  s8vector->vector vec
-@defunx u8vector->vector vec
-@defunx s16vector->vector vec
-@defunx u16vector->vector vec
-@defunx s32vector->vector vec
-@defunx u32vector->vector vec
-@defunx s64vector->vector vec
-@defunx u64vector->vector vec
-@defunx f32vector->vector vec
-@defunx f64vector->vector vec
-@end defun
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+リスト@var{list}を@var{TAG}vectorに変換します。
+リスト内の全ての要素は、@var{TAG}vectorの要素として正当な数値でなければなりません。
 
-@defun  list->s8vector list
-@defunx list->u8vector list
-@defunx list->s16vector list
-@defunx list->u16vector list
-@defunx list->s32vector list
-@defunx list->u32vector list
-@defunx list->s64vector list
-@defunx list->u64vector list
-@defunx list->f32vector list
-@defunx list->f64vector list
-[SRFI-4]
-@end defun
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(list->s64vector '(9 2 5)) @result{} #s64(9 2 5)
 
-@defun  vector->s8vector vec
-@defunx vector->u8vector vec
-@defunx vector->s16vector vec
-@defunx vector->u16vector vec
-@defunx vector->s32vector vec
-@defunx vector->u32vector vec
-@defunx vector->s64vector vec
-@defunx vector->u64vector vec
-@defunx vector->f32vector vec
-@defunx vector->f64vector vec
-@end defun
+(use gauche.collection)
+(coerce-to <s64vector> '(9 2 5)) @result{} #s64(9 2 5)
+@end example
+@end deftp
+
+@deftp {Function} @var{TAG}vector-copy @r{@var{vec}}
+@findex s8vector-copy
+@findex u8vector-copy
+@findex s16vector-copy
+@findex u16vector-copy
+@findex s32vector-copy
+@findex u32vector-copy
+@findex s64vector-copy
+@findex u64vector-copy
+@findex f32vector-copy
+@findex f64vector-copy
+@c EN
+@c JP
+@c COMMON
+@end deftp
+
+@deftp {Function} @var{TAG}vector-copy! @r{@var{dstvec} @var{srcvec}}
+@findex s8vector-copy!
+@findex u8vector-copy!
+@findex s16vector-copy!
+@findex u16vector-copy!
+@findex s32vector-copy!
+@findex u32vector-copy!
+@findex s64vector-copy!
+@findex u64vector-copy!
+@findex f32vector-copy!
+@findex f64vector-copy!
+@c EN
+@c JP
+@c COMMON
+@end deftp
+
+@deftp {Function} @var{TAG}vector->vector @r{@var{vec}}
+@findex s8vector->vector
+@findex u8vector->vector
+@findex s16vector->vector
+@findex u16vector->vector
+@findex s32vector->vector
+@findex u32vector->vector
+@findex s64vector->vector
+@findex u64vector->vector
+@findex f32vector->vector
+@findex f64vector->vector
+@c EN
+Converts @var{TAG}vector @var{vec} to a vector.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+@var{TAG}vector @var{vec}をベクタに変換します。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(f32vector->vector '#f32(9.3 2.2 5.5)) @result{} (9.3 2.2 5.5)
+
+(use gauche.collection)
+(coerce-to <vector> '#f32(9.3 2.2 5.5)) @result{} (9.3 2.2 5.5)
+@end example
+@end deftp
+
+@deftp {Function} vector->@var{TAG}vector @r{@var{vec}}
+@findex vector->s8vector
+@findex vector->u8vector
+@findex vector->s16vector
+@findex vector->u16vector
+@findex vector->s32vector
+@findex vector->u32vector
+@findex vector->s64vector
+@findex vector->u64vector
+@findex vector->f32vector
+@findex vector->f64vector
+@c EN
+Converts a vector @var{vec} to a @var{TAG}vector.
+All the elements in @var{vec} must be a valid number for an element
+of @var{TAG}vector.
+
+Note that the generic function @code{coerce-to} can be used as well,
+if you import @code{gauche.collection}.
+@c JP
+ベクタ@var{vec}を@var{TAG}vectorに変換します。
+ベクタ内の全ての要素は、@var{TAG}vectorの要素として正当な数値でなければなりません。
+
+モジュール@code{gauche.collection}をインポートしていれば、
+総称関数@code{coerce-to}を使うこともできます。
+@c COMMON
+@example
+(vector->f64vector '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
+
+(use gauche.collection)
+(coerce-to <f64vector> '#(3.1 5.4 3.2)) @result{} #f64(3.1 5.4 3.2)
+@end example
+@end deftp
+
+@c EN
+Using collection and sequence framework, you can perform
+various operations on the homogeneous vectors.
+@c JP
+コレクションやシーケンスフレームワークを使うと、さらに様々な操作を
+行うことができます。
+@c COMMON
+
+@example
+(use gauche.collection)
+(use gauche.sequence)
+
+(fold + 0 '#s32(1 2 3 4)) @result{} 10
+
+(map-to <f32vector> * '#f32(3.2 1.1 4.3) '#f32(-4.3 2.2 9.4))
+  @result{} #f32(-13.760001 2.420000 40.420002)
+
+(subseq #u32(1 4 3 4 5) 2 4) @result{} #u32(3 4)
+@end example
 
 @c ----------------------------------------------------------------------
 @node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, Library modules
