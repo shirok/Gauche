@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.374 2003-02-27 10:25:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.375 2003-02-27 10:45:31 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18699,10 +18699,10 @@ so choose whichever fits your requirement.
 
 実際、Gauche でコマンドラインオプションをパースするにはいくつかの選択肢が
 あります。SRFI-37 (@ref{srfi-37 - a program argument processor}参照)では、
-POSIX/GNU 互換の引数構文をパースするための機能的なインタフェースを提供しています。
+POSIX/GNU 互換の引数構文をパースするための関数的なインタフェースを提供しています。
 SLIB は、@code{getopt} 互換のユーティリティを持っています。
-要求される機能はアプリケーションごとに異なるので、あなたの要求にフィットするものを
-選んで下さい。
+要求される機能はアプリケーションごとに異なるので、
+あなたの要求にフィットするものを選んで下さい。
 @c COMMON
 @end deftp
 
@@ -18715,7 +18715,7 @@ returns the remaining arguments.
 @c JP
 @var{args} は、コマンドライン引数のリストを含む式です。
 このマクロは、コマンドラインオプション(`@code{-}' で始まる引数)をスキャンし、
-@var{option-clause} に指定されているものとして処理し、残りの引数を返します。
+@var{option-clause} の指定に従って処理し、残りの引数を返します。
 @c COMMON
 
 @c EN
@@ -18738,7 +18738,7 @@ Each @var{option-clause} is consisted by a pair of @var{option-spec}
 and its action.
 @c JP
 パーサは、ハイフン2つのみの引数 `@code{--}' に遭遇すると、引数パーシングを
-中止してｍ`@code{--}' の後の引数のリストを返します。
+中止して`@code{--}' の後の引数のリストを返します。
 
 それぞれの @var{option-clause} は、@var{option-spec} とそのアクションのペアで
 構成されます。
@@ -18827,9 +18827,9 @@ single or double minus signs.  The option's argument may be comibined
 by the option itself with an equal sign.  For example, all the following
 command line arguments match an option spec @code{"prefix=s"}.
 @c JP
-コマンドラインでは、オプションは一つか二つのハイフンに続いて与えられるでしょう。
-オプションの引数は、オプションそのものと等号記号でつながれて与えられるでしょう。
-例えば、以下の全てのコマンドライン引数は、一つのオプションの仕様、@code{"prefix=s"} に
+コマンドラインでは、オプションは一つか二つのハイフンに続いて与えられます。
+オプションの引数は、オプションそのものと等号記号でつながれていても構いません。
+例えば、以下の全てのコマンドライン引数は、オプションの仕様、@code{"prefix=s"} に
 マッチします。
 @c COMMON
 @example
@@ -18855,7 +18855,7 @@ following forms.
 The option's arguments are bound to @var{bind-spec}, then
 then @var{body} @dots{} is evaluated. 
 @c JP
-@var{bind-spec} は、ラムダリストのような変数の真性リストかドット対リストです。
+@var{bind-spec} は、ラムダリストのような変数の正しいリストかドット対リストです。
 オプションの引数は @var{bind-spec} に束縛され、@var{body} @dots{} が評価されます。
 @c COMMON
 
