@@ -12,31 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.26 2001-02-19 23:24:06 shiro Exp $
+ *  $Id: compile.c,v 1.27 2001-02-20 01:09:55 shiro Exp $
  */
 
 #include "gauche.h"
-
-/*
- * Syntax and macro objects
- */
-
-static int syntax_print(ScmObj obj, ScmPort *port, int mode)
-{
-    return Scm_Printf(port, "#<syntax %A>", SCM_SYNTAX(obj)->name);
-}
-
-SCM_DEFCLASS(Scm_SyntaxClass, "<syntax>", syntax_print, SCM_CLASS_DEFAULT_CPL);
-
-ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
-{
-    ScmSyntax *s = SCM_NEW(ScmSyntax);
-    SCM_SET_CLASS(s, SCM_CLASS_SYNTAX);
-    s->name = name;
-    s->compiler = compiler;
-    s->data = data;
-    return SCM_OBJ(s);
-}
 
 /*
  * SourceInfo object
@@ -153,6 +132,11 @@ enum {
 ScmObj Scm_Compile(ScmObj form, ScmObj env, int context)
 {
     return compile_int(form, env, context);
+}
+
+ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env)
+{
+    return lookup_env(sym, env);
 }
 
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
@@ -1312,68 +1296,6 @@ static ScmSyntax syntax_receive = {
     NULL
 };
 
-/*------------------------------------------------------------------
- * Traditional Macro
- */
-
-/* TODO: how to retain debug info? */
-/* TODO: better error message on syntax error (macro invocation with
-   bad number of arguments) */
-
-static ScmObj macro_transform(ScmObj form, ScmObj env, int ctx, void *data)
-{
-    ScmObj proc = SCM_OBJ(data);
-    ScmObj newform = Scm_Apply(proc, form);
-    return compile_int(newform, env, ctx);
-}
-
-ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
-{
-    return Scm_MakeSyntax(name, macro_transform, (void*)proc);
-}
-
-/* Expand macro.
- * To capture locally-bound macros, macro-expand needs to be a syntax.
- * From scheme, this syntax is visible as %macro-expand.
- * The procedure version, which works only for globally defined macros,
- * can be defined as
- *  (define (macro-expand form) (%macro-expand form))
- */
-static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
-                                   int ctx, void *data)
-{
-    ScmObj expr, sym;
-    ScmGloc *gloc;
-    
-    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
-        Scm_Error("syntax error: %S", form);
-    expr = SCM_CADR(form);
-    if (!SCM_PAIRP(expr)) return SCM_LIST1(expr);
-    if (!SCM_SYMBOLP(SCM_CAR(expr))) return SCM_LIST1(expr);
-    
-    sym = lookup_env(SCM_CAR(expr), env);
-    /* TODO: case of locally bound macros */
-    if (SCM_SYMBOLP(sym)) {
-        ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
-        if (g && SCM_SYNTAXP(g->value)) {
-            ScmSyntax *syn = SCM_SYNTAX(g->value);
-            if (syn->compiler == macro_transform) {
-                ScmObj proc = SCM_OBJ(syn->data);
-                ScmObj translated = Scm_Apply(proc, expr);
-                return SCM_LIST1(translated);
-            }
-        }
-    }
-    return SCM_LIST1(expr);
-}
-
-static ScmSyntax syntax_macro_expand = {
-    SCM_CLASS_SYNTAX,
-    SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
-    compile_macro_expand,
-    NULL
-};
-
 /*===================================================================
  * Initializer
  */
@@ -1406,5 +1328,4 @@ void Scm__InitCompiler(void)
     DEFSYN(SCM_SYM_DO,           syntax_do);
     DEFSYN(SCM_SYM_DELAY,        syntax_delay);
     DEFSYN(SCM_SYM_RECEIVE,      syntax_receive);
-    DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
 }
