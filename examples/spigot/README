@@ -46,7 +46,7 @@ Makefile.in from this directory and editing it.   There are some
 autoconf macros defined for the convenience, so usually there
 won't be much of Gauche-specific stuff in configure.in.
 
-In Makefile.in, you may find some items that are Gauche-specific.
+In Makefile.in, you may find some Gauche-specific items.
 
 - Define INSTALL to @GAUCHE_INSTALL@, which will be replaced to
   the path to gauche-install script.  gauche-isntall script is
@@ -57,6 +57,6 @@ In Makefile.in, you may find some items that are Gauche-specific.
 - If you include AC_GAUCHE_MAKE_GPD macro in configure.in, then
   a file $(PACKAGE).gpd is created at configuration time.  It records
   package's version and configuration option.  You can install it
-  under $(SCM_INSTALL_DIR)/.packages, then gauche-package script
-  will find it later, and it would be easier to apply 
+  under $(SCM_INSTALL_DIR)/.packages.
+
   
