@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.19 2001-04-01 09:18:25 shiro Exp $
+ *  $Id: number.c,v 1.20 2001-04-01 11:15:56 shiro Exp $
  */
 
 #include <math.h>
@@ -885,18 +885,30 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1))
             return (SCM_INT_VALUE(arg0) - SCM_INT_VALUE(arg1));
-        if (SCM_FLONUMP(arg1))
-            return ((double)SCM_INT_VALUE(arg0) - SCM_FLONUM_VALUE(arg1));
+        if (SCM_FLONUMP(arg1)) {
+            double r = SCM_INT_VALUE(arg0) - SCM_FLONUM_VALUE(arg1);
+            if (r < 0) return -1;
+            if (r > 0) return 1;
+            return 0;
+        }
         if (SCM_BIGNUMP(arg1))
             return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(arg0))),
                                  SCM_BIGNUM(arg1));
         badnum = arg1;
     }
     else if (SCM_FLONUMP(arg0)) {
-        if (SCM_INTP(arg1))
-            return (SCM_FLONUM_VALUE(arg0) - (double)SCM_INT_VALUE(arg1));
-        if (SCM_FLONUMP(arg1))
-            return (SCM_FLONUM_VALUE(arg0) - SCM_FLONUM_VALUE(arg1));
+        if (SCM_INTP(arg1)) {
+            double r = SCM_FLONUM_VALUE(arg0) - SCM_INT_VALUE(arg1);
+            if (r < 0) return -1;
+            if (r > 0) return 1;
+            return 0;
+        }
+        if (SCM_FLONUMP(arg1)) {
+            double r = SCM_FLONUM_VALUE(arg0) - SCM_FLONUM_VALUE(arg1);
+            if (r < 0) return -1;
+            if (r > 0) return 1;
+            return 0;
+        }
         if (SCM_BIGNUMP(arg1))
             return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(arg0))),
                                  SCM_BIGNUM(arg1));
