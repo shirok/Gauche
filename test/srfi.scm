@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.10 2001-04-09 19:24:03 shiro Exp $
+;; $Id: srfi.scm,v 1.11 2001-04-13 19:36:01 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -317,7 +317,22 @@
       (lambda () (delete-duplicates! '("a" "b" "a" "a" "c" "d" "a" "e") string=?)))
 (test "delete-duplicates!" '("A" "b" "c" "d" "e")
       (lambda () (delete-duplicates! '("A" "b" "a" "B" "c" "d" "a" "e") string-ci=?)))
-
+(test "assq" '(a 1) (lambda () (assq 'a '((a 1) (b 2) (c 3)))))
+(test "assq" #f     (lambda () (assq 'd '((a 1) (b 2) (c 3)))))
+(test "assq" #f     (lambda () (assq (list 'a) '(((a)) ((b)) ((c))))))
+(test "assv" '(b 2) (lambda () (assv 'b '((a 1) (b 2) (c 3)))))
+(test "assv" #f     (lambda () (assv 'd '((a 1) (b 2) (c 3)))))
+(test "assv" #f     (lambda () (assv (list 'a) '(((a)) ((b)) ((c))))))
+(test "assoc" '((a)) (lambda () (assoc (list 'a) '(((a)) ((b)) ((c))))))
+(test "assoc" '("a") (lambda () (assoc "a" '(("c") ("b") ("a")))))
+(test "assoc" '("a") (lambda () (assoc "A" '(("c") ("b") ("a")) string-ci=?)))
+(test "alist-cons" '((1 . 2) . 3) (lambda () (alist-cons 1 2 3)))
+(test "alist-copy" '((a 1) (a 2))
+      (lambda ()
+        (let* ((x '((b 2) (a 1)))
+               (y (alist-copy x)))
+          (set-cdr! (assq 'a y) (list 2))
+          (list (assq 'a x) (assq 'a y)))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")
