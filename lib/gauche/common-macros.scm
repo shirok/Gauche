@@ -1,7 +1,7 @@
 ;;;
 ;;; common-macros.scm - common macros
 ;;;
-;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.11 2002-10-26 09:02:41 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.12 2003-02-27 11:40:58 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -157,6 +157,27 @@
   (syntax-rules ()
     ((_ exp exp2 ...)
      (receive r exp exp2 ... (apply values r)))))
+
+(define-syntax values-ref               ;nth-value in Lisp
+  (syntax-rules ()
+    ;; provide shortcut for common cases
+    ((_ mv-expr 0)
+     (receive (v . ignore) mv-expr v))
+    ((_ mv-expr 1)
+     (receive (v0 v1 . ignore) mv-expr v1))
+    ((_ mv-expr 2)
+     (receive (v0 v1 v2 . ignore) mv-expr v2))
+    ((_ mv-expr n)
+     (receive v mv-expr (list-ref v n)))
+    ((_ mv-expr n m)
+     (receive v mv-expr (values (list-ref v n) (list-ref v m))))
+    ((_ mv-expr n m l)
+     (receive v mv-expr (values (list-ref v n) (list-ref v m) (list-ref v l))))
+    ((_ mv-expr n m l k ...)
+     (receive v mv-expr
+       (apply values
+              (map (lambda (i) (list-ref v i)) (list n m l k ...)))))
+    ))
 
 ;; Anaphoric macros.   Cf. Paul Graham, "On Lisp"
 ;(define-macro (l_ . body) `(lambda (_) ,@body))

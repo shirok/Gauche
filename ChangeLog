@@ -1,5 +1,7 @@
 2003-02-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm (values-ref): added values-ref
+	  experimentally.
 	* lib/util/list.scm (intersperse): added intersperse
 
 2003-02-17  Shiro Kawai  <shiro@acm.org>

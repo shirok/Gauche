@@ -488,6 +488,31 @@
           (dotimes (n (if (null? m) 10 (error "Boom!")) (reverse m))
                    (push! m n)))))
 
+(test "values-ref" 3
+      (lambda ()
+        (values-ref (quotient&remainder 10 3) 0)))
+(test "values-ref" 1
+      (lambda ()
+        (values-ref (quotient&remainder 10 3) 1)))
+(test "values-ref" 'e
+      (lambda ()
+        (values-ref (values 'a 'b 'c 'd 'e) 4)))
+(test "values-ref" '(d b)
+      (lambda ()
+        (receive r
+            (values-ref (values 'a 'b 'c 'd 'e) 3 1)
+          r)))
+(test "values-ref" '(d a b)
+      (lambda ()
+        (receive r
+            (values-ref (values 'a 'b 'c 'd 'e) 3 0 1)
+          r)))
+(test "values-ref" '(e d c b a)
+      (lambda ()
+        (receive r
+            (values-ref (values 'a 'b 'c 'd 'e) 4 3 2 1 0)
+          r)))
+
 ;;----------------------------------------------------------------------
 ;; macro-expand
 
