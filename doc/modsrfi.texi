@@ -2798,11 +2798,11 @@ conversion methods among them.
 
 @c EN
 On Gauche, time object is supported natively by @code{<time>} class
-(@xref{SRFI time}).  Date object is supported by @code{<date>} class
+(@xref{Time}).  Date object is supported by @code{<date>} class
 described below.
 @c JP
 Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込みで
-サポートされています(@ref{SRFI time}参照)。dateオブジェクトは以下で説明する
+サポートされています(@ref{Time}参照)。dateオブジェクトは以下で説明する
 @code{<date>}クラスとしてサポートされます。
 @c COMMON
 
@@ -2831,10 +2831,10 @@ convenience.
 [SRFI-19]
 @c EN
 UTC time.  Gauche's built-in @code{current-time} always returns
-this type (@xref{SRFI time}).
+this type (@xref{Time}).
 @c JP
 UTC timeです。Gaucheの組み込みの@code{current-time}は常にこのタイプの時間を
-返します (@ref{SRFI time}参照)。
+返します (@ref{Time}参照)。
 @c COMMON
 @end defvr
 
@@ -2899,11 +2899,11 @@ In the current implementation, this is the same as @code{time-process}.
 @defun current-time &optional time-type
 [SRFI-19]
 @c EN
-Extends Gauche built-in @code{current-time} (@xref{SRFI time}) to take
+Extends Gauche built-in @code{current-time} (@xref{Time}) to take
 optional @var{time-type} argument to specify the desired time type.
 @var{time-type} must be one of the types described in @ref{SRFI-19 Time types}.
 @c JP
-Gauche組み込みの@code{current-time} (@ref{SRFI time}参照)を拡張して、
+Gauche組み込みの@code{current-time} (@ref{Time}参照)を拡張して、
 必要な時間のタイプを省略可能な引数@var{time-type}で指定できるようにしています。
 可能な@var{time-type}の値は@ref{SRFI-19 Time types}で説明されているものです。
 @c COMMON

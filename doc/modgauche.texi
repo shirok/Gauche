@@ -8061,14 +8061,14 @@ CPUにそれを処理させます。
 @c EN
 [SRFI-18], [SRFI-21]
 Suspends the calling thread for the period specified by @var{timeout},
-which must be either a @code{<time>} object (@xref{SRFI time}) that
+which must be either a @code{<time>} object (@xref{Time}) that
 specifies absolute point of time, or a real number that specifies
 relative point of time from the time this procedure is called
 in number of seconds.
 @c JP
 [SRFI-18]、[SRFI-21]
 呼び出しているスレッドを@var{timeout}に指定した時間だけ中断します。
-@var{timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{SRFI time}参照)か、
+@var{timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{Time}参照)か、
 この手続きが呼ばれた時刻からの相対的な秒数を表す実数でなければなりません。
 @c COMMON
 
@@ -8143,12 +8143,12 @@ if @var{timeout} is given.
 @c COMMON
 
 @c EN
-@var{Timeout} must be either a @code{<time>} object (@xref{SRFI time})
+@var{Timeout} must be either a @code{<time>} object (@xref{Time})
 that specifies absolute point of time, or a real number that specifies
 relative point of time from the time this procedure is called
 in number of seconds, or @code{#f} that indicates no timeout (default).
 @c JP
-@var{Timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{SRFI time}参照)か、
+@var{Timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{Time}参照)か、
 この手続きが呼ばれた時刻からの相対的な時間を秒数で表した実数でなければなりません。
 タイムアウトが指定されていない(デフォルト)は@code{#f}です。
 @c COMMON
@@ -8356,14 +8356,14 @@ If @var{mutex} is in locked state and
 @var{mutex} becomes unlocked.   If @var{timeout} is specified,
 @code{mutex-lock!} returns when the specified time reaches in
 case it couldn't obtain a lock.  You can give @var{timeout}
-an absolute point of time (by @code{<time>} object, @xref{SRFI time}),
+an absolute point of time (by @code{<time>} object, @xref{Time}),
 or a relative time (by a real number).
 @c JP
 @var{mutex}がlocked(ロックされた状態)で、@var{timeout}が省略されるか@code{#f}ならば、
 この手続きは@var{mutex}のロックが解放されるまでブロックします。
 @var{timeout}が指定されている場合は、ロックが獲得できなかったケースでは
 指定された時間に達した時に@code{mutex-lock!}は戻ります。
-@var{timeout}には、絶対的な時間(@code{<time>}オブジェクト、@ref{SRFI time}参照)か、
+@var{timeout}には、絶対的な時間(@code{<time>}オブジェクト、@ref{Time}参照)か、
 相対的な時間を(実数で)指定できます。
 @c COMMON
 
@@ -8428,7 +8428,7 @@ The thread will be unblocked when other thread signals on
 @var{condition-variable} (see @code{condition-variable-signal!}
 and @code{condition-variable-broadcast!} below), or @var{timeout}
 reaches if it is supplied.  The @var{timeout} argument can be either
-a @code{<time>} object to represent an absolute time point (@xref{SRFI time}),
+a @code{<time>} object to represent an absolute time point (@xref{Time}),
 a real number to represent a relative time in seconds, or @code{#f} which
 means never.  The calling thread may be unblocked prematurely,
 so it should reacquire the lock of @var{mutex} and checks the
@@ -8443,7 +8443,7 @@ condition, as in the follwing example (it is taken from SRFI-18 document):
 (下記の@code{condition-variable-signal!}と@code{condition-variable-broadcast!}を
 見て下さい)、
 @var{timeout}が与えられていてそれに達すると、ブロックが解除されます。
-引数@var{timeout}は、絶対的な時間を表す@code{<time>}オブジェクト(@ref{SRFI time}参照)、
+引数@var{timeout}は、絶対的な時間を表す@code{<time>}オブジェクト(@ref{Time}参照)、
 相対的な時間を秒数で表す実数、タイムアウトしないことを表す@code{#f}のいずれかです。
 ブロックが解除された時に、必ずしも条件が満たされているとは限らないので、
 次に挙げる例(SRFI-18のドキュメントより引用)のように、
@@ -8739,7 +8739,7 @@ error port, much like the bourne shell's time command.
 @c COMMON
 
 @c EN
-The current version uses @code{sys-gettimeofday} (@xref{POSIX time}) to
+The current version uses @code{sys-gettimeofday} (@xref{Time}) to
 calculate the elapsed time, and @code{sys-times} (@xref{System Inquiry})
 to calculate user and system CPU times.  So the resolution of these numbers
 depends on these underlying system calls.  Usually the CPU
@@ -8748,7 +8748,7 @@ resolution.  On the systems that doesn't have gettimeofday(2) support,
 however, the elapsed time resolution can be as bad as a second.
 @c JP
 現在の実装は、経過時間に対しては@code{sys-gettimeofday}
-(@ref{POSIX time}参照)を、CPU時間に対しては@code{sys-times}
+(@ref{Time}参照)を、CPU時間に対しては@code{sys-times}
 (@ref{System Inquiry}参照)を用いています。従って、
 それぞれの数値の分解能はこれらの手続きが用いているシステムコールに依存します。
 CPU時間は10ms単位で、経過時間はそれより細かいことが多いです。

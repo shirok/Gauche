@@ -11151,14 +11151,14 @@ POSIX実装間でポータブルにするためには、@var{seconds}を65536より小さく保って
 [POSIX] 
 Suspends the process until the specified number of nanoseconds elapses,
 or the process receives a signal.  The argument @var{nanoseconds} can be
-a @code{<time>} object (@xref{SRFI time}), or a real number.
+a @code{<time>} object (@xref{Time}), or a real number.
 Returns @code{#f} if @var{nanoseconds} elapsed, or a @code{<time>}
 object that indicates the remaining time if @code{sys-nanosleep}
 is interrupted by a signal.
 @c JP
 [POSIX]
 指定されたナノ秒が経過するか、シグナルを受け取るまでプロセスを一時停止します。
-引数@var{nanoseconds}は@code{<time>}オブジェクト(@ref{SRFI time}参照)か
+引数@var{nanoseconds}は@code{<time>}オブジェクト(@ref{Time}参照)か
 実数です。@var{nanoseconds}が経過したら@code{#f}を返し、
 @code{sys-nanosleep}がシグナルによって割り込まれると残りの時間を表す
 @code{<time>}オブジェクトを返します。

@@ -176,14 +176,14 @@ You can use R5RS @code{quotient} and @code{remainder}.
 @itemx dup2
 No equivalent function.  If you want to use this function to
 set up I/Os for the child process, you can use `iomap' argument
-of @code{sys-exec}.  @xref{Fork and exec}.
+of @code{sys-exec}.  @xref{Unix process management}.
 @item execl
 @itemx execle
 @itemx execlp
 @itemx execv
 @itemx execve
 @itemx execvp
-Gauche @code{sys-exec}.  @xref{Fork and exec}.
+Gauche @code{sys-exec}.  @xref{Unix process management}.
 For higher level interface, @ref{gauche.process - High Level Process Interface}.
 @item exit
 @item _exit
@@ -228,7 +228,7 @@ Gauche's @code{fmod}.
 R5RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
 @item fork
-Gauche's @code{sys-fork}.   @xref{Fork and exec}.
+Gauche's @code{sys-fork}.   @xref{Unix process management}.
 @item forkpty
 Use @code{sys-forkpty}.  @xref{gauche.termios - Termios}.
 @item fpathconf
@@ -609,7 +609,7 @@ This function is available on systems that support symbolink links.
 @item sysconf
 Not supported yet.
 @item system
-Gauche @code{sys-system}.   @xref{Fork and exec}.
+Gauche @code{sys-system}.   @xref{Unix process management}.
 It is generally recommended to use the process library
 (@ref{gauche.process - High Level Process Interface}).
 @item tan
@@ -667,9 +667,9 @@ Not directly supported, but Gauche's @code{format}
 provides similar functionality.  @xref{Output}.
 SLIB has @code{printf} implementation.
 @item wait
-Gauche's @code{sys-wait}.  @xref{Wait}.
+Gauche's @code{sys-wait}.  @xref{Unix process management}.
 @item waitpid
-Gauche's @code{sys-waitpid}.  @xref{Wait}.
+Gauche's @code{sys-waitpid}.  @xref{Unix process management}.
 @item wcstombs
 @itemx wctomb
 Gauche handles multibyte strings internally, so generally you don't 

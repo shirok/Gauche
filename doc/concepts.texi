@@ -205,12 +205,12 @@ module.  @xref{gauche.threads - Threads}.
 
 @c EN
 @item SRFI-19, Time Data Types and Procedures.
-Time data type is Gauche built-in (@xref{SRFI time}).
+Time data type is Gauche built-in (@xref{Time}).
 Complete set of SRFI-19 is supported by the module @code{srfi-19}.
 @xref{srfi-19 - Time data types and procedures}.
 @c JP
 @item SRFI-19, 時間データの型と手続き
-時間のデータ型はGauche組み込みです(@ref{SRFI time}参照)。
+時間のデータ型はGauche組み込みです(@ref{Time}参照)。
 SRFI-19の完全なサポートはモジュール@code{srfi-19}で提供されています。
 @ref{srfi-19 - Time data types and procedures}参照。
 @c COMMON
