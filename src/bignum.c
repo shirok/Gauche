@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.13 2001-04-22 11:42:11 shiro Exp $
+ *  $Id: bignum.c,v 1.14 2001-04-23 05:08:53 shiro Exp $
  */
 
 #include <math.h>
@@ -42,6 +42,8 @@
 
 static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount);
 static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
+
+int Scm_DumpBignum(ScmBignum *b, ScmPort *out);
 
 /*---------------------------------------------------------------------
  * Constructor
@@ -486,16 +488,23 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
     
     if (bx->size <= nwords) {
         br->size = 0; br->values[0] = 0;
-    } else {
-        u_long prev = 0, x;
-        for (i = nwords; i < bx->size; i++) {
-            x = (bx->values[i] >> nbits) | prev;
-            prev = (bx->values[i] << (WORD_BITS - nbits));
-            br->values[i-nwords] = x;
+    } else if (nbits == 0) {
+        for (i = nwords; i < bx->size-1; i++) {
+            br->values[i-nwords] = bx->values[i];
         }
         br->size = bx->size - nwords;
         br->sign = bx->sign;
+    } else {
+        u_long x;
+        for (i = nwords; i < bx->size-1; i++) {
+            x = (bx->values[i+1]<<(WORD_BITS-nbits))|(bx->values[i]>>nbits);
+            br->values[i-nwords] = x;
+        }
+        br->values[i-nwords] = bx->values[i]>>nbits;
+        br->size = bx->size - nwords;
+        br->sign = bx->sign;
     }
+    Scm_DumpBignum(br, SCM_CUROUT); printf("\n");
     return br;
 }
 
@@ -504,7 +513,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
 static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
 {
     int nwords, nbits, i;
-    u_long prev = 0, x, mask;
+    u_long x;
     
     nwords = amount / WORD_BITS;
     nbits = amount % WORD_BITS;
@@ -515,13 +524,15 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
         }
         for (i = nwords-1; i>=0; i--) br->values[i] = 0;
     } else {
-        mask = (1L<<nbits)-1;    
-        for (i = bx->size-1; i >= 0; i--) {
-            x = ((bx->values[i] >> (WORD_BITS - nbits)) & mask) | prev;
-            prev = (bx->values[i] << nbits);
-            if (br->size > i+nwords) br->values[i+nwords+1] = x;
+        if (br->size > bx->size + nwords) {
+            br->values[bx->size+nwords] =
+                bx->values[bx->size-1]>>(WORD_BITS-nbits);
         }
-        br->values[nwords] = prev;
+        for (i = bx->size-1; i > 0; i--) {
+            x = (bx->values[i]<<nbits)|(bx->values[i-1]>>(WORD_BITS-nbits));
+            if (br->size > i+nwords) br->values[i+nwords] = x;
+        }
+        br->values[nwords] = bx->values[0]<<nbits;
         for (i = nwords-1; i>=0; i--) br->values[i] = 0;
     }
     if (br != bx) {
@@ -691,7 +702,7 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     /* normalize */
     u = make_bignum(dividend->size + 1);
     v = make_bignum(divisor->size);
-    if (d > HALF_BITS) {
+    if (d >= HALF_BITS) {
         d -= HALF_BITS;
         n = divisor->size*2 - 1;
         m = dividend->size*2 - n;
@@ -703,41 +714,42 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     bignum_lshift(v, divisor, d);
     vn_1 = DIGIT(v, n-1);
     vn_2 = DIGIT(v, n-2);
-
-#if 0
-    printf("shift=%d, vn_1=%08lx, vn_2=%08lx\n", d, vn_1, vn_2);
+#define DIV_DEBUG
+#ifdef DIV_DEBUG
+    printf("shift=%d, n=%d, m=%d\n", d, n, m);
     printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
     printf("v="); Scm_DumpBignum(v, SCM_CUROUT); printf("\n");
+    printf("vn_1=%08lx, vn_2=%08lx\n", vn_1, vn_2);
 #endif
 
     for (j = m; j >= 0; j--) {
         u_long uu = (DIGIT(u, j+n) << HALF_BITS) + DIGIT(u, j+n-1);
         u_long qq = uu/vn_1;
         u_long rr = uu%vn_1;
-        /*printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);*/
+#ifdef DIV_DEBUG
+        printf("loop on j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);
+#endif
         if (qq == HALF_WORD) { qq--; rr += vn_1; }
         while ((qq*vn_2 > (rr<<HALF_BITS)+DIGIT(u, j+n-2)) && (rr < HALF_WORD)) {
             qq--; rr += vn_1;
         }
-        /*printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);*/
+#ifdef DIV_DEBUG
+        printf("estimate uu=%08lx, qq=%08lx, rr=%08lx\n", uu, qq, rr);
+#endif
         cy = 0;
         for (k = 0; k < n; k++) {
             vv = qq * DIGIT(v, k);
             uj = (DIGIT(u, j+k+1)<<HALF_BITS) + DIGIT(u, j+k);
-            uj2 = uj - vv - cy;
-            cy =  (uj2 > uj)? -1 : 0;
+            uj2 = uj - vv - cy*HALF_WORD;
+            cy =  (uj2 > uj)? 1 : 0;
             SETDIGIT(u, j+k, LO(uj2));
             SETDIGIT(u, j+k+1, HI(uj2));
         }
-        uj = DIGIT(u, j+n) - cy;
-        cy = (uj > DIGIT(u, j+n))? -1 : 0;
-        SETDIGIT(u, j+n, uj);
-
-#if 0
-        printf("cy = %d, ", cy);
+#ifdef DIV_DEBUG
+        printf("subtract cy = %d, ", cy);
         printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
 #endif
-        if (cy < 0) {
+        if (cy) {
             qq--;
             cy = 0;
             for (k = 0; k < n; k++) {
@@ -748,12 +760,15 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
             }
             uj = DIGIT(u, j+n) + cy;
             SETDIGIT(u, j+n, uj);
-            
-            /*printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");*/
         }
         SETDIGIT(quotient, j, qq);
     }
-    return bignum_rshift(u, u, d);
+    bignum_rshift(u, u, d);
+#ifdef DIV_DEBUG
+    printf("quot q="); Scm_DumpBignum(quotient, SCM_CUROUT); printf("\n");
+    printf("rem  u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
+#endif
+    return u;
 }
 
 /* Fast path if divisor fits in a half word.  Quotient remains in the
@@ -816,6 +831,7 @@ ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
     r = bignum_gdiv(dividend, divisor, q);
     q->sign = dividend->sign * divisor->sign;
     r->sign = dividend->sign;
+    
     return Scm_Cons(Scm_NormalizeBignum(q), Scm_NormalizeBignum(r));
 }
 
