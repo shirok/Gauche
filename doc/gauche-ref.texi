@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.95 2001-10-13 10:20:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.96 2001-10-13 21:27:59 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3643,32 +3643,114 @@ it is returned for such case.  This is an extension of Gauche.
 
 @deftp {Builtin Class} <hash-table>
 @clindex hash-table
+@c EN
+Hash table class.
+@c JP
+ハッシュテーブルのクラスです。
+@c COMMON
 @end deftp
 
-@defun make-hash-table args
+@defun make-hash-table &optional type
+@c EN
+Creates a hash table.   A symbol @var{type} specifies the type of the table.
+The following types are currently supported.
+@c JP
+ハッシュテーブルを作成します。シンボル@var{type}はテーブルのタイプを指定します。
+現在、以下のようなタイプがサポートされています。
+@c COMMON
+@table @code
+@item eq?
+@c EN
+Keys are compared by @code{eq?}
+@c JP
+キーの比較に@code{eq?}を使います。
+@c COMMON
+@item eqv?
+@c EN
+Keys are compared by @code{eqv?}
+@c JP
+キーの比較に@code{eqv?}を使います。
+@c COMMON
+@item equal?
+@c EN
+Keys are compared by @code{equal?}
+@c JP
+キーの比較に@code{equal?}を使います。
+@c COMMON
+@item string=?
+@c EN
+Keys are compared by @code{string=?}.  Key must be a string.
+@c JP
+キーの比較に@code{string=?}を使います。キーは文字列でなければなりません。
+@c COMMON
+@end table
+
+@c EN
+If @var{type} is omitted, @code{eq?} is assumed.
+
+@c JP
+@var{type}が省略された場合は@code{eq?}とみなされます。
+@c COMMON
 @end defun
 
-@defun hash-table?
+@defun hash-table? obj
+@c EN
+Returns @code{#t} if @var{obj} is a hash table.
+@c JP
+@var{obj}がハッシュテーブルであれば@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun hash-table-get hash key &optional default
+@c EN
+Search @var{key} from a hash table @var{hash}, and returns its value
+if found.  If the key is not found in the table and @var{default} is
+given, it is returned.  Otherwise an error is signalled.
+@c JP
+キー@var{key}をハッシュテーブル@var{hash}から探します。見つかればキーに対応する
+値を返します。キーが見つからなかった場合、@var{default}が与えられていればそれを
+返し、そうでなければエラーを報告します。
+@c COMMON
 @end defun
 
 @defun hash-table-put! hash key value
+@c EN
+Puts a key @var{key} with a value @var{value} to the hash table @var{hash}.
+@c JP
+キー@var{key}と対応する値@var{value}をハッシュテーブル@var{hash}に挿入します。
+@c COMMON
 @end defun
 
 @defun hash-table-exists? hash key
+@c EN
+Returns @code{#t} if a hash table @var{hash} has a key @var{key}.
+@c JP
+ハッシュテーブル@var{hash}にキー@var{key}を持つエントリがあれば@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun hash-table-for-each hash proc
+@c EN
+A procedure @var{proc} is called with two arguments, a key and associated
+value, over all the entries in the hash table @var{hash}.
+@c JP
+ハッシュテーブル@var{hash}内の全てのエントリについて、各エントリのキーと値を
+2つの引数として手続き@var{proc}を呼びます。
+@c COMMON
 @end defun
 
 @defun hash-table-keys hash
 @defunx hash-table-values hash
+@c EN
+Returns all the keys or values of hash table @var{hash} in a list,
+ respectively.
+@c JP
+それぞれ、ハッシュテーブル@var{hash}内の全てのキーまたは値をリストにして返します。
+@c COMMON
 @end defun
 
-@defun hash-table-stat hash
-@end defun
+@c @defun hash-table-stat hash
+@c @end defun
 
 
 @c ----------------------------------------------------------------------
@@ -3772,16 +3854,31 @@ unlimited extent continuation in such callbacks.
 So far, the following code is executed in such callbacks.  Besides them,
 typical callback functions from external C libraries, like GUI toolkit,
 obeys the same limitation.
-@itemize
+@itemize @bullet
 @item
 A @code{write-object} method that is invoked from @code{write},
-@code{display} or @code{format}.
+@code{display} or @code{format} (@xref{Output}).
 @item
-A comparison function invoked from @code{sort}.
+A comparison function invoked from @code{sort} (@xref{Comparison and sorting}).
 @item
-A filler and a flusher callbacks of buffered ports.
+A filler and a flusher callbacks of buffered ports
+(@xref{Procedural ports}).
 @end itemize
 @c JP
+おそらく、そのようなコールバック内で無制限のエクステントを持つ継続を作る必要というのは
+あまり無いでしょう。Gauche組み込みの機能では、以下のようなコードがCからのコールバックで
+呼び出されます。さらに、外部のCライブラリを使った場合、例えばGUIツールキットからの
+コールバックなどはこの制限を受けるでしょう。
+@itemize @bullet
+@item
+@code{write}、@code{display}、@code{format}から呼び出される
+@code{write-object}メソッド (@ref{Output}参照)。
+@item
+@code{sort}から呼び出される比較クロージャ (@ref{Comparison and sorting}参照)。
+@item
+バッファードポートから呼び出されるfillerとflusher手続き。
+(@ref{Procedural ports}参照)。
+@end itemize
 @c COMMON
 
 @example
@@ -3822,6 +3919,7 @@ Caller can capture multiple values by a built-in syntax
 
 @node Delayed Evaludation,  , Multiple values, Control features
 @subsection  Delayed Evaludation
+@c NODE 遅延評価
 
 @defspec delay expression
 [R5RS]
