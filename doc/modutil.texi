@@ -9499,7 +9499,7 @@ The default value of @var{padding} is @code{#f}.
 @c JP
 @var{list}の最初の@var{k}個の要素で構成されるリストを返します。
 これは、SRFI-1の@code{take}に似ていますが、この手続きのほうが
-慣用です。つまり、@var{list}が@var{k}よりも短いとき、@code{take*}は
+寛容です。つまり、@var{list}が@var{k}よりも短いとき、@code{take*}は
 エラーを通知しません。その代わり、デフォルトで(あるいは、オプショナル
 引数@var{fill?}が@code{#f}の場合)@var{list}のコピーを返します。
 @var{fill?}が真の場合、その長さを@var{k}にするために、@var{padding}が
@@ -9531,7 +9531,7 @@ an empty list is returned.
 @c JP
 @var{list}の最初の@var{k}個の要素が削除されたリストを返します。
 これは、SRFI-1の@code{drop}に似ていますが、この手続きのほうが
-慣用です。@var{list}が@var{k}よりも短い場合、空リストが返されます。
+寛容です。@var{list}が@var{k}よりも短い場合、空リストが返されます。
 @c COMMON
 
 @example
