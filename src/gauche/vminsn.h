@@ -1,7 +1,7 @@
 /*
  * vminsn.h - Virtual machine instruction definition
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vminsn.h,v 1.39 2003-10-18 11:07:01 shirok Exp $
+ *  $Id: vminsn.h,v 1.40 2004-07-10 12:44:03 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -67,15 +67,18 @@ DEFINSN(SCM_VM_POP, "POP", 0)
  */
 DEFINSN(SCM_VM_DUP, "DUP", 0)
 
-/* PRE-CALL(nargs)
+/* PRE-CALL(nargs) <prep>
  *
- *  Prepare for a normal call.
+ *  Prepare for a normal call.   <prep> is a list of code that ends with CALL.
+ *  The next insn is the continuation.  This instruction pushes the
+ *  continuation, then go executing <prep>.
  */
 DEFINSN(SCM_VM_PRE_CALL, "PRE-CALL", 1)
 
-/* PRE-TAIL(nargs)
+/* PRE-TAIL(nargs) 
  *
- *  Prepare for a tail call.
+ *  Prepare for a tail call.   At this moment, this instruction only checks
+ *  stack boundary.  Eventually this will be removed.
  */
 DEFINSN(SCM_VM_PRE_TAIL, "PRE-TAIL", 1)
 
@@ -87,13 +90,15 @@ DEFINSN(SCM_VM_CHECK_STACK, "CHECK-STACK", 1)
 
 /* CALL(NARGS)
  *
- *  Call procedure in val0.
+ *  Call procedure in val0.  The continuation of this call is already
+ *  pushed by PRE_CALL, so this instruction is always the end of a graph.
  */
 DEFINSN(SCM_VM_CALL, "CALL", 1)
 
 /* TAIL-CALL(NARGS)
  *
- *  Call procedure in val0.
+ *  Call procedure in val0.  Same as CALL except this discards the 
+ *  caller's arugment frame and shift the callee's argument frame.
  */
 DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
 
