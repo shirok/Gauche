@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package.scm,v 1.3 2004-04-23 04:46:37 shirok Exp $
+;;;  $Id: package.scm,v 1.4 2004-05-16 09:03:43 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -70,6 +70,7 @@
   (use srfi-1)
   (use srfi-2)
   (use gauche.collection)
+  (use gauche.version)
   (use file.util)
   (export <gauche-package-description>
           path->gauche-package-description
@@ -139,20 +140,39 @@
 
 ;; A pseudo collection to traverse package description filenames.
 (define-class <gauche-package-description-paths> (<collection>)
-  ())
+  ((paths :init-form *load-path* :init-keyword :paths)))
 
 ;; Returns a singleton of <gauche-package-descriptions>.
-(define gauche-package-description-paths
-  (let ((singleton #f))
-    (lambda ()
-      (or singleton
-          (begin
-            (set! singleton (make <gauche-package-description-paths>))
-            singleton)))))
+(define (gauche-package-description-paths . args)
+  (let-keywords* args ((all-versions #f))
+    (if all-versions
+      (make <gauche-package-description-paths> :paths (get-all-version-paths))
+      (make <gauche-package-description-paths>))))
 
+;; scan the directory to find older verison of Gauche library directories.
+(define (get-all-version-paths)
+  (let ((xpaths '()))
+    (dolist (path *load-path*)
+      (cond ((#/\/\d+(\.\d+)*[^\/]*\/lib\/?$/ path)
+             => (lambda (m)
+                  (let* ((base (m 'before))
+                         (dirs (directory-list base
+                                               :children? #t :add-path? #t
+                                               :filter #/^\d+(\.\d+)*[^\/]*$/))
+                         )
+                    (set! xpaths
+                          (append (sort (delete path dirs)
+                                        (lambda (a b)
+                                          (version>? (sys-basename a)
+                                                     (sys-basename b))))
+                                  xpaths)))))
+            ))
+    (append *load-path* xpaths)))
+
+;; Iterator protocol
 (define-method call-with-iterator ((gpd <gauche-package-description-paths>)
                                    proc . args)
-  (let ((paths *load-path*)
+  (let ((paths (ref gpd 'paths))
         (files '()))
     (define (pick-next)
       (if (null? files)
@@ -173,9 +193,11 @@
       (proc end? next))))
 
 ;; utility
-(define (find-gauche-package-description name)
-  (and-let* ((path (find (string->regexp #`"/,|name|\\.gpd$")
-                         (gauche-package-description-paths))))
-    (path->gauche-package-description path)))
+(define (find-gauche-package-description name . args)
+  (let-keywords* args ((all-versions #f))
+    (and-let* ((path (find (string->regexp #`"/,|name|\\.gpd$")
+                           (gauche-package-description-paths
+                            :all-versions all-versions))))
+      (path->gauche-package-description path))))
 
 (provide "gauche/package")

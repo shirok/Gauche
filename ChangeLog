@@ -1,5 +1,9 @@
 2004-05-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/package.scm (gauche-package-description-paths): added
+	  :all-versions keyword argument to search library directories
+	  of older Gauche versions.
+	
 	* src/gauche-package.in: added --install-as option.
 	* lib/gauche/package/build.scm: allow sudo option to specify the
 	  username.
