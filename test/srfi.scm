@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.20 2002-05-24 10:21:26 shirok Exp $
+;; $Id: srfi.scm,v 1.21 2002-06-27 08:08:23 shirok Exp $
 
 (use gauche.test)
 
@@ -1350,7 +1350,8 @@
                 ))))
 
 ;; NB: in Gauche, the round-trip conversion from time -> julian-day -> time
-;; can't be guaranteed since limited precision of julian-day calcularion.
+;; can't be guaranteed because of the limited precision of julian-day
+;; calcularion.
 '(let1 t0 (make-time time-utc 1022191954 0)
   (test "julian day number"
         t0
@@ -1384,6 +1385,52 @@
           (map (lambda (s) (slot-ref d s))
                '(year month day hour minute second zone-offset)))))
                
+;;-----------------------------------------------------------------------
+(test-section "srfi-26")
 
+(use srfi-26)
+
+;; The test cases are taken from the SRFI-26 test program by Sebastian Egner.
+(test "cut list" '() (lambda () ((cut list))))
+(test "cut list <...>" '() (lambda () ((cut list <...>))))
+(test "cut list 1" '(1) (lambda () ((cut list 1))))
+(test "cut list <>" '(1) (lambda () ((cut list <>) 1)))
+(test "cut list <...>" '(1) (lambda () ((cut list <...>) 1)))
+(test "cut list 1 2" '(1 2) (lambda () ((cut list 1 2))))
+(test "cut list 1 <>" '(1 2) (lambda () ((cut list 1 <>) 2)))
+(test "cut list 1 <...>" '(1 2) (lambda () ((cut list 1 <...>) 2)))
+(test "cut list 1 <...>" '(1 2 3 4) (lambda () ((cut list 1 <...>) 2 3 4)))
+(test "cut list 1 <> 3 <>" '(1 2 3 4) (lambda () ((cut list 1 <> 3 <>) 2 4)))
+(test "cut list 1 <> 3 <...>" '(1 2 3 4 5 6) (lambda () ((cut list 1 <> 3 <...>) 2 4 5 6)))
+(test "cut (eval order)" '(ok)
+      (lambda ()
+        (let* ((x 'wrong) (y (cut list x))) (set! x 'ok) (y))))
+(test "cut (eval order)" 2
+      (lambda ()
+        (let ((a 0))
+          (map (cut + (begin (set! a (+ a 1)) a) <>)
+               '(1 2))
+          a)))
+
+(test "cute list" '() (lambda () ((cute list))))
+(test "cute list <...>" '() (lambda () ((cute list <...>))))
+(test "cute list 1" '(1) (lambda () ((cute list 1))))
+(test "cute list <>" '(1) (lambda () ((cute list <>) 1)))
+(test "cute list <...>" '(1) (lambda () ((cute list <...>) 1)))
+(test "cute list 1 2" '(1 2) (lambda () ((cute list 1 2))))
+(test "cute list 1 <>" '(1 2) (lambda () ((cute list 1 <>) 2)))
+(test "cute list 1 <...>" '(1 2) (lambda () ((cute list 1 <...>) 2)))
+(test "cute list 1 <...>" '(1 2 3 4) (lambda () ((cute list 1 <...>) 2 3 4)))
+(test "cute list 1 <> 3 <>" '(1 2 3 4) (lambda () ((cute list 1 <> 3 <>) 2 4)))
+(test "cute list 1 <> 3 <...>" '(1 2 3 4 5 6) (lambda () ((cute list 1 <> 3 <...>) 2 4 5 6)))
+(test "cute (eval order)" '(ok)
+      (lambda ()
+        (let* ((x 'ok) (y (cute list x))) (set! x 'wrong) (y))))
+(test "cute (eval order)" 1
+      (lambda ()
+        (let ((a 0))
+          (map (cute + (begin (set! a (+ a 1)) a) <>)
+               '(1 2))
+          a)))
 
 (test-end)

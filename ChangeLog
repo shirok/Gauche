@@ -1,5 +1,7 @@
 2002-06-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-26.scm, test/srfi.scm, src/gauche-init.scm : added SRFI-26
+	  and its test, and set cut and cute to be autoloaded.
 	* src/extlib.stub (format): allow to omit the port argument, so that
 	  it conforms SRFI-28 (basic format strings).
 
