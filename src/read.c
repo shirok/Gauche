@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.32 2001-12-15 10:58:49 shirok Exp $
+ *  $Id: read.c,v 1.33 2001-12-16 04:35:06 shirok Exp $
  */
 
 #include <stdio.h>
@@ -70,6 +70,20 @@ ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
         Scm_Error("input port required: %S", port);
     }
     return read_list(SCM_PORT(port), closer, &ctx);
+}
+
+/* convenience functions */
+ScmObj Scm_ReadFromString(ScmString *str)
+{
+    ScmObj inp = Scm_MakeInputStringPort(str);
+    return Scm_Read(inp);
+}
+
+ScmObj Scm_ReadFromCString(const char *cstr)
+{
+    ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
+    ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s));
+    return Scm_Read(inp);
 }
 
 /*----------------------------------------------------------------

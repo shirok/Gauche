@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.194 2001-12-15 09:45:30 shirok Exp $
+ *  $Id: gauche.h,v 1.195 2001-12-16 04:35:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1121,6 +1121,8 @@ enum {
 
 extern ScmObj Scm_Read(ScmObj port);
 extern ScmObj Scm_ReadList(ScmObj port, ScmChar closer);
+extern ScmObj Scm_ReadFromString(ScmString *string);
+extern ScmObj Scm_ReadFromCString(const char *string);
 
 extern ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc);
     
