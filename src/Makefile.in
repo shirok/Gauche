@@ -180,7 +180,7 @@ install-check :
 
 # clean ------------------------------------------------
 GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c thrlib.c
-CONFIG_GENERATED = Makefile gauche-config gauche-config.h
+CONFIG_GENERATED = Makefile gauche-config gauche/config.h
 
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) \

@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.41 2003-07-22 05:09:22 shirok Exp $
+# $Id: Makefile.in,v 1.42 2003-07-22 20:15:19 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check install uninstall clean distclean maintainer-clean install-check
@@ -57,7 +57,7 @@ distclean: clean
 
 maintainer-clean: clean
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) maintainer-clean); done
-	rm -rf $(AUTOCONF_GENERATED) VERSION
+	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.eucjp DIST_EXCLUDE_X gc/configure
 
 dist:
 	@echo "To create a distribution tarball, use DIST script."

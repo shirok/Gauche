@@ -11,7 +11,7 @@ SCMFILES = fcntl.scm
 
 OBJECTS = fcntl_head.$(OBJEXT) fcntl.$(OBJEXT) fcntlib.$(OBJEXT) fcntl_tail.$(OBJEXT)
 
-GENERATED = Makefile fcntllib.c fcntl_head.c fcntl_tail.c
+GENERATED = Makefile fcntlib.c fcntl_head.c fcntl_tail.c
 
 all : $(LIBFILES)
 
