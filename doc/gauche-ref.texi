@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.141 2001-12-21 09:06:54 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.142 2001-12-21 10:18:43 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -573,7 +573,7 @@ I describe several characteristics of Gauche object system here.
 @xref{Object system}, for details.
 
 @table @emph
-@item Everything is an object (in a sense).
+@item Everything is an object (if you care)
 You have seen this tagline for the other languages.
 And yes, in Gauche, everything is an object in the sense that you can
 query its class, and get various meta information of

@@ -1,3 +1,13 @@
+2001-12-20  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.11
+	* src/vm.c : make the default exception handler not capture
+	  non-fatal exception when user-defined exception handler is
+	  active.  Tests are added accordingly.
+	* gc/dyn_load.c, gc/include/private/gcconfig.h : enabled
+	  DYNAMIC_LOADING for FREEBSD.  I'm not sure it is the right
+	  thing and work on all cases, though.
+
 2001-12-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c : dynamic-wind properly returns multiple values.
