@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.26 2001-02-15 08:56:57 shiro Exp $
+;;; $Id: stdlib.stub,v 1.27 2001-02-17 10:23:09 shiro Exp $
 ;;;
 
 
@@ -777,7 +777,7 @@
 
 (define-cproc load (file)
   (assert (string? file))
-  "  SCM_RETURN(Scm_VMLoad(Scm_GetStringConst(file)));")
+  "  SCM_RETURN(Scm_VMLoad(file));")
 
 ; transcript-on
 ; transcript-off
