@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.207 2004-03-05 05:26:08 shirok Exp $
+ *  $Id: vm.c,v 1.208 2004-03-16 12:43:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1767,7 +1767,7 @@ static ScmObj user_eval_inner(ScmObj program)
     
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
-    if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
+    if (sigsetjmp(cstack.jbuf, TRUE) == 0) {
         run_loop();
         val0 = vm->val0;
         if (vm->cont == cstack.cont) {

@@ -1,3 +1,9 @@
+2004-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (user_eval_inner): saves signal mask.  it appears that
+	  not saving mask here would cause hang on cygwin (Reported by
+	  HIRAUCHI Hideyuki).
+
 2004-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub (process-setter): fixed typo (Pointed by Michal Maru-B¹ka)$)B
