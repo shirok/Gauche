@@ -74,6 +74,7 @@ AC_PROG_GCC_TRADITIONAL
 
 AC_CHECK_FUNCS(trunc rint)
 AC_CHECK_FUNCS(symlink)
+AC_CHECK_FUNCS(mkstemp)
 
 dnl Checks if crypt() exists and whether it's in libc or libcrypt.
 AC_CHECK_FUNC(crypt, HAVE_CRYPT=yes, HAVE_CRYPT=no)
