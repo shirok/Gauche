@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.220 2002-06-17 08:33:57 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.221 2002-06-17 20:45:54 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -691,10 +691,55 @@ using index access at all.
 
 @c EN
 You can choose @emph{internal} encoding scheme at the time of compiling
-Gauche.  Conversions from other encoding scheme is provided 
+Gauche.   At runtime, a procedure @code{gauche-character-encoding}
+can be used to query the internal encoding.  Currently, the following
+internal encodings are supported.
+@c JP
+Gaucheのコンパイル時に、文字の@emph{内部エンコーディング}を選択することができます。
+実行時に手続き@code{gauche-character-encoding}によってどの内部エンコーディング
+でコンパイルされたかを知ることが出来ます。
+今のところ、以下のエンコーディングがサポートされています。
+@c COMMON
+
+@table @code
+@item euc-jp
+@c EN
+EUC-JP encoding of ASCII, JIS X 0201 kana, JIS X 0212 and JIS X 0213:2000
+Japanese character set.
+@c JP
+ASCII、JIS X 0201カナ、JIS X 0212及びJIS X 0213:2000文字集合のEUC-JP
+エンコーディング
+@c COMMON
+@item sjis
+@c EN
+Shift-JIS encoding of JIS X 0201 kana and JIS X 0213:2000
+Japanese character set.  For source-code compatibility, the character
+code between 0 and 0x7f is mapped to ASCII.
+@c JP
+JIS X 0201カナ及びJIS X 0213:2000文字集合のShift-JISエンコーディング。
+ソースコードの互換性のため、文字コード0から0x7fの範囲はJIS X 0201 roman
+ではなくASCIIにマップされます。
+@c COMMON
+@item utf-8
+@c EN
+UTF-8 encoding of Unicode.
+@c JP
+UnicodeのUTF-8エンコーディング。
+@c COMMON
+@item none
+@c EN
+8-bit fixed-length character encoding, with the code between 0 and 0x7f
+matches ASCII.  When converted to Unicode, ISO8859-1 encoding is assumed.
+@c JP
+8ビット固定長の文字エンコーディング。文字コード0から0x7fの範囲はASCIIと
+みなします。Unicodeとの変換の際にはISO8859-1エンコーディングを仮定します。
+@c COMMON
+@end table
+
+@c EN
+Conversions from other encoding scheme is provided 
 as a special port. @xref{Character code conversion}, for details.
 @c JP
-Gaucheのコンパイル時に、文字の@emph{内部エンコーディング} を選択することができます。
 他の文字エンコーディングからの変換は特別なポートを使って行われます。
 @ref{Character code conversion} を参照して下さい。
 @c COMMON
