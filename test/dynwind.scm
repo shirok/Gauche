@@ -2,15 +2,121 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.11 2001-07-08 08:51:12 shirok Exp $
+;; $Id: dynwind.scm,v 1.12 2001-08-04 11:08:38 shirok Exp $
 
 (use gauche.test)
 
 (test-start "dynamic-wind and call/cc")
 
-;;------------------------------------------------------------------------
-
 (define c #f)
+
+;;-----------------------------------------------------------------------
+;; Test for continuation
+
+(define (callcc-test1)
+  (let ((r '()))
+    (let ((w (let ((v 1))
+               (set! v (+ (call-with-current-continuation
+                           (lambda (c0) (set! c c0) v))
+                          v))
+               (set! r (cons v r))
+               v)))
+      (if (<= w 1024) (c w) r))))
+
+(test "call/cc (env)" '(2048 1024 512 256 128 64 32 16 8 4 2)
+      callcc-test1)
+
+;; continuation with multiple values
+
+(test "call/cc (values)" '(1 2 3)
+      (lambda () (receive x (call-with-current-continuation
+                             (lambda (c) (c 1 2 3)))
+                          x)))
+
+;; continuation invoked while inline procedure is prepared.
+;; a test to see call/cc won't mess up the VM stack.
+
+(define (callcc-test2)
+  (let ((cc #f)
+        (r '()))
+    (let ((s (list 1 2 3 4 (call/cc (lambda (c) (set! cc c) 5)) 6 7 8)))
+      (if (null? r)
+          (begin (set! r s) (cc -1))
+          (list r s)))))
+    
+(test "call/cc (inline)" '((1 2 3 4 5 6 7 8) (1 2 3 4 -1 6 7 8))
+      callcc-test2)
+
+;;------------------------------------------------------------------------
+;; Test for continuation thrown over C stack boundary
+;;
+;; NOT YET SUPPORTED
+;;
+
+;;
+'(define (callcc-over-cstack)
+  (call-with-current-continuation
+   (lambda (c)
+     (sort '(1 2 3 4 5 6) (lambda (a b) (c 10))))))
+
+'(test "call/cc (cstack)" 10 callcc-over-cstack)
+
+'(test "call/cc (cstack2)" '(10 . 11)
+      (lambda () (cons (callcc-over-cstack) 11)))
+
+'(test "call/cc (cstack, values)" '(10 11)
+      (lambda ()
+        (receive x
+            (call-with-current-continuation
+             (lambda (c)
+               (sort '(1 2 3 4 5 6)
+                     (lambda (a b) (c 10 11)))))
+          x)))
+
+'(test "call/cc (cstack, two level)" '(10 . 11)
+      (lambda ()
+        (cons (call-with-current-continuation
+               (lambda (c)
+                 (sort '(1 2 3 4 5 6)
+                       (lambda (a b)
+                         (sort '(1 2 3 4 5 6)
+                               (lambda (a b) (c 10)))))))
+              11)))
+
+'(test "call/cc (cstack, two level, two hop)" '(11 . 11)
+      (lambda ()
+        (cons (call-with-current-continuation
+               (lambda (c)
+                 (sort '(1 2 3 4 5 6)
+                       (lambda (a b)
+                         (c (+ (call-with-current-continuation
+                                (lambda (d)
+                                  (sort '(1 2 3 4 5 6)
+                                        (lambda (a b) (d 10)))))
+                               1))))))
+              11)))
+
+;; Paranoia
+
+'(test "call/cc & dynwind (cstack)" '(a b c)
+      (lambda ()
+        (let ((x '()))
+          (call-with-current-continuation
+           (lambda (c)
+             (dynamic-wind
+              (lambda () (set! x (cons 'c x)))
+              (lambda ()
+                (sort '(1 2 3 4 5 6)
+                      (lambda (a b)
+                        (set! x (cons 'b x))
+                        (c 0)))
+                (set! x (cons 'z x))
+                )
+              (lambda () (set! x (cons 'a x))))))
+          x)))
+
+;;------------------------------------------------------------------------
+;; Test for dynamic-wind
 
 ;; An example in R5RS
 (define (dynwind-test1)
@@ -42,40 +148,6 @@
 (test "dynamic-wind"
       '(3 connect talk1 disconnect connect talk2 disconnect 1)
       dynwind-test2)
-
-;;-----------------------------------------------------------------------
-;; Test for continuation
-
-(define (callcc-test1)
-  (let ((r '()))
-    (let ((w (let ((v 1))
-               (set! v (+ (call-with-current-continuation
-                           (lambda (c0) (set! c c0) v))
-                          v))
-               (set! r (cons v r))
-               v)))
-      (if (<= w 1024) (c w) r))))
-
-(test "call/cc (env)" '(2048 1024 512 256 128 64 32 16 8 4 2)
-      callcc-test1)
-
-;; continuation with multiple values
-
-(test "call/cc (values)" '(1 2 3)
-      (lambda () (receive x (call-with-current-continuation
-                             (lambda (c) (c 1 2 3)))
-                          x)))
-
-(define (callcc-test2)
-  (let ((cc #f)
-        (r '()))
-    (let ((s (list 1 2 3 4 (call/cc (lambda (c) (set! cc c) 5)) 6 7 8)))
-      (if (null? r)
-          (begin (set! r s) (cc -1))
-          (list r s)))))
-    
-(test "call/cc (inline)" '((1 2 3 4 5 6 7 8) (1 2 3 4 -1 6 7 8))
-      callcc-test2)
 
 ;;-----------------------------------------------------------------------
 ;; Test for stack overflow handling
