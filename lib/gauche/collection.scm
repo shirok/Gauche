@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.6 2002-04-26 10:05:06 shirok Exp $
+;;;  $Id: collection.scm,v 1.7 2002-05-13 00:19:40 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -261,13 +261,15 @@
   (delay (size-of coll)))
 
 ;; shortcut
-(define-method size-of ((coll <list>)) (length coll))
-(define-method size-of ((coll <vector>)) (vector-length coll))
-(define-method size-of ((coll <string>)) (string-length coll))
+(define-method size-of ((coll <list>))        (length coll))
+(define-method size-of ((coll <vector>))      (vector-length coll))
+(define-method size-of ((coll <weak-vector>)) (weak-vector-length coll))
+(define-method size-of ((coll <string>))      (string-length coll))
 
-(define-method lazy-size-of ((coll <list>)) (length coll))
-(define-method lazy-size-of ((coll <vector>)) (vector-length coll))
-(define-method lazy-size-of ((coll <string>)) (string-length coll))
+(define-method lazy-size-of ((coll <list>))        (length coll))
+(define-method lazy-size-of ((coll <vector>))      (vector-length coll))
+(define-method lazy-size-of ((coll <weak-vector>)) (weak-vector-length coll))
+(define-method lazy-size-of ((coll <string>))      (string-length coll))
 
 ;; find -------------------------------------------------
 
