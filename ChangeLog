@@ -1,3 +1,8 @@
+2002-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/file/util.scm : added find-file-in-paths and move-file.
+	* ext/mt-random/* : added mt-random-integer with arbitrary range.
+
 2002-05-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/mt-random/* : added math.mt-random.
