@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.9 2002-05-10 20:35:56 shirok Exp $
+;;;  $Id: util.scm,v 1.10 2002-05-10 21:02:42 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -38,7 +38,7 @@
           file-mtime=? file-mtime<? file-mtime<=? file-mtime>? file-mtime>=?
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
-          touch-file copy-file
+          touch-file copy-file move-file
           ))
 (select-module file.util)
 
@@ -413,12 +413,52 @@
     ;; body of copy-file
     (unless (memq if-exists '(#f :error :supersede :backup))
       (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
-    (when (and (file-exists? src) (file-eqv? src dst))
+    (when (and (file-exists? src) (file-exists? dst) (file-eqv? src dst))
       (errorf "source ~s and destination ~s are the same file" src dst))
     (do-copy)
     ))
 
 ;; move-file
+;;  if-exists  - :error :supersede :backup #f
+;;  backup-suffix
+(define (move-file src dst . opts)
+  (let* ((if-exists (get-keyword :if-exists opts :error))
+         (backsfx   (get-keyword :backup-suffix opts ".orig"))
+         )
+    (define (do-rename)
+      (if (file-exists? dst)
+          (cond ((eq? if-exists :error)
+                 (error "destination file exists" dst))
+                ((eq? if-exists :supersede)
+                 (sys-rename src dst) #t)
+                ((eq? if-exists :backup)
+                 (sys-rename dst (string-append dst backsfx))
+                 (sys-rename src dst) #t)
+                (else #f))
+          (begin (sys-rename src dst) #t)))
+    (define (do-copying)
+      (and (copy-file src dst :if-exists if-exists
+                      :backup-suffix backsfx 
+                      :safe #t :keep-timestamp #t)
+           (begin (sys-unlink src) #t)))
+    
+    ;; body of move-file
+    (unless (memq if-exists '(#f :error :supersede :backup))
+      (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
+    (unless (file-exists? src)
+      (error "source file does not exist" src))
+    (when (and (file-exists? dst) (file-eqv? src dst))
+      (errorf "source ~s and destination ~s are the same file" src dst))
+    (let1 dstdir (sys-dirname dst)
+      (unless (file-exists? dstdir)
+        (errorf "can't move to ~s: path does not exist" dst))
+      (if (file-device=? src dstdir)
+          (do-rename)
+          (do-copying)))
+    ))
+
+
+
 
 ;; copy-directory
 ;; move-directory
