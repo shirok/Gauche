@@ -7,7 +7,7 @@ include ../Makefile.ext
 SCM_CATEGORY = gauche
 
 LIBFILES = libgauche-uvector.$(SOEXT)
-SCMFILES = array.scm uvector.scm
+SCMFILES = array.scm uvector.scm matrix.scm
 HDRFILES = gauche/uvector.h
 
 GENERATED = Makefile uvlib.c uvlib.stub uvector.c gauche/uvector.h \
