@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.2 2001-04-23 07:10:09 shiro Exp $
+;;;  $Id: numerical.scm,v 1.3 2001-05-06 07:46:46 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -83,7 +83,7 @@
 (define (make-polar r t)
   (check-arg real? r)
   (check-arg real? t)
-  (make-rectangular (* r (cos t)) (* r (sin t))))
+  (make-rectangular (* r (%cos t)) (* r (%sin t))))
 
 (define (real-part z)
   (cond ((real? z) z)
@@ -94,6 +94,72 @@
   (cond ((real? z) (if (exact? z) 0 0.0))
         ((number? z) (cdr (%complex->real/imag z)))
         (else (error "number required, but got: %S" z))))
+
+;; Complex transcedental functions.
+;; These are called by the main transcedental functions.  assumes
+;; z are complex.
+;;  Cf. Teiji Takagi: "Kaiseki Gairon" pp.193--198
+
+(define (%complex-exp z)
+  (let ((xy (%complex->real/imag z)))
+    (make-polar (%exp (car xy)) (cdr xy))))
+
+(define (%complex-log z)
+  (make-rectangular (%log (magnitude z)) (angle z)))
+
+(define (%complex-sqrt z)
+  (exp (/ (log z) 2.0)))
+
+(define (%complex-cos z)
+  (let ((xy (%complex->real/imag z)))
+    (make-rectangular (* (%cos (car xy)) (%cosh (cdr xy)))
+                      (* (%sin (car xy)) (%sinh (cdr xy))))))
+
+(define (%complex-cosh z)
+  (let ((xy (%complex->real/imag z)))
+    (make-rectangular (* (%cosh (car xy)) (%cos (cdr xy)))
+                      (* (%sinh (car xy)) (%sin (cdr xy))))))
+
+(define (%complex-sin z)
+  (let ((xy (%complex->real/imag z)))
+    (make-rectangular (* (%sin (car xy)) (%cosh (cdr xy)))
+                      (- (* (%cos (car xy)) (%sinh (cdr xy)))))))
+
+(define (%complex-sinh z)
+  (let ((xy (%complex->real/imag z)))
+    (make-rectangular (* (%sinh (car xy)) (%cos (cdr xy)))
+                      (* (%cosh (car xy)) (%sin (cdr xy))))))
+
+(define (%complex-tan z)
+  (let ((z2i (* +2i z)))
+    (* +i
+       (/ (+ (exp z2i) 1)
+          (- (exp z2i) 1)))))
+
+(define (%complex-tanh z)
+  (let ((z2 (* 2 z)))
+    (* +i
+       (/ (+ (exp z2) 1)
+          (- (exp z2) 1)))))
+
+(define (%complex-asin z)
+  (* -i (log (+ (* +i z) (sqrt (- 1 (* z z)))))))
+
+(define (%complex-asinh z)
+  (log (+ z (sqrt (+ (* z z) 1)))))
+
+(define (%complex-acos z)
+  (* -i (log (+ z (* +i (sqrt (- 1 (* z z))))))))
+
+(define (%complex-acosh z)
+  (log (+ z (sqrt (- (* z z) 1)))))
+
+(define (%complex-atan z)
+  (let ((iz (* z +i)))
+    (/ (log (/ (+ 1 iz) (- 1 iz))) +2i)))
+
+(define (%complex-atanh z)
+  (/ (log (/ (+ 1 z) (- 1 z))) 2.0))
 
 ;; Insert R5RS functions into scheme module
 
