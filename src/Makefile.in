@@ -1,16 +1,27 @@
 SCM = snow
-CC = cc
+CC = @CC@
 CFLAGS = -g -I. -I../gc -I../gc/include
 #CFLAGS = -O2 -I. -I../gc -I../gc/include
+LIBS = @LIBS@
 LDFLAGS = -lm
 AR = ar
 
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
 GENERATED = stdlib.c extlib.c
 
-INSTALL_HEADERS = gauche.h gauche/vm.h gauche/vminsn.h gauche/vminline.h \
-	          gauche/char_euc_jp.h memory.h
+INSTALL_HEADERS = gauche.h ../gc/gc.h 
+INSTALL_SUBHEADERS = gauche/char_euc_jp.h gauche/vm.h gauche/vminsn.h \
+                     gauche/vminline.h
 
-INSTALL_LIBS = libgauche.a libgc.a
+HEADER_INSTALL_DIR = @includedir@
+SUBHEADER_INSTALL_DIR = @includedir@/gauche
+LIB_INSTALL_DIR = @libdir@
+
+INSTALL_LIBS = libgauche.a
+
+GCLIB = ../gc/gc.a
 
 OBJS = core.o vm.o compile.o error.o inline.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o symbol.o \
@@ -26,18 +37,32 @@ HDRS = gauche.h
 all : gosh
 
 gosh : libgauche.a main.o
-	$(CC) $(CFLAGS) -o gosh main.o -L. -lgauche ../gc/gc.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -o gosh main.o -L. -lgauche $(LDFLAGS)
 
 $(OBJS) main.o : $(HDRS)
 
 stdlib.c : stdlib.stub
 extlib.c : extlib.stub
 
-libgauche.a : $(OBJS)
-	$(AR) r libgauche.a $(OBJS)
+libgauche.a : $(OBJS) $(GCLIB)
+	$(AR) x $(GCLIB)
+	$(AR) r libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
 
 clean :
 	rm -f core gosh *.o *~ *.a $(GENERATED) gauche/*~
 
 install : all
+	if [ ! -d $(HEADER_INSTALL_DIR) ]; then mkdir $(HEADER_INSTALL_DIR); fi
+	for f in $(INSTALL_HEADERS); do \
+	  cp -f $$f $(HEADER_INSTALL_DIR); \
+	done
+	if [ ! -d $(SUBHEADER_INSTALL_DIR) ]; then mkdir $(SUBHEADER_INSTALL_DIR); fi
+	for f in $(INSTALL_SUBHEADERS); do \
+	  cp -f $$f $(SUBHEADER_INSTALL_DIR); \
+	done
+	if [ ! -d @libdir@ ]; then mkdir @libdir@; fi
+	for f in $(INSTALL_LIBS); do \
+	  cp -f $$f @libdir@; \
+	done
+
 
