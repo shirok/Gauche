@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.54 2002-01-23 10:18:36 shirok Exp $
+;;; $Id: syslib.stub,v 1.55 2002-01-24 09:06:01 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -738,6 +738,11 @@
 
 (define-cproc sys-pause ()
   "  pause();  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc sys-alarm (seconds)
+  (assert (small-integer? seconds))
+  "  int r = alarm(seconds);
+  SCM_RETURN(Scm_MakeInteger(r));")
 
 ;; returns a list of two ports
 (define-cproc sys-pipe (&keyword (name "(pipe)") (buffered? #t))
