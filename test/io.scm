@@ -9,7 +9,7 @@
 ;;-------------------------------------------------------------------
 (test-section "file i/o")
 
-(sys-system "rm -f tmp2.o")
+(sys-system "rm -rf tmp2.o")
 
 (test* "open-input-file" *test-error*
        (open-input-file "tmp2.o"))
