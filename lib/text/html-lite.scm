@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: html-lite.scm,v 1.7 2001-11-12 08:30:30 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.8 2002-03-01 18:57:16 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -60,7 +60,7 @@
                     (get-attr (cddr args) (list* (car args) " " attrs)))
                    (else
                     (get-attr (cddr args)
-                              (list* (format #f "=~s"
+                              (list* (format #f "=\"~a\""
                                              (html-escape-string (x->string (cadr args))))
                                      (car args)
                                      " "
