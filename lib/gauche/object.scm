@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.31 2001-12-02 12:54:27 shirok Exp $
+;;;  $Id: object.scm,v 1.32 2002-05-07 07:02:24 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -460,6 +460,12 @@
 (define-method x->number  ((obj <char>)) (char->integer obj))
 (define-method x->number  ((obj <top>)) 0)
 
+;; shorthand notation
+(define-method ref ((obj <object>) (slot <symbol>))
+  (slot-ref obj slot))
+(define-method (setter ref) ((obj <object>) (slot <symbol>) value)
+  (slot-set! obj slot value))
+
 ;;;
 ;;; Make exported symbol visible from outside
 ;;;
@@ -467,8 +473,7 @@
 (define-syntax insert-symbols
   (syntax-rules ()
     ((_ symbol ...)
-     (with-module gauche
-       (define symbol (with-module gauche.object symbol)) ...))
+     (begin (define-in-module gauche symbol symbol) ...))
     ))
 
 (insert-symbols define-generic define-method define-class
@@ -485,6 +490,6 @@
                 slot-definition-allocation slot-definition-getter
                 slot-definition-setter slot-definition-accessor
                 class-slot-definition class-slot-accessor
-                x->string x->integer x->number)
+                x->string x->integer x->number ref)
 
 (provide "gauche/object")
