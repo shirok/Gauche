@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.421 2003-06-10 07:33:25 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.422 2003-06-10 08:39:09 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8893,15 +8893,27 @@ returns @code{#f} without calling further @var{pred}s.
 @subsubsection Optional argument parsing
 @c NODE 省略可能引数のパージング
 
+@c EN
 To have optional arguments or keyword arguments in Scheme,
 you have to take variable arguments as a list and decompose
 them by yourself.   The following macros help it.
+@c JP
+Schemeでオプショナル引数やキーワード引数を使うためには、
+可変引数をリストとして取り自分で分解しなければなりません。
+以下のマクロがヘルパーとして使えます。
+@c COMMON
 
 @defmac let-optionals* restargs (var-spec @dots{}) body @dots{}
 @defmacx let-optionals* restargs (var-spec @dots{} . restvar) body @dots{}
+@c EN
 Given a list of values @var{restargs}, binds variables accodring
 to @var{var-spec}, then evaluates @var{body}.
+@c JP
+与えられた値のリスト@var{restargs}を、@var{var-spec}にしたがって
+変数に束縛し、@var{body}を評価します。
+@c COMMON
 
+@c EN
 @var{Var-spec} can be either a symbol, or a list of two elements
 and its car is a symbol.  The symbol is the bound variable name.
 The values in @var{restargs} are bound to the symbol in order.
@@ -8914,13 +8926,37 @@ In the latter case the second
 element is only evaluated when there are not enough arguments.
 The binding proceeds in the order of @var{var-spec}, so the second
 element may refer to the bindings of previous @var{var-spec}.
+@c JP
+@var{var-spec}はシンボルか、そのcarがシンボルである2要素のリストの
+いずれかです。シンボルは束縛された変数名です。
+@var{restargs}にある値は、順番にシンボルに束縛されます。
+@var{restargs}に@var{var-spec}に示される数の値がない場合は、
+残りの@var{symbol}は以下に従ってデフォルト値が束縛されます。
+@var{var-spec}が単なるシンボルなら、デフォルト値は未定義です。
+@var{var-spec}がリストなら、デフォルト値はリストの2番目の要素を
+評価した結果です。後者の場合、2番目の要素は十分な引数がない場合にのみ
+評価されます。
+束縛は@var{var-spec}の順番にしたがって行われるので、2番目の要素は
+以前の@var{var-spec}のバインディングを参照するかも知れません。
+@c COMMON
 
+@c EN
 In the second form, @var{restvar} must be a symbol and bound to
 the list of values whatever left from @var{restargs} after binding
 to @var{var-spec}.
+@c JP
+2番目のフォームでは、@var{restvar}はシンボルでなければならず、
+@var{var-spec}に束縛された後、@var{restargs}に残っている値のリストに
+束縛されます。
+@c COMMON
 
+@c EN
 It is not an error if @var{restarg} has more values than @var{var-spec}s.
 The extra values are simply ignored in the first form.
+@c JP
+@var{restarg}が@var{var-spec}よりも多い値を持っていてもエラーでは
+ありません。最初のフォームでは、余分な値は単に無視されます。
+@c COMMON
 
 @example
 (define (proc x . args)
@@ -8957,11 +8993,19 @@ The extra values are simply ignored in the first form.
 @end defmac
 
 @defmac get-optional restargs default
+@c EN
 This is a short version of @var{let-optionals*} where you have only
 one optional argument.  Given the optional argument list @var{restargs},
 this macro returns the value of optional argument if one is given,
 or the result of @var{default} otherwise.  @var{Default} is not
 evaluated unless @var{restargs} is an empty list.
+@c JP
+これは@var{let-optionals*}の短いバージョンで、オプショナル引数が
+1つしかないときに使います。オプショナル引数のリストとして@var{restargs}が
+与えらると、このマクロはオプショナル引数が与えられていればその値を返し、
+そうでなければ@var{default}の結果を返します。@var{default}は@var{restargs}が
+空リストでなければ評価されません。
+@c COMMON
 
 @example
 (define (proc x . maybe-opt)
@@ -8974,27 +9018,55 @@ evaluated unless @var{restargs} is an empty list.
 @end defmac
 
 @defmac let-keywords* restarg (var-spec @dots{}) body @dots{}
+@c EN
 This macro is for keyword arguments.  @var{Var-spec} can be
 one of the following forms:
+@c JP
+このマクロはキーワード引数のためのものです。@var{var-spec}は
+以下のフォームのうちのいずれかです。
+@c COMMON
 
 @table @code
 @item (@var{symbol} @var{expr})
+@c EN
 If the @var{restrag} contains keyword which has the same name as @var{symbol},
 binds @var{symbol} to the corresponding value.  If such a keyword doesn't
 appear in @var{restarg}, binds @var{symbol} to the result of @var{expr}.
+@c JP
+@var{restarg}が@var{symbol}と同じ名前を持つキーワードを含んでいる場合、
+@var{symbol}を対応する値に束縛します。そのようなキーワードが@var{restarg}に
+ない場合は、@var{symbol}を@var{expr}の結果に束縛します。
+@c COMMON
 @item (@var{symbol} @var{keyword} @var{expr})
-If the @var{restrag} contains keyword @var{keyword},
+@c EN
+If the @var{restarg} contains keyword @var{keyword},
 binds @var{symbol} to the corresponding value.  If such a keyword doesn't
 appear in @var{restarg}, binds @var{symbol} to the result of @var{expr}.
+@c JP
+@var{restarg}がキーワード@var{keyword}を含む場合、
+@var{symbol}を対応する値に束縛します。そのようなキーワードが@var{restarg}に
+ない場合、@var{symbol}を@var{expr}の結果に束縛します。
+@c COMMON
 @end table
 
+@c EN
 The default value @var{expr} is only evaluated when the keyword is
 not given to the @var{restarg}.  The binding is done in the order
 of @var{var-spec}, so the @var{expr} can refer to the variables bound
 by preceding @var{var-spec}.
+@c JP
+デフォルト値@var{expr}は、@var{restarg}にキーワードが与えられてなかった
+場合にのみ評価されます。束縛は@var{var-spec}での順番に行われるので、
+@var{expr}は以前の@var{var-spec}により束縛された変数を参照できます。
+@c COMMON
 
+@c EN
 If a keyword that doesn't listed in @var{var-spec} appears in @var{restarg},
 it is simply ignored.
+@c JP
+@var{var-spec}にリストされていないキーワードが@var{restarg}に現れた場合、
+それは単に無視されます。
+@c COMMON
 
 @example
 (define (proc x . options)
@@ -9015,24 +9087,50 @@ it is simply ignored.
 @subsubsection Procedure arity
 @c NODE 手続きのアリティ
 
+@c EN
 Interface to query procedure's arity.
 The API is taken from MzScheme (PLT Scheme).
+@c JP
+手続きのアリティを問い合わせるインターフェースです。
+APIは、MzScheme (PLT Scheme)を参考にしました。
+@c COMMON
 
 @defun arity @var{proc}
-Given procedure @var{proc,}
+@c EN
+Given procedure @var{proc},
 returns an integer, an @emph{arity-at-least} object, or
 a list of integer(s) and @emph{arity-at-least} objects.
+@c JP
+手続き@var{proc}を与え、整数、@emph{arity-at-least}オブジェクト、
+整数と@emph{arity-at-least}オブジェクトからなるリストのいずれかを
+返します。
+@c COMMON
 
+@c EN
 An integer result indicates @var{proc} takes exactly that number
-of arguments.  An @emph{arity-at-least} indicats @var{proc} takes
+of arguments.  An @emph{arity-at-least} indicates @var{proc} takes
 at least @code{(arity-at-least-value @emph{arity-at-least})}
 arguments.   The list indicates there are multiple procedures
 with different arities.
+@c JP
+整数の戻り値は、@var{proc}が正確にその数の引数を取ることを表します。
+@emph{arity-at-least}は、@var{proc}が最低でも
+引数@code{(arity-at-least-value @emph{arity-at-least})}を取ることを
+表します。リストは、異なるアリティを持つ複数の手続きがあることを
+表します。
+@c COMMON
 
+@c EN
 Since one can add methods to an existing procedure or generic function
 at any moment in Gauche, the value returned by @code{arity} only
 indicates the current state of the procedure.  It will change
 if new method is added to the procedure/generic-function.
+@c JP
+Gaucheではいつでも、既存の手続きやジェネリック関数にメソッドを追加
+できるので、@code{arity}が返す値はその手続きの現在の状態を示すに
+過ぎません。その手続きやジェネリック関数に新しいメソッドが追加
+されると、それも変更されます。
+@c COMMON
 
 @example
 (arity cons) @result{} 2
@@ -9042,17 +9140,30 @@ if new method is added to the procedure/generic-function.
 @end defun
 
 @defun arity-at-least? @var{obj}
+@c EN
 Returns true if @var{obj} is an arity-at-least object.
+@c JP
+@var{obj}がarity-at-leastオブジェクトなら、真を返します。
+@c COMMON
 @end defun
 
 @defun arity-at-least-value @var{arity-at-least}
+@c EN
 Returns the number of required arguments the arity-at-least object
 indicates.
+@c JP
+arity-at-leastオブジェクトが表す必須引数の数を返します。
+@c COMMON
 @end defun
 
 @defun procedure-arity-includes? @var{proc} @var{k}
+@c EN
 If a procedure @var{proc} can take @var{k} arguments, returns @code{#t}.
 Otherwise returns @code{#f}.
+@c JP
+手続き@var{proc}が引数@var{k}を取れる場合、@code{#t}を返します。
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 
