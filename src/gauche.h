@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.64 2001-03-08 10:33:50 shiro Exp $
+ *  $Id: gauche.h,v 1.65 2001-03-08 19:09:13 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1493,6 +1493,7 @@ extern ScmClass Scm_SysTimeClass;
 #define SCM_CLASS_SYS_TIME    (&Scm_SysTimeClass)
 #define SCM_SYS_TIME(obj)     ((ScmSysTime*)(obj))
 #define SCM_SYS_TIME_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_TIME))
+#define SCM_SYS_TIME_TIME(obj) SCM_SYS_TIME(obj)->time
 
 extern ScmObj Scm_MakeSysTime(time_t);
 
@@ -1506,6 +1507,7 @@ extern ScmClass Scm_SysTmClass;
 #define SCM_CLASS_SYS_TM      (&Scm_SysTmClass)
 #define SCM_SYS_TM(obj)       ((ScmSysTm*)(obj))
 #define SCM_SYS_TM_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_SYS_TM))
+#define SCM_SYS_TM_TM(obj)    SCM_SYS_TM(obj)->tm
 
 extern ScmObj Scm_MakeSysTm(struct tm *);
     
