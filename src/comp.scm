@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.9 2005-01-03 09:40:27 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.10 2005-01-03 10:35:27 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -625,6 +625,12 @@
      (let1 v (quasi obj) (wrap v obj)))
     (else (error "syntax-error: malformed quasiquote:" form))))
 
+(define-pass1-syntax (unquote form cenv)
+  (error "unquote appeared outside quasiquote:" form))
+
+(define-pass1-syntax (unquote-splicing form cenv)
+  (error "unquote-splicing appeared outside quasiquote:" form))
+
 ;; Lambda family (binding constructs) ...................
 
 (define-pass1-syntax (lambda form cenv)
@@ -725,6 +731,22 @@
 
 (define-pass1-syntax (begin form cenv)
   `($seq ,@(map (cut pass1 <> cenv) (cdr form))))
+
+;; Delay .....................................................
+
+(define-pass1-syntax (delay form cenv)
+  (match form
+    ((_ expr)
+     `($promise ,form ,(pass1 `(,(global-id 'lambda) '() ,form))))
+    (else (error "syntax-error: malformed delay:" form))))
+
+;; Module related ............................................
+
+
+  
+
+
+
 
 ;; Bridge to dispatch new compiler pass-1 syntax handler based on
 ;; original binding
