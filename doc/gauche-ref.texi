@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.340 2003-01-14 06:06:20 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.341 2003-01-15 05:08:47 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13310,6 +13310,7 @@ SRFI互換の時間は@code{<time>}クラスのインスタンスとして表現され、
 @subsubsection POSIX time
 
 @defun sys-time
+@c EN
 [POSIX] Returns the current time in POSIX time
 (the time since Epoch (00:00:00 UTC, January 1, 1970),
 measured in seconds).  It may be a non-integral number, depending on
@@ -13317,78 +13318,162 @@ the architecture.
 
 Note that POSIX's definition of ``seconds since the Epoch'' doesn't
 take leap seconds into acount.
+@c JP
+[POSIX] 現在の時間を POSIX 時間(エポック(00:00:00 UTC, January 1, 1970)
+からの秒数)で返します。マシンのアーキテクチャによっては、不正確数で
+あるかもしれません。
+@c COMMON
 @end defun
 
 @defun sys-gettimeofday
+@c EN
 Returns two values.  The first value is a number of seconds,
 and the second value is a fraction in a number of microseconds,
 since 1970/1/1 0:00:00 UTC.   If the system doesn't have
 @code{gettimeofday} call, this function calls @code{time()};
 in that case, microseconds portion is always zero.
+@c JP
+2つの値を返します。1970/1/1 0:00:00 UTC を基準として、
+1つ目の値は秒数、2つ目の値は端数をマイクロ秒で表したものです。
+システムが @code{gettimeofday} 呼び出しをサポートしていない場合、
+この手続きは @code{time()} を呼び出し、その場合はマイクロ秒の
+部分はいつも 0 です。
+@c COMMON
 @end defun
 
 @deftp {Builtin Class} <sys-tm>
 @clindex sys-tm
+@c EN
 Represents @code{struct tm}, a calendar date.  It has the following slots.
+@c JP
+カレンダーである、@code{struct tm} を表します。以下のスロットを持ちます。
+@c COMMON
 @defivar <sys-tm> sec
+@c EN
 Seconds. 0-61.
+@c JP
+秒。0-61。
+@c COMMON
 @end defivar
 @defivar <sys-tm> min
+@c EN
 Minutes. 0-59.
+@c JP
+分。0-59。
+@c COMMON
 @end defivar
 @defivar <sys-tm> hour
+@c EN
 Hours.  0-23.
+@c JP
+時。0-23。
+@c COMMON
 @end defivar
 @defivar <sys-tm> mday
+@c EN
 Day of the month, counting from 1.  1-31.
+@c JP
+月の日。1 から数える。1-31。
+@c COMMON
 @end defivar
 @defivar <sys-tm> mon
+@c EN
 Month, counting from 0.  0-11.
+@c JP
+月。0 から数える。0-11。
+@c COMMON
 @end defivar
 @defivar <sys-tm> year
+@c EN
 Years since 1900, e.g. 102 for the year 2002.
+@c JP
+1900年からの年数。例えば、102 なら 2002年。
+@c COMMON
 @end defivar
 @defivar <sys-tm> wday
+@c EN
 Day of the week.  Sunday = 0 .. Saturday = 6.
+@c JP
+曜日。日曜は 0 .. 土曜は 6。
+@c COMMON
 @end defivar
 @defivar <sys-tm> yday
-Day of tye year.  January 1 = 0 .. December 31 = 364 or 365.
+@c EN
+Day of the year.  January 1 = 0 .. December 31 = 364 or 365.
+@c JP
+1年の中での日数。1月1日は 0 .. 12月31日は 364 か 365。
+@c COMMON
 @end defivar
 @defivar <sys-tm> isdst
+@c EN
 A flag that indicates if the daylight saving time is in effect.
 Positive if DST is in effect, zero if not, or negative if unknown.
+@c JP
+夏時間が有効であるかどうかを指定するフラグ。有効なら正の数、無効なら 0、
+分からなければ負の数。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun sys-gmtime time
 @defunx sys-localtime time
+@c EN
 [POSIX] Converts @var{time} to @code{<sys-tm>} object, represented in GMT
 or local timezone, respectively.   @var{Time} can be either POSIX-time or
 SRFI-time.
+@c JP
+[POSIX] @var{time} を @code{<sys-tm>} オブジェクトに変換します。
+標準時での表現かローカルタイムゾーンでの表現かで使い分けます。
+@var{Time} は POSIX 時間か SRFI 時間であす。
+@c COMMON
 @end defun
 
 @defun sys-ctime time
+@c EN
 [POSIX] Converts @var{time} to it string representation, using POSIX ctime().
 @var{Time} can be either POSIX-time or SRFI-time.
+@c JP
+[POSIX] @var{time} を POSIX の ctime() を使って文字列表現に変換します。
+@var{Time} は POSIX 時間か SRFI 時間です。
+@c COMMON
 @end defun
 
 @defun sys-difftime time1 time0
+@c EN
 [POSIX] Returns the difference of two times in the real number of seconds.
-@var{Time0} and @var{tiem1} can be either POSIX-time or SRFI-time.
+@var{Time0} and @var{time1} can be either POSIX-time or SRFI-time.
+@c JP
+[POSIX] 2つの時間の差を、秒の実数で返します。@var{Time0} と@var{time1} は
+POSIX 時間か SRFI 時間です。
+@c COMMON
 @end defun
 
 @defun sys-asctime tm
+@c EN
 [POSIX] Converts @code{<sys-tm>} object @var{tm} to a string representation.
+@c JP
+[POSIX] @code{<sys-tm>} オブジェクトである @var{tm} を文字列表現に変換します。
+@c COMMON
 @end defun
 
 @defun sys-strftime format tm
+@c EN
 [POSIX] Converts @code{<sys-tm>} object @var{tm} to a string representation,
 according to a format string @var{format}.
+@c JP
+[POSIX] @code{<sys-tm>} オブジェクトである @var{tm} を、フォーマット文字列
+@var{format} に従って文字列表現に変換します。
+@c COMMON
 @end defun
 
 @defun sys-mktime tm
+@c EN
 [POSIX] Converts @code{<sys-tm>} object @var{tm}, expressed as local time,
 to the POSIX-time (number of seconds since Epoch).
+@c JP
+[POSIX] ローカルタイムとして表現された @code{<sys-tm>} オブジェクトである
+@var{tm} を POSIX 時間(エポックからの秒数)に変換します。
+@c COMMON
 @end defun
 
 @defun sys-tm->alist tm
