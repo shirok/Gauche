@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.40 2004-01-17 01:34:48 shirok Exp $
+ *  $Id: char.c,v 1.41 2004-09-16 10:41:41 shirok Exp $
  */
 
 #include <ctype.h>
@@ -67,7 +67,12 @@ int Scm_SupportedCharacterEncodingP(const char *encoding)
 {
     const char **cs = supportedCharacterEncodings;
     for (;*cs;cs++) {
-        if (strcmp(*cs, encoding) == 0) return TRUE;
+        const char *p = *cs;
+        const char *q = encoding;
+        for (;*p && *q; p++, q++) {
+            if (tolower(*p) != tolower(*q)) break;
+        }
+        if (*p == '\0' && *q == '\0') return TRUE;
     }
     return FALSE;
 }

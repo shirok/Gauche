@@ -1,3 +1,8 @@
+2004-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (Scm_SupportedCharacterEncodingP): compare the encoding
+	  names case-insensitively.
+
 2004-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/jconv.c (sjis2eucj): fix for sjis 2nd plane convesion
