@@ -1,3 +1,7 @@
+2002-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/config.scm : added
+
 2002-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/exclib.stub (report-error): exposed Scm_ReportError to Scheme.
