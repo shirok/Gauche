@@ -12,19 +12,19 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: procedure.scm,v 1.2 2002-05-07 08:52:16 shirok Exp $
+;;;  $Id: procedure.scm,v 1.3 2002-05-07 20:17:19 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
   (export arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          compose
+          compose pa
           ))
 
 (select-module gauche.procedure)
 
-;; Procedure arity
+;; Procedure arity -----------------------------------------
 
 (define-class <arity-at-least> ()
   ((value :init-keyword :value :init-value 0)))
@@ -59,12 +59,15 @@
         (any check a)
         (check a))))
 
-;; other utilities
+;; Combinator utilities -----------------------------------------
 
 (define (compose f g . more)
   (if (null? more)
       (lambda args
         (call-with-values (lambda () (apply g args)) f))
       (compose f (apply compose g more))))
+
+(define (pa fn . args)                  ;partial apply
+  (lambda more-args (apply fn (append args more-args))))
 
 (provide "gauche/procedure")

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.7 2002-04-28 00:16:05 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.8 2002-05-07 20:17:19 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -152,10 +152,6 @@
   (syntax-rules ()
     ((_ var exp . body)
      (let ((var exp)) . body))))
-
-(define-syntax pa                       ;partial apply
-  (syntax-rules ()
-    ((_ op arg ...) (lambda args (apply op arg ... args)))))
 
 ;; Anaphoric macros.   Cf. Paul Graham, "On Lisp"
 (define-macro (l_ . body) `(lambda (_) ,@body))
