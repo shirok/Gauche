@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.60 2002-11-21 06:05:04 shirok Exp $
+ *  $Id: read.c,v 1.61 2002-11-29 10:23:12 shirok Exp $
  */
 
 #include <stdio.h>
@@ -29,6 +29,7 @@
 
 static void   read_context_init(ScmVM *vm, ScmReadContext *ctx);
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
+static ScmObj read_item(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
@@ -79,7 +80,8 @@ ScmObj Scm_Read(ScmObj port)
     }
 
     PORT_LOCK(SCM_PORT(port), vm);
-    PORT_SAFE_CALL(SCM_PORT(port), r = read_internal(SCM_PORT(port), &ctx));
+    PORT_SAFE_CALL(SCM_PORT(port),
+                   r = read_item(SCM_PORT(port), &ctx));
     PORT_UNLOCK(SCM_PORT(port));
     return r;
 }
@@ -188,11 +190,45 @@ inline static int char_word_case_fold(int c)
     return (c >= 0 && c < 128 && (ctypes[(unsigned char)c]&2));
 }
 
-inline static int skipws(ScmPort *port)
+static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
 {
-    int c = 0;
-    for (;;) {
+    int nesting = 0;
+    int line = Scm_PortLine(port);
+    ScmChar c, c1;
+    
+    for (c = Scm_GetcUnsafe(port);;) {
+        switch (c) {
+        case '#':
+            c1 = Scm_GetcUnsafe(port);
+            if (c1 == '|')   { nesting++; break; }
+            else if (c1 == EOF) goto eof;
+            else c = c1;
+            continue;
+        case '|':
+            c1 = Scm_GetcUnsafe(port);
+            if (c1 == '#') {
+                if (nesting-- == 0) {
+                    return;
+                }
+                break;
+            }
+            else if (c1 == EOF) goto eof;
+            else c = c1;
+            continue;
+        case EOF:
+          eof:
+            Scm_Error("encountered EOF inside nested multi-line comment (comment begins at line %d)", line);
+        default:
+            break;
+        }
         c = Scm_GetcUnsafe(port);
+    }
+}
+
+static int skipws(ScmPort *port, ScmReadContext *ctx)
+{
+    for (;;) {
+        int c = Scm_GetcUnsafe(port);
         if (c == EOF) return c;
         if (c <= 256 && isspace(c)) continue;
         if (c == ';') {
@@ -207,40 +243,9 @@ inline static int skipws(ScmPort *port)
     }
 }
 
-static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
-{
-    int nesting = 0;
-    int line = Scm_PortLine(port);
-    for (;;) {
-        ScmChar c = Scm_GetcUnsafe(port), c1;
-        switch (c) {
-        case '#':
-            c1 = Scm_GetcUnsafe(port);
-            if (c1 == '|')   nesting++;
-            else if (c1 == EOF) goto eof;
-            break;
-        case '|':
-            c1 = Scm_GetcUnsafe(port);
-            if (c1 == '#') {
-                if (nesting-- == 0) {
-                    return;
-                }
-            }
-            else if (c1 == EOF) goto eof;
-            break;
-        case EOF:
-          eof:
-            Scm_Error("encountered EOF inside nested multi-line comment (comment begins at line %d)", line);
-        }
-    }
-}
-
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
 {
-    int c;
-
-  restart:
-    c = skipws(port);
+    int c = skipws(port, ctx);
     switch (c) {
     case '(':
         return read_list(port, ')', ctx);
@@ -272,7 +277,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 /* allow `#!' magic of executable */
                 for (;;) {
                     c = Scm_GetcUnsafe(port);
-                    if (c == '\n') return read_internal(port, ctx);
+                    if (c == '\n') return SCM_UNDEFINED;
                     if (c == EOF) return SCM_EOF;
                 }
             case '/':
@@ -290,17 +295,18 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case ',':
                 /* #,(form) - SRFI-10 read-time macro */
                 {
-                    ScmObj form = read_internal(port, ctx);
+                    ScmObj form = read_item(port, ctx);
                     return read_sharp_comma(port, form);
                 }
             case '|':
-                /* #| - block comment (SRFI-30) */
+                /* #| - block comment (SRFI-30)
+                   it is equivalent to whitespace, so we return #<undef> */
                 read_nested_comment(port, ctx);
-                goto restart;
+                return SCM_UNDEFINED;
             case '`':
                 /* #`"..." is a special syntax of #,(string-interpolate "...") */
                 {
-                    ScmObj form = read_internal(port, ctx);
+                    ScmObj form = read_item(port, ctx);
                     return process_sharp_comma(port, sym_string_interpolate,
                                                SCM_LIST1(form));
                 }
@@ -314,7 +320,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     switch (c2) {
                     case '=':
                         /* #?=form - debug print */
-                        form = read_internal(port, ctx);
+                        form = read_item(port, ctx);
                         return SCM_LIST2(SCM_INTERN("debug-print"), form);
                     case EOF:
                         return SCM_EOF;
@@ -389,6 +395,14 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
     }
 }
 
+static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
+{
+    for (;;) {
+        ScmObj obj = read_internal(port, ctx);
+        if (!SCM_UNDEFINEDP(obj)) return obj;
+    }
+}
+
 /*----------------------------------------------------------------
  * List
  */
@@ -402,7 +416,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
     
     for (;;) {
-        c = skipws(port);
+        c = skipws(port, ctx);
         if (c == EOF) {
             if (line >= 0) {
                 Scm_ReadError(port, "EOF inside a list (starting from line %d)", line);
@@ -429,7 +443,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
                 if (start == SCM_NIL) {
                     Scm_ReadError(port, "bad dot syntax");
                 }
-                item = read_internal(port, ctx);
+                item = read_item(port, ctx);
                 SCM_SET_CDR(last, item);
                 dot_seen++;
                 continue;
@@ -439,6 +453,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
         } else {
             Scm_UngetcUnsafe(c, port);
             item = read_internal(port, ctx);
+            if (SCM_UNDEFINEDP(item)) continue;
         }
         SCM_APPEND1(start, last, item);
         if (start==last && (ctx->flags & SCM_READ_SOURCE_INFO) && line >= 0) {
@@ -452,7 +467,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 {
-    ScmObj item = read_internal(port, ctx);
+    ScmObj item = read_item(port, ctx);
     if (SCM_EOFP(item)) Scm_ReadError(port, "unterminated quote");
     return Scm_Cons(quoter, Scm_Cons(item, SCM_NIL));
 }
@@ -811,7 +826,7 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             Scm_ReadError(port, "duplicate back-reference number in #%d=", refnum);
         }
         register_reference(ctx, z, refnum);
-        y = read_internal(port, ctx);
+        y = read_item(port, ctx);
         if (!SCM_PAIRP(y)) {
             Scm_ReadError(port, "back-reference (#digit=) to the non-cell object %S is not supported yet, sorry.", y);
         }

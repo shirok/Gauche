@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.21 2002-06-27 08:08:23 shirok Exp $
+;; $Id: srfi.scm,v 1.22 2002-11-29 10:23:12 shirok Exp $
 
 (use gauche.test)
 
@@ -1432,5 +1432,72 @@
           (map (cute + (begin (set! a (+ a 1)) a) <>)
                '(1 2))
           a)))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-30")
+
+(test "srfi-30" 1
+      (lambda () #|hohoho|# 1))
+
+(test "srfi-30" '(1)
+      (lambda ()
+        '(#|hohoho|# 1)))
+
+(test "srfi-30, multiline" '(1)
+      (lambda ()
+        '(
+#|
+          hohoho
+|#
+          1)))
+
+(test "srfi-30, multiline" '(1)
+      (lambda ()
+        '(1
+#|
+          hohoho
+|#
+          )))
+
+(test "srfi-30, multiline" '()
+      (lambda ()
+        '(
+#|
+hohoho
+|#
+         )))
+
+(test "srfi-30, nesting" '(1)
+      (lambda ()
+        '(#| nested #| nested |# nested |# 1)))
+
+(test "srfi-30, nesting" '(1)
+      (lambda ()
+        '(#| nested #| nested; |# nested |# 1)))
+
+(test "srfi-30, nesting" '(1)
+      (lambda ()
+        '(#|##|###|#|||#### ||#|||||#|#1)))
+
+(test "srfi-30, intertwined" '(1)
+      (lambda ()
+        '(;; #| this is a single-line comment
+1 #|
+         ;; this is a multi-line comment #|
+we're still in multi-line comment ;;
+  #|#|multi-line comment can be nested many times|#|#
+;; yes, this is still in multi-line comment |#
+finally, this closes the comment |#
+                                        ;and this is in single-line comment
+          )))
+
+(test "srfi-30, dot syntax" '(1 . 1)
+      (lambda ()
+        '(1 . #|foo bar|#1)))
+
+(test "srfi-30, quasiquote" '(1 #(2 3))
+      (lambda ()
+        (let ((x 1) (y 2))
+          `(#|foo|# ,x #|foo|# #(#|,|# ,y ,(+ #|x|# x y #|y|#) #|foo|#)))))
 
 (test-end)

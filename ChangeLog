@@ -1,5 +1,7 @@
 2002-11-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c : fixed SRFI-30 syntax reader (Thanks to KIMURA 
+	  Shigenobu for pointing out this bug).
 	* src/compile.c, src/vm.c : dropped TAILBIND instruction, for it
 	  doesn't work when the constructing argument frame is moved
 	  to the heap by call/cc.  I can't come up a nice way to fix that
