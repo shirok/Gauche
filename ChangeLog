@@ -1,3 +1,9 @@
+2002-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* various files: snapshot of further modification for cygwin.
+	  not finished yet.  this check-in doesn't work for other
+	  platforms, since gosh fails to load libgauche.so.
+
 2002-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* various files: added support for cygwin (not finished yet).

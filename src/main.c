@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.45 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: main.c,v 1.46 2002-02-07 10:33:51 shirok Exp $
  */
 
 #include <unistd.h>
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     int c;
     ScmObj cp;
 
-#ifdef LIBGAUCHE_CYGWIN
+#ifdef __CYGWIN__
     /* Cygwin needs explicit initialization for GC module.
        This code is taken from gc.h and gcconfig.h (I don't want to
        include private/gcconfig.h)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.28 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: error.c,v 1.29 2002-02-07 10:33:51 shirok Exp $
  */
 
 #include <errno.h>
@@ -21,14 +21,16 @@
 #include "gauche.h"
 #include "gauche/class.h"
 
+
+
 /*-----------------------------------------------------------
  * Exception class hierarchy
  */
 
 static ScmClass *exception_cpl[] = {
-    SCM_CLASS_ERROR,
-    SCM_CLASS_EXCEPTION,
-    SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_ErrorClass),
+    SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 

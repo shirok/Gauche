@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.214 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: gauche.h,v 1.215 2002-02-07 10:33:51 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -44,35 +44,16 @@ extern "C" {
 # endif
 #endif
 
-#define SCM_CPP_CAT(a, b)   a ## b
-#define SCM_CPP_CAT3(a, b, c)  a ## b ## c
-
-/* The black magic for Win32.  I hate these macros which obscure
-   the underlying idea.  If you want to understand how Gauche
-   works, ignore everthing that enclosed in #ifdef __CYGWIN__.
-   If you want how I have to manage Win32 DLL oddity, see
-   doc/cygwin-memo.txt. */
+/* Ugly cliche for Win32.  There'll be more to come. */
 #if defined(__CYGWIN__)
-#  if defined(LIBGAUCHE_BODY)
-#    define SCM_EXTERN extern
-#    define SCM_CLASS_DECL(klass)                    \
-       extern ScmClass klass;                        \
-       extern ScmClass *SCM_CPP_CAT(_imp__, klass)
-#  else
-#    define SCM_EXTERN extern __declspec(dllimport)
-#    define SCM_CLASS_DECL(klass)                    \
-       extern __declspec(dllimport) ScmClass klass;  \
-       extern ScmClass *SCM_CPP_CAT(_imp__, klass)
-#  endif
-#  define SCM_CLASS_PTR(klass)  ((ScmClass*)(&(SCM_CPP_CAT(_imp__, klass))))
-#  define SCM_CLASS_REF(kptr)   (*((ScmClass**)kptr))
-#else /*!__CYGWIN__*/
+# if defined(LIBGAUCHE_BODY)
 #  define SCM_EXTERN extern
-#  define SCM_CLASS_DECL(klass)     extern ScmClass klass
-#  define SCM_CLASS_PTR(klass)      (&klass)
-#  define SCM_CLASS_REF(kptr)       (kptr)
-#  define SCM_CLASS_DECL_CPL(name)  ScmClass *name[]
-#endif
+# else
+#  define SCM_EXTERN extern __declspec(dllimport)
+# endif
+#else  /*!__CYGWIN__*/
+# define SCM_EXTERN extern
+#endif /*!__CYGWIN__*/
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
 #define SCM_VM_STACK_SIZE     10000
@@ -110,6 +91,11 @@ typedef long ScmChar;
  * this type.
  */
 typedef struct ScmHeaderRec *ScmObj;
+
+/*
+ * The class structure.  ScmClass is actually a subclass of ScmObj.
+ */
+typedef struct ScmClassRec ScmClass;
 
 /* TAG STRUCTURE
  *
@@ -245,24 +231,42 @@ SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
  *  A heap allocated object has its clsss tag in the first word.
  *  On most platforms, the class tag is simply a pointer to the
  *  class object.
- *  On Windows (Cygwin) platform, we can't use this simple method
- *  since the address of the class object which exists in different
- *  DLLs can't be resolved until runtime, while Gauche code needs
- *  them to be resolved at link time.   We use double-indirection
- *  instead.    See doc/cygwin-memo.txt for details.
+ *  On Windows (Cygwin) platform, things are much more complicated.
+ *  See doc/cygwin-memo.txt for details.
  */
 
+#define SCM_CPP_CAT(a, b)   a ## b
+#define SCM_CPP_CAT3(a, b, c)  a ## b ## c
+
+/* For ScmClass, we shouldn't use __declspec(dllimport) magic on Win32.
+ * See doc/cygwin-memo.txt for details.
+ */
+#ifdef __CYGWIN__
+# define SCM_CLASS_DECL(klass)                      \
+     SCM_EXTERN ScmClass klass;                     \
+     extern ScmClass *SCM_CPP_CAT(_imp__, klass)
+# define SCM_CLASS_STATIC_PTR(klass)  (ScmClass*)(&SCM_CPP_CAT(_imp__, klass))
+#else  /* !__CYGWIN__ */
+# define SCM_CLASS_DECL(klass) extern ScmClass klass
+# define SCM_CLASS_STATIC_PTR(klass)  (&klass)
+#endif /* __CYGWIN__ */
+
 typedef struct ScmHeaderRec {
-    struct ScmClassRec *klass;
+    ScmClass *klass;
 } ScmHeader;
 
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
-#define SCM_CLASS_OF(obj)      SCM_CLASS_REF(SCM_OBJ(obj)->klass)
-#define SCM_XTYPEP(obj, klass) \
-    (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj) == SCM_CLASS_REF(klass)))
-
+/* Only these two macros should be used to access header's klass field. */
+#ifdef __CYGWIN__
+#define SCM_CLASS_OF(obj)      (*((ScmClass**)(SCM_OBJ(obj)->klass)))
+#define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (ScmClass*)((k)->classPtr))
+#else  /* !__CYGWIN__ */
+#define SCM_CLASS_OF(obj)      (SCM_OBJ(obj)->klass)
 #define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (k))
+#endif /* !__CYGWIN__ */
+
+#define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj)==(klass)))
 
 #define SCM_MALLOC(size)          GC_MALLOC(size)
 #define SCM_MALLOC_ATOMIC(size)   GC_MALLOC_ATOMIC(size)
@@ -274,7 +278,6 @@ typedef struct ScmHeaderRec {
 #define SCM_NEW_ATOMIC2(type, size) ((type)(SCM_MALLOC_ATOMIC(size)))
 
 typedef struct ScmVMRec        ScmVM;
-typedef struct ScmClassRec     ScmClass;
 typedef struct ScmPairRec      ScmPair;
 typedef struct ScmCharSetRec   ScmCharSet;
 typedef struct ScmStringRec    ScmString;
@@ -366,11 +369,14 @@ SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
 /* See class.c for the description of function pointer members. */
 struct ScmClassRec {
     SCM_HEADER;
+#ifdef __CYGWIN__
+    ScmClass **classPtr;
+#endif
     void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
-    struct ScmClassRec **cpa;
+    ScmClass **cpa;
     short numInstanceSlots;     /* # of instance slots */
     unsigned char instanceSlotOffset;
     unsigned char flags;
@@ -431,14 +437,14 @@ SCM_CLASS_DECL(Scm_CollectionClass);
 SCM_CLASS_DECL(Scm_SequenceClass);
 SCM_CLASS_DECL(Scm_ObjectClass); /* base of Scheme-defined objects */
 
-#define SCM_CLASS_TOP          SCM_CLASS_PTR(Scm_TopClass)
-#define SCM_CLASS_BOOL         SCM_CLASS_PTR(Scm_BoolClass)
-#define SCM_CLASS_CHAR         SCM_CLASS_PTR(Scm_CharClass)
-#define SCM_CLASS_CLASS        SCM_CLASS_PTR(Scm_ClassClass)
-#define SCM_CLASS_UNKNOWN      SCM_CLASS_PTR(Scm_UnknownClass)
-#define SCM_CLASS_COLLECTION   SCM_CLASS_PTR(Scm_CollectionClass)
-#define SCM_CLASS_SEQUENCE     SCM_CLASS_PTR(Scm_SequenceClass)
-#define SCM_CLASS_OBJECT       SCM_CLASS_PTR(Scm_ObjectClass)
+#define SCM_CLASS_TOP          (&Scm_TopClass)
+#define SCM_CLASS_BOOL         (&Scm_BoolClass)
+#define SCM_CLASS_CHAR         (&Scm_CharClass)
+#define SCM_CLASS_CLASS        (&Scm_ClassClass)
+#define SCM_CLASS_UNKNOWN      (&Scm_UnknownClass)
+#define SCM_CLASS_COLLECTION   (&Scm_CollectionClass)
+#define SCM_CLASS_SEQUENCE     (&Scm_SequenceClass)
+#define SCM_CLASS_OBJECT       (&Scm_ObjectClass)
 
 SCM_EXTERN ScmClass *Scm_DefaultCPL[];
 SCM_EXTERN ScmClass *Scm_CollectionCPL[];
@@ -457,27 +463,41 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
  */
 
 /* internal macro. do not use directly */
+#ifdef __CYGWIN__
+#define SCM__CLASS_PTR_SLOT(cname)   &SCM_CPP_CAT(_imp__, cname),
+# ifdef LIBGAUCHE_BODY
+#  define SCM__CLASS_PTR_BODY(cname) \
+      ; ScmClass *SCM_CPP_CAT(_imp__, cname) = &cname
+# else
+#  define SCM__CLASS_PTR_BODY(cname)   /*none*/
+# endif
+#else
+#define SCM__CLASS_PTR_SLOT(cname)   /*none*/
+#define SCM__CLASS_PTR_BODY(cname)   /*none*/
+#endif
+
 #define SCM__DEFINE_CLASS_COMMON(cname, size, flag, printer, compare, serialize, allocate, cpa) \
-    ScmClass cname = {                          \
-        { SCM_CLASS_CLASS },                    \
-        printer,                                \
-        compare,                                \
-        serialize,                              \
-        allocate,                               \
-        cpa,                                    \
-        0,                                      \
-        size,                                   \
-        flag,                                   \
-        SCM_FALSE,                              \
-        SCM_FALSE,                              \
-        SCM_FALSE,                              \
-        SCM_NIL,                                \
-        SCM_NIL,                                \
-        SCM_NIL,                                \
-        SCM_NIL,                                \
-        SCM_NIL,                                \
-        SCM_FALSE                               \
-    }
+    ScmClass cname = {                           \
+        { SCM_CLASS_STATIC_PTR(Scm_ClassClass) },\
+        SCM__CLASS_PTR_SLOT(cname)               \
+        printer,                                 \
+        compare,                                 \
+        serialize,                               \
+        allocate,                                \
+        cpa,                                     \
+        0,                                       \
+        size,                                    \
+        flag,                                    \
+        SCM_FALSE,                               \
+        SCM_FALSE,                               \
+        SCM_FALSE,                               \
+        SCM_NIL,                                 \
+        SCM_NIL,                                 \
+        SCM_NIL,                                 \
+        SCM_NIL,                                 \
+        SCM_NIL,                                 \
+        SCM_FALSE                                \
+    } SCM__CLASS_PTR_BODY(cname)
     
 /* Define built-in class statically -- full-featured version */
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
@@ -529,9 +549,9 @@ struct ScmPairRec {
 SCM_CLASS_DECL(Scm_ListClass);
 SCM_CLASS_DECL(Scm_PairClass);
 SCM_CLASS_DECL(Scm_NullClass);
-#define SCM_CLASS_LIST      SCM_CLASS_PTR(Scm_ListClass)
-#define SCM_CLASS_PAIR      SCM_CLASS_PTR(Scm_PairClass)
-#define SCM_CLASS_NULL      SCM_CLASS_PTR(Scm_NullClass)
+#define SCM_CLASS_LIST      (&Scm_ListClass)
+#define SCM_CLASS_PAIR      (&Scm_PairClass)
+#define SCM_CLASS_NULL      (&Scm_NullClass)
 
 #define SCM_LISTP(obj)          (SCM_NULLP(obj) || SCM_PAIRP(obj))
 
@@ -669,7 +689,7 @@ struct ScmCharSetRec {
 };
 
 SCM_CLASS_DECL(Scm_CharSetClass);
-#define SCM_CLASS_CHARSET  SCM_CLASS_PTR(Scm_CharSetClass)
+#define SCM_CLASS_CHARSET  (&Scm_CharSetClass)
 #define SCM_CHARSET(obj)   ((ScmCharSet*)obj)
 #define SCM_CHARSETP(obj)  SCM_XTYPEP(obj, SCM_CLASS_CHARSET)
 
@@ -750,7 +770,7 @@ struct ScmStringRec {
     Scm_MakeString(cstr, -1, -1, SCM_MAKSTR_IMMUTABLE)
 
 SCM_CLASS_DECL(Scm_StringClass);
-#define SCM_CLASS_STRING        SCM_CLASS_PTR(Scm_StringClass)
+#define SCM_CLASS_STRING        (&Scm_StringClass)
 
 /* grammer spec for StringJoin (see SRFI-13) */
 enum {
@@ -822,10 +842,10 @@ SCM_EXTERN ScmObj Scm_CStringArrayToList(char **array, int size);
 
 /* You can allocate a constant string statically, if you calculate
    the length by yourself. */
-#define SCM_DEFINE_STRING_CONST(name, str, len, siz)    \
-    ScmString name = {                                  \
-        { SCM_CLASS_STRING }, 0, 1,                     \
-        (len), (siz), (str)                             \
+#define SCM_DEFINE_STRING_CONST(name, str, len, siz)		\
+    ScmString name = {						\
+        { SCM_CLASS_STATIC_PTR(Scm_StringClass) }, 0, 1,	\
+        (len), (siz), (str)					\
     }
 
 /* Auxiliary structure to construct a string.  This is not an ScmObj. */
@@ -890,7 +910,7 @@ typedef struct ScmStringPointerRec {
 } ScmStringPointer;
 
 SCM_CLASS_DECL(Scm_StringPointerClass);
-#define SCM_CLASS_STRING_POINTER  SCM_CLASS_PTR(Scm_StringPointerClass)
+#define SCM_CLASS_STRING_POINTER  (&Scm_StringPointerClass)
 #define SCM_STRING_POINTERP(obj)  SCM_XTYPEP(obj, SCM_CLASS_STRING_POINTER)
 #define SCM_STRING_POINTER(obj)   ((ScmStringPointer*)obj)
 
@@ -918,7 +938,7 @@ struct ScmVectorRec {
 #define SCM_VECTOR_ELEMENT(obj, i)   (SCM_VECTOR(obj)->elements[i])
 
 SCM_CLASS_DECL(Scm_VectorClass);
-#define SCM_CLASS_VECTOR     SCM_CLASS_PTR(Scm_VectorClass)
+#define SCM_CLASS_VECTOR     (&Scm_VectorClass)
 
 SCM_EXTERN ScmObj Scm_MakeVector(int size, ScmObj fill);
 SCM_EXTERN ScmObj Scm_VectorRef(ScmVector *vec, int i, ScmObj fallback);
@@ -1056,7 +1076,7 @@ enum ScmPortICPolicy {
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))
 
 SCM_CLASS_DECL(Scm_PortClass);
-#define SCM_CLASS_PORT      SCM_CLASS_PTR(Scm_PortClass)
+#define SCM_CLASS_PORT      (&Scm_PortClass)
 
 SCM_EXTERN ScmObj Scm_Stdin(void);
 SCM_EXTERN ScmObj Scm_Stdout(void);
@@ -1209,7 +1229,7 @@ struct ScmHashTableRec {
 #define SCM_HASHTABLEP(obj)  SCM_XTYPEP(obj, SCM_CLASS_HASHTABLE)
 
 SCM_CLASS_DECL(Scm_HashTableClass);
-#define SCM_CLASS_HASHTABLE  SCM_CLASS_PTR(Scm_HashTableClass)
+#define SCM_CLASS_HASHTABLE  (&Scm_HashTableClass)
 
 #define SCM_HASH_ADDRESS   (0)  /* eq?-hash */
 #define SCM_HASH_EQV       (1)
@@ -1267,7 +1287,7 @@ struct ScmModuleRec {
 #define SCM_MODULEP(obj)      SCM_XTYPEP(obj, SCM_CLASS_MODULE)
 
 SCM_CLASS_DECL(Scm_ModuleClass);
-#define SCM_CLASS_MODULE     SCM_CLASS_PTR(Scm_ModuleClass)
+#define SCM_CLASS_MODULE     (&Scm_ModuleClass)
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 				    int stay_in_module);
@@ -1315,7 +1335,7 @@ SCM_EXTERN ScmObj Scm_Intern(ScmString *name);
 SCM_EXTERN ScmObj Scm_Gensym(ScmString *prefix);
 
 SCM_CLASS_DECL(Scm_SymbolClass);
-#define SCM_CLASS_SYMBOL        SCM_CLASS_PTR(Scm_SymbolClass)
+#define SCM_CLASS_SYMBOL       (&Scm_SymbolClass)
 
 /* predefined symbols */
 #define DEFSYM(cname, sname)   SCM_EXTERN ScmSymbol cname
@@ -1339,7 +1359,7 @@ SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
 SCM_EXTERN void Scm__GlocPrint(ScmObj obj, ScmPort *port, int mode);
 
 SCM_CLASS_DECL(Scm_GlocClass);
-#define SCM_CLASS_GLOC          SCM_CLASS_PTR(Scm_GlocClass)
+#define SCM_CLASS_GLOC          (&Scm_GlocClass)
 
 /*--------------------------------------------------------
  * KEYWORD
@@ -1351,7 +1371,7 @@ struct ScmKeywordRec {
 };
 
 SCM_CLASS_DECL(Scm_KeywordClass);
-#define SCM_CLASS_KEYWORD       SCM_CLASS_PTR(Scm_KeywordClass)
+#define SCM_CLASS_KEYWORD       (&Scm_KeywordClass)
 
 #define SCM_KEYWORD(obj)        ((ScmKeyword*)(obj))
 #define SCM_KEYWORDP(obj)       SCM_XTYPEP(obj, SCM_CLASS_KEYWORD)
@@ -1387,10 +1407,10 @@ SCM_CLASS_DECL( Scm_ComplexClass);
 SCM_CLASS_DECL( Scm_RealClass);
 SCM_CLASS_DECL( Scm_IntegerClass);
 
-#define SCM_CLASS_NUMBER        SCM_CLASS_PTR(Scm_NumberClass)
-#define SCM_CLASS_COMPLEX       SCM_CLASS_PTR(Scm_ComplexClass)
-#define SCM_CLASS_REAL          SCM_CLASS_PTR(Scm_RealClass)
-#define SCM_CLASS_INTEGER       SCM_CLASS_PTR(Scm_IntegerClass)
+#define SCM_CLASS_NUMBER        (&Scm_NumberClass)
+#define SCM_CLASS_COMPLEX       (&Scm_ComplexClass)
+#define SCM_CLASS_REAL          (&Scm_RealClass)
+#define SCM_CLASS_INTEGER       (&Scm_IntegerClass)
 
 struct ScmBignumRec {
     SCM_HEADER;
@@ -1547,7 +1567,7 @@ enum {
 #define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
 
 SCM_CLASS_DECL(Scm_ProcedureClass);
-#define SCM_CLASS_PROCEDURE   SCM_CLASS_PTR(Scm_ProcedureClass)
+#define SCM_CLASS_PROCEDURE    (&Scm_ProcedureClass)
 #define SCM_PROCEDUREP(obj) \
     (SCM_PTRP(obj) && SCM_CLASS_APPLICABLE_P(SCM_CLASS_OF(obj)))
 #define SCM_PROCEDURE_TAKE_NARG_P(obj, narg) \
@@ -1590,11 +1610,11 @@ struct ScmSubrRec {
 #define SCM_SUBR_INLINER(obj)      SCM_SUBR(obj)->inliner
 #define SCM_SUBR_DATA(obj)         SCM_SUBR(obj)->data
 
-#define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)       \
-    ScmSubr cvar = {                                                    \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_PROCEDURE,                 \
-                                   req, opt, SCM_PROC_SUBR, inf),       \
-        (func), (inliner), (data)                                       \
+#define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)           \
+    ScmSubr cvar = {                                                        \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_ProcedureClass),\
+                                   req, opt, SCM_PROC_SUBR, inf),           \
+        (func), (inliner), (data)                                           \
     }
 
 SCM_EXTERN ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
@@ -1616,13 +1636,13 @@ struct ScmGenericRec {
 };
 
 SCM_CLASS_DECL(Scm_GenericClass);
-#define SCM_CLASS_GENERIC          SCM_CLASS_PTR(Scm_GenericClass)
+#define SCM_CLASS_GENERIC          (&Scm_GenericClass)
 #define SCM_GENERICP(obj)          SCM_XTYPEP(obj, SCM_CLASS_GENERIC)
 #define SCM_GENERIC(obj)           ((ScmGeneric*)obj)
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_GENERIC,                   \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_GenericClass),\
                                    0, 0, SCM_PROC_GENERIC, SCM_FALSE),  \
         SCM_NIL, cfunc, data                                            \
     }
@@ -1651,13 +1671,13 @@ struct ScmMethodRec {
 };
 
 SCM_CLASS_DECL(Scm_MethodClass);
-#define SCM_CLASS_METHOD           SCM_CLASS_PTR(Scm_MethodClass)
+#define SCM_CLASS_METHOD           (&Scm_MethodClass)
 #define SCM_METHODP(obj)           SCM_XTYPEP(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
-        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_METHOD,                    \
+        SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_MethodClass),\
                                    req, opt, SCM_PROC_METHOD,           \
                                    SCM_FALSE),                          \
         gf, specs, func, data, NULL                                     \
@@ -1677,7 +1697,7 @@ struct ScmNextMethodRec {
 };
 
 SCM_CLASS_DECL(Scm_NextMethodClass);
-#define SCM_CLASS_NEXT_METHOD      SCM_CLASS_PTR(Scm_NextMethodClass)
+#define SCM_CLASS_NEXT_METHOD      (&Scm_NextMethodClass)
 #define SCM_NEXT_METHODP(obj)      SCM_XTYPEP(obj, SCM_CLASS_NEXT_METHOD)
 #define SCM_NEXT_METHOD(obj)       ((ScmNextMethod*)obj)
 
@@ -1705,7 +1725,7 @@ struct ScmSyntaxRec {
 #define SCM_SYNTAXP(obj)            SCM_XTYPEP(obj, SCM_CLASS_SYNTAX)
 
 SCM_CLASS_DECL(Scm_SyntaxClass);
-#define SCM_CLASS_SYNTAX            SCM_CLASS_PTR(Scm_SyntaxClass)
+#define SCM_CLASS_SYNTAX            (&Scm_SyntaxClass)
 
 SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name,
 				 ScmCompileProc compiler, void *data);
@@ -1722,7 +1742,7 @@ struct ScmPromiseRec {
 };
 
 SCM_CLASS_DECL(Scm_PromiseClass);
-#define SCM_CLASS_PROMISE           SCM_CLASS_PTR(Scm_PromiseClass)
+#define SCM_CLASS_PROMISE           (&Scm_PromiseClass)
 
 SCM_EXTERN ScmObj Scm_MakePromise(ScmObj code);
 SCM_EXTERN ScmObj Scm_Force(ScmObj p);
@@ -1743,7 +1763,7 @@ SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 
 /* <exception> class is just a virtual class */
 SCM_CLASS_DECL(Scm_ExceptionClass);
-#define SCM_CLASS_EXCEPTION        SCM_CLASS_PTR(Scm_ExceptionClass)
+#define SCM_CLASS_EXCEPTION        (&Scm_ExceptionClass)
 #define SCM_EXCEPTIONP(obj)        Scm_TypeP(obj, SCM_CLASS_EXCEPTION)
 
 /* <error>: Root of all errors */
@@ -1753,7 +1773,7 @@ typedef struct ScmErrorRec {
 } ScmError;
 
 SCM_CLASS_DECL(Scm_ErrorClass);
-#define SCM_CLASS_ERROR            SCM_CLASS_PTR(Scm_ErrorClass)
+#define SCM_CLASS_ERROR            (&Scm_ErrorClass)
 #define SCM_ERRORP(obj)            Scm_TypeP(obj, SCM_CLASS_EXCEPTION)
 #define SCM_ERROR(obj)             ((ScmError*)(obj))
 #define SCM_ERROR_MESSAGE(obj)     SCM_ERROR(obj)->message
@@ -1765,7 +1785,7 @@ typedef struct ScmSystemErrorRec {
 } ScmSystemError;
     
 SCM_CLASS_DECL(Scm_SystemErrorClass);
-#define SCM_CLASS_SYSTEM_ERROR     SCM_CLASS_PTR(Scm_SystemErrorClass)
+#define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
 #define SCM_SYSTEM_ERROR_P(obj)    Scm_TypeP(obj, SCM_CLASS_SYSTEM_ERROR)
 
 /* Throwing error */
@@ -1781,7 +1801,7 @@ typedef struct ScmApplicationExitRec {
 } ScmApplicationExit;
 
 SCM_CLASS_DECL(Scm_ApplicationExitClass);
-#define SCM_CLASS_APPLICATION_EXIT   SCM_CLASS_PTR(Scm_ApplicationExitClass)
+#define SCM_CLASS_APPLICATION_EXIT   (&Scm_ApplicationExitClass)
 #define SCM_APPLICATION_EXIT_P(obj)  Scm_TypeP(obj, SCM_CLASS_APPLICATION_EXIT)
 
 SCM_EXTERN ScmObj Scm_MakeApplicationExit(int);
@@ -1802,7 +1822,7 @@ struct ScmRegexpRec {
 };
 
 SCM_CLASS_DECL(Scm_RegexpClass);
-#define SCM_CLASS_REGEXP          SCM_CLASS_PTR(Scm_RegexpClass)
+#define SCM_CLASS_REGEXP          (&Scm_RegexpClass)
 #define SCM_REGEXP(obj)           ((ScmRegexp*)obj)
 #define SCM_REGEXPP(obj)          SCM_XTYPEP(obj, SCM_CLASS_REGEXP)
 
@@ -1825,7 +1845,7 @@ struct ScmRegMatchRec {
 };
 
 SCM_CLASS_DECL(Scm_RegMatchClass);
-#define SCM_CLASS_REGMATCH        SCM_CLASS_PTR(Scm_RegMatchClass)
+#define SCM_CLASS_REGMATCH        (&Scm_RegMatchClass)
 #define SCM_REGMATCH(obj)         ((ScmRegMatch*)obj)
 #define SCM_REGMATCHP(obj)        SCM_XTYPEP(obj, SCM_CLASS_REGMATCH)
 
@@ -1855,7 +1875,7 @@ typedef struct ScmSysSigsetRec {
 } ScmSysSigset;
 
 SCM_CLASS_DECL(Scm_SysSigsetClass);
-#define SCM_CLASS_SYS_SIGSET   SCM_CLASS_PTR(Scm_SysSigsetClass)
+#define SCM_CLASS_SYS_SIGSET   (&Scm_SysSigsetClass)
 #define SCM_SYS_SIGSET(obj)    ((ScmSysSigset*)(obj))
 #define SCM_SYS_SIGSET_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYS_SIGSET)
 
@@ -1893,7 +1913,7 @@ typedef struct ScmSysStatRec {
 } ScmSysStat;
     
 SCM_CLASS_DECL(Scm_SysStatClass);
-#define SCM_CLASS_SYS_STAT    SCM_CLASS_PTR(Scm_SysStatClass)
+#define SCM_CLASS_SYS_STAT    (&Scm_SysStatClass)
 #define SCM_SYS_STAT(obj)     ((ScmSysStat*)(obj))
 #define SCM_SYS_STAT_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_STAT))
 
@@ -1914,7 +1934,7 @@ typedef struct ScmSysTmRec {
 } ScmSysTm;
     
 SCM_CLASS_DECL(Scm_SysTmClass);
-#define SCM_CLASS_SYS_TM      SCM_CLASS_PTR(Scm_SysTmClass)
+#define SCM_CLASS_SYS_TM      (&Scm_SysTmClass)
 #define SCM_SYS_TM(obj)       ((ScmSysTm*)(obj))
 #define SCM_SYS_TM_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_SYS_TM))
 #define SCM_SYS_TM_TM(obj)    SCM_SYS_TM(obj)->tm
@@ -1931,7 +1951,7 @@ typedef struct ScmSysGroupRec {
 } ScmSysGroup;
 
 SCM_CLASS_DECL(Scm_SysGroupClass);
-#define SCM_CLASS_SYS_GROUP    SCM_CLASS_PTR(Scm_SysGroupClass)
+#define SCM_CLASS_SYS_GROUP    (&Scm_SysGroupClass)
 #define SCM_SYS_GROUP(obj)     ((ScmSysGroup*)(obj))
 #define SCM_SYS_GROUP_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_GROUP))
     
@@ -1952,7 +1972,7 @@ typedef struct ScmSysPasswdRec {
 } ScmSysPasswd;
 
 SCM_CLASS_DECL(Scm_SysPasswdClass);
-#define SCM_CLASS_SYS_PASSWD    SCM_CLASS_PTR(Scm_SysPasswdClass)
+#define SCM_CLASS_SYS_PASSWD    (&Scm_SysPasswdClass)
 #define SCM_SYS_PASSWD(obj)     ((ScmSysPasswd*)(obj))
 #define SCM_SYS_PASSWD_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_PASSWD))
 
@@ -1970,7 +1990,7 @@ typedef struct ScmSysFdsetRec {
 } ScmSysFdset;
 
 SCM_CLASS_DECL(Scm_SysFdsetClass);
-#define SCM_CLASS_SYS_FDSET     SCM_CLASS_PTR(Scm_SysFdsetClass)
+#define SCM_CLASS_SYS_FDSET     (&Scm_SysFdsetClass)
 #define SCM_SYS_FDSET(obj)      ((ScmSysFdset*)(obj))
 #define SCM_SYS_FDSET_P(obj)    (SCM_XTYPEP(obj, SCM_CLASS_SYS_FDSET))
 
@@ -2017,7 +2037,7 @@ typedef struct ScmAutoloadRec {
 } ScmAutoload;
 
 SCM_CLASS_DECL(Scm_AutoloadClass);
-#define SCM_CLASS_AUTOLOAD      SCM_CLASS_PTR(Scm_AutoloadClass)
+#define SCM_CLASS_AUTOLOAD      (&Scm_AutoloadClass)
 #define SCM_AUTOLOADP(obj)      SCM_XTYPEP(obj, SCM_CLASS_AUTOLOAD)
 #define SCM_AUTOLOAD(obj)       ((ScmAutoload*)(obj))
 

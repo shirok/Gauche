@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.23 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: regexp.c,v 1.24 2002-02-07 10:33:51 shirok Exp $
  */
 
 #include <setjmp.h>

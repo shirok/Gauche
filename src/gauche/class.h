@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.23 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: class.h,v 1.24 2002-02-07 10:33:52 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -46,7 +46,7 @@ typedef ScmObj (*ScmNativeGetterProc)(ScmObj);
 typedef void   (*ScmNativeSetterProc)(ScmObj, ScmObj);
 
 SCM_CLASS_DECL(Scm_SlotAccessorClass);
-#define SCM_CLASS_SLOT_ACCESSOR    SCM_CLASS_PTR(Scm_SlotAccessorClass)
+#define SCM_CLASS_SLOT_ACCESSOR    (&Scm_SlotAccessorClass)
 #define SCM_SLOT_ACCESSOR(obj)     ((ScmSlotAccessor*)obj)
 #define SCM_SLOT_ACCESSOR_P(obj)   SCM_XTYPEP(obj, SCM_CLASS_SLOT_ACCESSOR)
 
@@ -56,16 +56,16 @@ struct ScmClassStaticSlotSpecRec {
     ScmSlotAccessor accessor;
 };
 
-#define SCM_CLASS_SLOT_SPEC(name, getter, setter)       \
-    { name, { {SCM_CLASS_SLOT_ACCESSOR},                \
-              NULL, NULL,                               \
-              (ScmNativeGetterProc)getter,              \
-              (ScmNativeSetterProc)setter,              \
-              SCM_UNBOUND,                              \
-              SCM_FALSE,                                \
-              SCM_FALSE,                                \
-              TRUE, 0,                                  \
-              SCM_FALSE,                                \
+#define SCM_CLASS_SLOT_SPEC(name, getter, setter)		\
+    { name, { {SCM_CLASS_STATIC_PTR(Scm_SlotAccessorClass)},    \
+              NULL, NULL,					\
+              (ScmNativeGetterProc)getter,			\
+              (ScmNativeSetterProc)setter,			\
+              SCM_UNBOUND,					\
+              SCM_FALSE,					\
+              SCM_FALSE,					\
+              TRUE, 0,						\
+              SCM_FALSE,					\
              } }
 
 #define SCM_CLASS_SLOT_SPEC_END()   { NULL }

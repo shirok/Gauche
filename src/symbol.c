@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.25 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: symbol.c,v 1.26 2002-02-07 10:33:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -191,7 +191,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     } while (0)
 
 #define DEFSYM(cname, sname) \
-    ScmSymbol cname = { { SCM_CLASS_SYMBOL }, NULL }
+    ScmSymbol cname = { { SCM_CLASS_STATIC_PTR(Scm_SymbolClass) }, NULL }
 #include "gauche/predef-syms.h"
 #undef DEFSYM
 

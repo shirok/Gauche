@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.60 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: number.c,v 1.61 2002-02-07 10:33:51 shirok Exp $
  */
 
 #include <math.h>
@@ -52,10 +52,10 @@ extern double rint(double);
  */
 
 static ScmClass *numeric_cpl[] = {
-    SCM_CLASS_REAL,
-    SCM_CLASS_COMPLEX,
-    SCM_CLASS_NUMBER,
-    SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_RealClass),
+    SCM_CLASS_STATIC_PTR(Scm_ComplexClass),
+    SCM_CLASS_STATIC_PTR(Scm_NumberClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 

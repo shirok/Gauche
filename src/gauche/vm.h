@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.55 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: vm.h,v 1.56 2002-02-07 10:33:52 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -92,7 +92,7 @@ typedef struct ScmIdentifierRec {
 } ScmIdentifier;
 
 SCM_CLASS_DECL(Scm_IdentifierClass);
-#define SCM_CLASS_IDENTIFIER    SCM_CLASS_PTR(Scm_IdentifierClass)
+#define SCM_CLASS_IDENTIFIER    (&Scm_IdentifierClass)
 
 #define SCM_IDENTIFIER(obj)     ((ScmIdentifier*)(obj))
 #define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
@@ -120,7 +120,7 @@ typedef struct ScmSourceInfoRec {
 } ScmSourceInfo;
 
 SCM_CLASS_DECL(Scm_SourceInfoClass);
-#define SCM_CLASS_SOURCE_INFO    SCM_CLASS_PTR(Scm_SourceInfoClass)
+#define SCM_CLASS_SOURCE_INFO    (&Scm_SourceInfoClass)
 
 #define SCM_SOURCE_INFO(obj)     ((ScmSourceInfo*)(obj))
 #define SCM_SOURCE_INFOP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOURCE_INFO)
@@ -238,7 +238,7 @@ SCM_EXTERN void Scm_VMDump(ScmVM *vm);
 SCM_EXTERN void Scm_VMDefaultExceptionHandler(ScmObj);
 
 SCM_CLASS_DECL(Scm_VMClass);
-#define SCM_CLASS_VM              SCM_CLASS_PTR(Scm_VMClass)
+#define SCM_CLASS_VM              (&Scm_VMClass)
 
 /*
  * VM instructions
@@ -359,7 +359,7 @@ typedef struct ScmCContinuation {
 #define SCM_CCONTP(obj)           SCM_XTYPEP(obj, SCM_CLASS_CCONT)
 
 SCM_CLASS_DECL(Scm_CContClass);
-#define SCM_CLASS_CCONT           SCM_CLASS_PTR(Scm_CContClass)
+#define SCM_CLASS_CCONT           (&Scm_CContClass)
 
 SCM_EXTERN void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
 			     void **data,

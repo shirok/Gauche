@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.27 2002-02-04 09:28:39 shirok Exp $
+ *  $Id: bignum.c,v 1.28 2002-02-07 10:33:51 shirok Exp $
  */
 
 #include <math.h>

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.45 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: port.c,v 1.46 2002-02-07 10:33:51 shirok Exp $
  */
 
 #include <unistd.h>

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.32 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: list.c,v 1.33 2002-02-07 10:33:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -24,7 +24,10 @@
  */
 
 static ScmClass *list_cpl[] = {
-    SCM_CLASS_LIST, SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_ListClass),
+    SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
+    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 

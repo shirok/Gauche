@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.13 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: boolean.c,v 1.14 2002-02-07 10:33:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.69 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: class.c,v 1.70 2002-02-07 10:33:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -41,26 +41,26 @@ static void initialize_builtin_cpl(ScmClass *klass);
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
 ScmClass *Scm_DefaultCPL[] = {
-    SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 
 ScmClass *Scm_CollectionCPL[] = {
-    SCM_CLASS_COLLECTION,
-    SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 
 ScmClass *Scm_SequenceCPL[] = {
-    SCM_CLASS_SEQUENCE,
-    SCM_CLASS_COLLECTION,
-    SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
+    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 
 ScmClass *Scm_ObjectCPL[] = {
-    SCM_CLASS_OBJECT,
-    SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 
@@ -88,9 +88,9 @@ SCM_DEFINE_BASE_CLASS(Scm_MethodClass, ScmMethod,
                       SCM_CLASS_OBJECT_CPL);
 
 static ScmClass *Scm_MetaclassCPL[] = {
-    SCM_CLASS_CLASS,
-    SCM_CLASS_OBJECT,
-    SCM_CLASS_TOP,
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass),
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 
@@ -284,7 +284,10 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmClass *instance = SCM_ALLOCATE(ScmClass, klass);
     SCM_SET_CLASS(instance, klass);
-    
+#ifdef __CYGWIN__
+    instance->classPtr = SCM_NEW(ScmClass*);
+    *instance->classPtr = instance;
+#endif
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = NULL;
@@ -329,7 +332,9 @@ static ScmObj allocate(ScmNextMethod *nm, ScmObj *args, int nargs, void *d)
     return c->allocate(c, args[1]);
 }
 
-static ScmClass *class_allocate_SPEC[] = { SCM_CLASS_CLASS, SCM_CLASS_LIST };
+static ScmClass *class_allocate_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass), SCM_CLASS_STATIC_PTR(Scm_ListClass)
+};
 static SCM_DEFINE_METHOD(class_allocate_rec, &Scm_GenericAllocate,
                          2, 0, class_allocate_SPEC, allocate, NULL);
 
@@ -343,7 +348,9 @@ static ScmObj class_compute_cpl(ScmNextMethod *nm, ScmObj *args, int nargs,
     return Scm_ComputeCPL(c);
 }
 
-static ScmClass *class_compute_cpl_SPEC[] = { SCM_CLASS_CLASS };
+static ScmClass *class_compute_cpl_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass)
+};
 static SCM_DEFINE_METHOD(class_compute_cpl_rec, &Scm_GenericComputeCPL,
                          1, 0, class_compute_cpl_SPEC,
                          class_compute_cpl, NULL);
@@ -361,7 +368,7 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         if (SCM_INTP(obj))  return SCM_CLASS_INTEGER;
         else return SCM_CLASS_UNKNOWN;
     } else {
-        return obj->klass;
+        return SCM_CLASS_OF(obj);
     }
 }
 
@@ -886,7 +893,9 @@ static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *args,
 }
 
 static ScmClass *slot_bound_using_class_p_SPEC[] = {
-    SCM_CLASS_CLASS, SCM_CLASS_TOP, SCM_CLASS_TOP
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass)
 };
 static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
                          &Scm_GenericSlotBoundUsingClassP,
@@ -934,8 +943,6 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
     ScmObj parentklass, slotnum, slotget, slotset;
 
     SCM_SET_CLASS(sa, klass);
-    sa->klass = SCM_CLASS_TOP;  /* sets bogus class now; initializer takes
-                                   care of it. */
     sa->name = SCM_FALSE;
     sa->getter = NULL;
     sa->setter = NULL;
@@ -1096,7 +1103,7 @@ static ScmObj object_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
 }
 
 static ScmClass *object_initialize_SPEC[] = {
-    SCM_CLASS_OBJECT, SCM_CLASS_LIST
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass), SCM_CLASS_STATIC_PTR(Scm_ListClass)
 };
 static SCM_DEFINE_METHOD(object_initialize_rec,
                          &Scm_GenericInitialize,
@@ -1141,7 +1148,7 @@ static ScmObj generic_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
 }
 
 static ScmClass *generic_initialize_SPEC[] = {
-    SCM_CLASS_GENERIC, SCM_CLASS_LIST
+    SCM_CLASS_STATIC_PTR(Scm_GenericClass), SCM_CLASS_STATIC_PTR(Scm_ListClass)
 };
 static SCM_DEFINE_METHOD(generic_initialize_rec,
                          &Scm_GenericInitialize,
@@ -1221,6 +1228,8 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
         }
         if (n == m->common.required) SCM_APPEND1(h, t, SCM_OBJ(m));
     }
+    //    Scm_Printf(SCM_CURERR, ">>> gf=%S args=%S h=%S\n", gf,
+    //	       Scm_ArrayToList(args, nargs), h);
     return h;
 }
 
@@ -1242,7 +1251,7 @@ static ScmObj compute_applicable_methods(ScmNextMethod *nm,
 }
 
 static ScmClass *compute_applicable_methods_SPEC[] = {
-    SCM_CLASS_GENERIC, SCM_CLASS_LIST
+    SCM_CLASS_STATIC_PTR(Scm_GenericClass), SCM_CLASS_STATIC_PTR(Scm_ListClass)
 };
 static SCM_DEFINE_METHOD(compute_applicable_methods_rec,
                          &Scm_GenericComputeApplicableMethods,
@@ -1294,7 +1303,9 @@ static ScmObj method_more_specific_p(ScmNextMethod *nm, ScmObj *args,
     return SCM_MAKE_BOOL(method_more_specific(x, y, targs, ntargs));
 }
 static ScmClass *method_more_specific_p_SPEC[] = {
-    SCM_CLASS_METHOD, SCM_CLASS_METHOD, SCM_CLASS_LIST
+    SCM_CLASS_STATIC_PTR(Scm_MethodClass),
+    SCM_CLASS_STATIC_PTR(Scm_MethodClass),
+    SCM_CLASS_STATIC_PTR(Scm_ListClass)
 };
 static SCM_DEFINE_METHOD(method_more_specific_p_rec,
                          &Scm_GenericMethodMoreSpecificP,
@@ -1420,7 +1431,8 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
 }
 
 static ScmClass *method_initialize_SPEC[] = {
-    SCM_CLASS_METHOD, SCM_CLASS_LIST
+    SCM_CLASS_STATIC_PTR(Scm_MethodClass),
+    SCM_CLASS_STATIC_PTR(Scm_ListClass)
 };
 static SCM_DEFINE_METHOD(method_initialize_rec,
                          &Scm_GenericInitialize,
@@ -1508,7 +1520,8 @@ static ScmObj generic_addmethod(ScmNextMethod *nm, ScmObj *args, int nargs,
 }
 
 static ScmClass *generic_addmethod_SPEC[] = {
-    SCM_CLASS_GENERIC, SCM_CLASS_METHOD
+    SCM_CLASS_STATIC_PTR(Scm_GenericClass),
+    SCM_CLASS_STATIC_PTR(Scm_MethodClass)
 };
 static SCM_DEFINE_METHOD(generic_addmethod_rec, &Scm_GenericAddMethod, 2, 0,
                          generic_addmethod_SPEC, generic_addmethod, NULL);
@@ -1617,6 +1630,20 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
     ScmObj acc = SCM_NIL;
     ScmObj s = SCM_INTERN(name);
     
+#ifdef __CYGWIN__
+    /* fix CPA on __CYGWIN__ */
+    {
+	ScmClass **c, **d, **cpa; int depth = 0;
+	for (c = k->cpa; *c; c++) depth++;
+	cpa = SCM_NEW2(ScmClass**, (depth+1)*sizeof(ScmClass*));
+	for (c = k->cpa, d = cpa; *c; c++, d++) {
+	    *d = **(ScmClass***)c;
+	}
+	*d = NULL;
+	k->cpa = cpa;
+    }
+#endif
+
     k->name = s;
     initialize_builtin_cpl(k);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(k));
@@ -1647,7 +1674,10 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
                           ScmClassStaticSlotSpec *slots,
                           int instanceSize, ScmModule *mod)
 {
-    /* insert metaclass */
+    /* initialize slots and CPL */
+    initialize_builtin_class(klass, name, slots, instanceSize, mod);
+
+    /* calculate metaclass */
     if (klass != SCM_CLASS_CLASS && SCM_XTYPEP(klass, SCM_CLASS_CLASS)) {
         int nlen = strlen(name);
         char *metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
@@ -1662,8 +1692,6 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
         }
         SCM_SET_CLASS(klass, make_implicit_meta(metaname, klass->cpa, mod));
     }
-    
-    initialize_builtin_class(klass, name, slots, instanceSize, mod);
 }
 
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
@@ -1675,6 +1703,20 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 
 void Scm_InitBuiltinMethod(ScmMethod *m)
 {
+#ifdef __CYGWIN__
+    /* fix specializer array on __CYGWIN__ */
+    {
+	ScmClass **c, **d, **spa;
+	int i;
+	spa = SCM_NEW2(ScmClass**,SCM_PROCEDURE_REQUIRED(m)*sizeof(ScmClass*));
+	for (i = 0, c = m->specializers, d = spa;
+	     i < SCM_PROCEDURE_REQUIRED(m);
+	     c++, d++, i++) {
+	    *d = **(ScmClass***)c;
+	}
+	m->specializers = spa;
+    }
+#endif
     m->common.info = Scm_Cons(m->generic->common.info,
                               class_array_to_names(m->specializers,
                                                    m->common.required));
@@ -1684,8 +1726,8 @@ void Scm_InitBuiltinMethod(ScmMethod *m)
 void Scm__InitClass(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    static ScmClass *nullcpa[] = { NULL }; /* for <top> */
-
+    static ScmClass *nullcpa[1] = {NULL}; /* for <top> */
+    
     key_allocation = SCM_MAKE_KEYWORD("allocation");
     key_builtin = SCM_MAKE_KEYWORD("builtin");
     key_slot_accessor = SCM_MAKE_KEYWORD("slot-accessor");

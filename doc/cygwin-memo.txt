@@ -19,10 +19,12 @@ This works quite nicely.   It has those characteristics.
 
   * You can add a class without "registering" it to
     the global class table to obtain a unique class tag.
+    Just define a class, and it is immediately available
+    to be used as a class tag.
 
   * Since you don't need to refer to the run-time tag table,
     you can have static reference to the classes.  Such as
-    an array of inherited classes or array of classes for
+    arrays of inherited classes or arrays of classes for
     method arguments.
 
 On Win32, dynamic linker is not so smart.  Instead of scanning
@@ -88,24 +90,56 @@ Now, the problem is that the value of _imp__ScmFooClass
 can't be determined until the dynamic-link time, so it can't
 be used in the static initializer.
 
-So, for cygwin environment only, I use double indirection
-for the type tag.   After macro expansion, it will look
-like this:
+Currently there are three places where the static reference
+to the address of the class structure.
+
+ * Static declaration of Scheme objects, including ScmClass,
+   ScmString, ScmSubr, ScmSyntax, etc.
+ * Static declaration of class precedence array, to be used
+   to initialize ScmClass statically.
+ * Static declaration of method specializer array, to be used
+   to initialize ScmMethod statically.
+
+Furthermore, the addresses of the classes (e.g. &ScmPairClass)
+are scattered in the sources (by the form of macros, such as
+SCM_CLASS_PAIR).
+
+I feel the original design of "class pointer as a tag" is
+clean and simple, and don't want to obscure the architecture
+by cluttering #ifdef's and nested macro calls just to port
+Gauche to Win32.   So these are the changes I made for Cygwin
+version:
+
+  1. A class tag for each object becomes double-indirect
+     pointer to ScmClass.   The access to the tag field should
+     be done via macros (SCM_CLASS_OF and SCM_SET_CLASS) and
+     this change is hidden in them.
+
+  2. SCM_CLASS_FOO macro remains to be &ScmFooClass.
+
+  3. For static initializers, a programmer should use
+     SCM_CLASS_PTR(ScmFooClass) instead of SCM_CLASS_FOO.
+
+  4. For the Scheme objects created at run time, we need a method
+     to map ScmClass* to ScmClass** in order to fill the objects'
+     tag.   I added extra field in ScmClass structure that keeps
+     the information.
+
+  5. For class precedence array and method specializer array,
+     Initialization methods convert ScmClass** array to 
+     ScmClass* array.
+
+So, for cygwin environment only, the source will look
+like this after macro expansion.
 
    extern __declspec(dllimport) ScmClass ScmFooClass;
    extern ScmClass *_imp__ScmFooClass;
 
    typedef ScmHeaderRec {
-       ScmClass *klass;
+       ScmClass **klass;
    } ScmHeader;
 
-   static ScmFoo foo = {{(ScmClass *)&_imp__ScmFooClass}, ... };
-
-And other macros take care of dereferencing the faked class pointer.
-
-Casting ScmClass** to ScmClass* is ugly, yes, but I'd rather do
-that than cluttering #ifdefs in the source and obscure the
-underlying idea.
+   static ScmFoo foo = {{&_imp__ScmFooClass}, ... };
 
 Note that although _imp__ScmFooClass is declared as "extern", 
 its scope is actually just inside a single DLL, or a statically 
@@ -114,12 +148,5 @@ differs.  It is automatically initialized to point to the variable
 ScmFooClass, which actually resides in the DLL where it is defined.
 The body of _imp__ScmFooClass is automatically allocated by the
 linker.
-
-The above expansion is for the modules outside the DLL where
-ScmFooClass is defined.   In the DLL where ScmFooClass is
-defined, we need a different expansion.
-
-   extern ScmClass ScmFooClass;
-   extern ScmClass *ScmFooClass_ind;
 
 

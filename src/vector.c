@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.15 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: vector.c,v 1.16 2002-02-07 10:33:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

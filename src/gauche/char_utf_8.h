@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_utf_8.h,v 1.7 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.8 2002-02-07 10:33:52 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY

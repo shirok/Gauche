@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.53 2002-02-04 09:28:40 shirok Exp $
+ *  $Id: load.c,v 1.54 2002-02-07 10:33:51 shirok Exp $
  */
 
 #include <stdlib.h>
