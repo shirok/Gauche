@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.40 2001-06-26 08:05:24 shirok Exp $
+;;; $Id: syslib.stub,v 1.41 2001-09-06 07:08:51 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -661,7 +661,7 @@
   SCM_RETURN(SCM_UNDEFINED); /* dummy */")
 
 (define-cproc sys-getcwd ()
-  "#define GETCWD_PATH_MAX 1024  /* needs to be configured */
+  "#define GETCWD_PATH_MAX 1024  /* TODO: needs to be configured */
   char p[GETCWD_PATH_MAX]; ScmObj s;
   if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) Scm_SysError(\"getcwd failed\");
   s = SCM_MAKE_STR_COPYING(p);
@@ -781,26 +781,28 @@
 ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
 ;; prototype.  However, it screws up something else.  Just for now I
 ;; cast the return value of crypt() to avoid it...such a kludge...
+(if (defined? "HAVE_CRYPT")
 (define-cproc sys-crypt (key salt)
   (assert (string? key))
   (assert (string? salt))
   "
-#ifdef HAVE_CRYPT
   SCM_RETURN(SCM_MAKE_STR_COPYING((const char *)crypt(Scm_GetStringConst(key),
-                                                      Scm_GetStringConst(salt))));
-#else
-  Scm_Error(\"system doesn't have crypt().\");
-  SCM_RETURN(SCM_UNDEFINED);
-#endif
-")
+                                                      Scm_GetStringConst(salt))));")
+)
 
 ;; not supported yet:
 ;;  fpathconf lseek pathconf read
 ;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp write
 
+(define-cproc sys-ctermid ()
+  "  char buf[L_ctermid+1];
+  char *r = ctermid(buf);
+  SCM_RETURN(SCM_MAKE_STR_COPYING(r));")
+
 ;;---------------------------------------------------------------------
 ;; symbolic link
 
+(if (defined? "HAVE_SYMLiNK")
 (define-cproc sys-symlink (existing new)
   (assert (string? existing))
   (assert (string? new))
@@ -814,6 +816,18 @@
   SCM_RETURN(SCM_FALSE);
 #endif
 ")
+)
+
+(if (defined? "HAVE_READLINK")
+(define-cproc sys-readlink (path)
+  (assert (string? path))
+  "#define READLINK_PATH_MAX 1024  /* TODO: needs to be configured */
+  char buf[READLINK_PATH_MAX];
+  int n = readlink(Scm_GetStringConst(path), buf, READLINK_PATH_MAX);
+  if (n < 0) Scm_SysError(\"readlink failed\");
+  if (n == READLINK_PATH_MAX) Scm_Error(\"readlink result too long\");
+  return Scm_MakeString(buf, n, -1, SCM_MAKSTR_COPYING);")
+)
 
 ;;---------------------------------------------------------------------
 ;; select
