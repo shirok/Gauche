@@ -13,11 +13,12 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.1 2001-04-15 08:16:52 shiro Exp $
+;;; \$Id: uvlib.stub.sh,v 1.2 2001-05-30 07:42:01 shirok Exp $
 ;;;
 
 "
 #include \\"uvector.h\\"
+#include \\"uvectorP.h\\"
 "
 
 EOF
@@ -25,6 +26,7 @@ EOF
 emit() {
     vecttag=$1
     vecttype=$2
+    itemtype=$3
     VECTTYPE=`echo $vecttype | tr '[a-z]' '[A-Z]'`
     cat <<EOF
 ;;--------------------------------------------------------------------
@@ -38,8 +40,9 @@ emit() {
 
 (define-cproc make-${vecttag}vector (length &optional (fill 0))
   (assert (small-integer? length))
-  (assert (small-integer? fill))
-  "SCM_RETURN(Scm_Make${vecttype}(length, fill));")
+  "  ${itemtype} filler;
+  SCM_${VECTTYPE}_UNBOX(filler, fill);
+  SCM_RETURN(Scm_Make${vecttype}(length, filler));")
 
 (define-cproc ${vecttag}vector (&rest args)
   "  SCM_RETURN(Scm_ListTo${vecttype}(args));")
@@ -77,16 +80,29 @@ emit() {
 
 (define-cproc ${vecttag}vector-fill! (v val)
   (assert (${vecttag}vector? v))
-  (assert (small-integer? val))
-  "  SCM_RETURN(Scm_${vecttype}Fill(v, val));")
+  "  ${itemtype} filler;
+  SCM_${VECTTYPE}_UNBOX(filler, val);
+  SCM_RETURN(Scm_${vecttype}Fill(v, filler));")
+
+(define-cproc ${vecttag}vector->vector (v)
+  (assert (${vecttag}vector? v))
+  "  SCM_RETURN(Scm_${vecttype}ToVector(v));")
+
+(define-cproc vector->${vecttag}vector (v)
+  (assert (vector? v))
+  "  SCM_RETURN(Scm_VectorTo${vecttype}(v));")
+
 EOF
 }
 
-emit s8  S8Vector
-emit u8  U8Vector
-emit s16 S16Vector
-emit u16 U16Vector
-emit s32 S32Vector
-emit u32 U32Vector
-emit f32 F32Vector
-emit f64 F64Vector
+emit s8  S8Vector  "char"
+emit u8  U8Vector  "unsigned char"
+emit s16 S16Vector "short"
+emit u16 U16Vector "unsigned short"
+emit s32 S32Vector SCM_UVECTOR_INT32
+emit u32 U32Vector SCM_UVECTOR_UINT32
+emit s64 S64Vector SCM_UVECTOR_INT64
+emit u64 U64Vector SCM_UVECTOR_UINT64
+emit f32 F32Vector "float"
+emit f64 F64Vector "double"
+

@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.5 2001-04-15 08:16:52 shiro Exp $
+ *  \$Id: uvector.c.sh,v 1.6 2001-05-30 07:42:01 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -28,6 +28,7 @@ cat <<EOF
 #include <string.h>  /* for memcpy() */
 #include <gauche.h>
 #include "uvector.h"
+#include "uvectorP.h"
 
 #ifndef EPSILON
 #define EPSILON  10e-5
@@ -58,13 +59,28 @@ static void print_${vecttype}(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     for (i=0; i<SCM_${VECTTYPE}_LENGTH(obj); i++) {
         ${itemtype} elt = SCM_${VECTTYPE}_DATA(obj)[i];
         if (i != 0) Scm_Printf(out, " ");
-        PRINT_ELT(out, elt);
+        SCM_${VECTTYPE}_PRINT_ELT(out, elt);
     }
     Scm_Printf(out, ")");
 }
 
+static int compare_${vecttype}(ScmObj x, ScmObj y)
+{
+    int len = SCM_${VECTTYPE}_LENGTH(x), i;
+    ${itemtype} xx, yy;
+    if (SCM_${VECTTYPE}_LENGTH(y) != len) return -1;
+    for (i=0; i<len; i++) {
+        xx = SCM_${VECTTYPE}_DATA(x)[i];
+        yy = SCM_${VECTTYPE}_DATA(y)[i];
+        if (!SCM_${VECTTYPE}_EQUAL_ELT(xx, yy)) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_${vecttype}Class,
-                         print_${vecttype}, NULL, NULL,
+                         print_${vecttype}, compare_${vecttype}, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
 /*
@@ -110,7 +126,7 @@ ScmObj Scm_ListTo${vecttype}(ScmObj list)
     vec = make_${vecttype}(length);
     for (i=0, cp=list; i<length; i++, cp = SCM_CDR(cp)) {
         ${itemtype} elt;
-        UNBOX(elt, SCM_CAR(cp));
+        SCM_${VECTTYPE}_UNBOX(elt, SCM_CAR(cp));
         vec->data[i] = elt;
     }
     return SCM_OBJ(vec);
@@ -118,12 +134,12 @@ ScmObj Scm_ListTo${vecttype}(ScmObj list)
 
 ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec)
 {
-    int length = SCM_VECTOR_LENGTH(ivec), i;
+    int length = SCM_VECTOR_SIZE(ivec), i;
     Scm${vecttype} *vec = make_${vecttype}(length);
     ScmObj cp;
     for (i=0; i<length; i++) {
         ${itemtype} elt;
-        UNBOX(elt, SCM_VECTOR_ELEMENT(ivec, i));
+        SCM_${VECTTYPE}_UNBOX(elt, SCM_VECTOR_ELEMENT(ivec, i));
         vec->data[i] = elt;
     }
     return SCM_OBJ(vec);
@@ -147,7 +163,7 @@ ScmObj Scm_${vecttype}Ref(Scm${vecttype} *vec, int index)
     ScmObj r;
     if (index < 0 || index >= SCM_${VECTTYPE}_LENGTH(vec))
         Scm_Error("index out of range: %d", index);
-    BOX(r, vec->data[index]);
+    SCM_${VECTTYPE}_BOX(r, vec->data[index]);
     return r;
 }
 
@@ -156,7 +172,7 @@ ScmObj Scm_${vecttype}Set(Scm${vecttype} *vec, int index, ScmObj val)
     ${itemtype} elt;
     if (index < 0 || index >= SCM_${VECTTYPE}_LENGTH(vec))
         Scm_Error("index out of range: %d", index);
-    UNBOX(elt, val);
+    SCM_${VECTTYPE}_UNBOX(elt, val);
     vec->data[index] = elt;
     return SCM_OBJ(vec);
 }
@@ -167,7 +183,7 @@ ScmObj Scm_${vecttype}ToList(Scm${vecttype} *vec)
     int i;
     for (i=0; i<SCM_${VECTTYPE}_LENGTH(vec); i++) {
         ScmObj elt;
-        BOX(elt, vec->data[i]);
+        SCM_${VECTTYPE}_BOX(elt, vec->data[i]);
         SCM_APPEND1(head, tail, elt);
     }
     return head;
@@ -179,7 +195,7 @@ ScmObj Scm_${vecttype}ToVector(Scm${vecttype} *vec)
     int i;
     for (i=0; i<SCM_${VECTTYPE}_LENGTH(vec); i++) {
         ScmObj elt;
-        BOX(elt, vec->data[i]);
+        SCM_${VECTTYPE}_BOX(elt, vec->data[i]);
         SCM_VECTOR_ELEMENT(ovec, i) = elt;
     }
     return ovec;
@@ -204,276 +220,16 @@ ScmObj Scm_${vecttype}CopyX(Scm${vecttype} *dst, Scm${vecttype} *src)
 EOF
 }  # end of emit
 
-# s8vector -----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = SCM_MAKE_INT(elt)
-#define UNBOX(elt, obj)                                                    \\
-    do {                                                                   \\
-        int v;                                                             \\
-        if (!SCM_INTP(obj)) Scm_Error("argument out of domain: %S", obj);  \\
-        v = SCM_INT_VALUE(obj);                                            \\
-        if (v < -128 || v > 127)                                           \\
-            Scm_Error("argument out of bound: %d", v);                     \\
-        elt = (signed char)v;                                              \\
-    } while (0)
-#define PRINT_ELT(out, elt)    Scm_Printf(out, "%d", elt)
-EOF
 emit s8 S8Vector "signed char"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# u8vector -----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = SCM_MAKE_INT(elt)
-#define UNBOX(elt, obj)                                                    \\
-    do {                                                                   \\
-        int v;                                                             \\
-        if (!SCM_INTP(obj)) Scm_Error("argument out of domain: %S", obj);  \\
-        v = SCM_INT_VALUE(obj);                                            \\
-        if (v < 0 || v > 255)                                              \\
-            Scm_Error("argument out of bound: %d", v);                     \\
-        elt = (unsigned char)v;                                            \\
-    } while (0)
-#define PRINT_ELT(out, elt)    Scm_Printf(out, "%u", elt)
-EOF
 emit u8 U8Vector "unsigned char"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# s16vector ----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = SCM_MAKE_INT(elt)
-#define UNBOX(elt, obj)                                                    \\
-    do {                                                                   \\
-        int v;                                                             \\
-        if (!SCM_INTP(obj)) Scm_Error("argument out of domain: %S", obj);  \\
-        v = SCM_INT_VALUE(obj);                                            \\
-        if (v < -32768 || v > 32767)                                       \\
-            Scm_Error("argument out of bound: %d", v);                     \\
-        elt = (short)v;                                                    \\
-    } while (0)
-#define PRINT_ELT(out, elt)   Scm_Printf(out, "%d", elt)
-EOF
 emit s16 S16Vector "short"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# u16vector ----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = SCM_MAKE_INT(elt)
-#define UNBOX(elt, obj)                                                    \\
-    do {                                                                   \\
-        int v;                                                             \\
-        if (!SCM_INTP(obj)) Scm_Error("argument out of domain: %S", obj);  \\
-        v = SCM_INT_VALUE(obj);                                            \\
-        if (v < 0 || v > 65536)                                            \\
-            Scm_Error("argument out of bound: %d", v);                     \\
-        elt = (unsigned short)v;                                           \\
-    } while (0)
-#define PRINT_ELT(out, elt)   Scm_Printf(out, "%u", elt)
-EOF
 emit u16 U16Vector "unsigned short"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# s32vector ----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = Scm_MakeInteger(elt)
-#define UNBOX(elt, obj)                                                 \\
-    do {                                                                \\
-        long v;                                                         \\
-        if (SCM_INTP(obj)) v = SCM_INT_VALUE(obj);                      \\
-        else if (SCM_BIGNUMP(obj)) v = Scm_BignumToSI(SCM_BIGNUM(obj)); \\
-        else Scm_Error("argument out of domain: %S", obj);              \\
-        elt = v;                                                        \\
-    } while (0)
-#define PRINT_ELT(out, elt)  Scm_Printf(out, "%d", elt)
-EOF
-emit s32 S32Vector "long"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# u32vector ----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = Scm_MakeInteger(elt)
-#define UNBOX(elt, obj)                                                 \\
-    do {                                                                \\
-        u_long v;                                                       \\
-        if (SCM_INTP(obj)) v = SCM_INT_VALUE(obj);                      \\
-        else if (SCM_BIGNUMP(obj)) v = Scm_BignumToUI(SCM_BIGNUM(obj)); \\
-        else Scm_Error("argument out of domain: %S", obj);              \\
-        elt = v;                                                        \\
-    } while (0)
-#define PRINT_ELT(out, elt)   Scm_Printf(out, "%d", elt)
-EOF
-emit u32 U32Vector "u_long"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# s64vector ----------------------------------------------------------
-
-cat <<EOF
-#if SIZEOF_LONG >= 8
-#define BOX(obj, elt)    obj = Scm_MakeInteger(elt)
-#define UNBOX(elt, obj)                                                 \\
-    do {                                                                \\
-        long v;                                                         \\
-        if (SCM_INTP(obj)) v = SCM_INT_VALUE(obj);                      \\
-        else if (SCM_BIGNUMP(obj)) v = Scm_BignumToSI(SCM_BIGNUM(obj)); \\
-        else Scm_Error("argument out of domain: %S", obj);              \\
-        elt = v;                                                        \\
-    } while (0)
-#define PRINT_ELT(out, elt)  Scm_Printf(out, "%ld", elt)
-#else /* assuming SIZEOF_LONG == 4 */
-
-static inline int valid_int64(ScmObj obj)
-{
-    if (SCM_BIGNUMP(obj)) {
-        if (!((SCM_BIGNUM(obj)->size <= 8/SIZEOF_LONG)
-               || (SCM_BIGNUM(obj)->sign < 0
-                   && SCM_BIGNUM(obj)->size == 8/SIZEOF_LONG + 1
-                   && SCM_BIGNUM(obj)->values[8/SIZEOF_LONG + 1] == 1)))
-            return FALSE;
-        else
-            return TRUE;
-    } else if (SCM_INTP(obj)) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-
-#define BOX(obj, elt)    obj = elt
-#define UNBOX(elt, obj)                                                 \\
-    do {                                                                \\
-        if (!valid_int64(obj))                                          \\
-            Scm_Error("argument out of domain: %S", obj);               \\
-        elt = obj;                                                      \\
-    } while (0)
-#define PRINT_ELT(out, elt)  Scm_Printf(out, "%S", elt)
-#endif
-EOF
-emit s64 S64Vector "INT64"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# u64vector ----------------------------------------------------------
-
-cat <<EOF
-#if SIZEOF_LONG >= 8
-#define BOX(obj, elt)    obj = Scm_MakeInteger(elt)
-#define UNBOX(elt, obj)                                                 \\
-    do {                                                                \\
-        u_long v;                                                       \\
-        if (SCM_INTP(obj)) v = SCM_INT_VALUE(obj);                      \\
-        else if (SCM_BIGNUMP(obj)) v = Scm_BignumToSI(SCM_BIGNUM(obj)); \\
-        else Scm_Error("argument out of domain: %S", obj);              \\
-        elt = v;                                                        \\
-    } while (0)
-#define PRINT_ELT(out, elt)  Scm_Printf(out, "%ld", elt)
-#else /* assuming SIZEOF_LONG == 4 */
-
-static inline int valid_uint64(ScmObj obj)
-{
-    if (SCM_BIGNUMP(obj)) {
-        if (SCM_BIGNUM(obj)->sign < 0) return FALSE;
-        if (SCM_BIGNUM(obj)->size > 8/SIZEOF_LONG) return FALSE;
-        return TRUE;
-    } else if (SCM_INTP(obj)) {
-        if (SCM_INT_VALUE(obj) < 0) return FALSE;
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-
-#define BOX(obj, elt)    obj = elt
-#define UNBOX(elt, obj)                                                 \\
-    do {                                                                \\
-        if (!valid_uint64(obj))                                         \\
-            Scm_Error("argument out of domain: %S", obj);               \\
-        elt = obj;                                                      \\
-    } while (0)
-#define PRINT_ELT(out, elt)  Scm_Printf(out, "%S", elt)
-#endif
-EOF
-emit u64 U64Vector "UINT64"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# f32vector ----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = Scm_MakeFlonum((double)elt)
-#define UNBOX(elt, obj)                                                 \
-    do {                                                                \
-        float v;                                                        \
-        if (SCM_FLONUMP(obj)) v = (float)SCM_FLONUM_VALUE(obj);         \
-        else if (SCM_INTP(obj)) v = (float)SCM_INT_VALUE(obj);          \
-        else if (SCM_BIGNUMP(obj)) v = Scm_BignumToDouble(SCM_BIGNUM(obj)); \
-        else Scm_Error("argument out of domain: %S", obj);              \
-        elt = v;                                                        \
-    } while (0)
-#define PRINT_ELT(out, elt)   Scm_Printf(out, "%f", elt)
-EOF
+emit s32 S32Vector "SCM_UVECTOR_INT32"
+emit u32 U32Vector "SCM_UVECTOR_UINT32"
+emit s64 S64Vector "SCM_UVECTOR_INT64"
+emit u64 U64Vector "SCM_UVECTOR_UINT64"
 emit f32 F32Vector "float"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
-
-# f64vector ----------------------------------------------------------
-
-cat <<EOF
-#define BOX(obj, elt)    obj = Scm_MakeFlonum(elt)
-#define UNBOX(elt, obj)                                                 \
-    do {                                                                \
-        double v;                                                       \
-        if (SCM_FLONUMP(obj)) v = SCM_FLONUM_VALUE(obj);                \
-        else if (SCM_INTP(obj)) v = (double)SCM_INT_VALUE(obj);          \
-        else if (SCM_BIGNUMP(obj)) v = Scm_BignumToDouble(SCM_BIGNUM(obj)); \
-        else Scm_Error("argument out of domain: %S", obj);              \
-        elt = v;                                                        \
-    } while (0)
-#define PRINT_ELT(out, elt)   Scm_Printf(out, "%lf", elt)
-EOF
 emit f64 F64Vector "double"
-cat <<EOF
-#undef BOX
-#undef UNBOX
-#undef PRINT_ELT
-EOF
 
 # epilogue -----------------------------------------------------------
 

@@ -1,7 +1,7 @@
 dnl
 dnl Configuring uvector module
 dnl
-dnl $Id: configure.in,v 1.1 2001-04-15 08:16:52 shiro Exp $
+dnl $Id: configure.in,v 1.2 2001-05-30 07:42:01 shirok Exp $
 AC_INIT(uvector.c.sh)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
@@ -32,13 +32,16 @@ CC="`$GAUCHE_CONFIG --cc`"
 AC_SUBST(CC)
 
 CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
-LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
 
 dnl Check for other programs.
 AC_PROG_INSTALL
 
 dnl Add more test
 
+dnl Set LDFLAGS to generate shared library.
+dnl This has to come after all the tests that requre linking, or those test
+dnl will fail because they can't generate stand-alone executable.
+LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
 
 dnl Output
 AC_OUTPUT(Makefile)
