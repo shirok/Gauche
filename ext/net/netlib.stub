@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.13 2002-04-29 03:07:38 shirok Exp $
+;;  $Id: netlib.stub,v 1.14 2002-04-30 01:12:52 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -112,41 +112,27 @@
   (assert (socket? sock))
   "  SCM_RETURN(Scm_MakeInteger(sock->fd));")
 
-;; NB: these are also in stdlib.stub -- can we merge them?
-(define-keyword full "key_full")
-(define-keyword line "key_line")
-(define-keyword modest "key_modest")
-(define-keyword none "key_none")
-
 ;; NB: buffered? keyword args in the following two procedures are
 ;; deprecated; use buffering arg.
-(define-cproc socket-input-port (sock &keyword (buffering (c "key_modest"))
+(define-cproc socket-input-port (sock &keyword (buffering #f)
                                                (buffered? #f))
   (assert (socket? sock))
-  " int bufmode = SCM_PORT_BUFFER_LINE;
+  " int bufmode;
   if (!SCM_FALSEP(bufferedP)) { /*for backward compatibility */
     bufmode = SCM_PORT_BUFFER_FULL;
-  } else if (SCM_EQ(buffering, key_full)) {
-    bufmode = SCM_PORT_BUFFER_FULL;
-  } else if (SCM_EQ(buffering, key_none)) {
-    bufmode = SCM_PORT_BUFFER_NONE;
-  } else if (!SCM_EQ(buffering, key_modest)) {
-    Scm_Error(\"buffering argument must be one of :full, :modest or :none, but got %S\", buffering);
+  } else {
+    bufmode = Scm_BufferedMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_LINE);
   }
   SCM_RETURN(Scm_SocketInputPort(sock, bufmode));")
 
-(define-cproc socket-output-port (sock &keyword (buffering (c "key_line"))
+(define-cproc socket-output-port (sock &keyword (buffering #f)
                                                 (buffered? #f))
   (assert (socket? sock))
-  " int bufmode = SCM_PORT_BUFFER_LINE;
+  " int bufmode;
   if (!SCM_FALSEP(bufferedP)) { /* for backward compatibility */
     bufmode = SCM_PORT_BUFFER_FULL;
-  } else if (SCM_EQ(buffering, key_full)) {
-    bufmode = SCM_PORT_BUFFER_FULL;
-  } else if (SCM_EQ(buffering, key_none)) {
-    bufmode = SCM_PORT_BUFFER_NONE;
-  } else if (!SCM_EQ(buffering, key_line)) {
-    Scm_Error(\"buffering argument must be one of :full, :line or :none, but got %S\", buffering);
+  } else {
+    bufmode = Scm_BufferedMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_LINE);
   }
   SCM_RETURN(Scm_SocketOutputPort(sock, bufmode));")
 
