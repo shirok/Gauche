@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvectorP.h,v 1.19 2004-11-05 10:34:25 shirok Exp $
+ *  $Id: uvectorP.h,v 1.20 2004-11-14 03:16:30 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -145,8 +145,8 @@ static inline long range_s32lo(long val, int clamp)
 #else
 static inline long clamp_s32(long val, int clamp)
 {
-    if (val > 2147483647L)    return range_s32hi(val, clamp);
-    if (val < -2147483647L-1) return range_s32lo(val, clamp);
+    if (val > 2147483647L)  return range_s32hi(val, clamp);
+    if (val < -2147483648L) return range_s32lo(val, clamp);
     return val;
 }
 #endif

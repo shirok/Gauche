@@ -1,7 +1,7 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.2 2004-11-11 12:14:43 shirok Exp $
+;; $Id: uvgen.scm,v 1.3 2004-11-14 03:16:30 shirok Exp $
 ;;
 
 (use srfi-1)
@@ -197,7 +197,7 @@
          `(EQ    . ,(lambda (x y)
                       #`"(,|x| == ,|y|)"))
          `(PRINT . ,(lambda (out elt)
-                      #`"Scm_Printf(,|out|,, \"%d\",, ,|elt|)"))
+                      #`"Scm_Printf(,|out|,, \"%u\",, ,|elt|)"))
          (common-rules 'u32)))
 
 (define (make-s64rules)

@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.4 2004-11-11 12:38:03 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.5 2004-11-14 03:16:30 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -572,7 +572,7 @@ static inline long s32_add_safe(long x, long y, int clamp)
 {
     long r, v;
     SADDOV(r, v, x, y);
-    if (v == 0) return r;
+    if (v == 0) return clamp_s32(r, clamp);
     if (v > 0)  return range_s32hi(0, clamp);
     else        return range_s32lo(0, clamp);
 }
@@ -582,7 +582,7 @@ static inline long s32_sub_safe(long x, long y, int clamp)
 {
     long r, v;
     SSUBOV(r, v, x, y);
-    if (v == 0) return r;
+    if (v == 0) return clamp_s32(r, clamp);
     if (v > 0)  return range_s32hi(0, clamp);
     else        return range_s32lo(0, clamp);
 }
@@ -591,7 +591,7 @@ static inline long s32_mul_safe(long x, long y, int clamp)
 {
     long r, v;
     SMULOV(r, v, x, y);
-    if (v == 0) return r;
+    if (v == 0) return clamp_s32(r, clamp);
     if (v > 0)  return range_s32hi(0, clamp);
     else        return range_s32lo(0, clamp);
 }
@@ -605,7 +605,7 @@ static inline long s32_mul_safe(long x, long y, int clamp)
 #define u32g_mul(x, y, clamp)    u32_mul_safe(x, y, clamp)
 #else  /* SIZEOF_LONG >= 8 */
 #define u32u32_add(x, y, clamp)  clamp_u32(x+y, clamp)
-#define u32u32_sub(x, y, clamp)  clamp_u32(x-y, clamp)
+#define u32u32_sub(x, y, clamp)  u32_sub_safe(x, y, clamp)
 #define u32u32_mul(x, y, clamp)  clamp_u32(x*y, clamp)
 #define u32g_add(x, y, clamp)    u32_add_safe(x, y, clamp)
 #define u32g_sub(x, y, clamp)    u32_sub_safe(x, y, clamp)
@@ -616,7 +616,7 @@ static inline u_long u32_add_safe(u_long x, u_long y, int clamp)
 {
     u_long r, v;
     UADDOV(r, v, x, y);
-    if (v == 0) return r;
+    if (v == 0) return clamp_u32(r, clamp);
     else        return range_u32hi(0, clamp);
 }
 
@@ -624,7 +624,7 @@ static inline u_long u32_sub_safe(u_long x, u_long y, int clamp)
 {
     u_long r, v;
     USUBOV(r, v, x, y);
-    if (v == 0) return r;
+    if (v == 0) return clamp_u32(r, clamp);
     else        return range_u32lo(0, clamp);
 }
 
@@ -632,7 +632,7 @@ static inline u_long u32_mul_safe(u_long x, u_long y, int clamp)
 {
     u_long r, v;
     UMULOV(r, v, x, y);
-    if (v == 0) return r;
+    if (v == 0) return clamp_u32(r, clamp);
     else        return range_u32hi(0, clamp);
 }
 
@@ -703,8 +703,7 @@ static inline ScmUInt64 u64g_add(ScmUInt64 x, ScmUInt64 y, int clamp)
     u_long r, v;
     UADDOV(r, v, x, y);
     if (v == 0) return r;
-    if (v > 0)  return range_u64hi(0, clamp);
-    else        return range_u64lo(0, clamp);
+    else        return range_u64hi(0, clamp);
 #endif
 }
 
@@ -719,7 +718,6 @@ static inline ScmUInt64 u64g_sub(ScmUInt64 x, ScmUInt64 y, int clamp)
     u_long r, v;
     USUBOV(r, v, x, y);
     if (v == 0) return r;
-    if (v > 0)  return range_u64hi(0, clamp);
     else        return range_u64lo(0, clamp);
 #endif
 }
@@ -735,8 +733,7 @@ static inline ScmUInt64 u64g_mul(ScmUInt64 x, ScmUInt64 y, int clamp)
     u_long r, v;
     UMULOV(r, v, x, y);
     if (v == 0) return r;
-    if (v > 0)  return range_u64hi(0, clamp);
-    else        return range_u64lo(0, clamp);
+    else        return range_u64hi(0, clamp);
 #endif
 }
 

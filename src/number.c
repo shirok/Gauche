@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.114 2004-11-05 10:33:38 shirok Exp $
+ *  $Id: number.c,v 1.115 2004-11-14 03:16:31 shirok Exp $
  */
 
 #include <math.h>
@@ -391,19 +391,30 @@ ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
     return (ScmInt32)Scm_GetIntegerClamp(obj, clamp, oor);
 #else  /* SIZEOF_LONG >= 8 */
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
+    /* NB: we denote the constant directly here.  (1L<<31) fails on
+       Alpha machines, since the compiler somehow calculates the constant
+       in 32bit integer even it has 'L'.  We have to write (1LL<<31), but
+       I'm afraid that it's not portable. */
     if (SCM_INTP(obj)) {
         long r = SCM_INT_VALUE(obj);
-        if (r < -(1L<<31)) {
-            if (clamp & SCM_CLAMP_LO) return -(1L<<31);
+        if (r < -0x80000000L) {
+            if (clamp & SCM_CLAMP_LO) return -0x80000000L;
             goto err;
         }
-        if (r >= (1L<<31)) {
-            if (clamp & SCM_CLAMP_HI) return (1L<<31)-1;
+        if (r > 0x7fffffffL) {
+            if (clamp & SCM_CLAMP_HI) return 0x7fffffffL;
+            goto err;
+        }
+        return r;
+    } else if (SCM_BIGNUMP(obj)) {
+        if (SCM_BIGNUM_SIGN(obj) < 0) {
+            if (clamp & SCM_CLAMP_LO) return -0x80000000L;
+            goto err;
+        } else {
+            if (clamp & SCM_CLAMP_HI) return 0x7fffffffL;
             goto err;
         }
     }
-    /*FALLTHROUGH*/
-    return (ScmInt32)Scm_GetIntegerClamp(obj, clamp, oor);
   err:
     if (clamp == SCM_CLAMP_NONE && oor != NULL) {
         *oor = TRUE;
@@ -426,13 +437,20 @@ ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor)
             if (clamp & SCM_CLAMP_LO) return 0;
             goto err;
         }
-        if (r >= (1L<<32)) {
-            if (clamp & SCM_CLAMP_HI) return (1L<<32)-1;
+        if (r > 0xffffffffUL) {
+            if (clamp & SCM_CLAMP_HI) return 0xffffffffUL;
+            goto err;
+        }
+        return r;
+    } else if (SCM_BIGNUMP(obj)) {
+        if (SCM_BIGNUM_SIGN(obj) < 0) {
+            if (clamp & SCM_CLAMP_LO) return 0;
+            goto err;
+        } else {
+            if (clamp & SCM_CLAMP_HI) return 0xffffffffUL;
             goto err;
         }
     }
-    /*FALLTHROUGH*/
-    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamp, *oor);
   err:
     if (clamp == SCM_CLAMP_NONE && oor != NULL) {
         *oor = TRUE;
