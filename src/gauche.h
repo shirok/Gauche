@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.40 2001-02-16 06:56:32 shiro Exp $
+ *  $Id: gauche.h,v 1.41 2001-02-17 10:21:34 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -225,6 +225,7 @@ typedef struct ScmSubrRec      ScmSubr;
 typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmExceptionRec ScmException;
+typedef struct ScmDLObjRec     ScmDLObj;
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -262,6 +263,10 @@ extern ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
 extern ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 
 extern ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
+extern ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
+                                 ScmObj (*body)(ScmObj *, int, void *),
+                                 ScmObj (*after)(ScmObj *, int, void *),
+                                 void *data);
 
 extern ScmObj Scm_VMThrowException(ScmObj exception);
 
@@ -1307,6 +1312,7 @@ extern ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
                            void *data,
                            int required, int optional,
                            ScmObj info);
+extern ScmObj Scm_NullProc(void);
 
 extern ScmObj Scm_ForEach1(ScmProcedure *proc, ScmObj args);
 extern ScmObj Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args);
@@ -1403,6 +1409,33 @@ extern ScmObj Scm_GetGroupById(gid_t gid);
 extern ScmObj Scm_GetGroupByName(ScmString *name);
 
 /*---------------------------------------------------
+ * LOAD AND DYNAMIC LINK
+ */
+
+extern ScmObj Scm_VMLoadFromPort(ScmPort *port);
+extern ScmObj Scm_VMLoad(ScmString *file);
+extern void Scm_Load(const char *file);
+
+extern ScmObj Scm_GetLoadPath(void);
+extern ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
+
+struct ScmDLObjRec {
+    SCM_HEADER;
+    void *handle;
+    int initialized;
+};
+
+extern ScmClass Scm_DLObjClass;
+#define SCM_CLASS_DLOBJ    (&Scm_DLObjClass)
+#define SCM_DLOBJ(obj)     ((ScmDLObj*)(obj))
+#define SCM_DLOBJP(obj)    SCM_XTYPEP(obj, SCM_CLASS_DLOBJ)
+
+extern ScmObj Scm_DynLink(ScmString *path);
+extern int Scm_DynInit(ScmDLObj *dlobj, ScmString *initfn);
+
+extern ScmObj Scm_DynLoad(ScmString *path);
+
+/*---------------------------------------------------
  * UTILITY STUFF
  */
 
@@ -1412,15 +1445,6 @@ extern void Scm_Init(const char *initfile);
 extern void Scm_Exit(int code);
 extern void Scm_Abort(const char *msg);
 extern void Scm_Panic(const char *msg, ...);
-
-/* Load */
-
-extern ScmObj Scm_VMLoadFromPort(ScmPort *port);
-extern ScmObj Scm_VMLoad(const char *file);
-extern void Scm_Load(const char *file);
-
-extern ScmObj Scm_GetLoadPath(void);
-extern ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
 
 /* Assertion */
 
