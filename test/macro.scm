@@ -405,5 +405,10 @@
       (lambda ()
         (let ((m '()))
           (dotimes (n 10 (reverse m)) (push! m n)))))
+(test "dotimes" '(0 1 2 3 4 5 6 7 8 9)
+      (lambda ()
+        (let ((m '()))
+          (dotimes (n (if (null? m) 10 (error "Boom!")) (reverse m))
+                   (push! m n)))))
 
 (test-end)
