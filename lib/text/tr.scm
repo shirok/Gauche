@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tr.scm,v 1.6 2001-09-22 10:12:56 shirok Exp $
+;;;  $Id: tr.scm,v 1.7 2001-09-22 10:30:43 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
@@ -83,11 +83,13 @@
     (lambda ()
       (define (start c r)
         (cond ((eof-object? c) (reverse r))
+              ((char=? c #\\) (start (read-char) r))
               (else (maybe-range c (read-char) r))))
       (define (maybe-range c c1 r)
         (cond ((eof-object? c1) (reverse (cons (list 1 c) r)))
               ((char=? c1 #\-) (range c (read-char) r))
               ((char=? c1 #\*) (repeat c (read-char) 0 r))
+              ((char=? c1 #\\) (start (read-char) (cons (list 1 c) r)))
               (else (maybe-range c1 (read-char) (cons (list 1 c) r)))))
       (define (range from to r)
         (cond ((eof-object? to) (reverse (list* (list 1 #\-) (list 1 from) r)))
