@@ -1,3 +1,9 @@
+2004-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmReadError): added <read-error>
+	* src/error.c: ditto
+	* src/read.c: ditto
+
 2004-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (write-object): fixed output of display.

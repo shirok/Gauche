@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.46 2004-05-20 04:50:33 shirok Exp $
+ *  $Id: error.c,v 1.47 2004-05-21 03:43:29 shirok Exp $
  */
 
 #include <errno.h>
@@ -45,16 +45,16 @@
 static void   error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static ScmObj error_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
 
 /*-----------------------------------------------------------
  * Exception class hierarchy
  *
  * NB: Srfi-35 uses the term "condition" instead of "exception".
- * I'm still thinking of how I can integrate srfi-35/36 to our
+ * I'm still pondering how I can integrate srfi-35/36 to our
  * exception hierarchy.
  *
  *      <exception>
- *        <debug-break>
  *        <thread-exception>
  *          <join-timeout-exception>
  *          <abandoned-mutex-exception>
@@ -62,6 +62,7 @@ static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
  *          <uncaught-exception>
  *        <error>
  *          <system-error>
+ *          <read-error>
  */
 
 static ScmClass *exception_cpl[] = {
@@ -78,6 +79,9 @@ SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
 SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
                       error_print, NULL, NULL,
                       syserror_allocate, exception_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
+                      error_print, NULL, NULL,
+                      readerror_allocate, exception_cpl);
 
 static void error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
@@ -104,6 +108,16 @@ static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(e);
 }
 
+static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmReadError *e = SCM_ALLOCATE(ScmReadError, klass);
+    SCM_SET_CLASS(e, klass);
+    e->common.message = SCM_FALSE; /* set by initialize */
+    e->port = NULL;                /* set by initialize */
+    e->line = -1;                  /* set by initialize */
+    return SCM_OBJ(e);
+}
+
 static ScmObj error_message_get(ScmError *obj)
 {
     return SCM_ERROR_MESSAGE(obj);
@@ -127,6 +141,38 @@ static void syserror_number_set(ScmSystemError *obj, ScmObj val)
     obj->error_number = SCM_INT_VALUE(val);
 }
 
+static ScmObj readerror_port_get(ScmReadError *obj)
+{
+    if (obj->port) return SCM_OBJ(obj->port);
+    else return SCM_FALSE;
+}
+
+static void readerror_port_set(ScmReadError *obj, ScmObj val)
+{
+    if (SCM_IPORTP(val)) {
+        obj->port = SCM_PORT(val);
+    }
+    else if (SCM_FALSEP(val)) {
+        obj->port = NULL;
+    }
+    else {
+        Scm_Error("input port or #f required, but got %S", val);
+    }
+}
+
+static ScmObj readerror_line_get(ScmReadError *obj)
+{
+    return SCM_MAKE_INT(obj->line);
+}
+
+static void readerror_line_set(ScmReadError *obj, ScmObj val)
+{
+    if (!SCM_INTP(val)){
+        Scm_Error("small integer required, but got %S", val);
+    }
+    obj->line = SCM_INT_VALUE(val);
+}
+
 static ScmClassStaticSlotSpec error_slots[] = {
     SCM_CLASS_SLOT_SPEC("message", error_message_get,
                         error_message_set),
@@ -141,10 +187,21 @@ static ScmClassStaticSlotSpec syserror_slots[] = {
     { NULL }
 };
 
+static ScmClassStaticSlotSpec readerror_slots[] = {
+    SCM_CLASS_SLOT_SPEC("message", error_message_get,
+                        error_message_set),
+    SCM_CLASS_SLOT_SPEC("port", readerror_port_get,
+                        readerror_port_set),
+    SCM_CLASS_SLOT_SPEC("line", readerror_line_get,
+                        readerror_line_set),
+    { NULL }
+};
+
 /*
  * C-level Constructors
  */
 
+/* actual class structure of thread exceptions are in ext/threads */
 ScmObj Scm_MakeThreadException(ScmClass *klass, ScmVM *thread)
 {
     ScmThreadException *e = SCM_NEW(ScmThreadException);
@@ -167,6 +224,16 @@ ScmObj Scm_MakeSystemError(ScmObj message, int en)
         SCM_SYSTEM_ERROR(syserror_allocate(SCM_CLASS_SYSTEM_ERROR, SCM_NIL));
     e->common.message = message;
     e->error_number = en;
+    return SCM_OBJ(e);
+}
+
+ScmObj Scm_MakeReadError(ScmObj message, ScmPort *port, int line)
+{
+    ScmReadError *e =
+        SCM_READ_ERROR(readerror_allocate(SCM_CLASS_READ_ERROR, SCM_NIL));
+    e->common.message = message;
+    e->port = port;
+    e->line = line;
     return SCM_OBJ(e);
 }
 
@@ -414,6 +481,8 @@ void Scm__InitExceptions(void)
                          error_slots, FALSE, mod);
     Scm_InitBuiltinClass(SCM_CLASS_SYSTEM_ERROR, "<system-error>",
                          syserror_slots, FALSE, mod);
+    Scm_InitBuiltinClass(SCM_CLASS_READ_ERROR, "<read-error>",
+                         readerror_slots, FALSE, mod);
     Scm_Init_exclib(mod);
 }
 

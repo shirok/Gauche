@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.369 2004-05-16 00:02:53 shirok Exp $
+ *  $Id: gauche.h,v 1.370 2004-05-21 03:43:29 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2079,7 +2079,7 @@ SCM_CLASS_DECL(Scm_ErrorClass);
 
 SCM_EXTERN ScmObj Scm_MakeError(ScmObj message);
 
-/* <system-error> */
+/* <system-error>: error from system calls */
 typedef struct ScmSystemErrorRec {
     ScmError common;
     int error_number;           /* errno */
@@ -2091,6 +2091,20 @@ SCM_CLASS_DECL(Scm_SystemErrorClass);
 #define SCM_SYSTEM_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_SYSTEM_ERROR)
 
 SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
+
+/* <read-error>: error from the reader */
+typedef struct ScmReadErrorRec {
+    ScmError common;
+    ScmPort *port;              /* input port where we're reading from. */
+    int line;                   /* line number (if available), or -1 */
+} ScmReadError;
+
+SCM_CLASS_DECL(Scm_ReadErrorClass);
+#define SCM_CLASS_READ_ERROR     (&Scm_ReadErrorClass)
+#define SCM_READ_ERROR(obj)      ((ScmReadError*)(obj))
+#define SCM_READ_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_READ_ERROR)
+
+SCM_EXTERN ScmObj Scm_MakeReadError(ScmObj message, ScmPort *p, int line);
 
 /* Throwing error */
 SCM_EXTERN void Scm_Error(const char *msg, ...);
