@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.72 2001-05-03 10:31:35 shirok Exp $
+;;; $Id: extlib.stub,v 1.73 2001-05-06 23:59:56 shirok Exp $
 ;;;
 
 "
@@ -354,6 +354,15 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
     gm = SCM_STRING_JOIN_PREFIX;
   else Scm_Error(\"invalid grammer specification: %S\", grammer);
   SCM_RETURN(Scm_StringJoin(strs, delim, gm));")
+
+(define-cproc %hash-string (str bound) ; for SRFI-13
+  (assert (string? str))
+  "  unsigned long modulo = 0;
+  if (SCM_UNDEFINEDP(bound)) modulo = SCM_SMALL_INT_MAX;
+  else if (SCM_INTP(bound)) modulo = SCM_INT_VALUE(bound);
+  else if (SCM_BIGNUMP(bound)) modulo = Scm_BignumToUI(SCM_BIGNUM(bound));
+  if (modulo == 0) Scm_Error(\"argument out of domain: %S\", bound);
+  SCM_RETURN(Scm_MakeInteger(Scm_HashString(str, modulo)));")
 
 ;; TODO: allow string/charset/regexp in ch
 (define-cproc string-split (s ch)
