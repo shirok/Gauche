@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.23 2001-04-18 09:30:17 shiro Exp $
+ *  $Id: number.c,v 1.24 2001-04-19 08:57:29 shiro Exp $
  */
 
 #include <math.h>
@@ -421,7 +421,10 @@ ScmObj Scm_Add(ScmObj args)
                     return Scm_BignumAddN(SCM_BIGNUM(big), args);
                 }
             } else if (SCM_BIGNUMP(v)) {
-                return Scm_BignumAddN(SCM_BIGNUM(v), args);
+                v = Scm_BignumAdd(SCM_BIGNUM(Scm_MakeBignumFromSI(result_int)),
+                                  SCM_BIGNUM(v));
+                if (SCM_NULLP(args)) return v;
+                else return Scm_BignumAddN(SCM_BIGNUM(v), args);
             } else if (SCM_FLONUMP(v)) {
                 result_real = (double)result_int;
                 goto DO_FLONUM;
@@ -1149,7 +1152,7 @@ static ScmObj read_integer(const char *str, int len, int radix)
             if (c == *ptab) {
                 if (SCM_FALSEP(value_big)) {
                     t = value_int*radix + (ptab-tab);
-                    if (t >= 0) {
+                    if (t >= value_int) {
                         value_int = t;
                         break;
                     } else {    /* overflow */
