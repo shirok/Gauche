@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.36 2004-08-02 12:20:54 shirok Exp $
+ *  $Id: net.c,v 1.37 2004-10-09 11:36:36 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -478,8 +478,7 @@ void Scm_Init_libnet(void)
 	}
     }
 #endif /*__MINGW32__*/
-    Scm_InitBuiltinClass(&Scm_SocketClass, "<socket>", NULL,
-                         sizeof(ScmSocket), mod);
+    Scm_InitStaticClass(&Scm_SocketClass, "<socket>", mod, NULL, 0);
     Scm_Init_NetAddr(mod);
     Scm_Init_NetDB(mod);
     Scm_Init_netlib(mod);

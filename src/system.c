@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.60 2004-07-27 10:23:47 shirok Exp $
+ *  $Id: system.c,v 1.61 2004-10-09 11:36:37 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1423,12 +1423,12 @@ int link(const char *existing, const char *newpath)
 void Scm__InitSystem(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    Scm_InitBuiltinClass(&Scm_SysStatClass, "<sys-stat>", stat_slots, 0, mod);
-    Scm_InitBuiltinClass(&Scm_TimeClass, "<time>", time_slots, 0, mod);
-    Scm_InitBuiltinClass(&Scm_SysTmClass, "<sys-tm>", tm_slots, 0, mod);
-    Scm_InitBuiltinClass(&Scm_SysGroupClass, "<sys-group>", grp_slots, 0, mod);
-    Scm_InitBuiltinClass(&Scm_SysPasswdClass, "<sys-passwd>", pwd_slots, 0, mod);
+    Scm_InitStaticClass(&Scm_SysStatClass, "<sys-stat>", mod, stat_slots, 0);
+    Scm_InitStaticClass(&Scm_TimeClass, "<time>", mod, time_slots, 0);
+    Scm_InitStaticClass(&Scm_SysTmClass, "<sys-tm>", mod, tm_slots, 0);
+    Scm_InitStaticClass(&Scm_SysGroupClass, "<sys-group>", mod, grp_slots, 0);
+    Scm_InitStaticClass(&Scm_SysPasswdClass, "<sys-passwd>", mod, pwd_slots, 0);
 #ifdef HAVE_SELECT
-    Scm_InitBuiltinClass(&Scm_SysFdsetClass, "<sys-fdset>", NULL, 0, mod);
+    Scm_InitStaticClass(&Scm_SysFdsetClass, "<sys-fdset>", mod, NULL, 0);
 #endif
 }

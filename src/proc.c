@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.38 2004-08-12 20:39:50 shirok Exp $
+ *  $Id: proc.c,v 1.39 2004-10-09 11:36:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -384,7 +384,7 @@ static ScmClassStaticSlotSpec proc_slots[] = {
  */
 void Scm__InitProc(void)
 {
-    Scm_InitBuiltinClass(&Scm_ProcedureClass, "<procedure>",
-                         proc_slots, 0, Scm_GaucheModule());
+    Scm_InitStaticClass(&Scm_ProcedureClass, "<procedure>",
+                        Scm_GaucheModule(), proc_slots, 0);
     Scm_ProcedureClass.flags |= SCM_CLASS_APPLICABLE;
 }

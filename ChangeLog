@@ -1,3 +1,17 @@
+2004-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c: revised class initialization API.  Scm_InitBuiltinClass
+	  is obsoleted; use Scm_InitStaticClass instead.
+	  Also added Scm_InitStaticClassWithSupers for the builtin class
+	  with multiple inheritance (used for condition hierarchy).
+	* src/error.c, src/gauche/exception.h : revised to support condition
+	  hierarchy.  Renamed ScmException -> ScmCondition, for the consistency
+	  with srfi-35.
+	* src/gauche-init.scm : make <exception> a synonym of <condition>,
+	  for backward compatibility.
+	* various files: modified according to the change of class
+	  initialization API.
+
 2004-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/guess.c: fixed initializer type mismatch.

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.15 2004-09-01 11:26:00 shirok Exp $
+ *  $Id: fcntl.c,v 1.16 2004-10-09 11:36:36 shirok Exp $
  */
 
 #define _GNU_SOURCE  /* for Linux, this enables additional features */
@@ -211,8 +211,8 @@ void Scm_Init_fcntl(void)
 
     SCM_INIT_EXTENSION(fcntl);
     mod = SCM_MODULE(SCM_FIND_MODULE("gauche.fcntl", TRUE));
-    Scm_InitBuiltinClass(&Scm_SysFlockClass, "<sys-flock>",
-                         flock_slots, sizeof(ScmSysFlock), mod);
+    Scm_InitStaticClass(&Scm_SysFlockClass, "<sys-flock>",
+                        mod, flock_slots, 0);
     Scm_Init_fcntlib(mod);
 }
 

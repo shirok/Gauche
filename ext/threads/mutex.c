@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: mutex.c,v 1.5 2003-07-05 03:29:11 shirok Exp $
+ *  $Id: mutex.c,v 1.6 2004-10-09 11:36:36 shirok Exp $
  */
 
 #include <math.h>
@@ -360,6 +360,6 @@ void Scm_Init_mutex(ScmModule *mod)
     sym_not_owned     = SCM_INTERN("not-owned");
     sym_abandoned     = SCM_INTERN("abandoned");
     sym_not_abandoned = SCM_INTERN("not-abandoned");
-    Scm_InitBuiltinClass(&Scm_MutexClass, "<mutex>", mutex_slots, sizeof(ScmMutex), mod);
-    Scm_InitBuiltinClass(&Scm_ConditionVariableClass, "<condition-variable>", cv_slots, sizeof(ScmConditionVariable), mod);
+    Scm_InitStaticClass(&Scm_MutexClass, "<mutex>", mod, mutex_slots, 0);
+    Scm_InitStaticClass(&Scm_ConditionVariableClass, "<condition-variable>", mod, cv_slots, 0);
 }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.107 2004-10-04 10:22:33 shirok Exp $
+ *  $Id: port.c,v 1.108 2004-10-09 11:36:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -89,7 +89,8 @@ static int port_cleanup(ScmPort *port)
     if (SCM_PORT_CLOSED_P(port)) return 0;
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
-        if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT && !SCM_PORT_ERROR_P(port)) {
+        if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT
+            && !SCM_PORT_ERROR_OCCURRED_P(port)) {
             bufport_flush(port, 0, TRUE);
         }
         if (port->ownerp && port->src.buf.closer) port->src.buf.closer(port);
@@ -687,7 +688,7 @@ void Scm_FlushAllPorts(int exitting)
         (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
         if (!SCM_FALSEP(p)) {
             SCM_ASSERT(SCM_PORTP(p) && SCM_PORT_TYPE(p)==SCM_PORT_FILE);
-            if (!SCM_PORT_ERROR_P(SCM_PORT(p))) {
+            if (!SCM_PORT_ERROR_OCCURRED_P(SCM_PORT(p))) {
                 bufport_flush(SCM_PORT(p), 0, TRUE);
             }
         }
@@ -1355,10 +1356,10 @@ void Scm__InitPort(void)
     (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
     active_buffered_ports.ports = SCM_WEAKVECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
 
-    Scm_InitBuiltinClass(&Scm_PortClass, "<port>",
-                         NULL, TRUE, Scm_GaucheModule());
-    Scm_InitBuiltinClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
-                         NULL, TRUE, Scm_GaucheModule());
+    Scm_InitStaticClass(&Scm_PortClass, "<port>",
+                        Scm_GaucheModule(), NULL, 0);
+    Scm_InitStaticClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
+                        Scm_GaucheModule(), NULL, 0);
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(stdin)"),
                                     SCM_PORT_INPUT, 0,

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.388 2004-10-06 08:54:56 shirok Exp $
+ *  $Id: gauche.h,v 1.389 2004-10-09 11:36:37 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -362,7 +362,6 @@ typedef struct ScmMacroRec     ScmMacro;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmRegexpRec    ScmRegexp;
 typedef struct ScmRegMatchRec  ScmRegMatch;
-typedef struct ScmErrorRec     ScmError;
 typedef struct ScmWriteContextRec ScmWriteContext;
 typedef struct ScmAutoloadRec  ScmAutoload;
 
@@ -521,6 +520,18 @@ enum {
 
 #define SCM_CLASS_CATEGORY(obj)  (SCM_CLASS_FLAGS(obj)&3)
 
+SCM_EXTERN void Scm_InitStaticClass(ScmClass *klass, const char *name,
+                                    ScmModule *mod,
+                                    ScmClassStaticSlotSpec *slots,
+                                    int flags);
+SCM_EXTERN void Scm_InitStaticClassWithSupers(ScmClass *klass,
+                                              const char *name,
+                                              ScmModule *mod,
+                                              ScmObj supers,
+                                              ScmClassStaticSlotSpec *slots,
+                                              int flags);
+
+/* OBSOLETE */
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
 				     ScmClassStaticSlotSpec *slots,
 				     int withMeta,
@@ -1268,7 +1279,7 @@ enum ScmPortICPolicy {
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT(obj)->closed)
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
-#define SCM_PORT_ERROR_P(obj)   (SCM_PORT(obj)->error)
+#define SCM_PORT_ERROR_OCCURRED_P(obj) (SCM_PORT(obj)->error)
 
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))
@@ -2151,58 +2162,11 @@ SCM_EXTERN ScmObj Scm_MakePromise(ScmObj code);
 SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 
 /*--------------------------------------------------------
- * EXCEPTION
- *
- *  In Gauche, you can throw any object.  It is a programmer's
- *  choice of how to interpret them.  However, there are some
- *  predefined objects that the Gauche system throws.
+ * CONDITION
  */
 
-/* <exception> : abstract class for predefined exceptions. */
-SCM_CLASS_DECL(Scm_ExceptionClass);
-#define SCM_CLASS_EXCEPTION        (&Scm_ExceptionClass)
-#define SCM_EXCEPTIONP(obj)        SCM_ISA(obj, SCM_CLASS_EXCEPTION)
-
-/* <error>: root of all errors (uncontinuable exceptions). */
-struct ScmErrorRec {
-    SCM_INSTANCE_HEADER;
-    ScmObj message;             /* error message */
-};
-
-SCM_CLASS_DECL(Scm_ErrorClass);
-#define SCM_CLASS_ERROR            (&Scm_ErrorClass)
-#define SCM_ERRORP(obj)            SCM_ISA(obj, SCM_CLASS_ERROR)
-#define SCM_ERROR(obj)             ((ScmError*)(obj))
-#define SCM_ERROR_MESSAGE(obj)     SCM_ERROR(obj)->message
-
-SCM_EXTERN ScmObj Scm_MakeError(ScmObj message);
-
-/* <system-error>: error from system calls */
-typedef struct ScmSystemErrorRec {
-    ScmError common;
-    int error_number;           /* errno */
-} ScmSystemError;
-    
-SCM_CLASS_DECL(Scm_SystemErrorClass);
-#define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
-#define SCM_SYSTEM_ERROR(obj)      ((ScmSystemError*)(obj))
-#define SCM_SYSTEM_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_SYSTEM_ERROR)
-
-SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
-
-/* <read-error>: error from the reader */
-typedef struct ScmReadErrorRec {
-    ScmError common;
-    ScmPort *port;              /* input port where we're reading from. */
-    int line;                   /* line number (if available), or -1 */
-} ScmReadError;
-
-SCM_CLASS_DECL(Scm_ReadErrorClass);
-#define SCM_CLASS_READ_ERROR     (&Scm_ReadErrorClass)
-#define SCM_READ_ERROR(obj)      ((ScmReadError*)(obj))
-#define SCM_READ_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_READ_ERROR)
-
-SCM_EXTERN ScmObj Scm_MakeReadError(ScmObj message, ScmPort *p, int line);
+/* Condition classes are defined in a separate file */
+#include <gauche/exception.h>
 
 /* Throwing error */
 SCM_EXTERN void Scm_Error(const char *msg, ...);
@@ -2224,18 +2188,6 @@ SCM_EXTERN void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
                                    int format);
 
 SCM_EXTERN void Scm_ReportError(ScmObj e);
-
-/* <application-exit> */
-typedef struct ScmApplicationExitRec {
-    SCM_HEADER;
-    int  code;                  /* exit code */
-} ScmApplicationExit;
-
-SCM_CLASS_DECL(Scm_ApplicationExitClass);
-#define SCM_CLASS_APPLICATION_EXIT   (&Scm_ApplicationExitClass)
-#define SCM_APPLICATION_EXIT_P(obj)  SCM_ISA(obj, SCM_CLASS_APPLICATION_EXIT)
-
-SCM_EXTERN ScmObj Scm_MakeApplicationExit(int);
 
 /*--------------------------------------------------------
  * REGEXP

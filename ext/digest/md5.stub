@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: md5.stub,v 1.5 2003-10-10 21:52:18 fuyuki Exp $
+;;;  $Id: md5.stub,v 1.6 2004-10-09 11:36:36 shirok Exp $
 ;;;
 
 "
@@ -67,7 +67,7 @@
  {
    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"rfc.md5\", TRUE));
    SCM_INIT_EXTENSION(md5);
-   Scm_InitBuiltinClass(&Scm_Md5Class, \"<md5-context>\", NULL, sizeof(ScmMd5), mod);
+   Scm_InitStaticClass(&Scm_Md5Class, \"<md5-context>\", mod, NULL, 0);
    Scm_md5_internal_init(mod);
  }
 

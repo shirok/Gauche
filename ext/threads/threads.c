@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.6 2004-02-26 07:44:22 shirok Exp $
+ *  $Id: threads.c,v 1.7 2004-10-09 11:36:36 shirok Exp $
  */
 
 #include <gauche.h>
@@ -212,7 +212,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
         } else {
             result = timeoutval;
         }
-    } else if (SCM_EXCEPTIONP(resultx)) {
+    } else if (SCM_CONDITIONP(resultx)) {
         result = Scm_VMThrowException(resultx);
     }
     return result;

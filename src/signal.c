@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.29 2004-07-15 07:10:07 shirok Exp $
+ *  $Id: signal.c,v 1.30 2004-10-09 11:36:37 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -680,8 +680,8 @@ void Scm__InitSignal(void)
     sigemptyset(&sigHandlers.masterSigset);
     for (i=0; i<NSIG; i++) sigHandlers.handlers[i] = SCM_FALSE;
     
-    Scm_InitBuiltinClass(&Scm_SysSigsetClass, "<sys-sigset>", NULL,
-                         sizeof(ScmSysSigset), mod);
+    Scm_InitStaticClass(&Scm_SysSigsetClass, "<sys-sigset>",
+                        mod, NULL, 0);
 
     for (desc = sigDesc; desc->name; desc++) {
         SCM_DEFINE(mod, desc->name, SCM_MAKE_INT(desc->num));

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.20 2004-08-02 12:20:54 shirok Exp $
+ *  $Id: addr.c,v 1.21 2004-10-09 11:36:36 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -263,15 +263,11 @@ void Scm_Init_NetAddr(ScmModule *mod)
     key_broadcast = SCM_MAKE_KEYWORD("broadcast");
     key_loopback  = SCM_MAKE_KEYWORD("loopback");
 
-    Scm_InitBuiltinClass(&Scm_SockAddrClass, "<sockaddr>", NULL,
-                         sizeof(ScmSockAddr), mod);
-    Scm_InitBuiltinClass(&Scm_SockAddrUnClass, "<sockaddr-un>", NULL,
-                         sizeof(ScmSockAddrUn), mod);
-    Scm_InitBuiltinClass(&Scm_SockAddrInClass, "<sockaddr-in>", NULL,
-                         sizeof(ScmSockAddrIn), mod);
+    Scm_InitStaticClass(&Scm_SockAddrClass, "<sockaddr>", mod, NULL, 0);
+    Scm_InitStaticClass(&Scm_SockAddrUnClass, "<sockaddr-un>", mod, NULL, 0);
+    Scm_InitStaticClass(&Scm_SockAddrInClass, "<sockaddr-in>", mod, NULL, 0);
 #ifdef HAVE_IPV6
-    Scm_InitBuiltinClass(&Scm_SockAddrIn6Class, "<sockaddr-in6>", NULL,
-                         sizeof(ScmSockAddrIn6), mod);
+    Scm_InitStaticClass(&Scm_SockAddrIn6Class, "<sockaddr-in6>", mod, NULL, 0);
 #endif /* HAVE_IPV6 */
 }
 

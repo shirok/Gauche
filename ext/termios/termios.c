@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.14 2004-09-12 10:25:59 shirok Exp $
+ *  $Id: termios.c,v 1.15 2004-10-09 11:36:36 shirok Exp $
  */
 
 #include <string.h>
@@ -156,8 +156,8 @@ void Scm_Init_termios(void)
     Scm_Init_termiolib(mod);
 
 #ifndef __MINGW32__
-    Scm_InitBuiltinClass(&Scm_SysTermiosClass, "<sys-termios>",
-                         termios_slots, sizeof(ScmSysTermios), mod);
+    Scm_InitStaticClass(&Scm_SysTermiosClass, "<sys-termios>", mod,
+                        termios_slots, 0);
 
     /* Constants for termios.  Non-POSIX symbols are guarded by #ifdef's */
 #define DEFSYM(sym) \

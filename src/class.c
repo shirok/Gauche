@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.113 2004-07-12 21:58:21 shirok Exp $
+ *  $Id: class.c,v 1.114 2004-10-09 11:36:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -55,7 +55,7 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
-static void   initialize_builtin_cpl(ScmClass *klass);
+static void   initialize_builtin_cpl(ScmClass *klass, ScmObj supers);
 
 static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old);
 static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
@@ -293,18 +293,19 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
  *    define the static part of the class; it is done by one of the
  *    SCM_DEFINE_***_CLASS macros provided in gauche.h, and it defines
  *    static instance of ScmClass structure.  Then, in the initialization
- *    phase, you have to call Scm_InitBuiltinClass to initialize the dynamic
+ *    phase, you have to call Scm_InitStaticClass to initialize the dynamic
  *    part of the structure.
  *
- *      void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
- *                                ScmClassStaticSlotSpec *slots,
- *                                int withMeta, ScmModule *mod)
+ *      void Scm_InitStaticClass(ScmClass *klass, const char *name,
+ *                               ScmModule *mod,
+ *                               ScmClassStaticSlotSpec *slots,
+ *                               int flags)
  *
  *         This function fills the ScmClass structure that can't be
  *         defined statically, and inserts the binding from the named
  *         symbol to the class object in the specified module.
- *         If withMeta is true, a metaclass is also created for
- *         this class.
+ *         The 'flags' arg is reserved for future use, and must be 0
+ *         for the time being.
  *
  *    See comments in gauche.h (around "Class categories") about
  *    the categories of C-defined classes.
@@ -773,7 +774,7 @@ static ScmClass *make_implicit_meta(const char *name,
     meta->print = class_print;
     meta->cpa = metas;
     meta->flags = SCM_CLASS_ABSTRACT;
-    initialize_builtin_cpl(meta);
+    initialize_builtin_cpl(meta, SCM_FALSE);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(meta));
     meta->slots = Scm_ClassClass.slots;
     meta->accessors = Scm_ClassClass.accessors;
@@ -2593,8 +2594,10 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
     { NULL }
 };
 
-/* booting class metaobject */
-static void initialize_builtin_cpl(ScmClass *klass)
+/*
+ * Sets up CPL from CPA
+ */
+static void initialize_builtin_cpl(ScmClass *klass, ScmObj supers)
 {
     ScmClass **p;
     ScmObj h = SCM_NIL, t;
@@ -2602,31 +2605,60 @@ static void initialize_builtin_cpl(ScmClass *klass)
     SCM_APPEND1(h, t, SCM_OBJ(klass));
     for (p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));
     klass->cpl = h;
-    if (SCM_PAIRP(SCM_CDR(h))) {
+    if (SCM_PAIRP(supers)) {
+        /* Check validity of the given supers. */
+        ScmObj cp, sp = supers;
+        SCM_FOR_EACH(cp, klass->cpl) {
+            if (SCM_EQ(SCM_CAR(cp), SCM_CAR(sp))) {
+                sp = SCM_CDR(sp);
+                if (SCM_NULLP(sp)) break;
+            }
+        }
+        if (!SCM_NULLP(sp)) {
+            /* NB: At this point we may not have initialized error handing
+               mechanism, so we have no option but quit. */
+            const char *cname = "(unnamed class)";
+            if (SCM_STRINGP(klass->name)) {
+                cname = Scm_GetStringConst(SCM_STRING(klass->name));
+            }
+            Scm_Panic("Class %s is being initialized with inconsistent super class list.  Must be an implementation error.  Report to the author.", cname);
+        }
+        klass->directSupers = supers;
+    } else if (SCM_PAIRP(SCM_CDR(h))) {
+        /* Default: take the next class of CPL as the only direct super */
         klass->directSupers = SCM_LIST1(SCM_CADR(h));
     } else {
+        /* Should this happen? */
         klass->directSupers = SCM_NIL;
     }
 }
 
-void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
-                          ScmClassStaticSlotSpec *specs,
-                          int withMeta, ScmModule *mod)
+/*
+ * A common part for builtin class initialization
+ */
+static void init_class(ScmClass *klass, 
+                       const char *name,
+                       ScmModule *mod,
+                       ScmObj supers,  /* SCM_FALSE if using default */
+                       ScmClassStaticSlotSpec *specs,
+                       int flags)  /* reserved */
 {
     ScmObj slots = SCM_NIL, t = SCM_NIL;
     ScmObj acc = SCM_NIL, sp;
-    ScmObj s;
     ScmClass **super;
 
-    /* initialize slots and CPL */
+    /* set class name first, for it may be used by error messages. */
+    klass->name = SCM_INTERN(name);
+
+    /* initialize CPL and directSupers */
     if (klass->cpa == NULL) {
 	klass->cpa = SCM_CLASS_DEFAULT_CPL;
     }
+    initialize_builtin_cpl(klass, supers);
 
-    klass->name = s = SCM_INTERN(name);
-    initialize_builtin_cpl(klass);
-    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(klass));
-
+    /* insert binding */
+    Scm_Define(mod, SCM_SYMBOL(klass->name), SCM_OBJ(klass));
+    
     /* initialize direct slots */
     if (specs) {
         for (;specs->name; specs++) {
@@ -2661,20 +2693,70 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
     }
     klass->slots = slots;
     klass->accessors = acc;
+}
 
-    /* calculate metaclass */
+/*
+ * Inter-module API
+ */
+
+/* The most standard way to initialize a class. */
+void Scm_InitStaticClass(ScmClass *klass,
+                         const char *name,
+                         ScmModule *mod,
+                         ScmClassStaticSlotSpec *specs,
+                         int flags) /* reserved */
+{
+    init_class(klass, name, mod, SCM_FALSE, specs, flags);
+}
+
+/* If the builtin class needs multiple inheritance... */
+void Scm_InitStaticClassWithSupers(ScmClass *klass,
+                                   const char *name,
+                                   ScmModule *mod,
+                                   ScmObj supers,
+                                   ScmClassStaticSlotSpec *specs,
+                                   int flags) /* reserved */
+{
+    init_class(klass, name, mod, supers, specs, flags);
+}
+
+/* A special initialization for some of builtin classes.
+   Creates metaclass automatically.   Extensions shouldn't use
+   this function; the implicit metaclass would be removed in future */
+void Scm__InitStaticClassWithMeta(ScmClass *klass,
+                                  const char *name,
+                                  ScmModule *mod,
+                                  ScmClassStaticSlotSpec *specs,
+                                  int flags)
+{
+    int nlen;
+    char *metaname;
+    
+    init_class(klass, name, mod, SCM_FALSE, specs, flags);
+    
+    nlen = strlen(name);
+    metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
+
+    if (name[nlen - 1] == '>') {
+        strncpy(metaname, name, nlen-1);
+        strcpy(metaname+nlen-1, "-meta>");
+    } else {
+        strcpy(metaname, name);
+        strcat(metaname, "-meta");
+    }
+    SCM_SET_CLASS(klass, make_implicit_meta(metaname, klass->cpa, mod));
+}
+
+/* The old API - deprecated.  We keep this around for a while
+   for backward compatibility. */
+void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
+                          ScmClassStaticSlotSpec *specs,
+                          int withMeta, ScmModule *mod)
+{
     if (withMeta) {
-        int nlen = strlen(name);
-        char *metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
-
-        if (name[nlen - 1] == '>') {
-            strncpy(metaname, name, nlen-1);
-            strcpy(metaname+nlen-1, "-meta>");
-        } else {
-            strcpy(metaname, name);
-            strcat(metaname, "-meta");
-        }
-        SCM_SET_CLASS(klass, make_implicit_meta(metaname, klass->cpa, mod));
+        Scm__InitStaticClassWithMeta(klass, name, mod, specs, 0);
+    } else {
+        Scm_InitStaticClass(klass, name, mod, specs, 0);
     }
 }
 
@@ -2718,10 +2800,10 @@ void Scm__InitClass(void)
     Scm_TopClass.cpa = nullcpa;
 
 #define BINIT(cl, nam, slots) \
-    Scm_InitBuiltinClass(cl, nam, slots, FALSE, mod)
+    Scm_InitStaticClass(cl, nam, mod, slots, 0)
 
 #define CINIT(cl, nam) \
-    Scm_InitBuiltinClass(cl, nam, NULL, TRUE, mod)
+    Scm__InitStaticClassWithMeta(cl, nam, mod, NULL, 0)
     
     /* class.c */
     BINIT(SCM_CLASS_CLASS,  "<class>", class_slots);

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: thrlib.stub,v 1.7 2003-07-05 03:29:11 shirok Exp $
+;;; $Id: thrlib.stub,v 1.8 2004-10-09 11:36:36 shirok Exp $
 ;;;
 
 "
@@ -202,14 +202,14 @@
 
 "static ScmClass *thread_exception_cpa[] = {
    SCM_CLASS_STATIC_PTR(Scm_ThreadExceptionClass),
-   SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
+   SCM_CLASS_STATIC_PTR(Scm_ConditionClass),
    SCM_CLASS_STATIC_PTR(Scm_TopClass),
    NULL
  };"
 
 (define-cclass <thread-exception>
   "ScmThreadException*" "Scm_ThreadExceptionClass"
-  ("Scm_ExceptionClass")
+  ("Scm_ConditionClass")
   ((thread :type <thread>))
   (allocator (c "thread_exception_allocate"))
   (printer   (c "thread_exception_print")))

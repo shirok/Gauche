@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.50 2004-08-01 05:41:22 shirok Exp $
+ *  $Id: error.c,v 1.51 2004-10-09 11:36:37 shirok Exp $
  */
 
 #include <errno.h>
@@ -42,49 +42,55 @@
 #include "gauche/vm.h"
 #include "gauche/builtin-syms.h"
 
-static void   error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-static ScmObj error_allocate(ScmClass *klass, ScmObj initargs);
+static void   message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
+static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs);
+
+/* Setting up CPL is a bit tricky, since we have multiple
+   inheritance case. */
+
+#define CONDITION_CPL                           \
+    SCM_CLASS_STATIC_PTR(Scm_ConditionClass),   \
+    SCM_CLASS_STATIC_PTR(Scm_TopClass)
+
+#define MESSAGE_SERIOUS_CPL \
+    SCM_CLASS_STATIC_PTR(Scm_MessageConditionClass), \
+    SCM_CLASS_STATIC_PTR(Scm_SeriousConditionClass), \
+    CONDITION_CPL
+
+#define ERROR_CPL \
+    SCM_CLASS_STATIC_PTR(Scm_ErrorClass),        \
+    MESSAGE_SERIOUS_CPL
 
 /*-----------------------------------------------------------
- * Exception class hierarchy
- *
- * NB: Srfi-35 uses the term "condition" instead of "exception".
- * I'm still pondering how I can integrate srfi-35/36 to our
- * exception hierarchy.
- *
- *      <exception>
- *        <thread-exception>
- *          <join-timeout-exception>
- *          <abandoned-mutex-exception>
- *          <terminated-thread-exception>
- *          <uncaught-exception>
- *        <error>
- *          <system-error>
- *          <read-error>
+ * Base conditions
  */
-
-static ScmClass *exception_cpl[] = {
-    SCM_CLASS_STATIC_PTR(Scm_ErrorClass),
-    SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+static ScmClass *condition_cpl[] = {
+    CONDITION_CPL,
     NULL
 };
 
-SCM_DEFINE_ABSTRACT_CLASS(Scm_ExceptionClass, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BASE_CLASS(Scm_ConditionClass, ScmInstance,
+                      NULL, NULL, NULL,
+                      NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BASE_CLASS(Scm_MessageConditionClass, ScmMessageCondition,
+                      message_print, NULL, NULL,
+                      message_allocate, condition_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_SeriousConditionClass, ScmSeriousCondition,
+                      NULL, NULL, NULL,
+                      NULL, condition_cpl);
 
-SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
-                      error_print, NULL, NULL, 
-                      error_allocate, exception_cpl+1);
-SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
-                      error_print, NULL, NULL,
-                      syserror_allocate, exception_cpl);
-SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
-                      error_print, NULL, NULL,
-                      readerror_allocate, exception_cpl);
+static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmCondition *c = SCM_ALLOCATE(ScmCondition, klass);
+    SCM_SET_CLASS(c, klass);
+    return SCM_OBJ(c);
+}
 
-static void error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmClass *k = SCM_CLASS_OF(obj);
     Scm_Printf(port, "#<%A \"%30.1A\">",
@@ -92,13 +98,50 @@ static void error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                SCM_ERROR_MESSAGE(obj));
 }
 
-static ScmObj error_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj message_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmError *e = SCM_ALLOCATE(ScmError, klass);
     SCM_SET_CLASS(e, klass);
     e->message = SCM_FALSE;     /* would be set by initialize */
     return SCM_OBJ(e);
 }
+
+static ScmObj message_get(ScmMessageCondition *obj)
+{
+    return SCM_MESSAGE_CONDITION(obj)->message;
+}
+
+static void message_set(ScmMessageCondition *obj, ScmObj val)
+{
+    obj->message = val;
+}
+
+static ScmClassStaticSlotSpec message_slots[] = {
+    SCM_CLASS_SLOT_SPEC("message", message_get, message_set),
+    { NULL }
+};
+
+/*------------------------------------------------------------
+ * Errors
+ */
+
+static ScmClass *error_cpl[] = {
+    ERROR_CPL,
+    NULL
+};
+
+SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
+                      message_print, NULL, NULL, 
+                      message_allocate, error_cpl+1);
+SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
+                      message_print, NULL, NULL,
+                      syserror_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOErrorClass, ScmIOError,
+                      message_print, NULL, NULL, 
+                      message_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
+                      message_print, NULL, NULL,
+                      readerror_allocate, error_cpl);
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -117,16 +160,6 @@ static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
     e->port = NULL;                /* set by initialize */
     e->line = -1;                  /* set by initialize */
     return SCM_OBJ(e);
-}
-
-static ScmObj error_message_get(ScmError *obj)
-{
-    return SCM_ERROR_MESSAGE(obj);
-}
-
-static void error_message_set(ScmError *obj, ScmObj val)
-{
-    obj->message = val;
 }
 
 static ScmObj syserror_number_get(ScmSystemError *obj)
@@ -174,29 +207,115 @@ static void readerror_line_set(ScmReadError *obj, ScmObj val)
     obj->line = SCM_INT_VALUE(val);
 }
 
-static ScmClassStaticSlotSpec error_slots[] = {
-    SCM_CLASS_SLOT_SPEC("message", error_message_get,
-                        error_message_set),
-    { NULL }
-};
-
 static ScmClassStaticSlotSpec syserror_slots[] = {
-    SCM_CLASS_SLOT_SPEC("message", error_message_get,
-                        error_message_set),
     SCM_CLASS_SLOT_SPEC("errno", syserror_number_get,
                         syserror_number_set),
     { NULL }
 };
 
 static ScmClassStaticSlotSpec readerror_slots[] = {
-    SCM_CLASS_SLOT_SPEC("message", error_message_get,
-                        error_message_set),
     SCM_CLASS_SLOT_SPEC("port", readerror_port_get,
                         readerror_port_set),
     SCM_CLASS_SLOT_SPEC("line", readerror_line_get,
                         readerror_line_set),
     { NULL }
 };
+
+/*------------------------------------------------------------
+ * Compound conditions
+ */
+
+static ScmClass *compound_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_CompoundConditionClass),
+    SCM_CLASS_STATIC_PTR(Scm_SeriousConditionClass),
+    CONDITION_CPL,
+    NULL
+};
+
+SCM_DEFINE_BASE_CLASS(Scm_CompoundConditionClass, ScmCompoundCondition,
+                      NULL, NULL, NULL, 
+                      compound_allocate, compound_cpl+2);
+SCM_DEFINE_BASE_CLASS(Scm_SeriousCompoundConditionClass, ScmCompoundCondition,
+                      NULL, NULL, NULL, 
+                      compound_allocate, compound_cpl);
+
+static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmCompoundCondition *e = SCM_ALLOCATE(ScmCompoundCondition, klass);
+    SCM_SET_CLASS(e, klass);
+    e->conditions = SCM_NIL;
+    return SCM_OBJ(e);
+}
+
+ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL, cp, cond;
+    int serious = FALSE;
+    int nconds = Scm_Length(conditions);
+    
+    /* some boundary cases */
+    if (nconds < 0) {
+        Scm_Error("Scm_MakeCompoundCondition: list required, but got %S",
+                  conditions);
+    }
+    if (nconds == 0) {
+        return compound_allocate(SCM_CLASS_COMPOUND_CONDITION, SCM_NIL);
+    }
+    if (nconds == 1) {
+        if (!SCM_CONDITIONP(SCM_CAR(cp))) {
+            Scm_Error("make-compound-condition: given non-condition object: %S", SCM_CAR(cp));
+        }
+        return SCM_CAR(cp);
+    }
+
+    /* collect conditions and creates compound one */
+    SCM_FOR_EACH(cp, conditions) {
+        ScmObj c = SCM_CAR(cp);
+        if (!SCM_CONDITIONP(c)) {
+            Scm_Error("make-compound-condition: given non-condition object: %S", SCM_CAR(cp));
+        }
+        if (SCM_SERIOUS_CONDITION_P(c)) {
+            serious = TRUE;
+        }
+        
+        if (SCM_COMPOUND_CONDITION_P(c)) {
+            ScmCompoundCondition *cc = SCM_COMPOUND_CONDITION(c);
+            SCM_APPEND(h, t, cc->conditions);
+        } else {
+            SCM_APPEND1(h, t, c);
+        }
+    }
+    cond = compound_allocate((serious?
+                              SCM_CLASS_COMPOUND_CONDITION :
+                              SCM_CLASS_SERIOUS_COMPOUND_CONDITION),
+                             SCM_NIL);
+    SCM_COMPOUND_CONDITION(cond)->conditions = h;
+    return cond;
+}
+
+static ScmObj conditions_get(ScmCompoundCondition *obj)
+{
+    return obj->conditions;
+}
+
+static void   conditions_set(ScmCompoundCondition *obj, ScmObj conds)
+{
+    ScmObj cp, eobj;
+    SCM_FOR_EACH(cp, conds) {
+        if (!SCM_CONDITIONP(SCM_CAR(cp))) goto err;
+    }
+    if (!SCM_NULLP(cp)) {
+      err:
+        Scm_Error("conditions slot of a compound condition must be a list of conditions, but got %S", conds);
+    }
+    obj->conditions = conds;
+}
+
+static ScmClassStaticSlotSpec compound_slots[] = {
+    SCM_CLASS_SLOT_SPEC("conditions", conditions_get, conditions_set),
+    { NULL }
+};
+
 
 /*
  * C-level Constructors
@@ -214,7 +333,7 @@ ScmObj Scm_MakeThreadException(ScmClass *klass, ScmVM *thread)
 
 ScmObj Scm_MakeError(ScmObj message)
 {
-    ScmError *e = SCM_ERROR(error_allocate(SCM_CLASS_ERROR, SCM_NIL));
+    ScmError *e = SCM_ERROR(message_allocate(SCM_CLASS_ERROR, SCM_NIL));
     e->message = message;
     return SCM_OBJ(e);
 }
@@ -546,14 +665,39 @@ extern void Scm_Init_exclib(ScmModule *module);
 void Scm__InitExceptions(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    Scm_InitBuiltinClass(SCM_CLASS_EXCEPTION, "<exception>",
-                         NULL, FALSE, mod);
-    Scm_InitBuiltinClass(SCM_CLASS_ERROR, "<error>",
-                         error_slots, FALSE, mod);
-    Scm_InitBuiltinClass(SCM_CLASS_SYSTEM_ERROR, "<system-error>",
-                         syserror_slots, FALSE, mod);
-    Scm_InitBuiltinClass(SCM_CLASS_READ_ERROR, "<read-error>",
-                         readerror_slots, FALSE, mod);
+
+    ScmObj mes_ser_supers
+        = SCM_LIST2(SCM_OBJ(SCM_CLASS_MESSAGE_CONDITION),
+                    SCM_OBJ(SCM_CLASS_SERIOUS_CONDITION));
+    ScmObj com_ser_supers
+        = SCM_LIST2(SCM_OBJ(SCM_CLASS_COMPOUND_CONDITION),
+                    SCM_OBJ(SCM_CLASS_SERIOUS_CONDITION));
+
+    Scm_InitStaticClass(SCM_CLASS_CONDITION, "<condition>",
+                        mod, NULL, 0);
+    Scm_InitStaticClass(SCM_CLASS_SERIOUS_CONDITION, "<serious-condition>",
+                        mod, NULL, 0);
+    Scm_InitStaticClass(SCM_CLASS_MESSAGE_CONDITION, "<message-condition>",
+                        mod, message_slots, 0);
+
+    Scm_InitStaticClassWithSupers(SCM_CLASS_ERROR, "<error>",
+                                  mod, mes_ser_supers,
+                                  message_slots, 0);
+    Scm_InitStaticClass(SCM_CLASS_SYSTEM_ERROR, "<system-error>",
+                        mod, syserror_slots, 0);
+    Scm_InitStaticClass(SCM_CLASS_READ_ERROR, "<read-error>",
+                        mod, readerror_slots, 0);
+    Scm_InitStaticClass(SCM_CLASS_READ_ERROR, "<io-error>",
+                        mod, NULL, 0);
+
+    Scm_InitStaticClass(SCM_CLASS_COMPOUND_CONDITION,
+                        "<compound-condition>",
+                        mod, compound_slots, 0);
+    Scm_InitStaticClassWithSupers(SCM_CLASS_SERIOUS_COMPOUND_CONDITION,
+                                  "<serious-compound-condition>",
+                                  mod, com_ser_supers, compound_slots, 0);
+
+
     Scm_Init_exclib(mod);
 }
 

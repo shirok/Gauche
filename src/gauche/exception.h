@@ -30,13 +30,192 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.4 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: exception.h,v 1.5 2004-10-09 11:36:37 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
 #define GAUCHE_EXCEPTION_H
 
-/* Thread exceptions */
+/* Condition class hierarchy
+ 
+  <condition> ; srfi-35
+    +- <compound-condition>
+    +- <serious-condition> ; srfi-35
+    |    +- <serious-compound-condition> ; also inherits <compound-condition>
+    +- <message-condition> ; srfi-35
+    |    +- <application-exit>           ; also inherits <serious-condition>
+    |    +- <error>             ; srfi-35, also inherits <serious-condition>
+    |         +- <system-error>
+    |         +- <read-error> ; srfi-36
+    |         +- <io-error>   ; srfi-36
+    |              +- <port-error> ; srfi-36
+    |              |    +- <io-read-error>   ; srfi-36
+    |              |    +- <io-write-error>  ; srfi-36
+    |              |    +- <io-closed-error> ; srfi-36
+    |              +- <filename-error> ; srfi-36
+    |                   +- <malformed-filename-error>  ; srfi-36
+    |                   +- <file-protection-error>     ; srfi-36
+    |                   +- <file-is-read-only-error> ; srfi-36
+    |                   +- <file-already-exists-error> ; srfi-36
+    |                   +- <no-such-file-error>        ; srfi-36
+    +- <thread-exception> ; srfi-18
+         +- <join-timeout-exception>      ; srfi-18
+         +- <abandoned-mutex-exception>   ; srfi-18
+         +- <terminated-thread-exception> ; srfi-18
+         +- <uncaught-exception>          ; srfi-18
+*/
+
+/*---------------------------------------------------
+ * Base conditions.
+ */
+
+/* <condition> : root of all condition types. */
+typedef ScmInstance ScmCondition;
+
+SCM_CLASS_DECL(Scm_ConditionClass);
+#define SCM_CLASS_CONDITION        (&Scm_ConditionClass)
+#define SCM_CONDITIONP(obj)        SCM_ISA(obj, SCM_CLASS_CONDITION)
+
+/* <message-condition> : condition with message. */
+typedef struct ScmMessageConditionRec {
+    ScmCondition common;
+    ScmObj message;             /* message */
+} ScmMessageCondition;
+
+SCM_CLASS_DECL(Scm_MessageConditionClass);
+#define SCM_CLASS_MESSAGE_CONDITION  (&Scm_MessageConditionClass)
+#define SCM_MESSAGE_CONDITION_P(obj) SCM_ISA(obj, SCM_CLASS_MESSAGE_CONDITION)
+#define SCM_MESSAGE_CONDITION(obj)   ((ScmMessageCondition*)(obj))
+
+/* <serious-condition> : condition which can't be restarted */
+typedef ScmCondition ScmSeriousCondition;
+
+SCM_CLASS_DECL(Scm_SeriousConditionClass);
+#define SCM_CLASS_SERIOUS_CONDITION  (&Scm_SeriousConditionClass)
+#define SCM_SERIOUS_CONDITION_P(obj) SCM_ISA(obj, SCM_CLASS_SERIOUS_CONDITION)
+#define SCM_SERIOUS_CONDITION(obj)   ((ScmSeriousCondition*)(obj))
+
+/*---------------------------------------------------
+ * Errors
+ */
+
+/* <error>: root of all errors. */
+typedef ScmMessageCondition ScmError;
+
+SCM_CLASS_DECL(Scm_ErrorClass);
+#define SCM_CLASS_ERROR            (&Scm_ErrorClass)
+#define SCM_ERRORP(obj)            SCM_ISA(obj, SCM_CLASS_ERROR)
+#define SCM_ERROR(obj)             ((ScmError*)(obj))
+#define SCM_ERROR_MESSAGE(obj)     SCM_ERROR(obj)->message
+
+SCM_EXTERN ScmObj Scm_MakeError(ScmObj message);
+
+/* <system-error>: error from system calls */
+typedef struct ScmSystemErrorRec {
+    ScmError common;
+    int error_number;           /* errno */
+} ScmSystemError;
+    
+SCM_CLASS_DECL(Scm_SystemErrorClass);
+#define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
+#define SCM_SYSTEM_ERROR(obj)      ((ScmSystemError*)(obj))
+#define SCM_SYSTEM_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_SYSTEM_ERROR)
+
+SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
+
+/* <read-error>: error from the reader */
+typedef struct ScmReadErrorRec {
+    ScmError common;
+    ScmPort *port;              /* input port where we're reading from. */
+    int line;                   /* line number (if available), or -1 */
+} ScmReadError;
+
+SCM_CLASS_DECL(Scm_ReadErrorClass);
+#define SCM_CLASS_READ_ERROR     (&Scm_ReadErrorClass)
+#define SCM_READ_ERROR(obj)      ((ScmReadError*)(obj))
+#define SCM_READ_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_READ_ERROR)
+
+SCM_EXTERN ScmObj Scm_MakeReadError(ScmObj message, ScmPort *p, int line);
+
+/* <io-error>: abstract class for I/O related error. */
+typedef ScmError ScmIOError;
+
+SCM_CLASS_DECL(Scm_IOErrorClass);
+#define SCM_CLASS_IO_ERROR       (&Scm_IOErrorClass)
+#define SCM_IO_ERROR_P(obj)      SCM_ISA(obj, SCM_CLASS_IO_ERROR)
+
+/* <port-error>: Port related error, inherits <io-error> */
+typedef struct ScmPortErrorRec {
+    ScmIOError common;
+    ScmPort *port;              /* The port where I/O error occurs */
+} ScmPortError;
+
+SCM_CLASS_DECL(Scm_PortErrorClass);
+#define SCM_CLASS_PORT_ERROR     (&Scm_PortErrorClass)
+#define SCM_PORT_ERROR(obj)      ((ScmPortError*)(obj))
+#define SCM_PORT_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_PORT_ERROR)
+
+/* <io-read-error>, <io-write-error>, <io-closed-error> :
+   subclasses of port-error */
+
+typedef ScmPortError ScmIOReadError;
+typedef ScmPortError ScmIOWriteError;
+typedef ScmPortError ScmIOClosedError;
+
+SCM_CLASS_DECL(Scm_IOReadErrorClass);
+#define SCM_CLASS_IO_READ_ERROR      (&Scm_IOReadErrorClass)
+SCM_CLASS_DECL(Scm_IOWriteErrorClass);
+#define SCM_CLASS_IO_WRITE_ERROR     (&Scm_IOWriteErrorClass)
+SCM_CLASS_DECL(Scm_IOClosedErrorClass);
+#define SCM_CLASS_IO_CLOSED_ERROR    (&Scm_IOClosedErrorClass)
+
+/*---------------------------------------------------
+ * Compounders
+ */
+
+/* compound condition may automatically be an instance of
+   <serious-compound-condition> if any of its component
+   exception is an instance of <serious-condition>.
+
+   Compound condition never 'nests', i.e. any member of conditions
+   isn't a compound condition itself. */
+
+typedef struct ScmCompoundConditionRec {
+    ScmCondition common;
+    ScmObj conditions;          /* list of simple conditions */
+} ScmCompoundCondition;
+
+SCM_CLASS_DECL(Scm_CompoundConditionClass);
+#define SCM_CLASS_COMPOUND_CONDITION   (&Scm_CompoundConditionClass)
+#define SCM_COMPOUND_CONDITION(obj)    ((ScmCompoundCondition*)(obj))
+#define SCM_COMPOUND_CONDITION_P(obj)  SCM_ISA(obj, SCM_CLASS_COMPOUND_CONDITION)
+
+SCM_CLASS_DECL(Scm_SeriousCompoundConditionClass);
+#define SCM_CLASS_SERIOUS_COMPOUND_CONDITION (&Scm_SeriousCompoundConditionClass)
+#define SCM_SERIOUS_COMPOUND_CONDITION_P(obj) SCM_ISA(obj, SCM_CLASS_SERIOUS_COMPOUND_CONDITION)
+
+SCM_EXTERN ScmObj Scm_MakeCompoundCondition(ScmObj conditions);
+
+/*---------------------------------------------------
+ * Application exit
+ */
+
+/* <application-exit> */
+typedef struct ScmApplicationExitRec {
+    ScmMessageCondition common;
+    int  code;                  /* exit code */
+} ScmApplicationExit;
+
+SCM_CLASS_DECL(Scm_ApplicationExitClass);
+#define SCM_CLASS_APPLICATION_EXIT   (&Scm_ApplicationExitClass)
+#define SCM_APPLICATION_EXIT_P(obj)  SCM_ISA(obj, SCM_CLASS_APPLICATION_EXIT)
+
+SCM_EXTERN ScmObj Scm_MakeApplicationExit(int);
+
+/*---------------------------------------------------
+ * Thread exceptions
+ */
+
 typedef struct ScmThreadExceptionRec {
     SCM_HEADER;
     ScmVM *thread;              /* the thread that caused the exception */

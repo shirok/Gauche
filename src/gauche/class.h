@@ -1,7 +1,7 @@
 /*
  * class.h - Gauche object system private header
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.40 2004-05-21 21:34:28 shirok Exp $
+ *  $Id: class.h,v 1.41 2004-10-09 11:36:37 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -149,6 +149,12 @@ SCM_EXTERN void   Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void   Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m);
 
 SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
+
+SCM_EXTERN void   Scm__InitStaticClassWithMeta(ScmClass *klass,
+                                               const char *name,
+                                               ScmModule *mod,
+                                               ScmClassStaticSlotSpec *specs,
+                                               int flags);
 
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 SCM_EXTERN ScmGeneric Scm_GenericObjectHash;

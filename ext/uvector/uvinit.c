@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.5 2003-11-27 17:10:40 shirok Exp $
+ *  $Id: uvinit.c,v 1.6 2004-10-09 11:36:37 shirok Exp $
  */
 
 #include <gauche.h>
@@ -82,17 +82,17 @@ void Scm_Init_libgauche_uvector(void)
 
     SCM_INIT_EXTENSION(uvector);
     m = SCM_MODULE(SCM_FIND_MODULE("gauche.uvector", TRUE));
-    Scm_InitBuiltinClass(&Scm_UVectorClass,   "<uvector>",  NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_U8VectorClass,  "<u8vector>",  NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_S16VectorClass, "<s16vector>", NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_U16VectorClass, "<u16vector>", NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_S32VectorClass, "<s32vector>", NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_U32VectorClass, "<u32vector>", NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_S64VectorClass, "<s64vector>", NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_U64VectorClass, "<u64vector>", NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_F32VectorClass, "<f32vector>", NULL, TRUE, m);
-    Scm_InitBuiltinClass(&Scm_F64VectorClass, "<f64vector>", NULL, TRUE, m);
+    Scm__InitStaticClassWithMeta(&Scm_UVectorClass,   "<uvector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_S8VectorClass,  "<s8vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_U8VectorClass,  "<u8vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_S16VectorClass, "<s16vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_U16VectorClass, "<u16vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_S32VectorClass, "<s32vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_U32VectorClass, "<u32vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_S64VectorClass, "<s64vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_U64VectorClass, "<u64vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_F32VectorClass, "<f32vector>", m, NULL, 0);
+    Scm__InitStaticClassWithMeta(&Scm_F64VectorClass, "<f64vector>", m, NULL, 0);
 
     /* initialize constant values */
     t = Scm_Ash(SCM_MAKE_INT(1), 31);  /* 2^31 */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.10 2004-08-02 12:20:54 shirok Exp $
+ *  $Id: netdb.c,v 1.11 2004-10-09 11:36:36 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -545,12 +545,12 @@ ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags)
 
 void Scm_Init_NetDB(ScmModule *mod)
 {
-    Scm_InitBuiltinClass(&Scm_SysHostentClass, "<sys-hostent>",
-                         hostent_slots, sizeof(ScmSysHostent), mod);
-    Scm_InitBuiltinClass(&Scm_SysProtoentClass, "<sys-protoent>",
-                         protoent_slots, sizeof(ScmSysProtoent), mod);
-    Scm_InitBuiltinClass(&Scm_SysServentClass, "<sys-servent>",
-                         servent_slots, sizeof(ScmSysServent), mod);
+    Scm_InitStaticClass(&Scm_SysHostentClass, "<sys-hostent>", mod,
+                        hostent_slots, 0);
+    Scm_InitStaticClass(&Scm_SysProtoentClass, "<sys-protoent>", mod,
+                        protoent_slots, 0);
+    Scm_InitStaticClass(&Scm_SysServentClass, "<sys-servent>", mod,
+                        servent_slots, 0);
     SCM_INTERNAL_MUTEX_INIT(netdb_data.hostent_mutex);
     SCM_INTERNAL_MUTEX_INIT(netdb_data.protoent_mutex);
     SCM_INTERNAL_MUTEX_INIT(netdb_data.servent_mutex);
