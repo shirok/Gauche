@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.17 2001-02-08 07:13:33 shiro Exp $
+ *  $Id: vm.h,v 1.18 2001-02-08 20:49:07 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -130,8 +130,10 @@ struct ScmVMRec {
 
     ScmObj handlers;            /* chain of active dynamic handlers          */
 
-    ScmObj *sp;
-    ScmObj *stack;
+    ScmObj *sp;                 /* stack pointer */
+    ScmObj *stack;              /* bottom of allocated stack area */
+    ScmObj *stackBase;          /* base of current stack area  */
+    ScmObj *stackEnd;           /* end of current stack area */
     int stackSize;
 };
 
