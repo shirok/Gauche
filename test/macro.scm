@@ -76,6 +76,26 @@
                      ((a f) (j k o) () (q)))
             (nest3 ((a b c d e) (f g h i)) ((j) (k l m n) (o p)) () ((q r))))
 
+(define-syntax mixlevel1 (syntax-rules ()
+                           ((_ (?a ?b ...)) ((?a ?b) ...))))
+
+(test-macro "mixlevel1" ((1 2) (1 3) (1 4) (1 5) (1 6))
+            (mixlevel1 (1 2 3 4 5 6)))
+
+(define-syntax mixlevel2 (syntax-rules ()
+                           ((_ (?a ?b ...) ...)
+                            (((?a ?b) ...) ...))))
+
+(test-macro "mixlevel2" (((1 2) (1 3) (1 4)) ((2 3) (2 4) (2 5) (2 6)))
+            (mixlevel2 (1 2 3 4) (2 3 4 5 6)))
+
+(define-syntax mixlevel3 (syntax-rules ()
+                           ((_ ?a (?b ?c ...) ...)
+                            (((?a ?b ?c) ...) ...))))
+
+(test-macro "mixlevel3" (((1 2 3) (1 2 4) (1 2 5) (1 2 6))
+                         ((1 7 8) (1 7 9) (1 7 10)))
+            (mixlevel3 1 (2 3 4 5 6) (7 8 9 10)))
 
 (define-syntax hygiene (syntax-rules ()
                          ((_ ?a) (+ ?a 1))))
