@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.24 2004-10-06 08:54:56 shirok Exp $
+ *  $Id: portapi.c,v 1.25 2004-10-10 05:34:30 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-
@@ -84,7 +84,8 @@
     do {                                                                \
         if (SCM_PORT_CLOSED_P(port)) {                                  \
             UNLOCK(p);                                                  \
-            Scm_Error("I/O attempted on closed port: %S", (port));      \
+            Scm_PortError((port), SCM_PORT_ERROR_CLOSED,                \
+                          "I/O attempted on closed port: %S", (port));  \
         }                                                               \
     } while (0)
 #endif /* CLOSE_CHECK */
@@ -126,7 +127,8 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
         break;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for output: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
+                      "bad port type for output: %S", p);
     }
 }
 
@@ -174,7 +176,8 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         break;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for output: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
+                      "bad port type for output: %S", p);
     }
 }
 
@@ -220,7 +223,8 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         break;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for output: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
+                      "bad port type for output: %S", p);
     }
 }
 
@@ -265,7 +269,8 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
         break;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for output: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
+                      "bad port type for output: %S", p);
     }
 }
 
@@ -297,7 +302,8 @@ void Scm_FlushUnsafe(ScmPort *p)
         break;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for output: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
+                      "bad port type for output: %S", p);
     }
 }
 
@@ -316,7 +322,8 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
     LOCK(p);
     if (p->ungotten != SCM_CHAR_INVALID
         || p->scrcnt != 0) {
-        Scm_Error("pushback buffer overflow on port %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                      "pushback buffer overflow on port %S", p);
     }
     p->ungotten = c;
     UNLOCK(p);
@@ -355,7 +362,8 @@ void Scm_UngetbUnsafe(int b, ScmPort *p)
     LOCK(p);
     if (p->ungotten != SCM_CHAR_INVALID
         || p->scrcnt >= SCM_CHAR_MAX_BYTES-1) {
-        Scm_Error("pushback buffer overflow on port %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                      "pushback buffer overflow on port %S", p);
     }
     p->scratch[p->scrcnt++] = b;
     UNLOCK(p);
@@ -469,7 +477,8 @@ int Scm_GetbUnsafe(ScmPort *p)
             break;
         default:
             UNLOCK(p);
-            Scm_Error("bad port type for output: %S", p);
+            Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                          "bad port type for input: %S", p);
         }
     }
     UNLOCK(p);
@@ -499,7 +508,8 @@ static int getc_scratch_unsafe(ScmPort *p)
         SAFE_CALL(p, r = Scm_Getb(p));
         if (r == EOF) {
             UNLOCK(p);
-            Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+            Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                          "encountered EOF in middle of a multibyte character from port %S", p);
         }
         tbuf[i] = (char)r;
     }
@@ -557,7 +567,8 @@ int Scm_GetcUnsafe(ScmPort *p)
                     if (filled <= 0) {
                         /* TODO: make this behavior customizable */
                         UNLOCK(p);
-                        Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+                        Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                                      "encountered EOF in middle of a multibyte character from port %S", p);
                     }
                     if (filled >= rest) {
                         memcpy(p->scratch+p->scrcnt, p->src.buf.current, rest);
@@ -594,7 +605,8 @@ int Scm_GetcUnsafe(ScmPort *p)
             if (p->src.istr.current + nb > p->src.istr.end) {
                 /* TODO: make this behavior customizable */
                 UNLOCK(p);
-                Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+                Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                              "encountered EOF in middle of a multibyte character from port %S", p);
             }
             SCM_CHAR_GET(p->src.istr.current-1, c);
             p->src.istr.current += nb;
@@ -611,7 +623,8 @@ int Scm_GetcUnsafe(ScmPort *p)
         return c;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for input: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                      "bad port type for input: %S", p);
     }
     return 0;/*dummy*/
 }
@@ -709,7 +722,8 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
         return r;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for output: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                      "bad port type for input: %S", p);
     }
     return -1;                  /* dummy */
 }
@@ -893,7 +907,8 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     VMDECL;
     SHORTCUT(p, return Scm_PortSeekUnsafe(p, off, whence));
     if (SCM_PORT_CLOSED_P(p)) {
-        Scm_Error("attempt to seek on closed port: %S", p);
+        Scm_PortError(p, SCM_PORT_ERROR_CLOSED,
+                      "attempt to seek on closed port: %S", p);
     }
     LOCK(p);
     switch (SCM_PORT_TYPE(p)) {

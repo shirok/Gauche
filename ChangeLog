@@ -1,6 +1,11 @@
 2004-10-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c, src/portapi.c : revised to use Scm_PortError instead
+	  of Scm_Error when appropriate.
+	* src/read.c : replaced some Scm_Error by Scm_ReadError.
 	* src/error.c (Scm_PortError): added utility function.
+	  (Scm_PrintDefaultErrorHeading): use condition's class name to
+	  display the error message heading.
 	* src/vm.c (Scm_VMThrowException): changed the non-continuable
 	  exception check according to the new condition hierarchy.
 

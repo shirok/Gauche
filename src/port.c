@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.108 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: port.c,v 1.109 2004-10-10 05:34:30 shirok Exp $
  */
 
 #include <unistd.h>
@@ -485,7 +485,8 @@ static void bufport_flush(ScmPort *p, int cnt, int forcep)
         p->error = TRUE;
         /* TODO: can we raise an error here, or should we propagate
            it to the caller? */
-        Scm_Error("Couldn't flush port %S due to an error", p);
+        Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
+                      "Couldn't flush port %S due to an error", p);
     }
     if (nwrote >= 0 && nwrote < cursiz) {
         memmove(p->src.buf.buffer, p->src.buf.buffer+nwrote,
@@ -837,8 +838,9 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     if ((flags & O_ACCMODE) == O_RDONLY) dir = SCM_PORT_INPUT;
     else if ((flags & O_ACCMODE) == O_WRONLY) dir = SCM_PORT_OUTPUT;
     else Scm_Error("unsupported file access mode %d to open %s", flags&O_ACCMODE, path);
-    if (buffering < SCM_PORT_BUFFER_FULL || buffering > SCM_PORT_BUFFER_NONE)
+    if (buffering < SCM_PORT_BUFFER_FULL || buffering > SCM_PORT_BUFFER_NONE) {
         Scm_Error("bad buffering flag: %d", buffering);
+    }
     fd = open(path, flags, perm);
     if (fd < 0) return SCM_FALSE;
     bufrec.mode = buffering;
@@ -1160,7 +1162,8 @@ static void coding_port_recognize_encoding(ScmPort *port,
            serialized in Scm_Require. */
         Scm_Require(SCM_MAKE_STR("gauche/charconv"));
         if (Scm_CodingAwarePortHook == NULL) {
-            Scm_Error("couldn't load gauche.charconv module");
+            Scm_PortError(port, SCM_PORT_ERROR_OTHER,
+                          "couldn't load gauche.charconv module");
         }
     }
     data->source = Scm_CodingAwarePortHook(data->source, encoding);

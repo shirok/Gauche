@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.74 2004-09-17 10:39:04 shirok Exp $
+ *  $Id: read.c,v 1.75 2004-10-10 05:34:30 shirok Exp $
  */
 
 #include <stdio.h>
@@ -363,7 +363,7 @@ static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
             continue;
         case EOF:
           eof:
-            Scm_Error("encountered EOF inside nested multi-line comment (comment begins at line %d)", line);
+            Scm_ReadError(port, "encountered EOF inside nested multi-line comment (comment begins at line %d)", line);
         default:
             break;
         }
@@ -689,8 +689,9 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
         Scm_DStringPutc(&ds, '\\');
         Scm_DStringPutc(&ds, key);
         for (i=0; i<nread; i++) Scm_DStringPutc(&ds, (unsigned char)buf[i]);
-        Scm_Error("Bad '\\%c' escape sequence in a string literal: %s",
-                  key, Scm_DStringGetz(&ds));
+        Scm_ReadError(port,
+                      "Bad '\\%c' escape sequence in a string literal: %s",
+                      key, Scm_DStringGetz(&ds));
     }
     return r;
 }
@@ -1133,7 +1134,7 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
            serialized in Scm_Require. */
         Scm_Require(SCM_MAKE_STR("gauche/uvector"));
         if (Scm_ReadUvectorHook == NULL)
-            Scm_Error("couldn't load srfi-4 module");
+            Scm_ReadError(port, "couldn't load srfi-4 module");
     }
     return Scm_ReadUvectorHook(port, tag, ctx);
 }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.53 2004-10-09 23:06:34 shirok Exp $
+ *  $Id: error.c,v 1.54 2004-10-10 05:34:30 shirok Exp $
  */
 
 #include <errno.h>
@@ -711,20 +711,36 @@ void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
  * Default error reporter
  */
 
+/* The default procedure to display the header of error message.
+   E is a thrown condition, not necessarily an error object. */
+static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
+{
+    char *heading, *p;
+    if (SCM_CONDITIONP(e)) {
+        heading = Scm_GetString(SCM_STRING(Scm__InternalClassName(Scm_ClassOf(e))));
+        /* TODO: considring that the class name may contain multibyte
+           characters, we should use string-upcase here. */
+        for (p=heading; *p; p++) {
+            *p = toupper(*p);
+        }
+        if (SCM_MESSAGE_CONDITION_P(e)) {
+            Scm_Printf(out, "*** %s: %A\n", heading,
+                       SCM_MESSAGE_CONDITION(e)->message);
+        } else {
+            Scm_Printf(out, "*** %s\n", heading);
+        }
+    } else {
+        Scm_Printf(out, "*** ERROR: unhandled exeption: %S\n", e);
+    }
+}
+
 static void report_error_inner(ScmVM *vm, ScmObj e)
 {
     ScmObj stack = Scm_VMGetStackLite(vm), cp;
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
     int depth = 0;
 
-    if (SCM_ERRORP(e) && SCM_STRINGP(SCM_ERROR_MESSAGE(e))) {
-        SCM_PUTZ("*** ERROR: ", -1, err);
-        SCM_PUTS(SCM_STRING(SCM_ERROR_MESSAGE(e)), err);
-        SCM_PUTNL(err);
-    } else {
-        SCM_PUTZ("*** ERROR: unhandled exception: ", -1, err);
-        Scm_Printf(SCM_PORT(err), "%S\n", e);
-    }
+    Scm_PrintDefaultErrorHeading(e, err);
     SCM_PUTZ("Stack Trace:\n", -1, err);
     SCM_PUTZ("_______________________________________\n", -1, err);
     Scm_ShowStackTrace(err, stack, 0, 0, 0, FMT_ORIG);
