@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.20 2001-02-13 20:58:37 shiro Exp $
+ *  $Id: vm.h,v 1.21 2001-02-14 10:09:46 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -80,6 +80,7 @@ extern void Scm_CallCC(ScmObj body);
 typedef struct ScmVMActivationHistoryRec {
     struct ScmVMActivationHistoryRec *prev; /* previous history */
     ScmObj *stackBase;          /* saved stack base */
+    ScmContFrame *cont;         /* saved continuation frame chain */
 } ScmVMActivationHistory;
 
 
