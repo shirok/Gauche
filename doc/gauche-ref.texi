@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.234 2002-07-01 11:12:41 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.235 2002-07-03 01:18:39 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9735,6 +9735,12 @@ the code is executed or not.
 @node Comparison and sorting, System interface, Loading Programs, Core library
 @section Comparison and sorting
 @c NODE Èæ³Ó¤È¥½¡¼¥È
+
+@defun compare obj1 obj2
+@end defun
+
+@deffn {Generic Function} object-compare obj1 obj2
+@end deffn
 
 @defun sort list &optional cmfpn
 @defunx sort! list &optional cmfpn
