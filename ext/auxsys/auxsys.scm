@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.9 2004-04-10 12:14:17 fuyuki Exp $
+;;;  $Id: auxsys.scm,v 1.10 2004-04-11 05:29:27 fuyuki Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -48,6 +48,11 @@
 (dynamic-load "auxsys")
 
 ;; define alternatives if the platform doesn't support...
+
+(define sys-realpath
+  (if (symbol-bound? '%sys-realpath)
+      %sys-realpath
+      (lambda (path) (error "sys-realpath not supported on this platform"))))
 
 (define sys-gethostname
   (if (symbol-bound? '%sys-gethostname)
@@ -67,7 +72,8 @@
 (define sys-setenv
   (if (symbol-bound? '%sys-setenv)
     %sys-setenv
-    (lambda (var val val) (error "sys-setenv not supported on this platform"))))
+    (lambda (var val overwrite)
+      (error "sys-setenv not supported on this platform"))))
 
 (define sys-unsetenv
   (if (symbol-bound? '%sys-unsetenv)
@@ -91,5 +97,11 @@
   (if (symbol-bound? '%sys-gettimeofday)
     %sys-gettimeofday
     (lambda () (values (sys-time) 0))))
+
+(define sys-lchown
+  (if (symbol-bound? '%sys-lchown)
+      %sys-lchown
+      (lambda (path owner group)
+        (error "sys-lchown not supported on this platform"))))
 
 (provide "gauche/auxsys")
