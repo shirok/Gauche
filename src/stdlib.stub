@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.36 2001-03-31 21:44:07 shiro Exp $
+;;; $Id: stdlib.stub,v 1.37 2001-04-01 09:19:06 shiro Exp $
 ;;;
 
 
@@ -56,23 +56,43 @@
 
 (define-cproc = (arg0 arg1 &rest args)
   (inliner (case-nargs (2 "SCM_VM_NUMEQ2") (else #f)))
-  "  SCM_RETURN(Scm_NumEq(arg0, arg1, args));")
+  "  for (;;) {
+  if (Scm_NumCmp(arg0, arg1) != 0) return SCM_FALSE;
+  if (SCM_NULLP(args)) return SCM_TRUE;
+  arg1 = SCM_CAR(args); args = SCM_CDR(args);
+  }")
 
 (define-cproc < (arg0 arg1 &rest args)
   (inliner (case-nargs (2 "SCM_VM_NUMLT2") (else #f)))
-  "  SCM_RETURN(Scm_NumLt(arg0, arg1, args));")
+  "  for (;;) {
+  if (Scm_NumCmp(arg0, arg1) >= 0) return SCM_FALSE;
+  if (SCM_NULLP(args)) return SCM_TRUE;
+  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
+  }")
 
 (define-cproc <= (arg0 arg1 &rest args)
   (inliner (case-nargs (2 "SCM_VM_NUMLE2") (else #f)))
-  "  SCM_RETURN(Scm_NumLe(arg0, arg1, args));")
+  "  for (;;) {
+  if (Scm_NumCmp(arg0, arg1) > 0) return SCM_FALSE;
+  if (SCM_NULLP(args)) return SCM_TRUE;
+  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
+  }")
 
 (define-cproc > (arg0 arg1 &rest args)
   (inliner (case-nargs (2 "SCM_VM_NUMGT2") (else #f)))
-  "  SCM_RETURN(Scm_NumGt(arg0, arg1, args));")
+  "  for (;;) {
+  if (Scm_NumCmp(arg0, arg1) <= 0) return SCM_FALSE;
+  if (SCM_NULLP(args)) return SCM_TRUE;
+  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
+  }")
 
 (define-cproc >= (arg0 arg1 &rest args)
   (inliner (case-nargs (2 "SCM_VM_NUMGE2") (else #f)))
-  "  SCM_RETURN(Scm_NumGe(arg0, arg1, args));")
+  "  for (;;) {
+  if (Scm_NumCmp(arg0, arg1) < 0) return SCM_FALSE;
+  if (SCM_NULLP(args)) return SCM_TRUE;
+  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
+  }")
 
 (define-cproc zero? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) == 0));")
