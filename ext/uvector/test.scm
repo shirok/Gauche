@@ -252,4 +252,42 @@
                        f64vector->list list->f64vector
                        '#f64(0 -1.0 1.0) 1.0e64)))
 
+;;-------------------------------------------------------------------
+(test-section "collection interface")
+
+(use gauche.collection)
+(use gauche.sequence)
+
+(define (collection-tester class vec)
+  (and (eqv?   (fold + 0 vec) 10)
+       (equal? (map identity vec) '(1 2 3 4))
+       (eqv?   (find (lambda (e) (= e 2)) vec) 2)
+       (equal? (coerce-to class '(1 2 3 4)) vec)
+       (eqv?   (ref vec 2) 3)
+       (equal? (begin (set! (ref vec 1) 0)
+                      (coerce-to <list> vec))
+               '(1 0 3 4))
+       (equal? (coerce-to <vector> (subseq vec 1 3)) '#(0 3))))
+
+(test "s8vector collection interface" #t
+      (lambda () (collection-tester <s8vector> '#s8(1 2 3 4))))
+(test "u8vector collection interface" #t
+      (lambda () (collection-tester <u8vector> '#u8(1 2 3 4))))
+(test "s16vector collection interface" #t
+      (lambda () (collection-tester <s16vector> '#s16(1 2 3 4))))
+(test "u16vector collection interface" #t
+      (lambda () (collection-tester <u16vector> '#u16(1 2 3 4))))
+(test "s32vector collection interface" #t
+      (lambda () (collection-tester <s32vector> '#s32(1 2 3 4))))
+(test "u32vector collection interface" #t
+      (lambda () (collection-tester <u32vector> '#u32(1 2 3 4))))
+(test "s64vector collection interface" #t
+      (lambda () (collection-tester <s64vector> '#s64(1 2 3 4))))
+(test "u64vector collection interface" #t
+      (lambda () (collection-tester <u64vector> '#u64(1 2 3 4))))
+(test "f32vector collection interface" #t
+      (lambda () (collection-tester <f32vector> '#f32(1 2 3 4))))
+(test "f64vector collection interface" #t
+      (lambda () (collection-tester <f64vector> '#f64(1 2 3 4))))
+
 (test-end)
