@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.2 2002-06-25 11:51:08 shirok Exp $
+;;;  $Id: array.scm,v 1.3 2002-06-27 00:10:16 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -21,6 +21,7 @@
 (define-module gauche.array
   (use srfi-1)
   (use srfi-4)
+  (use srfi-11)
   (use gauche.collection)
   (use gauche.sequence)
   (use gauche.let-opt)
@@ -37,16 +38,29 @@
    (backing-storage-getter  :init-keyword :backing-storage-getter
                             :getter backing-storage-getter-of)
    (backing-storage-setter  :init-keyword :backing-storage-setter
-                            :setter backing-storage-setter-of))
+                            :getter backing-storage-setter-of))
   )
 
 (define-class <array-base> ()
   ((start-vector    :init-keyword :start-vector :getter start-vector-of)
    (end-vector      :init-keyword :end-vector   :getter end-vector-of)
    (mapper          :init-keyword :mapper       :getter mapper-of)
+   (getter          :getter getter-of)
+   (setter          :getter setter-of)
    (backing-storage :init-keyword :backing-storage
                     :getter backing-storage-of))
   :metaclass <array-meta>)
+
+(define-method initialize ((self <array-base>) initargs)
+  (next-method)
+  (let ((get   (backing-storage-getter-of (class-of self)))
+        (set   (backing-storage-setter-of (class-of self)))
+        (store (backing-storage-of self)))
+    (set! (slot-ref self 'getter)
+          (lambda (index) (get store index)))
+    (set! (slot-ref self 'setter)
+          (lambda (index value) (set store index value)))
+    ))
 
 (define-class <array> (<array-base>)
   ()
@@ -94,6 +108,7 @@
   (let* ((rank    (s32vector-length Vb))
          (indices (iota rank))
          (Vs      (s32vector-sub Ve Vb))
+         (-Vb     (map-to <s32vector> - Vb))
          (vcl     (fold-right (lambda (sN l) (cons (* sN (car l)) l))
                               '(1)
                               (s32vector->list Vs)))
@@ -109,7 +124,7 @@
                   (errorf "index of dimension ~s is too small: ~s"
                           i (ref Vi i))))
             (else
-             (s32vector-dot Vc Vi))))))
+             (s32vector-dot Vc (s32vector-add -Vb Vi)))))))
 
 ;;---------------------------------------------------------------
 ;; Shape
@@ -145,15 +160,10 @@
       )))
 
 (define (shape->start/end-vector shape)
-  (let* ((shape-vec  (backing-storage-of shape))
-         (shape-size (vector-length shape-vec)))
-    (with-builder (<s32vector> add-vb! get-vb)
-      (with-builder (<s32vector> add-ve! get-ve)
-        (do ((i 0 (+ i 2)))
-            ((= i shape-size)
-             (values (get-vb) (get-ve)))
-          (add-vb! (vector-ref shape-vec i))
-          (add-ve! (vector-ref shape-vec (+ i 1))))))))
+  (let* ((rank (array-end shape 0))
+         (cnt  (iota rank)))
+    (values (map-to <s32vector> (lambda (i) (array-ref shape i 0)) cnt)
+            (map-to <s32vector> (lambda (i) (array-ref shape i 1)) cnt))))
 
 ;;---------------------------------------------------------------
 ;; Make general array
@@ -193,9 +203,98 @@
   (unless (array? array) (error "array required, but got" array))
   (s32vector-ref (end-vector-of array) k))
 
-(define (array-ref array . indices)
-  ((backing-storage-getter-of (class-of array))
-   (backing-storage-of array)
-   (apply (mapper-of array) indices)))
+;;---------------------------------------------------------------
+;; Array ref and set!
+;;
+
+(define-method array-ref ((array <array-base>) (index <integer>) . more-index)
+  ((getter-of array)
+   ((mapper-of array) (cons index more-index))))
+
+(define-method array-ref ((array <array-base>) (index <vector>))
+  ((getter-of array) ((mapper-of array) index)))
+
+(define-method array-ref ((array <array-base>) (index <array>))
+  (unless (= (array-rank index) 1)
+    (error "index array must be rank 1" index))
+  ;; This is slow, but we don't know if the index array using 
+  ;; standard mapping.
+  ((getter-of array)
+   ((mapper-of array)
+    (map (pa$ array-ref index)
+         (iota (- (array-end index 0) (array-start index 0))
+               (array-start index 0))))))
+
+(define-method array-ref ((array <array-base>))
+  ;; special case - zero dimensional array
+  ((getter-of array) ((mapper-of array) '())))
+
+(define-method array-set! ((array <array-base>) (index <integer>) . more-index)
+  (receive (indices value)
+      (split-at! (cons index more-index) (length more-index))
+    ((setter-of array) ((mapper-of array) indices) (car value))))
+
+(define-method array-set! ((array <array-base>) (index <vector>) value)
+  ((setter-of array) ((mapper-of array) index) value))
+
+(define-method array-set! ((array <array-base>) (index <array>) value)
+  (unless (= (array-rank index) 1)
+    (error "index array must be rank 1" index))
+  ;; This is slow, but we don't know if the index array using 
+  ;; standard mapping.
+  ((setter-of array)
+   ((mapper-of array)
+    (map (pa$ array-ref index)
+         (iota (- (array-end index 0) (array-start index 0))
+               (array-start index 0))))
+   value))
+
+(define-method array-set! ((array <array-base>) value)
+  ;; special case - zero dimensional array
+  ((setter-of array) ((mapper-of array) '()) value))
+
+;;---------------------------------------------------------------
+;; Share array
+;;
+
+;; Given proc, calculates coefficients of affine mapper
+;; Rank is the rank of the new array returned by share-array, which is
+;; the same as the arity of proc.
+
+(define (affine-proc->coeffs proc rank)
+  (receive Cs (apply proc (make-list rank 0))
+    (let ((cvecs (map (lambda (_) (make-s32vector rank)) Cs))
+          (cnt   (iota rank)))
+      (dotimes (i rank)
+        (receive Ks (apply proc (map (lambda (j) (if (= j i) 1 0)) cnt))
+          (for-each (lambda (v k c) (set! (ref v i) (- k c))) cvecs Ks Cs)))
+      (values Cs cvecs))))
+
+;; given calculated coefficients vectors and constants for affine mapper,
+;; and the original mapping function, creates the new afiine mapper.
+(define (generate-shared-map omap constants coeffs)
+  (lambda (Vi)
+    (omap (map (lambda (ci cvec)
+                 (+ ci (s32vector-dot cvec Vi)))
+               constants coeffs))))
+
+(define (share-array array shape proc)
+  (let*-values (((Vb Ve) (shape->start/end-vector shape))
+                ((constants coeffs)
+                 (affine-proc->coeffs proc (size-of Vb)))
+                )
+    (make <array>
+      :start-vector Vb
+      :end-vector   Ve
+      :mapper (generate-shared-map (mapper-of array) constants coeffs)
+      :backing-storage (backing-storage-of array))))
+
+;;---------------------------------------------------------------
+;; Array utilities
+;;
+
+;(define (array-shape array)
+  
+
 
 (provide "gauche/array")
