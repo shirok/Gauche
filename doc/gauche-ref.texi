@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.422 2003-06-10 08:39:09 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.423 2003-06-10 20:13:21 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -15205,7 +15205,7 @@ is @code{#f}.
 検知したディスクリプタの数です。timeoutが経過したら0になるでしょう。
 2、3、4番目の値は、それぞれ読み込み、書き出し、例外のステータスを変更
 するディスクリプタの集合を含む@code{<fdset>}オブジェクトです。
-@var{readfds}、@{writefds}、@var{exceptfds}のうちの1つ以上に@code{#f}を
+@var{readfds}、@var{writefds}、@var{exceptfds}のうちの1つ以上に@code{#f}を
 渡すと、対応する戻り値は@code{#f}になります。
 @c COMMON
 
