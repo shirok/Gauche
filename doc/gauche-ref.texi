@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.241 2002-07-10 10:14:36 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.242 2002-07-12 11:15:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -15857,6 +15857,51 @@ Schemeオブジェクト@var{obj}の詳細情報を表示します。
 このメソッドをスペシャライズすることによりクラス毎に表示をカスタマイズできます。
 @c COMMON
 @end deffn
+
+@defun info symbol
+@c EN
+Displays a page of Gauche's info file that contains definition of
+the function or syntax specified by @var{symbol}.
+If an environment variable @code{INFOPATH} is defined,
+this function searches for the info file from the directories in it.
+Otherwise, this function guesses info file location from the
+@code{gosh}'s library directory.   If the info file can't be
+found, an error is signalled.   If the info file is found,
+but @var{symbol} is not in its index, an error is signalled as well.
+So this function doesn't work if you haven't installed info file.
+@c JP
+Gaucheのinfoドキュメント中から、
+@var{symbol}で指定される手続きか構文要素の定義を含んでいるページを表示します。
+infoドキュメントは、もし環境変数@code{INFOPATH}が定義されていればそこに
+示されるディレクトリ中から探され、そうでなければ@code{gosh}のライブラリディレクトリ
+から推測されるディレクトリ中から探されます。infoドキュメントが見付からなかったり、
+見付かっても@var{symbol}がIndexページ中に無かった場合はエラーとなります。
+つまり、この手続きはinfoファイルがインストールされていないと動作しません。
+@c COMMON
+
+@c EN
+If the current output port is a tty, the info page is displayed by
+a paging software.  If an environment variable @code{PAGER} is defined,
+it is used as a paging software.  Otherwise, this function looks for
+@code{less} and @code{more} in this order from the directories in
+@code{PATH}.  If none of them is found, or the output port is not
+a tty, this function just displays the page.
+@c JP
+現在の出力ポートが端末である場合、infoドキュメントの該当ページは
+ページングプログラムを用いて表示されます。環境変数@code{PAGER}が指定されていれば
+それを用い、そうでなければコマンドサーチパスから@code{less}及び@code{more}を
+この順で探します。いずれも見付からなかった場合や、出力ポートが端末では
+ない場合には、単にページがそのまま出力されます。
+@c COMMON
+
+@c EN
+The first invocation of this function in a session takes some time
+to parse the info file.
+@c JP
+この手続きのセッション中での最初の呼び出しは、infoファイルをパーズするために
+多少時間がかかります。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
 @node User-level logging, Networking, Interactive session, Library modules
