@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.48 2002-02-14 09:04:37 shirok Exp $
+ *  $Id: main.c,v 1.49 2002-04-17 00:41:38 shirok Exp $
  */
 
 #include <unistd.h>
@@ -159,6 +159,18 @@ int main(int argc, char **argv)
     /* For backward compatibility -- see the notes about SRFI-22 below. */
     if (getenv("GAUCHE_COMPAT_0_5") != NULL) {
         srfi22_mode = FALSE;
+    }
+
+    /* Special case; if the binary is invoked as "./gosh", we may be in
+       the source tree.  Adds . and ../lib to the library path.
+       This feature is turned off if we're run by root or suid-ed. */
+    if (strcmp(argv[0], "./gosh") == 0
+        && access("./gauche.h", R_OK) == 0
+        && access("./gauche-init.scm", R_OK) == 0
+        && access("../lib/gauche/object.scm", R_OK) == 0
+        && geteuid() != 0 && getuid() == geteuid()) {
+        Scm_AddLoadPath("../lib", FALSE);
+        Scm_AddLoadPath(".", FALSE);
     }
 
     argind = parse_options(argc, argv);
