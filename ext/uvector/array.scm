@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.2 2002-06-28 09:56:32 shirok Exp $
+;;;  $Id: array.scm,v 1.3 2002-06-28 19:16:41 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -30,7 +30,9 @@
           array-start array-end array-ref array-set!
           share-array
           array-shape array-length array-size array-equal?
-          array-for-each-index shape-for-each-index
+          array-for-each-index shape-for-each
+          tabulate-array array-retabulate!
+          array-map array-map! array->vector array->list
           )
   )
 (select-module gauche.array)
@@ -81,6 +83,19 @@
 ;; NB: these should be built-in; but here for now.
 (define-method copy-object ((self <vector>))
   (vector-copy self))
+
+;; reader and writer
+
+(define-method write-object ((self <array-base>) port)
+  (format port "#,~s"
+          (list* (class-name (class-of self))
+                 (array->list (array-shape self))
+                 (array->list self))))
+
+;; TODO: register read-ctor when subclass of <array-meta> is initialized.
+(define-reader-ctor '<array>
+  (lambda (sh . inits)
+    (apply array (apply shape sh) inits)))
 
 ;;-------------------------------------------------------------
 ;; Affine mapper
@@ -186,6 +201,9 @@
   (let* ((a   (make-array shape))
          (bv  (backing-storage-of a))
          (len (vector-length bv)))
+    (unless (= (length inits) len)
+      (errorf "array element initializer doesn't match the shape ~s: ~s"
+              (array->list shape) inits))
     (do ((i 0 (+ i 1))
          (inits inits (cdr inits)))
         ((= i len) a)
@@ -327,9 +345,30 @@
                                   (make-vector r 0))
             #t)))))
 
+;; returns a proc that applies proc to indices that is given by a vector.
+
+(define (array-index-applier rank)
+  (case rank
+    ((0) (lambda (proc vec) (proc)))
+    ((1) (lambda (proc vec) (proc (vector-ref vec 0))))
+    ((2) (lambda (proc vec) (proc (vector-ref vec 0) (vector-ref vec 1))))
+    ((3) (lambda (proc vec)
+           (proc (vector-ref vec 0) (vector-ref vec 1) (vector-ref vec 2))))
+    (else (lambda (proc vec)
+            (apply proc (vector->list vec))))))
+
 ;; repeat construct
 
 (define (array-for-each-int proc rank Vb Ve ind)
+  (define (list-loop dim vi applier)
+    (if (= dim rank)
+        (applier proc vi)
+        (let1 e (s32vector-ref Ve dim)
+          (do ((k (s32vector-ref Vb dim) (+ k 1)))
+              ((= k e))
+            (vector-set! vi dim k)
+            (list-loop (+ dim 1) vi applier)))))
+
   (define (vec-loop dim vi)
     (if (= dim rank)
         (proc vi)
@@ -348,7 +387,8 @@
             (array-set! ai dim k)
             (arr-loop (+ dim 1) ai)))))
   
-  (cond ((null? ind) (vec-loop 0 (make-vector rank)))
+  (cond ((null? ind) (list-loop 0 (make-vector rank)
+                                (array-index-applier rank)))
         ((vector? (car ind)) (vec-loop 0 (car ind)))
         ((array? (car ind)) (arr-loop 0 (car ind)))
         (else "bad index object (vector or array required)" (car ind))))
@@ -368,5 +408,112 @@
                         (map-to <s32vector> (cut array-ref sh <> 0) ser)
                         (map-to <s32vector> (cut array-ref sh <> 1) ser)
                         o)))
+
+(define (tabulate-array sh proc . o)
+  (let1 ar (make-array sh)
+    (cond
+     ((null? o)
+      (let ((iv (make-vector (array-end sh 0)))
+            (applier (array-index-applier (array-end sh 0))))
+        (shape-for-each-index sh (lambda (ind)
+                                   (array-set! ar ind (applier proc ind)))
+                              iv)))
+     ((or (vector? (car o)) (array? (car o)))
+      (shape-for-each-index sh (lambda (ind)
+                                 (array-set! ar ind (proc ind)))
+                            (car o)))
+     (else "bad index object (vector or array required)" (car o)))
+    ar))
+
+;; Mapping onto array.
+;;   array-retabulate!
+;;   array-map!
+;;   array-map
+;; These may take optional shape argument.  It is redundant, for the shape
+;; has to match the target array's shape anyway.  In Jussi's reference
+;; implementation, giving the shape allows some optimization.  In my
+;; implementation it's not much of use.  I keep it just for compatibility
+;; to Jussi's.
+
+(define-method array-retabulate! ((ar <array>) (sh <array>) (proc <procedure>) . o)
+  ;; need to check the shape sh matches the ar's shape.
+  (apply array-retabulate! ar proc o))
+
+(define-method array-retabulate! ((ar <array>) (proc <procedure>) . o)
+  (cond ((null? o)
+         (let ((applier (array-index-applier (array-rank ar))))
+           (array-for-each-index ar
+                                 (lambda (ind)
+                                   (array-set! ar ind
+                                               (applier proc ind)))
+                                 (make-vector (array-rank ar)))))
+        ((or (vector? (car o)) (array? (car o)))
+         (array-for-each-index ar
+                               (lambda (ind)
+                                 (array-set! ar ind (proc ind)))
+                               (car o)))
+        (else "bad index object (vector or array required)" (car o))))
+
+(define-method array-map! ((ar <array>) (sh <array>) (proc <procedure>) ar0 . more-arrays)
+  ;; need to check the shape sh matches the ar's shape.
+  (apply array-map! ar proc ar0 more-arrays))
+
+(define-method array-map! ((ar <array>) (proc <procedure>) ar0)
+  (array-for-each-index ar
+                        (lambda (ind)
+                          (array-set! ar ind (proc (array-ref ar0 ind))))))
+
+(define-method array-map! ((ar <array>) (proc <procedure>) ar0)
+  (array-for-each-index ar
+                        (lambda (ind)
+                          (array-set! ar ind (proc (array-ref ar0 ind))))))
+
+(define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1)
+  (array-for-each-index ar
+                        (lambda (ind)
+                          (array-set! ar ind
+                                      (proc (array-ref ar0 ind)
+                                            (array-ref ar1 ind))))))
+                        
+(define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1 ar2)
+  (array-for-each-index ar
+                        (lambda (ind)
+                          (array-set! ar ind
+                                      (proc (array-ref ar0 ind)
+                                            (array-ref ar1 ind)
+                                            (array-ref ar2 ind))))))
+
+(define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1 ar2 . more)
+  (let1 arlist (list* ar0 ar1 ar2 more)
+    (array-for-each-index ar
+                          (lambda (ind)
+                            (array-set! ar ind
+                                        (apply proc
+                                               (map (cut array-ref <> ind)
+                                                    arlist))))
+                          (make-vector (array-rank ar)))))
+
+(define-method array-map ((sh <array>) (proc <procedure>) ar0 . more)
+  (apply array-map proc ar0 more))
+
+(define-method array-map ((proc <procedure>) ar0 . more)
+  (let1 target (make-array (array-shape ar0))
+    (apply array-map! target proc ar0 more)))
+
+(define (array->vector ar)
+  (with-builder (<vector> add! get :size (array-size ar))
+    (array-for-each-index ar
+                          (lambda (ind)
+                            (add! (array-ref ar ind)))
+                          (make-vector (array-rank ar)))
+    (get)))
+
+(define (array->list ar)
+  (with-builder (<list> add! get)
+    (array-for-each-index ar
+                          (lambda (ind)
+                            (add! (array-ref ar ind)))
+                          (make-vector (array-rank ar)))
+    (get)))
 
 (provide "gauche/array")
