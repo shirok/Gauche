@@ -1,5 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/gauche.h)
+AC_CONFIG_HEADER(src/gauche/config.h)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -27,6 +28,11 @@ AC_PROG_GCC_TRADITIONAL
 dnl Add version macro
 GAUCHE_VERSION=`cat VERSION`
 AC_SUBST(GAUCHE_VERSION)
+dnl Hack to make this variable visible from config.h.  I don't know
+dnl the proper way to do it.
+cat >> confdefs.h <<EOF
+#define GAUCHE_VERSION "$GAUCHE_VERSION"
+EOF
 
 AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile 
           ext/uvector/Makefile
