@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.34 2002-06-17 05:41:04 shirok Exp $
+ *  $Id: charconv.c,v 1.35 2002-09-26 05:24:44 shirok Exp $
  */
 
 #include <string.h>
@@ -151,6 +151,10 @@ static int conv_input_filler(ScmPort *port, int mincnt)
                           info->fromCode, info->toCode);
             }
             if (info->ownerp) Scm_ClosePort(info->remote);
+#ifdef JCONV_DEBUG
+            fprintf(stderr, "<= r=%d (reset), out(%p)%d\n",
+                    result, outbuf, outroom);
+#endif
             return result;
         }
     } else {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.9 2002-06-17 05:41:04 shirok Exp $
+ *  $Id: jconv.c,v 1.10 2002-09-26 05:24:44 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -1294,6 +1294,12 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
 
 /* case (5) */
 #ifdef HAVE_ICONV_H
+/* NB: although iconv manages states, we need to keep track of whether
+ * we're sure in default status (JIS_ASCII) or not (we use JIS_UNKNOWN for it).
+ * It's because jconv_iconv_reset will be called twice if there is any
+ * reset sequence; the first call should emit the sequence, but the second
+ * call shoudn't.
+ */
 static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
                           char **optr, size_t *oroom)
 {
@@ -1302,6 +1308,7 @@ static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
     fprintf(stderr, "jconv_iconv %s->%s\n", info->fromCode, info->toCode);
 #endif
     r = iconv(info->handle, (char **)iptr, iroom, optr, oroom);
+    info->ostate = JIS_UNKNOWN;
     if (r == (size_t)-1) {
         if (errno == EINVAL) return INPUT_NOT_ENOUGH;
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
@@ -1315,11 +1322,14 @@ static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
 static size_t jconv_iconv_reset(ScmConvInfo *info, char *optr, size_t oroom)
 {
     size_t oroom_prev = oroom;
-    size_t r = iconv(info->handle, NULL, 0, &optr, &oroom);
+    size_t r;
+    if (info->ostate == JIS_ASCII) return 0;
+    r = iconv(info->handle, NULL, 0, &optr, &oroom);
     if (r == (size_t)-1) {
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
         Scm_Panic("jconv_iconv_reset: unknown error number %d\n", errno);
     }
+    info->ostate = JIS_ASCII;
     return oroom_prev - oroom;
 }
 #endif /*HAVE_ICONV_H*/
