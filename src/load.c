@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.50 2001-12-22 20:51:41 shirok Exp $
+ *  $Id: load.c,v 1.51 2002-01-14 04:51:18 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -64,6 +64,7 @@ struct load_packet {
     ScmModule *prev_module;
     ScmObj prev_port;
     ScmObj prev_history;
+    ScmObj prev_next;
 };
 
 /* Clean up */
@@ -75,6 +76,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     Scm_SelectModule(p->prev_module);
     vm->load_port = p->prev_port;
     vm->load_history = p->prev_history;
+    vm->load_next = p->prev_next;
     return SCM_UNDEFINED;
 }
 
@@ -98,7 +100,7 @@ static ScmObj load_body(ScmObj *args, int nargs, void *data)
     return load_cc(SCM_NIL, (void **)&p->port);
 }
 
-ScmObj Scm_VMLoadFromPort(ScmPort *port)
+ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths)
 {
     struct load_packet *p;
     ScmObj port_info;
@@ -114,7 +116,9 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
     p->prev_module = Scm_CurrentModule();
     p->prev_port = vm->load_port;
     p->prev_history = vm->load_history;
+    p->prev_next = vm->load_next;
 
+    vm->load_next = next_paths;
     vm->load_port = SCM_OBJ(port);
     if (SCM_PORTP(p->prev_port)) {
         port_info = SCM_LIST2(p->prev_port,
@@ -212,11 +216,12 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
  * Load
  */
 
-ScmObj Scm_VMLoad(ScmString *filename, int errorp)
+ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths, int errorp)
 {
-    ScmObj port, truename, load_paths = Scm_GetLoadPath();
+    ScmObj port, truename;
     ScmVM *vm = Scm_VM();
 
+    if (!SCM_PAIRP(load_paths)) load_paths = Scm_GetLoadPath();
     truename = Scm_FindFile(filename, &load_paths, errorp);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
     if (vm->runtimeFlags & SCM_LOAD_VERBOSE) {
@@ -225,15 +230,14 @@ ScmObj Scm_VMLoad(ScmString *filename, int errorp)
         while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
         Scm_Printf(SCM_CURERR, "Loading %A...\n", truename);
     }
-    vm->load_next = load_paths;
     port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)), "r");
     if (SCM_FALSEP(port)) {
-        if (errorp) 
+        if (errorp)
             Scm_Error("file %S exists, but couldn't open.", truename);
         else
             return SCM_FALSE;
     }
-    return Scm_VMLoadFromPort(SCM_PORT(port));
+    return Scm_VMLoadFromPort(SCM_PORT(port), load_paths);
 }
 
 void Scm_Load(const char *cpath, int errorp)

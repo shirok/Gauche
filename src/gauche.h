@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.202 2002-01-12 10:44:14 shirok Exp $
+ *  $Id: gauche.h,v 1.203 2002-01-14 04:51:18 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1740,16 +1740,6 @@ extern ScmClass Scm_ApplicationExitClass;
 
 ScmObj Scm_MakeApplicationExit(int);
 
-/* <signal> */
-typedef struct ScmSignalRec {
-    SCM_HEADER;
-    int sig;
-} ScmSignal;
-
-extern ScmClass Scm_SignalClass;
-#define SCM_CLASS_SIGNAL           (&Scm_SignalClass)
-#define SCM_SIGNAL_P(obj)          Scm_TypeP(obj, SCM_CLASS_SIGNAL)
-
 /*--------------------------------------------------------
  * REGEXP
  */
@@ -1929,8 +1919,8 @@ typedef struct ScmHeaderRec ScmSysFdset;
  * LOAD AND DYNAMIC LINK
  */
 
-extern ScmObj Scm_VMLoadFromPort(ScmPort *port);
-extern ScmObj Scm_VMLoad(ScmString *file, int error_if_not_found);
+extern ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths);
+extern ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, int error_if_not_exist);
 extern void Scm_LoadFromPort(ScmPort *port);
 extern void Scm_Load(const char *file, int error_if_not_found);
 
