@@ -1,3 +1,9 @@
+2003-07-19  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/Makefile.in : run relink before installing
+	  gosh with --relink option, so that the installed gosh dynamically
+	  links the proper libgauche.so.
+
 2003-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche-config.in, ext/Makefile.ext.in :

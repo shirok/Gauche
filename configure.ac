@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.5 2003-07-19 11:47:30 shirok Exp $
+dnl $Id: configure.ac,v 1.6 2003-07-20 05:09:38 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.1_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.5 $)
+AC_REVISION($Revision: 1.6 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -485,8 +485,26 @@ AC_SUBST(EXT_LIBGAUCHE)
 AC_SUBST(EXT_UVECTOR)
 AC_SUBST(LIBGAUCHE_SO)
 AC_SUBST(GOSH_USE_SHLIB)
-AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX",[Define to the suffix of dynamic loadable object])
+AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX")
 AC_MSG_RESULT($SHLIB_OK)
+
+dnl Check to see the linker takes --rpath flag via -Wl.
+cflags_save="$CFLAGS"
+CFLAGS="$CFLAGS -Wl,--rpath -Wl,/"
+AC_CACHE_CHECK([linker takes --rpath flag], ac_cv_linker_rpath_flag, [
+  AC_LINK_IFELSE([int main(void) {return 0;}],
+                 ac_cv_linker_rpath_flag=yes,
+                 ac_cv_linker_rpath_flag=no)])
+CFLAGS="$cflags_save"
+if test "$ac_cv_linker_rpath_flag" = "yes"; then
+  RPATH_TMP='-Wl,--rpath -Wl,`pwd`'
+  RPATH_REAL='-Wl,--rpath -Wl,$(LIB_INSTALL_DIR)'
+else
+  RPATH_TMP=
+  RPATH_REAL=
+fi
+AC_SUBST(RPATH_TMP)
+AC_SUBST(RPATH_REAL)
 
 dnl Sets some optimization flags by heuristics.
 AC_GAUCHE_OPTFLAGS
@@ -495,7 +513,7 @@ dnl ===========================================================
 dnl Add version macro
 GAUCHE_VERSION=$PACKAGE_VERSION
 AC_SUBST(GAUCHE_VERSION)
-AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION",[Gauche version string])
+AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
 changequote(<<, >>)dnl
 GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
 changequote([, ])dnl

@@ -51,12 +51,15 @@ RANLIB   = @RANLIB@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 SOEXT    = @SHLIB_DYLIB_SUFFIX@
+RPATH_TMP  = @RPATH_TMP@
+RPATH_REAL = @RPATH_REAL@
 
 # Main definition of compilation commands
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 CCLD      = $(CC)
-LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+LINK      = $(CCLD) $(CFLAGS) $(RPATH_TMP) $(LDFLAGS)
+RELINK    = $(CCLD) $(CFLAGS) $(RPATH_REAL) $(LDFLAGS)
 INSTALL   = @INSTALL@
 
 LIB_INSTALL_DIR  = @libdir@
@@ -116,7 +119,10 @@ all : gosh$(EXEEXT) libgauche.$(SOEXT)
 
 gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
-	$(LINK) $(gosh_LDFLAGS) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
+	$(LINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
+
+relink :
+	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
 $(OBJECTS) : $(HEADERS)
 
@@ -198,7 +204,7 @@ INSTALL_DIRS = $(DESTDIR)$(HEADER_INSTALL_DIR) \
 	       $(DESTDIR)$(SITE_SCM_DIR) \
 	       $(DESTDIR)$(SITE_ARCH_DIR)
 
-install : all
+install : all relink
 	$(MKINSTDIR) $(INSTALL_DIRS)
 	$(INSTALL) -m 444 $(INSTALL_HEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)
 	$(INSTALL) -m 444 $(INSTALL_SUBHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
