@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: uvinit.c,v 1.2 2003-05-28 13:17:37 shirok Exp $
+ *  $Id: uvinit.c,v 1.3 2003-05-30 12:12:11 shirok Exp $
  */
 
 #include <gauche.h>
@@ -57,7 +57,7 @@ extern void Scm_Init_uvlib(ScmModule *);
 SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
                                          ScmReadContext *ctx);
  
-void Scm_Init_libuvector(void)
+void Scm_Init_libgauche_uvector(void)
 {
     ScmModule *m;
     ScmObj t;

@@ -4,7 +4,7 @@ top_srcdir   = @top_srcdir@
 
 SCM_CATEGORY = gauche
 
-LIBFILES = libuvector.la
+LIBFILES = libgauche-uvector.la
 SCMFILES = array.scm uvector.scm
 HDRFILES = gauche/uvector.h
 
@@ -16,7 +16,7 @@ all : $(LIBFILES)
 uvector_OBJECTS = uvector_head.lo uvector.lo uvutil.lo \
                   uvinit.lo uvlib.lo uvector_tail.lo
 
-libuvector.la : $(uvector_OBJECTS) 
+libgauche-uvector.la : $(uvector_OBJECTS) 
 	$(MODLINK) $(uvector_OBJECTS) $(EXT_LIBGAUCHE)
 
 uvector_head.c uvector_tail.c :

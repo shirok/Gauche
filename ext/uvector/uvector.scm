@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.uvector - uniform vectors
 ;;;
-;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uvector.scm,v 1.5 2003-05-28 13:17:37 shirok Exp $
+;;;  $Id: uvector.scm,v 1.6 2003-05-30 12:12:11 shirok Exp $
 ;;;
 
 ;; This module defines the superset of SRFI-4, homogeneous numeric vector
@@ -28,7 +28,7 @@
   (export-all)
   )
 (select-module gauche.uvector)
-(dynamic-load "libuvector")
+(dynamic-load "libgauche-uvector")
 
 ;; collection protocol implementation
 (define-macro (%define-srfi-4-collection-interface tag)

@@ -10,7 +10,7 @@
 (test-start "mt-random")
 ;; instead of (use srfi-4) ...
 (if (member "." *load-path*)
-  (begin (add-load-path "../uvector")
+  (begin (eval '(add-load-path "../uvector") (interaction-environment))
          (load "uvector")
          (load "mt-random"))
   (begin (load "gauche/uvector")
