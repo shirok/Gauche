@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.25 2004-01-05 05:45:33 shirok Exp $
+;;;  $Id: netlib.stub,v 1.26 2004-01-28 00:28:22 fuyuki Exp $
 ;;;
 
 "#include \"net.h\"
@@ -96,7 +96,7 @@
       (define-symbol inet6 "sym_inet6")
 
       (define-cmethod sockaddr-name ((addr "Scm_SockAddrIn6Class"))
-	"  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
+        "  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
   ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
   char buf[INET6_ADDRSTRLEN];
   const char *r = inet_ntop(AF_INET6, &a->addr.sin6_addr, buf, sizeof(buf));
@@ -105,10 +105,10 @@
   SCM_RETURN(Scm_GetOutputStringUnsafe(out));")
 
       (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
-	"  SCM_RETURN(sym_inet6);")
+        "  SCM_RETURN(sym_inet6);")
 
       (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
-	"#define BN_SIZE (16 / SIZEOF_LONG)
+        "#define BN_SIZE (16 / SIZEOF_LONG)
   ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
   u_long values[BN_SIZE];
   u_long *p = (u_long*)a->addr.sin6_addr.s6_addr;
@@ -120,7 +120,7 @@
   SCM_RETURN(Scm_NormalizeBignum(SCM_BIGNUM(bn)));")
 
       (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class"))
-	"  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
+        "  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
   SCM_RETURN(Scm_MakeInteger(ntohs(a->addr.sin6_port)));")
       ))
 
@@ -142,6 +142,14 @@
 (define-enum SOCK_STREAM)
 (define-enum SOCK_DGRAM)
 (define-enum SOCK_RAW)
+
+(define-enum MSG_CTRUNC)
+(define-enum MSG_DONTROUTE)
+(define-enum MSG_EOR)
+(define-enum MSG_OOB)
+(define-enum MSG_PEEK)
+(define-enum MSG_TRUNC)
+(define-enum MSG_WAITALL)
 
 (if "defined IPPROTO_IP"   (define-enum IPPROTO_IP))
 (if "defined IPPROTO_ICMP" (define-enum IPPROTO_ICMP))
@@ -215,6 +223,28 @@
 (define-cproc socket-connect (sock::<socket> addr::<socket-address>)
   (return "Scm_SocketConnect"))
 
+(define-cproc socket-getsockname (sock::<socket>)
+  (return "Scm_SocketGetSockName"))
+
+(define-cproc socket-getpeername (sock::<socket>)
+  (return "Scm_SocketGetPeerName"))
+
+(define-cproc socket-send (sock::<socket> msg::<string>
+                           &optional (flags::<fixnum> 0))
+  (return "Scm_SocketSend"))
+
+(define-cproc socket-sendto (sock::<socket> msg::<string> to::<socket-address>
+                             &optional (flags::<fixnum> 0))
+  (return "Scm_SocketSendTo"))
+
+(define-cproc socket-recv (sock::<socket> bytes::<fixnum>
+                           &optional (flags::<fixnum> 0))
+  (return "Scm_SocketRecv"))
+
+(define-cproc socket-recvfrom (sock::<socket> bytes::<fixnum>
+                               &optional (flags::<fixnum> 0))
+  (return "Scm_SocketRecvFrom"))
+
 ;; socket option interface
 
 (define-cproc socket-setsockopt (sock::<socket>
@@ -255,23 +285,23 @@
 (if "defined HAVE_IPV6"
     (begin
       (define-type <sys-addrinfo> "ScmSysAddrinfo*" #f
-	"SCM_SYS_ADDRINFO_P" "SCM_SYS_ADDRINFO")
+        "SCM_SYS_ADDRINFO_P" "SCM_SYS_ADDRINFO")
 
       (define-cclass <sys-addrinfo>
-	"ScmSysAddrinfo*" "Scm_SysAddrinfoClass"
-	()
-	((flags :type <int>)
-	 (family :type <int>)
-	 (socktype :type <int>)
-	 (protocol :type <int>)
-	 (addrlen :type <uint32>)
-	 (canonname :type <string>)
-	 (addr :setter "  if (!SCM_SOCKADDRP(value)) Scm_Error(\"ScmSockAddr* required, but got %S\", value);
+        "ScmSysAddrinfo*" "Scm_SysAddrinfoClass"
+        ()
+        ((flags :type <int>)
+         (family :type <int>)
+         (socktype :type <int>)
+         (protocol :type <int>)
+         (addrlen :type <uint32>)
+         (canonname :type <string>)
+         (addr :setter "  if (!SCM_SOCKADDRP(value)) Scm_Error(\"ScmSockAddr* required, but got %S\", value);
   obj->addr = SCM_SOCKADDR(value);"))
-	(allocator (c "addrinfo_allocate")))
+        (allocator (c "addrinfo_allocate")))
 
       (define-cproc sys-getaddrinfo (nodename servname hints)
-	"  struct addrinfo ai;
+        "  struct addrinfo ai;
   if (!SCM_STRINGP(nodename) && !SCM_FALSEP(nodename))
     Scm_Error(\"string or #f required, but got %S\", nodename);
   if (!SCM_STRINGP(servname) && !SCM_FALSEP(servname))
@@ -290,7 +320,7 @@
                              SCM_FALSEP(hints) ? NULL : &ai));")
 
       (define-cproc sys-getnameinfo (addr::<socket-address> &optional flags::<fixnum>)
-	"  SCM_RETURN(Scm_GetNameinfo(addr, flags));")
+        "  SCM_RETURN(Scm_GetNameinfo(addr, flags));")
       ))
 
 (if "defined AF_INET6" (define-enum AF_INET6))

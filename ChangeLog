@@ -1,3 +1,9 @@
+2004-01-28  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* ext/net/* : added socket-getsockname, socket-getpeername,
+	  socket-send, socket-sendto, socket-recv, socket-recvfrom.
+	  Note that these features aren't officially supported yet.
+
 2004-01-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/number.c, src/bignum.c, src/gauche/int64.h,

@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use srfi-1)
 (use srfi-13)
 (test-start "net")
 
@@ -24,8 +25,8 @@
         (let ((addr (make <sockaddr-in> :host "127.0.0.1" :port 80)))
           (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "127.0.0.1:80")
-	       (= (sockaddr-addr addr) #x7f000001)
-	       (= (sockaddr-port addr) 80)
+               (= (sockaddr-addr addr) #x7f000001)
+               (= (sockaddr-port addr) 80)
                #t))))
 
 (test "sockaddr_in" #t
@@ -51,13 +52,13 @@
 
 (when (symbol-bound? '<sockaddr-in6>)
   (test "sockaddr_in6" #t
-	(lambda ()
-	  (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
-	    (and (eq? (sockaddr-family addr) 'inet6)
-		 (#/\[2001:200:0?:8002:203:47ff:fea5:3085\]:23/ (sockaddr-name addr))
-		 (= (sockaddr-addr addr) #x2001020000008002020347fffea53085)
-		 (= (sockaddr-port addr) 23)
-		 #t)))))
+        (lambda ()
+          (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
+            (and (eq? (sockaddr-family addr) 'inet6)
+                 (#/\[2001:200:0?:8002:203:47ff:fea5:3085\]:23/ (sockaddr-name addr))
+                 (= (sockaddr-addr addr) #x2001020000008002020347fffea53085)
+                 (= (sockaddr-port addr) 23)
+                 #t)))))
 
 ;;-----------------------------------------------------------------
 (test-section "netdb")
@@ -68,9 +69,9 @@
           (and host
                (or (equal? (slot-ref host 'name) "localhost")
                    (member "localhost" (slot-ref host 'aliases))
-		   ;; cygwin usually doesn't define "localhost", and
-		   ;; returns hostname.  For now we skip this test.
-		   (string-suffix? "cygwin" (gauche-architecture)))
+                   ;; cygwin usually doesn't define "localhost", and
+                   ;; returns hostname.  For now we skip this test.
+                   (string-suffix? "cygwin" (gauche-architecture)))
                (member "127.0.0.1" (slot-ref host 'addresses))
                #t))))
 
@@ -80,9 +81,9 @@
           (and host
                (or (equal? (slot-ref host 'name) "localhost")
                    (member "localhost" (slot-ref host 'aliases))
-		   ;; cygwin usually doesn't define "localhost", and
-		   ;; returns hostname.  For now we skip this test.
-		   (string-suffix? "cygwin" (gauche-architecture)))
+                   ;; cygwin usually doesn't define "localhost", and
+                   ;; returns hostname.  For now we skip this test.
+                   (string-suffix? "cygwin" (gauche-architecture)))
                (member "127.0.0.1" (slot-ref host 'addresses))
                #t))))
 
@@ -251,5 +252,44 @@
             (display "END\n" out) (flush out)
             (receive (pid code) (sys-wait)
               (sys-wait-exit-status code))))))
+
+(test "getsockname/getpeername" #t
+      (lambda ()
+        (let* ((addr (make <sockaddr-in> :host :loopback :port *inet-port*))
+               (serv (make-server-socket addr :reuse-addr? #t))
+               (clnt (make-client-socket addr)))
+          (begin0 (every (lambda (addr)
+                           (and (= (sockaddr-addr addr) #x7f000001)
+                                (= (sockaddr-port addr) *inet-port*)))
+                         (list (socket-getsockname serv)
+                               (socket-getpeername clnt)))
+                  (socket-close clnt)
+                  (socket-close serv)))))
+
+(test "udp server socket" #t
+      (lambda ()
+        (let ((pid (sys-fork)))
+          (if (= pid 0)
+              (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
+                    (addr (make <sockaddr-in> :host :any :port *inet-port*)))
+                (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+                (socket-bind sock addr)
+                (receive (msg from) (socket-recvfrom sock 1024)
+                  (socket-sendto sock (string-upcase msg) from))
+                (socket-close sock)
+                (sys-exit 33))
+              (begin
+                (sys-select #f #f #f 300000)
+                #t)))))
+
+(test "udp client socket" "ABC"
+      (lambda ()
+        (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
+              (addr (make <sockaddr-in> :host :loopback :port *inet-port*)))
+          (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+          (socket-connect sock addr)
+          (socket-send sock "abc")
+          (begin0 (string-incomplete->complete (socket-recv sock 1024))
+                  (socket-close sock)))))
 
 (test-end)

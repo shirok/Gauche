@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.24 2003-10-20 04:26:06 fuyuki Exp $
+;;;  $Id: net.scm,v 1.25 2004-01-28 00:28:22 fuyuki Exp $
 ;;;
 
 (define-module gauche.net
@@ -38,9 +38,13 @@
   (export <socket> make-socket
           |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
+          |MSG_CTRUNC| |MSG_DONTROUTE| |MSG_EOR| |MSG_OOB| |MSG_PEEK|
+          |MSG_TRUNC| |MSG_WAITALL|
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
+          socket-getsockname socket-getpeername
+          socket-send socket-sendto socket-recv socket-recvfrom
           <sockaddr> <sockaddr-in> <sockaddr-un> make-sockaddrs
           sockaddr-name sockaddr-family sockaddr-addr sockaddr-port
           make-client-socket make-server-socket make-server-sockets
@@ -135,12 +139,12 @@
   (let1 err #f
     (define (try-connect address)
       (with-error-handler
-	  (lambda (e) (set! err e) #f)
-	(lambda ()
-	  (let1 socket (make-socket (address->protocol-family address)
-				    |SOCK_STREAM|)
-	    (socket-connect socket address)
-	    socket))))
+          (lambda (e) (set! err e) #f)
+        (lambda ()
+          (let1 socket (make-socket (address->protocol-family address)
+                                    |SOCK_STREAM|)
+            (socket-connect socket address)
+            socket))))
     (let1 socket (any try-connect (make-sockaddrs host port))
       (unless socket (raise err))
       socket)))
@@ -181,9 +185,9 @@
 
 (define (make-server-socket-inet port . args)
   (let* ((reuse-addr? (get-keyword :reuse-addr? args #f))
-	 (address (car (make-sockaddrs #f port)))
-	 (socket (make-socket (address->protocol-family address)
-			      |SOCK_STREAM|)))
+         (address (car (make-sockaddrs #f port)))
+         (socket (make-socket (address->protocol-family address)
+                              |SOCK_STREAM|)))
     (when reuse-addr?
       (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
     (socket-bind socket address)
@@ -196,25 +200,25 @@
 (define (make-sockaddrs host port . maybe-proto)
   (let1 proto (get-optional maybe-proto 'tcp)
     (cond (ipv6-capable
-	   (let* ((socktype (case proto
-			      ((tcp) |SOCK_STREAM|)
-			      ((udp) |SOCK_DGRAM|)
-			      (else (error "unsupported protocol:" proto))))
-		  (port (x->string port))
-		  (hints (make-sys-addrinfo :flags |AI_PASSIVE|
-					    :socktype socktype)))
-	     (map (lambda (ai) (slot-ref ai 'addr))
-		  (sys-getaddrinfo host port hints))))
-	  (else
-	   (let* ((proto (symbol->string proto))
-		  (port (if (number? port)
-			    port
-			    (slot-ref (sys-getservbyname port proto) 'port))))
-	     (if host
-		 (map (lambda (host)
-			(make <sockaddr-in> :host host :port port))
-		      (slot-ref (sys-gethostbyname host) 'addresses))
-		 (list (make <sockaddr-in> :host :any :port port))))))))
+           (let* ((socktype (case proto
+                              ((tcp) |SOCK_STREAM|)
+                              ((udp) |SOCK_DGRAM|)
+                              (else (error "unsupported protocol:" proto))))
+                  (port (x->string port))
+                  (hints (make-sys-addrinfo :flags |AI_PASSIVE|
+                                            :socktype socktype)))
+             (map (lambda (ai) (slot-ref ai 'addr))
+                  (sys-getaddrinfo host port hints))))
+          (else
+           (let* ((proto (symbol->string proto))
+                  (port (if (number? port)
+                            port
+                            (slot-ref (sys-getservbyname port proto) 'port))))
+             (if host
+                 (map (lambda (host)
+                        (make <sockaddr-in> :host host :port port))
+                      (slot-ref (sys-gethostbyname host) 'addresses))
+                 (list (make <sockaddr-in> :host :any :port port))))))))
 
 (define (call-with-client-socket socket proc)
   (with-error-handler

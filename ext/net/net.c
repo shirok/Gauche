@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.29 2003-12-05 19:38:28 shirok Exp $
+ *  $Id: net.c,v 1.30 2004-01-28 00:28:22 fuyuki Exp $
  */
 
 #include "net.h"
@@ -261,6 +261,101 @@ ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
     sock->address = addr;
     sock->status = SCM_SOCKET_STATUS_CONNECTED;
     return SCM_OBJ(sock);
+}
+
+ScmObj Scm_SocketGetSockName(ScmSocket *sock)
+{
+    const char addrbuf[SCM_SOCKADDR_MAXLEN];
+    int r, addrlen = SCM_SOCKADDR_MAXLEN;
+
+    if (sock->fd < 0) {
+        Scm_Error("attempt to get the name of a closed socket: %S", sock);
+    }
+    SCM_SYSCALL(r, getsockname(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
+    if (r < 0) {
+        Scm_SysError("getsockname(2) failed");
+    }
+    return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr *)addrbuf, addrlen));
+}
+
+ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
+{
+    const char addrbuf[SCM_SOCKADDR_MAXLEN];
+    int r, addrlen = SCM_SOCKADDR_MAXLEN;
+
+    if (sock->fd < 0) {
+        Scm_Error("attempt to get the name of a closed socket: %S", sock);
+    }
+    SCM_SYSCALL(r, getpeername(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
+    if (r < 0) {
+        Scm_SysError("getpeername(2) failed");
+    }
+    return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr *)addrbuf, addrlen));
+}
+
+ScmObj Scm_SocketSend(ScmSocket *sock, ScmString *msg, int flags)
+{
+    int r;
+    if (sock->fd < 0) {
+        Scm_Error("attempt to send to a closed socket: %S", sock);
+    }
+    SCM_SYSCALL(r, send(sock->fd,
+                        SCM_STRING_START(msg), SCM_STRING_SIZE(msg),
+                        flags));
+    if (r < 0) {
+        Scm_SysError("send(2) failed");
+    }
+    return SCM_MAKE_INT(r);
+}
+
+ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmString *msg, ScmSockAddr *to,
+                        int flags)
+{
+    int r;
+    if (sock->fd < 0) {
+        Scm_Error("attempt to send to a closed socket: %S", sock);
+    }
+    SCM_SYSCALL(r, sendto(sock->fd,
+                          SCM_STRING_START(msg), SCM_STRING_SIZE(msg),
+                          flags,
+                          &SCM_SOCKADDR(to)->addr, SCM_SOCKADDR(to)->addrlen));
+    if (r < 0) {
+        Scm_SysError("sendto(2) failed");
+    }
+    return SCM_MAKE_INT(r);
+}
+
+ScmObj Scm_SocketRecv(ScmSocket *sock, int bytes, int flags)
+{
+    int r;
+    char *buf;
+    if (sock->fd < 0) {
+        Scm_Error("attempt to recv from a closed socket: %S", sock);
+    }
+    buf = SCM_NEW_ATOMIC2(char*, bytes);
+    SCM_SYSCALL(r, recv(sock->fd, buf, bytes, flags));
+    if (r < 0) {
+        Scm_SysError("recv(2) failed");
+    }
+    return Scm_MakeString(buf, r, r, SCM_MAKSTR_INCOMPLETE);
+}
+
+ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
+{
+    int r;
+    char *buf;
+    struct sockaddr from;
+    int fromlen = sizeof(from);
+    if (sock->fd < 0) {
+        Scm_Error("attempt to recv from a closed socket: %S", sock);
+    }
+    buf = SCM_NEW_ATOMIC2(char*, bytes);
+    SCM_SYSCALL(r, recvfrom(sock->fd, buf, bytes, flags, &from, &fromlen));
+    if (r < 0) {
+        Scm_SysError("recvfrom(2) failed");
+    }
+    return Scm_Values2(Scm_MakeString(buf, r, r, SCM_MAKSTR_INCOMPLETE),
+                       Scm_MakeSockAddr(NULL, &from, fromlen));
 }
 
 /* Low-level setsockopt() and getsockopt() interface. */

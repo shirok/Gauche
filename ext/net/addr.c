@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.17 2003-08-08 19:39:15 shirok Exp $
+ *  $Id: addr.c,v 1.18 2004-01-28 00:28:22 fuyuki Exp $
  */
 
 #include "net.h"
@@ -80,6 +80,24 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
     ScmSockAddr *addr;
     addr = SCM_NEW2(ScmSockAddr*,
                     sizeof(ScmSockAddr) - sizeof(struct sockaddr) + len);
+    if (klass == NULL) {
+        switch (saddr->sa_family) {
+        case AF_UNIX:
+            klass = SCM_CLASS_SOCKADDR_UN;
+            break;
+        case AF_INET:
+            klass = SCM_CLASS_SOCKADDR_IN;
+            break;
+#ifdef HAVE_IPV6
+        case AF_INET6:
+            klass = SCM_CLASS_SOCKADDR_IN6;
+            break;
+#endif
+        default:
+            Scm_Error("unknown address type (%d)", saddr->sa_family);
+            break;
+        }
+    }
     SCM_SET_CLASS(addr, klass);
     addr->addrlen = len;
     memset(&addr->addr, 0, len);
@@ -211,18 +229,18 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
     addr->addr.sin6_port = htons(SCM_INT_VALUE(port));
     if (SCM_STRINGP(host)) {
         const char *hname = Scm_GetStringConst(SCM_STRING(host));
-	struct addrinfo hints, *res;
-	int r;
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET6;
-	hints.ai_socktype = SOCK_STREAM;
-	r = getaddrinfo(hname, NULL, &hints, &res);
-	if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
-	addr->addr.sin6_addr = ((struct sockaddr_in6*)res->ai_addr)->sin6_addr;
+        struct addrinfo hints, *res;
+        int r;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_INET6;
+        hints.ai_socktype = SOCK_STREAM;
+        r = getaddrinfo(hname, NULL, &hints, &res);
+        if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
+        addr->addr.sin6_addr = ((struct sockaddr_in6*)res->ai_addr)->sin6_addr;
     } else if (host == key_any) {
-	addr->addr.sin6_addr = in6addr_any;
+        addr->addr.sin6_addr = in6addr_any;
     } else if (host == key_loopback) {
-	addr->addr.sin6_addr = in6addr_loopback;
+        addr->addr.sin6_addr = in6addr_loopback;
     } else {
         Scm_Error("bad :host parameter: %S", host);
     }

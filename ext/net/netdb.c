@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.7 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: netdb.c,v 1.8 2004-01-28 00:28:22 fuyuki Exp $
  */
 
 #include "net.h"
@@ -483,7 +483,7 @@ static ScmClassStaticSlotSpec servent_slots[] = {
 ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmSysAddrinfo *info = SCM_ALLOCATE(ScmSysAddrinfo, klass);
-    SCM_SET_CLASS(info, SCM_CLASS_SYS_ADDRINFO);
+    SCM_SET_CLASS(info, klass);
     info->canonname = NULL;
     info->addr = NULL;
     return SCM_OBJ(info);
@@ -500,29 +500,17 @@ static ScmSysAddrinfo *make_addrinfo(struct addrinfo *ai)
     info->protocol = ai->ai_protocol;
     info->addrlen = ai->ai_addrlen;
     if (ai->ai_canonname != NULL)
-	info->canonname = SCM_STRING(SCM_MAKE_STR_COPYING(ai->ai_canonname));
-    if (ai->ai_addr != NULL) {
-      ScmClass *addrClass;
-      switch (ai->ai_family) {
-      case AF_INET:
-	addrClass = SCM_CLASS_SOCKADDR_IN;
-        break;
-      case AF_INET6:
-	addrClass = SCM_CLASS_SOCKADDR_IN6;
-        break;
-      default:
-        Scm_Error("unknown address type (%d)", ai->ai_family);
-	break;
-      }
-      info->addr = SCM_SOCKADDR(Scm_MakeSockAddr(addrClass,
-						 ai->ai_addr, ai->ai_addrlen));
-    }
+        info->canonname = SCM_STRING(SCM_MAKE_STR_COPYING(ai->ai_canonname));
+    if (ai->ai_addr != NULL)
+        info->addr = SCM_SOCKADDR(Scm_MakeSockAddr(NULL,
+                                                   ai->ai_addr,
+                                                   ai->ai_addrlen));
     return info;
 }
 
 ScmObj Scm_GetAddrinfo(const char *nodename,
-		       const char *servname,
-		       struct addrinfo *hints)
+                       const char *servname,
+                       struct addrinfo *hints)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
     struct addrinfo *res, *res0;
@@ -544,7 +532,7 @@ ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags)
     int r;
 
     r = getnameinfo(&addr->addr, addr->addrlen,
-		    host, sizeof(host), serv, sizeof(serv), flags);
+                    host, sizeof(host), serv, sizeof(serv), flags);
     if (r) Scm_Error("getnameinfo failed: %s", gai_strerror(r));
     return Scm_Values2(SCM_MAKE_STR_COPYING(host), SCM_MAKE_STR_COPYING(serv));
 }

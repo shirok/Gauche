@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.18 2003-10-20 04:26:06 fuyuki Exp $
+ *  $Id: net.h,v 1.19 2004-01-28 00:28:22 fuyuki Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -161,6 +161,14 @@ extern ScmObj Scm_SocketConnect(ScmSocket *s, ScmSockAddr *addr);
 extern ScmObj Scm_SocketListen(ScmSocket *s, int backlog);
 extern ScmObj Scm_SocketAccept(ScmSocket *s);
 
+extern ScmObj Scm_SocketGetSockName(ScmSocket *s);
+extern ScmObj Scm_SocketGetPeerName(ScmSocket *s);
+
+extern ScmObj Scm_SocketSend(ScmSocket *s, ScmString *msg, int flags);
+extern ScmObj Scm_SocketSendTo(ScmSocket *s, ScmString *msg, ScmSockAddr *to, int flags);
+extern ScmObj Scm_SocketRecv(ScmSocket *s, int bytes, int flags);
+extern ScmObj Scm_SocketRecvFrom(ScmSocket *s, int bytes, int flags);
+
 extern ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
                                int option, ScmObj value);
 extern ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
@@ -251,8 +259,8 @@ SCM_CLASS_DECL(Scm_SysAddrinfoClass);
 #define SCM_SYS_ADDRINFO_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_ADDRINFO)
 
 extern ScmObj Scm_GetAddrinfo(const char *nodename,
-			      const char *servname,
-			      struct addrinfo *hints);
+                              const char *servname,
+                              struct addrinfo *hints);
 extern ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags);
 
 #define NI_MAXHOST  1025
