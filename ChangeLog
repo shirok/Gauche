@@ -1,5 +1,11 @@
 2003-04-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-init.scm (export-if-defined): added.  This macro
+	  is to overcome the difficulty to keep exported symbol list
+	  consistent when some of module's external APIs are defined
+	  conditionally.  The implementation is a kludge, though.
+	  Should be used with care.
+
 	* src/genstub (define-cclass): fixed a bug that #if directive was
 	  ineffective for define-cclass.
 

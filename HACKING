@@ -16,4 +16,11 @@ the DIST script like the following to generate them.
   % ./DIST gen
 
 
+Note for seasoned libtool/automake users: the CVS source tree
+includes files that are usually generated automatically by
+autotools, such as aclocal.m4, ltmain.sh, src/gauche/config.h.in,
+etc.  Be careful not to clobber these files.  First, if your
+autotools version doesn't match mine, it tends to break.
+Second, those files are likely to be edited after generated,
+in order to fix some build problem on certain platform.
 
