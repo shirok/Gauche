@@ -68,7 +68,7 @@
           (push-result (module-name (current-module)))
           (with-output-to-file "tmp.t"
             (lambda () (for-each write load-data)))
-          (load "tmp.t")
+          (load "./tmp.t")
           (push-result (module-name (current-module)))
           (sys-unlink "tmp.t")
           (get-result)
