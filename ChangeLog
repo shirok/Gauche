@@ -1,3 +1,9 @@
+2003-02-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c, src/gauche.h : made autoload MT-safe.
+	* src/vm.c, src/gauche/vm.h : renamed PCTYPE to SCM_PCTYPE to avoid
+	  namespace pollution.
+
 2003-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netdb.c (Scm_GetHostByName etc.): made the fallback code

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.326 2003-02-07 03:50:26 shirok Exp $
+ *  $Id: gauche.h,v 1.327 2003-02-15 12:23:30 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2286,7 +2286,19 @@ typedef struct ScmAutoloadRec {
     ScmSymbol *import_from;     /* module to be imported after loading */
     ScmModule *import_to;       /* module to where import_from should be
                                    imported */
-    int loaded;
+                                /* The fields above will be set up when
+                                   the autoload object is created, and never
+                                   be modified. */
+
+    int loaded;                 /* The flag that indicates this autoload
+                                   is resolved, and value field contains
+                                   the resolved value.  Once the autoload
+                                   goes into "loaded" status, no field
+                                   should be changed. */
+    ScmObj value;               /* The resolved value */
+    ScmInternalMutex mutex;     /* mutex to resolve this autoload */
+    ScmInternalCond cv;         /* ... and condition variable. */
+    ScmVM *locker;              /* The thread that is resolving the autoload.*/
 } ScmAutoload;
 
 SCM_CLASS_DECL(Scm_AutoloadClass);

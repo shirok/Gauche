@@ -82,13 +82,27 @@
 ;; since the 'eval' test is done before i/o.
 (with-output-to-file "test.o/d.scm"
   (lambda ()
-    (display "(print (current-module)) (define foo 6)")))
+    (display "(define foo 6)")))
 
-(test* "eval & load & environment"
-       6
+(test* "eval & load & environment" 6
        (begin
          (eval '(load "test.o/d") (find-module 'load.test))
          (with-module load.test foo)))
+
+
+;; autoloading -----------------------------------------
+
+(with-output-to-file "test.o/l0.scm"
+  (lambda ()
+    (write '(define foo 0))))
+(autoload "test.o/l0" foo)
+(test* "autoload (file)" 0 foo)
+
+(with-output-to-file "test.o/l1.scm"
+  (lambda ()
+    (write '(define foo 0))))
+(autoload "test.o/l1" foo1)
+(test* "autoload (file/error)" *test-error* foo1)
 
 (sys-system "rm -rf test.o")
 
