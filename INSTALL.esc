@@ -21,12 +21,12 @@
 !>
 
 <? (if-lang japanese? !>
-                         Gaucheのコンパイルとインストール
+                      Gaucheのコンパイルとインストール
 <? else !>
-                        Compiling and Installing Gauche
+                      Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.15 2002-04-16 21:17:08 shirok Exp $
+$Id: INSTALL.esc,v 1.16 2002-06-30 04:26:10 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -358,23 +358,6 @@ The files are installed in those locations:
        in $HOME/lib, you should do:
 
          ./configure --with-local=$HOME
-<? ) !>
-<? (if-lang japanese? !>
-* FreeBSD - 4.4附属のiconvライブラリ (/usr/local/lib/libiconv.so等) の
-       2.xを使うと、gauche.charconvがうまく動作しないという問題が報告されています。
-       GNU libiconv (/usr/local/lib/libgiconv.* としてインストールされて
-       いると思います) だとうまく行くようです。GNU libiconvを使うには次のように
-       configureして下さい。
-
-         ./configure --with-iconv=/usr/local --with-iconv-lib=giconv
-<? else !>
-* FreeBSD - It is reported that the iconv 2.x library coming with 4.4
-       (/usr/local/lib/libiconv.*) doesn't work well with
-       gauche.charconv module.  GNU libiconv (/usr/local/lib/libgiconv.*)
-       appears to work instead.   To use GNU libiconv, you can configure
-       as follows:
-       
-         ./configure --with-iconv=/usr/local --with-iconv-lib=giconv
 <? ) !>
 <? (if-lang japanese? !>
 * IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
