@@ -1,4 +1,4 @@
-#? /usr/local/bin/gosh
+<#? /usr/local/bin/gosh
 <? ;; Process this file with escm
 (define japanese? (equal? (sys-getenv "LANG") "ja_JP"))
 (define (header ja en)
@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.8 2001-11-15 09:27:10 shirok Exp $
+$Id: INSTALL.esc,v 1.9 2001-11-15 09:54:55 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -68,10 +68,10 @@ You can give a --enable-multibyte=ENCODING option to switch the native
 encoding.
 <? ) !>
 
-  ./configure --enable-encoding=euc-jp  ;; EUC-JP (default)
-  ./configure --enable-encoding=utf-8   ;; UTF-8
-  ./configure --enable-encoding=sjis    ;; Shift JIS
-  ./configure --enable-encoding=no      ;; No multibyte string
+  ./configure --enable-multibyte=euc-jp  ;; EUC-JP (default)
+  ./configure --enable-multibyte=utf-8   ;; UTF-8
+  ./configure --enable-multibyte=sjis    ;; Shift JIS
+  ./configure --enable-multibyte=no      ;; No multibyte string
 
 <? (if-lang japanese? !>
 Gaucheはiconvを利用したキャラクタエンコーディングを変換するモジュールを持っています。
