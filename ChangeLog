@@ -1,6 +1,17 @@
+2001-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c : fixed a bug that estimated the bytecode size
+	  incorrectly for the patterns like #/(x|y)+/.
+	* lib/www/cgi.scm : added cgi-header
+	* lib/text/html-lite.scm : changed passing convention of the
+	  parameters.   added html-doctype.
+
 2001-11-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/html-lite.scm : experimentally added.
+	* configure.in : added --with-local flag to allow to use site-local
+	  libraries throught the compilation process.
+	* src/extlib.stub : added hash-table-push! and hash-table-pop!
 
 2001-11-07  Shiro Kawai  <shiro@acm.org>
 
