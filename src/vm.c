@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.54 2001-03-17 09:33:05 shiro Exp $
+ *  $Id: vm.c,v 1.55 2001-03-18 08:04:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -304,37 +304,39 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
  * args, fold those arguments to the list.  Returns adjusted size of
  * the argument frame.
  */
-#define adjust_argument_frame(proc, caller_args, callee_args)                   \
-    do {                                                                        \
-    int i, reqargs, restarg;                                                    \
-                                                                                \
-    if (!SCM_PROCEDUREP(proc)) Scm_Error("bad procedure: %S", proc);            \
-                                                                                \
-    reqargs = SCM_PROCEDURE_REQUIRED(proc);                                     \
-    restarg = SCM_PROCEDURE_OPTIONAL(proc);                                     \
-    callee_args  = reqargs + (restarg? 1 : 0);                                  \
-                                                                                \
-    if (restarg) {                                                              \
-        ScmObj p = SCM_NIL, a;                                                  \
-        if (caller_args < reqargs) {                                            \
-            Scm_Error("wrong number of arguments for %S (required %d, got %d)", \
-                      proc, reqargs, caller_args);                              \
-        }                                                                       \
-        /* fold &rest args */                                                   \
-        for (i = reqargs; i < caller_args; i++) {                               \
-            POP_ARG(a);                                                         \
-            p = Scm_Cons(a, p);                                                 \
-        }                                                                       \
-        argp->data[reqargs] = p;                                                \
-        sp = (ScmObj*)argp + ENV_SIZE(callee_args);                             \
-    } else {                                                                    \
-        if (caller_args != reqargs) {                                           \
-            Scm_Error("wrong number of arguments for %S (required %d, got %d)", \
-                      proc, reqargs, caller_args);                              \
-        }                                                                       \
-    }                                                                           \
-    argp->info = SCM_PROCEDURE_INFO(proc);                                      \
-    argp->size = callee_args;                                                   \
+#define adjust_argument_frame(proc, caller_args, callee_args)           \
+    do {                                                                \
+    int i, reqargs, restarg;                                            \
+                                                                        \
+    if (!SCM_PROCEDUREP(proc)) Scm_Error("bad procedure: %S", proc);    \
+                                                                        \
+    reqargs = SCM_PROCEDURE_REQUIRED(proc);                             \
+    restarg = SCM_PROCEDURE_OPTIONAL(proc);                             \
+    callee_args  = reqargs + (restarg? 1 : 0);                          \
+                                                                        \
+    if (restarg) {                                                      \
+        ScmObj p = SCM_NIL, a;                                          \
+        if (caller_args < reqargs) {                                    \
+            Scm_Error("wrong number of arguments for %S"                \
+                      " (required %d, got %d)",                         \
+                      proc, reqargs, caller_args);                      \
+        }                                                               \
+        /* fold &rest args */                                           \
+        for (i = reqargs; i < caller_args; i++) {                       \
+            POP_ARG(a);                                                 \
+            p = Scm_Cons(a, p);                                         \
+        }                                                               \
+        argp->data[reqargs] = p;                                        \
+        sp = (ScmObj*)argp + ENV_SIZE(callee_args);                     \
+    } else {                                                            \
+        if (caller_args != reqargs) {                                   \
+            Scm_Error("wrong number of arguments for %S"                \
+                      " (required %d, got %d)",                         \
+                      proc, reqargs, caller_args);                      \
+        }                                                               \
+    }                                                                   \
+    argp->info = SCM_PROCEDURE_INFO(proc);                              \
+    argp->size = callee_args;                                           \
     } while (0)
 
 #if 0
@@ -393,10 +395,11 @@ static void run_loop()
     
     for (;;) {
         /*VM_DUMP("");*/
-        
-        if (!SCM_PAIRP(pc)) {
-            /* We are at the end of procedure.  Activate the most recent
-               continuation. */
+
+        /* See if we're at the end of procedure.  It's safer to use
+           !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.
+           (the former makes nqueen.scm 2% slower) */
+        if (SCM_NULLP(pc)) {
             if (cont == NULL) {
                 SAVE_REGS();
                 return; /* no more continuations */
@@ -493,10 +496,16 @@ static void run_loop()
                     val0 = SCM_SUBR(val0)->func(argp->data, argcnt,
                                                 SCM_SUBR(val0)->data);
                     RESTORE_REGS();
-                } else {
+                } else if (SCM_CLOSUREP(val0)) {
                     env = argp;
                     env->up = SCM_CLOSURE(val0)->env;
                     pc = SCM_CLOSURE(val0)->code;
+                } else {
+                    /* Generic function */
+                    env = argp;
+                    SAVE_REGS();
+                    val0 = SCM_CLASS_OF(val0)->apply(val0, argp->data, argcnt);
+                    RESTORE_REGS();
                 }
                 continue;
             }
