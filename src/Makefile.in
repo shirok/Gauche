@@ -54,6 +54,7 @@ TESTFILES = ../test/primsyn.scm \
 	    ../test/macro.scm   \
 	    ../test/number.scm \
 	    ../test/string.scm \
+	    ../test/hash.scm \
 	    ../test/io.scm \
 	    ../test/dynwind.scm \
 	    ../test/srfi.scm \
