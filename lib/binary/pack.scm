@@ -10,7 +10,7 @@
 ;;; Disclaimer:
 ;;   The following code is horribly complicated.  The primary reason is
 ;;   the fact that I wanted to support the @ pack code while only
-;;   performing the required byte position counting when actually ausing
+;;   performing the required byte position counting when actually using
 ;;   an @ following a variable length template, without which all the
 ;;   "vlp" references would be gone.
 
@@ -24,7 +24,6 @@
   (use gauche.uvector)
   (use gauche.parameter)
   (use binary.io)
-  ;;(use util.debug)
   (export pack unpack unpack-skip make-packer))
 (select-module binary.pack)
 
@@ -141,7 +140,7 @@
 (define (number-writer writer . opt-endian)
   (if (pair? opt-endian)
     (cute writer <> #f (car opt-endian))
-    (cut writer <>)))
+    writer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; parser utilities
@@ -348,13 +347,23 @@
         (cut list (next-token-n* '() (list pad '*eof*) count))))
      (make-skipper count))))
 
+
+;; set endianess of the number reader
+(define (number-reader reader . opt-endian)
+  (if (pair? opt-endian)
+      (cute reader #f (car opt-endian))
+      reader))
+
 ;; make a basic dispatcher for fixed size numeric types
 (define (make-number-pack-dispatcher
-         reader base-writer size count vlp . opt-endian)
+         base-reader base-writer size count vlp . opt-endian)
   (let* ((splitter (get-splitter count))
          (writer (if (pair? opt-endian)
                    (number-writer base-writer (car opt-endian))
-                   (number-writer base-writer))))
+                   (number-writer base-writer)))
+         (reader (if (pair? opt-endian)
+                     (number-reader base-reader (car opt-endian))
+                   (number-reader base-reader))))
     (cond
       ((eq? count #\*)
        (make-pack-dispatch
@@ -938,7 +947,6 @@
 
 (define (read-until-token tok keys fixed-len var-len? var-len-param)
   (let loop ((ls '()) (flen fixed-len) (vlen? var-len?) (vlp var-len-param))
-    ;;(let ((next (read-packer keys fixed-len var-len? var-len-param)))
     (let ((next (read-packer keys flen vlen? vlp)))
       (cond ((equal? next tok)
              (reverse ls))

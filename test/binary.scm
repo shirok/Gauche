@@ -157,6 +157,24 @@
    ("N" #*"\xde\xad\xbe\xef" #xdeadbeef)
    ("V" #*"\xef\xbe\xad\xde" #xdeadbeef)))
 
+(for-each
+ (lambda (op)
+   (for-each
+    (lambda (i)
+      (test* (format "pack/unpack ~A ~D" op i) (list i)
+        (unpack op :from-string (pack op (list i) :to-string? #t))))
+    '(0 1 2 3 127 128 1023 1024 65534 65535)))
+ '("n" "N" "v" "V"))
+
+(for-each
+ (lambda (op)
+   (for-each
+    (lambda (i)
+      (test* (format "pack/unpack ~A ~D" op i) (list i)
+        (unpack op :from-string (pack op (list i) :to-string? #t))))
+    '(65536 16777215 16777216 4294967295)))
+ '("N" "V"))
+
 ;; object tests
 
 (test* "unpack o" '((1 (2 (3))))
