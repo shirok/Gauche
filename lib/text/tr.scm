@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tr.scm,v 1.5 2001-09-21 20:15:44 shirok Exp $
+;;;  $Id: tr.scm,v 1.6 2001-09-22 10:12:56 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
@@ -37,19 +37,29 @@
 (define string-transliterate string-tr) ;alias
 
 (define (build-transliterator from to . options)
-  (let* ((d? (get-keyword :delete options #f))
+  (let* ((!d? (not (get-keyword :delete options #f)))
          (s? (get-keyword :squeeze options #f))
          (c? (get-keyword :complement options #f))
          (size (get-keyword :table-size options 256))
          (tab  (build-tr-table from to size c?)))
     (lambda ()
-      (let loop ((char (read-char)))
+      (let loop ((char (read-char))
+                 (prev #f))
         (unless (eof-object? char)
           (let ((c (tr-table-ref tab (char->integer char))))
-            (cond ((char? c) (display c))
-                  (c         (display char)) ;pass through
-                  ((not d?)  (display char)))
-            (loop (read-char))))))
+            (cond ((char? c)            ;transliterated
+                   (unless (and s? (eqv? prev c))
+                     (display c))
+                   (loop (read-char) c))
+                  (c                    ;char is not in from-set
+                   (display char)
+                   (loop (read-char) #f))
+                  (!d?                  ;char is in from but not to, and no :d
+                   (unless (and s? (eqv? prev char))
+                     (display char))
+                   (loop (read-char) char))
+                  (else
+                   (loop (read-char) prev)))))))
     ))
 
 ;;--------------------------------------------------------------------
@@ -126,20 +136,29 @@
 
 ;; complement.  array doesn't contain repeat.
 (define (complement-char-array array table-size)
-  (define (range from to)
-    (list (- to from -1) (integer->char from) (integer->char to)))
+  (define (add-range from to rest)
+    (if (and (< from table-size) (<= table-size to))
+        (list* (list (- to table-size -1)
+                     (integer->char table-size)
+                     (integer->char to))
+               (list (- table-size from)
+                     (integer->char from)
+                     (integer->char (- table-size 1)))
+               rest)
+        (cons (list (- to from -1) (integer->char from) (integer->char to))
+              rest)))
   (let loop ((in array)
              (out '())
              (index 0))
     (if (null? in)
         (if (<= index *char-code-max*)
-            (reverse! (cons (range index *char-code-max*) out))
+            (reverse! (add-range index *char-code-max* out))
             (reverse! out))
         (let* ((lo (char->integer (cadar in)))
                (hi (+ lo (caar in))))
           (if (< index lo)
               (loop (cdr in)
-                    (cons (range index (- lo 1)) out)
+                    (add-range index (- lo 1) out)
                     hi)
               (loop (cdr in) out hi))))))
 
@@ -179,7 +198,7 @@
 ;; "from" character list shouldn't contain 
 (define (check-from-spec-validity spec array)
   (for-each (lambda (segment)
-              (if (null? (cddr segment))
+              (if (and (< 1 (car segment)) (null? (cddr segment)))
                   (error "from-spec can't contain repeat characters" spec)))
             array))
 
@@ -275,7 +294,11 @@
              (to-segs to-ca)
              (r       '()))
     (if (null? to-segs)
-        (set! (sparse-of tab) (append! (sparse-of tab) (reverse r)))
+        (let* ((from-end (+ (car from-seg) (char->integer (cadr from-seg))))
+               (rr (if (< from-ch from-end)
+                       (reverse (cons (list from-ch (- from-end 1) #f) r))
+                       (reverse r))))
+          (set! (sparse-of tab) (append! (sparse-of tab) rr)))
         (let* ((to-seg  (car to-segs))
                (to-size (car to-seg))
                (entry   (list from-ch (+ from-ch to-size -1)
