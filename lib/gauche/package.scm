@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package.scm,v 1.1 2004-04-22 12:48:01 shirok Exp $
+;;;  $Id: package.scm,v 1.2 2004-04-23 01:20:54 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -52,8 +52,9 @@
 ;;
 ;; Note that this module doesn't handle build and installation process.
 ;; This module just provides a means to create and access the package
-;; description files; gauche.build module will handle the build and
-;; installation.
+;; description files; gauche.package.build module will handle the build and
+;; installation, and gauche.package.fetch module will handle downloading
+;; package tarballs, and so on.
 ;;
 ;; [Package description file]
 ;;   For the time being, it contains just one S-expression.

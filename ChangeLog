@@ -1,3 +1,8 @@
+2004-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package/build.scm : added (experimental)
+	* src/package : added (experimental)
+
 2004-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package.scm : added (experiemntal; not completed).

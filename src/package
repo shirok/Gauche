@@ -1,0 +1,90 @@
+;;;
+;;; package - Gauche package builder/manager
+;;;  
+;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;;  $Id: package,v 1.1 2004-04-23 01:20:54 shirok Exp $
+;;;
+
+(use srfi-1)
+(use gauche.parseopt)
+(use gauche.package)
+(use gauche.package.build)
+(use file.util)
+(use util.list)
+
+(define (p . args) (for-each print args))
+
+(define (usage)
+  (p
+   "Usage: gosh package <command> [options] <args> ..."
+   "Commands:"
+   "  install <tarball> - extract, build, and install a package"
+   "  build <tarball>   - extract, and build the package."
+   "Options:"
+   "  -n, --dry-run : only displays the commands to be executed."
+   "      --clean   : cleans working directory after install."
+   "  -C, --configure-options=OPTS : pass OPTS to configure."
+   )
+  (exit 0))
+
+(define *commands* '())
+
+(define-macro (define-cmd name . body)
+  `(push! *commands* (cons ,name (lambda (args) ,@body))))
+
+(define-cmd "install"
+  (let-args args ((dry-run "n|dry-run")
+                  (copts   "C|configure-options=s" #f)
+                  (clean   "clean")
+                  . args)
+    (unless (= (length args) 1) (usage))
+    (gauche-package-build (car args)
+                          :dry-run dry-run :install #t :clean clean
+                          :configure-options copts)))
+
+(define-cmd "build"
+  (let-args args ((dry-run "n|dry-run")
+                  (copts   "C|configure-options=s" #f)
+                  . args)
+    (unless (= (length args) 1) (usage))
+    (gauche-package-build (car args) :dry-run dry-run
+                          :configure-options copts)))
+
+(define (main args)
+  (cond ((null? (cdr args)) (usage))
+        ((assoc-ref *commands* (cadr args)) => (cut <> (cddr args)))
+        (else (print "Unknown command: " (cadr args))
+              (usage)))
+  0)
+
+;; Local variables:
+;; mode: scheme
+;; end:
