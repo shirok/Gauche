@@ -1,7 +1,7 @@
 ;;;
 ;;; object.scm - object system
 ;;;
-;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.32 2002-05-07 07:02:24 shirok Exp $
+;;;  $Id: object.scm,v 1.33 2002-05-07 07:35:10 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -461,9 +461,9 @@
 (define-method x->number  ((obj <top>)) 0)
 
 ;; shorthand notation
-(define-method ref ((obj <object>) (slot <symbol>))
+(define-method ref ((obj <top>) (slot <symbol>))
   (slot-ref obj slot))
-(define-method (setter ref) ((obj <object>) (slot <symbol>) value)
+(define-method (setter ref) ((obj <top>) (slot <symbol>) value)
   (slot-set! obj slot value))
 
 ;;;
