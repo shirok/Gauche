@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.2 2004-10-08 10:28:03 shirok Exp $
+ *  $Id: vport.c,v 1.3 2004-10-18 20:28:25 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -93,7 +93,10 @@ static int vport_getb(ScmPort *p)
         SCM_CHAR_PUT(buf, c);
         
         for (i=1; i<nb; i++) {
-            Scm_UngetbUnsafe(buf[i], p); /* pushback for later use */
+            /* pushback for later use.  this isn't very efficient;
+               if efficiency becomes a problem, we need another API
+               to pushback multiple bytes. */
+            Scm_UngetbUnsafe(buf[i], p); 
         }
         return buf[0];
     } else {
@@ -215,12 +218,43 @@ static int vport_ready(ScmPort *p, int charp)
 static int vport_putb(ScmByte b, ScmPort *p)
 {
     vport *data = (vport*)p->src.vt.data;
+    ScmObj r;
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->putb_proc)) {
-        /* what shall I do? */
+        Scm_PortError(p, SCM_PORT_ERROR_UNIT, "cannot perform binary output to the port %S", p);
     }
+    r = Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(b)));
+    if (!SCM_INTP(r)) return 0;
+    else return SCM_INT_VALUE(r);
 }
+
+/*------------------------------------------------------------
+ * Vport putc
+ */
+static int vport_putc(ScmChar c, ScmPort *p)
+{
+    vport *data = (vport*)p->src.vt.data;
+    ScmObj r;
+    SCM_ASSERT(data != NULL);
+
+    if (!SCM_FALSEP(data->putc_proc)) {
+        if (!SCM_FALSEP(data->putb_proc)) {
+            unsigned char buf[SCM_CHAR_MAX_BYTES];
+            int i, n=SCM_CHAR_NBYTES(c);
+            SCM_CHAR_PUT(buf, c);
+            for (i=0; i<n; i++) {
+                r = Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(buf[i])));
+            }
+        }
+    } else {
+        r = Scm_Apply(data->putc_proc, SCM_LIST1(SCM_MAKE_CHAR(c)));
+    }
+    if (!SCM_INTP(r)) return 0;
+    else return SCM_INT_VALUE(r);
+}
+
+
 
 /*================================================================
  * <buffered-port>

@@ -1,5 +1,8 @@
 2004-10-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/error.c, src/gauche.h, src/gauche/exception.h: added
+	  <io-unit-error>.
+
 	* lib/gauche/parseopt.scm (let-args): fixed a bug of 'else' clause
 	  formal parameter handling.
 
