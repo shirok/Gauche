@@ -1,5 +1,15 @@
+2001-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c : guaranteed to return #t on successful load
+	* src/char.c, src/read.c, src/regexp.c : fixed charset reader.
+	  #[] is read an empty charset.   In regexp, however, the closing
+	  bracket at the beginning of charset is interpreted as the character
+	  itself, for compatibility to the POSIX regexp.  That is,
+	  #/[]]/ is valid.
+
 2001-11-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/queue.scm : added dequeue-all!
 	* src/io.c, src/port.c, src/gauche-init.scm, lib/gauche/with.scm :
 	  defined call-with-*-file and with-*-file procedures in Scheme
 	  instead of C.  io.c is removed.
