@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.6 2003-02-26 07:02:06 shirok Exp $
+;;; $Id: format.scm,v 1.7 2003-02-26 22:09:31 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -221,10 +221,10 @@
   (let ( (associated (assoc char tm:directives)) )
     (if associated (cdr associated) #f)))
 
-(define (tm:date-printer date fmtstr)
+(define (date->string date . maybe-fmtstr)
 
   (define (bad i)
-    (errorf "tm:date-printer: bad date format string: \"~a >>>~a<<< ~a\""
+    (errorf "date->string: bad date format string: \"~a >>>~a<<< ~a\""
             (string-take format-string i)
             (substring format-string i (+ i 1))
             (string-drop format-string (+ i 1))))
@@ -251,18 +251,13 @@
           (call-formatter ch2 #\0 (+ ind 1))))))
      ))
 
-  ;; tm:date-printer body
-  (with-input-from-string fmtstr
-    (cut rec (read-char) 0))
+  ;; body
+  (with-input-from-string (get-optional maybe-fmtstr "~c")
+    (lambda ()
+      (with-output-to-string
+        (cut rec (read-char) 0))))
   )
 
-(define (date->string date .  format-string)
-  (let-optionals* format-string ((fmt-str "~c"))
-    (with-output-to-string
-      (lambda () 
-        (tm:date-printer date fmt-str)
-        ))))
-	
 (define (tm:char->int ch)
   (or (digit->integer ch) 
       (errorf "bad date template string: non integer character: ~a" ch)))
