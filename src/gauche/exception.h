@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.6 2004-10-10 09:52:10 shirok Exp $
+ *  $Id: exception.h,v 1.7 2004-10-13 01:55:08 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -52,17 +52,19 @@
     |              |    +- <io-read-error>   ; srfi-36
     |              |    +- <io-write-error>  ; srfi-36
     |              |    +- <io-closed-error> ; srfi-36
-    |              +- <filename-error> ; srfi-36
-    |                   +- <malformed-filename-error>  ; srfi-36
-    |                   +- <file-protection-error>     ; srfi-36
-    |                   +- <file-is-read-only-error> ; srfi-36
-    |                   +- <file-already-exists-error> ; srfi-36
-    |                   +- <no-such-file-error>        ; srfi-36
+    |              +- <filename-error> ; srfi-36 (*)
+    |                   +- <malformed-filename-error>  ; srfi-36 (*)
+    |                   +- <file-protection-error>     ; srfi-36 (*)
+    |                   |    +- <file-is-read-only-error> ; srfi-36 (*)
+    |                   +- <file-already-exists-error> ; srfi-36 (*)
+    |                   +- <no-such-file-error>        ; srfi-36 (*)
     +- <thread-exception> ; srfi-18
          +- <join-timeout-exception>      ; srfi-18
          +- <abandoned-mutex-exception>   ; srfi-18
          +- <terminated-thread-exception> ; srfi-18
          +- <uncaught-exception>          ; srfi-18
+
+ (*) - not implemented yet
 */
 
 /*---------------------------------------------------
