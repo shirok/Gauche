@@ -61,6 +61,8 @@ Scheme program and exit.
 @c COMMON
 @end deftp
 
+@subheading Command-line options
+
 @c EN
 The following command line options are recognized by @code{gosh}.
 The first command line argument which doesn't begin with `@minus{}'
@@ -247,6 +249,22 @@ of appearance.  For example, adding a load path by -I affects the
 与えません。
 @c COMMON
 
+@subheading Environment variables
+
+The following enviornment variables are recognized:
+
+@deftp {Environment variable} GAUCHE_LOAD_PATH
+You can specify additional load paths by this environment
+variable, delimiting the paths by '@code{:}'.
+The paths are appended before the system default load paths.
+@end deftp
+
+@deftp {Environment variable} GAUCHE_DYNLOAD_PATH
+You can specify additional load paths for dynamically loaded
+objects by this environment variable, delimiting the paths by '@code{:}'.
+The paths are appended before the system default load paths.
+@end deftp
+
 @c ----------------------------------------------------------------------
 @node Interactive development, Debugging, Invoking Gosh, Programming in Gauche
 @section Interactive development
@@ -266,6 +284,26 @@ or evaluate @code{(exit)}.
 @c JP
 インタプリタを終了するには、EOF文字(Unix端末では通常Control-D)をタイプするか、
 @code{(exit)}を評価します。
+@c COMMON
+
+@c EN
+In interactive session, @code{gosh} loads @code{gauche.interactive}
+module (@xref{gauche.interactive - Interactive session}) for the
+convenience.  The module also loads a file @file{.gaucherc} under
+the user's home directory if it exists.
+You may put settings there that would help interactive debugging.
+(As of Gauche release 0.7.3,
+@file{.gauchrc} is no longer loaded when @code{gosh} is run
+in script mode.)
+@c JP
+インタラクティブセッションでは、@code{gosh}は
+@code{gauche.interactive}モジュールをロードします
+(@ref{gauche.interactive - Interactive session}参照)。
+このモジュールはまた、ユーザーのホームディレクトリに@file{.gaucherc}という
+ファイルがあればをれをロードします。
+インタラクティブデバッグに便利な設定をそこに書いておくことができます。
+(Gauche release 0.7.3から、@file{.gaucherc}はgoshがスクリプトモードで
+起動された時は読まれなくなりました)。
 @c COMMON
 
 @c EN
@@ -301,13 +339,6 @@ line-editing or command history.   They'll be added in future.
 @c JP
 今のところ、@code{gosh}は行編集やコマンドヒストリなどの便利な機能を
 備えていません。将来はこのへんも充実してゆくでしょう。
-@c COMMON
-
-@c EN
-@xref{gauche.interactive - Interactive session}, for some procedures useful in
-interactive session.
-@c JP
-インタラクティブセッションで便利な手続きが@ref{gauche.interactive - Interactive session}で定義されています。
 @c COMMON
 
 @c ----------------------------------------------------------------------
