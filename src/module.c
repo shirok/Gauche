@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.19 2001-04-22 07:37:47 shiro Exp $
+ *  $Id: module.c,v 1.20 2001-05-22 20:27:39 shirok Exp $
  */
 
 #include "gauche.h"
@@ -79,7 +79,9 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
             m = SCM_MODULE(SCM_CAR(p));
             e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-            if (e && !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported)))
+            if (e &&
+                (SCM_TRUEP(m->exported)
+                 || !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported))))
                 return SCM_GLOC(e->value);
         }
         /* Then, search from parent module */
@@ -129,6 +131,7 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
 {
     ScmObj lp, syms = module->exported;
+    if (SCM_TRUEP(syms)) return syms; /* all symbols are exported */
     SCM_FOR_EACH(lp, list) {
         if (!SCM_SYMBOLP(SCM_CAR(lp)))
             Scm_Error("symbol required, but got %S", SCM_CAR(lp));
@@ -136,6 +139,12 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
             syms = Scm_Cons(SCM_CAR(lp), syms);
     }
     return (module->exported = syms);
+}
+
+ScmObj Scm_ExportAll(ScmModule *module)
+{
+    module->exported = SCM_TRUE;
+    return SCM_OBJ(module);
 }
 
 /*----------------------------------------------------------------------
