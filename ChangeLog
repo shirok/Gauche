@@ -1,10 +1,12 @@
-2004-07-14  Shiro Kawai  <shiro@acm.org>
+2004-07-13  Shiro Kawai  <shiro@acm.org>
 
-	* src/compile.c (compile_body): supports internal defines generated
-	  by macro expansion.
+	* src/compile.c (compile_body): fixed a bug that passes
+	  (define (a) 1 (define b 2) b)
 
 2004-07-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.c (compile_body): supports internal defines generated
+	  by macro expansion.
 	* macro.c, compile.c, gauche.h, class.c : introduced ScmMacro structure
 	  apart from ScmSyntax to represent macros.  necessary to separate
 	  the transform pass and the compile pass, in order to support

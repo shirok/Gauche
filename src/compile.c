@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.112 2004-07-13 14:01:20 shirok Exp $
+ *  $Id: compile.c,v 1.113 2004-07-13 21:14:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -950,7 +950,18 @@ static ScmObj compile_body(ScmObj form, ScmObj env,
         /* If the explicit body hasn't started, we try to expand the macro,
            since it may produce internal definitions.  Note that the previous
            internal definition in the same body may shadow the macro binding,
-           so we need to check idef_vars for that */
+           so we need to check idef_vars for that.
+
+           Actually, this part touches the hole of R5RS---we can't determine
+           the scope of the identifiers of the body until we find the boundary
+           of internal define's, but in order to find all internal defines
+           we have to expand the macro and we need to detemine the scope
+           of the macro keyword.  Search "macro internal define" in
+           comp.lang.scheme for the details.
+
+           I use the model that appears the same as Chez, which adopts
+           let*-like semantics for the purpose of determining macro binding
+           during expansion. */
         if (!body_started && SCM_PAIRP(expr) && VAR_P(SCM_CAR(expr))
             && SCM_FALSEP(Scm_Memq(SCM_CAR(expr), idef_vars))) {
             ScmObj headvar = lookup_env(SCM_CAR(expr), env, TRUE);
@@ -1024,6 +1035,7 @@ static ScmObj compile_body(ScmObj form, ScmObj env,
             *depth += maxdepth + ENV_SIZE(idefs);
             maxdepth = 0;
         }
+        body_started = TRUE;
 
         if (SCM_NULLP(SCM_CDR(formtail))) {
             /* tail call */
@@ -1032,7 +1044,6 @@ static ScmObj compile_body(ScmObj form, ScmObj env,
             x = compile_int(expr, env, SCM_COMPILE_STMT, &subdepth);
         }
         SCM_APPEND(body, bodytail, x);
-        body_started = !SCM_NULLP(body);
         MAXDEPTH(maxdepth, subdepth);
         formtail = SCM_CDR(formtail);
     }
