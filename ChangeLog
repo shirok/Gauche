@@ -1,3 +1,14 @@
+2001-06-07  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.14
+	* gc/dyn_load.c : fixed a bug that failed to find data segments
+	  in dynamically loaded module on IRIX 6.5.
+	* ext/charconv/* : fixed small bugs around compilation and
+	  installation.
+	* lib/port/jfilter.scm : added this compatibility module.
+	* lib/Makefile.in : fixed a bug that some modules were not installed
+	  properly.
+
 2001-06-06  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/* : made it work with Bruno Haible's libiconv as well.
