@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.174 2001-09-17 01:36:39 shirok Exp $
+ *  $Id: gauche.h,v 1.175 2001-09-18 08:51:17 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -183,7 +183,11 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define	SCM_MAKE_CHAR(ch)       SCM_OBJ(((ch) << 3) + 2)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
+#if SIZEOF_LONG == 4
 #define SCM_CHAR_MAX            (LONG_MAX/8)
+#else
+#define SCM_CHAR_MAX            (0x1fffffff)
+#endif
 
 #define SCM_CHAR_ASCII_P(ch)    ((ch) < 0x80)
 #define SCM_CHAR_UPPER_P(ch)    (('A' <= (ch)) && ((ch) <= 'Z'))
