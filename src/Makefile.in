@@ -139,6 +139,10 @@ install : all
 	  $(INSTALL) -m 555 $$f $(BIN_INSTALL_DIR); \
 	  $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
 	done
+	# kludge for cygwin
+	if test "@LIBGAUCHE_SO@" = libgauche.dll; then \
+	  $(INSTALL) -m 555 @LIBGAUCHE_SO@ $(BIN_INSTALL_DIR); \
+	fi
 	$(INSTALL) -d $(SCM_INSTALL_DIR)
 	for f in $(INSTALL_SCMS); do \
 	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
