@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.23 2001-04-15 21:32:38 shiro Exp $
+ *  $Id: string.c,v 1.24 2001-04-22 07:31:05 shiro Exp $
  */
 
 #include <stdio.h>
@@ -590,7 +590,7 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
     int size = SCM_STRING_SIZE(str), sizecnt = 0;
     int len = SCM_STRING_LENGTH(str), lencnt = 0;
     const char *s = SCM_STRING_START(str), *p = s, *e = s + size;
-    ScmObj head = SCM_NIL, tail;
+    ScmObj head = SCM_NIL, tail = SCM_NIL;
 
     if (len < 0) {
         /* TODO: fix the policy of handling incomplete string */
@@ -711,7 +711,7 @@ int Scm_StringLength(ScmString *str)
 
 ScmObj Scm_StringToList(ScmString *str)
 {
-    ScmObj start = SCM_NIL, end;
+    ScmObj start = SCM_NIL, end = SCM_NIL;
     const char *bufp = SCM_STRING_START(str);
     int len = SCM_STRING_LENGTH(str);
     ScmChar ch;
