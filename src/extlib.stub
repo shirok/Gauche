@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.80 2001-05-19 10:56:28 shirok Exp $
+;;; $Id: extlib.stub,v 1.81 2001-05-19 11:36:24 shirok Exp $
 ;;;
 
 "
@@ -315,6 +315,8 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc string-incomplete? (obj)    ;gauche specific
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)&&SCM_STRING_INCOMPLETE_P(obj)));")
+(define-cproc string-immutable? (obj)   ;gauche specific
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)&&SCM_STRING_IMMUTABLE_P(obj)));")
 
 (define-cproc string-complete->incomplete! (str) ;gauche specific
   (assert (string? str))
