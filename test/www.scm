@@ -7,6 +7,7 @@
 (use gauche.charconv)
 (use text.tree)
 (use rfc.822)
+(use file.util)
 (test-start "www.* modules")
 
 ;;------------------------------------------------
@@ -22,33 +23,107 @@
 (define qs2 "zz=aa&aa=zz")
 (define qr2 '(("zz" "aa") ("aa" "zz")))
 
-(test "cgi-parse-parameters" qr1
-      (lambda ()
-        (set! params (cgi-parse-parameters :query-string qs1))
-        params))
-(test "cgi-parse-parameters" qr1
-      (lambda ()
-        (set! params (cgi-parse-parameters :query-string qs1b))
-        params))
+(test* "cgi-parse-parameters" qr1
+       (cgi-parse-parameters :query-string qs1))
+(test* "cgi-parse-parameters" qr1
+       (cgi-parse-parameters :query-string qs1b))
+
+(define ps1 "--boundary
+Content-Disposition: form-data; name=\"aaa\"
+
+111
+--boundary
+Content-Disposition: form-data; name=\"bbb\"; filename=\"x.txt\"
+Content-Type: text/plain
+
+abc
+def
+ghi
+
+--boundary
+Content-Disposition: form-data; name=\"ccc\"; filename=\"\"
+
+--boundary
+Content-Disposition: form-data: name=\"ddd\"; filename=\"ttt\"
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+
+VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
+--boundary--
+")
+
+(define pr1 '(("aaa" "111") ("bbb" "abc\ndef\nghi\n") ("ccc" #f) ("ddd" "This is a test sentence.")))
+
+(define pr2 '(("aaa" "111") ("bbb" "x.txt") ("ccc" #f) ("ddd" "ttt")))
+
+(test* "cgi-parse-parameters (multipart)" pr1
+       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
+                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
+         (with-input-from-string ps1
+           (lambda () (cgi-parse-parameters)))))
+
+(test* "cgi-parse-parameters (multipart, custom handler)" pr2
+       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
+                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
+         (with-input-from-string ps1
+           (lambda ()
+             (cgi-parse-parameters
+              :part-handlers
+              `((#t ,(lambda (name filename info reader inp)
+                       (let loop ((line (reader inp)))
+                         (if (eof-object? line)
+                           filename
+                           (loop (reader inp))))))))))
+         ))
+
+(test* "cgi-parse-parameters (multipart, custom handler 2)" "abc\ndef\nghi\n"
+       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
+                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
+         (let1 r
+             (with-input-from-string ps1
+               (lambda ()
+                 (cgi-parse-parameters
+                  :part-handlers `(("bbb" file "./bbb")))))
+           (let* ((tmpfile (cgi-get-parameter "bbb" r))
+                  (content (file->string tmpfile)))
+             (sys-unlink tmpfile)
+             content))))
+
+(test* "cgi-parse-parameters (multipart, custom handler 3)" "abc\ndef\nghi\n"
+       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")
+                                           ("CONTENT_TYPE" "multipart/form-data; boundary=boundary")
+                                           ("CONTENT_LENGTH" ,(string-size ps1)))))
+         (let1 r
+             (with-input-from-string ps1
+               (lambda ()
+                 (cgi-parse-parameters
+                  :part-handlers `((#/b{3}/ file "./bbb")))))
+           (let* ((tmpfile (cgi-get-parameter "bbb" r))
+                  (content (file->string tmpfile)))
+             (sys-unlink tmpfile)
+             content))))
 
 (test* "cgi-get-parameter" "foo bar"
-       (cgi-get-parameter "a" params))
+       (cgi-get-parameter "a" qr1))
 (test* "cgi-get-parameter" '("foo bar" "  ")
-       (cgi-get-parameter "a" params :list #t))
+       (cgi-get-parameter "a" qr1 :list #t))
 (test* "cgi-get-parameter" #t
-       (cgi-get-parameter "r" params))
+       (cgi-get-parameter "r" qr1))
 (test* "cgi-get-parameter" '(#t "2")
-       (cgi-get-parameter "r" params :list #t))
+       (cgi-get-parameter "r" qr1 :list #t))
 (test* "cgi-get-parameter" '("baz=doo")
-       (cgi-get-parameter "boo" params :list #t))
+       (cgi-get-parameter "boo" qr1 :list #t))
 (test* "cgi-get-parameter" 'none
-       (cgi-get-parameter "booz" params :default 'none))
+       (cgi-get-parameter "booz" qr1 :default 'none))
 (test* "cgi-get-parameter" #f
-       (cgi-get-parameter "booz" params))
+       (cgi-get-parameter "booz" qr1))
 (test* "cgi-get-parameter" '()
-       (cgi-get-parameter "booz" params :list #t))
+       (cgi-get-parameter "booz" qr1 :list #t))
 (test* "cgi-get-parameter" '(0 2)
-       (cgi-get-parameter "r" params :convert x->integer :list #t))
+       (cgi-get-parameter "r" qr1 :convert x->integer :list #t))
 
 (test* "cgi-get-query (GET)" qr1
        (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "GET")

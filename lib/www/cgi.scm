@@ -1,7 +1,7 @@
 ;;;
 ;;; cgi.scm - CGI utility
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.15 2004-05-13 09:30:10 shirok Exp $
+;;;  $Id: cgi.scm,v 1.16 2004-07-26 20:53:22 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -45,10 +45,13 @@
   (use srfi-13)
   (use rfc.uri)
   (use rfc.cookie)
+  (use rfc.mime)
+  (use rfc.822)
   (use gauche.parameter)
   (use gauche.charconv)
   (use text.tree)
   (use text.html-lite)
+  (use file.util)
   (export cgi-metavariables
           cgi-get-metavariable
           cgi-output-character-encoding
@@ -86,10 +89,14 @@
 ;; Get query string. (internal)
 ;;
 (define (cgi-get-query)
-  (let ((type   (get-meta "CONTENT_TYPE"))
-        (method (get-meta "REQUEST_METHOD")))
-    (when (and type (not (string-ci=? type "application/x-www-form-urlencoded")))
-      (error "unsupported content-type" type))
+  (let* ((type   (mime-parse-content-type (get-meta "CONTENT_TYPE")))
+         (typesig (and type (list (car type) (cadr type))))
+         (method (get-meta "REQUEST_METHOD")))
+    (unless (or (not type)
+                (member typesig
+                        '(("application" "x-www-form-urlencoded")
+                          ("multipart" "form-data"))))
+      (error "unsupported content-type" typesig))
     (cond ((not method)  ;; interactive use.
            (if (sys-isatty (current-input-port))
              (begin
@@ -108,41 +115,119 @@
                (string-ci=? method "HEAD"))
            (or (get-meta "QUERY_STRING") ""))
           ((string-ci=? method "POST")
-           ;; TODO: mutipart message
-           (or (and-let* ((lenp (get-meta "CONTENT_LENGTH"))
-                          (len  (x->integer lenp)))
-                 (string-incomplete->complete (read-block len)))
-               (port->string (current-input-port))))
+           (if (equal? typesig '("multipart" "form-data"))
+             'mime
+             (or (and-let* ((lenp (get-meta "CONTENT_LENGTH"))
+                            (len  (x->integer lenp)))
+                   (string-incomplete->complete (read-block len)))
+                 (port->string (current-input-port)))))
           (else (error "unknown REQUEST_METHOD" method)))))
 
 ;;----------------------------------------------------------------
 ;; API: cgi-parse-parameters &keyword query-string merge-cookies
-;;
+;;                                    part-handlers
 (define (cgi-parse-parameters . args)
   (let ((input   (or (get-keyword :query-string args #f)
                      (cgi-get-query)))
+        (part-handlers (get-keyword :part-handlers args '()))
         (cookies (cond ((and (get-keyword :merge-cookies args #f)
                              (get-meta "HTTP_COOKIE"))
                         => parse-cookie-string)
                        (else '()))))
     (append
      (cond
+      ((eq? input 'mime) ;; cgi-get-query returns this if content-type is mime
+       (get-mime-parts part-handlers))
       ((string-null? input) '())
-      (else
-       (fold-right (lambda (elt params)
-                     (let* ((ss (string-split elt #\=))
-                            (n  (uri-decode-string (car ss) :cgi-decode #t))
-                            (p  (assoc n params))
-                            (v  (if (null? (cdr ss))
-                                    #t
-                                    (uri-decode-string (string-join (cdr ss) "=")
-                                                       :cgi-decode #t))))
-                       (if p
-                           (begin (set! (cdr p) (cons v (cdr p))) params)
-                           (cons (list n v) params))))
-                   '()
-                   (string-split input #[&\;]))))
+      (else (split-query-string input)))
      (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
+
+(define (split-query-string input)
+  (fold-right (lambda (elt params)
+                (let* ((ss (string-split elt #\=))
+                       (n  (uri-decode-string (car ss) :cgi-decode #t))
+                       (p  (assoc n params))
+                       (v  (if (null? (cdr ss))
+                             #t
+                             (uri-decode-string (string-join (cdr ss) "=")
+                                                :cgi-decode #t))))
+                  (if p
+                    (begin (set! (cdr p) (cons v (cdr p))) params)
+                    (cons (list n v) params))))
+              '()
+              (string-split input #[&\;])))
+
+;; part-handlers: ((<name-list> <action>) ...)
+;;  <name-list> : list of field names (string or symbol)
+;;  <action>    : #f                ;; return as string
+;;              : file [<prefix>]   ;; save content to a tmpfile,
+;;                                  ;;   returns filename.
+;;              : ignore            ;; discard the value.
+;;              : <procedure>       ;; calls <procedure> with
+;;                                  ;;   name, part-info, reader, input-port.
+;;
+(define (get-mime-parts part-handlers)
+  (define (part-ref info name)
+    (rfc822-header-ref (ref info 'headers) name))
+
+  (define (make-file-handler prefix)
+    (lambda (name filename part-info reader inp)
+      (receive (outp tmpfile) (sys-mkstemp prefix)
+        (mime-retrieve-body part-info reader inp outp)
+        (close-output-port outp)
+        tmpfile)))
+
+  (define (string-handler name filename part-info reader inp)
+    (mime-body->string part-info reader inp))
+
+  (define (ignore-handler name filename part-info reader inp)
+    (let loop ((ignore (reader inp)))
+      (if (eof-object? ignore) #f (loop (reader inp)))))
+
+  (define (get-handler part-name)
+    (let* ((handler (find (lambda (entry)
+                            (or (eq? (car entry) #t)
+                                (and (regexp? (car entry))
+                                     (rxmatch (car entry) part-name))
+                                (and (list? (car entry))
+                                     (member part-name
+                                             (map x->string (car entry))))
+                                (string=? (x->string (car entry)) part-name)))
+                          part-handlers))
+           (action  (if handler (cdr handler) '(#f))))
+      (cond
+       ((not (pair? action))
+        (error "malformed part-handler clause:" handler))
+       ((eq? (car action) #f)
+        string-handler)
+       ((eq? (car action) 'file)
+        (make-file-handler (if (null? (cdr action))
+                             (build-path (temporary-directory) "gauche-cgi")
+                             (cadr action))))
+       ((eq? (car action) 'ignore)
+        ignore-handler)
+       (else
+        (car action)))))
+
+  (define (handle-part part-info reader)
+    (let* ((cd   (part-ref part-info "content-disposition"))
+           (opts (rfc822-field->tokens cd))
+           (name (cond ((member "name=" opts) => cadr) (else #f)))
+           (filename (cond ((member "filename=" opts) => cadr) (else #f)))
+           (handler (cond ((not name) ignore-handler)
+                          ((not filename) string-handler)
+                          ((string-null? filename) ignore-handler)
+                          (else  (get-handler name))))
+           (result (handler name filename part-info reader
+                            (current-input-port))))
+      (if name (list name result) #f)))
+
+  (let* ((ctype (get-meta "CONTENT_TYPE"))
+         (inp   (current-input-port))
+         (result (mime-parse-message inp `(("content-type" ,ctype))
+                                     handle-part)))
+    (filter-map (cut ref <> 'content) (ref result 'content)))
+  )
 
 ;;----------------------------------------------------------------
 ;; API: cgi-get-parameter key params &keyword list default convert
@@ -186,16 +271,18 @@
       
 ;;----------------------------------------------------------------
 ;; API: cgi-main proc &keyword on-error merge-cookies
-;;
+;;                             output-proc part-handlers
 (define (cgi-main proc . args)
   (let-keywords* args ((on-error cgi-default-error-proc)
-                       (output-proc cgi-default-output))
+                       (output-proc cgi-default-output)
+                       (merge-cookies #f)
+                       (part-handlers '()))
     (with-error-handler
      (lambda (e) (output-proc (on-error e)))
      (lambda ()
        (let1 params
-           (cgi-parse-parameters :merge-cookies
-                                 (get-keyword :merge-cookies args #f))
+           (cgi-parse-parameters :merge-cookies merge-cookies
+                                 :part-handlers part-handlers)
          (output-proc (proc params)))))
     ))
 
