@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.3 2001-04-17 09:57:13 shiro Exp $
+;; $Id: regexp.scm,v 1.4 2001-04-18 07:51:56 shiro Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -251,8 +251,14 @@
       (lambda () (match&list #/a[a-z]d/ "aed" 1)))
 (test "a[a-z]d" #f
       (lambda () (match&list #/a[a-z]d/ "aEd" 1)))
-(test "a[-a-z]d" '("a-d")
-      (lambda () (match&list #/a[-a-z]d/ "a-d" 1)))
+(test "a[]]d" '("a]d")
+      (lambda () (match&list #/a[]]d/ "a]d" 1)))
+(test "a[]-]d" '("a-d")
+      (lambda () (match&list #/a[]-]d/ "a-d" 1)))
+(test "a[]-^]d" #f
+      (lambda () (match&list #/a[]-^]d/ "a-d" 1)))
+(test "a[]-^]d" '("a]d")
+      (lambda () (match&list #/a[]-^]d/ "a]d" 1)))
 (test "a[a-z-]d" '("a-d")
       (lambda () (match&list #/a[a-z-]d/ "a-d" 1)))
 (test "a[a-z-]d" '("afd")
@@ -260,13 +266,21 @@
 (test "a[az-]d" '("a-d")
       (lambda () (match&list #/a[az-]d/ "a-d" 1)))
 (test "a[a-]d" '("a-d")
-      (lambda () (match&list #/a[az-]d/ "a-d" 1)))
+      (lambda () (match&list #/a[a-]d/ "a-d" 1)))
 (test "a[az-]d" #f
       (lambda () (match&list #/a[az-]d/ "afd" 1)))
 (test "a[az-]d" '("azd")
       (lambda () (match&list #/a[az-]d/ "azd" 1)))
 (test "a[^ab]c" '("acc")
       (lambda () (match&list #/a[^ab]c/ "abacc" 1)))
+(test "a[^]]c" '("abc")
+      (lambda () (match&list #/a[^]]c/ "abc" 1)))
+(test "a[^]]c" #f
+      (lambda () (match&list #/a[^]]c/ "a]c" 1)))
+(test "a[^^]c" '("abc")
+      (lambda () (match&list #/a[^^]c/ "abc" 1)))
+(test "a[^^]c" #f
+      (lambda () (match&list #/a[^^]c/ "a^c" 1)))
 (test "a[Bc]*d" '("aBccBd")
       (lambda () (match&list #/a[Bc]*d/ "aBccBd" 1)))
 (test "[a]b[c]" '("abc")
