@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.40 2001-09-27 10:13:08 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.41 2001-09-29 23:44:21 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -100,7 +100,7 @@
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
-  (sys-access path |F_OK|))
+  (sys-access path f_ok))
 (define (file-is-regular? path)
   (and (sys-access path |F_OK|)
        (eq? (sys-stat->file-type (sys-stat path)) 'regular)))

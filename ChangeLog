@@ -1,3 +1,22 @@
+2001-09-29  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.6
+	* src/compiler.c : changed to emit meaningful information for env.
+	* lib/gauche/vm/debugger.scm : added minimal debugging commands.
+	* src/genstub : added real? type assertion.
+	
+2001-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net : INCOMPATIBLE CHANGE: made system constants upper case
+	  (e.g. |AF_INET|).
+
+2001-09-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/extlib.stub, src/gauche/vm.h : added Scm_VMGetStack
+	  and its Scheme interface.  added a hook function in VM for
+	  debugger.
+	* lib/gauche/vm/debugger.scm: added
+
 2001-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub, src/gauche-init.scm : INCOMPATIBLE CHANGE:
@@ -48,7 +67,7 @@
 
 2001-09-20  Shiro Kawai  <shiro@acm.org>
 
-	* lib/srfi.scm (defmacro) : fixed a bug.
+	* lib/slib.scm (defmacro) : fixed a bug.
 	* lib/w3c/cgi.scm : moved under w3c.
 	* lib/text/csv.scm : added.
 	* src/stdlib.stub (open-output-string) : allow #f to :if-exists

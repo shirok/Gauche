@@ -23,12 +23,6 @@ Compiler and VM
 
 * better inliner definition for genstub
 
-* Get rid of source-info stuff.  That affects performance too much.
-  Instead, add a mechanism to keep source information in a table, attached
-  to each procedure.
-
-* Fix stack trace.
-
 o Method cache.  Each VM to have a table that maps (gf, targs ...) => sorted
   method list.  Invalidated if any of method of gf is redefined.
   Keep it in VM rather than gf makes MT easier.
@@ -45,19 +39,11 @@ Modules
 
 * module gauche.lock :general file locking
 
-* module gauche.logger : logging
-
-* module cgi   : cgi interface
-
 * module file.utils : common file utils
 
 * module file.find 
 
 * module file.du
-
-* module text.csv
-
-* module text.tr
 
 * module math/mt-random : Mersenne Twister random number generator
 
@@ -66,8 +52,6 @@ Modules
 * module math/quat : Quaternions
 
 * module math/matrix : Matrices
-
-* module rfc/uri : url parsing
 
 * module rfc/http : http parsing
 
