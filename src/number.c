@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.44 2001-05-12 20:41:53 shirok Exp $
+ *  $Id: number.c,v 1.45 2001-05-12 21:20:31 shirok Exp $
  */
 
 #include <math.h>
@@ -971,6 +971,59 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
   BADARG:
     Scm_Error("integer required, but got %S", x);
     return SCM_UNDEFINED;       /* dummy */
+}
+
+/*
+ * Expt
+ */
+
+/* short cut for exact numbers */
+static ScmObj exact_expt(ScmObj x, ScmObj y)
+{
+    int sign = Scm_Sign(y);
+    ScmObj r = SCM_MAKE_INT(1);
+
+    if (sign == 0) return r;
+    if (x == SCM_MAKE_INT(1)) return r;
+    if (x == SCM_MAKE_INT(-1)) return Scm_OddP(r)? SCM_MAKE_INT(-1) : r;
+    /* TODO: optimization when x is power of two */
+    if (SCM_INTP(y)) {
+        int iy = SCM_INT_VALUE(y);
+        if (iy < 0) iy = -iy;
+        for (;;) {
+            if (iy == 0) break;
+            if (iy == 1) { r = Scm_Multiply(r, x, SCM_NIL); break; }
+            if (iy & 0x01) r = Scm_Multiply(r, x, SCM_NIL);
+            x = Scm_Multiply(x, x, SCM_NIL);
+            iy >>= 1;
+        }
+    } else {
+        /* who wants such a heavy calculation? */
+        Scm_Error("exponent too big: %S", y);
+    }
+    return (sign < 0)? Scm_Reciprocal(r) : r;
+}
+
+ScmObj Scm_Expt(ScmObj x, ScmObj y)
+{
+    double dx, dy;
+    if (SCM_EXACTP(x) && SCM_EXACTP(y)) return exact_expt(x, y);
+    if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
+    if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
+    dx = Scm_GetDouble(x);
+    dy = Scm_GetDouble(y);
+    if (dx == 0.0) {
+        return Scm_MakeFlonum(1.0);
+    } else if (dx < 0 && !Scm_IntegerP(y)) {
+        /* x^y == exp(y * log(x)) = exp(y*log(|x|))*exp(y*arg(x)*i)
+           if x is a negative real number, arg(x) == pi
+        */
+        double mag = exp(dy * log(-dx));
+        double theta = dy * M_PI;
+        return Scm_MakeComplex(mag * cos(theta), mag * sin(theta));
+    } else {
+        return Scm_MakeFlonum(pow(dx, dy));
+    }
 }
 
 /*===============================================================
