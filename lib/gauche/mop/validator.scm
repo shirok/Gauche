@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: validator.scm,v 1.3 2002-12-09 04:31:00 shirok Exp $
+;;;  $Id: validator.scm,v 1.4 2002-12-09 13:52:53 shirok Exp $
 ;;;
 
 (define-module gauche.mop.validator
@@ -25,7 +25,7 @@
 
 (define-method compute-get-n-set ((class <validator-meta>) slot)
   (let ((pre  (slot-definition-option slot :validator #f))
-        (post (slot-definition-option slot :post-validator #f)))
+        (post (slot-definition-option slot :observer #f)))
     (if (or pre post)
         (let* ((acc (compute-slot-accessor class slot (next-method)))
                (getter (lambda (o) (slot-ref-using-accessor o acc)))
