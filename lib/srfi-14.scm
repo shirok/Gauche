@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-14.scm,v 1.7 2002-12-06 12:39:16 shirok Exp $
+;;;  $Id: srfi-14.scm,v 1.8 2002-12-15 01:31:49 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -223,7 +223,7 @@
 
 (define ucs-range->char-set!
   (if (eq? (gauche-character-encoding) 'utf-8)
-      integer-ragne->char-set!
+      integer-range->char-set!
       (lambda (low upper error? base)
         (when (< low 0)
           (if error?
