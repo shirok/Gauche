@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.96 2003-12-05 03:01:16 shirok Exp $
+;;;  $Id: genstub,v 1.97 2004-03-14 09:54:20 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1108,8 +1108,8 @@
 (define-method process-setter ((gf <cgeneric>) setter)
   (cond
    ((symbol? (car decl))
-    (set! (setter-of cproc) (car decl))
-    (set! (setter-c-name-of cproc) (get-c-name *file-prefix* (car decl))))
+    (set! (setter-of gf) (car decl))
+    (set! (setter-c-name-of gf) (get-c-name *file-prefix* (car decl))))
    (else
     (error "bad form of anonymous setter:" `(setter ,decl)))))
 

@@ -1,3 +1,7 @@
+2004-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub (process-setter): fixed typo (Pointed by Michal Maru-B¹ka)$)B
+
 2004-03-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/xlink : not to make a link when there's already a desired link.
