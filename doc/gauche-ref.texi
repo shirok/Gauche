@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.256 2002-09-02 03:49:37 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.257 2002-09-02 10:24:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3381,30 +3381,17 @@ The second form is merely a syntactic sugar of:
 @c NODE モジュール
 
 @c EN
-Module is an object that maps symbols onto @emph{bindings}.
-
-Unlike CommonLisp's packages, which map names to symbols,
-in Gauche symbols are always @code{eq?} if two have the
-same name.  However, different bindings can be associated
-to the same symbol, that yield different values.
-@c JP
-モジュールは、シンボルを束縛へとマップするオブジェクトです。
-
-CommonLispのパッケージは名前からシンボルへのマッピングを行いますが、
-Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
-モジュールが違えば同じシンボルは別々の束縛へとマップされ、違う値を
-返します。
-@c COMMON
-
-@c EN
+This section describes the semantics of Gauche modules and its API.
 See also @ref{Writing Gauche modules}, for the conventions
 Gauche is using for its modules.
 @c JP
+この章では、GaucheのモジュールのセマンティクスとAPIを述べます。
 Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
 併せて参照して下さい。
 @c COMMON
 
 @menu
+* Module semantics::            
 * Defining and selecting modules::  
 * Using modules::               
 * Module inheritance::          
@@ -3412,15 +3399,192 @@ Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
 * Predefined modules::          
 @end menu
 
-@node Module semantics
+@node Module semantics, Defining and selecting modules, Modules, Modules
 @subsection Module semantics
 @c NODE モジュールのセマンティクス
 
 @c EN
+Module is an object that maps symbols onto @emph{bindings},
+and affects the resolution of global variable reference.
 @c JP
+モジュールは、シンボルを束縛へとマップするオブジェクトで、
+グローバル変数の解決に影響を与えます。
 @c COMMON
 
-@node Defining and selecting modules, Using modules, Modules, Modules
+@c EN
+Unlike CommonLisp's packages, which map names to symbols,
+in Gauche symbols are always @code{eq?} if two have the
+same name.  However, Gauche's symbol doesn't have a 'value'
+slot in it.  Given symbol, a module finds its binding that
+keeps a value.
+Different modules can associate different bindings
+to the same symbol, that yield different values.
+@c JP
+CommonLispのパッケージは名前からシンボルへのマッピングを行いますが、
+Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
+Gaucheのシンボルは「値」のスロット持っていません。
+モジュールによってシンボルに対応する束縛が見付けられ、値はそこに
+格納されています。
+モジュールが違えば同じシンボルは別々の束縛へとマップされ、違う値を
+返します。
+@c COMMON
+
+@example
+@c EN
+;; Makes two modules A and B, and defines a global variable 'x' in them
+@c JP
+;; 二つのモジュールAとBを作成し、グローバル変数'x'をその中で定義
+@c COMMON
+(define-module A (define x 3))
+(define-module B (define x 4))
+
+;;  #<symbol 'x'> ---[module A]--> #<binding that has 3>
+(with-module A x) @result{} 3
+
+;;  #<symbol 'x'> ---[module B]--> #<binding that has 4>
+(with-module B x) @result{} 4
+@end example
+
+@c EN
+A module can @emph{export} a part or all of its bindings
+for other module to use.
+A module can @emph{import} other modules, and their exported
+bindings become visible to the module.
+A module can import any number of modules.
+@c JP
+モジュールは、自身が持つ一部または全ての束縛を他のモジュールからも
+使えるように@emph{export}することができます。モジュールが他の
+モジュールを@emph{import}すると、それらのモジュールでexportされている
+束縛が元もモジュールから見えるようになります。
+モジュールはいくつでも他のモジュールをimportすることができます。
+@c COMMON
+
+@example
+(define-module A
+  (export pi)
+  (define pi 3.1416))
+
+(define-module B
+  (export e)
+  (define e 2.71828))
+
+(define-module C
+  (import A B))
+
+(select-module C)
+(* pi e) @result{} 8.539748448
+@end example
+
+@c EN
+A module can also be @emph{inherited}, that is, you can extend
+the existing module by inheriting it and adding new bindings
+and exports.   From the new module, all ancestor's bindings (including
+non-exported bindings) are visible.
+(A new module inherits the @code{gauche} module by default, which is why
+the built-in procedures and syntax of @code{gauche} are available
+in the new module).
+From outside, the new module looks like having
+all exported bindings of the original module plus the newly
+defined and exported bindings.
+@c JP
+また、モジュールは継承することもできます。
+既存のモジュールを継承したモジュールに新しい束縛を足してexportすることにより、
+既存のモジュールを拡張することができます。新しいモジュールからは、
+継承元のモジュールの束縛が(exportされていないものも含め)全て見えます。
+(新しいモジュールはデフォルトで@code{gauche}モジュールを継承しています。
+新しいモジュールから@code{gauche}の組込み手続き等が使えるのはそのためです)。
+外からは、新しいモジュールには元のモジュールの全てのexportされた束縛と
+新たに追加されexportされた束縛が見えます。
+@c COMMON
+
+@example
+;; Module A defines and exports deg->rad.
+;; A binding of pi is not exported.
+(define-module A
+  (export deg->rad)
+  (define pi 3.1416)   ;; not exported
+  (define (deg->rad deg) (* deg (/ pi 180))))
+
+;; Module Aprime defines and exports rad->deg.
+;; The binding of pi is visible from inside Aprime.
+(define-module Aprime
+  (extend A)
+  (export rad->deg)
+  (define (rad->deg rad) (* rad (/ 180 pi))))
+
+;; Module C imports Aprime.
+(define-module C
+  (import Aprime)
+  ;; Here, both deg->rad and rad->deg are visible,
+  ;; but pi is not visible.
+  )
+@end example
+
+@c EN
+At any moment of the compilation, there is one "current module" available,
+and the global variable reference is looked for from the module.
+If there is a visible binding of the variable, the variable
+reference is compiled to the access of the binding.
+If the compiler can't find a visible binding,
+it marks the variable reference with the current module, and
+delays the resolution of binding at the time the variable is
+actually used.  That is, when the variable is referenced
+at run time, the binding is again looked for from the marked module
+(@emph{not} the current module at the run time) and if found,
+the variable reference code is replaced for the the code to
+access the binding.  If the variable reference is not found even
+at run time, an 'undefined variable' error is signalled.
+@c JP
+コンパイル中のどの時点でも、「カレントモジュール」が一意に決定され、
+グローバル変数の束縛はそのカレントモジュールを起点に探されます。
+その変数の束縛が見付かれば、変数参照の式はその束縛へアクセスするコードとして
+コンパイルされます。もしコンパイラが束縛を見付けられなかった場合、
+変数参照の式はカレントモジュールでマークされ、束縛の解決はランタイムへと
+先送りされます。すなわち、ランタイムにその変数が使われる時点で
+再びマークされていたモジュールから束縛の探索が行われます
+(ランタイムでのカレントモジュールからでは無いことに注意)。
+束縛が見付かれば、束縛へアクセスするコードがコンパイルされたコード列に
+挿入されます。見付からなければ'undefined variable'エラーが報告されます。
+@c COMMON
+
+@c EN
+Once the appropriate binding is found for the global variable,
+the access to the binding is hard-wired in the compiled code
+and the global variable resolution will never take place again.
+@c JP
+グローバル変数に対して適切な束縛がひとたび発見されれば、
+その束縛へのアクセスはコンパイルされたコードに埋め込まれ、
+その変数の束縛の探索は二度と行われません。
+@c COMMON
+
+@c EN
+The definition special form such as @code{define} and @code{define-syntax}
+inserts the binding to the current module.   Thus it may shadow
+the binding of imported or inherited modules.
+@c JP
+@code{define}や@code{define-syntax}等の定義を行う特殊形式は
+カレントモジュールに束縛を挿入します。これは、importしたり継承したりしている
+モジュールの同名の束縛をシャドウします。
+@c COMMON
+
+@c EN
+The resolution of binding of a global variable happens like this.
+First, the current module is searched.  Then, each
+imported module is taken in the order of import, and searched,
+including each module's ancestors.
+Note that import is not transitive; imported module list is not
+chased recursively.
+Finally, ancestors of the current module are searched in order.
+@c JP
+グローバル変数の束縛の解決は次の手順で行われます。
+まずカレントモジュールが探されます。次に、importしているモジュールが
+importの順番に並べられ、それぞれについてそのモジュールおよびそのモジュールの先祖
+(継承されているモジュール)が順に探されます。
+importは遷移的ではありません；importリストを再帰的に辿ることはしません。
+最後に、カレントモジュールの先祖が順に探されます。
+@c COMMON
+
+@node Defining and selecting modules, Using modules, Module semantics, Modules
 @subsection Defining and selecting modules
 @c NODE モジュールの定義と選択
 
@@ -3494,19 +3658,13 @@ Gaucheではモジュールはコンパイル時に静的に決定されます。
 @subsection Using modules
 @c NODE モジュールの使用
 
-A module should @var{export} symbols in order to make them 'visible' from
-others that uses the module.
-Exported symbols are visible when the user of the module @var{import}s 
-the module.  A convenience macro @var{use} does on-demand file loading
-and importing.
-
 @defspec export symbol @dots{}
 @c EN
 Makes bindings of @var{symbol}s in the current module available
 to modules that imports the current module.
 @c JP
-カレントモジュールの中で、シンボル@var{symbol}に対応する束縛をエクスポートします。
-エクスポートされた束縛は、カレントモジュールをインポートしたモジュール中で見えるようになります。
+カレントモジュールの中で、シンボル@var{symbol}に対応する束縛をexportします。
+exportされた束縛は、カレントモジュールをimportしたモジュール中で見えるようになります。
 @c COMMON
 @end defspec
 
@@ -3515,7 +3673,7 @@ to modules that imports the current module.
 Makes all bindings in the current module available to modules
 that imports it.
 @c JP
-カレントモジュール中の全ての束縛をエクスポートします。
+カレントモジュール中の全ての束縛をexportします。
 @c COMMON
 @end defspec
 
@@ -3524,10 +3682,24 @@ that imports it.
 Makes all exported bindings in the module named @var{module-name}
 available in the current module.   The named modules should exist
 when the compiler sees this special form.
+
+Note that imports are not transitive.  The modules that @var{module-name}s
+are importing are not automatically imported to the current module.
+This keeps modules' modularity; a library module can import whatever
+modules it needs without worring about polluting the namespace of
+the user of the module.
 @c JP
-名前@var{module-name}を持つモジュールがエクスポートしている束縛を
+名前@var{module-name}を持つモジュールがexportしている束縛を
 カレントモジュール中で使えるようにします。該当するモジュールが既に定義されて
 いなければなりません。
+
+モジュールのimportは遷移的でないことに注意してください。
+@code{module-name}で指定されるモジュール内でimportしているモジュールは、
+カレントモジュールにはimportされません。
+これはモジュールのモジュラリティを保つために必要です；
+例えば、ライブラリモジュールは内部で使用するためにいくつも他のモジュールを
+importするかもしれませんが、それがそのライブラリモジュールを使用するモジュールの
+名前空間に影響することはないわけです。
 @c COMMON
 @end defspec
 
@@ -3611,13 +3783,132 @@ hierarchical file/module configuration, as in Guile.)
 @subsection Module inheritance
 @c NODE モジュールの継承
 
-
-
-@defmac extend name @dots{}
 @c EN
+The export-import mechanism doesn't work well in some cases, such as:
 @c JP
+expotr-importメカニズムは、次のような場合をうまく処理できません。
+@c COMMON
+
+@itemize @bullet
+@c EN
+@item You want to create a module that is mostly the same as the
+existing one, but adding or altering some definitions.
+@c JP
+@item 既存のモジュールとほぼ同等の機能を持つが、若干定義を足したり変更したり
+したモジュールを作りたい。
+@c COMMON
+@c EN
+@item You wrote a bunch of related modules that are often used together,
+and not want your users to repeat a bunch of 'use' forms every time
+they use your module.
+@c JP
+@item 相互に関連するいくつものモジュールを作成した。
+ユーザがこれらのモジュールを使う時に毎回いくつも 'use' を並べないで済むように
+一つにまとめたい。
+@c COMMON
+@end itemize
+
+@c EN
+You can use module inheritance in these cases.
+@c JP
+このような場合にモジュールの継承が使えます。
+@c COMMON
+
+@defmac extend module-name @dots{}
+@c EN
+Makes the current module inherit from named modules.
+The current inheritance information is altered by the
+inheritance information calculated from given modules.
+@c JP
+カレントモジュールが、@var{module-name} @dots{}に挙げられたモジュールを
+継承するようにします。それまでの継承の情報は捨てられ、@var{module-name} @dots{}
+から計算される継承情報が有効になります。
+@c COMMON
+
+@c EN
+A new module inherits from @code{gauche} module when created.
+If you put @code{(extend scheme)} in that module, for example,
+the module resets to inherit directly from @code{scheme} module
+that has only bindings defined in R5RS, hence, after the export
+form, you can't use 'import' or any other @code{gauche}-specific
+bindings in the module.
+@c JP
+新たに作られるモジュールはデフォルトで@code{gauche}モジュールを継承しています。
+例えばそのモジュールに@code{(extend scheme)}というフォームを入れた場合、
+その時点でそのモジュールは@code{scheme}モジュール(R5RSで定義された束縛
+のみを含む)を直接継承するようになります。したがって、そのフォームの後で
+'import' やその他@code{gauche}特有の束縛はそのモジュール内では
+使えなくなります。
+@c COMMON
+
+@c EN
+If a named module is not defined yet, @code{extend}
+tries to load it, using the same convention @code{use} macro does.
+@c JP
+@var{module-name}に挙げられたモジュールがまだ存在しなかった場合、
+@code{extend}は@code{use}と同じメカニズムを使ってファイルをロードすることを
+試みます。
+@c COMMON
+
+@c EN
+A module can inherit multiple modules, exactly the same way as
+a class can inherit from multiple classes.  The resolution of
+order of inheritance needs to be explained a bit.
+@c JP
+モジュールは複数のモジュールを継承することができます。
+丁度、クラスが複数のクラスを継承できるのと同じようにです。
+多重継承の場合、次のようにしてモジュール間の優先順位が決められます。
+@c COMMON
+
+@c EN
+Each module has a @emph{module precedence list}, which lists
+modules in the order of how they are searched.  When the module
+inherits multiple modules, module precedence lists of inherited
+modules are merged into a single list, keeping the constraints
+that: (1) if a module A appears before module B in some module
+precedence list, A has to appear before B in the resulting module
+precedence list; and (2) if a module A appears before module B
+in @code{extend} form, A has to appear before B in the resulting
+module precedence list.   If no precedence list can be constructed
+with these constraints, an error is signalled.
+@c JP
+各モジュールは@emph{module precedence list}というモジュールのリストを
+持っています。そこにリストされた順に束縛が探されます。
+モジュールが複数のモジュールを多重継承した場合、継承される各モジュールの
+module precedence listを、次に挙げる制約を満たすようにマージ
+したものが新たなmodule precedence listとなります：
+(1) あるmodule precedence listでモジュールAがモジュールBより前に現れていたら、
+結果のmodule precedence listでもAはBより前に現れる：
+(2) モジュールAがモジュールBより@code{extend}フォームで前に現れていたら、
+結果のmodule precedence listでもAはBより前に現れる。
+この条件を満たすようなmodule precedence listが構成できない場合はエラーとなります。
 @c COMMON
 @end defmac
+
+@c EN
+For example, suppose you wrote a library in modules
+@code{mylib.base}, @code{mylib.util} and @code{mylib.system}.
+You can bundle those modules into one module by creating
+a module @code{mylib}, as follows:
+@c JP
+例えばあなたがライブラリを3つのモジュール、
+@code{mylib.base}、@code{mylib.util}、@code{mylib.system}に分けて
+書いたとしましょう。次のように書けば、これらのモジュールを
+一つの@code{mylib}モジュールに見せることができます。
+@c COMMON
+
+@example
+(define-module mylib
+  (extend mylib.system mylib.util mylib.base))
+@end example
+
+@c EN
+The user of your module just says @code{(use mylib)} and
+all exported symbols from three submodules become available.
+@c JP
+このライブラリモジュールのユーザは @code{(use mylib)} とするだけで
+全てのサブモジュールのexportされた束縛を利用することができるようになります。
+@c COMMON
 
 @node Module introspection, Predefined modules, Module inheritance, Modules
 @subsection Module introspection
@@ -3689,6 +3980,22 @@ It is an error to pass a non-module object.
 @c COMMON
 @end defun
 
+@defun module-parents module
+@defunx module-precedence-list module
+@c EN
+Returns the information of module inheritance.
+@code{Module-parents} returns the modules @var{module} directly inherits
+from.  @code{Module-precedence-list} returns the module precedence
+list of @var{module} (@xref{Module inheritance}).
+@c JP
+モジュールの継承に関する情報を返します。
+@code{module-parents}は@var{module}が直接継承しているモジュールのリストを
+返します。@code{module-precedence-list}は@var{module}のmodule precedence
+list (@ref{Module inheritance}参照) を返します。
+@c COMMON
+@end defun
+
+
 @node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
 @c NODE 組み込みモジュール
@@ -3748,6 +4055,7 @@ all the bindings of @code{gauche} module is imported.
 @code{gauche}モジュール内の全ての束縛がインポートされています。
 @c COMMON
 @end deftp
+
 
 @c ======================================================================
 @node Macros, Core library, Core syntax, Top
@@ -6699,10 +7007,18 @@ It is highly recommended to use SRFI-13 functions instead of these
 string pointer objects, for portability.
 @end deftp
 
-@defun make-string-pointer str &optional index
+@defun make-string-pointer str &optional (index 0)
+Creates a string pointer that points to the @var{index}-th character of
+string @var{str}.
+@end defun
+
+@defun string-pointer-copy sp
+Copies a string pointer.  The resulting string pointer
+shares the same string as @var{sp}, but has distinct pointer.
 @end defun
 
 @defun string-pointer? obj
+Returns @code{#t} iff @var{obj} is a string pointer.
 @end defun
 
 @defun string-pointer-next! sp
@@ -6716,7 +7032,10 @@ string pointer objects, for portability.
 @end defun
 
 @defun string-pointer-index sp
+@defunx string-pointer-byte-index sp
 @end defun
+
+
 
 @node Incomplete strings,  , String Pointers, Strings
 @subsection Incomplete strings
@@ -7595,13 +7914,10 @@ extends @code{for-each} to work on any type of collection.
 @c NODE コンビネータ
 
 @c EN
-A combinator is a procedure that takes procedure(s) as argument(s) and
-returns another procedure and is a powerful tool of abstraction.
+Gauche has some primitive procedures that allows combinatory programming.
 @c JP
-コンビネータは手続きを引数に取って手続きを返すような手続きで、
-強力な抽象化の道具となります。
+Gaucheには、combinatory programmingに使えるいくつかの基本手続きがあります。
 @c COMMON
-
 
 @defun pa$ proc arg @dots{}
 @c EN
