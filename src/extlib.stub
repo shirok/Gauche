@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.70 2001-04-27 07:56:40 shirok Exp $
+;;; $Id: extlib.stub,v 1.71 2001-05-01 09:50:15 shirok Exp $
 ;;;
 
 "
@@ -336,12 +336,25 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (string? str))
   "  SCM_RETURN(Scm_MaybeSubstring(str, start, end));")
 
-;; SRFI-13's string-join takes one more argument---easier to implement
-;; in Scheme
-(define-cproc string-join (strs &optional (delim " "))
+(define-symbol infix "sym_infix")
+(define-symbol strict-infix "sym_strict_infix")
+(define-symbol suffix "sym_suffix")
+(define-symbol prefix "sym_prefix")
+
+(define-cproc string-join (strs &optional (delim " ") grammer)
   (assert (list? strs))
   (assert (string? delim))
-  "  SCM_RETURN(Scm_StringJoin(strs, delim));")
+  "  int gm = 0;
+  if (SCM_UNBOUNDP(grammer) || SCM_UNDEFINEDP(grammer) || grammer == sym_infix)
+    gm = SCM_STRING_JOIN_INFIX;
+  else if (grammer == sym_strict_infix)
+    gm = SCM_STRING_JOIN_STRICT_INFIX;
+  else if (grammer == sym_suffix)
+    gm = SCM_STRING_JOIN_SUFFIX;
+  else if (grammer == sym_prefix)
+    gm = SCM_STRING_JOIN_PREFIX;
+  else Scm_Error(\"invalid grammer specification: %S\", grammer);
+  SCM_RETURN(Scm_StringJoin(strs, delim, gm));")
 
 ;; TODO: allow string/charset/regexp in ch
 (define-cproc string-split (s ch)

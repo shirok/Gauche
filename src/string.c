@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.30 2001-04-27 07:56:40 shirok Exp $
+ *  $Id: string.c,v 1.31 2001-05-01 09:50:15 shirok Exp $
  */
 
 #include <stdio.h>
@@ -389,14 +389,25 @@ ScmObj Scm_StringAppend(ScmObj strs)
     return SCM_OBJ(make_str(len, size, buf));
 }
 
-ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
+ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
 {
     ScmObj cp;
-    int size = 0, len = 0, nstrs = 0;
+    int size = 0, len = 0, nstrs = 0, ndelim = 0;
     int dsize = SCM_STRING_SIZE(delim), dlen = SCM_STRING_LENGTH(delim);
     char *buf, *bufp;
 
-    if (SCM_NULLP(strs)) return SCM_MAKE_STR("");
+    if (SCM_NULLP(strs)) {
+        if (grammer == SCM_STRING_JOIN_STRICT_INFIX)
+            Scm_Error("can't join empty list of strings with strict-infix grammer");
+        return SCM_MAKE_STR("");
+    }
+
+    if (grammer == SCM_STRING_JOIN_INFIX
+        || grammer == SCM_STRING_JOIN_STRICT_INFIX) {
+        ndelim = nstrs - 1;
+    } else {
+        ndelim = nstrs;
+    }
     
     SCM_FOR_EACH(cp, strs) {
         ScmObj str = SCM_CAR(cp);
@@ -407,10 +418,14 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
         }
         nstrs++;
     }
-    size += dsize * (nstrs-1);
-    if (len >= 0) len += dlen * (nstrs-1);
+    size += dsize * ndelim;
+    if (len >= 0) len += dlen * ndelim;
 
     bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
+    if (grammer == SCM_STRING_JOIN_PREFIX) {
+        memcpy(bufp, SCM_STRING_START(delim), dsize);
+        bufp += dsize;
+    }
     SCM_FOR_EACH(cp, strs) {
         ScmObj str = SCM_CAR(cp);
         memcpy(bufp, SCM_STRING_START(str), SCM_STRING_SIZE(str));
@@ -419,6 +434,10 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
             memcpy(bufp, SCM_STRING_START(delim), dsize);
             bufp += dsize;
         }
+    }
+    if (grammer == SCM_STRING_JOIN_SUFFIX) {
+        memcpy(bufp, SCM_STRING_START(delim), dsize);
+        bufp += dsize;
     }
     *bufp = '\0';
     return SCM_OBJ(make_str(len, size, buf));

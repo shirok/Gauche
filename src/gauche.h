@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.124 2001-04-26 20:06:38 shirok Exp $
+ *  $Id: gauche.h,v 1.125 2001-05-01 09:50:15 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -669,6 +669,14 @@ struct ScmStringRec {
 extern ScmClass Scm_StringClass;
 #define SCM_CLASS_STRING        (&Scm_StringClass)
 
+/* grammer spec for StringJoin (see SRFI-13) */
+enum {
+    SCM_STRING_JOIN_INFIX,
+    SCM_STRING_JOIN_STRICT_INFIX,
+    SCM_STRING_JOIN_SUFFIX,
+    SCM_STRING_JOIN_PREFIX
+};
+
 extern int     Scm_MBLen(const char *str, const char *stop);
 
 extern ScmObj  Scm_MakeString(const char *str, int size, int len);
@@ -697,7 +705,7 @@ extern ScmObj  Scm_StringTake(ScmString *x, int nchars, int takefirst, int fromr
 extern ScmObj  Scm_StringAppend2(ScmString *x, ScmString *y);
 extern ScmObj  Scm_StringAppendC(ScmString *x, const char *s, int size, int len);
 extern ScmObj  Scm_StringAppend(ScmObj strs);
-extern ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim);
+extern ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer);
 
 extern ScmObj  Scm_StringSplitByChar(ScmString *str, ScmChar ch);
 extern ScmObj  Scm_StringContains(ScmString *s1, ScmString *s2);
