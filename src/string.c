@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.16 2001-03-05 00:54:30 shiro Exp $
+ *  $Id: string.c,v 1.17 2001-03-17 08:15:51 shiro Exp $
  */
 
 #include <stdio.h>
@@ -680,6 +680,77 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
     }
     SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
     return head;
+}
+
+/* Boyer-Moore string search.  assuming siz1 > siz2, siz2 < 256. */
+static inline ScmObj boyer_moore(const char *ss1, int siz1,
+                                 const char *ss2, int siz2)
+{
+    unsigned char shift[256];
+    int i, j;
+    for (i=0; i<256; i++) { shift[i] = siz2; }
+    for (i=0; i<siz2; i++) {
+        if (shift[(unsigned char)ss2[i]] > i)
+            shift[(unsigned char)ss2[i]] = i;
+    }
+    for (i=j=siz2-1; i<siz1; i++) {
+        if (ss2[j] == ss1[i]) {
+            for (; j > 0; i--, j--) {
+                if (ss2[j] != ss1[i]) return SCM_FALSE;
+            }
+            return Scm_MakeInteger(i);
+        } else {
+            i += shift[(unsigned char)ss2[j]];
+        }
+    }
+    return SCM_FALSE;
+}
+
+/* See if s2 appears in s1.  If both strings are single-byte, and s1
+   is long, we use Boyer-Moore. */
+ScmObj Scm_StringContains(ScmString *s1, ScmString *s2)
+{
+    int i;
+    const char *ss1 = SCM_STRING_START(s1);
+    const char *ss2 = SCM_STRING_START(s2);
+    int siz1 = SCM_STRING_SIZE(s1), len1 = SCM_STRING_LENGTH(s1);
+    int siz2 = SCM_STRING_SIZE(s2), len2 = SCM_STRING_LENGTH(s2);
+
+    if (len1 < 0) {
+        if (len2 < 0 || siz2 == len2) goto sbstring;
+        Scm_Error("can't handle incomplete string %S with complete string %S",
+                  s1, s2);
+    }
+    if (siz1 == len1) {
+        if (len2 < 0 || siz2 == len2) goto sbstring;
+        return SCM_FALSE;       /* sbstring can't contain mbstring. */
+    }
+    if (len2 < 0)
+        Scm_Error("can't handle complete string %S with incomplete stirng %S",
+                  s1, s2);
+    
+  mbstring:
+    if (len1 < len2) return SCM_FALSE;
+    else {
+        const char *ssp = ss1;
+        for (i=0; i<=len1-len2; i++) {
+            if (memcmp(ssp, ss2, siz2) == 0) return Scm_MakeInteger(i);
+            ssp += SCM_CHAR_NFOLLOWS(*ssp);
+        }
+        return SCM_FALSE;
+    }
+    return SCM_FALSE;
+  sbstring: /* short cut for special case */
+    if (siz1 < siz2) return SCM_FALSE;
+    if (siz1 < 256 || siz2 >= 256) {
+        /* brute-force search */
+        for (i=0; i<=siz1-siz2; i++) {
+            if (memcmp(ss2, ss1+i, siz2) == 0) return Scm_MakeInteger(i);
+        }
+    } else {
+        return boyer_moore(ss1, siz1, ss2, siz2);
+    }
+    return SCM_FALSE;
 }
 
 /*----------------------------------------------------------------
