@@ -290,4 +290,57 @@
 (test "f64vector collection interface" #t
       (lambda () (collection-tester <f64vector> '#f64(1 2 3 4))))
 
+;;-------------------------------------------------------------------
+(test-section "arithmetic operations")
+
+(define (arith-tester op v0 v1)
+  (define (safe-test clamp-flag)
+    (with-error-handler
+     (lambda (e) 'error)
+     (lambda () (op v0 v1 clamp-flag))))
+  (list (safe-test #f)
+        (safe-test 'high)
+        (safe-test 'low)
+        (safe-test 'both)))
+
+(define-syntax arith-test
+  (syntax-rules ()
+    ((_ op v0 v1 res-none res-hi res-lo res-both)
+     (test (x->string 'op) (list res-none res-hi res-lo res-both)
+           (lambda () (arith-tester op v0 v1))))
+    ((_ op v0 v1 res)
+     (test (x->string 'op) (list res res res res)
+           (lambda () (arith-tester op v0 v1))))
+    ))
+
+;; type mismatch error detection
+(arith-test s8vector-add '#s8(0 1 2 3) #s8(4 5 6)
+            'error)
+(arith-test s8vector-add '#s8(0 1 2 3) #u8(4 5 6 7)
+            'error)
+
+
+(arith-test s8vector-add '#s8(0 1 2 3) #s8(4 5 6 7)
+            '#s8(4 6 8 10))
+(arith-test s8vector-add '#s8(0 1 2 3) 8
+            '#s8(8 9 10 11))
+(arith-test s8vector-add '#s8(0 1 2 3) -8
+            '#s8(-8 -7 -6 -5))
+(arith-test s8vector-add '#s8(0 1 2 3) 126
+            'error '#s8(126 127 127 127) 'error '#s8(126 127 127 127))
+(arith-test s8vector-add '#s8(0 -1 -2 -3) -126
+            'error 'error '#s8(-126 -127 -128 -128) '#s8(-126 -127 -128 -128))
+
+(arith-test u8vector-add '#u8(0 1 2 3) #u8(4 5 6 7)
+            '#u8(4 6 8 10))
+(arith-test u8vector-add '#u8(0 1 2 3) 8
+            '#u8(8 9 10 11))
+(arith-test u8vector-add '#u8(0 1 2 3) -8
+            'error)
+(arith-test u8vector-add '#u8(0 1 2 3) 253
+            'error '#u8(253 254 255 255) 'error '#u8(253 254 255 255))
+'(arith-test u8vector-add '#u8(0 1 2 3) -2
+            'error 'error '#u8(0 0 0 1) '#u8(0 0 0 1))
+
+
 (test-end)

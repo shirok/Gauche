@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.7 2002-06-19 01:58:47 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.8 2002-06-19 05:52:08 shirok Exp $
 ;;;
 
 "
@@ -66,29 +66,34 @@ emit() {
   (assert (${vecttag}vector? v))
   "  SCM_RETURN(SCM_MAKE_INT(SCM_${VECTTYPE}_SIZE(v)));")
 
-(define-cproc ${vecttag}vector-ref (v i)
+(define-cproc ${vecttag}vector-ref (v i &optional fallback)
   (assert (${vecttag}vector? v))
   (assert (small-integer? i))
   (setter ${vecttag}vector-set!)
-  "  SCM_RETURN(Scm_${vecttype}Ref(v, i));")
+  "  SCM_RETURN(Scm_${vecttype}Ref(v, i, fallback));")
 
 (define-cproc ${vecttag}vector-set! (v i val)
   (assert (${vecttag}vector? v))
   (assert (small-integer? i))
   "  SCM_RETURN(Scm_${vecttype}Set(v, i, val));")
 
-(define-cproc ${vecttag}vector-copy (v)
+(define-cproc ${vecttag}vector-copy (v &optional (start 0) (end -1))
   (assert (${vecttag}vector? v))
-  "  SCM_RETURN(Scm_${vecttype}Copy(v));")
+  (assert (${vecttag}vector? v))
+  (assert (small-integer? start))
+  (assert (small-integer? end))
+  "  SCM_RETURN(Scm_${vecttype}Copy(v, start, end));")
 
 (define-cproc ${vecttag}vector-copy! (dst src)
   (assert (${vecttag}vector? dst))
   (assert (${vecttag}vector? src))
   "  SCM_RETURN(Scm_${vecttype}CopyX(dst, src));")
 
-(define-cproc ${vecttag}vector->list (v)
+(define-cproc ${vecttag}vector->list (v &optional (start 0) (end -1))
   (assert (${vecttag}vector? v))
-  "  SCM_RETURN(Scm_${vecttype}ToList(v));")
+  (assert (small-integer? start))
+  (assert (small-integer? end))
+  "  SCM_RETURN(Scm_${vecttype}ToList(v, start, end));")
 
 (define-cproc list->${vecttag}vector (l)
   (assert (list? l))
@@ -102,13 +107,17 @@ emit() {
   SCM_${VECTTYPE}_UNBOX(filler, val);
   SCM_RETURN(Scm_${vecttype}Fill(v, filler, start, end));")
 
-(define-cproc ${vecttag}vector->vector (v)
+(define-cproc ${vecttag}vector->vector (v &optional (start 0) (end -1))
   (assert (${vecttag}vector? v))
-  "  SCM_RETURN(Scm_${vecttype}ToVector(v));")
+  (assert (small-integer? start))
+  (assert (small-integer? end))
+  "  SCM_RETURN(Scm_${vecttype}ToVector(v, start, end));")
 
-(define-cproc vector->${vecttag}vector (v)
+(define-cproc vector->${vecttag}vector (v &optional (start 0) (end -1))
   (assert (vector? v))
-  "  SCM_RETURN(Scm_VectorTo${vecttype}(v));")
+  (assert (small-integer? start))
+  (assert (small-integer? end))
+  "  SCM_RETURN(Scm_VectorTo${vecttype}(v, start, end));")
 
 ; Arithmetic operations
 (define-cproc ${vecttag}vector-add! (v0 v1 &optional clamp)

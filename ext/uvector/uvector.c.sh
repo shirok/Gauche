@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.16 2002-06-19 01:58:47 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.17 2002-06-19 05:52:08 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -49,6 +49,18 @@ ScmObj Scm_UvectorS64Max = SCM_NIL;
 ScmObj Scm_UvectorS64Min = SCM_NIL;
 ScmObj Scm_UvectorU64Max = SCM_NIL;
 ScmObj Scm_UvectorU64Min = SCM_NIL;
+
+#define CHECK_START_END(start, end, size)                   \\
+  do {                                                      \\
+    if (start < 0 || start >= size) {                       \\
+        Scm_Error("start index out of range: %d\n", start); \\
+    }                                                       \\
+    if (end < 0) end = size;                                \\
+    else if (end < start || end >= size) {                  \\
+        Scm_Error("end index out of range: %d\n", end);     \\
+    }                                                       \\
+  } while (0)
+
 EOF
 
 # template ------------------------------------------------------------
@@ -148,15 +160,17 @@ ScmObj Scm_ListTo${vecttype}(ScmObj list)
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec)
+ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec, int start, int end)
 {
     int length = SCM_VECTOR_SIZE(ivec), i;
-    Scm${vecttype} *vec = make_${vecttype}(length);
+    Scm${vecttype} *vec;
     ScmObj cp;
-    for (i=0; i<length; i++) {
+    CHECK_START_END(start, end, length);
+    vec = make_${vecttype}(end-start);
+    for (i=start; i<end; i++) {
         ${itemtype} elt;
         SCM_${VECTTYPE}_UNBOX(elt, SCM_VECTOR_ELEMENT(ivec, i));
-        vec->elements[i] = elt;
+        vec->elements[i-start] = elt;
     }
     return SCM_OBJ(vec);
 }
@@ -168,24 +182,19 @@ ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec)
 ScmObj Scm_${vecttype}Fill(Scm${vecttype} *vec, ${itemtype} fill, int start, int end)
 {
     int i, size = SCM_${VECTTYPE}_SIZE(vec);
-    if (start < 0 || start >= size) {
-        Scm_Error("start index out of range: %d\n", start);
-    }
-    if (end < 0) end = size;
-    else if (end < start || end >= size) {
-        Scm_Error("end index out of range: %d\n", end);
-    }
-    for (i=start; i<end; i++) {
-        vec->elements[i] = fill;
-    }
+    CHECK_START_END(start, end, size);
+    for (i=start; i<end; i++) vec->elements[i] = fill;
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_${vecttype}Ref(Scm${vecttype} *vec, int index)
+ScmObj Scm_${vecttype}Ref(Scm${vecttype} *vec, int index, ScmObj fallback)
 {
     ScmObj r;
-    if (index < 0 || index >= SCM_${VECTTYPE}_SIZE(vec))
-        Scm_Error("index out of range: %d", index);
+    if (index < 0 || index >= SCM_${VECTTYPE}_SIZE(vec)) {
+        if (SCM_UNBOUNDP(fallback)) 
+            Scm_Error("index out of range: %d", index);
+        return fallback;
+    }
     SCM_${VECTTYPE}_BOX(r, vec->elements[index]);
     return r;
 }
@@ -200,11 +209,12 @@ ScmObj Scm_${vecttype}Set(Scm${vecttype} *vec, int index, ScmObj val)
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_${vecttype}ToList(Scm${vecttype} *vec) 
+ScmObj Scm_${vecttype}ToList(Scm${vecttype} *vec, int start, int end)
 {
     ScmObj head = SCM_NIL, tail;
-    int i;
-    for (i=0; i<SCM_${VECTTYPE}_SIZE(vec); i++) {
+    int i, size = SCM_${VECTTYPE}_SIZE(vec);
+    CHECK_START_END(start, end, size);
+    for (i=start; i<end; i++) {
         ScmObj elt;
         SCM_${VECTTYPE}_BOX(elt, vec->elements[i]);
         SCM_APPEND1(head, tail, elt);
@@ -212,22 +222,26 @@ ScmObj Scm_${vecttype}ToList(Scm${vecttype} *vec)
     return head;
 }
 
-ScmObj Scm_${vecttype}ToVector(Scm${vecttype} *vec)
+ScmObj Scm_${vecttype}ToVector(Scm${vecttype} *vec, int start, int end)
 {
-    ScmObj ovec = Scm_MakeVector(SCM_${VECTTYPE}_SIZE(vec), SCM_UNDEFINED);
-    int i;
-    for (i=0; i<SCM_${VECTTYPE}_SIZE(vec); i++) {
+    ScmObj ovec;
+    int i, size = SCM_${VECTTYPE}_SIZE(vec);
+    CHECK_START_END(start, end, size);
+    ovec = Scm_MakeVector(end-start, SCM_UNDEFINED);
+    for (i=start; i<end; i++) {
         ScmObj elt;
         SCM_${VECTTYPE}_BOX(elt, vec->elements[i]);
-        SCM_VECTOR_ELEMENT(ovec, i) = elt;
+        SCM_VECTOR_ELEMENT(ovec, i-start) = elt;
     }
     return ovec;
 }
 
-ScmObj Scm_${vecttype}Copy(Scm${vecttype} *vec)
+ScmObj Scm_${vecttype}Copy(Scm${vecttype} *vec, int start, int end)
 {
-    return Scm_Make${vecttype}FromArray(SCM_${VECTTYPE}_SIZE(vec),
-                                        SCM_${VECTTYPE}_ELEMENTS(vec));
+    int size = SCM_${VECTTYPE}_SIZE(vec);
+    CHECK_START_END(start, end, size);
+    return Scm_Make${vecttype}FromArray(end-start,
+                                        SCM_${VECTTYPE}_ELEMENTS(vec)+start);
 }
 
 ScmObj Scm_${vecttype}CopyX(Scm${vecttype} *dst, Scm${vecttype} *src)
