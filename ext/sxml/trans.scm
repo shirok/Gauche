@@ -1,7 +1,7 @@
 ;;;
 ;;; convert the original SSAX.scm into Gauche's preferable format.
 ;;;
-;;; $Id: trans.scm,v 1.1 2003-07-16 11:57:55 shirok Exp $
+;;; $Id: trans.scm,v 1.2 2003-07-20 12:37:52 shirok Exp $
 ;;;
 
 (use srfi-13)
@@ -19,6 +19,9 @@
     ((define-macro (run-test ...) ...))
     ((run-test ...))
     ((include ...))
+    ((cerr ...))
+    ((let (...) (run-test ...) ...))
+    ((let* (...) (run-test ...) ...))
     ;; optimizing xml-token construction stuff
     ((define (make-xml-token ...) ...)
      (define make-xml-token cons))
@@ -46,8 +49,8 @@
    (else (let loop ((eltr rule)
                     (elts sexp))
            (cond ((null? eltr) (null? elts))
-                 ((not (pair? elts)) #f)
                  ((eq? (car eltr) '...) #t)
+                 ((not (pair? elts)) #f)
                  ((match? (car eltr) (car elts))
                   (loop (cdr eltr) (cdr elts)))
                  (else #f))))))

@@ -1,12 +1,12 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.1 2003-07-16 11:57:55 shirok Exp $
+;;; $Id: adaptor.scm,v 1.2 2003-07-20 12:37:52 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
   (use srfi-1)
-  (export assert begin0 let-values*
+  (export assert |--| begin0 let-values*
           *SSAX:warn-handler* SSAX:warn parser-error))
 (select-module sxml.adaptor)
 
@@ -87,6 +87,12 @@
 		    (error "assertion failure"))))
        (else (loop (cons (car reported) exprs) (cdr reported)))))))
 )
+
+;; Macros used in sxpath.scm (increment/decrement operators) ------
+
+; Read-only decrement
+(define-macro (|--| x) `(- ,x 1))
+
 
 ;; Macros used in ssax main body ----------------------------------
 

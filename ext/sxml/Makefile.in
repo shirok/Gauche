@@ -11,7 +11,7 @@ include ../Makefile.ext
 .scm.in.scm :
 	$(GOSH) ./trans.scm $<
 
-GENERATED_TARGET = ssax.scm tree-trans.scm to-html.scm
+GENERATED_TARGET = ssax.scm sxpath.scm tree-trans.scm to-html.scm
 GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
 CLEANFILES += $(GENERATED_TARGET) $(GENERATED_TEST)
 GENERATED = Makefile
