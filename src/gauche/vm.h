@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.1 2004-12-23 06:57:21 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.2 2004-12-23 11:04:02 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -52,7 +52,7 @@
 #define SCM_VM_SIGQ_MASK       1
 #define SCM_VM_FINQ_MASK       2
 
-#define SCM_PCTYPE ScmObj*
+#define SCM_PCTYPE ScmWord*
 
 /*
  * Compiled code packet
@@ -60,7 +60,7 @@
 
 typedef struct ScmCompiledCodeRec {
     SCM_HEADER;
-    ScmObj *code;               /* Code vector.  this is allocated as atomic,
+    ScmWord *code;              /* Code vector.  this is allocated as atomic,
                                    to prevent GC from scanning it. */
     ScmObj *constants;          /* Constant vector.  this isn't used during
                                    execution, but kept here so that the
@@ -376,8 +376,8 @@ struct ScmVMRec {
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module, ScmObj name);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj);
-SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, ScmObj *pc);
-SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, ScmObj *pc);
+SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
+SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
@@ -424,6 +424,20 @@ enum {
 #define SCM_VM_INSN_ARG_MIN          (-SCM_VM_INSN_ARG_MAX)
 #define SCM_VM_INSN_ARG_FITS(k) \
     (((k)<=SCM_VM_INSN_ARG_MAX)&&((k)>=SCM_VM_INSN_ARG_MIN))
+
+/* Macros for transition to the packed code vector of NVM.
+   In the packed code vector, VM insns are stored untagged.
+   It eliminates the shift in the dispatcher. */
+#define SCM_NVM_INSN_CODE(obj)       (SCM_WORD(obj)&0x0ff)
+#define SCM_NVM_INSN_ARG(obj)        ((signed long)SCM_WORD(obj) >> 8)
+#define SCM_NVM_INSN_ARG0(obj)       ((SCM_WORD(obj) >>  8) & 0x03ff)
+#define SCM_NVM_INSN_ARG1(obj)       ((SCM_WORD(obj) >> 18) & 0x03ff)
+
+#define SCM_NVM_INSN(code)           SCM_WORD(code)
+#define SCM_NVM_INSN1(code, arg)     SCM_WORD((long)((arg)<<8) | (code))
+#define SCM_NVM_INSN2(code, arg0, arg1)  \
+    SCM_WORD((long)((arg1) << 18) | ((arg0) << 8) | (code))
+
 
 enum {
 #define DEFINSN(sym, nam, nparams)  sym,
