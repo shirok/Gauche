@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.74 2001-09-29 10:06:31 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.75 2001-09-29 11:33:43 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3430,27 +3430,46 @@ function signals an error.
 @node Signal, System Inquiry, Locale, System interface
 @subsection Signal
 
-@defvar |SIGABRT|
-@defvarx |SIGALRM|
-@defvarx |SIGCHLD|
-@defvarx |SIGCONT|
-@defvarx |SIGFPE|
-@defvarx |SIGHUP|
-@defvarx |SIGILL|
-@defvarx |SIGINT|
-@defvarx |SIGKILL|
-@defvarx |SIGPIPE|
-@defvarx |SIGQUIT|
-@defvarx |SIGSEGV|
-@defvarx |SIGSTOP|
-@defvarx |SIGTERM|
-@defvarx |SIGTSTP|
-@defvarx |SIGTTIN|
-@defvarx |SIGTTOU|
-@defvarx |SIGUSR1|
-@defvarx |SIGUSR2|
+@deftp {Variable} |SIGABRT|
+@deftpx {Variable} |SIGALRM|
+@deftpx {Variable} |SIGCHLD|
+@deftpx {Variable} |SIGCONT|
+@deftpx {Variable} |SIGFPE|
+@deftpx {Variable} |SIGHUP|
+@deftpx {Variable} |SIGILL|
+@deftpx {Variable} |SIGINT|
+@deftpx {Variable} |SIGKILL|
+@deftpx {Variable} |SIGPIPE|
+@deftpx {Variable} |SIGQUIT|
+@deftpx {Variable} |SIGSEGV|
+@deftpx {Variable} |SIGSTOP|
+@deftpx {Variable} |SIGTERM|
+@deftpx {Variable} |SIGTSTP|
+@deftpx {Variable} |SIGTTIN|
+@deftpx {Variable} |SIGTTOU|
+@deftpx {Variable} |SIGUSR1|
+@deftpx {Variable} |SIGUSR2|
+@vindex SIGABRT
+@vindex SIGALRM
+@vindex SIGCHLD
+@vindex SIGCONT
+@vindex SIGFPE
+@vindex SIGHUP
+@vindex SIGILL
+@vindex SIGINT
+@vindex SIGKILL
+@vindex SIGPIPE
+@vindex SIGQUIT
+@vindex SIGSEGV
+@vindex SIGSTOP
+@vindex SIGTERM
+@vindex SIGTSTP
+@vindex SIGTTIN
+@vindex SIGTTOU
+@vindex SIGUSR1
+@vindex SIGUSR2
 These variables are bound to the corresponding signal numbers.
-@end defvar
+@end deftp
 
 @defun sys-kill pid sig
 [POSIX] Sends a signal @var{sig} to the specified process.  @var{sig}
@@ -3819,9 +3838,10 @@ analysis, better RNGs should be used.  Gauche will provide an
 extention module of Mersenne Twister RNG soon.
 @end defun
 
-@defvar rand_max
+@deftp {Variable} |RAND_MAX|
+@vindex RAND_MAX
 Bound to a positive integer that @code{sys-random} may return.
-@end defvar
+@end deftp
 
 @c ======================================================================
 @node Object System, Libarary Modules, Core library, Top
@@ -4779,22 +4799,29 @@ the sockets.
 Returns a socket with specified parameters.
 @end defun
 
-@defvar |PF_UNIX|
-@defvarx |PF_INET|
+@deftp {Variable} |PF_UNIX|
+@deftpx {Variable} |PF_INET|
+@vindex PF_UNIX
+@vindex PF_INET
 These variables are bound to @code{PF_UNIX} and @code{PF_INET}.
-@end defvar
+@end deftp
 
-@defvar |AF_UNIX|
-@defvarx |AF_INET|
+@deftp {Variable} |AF_UNIX|
+@deftpx {Variable} |AF_INET|
+@vindex AF_UNIX
+@vindex AF_INET
 These variables are bound to @code{AF_UNIX} and @code{AF_INET}.
-@end defvar
+@end deftp
 
-@defvar |SOCK_STREAM|
-@defvarx |SOCK_DGRAM|
-@defvarx |SOCK_RAW|
+@deftp {Variable} |SOCK_STREAM|
+@deftpx {Variable} |SOCK_DGRAM|
+@deftpx {Variable} |SOCK_RAW|
+@vindex SOCK_STREAM
+@vindex SOCK_DGRAM
+@vindex SOCK_RAW
 These variables are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
 and @code{SOCK_RAW}.
-@end defvar
+@end deftp
 
 @defun socket-fd socket
 Returns an integer system file descriptor of the underlying socket.
@@ -4903,51 +4930,61 @@ See manpages @code{socket(7)}, @code{tcp(7)} or @code{ip(7)} of
 your system to find out exact specification of those values.
 
 For ``level'' argument:
-@defvar |SOL_SOCKET|
-@defvarx |SOL_TCP|
-@defvarx |SOL_IP|
+@deftp {Variable} |SOL_SOCKET|
+@deftpx {Variable} |SOL_TCP|
+@deftpx {Variable} |SOL_IP|
+@vindex SOL_SOCKET
+@vindex SOL_TCP
+@vindex SOL_IP
 These variables are bound to @code{SOL_SOCKET}, @code{SOL_TCP} and
 @code{SOL_IP}, respectively.
-@end defvar
+@end deftp
 
 For ``option'' argument:
-@defvar |SO_KEEPALIVE|
+@deftp {Variable} |SO_KEEPALIVE|
+@vindex SO_KEEPALIVE
 Expects integer value.  If it is not zero, enables sending  of
 keep-alive messages on connection-oriented sockets.
-@end defvar
+@end deftp
 
-@defvar |SO_OOBINLINE|
+@deftp {Variable} |SO_OOBINLINE|
+@vindex SO_OOBINLINE
 Expects integer value.  If it is not zero, out-of-band data is
 directly placed into the receive data stream.  Oth-A­$)B
 erwise  out-of-band  data  is  only passed when the
 MSG_OOB flag is set during receiving.
-@end defvar
+@end deftp
 
-@defvar |SO_REUSEADDR|
+@deftp {Variable} |SO_REUSEADDR|
+@vindex SO_REUSEADDR
 Expects integer value.  If it is not zero, @code{socket-bind}
 allows to reuse local addresses, unless an active listening
 socket bound to the address.
-@end defvar
+@end deftp
 
-@defvar |SO_TYPE|
+@deftp {Variable} |SO_TYPE|
+@vindex SO_TYPE
 Gets the socket type as an integer (like @code{sock_stream}).
 Can be only used with @code{socket-getsockopt}.
-@end defvar
+@end deftp
 
-@defvar |SO_BROADCAST|
+@deftp {Variable} |SO_BROADCAST|
+@vindex SO_BROADCAST
 Expects integer value.  If it is not zero, datagram sockets
 are allowed to send/receive broadcast packets.
-@end defvar
+@end deftp
 
-@defvar |SO_PRIORITY|
+@deftp {Variable} |SO_PRIORITY|
+@vindex SO_PRIORITY
 Expects integer value, specifying the protocol-defined priority
 for all packets to be sent on this socket.
-@end defvar
+@end deftp
 
-@defvar |SO_ERROR|
+@deftp {Variable} |SO_ERROR|
+@vindex SO_ERROR
 Gets and clears the pending socket error as an integer.
 Can be only used with @code{socket-getsockopt}.
-@end defvar
+@end deftp
 
 @node Netdb interface,  , Low-level socket interface, Networking
 @subsection  Netdb interface
@@ -7501,21 +7538,38 @@ See also the Gauche built-in procedure @code{string-scan}
 
 @defun string-reverse s &optional start end
 @defunx string-reverse! s &optional start end
-[SRFI-13]
+[SRFI-13] Returns a string in which the character posisions are reversed
+from @var{s}.  @code{string-reverse!} modifies @var{s}.
+@example
+(string-reverse "mahalo") @result{} "olaham"
+(string-reverse "mahalo" 3) @result{} "ola"
+(string-reverse "mahalo" 1 4) @result{} "aha"
+
+(let ((s (string-copy "mahalo")))
+  (string-reverse! s 1 5)
+  s)
+  @result{} "mlahao"
+@end example
 @end defun
 
 @defun string-concatenate string-list
-[SRFI-13]
+[SRFI-13] Concatenates list of strings.
+@example
+(string-concatenate '("humuhumu" "nukunuku" "apua" "`a"))
+  @result{} "humuhumunukunukuapua`a"
+@end example
 @end defun
 
 @defun string-concatenate/shared string-list
 @defunx string-append/shared s @dots{}
-[SRFI-13]
+[SRFI-13] ``Shared'' version of @code{string-concatenate} and
+@code{string-append}.  In Gauche, these are just synonyms of them.
 @end defun
 
 @defun string-concatenate-reverse string-list
 @defunx string-concatenate-reverse/shared string-list
-[SRFI-13]
+[SRFI-13] Reverses @var{string-list} before concatenation.
+``Shared'' version works the same in Gauche.
 @end defun
 
 @node SRFI-13 String mapping, SRFI-13 String rotation, SRFI-13 String reverse & append, String library
@@ -7523,7 +7577,19 @@ See also the Gauche built-in procedure @code{string-scan}
 
 @defun string-map proc s &optional start end
 @defunx string-map! proc s &optional start end
-[SRFI-13]
+[SRFI-13] @code{string-map} applies @var{proc} on every character of @var{s},
+and collects the results into a string and returns it.
+On the other hand, @code{string-map!} modifies @var{s}.
+@example
+(string-map char-upcase "wikiwiki") @result{} "WIKIWIKI"
+(string-map char-upcase "wikiwiki" 4) @result{} "wikiWIKI"
+(string-map char-upcase "wikiwiki" 4) @result{} "WIKI"
+
+(let ((s (string-copy "wikiwiki")))
+  (string-map! char-upcase s 4)
+  s)
+  @result{} "wikiWIKI"
+@end example
 @end defun
 
 @defun string-fold kons knil s &optional start end
