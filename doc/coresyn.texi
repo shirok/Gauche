@@ -1147,7 +1147,7 @@ for the @code{begin0} form is expanded as follows.
 @code{prog1}と呼ばれているものです。
 
 @code{begin}と違って、これは「ブロック」を構成します。
-@code{begin1}フォームは次のように展開されるからです。
+@code{begin0}フォームは次のように展開されるからです。
 @c COMMON
 
 @example
@@ -1263,7 +1263,7 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @c JP
 @code{begin}は新しいスコープを作らないことに注意してください(@ref{Sequencing}参照)。
 @code{begin}の中に現われる@code{define}は、あたかも@code{begin}とそれを囲む
-括弧な無いかのように振舞います。すなわち、以下の2つの形式は等価です。
+括弧が無いかのように振舞います。すなわち、以下の2つの形式は等価です。
 @c COMMON
 @example
 (let ((x 0))
