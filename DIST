@@ -24,7 +24,7 @@ if [ "$tgz" = "yes" ]; then
 
   if [ -f Makefile ]; then make realclean; fi
   ./AUTOCONF
-  configure
+  ./configure
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
   (cd ext/charconv/data; make)
   make distclean
@@ -34,8 +34,10 @@ if [ "$tgz" = "yes" ]; then
   mkdir ../Gauche-$VERSION
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
-  mv ../Gauche-$VERSION.tgz $TGZ_DEST
-  cp ChangeLog $CHANGELOG_DEST
+  if [ -d $TGZ_DEST ]; then
+    mv ../Gauche-$VERSION.tgz $TGZ_DEST
+    cp ChangeLog $CHANGELOG_DEST
+  fi
 fi
 
 if [ "$doc" = "yes" ]; then
