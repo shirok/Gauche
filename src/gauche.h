@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.227 2002-04-12 00:48:06 shirok Exp $
+ *  $Id: gauche.h,v 1.228 2002-04-13 06:39:55 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1468,6 +1468,10 @@ SCM_EXTERN ScmObj Scm_BignumLogXor(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumLogNot(ScmBignum *bx);
 SCM_EXTERN ScmObj Scm_BignumLogBit(ScmBignum *bx, int bit);
 SCM_EXTERN ScmObj Scm_BignumAsh(ScmBignum *bx, int cnt);
+
+SCM_EXTERN ScmBignum *Scm_MakeBignumWithSize(int size, u_long init);
+SCM_EXTERN ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc, 
+                                             u_long coef, u_long c);
 
 struct ScmFlonumRec {
     SCM_HEADER;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.32 2002-04-12 06:39:13 shirok Exp $
+ *  $Id: bignum.c,v 1.33 2002-04-13 06:39:55 shirok Exp $
  */
 
 #include <math.h>
@@ -20,12 +20,12 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 
-/* Bignum library.  Not optimized well yet --- I think bignum performance
+/* Bignum library.  Not optimized well yet---I think bignum performance
  * is not very critical for Gauche, except a few special cases (like
  * the cases used in the numeric I/O routine).  So the implementation
  * emphasizes robustness rather than performance.
  *
- * Bignum is represented by ScmBignum struture.  There are "normalized"
+ * Bignum is represented by ScmBignum structure.  There are "normalized"
  * and "denormalized" bignums.   Scheme part only sees the normalized
  * bignums.  Normalized bignum uses the minimum words to represent the
  * given number, and no normalized bignums for the numbers that can be
@@ -77,15 +77,25 @@ static ScmBignum *bignum_clear(ScmBignum *b)
     return b;
 }
 
+#define BIGNUM_SIZE(size) (sizeof(ScmBignum)+((size)-1)*sizeof(long))
+
 static ScmBignum *make_bignum(int size)
 {
-    ScmBignum *b = SCM_NEW_ATOMIC2(ScmBignum*,
-                                   sizeof(ScmBignum)+(size-1)*sizeof(long));
+    ScmBignum *b = SCM_NEW_ATOMIC2(ScmBignum*, BIGNUM_SIZE(size));
     SCM_SET_CLASS(b, SCM_CLASS_INTEGER);
     b->size = size;
     b->sign = 1;
     return bignum_clear(b);
 }
+
+/* Allocate temporary bignum in the current function's stack frame
+   if alloca() is available. */
+#define ALLOC_TEMP_BIGNUM(var_, size_)                  \
+    (var_) = SCM_BIGNUM(alloca(BIGNUM_SIZE(size_)));    \
+    SCM_SET_CLASS(var_, SCM_CLASS_INTEGER);             \
+    (var_)->size = (size_);                             \
+    (var_)->sign = 1;                                   \
+    bignum_clear(var_)
 
 ScmObj Scm_MakeBignumFromSI(long val)
 {
@@ -607,7 +617,7 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
     } while (0)
 #endif
 
-/* br += bx * y << off*WORD_BITS.   br must have enough size. */
+/* br += bx * (y << off*WORD_BITS).   br must have enough size. */
 static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx,
                                   u_long y, int off)
 {
@@ -1063,3 +1073,46 @@ int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
     SCM_PUTC('>', out);
     return 0;
 }
+
+/*-----------------------------------------------------------------------
+ * Denormalized bignum API
+ * These are provided for optimization of specific cases.
+ */
+
+/* Returns a bignum of specified size, initializing the least significant
+   word by init. */
+ScmBignum *Scm_MakeBignumWithSize(int size, u_long init)
+{
+    ScmBignum *b = make_bignum(size);
+    b->values[0] = init;
+    return b;
+}
+
+/* Calculate acc * coef + c and store the result to acc, if the result fits
+   in acc.  If acc's size is not enough, allocate new bignum, which is at
+   least sizeincr words bigger than acc.
+   Returns the bignum that has the result, without normalizing.
+   Acc need not be normalized. */
+ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc, u_long coef, u_long c)
+{
+    ScmBignum *r;
+    int rsize = acc->size + 1, i;
+    ALLOC_TEMP_BIGNUM(r, rsize);
+    r->values[0] = c;
+    bignum_mul_word(r, acc, coef, 0);
+    if (r->values[rsize-1] == 0) {
+        for (i=0; i<acc->size; i++) {
+            acc->values[i] = r->values[i];
+        }
+        return acc;
+    } else {
+        ScmBignum *rr;
+        rr = make_bignum(rsize + 3); /* 3 is arbitrary size increment */
+        rr->sign = acc->sign;
+        for (i=0; i<rsize; i++) {
+            rr->values[i] = r->values[i];
+        }
+        return rr;
+    }
+}
+

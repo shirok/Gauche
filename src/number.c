@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.85 2002-04-12 00:48:06 shirok Exp $
+ *  $Id: number.c,v 1.86 2002-04-13 06:39:55 shirok Exp $
  */
 
 #include <math.h>
@@ -1721,7 +1721,7 @@ static ScmObj read_uint(const char **strp, int *lenp,
     int digits = 0, diglimit = longdigs[radix-RADIX_MIN];
     long limit = longlimit[radix-RADIX_MIN], bdig = bigdig[radix-RADIX_MIN];
     long value_int = 0;
-    ScmObj value_big = SCM_FALSE;
+    ScmBignum *value_big = NULL;
     char c;
     static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     const char *ptab;
@@ -1729,12 +1729,12 @@ static ScmObj read_uint(const char **strp, int *lenp,
     if (!SCM_FALSEP(initval)) {
         if (SCM_INTP(initval)) {
             if (SCM_INT_VALUE(initval) > limit) {
-                value_big = Scm_MakeBignumFromSI(SCM_INT_VALUE(initval));
+                value_big = Scm_MakeBignumWithSize(4, SCM_INT_VALUE(initval));
             } else {
                 value_int = SCM_INT_VALUE(initval);
             }
         } else if (SCM_BIGNUMP(initval)) {
-            value_big = initval;
+            value_big = SCM_BIGNUM(Scm_BignumCopy(SCM_BIGNUM(initval)));
         }
     } else {
         /* Ignore leading 0's, to avoid unnecessary bignum operations. */
@@ -1747,15 +1747,13 @@ static ScmObj read_uint(const char **strp, int *lenp,
             if (c == *ptab) {
                 value_int = value_int * radix + (ptab-tab);
                 digits++;
-                if (SCM_FALSEP(value_big)) {
+                if (value_big == NULL) {
                     if (value_int >= limit) {
-                        value_big = Scm_MakeBignumFromSI(value_int);
+                        value_big = Scm_MakeBignumWithSize(4, value_int);
                         value_int = digits = 0;
                     }
                 } else if (digits > diglimit) {
-                    value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big), bdig);
-                    SCM_ASSERT(SCM_BIGNUMP(value_big));
-                    value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
+                    value_big = Scm_BignumAccMultAddUI(value_big, bdig, value_int);
                     value_int = digits = 0;
                 }
                 break;
@@ -1766,19 +1764,13 @@ static ScmObj read_uint(const char **strp, int *lenp,
     *strp = str-1;
     *lenp = len+1;
 
-    if (SCM_FALSEP(value_big)) return Scm_MakeInteger(value_int);
+    if (value_big == NULL) return Scm_MakeInteger(value_int);
     if (digits > 0) {
-        value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big),
-                                    ipow(radix, digits));
-        if (SCM_INTP(value_big)) {
-            /* There may be a case that the above calculation yields
-               fixnum. */
-            value_big = Scm_MakeBignumFromSI(SCM_INT_VALUE(value_big));
-        }
-        return Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
-    } else {
-        return Scm_NormalizeBignum(SCM_BIGNUM(value_big));
+        value_big = Scm_BignumAccMultAddUI(value_big, 
+                                           ipow(radix, digits),
+                                           value_int);
     }
+    return Scm_NormalizeBignum(SCM_BIGNUM(value_big));
 }
 
 /*

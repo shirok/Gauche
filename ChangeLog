@@ -1,3 +1,7 @@
+2002-04-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/bignum.c, src/number.c : adding denormalized bignum APIs.
+
 2002-04-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : number reader/writer passes r4rstest.
