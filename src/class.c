@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.25 2001-03-25 06:33:51 shiro Exp $
+ *  $Id: class.c,v 1.26 2001-03-25 07:32:02 shiro Exp $
  */
 
 #include "gauche.h"
@@ -533,13 +533,27 @@ static ScmObj compute_cpl_cb(ScmObj k, void *dummy)
 
 ScmObj Scm_ComputeCPL(ScmClass *klass)
 {
-    ScmObj seqh = SCM_NIL, seqt, dp, result;
+    ScmObj seqh = SCM_NIL, seqt, ds, dp, result;
+
+    /* a trick to ensure we have <object> <top> at the end of CPL. */
+    ds = Scm_Delete(SCM_OBJ(SCM_CLASS_OBJECT), klass->directSupers,
+                    SCM_CMP_EQ);
+    ds = Scm_Delete(SCM_OBJ(SCM_CLASS_TOP), ds, SCM_CMP_EQ);
+    ds = Scm_Append2(ds, SCM_LIST1(SCM_OBJ(SCM_CLASS_OBJECT)));
+    SCM_APPEND1(seqh, seqt, ds);
+
     SCM_FOR_EACH(dp, klass->directSupers) {
         if (!SCM_CLASSP(SCM_CAR(dp)))
             Scm_Error("non-class found in direct superclass list: %S",
                       klass->directSupers);
+        if (SCM_CAR(dp) == SCM_OBJ(SCM_CLASS_OBJECT)
+            || SCM_CAR(dp) == SCM_OBJ(SCM_CLASS_TOP))
+            continue;
         SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS(SCM_CAR(dp))));
     }
+    SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS_OBJECT));
+    Scm_Printf(SCM_CUROUT, "-- %S\n", seqh);
+    
     result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh, compute_cpl_cb, NULL);
     if (SCM_FALSEP(result))
         Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
