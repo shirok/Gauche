@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.4 2001-03-25 10:23:49 shiro Exp $
+;;;  $Id: object.scm,v 1.5 2001-03-25 10:51:24 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -51,49 +51,32 @@
 ;; Method
 ;;
 
-(define-syntax define-method
-  (syntax-rules ()
-    ;; main expansion
-    ((_ "args" ?name () (?body ...) (?specs ...) ?lambda-list (?body-arg ...))
-     (begin
-       (%ensure-generic-function '?name (current-module))
-       (add-method! ?name
+(define-macro (define-method name specs . body)
+  (receive (specializers lambda-list body-args)
+      (let loop ((ss specs))
+        (cond ((null? ss)
+               (values '() '() (list 'next-method)))
+              ((not (pair? ss))
+               (values '() ss (list ss 'next-method)))
+              ((pair? (car ss))
+               (receive result (loop (cdr ss))
+                 (apply values (map cons
+                                    (list (cadar ss) (caar ss) (caar ss))
+                                    result))))
+              (else
+               (receive result (loop (cdr ss))
+                 (apply values (map cons
+                                    (list '<top> (car ss) (car ss))
+                                    result))))
+              ))
+    `(begin
+       (%ensure-generic-function ',name (current-module))
+       (add-method! ,name
                     (make <method>
-                      :generic ?name
-                      :specializers (list ?specs ...)
-                      :lambda-list  '?lambda-list
-                      :body (lambda (?body-arg ... next-method)
-                              ?body ...)))))
-    ;; terminating case
-    ((_ "args" ?name ((?arg ?class)) ?body
-        (?spec ...) (?llist ...) (?barg ...))
-     (define-method "args" ?name () ?body
-       (?spec ... ?class) (?llist ... ?arg) (?barg ... ?arg)))
-    ((_ "args" ?name (?arg) ?body
-        (?spec ...) (?llist ...) (?barg ...))
-     (define-method "args" ?name () ?body
-       (?spec ... <top>) (?llist ... ?arg) (?barg ... ?arg)))
-    ;; normal case
-    ((_ "args" ?name ((?arg ?class) . ?args) ?body
-        (?spec ...) (?llist ...) (?barg ...))
-     (define-method "args" ?name ?args ?body
-       (?spec ... ?class) (?llist ... ?arg) (?barg ... ?arg)))
-    ((_ "args" ?name (?arg . ?args) ?body
-        (?spec ...) (?llist ...) (?barg ...))
-     (define-method "args" ?name ?args ?body
-       (?spec ... <top>) (?llist ... ?arg) (?barg ... ?arg)))
-    ;; &rest arg.  we need special case for single &rest arg.
-    ((_ "args" ?name ?arg ?body 
-        () () ())
-     (define-method "args" ?name () ?body
-       () ?arg (?arg)))
-    ((_ "args" ?name ?arg ?body 
-        (?spec ...) (?llist ...) (?barg ...))
-     (define-method "args" ?name () ?body
-       (?spec ...) (?llist ... . ?arg) (?barg ... ?arg)))
-    ;; entry
-    ((_ ?name ?args ?body ...)
-     (define-method "args" ?name ?args (?body ...) () () ()))
+                      :generic ,name
+                      :specializers (list ,@specializers)
+                      :lambda-list ',lambda-list
+                      :body (lambda ,body-args ,@body))))
     ))
 
 ;;----------------------------------------------------------------
