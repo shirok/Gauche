@@ -1,5 +1,9 @@
 2003-08-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/slib.scm.in : provides substitute of slib's "byte" module---
+	  the original one uses a string for a byte-string, which doesn't
+	  work on Gauche.
+
 	* aclocal.m4, ext/net/net.ac, src/gauche/config.h : added test for
 	  socklen_t, which appears to be necessary on MacOS X when using
 	  ipv6.  (Patch from Hisazumi Kenji).

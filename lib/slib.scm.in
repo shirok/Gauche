@@ -8,6 +8,7 @@
 (define-module slib
   (use srfi-0)
   (extend util.record)  ;; SLIB-compatible make-record-type
+  (use gauche.uvector)  ;; Used to implement 'byte' API
   (export-all))
 (select-module slib)
 
@@ -136,6 +137,7 @@
 	current-time			;returns time in seconds since 1/1/1970
 
 		  ;; Implementation Specific features
+        byte                            ;byte string manipulation
 	))
 
 ;;; (OUTPUT-PORT-WIDTH <port>)
@@ -274,6 +276,27 @@
 ;(define (last-pair l) (if (pair? (cdr l)) (last-pair (cdr l)) l))
 (define t #t)
 (define nil #f)
+
+;;; byte string operators.  SLIB's byte module assumes strings are
+;;; a sequence of bytes.  In Gauche, it's not the case.  Furthermore,
+;;; using a string as a mutable structure is very bad idea.  Here
+;;; we use u8vector by default.  Unfortunately, some SLIB code assumes
+;;; bytes === string, and passes a string directly to those APIs; so
+;;; we have to deal with it.
+
+(define (byte-ref s k)
+  ((if (string? s) string-byte-ref u8vector-ref) s k))
+(define (byte-set! s k b)
+  ((if (string? s) string-byte-set! u8vector-set!) s k b))
+(define make-bytes make-u8vector)
+(define (bytes-length s)
+  ((if (string? s) string-length u8vector-length) s))
+(define bytes u8vector)
+(define (bytes->list s)
+  (u8vector->list (if (string? s) (string->u8vector s) s)))
+(define list->bytes list->u8vector)
+;; write-byte - Gauche has this
+;; read-byte  - Gauche has this
 
 ;;; Define these if your implementation's syntax can support it and if
 ;;; they are not already defined.
