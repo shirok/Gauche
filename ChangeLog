@@ -1,5 +1,19 @@
 2004-05-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/stdlib.stub : moved open-input-file and open-output-file to
+	  the autoloaded file lib/gauche/with.scm
+	* lib/gauche/with.scm (open-input-file, open-output-file): defined
+	  them here, and calls either internal %open-*-file or charconv's
+	  %open-*-file/conv depending on :encoding keyword argument.
+	* src/extlib.stub (%open-input-file, %open-output-file): implements
+	  core part of open-*-file here.
+	* ext/charconv/charconv.scm : removed open-input-file etc.  Instead,
+	  defines %open-*-file/conv, which is called from the system's
+	  open-*-file when :encoding is given.   Handles :if-does-not-exist #f
+	  case, according to HIRAUCHI Hideyuki's patch.
+	* src/autoloads.scm: added autoloads for open-*-file and
+	  %open-*-file/conv.
+	
 	* lib/util/match.scm (get-setter, get-getter): cleaned up by using
 	  srfi-17 and srfi-26 mechanism.
 

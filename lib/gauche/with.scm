@@ -30,10 +30,23 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: with.scm,v 1.14 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: with.scm,v 1.15 2004-05-14 11:28:25 shirok Exp $
 ;;;
 
 (select-module gauche)
+
+;; R5RS open-{input|output}-file can be hooked by conversion port.
+;; %open-{input|output}-file/conv are autoloaded.
+
+(define-in-module scheme (open-input-file filename . args)
+  (if (get-keyword :encoding args #f)
+    (apply %open-input-file/conv filename args)
+    (apply %open-input-file filename args)))
+
+(define-in-module scheme (open-output-file filename . args)
+  (if (get-keyword :encoding args #f)
+    (apply %open-output-file/conv filename args)
+    (apply %open-output-file filename args)))
 
 ;; File ports.
 

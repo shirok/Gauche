@@ -219,6 +219,17 @@
           '("EUCKR" "UTF-8" "ISO2022KR"))
 
 ;;--------------------------------------------------------------------
+(test-section "open -> #f")
+
+(test* "input :if-does-not-exist #f" #f
+       (with-input-from-file ":NOT;EXIST:" (lambda () (error "PANIC!"))
+                             :if-does-not-exist #f :encoding "*JP"))
+
+(test* "output :if-does-not-exist #f" #f
+       (with-output-to-file ":NOT;EXIST:" (lambda () (error "PANIC!"))
+                            :if-does-not-exist #f :encoding "UTF-8"))
+
+;;--------------------------------------------------------------------
 (test-section "code guessing")
 
 (define (test-guess file code scheme)

@@ -1,7 +1,7 @@
 ;;;
 ;;; stdlib.stub - r5rs scheme procedures
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,14 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.103 2003-07-05 03:29:12 shirok Exp $
+;;; $Id: stdlib.stub,v 1.104 2004-05-14 11:28:25 shirok Exp $
 ;;;
 
 
 "
 #include <stdlib.h>
 #include <ctype.h>
-#include <fcntl.h>
 #include <math.h>
 
 #ifndef M_PI
@@ -706,14 +705,8 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int
 ;; 6.6.1  Ports
 ;;
   
-;; valid keywords for open-*-file options
-(define-keyword error "key_error")
-(define-keyword create "key_create")
-(define-keyword append "key_append")
-(define-keyword supersede "key_supersede")
-(define-keyword overwrite "key_overwrite")
-(define-keyword character "key_character")
-(define-keyword binary "key_binary")
+;; open-input-file, open-output-file, and various call-with-* and
+;; with-* are defined in lib/gauche/with.scm and autoloaded.
 
 (define-cproc input-port? (obj)  (return <boolean> "SCM_IPORTP"))
 (define-cproc output-port? (obj) (return <boolean> "SCM_OPORTP"))
@@ -724,60 +717,6 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int
 
 (define-cproc current-output-port ()
   "  SCM_RETURN(SCM_OBJ(SCM_CUROUT));")
-
-(define-cproc open-input-file (path::<string>
-                               &keyword (if-does-not-exist (c "key_error"))
-                                        (buffering #f)
-                                        (element-type (c "key_character"))
-                               )
-  "  ScmObj o; int ignerr = FALSE, bufmode;
-  if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
-  else if (!SCM_EQ(if_does_not_exist, key_error)) {
-    Scm_Error(\"argument for :if-does-not-exist must be either :error or #f, but got %S\", if_does_not_exist);
-  }
-  bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_FULL);
-  o = Scm_OpenFilePort(Scm_GetStringConst(path), O_RDONLY, bufmode, 0);
-  if (o == SCM_FALSE && !ignerr) {
-     Scm_Error(\"couldn't open input file: %S\", path_scm);
-  }
-  SCM_RETURN(o);")
-
-(define-cproc open-output-file (path::<string>
-                                &keyword (if-exists (c "key_supersede"))
-                                         (if-does-not-exist (c "key_create"))
-                                         (mode::<fixnum> #o666)
-                                         (buffering #f)
-                                         (element-type (c "key_character"))
-                                         )
-  "  ScmObj o;
-  int ignerr = FALSE, bufmode, flags = O_WRONLY;
-
-  if (SCM_EQ(if_exists, key_append)) flags |= O_APPEND;
-  else if (SCM_EQ(if_exists, key_error)) {
-    flags |= O_EXCL;
-    if (SCM_EQ(if_does_not_exist, key_error)) {
-      Scm_Error(\"bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.\");
-    }
-  }
-  else if (SCM_EQ(if_exists, key_supersede)) flags |= O_TRUNC;
-  else if (SCM_EQ(if_exists, key_overwrite)) /*no need to add flags*/;
-  else if (SCM_FALSEP(if_exists)) { flags |= O_EXCL; ignerr = TRUE; }
-  else {
-    Scm_Error(\"argument for :if-exists must be either :supersede, :overwrite, :append, :error or #f, but got %S\", if_exists);
-  }
-
-  if (SCM_EQ(if_does_not_exist, key_create)) flags |= O_CREAT;
-  else if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
-  else if (!SCM_EQ(if_does_not_exist, key_error)) {
-    Scm_Error(\"argument for :if-does-not-exist must be either :error, :create or #f, but got %S\", if_does_not_exist);
-  }
-
-  bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_FULL);
-  o = Scm_OpenFilePort(Scm_GetStringConst(path), flags, bufmode, mode);
-  if (!ignerr && o == SCM_FALSE) {
-     Scm_Error(\"couldn't open output file: %S\", path_scm);
-  }
-  SCM_RETURN(o);")
 
 (define-cproc close-input-port (port::<port>)
   (return <void> "Scm_ClosePort"))

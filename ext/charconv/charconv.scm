@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: charconv.scm,v 1.18 2004-02-02 10:43:36 shirok Exp $
+;;;  $Id: charconv.scm,v 1.19 2004-05-14 11:28:25 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
   (use srfi-1)
+  (use srfi-2)
   (use srfi-13)
   (export open-input-conversion-port
           open-output-conversion-port
@@ -197,63 +198,22 @@
          (cut with-output-to-port <> thunk)
          opts))
 
-;; Replace system's open-*-file to accept :encoding option
-(define (open-input-file name . args)
-  (cond ((get-keyword :encoding args #f)
-         => (lambda (from-code)
-              (open-input-conversion-port
-               (with-module scheme (apply open-input-file name args))
-               from-code
-               :buffer-size (get-keyword :conversion-buffer-size args 0)
-               :owner #t)))
-        (else (with-module scheme (apply open-input-file name args)))))
+;; Inserts conversion port.  These are called from system's
+;; open-{input|output}-port when :encoding argument is given.
+(define (%open-input-file/conv name . args)
+  (and-let* ((port (apply %open-input-file name args)))
+    (open-input-conversion-port
+     port
+     (get-keyword :encoding args #f)
+     :buffer-size (get-keyword :conversion-buffer-size args 0)
+     :owner #t)))
 
-(define (open-output-file name . args)
-  (cond ((get-keyword :encoding args #f)
-         => (lambda (to-code)
-              (open-output-conversion-port
-               (with-module scheme (apply open-output-file name args))
-               to-code
-               :buffer-size (get-keyword :conversion-buffer-size args 0)
-               :owner #t)))
-        (else (with-module scheme (apply open-output-file name args)))))
-
-(define (call-with-input-file filename proc . flags)
-  (let ((port (apply open-input-file filename flags)))
-    (with-error-handler
-        (lambda (e)
-          (when port (close-input-port port))
-          (raise e))
-      (lambda ()
-        (begin0 (proc port)
-                (when port (close-input-port port)))))))
-
-(define (call-with-output-file filename proc . flags)
-  (let ((port (apply open-output-file filename flags)))
-    (with-error-handler
-        (lambda (e)
-          (when port (close-output-port port))
-          (raise e))
-      (lambda ()
-        (begin0 (proc port)
-                (when port (close-output-port port)))))))
-
-(define (with-input-from-file filename thunk . flags)
-  (let ((port (apply open-input-file filename flags)))
-    (and port
-         (with-error-handler
-             (lambda (e) (close-input-port port) (raise e))
-           (lambda ()
-             (begin0 ((with-module gauche with-input-from-port) port thunk)
-                     (close-input-port port)))))))
-
-(define (with-output-to-file filename thunk . flags)
-  (let ((port (apply open-output-file filename flags)))
-    (and port
-         (with-error-handler
-             (lambda (e) (close-output-port port) (raise e))
-           (lambda ()
-             (begin0 ((with-module gauche with-output-to-port) port thunk)
-                     (close-output-port port)))))))
+(define (%open-output-file/conv name . args)
+  (and-let* ((port (apply %open-output-file name args)))
+    (open-output-conversion-port
+     port
+     (get-keyword :encoding args #f)
+     :buffer-size (get-keyword :conversion-buffer-size args 0)
+     :owner #t)))
 
 (provide "gauche/charconv")

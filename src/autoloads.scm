@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.9 2004-05-05 12:06:21 shirok Exp $
+;;; $Id: autoloads.scm,v 1.10 2004-05-14 11:28:25 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.9 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.10 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -73,16 +73,17 @@
 
 ;;==========================================================
 (autoload-scheme "gauche/listutil"
-                  caaar caadr cadar caddr cdaar cdadr cddar cdddr
-                  caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr
-                  cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr)
+                 caaar caadr cadar caddr cdaar cdadr cddar cdddr
+                 caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr
+                 cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr)
 (autoload-scheme "gauche/with"
-                  call-with-input-file call-with-output-file
-                  with-input-from-file with-output-to-file)
+                 open-input-file open-output-file
+                 call-with-input-file call-with-output-file
+                 with-input-from-file with-output-to-file)
 (autoload-scheme "gauche/numerical"
-                  exp log sqrt expt cos sin tan asin acos atan
-                  gcd lcm numerator denominator
-                  real-part imag-part)
+                 exp log sqrt expt cos sin tan asin acos atan
+                 gcd lcm numerator denominator
+                 real-part imag-part)
 
 #|
 (autoload "gauche/object"
@@ -104,6 +105,9 @@
           with-input-from-string call-with-input-string
           with-string-io call-with-string-io
           write-to-string read-from-string)
+
+(autoload gauche.charconv
+          %open-input-file/conv %open-output-file/conv)
 
 (autoload "gauche/signal"
           (:macro with-signal-handlers))
