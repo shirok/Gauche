@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.8 2001-02-05 10:23:36 shiro Exp $
+ *  $Id: core.c,v 1.9 2001-02-06 06:59:18 shiro Exp $
  */
 
 #include "gauche.h"
@@ -33,8 +33,10 @@ static GC_PTR oom_handler(size_t bytes)
 
 extern void Scm__InitModule(void);
 extern void Scm__InitSymbol(void);
+extern void Scm__InitKeyword(void);
 extern void Scm__InitClass(void);
 extern void Scm__InitPort(void);
+extern void Scm__InitLoad(void);
 
 void Scm_Init(void)
 {
@@ -44,9 +46,11 @@ void Scm_Init(void)
     
     Scm__InitModule();
     Scm__InitSymbol();
+    Scm__InitKeyword();
     Scm__InitClass();
     Scm__InitPort();
     Scm__InitCompiler();
+    Scm__InitLoad();
 
     vm = Scm_NewVM(NULL, Scm_UserModule());
     Scm_SetVM(vm);
