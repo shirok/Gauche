@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.83 2002-09-07 07:21:11 shirok Exp $
+;;;  $Id: genstub,v 1.84 2002-09-09 08:06:09 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1532,7 +1532,7 @@
                  (display #\_)
                  (display (number->string (char->integer c) 16))
                  (loop (read-char)))
-                (else (display (char-downcase c)) (loop (read-char)))
+                (else (display c) (loop (read-char)))
                 ))))
         )
       )
