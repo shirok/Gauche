@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.18 2003-12-16 09:25:09 shirok Exp $
+ *  $Id: jconv.c,v 1.19 2004-09-15 00:37:12 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -179,7 +179,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         } else if (s1 >= 0xf5) {
             OUTCHK(3);
             m = 2;
-            e1 = (s1-0x9e)*2 + 0xa0 - ((s2 < 0x9f)? 1 : 0);
+            e1 = (s1-0xf5)*2 + 0x50 + 0xa0 - ((s2 < 0x9f)? 1 : 0);
         } else {
             OUTCHK(3);
             m = 2;

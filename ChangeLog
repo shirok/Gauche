@@ -1,5 +1,8 @@
 2004-09-14  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/jconv.c (sjis2eucj): fix for sjis 2nd plane convesion
+	  (patch from Kimura Fuyuki).
+
 	* lib/www/cgi.scm (cgi-header): put :status first if specified.
 
 2004-09-13  Shiro Kawai  <shiro@acm.org>
