@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.50 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: number.c,v 1.51 2001-05-20 08:58:15 shirok Exp $
  */
 
 #include <math.h>
@@ -1368,9 +1368,9 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
     } else if (SCM_COMPLEXP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort();
         double_print(buf, FLT_BUF, SCM_COMPLEX_REAL(obj), FALSE);
-        SCM_PUTCSTR(buf, SCM_PORT(p));
+        SCM_PUTZ(buf, SCM_PORT(p));
         double_print(buf, FLT_BUF, SCM_COMPLEX_IMAG(obj), TRUE);
-        SCM_PUTCSTR(buf, SCM_PORT(p));
+        SCM_PUTZ(buf, SCM_PORT(p));
         SCM_PUTC('i', SCM_PORT(p));
         r = Scm_GetOutputString(SCM_PORT(p));
     } else {
@@ -1473,7 +1473,7 @@ static double read_real(const char *str, int len, const char **next)
         break;
     }
     if (digits == 0) SCM_DSTRING_PUTB(&ds, '1');
-    sscanf(Scm_DStringGetCstr(&ds), "%lf", &value);
+    sscanf(Scm_DStringGetz(&ds), "%lf", &value);
     *next = str;
     return value;
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.40 2001-05-20 08:21:53 shirok Exp $
+ *  $Id: string.c,v 1.41 2001-05-20 08:58:15 shirok Exp $
  */
 
 #include <stdio.h>
@@ -840,17 +840,17 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 {
     char buf[5];
     switch (ch) {
-    case '\\': SCM_PUTCSTR("\\\\", port); break;
-    case '"':  SCM_PUTCSTR("\\\"", port); break;
-    case '\n': SCM_PUTCSTR("\\n", port); break;
-    case '\t': SCM_PUTCSTR("\\t", port); break;
-    case '\r': SCM_PUTCSTR("\\r", port); break;
-    case '\f': SCM_PUTCSTR("\\f", port); break;
-    case '\0': SCM_PUTCSTR("\\0", port); break;
+    case '\\': SCM_PUTZ("\\\\", port); break;
+    case '"':  SCM_PUTZ("\\\"", port); break;
+    case '\n': SCM_PUTZ("\\n", port); break;
+    case '\t': SCM_PUTZ("\\t", port); break;
+    case '\r': SCM_PUTZ("\\r", port); break;
+    case '\f': SCM_PUTZ("\\f", port); break;
+    case '\0': SCM_PUTZ("\\0", port); break;
     default:
         if (ch < ' ' || ch == 0x7f || (bytemode && ch >= 0x80)) {
             snprintf(buf, 5, "\\x%02x", (unsigned char)ch);
-            SCM_PUTCSTR(buf, port);
+            SCM_PUTZ(buf, port);
         } else {
             SCM_PUTC(ch, port);
         }
@@ -868,7 +868,7 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             const char *cp = SCM_STRING_START(str);
             int size = SCM_STRING_SIZE(str);
             if (SCM_STRING_INCOMPLETE_P(str)) {
-                SCM_PUTCSTR("#\"", port);
+                SCM_PUTZ("#\"", port);
             } else {
                 SCM_PUTC('"', port);
             }
@@ -1045,13 +1045,13 @@ ScmObj Scm_DStringGet(ScmDString *dstr)
 
 /* For conveninence.   Note that dstr may already contain NUL byte in it,
    in that case you'll get chopped string. */
-const char *Scm_DStringGetCstr(ScmDString *dstr)
+const char *Scm_DStringGetz(ScmDString *dstr)
 {
     SCM_DSTRING_PUTB(dstr, '\0');
     return dstr->start;
 }
 
-void Scm_DStringPutCstr(ScmDString *dstr, const char *str)
+void Scm_DStringPutz(ScmDString *dstr, const char *str)
 {
     int size = strlen(str);
     while (dstr->current + size >= dstr->end) {

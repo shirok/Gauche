@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.13 2001-05-06 23:59:12 shirok Exp $
+ *  $Id: hash.c,v 1.14 2001-05-20 08:58:15 shirok Exp $
  */
 
 #include "gauche.h"
@@ -531,7 +531,7 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
         Scm_Printf(port, "%S => %S ", e->key, e->value);
     }
-    SCM_PUTCSTR(">", port);
+    SCM_PUTZ(">", port);
 }
 
 /*

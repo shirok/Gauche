@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.139 2001-05-19 11:03:56 shirok Exp $
+ *  $Id: gauche.h,v 1.140 2001-05-20 08:58:15 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -649,6 +649,13 @@ ScmObj Scm_GetStandardCharSet(int id);
  * STRING
  */
 
+/* NB: Conceptually, object immutablility is not specific for strings,
+ * so the immutable flag has to be in SCM_HEADER or somewhere else.
+ * In practical situations, however, what ususally matters is string
+ * immutability (like the return value of symbol->string).  So I keep
+ * string specific immutable flag.
+ */
+
 struct ScmStringRec {
     SCM_HEADER;
     unsigned int incomplete : 1;
@@ -752,8 +759,8 @@ struct ScmDStringRec {
 
 extern void        Scm_DStringInit(ScmDString *dstr);
 extern ScmObj      Scm_DStringGet(ScmDString *dstr);
-extern const char *Scm_DStringGetCstr(ScmDString *dstr);
-extern void        Scm_DStringPutCstr(ScmDString *dstr, const char *str);
+extern const char *Scm_DStringGetz(ScmDString *dstr);
+extern void        Scm_DStringPutz(ScmDString *dstr, const char *str);
 extern void        Scm_DStringAdd(ScmDString *dstr, ScmString *str);
 extern void        Scm_DStringPutb(ScmDString *dstr, char byte);
 extern void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
@@ -893,11 +900,13 @@ typedef struct ScmProcPortInfoRec {
 typedef struct ScmPortVTableRec {
     int       (*Getb)(ScmPort *p);
     int       (*Getc)(ScmPort *p);
+    int       (*Getz)(ScmPort *p, char *buf, int buflen);
     ScmObj    (*Getline)(ScmPort *p);
     int       (*Ready)(ScmPort *p);
     int       (*Putb)(ScmPort *p, ScmByte b);
     int       (*Putc)(ScmPort *p, ScmChar c);
-    int       (*Puts)(ScmPort *p, const char *buf, int size, int len);
+    int       (*Putz)(ScmPort *p, const char *buf);
+    int       (*Puts)(ScmPort *p, ScmString *s);
     int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
     ScmProcPortInfo *(*Info)(ScmPort *p);
@@ -962,13 +971,14 @@ extern ScmObj Scm_ClosePort(ScmPort *port);
 extern void Scm_Putb(ScmByte b, ScmPort *port);
 extern void Scm_Putc(ScmChar c, ScmPort *port);
 extern void Scm_Puts(ScmString *s, ScmPort *port);
-extern void Scm_PutCStr(const char *s, ScmPort *port);
+extern void Scm_Putz(const char *s, ScmPort *port);
 extern void Scm_Putnl(ScmPort *port);
 extern void Scm_Flush(ScmPort *port);
 
 extern void Scm_Ungetc(ScmChar ch, ScmPort *port);
 extern int Scm_Getb(ScmPort *port);
 extern int Scm_Getc(ScmPort *port);
+extern int Scm_Getz(ScmPort *port, char *buf, int buflen);
 
 extern ScmObj Scm_ReadLine(ScmPort *port);
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.9 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: vector.c,v 1.10 2001-05-20 08:58:15 shirok Exp $
  */
 
 #include "gauche.h"
@@ -24,12 +24,12 @@
 static void vector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     int i;
-    SCM_PUTCSTR("#(", port);
+    SCM_PUTZ("#(", port);
     for (i=0; i<SCM_VECTOR_SIZE(obj); i++) {
         if (i != 0) SCM_PUTC(' ', port);
         Scm_Write(SCM_VECTOR_ELEMENT(obj, i), SCM_OBJ(port), ctx->mode);
     }
-    SCM_PUTCSTR(")", port);
+    SCM_PUTZ(")", port);
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass, vector_print, NULL, NULL,

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.23 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: port.c,v 1.24 2001-05-20 08:58:15 shirok Exp $
  */
 
 #include <unistd.h>
@@ -407,9 +407,9 @@ void Scm_Puts(ScmString *s, ScmPort *port)
     SCM_PUTS(s, port);
 }
 
-void Scm_PutCStr(const char *s, ScmPort *port)
+void Scm_Putz(const char *s, ScmPort *port)
 {
-    SCM_PUTCSTR(s, port);
+    SCM_PUTZ(s, port);
 }
 
 void Scm_Putnl(ScmPort *port)
@@ -489,6 +489,12 @@ static int null_getc(ScmPort *dummy)
     return SCM_CHAR_INVALID;
 }
 
+static int null_getz(ScmPort *dummy, char *buf, int buflen)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
 static ScmObj null_getline(ScmPort *port)
 {
     return readline_int(port);
@@ -512,7 +518,13 @@ static int null_putc(ScmPort *dummy, ScmChar c)
     return 0;
 }
 
-static int null_puts(ScmPort *dummy, const char *buf, int size, int len)
+static int null_putz(ScmPort *dummy, const char *str)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_puts(ScmPort *dummy, ScmString *s)
     /*ARGSUSED*/
 {
     return 0;
@@ -546,10 +558,12 @@ ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable, void *data,
     *vt = *vtable;
     if (!vt->Getb) vt->Getb = null_getb;
     if (!vt->Getc) vt->Getc = null_getc;
+    if (!vt->Getz) vt->Getz = null_getz;
     if (!vt->Getline) vt->Getline = null_getline;
     if (!vt->Ready) vt->Ready = null_ready;
     if (!vt->Putb) vt->Putb = null_putb;
     if (!vt->Putc) vt->Putc = null_putc;
+    if (!vt->Putz) vt->Putz = null_putz;
     if (!vt->Puts) vt->Puts = null_puts;
     if (!vt->Flush) vt->Flush = null_flush;
     if (!vt->Close) vt->Close = null_close;
@@ -660,11 +674,10 @@ static int fdport_putc_unbuffered(ScmPort *port, ScmChar ch)
     return nbytes;
 }
 
-static int fdport_puts_unbuffered(ScmPort *port, const char *buf, int size,
-                                  int len)
+static int fdport_putz_unbuffered(ScmPort *port, const char *buf)
 {
     DECL_FDPORT(pdata, port);
-    int nwrote, count = size;
+    int nwrote, size = strlen(buf), count = size;
     do {
         nwrote = write(pdata->info.fd, buf, count);
         CHECK_ERROR(nwrote, pdata);
@@ -672,6 +685,20 @@ static int fdport_puts_unbuffered(ScmPort *port, const char *buf, int size,
         buf += nwrote;
     } while (count > 0);
     return size;
+}
+
+static int fdport_puts_unbuffered(ScmPort *port, ScmString *str)
+{
+    DECL_FDPORT(pdata, port);
+    int nwrote, count = SCM_STRING_SIZE(str);
+    const char *buf = SCM_STRING_START(str);
+    do {
+        nwrote = write(pdata->info.fd, buf, count);
+        CHECK_ERROR(nwrote, pdata);
+        count -= nwrote;
+        buf += nwrote;
+    } while (count > 0);
+    return SCM_STRING_SIZE(str);
 }
 
 static int fdport_close_unbuffered(ScmPort *port)
@@ -725,6 +752,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
         vt.Ready = fdport_ready_unbuffered;
         vt.Putb = fdport_putb_unbuffered;
         vt.Putc = fdport_putc_unbuffered;
+        vt.Putz = fdport_putz_unbuffered;
         vt.Puts = fdport_puts_unbuffered;
         vt.Flush = NULL;        /* use default */
         vt.Close = fdport_close_unbuffered;
