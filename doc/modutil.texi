@@ -410,7 +410,7 @@ then pack reads input from that string.
 ことができないからです(@code{pack}の将来のバージョンでは、
 新しいread構文を登録することによってこれは回避されるでしょう)。
 
-オプションのキーワード@{:input}が与えられると、現在の入力ポートの
+オプションのキーワード@var{:input}が与えられると、現在の入力ポートの
 代わりにそのポートが使われます。@var{:from-string}が与えられると、
 packはその文字列を入力とします。
 @c COMMON
