@@ -1,9 +1,10 @@
-Shiro Kawai (shiro@acm.org) - maintainer
+Primary authors:
+Shiro Kawai (shiro@acm.org)
+Kimura Fuyuki (fuyuki@hadaly.org)
+Alex Shinn (foof@synthcode.com)
 
-Contributed from:
-Kimura Fuyuki (fuyuki@hadaly.org) - ext/digest/* etc.
-Alex Shinn (foof@synthcode.com) - lib/gauche/reload.scm etc.
-Makoto Satoh (makotosato2@yahoo.co.jp) - document translation
+Document translation:
+Makoto Satoh (makotosato2@yahoo.co.jp)
 
 Patches from:
 Abe Hiroshi
@@ -17,4 +18,5 @@ MINOURA Makoto
 ODA Hideo
 OGURISU Osamu
 Shin-ichi Hirata
+Yokota Hiroshi
 Yuuki Takahashi

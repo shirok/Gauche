@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.21 2003-03-30 12:54:35 shirok Exp $
+# $Id: Gauche.spec,v 1.22 2003-05-30 12:40:34 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -12,7 +12,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.6.8
+%define version  0.7
 %define encoding eucjp
 %define threads  pthreads
 
@@ -38,7 +38,7 @@ It can handle multibyte character strings natively.
 %package %{encoding}
 Summary: Scheme script interpreter with multibyte character handling
 Group: Development/Languages
-Provides: Gauche
+Provides: Gauche libgauche.so
 %description %{encoding}
 Gauche is a Scheme interpreter conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
@@ -83,14 +83,19 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 %doc COPYING ChangeLog INSTALL INSTALL.eucjp Gauche.spec
 /usr/bin/gosh
 /usr/bin/gauche-config
-#/usr/lib/libgauche.a
-#/usr/lib/libgauche.so
+/usr/lib/libgauche.a
+/usr/lib/libgauche.so
+/usr/lib/libgauche.so.0
+/usr/lib/libgauche.so.0.0.0
 /usr/lib/gauche/
 /usr/share/info/
 /usr/share/gauche/
 /usr/share/man/man1/
 
 %changelog
+* Fri May 30 2003 Shiro Kawai
+- Gauche release 0.7
+
 * Sun Mar 30 2003 Shiro Kawai
 - Gauche release 0.6.8
 

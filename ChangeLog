@@ -1,3 +1,10 @@
+2003-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.7
+
+	* ext/uvector/Makefile.in : changed again the name of the DSO to
+	  libgauche-uvector.la; some extension modules depended on the name.
+	
 2003-05-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-access): let it signal an error if real

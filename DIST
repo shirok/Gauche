@@ -137,8 +137,11 @@ if [ "$testclean" = "yes" ]; then
 fi
 
 if [ "$rpm" = "yes" ]; then
+  if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
+  VERSION=`cat VERSION`
+  if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
   rm -f $RPMDIR/SOURCES/Gauche-$VERSION.tgz
-  cp $TGZ_DEST/Gauche-$VERSION.tgz $RPMDIR/SOURCES/
+  cp ../Gauche-$VERSION.tgz $RPMDIR/SOURCES/
   spec=$RPMDIR/SPECS/Gauche.spec
   echo "UTF8, i386 ----------------------------------------------"
   rm -f $spec
