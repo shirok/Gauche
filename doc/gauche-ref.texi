@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.145 2002-01-14 06:02:40 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.146 2002-01-24 20:44:17 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -377,6 +377,7 @@ Gauche¤ÎÆ°ºî¤òÀµ³Î¤ËÍý²ò¤¹¤ë½õ¤±¤Ë¤Ê¤ë¤È»×¤¤¤Þ¤¹¡£
 @menu
 * Compilation::                 
 * Multibyte Strings::           
+* Case-sensitivity::            
 * Integerated Object System::   
 * Module System::               
 @end menu
@@ -485,7 +486,7 @@ a file on certain condition, use @code{load} or do dispatch in macro
 
 @end table
 
-@node Multibyte Strings, Integerated Object System, Compilation, Concepts
+@node Multibyte Strings, Case-sensitivity, Compilation, Concepts
 @section Multibyte Strings
 @c NODE ¥Þ¥ë¥Á¥Ð¥¤¥ÈÊ¸»úÎó
 
@@ -543,8 +544,53 @@ as a special port. @xref{Character code conversion}, for details.
 Gauche assumes the Scheme program is written in its internal
 encoding scheme.
 
+@node Case-sensitivity, Integerated Object System, Multibyte Strings, Concepts
+@section Case-sensitivity
+@c NODE ÂçÊ¸»ú¾®Ê¸»ú¤Î¶èÊÌ
 
-@node Integerated Object System, Module System, Multibyte Strings, Concepts
+Historically, most Lisp-family languages are case-insensitive
+for symbols.  Scheme is no exception and R5RS defines symbols are
+read in case-insensitive way.  (Note that symbols are case-sensitive
+internally even in R5RS Scheme; case-insensitivity is about readers.)
+
+However, nowadays programming is hardly completed in one language.
+When you interacts with other languages that distinguishes uppercase
+and lowercase characters, it is desirable that Scheme distinguishes them
+as well.
+
+So Gauche has two modes in reading and writing symbols.
+@emph{By default, Gauche reads and writes symbols in case-sensitive manner}.
+This behavior doesn't conform R5RS.
+
+@example
+; @r{In case-sensitive mode (default)}
+(eq? 'a 'A) @result{} #f  ; #t @r{in R5RS}
+(symbol->string 'ABC) @result{} "ABC"
+(symbol->string 'abc) @result{} "abc"
+(display (string->symbol "ABC")) @result{} @r{writes} ABC
+(display (string->symbol "abc")) @result{} @r{writes} abc
+@end example
+
+You can make Gauche case-insensitive by giving @code{-fcase-fold}
+command-line option to the @code{gosh} interpreter (@xref{Invoking Gosh}).
+In this mode, the reader folds uppercase characters in symbols to lowercase
+ones.  If a symbol name contains uppercase characters, it is written
+out using |-escape (@xref{Symbols}).
+
+@example
+; @r{In case-insensitive mode (with -fcase-fold option)}
+(eq? 'a 'A) @result{} #t
+(symbol->string 'ABC) @result{} "abc"
+(symbol->string 'abc) @result{} "abc"
+(display (string->symbol "ABC")) @result{} @r{writes} |ABC|
+(display (string->symbol "abc")) @result{} @r{writes} abc
+@end example
+
+Right now, there's no way to switch these two modes back and forth
+inside the intepreter; an API will be provided in the later versions.
+
+
+@node Integerated Object System, Module System, Case-sensitivity, Concepts
 @section Integrated Object System
 @c NODE Åý¹ç¤µ¤ì¤¿¥ª¥Ö¥¸¥§¥¯¥È¥·¥¹¥Æ¥à
 
@@ -813,6 +859,9 @@ Prohibits the compiler from inilining primitive Scheme procedures.
 Don't keep source information for debugging.  Consumes less memory.
 @item load-verbose
 Reports whenever a file is loaded.
+@item case-fold
+Ignore case for symbols as specified in R5RS.
+(It is distinguished by default).  @xref{Case-sensitivity}.
 @end table
 @c JP
 ¤³¤Î¥ª¥×¥·¥ç¥ó¤Ï¥³¥ó¥Ñ¥¤¥é¤ÎÆ°ºî¤Ë±Æ¶Á¤òÍ¿¤¨¤Þ¤¹¡¢º£¤Î¤È¤³¤í¡¢¼¡¤Î¥ª¥×¥·¥ç¥ó¤Î¤ß¤¬
@@ -824,6 +873,9 @@ Scheme¤Î´ðËÜ´Ø¿ô¤Î¥¤¥ó¥é¥¤¥óÅ¸³«¤ò¹Ô¤¤¤Þ¤»¤ó¡£
 ¥Ç¥Ð¥Ã¥°¤Î¤¿¤á¤Î¥½¡¼¥¹¥Õ¥¡¥¤¥ë¾ðÊó¤òÊÝ»ý¤·¤Þ¤»¤ó¡£¥á¥â¥ê¤Î»ÈÍÑÎÌ¤Ï¾®¤µ¤¯¤Ê¤ê¤Þ¤¹¡£
 @item load-verbose
 ¥Õ¥¡¥¤¥ë¤¬¥í¡¼¥É¤µ¤ì¤ë»þ¤Ë¤½¤ì¤òÊó¹ð¤·¤Þ¤¹¡£
+@item case-fold
+R5RS¤Ë¼¨¤µ¤ì¤ëÄÌ¤ê¡¢¥·¥ó¥Ü¥ë¤ÎÂçÊ¸»ú¾®Ê¸»ú¤ò¶èÊÌ¤·¤Þ¤»¤ó¡£
+(¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¤³¤ì¤é¤Ï¶èÊÌ¤µ¤ì¤Þ¤¹)¡£ @ref{Case-sensitivity} ¤ò»²¾È¤·¤Æ²¼¤µ¤¤¡£
 @end table
 @c COMMON
 @end deftp
@@ -3484,16 +3536,16 @@ Gauche¤Ç¤Ï¡¢Á´¤Æ¤Î¥·¥ó¥Ü¥ë¤Ïintern¡¢¤¹¤Ê¤ï¤ÁÆâÉô¤Î¥Æ¡¼¥Ö¥ë¤ËÅÐÏ¿¤µ¤ì¤Æ¤¤¤Þ¤¹¡£
 @c EN
 Denotes a symbol that has weird name, i.e. the name including the
 characters which is not allowed in the R5RS symbol syntax.
-This syntax can also be used to denote a symbol with capital letters
-(without escaping, the capital letters are converted to the lowercase
-letters by the reader).
+If the interpreter is running in case-insensitive mode, this syntax
+can be used to include uppercase characters in a symbol
+(@xref{Case-sensitivity}).
 
 The syntax is taken from CommonLisp.  Some other Scheme implementation
 use it as well.
 @c JP
 R5RS¤Î¥·¥ó¥Ü¥ë¤ÎÄêµÁ¤Ç¤Ïµö¤µ¤ì¤Æ¤¤¤Ê¤¤Ê¸»ú¤ò»È¤Ã¤¿Ì¯¤ÊÌ¾Á°¤Î¥·¥ó¥Ü¥ë¤òÉ½µ­¤¹¤ë¤Î¤Ë
-»È¤¦¹½Ê¸¤Ç¤¹¡£ÂçÊ¸»ú¤ò´Þ¤à¥·¥ó¥Ü¥ë¤òÉ½µ­¤¹¤ë¤È¤­¤Ë¤â»È¤¨¤Þ¤¹ (¤³¤Î¥¨¥¹¥±¡¼¥×¹½Ê¸¤Ê¤·¤À¤È¡¢
-ÂçÊ¸»ú¤ÏÁ´¤Æ¥ê¡¼¥À¡¼¤Ë¤è¤Ã¤Æ¾®Ê¸»ú¤ËÊÑ´¹¤µ¤ì¤Æ¤·¤Þ¤¤¤Þ¤¹)¡£
+»È¤¦¹½Ê¸¤Ç¤¹¡£¥¤¥ó¥¿¥×¥ê¥¿¤¬ÂçÊ¸»ú¾®Ê¸»ú¤ò¶èÊÌ¤·¤Ê¤¤¥â¡¼¥É¤ÇÁö¤Ã¤Æ¤¤¤ë¾ì¹ç¤Ï¡¢
+ÂçÊ¸»ú¤ò´Þ¤à¥·¥ó¥Ü¥ë¤òÉ½µ­¤¹¤ë¤È¤­¤Ë¤â»È¤¨¤Þ¤¹ (@ref{Case-sensitivity}»²¾È)¡£
 
 ¤³¤ÎÉ½µ­¤ÏCommonLisp¤«¤é¼è¤é¤ì¤Þ¤·¤¿¡£¤¤¤¯¤Ä¤«¤ÎScheme¤Ç¤âÆ±ÍÍ¤ÎÉ½µ­¤òºÎÍÑ¤·¤Æ¤¤¤Þ¤¹¡£
 @c COMMON
@@ -3540,7 +3592,7 @@ Returns a symbol whose name is a string @var{string}.
 
 @example
 (string->symbol "a") @result{} a
-(string->symbol "A") @result{} |A|
+(string->symbol "A") @result{} A
 (string->symbol "weird symbol name" @result{} |weird symbol name|
 @end example
 @end defun
@@ -6454,7 +6506,14 @@ the @code{~D} directive.
 @section Loading Programs
 @c NODE ¥×¥í¥°¥é¥à¤Î¥í¡¼¥É
 
-@node Loading Scheme file
+@menu
+* Loading Scheme file::         
+* Loading dynamic library::     
+* Require and provide::         
+* Autoload::                    
+@end menu
+
+@node Loading Scheme file, Loading dynamic library, Loading Programs, Loading Programs
 @subsection Load Scheme file
 @c NODE Scheme¥Õ¥¡¥¤¥ë¤Î¥í¡¼¥É
 
@@ -6639,7 +6698,7 @@ When called outside of @code{load}, these procedures returns
 @end defun
 
 
-@node Loading dynamic library
+@node Loading dynamic library, Require and provide, Loading Scheme file, Loading Programs
 @subsection Load dynamic library
 @c NODE ¥À¥¤¥Ê¥ß¥Ã¥¯¥é¥¤¥Ö¥é¥ê¤Î¥í¡¼¥É
 
@@ -6694,7 +6753,7 @@ There's no way to unload the loaded libraries.
 @end defun
 
 
-@node Require and provide
+@node Require and provide, Autoload, Loading dynamic library, Loading Programs
 @subsection Require and provide
 @c NODE require¤Èprovide
 
@@ -6744,7 +6803,7 @@ Returns @code{#t} if @var{feature} is already provided.
 @c COMMON
 @end defun
 
-@node Autoload
+@node Autoload,  , Require and provide, Loading Programs
 @subsection Autoload
 
 @defmac autoload file/module item @dots{}
@@ -7360,14 +7419,18 @@ Returns a boolean value of indicating whether @var{pathname} is allowed
 in @var{amode}.  @var{amode} can be a combinations (logical or) of
 following predefined flags.
 @table @code
-@item |R_OK|
+@item R_OK
+@vindex R_OK
 Checks whether @var{pathname} is readable by the current user.
-@item |W_OK
+@item W_OK
+@vindex W_OK
 Checks whether @var{pathname} is writable by the current user.
-@item |X_OK|
+@item X_OK
+@vindex X_OK
 Checks whether @var{pathname} is executable (or searchable in case
 @var{pathname} is a directory) by the current user.
-@item |F_OK|
+@item F_OK
+@vindex F_OK
 Checks whether @var{pathname} exists or not, regardless of
 the access permissions of @var{pathname}.  (But you need to have
 access permissions of the directories containing @var{pathname}).
@@ -7499,46 +7562,32 @@ function signals an error.
 @subsection Signal
 @c NODE  ¥·¥°¥Ê¥ë
 
-@deftp {Variable} |SIGABRT|
-@deftpx {Variable} |SIGALRM|
-@deftpx {Variable} |SIGCHLD|
-@deftpx {Variable} |SIGCONT|
-@deftpx {Variable} |SIGFPE|
-@deftpx {Variable} |SIGHUP|
-@deftpx {Variable} |SIGILL|
-@deftpx {Variable} |SIGINT|
-@deftpx {Variable} |SIGKILL|
-@deftpx {Variable} |SIGPIPE|
-@deftpx {Variable} |SIGQUIT|
-@deftpx {Variable} |SIGSEGV|
-@deftpx {Variable} |SIGSTOP|
-@deftpx {Variable} |SIGTERM|
-@deftpx {Variable} |SIGTSTP|
-@deftpx {Variable} |SIGTTIN|
-@deftpx {Variable} |SIGTTOU|
-@deftpx {Variable} |SIGUSR1|
-@deftpx {Variable} |SIGUSR2|
-@vindex SIGABRT
-@vindex SIGALRM
-@vindex SIGCHLD
-@vindex SIGCONT
-@vindex SIGFPE
-@vindex SIGHUP
-@vindex SIGILL
-@vindex SIGINT
-@vindex SIGKILL
-@vindex SIGPIPE
-@vindex SIGQUIT
-@vindex SIGSEGV
-@vindex SIGSTOP
-@vindex SIGTERM
-@vindex SIGTSTP
-@vindex SIGTTIN
-@vindex SIGTTOU
-@vindex SIGUSR1
-@vindex SIGUSR2
+In Gauche, you can write signal handlers in Scheme.
+
+
+
+
+@defvar SIGABRT
+@defvarx SIGALRM
+@defvarx SIGCHLD
+@defvarx SIGCONT
+@defvarx SIGFPE
+@defvarx SIGHUP
+@defvarx SIGILL
+@defvarx SIGINT
+@defvarx SIGKILL
+@defvarx SIGPIPE
+@defvarx SIGQUIT
+@defvarx SIGSEGV
+@defvarx SIGSTOP
+@defvarx SIGTERM
+@defvarx SIGTSTP
+@defvarx SIGTTIN
+@defvarx SIGTTOU
+@defvarx SIGUSR1
+@defvarx SIGUSR2
 These variables are bound to the corresponding signal numbers.
-@end deftp
+@end defvar
 
 @defun sys-kill pid sig
 [POSIX] Sends a signal @var{sig} to the specified process.  @var{sig}
@@ -7886,6 +7935,14 @@ the process.  This function only returns when the signal-catching
 function returns.  The returned value is undefined.
 @end defun
 
+@defun sys-alarm seconds
+[POSIX] Arranges a SIGALRM signal to be delivered after @var{seconds}.
+The previous settings of the alarm clock is cancelled.  Passing zero
+to @var{seconds} doesn't schedule new alarm.
+Returns the number of seconds remaining until previously scheduled
+alarm was due to be delivered (or zero if no alarm is active).
+@end defun
+
 @defun sys-sleep seconds
 [POSIX] Suspends the process until the specified number of seconds elapses,
 or the process receives a signal.  Returns zero if it sleeps well,
@@ -7914,8 +7971,7 @@ analysis, better RNGs should be used.  Gauche will provide an
 extention module of Mersenne Twister RNG soon.
 @end defun
 
-@deftp {Variable} |RAND_MAX|
-@vindex RAND_MAX
+@defvar RAND_MAX
 Bound to a positive integer that @code{sys-random} may return.
 @end deftp
 
@@ -8726,33 +8782,26 @@ APIs.
 
 @defun gdbm-open path &optional size rwmode fmode error-callback
 
-@deftp Variable @code{|GDBM_READER|}
-@vindex GDBM_READER
-@end deftp
+@defvar GDBM_READER
+@end defvar
 
-@deftp Variable @code{|GDBM_WRITER|}
-@vindex GDBM_WRITER
-@end deftp
+@defvar GDBM_WRITER
+@end defvar
 
-@deftp Variable @code{|GDBM_WRCREAT|}
-@vindex GDBM_WRCREAT
-@end deftp
+@defvar GDBM_WRCREAT
+@end defvar
 
-@deftp Variable @code{|GDBM_NEWDB|}
-@vindex GDBM_NEWDB
-@end deftp
+@defvar GDBM_NEWDB
+@end defvar
 
-@deftp Variable @code{|GDBM_FAST|}
-@vindex GDBM_FAST
-@end deftp
+@defvar GDBM_FAST
+@end defvar
 
-@deftp Variable @code{|GDBM_SYNC|}
-@vindex GDBM_SYNC
-@end deftp
+@defvar GDBM_SYNC
+@end defvar
 
-@deftp Variable @code{|GDBM_NOLOCK|}
-@vindex GDBM_NOLOCK
-@end deftp
+@defvar GDBM_NOLOCK
+@end defvar
 @end defun
 
 @defun gdbm-close gdbm-object
@@ -8763,13 +8812,12 @@ APIs.
 
 @defun gdbm-store key value &optional flag
 
-@deftp Variable @code{|GDBM_INSERT|}
-@vindex GDBM_INSERT
-@end deftp
 
-@deftp Variable @code{|GDBM_REPLACE|}
-@vindex GDBM_REPLACE
-@end deftp
+@defvar GDBM_INSERT
+@end defvar
+
+@defvar GDBM_REPLACE
+@end defvar
 
 @end defun
 
@@ -8808,25 +8856,20 @@ APIs.
 
 @defun gdbm-setopt gdbm-object option value
 
-@deftp Variable @code{|GDBM_CACHESIZE|}
-@vindex GDBM_CACHESIZE
-@end deftp
+@defvar GDBM_CACHESIZE
+@end defvar
 
-@deftp Variable @code{|GDBM_FASTMODE|}
-@vindex GDBM_FASTMODE
-@end deftp
+@defvar GDBM_FASTMODE
+@end defvar
 
-@deftp Variable @code{|GDBM_SYNCMODE|}
-@vindex GDBM_SYNCMODE
-@end deftp
+@defvar GDBM_SYNCMODE
+@end defvar
 
-@deftp Variable @code{|GDBM_CENTFREE|}
-@vindex GDBM_CENTFREE
-@end deftp
+@defvar GDBM_CENTFREE
+@end defvar
 
-@deftp Variable @code{|GDBM_COALESCEBLKS|}
-@vindex GDBM_COALESCEBLKS
-@end deftp
+@defvar GDBM_COALESCEBLKS
+@end defvar
 @end defun
 
 @defun gdbm-version
@@ -10188,27 +10231,27 @@ The operation is specified by an integer @var{operation}.
 Several variables are defined for valid @var{operation}.
 
 @table @code
-@item |F_GETFD|
+@item F_GETFD
 @vindex F_GETFD
 @vindex FD_CLOEXEC
 Returns flags associated to the file descriptor of @var{port-or-fd}.
 The optional argument @var{arg} is not used.   The return value is 
 an integer whose definition is system specific, except one flag,
-@code{|FD_CLOEXEC|}, which indicates the file descriptor should be
+@code{FD_CLOEXEC}, which indicates the file descriptor should be
 closed on @code{exec}.
 
-@item |F_SETFD|
+@item F_SETFD
 @vindex F_SETFD
 Sets the file descriptor flags given as @var{arg} to @var{port-or-fd}.
 For example, the portable way of setting @code{FL_CLOEXEC} flag is
 as follows:
 @example
-(sys-fcntl port |F_SETFD|
-          (logior |FD_CLOEXEC|
-                  (sys-fcntl port |F_GETFD|)))
+(sys-fcntl port F_SETFD
+          (logior FD_CLOEXEC
+                  (sys-fcntl port F_GETFD)))
 @end example
 
-@item |F_GETFL|
+@item F_GETFL
 @vindex F_GETFL
 Returns flags associated to the open files specified by @var{port-or-fd}.
 The flags includes the following information:
@@ -10219,60 +10262,60 @@ The flags includes the following information:
 @vindex O_RDONLY
 @vindex O_WRONLY
 @vindex O_RDWR
-File access mode.  When masked by @code{|O_ACCMODE|}, 
-it's either one of @code{|O_RDONLY|}, @code{|O_WRONLY|} or @code{|O_RDWR|}.
+File access mode.  When masked by @code{O_ACCMODE}, 
+it's either one of @code{O_RDONLY}, @code{O_WRONLY} or @code{O_RDWR}.
 @item
 @vindex O_CREAT
 @vindex O_EXCL
 @vindex O_TRUNC
-File creation options.  @code{|O_CREAT|}, @code{|O_EXCL|} and/or
-@code{|O_TRUNC|}.
+File creation options.  @code{O_CREAT}, @code{O_EXCL} and/or
+@code{O_TRUNC}.
 @item
 @vindex O_APPEND
-Whether appending is allowed or not, by @code{|O_APPEND|}
+Whether appending is allowed or not, by @code{O_APPEND}
 @item
 @vindex O_NONBLOCK
-Whether I/O is blocking or non-blocking, by @code{|O_NONBLOCK|}.
+Whether I/O is blocking or non-blocking, by @code{O_NONBLOCK}.
 @item
 @vindex O_NOCTTY
-Whether it grabs terminal control, by @code{|O_NOCTTY|}.
+Whether it grabs terminal control, by @code{O_NOCTTY}.
 @end itemize
 
 The system may define system-specific flags.
 
-@item |F_SETFL|
+@item F_SETFL
 @vindex F_SETFL
 Sets flags to the open files specified by @var{port-or-fd}.
-Among the flags listed above, only @code{|O_NONBLOCK|} and @code{|O_APPEND|}
+Among the flags listed above, only @code{O_NONBLOCK} and @code{O_APPEND}
 can be changed.
 
-Note that @code{|F_GETFD|}/@code{|F_SETFD|} concern flags associated
-to the file descriptor itself, while @code{|F_GETFL|}/@code{|F_SETFL|}
+Note that @code{F_GETFD}/@code{F_SETFD} concern flags associated
+to the file descriptor itself, while @code{F_GETFL}/@code{F_SETFL}
 concern flags associated to the opened file itself.  This makes difference
 when more than one file descriptor points to the same opened file.
 
-@item |F_DUPFD|
+@item F_DUPFD
 @vindex F_DUPFD
 Creates new file descriptor that points to the same file referred by
 @var{port-or-fd}.
 An integer must be provided as @var{arg}, and that specifies
 the minimum value of file descriptor to be assigned.
 
-@item |F_GETLK|
+@item F_GETLK
 @vindex F_GETLK
 The third argument must be provided and be an instance of @code{<sys-flock>}
 object described below.  It searches the lock information specified by
 @var{arg}, and modifies @var{arg} accordingly.
 
-@item |F_SETLK|
-@itemx |F_SETLKW|
+@item F_SETLK
+@itemx F_SETLKW
 @vindex F_SETLK
 @vindex F_SETLKW
 The third argument must be provided and be an instance of @code{<sys-flock>}
 object described below.  Sets the advisory file lock according to 
 @var{arg}.   If the lock is successfully obtained, @code{#t} is returned.
 If the other process has the lock conflicting the request,
-@code{|F_SETLK|} returns @code{#f}, while @code{|F_SETLKW|} waits until
+@code{F_SETLK} returns @code{#f}, while @code{F_SETLKW} waits until
 the lock is available.
 @end table
 
@@ -10293,16 +10336,16 @@ The following slots are defined.
 An integer represents lock type.  Following variables are predefined
 for the valid values:
 @table @code
-@item |F_RDLCK|
+@item F_RDLCK
 @vindex F_RDLCK
 Read locking
-@item |F_WRLCK|
+@item F_WRLCK
 @vindex F_WRLCK
 Write locking
-@item |F_UNLCK|
+@item F_UNLCK
 @vindex F_UNLCK
-To remove a lock by @code{|F_SETLK|}, or to indicate the record is not
-locked by @code{|F_GETLK|}.
+To remove a lock by @code{F_SETLK}, or to indicate the record is not
+locked by @code{F_GETLK}.
 @end table
 @end defivar
 
@@ -10319,7 +10362,7 @@ The number of bytes to lock.  Zero means ``until EOF''.
 @end defivar
 
 @defivar {<sys-flock>} pid
-An integer process id that holding the lock; used only by @code{|F_GETLK|}.
+An integer process id that holding the lock; used only by @code{F_GETLK}.
 @end defivar
 @end deftp
 
@@ -10731,29 +10774,22 @@ the sockets.
 Returns a socket with specified parameters.
 @end defun
 
-@deftp {Variable} |PF_UNIX|
-@deftpx {Variable} |PF_INET|
-@vindex PF_UNIX
-@vindex PF_INET
+@defvar PF_UNIX
+@defvarx PF_INET
 These variables are bound to @code{PF_UNIX} and @code{PF_INET}.
-@end deftp
+@end defvar
 
-@deftp {Variable} |AF_UNIX|
-@deftpx {Variable} |AF_INET|
-@vindex AF_UNIX
-@vindex AF_INET
+@defvar AF_UNIX
+@defvarx AF_INET
 These variables are bound to @code{AF_UNIX} and @code{AF_INET}.
-@end deftp
+@end defvar
 
-@deftp {Variable} |SOCK_STREAM|
-@deftpx {Variable} |SOCK_DGRAM|
-@deftpx {Variable} |SOCK_RAW|
-@vindex SOCK_STREAM
-@vindex SOCK_DGRAM
-@vindex SOCK_RAW
+@defvar SOCK_STREAM
+@defvarx SOCK_DGRAM
+@defvarx SOCK_RAW
 These variables are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
 and @code{SOCK_RAW}.
-@end deftp
+@end defvar
 
 @defun socket-fd socket
 Returns an integer system file descriptor of the underlying socket.
@@ -10862,61 +10898,51 @@ See manpages @code{socket(7)}, @code{tcp(7)} or @code{ip(7)} of
 your system to find out exact specification of those values.
 
 For ``level'' argument:
-@deftp {Variable} |SOL_SOCKET|
-@deftpx {Variable} |SOL_TCP|
-@deftpx {Variable} |SOL_IP|
-@vindex SOL_SOCKET
-@vindex SOL_TCP
-@vindex SOL_IP
+@defvar SOL_SOCKET
+@defvarx SOL_TCP
+@defvarx SOL_IP
 These variables are bound to @code{SOL_SOCKET}, @code{SOL_TCP} and
 @code{SOL_IP}, respectively.
-@end deftp
+@end defvar
 
 For ``option'' argument:
-@deftp {Variable} |SO_KEEPALIVE|
-@vindex SO_KEEPALIVE
+@defvar SO_KEEPALIVE
 Expects integer value.  If it is not zero, enables sending  of
 keep-alive messages on connection-oriented sockets.
-@end deftp
+@end defvar
 
-@deftp {Variable} |SO_OOBINLINE|
-@vindex SO_OOBINLINE
+@defvar SO_OOBINLINE
 Expects integer value.  If it is not zero, out-of-band data is
 directly placed into the receive data stream.  Oth-A­$)B
 erwise  out-of-band  data  is  only passed when the
 MSG_OOB flag is set during receiving.
-@end deftp
+@end defvar
 
-@deftp {Variable} |SO_REUSEADDR|
-@vindex SO_REUSEADDR
+@defvar SO_REUSEADDR
 Expects integer value.  If it is not zero, @code{socket-bind}
 allows to reuse local addresses, unless an active listening
 socket bound to the address.
-@end deftp
+@end defvar
 
-@deftp {Variable} |SO_TYPE|
-@vindex SO_TYPE
+@defvar SO_TYPE
 Gets the socket type as an integer (like @code{sock_stream}).
 Can be only used with @code{socket-getsockopt}.
-@end deftp
+@end defvar
 
-@deftp {Variable} |SO_BROADCAST|
-@vindex SO_BROADCAST
+@defvar SO_BROADCAST
 Expects integer value.  If it is not zero, datagram sockets
 are allowed to send/receive broadcast packets.
-@end deftp
+@end defvar
 
-@deftp {Variable} |SO_PRIORITY|
-@vindex SO_PRIORITY
+@defvar SO_PRIORITY
 Expects integer value, specifying the protocol-defined priority
 for all packets to be sent on this socket.
-@end deftp
+@end defvar
 
-@deftp {Variable} |SO_ERROR|
-@vindex SO_ERROR
+@defvar SO_ERROR
 Gets and clears the pending socket error as an integer.
 Can be only used with @code{socket-getsockopt}.
-@end deftp
+@end defvar
 
 @node Netdb interface,  , Low-level socket interface, Networking
 @subsection  Netdb interface
@@ -10956,11 +10982,11 @@ Otherwise, returns @code{#f}.
 Looks up a host that has an address @var{addr} of protocol @var{proto}.
 @var{addr} is a natural string representation of the address;
 for ipv4, it is a dotted decimal notation.  @var{proto} is a
-protocol number; only @code{|AF_INET|} is supported currently.
+protocol number; only @code{AF_INET} is supported currently.
 If the host is found, returns a @code{<sys-hostent>} object.
 Otherwise, returns @code{#f}.
 @example
-(let ((host (sys-gethostbyaddr "127.0.0.1" |AF_INET|)))
+(let ((host (sys-gethostbyaddr "127.0.0.1" AF_INET)))
   (list (slot-ref host 'name)
         (slot-ref host 'aliases)
         (slot-ref host 'addresses))
@@ -11965,13 +11991,13 @@ which must be an instance of @code{<sys-termios>}.
 An integer argument @var{when} specifies when the changes take effect.
 Three variables are pre-defined for the argument:
 @table @code
-@item |TCSANOW|
+@item TCSANOW
 @vindex TCSANOW 
 The change is reflected immediately.
-@item |TCSADRAIN|
+@item TCSADRAIN
 @vindex TCSADRAIN
 The change is reflected after all pending output is flushed.
-@item |TCSAFLUSH|
+@item TCSAFLUSH
 @vindex TCSAFLUSH
 The change is reflected after all pending output is flushed,
 and all pending input is discarded.
@@ -11993,13 +12019,13 @@ Waits until all output written to @var{port-or-fd} is transmitted.
 Discards data in the buffer of @var{port-or-fd}, specified by 
 @var{queue}, which may be one of the following values.
 @table @code
-@item |TCIFLUSH|
+@item TCIFLUSH
 @vindex TCIFLUSH
 Discards data received but not read.
-@item |TCOFLUSH|
+@item TCOFLUSH
 @vindex TCOFLUSH
 Discards data written but not transmitted.
-@item |TCIOFLUSH|
+@item TCIOFLUSH
 @vindex TCIOFLUSH
 Do both @code{TCIFLUSH} and @code{TCOFLUSH} action.
 @end table
@@ -12009,17 +12035,17 @@ Do both @code{TCIFLUSH} and @code{TCOFLUSH} action.
 Controls data flow of @var{port-or-fd} by @var{action}, which may be
 one of the following values:
 @table @code
-@item |TCOOFF|
+@item TCOOFF
 @vindex TCOOFF
 Suspends output transmission.
-@item |TCOON|
+@item TCOON
 @vindex TCOON
 Restarts output transmission.
-@item |TCIOFF|
+@item TCIOFF
 @vindex TCIOFF
 Transmits a STOP character to make the terminal device stop transmitting
 data to the system.
-@item |TCION|
+@item TCION
 @vindex TCION
 Transmits a START character to make the terminal device resume transmitting
 data to the system.
@@ -12041,13 +12067,13 @@ to @var{pgrp}.
 @defunx sys-cfsetospeed termios speed
 Gets/sets input/output speed (baud rate) parameter stored in @var{termios}
 object.   Speed is represented by the following predefined numbers:
-@code{|B0|}, @code{|B50|}, @code{|B75|}, @code{|B110|}, @code{|B134|}, 
-@code{|B150|}, @code{|B200|}, @code{|B300|}, @code{|B600|}, @code{|B1200|}, 
-@code{|B1800|}, @code{|B2400|}, @code{|B4800|}, @code{|B9600|},
-@code{|B19200|}, @code{|B38400|}.
-Some system may support higher baud rate, such as @code{|B57600|},
-@code{|B115200|} or @code{|B230400|}.  You can use @code{symbol-bound?}
-to check these options are defined.  @code{|B0|} is used to
+@code{B0}, @code{B50}, @code{B75}, @code{B110}, @code{B134}, 
+@code{B150}, @code{B200}, @code{B300}, @code{B600}, @code{B1200}, 
+@code{B1800}, @code{B2400}, @code{B4800}, @code{B9600},
+@code{B19200}, @code{B38400}.
+Some system may support higher baud rate, such as @code{B57600},
+@code{B115200} or @code{B230400}.  You can use @code{symbol-bound?}
+to check these options are defined.  @code{B0} is used to
 terminate the connection.
 @end defun
 
@@ -12067,13 +12093,13 @@ without echoing:
     ;; Turn off echo during reading.
     (dynamic-wind
      (lambda ()
-       (slot-set! attr 'lflag (logand lflag (lognot |ECHO|)))
-       (sys-tcsetattr port |TCSAFLUSH| attr))
+       (slot-set! attr 'lflag (logand lflag (lognot ECHO)))
+       (sys-tcsetattr port TCSAFLUSH attr))
      (lambda ()
        (read-line port))
      (lambda ()
        (slot-set! attr 'lflag lflag)
-       (sys-tcsetattr port |TCSANOW| attr)))))
+       (sys-tcsetattr port TCSANOW attr)))))
 @end example
 
 @c ----------------------------------------------------------------------
