@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.16 2004-02-02 11:42:13 shirok Exp $
+## $Id: Makefile.ext.in,v 1.17 2004-04-01 10:06:41 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -104,9 +104,9 @@ install-std : all
 uninstall :
 
 link :
-	-$(GOSH) ../xlink -l -g "$(SCM_CATEGORY)" \
+	-@$(GOSH) ../xlink -l -g "$(SCM_CATEGORY)" \
 	  -b $(top_builddir) -s $(top_srcdir) $(LIBFILES) $(SCMFILES)
 
 unlink :
-	-$(GOSH) ../xlink -u -g "$(SCM_CATEGORY)" \
+	-@$(GOSH) ../xlink -u -g "$(SCM_CATEGORY)" \
 	  -b $(top_builddir) -s $(top_srcdir) $(LIBFILES) $(SCMFILES)
