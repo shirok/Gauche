@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.50 2001-03-27 10:15:22 shiro Exp $
+;;; $Id: extlib.stub,v 1.51 2001-03-31 09:32:05 shiro Exp $
 ;;;
 
 "
@@ -298,7 +298,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; 6.6.2  Input
 ;;
 
-; read-byte
+(define-cproc read-byte (&optional (port (current-input-port)))
+  (assert (input-port? port))
+  "  int b; SCM_GETB(b, port);
+  SCM_RETURN((b < 0)? SCM_EOF : SCM_MAKE_INT(b));")
 
 (define-cproc read-line (&optional (port (current-input-port)))
   (assert (input-port? port))
