@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.245 2002-07-17 07:16:47 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.246 2002-07-17 10:27:40 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11345,7 +11345,15 @@ although the form may mislead such misunderstanding.
 @subsubsection Masking and waiting signals
 @c NODE シグナルのマスクと待機
 
+A Scheme program can set a signal mask, which is a set of signals
+to be blocked from delivery.   If a signal is delivered
+which is completely blocked in the process, the signal becomes
+"pending".  The pending signal may be delivered once the signal
+mask is changed not to block the specified signal.
+(However, it depends on the operating system whether the pending
+signals are queued or not.)
 
+In multithread environment, each thread has its own signal mask.
 
 @defun sys-sigmask how mask
 Modifies the current thread's signal mask, and returns the previous
@@ -11373,8 +11381,70 @@ handler is called, then @code{sys-sigsuspend} returns.
 @subsubsection Signals and threads
 @c NODE シグナルとスレッド
 
+The semantics of signals looks a bit compilated in the multithread
+environment.   Nevertheless, it is pretty comprehensible once
+you remember a small number of rules.  Besides,
+Gauche sets up the default behavior easy to use,
+while allowing programmers to do tricky stuff.
 
+If you don't want to be bothered by the details, just remember
+one thing, with one sidenote.
+@strong{By default}, signals are handled by the
+primordial (main) thread.  However, if the main thread
+is suspended on mutex or condition variable,
+the signal may not be handled at all, so be careful.
 
+Now, if you are curious about the details, here are the rules:
+@itemize @bullet
+@item
+The signal handler setting is shared by all threads.
+@item
+The signal mask is thread-specific.
+@item
+If a process receives an asynchronous signal (think it as a signal
+delivered from other processes), one thread is chosen, out of
+threads which don't block that signal.
+@item
+The signal handler is run on the chosen thread.
+However, if the chosen thread is waiting for acquiring a mutex lock
+or a condition variable, the handling of signal will be delayed
+until the thread is restarted.   Signal delivery itself doesn't
+restart the thread.
+@end itemize
+
+Now, these rules have several implications.
+
+If there are more than one thread that don't block a particular
+signal, you can't know which thread receives the signal.
+Such a situation is much less useful in Gauche than C programs
+because of the fact that the signal handling can be delayed indefinitely
+if the receiver thread is waiting on mutex or condition variable.
+So, it is recommended to make sure, for each signal, there is only one
+thread that can receive it.
+
+In Gauche, all threads created by @code{make-thread}
+(@xref{Thread procedures}) blocks all the signals by default
+(except the reserved ones).   This lets all the signals
+to be directed to the primordial (main) thread.
+
+Another strategy is to create a thread dedicated for handling
+signals.  To do so, you have to block the signals in the
+primordial thread, then create the signal-handling thread,
+and within that thread you unblock all the signals.
+Such a thread can just loop on @code{sys-pause}.
+
+@example
+(thread-start!
+  (make-thread
+    (lambda ()
+      (sys-sigmask SIG_SETMASK (make <sys-sigset>)) ;;empty mask
+      (let loop () (sys-pause)))))
+@end example
+
+Complicated application may want to control per-thread signal
+handling precisely.   You can do so, just make sure that
+at any moment only the designated thread unblocks the desired
+signal.
 
 @node System Inquiry, Time, Signal, System interface
 @subsection System Inquiry
