@@ -1,7 +1,7 @@
 /*
  * proc.c - Procedures
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.39.2.1 2004-12-23 06:57:21 shirok Exp $
+ *  $Id: proc.c,v 1.39.2.2 2004-12-24 11:06:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -71,7 +71,7 @@ ScmObj Scm_MakeClosure(int required, int optional,
     ScmObj info;
 
     SCM_ASSERT(SCM_COMPILED_CODE(code));
-    info = Scm_CompiledCodeArgInfo(SCM_COMPILED_CODE(code));
+    info = SCM_COMPILED_CODE_ARG_INFO(SCM_COMPILED_CODE(code));
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
     SCM_PROCEDURE_INIT(c, required, optional, SCM_PROC_CLOSURE, info);
     c->code = code;

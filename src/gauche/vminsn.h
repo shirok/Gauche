@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vminsn.h,v 1.40.2.4 2004-12-24 00:05:56 shirok Exp $
+ *  $Id: vminsn.h,v 1.40.2.5 2004-12-24 11:06:31 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters, operand type) */
@@ -133,7 +133,7 @@ DEFINSN(SCM_VM_DEFINE_CONST, "DEFINE-CONST", 0, OBJ)
  *  Create a closure capturing current environment.
  *  CODE is the compiled code.   Leaves created closure in the stack.
  */
-DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2, OBJ)
+DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2, CODE)
 
 /* LET(NLOCALS) <CONT>
  *
@@ -196,7 +196,7 @@ DEFINSN(SCM_VM_LSET4, "LSET4", 0, NONE)
  *
  *  LOCATION may be a symbol or gloc
  */
-DEFINSN(SCM_VM_GSET, "GSET", 0, NONE)
+DEFINSN(SCM_VM_GSET, "GSET", 0, OBJ)
 
 /* LREF(DEPTH,OFFSET)
  *
@@ -236,7 +236,7 @@ DEFINSN(SCM_VM_LREF14_PUSH, "LREF14-PUSH", 0, NONE)
  *  LOCATION may be a symbol or GLOC object.
  *  Retrieve global value in the current module.
  */
-DEFINSN(SCM_VM_GREF, "GREF", 0, NONE)
+DEFINSN(SCM_VM_GREF, "GREF", 0, OBJ)
 /*DEFINSN(SCM_VM_GREF_PUSH, "GREF-PUSH", 0)*/
 
 /* PROMISE

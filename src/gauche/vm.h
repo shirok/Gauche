@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.3 2004-12-24 00:05:56 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.4 2004-12-24 11:06:31 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -69,7 +69,12 @@ typedef struct ScmCompiledCodeRec {
     int codeSize;               /* size of code vector */
     int constantSize;           /* size of constant vector */
     int maxstack;               /* maximum runtime stack depth */
-    ScmObj info;                /* debug info */
+    ScmObj info;                /* debug info.  alist of instruction offset
+                                   and info. */
+    ScmObj argInfo;             /* If this code is the body of the closure,
+                                   keeps a list of args.  #f otherwise. */
+    ScmObj parent;              /* ScmCompiledCode if this code is compiled
+                                   within other code chunk.  #f otherwise. */
 } ScmCompiledCode;
 
 SCM_CLASS_DECL(Scm_CompiledCodeClass);
@@ -77,10 +82,10 @@ SCM_CLASS_DECL(Scm_CompiledCodeClass);
 
 #define SCM_COMPILED_CODE(obj)    ((ScmCompiledCode*)(obj))
 #define SCM_COMPILED_CODE_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_COMPILED_CODE)
+#define SCM_COMPILED_CODE_ARG_INFO(obj) (SCM_COMPILED_CODE(obj)->argInfo)
 
 SCM_EXTERN ScmObj Scm_PackCode(ScmObj code);
 SCM_EXTERN void Scm_CompiledCodeDump(ScmObj cc);
-SCM_EXTERN ScmObj Scm_CompiledCodeArgInfo(ScmCompiledCode *cc);
 
 /*
  * Environment frame
@@ -446,9 +451,20 @@ enum {
     SCM_VM_NUM_INSNS
 };
 
+/* Operand type */
+enum {
+    SCM_VM_OPERAND_NONE,        /* take no operand */
+    SCM_VM_OPERAND_OBJ,         /* take ScmObj */
+    SCM_VM_OPERAND_CODE,        /* take ScmCompiledCode */
+    SCM_VM_OPERAND_ADDR,        /* take address of next code */
+};
+
 SCM_EXTERN void   Scm__VMInsnWrite(ScmObj insn, ScmPort *port,
 				   ScmWriteContext *ctx);
 SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
+SCM_EXTERN const char *Scm_VMInsnName(u_int code);
+SCM_EXTERN int Scm_VMInsnNumParams(u_int code);
+SCM_EXTERN int Scm_VMInsnOperandType(u_int code);
 
 /*
  * C stack rewinding

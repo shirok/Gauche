@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.6 2004-12-24 03:16:59 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.7 2004-12-24 11:06:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -59,16 +59,6 @@ static ScmWord boundaryFrameMark = SCM_NVM_INSN(SCM_VM_HALT);
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_NVM_INSN(SCM_VM_RET) };
 #define PC_TO_RETURN  return_code
-
-
-static struct insn_info {
-    const char *name;
-    int nparams;
-} insn_table[] = {
-#define DEFINSN(sym, nam, np, type) { nam, np },
-#include "gauche/vminsn.h"
-#undef DEFINSN
-};
 
 /*
  * The VM. 
@@ -600,7 +590,7 @@ void Scm__InitVM(void)
         int i;
         for (i=0; i<SCM_VM_NUM_INSNS; i++) {
             fprintf(stderr, "%3d %-15s %p (+%04x, %5d)\n",
-                    i, insn_table[i].name,
+                    i, Scm_VMInsnName(i),
                     dispatch_table[i],
                     (char*)dispatch_table[i] - (char*)run_loop,
                     (char*)dispatch_table[i] - (char*)run_loop);
@@ -2877,6 +2867,48 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
 }
 
 /*
+ * VM Instruction introspection
+ *
+ *   Several internal functions to introspect VM instructions.
+ */
+
+static struct insn_info {
+    const char *name;           /* name */
+    int nparams;                /* # of parameters */
+    int operandType;            /* operand type */
+} insn_table[] = {
+#define DEFINSN(sym, nam, np, type) \
+    { nam, np, SCM_CPP_CAT(SCM_VM_OPERAND_, type) },
+#include "gauche/vminsn.h"
+#undef DEFINSN
+};
+
+#define CHECK_CODE(code)                                        \
+    do {                                                        \
+        if (code >= SCM_VM_NUM_INSNS) {                         \
+            Scm_Error("invalid VM instruction code: %d", code); \
+        }                                                       \
+    } while (0)
+
+const char *Scm_VMInsnName(u_int code)
+{
+    CHECK_CODE(code);
+    return insn_table[code].name;
+}
+
+int Scm_VMInsnNumParams(u_int code)
+{
+    CHECK_CODE(code);
+    return insn_table[code].nparams;
+}
+
+int Scm_VMInsnOperandType(u_int code)
+{
+    CHECK_CODE(code);
+    return insn_table[code].operandType;
+}
+
+/*
  * Printer of VM instruction.
  */
 
@@ -3071,6 +3103,8 @@ static ScmCompiledCode *make_compiled_code(void)
     cc->constants = NULL;
     cc->maxstack = -1;
     cc->info = SCM_NIL;
+    cc->argInfo = SCM_FALSE;
+    cc->parent = SCM_FALSE;
     return cc;
 }
 
@@ -3127,7 +3161,7 @@ static void pk_add_arg_info(ScmCompiledCode *cc, ScmObj attrs)
 {
     ScmObj binfo = Scm_Assq(SCM_SYM_BIND_INFO, attrs);
     if (SCM_PAIRP(binfo)) {
-        cc->info = Scm_Acons(SCM_SYM_ARG_INFO, SCM_CDR(binfo), cc->info);
+        cc->argInfo = SCM_CDR(binfo);
     }
 }
 
@@ -3346,17 +3380,6 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
         }
     }
     /* emit RET if necessary. */
-#if 0
-    if (SCM_VM_INSNP(insn)) {
-        switch (SCM_VM_INSN_CODE(insn)) {
-        case SCM_VM_CALL:;
-        case SCM_VM_TAIL_CALL:;
-        case SCM_VM_LET:;
-        case SCM_VM_JUMP:;
-            return;
-        }
-    }
-#endif
     if (need_ret) {
         pk_emit(data, SCM_VM_INSN(SCM_VM_RET));
     }
@@ -3378,10 +3401,9 @@ ScmObj Scm_PackCode(ScmObj compiled)
     i = 0;
     SCM_FOR_EACH(cp, Scm_ReverseX(data.code)) {
         ScmObj insn = SCM_CAR(cp);
-        int code = SCM_VM_INSN_CODE(insn);
-        int nparams = insn_table[code].nparams;
+        u_int code = SCM_VM_INSN_CODE(insn);
 
-        switch(nparams) {
+        switch(Scm_VMInsnNumParams(code)) {
         case 0:
             cc->code[i++] = SCM_NVM_INSN(code);
             break;
@@ -3393,29 +3415,26 @@ ScmObj Scm_PackCode(ScmObj compiled)
                                           SCM_VM_INSN_ARG0(insn),
                                           SCM_VM_INSN_ARG1(insn));
             break;
-        default:
-            Scm_Panic("pk_rec: bad nparams");
         }
         
-        switch (code) {
-        case SCM_VM_PRE_CALL:;
-        case SCM_VM_JUMP:;
-        case SCM_VM_LET:;
-        case SCM_VM_IF:;
-        case SCM_VM_RECEIVE:;
+        switch (Scm_VMInsnOperandType(code)) {
+        case SCM_VM_OPERAND_ADDR:
             cp = SCM_CDR(cp);
             SCM_ASSERT(SCM_INTP(SCM_CAR(cp)));
             target = cc->code + SCM_INT_VALUE(SCM_CAR(cp));
             cc->code[i++] = SCM_WORD(target);
             break;
-        case SCM_VM_CONST:;
-        case SCM_VM_GREF:;
-        case SCM_VM_GSET:;
-        case SCM_VM_DEFINE:;
-        case SCM_VM_DEFINE_CONST:;
-        case SCM_VM_LAMBDA:;
+        case SCM_VM_OPERAND_OBJ:
             cp = SCM_CDR(cp);
             cc->code[i++] = SCM_WORD(SCM_CAR(cp));
+            break;
+        case SCM_VM_OPERAND_CODE:
+            cp = SCM_CDR(cp);
+            SCM_ASSERT(SCM_COMPILED_CODE_P(SCM_CAR(cp)));
+            SCM_COMPILED_CODE(SCM_CAR(cp))->parent = SCM_OBJ(cc);
+            cc->code[i++] = SCM_WORD(SCM_CAR(cp));
+            break;
+        default:
             break;
         }
     }
@@ -3450,49 +3469,41 @@ void Scm_CompiledCodeDump(ScmObj obj)
     do {
       loop:
         p = cc->code;
-        arginfo = Scm_Assq(SCM_SYM_ARG_INFO, cc->info);
-        if (SCM_PAIRP(arginfo)) {
-            Scm_Printf(SCM_CUROUT, "args: %S\n", SCM_CDR(arginfo));
-        }
+        Scm_Printf(SCM_CUROUT, "args: %S\n", cc->argInfo);
         for (i=0; i < cc->codeSize; i++) {
             ScmWord insn = p[i];
             ScmObj info, s;
             ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
-            int code;
+            u_int code;
+            const char *insn_name;
 
             info = Scm_Assq(SCM_MAKE_INT(i), cc->info);
             code = SCM_NVM_INSN_CODE(insn);
-            switch (insn_table[code].nparams) {
+            insn_name = Scm_VMInsnName(code);
+            
+            switch (Scm_VMInsnNumParams(code)) {
             case 0:
-                Scm_Printf(out, "  %4d %s ", i, insn_table[code].name);
+                Scm_Printf(out, "  %4d %s ", i, insn_name);
                 break;
             case 1:
-                Scm_Printf(out, "  %4d %s(%d) ", i, insn_table[code].name,
+                Scm_Printf(out, "  %4d %s(%d) ", i, insn_name,
                            SCM_NVM_INSN_ARG(insn));
                 break;
             case 2:
-                Scm_Printf(out, "  %4d %s(%d,%d) ", i, insn_table[code].name,
+                Scm_Printf(out, "  %4d %s(%d,%d) ", i, insn_name,
                            SCM_NVM_INSN_ARG0(insn),SCM_NVM_INSN_ARG1(insn));
                 break;
             }
-            switch (code) {
-            case SCM_VM_PRE_CALL:;
-            case SCM_VM_LET:;
-            case SCM_VM_JUMP:;
-            case SCM_VM_IF:;
-            case SCM_VM_RECEIVE:;
+            switch (Scm_VMInsnOperandType(code)) {
+            case SCM_VM_OPERAND_ADDR:
                 Scm_Printf(out, "%d", (ScmWord*)p[i+1] - cc->code);
                 i++;
                 break;
-            case SCM_VM_DEFINE:;
-            case SCM_VM_DEFINE_CONST:;
-            case SCM_VM_GREF:;
-            case SCM_VM_GSET:;
-            case SCM_VM_CONST:;
+            case SCM_VM_OPERAND_OBJ:
                 Scm_Printf(out, "%S", p[i+1]);
                 i++;
                 break;
-            case SCM_VM_LAMBDA:;
+            case SCM_VM_OPERAND_CODE:
                 Scm_Printf(out, "#<lambda %d>", clonum);
                 closures = Scm_Acons(SCM_OBJ(p[i+1]), SCM_MAKE_INT(clonum),
                                      closures);
@@ -3536,9 +3547,5 @@ void Scm_CompiledCodeDump(ScmObj obj)
     } while (0);
 }
 
-ScmObj Scm_CompiledCodeArgInfo(ScmCompiledCode *cc)
-{
-    ScmObj ainfo = Scm_Assq(SCM_SYM_ARG_INFO, cc->info);
-    if (SCM_PAIRP(ainfo)) return SCM_CDR(ainfo);
-    else return SCM_FALSE;
-}
+/* CompiledCode - Scheme interface */
+
