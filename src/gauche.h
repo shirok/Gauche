@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.119 2001-04-22 11:43:03 shiro Exp $
+ *  $Id: gauche.h,v 1.120 2001-04-23 09:37:26 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -688,7 +688,7 @@ extern int     Scm_StringByteRef(ScmString *str, int k);
 extern ScmObj  Scm_StringByteSet(ScmString *str, int k, ScmByte b);
 
 extern ScmObj  Scm_Substring(ScmString *x, int start, int end);
-extern ScmObj  Scm_QuasiSubstring(ScmString *x, ScmObj start, ScmObj end);
+extern ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
 extern ScmObj  Scm_StringTake(ScmString *x, int nchars, int takefirst, int fromright);
 
 extern ScmObj  Scm_StringAppend2(ScmString *x, ScmString *y);
@@ -702,7 +702,8 @@ extern ScmObj  Scm_StringContains(ScmString *s1, ScmString *s2);
 extern ScmObj  Scm_StringP(ScmObj obj);
 extern ScmObj  Scm_StringToList(ScmString *str);
 extern ScmObj  Scm_ListToString(ScmObj chars);
-extern ScmObj  Scm_StringFill(ScmString *str, ScmChar c);
+extern ScmObj  Scm_StringFill(ScmString *str, ScmChar c,
+                              ScmObj maybeStart, ScmObj maybeEnd);
 
 /* You can allocate a constant string statically, if you calculate
    the length by yourself. */
