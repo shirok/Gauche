@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.12 2002-07-06 23:01:17 shirok Exp $
+ *  $Id: addr.c,v 1.13 2002-11-30 10:43:16 shirok Exp $
  */
 
 #include "net.h"
@@ -77,7 +77,9 @@ static ScmObj sockaddr_allocate(ScmClass *klass, ScmObj initargs)
 /* creates sockaddr from struct sockaddr. */
 ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
 {
-    ScmSockAddr *addr = SCM_NEW2(ScmSockAddr*, sizeof(ScmObj)+len);
+    ScmSockAddr *addr;
+    addr = SCM_NEW2(ScmSockAddr*,
+                    sizeof(ScmSockAddr) - sizeof(struct sockaddr) + len);
     SCM_SET_CLASS(addr, klass);
     addr->addrlen = len;
     memset(&addr->addr, len, 0);

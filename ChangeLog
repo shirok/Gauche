@@ -1,5 +1,8 @@
 2002-11-29  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/addr.c (Scm_MakeSockAddr): fixed a nasty bug that
+	  potentially clobbers heap area.  (Thanks to KIMURA Shigenobu
+	  for helping to identify the bug).
 	* doc/Makefile.in : put a sed line in generating html docs to fix
 	  LANG attribute, as suggested by Kimura Fuyuki.
 
