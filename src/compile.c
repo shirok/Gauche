@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.82 2002-09-12 03:26:03 shirok Exp $
+ *  $Id: compile.c,v 1.83 2002-09-12 09:54:24 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -220,6 +220,9 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
  *
  *     global_eq(VAR, SYM, ENV)  returns true iff VAR is a free variable
  *        and it's symbol is eq? to SYM.
+ *
+ *   NB: empty variable frame is not counted by the compiler; at runtime,
+ *   such frame is not generated.
  */
 
 #define VAR_P(obj)         (SCM_SYMBOLP(obj)||SCM_IDENTIFIERP(obj))
@@ -231,8 +234,9 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
 {
     ScmObj ep, frame, fp;
-    int depth = 0, offset = 0, found = -1;
+    int depth = 0;
     SCM_FOR_EACH(ep, env) {
+        int offset = 0, found = -1;
         if (SCM_IDENTIFIERP(var) && SCM_IDENTIFIER(var)->env == ep) {
             /* strip off the "wrapping" */
             var = SCM_OBJ(SCM_IDENTIFIER(var)->name);
@@ -257,9 +261,8 @@ static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
                 offset++;
             }
             if (found >= 0) return make_lref(depth, offset - found - 1);
+            depth++;
         }
-        depth++;
-        offset = 0;
     }
     if (SCM_SYMBOLP(var) && !op) {
         return Scm_MakeIdentifier(SCM_SYMBOL(var), SCM_NIL);
@@ -1228,7 +1231,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     int count = 0;
 
     if (type == BIND_LETREC) cfr = vars;
-    else cfr = Scm_MakeList(Scm_Length(vars), SCM_UNDEFINED); /* dummy frame */
+    else cfr = Scm_MakeList(nvars, SCM_UNDEFINED); /* dummy frame */
     newenv = Scm_Cons(cfr, env);
 
     for (count=0, varp=vars, valp=vals;
@@ -1246,7 +1249,11 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
     ADDCODE(body_compiler(body, newenv, ctx));
 
-    return add_srcinfo(SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), vars, code), form);
+    if (nvars > 0) {
+        return add_srcinfo(SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), vars, code), form);
+    } else {
+        return add_srcinfo(code, form);
+    }
 }
 
 static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
@@ -1318,7 +1325,7 @@ static ScmObj compile_named_let_body(ScmObj body, ScmObj env, int ctx)
     ScmObj args = SCM_CDR(SCM_CDR(body));
     name = lookup_env(name, env, FALSE);
     return compile_body(SCM_LIST1(Scm_Cons(name, args)),
-                        Scm_Cons(SCM_NIL, oldenv),
+                        Scm_Cons(SCM_LIST1(SCM_UNDEFINED), oldenv),
                         ctx);
 }
 

@@ -1,7 +1,12 @@
 2002-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.c, src/gauche/vm.h : changed the compiler to
+	  generate local frame referencer and modifier counting from the end
+	  of the frame, and modified ENV_DATA macro accordingly.
 	* src/vm.c : further optimization, and fixed a bug in the last change
 	  that left env ptr invalid after tail call argument shifting.
+	* src/compile.c, src/vm.c : further optimization of omitting an empty
+	  environment frames.
 
 2002-09-10  Shiro Kawai  <shiro@acm.org>
 

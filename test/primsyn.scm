@@ -192,5 +192,50 @@
          (lambda (e) #t)
          (lambda () (eval '(car '(3 2)) (null-environment 5))))))
 
+;;----------------------------------------------------------------
+(test-section "optimized frames")
+
+;; Empty environment frame is omitted by compiler optimization.
+;; The following tests makes sure if it works correctly.
+
+(test "lambda (empty env)" 1
+      (lambda ()
+        (let* ((a 1)
+               (b (lambda ()
+                    ((lambda () a)))))
+          (b))))
+
+(test "let (empty env)" 1
+      (lambda ()
+        (let ((a 1))
+          (let ()
+            (let ()
+              a)))))
+
+(test "let (empty env)" '(1 . 1)
+      (lambda ()
+        (let ((a 1))
+          (cons (let () (let () a))
+                (let* () (letrec () a))))))
+
+(test "let (empty env)" '(3 . 1)
+      (lambda ()
+        (let ((a 1)
+              (b 0))
+          (cons (let () (let () (set! b 3)) b)
+                (let () (let () a))))))
+
+(test "named let (empty env)" 1
+      (lambda ()
+        (let ((a -1))
+          (let loop ()
+            (unless (positive? a)
+              (set! a (+ a 1))
+              (loop)))
+          a)))
+
+(test "do (empty env)" 1
+      (lambda () (let ((a 0)) (do () ((positive? a) a) (set! a (+ a 1))))))
+
 (test-end)
 

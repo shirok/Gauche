@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.174 2002-09-12 03:26:03 shirok Exp $
+ *  $Id: vm.c,v 1.175 2002-09-12 09:54:24 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -538,6 +538,7 @@ static void run_loop()
                     *(sp-argc) = val0;
                     sp++; argc++;
                     val0 = SCM_OBJ(&Scm_GenericObjectApply);
+                    proctype = SCM_PROC_GENERIC;
                     nm = SCM_FALSE;
                     goto generic;
                 }
@@ -559,7 +560,13 @@ static void run_loop()
                 }
                 if (proctype == SCM_PROC_CLOSURE) {
                     ADJUST_ARGUMENT_FRAME(val0, argc);
-                    FINISH_ENV(SCM_PROCEDURE_INFO(val0), SCM_CLOSURE(val0)->env);
+                    if (argc) {
+                        FINISH_ENV(SCM_PROCEDURE_INFO(val0),
+                                   SCM_CLOSURE(val0)->env);
+                    } else {
+                        env = SCM_CLOSURE(val0)->env;
+                        argp = sp;
+                    }
                     pc = SCM_CLOSURE(val0)->code;
                     continue;
                 }
@@ -719,24 +726,27 @@ static void run_loop()
             CASE(SCM_VM_TAILBIND) {
                 ScmObj *to, *from;
                 ScmObj info;
-                int env_size;
+                int env_size = SCM_VM_INSN_ARG(code);
                 ScmEnvFrame *e;
                 FETCH_INSN(info); /* dummy info. discard it for now. */
                 
-                /* shift env frame. */
-                /* TODO: check if continuation was captured */
-                e = (ScmEnvFrame*)sp;
-                e->size = env->size;
-                e->up = env->up;
-                e->info = env->info;
-                to = argp - ENV_SIZE(env->size) - CONT_FRAME_SIZE;
-                from = argp;
-                env_size = env->size;
-
-                POP_CONT();     /* recover argp */
-                memmove(to, from, ENV_SIZE(env_size) * sizeof(ScmObj *));
-                env = (ScmEnvFrame *)(to + env->size);
-                sp = to + ENV_SIZE(env_size);
+                /* Shift env frame. */
+                /* NB: if env_size is zero, we don't have an env frame 
+                   to copy.  Just need to adjust sp. */
+                if (env_size > 0) {
+                    e = (ScmEnvFrame*)sp;
+                    e->size = env_size;
+                    e->up = env->up;
+                    e->info = env->info;
+                    to = argp - ENV_SIZE(env_size) - CONT_FRAME_SIZE;
+                    from = argp;
+                    POP_CONT(); /* recover argp */
+                    memmove(to, from, ENV_SIZE(env_size) * sizeof(ScmObj *));
+                    env = (ScmEnvFrame *)(to + env->size);
+                    sp = to + ENV_SIZE(env_size);
+                } else {
+                    sp = argp - CONT_FRAME_SIZE;
+                }
                 continue;
             }
             CASE(SCM_VM_LET) {
