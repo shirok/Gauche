@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.106 2001-09-16 06:59:14 shirok Exp $
+ *  $Id: vm.c,v 1.107 2001-09-24 10:21:44 shirok Exp $
  */
 
 #include "gauche.h"
@@ -39,7 +39,7 @@ static ScmVM *theVM;    /* this must be thread specific in MT version */
 static void save_stack(ScmVM *vm);
 
 static ScmObj throw_cont_body(ScmObj, ScmObj, ScmEscapePoint*, ScmObj);
-static ScmObj handle_exception(ScmVM *, ScmEscapePoint *, ScmException *);
+static ScmObj handle_exception(ScmVM *, ScmEscapePoint *, ScmObj);
 
 /*
  * Constructor
@@ -1480,10 +1480,9 @@ static ScmObj user_eval_inner(ScmObj program)
             }
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
-            ScmException *exn = (ScmException*)vm->escapeData[1];
 
+            val0 = vm->val0;
             if (ep && ep->cstack == vm->cstack) {
-                val0 = handle_exception(vm, ep, exn);
                 RESTORE_REGS();
                 POP_CONT();
                 SAVE_REGS();
@@ -1491,8 +1490,10 @@ static ScmObj user_eval_inner(ScmObj program)
                 goto restart;
             }
             if (vm->cstack->prev == NULL) {
-                /* Unhandled error. */
-                Scm_VMDefaultExceptionHandler(SCM_OBJ(exn), NULL);
+                /* This loop is the outermost C stack, and nobody will
+                   capture the error.  Usually this means we're running
+                   scripts.  We can safely exit here, for the dynamic
+                   stack is already rewind. */
                 exit(EX_SOFTWARE);
             }
         } else {
@@ -1739,32 +1740,38 @@ ScmObj Scm_VMThrowException(ScmObj exception)
     ScmEscapePoint *ep = vm->escapePoint;
 
     vm->errorFlags &= ~SCM_ERROR_BEING_HANDLED;
-    vm->escapeReason = SCM_VM_ESCAPE_ERROR;
-    vm->escapeData[0] = ep;
-    vm->escapeData[1] = exception;
 
-    if (vm->cstack) {
-        if (ep) vm->escapePoint = ep->prev;
-        longjmp(vm->cstack->jbuf, 1);
-    } else {
+    /* Call the active escape handler. */
+    if (!ep && !vm->cstack) {
         /* No C stack is defined.   We're called as a library functions
            from C program. */
         Scm_VMDefaultExceptionHandler(exception, NULL);
         exit(EX_SOFTWARE);
+    } else {
+        if (!ep) {
+            Scm_VMDefaultExceptionHandler(exception, NULL);
+        } else {
+            vm->escapePoint = ep->prev;
+            vm->val0 = handle_exception(vm, ep, exception);
+        }
+        vm->escapeReason = SCM_VM_ESCAPE_ERROR;
+        vm->escapeData[0] = ep;
+        vm->escapeData[1] = exception;
+        longjmp(vm->cstack->jbuf, 1);
     }
     /* NOTREACHED */
     return SCM_UNDEFINED;
 }
 
 static ScmObj handle_exception(ScmVM *vm, ScmEscapePoint *ep,
-                               ScmException *exception)
+                               ScmObj exception)
 {
     ScmObj target = ep->handlers, current = vm->handlers, hp;
     ScmObj result, rvals[SCM_VM_MAX_VALUES];
     int numVals, i;
 
     /* Call the error handler and save the results. */
-    result = Scm_Apply(ep->ehandler, SCM_LIST1(SCM_OBJ(exception)));
+    result = Scm_Apply(ep->ehandler, SCM_LIST1(exception));
     if ((numVals = vm->numVals) > 1) {
         for (i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
     }
