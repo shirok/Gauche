@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.55 2001-03-18 08:04:27 shiro Exp $
+ *  $Id: vm.c,v 1.56 2001-03-19 10:53:09 shiro Exp $
  */
 
 #include "gauche.h"
@@ -173,6 +173,10 @@ ScmVM *Scm_SetVM(ScmVM *vm)
         sp = vm->sp;                            \
     } while (0)
 
+/* Check if stack has room at least size bytes. */
+#define CHECK_STACK(size) \
+   if (sp >= vm->stackEnd - size) Scm_Panic("vm stack overflow");
+
 /* Push a continuation frame.  next_pc is the PC from where execution
    will be resumed.  */
 #define PUSH_CONT(next_pc)                              \
@@ -304,11 +308,9 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
  * args, fold those arguments to the list.  Returns adjusted size of
  * the argument frame.
  */
-#define adjust_argument_frame(proc, caller_args, callee_args)           \
+#define ADJUST_ARGUMENT_FRAME(proc, caller_args, callee_args)           \
     do {                                                                \
     int i, reqargs, restarg;                                            \
-                                                                        \
-    if (!SCM_PROCEDUREP(proc)) Scm_Error("bad procedure: %S", proc);    \
                                                                         \
     reqargs = SCM_PROCEDURE_REQUIRED(proc);                             \
     restarg = SCM_PROCEDURE_OPTIONAL(proc);                             \
@@ -338,44 +340,6 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
     argp->info = SCM_PROCEDURE_INFO(proc);                              \
     argp->size = callee_args;                                           \
     } while (0)
-
-#if 0
-inline static int adjust_argument_frame(ScmVM *vm,
-                                        ScmObj proc, int caller_args)
-{
-    int i, reqargs, restarg, callee_args;
-    
-    if (!SCM_PROCEDUREP(proc)) Scm_Error("bad procedure: %S", proc);
-
-    reqargs = SCM_PROCEDURE_REQUIRED(proc);
-    restarg = SCM_PROCEDURE_OPTIONAL(proc);
-    callee_args  = reqargs + (restarg? 1 : 0);
-    
-    if (restarg) {
-        ScmObj *sp = vm->sp;
-        ScmObj p = SCM_NIL, a;
-        if (caller_args < reqargs) {
-            Scm_Error("wrong number of arguments for %S (required %d, got %d)",
-                      proc, reqargs, caller_args);
-        }
-        /* fold &rest args */
-        for (i = reqargs; i < caller_args; i++) {
-            POP_ARG(a);
-            p = Scm_Cons(a, p);
-        }
-        vm->argp->data[reqargs] = p;
-        vm->sp = (ScmObj*)vm->argp + ENV_SIZE(callee_args);
-    } else {
-        if (caller_args != reqargs) {
-            Scm_Error("wrong number of arguments for %S (required %d, got %d)",
-                      proc, reqargs, caller_args);
-        }
-    }
-    vm->argp->info = SCM_PROCEDURE_INFO(proc);
-    vm->argp->size = callee_args;
-    return callee_args;
-}
-#endif
 
 /*
  * main loop of VM
@@ -466,17 +430,15 @@ static void run_loop()
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
             CASE(SCM_VM_CALL) {
                 int nargs = SCM_VM_INSN_ARG(code);
-                int tailp = (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL);
                 int argcnt;
 
-#if 0
-                SAVE_REGS();
-                argcnt = adjust_argument_frame(vm, val0, nargs);
-                RESTORE_REGS();
-#else
-                adjust_argument_frame(val0, nargs, argcnt);
-#endif
-                if (tailp) {
+                if (!SCM_PROCEDUREP(val0)) VM_ERR(("bad procedure: %S", val0));
+                if (SCM_PROCEDURE(val0)->generic) {
+                    /* prepare method list. */
+                    Scm_Error("generic function not supported yet.");
+                }
+                ADJUST_ARGUMENT_FRAME(val0, nargs, argcnt);
+                if (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL) {
                     /* discard the caller's argument frame, and shift
                        the callee's argument frame there.  This argument
                        shifting is not necessary if the caller's continuation
@@ -541,6 +503,26 @@ static void run_loop()
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
                 }
                 pc = SCM_CDR(pc);
+                continue;
+            }
+            CASE(SCM_VM_LREF0) {
+                val0 = env->data[0];
+                continue;
+            }
+            CASE(SCM_VM_LREF1) {
+                val0 = env->data[1];
+                continue;
+            }
+            CASE(SCM_VM_LREF2) {
+                val0 = env->data[2];
+                continue;
+            }
+            CASE(SCM_VM_LREF3) {
+                val0 = env->data[3];
+                continue;
+            }
+            CASE(SCM_VM_LREF4) {
+                val0 = env->data[4];
                 continue;
             }
             CASE(SCM_VM_LREF) {
@@ -618,6 +600,26 @@ static void run_loop()
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
                 }
                 pc = SCM_CDR(pc);
+                continue;
+            }
+            CASE(SCM_VM_LSET0) {
+                env->data[0] = val0;
+                continue;
+            }
+            CASE(SCM_VM_LSET1) {
+                env->data[1] = val0;
+                continue;
+            }
+            CASE(SCM_VM_LSET2) {
+                env->data[2] = val0;
+                continue;
+            }
+            CASE(SCM_VM_LSET3) {
+                env->data[3] = val0;
+                continue;
+            }
+            CASE(SCM_VM_LSET4) {
+                env->data[4] = val0;
                 continue;
             }
             CASE(SCM_VM_LSET) {

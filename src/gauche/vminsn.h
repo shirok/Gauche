@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.17 2001-03-05 09:19:24 shiro Exp $
+ *  $Id: vminsn.h,v 1.18 2001-03-19 10:53:09 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -124,6 +124,13 @@ DEFINSN(SCM_VM_VALUES_BIND, "VALUES-BIND", 2)
  */
 DEFINSN(SCM_VM_LSET, "LSET", 2)
 
+/* shortcut for the first frame, small offset */
+DEFINSN(SCM_VM_LSET0, "LSET0", 0)
+DEFINSN(SCM_VM_LSET1, "LSET1", 0)
+DEFINSN(SCM_VM_LSET2, "LSET2", 0)
+DEFINSN(SCM_VM_LSET3, "LSET3", 0)
+DEFINSN(SCM_VM_LSET4, "LSET4", 0)
+
 /* GSET <LOCATION>
  *
  *  LOCATION may be a symbol or gloc
@@ -135,6 +142,13 @@ DEFINSN(SCM_VM_GSET, "GSET", 0)
  *  Retrieve local value.
  */
 DEFINSN(SCM_VM_LREF, "LREF", 2)
+
+/* shortcut for the first frame, small offset */
+DEFINSN(SCM_VM_LREF0, "LREF0", 0)
+DEFINSN(SCM_VM_LREF1, "LREF1", 0)
+DEFINSN(SCM_VM_LREF2, "LREF2", 0)
+DEFINSN(SCM_VM_LREF3, "LREF3", 0)
+DEFINSN(SCM_VM_LREF4, "LREF4", 0)
 
 /* GREF <LOCATION>
  *

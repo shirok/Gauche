@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.40 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: compile.c,v 1.41 2001-03-19 10:53:09 shiro Exp $
  */
 
 #include "gauche.h"
@@ -76,6 +76,38 @@ static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
 
 #define ADDCODE1(c)   SCM_APPEND1(code, codetail, c)
 #define ADDCODE(c)    SCM_APPEND(code, codetail, c)
+
+/* create local ref/set insn.  special instruction is used for local
+   ref/set to the first frame with small number of offset (<5) for
+   performance reason. */
+static inline ScmObj make_lref(int depth, int offset)
+{
+    if (depth == 0) {
+        switch (offset) {
+        case 0: return SCM_VM_INSN(SCM_VM_LREF0);
+        case 1: return SCM_VM_INSN(SCM_VM_LREF1);
+        case 2: return SCM_VM_INSN(SCM_VM_LREF2);
+        case 3: return SCM_VM_INSN(SCM_VM_LREF3);
+        case 4: return SCM_VM_INSN(SCM_VM_LREF4);
+        }
+    }
+    return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
+}
+
+static inline ScmObj make_lset(int depth, int offset)
+{
+    if (depth == 0) {
+        switch (offset) {
+        case 0: return SCM_VM_INSN(SCM_VM_LSET0);
+        case 1: return SCM_VM_INSN(SCM_VM_LSET1);
+        case 2: return SCM_VM_INSN(SCM_VM_LSET2);
+        case 3: return SCM_VM_INSN(SCM_VM_LSET3);
+        case 4: return SCM_VM_INSN(SCM_VM_LSET4);
+        }
+    }
+    return SCM_VM_INSN2(SCM_VM_LSET, depth, offset);
+}
+
 
 /* type of let-family bindings */
 enum {
@@ -218,8 +250,7 @@ static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
                 continue;
             }
             SCM_FOR_EACH(fp, frame) {
-                if (SCM_CAR(fp) == var)
-                    return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
+                if (SCM_CAR(fp) == var) return make_lref(depth, offset);
                 offset++;
             }
         }
@@ -568,7 +599,7 @@ static ScmObj compile_set(ScmObj form,
     } else {
         int dep = SCM_VM_INSN_ARG0(location);
         int off = SCM_VM_INSN_ARG1(location);
-        ADDCODE1(SCM_VM_INSN2(SCM_VM_LSET, dep, off));
+        ADDCODE1(make_lset(dep, off));
     }
     return code;
 }
@@ -639,7 +670,7 @@ static ScmObj compile_body(ScmObj form,
             for (cnt=0; cnt<idefs; cnt++) {
                 SCM_APPEND(body, bodytail,
                            compile_int(SCM_CAR(idef_vals), env, SCM_COMPILE_NORMAL));
-                SCM_APPEND1(body, bodytail, SCM_VM_INSN2(SCM_VM_LSET, 0, cnt));
+                SCM_APPEND1(body, bodytail, make_lset(0, cnt));
                 idef_vars = SCM_CDR(idef_vars);
                 idef_vals = SCM_CDR(idef_vals);
             }
@@ -1061,7 +1092,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
          count++, varp=SCM_CDR(varp), valp=SCM_CDR(valp)) {
         ScmObj val = compile_int(SCM_CAR(valp), newenv, SCM_COMPILE_NORMAL);
         ADDCODE(val);
-        ADDCODE1(SCM_VM_INSN2(SCM_VM_LSET, 0, count));
+        ADDCODE1(make_lset(0, count));
             
         if (type == BIND_LET_STAR) {
             SCM_APPEND1(cfr, cfrtail, SCM_CAR(varp));
