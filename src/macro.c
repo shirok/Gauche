@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.25 2001-04-22 07:30:16 shiro Exp $
+ *  $Id: macro.c,v 1.26 2001-07-08 18:54:10 shirok Exp $
  */
 
 #include "gauche.h"
@@ -229,7 +229,7 @@ static inline ScmObj pvar_to_pvref(PatternContext *ctx,
     ScmObj q = Scm_Assq(pvar, ctx->pvars), pvref;
     if (!SCM_PAIRP(q)) return pvar;
     pvref = SCM_CDR(q);
-    if (PVREF_LEVEL(pvref) != pat->level) {
+    if (PVREF_LEVEL(pvref) > pat->level) {
         Scm_Error("%S: Pattern variable %S is used in wrong level: %S",
                   ctx->name, pvar, ctx->form);
     }
