@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.252 2002-08-24 22:58:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.253 2002-08-27 12:07:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -23281,6 +23281,14 @@ Returns @code{#t} if @var{obj} is an empty queue.
 @c COMMON
 @end defun
 
+@defun queue-length queue
+@c EN
+Returns the number of the items in the queue.
+@c JP
+キューの中にあるアイテムの数を返します。
+@c COMMON
+@end defun
+
 @defun enqueue! queue obj &optional more-objs @dots{}
 @c EN
 Add @var{obj} to the end of @var{queue}.  You may give more than
@@ -23324,9 +23332,11 @@ if @var{queue} is empty.
 @c EN
 Returns the whole content of the queue by a list, with emptying
 @var{queue}.   If @var{queue} is already empty, returns an empty list.
+See also @code{queue->list} below.
 @c JP
 キューの全ての内容をリストにして返します。キューそのものは空になります。
 キューが既に空の場合は空リストが返されます。
+下の@code{queue->list}も参照してください。
 @c COMMON
 @end defun
 
@@ -23341,6 +23351,80 @@ if @var{queue} is empty.
 キューが空の場合はエラーが報告されます。
 @c COMMON
 @end defun
+
+@defun list->queue list
+@c EN
+Returns a new queue whose content is the elements in @var{list},
+in the given order.
+@c JP
+与えられたリスト@var{list}の各要素をその順で持つようなキューを作成して返します。
+@c COMMON
+@end defun
+
+@defun queue->list queue
+@c EN
+Returns a list whose content is the items in the queue in order.
+Unlike @code{dequeue-all!}, the content of @var{queue} remains intact.
+
+In Gauche, @code{queue->list} copies the content of the queue to a
+freshly allocated list, while @code{dequeue-all!} doesn't copy but
+directly returns the queue's internal list.   There are some Scheme
+systems that has @code{queue->list} but doesn't guarantee the content
+is copied, so if you're planning to share the code among these
+implementations, it's better not to rely on the fact that
+@code{queue->list} copies the content.
+@c JP
+キュー@var{queue}の内容をリストにして返します。
+@code{dequeue-all!}と異なり、キューそのものの内容は変化しません。
+
+Gaucheでは@code{queue->list}は新しいリストをアロケートしてキューの
+内容をコピーします (@code{dequeue-all!}はコピーをせずにキューの内部の
+リストをそのまま返します)。組込みで@code{queue->list}を持っているScheme
+実装がいくつかありますが、その中には@code{queue->list}がキューの
+内容をコピーすることを保証していないものがあるので、それらの処理系と
+共有するコードでは@code{queue->list}がリストをコピーすることを
+あてにしない方が良いでしょう。
+@c COMMON
+@end defun
+
+@defun find-in-queue pred queue
+@c EN
+Returns the first item in @var{queue} that satisfies a
+predicate @var{pred}.  The order of arguments follows
+@code{find} in SRFI-1 (@xref{SRFI-1 Searching}).
+@c JP
+キュー内の要素のうち述語@var{pred}を満たす最初の要素を返します。
+引数の順序はSRFI-1の@code{find}に揃えました (@ref{SRFI-1 Searching}参照)。
+@c COMMON
+@end defun
+
+@defun remove-from-queue! pred queue
+@c EN
+Removes all items in the queue that satisfies @var{pred}.
+Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
+The order of arguments follows
+@code{remove} in SRFI-1 (@xref{SRFI-1 Filtering}).
+@c JP
+キューから、述語@var{pred}を満たす要素を全て取り除きます。
+要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
+引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 Filtering}参照)。
+@c COMMON
+@end defun
+
+@c EN
+Note on portability:
+Scheme48 has @code{delete-from-queue!}, which takes object to remove
+rather than predicate, and also takes arguments in reversed order
+(i.e. queue comes first).   Avoid conflicting with that I intentionally
+left out @code{delete-from-queue!}; it's easy to write one in either
+Scheme48 compatible way or consistent to SRFI-1 argument order.
+@c JP
+移植性に関する註：Scheme48には、述語ではなく削除するオブジェクトそのものを取る
+@code{delete-from-queue!}がありますが、引数の順序が逆(キューが先)になっています。
+まぎらわしい衝突を避けるため、敢えて@code{delete-from-queue!}は
+提供しませんでした。@code{remove-from-queue!}を使えば、Scheme48互換の方法でも、
+あるいはSRFI-1と一貫性のある方法でも@code{delete-from-queue!}をすぐ書けるでしょう。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Topological sort, CGI Utility, Queue, Library modules
