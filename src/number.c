@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.39 2001-05-10 07:56:58 shirok Exp $
+ *  $Id: number.c,v 1.40 2001-05-10 08:41:14 shirok Exp $
  */
 
 #include <math.h>
@@ -25,7 +25,17 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define IS_INF_OR_NAN(x)  ((x) == (x)+1)
+#ifdef HAVE_ISNAN
+#define SCM_IS_NAN(x)  isnan(x)
+#else
+#define SCM_IS_NAN(x)  FALSE    /* we don't have a clue */
+#endif
+
+#ifdef HAVE_ISINF
+#define SCM_IS_INF(x)  isinf(x)
+#else
+#define SCM_IS_INF(x)  ((x) == (x)+1)
+#endif
 
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
@@ -1152,9 +1162,27 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTS(SCM_STRING(s), port);
 }
 
+static void double_print(char *buf, int buflen, double val)
+{
+    /* TODO: Look at the algorithm of Burger & Dybvig :"Priting Floating-Point
+       Numbers Quickly and Accurately", PLDI '96, pp108--116. */
+    if (SCM_IS_INF(val)) {
+        strcpy(buf, "#<inf>");
+    } else if (SCM_IS_NAN(val)) {
+        strcpy(buf, "#<nan>");
+    } else {
+        snprintf(buf, buflen - 3, "%.20g", val);
+        if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
+            strcat(buf, ".0");
+    }
+}
+
+#define FLT_BUF 50
+
 ScmObj Scm_NumberToString(ScmObj obj, int radix)
 {
     ScmObj r = SCM_NIL;
+    char buf[FLT_BUF];
     
     if (SCM_INTP(obj)) {
         char buf[50];
@@ -1173,15 +1201,16 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
     } else if (SCM_BIGNUMP(obj)) {
         r = Scm_BignumToString(SCM_BIGNUM(obj), radix);
     } else if (SCM_FLONUMP(obj)) {
-        char buf[50];
-        snprintf(buf, 47, "%.20g", SCM_FLONUM_VALUE(obj));
-        if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
-            strcat(buf, ".0");
+        double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj));
         r = Scm_MakeString(buf, -1, -1);
     } else if (SCM_COMPLEXP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort();
-        double real = SCM_COMPLEX_REAL(obj), imag = SCM_COMPLEX_IMAG(obj);
-        Scm_Printf(SCM_PORT(p), "%lg%+lgi", real, imag);
+        double_print(buf, FLT_BUF, SCM_COMPLEX_REAL(obj));
+        SCM_PUTCSTR(buf, SCM_PORT(p));
+        SCM_PUTC('+', SCM_PORT(p));
+        double_print(buf, FLT_BUF, SCM_COMPLEX_IMAG(obj));
+        SCM_PUTCSTR(buf, SCM_PORT(p));
+        SCM_PUTC('i', SCM_PORT(p));
         r = Scm_GetOutputString(SCM_PORT(p));
     } else {
         Scm_Error("number required: %S", obj);
