@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.3 2001-10-04 11:20:03 shirok Exp $
+;;;  $Id: debugger.scm,v 1.4 2001-10-11 09:35:11 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
@@ -48,18 +48,24 @@
               ((= n level) (car stack))
               (else (loop (+ n 1) (cdr stack))))))
 
+    (define (show-env env)
+      (let* ((up   (vector-ref env 0))
+             (vals (vector-ref env 1)))
+        (cond ((not (list? vals))
+               (when up (show-env up)))
+              ((not (= (length vals) (- (vector-length env) 2)))
+               (format outp "[Unrecognized env; compiler error?]\n"))
+              (else
+               (do ((i 2 (+ i 1))
+                    (vals vals (cdr vals)))
+                   ((null? vals) (when up (show-env up)))
+                 (format outp " ~10@s = " (car vals))
+                 (write-limit (vector-ref env i) outp))))))
+
     (define (show-stack s level)
-      (let* ((env (cdr s))
-             (vals (vector-ref env 0)))
-        (format outp "~3d: " level)
-        (write-limit (car s) outp)
-        (if (not (= (length vals) (- (vector-length env) 1)))
-            (format outp "[Unrecognized env; compiler error?]\n")
-            (do ((i 1 (+ i 1))
-                 (vals vals (cdr vals)))
-                ((null? vals))
-              (format outp " ~10@s = " (car vals))
-              (write-limit (vector-ref env i) outp)))))
+      (format outp "~3d: " level)
+      (write-limit (car s) outp)
+      (show-env (cdr s)))
     
     (define (loop level)
       (format outp "debug$ ")
@@ -69,6 +75,7 @@
               ((eqv? cmd :up)   (up   level))
               ((eqv? cmd :down) (down level))
               ((eqv? cmd :quit))
+              ((eqv? cmd :q))
               ((eof-object? cmd) (newline outp))
               (else (help level)))))
 
