@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.316 2002-12-08 08:33:19 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.317 2002-12-10 03:17:57 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -16684,13 +16684,13 @@ slot doesn't.
 
 It is also a good example of customizing how the slots are accessed
 using the metaobject protocol.  This feature is implemented by
-only a dozen lines of code.
+only couple of dozen lines of code.
 @c JP
 仮想スロットに似ていますが、validatorを持つスロットはインスタンス内に実際に
 値を格納している点が異なります。
 
 このモジュールはまた、スロットのアクセスをメタオブジェクトプロトコルを使って
-カスタマイズする例でもあります。この機能はほんの12行ほどのコードで実現されています。
+カスタマイズする例でもあります。この機能は20行ほどのコードで実現されています。
 @c COMMON
 @end deftp
 
@@ -19105,12 +19105,82 @@ Scheme-level thread API conforms SRFI-18, "Multithreading support"
 (@ref{srfi-18,,[SRFI-18]}), wrapped around Gauche's object interface.
 
 @menu
+* Thread programming tips::     
 * Thread procedures::           
 * Synchronization primitives::  
 * Thread exceptions::           
 @end menu
 
-@node Thread procedures, Synchronization primitives, gauche.threads - Threads, gauche.threads - Threads
+@node Thread programming tips, Thread procedures, gauche.threads - Threads, gauche.threads - Threads
+@subsection Thread programming tips
+
+Although the surface API of threads looks simple and portable,
+you need know how the threads are implemented in order to utilize
+the feature's potential.   Some languages support threads as
+language's built-in construct and encourage programmers
+to express the calculation in terms of threads.
+However, it should be noted that in many cases there are
+alternative ways than threads to implement the desired
+algorithm, and you need to compare advantages and
+disadvantages of using threads depending on how the threads
+are realized in the underlying system.
+
+In Gauche, the primary purpose of threads is to write programs
+that @emph{requires} preemptive scheduling, therefore are
+difficult to express in other ways.  Preemptive threads may
+be required, for example, you have to call a module that 
+does blocking I/O which you can't intercept, or may spend
+nondeterministic amount of calculation time that you want
+to interrupt.
+
+For each Gauche's thread, an individual VM is allocated
+and it is run by the dedicated POSIX thread.  Thus there
+is not much overhead in context switch than the native
+thread, but the creation of threads costs much higher than,
+say, lightweight threads built on top of call/cc.
+So Gauche's preemptive threads are @emph{not} designed for
+applications that want to create thousands of threads
+for fine-grained calculation. 
+
+The recommended usage is the technique so called "thread pool",
+that you create a set of threads and keep them around for
+long time and dispatch jobs for them as needed.
+
+Preemptive threads have other difficulties
+(e.g. see @ref{fairthreads,[FairThreads],FairThreads}),
+and sometimes the alternatives may be a better fit
+than the native preemptive threads.
+
+@itemize
+@item
+If what you need is just a concurrent calculation, you
+might be able to use cooperative thread technique built
+on top of @code{call/cc}.   Creating call/cc-based threads
+is much faster than creating native threads. 
+
+@item
+If what you need is to deal with blocking I/O, and you have
+all your code at hand, it is sometimes easier to use good old
+@code{select}-based dispatching (@xref{gauche.selector - Simple dispatcher},
+for example).
+
+@item
+If what you need is to control the resouce consumption in the
+subsystem, and the subsystem works fairly independently from
+the main system, you may be use Unix processes instead of threads.
+It may sound to go backward, but Unix process does provide
+higher "shield" between the subsystem and the main system
+(e.g. the main system can keep running even if subsystem segfaults).
+
+@end itemize
+
+Of course, these technique are not mutually exclusive with
+native threads.  You can use dispatcher with "thread pool" technique,
+for example.   Just keep it in your mind that the native threads
+are not only but one of the ways to realize those features.
+
+
+@node Thread procedures, Synchronization primitives, Thread programming tips, gauche.threads - Threads
 @subsection Thread procedures
 
 @deftp {Builtin Class} <thread>
@@ -19532,6 +19602,7 @@ Returns the value of @code{reason} slot of @code{<uncaught-exception>}
 object.
 Provided for the compatibility to SRFI-18.
 @end defun
+
 
 @c ----------------------------------------------------------------------
 @node gauche.time - Measure timings, gauche.uvector - Uniform vectors, gauche.threads - Threads, Library modules - Gauche extensions
@@ -26873,6 +26944,11 @@ in @i{Proceedings of SIGPLAN '96}, pp. 99--107, 1996.
 Gregor Kiczales, Jim Des Rivieres, Daniel Bobrow,
 The Art of Metaobject Protocol, 
 The MIT Press.
+
+@anchor{fairthreads}
+@item [FairThreads]
+F. Boussinot, Java Fair Threads, @*
+@url{http://www-sop.inria.fr/mimosa/rp/FairThreads/html/FairThreads.html}.
 
 @anchor{rfc1321}
 @item [RFC1321]
