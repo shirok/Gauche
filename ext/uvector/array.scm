@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.1 2002-06-27 11:30:09 shirok Exp $
+;;;  $Id: array.scm,v 1.2 2002-06-28 09:56:32 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -28,7 +28,10 @@
   (export <array-meta> <array>
           array? make-array shape array array-rank
           array-start array-end array-ref array-set!
-          share-array)
+          share-array
+          array-shape array-length array-size array-equal?
+          array-for-each-index shape-for-each-index
+          )
   )
 (select-module gauche.array)
 
@@ -293,8 +296,77 @@
 ;; Array utilities
 ;;
 
-;(define (array-shape array)
-  
+(define (array-shape ar)
+  (let1 r (array-rank ar)
+    (apply array (shape 0 r 0 2)
+           (append-map! (lambda (k)
+                          (list (array-start ar k)
+                                (array-end ar k)))
+                        (iota r)))))
 
+(define (array-length ar dim)
+  (- (array-end ar dim) (array-start ar dim)))
+
+(define (array-size ar)
+  (reduce * 1 (map (cute array-length ar <>) (iota (array-rank ar)))))
+
+(define (array-equal? a b)
+  (let ((r   (array-rank a)))
+    (and (= r (array-rank b))
+         (every (lambda (dim)
+                  (and (= (array-start a dim) (array-start b dim))
+                       (= (array-end a dim) (array-end b dim))))
+                (iota r))
+         (call/cc
+          (lambda (break)
+            (array-for-each-index a
+                                  (lambda (index)
+                                    (unless (equal? (array-ref a index)
+                                                    (array-ref b index))
+                                      (break #f)))
+                                  (make-vector r 0))
+            #t)))))
+
+;; repeat construct
+
+(define (array-for-each-int proc rank Vb Ve ind)
+  (define (vec-loop dim vi)
+    (if (= dim rank)
+        (proc vi)
+        (let1 e (s32vector-ref Ve dim)
+          (do ((k (s32vector-ref Vb dim) (+ k 1)))
+              ((= k e))
+            (vector-set! vi dim k)
+            (vec-loop (+ dim 1) vi)))))
+
+  (define (arr-loop dim ai)
+    (if (= dim rank)
+        (proc ai)
+        (let1 e (s32vector-ref Ve dim)
+          (do ((k (s32vector-ref Vb dim) (+ k 1)))
+              ((= k e))
+            (array-set! ai dim k)
+            (arr-loop (+ dim 1) ai)))))
+  
+  (cond ((null? ind) (vec-loop 0 (make-vector rank)))
+        ((vector? (car ind)) (vec-loop 0 (car ind)))
+        ((array? (car ind)) (arr-loop 0 (car ind)))
+        (else "bad index object (vector or array required)" (car ind))))
+
+(define (array-for-each-index ar proc . o)
+  (array-for-each-int proc
+                      (array-rank ar)
+                      (start-vector-of ar)
+                      (end-vector-of ar)
+                      o))
+
+(define (shape-for-each-index sh proc . o)
+  (let* ((rank (array-end sh 0))
+         (ser  (iota rank)))
+    (array-for-each-int proc
+                        rank
+                        (map-to <s32vector> (cut array-ref sh <> 0) ser)
+                        (map-to <s32vector> (cut array-ref sh <> 1) ser)
+                        o)))
 
 (provide "gauche/array")
