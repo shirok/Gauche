@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.34 2002-04-18 10:02:04 shirok Exp $
+ *  $Id: list.c,v 1.35 2002-12-04 02:34:49 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -31,7 +31,7 @@ static ScmClass *list_cpl[] = {
     NULL
 };
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ListClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ListClass, NULL, NULL, NULL, NULL, list_cpl+1);
 SCM_DEFINE_BUILTIN_CLASS(Scm_PairClass, NULL, NULL, NULL, NULL, list_cpl);
 SCM_DEFINE_BUILTIN_CLASS(Scm_NullClass, NULL, NULL, NULL, NULL, list_cpl);
 
