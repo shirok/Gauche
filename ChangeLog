@@ -1,5 +1,13 @@
+2002-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : further optimization, and fixed a bug in the last change
+	  that left env ptr invalid after tail call argument shifting.
+
 2002-09-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/stdlib.stub, src/proc.c : let map and for-each accept non-procedure
+	  object as the 1st arg so that object-apply hook can work.
+	* src/vm.c : optimized subr call by omitting environment frame header.
 	* src/vm.c, src/class.c : added object-apply hook.  If non-procedure
 	  object is applied, like ("abc" 1), a method object-apply is
 	  called as (object-apply "abc" 1).

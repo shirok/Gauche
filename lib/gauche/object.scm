@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.34 2002-06-11 12:30:00 shirok Exp $
+;;;  $Id: object.scm,v 1.35 2002-09-11 23:41:28 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -465,6 +465,23 @@
   (slot-ref obj slot))
 (define-method (setter ref) ((obj <top>) (slot <symbol>) value)
   (slot-set! obj slot value))
+
+;;----------------------------------------------------------------
+;; Generalized application hooks
+;;  (should this be in separate file, e.g. apply.scm?)
+
+(define-method object-apply ((self <regexp>) (s <string>))
+  (rxmatch self s))
+(define-method object-apply ((self <regmatch>))
+  (rxmatch-substring self))
+(define-method object-apply ((self <regmatch>) (i <integer>))
+  (rxmatch-substring self i))
+;(define-method object-apply ((self <rxmatch>) (s <symbol>))
+;  (case s
+;    ((before) (rxmatch-before self))
+;    ((after)  (rxmatch-after self))
+;    ((
+
 
 ;;;
 ;;; Make exported symbol visible from outside
