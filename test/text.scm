@@ -134,5 +134,8 @@
         (string-tr "Hello,   World!!!!" "A-Za-z" ""
                    :squeeze #t :complement #t :table-size 103)))
 
+(test "escape in spec" "*ello, World!"
+      (lambda ()
+        (string-tr "Hello,-World!" "A\\-H" "_ \\*")))
 
 (test-end)
