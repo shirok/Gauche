@@ -1,0 +1,34 @@
+;; -*-Scheme-*-
+
+;;;
+;;; System interface functions.   Mostly I followed POSIX.1, but included
+;;; some non-posix functions which are important for programming on Unix.
+;;;
+;;; If mapping from Scheme to the function is trivial, it is defined directly
+;;; in syslib.stub.  
+;;;
+;;; The functions are listed in the order of the header file which defines
+;;; them.
+;;;
+
+;; dirent.h - read directory
+;;   we don't have correspoinding functions, but provide these:
+
+(define-cproc sys-read-directory (pathname)
+  (assert (string? pathname))
+  "  SCM_RETURN(Scm_ReadDirectory(pathname));")
+
+(define-cproc sys-glob-directory (pattern)
+  (assert (string? pattern))
+  "  SCM_RETURN(Scm_GlobDirectory(pattern));")
+
+;; grp.h - groups
+
+(define-cproc sys-get-group-by-id (gid)
+  (assert (small-integer? gid))         ;TODO: make sure it covers all gids
+  "  SCM_RETURN(Scm_GetGroupById(gid));")
+
+(define-cproc sys-get-group-by-name (name)
+  (assert (string? name))
+  "  SCM_RETURN(Scm_GetGroupByName(name));")
+
