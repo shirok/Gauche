@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.3 2001-05-06 07:46:46 shirok Exp $
+;;;  $Id: numerical.scm,v 1.4 2001-05-07 09:06:39 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -109,6 +109,12 @@
 
 (define (%complex-sqrt z)
   (exp (/ (log z) 2.0)))
+
+(define (%complex-expt x y)
+  (if (real? x)
+      (let ((ri (%complex->real/imag y)))
+        (* (%expt x (car ri)) (exp (* +i (cdr ri) (%log x)))))
+      (exp (* y (log x)))))
 
 (define (%complex-cos z)
   (let ((xy (%complex->real/imag z)))
