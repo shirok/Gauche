@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-13/pred - string library (predicates)
+;;; srfi-13/misc - string library (miscellaneous)
 ;;;
 ;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
 ;;;
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: misc.scm,v 1.2 2001-05-01 06:44:35 shirok Exp $
+;;;  $Id: misc.scm,v 1.3 2001-05-01 10:01:50 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
