@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.379 2003-03-26 00:43:56 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.380 2003-03-28 05:57:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7583,15 +7583,6 @@ GaucheはPOSIXの拡張正規表現にほぼ上位互換な正規表現エンジンを
 拡張機能を採り入れています。
 @c COMMON
 
-@c EN
-Gauche's regexp compiles the given regular expression pattern to
-an internal byte-code, which is executed by the engine when
-applied to a string.   Besides, the regexp compiler separates parsing stage
-and back-end compiler, allowing the program to provide alternative
-syntax.
-@c JP
-@c COMMON
-
 @deftp {Builtin Class} <regexp>
 @clindex regexp
 @c EN
@@ -7669,109 +7660,173 @@ If you want to construct regexp on-the-fly, however, use @code{string->regexp}.
 使うことができます。動的に正規表現を作成したい場合のみ@code{string->regexp}を
 使って下さい。
 @c COMMON
-
-@c EN
-The recognized syntax is a subset of POSIX extended regular expression,
-with a bit of extension taken from Perl.  Specifically, Gauche supports:
-@c JP
-認識される構文はPOSIX拡張正規表現のサブセットに、Perlの拡張の一部を
-採り入れたものです。具体的には以下の構文がサポートされます。
-@c COMMON
-@itemize @bullet
-@item
-@c EN
-Repetition by @code{*}, @code{+} and @code{?}.
-@c JP
-@code{*}、@code{+}、@code{?}による繰り返しの指定。
-@c COMMON
-@item
-@c EN
-Grouping by @code{()}.  No backslash escape is needed.
-@c JP
-@code{()}によるグルーピング。括弧の前にバックスラッシュは不要です。
-@c COMMON
-@item
-@c EN
-Alternative by @code{|}.
-@c JP
-@code{|}による選択。
-@c COMMON
-@item 
-@c EN
-Character class by @code{[]}.  The syntax recognized by character set
-literals (@xref{Character set}) are valid.
-@c JP
-@code{[]}による文字クラス。文字集合リテラル (@ref{Character set}参照) で認識される
-表記が全て有効です。
-@c COMMON
-@item
-@c EN
-Beginning of the string @code{^} and end of the string @code{$} assertions.
-@c JP
-文字列の先頭@code{^}、および末尾@code{$}へのマッチ。
-@c COMMON
-@item
-@c EN
-Several special character class abbreviations;
-@code{\d} for digits, @code{\D} for non-digits, @code{\w} for alfphanumeric
-characters, @code{\W} for non-alphanumeric characters, @code{\s} for
-whitespace characters, and @code{\S} for non-whitespace characters.
-These can be used both inside and outside of @code{[]}.
-@c JP
-いくつかの特定の文字クラスの略記。
-数字@code{\d}、数字の補集合@code{\D}、アルファベットと数字@code{\w}、
-その補集合@code{\W}、空白文字@code{\s}、その補集合@code{\S}が使えます。
-これらは通常のコンテクストでも、文字クラス@code{[]}の中でも使えます。
-@c COMMON
-@end itemize
-
-@c EN
-And Gauche does not supports:
-@c JP
-以下の機能はサポートされていません。
-@c COMMON
-@itemize @bullet
-@item
-@c EN
-Collating elements, e.g. @code{[=e=]} and @code{[.ll.]}.
-@c JP
-@code{[=e=]}や@code{[.ll.]}のような、コレーティングエレメント。
-@c COMMON
-@item
-@c EN
-Beginning/end of word assertions.
-@c JP
-単語の先頭/終了へのマッチ。
-@c COMMON
-@item
-@c EN
-Fixed-number repetition, @code{@{m,n@}}.
-@c JP
-@code{@{m,n@}}のような、回数を指定した繰り返し。
-@c COMMON
-@item
-@c EN
-Back reference of submatches.
-@c JP
-部分一致へのバックリファレンス。
-@c COMMON
-@end itemize
-
-@c EN
-Among those unsupported features, the first three will eventually
-be supported.  It is unlikely to support back reference, however.
-If you use back reference, you're not dealing with regular grammer
-any more.  And if you're dealing with higher class of grammer,
-there should be appropriate tools rather than regular expressions.
-@c JP
-これらのサポートされていない機能のうち、最初の3つはいずれサポートする予定です。
-但し、バックリファレンスに関してはおそらくサポートしないでしょう。
-バックリファレンスを使わなければならないということは、
-その対象は正規文法では表現できないということです。
-それならばより複雑なクラスの文法を扱うのに適したツールを使うべきであって、
-無理矢理正規表現を使おうとするのは良くありません。
-@c COMMON
 @end deftp
+
+@c EN
+Gauche's built-in regexp syntax follows POSIX extended regular 
+expression, with a bit of extensions taken from Perl.
+
+Note that the syntax described here is just a surface syntax.
+Gauche's regexp compiler works on the abstract syntax tree,
+and alternative syntax such as SRE will be supported in the
+future versions.
+@c JP
+Gaucheの組み込み正規表現構文はPOSIX拡張正規表現に準じたものに、
+Perlの拡張の一部を採り入れたものです。
+
+ここに示す構文は表面的な構文にすぎないことに注意して下さい。
+Gaucheの正規表現コンパイラは抽象構文木を扱うようになっており、
+将来はSREのような別の構文もサポートされる予定です。
+@c COMMON
+
+@table @code
+@item @i{re}*
+@c EN
+Matches zero or more repetition of @i{re}.
+@c JP
+@i{re}の0回以上の繰り返しにマッチします。
+@c COMMON
+
+@item @i{re}+
+@c EN
+Matches one or more repetition of @i{re}.
+@c JP
+@i{re}の1回以上の繰り返しにマッチします。
+@c COMMON
+
+@item @i{re}?
+@c EN
+Matches zero or one occurrence of @i{re}.
+@c JP
+@i{re}の0回または1回の出現にマッチします。
+@c COMMON
+
+@item @i{re}@{@i{n}@}
+@itemx @i{re}@{@i{n},@}
+@itemx @i{re}@{@i{n},@i{m}@}
+@c EN
+Bounded repetition.  @code{@i{re}@{@i{n}@}} matches exactly @i{n}
+occurrences of @i{re}.   @code{@i{re}@{@i{n},@}} matches
+@i{n} or more occurrences of @i{re}.
+@code{@i{re}@{@i{n},@i{m}@}} matches at least @var{n} and at most
+@var{m} occurrences of @i{re}, where @var{n} <= @var{m}.
+@c JP
+回数に範囲のある繰り返しです。
+@code{@i{re}@{@i{n}@}}は@i{re}の@i{n}回の繰り返しにマッチします。
+@code{@i{re}@{@i{n},@}}は@i{re}の@i{n}回以上の繰り返しにマッチします。
+@code{@i{re}@{@i{n},@i{m}@}}は@i{re}の@i{n}回以上、@i{m}回以下の
+繰り返しのマッチします。但し@var{n} <= @var{m}とします。
+@c COMMON
+
+@item (@i{re}@dots{})
+@c EN
+Clustering with capturing.  The regular expression enclosed
+by parenthesis works as a single @i{re}.  Besides, the string
+that matches @i{re} @dots{} is saved as a @emph{submatch}.
+@c JP
+捕捉とクラスタリング。括弧でくくられた正規表現の列がグループとして
+扱われ、またそれにマッチした文字列はサブマッチとして保存されます。
+@c COMMON
+
+@item (?:@i{re}@dots{})
+@c EN
+Clustering without capturing.   @code{@i{re} @dots{}} works as
+a single @i{re}, but the matched string isn't saved.
+@c JP
+捕捉無しクラスタリング。@code{@i{re} @dots{}}はグループとして
+扱われますが、サブマッチとして保存されません。
+@c COMMON
+
+@item (?i:@i{re}@dots{})
+@itemx (?-i:@i{re}@dots{})
+@c EN
+Lexical case sensitivity control.  
+@code{(?i:@i{re}@dots{})} makes @i{re}@dots{} matches case-insensitively,
+while @code{(?-i:@i{re}@dots{})} makes 
+@i{re}@dots{} matches case-sensitively.
+
+Perl's regexp allows several more flags to appear between '?' and ':'.
+Gauche only supports above two, for now.
+@c JP
+大文字小文字の区別の制御。
+@code{(?i:@i{re}@dots{})}は@i{re}@dots{}が大文字小文字にかかわらず
+マッチするようにします。
+@code{(?-i:@i{re}@dots{})}はその逆です。
+
+Perlの正規表現では'?'と':'の間に他のいくつかのフラグを使うことが
+できますが、Gaucheでは今のところこのフラグのみをサポートしています。
+@c COMMON
+
+@item @i{pattern1}|@i{pattern2}|@dots{}
+@c EN
+Alternation.  Matches either one of patterns, where each
+pattern is @i{re} @dots{}.
+@c JP
+パターンのいずれかにマッチします。
+@c COMMON
+
+@item .
+@c EN
+Matches any character (including newline).
+@c JP
+任意の1文字にマッチします。改行文字にもマッチします。
+@c COMMON
+
+@item [@i{char-set-spec}]
+@c EN
+Matches any of the character set specified by @i{char-set-spec}.
+@xref{Character set}, for the details of @i{char-set-spec}.
+@c JP
+@i{char-set-spec}で指定される文字セット内の文字にマッチします。
+@i{char-set-spec}については@ref{Character set}を参照して下さい。
+@c COMMON
+
+@item \s, \d, \w
+@c EN
+Matches a whitespace character (@code{#[[:space:]]}),
+a digit character (@code{#[[:digit:]]}), or
+a word-constituent character (@code{#[[:alpha:][:digit:]_]}),
+respectively.
+
+Can be used both inside and outside of character set.
+@c JP
+それぞれ空白文字(@code{#[[:space:]]})、
+数字(@code{#[[:digit:]]})、
+単語を構成する文字(@code{#[[:alpha:][:digit:]_]})にマッチします。
+
+文字セット内でも、その外でも使えます。
+@c COMMON
+
+@item \S, \D, \W
+@c EN
+Matches the complement character set of @code{\s}, @code{\d} and
+@code{\w}, respectively.
+@c JP
+それぞれ@code{\s}、@code{\d}、@code{\w}で指定される文字セットの補集合の
+文字にマッチします。
+@c COMMON
+
+@item ^, $
+@c EN
+Beginning and end of string assertion, 
+when appears at the beginning or end of the pattern.
+@c JP
+それぞれ、パターンの最初または最後に指定された場合、
+文字列の最初か最後にマッチします。
+@c COMMON
+
+@item \b, \B
+@c EN
+Word boundary and non word boundary assertion, repectively.
+That is, @code{\b} matches an empty string between
+word-constituent character and non-word-constituent character,
+and @code{\B} matches an empty string elsewhere.
+@c JP
+@code{\b}は単語の境界の空文字列にマッチします。
+@code{\B}はその逆です。
+@c COMMON
+
+@end table
 
 @defun string->regexp string &keyword case-fold
 @c EN
