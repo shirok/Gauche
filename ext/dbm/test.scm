@@ -28,25 +28,17 @@
 (define *test1-dataset* (make-hash-table 'equal?)) ;string only
 (define *test2-dataset* (make-hash-table 'equal?)) ;other objects
 
-(define (limit-list list)
-  (define limit 30)
-  (if (> (length list) limit) (take list limit) list))
+(define (generate-test-set size)
+  (do ((i   0 (+ i 1))
+       (key (sys-random) (sys-random))
+       (val (cons (sys-random) (sys-random)) (cons (sys-random) (sys-random))))
+      ((>= i size))
+    (hash-table-put! *test1-dataset*
+                     (x->string key)
+                     (x->string val))
+    (hash-table-put! *test2-dataset* key val)))
 
-(let loop ((f (limit-list (sys-glob "/*"))))
-  (cond ((null? f))
-        ((and (file-is-directory? (car f))
-              (sys-access (car f) |R_OK|))
-         (for-each (lambda (s)
-                     (hash-table-put! *test1-dataset*
-                                      s (apply string-append s f))
-                     (hash-table-put! *test2-dataset*
-                                      (cons s f)
-                                      (list (string-length s)
-                                            (odd? (string-length s))
-                                            (string-split s #\/))))
-                   (limit-list (sys-glob (string-append (car f) "/*"))))
-         (loop (cdr f)))
-        (else (loop (cdr f)))))
+(generate-test-set 1000)
 
 ;; create test
 (define (test:make class rw-mode serializer)
