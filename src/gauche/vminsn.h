@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.16 2001-02-27 08:14:13 shiro Exp $
+ *  $Id: vminsn.h,v 1.17 2001-03-05 09:19:24 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -145,7 +145,7 @@ DEFINSN(SCM_VM_GREF, "GREF", 0)
 
 /* PROMISE
  *
- *  Delay syntax emits this instruction.  Wrap a procedure into promise
+ *  Delay syntax emits this instruction.  Wrap a procedure into a promise
  *  object.
  */
 DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
