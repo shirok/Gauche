@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.311 2002-12-06 05:29:36 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.312 2002-12-06 12:46:38 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -22631,6 +22631,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @defunx ucs-range->char-set! lower upper error? base-cs
 [SRFI-14]
 @c EN
+
 @c JP
 @c COMMON
 @end defun

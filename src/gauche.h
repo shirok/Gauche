@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.309 2002-12-06 05:29:36 shirok Exp $
+ *  $Id: gauche.h,v 1.310 2002-12-06 12:47:03 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -959,6 +959,7 @@ SCM_CLASS_DECL(Scm_StringPointerClass);
 
 SCM_EXTERN ScmObj Scm_MakeStringPointer(ScmString *src, int index,
 					int start, int end);
+SCM_EXTERN ScmObj Scm_StringPointerRef(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerNext(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerPrev(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerSet(ScmStringPointer *sp, int index);

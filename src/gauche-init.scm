@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.96 2002-12-06 05:28:32 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.97 2002-12-06 12:47:01 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -44,7 +44,7 @@
                    ((identifier? module) (identifier->symbol module))
                    (else (error "module name must be a symbol" module)))))
     ;; Here, there will be some module-name translator hook
-    (string-join (string-split (symbol->string mod) #\.) "/")))
+    (string-join (%string-split-by-char (symbol->string mod) #\.) "/")))
 
 (define-macro (use module)
   `(begin (with-module gauche (require ,(%module-name->path module)))
@@ -89,7 +89,7 @@
   (receive (path module)
       (cond ((string? file) (values file #f))
             ((symbol? file)
-             (values (string-join (string-split (symbol->string file) #\.) "/")
+             (values (string-join (%string-split-by-char (symbol->string file) #\.) "/")
                      file))
             (else (bad)))
     `(begin ,@(map (lambda (v)
@@ -188,6 +188,8 @@
 
 (autoload gauche.defvalues
           (:macro define-values) (:macro set!-values))
+
+(autoload gauche.stringutil string-split)
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)

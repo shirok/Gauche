@@ -1,3 +1,13 @@
+2002-12-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-14.scm : made ucs-range->char-set work on non-ASCII chars.
+	* src/string.c : added string-pointer-ref.
+	* lib/gauche/stringutil.scm, src/extlib.stub, src/gauche-init.scm:
+	  now string-split can accept not only a character but also a char-set,
+	  a string, a regexp or a predicate.  The character case is handled
+	  by built-in (Scm_StringSplitByChar, %string-split-by-char), and
+	  the other cases are handled by autoloaded module gauche.stringutil.
+
 2002-12-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.c (regexp-quote): added regexp-quote,

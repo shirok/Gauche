@@ -106,6 +106,64 @@
         (string-scan "abakjrgaker" "")))
 
 ;;-------------------------------------------------------------------
+(test-section "string-split")
+
+(test "string-split (char)" '("aa" "bbb" "c")
+      (lambda () (string-split "aa*bbb*c" #\*)))
+(test "string-split (char)" '("aa" "bbb" "c" "")
+      (lambda () (string-split "aa*bbb*c*" #\*)))
+(test "string-split (char)" '("aa" "bbb" "c" "" "")
+      (lambda () (string-split "aa*bbb*c**" #\*)))
+(test "string-split (char)" '("aa")
+      (lambda () (string-split "aa" #\*)))
+(test "string-split (char)" '("")
+      (lambda () (string-split "" #\*)))
+(test "string-split (char)" '("" "")
+      (lambda () (string-split "*" #\*)))
+
+(test "string-split (1-char string)" '("aa" "bbb" "c")
+      (lambda () (string-split "aa*bbb*c" "*")))
+
+(test "string-split (string)" '("aa" "bbb" "c*c")
+      (lambda () (string-split "aa**bbb**c*c" "**")))
+(test "string-split (string)" '("aa**bbb**c*c")
+      (lambda () (string-split "aa**bbb**c*c" "--")))
+(test "string-split (string)" '("aa" "bbb" "c*c" "")
+      (lambda () (string-split "aa**bbb**c*c**" "**")))
+(test "string-split (string)" '("")
+      (lambda () (string-split "" "**")))
+(test "string-split (string)" '("" "")
+      (lambda () (string-split "**" "**")))
+
+(test "string-split (regexp)" '("aa" "bbb" "c" "c")
+      (lambda () (string-split "aa--bbb--c-c" #/-+/)))
+(test "string-split (regexp)" '("aa" "bbb" "-c-c")
+      (lambda () (string-split "aa--bbb---c-c" #/--/)))
+(test "string-split (regexp)" '("" "aa" "bbb" "c" "c" "")
+      (lambda () (string-split "--aa--bbb---c-c-" #/-+/)))
+(test "string-split (regexp)" '("--" "--" "---" "-" "-")
+      (lambda () (string-split "--aa--bbb---c-c-" #/\w+/)))
+(test "string-split (regexp)" '("--aa--bbb---c-c-")
+      (lambda () (string-split "--aa--bbb---c-c-" #/z+/)))
+(test "string-split (regexp)" 'error ;; test detection of infinite loop
+      (lambda ()
+        (with-error-handler
+            (lambda (e) 'error)
+          (lambda () (string-split "--aa--bbb---c-c-" #/-*/)))))
+
+(test "string-split (charset)" '("aa" "bbb" "c" "d")
+      (lambda () (string-split "aa---bbb***c&d" #[\W])))
+(test "string-split (charset)" '("" "---" "***" "&" "")
+      (lambda () (string-split "aa---bbb***c&d" #[\w])))
+(test "string-split (charset)" '("")
+      (lambda () (string-split "" #[\w])))
+(test "string-split (charset)" '("" "")
+      (lambda () (string-split "a" #[\w])))
+
+(test "string-split (predicate)" '("" "---" "***" "&" "")
+      (lambda () (string-split "aa---bbb***c&d" char-alphabetic?)))
+
+;;-------------------------------------------------------------------
 (test-section "incomplete strings")
 
 ;; Real test for incomplete string requires multibyte strings.

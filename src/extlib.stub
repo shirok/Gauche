@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.182 2002-12-06 05:29:36 shirok Exp $
+;;; $Id: extlib.stub,v 1.183 2002-12-06 12:46:58 shirok Exp $
 ;;;
 
 "
@@ -463,8 +463,8 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   if (modulo == 0) Scm_Error(\"argument out of domain: %S\", bound);
   SCM_RETURN(Scm_MakeInteger(Scm_HashString(str, modulo)));")
 
-;; TODO: allow string/charset/regexp in ch
-(define-cproc string-split (s::<string> ch::<char>)
+;; see lib/gauche/string for generic string-split
+(define-cproc %string-split-by-char (s::<string> ch::<char>)
   (return "Scm_StringSplitByChar"))
 
 ;; primitive scanner
@@ -508,6 +508,8 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc string-pointer? (obj)
   (return <boolean> "SCM_STRING_POINTERP"))
 
+(define-cproc string-pointer-ref (sp::<string-pointer>)
+  (return "Scm_StringPointerRef"))
 (define-cproc string-pointer-next! (sp::<string-pointer>)
   (return "Scm_StringPointerNext"))
 (define-cproc string-pointer-prev! (sp::<string-pointer>)

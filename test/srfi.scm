@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.23 2002-12-03 02:13:52 shirok Exp $
+;; $Id: srfi.scm,v 1.24 2002-12-06 12:47:06 shirok Exp $
 
 (use gauche.test)
 
@@ -1003,6 +1003,27 @@
         (char-set= (string->char-set "abcef12345")
                    (ucs-range->char-set! 97 103 #t
                                          (string->char-set "12345")))))
+(test "integer-range->char-set" #t
+      (lambda ()
+        (char-set= (string->char-set "abcdef12345")
+                   (integer-range->char-set 97 103 #t
+                                        (string->char-set "12345")))))
+(test "integer-range->char-set" #f
+      (lambda ()
+        (char-set= (string->char-set "abcef12345")
+                   (integer-range->char-set 97 103 #t
+                                        (string->char-set "12345")))))
+(test "integer-range->char-set!" #t
+      (lambda ()
+        (char-set= (string->char-set "abcdef12345")
+                   (integer-range->char-set! 97 103 #t
+                                         (string->char-set "12345")))))
+(test "integer-range->char-set!" #f
+      (lambda ()
+        (char-set= (string->char-set "abcef12345")
+                   (integer-range->char-set! 97 103 #t
+                                         (string->char-set "12345")))))
+
 (test "->char-set" #t
       (lambda ()
         (char-set= (->char-set #\x)

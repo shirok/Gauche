@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.69 2002-11-18 07:04:20 shirok Exp $
+ *  $Id: string.c,v 1.70 2002-12-06 12:47:06 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1075,6 +1075,19 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
   badindex:
     Scm_Error("index out of range: %d", index);
     return SCM_UNDEFINED;
+}
+
+ScmObj Scm_StringPointerRef(ScmStringPointer *sp)
+{
+    ScmChar ch;
+    if (sp->length < 0 || sp->size == sp->length) {
+        if (sp->index >= sp->size) return SCM_EOF;
+        ch = *sp->current;
+    } else {
+        if (sp->index >= sp->length) return SCM_EOF;
+        SCM_CHAR_GET(sp->current, ch);
+    }
+    return SCM_MAKE_CHAR(ch);
 }
 
 ScmObj Scm_StringPointerNext(ScmStringPointer *sp)
