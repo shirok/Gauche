@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.7 2003-05-10 12:32:32 shirok Exp $
+;;;  $Id: list.scm,v 1.8 2003-05-10 23:20:10 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
@@ -24,9 +24,9 @@
           slices intersperse cond-list
           alist->hash-table hash-table->alist
           rassq rassv rassoc
-          alist-ref assq-ref assv-ref assoc-ref
-          assq-set! assv-set! assoc-set!
-          rassq-ref rassv-ref rassoc-ref reverse-alist-ref)
+          assq-ref assv-ref assoc-ref
+          rassq-ref rassv-ref rassoc-ref
+          assq-set! assv-set! assoc-set!)
   )
 (select-module util.list)
 
@@ -137,7 +137,8 @@
 ;; conversion to/from hash-table
 (define (alist->hash-table a . opt-eq)
   (let ((tb (apply make-hash-table opt-eq)))
-    (for-each (lambda (x) (hash-table-put! tb (car x) (cdr x))) a) tb))
+    (for-each (lambda (x) (hash-table-put! tb (car x) (cdr x))) a)
+    tb))
 
 (define (hash-table->alist h)
   (hash-table-map h cons))
@@ -146,37 +147,41 @@
 (define (rassoc key alist . opt-eq)
   (let-optionals* opt-eq ((eq equal?))
     (find (lambda (elt)
-            (and (pair? elt) (eq (cdr elt0) key)))
+            (and (pair? elt) (eq (cdr elt) key)))
           alist)))
 
 (define rassq (cut rassoc <> <> eq?))
 (define rassv (cut rassoc <> <> eqv?))
 
-;; 'alist-ref', a shortcut of value retrieval w/ default value
-(define (alist-ref alist key . opts)
-  (let-optionals* opts ((eq      eqv?)
-                        (default #f))
+;; 'assoc-ref', a shortcut of value retrieval w/ default value
+;; Default parameter comes first, following the convention of
+;; other *-ref functions.
+(define (assoc-ref alist key . opts)
+  (let-optionals* opts ((default #f)
+                        (eq      equal?))
     (cond ((assoc key alist eq) => cdr)
           (else default))))
 
-(define assq-ref  (cut alist-ref <> <> eq? <...>))
-(define assv-ref  (cut alist-ref <> <> eqv? <...>))
-(define assoc-ref (cut alist-ref <> <> equal? <...>))
-          
-(define (reverse-alist-ref alist key . opts)
-  (let-optionals* opts ((eq      eqv?)
-                        (default #f))
-    (cond ((rassoc key alist eq) => cdr)
+(define (assq-ref alist key . opts)
+  (assoc-ref alist key (get-optional opts #f) eq?))
+(define (assv-ref alist key . opts)
+  (assoc-ref alist key (get-optional opts #f) eqv?))
+
+(define (rassoc-ref alist key . opts)
+  (let-optionals* opts ((default #f)
+                        (eq      equal?))
+    (cond ((rassoc key alist eq) => car)
           (else default))))
 
-(define rassq-ref  (cut reverse-alist-ref <> <> eq? <...>))
-(define rassv-ref  (cut reverse-alist-ref <> <> eqv? <...>))
-(define rassoc-ref (cut reverse-alist-ref <> <> equal? <...>))
+(define (rassq-ref alist key . opts)
+  (rassoc-ref alist key (get-optional opts #f) eq?))
+(define (rassv-ref alist key . opts)
+  (rassoc-ref alist key (get-optional opts #f) eqv?))
 
 ;; 'assoc-set!'
 (define (assoc-set! alist key val . opt-eq)
   (let-optionals* opt-eq ((eq equal?))
-    (cond ((assoc key val eq)
+    (cond ((assoc key alist eq)
            => (lambda (p) (set-cdr! p val) alist))
           (else (acons key val alist)))))
 

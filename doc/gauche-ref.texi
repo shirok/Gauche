@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.388 2003-05-06 07:59:19 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.389 2003-05-10 23:19:58 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8411,8 +8411,13 @@ Returns all the keys or values of hash table @var{hash} in a list,
 @c COMMON
 @end defun
 
-@c @defun hash-table-stat hash
-@c @end defun
+@c EN
+See also @ref{util.list - Additional list library}, where @code{hash-table->alist}
+and @code{alist->hash-table} are defined.
+@c JP
+@ref{util.list - Additional list library}も参照して下さい。
+@code{hash-table->alist}と@code{alist->hash-table}が定義されています。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Weak pointers, Control features, Hashtables, Core library
@@ -25804,6 +25809,7 @@ A simple example:
 
 @c ----------------------------------------------------------------------
 @menu
+* binary.pack - Packing Binary Data::
 * dbm - Generic DBM interface::  
 * dbm.gdbm - GDBM interface::   
 * dbm.ndbm - NDBM interface::   
@@ -25836,7 +25842,234 @@ A simple example:
 * www.cgi - CGI Utility::       
 @end menu
 
-@node dbm - Generic DBM interface, dbm.gdbm - GDBM interface, Library modules - Utilities, Library modules - Utilities
+@c ----------------------------------------------------------------------
+@node binary.pack - Packing Binary Data, dbm - Generic DBM interface, Library modules - Utilities, Library modules - Utilities
+@section @code{binary.pack} - Packing Binary Data
+
+@deftp {Module} binary.pack
+@mdindex binary.pack
+This module provides an interface for packing and unpacking (writing
+and reading) binary data with templates.  The functionality was
+inspired largely by the Perl pack/unpack functions, with comparison of
+similar features from other languages, however an effort was made to
+make it more general and more efficient, to be usable for
+database-like processing.  To that end, the most notable differences
+are that any packable value is unpackable (and vice versa), and the
+default behavior is to pack and unpack using port I/O, so you can seek
+in a large file and unpack from it.  Also, templates may be stored as
+dispatch closures to pack, unpack or even skip over values without
+re-parsing the template.
+
+See also binary.io - Binary I/O for utilities to read and write
+individual binary values.
+@end deftp
+
+@defun pack template list &keyword :output :to-string?
+Writes the values in @var{list} to the current output port, according
+to the format specified by the string @var{template}.  The template
+string is a series of single character codes, optionally followed by a
+numeric count (which defaults to 1).
+
+The format characters can generally be divided into string types,
+which interpret the count as a string byte size, and object types,
+which treat the count as a repetition indicator.  The count may be
+specified as the character @code{*}, which means to use the full
+size of the string for string types, and use all remaining values for
+object types.
+
+Counts may also be specified as a template enclosed in brackets, which
+means the count is the byte size of the enclosed template.  For
+example, @code{x[L]} skips a long.
+
+The special format character @code{/} may be used to indicate a
+structure where the packed data contains a dynamic count followed by
+the value itself.  The template is written as
+@code{<count-item>/<value-item>}, where @code{<count-item>} is any
+template character to be interpreted as a numeric count, and
+@code{<value-item>} is any other template character to use this count.
+If a normal count is given after @code{<value-item>} it is ignored.
+
+The format character @code{@@} may be used with a count to pad to an
+absolute position since the start of the template.
+
+Sub-templates may be grouped inside parentheses.  If angle-brackets
+are used, then they also behave as group operators but recursively
+operate on nested lists.
+
+The string types:
+
+@table @code
+@item a
+An arbitrary incomplete string, null padded.
+
+@item A
+A text string, space padded.
+
+@item Z
+A null terminated (ASCIZ) string, null padded.
+
+@item b
+A bit string (ascending bit order inside each byte).
+
+@item B
+A bit string (decending bit order inside each byte).
+
+@item h
+A hex string (low nybble first).
+
+@item H
+A hex string (high nybble first).
+@end table
+
+The object types:
+
+@table @code
+@item c
+A single char value.
+
+@item C
+An unsigned char value, single-byte only.
+
+@item s
+A signed short (16 bit) value.
+
+@item S
+An unsigned short (16 bit) value.
+
+@item i
+A signed integer (>= 32 bit) value.
+
+@item I
+An unsigned integer (>= 32 bit) value.
+
+@item l
+A signed long (32 bit) value.
+
+@item L
+An unsigned long (32 bit) value.
+
+@item n
+An unsigned short (16 bit) in "network" (big-endian) order.
+
+@item N
+An unsigned long (32 bit) in "network" (big-endian) order.
+
+@item v
+An unsigned short (16 bit) in "VAX" (little-endian) order.
+
+@item V
+An unsigned long (32 bit) in "VAX" (little-endian) order.
+
+@item q
+A signed quad (64 bit) value.
+
+@item Q
+An unsigned quad (64 bit) value.
+
+@item f
+A single-precision float in the native format.
+
+@item d
+A double-precision float in the native format.
+
+@item w
+A BER compressed integer.  An unsigned integer in base 128, most
+significant digit first, where the high bit is set on all but the
+final (least significant) byte.  Thus any size integer can be encoded,
+but the encoding is efficient and small integers don't take up any
+more space than they would in normal char/short/int encodings.
+
+@item x
+A null byte.
+
+@item o
+An sexp, handled with @code{read} and @code{write}.
+
+@end table
+
+If the optional keyword @var{:output} is given that port is used
+instead of the current output port.  If @var{:to-string?} is given and
+true, then pack accumulates and returns the output as a string.
+
+@example
+(pack "CCCC" '(65 66 67 68) :to-string? #t)
+ @result{} "ABCD"
+
+(pack "C/a*" '("hello") :to-string? #t)
+ @result{} "\x05hello"
+@end example
+@end defun
+
+@defun unpack template &keyword :input :from-string
+The complement of pack, unpack reads values from the current input
+port assuming they've been packed according to the string template and
+returns the values as a list.  unpack accepts the same format strings
+as pack.  Further, the following tautology holds:
+
+@example
+(equal? x (unpack fmt :from-string (pack fmt x :to-string? #t)))
+@end example
+
+for any list @var{x} and format string @var{fmt}.  The only exceptions
+to this are when the template includes a @code{*} and when the
+@code{o} template is used, since Scheme numeric literals cannot be
+reliably delimited (though future versions of @code{pack} may
+circumvent this by registering a new read syntax).
+
+If the optional keyword @var{:input} is given that port is used
+instead of the current input port.  If @var{:from-string} is given,
+then pack reads input from that string.
+
+@example
+(unpack "CCCC" :from-string "ABCD")
+ @result{} '(65 66 67 68)
+
+(unpack "C/a*" :from-string "\x05hello")
+ @result{} '("hello")
+@end example
+@end defun
+
+@defun unpack-skip template &keyword :input
+unpack-skip is the same as unpack except it does not return the
+values.  In some cases, particulary with fixed-size templates, this
+can be much more efficient when you just want to skip over a value.
+@end defun
+
+@defun make-packer template
+The low-level interface.  This function returns a disptach closure
+that can be used to pack, unpack and skip over the same cached
+template.  The dispatch closure accepts symbol methods as follows:
+
+@table @code
+@item 'pack list
+pack the items in list to the current output port.
+
+@item 'unpack
+unpack items from the current input port.
+
+@item 'skip
+skip items from the current input port.
+
+@item 'packer
+return the cached 'pack closure
+
+@item 'unpacker
+return the cached 'unpack closure.
+
+@item 'skipper
+return the cached 'skip closure.
+
+@item 'length
+return the known fixed length of the template.
+
+@item 'variable-length?
+return #t iff the template has variable length elements.
+@end table
+@end defun
+@c ----------------------------------------------------------------------
+
+
+@node dbm - Generic DBM interface, dbm.gdbm - GDBM interface, binary.pack - Packing Binary Data, Library modules - Utilities
 @section @code{dbm} - Generic DBM interface
 @c NODE dbm - 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
 
@@ -29715,6 +29948,81 @@ value is used to construct the result.
   @result{} (have-x 6)
 @end example
 @end defmac
+
+@defun alist->hash-table alist &optional cmp
+Creates and returns a hash table that has entries of
+each element in alist, using its car as the key and
+its cdr as the value.  @var{Cmp} is a symbol specifying
+the comparison function of the created hash table;
+currently @code{eq?}, @code{eqv?}, @code{equal?} and @code{string=?}
+are supported.
+@end defun
+
+@defun hash-table->alist hash-table
+@example
+  (hash-table-map h cons)
+@end example
+@end defun
+
+@defun rassoc key alist &optional eq-fn
+@defunx rassq key alist
+@defunx rassv key alist
+Reverse associations---given @var{key} is matched to the @emph{cdr}
+of each element in @var{alist}, instead of the @emph{car}.
+Handy to realize bidirectional associative list.
+@code{Rassoc} takes an optional comparison function, whose default is
+@code{equal?}.  @code{Rassq} and @var{rassv} uses @code{eq?} and @var{eqv?}.
+@end defun
+
+
+@defun assoc-ref alist key &optional default eq-fn
+@defunx assq-ref alist key &optional default
+@defunx assv-ref alist key &optional default
+These procedures provide the access to the assoc list
+symmetric with other *-ref procedures.
+This captures the common pattern of alist access:
+@example
+(assoc-ref alist key default eq-fn)
+ @equiv{}
+  (cond ((assoc key alist eq-fn) => cdr)
+        (else default))))
+@end example
+
+If @var{default} is omitted, @code{#f} is used.
+
+@code{Assoc-ref} takes an optional comparison function @var{eq-fn},
+whose default is @code{equal?}.  @code{Assq-ref} and @code{assv-ref}
+uses @code{eq?} and @code{eqv?}, respectively.
+@end defun
+
+@defun rassoc-ref alist key &optional default eq-fn
+@defunx rassq-ref alist key &optional default
+@defunx rassv-ref alist key &optional default
+Reverse association version of @code{assoc-ref}.
+@example
+(rassoc-ref alist key default eq-fn)
+ @equiv{}
+  (cond ((rassoc key alist eq-fn) => car)
+        (else default))))
+@end example
+The meanings of optional arguments are the same as @code{assoc-ref}.
+@end defun
+
+@defun assoc-set! alist key val &optional eq-fn
+@defunx assq-set! alist key val
+@defunx assv-set! alist key val
+Returns an alist who has @code{(key . val)} pair added to the @code{alist}.
+If @code{alist} already has an element with @var{key}, the element's
+@emph{cdr} is destructively modified for @var{val}.
+If @var{alist} doesn't have an element with @var{key}, a new pair
+is created and appended in front of @var{alist}; so you should use
+the return value to guarantee @var{key}-@var{val} pair is added.
+
+@code{Assoc-set!} takes optional comparison function @var{eq-fn},
+whose default is @code{equal?}.  @code{Assq-set!} and @code{assv-set!}
+uses @code{eq?} and @code{eqv?}, respectively.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node util.queue - Queue, util.toposort - Topological sort, util.list - Additional list library, Library modules - Utilities

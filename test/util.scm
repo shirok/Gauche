@@ -400,6 +400,62 @@
 (test* "cond-list" '(a b d) (cond-list (#t 'a) (#t 'b) (#f 'c) (#t 'd)))
 (test* "cond-list" '((b)) (cond-list (#f 'a) ('b => list)))
 
+(test* "alist->hash-table" '(a b)
+       (let ((ht (alist->hash-table '((5 . b) (3 . a)) 'eqv?)))
+         (list (hash-table-get ht 3)
+               (hash-table-get ht 5))))
+(test* "hash-table->alist" '(("a" . 3) ("b" . 5))
+       (let ((a (hash-table->alist
+                 (hash-table 'equal? '("a" . 3) '("b" . 5)))))
+         (list (assoc "a" a)
+               (assoc "b" a))))
+
+(test* "rassoc" '(5 . "b")
+       (rassoc "b" '((3 . "a") (5 . "b"))))
+(test* "rassq" '(5 . b)
+       (rassq 'b '((3 . a) (5 . b))))
+(test* "rassv" '("b" . 5)
+       (rassoc 5 '(("a" . 3) ("b" . 5))))
+
+(test* "assoc-ref" 5
+       (assoc-ref '(("a" . 3) ("b" . 5)) "b"))
+(test* "assoc-ref" 7
+       (assoc-ref '(("a" . 3) ("b" . 5)) "c" 7))
+(test* "assq-ref" 5
+       (assq-ref '((a . 3) (b . 5)) 'b))
+(test* "assq-ref" 7
+       (assq-ref '((a . 3) (b . 5)) 'c 7))
+(test* "assv-ref" 'b
+       (assv-ref '((3 . a) (5 . b)) 5))
+(test* "assv-ref" 'c
+       (assv-ref '((3 . a) (5 . b)) 7 'c))
+
+(test* "rassoc-ref" 5
+       (rassoc-ref '((3 . "a") (5 . "b")) "b"))
+(test* "rassoc-ref" 7
+       (rassoc-ref '((3 . "a") (5 . "b")) "c" 7))
+(test* "rassq-ref" 5
+       (rassq-ref '((3 . a) (5 . b)) 'b))
+(test* "rassq-ref" #f
+       (rassq-ref '((3 . a) (5 . b)) 'c))
+(test* "rassv-ref" 'b
+       (rassv-ref '((a . 3) (b . 5)) 5))
+(test* "rassv-ref" #f
+       (rassv-ref '((a . 3) (b . 5)) 7))
+
+(test* "assoc-set!" '(("a" . 3) ("b" . 9))
+       (assoc-set! (list (cons "a" 3) (cons "b" 5)) "b" 9))
+(test* "assoc-set!" '(("c" . 9) ("a" . 3) ("b" . 5))
+       (assoc-set! (list (cons "a" 3) (cons "b" 5)) "c" 9))
+(test* "assq-set!" '((a . 3) (b . 9))
+       (assq-set! (list (cons 'a 3) (cons 'b 5)) 'b 9))
+(test* "assq-set!" '((c . 9) (a . 3) (b . 5))
+       (assq-set! (list (cons 'a 3) (cons 'b 5)) 'c 9))
+(test* "assv-set!" '((3 . a) (5 . c))
+       (assv-set! (list (cons 3 'a) (cons 5 'b)) 5 'c))
+(test* "assv-set!" '((9 . c) (3 . a) (5 . b))
+       (assv-set! (list (cons 3 'a) (cons 5 'b)) 9 'c))
+
 ;;-----------------------------------------------
 (test-section "util.queue")
 (use util.queue)
