@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.103 2001-04-02 01:27:34 shiro Exp $
+ *  $Id: gauche.h,v 1.104 2001-04-03 08:05:13 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -337,12 +337,6 @@ enum {
 extern void Scm_InitBuiltinClass(ScmClass *c, const char *name, ScmModule *m);
 
 extern ScmClass *Scm_ClassOf(ScmObj obj);
-extern ScmObj Scm_ClassName(ScmClass *klass);
-extern ScmObj Scm_ClassCPL(ScmClass *klass);
-extern ScmObj Scm_ClassDirectSupers(ScmClass *klass);
-extern ScmObj Scm_ClassDirectSlots(ScmClass *klass);
-extern ScmObj Scm_ClassSlots(ScmClass *klass);
-extern ScmObj Scm_ClassAccessors(ScmClass *klass);
 extern int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 extern int Scm_TypeP(ScmObj obj, ScmClass *type);
 
@@ -592,8 +586,8 @@ struct ScmCharSetRec {
     unsigned long mask[SCM_CHARSET_MASK_SIZE];
     struct ScmCharSetRange {
         struct ScmCharSetRange *next;
-        ScmChar lo;
-        ScmChar hi;
+        ScmChar lo;             /* lower boundary of range (inclusive) */
+        ScmChar hi;             /* higher boundary of range (inclusive) */
     } *ranges;
 };
 
@@ -604,7 +598,7 @@ extern ScmClass Scm_CharSetClass;
 
 ScmObj Scm_MakeEmptyCharSet(void);
 ScmObj Scm_CopyCharSet(ScmCharSet *src);
-ScmObj Scm_CharSetAdd(ScmCharSet *cs, ScmChar ch);
+ScmObj Scm_CharSetAdd(ScmCharSet *cs, ScmChar from, ScmChar to);
 ScmObj Scm_CharSetAddCstr(ScmCharSet *cs, const char *s, int allowRange);
 ScmObj Scm_CharSetAddStr(ScmCharSet *cs, ScmString *s);
     
