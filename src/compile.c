@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.55 2001-07-11 07:33:00 shirok Exp $
+ *  $Id: compile.c,v 1.56 2001-07-24 18:39:17 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1353,7 +1353,6 @@ static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
     test = SCM_CAR(SCM_CDDR(form));
     body = SCM_CDR(SCM_CDDR(form));
 
-    if (!SCM_PAIRP(binds)) Scm_Error("badly formed `do': %S", form);
     SCM_FOR_EACH(bp, binds) {
         ScmObj bind = SCM_CAR(bp);
         int blen = Scm_Length(bind);
@@ -1365,6 +1364,7 @@ static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
                     (blen == 3)? SCM_CAR(SCM_CDDR(bind)) : SCM_CAR(bind));
         nvars++;
     }
+    if (!SCM_NULLP(binds)) Scm_Error("badly formed `do': %S", form);
     
     if (Scm_Length(test) < 1) Scm_Error("bad test form in `do': %S", form);
     return compile_let_family(form, vars, inits, nvars, BIND_LET,
