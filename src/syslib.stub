@@ -224,10 +224,11 @@
   SCM_RETURN(Scm_MakeInteger(pid));")
 
 (define-cproc sys-getcwd ()
-  "  char p[PATH_MAX+1];
-  if (getcwd(p, PATH_MAX+1) == NULL)
-    Scm_SysError(\"getcwd failed\");
-  SCM_RETURN(Scm_MakeString(p, -1, -1));")
+  "  char *p; ScmObj s;
+  if ((p = getcwd(NULL, -1)) == NULL) Scm_SysError(\"getcwd failed\");
+  s = Scm_MakeString(p, -1, -1);
+  free(p); /* allocated by getcwd() */
+  SCM_RETURN(s);")
 
 (define-cproc sys-getegid ()
   "  SCM_RETURN(Scm_MakeInteger(getegid()));")
