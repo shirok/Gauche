@@ -80,7 +80,8 @@
                          (pass1 (cadr code))
                          (pass1 (cddr code)))
                         ((member op '("LET" "TAILBIND" "VALUES-BIND"))
-                         (pass1 (cddr code)))
+                         (pass1 (caddr code))
+                         (pass1 (cdddr code)))
                         ((equal? op "LAMBDA")
                          (pass1 (caddr code))
                          (pass1 (cdddr code)))
@@ -103,7 +104,8 @@
                       ((member op '("LET" "VALUES-BIND" "TAILBIND"))
                        (print-insn indent op (cdr insn) #f)
                        (print-note (cadr code))
-                       (pass2 (cddr code) (+ indent 1)))
+                       (pass2 (caddr code) (+ indent 1))
+                       (pass2 (cdddr code) indent))
                       ((equal? op "LAMBDA")
                        (print-insn indent op (cdr insn) #f)
                        (print-note (cadr code))
@@ -122,12 +124,9 @@
                       (else
                        (print-insn indent op (cdr insn) #f)
                        (pass2 (cdr code) indent)))
-                (cond ((is-a? (car code) <source-info>)
-                       (print-note (source-info (car code)))
-                       (pass2 (cdr code) indent))
-                      (else
-                       (print-literal indent (car code))
-                       (pass2 (cdr code) indent)))))
+                (begin
+                  (print-literal indent (car code))
+                  (pass2 (cdr code) indent))))
           ))
     
     (define (pass2 code indent)
