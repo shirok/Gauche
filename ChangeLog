@@ -1,3 +1,7 @@
+2002-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in, src/gauche-config.in : install aclocal.m4.
+
 2002-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/*/configure.in : modified to use aclocal.m4
