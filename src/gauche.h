@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.403.2.8 2005-01-10 00:22:39 shirok Exp $
+ *  $Id: gauche.h,v 1.403.2.9 2005-01-11 02:54:09 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -405,7 +405,7 @@ SCM_EXTERN ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2,
 			      ScmObj val3, ScmObj val4);
 
 SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
-					   ScmProcedure *proc);
+					   ScmObj proc);
 SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
 

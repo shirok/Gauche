@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.1.2.6 2005-01-10 08:46:02 shirok Exp $
+;;; $Id: intlib.stub,v 1.1.2.7 2005-01-11 02:54:09 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -126,6 +126,9 @@
     Scm_Error(\"Context must be either one of normal, stmt or tail, but got %S\", ctx);
   }
   SCM_RETURN(Scm_CallSyntaxCompiler(syn, form, env, context));")
+
+(define-cproc make-macro-transformer (name::<symbol> proc)
+  (return "Scm_MakeMacroTransformer"))
 
 (define-cproc call-macro-expander (mac expr env)
   "if (!SCM_MACROP(mac)) Scm_Error(\"macro required, but got %S\", mac);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52.2.3 2005-01-10 16:52:11 shirok Exp $
+ *  $Id: macro.c,v 1.52.2.4 2005-01-11 02:54:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -146,9 +146,48 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 
 /* In the new compiler, macro transformers for hygienic and traditional
  * macros are integrated.
- * The lowest-level macro transformer can be introduced by
+ * The lowest-level macro transformer can be introduced by define-syntax,
+ * let-syntax and letrec-syntax (but not syntax-case or syntax-rules; they
+ * are built on top of it).
+ *
+ *   (define-syntax foo <transformer>)
+ *
+ * Where <transformer> is a procedure that takes one argument, a syntactic
+ * closure.  It must return a syntactic closure as the result of trans
+ * formation.
+ *
+ * From the point of the compiler, define-syntax triggers the following
+ * actions.
+ *
+ *  - evaluate <transformer> in the compiler environment.
+ *  - encapsulate it into <macro> object, and insert it to the compiler
+ *    environment.
+ *  - insert the binding to foo in the runtime toplevel environment.
+ *
+ * Define-macro is also built on top of define-syntax.  Concepturally,
+ * it is transformed as follows.
+ *
+ *  (define-macro foo procedure)
+ *   => (define-syntax foo
+ *        (lambda (x)
+ *          (let ((env  (slot-ref x 'env))
+ *                (form (slot-ref x 'expr)))
+ *            (make-syntactic-closure
+ *              env () (apply procedure form)))))
  */
 
+static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env,
+                              void *data)
+{
+    ScmObj proc = SCM_OBJ(data);
+    SCM_ASSERT(SCM_SYNTACTIC_CLOSURE_P(form));
+    return Scm_Apply(proc, SCM_LIST1(form));
+}
+
+ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmObj proc)
+{
+    return Scm_MakeMacro(name, macro_transform, (void*)proc);
+}
 
 /*===================================================================
  * Traditional Macro
@@ -158,7 +197,8 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 /* TODO: better error message on syntax error (macro invocation with
    bad number of arguments) */
 
-static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env, void *data)
+static ScmObj macro_transform_old(ScmObj self, ScmObj form,
+                                  ScmObj env, void *data)
 {
     ScmObj proc = SCM_OBJ(data);
     SCM_ASSERT(SCM_PAIRP(form));
@@ -167,7 +207,7 @@ static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env, void *data)
 
 ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 {
-    return Scm_MakeMacro(name, macro_transform, (void*)proc);
+    return Scm_MakeMacro(name, macro_transform_old, (void*)proc);
 }
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)

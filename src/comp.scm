@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.18 2005-01-10 16:52:11 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.19 2005-01-11 02:54:09 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -114,28 +114,6 @@
                (make-identifier sym-or-id '() (cenv-module cenv))))
             ((find-lvar (car frames)))
             (else (loop (cdr frames)))))))
-
-;; Syntactic closure (sc)
-;;   The input of hygienic syntactic transformer.  It encapsulates
-;;   the compile-time environment and the input S-expr.
-
-(define (make-sc form cenv) (vector 'sc form cenv))
-(define (sc? sc)        (and (vector? sc) (eq? (vector-ref sc 0) 'sc)))
-
-(define (sc-form sc)    (vector-ref sc 1))
-(define (sc-cenv sc)    (vector-ref sc 2))
-
-(define (sc-apply-op op)
-  (lambda (sc) (make-sc (op (sc-form sc)) (sc-cenv sc))))
-
-(define (sc-pair? sc)        (pair? (sc-form sc)))
-(define (sc-proper-list? sc) (proper-list? (sc-form sc)))
-(define sc-car               (sc-apply-op car))
-(define sc-cdr               (sc-apply-op cdr))
-
-(define (sc->list sc)
-  (let1 env (sc-cenv sc)
-    (map (lambda (elt) (make-sc elt env)) (sc-form sc))))
 
 ;; Pattern variable (pvar)
 ;;   Keeps binding info of pattern variables at the compile time.
@@ -413,14 +391,23 @@
   (pass1/define-macro form form (cenv-module) cenv))
 
 
-(define-pass1-syntax (define-syntax form cenv)
-  (unless (cenv-toplevel? cenv)
-    (error "syntax-error: non-toplevel define-syntax is not allowed:" oform))
-  (match form
-    ((_ name expr)
-     (%insert-binding name (cenv-module cenv)
-                      
-
+;(define-pass1-syntax (define-syntax form cenv)
+;  (unless (cenv-toplevel? cenv)
+;    (error "syntax-error: non-toplevel define-syntax is not allowed:" oform))
+;  (match form
+;    ((_ name expr)
+;     (let1 transformer (eval expr (cenv-module cenv))
+;       (unless (and (procedure? transformer)
+;                    (or (= (ref proc 'required) 1)
+;                        (and (= (ref proc 'required) 0)
+;                             (ref proc 'optional))))
+;         (error "Macro transformer should be a 
+         
+         
+;     (%insert-binding (cenv-module cenv) name
+;                      ))
+;    (else
+;     (error "syntax-error: malformed define-syntax:" form))))
 
 ;; If family ........................................
 
