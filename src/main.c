@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.32 2001-11-16 09:38:58 shirok Exp $
+ *  $Id: main.c,v 1.33 2001-12-07 07:31:30 shirok Exp $
  */
 
 #include <unistd.h>
@@ -63,6 +63,9 @@ void further_options(const char *optarg)
     }
     else if (strcmp(optarg, "no-source-info") == 0) {
         Scm_VM()->compilerFlags |= SCM_COMPILE_NOSOURCE;
+    }
+    else if (strcmp(optarg, "load-verbose") == 0) {
+        Scm_VM()->runtimeFlags |= SCM_LOAD_VERBOSE;
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.21 2001-11-13 10:53:26 shirok Exp $
+ *  $Id: error.c,v 1.22 2001-12-07 07:31:30 shirok Exp $
  */
 
 #include <errno.h>
@@ -207,11 +207,11 @@ void Scm_Error(const char *msg, ...)
     ScmObj e;
     va_list args;
 
-    if (Scm_VM()->errorFlags & SCM_ERROR_BEING_HANDLED) {
+    if (Scm_VM()->runtimeFlags & SCM_ERROR_BEING_HANDLED) {
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
         Scm_VMThrowException(e);
     }
-    Scm_VM()->errorFlags |= SCM_ERROR_BEING_HANDLED;
+    Scm_VM()->runtimeFlags |= SCM_ERROR_BEING_HANDLED;
     
     SCM_PUSH_ERROR_HANDLER {
         ScmObj ostr = Scm_MakeOutputStringPort();

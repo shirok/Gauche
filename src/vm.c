@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.114 2001-10-29 00:35:03 shirok Exp $
+ *  $Id: vm.c,v 1.115 2001-12-07 07:31:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -62,7 +62,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->curerr = SCM_PORT(Scm_Stderr());
 
     v->compilerFlags = 0;
-    v->errorFlags = 0;
+    v->runtimeFlags = 0;
 
     v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
     v->sp = v->stack;
@@ -1753,7 +1753,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
     ScmObj handlers = vm->handlers, hp;
     ScmEscapePoint *ep = vm->escapePoint;
 
-    vm->errorFlags &= ~SCM_ERROR_BEING_HANDLED;
+    vm->runtimeFlags &= ~SCM_ERROR_BEING_HANDLED;
 
     /* Call the active escape handler. */
     if (!ep && !vm->cstack) {

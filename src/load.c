@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.46 2001-12-05 10:33:09 shirok Exp $
+ *  $Id: load.c,v 1.47 2001-12-07 07:31:30 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -221,6 +221,12 @@ ScmObj Scm_VMLoad(ScmString *filename, int errorp)
 
     truename = Scm_FindFile(filename, &load_paths, errorp);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
+    if (Scm_VM()->runtimeFlags & SCM_LOAD_VERBOSE) {
+        int len = Scm_Length(load_history_rec->value);
+        SCM_PUTZ(";;", 2, SCM_CURERR);
+        while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
+        Scm_Printf(SCM_CURERR, "Loading %A...\n", truename);
+    }
     load_next_rec->value = load_paths;
     port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)), "r");
     if (SCM_FALSEP(port)) {
