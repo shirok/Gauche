@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: portutil.scm,v 1.4 2003-01-31 02:34:30 shirok Exp $
+;;;  $Id: portutil.scm,v 1.5 2003-02-08 09:28:43 shirok Exp $
 ;;;
 
 (define-module gauche.portutil
@@ -85,7 +85,7 @@
                       (begin ,writer
                              (loop (+ count 1))))))))))))
 
-(define (do-copy/limitN src dst buf unit limit)
+(define (%do-copy/limitN src dst buf unit limit)
   (with-port-locking src
     (lambda ()
       (with-port-locking dst
