@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.138 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: vm.c,v 1.139 2002-04-21 21:14:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -532,7 +532,7 @@ static void run_loop()
         if (!SCM_VM_INSNP(code)) {
             /* literal object */
             val0 = code;
-            theVM->numVals = 1;
+            vm->numVals = 1;
             continue;
         }
 
