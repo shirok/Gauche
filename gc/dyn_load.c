@@ -65,7 +65,8 @@
    defined below. */
 #define ENABLE_EXPLICIT_INITIALIZATION
 void GC_register_dynamic_libraries(){}
-#endif
+#endif /* !defiend(SUNOS4) && ... && !(defined(FREEBSD)&&defined(__ELF__)) */
+#endif /* (defined(DYNAMIC_LOADING) || ...) && !defined(PCR) */
 
 /* [SK 2002/02/09] Added this API for platforms that isn't supported
    DYNAMIC_LOADING to register the data section of dlopen-ed library
@@ -76,6 +77,9 @@ void GC_register_dlopen_data(GC_PTR start, GC_PTR end)
     GC_add_roots(start, end);
 #endif  /*!DYNAMIC_LOADING*/
 }
+
+#if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE)) \
+    && !defined(PCR)
 
 #include <stdio.h>
 #ifdef SUNOS5DL
