@@ -471,6 +471,15 @@ void GC_register_dynamic_libraries()
 #	endif /* MMAP_STACKS */
 
         limit = start + addr_map[i].pr_size;
+
+        /* NB: The following test sometimes fails to detect data segment
+           under IRIX 6.5, where the data segment does have zero pr_off
+           and Elf header, and sometimes *.so is installed with executable
+           bit on.  The MA_READ|MA_WRITE test above appears to filter out
+           text segments effectively, so I don't see the needs of the
+           following test.
+        */
+#if 0
 	if (addr_map[i].pr_off == 0 && strncmp(start, ELFMAG, 4) == 0) {
 	    /* Discard text segments, i.e. 0-offset mappings against	*/
 	    /* executable files which appear to have ELF headers.	*/
@@ -499,6 +508,7 @@ void GC_register_dynamic_libraries()
 	        }
 	    }
 	}
+#endif
         GC_add_roots_inner(start, limit, TRUE);
       irrelevant: ;
     }
