@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.34 2001-06-01 21:05:10 shirok Exp $
+ *  $Id: port.c,v 1.35 2001-06-02 09:49:28 shirok Exp $
  */
 
 #include <unistd.h>
@@ -38,14 +38,15 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
  */
 static int port_cleanup(ScmPort *port)
 {
-    if (SCM_PORT_OWNER_P(port)) {
-        switch (SCM_PORT_TYPE(port)) {
-        case SCM_PORT_FILE:
+    switch (SCM_PORT_TYPE(port)) {
+    case SCM_PORT_FILE:
+        if (SCM_PORT_OWNER_P(port)) {
             return fclose(port->src.file.fp);
-        case SCM_PORT_PROC:
-            if (port->src.proc.vtable->Close) {
-                return port->src.proc.vtable->Close(SCM_PORT(port));
-            }
+        }
+    case SCM_PORT_PROC:
+        if (port->src.proc.vtable->Close) {
+            port->src.proc.vtable->Flush(SCM_PORT(port));
+            return port->src.proc.vtable->Close(SCM_PORT(port));
         }
     }
     return 0;
@@ -895,31 +896,29 @@ static int bufport_putc(ScmChar c, ScmPort *port)
     return 0;
 }
 
-static int bufport_put_internal(ScmPort *port, const char *buf, int nbytes)
+static int bufport_putz(const char *buf, int siz, ScmPort *port)
 {
     struct bufport *bp = PORT_BUFPORT(port);
-    if (bp->current + nbytes >= bp->bufsiz) {
+    int nwrote = 0;
+    
+    if (siz < 0) siz = strlen(buf);
+    while (bp->current + siz > bp->bufsiz) {
+        /* fill the buffer and flush */
         int first = bp->bufsiz - bp->current;
-        memcpy(bp->buffer+bp->current, buf, first);
+        memcpy(bp->buffer + bp->current, buf + nwrote, first);
+        bp->current = bp->bufsiz;
         bufport_flush_internal(bp);
-        memcpy(bp->buffer, buf+first, nbytes-first);
-        bp->current = nbytes-first;
-    } else {
-        memcpy(bp->buffer+bp->current, buf, nbytes);
-        bp->current += nbytes;
+        siz -= first;
+        nwrote += first;
     }
+    memcpy(bp->buffer + bp->current, buf + nwrote, siz);
+    bp->current += siz;
     return 0;
-}
-
-static int bufport_putz(const char *buf, int len, ScmPort *port)
-{
-    return bufport_put_internal(port, buf, (len < 0? strlen(buf) : len));
 }
 
 static int bufport_puts(ScmString *s, ScmPort *port)
 {
-    return bufport_put_internal(port, SCM_STRING_START(s), 
-                                SCM_STRING_SIZE(s));
+    return bufport_putz(SCM_STRING_START(s), SCM_STRING_SIZE(s), port);
 }
 
 static int bufport_flush(ScmPort *port)
