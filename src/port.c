@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.50 2002-04-25 07:08:54 shirok Exp $
+ *  $Id: port.c,v 1.51 2002-04-25 11:52:02 shirok Exp $
  */
 
 #include <unistd.h>
@@ -274,6 +274,7 @@ ScmObj Scm_MakeBufferedPort(int dir,     /* direction */
         p->src.buf.end = p->src.buf.buffer + bufsiz;
     }
     p->src.buf.size = bufsiz;
+    p->src.buf.mode = SCM_PORT_BUFFER_ALWAYS;
     p->src.buf.filler = filler;
     p->src.buf.flusher = flusher;
     p->src.buf.closer = closer;
@@ -371,6 +372,8 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
  */
 
 /*TODO: allow to extend the port vector. */
+/*TODO: if we make at most one port owns one fd, the vector can be directly
+  indexed by fd. */
 
 #define PORT_VECTOR_SIZE 256    /* need to be 2^n */
 
@@ -475,6 +478,7 @@ void Scm_Putb(ScmByte b, ScmPort *p)
         if (p->src.buf.current >= p->src.buf.end) bufport_flush(p, 1);
         SCM_ASSERT(p->src.buf.current < p->src.buf.end);
         *p->src.buf.current++ = b;
+        if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) bufport_flush(p, 1);
         break;
     case SCM_PORT_OSTR:
         SCM_DSTRING_PUTB(&p->src.ostr, b);
@@ -499,6 +503,11 @@ void Scm_Putc(ScmChar c, ScmPort *p)
         SCM_ASSERT(p->src.buf.current+nb <= p->src.buf.end);
         SCM_CHAR_PUT(p->src.buf.current, c);
         p->src.buf.current += nb;
+        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+            if (c == '\n') bufport_flush(p, nb);
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) {
+            bufport_flush(p, nb);
+        }
         break;
     case SCM_PORT_OSTR:
         SCM_DSTRING_PUTC(&p->src.ostr, c);
@@ -517,6 +526,17 @@ void Scm_Puts(ScmString *s, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         bufport_write(p, SCM_STRING_START(s), SCM_STRING_SIZE(s));
+        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+            const char *cp = p->src.buf.current;
+            while (cp-- > p->src.buf.buffer) {
+                if (*cp == '\n') {
+                    bufport_flush(p, (int)(cp - p->src.buf.current));
+                    break;
+                }
+            }
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) {
+            bufport_flush(p, 0);
+        }
         break;
     case SCM_PORT_OSTR:
         Scm_DStringAdd(&p->src.ostr, s);
@@ -536,6 +556,18 @@ void Scm_Putz(const char *s, int siz, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         bufport_write(p, s, siz);
+        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+            const char *cp = p->src.buf.current;
+            while (cp-- > p->src.buf.buffer) {
+                if (*cp == '\n') {
+                    bufport_flush(p, (int)(cp - p->src.buf.current));
+                    break;
+                }
+            }
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NEVER) {
+            bufport_flush(p, 0);
+        }
+        break;
         break;
     case SCM_PORT_OSTR:
         Scm_DStringPutz(&p->src.ostr, s, siz);
@@ -1041,6 +1073,8 @@ void Scm__InitPort(void)
                                     SCM_PORT_INPUT, 0, TRUE, TRUE);
     scm_stdout = Scm_MakePortWithFd(SCM_MAKE_STR("(stdout)"),
                                     SCM_PORT_OUTPUT, 1, TRUE, TRUE);
+    SCM_PORT(scm_stdout)->src.buf.mode = SCM_PORT_BUFFER_LINE;
     scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(stderr)"),
                                     SCM_PORT_OUTPUT, 2, TRUE, TRUE);
+    SCM_PORT(scm_stderr)->src.buf.mode = SCM_PORT_BUFFER_NEVER;
 }

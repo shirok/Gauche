@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.141 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: vm.c,v 1.142 2002-04-25 11:52:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1960,6 +1960,8 @@ static void report_error(ScmObj e)
             Scm_Printf(SCM_PORT(err), "\n");
         }
     }
+    /* NB: stderr is autoflushed by default, but in case err is replaced
+       by some other port, we explicitly flush it. */
     SCM_FLUSH(err);
 }
 

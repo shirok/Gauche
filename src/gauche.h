@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.238 2002-04-25 07:08:54 shirok Exp $
+ *  $Id: gauche.h,v 1.239 2002-04-25 11:52:02 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1098,6 +1098,13 @@ enum ScmPortType {
     SCM_PORT_ISTR,              /* input string port */
     SCM_PORT_OSTR,              /* output string port */
     SCM_PORT_PROC               /* virtual port */
+};
+
+/* Port buffering mode */
+enum ScmPortBufferMode {
+    SCM_PORT_BUFFER_ALWAYS,     /* buffers as much as possible */
+    SCM_PORT_BUFFER_LINE,       /* flush the buffer for each line */
+    SCM_PORT_BUFFER_NEVER       /* flush the buffer for every output */
 };
 
 #if 0 /* not implemented */
