@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.27 2002-05-12 06:35:20 shirok Exp $
+ *  $Id: symbol.c,v 1.28 2002-05-12 10:39:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -179,6 +179,20 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     g->getter = NULL;
     g->setter = NULL;
     return SCM_OBJ(g);
+}
+
+ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module)
+{
+    ScmGloc *g = SCM_GLOC(Scm_MakeGloc(sym, module));
+    g->setter = Scm_GlocConstSetter;
+    return SCM_OBJ(g);
+}
+
+ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)
+{
+    Scm_Error("cannot change constant value of %S::%S",
+              gloc->module->name, gloc->name);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /*

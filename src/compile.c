@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.78 2002-05-12 06:35:20 shirok Exp $
+ *  $Id: compile.c,v 1.79 2002-05-12 10:39:42 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -501,10 +501,17 @@ static int check_valid_lambda_args(ScmObj args)
 
 /*------------------------------------------------------------------
  * DEFINE (toplevel define)
+ * DEFINE-CONSTANT
  * DEFINE-IN-MODULE
  *   This should never called for internal defines (they are handled by
  *   compile_body).
  */
+enum {
+    DEFINE_TYPE_DEFINE,
+    DEFINE_TYPE_CONST,
+    DEFINE_TYPE_IN_MODULE
+};
+
 static ScmObj compile_define(ScmObj form,
                              ScmObj env,
                              int ctx,
@@ -513,7 +520,7 @@ static ScmObj compile_define(ScmObj form,
     ScmObj var, val, tail = SCM_CDR(form);
     ScmObj code = SCM_NIL, codetail = SCM_NIL;
     ScmModule *module = NULL;
-    int in_module_p = (data != NULL);
+    int in_module_p = (data == (void*)DEFINE_TYPE_IN_MODULE);
 
     if (in_module_p) {
         ScmObj mod;
@@ -546,7 +553,11 @@ static ScmObj compile_define(ScmObj form,
     }
 
     ADDCODE(val);
-    ADDCODE1(SCM_VM_INSN(SCM_VM_DEFINE));
+    if (data == (void*)DEFINE_TYPE_CONST) {
+        ADDCODE1(SCM_VM_INSN(SCM_VM_DEFINE_CONST));
+    } else {
+        ADDCODE1(SCM_VM_INSN(SCM_VM_DEFINE));
+    }
     ADDCODE1(var);
     return code;
 }
@@ -555,14 +566,21 @@ static ScmSyntax syntax_define = {
     { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
     SCM_SYMBOL(SCM_SYM_DEFINE),
     compile_define,
-    NULL
+    (void*)DEFINE_TYPE_DEFINE
+};
+
+static ScmSyntax syntax_define_constant = {
+    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    SCM_SYMBOL(SCM_SYM_DEFINE_CONSTANT),
+    compile_define,
+    (void*)DEFINE_TYPE_CONST
 };
 
 static ScmSyntax syntax_define_in_module = {
     { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
     SCM_SYMBOL(SCM_SYM_DEFINE_IN_MODULE),
     compile_define,
-    (void*)1
+    (void*)DEFINE_TYPE_IN_MODULE
 };
 
 /*------------------------------------------------------------------
@@ -1891,6 +1909,7 @@ void Scm__InitCompiler(void)
      * Just leave that until I find a better way.
      */
     DEFSYN_N(SCM_SYM_DEFINE,       syntax_define);
+    DEFSYN_G(SCM_SYM_DEFINE_CONSTANT,  syntax_define_constant);
     DEFSYN_G(SCM_SYM_DEFINE_IN_MODULE, syntax_define_in_module);
     DEFSYN_N(SCM_SYM_QUOTE,        syntax_quote);
     DEFSYN_N(SCM_SYM_QUASIQUOTE,   syntax_quasiquote);

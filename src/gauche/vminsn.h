@@ -1,7 +1,7 @@
 /*
  * vminsn.h - Virtual machine instruction definition
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.27 2002-02-12 19:51:37 shirok Exp $
+ *  $Id: vminsn.h,v 1.28 2002-05-12 10:39:45 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -80,6 +80,7 @@ DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
  *  are recognized and eliminated by the compiling process.
  */
 DEFINSN(SCM_VM_DEFINE, "DEFINE", 0)
+DEFINSN(SCM_VM_DEFINE_CONST, "DEFINE-CONST", 0)
 
 /* LAMBDA(NARGS,RESTARG) <ARGLIST> <CODE>
  *

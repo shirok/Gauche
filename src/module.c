@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.26 2002-05-12 06:35:20 shirok Exp $
+ *  $Id: module.c,v 1.27 2002-05-12 10:39:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -121,10 +121,37 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
     ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
     if (g) {
+        if (g->setter == Scm_GlocConstSetter) {
+            /* TODO: warning interface */
+            Scm_Printf(SCM_CURERR, "Warning: redefining constant %S::%S",
+                       g->module, g->name);
+            g->setter = NULL;
+        }
         SCM_GLOC_SET(g, value);
     } else {
         g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         SCM_GLOC_SET(g, value);
+        Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
+    }
+    return SCM_OBJ(g);
+}
+
+ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
+{
+    ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
+    /* NB: this function bypasses check of gloc setter */
+    if (g) {
+        if (g->setter == Scm_GlocConstSetter
+            && g->value != value) {
+            /* TODO: warning interface */
+            Scm_Printf(SCM_CURERR, "Warning: redefining constant %S::%S\n",
+                       g->module->name, g->name);
+        }
+        g->setter = Scm_GlocConstSetter;
+        g->value  = value;
+    } else {
+        g = SCM_GLOC(Scm_MakeConstGloc(symbol, module));
+        g->value = value;
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
     return SCM_OBJ(g);

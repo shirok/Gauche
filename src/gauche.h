@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.247 2002-05-12 06:35:20 shirok Exp $
+ *  $Id: gauche.h,v 1.248 2002-05-12 10:39:42 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1377,6 +1377,8 @@ SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name);
 SCM_EXTERN ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol);
 SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,
 			     ScmObj value);
+SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol,
+                                  ScmObj value);
 
 SCM_EXTERN ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);
 SCM_EXTERN ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
@@ -1444,7 +1446,8 @@ struct ScmGlocRec {
     ((gloc)->setter? (gloc)->setter((gloc), (val)) : ((gloc)->value = (val)))
 
 SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
-SCM_EXTERN void Scm__GlocPrint(ScmObj obj, ScmPort *port, int mode);
+SCM_EXTERN ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module);
+SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
 
 SCM_CLASS_DECL(Scm_GlocClass);
 #define SCM_CLASS_GLOC          (&Scm_GlocClass)
