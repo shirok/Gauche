@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.19 2001-10-30 09:00:30 shirok Exp $
+ *  $Id: hash.c,v 1.20 2001-11-19 11:27:51 shirok Exp $
  */
 
 #include "gauche.h"
@@ -294,53 +294,6 @@ static int string_cmp(ScmObj key, ScmHashEntry *e)
 }
 
 /*
- * Accessor functions for small integer
- */
-static ScmHashEntry *smallint_access(ScmHashTable *table,
-                                     ScmObj key, int mode, ScmObj value)
-{
-    unsigned long hashval, index;
-    int ikey;
-    ScmHashEntry *e, *p;
-
-    if (!SCM_INTP(key)) {
-        Scm_Abort("Got non-integer key to the small integer hashtable");
-    }
-    ikey = SCM_INT_VALUE(key);
-    SMALL_INT_HASH(hashval, ikey);
-    index = HASH2INDEX(table, hashval);
-    
-    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
-        if (e->key == key) {
-            if (mode == HASH_FIND || mode == HASH_ADD) return e;
-            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
-            else {
-                e->value = value;
-                return e;
-            }
-        }
-    }
-
-    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
-    else return insert_entry(table, key, value, index);
-}
-
-static unsigned long smallint_hash(ScmObj obj)
-{
-    unsigned long hashval;
-    int ikey;
-    if (!SCM_INTP(obj)) return 0;
-    ikey = SCM_INT_VALUE(obj);
-    SMALL_INT_HASH(hashval, ikey);
-    return hashval;
-}
-
-static int smallint_cmp(ScmObj key, ScmHashEntry *e)
-{
-    return (key == e->key ? 0 : -1);
-}
-
-/*
  * Accessor function for general case
  *    (hashfn and cmpfn are given by user)
  */
@@ -439,7 +392,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
         z->hashfn = address_hash;
         z->cmpfn = address_cmp;
     } else if (hashfn == (ScmHashProc)SCM_HASH_EQV) {
-        z->type = SCM_HASH_EQUAL;
+        z->type = SCM_HASH_EQV;
         z->accessfn = general_access;
         z->hashfn = eqv_hash;
         z->cmpfn =  eqv_cmp;
@@ -453,11 +406,6 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
         z->accessfn = string_access;
         z->hashfn = string_hash;
         z->cmpfn =  string_cmp;
-    } else if (hashfn == (ScmHashProc)SCM_HASH_SMALLINT) {
-        z->type = SCM_HASH_SMALLINT;
-        z->accessfn = smallint_access;
-        z->hashfn = smallint_hash;
-        z->cmpfn = smallint_cmp;
     } else {
         z->type = SCM_HASH_GENERAL;
         z->accessfn = general_access;
