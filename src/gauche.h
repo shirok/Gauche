@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.55 2001-03-05 04:01:16 shiro Exp $
+ *  $Id: gauche.h,v 1.56 2001-03-05 04:24:14 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -465,7 +465,8 @@ extern ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode);
 
 extern ScmObj Scm_TopologicalSort(ScmObj edges);
 extern ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
-                                 ScmObj parents);
+                                 ScmObj (*get_super)(ScmObj, void*),
+                                 void* data);
 extern ScmObj Scm_Union(ScmObj list1, ScmObj list2);
 extern ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
 
