@@ -1,3 +1,17 @@
+2001-03-19  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.6
+	* src/gauche.h, src/proc.c, src/class.c: changed procedure
+	  structure.  there's no longer separate classes for closure and
+	  subr; they're <procuedure>.  "type" field in ScmProcedure structure
+	  discriminates closures, subrs, and other applicable metaobjects.
+	* src/vm.c: method dispatching code is embedded in VM loop.  Not
+	  quite working, but it's on the way.
+	* src/gauche-init.scm: added code to load ~/.gaucherc if exists.
+	* src/list.c: added Scm_ArrayToList.
+	* src/vector.c: rewrote Scm_VectorToList using Scm_ArrayToList.
+	* src/system.c (Scm_NormalizePathname): fix bug in expanding "~".
+
 2001-03-18  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.5
