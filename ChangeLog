@@ -1,3 +1,7 @@
+2004-10-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (byte-ready?): added.
+
 2004-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/port.c : fixed return type of vtable entries.
