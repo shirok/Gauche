@@ -1,7 +1,7 @@
 /*
  * gauche.h - Gauche scheme system header
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, ditribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.15 2001-01-30 06:30:23 shiro Exp $
+ *  $Id: gauche.h,v 1.16 2001-01-31 07:29:13 shiro Exp $
  */
 
 #ifndef GAUCHE_H

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.6 2001-01-25 09:14:28 shiro Exp $
+ *  $Id: vminsn.h,v 1.7 2001-01-31 07:29:13 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -30,11 +30,17 @@ DEFINSN(SCM_VM_NOP, "NOP", 0)
  */
 DEFINSN(SCM_VM_PUSH, "PUSH", 0)
 
-/* PRE-CALL
+/* PRE-CALL <preparation>
  *
- *  Prepair for a call.   Push header part of argument frame.
+ *  Prepair for a normal call.
  */
-DEFINSN(SCM_VM_PRE_CALL, "PRE-CALL", 0)
+DEFINSN(SCM_VM_PRE_CALL, "PRE-CALL", 1)
+
+/* PRE-TAIL
+ *
+ *  Prepair for a tail call.
+ */
+DEFINSN(SCM_VM_PRE_TAIL, "PRE-TAIL", 0)
 
 /* CALL(NARGS)
  *

@@ -1,7 +1,7 @@
 /*
  * char.c - character operations
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, ditribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.2 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: char.c,v 1.3 2001-01-31 07:29:13 shiro Exp $
  */
 
 #include "gauche.h"

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.9 2001-01-25 09:14:27 shiro Exp $
+ *  $Id: vm.h,v 1.10 2001-01-31 07:29:13 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -42,12 +42,14 @@
  */
 
 typedef struct ScmEnvFrameRec {
-    ScmObj *sp;                 /* saved sp */
     struct ScmEnvFrameRec *up;  /* static link */
     ScmObj info;                /* source code info for debug */
     int size;                   /* size of the frame */
     ScmObj data[1];             /* variable length */
 } ScmEnvFrame;
+
+#define ENV_HDR_SIZE   3        /* envframe header size */
+#define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
 
 /*
  * Continuation
@@ -65,10 +67,12 @@ typedef struct ScmEnvFrameRec {
 
 typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
-    ScmObj *sp;                   /* sp to be recovered */
     ScmEnvFrame *env;             /* current environment */
     ScmObj pc;                    /* next PC */
+    int size;                     /* size of extra data */
 } ScmContFrame;
+
+#define CONT_FRAME_SIZE  4
 
 extern void Scm_CallCC(ScmObj body);
 

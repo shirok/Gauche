@@ -1,0 +1,18 @@
+
+all : gc/libgc.a src/gosh
+
+gc/libgc.a :
+	cd gc; $(MAKE)
+
+src/gosh : gc/libgc.a
+	cd src; $(MAKE)
+
+clean :
+	cd gc; $(MAKE) clean
+	cd src; $(MAKE) clean
+
+allclean : clean
+	rm -rf Makefile src/Makefile config.cache config.log config.status
+
+install :
+	cd src; $(MAKE) install

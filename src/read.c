@@ -1,7 +1,7 @@
 /*
  * read.c - reader
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, ditribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.5 2001-01-19 20:09:53 shiro Exp $
+ *  $Id: read.c,v 1.6 2001-01-31 07:29:13 shiro Exp $
  */
 
 #include <stdio.h>

@@ -1,7 +1,7 @@
 /*
  * compile.c - compile the given form to an intermediate form
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, ditribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.10 2001-01-25 09:14:27 shiro Exp $
+ *  $Id: compile.c,v 1.11 2001-01-31 07:29:13 shiro Exp $
  */
 
 #include "gauche.h"
@@ -215,8 +215,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
         {
             ScmObj ap;
             int nargs = 0;
-
-            SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_PRE_CALL));
+            
             SCM_FOR_EACH(ap, SCM_CDR(form)) {
                 ScmObj arg = compile_int(SCM_CAR(ap), env, SCM_COMPILE_NORMAL);
                 SCM_APPEND(code, codetail, arg);
@@ -230,6 +229,12 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
                         SCM_VM_INSN1(SCM_VM_CALL, nargs));
             SCM_APPEND1(code, codetail, Scm_MakeSourceInfo(form, NULL));
+
+            if (ctx == SCM_COMPILE_TAIL) {
+                code = Scm_Cons(SCM_VM_INSN(SCM_VM_PRE_TAIL), code);
+            } else {
+                code = SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL), code);
+            }
             return code;
         }
     }
@@ -888,7 +893,8 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     }
     
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
-    SCM_APPEND(code, codetail, body_compiler(body, newenv, ctx));
+/*    SCM_APPEND(code, codetail, body_compiler(body, newenv, ctx));*/
+    SCM_APPEND(code, codetail, body_compiler(body, newenv, SCM_COMPILE_NORMAL));
     SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPENV));
     return code;
 }
