@@ -16,7 +16,7 @@ GENERATED = Makefile netlib.c net_head.c net_tail.c
 all : $(LIBFILES)
 
 libnet.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) libnet.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) libnet.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 netlib.c : netlib.stub
 

@@ -16,7 +16,7 @@ GENERATED = Makefile thrlib.c threads_head.c threads_tail.c
 all : $(LIBFILES)
 
 threads.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) threads.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) threads.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 thrlib.c : thrlib.stub
 

@@ -16,7 +16,7 @@ GENERATED = Makefile termiolib.c termios_head.c termios_tail.c
 all : $(LIBFILES)
 
 termios.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) termios.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) termios.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 termiolib.c : termiolib.stub
 

@@ -16,7 +16,7 @@ GENERATED = Makefile syslog.c syslog_head.c syslog_tail.c
 all : $(LIBFILES)
 
 syslog.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) syslog.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) syslog.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 syslog.c : syslog.stub
 

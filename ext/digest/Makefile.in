@@ -16,14 +16,14 @@ all : $(LIBFILES)
 md5_OBJECTS = md5_head.$(OBJEXT) md5.$(OBJEXT) md5c.$(OBJEXT) md5_tail.$(OBJEXT)
 
 md5.$(SOEXT) : $(md5_OBJECTS) 
-	$(MODLINK) md5.$(SOEXT) $(md5_OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) md5.$(SOEXT) $(md5_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 md5.c : md5.stub
 
 sha1_OBJECTS = sha1_head.$(OBJEXT) sha1.$(OBJEXT) sha.$(OBJEXT) sha1_tail.$(OBJEXT)
 
 sha1.$(SOEXT) : $(sha1_OBJECTS) 
-	$(MODLINK) sha1.$(SOEXT) $(sha1_OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) sha1.$(SOEXT) $(sha1_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 sha1.c : sha1.stub
 

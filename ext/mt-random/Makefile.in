@@ -18,7 +18,8 @@ EXTRA_INCLUDES = -I$(srcdir)/../uvector
 all : $(LIBFILES)
 
 mt-random.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) mt-random.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) 
+	$(MODLINK) mt-random.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
+
 mt-lib.c : mt-lib.stub
 
 mt-random_head.c mt-random_tail.c :

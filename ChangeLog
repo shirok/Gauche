@@ -1,5 +1,9 @@
 2003-09-13  Shiro Kawai  <shiro@acm.org>
 
+	* ext/*/Makefile.in : added missing $(LIBS) in the link rule.
+	  This caused hang in the test of ext/threads during pthrad_cond_wait
+	  (see http://sources.redhat.com/ml/libc-hacker/2003-09/msg00002.html)
+	
 	* lib/gauche/libutil.scm, lib/gauche/reload.scm : added libutuil.
 	* src/gauche-init.scm : set autoloads for gauche.libutil.
 

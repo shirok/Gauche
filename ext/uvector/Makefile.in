@@ -19,7 +19,7 @@ uvector_OBJECTS = uvector_head.$(OBJEXT) uvector.$(OBJEXT) uvutil.$(OBJEXT) \
                   uvinit.$(OBJEXT) uvlib.$(OBJEXT) uvector_tail.$(OBJEXT)
 
 libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS) 
-	$(MODLINK) libgauche-uvector.$(SOEXT) $(uvector_OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) libgauche-uvector.$(SOEXT) $(uvector_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 uvector_head.c uvector_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension uvector

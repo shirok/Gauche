@@ -16,7 +16,7 @@ GENERATED = Makefile fcntlib.c fcntl_head.c fcntl_tail.c
 all : $(LIBFILES)
 
 fcntl.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) fcntl.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE)
+	$(MODLINK) fcntl.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 fcntlib.c : fcntlib.stub
 
