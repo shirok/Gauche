@@ -12,12 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: csv.scm,v 1.2 2001-09-21 09:58:33 shirok Exp $
+;;;  $Id: csv.scm,v 1.3 2001-09-24 05:51:38 shirok Exp $
 ;;;
 
 (define-module text.csv
   (use srfi-1)
+  (use srfi-11)
   (use srfi-13)
+  (use gauche.regexp)
   (export <csv>
           make-csv-reader
           make-csv-writer)
@@ -66,21 +68,19 @@
       (cond ((eof-object? line) (error "unterminated quoted field"))
             ((string-null? line)
              (quoted (read-line port) fields (cons "\n" partial)))
-            ((string-index line #\")
-             => (lambda (i)
-                  (let ((this (string-take line i))
-                        (next (string-drop line (+ i 1))))
-                    (if (string-prefix? "\"" next)
-                        (quoted (string-drop next 1) fields
-                                (list* "\"" this partial))
-                        (let ((j (string-index next separator))
-                              (f (string-concatenate-reverse
-                                  (cons this partial))))
-                          (if j
-                              (start (string-drop next (+ j 1)) (cons f fields))
-                              (reverse!(cons f fields))))))))
             (else
-             (quoted (read-line port) fields (list*  "\n" line partial)))))
+             (receive (this next) (string-scan line #\" 'both)
+               (if this
+                   (if (string-prefix? "\"" next)
+                       (quoted (string-drop next 1) fields
+                               (list* "\"" this partial))
+                       (let ((next-next (string-scan next separator 'after))
+                             (f (string-concatenate-reverse (cons this partial))))
+                         (if next-next
+                             (start next-next (cons f fields))
+                             (reverse!(cons f fields)))))
+                   (quoted (read-line port) fields
+                           (list*  "\n" line partial)))))))
     (let ((line (read-line port)))
       (if (eof-object? line)
           line
