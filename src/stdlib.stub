@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.66 2001-09-16 23:01:12 shirok Exp $
+;;; $Id: stdlib.stub,v 1.67 2001-09-21 10:01:32 shirok Exp $
 ;;;
 
 
@@ -910,8 +910,15 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
         if (ignerr) *ignerr = TRUE;
         return binmode? \"cb\" : \"c\";
       }
+    } else if (SCM_FALSEP(if_exists)) {
+      if (if_does_not_exist == key_create) {
+        if (ignerr) *ignerr = TRUE;
+        return binmode? \"cb\" : \"c\";
+      } else {
+        return binmode? \"Wb\" : \"W\";
+      }
     } else {
-      Scm_Error(\"argument for :if-exists must be either :supersede, :append or :error, but got %S\", if_exists);
+      Scm_Error(\"argument for :if-exists must be either :supersede, :append, :error or #f, but got %S\", if_exists);
     }
   }
   return NULL; /* dummy */
