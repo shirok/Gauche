@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.81 2001-05-19 11:36:24 shirok Exp $
+;;; $Id: extlib.stub,v 1.82 2001-05-22 20:27:59 shirok Exp $
 ;;;
 
 "
@@ -710,6 +710,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc all-modules ()
   "  SCM_RETURN(Scm_AllModules());")
+
+(define-cproc %export-all ()
+  "  SCM_RETURN(Scm_ExportAll(SCM_CURRENT_MODULE()));")
 
 ;;
 ;; Gauche extentions
