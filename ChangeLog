@@ -1,3 +1,12 @@
+2001-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.11
+	* src/port.c, src/gauche/portmacros.h : added code to input string
+	  port to handle the case that rest bytes consist an incomplete
+	  character.
+	* src/string.c : disallow string-ref on an incomplete string.
+	* test/euc-jp.scm : added tests for incomplete strings
+
 2001-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c : revised for handling of incomplete string.
