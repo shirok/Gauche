@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.97 2003-10-23 14:06:01 shirok Exp $
+ *  $Id: class.c,v 1.98 2003-10-26 00:26:06 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -47,6 +47,7 @@ static void generic_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void next_method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void slot_accessor_print(ScmObj, ScmPort *, ScmWriteContext*);
+static void accessor_method_print(ScmObj, ScmPort *, ScmWriteContext*);
 
 static ScmObj class_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
@@ -83,6 +84,13 @@ ScmClass *Scm_ObjectCPL[] = {
     NULL
 };
 
+static ScmClass *Scm_MethodCPL[] = {
+    SCM_CLASS_STATIC_PTR(Scm_MethodClass),
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
 SCM_DEFINE_ABSTRACT_CLASS(Scm_TopClass, NULL);
 SCM_DEFINE_ABSTRACT_CLASS(Scm_CollectionClass, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_ABSTRACT_CLASS(Scm_SequenceClass, SCM_CLASS_COLLECTION_CPL);
@@ -106,20 +114,15 @@ SCM_DEFINE_BASE_CLASS(Scm_MethodClass, ScmMethod,
                       method_print, NULL, NULL, method_allocate,
                       SCM_CLASS_OBJECT_CPL);
 
-#if 0
-static ScmClass *Scm_MetaclassCPL[] = {
-    SCM_CLASS_STATIC_PTR(Scm_ClassClass),
-    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass),
-    NULL
-};
-#endif
-
 /* Internally used classes */
 SCM_DEFINE_BUILTIN_CLASS(Scm_SlotAccessorClass,
                          slot_accessor_print, NULL, NULL,
                          slot_accessor_allocate,
                          SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_AccessorMethodClass,
+                         accessor_method_print, NULL, NULL,
+                         method_allocate,
+                         Scm_MethodCPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, next_method_print);
 
 /* Builtin generic functions */
@@ -127,10 +130,12 @@ SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericAllocate, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericInitialize, builtin_initialize, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericAddMethod, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericDeleteMethod, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeCPL, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeApplicableMethods, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericUpdateDirectMethod, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericApplyGeneric, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericMethodMoreSpecificP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
@@ -156,6 +161,23 @@ static ScmObj sym_builtin        = SCM_FALSE;
 static ScmObj sym_abstract       = SCM_FALSE;
 static ScmObj sym_base           = SCM_FALSE;
 static ScmObj sym_scheme         = SCM_FALSE;
+
+/* A global lock to serialize class redefinition.  We need it since
+   class redefinition is not a local effect---it propagates through
+   its subclasses.  So it is pretty difficult to guarantee consistency
+   if two threads enter the class redefinition, even if they redefine
+   different classes.
+   This lock works as a recursive lock.  Scm_StartClassRedefinition
+   increments the lock count, and Scm_CommitClassRedefinition decrements it.
+*/
+static struct {
+    ScmVM             *owner;   /* thread that grabs the lock, or NULL */
+    int               count;
+    ScmInternalMutex  mutex;
+    ScmInternalCond   cv;
+} class_redefinition_lock = { NULL, -1 }; /* we initialize other than zero,
+                                             to ensure this sturcture is
+                                             placed in the data area */
 
 /*=====================================================================
  * Auxiliary utilities
@@ -349,6 +371,8 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->slots = SCM_NIL;
     instance->directSubclasses = SCM_NIL;
     instance->directMethods = SCM_NIL;
+    instance->initargs = SCM_NIL;
+    instance->module = SCM_FALSE;
     instance->redefined = SCM_FALSE;
     (void)SCM_INTERNAL_MUTEX_INIT(instance->mutex);
     (void)SCM_INTERNAL_COND_INIT(instance->cv);
@@ -569,6 +593,20 @@ static ScmObj class_category(ScmClass *klass)
     }
 }
 
+static ScmObj class_initargs(ScmClass *klass)
+{
+    return klass->initargs;
+}
+
+static void class_initargs_set(ScmClass *klass, ScmObj val)
+{
+    int len = Scm_Length(val);
+    if (len < 0 || len%2 != 0) {
+        Scm_Error("class-initargs must be a list of even number of elements, but got %S", val);
+    }
+    klass->initargs = val;
+}
+
 /* 
  * The following slots should only be modified by a special MT-safe procedures.
  */
@@ -724,33 +762,123 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
  * Internal procedures for class redefinition
  */
 
+/* global lock manipulation */
+static void lock_class_redefinition(ScmVM *vm)
+{
+    ScmVM *stolefrom = NULL;
+    if (class_redefinition_lock.owner == vm) {
+        class_redefinition_lock.count++;
+    } else {
+        (void)SCM_INTERNAL_MUTEX_LOCK(class_redefinition_lock.mutex);
+        while (class_redefinition_lock.owner != vm) {
+            if (class_redefinition_lock.owner == NULL) {
+                class_redefinition_lock.owner = vm;
+            } else if (class_redefinition_lock.owner->state
+                       == SCM_VM_TERMINATED) {
+                stolefrom = class_redefinition_lock.owner;
+                class_redefinition_lock.owner = vm;
+            } else {
+                (void)SCM_INTERNAL_COND_WAIT(class_redefinition_lock.cv,
+                                             class_redefinition_lock.mutex);
+            }
+        }
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(class_redefinition_lock.mutex);
+        if (stolefrom) {
+            Scm_Warn("a thread holding class redefinition lock has been terminated: %S", stolefrom);
+        }
+        class_redefinition_lock.count = 0;
+    }
+}
+
+static void unlock_class_redefinition(ScmVM *vm)
+{
+    if (class_redefinition_lock.owner != vm) return;
+    if (--class_redefinition_lock.count <= 0) {
+        (void)SCM_INTERNAL_COND_BROADCAST(class_redefinition_lock.cv);
+    }
+}
+
 /* %start-class-redefinition klass */
-int Scm_StartClassRedefinition(ScmClass *klass)
+void Scm_StartClassRedefinition(ScmClass *klass)
 {
     int success = FALSE;
+    ScmVM *vm;
+    
     if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
         Scm_Error("cannot redefine class %S, which is not a Scheme-defined class", klass);
     }
+    vm = Scm_VM();
+
+    /* First, acquire the global lock. */
+    lock_class_redefinition(vm);
+    
+    /* Mark this class to be redefined. */
     (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
     if (SCM_FALSEP(klass->redefined)) {
-        klass->redefined = SCM_OBJ(Scm_VM());
+        klass->redefined = SCM_OBJ(vm);
         success = TRUE;
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
-    return success;
+
+    if (!success) {
+        unlock_class_redefinition(vm);
+        Scm_Error("class %S seems abandoned during class redefinition", klass);
+    }
 }
 
-/* %commit-class-redefinition klass */
-void Scm_CommitClassRedefinition(ScmClass *klass, ScmClass *newklass)
+/* %commit-class-redefinition klass newklass */
+void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newklass)
 {
-    if (SCM_CLASS_CATEGORY(klass) == SCM_CLASS_SCHEME) {
-        (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
-        if (SCM_EQ(klass->redefined, SCM_OBJ(Scm_VM()))) {
-            klass->redefined = SCM_OBJ(newklass);
-            (void)SCM_INTERNAL_COND_BROADCAST(klass->cv);
-        }
-        (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
+    ScmVM *vm;
+    
+    if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) return;
+    if (!SCM_FALSEP(newklass)&&!SCM_CLASSP(newklass)) {
+        Scm_Error("class or #f required, but got %S", newklass);
     }
+    
+    vm = Scm_VM();
+
+    /* Release the lock of the class.
+       We execute this regardless of class_redefinition_lock.owner.
+       Theoretically, this procedure shouldn't be called unless the thread
+       owns global class_redefinition_lock.  However, we don't require it,
+       so that this procedure can be used for a program to exit from
+       obscure state. */
+    (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
+    if (SCM_EQ(klass->redefined, SCM_OBJ(vm))) {
+        klass->redefined = newklass;
+        (void)SCM_INTERNAL_COND_BROADCAST(klass->cv);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
+
+    /* Decrement the recursive global lock. */
+    unlock_class_redefinition(vm);
+}
+
+/* %check-class-binding name module
+   Return #t if name is bound in module to a class.
+   This can't be implemented in Scheme, since the class we're looking for
+   may be set to autoload, and this function is invoked during the autoload
+   process---in which case, the class hasn't defined yet, and referencing
+   the value in Scheme triggers recursive autoload that is an error. */
+int Scm_CheckClassBinding(ScmObj name, ScmModule *module)
+{
+    ScmObj v;
+    if (!SCM_SYMBOLP(name)) return FALSE;
+    v = Scm_SymbolValue(module, SCM_SYMBOL(name));
+    return SCM_CLASSP(v);
+}
+
+/* %replace-class-binding! klass newklass
+   Called when a descendant of klass is redefined.  If klass has a global
+   binding, replace it to newklass. */
+void Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newklass)
+{
+    if (!SCM_MODULEP(klass->module)) return;
+    if (!SCM_SYMBOLP(klass->name)) return;
+    Scm_Define(SCM_MODULE(klass->module),
+               SCM_SYMBOL(klass->name),
+               SCM_OBJ(newklass));
 }
 
 /* %add-direct-subclass! super sub */
@@ -759,8 +887,11 @@ void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub)
     if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
         ScmObj p = Scm_Cons(SCM_OBJ(sub), SCM_NIL);
         (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
-        SCM_SET_CDR(p, super->directSubclasses);
-        super->directSubclasses = p;
+        /* avoid duplication */
+        if (SCM_FALSEP(Scm_Memq(super->directSubclasses, SCM_OBJ(sub)))) {
+            SCM_SET_CDR(p, super->directSubclasses);
+            super->directSubclasses = p;
+        }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
     }
 }
@@ -782,8 +913,11 @@ void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m)
     if (SCM_CLASS_CATEGORY(super) == SCM_CLASS_SCHEME) {
         ScmObj p = Scm_Cons(SCM_OBJ(m), SCM_NIL);
         (void)SCM_INTERNAL_MUTEX_LOCK(super->mutex);
-        SCM_SET_CDR(p, super->directMethods);
-        super->directMethods = p;
+        /* avoid duplication */
+        if (SCM_FALSEP(Scm_Memq(super->directMethods, SCM_OBJ(m)))) {
+            SCM_SET_CDR(p, super->directMethods);
+            super->directMethods = p;
+        }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(super->mutex);
     }
 }
@@ -1309,6 +1443,7 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     instance->methods = SCM_NIL;
     instance->fallback = Scm_NoNextMethod;
     instance->data = NULL;
+    (void)SCM_INTERNAL_MUTEX_INIT(instance->lock);
     return SCM_OBJ(instance);
 }
 
@@ -1681,13 +1816,57 @@ static void method_specializers_set(ScmMethod *m, ScmObj val)
         m->specializers = class_list_to_array(val, len);
 }
 
+/* update-direct-method! method old-class new-class
+ *   To be called during class redefinition, and swaps reference of
+ *   old-class for new-class.
+ *
+ *   This procedure swaps the pointer "in-place", so as far as the pointer
+ *   arithmetic is atomic, we won't have a race condition.  Class
+ *   redefinition is serialized inside class-redefinition, so we won't
+ *   have the case that more than one thread call this procedure with
+ *   the same OLD pointer.  It is possible that more than one thread call
+ *   this procedure on the same method simultaneously, but the OLD pointer
+ *   should differ, and it won't do any harm for them to run concurrently.
+ *
+ *   Note that if we implement this in Scheme, we need a mutex to lock the
+ *   specializer array.
+ */
+ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *new)
+{
+    int i, rec = SCM_PROCEDURE_REQUIRED(m);
+    ScmClass **sp = m->specializers;
+    for (i=0; i<rec; i++) {
+        if (sp[i] == old) sp[i] = new;
+    }
+    return SCM_OBJ(m);
+}
+
+static ScmObj generic_updatedirectmethod(ScmNextMethod *nm, ScmObj *args,
+                                         int nargs, void *data)
+{
+    return Scm_UpdateDirectMethod(SCM_METHOD(args[0]),
+                                  SCM_CLASS(args[1]),
+                                  SCM_CLASS(args[2]));
+}
+
+static ScmClass *generic_updatedirectmethod_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_MethodClass),
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass),
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass)
+};
+static SCM_DEFINE_METHOD(generic_updatedirectmethod_rec,
+                         &Scm_GenericUpdateDirectMethod, 3, 0,
+                         generic_updatedirectmethod_SPEC,
+                         generic_updatedirectmethod, NULL);
+
 /*
  * ADD-METHOD, and it's default method version.
  */
 ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 {
-    ScmObj mp;
-    
+    ScmObj mp, pair;
+    int replaced = FALSE;
+        
     if (method->generic && method->generic != gf)
         Scm_Error("method %S already added to a generic function %S",
                   method, method->generic);
@@ -1696,7 +1875,11 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                   " something wrong in MOP implementation?",
                   method, gf);
     method->generic = gf;
+    /* pre-allocate cons pair to avoid triggering GC in the critical region */
+    pair = Scm_Cons(SCM_OBJ(method), gf->methods);
+
     /* Check if a method with the same signature exists */
+    (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
     SCM_FOR_EACH(mp, gf->methods) {
         ScmMethod *mm = SCM_METHOD(SCM_CAR(mp));
         if (SCM_PROCEDURE_REQUIRED(method) == SCM_PROCEDURE_REQUIRED(mm)
@@ -1708,13 +1891,14 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                 if (sp1[i] != sp2[i]) break;
             }
             if (i == SCM_PROCEDURE_REQUIRED(method)) {
-                /* TODO: alert for MT */
                 SCM_SET_CAR(mp, SCM_OBJ(method));
-                return SCM_UNDEFINED;
+                replaced = TRUE;
+                break;
             }
         }
     }
-    gf->methods = Scm_Cons(SCM_OBJ(method), gf->methods);
+    if (!replaced) gf->methods = pair;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
     return SCM_UNDEFINED;
 }
 
@@ -1728,8 +1912,54 @@ static ScmClass *generic_addmethod_SPEC[] = {
     SCM_CLASS_STATIC_PTR(Scm_GenericClass),
     SCM_CLASS_STATIC_PTR(Scm_MethodClass)
 };
-static SCM_DEFINE_METHOD(generic_addmethod_rec, &Scm_GenericAddMethod, 2, 0,
-                         generic_addmethod_SPEC, generic_addmethod, NULL);
+static SCM_DEFINE_METHOD(generic_addmethod_rec,
+                         &Scm_GenericAddMethod, 2, 0,
+                         generic_addmethod_SPEC,
+                         generic_addmethod, NULL);
+
+/*
+ * DELETE-METHOD, and it's default method version.
+ */
+ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method)
+{
+    ScmObj mp;
+
+    if (!method->generic || method->generic != gf) return SCM_UNDEFINED;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
+    mp = gf->methods;
+    if (SCM_PAIRP(mp)) {
+        if (SCM_EQ(SCM_CAR(mp), SCM_OBJ(method))) {
+            gf->methods = SCM_CDR(mp);
+            method->generic = NULL;
+        } else {
+            while (SCM_PAIRP(SCM_CDR(mp))) {
+                if (SCM_EQ(SCM_CADR(mp), SCM_OBJ(method))) {
+                    SCM_CDR(mp) = SCM_CDDR(mp);
+                    method->generic = NULL;
+                    break;
+                }
+            }
+        }
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
+    return SCM_UNDEFINED;
+}
+
+static ScmObj generic_deletemethod(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                   void *data)
+{
+    return Scm_DeleteMethod(SCM_GENERIC(args[0]), SCM_METHOD(args[1]));
+}
+
+static ScmClass *generic_deletemethod_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_GenericClass),
+    SCM_CLASS_STATIC_PTR(Scm_MethodClass)
+};
+static SCM_DEFINE_METHOD(generic_deletemethod_rec,
+                         &Scm_GenericDeleteMethod, 2, 0,
+                         generic_deletemethod_SPEC,
+                         generic_deletemethod, NULL);
 
 /*=====================================================================
  * Next Method
@@ -1761,6 +1991,87 @@ static void next_method_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 }
 
 /*=====================================================================
+ * Accessor Method
+ */
+
+static void accessor_method_print(ScmObj obj, ScmPort *port,
+                                  ScmWriteContext *ctx)
+{
+    Scm_Printf(port, "#<accessor-method %S>", SCM_METHOD(obj)->common.info);
+}
+
+static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                void *data)
+{
+    ScmObj obj = args[0];
+    ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
+    return slot_ref_using_accessor(obj, ca, FALSE);
+}
+
+static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                void *data)
+{
+    ScmObj obj = args[0];
+    ScmObj val = args[1];
+    ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
+    return slot_set_using_accessor(obj, ca, val);
+}
+
+/* Accessor method can be just created by usual allocate/initialize
+   sequence.  But it requires :slot-accessor initarg.  The method body
+   is overridden by C function, and the closure given to :body doesn't
+   have an effect.  */
+static ScmObj accessor_method_initialize(ScmNextMethod *nm, ScmObj *args,
+                                         int nargs, void *data)
+{
+    ScmMethod *m = SCM_METHOD(method_initialize(nm, args, nargs, data));
+    ScmObj initargs = args[1];
+    ScmObj sa = Scm_GetKeyword(key_slot_accessor, initargs, SCM_FALSE);
+
+    if (!SCM_SLOT_ACCESSOR_P(sa)) {
+        Scm_Error("slot accessor required for :slot-accessor argument: %S",
+                  sa);
+    }
+
+    m->data = sa;
+    switch (SCM_PROCEDURE_REQUIRED(m)) {
+    case 1: /* accessor <obj> - this is a getter */
+        m->func = accessor_get_proc;
+        break;
+    case 2: /* accessor <obj> <val> - this is a setter */
+        m->func = accessor_set_proc;
+        break;
+    default:
+        Scm_Error("bad initialization parameter for accessor method %S", m);
+    }
+    return SCM_OBJ(m);
+}
+
+static ScmClass *accessor_method_initialize_SPEC[] = {
+    SCM_CLASS_STATIC_PTR(Scm_AccessorMethodClass),
+    SCM_CLASS_STATIC_PTR(Scm_ListClass)
+};
+static SCM_DEFINE_METHOD(accessor_method_initialize_rec,
+                         &Scm_GenericInitialize,
+                         2, 0,
+                         accessor_method_initialize_SPEC,
+                         accessor_method_initialize, NULL);
+
+static ScmObj accessor_method_slot_accessor(ScmAccessorMethod *m)
+{
+    SCM_ASSERT(SCM_SLOT_ACCESSOR_P(m->data));
+    return SCM_OBJ(m->data);
+}
+
+static void accessor_method_slot_accessor_set(ScmAccessorMethod *m, ScmObj v)
+{
+    if (!SCM_SLOT_ACCESSOR_P(v)) {
+        Scm_Error("slot accessor required, but got %S", v);
+    }
+    m->data = v;
+}
+
+/*=====================================================================
  * Class initialization
  */
 
@@ -1777,6 +2088,7 @@ static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("num-instance-slots", class_numislots, class_numislots_set),
     SCM_CLASS_SLOT_SPEC("direct-subclasses", class_direct_subclasses, NULL),
     SCM_CLASS_SLOT_SPEC("direct-methods", class_direct_methods, NULL),
+    SCM_CLASS_SLOT_SPEC("initargs", class_initargs, class_initargs_set),
     SCM_CLASS_SLOT_SPEC("redefined", class_redefined, NULL),
     SCM_CLASS_SLOT_SPEC("category", class_category, NULL),
     { NULL }
@@ -1793,6 +2105,15 @@ static ScmClassStaticSlotSpec method_slots[] = {
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
+    { NULL }
+};
+
+static ScmClassStaticSlotSpec accessor_method_slots[] = {
+    SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
+    SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
+    SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
+    SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
+    SCM_CLASS_SLOT_SPEC("slot-accessor", accessor_method_slot_accessor, accessor_method_slot_accessor_set),
     { NULL }
 };
 
@@ -1915,6 +2236,7 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
     if (gf->fallback == NULL) {
 	gf->fallback = Scm_NoNextMethod;
     }
+    (void)SCM_INTERNAL_MUTEX_INIT(gf->lock);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(gf));
 }
 
@@ -1945,6 +2267,9 @@ void Scm__InitClass(void)
     sym_base = SCM_INTERN("base");
     sym_scheme = SCM_INTERN("scheme");
 
+    (void)SCM_INTERNAL_MUTEX_INIT(class_redefinition_lock.mutex);
+    (void)SCM_INTERNAL_COND_INIT(class_redefinition_lock.cv);
+    
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
 
@@ -1967,6 +2292,8 @@ void Scm__InitClass(void)
     Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
     BINIT(SCM_CLASS_NEXT_METHOD, "<next-method>", NULL, 0);
     Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
+    BINIT(SCM_CLASS_ACCESSOR_METHOD, "<accessor-method>",  accessor_method_slots, sizeof(ScmAccessorMethod));
+    Scm_AccessorMethodClass.flags |= SCM_CLASS_APPLICABLE;
     BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots, sizeof(ScmSlotAccessor));
     BINIT(SCM_CLASS_COLLECTION, "<collection>", NULL, 0);
     BINIT(SCM_CLASS_SEQUENCE,   "<sequence>", NULL, 0);
@@ -2049,6 +2376,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericComputeSlots, "compute-slots");
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
     GINIT(&Scm_GenericComputeApplicableMethods, "compute-applicable-methods");
+    GINIT(&Scm_GenericUpdateDirectMethod, "update-direct-method!");
     GINIT(&Scm_GenericMethodMoreSpecificP, "method-more-specific?");
     GINIT(&Scm_GenericApplyGeneric, "apply-generic");
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
@@ -2071,6 +2399,7 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&generic_initialize_rec);
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
     Scm_InitBuiltinMethod(&method_initialize_rec);
+    Scm_InitBuiltinMethod(&accessor_method_initialize_rec);
     Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
     Scm_InitBuiltinMethod(&method_more_specific_p_rec);
     Scm_InitBuiltinMethod(&object_equalp_rec);

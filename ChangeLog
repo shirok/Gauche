@@ -1,5 +1,9 @@
 2003-10-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h, src/class.c, src/gauche/class.h, src/moplib.stub,
+	  lib/gauche/object.scm : snapshot of class redefinition logic.
+	  Not enabled yet, but closer to the final structure.
+
 	* lib/dbm/fsdbm.scm (dbm-fold): fixed a bug that dbm-fold passes
 	  a bogus key to the iteratee procedure.
 

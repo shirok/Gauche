@@ -30,15 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.33 2003-10-23 14:06:02 shirok Exp $
+ *  $Id: class.h,v 1.34 2003-10-26 00:26:06 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
 #define GAUCHE_CLASS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+SCM_DECL_BEGIN
 
 /*
  * SlotAccessor
@@ -88,6 +86,19 @@ struct ScmClassStaticSlotSpecRec {
 
 #define SCM_CLASS_SLOT_SPEC_END()   { NULL }
 
+/*
+ * AccessorMethod
+ *  - A special method to be used as a slot accessor
+ *    It keeps ScmSlotAccessor in data field, and uses specialized
+ *    routine to access the slot.
+ */
+typedef ScmMethod ScmAccessorMethod;
+
+SCM_CLASS_DECL(Scm_AccessorMethodClass);
+#define SCM_CLASS_ACCESSOR_METHOD    (&Scm_AccessorMethodClass)
+#define SCM_ACCESSOR_METHOD(obj)     ((ScmAccessorMethod*)obj)
+#define SCM_ACCESSOR_METHOD_P(obj)   SCM_ISA(obj, SCM_CLASS_SLOT_ACCESSOR)
+
 /* cliche in allocate method */
 #define SCM_ALLOCATE(klassname, klass) \
     ((klassname*)Scm_AllocateInstance(klass, sizeof(klassname)))
@@ -103,6 +114,7 @@ SCM_EXTERN ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs);
 SCM_EXTERN ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
 				     ScmObj *args, int nargs, int copyArgs);
 SCM_EXTERN ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
+SCM_EXTERN ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method);
 
 SCM_EXTERN ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj,
 					     ScmSlotAccessor *acc,
@@ -114,8 +126,10 @@ SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
 SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
 SCM_EXTERN void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
 
-SCM_EXTERN int  Scm_StartClassRedefinition(ScmClass *klass);
-SCM_EXTERN void Scm_CommitClassRedefinition(ScmClass *klass, ScmClass *newk);
+SCM_EXTERN void Scm_StartClassRedefinition(ScmClass *klass);
+SCM_EXTERN void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newk);
+SCM_EXTERN int  Scm_CheckClassBinding(ScmObj name, ScmModule *module);
+SCM_EXTERN void Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newk);
 SCM_EXTERN void Scm_AddDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void Scm_RemoveDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void Scm_AddDirectMethod(ScmClass *super, ScmMethod *m);
@@ -128,8 +142,10 @@ SCM_EXTERN ScmGeneric Scm_GenericObjectHash;
 SCM_EXTERN ScmGeneric Scm_GenericObjectApply;
 SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
 
-#ifdef __cplusplus
-}
-#endif
+SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
+                                         ScmClass *old,
+                                         ScmClass *new);
+
+SCM_DECL_END
 
 #endif /* GAUCHE_CLASS_H */

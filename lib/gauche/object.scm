@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.44 2003-10-23 14:06:01 shirok Exp $
+;;;  $Id: object.scm,v 1.45 2003-10-26 00:26:06 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -134,40 +134,43 @@
 ;;
 
 (define-macro (define-class name supers slots . options)
-  (define (transform-slot-definition slot)
-    (if (pair? slot)
-        (let loop ((opts (cdr slot)) (r '()))
-          (cond ((null? opts) `(list ',(car slot) ,@(reverse! r)))
-                ((not (and (pair? opts) (pair? (cdr opts))))
-                 (error "bad slot specification:" slot))
-                (else
-                 (case (car opts)
-                   ((:initform :init-form)
-                    (loop (cddr opts)
-                          (list* `(lambda () ,(cadr opts)) :init-thunk r)))
-                   ((:getter :setter :accessor)
-                    (loop (cddr opts)
-                          (list* `',(cadr opts) (car opts) r)))
-                   (else
-                    (loop (cddr opts) (list* (cadr opts) (car opts) r))))
-                 )))
-        `'(,slot)))
-  (let ((slot-defs (map transform-slot-definition slots))
-        (metaclass (or (get-keyword :metaclass options #f)
-                       `(,%get-default-metaclass (list ,@supers))))
-        (class     (gensym))
-        (slot      (gensym)))
+  (let* ((metaclass (or (get-keyword :metaclass options #f)
+                        `(,%get-default-metaclass (list ,@supers))))
+         (slot-defs (map %process-slot-definition slots))
+         (class     (gensym))
+         (slot      (gensym)))
     `(define ,name
        (let ((,class (make ,metaclass
                        :name ',name
                        :supers (list ,@supers)
                        :slots (list ,@slot-defs)
                        ,@options)))
+         ;(when (%check-class-binding ',name (current-module))
+         ;  (redefine-class! ,name ,class))
          (for-each (lambda (,slot)
                      (,%make-accessor ,class ,slot (current-module)))
                    (class-slots ,class))
          ,class))
     ))
+
+(define (%process-slot-definition sdef)
+  (if (pair? sdef)
+    (let loop ((opts (cdr sdef)) (r '()))
+      (cond ((null? opts) `(list ',(car sdef) ,@(reverse! r)))
+            ((not (and (pair? opts) (pair? (cdr opts))))
+             (error "bad slot specification:" sdef))
+            (else
+             (case (car opts)
+               ((:initform :init-form)
+                (loop (cddr opts)
+                      (list* `(lambda () ,(cadr opts)) :init-thunk r)))
+               ((:getter :setter :accessor)
+                (loop (cddr opts)
+                      (list* `',(cadr opts) (car opts) r)))
+               (else
+                (loop (cddr opts) (list* (cadr opts) (car opts) r))))
+             )))
+    `'(,sdef)))
 
 ;; Determine default metaclass, that is a class inheriting all the metaclasses
 ;; of supers.  The idea is taken from stklos.  The difference is that
@@ -224,54 +227,53 @@
     (let* ((slots (compute-slots class)))
       (slot-set! class 'slots slots)
       (slot-set! class 'accessors
-                 (map (lambda (s) (%compute-accessor class s)) slots))
+                 (map (lambda (s)
+                        ;; returns (name . #<slot-accessor>)
+                        (cons (car s)
+                              (compute-slot-accessor
+                               class s
+                               (compute-get-n-set class s))))
+                      slots))
       )
     ;; bookkeeping for class redefinition
-    (for-each (lambda (super)
-                (%add-direct-subclass! super class))
+    (slot-set! class 'initargs initargs)
+    (for-each (lambda (super) (%add-direct-subclass! super class))
               supers)
     ))
 
-(define (%compute-accessor class slot)
-  (let ((name (car slot))
-        (gns  (compute-get-n-set class slot)))
-    (cons name (compute-slot-accessor class slot gns))))
-
 (define (%make-accessor class slot module)
-  (let ((%getter   (slot-definition-getter slot))
-        (%setter   (slot-definition-setter slot))
-        (%accessor (slot-definition-accessor slot))
-        (name     (slot-definition-name slot)))
+  (let* ((name      (slot-definition-name slot))
+         (sa        (class-slot-accessor class name))
+         (%getter   (slot-definition-getter slot))
+         (%setter   (slot-definition-setter slot))
+         (%accessor (slot-definition-accessor slot)))
+
+    (define (make-getter gf)
+      (add-method! gf
+                   (make <accessor-method>
+                     :generic gf :specializers (list class)
+                     :slot-accessor sa :lambda-list '(obj)
+                     :body (lambda (obj next-method) #f) ;; dummy
+                     )))
+
+    (define (make-setter gf)
+      (add-method! gf
+                   (make <accessor-method>
+                     :generic gf :specializers (list class <top>)
+                     :slot-accessor sa :lambda-list '(obj val)
+                     :body (lambda (obj val next-method) #f) ;; dummy
+                     )))
+
     (when %getter
-      (let ((gf (%ensure-generic-function %getter module)))
-        (add-method! gf
-                     (make <method> :generic gf :specializers `(,class)
-                           :lambda-list '(obj)
-                           :body (lambda (obj next-method)
-                                   (slot-ref obj name))))))
+      (make-getter (%ensure-generic-function %getter module)))
     (when %setter
-      (let ((gf (%ensure-generic-function %setter module)))
-        (add-method! gf
-                     (make <method> :generic gf
-                           :specializers `(,class ,<top>)
-                           :lambda-list '(obj val)
-                           :body (lambda (obj val next-method)
-                                   (slot-set! obj name val))))))
+      (make-setter (%ensure-generic-function %setter module)))
     (when %accessor
       (let ((gf  (%ensure-generic-function %accessor module))
             (gfs (%ensure-generic-function (%make-setter-name %accessor)
                                            module)))
-        (add-method! gf
-                     (make <method> :generic gf :specializers `(,class)
-                           :lambda-list '(obj)
-                           :body (lambda (obj next-method)
-                                   (slot-ref obj name))))
-        (add-method! gfs
-                     (make <method> :generic gfs
-                           :specializers `(,class ,<top>)
-                           :lambda-list '(obj val)
-                           :body (lambda (obj val next-method)
-                                   (slot-set! obj name val))))
+        (make-getter gf)
+        (make-setter gfs)
         (set! (setter gf) gfs)
         ))
     ))
@@ -406,61 +408,67 @@
 ;; Class Redefinition
 ;;
 
-;; The MOP requires the following control flow:
-;;
-;;   class-redefinition old new    [gf]
-;;      remove-class-accessors! old          [gf]
-;;      update-direct-method! method new old [gf]
-;;      update-direct-subclass! c old new    [gf]
-;;
-;; NB: we don't change the identity of old-class.  So if a reference to
-;; old class is stored in somewhere, it keeps pointing the old class.
-;; (It is the same behavior as stklos; guile, on the other hand, swaps
-;; identity of old and new classes).
-;; The instances will be updated whenever it is "touched".  See class.c.
+;; redefine-class! old new  [function]
+;;   <with locking old>
+;;     class-redefinition old new   [gf]
+;;       <update direct methods>
+;;       <update direct supers>
+;;       update-direct-subclass! c orig clone      [gf]
 
-(define-method class-redefinition ((old <class>) (new <class>))
-  (%start-class-redefinition! old)
+(define (redefine-class! old new)
+  (%start-class-redefinition! old) ;; MT safety
   (with-error-handler
       (lambda (e)
-        ;; NB: this isn't right, but we don't have a right semantics
-        ;; to roll back the changes.  So just for now...
-        (%commit-class-redefinition! old new)
+        (%commit-class-redefinition! old #f)
+        (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent" old)
         (raise e))
     (lambda ()
-      (remove-class-accessors! old)
-      (for-each (lambda (m)
-                  (update-direct-method! m old new)
-                  (%add-direct-method! new m))
-                (reverse (class-direct-method old)))
-      (for-each (lambda (sup)
-                  (%delete-direct-subclass! sup old))
-                (class-direct-supers old))
-      (for-each (lambda (sub)
-                  (update-direct-subclass! sub old new))
-                (class-direct-subclasses old))
+      (class-redefinition old new)
       (%commit-class-redefinition! old new))))
 
-(define-method remove-class-accessors! (c <class>)
-  ;; to be written
-  #f
-  )
-    
-(define-method update-direct-method! ((m <method>) (old <class>) (new <class>))
-  ;; to be written
-  #f
+(define-method class-redefinition ((old <class>) (new <class>))
+  (for-each (lambda (m)
+              (if (is-a? m <accessor-method>)
+                (delete-method! (slot-ref m 'generic) m)
+                (update-direct-method m old new)))
+            (class-direct-methods old))
+  (for-each (lambda (sup) (%delete-direct-subclass! sup old))
+            (class-direct-supers old))
+  (for-each (lambda (sub) (update-direct-subclass! sub old new))
+            (class-direct-subclasses old))
   )
 
-(define-method update-direct-subclass! ((sub <class>) (old <class>) (new <class>))
-  ;; to be written
-  #f
-  )
+(define-method update-direct-subclass! ((sub <class>)
+                                        (orig <class>)
+                                        (new <class>))
+  (define (new-supers supers)
+    (map (lambda (s) (if (eq? s orig) new s)) supers))
+
+  (define (fix-initargs initargs supers metaclass)
+    (let loop ((args initargs) (r '()))
+      (cond ((null? args) (reverse! r))
+            ((eq? (car args) :supers)
+             (loop (cddr args) (list* supers :supers r)))
+            ((eq? (car args) :metaclass)
+             (loop (cddr args) (list* metaclass :metaclass r)))
+            (else
+             (loop (cddr args) (list* (cadr args) (car args) r))))))
+
+  (let* ((initargs (class-initargs initargs))
+         (supers   (new-supers (class-direct-supers sub)))
+         ;; NB: this isn't correct!
+         (metaclass (or (get-keyword :metaclass initargs #f)
+                        (%get-default-metaclass supers)))
+         (new-sub  (apply make metaclass
+                          (fix-initargs initargs supers metaclass))))
+    (redefine-class! sub new-sub)
+    (%replace-class-binding! sub new-sub)))
   
-(define-method change-class ((old-instance <object>)
-                             (new-class <class>)
-                             . initargs)
+(define-method change-class ((instance <object>)
+                             (old <class>)
+                             (new <class>))
   ;; to be written
-  old-instance)
+  old)
 
 ;;----------------------------------------------------------------
 ;; Method Application
@@ -501,6 +509,8 @@
 (define (class-precedence-list class) (slot-ref class 'cpl))
 (define (class-direct-supers class) (slot-ref class 'direct-supers))
 (define (class-direct-slots class) (slot-ref class 'direct-slots))
+(define (class-direct-methods class) (slot-ref class 'direct-methods))
+(define (class-direct-subclasses class) (slot-ref class 'direct-subclasses))
 (define (class-slots class) (slot-ref class 'slots))
 
 (define (slot-definition-name slot) (car slot))
@@ -592,8 +602,9 @@
                 apply-generic sort-applicable-methods
                 apply-methods apply-method
                 class-name class-precedence-list class-direct-supers
+                class-direct-methods class-direct-subclasses
                 class-direct-slots class-slots
-                class-redefinition
+                redefine-class! class-redefinition
                 slot-definition-name slot-definition-options
                 slot-definition-option
                 slot-definition-allocation slot-definition-getter

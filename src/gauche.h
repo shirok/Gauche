@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.347 2003-10-23 14:06:02 shirok Exp $
+ *  $Id: gauche.h,v 1.348 2003-10-26 00:26:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -419,7 +419,8 @@ SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
 
 /* See class.c for the description of function pointer members.
    There's a lot of voodoo magic in class structure, so don't touch
-   those fields casually. */
+   those fields casually.  Also, the order of these fields must be
+   reflected to the class definition macros below */
 struct ScmClassRec {
     SCM_INSTANCE_HEADER;
     void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
@@ -438,6 +439,8 @@ struct ScmClassRec {
     ScmObj directSubclasses;    /* list of direct subclasses */
     ScmObj directMethods;       /* list of methods that has this class in
                                    its specializer */
+    ScmObj initargs;            /* saved key-value list for redefinition */
+    ScmObj module;              /* module where this class is defined */
     ScmObj redefined;           /* if this class is obsoleted by class
                                    redefinition, points to the new class.
                                    if this class is being redefined, points
@@ -446,7 +449,7 @@ struct ScmClassRec {
                                    Scheme; see class.c)
                                    otherwise #f */
     ScmInternalMutex mutex;     /* to protect from MT hazard */
-    ScmInternalCond cv;         /* wait on this while a class is updating */
+    ScmInternalCond cv;         /* wait on this while a class being updated */
 };
 
 typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
@@ -485,7 +488,6 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
        classes in CPL must be either SCM_CLASS_ABSTRACT or
        SCM_CLASS_SCHEME.  This class can be redefined.
 */
-         
 
 enum {
     SCM_CLASS_BUILTIN  = 0,
@@ -560,15 +562,17 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
         cpa,                                     \
         0,                                       \
         flag,                                    \
-        SCM_FALSE,                               \
-        SCM_FALSE,                               \
-        SCM_FALSE,                               \
-        SCM_NIL,                                 \
-        SCM_NIL,                                 \
-        SCM_NIL,                                 \
-        SCM_NIL,                                 \
-        SCM_NIL,                                 \
-        SCM_FALSE                                \
+        SCM_FALSE,/*name*/                       \
+        SCM_NIL,  /*directSupers*/               \
+        SCM_NIL,  /*cpl*/                        \
+        SCM_NIL,  /*accessors*/                  \
+        SCM_NIL,  /*directSlots*/                \
+        SCM_NIL,  /*slots*/                      \
+        SCM_NIL,  /*directSubclasses*/           \
+        SCM_NIL,  /*directMethods*/              \
+        SCM_NIL,  /*initargs*/                   \
+        SCM_FALSE,/*module*/                     \
+        SCM_FALSE /*redefined*/                  \
     }
     
 /* Define built-in class statically -- full-featured version */
@@ -1875,6 +1879,7 @@ struct ScmGenericRec {
     ScmObj methods;
     ScmObj (*fallback)(ScmObj *args, int nargs, ScmGeneric *gf);
     void *data;
+    ScmInternalMutex lock;
 };
 
 SCM_CLASS_DECL(Scm_GenericClass);
@@ -1902,9 +1907,7 @@ SCM_EXTERN ScmObj Scm_InvalidApply(ScmObj *args, int nargs, ScmGeneric *gf);
 /* Method - method
    A method can be defined either by C or by Scheme.  C-defined method
    have func ptr, with optional data.   Scheme-define method has NULL
-   in func, code in data, and optional environment in env.
-   We can't use union here since we want to initialize C-defined method
-   statically. */
+   in func, code in data, and optional environment in env. */
 struct ScmMethodRec {
     ScmProcedure common;
     ScmGeneric *generic;
@@ -1916,7 +1919,7 @@ struct ScmMethodRec {
 
 SCM_CLASS_DECL(Scm_MethodClass);
 #define SCM_CLASS_METHOD           (&Scm_MethodClass)
-#define SCM_METHODP(obj)           SCM_XTYPEP(obj, SCM_CLASS_METHOD)
+#define SCM_METHODP(obj)           SCM_ISA(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
@@ -1930,7 +1933,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
 SCM_EXTERN void Scm_InitBuiltinMethod(ScmMethod *m);
 
 /* Next method object
-   Next method is just another callable entity, with memorizing
+   Next method is just another callable entity, with memoizing
    the arguments. */
 struct ScmNextMethodRec {
     ScmProcedure common;
