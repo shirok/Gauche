@@ -90,7 +90,7 @@ libgauche.a : $(OBJS) $(GCLIB)
 	$(RANLIB) libgauche.a
 
 libgauche.@SHLIB_DYLIB_SUFFIX@ : $(OBJS) $(GCLIB)
-	$(CC) @SHLIB_DYLIB_LDFLAGS@ libgauche.@SHLIB_DYLIB_SUFFIX@ $(OBJS) `$(AR) t $(GCLIB) | sed '/__.SYMDEF/d'` $(LIBS)
+	$(CC) @SHLIB_DYLIB_LDFLAGS@ libgauche.@SHLIB_DYLIB_SUFFIX@ $(OBJS) `$(AR) t $(GCLIB) | sed '/__.SYMDEF/d'` @LOCAL_LIB@ $(LIBS)
 
 gauche/arch.h : Makefile
 	@rm -f gauche/arch.h
