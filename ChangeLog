@@ -1,3 +1,7 @@
+2004-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm/fsdbm.scm : allow binary data to be stored.
+
 2004-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/termios/* : Added support of termios.c_cc (Based on the patch
