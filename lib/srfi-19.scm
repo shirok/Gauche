@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.5 2002-05-24 10:21:26 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.6 2002-05-25 09:56:53 shirok Exp $
 
 (define-module srfi-19
   (use gauche.let-opt)
@@ -37,7 +37,7 @@
           subtract-duration subtract-duration! 
           make-date date? date-nanosecond date-second date-minute
           date-hour date-day date-month date-year date-zone-offset
-          date-year-day date-week-day date-week-number
+          date-year-day date-week-day date-week-number current-date
           date->julian-day date->modified-julian-day date->time-monotonic
           date->time-tai date->time-utc
           julian-day->date julian-day->time-monotonic
