@@ -538,7 +538,7 @@ before creating the procedure.
 
 @example
 (cute cons (+ a 1) <>)
-   @equiv{} (let ((xa (+ a 1))) (lambda (x2 (cons xa x2))))
+   @equiv{} (let ((xa (+ a 1))) (lambda (x2) (cons xa x2)))
 @end example
 
 @c EN
