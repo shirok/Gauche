@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.323 2002-12-11 09:18:50 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.324 2002-12-12 06:13:51 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11539,11 +11539,15 @@ this function is unbound.
 [POSIX] 
 @c EN
 Makes a directory @var{pathname} with mode @var{mode}.
+(Note that @var{mode} is masked by the current umask;
+see @code{sys-umask} below).
 The parent directory of @var{pathname} must exist and be writable
 by the process.  To create intermediate directories at once, use
 @code{make-directory*} in @code{file.util} (@ref{Directory utilities}).
 @c JP
 ディレクトリ@var{pathname}をモード@var{mode}で作成します。
+(@var{mode}はさらにumaskでマスクされることに注意して下さい；下の@code{sys-umask}
+参照)。
 @var{pathname}の親ディレクトリは存在して、プロセスが書き込めるようになっていなければ
 なりません。中間のディレクトリも一度に作成するには、
 @code{file.util}の@code{make-directory*}が使えます
