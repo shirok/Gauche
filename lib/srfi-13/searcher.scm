@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: searcher.scm,v 1.7 2004-03-14 01:42:42 shirok Exp $
+;;;  $Id: searcher.scm,v 1.8 2004-03-14 05:27:55 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -101,7 +101,7 @@
   (check-arg string? s1)
   (check-arg string? s2)
   (let-optionals* args ((start1 0) end1 start2 end2)
-    (let ((str1 (string-upcase (%maybe-substring s1 start1 end1)))
-          (str2 (string-upcase (%maybe-substring s2 start2 end2)))
-          (res  (string-scan str1 str2)))
+    (let* ((str1 (string-upcase (%maybe-substring s1 start1 end1)))
+           (str2 (string-upcase (%maybe-substring s2 start2 end2)))
+           (res  (string-scan str1 str2)))
       (and res (+ start1 res)))))

@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.35 2004-03-14 01:42:42 shirok Exp $
+;; $Id: srfi.scm,v 1.36 2004-03-14 05:28:13 shirok Exp $
 
 (use gauche.test)
 
@@ -784,7 +784,7 @@
 (test* "string-contains" 15
        (string-contains "eek -- what a geek." "ee" 12 18))
 (test* "string-contains-ci" 15
-       (string-contains "Eek -- what a geek." "EE" 12 18))
+       (string-contains-ci "Eek -- what a geek." "EE" 12 18))
 
 (test* "string-titlecase" "--Capitalize This Sentence."
        (string-titlecase "--capitalize tHIS sentence."))
