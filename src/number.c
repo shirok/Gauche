@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.101 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: number.c,v 1.102 2003-09-20 05:56:52 shirok Exp $
  */
 
 #include <math.h>
@@ -1079,6 +1079,8 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
             }
             return Scm_MakeFlonum(q);
         }
+    } else {
+        goto BADARG;
     }
   DIVBYZERO:
     Scm_Error("divide by zero");
@@ -1183,6 +1185,8 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
             }
         }
         return Scm_MakeFlonum(rem);
+    } else {
+        goto BADARG;
     }
   DIVBYZERO:
     Scm_Error("divide by zero");
