@@ -12,13 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.12 2001-09-05 19:08:36 shirok Exp $
+;;;  $Id: net.scm,v 1.13 2001-09-29 09:27:45 shirok Exp $
 ;;;
 
 (define-module gauche.net
   (use gauche.let-opt)
   (export <socket> make-socket
-          pf_unix pf_inet af_unix af_inet sock_stream sock_dgram sock_raw
+          |PF_UNIX| |PF_INET| |AF_UNIX| |AF_INET|
+          |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
@@ -59,13 +60,13 @@
 
 (define (make-client-socket-unix path)
   (let ((address (make <sockaddr-un> :path path))
-        (socket  (make-socket pf_unix sock_stream)))
+        (socket  (make-socket |PF_UNIX| |SOCK_STREAM|)))
     (socket-connect socket address)
     socket))
   
 (define (make-client-socket-inet host port)
   (let ((address (make <sockaddr-in> :host host :port port))
-        (socket (make-socket pf_inet sock_stream)))
+        (socket (make-socket |PF_INET| |SOCK_STREAM|)))
     (socket-connect socket address)
     socket))
 
@@ -88,16 +89,16 @@
 
 (define (make-server-socket-unix path)
   (let ((address (make <sockaddr-un> :path path))
-        (socket (make-socket pf_unix sock_stream)))
+        (socket (make-socket |PF_UNIX| |SOCK_STREAM|)))
     (socket-bind socket address)
     (socket-listen socket 5)))
 
 (define (make-server-socket-inet port . args)
   (let ((reuse-addr? (get-keyword :reuse-addr? args #f))
         (address (make <sockaddr-in> :host :any :port port))
-        (socket (make-socket pf_inet sock_stream)))
+        (socket (make-socket |PF_INET| |SOCK_STREAM|)))
     (when reuse-addr?
-      (socket-setsockopt socket sol_socket so_reuseaddr 1))
+      (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
     (socket-bind socket address)
     (socket-listen socket 5)))
 
@@ -106,5 +107,18 @@
    (lambda () #f)
    (lambda () (proc (socket-input-port socket) (socket-output-port socket)))
    (lambda () (socket-close socket))))
+
+;; backward compatibility -- will be removed!
+(define pf_inet |PF_INET|)
+(define pf_unix |PF_UNIX|)
+
+(define af_inet |AF_INET|)
+(define af_unix |AF_UNIX|)
+
+(define sock_stream |SOCK_STREAM|)
+(define sock_dgram  |SOCK_DGRAM|)
+
+(define sol_socket |SOL_SOCKET|)
+(define so_reuseaddr |SO_REUSEADDR|)
 
 (provide "gauche/net")

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.11 2001-08-09 09:43:30 shirok Exp $
+ *  $Id: net.c,v 1.12 2001-09-29 09:27:45 shirok Exp $
  */
 
 #include "net.h"
@@ -286,50 +286,50 @@ void Scm_Init_libnet(void)
 #define DEFSYM(sym, val) \
     SCM_DEFINE(mod, sym, Scm_MakeInteger(val))
 
-    DEFSYM("sol_socket", SOL_SOCKET);
+    DEFSYM("SOL_SOCKET", SOL_SOCKET);
 #ifdef SO_KEEPALIVE
-    DEFSYM("so_keepalive", SO_KEEPALIVE);
+    DEFSYM("SO_KEEPALIVE", SO_KEEPALIVE);
 #endif
 #ifdef SO_OOBINLINE
-    DEFSYM("so_oobinline", SO_OOBINLINE);
+    DEFSYM("SO_OOBINLINE", SO_OOBINLINE);
 #endif
 #ifdef SO_REUSEADDR
-    DEFSYM("so_reuseaddr", SO_REUSEADDR);
+    DEFSYM("SO_REUSEADDR", SO_REUSEADDR);
 #endif
 #ifdef SO_TYPE
-    DEFSYM("so_type",      SO_TYPE);
+    DEFSYM("SO_TYPE",      SO_TYPE);
 #endif
 #ifdef SO_BROADCAST
-    DEFSYM("so_broadcast", SO_BROADCAST);
+    DEFSYM("SO_BROADCAST", SO_BROADCAST);
 #endif
 #ifdef SO_SNDBUF
-    DEFSYM("so_sndbuf",    SO_SNDBUF);
+    DEFSYM("SO_SNDBUF",    SO_SNDBUF);
 #endif
 #ifdef SO_RCVBUF
-    DEFSYM("so_rcvbuf",    SO_RCVBUF);
+    DEFSYM("SO_RCVBUF",    SO_RCVBUF);
 #endif
 #ifdef SO_PRIORITY
-    DEFSYM("so_priority",  SO_PRIORITY);
+    DEFSYM("SO_PRIORITY",  SO_PRIORITY);
 #endif
-    DEFSYM("so_error",     SO_ERROR);
+    DEFSYM("SO_ERROR",     SO_ERROR);
 
 #ifdef SOL_TCP
-    DEFSYM("sol_tcp", SOL_TCP);
+    DEFSYM("SOL_TCP", SOL_TCP);
 #ifdef TCP_NODELAY
-    DEFSYM("tcp_nodelay",  TCP_NODELAY);
+    DEFSYM("TCP_NODELAY",  TCP_NODELAY);
 #endif
 #ifdef TCP_MAXSEG
-    DEFSYM("tcp_maxseg",   TCP_MAXSEG);
+    DEFSYM("TCP_MAXSEG",   TCP_MAXSEG);
 #endif
 #ifdef TCP_CORK
-    DEFSYM("tcp_cork",     TCP_CORK);
+    DEFSYM("TCP_CORK",     TCP_CORK);
 #endif
 #endif /* SOL_TCP */
 
 #ifdef SOL_IP
-    DEFSYM("sol_ip", SOL_IP);
+    DEFSYM("SOL_IP", SOL_IP);
 #ifdef IP_OPTIONS
-    DEFSYM("ip_options",   IP_OPTIONS);
+    DEFSYM("IP_OPTIONS",   IP_OPTIONS);
 #endif
 #endif /* SOL_IP */
 }

@@ -62,7 +62,7 @@
 
 (test "gethostbyaddr" #t
       (lambda ()
-        (let ((host (sys-gethostbyaddr "127.0.0.1" af_inet)))
+        (let ((host (sys-gethostbyaddr "127.0.0.1" |AF_INET|)))
           (and host
                (or (equal? (slot-ref host 'name) "localhost")
                    (member "localhost" (slot-ref host 'aliases)))

@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.10 2001-09-05 11:18:31 shirok Exp $
+;;  $Id: netlib.stub,v 1.11 2001-09-29 09:27:45 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -72,15 +72,15 @@
   (assert (small-integer? protocol))
   "  SCM_RETURN(Scm_MakeSocket(domain, type, protocol));")
 
-(define-symbol PF_UNIX "sym_pf_unix" "Scm_MakeInteger(PF_UNIX)")
-(define-symbol PF_INET "sym_pf_inet" "Scm_MakeInteger(PF_INET)")
+(define-symbol |PF_UNIX| "sym_pf_unix" "Scm_MakeInteger(PF_UNIX)")
+(define-symbol |PF_INET| "sym_pf_inet" "Scm_MakeInteger(PF_INET)")
 
-(define-symbol AF_UNIX "sym_af_unix" "Scm_MakeInteger(AF_UNIX)")
-(define-symbol AF_INET "sym_af_inet" "Scm_MakeInteger(AF_INET)")
+(define-symbol |AF_UNIX| "sym_af_unix" "Scm_MakeInteger(AF_UNIX)")
+(define-symbol |AF_INET| "sym_af_inet" "Scm_MakeInteger(AF_INET)")
 
-(define-symbol SOCK_STREAM "sym_sock_stream" "Scm_MakeInteger(SOCK_STREAM)")
-(define-symbol SOCK_DGRAM  "sym_sock_dgram" "Scm_MakeInteger(SOCK_DGRAM)")
-(define-symbol SOCK_RAW    "sym_sock_raw" "Scm_MakeInteger(SOCK_RAW)")
+(define-symbol |SOCK_STREAM| "sym_sock_stream" "Scm_MakeInteger(SOCK_STREAM)")
+(define-symbol |SOCK_DGRAM|  "sym_sock_dgram" "Scm_MakeInteger(SOCK_DGRAM)")
+(define-symbol |SOCK_RAW|    "sym_sock_raw" "Scm_MakeInteger(SOCK_RAW)")
 
 (define-cproc socket-address (sock)
   (assert (socket? sock))
