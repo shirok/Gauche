@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.64 2002-03-09 10:58:20 shirok Exp $
+ *  $Id: number.c,v 1.65 2002-04-01 23:01:58 shirok Exp $
  */
 
 #include <math.h>
@@ -315,7 +315,7 @@ ScmObj Scm_Reciprocal(ScmObj obj)
         double r = SCM_COMPLEX_REAL(obj), r1;
         double i = SCM_COMPLEX_IMAG(obj), i1;
         double d;
-        if (r == 0.0 && i == 0.0) Scm_Error("divie by zero");
+        if (r == 0.0 && i == 0.0) Scm_Error("divide by zero");
         d = r*r + i*i;
         r1 = r/d;
         i1 = -i/d;
