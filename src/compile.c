@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.59 2001-09-08 10:49:36 shirok Exp $
+ *  $Id: compile.c,v 1.60 2001-09-24 11:32:00 shirok Exp $
  */
 
 #include "gauche.h"
@@ -32,26 +32,6 @@ static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
 
 /* constructor definition comes below */
-
-/*
- * SourceInfo object
- */
-
-static void source_info_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    Scm_Printf(port, "#<source-info %S>", SCM_SOURCE_INFO(obj)->info);
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SourceInfoClass, source_info_print);
-
-ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up)
-{
-    ScmSourceInfo *i = SCM_NEW(ScmSourceInfo);
-    SCM_SET_CLASS(i, SCM_CLASS_SOURCE_INFO);
-    i->info = info;
-    i->up = up;
-    return SCM_OBJ(i);
-}
 
 /* Conventions of internal functions
  *
@@ -432,8 +412,6 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             ADDCODE1(((ctx == SCM_COMPILE_TAIL)?
                       SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
                       SCM_VM_INSN1(SCM_VM_CALL, nargs)));
-            if (!(Scm_VM()->compilerFlags & SCM_COMPILE_NOSOURCE))
-                ADDCODE1(Scm_MakeSourceInfo(form, NULL));
 
             if (ctx == SCM_COMPILE_TAIL) {
                 code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs), code);
@@ -469,8 +447,6 @@ static ScmObj compile_varref(ScmObj obj, ScmObj env)
     } else {
         ADDCODE1(loc);
     }
-    if (!(Scm_VM()->compilerFlags & SCM_COMPILE_NOSOURCE))
-        ADDCODE1(Scm_MakeSourceInfo(obj, NULL));
     return code;
 }
 
@@ -627,9 +603,6 @@ static ScmObj compile_set(ScmObj form,
                   SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
                   SCM_VM_INSN1(SCM_VM_CALL, nargs)));
         
-        if (!(Scm_VM()->compilerFlags & SCM_COMPILE_NOSOURCE))
-            ADDCODE1(Scm_MakeSourceInfo(form, NULL));
-
         if (ctx == SCM_COMPILE_TAIL) {
             code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs), code);
         } else {

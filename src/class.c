@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.56 2001-09-18 08:06:53 shirok Exp $
+ *  $Id: class.c,v 1.57 2001-09-24 11:32:00 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1673,7 +1673,6 @@ void Scm__InitClass(void)
 
     /* compile.c */
     CINIT(SCM_CLASS_IDENTIFIER,       "<identifier>");
-    CINIT(SCM_CLASS_SOURCE_INFO,      "<source-info>");
 
     /* error.c */
     /* initialized in Scm__InitExceptions */

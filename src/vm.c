@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.107 2001-09-24 10:21:44 shirok Exp $
+ *  $Id: vm.c,v 1.108 2001-09-24 11:32:01 shirok Exp $
  */
 
 #include "gauche.h"
@@ -382,8 +382,9 @@ static void run_loop()
         FETCH_INSN(code);
         
         if (!SCM_VM_INSNP(code)) {
-            /* literal object or source info. */
-            if (!SCM_SOURCE_INFOP(code)) { val0 = code; theVM->numVals = 1; }
+            /* literal object */
+            val0 = code;
+            theVM->numVals = 1;
             continue;
         }
 
@@ -431,7 +432,9 @@ static void run_loop()
                 CHECK_STACK(reqstack);
 #endif
 #endif
-                PUSH_CONT(next);
+                if (!SCM_NULLP(next)) {
+                    PUSH_CONT(next);
+                }
                 PUSH_ENV_HDR();
                 pc = prep;
                 continue;
@@ -2035,28 +2038,27 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
 
 /*
  * Stack trace.
+ *   Returns a chain of information of continuation frames.
+ *   Each continuation frame info is...
+ *     (<pc> <env-info>)
+ *   where <pc> is the continuation instruction stream, and
+ *   <env-info> is the info of captured env.  <pc> may be #f
+ *   if it is C continuation.
  */
 
 ScmObj Scm_VMGetStack(ScmVM *vm)
 {
     ScmContFrame *c = vm->cont;
-    ScmEnvFrame *e = vm->env;
     ScmObj pc = vm->pc;
     ScmObj stack = SCM_NIL, stacktail = SCM_NIL;
 
-    /* Get info from the last subr call, if any.
-       This will be removed once source-info mechanism gone. */
-    SCM_FOR_EACH(pc, pc) {
-        if (SCM_SOURCE_INFOP(SCM_CAR(pc))) {
-            SCM_APPEND1(stack, stacktail, SCM_SOURCE_INFO(SCM_CAR(pc))->info);
-            break;
-        }
-        break;
-    }
-    
     while (c) {
-        if (e) SCM_APPEND1(stack, stacktail, e->info);
-        e = c->env;
+        ScmObj cinfo, einfo;
+        if (c->argp) cinfo = c->pc;
+        else         cinfo = SCM_FALSE;
+        if (c->env)  einfo = c->env->info;
+        else         einfo = SCM_FALSE;
+        SCM_APPEND1(stack, stacktail, SCM_LIST2(cinfo, einfo));
         c = c->prev;
     }
     return stack;
