@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.44 2001-04-23 06:33:46 shiro Exp $
+;;; $Id: stdlib.stub,v 1.45 2001-04-23 07:09:54 shiro Exp $
 ;;;
 
 
@@ -208,20 +208,12 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc quotient (n1 n2)
   "  SCM_RETURN(Scm_Quotient(n1, n2));")
-
 (define-cproc remainder (n1 n2)
   "  SCM_RETURN(Scm_Modulo(n1, n2, TRUE));")
-
 (define-cproc modulo (n1 n2)
   "  SCM_RETURN(Scm_Modulo(n1, n2, FALSE));")
 
-;; in Gauche, rational number is exact integer, i.e. N/1
-(define-cproc numerator (q)
-  "  if (!SCM_EXACTP(q)) Scm_Error(\"exact integer required: %S\", q_scm);
-  SCM_RETURN(q);")
-(define-cproc denominator (q)
-  (assert (exact? q))
-  "  SCM_RETURN(SCM_MAKE_INT(1));")
+;; gcd, lcd, numerator, denominator - in gauche/numeric.scm
 
 (define-cproc floor (v)
   "  SCM_RETURN(Scm_Round(v, SCM_ROUND_FLOOR));")
@@ -258,30 +250,12 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   else z = Scm_MakeComplex(Scm_GetDouble(a), Scm_GetDouble(b));
   SCM_RETURN(z);")
 
-(define-cproc make-polar (r t)
-  "  ScmObj z; double x, y;
-  if (!SCM_REALP(r)) Scm_Error(\"real number required, but got %S\", r);
-  if (!SCM_REALP(t)) Scm_Error(\"real number required, but got %S\", t);
-  x = Scm_GetDouble(r) * cos(Scm_GetDouble(t));
-  y = Scm_GetDouble(r) * sin(Scm_GetDouble(t));
-  if (y == 0.0) z = Scm_MakeFlonum(x);
-  else z = Scm_MakeComplex(x, y);
-  SCM_RETURN(z);")
+(define-cproc %complex->real/imag (z)
+  "  if (!SCM_COMPLEXP(z)) Scm_Error(\"complex required, but got %S\", z);
+  SCM_RETURN(Scm_Cons(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));")
+    
+;; make-polar, real-part, imag-part - defined in gauche/numeric.scm
 
-(define-cproc real-part (z)
-  "  ScmObj r = SCM_NIL;
-  if (SCM_INTP(z)) r = z;
-  else if (SCM_FLONUMP(z)) r = z;
-  else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
-  else Scm_Error(\"number required, but got %S\", z);
-  SCM_RETURN(r);")
-(define-cproc imag-part (z)
-  "  ScmObj r = SCM_NIL;
-  if (SCM_INTP(z)) r = SCM_MAKE_INT(0);
-  else if (SCM_FLONUMP(z)) r = Scm_MakeFlonum(0.0);
-  else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
-  else Scm_Error(\"number required, but got %S\", z);
-  SCM_RETURN(r);")
 (define-cproc magnitude (z)
   "  SCM_RETURN(Scm_Magnitude(z));")
 (define-cproc angle (z)
