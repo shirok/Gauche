@@ -419,10 +419,11 @@
 (define (tag->max tag) (caddr (assq tag *bounds*)))
 
 (define-macro (arith-test-generate tag)
-  (define (tag+ sym)
-    (string->symbol (string-append (symbol->string tag) "vector" sym)))
   `(arith-test ',tag ,(tag->min tag) ,(tag->max tag)
-               ,(tag+ "") ,(tag+ "-add") ,(tag+ "-sub") ,(tag+ "-mul")))
+               ,(string->symbol #`",|tag|vector")
+               ,(string->symbol #`",|tag|vector-add")
+               ,(string->symbol #`",|tag|vector-sub")
+               ,(string->symbol #`",|tag|vector-mul")))
 
 (define (arith-test tag min max make add sub mul)
   (define v0 (make 0 1 2 3))
@@ -458,6 +459,7 @@
   (define (result-hi-ok  v) (list 'error v 'error v))
   (define (result-lo-ok  v) (list 'error 'error v v))
 
+  ;; Add
   (test (format #f "~avector-add (v+v)" tag) (result-normal v0+v1)
         (gen-tester add v0 v1))
   (test (format #f "~avector-add (v+v)" tag) (result-hi-ok v0+v2)
@@ -485,6 +487,7 @@
   (test (format #f "~avector-add (v+b)" tag) (result-lo-ok vmin)
         (gen-tester add v0 (- big64)))
 
+  ;; Sub
   (test (format #f "~avector-sub (v-v)" tag) (result-normal v1-v0)
         (gen-tester sub v1 v0))
   (test (format #f "~avector-sub (v-v)" tag) (result-lo-ok  v3-v0)
@@ -509,6 +512,7 @@
   (test (format #f "~avector-sub (v-b)" tag) (result-hi-ok vmax)
         (gen-tester sub v0 (- big64)))
 
+  ;; Mul
   (test (format #f "~avector-mul (v*v)" tag) (result-normal v0*v1)
         (gen-tester mul v0 v1))
   (test (format #f "~avector-mul (v*v)" tag) (result-hi-ok v0*v2)
@@ -552,5 +556,76 @@
 (arith-test-generate u32)
 (arith-test-generate s64)
 (arith-test-generate u64)
+
+;;-------------------------------------------------------------------
+(test-section "bitwise operations")
+
+(define (bit-test tag v0 v1 s0 s1 ->list list-> and ior xor)
+  (define (tests opname op logop)
+    (test (format #f "~svector-~s ~s ~s" tag opname v0 v1)
+          (list-> (map logop (->list v0) (->list v1)))
+          (lambda () (op v0 v1)))
+    (test (format #f "~svector-~s ~s ~s" tag opname v0 s0)
+          (list-> (map (pa$ logop s0) (->list v0)))
+          (lambda () (op v0 s0)))
+    (test (format #f "~svector-~s ~s ~s" tag opname v0 s1)
+          (list-> (map (pa$ logop s1) (->list v0)))
+          (lambda () (op v0 s1))))
+  (tests 'and and logand)
+  (tests 'ior ior logior)
+  (tests 'xor xor logxor))
+
+(define-macro (bit-test-generate tag v0 v1 s0 s1)
+  `(bit-test ',tag ',v0 ',v1 ,s0 ,s1
+             ,(string->symbol #`",|tag|vector->list")
+             ,(string->symbol #`"list->,|tag|vector")
+             ,(string->symbol #`",|tag|vector-and")
+             ,(string->symbol #`",|tag|vector-ior")
+             ,(string->symbol #`",|tag|vector-xor")))
+
+(bit-test-generate s8
+                   #s8(#x0f #x70 #x-0f #x-70)
+                   #s8(#x55 #x2a #x-55 #x-2a)
+                   #x55
+                   #x-55)
+(bit-test-generate u8
+                   #u8(#x0f #x70 #xf0 #xcc)
+                   #u8(#x55 #xaa #x5a #xa5)
+                   #x55
+                   #xaa)
+(bit-test-generate s16
+                   #s16(#x0fff #x7070 #x-0fff #x-7070)
+                   #s16(#x3c3c #x-43c3 #x43c3 #x-3c3c)
+                   #x55aa
+                   #x-55aa)
+(bit-test-generate u16
+                   #u16(#x0fff #x7070 #xff00 #xc0c0)
+                   #u16(#x3c3c #xc3c3 #x55aa #xaa55)
+                   #x55aa
+                   #x9696)
+(bit-test-generate s32
+                   #s32(#x0fffffff #x70707070 #x-0fffffff #x-70707070)
+                   #s32(#x3c3c3c3c #x-43c3c3c3 #x43c3c3c3 #x-3c3c3c3c)
+                   #x55aa55aa
+                   #x-55aa55aa)
+(bit-test-generate u32
+                   #u32(#x0fffffff #x70707070 #xff00ff00 #xc0c0c0c0)
+                   #u32(#x3c3c3c3c #xc3c3c3c3 #x55aa55aa #xaa55aa55)
+                   #x55aa55aa
+                   #x96966969)
+(bit-test-generate s64
+                   #s64(#x0fffffffffffffff #x7070707007070707
+                        #x-0fffffffffffffff #x-7070707007070707)
+                   #s64(#x3c3c3c3cc3c3c3c3 #x-43c3c3c33c3c3c3c
+                        #x43c3c3c3c3c3c3c3 #x-3c3c3c3c3c3c3c3c)
+                   #x55aa55aa55aa55aa
+                   #x-55aa55aa55aa55aa)
+(bit-test-generate u64
+                   #u64(#x0fffffffffffffff #x70707070f0f0f0f0
+                        #xff00ff00ff00ff00 #xc0c0c0c003030303)
+                   #u64(#x3c3c3c3c3c3c3c3c #xc3c3c3c3c3c3c3c3
+                        #x55aa55aa55aa55aa #xaa55aa55aa55aa55)
+                   #x55aa55aa5a5a5a5a
+                   #x9696696988778877)
 
 (test-end)
