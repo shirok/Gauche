@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.327 2002-12-13 13:06:50 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.328 2002-12-15 00:16:16 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3462,6 +3462,15 @@ The second form is merely a syntactic sugar of:
 @end example
 @end defspec
 
+@c EN
+Note: to find out if a symbol has definition (global binding) in
+the current module, you can use @code{symbol-bound?}
+(@xref{Module introspection}).
+@c JP
+註: シンボルが現在のモジュール中で定義されているか(グローバルな束縛を持つか)
+を調べるには、@code{symbol-bound?}が使えます
+(@ref{Module introspection}参照)。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Modules,  , Definitions, Core syntax
@@ -4082,6 +4091,11 @@ list (@ref{Module inheritance}参照) を返します。
 @c COMMON
 @end defun
 
+@defun symbol-bound? symbol &optional module
+Returns true iff @var{symbol}'s global binding is visible
+from @var{module}.  If @var{module} is omitted, the current module
+is used.
+@end defun
 
 @node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
@@ -6724,6 +6738,19 @@ using @code{list->string} is faster than using @code{make-string} and
 (@ref{文字列ポート}参照)。それが使えない場合、
 文字のリストを作成し、@code{list->string}で変換する方がまだ@code{make-string}と
 @code{string-set!}を使うより良いでしょう。
+@c COMMON
+@end defun
+
+@defun make-byte-string k &optional byte
+@c EN
+Creates and returns an incomplete string o size @var{k}.
+If @var{byte} is given,
+which must be an exact integer, and its lower 8 bits
+are used to initialize every byte in the created string.
+@c JP
+大きさ@var{k}の不完全な文字列を作成して返します。
+@var{byte}が与えられた場合は、その下位1バイトで文字列の各バイトを初期化します。
+@var{byte}は正確な整数でなければなりません。
 @c COMMON
 @end defun
 
