@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.74 2003-05-16 10:13:13 shirok Exp $
+ *  $Id: load.c,v 1.75 2003-05-29 08:40:39 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -618,6 +618,18 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
         /* already loaded */
         goto cleanup;
     }
+    SCM_UNWIND_PROTECT {
+        ScmVM *vm = Scm_VM();
+        if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
+            int len = Scm_Length(vm->load_history);
+            SCM_PUTZ(";;", 2, SCM_CURERR);
+            while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
+            Scm_Printf(SCM_CURERR, "Dynamically Loading %s...\n", cpath);
+        }
+    } SCM_WHEN_ERROR {
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
+        SCM_NEXT_HANDLER;
+    } SCM_END_PROTECT;
     handle = dl_open(cpath);
     if (handle == NULL) {
         err = dl_error();
