@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.32 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: vm.h,v 1.33 2001-06-30 20:42:44 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -137,12 +137,12 @@ extern ScmClass Scm_SourceInfoClass;
 extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 
 /*
- * C-level error handler
+ * C-level escape handler
  */
-typedef struct ScmErrorHandlerRec {
-    struct ScmErrorHandlerRec *prev;
+typedef struct ScmEscapeHandlerRec {
+    struct ScmEscapeHandlerRec *prev;
     jmp_buf jbuf;
-} ScmErrorHandler;
+} ScmEscapeHandler;
 
 /*
  * VM structure
@@ -152,8 +152,9 @@ struct ScmVMRec {
     SCM_HEADER;
     ScmVM *parent;
     ScmModule *module;          /* current global namespace */
-    ScmErrorHandler *escape;    /* current escape point */
-    ScmObj errorHandler;        /* error handler */
+    ScmEscapeHandler *escape;    /* current escape point */
+    void (*errorHandler)(ScmObj, void*); /* error handler */
+    void *errorHandlerData;     /* error handler data */
     ScmVMActivationHistory *history; /* activation history */
 
     unsigned int compilerFlags; /* Compiler flags */
@@ -188,6 +189,7 @@ struct ScmVMRec {
 extern ScmVM *Scm_SetVM(ScmVM *vm);
 extern ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module);
 extern void Scm_VMDump(ScmVM *vm);
+extern void Scm_VMDefaultExceptionHandler(ScmObj, void *);
 
 extern ScmClass Scm_VMClass;
 #define SCM_CLASS_VM              (&Scm_VMClass)
@@ -235,7 +237,7 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 #define SCM_PUSH_ERROR_HANDLER                  \
     do {                                        \
-       ScmErrorHandler handler;                 \
+       ScmEscapeHandler handler;                \
        handler.prev = Scm_VM()->escape;         \
        Scm_VM()->escape = &handler;             \
        if (setjmp(handler.jbuf) == 0) {
