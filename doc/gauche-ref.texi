@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.44 2001-07-14 18:58:28 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.45 2001-07-25 10:48:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3525,6 +3525,10 @@ of descendants of @var{class}.
 
 @node System metaclasses, Class introspection, Metaobject protocol, Metaobject protocol
 @subsection System metaclasses
+
+@deftp {Class} <top>
+@clindex top
+@end deftp
 
 @deftp {Class} <class>
 @clindex class
