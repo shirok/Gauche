@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.139 2002-04-21 21:14:38 shirok Exp $
+ *  $Id: vm.c,v 1.140 2002-04-24 23:10:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1821,7 +1821,6 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
     ScmObj after = SCM_OBJ(data[0]);
     ScmObj prev  = SCM_OBJ(data[1]);
     void *d[3];
-    int i;
 
     vm->handlers = prev;
     d[0] = (void*)result;
@@ -1935,7 +1934,6 @@ static void report_error(ScmObj e)
     ScmVM *vm = theVM;
     ScmObj stack = Scm_VMGetStackLite(vm), cp;
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
-    ScmObj handlers = vm->handlers;
     int depth = 0;
 
     if (SCM_ERRORP(e) && SCM_STRINGP(SCM_ERROR_MESSAGE(e))) {
@@ -1963,6 +1961,7 @@ static void report_error(ScmObj e)
             Scm_Printf(SCM_PORT(err), "\n");
         }
     }
+    SCM_FLUSH(err);
 }
 
 /*
@@ -2051,7 +2050,6 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
 ScmObj Scm_VMThrowException(ScmObj exception)
 {
     ScmVM *vm = theVM;
-    ScmObj handlers = vm->handlers, hp;
     ScmEscapePoint *ep = vm->escapePoint;
 
     vm->runtimeFlags &= ~SCM_ERROR_BEING_HANDLED;
@@ -2257,6 +2255,7 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
         vm->handlers = ep->handlers;
         return throw_cont_body(handlers_to_call, ep, args);
     }
+    return SCM_UNDEFINED; /*dummy*/
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
