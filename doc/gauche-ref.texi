@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.392 2003-05-26 11:05:05 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.393 2003-05-28 10:51:29 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18001,10 +18001,22 @@ Returns a pathname of the socket address.
 @c COMMON
 @end deffn
 
+@deftp {Builtin Class} <sockaddr-in6>
+@clindex sockaddr-in6
+@c EN
+AF_INET6 family socket address.  This is only avalable if
+gauche is configured with --enable-ipv6 configure option.
+The constructor and the slots are the same as @code{<sockaddr-in>}.
+@c JP
+AF_INET6ファミリのソケットアドレスです。
+このクラスはgaucheが--enable-ipv6つきでconfigureされている場合に使えます。
+コンストラクタとスロットは@code{<sockaddr-in>}と同じです。
+@c COMMON
+@end deftp
 
 @node High-level network functions, Low-level socket interface, Socket address, gauche.net - Networking
 @subsection High-level network functions
-@c EN 高レベルネットワーク手続き
+@c NODE 高レベルネットワーク手続き
 
 @deftp {Builtin Class} <socket>
 @clindex socket
@@ -18059,18 +18071,39 @@ of addreess @var{path}.
 @c EN
 The client socket is connected to the inet domain server socket
 with hostname @var{host} and port @var{port}.   TCP protocol is
-assumed.   @var{host} can be either a dotted decimal notation of
-IPv4 address, or a hostname.  @var{port} must be an exact integer.
+assumed.   @var{host} can be either a hostname, or
+a dotted decimal notation of IPv4 address.
+If gauche is compiled with --enable-ipv6, IPv6 address notation
+can also be used.  @var{Port} must be an exact integer.
+
+If gauche is compiled with --enable-ipv6, and the hostname is given,
+and the hostname has both IPv6 and IPv4 addresses, then
+IPv6 connection is tried first, and IPv4 is used when IPv6 fails.
 @c JP
 ホスト@var{host}のポート@var{port}で待っているInetドメインのサーバーソケットに
 TCPを使って接続します。@var{host}はIPアドレスのドット表記でもホスト名でも
-構いません。@var{port}は正確な整数でなければなりません。
+構いません。Gaucheが--enable-ipv6でコンパイルされていれば、IPv6形式のアドレス
+表記も受け付けます。
+@var{port}は正確な整数でなければなりません。
+
+Gaucheが--enable-ipv6でコンパイルされており、ホスト名が渡されて、
+そのホストがIPv6とIPv4の両方のアドレスを持っていた場合は、
+最初にIPv6での接続が試みられ、それが失敗した場合にIPv4での接続が試みられます。
 @c COMMON
 @item (make-client-socket @var{host} @var{port})
 @c EN
 This works the same as above.  This form is for compatibility with STk.
 @c JP
 上と同じです。この形式はSTkとの互換性のために提供されています。
+@c COMMON
+@item (make-client-socket @var{sockaddr})
+@c EN
+If an instance of @code{<sockaddr>} is passed,
+a socket suitable for @var{sockaddr} is opened and then connected
+to the given address.
+@c JP
+@code{<sockaddr>}のインスタンスが渡された場合には、それに対応する
+ソケットがオープンされ、そのアドレスへと接続されます。
 @c COMMON
 @end table
 
@@ -18131,6 +18164,14 @@ with STk's @code{make-server-socket}.
 @c JP
 これは上の形式と同じ動作をします。STkの@code{make-server-socket}との
 互換性のために提供されています。
+@c COMMON
+@item (make-server-socket @var{sockaddr} [:reuse-addr? @var{flag}])
+@c EN
+This form explicitly specifies the socket address to listen
+by an instance of @code{<sockaddr>}.
+@c JP
+この形式は、listenするソケットアドレスを@code{<sockaddr>}のインスタンスで
+明示的に指定します。
 @c COMMON
 @end table
 
@@ -18579,6 +18620,33 @@ Otherwise, @code{#f} is returned.
         (slot-ref proto 'proto)))
   @result{} ("udp" ("UDP") 17)
 @end example
+@end defun
+
+@deftp {Builtin Class} <sys-addrinfo>
+@clindex sys-addrinfo
+The new interface to keep address information.
+Corresponds to @code{struct addrinfo} in C.
+This is only available if gauche is configured with --enable-ipv6 option.
+The following slots are provided.
+
+@defivar {<sys-addrinfo>} flags
+@end defivar
+@defivar {<sys-addrinfo>} family
+@end defivar
+@defivar {<sys-addrinfo>} socktype
+@end defivar
+@defivar {<sys-addrinfo>} protocol
+@end defivar
+@defivar {<sys-addrinfo>} addrlen
+@end defivar
+@defivar {<sys-addrinfo>} addr
+@end defivar
+@end deftp
+
+@defun sys-getaddrinfo nodename servname hints
+Returns @code{<sys-addrinfo>} instance from the given @var{nodename},
+@var{servname} and @var{hints}.
+This is only available if gauche is compiled with --enable-ipv6 option.
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -25829,7 +25897,7 @@ A simple example:
 * rfc.uri - URI parsing and construction::  
 * slib - SLIB::                 
 * text.csv - CSV tables::       
-* text.diff - Calculate difference of text files::  
+* text.diff - Calculate difference of text streams::  
 * text.html-lite - Simple HTML document construction::  
 * text.parse - Parsing input stream::  
 * text.tr - Transliterate characters::  
@@ -28684,7 +28752,7 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node text.csv - CSV tables, text.diff - Calculate difference of text files, slib - SLIB, Library modules - Utilities
+@node text.csv - CSV tables, text.diff - Calculate difference of text streams, slib - SLIB, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -28762,41 +28830,69 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.diff - Calculate difference of text files, text.html-lite - Simple HTML document construction, text.csv - CSV tables, Library modules - Utilities
-@section @code{text.diff} - Calculate difference of text files
+@node text.diff - Calculate difference of text streams, text.html-lite - Simple HTML document construction, text.csv - CSV tables, Library modules - Utilities
+@section @code{text.diff} - Calculate difference of text streams
 
 @deftp {Module} text.diff
 @mdindex text.diff
-This module calculates the difference of two text files or strings,
+This module calculates the difference of two text streams or strings,
 using @code{util.lcs} (@xref{util.lcs - The longest common subsequence}).
 @end deftp
 
 @defun diff src-a src-b &keyword reader eq-fn
+Generates an "edit list" from text sources @var{src-a} and @var{src-b}.
+
 Each of text sources, @var{src-a} and @var{src-b}, can be either an input
 port or a string.  If it is a string, it is converted to a string input
 port internally.  Then, the text streams from both sources are converted
 to sequences by calling @var{reader} repeatedly on them; the default
-of @var{reader} is @code{read-line}.
-Finally, two sequences are passed to @code{lcs-with-positions}
-procedure to find the longest common subsequences of them.
-The function @var{eq-fn} is used to compare elements in the sequences,
-and whose default is @code{equal?}.
+of @var{reader} is @code{read-line}, and those sequences are
+passed to @code{lcs-edit-list} to calculate the edit list.
+The equality function @var{eq-fn} is also passed to @code{lcs-edit-list}.
 
-This procedure returns three values: The first two values
-are sequences obtained from @var{src-a} and @var{src-b}, respectively.
-The last value is a list of the result of @code{lcs-with-positions},
-which is the following form:
+An edit list is a set of commands that turn the text sequence
+from @code{src-a} to the one from @code{src-b}.
+See the description of @code{lcs-edit-list} for
+the detailed explanation of the edit list.
+
 @example
-(@var{length} ((@var{elt} @var{a-pos} @var{b-pos}) @dots{}))
+(diff "a\nb\nc\nd\n" "b\ne\nd\nf\n")
+@result{}
+  (((- 0 "a"))
+   ((- 2 "c") (+ 1 "e"))
+   ((+ 3 "f")))
 @end example
-@var{Length} is an integer showing the length of the found LCS.
-What follows is a list of elements of LCS; each sublist
-consists of the element, the integer position of the element
-in @var{seq-a}, then the integer position of the element in @var{seq-b}.
-
 @end defun
 
 @defun diff-report src-a src-b &keyword reader eq-fn writer
+A convenience procedure to take the diff of two text sources
+and display the result nicely.  This procedure calls @code{lcs-fold}
+to calculate the difference of two text sources.  The meanings of
+@var{src-a}, @var{src-b}, @var{reader} and @var{eq-fn} are the
+same as @code{diff}'s.
+
+@var{Writer} is a procedure that takes two arguments, the text element
+and a type, which is either a symbol @code{+}, 
+a symbol @code{-}, or @code{#f}.   If the text element is only
+in @var{src-a}, @var{writer} is called with the element and
+@code{-}.  If the text element is only in @var{src-b}, 
+it is called with the element and @code{+}.  If the text element
+is in both sources, it is called with the element and
+@code{#f}.   The default procedure of @var{writer} prints
+the passed text element to the current output port
+in unified-diff-like format:
+@example
+(diff-report "a\nb\nc\nd\n" "b\ne\nd\nf\n")
+@end example
+displays: 
+@example
+- a
+  b
+- c
++ e
+  d
++ f
+@end example
 @end defun
 
 
@@ -28857,7 +28953,7 @@ in @var{seq-a}, then the integer position of the element in @var{seq-b}.
 @c @end defun
 
 @c ----------------------------------------------------------------------
-@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.diff - Calculate difference of text files, Library modules - Utilities
+@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.diff - Calculate difference of text streams, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
 
 @deftp {Module} text.html-lite
@@ -29877,8 +29973,8 @@ This module implements the algorithm to find the longest common subsequence
 of two given sequences.
 
 One of the applications of this algorithm is to calculate
-the difference of two text files;
-see @ref{text.diff - Calculate difference of text files}.
+the difference of two text streams;
+see @ref{text.diff - Calculate difference of text streams}.
 @end deftp
 
 @defun lcs seq-a seq-b &optional eq-fn

@@ -1,3 +1,12 @@
+2003-05-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.scm : made make-client-socket and make-server-socket
+	  take a <sockaddr> instance as well.
+
+	* lib/text/diff.scm : changed API.
+
+	* INSTALL.esc : added description of --enable-ipv6
+
 2003-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm : removed dependency on gauche.thread

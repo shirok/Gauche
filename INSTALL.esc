@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.21 2003-02-05 07:50:07 shirok Exp $
+$Id: INSTALL.esc,v 1.22 2003-05-28 10:51:15 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -101,15 +101,16 @@ Gauche takes such characters as the first byte of multibyte charaters.
   ./configure --enable-multibyte=no      ;; No multibyte string
 
 <? (if-lang japanese? !>
-Gaucheはiconvを利用したキャラクタエンコーディングを変換するモジュールを持っています。
-システムによっては、iconvがサポートされていなかったり、サポートされていても
-エンコーディングに制限があったりバグがあるかもしれません。--with-iconvオプションで
-外部のiconvライブラリを利用することができます。
+Gaucheは代表的な日本語文字エンコーディングを認識し変換することが
+できますが、それ以外のエンコーディングに関しては、iconvが利用可能で
+あればそれを利用して変換を行います。
+iconvが標準でインストールされていないシステムでは、
+--with-iconvオプションで外部のiconvライブラリを利用することができます。
 <? else !>
-Gauche has a module to convert various character encodings, using
-iconv() function.   Some systems lack iconv, or have the one with
-limited capability or bugs, and you may want to use an external
-iconv library.  If so, you can specify the location of your external
+Gauche can recognize and converts typical japanese character
+encodings, but delegates other conversion work to iconv library
+(when available).   If your system does not have iconv installed,
+you can specify the location of your external
 iconv library by --with-iconv option.
 <? ) !>
 
@@ -164,6 +165,29 @@ For example, if you want to use gdbm library in /usr/local,
 you can say:
 
   --with-local=/usr/local
+<? ) !>
+
+<? (header "IPv6サポート" "IPv6 support") !>
+
+<? (if-lang japanese? !>
+Gaucheは実験的にIPv6をサポートしています。デフォルトではこの機能はoffに
+なっていますが、次のconfigureオプションで有効にすることができます。
+<? else !>
+Gauche has experimental support for IPv6.
+It is turned off by default,
+but you can include it by giving the following configure option.
+<? ) !>
+
+  --enable-ipv6
+
+<? (if-lang japanese? !>
+もちろん、OSでIPv6がサポートされていなければなりません。
+現在の実装はFreeBSD上でテストされています。
+詳しい機能はリファレンスマニュアルのgauche.netの項を参照して下さい。
+<? else !>
+Of course your OS has to have the support of IPv6.
+The current implementation is tested on FreeBSD.
+See the gauche.net section of the reference manual for details.
 <? ) !>
 
 <? (header "SLIBの場所" "Selecting SLIB location") !>
