@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.9 2003-02-11 08:50:32 shirok Exp $
+;;;  $Id: extract,v 1.10 2003-03-07 01:05:32 shirok Exp $
 ;;;
 
 (use gauche.regexp)
@@ -69,7 +69,7 @@
         (process-menu menu) (in (read-line)))
       (else (display
              (regexp-replace-all #/@VERSION@/
-              (regexp-replace-all #/(@x?ref){([^\}]+)}/ line process-ref)
+              (regexp-replace-all #/(@x?ref)\{([^\}]+)\}/ line process-ref)
               *version*))
             (newline)
             (in (read-line)))))
