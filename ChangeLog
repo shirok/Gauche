@@ -1,3 +1,7 @@
+2004-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in : added dependency of symbol.o on builtin-syms.c
+
 2004-05-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in : cleaned up the source a bit.

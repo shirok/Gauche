@@ -152,6 +152,8 @@ autoloads.c : autoloads.scm
 builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
 	gosh -A../lib ./builtin-syms.scm
 
+symbol.$(OBJEXT) : builtin-syms.c
+
 port.$(OBJEXT) : port.c portapi.c
 
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
