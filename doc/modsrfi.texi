@@ -3507,10 +3507,12 @@ the option procedure is called as follows:
 与えられたオプションが @var{options} 内のオプションオブジェクトのひとつ
 にマッチすれば、オプション手続きが以下のように呼出されます。
 @c COMMON
+
 @example
 (@var{option-proc} @var{option} @var{name} @var{arg} @var{seed} @dots{})
 @end example
-@ EN
+
+@c EN
 where @var{option} is the matched option object, @var{name} is
 the string actually used to specify the option, @var{arg} is
 the option argument (or @code{#f} if there's none), and
@@ -3534,9 +3536,11 @@ is called as follows:
 @code{args-fold} がオペランドを見つけたら、@var{operand-proc} が
 以下のように呼出されます。
 @c COMMON
+
 @example
 (@var{operand-proc} @var{operand} @var{seed} @dots{})
 @end example
+
 @c EN
 @var{Operand-proc} must return as many arguments as @var{seed}s.
 
