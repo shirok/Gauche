@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.55 2004-08-01 05:41:21 shirok Exp $
+;;;  $Id: object.scm,v 1.55.2.1 2004-12-27 07:25:03 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -554,6 +554,10 @@
     (else
      (errorf "bad symbol argument to ~s: ~s: must be either 'before or 'after"
              self s))))
+
+;; A trick to let a condition type behave its own predicate
+(define-method object-apply ((type <condition-meta>) obj)
+  (condition-has-type? obj type))
 
 ;;;
 ;;; Make exported symbol visible from outside

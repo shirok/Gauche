@@ -1,5 +1,10 @@
 2004-12-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/condutil.scm, lib/gauche/object.scm (object-apply):
+	  moved object-apply of <condition-type> from condutil.scm to
+	  object.scm, so that condition-type-as-predicate works without
+	  loading condutil.scm.
+
 	* src/compile.c, src/class.c (<identifier>): expose identifier
 	  internals to Scheme.  This is temporary solution until the compiler
 	  is revised.
