@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.15 2003-09-13 11:36:23 shirok Exp $
+ *  $Id: jconv.c,v 1.16 2003-10-19 08:07:19 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -472,7 +472,7 @@ static inline size_t utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
     
     INCHK(2);
     u1 = (unsigned char)inptr[1];
-    if (u1 < 0x80 || u1 >= 0xbf) return ILLEGAL_SEQUENCE;
+    if (u1 < 0x80 || u1 >= 0xc0) return ILLEGAL_SEQUENCE;
 
     switch (u0) {
     case 0xc2: etab = utf2euc_c2; break;

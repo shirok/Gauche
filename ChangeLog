@@ -1,3 +1,9 @@
+2003-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/jconv.c : fixed a bug in utf8->eucjp conversion routine
+	  that incorrectly rejected 2-byte utf8 sequences which end with 0xbf
+	  (Thanks to Kimura Fuyuki for identifying the problem).
+
 2003-10-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c, src/gauche.h, src/moplib.stub, lib/gauche/object.scm :
