@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.6 2001-05-03 19:05:39 shirok Exp $
+;; $Id: euc-jp.scm,v 1.7 2001-05-21 08:50:02 shirok Exp $
 
 (use gauche.test)
 
@@ -101,6 +101,39 @@
         (string-pointer-set! sp 0)
         (list (string-pointer-substring sp)
               (string-pointer-substring sp :after #t))))
+
+;;-------------------------------------------------------------------
+(test-section "incomplete strings")
+
+(test "string-length" 6 (lambda () (string-length #"あいう")))
+(test "string-complete->incomplete" #"あいう" 
+      (lambda () (string-complete->incomplete "あいう")))
+(test "string-complete->incomplete" #"あいう"
+      (lambda () (string-complete->incomplete #"あいう")))
+(test "string-incomplete->complete" "あいう"
+      (lambda () (string-incomplete->complete #"あいう")))
+(test "string-incomplete->complete" "あいう"
+      (lambda () (string-incomplete->complete "あいう")))
+
+(test "string=?" #t (lambda () (string=? #"あいう" #"あいう")))
+
+(test "string-byte-ref" #xa2 (lambda () (string-byte-ref #"あいう" 1)))
+
+(test "string-append" #"あいうえお"
+      (lambda () (string-append "あいう" #"えお")))
+(test "string-append" #"あいうえお"
+      (lambda () (string-append #"あいう" "えお")))
+(test "string-append" #"あいうえお"
+      (lambda () (string-append #"あいう" #"えお")))
+(test "string-append" 10
+      (lambda () (string-length (string-append "あいう" "えお" #""))))
+
+(test "string-substitute!" #"\xa4bc\xa4"
+      (lambda () (string-substitute! (string-copy #"あい") 1 #"bc")))
+
+(test "string-incompltet->incomplete" "あ"
+      (lambda () (string-incomplete->complete
+                  (string-append #"\xa4" #"\xa2"))))
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
