@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.57 2002-04-27 00:54:01 shirok Exp $
+ *  $Id: port.c,v 1.58 2002-04-27 08:05:34 shirok Exp $
  */
 
 #include <unistd.h>
@@ -21,6 +21,9 @@
 #include <errno.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+
+#define MAX(a, b) ((a)>(b)? (a) : (b))
+#define MIN(a, b) ((a)<(b)? (a) : (b))
 
 /*================================================================
  * Common
@@ -422,12 +425,16 @@ static void bufport_write(ScmPort *p, const char *src, int siz)
     } while (siz > 0);
 }
 
-/* fills the buffer up to cnt bytes.  if sync is TRUE, this won't return
-   until cnt bytes are read. */
-static int bufport_fill(ScmPort *p, int cnt, int sync)
+/* Fills the buffer.  Reads at least MIN bytes (unless it reaches EOF).
+ * If SYNC is true or the port buffering mode is BUFFER_NONE, this function
+ * reads no more than MIN bytes.  Otherwise, this function may read more
+ * bytes if possible.
+ * Returns the number of bytes actually read, or 0 if EOF, or -1 if error.
+ */
+static int bufport_fill(ScmPort *p, int min, int sync)
 {
     int cursiz = (int)(p->src.buf.end - p->src.buf.current);
-    int nread = 0;
+    int nread = 0, toread;
     if (cursiz > 0) {
         memmove(p->src.buf.buffer, p->src.buf.current, cursiz);
         p->src.buf.current = p->src.buf.buffer;
@@ -435,40 +442,63 @@ static int bufport_fill(ScmPort *p, int cnt, int sync)
     } else {
         p->src.buf.current = p->src.buf.end = p->src.buf.buffer;
     }
-    if (cnt <= 0) {
-        cnt = SCM_PORT_BUFFER_ROOM(p);
+    if (min <= 0) min = SCM_PORT_BUFFER_ROOM(p);
+    if (sync || p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+        toread = min;
+    } else {
+        toread = SCM_PORT_BUFFER_ROOM(p);
     }
+
     do {
-        int r = p->src.buf.filler(p, cnt-nread);
+        int r = p->src.buf.filler(p, toread-nread);
         if (r <= 0) break;
         nread += r;
         p->src.buf.end += r;
-    } while (sync && nread < cnt);
+    } while (nread < min);
     return nread;
 }
 
-/* reads siz bytes to dst from the buffered port.  siz may be larger
-   than the port's buffer. */
+/* Reads siz bytes to dst from the buffered port.  siz may be larger
+ * than the port's buffer, in which case the filler procedure is called
+ * more than once.  Unless the port buffering mode is BUFFER_FULL,
+ * this may read less than SIZ bytes if only that amount of data is
+ * immediately available.
+ * Caveat: if the filler procedure returns N where 0 < N < requested size,
+ * we know less data is available; non-greedy read can return at that point.
+ * However, if the filler procedure returns exactly the requested size,
+ * and we need more bytes, we gotta be careful -- next call to the filler
+ * procedure may or may not hang.  So we need to check the ready procedure.
+ */
 static int bufport_read(ScmPort *p, char *dst, int siz)
 {
-    int nread = 0;
-    do {
-        int avail = (int)(p->src.buf.end - p->src.buf.current);
-        if (avail >= siz) {
-            memcpy(dst, p->src.buf.current, siz);
-            p->src.buf.current += siz;
-            nread += siz;
-            siz = 0;
-        } else {
-            memcpy(dst, p->src.buf.current, avail);
-            p->src.buf.current += avail;
-            nread += avail;
-            siz -= avail;
-            dst += avail;
-            bufport_fill(p, (siz > p->src.buf.size)? 0 : siz, TRUE);
-            if (p->src.buf.current == p->src.buf.end) break;
+    int nread = 0, r, req;
+    int avail = (int)(p->src.buf.end - p->src.buf.current);
+
+    req = MIN(siz, avail);
+    if (req > 0) {
+        memcpy(dst, p->src.buf.current, req);
+        p->src.buf.current += req;
+        nread += req;
+        siz -= req;
+        dst += req;
+    }
+    while (siz > 0) {
+        req = MIN(siz, p->src.buf.size);
+        r = bufport_fill(p, req, TRUE);
+        if (r <= 0) break; /* EOF or an error*/
+        memcpy(dst, p->src.buf.current, r);
+        p->src.buf.current += r;
+        nread += r;
+        siz -= r;
+        dst += r;
+        if (p->src.buf.mode != SCM_PORT_BUFFER_FULL) {
+            if (r < req) break;
+            if (p->src.buf.ready
+                && p->src.buf.ready(p) == SCM_FD_WOULDBLOCK) {
+                break;
+            }
         }
-    } while (siz > 0);
+    }
     return nread;
 }
 
@@ -711,10 +741,38 @@ void Scm_Ungetc(ScmChar c, ScmPort *port)
     SCM_UNGETC(c, port);
 }
 
+/*---------------------------------------------------
+ * Getb
+ */
+
+/* handle the case that there's remaining data in the scratch buffer */
+static int getb_scratch(ScmPort *p)
+{
+    int b = (unsigned char)p->scratch[0], i;
+    p->scrcnt--;
+    for (i=0; i<p->scrcnt; i++) p->scratch[i]=p->scratch[i+1];
+    return b;
+}
+
+/* handle the case that there's an ungotten char */
+static int getb_ungotten(ScmPort *p)
+{
+    SCM_CHAR_PUT(p->scratch, p->ungotten);
+    p->scrcnt = SCM_CHAR_NBYTES(p->ungotten);
+    p->ungotten = SCM_CHAR_INVALID;
+    return getb_scratch(p);
+}
+
+/* getb body */
 int Scm_Getb(ScmPort *p)
 {
     int b = 0;
     CLOSE_CHECK(p);
+
+    /* check if there's "pushded back" stuff */
+    if (p->scrcnt) return getb_scratch(p);
+    if (p->ungotten != SCM_CHAR_INVALID) return getb_ungotten(p);
+    
     /* TODO: ungotten char */
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -736,19 +794,39 @@ int Scm_Getb(ScmPort *p)
     return b;
 }
 
+/*--------------------------------------------------- 
+ * Getc 
+ */
+
+/* handle the case that there's data in scratch area */
+static int getc_scratch(ScmPort *p)
+{
+    char tbuf[SCM_CHAR_MAX_BYTES];
+    int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]), ch, i, curr = p->scrcnt;
+    memcpy(tbuf, p->scratch, curr);
+    p->scrcnt = 0;
+    for (i=curr; i<=nb; i++) {
+        int r = Scm_Getb(p);
+        if (r == EOF) {
+            Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+        }
+        tbuf[i] = (char)r;
+    }
+    SCM_CHAR_GET(tbuf, ch);
+    return ch;
+}
+
+/* getc main body */
 int Scm_Getc(ScmPort *p)
 {
     int first, nb, c = 0;
 
     CLOSE_CHECK(p);
+    if (p->scrcnt > 0) return getc_scratch(p);
     if (p->ungotten != SCM_CHAR_INVALID) {
         c = p->ungotten;
         p->ungotten = SCM_CHAR_INVALID;
         return c;
-    }
-
-    if (p->scrcnt > 0) {
-        Scm_Error("binary/character mixed I/O is not supported yet, sorry (port %S)", p);
     }
 
     switch (SCM_PORT_TYPE(p)) {
@@ -768,8 +846,7 @@ int Scm_Getc(ScmPort *p)
                 memcpy(p->scratch, p->src.buf.current-1, p->scrcnt);
                 p->src.buf.current = p->src.buf.end;
                 rest = nb + 1 - p->scrcnt;
-                bufport_fill(p, rest, TRUE);
-                if (p->src.buf.current + rest > p->src.buf.end) {
+                if (bufport_fill(p, rest, FALSE) < rest) {
                     /* TODO: make this behavior customizable */
                     Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
                 }
@@ -810,15 +887,43 @@ int Scm_Getc(ScmPort *p)
     return c;
 }
 
-/*
+/*--------------------------------------------------- 
  * Getz - block read.
+ *   If the buffering mode is BUFFER_FULL, this reads BUFLEN bytes
+ *   unless it reaches EOF.  Otherwise, this reads less than BUFLEN
+ *   if the data is not immediately available.
  */
+static int getz_scratch(char *buf, int buflen, ScmPort *p)
+{
+    int i;
+    if (p->scrcnt >= buflen) {
+        memcpy(buf, p->scratch, buflen);
+        p->scrcnt -= buflen;
+        for (i=0; i<p->scrcnt; i++) p->scratch[i] = p->scratch[i+buflen];
+        return buflen;
+    } else {
+        memcpy(buf, p->scratch, p->scrcnt);
+        i = p->scrcnt;
+        p->scrcnt = 0;
+        return i + Scm_Getz(buf+i, buflen-i, p);
+    }
+}
+
+static int getz_ungotten(char *buf, int buflen, ScmPort *p)
+{
+    p->scrcnt = SCM_CHAR_NBYTES(p->ungotten);
+    SCM_CHAR_PUT(p->scratch, p->ungotten);
+    p->ungotten = SCM_CHAR_INVALID;
+    return getz_scratch(buf, buflen, p);
+}
+
 int Scm_Getz(char *buf, int buflen, ScmPort *p)
 {
     int siz;
     CLOSE_CHECK(p);
 
-    /* TODO: ungotten char */
+    if (p->scrcnt) return getz_scratch(buf, buflen, p);
+    if (p->ungotten != SCM_CHAR_INVALID) return getz_ungotten(buf, buflen, p);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -846,8 +951,9 @@ int Scm_Getz(char *buf, int buflen, ScmPort *p)
     return -1;                  /* dummy */
 }
 
-/*
+/*--------------------------------------------------- 
  * ReadLine
+ *   Reads up to '\n' or EOF.
  */
 
 /* TODO: this can be optimized by scanning buffer directly, instead of
