@@ -12,13 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tr.scm,v 1.1 2001-09-19 08:42:32 shirok Exp $
+;;;  $Id: tr.scm,v 1.2 2001-09-20 20:16:22 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
 
 (define-motulde text.tr
   (use srfi-1)
+  (use srfi-11) ;let-values
   (use srfi-13)
   (export tr transliterate string-tr string-transliterate
           build-transliterator)
@@ -26,38 +27,27 @@
 (select-module text.tr)
 
 (define (tr from to . options)
-  (let ((proc (apply build-transliterator from to options))
-        (inp  (get-keyword :input options (current-input-port)))
-        (outp (get-keyword :output options (current-output-port))))
-    (proc inp outp)))
+  ((apply build-transliterator from to options)))
+
+(define transliterate tr)               ;alias
 
 (define (string-tr str from to . options)
-  (with-input-from-string str
-    (lambda ()
-      (with-output-to-string
-        (lambda ()
-          (apply transliterate from to options))))))
+  (with-string-io str (lambda () (apply tr from to options))))
+
+(define string-transliterate string-tr) ;alias
 
 (define (build-transliterator from to . options)
   (let* ((d? (get-keyword :delete-unreplaced options #f))
          (s? (get-keyword :squash options #f))
          (c? (get-keyword :complement-match options #f))
-         (in (expand-character-list from))
-         (tbl (chars->table (if c? (complement-charset in) in)
-                            (expand-character-list to)
-                            d?)))
-    (lambda (inp outp)
-      (let loop ((char (read-char inp))
-                 (prev #f)
-                 (cnt 0))
-        (if (eof-object? char)
-            cnt
-            (let* ((e  (vector-ref tbl (char->integer char)))
-                   (tr (or e (if d? #f char))))
-              (if (and (char? tr)
-                       (not (and s? (eqv? prev tr))))
-                  (display tr outp))
-              (loop (read-char inp) tr (if e (+ cnt 1) cnt))))))
+         (size (get-keyword :table-size options 256))
+         (tab  (build-tr-table from to size)))
+    (lambda ()
+      (let loop ((char (read-char)))
+        (unless (eof-object? char)
+          (let ((c (tr-table-ref tab (char->integer char))))
+            (display (or c char))
+            (loop (read-char))))))
     ))
 
 ;;--------------------------------------------------------------------
@@ -74,7 +64,9 @@
 ;;                          the size is <n>.
 
 ;; "A-Za-z" => ((26 #\A #\Z) (26 #\a #\z))
-(define (build-char-array spec)
+;; The grouping never crosses the boundary of table-size, i.e. if the table
+;; size is 70 ('F'), "A-Z" => ((6 #\A #\F) (20 #\G #\Z))
+(define (build-char-array spec table-size)
   (with-input-from-string spec
     (lambda ()
       (define (start c r)
@@ -88,11 +80,22 @@
       (define (range from to r)
         (cond ((eof-object? to) (reverse (list* (list 1 #\-) (list 1 from) r)))
               (else
-               (let ((size (- (char->integer to) (char->integer from) -1)))
+               (let* ((fromi (char->integer from))
+                      (toi   (char->integer to))
+                      (size  (- toi fromi -1)))
                  (when (negative? size)
                    (errorf "wrong character order: ~a-~a" from to))
-                 (start (read-char)
-                        (cons (list size from to) r))))))
+                 (if (and (< fromi table-size) (<= table-size toi))
+                     (start (read-char)
+                            (list* (list (- toi table-size)
+                                         (integer->char table-size)
+                                         to)
+                                   (list (- table-size fromi)
+                                         from
+                                         (integer->char (- table-size 1)))
+                                   r))
+                     (start (read-char)
+                            (cons (list size from to) r)))))))
       (define (repeat c d n r)
         (cond ((eof-object? d) (reverse (cons (list n c) r)))
               ((char-numeric? d) (repeat c (read-char)
@@ -104,6 +107,18 @@
 ;; size of the array
 (define (char-array-size array)
   (fold (lambda (elt n) (+ (car elt) n)) 0 array))
+
+;; ref
+(define (char-array-ref array index)
+  (let loop ((array array)
+             (cnt   0))
+    (cond ((null? array) #f)
+          ((>= index (+ cnt (caar array)))
+           (loop (cdr array) (+ cnt (caar array))))
+          ((null? (cddar array)) (cadar array))
+          (else (let ((from (char->integer (cadar array)))
+                      (to   (char->integer (caddar array))))
+                  (integer->char (+ from (- index cnt))))))))
 
 ;; `split' the char array at given index
 ;; (split-char-array '((26 #\A #\Z)) 1) => ((1 #\A)) and ((25 #\B #\Z))
@@ -138,25 +153,12 @@
                     (else
                      (loop (cdr in) (cons (car in) out) next))))))))
 
-;; expand character array to the list of characters.
-;; this is used for relatively small (<256) characters.
-(define (expand-char-array array)
-  (define (make-reverse-list n from to)
-    (do ((cnt (char->integer from) (+ cnt 1))
-         (i   0    (+ i 1))
-         (l   '()  (cons (integer->char cnt) l)))
-        ((= i n) l)
-      ))
-  (let loop ((array array)
-             (r     '()))
-    (cond ((null? array) (reverse r))
-          ((= 1 (caar array)) (loop (cdr array) (cons (cadar array) r)))
-          ((null? (cddar array))
-           (loop (cdr array)
-                 (append (make-list (caar array) (cadar array)) r)))
-          (else
-           (loop (cdr array)
-                 (append (apply make-reverse-list (car array)) r))))))
+;; "from" character list shouldn't contain 
+(define (check-from-spec-validity spec array)
+  (for-each (lambda (segment)
+              (if (null? (cddr segment))
+                  (error "from-spec can't contain repeat characters" spec)))
+            array))
 
 ;;--------------------------------------------------------------------
 ;; Table of transliteration
@@ -185,22 +187,70 @@
 ;;
 
 (define-class <tr-table> ()
-  ((vector :initform (make-vector 256 #f) :accessor vector-of)
+  ((vector-size :init-keyword :vector-size :initform 256)
+   (vector :accessor vector-of)
    (sparse :initform '() :accessor sparse-of)
    ))
 
+(define-method initialize ((self <tr-table>) initargs)
+  (next-method)
+  (let ((size (slot-ref self 'vector-size)))
+    (set! (vector-of self) (make-vector size #f))))
+
 (define (tr-table-ref tab index)
-  (if (< index 256)
+  (if (< index (slot-ref tab 'vector-size))
       (vector-ref (vector-of tab) index)
       (let loop ((e (sparse-of tab)))
         (cond ((null? e) #f)
-              ((<= (car e) index (cadr e))
-               (let ((v (caddr e)))
+              ((<= (caar e) index (cadar e))
+               (let ((v (caddar e)))
                  (if (integer? v)
-                     (integer->char (+ v (- index (car e)))))
-                     v))
+                     (integer->char (+ v (- index (caar e))))
+                     v)))
               (else (loop (cdr e)))))))
 
+(define (build-tr-table from-spec to-spec size)
+  (let ((tab     (make <tr-table> :vector-size size))
+        (from-ca (build-char-array from-spec size))
+        (to-ca   (build-char-array to-spec size)))
+    (check-from-spec-validity from-spec from-ca)
+    (fill-tr-table tab from-ca to-ca)))
+
+(define (fill-tr-table tab from-ca to-ca)
+  (let loop ((from-ca from-ca)
+             (to-ca   to-ca))
+    (if (null? from-ca)
+        tab
+        (let*-values (((vsiz)     (slot-ref tab 'vector-size))
+                      ((from-seg) (car from-ca))
+                      ((size)     (car from-seg))
+                      ((to-segs to-rest) (split-char-array to-ca size)))
+          (if (< (char->integer (cadr from-seg)) vsiz)
+              (fill-tr-vector tab from-seg to-segs)
+              (fill-tr-sparse tab from-seg to-segs))
+          (loop (cdr from-ca) to-rest)))))
+
+(define (fill-tr-vector tab from-seg to-ca)
+  (do ((v       (vector-of tab))
+       (size    (car from-seg))
+       (from-ch (char->integer (cadr from-seg)) (+ from-ch 1))
+       (cnt     0   (+ cnt 1)))
+      ((= cnt size))
+    (vector-set! v from-ch (char-array-ref to-ca cnt))))
+
+(define (fill-tr-sparse tab from-seg to-ca)
+  (let loop ((from-ch (char->integer (cadr from-seg)))
+             (to-segs to-ca)
+             (r       '()))
+    (if (null? to-segs)
+        (set! (sparse-of tab) (append! (sparse-of tab) (reverse r)))
+        (let* ((to-seg  (car to-segs))
+               (to-size (car to-seg))
+               (entry   (list from-ch (+ from-ch to-size -1)
+                              (if (null? (cddr to-seg))
+                                  (cadr to-seg)
+                                  (char->integer (cadr to-seg))))))
+          (loop (+ from-ch to-size) (cdr to-segs) (cons entry r))))))
 
 (provide "text/tr")
 
