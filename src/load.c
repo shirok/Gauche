@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.81 2003-12-16 20:08:37 shirok Exp $
+ *  $Id: load.c,v 1.82 2004-01-18 12:07:31 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -44,6 +44,7 @@
 #include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/port.h"
+#include "gauche/builtin-syms.h"
 
 #define LOAD_SUFFIX ".scm"      /* default load suffix */
 

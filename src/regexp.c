@@ -1,7 +1,7 @@
 /*
  * regexp.c - regular expression
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.47 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: regexp.c,v 1.48 2004-01-18 12:07:31 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -38,6 +38,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
+#include "gauche/builtin-syms.h"
 
 /* I don't like to reinvent wheels, so I looked for a regexp implementation
  * that can handle multibyte encodings and not bound to Unicode.
@@ -170,31 +171,6 @@ enum {
  * case-folded.
  */
    
-ScmObj sym_seq        = SCM_UNBOUND; /* seq */
-ScmObj sym_seq_uncase = SCM_UNBOUND; /* seq-uncase */
-ScmObj sym_seq_case   = SCM_UNBOUND; /* seq-case */
-ScmObj sym_alt        = SCM_UNBOUND; /* alt */
-ScmObj sym_rep        = SCM_UNBOUND; /* rep */
-ScmObj sym_rep_min    = SCM_UNBOUND; /* rep-min */
-ScmObj sym_rep_bound  = SCM_UNBOUND; /* rep-bound */
-ScmObj sym_rep_bound_min = SCM_UNBOUND; /* rep-bound-min */
-ScmObj sym_rep_while  = SCM_UNBOUND; /* rep-while */
-ScmObj sym_any        = SCM_UNBOUND; /* any */
-ScmObj sym_bol        = SCM_UNBOUND; /* bol */
-ScmObj sym_eol        = SCM_UNBOUND; /* eol */
-ScmObj sym_wb         = SCM_UNBOUND; /* wb */
-ScmObj sym_nwb        = SCM_UNBOUND; /* nwb */
-ScmObj sym_comp       = SCM_UNBOUND; /* complement charset */
-ScmObj sym_star       = SCM_UNBOUND; /* '*'  */
-ScmObj sym_starq      = SCM_UNBOUND; /* '*?' */
-ScmObj sym_plus       = SCM_UNBOUND; /* '+'  */
-ScmObj sym_plusq      = SCM_UNBOUND; /* '+?' */
-ScmObj sym_question   = SCM_UNBOUND; /* '?'  */
-ScmObj sym_questionq  = SCM_UNBOUND; /* '??' */
-ScmObj sym_open       = SCM_UNBOUND; /* '('  */
-ScmObj sym_close      = SCM_UNBOUND; /* ')'  */
-
-
 static void regexp_print(ScmObj obj, ScmPort *port, ScmWriteContext *c);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, regexp_print);
@@ -324,16 +300,16 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
     if (ch == SCM_CHAR_INVALID) return SCM_EOF;
     switch (ch) {
     case '(': return rc1_lex_open_paren(ctx);
-    case ')': return sym_close;
-    case '|': return sym_alt;
-    case '^': return sym_bol;
-    case '.': return sym_any;
-    case '$': return sym_eol;
+    case ')': return SCM_SYM_CLOSE_PAREN;
+    case '|': return SCM_SYM_ALT;
+    case '^': return SCM_SYM_BOL;
+    case '.': return SCM_SYM_ANY;
+    case '$': return SCM_SYM_EOL;
     case '[': return rc_charset(ctx);
     case '{': return rc1_lex_minmax(ctx);
-    case '+': return rc1_maybe_lazy(ctx, sym_plus, sym_plusq);
-    case '*': return rc1_maybe_lazy(ctx, sym_star, sym_starq);
-    case '?': return rc1_maybe_lazy(ctx, sym_question, sym_questionq);
+    case '+': return rc1_maybe_lazy(ctx, SCM_SYM_PLUS, SCM_SYM_PLUSQ);
+    case '*': return rc1_maybe_lazy(ctx, SCM_SYM_STAR, SCM_SYM_STARQ);
+    case '?': return rc1_maybe_lazy(ctx, SCM_SYM_QUESTION, SCM_SYM_QUESTIONQ);
     case '\\':
         ch = Scm_GetcUnsafe(ctx->ipat);
         if (ch == SCM_CHAR_INVALID) {
@@ -347,8 +323,8 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
         case 't': return SCM_MAKE_CHAR('\t');
         case 'f': return SCM_MAKE_CHAR('\f');
         case 'e': return SCM_MAKE_CHAR(0x1b);
-        case 'b': return sym_wb;
-        case 'B': return sym_nwb;
+        case 'b': return SCM_SYM_WB;
+        case 'B': return SCM_SYM_NWB;
         case 'x':
             ch = rc1_lex_xdigits(ctx->ipat, 2, 'x');
             return SCM_MAKE_CHAR(ch);
@@ -365,7 +341,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
         case 'D':
             cs = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
             rc_register_charset(ctx, SCM_CHARSET(cs));
-            return Scm_Cons(sym_comp, cs);
+            return Scm_Cons(SCM_SYM_COMP, cs);
         case 'w':
             cs = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
             rc_register_charset(ctx, SCM_CHARSET(cs));
@@ -373,7 +349,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
         case 'W':
             cs = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
             rc_register_charset(ctx, SCM_CHARSET(cs));
-            return Scm_Cons(sym_comp, cs);
+            return Scm_Cons(SCM_SYM_COMP, cs);
         case 's':
             cs = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
             rc_register_charset(ctx, SCM_CHARSET(cs));
@@ -381,7 +357,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
         case 'S':
             cs = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
             rc_register_charset(ctx, SCM_CHARSET(cs));
-            return Scm_Cons(sym_comp, cs);
+            return Scm_Cons(SCM_SYM_COMP, cs);
         }
         /*FALLTHROUGH*/
     default:
@@ -441,25 +417,25 @@ static ScmObj rc1_lex_open_paren(regcomp_ctx *ctx)
     ch = Scm_GetcUnsafe(ctx->ipat);
     if (ch != '?') {
         Scm_UngetcUnsafe(ch, ctx->ipat);
-        return sym_open;
+        return SCM_SYM_OPEN_PAREN;
     }
     ch = Scm_GetcUnsafe(ctx->ipat);
-    if (ch == ':') return sym_seq;
+    if (ch == ':') return SCM_SYM_SEQ;
     if (ch == 'i') {
         ch = Scm_GetcUnsafe(ctx->ipat);
-        if (ch == ':') return sym_seq_uncase;
+        if (ch == ':') return SCM_SYM_SEQ_UNCASE;
         /* fall through */
     } else if (ch == '-') {
         ch = Scm_GetcUnsafe(ctx->ipat);
         if (ch == 'i') {
             ch = Scm_GetcUnsafe(ctx->ipat);
-            if (ch == ':') return sym_seq_case;
+            if (ch == ':') return SCM_SYM_SEQ_CASE;
         }
         /* fall through */
     }
     /* fail. */
     Scm_PortSeekUnsafe(ctx->ipat, pos, SEEK_SET);
-    return sym_open;
+    return SCM_SYM_OPEN_PAREN;
 }
 
 /* Reads {n,m}-type repeat syntax.  The leading "{" has been read.
@@ -475,7 +451,7 @@ static ScmObj rc1_lex_minmax(regcomp_ctx *ctx)
 {
     int rep_min = -1, rep_max = -1, exact = FALSE, ch;
     ScmObj pos, m;
-    ScmObj type = sym_rep_bound; /* default is greedy */
+    ScmObj type = SCM_SYM_REP_BOUND; /* default is greedy */
 
     pos = Scm_PortSeekUnsafe(ctx->ipat, SCM_MAKE_INT(0), SEEK_CUR);
     
@@ -524,7 +500,7 @@ static ScmObj rc1_lex_minmax(regcomp_ctx *ctx)
     else                  m = SCM_MAKE_INT(rep_max);
 
     ch = Scm_GetcUnsafe(ctx->ipat);
-    if (ch == '?') type = sym_rep_bound_min;
+    if (ch == '?') type = SCM_SYM_REP_BOUND_MIN;
     else Scm_UngetcUnsafe(ch, ctx->ipat);
     return Scm_Cons(type, Scm_Cons(SCM_MAKE_INT(rep_min), m));
 
@@ -546,10 +522,10 @@ static ScmObj rc1_fold_alts(regcomp_ctx *ctx, ScmObj alts)
         if (SCM_PAIRP(alt) && SCM_NULLP(SCM_CDR(alt))) {
             r = Scm_Cons(SCM_CAR(alt), r);
         } else {
-            r = Scm_Cons(Scm_Cons(sym_seq, alt), r);
+            r = Scm_Cons(Scm_Cons(SCM_SYM_SEQ, alt), r);
         }
     }
-    return Scm_Cons(sym_alt, r);
+    return Scm_Cons(SCM_SYM_ALT, r);
 }
 
 /* Parser */
@@ -570,15 +546,15 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             }
             break;
         }
-        if (SCM_EQ(token, sym_close)) {
+        if (SCM_EQ(token, SCM_SYM_CLOSE_PAREN)) {
             if (topp) {
                 Scm_Error("extra close parenthesis in regexp %S", ctx->pattern);
             }
             break;
         }
-        if (SCM_EQ(token, sym_bol)) {
+        if (SCM_EQ(token, SCM_SYM_BOL)) {
             if (bolp) {
-                PUSH(sym_bol);
+                PUSH(SCM_SYM_BOL);
                 bolp = FALSE;
                 continue;
             } else {
@@ -586,65 +562,65 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             }
             /*FALLTHROUGH*/
         }
-        if (SCM_EQ(token, sym_alt)) {
+        if (SCM_EQ(token, SCM_SYM_ALT)) {
             alts = Scm_Cons(Scm_ReverseX(stack), alts);
             stack = SCM_NIL;
             bolp = bolpsave;
             continue;
         }
-        if (SCM_EQ(token, sym_open)) {
+        if (SCM_EQ(token, SCM_SYM_OPEN_PAREN)) {
             int grpno = ++ctx->grpcount;
             item = rc1_parse(ctx, bolp, FALSE);
             PUSH(Scm_Cons(SCM_MAKE_INT(grpno), item));
             bolp = FALSE;
             continue;
         }
-        if (SCM_EQ(token, sym_seq)) {
+        if (SCM_EQ(token, SCM_SYM_SEQ)) {
             item = rc1_parse(ctx, bolp, FALSE);
-            PUSH(Scm_Cons(sym_seq, item));
+            PUSH(Scm_Cons(SCM_SYM_SEQ, item));
             bolp = FALSE;
             continue;
         }
-        if (SCM_EQ(token, sym_seq_uncase) || SCM_EQ(token, sym_seq_case)) {
+        if (SCM_EQ(token, SCM_SYM_SEQ_UNCASE) || SCM_EQ(token, SCM_SYM_SEQ_CASE)) {
             int oldflag = ctx->casefoldp;
-            ctx->casefoldp = SCM_EQ(token, sym_seq_uncase);
+            ctx->casefoldp = SCM_EQ(token, SCM_SYM_SEQ_UNCASE);
             item = rc1_parse(ctx, bolp, FALSE);
             PUSH(Scm_Cons(token, item));
             ctx->casefoldp = oldflag;
             bolp = FALSE;
             continue;
         }
-        if (SCM_EQ(token, sym_star)) {
+        if (SCM_EQ(token, SCM_SYM_STAR)) {
             /* "x*" => (rep x) */
             if (SCM_NULLP(stack)) goto synerr;
-            item = SCM_LIST2(sym_rep, SCM_CAR(stack));
+            item = SCM_LIST2(SCM_SYM_REP, SCM_CAR(stack));
             PUSH1(item);
             continue;
         }
-        if (SCM_EQ(token, sym_starq)) {
+        if (SCM_EQ(token, SCM_SYM_STARQ)) {
             /* "x*?" => (rep-min x) */
             if (SCM_NULLP(stack)) goto synerr;
-            item = SCM_LIST2(sym_rep_min, SCM_CAR(stack));
+            item = SCM_LIST2(SCM_SYM_REP_MIN, SCM_CAR(stack));
             PUSH1(item);
             continue;
         }
-        if (SCM_EQ(token, sym_plus)) {
+        if (SCM_EQ(token, SCM_SYM_PLUS)) {
             /* "x+" => (seq x (rep x)) */
             if (SCM_NULLP(stack)) goto synerr;
-            item = SCM_LIST3(sym_seq, SCM_CAR(stack),
-                             SCM_LIST2(sym_rep, SCM_CAR(stack)));
+            item = SCM_LIST3(SCM_SYM_SEQ, SCM_CAR(stack),
+                             SCM_LIST2(SCM_SYM_REP, SCM_CAR(stack)));
             PUSH1(item);
             continue;
         }
-        if (SCM_EQ(token, sym_plusq)) {
+        if (SCM_EQ(token, SCM_SYM_PLUSQ)) {
             /* "x+?" => (seq x (rep-min x)) */
             if (SCM_NULLP(stack)) goto synerr;
-            item = SCM_LIST3(sym_seq, SCM_CAR(stack),
-                             SCM_LIST2(sym_rep_min, SCM_CAR(stack)));
+            item = SCM_LIST3(SCM_SYM_SEQ, SCM_CAR(stack),
+                             SCM_LIST2(SCM_SYM_REP_MIN, SCM_CAR(stack)));
             PUSH1(item);
             continue;
         }
-        if (SCM_EQ(token, sym_question)) {
+        if (SCM_EQ(token, SCM_SYM_QUESTION)) {
             /* "x?" => (alt x ()) */
             if (SCM_NULLP(stack)) goto synerr;
             item = rc1_fold_alts(ctx,
@@ -652,7 +628,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             PUSH1(item);
             continue;
         }
-        if (SCM_EQ(token, sym_questionq)) {
+        if (SCM_EQ(token, SCM_SYM_QUESTIONQ)) {
             /* "x??" => (alt () x) */
             if (SCM_NULLP(stack)) goto synerr;
             item = rc1_fold_alts(ctx,
@@ -661,35 +637,35 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             continue;
         }
         if (SCM_PAIRP(token)&&
-            (SCM_EQ(SCM_CAR(token), sym_rep_bound) ||
-             SCM_EQ(SCM_CAR(token), sym_rep_bound_min))) {
+            (SCM_EQ(SCM_CAR(token), SCM_SYM_REP_BOUND) ||
+             SCM_EQ(SCM_CAR(token), SCM_SYM_REP_BOUND_MIN))) {
             /* "x{n}"    => (seq x .... x) 
                "x{n,}"   => (seq x .... x (rep x))
                "x{n,m}"  => (seq x .... x (rep-bound m-n x))
                "x{n,}?"  => (seq x .... x (rep-min x))
                "x{n,m}?" => (seq x .... x (rep-bound-min m-n x)) */
             ScmObj n = SCM_CADR(token), m = SCM_CDDR(token);
-            int greedy = SCM_EQ(SCM_CAR(token), sym_rep_bound);
+            int greedy = SCM_EQ(SCM_CAR(token), SCM_SYM_REP_BOUND);
 
             if (SCM_NULLP(stack)) goto synerr;
             SCM_ASSERT(SCM_INTP(n));
             item = Scm_MakeList(SCM_INT_VALUE(n), SCM_CAR(stack));
             if (SCM_FALSEP(m)) {
-                item = Scm_Cons(sym_seq, item);
+                item = Scm_Cons(SCM_SYM_SEQ, item);
             } else if (SCM_TRUEP(m)) {
-                item = Scm_Cons(sym_seq, item);
+                item = Scm_Cons(SCM_SYM_SEQ, item);
                 item = Scm_Append2X(item,
-                                    SCM_LIST1(SCM_LIST2((greedy? sym_rep : sym_rep_min),
+                                    SCM_LIST1(SCM_LIST2((greedy? SCM_SYM_REP : SCM_SYM_REP_MIN),
                                                         SCM_CAR(stack))));
             } else {
                 int m_n;
                 SCM_ASSERT(SCM_INTP(m));
                 m_n = SCM_INT_VALUE(m)-SCM_INT_VALUE(n);
                 SCM_ASSERT(m_n >= 0);
-                item = Scm_Cons(sym_seq, item);
+                item = Scm_Cons(SCM_SYM_SEQ, item);
                 if (m_n > 0) {
                     item = Scm_Append2X(item,
-                                        SCM_LIST1(SCM_LIST3((greedy? sym_rep_bound : sym_rep_bound_min),
+                                        SCM_LIST1(SCM_LIST3((greedy? SCM_SYM_REP_BOUND : SCM_SYM_REP_BOUND_MIN),
                                                             SCM_MAKE_INT(m_n),
                                                             SCM_CAR(stack))));
                 }
@@ -718,7 +694,7 @@ static ScmObj rc1(regcomp_ctx *ctx)
 {
     ScmObj ast = rc1_parse(ctx, TRUE, TRUE);
     if (ctx->casefoldp) {
-        ast = SCM_LIST2(SCM_MAKE_INT(0), Scm_Cons(sym_seq_uncase, ast));
+        ast = SCM_LIST2(SCM_MAKE_INT(0), Scm_Cons(SCM_SYM_SEQ_UNCASE, ast));
     } else {
         ast = Scm_Cons(SCM_MAKE_INT(0), ast);
     }
@@ -740,7 +716,7 @@ static ScmObj rc_charset(regcomp_ctx *ctx)
     
     rc_register_charset(ctx, SCM_CHARSET(set));
     if (complement) {
-        return Scm_Cons(sym_comp, SCM_OBJ(set));
+        return Scm_Cons(SCM_SYM_COMP, SCM_OBJ(set));
     } else {
         return SCM_OBJ(set);
     }
@@ -784,25 +760,25 @@ static ScmObj rc2_optimize_seq(ScmObj seq, ScmObj rest)
     elt = SCM_CAR(seq);
     tail = rc2_optimize_seq(SCM_CDR(seq), rest);
     rest = SCM_NULLP(tail)? rest : tail;
-    if (!SCM_PAIRP(elt) || SCM_EQ(SCM_CAR(elt), sym_comp)) {
+    if (!SCM_PAIRP(elt) || SCM_EQ(SCM_CAR(elt), SCM_SYM_COMP)) {
         if (SCM_EQ(tail, SCM_CDR(seq))) return seq;
         else return Scm_Cons(elt, tail);
     }
     etype = SCM_CAR(elt);
-    if (SCM_EQ(etype, sym_seq)) {
+    if (SCM_EQ(etype, SCM_SYM_SEQ)) {
         return Scm_Append2(rc2_optimize_seq(SCM_CDR(elt), rest), tail);
     }
-    if (SCM_EQ(etype, sym_rep)) {
+    if (SCM_EQ(etype, SCM_SYM_REP)) {
         /* If the head of repeating sequence and the beginning of the
            following sequence are distinct, like #/\s*foo/, the branch
            becomes deterministic (i.e. we don't need backtrack). */
         ScmObj repbody = rc2_optimize_seq(SCM_CDR(elt), rest);
         SCM_ASSERT(SCM_PAIRP(repbody));
         if (SCM_NULLP(rest) || is_distinct(SCM_CAR(repbody), SCM_CAR(rest))) {
-            return Scm_Cons(Scm_Cons(sym_rep_while, repbody), tail);
+            return Scm_Cons(Scm_Cons(SCM_SYM_REP_WHILE, repbody), tail);
         }
         if (SCM_EQ(repbody, SCM_CDR(elt))) opted = elt;
-        else opted = Scm_Cons(sym_rep, repbody);
+        else opted = Scm_Cons(SCM_SYM_REP, repbody);
     } else {
         opted = rc2_optimize(elt, rest);
     }
@@ -815,9 +791,9 @@ static ScmObj rc2_optimize(ScmObj ast, ScmObj rest)
     ScmObj type, seq, seqo;
     if (!SCM_PAIRP(ast)) return ast;
     type = SCM_CAR(ast);
-    if (SCM_EQ(type, sym_comp)) return ast;
+    if (SCM_EQ(type, SCM_SYM_COMP)) return ast;
 
-    if (SCM_EQ(type, sym_alt)) {
+    if (SCM_EQ(type, SCM_SYM_ALT)) {
         ScmObj sp, sp2, e = SCM_UNBOUND, h, t;
         SCM_FOR_EACH(sp, SCM_CDR(ast)) {
             e = rc2_optimize(SCM_CAR(sp), rest);
@@ -833,14 +809,14 @@ static ScmObj rc2_optimize(ScmObj ast, ScmObj rest)
         SCM_FOR_EACH(sp2, SCM_CDR(sp2)) {
             SCM_APPEND1(h, t, rc2_optimize(SCM_CAR(sp2), rest));
         }
-        return Scm_Cons(sym_alt, h);
+        return Scm_Cons(SCM_SYM_ALT, h);
     }
-    if (SCM_EQ(type, sym_rep_bound)) seq = SCM_CDDR(ast);
+    if (SCM_EQ(type, SCM_SYM_REP_BOUND)) seq = SCM_CDDR(ast);
     else seq = SCM_CDR(ast);
     seqo = rc2_optimize_seq(seq, rest);
     if (SCM_EQ(seq, seqo)) return ast;
     else {
-        if (SCM_EQ(type, sym_rep_bound)) {
+        if (SCM_EQ(type, SCM_SYM_REP_BOUND)) {
             return Scm_Cons(type, Scm_Cons(SCM_CADR(ast), seqo));
         } else {
             return Scm_Cons(type, seqo);
@@ -853,7 +829,7 @@ static int is_distinct(ScmObj x, ScmObj y)
     ScmObj carx;
     if (SCM_PAIRP(x)) {
         carx = SCM_CAR(x);
-        if (SCM_EQ(carx, sym_comp)) {
+        if (SCM_EQ(carx, SCM_SYM_COMP)) {
             SCM_ASSERT(SCM_CHARSETP(SCM_CDR(x)));
             if (SCM_CHARP(y) || SCM_CHARSETP(y)) {
                 return !is_distinct(SCM_CDR(x), y);
@@ -861,8 +837,8 @@ static int is_distinct(ScmObj x, ScmObj y)
             return FALSE;
         }
         if (SCM_INTP(carx)
-            || SCM_EQ(carx, sym_seq_uncase)
-            || SCM_EQ(carx, sym_seq_case)) {
+            || SCM_EQ(carx, SCM_SYM_SEQ_UNCASE)
+            || SCM_EQ(carx, SCM_SYM_SEQ_CASE)) {
             if (SCM_PAIRP(SCM_CDR(x))) {
                 return is_distinct(SCM_CADR(x), y);
             }
@@ -1026,15 +1002,15 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         }
         /* special stuff */
         if (SCM_SYMBOLP(ast)) {
-            if (SCM_EQ(ast, sym_any)) {
+            if (SCM_EQ(ast, SCM_SYM_ANY)) {
                 rc3_emit(ctx, RE_ANY);
                 return;
             }
-            if (SCM_EQ(ast, sym_bol)) {
+            if (SCM_EQ(ast, SCM_SYM_BOL)) {
                 rc3_emit(ctx, RE_BOL);
                 return;
             }
-            if (SCM_EQ(ast, sym_eol)) {
+            if (SCM_EQ(ast, SCM_SYM_EOL)) {
                 if (lastp) {
                     rc3_emit(ctx, RE_EOL);
                 } else {
@@ -1043,11 +1019,11 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
                 }
                 return;
             }
-            if (SCM_EQ(ast, sym_wb)) {
+            if (SCM_EQ(ast, SCM_SYM_WB)) {
                 rc3_emit(ctx, RE_WB);
                 return;
             }
-            if (SCM_EQ(ast, sym_nwb)) {
+            if (SCM_EQ(ast, SCM_SYM_NWB)) {
                 rc3_emit(ctx, RE_NWB);
                 return;
             }
@@ -1058,7 +1034,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
 
     /* now we have a structured node */
     type = SCM_CAR(ast);
-    if (SCM_EQ(type, sym_comp)) {
+    if (SCM_EQ(type, SCM_SYM_COMP)) {
         ScmObj cs = SCM_CDR(ast);
         SCM_ASSERT(SCM_CHARSETP(cs));
         if (SCM_CHARSET_SMALLP(cs)) {
@@ -1069,7 +1045,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         rc3_emit(ctx, rc3_charset_index(rx, cs));
         return;
     }
-    if (SCM_EQ(type, sym_seq)) {
+    if (SCM_EQ(type, SCM_SYM_SEQ)) {
         rc3_seq(ctx, SCM_CDR(ast), lastp, toplevelp);
         return;
     }
@@ -1082,14 +1058,14 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         rc3_emit(ctx, grpno);
         return;
     }
-    if (SCM_EQ(type, sym_seq_uncase) || SCM_EQ(type, sym_seq_case)) {
+    if (SCM_EQ(type, SCM_SYM_SEQ_UNCASE) || SCM_EQ(type, SCM_SYM_SEQ_CASE)) {
         int oldcase = ctx->casefoldp;
-        ctx->casefoldp = SCM_EQ(type, sym_seq_uncase);
+        ctx->casefoldp = SCM_EQ(type, SCM_SYM_SEQ_UNCASE);
         rc3_seq(ctx, SCM_CDR(ast), lastp, toplevelp);
         ctx->casefoldp = oldcase;
         return;
     }
-    if (SCM_EQ(type, sym_rep_while)) {
+    if (SCM_EQ(type, SCM_SYM_REP_WHILE)) {
         /* here we have an opportunity to generate an optimized code. */
         if (SCM_PAIRP(SCM_CDR(ast)) && SCM_NULLP(SCM_CDDR(ast))) {
             ScmObj elem = SCM_CADR(ast);
@@ -1098,7 +1074,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
                 rc3_emit(ctx, rc3_charset_index(rx, elem));
                 return;
             }
-            if (SCM_PAIRP(elem)&&SCM_EQ(SCM_CAR(elem), sym_comp)) {
+            if (SCM_PAIRP(elem)&&SCM_EQ(SCM_CAR(elem), SCM_SYM_COMP)) {
                 elem = SCM_CDR(elem);
                 SCM_ASSERT(SCM_CHARSETP(elem));
                 rc3_emit(ctx, SCM_CHARSET_SMALLP(elem)?RE_NSET1R:RE_NSETR);
@@ -1107,9 +1083,9 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
             }
         }
         /* fallthrough to rep */
-        type = sym_rep;
+        type = SCM_SYM_REP;
     }
-    if (SCM_EQ(type, sym_rep)) {
+    if (SCM_EQ(type, SCM_SYM_REP)) {
         /* rep: TRY next
                 <seq>
                 JUMP rep
@@ -1124,7 +1100,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         rc3_fill_offset(ctx, ocodep+1, ctx->codep);
         return;
     }
-    if (SCM_EQ(type, sym_rep_min)) {
+    if (SCM_EQ(type, SCM_SYM_REP_MIN)) {
         /* non-greedy repeat
            rep: TRY seq
                 JUMP next
@@ -1145,7 +1121,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         rc3_fill_offset(ctx, ocodep2+1, ctx->codep);
         return;
     }
-    if (SCM_EQ(type, sym_alt)) {
+    if (SCM_EQ(type, SCM_SYM_ALT)) {
         /*     TRY #1
                <alt0>
                JUMP next
@@ -1185,7 +1161,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         }
         return;
     }
-    if (SCM_EQ(type, sym_rep_bound) || SCM_EQ(type, sym_rep_bound_min)) {
+    if (SCM_EQ(type, SCM_SYM_REP_BOUND) || SCM_EQ(type, SCM_SYM_REP_BOUND_MIN)) {
         /* (rep-bound <n> . <x>)
 
                TRY  #01
@@ -1218,7 +1194,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
          */
         ScmObj item, jlist = SCM_NIL;
         int count, n, j0 = 0, jn;
-        int greedy = SCM_EQ(type, sym_rep_bound);
+        int greedy = SCM_EQ(type, SCM_SYM_REP_BOUND);
 
         SCM_ASSERT(Scm_Length(ast) == 3 && SCM_INTP(SCM_CADR(ast)));
         count = SCM_INT_VALUE(SCM_CADR(ast));
@@ -1285,16 +1261,16 @@ static int is_bol_anchored(ScmObj ast)
 {
     ScmObj type;
     if (!SCM_PAIRP(ast)) {
-        if (SCM_EQ(ast, sym_bol)) return TRUE;
+        if (SCM_EQ(ast, SCM_SYM_BOL)) return TRUE;
         else return FALSE;
     }
     type = SCM_CAR(ast);
-    if (SCM_INTP(type) || SCM_EQ(type, sym_seq)
-        || SCM_EQ(type, sym_seq_uncase) || SCM_EQ(type, sym_seq_case)) {
+    if (SCM_INTP(type) || SCM_EQ(type, SCM_SYM_SEQ)
+        || SCM_EQ(type, SCM_SYM_SEQ_UNCASE) || SCM_EQ(type, SCM_SYM_SEQ_CASE)) {
         if (!SCM_PAIRP(SCM_CDR(ast))) return FALSE;
         return is_bol_anchored(SCM_CADR(ast));
     }
-    if (SCM_EQ(type, sym_alt)) {
+    if (SCM_EQ(type, SCM_SYM_ALT)) {
         ScmObj ap;
         SCM_FOR_EACH(ap, SCM_CDR(ast)) { 
             if (!is_bol_anchored(SCM_CAR(ap))) return FALSE;
@@ -1481,8 +1457,8 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
             rc_register_charset(ctx, SCM_CHARSET(ast));
             return ast;
         }
-        if (SCM_EQ(ast, sym_bol) || SCM_EQ(ast, sym_eol)
-            || SCM_EQ(ast, sym_any)) {
+        if (SCM_EQ(ast, SCM_SYM_BOL) || SCM_EQ(ast, SCM_SYM_EOL)
+            || SCM_EQ(ast, SCM_SYM_ANY)) {
             return ast;
         }
         goto badast;
@@ -1497,19 +1473,19 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
             return Scm_Cons(SCM_MAKE_INT(grpno), rest);
         }
     }
-    if (SCM_EQ(type, sym_comp)) {
+    if (SCM_EQ(type, SCM_SYM_COMP)) {
         if (!SCM_CHARSETP(SCM_CDR(ast))) goto badast;
         rc_register_charset(ctx, SCM_CHARSET(SCM_CDR(ast)));
         return ast;
     }
-    if (SCM_EQ(type, sym_seq) || SCM_EQ(type, sym_alt)
-        || SCM_EQ(type, sym_seq_uncase) || SCM_EQ(type, sym_seq_case)
-        || SCM_EQ(type, sym_rep) || SCM_EQ(type, sym_rep_while)) {
+    if (SCM_EQ(type, SCM_SYM_SEQ) || SCM_EQ(type, SCM_SYM_ALT)
+        || SCM_EQ(type, SCM_SYM_SEQ_UNCASE) || SCM_EQ(type, SCM_SYM_SEQ_CASE)
+        || SCM_EQ(type, SCM_SYM_REP) || SCM_EQ(type, SCM_SYM_REP_WHILE)) {
         rest = rc_setup_context_seq(ctx, SCM_CDR(ast));
         if (SCM_EQ(SCM_CDR(ast), rest)) return ast;
         else return Scm_Cons(type, rest);
     }
-    if (SCM_EQ(type, sym_rep_bound)) {
+    if (SCM_EQ(type, SCM_SYM_REP_BOUND)) {
         if (!SCM_PAIRP(SCM_CDR(ast)) || !SCM_INTP(SCM_CADR(ast))
             || SCM_INT_VALUE(SCM_CADR(ast)) < 0) {
             goto badast;
@@ -2049,27 +2025,4 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
 
 void Scm__InitRegexp(void)
 {
-    sym_seq = SCM_INTERN("seq");
-    sym_seq_case = SCM_INTERN("seq-case");
-    sym_seq_uncase = SCM_INTERN("seq-uncase");
-    sym_alt = SCM_INTERN("alt");
-    sym_rep = SCM_INTERN("rep");
-    sym_rep_min = SCM_INTERN("rep-min");
-    sym_rep_bound = SCM_INTERN("rep-bound");
-    sym_rep_bound_min = SCM_INTERN("rep-bound-min");
-    sym_rep_while = SCM_INTERN("rep-while");
-    sym_any = SCM_INTERN("any");
-    sym_bol = SCM_INTERN("bol");
-    sym_eol = SCM_INTERN("eol");
-    sym_wb  = SCM_INTERN("wb");
-    sym_nwb = SCM_INTERN("nwb");
-    sym_comp = SCM_INTERN("comp");
-    sym_star = SCM_INTERN("*");
-    sym_starq = SCM_INTERN("*?");
-    sym_plus = SCM_INTERN("+");
-    sym_plusq = SCM_INTERN("+?");
-    sym_question = SCM_INTERN("?");
-    sym_questionq = SCM_INTERN("??");
-    sym_open = SCM_INTERN("(");
-    sym_close = SCM_INTERN(")");
 }

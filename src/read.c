@@ -1,7 +1,7 @@
 /*
  * read.c - reader
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.65 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: read.c,v 1.66 2004-01-18 12:07:31 shirok Exp $
  */
 
 #include <stdio.h>
@@ -40,6 +40,7 @@
 #include "gauche.h"
 #include "gauche/vm.h"
 #include "gauche/port.h"
+#include "gauche/builtin-syms.h"
 
 /*
  * READ
@@ -70,9 +71,6 @@ static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
                               ScmReadContext *ctx) = NULL;
-
-/* A symbol to look up string interpolator */
-ScmObj sym_string_interpolate = SCM_NIL;
 
 /* Table of 'read-time constructor' in SRFI-10 */
 static struct {
@@ -341,7 +339,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 /* #`"..." is a special syntax of #,(string-interpolate "...") */
                 {
                     ScmObj form = read_item(port, ctx);
-                    return process_sharp_comma(port, sym_string_interpolate,
+                    return process_sharp_comma(port,
+                                               SCM_SYM_STRING_INTERPOLATE,
                                                SCM_LIST1(form));
                 }
             case '?':
@@ -355,7 +354,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     case '=':
                         /* #?=form - debug print */
                         form = read_item(port, ctx);
-                        return SCM_LIST2(SCM_INTERN("debug-print"), form);
+                        return SCM_LIST2(SCM_SYM_DEBUG_PRINT, form);
                     case EOF:
                         return SCM_EOF;
                     default:
@@ -976,13 +975,11 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 
 void Scm__InitRead(void)
 {
-    ScmObj sym_reader_ctor = SCM_INTERN("define-reader-ctor");
-    sym_string_interpolate = SCM_INTERN("string-interpolate");
     readCtorData.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS,
                                                          NULL, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(readCtorData.mutex);
-    Scm_DefineReaderCtor(sym_reader_ctor,
+    Scm_DefineReaderCtor(SCM_SYM_DEFINE_READER_CTOR,
                          Scm_MakeSubr(reader_ctor, NULL, 2, 0,
-                                      sym_reader_ctor));
+                                      SCM_SYM_DEFINE_READER_CTOR));
 }
 

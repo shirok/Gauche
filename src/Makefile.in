@@ -87,12 +87,14 @@ INSTALL_HEADERS = gauche.h \
 INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/char_euc_jp.h gauche/char_utf_8.h    \
                      gauche/char_sjis.h gauche/char_none.h       \
-                     gauche/predef-syms.h gauche/extend.h        \
+                     gauche/extend.h        \
                      gauche/class.h gauche/exception.h           \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
 INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh gauche-config
 INSTALL_SCMS = genstub gauche-init.scm
+
+PRIVATE_HEADERS = gauche/arith.h gauche/builtin-syms.h
 
 
 # build -----------------------------------------------
@@ -118,7 +120,7 @@ libgauche_OBJECTS = \
 	syslib.$(OBJEXT) moplib.$(OBJEXT)
 libgauche_LDFLAGS = @SHLIB_DYLIB_LDFLAGS@
 
-HEADERS = gauche.h $(INSTALL_SUBHEADERS)
+HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
@@ -141,7 +143,10 @@ syslib.c : syslib.stub genstub
 moplib.c : moplib.stub genstub
 
 autoloads.c : autoloads.scm
-	gosh ./autoloads.scm
+	gosh -A../lib ./autoloads.scm
+
+builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
+	gosh -A../lib ./builtin-syms.scm
 
 port.$(OBJEXT) : port.c portapi.c
 
@@ -191,7 +196,8 @@ install-check :
 	done
 
 # clean ------------------------------------------------
-GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c thrlib.c autoloads.c
+GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c thrlib.c \
+	    autoloads.c builtin-syms.c gauche/builtin-syms.h
 CONFIG_GENERATED = Makefile gauche-config gauche/config.h
 
 clean :

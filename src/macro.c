@@ -1,7 +1,7 @@
 /*
  * macro.c - macro implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,12 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.46 2003-12-13 19:48:26 shirok Exp $
+ *  $Id: macro.c,v 1.47 2004-01-18 12:07:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/macro.h"
+#include "gauche/builtin-syms.h"
 
 /*===================================================================
  * Syntax object
@@ -479,7 +480,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
 
   badform:
     Scm_Error("malformed macro %S: %S", name,
-              Scm_Cons(SCM_INTERN("syntax-rules"), Scm_Cons(literals, rules)));
+              Scm_Cons(SCM_SYM_SYNTAX_RULES, Scm_Cons(literals, rules)));
     return NULL;       /* dummy */
 }
 
@@ -902,7 +903,7 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
         
   badform:
     Scm_Error("malformed syntax-rules: ",
-              Scm_Cons(SCM_INTERN("syntax-rules"), SCM_CDDR(form)));
+              Scm_Cons(SCM_SYM_SYNTAX_RULES, SCM_CDDR(form)));
     return SCM_NIL;
 }
 

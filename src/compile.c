@@ -1,7 +1,7 @@
 /*
  * compile.c - compile the given form to an intermediate form
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,12 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.104 2003-11-27 17:10:40 shirok Exp $
+ *  $Id: compile.c,v 1.105 2004-01-18 12:07:31 shirok Exp $
  */
 
 #include <stdlib.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/builtin-syms.h"
 
 /* constructor definition comes below */
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.30 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: symbol.c,v 1.31 2004-01-18 12:07:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -217,23 +217,10 @@ ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)
  * Initialization
  */
 
-#define SYMREG(var, nam)                                                \
-    do {                                                                \
-        ScmObj snam = SCM_MAKE_STR_IMMUTABLE(nam);                      \
-        var.name = SCM_STRING(snam);                                    \
-        Scm_HashTablePut(obtable, SCM_OBJ(snam), SCM_OBJ(&var));        \
-    } while (0)
-
-#define DEFSYM(cname, sname) \
-    ScmSymbol cname = { { SCM_CLASS_STATIC_PTR(Scm_SymbolClass) }, NULL }
-#include "gauche/predef-syms.h"
-#undef DEFSYM
+#include "builtin-syms.c"
 
 void Scm__InitSymbol(void)
 {
     obtable = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 2000));
-
-#define DEFSYM(cname, sname) SYMREG(cname, sname)
-#include "gauche/predef-syms.h"
-#undef DEFSYM
+    init_builtin_syms();
 }

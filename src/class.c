@@ -1,7 +1,7 @@
 /*
  * class.c - class metaobject implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,13 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.107 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: class.c,v 1.108 2004-01-18 12:07:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/macro.h"
 #include "gauche/class.h"
+#include "gauche/builtin-syms.h"
 
 /*===================================================================
  * Built-in classes
@@ -163,11 +164,6 @@ static ScmObj key_lambda_list    = SCM_FALSE;
 static ScmObj key_generic        = SCM_FALSE;
 static ScmObj key_specializers   = SCM_FALSE;
 static ScmObj key_body           = SCM_FALSE;
-
-static ScmObj sym_builtin        = SCM_FALSE;
-static ScmObj sym_abstract       = SCM_FALSE;
-static ScmObj sym_base           = SCM_FALSE;
-static ScmObj sym_scheme         = SCM_FALSE;
 
 /* A global lock to serialize class redefinition.  We need it since
    class redefinition is not a local effect---it propagates through
@@ -645,10 +641,10 @@ static void class_numislots_set(ScmClass *klass, ScmObj snf)
 static ScmObj class_category(ScmClass *klass)
 {
     switch (SCM_CLASS_CATEGORY(klass)) {
-    case SCM_CLASS_BUILTIN:  return sym_builtin;
-    case SCM_CLASS_ABSTRACT: return sym_abstract;
-    case SCM_CLASS_BASE:     return sym_base;
-    default:                 return sym_scheme;
+    case SCM_CLASS_BUILTIN:  return SCM_SYM_BUILTIN;
+    case SCM_CLASS_ABSTRACT: return SCM_SYM_ABSTRACT;
+    case SCM_CLASS_BASE:     return SCM_SYM_BASE;
+    default:                 return SCM_SYM_SCHEME;
     }
 }
 
@@ -2704,11 +2700,6 @@ void Scm__InitClass(void)
     key_generic = SCM_MAKE_KEYWORD("generic");
     key_specializers = SCM_MAKE_KEYWORD("specializers");
     key_body = SCM_MAKE_KEYWORD("body");
-
-    sym_builtin = SCM_INTERN("builtin");
-    sym_abstract = SCM_INTERN("abstract");
-    sym_base = SCM_INTERN("base");
-    sym_scheme = SCM_INTERN("scheme");
 
     (void)SCM_INTERNAL_MUTEX_INIT(class_redefinition_lock.mutex);
     (void)SCM_INTERNAL_COND_INIT(class_redefinition_lock.cv);

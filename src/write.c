@@ -1,7 +1,7 @@
 /*
  * write.c - writer
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.40 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: write.c,v 1.41 2004-01-18 12:07:32 shirok Exp $
  */
 
 #include <stdio.h>
@@ -38,6 +38,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/port.h"
+#include "gauche/builtin-syms.h"
 
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);

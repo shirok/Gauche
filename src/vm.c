@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.205 2004-01-17 09:25:17 shirok Exp $
+ *  $Id: vm.c,v 1.206 2004-01-18 12:07:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -38,6 +38,7 @@
 #include "gauche/memory.h"
 #include "gauche/class.h"
 #include "gauche/exception.h"
+#include "gauche/builtin-syms.h"
 
 #include <unistd.h>
 #ifdef HAVE_SCHED_H

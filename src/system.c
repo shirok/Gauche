@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.53 2004-01-17 01:34:48 shirok Exp $
+ *  $Id: system.c,v 1.54 2004-01-18 12:07:31 shirok Exp $
  */
 
 #include <stdio.h>
@@ -49,6 +49,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
+#include "gauche/builtin-syms.h"
 
 #ifdef HAVE_GLOB_H
 #include <glob.h>
@@ -371,26 +372,18 @@ ScmObj Scm_MakeSysStat(void)
     return stat_allocate(&Scm_SysStatClass, SCM_NIL);
 }
 
-static ScmObj sym_directory = SCM_UNBOUND;
-static ScmObj sym_regular   = SCM_UNBOUND;
-static ScmObj sym_character = SCM_UNBOUND;
-static ScmObj sym_block     = SCM_UNBOUND;
-static ScmObj sym_fifo      = SCM_UNBOUND;
-static ScmObj sym_symlink   = SCM_UNBOUND;
-static ScmObj sym_socket    = SCM_UNBOUND;
-
 static ScmObj stat_type_get(ScmSysStat *stat)
 {
-  if (S_ISDIR(stat->statrec.st_mode)) return (sym_directory);
-  if (S_ISREG(stat->statrec.st_mode)) return (sym_regular);
-  if (S_ISCHR(stat->statrec.st_mode)) return (sym_character);
-  if (S_ISBLK(stat->statrec.st_mode)) return (sym_block);
-  if (S_ISFIFO(stat->statrec.st_mode)) return (sym_fifo);
+  if (S_ISDIR(stat->statrec.st_mode)) return (SCM_SYM_DIRECTORY);
+  if (S_ISREG(stat->statrec.st_mode)) return (SCM_SYM_REGULAR);
+  if (S_ISCHR(stat->statrec.st_mode)) return (SCM_SYM_CHARACTER);
+  if (S_ISBLK(stat->statrec.st_mode)) return (SCM_SYM_BLOCK);
+  if (S_ISFIFO(stat->statrec.st_mode)) return (SCM_SYM_FIFO);
 #ifdef S_ISLNK
-  if (S_ISLNK(stat->statrec.st_mode)) return (sym_symlink);
+  if (S_ISLNK(stat->statrec.st_mode)) return (SCM_SYM_SYMLINK);
 #endif
 #ifdef S_ISSOCK
-  if (S_ISSOCK(stat->statrec.st_mode)) return (sym_socket);
+  if (S_ISSOCK(stat->statrec.st_mode)) return (SCM_SYM_SOCKET);
 #endif
   return (SCM_FALSE);
 }
@@ -447,13 +440,11 @@ static ScmClassStaticSlotSpec stat_slots[] = {
 
 /* <time> object */
 
-static ScmObj sym_time_utc = SCM_FALSE;
-
 static ScmObj time_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmTime *t = SCM_ALLOCATE(ScmTime, klass);
     SCM_SET_CLASS(t, SCM_CLASS_TIME);
-    t->type = sym_time_utc;
+    t->type = SCM_SYM_TIME_UTC;
     t->sec = t->nsec = 0;
     return SCM_OBJ(t);
 }
@@ -471,7 +462,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_TimeClass,
 ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
 {
     ScmTime *t = SCM_TIME(time_allocate(SCM_CLASS_TIME, SCM_NIL));
-    t->type = SCM_FALSEP(type)? sym_time_utc : type;
+    t->type = SCM_FALSEP(type)? SCM_SYM_TIME_UTC : type;
     t->sec = sec;
     t->nsec = nsec;
     return SCM_OBJ(t);
@@ -484,15 +475,15 @@ ScmObj Scm_CurrentTime(void)
     int r;
     SCM_SYSCALL(r, gettimeofday(&tv, NULL));
     if (r < 0) Scm_SysError("gettimeofday failed");
-    return Scm_MakeTime(sym_time_utc, (long)tv.tv_sec, (long)tv.tv_usec*1000);
+    return Scm_MakeTime(SCM_SYM_TIME_UTC, (long)tv.tv_sec, (long)tv.tv_usec*1000);
 #else  /* !HAVE_GETTIMEOFDAY */
-    return Scm_MakeTime(sym_time_utc, (long)time(NULL), 0);
+    return Scm_MakeTime(SCM_SYM_TIME_UTC, (long)time(NULL), 0);
 #endif /* !HAVE_GETTIMEOFDAY */
 }
 
 ScmObj Scm_IntSecondsToTime(long sec)
 {
-    return Scm_MakeTime(sym_time_utc, sec, 0);
+    return Scm_MakeTime(SCM_SYM_TIME_UTC, sec, 0);
 }
 
 ScmObj Scm_RealSecondsToTime(double sec)
@@ -502,7 +493,7 @@ ScmObj Scm_RealSecondsToTime(double sec)
         Scm_Error("seconds out of range: %f", sec);
     }
     frac = modf(sec, &s);
-    return Scm_MakeTime(sym_time_utc, (long)s, (long)(frac * 1.0e9));
+    return Scm_MakeTime(SCM_SYM_TIME_UTC, (long)s, (long)(frac * 1.0e9));
 }
 
 static ScmObj time_type_get(ScmTime *t)
@@ -1093,14 +1084,6 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 void Scm__InitSystem(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    sym_directory = SCM_INTERN("directory");
-    sym_regular   = SCM_INTERN("regular");
-    sym_character = SCM_INTERN("character");
-    sym_block     = SCM_INTERN("block");
-    sym_fifo      = SCM_INTERN("fifo");
-    sym_symlink   = SCM_INTERN("symlink");
-    sym_socket    = SCM_INTERN("socket");
-    sym_time_utc  = SCM_INTERN("time-utc");
     Scm_InitBuiltinClass(&Scm_SysStatClass, "<sys-stat>", stat_slots, 0, mod);
     Scm_InitBuiltinClass(&Scm_TimeClass, "<time>", time_slots, 0, mod);
     Scm_InitBuiltinClass(&Scm_SysTmClass, "<sys-tm>", tm_slots, 0, mod);

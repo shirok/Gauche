@@ -1,7 +1,7 @@
 /*
  * module.c - module implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.46 2003-12-27 13:02:58 shirok Exp $
+ *  $Id: module.c,v 1.47 2004-01-18 12:07:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/builtin-syms.h"
 
 /*
  * Modules
@@ -501,5 +502,5 @@ void Scm__InitModule(void)
     defaultParents = SCM_LIST1(SCM_CAR(mpl));
     defaultMpl = mpl;
 
-    anon_module_name = SCM_INTERN("#");
+    anon_module_name = SCM_SYM_SHARP;
 }

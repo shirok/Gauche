@@ -1,7 +1,7 @@
 /*
  * error.c - error handling
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.42 2003-12-05 01:11:12 shirok Exp $
+ *  $Id: error.c,v 1.43 2004-01-18 12:07:31 shirok Exp $
  */
 
 #include <errno.h>
@@ -40,6 +40,7 @@
 #include "gauche/class.h"
 #include "gauche/exception.h"
 #include "gauche/vm.h"
+#include "gauche/builtin-syms.h"
 
 /*-----------------------------------------------------------
  * Exception class hierarchy

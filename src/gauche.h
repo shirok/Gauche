@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.359 2004-01-17 09:25:17 shirok Exp $
+ *  $Id: gauche.h,v 1.360 2004-01-18 12:07:31 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1550,13 +1550,6 @@ SCM_EXTERN ScmObj Scm_Gensym(ScmString *prefix);
 
 SCM_CLASS_DECL(Scm_SymbolClass);
 #define SCM_CLASS_SYMBOL       (&Scm_SymbolClass)
-
-/* predefined symbols */
-#define DEFSYM(cname, sname)   SCM_EXTERN ScmSymbol cname
-#define DEFSYM_DEFINES
-#include <gauche/predef-syms.h>
-#undef DEFSYM_DEFINES
-#undef DEFSYM
 
 /* Gloc (global location) */
 struct ScmGlocRec {
