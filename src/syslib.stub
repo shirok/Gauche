@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.44 2001-09-16 07:00:09 shirok Exp $
+;;; $Id: syslib.stub,v 1.45 2001-09-22 07:25:06 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -320,6 +320,18 @@
   } else {
     SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   }")
+
+(if (defined? "HAVE_PUTENV")
+    (define-cproc sys-putenv (name value)
+      (assert (string? name))
+      (assert (string? value))
+      "  ScmObj s;
+ s  = Scm_StringAppend(SCM_LIST3(SCM_OBJ(name),
+                                 SCM_MAKE_STR(\"=\"),
+                                 SCM_OBJ(value)));
+ putenv(Scm_GetStringConst(s));
+ SCM_RETURN(SCM_UNDEFINED);")
+)
 
 ;; Note: the return value of system() is not portable.
 (define-cproc sys-system (command)

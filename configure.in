@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.36 2001-09-06 07:06:39 shirok Exp $
+dnl $Id: configure.in,v 1.37 2001-09-22 07:25:06 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -153,7 +153,7 @@ dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 
 AC_CHECK_FUNCS(isnan isinf trunc rint)
-AC_CHECK_FUNCS(symlink readlink mkstemp select)
+AC_CHECK_FUNCS(symlink readlink mkstemp select putenv)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
 
 dnl Checks if crypt() exists and whether it's in libc or libcrypt.
