@@ -29,6 +29,14 @@ Gregor Kiczales, Jim Des Rivieres, Daniel Bobrow,
 The Art of Metaobject Protocol, 
 The MIT Press.
 
+@anchor{dylan}
+@item [Dylan]
+Kim Barrett, Bob Cassels, Paul Haahr,
+David A. Moon, Keith Playford, P. Tucker Withington,
+A Monotonic Superclass Linearization for Dylan,
+in @i{Proceedings of OOPSLA 96}, October 1996.@*
+@url{http://www.webcom.com/~haahr/dylan/linearization-oopsla96.html}.
+
 @anchor{fairthreads}
 @item [FairThreads]
 F. Boussinot, Java Fair Threads, @*

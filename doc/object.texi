@@ -27,10 +27,9 @@ and so on.
 @menu
 * Introduction to the object system::  
 * General Inquiry::             
-* Defining class::              
-* Defining methods::            
-* Creating Instance::           
-* Accessing Instance::          
+* Class::                       
+* Instance::                    
+* Generic function and method::  
 * Metaobject protocol::         
 @end menu
 
@@ -605,7 +604,7 @@ by PostScript viewer such as GhostScript.
 
 
 @c ----------------------------------------------------------------------
-@node General Inquiry, Defining class, Introduction to the object system, Object system
+@node General Inquiry, Class, Introduction to the object system, Object system
 @section  General Inquiry
 @c NODE 一般的な問い合わせ
 
@@ -662,31 +661,26 @@ updating @var{obj} (which would cause infinite loop).
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Defining class, Defining methods, General Inquiry, Object system
-@section Defining class
-@c NODE クラスの定義
+@node Class, Instance, General Inquiry, Object system
+@section Class
+@c NODE クラス
 
-@c EN
-A class is a first-class object in Gauche and you can create it
-on the fly at run-time using procedure calls.
-However, for convenience, a macro is defined to create a class
-and bind it globally.
-@c JP
-クラスは、Gaucheではファーストクラスのオブジェクトなので、
-手続き呼び出しを使って実行時に動的に作成することができます。
-簡便のため、グローバルに束縛されたクラスを生成するマクロが
-定義されています。
-@c COMMON
+In this section, a class in Gauche is explained in detail.
 
 @menu
-* define-class macro::          
-* Inheritance::        
+* Defining class::              
+* Inheritance::                 
+* Class object::                
+* Slot definition object::      
 * Class redefinition::          
+* Class definition examples::   
 @end menu
 
-@node define-class macro, Inheritance, Defining class, Defining class
-@subsection @code{define-class} macro
-@c NODE define-class マクロ
+@node Defining class, Inheritance, Class, Class
+@subsection Defining class
+@c NODE クラスの定義
+
+To define a class, use a macro @code{define-class}.
 
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
 @c EN
@@ -782,6 +776,9 @@ described below.  In other words, you can make a procedural slot.
 If a slot's allocation is specified as virtual, @code{:slot-ref} and
 @code{:slot-set!} options have to be specified as well, or @code{define-class}
 raises an error.
+@item :builtin
+This type of allocation only appears in built-in classes, and
+you can't specify it in Scheme-defined class.
 @end table
 
 @item :init-keyword
@@ -855,7 +852,8 @@ calls the procedure given to @code{slot-ref} instead, and see whether
 its return value is @code{#<undef>} or not.
 @end table
 
-@node Inheritance, Class redefinition, define-class macro, Defining class
+
+@node Inheritance, Class object, Defining class, Class
 @subsection Inheritance
 @c NODE 継承
 
@@ -877,22 +875,73 @@ and @code{<T>} is a @emph{direct subclass} of @code{<S>}.
 When a class is defined, it and its superclasses are ordered from
 subclasses to superclasses, and a list of classes is created in such
 order.   It is called @emph{class precedence list}, or CPL.
-A CPL of a class always begins with the class, and end with
-@code{(<object> <top>)}.   @code{<object>} is a superclass of
+A CPL of a class always begins with the class, and ends with
+@code{<top>}.   @code{<object>} is a superclass of
 all Scheme-defined classes, and @code{<top>} is a superclass of
 all classes (including built-in classes).
 
-If there's only single inheritance, CPL is straightforward:
+You can query a class's CPL by a procedure @code{class-precedence-list}:
+
+@example
+gosh> (class-precedence-list <boolean>)
+(#<class <boolean>> #<class <top>>)
+gosh> (class-precedence-list <string>)
+(#<class <string>> #<class <sequence>> #<class <collection>> #<class <top>>)
+@end example
+
+As you see, all classes inherits a class named @code{<top>}.
+Some built-in classes have several abstract classes in its CPL
+between itself and @code{<top>}; the above example shows @code{<string>}
+class inherits @code{<sequence>} and @code{<collection>}.
+That means a string can behave both as a sequence and a collection.
+
+@example
+gosh> (is-a? "abc" <string>)
+#t
+gosh> (is-a? "abc" <sequence>)
+#t
+gosh> (is-a? "abc" <collection>)
+#t
+@end example
+
+How about inheritance of Scheme-defined classes?
+If there's only single inheritance, its CPL is straightforward:
 you can just follow the class's super, its super's super, its
 super's super's super, @dots{}, until you reach @code{<top>}.
-When multiple inheritance is involved, a story becomes a bit
-complicated.   I'll explain it later, but for now, you can
-just assume you always have a linear list, not like a general graph
-with branches and merges.
-You can get a CPL of a class object using @code{class-precedence-list}
-function.
+See the example:
 
-The slots of defined class is calculated as follows:
+@example
+gosh> (define-class <a> () ())
+<a>
+gosh> (define-class <b> (<a>) ())
+<b>
+gosh> (class-precedence-list <b>)
+(#<class <b>> #<class <a>> #<class <object>> #<class <top>>)
+@end example
+
+Scheme-defined class always inherits @code{<object>}.
+It is automatically inserted by the system.
+
+When multiple inheritance is involved, a story becomes a bit
+complicated.  We have to merge multiple CPLs of the superclasses
+into one CPL.  It is called @emph{linearization}, and there are
+several linealization strategies.  By default, Gauche uses
+the same algorithm used in Dylan, which has two properties:
+
+@table @i
+@item Observing local precedence order:
+If class @code{<A>} precedes class @code{<B>} in the local precedence
+order of class @code{<C>}, the linearizations of @code{<C>} and all
+of its subclasses have @code{<A>} before @code{<B>}.
+@item Monotonic:
+Every property inherited by a class is inherited or defined by one
+of its direct superclasses.
+@end table
+
+See @ref{dylan,[Dylan],Dylan} for the details.
+
+Once the class precedence order is determined,
+the slots of defined class is calculated as follows:
 the slot definitions are collected in the direction from superclasss
 to subclass in CPL.  If a subclass has a slot definition of the same
 name of the one in superclass, then the slot defintion of the subclass
@@ -919,55 +968,303 @@ definitions, @code{c} and @code{d}'s come from @code{<T>}, and
  <U>'s slots| a   b   c   d   e
 @end example
 
-Note that this is a default behavior.
-You can also be customized by defining metaclass.  For example,
+You can get a list of slot definitions of a class object using
+@code{class-slots} function.
+
+Note that the behavor described above is mere a default behavior.
+You can customize how the CPL is computed, or how slot definitions
+are inherited, by defining metaclass.  For example,
 you can write a metaclass that allows you to merge slot options
 of the same slot names, instead of the one shadowing the other.
 Or you can write a metaclass that forbids a subclass shadows
 the superclass's slot.
 
-You can get a list of slot definitions of a class object using
-@code{class-slots} function.
+@node Class object, Slot definition object, Inheritance, Class
+@subsection Class object
+@c NODE クラスオブジェクト
 
-Now, suppose you create an instance @code{u} from the class @code{<U>}:
+What is a class?  In Gauche, a class is just an object that implements
+a specific feature: to instantiate an object.
+Because of that, you can introspect the class by just
+looking into the slot values.  There are some procedures provided
+for the convenience of such introspection.
+Note that if those procedures return a list, it belongs to
+the class and you shouldn't modify it.
+
+@defun class-name class
+Returns the name of @var{class}.
 
 @example
-(define u (make <U>))
-
-(is-a? u <U>) @result{} #t
+(class-name <string>) @result{} <string>
 @end example
+@end defun
 
-Then, @code{u} can be passed to methods that expects argument of
-class @code{<U>}, or any of superclasses of @code{<U>}.
-The method dispatch mechanism is explained in @ref{Defining methods}.
+@defun class-precedence-list class
+Returns the class precedence list of @var{class}.
+
+@example
+(class-precedence-list <string>)
+  @result{} (#<class <string>>
+             #<class <sequence>>
+             #<class <collection>>
+             #<class <top>>)
+@end example
+@end defun
+
+@defun class-direct-supers class
+Returns a list of direct superclasses of @var{class}.
+A direct superclass is a class from which
+@var{class} inherits directly.
+
+@example
+(class-direct-supers <string>)
+  @result{} (#<class <sequence>>)
+@end example
+@end defun
+
+@defun class-direct-subclasses class
+Returns a list of direct subclasses of @var{class}.
+A direct subclass is a class that directly inherits
+@var{class}.  If @code{<T>} is a direct subclass of @code{<S>},
+then @code{<S>} is a direct superclass of @code{<T>}.
+@end defun
+
+@defun class-slots class
+Returns a list of @emph{slot definitions} of @var{class}.
+A slot definition is a list whose car is the name of the slot
+adn whose cdr is a keyword-value list that specifies slot options.
+You can further inspect a slot definition to know what characteristics
+the slot has.  See @ref{Slot definition object} for the details.
+
+The standard way to get the list of slot names of a given class
+is @code{(map slot-definition-name (class-slots class))}.
+@end defun
+
+@defun class-slot-definition class slot-name
+Returns a slot definition of a slot specified by @var{slot-name} in
+a class @var{class}.  If @var{class} doesn't have a named slot,
+@code{#f} is returned.
+@end defun
+
+@defun class-direct-slots class
+Returns a list of slot definitions that are directly defined
+in this class (i.e. not inherited from superclasses).
+This information is used to calculate slot inheritance
+during class initialization.
+@end defun
+
+@defun class-direct-methods class
+Returns a list of methods that has @var{class} in its specializer.
+@end defun
+
+@defun class-slot-accessor class slot-name
+Returns a slot accessor object of the slot specified by @var{slot-name}
+in @var{class}.
+A slot accessor object is an internal object that encapsulates
+the information how to access, modify, and initialize the given slot.
+
+You don't usually need to deal with slot accessor objects unless
+you are defining some special slots using metaobject protocol.
+@end defun
+
+@node Slot definition object, Class redefinition, Class object, Class
+@subsection Slot definition object
+@c NODE スロット定義オブジェクト
+
+A slot definition object, returned by @code{class-slots},
+@code{class-direct-slots} and @code{class-slot-definition},
+keeps information about a slot.
+Currently Gauche uses a list to represent the slot definition,
+as STklos and TinyCLOS do.  However, it is not guaranteed that
+Gauche keeps such a structure in future; you should use the
+following dedicated accessor method to obtain information
+of a slot definition object.
+
+@defun slot-definition-name slot-def
+Returns the name of a slot given by a slot definition object @var{slot-def}.
+@end defun
+
+@defun slot-definition-options slot-def
+Returns a keyword-value list of slot options of @var{slot-def}.
+@end defun
+
+@defun slot-definition-allocation slot-def
+Returns the value of @code{:allocation} option of @var{slot-def}.
+@end defun
+
+@defun slot-definition-getter slot-def
+@defunx slot-defininion-setter slot-def
+@defunx slot-definition-accessor slot-def
+Returns the value of @code{:getter}, @code{:setter} and @code{:accessor}
+slot options of @var{slot-def}, respectively.
+@end defun
+
+@defun slot-definition-option slot-def option &optional default
+Returns the value of slot option @var{option} of @var{slot-def}.
+If there's no such an option, @var{default} is returned
+if given, or an error is signalled otherwise.
+@end defun
 
 
-
-
-
-
-
-
-
-@node Class redefinition,  , Inheritance, Defining class
+@node Class redefinition, Class definition examples, Slot definition object, Class
 @subsection Class redefinition
 @c NODE クラスの再定義
 
+If the specified class name is bound to a class when @code{define-class}
+is used, it is regarded as @emph{redefinition} of the original class.
+
+Redefinition of a class means the following operations:
+
+@itemize @bullet
+@item
+A new class object is created based on the new definition,
+and bound to the variable given to @code{define-class}.
+
+@item 
+Methods defined on the original class (i.e. methods that have
+the original class in their specializers) are changed so that
+they are defined on the new class.
+
+@item
+The direct-subclasses link of the direct superclasses of the
+original class is modified so that they points to the new class.
+
+@item
+All the subclasses of the original class are redefined
+so that they reflect the changes of the class.
+
+@item
+The original class is marked @emph{redefined}.
+@end itemize
+
+Note that the original class and the new class are different objects.
+The original class object remembers which variable in which module
+it is originally bound, and replaces the binding to a new class.
+If you keep the direct reference to the original class somewhere else,
+it still refers to the original class; you might want to take extra
+care.  You can customize class redefinition behavior by
+defining the @code{class-redefinition} method; see 
+@ref{Metaobject protocol} for the details.
+
+If there are instances of the original class, such instances
+are automatically @emph{updated} when it is about to be accessed or modified
+via @code{class-of}, @code{is-a?}, @code{slot-ref},
+@code{slot-set!}, @code{ref}, getter method, or setter method.  
+
+Updating an instance means that the class of the instance
+is changed (from the old class to the new class).
+See @ref{Changing classes}, for the details.
+
+
+@node Class definition examples,  , Class redefinition, Class
+@subsection Class definition examples
+@c NODE クラスの定義例
+
+Let's see some examples.  Suppose you are defining a graphical
+toolkit.  A @code{<window>} is a rectangle region on
+the screen, so it has width and height.  It can be organized
+hierarchically, i.e. a window can be placed in another window;
+so it has a pointer to the parent window.  And we specify the
+window's position, x, y, by the coordinate relative to its
+parent window.  Finally, we create a "root" window that
+covers entire screen.  It also serves the default parent window.
+So far, what we get is something like this:
+
+@example
+;; The first version
+(define-class <window> ()
+  (;; Pointer to the parent window.
+   (parent      :init-keyword :parent :init-form *root-window*)
+   ;; Sizes of the window
+   (width       :init-keyword :width  :init-value 1)
+   (height      :init-keyword :height :init-value 1)
+   ;; Position of the window relative to the parent.
+   (x           :init-keyword :x :init-value 0)
+   (y           :init-keyword :y :init-value 0)
+   ))
+
+(define *screen-width* 1280)
+(define *screen-height* 1024)
+
+(define *root-window*
+  (make <window> :parent #f :width *screen-width* :height *screen-height*))
+@end example
+
+Note the usage of @code{:init-value} and @code{:init-form}.
+When the @code{<window>} class is defined, we haven't bound
+@code{*root-window*} yet, so we can't use @code{:init-value} here.
+
+@example
+gosh> *root-window*
+#<<window> 0x80db1d0>
+gosh> (define window-a (make <window> :width 100 :height 100))
+window-a
+gosh> (d window-a)
+#<<window> 0x80db1b0> is an instance of class <window>
+slots:
+  parent    : #<<window> 0x80db1d0>
+  width     : 100
+  height    : 100
+  x         : 0
+  y         : 0
+gosh> (define window-b
+        (make <window> :parent window-a :width 50 :height 20 :x 10 :y 5))
+window-b
+gosh> (d window-b)
+#<<window> 0x80db140> is an instance of class <window>
+slots:
+  parent    : #<<window> 0x80db1b0>
+  width     : 50
+  height    : 20
+  x         : 10
+  y         : 5
+@end example
+
+
+
+@example
+   ;; Pointer to the root window, and absolute positions of the window.
+   (root-window :allocation :class)
+   (root-x      :allocation :virtual
+                :slot-ref  (lambda (o)
+                             (+ (ref (ref o 'parent) 'root-x)
+                                (ref o 'x)))
+                :slot-set! (lambda (o v)
+                             (set! (ref o 'x)
+                                   (- v (ref (ref o 'parent) 'root-x)))))
+   (root-y      :allocation :virtual
+                :slot-ref  (lambda (o)
+                             (+ (ref (ref o 'parent) 'root-y)
+                                (ref o 'y)))
+                :slot-set! (lambda (o v)
+                             (set! (ref o 'y)
+                                   (- v (ref (ref o 'parent) 'root-y)))))
+   ))
+
+  (let ((w (make <window> :parent #f
+             :width *screen-width* :height *screen-height*)))
+    (slot-set! w 'root-window w)
+    w))
+@end example
+
+
+
 
 @c ----------------------------------------------------------------------
-@node Defining methods, Creating Instance, Defining class, Object system
-@section Defining methods
-@c NODE メソッドの定義
+@node Instance, Generic function and method, Class, Object system
+@section Instance
+@c NODE インスタンス
 
-@defmac define-generic name
-@end defmac
+In this section, we explain how to create and use an instance.
 
-@defmac define-method name specs body
-@end defmac
+@menu
+* Creating instance::           
+* Accessing instance::          
+* Changing classes::            
+@end menu
 
-@c ----------------------------------------------------------------------
-@node Creating Instance, Accessing Instance, Defining methods, Object system
-@section Creating Instance
+@node Creating instance, Accessing instance, Instance, Instance
+@subsection Creating instance
 @c NODE インスタンスの作成
 
 @deffn {Generic Function} make class arg @dots{}
@@ -983,9 +1280,8 @@ The method dispatch mechanism is explained in @ref{Defining methods}.
 @deffn {Method} initialize (class <class>) initargs
 @end deffn
 
-@c ----------------------------------------------------------------------
-@node Accessing Instance, Metaobject protocol, Creating Instance, Object system
-@section Accessing Instance
+@node Accessing instance, Changing classes, Creating instance, Instance
+@subsection Accessing instance
 @c NODE インスタンスへのアクセス
 
 @defun slot-ref obj slot
@@ -1088,103 +1384,52 @@ It can be defined like the following code
 @defunx class-slot-set! class slot-name obj
 @end defun
 
+
+@node Changing classes,  , Accessing instance, Instance
+@subsection Changing classes
+@c NODE クラスの変更
+
+
+
 @c ----------------------------------------------------------------------
-@node Metaobject protocol,  , Accessing Instance, Object system
+@node Generic function and method, Metaobject protocol, Instance, Object system
+@section Generic function and method
+@c NODE ジェネリックファンクションとメソッド
+
+@menu
+* Defining methods::            
+* Applying generic function::   
+@end menu
+
+@node Defining methods, Applying generic function, Generic function and method, Generic function and method
+@subsection Defining methods
+
+@defmac define-generic name
+@end defmac
+
+@defmac define-method name specs body
+@end defmac
+
+
+@node Applying generic function,  , Defining methods, Generic function and method
+@subsection Applying generic function
+
+
+@c ----------------------------------------------------------------------
+@node Metaobject protocol,  , Generic function and method, Object system
 @section Metaobject protocol
 @c NODE メタオブジェクトプロトコル
 
 @menu
-* System metaclasses::          
-* Class introspection::         
 * Class instantiation::         
 * Customizing slot access::     
 * Method instantiation::        
 * Customizing method application::  
 @end menu
 
-@node System metaclasses, Class introspection, Metaobject protocol, Metaobject protocol
-@subsection System metaclasses
-@c NODE システムメタクラス
-
-@deftp {Class} <top>
-@clindex top
-@end deftp
-
-@deftp {Class} <class>
-@clindex class
-@end deftp
-
-@deftp {Class} <generic>
-@clindex generic
-@end deftp
-
-@deftp {Class} <method>
-@clindex method
-@end deftp
-
-@deftp {Class} <object>
-@clindex object
-@end deftp
 
 
-@node Class introspection, Class instantiation, System metaclasses, Metaobject protocol
-@subsection Class introspection
-@c NODE クラスのイントロスペクション
-
-@menu
-* Class metaobject::            
-* Slot definition::             
-@end menu
-
-@node Class metaobject, Slot definition, Class introspection, Class introspection
-@subsubsection Class metaobject
-@c NODE クラスメタオブジェクト
-
-@defun class-name class
-@end defun
-
-@defun class-precedence-list class
-@end defun
-
-@defun class-direct-supers class
-@end defun
-
-@defun class-direct-slots class
-@end defun
-
-@defun class-slots
-@end defun
-
-@node Slot definition,  , Class metaobject, Class introspection
-@subsubsection Slot definition
-@c NODE スロット定義
-
-@deftp {Class} <slot-accessor>
-@clindex slot-accessor
-@end deftp
-
-
-@defun class-slot-definition class slot-name
-@end defun
-
-@defun class-slot-accessor class slot-name
-@end defun
-
-@defun slot-definition-name slot-def
-@end defun
-@defun slot-definition-allocation slot
-@end defun
-
-@defun slot-definition-getter slot
-@defunx slot-defininion-setter slot
-@defunx slot-definition-accessor slot
-@end defun
-
-@defun slot-definition-options slot-def
-@defunx slot-definition-option slot-def key &optional default
-@end defun
-
-@node Class instantiation, Customizing slot access, Class introspection, Metaobject protocol
+@node Class instantiation, Customizing slot access, Metaobject protocol, Metaobject protocol
 @subsection Class instantiation
 @c NODE クラスのインスタンシエーション
 

@@ -21,7 +21,7 @@ R5RS arithmetic procedure @code{-}.   @xref{Arithmetics}.
 @item -=
 Gauche @code{dec!} macro.  @xref{Assignments}.
 @item ->
-Gauche @code{slot-ref} is something close to this.  @xref{Accessing Instance}.
+Gauche @code{slot-ref} is something close to this.  @xref{Accessing instance}.
 @item * (binary)
 R5RS arithmetic procedure @code{*}.   @xref{Arithmetics}.
 @item * (unary)
@@ -82,7 +82,7 @@ R5RS @code{vector-ref} (@xref{Vectors}) is something close.
 Or you can use Gauche's generic function @code{ref} (@xref{gauche.sequence - Sequence framework})
 for arbitrary sequences.
 @item .
-Gauche @code{slot-ref} is something close to this.  @xref{Accessing Instance}.
+Gauche @code{slot-ref} is something close to this.  @xref{Accessing instance}.
 @item ~
 Gauche @code{lognot}.  @xref{Bitwise operations}.
 @item ~=
