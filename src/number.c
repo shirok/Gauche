@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.38 2001-05-07 08:56:32 shirok Exp $
+ *  $Id: number.c,v 1.39 2001-05-10 07:56:58 shirok Exp $
  */
 
 #include <math.h>
@@ -22,8 +22,10 @@
 #include "gauche.h"
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323
+#define M_PI 3.14159265358979323846
 #endif
+
+#define IS_INF_OR_NAN(x)  ((x) == (x)+1)
 
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
@@ -1051,7 +1053,7 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 
 ScmObj Scm_Max(ScmObj arg0, ScmObj args)
 {
-    int inexact = SCM_EXACTP(arg0);
+    int inexact = !SCM_EXACTP(arg0);
     for (;;) {
         if (!SCM_REALP(arg0))
             Scm_Error("real number required, but got %S", arg0);
@@ -1072,7 +1074,7 @@ ScmObj Scm_Max(ScmObj arg0, ScmObj args)
 
 ScmObj Scm_Min(ScmObj arg0, ScmObj args)
 {
-    int inexact = SCM_EXACTP(arg0);
+    int inexact = !SCM_EXACTP(arg0);
     for (;;) {
         if (!SCM_REALP(arg0))
             Scm_Error("real number required, but got %S", arg0);
@@ -1172,7 +1174,7 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
         r = Scm_BignumToString(SCM_BIGNUM(obj), radix);
     } else if (SCM_FLONUMP(obj)) {
         char buf[50];
-        snprintf(buf, 47, "%.15g", SCM_FLONUM_VALUE(obj));
+        snprintf(buf, 47, "%.20g", SCM_FLONUM_VALUE(obj));
         if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
             strcat(buf, ".0");
         r = Scm_MakeString(buf, -1, -1);
