@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.2 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: number.c,v 1.3 2001-01-14 11:55:59 shiro Exp $
  */
 
 #include <math.h>
@@ -80,6 +80,20 @@ ScmObj Scm_MakeFlonum(double d)
     f->hdr.klass = SCM_CLASS_REAL;
     f->value = d;
     return SCM_OBJ(f);
+}
+
+ScmObj Scm_MakeFlonumToNumber(double d, int exact)
+{
+    if (exact) {
+        /* see if d can be demoted to integer */
+        double i, f;
+        f = modf(d, &i);
+        if (f == 0.0) {
+            /* TODO: range check */
+            return SCM_MAKE_INT((int)i);
+        }
+    }
+    return Scm_MakeFlonum(d);
 }
 
 /*======================================================================
@@ -152,6 +166,27 @@ ScmObj Scm_NumberP(ScmObj obj)
     return SCM_NUMBERP(obj)? SCM_TRUE : SCM_FALSE;
 }
 
+ScmObj Scm_IntegerP(ScmObj obj)
+{
+    if (SCM_INTP(obj)) return SCM_TRUE;
+    if (SCM_FLONUMP(obj)) {
+        double d = SCM_FLONUM_VALUE(obj);
+        double f, i;
+        if ((f = modf(d, &i)) == 0.0) return SCM_TRUE;
+        return SCM_FALSE;
+    }
+    if (SCM_COMPLEXP(obj)) {
+        if (SCM_COMPLEX_IMAG(obj) == 0.0) {
+            double d = SCM_FLONUM_VALUE(obj);
+            double f, i;
+            if ((f = modf(d, &i)) == 0.0) return SCM_TRUE;
+        }
+        return SCM_FALSE;
+    }
+    Scm_Error("number required, but got %S", obj);
+    return SCM_FALSE;           /* dummy */
+}
+
 /* Unary Operator */
 
 ScmObj Scm_Abs(ScmObj obj)
@@ -192,7 +227,7 @@ int Scm_Sign(ScmObj obj)
     return r;
 }
 
-ScmObj Scm_Uminus(ScmObj obj)
+ScmObj Scm_Negate(ScmObj obj)
 {
     if (SCM_INTP(obj)) {
         /* TOOD: overflow check */
@@ -203,6 +238,31 @@ ScmObj Scm_Uminus(ScmObj obj)
     } else if (SCM_COMPLEXP(obj)) {
         obj = Scm_MakeComplex(-SCM_COMPLEX_REAL(obj),
                               -SCM_COMPLEX_IMAG(obj));
+    } else {
+        Scm_Error("number required: %S", obj);
+    }
+    return obj;
+}
+
+ScmObj Scm_Reciprocal(ScmObj obj)
+{
+    if (SCM_INTP(obj)) {
+        int val = SCM_INT_VALUE(obj);
+        if (val == 0) Scm_Error("divide by zero");
+        obj = Scm_MakeFlonum(1.0/(double)val);
+    } else if (SCM_FLONUMP(obj)) {
+        double val = SCM_FLONUM_VALUE(obj);
+        if (val == 0.0) Scm_Error("divide by zero");
+        obj = Scm_MakeFlonum(1.0/val);
+    } else if (SCM_COMPLEXP(obj)) {
+        double r = SCM_COMPLEX_REAL(obj), r1;
+        double i = SCM_COMPLEX_IMAG(obj), i1;
+        double d;
+        if (r == 0.0 && i == 0.0) Scm_Error("divie by zero");
+        d = r*r + i*i;
+        r1 = r/d;
+        i1 = -i/d;
+        obj = Scm_MakeComplex(r1, i1);
     } else {
         Scm_Error("number required: %S", obj);
     }
@@ -286,145 +346,163 @@ ScmObj Scm_PromoteToComplex(ScmObj obj)
  * Addition and subtraction
  */
 
-ScmObj Scm_Sum(ScmObj args)
+ScmObj Scm_Add(ScmObj args)
 {
-    ScmObj cp, v;
+    ScmObj v;
     int result_int = 0;
-    double result_double, result_imag;
-    int nclass = FIXNUM;
+    double result_real, result_imag;
 
     if (!SCM_PAIRP(args)) return SCM_MAKE_INT(0);
 
     v = SCM_CAR(args);
     args = SCM_CDR(args);
-    nclass = NUMBER_CLASS(v);
-    if (nclass == NONUMBER) Scm_Error("number required: %S", v);
-    if (!SCM_PAIRP(args)) return v;
 
-    while (nclass == FIXNUM) {
-        /* TODO: check overflow */
-        result_int += SCM_INT_VALUE(v);
-        if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
+    if (SCM_INTP(v)) {
+        if (!SCM_PAIRP(args)) return v;
+        result_int = SCM_INT_VALUE(v);
         v = SCM_CAR(args);
         args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
+        for (;;) {
+            if (SCM_INTP(v)) {
+                /* TODO: check overflow */
+                result_int += SCM_INT_VALUE(v);
+            } else if (SCM_FLONUMP(v)) {
+                result_real = (double)result_int;
+                goto DO_FLONUM;
+            } else if (SCM_COMPLEXP(v)) {
+                result_real = (double)result_int;
+                result_imag = 0.0;
+                goto DO_COMPLEX;
+            } else {
+                Scm_Error("number required, but got: %S", v);
+            }
+            if (SCM_NULLP(args)) return Scm_MakeInteger(result_int);
+            v = SCM_CAR(args);
+            args = SCM_CDR(args);
+        }
     }
-
-    if (nclass == NONUMBER) Scm_Error("number required: %S", v);
-
-    result_double = (double)result_int;
-    while (nclass == FLONUM) {
-        result_double += SCM_FLONUM_VALUE(v);
-        if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_double);
+    if (SCM_FLONUMP(v)) {
+        if (!SCM_PAIRP(args)) return v;
+        result_real = SCM_FLONUM_VALUE(v);
         v = SCM_CAR(args);
         args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
-
-        if (nclass < FLONUM) {
-            v = Scm_PromoteToFlonum(v);
-            nclass = FLONUM;
+      DO_FLONUM:
+        for (;;) {
+            if (SCM_INTP(v)) {
+                result_real += (double)SCM_INT_VALUE(v);
+            } else if (SCM_FLONUMP(v)) {
+                result_real += SCM_FLONUM_VALUE(v);
+            } else if (SCM_COMPLEXP(v)) {
+                result_imag = 0.0;
+                goto DO_COMPLEX;
+            } else {
+                Scm_Error("number required, but got: %S", v);
+            }
+            if (SCM_NULLP(args)) return Scm_MakeFlonum(result_real);
+            v = SCM_CAR(args);
+            args = SCM_CDR(args);
         }
     }
-
-    result_imag = 0.0;
-    while (nclass == COMPLEX) {
-        result_double += SCM_COMPLEX_REAL(v);
-        result_imag += SCM_COMPLEX_IMAG(v);
-        if (!SCM_PAIRP(args)) {
-            if (result_imag == 0.0)
-                return Scm_MakeFlonum(result_double);
-            else
-                return Scm_MakeComplex(result_double, result_imag);
-        }
+    if (SCM_COMPLEXP(v)) {
+        if (!SCM_PAIRP(args)) return v;
+        result_real = SCM_COMPLEX_REAL(v);
+        result_imag = SCM_COMPLEX_IMAG(v);
         v = SCM_CAR(args);
         args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
-
-        if (nclass < COMPLEX) {
-            v = Scm_PromoteToComplex(v);
-            nclass = COMPLEX;
+      DO_COMPLEX:
+        for (;;) {
+            if (SCM_INTP(v)) {
+                result_real += (double)SCM_INT_VALUE(v);
+            } else if (SCM_FLONUMP(v)) {
+                result_real += SCM_FLONUM_VALUE(v);
+            } else if (SCM_COMPLEXP(v)) {
+                result_real += SCM_COMPLEX_REAL(v);
+                result_imag += SCM_COMPLEX_IMAG(v);
+            } else {
+                Scm_Error("number required, but got: %S", v);
+            }
+            if (!SCM_PAIRP(args)) {
+                if (result_imag == 0.0)
+                    return Scm_MakeFlonum(result_real);
+                else
+                    return Scm_MakeComplex(result_real, result_imag);
+            }
+            v = SCM_CAR(args);
+            args = SCM_CDR(args);
         }
     }
-    
     Scm_Error("number required: %S", v);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
-ScmObj Scm_Difference(ScmObj arg1, ScmObj args)
+ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    ScmObj cp, v;
     int result_int = 0;
-    double result_double = 0.0, result_imag = 0.0;
-    int nclass, vnclass;
+    double result_real = 0.0, result_imag = 0.0;
+    int nc0, nc1;
 
-    if (!SCM_PAIRP(args)) return Scm_Uminus(arg1);
-    
-    if (SCM_INTP(arg1)) {
-        result_int = SCM_INT_VALUE(arg1);
-        nclass = FIXNUM;
-    } else if (SCM_FLONUMP(arg1)) {
-        result_double = SCM_FLONUM_VALUE(arg1);
-        nclass = FLONUM;
-    } else if (SCM_COMPLEXP(arg1)) {
-        result_double = SCM_COMPLEX_REAL(arg1);
-        result_imag = SCM_COMPLEX_IMAG(arg1);
-        nclass = COMPLEX;
-    } else {
-        Scm_Error("number required: %S", arg1);
-    }
-
-    v = SCM_CAR(args);
-    args = SCM_CDR(args);
-    vnclass = NUMBER_CLASS(v);
-    if (nclass == NONUMBER) Scm_Error("number required: %S", v);
-    if (vnclass > nclass) nclass = vnclass;
-
-    while (nclass == FIXNUM) {
-        /* TODO: check overflow */
-        result_int -= SCM_INT_VALUE(v);
-        
-        if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
-    }
-
-    if (nclass == NONUMBER) Scm_Error("number required: %S", v);
-
-    result_double += (double)result_int;
-
-    while (nclass == FLONUM) {
-        result_double -= SCM_FLONUM_VALUE(v);
-        if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_double);
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
-        if (nclass < FLONUM) {
-            v = Scm_PromoteToFlonum(v);
-            nclass = FLONUM;
+    if (SCM_INTP(arg0)) {
+        result_int = SCM_INT_VALUE(arg0);
+        for (;;) {
+            if (SCM_INTP(arg1)) {
+                /* TODO: check overflow */
+                result_int -= SCM_INT_VALUE(arg1);
+            } else if (SCM_FLONUMP(arg1)) {
+                result_real = (double)result_int;
+                goto DO_FLONUM;
+            } else if (SCM_COMPLEXP(arg1)) {
+                result_real = (double)result_int;
+                goto DO_COMPLEX;
+            } else {
+                Scm_Error("number required, but got %S", arg1);
+            }
+            if (SCM_NULLP(args))
+                return SCM_MAKE_INT(result_int);
+            arg1 = SCM_CAR(args);
+            args = SCM_CDR(args);
         }
     }
-
-    while (nclass == COMPLEX) {
-        result_double -= SCM_COMPLEX_REAL(v);
-        result_imag -= SCM_COMPLEX_IMAG(v);
-        if (!SCM_PAIRP(args)) {
-            if (result_imag == 0.0)
-                return Scm_MakeFlonum(result_double);
-            else
-                return Scm_MakeComplex(result_double, result_imag);
-        }
-        v = SCM_CAR(args);
-        args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
-
-        if (nclass < COMPLEX) {
-            v = Scm_PromoteToComplex(v);
-            nclass = COMPLEX;
+    if (SCM_FLONUMP(arg0)) {
+        result_real = SCM_FLONUM_VALUE(arg0);
+      DO_FLONUM:
+        for (;;) {
+            if (SCM_INTP(arg1)) {
+                result_real -= (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_FLONUMP(arg1)) {
+                result_real -= SCM_FLONUM_VALUE(arg1);
+            } else if (SCM_COMPLEXP(arg1)) {
+                goto DO_COMPLEX;
+            } else {
+                Scm_Error("number required, but got %S", arg1);
+            }
+            if (SCM_NULLP(args))
+                return Scm_MakeFlonum(result_real);
+            arg1 = SCM_CAR(args);
+            args = SCM_CDR(args);
         }
     }
-    
-    Scm_Error("number required: %S", v);
+    if (SCM_COMPLEXP(arg0)) {
+        result_real = SCM_COMPLEX_REAL(arg0);
+        result_imag = SCM_COMPLEX_IMAG(arg0);
+      DO_COMPLEX:
+        for (;;) {
+            if (SCM_INTP(arg1)) {
+                result_real -= (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_FLONUMP(arg1)) {
+                result_real -= SCM_FLONUM_VALUE(arg1);
+            } else if (SCM_COMPLEXP(arg1)) {
+                result_real -= SCM_COMPLEX_REAL(arg1);
+                result_imag -= SCM_COMPLEX_IMAG(arg1);
+            } else {
+                Scm_Error("number required, but got %S", arg1);
+            }
+            if (SCM_NULLP(args))
+                return Scm_MakeComplex(result_real, result_imag);
+            arg1 = SCM_CAR(args);
+            args = SCM_CDR(args);
+        }
+    }
+    Scm_Error("number required: %S", arg1);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
@@ -432,74 +510,216 @@ ScmObj Scm_Difference(ScmObj arg1, ScmObj args)
  * Multiplication
  */
 
-ScmObj Scm_Product(ScmObj args)
+ScmObj Scm_Multiply(ScmObj args)
 {
-    ScmObj cp, v;
-    int result_int = 1;
-    double result_double, result_imag;
-    int nclass = FIXNUM;
+    ScmObj v;
+    int result_int;
+    double result_real, result_imag;
 
     if (!SCM_PAIRP(args)) return SCM_MAKE_INT(1);
 
     v = SCM_CAR(args);
     args = SCM_CDR(args);
-    nclass = NUMBER_CLASS(v);
-    if (nclass == NONUMBER) Scm_Error("number required: %S", v);
-    if (!SCM_PAIRP(args)) return v;
 
-    while (nclass == FIXNUM) {
-        /* TODO: check overflow */
-        result_int *= SCM_INT_VALUE(v);
-        if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
+    if (SCM_INTP(v)) {
+        if (!SCM_PAIRP(args)) return v;
+        result_int = SCM_INT_VALUE(v);
         v = SCM_CAR(args);
         args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
+        for (;;) {
+            if (SCM_INTP(v)) {
+                /* TODO: check overflow */
+                result_int *= SCM_INT_VALUE(v);
+            } else if (SCM_FLONUMP(v)) {
+                result_real = (double)result_int;
+                goto DO_FLONUM;
+            } else if (SCM_COMPLEXP(v)) {
+                result_real = (double)result_int;
+                result_imag = 0.0;
+                goto DO_COMPLEX;
+            } else {
+                Scm_Error("number required, but got: %S", v);
+            }
+            if (SCM_NULLP(args)) return Scm_MakeInteger(result_int);
+            v = SCM_CAR(args);
+            args = SCM_CDR(args);
+        }
     }
-
-    if (nclass == NONUMBER) Scm_Error("number required: %S", v);
-
-    result_double = (double)result_int;
-    while (nclass == FLONUM) {
-        result_double *= SCM_FLONUM_VALUE(v);
-        if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_double);
+    if (SCM_FLONUMP(v)) {
+        if (!SCM_PAIRP(args)) return v;
+        result_real = SCM_FLONUM_VALUE(v);
         v = SCM_CAR(args);
         args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
-
-        if (nclass < FLONUM) {
-            v = Scm_PromoteToFlonum(v);
-            nclass = FLONUM;
+      DO_FLONUM:
+        for (;;) {
+            if (SCM_INTP(v)) {
+                result_real *= (double)SCM_INT_VALUE(v);
+            } else if (SCM_FLONUMP(v)) {
+                result_real *= SCM_FLONUM_VALUE(v);
+            } else if (SCM_COMPLEXP(v)) {
+                result_imag = 0.0;
+                goto DO_COMPLEX;
+            } else {
+                Scm_Error("number required, but got: %S", v);
+            }
+            if (SCM_NULLP(args)) return Scm_MakeFlonum(result_real);
+            v = SCM_CAR(args);
+            args = SCM_CDR(args);
         }
     }
-
-    result_imag = 0.0;
-    while (nclass == COMPLEX) {
-        double r = SCM_COMPLEX_REAL(v);
-        double i = SCM_COMPLEX_IMAG(v);
-
-        double t = result_double * r - result_imag * i;
-        result_imag   = result_double * i + result_imag * r;
-        result_double = t;
-        
-        if (!SCM_PAIRP(args)) {
-            if (result_imag == 0.0)
-                return Scm_MakeFlonum(result_double);
-            else
-                return Scm_MakeComplex(result_double, result_imag);
-        }
+    if (SCM_COMPLEXP(v)) {
+        if (!SCM_PAIRP(args)) return v;
+        result_real = SCM_COMPLEX_REAL(v);
+        result_imag = SCM_COMPLEX_IMAG(v);
         v = SCM_CAR(args);
         args = SCM_CDR(args);
-        nclass = NUMBER_CLASS(v);
-
-        if (nclass < COMPLEX) {
-            v = Scm_PromoteToComplex(v);
-            nclass = COMPLEX;
+      DO_COMPLEX:
+        for (;;) {
+            if (SCM_INTP(v)) {
+                result_real *= (double)SCM_INT_VALUE(v);
+                result_imag *= (double)SCM_INT_VALUE(v);
+            } else if (SCM_FLONUMP(v)) {
+                result_real *= SCM_FLONUM_VALUE(v);
+                result_imag *= SCM_FLONUM_VALUE(v);
+            } else if (SCM_COMPLEXP(v)) {
+                double r = SCM_COMPLEX_REAL(v);
+                double i = SCM_COMPLEX_IMAG(v);
+                double t = result_real * r - result_imag * i;
+                result_imag   = result_real * i + result_imag * r;
+                result_real = t;
+            } else {
+                Scm_Error("number required, but got: %S", v);
+            }
+            if (!SCM_PAIRP(args)) {
+                if (result_imag == 0.0)
+                    return Scm_MakeFlonum(result_real);
+                else
+                    return Scm_MakeComplex(result_real, result_imag);
+            }
+            v = SCM_CAR(args);
+            args = SCM_CDR(args);
         }
     }
-    
     Scm_Error("number required: %S", v);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
+
+/*
+ * Division
+ */
+
+ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
+{
+    double result_real = 0.0, result_imag = 0.0, div_real, div_imag;
+    int exact = 1;
+
+    if (SCM_INTP(arg0)) {
+        result_real = (double)SCM_INT_VALUE(arg0);
+        goto DO_FLONUM;
+    }
+    if (SCM_FLONUMP(arg0)) {
+        result_real = SCM_FLONUM_VALUE(arg0);
+        exact = 0;
+      DO_FLONUM:
+        for (;;) {
+            if (SCM_INTP(arg1)) {
+                div_real = (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_FLONUMP(arg1)) {
+                div_real = SCM_FLONUM_VALUE(arg1);
+                exact = 0;
+            } else if (SCM_COMPLEXP(arg1)) {
+                goto DO_COMPLEX;
+            } else {
+                Scm_Error("number required, but got %S", arg1);
+            }
+            if (div_real == 0) 
+                Scm_Error("divide by zero");
+            result_real /= div_real;
+            if (SCM_NULLP(args))
+                return Scm_MakeFlonumToNumber(result_real, exact);
+            arg1 = SCM_CAR(args);
+            args = SCM_CDR(args);
+        }
+    }
+    if (SCM_COMPLEXP(arg0)) {
+        double d, r, i;
+        result_real = SCM_COMPLEX_REAL(arg0);
+        result_imag = SCM_COMPLEX_IMAG(arg0);
+        div_imag = 0.0;
+      DO_COMPLEX:
+        for (;;) {
+            if (SCM_INTP(arg1)) {
+                div_real = (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_FLONUMP(arg1)) {
+                div_real = SCM_FLONUM_VALUE(arg1);
+            } else if (SCM_COMPLEXP(arg1)) {
+                div_real = SCM_COMPLEX_REAL(arg1);
+                div_imag = SCM_COMPLEX_IMAG(arg1);
+            } else {
+                Scm_Error("number required, but got %S", arg1);
+            }
+            d = div_real*div_real + div_imag*div_imag;
+            if (d == 0.0)
+                Scm_Error("divide by zero");
+            r = (result_real*div_real + result_imag*div_imag)/d;
+            i = (result_imag*div_real - result_real*div_imag)/d;
+            result_real = r;
+            result_imag = i;
+            if (SCM_NULLP(args))
+                return Scm_MakeComplex(result_real, result_imag);
+            arg1 = SCM_CAR(args);
+            args = SCM_CDR(args);
+        }
+    }
+    Scm_Error("number required: %S", arg0);
+    return SCM_UNDEFINED;       /* NOTREACHED */
+}
+
+/*
+ * Integer division
+ */
+ScmObj Scm_Quotient(ScmObj x, ScmObj y)
+{
+    double rx, ry, f, i;
+    if (SCM_INTP(x)) {
+        if (SCM_INTP(y)) {
+            int r;
+            if (SCM_INT_VALUE(y) == 0) goto DIVBYZERO;
+            r = SCM_INT_VALUE(x)/SCM_INT_VALUE(y);
+            return SCM_MAKE_INT(r);
+        }
+        rx = (double)SCM_INT_VALUE(x);
+        if (SCM_FLONUMP(y)) {
+            ry = SCM_FLONUM_VALUE(y);
+            if (ry != floor(ry)) goto BADARGY;
+            goto DO_FLONUM;
+        }
+        goto BADARGY;
+    } else if (SCM_FLONUMP(x)) {
+        rx = SCM_FLONUM_VALUE(x);
+        if (rx != floor(rx)) goto BADARG;
+        if (SCM_INTP(y)) {
+            ry = (double)SCM_INT_VALUE(y);
+        } else if (SCM_FLONUMP(y)) {
+            ry = SCM_FLONUM_VALUE(y);
+            if (ry != floor(ry)) goto BADARGY;
+        } else {
+            goto BADARGY;
+        }
+      DO_FLONUM:
+        if (ry == 0.0) goto DIVBYZERO;
+        f = modf(rx/ry, &i);
+        return Scm_MakeFlonum(i);
+    }
+  DIVBYZERO:
+    Scm_Error("divide by zero");
+  BADARGY:
+    x = y;
+  BADARG:
+    Scm_Error("integer required, but got %S", x);
+    return SCM_UNDEFINED;       /* dummy */
+}
+
 
 /*===============================================================
  * Comparison
@@ -679,6 +899,11 @@ ScmObj Scm_Min(ScmObj arg0, ScmObj args)
         }
     }
 }
+
+/*===============================================================
+ * ACCESSING STRUCTURED NUMBERS
+ */
+
 
      
 /*===============================================================

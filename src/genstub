@@ -143,6 +143,8 @@
        (arg-attr-set! cproc arg :type :small-integer))
       ((exact?)
        (arg-attr-set! cproc arg :type :exact))
+      ((number?)
+       (arg-attr-set! cproc arg :type :number))
       ((char?)
        (arg-attr-set! cproc arg :type :char))
       ((boolean?)
@@ -327,6 +329,7 @@
    :small-integer  '("int"        "SCM_INTP"    "SCM_INT_VALUE" "small integer")
    ;; TODO: bignum!
    :exact          '("int"        "SCM_EXACTP"  "SCM_INT_VALUE" "exact integer")
+   :number         '("ScmObj"     "SCM_NUMBERP" ""            "number")
    :char           '("ScmChar"    "SCM_CHARP"   "SCM_CHAR_VALUE" "character")
    :scm            '("ScmObj"     #f            #f            #f)
    :port           '("ScmPort*"   "SCM_PORTP"   "SCM_PORT"    "port")

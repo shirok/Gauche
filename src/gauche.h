@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.3 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: gauche.h,v 1.4 2001-01-14 11:55:59 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1161,14 +1161,22 @@ extern double Scm_GetDouble(ScmObj obj);
 extern ScmObj Scm_MakeComplex(double real, double imag);
 
 extern ScmObj Scm_NumberP(ScmObj obj);
+extern ScmObj Scm_IntegerP(ScmObj obj);
 extern ScmObj Scm_Abs(ScmObj obj);
 extern int    Scm_Sign(ScmObj obj);
+extern ScmObj Scm_Negate(ScmObj obj);
+extern ScmObj Scm_Reciprocal(ScmObj obj);
 extern ScmObj Scm_ExactToInexact(ScmObj obj);
 extern ScmObj Scm_InexactToExact(ScmObj obj);
 
-extern ScmObj Scm_Sum(ScmObj args);
-extern ScmObj Scm_Difference(ScmObj arg1, ScmObj args);
-extern ScmObj Scm_Product(ScmObj args);
+extern ScmObj Scm_Add(ScmObj args);
+extern ScmObj Scm_Subtract(ScmObj arg1, ScmObj arg2, ScmObj args);
+extern ScmObj Scm_Multiply(ScmObj args);
+extern ScmObj Scm_Divide(ScmObj arg1, ScmObj arg2, ScmObj args);
+
+extern ScmObj Scm_Quotient(ScmObj arg1, ScmObj arg2);
+extern ScmObj Scm_Remainder(ScmObj arg1, ScmObj arg2);
+extern ScmObj Scm_Modulo(ScmObj arg1, ScmObj arg2);
 
 extern ScmObj Scm_NumEq(ScmObj arg0, ScmObj arg1, ScmObj args); /* = */
 extern ScmObj Scm_NumLt(ScmObj arg0, ScmObj arg1, ScmObj args); /* < */

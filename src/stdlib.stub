@@ -4,6 +4,8 @@
 ;; built-in scheme procedures
 ;;
 
+"#include <math.h>\n"
+
 ;;
 ;; 6.1  Equivalence predicates
 ;;
@@ -30,7 +32,7 @@
 (define-cproc rational? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INTEGERP(obj)));")
 (define-cproc integer? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INTEGERP(obj)));")
+  "  SCM_RETURN(Scm_IntegerP(obj));")
 
 (define-cproc exact? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EXACTP(obj)));")
@@ -70,26 +72,43 @@
 
 
 (define-cproc + (&rest args)
-  "  SCM_RETURN(Scm_Sum(args)); ")
+  "  SCM_RETURN(Scm_Add(args)); ")
 
 (define-cproc * (&rest args)
-  "  SCM_RETURN(Scm_Product(args));")
+  "  SCM_RETURN(Scm_Multiply(args));")
 
 (define-cproc - (arg1 &rest args)
-  "  SCM_RETURN(Scm_Difference(arg1, args));")
+  "  ScmObj r;
+  if (SCM_NULLP(args)) r = Scm_Negate(arg1);
+  else r = Scm_Subtract(arg1, SCM_CAR(args), SCM_CDR(args));
+  SCM_RETURN(r);")
 
-;; /
+(define-cproc / (arg1 &rest args)
+  "  ScmObj r;
+  if (SCM_NULLP(args)) r = Scm_Reciprocal(arg1);
+  else r = Scm_Divide(arg1, SCM_CAR(args), SCM_CDR(args));
+  SCM_RETURN(r);")
 
 (define-cproc abs (obj)
   "  SCM_RETURN(Scm_Abs(obj));")
 
-;; quotient
+(define-cproc quotient (n1 n2)
+  "  SCM_RETURN(Scm_Quotient(n1, n2));")
+
 ;; remainder
 ;; modulo
 ;; gcd
 ;; lcm
-;; numerator
-;; denominator
+
+
+;; in Gauche, rational number is exact integer, i.e. N/1
+(define-cproc numerator (q)
+  "  if (!SCM_EXACTP(q)) Scm_Error(\"exact integer required: %S\", q_scm);
+  SCM_RETURN(q);")
+(define-cproc denominator (q)
+  (assert (exact? q))
+  "  SCM_RETURN(SCM_MAKE_INT(1));")
+
 ;; floor
 ;; ceiling
 ;; truncate
@@ -107,9 +126,36 @@
 ;; expt
 ;; make-rectangular
 ;; make-polar
-;; real-part
-;; imag-part
-;; magnitude
+
+(define-cproc real-part (z)
+  "  ScmObj r;
+  if (SCM_INTP(z)) r = z;
+  else if (SCM_FLONUMP(z)) r = z;
+  else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
+  else Scm_Error(\"number required, but got %S\", z);
+  SCM_RETURN(r);")
+
+(define-cproc imag-part (z)
+  "  ScmObj r;
+  if (SCM_INTP(z)) r = SCM_MAKE_INT(0);
+  else if (SCM_FLONUMP(z)) r = Scm_MakeFlonum(0.0);
+  else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
+  else Scm_Error(\"number required, but got %S\", z);
+  SCM_RETURN(r);")
+
+(define-cproc magnitude (z)
+  "  ScmObj r;
+  if (SCM_INTP(z)) r = Scm_Abs(z); 
+  else if (SCM_FLONUMP(z)) r = Scm_Abs(z); 
+  else if (SCM_COMPLEXP(z)) {
+    double real = SCM_COMPLEX_REAL(z);
+    double imag = SCM_COMPLEX_IMAG(z);
+    r = Scm_MakeFlonum(sqrt(real*real + imag*imag));
+  } 
+  else Scm_Error(\"number required, but got %S\", z);
+  SCM_RETURN(r);")
+  
+
 ;; angle
 
 (define-cproc exact->inexact (obj)
