@@ -1,3 +1,7 @@
+2002-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-config.in : added --mandir and --infodir
+
 2002-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.4
