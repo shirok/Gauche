@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.4 2001-05-07 09:06:39 shirok Exp $
+;;;  $Id: numerical.scm,v 1.5 2001-05-10 09:59:19 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -119,7 +119,7 @@
 (define (%complex-cos z)
   (let ((xy (%complex->real/imag z)))
     (make-rectangular (* (%cos (car xy)) (%cosh (cdr xy)))
-                      (* (%sin (car xy)) (%sinh (cdr xy))))))
+                      (- (* (%sin (car xy)) (%sinh (cdr xy)))))))
 
 (define (%complex-cosh z)
   (let ((xy (%complex->real/imag z)))
@@ -129,7 +129,7 @@
 (define (%complex-sin z)
   (let ((xy (%complex->real/imag z)))
     (make-rectangular (* (%sin (car xy)) (%cosh (cdr xy)))
-                      (- (* (%cos (car xy)) (%sinh (cdr xy)))))))
+                      (* (%cos (car xy)) (%sinh (cdr xy))))))
 
 (define (%complex-sinh z)
   (let ((xy (%complex->real/imag z)))
@@ -137,16 +137,14 @@
                       (* (%cosh (car xy)) (%sin (cdr xy))))))
 
 (define (%complex-tan z)
-  (let ((z2i (* +2i z)))
-    (* +i
-       (/ (+ (exp z2i) 1)
-          (- (exp z2i) 1)))))
+  (let ((iz (* +i z)))
+    (* -i
+       (/ (- (exp iz) (exp (- iz)))
+          (+ (exp iz) (exp (- iz)))))))
 
 (define (%complex-tanh z)
-  (let ((z2 (* 2 z)))
-    (* +i
-       (/ (+ (exp z2) 1)
-          (- (exp z2) 1)))))
+  (/ (- (exp z) (exp (- z)))
+     (+ (exp z) (exp (- z)))))
 
 (define (%complex-asin z)
   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z)))))))
