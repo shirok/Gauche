@@ -41,6 +41,7 @@
 * Determine isomorphism::       (util.isomorph)
 * The longest common subsequence::  (util.lcs)
 * Additional list library::     (util.list)
+* Pattern matching::            (util.match)
 * Queue::                       (util.queue)
 * SLIB-compatible record type::  (util.record)
 * Topological sort::            (util.toposort)
@@ -9462,7 +9463,7 @@ returns.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Additional list library, Queue, The longest common subsequence, Library modules - Utilities
+@node Additional list library, Pattern matching, The longest common subsequence, Library modules - Utilities
 @section @code{util.list} - Additional list library
 @c NODE その他のリストライブラリ, @code{util.list} - その他のリストライブラリ
 
@@ -9789,9 +9790,304 @@ uses @code{eq?} and @code{eqv?}, respectively.
 @c COMMON
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Pattern matching, Queue, Additional list library, Library modules - Utilities
+@section @code{util.match} - Pattern matching
+@c NODE パターンマッチング, @code{util.match} - パターンマッチング
+
+@deftp {Module} util.match
+@mdindex util.match
+This module is a port of Andrew Wright's pattern matching macro library.
+It is widely used in Scheme world, and ported to various Scheme
+implementations, including Chez Scheme, PLT Scheme, Scheme48, Chicken,
+and SLIB.
+It provides a similar feature of Common Lisp's @code{destructuring-bind}.
+
+This version retains compatibility of the original Wright's macro,
+except (1) @var{box} is not supported since Gauche doesn't have one,
+and (2) structure matching is integrated to Gauche's object system.
+@end deftp
+
+We show a list of APIs first, then the table of complete syntax
+of patterns, followed by examples.
+
+@subheading Pattern matching API
+
+@defmac match expr clause @dots{}
+
+Each @var{clause} is either one of the followings:
+@example
+(@var{pat} @var{expr} @dots{})
+(@var{pat} (=> @var{identifier}) @var{expr} @dots{})
+@end example
+
+First, the @var{expr} is matched against @var{pat} of each clauses.
+The detailed syntax of the pattern is explained below.
+
+If a matching @var{pat} is found, the @emph{pattern variables} in
+@var{pat} are bound to the corresponding elements in @var{expr}, then
+@var{expr} @dots{} are evaluated.
+
+If the clause is the second form, @var{identifier} is also bound
+to the failure continuation of the @var{clause}.  It is a
+procedure with no arguments, and when called, it jumps back to
+the matcher as if the matching of @var{pat} is failed, and
+@code{match} continues to try the rest of clauses.
+So you can perform extra tests
+within @var{expr} @dots{} and if you're not satisfied you can reject
+the match by calling @code{(@var{identifier})}.  See the examples
+below for more details.
+
+If no @var{pat} matches, @code{match} reports an error.
+@end defmac
+
+@defmac match-lambda clause @dots{}
+Creates a function that takes one argument and performs @code{match} on it.
+using @var{clause} @dots{}.  It's functionally equivalent to the following
+expression:
+@example
+(lambda (expr) (match expr @var{clause} @dots{}))
+@end example
+@end defmac
+
+@defmac match-lambda* clause @dots{}
+Like @code{match-lambda}, but performs @code{match} on the list of
+whole arguments.
+It's functionally equivalent to the following expression:
+@example
+(lambda expr (match expr @var{clause} @dots{}))
+@end example
+@end defmac
+
+@defmac match-let ((pat expr) @dots{}) body-expr @dots{}
+@defmacx match-let name ((pat expr) @dots{}) body-expr @dots{}
+@defmacx match-let* ((pat expr) @dots{}) body-expr @dots{}
+@defmacx match-letrec ((pat expr) @dots{}) body-expr @dots{}
+Generalize @code{let}, @code{let*}, and @code{letrec} to allow
+patterns in the binding position rather than just variables.
+Each @var{expr} is evaluated, and then matched to @var{pat},
+and the bound pattern variables are visible in 
+@var{body-expr} @dots{}.
+
+@example
+(match-let (
+             (((ca . cd) ...)   '((a . 0) (b . 1) (c . 2)))
+           )
+  (list ca cd))
+ @result{} ((a b c) (0 1 2))
+@end example
+
+If you're sick of parenthesis, try @code{match-let1} below.
+@end defmac
+
+@defmac match-let1 pat expr body-expr @dots{}
+This is a Gauche extension and isn't found in the original Wright's code.
+This one is equivalent to the following code:
+@example
+(match-let ((@var{pat} @var{expr})) @var{body-expr} @dots{})
+@end example
+
+Syntactically, @code{match-let1} is very close to the Common Lisp's
+@code{destructuring-bind}.
+@end defmac
+
+@defmac match-define pat expr
+Like toplevel @code{define}, but allows a pattern instead of variables.
+@end defmac
+
+@subheading Pattern syntax
+
+Here's a summary of pattern syntax.  The asterisk @code{(*)} after
+the explanation means Gauche's extension which does not present
+in the original Wright's code.
+
+@example
+pat : patvar                       ;; anything, and binds pattern var
+    | _                            ;; anything
+    | ()                           ;; the empty list
+    | #t                           ;; #t
+    | #f                           ;; #f
+    | string                       ;; a string
+    | number                       ;; a number
+    | character                    ;; a character
+    | keyword                      ;; a keyword (*)
+    | 'sexp                        ;; an s-expression
+    | 'symbol                      ;; a symbol (special case of s-expr)
+    | (pat1 ... patN)              ;; list of n elements
+    | (pat1 ... patN . patN+1)     ;; list of n or more
+    | (pat1 ... patN patN+1 ooo)   ;; list of n or more, each element
+                                   ;;   of remainder must match patN+1
+    | #(pat1 ... patN)             ;; vector of n elements
+    | #(pat1 ... patN patN+1 ooo)  ;; vector of n or more, each element
+                                   ;;   of remainder must match patN+1
+    | ($ class pat1 ... patN)      ;; an object (patK matches in slot order)
+    | (struct class pat1 ... patN) ;; ditto (*)
+    | (@@ class (slot1 pat1) ...)   ;; an object (using slot names) (*)
+    | (object class (slot1 pat1) ...) ;; ditto (*)
+    | (= proc pat)                 ;; apply proc, match the result to pat
+    | (and pat ...)                ;; if all of pats match
+    | (or pat ...)                 ;; if any of pats match
+    | (not pat ...)                ;; if all pats don't match
+    | (? predicate pat ...)        ;; if predicate true and all pats match
+    | (set! patvar)                ;; anything, and binds setter
+    | (get! patvar)                ;; anything, and binds getter
+    | `qp                          ;; a quasi-pattern
+
+patvar : a symbol except _, quote, $, struct, @@, object, =, and, or,
+         not, ?, set!, get!, backquote, ..., ___, ..k, __k.
+
+ooo : ...                          ;; zero or more
+    | ___                          ;; zero or more
+    | ..k                          ;; k or more
+    | __k                          ;; k or more
+@end example
+
+@itemize @bullet
+@item
+A bare symbol is a "pattern variable"; it matches anything, and
+the matched part of the expression is bound to the symbol.
+The following symbols have special meanings and cannot be used
+as a pattern variable: @code{_}, @code{quote}, @code{$}, @code{struct},
+@code{@@}, @code{object}, @code{=}, @code{and}, @code{or},
+@code{not}, @code{?}, @code{set!}, @code{get!}, @code{backquote},
+@code{...}, @code{___}, and @code{..k} and @code{__k} where @emph{k} is
+an integer.
+
+@item
+A symbol @code{_} matches anything, without binding a patter variable.
+It can be used to show "don't care" placeholoder.
+
+@item
+Literals such as emptylist, booleans, strings, numbers, characters and
+keywords match the same object (in the sense of @code{equal?}).
+
+@item
+Quoted expression matches the same experssion (in the sense of @code{equal?}).
+You can use a quoted symbol to match the symbol itself.
+
+@item
+A list and a vector in general match a list or a vector whose elements
+matches the elements in the pattern recursively, unless the first element
+of the list is one of the special symbols listed above, it has a special
+meaning.
+
+As a special case, the last element of a vector or a list can be
+followed by a symbol @code{...}.  In that case, the pattern just before
+the symbol @code{...} can be applied repeatedly until it consumes all the
+elements in the given expression.  A symbol @code{___} can be used
+in place of @code{...}; it is useful when you want to produce a pattern
+by syntax-rules macro.
+
+For a list pattern, you can also use a symbol @code{..1}, @code{..2},
+@dots{}, which specifies the minimum number of repetition.
+
+@item
+@code{($ class pat1 @dots{})} matches an instance of a class @code{class}.
+Each pattern @code{pat1} @dots{} matches each value of slots,
+in order of @code{(class-slots class)}.
+
+@code{(struct class pat1 @dots{})} has the same meaning.  Although
+the original Wright's code doesn't have @code{struct}, PLT Scheme has
+it in its extended match feature, and it is more descriptive.
+
+This is an adaptation of the original feature that can match structures.
+It is useful to match a simple instance that you know the order of
+slots; for example, a simple record created by srfi-9
+(@xref{Record types}) would be easy to match by positioned values.
+
+If the instance's class uses inheritances, it is a bit difficult to
+match by positions.  You can use @code{@@} or @code{object} pattern
+below to match using slot names.
+
+@item
+@code{(object class (slot1 pat1) @dots{})} matches an instance
+of a class @code{class} whose value of @var{slot1} @dots{} matches
+@var{pat1} @dots{}.  This is Gauche's extension.  @code{@@} can be
+used in place of @code{object}, but @code{object} is recommended
+because of descriptiveness.
+
+@item
+@code{(= proc pat)} first applies @var{proc} to the corresponding
+expression, then match the result with @var{pat}.
+
+@item
+@code{(and pat @dots{})}, @code{(or pat @dots{})}, and
+@code{(not pat @dots{})} are boolean operations of patterns.
+
+@item
+@code{(? predicate pat @dots{})} first applies a predicate to the
+corresponding expression, and if it returns true, applies each
+@code{pat} @dots{} to the expression.
+
+@item
+@code{(set! patvar)} matches anything, and binds an one-argument
+procedure to a pattern variable @var{patvar}.  If the procedure is
+called, it replaces the value of matched pattern for the given argument.
+
+@item
+@code{(get! patvar)} matches anything, and binds a zero-argument
+procedure to a pattern variable @var{patvar}.  If the procedure is
+called, it returns the matched value.
+
+@item
+@code{`qp} works like a quasiquote.  You can insert patterns within
+@code{qp} by unquote and unquote-splicing.
+@end itemize
+
+@subheading Pattern examples
+
+A simple structure decomposition:
+@example
+(match '(0 (1 2) (3 4 5))
+  ((a (b c) (d e f))
+   (list a b c d e f)))
+ @result{} (0 1 2 3 4 5)
+@end example
+
+Using predicate patterns:
+@example
+(match 123
+  ((? string? x) (list 'string x))
+  ((? number? x) (list 'number x)))
+ @result{} (number 123)
+@end example
+
+Extracting variables and expressions from @code{let}.
+Uses repetition and predicate patterns:
+@example
+(define let-analyzer
+  (match-lambda
+    (('let (? symbol?)
+           ((var expr) ...)
+       body ...)
+     (format "named let, vars=~s exprs=~s" var expr))
+    (('let ((var expr) ...)
+       body ...)
+     (format "normal let, vars=~s exprs=~s" var expr))
+    (_
+     (format "malformed let"))))
+
+(let-analyzer '(let ((a b) (c d)) e f g))
+ @result{} "normal let, vars=(a c) exprs=(b d)"
+
+(let-analyzer '(let foo ((x (f a b)) (y (f c d))) e f g))
+ @result{} "named let, vars=(x y) exprs=((f a b) (f c d))"
+
+(let-analyzer '(let (a) b c d))
+ @result{} "malformed let"
+@end example
+
+Using @code{=} function application.  The pattern variable @var{m}
+is matched to the result of application of the regular expression.
+@example
+(match "gauche-ref.texi"
+  ((? string? (= #/(.*)\.([^.]+)$/ m))
+   (format "base=~a suffix=~a" (m 1) (m 2))))
+ @result{} "base=gauche-ref suffix=texi"
+@end example
 
 @c ----------------------------------------------------------------------
-@node Queue, SLIB-compatible record type, Additional list library, Library modules - Utilities
+@node Queue, SLIB-compatible record type, Pattern matching, Library modules - Utilities
 @section @code{util.queue} - Queue
 @c NODE キュー, @code{util.queue} - キュー
 
