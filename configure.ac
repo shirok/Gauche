@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.8 2003-07-23 13:08:22 shirok Exp $
+dnl $Id: configure.ac,v 1.9 2003-07-23 14:27:11 shirok Exp $
 AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.7.1_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.8 $)
+AC_INIT(Gauche, 0.7.1, shiro@acm.org)
+AC_REVISION($Revision: 1.9 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -517,8 +517,16 @@ if test "$ac_cv_linker_rpath_flag" = "yes"; then
   RPATH_TMP='-Wl,--rpath "-Wl,`pwd`"'
   RPATH_REAL='-Wl,--rpath "-Wl,$(LIB_INSTALL_DIR)"'
 else
-  RPATH_TMP=
-  RPATH_REAL=
+  # solaris' ld uses -R instead of --rpath
+  CFLAGS="$CFLAGS -Wl,-R -Wl,/"
+  AC_LINK_IFELSE([int main(void) {return 0;}],
+                 ac_cv_linker_rpath_flag=yes,
+                 ac_cv_linker_rpath_flag=no)
+  CFLAGS="$cflags_save"
+  if test "$ac_cv_linker_rpath_flag" = "yes"; then
+    RPATH_TMP='-Wl,-R "-Wl,`pwd`"'
+    RPATH_REAL='-Wl,-R "-Wl,$(LIB_INSTALL_DIR)"'
+  fi
 fi
 AC_SUBST(RPATH_TMP)
 AC_SUBST(RPATH_REAL)

@@ -1,3 +1,7 @@
+2003-07-23  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.7.1
+
 2003-07-22  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/Makefile.in, src/link-dylib, src/makeverslink:
