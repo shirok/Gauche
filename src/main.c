@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.37 2001-12-14 20:09:55 shirok Exp $
+ *  $Id: main.c,v 1.38 2001-12-16 04:35:25 shirok Exp $
  */
 
 #include <unistd.h>
@@ -30,7 +30,8 @@ int load_initfile = TRUE;       /* if false, not to load init files */
 int batch_mode = FALSE;         /* force batch mode */
 int interactive_mode = FALSE;   /* force interactive mode */
 ScmObj extra_load_paths = SCM_NIL; /* -I path */
-ScmObj use_modules = SCM_NIL;   /* -u module */
+ScmObj extra_loads = SCM_NIL;   /* -u modules (symbol) and -l files (string) */
+ScmObj eval_expr = SCM_NIL;     /* -e expr */
 
 void usage(void)
 {
@@ -46,7 +47,7 @@ void usage(void)
             "  -f<flag> sets various flags\n"
             "      no-inline       don't inline primitive procedures\n"
             "      no-source-info  don't preserve source information for debug\n"
-            "      load-verbose    report what files are loaded\n"
+            "      load-verbose    report while loading files\n"
             );
     exit(1);
 }
@@ -87,7 +88,7 @@ int main(int argc, char **argv)
     ScmObj cp;
 
     Scm_Init();
-    while ((c = getopt(argc, argv, "+biqu:Vf:I:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+be:iql:u:Vf:I:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
@@ -95,12 +96,17 @@ int main(int argc, char **argv)
         case 'V': version(); break;
         case 'f': further_options(optarg); break;
         case 'u':
-            use_modules = Scm_Cons(SCM_INTERN(optarg), use_modules);
+            extra_loads = Scm_Cons(SCM_INTERN(optarg), extra_loads);
+            break;
+        case 'l':
+            extra_loads = Scm_Cons(SCM_MAKE_STR_COPYING(optarg), extra_loads);
             break;
         case 'I':
             extra_load_paths = Scm_Cons(SCM_MAKE_STR_COPYING(optarg),
                                         extra_load_paths);
             break;
+        case 'e':
+            eval_expr = Scm_Cons(Scm_ReadFromCString(optarg), eval_expr);
         case '-': break;
         case '?': usage(); break;
         }
@@ -121,15 +127,29 @@ int main(int argc, char **argv)
     }
 
     /* pre-load specified modules */
-    if (!SCM_NULLP(use_modules)) {
+    if (!SCM_NULLP(extra_loads)) {
         ScmObj m;
-        SCM_FOR_EACH(m, Scm_Reverse(use_modules)) {
-            ScmObj mod = SCM_CAR(m);
-            ScmObj p = Scm_StringSplitByChar(SCM_SYMBOL_NAME(mod), '.');
-            ScmObj path = Scm_StringJoin(p, SCM_STRING(SCM_MAKE_STR("/")),
-                                         SCM_STRING_JOIN_INFIX);
-            Scm_Require(path);
-            Scm_ImportModules(SCM_CURRENT_MODULE(), SCM_LIST1(mod));
+        SCM_FOR_EACH(m, Scm_Reverse(extra_loads)) {
+            ScmObj mod = SCM_CAR(m), p, path;
+
+            if (SCM_SYMBOLP(mod)) {
+                p = Scm_StringSplitByChar(SCM_SYMBOL_NAME(mod), '.');
+                path = Scm_StringJoin(p, SCM_STRING(SCM_MAKE_STR("/")),
+                                      SCM_STRING_JOIN_INFIX);
+                Scm_Require(path);
+                Scm_ImportModules(SCM_CURRENT_MODULE(), SCM_LIST1(mod));
+            } else if (SCM_STRINGP(mod)) {
+                Scm_Load(Scm_GetStringConst(SCM_STRING(mod)), TRUE);
+            }
+        }
+    }
+
+    /* pre-evaluate -e experssions */
+    if (!SCM_NULLP(eval_expr)) {
+        ScmObj e;
+        SCM_FOR_EACH(e, Scm_Reverse(eval_expr)) {
+            ScmObj expr = SCM_CAR(e);
+            Scm_Eval(expr, SCM_OBJ(Scm_UserModule()));
         }
     }
 
