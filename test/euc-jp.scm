@@ -1,10 +1,11 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.9 2001-05-31 19:43:30 shirok Exp $
+;; $Id: euc-jp.scm,v 1.10 2001-06-02 09:51:28 shirok Exp $
 
 (use gauche.test)
 
 (test-start "EUC-JP")
+(use srfi-1)
 
 ;;-------------------------------------------------------------------
 (test-section "string builtins")
@@ -322,5 +323,80 @@
         #"\xa4\xaf\xa4\xb1\xa4\xb3")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 1) 7)))
+
+(define *flusher-out* '())
+
+(define (flusher str)
+  (if str
+      (set! *flusher-out* (cons str *flusher-out*))
+      (set! *flusher-out* (string-concatenate-reverse *flusher-out*))))
+
+(define (byte-list->port p bytes)
+  (set! *flusher-out* '())
+  (for-each (lambda (b) (write-byte b p)) bytes)
+  (close-output-port p)
+  *flusher-out*)
+
+(define (char-list->port p chars)
+  (set! *flusher-out* '())
+  (for-each (lambda (c) (write-char c p)) chars)
+  (close-output-port p)
+  *flusher-out*)
+
+(define (string-list->port p strs)
+  (set! *flusher-out* '())
+  (for-each (lambda (s) (display s p)) strs)
+  (close-output-port p)
+  *flusher-out*)
+
+(test "buffered port (putb, bufsiz=7)"
+      #"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      (lambda ()
+        (byte-list->port (open-output-buffered-port flusher 7)
+                         (iota 27 #x40))))
+
+(test "buffered port (putb, bufsiz=30)"
+      #"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      (lambda ()
+        (byte-list->port (open-output-buffered-port flusher 30)
+                         (iota 27 #x40))))
+
+(test "buffered port (putc, bufsiz=7)"
+      #"あいうえおかきくけこさしすせそ"
+      (lambda ()
+        (char-list->port (open-output-buffered-port flusher 7)
+                         '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
+                           #\さ #\し #\す #\せ #\そ))))
+
+(test "buffered port (putc, bufsiz=30)"
+      #"あいうえおかきくけこさしすせそ"
+      (lambda ()
+        (char-list->port (open-output-buffered-port flusher 30)
+                         '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
+                           #\さ #\し #\す #\せ #\そ))))
+
+(test "buffered port (puts, bufsiz=6)"
+      #"あいうえおかきくけこさしすせそ"
+      (lambda ()
+        (string-list->port (open-output-buffered-port flusher 6)
+                           '("あいう" "えおか" "きくけ" "こさし" "すせそ"))))
+
+(test "buffered port (puts, bufsiz=7)"
+      #"あいうえおかきくけこさしすせそ"
+      (lambda ()
+        (string-list->port (open-output-buffered-port flusher 7)
+                           '("あいう" "えおか" "きくけ" "こさし" "すせそ"))))
+
+(test "buffered port (puts, bufsiz=7)"
+      #"あいうえおかきくけこさしすせそ"
+      (lambda ()
+        (string-list->port (open-output-buffered-port flusher 7)
+                           '("あいうえお" "かきくけこ" "さしすせ" "そ"))))
+
+(test "buffered port (puts, bufsiz=3)"
+      #"あいうえおかきくけこさしすせそ"
+      (lambda ()
+        (string-list->port (open-output-buffered-port flusher 3)
+                           '("あいうえお" "かきくけこ" "さしすせ" "そ"))))
 
 (test-end)
