@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.33 2001-04-14 23:52:39 shiro Exp $
+ *  $Id: load.c,v 1.34 2001-04-14 23:59:12 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -233,7 +233,7 @@ void Scm_Load(const char *cpath, int errorp)
         Scm_Eval(SCM_LIST2(l, f), SCM_NIL);
     } else {
         ScmObj k = SCM_MAKE_KEYWORD("error-if-not-found");
-        Scm_Eval(SCM_LIST4(l, f, k, SCM_TRUE), SCM_NIL);
+        Scm_Eval(SCM_LIST4(l, f, k, SCM_FALSE), SCM_NIL);
     }
 }
 
