@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.13 2001-05-03 10:28:07 shirok Exp $
+;; $Id: srfi.scm,v 1.14 2001-05-03 18:50:29 shirok Exp $
 
 (use gauche.test)
 
@@ -367,7 +367,6 @@
 (test "string-every" #t (lambda () (string-every #\a "")))
 (test "string-every" #t (lambda () (string-every #\a "aaaa")))
 (test "string-every" #f (lambda () (string-every #\a "aaba")))
-(test "string-every" #t (lambda () (string-every #\a "")))
 (test "string-every" #t (lambda () (string-every #[a-z] "aaba")))
 (test "string-every" #f (lambda () (string-every #[a-z] "aAba")))
 (test "string-every" #t (lambda () (string-every #[a-z] "")))
