@@ -1,3 +1,8 @@
+2003-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/bignum.c (Scm_BignumCmp3U): fixed a bug that caused the last
+	  digit of certain floating point numbers to be printed incorrectly.
+
 2003-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/addr.c, ext/net/net.scm, ext/net/netdb.c,
