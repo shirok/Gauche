@@ -1,5 +1,10 @@
 2004-06-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive.scm (%apropos): search ancestors of imported
+	  modules as well.
+
+	* src/gauche-cesconv.in (main): fixed --help.
+
 	* src/number.c (Scm_Divide): fixed a bug when complex numbers
 	  appear in more than 2 arg cases.
 

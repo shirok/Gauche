@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: interactive.scm,v 1.13 2003-12-09 19:45:47 shirok Exp $
+;;;  $Id: interactive.scm,v 1.14 2004-06-27 23:38:16 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
@@ -95,7 +95,9 @@
     (if stay-in-module
         (search module)
         (begin
-          (for-each search (module-imports module))
+          (for-each (lambda (m)
+                      (for-each search (module-precedence-list m)))
+                    (module-imports module))
           (for-each search (module-precedence-list module))))
     (for-each display (sort result))
     (values)
