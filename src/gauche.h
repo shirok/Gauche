@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.150 2001-06-02 09:01:46 shirok Exp $
+ *  $Id: gauche.h,v 1.151 2001-06-04 02:18:15 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -192,6 +192,7 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 
 extern ScmObj Scm_CharEncodingName(void);
 extern const char **Scm_SupportedCharacterEncodings(void);
+extern int Scm_SupportedCharacterEncodingP(const char *encoding);
 
 #if   defined(GAUCHE_CHAR_ENCODING_EUC_JP)
 #include "gauche/char_euc_jp.h"

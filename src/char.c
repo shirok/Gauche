@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.16 2001-05-28 11:55:48 shirok Exp $
+ *  $Id: char.c,v 1.17 2001-06-04 02:17:47 shirok Exp $
  */
 
 #include <ctype.h>
@@ -43,6 +43,15 @@ ScmObj Scm_CharEncodingName(void)
 const char **Scm_SupportedCharacterEncodings(void)
 {
     return supportedCharacterEncodings;
+}
+
+int Scm_SupportedCharacterEncodingP(const char *encoding)
+{
+    const char **cs = supportedCharacterEncodings;
+    for (;*cs;cs++) {
+        if (strcmp(*cs, encoding) == 0) return TRUE;
+    }
+    return FALSE;
 }
 
 /*=======================================================================
