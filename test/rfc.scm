@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use gauche.sequence)
 (test-start "rfc")
 
 ;;--------------------------------------------------------------------
@@ -52,6 +53,54 @@ Content-Length: 4349
        (equal? rfc822-header1-list
                (rfc822-header->list (open-input-string rfc822-header1))))
 
+(test* "rfc822-parse-date" '(2003 2 4 12 34 56 -3600 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 2003 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date" '(2003 2 4 12 34 56 0 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 2003 12:34:56 UT") r))
+
+(test* "rfc822-parse-date (no weekday)" '(2003 2 4 12 34 56 -3600 #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date (no timezone)" '(2003 2 4 12 34 56 #f #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34:56") r))
+
+(test* "rfc822-parse-date (old tz)" '(2003 2 4 12 34 56 #f #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34:56 jst") r))
+
+(test* "rfc822-parse-date (no seconds)" '(2003 2 4 12 34 #f 900 #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34 +0900") r))
+
+(test* "rfc822-parse-date (no seconds)" '(2003 2 4 12 34 #f 900 2)
+       (receive r (rfc822-parse-date "Tue, 04 Mar 2003 12:34 +0900") r))
+
+(test* "rfc822-parse-date (2digit year)" '(2003 2 4 12 34 56 -3600 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 03 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date (2digit year)" '(1987 2 4 12 34 56 -3600 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 87 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date (Weekday, exhausive)" '(0 1 2 3 4 5 6 #f)
+       (map-with-index
+        (lambda (ind wday)
+          (receive (y m d H M S tz wd)
+              (rfc822-parse-date
+               #`",|wday|, ,(+ 2 ind) Jan 2000 00:00:00 +0000")
+            wd))
+        '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Znn")))
+
+(test* "rfc822-parse-date (Months, exhausive)"
+       '(0 1 2 3 4 5 6 7 8 9 10 11 #f)
+       (map (lambda (mon)
+              (receive (y m d H M S tz wd)
+                  (rfc822-parse-date
+                   #`"1 ,mon 1999 00:00:00 +0000")
+                m))
+            '("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug"
+              "Sep" "Oct" "Nov" "Dec" "Zzz")))
+
+(test* "rfc822-parse-date (invalid)" '(#f #f #f #f #f #f #f #f)
+       (receive r (rfc822-parse-date "Sun 2 Mar 2002") r))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.base64")

@@ -1,3 +1,8 @@
+2003-03-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/822.scm (rfc822-parse-date): fixed behavior to conform
+	  RFC2822 more closely (Patch provided from OGURISU Osamu).
+
 2003-03-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/bignum.c: takes more bits for bignum size,

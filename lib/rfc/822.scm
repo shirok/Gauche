@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.8 2003-01-09 11:32:57 shirok Exp $
+;;;  $Id: 822.scm,v 1.9 2003-03-04 04:05:13 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -138,11 +138,12 @@
 
 (define (rfc822-parse-date string)
   (define (dow->number dow)
-    (- (length (member dow '("Sat" "Fri" "Thu" "Wed" "Tue" "Mon" "Sun"))) 1))
+    (list-index (cut string=? <> dow)
+                '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat")))
   (define (mon->number mon)
-    (- (length (member mon '("Dec" "Nov" "Oct" "Sep" "Aug" "Jul"
-                             "Jun" "May" "Apr" "Mar" "Feb" "Jan")))
-       1))
+    (list-index (cut string=? <> mon)
+                '("Jan" "Feb" "Mar" "Apr" "May" "Jun"
+                  "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")))
   (define (year->number year) ;; see obs-year definition of RFC-2822
     (let ((y (string->number year)))
       (and y
@@ -150,23 +151,25 @@
                  ((< y 100) (+ y 1900))
                  (else y)))))
   (define (tz->number tz)
-    (cond ((string->number tz))
+    (cond ((equal? tz "-0000") #f)  ;;no effective TZ info; see 3.3 of RFC2822
+          ((string->number tz))
           ((assoc tz '(("UT" . 0) ("GMT" . 0) ("EDT" . -400) ("EST" . -500)
                        ("CDT" . -500) ("CST" . -600) ("MDT" . -600)
-                       ("MST" . -700) ("PDT" . -700) ("PST" . -800))))
+                       ("MST" . -700) ("PDT" . -700) ("PST" . -800)))
+           => cdr)
           (else #f)))
 
   (rxmatch-case string
-    (#/((Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s*,)?\s*(\d+)\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d\d\d\d)\s+(\d\d)\s*:\s*(\d\d)\s*:\s*(\d\d)\s+([+-]\d\d\d\d|[A-Z][A-Z][A-Z])/
-       (#f #f dow dom mon yr hour min sec tz)
+    (#/((Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s*,)?\s*(\d+)\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d\d(\d\d)?)\s+(\d\d)\s*:\s*(\d\d)(\s*:\s*(\d\d))?(\s+([+-]\d\d\d\d|[A-Z][A-Z][A-Z]?))?/
+       (#f #f dow dom mon yr #f hour min #f sec #f tz)
        (values (year->number yr)
                (mon->number mon)
                (string->number dom)
                (string->number hour)
                (string->number min)
-               (string->number sec)
-               (tz->number tz)
-               (dow->number dow)))
+               (and sec (string->number sec))
+               (and tz (tz->number tz))
+               (and dow (dow->number dow))))
      (else (values #f #f #f #f #f #f #f #f))))
 
 ;(define (rfc822-date->time string)
