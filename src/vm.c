@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.47 2001-02-27 08:14:01 shiro Exp $
+ *  $Id: vm.c,v 1.48 2001-03-05 00:40:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1398,44 +1398,6 @@ ScmObj Scm_Values(ScmObj args)
     vm->numVals = nvals;
     return SCM_CAR(args);
 }
-
-#if 0 /* call-with-values is defined in Scheme using receive (for now) */
-
-static ScmObj call_with_values_cc(ScmObj result, void *data[])
-{
-    ScmObj consumer = (ScmObj)data[0];
-    DECL_REGS;
-    ScmObj insn, info, body;
-
-    insn = SCM_VM_INSN2(SCM_VM_VALUES_BIND,
-                        SCM_PROCEDURE_REQUIRED(consumer),
-                        SCM_PROCEDURE_OPTIONAL(consumer));
-    info = SCM_PROCEDURE_INFO(consumer);
-
-    if (SCM_CLOSUREP(consumer)) {
-        env = SCM_CLOSURE(consumer)->env;
-        pc = SCM_CLOSURE(consumer)->code;
-    }
-    pc = Scm_Cons(info, pc);
-    pc = Scm_Cons(insn, pc);
-
-    SAVE_REGS();
-    fprintf(stderr, "numvals=%d\n", theVM->numVals);
-    Scm_VMDump(theVM);
-    return result;
-}
-
-ScmObj Scm_VMCallWithValues(ScmObj generator, ScmObj consumer)
-{
-    if (!SCM_PROCEDURE_TAKE_NARG_P(generator, 0))
-        Scm_Error("thunk required, but got: %S", generator);
-    if (!SCM_PROCEDUREP(consumer))
-        Scm_Error("procedure required, but got: %S", consumer);
-    Scm_VMPushCC(call_with_values_cc, (void**)&consumer, 1);
-    return Scm_VMApply0(generator);
-}
-
-#endif
 
 /*==============================================================
  * Debug features.
