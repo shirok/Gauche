@@ -5,6 +5,12 @@
 	* src/vm.c : added code to honor the second argument of eval
 	* src/extlib.stub : fix a bug that null-environment didn't take
 	  version argument.
+	* src/gauche/char_sjis.h : fixed broken Shift-JIS support.
+	* src/gauche/char_utf_8.h : fixed a bug.
+	* src/string.c : fixed count_length that works incorrectly on
+	  the encodings other than EUC-JP.
+	* ext/charconv : fixed bugs that appears in the encodings
+	  other than EUC-JP.
 
 2001-12-21  Shiro Kawai  <shiro@acm.org>
 
