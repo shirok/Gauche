@@ -9186,7 +9186,7 @@ If the specified group doesn't exist, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@defun sys-gid->group->name gid
+@defun sys-gid->group-name gid
 @defunx sys-group-name->gid name
 @c EN
 Convenience function to convert between group id and group name.
