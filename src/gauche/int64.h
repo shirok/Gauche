@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: int64.h,v 1.2 2004-01-30 04:05:47 shirok Exp $
+ *  $Id: int64.h,v 1.3 2004-02-04 01:50:50 shirok Exp $
  */
 
 /* Some Scheme API needs to deal with 64bit signed/unsigned integer
@@ -45,6 +45,9 @@
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
 #endif
 
 /* typedefs ScmInt64 and ScmUInt64 to appropriate type */

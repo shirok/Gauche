@@ -1,5 +1,10 @@
 2004-02-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/link-dylib : avoid linking old library to gosh.
+
+	* ext/net/netlib.stub : check existence of definitions of MSG_*
+	  symbols.
+
 	* configure.ac, gc/configure.in (LOCAL_INC, LOCAL_LIB): avoid
 	  putting newlines in the command line when more than one paths
 	  are given to --with-local.
