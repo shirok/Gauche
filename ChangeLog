@@ -8,6 +8,9 @@
 	* src/gauche.h, src/load.c (Scm_DefineAutoload), src/extlib.stub:
 	  Implemented autoload feature in C.
 
+	* src/gauche-init.scm, src/gauche/interactive.scm : moved the
+	  feature to load ~/.gaucherc from gauche-init to gauche.interactive.
+
 2003-12-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_NEW_ARRAY), src/*.c : replaced most of SCM_NEW2
