@@ -1,4 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
+dnl $Id: configure.in,v 1.21 2001-04-26 07:01:40 shiro Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -161,6 +162,23 @@ dnl Add version macro
 GAUCHE_VERSION=`cat VERSION`
 AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
+
+dnl ==========================================================
+dnl Process args given to configre
+AC_ARG_ENABLE(multibyte, [--enable-multibyte=ENCODING:  Enables multibyte string handling.
+This option is ON by default.  Following encodings are currently recognized:
+  --enable-multibyte=euc-jp     EUC-JP code (default)
+  --enable-multibyte=utf-8      UTF-8
+  --enable-multibyte=sjis       Shift-JIS
+  --enable-multibyte=no         No multibyte support ], [
+ case $enable_multibyte in
+   euc-jp|yes)     AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
+   utf-8|utf8)     AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
+   sjis|shift-jis) AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
+   no|none) ;;
+   *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
+      exit 1;;
+ esac], [ AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP)])
 
 dnl ===========================================================
 dnl Configure extensions
