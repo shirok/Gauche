@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.17 2002-09-19 21:25:21 shirok Exp $
+;; $Id: object.scm,v 1.18 2002-10-08 20:19:01 shirok Exp $
 
 (use gauche.test)
 
@@ -445,7 +445,7 @@
 ;;----------------------------------------------------------------
 (test-section "metaclass/validator")
 
-(use gauche.validator)
+(use gauche.mop.validator)
 
 (define-class <validator> ()
   ((a :accessor a-of
@@ -484,5 +484,66 @@
       (lambda ()
         (with-error-handler (lambda (e) #t)
                             (lambda () (set! (b-of v) 3.4)))))
+
+;;----------------------------------------------------------------
+(test-section "metaclass/propagate-slot")
+
+(use gauche.mop.propagate-slot)
+
+(define-class <propagate-x> ()
+  ((value :init-keyword :value :init-value 3)))
+
+(define-class <propagate-y> ()
+  ((x0 :init-keyword :x0 :init-form (make <propagate-x> :value 0))
+   (x1 :init-keyword :x1 :init-form (make <propagate-x> :value 1))
+   (value :allocation :propagated :propagate 'x0 :init-keyword :value)
+   (vv    :allocation :propagated :propagate '(x1 value)))
+  :metaclass <propagate-slot-meta>)
+
+(test "propagate ref default" '(0 0)
+      (lambda ()
+        (let* ((y (make <propagate-y>))
+               (x (slot-ref y 'x0)))
+          (list (slot-ref y 'value)
+                (slot-ref x 'value)))))
+(test "propagate ref init" '(3 1)
+      (lambda ()
+        (let ((y (make <propagate-y> :x0 (make <propagate-x>))))
+          (list (slot-ref y 'value) (slot-ref y 'vv)))))
+(test "propagate ref init2" '(99 99)
+      (lambda ()
+        (let* ((y (make <propagate-y> :x0 (make <propagate-x>) :value 99))
+               (x (slot-ref y 'x0)))
+          (list (slot-ref y 'value)
+                (slot-ref x 'value)))))
+
+(test "propagate set" '(888 888)
+      (lambda ()
+        (let ((y (make <propagate-y>)))
+          (set! (slot-ref y 'value) 888)
+          (list (slot-ref y 'value) (slot-ref (slot-ref y 'x0) 'value)))))
+
+(test "propagate set" '(999 999)
+      (lambda ()
+        (let ((y (make <propagate-y>)))
+          (set! (slot-ref y 'vv) 999)
+          (list (slot-ref y 'vv) (slot-ref (slot-ref y 'x1) 'value)))))
+
+(define-class <propagate-validator-meta> (<validator-meta>
+                                          <propagate-slot-meta>)
+  ())
+
+(define-class <propagate-validator> ()
+  ((x :initform (make <propagate-x>))
+   (value :allocation :propagated :propagate 'x
+          :validator (lambda (o v) (x->string v)))
+   )
+  :metaclass <propagate-validator-meta>)
+
+(test "propagate-validator" "999"
+      (lambda ()
+        (let ((y (make <propagate-validator>)))
+          (set! (slot-ref y 'value) 999)
+          (slot-ref y 'value))))
 
 (test-end)
