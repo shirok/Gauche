@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.102 2001-10-18 10:06:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.103 2001-10-20 11:31:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2558,6 +2558,34 @@ can't be a number, @code{#f} is returned.
 @c COMMON
 @end defun
 
+@deffn {Generic Function} x->number obj
+@deffnx {Generic Function} x->integer obj
+@c EN
+Generic coercion functions.  Returns `natural' interpretation of @var{obj}
+as a number or an exact integer, respectively.
+The default methods are defined for numbers and strings; a string is
+interpreted by @var{string->number}, and if the string can't be
+interpreted as a number, 0 is returned.
+Other @var{obj} is simply converted to 0.
+If @var{obj} is naturally interpreted
+as a number that is not an exact integer, @code{x->integer} uses
+@code{round} and @code{inexact->exact} to obtain an integer.
+
+Other class may provide a method to customize the behavior.
+@c JP
+数値への強制型変換手続きです。
+@var{obj}をそれぞれ数値もしくは完全な整数と解釈して返します。
+数値と文字列に対してのメソッドは定義されています
+(文字列は@var{string->number}を使って変換されます。
+数値として解釈できない文字列に関しては0が返されます)。
+その他の@var{obj}については単に0が返されます。
+@code{x->integer}は、@var{obj}が数値として表現できるけれど完全な整数では
+ない場合、@code{round}と@code{inexact->exact}によって完全な整数に変換します。
+
+他のクラスはこのメソッドを定義することにより、独自の変換関数を提供することができます。
+@c COMMON
+@end deffn
+
 @node Bitwise operations,  , Numerical conversions, Numbers
 @subsection Bitwise operations
 @c NODE ビット演算
@@ -3418,6 +3446,28 @@ Returns a string consisted by @var{char} @dots{}.
 文字@var{char} @dots{} から構成された文字列を返します。
 @c COMMON
 @end defun
+
+@deffn {Generic Function} x->string obj
+@c EN
+A generic coercion function.
+Returns a string representation of @var{obj}.
+The default methods are defined as follows: strings are returned
+as is, numbers are converted by @code{number->string}, symbols are
+converted by @code{symbol->string}, and other objects are
+converted by @code{display}.
+
+Other class may provide a method to customize the behavior.
+@c JP
+文字列への強制型変換手続きです。
+@var{obj}の文字列表現を返します。
+デフォルトのメソッドでは、文字列はそのまま返され、数値は@code{number->string}で、
+シンボルは@code{symbol->string}で変換され、その他のオブジェクトは@code{display}表現
+が使われます。
+
+他のクラスはこのメソッドを定義することにより、独自の変換関数を提供することができます。
+@c COMMON
+@end deffn
+
 
 @node String Accessors & Modifiers, String Comparison, String Constructors, Strings
 @subsection String Accessors & Modifiers
