@@ -1,3 +1,11 @@
+2001-03-12  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2
+	* src/class.c: start implementing core protocol of metaobjects.
+	* ext/example: fixed configure.in and Makefile.in to handle
+	  installation process as well.
+	* src/syslib.stub: added a part of signal stuff and exec().
+	
 2001-03-11  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.1.8
