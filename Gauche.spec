@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.3 2002-03-11 09:46:12 shirok Exp $
+# $Id: Gauche.spec,v 1.4 2002-04-16 10:23:27 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -12,7 +12,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.5.3_pre1
+%define version  0.5.3
 %define encoding eucjp
 
 Summary: Scheme script interpreter with multibyte character handling
@@ -62,10 +62,16 @@ rm -rf ${RPM_BUILD_ROOT}/usr/lib/gauche
 rm -rf ${RPM_BUILD_ROOT}/usr/share/gauche
 rm -rf ${RPM_BUILD_ROOT}/usr/share/man/man1
 mkdir -p ${RPM_BUILD_ROOT}/usr
-make prefix=${RPM_BUILD_ROOT}/usr install
+make prefix=${RPM_BUILD_ROOT}/usr install-rpm
 make prefix=${RPM_BUILD_ROOT}/usr install-doc
 
 %clean
+
+%post
+
+%post %{encoding}
+# creates slib catalog, if possible.
+/usr/bin/gosh -u slib -e "(require 'logical)" -e "(exit 0)" > /dev/null 2>&1 || echo
 
 %files
 
@@ -79,6 +85,9 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 /usr/share/man/man1/
 
 %changelog
+* Thu Apr 15 2002 Shiro Kawai
+- Gauche release 0.5.3
+
 * Thu Mar  7 2002 Shiro Kawai
 - first package release
 
