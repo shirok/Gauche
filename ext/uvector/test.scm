@@ -1421,80 +1421,69 @@
             '(0 1 2 3)))
 
 (test-section "array-ref")
-(test* "array-ref (list)" 'a
-       (array-ref (make-array (shape) 'a)))
-(test* "array-ref (list)" 'b
-       (array-ref (make-array (shape -1 1) 'b) -1))
-(test* "array-ref (list)" 'c
-       (array-ref (make-array (shape -1 1) 'c) 0))
-(test* "array-ref (list)" 'd
-       (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd) 1 3 5 7))
-
-(test* "array-ref (vector)" 'a
-       (array-ref (make-array (shape) 'a) '#()))
-(test* "array-ref (vector)" 'b
-       (array-ref (make-array (shape -1 1) 'b) '#(-1)))
-(test* "array-ref (vector)" 'c
-       (array-ref (make-array (shape -1 1) 'c) '#(0)))
-(test* "array-ref (vector)" 'd
-       (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd)
-                  '#(1 3 5 7)))
-
-(test* "array-ref (array)" 'a
-       (array-ref (make-array (shape) 'a)
-                  (array (shape 0 0))))
-(test* "array-ref (array)" 'b
-       (array-ref (make-array (shape -1 1) 'b)
-                  (array (shape 0 1) -1)))
-(test* "array-ref (array)" 'c
-       (array-ref (make-array (shape -1 1) 'c)
-                  (array (shape 0 1) 0)))
-(test* "array-ref (array)" 'd
-       (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd)
-                  (array (shape 0 4) 1 3 5 7)))
+(for-each
+ (lambda (ls)
+   (let ((a (car ls)))
+     (for-each
+      (lambda (t)
+        (test* (format "array-ref ~S:" (cdr t)) (car t)
+          (apply array-ref a (cdr t))))
+      (cdr ls))))
+ '((#,(<array> () a) (a))
+   (#,(<array> (-1 1) a b) (a -1) (b 0))
+   (#,(<array> (1 2 3 4 5 6 7 8) a) (a 1 3 5 7))
+   (#,(<array> (1 3 4 6 7 9 10 12) a b c d e f g h i j k l m n o p)
+    (a 1 4 7 10) (b 1 4 7 11) (i 2 4 7 10) (n 2 5 7 11))
+   (#,(<array> () a) (a #()))
+   (#,(<array> (-1 1) a b) (a #(-1)) (b #(0)))
+   (#,(<array> (1 2 3 4 5 6 7 8) a) (a #(1 3 5 7)))
+   (#,(<array> (1 3 4 6 7 9 10 12) a b c d e f g h i j k l m n o p)
+    (a #(1 4 7 10)) (b #(1 4 7 11)) (i #(2 4 7 10)) (n #(2 5 7 11)))
+   (#,(<array> () a) (a #,(<array> (0 0))))
+   (#,(<array> (-1 1) a b) (a #,(<array> (0 1) -1)) (b #,(<array> (0 1) 0)))
+   (#,(<array> (1 2 3 4 5 6 7 8) a) (a #,(<array> (0 4) 1 3 5 7)))
+   (#,(<array> (1 3 4 6 7 9 10 12) a b c d e f g h i j k l m n o p)
+    (a #,(<array> (0 4) 1 4 7 10)) (b #,(<array> (0 4) 1 4 7 11))
+    (i #,(<array> (0 4) 2 4 7 10)) (n #,(<array> (0 4) 2 5 7 11)))
+   (#,(<u8array> () 2) (2))
+   (#,(<u8array> (-1 1) 2 3) (2 -1) (3 0))
+   (#,(<u8array> (1 2 3 4 5 6 7 8) 2) (2 1 3 5 7))
+   (#,(<u8array> (1 3 4 6 7 9 10 12) 2 3 5 7 11 13 17 23 29 31 37 39 41 43 47 51)
+    (2 1 4 7 10) (3 1 4 7 11) (29 2 4 7 10) (43 2 5 7 11))
+   ))
 
 (test-section "array-set!")
-(test* "array-set! (list)" 'a
-       (let ((arr (make-array (shape) 'o)))
-         (array-set! arr 'a)
-         (array-ref arr)))
-(test* "array-set! (list)" '(b c)
-       (let ((arr (make-array (shape -1 1) 'o)))
-         (array-set! arr -1 'b)
-         (array-set! arr 0 'c)
-         (list (array-ref arr -1) (array-ref arr 0))))
-(test* "array-set! (list)" 'd
-       (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
-         (array-set! arr 1 3 5 7 'd)
-         (array-ref arr 1 3 5 7)))
-
-(test* "array-set! (vector)" 'a
-       (let ((arr (make-array (shape) 'o)))
-         (array-set! arr '#() 'a)
-         (array-ref arr)))
-(test* "array-set! (vector)" '(b c)
-       (let ((arr (make-array (shape -1 1) 'o)))
-         (array-set! arr '#(-1) 'b)
-         (array-set! arr '#(0) 'c)
-         (list (array-ref arr -1) (array-ref arr 0))))
-(test* "array-set! (vector)" 'd
-       (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
-         (array-set! arr '#(1 3 5 7) 'd)
-         (array-ref arr 1 3 5 7)))
-
-(test* "array-set! (array)" 'a
-       (let ((arr (make-array (shape) 'o)))
-         (array-set! arr 'a)
-         (array-ref arr)))
-(test* "array-set! (array)" '(b c)
-       (let ((arr (make-array (shape -1 1) 'o)))
-         (array-set! arr (array (shape 0 1) -1) 'b)
-         (array-set! arr (array (shape 0 1) 0) 'c)
-         (list (array-ref arr -1)  (array-ref arr 0))))
-(test* "array-set! (array)" 'd
-       (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
-         (array-set! arr (array (shape 0 4) 1 3 5 7) 'd)
-         (array-ref arr 1 3 5 7)))
+(for-each
+ (lambda (ls)
+   (let ((a (car ls)))
+     (for-each
+      (lambda (t)
+        (test* (format "array-set! ~S:" (cdr t)) (car t)
+          (begin (apply array-set! a (append (cdr t) (list (car t))))
+                 (apply array-ref a (cdr t)))))
+      (cdr ls))))
+ '((#,(<array> () a) (x))
+   (#,(<array> (-1 1) a b) (y -1) (z 0))
+   (#,(<array> (1 2 3 4 5 6 7 8) a) (x 1 3 5 7))
+   (#,(<array> (1 3 4 6 7 9 10 12) a b c d e f g h i j k l m n o p)
+    (w 1 4 7 10) (x 1 4 7 11) (y 2 4 7 10) (z 2 5 7 11))
+   (#,(<array> () a) (x #()))
+   (#,(<array> (-1 1) a b) (x #(-1)) (y #(0)))
+   (#,(<array> (1 2 3 4 5 6 7 8) a) (x #(1 3 5 7)))
+   (#,(<array> (1 3 4 6 7 9 10 12) a b c d e f g h i j k l m n o p)
+    (w #(1 4 7 10)) (x #(1 4 7 11)) (y #(2 4 7 10)) (z #(2 5 7 11)))
+   (#,(<array> () a) (x #,(<array> (0 0))))
+   (#,(<array> (-1 1) a b) (x #,(<array> (0 1) -1)) (y #,(<array> (0 1) 0)))
+   (#,(<array> (1 2 3 4 5 6 7 8) a) (x #,(<array> (0 4) 1 3 5 7)))
+   (#,(<array> (1 3 4 6 7 9 10 12) a b c d e f g h i j k l m n o p)
+    (w #,(<array> (0 4) 1 4 7 10)) (x #,(<array> (0 4) 1 4 7 11))
+    (y #,(<array> (0 4) 2 4 7 10)) (z #,(<array> (0 4) 2 5 7 11)))
+   (#,(<u8array> () 2) (102))
+   (#,(<u8array> (-1 1) 2 3) (102 -1) (103 0))
+   (#,(<u8array> (1 2 3 4 5 6 7 8) 2) (102 1 3 5 7))
+   (#,(<u8array> (1 3 4 6 7 9 10 12) 2 3 5 7 11 13 17 23 29 31 37 39 41 43 47 51)
+    (102 1 4 7 10) (103 1 4 7 11) (129 2 4 7 10) (143 2 5 7 11))
+   ))
 
 (test* "array-valid-index? (list)" #t
        (array-valid-index? (make-array (shape) 'o)))
@@ -1533,7 +1522,7 @@
 (test* "array-valid-index? (array)" #f
        (array-valid-index? (make-array (shape -1 1) 'o) #,(<array> (0 1) 1)))
 (test* "array-valid-index? (array)" #f
-       (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) #,(<array> (0 4) 1 4 5 7)))
+      (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) #,(<array> (0 4) 1 4 5 7)))
 
 ;;; Share and change:
 ;;;
@@ -1907,6 +1896,12 @@
     (array-retabulate! ar (lambda (v) (/ 1.0 (array-ref ar v))) vec)
     ar))
 
+(test* "array-retabulate! (uniform)" #,(<f64array> (0 2 0 2) 1.0 0.5 0.25 0.125)
+  (let ((ar #,(<f64array> (0 2 0 2) 1 2 4 8))
+        (vec (make-vector 2)))
+    (array-retabulate! ar (lambda (v) (/ 1.0 (array-ref ar v))) vec)
+    ar))
+
 (test* "array-map-1" #,(<array> (0 2 0 2) 1 4 9 16)
   (array-map (lambda (x) (* x x)) #,(<array> (0 2 0 2) 1 2 3 4)))
 
@@ -1927,6 +1922,13 @@
              #,(<array> (0 2 0 2) 10 20 30 40)
              #,(<array> (0 2 0 2) .1 .2 .3 .4)
              #,(<array> (0 2 0 2) 10.0 1.0 0.1 0.01)))
+
+(test* "array-map-uniform" #,(<array> (0 2 0 2) 111.0 22.2 3.33 .444)
+  (array-map (lambda (a b c d) (/ (truncate (* (* d (+ a b c)) 10000)) 10000))
+             #,(<u8array> (0 2 0 2) 1 2 3 4)
+             #,(<s32array> (0 2 0 2) 10 20 30 40)
+             #,(<f32array> (0 2 0 2) .1 .2 .3 .4)
+             #,(<f64array> (0 2 0 2) 10.0 1.0 0.1 0.01)))
 
 (test* "array-every-1" #t
   (array-every even? #,(<array> (0 0))))
