@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.74 2002-08-20 08:00:39 shirok Exp $
+;;;  $Id: genstub,v 1.75 2002-08-24 02:11:00 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -382,7 +382,7 @@
 ;; Symbol and keyword definition
 ;;
 
-;; (define-symbol scheme-name c-name [init])
+;; (define-symbol scheme-name c-name)
 
 (define-class <csymbol> (<stub>)
   ((initializer    :init-keyword :initializer :accessor initializer-of)
@@ -406,9 +406,42 @@
                (symbol? (cadr form))
                (string? (caddr form)))
     (error "malformed define-symbol:" form))
+  (when (= (length form) 4)
+    (warn "using initializer value in define-symbol is deprecated.  use define-variable instead."))
   (let ((symbol (make <csymbol>
                   :scheme-name (cadr form) :c-name (caddr form)
                   :initializer (if (pair? (cdddr form)) (cadddr form) #f))))
+    (emit-definition symbol)
+    ))
+
+;; (define-variable scheme-name init &keyword c-name)
+
+(define-class <cvariable> (<stub>)
+  ((initializer    :init-keyword :initializer :accessor initializer-of)
+   ))
+
+(define-method emit-definition ((self <cvariable>))
+  (with-cpp-condition self
+    (emit-static-string (c-name-of self) (scheme-name-of self))
+    (f "static ScmObj ~a = SCM_FALSE;" (c-name-of self))
+    (newline)))
+
+(define-method emit-initializer ((self <cvariable>))
+  (with-cpp-condition self
+    (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
+    (when (initializer-of self)
+      (f "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
+         (c-name-of self) (initializer-of self)))))
+
+(define (process-define-variable form)
+  (unless (and (> (length form) 3)
+               (symbol? (cadr form)))
+    (error "malformed define-variable:" form))
+  (let ((symbol (make <cvariable>
+                  :scheme-name (cadr form)
+                  :c-name (get-keyword :c-name (cdddr form)
+                                       #`",(cadr form)__VAR")
+                  :initializer (caddr form))))
     (emit-definition symbol)
     ))
 
