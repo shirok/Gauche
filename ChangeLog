@@ -1,3 +1,16 @@
+2001-10-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : fixed a number class hierarchy bug.
+	* ext/uvlib.stub.sh : added setter definition to the *-ref.
+
+2001-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm : added inc! and dec!.
+
+2001-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* doc/gauche-ref.texi : more translations.
+
 2001-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/parse.scm : extended functions to be more orthogonal,
