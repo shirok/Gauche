@@ -129,14 +129,7 @@
 (define (hex-char->number c)
   (if (< c 16)
     c
-    (case (integer->char c)
-      ((#\1) 1) ((#\2) 2) ((#\3) 3)
-      ((#\4) 4) ((#\5) 5) ((#\6) 6)
-      ((#\7) 7) ((#\8) 8) ((#\9) 9)
-      ((#\a #\A) 10) ((#\b #\B) 11)
-      ((#\c #\C) 12) ((#\d #\D) 13)
-      ((#\e #\E) 14) ((#\f #\F) 15)
-      (else 0))))
+    (or (digit->integer (integer->char c) 16) 0)))
 
 (define (number-writer writer . opt-endian)
   (if (pair? opt-endian)

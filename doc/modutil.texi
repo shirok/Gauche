@@ -7841,7 +7841,7 @@ and automatic conversions.
 より高レベルな機能の提供を計画しています。
 @c COMMON
 
-@defun make-csv-reader separator
+@defun make-csv-reader separator &optional (quote-char #\")
 @c EN
 Returns a procedure with one argument, input port.
 When the procedure is called, it reads one record from the port,
@@ -7854,7 +7854,7 @@ If input reaches EOF, it returns EOF.
 @c COMMON
 @end defun
 
-@defun make-csv-writer separator &optional newline
+@defun make-csv-writer separator &optional newline (quote-char #\")
 @c EN
 Returns a procedure with two arguments, output port and
 a list of fields.  When the procedure is called, it
