@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.54 2001-09-09 06:40:28 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.55 2001-09-11 10:38:03 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.4.1
+@subtitle version 0.4.4
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -998,6 +998,7 @@ traditional macros.
 * Vectors::                     
 * Hashtables::                  
 * Control features::            
+* Exceptions::                  
 * Eval::                        
 * Input and output::            
 * Loading Programs::            
@@ -1222,6 +1223,7 @@ of two integers @var{n1} and @var{n2}.
 Returns bitwise not of an integer @var{n}.
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Booleans, Pairs and Lists, Numbers, Core library
 @section Booleans
 
@@ -1976,13 +1978,12 @@ useful macros to deal with regular expression matching.
 
 
 @c ----------------------------------------------------------------------
-@node Control features, Eval, Hashtables, Core library
+@node Control features, Exceptions, Hashtables, Core library
 @section Control features
 
 @menu
 * Procedures::                  
 * Continuation and escaping::   
-* Errors::                      
 * Multiple values::             
 * Delayed Evaludation::         
 @end menu
@@ -2010,7 +2011,7 @@ useful macros to deal with regular expression matching.
 [R5RS]
 @end defun
 
-@node Continuation and escaping, Errors, Procedures, Control features
+@node Continuation and escaping, Multiple values, Procedures, Control features
 @subsection Continuation and escaping
 
 
@@ -2023,43 +2024,7 @@ useful macros to deal with regular expression matching.
 [R5RS]
 @end defun
 
-@node Errors, Multiple values, Continuation and escaping, Control features
-@subsection Errors
-
-@defun error string arg @dots{}
-[SRFI-23] Signals an error.  This causes the following actions:
-@enumerate
-@item
-@var{string} is printed by @code{display}, and each @var{arg} is printed
-by @code{write}, into the current error port.
-@item
-If Gauche is running in the interactive mode,
-the current stack trace is also displayed (although it is not correct
-in the current release).
-@item
-The current dynamic environment is unwound, i.e.
-all the active ``after'' thunk set by @code{dynamic-wind} are
-executed.
-@item
-If Gauche is running in the interactive mode, the control goes
-to the toplevel REPL.  If Gauche is running as a script,
-the program exits with an exit code 70 (EX_SOFTWARE).
-@end enumerate
-
-Currently there's no way to catch the error or change this
-behavior.  Error handling mechanism will be provided in 0.4.x, though.
-@end defun
-
-@defun errorf fmt-string arg @dots{}
-Similar to an error, but the error message is formatted by
-@code{format}, i.e. it is equivalent to:
-@example
-(define (errorf fmt . args)
-  (error (apply format #f fmt args)))
-@end example
-@end defun
-
-@node Multiple values, Delayed Evaludation, Errors, Control features
+@node Multiple values, Delayed Evaludation, Continuation and escaping, Control features
 @subsection Multiple values
 
 @defun values obj @dots{}
@@ -2086,7 +2051,111 @@ Caller can capture multiple values by a built-in syntax
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Eval, Input and output, Control features, Core library
+@node Exceptions, Eval, Control features, Core library
+@section Exceptions
+
+In Gauche, error singnaling mechanism is implemented on top
+of a simple exception system.   However, lower-level functionality
+of the exception system is not exposed to Scheme level yet.
+So far, all you can do with exceptions is to signal an error.
+
+@menu
+* Signalling errors::           
+* Handling errors::             
+@end menu
+
+@node Signalling errors, Handling errors, Exceptions, Exceptions
+@subsection Signalling errors
+
+@defun error string arg @dots{}
+[SRFI-23] Signals an error.   Internally the action is realized
+by those two steps.
+@enumerate
+@item
+An error exception is created, with the message prefixed
+by @var{string} and followed by @var{arg}s.
+@item
+The error exception is thrown, which may be handled by the
+current active error handler, if any.
+@end enumerate
+
+If no error handler is active, the default error handler is
+used, which prints the error message to the current error port
+and some debug information.   Then, if Gauche is running
+interactively, the control moves to the toplevel; if Gauche
+is running as a script, it exits with the exit status @code{EX_SOFTWARE}
+(70).
+@end defun
+
+@defun errorf fmt-string arg @dots{}
+Similar to an error, but the error message is formatted by
+@code{format}, i.e. it is equivalent to:
+@example
+(define (errorf fmt . args)
+  (error (apply format #f fmt args)))
+@end example
+@end defun
+
+@node Handling errors,  , Signalling errors, Exceptions
+@subsection Handling errors
+
+@defun with-error-handler handler thunk
+Makes @var{handler} the active error handler and executes @var{thunk}.
+If @var{thunk} returns normally, the result(s) will be returned.
+If an error is signalled during execution of @var{thunk},
+@var{handler} is called with one argument, an exception object
+representing the error, with the continuation of @code{with-error-handler}.
+That is, @code{with-error-handler} returns whatever value(s) @var{handler}
+returns.
+
+If @var{handler} signals an error, it will be handled by the
+handler installed when @code{with-error-handler} called.
+
+The dynamic environment where @var{handler} is executed is
+the same as the error occurs.  If @code{dynamic-wind} is used
+in @var{thunk}, its @var{after} method is called after @var{handler}
+has returned, and before @code{with-error-handler} returns.
+
+The precise behavior of @code{with-error-handler} can be
+described in the form of Scheme code shown below.  Note that
+the actual function is built in VM, using lighter mechanisms
+(similar to "one-shot continuation" in Chez Scheme).
+
+@example
+;; @r{conceptual implementation of with-error-handler}
+(define (with-error-handler handler thunk)
+  (call/cc
+    (lambda (cont)
+      (let ((prev-handler *error-handler*))
+        (dynamic-wind
+          (lambda ()
+            (set! *error-handler*
+              (lambda (exception)
+                (set! *error-handler* prev-handler)
+                (call-with-values (handler exception) cont))))
+          thunk
+          (lambda ()
+            (set! *error-handler prev-handler)))))))
+@end example
+@end defun
+
+@node Exception object
+@subsection Exception object
+
+@deftp {Class} <exception>
+@clindex exception
+Represents An exception.
+The complete exception class hierarchy is under construction.
+Right now, only the following information is available.
+
+@defivar {<exception>} message
+For an error exception, this is the error message.
+@end defivar
+@end deftp
+
+
+@c ----------------------------------------------------------------------
+@node Eval, Input and output, Exceptions, Core library
 @section Eval
 
 @defun eval expr env
@@ -3832,6 +3901,7 @@ So far, only one function is provided; will be populated later.
 @end deftp
 
 @defmac apropos pattern &optional module
+@defmacx a pattern &optional module
 Show a list of variables whose name matches @var{pattern}.
 If you give a module or a module name @var{module}, only the variables
 defined in that module are listed.  Without @var{module},
@@ -4444,7 +4514,7 @@ This module defines a convenient way to parse command-line options.
 The interface is hinted by Perl, and conveniently handles long-format
 options with mutiple option arguments.
 
-Note that you can use the standard @code{getopt} interface by SLIB,
+Note that you can also use the standard @code{getopt} interface by SLIB,
 if you prefer.
 @end deftp
 
