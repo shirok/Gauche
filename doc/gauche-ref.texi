@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.173 2002-04-13 23:19:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.174 2002-04-20 07:48:02 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9894,6 +9894,7 @@ for the usage of metaclass.
 * Interactive session::         
 * User-level logging::          
 * Networking::                  
+* Parameters::                  
 * Parsing command-line options::  
 * High Level Process Interface::  
 * Regular expression utilities::  
@@ -12290,64 +12291,134 @@ Schemeオブジェクト@var{obj}の詳細情報を表示します。
 
 @deftp {Module} gauche.logger
 @mdindex gauche.logger
+@c EN
 Provides a simple interface to log the program's activity.
 It writes the information directly to the specified file,
 instead of using syslog(2).  A syslog-like prefix string is added
 to each message, which is configurable.  It also takes care of
 locking of the file.
+@c JP
+プログラムからログを書き出す簡単なインタフェースを提供します。
+このモジュールは、syslog(2)を使うかわりに、
+指定されたファイルへ直接ログを書き出します。
+syslogに似たプレフィクスが各メッセージの前に追加されます。
+プレフィクスはカスタマイズすることもできます。
+ログファイルの排他制御は組み込まれています。
+@c COMMON
 @end deftp
 
 @deftp {Class} <log-drain>
 @clindex log-drain
+@c EN
 Represents the destination of log messages.
 There's one implicit global @code{<log-drain>} instance, which is
 used by default.  However, you can create as many instances
 by @code{make} method as you want, in case if you want to log
 to more than one destination.
+@c JP
+ログメッセージの行き先を表現するオブジェクトです。
+デフォルトのログの行き先として、グローバルな@code{<log-drain>}のインスタンスが
+ひとつ作られます。
+ログをいくつかにわけて出力する場合などは@code{make}メソッドを使って
+いくつでも@code{<log-drain>}のインスタンスを作ることができます。
+@c COMMON
 
 @defivar {<log-drain>} path
+@c EN
 Path of the log file.  It can be also @code{#t}, which means 
 the current error port, or @code{#f}, which makes @code{log-format}
 to return the formatted message but not write to any log files.
 
 By default, this slot is @code{#f}.
+@c JP
+ログファイルのパス名か、@code{#t}または@code{#f}の値を取ります。
+このスロットが@code{#t}の場合、ログメッセージは現在のエラーポートに
+書き出されます。@code{#f}の場合は@code{log-format}は
+ログを書き出すかわりにフォーマットされたログメッセージを文字列として返します。
+
+このスロットの初期値は@code{#f}です。
+@c COMMON
 @end defivar
 
 @defivar {<log-drain>} prefix
+@c EN
 Specifies the prefix string that is attached to the beginning of every
 message.  If the message spans to several lines, the prefix is
 attached to each line.   In the prefix, the following character sequences
 have special meanings and replaced by @code{log-format} for appropriate
 information when written out.
+@c JP
+各メッセージの前に追加されるプレフィクス文字列を指定します。
+メッセージが複数行に渡る場合、プレフィクスは各行の頭に追加されます。
+プレフィクス文字列中で、以下に挙げる文字シーケンスは特別な意味を持ち、
+@code{log-format}によって置換されます。
+@c COMMON
 
 @table @code
 @item ~T
-Current time, in the format of ``Mmm DD hh:mm:ss'' where ``Mmm'' is
-an abbreviated month, ``DD'' is the day of month, ``hh'', ``mm'' and
-``ss'' are hours (in 24 hour basis), minuts and seconds, respectively.
+@c EN
+Current time, in the format of "Mmm DD hh:mm:ss" where "Mmm" is
+an abbreviated month, "DD" is the day of month, "hh", "mm" and
+"ss" are hours (in 24 hour basis), minutes and seconds, respectively.
 This format is compatible with system logs.
+@c JP
+現在の時刻を"Mmm DD hh:mm:ss"という形式で表したもの。
+ここで"Mmm" は英語の月名の省略形、"DD" は日、"hh"、"mm"、
+"ss" は時間(24時間制)、分、秒です。
+このフォーマットはシステムログと同じです。
+@c COMMON
 
 @item ~Y
+@c EN
 Current 4-digit year.
+@c JP
+4桁で表した現在の西暦。
+@c COMMON
 
 @item ~P
+@c EN
 The program name.  The default value is the basename of
-@code{*program-name*}, but you can change it by the @code{program-name}
+@code{*program-name*} (@xref{Writing Scheme scripts}), 
+but you can change it by the @code{program-name}
 slot described below.
+@c JP
+プログラム名。初期値は@code{*program-name*}の値のbasenameが使われます
+(@ref{Writing Scheme scripts}参照)。
+下に述べる@code{program-name}スロットの値を変えれば
+ここに現れる文字列を変えることができます。
+@c COMMON
 
 @item ~$
+@c EN
 The process id of this program.
+@c JP
+このプログラムのプロセスID｡
+@c COMMON
 
 @item ~U
+@c EN
 The name of the effective user of the process.
+@c JP
+このプロセスの実行ユーザ名。
+@c COMMON
 
 @item ~H
+@c EN
 The hostname the process is running.
+@c JP
+このプロセスが走っているホスト名。
+@c COMMON
 @end table
 
-The default value of this slot is ``@code{~T ~P[~$]: }''.  For example,
-if a string ``this is a log message.\nline 2\nline 3'' is given as the
+@c EN
+The default value of this slot is "@code{~T ~P[~$]: }".  For example,
+if a string "this is a log message.\nline 2\nline 3" is given as the
 message, it produces something like the following log entry.
+@c JP
+このスロットの初期値は"@code{~T ~P[~$]: }"です。例えば
+"this is a log message.\nline 2\nline 3"というメッセージが
+与えられると、次のようなログが書き出されます。
+@c COMMON
 
 @example
 Sep  1 17:30:23 myprogram[441]: this is a log message
@@ -12358,38 +12429,80 @@ Sep  1 17:30:23 myprogram[441]: line 3
 @end defivar
 
 @defivar {<log-drain>} program-name
+@c EN
 Specifies the program name written by @code{~P} directive of
 the prefix slot.
+@c JP
+プレフィクス文字列の@code{~P}が置換されるプログラム名を指定します。
+@c COMMON
 @end defivar
 @end deftp
 
 
 @defun log-open path &keyword prefix program-name
+@c EN
 Sets the destination of the default log message to the path @var{path}.
 It can be a string or a boolean, as described above.
 You can also set prefix and program name by corresponding keyword 
 arguments.
+@c JP
+デフォルトのログの行き先を@var{path}に指定します。
+@var{path}は文字列かboolean値で、上の@code{path}スロットで述べたものと
+おなじ意味を持ちます。またプレフィクスとプログラム名をキーワード引数で
+指定することもできます。
+@c COMMON
 
+@c EN
 Despite its name, this function doesn't open the specified file
 immediately.  The file is opened and closed every time @code{log-format}
 is called.
+@c JP
+名前に"open"とありますが、この手続きは指定されたファイルをオープンしません。
+ファイルは@code{log-format}が呼ばれるたびにオープンされクローズされます。
+@c COMMON
 @end defun
 
 @deffn {Method} log-format (format <string>) arg @dots{}
 @deffnx {Method} log-format (drain <log-drain>) (format <string>) arg @dots{}
+@c EN
 Formats a log message by @var{format} and @var{arg @dots{}}, by using
 @code{format} (@xref{Output}).    In the first form, the output goes
 to the default destination.  In the second form, the output goes to
 the specfied drain.
+@c JP
+ログメッセージを@code{format}手続きでフォーマットし(@ref{Output}参照)、
+指定された行き先に書き出します。最初の形式ではデフォルトの行き先が使われます。
+@c COMMON
 
+@c EN
 The file is opened and closed every time.  You can safely move
 the log file while your program that touches the log file is running.
 Also @code{log-format} acquires a write lock of the log file by
 @code{sys-fcntl} (@xref{Low-level file operations}).
+@c JP
+ファイルはこの手続きが呼ばれるたびにオープンされクローズされます。
+したがって、ログファイルに書き出すプログラムが走っている最中でも
+ログファイルをmoveすることができます。
+また、@code{log-format}は@code{sys-fcntl} (@ref{Low-level file operations}参照)
+を使ってファイルロックを獲得します。
+@c COMMON
+
+@c EN
+If the first form of @code{log-format} is called before @code{log-open}
+is called, @code{log-format} does nothing.
+It is useful to embed debug stubs in your code; once your code is
+past the debugging stage, you just comment out @code{log-open} and
+the code runs without logging.
+@c JP
+@code{log-open}が呼ばれる前に@code{log-format}が最初の形式で呼ばれた場合、
+@code{log-format}は何もしません。したがって、@code{log-format}をデバッグに
+活用し、必要なくなったら@code{log-open}だけをコメントアウトする、というような
+使用法も可能です。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Networking, Parsing command-line options, User-level logging, Library modules
+@node Networking, Parameters, User-level logging, Library modules
 @section @code{gauche.net} - Networking
 @c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
@@ -12971,7 +13084,87 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parsing command-line options, High Level Process Interface, Networking, Library modules
+@node Parameters, Parsing command-line options, Networking, Library modules
+@section @code{gauche.parameter} - Parameters
+@c NODE パラメータ, @code{gauche.parameter} - パラメータ
+
+@deftp {Module} gauche.parameter
+@mdindex gauche.parameter
+@c EN
+A "parameter" is basically a stateful procedure that takes zero or
+one argument.
+If no argument is given, the parameter returns the current value it is keeping.
+If single argument is given, it will be the current value of the parameter.
+Optionally you can give a "filter procedure" that checks the new
+value before setting it as the parameter value.
+With the macro @code{parameterize}, you can change the parameter's
+value within certain dynamic scope.
+
+This feature is built in some Scheme implementations, such as
+ChezScheme, Chicken or MzScheme.   This module emulates them.
+@c JP
+「パラメータ」は基本的にゼロもしくは一個の引数を取る状態を持つ手続きです。
+引数が与えられなかった場合、それは内部に保持した値を返します。
+一つの引数が与えられた場合、その値が新たなパラメータ内部の値となります。
+また、更新される値をチェックするフィルタ手続きを指定することもできます。
+マクロ@code{parameterize}によって、特定の動的スコープの間だけ
+パラメータの値を変えることができます。
+
+この機能はChezScheme、Chicken、MzSchemeなどいくつかのScheme処理系で
+組み込みとなっています。このモジュールはそれをエミュレートするものです。
+@c COMMON
+@end deftp
+
+@defun make-parameter value &optional filter
+@c EN
+Creates a parameter whose initial value is @var{value}.
+If an optional argument @var{filter} is given, it must be
+a procedure that takes one argument and returns one value;
+whenever the parameter's value is about to change, the procedure
+is called with the given value, and the value the procedure
+returns will be the parameter's value.  The filter procedure
+can raise an error or reject to change the parameter's value.
+@c JP
+初期値が@var{value}であるパラメータを作成します。
+もし省略可能な引数@var{filter}が与えられた場合、
+それは一つの引数を取る手続きでなければなりません。
+パラメータの値が変更されようとした時、@var{filter}は与えられた値を
+引数として呼ばれ、@var{filter}が返した値がパラメータの新しい値と
+なります。@var{filter}はエラーを報告したりパラメータの値を変えずに置くことも
+可能です。
+@c COMMON
+@end defun
+
+@defmac parameterize ((param value) @dots{}) body @dots{}
+@c EN
+Evaluages @var{body} @dots{}, with
+change parameter @var{param}'s value to the given @var{value} within
+the dynamic scope of @var{body} @dots{}.
+Returns the value(s) of the result of the last @var{body}.
+@c JP
+@var{body} @dots{}を評価します。
+但し、@var{body} @dots{} の実行中のみ、パラメータ@var{param}の値を
+@var{value}に変更します。最後@var{body}の返した値を返します。
+@c COMMON
+@end defmac
+
+@c EN
+Some examples:
+@c JP
+例：
+@c COMMON
+@example
+(define a (make-parameter 1))
+(a) @result{} 1
+(a 2)
+(a) @result{} 2
+(parameterize ((a 3))
+  (a)) @result{} 3
+(a) @result{} 2
+@end example
+
+@c ----------------------------------------------------------------------
+@node Parsing command-line options, High Level Process Interface, Parameters, Library modules
 @section @code{gauche.parseopt} - Parsing command-line options
 @c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
