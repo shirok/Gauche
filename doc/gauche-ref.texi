@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.107 2001-10-25 11:04:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.108 2001-10-27 10:13:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4892,37 +4892,90 @@ if not, an incomplete string is returned.
 @end defun
 
 @defun call-with-input-string string proc
+@defunx call-with-output-string proc
+@defunx with-input-from-string string thunk
+@defunx with-output-to-string thunk
+@c EN
+These utility functions are trivially defined as follows.
+The interface is parallel to the file port version.
+@c JP
+これらのユーティリティ関数は次に定義されるような動作をします。
+インタフェースはファイルポートを扱う類似の関数と揃えてあります。
+@c COMMON
+@example
+(define (call-with-output-string proc)
+  (let ((out (open-output-string)))
+    (proc out)
+    (get-output-string out)))
+
+(define (call-with-input-string str proc)
+  (let ((in (open-input-string str)))
+    (proc in)))
+
+(define (with-output-to-string thunk)
+  (let ((out (open-output-string)))
+    (with-output-to-port out thunk)
+    (get-output-string out)))
+
+(define (with-input-from-string str thunk)
+  (with-input-from-port (open-input-string str) thunk))
+@end example
 @end defun
 
-@defun call-with-output-string proc
-@end defun
+@defun call-with-string-io str proc
+@defunx with-string-io str thunk
+@example
+(define (call-with-string-io str proc)
+  (let ((out (open-output-string))
+        (in  (open-input-string str)))
+    (proc in out)
+    (get-output-string out)))
 
-@defun with-input-from-string string thunk
-@end defun
-
-@defun with-output-to-string thunk
+(define (with-string-io str thunk)
+  (with-output-to-string
+    (lambda ()
+      (with-input-from-string str
+        thunk))))
+@end example
 @end defun
 
 @defun write-to-string obj &optional writer
-@defunx read-from-string string &optional reader
+@defunx read-from-string string &optional start end
 @c EN
-These convenience functions implicitly uses string ports.
-@code{Write-to-string} writes out @var{obj} into
-a string port using a procedure @var{writer} and returns the result
-string.  The default writer is @code{write}.  @code{Read-from-string}
-creates an input string port from @var{string}, and let @var{reader}
-read from the port.  The default reader is @code{read}.
+These convenience functions cover commin idioms using string ports.
+@example
+(write-to-string obj writer)
+  @equiv{}
+  (with-output-to-string (lambda () (writer obj)))
 
-Note: STk has @code{read-from-string} without optional argument.
+(read-from-string string)
+  @equiv{}
+  (with-input-from-string string read)
+@end example
+The default value of @var{writer} is the procedure @code{write}.
+The default values of @var{start} and @var{end} is 0 and
+the length of @var{string}.
+
+Portability note: Common Lisp has these functions, with
+different optional arguments.
+STk has @code{read-from-string} without optional argument.
 @c JP
-文字列ポートを内部で使った便利な手続きです。
-@code{Write-to-string}は、手続き@var{writer}を使って@var{obj}を
-出力文字列ポートに書き出し、結果の文字列を返します。@var{writer}のデフォルトは
-@code{write}です。@code{read-from-string}は文字列@var{string}から
-入力文字列ポートを作成し、@var{reader}を使ってそこから読み込んだオブジェクトを
-返します。@var{reader}のデフォルトは@code{read}です。
+文字列ポートを使う定型句をユーティリティ関数にしました。
+@example
+(write-to-string obj writer)
+  @equiv{}
+  (with-output-to-string (lambda () (writer obj)))
 
-註：STkには@code{read-from-string}がありますが、省略可能な引数は取りません。
+(read-from-string string)
+  @equiv{}
+  (with-input-from-string string read)
+@end example
+@var{writer}の既定値は@code{write}です。@var{start}, @var{end}は
+省略されればそれぞれ0と文字列の長さになります。
+
+移植性への註：Common Lispに同名の関数があります。必須引数の動作は同じですが、
+省略可能な引数は異なります。
+STkには@code{read-from-string}がありますが、省略可能な引数は取りません。
 @c COMMON
 @end defun
 
