@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.8 2001-04-07 08:51:12 shiro Exp $
+;; $Id: srfi.scm,v 1.9 2001-04-08 20:28:53 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -202,9 +202,51 @@
       (lambda () (append-map! (lambda (x y) (list x (- y)))
                              '(1 3 5) '(2 4 6 8))))
 (test "map!" '(4 1 5 1)
-      (lambda () (map + '(3 1 4 1) (circular-list 1 0))))
+      (lambda () (map! + '(3 1 4 1) (circular-list 1 0))))
 (test "map-in-order"  '(4 1 5 1)
-      (lambda () (map + '(3 1 4 1) (circular-list 1 0))))
+      (lambda () (map-in-order + '(3 1 4 1) (circular-list 1 0))))
+(test "pair-for-each" '((c) (b c) (a b c))
+      (lambda () (let ((r '()))
+                   (pair-for-each (lambda (l) (set! r (cons l r)))
+                                  '(a b c))
+                   r)))
+(test "filter-map" '(1 9 49)
+      (lambda () (filter-map (lambda (x) (and (number? x) (* x x)))
+                             '(a 1 b 3 c 7))))
+(test "filter" '(0 8 8 -4)
+      (lambda () (filter even? '(0 7 8 8 9 -4))))
+(test "partition" '((one four five) (2 3 6))
+      (lambda () (receive x (partition symbol? '(one 2 3 four five 6)) x)))
+(test "remove" '(7 43)
+      (lambda () (remove even? '(0 7 8 8 43 -4))))
+(test "filter!" '(0 8 8 -4)
+      (lambda () (filter even? (list 0 7 8 8 9 -4))))
+(test "partition!" '((one four five) (2 3 6))
+      (lambda () (receive x (partition! symbol? (list 'one 2 3 'four 'five 6)) x)))
+(test "remove!" '(7 43)
+      (lambda () (remove! even? (list 0 7 8 8 43 -4))))
+(test "find" 4
+      (lambda () (find even? '(3 1 4 1 5 9))))
+(test "find" #f
+      (lambda () (find even? '(3 1 1 5 9))))
+(test "fid-tail" '(-8 -5 0 0)
+      (lambda () (find-tail even? '(3 1 -8 -5 0 0))))
+(test "find-tail" #f
+      (lambda () (find-tail even? '(3 1 -9 -5 1 -1))))
+(test "take-while" '(2 18)
+      (lambda () (take-while even? '(2 18 3 10 22 9))))
+(test "take-while!" '(2 18)
+      (lambda () (take-while! even? (list 2 18 3 10 22 9))))
+(test "drop-while" '(3 10 22 9)
+      (lambda () (drop-while even? '(3 10 22 9))))
+(test "span" '((2 18) (3 10 22 9))
+      (lambda () (receive x (span even? '(2 18 3 10 22 9)) x)))
+(test "break" '((2 18) (3 10 22 9))
+      (lambda () (receive x (break odd? '(2 18 3 10 22 9)) x)))
+(test "span!" '((2 18) (3 10 22 9))
+      (lambda () (receive x (span! even? (list 2 18 3 10 22 9)) x)))
+(test "break!" '((2 18) (3 10 22 9))
+      (lambda () (receive x (break! odd? (list 2 18 3 10 22 9)) x)))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")
