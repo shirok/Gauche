@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.3 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: list.c,v 1.4 2001-01-17 08:22:37 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/mem.h"
 
 /*
  * Classes
@@ -64,7 +65,8 @@ ScmClass Scm_NullClass = {
 
 ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
 {
-    ScmPair *z = SCM_NEW(ScmPair);
+    ScmPair *z;
+    SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
     z->hdr.klass = SCM_CLASS_PAIR;
     SCM_SET_CAR(z, car);
     SCM_SET_CDR(z, cdr);
@@ -234,7 +236,7 @@ ScmObj Scm_CopyList(ScmObj list)
     if (!SCM_PAIRP(list)) return list;
     
     SCM_FOR_EACH(list, list) {
-        SCM_GROW_LIST(start, last, SCM_CAR(list));
+        SCM_APPEND1(start, last, SCM_CAR(list));
     }
     if (!SCM_NULLP(list)) {
         if (start == SCM_NIL) start = list;
@@ -252,7 +254,7 @@ ScmObj Scm_MakeList(int len, ScmObj fill)
 {
     ScmObj start = SCM_NIL, last;
     while (len--) {
-        SCM_GROW_LIST(start, last, fill);
+        SCM_APPEND1(start, last, fill);
     }
     return start;
 }
@@ -287,7 +289,7 @@ ScmObj Scm_Append2(ScmObj list, ScmObj obj)
     if (!SCM_PAIRP(list)) return obj;
 
     SCM_FOR_EACH(list, list) {
-	SCM_GROW_LIST(start, last, SCM_CAR(list));
+	SCM_APPEND1(start, last, SCM_CAR(list));
     }
     SCM_SET_CDR(last, obj);
 
@@ -307,7 +309,7 @@ ScmObj Scm_Append(ScmObj args)
         } else if (!SCM_PAIRP(SCM_CAR(cp))) {
             Scm_Error("pair required, but got %S", SCM_CAR(cp));
         } else {
-            SCM_GROW_LIST_SPLICING(start, last, Scm_CopyList(SCM_CAR(cp)));
+            SCM_APPEND(start, last, Scm_CopyList(SCM_CAR(cp)));
         }
     }
     return start;
@@ -321,13 +323,16 @@ ScmObj Scm_Append(ScmObj args)
 ScmObj Scm_Reverse(ScmObj list)
 {
     ScmObj cp, result;
+    ScmPair *p;
 
     if (!SCM_PAIRP(list)) return list;
 
-    result = Scm_Cons(SCM_NIL, SCM_NIL);
+    SCM_NEW_PAIR(p, SCM_NIL, SCM_NIL);
+    result = SCM_OBJ(p);
     SCM_FOR_EACH(cp, list) {
 	SCM_SET_CAR(result, SCM_CAR(cp));
-	result = Scm_Cons(SCM_NIL, result);
+        SCM_NEW_PAIR(p, SCM_NIL, result);
+        result = SCM_OBJ(p);
     }
     return SCM_CDR(result);
 }

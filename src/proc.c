@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.2 2001-01-15 04:44:54 shiro Exp $
+ *  $Id: proc.c,v 1.3 2001-01-17 08:22:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -152,7 +152,7 @@ static void map1_cc(ScmObj result, void **data)
     ScmObj head = SCM_OBJ(data[2]);
     ScmObj tail = SCM_OBJ(data[3]);
 
-    SCM_GROW_LIST(head, tail, result);
+    SCM_APPEND1(head, tail, result);
     
     if (SCM_PAIRP(args)) {
         ScmObj proc  = SCM_OBJ(data[0]);
@@ -202,8 +202,8 @@ static int mapper_collect_args(ScmObj argslist,
             /* ran out the argument. */
             return 1;
         }
-        SCM_GROW_LIST(arg, argtail, SCM_CAR(argsN));
-        SCM_GROW_LIST(more, moretail, SCM_CDR(argsN));
+        SCM_APPEND1(arg, argtail, SCM_CAR(argsN));
+        SCM_APPEND1(more, moretail, SCM_CDR(argsN));
     }
     *thisargs = arg;
     *moreargs = more;
@@ -250,7 +250,7 @@ static void mapN_cc(ScmObj result, void **data)
     ScmObj args, moreargs;
     void *d[4];
 
-    SCM_GROW_LIST(head, tail, result);
+    SCM_APPEND1(head, tail, result);
 
     if (mapper_collect_args(args_list, &args, &moreargs)) {
         SCM_RETURN(head);

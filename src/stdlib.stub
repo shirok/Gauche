@@ -118,23 +118,50 @@
   (assert (exact? q))
   "  SCM_RETURN(SCM_MAKE_INT(1));")
 
-;; floor
-;; ceiling
-;; truncate
-;; round
+(define-cproc floor (v)
+  "  SCM_RETURN(Scm_Round(v, SCM_ROUND_FLOOR));")
+(define-cproc ceiling (v)
+  "  SCM_RETURN(Scm_Round(v, SCM_ROUND_CEIL));")
+(define-cproc truncate (v)
+  "  SCM_RETURN(Scm_Round(v, SCM_ROUND_TRUNC));")
+(define-cproc round (v)
+  "  SCM_RETURN(Scm_Round(v, SCM_ROUND_ROUND));")
+
 ;; rationalize
-;; exp
-;; log
-;; sin
-;; cos
-;; tan
-;; asin
-;; acos
-;; atan
-;; sqrt
-;; expt
-;; make-rectangular
-;; make-polar
+
+(define-cproc exp (z)  "  SCM_RETURN(Scm_Exp(z));")
+(define-cproc log (z)  "  SCM_RETURN(Scm_Log(z));")
+(define-cproc sin (z)  "  SCM_RETURN(Scm_Sin(z));")
+(define-cproc cos (z)  "  SCM_RETURN(Scm_Cos(z));")
+(define-cproc tan (z)  "  SCM_RETURN(Scm_Tan(z));")
+(define-cproc asin (z) "  SCM_RETURN(Scm_Asin(z));")
+(define-cproc acos (z) "  SCM_RETURN(Scm_Acos(z));")
+
+(define-cproc atan (z &optional x)
+  "  if (x == SCM_UNBOUND) SCM_RETURN(Scm_Atan(z));
+  else SCM_RETURN(Scm_Atan2(z, x));")
+(define-cproc sqrt (z)
+  "  SCM_RETURN(Scm_Sqrt(z));")
+(define-cproc expt (x y)
+  "  SCM_RETURN(Scm_Expt(x, y));")
+
+(define-cproc make-rectangular (a b)
+  "  ScmObj z;
+  if (!SCM_REALP(a)) Scm_Error(\"real number required, but got %S\", a);
+  if (!SCM_REALP(b)) Scm_Error(\"real number required, but got %S\", b);
+  if (Scm_Sign(b) == 0) z = Scm_MakeFlonum(Scm_GetDouble(a));
+  else z = Scm_MakeComplex(Scm_GetDouble(a), Scm_GetDouble(b));
+  SCM_RETURN(z);")
+
+(define-cproc make-polar (r t)
+  "  ScmObj z; double x, y;
+  if (!SCM_REALP(r)) Scm_Error(\"real number required, but got %S\", r);
+  if (!SCM_REALP(t)) Scm_Error(\"real number required, but got %S\", t);
+  x = Scm_GetDouble(r) * cos(Scm_GetDouble(t));
+  y = Scm_GetDouble(r) * sin(Scm_GetDouble(t));
+  if (y == 0.0) z = Scm_MakeFlonum(x);
+  else z = Scm_MakeComplex(x, y);
+  SCM_RETURN(z);")
 
 (define-cproc real-part (z)
   "  ScmObj r;
@@ -143,7 +170,6 @@
   else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
   else Scm_Error(\"number required, but got %S\", z);
   SCM_RETURN(r);")
-
 (define-cproc imag-part (z)
   "  ScmObj r;
   if (SCM_INTP(z)) r = SCM_MAKE_INT(0);
@@ -151,21 +177,10 @@
   else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
   else Scm_Error(\"number required, but got %S\", z);
   SCM_RETURN(r);")
-
 (define-cproc magnitude (z)
-  "  ScmObj r;
-  if (SCM_INTP(z)) r = Scm_Abs(z); 
-  else if (SCM_FLONUMP(z)) r = Scm_Abs(z); 
-  else if (SCM_COMPLEXP(z)) {
-    double real = SCM_COMPLEX_REAL(z);
-    double imag = SCM_COMPLEX_IMAG(z);
-    r = Scm_MakeFlonum(sqrt(real*real + imag*imag));
-  } 
-  else Scm_Error(\"number required, but got %S\", z);
-  SCM_RETURN(r);")
-  
-
-;; angle
+  "  SCM_RETURN(Scm_Magnitude(z));")
+(define-cproc angle (z)
+  "  SCM_RETURN(Scm_Angle(z));")
 
 (define-cproc exact->inexact (obj)
   "  SCM_RETURN(Scm_ExactToInexact(obj));")
@@ -581,14 +596,14 @@
     head = tail = Scm_Cons(arg1, SCM_NIL);
     SCM_FOR_EACH(cp, args) {
       if (SCM_NULLP(SCM_CDR(cp))) {
-        SCM_GROW_LIST_SPLICING(head, tail, SCM_CAR(cp));
+        SCM_APPEND(head, tail, SCM_CAR(cp));
         Scm_Apply(proc, head);
         return;
       }
       if (!SCM_PAIRP(SCM_CDR(cp))) {
         Scm_Error(\"improper list not allowed: %S\", SCM_CDR(cp));
       }
-      SCM_GROW_LIST(head, tail, SCM_CAR(cp));
+      SCM_APPEND1(head, tail, SCM_CAR(cp));
     }
   } /*NOTREACHED*/")
 

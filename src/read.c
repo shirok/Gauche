@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.3 2001-01-16 20:32:42 shiro Exp $
+ *  $Id: read.c,v 1.4 2001-01-17 08:22:38 shiro Exp $
  */
 
 #include <stdio.h>
@@ -218,7 +218,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer)
             SCM_UNGETC(c, port);
             item = read_internal(port);
         }
-        SCM_GROW_LIST(start, last, item);
+        SCM_APPEND1(start, last, item);
     }
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: inline.c,v 1.4 2001-01-16 09:08:46 shiro Exp $
+ *  $Id: inline.c,v 1.5 2001-01-17 08:22:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -37,23 +37,23 @@
     int nargs = Scm_Length(SCM_CDR(form));      \
     ScmObj code = SCM_NIL, codetail
 
-#define INLINE_RETURN                                                   \
-    if (ctx == 0) SCM_GROW_LIST(code, codetail,                         \
-                                SCM_VM_MAKE_INSN(SCM_VM_POPARG));       \
+#define INLINE_RETURN                                           \
+    if (ctx == 0) SCM_APPEND1(code, codetail,                   \
+                              SCM_VM_MAKE_INSN(SCM_VM_POPARG)); \
     return code
 
-#define PUSH_ARG0                                                       \
-        SCM_GROW_LIST_SPLICING(code, codetail,                          \
-                               Scm_Compile(SCM_CADR(form), env, 1))
-#define PUSH_ARG1                                                       \
-        SCM_GROW_LIST_SPLICING(code, codetail,                          \
-                               Scm_Compile(SCM_CAR(SCM_CDDR(form)), env, 1))
-#define PUSH_ARG2                                                       \
-        SCM_GROW_LIST_SPLICING(code, codetail,                          \
-                               Scm_Compile(SCM_CADR(SCM_CDDR(form)), env, 1))
+#define PUSH_ARG0                                       \
+    SCM_APPEND(code, codetail,                          \
+               Scm_Compile(SCM_CADR(form), env, 1))
+#define PUSH_ARG1                                               \
+    SCM_APPEND(code, codetail,                                  \
+               Scm_Compile(SCM_CAR(SCM_CDDR(form)), env, 1))
+#define PUSH_ARG2                                               \
+    SCM_APPEND(code, codetail,                                  \
+               Scm_Compile(SCM_CADR(SCM_CDDR(form)), env, 1))
 
 #define PUSH_INSN(insn) \
-        SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_INSN(insn));
+    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(insn));
 
 
 
@@ -90,10 +90,9 @@ ScmObj Scm_inline_vector(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
     ScmObj args = SCM_CDR(form);
     INLINE_DECLS;
     SCM_FOR_EACH(args, args) {
-        SCM_GROW_LIST_SPLICING(code, codetail,
-                               Scm_Compile(SCM_CAR(args), env, 1));
+        SCM_APPEND(code, codetail, Scm_Compile(SCM_CAR(args), env, 1));
     }
-    SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_VEC(nargs));
+    SCM_APPEND1(code, codetail, SCM_VM_MAKE_VEC(nargs));
     INLINE_RETURN;
 }
 

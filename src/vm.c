@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.7 2001-01-16 09:08:46 shiro Exp $
+ *  $Id: vm.c,v 1.8 2001-01-17 08:22:38 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/mem.h"
 
 /*
  * The VM.
@@ -122,9 +123,15 @@ static ScmEnvFrame *topenv(ScmModule *module)
 
 static ScmEnvFrame *newenv(ScmObj info, int nlocals, ScmEnvFrame *up)
 {
-    ScmEnvFrame *e =
-        SCM_NEW2(ScmEnvFrame*,
-                 sizeof(ScmEnvFrame) + (nlocals-1)*sizeof(ScmObj));
+    ScmEnvFrame *e;
+    int size = sizeof(ScmEnvFrame) + (nlocals-1)*sizeof(ScmObj);
+
+    if (nlocals < 8) {          /* 8 is arbitrary.  can be set any number
+                                   as long as the env size < MAXOBJSZ. */
+        SCM_MALLOC_WORDS(e, size/sizeof(GC_word), ScmEnvFrame*);
+    } else {
+        e = (ScmEnvFrame*)Scm_Malloc(size);
+    }
     e->up = up;
     e->info = info;
     e->size = nlocals;
@@ -133,7 +140,9 @@ static ScmEnvFrame *newenv(ScmObj info, int nlocals, ScmEnvFrame *up)
 
 static ScmContFrame *get_continuation(ScmObj next)
 {
-    ScmContFrame *c = SCM_NEW(ScmContFrame);
+    void *p;
+    ScmContFrame *c;
+    SCM_MALLOC_WORDS(c, sizeof(ScmContFrame)/sizeof(GC_word), ScmContFrame*);
     c->prev = theVM->cont;
     c->env = theVM->env;
     c->argp = theVM->argp;
@@ -153,7 +162,12 @@ static void push_continuation(ScmObj next)
  *  Interprets intermediate code CODE on VM.
  */
 
-#define PUSH_ARG(obj) (vm->argp = Scm_Cons(obj, vm->argp))
+#define PUSH_ARG(obj)                           \
+    do {                                        \
+        ScmPair *z__VM;                         \
+        SCM_NEW_PAIR(z__VM, obj, vm->argp);     \
+        vm->argp = SCM_OBJ(z__VM);              \
+    } while (0)
 #define POP_ARG(var)  (var = SCM_CAR(vm->argp), vm->argp = SCM_CDR(vm->argp))
 #define PEEK_ARG(var) (var = SCM_CAR(vm->argp))
 #define DISCARD_ARG() (vm->argp = SCM_CDR(vm->argp))
@@ -313,8 +327,10 @@ static void run_loop(ScmObj program)
                                   proc, reqargs, nargs);
                     }
                     for (i=nargs-1; i>=reqargs; i--) {
+                        ScmPair *p;
                         POP_ARG(a);
-                        rest = Scm_Cons(a, rest);
+                        SCM_NEW_PAIR(p, a, rest);
+                        rest = SCM_OBJ(p);
                     }
                     e->data[reqargs] = rest;
                     for (; i>=0; i--) {
@@ -497,10 +513,12 @@ static void run_loop(ScmObj program)
         case SCM_VM_CONS:
             {
                 ScmObj car, cdr;
+                ScmPair *p;
                 CHECK_ARGCNT(2);
                 POP_ARG(cdr);
                 POP_ARG(car);
-                PUSH_ARG(Scm_Cons(car, cdr));
+                SCM_NEW_PAIR(p, car, cdr);
+                PUSH_ARG(SCM_OBJ(p));
                 continue;
             }
         case SCM_VM_CAR:
@@ -525,8 +543,10 @@ static void run_loop(ScmObj program)
                 ScmObj head = SCM_NIL, arg;
                 CHECK_ARGCNT(nargs);
                 while (nargs-- > 0) {
+                    ScmPair *p;
                     POP_ARG(arg);
-                    head = Scm_Cons(arg, head);
+                    SCM_NEW_PAIR(p, arg, head);
+                    head = SCM_OBJ(p);
                 }
                 PUSH_ARG(head);
                 continue;
@@ -540,8 +560,10 @@ static void run_loop(ScmObj program)
                     POP_ARG(head);
                     nargs--;
                     while (nargs-- > 0) {
+                        ScmPair *p;
                         POP_ARG(arg);
-                        head = Scm_Cons(arg, head);
+                        SCM_NEW_PAIR(p, arg, head);
+                        head = SCM_OBJ(p);
                     }
                     PUSH_ARG(head);
                 }
@@ -704,6 +726,7 @@ void Scm_VMPushCC(void (*func)(ScmObj result, void **data),
 {
     int i = 0;
     ScmCContinuation *cc = SCM_NEW(ScmCContinuation);
+    ScmPair *p;
     
     cc->hdr.klass = &Scm_CContClass;
     cc->func = func;
@@ -711,7 +734,8 @@ void Scm_VMPushCC(void (*func)(ScmObj result, void **data),
     for (i=0; i<datasize && i<SCM_CCONT_DATA_SIZE; i++) {
         cc->data[i] = data[i];
     }
-    theVM->pc = Scm_Cons(SCM_OBJ(cc), theVM->pc);
+    SCM_NEW_PAIR(p, SCM_OBJ(cc), theVM->pc);
+    theVM->pc = SCM_OBJ(p);
 }
 
 /*==================================================================
@@ -721,31 +745,37 @@ void Scm_VMPushCC(void (*func)(ScmObj result, void **data),
 void Scm_Apply0(ScmObj proc)
 {
     ScmVM *vm = theVM;
+    ScmPair *p;
     if (!SCM_PROCEDUREP(proc))
         Scm_Error("procedure required, but got %S", proc);
     PUSH_ARG(proc);
-    vm->pc = Scm_Cons(SCM_VM_MAKE_CALL(0, 1), vm->pc);
+    SCM_NEW_PAIR(p, SCM_VM_MAKE_CALL(0, 1), vm->pc);
+    vm->pc = SCM_OBJ(p);
 }
 
 void Scm_Apply1(ScmObj proc, ScmObj arg)
 {
     ScmVM *vm = theVM;
+    ScmPair *p;
     if (!SCM_PROCEDUREP(proc))
         Scm_Error("procedure required, but got %S", proc);
     PUSH_ARG(arg);
     PUSH_ARG(proc);
-    vm->pc = Scm_Cons(SCM_VM_MAKE_CALL(1, 1), vm->pc);
+    SCM_NEW_PAIR(p, SCM_VM_MAKE_CALL(1, 1), vm->pc);
+    vm->pc = SCM_OBJ(p);
 }
 
 void Scm_Apply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 {
     ScmVM *vm = theVM;
+    ScmPair *p;
     if (!SCM_PROCEDUREP(proc))
         Scm_Error("procedure required, but got %S", proc);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PUSH_ARG(proc);
-    vm->pc = Scm_Cons(SCM_VM_MAKE_CALL(2, 1), vm->pc);
+    SCM_NEW_PAIR(p, SCM_VM_MAKE_CALL(2, 1), vm->pc);
+    vm->pc = SCM_OBJ(p);
 }
 
 void Scm_Apply(ScmObj proc, ScmObj args)
@@ -962,8 +992,8 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
     for (;;) {
         SCM_FOR_EACH(pc, pc) {
             if (SCM_SOURCE_INFOP(SCM_CAR(pc))) {
-                SCM_GROW_LIST(stack, stacktail,
-                              SCM_SOURCE_INFO(SCM_CAR(pc))->info);
+                SCM_APPEND1(stack, stacktail,
+                            SCM_SOURCE_INFO(SCM_CAR(pc))->info);
                 break;
             }
             if (SCM_CCONTP(SCM_CAR(pc))) {
@@ -975,7 +1005,7 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
             break;
         }
         if (e) {
-            SCM_GROW_LIST(stack, stacktail, e->info);
+            SCM_APPEND1(stack, stacktail, e->info);
         }
 
         if (!c) break;

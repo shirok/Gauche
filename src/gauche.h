@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.9 2001-01-16 20:32:42 shiro Exp $
+ *  $Id: gauche.h,v 1.10 2001-01-17 08:22:37 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -24,6 +24,7 @@
 #include <setjmp.h>
 #include <gc.h>
 
+#define SCM_INLINE_MALLOC_PRIMITIVES
 #define CHARCODE_EUC_JP
 
 #ifdef CHARCODE_EUC_JP
@@ -185,6 +186,7 @@ typedef struct ScmHeaderRec {
 #define SCM_NEW_ATOMIC(type)  ((type*)(Scm_MallocAtomic(sizeof(type))))
 #define SCM_NEW_ATOMIC2(type, size) ((type)(Scm_MallocAtomic(size)))
 
+extern void *Scm_MallocWords(size_t words);
 extern void *Scm_Malloc(size_t size);
 extern void *Scm_MallocAtomic(size_t size);
 
@@ -312,7 +314,7 @@ extern ScmClass Scm_NullClass;
 #define	SCM_FOR_EACH(p, list) \
     for((p) = (list); SCM_PAIRP(p); (p) = SCM_CDR(p))
 
-#define	SCM_GROW_LIST(start, last, obj)                         \
+#define	SCM_APPEND1(start, last, obj)                           \
     do {                                                        \
 	if (SCM_NULLP(start)) {                                 \
 	    (start) = (last) = Scm_Cons((obj), SCM_NIL);        \
@@ -322,7 +324,7 @@ extern ScmClass Scm_NullClass;
 	}                                                       \
     } while (0)
 
-#define	SCM_GROW_LIST_SPLICING(start, last, obj)        \
+#define	SCM_APPEND(start, last, obj)                    \
     do {                                                \
         ScmObj list_SCM_GLS = (obj);                    \
 	if (SCM_NULLP(start)) {                         \
@@ -1205,6 +1207,29 @@ extern ScmObj Scm_NumGe(ScmObj arg0, ScmObj arg1, ScmObj args); /* >= */
 
 extern ScmObj Scm_Max(ScmObj arg0, ScmObj args);
 extern ScmObj Scm_Min(ScmObj arg0, ScmObj args);
+
+enum {
+    SCM_ROUND_FLOOR,
+    SCM_ROUND_CEIL,
+    SCM_ROUND_TRUNC,
+    SCM_ROUND_ROUND
+};
+extern ScmObj Scm_Round(ScmObj num, int mode);
+
+extern ScmObj Scm_Exp(ScmObj z);
+extern ScmObj Scm_Log(ScmObj z);
+extern ScmObj Scm_Sin(ScmObj z);
+extern ScmObj Scm_Cos(ScmObj z);
+extern ScmObj Scm_Tan(ScmObj z);
+extern ScmObj Scm_Asin(ScmObj z);
+extern ScmObj Scm_Acos(ScmObj z);
+extern ScmObj Scm_Atan(ScmObj z);
+extern ScmObj Scm_Atan2(ScmObj y, ScmObj x);
+extern ScmObj Scm_Sqrt(ScmObj z);
+extern ScmObj Scm_Expt(ScmObj z1, ScmObj z2);
+
+extern ScmObj Scm_Magnitude(ScmObj z);
+extern ScmObj Scm_Angle(ScmObj z);
 
 extern ScmObj Scm_NumberToString(ScmObj num, int radix);
 extern ScmObj Scm_StringToNumber(ScmString *str, int radix);

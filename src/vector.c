@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: vector.c,v 1.2 2001-01-17 08:22:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -80,7 +80,7 @@ ScmObj Scm_VectorToList(ScmVector *v)
     int i;
     
     SCM_VECTOR_FOR_EACH(i, e, v) {
-        SCM_GROW_LIST(start, last, e);
+        SCM_APPEND1(start, last, e);
     }
     return start;
 }

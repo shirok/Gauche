@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.2 2001-01-12 11:33:37 shiro Exp $
+ *  $Id: class.c,v 1.3 2001-01-17 08:22:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -107,7 +107,7 @@ ScmObj Scm_ClassCPL(ScmClass *klass)
     ScmClass **p = klass->cpl;
     ScmObj start = SCM_NIL, last;
     while (*p) {
-        SCM_GROW_LIST(start, last, SCM_OBJ(*p));
+        SCM_APPEND1(start, last, SCM_OBJ(*p));
         p++;
     }
     return start;

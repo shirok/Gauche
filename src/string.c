@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.6 2001-01-16 06:42:11 shiro Exp $
+ *  $Id: string.c,v 1.7 2001-01-17 08:22:38 shiro Exp $
  */
 
 #include <stdio.h>
@@ -574,7 +574,7 @@ ScmObj Scm_StringToList(ScmString *str)
     while (len-- > 0) {
         SCM_STR_GETC(bufp, ch);
         bufp += SCM_CHAR_NBYTES(ch);
-        SCM_GROW_LIST(start, end, SCM_MAKE_CHAR(ch));
+        SCM_APPEND1(start, end, SCM_MAKE_CHAR(ch));
     }
     return start;
 }

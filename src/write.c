@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.4 2001-01-15 01:28:28 shiro Exp $
+ *  $Id: write.c,v 1.5 2001-01-17 08:22:38 shiro Exp $
  */
 
 #include <stdio.h>
@@ -389,7 +389,7 @@ ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...)
     va_start(ap, fmt);
     while (nargs--) {
         ScmObj o = va_arg(ap, ScmObj);
-        SCM_GROW_LIST(start, end, o);
+        SCM_APPEND1(start, end, o);
     }
     va_end(ap);
     return Scm_Format(port, fmtstr, start);

@@ -12,12 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.5 2001-01-16 20:32:42 shiro Exp $
+ *  $Id: number.c,v 1.6 2001-01-17 08:22:37 shiro Exp $
  */
 
 #include <math.h>
 #include <limits.h>
 #include "gauche.h"
+
+#define PI 3.14159265358979323
 
 /*
  * Classes of Numeric Tower
@@ -128,6 +130,38 @@ ScmObj Scm_MakeComplex(double r, double i)
     c->real = r;
     c->imag = i;
     return SCM_OBJ(c);
+}
+
+ScmObj Scm_Magnitude(ScmObj z)
+{
+    double m;
+    if (SCM_REALP(z)) {
+        m = fabs(Scm_GetDouble(z));
+    } else if (!SCM_COMPLEXP(z)) {
+        Scm_Error("number required, but got %S", z);
+        m = 0.0;                /* dummy */
+    } else {
+        double r = SCM_COMPLEX_REAL(z);
+        double i = SCM_COMPLEX_IMAG(z);
+        m = sqrt(r*r+i*i);
+    }
+    return Scm_MakeFlonum(m);
+}
+
+ScmObj Scm_Angle(ScmObj z)
+{
+    double a;
+    if (SCM_REALP(z)) {
+        a = (Scm_Sign(z) < 0)? PI : 0.0;
+    } else if (!SCM_COMPLEXP(z)) {
+        Scm_Error("number required, but got %S", z);
+        a = 0.0;                /* dummy */
+    } else {
+        double r = SCM_COMPLEX_REAL(z);
+        double i = SCM_COMPLEX_IMAG(z);
+        a = atan2(i, r);
+    }
+    return Scm_MakeFlonum(a);
 }
 
 /*=======================================================================
@@ -957,11 +991,90 @@ ScmObj Scm_Min(ScmObj arg0, ScmObj args)
 }
 
 /*===============================================================
- * ACCESSING STRUCTURED NUMBERS
+ * ROUNDING
  */
 
+ScmObj Scm_Round(ScmObj num, int mode)
+{
+    double r, v;
+    
+    if (SCM_EXACTP(num)) return num;
+    if (!SCM_FLONUMP(num))
+        Scm_Error("real number required, but got %S", num);
+    v = SCM_FLONUM_VALUE(num);
+    switch (mode) {
+    case SCM_ROUND_FLOOR: r = floor(v); break;
+    case SCM_ROUND_CEIL:  r = ceil(v); break;
+    case SCM_ROUND_TRUNC: r = trunc(v); break; /* TODO: check if trunc() is in ANSI C or POSIX */
+    case SCM_ROUND_ROUND: r = rint(v); break; /* TODO: check if rint() is in ANSI C or POSIX */
+    default: Scm_Panic("something screwed up");
+    }
+    return Scm_MakeFlonum(r);
+}
 
+/*===============================================================
+ * TRANSCEDENTAL FUNCTIONS
+ *   for now, we have functions only for real numbers.
+ */
+
+#define TRANS(sfn, fn)                                                   \
+ScmObj sfn(ScmObj z)                                                     \
+{                                                                        \
+    double r;                                                            \
+    if (!SCM_REALP(z)) Scm_Error("real number required, but got %S", z); \
+    r = fn(Scm_GetDouble(z));                                            \
+    return Scm_MakeFlonum(r);                                            \
+}
+
+/* TODO: check domain error! */
+TRANS(Scm_Exp, exp)
+TRANS(Scm_Log, log)
+TRANS(Scm_Sin, sin)
+TRANS(Scm_Cos, cos)
+TRANS(Scm_Tan, tan)
+TRANS(Scm_Asin, asin)
+TRANS(Scm_Acos, acos)
+TRANS(Scm_Atan, atan)
+
+ScmObj Scm_Atan2(ScmObj y, ScmObj x)
+{
+    if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
+    if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
+    {
+        double vx = Scm_GetDouble(x);
+        double vy = Scm_GetDouble(y);
+        double r = atan2(vy, vx);
+        return Scm_MakeFlonum(r);
+    }
+}
      
+ScmObj Scm_Expt(ScmObj x, ScmObj y)
+{
+    if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
+    if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
+    
+    /* TODO: optimize the case where x and y is integer, y>0 */
+    {
+        double vx = Scm_GetDouble(x);
+        double vy = Scm_GetDouble(y);
+        double r = pow(vx, vy);
+        return Scm_MakeFlonum(r);
+    }
+}
+
+ScmObj Scm_Sqrt(ScmObj z)
+{
+    if (!SCM_REALP(z)) Scm_Error("real number required, but got %S", z);
+    {
+        double vz = Scm_GetDouble(z);
+        if (vz < 0){
+            return Scm_MakeComplex(0.0, sqrt(-vz));
+        } else {
+            return Scm_MakeFlonum(sqrt(vz));
+        }
+    }
+}
+
 /*===============================================================
  * Number I/O
  */
