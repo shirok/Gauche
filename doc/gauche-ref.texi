@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.213 2002-06-14 00:07:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.214 2002-06-14 09:40:12 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12824,7 +12824,7 @@ Conversions between other encodings are handled by @code{iconv(3)}.
 @c JP
 リリース0.5.6より、Gaucheは日本語の主要エンコーディング
 (ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213), 
-UTF-8 (Unicode 3.2)間の変換を自前で持つようになりました。
+UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
 上記以外のコードとの変換は@code{iconv(3)}を利用します。
 サポートされるコーディングシステムに関する詳細は
 @ref{Supported character encoding schemes}を参照して下さい。
@@ -12851,28 +12851,6 @@ CESの名前は文字列で指定します。大文字小文字の違いは無視されます。
 @c COMMON
 
 @c EN
-Conversion between any two of the following CESes is handled by Gauche's
-built-in algorithm.  When other CES name is given, Gauche uses
-@code{iconv(3)} if it is linked.
-@c JP
-以下のCES間の変換に関しては、Gaucheが内部に変換アルゴリズムを持っています。
-それ以外のCESに関しては、リンクされていればGaucheは@code{iconv(3)}を用いて
-変換を行います。
-@c COMMON
-
-
-@multitable {aaaaaaaa} {aaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
-@item "EUC-JP", "EUCJP"
-EUC-JP
-@item "SJIS", "SHIFT-JIS"
-Shift JIS
-@item "UTF-8"
-UTF-8
-@item "CSISO2022JP"
-ISO-2022-JP
-@end table
-
-@c EN
 You can check whether the specific conversion is supported on
 your system or not, by the following function.
 @c JP
@@ -12888,6 +12866,108 @@ Returns @code{#t} if conversion from the character encoding scheme
 そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
+
+@c EN
+Conversion between common japanese CESes (EUC_JP, Shift JIS, UTF-8
+and ISO2022-JP) of the character set JIS X 0201 and JIS X 0213
+is handled by Gauche's built-in algorithm (see below for details).
+When other CES name is given, Gauche uses
+@code{iconv(3)} if it is linked.
+@c JP
+日本語の文字セットJIS X 0201及びJIS X 0213のエンコーディング
+(EUC_JP、Shift JIS、UTF-8及びISO2022-JP) 間の変換に関しては、
+Gaucheが内部に変換アルゴリズムを持っています (詳細は下の注記を参照)。
+それ以外のCESに関しては、リンクされていればGaucheは@code{iconv(3)}を用いて
+変換を行います。
+@c COMMON
+
+@c EN
+When Gauche's conversion routine encounters a character that can't
+be mapped, it replaces the character for "geta mark" (U+3013)
+if it's a multibyte character in the input encoding, or for '?' if it's
+a singlebyte character in the input encoding.
+If that happens in iconv, handling of such character depends
+on iconv implementation (glibc implementation returns an error).
+@c JP
+出力CESへマップ不可能な入力文字に出会った場合、Gaucheの変換ルーチンは
+その文字が入力CESでマルチバイトである場合はgeta mark '〓' (U+3013) に、
+入力CESでシングルバイトである場合は '?' に置換します。
+iconvによる変換でマップ不可能な文字に出会った場合の処理はiconvの実装に
+依存します(例えばglibcではエラーとなります)。
+@c COMMON
+
+@c EN
+If the conversion routine encounters an input sequence that
+is illegal in the input CES, an error is signalled.
+@c JP
+変換ルーチンが、入力CESとして不正な入力文字列に出会った場合は
+エラーが報告されます。
+@c COMMON
+
+@c EN
+@strong{Details of Gauche's native conversion algorithm:}
+Between EUC_JP, Shift JIS and ISO2022JP, Gauche uses arithmetic
+conversion whenever possible.  This even maps the undefined codepoint
+properly.  Between Unicode (UTF-8) and EUC_JP, Gauche uses lookup tables.
+Between Unicode and Shift JIS or ISO2022JP, Gauche converts the
+input CES to EUC_JP, then convert it to the output CES.
+@c JP
+@strong{Gaucheの内部変換アルゴリズムの詳細:}
+EUC_JP、Shift JIS、及びISO2022JP間の変換は可能な限り計算で行います。
+文字が未定義のコードポイントも計算式に従って変換されます。
+Unicode(UTF-8)とEUC_JP間の変換はテーブルルックアップによって行われます。
+UnicodeとShift JISまたはISO2022JP間の変換は、入力CESを一度EUC_JPに
+変換し、それを出力CESに変換することによって行います。
+@c COMMON
+
+@table @code
+@item EUC_JP, EUCJP, EUCJ, EUC_JISX0213
+@c EN
+Covers ASCII, JIS X 0201 kana, JIS X 0212 and JIS X 0213 character sets.
+JIS X 0212 character set is supported merely because it uses
+the code region JIS X 0213 doesn't use, and JIS X 0212 characters
+are not converted properly to Shift JIS and UTF-8.
+Use JIS X 0213.
+@c JP
+ASCII, JIS X 0201カナ、JIS X 0212、及びJIS X 0213文字セットをカバーします。
+JIS X 0212は、単にJIS X 0213と重ならないコードを使っているためにサポート
+されていますが、他のCESへの変換は行われないので注意して下さい。
+なるべくJIS X 0213の使用をおすすめします。
+@c COMMON
+
+@item SJIFT_JIS, SHIFTJIS, SJIS
+@c EN
+Covers Shift_JISX0213, except that 0x5c and 0x7e is mapped to ASCII
+character set (REVERSE SOLIDUS and TILDE),
+instead of JIS X 0201 Roman (YEN SIGN and OVERLINE).
+@c JP
+Shift_JISX0213をカバーします。但し、0x5cと0x7eに関しては
+JIS X 0201 Roman (YEN SIGNとOVERLINE) ではなく
+ASCII (REVERSE SOLIDUSとTILDE) にマップされます。
+@c COMMON
+
+@item UTF-8, UTF8
+@c EN
+Unicode 3.2.  Note that some JIS X 0213 characters are mapped to Extension B
+(U+20000 and up).
+Some JIS X 0213 characters are mapped to two
+unicode characters (one base character plus a combining character).
+@c JP
+Unicode 3.2です。JIS X 0213中の文字のいくつかはExtension B (U+20000〜)
+にマップされます。JIS X 0213中の他の文字のいくつかは2つのUnicode文字
+(base character + combining character)にマップされます。
+@c COMMON
+
+@item ISO2022JP, CSISO2022JP, ISO2022JP-1, ISO2022JP-2, ISO2022JP-3
+@c EN
+These encodings differ a bit
+(except ISO2022JP and CSISO2022JP, which are synonyms), but
+Gauche handles them same.  If one of these CES is specified as input,
+Gauche recognizes escape sequences of any of CES.
+For output, Gauche switches escape sequence based on 
+@c JP
+@c COMMON
+@end table
 
 @node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, Character code conversion
 @subsection Autodetecting the encoding scheme
