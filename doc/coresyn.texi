@@ -1567,19 +1567,38 @@ importは遷移的ではありません；importされたモジュールがimportしているモジュール…
 @subsection Modules and libraries
 @c NODE モジュールとライブラリ
 
+@c EN
 Modules are run-time data structure; you can procedurally
 create modules with arbitrary names at run-time.
 
+@c JP
+モジュールは実行時データ構造です。実行時に任意の名前のモジュールを
+手続き的に作成することができます。
+
+@c EN
 However, most libraries use modules to create their own
 namespace, so that they can control which bindings to be
 visible from library users.
 
+@c JP
+しかしほとんどのライブラリは、固有の名前空間を生成します。これにより、
+どの束縛を、ライブラリ使用者に見せるかを制御できます。
+
+@c EN
 Usually a library is provided in the form of one or more Scheme
 source file(s), so it is convenient to have a convention to map 
 module names to file names, and vice versa; then, you can load a
 library file and import its module by one action with @code{use}
 macro, for example.
 
+@c JP
+通常ライブラリは1つ以上のSchemeソースファイル形式で提供されます。
+したがって、ファイル名をモジュール名に対応づける(またはその逆の)
+規約にしておけば便利です。そうすれば、たとえば、ライブラリーファイルを
+ロードしたり、@code{use} マクロを使ってモジュールを一動作で、
+インポートしたりできます。
+
+@c EN
 For the time being, Gauche uses a simple rules for this mapping:
 Module names are organized hierarchically, using period `@code{.}'
 for separator, e.g. @code{gauche.mop.validator}.  If such a
@@ -1589,6 +1608,16 @@ replacing periods to directory separator, i.e.
 @code{gauche/mop/validator}, and look for
 @code{gauche/mop/validator.scm} in the load paths.
 
+@c JP
+当分の間、Gauche はこの対応づけのための単純なルールを使用します。すなわち、
+モジュール名は、例えば @code{gauche.mop.validator} のように `@code{.}' 
+(ピリオド)記号で階層的に区切って構成されます。このようなモジュールが
+要求されても、現在の実行時環境に存在しない場合には、Gauche は
+ピリオド記号をディレクトリ区切りに変換して @code{gauche/mop/validator}
+のようにモジュール名からパス名に変換します。その後、
+@code{gauche/mop/validator.scm} をロードパスから探します。
+
+@c EN
 Note that this is just a default behavior.
 Theoretically, one Scheme source file may contain multiple
 modules, or one module implementation may span to multiple files.
@@ -1599,6 +1628,18 @@ default rule blindly.   Gauche provides two procedures,
 @code{module-name->path} and @code{path->module-name},
 to do mapping for you (see @ref{Module introspection}, for details).
 
+@c JP
+これが単にデフォルトの振る舞いであることに注意してください。
+理論上、1つのSchemeソース・ファイルは多数のモジュールを含むことがあります。
+あるいは、1つのモジュール実装は多数のファイルにまたがることもありえます。
+将来、特別なケースのために、この対応付けをカスタマイズするフックを
+用意するかもしれません。したがって、モジュールおよびライブラリーファイルを
+扱うルーチンを書く場合には、上記のデフォルトルールを盲目的に適用しないで
+ください。Gaucheは @code{module-name->path} と @code{path->module-name} という
+2つの対応づけ手続き(詳細に関しては、@ref{Module introspection}参照)
+を用意しています。
+
+@c COMMON
 @node Defining and selecting modules, Using modules, Modules and libraries, Modules
 @subsection Defining and selecting modules
 @c NODE モジュールの定義と選択
