@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: propagate.scm,v 1.3 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: propagate.scm,v 1.4 2003-12-13 09:12:05 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL.   THE API MAY CHANGE.
@@ -58,30 +58,37 @@
 (define-method compute-get-n-set ((class <propagate-meta>) slot)
   (let ((name  (slot-definition-name slot))
         (alloc (slot-definition-allocation slot)))
-    (cond ((eq? alloc :propagated)
-           (let1 prop (or (slot-definition-option slot :propagate #f)
-                          (slot-definition-option slot :propagate-to #f))
-             (cond ((symbol? prop)
-                    (list (lambda (o)
-                            (slot-ref (slot-ref o prop) name))
-                          (lambda (o v)
-                            (slot-set! (slot-ref o prop) name v))))
-                   ((and-let* (((list? prop))
-                               ((= (length prop) 2))
-                               (object-slot (car prop))
-                               ((symbol? object-slot))
-                               (real-slot (cadr prop))
-                               ((symbol? real-slot)))
-                      (list (lambda (o)
-                              (slot-ref (slot-ref o object-slot) real-slot))
-                            (lambda (o v)
-                              (slot-set! (slot-ref o object-slot) real-slot v))
-                            )))
-                   (else
-                    (errorf "bad :propagated slot option value ~s for slot ~s of class ~s"
-                            prop name class))
-                   )))
-          (else (next-method)))))
+    (if (eq? alloc :propagated)
+      (let1 prop (or (slot-definition-option slot :propagate #f)
+                     (slot-definition-option slot :propagate-to #f))
+        (cond ((symbol? prop)
+               (list (lambda (o)
+                       (slot-ref (slot-ref-using-class class o prop) name))
+                     (lambda (o v)
+                       (slot-set! (slot-ref-using-class class o prop) name v))
+                     (lambda (o)
+                       (slot-bound? (slot-ref-using-class class o prop) name))))
+              ((and-let* (((list? prop))
+                          ((= (length prop) 2))
+                          (object-slot (car prop))
+                          ((symbol? object-slot))
+                          (real-slot (cadr prop))
+                          ((symbol? real-slot)))
+                 (list (lambda (o)
+                         (slot-ref (slot-ref-using-class class o object-slot)
+                                   real-slot))
+                       (lambda (o v)
+                         (slot-set! (slot-ref-using-class class o object-slot)
+                                    real-slot v))
+                       (lambda (o)
+                         (slot-bound? (slot-ref-using-class class o object-slot)
+                                      real-slot))
+                       )))
+              (else
+               (errorf "bad :propagated slot option value ~s for slot ~s of class ~s"
+                       prop name class))
+              ))
+      (next-method))))
 
 ;; convenient to be used as a mixin
 (define-class <propagate-mixin> ()
