@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.178 2002-04-24 12:01:35 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.179 2002-04-25 22:22:04 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7432,11 +7432,36 @@ use @code{display}.
 @end defun
 
 @defun eof-object? obj
-[R5RS] Returns true if @var{obj} is an EOF object.
+[R5RS]
+@c EN
+Returns true if @var{obj} is an EOF object.
+@c JP
+@var{obj}がEOFオブジェクトなら@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun char-ready? port
-[R5RS] If a character is ready to be read from @var{port}, returns @code{#t}.
+[R5RS]
+@c EN
+If a character is ready to be read from @var{port}, returns @code{#t}.
+
+For now, this procedure actually checks only if next @emph{byte} is
+immediately available from @var{port}.   If the next byte is a part of
+a multibyte character, the attempt to read the whole character may block,
+even if @code{char-ready?} returns @code{#t} on the port.
+(It is unlikely to happen in usual situation, but theoretically it can.
+If you concern, use @code{read-block} to read the input as a byte
+sequence, then use input string port to read characters.)
+@c JP
+@var{port}から文字が読み出せる状態ならば@code{#t}を返します。
+
+今のところ、この手続きは@var{port}から少なくとも1バイト読み出せる状態なら@code{#t}
+を返します。そのバイトがマルチバイト文字を構成する場合、@code{char-ready?}を返した
+ポートから文字全てを読み込もうとすると、ブロックする可能性があります。
+(通常の使用状況ではそのようなことは起きないでしょうが、理論的には起こり得ます。
+慎重を期したい場合は@code{read-block}でバイトシーケンスとして読み込んだ後、
+入力文字列ポート等を使って文字毎に読むようにして下さい。)
+@c COMMON
 @end defun
 
 @defun port->string port
