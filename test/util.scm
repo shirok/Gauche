@@ -329,6 +329,36 @@
        (isomorphic? (make-data #t) (make-data #f)))
 
 ;;-----------------------------------------------
+(test-section "util.lcs")
+(use util.lcs)
+(test-module 'util.lcs)
+
+(test "lcs skip" '(a c)
+  (cut lcs '(a b c) '(a c)))
+
+(test "lcs head" '(a b)
+  (cut lcs '(a b c) '(a b)))
+
+(test "lcs tail" '(b c)
+  (cut lcs '(a b c) '(b c)))
+
+(test "lcs same" '(a b c)
+  (cut lcs '(a b c) '(a b c)))
+
+(test "lcs no common" '()
+  (cut lcs '(a b c) '(x y z)))
+
+(test "lcs empty" '()
+  (cut lcs '(a b c) '()))
+
+(test "lcs mislead" '(a x b y c z)
+  (cut lcs '(a x b y c z p d q) '(a b c a x b y c z)))
+
+(test "lcs mislead count"
+    '(6 ((a 0 0) (x 1 4) (b 2 5) (y 3 6) (c 4 7) (z 5 8)))
+  (cut lcs-with-positions '(a x b y c z p d q) '(a b c a x b y c z)))
+
+;;-----------------------------------------------
 (test-section "util.list")
 (use util.list)
 (test-module 'util.list)

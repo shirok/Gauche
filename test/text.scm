@@ -62,6 +62,14 @@
            ((make-csv-writer #\,) out '()))))
 
 ;;-------------------------------------------------------------------
+(test-section "diff")
+(use text.diff)
+(test-module 'text.diff)
+
+(test* "diff" '("abc" "ghi")
+       (map car (cadr (caddr (diff "abc\ndef\nghi" "abc\nghi")))))
+
+;;-------------------------------------------------------------------
 (test-section "parse")
 (use text.parse)
 (test-module 'text.parse)

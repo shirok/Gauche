@@ -1,5 +1,8 @@
 2003-05-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/lcs.scm, lib/text/diff.scm, lib/Makefile.in : added
+	  Alex Shinn's LCS finding utility.
+
 	* lib/net/netlib.stub, lib/net/net.scm : made 'flags' argument of
 	  sys-getnameinfo optional, and export a bunch of IPPROTO_* enums.
 	  (Patch from Kimura Fuyuki)
