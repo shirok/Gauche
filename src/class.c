@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.42 2001-04-03 08:03:37 shiro Exp $
+ *  $Id: class.c,v 1.43 2001-04-03 10:10:42 shiro Exp $
  */
 
 #include "gauche.h"
@@ -354,6 +354,8 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     /* find correct allocation method */
     klass->allocate = NULL;
     for (p = klass->cpa; *p; p++) {
+        if (SCM_CLASS_FINAL_P(*p))
+            Scm_Error("you can't inherit a final class %S", *p);
         if ((*p)->allocate) {
             if ((*p)->allocate != object_allocate) {
                 if (klass->allocate && klass->allocate != object_allocate) {
@@ -383,7 +385,12 @@ static ScmObj class_direct_supers(ScmClass *klass)
 
 static void class_direct_supers_set(ScmClass *klass, ScmObj val)
 {
-    /* TODO: check argument vailidity */
+    ScmObj vp;
+    SCM_FOR_EACH(vp, val) {
+        if (!Scm_TypeP(SCM_CAR(vp), SCM_CLASS_CLASS))
+            Scm_Error("non-class object found in direct superclass list: %S",
+                      SCM_CAR(vp));
+    }
     klass->directSupers = val;
 }
 
@@ -394,7 +401,12 @@ static ScmObj class_direct_slots(ScmClass *klass)
 
 static void class_direct_slots_set(ScmClass *klass, ScmObj val)
 {
-    /* TODO: check argument vailidity */
+    ScmObj vp;
+    SCM_FOR_EACH(vp, val) {
+        if (!SCM_PAIRP(SCM_CAR(vp)))
+            Scm_Error("bad slot spec found in direct slot list: %S",
+                      SCM_CAR(vp));
+    }
     klass->directSlots = val;
 }
 
@@ -405,7 +417,12 @@ static ScmObj class_slots_ref(ScmClass *klass)
 
 static void class_slots_set(ScmClass *klass, ScmObj val)
 {
-    /* TODO: check argument vailidity */
+    ScmObj vp;
+    SCM_FOR_EACH(vp, val) {
+        if (!SCM_PAIRP(SCM_CAR(vp)))
+            Scm_Error("bad slot spec found in slot list: %S",
+                      SCM_CAR(vp));
+    }
     klass->slots = val;
 }
 
@@ -416,7 +433,13 @@ static ScmObj class_accessors(ScmClass *klass)
 
 static void class_accessors_set(ScmClass *klass, ScmObj val)
 {
-    /* TODO: check argument vailidity */
+    ScmObj vp;
+    SCM_FOR_EACH(vp, val) {
+        if (!SCM_PAIRP(SCM_CAR(vp))
+            || !SCM_SLOT_ACCESSOR_P(SCM_CDAR(vp)))
+            Scm_Error("slot accessor list must be an assoc-list of slot name and slot accessor object, but found: %S",
+                      SCM_CAR(vp));
+    }
     klass->accessors = val;
 }
 
