@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.2 2001-11-10 11:44:38 shirok Exp $
+;;;  $Id: cgi.scm,v 1.3 2001-11-11 12:05:01 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
@@ -58,19 +58,22 @@
                         => parse-cookie-string)
                        (else '()))))
     (append
-     (fold-right (lambda (elt params)
-                   (let* ((ss (string-split elt #\=))
-                          (p  (assoc (car ss) params))
-                          (v  (if (null? (cdr ss))
-                                  #t
-                                  (uri-decode-string (string-join (cdr ss) "=")
-                                                     :cgi-decode #t))))
-                     (if p
-                         (begin (set! (cdr p) (cons v (cdr p))) params)
-                         (cons (list (car ss) v) params))))
-                 '()
-                 (string-split input #\&))
-     (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
+     (cond
+      ((string-null? input) '())
+      (else
+       (fold-right (lambda (elt params)
+                     (let* ((ss (string-split elt #\=))
+                            (p  (assoc (car ss) params))
+                            (v  (if (null? (cdr ss))
+                                    #t
+                                    (uri-decode-string (string-join (cdr ss) "=")
+                                                       :cgi-decode #t))))
+                       (if p
+                           (begin (set! (cdr p) (cons v (cdr p))) params)
+                           (cons (list (car ss) v) params))))
+                   '()
+                   (string-split input #\&))
+       (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))))
 
 (define (cgi-get-parameter key params . args)
   (let* ((list?   (get-keyword :list args #f))
