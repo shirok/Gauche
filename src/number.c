@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.13 2001-03-06 08:39:06 shiro Exp $
+ *  $Id: number.c,v 1.14 2001-03-06 09:04:50 shiro Exp $
  */
 
 #include <math.h>
@@ -29,8 +29,8 @@
 #ifdef HAVE_TRUNC
 extern double trunc(double);
 #endif
-#ifdef HAVE_ROUND
-extern double round(double);
+#ifdef HAVE_RINT
+extern double rint(double);
 #endif
 
 /*
@@ -1077,15 +1077,21 @@ ScmObj Scm_Round(ScmObj num, int mode)
 #else
     case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
 #endif
-#ifdef HAVE_ROUND
-    case SCM_ROUND_ROUND: r = round(v); break;
+#ifdef HAVE_RINT
+    case SCM_ROUND_ROUND: r = rint(v); break;
 #else
     case SCM_ROUND_ROUND: {
         double frac = modf(v, &r);
         if (v > 0.0) {
-            if (frac >= 0.5) r += 1.0;
+            if (frac > 0.5) r += 1.0;
+            else if (frac == 0.5) {
+                if (r/2.0 != 0.0) r += 1.0;
+            }
         } else {
-            if (frac <= -0.5) r -= 1.0;
+            if (frac < -0.5) r -= 1.0;
+            else if (frac == 0.5) {
+                if (r/2.0 != 0.0) r -= 1.0;
+            }
         }
         break;
     }

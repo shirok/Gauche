@@ -10,9 +10,9 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 
 dnl Checks for libraries.
-AC_CHECK_LIB(m, sin) dnl needed to check trunc and round below
+AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
 AC_CHECK_LIB(dl, dlopen)
-AC_CHECK_FUNCS(trunc round)
+AC_CHECK_FUNCS(trunc rint)
 
 dnl Checks for header files.
 AC_HEADER_STDC
