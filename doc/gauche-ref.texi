@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.320 2002-12-11 00:15:53 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.321 2002-12-11 00:21:37 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3679,7 +3679,7 @@ importは遷移的ではありません；importされたモジュールがimportしているモジュール…
 
 @defspec define-module name body @dots{}
 @c EN
-@var{Name} must be a symbol
+@var{Name} must be a symbol.
 If a module named @var{name} does not exist, create one.
 Then evaluates @var{body} sequentially in the module.
 @c JP
@@ -4098,7 +4098,7 @@ Gauche起動時にいくつかのモジュールがあらかじめ定義されています。
 @c EN
 This module corresponds to the null environment referred in R5RS.
 This module contains only syntactic bindings of R5RS syntax.
-(With one exception in the current implmenetation:
+(With one exception in the current implementation:
 Syntax @code{with-module} is in this module, since Gauche needed it
 for certain internal setup.  It'll be removed in future.)
 @c JP
@@ -11406,7 +11406,7 @@ If the undelying platform doesn't have @code{glob()}, this function
 signals an error of "feature not supported".
 
 Note: it is known that on some systems glob() implementation has
-a security issue.  Gauche will eventually implment glob() functionality
+a security issue.  Gauche will eventually implement glob() functionality
 in itself.
 @c JP
 glob(3)関数へのインタフェースです。@var{pattern}はsh(1)で使われるパターンです:
@@ -14587,7 +14587,7 @@ CESを推測しようとします。そのアルゴリズムで推測されるどのCESにも該当しないデータ
 誤った判定をする可能性が高くなります。大抵のテキストドキュメントに対して、
 既定のバッファサイズは十分ですが、大きなテキストのほとんどがASCII文字で最後だけ
 マルチバイト文字が現われるようなテキストでは誤判定の可能性があります。
-最悪の場合でも結果を保障するには、テキスト全体が格納できるバッファサイズを指定すると
+最悪の場合でも結果を保証するには、テキスト全体が格納できるバッファサイズを指定すると
 良いでしょう。
 @c COMMON
 
@@ -19331,7 +19331,7 @@ for example).
 @item
 If what you need is to control the resouce consumption in the
 subsystem, and the subsystem works fairly independently from
-the main system, you may be use Unix processes instead of threads.
+the main system, you may be able to use Unix processes instead of threads.
 It may sound to go backward, but Unix process does provide
 higher "shield" between the subsystem and the main system
 (e.g. the main system can keep running even if subsystem segfaults).
@@ -22116,7 +22116,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @subsection Association lists
 
 @defun alist-cons key datum alist
-[SRFI-1] Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
+[SRFI-1] Returns @code{(cons (cons @var{key} @var{datum}) @var{alist})}.
 This is an alias of the Gauche builtin procedure @code{acons}.
 @end defun
 
@@ -26512,12 +26512,12 @@ and SHA1 (@xref{rfc.sha1 - SHA1 message digest}).
 @end deftp
 
 @deftp {Class} <message-digest-algorithm-meta>
-@clindex <message-digest-algorithm-meta>
-A metaclass of message digest algorithm implmentation.
+@clindex message-digest-algorithm-meta
+A metaclass of message digest algorithm implementation.
 @end deftp
 
 @deftp {Class} <message-digest-algorithm>
-@clindex <message-digest-algorithm>
+@clindex message-digest-algorithm
 A base class of message digest algorithm implementation.
 @end deftp
 
