@@ -1,7 +1,8 @@
 2003-01-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/boolean.c (Scm_EqualP): check eq?-ness first.
 	* lib/gauche/mop/instance-pool.scm : renamed *-remove methods to
-	  *-remove!.
+	  *-remove!.  added map fns.
 
 2003-01-01  Shiro Kawai  <shiro@acm.org>
 

@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.20 2002-12-13 04:24:12 shirok Exp $
+;; $Id: object.scm,v 1.21 2003-01-03 21:06:26 shirok Exp $
 
 (use gauche.test)
 
@@ -540,4 +540,85 @@
           (set! (slot-ref y 'value) 999)
           (slot-ref y 'value))))
 
+;;----------------------------------------------------------------
+(test-section "metaclass/instance-pool")
+
+(use srfi-1)
+(use gauche.mop.instance-pool)
+
+(define-class <pool-x> (<instance-pool-mixin>) ())
+(define-class <pool-y> (<instance-pool-mixin>) ())
+(define-class <pool-z> (<pool-x> <pool-y>) ())
+
+(define pool-x1 (make <pool-x>))
+(define pool-z1 (make <pool-z>))
+(define pool-y1 (make <pool-y>))
+(define pool-y2 (make <pool-y>))
+(define pool-x2 (make <pool-x>))
+(define pool-z2 (make <pool-z>))
+
+(test "instance-pool (pool)" #t
+      (lambda ()
+        (and (memq pool-x1 (instance-pool->list <pool-x>))
+             (memq pool-x2 (instance-pool->list <pool-x>))
+             (not (memq pool-y1 (instance-pool->list <pool-x>)))
+             (not (memq pool-y2 (instance-pool->list <pool-x>)))
+             (memq pool-y1 (instance-pool->list <pool-y>))
+             (memq pool-y2 (instance-pool->list <pool-y>))
+             (not (memq pool-x1 (instance-pool->list <pool-y>)))
+             (not (memq pool-x2 (instance-pool->list <pool-y>)))
+             (memq pool-z1 (instance-pool->list <pool-x>))
+             (memq pool-z1 (instance-pool->list <pool-y>))
+             #t
+             )))
+
+(test "instance-pool-find" pool-x1
+      (lambda ()
+        (instance-pool-find <pool-x> (cut eq? pool-x1 <>))))
+
+(test "instance-pool-find" pool-z1
+      (lambda ()
+        (instance-pool-find <pool-x> (cut eq? pool-z1 <>))))
+
+(test "instance-pool-find" pool-y1
+      (lambda ()
+        (instance-pool-find <pool-y> (cut eq? pool-y1 <>))))
+
+(test "instance-pool-find" #f
+      (lambda ()
+        (instance-pool-find <pool-x> (cut eq? pool-y2 <>))))
+
+(test "instance-pool-fold" (list pool-x1 pool-z1 pool-x2 pool-z2)
+      (lambda ()
+        (instance-pool-fold <pool-x> cons '()))
+      (cut lset= eq? <> <>))
+
+(test "instance-pool-map" (list pool-x1 pool-z1 pool-x2 pool-z2)
+      (lambda ()
+        (instance-pool-map <pool-x> identity))
+      (cut lset= eq? <> <>))
+
+(test "instance-pool-for-each" (list pool-x1 pool-z1 pool-x2 pool-z2)
+      (lambda ()
+        (let ((r '()))
+          (instance-pool-for-each <pool-x> (lambda (p) (push! r p)))
+          r))
+      (cut lset= eq? <> <>))
+
+(test "instance-pool-remove!" #f
+      (lambda ()
+        (instance-pool-remove! <pool-x> (cut eq? pool-z1 <>))
+        (instance-pool-find <pool-x> (cut eq? pool-z1 <>))))
+
+(test "instance-pool-remove!" pool-z1
+      (lambda ()
+        (instance-pool-find <pool-y> (cut eq? pool-z1 <>))))
+
+(test "instance-pool-remove!" #f
+      (lambda ()
+        (instance-pool-remove! <pool-z> (cut eq? pool-z2 <>))
+        (or (instance-pool-find <pool-x> (cut eq? pool-z2 <>))
+            (instance-pool-find <pool-y> (cut eq? pool-z2 <>)))))
+
 (test-end)
+

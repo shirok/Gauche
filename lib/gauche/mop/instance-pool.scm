@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: instance-pool.scm,v 1.3 2003-01-03 11:14:01 shirok Exp $
+;;;  $Id: instance-pool.scm,v 1.4 2003-01-03 21:06:26 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL.   THE API MAY CHANGE.
@@ -23,9 +23,11 @@
   (export <instance-pool-meta> <instance-pool-mixin>
           <instance-table-meta> <instance-table-mixin>
           instance-pool->list instance-pool-find instance-pool-remove!
+          instance-pool-fold instance-pool-for-each instance-pool-map
           instance-pool:create-pool instance-pool:compute-pools
           instance-pool:add instance-pool:find instance-pool:remove!
-          instance-pool:->list)
+          instance-pool:->list
+          instance-pool:fold instance-pool:for-each instance-pool:map)
   )
 (select-module gauche.mop.instance-pool)
 
@@ -80,6 +82,15 @@
 (define-method instance-pool:remove! ((pool <instance-pool:list-pool>) pred)
   (update! (ref pool 'instances) (cut remove! pred <>)))
 
+(define-method instance-pool:fold ((pool <instance-pool:list-pool>) kons knil)
+  (fold kons knil (ref pool 'instances)))
+
+(define-method instance-pool:for-each ((pool <instance-pool:list-pool>) proc)
+  (for-each proc (ref pool 'instances)))
+
+(define-method instance-pool:map ((pool <instance-pool:list-pool>) proc)
+  (map proc (ref pool 'instances)))
+
 (define-method instance-pool:->list ((pool <instance-pool:list-pool>))
   (reverse (ref pool 'instances)))
 
@@ -127,13 +138,31 @@
                    (instance-pools-of class)))
         ))
 
+(define-method instance-pool-fold ((class <instance-pool-meta>) kons knil)
+  (cond ((instance-pool-of class) => (cut instance-pool:fold <> kons knil))
+        (else (errorf "class ~s doesn't own an instance pool" class))))
+
+(define-method instance-pool-for-each ((class <instance-pool-meta>) proc)
+  (cond ((instance-pool-of class) => (cut instance-pool:for-each <> proc))
+        (else (errorf "class ~s doesn't own an instance pool" class))))
+
+(define-method instance-pool-map ((class <instance-pool-meta>) proc)
+  (cond ((instance-pool-of class) => (cut instance-pool:map <> proc))
+        (else (errorf "class ~s doesn't own an instance pool" class))))
+
 ;; The operations to the instance propagates to its class
 (define-method instance-pool->list ((self <instance-pool-mixin>))
   (instance-pool->list (class-of self)))
 (define-method instance-pool-find ((self <instance-pool-mixin>) pred)
-  (instance-pool-find (class-of self)))
+  (instance-pool-find (class-of self) pred))
 (define-method instance-pool-remove! ((self <instance-pool-mixin>) pred)
-  (instance-pool-remove! (class-of self)))
+  (instance-pool-remove! (class-of self) pred))
+(define-method instance-pool-fold ((self <instance-pool-mixin>) kons knil)
+  (instance-pool-fold (class-of self) kons knil))
+(define-method instance-pool-for-each ((self <instance-pool-mixin>) proc)
+  (instance-pool-for-each (class-of self) proc))
+(define-method instance-pool-map ((self <instance-pool-mixin>) proc)
+  (instance-pool-map (class-of self) proc))
 
 (provide "gauche/mop/instance-pool")
 
