@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.17 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: net.h,v 1.18 2003-10-20 04:26:06 fuyuki Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -84,6 +84,8 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *addr, int len);
 
 extern ScmGeneric Scm_GenericSockAddrName;
 extern ScmGeneric Scm_GenericSockAddrFamily;
+extern ScmGeneric Scm_GenericSockAddrAddr;
+extern ScmGeneric Scm_GenericSockAddrPort;
 
 typedef struct ScmSockAddrUnRec {
     SCM_HEADER;

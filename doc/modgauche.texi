@@ -3642,6 +3642,22 @@ the IP address and @var{port} is the port number.
 @c COMMON
 @end deffn
 
+@deffn {Method} sockaddr-addr (addr <sockaddr-in>)
+@c EN
+Returns the IP address as an integer.
+@c JP
+IPアドレスを整数で返します。
+@c COMMON
+@end deftp
+
+@deffn {Method} sockaddr-port (addr <sockaddr-in>)
+@c EN
+Returns the port number as an integer.
+@c JP
+ポート番号を整数で返します。
+@c COMMON
+@end deffn
+
 @deftp {Builtin Class} <sockaddr-un>
 @clindex sockaddr-un
 @c EN

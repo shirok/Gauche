@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.23 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: netlib.stub,v 1.24 2003-10-20 04:26:06 fuyuki Exp $
 ;;;
 
 "#include \"net.h\"
@@ -47,6 +47,8 @@
 
 (define-cgeneric sockaddr-name "Scm_GenericSockAddrName" (extern))
 (define-cgeneric sockaddr-family "Scm_GenericSockAddrFamily" (extern))
+(define-cgeneric sockaddr-addr "Scm_GenericSockAddrAddr" (extern))
+(define-cgeneric sockaddr-port "Scm_GenericSockAddrPort" (extern))
 
 (define-symbol unix "sym_unix")
 (define-symbol inet "sym_inet")
@@ -81,6 +83,14 @@
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
   "  SCM_RETURN(sym_inet);")
 
+(define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass"))
+  "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
+  SCM_RETURN(Scm_MakeIntegerFromUI(ntohl(a->addr.sin_addr.s_addr)));")
+
+(define-cmethod sockaddr-port ((addr "Scm_SockAddrInClass"))
+  "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
+  SCM_RETURN(Scm_MakeInteger(ntohs(a->addr.sin_port)));")
+
 (if "defined HAVE_IPV6"
     (begin
       (define-symbol inet6 "sym_inet6")
@@ -96,6 +106,22 @@
 
       (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
 	"  SCM_RETURN(sym_inet6);")
+
+      (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
+	"#define BN_SIZE (16 / SIZEOF_LONG)
+  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
+  u_long values[BN_SIZE];
+  u_long *p = (u_long*)a->addr.sin6_addr.s6_addr;
+  int i;
+  ScmObj bn;
+
+  for (i = 0; i < BN_SIZE; i++) values[BN_SIZE-i-1] = ntohl(*p++);
+  bn = Scm_MakeBignumFromUIArray(1, values, BN_SIZE);
+  SCM_RETURN(Scm_NormalizeBignum(SCM_BIGNUM(bn)));")
+
+      (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class"))
+	"  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
+  SCM_RETURN(Scm_MakeInteger(ntohs(a->addr.sin6_port)));")
       ))
 
 ;;----------------------------------------------------------

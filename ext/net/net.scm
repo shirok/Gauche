@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.23 2003-10-01 12:30:51 shirok Exp $
+;;;  $Id: net.scm,v 1.24 2003-10-20 04:26:06 fuyuki Exp $
 ;;;
 
 (define-module gauche.net
@@ -41,8 +41,8 @@
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
-          <sockaddr> <sockaddr-in> <sockaddr-un>
-          sockaddr-name sockaddr-family make-sockaddrs
+          <sockaddr> <sockaddr-in> <sockaddr-un> make-sockaddrs
+          sockaddr-name sockaddr-family sockaddr-addr sockaddr-port
           make-client-socket make-server-socket make-server-sockets
           call-with-client-socket
           <sys-hostent> sys-gethostbyname sys-gethostbyaddr

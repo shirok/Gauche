@@ -1,5 +1,8 @@
 2003-10-20  Kimura Fuyuki  <fuyuki@nigredo.org>
 
+	* ext/net/*, doc/modgauche.texi : added sockaddr-addr and
+	  sockaddr-port.
+
 	* lib/srfi-37.scm : Fixed a typo in the export list. We seem to
 	  need some sort of "duplication checker".
 
