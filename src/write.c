@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.6 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: write.c,v 1.7 2001-02-01 09:12:43 shiro Exp $
  */
 
 #include <stdio.h>
@@ -282,7 +282,7 @@ static int write_circular(ScmObj obj, ScmPort *port, int mode,
     return nc;
 }
 
-int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode)
+int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
 {
     ScmWriteInfo info;
 
@@ -291,7 +291,23 @@ int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode)
     info.ncirc = 0;
     info.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8));
     write_scan(obj, &info);
-    return write_circular(obj, port, mode|WRITE_CIRCULAR, 0, &info);
+
+    if (width > 0) {
+        ScmObj out = Scm_MakeOutputStringPort();
+        int nc = write_circular(obj, SCM_PORT(out),
+                                mode|WRITE_CIRCULAR, width, &info);
+        if (nc > width) {
+            ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
+                                       0, width);
+            SCM_PUTS(sub, port);
+            return -1;
+        } else {
+            SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port);
+            return nc;
+        }
+    } else {
+        return write_circular(obj, port, mode|WRITE_CIRCULAR, 0, &info);
+    }
 }
 
 /*===================================================================
@@ -437,7 +453,7 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
     }
     
     while ((c = *fmtp++) != 0) {
-        int width, prec, dot_appeared;
+        int width, prec, dot_appeared, pound_appeared;
 
         if (c != '%') {
             SCM_PUTC(c, out); nc++;
@@ -446,7 +462,7 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
 
         Scm_DStringInit(&argbuf);
         SCM_DSTRING_PUTB(&argbuf, c);
-        width = 0, prec = 0, dot_appeared = 0;
+        width = 0, prec = 0, dot_appeared = 0, pound_appeared = 0;
         while ((c = *fmtp++) != 0) {
             switch (c) {
             case 'l':
@@ -520,11 +536,20 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     int mode =
                         (c == 'A')? SCM_PRINT_DISPLAY : SCM_PRINT_WRITE;
 
-                    if (width == 0) {
+                    if (pound_appeared) {
+                        int n = Scm_WriteCircular(o, out, mode, width);
+                        if (n < 0 && prec > 0) {
+                            SCM_PUTCSTR(" ...", out);
+                            nc += 4;
+                        }
+                        if (n > 0) {
+                            for (; n < width; n++) SCM_PUTC(' ', out);
+                        }
+                        nc += width;
+                    } else if (width == 0) {
                         nc += write_internal(o, out, mode, 0, NULL);
                     } else if (dot_appeared) {
-                        int n = Scm_WriteLimited(o, SCM_OBJ(out),
-                                                 mode, width);
+                        int n = Scm_WriteLimited(o, SCM_OBJ(out), mode, width);
                         if (n < 0 && prec > 0) {
                             SCM_PUTCSTR(" ...", out);
                             nc += 4;
@@ -558,6 +583,9 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                 goto fallback;
             case '.':
                 dot_appeared++;
+                goto fallback;
+            case '#':
+                pound_appeared++;
                 goto fallback;
             fallback:
             default:
