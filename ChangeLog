@@ -1,3 +1,8 @@
+2002-11-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_MakeFillString): added arg range check (pointed
+	  out by Kimura Fuyuki).
+
 2002-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.5
