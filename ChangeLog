@@ -6,6 +6,12 @@
 
 2004-01-27  Shiro Kawai  <shiro@acm.org>
 
+	* ext/binary/* : implemented primitive binary i/o in C.
+	  NOTE: the API is likely to be changed when binary i/o srfi
+	  is done.  This module shouldn't be used directly unless you're
+	  aware of it.  Use binary.pack whenever possible.
+	* lib/binary/io.scm, test/binary.scm : moved to ext/binary.
+	
 	* src/read.c (read_escaped_symbol): recognize single escape '\'
 	  within multiple escapes '|' while reading symbol name.  This
 	  is CL compatible.  I haven't decided how to treat a single escape

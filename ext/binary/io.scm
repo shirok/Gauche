@@ -12,16 +12,45 @@
 ;; employments.
 ;;          -- from "Gulliver's Travels" by Jonathan Swift
 
-;; NB: The APIs here will be replaced by the native-coded version in
-;; near future.  Do not count on it -- [SK]
+;; NB: the API will likely to be renamed according to the
+;; oncoming binary i/o srfi.  Use the current API at your own risk.
+;; $Id: io.scm,v 1.1 2004-01-28 09:34:55 shirok Exp $
 
 (define-module binary.io
   (use gauche.uvector)
   (use srfi-1)  ;; list library
   (use srfi-2)  ;; and-let*
   (use srfi-13) ;; string library
-  (export-all))
+  (export default-endian
+          read-binary-uint
+          read-binary-uint8 read-binary-uint16
+          read-binary-uint32 read-binary-uint64
+          read-binary-sint
+          read-binary-sint8 read-binary-sint16
+          read-binary-sint32 read-binary-sint64
+          read-binary-short  read-binary-ushort
+          read-binary-long   read-binary-ulong
+          read-binary-float  read-binary-double
+          read-ber-integer
+          write-binary-uint
+          write-binary-uint8 write-binary-uint16
+          write-binary-uint32 write-binary-uint64
+          write-binary-sint
+          write-binary-sint8 write-binary-sint16
+          write-binary-sint32 write-binary-sint64
+          write-binary-short  write-binary-ushort
+          write-binary-long   write-binary-ulong
+          write-binary-float  write-binary-double
+          write-ber-integer)
+  )
 (select-module binary.io)
+
+(dynamic-load "binary")
+
+;; native routine defines the following:
+;; default-endian
+;; {read,write}-binary-[su]int{8,16,32,64}
+;; {read,write}-binary-{float,double}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config
@@ -32,16 +61,6 @@
 (define *byte-mask* (- *byte-magnitude* 1))
 (define *byte-right-shift* (* -1 *byte-size*))
 
-;; auto-detect endianess (middle-endians not supported)
-(define *default-endian*
-  (let1 vec (make-u32vector 1)
-    (with-input-from-string "\x01\x02\x03\x04"
-      (lambda ()
-        (read-block! vec)
-        (if (eq? (u32vector-ref vec 0) #x04030201)
-          'little-endian
-          'big-endian)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic reading
 
@@ -49,7 +68,7 @@
 ;; handle endianess
 (define (read-binary-uint size . args)
   (let ((port (current-input-port))
-        (endian *default-endian*))
+        (endian (default-endian)))
     ;; [port [endian]]
     (if (pair? args)
       (let ((args2 (cdr args)))
@@ -82,22 +101,12 @@
 (define (read-binary-sint size . args)
   (uint->sint (apply read-binary-uint (cons size args)) size))
 
-(define read-binary-uint8  read-byte)
-(define read-binary-uint16 (cut read-binary-uint 2 <...>))
-(define read-binary-uint32 (cut read-binary-uint 4 <...>))
-(define read-binary-uint64 (cut read-binary-uint 8 <...>))
-
-(define read-binary-sint8  (cut read-binary-sint 1 <...>))
-(define read-binary-sint16 (cut read-binary-sint 2 <...>))
-(define read-binary-sint32 (cut read-binary-sint 4 <...>))
-(define read-binary-sint64 (cut read-binary-sint 8 <...>))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic writing
 
 (define (write-binary-uint size int . args)
   (let ((port (current-output-port))
-        (endian *default-endian*))
+        (endian (default-endian)))
     ;; [port [endian]]
     (if (pair? args)
       (let ((args2 (cdr args)))
@@ -117,17 +126,16 @@
 (define (write-binary-sint size int . args)
   (apply write-binary-uint (cons size (cons (sint->uint int size) args))))
 
-(define write-binary-uint8  write-byte)
-(define write-binary-uint16 (cut write-binary-uint 2 <...>))
-(define write-binary-uint32 (cut write-binary-uint 4 <...>))
-(define write-binary-uint64 (cut write-binary-uint 8 <...>))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; compatibility
+;;
 
-(define write-binary-sint8  (cut write-binary-sint 1 <...>))
-(define write-binary-sint16 (cut write-binary-sint 2 <...>))
-(define write-binary-sint32 (cut write-binary-sint 4 <...>))
-(define write-binary-sint64 (cut write-binary-sint 8 <...>))
-
-;; these should be defined to the native "C" meanings
+;; These are used in binary.pack for the (unofficial) features to
+;; read/write integers in "native" width of C system on the platform.
+(define read-binary-short  read-binary-sint16)
+(define read-binary-ushort read-binary-uint16)
+(define read-binary-long   read-binary-sint32)
+(define read-binary-ulong  read-binary-uint32)
 
 (define write-binary-short  write-binary-sint16)
 (define write-binary-ushort write-binary-uint16)
@@ -169,41 +177,6 @@
                  (loop (ash n -7)) ;; write high bytes first
                  (write-binary-uint8 (logior (logand n #b01111111) #b10000000))))))
       (write-binary-uint8 final))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; floating point numbers
-
-;; There are no network portable floating point representations, so we
-;; use the internal native representation.  For this, gauche.uvector
-;; works fine.
-
-;; Gauche uses double's internally for all floating point numbers, so
-;; when using the float type you can lose some precision.  For example,
-;; writing and then reading back out 123.456 produces
-;; 123.45600128173828 using read/write-binary-float, but 123.456 with
-;; read/write-binary-double.
-
-(define (read-binary-float . opt-port)
-  (let ((p (if (pair? opt-port) (car opt-port) (current-input-port)))
-        (vec (make-f32vector 1)))
-    (read-block! vec)
-    (f32vector-ref vec 0)))
-
-(define (read-binary-double . opt-port)
-  (let ((p (if (pair? opt-port) (car opt-port) (current-input-port)))
-        (vec (make-f64vector 1)))
-    (read-block! vec)
-    (f64vector-ref vec 0)))
-
-(define (write-binary-float x . opt-port)
-  (let ((p (if (pair? opt-port) (car opt-port) (current-output-port)))
-        (vec (make-f32vector 1 x)))
-    (write-block vec)))
-
-(define (write-binary-double x . opt-port)
-  (let ((p (if (pair? opt-port) (car opt-port) (current-output-port)))
-        (vec (make-f64vector 1 x)))
-    (write-block vec)))
 
 (provide "binary/io")
 

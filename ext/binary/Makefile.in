@@ -1,0 +1,30 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = binary
+
+include ../Makefile.ext
+
+LIBFILES = binary.$(SOEXT)
+SCMFILES = io.scm
+
+GENERATED = Makefile binarylib.c binary_head.c binary_tail.c
+
+OBJECTS = binary_head.$(OBJEXT) \
+          binary.$(OBJEXT) \
+          binarylib.$(OBJEXT) \
+          binary_tail.$(OBJEXT)
+
+all : $(LIBFILES)
+
+binary.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) binary.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+binary_head.c binary_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension binary
+
+binarylib.c : binarylib.stub
+
+install : install-std
+

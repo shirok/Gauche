@@ -1,0 +1,163 @@
+;;;
+;;; binaryio.stub - primitive binary i/o interface
+;;;  
+;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;; $Id: binarylib.stub,v 1.1 2004-01-28 09:34:55 shirok Exp $
+;;;
+
+"#include \"binary.h\"
+"
+
+(define-symbol little-endian "sym_little_endian")
+(define-symbol big-endian "sym_big_endian")
+
+"#ifdef WORD_BIG_ENDIAN
+#define DEFAULT_ENDIAN sym_big_endian
+#else
+#define DEFAULT_ENDIAN sym_little_endian
+#endif
+"
+
+"static Endian check_endian(ScmObj sym)
+ {
+  if (SCM_EQ(sym, sym_big_endian)) return SCM_BE;
+  if (SCM_EQ(sym, sym_little_endian)) return SCM_LE;
+  Scm_Error(\"endian must be big-endian or little-endian, but got %S\", sym);
+  return SCM_BE; /* dummy */
+ }
+"
+
+;; HACK: treat endian as a dummy type.
+;; It's not guaranteed that this works with the future genstub
+(define-type <endian> "Endian" "endian"
+  "" "check_endian" "")
+
+(define-cproc default-endian ()
+  "SCM_RETURN(DEFAULT_ENDIAN);")
+
+(define-cproc read-binary-uint8 (&optional
+                                 (port #f)
+                                 (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinaryUint8"))
+(define-cproc read-binary-uint16 (&optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinaryUint16"))
+(define-cproc read-binary-uint32 (&optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinaryUint32"))
+(define-cproc read-binary-uint64 (&optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinaryUint64"))
+
+(define-cproc read-binary-sint8 (&optional
+                                 (port #f)
+                                 (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinarySint8"))
+(define-cproc read-binary-sint16 (&optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinarySint16"))
+(define-cproc read-binary-sint32 (&optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinarySint32"))
+(define-cproc read-binary-sint64 (&optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinarySint64"))
+  
+(define-cproc write-binary-uint8 (intval::<integer>
+                                  &optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinaryUint8"))
+(define-cproc write-binary-uint16 (intval::<integer>
+                                   &optional
+                                   (port #f)
+                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinaryUint16"))
+(define-cproc write-binary-uint32 (intval::<integer>
+                                   &optional
+                                   (port #f)
+                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinaryUint32"))
+(define-cproc write-binary-uint64 (intval::<integer>
+                                   &optional
+                                   (port #f)
+                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinaryUint64"))
+(define-cproc write-binary-sint8 (intval::<integer>
+                                  &optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinarySint8"))
+(define-cproc write-binary-sint16 (intval::<integer>
+                                   &optional
+                                   (port #f)
+                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinarySint16"))
+(define-cproc write-binary-sint32 (intval::<integer>
+                                   &optional
+                                   (port #f)
+                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinarySint32"))
+(define-cproc write-binary-sint64 (intval::<integer>
+                                   &optional
+                                   (port #f)
+                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinarySint64"))
+
+(define-cproc read-binary-float (&optional
+                                 (port #f)
+                                 (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinaryFloat"))
+(define-cproc read-binary-double (&optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return "Scm_ReadBinaryDouble"))
+
+(define-cproc write-binary-float (val::<number>
+                                  &optional
+                                  (port #f)
+                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinaryFloat"))
+(define-cproc write-binary-double (val::<number>
+                                   &optional
+                                   (port #f)
+                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (return <void> "Scm_WriteBinaryDouble"))
+
+;; Local variables:
+;; mode: scheme
+;; end:
