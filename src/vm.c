@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.178 2002-09-19 05:22:42 shirok Exp $
+ *  $Id: vm.c,v 1.179 2002-09-19 20:17:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -723,6 +723,51 @@ static void run_loop()
                 val0 = ENV_DATA(e, off);
                 continue;
             }
+            CASE(SCM_VM_LREF0_PUSH) {
+                val0 = ENV_DATA(env, 0); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF1_PUSH) {
+                val0 = ENV_DATA(env, 1); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF2_PUSH) {
+                val0 = ENV_DATA(env, 2); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF3_PUSH) {
+                val0 = ENV_DATA(env, 3); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF4_PUSH) {
+                val0 = ENV_DATA(env, 4); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF10_PUSH) {
+                val0 = ENV_DATA(env->up, 0); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF11_PUSH) {
+                val0 = ENV_DATA(env->up, 1); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF12_PUSH) {
+                val0 = ENV_DATA(env->up, 2); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF13_PUSH) {
+                val0 = ENV_DATA(env->up, 3); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF14_PUSH) {
+                val0 = ENV_DATA(env->up, 4); PUSH_ARG(val0); continue;
+            }
+            CASE(SCM_VM_LREF_PUSH) {
+                int dep = SCM_VM_INSN_ARG0(code);
+                int off = SCM_VM_INSN_ARG1(code);
+                ScmEnvFrame *e = env;
+
+                for (; dep > 0; dep--) {
+                    VM_ASSERT(e != NULL);
+                    e = e->up;
+                }
+                VM_ASSERT(e != NULL);
+                VM_ASSERT(e->size > off);
+                val0 = ENV_DATA(e, off);
+                PUSH_ARG(val0);
+                continue;
+            }
             CASE(SCM_VM_TAILBIND) {
                 ScmObj *to, *from;
                 int env_size = SCM_VM_INSN_ARG(code);
@@ -901,6 +946,18 @@ static void run_loop()
                 continue;
             }
 
+            /* combined push immediate */
+            CASE(SCM_VM_PUSHI) {
+                long imm = SCM_VM_INSN_ARG(code);
+                val0 = SCM_MAKE_INT(imm);
+                PUSH_ARG(val0);
+                continue;
+            }
+            CASE(SCM_VM_PUSHNIL) {
+                val0 = SCM_NIL;
+                PUSH_ARG(val0);
+                continue;
+            }
             /* Inlined procedures */
             CASE(SCM_VM_CONS) {
                 ScmObj ca;
@@ -910,17 +967,38 @@ static void run_loop()
                 vm->numVals = 1;
                 continue;
             }
+            CASE(SCM_VM_CONS_PUSH) {
+                ScmObj ca;
+                POP_ARG(ca);
+                SAVE_REGS();
+                val0 = Scm_Cons(ca, val0);
+                vm->numVals = 1;
+                PUSH_ARG(val0);
+                continue;
+            }
             CASE(SCM_VM_CAR) {
-                if (!SCM_PAIRP(val0))
-                    VM_ERR(("pair required, but got %S", val0));
+                if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CAR(val0);
                 vm->numVals = 1;
                 continue;
             }
+            CASE(SCM_VM_CAR_PUSH) {
+                if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
+                val0 = SCM_CAR(val0);
+                PUSH_ARG(val0);
+                vm->numVals = 1;
+                continue;
+            }
             CASE(SCM_VM_CDR) {
-                if (!SCM_PAIRP(val0))
-                    VM_ERR(("pair required, but got %S", val0));
+                if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CDR(val0);
+                vm->numVals = 1;
+                continue;
+            }
+            CASE(SCM_VM_CDR_PUSH) {
+                if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
+                val0 = SCM_CDR(val0);
+                PUSH_ARG(val0);
                 vm->numVals = 1;
                 continue;
             }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.31 2002-09-17 09:42:06 shirok Exp $
+ *  $Id: vminsn.h,v 1.32 2002-09-19 20:17:38 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -30,6 +30,10 @@ DEFINSN(SCM_VM_NOP, "NOP", 0)
  */
 DEFINSN(SCM_VM_PUSH, "PUSH", 0)
 
+/* combined push */
+DEFINSN(SCM_VM_PUSHI, "PUSHI", 1) /* push immediate integer */
+DEFINSN(SCM_VM_PUSHNIL, "PUSHNIL", 0) /* push '() */
+    
 /* POP
  *
  *  Pop arg
@@ -156,12 +160,27 @@ DEFINSN(SCM_VM_LREF12, "LREF12", 0)
 DEFINSN(SCM_VM_LREF13, "LREF13", 0)
 DEFINSN(SCM_VM_LREF14, "LREF14", 0)
 
+/* combined instrction */
+DEFINSN(SCM_VM_LREF_PUSH, "LREF-PUSH", 2)
+DEFINSN(SCM_VM_LREF0_PUSH, "LREF0-PUSH", 0)
+DEFINSN(SCM_VM_LREF1_PUSH, "LREF1-PUSH", 0)
+DEFINSN(SCM_VM_LREF2_PUSH, "LREF2-PUSH", 0)
+DEFINSN(SCM_VM_LREF3_PUSH, "LREF3-PUSH", 0)
+DEFINSN(SCM_VM_LREF4_PUSH, "LREF4-PUSH", 0)
+DEFINSN(SCM_VM_LREF10_PUSH, "LREF10-PUSH", 0)
+DEFINSN(SCM_VM_LREF11_PUSH, "LREF11-PUSH", 0)
+DEFINSN(SCM_VM_LREF12_PUSH, "LREF12-PUSH", 0)
+DEFINSN(SCM_VM_LREF13_PUSH, "LREF13-PUSH", 0)
+DEFINSN(SCM_VM_LREF14_PUSH, "LREF14-PUSH", 0)
+
+
 /* GREF <LOCATION>
  *
  *  LOCATION may be a symbol or GLOC object.
  *  Retrieve global value in the current module.
  */
 DEFINSN(SCM_VM_GREF, "GREF", 0)
+/*DEFINSN(SCM_VM_GREF_PUSH, "GREF-PUSH", 0)*/
 
 /* PROMISE
  *
@@ -186,9 +205,13 @@ DEFINSN(SCM_VM_QUOTE_INSN, "QUOTE-INSN", 0)
  *  as well.
  */
 DEFINSN(SCM_VM_CONS, "CONS", 0)
+DEFINSN(SCM_VM_CONS_PUSH, "CONS-PUSH", 0)
 DEFINSN(SCM_VM_CAR, "CAR", 0)
+DEFINSN(SCM_VM_CAR_PUSH, "CAR-PUSH", 0)
 DEFINSN(SCM_VM_CDR, "CDR", 0)
+DEFINSN(SCM_VM_CDR_PUSH, "CDR-PUSH", 0)
 DEFINSN(SCM_VM_LIST, "LIST", 1)
+/*DEFINSN(SCM_VM_LIST_PUSH, "LIST-PUSH", 0)*/
 DEFINSN(SCM_VM_LIST_STAR, "LIST*", 1)
 DEFINSN(SCM_VM_MEMQ, "MEMQ", 0)
 DEFINSN(SCM_VM_MEMV, "MEMV", 0)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.86 2002-09-19 08:07:12 shirok Exp $
+ *  $Id: compile.c,v 1.87 2002-09-19 20:17:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -60,6 +60,7 @@ static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
 #define ADDCODE1(c)   SCM_APPEND1(code, codetail, c)
 #define ADDCODE(c)    SCM_APPEND(code, codetail, c)
 
+#define ADDPUSH()     (combine_push(&code, &codetail))
 
 /* create local ref/set insn.  special instruction is used for local
    ref/set to the first frame with small number of offset (<5) for
@@ -116,6 +117,74 @@ static ScmObj add_bindinfo(ScmObj code, ScmObj info)
                                         SCM_PAIR_ATTR(code));
     }
     return code;
+}
+
+/* add PUSH instruction to the stream.  if the last instruction is
+   LREF, substitute it for combined instruction instead. */
+static void combine_push(ScmObj *head, ScmObj *tail)
+{
+    if (SCM_NULLP(*head)) {
+        SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
+    } else if (!SCM_VM_INSNP(SCM_CAR(*tail))) {
+        ScmObj val = SCM_CAR(*tail);
+        if (SCM_NULLP(val)) {
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_PUSHNIL));
+        } else if (SCM_INTP(val) && SCM_VM_INSN_ARG_FITS(SCM_INT_VALUE(val))) {
+            SCM_SET_CAR(*tail, SCM_VM_INSN1(SCM_VM_PUSHI, SCM_INT_VALUE(val)));
+        } else {
+            SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
+        }
+    } else {
+        ScmObj insn = SCM_CAR(*tail);
+        switch (SCM_VM_INSN_CODE(insn)) {
+        case SCM_VM_LREF:
+            SCM_SET_CAR(*tail, SCM_VM_INSN2(SCM_VM_LREF_PUSH,
+                                            SCM_VM_INSN_ARG0(insn),
+                                            SCM_VM_INSN_ARG1(insn)));
+            break;
+        case SCM_VM_LREF0:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF0_PUSH));
+            break;
+        case SCM_VM_LREF1:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF1_PUSH));
+            break;
+        case SCM_VM_LREF2:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF2_PUSH));
+            break;
+        case SCM_VM_LREF3:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF3_PUSH));
+            break;
+        case SCM_VM_LREF4:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF4_PUSH));
+            break;
+        case SCM_VM_LREF10:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF10_PUSH));
+            break;
+        case SCM_VM_LREF11:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF11_PUSH));
+            break;
+        case SCM_VM_LREF12:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF12_PUSH));
+            break;
+        case SCM_VM_LREF13:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF13_PUSH));
+            break;
+        case SCM_VM_LREF14:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_LREF14_PUSH));
+            break;
+        case SCM_VM_CONS:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_CONS_PUSH));
+            break;
+        case SCM_VM_CAR:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_CAR_PUSH));
+            break;
+        case SCM_VM_CDR:
+            SCM_SET_CAR(*tail, SCM_VM_INSN(SCM_VM_CDR_PUSH));
+            break;
+        default:
+            SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
+        }
+    }
 }
 
 /* type of let-family bindings */
@@ -446,7 +515,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             SCM_FOR_EACH(ap, SCM_CDR(form)) {
                 ScmObj arg = compile_int(SCM_CAR(ap), env, SCM_COMPILE_NORMAL);
                 ADDCODE(arg);
-                ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                ADDPUSH();
                 nargs++;
             }
 
@@ -680,13 +749,13 @@ static ScmObj compile_set(ScmObj form,
         SCM_FOR_EACH(args, SCM_CDR(location)) {
             ScmObj arg = compile_int(SCM_CAR(args), env, SCM_COMPILE_NORMAL);
             ADDCODE(arg);
-            ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+            ADDPUSH();
             nargs++;
         }
         if (!SCM_NULLP(args))
             Scm_Error("syntax error for generalized set! location: %S", form);
         ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
-        ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+        ADDPUSH();
         nargs++;
         ADDCODE(compile_int(SCM_CAR(location), env, SCM_COMPILE_NORMAL));
         ADDCODE1(SCM_VM_INSN(SCM_VM_SETTER));
@@ -1113,13 +1182,13 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     /* Let's compile the clause. */
     if (!casep && clen >= 2 && global_eq(SCM_CAR(body), SCM_SYM_YIELDS, env)) {
         /* `=>' */
-        ScmObj xcode = SCM_NIL, xtail;
+        ScmObj xcode = SCM_NIL, xtail = SCM_NIL;
         
         if (clen != 3) {
             Scm_Error("badly formed '=>' clause in the form: %S", form);
         }
-        
-        SCM_APPEND1(xcode, xtail, SCM_VM_INSN(SCM_VM_PUSH));
+
+        combine_push(&xcode, &xtail);
         SCM_APPEND(xcode, xtail,
                    compile_int(SCM_CADR(body), env, SCM_COMPILE_NORMAL));
         if (TAILP(ctx)) {
@@ -1196,7 +1265,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
     clauses = SCM_CDR(tail);
 
     ADDCODE(compile_int(key, env, SCM_COMPILE_NORMAL));
-    ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+    ADDPUSH();
     merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     ADDCODE(compile_cond_int(form, clauses, merger, env, ctx, TRUE));
     return code;
@@ -1373,7 +1442,7 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     SCM_FOR_EACH(updtsp, updts) {
         SCM_APPEND(updcode, updtail,
                    compile_int(SCM_CAR(updtsp), env, SCM_COMPILE_NORMAL));
-        SCM_APPEND1(updcode, updtail, SCM_VM_INSN(SCM_VM_PUSH));
+        combine_push(&updcode, &updtail);
         varcnt++;
     }
 
@@ -1487,7 +1556,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
             return compile_int(SCM_CADR(form), env, SCM_COMPILE_NORMAL);
         } else {
             ADDCODE1(car);
-            ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+            ADDPUSH();
             ADDCODE(compile_qq(SCM_CADR(form), env, level-1));
             ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
             return code;
@@ -1500,7 +1569,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
         if (!VALID_QUOTE_SYNTAX_P(form))
             Scm_Error("badly formed quasiquote: %S\n", form);
         ADDCODE1(car);
-        ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+        ADDPUSH();
         ADDCODE(compile_qq(SCM_CADR(form), env, level+1));
         ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
         return code;
@@ -1519,34 +1588,34 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
             if (!VALID_QUOTE_SYNTAX_P(car))
                 Scm_Error("badly formed quasiquote: %S\n", form);
             if (level == 0) {
-                if (last_spliced) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                if (last_spliced) ADDPUSH();
                 ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, len));
-                ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                ADDPUSH();
                 len = 0;
                 ADDCODE(compile_int(SCM_CADR(car), env, SCM_COMPILE_NORMAL));
                 last_spliced = TRUE;
                 splice+=2;
             } else {
-                if (cp != form) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                if (cp != form) ADDPUSH();
                 ADDCODE1(SCM_CAR(car));
-                ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                ADDPUSH();
                 ADDCODE(compile_qq(SCM_CADR(car), env, level-1));
                 ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
                 len++;
             }
         } else {
-            if (cp != form) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+            if (cp != form) ADDPUSH();
             ADDCODE(compile_qq(SCM_CAR(cp), env, level));
             last_spliced = FALSE;
             len++;
         }
     }
     if (!SCM_NULLP(cp)) {
-        ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+        ADDPUSH();
         ADDCODE(compile_qq(cp, env, level));
         ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST_STAR, len+1));
     } else {
-        if (last_spliced) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+        if (last_spliced) ADDPUSH();
         ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, len));
     }
     if (splice) {
@@ -1568,12 +1637,12 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
             if (UNQUOTEP(car, env)) {
                 if (!VALID_QUOTE_SYNTAX_P(p))
                     Scm_Error("badly formed unquote: %S\n", p);
-                if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                if (i > 0) ADDPUSH();
                 if (level == 0) {
                     ADDCODE(compile_int(SCM_CADR(p), env, SCM_COMPILE_NORMAL));
                 } else {
                     ADDCODE1(car);
-                    ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                    ADDPUSH();
                     ADDCODE(compile_qq(SCM_CADR(p), env, level-1));
                     ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
                 }
@@ -1583,17 +1652,17 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
                 if (!VALID_QUOTE_SYNTAX_P(p))
                     Scm_Error("badly formed unquote-splicing: %S\n", form);
                 if (level == 0) {
-                    if (last_spliced) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                    if (last_spliced) ADDPUSH();
                     ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, alen));
-                    ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                    ADDPUSH();
                     alen = 0;
                     ADDCODE(compile_int(SCM_CADR(p), env, SCM_COMPILE_NORMAL));
                     last_spliced = TRUE;
                     spliced+=2;
                 } else {
-                    if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                    if (i > 0) ADDPUSH();
                     ADDCODE1(car);
-                    ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                    ADDPUSH();
                     ADDCODE(compile_qq(SCM_CADR(p), env, level-1));
                     ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
                     alen++;
@@ -1601,21 +1670,21 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
             } else if (QUASIQUOTEP(car, env)) {
                 if (!VALID_QUOTE_SYNTAX_P(p))
                     Scm_Error("badly formed quasiquote: %S\n", form);
-                if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                if (i > 0) ADDPUSH();
                 ADDCODE1(car);
-                ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                ADDPUSH();
                 ADDCODE(compile_qq(SCM_CADR(p), env, level+1));
                 ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
                 last_spliced = FALSE;
                 alen++;
             } else {
-                if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                if (i > 0) ADDPUSH();
                 ADDCODE1(unwrap_identifier(p));
                 last_spliced = FALSE;
                 alen++;
             }
         } else {
-            if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+            if (i > 0) ADDPUSH();
             ADDCODE1(unwrap_identifier(p));
             last_spliced = FALSE;
             alen++;
@@ -1860,7 +1929,7 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
                           int reqargs, int optargs, int insn, char *proc)
 {
     ScmObj cp = SCM_CDR(form);
-    ScmObj code = SCM_NIL, tail = SCM_NIL;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
     int nargs = Scm_Length(cp);
     if (optargs) {
         if (0 < reqargs && nargs < reqargs) {
@@ -1872,15 +1941,13 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
         }
     }
     SCM_FOR_EACH(cp, cp) {
-        SCM_APPEND(code, tail, Scm_Compile(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));
-        if (SCM_PAIRP(SCM_CDR(cp))) {
-            SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
-        }
+        ADDCODE(Scm_Compile(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));
+        if (SCM_PAIRP(SCM_CDR(cp))) ADDPUSH();
     }
     if (optargs) {
-        SCM_APPEND1(code, tail, SCM_VM_INSN1(insn, nargs));
+        ADDCODE1(SCM_VM_INSN1(insn, nargs));
     } else {
-        SCM_APPEND1(code, tail, SCM_VM_INSN(insn));
+        ADDCODE1(SCM_VM_INSN(insn));
     }
     return code;
 }
