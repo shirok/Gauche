@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.58 2001-10-16 20:35:00 shirok Exp $
+ *  $Id: number.c,v 1.59 2002-01-11 19:28:24 shirok Exp $
  */
 
 #include <math.h>
@@ -257,6 +257,8 @@ int Scm_Sign(ScmObj obj)
     
     if (SCM_INTP(obj)) {
         r = SCM_INT_VALUE(obj);
+        if (r > 0) r = 1;
+        else if (r < 0) r = -1;
     } else if (SCM_BIGNUMP(obj)) {
         r = SCM_BIGNUM_SIGN(obj);
     } else if (SCM_FLONUMP(obj)) {
