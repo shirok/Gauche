@@ -1,10 +1,9 @@
 2002-06-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c : fixed usage message.  disabled SIGWINCH by default.
-	* ext/charconv/jconv.c : added iso2022jp support.  passes tests,
-	  but needs cleanup procedure to conform the specification
-	  (recover the state to ASCII when closed).
-
+	* ext/charconv/jconv.c : added iso2022jp support and cleanup routine.
+	  added more tests.
+	
 2002-06-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/string.c : fixed a problem of signed/unsigned
