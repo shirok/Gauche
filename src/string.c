@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.11 2001-02-05 10:23:36 shiro Exp $
+ *  $Id: string.c,v 1.12 2001-02-07 08:52:03 shiro Exp $
  */
 
 #include <stdio.h>
@@ -123,7 +123,7 @@ int Scm_MBLen(const char *str)
     return count;
 }
 
-/*
+/*----------------------------------------------------------------
  * Constructors
  */
 
@@ -227,7 +227,7 @@ ScmObj Scm_CopyString(ScmString *x)
     return SCM_OBJ(z);
 }
 
-/*
+/*----------------------------------------------------------------
  * Comparison
  */
 
@@ -335,7 +335,7 @@ STRCICMP(Scm_StringCiLe, <=)
 STRCICMP(Scm_StringCiGt, >)
 STRCICMP(Scm_StringCiGe, >=)
     
-/*
+/*----------------------------------------------------------------
  * Reference
  */
 
@@ -383,7 +383,7 @@ int Scm_StringByteRef(ScmString *str, int offset)
     return (ScmByte)SCM_STRING(str)->start[offset];
 }
 
-/*
+/*----------------------------------------------------------------
  * Concatenation
  */
 
@@ -497,7 +497,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
     return SCM_OBJ(z);
 }
 
-/*
+/*----------------------------------------------------------------
  * Substitution
  */
 
@@ -584,7 +584,7 @@ ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
     return SCM_OBJ(x);
 }
 
-/*
+/*----------------------------------------------------------------
  * Substring
  */
 
@@ -600,6 +600,7 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
         Scm_Error("end argument is out of range: %d", end);
     if (end < start)
         Scm_Error("end argument must be equal to or greater than the start argument: start=%d, end=%d", start, end);
+    /* TODO: incomplete string case? */
     if (start) s = forward_pos(x->start, start); else s = x->start;
     e = forward_pos(s, end - start);
 
@@ -607,7 +608,43 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
     return SCM_OBJ(z);
 }
 
-/*
+/* auxiliary procedure to support optional start/end parameter specified
+   in lots of SRFI-13 functions.   If at least one of START or END is
+   SCM_UNBOUND, it returns the string itself.  Otherwise, it returns
+   a substring. */
+ScmObj Scm_QuasiSubstring(ScmString *x, ScmObj start, ScmObj end)
+{
+    int istart, iend, slen;
+
+    if (SCM_UNBOUNDP(start) || SCM_UNBOUNDP(end)) return SCM_OBJ(x);
+    if (!SCM_INTP(start))
+        Scm_Error("exact integer required for start, but got %S", start);
+    if (!SCM_INTP(end))
+        Scm_Error("exact integer required for start, but got %S", end);
+    return Scm_Substring(x, SCM_INT_VALUE(start), SCM_INT_VALUE(end));
+}
+
+/* SRFI-13 string-take and string-drop */
+ScmObj Scm_StringTake(ScmString *x, int nchars, int takefirst, int fromright)
+{
+    int len = SCM_STRING_LENGTH(x);
+    if (nchars < 0 || nchars >= len)
+        Scm_Error("nchars argument out of range: %d", nchars);
+    if (fromright) nchars = len - nchars;
+    if (takefirst)
+        return Scm_Substring(x, 0, nchars);
+    else
+        return Scm_Substring(x, nchars, len);
+}
+
+/*----------------------------------------------------------------
+ * Prefix/suffix
+ */
+
+
+
+
+/*----------------------------------------------------------------
  * Miscellaneous functions
  */
 
