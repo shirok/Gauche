@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.39 2001-08-30 06:55:49 shirok Exp $
+ *  $Id: port.c,v 1.40 2001-09-16 23:01:12 shirok Exp $
  */
 
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 #include <errno.h>
 #include "gauche.h"
 
@@ -239,8 +240,36 @@ ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode, int ownerp)
 ScmObj Scm_OpenFilePort(const char *path, const char *mode)
 {
     FILE *fp;
-    
-    fp = fopen(path, mode);
+
+    if (*mode == 'c' || *mode == 'W' || *mode == 'A') {
+        /* Special modes:
+            c : create file exclusively.  fails if file exists.
+            W : opens existing file.  fails if file doesn't exist.
+            A : same as 'W', but file pointer seeks to the end.
+         */
+        int fd, rdwr = FALSE, bin = FALSE, flags = 0;
+        char c, op = *mode;
+        while ((c = *++mode) != 0) {
+            if (c == 'b') bin = TRUE;
+            if (c == '+') rdwr = TRUE;
+        }
+        if (op == 'c') flags = O_CREAT|O_EXCL;
+        if (rdwr) flags |= O_RDWR;
+        else      flags |= O_WRONLY;
+        if (op != 'A') flags |= O_TRUNC;
+
+        fd = open(path, flags, 0666);
+        if (fd < 0) {
+            if (errno == EEXIST || errno == ENOENT) return SCM_FALSE;
+            Scm_SysError("couldn't open %s", path);
+        }
+        mode = ((op == 'A')?
+                (bin? (rdwr? "ab+" : "ab") : (rdwr? "a+" : "a")) :
+                (bin? (rdwr? "wb+" : "wb") : (rdwr? "w+" : "w")));
+        fp = fdopen(fd, mode);
+    } else {
+        fp = fopen(path, mode);
+    }
     if (fp == NULL) return SCM_FALSE;
     return Scm_MakeFilePort(fp, SCM_MAKE_STR_COPYING(path), mode, TRUE);
 }

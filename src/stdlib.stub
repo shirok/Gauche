@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.65 2001-08-30 07:05:09 shirok Exp $
+;;; $Id: stdlib.stub,v 1.66 2001-09-16 23:01:12 shirok Exp $
 ;;;
 
 
@@ -850,6 +850,74 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 ;; 6.6.1  Ports
 ;;
   
+;; valid keywords for open-*-file options
+(define-keyword error "key_error")
+(define-keyword create "key_create")
+(define-keyword append "key_append")
+(define-keyword supersede "key_supersede")
+(define-keyword character "key_character")
+(define-keyword binary "key_binary")
+
+;; Compose mode string to be passed to Scm_OpenFilePort.
+"static const char *file_flags(int inputp,
+                               ScmObj if_does_not_exist,
+                               ScmObj if_exists,
+                               ScmObj element_type, int *ignerr)
+ {
+  int binmode = FALSE;
+
+  if (element_type == key_character) binmode = FALSE;
+  else if (element_type == key_binary) binmode = TRUE;
+  else Scm_Error(\"argument for :element-type must be either :character or :binary, but got %S\", element_type);
+
+  if (ignerr) *ignerr = FALSE;
+
+  if (inputp) {
+    if (SCM_FALSEP(if_does_not_exist)) {
+      if (ignerr) *ignerr = TRUE;
+    } else if (if_does_not_exist != key_error) {
+      Scm_Error(\"argument for :if-does-not-exist must be either :error or #f, but got %S\", if_does_not_exist);
+    }
+    return binmode? \"rb\" : \"r\";
+  } else {
+    if (if_does_not_exist != key_error && !SCM_FALSEP(if_does_not_exist) && if_does_not_exist != key_create) { 
+      Scm_Error(\"argument for :if-does-not-exist must be either :error, :create or #f, but got %S\", if_does_not_exist);
+    }
+    if (if_exists == key_supersede) {
+      if (if_does_not_exist == key_create) {
+        return binmode? \"wb\" : \"w\";
+      } else if (if_does_not_exist == key_error) {
+        return binmode? \"Wb\" : \"W\";
+      } else {
+        if (ignerr) *ignerr = TRUE;
+        return binmode? \"Wb\" : \"W\";
+      }
+    } else if (if_exists == key_append) {
+      if (if_does_not_exist == key_create) {
+        return binmode? \"ab\" : \"a\";
+      } else if (if_does_not_exist == key_error) {
+        return binmode? \"Ab\" : \"A\";
+      } else {
+        if (ignerr) *ignerr = TRUE;
+        return binmode? \"Ab\" : \"A\";
+      }
+    } else if (if_exists == key_error) {
+      if (if_does_not_exist == key_create) {
+        return binmode? \"cb\" : \"c\";
+      } else if (if_does_not_exist == key_error) {
+        Scm_Error(\"bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.\");
+      } else {
+        if (ignerr) *ignerr = TRUE;
+        return binmode? \"cb\" : \"c\";
+      }
+    } else {
+      Scm_Error(\"argument for :if-exists must be either :supersede, :append or :error, but got %S\", if_exists);
+    }
+  }
+  return NULL; /* dummy */
+ }
+"
+
 (define-cproc call-with-input-file (file proc)
   (assert (string? file))
   (assert (procedure? proc))
@@ -886,17 +954,31 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  Scm_WithFile(file, thunk, 1);
   SCM_RETURN(SCM_UNDEFINED);")
 
-
-(define-cproc open-input-file (path)
+(define-cproc open-input-file (path
+                               &keyword (if-does-not-exist (c "key_error"))
+                                        (element-type (c "key_character"))
+                               )
   (assert (string? path))
-  "  ScmObj o = Scm_OpenFilePort(Scm_GetStringConst(path), \"r\");
-  if (o == SCM_FALSE) Scm_Error(\"couldn't open input file: %S\", path_scm);
+  "  ScmObj o;  int ignerr;
+  const char *flags = file_flags(TRUE, if_does_not_exist, 0, element_type, &ignerr);
+  o  = Scm_OpenFilePort(Scm_GetStringConst(path), flags);
+  if (o == SCM_FALSE && !ignerr) {
+     Scm_Error(\"couldn't open input file: %S\", path_scm);
+  }
   SCM_RETURN(o);")
 
-(define-cproc open-output-file (path)
+(define-cproc open-output-file (path
+                                &keyword (if-exists (c "key_supersede"))
+                                         (if-does-not-exist (c "key_create"))
+                                         (element-type (c "key_character"))
+                                         )
   (assert (string? path))
-  "  ScmObj o = Scm_OpenFilePort(Scm_GetStringConst(path), \"w\");
-  if (o == SCM_FALSE) Scm_Error(\"couldn't open output file: %S\", path_scm);
+  "  ScmObj o; int ignerr;
+  const char *flags = file_flags(FALSE, if_does_not_exist, if_exists, element_type, &ignerr);
+  o = Scm_OpenFilePort(Scm_GetStringConst(path), flags);
+  if (!ignerr && o == SCM_FALSE) {
+     Scm_Error(\"couldn't open output file: %S\", path_scm);
+  }
   SCM_RETURN(o);")
 
 (define-cproc close-input-port (port)
