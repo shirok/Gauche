@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.16 2004-02-02 10:43:37 shirok Exp $
+;;;  $Id: 822.scm,v 1.17 2004-10-06 09:07:01 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -196,9 +196,9 @@
     (list-index (cut string=? <> dow)
                 '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat")))
   (define (mon->number mon)
-    (list-index (cut string=? <> mon)
-                '("Jan" "Feb" "Mar" "Apr" "May" "Jun"
-                  "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")))
+    (+ 1 (list-index (cut string=? <> mon)
+                     '("Jan" "Feb" "Mar" "Apr" "May" "Jun"
+                       "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))))
   (define (year->number year) ;; see obs-year definition of RFC2822
     (let ((y (string->number year)))
       (and y

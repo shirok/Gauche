@@ -2777,10 +2777,12 @@ year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
 @emph{Timezone} is an offset from UT in minutes.
 @emph{Day-of-week} is a day from sunday,
 and may be #f if that information is not available.
+@emph{Month} is an integer between 1 and 12, inclusive.
 If the string is not parsable, all the elements are #f.
 @c JP
-@emph{Timezone} は UT(グリニッジ標準時)からの分単位のオフセットです。
-@emph{Day-of-week} は日曜日から数えた曜日で、情報が不足している場合は #f です。
+@emph{timezone} は UT(グリニッジ標準時)からの分単位のオフセットです。
+@emph{day-of-week} は日曜日から数えた曜日で、情報が不足している場合は #f です。
+@emph{month}は1から12までの整数です。
 文字列がパーズ不可能ならば、全ての要素が #f になります。
 @c COMMON
 @end defun

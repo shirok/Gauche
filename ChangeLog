@@ -1,5 +1,9 @@
 2004-10-05  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/822.scm (rfc822-parse-date) : fix off-by-one error of
+	  return value of month.
+	* test/rfc.scm : ditto
+	
 	* src/gauche.h, src/portapi.c : code clean up
 
 2004-10-03  Shiro Kawai  <shiro@acm.org>

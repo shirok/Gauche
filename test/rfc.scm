@@ -70,31 +70,31 @@ Content-Length: 4349
         "from aaaaa.aaa.org (aaaaa.aaa.org [192.168.0.9]) by ggg.gggg.net (Postfix) with ESMTP id 24D50175C8"))
 
 
-(test* "rfc822-parse-date" '(2003 2 4 12 34 56 -3600 2)
+(test* "rfc822-parse-date" '(2003 3 4 12 34 56 -3600 2)
        (receive r (rfc822-parse-date "Tue,  4 Mar 2003 12:34:56 -3600") r))
 
-(test* "rfc822-parse-date" '(2003 2 4 12 34 56 0 2)
+(test* "rfc822-parse-date" '(2003 3 4 12 34 56 0 2)
        (receive r (rfc822-parse-date "Tue,  4 Mar 2003 12:34:56 UT") r))
 
-(test* "rfc822-parse-date (no weekday)" '(2003 2 4 12 34 56 -3600 #f)
+(test* "rfc822-parse-date (no weekday)" '(2003 3 4 12 34 56 -3600 #f)
        (receive r (rfc822-parse-date "4 Mar 2003 12:34:56 -3600") r))
 
-(test* "rfc822-parse-date (no timezone)" '(2003 2 4 12 34 56 #f #f)
+(test* "rfc822-parse-date (no timezone)" '(2003 3 4 12 34 56 #f #f)
        (receive r (rfc822-parse-date "4 Mar 2003 12:34:56") r))
 
-(test* "rfc822-parse-date (old tz)" '(2003 2 4 12 34 56 #f #f)
+(test* "rfc822-parse-date (old tz)" '(2003 3 4 12 34 56 #f #f)
        (receive r (rfc822-parse-date "4 Mar 2003 12:34:56 jst") r))
 
-(test* "rfc822-parse-date (no seconds)" '(2003 2 4 12 34 #f 900 #f)
+(test* "rfc822-parse-date (no seconds)" '(2003 3 4 12 34 #f 900 #f)
        (receive r (rfc822-parse-date "4 Mar 2003 12:34 +0900") r))
 
-(test* "rfc822-parse-date (no seconds)" '(2003 2 4 12 34 #f 900 2)
+(test* "rfc822-parse-date (no seconds)" '(2003 3 4 12 34 #f 900 2)
        (receive r (rfc822-parse-date "Tue, 04 Mar 2003 12:34 +0900") r))
 
-(test* "rfc822-parse-date (2digit year)" '(2003 2 4 12 34 56 -3600 2)
+(test* "rfc822-parse-date (2digit year)" '(2003 3 4 12 34 56 -3600 2)
        (receive r (rfc822-parse-date "Tue,  4 Mar 03 12:34:56 -3600") r))
 
-(test* "rfc822-parse-date (2digit year)" '(1987 2 4 12 34 56 -3600 2)
+(test* "rfc822-parse-date (2digit year)" '(1987 3 4 12 34 56 -3600 2)
        (receive r (rfc822-parse-date "Tue,  4 Mar 87 12:34:56 -3600") r))
 
 (test* "rfc822-parse-date (Weekday, exhausive)" '(0 1 2 3 4 5 6 #f)
@@ -107,7 +107,7 @@ Content-Length: 4349
         '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Znn")))
 
 (test* "rfc822-parse-date (Months, exhausive)"
-       '(0 1 2 3 4 5 6 7 8 9 10 11 #f)
+       '(1 2 3 4 5 6 7 8 9 10 11 12 #f)
        (map (lambda (mon)
               (receive (y m d H M S tz wd)
                   (rfc822-parse-date
