@@ -1,3 +1,8 @@
+2003-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm/fsdbm.scm (dbm-fold): fixed a bug that dbm-fold passes
+	  a bogus key to the iteratee procedure.
+
 2003-10-25  Kimura Fuyuki  <fuyuki@nigredo.org>
 
 	* examples/spigot/Makefile.in : Respect DESTDIR.

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.4 2003-10-23 02:42:37 fuyuki Exp $
+;;;  $Id: fsdbm.scm,v 1.5 2003-10-25 23:11:09 shirok Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -152,15 +152,18 @@
 
 (define-method dbm-fold ((self <fsdbm>) proc seed)
   (define prefix-len
-    (+ 2 (string-length (build-path (ref self 'path) "a"))))
+    (string-length (build-path (ref self 'path) "a/")))
   (define (apply-kv path seed)
     (if (file-is-directory? path)
       (fold apply-kv seed
             (directory-list path :add-path? #t :children? #t))
-      (proc (%dbm-s2k self (string-drop path prefix-len))
-            (call-with-input-file path
-              (lambda (p) (%dbm-s2v self (port->string p))))
-            seed)))
+      (let ((k (path->key (string-drop path prefix-len))))
+        (if k
+          (proc (%dbm-s2k self k)
+                (call-with-input-file path
+                  (lambda (p) (%dbm-s2v self (port->string p))))
+                seed)
+          seed))))
   (next-method)
   (fold (lambda (c seed)
           (let1 p (build-path (ref self 'path) c)
@@ -211,6 +214,31 @@
               (else
                (format #t "_~2,'0x" c)
                (loop (read-byte) (+ count 1))))))))
+
+;; reverse fn of key->path.  returns #f is path is invalid.
+(define (path->key path)
+  (call/cc
+   (lambda (return)
+     (string-incomplete->complete
+      (with-string-io path
+        (lambda ()
+          ;; skip the first char
+          (unless (eqv? (read-char) #\_) (return #f))
+          (let loop ((c (read-char)))
+            (cond ((eof-object? c))
+                  ((char=? c #\/) (loop (read-char)))
+                  ((char=? c #\_)
+                   (let* ((c1 (read-char))
+                          (c2 (read-char)))
+                     (when (or (eof-object? c1) (eof-object? c2)) (return #f))
+                     (unless (and (char-set-contains? #[[:xdigit:]] c1)
+                                  (char-set-contains? #[[:xdigit:]] c2))
+                       (return #f))
+                     (write-byte (+ (* (digit->integer c1 16) 16)
+                                    (digit->integer c2 16)))
+                     (loop (read-char))))
+                  (else
+                   (write-char c) (loop (read-char)))))))))))
 
 (define (path->hash path)
   (string (string-ref *hash-chars* (string-hash path *hash-range*))))
