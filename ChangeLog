@@ -1,3 +1,11 @@
+2003-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/extend.h (SCM_INIT_EXTENSION): under __CYGWIN__, add
+	  a region between _bss_start__ and _bss_end__ to the root set,
+	  instead of Scm__bssstart/end.  The new ld reorders bss area,
+	  so the latter doesn't work.   (It may be the case with other
+	  lds.  Need to investigate).
+
 2003-09-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.scm, example/scheme-server.scm : added 'proto' optional

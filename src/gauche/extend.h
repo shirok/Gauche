@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: extend.h,v 1.4 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: extend.h,v 1.5 2003-10-02 09:33:59 shirok Exp $
  */
 
 #ifndef GAUCHE_EXTEND_H
@@ -44,6 +44,7 @@
 extern "C" {
 #endif
 
+#ifndef __CYGWIN__
 #define SCM_INIT_EXTENSION(name)                                        \
    do {                                                                 \
        extern void *SCM_CPP_CAT(Scm__datastart_, name);                 \
@@ -55,6 +56,20 @@ extern "C" {
                       (void*)&SCM_CPP_CAT(Scm__bssstart_, name),        \
                       (void*)&SCM_CPP_CAT(Scm__bssend_, name));         \
    } while (0)
+#else  /* __CYGWIN__ */
+#define SCM_INIT_EXTENSION(name)                                        \
+   do {                                                                 \
+       extern void *SCM_CPP_CAT(Scm__datastart_, name);                 \
+       extern void *SCM_CPP_CAT(Scm__dataend_, name);                   \
+       extern void *_bss_start__;                  \
+       extern void *_bss_end__;                    \
+       Scm_RegisterDL((void*)&SCM_CPP_CAT(Scm__datastart_, name),       \
+                      (void*)&SCM_CPP_CAT(Scm__dataend_, name),         \
+                      (void*)&_bss_start__,        \
+                      (void*)&_bss_end__);         \
+   } while (0)
+#endif /* __CYGWIN__ */
+
 
 #ifdef __cplusplus
 }
