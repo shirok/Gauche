@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parameter.scm,v 1.4 2002-12-10 13:16:09 shirok Exp $
+;;;  $Id: parameter.scm,v 1.5 2002-12-11 00:16:18 shirok Exp $
 ;;;
 
 ;; The API is upper-compatible to ChezScheme and Chicken's.
@@ -46,10 +46,10 @@
                  (let ((new (filter val))
                        (old (%vm-parameter-ref index)))
                    (cond ((slot-ref self 'pre-observers)
-                          => (cut run-hook <> new)))
+                          => (cut run-hook <> old new)))
                    (%vm-parameter-set! index new)
                    (cond ((slot-ref self 'post-observers)
-                          => (cut run-hook <> new)))
+                          => (cut run-hook <> old new)))
                    old)))
     ))
 
@@ -88,41 +88,36 @@
 
 (define-method parameter-pre-observers ((self <parameter>))
   (or (slot-ref self 'pre-observers)
-      (let1 h (make-hook 1)
+      (let1 h (make-hook 2)
         (slot-set! self 'pre-observers h)
         h)))
 
 (define-method parameter-post-observers ((self <parameter>))
   (or (slot-ref self 'post-observers)
-      (let1 h (make-hook 1)
+      (let1 h (make-hook 2)
         (slot-set! self 'post-observers h)
         h)))
 
 (define-method parameter-observer-add! ((self <parameter>) proc . args)
-  (let ((before? #f)
-        (append? #f))
-    (for-each (lambda (opt)
-                (case opt
-                  ((before)  (set! before? #t))
-                  ((after)   (set! before? #f))
-                  ((prepend) (set! append? #f))
-                  ((append)  (set! append? #t))
-                  (else (error "bad option for parameter-observer-add!: must be a combination of {before, after} and {prepend, append}" opt))))
-              args)
-    (add-hook! (if before?
+  (let-optionals* args ((when 'after)
+                        (where 'append))
+    (unless (memq when '(before after))
+      (error "`when' argument of parameter-observer-add! must be either 'before or 'after" when))
+    (unless (memq where '(prepend append))
+      (error "`where' argument of parameter-observer-add! must be either 'prepend or 'append" when))
+    (add-hook! (if (eq? when 'before)
                    (parameter-pre-observers self)
                    (parameter-post-observers self))
-               proc append?)))
+               proc
+               (eq? where 'append))))
                 
-(define-method parameter-observer-delete! ((self <parameter>) proc . where)
-  (let ((before? (case (get-optional where 'after)
-                   ((before) #t)
-                   ((after) #f)
-                   (else (error "bad option for parameter-observer-delete!: must be either before or after" (car where))))))
-    (delete-hook! (if before?
-                      (parameter-pre-observers self)
-                      (parameter-post-observers self))
-                  proc)))
+(define-method parameter-observer-delete! ((self <parameter>) proc . args)
+  (let ((where (get-optional args #f)))
+    (unless (eq? where 'after)
+      (delete-hook! (parameter-pre-observers self) proc))
+    (unless (eq? where 'before)
+      (delete-hook! (parameter-post-observers self) proc))
+    ))
 
 (provide "gauche/parameter")
 

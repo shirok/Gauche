@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.319 2002-12-10 12:39:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.320 2002-12-11 00:15:53 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17529,27 +17529,80 @@ Otherwise, @code{#f} is returned.
 @deftp {Module} gauche.parameter
 @mdindex gauche.parameter
 @c EN
-A "parameter" is basically a stateful procedure that takes zero or
+A @emph{parameter} is somethink like a stateful procedure that takes zero or
 one argument.
 If no argument is given, the parameter returns the current value it is keeping.
 If single argument is given, it will be the current value of the parameter.
-Optionally you can give a "filter procedure" that checks the new
-value before setting it as the parameter value.
-With the macro @code{parameterize}, you can change the parameter's
-value within certain dynamic scope.
-
-This feature is built in some Scheme implementations, such as
-ChezScheme, Chicken or MzScheme.   This module emulates them.
+A parameter has several advantages over global variables to store
+states.
 @c JP
-「パラメータ」は基本的にゼロもしくは一個の引数を取る状態を持つ手続きです。
+「パラメータ」は基本的にゼロもしくは一個の引数を取る状態を持つ手続きとみなせます。
 引数が与えられなかった場合、それは内部に保持した値を返します。
-一つの引数が与えられた場合、その値が新たなパラメータ内部の値となります。
-また、更新される値をチェックするフィルタ手続きを指定することもできます。
-マクロ@code{parameterize}によって、特定の動的スコープの間だけ
-パラメータの値を変えることができます。
+一つの引数が与えられた場合、その値が新たなパラメータ内部の値となり、
+変更前の値が返されます。
+パラメータは状態を保持する手段として、
+単なるグローバル変数に比べていくつかの利点を持っています。
+@c COMMON
 
-この機能はChezScheme、Chicken、MzSchemeなどいくつかのScheme処理系で
-組み込みとなっています。このモジュールはそれをエミュレートするものです。
+@c EN
+Value of parameters are kept for each thread, so you can use
+a parameter as a thread-local storage.  When a new thread is
+created, it inherits a copy of parameters from its creator thread.
+@c JP
+パラメータの値はスレッド毎に保持されるので、
+パラメータをスレッドローカルな格納領域として利用することができます。
+新たに作られたスレッドは、その作成元のスレッドのパラメータのコピーを
+受け取ります。
+@c COMMON
+
+@c EN
+You can give a "filter procedure" that checks the new
+value before setting it as the parameter value,
+so that you can guarantee the value of the parameter is always sane.
+@c JP
+パラメータに値がセットされるときに、指定の「フィルタ手続き」を呼んで
+値を検査することができます。これにより、パラメータの値が常に正当なもので
+あることを保証できます。
+@c COMMON
+
+@c EN
+With the macro @code{parameterize}, you can change the parameter's
+value within certain dynamic scope.   It can effectively
+replace dynamically scoped variables.
+@c JP
+マクロ@code{parameterize}により、特定のダイナミックスコープの中だけ
+パラメータの値を変えることができます。これは、実質的にダイナミックスコープを
+持つ変数を置き換えることができます。
+@c COMMON
+
+@c EN
+You can also register callback procedures to be called whenever
+the value of the parameter is changed.   It can effectively
+replace so-called "traced variables"
+@c JP
+また、パラメータの値が変更されたときに呼ばれるコールバック手続きを
+登録しておくこともできます。これによって実質的に、いわゆる
+「traceされた変数」を置き換えることができます。
+@c COMMON
+
+@c EN
+@var{Parameters} can be found in other Scheme implementations,
+including ChezScheme, Chicken and MzScheme.
+Guile and Scheme48 call them @var{fluids}, with different APIs.
+@c JP
+この機能はChezScheme、Chicken、MzSchemeなどいくつかのScheme処理系に
+見られます。また、これはGuileやScheme48では@var{fluid}と呼ばれています。
+@c COMMON
+@end deftp
+
+@deftp {Class} <parameter>
+@clindex parameter
+@c EN
+A parameter class.  A @code{object-apply} method is defined
+so that a parameter can be used as if it were a procedure.
+@c JP
+パラメータのクラスです。@code{object-apply}メソッドが定義されているので、
+パラメータオブジェクトは普通の手続きと同様に使うことが出来ます。
 @c COMMON
 @end deftp
 
@@ -17600,6 +17653,42 @@ Some examples:
   (a)) @result{} 3
 (a) @result{} 2
 @end example
+
+@deffn {Method} parameter-observer-add! (p <parameter>) proc &optional when where
+Adds @var{proc} to "observer" procedures of a parameter @var{p}.
+Observer procedures are called either (1) just before
+a new value is set to the parameter, or (2) just after the new value
+is set to the parameter.   In case of (1), a filter procedure is
+already applied before a callback is called.
+In either case, observer procedures are called with two arguments,
+the old value and the new value.  The return value(s) of observer
+procedures are discarded.
+
+The optional @var{when} argument must be either a symbol @code{before}
+or @code{after}, to specify whether @var{proc} should be called
+before or after the value is changed.   If omitted, @code{after} is
+assumed.
+
+The optional @var{where} argument must be either a symbol
+@code{append} or @code{prepend}, to specify whether @var{proc} should
+be prepended or appended to the existing observer procedure list.
+If omitted, @code{append} is assumed.
+@end deffn
+
+@deffn {Method} parameter-observer-delete! (p <parameter>) proc &optional when
+Deletes @var{proc} from observer procedure list of a parameter @var{p}.
+If @var{proc} is not in the list, nothing happens.
+You can give either a symbol @code{before} or @code{after} to
+@var{when} argument to specify from which list @var{proc} should be
+deleted.  If @var{when} argument is omitted, @var{proc} is deleted
+from both lists. 
+@end deffn
+
+@deffn {Method} parameter-pre-observers (p <parameter>)
+@deffnx {Method} parameter-post-observers (p <parameter>)
+Returns a hook object (@xref{gauche.hook - Hooks}) that keeps
+"before" or "after" observers, respectively.
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node gauche.parseopt - Parsing command-line options, gauche.process - High Level Process Interface, gauche.parameter - Parameters, Library modules - Gauche extensions
