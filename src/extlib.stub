@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.113 2001-11-03 09:56:35 shirok Exp $
+;;; $Id: extlib.stub,v 1.114 2001-11-09 08:49:29 shirok Exp $
 ;;;
 
 "
@@ -886,6 +886,31 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
     SCM_RETURN(SCM_TRUE);
   else
     SCM_RETURN(SCM_FALSE);")
+
+(define-cproc hash-table-push! (hash key value)
+  (assert (hash-table? hash))
+  "ScmHashEntry *e = Scm_HashTableAdd(hash, key, SCM_UNBOUND);
+  if (SCM_UNBOUNDP(e->value)) e->value = SCM_LIST1(value);
+  else                        e->value = Scm_Cons(value, e->value);
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc hash-table-pop! (hash key &optional fallback)
+  (assert (hash-table? hash))
+  "ScmHashEntry *e = Scm_HashTableGet(hash, key); ScmObj r;
+  if (e == NULL) {
+    if (SCM_UNBOUNDP(fallback)) {
+      Scm_Error(\"hash table doesn't have an entry for key %S\", key);
+    }
+    r = fallback;
+  } else if (!SCM_PAIRP(e->value)) {
+    if (SCM_UNBOUNDP(fallback)) {
+      Scm_Error(\"hash table value for key %S is not a pair: %S\", key, e->value);
+    }
+    r = fallback;
+  } else {
+    r = SCM_CAR(e->value); e->value = SCM_CDR(e->value);
+  }
+  SCM_RETURN(r);")
 
 "static ScmObj hash_table_iter_cc(ScmObj result, void **data)
  {
