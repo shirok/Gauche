@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.30 2001-06-23 19:36:04 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.31 2001-06-24 20:48:25 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -270,10 +270,7 @@ The API of the entry reflects the API specified in POSIX.
 @node Structure of this document,  , Notations, Introduction
 @section Structure of this document
 
-
-
-
-
+---To be written---
 
 
 @c ======================================================================
@@ -282,6 +279,8 @@ The API of the entry reflects the API specified in POSIX.
 
 In this chapter I describe a few Gauche's design concepts
 that help you to understand how Gauche works.
+
+---This chapter is under construction---
 
 @menu
 * Compilation::                 
@@ -295,9 +294,51 @@ that help you to understand how Gauche works.
 
 Gauche is a Scheme interpreter, in the sense that it reads
 a Scheme form at a time and evaluates it.   Actually,
-Gauche compiles every form into an intermediate form
-before executing.  
+Gauche compiles every toplevel form into an intermediate form
+before executing.
 
+Built-in sytanxes and macros are recognized and expanded
+at the compilation time.  Some built-in procedures are
+expanded in-line as far as the compiler can see the global
+binding is not altered at the time the form is compiled.
+
+This raises a few problems you should care.
+
+@table @emph
+@item load is done at run time.
+@code{load} is a procedure in Gauche, therefore evaluated at run time.
+If the loaded program defines a macro, which is available for the compiler
+after the toplevel form containing @code{load} is evaluated.  So, suppose
+@code{foo.scm} defines a macro @code{foo}, and you use the macro
+like this:
+@example
+;; @r{in ``foo.scm''}
+(define-syntax foo
+  (syntax-rules () (_ arg) (quote arg)))
+
+;; @r{in your program}
+(begin (load "foo") (foo (1 2 3)))
+  @result{} @r{error, bad procedure: `1'}
+
+(load "foo")
+(foo (1 2 3)) @result{} '(1 2 3)
+@end example
+The @code{(begin (load ...))} form fails,  because the compiler
+doesn't know @code{foo} is a special form at the compilation time
+and compiles @code{(1 2 3)} as if it is a normal procedure call.
+The latter example works, however, since the execution
+of the toplevel form @code{(load "foo")} is done before
+@code{(foo (1 2 3))} is compiled.
+
+To avoid this kind of subtleties, use @code{require} or @code{use}
+to load a program fragments.  Those are recognized by the compiler.
+
+@item require is done at compile time
+On the other hand, since @code{require} and @code{use} is recognized
+by the compiler, the specified file is loaded even if the form
+is in the conditional expression.  Use @code{load} if you need
+such behavior.
+@end table
 
 
 @node Module System, Objects, Compilation, Concepts
@@ -528,7 +569,7 @@ The following script is a simple grep command.
 @section Literals
 
 @defspec quote datum
-[R5RS]
+[R5RS] Inserts @var{datum} as a literal value.
 @end defspec
 
 @c ----------------------------------------------------------------------
@@ -1233,16 +1274,20 @@ A class of pairs.
 @subsection List predicates
 
 @defun pair? obj
-[R5RS]
+[R5RS] Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @end defun
 
 @defun null? obj
-[R5RS]
+[R5RS] Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 @end defun
 
 @defun list? obj
-[R5RS]
+[R5RS] Returns @code{#t} if @var{obj} is a proper list, @code{#f} otherwise.
+This function returns @code{#f} if @var{obj} is a dotted or circular list.
 @end defun
+
+See also @code{proper-list?}, @code{circular-list?} and
+@code{dotted-list?} in @ref{SRFI-1 List predicates}.
 
 @node List constructors, List accessors and modifiers, List predicates, Pairs and Lists
 @subsection List constructors
@@ -1305,6 +1350,9 @@ this function diverges.
 @defun set-car! pair obj
 @defunx set-cdr! pair obj
 [R5RS] Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
+
+Note: @code{(setter car)} @equiv{} @code{set-car!}, and
+@code{(setter cdr)} @equiv{} @code{set-cdr!}.
 @end defun
 
 @defun caar pair
@@ -1335,23 +1383,40 @@ this function diverges.
 @defunx cddadr pair
 @defunx cdddar pair
 @defunx cddddr pair
-[R5RS]
+[R5RS] @code{caar} @equiv{} @code{(car (car x))},
+@code{cadr} @equiv{} @code{(car (cdr x))}, and so on.
+
+The corresponding setters are also defined.
+@example
+(let ((x (list 1 2 3 4 5)))
+  (set! (caddr x) -1)
+  x)
+  @result{} (1 2 -1 4 5)
+@end example
 @end defun
 
 @defun length list
-[R5RS]
+[R5RS] Returns the length of a proper list @var{list}.
+If @var{list} is a dotted list, an error is signalled.
+If @var{list} is a circular list, this function diverges.
+
+If you want to handle circular lists as well, 
+See @code{length+} in @ref{SRFI-1 List miscellaneous routines}.
 @end defun
 
 @defun list-tail list k
-[R5RS]
+[R5RS] Returns @var{k}-th cdr of @var{list}.
+@var{list} can be a proper, dotted or circular list.
 @end defun
 
 @defun list-ref list k
-[R5RS]
+[R5RS] Returns @var{k}-th element of @var{list}.
+@var{list} can be a proper, dotted or circular list.
 @end defun
 
 @defun last-pair list
-[SRFI-1]
+[SRFI-1] Returns the last pair of @var{list}.
+@var{list} can be a proper or dotted list.
 @end defun
 
 
@@ -1401,7 +1466,7 @@ this function diverges.
 
 @deftp {Builtin Class} <symbol>
 @clindex symbol
-A builting class for symbols.
+A class for symbols.
 @end  deftp
 
 @defun symbol? obj
@@ -2360,7 +2425,7 @@ provide lower level routines as well.
 * Time::                        
 * Unix process management::     
 * I/O multiplexing::            
-* Miscellaneous::               
+* Miscellaneous system calls::  
 @end menu
 
 @node Program termination, Environment Inquiry, System interface, System interface
@@ -2977,7 +3042,7 @@ true @var{untraced} argument.  @code{sys-wait-stopsig} returns the
 signum number that stopped the child.
 @end defun
 
-@node I/O multiplexing, Miscellaneous, Unix process management, System interface
+@node I/O multiplexing, Miscellaneous system calls, Unix process management, System interface
 @subsection I/O multiplexing
 
 The interface functions for @code{select(2)}.
@@ -3012,12 +3077,39 @@ Returns the maximum file descriptor number in @var{fdset}.
 
 @defun sys-select readfds writefds exceptfds &optional timeout
 @defunx sys-select! readfds writefds exceptfds &optional timeout
+Waits for a set of file descriptors to change status.
+@var{readfds}, @var{writefds}, and @var{exceptfds} are @code{<fdset>}
+objects to represent a set of file descriptors to watch.
+File descriptors in @var{readfds} are watched to see if characters
+are ready to be read.   File descriptors in @var{writefds} are
+watched if writing to them is ok.  File descriptors in @var{exceptfds}
+are watched for exceptions.  You can pass @code{#f} to one or more
+of those arguments if you don't care about watching the condition.
 
+@var{timeout} specifies maximum time @code{sys-select} waits for
+the condition change.  It can be a real number, for number of microseconds,
+or a list of two integers, the first is the number of seconds and
+the second is the number of microseconds.  If you pass @code{#f},
+@code{sys-select} waits indefinitely.
+
+@code{sys-select} returns four values.  The first value is a number
+of descriptors it detected status change.  It may be zero if 
+timeout expired.  The second, third and fourth values are @code{<fdset>}
+object that contains a set of descriptors that changed status
+for reading, writing, and exception, respectively.
+If you passed @code{#f} to one or more of @var{readfds},
+@var{writefds} and @var{exceptfds}, the corresponding return value
+is @code{#f}.
+
+@code{sys-select!} variant works the same as @code{sys-select}, except
+it modifies the passed @code{<fdset>} arguments.
+@code{sys-select} creates new @code{<fdset>} objects and
+doesn't modify its arguments.
 @end defun
 
 
-@node Miscellaneous,  , I/O multiplexing, System interface
-@subsection Miscellaneous
+@node Miscellaneous system calls,  , I/O multiplexing, System interface
+@subsection Miscellaneous system calls
 
 @defun sys-pause
 [POSIX] Suspends the process until it receives a signal whose
@@ -4570,7 +4662,7 @@ This procedure takes its name from the APL primitive.
 [SRFI-1] Returns true iff x is a proper list -- a finite, nil-terminated list.
 @end defun
 
-@defun cicular-list? x
+@defun circular-list? x
 [SRFI-1] True if x is a circular list.
 @end defun
 
