@@ -12,14 +12,12 @@
 (sys-system "rm -f tmp2.o")
 
 (test "open-input-file" #t
-      (lambda ()
-        (with-error-handler
-         (lambda (e) #t)
-         (lambda () (open-input-file "tmp2.o")))))
+      (lambda () (with-error-handler
+                  (lambda (e) #t)
+                  (lambda () (open-input-file "tmp2.o")))))
 
 (test "open-input-file :if-does-not-exist #f" #f
-      (lambda ()
-        (open-input-file "tmp2.o" :if-does-not-exist #f)))
+      (lambda () (open-input-file "tmp2.o" :if-does-not-exist #f)))
 
 (test "open-output-file :if-does-not-exist :error" #t
       (lambda ()
@@ -75,9 +73,9 @@
 
 (test "open-output-file :if-exists :append" 'cdefghijklm
       (lambda ()
-        (let ((o (open-output-file "tmp2.o"
-                                   :if-exists :append
-                                   :if-does-not-exist :error)))
+        (let1 o (open-output-file "tmp2.o"
+                                  :if-exists :append
+                                  :if-does-not-exist :error)
           (display "klm" o)
           (close-output-port o)
           (let* ((i (open-input-file "tmp2.o"))
@@ -87,9 +85,9 @@
 
 (test "open-output-file :if-exists :supersede" 'nopqr
       (lambda ()
-        (let ((o (open-output-file "tmp2.o"
-                                   :if-exists :supersede
-                                   :if-does-not-exist #f)))
+        (let1 o (open-output-file "tmp2.o"
+                                  :if-exists :supersede
+                                  :if-does-not-exist #f)
           (display "nopqr" o)
           (close-output-port o)
           (let* ((i (open-input-file "tmp2.o"))
@@ -127,6 +125,85 @@
 
 ;;-------------------------------------------------------------------
 (test-section "input ports")
+
+(sys-unlink "tmp1.o")
+(with-output-to-file "tmp1.o" (lambda () (display "")))
+(test "read-char (EOF)" #t
+      (lambda () (eof-object? (call-with-input-file "tmp1.o" read-char))))
+(test "read-byte (EOF)" #t
+      (lambda () (eof-object? (call-with-input-file "tmp1.o" read-byte))))
+(test "read-line (EOF)" #t
+      (lambda () (eof-object? (call-with-input-file "tmp1.o" read-line))))
+(test "read-block (EOF)" #t
+      (lambda ()
+        (eof-object? (call-with-input-file "tmp1.o" (pa read-block 10)))))
+
+(with-output-to-file "tmp1.o" (lambda () (display "ab")))
+(test "read-char (a)" #\a
+      (lambda () (call-with-input-file "tmp1.o" read-char)))
+(test "read-byte (a)" 97
+      (lambda () (call-with-input-file "tmp1.o" read-byte)))
+(test "read-byte (ungotten)" 97
+      (lambda ()
+        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-byte _)))))
+(test "read-line (a)" "ab"
+      (lambda () (call-with-input-file "tmp1.o" read-line)))
+(test "read-byte (ungotten)" 97
+      (lambda ()
+        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-byte _)))))
+(test "read-block (a)" #"ab"
+      (lambda ()
+        (call-with-input-file "tmp1.o" (pa read-block 10))))
+(test "read-block (ungotten)" #"ab"
+      (lambda ()
+        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-block 10 _)))))
+
+(with-output-to-file "tmp1.o" (lambda () (display "\n")))
+(test "read-line (LF)" ""
+      (lambda () (call-with-input-file "tmp1.o" read-line)))
+(test "read-line (LF, ungotten)" ""
+      (lambda ()
+        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-line _)))))
+(with-output-to-file "tmp1.o" (lambda () (display "\r")))
+(test "read-line (CR)" ""
+      (lambda () (call-with-input-file "tmp1.o" read-line)))
+(test "read-line (CR, ungotten)" ""
+      (lambda ()
+        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-line _)))))
+(with-output-to-file "tmp1.o" (lambda () (display "\n\n")))
+(test "read-line (LF)" '("" "" #t)
+      (lambda ()
+        (call-with-input-file "tmp1.o"
+          (l_ (let* ((c1 (peek-char _))
+                     (l1 (read-line _))
+                     (c2 (peek-char _))
+                     (l2 (read-line _))
+                     (c2 (peek-char _))
+                     (l3 (read-line _)))
+                (list l1 l2 (eof-object? l3)))))))
+(with-output-to-file "tmp1.o" (lambda () (display "\r\r\n")))
+(test "read-line (CR, CRLF)" '("" "" #t)
+      (lambda ()
+        (call-with-input-file "tmp1.o"
+          (l_ (let* ((c1 (peek-char _))
+                     (l1 (read-line _))
+                     (c2 (peek-char _))
+                     (l2 (read-line _))
+                     (c2 (peek-char _))
+                     (l3 (read-line _)))
+                (list l1 l2 (eof-object? l3)))))))
+(with-output-to-file "tmp1.o" (lambda () (display "a\r\nb\nc")))
+(test "read-line (mix)" '("a" "b" "c" #t)
+      (lambda ()
+        (call-with-input-file "tmp1.o"
+          (l_ (let* ((c1 (peek-char _))
+                     (l1 (read-line _))
+                     (c2 (peek-char _))
+                     (l2 (read-line _))
+                     (c2 (peek-char _))
+                     (l3 (read-line _))
+                     (c3 (peek-char _)))
+                (list l1 l2 l3 (eof-object? c3)))))))
 
 (with-output-to-file "tmp1.o"
   (lambda ()

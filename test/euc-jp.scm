@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.12 2002-04-27 08:22:58 shirok Exp $
+;; $Id: euc-jp.scm,v 1.13 2002-04-28 01:03:44 shirok Exp $
 
 (use gauche.test)
 
@@ -233,6 +233,26 @@
       (lambda () (peek-char istr) (read-block 1 istr)))
 (test "read-block (using scratch)" #"\xdbヘト"
       (lambda () (peek-char istr) (read-block 10 istr)))
+
+(test "read-line (LF)" "なむ"
+      (lambda () (read-line (open-input-string "なむ\n"))))
+(test "read-line (CR)" "なむ"
+      (lambda () (read-line (open-input-string "なむ\r"))))
+(test "read-line (CRLF)" "なむ"
+      (lambda () (read-line (open-input-string "なむ\r\n"))))
+(test "read-line (using ungotten)" "なむ"
+      (lambda ()
+        (let1 s (open-input-string "なむ\n")
+          (peek-char s) (read-line s))))
+
+;(test "read-line (using scratch)" "なむ"
+;      (lambda ()
+;        (let ((i (open-input-string "なむ\n"))
+;              (o (open-output-string)))
+;          (peek-char i)
+;          (write-byte (read-byte i) o)
+;          (display (read-line i) o)
+;          (get-output-string o))))
 
 ;;-------------------------------------------------------------------
 (test-section "buffered ports")

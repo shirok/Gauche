@@ -275,6 +275,29 @@
 (test "termination" #t
       (lambda () (eof-object? (read-block 3 istr))))
 
+(define (read-line-tester str)
+  (let1 s (open-input-string str)
+    (let loop ((l (read-line s))
+               (r '()))
+      (if (eof-object? l) (reverse r) (loop (read-line s) (cons l r))))))
+
+(test "read-line (nullstr)" '()
+      (lambda () (read-line-tester "")))
+(test "read-line (NL)" '("")
+      (lambda () (read-line-tester "\n")))
+(test "read-line (CR)" '("")
+      (lambda () (read-line-tester "\r")))
+(test "read-line (CRNL)" '("")
+      (lambda () (read-line-tester "\r\n")))
+(test "read-line (mix)" '("ab" "cd" "" "ef" "g")
+      (lambda () (read-line-tester "ab\rcd\r\r\nef\ng")))
+(test "read-line (ungotten)" '("ab" "cd")
+      (lambda ()
+        (let1 s (open-input-string "ab\ncd")
+          (let loop ((l (begin (peek-char s) (read-line s)))
+                     (r '()))
+            (if (eof-object? l) (reverse r) (loop (read-line s) (cons l r)))))))
+
 ;;-------------------------------------------------------------------
 (test-section "output string port")
 
