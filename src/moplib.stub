@@ -12,12 +12,15 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.11 2001-04-22 08:02:49 shiro Exp $
+;;; $Id: moplib.stub,v 1.12 2001-10-24 09:42:49 shirok Exp $
 ;;;
 
 "
 #include <gauche/class.h>
 "
+
+(define-type "slot-accessor" slot-accessor?
+  "ScmSlotAccessor*" "SCM_SLOT_ACCESSOR_P" "SCM_SLOT_ACCESSOR")
 
 ;;
 ;; Internal routines
@@ -87,6 +90,23 @@
 
 (define-cproc slot-bound? (obj slot)
   "  SCM_RETURN(Scm_VMSlotBoundP(obj, slot));")
+
+(define-cproc slot-ref-using-accessor (obj accessor)
+  (assert (slot-accessor? accessor))
+  "  SCM_RETURN(Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE));")
+
+(define-cproc slot-set-using-accessor (obj accessor value)
+  (assert (slot-accessor? accessor))
+  "  SCM_RETURN(Scm_VMSlotSetUsingAccessor(obj, accessor, value));")
+
+(define-cproc instance-slot-ref (obj num)
+  (assert (small-integer? num))
+  "  SCM_RETURN(Scm_InstanceSlotRef(obj, num));")
+
+(define-cproc instance-slot-set (obj num value)
+  (assert (small-integer? num))
+  "Scm_InstanceSlotSet(obj, num, value);
+   SCM_RETURN(SCM_UNDEFINED);")
 
 ;; Local variables:
 ;; mode: scheme
