@@ -49,5 +49,26 @@
       )
 
 (sys-system "rm -rf test.o")
+(sys-mkdir "test.o" #o777)
+(with-output-to-file "test.o/d.scm"
+  (lambda ()
+    (display "(define z 0)(")
+    (newline)))
+
+(test "reload after error"
+      1
+      (lambda ()
+        (with-error-handler
+         (lambda (e) #t)
+         (lambda ()
+           (eval '(require "test.o/d") (interaction-environment))))
+        (with-output-to-file "test.o/d.scm"
+          (lambda ()
+            (write '(define z 1))
+            (write '(provide "tset.o/d"))))
+        (eval '(require "test.o/d") (interaction-environment))
+        (eval 'z (interaction-environment))))
+
+(sys-system "rm -rf test.o")
 
 (test-end)
