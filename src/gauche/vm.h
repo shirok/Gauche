@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.68 2002-05-25 09:03:34 shirok Exp $
+ *  $Id: vm.h,v 1.69 2002-07-05 00:25:21 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -60,6 +60,10 @@ SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
  * Continuation
  *
  *  Continuation is represented as a chain of ScmContFrames.
+ *  If argp == NULL && size >= 0, the frame is C continuation.
+ *  If info == SCM_FALSE, it is a boundary frame (a dummy frame inserted by
+ *  Scm_Eval or Scm_Apply to indicate the continuation has to "return" to
+ *  C stack).
  */
 
 typedef struct ScmContFrameRec {
@@ -352,7 +356,7 @@ SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
     do {                                        \
        ScmCStack cstack;                        \
        cstack.prev = Scm_VM()->cstack;          \
-       cstack.cont = Scm_VM()->cont;            \
+       cstack.cont = NULL;                      \
        Scm_VM()->cstack = &cstack;              \
        if (sigsetjmp(cstack.jbuf, TRUE) == 0) {
            

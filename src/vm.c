@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.156 2002-07-02 23:11:32 shirok Exp $
+ *  $Id: vm.c,v 1.157 2002-07-05 00:25:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -260,6 +260,9 @@ void Scm__InitVM(void)
 #define IN_STACK_P(ptr)                         \
     ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
 
+/* return true if cont is a boundary continuation frame */
+#define BOUNDARY_FRAME_P(cont) (SCM_FALSEP((cont)->info))
+
 #define RESTORE_REGS()                          \
     do {                                        \
         pc = vm->pc;                            \
@@ -476,7 +479,7 @@ static void run_loop()
            !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.
            (the former makes nqueen.scm 2% slower) */
         if (SCM_NULLP(pc)) {
-            if (cont == NULL || cont == vm->cstack->cont) {
+            if (cont == NULL || BOUNDARY_FRAME_P(cont)) {
                 SAVE_REGS();
                 return; /* no more continuations */
             }
@@ -1559,13 +1562,13 @@ static ScmObj user_eval_inner(ScmObj program)
     DECL_REGS_VOLATILE;
     ScmCStack cstack;
 
-    /* Push extra continuation to preserve vm state.  This is necessary
-       since the stack may have unfinisied argument frame, and it must
-       be saved when a continuation is captured inside PROGRAM.
-       TODO: This won't be necessary if we're called directly
-       from a subr so it can be optimized. */
+    /* Push extra continuation.  This continuation frame is a 'boundary
+       frame' and marked by info == SCM_FALSE.   VM loop knows it should
+       return to C frame when it sees a boundary frame.  A boundary frame
+       also keeps the unfinished argument frame at the point when
+       Scm_Eval or Scm_Apply is called. */
     CHECK_STACK(CONT_FRAME_SIZE);
-    PUSH_CONT(pc, pc);
+    PUSH_CONT(SCM_FALSE, pc);
     pc = program;
     SAVE_REGS();
 
