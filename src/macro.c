@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.34 2001-12-22 20:51:41 shirok Exp $
+ *  $Id: macro.c,v 1.35 2002-01-06 06:19:43 shirok Exp $
  */
 
 #include "gauche.h"
@@ -108,8 +108,8 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 static ScmObj macro_transform(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj proc = SCM_OBJ(data);
-    ScmObj newform = Scm_Apply(proc, form);
-    return Scm_Compile(newform, env, ctx);
+    SCM_ASSERT(SCM_PAIRP(form));
+    return Scm_Compile(Scm_Apply(proc, SCM_CDR(form)), env, ctx);
 }
 
 ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
@@ -152,8 +152,8 @@ static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
         /* (define-macro (foo ..) ... */
         ScmObj args, body;
         if (!SCM_PAIRP(name)) goto badsyn;
+        args = SCM_CDR(name);
         name = SCM_CAR(name);
-        args = SCM_CADR(form);
         body = SCM_CDDR(form);
 
         /* TODO: think more about the case that name is an identifier */
