@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: exclib.stub,v 1.3 2002-07-07 10:48:55 shirok Exp $
+;;; $Id: exclib.stub,v 1.4 2002-07-08 12:33:47 shirok Exp $
 ;;;
 
 "
@@ -36,7 +36,7 @@
     Scm_Error(\"error handler must take at least 1 argument, but got %S\",
               handler);
   }
-  if (!SCM_PROCEDURE_TAKE_NARG_P(thunk, 0)) {
+  if (!SCM_PROCEDURE_THUNK_P(thunk)) {
     Scm_Error(\"thunk required, but got %S\", thunk);
   }
   SCM_RETURN(Scm_VMWithErrorHandler(handler, thunk));")
@@ -50,7 +50,7 @@
     Scm_Error(\"exception handler must take at least 1 argument, but got %S\",
               handler);
   }
-  if (!SCM_PROCEDURE_TAKE_NARG_P(thunk, 0)) {
+  if (!SCM_PROCEDURE_THUNK_P(thunk)) {
     Scm_Error(\"thunk required, but got %S\", thunk);
   }
   SCM_RETURN(Scm_VMWithExceptionHandler(handler, thunk));")

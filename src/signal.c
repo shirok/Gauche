@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.14 2002-05-21 11:49:46 shirok Exp $
+ *  $Id: signal.c,v 1.15 2002-07-08 12:33:47 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -25,86 +25,99 @@
 /* Signals
  *
  *  C-application that embeds Gauche can specify a set of signals
- *  that Gauche should handle.
+ *  that Gauche can handle.
  *
- *  Gauche sets its internal signal handlers for them.  The signal
- *  is queued to the signal buffer of the thread that caught the
- *  signal.
- *
+ *  The Scheme program can specify which signal it wants to handle
+ *  by setting a Scheme signal handler.  Gauche registers the internal
+ *  signal handler for the specified signal.  What the internal signal
+ *  handler does is just queue the signal in the VM's signal queue.
  *  VM calls Scm_SigCheck() at the "safe" point, which flushes
  *  the signal queue and make a list of handlers to be called.
  *
- *  This signal handling mechanism only deals with the
- *  thread-private data.
+ *  Scheme signal handler vector is shared by all threads.  Each
+ *  thread can set a signal mask.  By default, only the primordial
+ *  thread handles signals.
+ *
+ *  For most signals, Gauche installs the default signal handler that
+ *  raises 'unhandled signal exception'.   For other signals, Gauche lets
+ *  the system to handle the signal unless the Scheme program installs
+ *  the handler.   Such signals are the ones that can't be caught, or
+ *  are ignored by default.  SIGPWR and SIGXCPU are also left to the system
+ *  since GC uses it in the Linux/pthread environment.
  */
 
-/* Master set of signals that the Gauche traps.  Need to be MT safe. */
-static sigset_t masterSigset;
+/* Master signal handler vector. */
+static struct sigHandlersRec {
+    sigset_t masterSigset;      /* the signals Gauche is allowed to handle */
+    ScmObj handlers[NSIG];      /* Scheme signal handlers */
+    ScmInternalMutex mutex;
+} sigHandlers;
 
 /* Table of signals and its name, to display sigset content. */
-#define SIGDEF(x)  { #x, x }
+#define SIGDEF(x, flag)  { #x, x, flag }
 
 static struct sigdesc {
     const char *name;
     int num;
+    int defaultHandle;
 } sigDesc[] = {
-    SIGDEF(SIGHUP),	/* Hangup (POSIX).  */
-    SIGDEF(SIGINT),	/* Interrupt (ANSI).  */
-    SIGDEF(SIGQUIT),	/* Quit (POSIX).  */
-    SIGDEF(SIGILL),	/* Illegal instruction (ANSI).  */
+    SIGDEF(SIGHUP, TRUE),       /* Hangup (POSIX).  */
+    SIGDEF(SIGINT, TRUE),       /* Interrupt (ANSI).  */
+    SIGDEF(SIGQUIT, TRUE),      /* Quit (POSIX).  */
+    SIGDEF(SIGILL, FALSE),      /* Illegal instruction (ANSI).  */
 #ifdef SIGTRAP
-    SIGDEF(SIGTRAP),	/* Trace trap.  */
+    SIGDEF(SIGTRAP, TRUE),      /* Trace trap.  */
 #endif
-    SIGDEF(SIGABRT),	/* Abort (ANSI).  */
+    SIGDEF(SIGABRT, FALSE),     /* Abort (ANSI).  */
 #ifdef SIGIOT
-    SIGDEF(SIGIOT),	/* IOT trap (4.2 BSD).  */
+    SIGDEF(SIGIOT, TRUE),       /* IOT trap (4.2 BSD).  */
 #endif
 #ifdef SIGBUS
-    SIGDEF(SIGBUS),	/* BUS error (4.2 BSD).  */
+    SIGDEF(SIGBUS, FALSE),      /* BUS error (4.2 BSD).  */
 #endif
-    SIGDEF(SIGFPE),	/* Floating-point exception (ANSI).  */
-    SIGDEF(SIGKILL),	/* Kill, unblockable (POSIX).  */
-    SIGDEF(SIGUSR1),	/* User-defined signal 1 (POSIX).  */
-    SIGDEF(SIGSEGV),	/* Segmentation violation (ANSI).  */
-    SIGDEF(SIGUSR2),	/* User-defined signal 2 (POSIX).  */
-    SIGDEF(SIGPIPE),	/* Broken pipe (POSIX).  */
-    SIGDEF(SIGALRM),	/* Alarm clock (POSIX).  */
-    SIGDEF(SIGTERM),	/* Termination (ANSI).  */
+    SIGDEF(SIGFPE, TRUE),       /* Floating-point exception (ANSI).  */
+    SIGDEF(SIGKILL, FALSE),     /* Kill, unblockable (POSIX).  */
+    SIGDEF(SIGUSR1, TRUE),      /* User-defined signal 1 (POSIX).  */
+    SIGDEF(SIGSEGV, FALSE),     /* Segmentation violation (ANSI).  */
+    SIGDEF(SIGUSR2, TRUE),      /* User-defined signal 2 (POSIX).  */
+    SIGDEF(SIGPIPE, TRUE),      /* Broken pipe (POSIX).  */
+    SIGDEF(SIGALRM, TRUE),      /* Alarm clock (POSIX).  */
+    SIGDEF(SIGTERM, TRUE),      /* Termination (ANSI).  */
 #ifdef SIGSTKFLT
-    SIGDEF(SIGSTKFLT),	/* Stack fault.  */
+    SIGDEF(SIGSTKFLT, TRUE),    /* Stack fault.  */
 #endif
-    SIGDEF(SIGCHLD),	/* Child status has changed (POSIX).  */
-    SIGDEF(SIGCONT),	/* Continue (POSIX).  */
-    SIGDEF(SIGSTOP),	/* Stop, unblockable (POSIX).  */
-    SIGDEF(SIGTSTP),	/* Keyboard stop (POSIX).  */
-    SIGDEF(SIGTTIN),	/* Background read from tty (POSIX).  */
-    SIGDEF(SIGTTOU),	/* Background write to tty (POSIX).  */
+    SIGDEF(SIGCHLD, FALSE),     /* Child status has changed (POSIX).  */
+    SIGDEF(SIGCONT, FALSE),     /* Continue (POSIX).  */
+    SIGDEF(SIGSTOP, FALSE),     /* Stop, unblockable (POSIX).  */
+    SIGDEF(SIGTSTP, FALSE),     /* Keyboard stop (POSIX).  */
+    SIGDEF(SIGTTIN, FALSE),     /* Background read from tty (POSIX).  */
+    SIGDEF(SIGTTOU, FALSE),     /* Background write to tty (POSIX).  */
 #ifdef SIGURG
-    SIGDEF(SIGURG),	/* Urgent condition on socket (4.2 BSD).  */
+    SIGDEF(SIGURG, FALSE),      /* Urgent condition on socket (4.2 BSD).  */
 #endif
 #ifdef SIGXCPU
-    SIGDEF(SIGXCPU),	/* CPU limit exceeded (4.2 BSD).  */
+    SIGDEF(SIGXCPU, FALSE),     /* CPU limit exceeded (4.2 BSD).  */
 #endif
 #ifdef SIGXFSZ
-    SIGDEF(SIGXFSZ),	/* File size limit exceeded (4.2 BSD).  */
+    SIGDEF(SIGXFSZ, TRUE),      /* File size limit exceeded (4.2 BSD).  */
 #endif
 #ifdef SIGVTALRM
-    SIGDEF(SIGVTALRM),	/* Virtual alarm clock (4.2 BSD).  */
+    SIGDEF(SIGVTALRM, TRUE),    /* Virtual alarm clock (4.2 BSD).  */
 #endif
 #ifdef SIGPROF
-    SIGDEF(SIGPROF),	/* Profiling alarm clock (4.2 BSD).  */
+    SIGDEF(SIGPROF, TRUE),      /* Profiling alarm clock (4.2 BSD).  */
 #endif
 #ifdef SIGWINCH
-    SIGDEF(SIGWINCH),	/* Window size change (4.3 BSD, Sun).  */
+    SIGDEF(SIGWINCH, FALSE),    /* Window size change (4.3 BSD, Sun).  */
 #endif
 #ifdef SIGPOLL
-    SIGDEF(SIGPOLL),	/* Pollable event occurred (System V).  */
+    SIGDEF(SIGPOLL, TRUE),      /* Pollable event occurred (System V).  */
 #endif
 #ifdef SIGIO
-    SIGDEF(SIGIO),	/* I/O now possible (4.2 BSD).  */
+    SIGDEF(SIGIO, TRUE),        /* I/O now possible (4.2 BSD).  */
 #endif
 #ifdef SIGPWR
-    SIGDEF(SIGPWR),	/* Power failure restart (System V).  */
+    SIGDEF(SIGPWR, FALSE),      /* Power failure restart (System V).  */
 #endif
     { NULL, -1 }
 };
@@ -259,7 +272,7 @@ static void sig_handle(int signum)
     /* It is possible that vm == NULL at this point, if the thread is
        terminating and in the cleanup phase. */
     if (vm == NULL) return;
-       
+    
     if (vm->sigOverflow) return;
     
     if (vm->sigQueueHead <= vm->sigQueueTail) {
@@ -281,59 +294,39 @@ static void sig_handle(int signum)
  */
 void Scm_SigCheck(ScmVM *vm)
 {
-    ScmObj sp, tail;
+    ScmObj tail, cell, sp;
+    int sigQsize, i;
+    int sigQcopy[SCM_VM_SIGQ_SIZE]; /* copy of signal queue */
 
+    /* Copy VM's signal queue to local storage, for we can't call
+       storage allocation during blocking signals. */
     sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);
-    /* NB: if an error occurs during the critical section,
-       some signals may be lost. */
-    SCM_UNWIND_PROTECT {
-        tail = vm->sigPending;
-        if (!SCM_NULLP(tail)) tail = Scm_LastPair(tail);
-        while (vm->sigQueueHead != vm->sigQueueTail) {
-            int signum = vm->sigQueue[vm->sigQueueHead++];
-            if (vm->sigQueueHead >= SCM_VM_SIGQ_SIZE) vm->sigQueueHead = 0;
+    for (sigQsize = 0; vm->sigQueueHead != vm->sigQueueTail; sigQsize++) {
+        sigQcopy[sigQsize] = vm->sigQueue[vm->sigQueueHead++];
+        if (vm->sigQueueHead >= SCM_VM_SIGQ_SIZE) vm->sigQueueHead = 0;
+    }
+    vm->sigOverflow = 0; /*TODO: we should do something*/
+    sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
 
-            SCM_FOR_EACH(sp, vm->sigHandlers) {
-                ScmObj sigh = SCM_CAR(sp);
-                sigset_t *set;
-                SCM_ASSERT(SCM_PAIRP(sigh)&&SCM_SYS_SIGSET_P(SCM_CAR(sigh)));
-                set = &(SCM_SYS_SIGSET(SCM_CAR(sigh))->set);
-                if (sigismember(set, signum)) {
-                    ScmObj cell = Scm_Acons(SCM_CDR(sigh),
-                                            SCM_MAKE_INT(signum),
-                                            SCM_NIL);
-                    if (SCM_NULLP(tail)) {
-                        vm->sigPending = tail = cell;
-                    } else {
-                        SCM_SET_CDR(tail, cell);
-                        tail = SCM_CDR(tail);
-                    }
-                    break;
-                }
-            }
-            if (SCM_NULLP(sp)) {
-                /* No handler is defined for signum. Call default handler */
-                ScmObj cell = Scm_Acons(DEFAULT_SIGHANDLER,
-                                        SCM_MAKE_INT(signum),
-                                        SCM_NIL);
-                if (SCM_NULLP(tail)) {
-                    vm->sigPending = tail = cell;
-                } else {
-                    SCM_SET_CDR(tail, cell);
-                    tail = SCM_CDR(tail);
-                }
+    /* Now, prepare queued signal handlers
+       If an error is thrown in this loop, the queued signals will be
+       lost---it doesn't look like so, but I may overlook something. */
+    tail = vm->sigPending;
+    if (!SCM_NULLP(tail)) tail = Scm_LastPair(tail);
+    for (i=0; i<sigQsize; i++) {
+        if (SCM_PROCEDUREP(sigHandlers.handlers[sigQcopy[i]])) {
+            cell = Scm_Acons(sigHandlers.handlers[sigQcopy[i]],
+                             SCM_MAKE_INT(sigQcopy[i]),
+                             SCM_NIL);
+            if (SCM_NULLP(tail)) {
+                vm->sigPending = tail = cell;
+            } else {
+                SCM_SET_CDR(tail, cell);
+                tail = SCM_CDR(tail);
             }
         }
     }
-    SCM_WHEN_ERROR {
-        sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
-        SCM_NEXT_HANDLER;
-    }
-    SCM_END_PROTECT;
-    /* TODO: signal overflow handling */
-    vm->sigOverflow = 0;
-    sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
-
+    
     /* Call the queued signal handlers.  If an error is thrown in one
        of those handlers, the rest of handlers remain in the queue. */
     /* TODO: if VM is active, it'd be better to make the active VM to handle
@@ -346,38 +339,67 @@ void Scm_SigCheck(ScmVM *vm)
 }
 
 /*
- * %with-signal-handlers
+ * set-signal-handler!
  */
-/* this is a low-level routine that will be called from
-   with-signal-handlers macro.  handlers are list of (<sigset> . <handler>)
-   where <handler> is either a handler procedure or #f (ignore).
-*/
-
-static ScmObj set_sighandlers(ScmObj *args, int nargs, void *data)
+ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler)
 {
-    /* NB: change sigmask of this thread */
-    ScmObj handlers = SCM_OBJ(data);
-    Scm_VM()->sigHandlers = handlers;
-    return handlers;
-}
-
-ScmObj Scm_VMWithSignalHandlers(ScmObj handlers, ScmProcedure *thunk)
-{
-    ScmObj cp, before, after, newhandlers;
-    ScmVM *vm = Scm_VM();
-    /* check validity of args */
-    SCM_FOR_EACH(cp, handlers) {
-        ScmObj p = SCM_CAR(cp);
-        if (!SCM_PAIRP(p) || !SCM_SYS_SIGSET_P(SCM_CAR(p))
-            || !SCM_PROCEDUREP(SCM_CDR(p))) {
-            Scm_Error("bad sighandler entry: %S", p);
+    struct sigaction act;
+    sigset_t sigset;
+    int badproc = FALSE, sigactionfailed = FALSE, i;
+    if (SCM_INTP(sigs)) {
+        int signum = SCM_INT_VALUE(sigs);
+        if (signum < 0 || signum >= NSIG) {
+            Scm_Error("bad signal number: %d", signum);
+        }
+        sigemptyset(&sigset);
+        sigaddset(&sigset, signum);
+    } else if (SCM_SYS_SIGSET_P(sigs)) {
+        sigset = SCM_SYS_SIGSET(sigs)->set;
+    } else {
+        Scm_Error("bad signal number: must be an integer signal number or a <sys-sigset> object, but got %S", sigs);
+    }
+    
+    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
+    if (SCM_TRUEP(handler)) {
+        act.sa_handler = SIG_DFL;
+    } else if (SCM_FALSEP(handler)) {
+        act.sa_handler = SIG_IGN;
+    } else if (SCM_PROCEDUREP(handler)
+               && SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {
+        act.sa_handler = sig_handle;
+    } else {
+        badproc = TRUE;
+    }
+    if (!badproc) {
+        sigemptyset(&act.sa_mask);
+        act.sa_flags = 0;
+        for (i=0; i<NSIG; i++) {
+            if (sigismember(&sigset, i)
+                && sigismember(&sigHandlers.masterSigset, i)) {
+                if (sigaction(i, &act, NULL) != 0) {
+                    sigactionfailed = TRUE;
+                    break;
+                }
+                sigHandlers.handlers[i] = handler;
+            }
         }
     }
-    if (!SCM_NULLP(cp)) Scm_Error("bad sighandler list: %S", handlers);
-    newhandlers = Scm_Append2(handlers, vm->sigHandlers);
-    before = Scm_MakeSubr(set_sighandlers, newhandlers, 0, 0, SCM_FALSE);
-    after = Scm_MakeSubr(set_sighandlers, vm->sigHandlers, 0, 0, SCM_FALSE);
-    return Scm_VMDynamicWind(before, SCM_OBJ(thunk), after);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
+    if (badproc) Scm_Error("bad signal handling procedure: must be either a procedure that takes at least one argument, #t, or #f, but got %S", handler);
+    if (sigactionfailed) Scm_Error("sigaction failed when setting a sighandler");
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_GetSignalHandler(int signum)
+{
+    ScmObj r;
+    if (signum < 0 || signum >= NSIG) {
+        Scm_Error("bad signal number: %d", signum);
+    }
+    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
+    r = sigHandlers.handlers[signum];
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
+    return r;
 }
 
 /*
@@ -385,10 +407,10 @@ ScmObj Scm_VMWithSignalHandlers(ScmObj handlers, ScmProcedure *thunk)
  */
 sigset_t Scm_GetMasterSigmask(void)
 {
-    return masterSigset;
+    return sigHandlers.masterSigset;
 }
 
-/* this should be called before any threads but the master one is created. */
+/* this should be called before any thread is created. */
 void Scm_SetMasterSigmask(sigset_t *set)
 {
     struct sigdesc *desc = sigDesc;
@@ -402,22 +424,26 @@ void Scm_SetMasterSigmask(sigset_t *set)
     actoff.sa_flags = 0;
     
     for (; desc->name; desc++) {
-        if (sigismember(&masterSigset, desc->num)
+        if (sigismember(&sigHandlers.masterSigset, desc->num)
             && !sigismember(set, desc->num)) {
             /* remove sighandler */
             if (sigaction(desc->num, &actoff, NULL) != 0) {
-                Scm_SysError("sigaction on %d failed\n", desc->num);
+                Scm_SysError("sigaction on %d failed", desc->num);
             }
-        } else if (!sigismember(&masterSigset, desc->num)
+            sigHandlers.handlers[desc->num] = SCM_TRUE;
+        } else if (!sigismember(&sigHandlers.masterSigset, desc->num)
                    && sigismember(set, desc->num)) {
-            /* add sighandler */
-            if (sigaction(desc->num, &acton, NULL) != 0) {
-                Scm_SysError("sigaction on %d failed\n", desc->num);
+            /* add sighandler, only if defaultHandle is true. */
+            if (desc->defaultHandle) {
+                if (sigaction(desc->num, &acton, NULL) != 0) {
+                    Scm_SysError("sigaction on %d failed", desc->num);
+                }
+                sigHandlers.handlers[desc->num] = DEFAULT_SIGHANDLER;
             }
         }
     }
-    masterSigset = *set;
-    Scm_VM()->sigMask = masterSigset;
+    sigHandlers.masterSigset = *set;
+    Scm_VM()->sigMask = sigHandlers.masterSigset;
 }
 
 /*
@@ -429,8 +455,11 @@ void Scm__InitSignal(void)
     ScmModule *mod = Scm_GaucheModule();
     ScmObj defsigh_sym = Scm_Intern(&default_sighandler_name);
     struct sigdesc *desc;
+    int i;
 
-    sigemptyset(&masterSigset);
+    (void)SCM_INTERNAL_MUTEX_INIT(sigHandlers.mutex);
+    sigemptyset(&sigHandlers.masterSigset);
+    for (i=0; i<NSIG; i++) sigHandlers.handlers[i] = SCM_FALSE;
     
     Scm_InitBuiltinClass(&Scm_SysSigsetClass, "<sys-sigset>", NULL,
                          sizeof(ScmSysSigset), mod);

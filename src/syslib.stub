@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.73 2002-05-15 03:34:40 shirok Exp $
+;;; $Id: syslib.stub,v 1.74 2002-07-08 12:33:47 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -220,9 +220,16 @@
   if (r < 0) Scm_SysError(\"kill failed\");
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc %with-signal-handlers (handlers thunk)
-  (assert (procedure? thunk))
-  "SCM_RETURN(Scm_VMWithSignalHandlers(handlers, thunk));")
+(define-cproc set-signal-handler! (sig proc)
+  "SCM_RETURN(Scm_SetSignalHandler(sig, proc));")
+
+(define-cproc get-signal-handler (sig)
+  (assert (exact? sig))
+  "SCM_RETURN(Scm_GetSignalHandler(sig));")
+
+;(define-cproc %with-signal-handlers (handlers thunk)
+;  (assert (procedure? thunk))
+;  "SCM_RETURN(Scm_VMWithSignalHandlers(handlers, thunk));")
 
 ;; raise should be handled by sys-kill
 

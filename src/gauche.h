@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.278 2002-07-08 03:01:05 shirok Exp $
+ *  $Id: gauche.h,v 1.279 2002-07-08 12:33:47 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1721,7 +1721,13 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
 #define SCM_PROCEDUREP(obj) \
     (SCM_PTRP(obj) && SCM_CLASS_APPLICABLE_P(SCM_CLASS_OF(obj)))
 #define SCM_PROCEDURE_TAKE_NARG_P(obj, narg) \
-    (SCM_PROCEDUREP(obj)&&SCM_PROCEDURE_REQUIRED(obj)==(narg))
+    (SCM_PROCEDUREP(obj)&& \
+     (  (!SCM_PROCEDURE_OPTIONAL(obj)&&SCM_PROCEDURE_REQUIRED(obj)==(narg)) \
+      ||(SCM_PROCEDURE_OPTIONAL(obj)&&SCM_PROCEDURE_REQUIRED(obj)>=(narg))))
+#define SCM_PROCEDURE_THUNK_P(obj) \
+    (SCM_PROCEDUREP(obj)&& \
+     (  (!SCM_PROCEDURE_OPTIONAL(obj)&&SCM_PROCEDURE_REQUIRED(obj)==0) \
+      ||(SCM_PROCEDURE_OPTIONAL(obj))))
 #define SCM_PROCEDURE_INIT(obj, req, opt, typ, inf)     \
     SCM_PROCEDURE(obj)->required = req,                 \
     SCM_PROCEDURE(obj)->optional = opt,                 \
@@ -2108,7 +2114,8 @@ SCM_CLASS_DECL(Scm_SysSigsetClass);
 
 SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_SysSigsetOp(ScmSysSigset*, ScmObj, int);
-SCM_EXTERN ScmObj Scm_VMWithSignalHandlers(ScmObj handlers, ScmProcedure *thunk);
+SCM_EXTERN ScmObj Scm_GetSignalHandler(int);
+SCM_EXTERN ScmObj Scm_SetSignalHandler(ScmObj, ScmObj);
 SCM_EXTERN sigset_t Scm_GetMasterSigmask(void);
 SCM_EXTERN void   Scm_SetMasterSigmask(sigset_t *set);
 SCM_EXTERN ScmObj Scm_SignalName(int signum);

@@ -1,3 +1,11 @@
+2002-07-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c, src/gauche.h, src/vm.c, src/extlib.stub: revised
+	  signal handling mechanism.  Now the signal handler vector is
+	  shared by all threads.  This check-in breaks backward compatibility
+	  of the signal handling mechanism---the compatible
+	  with-signal-handlers interface should be written later.
+
 2002-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/exclib.stub : fix slot name of uncaught-exception.

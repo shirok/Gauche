@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.71 2002-07-06 10:13:39 shirok Exp $
+ *  $Id: vm.h,v 1.72 2002-07-08 12:33:48 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -258,7 +258,6 @@ struct ScmVMRec {
     unsigned int sigQueueHead;  /* points to the queue head */
     unsigned int sigQueueTail;  /* points to the queue tail */
     unsigned int sigOverflow;   /* flag to indicate queue overflow */
-    ScmObj sigHandlers;         /* assoc list of signal handlers */
     ScmObj sigPending;          /* pending signal handlers */
     sigset_t sigMask;           /* current signal mask */
 };
