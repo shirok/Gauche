@@ -418,9 +418,9 @@ static ScmClassStaticSlotSpec servent_slots[] = {
 void Scm_Init_NetDB(ScmModule *mod)
 {
     Scm_InitBuiltinClass(&Scm_SysHostentClass, "<sys-hostent>",
-                         hostent_slots, mod);
+                         hostent_slots, sizeof(ScmSysHostent), mod);
     Scm_InitBuiltinClass(&Scm_SysProtoentClass, "<sys-protoent>",
-                         protoent_slots, mod);
+                         protoent_slots, sizeof(ScmSysProtoent), mod);
     Scm_InitBuiltinClass(&Scm_SysServentClass, "<sys-servent>",
-                         servent_slots, mod);
+                         servent_slots, sizeof(ScmSysServent), mod);
 }

@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.8 2001-10-29 00:56:58 shirok Exp $
+;;  $Id: ndbm.stub,v 1.9 2001-11-07 09:33:00 shirok Exp $
 ;;
 
 "
@@ -65,7 +65,7 @@
  void Scm_Init_ndbm(void)
  {
     ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"dbm.ndbm\", TRUE));
-    Scm_InitBuiltinClass(&Scm_NdbmClass, \"<ndbm-file>\", NULL, mod);
+    Scm_InitBuiltinClass(&Scm_NdbmClass, \"<ndbm-file>\", NULL, sizeof(ScmNdbm), mod);
     internal_init(mod);
  }
  #define Scm_Init_ndbm  internal_init

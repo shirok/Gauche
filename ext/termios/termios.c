@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.c,v 1.3 2001-09-16 01:37:14 shirok Exp $
+ *  $Id: termios.c,v 1.4 2001-11-07 09:33:00 shirok Exp $
  */
 
 #include "termios.h"
@@ -72,7 +72,7 @@ void Scm_Init_termios(void)
     ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.termios", TRUE));
 
     Scm_InitBuiltinClass(&Scm_SysTermiosClass, "<sys-termios>",
-                         termios_slots, mod);
+                         termios_slots, sizeof(ScmSysTermios), mod);
     Scm_Init_termiolib(mod);
 
     /* Constants for termios.  Non-POSIX symbols are guarded by #ifdef's */

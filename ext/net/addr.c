@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.8 2001-06-30 10:09:13 shirok Exp $
+ *  $Id: addr.c,v 1.9 2001-11-07 09:33:00 shirok Exp $
  */
 
 #include "net.h"
@@ -172,8 +172,11 @@ void Scm_Init_NetAddr(ScmModule *mod)
     key_broadcast = SCM_MAKE_KEYWORD("broadcast");
     key_loopback  = SCM_MAKE_KEYWORD("loopback");
 
-    Scm_InitBuiltinClass(&Scm_SockAddrClass, "<sockaddr>", NULL, mod);
-    Scm_InitBuiltinClass(&Scm_SockAddrUnClass, "<sockaddr-un>", NULL, mod);
-    Scm_InitBuiltinClass(&Scm_SockAddrInClass, "<sockaddr-in>", NULL, mod);
+    Scm_InitBuiltinClass(&Scm_SockAddrClass, "<sockaddr>", NULL,
+                         sizeof(ScmSockAddr), mod);
+    Scm_InitBuiltinClass(&Scm_SockAddrUnClass, "<sockaddr-un>", NULL,
+                         sizeof(ScmSockAddrUn), mod);
+    Scm_InitBuiltinClass(&Scm_SockAddrInClass, "<sockaddr-in>", NULL,
+                         sizeof(ScmSockAddrIn), mod);
 }
 

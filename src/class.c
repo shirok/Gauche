@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.61 2001-10-30 09:00:30 shirok Exp $
+ *  $Id: class.c,v 1.62 2001-11-07 09:33:00 shirok Exp $
  */
 
 #include "gauche.h"
@@ -241,13 +241,14 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance = SCM_NEW2(ScmClass*,
                         sizeof(ScmClass) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
+    
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = NULL;
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
-    instance->numInstanceSlots = nslots;
-    instance->instanceSlotOffset = 1; /* default */
+    instance->numInstanceSlots = 0; /* will be adjusted in class init */
+    instance->instanceSlotOffset = 1; /* will be adjusted when CPL is set */
     instance->flags = 0;        /* ?? */
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
@@ -367,6 +368,7 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
                     Scm_Error("class precedence list has more than one C-defined base class (except <object>): %S", val);
                 }
                 klass->allocate = (*p)->allocate;
+                klass->instanceSlotOffset = (*p)->instanceSlotOffset;
             } else {
                 object_inherited = TRUE;
             }
@@ -1614,7 +1616,8 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
 
 /* booting class metaobject */
 void bootstrap_class(ScmClass *k,
-                     ScmClassStaticSlotSpec *specs)
+                     ScmClassStaticSlotSpec *specs,
+                     int instanceSize)
 {
     ScmObj slots = SCM_NIL, t = SCM_NIL;
     ScmObj acc = SCM_NIL;
@@ -1635,10 +1638,14 @@ void bootstrap_class(ScmClass *k,
     }
     k->accessors = acc;
     k->directSlots = k->slots = slots;
+    if (instanceSize > 0) {
+        k->instanceSlotOffset = instanceSize / sizeof(ScmObj);
+    }
 }
 
 void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
-                          ScmClassStaticSlotSpec *slots, ScmModule *mod)
+                          ScmClassStaticSlotSpec *slots,
+                          int instanceSize, ScmModule *mod)
 {
     ScmObj h = SCM_NIL, t;
     ScmObj s = SCM_INTERN(name);
@@ -1656,7 +1663,7 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
     }
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(klass));
     if (slots) {
-        bootstrap_class(klass, slots);
+        bootstrap_class(klass, slots, instanceSize);
     }
 }
 
@@ -1705,7 +1712,7 @@ void Scm__InitClass(void)
     Scm_TopClass.cpa = nullcpa;
 
 #define CINIT(cl, nam) \
-    Scm_InitBuiltinClass(cl, nam, NULL, mod)
+    Scm_InitBuiltinClass(cl, nam, NULL, 0, mod)
     
     /* class.c */
     CINIT(SCM_CLASS_TOP,              "<top>");
@@ -1714,17 +1721,17 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_UNKNOWN,          "<unknown>");
     CINIT(SCM_CLASS_OBJECT,           "<object>");
     CINIT(SCM_CLASS_CLASS,            "<class>");
-    bootstrap_class(&Scm_ClassClass, class_slots);
+    bootstrap_class(&Scm_ClassClass, class_slots, sizeof(ScmClass));
     CINIT(SCM_CLASS_GENERIC,          "<generic>");
-    bootstrap_class(&Scm_GenericClass, generic_slots);
+    bootstrap_class(&Scm_GenericClass, generic_slots, sizeof(ScmGeneric));
     Scm_GenericClass.flags |= SCM_CLASS_APPLICABLE;
     CINIT(SCM_CLASS_METHOD,           "<method>");
-    bootstrap_class(&Scm_MethodClass, method_slots);
+    bootstrap_class(&Scm_MethodClass, method_slots, sizeof(ScmMethod));
     Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
     CINIT(SCM_CLASS_NEXT_METHOD,      "<next-method>");
     Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
     CINIT(SCM_CLASS_SLOT_ACCESSOR,    "<slot-accessor>");
-    bootstrap_class(&Scm_SlotAccessorClass, slot_accessor_slots);
+    bootstrap_class(&Scm_SlotAccessorClass, slot_accessor_slots, sizeof(ScmSlotAccessor));
     CINIT(SCM_CLASS_COLLECTION,       "<collection>");
     CINIT(SCM_CLASS_SEQUENCE,         "<sequence>");
 

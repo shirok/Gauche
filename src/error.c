@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.19 2001-09-16 01:37:02 shirok Exp $
+ *  $Id: error.c,v 1.20 2001-11-07 09:33:00 shirok Exp $
  */
 
 #include <errno.h>
@@ -174,11 +174,11 @@ void Scm__InitExceptions(void)
 {
     ScmModule *mod = Scm_GaucheModule();
     Scm_InitBuiltinClass(&Scm_ExceptionClass, "<exception>",
-                         exception_slots, mod);
+                         exception_slots, sizeof(ScmException), mod);
     Scm_InitBuiltinClass(&Scm_ErrorClass, "<error>",
-                         exception_slots, mod);
+                         exception_slots, sizeof(ScmException), mod);
     Scm_InitBuiltinClass(&Scm_SysErrorClass, "<sys-error>",
-                         sys_error_slots, mod);
+                         sys_error_slots, sizeof(ScmException), mod);
 }
 
 /*================================================================

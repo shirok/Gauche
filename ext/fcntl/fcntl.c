@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.c,v 1.1 2001-09-16 06:50:43 shirok Exp $
+ *  $Id: fcntl.c,v 1.2 2001-11-07 09:33:00 shirok Exp $
  */
 
 #include "fcntl.h"
@@ -135,7 +135,7 @@ void Scm_Init_fcntl(void)
     ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.fcntl", TRUE));
 
     Scm_InitBuiltinClass(&Scm_SysFlockClass, "<sys-flock>",
-                         flock_slots, mod);
+                         flock_slots, sizeof(ScmSysFlock), mod);
     Scm_Init_fcntlib(mod);
 }
 
