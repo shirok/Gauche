@@ -20,9 +20,13 @@ distclean-generic:
 maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -rf $(MAINTAINERCLEANFILES)
 
-## automake's "make dist" doesn't work for us.
-dist:
+## automake's "make dist" doesn't work for us.  this trick prevents
+## a devloper from accidentally running "make dist".
+DISTFILES = no-dist
+
+no-dist:
 	@echo "'make dist' does not work.  Use DIST script instead."
+	@exit 1
 
 ## for backward compatibility from pre-automake age of Gauche
 test : check
