@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.57 2001-05-11 09:49:01 shirok Exp $
+;;; $Id: stdlib.stub,v 1.58 2001-05-12 19:24:45 shirok Exp $
 ;;;
 
 
@@ -309,13 +309,24 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   vx = Scm_GetDouble(x);
   if (vx < 0) SCM_RETURN(Scm_MakeComplex(0.0, sqrt(-vx)));
   else        SCM_RETURN(Scm_MakeFlonum(sqrt(vx)));")
-  
+
+;"static ScmObj exact_expt(ScmObj x, ScmObj y)
+; {
+;  int sign = Scm_Sign(y);
+;  if (SCM_INTP(y)) {
+;    int iy = SCM_INT_VALUE(y);
+;    ScmObj r = x;
+;    if (iy < 0) iy = -iy;
+;    while (i
+;  }
+; }"
+
 (define-cproc %expt (x y)
   "  double vx, vy;
   if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   if (!SCM_REALP(y)) Scm_Error(\"real number required, but got %S\", y);
-  /* TODO: optimize the case where x and y is integer, y>0 */
-  SCM_RETURN(Scm_MakeFlonum(pow(Scm_GetDouble(x), Scm_GetDouble(y))));")
+  SCM_RETURN(Scm_MakeFlonum(pow(Scm_GetDouble(x), Scm_GetDouble(y))));
+  ")
 
 (define-cproc make-rectangular (a b)
   "  ScmObj z;
@@ -326,8 +337,10 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   SCM_RETURN(z);")
 
 (define-cproc %complex->real/imag (z)
-  "  if (!SCM_COMPLEXP(z)) Scm_Error(\"complex required, but got %S\", z);
-  SCM_RETURN(Scm_Cons(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));")
+  "  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
+  else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_Values2(z, Scm_MakeFlonum(0.0))); }
+  else if (!SCM_COMPLEXP(z)) Scm_Error(\"number required, but got %S\", z);
+  else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));}")
     
 ;; make-polar, real-part, imag-part - defined in gauche/numeric.scm
 
