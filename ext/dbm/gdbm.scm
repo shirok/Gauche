@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.scm,v 1.5 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.6 2003-07-09 10:55:26 shirok Exp $
 ;;;
 
 (define-module dbm.gdbm
@@ -139,14 +139,7 @@
       (if key
           (let ((val (gdbm-fetch gdbm key)))
             (loop (gdbm-nextkey gdbm key)
-                  (proc (%dbm-s2k self key) (%dbm-s2k self val) r)))
+                  (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
           r))))
 
 (provide "dbm/gdbm")
-
-
-                       
-                               
-
-           
-           
