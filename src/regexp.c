@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.28 2002-09-20 06:54:13 shirok Exp $
+ *  $Id: regexp.c,v 1.29 2002-09-20 19:40:15 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -67,6 +67,8 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
 enum {
     RE_MATCH1,                  /* followed by 1 byte to match */
     RE_MATCH,                   /* followed by length, and bytes to match */
+    RE_MATCH1_CI,               /* case insenstive match */
+    RE_MATCH_CI,                /* case insenstive match */
     RE_ANY,                     /* match any char */
     RE_TRY,                     /* followed by offset (2 bytes). try matching
                                    the following sequence, and if fails,
@@ -111,8 +113,11 @@ static ScmRegexp *make_regexp(void)
     rx->numSets = 0;
     rx->sets = NULL;
     rx->mustMatch = NULL;
+    rx->flags = 0;
     return rx;
 }
+
+#define IGNCASEP(rx)   ((rx)->flags&SCM_REGEXP_IGNORE_CASE)
 
 #ifndef CHAR_MAX
 #define CHAR_MAX 256
@@ -396,6 +401,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             break;
         default:
         ordchar:
+            if (IGNCASEP(rx)) ch = SCM_CHAR_DOWNCASE(ch);
             SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
             continue;
         }
@@ -521,7 +527,7 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
             }
             
             /* find out the longest run of bytes */
-            re_compile_emit(ctx, RE_MATCH, emitp);
+            re_compile_emit(ctx, (IGNCASEP(rx)? RE_MATCH_CI:RE_MATCH), emitp);
             re_compile_emit(ctx, 0, emitp); /* patched later */
             do {
                 ch = SCM_CHAR_VALUE(item);
@@ -539,7 +545,7 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                 /* patches the jump offset.  if we are matching to a
                    single byte char, use MATCH1 insn. */
                 if (nrun == 1) {
-                    ctx->code[ocodep] = RE_MATCH1;
+                    ctx->code[ocodep] = IGNCASEP(rx)?RE_MATCH1_CI:RE_MATCH1;
                     ctx->code[ocodep+1] = ctx->code[ocodep+2];
                     ctx->codep = ocodep+2;
                 } else {
@@ -692,17 +698,23 @@ void Scm_RegDump(ScmRegexp *rx)
 
     for (codep = 0; codep < end; codep++) {
         switch (rx->code[codep]) {
-        case RE_MATCH1:
+        case RE_MATCH1:;
+        case RE_MATCH1_CI:
             codep++;
-            Scm_Printf(SCM_CUROUT, "%4d  MATCH1  0x%02x  '%c'\n",
-                       codep-1, rx->code[codep], rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  %s  0x%02x  '%c'\n",
+                       codep-1,
+                       (rx->code[codep-1]==RE_MATCH1? "MATCH1":"MATCH1_CI"),
+                       rx->code[codep], rx->code[codep]);
             continue;
-        case RE_MATCH:
+        case RE_MATCH:;
+        case RE_MATCH_CI:
             codep++;
             {
                 u_int numchars = (u_int)rx->code[codep];
                 int i;
-                Scm_Printf(SCM_CUROUT, "%4d  MATCH(%3d) '", codep-1, numchars);
+                Scm_Printf(SCM_CUROUT, "%4d  %s(%3d) '",
+                           (rx->code[codep-1]==RE_MATCH? "MATCH":"MATCH_CI"),
+                           codep-1, numchars);
                 for (i=0; i< numchars; i++)
                     Scm_Printf(SCM_CUROUT, "%c", rx->code[++codep]);
                 Scm_Printf(SCM_CUROUT, "'\n");
@@ -773,12 +785,14 @@ void Scm_RegDump(ScmRegexp *rx)
 /*--------------------------------------------------------------
  * Compiler entry point
  */
-ScmObj Scm_RegComp(ScmString *pattern)
+ScmObj Scm_RegComp(ScmString *pattern, int flags)
 {
     ScmRegexp *rx = make_regexp();
     ScmObj compiled;
     struct comp_ctx cctx;
 
+    rx->flags = flags;
+    
     if (SCM_STRING_INCOMPLETE_P(pattern)) {
         Scm_Error("incomplete string is not allowed: %S", pattern);
     }
@@ -787,7 +801,7 @@ ScmObj Scm_RegComp(ScmString *pattern)
                                             SCM_STRING_SIZE(pattern),
                                             SCM_STRING_LENGTH(pattern),
                                             SCM_MAKSTR_IMMUTABLE));
-    cctx.pattern = pattern;
+    cctx.pattern = rx->pattern;
     cctx.ipat = SCM_PORT(Scm_MakeInputStringPort(pattern));
     cctx.sets = SCM_NIL;
     cctx.codep = 0;
@@ -884,6 +898,31 @@ void re_exec_rec(const char *code,
         case RE_MATCH1:
             if (ctx->stop == input) return;
             if (*code++ != *input++) return;
+            continue;
+        case RE_MATCH_CI:
+            param = (unsigned char)*code++;
+            if (ctx->stop - input < param) return;
+            do {
+                char in = *input++, c = *code++;
+                int nf = SCM_CHAR_NFOLLOWS(in);
+                if (nf == 0) {
+                    if (c != SCM_CHAR_DOWNCASE(in)) return;
+                } else{
+                    if (c != in) return;
+                    while (nf-- > 0) {
+                        if (*code++ != *input++) return;
+                    }
+                }
+                param -= nf+1;
+            } while (param > 0);
+            continue;
+        case RE_MATCH1_CI:
+            if (ctx->stop == input) return;
+            else {
+                char in = *input++, c = *code++;
+                if (SCM_CHAR_NFOLLOWS(in) != 0 || c != SCM_CHAR_DOWNCASE(in))
+                    return;
+            }
             continue;
         case RE_ANY:
             if (ctx->stop == input) return;

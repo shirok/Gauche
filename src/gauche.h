@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.302 2002-09-20 06:54:13 shirok Exp $
+ *  $Id: gauche.h,v 1.303 2002-09-20 19:40:14 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2006,6 +2006,7 @@ struct ScmRegexpRec {
     int numCodes;
     ScmCharSet **sets;
     int numSets;
+    int flags;
     ScmString *mustMatch;
 };
 
@@ -2014,7 +2015,10 @@ SCM_CLASS_DECL(Scm_RegexpClass);
 #define SCM_REGEXP(obj)           ((ScmRegexp*)obj)
 #define SCM_REGEXPP(obj)          SCM_XTYPEP(obj, SCM_CLASS_REGEXP)
 
-SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern);
+/* flags */
+#define SCM_REGEXP_IGNORE_CASE      (1L<<0)
+
+SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern, int flags);
 SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input);
 SCM_EXTERN void Scm_RegDump(ScmRegexp *rx);
 

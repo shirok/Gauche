@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.54 2002-08-19 04:05:57 shirok Exp $
+ *  $Id: read.c,v 1.55 2002-09-20 19:40:14 shirok Exp $
  */
 
 #include <stdio.h>
@@ -719,7 +719,7 @@ static ScmObj read_regexp(ScmPort *port)
             }
             SCM_DSTRING_PUTC(&ds, c);
         } else if (c == '/') {
-            return Scm_RegComp(SCM_STRING(Scm_DStringGet(&ds)));
+            return Scm_RegComp(SCM_STRING(Scm_DStringGet(&ds)), 0);
         } else {
             SCM_DSTRING_PUTC(&ds, c);
         }
