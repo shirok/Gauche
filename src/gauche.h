@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.336 2003-05-31 11:53:55 shirok Exp $
+ *  $Id: gauche.h,v 1.337 2003-06-03 08:06:57 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -251,7 +251,7 @@ SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
 /*
  * HEAP ALLOCATED OBJECTS
  *
- *  A heap allocated object has its clsss tag in the first word.
+ *  A heap allocated object has its class tag in the first word.
  *  On most platforms, the class tag is simply a pointer to the
  *  class object.
  *  On Windows (Cygwin) platform, things are much more complicated.
