@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.63 2001-11-29 11:38:59 shirok Exp $
+ *  $Id: class.c,v 1.64 2001-12-01 10:26:24 shirok Exp $
  */
 
 #include "gauche.h"
@@ -524,17 +524,47 @@ static void class_numislots_set(ScmClass *klass, ScmObj snf)
  *  (make <class> :name NAME :supers (list <class>))
  */
 
-static ScmClass *make_implicit_meta(const char *name, ScmModule *mod)
+static ScmClass *make_implicit_meta(const char *name,
+                                    ScmClass **cpa,
+                                    ScmModule *mod)
 {
     ScmClass *meta = (ScmClass*)class_allocate(SCM_CLASS_CLASS, SCM_NIL);
     ScmObj s = SCM_INTERN(name);
     ScmObj sp, h = SCM_NIL, t;
-    static ScmClass *metacpl[] = { SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL };
-    
+    static ScmClass *metacpa[] = { SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL };
+    ScmClass **metas = metacpa;
+
+    /* check to see if parent class has also metaclass, and if so,
+       adds it to the CPA.  We know all the builtin classes use
+       single inheritance, so the CPA calculation should be straightforward.
+       Note that this assumes the parent classes are already initialized.
+    */
+    {
+        ScmClass **parent;
+        int numExtraMetas = 0, i;
+        for (parent = cpa; *parent; parent++) {
+            if (SCM_CLASS_OF(*parent) != SCM_CLASS_CLASS) {
+                numExtraMetas++;
+            }
+        }
+        if (numExtraMetas) {
+            metas = SCM_NEW2(ScmClass**, sizeof(ScmClass*)*(numExtraMetas+4));
+            for (i = 0, parent = cpa; *parent; parent++) {
+                if (SCM_CLASS_OF(*parent) != SCM_CLASS_CLASS) {
+                    metas[i++] = SCM_CLASS_OF(*parent);
+                }
+            }
+            metas[i++] = SCM_CLASS_CLASS;
+            metas[i++] = SCM_CLASS_OBJECT;
+            metas[i++] = SCM_CLASS_TOP;
+            metas[i] = NULL;
+        }
+    }
+
     meta->name = s;
     meta->allocate = class_allocate;
     meta->print = class_print;
-    meta->cpa = metacpl;
+    meta->cpa = metas;
     meta->instanceSlotOffset = sizeof(ScmClass) / sizeof(ScmObj);
     initialize_builtin_cpl(meta);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(meta));
@@ -1592,7 +1622,7 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
             strcpy(metaname, name);
             strcat(metaname, "-meta");
         }
-        SCM_SET_CLASS(klass, make_implicit_meta(metaname, mod));
+        SCM_SET_CLASS(klass, make_implicit_meta(metaname, klass->cpa, mod));
     }
     
     initialize_builtin_class(klass, name, slots, instanceSize, mod);
