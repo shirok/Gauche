@@ -2472,20 +2472,36 @@ the lock is available.
 
 @item F_GETOWN
 @vindex F_GETOWN
+@c EN
 Returns the process id or process group that will receive
 SIGIO and SIGURG signals for events on the file descriptor.
 Process group is indicated by a negative value.
 This flag is only available on the systems that has this 
 feature (BSD and Linux have this).
+@c JP
+当該ファイルディスクリプタ上のイベント用シグナル、SIGIO および SIGURG を
+受けとることになるプロセスのプロセスIDあるいはプロセスグループを返します。
+プロセスグループは負の値で表示されます。このフラグはシステムにこのような
+機能がある場合にのみ利用可能です(BSD や Linux にはこの機能があります)。
+@c COMMON
 
 @item F_SETOWN
 @vindex F_SETOWN
+@c EN
 Sets the process id or process group that will receive SIGIO
 and SIGURG signals for events on the file descriptor.
 Process group is indicated by a negative value.
 This flag is only available on the systems that has this 
 feature (BSD and Linux have this).
 Check out fcntl(2) manpage of your system for the details.
+@c JP
+当該ファイルディスクリプタ上のイベント用シグナル、SIGIO および SIGURG を
+受けとることになるプロセスのプロセスIDあるいはプロセスグループを設定します。
+プロセスグループは負の値で表示されます。このフラグはシステムにこのような
+機能がある場合にのみ利用可能です(BSD や Linux にはこの機能があります)。
+詳細については、お使いのシステムの fcntl(2) のマニュアルページをチェック
+してください。
+@c COMMON
 
 @end table
 
