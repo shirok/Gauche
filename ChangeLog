@@ -1,5 +1,7 @@
 2003-12-16  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.7.3
+
 	* src/boolean.c (Scm_EqualP): Experimentally put code that compares
 	  identifiers by name in equal?.  See the comment in the source.
 
