@@ -3,5 +3,5 @@ VERSION=`cat VERSION`
 
 autoconf
 configure
-make allclean
+make distclean
 cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE Gauche | gzip -9 > Gauche-$VERSION.tgz

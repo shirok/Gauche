@@ -13,12 +13,14 @@ clean :
 	cd src; $(MAKE) clean
 	cd test; $(MAKE) clean
 
-allclean : clean
-	rm -rf Makefile src/Makefile config.cache config.log config.status
+distclean : clean
+	cd src; $(MAKE) distclean
+	rm -rf Makefile config.cache config.log config.status
 
 install :
 	cd src; $(MAKE) install
 
-realclean : allclean
+realclean : distclean
+	cd src; $(MAKE) realclean
 	rm -rf configure
 

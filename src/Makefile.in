@@ -10,7 +10,8 @@ AR = ar
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
-GENERATED = stdlib.c extlib.c syslib.c gauche-config
+GENERATED = stdlib.c extlib.c syslib.c
+CONFIG_GENERATED = Makefile gauche-config
 
 HEADER_INSTALL_DIR = @includedir@
 SUBHEADER_INSTALL_DIR = @includedir@/gauche
@@ -32,7 +33,7 @@ GCLIB = ../gc/gc.a
 OBJS = core.o vm.o compile.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o \
        symbol.o keyword.o \
-       module.o proc.o number.o io.o load.o file.o promise.o repl.o \
+       module.o proc.o number.o io.o load.o promise.o repl.o \
        system.o stdlib.o extlib.o syslib.o
 
 .SUFFIXES: .stub
@@ -58,7 +59,13 @@ libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
 
 clean :
-	rm -f core gosh *.o *~ *.a $(GENERATED) gauche/*~
+	rm -f core gosh *.o *~ *.a gauche/*~
+
+distclean : clean
+	rm -f $(CONFIG_GENERATED)
+
+realclean : clean
+	rm -f $(CONFIG_GENERATED) $(GENERATED)
 
 install : all
 	for f in $(INSTALL_HEADERS); do \

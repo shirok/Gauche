@@ -1,3 +1,20 @@
+2001-02-12  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.9
+	* src/file.c: removed.  pathname functions are moved to system.c
+	* src/system.c: added pathname functions (dirname, basename,
+	  normalize-pathname)
+
+2001-02-11  Shiro Kawai  <shiro@scherzo>
+
+	* sys/string.c: fix to handle the case that c-string's length is
+	  unknown but size is given.
+
+2001-02-10  Shiro Kawai  <shiro@scherzo>
+
+	* src/genstub: allow &keyword args
+	* src/system.c, src/syslib.stub: added system interface.
+
 2001-02-09  Shiro Kawai  <shiro@scherzo>
 
 	* src/gauche/vm.h: fix bug in SCM_PROPAGATE_ERROR
