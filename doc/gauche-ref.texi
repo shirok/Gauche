@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.147 2002-01-25 11:13:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.148 2002-01-25 21:01:31 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -227,42 +227,69 @@ Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
 @c JP
 @item モジュラー開発
 @c COMMON
+@c EN
 Gauche has a simple module system to separate namespaces,
 which allows the developers to work in parallel without
 worrying name collision.  
+@c JP
+Gaucheは名前空間を分離する単純なモジュールシステムを備えており、
+名前の衝突を心配せずに複数の開発者が並行して作業をすることができます。
+@c COMMON
 
 @c EN
 @item Integrated object system
 @c JP
 @item 統合されたオブジェクトシステム
 @c COMMON
+@c EN
 A powerful CLOS-like object system with MetaObject protocol
-(mostly compatible with STklos) is provided.
-
+(mostly compatible with STklos and Guile) is provided.
+@c JP
+CLOSライクなメタオブジェクトプロトコルを備えた橋梁kなオブジェクトシステム
+が組み込んであります。STklosやGuileのオブジェクトシステムとかなり互換性があります。
+@c COMMON
 
 @c EN
 @item System interface
 @c JP
 @item システムインタフェース
 @c COMMON
+@c EN
 Although Scheme abstracts lots of details of the machine,
 sometimes you have to bypass these high-level layers and
 go down to the basement to make things work.
 Gauche has built-in support of most of POSIX.1 system calls.
 Other modules, such as networking module, usually provide
-both high-level abstract interface and low-level interface.
+both high-level abstract interface and low-level interface
+close to system calls.
+@c JP
+Schemeは計算機の詳細の多くを抽象化しますが、プログラムを書いていると、
+それらの高レベル層をバイパスして地下室に降りて作業しなければならないような時が
+あります。GaucheはPOSIX.1システムコールのほとんどを組み込みでサポートします。
+また、ネットワーキングモジュールなど他のシステム関連モジュールは通常、
+高レベルの抽象的なインタフェースと低レベルのシステムコールに近いインタフェースを
+両方提供します。
+@c COMMON
 
 @c EN
 @item Enhanced I/O
 @c JP
 @item 強化された入出力
 @c COMMON
+@c EN
 No real application can be written without dealing with I/O.
 Scheme neatly abstracts I/O as a port, but defines least operations on it.
 Gauche uses a port object as a unified abstraction, providing
 utility functions to operate on the underlying I/O system.
 @xref{Input and output}, for the basic I/O support.
-
+@c JP
+本物のアプリケーションはI/O無しでは成り立ちません。
+SchemeはI/Oをポートとして簡潔に抽象化していますが、
+標準のSchemeには最低限の操作しか定義されていません。
+Gaucheはポートオブジェクトを入出力のための統合された抽象化オブジェクトと考え、
+それを通して下位のI/Oシステム層にアクセスするユーティリティ関数を提供しています。
+@ref{Input and output}を参照して下さい。
+@c COMMON
 @end table
 
 @c EN
@@ -516,6 +543,7 @@ Schemeの文字列プリミティブのセマンティクスは保たれているので、
 下にあげるいくつかの点を知っておいたほうが良いでしょう。
 @c COMMON
 
+@c EN
 A string object keeps a type tag and a pointer to the storage
 of the string body.  The storage of the body is managed in a sort of
 ``copy-on-write''
@@ -525,24 +553,58 @@ by @code{copy-string}, the underlying storage is shared
 (the ``anchor'' of the string is different, so the copied string
 is not @code{eq?} to the original string).
 The actual string is copied only if you destructively modify it.
+@c JP
+文字列オブジェクトは型タグと文字列本体へのポインタを保持しています。
+文字列本体は「copy-on-write」方式で管理されます。すなわち、@code{substring}
+や正規表現を使って部分文字列を切り出したり、あるいは単に文字列をコピーした場合、
+文字列オブジェクトそのものは別につくられますが、文字列本体は共有されます。
+文字列が破壊的に変更される場合にのみ、文字列本体がコピーされます。
+@c COMMON
 
+@c EN
 Consequently the algorithm like pre-allocating a string by
 @code{make-string} and filling it with @code{string-set!}
-becomes @emph{extremely} inefficient.  Don't do it.
+becomes @emph{extremely} inefficient in Gauche.  Don't do it.
+(It doesn't work with mulitbyte strings anyway).
 Sequential access of string is much more efficient
 using @emph{string ports} (@xref{String ports}).
+@c JP
+したがって、@code{make-string}である大きさの文字列をあらかじめアロケート
+しておき、@code{string-set!}で順に埋めて行くようなアルゴリズムは
+Gaucheでは非常に効率が悪くなります。そのようなアルゴリズムは使わない方が良いでしょう。
+(そのようなアルゴリズムはマルチバイト文字列とも相性が良くありません)。
+文字列を順に埋めて行く場合は@emph{string ports}を使うのが
+効率の良い方法です (@ref{String ports}参照)。
+@c COMMON
 
+@c EN
 String search primitives such as @code{string-scan} (@xref{String utilities})
 and regular expression matcher (@xref{Regular expression})
 can return a matched string directly, without
 using index access at all.
+@c JP
+@code{string-scan} (@ref{String utilities}参照) や正規表現
+(@ref{Regular expression}参照) など文字列を検索するプリミティブは、
+インデックスを介さずに一致した文字列を直接返すことができます。
+@c COMMON
 
+@c EN
 You can choose @emph{internal} encoding scheme at the time of compiling
 Gauche.  Conversions from other encoding scheme is provided 
 as a special port. @xref{Character code conversion}, for details.
+@c JP
+Gaucheのコンパイル時に、文字の@emph{内部エンコーディング} を選択することができます。
+他の文字エンコーディングからの変換は特別なポートを使って行われます。
+@ref{Character code conversion} を参照して下さい。
+@c COMMON
 
+@c EN
 Gauche assumes the Scheme program is written in its internal
 encoding scheme.
+@c JP
+Gaucheは、Schemeプログラムはその内部エンコーディングと同じエンコーディングで
+書かれているものとして読み込みます。
+@c COMMON
 
 @node Case-sensitivity, Integerated Object System, Multibyte Strings, Concepts
 @section Case-sensitivity
@@ -7690,7 +7752,7 @@ When you're using the @code{gosh} interpreter, all the signals
 except @code{SIGABRT}, @code{SIGILL}, @code{SIGKILL}, @code{SIGCONT},
 @code{SIGSTOP}, @code{SIGSEGV} and @code{SIGCHLD} can be handled
 in Scheme.  If no handlers are available when a signal is delivered,
-the default handler is called, which raises an error.
+the default handler is called, which raises an error (unhandled signal).
 
 If you're using Gauche embedded in some other application,
 it may redefine the set of signals handleable by Gauche.
@@ -7699,11 +7761,6 @@ it may redefine the set of signals handleable by Gauche.
 Currently it interferes the internal mechanism of Gauche
 so it is ignored.  It is purely an implementation restriction
 that should be removed later.
-
-Note that when Gauche's VM gets a signal it just queues the
-signal, and handles them when evaluation of Scheme expression
-is safe.  So the invocation of handler may be delayed from
-the actual delivery of the signal.
 
 @defmac with-signal-handlers (handler-clause @dots{}) thunk
 Adds signal handlers specified in @var{handler-clause}s, then
@@ -7715,20 +7772,34 @@ the previous signal handlers are restored.
 @item (@var{signals} @var{expr} @dots{})
 When one of @var{signals} is delivered, @var{expr} @dots{} are
 evaluated.
+@var{signals} may be an expression that will yield either a signal,
+a list of signals, or a @code{<sys-sigset>} object.
 
 @item (@var{signals} => @var{proc})
 When one of @var{signals} is delivered, a procedure @var{proc} is
 called with one argument, the delivered signal.
+@var{signals} are the same as above.
 @end table
 
-In @var{handler-clause}, @var{signals} may be an expression that
-will yield either a signal, a list of signals, or a @code{<sys-sigset>}
-object.
+The VM examines the chain of handlers when a signal is delivered,
+and picks up the one that catches it.  Then invokes the handler
+with the current continuation.
 
-
-
-
+Actually, when Gauche's VM gets a signal it just queues the
+signal, and handles them when evaluation of Scheme expression
+is safe.  So the invocation of handler may be delayed from
+the actual delivery of the signal.  Unless signal handlers
+invokes other contniuations, the original control flow
+resumes after invocations of the handlers.
 @end defmac
+
+@emph{Caveat:} In the current implementation, some built-in operations
+such as system calls and read/write calls can't be continued
+after delivery of a signal.  If the signal handler returns,
+the system reports an error (interrupted system call) or
+returns prematurely (for example, read returns EOF in such case).
+In future versions of Gauche more procedures will be correctly
+restarted.
 
 
 @node System Inquiry, Time, Signal, System interface
@@ -15885,7 +15956,7 @@ Gauche @code{sys-access}.  @xref{File stats}.
 @item acos
 R5RS @code{acos}.  @xref{Arithmetics}.
 @item alarm
-No equivalent function in Gauche.
+Gauche @code{sys-alarm}.   @xref{Miscellaneous system calls}.
 @item asctime
 Gauche @code{sys-asctime}.  @xref{Time}.
 @item asin
@@ -16261,22 +16332,26 @@ Not supported yet.
 @item setvbuf
 Not necessary.
 @item sigaction
-Not supported yet.
+You can use @code{with-signal-handlers} to install signal handlers.
+@xref{Handling signals}.
 @item sigaddset
 @itemx sigdelset
 @itemx sigemptyset
 @itemx sigfillset
+Gauche's @code{sys-sigset-add!} and @code{sys-sigset-delete!}.
+@xref{Signals and signal sets}.
 @itemx sigismember
 Not supported yet.
 @item siglongjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @item signal
-Not supported yet.
+You can use @code{with-signal-handlers} to install signal handlers.
+@xref{Handling signals}.
 @item sigpending
 Not supported yet.
 @item sigprocmask
-Not supported yet.
+Signal mask is handled internally.  See @xref{Handling signals}.
 @item sigsetjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
