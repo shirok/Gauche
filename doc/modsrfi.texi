@@ -791,18 +791,19 @@ any value @var{x} that is valid as @var{f}'s input,
 あらゆる値 @var{x} について以下を満していなければなりません。
 @c COMMON
 @example
- (f x ridentity) @equiv{} ridentity
+ (f x ridentity) @equiv{} x
 @end example
 
 @c EN
 These functions effectively do the same thing as @code{fold} or
-@code{fold-right}, respectively, but omit application of @var{f}
-when @var{list} contains exactly one element, using the nature of
-@var{ridentity}.
+@code{fold-right}, respectively, but omit the first 
+application of @var{f} to @var{ridentity}, using the above nature.
+So @var{ridentity} is used only when @var{list} is empty.
 @c JP
 これらの関数は実質的に @code{fold} や @code{fold-right} と同じことを
-行いますが、@var{list} がひとつしか要素をもたない場合には、
-@var{ridentity} の性質を利用して @var{f} の適用を省略します。
+行いますが、@var{ridentity}には上記の性質があるため、
+@var{f}は@var{ridentity}には適用されません。
+@var{ridentity}が使われるのは@var{list}が空の場合だけです。
 @c COMMON
 @end defun
 
