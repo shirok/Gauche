@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.26 2001-03-10 09:57:42 shiro Exp $
+ *  $Id: load.c,v 1.27 2001-03-25 02:51:08 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -512,19 +512,16 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
 
 void Scm__InitLoad(void)
 {
-    ScmObj curdir = SCM_MAKE_STR(".");
     ScmModule *m = Scm_SchemeModule();
     ScmObj init_load_path, init_dynload_path, t;
     const char *pathvar;
 
     init_load_path = t = SCM_NIL;
-    SCM_APPEND1(init_load_path, t, curdir);
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
     SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));
     SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_LIB_DIR));
 
     init_dynload_path = t = SCM_NIL;
-    SCM_APPEND1(init_dynload_path, t, curdir);
     SCM_APPEND(init_dynload_path, t, break_env_paths("GAUCHE_DYNLOAD_PATH"));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_ARCH_DIR));
