@@ -4953,7 +4953,7 @@ XMLドキュメントのSXML表現を返します。
 @c ----------------------------------------------------------------------
 @node sxml.sxpath - SXML Query Language, sxml.tools - manipulationg SXML structure, sxml.ssax - Functional XML parser, Library modules - Utilities
 @section @code{sxml.sxpath} - SXML Query Language
-@c NODE @code{sxml.sxpath} - SXMLクエリ言語, @code{sxml.sxpath} - SXMLクエリ言語
+@c NODE sxml.sxpath - SXMLクエリ言語, @code{sxml.sxpath} - SXMLクエリ言語
 
 @deftp {Module} sxml.sxpath
 @mdindex sxml.sxpath
@@ -4989,7 +4989,7 @@ original source files.
 The module consists of three layers.
 @c JP
 このマニュアルは、そのほとんどがオリジナルのソースファイルのコメントより
-導出されいます。
+導出されています。
 
 このモジュールは3つのレイヤから構成されます。
 @c COMMON
@@ -5557,6 +5557,9 @@ can be stopped.
 @subsection SXPath query language
 @c NODE SXPathクエリ言語
 
+@defun sxpath abbrpath . ns-binding
+Evaluates an abbreviated SXPath
+
 @example
  sxpath:: AbbrPath -> Converter, or
  sxpath:: AbbrPath -> Node|Nodeset -> Nodeset
@@ -5981,9 +5984,15 @@ Popular shortcuts:
 @c ----------------------------------------------------------------------
 @node sxml.tools - manipulationg SXML structure, text.csv - CSV tables, sxml.sxpath - SXML Query Language, Library modules - Utilities
 @section @code{sxml.tools} - manipulationg SXML structure
-@c NODE @code{sxml.tools} - SXML構造を操作する, @code{sxml.tools} - SXML構造を操作する
+@c NODE sxml.tools - SXML構造を操作する, @code{sxml.tools} - SXML構造を操作する
+
+@deftp {Module} sxml.tools
+@mdindex sxml.tools
 
 @c EN
+This module is a port of Kirill Lisofsky's sxml-tools,
+a collection of convenient procedures that work on
+SXML structure.
 The current version is derived from sxml-tools CVS revision 3.13.
 
 The manual entry is mainly derived from the comments in the original
@@ -6195,7 +6204,7 @@ Returns @var{attr-list} for a given @var{obj},
 or @code{#f} if it is absent
 @c JP
 与えられた@var{obj}の@var{attr-list}を返します。
-@{attr-list}が存在しなければ@code{#f}を返します。
+@var{attr-list}が存在しなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
