@@ -1,7 +1,9 @@
 2002-07-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/syslib.stub : avoid calling pause() from sys-pause; it won't
+	  work in race conditions.  sys-pause now uses sigsuspend instead.
 	* src/signal.c, src/main.c : fixed a bug that messed up threads'
-	  signal mask.
+	  signal mask.  Also add Scheme level support of sigsuspend.
 
 2002-07-15  Shiro Kawai  <shiro@acm.org>
 
