@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: http.scm,v 1.2 2002-11-14 05:00:35 shirok Exp $
+;;;  $Id: http.scm,v 1.3 2002-11-14 05:05:41 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -96,7 +96,7 @@
   (let* ((sink    (get-keyword* :sink options (open-output-string)))
          (flusher (get-keyword  :flusher options get-output-string))
          (host    (get-keyword* :host options (server->host server)))
-         (follow  (get-keyword  :follow-redirect options #t))
+         (follow  (not (get-keyword  :no-redirect options #f)))
          (has-content? (not (memq request '(HEAD)))))
     (if follow
         (let loop ((history (list (canonical-uri request-uri host)))
