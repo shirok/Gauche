@@ -144,8 +144,8 @@
 
 (define-cproc load-from-port (port)
   (assert (input-port? port))
-  "  Scm_LoadFromPort(port);
-  SCM_RETURN(SCM_UNDEFINED);")
+  "  SCM_RETURN(Scm_VMLoadFromPort(port));")
+
 
 ;;
 ;; Hashtable
@@ -231,8 +231,7 @@
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc error (fmt &rest args)
-  "  Scm_SError(fmt, args);
-  SCM_RETURN(SCM_UNDEFINED);")
+  "  SCM_RETURN(Scm_SError(fmt, args));")
 
 ;; Inspecting feature
 (define-cproc current-vm ()

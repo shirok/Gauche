@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.8 2001-01-24 11:30:39 shiro Exp $
+ *  $Id: vm.h,v 1.9 2001-01-25 09:14:27 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -211,6 +211,17 @@ extern ScmClass Scm_CContClass;
 extern void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
                          void **data,
                          int datasize);
+
+/*
+ * Compiler context
+ */
+
+enum {
+    SCM_COMPILE_STMT,           /* Statement context.  The value of this
+                                   expression will be discarded. */
+    SCM_COMPILE_TAIL,           /* This is a tail expression. */
+    SCM_COMPILE_NORMAL          /* Normal calling sequence. */
+};
 
 #include "vminline.h"
 

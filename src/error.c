@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.2 2001-01-18 20:24:40 shiro Exp $
+ *  $Id: error.c,v 1.3 2001-01-25 09:14:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -54,7 +54,7 @@ ScmObj Scm_MakeException(ScmObj data)
  * Error handling
  *
  *   The interaction with dynamic environment of VM is handled by
- *   Scm_ThrowException() in vm.c.   These routines provide
+ *   Scm_VMThrowException() in vm.c.   These routines provide
  *   application interface.
  */
 
@@ -78,13 +78,13 @@ void Scm_Error(const char *msg, ...)
         e = Scm_MakeException(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_POP_ERROR_HANDLER;
-    Scm_ThrowException(e);
+    Scm_VMThrowException(e);
 }
 
 /*
  * The version called from Scheme
  */
-void Scm_SError(ScmObj fmt, ScmObj args)
+ScmObj Scm_SError(ScmObj fmt, ScmObj args)
 {
     ScmObj e;
 
@@ -102,6 +102,6 @@ void Scm_SError(ScmObj fmt, ScmObj args)
         e = Scm_MakeException(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_POP_ERROR_HANDLER;
-    Scm_ThrowException(e);
+    return Scm_VMThrowException(e);
 }
 

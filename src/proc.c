@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.4 2001-01-24 11:30:39 shiro Exp $
+ *  $Id: proc.c,v 1.5 2001-01-25 09:14:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -129,21 +129,23 @@ static ScmObj foreach1_cc(ScmObj result, void **data)
         data[0] = proc;
         data[1] = SCM_CDR(args);
         Scm_VMPushCC(foreach1_cc, data, 2);
-        Scm_VMApply1(proc, SCM_CAR(args));
+        SCM_RETURN(Scm_VMApply1(proc, SCM_CAR(args)));
+    } else {
+        SCM_RETURN(SCM_UNDEFINED);
     }
-    SCM_RETURN(SCM_UNDEFINED);
 }
 
-void Scm_ForEach1(ScmProcedure *proc, ScmObj args)
+ScmObj Scm_ForEach1(ScmProcedure *proc, ScmObj args)
 {
     if (!SCM_NULLP(args)) {
         void *data[2];
         data[0] = proc;
         data[1] = SCM_CDR(args);
         Scm_VMPushCC(foreach1_cc, data, 2);
-        Scm_VMApply1(SCM_OBJ(proc), SCM_CAR(args));
+        SCM_RETURN(Scm_VMApply1(SCM_OBJ(proc), SCM_CAR(args)));
+    } else {
+        SCM_RETURN(SCM_UNDEFINED);
     }
-    return;
 }
 
 static ScmObj map1_cc(ScmObj result, void **data)
@@ -152,8 +154,6 @@ static ScmObj map1_cc(ScmObj result, void **data)
     ScmObj head = SCM_OBJ(data[2]);
     ScmObj tail = SCM_OBJ(data[3]);
 
-    Scm_Printf(SCM_CURRENT_ERROR_PORT, "ZZZZ %S %S %S %S\n", result, args, head, tail);
-    
     SCM_APPEND1(head, tail, result);
     
     if (SCM_PAIRP(args)) {
@@ -164,12 +164,13 @@ static ScmObj map1_cc(ScmObj result, void **data)
         data[2] = head;
         data[3] = tail;
         Scm_VMPushCC(map1_cc, data, 4);
-        Scm_VMApply1(proc, SCM_CAR(args));
+        SCM_RETURN(Scm_VMApply1(proc, SCM_CAR(args)));
+    } else {
+        SCM_RETURN(head);
     }
-    SCM_RETURN(head);
 }
 
-void Scm_Map1(ScmProcedure *proc, ScmObj args)
+ScmObj Scm_Map1(ScmProcedure *proc, ScmObj args)
 {
     if (!SCM_NULLP(args)) {
         void *data[4];
@@ -178,9 +179,9 @@ void Scm_Map1(ScmProcedure *proc, ScmObj args)
         data[2] = SCM_NIL;
         data[3] = SCM_NIL;
         Scm_VMPushCC(map1_cc, data, 4);
-        Scm_VMApply1(SCM_OBJ(proc), SCM_CAR(args));
+        SCM_RETURN(Scm_VMApply1(SCM_OBJ(proc), SCM_CAR(args)));
     } else {
-        Scm_VMSetResult(SCM_NIL);
+        SCM_RETURN(SCM_NIL);
     }
 }
 
@@ -227,18 +228,18 @@ static ScmObj foreachN_cc(ScmObj result, void **data)
     d[0] = proc;
     d[1] = moreargs;
     Scm_VMPushCC(foreachN_cc, d, 2);
-    Scm_VMApply(proc, args);
-    SCM_RETURN(SCM_UNDEFINED);
+    SCM_RETURN(Scm_VMApply(proc, args));
 }
 
-void Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args)
+ScmObj Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args)
 {
-    if (SCM_NULLP(args)) Scm_ForEach1(proc, arg1); /* shortcut */
-    else {
+    if (SCM_NULLP(args)) {
+        SCM_RETURN(Scm_ForEach1(proc, arg1)); /* shortcut */
+    } else {
         void *data[2];
         data[0] = proc;
         data[1] = Scm_Cons(arg1, args);
-        Scm_VMPushCC(foreachN_cc, data, 2);
+        SCM_RETURN(foreachN_cc(SCM_UNDEFINED, data));
     }
 }
 
@@ -263,22 +264,21 @@ static ScmObj mapN_cc(ScmObj result, void **data)
     d[2] = head;
     d[3] = tail;
     Scm_VMPushCC(mapN_cc, d, 4);
-    Scm_VMApply(proc, args);
-    return SCM_UNDEFINED;
+    SCM_RETURN(Scm_VMApply(proc, args));
 }
 
-void Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args)
+ScmObj Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args)
 {
-    if (SCM_NULLP(args)) Scm_Map1(proc, arg1); /* shortcut */
-    else {
+    if (SCM_NULLP(args)) {
+        SCM_RETURN(Scm_Map1(proc, arg1)); /* shortcut */
+    } else {
         ScmObj thisargs, moreargs;
         void *data[4];
 
         if (mapper_collect_args(Scm_Cons(arg1, args),
                                 &thisargs, &moreargs)) {
             /* one of the arglist is already nil. */
-            Scm_VMSetResult(SCM_NIL);
-            return;
+            SCM_RETURN(SCM_NIL);
         }
         
         data[0] = proc;
@@ -286,7 +286,7 @@ void Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args)
         data[2] = SCM_NIL;
         data[3] = SCM_NIL;
         Scm_VMPushCC(mapN_cc, data, 4);
-        Scm_VMApply(SCM_OBJ(proc), thisargs);
+        SCM_RETURN(Scm_VMApply(SCM_OBJ(proc), thisargs));
     }
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.2 2001-01-24 11:30:39 shiro Exp $
+ *  $Id: load.c,v 1.3 2001-01-25 09:14:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -47,24 +47,35 @@ static ScmObj load_cc(ScmObj result, void **data)
     SCM_RETURN(result);
 }
 
-void Scm_LoadFromPort(ScmPort *port)
+ScmObj Scm_VMLoadFromPort(ScmPort *port)
 {
     if (!SCM_IPORTP(port))
         Scm_Error("input port required, but got: %S", port);
     if (SCM_PORT_CLOSED_P(port))
         Scm_Error("port already closed: %S", port);
-    Scm_VMPushCC(load_cc, (void **)&port, 1);
+    return load_cc(SCM_NIL, (void **)&port);
 }
 
-
 /* TODO: search path, default suffix, etc... */
+ScmObj Scm_VMLoad(const char *s)
+{
+    ScmObj p = Scm_OpenFilePort(s, "r");
+    if (SCM_FALSEP(p)) {
+        Scm_Error("cannot open file: %s", s);
+    }
+    return Scm_VMLoadFromPort(SCM_PORT(p));
+}
+
 void Scm_Load(const char *s)
 {
     ScmObj p = Scm_OpenFilePort(s, "r");
     if (SCM_FALSEP(p)) {
         Scm_Error("cannot open file: %s", s);
     }
-    Scm_LoadFromPort(SCM_PORT(p));
+    Scm_VMPrepareCall();
+    Scm_VMLoadFromPort(SCM_PORT(p));
 }
+
+
 
 

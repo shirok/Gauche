@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.13 2001-01-24 11:30:39 shiro Exp $
+ *  $Id: gauche.h,v 1.14 2001-01-25 09:14:27 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -246,9 +246,11 @@ extern ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
 
 extern ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
 
+extern ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
+
 extern ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 
-extern void Scm_ThrowException(ScmObj exception);
+extern ScmObj Scm_VMThrowException(ScmObj exception);
 
 /*---------------------------------------------------------
  * CLASS
@@ -1299,10 +1301,10 @@ extern ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
                            int required, int optional,
                            ScmObj info);
 
-extern void Scm_ForEach1(ScmProcedure *proc, ScmObj args);
-extern void Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args);
-extern void Scm_Map1(ScmProcedure *proc, ScmObj args);
-extern void Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args);
+extern ScmObj Scm_ForEach1(ScmProcedure *proc, ScmObj args);
+extern ScmObj Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args);
+extern ScmObj Scm_Map1(ScmProcedure *proc, ScmObj args);
+extern ScmObj Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args);
 
 /*--------------------------------------------------------
  * MACROS AND SYNTAX
@@ -1387,7 +1389,8 @@ extern void Scm_Panic(const char *msg, ...);
 
 /* Load */
 
-extern void Scm_LoadFromPort(ScmPort *port);
+extern ScmObj Scm_VMLoadFromPort(ScmPort *port);
+extern ScmObj Scm_VMLoad(const char *file);
 extern void Scm_Load(const char *file);
 
 /* Assertion */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.12 2001-01-24 11:30:39 shiro Exp $
+ *  $Id: vm.c,v 1.13 2001-01-25 09:14:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -130,10 +130,9 @@ static ScmEnvFrame *alloc_env(int size)
  *  Interprets intermediate code CODE on VM.
  */
 
-/*
- * Register-related macros.
- *
- *   Most of those macros assume important registers are declared locally.
+/* Micro-operations
+ *   These macros concerning a primitive operations involving updating
+ *   one or more registers.
  */
 #define CONT_FRAME_SIZE  4
 #define ENV_HDR_SIZE     4
@@ -199,6 +198,23 @@ static ScmEnvFrame *alloc_env(int size)
         cont = cont->prev;                      \
     } while (0)
 
+/* push current sp on top of the stack. */
+#define PUSH_SP()                               \
+    do {                                        \
+        ScmObj psp = SCM_OBJ(sp);               \
+        PUSH_ARG(psp);                          \
+    } while (0)
+
+/* pop the first word of the stack, then use it as SP.  When a subr
+   is called, it is always the case that the SP to be recovered
+   is on top of the stack. */
+#define POP_SP()                                \
+    do {                                        \
+        ScmObj psp;                             \
+        POP_ARG(psp);                           \
+        sp = (ScmObj*)psp;                      \
+    } while (0)
+
 /* push a header of an environment frame.   this is the second stage of
    preparing a procedure call.   info and size will be set just before
    the call, by adjust_argument_frame(). */
@@ -234,45 +250,13 @@ static ScmEnvFrame *alloc_env(int size)
         env = env->up;                          \
     } while (0)
 
-/* standard calling sequence */
-#define DO_CALL(nargs, tailp)                                           \
+#define VM_ASSERT(expr)                                                 \
     do {                                                                \
-        ScmEnvFrame *argframe = (ScmEnvFrame *)(sp - ENV_SIZE(nargs));  \
-        int argcnt = adjust_argument_frame(vm, val0, nargs, argframe);  \
-        if (SCM_SUBRP(val0)) {                                          \
-            /* don't need to push continuation frame.  Furthermore,     \
-               we pop argument frame before calling the subr, which     \
-               make it easier to manipulate stacks inside the subr.     \
-               Caveats: when introducing stack gc, we need a way to     \
-               preserve argframe. */                                    \
-            sp = argframe->sp;                                          \
-            SAVE_REGS();                                                \
-            val0 = SCM_SUBR(val0)->func(argframe->data, argcnt,         \
-                                        SCM_SUBR(val0)->data);          \
-            RESTORE_REGS();                                             \
-        } else {                                                        \
-            if (tailp) {                                                \
-                /* discard the caller's argument frame, and shift my    \
-                   argframe there.  Caveats: we should preserve         \
-                   caller's continuation frame, and caller's argument   \
-                   frame's sp pointer. */                               \
-                ScmEnvFrame *penv = cont->env;                          \
-                ScmContFrame *pprev = cont->prev;                       \
-                ScmObj ppc = cont->pc;                                  \
-                sp = cont->sp;                                          \
-                argframe->sp = sp;                                      \
-                memmove(sp,argframe,ENV_SIZE(argcnt)*sizeof(ScmObj));   \
-                cont = (ScmContFrame*)(sp + ENV_SIZE(argcnt));          \
-                cont->env = penv;                                       \
-                cont->prev = pprev;                                     \
-                cont->pc = ppc;                                         \
-                cont->sp = sp;                                          \
-                sp = (ScmObj*)cont + CONT_FRAME_SIZE;                   \
-            } else {                                                    \
-                PUSH_CONT(argframe);                                    \
-            }                                                           \
-            env->up = SCM_CLOSURE(val0)->env;                           \
-            pc = SCM_CLOSURE(val0)->code;                               \
+        if (!(expr))  {                                                 \
+            fprintf(stderr, "\"%s\", line %d: Assertion failed: %s\n",  \
+                    __FILE__, __LINE__, #expr);                         \
+            Scm_VMDump(theVM);                                          \
+            Scm_Panic("exitting...\n");                                 \
         }                                                               \
     } while (0)
 
@@ -295,7 +279,7 @@ inline
 #endif
 static ScmEnvFrame *save_env(ScmVM *vm)
 {
-    ScmEnvFrame *e = vm->env;
+    ScmEnvFrame *e = vm->env, *prev = NULL;
     ScmContFrame *c = vm->cont;
     for (; in_stack(vm, (ScmObj*)e); e = e->up) {
         int size = sizeof(ScmEnvFrame) + (e->size-1)*sizeof(ScmObj);
@@ -307,7 +291,9 @@ static ScmEnvFrame *save_env(ScmVM *vm)
                 break;
             }
         }
-        if (e == vm->env) vm->env = s;
+        if (vm->env == e) vm->env = s;
+        if (prev) prev->up = s;
+        prev = s;
     }
     return vm->env;
 }
@@ -401,8 +387,7 @@ static void run_loop(ScmObj program)
     int nvals;                  /* # of values */
     
     for (;;) {
-/*        SAVE_REGS();
-          Scm_VMDump(vm);*/
+/*        SAVE_REGS(); Scm_VMDump(vm); */
         
         if (!SCM_PAIRP(pc)) {
             /* We are at the end of procedure.  Activate the most recent
@@ -422,9 +407,11 @@ static void run_loop(ScmObj program)
             if (SCM_CCONTP(code)) {
                 /* C-continuation */
                 ScmCContinuation *cc = SCM_CCONT(code);
+                PUSH_SP();
                 SAVE_REGS();
                 val0 = cc->func(val0, cc->data);
                 RESTORE_REGS();
+                POP_SP();
                 continue;
             } else if (SCM_SOURCE_INFOP(code)) {
                 /* source info.  ignore it. */
@@ -443,11 +430,6 @@ static void run_loop(ScmObj program)
                 PUSH_ENV_HDR();
                 continue;
             }
-        case SCM_VM_PRE_TAIL:
-            {
-                PUSH_ENV_HDR();
-                continue;
-            }
         case SCM_VM_PUSH:
             {
                 PUSH_ARG(val0);
@@ -457,7 +439,7 @@ static void run_loop(ScmObj program)
             {
                 ScmObj sym;
 
-                SCM_ASSERT(SCM_PAIRP(pc));
+                VM_ASSERT(SCM_PAIRP(pc));
                 sym = SCM_CAR(pc);
 
                 if (SCM_GLOCP(sym)) {
@@ -490,22 +472,60 @@ static void run_loop(ScmObj program)
                 ScmEnvFrame *e = env;
                 
                 while (dep-- > 0) {
-                    SCM_ASSERT(e != NULL);
+                    VM_ASSERT(e != NULL);
                     e = e->up;
                 }
-                SCM_ASSERT(e != NULL);
-                SCM_ASSERT(e->size > off);
+                VM_ASSERT(e != NULL);
+                VM_ASSERT(e->size > off);
                 val0 = e->data[off];
                 continue;
             }
         case SCM_VM_TAIL_CALL:;
-            {
-                DO_CALL(SCM_VM_INSN_ARG(code), TRUE);
-                continue;
-            }
         case SCM_VM_CALL:
             {
-                DO_CALL(SCM_VM_INSN_ARG(code), FALSE);
+                int nargs = SCM_VM_INSN_ARG(code);
+                int tailp = (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL);
+                ScmEnvFrame *argframe = (ScmEnvFrame *)(sp - ENV_SIZE(nargs));
+                int argcnt;
+
+                SAVE_REGS();
+                argcnt = adjust_argument_frame(vm, val0, nargs, argframe);
+                RESTORE_REGS();
+                if (SCM_SUBRP(val0)) {
+                    /* don't need to push a continuation frame, but save the
+                       sp to pop current env on top of the stack.  the value
+                       may be changed by subr. */ 
+                    PUSH_ARG(SCM_OBJ(argframe));
+                    SAVE_REGS();
+                    val0 = SCM_SUBR(val0)->func(argframe->data, argcnt,
+                                                SCM_SUBR(val0)->data);
+                    RESTORE_REGS();
+                    POP_SP();
+                } else {
+                    if (tailp) {
+                        /* discard the caller's argument frame, and shift my
+                           argframe there.  Caveats: we should preserve
+                           caller's continuation frame, and caller's argument
+                           frame's sp pointer. */
+                        ScmEnvFrame *penv = cont->env;
+                        ScmContFrame *pprev = cont->prev;
+                        ScmObj ppc = cont->pc;
+                        sp = cont->sp;
+                        argframe->sp = sp;
+                        memmove(sp,argframe,ENV_SIZE(argcnt)*sizeof(ScmObj));
+                        cont = (ScmContFrame*)(sp + ENV_SIZE(argcnt));
+                        cont->env = penv;
+                        cont->prev = pprev;
+                        cont->pc = ppc;
+                        cont->sp = sp;
+                        env = (ScmEnvFrame *)sp;
+                        sp = (ScmObj*)cont + CONT_FRAME_SIZE;
+                    } else {
+                        PUSH_CONT(argframe);
+                    }
+                    env->up = SCM_CLOSURE(val0)->env;
+                    pc = SCM_CLOSURE(val0)->code;
+                }
                 continue;
             }
         case SCM_VM_TAILBIND:
@@ -522,7 +542,7 @@ static void run_loop(ScmObj program)
                 int nlocals = SCM_VM_INSN_ARG(code), i;
                 ScmObj info;
 
-                SCM_ASSERT(SCM_PAIRP(pc));
+                VM_ASSERT(SCM_PAIRP(pc));
                 info = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
                 PUSH_LOCAL_ENV(nlocals, info);
@@ -530,14 +550,14 @@ static void run_loop(ScmObj program)
             }
         case SCM_VM_POPENV:
             {
-                SCM_ASSERT(env != NULL);
+                VM_ASSERT(env != NULL);
                 POP_LOCAL_ENV();
                 continue;
             }
         case SCM_VM_SET:
             {
                 ScmObj location, val;
-                SCM_ASSERT(SCM_PAIRP(pc));
+                VM_ASSERT(SCM_PAIRP(pc));
                 
                 location = SCM_CAR(pc);
                 if (SCM_GLOCP(location)) {
@@ -549,11 +569,11 @@ static void run_loop(ScmObj program)
                     int off = SCM_VM_INSN_ARG1(location);
                     
                     while (dep-- > 0) {
-                        SCM_ASSERT(e != NULL);
+                        VM_ASSERT(e != NULL);
                         e = e->up;
                     }
-                    SCM_ASSERT(e != NULL);
-                    SCM_ASSERT(e->size > off);
+                    VM_ASSERT(e != NULL);
+                    VM_ASSERT(e->size > off);
                     e->data[off] = val0;
                 } else if (SCM_SYMBOLP(location)) {
                     ScmGloc *gloc = Scm_FindBinding(vm->module,
@@ -578,9 +598,9 @@ static void run_loop(ScmObj program)
             {
                 ScmObj var;
 
-                SCM_ASSERT(SCM_PAIRP(pc));
+                VM_ASSERT(SCM_PAIRP(pc));
                 var = SCM_CAR(pc);
-                SCM_ASSERT(SCM_SYMBOLP(var));
+                VM_ASSERT(SCM_SYMBOLP(var));
                 pc = SCM_CDR(pc);
                 Scm_Define(vm->module, SCM_SYMBOL(var), val0);
                 val0 = var;
@@ -596,21 +616,22 @@ static void run_loop(ScmObj program)
             {
                 ScmObj info, body;
                 
-                SCM_ASSERT(SCM_PAIRP(pc));
+                VM_ASSERT(SCM_PAIRP(pc));
                 info = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
-                SCM_ASSERT(SCM_PAIRP(pc));
+                VM_ASSERT(SCM_PAIRP(pc));
                 body = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
 
                 /* move environment to the heap. */
-                env = save_env(vm);
                 SAVE_REGS();
+                env = save_env(vm);
                 val0 = Scm_MakeClosure(SCM_VM_INSN_ARG0(code),
                                        SCM_VM_INSN_ARG1(code),
                                        body,
                                        env,
                                        info);
+                RESTORE_REGS();
                 continue;
             }
 
@@ -681,7 +702,7 @@ static void run_loop(ScmObj program)
                 continue;
             }
         default:
-            Scm_Panic("Illegal instruction: %08x",  SCM_VM_INSN_CODE(code));
+            Scm_Panic("Illegal vm instruction: %08x",  SCM_VM_INSN_CODE(code));
         }
     }
 }
@@ -694,10 +715,11 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
 {
     DECL_REGS;
     ScmObj cp;
-    printf("^^^ %d\n", numargs);
+    POP_SP();                   /* discard argframe */
     pc = Scm_Cons(SCM_VM_INSN1(SCM_VM_CALL, numargs), pc);
     PUSH_ENV_HDR();
     SCM_FOR_EACH(cp, args) PUSH_ARG(SCM_CAR(cp));
+    PUSH_SP();
     SAVE_REGS();
 }
 
@@ -744,15 +766,27 @@ ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
     DECL_REGS;
-    ScmObj v = Scm_Compile(expr, SCM_NIL, 2);
-    ScmEnvFrame *topenv = (ScmEnvFrame *)sp;
-
+    ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_TAIL);
+    ScmEnvFrame *topenv;        /* dummy env.  later, we need to derive
+                                   this from ScmObj */
+    POP_SP();
+    topenv = (ScmEnvFrame *)sp;
     PUSH_ENV_HDR();
     topenv->size = 0;
     PUSH_CONT(topenv);
     pc = v;
+    PUSH_SP();                  /* this one will be popped by vm. */
     SAVE_REGS();
     return SCM_UNDEFINED;
+}
+
+/* Adjusts sp so that a VM function can be called outside of a subr.
+   Usually followed by Scm_VM* function. */
+/* TODO: ugly interface.  any good alternative? */
+void Scm_VMPrepareCall(void)
+{
+    DECL_REGS;
+    PUSH_SP();
 }
 
 /*
@@ -775,7 +809,7 @@ ScmClass Scm_CContClass = {
  * Usually followed by Scm_VMApply* function.
  */
 void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
-                       void **data, int datasize)
+                  void **data, int datasize)
 {
     /* TODO: allocate CC on stack frame? */
     ScmCContinuation *cc = SCM_NEW(ScmCContinuation);
@@ -882,8 +916,7 @@ ScmObj throw_exception_cc(ScmObj result, void **data)
         void *data = SCM_CDR(handlers);
         theVM->handlers = SCM_CDR(handlers);
         Scm_VMPushCC(throw_exception_cc, &data, 1);
-        Scm_VMApply0(proc);
-        return SCM_UNDEFINED;
+        return Scm_VMApply0(proc);
     }
 
     if (theVM->escape) {
@@ -895,17 +928,16 @@ ScmObj throw_exception_cc(ScmObj result, void **data)
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
-void Scm_ThrowException(ScmObj exception)
+ScmObj Scm_VMThrowException(ScmObj exception)
 {
     void *data = theVM->handlers;
     if (SCM_PROCEDUREP(theVM->errorHandler)) {
         Scm_VMPushCC(throw_exception_cc, &data, 1);
-        Scm_VMApply1(theVM->errorHandler, exception);
-        return;
+        return Scm_VMApply1(theVM->errorHandler, exception);
     } else {
         default_exception_handler(exception);
     }   
-    throw_exception_cc(SCM_UNDEFINED, &data);
+    return throw_exception_cc(SCM_UNDEFINED, &data);
 }
 
 /*==============================================================
@@ -1009,7 +1041,7 @@ static void throw_continuation(ScmObj *argframe, int nargs, void *data)
     throw_cont_body(current, handlers, cont, args);
 }
 
-void Scm_CallCC(ScmObj proc)
+ScmObj Scm_VMCallCC(ScmObj proc)
 {
     ScmObj contproc;
     struct cont_data *data;
@@ -1018,7 +1050,10 @@ void Scm_CallCC(ScmObj proc)
         Scm_Error("Procedure taking one argument is required, but got: %S",
                   proc);
 
-    Scm_Panic("Scm_CallCC");
+    /* Copy continuation to the heap.   I'd like to try non-copying
+     * method later, but for now...
+     */
+
 }
 
 /*==============================================================
@@ -1164,7 +1199,7 @@ void Scm_VMDump(ScmVM *vm)
     ScmContFrame *cont = vm->cont;
     int j;
 
-    Scm_Printf(out, "VM %p\n", vm);
+    Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %65.1S\n", vm->pc);
     Scm_Printf(out, "   sp: %p\n", vm->sp);
     Scm_Printf(out, "  btm: %p\n", vm->stack);
@@ -1179,6 +1214,7 @@ void Scm_VMDump(ScmVM *vm)
     Scm_Printf(out, "conts:\n");
     while (cont) {
         Scm_Printf(out, "   %p\n", cont);
+        Scm_Printf(out, "               sp = %p\n", cont->sp);
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "               pc = %50.1S\n", cont->pc);
         cont = cont->prev;
