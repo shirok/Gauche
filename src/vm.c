@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.18 2001-02-01 10:58:57 shiro Exp $
+ *  $Id: vm.c,v 1.19 2001-02-02 11:55:48 shiro Exp $
  */
 
 #include "gauche.h"
@@ -114,7 +114,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 }
 
 /*====================================================================
- * Scm_Run - VM interpreter
+ * VM interpreter
  *
  *  Interprets intermediate code CODE on VM.
  */
@@ -330,22 +330,6 @@ static ScmEnvFrame *topenv(ScmModule *module)
     e->data[0] = SCM_OBJ(module);
     theVM->sp += 5;
     return e;
-}
-
-
-
-static void run_loop(void);
-
-void Scm_Run(ScmObj program)
-{
-    vm_reset();
-    theVM->pc = program;
-    run_loop();
-}
-
-void Scm_Cont(void)
-{
-    run_loop();
 }
 
 /*
@@ -810,6 +794,16 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     PUSH_CONT(v);
     SAVE_REGS();
     return SCM_UNDEFINED;
+}
+
+/* User level eval().  */
+ScmObj Scm_Eval(ScmObj expr, ScmObj e)
+{
+    vm_reset(); /* shouldn't reset, actually.  we need
+                   some mechanism to save the current vm state,
+                   and recover it upon leaving this continuation. */
+    theVM->pc = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    run_loop();
 }
 
 /* Adjusts sp so that a VM function can be called outside of a subr.

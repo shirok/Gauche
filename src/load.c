@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.6 2001-02-01 09:28:24 shiro Exp $
+ *  $Id: load.c,v 1.7 2001-02-02 11:55:48 shiro Exp $
  */
 
 #include "gauche.h"
@@ -70,8 +70,7 @@ void Scm_Load(const char *s)
 {
     ScmObj f = SCM_MAKE_STR(s);
     ScmObj l = SCM_INTERN("load");
-    ScmObj v = Scm_Compile(SCM_LIST2(l, f), SCM_NIL, SCM_COMPILE_NORMAL);
-    Scm_Run(v);
+    Scm_Eval(SCM_LIST2(l, f), SCM_NIL);
 }
 
 

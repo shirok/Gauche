@@ -22,7 +22,6 @@ int main(int argc, char **argv)
     if (optind < argc) {
         /* file name passed. */
         Scm_Load(argv[optind]);
-        Scm_Cont();
         exit(0);
     }
 
