@@ -1,3 +1,10 @@
+2004-02-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.c (thread_entry): displays thread's stack trace
+	  when non-handled error is thrown and the thread is about to die
+	  (by unhandled-exception).  It will help debugging, and won't be
+	  a problem of apps that properly handles errors in threads.
+
 2004-02-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-13/revapp.scm (string-concatenate-reverse): optional arg
