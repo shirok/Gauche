@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.261 2002-05-24 10:20:22 shirok Exp $
+ *  $Id: gauche.h,v 1.262 2002-05-24 22:52:24 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1688,7 +1688,8 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->required = req,                 \
     SCM_PROCEDURE(obj)->optional = opt,                 \
     SCM_PROCEDURE(obj)->type = typ,                     \
-    SCM_PROCEDURE(obj)->info = inf
+    SCM_PROCEDURE(obj)->info = inf,                     \
+    SCM_PROCEDURE(obj)->setter = SCM_FALSE
 
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf) \
     { { klass }, (req), (opt), (typ), FALSE, (inf), SCM_FALSE }
