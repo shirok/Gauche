@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.8 2004-10-11 10:53:18 shirok Exp $
+;; $Id: exception.scm,v 1.9 2004-11-02 06:01:43 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -255,9 +255,34 @@
                ((is-a? x <exception>) 'exception))
          (raise (make <my-exc>))))
 
+;;--------------------------------------------------------------------
+(test-section "combinations")
+
+(test* "guarding read-error" "Warning: read error:(input string port):1"
+       (guard (exc
+               ((condition-has-type? exc <read-error>)
+                (format "Warning: read error:~a:~a"
+                        (port-name (ref exc 'port))
+                        (ref exc 'line)))
+               ((condition-has-type? exc <io-port-error>)
+                (format "Warning: I/O error occurred on port ~a"
+                        (port-name (ref exc 'port))))
+               (else
+                (format "Other error")))
+         (read-from-string "(abc")))
+
+(test* "guarding read-error (2)"
+       "Warning: read error:(input string port):1"
+       (guard (exc
+               ((<read-error> exc)
+                (format "Warning: read error:~a:~a"
+                        (port-name (ref exc 'port))
+                        (ref exc 'line)))
+               ((<io-port-error> exc)
+                (format "Warning: I/O error occurred on port ~a"
+                        (port-name (ref exc 'port))))
+               (else
+                (format "Other error")))
+         (read-from-string "(abc")))
+
 (test-end)
-
-
-
-
-
