@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.65 2001-03-08 19:09:13 shiro Exp $
+ *  $Id: gauche.h,v 1.66 2001-03-09 08:38:14 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1562,6 +1562,10 @@ extern ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
 
 extern ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn);
 
+extern ScmObj Scm_Require(ScmObj feature);
+extern ScmObj Scm_Provide(ScmObj feature);
+extern ScmObj Scm_ProvidedP(ScmObj feature);
+    
 extern ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path);
 
 /*---------------------------------------------------
