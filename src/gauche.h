@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.219 2002-02-18 20:48:22 shirok Exp $
+ *  $Id: gauche.h,v 1.220 2002-03-04 19:58:30 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -57,6 +57,12 @@ extern "C" {
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
 #define SCM_VM_STACK_SIZE     10000
+
+#ifdef GAUCHE_USE_PTHREAD
+# include <gauche/pthread.h>
+#else  /* !GAUCHE_USE_PTHREAD */
+# include <gauche/uthread.h>
+#endif /* !GAUCHE_USE_PTHREAD */
 
 /* Some useful macros */
 
@@ -1860,6 +1866,39 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 #define SCM_ARGREF(count)           (SCM_FP[count])
 #define SCM_RETURN(value)           return value
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
+
+/*---------------------------------------------------------
+ * THREAD
+ */
+
+typedef struct ScmThreadRec {
+    SCM_HEADER;
+    ScmVM *vm;
+    ScmInternalThread tid;
+    ScmObj thunk;
+    ScmObj specific;
+    ScmObj exitCondition;
+    ScmObj exitResult;
+} ScmThread;
+
+SCM_CLASS_DECL(Scm_ThreadClass);
+#define SCM_CLASS_THREAD       (&Scm_ThreadClass)
+#define SCM_THREAD(obj)        ((ScmThread*)obj)
+#define SCM_THREADP(obj)       SCM_XTYPEP(obj, SCM_CLASS_THREAD)
+
+
+
+typedef struct ScmMutexRec {
+    SCM_HEADER;
+    ScmInternalMutex mutex;
+    ScmObj specific;
+} ScmMutex;
+
+SCM_CLASS_DECL(Scm_MutexClass);
+#define SCM_CLASS_MUTEX        (&Scm_MutexClass)
+#define SCM_MUTEX(obj)         ((ScmMutex*)obj)
+#define SCM_MUTEXP(obj)        SCM_XTYPEP(obj, SCM_CLASS_MUTEX)
+
 
 /*---------------------------------------------------
  * SIGNAL

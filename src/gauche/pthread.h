@@ -1,0 +1,28 @@
+/*
+ * pthread.h - pthread primitives
+ *
+ *  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
+ *
+ *  Permission to use, copy, modify, distribute this software and
+ *  accompanying documentation for any purpose is hereby granted,
+ *  provided that existing copyright notices are retained in all
+ *  copies and that this notice is included verbatim in all
+ *  distributions.
+ *  This software is provided as is, without express or implied
+ *  warranty.  In no circumstances the author(s) shall be liable
+ *  for any damages arising out of the use of this software.
+ *
+ *  $Id: pthread.h,v 1.1 2002-03-04 19:58:35 shirok Exp $
+ */
+
+#ifndef GAUCHE_PTHREAD_H
+#define GAUCHE_PTHREAD_H
+
+#include <pthread.h>
+
+typedef pthread_mutex_t ScmInternalMultex;
+
+
+
+
+#endif /* GAUCHE_PTHREAD_H */

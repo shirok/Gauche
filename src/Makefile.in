@@ -34,7 +34,7 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/char_euc_jp.h gauche/char_utf_8.h    \
                      gauche/char_sjis.h gauche/char_none.h       \
                      gauche/predef-syms.h gauche/portmacros.h    \
-		     gauche/extend.h
+		     gauche/extend.h gauche/pthread.h gauche/uthread.h
 INSTALL_LIBS = libgauche.a @LIBGAUCHE_SO@
 INSTALL_BINS = gosh gauche-config
 INSTALL_SCMS = genstub gauche-init.scm
