@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.47 2001-05-14 19:08:31 shirok Exp $
+ *  $Id: number.c,v 1.48 2001-05-17 09:05:35 shirok Exp $
  */
 
 #include <math.h>
@@ -1227,23 +1227,61 @@ ScmObj Scm_Ash(ScmObj x, int cnt)
     return SCM_UNDEFINED;
 }
 
+ScmObj Scm_LogNot(ScmObj x)
+{
+    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (SCM_INTP(x)) {
+        /* this won't cause an overflow */
+        return SCM_MAKE_INT(~SCM_INT_VALUE(x));
+    } else {
+        return Scm_Negate(Scm_BignumAddSI(SCM_BIGNUM(x), 1));
+    }
+}
+
 ScmObj Scm_LogAnd(ScmObj x, ScmObj y)
 {
     if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
     if (!SCM_EXACTP(y)) Scm_Error("exact integer required, but got %S", y);
     if (SCM_INTP(x)) {
-        if (SCM_INTP(y)) {
+        if (SCM_INTP(y))
             return SCM_MAKE_INT(SCM_INT_VALUE(x) & SCM_INT_VALUE(y));
-        } else {
-            return Scm_BignumLogAndSI(SCM_BIGNUM(y), SCM_INT_VALUE(x));
-        }
+        else
+            x = Scm_MakeBignumFromSI(SCM_INT_VALUE(x));
     } else {
-        if (SCM_INTP(y)) {
-            return Scm_BignumLogAndSI(SCM_BIGNUM(x), SCM_INT_VALUE(y));
-        } else {
-            return Scm_BignumLogAnd(SCM_BIGNUM(x), SCM_BIGNUM(y));
-        }
+        if (SCM_INTP(y)) y = Scm_MakeBignumFromSI(SCM_INT_VALUE(y));
     }
+    return Scm_BignumLogAnd(SCM_BIGNUM(x), SCM_BIGNUM(y));
+}
+
+ScmObj Scm_LogIor(ScmObj x, ScmObj y)
+{
+    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (!SCM_EXACTP(y)) Scm_Error("exact integer required, but got %S", y);
+    if (SCM_INTP(x)) {
+        if (SCM_INTP(y))
+            return SCM_MAKE_INT(SCM_INT_VALUE(x) | SCM_INT_VALUE(y));
+        else
+            x = Scm_MakeBignumFromSI(SCM_INT_VALUE(x));
+    } else {
+        if (SCM_INTP(y)) y = Scm_MakeBignumFromSI(SCM_INT_VALUE(y));
+    }
+    return Scm_BignumLogIor(SCM_BIGNUM(x), SCM_BIGNUM(y));
+}
+
+
+ScmObj Scm_LogXor(ScmObj x, ScmObj y)
+{
+    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (!SCM_EXACTP(y)) Scm_Error("exact integer required, but got %S", y);
+    if (SCM_INTP(x)) {
+        if (SCM_INTP(y))
+            return SCM_MAKE_INT(SCM_INT_VALUE(x) ^ SCM_INT_VALUE(y));
+        else
+            x = Scm_MakeBignumFromSI(SCM_INT_VALUE(x));
+    } else {
+        if (SCM_INTP(y)) y = Scm_MakeBignumFromSI(SCM_INT_VALUE(y));
+    }
+    return Scm_BignumLogXor(SCM_BIGNUM(x), SCM_BIGNUM(y));
 }
 
 /*===============================================================
