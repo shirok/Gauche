@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: odbm.scm,v 1.1 2001-10-20 11:47:14 shirok Exp $
+;;;  $Id: odbm.scm,v 1.2 2001-10-28 11:38:14 shirok Exp $
 ;;;
 
 (define-module dbm.odbm
@@ -43,8 +43,10 @@
 (define-class <odbm> (<dbm>)
   ())
 
-(define-method initialize ((self <odbm>) initargs)
+(define-method dbm-open ((self <odbm>))
   (next-method)
+  (unless (slot-bound? self 'path)
+    (errorf "path must be set to open dbm database"))
   (let* ((path   (slot-ref self 'path))
          (rwmode (slot-ref self 'rw-mode))
          (fmode  (slot-ref self 'file-mode))
@@ -55,21 +57,21 @@
                     (with-output-to-file dirfile (lambda () #f))
                     (with-output-to-file pagfile (lambda () #f)))))
     (case rwmode
-      (:read
+      ((:read)
        (unless exists?
          (errorf "dbm-open: no database file ~s.dir or ~s.pag" path path)))
-      (:write
+      ((:write)
        ;; dir and pag files must exist
        (unless exists? (create)))
-      (:create
+      ((:create)
        ;; a trick: remove dir and pag file first if :create
        (when exists?
          (posix-unlink dirfile) (posix-unlink pagfile))
        (create)))
     (odbm-init path)
     ;; adjust mode properly
-    (posix-chmod dirfile fmode)
-    (posix-chmod pagfile fmode)
+    (sys-chmod dirfile fmode)
+    (sys-chmod pagfile fmode)
     self))
 
 ;;
@@ -88,53 +90,34 @@
 
 (define-method dbm-put! ((self <odbm>) key value)
   (next-method)
-  (if (eqv? (slot-ref self 'rw-mode) :read)
-      (errorf "dbm-put!: database ~s is read only" self)
-      (let ((stringify (slot-ref self '->string)))
-        (if (> 0 (odbm-store (stringify key) (stringify value)))
-            (errorf "dbm-put!: put failed")))))
+  (when (positive? (odbm-store (%dbm-k2s self key) (%dbm-v2s self value)))
+    (errorf "dbm-put!: put failed")))
 
 (define-method dbm-get ((self <odbm>) key . args)
   (next-method)
-  (let ((stringify   (slot-ref self '->string))
-        (unstringify (slot-ref self 'string->)))
-    (cond ((odbm-fetch (stringify key))
-           => (lambda (v) (unstringify v)))
-          ((pair? args) (car args))     ;fall-back value
-          (else  (errorf "odbm: no data for key ~s in database ~s"
-                        key self)))))
+  (cond ((odbm-fetch (%dbm-k2s self key))
+         => (lambda (v) (%dbm-v2s self v)))
+        ((pair? args) (car args))     ;fall-back value
+        (else  (errorf "odbm: no data for key ~s in database ~s"
+                       key self))))
 
 (define-method dbm-exists? ((self <odbm>) key)
   (next-method)
-  (let ((stringify   (slot-ref self '->string)))
-    (if (odbm-fetch (stringify key)) #t #f)))
+  (if (odbm-fetch (%dbm-k2s self key)) #t #f))
 
 (define-method dbm-delete! ((self <odbm>) key)
   (next-method)
-  (if (eqv? (slot-ref self 'rw-mode) :read)
-      (errorf "dbm-delete!: database ~s is read only" self)
-      (if (> 0 (odbm-delete ((slot-ref self '->string) key)))
-          (errorf "dbm-delete!: deleteting key ~s from ~s failed" key self))))
+  (when (positive? (odbm-delete (%dbm-k2s self key)))
+    (errorf "dbm-delete!: deleteting key ~s from ~s failed" key self)))
 
-(define-method dbm-for-each ((self <odbm>) proc)
+(define-method dbm-fold ((self <odbm>) proc knil)
   (next-method)
-  (let ((unstringify (slot-ref self 'string->)))
-    (let loop ((key (odbm-firstkey)))
-      (when key
+  (let loop ((key (odbm-firstkey))
+             (r   '()))
+    (if key
         (let ((val (odbm-fetch key)))
-          (proc (unstringify key) (unstringify val))
-          (loop (odbm-nextkey key)))))
-    ))
-
-(define-method dbm-map ((self <odbm>) proc)
-  (next-method)
-  (let ((unstringify (slot-ref self 'string->)))
-    (let loop ((key (odbm-firstkey))
-               (r   '()))
-      (if key
-          (let ((val (odbm-fetch key)))
-            (loop (odbm-nextkey key)
-                  (cons (proc (unstringify key) (unstringify val)) r)))
-          (reverse r)))))
+          (loop (odbm-nextkey key)
+                (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
+        r)))
   
 (provide "dbm/odbm")

@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.6 2001-10-24 19:39:26 shirok Exp $
+;;  $Id: ndbm.stub,v 1.7 2001-10-28 11:38:14 shirok Exp $
 ;;
 
 "
@@ -94,7 +94,7 @@
 
 (define-cproc ndbm-closed? (ndbm)
   (assert (ndbm? ndbm))
-  "SCM_RETURN(SCM_MAKE_BOOL(ndbm->dbf != NULL));")
+  "SCM_RETURN(SCM_MAKE_BOOL(ndbm->dbf == NULL));")
 
 (define-cproc ndbm-store (ndbm key val &optional (flags 0))
   (assert (ndbm? ndbm))
@@ -118,6 +118,15 @@
   FROM_DATUM(r, dval);
   SCM_RETURN(r);")
 
+(define-cproc ndbm-exists? (ndbm key)
+  (assert (ndbm? ndbm))
+  (assert (string? key))
+  "datum dkey, dval; ScmObj r;
+  CHECK_NDBM(ndbm);
+  TO_DATUM(dkey, key);
+  dval = dbm_fetch(ndbm->dbf, dkey);
+  SCM_RETURN(SCM_MAKE_BOOL(dval.dptr != NULL));")
+
 (define-cproc ndbm-delete (ndbm key)
   (assert (ndbm? ndbm))
   (assert (string? key))
@@ -135,7 +144,7 @@
   FROM_DATUM(r, dkey);
   SCM_RETURN(r);")
 
-(define-cproc ndbm-nextkey (ndbm key)
+(define-cproc ndbm-nextkey (ndbm)
   (assert (ndbm? ndbm))
   "datum dkey; ScmObj r;
   CHECK_NDBM(ndbm);
