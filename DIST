@@ -23,13 +23,15 @@ done
 
 if [ "$gen" = "yes" ]; then
   if [ ! -d libltdl ]; then libtoolize --ltdl --copy --force; fi
-  if [ \( ! -f $CONFIG_H_IN \) -o \( $CONFIG_H_IN -ot configure.in \) ]; then
+  aclocal
+  if [ $CONFIG_H_IN -ot configure.in ]; then
     autoheader
   fi
-  aclocal
   automake -a -c
   (cd gc; automake)
   autoconf
+  (cd gc; autoconf)
+  (cd libltdl; autoconf)
 fi
 
 if [ "$tgz" = "yes" ]; then
