@@ -1,7 +1,7 @@
 /*
  * bignum.c - multiple precision exact integer arithmetic
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.31 2002-04-12 00:45:16 shirok Exp $
+ *  $Id: bignum.c,v 1.32 2002-04-12 06:39:13 shirok Exp $
  */
 
 #include <math.h>
@@ -20,8 +20,22 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 
-/* This is a very naive implementation.  For now, I think bignum
- * performance is not very important for the purpose of Gauche.
+/* Bignum library.  Not optimized well yet --- I think bignum performance
+ * is not very critical for Gauche, except a few special cases (like
+ * the cases used in the numeric I/O routine).  So the implementation
+ * emphasizes robustness rather than performance.
+ *
+ * Bignum is represented by ScmBignum struture.  There are "normalized"
+ * and "denormalized" bignums.   Scheme part only sees the normalized
+ * bignums.  Normalized bignum uses the minimum words to represent the
+ * given number, and no normalized bignums for the numbers that can be
+ * representable in fixnum.   Most external bignum API expects normalized
+ * bignums, and return normalized bignums.   Normalized bignums should
+ * be seen as read-only construct.
+ *
+ * Denormalized bignums are used to keep intermediate results.
+ * Denormalized forms shouldn't "leak out" to the Scheme world; but
+ * can be useful to write efficient routine.
  */
 /* Cf: Knuth: The Art of Computer Programming, sectin 4.3 */
 
