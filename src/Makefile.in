@@ -46,7 +46,7 @@ HDRS = gauche.h
 all : gosh
 
 gosh : libgauche.a main.o
-	$(CC) $(CFLAGS) -o gosh main.o -L. -lgauche $(LDFLAGS)
+	$(CC) $(CFLAGS) -o gosh main.o -L. -lgauche $(LDFLAGS) $(LIBS)
 
 $(OBJS) main.o : $(HDRS)
 
