@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.33 2001-05-06 01:26:03 shirok Exp $
+ *  $Id: number.c,v 1.34 2001-05-06 01:37:59 shirok Exp $
  */
 
 #include <math.h>
@@ -447,7 +447,6 @@ ScmObj Scm_Add(ScmObj args)
                 result_real += (double)SCM_INT_VALUE(v);
             } else if (SCM_BIGNUMP(v)) {
                 result_real += Scm_BignumToDouble(SCM_BIGNUM(v));
-                fprintf(stderr, "%f\n", result_real);
             } else if (SCM_FLONUMP(v)) {
                 result_real += SCM_FLONUM_VALUE(v);
             } else if (SCM_COMPLEXP(v)) {
