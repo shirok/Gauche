@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.3 2001-10-15 09:04:12 shirok Exp $
+;;;  $Id: collection.scm,v 1.4 2001-12-01 11:35:06 shirok Exp $
 ;;;
 
 ;;; NOTE: This is an experimental implementation.
@@ -20,126 +20,358 @@
 
 ;; Defines generic operations over collection.   A collection is
 ;; a set of objects, possibly containing infinite objects.
-;; A class that implements a collection generic interface must
-;; define at least one method:
-;;
-;;  (gen-fold proc (obj <collection) knil ...)
-;;
-;; The other operations are derived from the generic fold+, but
-;; the specific collection inplementation can override some of them
-;; for efficiency.
 
 (define-module gauche.collection
-  (export gen-fold
-          gen-size gen-mutable? gen-extendable?
-          gen-map  gen-for-each gen-collect gen-enumerate
-          gen-find gen-filter gen-remove gen-partition
-          gen-any? gen-every?
-          gen-ref  gen-set!
-          )
+  (use srfi-1)
+  (use util.queue)
+  (export call-with-iterator with-iterator call-with-iterators
+          call-with-builder  with-builder
+          size-of fold map map-to
+          filter filter-to remove remove-to partition partition-to
+          delete delete-to
+          find coerce-to)
   )
 (select-module gauche.collection)
 
-;;-------------------------------------------------------------
-;; gen-fold - a fundamental iterator over a collection.
+;;-------------------------------------------------
+;; Call-with-iterator - the fundamental iterator
 ;;
-;;  (gen-fold proc collection knil knil2 ...)
+
+(define-syntax with-iterator 
+  (syntax-rules ()
+    ((_ (coll end? next . opts) . body)
+     (call-with-iterator coll (lambda (end? next) . body) . opts))))
+
+(define-method call-with-iterator ((coll <list>) proc . args)
+  (let* ((start (get-keyword :start args #f))
+         (p (if start (list-tail coll start) coll)))
+    (proc (lambda () (null? p))
+          (lambda () (pop! p)))))
+
+(define-method call-with-iterator ((coll <vector>) proc . args)
+  (let ((len (vector-length coll))
+        (i   (get-keyword :start args 0)))
+    (proc (lambda () (>= i len))
+          (lambda () (let ((e (vector-ref coll i))) (inc! i) e)))))
+
+(define-method call-with-iterator ((coll <string>) proc . args)
+  (let* ((start (get-keyword :start args #f))
+         (s     (open-input-string (if start (string-copy coll start) coll)))
+         (ch    (read-char s)))
+    (proc (lambda () (eof-object? ch))
+          (lambda () (let ((c ch))
+                       (set! ch (read-char s))
+                       c)))))
+
+(define-method call-with-iterator ((coll <hash-table>) proc . args)
+  (let ((iter (%hash-table-iter coll))
+        (kv   (call-with-values iter cons)))
+    (proc (lambda () (eof-object? (car kv)))
+          (lambda () (let ((r kv))
+                       (set! kv (call-with-values iter cons))
+                       r)))))
+
+;; n-ary case aux. proc
+(define (call-with-iterators colls proc)
+  (let loop ((colls colls)
+             (eprocs '())
+             (nprocs '()))
+    (if (null? colls)
+        (proc (reverse eprocs) (reverse nprocs))
+        (with-iterator ((car colls) end? next)
+          (loop (cdr colls) (cons end? eprocs) (cons next nprocs))))))
+
+;;-------------------------------------------------
+;; Call-with-builder - the fundamental constructor
 ;;
-;; Note that the order of argument is different from fold in SRFI-1.
 
-(define-generic gen-fold )
-
-;; TODO: add fallback code to map n-ary version of fold to 1-ary version
-
-;; Other generic methods.  The specific implementation of a
-;; collection can override any of them.
-;; Note that the exhausive map operation may not terminate
-;; if the collection has unlimited number of elements.
-;; You can use call/cc to break out of the loop, or use gen-enumerate
-;; generic function.
-
-;; Returns number of items in the collection.
-(define-method gen-size (coll) (gen-fold + coll 0))
-
-;; Map proc to each element in the collection, collecting the
-;; results into a list.
-(define-method gen-map (proc coll)
-  (reverse (gen-fold (lambda (elt r) (cons (proc elt) r)) coll '())))
-
-;; Apply proc to each element in the collection.
-(define-method gen-for-each (proc coll)
-  (gen-fold (lambda (elt r) (proc elt)) coll '())
-  (undefined))
-
-
-;; auxiliary macros to support differential list accumulation
-(define-syntax dlist-seed
+(define-syntax with-builder
   (syntax-rules ()
-    ((_) (let ((x (cons '() '()))) (cons x x)))))
+    ((_ (class add! get . opts) . body)
+     (call-with-builder class (lambda (add! get) . body) . opts))))
 
-(define-syntax dlist-append!
-  (syntax-rules ()
-    ((_ dlist item)
-     (begin (set! (cddr dlist) item)
-            (set! (cdr dlist) (last-pair (cddr dlist)))))))
+(define-method call-with-builder ((class <list-meta>) proc . args)
+  (let ((q (make-queue)))
+    (proc (lambda (item) (enqueue! q item))
+          (lambda () (dequeue-all! q)))))
+
+(define-method call-with-builder ((class <vector-meta>) proc . args)
+  (let ((size (get-keyword :size args #f)))
+    (if size
+        (let ((v (make-vector size))
+              (i 0))
+          (proc (lambda (item)
+                  (when (< i size)
+                    (vector-set! v i item)
+                    (inc! i)))
+                (lambda () v)))
+        (let ((q (make-queue)))
+          (proc (lambda (item) (enqueue! q item))
+                (lambda () (list->vector (dequeue-all! q))))))))
+
+(define-method call-with-builder ((class <string-meta>) proc . args)
+  (let ((s (open-output-string)))
+    (proc (lambda (item)
+            (unless (char? item)
+              (error "character required to build a string, but got" item))
+            (write-char item s))
+          (lambda () (get-output-string s)))))
+
+(define-method call-with-builder ((class <hash-table>) proc . args)
+  (let* ((type (get-keyword :type args 'eq?))
+         (h    (make-hash-table type)))
+    (proc (lambda (item)
+            (unless (pair? item)
+              (error "pair required to build a hashtable, but got" item))
+            (hash-table-put! h (car item) (cdr item)))
+          (lambda () h))))
+
+;;----------------------------------------------------
+;; Derived operations
+;;
+
+;; fold -------------------------------------------------
+
+;; generic way.   This effectively shadows SRFI-1 fold.
+(define-method fold (proc knil (coll <collection>) . more)
+  (if (null? more)
+      (with-iterator (coll end? next)
+        (do ((r knil (proc (next) r)))
+            ((end?) r)
+          #f))
+      (call-with-iterators
+       (cons coll more)
+       (lambda (ends? nexts)
+         (do ((r knil (apply proc (fold-right (lambda (p r) (cons (p) r))
+                                              r
+                                              nexts))))
+             ((any (lambda (p) (p)) ends?) r)
+           #f)))))
+
+;; for list arguments, SRFI-1 implementation is slightly faster.
+(define-method fold (proc knil (coll <list>))
+  ((with-module srfi-1 fold) proc knil coll))
+
+(define-method fold (proc knil (coll <list>) (coll2 <list>))
+  ((with-module srfi-1 fold) proc knil coll coll2))
+
+;; map --------------------------------------------------
+
+;; generic way.  this shadows builtin map.
+(define-method map (proc (coll <collection>) . more)
+  (if (null? more)
+      (with-iterator (coll end? next)
+        (do ((q (make-queue)))
+            ((end?) (dequeue-all! q))
+          (enqueue! q (proc (next)))))
+      (let ((%map (with-module gauche map)))
+        (call-with-iterators
+         (cons coll more)
+         (lambda (ends? nexts)
+           (do ((q (make-queue)))
+               ((any (lambda (p) (p)) ends?)
+                (dequeue-all! q))
+             (enqueue! q (apply proc (%map (lambda (p) (p)) nexts))))))
+        )))
+
+;; for list arguments, built-in map is much faster.
+(define-method map (proc (coll <list>) . more)
+  (let ((%map (with-module gauche map)))
+    (if (null? more)
+        (%map proc coll)
+        (if (every pair? more)
+            (apply %map proc coll more)
+            (next-method)))))
+
+;; map-to -----------------------------------------------
+
+;; generic way.
+(define-method map-to ((class <class>) proc (coll <collection>) . more)
+  (if (null? more)
+      (with-builder (class add! get :size (size-of coll))
+        (with-iterator (coll end? next)
+          (do ()
+              ((end?) (get))
+            (add! (proc (next))))))
+      (with-builder (class add! get :size (size-of coll))
+        (call-with-iterators
+         (cons coll more)
+         (lambda (ends? nexts)
+           (do ()
+               ((any (lambda (p) (p)) ends?) (get))
+             (add! (apply proc (map (lambda (p) (p)) nexts)))))))))
+
+;; map-to <list> is equivalent to map.
+(define-method map-to ((class <list-meta>) proc coll . more)
+  (apply map proc coll more))
 
 
-;; Like map, but the result of proc is appended to the result.
-;; Common Lisp's mapcan.
-(define-method gen-collect (proc coll)
-  (cdr (gen-fold (lambda (elt r) (dlist-append! r (proc elt)))
-               coll
-               (dlist-seed))))
+;; for-each ---------------------------------------------
 
-;; Enumerate
-;;  Cf. http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc.html
+;; generic way.  this shadows builtin for-each.
+(define-method for-each (proc (coll <collection>) . more)
+  (if (null? more)
+      (with-iterator (coll end? next)
+        (until (end?) (proc (next))))
+      (let ((%map (with-module gauche map)))
+        (call-with-iterators
+         (cons coll more)
+         (lambda (ends? nexts)
+           (until (any (lambda (p) (p)) ends?)
+             (apply proc (%map (lambda (p) (p)) nexts))))))))
 
-(define-method gen-enumerate (proc coll)
-  (call/cc
-   (lambda (break)
-     (gen-fold (lambda (elt r)
-               (unless (proc elt) (break)))
-             coll '()))))
+;; for list arguments, built-in for-each is much faster.
+(define-method for-each (proc (coll <list>) . more)
+  (let ((%for-each (with-module gauche for-each)))
+    (if (null? more)
+        (%for-each proc coll)
+        (if (every pair? more)
+            (apply %for-each proc coll more)
+            (next-method)))))
 
-(define-method gen-enumerate (proc coll arg1)
-  (call/cc
-   (lambda (break)
-     (gen-fold (lambda (elt r)
-               (receive (flag x) (proc elt r)
-                 (if flag
-                     x
-                     (break r))))
-             coll
-             arg1))))
+;; size-of ----------------------------------------------
 
-(define-method gen-enumerate (proc coll arg1 arg2)
-  (call/cc
-   (lambda (break)
-     (gen-fold (lambda (elt r0 r1)
-               (receive (flag x0 x1) (proc elt r0 r1)
-                 (if flag
-                     (values x0 x1)
-                     (break r0 r1))))
-             coll
-             arg1 arg2))))
+;; generic way
+(define-method size-of ((coll <collection>))
+  (fold (lambda (e r) (+ r 1)) 0 coll))
 
-(define-method gen-enumerate (proc coll arg1 arg2 arg3)
-  (call/cc
-   (lambda (break)
-     (gen-fold (lambda (elt r0 r1 r2)
-               (receive (flag x0 x1 x2) (proc elt r0 r1 r2)
-                 (if flag
-                     (values x0 x1 x2)
-                     (break r0 r1 r2))))
-             coll
-             arg1 arg2 arg3))))
+(define-method lazy-size-of ((coll <collection>))
+  (delay (size-of coll)))
 
-;; TODO gen-enumerate (proc coll arg1 arg2 arg3 . rest)
+;; shortcut
+(define-method size-of ((coll <list>)) (length coll))
+(define-method size-of ((coll <vector>)) (vector-length coll))
+(define-method size-of ((coll <string>)) (string-length coll))
 
-(define-method gen-find (pred coll)
-  (call/cc
-   (lambda (break)
-     (gen-fold (lambda (elt r) (when (pred elt) (break elt))) coll '()))))
+(define-method lazy-size-of ((coll <list>)) (length coll))
+(define-method lazy-size-of ((coll <vector>)) (vector-length coll))
+(define-method lazy-size-of ((coll <string>)) (string-length coll))
+
+;; find -------------------------------------------------
+
+;; generic way
+(define-method find (pred (coll <collection>))
+  (with-iterator (coll end? next)
+    (let loop ()
+      (if (end?)
+          #f
+          (let ((e (next)))
+            (if (pred e) e (loop)))))))
+
+;; shortcut
+(define-method find (pred (coll <list>))
+  ((with-module srfi-1 find) pred coll))
+
+;; filter -----------------------------------------------
+
+;; generic way
+(define-method filter (pred (coll <collection>))
+  (let ((q (make-queue)))
+    (with-iterator (coll end? next)
+      (until (end?) (let ((e (next))) (when (pred e) (enqueue! q e)))))))
+
+(define-method filter-to ((class <class>) pred (coll <collection>))
+  (with-builder (class add! get)
+    (with-iterator (coll end? next)
+      (do ()
+          ((end?) (get))
+        (let ((e (next))) (when (pred e) (add! e)))))))
+
+;; shortcut
+(define-method filter (pred (coll <list>))
+  ((with-module srfi-1 filter) pred coll))
+
+(define-method filter-to ((class <list-meta>) pred coll)
+  (filter pred coll))
+
+;; remove -----------------------------------------------
+
+;; generic way
+(define-method remove (pred (coll <collection>))
+  (let ((q (make-queue)))
+    (with-iterator (coll end? next)
+      (until (end?) (let ((e (next))) (unless (pred e) (enqueue! q e)))))))
+
+(define-method remove-to ((class <class>) pred (coll <collection>))
+  (with-builder (class add! get)
+    (with-iterator (coll end? next)
+      (do ()
+          ((end?) (get))
+        (let ((e (next))) (unless (pred e) (add! e)))))))
+
+;; shortcut
+(define-method remove (pred (coll <list>))
+  ((with-module srfi-1 remove) pred coll))
+
+(define-method remove-to ((class <list-meta>) pred coll)
+  (remove pred coll))
+
+;; partition ---------------------------------------------
+
+;; generic way
+(define-method partition (pred (coll <collection>))
+  (with-iterator (coll end? next)
+    (let loop ((y '()) (n '()))
+      (if (end?)
+          (values (reverse y) (reverse n))
+          (let ((e (next)))
+            (if (pred e)
+                (loop (cons e y) n)
+                (loop y (cons e n))))))))
+
+(define-method partition-to ((class <class>) pred (coll <collection>))
+  (with-builder (class add0! get0)
+    (with-builder (class add1! get1)
+      (with-iterator (coll end? next)
+        (do ()
+            ((end?) (values (get0) (get1)))
+          (let ((e (next)))
+            (if (pred e) (add0! e) (add1! e))))))))
+
+;; shortcut
+(define-method partition (pred (coll <list>))
+  ((with-module srfi-1 partition) pred coll))
+
+(define-method partition-to ((class <list-meta>) pred coll)
+  (partition pred coll))
+
+;; coercion ---------------------------------------------
+
+(define-method coerce-to ((class <class>) (coll <collection>))
+  (with-builder (class add! get :size (size-of coll))
+    (with-iterator (coll end? next)
+      (do ()
+          ((end?) (get))
+        (add! (next))))))
+
+;; shortcut
+(define-method coerce-to ((class <list-meta>) (coll <list>))
+  (list-copy coll))
+(define-method coerce-to ((class <list-meta>) (coll <vector>))
+  (vector->list coll))
+(define-method coerce-to ((class <list-meta>) (coll <string>))
+  (string->list coll))
+(define-method coerce-to ((class <vector-meta>) (coll <list>))
+  (list->vector coll))
+(define-method coerce-to ((class <string-meta>) (coll <list>))
+  (list->string coll))
+
+;; sequence ----------------------------------------------
+
+(define-method subseq ((coll <collection>))
+  (subseq coll 0 (size-of coll)))
+
+(define-method subseq ((coll <collection>) start)
+  (subseq coll start (size-of coll)))
+
+(define-method subseq ((coll <collection>) start end)
+  (when (< end 0) (set! end (modulo end (size-of coll))))
+  (when (> start end)
+    (errorf "start ~a must be smaller than or equal to end ~a" start end))
+  (let ((size (- end start)))
+    (with-builder ((class-of coll) add! get :size size)
+      (with-iterator (coll end? next :start start)
+        (dotimes (i size (get)) (add! (next)))))))
 
 
 
