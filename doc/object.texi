@@ -1161,8 +1161,8 @@ not shared by the instances of its subclasses.
 No storage is allocated for this type of slot.  Accessing the slot
 calls procedures given in @code{:slot-ref} and @code{:slot-set!} options
 described below.  In other words, you can make a procedural slot.
-If a slot's allocation is specified as virtual, @code{:slot-ref} and
-@code{:slot-set!} options have to be specified as well, or @code{define-class}
+If a slot's allocation is specified as virtual, at least
+@code{:slot-ref} option has to be specified as well, or @code{define-class}
 raises an error.
 @item :builtin
 This type of allocation only appears in built-in classes, and
@@ -1224,11 +1224,11 @@ If the slot allocation is not @code{virtual} this slot option is ignored.
 
 @item :slot-set!
 Specifies a value that evaluates to a procedure which takes two arguments,
-an instance and a value.  This slot option must be specified if the
-allocation of the slot is @code{virtual}.  Whenever a program tries
+an instance and a value.  Whenever a program tries
 to set the value of the slot, either using @code{slot-set!} or the
 setter method, the specified procedure is called with the value to be set.
 If the slot allocation is not @code{virtual} this slot option is ignored.
+If this option isn't given to a virtual slot, the slot becomes read-only.
 
 @item :slot-bound?
 Specifies a value that evaluates to a procedure which takes one argument,
@@ -1276,7 +1276,7 @@ its return value is @code{#<undef>} or not.
 にアクセスすると以下で説明する @code{:slot-ref} および @code{:slot-set!}
 オプションで与えられた手続きが呼ばれます。いいかえれば、手続きスロットを
 作成できるということです。スロットアロケーションが virtual と指定されて
-いれば、@code{:slot-ref} および @code{:slot-set!} オプションが同様に
+いる場合、少なくとも @code{:slot-ref} オプションが同時に
 指定されていなければなりません。さもなければ、@code{define-class} は
 エラーを発生させます。
 @item :builtin
@@ -1341,13 +1341,12 @@ thunk を与えます。もし、当該スロットが生成時にキーワード引数によって
 
 @item :slot-set!
 評価すると二つの引数(インスタンスと値)をとる手続きとなる値を指定します。
-このスロットオプションは当該のスロットのアロケーションが
-@code{virtual}である場合、必ず指定されていなければなりません。
 プログラムが@code{slot-set!} あるいは setter メソッドを使って
 当該スロットに値をセットしようとするときに、
 指定した手続きがインスタンスとセットすべき値を引数として
 呼ばれます。スロットアロケーションが
 @code{virtual}でなければ、このスロットオプションは無視されます。
+このスロットオプションの無いvirtualスロットはリードオンリースロットとなります。
 
 @item :slot-bound?
 評価すると引数(インスタンス)を一つとる手続きとなる値を指定します。

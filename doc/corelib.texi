@@ -2832,7 +2832,7 @@ Returned value is an integer in the range between 0 and 255.
 @c JP
 (多分、不完全な)文字列@var{string}の@var{k番目}のバイトを返します。
 戻り値は、0から255の範囲の整数です。@var{k}は0以上、
-@code{(string-size @var{string})}以下でなければなりません。
+@code{(string-size @var{string})}より小でなければなりません。
 @c COMMON
 @end defun
 
@@ -2849,7 +2849,7 @@ of @var{char} is used to set @var{string}'s @var{k}-th byte.
 See the notes in @code{make-string} about performance consideration.
 @c JP
 [R5RS] @var{string}の@var{k}番目の文字を@var{char}で置き換えます。
-@var{k}は0以上、@code{(string-length @var{string})}以下でなければ
+@var{k}は0以上、@code{(string-length @var{string})}より小でなければ
 なりません。戻り値は未定義です。
 
 @var{string}が不完全文字列の場合、@var{char}の下位8ビットの整数値は、
@@ -2871,7 +2871,7 @@ Return value is undefined.
 @c JP
 @var{string}の@var{k}番目のバイトを整数@var{byte}で置き換えます。
 @var{byte}は0から255の範囲(255を含む)でなければなりません。
-@var{k}は0以上、@code{(string-size @var{string})}以下である必要があります。
+@var{k}は0以上、@code{(string-size @var{string})}より小である必要があります。
 @var{string}が完全文字列の場合、この操作により不完全文字列になります。
 戻り値は未定義です。
 @c COMMON
@@ -5382,29 +5382,283 @@ fibonacci numbers.
 @section Exceptions
 @c NODE 例外
 
-@c EN
-In Gauche, error singnaling mechanism is implemented in multiple
-layers.   The lower layer provides very simple mechanism with which
-the user can implement various semantics.  The higher layer provides
-a way to handle common patterns like error handling in a simple way.
-@c JP
-Guacheでは、エラー通知メカニズムは複数のレイヤとして実装されています。
-下層のレイヤは、ユーザが様々なセマンティクスを実装できるような
-とてもシンプルなメカニズムを提供しています。上層のレイヤは、
-シンプルな方法で、エラーハンドリングのような一般的なパターンを扱う
-方法を提供します。
-@c COMMON
+Gauche's exception system consists of three components;
+(1) the way to signal an exceptional case has occurred,
+(2) the way to specify how to handle such a case,
+and (3) the standard objects (@emph{conditions}) 
+to communicate the code that
+signals an exceptional case and the code that handles it.
+
+Those three components are typically used together, so first
+we explain the typical usage patterns using examples.  Then
+we describe each feature in detail.
+
+Note for terminology: some languages use the word @emph{exception}
+to refer to an object used to communicate the code that encountered
+an exceptional situation with a handler that deals with it.
+Gauche uses a term @emph{condition} to refer to such objects,
+following SRFI-35.  @emph{Exception} is the situation, and
+@emph{condition} is what describes it.
+
+@c The most common exceptional case is errors, so Gauche has
+@c a convenience API for reporting errors (e.g. @code{error}).
+@c Technically it creates an @emph{error condition} with given
+@c message and passes it to the active exception handler.
+@c Gauche's built-in procedures may signal exceptions with
+@c more specific conditions, such as @emph{read-error} if
+@c @code{read} encounters an illegal syntax, or @emph{system-error}
+@c if a system call fails.   @ref{Signalling exceptions} explains
+@c both the convenience error functions and more primitive API to
+@c signal other type of conditions.
+
+@c The exception handler can examine
+@c the signalled condition and take an appropriate action for
+@c each case.  @ref{Handling exceptions} explains how to do that.
+@c This part also has layers, from the convenient high-level macro
+@c to the underlying low-level primitive APIs.  
+
+@c In @ref{Conditions} 
+@c A library programmer may define his/her own
+@c condition type, if necessary, to allow the library users
+@c to handle specific type of exceptions differently than the
+@c built-in conditions.
 
 @menu
-* Signalling errors::           
-* Handling errors::             
-* Exception object::            
-* Low-level exception mechanism::  
+* Exception handling overview::  
+* Signalling exceptions::       
+* Handling exceptions::         
+* Conditions::                  
 @end menu
 
-@node Signalling errors, Handling errors, Exceptions, Exceptions
-@subsection Signalling errors
-@c NODE エラーの通知
+@node Exception handling overview, Signalling exceptions, Exceptions, Exceptions
+@subsection Exception handling overview
+@c NODE 例外処理の概要
+
+@c EN
+@subsubheading Catching specific errors
+@c JP
+@subsubheading 特定のエラーを捕まえる
+@c COMMON
+
+One of the most typical exception handling is to catch a
+specific error raised by some built-in or library procedures.
+A macro @code{guard} can be used for such a purpose.  The code
+looks like this:
+
+@example
+(guard (exc
+        ((condition-has-type? exc <read-error>) (format #t "read error!")
+                                                'read-error)
+        (else 'other-error))
+  (read-from-string "(abc")))
+@end example
+
+The cadr of @code{guard} clause is a form of 
+@code{(@var{variable} @var{clause} @dots{})}.  In this example,
+the variable is @code{exc}, and it has two clauses.
+Each @var{clause} has the form like the one in @code{cond}.
+
+The cddr of @code{guard} is the body, a list of expressions.  This
+example has only one expression, @code{(read-from-string "(abc")}.
+
+@code{guard} starts executing its body.
+@code{read-from-string} reaises an error of type @code{<read-error>}
+when it encounters syntactic errors.  The form @code{guard} intercepts
+the error, and binds the condition object to the variable @var{exc},
+then checks the clauses following @var{exc} in a similar manner
+to @code{cond}---in this case, the thrown condition is of type
+@code{<read-error>}, so the test of the first clause is satisfied,
+and the rest of clause is executed, i.e. @code{"read error!"} is
+printed and a symbol @code{read-error} is returned.
+
+If you're familiar with other languages, you may recognize the
+pattern.  The cddr of @code{guard} form is like @var{try} clause
+of C++/Jave or the cadr of @code{handler-case} of Common Lisp;
+and the cdadr of @code{guard} form is like @code{catch} clauses
+or the cddr of @code{handler-case}.
+
+In the test expressions it is common to check the type of
+thrown condition.  The function @code{condition-has-type?} is
+defined in SRFI-35 but it's rather lengthy.  Gauche's condition
+classes can also work like a predicate, so you can write the
+above expression like this.
+
+@example
+(guard (exc
+        ((<read-error> exc) 'read-error)
+        (else 'other-error))
+  (read-from-string "(abc")))
+@end example
+
+@emph{Note:} Generally you can't use @code{is-a?} to test if
+the thrown condition is of a specific type, since a condition
+may be @emph{compound}.  See @ref{Conditions} about compound
+conditions.
+
+If no tests of @var{clause}s satisfy and no @code{else} clause is given,
+the exception `falls off' the @code{guard} construct, i.e. 
+it will be handled by the outer level of @code{guard} form or
+top-level.  For example, the following @code{guard} form
+only handles @code{<read-error>} and @code{<system-error>};
+if the body throws other type of conditions, it must be handled
+by outer level.
+
+@example
+(guard (exc
+        ((<read-error> exc) (handle-read-error))
+        ((<system-error> exc) (handle-system-error))
+        )
+  body @dots{})
+@end example
+
+See @ref{Handling exceptions} for more details on @code{guard} and
+other lower-level exception handling constructs.
+
+
+
+@c EN
+@subsubheading Signalling exceptions from your code
+@c JP
+@subsubheading 自分のコードから例外を通知する
+@c COMMON
+
+The generic way to signal an exception is to use @code{raise} procedure.
+
+@example
+(raise @var{condition})
+@end example
+
+You can pass any object to @var{condition}; its interpretation
+solely depends on the exception handler.  If you know the code
+raises an integer as a condition, you can catch it by @code{guard}
+as this:
+
+@example
+(guard (exc
+        ((integer? exc) 'raised))
+  (raise 3))
+@end example
+
+However, as a convention, it is preferable to use an instance
+of @code{<condition>} or one of its subclasses.  A macro @code{condition}
+can be used to create a condition object.  The following examples
+show how to create a condition with some slot values and then raise it.
+
+@example
+;; create and raise an error condition
+(raise (condition
+        (<error> (message "An error occurred."))))
+
+;; create and raise a system error condition
+(raise (condition
+        (<system-error> (message "A system error occurred.")
+                        (errno 4))))
+@end example
+
+See @ref{Conditions} for the details of @code{condition} macro
+and what kind of condition classes are provided.
+
+The most common type of condition is an error condition, so
+a convenience procedure @code{error} and @code{errorf} are
+provided.  They create an error condition with a message and
+raise it.
+
+@example
+;; `error' concatenates the arguments into a message.
+(unless (integer? obj)
+  (error "Integer expected, but got:" obj))
+
+;; `errorf' uses format to create a message.
+(unless (equal? x y)
+  (errorf "~s and ~s don't match" x y))
+@end example
+
+@emph{Note:} unlike the exception throwing constructs in some languages,
+such as @code{throw} of C++/Java, which abandons its continuation,
+Scheme's @code{raise} may return to its caller.   If you don't
+want @code{raise} to return, a rule of thumb is always to pass
+one of error conditions to it; then Gauche guarantees @code{raise}
+wont return.   See the description of @code{raise} in
+@ref{Signalling exceptions} for more details.
+
+
+@c EN
+@subsubheading Defining your own condition
+@c JP
+@subsubheading 独自のコンディションを定義する
+@c COMMON
+
+You can also define your own condition classes
+to pass application-specific information from the point of
+raising exception to the handlers.
+
+To fit to Gauche's framework (SRFI-35), it is desirable that
+the new condition class inherits a built-in @code{<condition>} class
+or one of its descendants, and also is an instance of a metaclass
+@code{<condition-meta>}.
+
+One way of ensuring the above convention as well as increasing 
+portability is to use @code{define-condition-type} macro, defined
+in @code{SRFI-35}.
+
+@example
+(define-condition-type <myapp-error> <error>
+  myapp-error?
+  (debug-info myapp-error-debug-info)
+  (reason myapp-error-reason))
+@end example
+
+This defines a condition type (which is a class in Gauche)
+@code{<myapp-error>}, with a predicate @code{myapp-error?}
+and slots with accessors.   Then you can use the new
+condition type like the following code:
+
+@example
+(guard (exc
+         ((myapp-error? exc)
+          (let ((debug-info (myapp-error-debug-info exc))
+                (reason (myapp-error-reason exc)))
+            ... handle myapp-error ...)))
+  ...
+  ...
+  (if (something-went-wrong)
+    (raise (condition
+             (<myapp-error> (debug-info "during processing xxx")
+                            (reason "something went wrong")))))
+  ...
+  ...
+  )
+@end example
+
+See the description of @code{define-condition-type} macro
+for how the condition type is implemented in Gauche's object system.
+Sometimes it may be desirable that you directly define a new conditon
+class instead of going through @code{define-condition-type}
+(especially since it requires names for a predicate and all
+slot accessors).
+
+
+@node Signalling exceptions, Handling exceptions, Exception handling overview, Exceptions
+@subsection Signalling exceptions
+@c NODE 例外の通知
+
+@c EN
+@subsubheading Signalling errors
+@c JP
+@subsubheading エラーの通知
+@c COMMON
+
+@c EN
+The most common case of exceptions is an error.
+Two convenience functions to signal a standard error condition
+are provided.   To signal a condition other than the standard
+error, you can use @code{raise} as explained below.
+@c JP
+最も良くある例外ケースはエラーです。標準的なエラー条件を通知するために、
+ふたつの簡単な関数が用意されています。
+標準的なエラー以外の条件を通知するには、
+下で説明する@code{raise}手続きを使って下さい。
+@c COMMON
 
 @defun error string arg @dots{}
 @c EN
@@ -5417,18 +5671,18 @@ by those two steps.
 @enumerate
 @item
 @c EN
-An error exception is created, with the message prefixed
+An error condition is created, with the message prefixed
 by @var{string} and followed by @var{arg}s.
 @c JP
 前に@var{string}、後に@var{arg}が続くメッセージとともに、
-エラー例外が生成されます。
+エラーコンディションが生成されます。
 @c COMMON
 @item
 @c EN
-The error exception is thrown, which may be handled by the
-current active error handler, if any.
+The error condition is thrown, which may be handled by the
+current active exception handler, if any.
 @c JP
-エラー例外が投げられます。現在アクティブなエラーハンドラがあれば、
+エラーコンディションが投げられます。現在アクティブな例外ハンドラがあれば、
 それにより処理されます。
 @c COMMON
 @end enumerate
@@ -5464,19 +5718,62 @@ Similar to an error, but the error message is formatted by
 @end defun
 
 @c EN
-To signal an exceptional condition other than the standard
-error object (an instance of @code{<error>} class), you can
-use @code{raise}.  See @ref{Low-level exception mechanism}.
+@subsubheading Signalling generic conditions
 @c JP
-標準的なエラーオブジェクト (@code{<error>}クラスのインスタンス) 以外の
-例外条件を通知するには、@code{raise}手続きが使えます。
-@ref{Low-level exception mechanism}を参照して下さい。
+@subsubheading 一般的な条件の通知
 @c COMMON
 
+@defun raise condition
+@c EN
+[SRFI-18] 
+This is the base mechanism of signalling exceptions.
 
-@node Handling errors, Exception object, Signalling errors, Exceptions
-@subsection Handling errors
-@c NODE エラーの処理
+The procedure invokes the current exception handler.
+The argument @var{condition} represents the nature of the exception,
+and passed to the exception handler.
+Gauche's built-in and library functions always use
+an instance of @code{<condition>} or one of its subclasses as @var{condition},
+but you can pass any Scheme object to @code{raise}.  The interpretation
+of @var{condition} is up to the exception handler.
+
+@emph{Note:} Unlike some of the mainstream languages in which
+"throwing" an exception never returns, you can set up an exception
+handler in the way that @code{raise} may return.  The details
+are explained in @ref{Handling exceptions}.
+
+If you don't want @code{raise} to return, the best way is to
+pass a condition which is an instance of @code{<serious-condition>} 
+or one of its subclasses.  Gauche's internal mechanism
+guarantees raising such an exception won't return.
+See @ref{Conditions} for the hierarchy of built-in conditions.
+@c JP
+[SRFI-18]
+これは、例外事態を通知する基本となるメカニズムです。
+
+この手続きは現在の例外ハンドラを呼び出します。引数@var{condition}は
+例外の性質を表現するのに使われ、例外ハンドラに渡されます。
+Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<condition>}クラス
+もしくはそのサブクラスのインスタンスを@var{condition}として用いますが、
+ユーザは任意のオブジェクトを@code{raise}に渡すこともできます。
+渡された@var{condition}の解釈は例外ハンドラに任されます。
+
+@emph{註:} いくつかの主流の言語では、例外を「投げる」と制御はそこに
+戻りません。Gaucheでは@code{raise}から戻って来れるように
+セットアップすることが可能です。詳細は@ref{Handling exceptions}を
+参照してください。
+
+@code{raise}から戻って来ることが無いようにしたい場合は、
+@code{<serious-condition>}やそのサブクラスのインスタンスを@var{condition}
+として@code{raise}に渡すのが確実です。
+組み込みコンディションのクラス階層については@ref{Conditions}を参照して下さい。
+@c COMMON
+@end defun
+
+@node Handling exceptions, Conditions, Signalling exceptions, Exceptions
+@subsection Handling exceptions
+@c NODE 例外の処理
+
+@subsubheading High-level exception handling mechanism
 
 @defmac guard (var clause @dots{}) body @dots{}
 [SRFI-34]
@@ -5484,8 +5781,8 @@ use @code{raise}.  See @ref{Low-level exception mechanism}.
 This is @emph{the} high-level form to handle errors in Gauche.
 It is built on top of @code{with-error-handler} function below.
 @c JP
-これは Gauche では@emph{唯一}のエラー処理の高水準フォームです。
-これは後述の @code{with-error-handler} 関数の上に作り上げられています。
+これはGaucheでのエラー処理の高水準フォームです。
+これは後述の@code{with-error-handler}関数の上に作り上げられています。
 @c COMMON
 
 @c EN
@@ -5506,7 +5803,7 @@ the following forms:
 @c EN
 The last @var{clause} may be @code{(else @var{expr} @dots{})}.
 @c JP
-最後の @var{clause} は @code{(else @var{expr} @dots{})} となるでしょう。
+最後の@var{clause}は@code{(else @var{expr} @dots{})}という形式も許されます。
 @c COMMON
 
 @c EN
@@ -5517,17 +5814,16 @@ the raised exception is bound to a variable @var{var}, then
 evaluates @var{test} expression of each clause.  If one of @var{test}
 expressions returns true value, then the corresponding @var{expr}s
 are evaluated if the clause is the first form above, or an @var{proc}
-is evaluated and the result of @var{test} is passed to the result of
-@var{proc} which is expected to be a procedure.
+is evaluated and the result of @var{test} is passed to the procedure
+@var{proc} if the clause is the second form.
 @c JP
 このフォームは通常の場合には @var{body} @dots{} を評価し最後の
 @var{body} の式の値を返します。本体の式を評価している最中に例外が
 発生した場合、発生した例外を変数 @var{var} に束縛し、その後
 各節の @var{test} 式を評価します。もし、@var{test} 式のひとつが
 真値を返したとき、その節が上述の最初の形式であれば、対応する
-@var{expr} が評価されます。あるいは、@var{proc} が評価され、
-@var{test} の結果が、手続きであることが期待される @var{proc} の
-結果に引き渡されます。
+@var{expr} が評価されます。あるいは、節が二番目の形式であれば、
+手続き@var{proc}に@var{test}の結果が渡されます。
 @c COMMON
 
 @c EN
@@ -5537,7 +5833,7 @@ installed; that is, if an exception is raised again within @var{clause}s,
 it is handled by the @emph{outer} exception handler or @code{guard} form.
 @c JP
 指定された節の @var{test} および @var{expr} が評価されるとき、
-@code{guard} の呼び出し側の影響を受ける例外ハンドラが設定されます。つまり、
+@code{guard}を呼び出した時点での例外ハンドラが設定されます。つまり、
 @var{clause} 内部で再び例外が発生した場合、その例外は、@emph{外側の}
 例外ハンドラまたは @code{guard} フォームで処理されます。
 @c COMMON
@@ -5562,27 +5858,6 @@ returns the value(s) of the last @var{expr} in the handling clause.
 例外が @code{clause} のどれかで処理された時には、@code{guard} は
 それを処理した節の最後の @var{expr} の値を返します。
 @c COMMON
-
-@c EN
-The following is a pseudo example of using @code{guard} to check
-certain type of errors.  Currently, most errors Gauche raises
-are of @code{<error>} type, so it's a little bit messy
-to handle errors selectively.  The exception hierarchy will
-be refined in the future versions.
-@c JP
-以下は @code{guard} を用いて、特定の型のエラーをチェックする
-擬似コード例です。現時点では、Gauche が発生するほとんどのエラーの型は
-@code{<error>} です。それゆえ、選択的にエラーを処理することは少々面倒です。
-例外の階層については将来のバージョンで整理する予定です。
-@c COMMON
-
-@example
-(guard (exc
-        ((and (is-a? exc <error>)
-              (#/couldn't open/ (ref exc 'message)))
-         (do-fallback)))
-  (try-open-file))
-@end example
 @end defmac
 
 @defun with-error-handler handler thunk
@@ -5625,12 +5900,12 @@ has returned, and before @code{with-error-handler} returns.
 @c EN
 The behavior of @code{with-error-handler} can be
 described in the form of Scheme code shown below,
-using the low-level mechanism (@xref{Low-level exception mechanism}).
+using the low-level mechanism.
 Note that the actual function is built in VM, using lighter
 mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 @c JP
 @code{with-error-handler}の振舞いは、低レベルなメカニズムを使って
-(@ref{Low-level exception mechanism}参照)、以下のようなSchemeコードで
+以下のようなSchemeコードで
 表すことができます。実際の関数は、より軽量なメカニズム
 (``one-shot continuation'', @ref{onecont, [1CC], 1CC}に似ています)
 を使って仮想マシンに組み込まれていることに注意して下さい。
@@ -5657,145 +5932,7 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 @end example
 @end defun
 
-@node Exception object, Low-level exception mechanism, Handling errors, Exceptions
-@subsection Exception object
-@c NODE 例外オブジェクト
-
-@c EN
-The complete exception class hierarchy is under construction.
-@c JP
-完全な例外クラスの階層は構築中です。
-@c COMMON
-
-@deftp {Class} <exception>
-@clindex exception
-@c EN
-An abstract base class of exception class hierarchy.
-You cannot create an instance of this class, but you can
-subclass it to define your own exception class.
-@c JP
-例外クラス階層の抽象ベースクラスです。
-このクラスから直接インスタンスを作ることはできません。
-このクラスを継承して独自の例外クラスを作ることはできます。
-@c COMMON
-@end deftp
-
-@deftp {Class} <error>
-@c EN
-This class is a base class of @emph{uncontinuable} exception.
-If this type of exception is raised, the exception handler
-shouldn't return to the original place the exception was raised.
-(You don't need to worry about this if you're using high-level
-API such as @code{guard} and @code{with-error-handler}, since
-you can't "return to the original place" anyway.  It only
-matters if you're using low-level @code{with-exception-handler}).
-@c JP
-このクラスは @emph{継続不可能}例外のベースクラスです。このタイプの
-例外が発生した場合には、例外ハンドラは例外が発生した場所に戻っては
-いけません。(@code{guard} や @code{with-error-handler}のような
-高水準 API を使う場合にはこれを気にする必要はありません。なぜなら、
-その場合、どうやっても「元の場所に戻ることは」できないからです。
-これが重要になるのは低水準の @code{with-exception-handler} を
-使うときだけです。)
-@c COMMON
-
-@c EN
-This class inherits @code{<exception>}.
-It has one instance slot.
-@c JP
-このクラスは @code{<exception>} を継承し、インスタンススロットを持ちます。
-@c COMMON
-
-@defivar {<error>} message
-@c EN
-The error message.
-@c JP
-エラーメッセージ
-@c COMMON
-@end defivar
-
-@c EN
-The code:
-@c JP
-@c COMMON
-@example
-(error "something wend wrong.")
-@end example
-@c EN
-is conceptually equivalent to:
-@c JP
-は概念的には、
-@c COMMON
-@example
-(raise (make <error> :message "something went wrong"))
-@end example
-@c EN
-@c JP
-と同等です。
-@c COMMON
-@end deftp
-
-@deftp {Class} <system-error>
-@c EN
-A subclass of @code{<error>}.
-When a system call returns an error, this type of exception is
-thrown.  The @code{message} slot usually contains the description
-of the error (like the one from @code{strerror(3)}).
-Besides that, this class has one more instance slot:
-@c JP
-@code{<error>} のサブクラス。
-システムコールがエラーを返したとき、この型の例外が投げられます。
-@code{message} スロットには通常エラーの(@code{strerror(3)}のような)説明が
-含まれています。それ以外に、このクラスにはもうひとつ次のような
-インスタンススロットがあります。
-@c COMMON
-
-@defivar {<system-error>} errno
-@c EN
-Contains an integer value of system's error number.
-@c JP
-システムのエラー番号の整数値を持ちます。
-@c COMMON
-@end defivar
-@end deftp
-
-@deftp {Class} <read-error>
-@c EN
-A subclass of @code{<error>}.
-When the reader detects a lexical or syntactic error during
-reading an S-expression, this type of exception is thrown.
-Besides the @code{message} slot that contains the description of the error,
-this class provides two other slots:
-@c JP
-@code{<error>} のサブクラス。リーダがＳ式を読み込み中に、字句エラー
-または構文エラーを検出したとき、この型の例外が投げられます。
-エラーの説明を含む @code{message} スロットの他に、このクラスには 2つの
-スロットが用意されています。
-@c COMMON
-
-@defivar {<read-error>} port
-@c EN
-A port from which the reader is reading.
-@c JP
-リーダが読むポート。
-@c COMMON
-@end defivar
-
-@defivar {<read-error>} line
-@c EN
-A line count (1-base) of the input where the reader raised this error.
-It may be -1 if the reader is reading from a port that doesn't keep
-track of line count.
-@c JP
-リーダがこのエラーを発生させたときの入力行カウント(1がベース)。
-リーダが行カウントを保持しないポートから読み込むときには、-1 となる。
-@c COMMON
-@end defivar
-@end deftp
-
-@node Low-level exception mechanism,  , Exception object, Exceptions
-@subsection Low-level exception mechanism
-@c NODE 低レベルな例外メカニズム
+@subsubheading Low-level exception handling mechanism
 
 @c EN
 This layer provides SRFI-18 compatible simple exception mechanism.
@@ -5828,26 +5965,6 @@ Returns the current exception handler.
 @c JP
 [SRFI-18]
 現在の例外ハンドラを返します。
-@c COMMON
-@end defun
-
-@defun raise exception
-@c EN
-[SRFI-18] 
-Invokes the current exception handler with one argument, @var{exception}.
-@var{exception} can be any Scheme object; it doesn't need to be
-an instance of @code{<exception>} class.
-Combined with @code{with-exception-handler} you can give your own
-semantics to the @var{exception}.
-@code{raise} returns whatever the handler returns.
-@c JP
-[SRFI-18]
-現在の例外ハンドラを1引数、@var{exception}を伴って呼び出します。
-@var{exception}はいかなるSchemeオブジェクトでも構いません。
-@code{<exception>}クラスのインスタンスである必要もありません。
-@code{with-exception-handler}と組み合わせることによって、
-@var{exception}に独自のセマンティクスを与えることができます。
-@code{raise}は、ハンドラが返すものを返します。
 @c COMMON
 @end defun
 
@@ -5927,6 +6044,242 @@ the following conceptual Scheme code.
       thunk
       (lambda () (set! %xh prev)))))
 @end example
+
+
+@node Conditions,  , Handling exceptions, Exceptions
+@subsection Conditions
+@c NODE コンディション
+
+@c EN
+@subsubheading Built-in Condition classes
+@c JP
+@subsubheading 組み込みコンディションクラス
+@c COMMON
+
+Gauche currently has the following hierarchy of built-in condition
+classes.  It approximately reflects SRFI-35 and SRFI-36 condition hierarchy,
+although they have Gauche-style class names (SRFI-compatible names
+are also defined; see below).
+
+@example
+  <condition>
+    +- <compound-condition>
+    +- <serious-condition>
+    |    +- <serious-compound-condition> ; also inherits <compound-condition>
+    +- <message-condition>
+         +- <error>                      ; also inherits <serious-condition>
+              +- <system-error>
+              +- <read-error>
+              +- <io-error>
+                   +- <port-error>
+                        +- <io-read-error>
+                        +- <io-write-error>
+                        +- <io-closed-error>
+                        +- <io-unit-error>
+@end example
+
+Note that some conditions may occur simultaneously; for example,
+error during reading from a file because of device failure may consist
+both @code{<system-error>} @emph{and} @code{<io-read-error>}.
+In such cases, a @emph{compound condition} is raised.
+So you can't just use, for instance, @code{(is-a? obj <io-read-error>)}
+to check if @code{<io-read-error>} is thrown.  See 
+the description of @code{condition-has-type?} below.
+
+@deftp {Metaclass} <condition-meta>
+@clindex condition-meta
+Every condition class is an instance of this class.
+This class defines @code{object-apply} so that you can use
+a condition class as a predicate, e.g.:
+
+{{{
+(<error> obj) @equiv{} (condition-has-type? obj <error>)
+}}}
+@end deftp
+
+
+@deftp {Class} <condition>
+@clindex condition
+The root class of the condition hierarchy.
+@end deftp
+
+@deftp {Class} <compound-condition>
+@clindex compound-condition
+Represents a compound condition.  
+@end deftp
+
+@deftp {Class} <serious-condition>
+@clindex serious-condition
+@end deftp
+
+@deftp {Class} <serious-compound-condition>
+@clindex serious-compound-condition
+@end deftp
+
+@deftp {Class} <message-condition>
+@clindex message-condition
+@end deftp
+
+@deftp {Class} <error>
+@c EN
+The code:
+@c JP
+@c COMMON
+@example
+(error "something wend wrong.")
+@end example
+@c EN
+is conceptually equivalent to:
+@c JP
+は概念的には、
+@c COMMON
+@example
+(raise (make <error> :message "something went wrong"))
+@end example
+@c EN
+@c JP
+と同等です。
+@c COMMON
+@end deftp
+
+@deftp {Class} <system-error>
+@c EN
+A subclass of @code{<error>}.
+When a system call returns an error, this type of exception is
+thrown.  The @code{message} slot usually contains the description
+of the error (like the one from @code{strerror(3)}).
+Besides that, this class has one more instance slot:
+@c JP
+@code{<error>} のサブクラス。
+システムコールがエラーを返したとき、この型の例外が投げられます。
+@code{message} スロットには通常エラーの(@code{strerror(3)}のような)説明が
+含まれています。それ以外に、このクラスにはもうひとつ次のような
+インスタンススロットがあります。
+@c COMMON
+
+@defivar {<system-error>} errno
+@c EN
+Contains an integer value of system's error number.
+@c JP
+システムのエラー番号の整数値を持ちます。
+@c COMMON
+@end defivar
+@end deftp
+
+@deftp {Class} <read-error>
+@c EN
+A subclass of @code{<error>}.
+When the reader detects a lexical or syntactic error during
+reading an S-expression, this type of exception is thrown.
+Besides the @code{message} slot that contains the description of the error,
+this class provides two other slots:
+@c JP
+@code{<error>} のサブクラス。リーダがＳ式を読み込み中に、字句エラー
+または構文エラーを検出したとき、この型の例外が投げられます。
+エラーの説明を含む @code{message} スロットの他に、このクラスには 2つの
+スロットが用意されています。
+@c COMMON
+
+@defivar {<read-error>} port
+@c EN
+A port from which the reader is reading.
+@c JP
+リーダが読むポート。
+@c COMMON
+@end defivar
+
+@defivar {<read-error>} line
+@c EN
+A line count (1-base) of the input where the reader raised this error.
+It may be -1 if the reader is reading from a port that doesn't keep
+track of line count.
+@c JP
+リーダがこのエラーを発生させたときの入力行カウント(1がベース)。
+リーダが行カウントを保持しないポートから読み込むときには、-1 となる。
+@c COMMON
+@end defivar
+@end deftp
+
+@deftp {Class} <io-error>
+@end deftp
+
+@deftp {Class} <port-error>
+@end deftp
+
+@deftp {Class} <io-read-error>
+@end deftp
+
+@deftp {Class} <io-write-error>
+@end deftp
+
+@deftp {Class} <io-closd-error>
+@end deftp
+
+@deftp {Class} <io-unit-error>
+@end deftp
+
+
+
+@c EN
+@subsubheading Condition API
+@c JP
+@subsubheading コンディションAPI
+@c COMMON
+
+@defmac define-condition-type name supertype predicate field-spec @dots{}
+[SRFI-35]
+@end defmac
+
+@defun condition-type? obj
+[SRFI-35]
+@end defun
+
+@defun make-condition-type name parent field-names
+[SRFI-35]
+@end defun
+
+
+@defun make-condition type field-name value @dots{}
+[SRFI-35]
+@end defun
+
+@defun condition? obj
+[SRFI-35]
+@end defun
+
+@defun condition-has-type? obj
+[SRFI-35]
+@end defun
+
+@defun condition-ref condition field-name
+[SRFI-35]
+@end defun
+
+@defun make-compound-condition condition0 condition1 @dots{}
+[SRFI-35]
+@end defun
+
+@defun extract-condition condition condition-type
+[SRFI-35]
+@end defun
+
+@defmac condition type-field-binding @dots{}
+[SRFI-35]
+@end defmac
+
+
+
+
+
+@c EN
+@subsubheading Condition class aliases
+@c JP
+@subsubheading コンディションクラスの別名
+@c COMMON
+
+
+
+
 
 @c ----------------------------------------------------------------------
 @node Eval and repl, Input and output, Exceptions, Core library
@@ -6942,14 +7295,13 @@ Note that if a continuation captured outside @code{call-with-input-file}
 et al. is invoked inside @var{proc}, the port is not closed.
 It is possible that the control returns later into the @var{proc},
 if a continuation is captured in it (e.g. coroutines).
-The low-level exceptions 
-(@xref{Low-level exception mechanism}) also doesn't ensure closing 
-the port.
+The low-level exceptions (@xref{Handling exceptions})
+also doesn't ensure closing the port.
 @c JP
 @code{call-with-input-file}の外で捕捉された継続を@var{proc}内で呼んだ場合には
 ポートは閉じられないことに注意して下さい。後で@var{proc}へと制御が戻ってくるかも
 しれないからです (コルーチン等)。また、
-低レベルの例外メカニズム(@ref{Low-level exception mechanism}
+低レベルの例外メカニズム(@ref{Handling exceptions}
 参照)を利用した場合、エラー時にポートを閉じるのはプログラマの責任になります。
 @c COMMON
 
@@ -9062,15 +9414,15 @@ Sorts elements in a sequence @var{seq} (a list or a vector)
 in ascending order and returns the sorted sequence.
 @code{sort!} destructively reuses the original sequence.
 The sorting order is specified by @code{cmpfn}, which is
-a procedure takes two elements of @var{list}, and returns @code{#t}
+a procedure takes two elements of @var{seq}, and returns @code{#t}
 if the first argument strictly precedes the second.
 @c JP
 シーケンス@var{seq}(リストかベクタ)の要素を昇順にソートし、
 ソートされたシーケンスを返します。
 @code{sort!}は、オリジナルのシーケンスを破壊的に再利用します。
-ソート順は@code{cmpfn}で指定されます。@code{cmpfn}は2要素の@var{list}を
+ソート順は@code{cmpfn}で指定されます。@code{cmpfn}は@var{seq}のふたつの要素を
 引数に取り、最初の要素が厳密に2番目の要素より先行するものの場合は
-@code{#f}を返す手続きです。
+@code{#t}を返す手続きです。
 @c COMMON
 
 @example

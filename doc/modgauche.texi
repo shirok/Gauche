@@ -6705,6 +6705,17 @@ value from the procedure is inserted to the output string using
                     (string->list (rxmatch-substring m 1))))))
  @result{} "abfedhi"
 @end example
+
+@c EN
+Note: @code{regexp-replace-all} applies itself recursively to the remaining 
+of the string after match.  So the beginning of string assertion
+in @var{regexp} doesn't only mean the beginning of input string.
+@c JP
+註: @code{regexp-replace-all} は文字列でマッチした部分の後ろの部分に
+ついて再帰的に自分自身を適用します。従って、@var{regexp}が
+文字列先頭のアサーション (@code{^}) を含んでいても、それは@var{string}の
+先頭だけにマッチするとは限りません。
+@c COMMON
 @end defun
 
 @defun regexp-quote string
@@ -9818,7 +9829,7 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @end example
 @end deftp
 
-@deftp {Function} @var{TAG}vector-copy! @r{@var{dstvec} @var{srcvec}}
+@deftp {Function} @var{TAG}vector-copy! @r{@var{target} @var{tstart} @var{source} &optional @var{sstart} @var{send}}
 @findex s8vector-copy!
 @findex u8vector-copy!
 @findex s16vector-copy!
@@ -9829,9 +9840,32 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @findex u64vector-copy!
 @findex f32vector-copy!
 @findex f64vector-copy!
-@c EN
-@c JP
-@c COMMON
+Both @var{target} and @var{source} must be @i{TAG}vectors, and
+@var{target} must be mutable.
+This procedure copies the elements of @var{start}, beginning from index
+@var{sstart} (inclusive) and up to @var{send}, into @var{target},
+beginning from index @var{tstart}.  @var{Sstart} and @var{tstart}
+may be omitted, and in that case 0 and the length of @var{source}
+are assumed, respectively.
+
+@example
+(let ((target (u8vector 0 1 2 3 4 5 6)))
+  (u8vector-copy! target 2 '#u8(10 11 12 13 14) 1 4)
+  target)
+ @result{} #u8(0 1 11 12 13 6)
+@end example
+
+If the number of elements in the source vector between @var{sstart}
+and @var{send} is larger than the target vector beginning from @code{tstart},
+the excess elements are silently discarded.
+
+@emph{Note:} This procedure used to take just two uniform vectors, @var{target}
+and @var{source}, and just copies contents of @var{source} to @var{target}.
+Both vectors had to be the same type and same length.  The API is revised
+to the current form to make it parallel with @code{string-copy!} (SRFI-13)
+and @code{vector-copy!} (SRFI-43).  The old interface is still supported
+for the backward compatibility, but it is deprecated and will be gone
+in the future releases.
 @end deftp
 
 @c EN
@@ -10030,6 +10064,23 @@ u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は、
 (string->u8vector "いろは") @result{} #u8(164 164 164 237 164 207)
 @c COMMON
 @end example
+@end defun
+
+@defun string->s8vector! target tstart string &optional start end
+@defunx string->u8vector! target tstart string &optional start end
+@var{Target} must be an s8vector or a u8vector, respectively.
+@var{Target} must be mutable.
+Like copies the raw byte representation of @var{string}
+into @var{target} beginning from index @var{tstart}.
+
+Returns @var{target}.
+
+@example
+(let ((target (make-u8vector 10 0)))
+  (string->u8vector! target 3 "abcde"))
+ @result{} #u8(0 0 0 97 98 99 100 101 0 0)
+@end example
+
 @end defun
 
 @defun s8vector->string vec &optional start end

@@ -11196,14 +11196,14 @@ by @code{write-tree}, then returns zero.
 If an error is signalled in @var{proc}, it is caught and an HTML
 page reporting the error is generated.  You can customize the
 error page by providing a procedure to the @var{on-error} keyword argument.
-The procedure takes an @code{<exception>} object (@xref{Exception object}),
+The procedure takes an @code{<condition>} object (@xref{Conditions}),
 and has to return a tree of string for the error reporting HTML
 page, including an HTTP header.
 @c JP
 もし@var{proc}内でエラーが起こった場合、そのエラーは捕捉されて、エラーを報告する
 HTMLページが作成されて出力されます。このエラーページは、@var{on-error}キーワード引数に
 手続きを渡すことでカスタマイズできます。@var{on-error}に渡された手続きは
-エラー発生時に@code{<exception>}オブジェクト(@ref{Exception object}参照)
+エラー発生時に@code{<condition>}オブジェクト(@ref{Conditions}参照)
 を引数として呼ばれ、HTTPヘッダを含むドキュメントをテキストツリー構造で返さねばなりません。
 @c COMMON
 

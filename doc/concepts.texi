@@ -252,10 +252,10 @@ Supported.  @xref{Writing Scheme scripts}.
 
 @c EN
 @item SRFI-23, Error reporting mechanism.
-Built-in.   @xref{Signalling errors}.
+Built-in.   @xref{Signalling exceptions}.
 @c JP
 @item SRFI-23, エラー報告機構
-組み込みです。@ref{Signalling errors}参照。
+組み込みです。@ref{Signalling exceptions}参照。
 @c COMMON
 
 @c EN
