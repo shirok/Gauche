@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.167 2002-02-26 10:01:58 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.168 2002-02-26 20:32:51 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2557,7 +2557,7 @@ Common Lispの@code{dolist}は提供されていません。@code{for-each}を使うか、
 @c NODE 定義
 
 @defspec define variable expression
-@defspecx define (variable formals) body @dots{}
+@defspecx define (variable . formals) body @dots{}
 [R5RS]
 @c EN
 This form has different meanings in the toplevel (without no
@@ -2622,6 +2622,34 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @end example
 
 @end defspec
+
+
+@defspec define-in-module module variable expression
+@defspecx define-in-module module (variable . formals) body @dots{}
+@c EN
+This form creates a global binding of @var{variable} in
+@var{module}, which must be either a symbol of the module name or
+a module object.  If @var{module} is a symbol, the named module
+must exist.
+
+@var{Expression} is evaluated in the current module.
+
+The second form is merely a syntactic sugar of:
+@c JP
+この形式は@var{variable}のグローバルな束縛を@var{module}中に作成します。
+@var{module}はモジュール名を表すシンボルか、モジュールオブジェクトで
+なければなりません。@var{module}がシンボルの場合、その名前を持つ
+モジュールが既に存在している必要があります。
+
+@var{expression}は現在のモジュール中で評価されます。
+
+2番目の形式は次の形式の構文的修飾です。
+@c COMMON
+@example
+(define-in-module module variable (lambda formals body @dots{}))
+@end example
+@end defspec
+
 
 @c ----------------------------------------------------------------------
 @node Modules,  , Definitions, Core syntax
