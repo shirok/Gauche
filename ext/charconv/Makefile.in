@@ -8,7 +8,7 @@ GAUCHE_TOP = @GAUCHE_TOP@
 INSTALL = @INSTALL@
 
 ARCHFILES = libcharconv.so
-SCMFILES =
+SCMFILES = charconv.scm
 HEADERS = 
 
 TARGET = libcharconv.so
@@ -17,10 +17,8 @@ CONFIG_GENERATED = Makefile config.cache config.log config.status
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
-SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
-
-TESTTXTS = test.1.euc-jp test.1.sjis test.1.utf-8 test.1.iso2022jp
 
 
 all : $(TARGET)
