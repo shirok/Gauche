@@ -154,7 +154,20 @@
                                  result))
                            '()
                            :follow-link? #f))))
+  ;; this tests dangling symlink
+  (sys-symlink "foo" "test.out/test.dangling")
+  (test "directory-fold :follow-link? #t; dangling link"
+        '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
+          "test.out/test.dangling" "test.out/test1.o"
+          "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+          "test.out/test2.o" "test.out/test3.o" "test.out/test4.o"
+          "test.out/test5.o" "test.out/test6.o" "test.out/test7.o")
+        (lambda ()
+          (sort (directory-fold "test.out" cons '()))))
+  (sys-unlink "test.out/test.dangling")
   )
+
+
 
 (test "directory-fold :lister"
       '("test.out/test.d/test10.o" "test.out/test.d/test11.o" "test.out/test1.o")

@@ -1,5 +1,7 @@
 2002-09-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm : fixed a problem in directory-fold etc. that
+	  failed when there was a dangling symlink.
 	* src/promise.c : fixed a bug in force.
 	* src/core.c : added Scm_RegisterFinalizer
 	* configure.in, src/gauche/config.h.in : added GAUCHE_MAJOR_VERSION et al.

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.14 2002-07-11 10:44:10 shirok Exp $
+;;;  $Id: util.scm,v 1.15 2002-09-13 02:36:09 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -79,7 +79,7 @@
          (filters   (%directory-filter-compose opts)))
     (let1 entries (sort (%directory-filter dir filters))
       (if add-path?
-          (map (l_ (build-path dir _)) entries)
+          (map (cut build-path dir <>) entries)
           entries))))
 
 ;; directory-list2 DIR &optional ADD-DIR? CHILDREN? FILTER FOLLOW-LINK?
@@ -88,12 +88,13 @@
          (filters   (%directory-filter-compose opts))
          (selector  (let1 stat (%stat opts)
                       (lambda (e)
-                        (eq? (slot-ref (stat e) 'type) 'directory)))))
+                        (and (file-exists? e)
+                             (eq? (slot-ref (stat e) 'type) 'directory))))))
     (let1 entries (sort (%directory-filter dir filters))
       (if add-path?
           (partition selector
-                     (map (l_ (build-path dir _)) entries))
-          (partition (l_ (selector (build-path dir _)))
+                     (map (cut build-path dir <>) entries))
+          (partition (lambda (e) (selector (build-path dir e)))
                      entries)))))
 
 ;; directory-fold DIR PROC KNIL &keyword LISTER FOLDER FOLLOW-LINK?
@@ -107,7 +108,8 @@
          (folder (get-keyword :folder opts fold))
          (selector (let1 stat (%stat opts)
                      (lambda (e)
-                       (eq? (slot-ref (stat e) 'type) 'directory)))))
+                       (and (file-exists? e)
+                            (eq? (slot-ref (stat e) 'type) 'directory))))))
     (define (rec path knil)
       (if (selector path)
           (folder rec knil (lister path knil))
@@ -401,7 +403,7 @@
          (set! inport (open-input-file src))
          (when keeptime
            (set! times (let1 stat (sys-fstat inport)
-                         (map (l_ (slot-ref stat _)) '(atime mtime)))))
+                         (map (cut slot-ref stat <>) '(atime mtime)))))
          (begin0
           (and (open-destination)
                (copy-port inport outport)
