@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.127 2001-05-05 10:07:57 shirok Exp $
+ *  $Id: gauche.h,v 1.128 2001-05-05 20:43:40 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1486,8 +1486,8 @@ extern double Scm_GetDouble(ScmObj obj);
 
 extern ScmObj Scm_MakeComplex(double real, double imag);
 
-extern ScmObj Scm_NumberP(ScmObj obj);
-extern ScmObj Scm_IntegerP(ScmObj obj);
+extern int    Scm_IntegerP(ScmObj obj);
+extern int    Scm_OddP(ScmObj obj);
 extern ScmObj Scm_Abs(ScmObj obj);
 extern int    Scm_Sign(ScmObj obj);
 extern ScmObj Scm_Negate(ScmObj obj);
