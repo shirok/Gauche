@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.54 2001-07-08 08:24:25 shirok Exp $
+ *  $Id: compile.c,v 1.55 2001-07-11 07:33:00 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1124,7 +1124,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
     ScmObj tail = SCM_CDR(form), key, clauses, merger;
     ScmObj code = SCM_NIL, codetail;
     int nlen = Scm_Length(tail);
-    if (nlen < 3) Scm_Error("bad case form: %S", form);
+    if (nlen < 2) Scm_Error("bad case form: %S", form);
     key = SCM_CAR(tail);
     clauses = SCM_CDR(tail);
 
