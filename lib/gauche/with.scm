@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.9 2001-12-22 21:18:32 shirok Exp $
+;;;  $Id: with.scm,v 1.10 2002-01-14 09:01:49 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -26,14 +26,14 @@
     (dynamic-wind
      (lambda () #f)
      (lambda () (proc port))
-     (lambda () (close-input-port port)))))
+     (lambda () (if port (close-input-port port))))))
 
 (define (call-with-output-file filename proc . flags)
   (let ((port (apply open-output-file filename flags)))
     (dynamic-wind
      (lambda () #f)
      (lambda () (proc port))
-     (lambda () (close-output-port port)))))
+     (lambda () (if port (close-output-port port))))))
 
 (define (with-input-from-file filename thunk . flags)
   (let ((port (apply open-input-file filename flags)))
