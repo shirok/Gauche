@@ -1,16 +1,3 @@
 This directory contains several Scheme files useful for testing.
-
-r4rstest.scm - taken from SCM distribution by Aubrey Jaffer.
-    This file is under GPL.
-    Gauche fails in the following tests:
-      * A test which alters global binding of '+' (since Gauche compiler
-        inlines '+' by default.)
-      * Tests involving bignums and float number formatting
-
-nqueen.scm - A solver of N-queen problem, written by Yusuke SHINYAMA
-    (http://tanaka-www.cs.titech.ac.jp/%7Eeuske/).
-    I'm using this for naive benchmark.
-
-Other scheme files comform Gauche's standard test protocol.
 Run "make test" in src directory to run those tests.
 
