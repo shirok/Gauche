@@ -1,3 +1,17 @@
+2001-06-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c and most *.scm : INCOMPATIBLE CHANGE: made "error"
+	  procedure SRFI-23 compliant, i.e. the first argument is just
+	  a string, and "format" is not called.   The former version which
+	  uses format is renamed to "errorf".
+	* ext/net/netlib.stub : INCOMPATIBLE CHANGE: sockaddr-family now
+	  returns a symbol, rather than a keyword.
+	* src/Makefile.in, src/gauche-config.in : changed install location
+	  of site-specific DSOs; includes version number in the path.
+	* src/main.c : use main's return value for exit code in script mode.
+	* src/vm.c : remove reference to sysexits.h - it causes a duplicate
+	  definition warning of EX_OK on IRIX, and we don't really need it.
+
 2001-06-28  Shiro Kawai  <shiro@acm.org>
 
 	* doc/gauche-ref.texi: added docs of sys-random and sys-srandom,
