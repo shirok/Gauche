@@ -235,6 +235,131 @@
 (test "file-equal?" #t
       (lambda () (file-equal? "test.out/test4.o" "test.out/test5.o")))
 
+(test "touch-file" #t
+      (lambda ()
+        (and (not (file-exists? "test.out/touched"))
+             (begin (touch-file "test.out/touched")
+                    (file-exists? "test.out/touched")))))
+
+(test "copy-file (normal)" #t
+      (lambda ()
+        (and (copy-file "test.out/test5.o" "test.out/test.copy")
+             (not (file-eq? "test.out/test5.o" "test.out/test.copy"))
+             (file-equal? "test.out/test5.o" "test.out/test.copy"))))
+
+(test "copy-file (:if-exists :error)" 'error
+      (lambda ()
+        (with-error-handler
+         (lambda (e) 'error)
+         (lambda () (copy-file "test.out/test5.o" "test.out/test.copy")))))
+
+(test "copy-file (:if-exists #f)" #f
+      (lambda ()
+        (copy-file "test.out/test5.o" "test.out/test.copy" :if-exists #f)))
+
+(test "copy-file (:if-exists :supersede)" #t
+      (lambda ()
+        (and (copy-file "test.out/test1.o" "test.out/test.copy"
+                        :if-exists :supersede)
+             (file-equal? "test.out/test1.o" "test.out/test.copy")
+             (not (file-exists? "test.out/test.copy.orig")))))
+
+(test "copy-file (:if-exists :backup)" #t
+      (lambda ()
+        (and (copy-file "test.out/test5.o" "test.out/test.copy"
+                        :if-exists :backup)
+             (file-equal? "test.out/test5.o" "test.out/test.copy")
+             (file-equal? "test.out/test1.o" "test.out/test.copy.orig"))))
+
+(test "copy-file (:if-exists :backup)" #t
+      (lambda ()
+        (and (copy-file "test.out/test1.o" "test.out/test.copy"
+                        :if-exists :backup :backup-suffix "~")
+             (file-equal? "test.out/test1.o" "test.out/test.copy")
+             (file-equal? "test.out/test5.o" "test.out/test.copy~"))))
+
+(sys-unlink "test.out/test.copy")
+(sys-unlink "test.out/test.copy~")
+(sys-unlink "test.out/test.copy.orig")
+
+(test "copy-file (normal, safe)" #t
+      (lambda ()
+        (and (copy-file "test.out/test5.o" "test.out/test.copy" :safe #t)
+             (not (file-eq? "test.out/test5.o" "test.out/test.copy"))
+             (file-equal? "test.out/test5.o" "test.out/test.copy"))))
+
+(test "copy-file (:if-exists :error, safe)" 'error
+      (lambda ()
+        (with-error-handler
+         (lambda (e) 'error)
+         (lambda () (copy-file "test.out/test5.o" "test.out/test.copy" :safe #t)))))
+
+(test "copy-file (:if-exists #f, safe)" #f
+      (lambda ()
+        (copy-file "test.out/test5.o" "test.out/test.copy" :if-exists #f :safe #t)))
+
+(test "copy-file (:if-exists :supersede, safe)" #t
+      (lambda ()
+        (and (copy-file "test.out/test1.o" "test.out/test.copy"
+                        :if-exists :supersede :safe #t)
+             (file-equal? "test.out/test1.o" "test.out/test.copy")
+             (not (file-exists? "test.out/test.copy.orig")))))
+
+(test "copy-file (:if-exists :backup, safe)" #t
+      (lambda ()
+        (and (copy-file "test.out/test5.o" "test.out/test.copy"
+                        :if-exists :backup :safe #t)
+             (file-equal? "test.out/test5.o" "test.out/test.copy")
+             (file-equal? "test.out/test1.o" "test.out/test.copy.orig"))))
+
+(test "copy-file (:if-exists :backup, safe)" #t
+      (lambda ()
+        (and (copy-file "test.out/test1.o" "test.out/test.copy"
+                        :if-exists :backup :backup-suffix "~" :safe #t)
+             (file-equal? "test.out/test1.o" "test.out/test.copy")
+             (file-equal? "test.out/test5.o" "test.out/test.copy~"))))
+
+(test "copy-file (same file)" 'error
+      (lambda ()
+        (with-error-handler
+         (lambda (e) 'error)
+         (lambda () (copy-file "test.out/test.copy" "test.out/test.copy"
+                               :if-exists :supersede)))))
+
+(test "move-file (normal)" #t
+      (lambda ()
+        (and (move-file "test.out/test.copy" "test.out/test.move")
+             (not (file-exists? "test.out/test.copy"))
+             (file-equal? "test.out/test1.o" "test.out/test.move"))))
+
+(test "move-file (:if-exists :error)" 'error
+      (lambda ()
+        (with-error-handler
+         (lambda (e) 'error)
+         (lambda () (move-file "test.out/test5.o" "test.out/test.move")))))
+
+(test "move-file (:if-exists :supersede)" #t
+      (lambda ()
+        (and (move-file "test.out/test5.o" "test.out/test.move"
+                        :if-exists :supersede)
+             (not (file-exists? "test.out/test5.o"))
+             (not (file-equal? "test.out/test1.o" "test.out/test.move")))))
+
+(test "move-file (:if-exists :backup)" #t
+      (lambda ()
+        (and (move-file "test.out/test1.o" "test.out/test.move"
+                        :if-exists :backup)
+             (not (file-exists? "test.out/test1.o"))
+             (file-equal? "test.out/test2.o" "test.out/test.move")
+             (file-equal? "test.out/test4.o" "test.out/test.move.orig"))))
+
+(test "move-file (same file)" 'error
+      (lambda ()
+        (with-error-handler
+         (lambda (e) 'error)
+         (lambda () (move-file "test.out/test.move" "test.out/test.move"
+                               :if-exists :supersede)))))
+
 (test "remove-directory*" #f
       (lambda ()
         (remove-directory* "test.out")
