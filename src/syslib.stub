@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.25 2001-03-14 10:31:01 shiro Exp $
+;;; $Id: syslib.stub,v 1.26 2001-03-30 07:42:48 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -561,19 +561,10 @@
   "  int pid = fork();
   SCM_RETURN(Scm_MakeInteger(pid));")
 
-(define-cproc sys-exec (command arg0 &rest rest)
+(define-cproc sys-exec (command args &optional iomap)
   (assert (string? command))
-  "  ScmObj args = Scm_Cons(arg0, rest), ap;
-  int argc = Scm_Length(args), i;
-  char **argv;
-  argv = SCM_NEW2(char **, sizeof(char *)*(argc+1));
-  for (i=0, ap = args; i<argc; i++, ap = SCM_CDR(ap)) {
-    if (!SCM_STRINGP(SCM_CAR(ap))) Scm_Error(\"bad argument (string required): %S\", SCM_CAR(ap));
-    argv[i] = Scm_GetString(SCM_STRING(SCM_CAR(ap)));
-  }
-  argv[i] = NULL;
-  execvp(Scm_GetStringConst(command), (char *const*)argv);
-  Scm_SysError(\"exec failed\");
+  (assert (list? args))
+  "  Scm_SysExec(command, args, iomap);
   SCM_RETURN(SCM_UNDEFINED); /* dummy */")
 
 (define-cproc sys-getcwd ()
