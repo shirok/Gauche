@@ -12,14 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.2 2001-02-09 20:41:14 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.3 2001-02-13 12:37:42 shiro Exp $
 ;;;
 
 ;;
 ;; Macro
 ;;
 
-(define define-macro
+(define DEFINE-MACRO
   (%make-macro-transformer
    'define-macro
    (lambda (_ spec . body)
@@ -31,4 +31,26 @@
         (%make-macro-transformer
          ',(car spec)
          (lambda ,spec ,@body))))))
+
+;;
+;; Some useful aliases
+;;
+
+(define CALL/CC call-with-current-continuation)
+
+;;
+;; Require and provide (temporary solution)
+;;
+
+(define *provided* '())
+
+(define (REQUIRE feature)
+  (unless (member feature *provided*)
+    (load (string-append feature ".scm"))))
+
+(define (PROVIDE feature)
+  (set! *provided* (cons feature *provided*)))
+
+(define (PROVIDED? feature)
+  (member feature *provided*))
 
