@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.18 2003-10-03 10:55:50 shirok Exp $
+;; $Id: dynwind.scm,v 1.19 2004-10-03 10:36:14 shirok Exp $
 
 (use gauche.test)
 
@@ -28,10 +28,27 @@
 
 ;; continuation with multiple values
 
-(test "call/cc (values)" '(1 2 3)
-      (lambda () (receive x (call-with-current-continuation
-                             (lambda (c) (c 1 2 3)))
-                          x)))
+(test* "call/cc (values)" '(1 2 3)
+       (receive x (call-with-current-continuation
+                   (lambda (c) (c 1 2 3)))
+         x))
+
+(test* "call/cc (values2)" '(1 2 3)
+       (receive (x y z) (call-with-current-continuation
+                         (lambda (c) (c 1 2 3)))
+         (list x y z)))
+
+(test* "call/cc (values3)" '(1 2 (3))
+       (receive (x y . z)
+           (call-with-current-continuation
+            (lambda (c) (c 1 2 3)))
+         (list x y z)))
+
+(test* "call/cc (values4)" *test-error*
+       (receive (x y)
+           (call-with-current-continuation
+            (lambda (c) (c 1 2 3)))
+         (list x y)))
 
 ;; continuation invoked while inline procedure is prepared.
 ;; a test to see call/cc won't mess up the VM stack.
