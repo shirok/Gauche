@@ -19,7 +19,7 @@ gauche-refe.html : gauche-refe.texi
 	texi2html -number gauche-refe.texi
 
 gauche-refe_toc.html : gauche-refe.texi
-	texi2html -split chapter -number gauche-refe.texi
+	texi2html -split section -number gauche-refe.texi
 
 gauche-refe.dvi : gauche-refe.texi
 	texi2dvi gauche-refe.texi
@@ -34,7 +34,7 @@ gauche-refj.html : gauche-refj.texi
 	texi2html -number gauche-refj.texi
 
 gauche-refj_toc.html : gauche-refj.texi
-	texi2html -split chapter -number gauche-refj.texi
+	texi2html -split section -number gauche-refj.texi
 
 gauche-refj.dvi : gauche-refj.texi
 	texi2dvi gauche-refj.texi
