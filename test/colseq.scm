@@ -6,6 +6,7 @@
 (test-start "collections and sequences")
 
 (use util.queue)
+(use srfi-1)
 (use srfi-13)
 (use gauche.collection)
 (use gauche.sequence)
@@ -56,6 +57,9 @@
        (fold cons '() '#(1 2 3 4 5 6)))
 (test* "fold (string)" '(#\f #\e #\d #\c #\b #\a)
        (fold cons '() "abcdef"))
+(test* "fold (hash-table)" '((c . "c") (b . "b") (a . "a"))
+       (fold cons '() (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c")))
+       (cut lset= equal? <> <>))
 (test* "fold (custom)" '("f" "e" "d" "c" "b" "a")
        (fold cons '() (sseq 'a 'b 'c 'd 'e 'f)))
 
@@ -74,6 +78,9 @@
        (map (lambda (x) (* x 2)) '#(1 2 3 4 5)))
 (test* "map (string)" '(2 4 6 8 10)
        (map (lambda (x) (* (digit->integer x) 2)) "12345"))
+(test* "map (hash-table)" '((c . "c") (b . "b") (a . "a"))
+       (map identity (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c")))
+       (cut lset= equal? <> <>))
 (test* "map (custom)" '(2 4 6 8 10)
        (map (lambda (x) (* (string->number x) 2))
             (sseq 1 2 3 4 5)))
@@ -121,6 +128,12 @@
        (let ((p '()))
          (for-each (lambda (x) (push! p x)) "12345")
          p))
+(test* "for-each (hash-table)" '((c . "c") (b . "b") (a . "a"))
+       (let ((p '()))
+         (for-each (lambda (x) (push! p x))
+                   (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c")))
+         p)
+       (cut lset= equal? <> <>))
 (test* "for-each (custom)" '("5" "4" "3" "2" "1")
        (let ((p '()))
          (for-each (lambda (x) (push! p x)) (sseq 1 2 3 4 5))
@@ -134,6 +147,9 @@
        (find even? '#(3 1 7 5 4 8 7)))
 (test* "find (string)" #\a
        (find char-lower-case? "YAEUB4309aBrnar"))
+(test* "for-each (hash-table)" '(b . "b")
+       (find (lambda (x) (string=? "b" (cdr x)))
+             (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c"))))
 (test* "find (custom)" "zoo"
        (find (lambda (s) (= (size-of s) 3))
              (sseq 'najr 'ej 'zoo 'bunr)))
@@ -144,6 +160,10 @@
        (filter even? '#(1 2 3 4 5 6 7)))
 (test* "filter (string)" '(#\a #\r #\b)
        (filter char-lower-case? "UBaBrGLbO"))
+(test* "filter (hash-table)" '((b . "b"))
+       (filter (lambda (x) (string=? "b" (cdr x)))
+               (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c")))
+       (cut lset= equal? <> <>))
 (test* "filter (custom)" '("zoo" "zn")
        (filter (lambda (s) (string-prefix? "z" s))
                (sseq 'urnb 'zoo 'nbak 'zn 'run)))
@@ -154,6 +174,15 @@
        (slot-ref
         (filter-to <string-seq> even? '#(1 2 3 4 5 6 7))
         'strings))
+(test* "filter-to (hash-table)" '((b . "b") (z . "b"))
+       (hash-table-map
+        (filter-to <hash-table>
+                   (lambda (x) (string=? "b" (cdr x)))
+                   (hash-table 'eq?
+                               '(a . "a") '(b . "b")
+                               '(c . "c") '(z . "b")))
+        cons)
+       (cut lset= equal? <> <>))
 
 (test* "remove (list)" '(1 3 5 7)
        (remove even? '(1 2 3 4 5 6 7)))
@@ -161,12 +190,25 @@
        (remove even? '#(1 2 3 4 5 6 7)))
 (test* "remove (string)" '(#\U #\B #\B #\G #\L #\O)
        (remove char-lower-case? "UBaBrGLbO"))
+(test* "remove (hash-table)" '((a . "a") (c . "c"))
+       (remove (lambda (x) (string=? "b" (cdr x)))
+               (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c")))
+       (cut lset= equal? <> <>))
 (test* "remove (custom)" '("urnb" "nbak" "run")
        (remove (lambda (s) (string-prefix? "z" s))
                (sseq 'urnb 'zoo 'nbak 'zn 'run)))
 
 (test* "remove-to (vector)" '#(1 3 5 7)
        (remove-to <vector> even? '#(1 2 3 4 5 6 7)))
+(test* "remove-to (hash-table)" '((a . "a") (c . "c"))
+       (hash-table-map
+        (remove-to <hash-table>
+                   (lambda (x) (string=? "b" (cdr x)))
+                   (hash-table 'eq?
+                               '(a . "a") '(b . "b")
+                               '(c . "c") '(z . "b")))
+        cons)
+       (cut lset= equal? <> <>))
 (test* "remove-to (custom)" '("1" "3" "5" "7")
        (slot-ref
         (remove-to <string-seq> even? '#(1 2 3 4 5 6 7))
@@ -196,6 +238,8 @@
 (test* "size-of (vector)" 5 (size-of '#(1 2 3 4 5)))
 (test* "size-of (string)" 5 (size-of "12345"))
 (test* "size-of (custom)" 5 (size-of (sseq 1 2 3 4 5)))
+(test* "size-of (hash-table)" 4
+       (size-of (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c") '(z . "b"))))
 
 (test* "coerce-to (list->list)" '(1 2 3)
        (coerce-to <list> '(1 2 3)))
@@ -203,6 +247,11 @@
        (coerce-to <vector> '(1 2 3)))
 (test* "coerce-to (list->string)" "123"
        (coerce-to <string> '(#\1 #\2 #\3)))
+(test* "coerce-to (list->hash-table)" '((a . "a") (b . "b") (c . "c"))
+       (hash-table-map
+        (coerce-to <hash-table> '((a . "a") (b . "b") (c . "c")))
+        cons)
+       (cut lset= equal? <> <>))
 (test* "coerce-to (list->custom)" '("1" "2" "3")
        (slot-ref (coerce-to <string-seq> '(#\1 #\2 #\3)) 'strings))
 (test* "coerce-to (vector->list)" '(1 2 3)
@@ -221,6 +270,16 @@
        (coerce-to <string> "123"))
 (test* "coerce-to (string->custom)" '("1" "2" "3")
        (slot-ref (coerce-to <string-seq> "123") 'strings))
+(test* "coerce-to (hash-table->list)" '((a . "a") (b . "b") (c . "c"))
+       (coerce-to <list>
+                  (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c")))
+       (cut lset= equal? <> <>))
+(test* "coerce-to (hash-table->hash-table)" '((a . "a") (b . "b") (c . "c"))
+       (hash-table-map
+        (coerce-to <hash-table>
+                   (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c")))
+        cons)
+       (cut lset= equal? <> <>))
 (test* "coerce-to (custom->list)" '("1" "2" "3")
        (coerce-to <list> (sseq 1 2 3)))
 (test* "coerce-to (custom->vector)" '#("1" "2" "3")

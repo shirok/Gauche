@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.12 2003-02-04 12:42:20 shirok Exp $
+;;;  $Id: collection.scm,v 1.13 2003-02-10 04:52:13 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -65,12 +65,13 @@
                        c)))))
 
 (define-method call-with-iterator ((coll <hash-table>) proc . args)
-  (let* ((iter (%hash-table-iter coll))
-         (kv   (call-with-values iter cons)))
-    (proc (cut eof-object? (car kv))
-          (lambda () (let ((r kv))
-                       (set! kv (call-with-values iter cons))
-                       r)))))
+  (let ((eof-marker (cons #f #f))
+        (iter (%hash-table-iter coll)))
+    (receive (k v) (iter eof-marker)
+      (proc (cut eq? k eof-marker)
+            (lambda ()
+              (begin0 (cons k v)
+                      (set!-values (k v) (iter eof-marker))))))))
 
 ;; n-ary case aux. proc
 (define (call-with-iterators colls proc)

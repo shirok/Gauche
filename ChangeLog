@@ -1,3 +1,9 @@
+2003-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/collection.scm : fixed hash table's call-with-iterator
+	  which wasn't updated for the new hash table iterator.
+	  (Patch from Kimura Fuyuki).
+
 2003-02-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/char_euc_jp.h (Scm_CharBackwardEUC): made string pointer
