@@ -1,3 +1,9 @@
+2001-05-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, src/extlib.stub, lib/srfi-13/hash.scm: added %hash-string
+	  which exposes internal string hash function, and implemented
+	  string-hash (SRFI-13) on top of it.
+
 2001-05-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : fixed number reader to recognize x+0i as x (real
