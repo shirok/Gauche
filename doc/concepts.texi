@@ -321,6 +321,34 @@ Defined as an autoloaded macro.  @xref{Binding constructs}.
 @c COMMON
 
 @c EN
+@item SRFI-34, Exception Handling for Programs
+Built-in.  @xref{Exceptions}.
+(However, Gauche implements srfi-18's semantics of @code{raise} literally,
+which differs slightly from srfi-34's.  This may be changed in future.)
+@c JP
+@item SRFI-34, プログラムの例外処理
+組み込みです。@ref{Exceptions}参照。
+(但し、Gaucheは@code{raise}に関してはsrfi-18のセマンティクスを文字通り
+実装していて、それはsrfi-34と若干異なります。将来はsrfi-34に合わせるかもしれません。)
+@c COMMON
+
+@c EN
+@item SRFI-35, Conditions
+Built-in.  @xref{Conditions}.
+@c JP
+@item SRFI-35, コンディション
+組み込みです。@ref{Conditions}参照。
+@c COMMON
+
+@c EN
+@item SRFI-36, I/O Conditions
+Partly supported.  @xref{Conditions}.
+@c JP
+@item SRFI-36, I/O コンディション
+部分的にサポートされています.  @ref{Conditions}参照。
+@c COMMON
+
+@c EN
 @item SRFI-37, args-fold: a program argument processor
 Supported by the module @code{srfi-37}.
 @xref{A program argument processor}.
