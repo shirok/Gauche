@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.22 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: string.c,v 1.23 2001-04-15 21:32:38 shiro Exp $
  */
 
 #include <stdio.h>
@@ -64,10 +64,7 @@ void Scm_StringDump(FILE *out, ScmObj str)
 
 /* Calculate both length and size of C-string str.
    If str is incomplete, *plen gets -1. */
-#ifdef __GNUC__
-inline
-#endif
-static int count_size_and_length(const char *str, int *psize, int *plen)
+static inline int count_size_and_length(const char *str, int *psize, int *plen)
 {
     char c;
     const char *p = str;
@@ -87,10 +84,7 @@ static int count_size_and_length(const char *str, int *psize, int *plen)
 }
 
 /* Calculate length of known size string.  str can contain NUL character. */
-#ifdef __GNUC__
-inline
-#endif
-static int count_length(const char *str, int size)
+static inline int count_length(const char *str, int size)
 {
     int count = 0;
 
@@ -107,21 +101,13 @@ static int count_length(const char *str, int size)
     return count;
 }
 
-/* Returns length of C-string.   Returns -1 if str is incomplete */
-int Scm_MBLen(const char *str)
+/* Returns length of string, starts from str and end at stop.
+   If stop is NULL, str is regarded as C-string (NUL terminated).
+   If the string is incomplete, returns -1. */
+int Scm_MBLen(const char *str, const char *stop)
 {
-    char c;
-    int count = 0;
-    
-    while ((c = *str++) != 0) {
-        int i = SCM_CHAR_NFOLLOWS(c);
-        if (i < 0) return -1;
-        count++;
-        while (i-- > 0) {
-            if (!*str++) return -1;
-        }
-    }
-    return count;
+    int size = (stop == NULL)? strlen(str) : (stop - str);
+    return count_length(str, size);
 }
 
 /*----------------------------------------------------------------
