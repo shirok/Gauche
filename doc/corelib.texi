@@ -6924,6 +6924,15 @@ GaucheはR5RSに定義されている構文要素に加え、@ref{Lexical structure}に
 @c COMMON
 @end defun
 
+@defun read-with-shared-structure &optional iport
+@defunx read/ss &optional iport
+[SRFI-38]
+These procedures are defined in srfi-38 to recognize shared substructure
+notation (@code{#n=}, @code{#n#}).   Gauche's builtin @code{read} recognizes
+the srfi-38 notation, so these are just synonyms to @code{read}; these
+are only provided for srfi-38 compatibility.
+@end defun
+
 @defun read-char &optional iport
 [R5RS]
 @c EN
@@ -7418,9 +7427,89 @@ an output port, and when omitted, the current output port is assumed.
 @defunx display obj &optional port
 [R5RS]
 @c EN
+Produces a printable representation of an object @var{obj} to the output port.
+@code{Write} uses object's standard external representation
+whenever possible, so that the written output would be
+read back by @code{read},
+whereas @code{display} produces more human-readable output.
+
+When @code{write} and @code{display} encounter an object of
+a user-defined class, they call the generic function @code{write-object}.
+
+These procedures may not stop when @var{obj} contains a cyclic structure.
+See @code{write/ss} below.
 @c JP
+オブジェクト@var{obj}の表示可能な表現を生成し、出力ポートに書き出します。
+@code{write}は可能な限り、@var{obj}の標準的な外部表現を使い、
+生成された出力が@code{read}で再び読み込めるようにします。
+@var{display}はより人間にとって可読性の高い出力を生成します。
+
+@code{write}や@code{display}が表示中にユーザ定義クラスのオブジェクトに
+出会った場合は、ジェネリックファンクション@code{write-object}を呼び出します。
+
+@var{obj}が循環する構造を持っていた場合、これらの手続きは停止しないかも
+しれません。@code{write/ss}を参照して下さい。
 @c COMMON
 @end defun
+
+@defun write-with-shared-structure obj &optional port
+@defunx write/ss obj &optional port
+@defunx write* obj &optional port
+[SRFI-38]
+@c EN
+Produces the output like @code{write}, except that they recognize shared
+substructures and/or cyclic structures, and use @code{#n=} and @code{#n#}
+syntax to indicate them.
+@c JP
+@code{write}と同じような出力を生成しますが、これらの手続きはさらに
+共有される部分構造や循環構造を認識し、@code{#n=}, @code{#n#}構文を使って
+それらを表現します。
+@c COMMON
+
+@example
+(write/ss 
+  (let ((x (list 'a)))
+    (list x x)))
+ @result{} ;; writes (#0=(a) #0#)
+
+(write/ss 
+  (let ((x (list 'a)))
+    (set-cdr! x x)
+    x))
+ @result{} ;; writes #0=(a . #0#)
+@end example
+
+@c EN
+The @code{read} procedure can recognize this syntax, so when you
+read it back, you can get a structure which is isomorphic to
+the original one.
+@c JP
+@code{read}手続きもこの構文を認識するので、読み込めば
+もとの構造と同型の構造が得られます。
+@c COMMON
+
+@c EN
+Three procedures are the same.
+Gauche has been used the name @code{write*} for long, which is
+taken from STklos.  However, @code{write-with-shared-structure}
+and @code{write/ss} have been introduced in srfi-38, so these names will
+be more portable.
+@c JP
+3つの手続きは等価です。
+Gaucheは、STklosから取った@code{write*}という名前を長く使ってきましたが、
+srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
+定義されました。今後は後者の名前を使った方がポータブルでしょう。
+@c COMMON
+
+@c EN
+Note: The user-defined @code{write-object} methods work 
+transparently for these procedures as well.
+@c JP
+註: ユーザ定義の@code{write-object}メソッドはこれらの手続きに対して
+透過的に動作します。
+@c COMMON
+@end defun
+
 
 @defun print expr @dots{}
 @c EN
@@ -7482,9 +7571,6 @@ Write a byte @var{byte} to the port.
 出力ポートに1バイトのデータ@var{byte}を書き出します。
 @var{byte}は0から255の間の正確な整数でなければなりません。
 @c COMMON
-@end defun
-
-@defun write* obj &optional port
 @end defun
 
 @defun format port string arg @dots{}
