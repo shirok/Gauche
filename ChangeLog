@@ -1,3 +1,9 @@
+2001-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.4
+	* src/repl.c, src/vm.c : cleaned up default exception handling.
+	* lib/gauche/process.scm : added process-output->string
+	
 2001-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c : implemented exception class hierarchy.
