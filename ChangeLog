@@ -1,5 +1,10 @@
 2003-12-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/list.scm (util.list): it no longer inherits srfi-1.
+	  inheriting srfi-1 causes a problem when this module is imported
+	  after gauche.collection---then procedures like 'find' or 'map'
+	  are resolved as srfi-1's, which is usually not the intended
+	  behavior.
 	* src/system.c (Scm_GlobDirectory): fixed return value check
 	  for portability (pointed by kou).
 	* src/main.c (sig_setup): exclude SIGPROF from Scheme-monitored
