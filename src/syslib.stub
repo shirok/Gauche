@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.37 2001-06-24 22:02:08 shirok Exp $
+;;; $Id: syslib.stub,v 1.38 2001-06-25 08:05:53 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -481,7 +481,7 @@
   "  int status;
   pid_t r = wait(&status);
   if (r < 0) Scm_SysError(\"wait() failed\");
-  SCM_RETURN(Scm_Cons(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+  SCM_RETURN(Scm_Values2(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
 
 (define-cproc sys-waitpid (pid &keyword (nohang #f) (untraced #f))
   (assert (small-integer? pid))         ;TODO: small-int is enough?
@@ -490,7 +490,7 @@
   if (!SCM_FALSEP(untraced)) options |= WUNTRACED;
   r = waitpid(pid, &status, options);
   if (r < 0) Scm_SysError(\"waitpid() failed\");
-  SCM_RETURN(Scm_Cons(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+  SCM_RETURN(Scm_Values2(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
 
 ;; status interpretation
 (define-cproc sys-wait-exited? (status)
