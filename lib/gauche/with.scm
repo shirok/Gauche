@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.5 2001-10-25 10:34:18 shirok Exp $
+;;;  $Id: with.scm,v 1.6 2001-10-27 10:10:28 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -51,4 +51,6 @@
     (lambda () ((if (pair? args) (car args) write) obj))))
 
 (define (read-from-string string . args)
-  (with-input-from-string string (if (pair? args) (car args) read)))
+  (with-input-from-string
+      (if (null? args) string (apply %maybe-substring string args))
+    read))
