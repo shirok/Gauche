@@ -1,0 +1,41 @@
+EXTENSIONS=@EXTENSIONS@
+
+
+all : gc/libgc.a src/gosh
+	cd ext; $(MAKE) all
+
+gc/libgc.a :
+	cd gc; $(MAKE) CC="@CC@" SHLIB_SO_CFLAGS="@SHLIB_SO_CFLAGS@"
+
+src/gosh : gc/libgc.a
+	cd src; $(MAKE)
+
+test : src/gosh
+	cd src; $(MAKE) test
+	cd ext; $(MAKE) test
+
+clean :
+	rm -rf core *~
+	cd gc; $(MAKE) clean
+	cd src; $(MAKE) clean
+	cd lib; $(MAKE) clean
+	cd test; $(MAKE) clean
+	cd ext; $(MAKE) clean
+
+distclean : clean
+	cd src; $(MAKE) distclean
+	cd lib; $(MAKE) distclean
+	cd ext; $(MAKE) distclean
+	rm -rf Makefile config.cache config.log config.status
+
+install :
+	cd src; $(MAKE) install
+	cd lib; $(MAKE) install
+	cd ext; $(MAKE) install
+
+realclean : clean
+	cd src; $(MAKE) realclean
+	cd lib; $(MAKE) realclean
+	cd ext; $(MAKE) realclean
+	rm -rf configure Makefile config.cache config.log config.status
+

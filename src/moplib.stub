@@ -1,0 +1,50 @@
+;;;
+;;; moplib.stub - extra built-ins
+;;;
+;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: moplib.stub,v 1.2 2001-03-16 10:54:17 shiro Exp $
+;;;
+
+"
+#include <gauche/class.h>
+"
+
+;; Gauche object system interface
+
+;;
+;; Internal routines
+;;
+
+(define-cproc %allocate-instance (klass initargs)
+  "  SCM_RETURN(Scm_AllocateInstance(klass, initargs));")
+
+;;
+;; Public interface
+;;
+
+(define-cproc class-of (obj)
+  "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+
+(define-cproc is-a? (obj klass)
+  (assert (class? klass))
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_TypeP(obj, klass)));")
+
+(define-cproc slot-ref (obj slot)
+  "  SCM_RETURN(Scm_SlotRef(obj, slot));")
+
+(define-cproc slot-set! (obj slot value)
+  "  Scm_SlotSet(obj, slot, value); SCM_RETURN(SCM_UNDEFINED);")
+
+;; Local variables:
+;; mode: scheme
+;; end:

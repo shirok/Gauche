@@ -1,9 +1,9 @@
 /*
  * symbol.c - symbol implementation
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: symbol.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,28 +27,63 @@ static int symbol_print(ScmObj obj, ScmPort *port, int mode)
     return SCM_STRING_LENGTH(SCM_SYMBOL(obj)->name);
 }
 
-static ScmClass *cpl[] = { SCM_CLASS_TOP, NULL };
+SCM_DEFINE_BUILTIN_CLASS(Scm_SymbolClass,
+                         symbol_print, NULL, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
-ScmClass Scm_SymbolClass = {
-    SCM_CLASS_CLASS,
-    "<symbol>",
-    symbol_print,
-    cpl
-};
+#define INITSYM(sym, nam)                       \
+    sym = SCM_NEW(ScmSymbol);                   \
+    SCM_SET_CLASS(sym, SCM_CLASS_SYMBOL);       \
+    sym->name = SCM_STRING(nam)
 
+/* These two are global resource.  Must be protected in MT environment. */
 static ScmHashTable *obtable;   /* name -> symbol mapper */
+static int gensym_count = 0;
 
 ScmObj Scm_Intern(ScmString *name)
 {
     ScmHashEntry *e = Scm_HashTableGet(obtable, SCM_OBJ(name));
     if (e) return e->value;
     else {
-        ScmSymbol *sym = SCM_NEW(ScmSymbol);
-        sym->hdr.klass = SCM_CLASS_SYMBOL;
-        sym->name = SCM_STRING(Scm_CopyString(name));
-        Scm_HashTablePut(obtable, SCM_OBJ(name), SCM_OBJ(sym));
+        ScmObj n = Scm_CopyString(name);
+        ScmSymbol *sym;
+        INITSYM(sym, n);
+        Scm_HashTablePut(obtable, n, SCM_OBJ(sym));
         return SCM_OBJ(sym);
     }
+}
+
+/* Returns a list of symbols whose name contains substr */
+ScmObj Scm_Apropos(ScmString *substr)
+{
+    ScmHashIter iter;
+    ScmHashEntry *e;
+    ScmObj h = SCM_NIL, t;
+    Scm_HashIterInit(obtable, &iter);
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        if (!SCM_FALSEP(Scm_StringContains(SCM_STRING(e->key), substr)))
+            SCM_APPEND1(h, t, e->value);
+    }
+    return h;
+}
+
+/* Default prefix string. */
+SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
+
+/* Returns uninterned symbol.
+   PREFIX can be NULL*/
+ScmObj Scm_Gensym(ScmString *prefix)
+{
+    ScmString *name;
+    ScmSymbol *sym;
+    char numbuf[50];
+    int nc;
+
+    if (prefix == NULL) prefix = &default_prefix;
+    nc = snprintf(numbuf, 50, "%d", gensym_count++);
+    name = SCM_STRING(Scm_StringAppendC(prefix, numbuf, nc, nc));
+    INITSYM(sym, name);
+    return SCM_OBJ(sym);
 }
 
 /*
@@ -62,17 +97,12 @@ static int gloc_print(ScmObj obj, ScmPort *port, int mode)
                       g->module->name, g->name);
 }
 
-ScmClass Scm_GlocClass = {
-    SCM_CLASS_CLASS,
-    "<gloc>",
-    gloc_print,
-    cpl
-};
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
 
 ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 {
     ScmGloc *g = SCM_NEW(ScmGloc);
-    g->hdr.klass = &Scm_GlocClass;
+    SCM_SET_CLASS(g, &Scm_GlocClass);
     g->name = sym;
     g->module = module;
     g->value = SCM_UNBOUND;
@@ -83,7 +113,6 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
  * Initialization
  */
 
-#define SYMINIT   { SCM_CLASS_SYMBOL, NULL }
 #define SYMREG(var, nam)                                                \
     do {                                                                \
         ScmObj snam = Scm_MakeStringConst(nam, -1, -1);                 \
@@ -91,49 +120,16 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
         Scm_HashTablePut(obtable, SCM_OBJ(snam), SCM_OBJ(&var));        \
     } while (0)
 
-ScmSymbol ScmQquote            = SYMINIT;
-ScmSymbol ScmQbackquote        = SYMINIT;
-ScmSymbol ScmQunquote          = SYMINIT;
-ScmSymbol ScmQunquoteSplicing  = SYMINIT;
-ScmSymbol ScmQdefine           = SYMINIT;
-ScmSymbol ScmQlambda           = SYMINIT;
-ScmSymbol ScmQif               = SYMINIT;
-ScmSymbol ScmQset              = SYMINIT;
-ScmSymbol ScmQlet              = SYMINIT;
-ScmSymbol ScmQletStar          = SYMINIT;
-ScmSymbol ScmQletrec           = SYMINIT;
-ScmSymbol ScmQbegin            = SYMINIT;
-ScmSymbol ScmQwhen             = SYMINIT;
-ScmSymbol ScmQunless           = SYMINIT;
-ScmSymbol ScmQand              = SYMINIT;
-ScmSymbol ScmQor               = SYMINIT;
-ScmSymbol ScmQcond             = SYMINIT;
-ScmSymbol ScmQcase             = SYMINIT;
-ScmSymbol ScmQelse             = SYMINIT;
-ScmSymbol ScmQyields           = SYMINIT;
+#define DEFSYM(cname, sname) \
+    ScmSymbol cname = { SCM_CLASS_SYMBOL, NULL }
+#include "gauche/predef-syms.h"
+#undef DEFSYM
 
 void Scm__InitSymbol(void)
 {
     obtable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_STRING, NULL, 2000));
 
-    SYMREG(ScmQquote, "quote");
-    SYMREG(ScmQbackquote, "backquote");
-    SYMREG(ScmQunquote, "unquote");
-    SYMREG(ScmQunquoteSplicing, "unquote-splicing");
-    SYMREG(ScmQdefine, "define");
-    SYMREG(ScmQlambda, "lambda");
-    SYMREG(ScmQif, "if");
-    SYMREG(ScmQset, "set!");
-    SYMREG(ScmQlet, "let");
-    SYMREG(ScmQletStar, "let*");
-    SYMREG(ScmQletrec, "letrec");
-    SYMREG(ScmQbegin, "begin");
-    SYMREG(ScmQwhen, "when");
-    SYMREG(ScmQunless, "unless");
-    SYMREG(ScmQand,    "and");
-    SYMREG(ScmQor,     "or");
-    SYMREG(ScmQcond,   "cond");
-    SYMREG(ScmQcase,   "case");
-    SYMREG(ScmQelse,   "else");
-    SYMREG(ScmQyields, "=>");
+#define DEFSYM(cname, sname) SYMREG(cname, sname)
+#include "gauche/predef-syms.h"
+#undef DEFSYM
 }

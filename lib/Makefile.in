@@ -1,0 +1,34 @@
+#
+# Makefile.in for Gauche/lib
+#
+#  $Id: Makefile.in,v 1.6 2001-03-09 08:33:08 shiro Exp $
+#
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+SCM_INSTALL_DIR = @datadir@/gauche/@GAUCHE_VERSION@/lib
+
+SCMS = srfi-0.scm srfi-1.scm srfi-2.scm srfi-11.scm japanize-euc.scm \
+       tester/tester.scm
+SUBDIRS = tester
+
+INSTALL=@INSTALL@
+
+all :
+
+clean :
+	rm -f core *~ vm/*~ tester/*~
+
+distclean : clean
+	rm -f Makefile
+
+realclean : clean
+	rm -f Makefile
+
+install : all
+	for d in $(SUBDIRS); do \
+	  $(INSTALL) -d $(SCM_INSTALL_DIR)/$$d; \
+	done
+	for f in $(SCMS); do \
+	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
+	done

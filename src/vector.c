@@ -1,9 +1,9 @@
 /*
  * vector.c - vector implementation
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: vector.c,v 1.6 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,10 +20,6 @@
 /*
  * Constructor
  */
-
-static ScmClass *sequence_cpl[] = {
-    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
 
 static int vector_print(ScmObj obj, ScmPort *port, int mode)
 {
@@ -37,18 +33,15 @@ static int vector_print(ScmObj obj, ScmPort *port, int mode)
     return nc;
 }
 
-ScmClass Scm_VectorClass = {
-    SCM_CLASS_CLASS,
-    "<vector>",
-    vector_print,
-    sequence_cpl
-};
+SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass,
+                         vector_print, NULL, NULL, NULL,
+                         SCM_CLASS_SEQUENCE_CPL);
 
 static ScmVector *make_vector(int size)
 {
     ScmVector *v = SCM_NEW2(ScmVector *,
                             sizeof(ScmVector) + sizeof(ScmObj)*(size-1));
-    v->hdr.klass = SCM_CLASS_VECTOR;
+    SCM_SET_CLASS(v, SCM_CLASS_VECTOR);
     v->size = size;
     return v;
 }
@@ -80,7 +73,7 @@ ScmObj Scm_VectorToList(ScmVector *v)
     int i;
     
     SCM_VECTOR_FOR_EACH(i, e, v) {
-        SCM_GROW_LIST(start, last, e);
+        SCM_APPEND1(start, last, e);
     }
     return start;
 }
