@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.6 2004-05-16 10:52:49 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.7 2004-05-16 20:40:27 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -114,11 +114,14 @@
 Options:
   -n, --dry-run   : shows commands to be executed, without running them.
   -C, --configure-options=<options>
-                  : pass <options> to ./configure
-      --clean     : clean up build directory after installation
+                  : pass <options> to ./configure.  overrides -r.
+  -r, --reconfigure
+                  : uses the same configure options as before
+      --clean     : clean up the build directory after installation
   -S, --install-as=<user> : sudo to <user> when installing")
   (let-args args ((dry-run "n|dry-run")
                   (copts   "C|configure-options=s" #f)
+                  (reconf  "r|reconfigure")
                   (clean   "clean")
                   (sudo    "S|install-as=s" #f)
                   . args)
@@ -127,6 +130,7 @@ Options:
                           :config *config*
                           :dry-run dry-run :install #t :clean clean
                           :sudo-install sudo
+                          :reconfigure reconf
                           :configure-options copts)))
 
 ;;------------------------------------------------------
@@ -141,21 +145,25 @@ Options:
 Options:
   -n, --dry-run   : shows commands to be executed, without running them.
   -C, --configure-options=<options>
-                  : pass <options> to ./configure")
+                  : pass <options> to ./configure.  overrides -r.
+  -r, --reconfigure
+                  : uses the same configure options as before")
   (let-args args ((dry-run "n|dry-run")
                   (copts   "C|configure-options=s" #f)
+                  (reconf  "r|reconfigure")
                   . args)
     (unless (= (length args) 1) (usage-self))
     (gauche-package-build (car args)
                           :config *config*
                           :dry-run dry-run
+                          :reconfigure reconf
                           :configure-options copts)))
 
 ;;------------------------------------------------------
 ;; reconfigure
 ;;
 (define-cmd "reconfigure"
-  ("reconfigure <package>"
+  ("configure-options <package>"
    "Show configure options of <package>"
    "Argument: a package name.
   If the package has installed .gpd (Gauche package description) file, show
@@ -164,7 +172,7 @@ Options:
   (let1 gpd (find-gauche-package-description (car args) :all-versions #t)
     (if gpd
       (print (ref gpd 'configure))
-      (print "# I don't know about package " (car args)))))
+      (print ";; I don't know about package " (car args)))))
 
 ;;------------------------------------------------------
 ;; list

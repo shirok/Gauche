@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.5 2004-05-15 23:03:49 shirok Exp $
+;;;  $Id: build.scm,v 1.6 2004-05-16 20:40:27 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -120,6 +120,11 @@
       (error "weird package directory name:" basename))
     (string-join (drop-right s 1) "-")))
 
+;; get reconfigure options
+(define (get-reconf-options package)
+  (and-let* ((gpd (find-gauche-package-description package :all-versions #t)))
+    (string-scan (ref gpd 'configure) #\space 'after)))
+
 ;;;
 ;;; Driver
 ;;;
@@ -142,7 +147,10 @@
              (packname  (package-name basename)))
         (unless install-only?
           (untar config tarball)
-          (configure config dir packname configure-options)
+          (configure config dir packname
+                     (or configure-options
+                         (and reconfigure?
+                              (get-reconf-options packname))))
           (make config dir)
           (when check?   (make-check config dir)))
         (when (or install? install-only?)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package.scm,v 1.5 2004-05-16 10:52:49 shirok Exp $
+;;;  $Id: package.scm,v 1.6 2004-05-16 20:40:26 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -174,7 +174,13 @@
 (define-method call-with-iterator ((gpd <gauche-package-description-paths>)
                                    proc . args)
   (let ((paths (ref gpd 'paths))
-        (files '()))
+        (files '())
+        (visited (make-hash-table 'string=?)))
+    (define (interesting? path)
+      (and (#/\.gpd$/ path)
+           (not (hash-table-get visited (sys-basename path) #f))
+           (begin (hash-table-put! visited (sys-basename path) #t)
+                  #t)))
     (define (pick-next)
       (if (null? files)
         (let loop ()
@@ -184,7 +190,7 @@
               (cond ((file-is-directory? dir)
                      (set! files
                            (directory-list dir
-                                           :add-path? #t :filter #/\.gpd$/))
+                                           :add-path? #t :filter interesting?))
                      (pick-next))
                     (else (loop))))))
         (pop! files)))
