@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.13 2001-02-20 01:09:21 shiro Exp $
+ *  $Id: core.c,v 1.14 2001-03-05 00:39:45 shiro Exp $
  */
 
 #include "gauche.h"
@@ -46,8 +46,8 @@ void Scm_Init(const char *initfile)
 
     GC_oom_fn = oom_handler;
     
-    Scm__InitModule();
     Scm__InitSymbol();
+    Scm__InitModule();
     Scm__InitKeyword();
     Scm__InitClass();
     Scm__InitPort();
