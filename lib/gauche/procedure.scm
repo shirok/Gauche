@@ -12,11 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: procedure.scm,v 1.7 2002-10-26 08:41:31 shirok Exp $
+;;;  $Id: procedure.scm,v 1.8 2002-12-04 04:47:55 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
+  (use srfi-2)
   (export compose pa$ map$ for-each$ apply$
           any-pred every-pred
           let-optionals* let-keywords* get-optional
@@ -110,14 +111,16 @@
   (let* ((tmp (gensym))
          (triplets
           (map (lambda (var&default)
-                 (or (and (list? var&default)
-                          (symbol? (car var&default))
-                          (case (length var&default)
-                            ((2) `(,(car var&default)
-                                   ,(make-keyword (car var&default))
-                                  ,(cadr var&default)))
-                            ((3) var&default)
-                            (else #f)))
+                 (or (and-let* (((list? var&default))
+                                (var (unwrap-syntax (car var&default)))
+                                ((symbol? var)))
+                       (case (length var&default)
+                         ((2) `(,var
+                                ,(make-keyword var)
+                                ,(cadr var&default)))
+                         ((3) `(,var ,(unwrap-syntax (cadr var&default))
+                                     ,(caddr var&default)))
+                         (else #f)))
                      (error "bad binding form in let-keywords*" var&default)))
                vars)))
     `(let* ((,tmp ,arg)
