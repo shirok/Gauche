@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.69 2001-09-24 09:14:07 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.70 2001-09-26 11:37:32 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2566,6 +2566,8 @@ you can implement various actions:
  @result{} ;@r{opens "foo" for append only if it already exists}
 @end example
 
+To check the existence of a file without opening it,
+use @code{sys-access} or @code{file-exists?} (@xref{File stats}).
 
 Note for portability: Some Scheme implementations (e.g. STk) allows
 you to specify a command to @var{filename} and reads from, or
@@ -2579,7 +2581,13 @@ other command in a subprocess and to communiate it.
 
 @defun call-with-input-file string proc
 @defunx call-with-output-file string proc
-[R5RS]
+[R5RS] Opens a file specified by @var{string} for input/output,
+and call @var{proc} with one argument, the file port.  When @var{proc}
+returns, or a control exits @var{proc}'s dynamic scope by invoking
+a continuation captured outside @code{call-with-string}, the file
+is closed.  If the specified file can't be opened, an error is thrown.
+
+Returns the value(s) @code{proc} returned.
 @end defun
 
 @defun with-input-from-file string thunk
@@ -3092,6 +3100,8 @@ If the undelying platform doesn't have @code{glob()}, this function
 signals an error of "feature not supported".
 @end defun
 
+@xref{File stats}, to check if a path is actually a directory.
+
 @node Directory manipulation, Pathnames, Directories, Filesystems
 @subsubsection Directory manipulation
 
@@ -3215,6 +3225,18 @@ may return @code{"/"} for the argument @code{"/"}, and
 
 @node File stats, Other file operations, Pathnames, Filesystems
 @subsubsection File stats
+
+@defun file-exists? path
+@defunx file-is-regular? path
+@defunx file-is-directory? path
+Returns true if @var{path} exists, is a regular file, or is a directory,
+respectively.   The latter two returns false if @var{path} doesn't
+exist at all.
+
+These functions are built on top of primitive
+system interfaces described below; I provide these for convenience
+and compatibility (STk has the same functions).
+@end defun
 
 @deftp {Builtin Class} <sys-stat>
 @clindex sys-stat
