@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: termios.scm,v 1.1 2001-09-07 11:35:30 shirok Exp $
+;;;  $Id: termios.scm,v 1.2 2001-09-08 11:16:49 shirok Exp $
 ;;;
 
 (define-module gauche.termios
@@ -20,6 +20,7 @@
           sys-tcgetattr sys-tcsetattr
           sys-tcsendbreak sys-tcdrain sys-tcflush sys-tcflow
           sys-tcgetpgrp sys-tcsetpgrp
+          sys-cfgetispeed sys-cfsetispeed sys-cfgetospeed sys-cfsetospeed
 
           |IGNBRK|  |BRKINT|  |IGNPAR|  |PARMRK|  |INPCK|  |ISTRIP|
           |INLCR|   |IGNCR|   |ICRNL|   |IUCLC|   |IXON|   |IXANY|
@@ -39,7 +40,8 @@
           |TCOOFF|  |TCOON|   |TCIOFF|  |TCION|
           |B0|      |B50|     |B75|     |B110|    |B134|   |B150|
           |B200|    |B300|    |B600|    |B1200|   |B1800|  |B2400|
-          |B4800|   |B9600|   |B19200|  |B38400|
+          |B4800|   |B9600|   |B19200|  |B38400|  |B57600| |B115200|
+          |B230400|
           )
   )
 
