@@ -3995,6 +3995,7 @@ For the hashing of primitive objects are done in @code{hash}.
 
 @defun eq-hash obj
 @defunx eqv-hash obj
+@c EN
 These are hash functions used for @code{eq?}-type and @code{eqv?}-type
 hash tables.  Returns a non-negative integer up to 2^@emph{n}-1, where
 @emph{n} is system-dependent value no less than 32.
@@ -4004,6 +4005,18 @@ and can't be carried over the boundary of the running process.
 Note: don't hash numbers by @code{eq-hash}.  Two numbers
 are not guaranteed to be @code{eq?} even if they are numerically equal,
 so they are not supposed to be used as a key in @code{eq?}-type hash table.
+@c JP
+この2つは @code{eq?}-タイプおよび @code{eqv?}-タイプのハッシュテーブル
+用のハッシュ関数で、2^@emph{n}-1 以下の非負の整数を返します。ここで、
+@emph{n} は 32 以上のシステム依存の値です。返り値のハッシュ値は、
+システムおよびプロセスに依存する値です。動作しているプロセスの境界を
+超えてもちまわることはできません。
+
+注意: @code{eq-hash} をつかって、数をハッシュしてはいけません。
+2つの数はたとえその値が等しくても @code{eq?} であることは保証されて
+いません。したがって、@code{eq?}-タイプのハッシュテーブルで、
+数のキーとしての使用はサポートされていません。
+@c COMMON
 @end defun
 
 @defun hash-table? obj
