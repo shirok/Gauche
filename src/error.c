@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.15 2001-06-30 09:42:38 shirok Exp $
+ *  $Id: error.c,v 1.16 2001-08-04 11:09:24 shirok Exp $
  */
 
 #include <errno.h>
@@ -75,6 +75,7 @@ void Scm_Error(const char *msg, ...)
         e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
+        /* TODO: should check continuation? */
         e = Scm_MakeException(FALSE,
                               SCM_MAKE_STR("Error occurred in error handler"));
     }
@@ -104,6 +105,7 @@ void Scm_SysError(const char *msg, ...)
         e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
+        /* TODO: should check continuation */
         e = Scm_MakeException(FALSE,
                               SCM_MAKE_STR("Error occurred in error handler"));
     }
@@ -131,6 +133,7 @@ ScmObj Scm_SError(ScmString *reason, ScmObj args)
         e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
+        /* TODO: should check continuation? */
         e = Scm_MakeException(FALSE,
                               SCM_MAKE_STR("Error occurred in error handler"));
     }
@@ -154,6 +157,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
         e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
+        /* TODO: should check continuation? */
         e = Scm_MakeException(FALSE,
                               SCM_MAKE_STR("Error occurred in error handler"));
     }
