@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.72 2001-09-27 20:15:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.73 2001-09-28 11:28:42 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1687,7 +1687,7 @@ defined in SRFI-13.   @xref{String library}, for details.
 * String Constructors::         
 * String Accessors & Modifiers::  
 * String Comparison::           
-* String Utilities::            
+* String utilities::            
 * String Pointers::             
 * Incomplete strings::          
 @end menu
@@ -1780,7 +1780,7 @@ by this operation.
 Return value is undefined.
 @end defun
 
-@node String Comparison, String Utilities, String Accessors & Modifiers, Strings
+@node String Comparison, String utilities, String Accessors & Modifiers, Strings
 @subsection String Comparison
 
 @defun string=? string1 string2
@@ -1799,8 +1799,8 @@ Return value is undefined.
 [R5RS]
 @end defun
 
-@node String Utilities, String Pointers, String Comparison, Strings
-@subsection String Utilities
+@node String utilities, String Pointers, String Comparison, Strings
+@subsection String utilities
 
 @defun substring string start end
 [R5RS]
@@ -1942,7 +1942,7 @@ after @var{item}.  If @var{item} is not found, returns
 @end defun
 
 
-@node String Pointers, Incomplete strings, String Utilities, Strings
+@node String Pointers, Incomplete strings, String utilities, Strings
 @subsection String Pointers
 
 @deftp {Builtin Class} <string-pointer>
@@ -7434,18 +7434,48 @@ always a copy of @var{s}, even no character is dropped.
 
 @defun string-index s char/char-set/pred &optional start end
 @defunx string-index-right s char/char-set/pred &optional start end
-@defunx string-skip s char/char-set/pred &optional start end
+[SRFI-13] Looks for the first element in a string @var{s}
+that matches @var{char/char-set/pred}, and returns its index.
+If @var{char/char-set/pred} is not found in @var{s}, returns @code{#f}.
+Optional @var{start} and @var{end} limit the range of @var{s} to search.
+
+@example
+(string-index "Aloha oe" #\a) @result{} 4
+(string-index "Aloha oe" #[Aa]) @result{} 0
+(string-index "Aloha oe" #[\s]) @result{} 5
+(string-index "Aloha oe" char-lower-case?) @result{} 1
+(string-index "Aloha oe" #\o 3) @result{} 6
+@end example
+
+
+See also the Gauche built-in procedure @code{string-scan}
+(@ref{String utilities}), if you need speed over portability.
+@end defun
+
+@defun string-skip s char/char-set/pred &optional start end
 @defunx string-skip-right s char/char-set/pred &optional start end
-[SRFI-13]
+[SRFI-13] Looks for the first element that does not match
+@var{char/char-set/pred} and returns its index.
+If such element is not found, returns @code{#f}.
+Optional @var{start} and @var{end} limit the range of @var{s} to search.
 @end defun
 
 @defun string-count s char/char-set/pred &optional start end
-[SRFI-13]
+[SRFI-13] Counts the number of elements in @var{s}
+that matches @var{char/char-set/pred}.
+Optional @var{start} and @var{end} limit the range of @var{s} to search.
 @end defun
 
 @defun string-contains s1 s2 &optional start1 end1 start2 end2
 @defunx string-contains-ci s1 s2 &optional start1 end1 start2 end2
-[SRFI-13]
+[SRFI-13] Looks for a string @var{s2} inside another string @var{s1}.
+If found, returns an index in @var{s1} from where the maching string
+begins.  Returns @code{#f} otherwise.
+Optional @var{start1}, @var{end1}, @var{start2} and @var{end2}
+limits the range of @var{s1} and @var{s2}.
+
+See also the Gauche built-in procedure @code{string-scan}
+(@ref{String utilities}), if you need speed over portability.
 @end defun
 
 @node SRFI-13 String case mapping, SRFI-13 String reverse & append, SRFI-13 String searching, String library
@@ -7829,6 +7859,8 @@ consecutive double-quote character.   Usually, the whitespaces around
 the field are ignored.
 
 @c example here
+
+@end deftp
 
 Right now, the following two low-level procedures are exported.
 A plan is to provide higher features, such as labelling fields
@@ -8577,7 +8609,7 @@ Gauche's @code{sys-stat}.  @xref{File stats}.
 R5RS @code{string-ci=?} and other comparison functions.
 @xref{String Comparison}.
 @item strcat
-R5RS @code{string-append}.  @xref{String Utilities}.
+R5RS @code{string-append}.  @xref{String utilities}.
 @item strchr
 SRFI-13 @code{string-index}.  @xref{SRFI-13 String searching}.
 @item strcmp
@@ -8586,7 +8618,7 @@ R5RS @code{string=?} and other comparison functions.
 @item strcoll
 Not supported yet.
 @item strcpy
-R5RS @code{string-copy}.    @xref{String Utilities}.
+R5RS @code{string-copy}.    @xref{String utilities}.
 @item strcspn
 Not directly supported, but you can use SRFI-13 @code{string-skip}
 with a character set.  @xref{SRFI-13 String searching}.
@@ -8613,7 +8645,7 @@ If what you want is just to check the fixed-length prefixes of two
 string matches, you can use SRFI-13 @code{string-prefix?}.
 @xref{SRFI-13 String Prefixes & Suffixes}.
 @item strncpy
-SRFI-13 @code{substring}.  @xref{String Utilities}.
+SRFI-13 @code{substring}.  @xref{String utilities}.
 @item strpbrk
 Not directly supported, but you can use SRFI-13 @code{string-skip}
 with a character set.  @xref{SRFI-13 String searching}.
