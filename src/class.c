@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.22 2001-03-24 09:45:34 shiro Exp $
+ *  $Id: class.c,v 1.23 2001-03-24 10:47:17 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,6 +27,8 @@ static int class_print(ScmObj, ScmPort *, int);
 static int generic_print(ScmObj, ScmPort *, int);
 static int method_print(ScmObj, ScmPort *, int);
 static int slot_accessor_print(ScmObj, ScmPort *, int);
+
+static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 
 ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
 ScmClass *Scm_CollectionCPL[] = {
@@ -242,9 +244,10 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->equal = NULL;
     instance->compare = NULL;
     instance->serialize = NULL; /* class_serialize? */
-    instance->allocate = class_allocate;
+    instance->allocate = object_allocate; /* default allocation */
     instance->cpa = NULL;
     instance->numInstanceSlots = nslots;
+    instance->instanceSlotOffset = 0;
     instance->flags = 0;        /* ?? */
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
@@ -254,7 +257,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->slots = SCM_NIL;
     instance->directSubclasses = SCM_NIL;
     instance->directMethods = SCM_NIL;
-    /* TODO: initialize extra slots */
+    for (i=0; i<nslots; i++) instance->instanceSlots[i] = SCM_UNBOUND;
     return SCM_OBJ(instance);
 }
 
@@ -509,9 +512,12 @@ ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot)
         ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
         if (ca->getter) {
             val = ca->getter(obj);
+        } else if (ca->slotNumber >= 0) {
+            val = SCM_OBJECT(obj)->slots[ca->slotNumber + klass->instanceSlotOffset];
         } else {
             return SCM_FALSE; /* should signal error? */
         }
+        return val;
     }
 #ifdef NOT_IMPLEMENTED_YET
     return Scm_ApplyGeneric(SCM_GF_SLOT_MISSING,
@@ -535,6 +541,8 @@ void Scm_SlotSet(ScmObj obj, ScmObj slot, ScmObj val)
         ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
         if (ca->setter) {
             ca->setter(obj, val);
+        } else if (ca->slotNumber >= 0) {
+            SCM_OBJECT(obj)->slots[ca->slotNumber + klass->instanceSlotOffset] = val;
         } else {
             Scm_Error("slot %S of class %S is read-only",
                       slot, SCM_OBJ(klass));
@@ -664,7 +672,6 @@ static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(obj);
 }
 
-
 /*=====================================================================
  * Generic function
  */
@@ -672,7 +679,7 @@ static ScmObj object_allocate(ScmClass *klass, ScmObj initargs)
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmGeneric *instance;
-    int nslots = klass->numInstanceSlots;
+    int nslots = klass->numInstanceSlots, i;
     instance = SCM_NEW2(ScmGeneric*,
                         sizeof(ScmGeneric) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
@@ -680,7 +687,7 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     instance->methods = SCM_NIL;
     instance->fallback = Scm_NoNextMethod;
     instance->data = NULL;
-    /* TODO: initialize extended slots */
+    for (i=0; i<nslots; i++) instance->instanceSlots[i] = SCM_UNBOUND;
     return SCM_OBJ(instance);
 }
 
@@ -786,7 +793,7 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmMethod *instance;
-    int nslots = klass->numInstanceSlots;
+    int nslots = klass->numInstanceSlots, i;
     instance = SCM_NEW2(ScmMethod*,
                         sizeof(ScmMethod) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
@@ -794,7 +801,7 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
     instance->generic = NULL;
     instance->specializers = NULL;
     instance->func = NULL;
-    /* TODO: initialize extended slots */
+    for (i=0; i<nslots; i++) instance->instanceSlots[i] = SCM_UNBOUND;
     return SCM_OBJ(instance);
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.10 2001-03-24 09:45:40 shiro Exp $
+ *  $Id: class.h,v 1.11 2001-03-24 10:47:17 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -65,6 +65,8 @@ typedef struct ScmObjectRec {
     SCM_HEADER;
     ScmObj slots[1];
 } ScmObject;
+
+#define SCM_OBJECT(obj)      ((ScmObject *)obj)
 
 /* some internal methods */
     

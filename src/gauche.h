@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.87 2001-03-24 09:45:58 shiro Exp $
+ *  $Id: gauche.h,v 1.88 2001-03-24 10:47:17 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -300,7 +300,8 @@ struct ScmClassRec {
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
     struct ScmClassRec **cpa;
     short numInstanceSlots;     /* # of instance slots */
-    unsigned short flags;
+    unsigned char instanceSlotOffset;
+    unsigned char flags;
     ScmObj name;                /* scheme name */
     ScmObj directSupers;        /* list of classes */
     ScmObj cpl;                 /* list of classes */
@@ -309,7 +310,11 @@ struct ScmClassRec {
     ScmObj slots;               /* alist of slot-name & slot-definition */
     ScmObj directSubclasses;
     ScmObj directMethods;
-#define SCM_CLASS_PREDEFINED_SLOTS 6
+#ifdef __GNUC__
+    ScmObj instanceSlots[0];    /* for subclass */
+#else
+    ScmObj instanceSlots[1];    /* for subclass */
+#endif
 };
 
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
@@ -375,24 +380,25 @@ extern ScmClass *Scm_ObjectCPL[];
 
 /* define built-in class statically. */
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, equal, compare, serialize, cpa) \
-    ScmClass cname = {                                  \
-        SCM_CLASS_CLASS,                                \
-        printer,                                        \
-        equal,                                          \
-        compare,                                        \
-        serialize,                                      \
-        NULL,                                           \
-        cpa,                                            \
-        0,                                              \
-        SCM_CLASS_BUILTIN,                              \
-        SCM_FALSE,                                      \
-        SCM_FALSE,                                      \
-        SCM_FALSE,                                      \
-        SCM_NIL,                                        \
-        SCM_NIL,                                        \
-        SCM_NIL,                                        \
-        SCM_NIL,                                        \
-        SCM_NIL                                         \
+    ScmClass cname = {                          \
+        SCM_CLASS_CLASS,                        \
+        printer,                                \
+        equal,                                  \
+        compare,                                \
+        serialize,                              \
+        NULL,                                   \
+        cpa,                                    \
+        0,                                      \
+        0,                                      \
+        SCM_CLASS_BUILTIN,                      \
+        SCM_FALSE,                              \
+        SCM_FALSE,                              \
+        SCM_FALSE,                              \
+        SCM_NIL,                                \
+        SCM_NIL,                                \
+        SCM_NIL,                                \
+        SCM_NIL,                                \
+        SCM_NIL                                 \
     }
     
 /* simpler version */
@@ -1487,6 +1493,11 @@ struct ScmGenericRec {
     ScmObj methods;
     ScmObj (*fallback)(ScmObj *args, int nargs, ScmGeneric *gf);
     void *data;
+#ifdef __GNUC__
+    ScmObj instanceSlots[0];    /* for subclass */
+#else
+    ScmObj instanceSlots[1];    /* for subclass */
+#endif
 };
 
 extern ScmClass Scm_GenericClass;
@@ -1517,6 +1528,11 @@ struct ScmMethodRec {
     ScmObj (*func)(ScmNextMethod *nm, ScmObj *args, int nargs, void * data);
     void *data;                 /* closure, or code */
     ScmEnvFrame *env;           /* for Scheme-defined method */
+#ifdef __GNUC__
+    ScmObj instanceSlots[0];    /* for subclass */
+#else
+    ScmObj instanceSlots[1];    /* for subclass */
+#endif
 };
 
 extern ScmClass Scm_MethodClass;
