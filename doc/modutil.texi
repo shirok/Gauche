@@ -8068,9 +8068,9 @@ Pass a singular form to @var{msg-id}, and plural form to
 the plural form.  If no message catalog is found, @var{msg-id}
 is returnf when @var{num} is 1, and @var{msg-id2} otherwise.
 @c JP
-@var{gettext}と似ていますが、複数のフォームを処理するのに使うことが
-できます。単一のフォームを @var{msg-id} へ渡し、複数のフォームを
-@code{msg-id2} に渡します。@var{num} 引数は、複数のフォームを決定
+@var{gettext}と似ていますが、複数形を処理するのに使うことが
+できます。単数形のメッセージを @var{msg-id} へ、複数形のメッセージを
+@code{msg-id2} に渡します。@var{num} 引数は、複数形を決定
 するのに使われます。もし、メッセージカタログが見つからなければ、
 @var{num} が 1 のときは、@var{msg-id} が返り、そうでなければ、
 @var{msg-id2} が返ります。
@@ -9880,8 +9880,8 @@ Each @var{clause} is either one of the followings:
 それぞれの @var{clause} は以下のうちどちらかです。
 @c COMMON
 @example
-(@var{pat} @var{expr} @dots{})
-(@var{pat} (=> @var{identifier}) @var{expr} @dots{})
+(@var{pat} @var{body} @dots{})
+(@var{pat} (=> @var{identifier}) @var{body} @dots{})
 @end example
 
 @c EN
@@ -9895,11 +9895,12 @@ The detailed syntax of the pattern is explained below.
 @c EN
 If a matching @var{pat} is found, the @emph{pattern variables} in
 @var{pat} are bound to the corresponding elements in @var{expr}, then
-@var{expr} @dots{} are evaluated.
+@var{body} @dots{} are evaluated.  Then @code{match} returns the value(s)
+of the last expression of @var{body} @dots{}.
 @c JP
 @var{pat} にマッチする部分が見つかれば、@var{pat} 中の @emph{パターン変数}
-は、@var{expr} 中の対応する要素に束縛され、その後、@var{expr} @dots{} 
-が評価されます。
+は、@var{expr} 中の対応する要素に束縛され、その後、@var{body} @dots{} 
+が評価されます。@code{match}は@var{body} @dots{}の最後の式の値を返します。
 @c COMMON
 
 @c EN
@@ -9909,14 +9910,14 @@ procedure with no arguments, and when called, it jumps back to
 the matcher as if the matching of @var{pat} is failed, and
 @code{match} continues to try the rest of clauses.
 So you can perform extra tests
-within @var{expr} @dots{} and if you're not satisfied you can reject
+within @var{body} @dots{} and if you're not satisfied you can reject
 the match by calling @code{(@var{identifier})}.  See the examples
 below for more details.
 @c JP
-節が 2つ目の形式である場合、@var{identifier} も @var{clause} の失敗継続
+節が 2つ目の形式である場合、@var{identifier} は @var{clause} の失敗継続
 に束縛されます。これは引数をもたない手続きで、呼ばれると、あたかも、
 @var{pat} の照合に失敗したかの如くマッチャーに戻り、@code{match} が
-残りの節について試行を続けます。それゆえ、@var{expr} @dots{} 内部で
+残りの節について試行を続けます。それゆえ、@var{body} @dots{} 内部で
 追加のテストを実行することが可能で、もし、満足いくものでなければ、
 @code{(@var{identifier})} を呼ぶことで、照合結果を拒絶することができます。
 より詳しくは、後述の例を見てください。
@@ -10145,7 +10146,7 @@ A symbol @code{_} matches anything, without binding a patter variable.
 It can be used to show "don't care" placeholoder.
 @c JP
 シンボル @code{_} はあらゆるものマッチし、パターン変数は束縛しません。
-「鎌○ぬ」プレースホルダであることを示すのに用います。
+プレースホルダであることを示すのに用います。
 @c COMMON
 
 @item

@@ -4006,8 +4006,9 @@ non-negative integer, and it has two properties:
 @itemize
 @item
 For any object @var{a} and @var{b}, 
-@code{(equal? @var{a} and @var{b})} @equiv{} @code{(= (hash @var{a}) (hash @var{b}))}
-if @code{hash} is defined for types of @var{a} and @var{b}.
+if @code{(equal? @var{a} and @var{b})}, 
+then @code{(= (hash @var{a}) (hash @var{b}))},
+while @code{hash} is defined for types of @var{a} and @var{b}.
 @item
 The value of @code{hash} is independent from the runtime state
 of the machine (such as address of the data); so you can safely save
@@ -4025,10 +4026,10 @@ a generic function @code{object-hash} to calculate the hash value.
 以下の二つの性質があります。
 @itemize
 @item
-もし、@var{a} および @var{b} の型について、@code{hash} が定義されているなら、
+@var{a} および @var{b} の型について、@code{hash} が定義されているとき、
 あらゆるオブジェクト @var{a} および  @var{b} に対して、
-@code{(equal? @var{a} @var{b})} と @code{(= (hash @var{a}) (hash @var{b}))}
-とは同等です。
+@code{(equal? @var{a} @var{b})} であれば
+@code{(= (hash @var{a}) (hash @var{b}))}。
 @item
 @code{hash} は(そのデータのアドレスというような)実行時の計算機の状態とは
 独立しています。それゆえ、その値をファイルに格納し、別のプロセスで読み込んで
@@ -5149,27 +5150,11 @@ A filler and a flusher callbacks of buffered ports
 @code{write}、@code{display}、@code{format}から呼び出される
 @code{write-object}メソッド (@ref{Output}参照)。
 @item
-@code{sort}から呼び出される比較クロージャ (@ref{Comparison and sorting}参照)。
-@item
 バッファードポートから呼び出されるfillerとflusher手続き。
 (@ref{Procedural ports}参照)。
 @end itemize
 @c COMMON
 
-@example
-(define *oob-cont* #f)
-
-(call/cc (lambda (valid-cont)
-           (sort '(1 2 3 4 5 6)
-                 (lambda (a b)
-                   (call/cc (lambda (oob-cont)
-                              (set! *oob-cont* oob-cont)))
-                   (valid-cont 'ok)))))
- @result{} ok  ;@r{callback can call a continuation}
-
-(*oob-cont* 'not-ok)
- @result{} ;@r{error -- *oob-cont* is out of its extent}.
-@end example
 @end defun
 
 @defmac let/cc var body @dots{}
@@ -5178,7 +5163,7 @@ This macro expands to :
 @c JP
 このマクロは次のように展開されます :
 @c COMMON
-@code{(call/cc (lambda (@var{var}) @var{body} @dots{})}.
+@code{(call/cc (lambda (@var{var}) @var{body} @dots{}))}.
 @c EN
 The API is taken from PLT Scheme.
 @c JP
@@ -5289,15 +5274,16 @@ Conceptually, it is the same as the following code.
 (call-with-values (lambda () mv-expr) (lambda r (list-ref r k)))
 @end example
 @c EN
-This macro shortcuts the typical cases like @var{k} is zero.
+This macro uses shortcuts for the typical cases like @var{k} is zero.
 
 Similar to Common Lisp's @code{nth-value}, but the argument order
 is flipped to match other Scheme's @code{*-ref} procedures.
 @c JP
-このマクロは k がゼロであるような典型的な場合にてっとりばやい方法になります。
+このマクロは k がゼロであるような典型的な場合にはより単純な形へと
+展開されます。
 
-Common Lisp の @code{nth-value} に似ていますが、Scheme の他の
-@code{*-ref} 手続きとは引数の順が逆になっています。
+Common Lisp の @code{nth-value} に似ていますが、引数の順が逆になっています。
+Scheme の他の@code{*-ref} 手続きと合わせるためです。
 @c COMMON
 @end defmac
 
@@ -6000,19 +5986,6 @@ argument.
 引数@var{version}に5以外の値を渡すとエラーが通知されます。
 @c COMMON
 
-@c EN
-There's one difference from R5RS in @code{null-environment} and
-@code{scheme-report-environment}; they contain @code{with-module}
-special form.   It is necessary to define R5RS procedure using
-Gauche built-ins for now.  It'll be removed as soon as I find
-a better way.
-@c JP
-R5RSでは、@code{null-environment}と@code{scheme-report-environment}の
-間には1つの異なる点があります。それは@code{with-module}というスペシャル
-フォームを含むことです。現在は、R5RSな手続きを定義するには、
-Gaucheのビルトインを使う必要があります。より良い方法が見つかり次第、
-その制限を取り除くつもりです。
-@c COMMON
 @end defun
 
 @defun read-eval-print-loop &optional reader evaluator printer prompter
