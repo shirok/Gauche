@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.82 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: load.c,v 1.83 2004-05-04 04:39:22 fuyuki Exp $
  */
 
 #include <stdlib.h>
@@ -384,9 +384,15 @@ ScmObj Scm_GetDynLoadPath(void)
 static ScmObj break_env_paths(const char *envname)
 {
     const char *e = getenv(envname);
-    if (geteuid() == 0) return SCM_NIL; /* don't trust env when run by root */
-    if (e == NULL) return SCM_NIL;
-    else return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)), ':');
+
+    if (e == NULL) {
+        return SCM_NIL;
+    } else if (geteuid() != getuid() || getegid() != getgid()) {
+        /* don't trust env when setugid'd */
+        return SCM_NIL;
+    } else {
+        return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)), ':');
+    }
 }
 
 /* Add CPATH to the current list of load path.  The path is
