@@ -12,13 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.16 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: hash.c,v 1.17 2001-10-13 11:44:18 shirok Exp $
  */
 
 #include "gauche.h"
 
 /* 
- * Finding good hash functions is an interesting topic.  I went through
+ * Finding good hash functions is an interesting topic.  I looked around
  * the net and find some valuable informations such as those:
  *
  *  http://burtleburtle.net/bob/hash/doobs.html
@@ -202,6 +202,40 @@ static int address_cmp(ScmObj key, ScmHashEntry *e)
 }
 
 /*
+ * Accessor function for eqv-hash
+ */
+static unsigned long eqv_hash(ScmObj obj)
+{
+    unsigned long hashval;
+    if (SCM_NUMBERP(obj)) {
+        if (SCM_INTP(obj)) {
+            SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
+        } else if (SCM_BIGNUMP(obj)) {
+            int i;
+            unsigned long u = 0;
+            for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
+                u += SCM_BIGNUM(obj)->values[i];
+            }
+            SMALL_INT_HASH(hashval, u);
+        } else if (SCM_FLONUMP(obj)) {
+            /* TODO: I'm not sure this is a good hash. */
+            hashval = (unsigned long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
+        } else {
+            /* TODO: I'm not sure this is a good hash. */
+            hashval = (unsigned long)((SCM_COMPLEX_REAL(obj)+SCM_COMPLEX_IMAG(obj))*2654435761UL);
+        }
+    } else {
+        ADDRESS_HASH(hashval, obj);
+    }
+    return hashval;
+}
+
+static int eqv_cmp(ScmObj key, ScmHashEntry *e)
+{
+    return (Scm_EqvP(key, e->key) ? 0 : -1);
+}
+
+/*
  * Accessor function for string type.
  */
 static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
@@ -353,6 +387,7 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
+
 ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
                          ScmHashCmpProc cmpfn,
                          unsigned int initSize)
@@ -373,23 +408,33 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 
     for (i=0; i<initSize; i++) z->buckets[i] = NULL;
     
-    if (hashfn == SCM_HASH_DEFAULT) {
+    if (hashfn == SCM_HASH_ADDRESS) {
+        z->type = (int)SCM_HASH_ADDRESS;
+        z->accessfn = address_access;
+        z->hashfn = address_hash;
+        z->cmpfn = address_cmp;
+    } else if (hashfn == SCM_HASH_EQV) {
+        z->type = (int)SCM_HASH_EQUAL;
+        z->accessfn = general_access;
+        z->hashfn = eqv_hash;
+        z->cmpfn =  eqv_cmp;
+    } else if (hashfn == SCM_HASH_EQUAL) {
+        z->type = (int)SCM_HASH_EQUAL;
         z->accessfn = general_access;
         z->hashfn = general_hash;
         z->cmpfn =  general_cmp;
     } else if (hashfn == SCM_HASH_STRING) {
+        z->type = (int)SCM_HASH_STRING;
         z->accessfn = string_access;
         z->hashfn = string_hash;
         z->cmpfn =  string_cmp;
-    } else if (hashfn == SCM_HASH_ADDRESS) {
-        z->accessfn = address_access;
-        z->hashfn = address_hash;
-        z->cmpfn = address_cmp;
     } else if (hashfn == SCM_HASH_SMALLINT) {
+        z->type = (int)SCM_HASH_SMALLINT;
         z->accessfn = smallint_access;
         z->hashfn = smallint_hash;
         z->cmpfn = smallint_cmp;
     } else {
+        z->type = (int)SCM_HASH_GENERAL;
         z->accessfn = general_access;
         z->hashfn = hashfn;
         z->cmpfn = (cmpfn ? cmpfn : general_cmp);
@@ -522,16 +567,30 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmHashTable *ht = (ScmHashTable*)obj;
     ScmHashIter iter;
     ScmHashEntry *e;
+    char *str;
 
-    Scm_Printf(port,
-                "#<hashtable %p (%d entries in %d buckets): ",
-                ht, ht->numEntries, ht->numBuckets);
-
-    Scm_HashIterInit(ht, &iter);
-    while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        Scm_Printf(port, "%S => %S ", e->key, e->value);
+    switch (ht->type) {
+    case SCM_HASH_ADDRESS: str = "eq?"; break;
+    case SCM_HASH_EQV:     str = "eqv?"; break;
+    case SCM_HASH_EQUAL:   str = "equal?"; break;
+    case SCM_HASH_STRING:  str = "string=?"; break;
+    default: str = "general"; break;
     }
-    SCM_PUTZ(">", -1, port);
+
+#if 0
+    /* Use read-time constructor so that table can be read back
+       --- is it necessary?  I'm not sure yet. */
+    Scm_Printf(port, "#,(<hash-table> %s", str);
+    if (ht->numEntries > 0) {
+        Scm_HashIterInit(ht, &iter);
+        while ((e = Scm_HashIterNext(&iter)) != NULL) {
+            Scm_Printf(port, " %S %S", e->key, e->value);
+        }
+    }
+    SCM_PUTZ(")", -1, port);
+#else
+    Scm_Printf(port, "#<hash-table %s %p>", str, ht);
+#endif
 }
 
 /*
