@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.37 2002-05-15 02:56:52 shirok Exp $
+ *  $Id: system.c,v 1.38 2002-05-15 03:34:40 shirok Exp $
  */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <locale.h>
@@ -417,6 +418,22 @@ ScmObj Scm_CurrentTime(void)
 #endif /* !HAVE_GETTIMEOFDAY */
 }
 
+ScmObj Scm_IntSecondsToTime(unsigned long sec)
+{
+    return Scm_MakeTime(sym_time_utc, sec, 0);
+}
+
+ScmObj Scm_RealSecondsToTime(double sec)
+{
+    double s, frac;
+    if (sec > (double)ULONG_MAX || sec < 0) {
+        Scm_Error("seconds out of range: %f", sec);
+    }
+    frac = modf(sec, &s);
+    return Scm_MakeTime(sym_time_utc, (unsigned long)s,
+                        (unsigned long)(frac * 1.0e9));
+}
+
 static ScmObj time_type_get(ScmTime *t)
 {
     return t->type;
@@ -491,7 +508,7 @@ time_t Scm_GetSysTime(ScmObj val)
         return (time_t)SCM_TIME(val)->sec;
 #else
         return (time_t)((double)SCM_TIME(val)->sec +
-                        (double)SCM_TIME(val)->nsec/1.0e-9);
+                        (double)SCM_TIME(val)->nsec/1.0e9);
 #endif
     } else if (SCM_NUMBERP(val)) {
 #ifdef INTEGRAL_TIME_T
@@ -502,6 +519,15 @@ time_t Scm_GetSysTime(ScmObj val)
     } else {
         Scm_Error("bad time value: either a <time> object or a real number is required, but got %S", val);
         return (time_t)0;       /* dummy */
+    }
+}
+
+ScmObj Scm_TimeToSeconds(ScmTime *t)
+{
+    if (t->nsec) {
+        return Scm_MakeFlonum((double)t->sec + (double)t->nsec/1.0e9);
+    } else {
+        return Scm_MakeIntegerFromUI(t->sec);
     }
 }
 

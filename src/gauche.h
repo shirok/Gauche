@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.251 2002-05-15 02:56:52 shirok Exp $
+ *  $Id: gauche.h,v 1.252 2002-05-15 03:34:40 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2083,7 +2083,9 @@ SCM_CLASS_DECL(Scm_TimeClass);
 
 SCM_EXTERN ScmObj Scm_CurrentTime(void);
 SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, unsigned long sec, unsigned long nsec);
-SCM_EXTERN ScmObj Scm_SecondsToTime(time_t seconds);
+SCM_EXTERN ScmObj Scm_IntSecondsToTime(unsigned long sec);
+SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
+SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 
 /* struct tm */
 typedef struct ScmSysTmRec {

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.72 2002-05-15 02:56:52 shirok Exp $
+;;; $Id: syslib.stub,v 1.73 2002-05-15 03:34:40 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -425,8 +425,19 @@
 (define-cproc sys-time ()
   "SCM_RETURN(Scm_MakeSysTime(time(NULL)));")
 
-(define-cproc current-time ()
+(define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21
   "SCM_RETURN(Scm_CurrentTime());")
+
+(define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_TIMEP(obj)));")
+
+(define-cproc time->seconds (t)         ;SRFI-18
+  (assert (time? t))
+  "SCM_RETURN(Scm_TimeToSeconds(t));")
+
+(define-cproc seconds->time (t)         ;SRFI-18
+  (assert (real? t))
+  "SCM_RETURN(Scm_RealSecondsToTime(t));")
 
 (define-cproc sys-asctime (tm)
   (assert (sys-tm? tm))
