@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.20 2001-04-01 11:15:56 shiro Exp $
+ *  $Id: number.c,v 1.21 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include <math.h>
@@ -45,7 +45,7 @@ static ScmClass *numeric_cpl[] = {
     NULL
 };
 
-static int number_print(ScmObj obj, ScmPort *port, int mode);
+static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_NumberClass, number_print, NULL, NULL,
                          numeric_cpl+4);
@@ -1072,11 +1072,10 @@ ScmObj Scm_Sqrt(ScmObj z)
  * Printer
  */
 
-static int number_print(ScmObj obj, ScmPort *port, int mode)
+static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmObj s = Scm_NumberToString(obj, 10);
     SCM_PUTS(SCM_STRING(s), port);
-    return SCM_STRING_LENGTH(s);
 }
 
 ScmObj Scm_NumberToString(ScmObj obj, int radix)

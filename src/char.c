@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.10 2001-04-05 07:06:46 shiro Exp $
+ *  $Id: char.c,v 1.11 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,7 +27,7 @@
  * will be a macro in the future).
  */
 
-static int charset_print(ScmObj obj, ScmPort *out, int mode);
+static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext*);
 static int charset_compare(ScmObj x, ScmObj y);
 SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
                          charset_print, charset_compare, NULL,
@@ -54,9 +54,9 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
 #define MASK_RESET(cs, ch)   (cs->mask[MASK_INDEX(ch)] &= ~MASK_BIT(ch))
 
 /* printer */
-static int charset_print(ScmObj obj, ScmPort *out, int mode)
+static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
-    return Scm_Printf(out, "#<char-set %p>", obj);
+    Scm_Printf(out, "#<char-set %p>", obj);
 }
 
 /* comparer */

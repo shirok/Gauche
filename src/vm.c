@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.71 2001-04-03 07:56:36 shiro Exp $
+ *  $Id: vm.c,v 1.72 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1647,10 +1647,10 @@ static struct insn_info {
 #undef DEFINSN
 };
 
-int Scm__VMInsnWrite(ScmObj obj, ScmPort *out, int mode)
+void Scm__VMInsnWrite(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     struct insn_info *info;
-    int nc = 0, param0, param1;
+    int param0, param1;
     char buf[50];
     int insn = SCM_VM_INSN_CODE(obj);
     SCM_ASSERT(insn >= 0 && insn < SCM_VM_NUM_INSNS);
@@ -1658,22 +1658,21 @@ int Scm__VMInsnWrite(ScmObj obj, ScmPort *out, int mode)
     info = &insn_table[insn];
     switch (info->nparams) {
     case 0:
-        nc = snprintf(buf, 50, "#<%s>", info->name);
+        snprintf(buf, 50, "#<%s>", info->name);
         break;
     case 1:
         param0 = SCM_VM_INSN_ARG(obj);
-        nc = snprintf(buf, 50, "#<%s %d>", info->name, param0);
+        snprintf(buf, 50, "#<%s %d>", info->name, param0);
         break;
     case 2:
         param0 = SCM_VM_INSN_ARG0(obj);
         param1 = SCM_VM_INSN_ARG1(obj);
-        nc = snprintf(buf, 50, "#<%s %d,%d>", info->name, param0, param1);
+        snprintf(buf, 50, "#<%s %d,%d>", info->name, param0, param1);
         break;
     default:
         Scm_Panic("something screwed up");
     }
     SCM_PUTCSTR(buf, out);
-    return nc;
 }
 
 /* Returns list of insn name and parameters.  Useful if you want to 

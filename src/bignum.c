@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.4 2001-03-08 10:21:46 shiro Exp $
+ *  $Id: bignum.c,v 1.5 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include <math.h>
@@ -660,12 +660,12 @@ ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args)
 
 int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
 {
-    int i, nc;
-    nc = Scm_Printf(out, "#<bignum ");
-    if (b->sign < 0) { SCM_PUTC('-', out); nc++; }
+    int i;
+    Scm_Printf(out, "#<bignum ");
+    if (b->sign < 0) SCM_PUTC('-', out);
     for (i=b->size-1; i>=0; i--) {
-        nc += Scm_Printf(out, "%08x ", b->values[i]);
+        Scm_Printf(out, "%08x ", b->values[i]);
     }
-    SCM_PUTC('>', out); nc++;
-    return nc;
+    SCM_PUTC('>', out);
+    return 0;
 }

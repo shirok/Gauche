@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: promise.c,v 1.7 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: promise.c,v 1.8 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,11 +21,10 @@
  * class stuff
  */
 
-static int promise_print(ScmObj obj, ScmPort *port, int mode)
+static void promise_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmPromise *p = (ScmPromise*)obj;
-    return Scm_Printf(port, "#<promise %p%s>", p, 
-                      p->forced? " (forced)" : "");
+    Scm_Printf(port, "#<promise %p%s>", p, p->forced? " (forced)" : "");
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PromiseClass, promise_print);

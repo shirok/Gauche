@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.31 2001-03-29 06:06:18 shiro Exp $
+ *  $Id: vm.h,v 1.32 2001-04-05 10:01:27 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -223,7 +223,7 @@ enum {
     SCM_VM_NUM_INSNS
 };
 
-extern int Scm__VMInsnWrite(ScmObj insn, ScmPort *port, int mode);
+extern void Scm__VMInsnWrite(ScmObj insn, ScmPort *port, ScmWriteContext *ctx);
 extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 /*

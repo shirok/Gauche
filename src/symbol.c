@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.14 2001-03-31 09:18:07 shiro Exp $
+ *  $Id: symbol.c,v 1.15 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,7 +21,7 @@
  * Symbols
  */
 
-static int symbol_print(ScmObj obj, ScmPort *port, int mode);
+static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 
 #define INITSYM(sym, nam)                       \
@@ -107,11 +107,10 @@ static char special[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 11,3, 0, 7
 };
 
-static int symbol_print(ScmObj obj, ScmPort *port, int mode)
+static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    if (mode == SCM_PRINT_DISPLAY) {
+    if (ctx->mode == SCM_WRITE_DISPLAY) {
         SCM_PUTS(SCM_SYMBOL(obj)->name, port);
-        return SCM_STRING_LENGTH(SCM_SYMBOL(obj)->name);
     } else {
         /* See if we have special characters, and use |-escape if necessary. */
         /* TODO: For now, we regard chars over 0x80 is all "printable".
@@ -123,11 +122,11 @@ static int symbol_print(ScmObj obj, ScmPort *port, int mode)
         
         if (siz == 0) {         /* special case */
             SCM_PUTCSTR("||", port);
-            return 2;
+            return;
         }
         if (siz == 1 && (*p == '+' || *p == '-')) {
             SCM_PUTC((unsigned)*p, port);
-            return 1;
+            return;
         }
         if ((unsigned int)*p < 128 && (special[(unsigned int)*p]&1)) {
             escape = TRUE;
@@ -140,30 +139,28 @@ static int symbol_print(ScmObj obj, ScmPort *port, int mode)
             }
         }
         if (escape) {
-            int nc = 0;
-            SCM_PUTC('|', port); nc++;
+            SCM_PUTC('|', port);
             for (q=p; q<p+siz; ) {
                 unsigned int ch;
                 SCM_STR_GETC(q, ch);
                 q += SCM_CHAR_NBYTES(ch);
                 if (ch < 128) {
                     if (special[ch] & 8) {
-                        SCM_PUTC('\\', port); nc++;
-                        SCM_PUTC(ch, port); nc++;
+                        SCM_PUTC('\\', port);
+                        SCM_PUTC(ch, port);
                     } else if (special[ch] & 4) {
-                        nc += Scm_Printf(port, "\\x%02x", ch);
+                        Scm_Printf(port, "\\x%02x", ch);
                     } else {
-                        SCM_PUTC(ch, port); nc++;
+                        SCM_PUTC(ch, port);
                     }
                 } else {
-                    SCM_PUTC(ch, port); nc++;
+                    SCM_PUTC(ch, port);
                 }
             }
-            SCM_PUTC('|', port); nc++;
-            return nc;
+            SCM_PUTC('|', port);
+            return;
         } else {
             SCM_PUTS(snam, port);
-            return SCM_STRING_LENGTH(snam);
         }
     }
 }
@@ -172,11 +169,10 @@ static int symbol_print(ScmObj obj, ScmPort *port, int mode)
  * GLOCs
  */
 
-static int gloc_print(ScmObj obj, ScmPort *port, int mode)
+static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmGloc *g = SCM_GLOC(obj);
-    return Scm_Printf(port, "#<gloc %A::%S>",
-                      g->module->name, g->name);
+    Scm_Printf(port, "#<gloc %A::%S>", g->module->name, g->name);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.38 2001-04-01 10:21:40 shiro Exp $
+;;; $Id: stdlib.stub,v 1.39 2001-04-05 10:01:27 shiro Exp $
 ;;;
 
 
@@ -841,13 +841,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc write (obj &optional (port (current-output-port)))
   (assert (output-port? port))
-  "  int nc = Scm_Write(obj, SCM_OBJ(port), SCM_PRINT_WRITE);
-  SCM_RETURN(Scm_MakeInteger(nc));")
+  "  Scm_Write(obj, SCM_OBJ(port), SCM_WRITE_WRITE);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc display (obj &optional (port (current-output-port)))
   (assert (output-port? port))
-  "  int nc = Scm_Write(obj, SCM_OBJ(port), SCM_PRINT_DISPLAY);
-  SCM_RETURN(Scm_MakeInteger(nc));")
+  "  Scm_Write(obj, SCM_OBJ(port), SCM_WRITE_DISPLAY);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc newline (&optional (port (current-output-port)))
   (assert (output-port? port))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.10 2001-03-29 06:06:45 shiro Exp $
+ *  $Id: error.c,v 1.11 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include <errno.h>
@@ -23,10 +23,9 @@
  * Class stuff
  */
 
-static int exception_print(ScmObj obj, ScmPort *port, int mode)
+static void exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    return Scm_Printf(port, "#<exception %p:%30.0S>",
-                      obj, SCM_EXCEPTION_DATA(obj));
+    Scm_Printf(port, "#<exception %p:%30.0S>", obj, SCM_EXCEPTION_DATA(obj));
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ExceptionClass, exception_print);
@@ -125,7 +124,7 @@ ScmObj Scm_SError(ScmObj fmt, ScmObj args)
             Scm_Format(ostr, SCM_STRING(fmt), args);
         } else {
             /* this shouldn't happen, but we tolerate it. */
-            Scm_Write(fmt, ostr, SCM_PRINT_WRITE);
+            Scm_Write(fmt, ostr, SCM_WRITE_WRITE);
         }
         e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }

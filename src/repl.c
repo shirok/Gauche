@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.8 2001-03-16 07:11:06 shiro Exp $
+ *  $Id: repl.c,v 1.9 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -25,7 +25,7 @@ void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out)
     for (;;) {
         ScmObj p = Scm_Eval(prompt, SCM_NIL);
         SCM_PUSH_ERROR_HANDLER {
-            Scm_Write(p, SCM_OBJ(out), SCM_PRINT_DISPLAY);
+            Scm_Write(p, SCM_OBJ(out), SCM_WRITE_DISPLAY);
             SCM_FLUSH(out);
             v = Scm_Read(SCM_OBJ(in));
             if (SCM_EOFP(v)) { eofread = TRUE; break; }

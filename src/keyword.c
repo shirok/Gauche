@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: keyword.c,v 1.5 2001-03-31 08:43:51 shiro Exp $
+ *  $Id: keyword.c,v 1.6 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,16 +21,13 @@
  * Keywords
  */
 
-static int keyword_print(ScmObj obj, ScmPort *port, int mode)
+static void keyword_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    int nc = 0;
-    if (mode != SCM_PRINT_DISPLAY) {
+    if (ctx->mode != SCM_WRITE_DISPLAY) {
         SCM_PUTC(':', port);
-        nc++;
     }
     SCM_PUTS(SCM_KEYWORD(obj)->name, port);
-    nc += SCM_STRING_LENGTH(SCM_KEYWORD(obj)->name);
-    return nc;
+    return;
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_KeywordClass, keyword_print);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.17 2001-03-31 08:45:20 shiro Exp $
+ *  $Id: port.c,v 1.18 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include <unistd.h>
@@ -23,7 +23,7 @@
  * Common
  */
 
-static int port_print(ScmObj obj, ScmPort *port, int mode);
+static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void port_finalize(GC_PTR obj, GC_PTR data);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
@@ -182,13 +182,13 @@ int Scm_PortPosition(ScmPort *port)
     return pos;
 }
 
-static int port_print(ScmObj obj, ScmPort *port, int mode)
+static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    return Scm_Printf(port, "#<%s%sport %A %p>",
-                      (SCM_PORT_DIR(obj)&SCM_PORT_INPUT)? "i" : "",
-                      (SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT)? "o" : "",
-                      Scm_PortName(SCM_PORT(obj)),
-                      obj);
+    Scm_Printf(port, "#<%s%sport %A %p>",
+               (SCM_PORT_DIR(obj)&SCM_PORT_INPUT)? "i" : "",
+               (SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT)? "o" : "",
+               Scm_PortName(SCM_PORT(obj)),
+               obj);
 }
 
 /* Returns port's associated file descriptor number, if any.

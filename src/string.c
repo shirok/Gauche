@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.21 2001-04-01 10:19:54 shiro Exp $
+ *  $Id: string.c,v 1.22 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include <stdio.h>
@@ -20,7 +20,7 @@
 #include <sys/types.h>
 #include "gauche.h"
 
-static int string_print(ScmObj obj, ScmPort *port, int mode);
+static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
@@ -761,16 +761,14 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch)
     return SCM_OBJ(str);
 }
 
-static int string_print(ScmObj obj, ScmPort *port, int mode)
+static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmString *str = SCM_STRING(obj);
-    int nc = 0;
     
-    if (mode == SCM_PRINT_DISPLAY) {
+    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(str, port);
-        nc = SCM_STRING_LENGTH(str);
     } else {
-        SCM_PUTC('"', port); nc++;
+        SCM_PUTC('"', port);
         if (SCM_STRING_COMPLETE_P(str)) {
             ScmChar ch;
             const char *cp = SCM_STRING_START(str);
@@ -779,16 +777,16 @@ static int string_print(ScmObj obj, ScmPort *port, int mode)
             while (len--) {
                 SCM_STR_GETC(cp, ch);
                 switch (ch) {
-                case '\\': SCM_PUTCSTR("\\\\", port); nc += 2; break;
-                case '"':  SCM_PUTCSTR("\\\"", port); nc += 2; break;
-                case '\n': SCM_PUTCSTR("\\n", port); nc += 2; break;
-                case '\t': SCM_PUTCSTR("\\t", port); nc += 2; break;
-                case '\r': SCM_PUTCSTR("\\r", port); nc += 2; break;
-                case '\f': SCM_PUTCSTR("\\f", port); nc += 2; break;
-                case '\0': SCM_PUTCSTR("\\0", port); nc += 2; break;
+                case '\\': SCM_PUTCSTR("\\\\", port); break;
+                case '"':  SCM_PUTCSTR("\\\"", port); break;
+                case '\n': SCM_PUTCSTR("\\n", port); break;
+                case '\t': SCM_PUTCSTR("\\t", port); break;
+                case '\r': SCM_PUTCSTR("\\r", port); break;
+                case '\f': SCM_PUTCSTR("\\f", port); break;
+                case '\0': SCM_PUTCSTR("\\0", port); break;
                 default:
                     /* TODO: need to escape control chars */
-                    SCM_PUTC(ch, port); nc++;
+                    SCM_PUTC(ch, port);
                 }
                 cp += SCM_CHAR_NBYTES(ch);
             }
@@ -798,13 +796,13 @@ static int string_print(ScmObj obj, ScmPort *port, int mode)
             int c;
             while (size--) {
                 switch (c = *cp) {
-                case '\\': SCM_PUTCSTR("\\\\", port); nc += 2; break;
-                case '"':  SCM_PUTCSTR("\\\"", port); nc += 2; break;
-                case '\n': SCM_PUTCSTR("\\n", port); nc += 2; break;
-                case '\t': SCM_PUTCSTR("\\t", port); nc += 2; break;
-                case '\r': SCM_PUTCSTR("\\r", port); nc += 2; break;
-                case '\f': SCM_PUTCSTR("\\f", port); nc += 2; break;
-                case '\0': SCM_PUTCSTR("\\0", port); nc += 2; break;
+                case '\\': SCM_PUTCSTR("\\\\", port); break;
+                case '"':  SCM_PUTCSTR("\\\"", port); break;
+                case '\n': SCM_PUTCSTR("\\n", port); break;
+                case '\t': SCM_PUTCSTR("\\t", port); break;
+                case '\r': SCM_PUTCSTR("\\r", port); break;
+                case '\f': SCM_PUTCSTR("\\f", port); break;
+                case '\0': SCM_PUTCSTR("\\0", port); break;
                 default:
                     /* TODO: need to escape control chars */
                     SCM_PUTC(c, port);
@@ -812,9 +810,8 @@ static int string_print(ScmObj obj, ScmPort *port, int mode)
                 cp++;
             }
         }
-        SCM_PUTC('"', port); nc++;
+        SCM_PUTC('"', port);
     }
-    return nc;
 }
 
 /*==================================================================

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.23 2001-03-31 08:45:34 shiro Exp $
+ *  $Id: macro.c,v 1.24 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -22,9 +22,9 @@
  * Syntax object
  */
 
-static int syntax_print(ScmObj obj, ScmPort *port, int mode)
+static void syntax_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 {
-    return Scm_Printf(port, "#<syntax %A>", SCM_SYNTAX(obj)->name);
+    Scm_Printf(port, "#<syntax %A>", SCM_SYNTAX(obj)->name);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxClass, syntax_print);
@@ -44,7 +44,7 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
  *   Internal object to construct pattern matcher
  */
 
-static int pattern_print(ScmObj obj, ScmPort *port, int mode)
+static void pattern_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     return Scm_Printf(port, "#<pattern:%d%S %S%s>",
                       SCM_SYNTAX_PATTERN(obj)->level,
@@ -71,20 +71,19 @@ ScmSyntaxPattern *make_syntax_pattern(int level, int repeat)
  *   Internal object to construct pattern matcher
  */
 
-static int synrule_print(ScmObj obj, ScmPort *port, int mode)
+static void synrule_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 {
-    int nc = 0, i;
+    int i;
     ScmSyntaxRules *r = SCM_SYNTAX_RULES(obj);
 
-    nc += Scm_Printf(port, "#<syntax-rules(%d)\n", r->numRules);
+    Scm_Printf(port, "#<syntax-rules(%d)\n", r->numRules);
     for (i = 0; i < r->numRules; i++) {
-        nc += Scm_Printf(port, "%2d: (numPvars=%d, maxLevel=%d)\n",
-                         i, r->rules[i].numPvars, r->rules[i].maxLevel);
-        nc += Scm_Printf(port, "   pattern  = %S\n", r->rules[i].pattern);
-        nc += Scm_Printf(port, "   template = %S\n", r->rules[i].template);
+        Scm_Printf(port, "%2d: (numPvars=%d, maxLevel=%d)\n",
+                   i, r->rules[i].numPvars, r->rules[i].maxLevel);
+        Scm_Printf(port, "   pattern  = %S\n", r->rules[i].pattern);
+        Scm_Printf(port, "   template = %S\n", r->rules[i].template);
     }
-    nc += Scm_Printf(port, ">");
-    return nc;
+    Scm_Printf(port, ">");
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxRulesClass, synrule_print);

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.56 2001-04-05 07:07:41 shiro Exp $
+;;; $Id: extlib.stub,v 1.57 2001-04-05 10:01:27 shiro Exp $
 ;;;
 
 "
@@ -412,11 +412,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc write-limited (obj limit &optional (port (current-output-port)))
   (assert (small-integer? limit))
-  "  int n = Scm_WriteLimited(obj, port, SCM_PRINT_WRITE, limit);
+  "  int n = Scm_WriteLimited(obj, port, SCM_WRITE_WRITE, limit);
   SCM_RETURN(SCM_MAKE_INT(n));")
 
 (define-cproc write* (obj &optional (port (current-output-port)))
-  "  int n = Scm_WriteCircular(obj, port, SCM_PRINT_WRITE, 0);
+  "  int n = Scm_WriteCircular(obj, port, SCM_WRITE_WRITE, 0);
   SCM_RETURN(SCM_MAKE_INT(n));")
 
 ;;

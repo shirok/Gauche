@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.10 2001-03-30 07:46:38 shiro Exp $
+ *  $Id: hash.c,v 1.11 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -349,7 +349,7 @@ static int general_cmp(ScmObj key, ScmHashEntry *e)
  * Constructor
  */
 
-static int hash_print(ScmObj obj, ScmPort *port, int mode);
+static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
@@ -517,23 +517,21 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
  * print
  */
 
-static int hash_print(ScmObj obj, ScmPort *port, int mode)
+static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmHashTable *ht = (ScmHashTable*)obj;
     ScmHashIter iter;
     ScmHashEntry *e;
-    int nc = 0;
 
-    nc = Scm_Printf(port,
-                    "#<hashtable %p (%d entries in %d buckets): ",
-                    ht, ht->numEntries, ht->numBuckets);
+    Scm_Printf(port,
+                "#<hashtable %p (%d entries in %d buckets): ",
+                ht, ht->numEntries, ht->numBuckets);
 
     Scm_HashIterInit(ht, &iter);
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        nc += Scm_Printf(port, "%S => %S ", e->key, e->value);
+        Scm_Printf(port, "%S => %S ", e->key, e->value);
     }
-    SCM_PUTCSTR(">", port); nc++;
-    return nc;
+    SCM_PUTCSTR(">", port);
 }
 
 

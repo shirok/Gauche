@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.17 2001-03-31 08:45:57 shiro Exp $
+ *  $Id: module.c,v 1.18 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -26,10 +26,9 @@
  *  a procedure, to capture compile-time information.
  */
 
-static int module_print(ScmObj obj, ScmPort *port, int mode)
+static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmModule *m = SCM_MODULE(obj);
-    return Scm_Printf(port, "#<module %S>", m->name);
+    Scm_Printf(port, "#<module %S>", SCM_MODULE(obj)->name);
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass, module_print, NULL, NULL,

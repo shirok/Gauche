@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.44 2001-04-03 10:27:56 shiro Exp $
+ *  $Id: class.c,v 1.45 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -23,11 +23,11 @@
  * Built-in classes
  */
 
-static int class_print(ScmObj, ScmPort *, int);
-static int generic_print(ScmObj, ScmPort *, int);
-static int method_print(ScmObj, ScmPort *, int);
-static int next_method_print(ScmObj, ScmPort *, int);
-static int slot_accessor_print(ScmObj, ScmPort *, int);
+static void class_print(ScmObj, ScmPort *, ScmWriteContext*);
+static void generic_print(ScmObj, ScmPort *, ScmWriteContext*);
+static void method_print(ScmObj, ScmPort *, ScmWriteContext*);
+static void next_method_print(ScmObj, ScmPort *, ScmWriteContext*);
+static void slot_accessor_print(ScmObj, ScmPort *, ScmWriteContext*);
 
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static void scheme_slot_default(ScmObj obj);
@@ -255,10 +255,9 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(instance);
 }
 
-static int class_print(ScmObj obj, ScmPort *port, int mode) 
+static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx) 
 {
-    ScmClass *c = (ScmClass*)obj;
-    return Scm_Printf(port, "#<class %A>", c->name);
+    Scm_Printf(port, "#<class %A>", SCM_CLASS(obj)->name);
 }
 
 /*
@@ -927,20 +926,18 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(sa);
 }
 
-static int slot_accessor_print(ScmObj obj, ScmPort *out, int mode)
+static void slot_accessor_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
-    int nc = 0;
     ScmSlotAccessor *sa = SCM_SLOT_ACCESSOR(obj);
     
-    nc += Scm_Printf(out, "#<slot-accessor ");
-    if (sa->getter) nc += Scm_Printf(out, "native");
-    else if (SCM_PAIRP(sa->schemeAccessor)) nc += Scm_Printf(out, "proc");
-    else if (sa->slotNumber >= 0) nc += Scm_Printf(out, "%d", sa->slotNumber);
-    else nc += Scm_Printf(out, "unknown");
+    Scm_Printf(out, "#<slot-accessor ");
+    if (sa->getter) Scm_Printf(out, "native");
+    else if (SCM_PAIRP(sa->schemeAccessor)) Scm_Printf(out, "proc");
+    else if (sa->slotNumber >= 0) Scm_Printf(out, "%d", sa->slotNumber);
+    else Scm_Printf(out, "unknown");
     if (!SCM_FALSEP(sa->initKeyword))
-        nc += Scm_Printf(out, " %S", sa->initKeyword);
-    nc += Scm_Printf(out, ">");
-    return nc;
+        Scm_Printf(out, " %S", sa->initKeyword);
+    Scm_Printf(out, ">");
 }
 
 /* some information is visible from Scheme world */
@@ -1054,11 +1051,11 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(instance);
 }
 
-static int generic_print(ScmObj obj, ScmPort *port, int mode)
+static void generic_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    return Scm_Printf(port, "#<generic %S (%d)>",
-                      SCM_GENERIC(obj)->common.info,
-                      Scm_Length(SCM_GENERIC(obj)->methods));
+    Scm_Printf(port, "#<generic %S (%d)>",
+               SCM_GENERIC(obj)->common.info,
+               Scm_Length(SCM_GENERIC(obj)->methods));
 }
 
 /*
@@ -1301,10 +1298,9 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(instance);
 }
 
-static int method_print(ScmObj obj, ScmPort *port, int mode)
+static void method_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    return Scm_Printf(port, "#<method %S>",
-                      SCM_METHOD(obj)->common.info);
+    Scm_Printf(port, "#<method %S>", SCM_METHOD(obj)->common.info);
 }
 
 /*
@@ -1474,11 +1470,11 @@ ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
     return SCM_OBJ(nm);
 }
 
-static int next_method_print(ScmObj obj, ScmPort *out, int mode)
+static void next_method_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     ScmNextMethod *nm = SCM_NEXT_METHOD(obj);
     ScmObj args = Scm_ArrayToList(nm->args, nm->nargs);
-    return Scm_Printf(out, "#<next-method %S %S>", nm->methods, args);
+    Scm_Printf(out, "#<next-method %S %S>", nm->methods, args);
 }
 
 /*=====================================================================

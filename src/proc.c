@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.14 2001-03-20 08:47:04 shiro Exp $
+ *  $Id: proc.c,v 1.15 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,26 +21,24 @@
  * Classes
  */
 
-static int proc_print(ScmObj obj, ScmPort *port, int mode);
+static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProcedureClass, proc_print);
 
-static int proc_print(ScmObj obj, ScmPort *port, int mode)
+static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
         ScmSubr *subr = SCM_SUBR(obj);
-        int nc = 0;
-        SCM_PUTCSTR("#<subr", port); nc += 6;
+        SCM_PUTCSTR("#<subr", port);
         if (SCM_PROCEDURE_INFO(subr)) {
-            nc += Scm_Printf(port, ":%S", SCM_PROCEDURE_INFO(subr));
+            Scm_Printf(port, ":%S", SCM_PROCEDURE_INFO(subr));
         }
-        if (mode == SCM_PRINT_DEBUG) {
-            nc += Scm_Printf(port, " %p", subr);
+        if (ctx->mode == SCM_WRITE_DEBUG) {
+            Scm_Printf(port, " %p", subr);
         }
-        SCM_PUTC('>', port); nc++;
-        return nc;
+        SCM_PUTC('>', port);
     } else {
-        return Scm_Printf(port, "#<closure %p>", obj);
+        Scm_Printf(port, "#<closure %p>", obj);
     }
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.46 2001-03-31 08:37:25 shiro Exp $
+ *  $Id: compile.c,v 1.47 2001-04-05 10:01:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,12 +21,12 @@
  * Identifier object
  */
 
-static int identifier_print(ScmObj obj, ScmPort *port, int mode)
+static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    return Scm_Printf(port, "#<id %p %A::%A>",
-                      obj,
-                      SCM_IDENTIFIER(obj)->module->name,
-                      SCM_IDENTIFIER(obj)->name);
+    Scm_Printf(port, "#<id %p %A::%A>",
+               obj,
+               SCM_IDENTIFIER(obj)->module->name,
+               SCM_IDENTIFIER(obj)->name);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
@@ -37,10 +37,9 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
  * SourceInfo object
  */
 
-static int source_info_print(ScmObj obj, ScmPort *port, int mode)
+static void source_info_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    return Scm_Printf(port, "#<source-info %S>",
-                      SCM_SOURCE_INFO(obj)->info);
+    Scm_Printf(port, "#<source-info %S>", SCM_SOURCE_INFO(obj)->info);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SourceInfoClass, source_info_print);

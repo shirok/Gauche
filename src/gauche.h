@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.106 2001-04-05 07:07:06 shiro Exp $
+ *  $Id: gauche.h,v 1.107 2001-04-05 10:01:27 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -252,6 +252,7 @@ typedef struct ScmNextMethodRec ScmNextMethod;
 typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmExceptionRec ScmException;
+typedef struct ScmWriteContextRec ScmWriteContext;
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -305,7 +306,7 @@ extern ScmObj Scm_VMThrowException(ScmObj exception);
 /* See class.c for the description of function pointer members. */
 struct ScmClassRec {
     SCM_HEADER;
-    int (*print)(ScmObj obj, ScmPort *sink, int mode);
+    void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
@@ -1113,32 +1114,32 @@ extern int Scm__PortGetcInternal(ScmPort *port);
  * WRITE
  */
 
+struct ScmWriteContextRec {
+    short mode;                 /* print mode */
+    short flags;                /* internal */
+    int limit;                  /* internal */
+    int ncirc;                  /* internal */
+    ScmHashTable *table;        /* internal */
+};
+
 /* Print mode flags */
 enum {
-    SCM_PRINT_WRITE,            /* write mode   */
-    SCM_PRINT_DISPLAY,          /* display mode */
-    SCM_PRINT_DEBUG,            /* debug mode   */
-    SCM_PRINT_SCAN              /* this mode of call is only initiated
+    SCM_WRITE_WRITE,            /* write mode   */
+    SCM_WRITE_DISPLAY,          /* display mode */
+    SCM_WRITE_DEBUG,            /* debug mode   */
+    SCM_WRITE_SCAN              /* this mode of call is only initiated
                                    by Scm_WriteStar (write*).
                                 */
 };
 
-#define SCM_PRINT_MODE(mode)     ((mode)&0x0f)
+#define SCM_WRITE_MODE(ctx)   ((ctx)->mode)
 
-typedef struct ScmWriteInfoRec ScmWriteInfo;
-
-extern int Scm_Write(ScmObj obj, ScmObj port, int mode);
+extern void Scm_Write(ScmObj obj, ScmObj port, int mode);
 extern int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);
 extern ScmObj Scm_Format(ScmObj port, ScmString *fmt, ScmObj args);
 extern ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...);
-extern int Scm_Printf(ScmPort *port, const char *fmt, ...);
-extern int Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
-
-/* Convenient for debug */
-#define SCM_DBGPRINT(form)                                      \
-    (Scm_Write(form, Scm_Stderr(), SCM_PRINT_WRITE),            \
-     Scm_Putc('\n', SCM_PORT(Scm_Stderr())),                    \
-     form)
+extern void Scm_Printf(ScmPort *port, const char *fmt, ...);
+extern void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
 
 /*---------------------------------------------------------
  * READ
