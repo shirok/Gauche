@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.54 2001-03-05 00:54:30 shiro Exp $
+ *  $Id: gauche.h,v 1.55 2001-03-05 04:01:16 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -452,18 +452,22 @@ extern ScmObj Scm_LastPair(ScmObj list);
 
 extern ScmObj Scm_Memq(ScmObj obj, ScmObj list);
 extern ScmObj Scm_Memv(ScmObj obj, ScmObj list);
-extern ScmObj Scm_Member(ScmObj obj, ScmObj list);
+extern ScmObj Scm_Member(ScmObj obj, ScmObj list, int cmpmode);
 extern ScmObj Scm_Assq(ScmObj obj, ScmObj alist);
 extern ScmObj Scm_Assv(ScmObj obj, ScmObj alist);
-extern ScmObj Scm_Assoc(ScmObj obj, ScmObj alist);
+extern ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode);
 
 extern ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode);
 extern ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode);
 
-extern ScmObj Scm_Union(ScmObj list1, ScmObj list2);
-extern ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
+extern ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode);
+extern ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode);
 
 extern ScmObj Scm_TopologicalSort(ScmObj edges);
+extern ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
+                                 ScmObj parents);
+extern ScmObj Scm_Union(ScmObj list1, ScmObj list2);
+extern ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
 
 extern ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 extern ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
