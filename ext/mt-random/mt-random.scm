@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: mt-random.scm,v 1.5 2002-05-12 02:21:48 shirok Exp $
+;;;  $Id: mt-random.scm,v 1.6 2002-05-28 06:51:42 shirok Exp $
 ;;;
 
 (define-module math.mt-random
@@ -50,5 +50,7 @@
           (if (< r qn)
               (quotient r q)
               (loop #(%get-nword-random-int mt siz)))))))
+
+
 
 (provide "math/mt-random")

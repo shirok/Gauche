@@ -5,6 +5,7 @@
 (use gauche.test)
 (use gauche.collection)
 (use srfi-1)
+(use srfi-13)
 
 ;; instead of (use srfi-4) ...
 (add-load-path "../uvector")
@@ -67,6 +68,12 @@
                                         (lambda () (mt-random-real m0)))
                   (make-random-sequence <list> 100
                                         (lambda () (mt-random-real m1)))))))
+
+;;; NB: Cygwin version doesn't suppor some procedures.  Exit here.
+(when (string-contains (gauche-architecture) "cygwin")
+  (test-end)
+  (exit 0))
+
 (test "seed" #t
       (lambda ()
         (let ((m0 (make <mersenne-twister>)) 
