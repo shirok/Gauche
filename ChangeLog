@@ -1,6 +1,17 @@
 2002-02-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.c (compile_define): added define-in-module syntax.
+	* src/gauche-init.scm, lib/gauche/with.scm, lib/gauche/numerical.scm :
+	  adapted to define-in-module.
+	* lib/gauche/with.scm : fixed semantics of closing file ports.
 	* lib/port/stk.scm: added posix-* compatibility functions.
+
+2002-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c : it turned out select-module has to be visible
+	  from the scheme module for autoload to work.
+	* lib/Makefile.in : fixed installation of file/filter.scm and
+	  gauche/interpolate.scm.
 
 2002-02-21  Shiro Kawai  <shiro@acm.org>
 
