@@ -38,6 +38,38 @@
             from-codes))
 
 ;;--------------------------------------------------------------------
+(test-section "ces-equivalent? and ces-upper-compatible?")
+
+(define-syntax ces=-test
+  (syntax-rules ()
+    ((_ op a b exp)
+     (test (format "~s ~s ~s" op a b) exp (lambda () (op a b '?))))))
+
+(ces=-test ces-equivalent? 'none  'none      #t)
+(ces=-test ces-equivalent? 'eucjp 'euc-jp    #t)
+(ces=-test ces-equivalent? 'sjis  'shift_jis #t)
+(ces=-test ces-equivalent? 'utf8  'utf-8     #t)
+(ces=-test ces-equivalent? 'utf8  'none      #t)
+(ces=-test ces-equivalent? 'none  'eucjp     #t)
+(ces=-test ces-equivalent? 'sjis  'none      #t)
+(ces=-test ces-equivalent? 'eucjp "EUC-JP"   #t)
+(ces=-test ces-equivalent? "Shift_JIS" "SJIS" #t)
+(ces=-test ces-equivalent? 'hoge  'euc-jp    '?)
+(ces=-test ces-equivalent? 'hoge  'none      #t)
+
+(ces=-test ces-upper-compatible? 'eucjp 'usascii  #t)
+(ces=-test ces-upper-compatible? 'usascii 'eucjp  #f)
+(ces=-test ces-upper-compatible? 'sjis 'usascii   #t)
+(ces=-test ces-upper-compatible? 'usascii 'sjis   #f)
+(ces=-test ces-upper-compatible? 'eucjp 'sjis     #f)
+(ces=-test ces-upper-compatible? 'sjis 'eucjp     #f)
+(ces=-test ces-upper-compatible? 'eucjp 'none     #t)
+(ces=-test ces-upper-compatible? 'none 'eucjp     #t)
+(ces=-test ces-upper-compatible? 'iso-2022-jp-2 'usascii #t)
+(ces=-test ces-upper-compatible? 'usascii 'iso-2022-jp-2 #f)
+(ces=-test ces-upper-compatible? 'iso-2022-jp-2 'iso-2022-jp #t)
+
+;;--------------------------------------------------------------------
 (test-section "input conversion")
 
 (define (test-input file from to . guesser)
@@ -218,6 +250,48 @@
 (map-test test-string "data/jp3"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+
+;;--------------------------------------------------------------------
+(test-section "wrapping conversion")
+
+(define (test-wrap/in str from to)
+  (if (ces-conversion-supported? from to)
+      (test* #`"wrap-input-conversion-port (,|from|, ,|to|)"
+             (string-complete->incomplete
+              (port->string (open-input-conversion-port
+                             (open-input-string str)
+                             from :to-code to :owner? #t)))
+             (string-complete->incomplete
+              (port->string (wrap-with-input-conversion
+                             (open-input-string str)
+                             from :to-code to))))
+      (test* #`"wrap-input-conversion-port (,|from|, ,|to|)"
+             "(not supported)" "(not supported)")))
+
+(define (test-wrap/out str from to)
+  (if (ces-conversion-supported? from to)
+      (test* #`"wrap-output-conversion-port (,|from|, ,|to|)"
+             (string-complete->incomplete
+              (let* ((os  (open-output-string))
+                     (out (open-output-conversion-port os to :from-code from)))
+                (display str out)
+                (close-output-port out)
+                (get-output-string os)))
+             (string-complete->incomplete
+              (let* ((os  (open-output-string))
+                     (out (wrap-with-output-conversion os to :from-code from)))
+                (display str out)
+                (close-output-port out)
+                (get-output-string os))))
+      (test* #`"wrap-input-conversion-port (,|from|, ,|to|)"
+             "(not supported)" "(not supported)")))
+
+(map-test test-wrap/in "foobar"
+          '("NONE" "ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("NONE" "ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-wrap/out "foobar"
+          '("NONE" "ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("NONE" "ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 ;;--------------------------------------------------------------------
 (test-section "ucs <-> char")

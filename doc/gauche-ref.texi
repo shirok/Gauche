@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.359 2003-02-06 00:21:36 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.360 2003-02-06 09:19:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -15006,10 +15006,107 @@ your system or not, by the following function.
 @c EN
 Returns @code{#t} if conversion from the character encoding scheme
 (CES) @var{from-ces} to @var{to-ces} is supported in this system.
+
+Note that this procedure may return true even if system only supports
+partial conversion between @var{from-ces} and @var{to-ces}.
+In such case, actual conversion might lose information by coercing
+characters in @var{from-ces} which are not supported in @var{to-ces}.
+(For example, conversion from Unicode to EUC-JP is "supported",
+although Unicode has characters that are not in EUC-JP).
+
+Also note that this procedure always returns @code{#t} 
+if @var{from-ces} and/or @var{to-ces} is "none",
+for conversion to/from CES "none" always succeeds (in fact, it does nothing).
+
+@example
+;; see if you can convert the internal encoding to EUC-JP
+(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
+@end example
 @c JP
-符号化方法@var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
+CES @var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
 そうでなければ@code{#f}を返します。
+
+システムが@var{from-ces}から@var{to-ces}への変換を部分的にしか
+サポートしていない場合でもこの手続きは@code{#t}を返すことに注意して下さい。
+そのような場合、実際の変換作業は@var{from-ces}にあって@var{to-ces}にない
+コードを置換文字に置き換える等で情報を失うかもしれません
+(例えば、UnicodeからEUC-JPへの変換はサポートされていますが、
+UnicodeにはEUC-JPにない文字も含まれています)。
+
+@var{from-ces}か@var{to-ces}が "none" ならばこの手続きは常に@code{#t}を
+返します。なぜならそのような変換は常に成功するからです(何も変換しないわけですが)。
+
+@example
+;; 内部エンコーディングからEUC-JPに変換できるか?
+(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
+@end example
 @c COMMON
+@end defun
+
+@c EN
+Also there are two useful procedures to deal with CES names.
+@c JP
+また、CESを扱う二つの便利な手続きが用意されています。
+@c COMMON
+
+@defun ces-equivalent? ces-a ces-b &optional unknown-value
+@c EN
+Returns true if two CESes @var{ces-a} and @var{ces-b} are equivalent
+to the knowledge of the system.  Returns false if they are not.
+If the system doesn't know about equivalency, @var{unknown-value}
+is returned, whose default is @code{#f}.
+
+CES "none" works like a wild card; it is "equivalent" to any CES.
+(Thus, @code{ces-equivalent?} is not transitive.  
+The intended use of @code{ces=?}
+is to compare two given CES names and see if conversion is required or not).
+@c JP
+CES @var{ces-a}と@var{ces-b}がシステムの知る限りで等価だった場合に
+@code{#t}を、等価でない場合に@code{#f}を返します。
+システムがその等価性を判断出来ない場合は@var{unknown-value}に与えられた
+値を返します。そのデフォルトは@code{#f}です。
+
+CES名 "none" はワイルドカードのように動作します。それはどんなCESとも
+等価と見倣されます。(従って、@code{ces-equivalent?} は遷移的ではありません。
+この手続きは、二つのCESを知った時に相互の変換が
+必要かどうかを判断するためのものです)。
+@c COMMON
+
+@example
+(ces-equivalent? 'eucjp "EUC-JP")            @result{} #t
+(ces-equivalent? 'shift_jis "EUC-JP")        @result{} #f
+(ces-equivalent? "NoSuchEncoding" 'utf-8 '?) @result{} ?
+@end example
+@end defun
+
+@defun ces-upper-compatible? ces-a ces-b &optional unknown-value
+@c EN
+Returns true if a string encoded in CES @var{ces-b} can also
+be regarded as a string encoded in @var{ces-a} without conversion,
+to the knowledge of the system.  
+Returns false if not.  Returns @var{unknown-value}
+if the system can't determine which is the case.
+
+Like @code{ces-equivalent?}, CES "none" works like a wildcard.
+It is upper-compatible to any CES, and any CES is upper-compatible to
+"none".
+@c JP
+CES @var{ces-b}でエンコードされた文字列が、システムの知る限りで
+変換無しに@var{ces-a}でエンコードされたものと見倣せる場合に@code{#t}を
+返します。見倣せない場合は@var{#f}を返します。
+システムが判断できない場合は@var{unknown-value}に与えられた
+値を返します。そのデフォルトは@code{#f}です。
+
+@code{ces-equivalent?}と同様に、CES名 "none" はワイルドカードとして
+働きます。@var{ces-a} か @var{ces-b} が "none" であれば、
+常に@code{#t}が返されます。
+@c COMMON
+
+@example
+(ces-upper-compatible? "eucjp" "ASCII")             @result{} #t
+(ces-upper-compatible? "eucjp" "utf-8")             @result{} #f
+(ces-upper-compatible? "utf-8" "NoSuchEncoding" '?) @result{} ?
+@end example
 @end defun
 
 @c EN
@@ -15359,6 +15456,30 @@ assumed.
 @end defun
 
 
+@defun wrap-with-input-conversion port from-code &keyword to-code buffer-size
+@defunx wrap-with-output-conversion port to-code &keyword from-code buffer-size
+@c EN
+Convenient functions to avoid adding unnecessary conversion port.
+Each procedure works like @code{open-input-conversion-port}
+and @code{open-output-conversion-port}, respectively,
+except if system knows no conversoin is needed,
+no conversion port is created and @var{port} is returned as is.
+
+When a conversion port is created, @var{port} is always owned by the port.
+@var{buffer-size} argument is passed to the @code{open-*-conversion-port}
+as is.
+@c JP
+不要な変換ポートを作らないようにする便利な手続きです。
+各手続きはそれぞれ@code{open-input-conversion-port}と
+@code{open-output-conversion-port}のように動作します。
+但し、指定されたCES間の変換が必要でないとシステムが知っている場合は、
+変換ポートは作られず、@var{port}がそのまま返されます。
+
+変換ポートが作られた場合、@var{port}は常に変換ポートに所有されます
+(@code{:owner #t}となる)。@code{:buffer-size} 引数はそのまま
+変換ポート作成手続きに渡されます。
+@c COMMON
+@end defun
 
 @node Extended port procedures,  , Conversion ports, gauche.charconv - Character code conversion
 @subsection Extended port procedures
@@ -22693,6 +22814,9 @@ for result if the argument is a list of non-zero length.
 An error is signalled if @var{i} is past the end of list @var{x}.
 @xref{util.list - Additional list library}, for more tolerant version
 of @code{take} and @code{drop}.
+
+For generic subsequence extranction from any sequence, see @code{subseq}
+in @ref{Slicing sequence}.
 @end defun
 
 @defun take-right flist i
@@ -28669,6 +28793,9 @@ The default value of @var{padding} is @code{#f}.
 (take* '(a b c d) 6 #t)    @result{} (a b c d #f #f)
 (take* '(a b c d) 6 #t 'z) @result{} (a b c d z z)
 @end example
+
+Note: For generic subsequence extranction from any sequence, 
+see @code{subseq} in @ref{Slicing sequence}.
 @end defun
 
 @defun drop* list k

@@ -2,6 +2,8 @@
 
 	* ext/charconv/charconv.c : allows a symbol as a CES name, as well
 	  as a string.   Supports a special CES name "none".
+	  Also added ces-equivalent?, ces-upper-compatible?,
+	  wrap-with-{input|output}-conversion.
 	* lib/file/util.scm (directory-list) : added :filter-add-path?
 	  keyword argument.  refactored using cond-list and every-pred.
 
