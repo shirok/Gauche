@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.24 2002-08-29 22:04:40 shirok Exp $
+ *  $Id: repl.c,v 1.25 2002-08-30 00:18:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -58,7 +58,7 @@ static ScmObj repl_print_cc(ScmObj result, void **data)
 static ScmObj repl_eval_cc(ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj *)data;
-    ScmObj printer = closure[3];
+    ScmObj printer = closure[2];
     ScmVM *vm = Scm_VM();
     if (SCM_PROCEDUREP(printer)) {
         Scm_VMPushCC(repl_print_cc, data, 4);
@@ -81,7 +81,7 @@ static ScmObj repl_eval_cc(ScmObj result, void **data)
 static ScmObj repl_read_cc(ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj*)data;
-    ScmObj evaluator = closure[2];
+    ScmObj evaluator = closure[1];
     if (SCM_EOFP(result)) {
         return SCM_FALSE;
     } else if (SCM_PROCEDUREP(evaluator)) {
@@ -96,7 +96,7 @@ static ScmObj repl_read_cc(ScmObj result, void **data)
 static ScmObj repl_prompt_cc(ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj*)data;
-    ScmObj reader = closure[1];
+    ScmObj reader = closure[0];
     Scm_Write(result, SCM_OBJ(SCM_CUROUT), SCM_WRITE_DISPLAY);
     Scm_Flush(SCM_CUROUT);
     if (SCM_PROCEDUREP(reader)) {
@@ -111,7 +111,7 @@ static ScmObj repl_prompt_cc(ScmObj result, void **data)
 static ScmObj repl_main(ScmObj *args, int nargs, void *data)
 {
     ScmObj *closure = (ScmObj*)data;
-    ScmObj prompter = closure[0];
+    ScmObj prompter = closure[3];
     if (SCM_PROCEDUREP(prompter)) {
         Scm_VMPushCC(repl_prompt_cc, data, 4);
         return Scm_VMApply0(prompter);
