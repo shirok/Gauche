@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.1 2001-09-21 09:32:17 shirok Exp $
+;;;  $Id: cgi.scm,v 1.2 2001-09-24 02:43:28 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
@@ -22,13 +22,13 @@
   (use srfi-1)
   (use srfi-13)
   (use rfc.uri)
-  (export cgi-get-input
-          cgi-parse-parameters
+  (use rfc.cookie)
+  (export cgi-parse-parameters
           cgi-get-parameter)
   )
 (select-module w3c.cgi)
 
-(define (cgi-get-input)
+(define (cgi-get-query)
   (let ((method (sys-getenv "REQUEST_METHOD")))
     (cond ((not method)  ;; interactive use.
            (if (sys-isatty (current-input-port))
@@ -45,35 +45,41 @@
                (string-ci=? method "HEAD"))
            (or (sys-getenv "QUERY_STRING") ""))
           ((string-ci=? method "POST")
+           ;; TODO: mutipart message
            (string-concatenate (port->string-list (current-input-port))))
           (else (error "unknown REQUEST_METHOD" method)))))
 
 (define (cgi-parse-parameters . args)
-  (fold-right (lambda (elt params)
-                (let* ((ss (string-split elt #\=))
-                       (p  (assoc (car ss) params))
-                       (v  (if (null? (cdr ss))
-                               #t
-                               (uri-decode-string (string-join (cdr ss) "=")
-                                                  :cgi-decode #t))))
-                  (if p
-                      (begin (set! (cdr p) (cons v (cdr p))) params)
-                      (cons (list (car ss) v) params))))
-              '()
-              (append-map (lambda (s) (string-split s #\&))
-                          (if (null? args)
-                              (list (cgi-get-input))
-                              args))))
+  (let ((input   (or (get-keyword :query-string args #f)
+                     (cgi-get-query)))
+        (cookies (cond ((and (get-keyword :merge-cookies args #f)
+                             (sys-getenv "HTTP_COOKIE"))
+                        => parse-cookie-string)
+                       (else '()))))
+    (append
+     (fold-right (lambda (elt params)
+                   (let* ((ss (string-split elt #\=))
+                          (p  (assoc (car ss) params))
+                          (v  (if (null? (cdr ss))
+                                  #t
+                                  (uri-decode-string (string-join (cdr ss) "=")
+                                                     :cgi-decode #t))))
+                     (if p
+                         (begin (set! (cdr p) (cons v (cdr p))) params)
+                         (cons (list (car ss) v) params))))
+                 '()
+                 (string-split input #\&))
+     (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
 
 (define (cgi-get-parameter key params . args)
-  (let ((default (get-keyword :default args #f))
-        (list?   (get-keyword :list args #f))
-        (convert (get-keyword :convert args (lambda (x) x))))
+  (let* ((list?   (get-keyword :list args #f))
+         (default (get-keyword :default args (if list? '() #f)))
+         (convert (get-keyword :convert args (lambda (x) x))))
     (cond ((assoc key params)
            => (lambda (p)
                 (if list?
                     (map convert (cdr p))
-                    (convert (string-join (cdr p) " ")))))
-          (else (if list? (list default) default)))))
+                    (convert (cadr p)))))
+          (else default))))
 
 (provide "w3c/cgi")
