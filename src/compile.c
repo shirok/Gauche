@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.108 2004-05-21 11:40:21 shirok Exp $
+ *  $Id: compile.c,v 1.109 2004-06-04 23:38:35 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1331,9 +1331,21 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     /* Emit test code. */
     if (casep) {
         ScmObj testcode = SCM_NIL, testtail;
+        ScmObj h = SCM_NIL, t = SCM_NIL, tp;
         int testlen = Scm_Length(test);
         if (testlen < 0)
             Scm_Error("badly formed clause in case form: %S", clause);
+        /* if this is a macro-expanded form, symbols in test may
+           contain identifiers.  we replace it. */
+        SCM_FOR_EACH(tp, test) {
+            if (SCM_IDENTIFIERP(SCM_CAR(tp))) {
+                SCM_APPEND1(h, t, SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(tp))->name));
+            } else {
+                SCM_APPEND1(h, t, SCM_CAR(tp));
+            }
+        }
+        test = h;
+        
         /* the value of the key is on top of the stack.  */
         SCM_APPEND1(testcode, testtail, SCM_VM_INSN(SCM_VM_DUP));
         SCM_APPEND1(testcode, testtail, test);

@@ -1,3 +1,9 @@
+2004-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c (compile_cond_int): fixed a bug that 'case' didn't
+	  work when it appeared in the macro-expanded form (Pointed out by
+	  Grzegorz Chrupa-B³a).$)B
+
 2004-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c: enable regexps to be compared by equal?.
