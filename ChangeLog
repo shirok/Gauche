@@ -1,3 +1,9 @@
+2003-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm : allow cgi-header to accept arbitrary keyword
+	  argument to add extra headers.  :location argument no longer
+	  suppresses set-cookie header.
+
 2003-07-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/html-lite.scm : generate "<tag />" for empty element.

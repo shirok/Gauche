@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use gauche.parameter)
+(use text.tree)
 (test-start "www.* modules")
 
 ;; need to pre-load charconv if test without installation
@@ -74,6 +75,30 @@
                                            ("CONTENT_LENGTH" 5))))
          (with-input-from-string qs2
            cgi-parse-parameters)))
+
+(test* "cgi-header" "Content-type: text/html\n\n"
+       (tree->string (cgi-header)))
+
+(test* "cgi-header" "Location: http://foo.bar/\n\n"
+       (tree->string (cgi-header :location "http://foo.bar/")))
+
+(test* "cgi-header" "Content-type: hoge\nLocation: http://foo.bar/\n\n"
+       (tree->string
+        (cgi-header :location "http://foo.bar/" :content-type "hoge")))
+
+(test* "cgi-header" "Content-type: text/plain; charset=utf-8\n\n"
+       (tree->string
+        (cgi-header :content-type "text/plain; charset=utf-8")))
+
+(test* "cgi-header"
+       "Content-type: text/html\nSet-cookie: hoge\nSet-cookie: poge\n\n"
+       (tree->string
+        (cgi-header :cookies '("hoge" "poge"))))
+
+(test* "cgi-header"
+       "Content-type: text/html\nSet-cookie: hoge\nSet-cookie: poge\nx-foo: foo\n\n"
+       (tree->string
+        (cgi-header :x-foo "foo" :cookies '("hoge" "poge"))))
 
 (test* "cgi-main" "Content-type: text/plain\n\na=foo bar"
        (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "GET")

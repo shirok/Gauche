@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.11 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: cgi.scm,v 1.12 2003-07-05 20:40:49 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -152,20 +152,31 @@
           (else default))))
 
 ;;----------------------------------------------------------------
-;; API: cgi-header &keyword content-type location cookies
+;; API: cgi-header &keyword content-type cookies location &allow-other-keys
 ;;
 (define (cgi-header . args)
-  (let ((content-type (get-keyword :content-type args "text/html"))
-        (location     (get-keyword :location args #f))
-        (cookies      (get-keyword :cookies args '())))
-    (if location
-        (list "Location: " (x->string location) "\n\n")
-        (list "Content-type: " (x->string content-type) "\n"
-              (map (lambda (cookie)
-                     (list "Set-cookie: " cookie "\n"))
-                   cookies)
-              "\n"))))
-
+  (let-keywords* args ((content-type #f)
+                       (location     #f)
+                       (cookies      '()))
+    (let ((ct (or content-type
+                  (and (not location) "text/html")))
+          (r '()))
+      (when ct       (push! r #`"Content-type: ,ct\n"))
+      (when location (push! r #`"Location: ,location\n"))
+      (for-each (lambda (cookie)
+                  (push! r #`"Set-cookie: ,cookie\n"))
+                cookies)
+      (let loop ((args args))
+        (cond ((null? args))
+              ((null? (cdr args)))
+              ((memv (car args) '(:content-type :location :cookies))
+               (loop (cddr args)))
+              (else
+               (push! r #`",(car args): ,(cadr args)\n")
+               (loop (cddr args)))))
+      (push! r "\n")
+      (reverse r))))
+      
 ;;----------------------------------------------------------------
 ;; API: cgi-main proc &keyword on-error merge-cookies
 ;;
