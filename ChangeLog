@@ -1,5 +1,13 @@
 2002-11-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.c, src/vm.c : dropped TAILBIND instruction, for it
+	  doesn't work when the constructing argument frame is moved
+	  to the heap by call/cc.  I can't come up a nice way to fix that
+	  without performance penalty.  Instead, the do form is expanded
+	  into letrec form in the compiler.  And believe it or not, the
+	  performance is actually better.
+	  The compiler is also modified to keep hygienity on some
+	  compiler-inserted symbols.
 	* src/regexp.c (re_exec_rec): fixed a bug in matching multibyte
 	  char against RE_NSET1.  (Thanks to Alex Shinn for reporting this).
 

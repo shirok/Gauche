@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.16 2002-05-12 07:44:13 shirok Exp $
+;; $Id: dynwind.scm,v 1.17 2002-11-29 04:30:23 shirok Exp $
 
 (use gauche.test)
 
@@ -46,6 +46,16 @@
     
 (test "call/cc (inline)" '((1 2 3 4 5 6 7 8) (1 2 3 4 -1 6 7 8))
       callcc-test2)
+
+;; continuation created during do frame preparation.
+;; the TAILBIND instruction failed this test.
+
+(test "call/cc (do)" 6
+      (lambda ()
+        (do ((x 0 (+ x 1))
+             (y 0 (call/cc (lambda (c) c))))
+            ((> x 5) x)
+          #f)))
 
 ;;------------------------------------------------------------------------
 ;; Test for continuation thrown over C stack boundary

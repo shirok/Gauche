@@ -7,7 +7,7 @@
 (test-start "primitive syntax")
 
 ;;----------------------------------------------------------------
-(test-section "contitionals")
+(test-section "conditionals")
 
 (test "if" 5 (lambda ()  (if #f 2 5)))
 (test "if" 2 (lambda ()  (if (not #f) 2 5)))
@@ -271,6 +271,31 @@
 
 (test "do (empty env)" 1
       (lambda () (let ((a 0)) (do () ((positive? a) a) (set! a (+ a 1))))))
+
+;;----------------------------------------------------------------
+(test-section "hygienity")
+
+(test "hygienity (named let)" 4
+      (lambda ()
+        (let ((lambda list))
+          (let loop ((x 0))
+            (if (> x 3) x (loop (+ x 1)))))))
+
+(test "hygienity (internal defines)" 4
+      (lambda ()
+        (let ((lambda list))
+          (define (x) 4)
+          (x))))
+
+(test "hygienity (do)" 4
+      (lambda ()
+        (let ((lambda #f)
+              (begin  #f)
+              (if     #f)
+              (letrec #f))
+          (do ((x 0 (+ x 1)))
+              ((> x 3) x)
+            #f))))
 
 (test-end)
 

@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.7 2001-12-21 07:04:52 shirok Exp $
+;;  $Id: error.scm,v 1.8 2002-11-29 04:30:23 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -477,5 +477,28 @@
                     (lambda () (push! x 'g))))))
               (lambda () (push! x 'h)))))
           (reverse x))))
+
+;;----------------------------------------------------------------
+(test-section "interaction with empty environment frame")
+
+(test "empty do" 'ok
+      (lambda ()
+        (let ((x 0))
+          (do () ((> x 0) 'ok)
+            (with-error-handler
+                (lambda (e) (inc! x))
+              (lambda () (car x)))))))
+
+
+(test "empty let" 'ok
+      (lambda ()
+        (let ((x 0))
+          (let loop ()
+            (with-error-handler
+                (lambda (e) (inc! x) (loop))
+              (lambda ()
+                (if (> x 2)
+                    'ok
+                    (car x))))))))
 
 (test-end)
