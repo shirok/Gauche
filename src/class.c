@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.12 2001-03-16 10:54:17 shiro Exp $
+ *  $Id: class.c,v 1.13 2001-03-17 08:23:20 shiro Exp $
  */
 
 #include "gauche.h"
@@ -43,11 +43,12 @@ SCM_DEFCLASS(Scm_UnknownClass, "<unknown>", NULL, SCM_CLASS_DEFAULT_CPL);
 /* Intercessory classes */
 SCM_DEFCLASS(Scm_CollectionClass, "<collection>", NULL, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
-SCM_DEFCLASS(Scm_ObjectClass, "<object>", NULL, SCM_CLASS_OBJECT_CPL);
+SCM_DEFCLASS(Scm_ObjectClass, "<object>", NULL, SCM_CLASS_DEFAULT_CPL);
 
-/* Class metaobject needs customized initialization, which is done
-   in Scm__InitClass(). */
+/* Those basic metaobjects will be initialized further in Scm__InitClass */
 SCM_DEFCLASS(Scm_ClassClass, "<class>", class_print, SCM_CLASS_OBJECT_CPL);
+SCM_DEFCLASS(Scm_GenericClass, "<generic>", NULL,  SCM_CLASS_OBJECT_CPL);
+SCM_DEFCLASS(Scm_MethodClass, "<method>", NULL, SCM_CLASS_OBJECT_CPL);
 
 /* Internally used classes */
 SCM_DEFCLASS(Scm_ClassAccessorClass, "<class-accessor>", NULL,
@@ -161,7 +162,7 @@ static ScmObj key_instance;
  */
 
 /* Allocate class structure.  klass is a metaclass. */
-ScmObj class_allocate(ScmClass *klass, int nslots)
+static ScmObj class_allocate(ScmClass *klass, int nslots)
 {
     ScmClass *instance;
     int i;
@@ -315,16 +316,15 @@ static void class_slots_set(ScmClass *klass, ScmObj val)
     klass->slots = val;
 }
 
-ScmObj Scm_ClassAccessorTable(ScmClass *klass)
+ScmObj Scm_ClassAccessors(ScmClass *klass)
 {
-    return klass->accessorTable;
+    return klass->accessors;
 }
 
-static void class_accessor_table_set(ScmClass *klass, ScmObj val)
+static void class_accessors_set(ScmClass *klass, ScmObj val)
 {
-    if (!SCM_FALSEP(val) && !SCM_HASHTABLEP(val))
-        Scm_Error("only hashtable or #f allowed: %S", val);
-    klass->accessorTable = val;
+    /* TODO: check argument vailidity */
+    klass->accessors = val;
 }
 
 ScmObj Scm_ClassDirectSubclasses(ScmClass *klass)
@@ -338,15 +338,15 @@ static void class_direct_subclasses_set(ScmClass *klass, ScmObj val)
     klass->directSubclasses = val;
 }
 
-static ScmObj class_numfields(ScmClass *klass)
+static ScmObj class_numislots(ScmClass *klass)
 {
-    klass->numInstanceSlots;
+    Scm_MakeInteger(klass->numInstanceSlots);
 }
 
-static void class_numfields_set(ScmClass *klass, ScmObj snf)
+static void class_numislots_set(ScmClass *klass, ScmObj snf)
 {
     int nf;
-    if (!SCM_INTP(nf) || (nf = SCM_INT_VALUE(nf) < 0)) {
+    if (!SCM_INTP(snf) || (nf = SCM_INT_VALUE(snf) < 0)) {
         Scm_Error("invalid argument: %S", snf);
     }
     klass->numInstanceSlots = nf;
@@ -419,21 +419,18 @@ ScmObj Scm_AllocateInstance(ScmObj klass, ScmObj initargs)
 ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmObj atab = klass->accessorTable;
-    if (SCM_HASHTABLEP(atab)) {
-        ScmHashEntry *e = Scm_HashTableGet(SCM_HASHTABLE(atab), slot);
-        if (e) {
-            ScmObj acc = e->value;
-            if (SCM_XTYPEP(acc, SCM_CLASS_CLASS_ACCESSOR)) {
-                ScmClassAccessor *ca = SCM_CLASS_ACCESSOR(acc);
-                if (ca->getter) {
-                    return ca->getter(obj);
-                } else {
-                    return SCM_FALSE; /* should signal error? */
-                }
+    ScmObj p = Scm_Assq(slot, klass->accessors);
+    if (SCM_PAIRP(p)) {
+        ScmObj acc = SCM_CDR(p);
+        if (SCM_XTYPEP(acc, SCM_CLASS_CLASS_ACCESSOR)) {
+            ScmClassAccessor *ca = SCM_CLASS_ACCESSOR(acc);
+            if (ca->getter) {
+                return ca->getter(obj);
+            } else {
+                return SCM_FALSE; /* should signal error? */
             }
-            Scm_Error("slot-ref: not implemented yet.");
         }
+        Scm_Error("slot-ref: not implemented yet.");
     }
 #ifdef NOT_IMPLEMENTED_YET
     return Scm_ApplyGeneric(SCM_GF_SLOT_MISSING,
@@ -447,22 +444,19 @@ ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot)
 void Scm_SlotSet(ScmObj obj, ScmObj slot, ScmObj val)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmObj atab = klass->accessorTable;
-    if (SCM_HASHTABLEP(atab)) {
-        ScmHashEntry *e = Scm_HashTableGet(SCM_HASHTABLE(atab), slot);
-        if (e) {
-            ScmObj acc = e->value;
-            if (SCM_XTYPEP(acc, SCM_CLASS_CLASS_ACCESSOR)) {
-                ScmClassAccessor *ca = SCM_CLASS_ACCESSOR(acc);
-                if (ca->setter) {
-                    ca->setter(obj, val);
-                } else {
-                    Scm_Error("slot %S of class %S is read-only",
-                              slot, SCM_OBJ(klass));
-                }
+    ScmObj p = Scm_Assq(slot, klass->accessors);
+    if (SCM_PAIRP(p)) {
+        ScmObj acc = SCM_CDR(p);
+        if (SCM_XTYPEP(acc, SCM_CLASS_CLASS_ACCESSOR)) {
+            ScmClassAccessor *ca = SCM_CLASS_ACCESSOR(acc);
+            if (ca->setter) {
+                ca->setter(obj, val);
             } else {
-                Scm_Error("slot-set!: not implemented yet.");
+                Scm_Error("slot %S of class %S is read-only",
+                          slot, SCM_OBJ(klass));
             }
+        } else {
+            Scm_Error("slot-set!: not implemented yet.");
         }
         return;
     }
@@ -487,10 +481,86 @@ ScmObj Scm_GetSlotAllocation(ScmObj slot)
  * Generic function
  */
 
+static ScmObj generic_allocate(ScmClass *klass, int nslots)
+{
+    ScmGeneric *instance;
+    SCM_ASSERT(nslots >= 0);
+    instance = SCM_NEW2(ScmGeneric*,
+                        sizeof(ScmGeneric) + sizeof(ScmObj)*nslots);
+    SCM_SET_CLASS(instance, klass);
+    instance->name = SCM_FALSE;
+    instance->methods = SCM_NIL;
+    /* TODO: initialize extended slots */
+    return SCM_OBJ(instance);
+}
+
+static ScmObj generic_name(ScmGeneric *gf)
+{
+    return gf->name;
+}
+
+static void generic_name_set(ScmGeneric *gf, ScmObj val)
+{
+    gf->name = val;
+}
+
+static ScmObj generic_methods(ScmGeneric *gf)
+{
+    return gf->methods;
+}
+
+static void generic_methods_set(ScmGeneric *gf, ScmObj val)
+{
+    gf->methods = val;
+}
 
 /*=====================================================================
  * Method
  */
+
+static ScmObj method_allocate(ScmClass *klass, int nslots)
+{
+    ScmMethod *instance;
+    SCM_ASSERT(nslots >= 0);
+    instance = SCM_NEW2(ScmMethod*,
+                        sizeof(ScmMethod) + sizeof(ScmObj)*nslots);
+    SCM_SET_CLASS(instance, klass);
+    instance->generic = SCM_NIL;
+    instance->specializers = SCM_NIL;
+    instance->body = SCM_NIL;
+    /* TODO: initialize extended slots */
+    return SCM_OBJ(instance);
+}
+
+static ScmObj method_generic(ScmMethod *m)
+{
+    return m->generic;
+}
+
+static void method_generic_set(ScmMethod *m, ScmObj val)
+{
+    m->generic = val;
+}
+
+static ScmObj method_specializers(ScmMethod *m)
+{
+    return m->specializers;
+}
+
+static void method_specializers_set(ScmMethod *m, ScmObj val)
+{
+    m->specializers = val;
+}
+
+static ScmObj method_body(ScmMethod *m)
+{
+    return m->body;
+}
+
+static void method_body_set(ScmMethod *m, ScmObj val)
+{
+    m->body = val;
+}
 
 
 /*=====================================================================
@@ -507,8 +577,8 @@ static ScmClassStaticSlotSpec class_slots[] = {
                         Scm_ClassCPL, class_cpl_set),
     SCM_CLASS_SLOT_SPEC("direct-supers", &Scm_ClassClass,
                         Scm_ClassDirectSupers, class_direct_supers_set),
-    SCM_CLASS_SLOT_SPEC("accessor-table", &Scm_ClassClass,
-                        Scm_ClassAccessorTable, class_accessor_table_set),
+    SCM_CLASS_SLOT_SPEC("accessors", &Scm_ClassClass,
+                        Scm_ClassAccessors, class_accessors_set),
     SCM_CLASS_SLOT_SPEC("slots", &Scm_ClassClass,
                         Scm_ClassSlots, class_slots_set),
     SCM_CLASS_SLOT_SPEC("direct-slots", &Scm_ClassClass,
@@ -516,28 +586,48 @@ static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("direct-subclasses", &Scm_ClassClass,
                         Scm_ClassDirectSubclasses,
                         class_direct_subclasses_set),
-    SCM_CLASS_SLOT_SPEC("num-fields", &Scm_ClassClass,
-                        class_numfields, class_numfields_set),
+    SCM_CLASS_SLOT_SPEC("num-instance-slos", &Scm_ClassClass,
+                        class_numislots, class_numislots_set),
     SCM_CLASS_SLOT_SPEC(NULL, NULL, NULL, NULL)
 };
 
-/* booting class metaobject */
-void bootstrap_class(ScmClass *k)
-{
-    ScmHashTable *atab;
-    ScmObj slots = SCM_NIL, t;
-    ScmClassStaticSlotSpec *specs = class_slots;
+static ScmClassStaticSlotSpec generic_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name", &Scm_GenericClass,
+                        generic_name, generic_name_set),
+    SCM_CLASS_SLOT_SPEC("methods", &Scm_GenericClass,
+                        generic_methods, generic_methods_set),
+    { NULL }
+};
 
-    k->allocate = class_allocate;
-    k->accessorTable = Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8);
-    atab = SCM_HASHTABLE(k->accessorTable);
+static ScmClassStaticSlotSpec method_slots[] = {
+    SCM_CLASS_SLOT_SPEC("generic", &Scm_MethodClass,
+                        method_generic, method_generic_set),
+    SCM_CLASS_SLOT_SPEC("specializers", &Scm_MethodClass,
+                        method_specializers, method_specializers_set),
+    SCM_CLASS_SLOT_SPEC("body", &Scm_MethodClass,
+                        method_body, method_body_set),
+    { NULL }
+};
+
+/* booting class metaobject */
+void bootstrap_class(ScmClass *k,
+                     ScmClassStaticSlotSpec *specs,
+                     ScmObj (*allocate)(ScmClass*, int))
+{
+    ScmObj slots = SCM_NIL, t;
+    ScmObj acc = SCM_NIL;
+
+    k->allocate = allocate;
     for (;specs->name; specs++) {
         ScmObj snam = SCM_INTERN(specs->name);
-        Scm_HashTablePut(atab, snam, SCM_OBJ(&specs->accessor));
+        acc = Scm_Acons(snam, SCM_OBJ(&specs->accessor), acc);
         SCM_APPEND1(slots, t, snam);
     }
+    k->accessors = acc;
     k->directSlots = k->slots = slots;
 }
+
+
 
 void Scm__InitClass(void)
 {
@@ -549,14 +639,18 @@ void Scm__InitClass(void)
 
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
-    bootstrap_class(&Scm_ClassClass);
-    
+    bootstrap_class(&Scm_ClassClass, class_slots, class_allocate);
+    bootstrap_class(&Scm_GenericClass, generic_slots, generic_allocate);
+    bootstrap_class(&Scm_MethodClass, method_slots, method_allocate);
     
     SCM_DEFINE(mod, "<top>",      SCM_OBJ(SCM_CLASS_TOP));
     SCM_DEFINE(mod, "<boolean>",  SCM_OBJ(SCM_CLASS_BOOL));
     SCM_DEFINE(mod, "<char>",     SCM_OBJ(SCM_CLASS_CHAR));
     SCM_DEFINE(mod, "<unknown>",  SCM_OBJ(SCM_CLASS_UNKNOWN));
+    SCM_DEFINE(mod, "<object>",   SCM_OBJ(SCM_CLASS_OBJECT));
     SCM_DEFINE(mod, "<class>",    SCM_OBJ(SCM_CLASS_CLASS));
+    SCM_DEFINE(mod, "<generic>",  SCM_OBJ(SCM_CLASS_GENERIC));
+    SCM_DEFINE(mod, "<method>",   SCM_OBJ(SCM_CLASS_METHOD));
     SCM_DEFINE(mod, "<collection>", SCM_OBJ(SCM_CLASS_COLLECTION));
     SCM_DEFINE(mod, "<sequence>", SCM_OBJ(SCM_CLASS_SEQUENCE));
     SCM_DEFINE(mod, "<string>",   SCM_OBJ(SCM_CLASS_STRING));

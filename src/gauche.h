@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.79 2001-03-16 10:54:17 shiro Exp $
+ *  $Id: gauche.h,v 1.80 2001-03-17 08:23:20 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -303,7 +303,7 @@ struct ScmClassRec {
     ScmObj sname;               /* scheme name */
     ScmObj directSupers;        /* list of classes */
     ScmObj cpl;                 /* list of classes */
-    ScmObj accessorTable;       /* hashtable or #f */
+    ScmObj accessors;
     ScmObj directSlots;         /* list of slot names */
     ScmObj slots;               /* alist of slot-name & slot-definition */
     ScmObj directSubclasses;
@@ -330,7 +330,8 @@ extern ScmObj Scm_ClassName(ScmClass *klass);
 extern ScmObj Scm_ClassCPL(ScmClass *klass);
 extern ScmObj Scm_ClassDirectSupers(ScmClass *klass);
 extern ScmObj Scm_ClassDirectSlots(ScmClass *klass);
-extern ScmObj Scm_ClassEffectiveSlots(ScmClass *klass);
+extern ScmObj Scm_ClassSlots(ScmClass *klass);
+extern ScmObj Scm_ClassAccessors(ScmClass *klass);
 extern int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 extern int Scm_TypeP(ScmObj obj, ScmClass *type);
 
@@ -383,7 +384,7 @@ extern ScmClass *Scm_ObjectCPL[];
         SCM_FALSE,              /* scheme name */       \
         SCM_FALSE,              /* directsupers */      \
         SCM_FALSE,              /* cpl */               \
-        SCM_FALSE,              /* accessortable */     \
+        SCM_NIL,                /* accessors */         \
         SCM_NIL,                /* directslots */       \
         SCM_NIL,                /* slots */             \
         SCM_NIL,                /* directsubclasses */  \
@@ -597,6 +598,7 @@ extern ScmObj  Scm_StringAppend(ScmObj strs);
 extern ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim);
 
 extern ScmObj  Scm_StringSplitByChar(ScmString *str, ScmChar ch);
+extern ScmObj  Scm_StringContains(ScmString *s1, ScmString *s2);
 
 extern ScmObj  Scm_StringP(ScmObj obj);
 extern ScmObj  Scm_StringToList(ScmString *str);
@@ -1132,6 +1134,7 @@ extern ScmHashEntry *Scm_HashTablePut(ScmHashTable *hash,
 extern ScmHashEntry *Scm_HashTableDelete(ScmHashTable *hash, ScmObj key);
 extern ScmObj Scm_HashTableKeys(ScmHashTable *table);
 extern ScmObj Scm_HashTableValues(ScmHashTable *table);
+extern ScmObj Scm_HashTableStat(ScmHashTable *table);
 
 extern void Scm_HashIterInit(ScmHashTable *hash, ScmHashIter *iter);
 extern ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter);
@@ -1196,7 +1199,7 @@ struct ScmSymbolRec {
 
 extern ScmObj Scm_Intern(ScmString *name);
 #define SCM_INTERN(cstr)       Scm_Intern(SCM_STRING(SCM_MAKE_STR(cstr)))
-
+extern ScmObj Scm_Apropos(ScmString *substr);
 extern ScmObj Scm_Gensym(ScmString *prefix);
 
 extern ScmClass Scm_SymbolClass;
