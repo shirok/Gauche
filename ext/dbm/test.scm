@@ -176,7 +176,7 @@
 
 ;; conditionally test
 (define-macro (test-if-exists file module class)
-  (when (file-exists? (string-append file ".la"))
+  (when (file-exists? (string-append file "." (gauche-dso-suffix)))
     `(begin ,(if (member "." *load-path*) ;; trick to allow in-place test
                `(require ,file)
                `(require ,#`"dbm/,file"))
