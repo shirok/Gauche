@@ -71,7 +71,136 @@
       (lambda () (call-with-output-string
                    (lambda (out)
                      ((make-csv-writer #\,) out '())))))
-      
+
+;;-------------------------------------------------------------------
+(test-section "parse")
+(use text.parse)
+
+;; a part of text data is taken from Oleg's vinput-parse.scm
+;;  http://pobox.com/~oleg/ftp/Scheme/parsing.html
+
+(define (test-find-string input pattern . max-chars)
+  (call-with-input-string input
+    (lambda (p)
+      (let* ((n (apply find-string-from-port? pattern p max-chars))
+             (c (read-char p)))
+        (list n (if (eof-object? c) 'eof c))))))
+
+(test "find-string-from-port?" '(7 #\d)
+      (lambda () (test-find-string "bacacabd" "acab")))
+(test "find-string-from-port?" '(7 #\d)
+      (lambda () (test-find-string "bacacabd" "acab" 100)))
+(test "find-string-from-port?" '(#f eof)
+      (lambda () (test-find-string "bacacabd" "acad")))
+(test "find-string-from-port?" '(#f eof)
+      (lambda () (test-find-string "bacacabd" "acad" 100)))
+(test "find-string-from-port?" '(#f #\a)
+      (lambda () (test-find-string "bacacabd" "bd" 5)))
+(test "find-string-from-port?" '(8 eof)
+      (lambda () (test-find-string "bacacabd" "bd" 9)))
+(test "find-string-from-port?" '(8 eof)
+      (lambda () (test-find-string "bacacabd" "bd")))
+(test "find-string-from-port?" '(8 eof)
+      (lambda () (test-find-string "bacacabd" "bd" 8)))
+(test "find-string-from-port?" '(#f eof)
+      (lambda () (test-find-string "bacacabd" "be" 20)))
+
+
+(define (test-parseutil proc input . args)
+  (with-error-handler
+   (lambda (e) 'error)
+   (lambda ()
+     (call-with-input-string input
+       (lambda (p)
+         (let* ((c (apply proc (append args (list p))))
+                (n (read-char p)))
+           (list (if (eof-object? c) 'eof c)
+                 (if (eof-object? n) 'eof n))))))))
+
+(define (test-assert-curr-char str clist)
+  (test-parseutil assert-curr-char str clist "zz"))
+
+(test "assert-curr-char" '(#\space #\a)
+      (lambda () (test-assert-curr-char " abcd" '(#\a #\space))))
+(test "assert-curr-char" '(#\space #\a)
+      (lambda () (test-assert-curr-char " abcd" #[a ])))
+(test "assert-curr-char" '(#\space #\a)
+      (lambda () (test-assert-curr-char " abcd" #[a\s])))
+(test "assert-curr-char" '(#\space #\a)
+      (lambda () (test-assert-curr-char " abcd" '(#\a #[\s]))))
+(test "assert-curr-char" '(#\a #\space)
+      (lambda () (test-assert-curr-char "a bcd" '(#\a #\space))))
+(test "assert-curr-char" '(#\a #\space)
+      (lambda () (test-assert-curr-char "a bcd" #[a ])))
+(test "assert-curr-char" 'error
+      (lambda () (test-assert-curr-char "bcd" #[a ])))
+(test "assert-curr-char" 'error
+      (lambda () (test-assert-curr-char "" #[a ])))
+(test "assert-curr-char" '(eof eof)
+      (lambda () (test-assert-curr-char "" '(#\a #\space *eof*))))
+
+(test "skip-until number" '(#f #\a)
+      (lambda () (test-parseutil skip-until " abcd" 1)))
+(test "skip-until number" 'error
+      (lambda () (test-parseutil skip-until " abcd" 10)))
+(test "skip-until number" '(#f eof)
+      (lambda () (test-parseutil skip-until " abcd" 5)))
+(test "skip-until cset" '(#\space #\a)
+      (lambda () (test-parseutil skip-until " abcd" '(#\a #\space))))
+(test "skip-until cset" '(#\space #\a)
+      (lambda () (test-parseutil skip-until " abcd" #[a ])))
+(test "skip-until cset" '(#\c #\space)
+      (lambda () (test-parseutil skip-until "xxxc bcd" #[abc ])))
+(test "skip-until cset" '(#\c eof)
+      (lambda () (test-parseutil skip-until "xxxc" #[abc ])))
+(test "skip-until cset" 'error
+      (lambda () (test-parseutil skip-until "xxxc" #[def])))
+(test "skip-until cset" '(eof eof)
+      (lambda () (test-parseutil skip-until "xxxc" '(#[def] *eof*))))
+(test "skip-until cset" '(#\c eof)
+      (lambda () (test-parseutil skip-until "xxxc" '(#[c-f] *eof*))))
+(test "skip-while" '(#\d #\d)
+      (lambda () (test-parseutil skip-while "xxxd" '(#\a #\space #\x))))
+(test "skip-while" '(#\d #\d)
+      (lambda () (test-parseutil skip-while "xxxd" #[ax ])))
+(test "skip-while" '(#\y #\y)
+      (lambda () (test-parseutil skip-while "yxxxd" #[ax ])))
+(test "skip-while" '(eof eof)
+      (lambda () (test-parseutil skip-while "xxxa" #[ax ])))
+
+(test "next-token" '("" #\d)
+      (lambda () (test-parseutil next-token "xxxd" #[ax ] #[d] "next token")))
+(test "next-token" '("bc" #\d)
+      (lambda () (test-parseutil next-token "xxxabcd" #[ax ] #[d] "next token")))
+(test "next-token" '("aeio" #\tab)
+      (lambda () (test-parseutil next-token "   aeio\tnjj" #[\s] #[\s] "next token")))
+(test "next-token" 'error
+      (lambda () (test-parseutil next-token "   aeio" #[\s] #[\s] "next token")))
+(test "next-token" '("aeio" eof)
+      (lambda () (test-parseutil next-token "   aeio" #[\s] '(#[\s] *eof*) "next token")))
+(test "next-token-of" '("" #\x)
+      (lambda () (test-parseutil next-token-of "xxxd" #[a-c])))
+(test "next-token-of" '("" #\x)
+      (lambda () (test-parseutil next-token-of "xxxd" #[a-d])))
+(test "next-token-of" '("xxx" #\d)
+      (lambda () (test-parseutil next-token-of "xxxd" #[ax])))
+(test "next-token-of" '("anmb" #\-)
+      (lambda () (test-parseutil next-token-of "anmb-runge" #[\w])))
+(test "next-token-of" '("rnge!rg0#$@" #\space)
+      (lambda () (test-parseutil next-token-of "rnge!rg0#$@ bag" #[\S])))
+
+(test "read-string" '("aaaa" #\a)
+      (lambda () (test-parseutil read-string "aaaaa" 4)))
+(test "read-string" '("aaaaa" eof)
+      (lambda () (test-parseutil read-string "aaaaa" 5)))
+(test "read-string" '("aaaaa" eof)
+      (lambda () (test-parseutil read-string "aaaaa" 6)))
+(test "read-string" '("" #\a)
+      (lambda () (test-parseutil read-string "aaaaa" 0)))
+(test "read-string" '("" #\a)
+      (lambda () (test-parseutil read-string "aaaaa" -1)))
+(test "read-string" '("" eof)
+      (lambda () (test-parseutil read-string "" 7)))
 
 ;;-------------------------------------------------------------------
 (test-section "tr")
