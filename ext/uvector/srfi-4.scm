@@ -12,22 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-4.scm,v 1.4 2002-06-27 10:41:40 shirok Exp $
+;;;  $Id: srfi-4.scm,v 1.5 2002-08-24 02:12:49 shirok Exp $
 ;;;
 
 ;; Procedures of SRFI-4 are now defined in gauche.uvector.
 
 (define-module srfi-4
-  (use gauche.uvector)
-
-  ;; hack until i implement a proper module inheritance ...
-  (define-macro (extend module)
-    (cons 'begin
-          (hash-table-map (module-table (find-module module))
-                          (lambda (k v)
-                            `(define ,k (with-module ,module ,k))))))
+  (require "gauche/uvector")
   (extend gauche.uvector)
-  (export-all)
   )
 
 (provide "srfi-4")
