@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: convlib.stub,v 1.8 2001-06-07 19:58:02 shirok Exp $
+;;; $Id: convlib.stub,v 1.9 2002-05-26 01:06:13 shirok Exp $
 ;;;
 
 "#include \"charconv.h\""
@@ -23,15 +23,17 @@
   cto   = Scm_GetCESName(to, \"to-code\");
   SCM_RETURN(SCM_MAKE_BOOL(Scm_ConversionSupportedP(cfrom, cto)));")
 
+;; NB: :handler interface is experimental.  Do not use it.
 (define-cproc open-input-conversion-port (source from-code
                                           &keyword (to-code #f)
                                                    (buffer-size 0)
-                                                   (owner? #f))
+                                                   (owner? #f)
+                                                   (handler #f))
   (assert (input-port? source))
   (assert (small-integer? buffer-size))
   " const char *fc = Scm_GetCESName(from_code, \"from-code\");
   const char *tc = Scm_GetCESName(to_code, \"to-code\");
-  SCM_RETURN(Scm_MakeInputConversionPort(source, fc, tc,
+  SCM_RETURN(Scm_MakeInputConversionPort(source, fc, tc, handler,
                                          buffer_size, !SCM_FALSEP(ownerP)));")
 
 (define-cproc open-output-conversion-port (sink to-code

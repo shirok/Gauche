@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.26 2002-05-05 05:00:50 shirok Exp $
+ *  $Id: charconv.c,v 1.27 2002-05-26 01:06:13 shirok Exp $
  */
 
 #include <string.h>
@@ -29,6 +29,8 @@
 
 #define DEFAULT_CONVERSION_BUFFER_SIZE 1024
 
+/* NB: ilseqHandler implementation is experimental.  Maybe it'll removed
+   or replaced to something else later. */
 typedef struct conv_info_rec {
     iconv_t handle;             /* iconv handle */
     ScmPort *remote;            /* source or drain port */
@@ -36,6 +38,9 @@ typedef struct conv_info_rec {
     int bufsiz;                 /* size of conversion buffer */
     char *buf;                  /* internal conversion buffer */
     char *ptr;                  /* current ptr in the internal conv buf */
+    const char *fromCode;       /* convert from ... */
+    const char *toCode;         /* conver to ... */
+    ScmObj ilseqHandler;        /* handler for illegal byte sequence */
 } conv_info;
 
 typedef struct conv_guess_rec {
@@ -153,6 +158,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     /* Conversion. */
     inroom = insize;
     outroom = SCM_PORT_BUFFER_ROOM(port);
+  retry:
 #ifdef DEBUG
     fprintf(stderr, "=> in(%p)%d out(%p)%d\n", inbuf, insize, outbuf, outroom);
 #endif
@@ -161,26 +167,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
             result, inbuf, inroom, outbuf, outroom);
 #endif
-    if (result == (size_t)-1) {
-        if (errno == EINVAL || errno == E2BIG) {
-            /* Conversion stopped due to an incomplete character at the
-               end of the input buffer, or the output buffer is full.
-               We shift the unconverted bytes to the beginning of input
-               buffer. */
-            memmove(info->buf, info->buf+insize-inroom, inroom);
-            info->ptr = info->buf + inroom;
-            return info->bufsiz - outroom;
-        } else {
-            /* it's likely that input contains invalid sequence.
-               TODO: we should handle this case gracefully. */
-            int cnt = inroom >= 6 ? 6 : inroom;
-            ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
-                                      SCM_MAKSTR_COPYING|SCM_MAKSTR_INCOMPLETE);
-            Scm_Error("invalid character sequence in the input stream: %S ...",
-                      s);
-            return 0;           /* dummy */
-        }
-    } else {
+    if (result != (size_t)-1) {
         /* Conversion is done completely. */
         /* NB: There are cases that some bytes are left in the input buffer
            even iconv returns positive value.  We need to shift those bytes. */
@@ -193,6 +180,46 @@ static int conv_input_filler(ScmPort *port, int mincnt)
             return info->bufsiz - outroom;
         }
     }
+
+    /* we've got an error. */
+    if (errno == EINVAL || errno == E2BIG) {
+        /* Conversion stopped due to an incomplete character at the
+           end of the input buffer, or the output buffer is full.
+           We shift the unconverted bytes to the beginning of input
+           buffer. */
+        memmove(info->buf, info->buf+insize-inroom, inroom);
+        info->ptr = info->buf + inroom;
+        return info->bufsiz - outroom;
+    }
+    
+    /* Now, it's likely that the input contains invalid sequence. */
+    if (!SCM_FALSEP(info->ilseqHandler)) {
+        ScmObj rest = Scm_MakeString(info->buf+insize-inroom,
+                                     inroom, inroom,
+                                     SCM_MAKSTR_COPYING|SCM_MAKSTR_INCOMPLETE);
+        ScmObj r = Scm_Apply(info->ilseqHandler,
+                             SCM_LIST4(SCM_MAKE_STR(info->fromCode),
+                                       SCM_MAKE_STR(info->toCode),
+                                       rest,
+                                       SCM_OBJ(info->remote)));
+        if (SCM_STRINGP(r)) {
+            if (SCM_STRING_SIZE(r) > info->bufsiz) {
+                Scm_Error("illegal sequence handler returns too long string: %S", r);
+            }
+            memcpy(info->buf, SCM_STRING_START(r), SCM_STRING_SIZE(r));
+            inroom = insize = SCM_STRING_SIZE(r);
+            goto retry;
+        }
+        /* If ilseqHandler returns non-string, fallback to the error routine */
+    }
+
+    {
+        int cnt = inroom >= 6 ? 6 : inroom;
+        ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
+                                  SCM_MAKSTR_COPYING|SCM_MAKSTR_INCOMPLETE);
+        Scm_Error("invalid character sequence in the input stream: %S ...", s);
+        return 0;           /* dummy */
+    }
 }
 
 static int conv_input_closer(ScmPort *p)
@@ -203,6 +230,7 @@ static int conv_input_closer(ScmPort *p)
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                    const char *fromCode,
                                    const char *toCode,
+                                   ScmObj handler,
                                    int bufsiz,
                                    int ownerp)
 {
@@ -251,6 +279,9 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     cinfo->remote = fromPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = bufsiz;
+    cinfo->fromCode = fromCode;
+    cinfo->toCode = toCode;
+    cinfo->ilseqHandler = handler;
     if (preread > 0) {
         cinfo->buf = inbuf;
         cinfo->ptr = inbuf + preread;
@@ -403,6 +434,9 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
     cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->ptr = cinfo->buf;
+    cinfo->fromCode = fromCode;
+    cinfo->toCode = toCode;
+    cinfo->ilseqHandler = SCM_FALSE;
     
     bufrec.size = cinfo->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
