@@ -1197,7 +1197,15 @@ via @code{class-of}, @code{is-a?}, @code{slot-ref},
 
 Updating an instance means that the class of the instance
 is changed (from the old class to the new class).
+By default, the slot values that are common in the original
+class and the new class are carried over, and the slots added
+by the new class are initialized according to the slot specification
+of the new class, and the slot values removed from the original class
+are discarded.
+You can customize this behavior by writing the @code{change-class} method.
 See @ref{Changing classes}, for the details.
+
+
 
 
 @node Class definition examples,  , Class redefinition, Class
@@ -1339,18 +1347,79 @@ In this section, we explain how to create and use an instance.
 @subsection Creating instance
 @c NODE インスタンスの作成
 
-@deffn {Generic Function} make class arg @dots{}
+Using class object, you can create an instance of the class
+by a generic function @code{make}.
+A specialized method for standard @code{<class>} is defined:
+
+@deffn {Generic Function} make
+@deffnx {Method} make (class <class>) arg @dots{}
+Creates an instance of @var{class} and returns it.
+@var{Arg} @dots{} is typically a keyword-value list
+to initialize the instance.
 @end deffn
 
-@deffn {Method} make (class <class>) arg @dots{}
+Conceptually, the default @code{make} method is defined
+as follows:
+
+@example
+(define-method make ((class <class>) . initargs)
+  (let ((obj (allocate-instance class initargs)))
+    (initialize obj initargs)
+    obj))
+@end example
+
+That is, first it allocates memory for @var{class}'s instance,
+then initialize it with the @var{initialize} method.
+
+@deffn {Generic Function} allocate-instance
+@deffnx {Method} allocate-instance (class <class>) initargs
+Returns a newly-allocated uninitialized instance of @var{class}.
 @end deffn
 
-@deffn {Method} make (class <method>)  arg @dots{}
-@deffnx {Method} make (class <generic>)  arg @dots{}
+@deffn {Generic Function} initialize
+@deffnx {Method} initialize (obj <object>) initargs
+The default initialize method for @code{<object>} works as follows:
+
+@itemize @bullet
+@item
+For each initializable slot of the class
+@itemize @bullet
+@item
+If (the slot has the :init-keyword slot option
+AND the keyword appears in @var{initargs}):
+Then the corresponding value is used to initialize the slot
+@item
+Else if the slot has :init-value slot option:
+Then the value given to the slot option is used to initialize the slot
+@item
+Else if the slot has :init-thunk slot option:
+Then the thunk is called, and the returned value is used to initialize
+the slot.
+@item
+Else: The slot is left unbound.
+@end itemize
+@end itemize
+
+Among the default slot allocation classes, only
+instance-allocated slots are initializable and are handled by
+the above sequence.  An user-defined allocation class can be
+configured either initializable or not initializable; see
+@ref{Metaobject protocol} for the details.
+
+If you specialize @var{initialize} method, make sure to call
+@code{next-method} so that the slots are properly initialized
+by the default sequence, before accessing any slot of the
+newly created instance.
 @end deffn
 
-@deffn {Method} initialize (class <class>) initargs
-@end deffn
+Typically you specialize @code{initialize} method for
+your class customize how the instance is initialized.
+
+It is not common to specialize @code{allocate-instance} method.
+However, knowing that how @code{make} works, you can specialize
+@code{make} itself to avoid allocation of instance in
+some circumstances (e.g. using pre-allocated instances).
+
 
 @node Accessing instance, Changing classes, Creating instance, Instance
 @subsection Accessing instance
@@ -1445,22 +1514,86 @@ It can be defined like the following code
 @end example
 @end defun
 
-@deffn {Method} slot-unbound (class <class>) obj slot
-@end deffn
-
-@deffn {Method} slot-missing (class <class>) obj slot &optional value
-@end deffn
-
-
 @defun class-slot-ref class slot-name
 @defunx class-slot-set! class slot-name obj
+@c EN
+When slot's @code{:allocation} option is either @code{:class}
+or @code{:each-subclass}, these procedures allow you to
+get/set the value of the slot without having an instance.
+@c JP
+スロットの@code{:allocation}オプションが@code{:class}もしくは
+@code{:each-subclass}である場合、これらの手続きを使って、
+インスタンス無しでそれらのスロットの値を取得/設定できます。
+@c COMMON
 @end defun
 
+@deffn {Generic Function} slot-unbound
+@deffnx {Method} slot-unbound (class <class>) obj slot
+This generic function is called when an unbound slot value is
+retrieved.  The return value of this generic function will be
+returned to the caller that tried to get the value.
+
+The default method just signals an error.
+@end deffn
+
+@deffn {Generic Function} slot-missing
+@deffnx {Method} slot-missing (class <class>) obj slot &optional value
+This generic function is called when a non-existent slot
+value is retrieved or set.  The return value of this generic
+function will be returned to the caller that tried to get the value.
+
+The default method just signals an error.
+@end deffn
+
+@deffn {Method} slot-ref-using-class (class <class>) (obj <object>) slot-name
+@deffnx {Method} slot-set-using-class! (class <class>) (obj <object>) slot-name value
+@deffnx {Method} slot-bound-using-class? (class <class>) (obj <object>) slot-name
+Generic function version of @code{slot-ref}, @code{slot-set!} and
+@code{slot-bound?}.   @var{Class} must be the class of @var{object}.
+
+Besides being generic, these functions are different from
+their procedural versions that they don't trigger class
+redefinition when @code{obj}'s class has been redefined
+(i.e. in which case, @var{class} should be the original class
+of @var{obj}).
+
+Note: Unlike CLOS, @code{slot-ref} etc. don't call the generic
+function version in it, so you can't customize the behavior
+of @code{slot-ref} by specializing @code{slot-ref-using-class}.
+So the primary puropose of those generic functions are to be
+used within @code{change-class} method; especially, @code{slot-ref} etc.
+can't be used during @var{obj}'s being redefined, since they
+trigger class redefinition again (see @ref{Changing classes} for details).
+@end deffn
 
 @node Changing classes,  , Accessing instance, Instance
 @subsection Changing classes
 @c NODE クラスの変更
 
+An unique feature of CLOS-family object system is that
+you can change classes of an existing instance.  The two
+classes doesn't need to be related; you can change a sewing
+machine into an umbrella, if you like.
+
+@deffn {Generic Function} change-class
+@deffnx {Method} change-class (obj <object>) (new-class <class>) &optional slots
+Changes an object @var{obj}'s class to @var{new-class}.
+The default method just calls @code{change-object-class} procedure.
+@end deffn
+
+@defun change-object-class obj orig-class new-class &optional slots
+@end defun
+
+Updating instance for a redefined class is also handled
+as class change.  If object's class has been
+redefined (see @ref{Class redefinition}) when the object
+is accessed, this generic function is called with the
+redefined class as @var{new-class}; that is, updating
+an instance is regarded as chaning object's class from
+the original one to the redefined one.
+
+By specializing @code{change-class}, you can customize the
+way an instance is updated for a redefined class.
 
 
 @c ----------------------------------------------------------------------
