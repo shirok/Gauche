@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.262 2002-09-03 20:03:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.263 2002-09-04 09:11:08 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3422,7 +3422,7 @@ to the same symbol, that yield different values.
 @c JP
 CommonLispのパッケージは名前からシンボルへのマッピングを行いますが、
 Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
-Gaucheのシンボルは「値」のスロット持っていません。
+Gaucheのシンボルは「値」のスロットを持っていません。
 モジュールによってシンボルに対応する束縛が見付けられ、値はそこに
 格納されています。
 モジュールが違えば同じシンボルは別々の束縛へとマップされ、違う値を
@@ -3489,9 +3489,9 @@ defined and exported bindings.
 @c JP
 また、モジュールは継承することもできます。
 既存のモジュールを継承したモジュールに新しい束縛を足してexportすることにより、
-既存のモジュールを拡張することができます。新しいモジュールからは、
+既存のモジュールを拡張することができます。新しいモジュールの内部からは、
 継承元のモジュールの束縛が(exportされていないものも含め)全て見えます。
-(新しいモジュールはデフォルトで@code{gauche}モジュールを継承しています。
+(新しく作られるモジュールはデフォルトで@code{gauche}モジュールを継承しています。
 新しいモジュールから@code{gauche}の組込み手続き等が使えるのはそのためです)。
 外からは、新しいモジュールには元のモジュールの全てのexportされた束縛と
 新たに追加されexportされた束縛が見えます。
@@ -3580,15 +3580,14 @@ Finally, ancestors of the current module are searched in order.
 まずカレントモジュールが探されます。次に、importしているモジュールが
 importの順番に並べられ、それぞれについてそのモジュールおよびそのモジュールの先祖
 (継承されているモジュール)が順に探されます。
-importは遷移的ではありません；importリストを再帰的に辿ることはしません。
+importは遷移的ではありません；importされたモジュールがimportしているモジュール…
+というふうに再帰的に辿ることはしません。
 最後に、カレントモジュールの先祖が順に探されます。
 @c COMMON
 
 @node Defining and selecting modules, Using modules, Module semantics, Modules
 @subsection Defining and selecting modules
 @c NODE モジュールの定義と選択
-
-A module can be created by the @code{define-module} special form.
 
 @defspec define-module name body @dots{}
 @c EN
