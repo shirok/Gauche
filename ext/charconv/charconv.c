@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.7 2001-06-04 03:59:57 shirok Exp $
+ *  $Id: charconv.c,v 1.8 2001-06-04 20:07:48 shirok Exp $
  */
 
 #include <errno.h>
@@ -79,15 +79,16 @@ static int conv_input_filler(char *buf, int len, void *data)
     /* Conversion. */
     inroom = insize;
     outroom = info->bufsiz;
+#ifdef DEBUG
     fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
             info->inbuf, info->inptr, insize,
             info->outbuf, info->outptr, outroom);
-
+#endif
     result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
-
+#ifdef DEBUG
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
            result, inbuf, inroom, outbuf, outroom);
-    
+#endif
     if (result == (size_t)-1) {
         if (errno == EINVAL || errno == E2BIG) {
             /* Conversion stopped due to an incomplete character at the
@@ -148,7 +149,109 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                 (void*)cinfo);
 }
 
-/* Initialization */
+/*------------------------------------------------------------
+ * Output conversion
+ *
+ *   Bufferd port -->outbuf--> flusher -->inbuf--> putz(remote)
+ */
+
+static int conv_output_flusher(char *buf, int len, void *data)
+{
+    conv_info *info = (conv_info*)data;
+    size_t outsize, inroom, outroom, result;
+    int nread;
+    const char *inbuf;
+    char *outbuf;
+
+    inbuf = info->inbuf;
+    outbuf = info->outptr;
+    for (;;) {
+        /* Conversion. */
+        outsize = info->bufsiz - (info->outptr - info->outbuf);
+        inroom = len;
+        outroom = outsize;
+#ifdef DEBUG
+        fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
+                info->inbuf, info->inptr, insize,
+                info->outbuf, info->outptr, outroom);
+#endif
+        result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
+#ifdef DEBUG
+        fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
+                result, inbuf, inroom, outbuf, outroom);
+#endif
+        if (result == (size_t)-1) {
+            if (errno == EINVAL) {
+                /* Conversion stopped due to an incomplete character at the
+                   end of the input buffer.  We just return # of bytes
+                   flushed.  (Shifting unconverted characters is done by
+                   buffered port routine) */
+                return len - outroom;
+            } else if (errno == E2BIG) {
+                /* Output buffer got full.  Flush it. */
+                Scm_Putz(info->outbuf, info->bufsiz - outroom, info->remote);
+                outbuf = info->outptr = info->outbuf;
+                continue;
+            } else {
+                /* it's likely that input contains invalid sequence.
+                   TODO: we should handle this case gracefully. */
+                Scm_Error("invalid character sequence in the input stream");
+                return 0;           /* dummy */
+            }
+        } else {
+            /* Conversion is done completely.  Update outptr. */
+            SCM_ASSERT(inroom == 0);
+            info->outptr = outbuf;
+            if (buf == NULL) {
+                /* the port is closed.  flush outbuf */
+                Scm_Putz(info->outbuf, info->outptr - info->outbuf,
+                         info->remote);
+            }
+            return len;
+        }
+    }
+}
+
+ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
+                                    ScmString *toCode,
+                                    ScmString *fromCode,
+                                    int bufsiz)
+{
+    conv_info *cinfo;
+    iconv_t handle;
+    ScmPort *newport;
+    
+    if (!SCM_OPORTP(toPort))
+        Scm_Error("output port required, but got %S", toPort);
+
+    handle = iconv_open(Scm_GetStringConst(toCode),
+                        Scm_GetStringConst(fromCode));
+    if (handle == (iconv_t)-1) {
+        if (errno == EINVAL) {
+            Scm_Error("conversion from code %S to code %S is not supported",
+                      SCM_OBJ(fromCode), SCM_OBJ(toCode));
+        } else {
+            /* TODO: try to call gc to collect unused file descriptors */
+            Scm_SysError("iconv_open failed");
+        }
+    }
+    cinfo = SCM_NEW(conv_info);
+    cinfo->handle = handle;
+    cinfo->remote = toPort;
+    cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
+    cinfo->inbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
+    cinfo->inptr = cinfo->inbuf;
+    cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
+    cinfo->outptr = cinfo->outbuf;
+    
+    return Scm_MakeBufferedPort(SCM_PORT_OUTPUT, cinfo->bufsiz, 0,
+                                cinfo->inbuf, conv_output_flusher,
+                                (void*)cinfo);
+}
+
+/*====================================================================
+ * Initialization
+ */
 extern void Scm_Init_convlib(ScmModule *module);
 
 void Scm_Init_charconv(void)
