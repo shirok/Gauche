@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.74 2002-07-31 22:09:12 shirok Exp $
+ *  $Id: vm.h,v 1.75 2002-09-10 08:24:54 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -21,38 +21,32 @@
 #define SCM_VM_MAX_VALUES      20
 #define SCM_VM_SIGQ_SIZE       32
 
-/* Local variable access:
- *   Regardless of frame allocation scheme, local variables are always
- *   accessed like this:
+/*
+ * Environment frame
  *
- * (define (foo x y)
- *    ;; here, x is env->data[0], y is env->data[1]
- *    (let ((a ...) (b ...))
- *       ;; here, a is env->data[0], b is env->data[1],
- *       ;;       x is env->up->data[0], and so on.
- *       (lambda (r s)
- *          ;; here, r is env->data[0], s is env->data[1],
- *          ;;       a is env->up->data[0], x is env->up->up->data[0].
- *
- *     ....
- *
- * If frames are allocated on the stack first, they are copied to the
- * heap when a closure is created.   Once copied, it stays on the heap
- * until it's garbage collected.
- *
- * The toplevel frame is always a frame of size 1, containing the toplevel
- * module in data[0].   You can tell it's toplevel if env->up is NULL.
+ *   :        :
+ *   +--------+
+ *   | size=N |
+ *   |  info  |
+ *   |...up...|<--- ScmEnvFrame* envp
+ *   |arg[N-1]|
+ *   |arg[N-2]|
+ *   :        :
+ *   | arg[0] |
+ *   +--------+
+ *   :        :
  */
 
 typedef struct ScmEnvFrameRec {
     struct ScmEnvFrameRec *up;  /* static link */
     ScmObj info;                /* source code info for debug */
-    int size;                   /* size of the frame */
-    ScmObj data[1];             /* variable length */
+    int size;                   /* size of the frame (excluding header) */
 } ScmEnvFrame;
 
 #define ENV_HDR_SIZE   3        /* envframe header size */
 #define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
+#define ENV_FP(env)        (((ScmObj*)(env))-((env)->size))
+#define ENV_DATA(env, num) (ENV_FP(env)[num])
 
 SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
 
@@ -69,7 +63,7 @@ SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
 typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
-    ScmEnvFrame *argp;            /* saved argument pointer */
+    ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
     ScmObj pc;                    /* next PC */
     ScmObj info;                  /* debug info */
@@ -222,7 +216,7 @@ struct ScmVMRec {
                                    instructions to be executed.              */
     ScmEnvFrame *env;           /* Current environment.                      */
     ScmContFrame *cont;         /* Current continuation.                     */
-    ScmEnvFrame *argp;          /* Current argument pointer.  Points
+    ScmObj *argp;               /* Current argument pointer.  Points
                                    to the incomplete environment frame
                                    being accumulated.  This is a part of
                                    continuation.                             */

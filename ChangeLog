@@ -1,3 +1,8 @@
+2002-09-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h : changed environment frame layout.  see
+	  the comment of vm.h.
+
 2002-09-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub (get-c-name): changed to preserve case of the input
