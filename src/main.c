@@ -12,25 +12,34 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.29 2001-09-02 07:58:47 shirok Exp $
+ *  $Id: main.c,v 1.30 2001-09-26 10:44:36 shirok Exp $
  */
 
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include "gauche.h"
 
-int load_initfile = TRUE;
-int batch_mode = FALSE;
-ScmObj extra_load_paths = SCM_NIL;
-ScmObj use_modules = SCM_NIL;
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
+/* options */
+int load_initfile = TRUE;       /* if false, not to load init files */
+int batch_mode = FALSE;         /* force batch mode */
+int interactive_mode = FALSE;   /* force interactive mode */
+ScmObj extra_load_paths = SCM_NIL; /* -I path */
+ScmObj use_modules = SCM_NIL;   /* -u module */
 
 void usage(void)
 {
     fprintf(stderr,
-            "Usage: gosh [-qV][-I<path>][-u<module>][--] [file]\n"
+            "Usage: gosh [-biqV][-I<path>][-u<module>][--] [file]\n"
             "options:\n"
             "  -V       print version and exit.\n"
+            "  -b       batch mode.  don't print prompts.  supersedes -i.\n"
+            "  -i       interactive mode.  force to print prompts.\n"
             "  -q       don't read the default initiailzation file.\n"
             "  -I<path> add <path> to the head of load path.\n"
             "  -u<module> (use) load and import <module>\n"
@@ -71,9 +80,10 @@ int main(int argc, char **argv)
     ScmObj cp;
 
     Scm_Init();
-    while ((c = getopt(argc, argv, "bqu:Vf:I:-")) >= 0) {
+    while ((c = getopt(argc, argv, "biqu:Vf:I:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
+        case 'i': interactive_mode = TRUE; break;
         case 'q': load_initfile = FALSE; break;
         case 'V': version(); break;
         case 'f': further_options(optarg); break;
@@ -169,7 +179,7 @@ int main(int argc, char **argv)
         SCM_POP_ERROR_HANDLER;
     }
 
-    if (batch_mode || !isatty(0)) {
+    if (batch_mode || (!isatty(0) && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()));
     } else {
         Scm_Repl(SCM_MAKE_STR("gosh> "),
