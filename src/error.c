@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.47 2004-05-21 03:43:29 shirok Exp $
+ *  $Id: error.c,v 1.48 2004-05-22 07:07:27 shirok Exp $
  */
 
 #include <errno.h>
@@ -68,7 +68,8 @@ static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmClass *exception_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_ErrorClass),
     SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass)
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
 };
 
 SCM_DEFINE_ABSTRACT_CLASS(Scm_ExceptionClass, SCM_CLASS_DEFAULT_CPL);
