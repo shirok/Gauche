@@ -12,11 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interactive.scm,v 1.3 2001-09-23 05:44:43 shirok Exp $
+;;;  $Id: interactive.scm,v 1.4 2001-10-03 09:02:11 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
-  (export apropos a describe d)
+  (export apropos describe d)
   )
 (select-module gauche.interactive)
 
@@ -105,9 +105,10 @@
     ))
 
 ;; For convenience
-(define-syntax a
-  (syntax-rules ()
-    ((_ . ?args) (apropos . ?args))))
+;; This may interfere with other code.
+;(define-syntax a
+;  (syntax-rules ()
+;    ((_ . ?args) (apropos . ?args))))
 
 (define d describe)
 
