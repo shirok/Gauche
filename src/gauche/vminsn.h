@@ -1,0 +1,162 @@
+/*
+ * vminsn.h - Virtual machine instruction definition
+ *
+ *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *
+ *  Permission to use, copy, modify, ditribute this software and
+ *  accompanying documentation for any purpose is hereby granted,
+ *  provided that existing copyright notices are retained in all
+ *  copies and that this notice is included verbatim in all
+ *  distributions.
+ *  This software is provided as is, without express or implied
+ *  warranty.  In no circumstances the author(s) shall be liable
+ *  for any damages arising out of the use of this software.
+ *
+ *  $Id: vminsn.h,v 1.1 2001-01-12 11:34:07 shiro Exp $
+ */
+
+/* DEFINSN(symbol, name, # of parameters) */
+
+/* NOP
+ *   Input stack  : -
+ *   Result stack : -
+ *  Used for placeholder.
+ */
+DEFINSN(SCM_VM_NOP, "NOP", 0)
+
+/* DEFINE <SYMBOL>
+ *   Input stack  : value
+ *   Result stack : SYMBOL
+ *
+ *  Defines global binding of SYMBOL in the current module.
+ *  The value is taken from the input stack.
+ *  This instruction only appears at the toplevel.  Internal defines
+ *  are recognized and eliminated by the compiling process.
+ */
+DEFINSN(SCM_VM_DEFINE, "DEFINE", 0)
+
+/* LAMBDA(NARGS,RESTARG) <ARGLIST> <CODE>
+ *   Input stack  : -
+ *   Result stack : closure
+ *
+ *  Create a closure capturing current environment.  Two operands are
+ *  taken: ARGLIST is a form of lambda list; it is just for debug.
+ *  CODE is the compiled code.   Leaves created closure in the stack.
+ */
+DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
+
+/* LET(NLOCALS)
+ *   Input stack  : -
+ *   Result stack : -
+ *
+ *  Create a new environment frame, size of NLOCALS.  let-families
+ *  like let, let* and letrec yields this instruction.
+ */
+DEFINSN(SCM_VM_LET, "LET", 1)
+
+/* POPENV
+ *   Input stack  : -
+ *   Result stack : -
+ *
+ *  Pop a local environment.  Executed on the end of let-family
+ *  constructs.
+ */
+DEFINSN(SCM_VM_POPENV, "POPENV", 0)
+
+/* POPARG
+ *   Input stack  : arg
+ *   Result stack : -
+ *
+ *  Discard the result pushed on top of the stack.
+ */
+DEFINSN(SCM_VM_POPARG, "POPARG", 0)
+
+/* DUPARG
+ *   Input stack  : value
+ *   Result stack : value value
+ *
+ *  Duplicate the value of the arg stack.
+ */
+DEFINSN(SCM_VM_DUPARG, "DUPARG", 0)
+
+/* IF  <THEN-CODE>
+ *   Input stack  : test
+ *   Result stack : -
+ *
+ *  If test is true, transfer control to THEN-CODE.  Otherwise
+ *  it continues execution.   Test arg is popped.
+ */
+DEFINSN(SCM_VM_IF, "IF", 0)
+
+/* IFNP <THEN-CODE>
+ *   Input stack  : test
+ *   Result stack : test
+ *
+ *  Similar to IF, but leave the test on the stack.  `NP' stands
+ *  for "No-Pop".
+ */
+DEFINSN(SCM_VM_IFNP, "IFNP", 0)
+
+/* CALL(NARGS,NRETS)
+ *   Input stack  : arg0 ... argN proc
+ *   Result stack : ret0 ... retM
+ *
+ *  Call PROC.  If NRETS is SCM_VM_NRETS_UNKNOWN, this is a tail call.
+ */
+DEFINSN(SCM_VM_CALL, "CALL", 2)
+
+/* SET <LOCATION>
+ *   Input stack  : value
+ *   Result stack : -
+ *
+ *  LOCATION may be a symbol (in case of global set!) or LREF
+ *  instruction (local set!)
+ */
+DEFINSN(SCM_VM_SET, "SET", 0)
+
+/* LREF(DEPTH,OFFSET)
+ *   Input stack  : -
+ *   Result stack : value
+ *
+ *  Retrieve local value.
+ */
+DEFINSN(SCM_VM_LREF, "LREF", 2)
+
+/* GREF <LOCATION>
+ *   Input stack  : -
+ *   Result stack : value
+ *
+ *  LOCATION may be a symbol or GLOC object.
+ *  Retrieve global value in the current module.
+ */
+DEFINSN(SCM_VM_GREF, "GREF", 0)
+
+/* Quote families */
+DEFINSN(SCM_VM_QUOTE, "QUOTE", 0)
+DEFINSN(SCM_VM_BACKQUOTE, "BACKQUOTE", 0)
+DEFINSN(SCM_VM_UNQUOTE, "UNQUOTE", 0)
+DEFINSN(SCM_VM_UNQUOTE_SPLICING, "UNQUOTE_SPLICING", 0)
+
+/* Inlined operators
+ *  They work the same as corresponding Scheme primitives, but they are
+ *  directly interpreted by VM, skipping argument processing part.
+ *  Compiler may insert these in order to fulfill the operation (e.g.
+ *  `case' needs MEMQ).  If the optimization level is high, global
+ *  reference of those primitive calls in the user code are replaced
+ *  as well.
+ */
+DEFINSN(SCM_VM_CONS, "CONS", 0)
+DEFINSN(SCM_VM_CAR, "CAR", 0)
+DEFINSN(SCM_VM_CDR, "CDR", 0)
+DEFINSN(SCM_VM_LIST, "LIST", 1)
+DEFINSN(SCM_VM_LIST_STAR, "LIST*", 1)
+DEFINSN(SCM_VM_MEMV, "MEMV", 0)
+DEFINSN(SCM_VM_EQ, "EQ?", 0)
+DEFINSN(SCM_VM_EQV, "EQV?", 0)
+DEFINSN(SCM_VM_APPEND, "APPEND", 1)
+DEFINSN(SCM_VM_NCONC, "NCONC", 1)
+DEFINSN(SCM_VM_NOT, "NOT", 0)
+DEFINSN(SCM_VM_NULLP, "NULL?", 0)
+DEFINSN(SCM_VM_NOT_NULLP, "NOT-NULL?", 0)
+DEFINSN(SCM_VM_FOR_EACH, "FOR-EACH", 1)
+DEFINSN(SCM_VM_MAP, "MAP", 1)
