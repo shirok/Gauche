@@ -10184,25 +10184,45 @@ The following example shows the parameters given to the CGI program.
 @c ----------------------------------------------------------------------
 @node CGI testing,  , CGI Utility, Library modules - Utilities
 @section @code{www.cgi-test} - CGI testing
+@c NODE CGIのテスト, @code{www.cgi-test} - CGIのテスト
 
 @deftp {Module} www.cgi-test
 @mdindex www.cgi-test
+@c EN
 This module defines a useful procedures to test CGI script.
 The test actually runs the named script, with specified enviornment
 variable settings, and retrieve the output.  Your test procedure
 then examine whether the output is as expected or not.
+@c JP
+CGIスクリプトをテストするための便利な手続きを定義しています。
+このテストは、指定された環境変数をセットし、実際にスクリプトを
+実行し、出力を取得します。ユーザのテスト手続きは、その出力が
+期待したものであるかどうかを検査します。
+@c COMMON
 @end deftp
 
 @defun cgi-test-enviornment-ref envvar-name
 @defunx {(setter cgi-test-enviornment-ref)} envvar-name value
+@c EN
 The module keeps a table of default values of enviornment variables
 with which the cgi script will be run.  These procedures allow
 the programmer to get/set those default values.
 
 Note that you can override these default values and/or pass additional
 environment variables for each call of cgi script.
+@c JP
+モジュールにより、CGIスクリプトが実行される際の環境変数の
+デフォルト値のテーブルが保持されます。プログラマは、これらの
+手続きを使ってそのデフォルト値を取得したり設定したりできます。
 
+CGIスクリプトの呼び出し毎に、これらのデフォルト値を上書きしたり、
+追加の環境変数を渡したりできます。
+
+@c EN
 The following environment variables are set by default.
+@c JP
+デフォルトでは、下記の環境変数が設定されています。
+@c COMMON
 @multitable @columnfractions .5 .5
 @item Name @tab Value
 @item @code{SERVER_SOFTWARE}   
@@ -10225,14 +10245,24 @@ The following environment variables are set by default.
 @end defun
 
 @defun call-with-cgi-script script proc &keyword (environment ()) (parameters #f)
+@c EN
 Runs a script with given enviornment, and calls @var{proc} with
 one argument, an input port which is connected to the pipe of script's
 standard output.
+@c JP
+与えられた環境でスクリプトを実行し、そのスクリプトの標準出力のパイプに
+接続された入力ポートを1つ引数に取る @var{proc} を呼び出します。
 
+@c EN
 The argument @var{script} should be a list of 
 program name and its arguments.  Each element are
 passed to @code{x->string} first to stringify.
+@c JP
+引数 @var{script} は、プログラムの名前とその引数のリストでなければ
+なりません。リストの要素はそれぞれ、文字列化されるためにまず
+@code{x->string}に渡されます。
 
+@c EN
 The script is run under the enviornment given by @var{enviornment}
 variable and the default test environment described above.
 The @var{environment} argument must be an associative list, in which each
@@ -10240,11 +10270,20 @@ key (@code{car}) is the name of the enviornment variable and
 its @code{cdr} is the value.  Both are passed to @code{x->string} first.
 If the same environment variable appears in @var{environment} and
 the default test enviornment, the one in @var{environment} is used.
+@c JP
+スクリプトは、変数 @var{environment} で与えられる環境と、上述した
+デフォルトのテスト環境の下で実行されます。
+@var{environment}は、キー(@code{car})がその環境変数の名前、
+@code{cdr}が対応する値であるような連想リストでなければなりません。
+両方ともまず @code{x->string} に渡されます。
+@var{environment} とデフォルトのテスト環境に同じ環境変数がある場合は、
+@var{environment} にあるものが使われます。
 
+@c EN
 Additionally, if an associative list is given to the @var{parameters}
 argument, a query string is built from it and passed the script.
 The actual method to pass the query string depends on the value
-of @code{REQUEST_METHOD} environment variable in hte setting.
+of @code{REQUEST_METHOD} environment variable in the setting.
 If @code{REQUEST_METHOD} is either @code{GET} or @code{HEAD},
 the query string is put in an environment variable @code{QUERY_STRING}.
 If it is @code{POST}, the query string is fed to the standard
@@ -10255,9 +10294,25 @@ automatically.  If @code{REQUEST_METHOD} is other values,
 @var{parameters} is ignored.
 You can bypass this mechanism and set up enviornment variable
 @code{QUERY_STRING} directly, if you wish.
+@c JP
+さらに、引数 @var{parameters} に連想リストが渡された場合、そこから
+クエリストリングが作られスクリプトに渡されます。
+クエリストリングを渡す実際のメソッドは、環境変数 @code{REQUEST_METHOD}の
+値に依存します。@code{REQUEST_METHOD} が @code{GET} か @code{HEAD} で
+ある場合は、クエリストリングは環境変数 @code{QUERY_STRING} に置かれます。
+@code{REQUEST_METHOD} が @code{POST} の場合は、クエリストリングは
+スクリプトの標準入力から取得されます。後者の場合、@code{CONTENT_TYPE} には
+@code{application/x-www-form-urlencoded}が、
+@code{CONTENT_LENGTH} には @code{QUERY_STRING}の長さが、それぞれ自動的に
+セットされます。@code{REQUEST_METHOD} がその他の値の場合は、
+@var{parameters} は無視されます。
+必要であれば、このメカニズムをバイパスして、環境変数 @code{QUERY_STRING} を
+直接セットアップすることも可能です。
+@c COMMON
 @end defun
 
 @defun run-cgi-script->header&body script reader &keyword environment parameters
+@c EN
 A convenient wrapper of @code{call-with-cgi-script}.
 The @var{script}, @var{environment} and @var{parameters} are passed
 to @code{call-with-cgi-script} as they are.
@@ -10267,34 +10322,68 @@ First, the RFC2822 header fields are parsed by
 @code{rfc822-header->list} (@xref{RFC822 message parsing}).
 Then, the @var{reader} is called with an input port which
 is piped to the script's output.
+@c JP
+@code{call-with-cgi-script} の便利なラッパー手続きです。
+@var{script}、@var{environment}、@var{parameters}は、
+そのまま @code{call-with-cgi-script}に渡されます。
+スクリプトの出力は、@code{run-cgi-script->header&body}により
+パーズされます。
+最初に、RFC2822ヘッダフィールドが @code{rfc822-header->list}
+(@ref{RFC822 message parsing}参照)によりパーズされます。
+次に、@var{reader}が、スクリプトの出力にパイプされた入力ポートと
+ともに呼ばれます。
 
+@c EN
 @code{Run-cgi-script->header&body} returns two values,
 the list of headers (as parsed by @code{rfc822-header->list}),
 and the return value of @var{reader}.
+@c JP
+@code{run-cgi-script->header&body}は、ヘッダのリスト
+(@code{rfc822-header->list}によりパーズされたもの)と
+@var{reader}の戻り値の2つの値を返します。
+@c COMMON
 @end defun
 
-
 @defun run-cgi-script->sxml script &keyword environment parameters
+@c EN
 This is a procedure that uses @code{ssax:xml->sxml}
 (@xref{Functional XML parser}) as the @var{reader}
 in @code{run-cgi-script->header&body}.  
 Useful when you're testing a cgi script that produces
 well-formed HTML and/or XML document.
+@c JP
+この手続きでは、@code{run-cgi-script->header&body}の
+@var{reader}として、@code{ssax:xml->sxml}
+(@ref{Functional XML parser}参照)を使います。
+整形式(Well-formed)のHTMLやXMLドキュメントを生成する
+CGIスクリプトをテストする場合に便利です。
+@c COMMON
 @end defun
 
 @defun run-cgi-script->string script &keyword environment parameters
 @defunx run-cgi-script->string-list script &keyword environment parameters
+@c EN
 These procedures use @code{port->string} 
 and @code{port->string-list}
 (@xref{Input utility functions}) as the @var{reader}
 in @code{run-cgi-script->header&body}, respectively.
+@c JP
+これらの手続きは、@code{run-cgi-script->header&body}の
+@var{reader}として、それぞれ @code{port->string}、
+@code{port->string-list}を使います。
+@c COMMON
 @end defun
 
+@c EN
 An example:
+@c JP
+例:
+@c COMMON
 @example
 (run-cgi-script->string-list "bbs.cgi"
                              :environment '((REMOTE_ADDR . "12.34.56.78"))
                              :parameters '((command . "view")
                                            (page . 1234)))
 @end example
+
 
