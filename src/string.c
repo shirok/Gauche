@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.41 2001-05-20 08:58:15 shirok Exp $
+ *  $Id: string.c,v 1.42 2001-05-21 09:00:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -359,8 +359,11 @@ ScmChar Scm_StringRef(ScmString *str, int pos)
 {
     int len = SCM_STRING_LENGTH(str);
 
+    /* we can't allow string-ref on incomplete strings, since it may yield
+       invalid character object. */
+    if (SCM_STRING_INCOMPLETE_P(str)) 
+        Scm_Error("incomplete string not allowed : %S", str);
     if (pos < 0 || pos >= len) Scm_Error("argument out of range: %d", pos);
-
     if (SCM_STRING_SINGLE_BYTE_P(str)) {
         return (ScmChar)(SCM_STRING_START(str)[pos]);
     } else {
