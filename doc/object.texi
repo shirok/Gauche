@@ -993,6 +993,7 @@ of descendants of @var{class}.
 @end example
 @end defun
 
+@c EN
 If @var{obj}'s class has been redefined, these procedures
 first updates @var{obj} to change its class to the new class.
 So @code{class-of} always returns the new class.
@@ -1002,8 +1003,18 @@ If you need to get the old class, you should use @code{current-class-of}
 below.  
 See @ref{Class redefinition} for the details of the semantics
 of redefined class.
+@c JP
+@var{obj}のクラスが再定義されてしまうと、これらの手続きは、最初に
+@var{obj}のクラスを新しいクラスに変更します。したがって、@code{class-of} は
+いつも新しいクラスを返します。この振舞いは stklos 0.55 とは異ります。
+stklos 0.55 では @code{class-of}は、@var{obj}が更新されていなければ、
+旧いクラスを返します。もし、旧いクラスが必要なばあいは、以下の
+@code{current-class-of} を使うべきです。クラス再定義のセマンティクスの
+詳細については @ref{Class redefinition} を見てください。
+@c COMMON
 
 @defun current-class-of obj
+@c EN
 Returns a class metaobject of @var{obj}.  If @var{obj}'s class
 has been redefined, but @var{obj} is not updated for the change,
 then this procedure returns the original class of @var{obj}
@@ -1012,6 +1023,16 @@ without updating @var{obj}.
 You need this procedure in rare occasions, such as within
 @code{change-class} method, in which you don't want to trigger
 updating @var{obj} (which would cause infinite loop).
+@c JP
+@var{obj} のクラスメタオブジェクトを返します。@var{obj} のクラスが
+再定義されてしまった場合でも、@var{obj} がその変更に合せて更新されて
+いない場合には、この手続きは @var{obj} の元のクラスを返します。
+この手続きは、@var{obj} を更新しません。
+
+この手続きはめったに必要にはなりません。必要になるのは @code{change-class}
+メソッド内で、@var{obj} の更新のトリガーを引きたくないような場合
+(無限ループを起す可能性がある場合)です。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -1019,7 +1040,11 @@ updating @var{obj} (which would cause infinite loop).
 @section Class
 @c NODE クラス
 
+@c EN
 In this section, a class in Gauche is explained in detail.
+@c JP
+この節では、Gauche におけるクラスについて詳しく説明します。
+@c COMMON
 
 @menu
 * Defining class::              
@@ -1034,7 +1059,11 @@ In this section, a class in Gauche is explained in detail.
 @subsection Defining class
 @c NODE クラスの定義
 
+@c EN
 To define a class, use a macro @code{define-class}.
+@c JP
+クラスを定義するには、@code{define-class} マクロを使います。
+@c COMMON
 
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
 @c EN
@@ -1092,12 +1121,17 @@ for the usage of metaclass.
 @c COMMON
 @end defmac
 
+@c EN
 If a slot specification is a list, it should be in the following form:
+@c JP
+スロットの指定はリストで、以下のようなフォームであるべきです。
+@c COMMON
 
 @example
 (@var{slot-name} :option1 value1 :option2 value2 @dots{})
 @end example
 
+@c EN
 Each keyword (@code{option1} etc.) gives a @emph{slot option}.
 By default, the following slot options are recognized.
 You can add more slot options by defining metaclass.
@@ -1206,7 +1240,124 @@ If this slot option is omitted for a virtual slot, the system
 calls the procedure given to @code{slot-ref} instead, and see whether
 its return value is @code{#<undef>} or not.
 @end table
+@c JP
+各キーワード(@code{option1} など) は @emph{slot option} を与えます。
+デフォルトでは、以下のスロットオプションが認識されます。
+メタクラスを定義することで、デフォルト以外のスロットオプションを
+追加できます。
 
+@table @code
+
+@item :allocation
+このスロットのアロケーションタイプを指定します。これは、このスロットが
+どのように値を格納するかを指定します。以下のようなキーワード値が
+標準クラスによって認識されます。プログラマは、自分用のメタクラスを定義し、
+これら以外のアロケーションタイプを認識するように、このクラスを拡張すること
+ができます。
+
+@table @code
+@item :instance
+スロットは各インスタンス毎にアロケートされます。したがって、おのおのの
+インスタンスは別々の値をもてます。これは、いわゆる「インスタンス
+変数」の振舞いを実現します。@code{:allocation} スロットオプションが
+省略された場合、これがデフォルトとなります。
+@item :class
+スロットはクラスオブジェクト毎にアロケートされます。したがって、おのおのの
+インスタンスはこのスロットの同じ値を共有します。これは、いわゆる
+「クラス変数」の振舞いを実現します。このスロットの値は、すべてのサブクラス
+でも共有されます。(ただし、サブクラスの定義がこのスロットをシャドウする
+場合には、そのかぎりではありません。)
+@item :each-subclass
+@code{class} アロケーションと似ていますが、スロットはクラス毎にアロケート
+されます。すなわち、このスロットは、このクラスのすべてのインスタンスで
+共有されますが、サブクラスのインスタンスには共有されません。
+@item :virtual
+このタイプのスロット用には格納領域はアロケートされません。このスロット
+にアクセスすると以下で説明する @code{:slot-ref} および @code{:slot-set!}
+オプションで与えられた手続きが呼ばれます。いいかえれば、手続きスロットを
+作成できるということです。スロットアロケーションが virtual と指定されて
+いれば、@code{:slot-ref} および @code{:slot-set!} オプションが同様に
+指定されていなければなりません。さもなければ、@code{define-class} は
+エラーを発生させます。
+@item :builtin
+このアロケーションタイプは組み込みクラスの中だけに現れます。
+Scheme 定義のクラスでこのタイプを指定することはできません。
+@end table
+
+@item :init-keyword
+このスロットオプションに与えられたキーワード値は、インスタンスが生成
+される際に @code{make} メソッドに初期値をわたすために使えます。
+
+@item :init-value
+生成時にキーワード引数で初期化されてないスロットの場合、これによって
+スロットの初期値を与えます。その値は @code{define-class} が評価される
+ときに、評価されます。
+
+@item :init-form
+@code{init-value} と似ていますが、与えられた値は thunk で包まれていて、
+その値が必要とされた時に毎回評価されます。@code{init-value} と
+@code{init-form} との両方が与えられた時には @code{init-form} が無視されます。
+実際には、@code{:init-form @var{expr}} は @code{define-class} マクロの
+@code{:init-thunk (lambda () @var{expr})} でカバーできます。
+
+@item :initform
+@code{init-form} と同義です。STk との互換性のためにあります。新しくコードを
+書く場合には使うべきではありません。
+
+@item :init-thunk
+thunk を与えます。もし、当該スロットが生成時にキーワード引数によって
+初期化されていなければ、その thunk を評価して当該スロットの初期値とします。
+@code{:init-form} に @code{value} を与えることと、@code{:init-thunk}
+に @code{(lambda () value)} を与えることは同じことです。
+
+@item :getter
+シンボルをとり、getter メソッドを生成し、同じ名前のジェネリック関数に
+束縛します。getter メソッドは当該クラスのインスタンスを引数とし、当該
+スロットの値を返します。
+
+@item :setter
+シンボルをとり、setter メソッドを生成し、同じ名前のジェネリック関数に
+束縛します。setter メソッドは当該クラスのインスタンスと値をひとつ引数
+として、そのインスタンスの当該スロットの値をその値にセットします。
+
+@item :accessor
+シンボルをとり、2 つのメソッド(getter メソッドと setter メソッド)を
+生成します。getter メソッドは与えられた名前のジェネリック関数に
+束縛され、setter メソッドは、@code{setter} という名前のジェネリック関
+数として追加されます(ジェネリック setter については @ref{Assignments}
+を参照して下さい)。
+
+@item :slot-ref
+評価すると引数(インスタンス)を一つとる手続きとなる値を指定します。
+このスロットオプションは当該スロットのアロケーションが @code{virtual}
+である場合、必ず指定されていなければならなりません。プログラムが
+当該スロットの値を得ようとするするときには、いつも @code{slot-ref}
+あるいは getter メソッドを使って指定した手続きを呼びます。
+その結果は当該スロットの値として返されます。手続きは undef 値を返し
+(返り値は @code{#<undef>})、スロットが値をもっていないことを示す
+ことができます。もしスロットのアロケーションが @code{virtual} で
+なければ、このスロットオプションは無視されます。
+
+@item :slot-set!
+評価すると二つの引数(インスタンスと値)をとる手続きとなる値を指定します。
+このスロットオプションは当該のスロットのアロケーションが
+@code{virtual}である場合、必ず指定されていなければなりません。
+プログラムが当該スロットに値をセットしようとするときには、いつも
+@code{slot-set!} あるいは setter メソッドを使って、指定した手続きを
+セットすべき値とともに呼びます。スロットアロケーションが
+@code{virtual}でなければ、このスロットオプションは無視されます。
+
+@item :slot-bound?
+評価すると引数(インスタンス)を一つとる手続きとなる値を指定します。
+このスロットオプションは当該スロットのアロケーションが @code{virtual}
+である場合、必ず指定されていなければならなりません。プログラムが
+当該スロットが値を持っているかどうかを決定しようとしたときには、いつも
+この手続きを呼ばれます。スロットが値をもつなら、真の値を返します。さも
+なければ @code{#f} を返します。仮想スロットに対して、このスロット
+オプションが省略されると、システムは代りに @code{slot-ref} に与えられ
+た手続きを呼び、それが、@code{#<undef>} を返すかどうか見ます。
+@end table
+@c COMMON
 
 @node Inheritance, Class object, Defining class, Class
 @subsection Inheritance
