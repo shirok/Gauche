@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.91 2003-01-15 06:48:46 shirok Exp $
+;;;  $Id: genstub,v 1.92 2003-02-07 03:50:27 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1066,11 +1066,11 @@
         (req  (num-reqargs-of cproc))
         (opt  (num-optargs-of cproc))
         )
-    (f "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)" inliner)
+    (f "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)" inliner)
     ))
 
 (define (emit-inliner-call cproc insn)
-  (f "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\");"
+  (f "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\", depth);"
      (num-reqargs-of cproc)
      (if (or (< 0 (num-optargs-of cproc)) (have-rest-arg? cproc)) "TRUE" "FALSE")
      insn

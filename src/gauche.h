@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.325 2003-02-05 09:50:00 shirok Exp $
+ *  $Id: gauche.h,v 1.326 2003-02-07 03:50:26 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -365,7 +365,7 @@ SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
 SCM_EXTERN ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
 				     int reqargs, int optargs,
-				     int insn, char *proc);
+				     int insn, char *proc, int *depth);
 SCM_EXTERN ScmObj Scm_Eval(ScmObj form, ScmObj env);
 SCM_EXTERN ScmObj Scm_Apply(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_Values(ScmObj args);
@@ -1799,7 +1799,7 @@ SCM_EXTERN ScmObj Scm_MakeClosure(int required, int optional,
 struct ScmSubrRec {
     ScmProcedure common;
     ScmObj (*func)(ScmObj *, int, void*);
-    ScmObj (*inliner)(ScmSubr *, ScmObj, ScmObj, int);
+    ScmObj (*inliner)(ScmSubr *, ScmObj, ScmObj, int, int*);
     void *data;
 };
 
@@ -1914,7 +1914,7 @@ SCM_EXTERN ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args);
  * MACROS AND SYNTAX
  */
 
-typedef ScmObj (*ScmCompileProc)(ScmObj, ScmObj, int, void*);
+typedef ScmObj (*ScmCompileProc)(ScmObj, ScmObj, int, int *, void*);
 
 /* Syntax is a built-in procedure to compile given form. */
 struct ScmSyntaxRec {
