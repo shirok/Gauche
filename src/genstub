@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.81 2002-08-27 00:30:58 shirok Exp $
+;;;  $Id: genstub,v 1.82 2002-08-29 08:13:29 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -520,6 +520,12 @@
      (if (positive? (value-of a)) "Scm_MakeIntegerFromUI" "Scm_MakeInteger")
      (value-of a)))
 
+;; boolean literals
+(define-literal-binding <boolean> <boolean-literal>)
+(define-class <boolean-literal> (<literal>) ())
+(define-method value-getter-of ((self <boolean-literal>))
+  (if (value-of self) "SCM_TRUE" "SCM_FALSE"))
+
 ;; string literals
 (define-literal-binding <string> <string-literal>)
 (define-class <string-literal> (<literal>) ())
@@ -634,7 +640,7 @@
 
 ;;-------------------------------------------------------------------
 ;; (define-variable scheme-name init &keyword c-name)
-;; (define-const scheme-name init &keyword c-name)
+;; (define-constant scheme-name init &keyword c-name)
 
 (define-class <cvariable> (<stub>)
   ((constant?      :init-keyword :constant? :accessor constant?)
@@ -668,15 +674,15 @@
   (check-arg symbol? name)
   (variable-parser-common #f name init opts))
 
-(define-form-parser define-const (name init . opts)
+(define-form-parser define-constant (name init . opts)
   (check-arg symbol? name)
   ;; hack to detect obsoleted syntax
   (if (and (pair? opts) (null? (cdr opts)) (string? init))
-      (errorf "(define-const ~a ...) : using obsoleted syntax" name)
+      (errorf "(define-constant ~a ...) : using obsoleted syntax" name)
       (variable-parser-common #t name init opts)))
 
 ;;-------------------------------------------------------------------
-;; (define-enum name) - a special case of define-const
+;; (define-enum name) - a special case of define-constant
 
 (define-class <cenum> (<cvariable>)
   ())
