@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.42 2001-04-22 07:50:54 shiro Exp $
+;;; $Id: stdlib.stub,v 1.43 2001-04-22 11:42:47 shiro Exp $
 ;;;
 
 
@@ -210,10 +210,10 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  SCM_RETURN(Scm_Quotient(n1, n2));")
 
 (define-cproc remainder (n1 n2)
-  "  SCM_RETURN(Scm_Modulo(n1, n2, 1));")
+  "  SCM_RETURN(Scm_Modulo(n1, n2, TRUE));")
 
 (define-cproc modulo (n1 n2)
-  "  SCM_RETURN(Scm_Modulo(n1, n2, 0));")
+  "  SCM_RETURN(Scm_Modulo(n1, n2, FALSE));")
 
 
 (define-cproc gcd (&rest args)
