@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.53 2002-01-22 01:52:35 shirok Exp $
+;;; $Id: syslib.stub,v 1.54 2002-01-23 10:18:36 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -253,7 +253,7 @@
   if (r < 0) Scm_SysError(\"kill failed\");
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc %with-signal-handler (handlers thunk)
+(define-cproc %with-signal-handlers (handlers thunk)
   (assert (procedure? thunk))
   "SCM_RETURN(Scm_VMWithSignalHandlers(handlers, thunk));")
 
