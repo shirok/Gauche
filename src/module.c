@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.49 2004-04-24 11:32:03 shirok Exp $
+ *  $Id: module.c,v 1.50 2004-05-22 07:21:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -72,10 +72,6 @@
  * Benchmark showed the change made program loading 30% faster.
  */
 
-static ScmObj anon_module_name = SCM_UNBOUND; /* Name used for anonymous
-                                                 modules.  Symbol '#',
-                                                 set by init */
-
 static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     Scm_Printf(port, "#<module %A>", SCM_MODULE(obj)->name);
@@ -87,10 +83,12 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass,
 
 /* Global module table */
 static struct {
+    ScmObj anon_name;       /* Name used for anonymous modules.
+                               Symbol '#', set by init */
     ScmHashTable *table;    /* Maps name -> module. */
     ScmInternalMutex mutex; /* Lock for table.  Only register_module and
                                lookup_module may hold the lock. */
-} modules = { NULL };
+} modules = { SCM_UNBOUND, NULL };
 
 /* Predefined modules - slots will be initialized by Scm__InitModule */
 #define DEFINE_STATIC_MODULE(cname) \
@@ -158,8 +156,8 @@ static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
 ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 {
     ScmObj r;
-    if (name == NULL) name = SCM_SYMBOL(anon_module_name);
-    if (SCM_EQ(SCM_OBJ(name), anon_module_name)) {
+    if (name == NULL) name = SCM_SYMBOL(modules.anon_name);
+    if (SCM_EQ(SCM_OBJ(name), modules.anon_name)) {
         r = make_module(name);
     } else {
         int created;
@@ -539,5 +537,5 @@ void Scm__InitModule(void)
     defaultParents = SCM_LIST1(SCM_CAR(mpl));
     defaultMpl = mpl;
 
-    anon_module_name = SCM_SYM_SHARP;
+    modules.anon_name = SCM_SYM_SHARP;
 }

@@ -1,5 +1,8 @@
 2004-05-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/module.c (modules): make sure the global module name map is
+	  placed in the data region instead of bss.
+
 	* src/gauche.h, src/gauche/class.h : avoid using C++ reserved words
 	  (pointed out by Laurent Marzullo).
 
