@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.53 2001-09-07 11:35:53 shirok Exp $
+ *  $Id: class.c,v 1.54 2001-09-12 10:46:23 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1667,7 +1667,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_SOURCE_INFO,      "<source-info>");
 
     /* error.c */
-    CINIT(SCM_CLASS_EXCEPTION,        "<exception>");
+    /* initialized in Scm__InitExceptions */
 
     /* hash.c */
     CINIT(SCM_CLASS_HASHTABLE,        "<hash-table>");

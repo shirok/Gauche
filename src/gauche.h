@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.170 2001-09-10 19:59:53 shirok Exp $
+ *  $Id: gauche.h,v 1.171 2001-09-12 10:46:23 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1638,18 +1638,30 @@ extern ScmObj Scm_Force(ScmObj p);
  * EXCEPTION
  */
 
+/* The same structure is used for <exception>, <error>, <sys-error> and
+   <signal> class. */
+
 struct ScmExceptionRec {
     SCM_HEADER;
-    int continuable;
-    ScmObj data;
+    ScmObj message;             /* common */
+    ScmObj data;                /* unused for <exception> and <error>.
+                                   errno for <sys-error>, and signal number
+                                   for <signal> */
 };
 
 extern ScmClass Scm_ExceptionClass;
-#define SCM_CLASS_EXCEPTION       (&Scm_ExceptionClass)
+#define SCM_CLASS_EXCEPTION        (&Scm_ExceptionClass)
+#define SCM_EXCEPTIONP(obj)        SCM_XTYPEP(obj, SCM_CLASS_EXCEPTION)
+#define SCM_EXCEPTION(obj)         ((ScmException*)(obj))
+#define SCM_EXCEPTION_MESSAGE(obj) SCM_EXCEPTION(obj)->message
+#define SCM_EXCEPTION_DATA(obj)    SCM_EXCEPTION(obj)->data
 
-#define SCM_EXCEPTIONP(obj)       SCM_XTYPEP(obj, SCM_CLASS_EXCEPTION)
-#define SCM_EXCEPTION(obj)        ((ScmException*)(obj))
-#define SCM_EXCEPTION_DATA(obj)   SCM_EXCEPTION(obj)->data
+extern ScmClass Scm_ErrorClass;
+#define SCM_CLASS_ERROR            (&Scm_ErrorClass)
+extern ScmClass Scm_SysErrorClass;
+#define SCM_CLASS_SYS_ERROR        (&Scm_SysErrorClass)
+extern ScmClass Scm_SignalClass;
+#define SCM_CLASS_SIGNAL           (&Scm_SignalClass)
 
 /* Throwing error */
 extern void Scm_Error(const char *msg, ...);

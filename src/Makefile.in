@@ -49,6 +49,7 @@ OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
        system.o stdlib.o extlib.o syslib.o moplib.o
 
 TESTFILES = ../test/primsyn.scm \
+	    ../test/error.scm \
 	    ../test/module.scm  \
 	    ../test/macro.scm   \
 	    ../test/number.scm \
