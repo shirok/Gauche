@@ -1,5 +1,8 @@
 2004-08-18  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac (SONAME_FLAG), src/Makefile.in : attach
+	  SONAME to libgauche.so when the linker takes --soname flag.
+	
 	* src/compile.c, src/stdlib.stub, src/gauche/vm.h:
 	  making an inliner into a generic compiler macro, stage 3.
 	  Now the inliner is (Sexpr, Env, Context) -> (Sexpr), which is

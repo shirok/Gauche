@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.40 2004-08-02 13:41:22 shirok Exp $
+dnl $Id: configure.ac,v 1.41 2004-08-19 10:07:37 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.1, shiro@acm.org)
-AC_REVISION($Revision: 1.40 $)
+AC_REVISION($Revision: 1.41 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -528,7 +528,7 @@ AC_SUBST(LINK_HELPER)
 AC_SUBST(MAKEVERSLINK)
 AC_MSG_RESULT($SHLIB_OK)
 
-dnl Check to see the linker takes --rpath flag via -Wl.
+dnl Check to see if the linker takes --rpath flag via -Wl.
 if test "$try_rpath" = "yes"; then
   cflags_save="$CFLAGS"
   CFLAGS="$CFLAGS -Wl,--rpath -Wl,/"
@@ -555,6 +555,20 @@ if test "$try_rpath" = "yes"; then
 fi
 AC_SUBST(RPATH_TMP)
 AC_SUBST(RPATH_REAL)
+
+dnl Check to see if the linker takes --soname flag
+cflags_save="$CFLAGS"
+CFLAGS="$CFLAGS -Wl,--soname,libgauche.so.0"
+AC_CACHE_CHECK([linker takes --soname flag], ac_cv_linker_soname_flag, [
+  AC_LINK_IFELSE([int main(void) {return 0;}],
+                   ac_cv_linker_soname_flag=yes,
+                   ac_cv_linker_soname_flag=no)])
+CFLAGS="$cflags_save"
+if test "$ac_cv_linker_soname_flag" = "yes"; then
+  major_version=`echo $PACKAGE_VERSION | sed 's/\..*//'`
+  SONAME_FLAG="-Wl,--soname,libgauche.so.$major_version"
+fi
+AC_SUBST(SONAME_FLAG)
 
 dnl Sets some optimization flags by heuristics.
 AC_GAUCHE_OPTFLAGS

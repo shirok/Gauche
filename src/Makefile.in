@@ -54,6 +54,7 @@ SOEXT    = @SHLIB_DYLIB_SUFFIX@
 LINK_HELPER = @LINK_HELPER@
 RPATH_TMP  = @RPATH_TMP@
 RPATH_REAL = @RPATH_REAL@
+SONAME_FLAG = @SONAME_FLAG@
 MAKEVERSLINK = @MAKEVERSLINK@
 
 # Main definition of compilation commands
@@ -122,7 +123,7 @@ libgauche_OBJECTS = \
 	load.$(OBJEXT) promise.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \
 	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
 	syslib.$(OBJEXT) moplib.$(OBJEXT)
-libgauche_LDFLAGS = @SHLIB_DYLIB_LDFLAGS@
+libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
