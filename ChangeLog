@@ -1,5 +1,12 @@
 2003-12-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/tr.scm (build-transliterator) : changed it to
+	  use current-i/o ports when the created transliterator is
+	  called instead of the ones when the transliterator is created;
+	  the former is more useful, since the latter can be achieved
+	  by passing :input (current-input-port) etc., to build-transliterator.
+	  Patch from Alex Shinn.
+
 	* lib/text/html-lite.scm (html-escape-string): call x->string on
 	  the argument so that it can handle non-string argument.
 	  (Suggested by Kouhei Sutou).

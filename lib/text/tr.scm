@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: tr.scm,v 1.9 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: tr.scm,v 1.10 2003-12-04 08:32:58 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
@@ -55,32 +55,36 @@
 (define string-transliterate string-tr) ;alias
 
 (define (build-transliterator from to . options)
-  (let* ((!d? (not (get-keyword :delete options #f)))
-         (s? (get-keyword :squeeze options #f))
-         (c? (get-keyword :complement options #f))
-         (size (get-keyword :table-size options 256))
-         (in   (get-keyword :input options (current-input-port)))
-         (out  (get-keyword :output options (current-output-port)))
-         (tab  (build-tr-table from to size c?)))
-    (lambda ()
-      (let loop ((char (read-char in))
-                 (prev #f))
-        (unless (eof-object? char)
-          (let ((c (tr-table-ref tab (char->integer char))))
-            (cond ((char? c)            ;transliterated
-                   (unless (and s? (eqv? prev c))
-                     (display c out))
-                   (loop (read-char in) c))
-                  (c                    ;char is not in from-set
-                   (display char out)
-                   (loop (read-char in) #f))
-                  (!d?                  ;char is in from but not to, and no :d
-                   (unless (and s? (eqv? prev char))
-                     (display char out))
-                   (loop (read-char in) char))
-                  (else
-                   (loop (read-char in) prev)))))))
-    ))
+  (let-keywords* options
+      ((d? :delete #f)
+       (s? :squeeze #f)
+       (c? :complement #f)
+       (size :table-size 256)
+       (input #f)
+       (output #f))
+    (let ((!d? (not d?))
+          (tab  (build-tr-table from to size c?)))
+      (lambda ()
+        (let ((in (or input (current-input-port)))
+              (out (or output (current-output-port))))
+          (let loop ((char (read-char in))
+                     (prev #f))
+            (unless (eof-object? char)
+              (let ((c (tr-table-ref tab (char->integer char))))
+                (cond
+                 ((char? c)            ;transliterated
+                  (unless (and s? (eqv? prev c))
+                    (display c out))
+                  (loop (read-char in) c))
+                 (c                    ;char is not in from-set
+                  (display char out)
+                  (loop (read-char in) #f))
+                 (!d?                  ;char is in from but not to, and no :d
+                  (unless (and s? (eqv? prev char))
+                    (display char out))
+                  (loop (read-char in) char))
+                 (else
+                  (loop (read-char in) prev)))))))))))
 
 ;;--------------------------------------------------------------------
 ;; Parse character array syntax

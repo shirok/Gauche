@@ -7815,6 +7815,17 @@ once and apply it repeatedly, saving the overhead of initialization.
 初期化のオーバヘッドを軽減することができます。
 @c COMMON
 
+@c EN
+A note for an edge case:
+When @var{input} and/or @var{output} keyword arguments are omitted,
+the created transliterator is set up to use current-input-port and/or
+current-output-port at the time transliterator is called.
+@c JP
+註記：@var{input}や@var{output}キーワード引数が省略された場合、
+作成される変換手続きは、それが使用された時点でのカレント入出力ポート
+を参照します。
+@c COMMON
+
 @example
 (with-input-from-file "huge-file.txt"
   (lambda ()
