@@ -3,6 +3,9 @@
 	* src/compile.c (compile_do): fixed a bug that reported an error
 	  on a valid do form (thanks to KIMURA Shigenobu).
 	* src/read.c : allow numbers to begin with dot, e.g. ``.12''
+	* ext/uvector/* : generate uvector.h under the subdirectory 'gauche',
+	  so that other extension module can use #include "gauche/uvector.h".
+	* test/primsyn.scm : added tricky case tests of "case" and "do".
 
 2001-07-14  Shiro Kawai  <shiro@acm.org>
 
