@@ -14,7 +14,7 @@ HEADERS =
 TARGET = mt-random.so
 OBJS = mt-random_head.o mt-random.o mt-lib.o mt-random_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te.cache mt-random_head.o mt-random_tail.o
+		   autom4te.cache mt-random_head.c mt-random_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
