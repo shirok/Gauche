@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.15 2002-03-08 07:53:44 shirok Exp $
+# $Id: gauche-config.in,v 1.16 2002-07-19 02:21:47 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -32,6 +32,7 @@ shlib_so_suffix="@SHLIB_SO_SUFFIX@"
 shlib_so_cflags="@SHLIB_SO_CFLAGS@"
 shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
 shlib_so_libs="@SHLIB_LIBS_FOR_EXT@"
+default_cflags="@DEFAULT_CFLAGS@"
 
 shlib_dylib_suffix="@SHLIB_DYLIB_SUFFIX@"
 shlib_dylib_ldflags="@SHLIB_DYLIB_LDFLAGS@"
@@ -107,6 +108,7 @@ case $1 in
   --dylib-suffix) echo $shlib_dylib_suffix;;
   --dylib-ldflags) echo $shlib_dylib_ldflags;;
   --libgauche-so) echo $libgauche_so;;
+  --default-cflags) echo $default_cflags;;
       
   *)  usage;;
 esac

@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.11 2002-07-18 10:52:21 shirok Exp $
+# $Id: aclocal.m4,v 1.12 2002-07-19 02:21:47 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -58,6 +58,11 @@ AC_DEFUN([AC_GAUCHE_CC],
          [
 CC="`$GAUCHE_CONFIG --cc`"
 AC_SUBST(CC)
+# adds default CFLAGS if it has not been set.
+ac_gauche_CFLAGS=${CFLAGS+set}
+if test -z "$ac_gauche_CFLAGS"; then
+  CFLAGS="`$GAUCHE_CONFIG --default-cflags`"
+fi
 ])
 
 # AC_GAUCHE_FLAGS
@@ -69,10 +74,13 @@ CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
 AC_SUBST(CFLAGS)
 CPPFLAGS="$CPPFLAGS $GAUCHE_INC"       # some test requires this
 LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --local-libdir`"
+AC_GAUCHE_OPTFLAGS
 ])
 
 # AC_GAUCHE_OPTFLAGS
 #   Sets OPTFLAGS with some optimization flags using heuristics.
+#   If you use AC_GAUCHE_FLAGS, this test is included.
+#   The main configure and gc's configure also use this.
 AC_DEFUN([AC_GAUCHE_OPTFLAGS],
          [
 case "$host" in
