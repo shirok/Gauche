@@ -31,7 +31,7 @@
 ;;  PARTICULAR PURPOSE.
 ;;
 
-;; Adapted to Gauche by Shiro Kawai (shiro@acm.org) to adapt to Gauche.
+;; Adapted to Gauche by Shiro Kawai (shiro@acm.org)
 ;;  - Gauche prefers receive to call-with-values
 ;;  - Added a call to provide, so that this file can be "require"d.
 ;;  - Added module stuff.
@@ -57,10 +57,17 @@
     
     ((let-values "mktmp" (?a . ?b) ?e0 (?arg ...) ?bindings (?tmp ...) ?body)
      (let-values "mktmp" ?b ?e0 (?arg ... x) ?bindings (?tmp ... (?a x)) ?body))
-    
+
+    ;; NB: this clause shouldn't be necessary, but Gauche's macro expander
+    ;; as of 0.4.10 doesn't handle the case well.
+    ((let-values "mktmp" ?a ?e0 () ?bindings (?tmp ...) ?body)
+     (receive x ?e0
+       (let-values "bind" ?bindings (?tmp ... (?a x)) ?body)))
+
     ((let-values "mktmp" ?a ?e0 (?arg ...) ?bindings (?tmp ...) ?body)
-     (receive (?arg ... . ?x) ?e0
-       (let-values "bind" ?bindings (?tmp ... (?a x)) ?body)))))
+     (receive (?arg ... . x) ?e0
+       (let-values "bind" ?bindings (?tmp ... (?a x)) ?body)))
+    ))
 
 (define-syntax let*-values
   (syntax-rules ()
