@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: dl_darwin.c,v 1.2 2003-05-16 07:45:14 shirok Exp $
+ *  $Id: dl_darwin.c,v 1.3 2003-05-21 08:54:02 shirok Exp $
  */
 
 /* Cf: Technical Note TN2071 "Porting Command Line Unix Tools to MacOS X"
@@ -22,6 +22,10 @@
 */
 
 /* This file is included in load.c */
+
+/* NB: This isn't really used for now, since GC requires a special wrapper
+   around dlopen() and we can't casually replace it.  I need to tweak
+   GC's external API so that we can safely wrap these calls. */
 
 #include <mach-o/dyld.h>
 
