@@ -1,3 +1,29 @@
+2002-01-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/repl.c : fixed the bug of VM stack rewinding problem.
+	* src/extlib.stub : added port-type
+	* lib/srfi-0.scm : added module stuff
+
+2002-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c : fixed the traditional macro transformer spec.
+	  In the form like (define-macro foo (lambda args ...)), args was
+	  bound to the entire form (including foo) but it was
+	  inconsisntent with tranditional Scheme implementation and also
+	  with (define-macro (foo . args) ...) form.   Now args receives
+	  the arguments of foo, as expected.
+
+2002-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c : made Scm_ReadError public.  improve the error message
+	  of "EOF inside list" error.
+	* lib/gauche/vm/debugger.scm : avoid error on the form that doesn't
+	  have source-info.
+
+2002-01-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c : added.
+
 2002-01-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/class.h, src/class.c, src/error.c, src/system.c :
