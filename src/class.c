@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.105 2003-11-27 17:10:40 shirok Exp $
+ *  $Id: class.c,v 1.106 2003-12-08 08:38:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -802,11 +802,6 @@ int Scm_TypeP(ScmObj obj, ScmClass *type)
 /*
  * compute-cpl
  */
-static ScmObj compute_cpl_cb(ScmObj k, void *dummy)
-{
-    return SCM_CLASS(k)->directSupers;
-}
-
 ScmObj Scm_ComputeCPL(ScmClass *klass)
 {
     ScmObj seqh = SCM_NIL, seqt, ds, dp, result;
@@ -816,7 +811,6 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
                     SCM_CMP_EQ);
     ds = Scm_Delete(SCM_OBJ(SCM_CLASS_TOP), ds, SCM_CMP_EQ);
     ds = Scm_Append2(ds, SCM_LIST1(SCM_OBJ(SCM_CLASS_OBJECT)));
-    SCM_APPEND1(seqh, seqt, ds);
 
     SCM_FOR_EACH(dp, klass->directSupers) {
         if (!Scm_TypeP(SCM_CAR(dp), SCM_CLASS_CLASS))
@@ -828,8 +822,10 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
         SCM_APPEND1(seqh, seqt, SCM_CLASS(SCM_CAR(dp))->cpl);
     }
     SCM_APPEND1(seqh, seqt, Scm_ObjectClass.cpl);
+
+    SCM_APPEND1(seqh, seqt, ds);
     
-    result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh, compute_cpl_cb, NULL);
+    result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh);
     if (SCM_FALSEP(result))
         Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
                   klass->directSupers);

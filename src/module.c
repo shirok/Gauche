@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.44 2003-09-07 12:37:11 shirok Exp $
+ *  $Id: module.c,v 1.45 2003-12-08 08:38:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -344,16 +344,10 @@ ScmObj Scm_ExportAll(ScmModule *module)
 /* NB: ExtendModule alters module's precedence list, and may cause
    unwanted side effects when used carelessly.  */
 
-static ScmObj mod_get_super(ScmObj module, void *data)
-{
-    return SCM_MODULE(module)->parents;
-}
-
 ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
 {
     ScmObj mpl, seqh = SCM_NIL, seqt = SCM_NIL, sp;
 
-    SCM_APPEND1(seqh, seqt, supers);
     SCM_FOR_EACH(sp, supers) {
         if (!SCM_MODULEP(SCM_CAR(sp))) {
             Scm_Error("non-module object found in the extend syntax: %S",
@@ -361,8 +355,9 @@ ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
         }
         SCM_APPEND1(seqh, seqt, SCM_MODULE(SCM_CAR(sp))->mpl);
     }
+    SCM_APPEND1(seqh, seqt, supers);
     module->parents = supers;
-    mpl = Scm_MonotonicMerge(SCM_OBJ(module), seqh, mod_get_super, NULL);
+    mpl = Scm_MonotonicMerge(SCM_OBJ(module), seqh);
     if (SCM_FALSEP(mpl)) {
         Scm_Error("can't extend those modules simultaneously because of inconsistent precedence lists: %S", supers);
     }

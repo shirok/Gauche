@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.208 2003-11-25 04:41:42 shirok Exp $
+;;; $Id: extlib.stub,v 1.209 2003-12-08 08:38:31 shirok Exp $
 ;;;
 
 "
@@ -247,18 +247,8 @@
     SCM_RETURN(SCM_UNDEFINED);
   }")
 
-;; TODO: this doesn't work properly.  Find the cause.
-"
-static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
-{
-    ScmObj proc = SCM_OBJ(data);
-    return Scm_Apply(proc, SCM_LIST1(elt));
-}
-"
-
-(define-cproc monotonic-merge (start sequences::<list> get-super::<procedure>)
-  "  SCM_RETURN(Scm_MonotonicMerge(start, sequences,
-                                   monotonic_merge_cb, (void*)get_super));")
+(define-cproc monotonic-merge (start sequences::<list>)
+  (return "Scm_MonotonicMerge"))
 
 (define-cproc pair-attributes (pair::<pair>)
   (return "SCM_PAIR_ATTR"))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.354 2003-12-05 19:38:28 shirok Exp $
+ *  $Id: gauche.h,v 1.355 2003-12-08 08:38:31 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -714,10 +714,7 @@ SCM_EXTERN ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode);
 SCM_EXTERN ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode);
 SCM_EXTERN ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode);
 
-SCM_EXTERN ScmObj Scm_TopologicalSort(ScmObj edges);
-SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
-				     ScmObj (*get_super)(ScmObj, void*),
-				     void* data);
+SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences);
 SCM_EXTERN ScmObj Scm_Union(ScmObj list1, ScmObj list2);
 SCM_EXTERN ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
 

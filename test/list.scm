@@ -2,7 +2,7 @@
 ;;; tests for some builtin list operations
 ;;;
 
-;; $Id: list.scm,v 1.4 2001-05-02 08:20:25 shirok Exp $
+;; $Id: list.scm,v 1.5 2003-12-08 08:38:31 shirok Exp $
 
 (use gauche.test)
 
@@ -36,8 +36,8 @@
       (lambda ()
         (monotonic-merge
          'popup-menu
-         '((menu popup-mixin)
-           (menu choice-widget object)
+         '((menu choice-widget object)
+           (menu popup-mixin)
            (popup-mixin object))
          get-super)))
 
@@ -47,9 +47,9 @@
       (lambda ()
         (monotonic-merge
          'pedalo
-         '((pedal-wheel-boat small-catamaran)
-           (pedal-wheel-boat engineless day-boat wheel-boat boat object)
-           (small-catamaran small-multihull day-boat boat object))
+         '((pedal-wheel-boat engineless day-boat wheel-boat boat object)
+           (small-catamaran small-multihull day-boat boat object)
+           (pedal-wheel-boat small-catamaran))
          get-super)))
 
 (test "monotonic-merge"

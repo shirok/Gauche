@@ -1,5 +1,9 @@
 2003-12-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/list.c (Scm_MonotonicMerge), src/class.c, src/module.c,
+	  src/gauche.h, src/extlib.stub : Changed to use C3 linearization
+	  instead of Dylan linearization.  C3 is more intuitive.
+
 	* ext/charconv/charconv.c (Scm_MakeInputConversionPort,
 	  Scm_MakeOutputConversionPort) : fixed a bug that didn't
 	  initialize all the members of ScmPortBuffer.

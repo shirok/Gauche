@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.40 2003-11-19 06:12:17 shirok Exp $
+ *  $Id: list.c,v 1.41 2003-12-08 08:38:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -688,27 +688,25 @@ ScmObj Scm_TopologicalSort(ScmObj lists)
  * Monotonic Merge
  *
  *  Merge lists, keeping the order of elements (left to right) in each
- *  list.  Returns SCM_FALSE if the lists are inconsistent to be ordered
+ *  list.   If there's more than one way to order an element, choose the
+ *  first one appears in the given list of lists.
+ *  Returns SCM_FALSE if the lists are inconsistent to be ordered
  *  in the way. 
  *
  *  START is an item of the starting point.  It is inserted into the result
  *  first.  SEQUENCES is a list of lists describing the order of preference.
- *  GET_SUPER is a C procedure which returns direct parents of the given
- *  element.
  *
- *  The algorithm is used in class precedence list calculation of
- *  Dylan, described in the paper
+ *  The algorithm is used in C3 linearization of class precedence
+ *  calculation, described in the paper
  *    http://www.webcom.com/~haahr/dylan/linearization-oopsla96.html.
  *  Since the algorithm is generally useful, I implement the core routine
  *  of the algorithm here.
  */
 
-ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
-                          ScmObj (*get_super)(ScmObj, void*),
-                          void* data)
+ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences)
 {
-    ScmObj result = Scm_Cons(start, SCM_NIL), rp, next;
-    ScmObj *seqv, *sp;
+    ScmObj result = Scm_Cons(start, SCM_NIL), next, h;
+    ScmObj *seqv, *sp, *tp;
     int nseqs = Scm_Length(sequences);
 
     if (nseqs < 0) Scm_Error("bad list of sequences: %S", sequences);
@@ -726,26 +724,18 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
 
         /* select candidate */
         next = SCM_FALSE;
-        SCM_FOR_EACH(rp, result) {
-            ScmObj e = SCM_CAR(rp);
-            ScmObj supers = get_super(e, data);
-            if (!SCM_PAIRP(supers)) continue;
-            SCM_FOR_EACH(supers, supers) {
-                ScmObj s = SCM_CAR(supers);
-                /* see if s can go to the result */
-                for (sp = seqv; sp < seqv+nseqs; sp++) {
-                    if (SCM_PAIRP(*sp) && s == SCM_CAR(*sp)) break;
+        for (sp = seqv; sp < seqv+nseqs; sp++) {
+            if (!SCM_PAIRP(*sp)) continue;
+            h = SCM_CAR(*sp);
+            for (tp = seqv; tp < seqv+nseqs; tp++) {
+                if (!SCM_PAIRP(*tp)) continue;
+                if (!SCM_FALSEP(Scm_Memq(h, SCM_CDR(*tp)))) {
+                    break;
                 }
-                if (sp == seqv+nseqs) continue;
-                for (sp = seqv; sp < seqv+nseqs; sp++) {
-                    if (SCM_PAIRP(*sp) && !SCM_FALSEP(Scm_Memq(s, SCM_CDR(*sp))))
-                        break;
-                }
-                if (sp != seqv+nseqs) continue;
-                next = s;
-                break;
             }
-            if (!SCM_FALSEP(next)) break;
+            if (tp != seqv+nseqs) continue;
+            next = h;
+            break;
         }
 
         if (SCM_FALSEP(next)) return SCM_FALSE; /* inconsistent */
@@ -753,7 +743,7 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
         /* move the candidate to the result */
         result = Scm_Cons(next, result);
         for (sp = seqv; sp < seqv+nseqs; sp++) {
-            if (SCM_PAIRP(*sp) && next == SCM_CAR(*sp)) {
+            if (SCM_PAIRP(*sp) && SCM_EQ(next, SCM_CAR(*sp))) {
                 *sp = SCM_CDR(*sp);
             }
         }
