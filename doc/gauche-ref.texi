@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.375 2003-02-27 10:45:31 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.376 2003-02-27 12:17:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -20180,6 +20180,8 @@ If no element in @var{seq} satisfies @var{pred}, @code{#f} is returned.
 (find-index char-numeric? "abraCadabra")
   @result{} #f
 @end example
+
+See also @code{list-index} in SRFI-1 (@xref{SRFI-1 Searching}).
 @end deffn
 
 @node Implementing sequence,  , Mapping over sequences, gauche.sequence - Sequence framework
