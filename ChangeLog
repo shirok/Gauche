@@ -1,3 +1,22 @@
+2001-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c, lib/srfi-13/* : fixed the buf of string-index with
+	  start/end args.  added make-string-pointer start/end optional
+	  args, and optimized srfi-13 functions to it.
+	* src/load.c, src/vm.c : fixed autoload bug that doesn't load
+	  the file when autoload symbol is referenced as a variable.
+	* ext/dbm/* : made it pass through the test.
+
+2001-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* gc : upgraded Boehm GC package from 5.3 to 6.0.
+	* ext/dbm : made the basic functions work.
+
+2001-10-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/with.scm : added read-from-string and write-to-string
+	  to be autoloaded.
+
 2001-10-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/tree.scm : added.  fast concatenation and rendering of text.
@@ -26,7 +45,7 @@
 	* src/genstub : prevent generated code from calling SCM_MAKE_KEYWORD
 	  at the subr application time; keywords are now created at setup time.
 	  Also added initcode form.
-	* ext/dbm : made it work.
+	* ext/dbm : made it compile.
 	
 2001-10-19  Shiro Kawai  <shiro@acm.org>
 
