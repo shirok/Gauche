@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.62 2001-06-17 22:05:20 shirok Exp $
+;;; $Id: stdlib.stub,v 1.63 2001-06-24 23:49:20 shirok Exp $
 ;;;
 
 
@@ -378,6 +378,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 ;;
 
 (define-cproc pair? (obj)
+  (inliner "SCM_VM_PAIRP")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PAIRP(obj)));")
 
 (define-cproc cons (obj1 obj2)
@@ -535,6 +536,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 ;;
 
 (define-cproc symbol? (obj)
+  (inliner "SCM_VM_SYMBOLP")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_SYMBOLP(obj)));")
 
 (define-cproc symbol->string (obj)
@@ -550,6 +552,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 ;;
 
 (define-cproc char? (obj)
+  (inliner "SCM_VM_CHARP")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_CHARP(obj)));")
 
 (define-cproc char=? (c1 c2)
@@ -631,6 +634,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 ;;
 
 (define-cproc string? (obj)
+  (inliner "SCM_VM_STRINGP")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)));")
 
 (define-cproc make-string (len &optional (c #\ ))
@@ -819,6 +823,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc values (&rest args)
+  (inliner "SCM_VM_VALUES")
   "  SCM_RETURN(Scm_Values(args));")
 
 ;; call-with-values - defined in gauche-init.scm
@@ -927,6 +932,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   SCM_RETURN(r);")
 
 (define-cproc eof-object? (obj)
+  (inliner "SCM_VM_EOFP")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EOFP(obj)));")
 
 ; char-ready?

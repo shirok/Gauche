@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.83 2001-06-23 07:14:12 shirok Exp $
+ *  $Id: vm.c,v 1.84 2001-06-24 23:49:20 shirok Exp $
  */
 
 #include "gauche.h"
@@ -891,6 +891,26 @@ static void run_loop()
                 val0 = Scm_Assv(item, val0);
                 continue;
             }
+            CASE(SCM_VM_PAIRP) {
+                val0 = SCM_MAKE_BOOL(SCM_PAIRP(val0));
+                continue;
+            }
+            CASE(SCM_VM_CHARP) {
+                val0 = SCM_MAKE_BOOL(SCM_CHARP(val0));
+                continue;
+            }
+            CASE(SCM_VM_EOFP) {
+                val0 = SCM_MAKE_BOOL(SCM_EOFP(val0));
+                continue;
+            }
+            CASE(SCM_VM_STRINGP) {
+                val0 = SCM_MAKE_BOOL(SCM_STRINGP(val0));
+                continue;
+            }
+            CASE(SCM_VM_SYMBOLP) {
+                val0 = SCM_MAKE_BOOL(SCM_SYMBOLP(val0));
+                continue;
+            }
             CASE(SCM_VM_APPEND) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 ScmObj cp = SCM_NIL, arg;
@@ -922,6 +942,20 @@ static void run_loop()
                 if (!SCM_PROCEDUREP(val0))
                     VM_ERR(("procedure required, but got %S\n", val0));
                 val0 = Scm_Setter(SCM_PROCEDURE(val0));
+                continue;
+            }
+            CASE(SCM_VM_VALUES) {
+                int nargs = SCM_VM_INSN_ARG(code), i;
+                if (nargs >= SCM_VM_MAX_VALUES)
+                    VM_ERR(("values got too many args"));
+                VM_ASSERT(nargs < sp - vm->stackBase);
+                if (nargs > 0) {
+                    for (i = nargs-1; i>0; i--) {
+                        vm->vals[i-1] = val0;
+                        POP_ARG(val0);
+                    }
+                }
+                vm->numVals = nargs;
                 continue;
             }
             CASE(SCM_VM_VEC) {
