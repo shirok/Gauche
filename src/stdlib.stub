@@ -664,8 +664,16 @@
 (define-cproc current-output-port ()
   "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_OUTPUT_PORT));")
 
-; with-input-from-file
-; with-output-to-file
+(define-cproc with-input-from-file (file thunk)
+  (assert (string? file))
+  (assert (procedure? thunk))
+  "  Scm_WithFile(file, thunk, 0);")
+
+(define-cproc with-output-to-file (file thunk)
+  (assert (string? file))
+  (assert (procedure? thunk))
+  "  Scm_WithFile(file, thunk, 1);")
+
 
 (define-cproc open-input-file (path)
   (assert (string? path))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.10 2001-01-18 20:24:40 shiro Exp $
+ *  $Id: vm.c,v 1.11 2001-01-19 20:09:53 shiro Exp $
  */
 
 #include "gauche.h"
@@ -24,7 +24,6 @@
  *   VM encapsulates the dynamic status of the current exection.
  *   In Gauche, there's always one active virtual machine per thread,
  *   refered by Scm_VM().
- *
  */
 
 static int vm_print(ScmObj obj, ScmPort *out, int mode)
@@ -62,18 +61,22 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->curout = SCM_PORT(Scm_Stdout());
     v->curerr = SCM_PORT(Scm_Stderr());
 
-    v->debugLevel = SCM_VM_DEBUG_DEFAULT;
     v->enableInline = 1;
 
     /* initial frame */
-    v->env = topenv(v->module);
+    v->env = NULL;
         
     v->cont = NULL;
     v->argp = SCM_NIL;
     v->pc = SCM_NIL;
 
     v->handlers = SCM_NIL;
-    
+
+#ifdef SCM_VM_USE_STACK
+    v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
+    v->sp = v->stack;
+    v->stackSize = SCM_VM_STACK_SIZE;
+#endif
     return v;
 }
 
@@ -87,7 +90,18 @@ static void vm_reset()
 
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
+#ifdef SCM_VM_USE_STACK
+    ScmObj *p, head = SCM_NIL, tail;
+    if (vm->env) {
+        p = vm->env->data + vm->env->size;
+        for (; p < vm->sp; p++) {
+            SCM_APPEND1(head, tail, *p);
+        }
+    }
+    return head;
+#else
     return Scm_Reverse(vm->argp);
+#endif
 }
 
 /*
@@ -105,9 +119,37 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     return prev;
 }
 
+/*
+ * Frame management
+ */
+
+static ScmEnvFrame *alloc_env(int size)
+{
+    ScmEnvFrame *e;
+#ifdef SCM_VM_USE_STACK
+    e = (ScmEnvFrame*)theVM->sp;
+    theVM->sp += sizeof(ScmEnvFrame)/sizeof(ScmObj) + (size-1);
+#else
+    e = SCM_NEW2(ScmEnvFrame*, sizeof(ScmEnvFrame) + (size-1)*sizeof(ScmObj));
+#endif
+    return e;
+}
+
+static ScmContFrame *alloc_cont(void)
+{
+    ScmContFrame *c;
+#ifdef SCM_VM_USE_STACK
+    c = (ScmContFrame*)theVM->sp;
+    theVM->sp += sizeof(ScmContFrame);
+#else
+    c = SCM_NEW(ScmContFrame);
+#endif
+    return c;
+}
+
 static ScmEnvFrame *topenv(ScmModule *module)
 {
-    ScmEnvFrame *e = SCM_NEW(ScmEnvFrame);
+    ScmEnvFrame *e = alloc_env(1);
     e->up = NULL;
     e->info = SCM_MAKE_STR("[toplevel]");
     e->size = 1;
@@ -117,9 +159,7 @@ static ScmEnvFrame *topenv(ScmModule *module)
 
 static ScmEnvFrame *newenv(ScmObj info, int nlocals, ScmEnvFrame *up)
 {
-    ScmEnvFrame *e;
-    int size = sizeof(ScmEnvFrame) + (nlocals-1)*sizeof(ScmObj);
-    e = (ScmEnvFrame*)Scm_Malloc(size);
+    ScmEnvFrame *e = alloc_env(nlocals);
     e->up = up;
     e->info = info;
     e->size = nlocals;
@@ -129,8 +169,7 @@ static ScmEnvFrame *newenv(ScmObj info, int nlocals, ScmEnvFrame *up)
 static ScmContFrame *get_continuation(ScmObj next)
 {
     void *p;
-    ScmContFrame *c;
-    SCM_MALLOC_WORDS(c, sizeof(ScmContFrame)/sizeof(GC_word), ScmContFrame*);
+    ScmContFrame *c = alloc_cont();
     c->prev = theVM->cont;
     c->env = theVM->env;
     c->argp = theVM->argp;
@@ -150,6 +189,8 @@ static void push_continuation(ScmObj next)
  *  Interprets intermediate code CODE on VM.
  */
 
+#ifndef SCM_VM_USE_STACK
+
 #define PUSH_ARG(obj)                           \
     do {                                        \
         ScmPair *z__VM;                         \
@@ -159,21 +200,24 @@ static void push_continuation(ScmObj next)
 #define POP_ARG(var)  (var = SCM_CAR(vm->argp), vm->argp = SCM_CDR(vm->argp))
 #define PEEK_ARG(var) (var = SCM_CAR(vm->argp))
 #define DISCARD_ARG() (vm->argp = SCM_CDR(vm->argp))
-
 #define CHECK_ARGCNT(cnt)  SCM_ASSERT(Scm_Length(vm->argp) >= (cnt))
+
+#else /* SCM_VM_USE_STACK */
+
+#define PUSH_ARG(obj)  (*vm->sp++ = (obj))
+#define POP_ARG(var)   (var = *--vm->sp)
+#define PEEK_ARG(var)  (var = *(vm->sp-1))
+#define DISCARD_ARG()  (vm->sp--)
+#define CHECK_ARGCNT(cnt)  SCM_ASSERT((vm->sp - vm->stack) >= (cnt))
+
+#endif
 
 static void run_loop(ScmObj);
 
 void Scm_Run(ScmObj program)
 {
     vm_reset();
-    SCM_PUSH_ERROR_HANDLER {
-        run_loop(program);
-    }
-    SCM_WHEN_ERROR {
-        
-    }
-    SCM_POP_ERROR_HANDLER;
+    run_loop(program);
 }
 
 void Scm_Cont(void)
@@ -273,8 +317,8 @@ static void run_loop(ScmObj program)
             }
         case SCM_VM_LREF:
             {
-                int off = SCM_VM_LREF_OFFSET(code);
-                int dep = SCM_VM_LREF_DEPTH(code);
+                int dep = SCM_VM_INSN_ARG0(code);
+                int off = SCM_VM_INSN_ARG1(code);
                 ScmEnvFrame *e = vm->env;
                 
                 while (dep-- > 0) {
@@ -293,8 +337,8 @@ static void run_loop(ScmObj program)
             }
         case SCM_VM_CALL:
             {
-                int nargs = SCM_VM_CALL_NARGS(code);
-                int nrets = SCM_VM_CALL_NRETS(code);
+                int nargs = SCM_VM_INSN_ARG0(code);
+                int nrets = SCM_VM_INSN_ARG1(code);
                 int i, reqargs, restarg, argcnt;
                 ScmObj proc, a;
                 ScmEnvFrame *e;
@@ -351,7 +395,7 @@ static void run_loop(ScmObj program)
                                          SCM_SUBR(proc)->data);
                     pc = vm->pc;
                 } else {
-                    if (nrets == SCM_VM_NRETS_UNKNOWN) {
+                    if (nrets == 0x03ff) {
                         /* This is a tail call.  We don't need to save
                            current continuation, rather the callee to
                            use it. */
@@ -387,7 +431,7 @@ static void run_loop(ScmObj program)
             }
         case SCM_VM_LET:
             {
-                int nlocals = SCM_VM_LET_NLOCALS(code);
+                int nlocals = SCM_VM_INSN_ARG(code);
                 ScmObj info;
 
                 SCM_ASSERT(SCM_PAIRP(pc));
@@ -430,8 +474,8 @@ static void run_loop(ScmObj program)
                 } else if (SCM_VM_INSNP(location)
                            && SCM_VM_INSN_CODE(location) == SCM_VM_LREF) {
                     ScmEnvFrame *e = vm->env;
-                    int off = SCM_VM_LREF_OFFSET(location);
-                    int dep = SCM_VM_LREF_DEPTH(location);
+                    int dep = SCM_VM_INSN_ARG0(location);
+                    int off = SCM_VM_INSN_ARG1(location);
                     
                     while (dep-- > 0) {
                         SCM_ASSERT(e != NULL);
@@ -489,8 +533,8 @@ static void run_loop(ScmObj program)
                 body = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
 
-                closure = Scm_MakeClosure(SCM_VM_LAMBDA_NARGS(code),
-                                          SCM_VM_LAMBDA_RESTARG(code),
+                closure = Scm_MakeClosure(SCM_VM_INSN_ARG0(code),
+                                          SCM_VM_INSN_ARG1(code),
                                           body, vm->env, info);
                 PUSH_ARG(closure);
                 continue;
@@ -743,7 +787,7 @@ void Scm_Apply0(ScmObj proc)
     if (!SCM_PROCEDUREP(proc))
         Scm_Error("procedure required, but got %S", proc);
     PUSH_ARG(proc);
-    SCM_NEW_PAIR(p, SCM_VM_MAKE_CALL(0, 1), vm->pc);
+    SCM_NEW_PAIR(p, SCM_VM_INSN2(SCM_VM_CALL, 0, 1), vm->pc);
     vm->pc = SCM_OBJ(p);
 }
 
@@ -755,7 +799,7 @@ void Scm_Apply1(ScmObj proc, ScmObj arg)
         Scm_Error("procedure required, but got %S", proc);
     PUSH_ARG(arg);
     PUSH_ARG(proc);
-    SCM_NEW_PAIR(p, SCM_VM_MAKE_CALL(1, 1), vm->pc);
+    SCM_NEW_PAIR(p, SCM_VM_INSN2(SCM_VM_CALL, 1, 1), vm->pc);
     vm->pc = SCM_OBJ(p);
 }
 
@@ -768,7 +812,7 @@ void Scm_Apply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PUSH_ARG(proc);
-    SCM_NEW_PAIR(p, SCM_VM_MAKE_CALL(2, 1), vm->pc);
+    SCM_NEW_PAIR(p, SCM_VM_INSN2(SCM_VM_CALL, 2, 1), vm->pc);
     vm->pc = SCM_OBJ(p);
 }
 
@@ -786,7 +830,7 @@ void Scm_Apply(ScmObj proc, ScmObj args)
     }
     if (!SCM_NULLP(cp)) Scm_Error("improper list not allowed: %S", args);
     PUSH_ARG(proc);
-    vm->pc = Scm_Cons(SCM_VM_MAKE_CALL(numargs, 1), vm->pc);
+    vm->pc = Scm_Cons(SCM_VM_INSN2(SCM_VM_CALL, numargs, 1), vm->pc);
 }
 
 /* TODO: write proper environment object!
@@ -888,7 +932,7 @@ void throw_exception_cc(ScmObj result, void **data)
 {
     ScmObj handlers = SCM_OBJ(data[0]);
     if (!SCM_NULLP(handlers)) {
-        ScmObj proc = SCM_CAAR(handlers);
+        ScmObj proc = SCM_CDAR(handlers);
         void *data = SCM_CDR(handlers);
         theVM->handlers = SCM_CDR(handlers);
         Scm_VMPushCC(throw_exception_cc, &data, 1);

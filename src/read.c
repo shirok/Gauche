@@ -1,5 +1,5 @@
 /*
- * io.c - input/output
+ * read.c - reader
  *
  *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
  *
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.4 2001-01-17 08:22:38 shiro Exp $
+ *  $Id: read.c,v 1.5 2001-01-19 20:09:53 shiro Exp $
  */
 
 #include <stdio.h>
@@ -173,6 +173,8 @@ ScmObj read_internal(ScmPort *port)
     case '0':; case '1':; case '2':; case '3':; case '4':;
     case '5':; case '6':; case '7':; case '8':; case '9':;
         return read_number(port, c);
+    case ')':; case ']':; case '}':;
+        read_error(port, "extra close parenthesis");
     case EOF:
         return SCM_EOF;
     default:

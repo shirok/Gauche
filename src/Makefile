@@ -9,7 +9,7 @@ GENERATED = stdlib.c extlib.c
 
 OBJS = core.o vm.o compile.o error.o inline.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o symbol.o \
-       module.o proc.o number.o io.o load.o promise.o stdlib.o extlib.o
+       module.o proc.o number.o io.o load.o promise.o repl.o stdlib.o extlib.o
 
 .SUFFIXES: .stub
 

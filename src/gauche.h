@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.11 2001-01-18 19:41:39 shiro Exp $
+ *  $Id: gauche.h,v 1.12 2001-01-19 20:09:53 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -25,6 +25,8 @@
 #include <gc.h>
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
+#undef SCM_VM_USE_STACK
+#define SCM_VM_STACK_SIZE     10000
 #define CHARCODE_EUC_JP
 
 #ifdef CHARCODE_EUC_JP
@@ -38,7 +40,7 @@
 #endif
 
 /*-------------------------------------------------------------
- * B A S I C   T Y P E S
+ * BASIC TYPES
  */
 
 /*
@@ -246,7 +248,7 @@ extern void Scm_Eval(ScmObj expr, ScmObj env);
 
 extern void Scm_DynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 
-extern void Scm_ThrowEXception(ScmObj exception);
+extern void Scm_ThrowException(ScmObj exception);
 
 /*---------------------------------------------------------
  * CLASS

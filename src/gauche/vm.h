@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.6 2001-01-18 19:41:39 shiro Exp $
+ *  $Id: vm.h,v 1.7 2001-01-19 20:09:53 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -101,6 +101,12 @@ typedef struct ScmErrorHandlerRec {
     jmp_buf jbuf;
 } ScmErrorHandler;
 
+/*
+ * VM structure
+ *
+ *
+ */
+
 struct ScmVMRec {
     SCM_HEADER;
     ScmVM *parent;
@@ -109,7 +115,6 @@ struct ScmVMRec {
     ScmObj errstr;              /* error string */
     ScmObj errorHandler;        /* error handler */
     
-    int debugLevel;             /* debug level */
     int enableInline;           /* enable inlining on compilation */
 
     ScmPort *curin;             /* current input port */
@@ -123,6 +128,12 @@ struct ScmVMRec {
     ScmContFrame *cont;         /* continuation */
 
     ScmObj handlers;            /* chain of active dynamic handlers */
+
+#ifdef SCM_VM_USE_STACK
+    ScmObj *sp;
+    ScmObj *stack;
+    int stackSize;
+#endif
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);
@@ -132,49 +143,24 @@ extern void Scm_VMDump(ScmVM *vm);
 extern ScmClass Scm_VMClass;
 #define SCM_CLASS_VM              (&Scm_VMClass)
 
-/* Instructions */
+/*
+ * VM instructions
+ */
 #define SCM_VM_INSN_TAG            0x0e
 
-#define SCM_VM_INSNP(obj)          ((SCM_WORD(obj)&0x0f) == SCM_VM_INSN_TAG)
-#define SCM_VM_INSN_CODE(obj)      ((SCM_WORD(obj)>>4)&0x0ff)
-#define SCM_VM_INSN_ARG(obj)       (SCM_WORD(obj) >> 12)
+#define SCM_VM_INSNP(obj)            ((SCM_WORD(obj)&0x0f) == SCM_VM_INSN_TAG)
+#define SCM_VM_INSN_CODE(obj)        ((SCM_WORD(obj)>>4)&0x0ff)
+#define SCM_VM_INSN_ARG(obj)         (SCM_WORD(obj) >> 12)
 
-#define SCM_VM_INSN_ARG0(obj)      ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_INSN_ARG1(obj)      ((SCM_WORD(obj) >> 22) & 0x03ff)
+#define SCM_VM_INSN_ARG0(obj)        ((SCM_WORD(obj) >> 12) & 0x03ff)
+#define SCM_VM_INSN_ARG1(obj)        ((SCM_WORD(obj) >> 22) & 0x03ff)
 
-#define SCM_VM_MAKE_INSN(code)     SCM_OBJ(((code)<<4)|SCM_VM_INSN_TAG)
-
-#define SCM_VM_LREF_OFFSET(obj)    ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_LREF_DEPTH(obj)     ((SCM_WORD(obj) >> 22) & 0x03ff)
-#define SCM_VM_MAKE_LREF(depth, off)  \
-    SCM_OBJ(((depth)<<22) | ((off)<<12) | (SCM_VM_LREF<<4) | SCM_VM_INSN_TAG)
-
-#define SCM_VM_CALL_NARGS(obj)     ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_CALL_NRETS(obj)     ((SCM_WORD(obj) >> 22) & 0x03ff)
-#define SCM_VM_NRETS_UNKNOWN       0x03ff
-#define SCM_VM_MAKE_CALL(nargs, nrets) \
-    SCM_OBJ(((nrets)<<22) | ((nargs)<<12) | (SCM_VM_CALL<<4) | SCM_VM_INSN_TAG)
-
-#define SCM_VM_LET_NLOCALS(obj)    SCM_VM_INSN_ARG(obj)
-#define SCM_VM_MAKE_LET(nlocals) \
-    SCM_OBJ(((nlocals)<<12) | (SCM_VM_LET<<4) | SCM_VM_INSN_TAG)
-#define SCM_VM_MAKE_TAILBIND(nlocals) \
-    SCM_OBJ(((nlocals)<<12) | (SCM_VM_TAILBIND<<4) | SCM_VM_INSN_TAG)
-#define SCM_VM_MAKE_LIST(nargs) \
-    SCM_OBJ(((nargs)<<12) | (SCM_VM_LIST<<4) | SCM_VM_INSN_TAG)
-#define SCM_VM_MAKE_LIST_STAR(nargs) \
-    SCM_OBJ(((nargs)<<12) | (SCM_VM_LIST_STAR<<4) | SCM_VM_INSN_TAG)
-#define SCM_VM_MAKE_APPEND(nargs) \
-    SCM_OBJ(((nargs)<<12) | (SCM_VM_APPEND<<4) | SCM_VM_INSN_TAG)
-#define SCM_VM_MAKE_VEC(nargs) \
-    SCM_OBJ(((nargs)<<12) | (SCM_VM_VEC<<4) | SCM_VM_INSN_TAG)
-#define SCM_VM_MAKE_APP_VEC(nargs) \
-    SCM_OBJ(((nargs)<<12) | (SCM_VM_APP_VEC<<4) | SCM_VM_INSN_TAG)
-
-#define SCM_VM_LAMBDA_NARGS(obj)   ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_LAMBDA_RESTARG(obj) ((SCM_WORD(obj) >> 22) & 0x03ff)
-#define SCM_VM_MAKE_LAMBDA(nargs, restarg) \
-    SCM_OBJ(((restarg)<<22) | ((nargs)<<12) | (SCM_VM_LAMBDA<<4) | SCM_VM_INSN_TAG)
+#define SCM_VM_INSN(code) \
+    SCM_OBJ(((code)<<4)|SCM_VM_INSN_TAG)
+#define SCM_VM_INSN1(code, arg) \
+    SCM_OBJ(((arg) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
+#define SCM_VM_INSN2(code, arg0, arg1) \
+    SCM_OBJ(((arg1) << 22) | ((arg0) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
 
 enum {
 #define DEFINSN(sym, nam, nparams)  sym,
@@ -185,33 +171,6 @@ enum {
 
 extern int Scm__VMInsnWrite(ScmObj insn, ScmPort *port, int mode);
 extern ScmObj Scm_VMInsnInspect(ScmObj obj);
-
-/*
- * Debug level
- */
-
-enum {
-    /* Full debug level
-     *  This level allows the programmer to track the execution process
-     *  precisely mapped onto the corresponding source code.  Importantly,
-     *  the tail call is not eliminated at this level.
-     */
-    SCM_VM_DEBUG_FULL,
-
-    /* Default debug level
-     *
-     */          
-    SCM_VM_DEBUG_DEFAULT,
-
-    /* Faster execution
-     *  At this level, some important information is not available at
-     *  run time.  Notably, SUBR calls don't push activation record,
-     *  so that you don't see them from the stack trace.
-     */          
-    SCM_VM_DEBUG_LESS,
-    SCM_VM_DEBUG_NONE
-};
-
 
 /*
  * Error handling 

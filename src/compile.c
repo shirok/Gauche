@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.7 2001-01-17 08:22:37 shiro Exp $
+ *  $Id: compile.c,v 1.8 2001-01-19 20:09:53 shiro Exp $
  */
 
 #include "gauche.h"
@@ -206,7 +206,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 
                 /* Symbol doesn't have syntactic bindings.  It must be
                    a global procedure call. */
-                head = SCM_LIST2(SCM_VM_MAKE_INSN(SCM_VM_GREF), head);
+                head = SCM_LIST2(SCM_VM_INSN(SCM_VM_GREF), head);
             } else {
                 head = SCM_LIST1(head);
             }
@@ -225,13 +225,13 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             }
 
             SCM_APPEND(code, codetail, head);
-            SCM_APPEND1(code, codetail, SCM_VM_MAKE_CALL(nargs, ctx));
+            SCM_APPEND1(code, codetail, SCM_VM_INSN2(SCM_VM_CALL, nargs, ctx));
             SCM_APPEND1(code, codetail,
-                          Scm_MakeSourceInfo(form, NULL));
+                        Scm_MakeSourceInfo(form, NULL));
 
             /* if this is in a statement context, discard the result. */
             if (ctx == 0) {
-                SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+                SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPARG));
             }
             return code;
         }
@@ -241,7 +241,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
            the variable, for it may raise an error. */
         SCM_APPEND(code, codetail, compile_varref(form, env));
         if (ctx == 0) {
-            SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+            SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPARG));
         }
         return code;
     }
@@ -262,7 +262,7 @@ static ScmObj lookup_env(ScmObj symbol, ScmObj env)
     SCM_FOR_EACH(frame, env) {
         SCM_FOR_EACH(var, SCM_CAR(frame)) {
             if (SCM_CAR(var) == symbol)
-                return SCM_VM_MAKE_LREF(depth, offset);
+                return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
             offset++;
         }
         depth++;
@@ -276,7 +276,7 @@ static ScmObj compile_varref(ScmObj sym, ScmObj env)
     ScmObj v = lookup_env(sym, env);
     ScmObj start = SCM_NIL, end;
     if (SCM_SYMBOLP(v)) {
-        SCM_APPEND1(start, end, SCM_VM_MAKE_INSN(SCM_VM_GREF));
+        SCM_APPEND1(start, end, SCM_VM_INSN(SCM_VM_GREF));
     }
     SCM_APPEND1(start, end, v);
     SCM_APPEND1(start, end, Scm_MakeSourceInfo(sym, NULL));
@@ -321,7 +321,7 @@ static ScmObj compile_define(ScmObj form,
     }
 
     SCM_APPEND(code, codetail, val);
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_DEFINE));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_DEFINE));
     SCM_APPEND1(code, codetail, var);
     return code;
 }
@@ -369,7 +369,7 @@ static ScmObj compile_set(ScmObj form,
     ScmObj code = SCM_NIL, codetail;
 
     if (!SCM_PAIRP(tail) || !SCM_PAIRP(SCM_CDR(tail))
-        || !SCM_NULLP(SCM_CDR(SCM_CDR(tail)))) {
+        || !SCM_NULLP(SCM_CDDR(tail))) {
         Scm_Error("syntax error: %S", form);
     }
     location = SCM_CAR(tail);
@@ -385,7 +385,7 @@ static ScmObj compile_set(ScmObj form,
 
     code = compile_int(expr, env, 1);
     codetail = Scm_LastPair(code);
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_SET));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_SET));
     SCM_APPEND1(code, codetail, lookup_env(location, env));
 
     /* set! doesn't return values.  however, if this is the tail call,
@@ -442,7 +442,7 @@ static ScmObj compile_body(ScmObj form,
                        Need to use compile_lambda_family, but we can't
                        use it until we have the new environment. */
                     val = Scm_Cons(SCM_SYM_LAMBDA,
-                                   Scm_Cons(args, SCM_CDR(SCM_CDR(expr))));
+                                   Scm_Cons(args, SCM_CDDR(expr)));
                 } else {
                     if (llen != 3)
                         Scm_Error("badly formed internal define: %S", expr);
@@ -459,14 +459,13 @@ static ScmObj compile_body(ScmObj form,
             int cnt;
             
             env = Scm_Cons(idef_vars, env);
-            SCM_APPEND1(body, bodytail, SCM_VM_MAKE_LET(idefs));
+            SCM_APPEND1(body, bodytail, SCM_VM_INSN1(SCM_VM_LET, idefs));
             SCM_APPEND1(body, bodytail, form);
             for (cnt=0; cnt<idefs; cnt++) {
                 ScmObj loc = compile_varref(SCM_CAR(idef_vars), env);
                 SCM_APPEND(body, bodytail,
-                                       compile_int(SCM_CAR(idef_vals),
-                                                   env, 1));
-                SCM_APPEND1(body, bodytail, SCM_VM_MAKE_INSN(SCM_VM_SET));
+                           compile_int(SCM_CAR(idef_vals), env, 1));
+                SCM_APPEND1(body, bodytail, SCM_VM_INSN(SCM_VM_SET));
                 SCM_APPEND(body, bodytail, loc);
                 idef_vars = SCM_CDR(idef_vars);
                 idef_vals = SCM_CDR(idef_vals);
@@ -484,7 +483,7 @@ static ScmObj compile_body(ScmObj form,
     }
     
     if (idefs > 0 && body_started) {
-        SCM_APPEND1(body, bodytail, SCM_VM_MAKE_INSN(SCM_VM_POPENV));
+        SCM_APPEND1(body, bodytail, SCM_VM_INSN(SCM_VM_POPENV));
     }
     return body;
 }
@@ -521,10 +520,10 @@ static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
 
     bodycode = compile_body(body, newenv, -1);
     SCM_APPEND(code, codetail, 
-                           SCM_LIST3(SCM_VM_MAKE_LAMBDA(nargs,restarg),
-                                     form, bodycode));
+               SCM_LIST3(SCM_VM_INSN2(SCM_VM_LAMBDA, nargs,restarg),
+                         form, bodycode));
     if (ctx == 0)
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPARG));
     return code;
 }
 
@@ -598,13 +597,13 @@ static ScmObj compile_if_family(ScmObj test_code, ScmObj then_code,
     }
     if (mergep) {
         /* make two instruction stream merges */
-        ScmObj next_cell = SCM_LIST1(SCM_VM_MAKE_INSN(SCM_VM_NOP));
+        ScmObj next_cell = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
         then_code = Scm_Append2X(then_code, next_cell);
         else_code = Scm_Append2X(else_code, next_cell);
     }
     
     SCM_APPEND(code, codetail, test_code);
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(insn));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN(insn));
     SCM_APPEND1(code, codetail, then_code);
     SCM_APPEND(code, codetail, else_code);
     return code;
@@ -677,10 +676,10 @@ static ScmObj compile_and_rec(ScmObj conds, ScmObj merger, int orp,
         return Scm_Append2X(last_test, merger);
     } else {
         ScmObj more_test =
-            Scm_Cons(SCM_VM_MAKE_INSN(SCM_VM_POPARG),
+            Scm_Cons(SCM_VM_INSN(SCM_VM_POPARG),
                      compile_and_rec(SCM_CDR(conds), merger, orp, env, ctx));
         ScmObj no_more_test =
-            (ctx == 0)? Scm_Cons(SCM_VM_MAKE_INSN(SCM_VM_POPARG), merger) : merger;
+            (ctx == 0)? Scm_Cons(SCM_VM_INSN(SCM_VM_POPARG), merger) : merger;
         return compile_if_family(SCM_CAR(conds),
                                  orp? no_more_test : more_test,
                                  orp? more_test : no_more_test,
@@ -699,7 +698,7 @@ static ScmObj compile_and(ScmObj form, ScmObj env, int ctx, void *data)
         if (ctx == 0) return SCM_NIL;
         else return orp ? SCM_LIST1(SCM_FALSE) : SCM_LIST1(SCM_TRUE);
     } else {
-        ScmObj merger = SCM_LIST1(SCM_VM_MAKE_INSN(SCM_VM_NOP));
+        ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
         return compile_and_rec(tail, merger, orp, env, ctx);
     }
 }
@@ -732,7 +731,7 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     int clen;
 
     if (casep)
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPARG));
     
     if (SCM_NULLP(clauses)) {
         /* If caller expects a result, let it have undefined value. */
@@ -769,9 +768,8 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
         if (clen != 3) {
             Scm_Error("badly formed '=>' clause in the form: %S", form);
         }
-        SCM_APPEND(code, codetail,
-                               compile_int(SCM_CADR(body), env, 1));
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_CALL(1, ctx));
+        SCM_APPEND(code, codetail, compile_int(SCM_CADR(body), env, 1));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN2(SCM_VM_CALL, 1, ctx));
         SCM_APPEND(code, codetail, merger);
     } else if (clen == 1) {
         /* This only applies for cond forms.
@@ -779,12 +777,12 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
            the result.  If this is in a statement context, however,
            we need to pop the test result. */
         if (ctx == 0) {
-            SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+            SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPARG));
         }
         SCM_APPEND(code, codetail, merger);
     } else {
         /* Normal case */
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPARG));
         SCM_APPEND(code, codetail, compile_body(body, env, ctx));
         SCM_APPEND(code, codetail, merger);
     }
@@ -792,10 +790,10 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     /* Rest of clauses.   We have the result of test
        on the stack when the rest of clauses are called, so
        we need to pop it first. */
-    SCM_APPEND1(altcode, altcodetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+    SCM_APPEND1(altcode, altcodetail, SCM_VM_INSN(SCM_VM_POPARG));
     SCM_APPEND(altcode, altcodetail,
-                           compile_cond_int(form, SCM_CDR(clauses),
-                                            merger, env, ctx, casep));
+               compile_cond_int(form, SCM_CDR(clauses),
+                                merger, env, ctx, casep));
 
     /* Emit test code for `case' form.  The value of the key is already
        on top of the stack. */
@@ -804,9 +802,9 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
         int testlen = Scm_Length(test);
         if (testlen < 0)
             Scm_Error("badly formed clause in case form: %S", clause);
-        SCM_APPEND1(testcode, testtail, SCM_VM_MAKE_INSN(SCM_VM_DUPARG));
+        SCM_APPEND1(testcode, testtail, SCM_VM_INSN(SCM_VM_DUPARG));
         SCM_APPEND1(testcode, testtail, test);
-        SCM_APPEND1(testcode, testtail, SCM_VM_MAKE_INSN(SCM_VM_MEMV));
+        SCM_APPEND1(testcode, testtail, SCM_VM_INSN(SCM_VM_MEMV));
         test = testcode;
     }
     
@@ -820,7 +818,7 @@ static ScmObj compile_cond(ScmObj form, ScmObj env, int ctx, void *data)
     if (SCM_NULLP(clauses)) {
         Scm_Error("at least one clause is required for cond: %S", form);
     }
-    merger = SCM_LIST1(SCM_VM_MAKE_INSN(SCM_VM_NOP));
+    merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     return compile_cond_int(form, clauses, merger, env, ctx, 0);
 }
 
@@ -843,7 +841,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
     /* First, push the value of the key on the stack */
     SCM_APPEND(code, codetail, compile_int(key, env, 1));
 
-    merger = SCM_LIST1(SCM_VM_MAKE_INSN(SCM_VM_NOP));
+    merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     SCM_APPEND(code, codetail,
                            compile_cond_int(form, clauses, merger,
                                             env, ctx, 1));
@@ -885,7 +883,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     ScmObj cfr = SCM_NIL, cfrtail;  /* current frame */
     ScmObj newenv, varp, valp;
     int count = 0;
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_LET(nvars));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_LET, nvars));
     SCM_APPEND1(code, codetail, form); /* debug info */
 
     if (type == BIND_LETREC) cfr = vars;
@@ -897,8 +895,8 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
          count++, varp=SCM_CDR(varp), valp=SCM_CDR(valp)) {
         ScmObj val = compile_int(SCM_CAR(valp), newenv, 1);
         SCM_APPEND(code, codetail, val);
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_SET));
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_LREF(0, count));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_SET));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN2(SCM_VM_LREF, 0, count));
             
         if (type == BIND_LET_STAR) {
             SCM_APPEND1(cfr, cfrtail, SCM_CAR(varp));
@@ -908,7 +906,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
     SCM_APPEND(code, codetail, body_compiler(body, newenv, ctx));
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPENV));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPENV));
     return code;
 }
 
@@ -1024,7 +1022,7 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     ScmObj test = SCM_CAR(body);
     ScmObj vars = SCM_CADR(body);
     ScmObj updts = SCM_CAR(SCM_CDDR(body)), updtsp;
-    ScmObj merger = SCM_LIST1(SCM_VM_MAKE_INSN(SCM_VM_NOP));
+    ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
 
     ScmObj code = SCM_NIL, codetail;
     ScmObj fincode = SCM_NIL, fintail;
@@ -1038,20 +1036,17 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     /* Compile updates.  We need to calculate all the updates first,
        discard current env, allocates new env then put the updates. */
     SCM_FOR_EACH(updtsp, updts) {
-        SCM_APPEND(bodycode, bodytail,
-                               compile_int(SCM_CAR(updtsp), env, 1));
+        SCM_APPEND(bodycode, bodytail, compile_int(SCM_CAR(updtsp), env, 1));
         varcnt++;
     }
-    SCM_APPEND1(bodycode, bodytail, SCM_VM_MAKE_TAILBIND(varcnt));
+    SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN1(SCM_VM_TAILBIND, varcnt));
     SCM_APPEND1(bodycode, bodytail, SCM_NIL); /* dbg info */
 
     /* Compile finalization code */
     if (SCM_PAIRP(SCM_CDR(test))) {
-        SCM_APPEND(fincode, fintail,
-                               compile_body(SCM_CDR(test), env, ctx));
+        SCM_APPEND(fincode, fintail, compile_body(SCM_CDR(test), env, ctx));
     } else {
-        if (ctx != 0)
-            SCM_APPEND1(fincode, fintail, SCM_UNDEFINED);
+        if (ctx != 0) SCM_APPEND1(fincode, fintail, SCM_UNDEFINED);
     }
 
     /* Compile test part and branch.
@@ -1059,9 +1054,8 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
        'else' branch.   Otherwise, 'else' branch becomes circular
        list and the rest of compilers will be confused. */
     SCM_APPEND(code, codetail, merger);
-    SCM_APPEND(code, codetail,
-                           compile_int(SCM_CAR(test), env, 1));
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_NOT));
+    SCM_APPEND(code, codetail, compile_int(SCM_CAR(test), env, 1));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_NOT));
     code = compile_if_family(code, bodycode, fincode, SCM_VM_IF, 0, env);
 
     /* Make the list circular.   */
@@ -1091,8 +1085,7 @@ static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
         SCM_APPEND1(vars, vars_tail, SCM_CAR(bind));
         SCM_APPEND1(inits, inits_tail, SCM_CADR(bind));
         SCM_APPEND1(updts, updts_tail,
-                      (blen == 3)?
-                      SCM_CAR(SCM_CDDR(bind)) : SCM_CAR(bind));
+                    (blen == 3)? SCM_CAR(SCM_CDDR(bind)) : SCM_CAR(bind));
         nvars++;
     }
     
@@ -1174,26 +1167,23 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
             && FREE_VAR_P(SCM_CAR(car), env)) {
             if (!VALID_QUOTE_SYNTAX_P(car))
                 Scm_Error("badly formed quasiquote: %S\n", form);
-            SCM_APPEND1(code, codetail, SCM_VM_MAKE_LIST(len));
+            SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_LIST, len));
             len = 0;
-            SCM_APPEND(code, codetail,
-                                   compile_int(SCM_CADR(car), env, 1));
+            SCM_APPEND(code, codetail, compile_int(SCM_CADR(car), env, 1));
             splice+=2;
         } else {
-            SCM_APPEND(code, codetail,
-                                   compile_qq(SCM_CAR(cp), env, level));
+            SCM_APPEND(code, codetail, compile_qq(SCM_CAR(cp), env, level));
             len++;
         }
     }
     if (!SCM_NULLP(cp)) {
-        SCM_APPEND(code, codetail,
-                               compile_qq(cp, env, level));
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_LIST_STAR(len+1));
+        SCM_APPEND(code, codetail, compile_qq(cp, env, level));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_LIST_STAR, len+1));
     } else {
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_LIST(len));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_LIST, len));
     }
     if (splice) {
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_APPEND(splice+1));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_APPEND, splice+1));
     }
     return code;
 }
@@ -1211,21 +1201,19 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
                     Scm_Error("badly formed unquote: %S\n", p);
                 if (level == 0) {
                     SCM_APPEND(code, codetail,
-                                           compile_int(SCM_CADR(p), env, 1));
+                               compile_int(SCM_CADR(p), env, 1));
                 } else {
                     SCM_APPEND(code, codetail,
-                                           compile_qq(SCM_CADR(p), env,
-                                                      level-1));
+                               compile_qq(SCM_CADR(p), env, level-1));
                 }
                 alen++;
             } else if (car == SCM_SYM_UNQUOTE_SPLICING
                        && FREE_VAR_P(car, env)) {
                 if (!VALID_QUOTE_SYNTAX_P(p))
                     Scm_Error("badly formed quasiquote: %S\n", form);
-                SCM_APPEND1(code, codetail, SCM_VM_MAKE_LIST(alen));
+                SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_LIST, alen));
                 alen = 0;
-                SCM_APPEND(code, codetail,
-                                       compile_int(SCM_CADR(p), env, 1));
+                SCM_APPEND(code, codetail, compile_int(SCM_CADR(p), env, 1));
                 spliced+=2;
             } else {
                 SCM_APPEND1(code, codetail, p);
@@ -1238,13 +1226,13 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
     }
 
     if (spliced == 0) {
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_VEC(vlen));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_VEC, vlen));
     } else {
         if (alen) {
-            SCM_APPEND1(code, codetail, SCM_VM_MAKE_LIST(alen));
+            SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_LIST, alen));
             spliced++;
         }
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_APP_VEC(spliced));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_APP_VEC, spliced));
     }
     return code;
 }
@@ -1300,16 +1288,16 @@ static ScmObj compile_delay(ScmObj form, ScmObj env, int ctx, void *data)
     if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
         Scm_Error("bad delay form: %S", form);
     SCM_APPEND(code, codetail,
-                           compile_int(SCM_LIST3(SCM_SYM_LAMBDA,
-                                                 SCM_NIL,
-                                                 SCM_CADR(form)),
-                                       env, 1));
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_PROMISE));
+               compile_int(SCM_LIST3(SCM_SYM_LAMBDA,
+                                     SCM_NIL,
+                                     SCM_CADR(form)),
+                           env, 1));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_PROMISE));
 
     if (ctx == 0) {
         /* it doens't make sense to call delay in statement context,
            but emit the code for now. */
-        SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(SCM_VM_POPARG));
+        SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_POPARG));
     }
     return code;
 }

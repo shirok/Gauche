@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: inline.c,v 1.5 2001-01-17 08:22:37 shiro Exp $
+ *  $Id: inline.c,v 1.6 2001-01-19 20:09:53 shiro Exp $
  */
 
 #include "gauche.h"
@@ -39,7 +39,7 @@
 
 #define INLINE_RETURN                                           \
     if (ctx == 0) SCM_APPEND1(code, codetail,                   \
-                              SCM_VM_MAKE_INSN(SCM_VM_POPARG)); \
+                              SCM_VM_INSN(SCM_VM_POPARG)); \
     return code
 
 #define PUSH_ARG0                                       \
@@ -53,7 +53,7 @@
                Scm_Compile(SCM_CADR(SCM_CDDR(form)), env, 1))
 
 #define PUSH_INSN(insn) \
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_INSN(insn));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN(insn));
 
 
 
@@ -92,7 +92,7 @@ ScmObj Scm_inline_vector(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
     SCM_FOR_EACH(args, args) {
         SCM_APPEND(code, codetail, Scm_Compile(SCM_CAR(args), env, 1));
     }
-    SCM_APPEND1(code, codetail, SCM_VM_MAKE_VEC(nargs));
+    SCM_APPEND1(code, codetail, SCM_VM_INSN1(SCM_VM_VEC, nargs));
     INLINE_RETURN;
 }
 
