@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.31 2001-02-08 08:48:26 shiro Exp $
+ *  $Id: vm.c,v 1.32 2001-02-08 20:49:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -52,6 +52,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
     v->sp = v->stack;
     v->stackSize = SCM_VM_STACK_SIZE;
+    v->stackBase = v->stack;
+    v->stackEnd = v->stack + v->stackSize;
 
     v->env = NULL;
     v->argp = (ScmEnvFrame*)v->stack;
@@ -146,7 +148,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 
 /* return true if ptr points into the stack area */
 #define IN_STACK_P(ptr)                         \
-    ((ptr) >= vm->stack && (ptr) < vm->stack + vm->stackSize)
+    ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
 
 #define RESTORE_REGS()                          \
     do {                                        \
@@ -278,7 +280,9 @@ static ScmContFrame *save_cont(ScmVM *vm)
 {
     ScmContFrame *c = vm->cont;
     for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
+        ScmEnvFrame *e = save_env(vm, c->env, c);
     }
+    vm->stackBase = (ScmObj *)vm->cont + CONT_FRAME_SIZE;
     return c;
 }
 
@@ -414,7 +418,7 @@ static void run_loop()
                 PUSH_ENV_HDR();
                 continue;
             }
-            CASE(SCM_VM_TAIL_CALL) ;
+            CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
             CASE(SCM_VM_CALL) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 int tailp = (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL);
