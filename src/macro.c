@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.6 2001-02-23 13:00:01 shiro Exp $
+ *  $Id: macro.c,v 1.7 2001-02-23 13:31:52 shiro Exp $
  */
 
 #include "gauche.h"
@@ -80,8 +80,8 @@ static int synrule_print(ScmObj obj, ScmPort *port, int mode)
 
     nc += Scm_Printf(port, "#<syntax-rules(%d)\n", r->numRules);
     for (i = 0; i < r->numRules; i++) {
-        nc += Scm_Printf(port, "%2d: (numPvars=%d)\n",
-                         i, r->rules[i].numPvars);
+        nc += Scm_Printf(port, "%2d: (numPvars=%d, maxLevel=%d)\n",
+                         i, r->rules[i].numPvars, r->rules[i].maxLevel);
         nc += Scm_Printf(port, "   pattern  = %S\n", r->rules[i].pattern);
         nc += Scm_Printf(port, "   template = %S\n", r->rules[i].template);
     }
@@ -200,6 +200,7 @@ typedef struct {
     ScmObj literals;            /* list of literal identifiers */
     ScmObj pvars;               /* list of (pvar . pvref) */
     int pvcnt;                  /* counter of pattern variables */
+    int maxlev;                 /* maximum level */
     ScmObj tvars;               /* list of identifies inserted in template */
     ScmObj env;                 /* compiler env of this macro definition */
 } PatternContext;
@@ -305,6 +306,7 @@ static ScmObj compile_rule1(ScmObj form,
                 ScmSyntaxPattern *nspat;
                 if (!SCM_NULLP(SCM_CDDR(pp))) BAD_ELLIPSIS(ctx);
                 nspat = make_syntax_pattern(spat->level+1, TRUE);
+                if (ctx->maxlev <= spat->level) ctx->maxlev++;
                 nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
                                                patternp);
                 SCM_APPEND1(h, t, SCM_OBJ(nspat));
@@ -328,6 +330,7 @@ static ScmObj compile_rule1(ScmObj form,
                 ScmSyntaxPattern *nspat;
                 if (i != len-2) BAD_ELLIPSIS(ctx);
                 nspat = make_syntax_pattern(spat->level+1, TRUE);
+                if (ctx->maxlev <= spat->level) ctx->maxlev++;
                 nspat->pattern = compile_rule1(*pe, nspat, ctx, patternp);
                 SCM_VECTOR_ELEMENT(nv, i) = SCM_OBJ(nspat);
                 spat->vars = Scm_Append2(spat->vars, nspat->vars);
@@ -395,6 +398,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
         ctx.pvars = SCM_NIL;
         ctx.tvars = SCM_NIL;
         ctx.pvcnt = 0;
+        ctx.maxlev = 0;
 
         ctx.form = SCM_CAR(rule);
         if (!SCM_PAIRP(ctx.form)) goto badform;
@@ -406,6 +410,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
         sr->rules[i].pattern  = SCM_OBJ(pat->pattern);
         sr->rules[i].template = SCM_OBJ(tmpl->pattern);
         sr->rules[i].numPvars = ctx.pvcnt;
+        sr->rules[i].maxLevel = ctx.maxlev;
         if (ctx.pvcnt > sr->maxNumPvars) sr->maxNumPvars = ctx.pvcnt;
     }
     return sr;
@@ -457,6 +462,23 @@ static void init_matchvec(MatchVar *mvec, int numPvars)
     for (i=0; i<numPvars; i++) {
         mvec[i].branch = mvec[i].sprout = mvec[i].root = SCM_NIL;
     }
+}
+
+/* get value associated to the pvref */
+static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec, int *indices)
+{
+    int level = PVREF_LEVEL(pvref), count = PVREF_COUNT(pvref);
+    int i, j;
+    ScmObj tree = mvec[count].root;
+    for (i=0; i<level; i++) {
+        for (j=0; j<indices[level]; j++) {
+            if (!SCM_PAIRP(tree)) return SCM_UNBOUND; /* exhausted */
+            tree = SCM_CDR(tree);
+        }
+        if (!SCM_PAIRP(tree)) return SCM_UNBOUND;
+        tree = SCM_CAR(tree);
+    }
+    return tree;
 }
 
 /* for debug */
@@ -647,6 +669,62 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
  * pattern language transformer
  */
 
+static ScmObj realize_template_rec(ScmObj template,
+                                   MatchVar *mvec,
+                                   int level,
+                                   int *indices)
+{
+    if (SCM_PAIRP(template)) {
+        ScmObj h = SCM_NIL, t, r, e;
+        while (SCM_PAIRP(template)) {
+            e = SCM_CAR(template);
+            if (SCM_SYNTAX_PATTERN_P(e)) {
+                r = realize_template_rec(e, mvec, level, indices);
+                SCM_APPEND(h, t, r);
+                return h;
+            } else {
+                r = realize_template_rec(e, mvec, level, indices);
+                SCM_APPEND1(h, t, r);
+            }
+            template = SCM_CDR(template);
+        }
+        if (!SCM_NULLP(template)) {
+            r = realize_template_rec(template, mvec, level, indices);
+            SCM_APPEND(h, t, r);
+        }
+        return h;
+    }
+    if (PVREF_P(template)) {
+        return get_pvref_value(template, mvec, indices);
+    }
+    if (SCM_SYNTAX_PATTERN_P(template)) {
+        ScmSyntaxPattern *pat = SCM_SYNTAX_PATTERN(template);
+        ScmObj h = SCM_NIL, t, r;
+        for (;;) {
+            r = realize_template_rec(pat->pattern, mvec, level+1, indices);
+            if (r == SCM_UNBOUND) return h;
+            SCM_APPEND1(h, t, r);
+            indices[level+1]++;
+        }
+    }
+    if (SCM_VECTORP(template)) {
+        Scm_Error("!!! NOT SUPPORTED YET!!!");
+    }
+    return template;
+}
+
+#define DEFAULT_MAX_LEVEL  10
+
+static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
+                               MatchVar *mvec)
+{
+    int index[DEFAULT_MAX_LEVEL], *indices = index, i, lev;
+    if (branch->maxLevel > DEFAULT_MAX_LEVEL)
+        indices = SCM_NEW_ATOMIC2(int*, branch->maxLevel * sizeof(int));
+    for (i=0; i<branch->maxLevel; i++) indices[i] = 0;
+    return realize_template_rec(branch->template, mvec, 0, indices);
+}
+
 static ScmObj synrule_transform(ScmObj form, ScmObj env,
                                 int ctx, void *data)
 {
@@ -661,11 +739,16 @@ static ScmObj synrule_transform(ScmObj form, ScmObj env,
         if (match_synrule(SCM_CDR(form), sr->rules[i].pattern, env, mvec)) {
             Scm_Printf(SCM_CUROUT, "success:\n");
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);
-            break;
+            {
+                ScmObj r = realize_template(&sr->rules[i], mvec);
+                Scm_Printf(SCM_CUROUT, "result: %S\n", r);
+            }
+            return SCM_NIL;
         } else {
             Scm_Printf(SCM_CUROUT, "failed.\n");
         }
     }
+    Scm_Error("malformed %S: %S", SCM_CAR(form), form);
     return SCM_NIL;
 }
 
