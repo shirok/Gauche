@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.10 2001-04-15 08:03:29 shiro Exp $
+ *  $Id: read.c,v 1.11 2001-04-15 21:53:39 shiro Exp $
  */
 
 #include <stdio.h>
@@ -34,6 +34,7 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial);
 static ScmObj read_number(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
 static ScmObj read_keyword(ScmPort *port);
+static ScmObj read_regexp(ScmPort *port);
 static ScmObj maybe_uvector(ScmPort *port, char c);
 
 /* Special hook for SRFI-4 syntax */
@@ -151,6 +152,9 @@ ScmObj read_internal(ScmPort *port)
                     if (c == '\n') return read_internal(port);
                     if (c == EOF) return SCM_EOF;
                 }
+            case '/':
+                /* #/.../ literal regexp */
+                return read_regexp(port);
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
@@ -409,6 +413,36 @@ static ScmObj read_keyword(ScmPort *port)
 {
     ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID));
     return Scm_MakeKeyword(s);
+}
+
+/*----------------------------------------------------------------
+ * Regexp
+ */
+
+/* gauche extension :  #/regexp/ */
+static ScmObj read_regexp(ScmPort *port)
+{
+    ScmChar c;
+    ScmDString ds;
+    Scm_DStringInit(&ds);
+    for (;;) {
+        SCM_GETC(c, port);
+        if (c == SCM_CHAR_INVALID) {
+            read_error(port, "unterminated literal regexp");
+        }
+        if (c == '\\') {
+            SCM_DSTRING_PUTC(&ds, c);
+            SCM_GETC(c, port);
+            if (c == SCM_CHAR_INVALID) {
+                read_error(port, "unterminated literal regexp");
+            }
+            SCM_DSTRING_PUTC(&ds, c);
+        } else if (c == '/') {
+            return Scm_RegComp(SCM_STRING(Scm_DStringGet(&ds)));
+        } else {
+            SCM_DSTRING_PUTC(&ds, c);
+        }
+    }
 }
 
 /*----------------------------------------------------------------
