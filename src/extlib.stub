@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.29 2001-02-28 23:48:16 shiro Exp $
+;;; $Id: extlib.stub,v 1.30 2001-03-04 22:23:19 shiro Exp $
 ;;;
 
 ;;
@@ -221,6 +221,10 @@
   (assert (output-port? oport))
   "  Scm_Flush(oport);
   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc port-closed? (obj)
+  (assert (port? obj))
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PORT_CLOSED_P(obj)));")
 
 (define-cproc current-error-port ()     ;gauche extention
   "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
