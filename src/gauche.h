@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.387 2004-09-20 13:27:15 shirok Exp $
+ *  $Id: gauche.h,v 1.388 2004-10-06 08:54:56 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1156,6 +1156,14 @@ typedef struct ScmPortVTableRec {
     void      *data;
 } ScmPortVTable;
 
+/* The main port structure.
+ * Regardless of the port type, the port structure caches at most
+ * one character, in order to realize `peek-char' (Scheme) or `Ungetc' (C)
+ * operation.   'scratch', 'scrcnt', and 'ungotten' fields are used for
+ * that purpose, and outside routine shouldn't touch these fields.
+ * See portapi.c for the detailed semantics. 
+ */
+
 struct ScmPortRec {
     SCM_INSTANCE_HEADER;
     unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT.
@@ -1256,7 +1264,6 @@ enum ScmPortICPolicy {
 #define SCM_PORT_TYPE(obj)      (SCM_PORT(obj)->type)
 #define SCM_PORT_DIR(obj)       (SCM_PORT(obj)->direction)
 #define SCM_PORT_FLAGS(obj)     (SCM_PORT(obj)->flags)
-#define SCM_PORT_UNGOTTEN(obj)  (SCM_PORT(obj)->ungotten)
 #define SCM_PORT_ICPOLICY(obj)  (SCM_PORT(obj)->icpolicy)
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT(obj)->closed)
@@ -1368,9 +1375,7 @@ SCM_EXTERN ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk,
 #define SCM_FLUSH(p)       Scm_Flush(SCM_PORT(p))
 #define SCM_PUTNL(p)       SCM_PUTC('\n', p)
 
-#define SCM_UNGETC(c, port)      (SCM_PORT(port)->ungotten = (c))
-#define SCM_PORT_SCRATCH_EMPTY_P(port) \
-    (SCM_PORT(port)->scrcnt == 0)
+#define SCM_UNGETC(c, port) Scm_Ungetc(c, SCM_PORT(port))
 #define SCM_GETB(b, p)     (b = Scm_Getb(SCM_PORT(p)))
 #define SCM_GETC(c, p)     (c = Scm_Getc(SCM_PORT(p)))
 

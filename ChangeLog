@@ -1,3 +1,7 @@
+2004-10-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/portapi.c : code clean up
+
 2004-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c: removed dead code.

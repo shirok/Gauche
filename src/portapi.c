@@ -30,16 +30,36 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.23 2004-09-20 13:27:15 shirok Exp $
+ *  $Id: portapi.c,v 1.24 2004-10-06 08:54:56 shirok Exp $
  */
 
-/* This file is included twice by port.c to define safe- and unsafe-
+/* This file is included _twice_ by port.c to define safe- and unsafe-
  * variant of port common APIs.  It is to minimize the overhead of
  * locking operations.
  *
  * The macro SHORTCUT allows 'safe' version to bypass lock/unlock
  * stuff by calling 'unsafe' version when the port is already locked by
  * the calling thread.
+ */
+
+/* [scratch and ungottern buffer]
+ *   It is always possible to mix binary and character i/o for Gauche's
+ *   ports.  To support peek operations in Scheme and 'unget' operations
+ *   in C, we need to buffer at most one character or its equivalent
+ *   byte sequence.   The 'ungotten' and 'scratch' fields are used for
+ *   character and binary buffering, respectively.
+ *   (This level of buffering is common to all input port types, and
+ *   distinct from the buffering of 'buffered' (file) port type.)
+ *
+ *   'Ungotten' field keeps SCM_CHAR_INVALID if there's no buffered
+ *   character.  Otherwise, its value is the buffered character.
+ *   The number of bytes in the 'scratch' array is kept in 'scrcnt'
+ *   field.  If 'scrcnt' field is not zero, there's data in the
+ *   'scratch' array.
+ *
+ *   In no cases there should be data in both ungotten and scratch
+ *   field.  The consistency is taken care of the routines defined here;
+ *   no other routine should touch these buffering field.
  */
 
 #ifdef SAFE_PORT_OP
@@ -57,8 +77,9 @@
 #define SHORTCUT(p, unsafe) /* none */
 #endif
 
-/* Convenience macro */
 
+/* Convenience macro */
+#ifndef CLOSE_CHECK
 #define CLOSE_CHECK(port)                                               \
     do {                                                                \
         if (SCM_PORT_CLOSED_P(port)) {                                  \
@@ -66,6 +87,7 @@
             Scm_Error("I/O attempted on closed port: %S", (port));      \
         }                                                               \
     } while (0)
+#endif /* CLOSE_CHECK */
 
 /*=================================================================
  * Putb
@@ -292,7 +314,11 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
     VMDECL;
     SHORTCUT(p, Scm_UngetcUnsafe(c, p); return);
     LOCK(p);
-    SCM_UNGETC(c, p);
+    if (p->ungotten != SCM_CHAR_INVALID
+        || p->scrcnt != 0) {
+        Scm_Error("pushback buffer overflow on port %S", p);
+    }
+    p->ungotten = c;
     UNLOCK(p);
 }
 
@@ -306,9 +332,9 @@ ScmChar Scm_PeekcUnsafe(ScmPort *p)
     VMDECL;
     SHORTCUT(p, return Scm_PeekcUnsafe(p));
     LOCK(p);
-    if ((ch = SCM_PORT_UNGOTTEN(p)) == SCM_CHAR_INVALID) {
+    if ((ch = p->ungotten) == SCM_CHAR_INVALID) {
         ch = Scm_GetcUnsafe(p);
-        SCM_PORT_UNGOTTEN(p) = ch;
+        p->ungotten = ch;
     }
     UNLOCK(p);
     return ch;
@@ -327,9 +353,11 @@ void Scm_UngetbUnsafe(int b, ScmPort *p)
     VMDECL;
     SHORTCUT(p, Scm_UngetbUnsafe(b, p); return);
     LOCK(p);
-    /* caller must ensure ungetb is called only at the fresh state */
-    p->scratch[0] = b;
-    p->scrcnt = 1;
+    if (p->ungotten != SCM_CHAR_INVALID
+        || p->scrcnt >= SCM_CHAR_MAX_BYTES-1) {
+        Scm_Error("pushback buffer overflow on port %S", p);
+    }
+    p->scratch[p->scrcnt++] = b;
     UNLOCK(p);
 }
 
@@ -372,16 +400,23 @@ int Scm_PeekbUnsafe(ScmPort *p)
  */
 
 #ifndef SHIFT_SCRATCH  /* we need to define this only once */
+#define SHIFT_SCRATCH
+
 /* shift scratch buffer content */
-#define SHIFT_SCRATCH(p, off) \
-   do { int i_; for (i_=0; i_ < (p)->scrcnt; i_++) (p)->scratch[i_]=(p)->scratch[i_+(off)]; } while (0)
+static inline shift_scratch(ScmPort *p, int off)
+{
+    int i;
+    for (i=0; i<p->scrcnt; i++) {
+        p->scratch[i] = p->scratch[i+off];
+    }
+}
 
 /* handle the case that there's remaining data in the scratch buffer */
 static int getb_scratch(ScmPort *p)
 {
     int b = (unsigned char)p->scratch[0];
     p->scrcnt--;
-    SHIFT_SCRATCH(p, 1);
+    shift_scratch(p, 1);
     return b;
 }
 
@@ -602,7 +637,7 @@ static int getz_scratch_unsafe(char *buf, int buflen, ScmPort *p)
     if (p->scrcnt >= buflen) {
         memcpy(buf, p->scratch, buflen);
         p->scrcnt -= buflen;
-        SHIFT_SCRATCH(p, buflen);
+        shift_scratch(p, buflen);
         return buflen;
     } else {
         memcpy(buf, p->scratch, p->scrcnt);
@@ -758,7 +793,7 @@ int Scm_ByteReadyUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_ByteReadyUnsafe(p));
     if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
     LOCK(p);
-    if (SCM_PORT_UNGOTTEN(p) != SCM_CHAR_INVALID
+    if (p->ungotten != SCM_CHAR_INVALID
         || p->scrcnt > 0) {
         r = TRUE;
     } else {
@@ -796,7 +831,7 @@ int Scm_CharReadyUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_CharReadyUnsafe(p));
     if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
     LOCK(p);
-    if (SCM_PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) r = TRUE;
+    if (p->ungotten != SCM_CHAR_INVALID) r = TRUE;
     else {
         switch (SCM_PORT_TYPE(p)) {
         case SCM_PORT_FILE:
