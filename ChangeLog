@@ -1,3 +1,10 @@
+2002-06-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c: fixed a bug that Scm_Import added imported module
+	  to the imported list multiple times.  Also added proper mutex for
+	  module access.
+	* src/core.c (Scm_Warn) : added Scm_Warn.
+
 2002-06-09  Shiro Kawai  <shiro@acm.org>
 
 	* gc/dyn_load.c (GC_register_dlopen_data), src/gauche/extend.h,
