@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.65 2001-10-06 09:58:17 shirok Exp $
+ *  $Id: compile.c,v 1.66 2001-10-24 09:36:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1676,8 +1676,11 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
     if (Scm_Length(form) < 2) Scm_Error("syntax error: %S", form);
     modname = SCM_CADR(form);
     body = SCM_CDDR(form);
-    if (!SCM_SYMBOLP(modname))
+    if (SCM_IDENTIFIERP(modname)) {
+        modname = SCM_OBJ(SCM_IDENTIFIER(modname)->name);
+    } else if (!SCM_SYMBOLP(modname)) {
         Scm_Error("with-module: bad module name: %S", modname);
+    }
     module = Scm_FindModule(SCM_SYMBOL(modname), createp);
     if (!SCM_MODULEP(module)) {
         Scm_Error("with-module: no such module: %S", modname);
