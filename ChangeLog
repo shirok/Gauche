@@ -1,3 +1,10 @@
+2002-01-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c, src/extlib.stub : added paths keyword arg to load.
+	  fix load_next feature.
+	* lib/gauche/with.scm : fixed a bug in call-with-*-file and
+	  with-*-file when used with :if-does-not-exist #f.
+
 2002-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_Sign): fixed to conform its comment (thanks for
@@ -6,6 +13,9 @@
 	  Iwao KIMURA).
 	* ext/charconv/charconv.scm : experimentally overloaded open-*-file
 	  functions to accept :encoding keyword argument.
+	* src/write.c, src/symbol.c : support writer in case-sensitive mode
+	* src/Makefile.in, test/symcase.scm : added tests for
+	  case (in)sensitive mode
 
 2002-01-10  Shiro Kawai  <shiro@acm.org>
 
