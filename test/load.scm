@@ -9,7 +9,7 @@
 (add-load-path ".")
 
 ;;----------------------------------------------------------------
-(test-start "require and provide")
+(test-section "require and provide")
 
 (sys-system "rm -rf test.o")
 (sys-mkdir "test.o" #o777)
