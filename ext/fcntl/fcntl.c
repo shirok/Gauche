@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.c,v 1.8 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: fcntl.c,v 1.9 2003-04-01 16:06:27 shirok Exp $
  */
 
 #include <string.h>
@@ -23,7 +23,7 @@
 
 #undef SCM_EXTERN
 #define SCM_EXTERN  extern
-#include "fcntl.h"
+#include "gauche/fcntl.h"
 
 /* struct flock */
 

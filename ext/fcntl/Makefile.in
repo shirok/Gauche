@@ -10,7 +10,7 @@ INSTALL = @INSTALL@
 
 ARCHFILES = fcntl.so
 SCMFILES = fcntl.scm
-HEADERS = fcntl.h
+HEADERS = gauche/fcntl.h
 
 TARGET = fcntl.so
 OBJS = fcntl_head.o fcntl.o fcntlib.o fcntl_tail.o
@@ -18,7 +18,7 @@ CONFIG_GENERATED = Makefile config.cache config.log config.status fcntlib.c \
 		   autom4te*.cache fcntl_head.c fcntl_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
-HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 

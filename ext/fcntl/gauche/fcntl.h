@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.h,v 1.2 2002-02-08 09:10:57 shirok Exp $
+ *  $Id: fcntl.h,v 1.1 2003-04-01 16:06:55 shirok Exp $
  */
 
 #ifndef GAUCHE_FCNTL_H
