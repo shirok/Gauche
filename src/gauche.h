@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.18 2001-02-02 06:35:28 shiro Exp $
+ *  $Id: gauche.h,v 1.19 2001-02-02 09:29:52 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -37,6 +37,13 @@
 #else
 #include "gauche/char_utf8.h"
 #endif
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+#define TRUE (!FALSE)
 #endif
 
 /*-------------------------------------------------------------
@@ -933,6 +940,14 @@ extern ScmObj Scm_Read(ScmObj port);
  */
 
 extern void Scm_CallWithFile(ScmString *path, ScmProcedure *proc, int inputp);
+
+/*--------------------------------------------------------
+ * FILE
+ */
+
+extern ScmObj Scm_ParsePathname(const char *pathname,
+                                int makeAbsolute,
+                                int normalize);
 
 /*--------------------------------------------------------
  * HASHTABLE
