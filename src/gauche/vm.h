@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.67 2002-05-23 06:21:58 shirok Exp $
+ *  $Id: vm.h,v 1.68 2002-05-25 09:03:34 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -246,7 +246,6 @@ struct ScmVMRec {
     ScmObj load_next;           /* list of the directories to be searched */
     ScmObj load_history;        /* history of the nested load */
     ScmObj load_port;           /* current port from which we are loading */
-    ScmObj load_requiring;      /* history of the nested require */
 
     /* Signal information */
     int sigQueue[SCM_VM_SIGQ_SIZE];/* Ring buffer for pending signals */

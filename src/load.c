@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.61 2002-05-22 09:20:59 shirok Exp $
+ *  $Id: load.c,v 1.62 2002-05-25 09:03:34 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -44,8 +44,12 @@ static struct {
     ScmInternalMutex path_mutex;
 
     /* Provided features */
-    ScmObj provided;              /* List of provided features. */
-    ScmObj providing;             /* Alist of features that is being loaded. */
+    ScmObj provided;            /* List of provided features. */
+    ScmObj providing;           /* Alist of features that is being loaded,
+                                   and the thread that is loading it. */
+    ScmObj waiting;             /* Alist of threads that is waiting for
+                                   a feature to being provided, and the
+                                   feature that is waited. */
     ScmInternalMutex prov_mutex;
     ScmInternalCond  prov_cv;
 
@@ -145,12 +149,12 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths)
 static ScmObj load_from_port(ScmObj *args, int argc, void *data)
 {
     ScmPort *port;
-    ScmObj paths = SCM_NIL;
+    ScmObj paths = SCM_NIL, rest = args[1];
     if (!SCM_IPORTP(args[0])) {
         Scm_Error("input port required, but got %S", args[0]);
     }
     port = SCM_PORT(args[0]);
-    if (SCM_PAIRP(args[1])) paths = SCM_CAR(args[1]);
+    if (SCM_PAIRP(rest)) paths = SCM_CAR(rest);
     return Scm_VMLoadFromPort(port, paths);
 }
 
@@ -513,44 +517,92 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
 
 /* [Preventing Race Condition]
  *
- *   When <feature> is required and it is neither provided nor being
- *   provided, 'require' pushes <feature> to ldinfo.providing, then
- *   loads the file.  When 'provide' is called in the file, <feature>
- *   is moved from ldinfo.providing to ldinfo.provided.
- *   If a thread tries to require a <feature> and finds it is being
- *   provided (in the list of ldinfo.providing), the thread blocks
- *   until the feature is provided (or removed from providing list
- *   for some reason, e.g. error).
+ *   Besides the list of provided features (ldinfo.provided), the
+ *   system keeps two kind of global assoc list for transient information.
+ *
+ *   ldinfo.providing keeps a list of (<feature> . <thread>), where
+ *   <thread> is currently loading a file for <feature>.
+ *   ldinfo.waiting keeps a list of (<thread> . <feature>), where
+ *   <thread> is waiting for <feature> to be provided.
+ *
+ *   Scm_Require first checks ldinfo.provided list; if the feature is
+ *   already provided, no problem; just return.
+ *   If not, ldinfo.providing is searched.  If the feature is being provided
+ *   by some other thread, the calling thread pushes itself onto
+ *   ldinfo.waiting list and waits for the feature to be provided.
+ *
+ *   There may be a case that the feature dependency forms a loop because
+ *   of bug.  An error should be signaled in such a case, rather than going
+ *   to deadlock.   So, when the calling thread finds the required feature
+ *   is in the ldinfo.providing alist, it checks the waiting chaing of
+ *   features, and no threads are waiting for a feature being provided by
+ *   the calling thread.
  */
 
 ScmObj Scm_Require(ScmObj feature)
 {
     ScmObj filename;
-    int provided = FALSE, providing = TRUE;
+    ScmVM *vm = Scm_VM();
+    ScmObj provided, providing, p, q;
+    int loop = FALSE;
     
     if (!SCM_STRINGP(feature)) {
         Scm_Error("require: string expected, but got %S\n", feature);
     }
-    
+
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
     do {
-        provided = !SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL));
-        if (!provided) {
-            providing = !SCM_FALSEP(Scm_Member(feature, ldinfo.providing, SCM_CMP_EQUAL));
-            if (providing) {
-                (void)SCM_INTERNAL_COND_WAIT(ldinfo.prov_cv, ldinfo.prov_mutex);
-                continue;
+        provided = Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL);
+        if (!SCM_FALSEP(provided)) break;
+        providing = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
+        if (SCM_FALSEP(providing)) break;
+
+        /* Checks for dependency loop */
+        p = providing;
+        SCM_ASSERT(SCM_PAIRP(p));
+        if (SCM_CDR(p) == SCM_OBJ(vm)) {
+            loop = TRUE;
+            break;
+        }
+        
+        for (;;) {
+            q = Scm_Assoc(SCM_CDR(p), ldinfo.waiting, SCM_CMP_EQ);
+            if (SCM_FALSEP(q)) break;
+            SCM_ASSERT(SCM_PAIRP(q));
+            p = Scm_Assoc(SCM_CDR(q), ldinfo.providing, SCM_CMP_EQUAL);
+            SCM_ASSERT(SCM_PAIRP(p));
+            if (SCM_CDR(p) == SCM_OBJ(vm)) {
+                loop = TRUE;
+                break;
             }
         }
+        if (loop) break;
+        ldinfo.waiting = Scm_Acons(SCM_OBJ(vm), feature, ldinfo.waiting);
+        (void)SCM_INTERNAL_COND_WAIT(ldinfo.prov_cv, ldinfo.prov_mutex);
+        ldinfo.waiting = Scm_AssocDeleteX(SCM_OBJ(vm), ldinfo.waiting, SCM_CMP_EQ);
+        continue;
     } while (0);
-    if (!provided) {
-        ldinfo.providing = Scm_Cons(feature, ldinfo.providing);
+    if (!loop && SCM_FALSEP(provided)) {
+        ldinfo.providing = Scm_Acons(feature, SCM_OBJ(vm), ldinfo.providing);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
 
-    if (provided) return SCM_TRUE;
-    filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
-    Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), TRUE);
+    if (loop) Scm_Error("a loop is detected in the require dependency involving feature %S", feature);
+    if (!SCM_FALSEP(provided)) return SCM_TRUE;
+    SCM_UNWIND_PROTECT {
+        filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
+        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), TRUE);
+    } SCM_WHEN_ERROR {
+        (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
+        ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
+        (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
+        SCM_NEXT_HANDLER;
+    } SCM_END_PROTECT;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
+    ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
+    (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
     return SCM_TRUE;
 }
 
@@ -689,6 +741,7 @@ void Scm__InitLoad(void)
                                 SCM_MAKE_STR("srfi-17")  /* set! (builtin) */
         );
     ldinfo.providing = SCM_NIL;
+    ldinfo.waiting = SCM_NIL;
     ldinfo.dso_list = SCM_NIL;
     ldinfo.dso_loading = SCM_FALSE;
 }
