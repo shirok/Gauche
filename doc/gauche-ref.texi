@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.165 2002-02-26 09:05:02 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.166 2002-02-26 09:44:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -58,10 +58,7 @@ Gaucheのバージョン@VERSION@に対応します。
 * Library modules::             
 * References::                  
 * C to Scheme mapping::         
-* Function and Syntax Index::   
-* Module Index::                
-* Class Index::                 
-* Variable Index::              
+* Indices::                     
 @end menu
 
 @node Introduction, Concepts, Top, Top
@@ -3067,7 +3064,7 @@ returns the expanded form.  Otherwise, returns @var{form} as is.
 @var{form} can't be expanded.
 
 These procedures can be used to expand globally defined macros.
-@end defspec
+@end defun
 
 @defspec %macro-expand form
 @defspecx %macro-expand-1 form
@@ -6904,7 +6901,7 @@ Returns the value(s) @code{proc} returned.
 @c JP
 @var{string}で示されるファイルを入力または出力用にオープンし、
 作成されたポートを引数として手続き@var{proc}を呼び出します。
-@var{proc}が正常終了するか、@var{proc}無いで捕捉されないエラーが起きた場合に
+@var{proc}が正常終了するか、@var{proc}内で捕捉されないエラーが起きた場合に
 ファイルはクローズされます。
 
 キーワード引数は
@@ -6972,7 +6969,7 @@ what kind of state the port is in.  In practical programs, you
 should capture error explicitly inside @var{proc} if you still want
 to do some meaningful operation with the port.
 @c JP
-Gaucheの実装は若干この条件には反しています。ただ捕捉されないエラーが@var{proc}から
+Gaucheの実装は若干この条件には反しています。捕捉されないエラーが@var{proc}から
 発せられたというだけでは、そのポートが今後一切使われないかどうかはわかりません。
 しかし実際には、そのようなエラーが発せられた後でポートに対して意味のある操作をするのは
 非現実的です。ポートがどのような状態にあるかわからないわけですから。
@@ -6991,8 +6988,9 @@ the port.
 @c JP
 @code{call-with-input-file}の外で捕捉された継続を@var{proc}内で呼んだ場合には
 ポートは閉じられないことに注意して下さい。後で@var{proc}へと制御が戻ってくるかも
-しれないからです (コルーチン等)。低レベルの例外メカニズム(@ref{Low-level exception mechanism}
-参照)もポートに関する操作は行いません。
+しれないからです (コルーチン等)。また、
+低レベルの例外メカニズム(@ref{Low-level exception mechanism}
+参照)を利用した場合、エラー時にポートを閉じるのはプログラマの責任になります。
 @c COMMON
 
 @node String ports, Procedural ports, File ports, Input and output
@@ -17493,7 +17491,7 @@ The following example shows the parameters given to the CGI program.
 
 @c ======================================================================
 @node References, C to Scheme mapping, Library modules, Top
-@unnumbered References
+@appendix References
 @c NODE 参考文献
 
 @table @asis
@@ -17634,8 +17632,8 @@ Oleg Kiselyov, General ways to traverse collections,,@*
 @end table
 
 @c ======================================================================
-@node C to Scheme mapping, Function and Syntax Index, References, Top
-@unnumbered C to Scheme mapping
+@node C to Scheme mapping, Indices, References, Top
+@appendix C to Scheme mapping
 @c NODE CとSchemeの関数の対応
 
 @c EN
@@ -17646,15 +17644,6 @@ the corresponding Scheme functions.
 Cに馴染んだプログラマのために、Cのオペレータとライブラリ関数からSchemeの関数への
 対応表を示しておきます。
 @c COMMON
-
-@menu
-* C operators::                 
-* C functions::                 
-@end menu
-
-@node C operators, C functions, C to Scheme mapping, C to Scheme mapping
-@subsection C operators
-@c NODE Cのオペレータ
 
 @table @code
 @item +
@@ -17724,7 +17713,7 @@ R5RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
 No equivalent procedure.
 @item []
 R5RS @code{vector-ref} (@xref{Vectors}) is something close.
-Or you can use Gauche's generic function @code{ref} (@xref{Sequences})
+Or you can use Gauche's generic function @code{ref} (@xref{Sequence framework})
 for arbitrary sequences.
 @item .
 Gauche @code{slot-ref} is something close to this.  @xref{Accessing Instance}.
@@ -17736,13 +17725,6 @@ No equivalent procedure.
 R5RS procedure @code{not}.  @xref{Booleans}.
 @item !=
 No equivalent procedure.
-@end table
-
-@node C functions,  , C operators, C to Scheme mapping
-@subsection C functions
-@c NODE Cの関数
-
-@table @code
 @item abort
 Gauche @code{sys-abort}. 
 @item abs
@@ -18326,27 +18308,38 @@ R5RS @code{display}.   @xref{Output}.
 @c Appendix : Python to Scheme mapping?
 
 @c ======================================================================
-@node Function and Syntax Index, Module Index, C to Scheme mapping, Top
-@unnumbered Function and Syntax Index
+@node Indices,  , C to Scheme mapping, Top
+@appendix Indices
+@c NODE 索引
+
+@menu
+* Function and Syntax Index::   
+* Module Index::                
+* Class Index::                 
+* Variable Index::              
+@end menu
+
+@node Function and Syntax Index, Module Index, Indices, Indices
+@appendixsec Function and Syntax Index
 @c NODE 手続きと構文索引
 @printindex fn
 
-@node Module Index, Class Index, Function and Syntax Index, Top
-@unnumbered Module Index
+@node Module Index, Class Index, Function and Syntax Index, Indices
+@appendixsec Module Index
 @c NODE モジュール索引
 @printindex md
 
 
-@node Class Index, Variable Index, Module Index, Top
-@unnumbered Class Index
+@node Class Index, Variable Index, Module Index, Indices
+@appendixsec Class Index
 @c NODE クラス索引
 
 For readability, the surrounding @code{<} and @code{>} are stripped off.
 
 @printindex cl
 
-@node Variable Index,  , Class Index, Top
-@unnumbered Variable Index
+@node Variable Index,  , Class Index, Indices
+@appendixsec Variable Index
 @c NODE 変数索引
 @printindex vr
 

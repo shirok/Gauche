@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.6 2002-02-15 10:51:29 shirok Exp $
+;;;  $Id: extract,v 1.7 2002-02-26 09:44:08 shirok Exp $
 ;;;
 
 (use gauche.regexp)
@@ -34,7 +34,7 @@
        (rxmatch-case line
          (#/^@node\s+([^,]+)/ (#f node)
           (set! current-node (string-trim-right node)))
-         (#/^@(chapter|(sub)*section|unnumbered)\s+(.*)/ (#f #f #f header)
+         (#/^@(chapter|(sub)*section|appendix\w*)\s+(.*)/ (#f #f #f header)
           (set! current-header (string-trim-right header)))
          (#/^@c NODE\s+([^,]*)(,(.*))?/ (#f jnode #f jheader)
           (let* ((jn (string-trim-right jnode))
@@ -56,7 +56,7 @@
             (newline) (in (read-line)))
       (#/^@node\s+(.*)$/ (#f nodedesc)
         (process-node nodedesc) (in (read-line)))
-      (#/^@(chapter|(sub)*section|unnumbered)\s+(.*)/ (#f cmd #f header)
+      (#/^@(chapter|(sub)*section|appendix\w*)\s+(.*)/ (#f cmd #f header)
         (process-header cmd header) (in (read-line)))
       (#/^\* ([^:]+)::/ (#f menu)
         (process-menu menu) (in (read-line)))
