@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.29 2002-05-24 10:01:10 shirok Exp $
+ *  $Id: proc.c,v 1.30 2002-05-25 09:03:01 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -33,7 +33,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         ScmSubr *subr = SCM_SUBR(obj);
         SCM_PUTZ("#<subr", -1, port);
         if (SCM_PROCEDURE_INFO(subr)) {
-            Scm_Printf(port, ":%S", SCM_PROCEDURE_INFO(subr));
+            Scm_Printf(port, " %A", SCM_PROCEDURE_INFO(subr));
         }
         if (ctx->mode == SCM_WRITE_DEBUG) {
             Scm_Printf(port, " %p", subr);
