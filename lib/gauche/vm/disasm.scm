@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: disasm.scm,v 1.8 2002-04-21 10:35:47 shirok Exp $
+;;;  $Id: disasm.scm,v 1.9 2002-09-19 07:52:00 shirok Exp $
 ;;;
 
 (define-module gauche.vm.disasm
@@ -89,17 +89,9 @@
                    (op   (and insn (car insn))))
               (hash-table-put! ihash code #f)
               (if insn
-                  (cond ((member op '("IF" "PRE-CALL"))
+                  (cond ((member op '("IF" "PRE-CALL" "LET" "VALUES-BIND" "LAMBDA"))
                          (pass1 (cadr code))
                          (pass1 (cddr code)))
-                        ((member op '("LET" "VALUES-BIND"))
-                         (pass1 (caddr code))
-                         (pass1 (cdddr code)))
-                        ((equal? op "TAILBIND")
-                         (pass1 (cddr code)))
-                        ((equal? op "LAMBDA")
-                         (pass1 (caddr code))
-                         (pass1 (cdddr code)))
                         (else
                          (pass1 (cdr code))))
                   (pass1 (cdr code)))
@@ -121,21 +113,19 @@
                        (pass2 (cddr code) indent))
                       ((member op '("LET" "VALUES-BIND"))
                        (print-insn indent op (cdr insn) #f)
-                       ;(print-note (cadr code))
                        (when srcinfo (print-note srcinfo))
-                       (pass2 (caddr code) (+ indent 1))
-                       (pass2 (cdddr code) indent))
+                       (pass2 (cadr code) (+ indent 1))
+                       (pass2 (cddr code) indent))
                       ((equal? op "TAILBIND")
                        (print-insn indent op (cdr insn) #f)
                        (when srcinfo (print-note srcinfo))
-                       (pass2 (cddr code) indent))
+                       (pass2 (cdr code) indent))
                       ((equal? op "LAMBDA")
                        (print-insn indent op (cdr insn) #f)
-                       ;(print-note (cadr code))
                        (when srcinfo (print-note srcinfo))
                        (newline)
-                       (pass2 (caddr code) (+ indent 1))
-                       (pass2 (cdddr code) indent))
+                       (pass2 (cadr code) (+ indent 1))
+                       (pass2 (cddr code) indent))
                       ((equal? op "POPENV")
                        (print-insn indent op #f #f)
                        (when srcinfo (print-note srcinfo))
