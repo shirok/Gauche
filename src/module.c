@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.4 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: module.c,v 1.5 2001-02-17 10:22:18 shiro Exp $
  */
 
 #include "gauche.h"
@@ -93,7 +93,7 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         g->value = value;
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
-    return SCM_OBJ(symbol);
+    return SCM_OBJ(g);
 }
 
 ScmObj Scm_GlobalSet(ScmModule *module, ScmSymbol *symbol, ScmObj value)
