@@ -1,3 +1,11 @@
+2001-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/* : made low-level functions work
+
+2001-06-10  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/addr.c : added 
+
 2001-06-07  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.14
