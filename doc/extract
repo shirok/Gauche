@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.13 2004-01-19 22:28:35 shirok Exp $
+;;;  $Id: extract,v 1.14 2004-06-01 06:04:21 shirok Exp $
 ;;;
 
 (use gauche.regexp)
@@ -67,7 +67,7 @@
         (process-header cmd header) (in (read-line)))
       (#/^\* ([^:]+)::(.*)?/ (#f node desc)
         (process-menu node #f desc) (in (read-line)))
-      (#/^\* ([^:]+):\s+([^.]+)\.(.*)?/ (#f tag node desc)
+      (#/^\* ([^:]+):\s+([^)]+\))\.(.*)?/ (#f tag node desc)
         (process-menu node tag desc) (in (read-line)))
       (else (display
              (regexp-replace-all #/@VERSION@/
