@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.92 2001-07-28 11:23:54 shirok Exp $
+ *  $Id: vm.c,v 1.93 2001-08-04 11:07:09 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1676,11 +1676,17 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     ScmObj args = argframe[0];
     ScmVMActivationHistory *h;
 
-    for (h = theVM->history; h; h = h->prev) {
-        if (cd->history == h) break;
+    if (theVM->history != cd->history) {
+        for (h = theVM->history; h; h = h->prev) {
+            if (cd->history == h) break;
+        }
+        if (h == NULL) {
+            Scm_Error("a continuation is thrown outside of it's extent: %p",
+                      cd);
+        } else {
+            Scm_Error("continuation can't be thrown across C strack (yet)");
+        }
     }
-    if (h == NULL)
-        Scm_Error("a continuation is thrown outside of it's extent: %p", cd);
     return throw_cont_body(current, handlers, cd, args);
 }
 
