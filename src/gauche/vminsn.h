@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.29 2002-09-10 10:36:46 shirok Exp $
+ *  $Id: vminsn.h,v 1.30 2002-09-10 20:16:48 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -96,13 +96,6 @@ DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
  *  like let, let* and letrec yields this instruction.
  */
 DEFINSN(SCM_VM_LET, "LET", 1)
-
-/* POPENV
- *
- *  Pop a local environment.  Executed on the end of let-family
- *  constructs.
- */
-DEFINSN(SCM_VM_POPENV, "POPENV", 0)
 
 /* IF  <THEN-CODE>
  *

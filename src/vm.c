@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.169 2002-09-10 10:36:41 shirok Exp $
+ *  $Id: vm.c,v 1.170 2002-09-10 20:16:32 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -737,11 +737,6 @@ static void run_loop()
                 }
                 PUSH_LOCAL_ENV(nlocals, info);
                 pc = body;
-                continue;
-            }
-            CASE(SCM_VM_POPENV) {
-                VM_ASSERT(env != NULL);
-                POP_LOCAL_ENV();
                 continue;
             }
             CASE(SCM_VM_GSET) {
