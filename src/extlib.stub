@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.139 2002-04-25 22:31:47 shirok Exp $
+;;; $Id: extlib.stub,v 1.140 2002-04-26 09:22:00 shirok Exp $
 ;;;
 
 "
@@ -633,6 +633,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (small-integer? size))
   "SCM_RETURN(Scm_MakeWeakVector(size));")
 
+(define-cproc weak-vector-length (wv)
+  (assert (weak-vector? wv))
+  "SCM_RETURN(Scm_MakeInteger(wv->size));")
+
 (define-cproc weak-vector-ref (wv index &optional fallback)
   (assert (weak-vector? wv))
   (assert (small-integer? index))
@@ -716,7 +720,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  ScmPortBuffer bufrec;
   bufrec.size = buffer_size;
   bufrec.buffer = NULL;
-  bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+  bufrec.mode = SCM_PORT_BUFFER_FULL;
   bufrec.filler = bufport_filler;
   bufrec.flusher = NULL;
   bufrec.closer = bufport_closer;
@@ -743,7 +747,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  ScmPortBuffer bufrec;
   bufrec.size = buffer_size;
   bufrec.buffer = NULL;
-  bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+  bufrec.mode = SCM_PORT_BUFFER_FULL;
   bufrec.filler = NULL;
   bufrec.flusher = bufport_flusher;
   bufrec.closer = bufport_closer;

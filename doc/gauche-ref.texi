@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.180 2002-04-26 09:05:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.181 2002-04-26 09:24:25 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5852,9 +5852,15 @@ you can also use a method @code{ref}.
 Sets @var{k}-th element of the vector @var{vector} to @var{obj}.
 It is an error if @var{k} is negative or greater than or equal to the
 length of @var{vector}.
+
+With @code{gauche.sequence} module, you can also use
+a setter method of @code{ref}.
 @c JP
 ベクタ@var{vector}の@var{k}番目の要素を@var{obj}に変更します。
 @var{k}が負数であったりベクタの長さより大きい場合はエラーとなります。
+
+@code{gauche.sequence}モジュールをロードしていれば、
+メソッド@code{ref}のsetterメソッドも使えます。
 @c COMMON
 @end defun
 
@@ -6104,6 +6110,14 @@ gosh> (weak-vector-ref v 0)
 Creates and returns a weak vector of size @var{size}.
 @c JP
 大きさ@var{size}のweak vectorを作成して返します。
+@c COMMON
+@end defun
+
+@defun weak-vector-length wvec
+@c EN
+Returns the length of a weak vector @var{wvec}.
+@c JP
+Weak vector @var{wvec}の大きさを返します。
 @c COMMON
 @end defun
 
