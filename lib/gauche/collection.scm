@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.8 2002-05-24 22:53:31 shirok Exp $
+;;;  $Id: collection.scm,v 1.9 2002-05-25 22:56:48 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -23,7 +23,7 @@
   (use util.queue)
   (export call-with-iterator with-iterator call-with-iterators
           call-with-builder  with-builder
-          fold map map-to for-each map$ for-each$
+          fold map map-to for-each fold$ map$ for-each$
           find filter filter-to remove remove-to partition partition-to
           size-of lazy-size-of coerce-to)
   )
@@ -176,6 +176,12 @@
 
 (define-method fold (proc knil (coll <list>) (coll2 <list>))
   ((with-module srfi-1 fold) proc knil coll coll2))
+
+;; partial applied version
+(define-method fold$ (proc)
+  (lambda (knil . lists) (apply fold proc knil lists)))
+(define-method fold$ (proc knil)
+  (lambda lists (apply fold proc knil lists)))
 
 ;; map --------------------------------------------------
 
