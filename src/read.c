@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.40 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: read.c,v 1.41 2002-02-11 09:22:44 shirok Exp $
  */
 
 #include <stdio.h>
@@ -32,7 +32,8 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
-static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
+static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
+                        int temp_case_fold);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
@@ -483,7 +484,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         return SCM_MAKE_CHAR(c);
     default:
         /* need to read word to see if it is a character name */
-        name = SCM_STRING(read_word(port, c, ctx));
+        name = SCM_STRING(read_word(port, c, ctx, TRUE));
         if (SCM_STRING_LENGTH(name) == 1) {
             return SCM_MAKE_CHAR(c);
         }
@@ -513,9 +514,11 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
  * Symbols and Numbers
  */
 
-static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
+static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
+                        int temp_case_fold)
 {
-    int c = 0, case_fold = (ctx->flags & SCM_READ_CASE_FOLD);
+    int c = 0;
+    int case_fold = temp_case_fold || (ctx->flags & SCM_READ_CASE_FOLD);
     ScmDString ds;
     Scm_DStringInit(&ds);
     if (initial != SCM_CHAR_INVALID) {
@@ -536,13 +539,13 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial, ctx));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
     return Scm_Intern(s);
 }
 
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial, ctx));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
     ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         Scm_ReadError(port, "bad numeric format: %S", s);
@@ -551,7 +554,7 @@ static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial, ctx));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
     ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         return Scm_Intern(s);
@@ -561,7 +564,7 @@ static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadConte
 
 static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID, ctx));
+    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID, ctx, FALSE));
     return Scm_MakeKeyword(s);
 }
 
