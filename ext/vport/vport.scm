@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: vport.scm,v 1.4 2004-11-12 02:45:54 shirok Exp $
+;;;  $Id: vport.scm,v 1.5 2004-11-12 11:31:00 shirok Exp $
 ;;;
 
 (define-module gauche.vport
@@ -89,18 +89,17 @@
          (index 0)
          (len (u8vector-length dst)))
     (define (flusher buf force?)
-      (if (>= index len)
-        #f ;; overflow
-        (let ((req (u8vector-length buf)))
-          (if (> req (- len index))
-            (let ((count (- len index)))
-              (u8vector-copy! dst index buf 0 count)
-              (inc! index count)
-              count)
-            (begin
-              (u8vector-copy! dst index buf 0 req)
-              (inc! index req)
-              req)))))
+      (let1 req (u8vector-length buf)
+        (cond ((>= index len) req)  ;; simply discard the data
+              ((> req (- len index))
+               (let ((count (- len index)))
+                 (u8vector-copy! dst index buf 0 count)
+                 (inc! index count)
+                 req))
+              (else
+               (u8vector-copy! dst index buf 0 req)
+               (inc! index req)
+               req))))
     (define (seeker offset whence)
       (cond
        ((= whence SEEK_SET)
