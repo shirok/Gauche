@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.51 2002-04-25 11:52:02 shirok Exp $
+ *  $Id: port.c,v 1.52 2002-04-25 12:28:51 shirok Exp $
  */
 
 #include <unistd.h>
@@ -158,14 +158,53 @@ int Scm_PortFileNo(ScmPort *port)
     }
 }
 
-int Scm_CharReady(ScmPort *port)
+/* Low-level function to find if the file descriptor is ready or not.
+   DIR specifies SCM_PORT_INPUT or SCM_PORT_OUTPUT.
+   If the system doesn't have select(), this function returns
+   SCM_FD_UNKNOWN. */
+int Scm_FdReady(int fd, int dir)
 {
-    /* WRITEME */
-    return TRUE;
+#ifdef HAVE_SELECT
+    fd_set fds;
+    int r;
+    struct timeval tm;
+
+    /* In case if this is called on non-file ports.*/
+    if (fd < 0) return SCM_FD_READY;
+
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+    tm.tv_sec = tm.tv_usec = 0;
+    if (dir == SCM_PORT_OUTPUT) {
+        r = Scm_SysCall(select(fd+1, NULL, &fds, NULL, &tm));
+    } else {
+        r = Scm_SysCall(select(fd+1, &fds, NULL, NULL, &tm));
+    }
+    if (r < 0) Scm_SysError("select failed");
+    if (r > 0) return SCM_FD_READY;
+    else       return SCM_FD_WOULDBLOCK;
+#else  /*!HAVE_SELECT*/
+    return SCM_FD_UNKNOWN;
+#endif /*!HAVE_SELECT*/
+}
+
+int Scm_CharReady(ScmPort *p)
+{
+    if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        if (p->src.buf.current < p->src.buf.end) return TRUE;
+        if (p->src.buf.fd < 0) return TRUE; /*FIXME*/
+        return (Scm_FdReady(p->src.buf.fd, SCM_PORT_INPUT) != SCM_FD_WOULDBLOCK);
+    case SCM_PORT_PROC:
+        return p->src.vt.Ready(p);
+    default:
+        return TRUE;
+    }
 }
 
 /*===============================================================
- * Buffered Port
+ * buffered Port
  *  - mainly used for buffered file I/O, but can also be used
  *    for other purpose, like character-code conversion port.
  */
