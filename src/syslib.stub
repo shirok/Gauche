@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.19 2001-03-12 04:39:44 shiro Exp $
+;;; $Id: syslib.stub,v 1.20 2001-03-12 07:55:59 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -65,6 +65,9 @@
 
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
+
+(define-type "sys-group" sys-group?
+  "ScmSysGroup*"  "SCM_SYS_GROUP_P" "SCM_SYS_GROUP")
 
 (define-cproc sys-getgrgid (gid)
   (assert (small-integer? gid))         ;TODO: make sure it covers all gids
@@ -164,6 +167,9 @@
 
 ;;---------------------------------------------------------------------
 ;; pwd.h - passwords
+
+(define-type "sys-passwd" sys-passwd?
+  "ScmSysPasswd*"  "SCM_SYS_PASSWD_P" "SCM_SYS_PASSWD")
 
 (define-cproc sys-getpwuid (uid)
   (assert (small-integer? uid))         ;TODO: make sure it covers all gids
@@ -266,6 +272,9 @@
 ;;---------------------------------------------------------------------
 ;; sys/stat.h
 
+(define-type "sys-stat" sys-stat?
+  "ScmSysStat*"  "SCM_SYS_STAT_P" "SCM_SYS_STAT")
+
 (define-cproc sys-stat (path)
   (assert (string? path))
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
@@ -313,6 +322,9 @@
 
 ;;---------------------------------------------------------------------
 ;; sys/times.h
+
+(define-type "sys-time" sys-time?
+  "ScmSysTime*"   "SCM_SYS_TIME_P" "SCM_SYS_TIME")
 
 (define-cproc sys-times ()
   "  struct tms info;
@@ -398,6 +410,9 @@
 
 ;;---------------------------------------------------------------------
 ;; time.h
+
+(define-type "sys-tm" sys-tm?
+  "ScmSysTm*"     "SCM_SYS_TM_P" "SCM_SYS_TM")
 
 (define-cproc sys-asctime (tm)
   (assert (sys-tm? tm))
