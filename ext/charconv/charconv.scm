@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: charconv.scm,v 1.10 2003-01-09 11:34:21 shirok Exp $
+;;;  $Id: charconv.scm,v 1.11 2003-01-31 11:26:05 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -62,30 +62,40 @@
 
 (define (call-with-input-file filename proc . flags)
   (let ((port (apply open-input-file filename flags)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () (proc port))
-     (lambda () (close-input-port port)))))
+    (with-error-handler
+        (lambda (e)
+          (when port (close-input-port port))
+          (raise e))
+      (lambda ()
+        (begin0 (proc port)
+                (when port (close-input-port port)))))))
 
 (define (call-with-output-file filename proc . flags)
   (let ((port (apply open-output-file filename flags)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () (proc port))
-     (lambda () (close-output-port port)))))
+    (with-error-handler
+        (lambda (e)
+          (when port (close-output-port port))
+          (raise e))
+      (lambda ()
+        (begin0 (proc port)
+                (when port (close-output-port port)))))))
 
 (define (with-input-from-file filename thunk . flags)
   (let ((port (apply open-input-file filename flags)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () ((with-module gauche with-input-from-port) port thunk))
-     (lambda () (close-input-port port)))))
+    (and port
+         (with-error-handler
+             (lambda (e) (close-input-port port) (raise e))
+           (lambda ()
+             (begin0 ((with-module gauche with-input-from-port) port thunk)
+                     (close-input-port port)))))))
 
 (define (with-output-to-file filename thunk . flags)
   (let ((port (apply open-output-file filename flags)))
-    (dynamic-wind
-     (lambda () #f)
-     (lambda () ((with-module gauche with-output-to-port) port thunk))
-     (lambda () (close-output-port port)))))
+    (and port
+         (with-error-handler
+             (lambda (e) (close-output-port port) (raise e))
+           (lambda ()
+             (begin0 ((with-module gauche with-output-to-port) port thunk)
+                     (close-output-port port)))))))
 
 (provide "gauche/charconv")

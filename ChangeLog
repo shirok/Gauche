@@ -1,3 +1,9 @@
+2003-01-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/charconv.scm: adjust semantics of replaced call-with*
+	  and with-*-file functions to close ports only when escaping
+	  condition occurs.
+
 2003-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c, src/extlib.stub, lib/gauche/portutil.scm :
