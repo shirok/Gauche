@@ -2,6 +2,10 @@
 
 	* release 0.7
 
+	* src/syslib.stub (sys-access): the last change didn't work.
+	  Reverted to the original code, but kept the check if we're
+	  running suid/sgid code.
+
 	* ext/uvector/Makefile.in : changed again the name of the DSO to
 	  libgauche-uvector.la; some extension modules depended on the name.
 	

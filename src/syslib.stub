@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.90 2003-05-30 08:02:42 shirok Exp $
+;;; $Id: syslib.stub,v 1.91 2003-05-30 20:44:56 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -409,25 +409,13 @@
 (define-enum X_OK)
 (define-enum F_OK)
 
-;; NB: access(2) is in POSIX, but the use of it may cause a security hole
-;; when used in suid program.  The difference between access(2) and using
-;; stat(2) is that access(2) uses real uid/gid instead of effective uid/gid
-;; ---however, because of the security problem, access(2) is effectively
-;; useless to check by real uid/gid.  Probably because of this reason,
-;; some platforms provides access(2) that returns success even if the
-;; user doesn't have proper permission.  
-;; So we emulate access by stat(2).
 (define-cproc sys-access (pathname::<string> amode::<int>)
-  "struct stat statbuf; int r;
-  if (getuid() != geteuid() || getgid() != getegid()) {
+  "int r;
+  if (geteuid() != getuid() || getegid() != getgid()) {
     Scm_Error(\"cannot use sys-access in suid/sgid program.\");
   }
-  r = Scm_SysCall(stat(Scm_GetStringConst(pathname), &statbuf));
-  if (r < 0) SCM_RETURN(SCM_FALSE);
-  if ((amode & R_OK) && !(statbuf.st_mode & S_IRUSR)) SCM_RETURN(SCM_FALSE);
-  if ((amode & W_OK) && !(statbuf.st_mode & S_IWUSR)) SCM_RETURN(SCM_FALSE);
-  if ((amode & X_OK) && !(statbuf.st_mode & S_IXUSR)) SCM_RETURN(SCM_FALSE);
-  SCM_RETURN(SCM_TRUE);")
+  r = Scm_SysCall(access(Scm_GetStringConst(pathname), amode));
+  SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);")
 
 (define-cproc sys-chdir (pathname::<string>)
   "  if (Scm_SysCall(chdir(Scm_GetStringConst(pathname))) < 0)

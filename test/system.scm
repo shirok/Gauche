@@ -103,23 +103,31 @@
 
 (sys-system "rm -rf test.dir >/dev/null")
 
+;; NB: on BSD-derived platforms, it seems that the change of
+;; permission bits does not propagate to the other process
+;; immediately (maybe due to the authentication module?).
+;; For the time being, we just put a delay before cheking.
 (test* "access" '(#f #f #f #f)
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
 (sys-system "touch test.dir")
 (sys-system "chmod 777 test.dir")
+(sys-system "sleep 5")
 (test* "access" '(#t #t #t #t)
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
 (sys-system "chmod 500 test.dir")
+(sys-system "sleep 5")
 (test* "access" '(#t #t #f #t)
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
-(sys-system "chmod 477 test.dir")
+(sys-system "chmod 400 test.dir")
+(sys-system "sleep 5")
 (test* "access" '(#t #t #f #f)
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
 (sys-system "chmod 000 test.dir")
+(sys-system "sleep 5")
 (test* "access" '(#t #f #f #f)
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
