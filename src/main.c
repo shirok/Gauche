@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.27 2001-08-06 07:38:22 shirok Exp $
+ *  $Id: main.c,v 1.28 2001-08-31 08:32:51 shirok Exp $
  */
 
 #include <unistd.h>
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 
     /* if script file is specified, load it. */
     if (optind < argc) {
-        ScmObj av = SCM_NIL, at, mainproc;
+        ScmObj av = SCM_NIL, at = SCM_NIL, mainproc;
         int ac;
         for (ac = optind+1; ac < argc; ac++) {
             SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
