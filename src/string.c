@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.12 2001-02-07 08:52:03 shiro Exp $
+ *  $Id: string.c,v 1.13 2001-02-11 13:32:35 shiro Exp $
  */
 
 #include <stdio.h>
@@ -131,7 +131,8 @@ ScmObj Scm_MakeStringConst(const char *str, int size, int len)
 {
     ScmString *z;
 
-    if (size < 0 || len < 0) count_size_and_length(str, &size, &len);
+    if (size < 0) count_size_and_length(str, &size, &len);
+    else if (len < 0) len = count_length(str, size);
     INITSTR(z, len, size, str);
     return SCM_OBJ(z);
 }
@@ -141,7 +142,8 @@ ScmObj Scm_MakeString(const char *str, int size, int len)
     ScmString *z;
     char *nstr;
 
-    if (size < 0 || len < 0) count_size_and_length(str, &size, &len);
+    if (size < 0) count_size_and_length(str, &size, &len);
+    else if (len < 0) len = count_length(str, size);
     nstr = SCM_NEW_ATOMIC2(char *, size + 1);
     memcpy(nstr, str, size+1);  /* includes \0 */
     INITSTR(z, len, size, nstr);
@@ -415,7 +417,8 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
     char *p;
     ScmString *z;
 
-    if (sizey < 0 || leny < 0) count_size_and_length(str, &sizey, &leny);
+    if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+    else if (leny < 0) leny = count_length(str, sizey);
     
     p = SCM_NEW_ATOMIC2(char *, sizex + sizey + 1);
     memcpy(p, x->start, sizex);
@@ -515,9 +518,10 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
             if (sizey < 0) sizey = strlen(str);
             lenz = -1;
         } else {                /* x is complete sbstring */
-            if (sizey < 0 || leny < 0)
-                count_size_and_length(str, &sizey, &leny);
-            lenz = lenx - (end - start) + leny;
+            if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+            else if (leny < 0) leny = count_length(str, sizey);
+            if (leny >= 0) lenz = lenx - (end - start) + leny;
+            else lenz = -1;
         }
         if (end > sizex) return SCM_FALSE;
         sizez = sizex - (end - start) + sizey;
@@ -530,11 +534,13 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
     } else {
         /* x is mbstring */
         const char *s, *e;
-        if (sizey < 0 || leny < 0) count_size_and_length(str, &sizey, &leny);
+        if (sizey < 0) count_size_and_length(str, &sizey, &leny);
+        else if (leny < 0) leny = count_length(str, sizey);
         s = forward_pos(x->start, start);
         e = forward_pos(s, end - start);
         sizez = sizex + sizey - (e - s);
-        lenz = lenx + leny - (end - start);
+        if (leny >= 0) lenz = lenx + leny - (end - start);
+        else lenz = -1;
 
         p = SCM_NEW_ATOMIC2(char *, sizez+1);
         if (start > 0) memcpy(p, x->start, s - x->start);
