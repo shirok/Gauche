@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.6 2001-06-13 19:56:53 shirok Exp $
+ *  $Id: net.c,v 1.7 2001-06-14 07:14:48 shirok Exp $
  */
 
 #include "net.h"
@@ -292,7 +292,9 @@ void Scm_Init_libnet(void)
     DEFSYM("so_broadcast", SO_BROADCAST);
     DEFSYM("so_sndbuf",    SO_SNDBUF);
     DEFSYM("so_rcvbuf",    SO_RCVBUF);
+#ifdef SO_PRIORITY
     DEFSYM("so_priority",  SO_PRIORITY);
+#endif
     DEFSYM("so_error",     SO_ERROR);
 
 #ifdef SOL_TCP
