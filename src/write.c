@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.26 2002-04-18 08:14:53 shirok Exp $
+ *  $Id: write.c,v 1.27 2002-05-18 07:17:47 shirok Exp $
  */
 
 #include <stdio.h>
@@ -885,7 +885,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                             SCM_PUTZ(" ...", -1, out);
                         }
                         if (n > 0) {
-                            for (; n < width; n++) SCM_PUTC(' ', out);
+                            for (; n < prec; n++) SCM_PUTC(' ', out);
                         }
                     } else {
                         write_internal(o, out, &ctx);
