@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.15 2003-09-07 12:39:23 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.16 2003-12-19 23:59:23 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -187,6 +187,7 @@
      (receive (v0 v1 v2 . ignore) mv-expr v2))
     ((_ mv-expr n)
      (receive v mv-expr (list-ref v n)))
+    ;; The following extension is experimental; do not rely on them.
     ((_ mv-expr n m)
      (receive v mv-expr (values (list-ref v n) (list-ref v m))))
     ((_ mv-expr n m l)
