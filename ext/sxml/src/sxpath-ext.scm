@@ -1,5 +1,5 @@
 ;; W3C compliant extensions to SXPathlib
-; $Id: sxpath-ext.scm,v 1.1 2003-07-22 11:22:11 shirok Exp $:
+; $Id: sxpath-ext.scm,v 1.2 2004-02-09 06:33:03 shirok Exp $:
 ;
 ; This software is in Public Domain.
 ; IT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
@@ -147,7 +147,7 @@
            (else
             (first (cdr str-set1) str-set2)))))
       (else  ; one of the objects is a nodeset, another is not
-       (let-values*
+       (let*-values
         (((nset elem)
           ; Equality operations are commutative
           (if (nodeset? obj1) (values obj1 obj2) (values obj2 obj1))))

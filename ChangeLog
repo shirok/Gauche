@@ -1,3 +1,9 @@
+2004-02-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/src/sxpath-ext.scm (sxml:equality-cmp): replaced
+	  let-values* for let*-values (latter is srfi-11; the former was
+	  used in the original sxml).
+
 2004-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_GetInteger32Clamp, Scm_GetIntegerU32Clamp):
