@@ -116,6 +116,77 @@
                                   '(0.0 -1.0 1.0)
                                   '#f64(0.0 -1.0 1.0))))
 
+(define (uvset-clamp-tester make ref set value)
+  (let ((v (make 1)))
+    (list (with-error-handler
+           (lambda (e) 'error)
+           (lambda () (set v 0 value) (ref v 0)))
+          (with-error-handler
+           (lambda (e) 'error)
+           (lambda () (set v 0 value 'low) (ref v 0)))
+          (with-error-handler
+           (lambda (e) 'error)
+           (lambda () (set v 0 value 'high) (ref v 0)))
+          (with-error-handler
+           (lambda (e) 'error)
+           (lambda () (set v 0 value 'both) (ref v 0))))))
+
+(test "s8vector-set! clamp" '(error -128 error -128)
+      (lambda ()
+        (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! -129)))
+(test "s8vector-set! clamp" '(error error 127 127)
+      (lambda ()
+        (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! 128)))
+
+(test "u8vector-set! clamp" '(error 0 error 0)
+      (lambda ()
+        (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! -1)))
+(test "u8vector-set! clamp" '(error error 255 255)
+      (lambda ()
+        (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! 256)))
+
+(test "s16vector-set! clamp" '(error -32768 error -32768)
+      (lambda ()
+        (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! -32769)))
+(test "s16vector-set! clamp" '(error error 32767 32767)
+      (lambda ()
+        (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! 32768)))
+
+(test "u16vector-set! clamp" '(error 0 error 0)
+      (lambda ()
+        (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! -1)))
+(test "u16vector-set! clamp" '(error error 65535 65535)
+      (lambda ()
+        (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! 65536)))
+
+(test "s32vector-set! clamp" '(error -2147483648 error -2147483648)
+      (lambda ()
+        (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! -2147483649)))
+(test "s32vector-set! clamp" '(error error 2147483647 2147483647)
+      (lambda ()
+        (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! 2147483648)))
+
+(test "u32vector-set! clamp" '(error 0 error 0)
+      (lambda ()
+        (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! -1)))
+(test "u32vector-set! clamp" '(error error 4294967295 4294967295)
+      (lambda ()
+        (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! 4294967296)))
+
+(test "s64vector-set! clamp" '(error -9223372036854775808 error -9223372036854775808)
+      (lambda ()
+        (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! -9223372036854775809)))
+(test "s64vector-set! clamp" '(error error 9223372036854775807 9223372036854775807)
+      (lambda ()
+        (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! 9223372036854775808)))
+
+(test "u64vector-set! clamp" '(error 0 error 0)
+      (lambda ()
+        (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! -1)))
+(test "u64vector-set! clamp" '(error error 18446744073709551615 18446744073709551615)
+      (lambda ()
+        (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! 18446744073709551616)))
+
 ;;-------------------------------------------------------------------
 (test-section "conversions")
 
@@ -252,6 +323,31 @@
                        f64vector->list list->f64vector
                        '#f64(0 -1.0 1.0) 1.0e64)))
 
+(define (uvcopy-startend-test msg make copy fill)
+  (test msg (list (make 1 2 3) (make 1 2) (make 0 9 9 3))
+        (lambda ()
+          (let1 v (make 0 1 2 3)
+            (list (copy v 1)
+                  (copy v 1 3)
+                  (fill v 9 1 3))))))
+
+(uvcopy-startend-test "uvcopy-startend s8vector"
+                      s8vector s8vector-copy s8vector-fill!)
+(uvcopy-startend-test "uvcopy-startend u8vector"
+                      u8vector u8vector-copy u8vector-fill!)
+(uvcopy-startend-test "uvcopy-startend s16vector"
+                      s16vector s16vector-copy s16vector-fill!)
+(uvcopy-startend-test "uvcopy-startend u16vector"
+                      u16vector u16vector-copy u16vector-fill!)
+(uvcopy-startend-test "uvcopy-startend s32vector"
+                      s32vector s32vector-copy s32vector-fill!)
+(uvcopy-startend-test "uvcopy-startend u32vector"
+                      u32vector u32vector-copy u32vector-fill!)
+(uvcopy-startend-test "uvcopy-startend s64vector"
+                      s64vector s64vector-copy s64vector-fill!)
+(uvcopy-startend-test "uvcopy-startend u64vector"
+                      u64vector u64vector-copy u64vector-fill!)
+
 ;;-------------------------------------------------------------------
 (test-section "collection interface")
 
@@ -293,54 +389,168 @@
 ;;-------------------------------------------------------------------
 (test-section "arithmetic operations")
 
-(define (arith-tester op v0 v1)
-  (define (safe-test clamp-flag)
-    (with-error-handler
-     (lambda (e) 'error)
-     (lambda () (op v0 v1 clamp-flag))))
-  (list (safe-test #f)
-        (safe-test 'high)
-        (safe-test 'low)
-        (safe-test 'both)))
+;; there are too many combinations to write down by hand.
+;;
+;; for each opertaion in add, sub, mul
+;;   for each testdata such that:
+;;     - vector vs vector normal
+;;     - vector vs vector underflow
+;;     - vector vs vector overflow
+;;     - vector vs smallint normal
+;;     - vector vs smallint underflow
+;;     - vector vs smallint overflow
+;;     - vector vs bignum normal
+;;     - vector vs bignum underflow
+;;     - vector vs bignum overflow
+;;
 
-(define-syntax arith-test
-  (syntax-rules ()
-    ((_ op v0 v1 res-none res-hi res-lo res-both)
-     (test (x->string 'op) (list res-none res-hi res-lo res-both)
-           (lambda () (arith-tester op v0 v1))))
-    ((_ op v0 v1 res)
-     (test (x->string 'op) (list res res res res)
-           (lambda () (arith-tester op v0 v1))))
+(define *bounds*
+  `((s8   ,(- (expt 2  7)) ,(- (expt 2  7) 1))
+    (u8   0                ,(- (expt 2  8) 1))
+    (s16  ,(- (expt 2 15)) ,(- (expt 2 15) 1))
+    (u16  0                ,(- (expt 2 16) 1))
+    (s32  ,(- (expt 2 31)) ,(- (expt 2 31) 1))
+    (u32  0                ,(- (expt 2 32) 1))
+    (s64  ,(- (expt 2 63)) ,(- (expt 2 63) 1))
+    (u64  0                ,(- (expt 2 64) 1))
     ))
 
-;; type mismatch error detection
-'(arith-test s8vector-add '#s8(0 1 2 3) #s8(4 5 6)
-            'error)
-'(arith-test s8vector-add '#s8(0 1 2 3) #u8(4 5 6 7)
-            'error)
+(define (tag->min tag) (cadr  (assq tag *bounds*)))
+(define (tag->max tag) (caddr (assq tag *bounds*)))
 
+(define-macro (arith-test-generate tag)
+  (define (tag+ sym)
+    (string->symbol (string-append (symbol->string tag) "vector" sym)))
+  `(arith-test ',tag ,(tag->min tag) ,(tag->max tag)
+               ,(tag+ "") ,(tag+ "-add") ,(tag+ "-sub") ,(tag+ "-mul")))
 
-'(arith-test s8vector-add '#s8(0 1 2 3) #s8(4 5 6 7)
-            '#s8(4 6 8 10))
-'(arith-test s8vector-add '#s8(0 1 2 3) 8
-            '#s8(8 9 10 11))
-'(arith-test s8vector-add '#s8(0 1 2 3) -8
-            '#s8(-8 -7 -6 -5))
-'(arith-test s8vector-add '#s8(0 1 2 3) 126
-            'error '#s8(126 127 127 127) 'error '#s8(126 127 127 127))
-'(arith-test s8vector-add '#s8(0 -1 -2 -3) -126
-            'error 'error '#s8(-126 -127 -128 -128) '#s8(-126 -127 -128 -128))
+(define (arith-test tag min max make add sub mul)
+  (define v0 (make 0 1 2 3))
+  (define v1 (make 4 5 6 7))
+  (define v2 (make (- max 2) (- max 2) (- max 2) (- max 2)))
+  (define v3 (make (+ min 2) (+ min 2) (+ min 2) (+ min 2)))
+  (define v0+v1 (make 4 6 8 10))
+  (define v1-v0 (make 4 4 4 4))
+  (define v0*v1 (make 0 5 12 21))
+  (define v0*2  (make 0 2 4 6))
+  (define v0+v2 (make (- max 2) (- max 1) max max))
+  (define v0*v2 (make 0 (- max 2) max max))
+  (define v0-min-1 (make min min (+ min 1) (+ min 2)))
+  (define v3-v0    (make (+ min 2) (+ min 1) min min))
+  (define v0*v3 (make 0 (+ min 2) min min))
+  (define vmin (make min min min min))
+  (define vmax (make max max max max))
+  (define big32  #xffffffff)
+  (define big64  #xffffffffffffffff)
 
-'(arith-test u8vector-add '#u8(0 1 2 3) #u8(4 5 6 7)
-            '#u8(4 6 8 10))
-'(arith-test u8vector-add '#u8(0 1 2 3) 8
-            '#u8(8 9 10 11))
-'(arith-test u8vector-add '#u8(0 1 2 3) -8
-            'error)
-'(arith-test u8vector-add '#u8(0 1 2 3) 253
-            'error '#u8(253 254 255 255) 'error '#u8(253 254 255 255))
-'(arith-test u8vector-add '#u8(0 1 2 3) -2
-            'error 'error '#u8(0 0 0 1) '#u8(0 0 0 1))
+  (define (gen-tester op v0 v1)
+    (define (safe-test clamp-flag)
+      (with-error-handler
+       (lambda (e) 'error)
+       (lambda () (op v0 v1 clamp-flag))))
+    (lambda ()
+      (list (safe-test #f)
+            (safe-test 'high)
+            (safe-test 'low)
+            (safe-test 'both))))
 
+  (define (result-normal v) (list v v v v))
+  (define (result-hi-ok  v) (list 'error v 'error v))
+  (define (result-lo-ok  v) (list 'error 'error v v))
+
+  (test (format #f "~avector-add (v+v)" tag) (result-normal v0+v1)
+        (gen-tester add v0 v1))
+  (test (format #f "~avector-add (v+v)" tag) (result-hi-ok v0+v2)
+        (gen-tester add v0 v2))
+  (test (format #f "~avector-add (v+s)" tag) (result-normal v1)
+        (gen-tester add v0 4))
+  (test (format #f "~avector-add (v+s)" tag) (result-hi-ok v0+v2)
+        (gen-tester add v0 (- max 2)))
+  (test (format #f "~avector-add (v+s)" tag) (result-lo-ok v0-min-1)
+        (gen-tester add v0 (- min 1)))
+  (test (format #f "~avector-add (v+b)" tag)
+        (case tag
+          ((s64 u64)
+           (result-normal (make big32 (+ big32 1) (+ big32 2) (+ big32 3))))
+          (else (result-hi-ok vmax)))
+        (gen-tester add v0 big32))
+  (test (format #f "~avector-add (v+b)" tag)
+        (case tag
+          ((s64)
+           (result-normal (make (- big32) (- 1 big32) (- 2 big32) (- 3 big32))))
+          (else (result-lo-ok vmin)))
+        (gen-tester add v0 (- big32)))
+  (test (format #f "~avector-add (v+b)" tag) (result-hi-ok vmax)
+        (gen-tester add v0 big64))
+  (test (format #f "~avector-add (v+b)" tag) (result-lo-ok vmin)
+        (gen-tester add v0 (- big64)))
+
+  (test (format #f "~avector-sub (v-v)" tag) (result-normal v1-v0)
+        (gen-tester sub v1 v0))
+  (test (format #f "~avector-sub (v-v)" tag) (result-lo-ok  v3-v0)
+        (gen-tester sub v3 v0))
+  (test (format #f "~avector-sub (v-s)" tag) (result-normal v0)
+        (gen-tester sub v1 4))
+  (test (format #f "~avector-sub (v-s)" tag) (result-lo-ok v0-min-1)
+        (gen-tester sub v0 (- (- min 1))))
+  (test (format #f "~avector-sub (v-b)" tag)
+        (case tag
+          ((s64) (result-normal (make (- big32) (- 1 big32) (- 2 big32) (- 3 big32))))
+          (else  (result-lo-ok vmin)))
+        (gen-tester sub v0 big32))
+  (test (format #f "~avector-sub (v-b)" tag)
+        (case tag
+          ((s64 u64)
+           (result-normal (make big32 (+ big32 1) (+ big32 2) (+ big32 3))))
+          (else (result-hi-ok vmax)))
+        (gen-tester sub v0 (- big32)))
+  (test (format #f "~avector-sub (v-b)" tag) (result-lo-ok vmin)
+        (gen-tester sub v0 big64))
+  (test (format #f "~avector-sub (v-b)" tag) (result-hi-ok vmax)
+        (gen-tester sub v0 (- big64)))
+
+  (test (format #f "~avector-mul (v*v)" tag) (result-normal v0*v1)
+        (gen-tester mul v0 v1))
+  (test (format #f "~avector-mul (v*v)" tag) (result-hi-ok v0*v2)
+        (gen-tester mul v0 v2))
+  (unless (memq tag '(u8 u16 u32 u64))
+    (test (format #f "~avector-mul (v*v)" tag) (result-lo-ok v0*v3)
+          (gen-tester mul v0 v3)))
+  (test (format #f "~avector-mul (v*s)" tag) (result-normal v0*2)
+        (gen-tester mul v0 2))
+  (test (format #f "~avector-mul (v*s)" tag)
+        (if (memq tag '(s8 s16 s32 s64))
+            (result-normal (make 0 -2 -4 -6))
+            (result-lo-ok  vmin))
+        (gen-tester mul v0 -2))
+  (test (format #f "~avector-mul (v*s)" tag)
+        (result-hi-ok (make 0 (- max 1) max max))
+        (gen-tester mul v0 (- max 1)))
+  (test (format #f "~avector-mul (v*s)" tag)
+        (case tag
+          ((s8 s16 s32 s64) (result-lo-ok (make 0 (- (- max 1)) min min)))
+          (else (result-lo-ok  vmin)))
+        (gen-tester mul v0 (- (- max 1))))
+  (test (format #f "~avector-mul (v*b)" tag)
+        (case tag
+          ((s64 u64) (result-normal (make 0 big32 (* big32 2) (* big32 3))))
+          (else (result-hi-ok  (make 0 max max max))))
+        (gen-tester mul v0 big32))
+  (test (format #f "~avector-mul (v*b)" tag)
+        (case tag
+          ((s64)
+           (result-normal (make 0 (- big32) (- (* big32 2))  (- (* big32 3)))))
+          (else (result-lo-ok  (make 0 min min min))))
+        (gen-tester mul v0 (- big32)))
+  )
+  
+(arith-test-generate s8)
+(arith-test-generate u8)
+(arith-test-generate s16)
+(arith-test-generate u16)
+(arith-test-generate s32)
+(arith-test-generate u32)
+(arith-test-generate s64)
+(arith-test-generate u64)
 
 (test-end)
