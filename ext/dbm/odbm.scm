@@ -1,0 +1,140 @@
+;;;
+;;; odbm - original dbm interface
+;;;
+;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;
+;;;  Permission to use, copy, modify, distribute this software and
+;;;  accompanying documentation for any purpose is hereby granted,
+;;;  provided that existing copyright notices are retained in all
+;;;  copies and that this notice is included verbatim in all
+;;;  distributions.
+;;;  This software is provided as is, without express or implied
+;;;  warranty.  In no circumstances the author(s) shall be liable
+;;;  for any damages arising out of the use of this software.
+;;;
+;;;  $Id: odbm.scm,v 1.1 2001-10-20 11:47:14 shirok Exp $
+;;;
+
+(define-module dbm.odbm
+  (use dbm)
+  (export <odbm>
+          ;; low level funcions
+          odbm-init    odbm-close    odbm-closed?
+          odbm-store   odbm-fetch   odbm-delete
+          obdm-firstkey  odbm-nextkey)
+  )
+(select-module dbm.odbm)
+(dynamic-load "odbm")
+
+;; Legacy DBM has some limitations.
+;;  * only one dbm file can be opened at a time.
+;;     (this is checked in C code)
+;;  * no flags (read-only, read-write or create)
+;;  * dbm changes file mode to #o000 when opened, to prevent
+;;    other processes to access to the same file (I guess).
+;;    this won't work well if the process dies before changing
+;;    back the permission.  We reset the permission after
+;;    opening the file.
+
+;;
+;; Initialize
+;;
+
+(define-class <odbm> (<dbm>)
+  ())
+
+(define-method initialize ((self <odbm>) initargs)
+  (next-method)
+  (let* ((path   (slot-ref self 'path))
+         (rwmode (slot-ref self 'rw-mode))
+         (fmode  (slot-ref self 'file-mode))
+         (dirfile (string-append path ".dir"))
+         (pagfile (string-append path ".pag"))
+         (exists? (and (file-exists? dirfile) (file-exists? pagfile)))
+         (create  (lambda ()
+                    (with-output-to-file dirfile (lambda () #f))
+                    (with-output-to-file pagfile (lambda () #f)))))
+    (case rwmode
+      (:read
+       (unless exists?
+         (errorf "dbm-open: no database file ~s.dir or ~s.pag" path path)))
+      (:write
+       ;; dir and pag files must exist
+       (unless exists? (create)))
+      (:create
+       ;; a trick: remove dir and pag file first if :create
+       (when exists?
+         (posix-unlink dirfile) (posix-unlink pagfile))
+       (create)))
+    (odbm-init path)
+    ;; adjust mode properly
+    (posix-chmod dirfile fmode)
+    (posix-chmod pagfile fmode)
+    self))
+
+;;
+;; close operation
+;;
+
+(define-method dbm-close ((self <odbm>))
+  (odbm-close))
+
+(define-method dbm-closed? ((self <odbm>))
+  (odbm-closed?))
+
+;;
+;; common operations
+;;
+
+(define-method dbm-put! ((self <odbm>) key value)
+  (next-method)
+  (if (eqv? (slot-ref self 'rw-mode) :read)
+      (errorf "dbm-put!: database ~s is read only" self)
+      (let ((stringify (slot-ref self '->string)))
+        (if (> 0 (odbm-store (stringify key) (stringify value)))
+            (errorf "dbm-put!: put failed")))))
+
+(define-method dbm-get ((self <odbm>) key . args)
+  (next-method)
+  (let ((stringify   (slot-ref self '->string))
+        (unstringify (slot-ref self 'string->)))
+    (cond ((odbm-fetch (stringify key))
+           => (lambda (v) (unstringify v)))
+          ((pair? args) (car args))     ;fall-back value
+          (else  (errorf "odbm: no data for key ~s in database ~s"
+                        key self)))))
+
+(define-method dbm-exists? ((self <odbm>) key)
+  (next-method)
+  (let ((stringify   (slot-ref self '->string)))
+    (if (odbm-fetch (stringify key)) #t #f)))
+
+(define-method dbm-delete! ((self <odbm>) key)
+  (next-method)
+  (if (eqv? (slot-ref self 'rw-mode) :read)
+      (errorf "dbm-delete!: database ~s is read only" self)
+      (if (> 0 (odbm-delete ((slot-ref self '->string) key)))
+          (errorf "dbm-delete!: deleteting key ~s from ~s failed" key self))))
+
+(define-method dbm-for-each ((self <odbm>) proc)
+  (next-method)
+  (let ((unstringify (slot-ref self 'string->)))
+    (let loop ((key (odbm-firstkey)))
+      (when key
+        (let ((val (odbm-fetch key)))
+          (proc (unstringify key) (unstringify val))
+          (loop (odbm-nextkey key)))))
+    ))
+
+(define-method dbm-map ((self <odbm>) proc)
+  (next-method)
+  (let ((unstringify (slot-ref self 'string->)))
+    (let loop ((key (odbm-firstkey))
+               (r   '()))
+      (if key
+          (let ((val (odbm-fetch key)))
+            (loop (odbm-nextkey key)
+                  (cons (proc (unstringify key) (unstringify val)) r)))
+          (reverse r)))))
+  
+(provide "dbm/odbm")

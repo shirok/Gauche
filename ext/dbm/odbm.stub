@@ -1,0 +1,131 @@
+;;
+;; odbmlib.stub - original dbm interface
+;;
+;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;
+;;  Permission to use, copy, modify, distribute this software and
+;;  accompanying documentation for any purpose is hereby granted,
+;;  provided that existing copyright notices are retained in all
+;;  copies and that this notice is included verbatim in all
+;;  distributions.
+;;  This software is provided as is, without express or implied
+;;  warranty.  In no circumstances the author(s) shall be liable
+;;  for any damages arising out of the use of this software.
+;;
+;;  $Id: odbm.stub,v 1.1 2001-10-20 11:47:14 shirok Exp $
+;;
+
+"
+ #include \"dbmconfig.h\"
+
+ #ifdef HAVE_DBM_H
+ #include <dbm.h>
+ #elif HAVE_GDBM_DBM_H
+ #include <gdbm/dbm.h>
+ #endif
+
+ static void odbm_print(ScmObj, ScmPort *, ScmWriteContext*);
+ static SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_OdbmClass, odbm_print);
+
+ #define SCM_CLASS_ODBM       (&Scm_OdbmClass)
+ #define SCM_ODBM(obj)        ((ScmOdbm*)obj)
+ #define SCM_ODBM_P(obj)      TYPEP(obj, SCM_CLASS_ODBM)
+
+ typedef struct ScmOdbmRec {
+    ScmObj name;
+ } ScmOdbm;
+
+ static void odbm_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+ {
+    Scm_Printf(out, \"#<odbm-file %S>\", SCM_ODBM(obj)->name);
+ }
+
+ #define TO_DATUM(datum_, scm_)             \\
+   do {                                     \\
+     datum_.dptr = Scm_GetString(scm_);     \\
+     datum_.dsize = SCM_STRING_SIZE(scm_);  \\
+   } while (0)
+ #define FROM_DATUM(scm_, datum_)           \\
+   do {                                     \\
+     if (datum_.dptr) {                     \\
+       scm_ = Scm_MakeString(datum_.dptr, datum_.dsize, -1, SCM_MAKSTR_COPYING); \\
+     } else {                               \\
+       scm_ = SCM_FALSE;                    \\
+     }                                      \\
+   } while (0)
+
+ #define CHECK_ODBM() if (!odbm_opened) Scm_Error(\"odbm file already closed\")
+"
+
+;; Original dbm allows to open only one file at a time.
+;; The static variable odbm_opened tracks the status.
+
+"static int odbm_opened = FALSE;"
+
+(define-cproc odbm-init (name)
+  (assert (string? name))
+  "int r;
+  if (odbm_opened) Scm_Error(\"dbm file is already opened.\");
+  r = dbminit(Scm_GetString(name));
+  if (r < 0) {
+    Scm_SysError(\"couldn't open dbm database %S\", name);
+  }
+  odbm_opened = TRUE;
+  SCM_RETURN(SCM_MAKE_INT(r));")
+
+(define-cproc odbm-close ()
+  "if (odbm_opened) {
+      dbmclose();
+      odbm_opened = FALSE;
+   }
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc odbm-closed? ()
+  "SCM_RETURN(SCM_MAKE_INT(!odbm_opened));")
+
+(define-cproc odbm-store (key val)
+  (assert (string? key))
+  (assert (string? val))
+  "datum dkey, dval; int r;
+   CHECK_ODBM();
+   TO_DATUM(dkey, key);
+   TO_DATUM(dval, val);
+   r = store(dkey, dval);
+   SCM_RETURN(SCM_MAKE_INT(r));")
+
+(define-cproc odbm-fetch (key)
+  (assert (string? key))
+  "datum dkey, dval; ScmObj r;
+   CHECK_ODBM();
+   TO_DATUM(dkey, key);
+   dval = fetch(dkey);
+   FROM_DATUM(r, dval);
+   SCM_RETURN(r);")
+
+(define-cproc odbm-delete (key)
+  (assert (string? key))
+  "datum dkey; int r;
+   CHECK_ODBM();
+   TO_DATUM(dkey, key);
+   r = delete(key);
+   SCM_RETURN(SCM_MAKE_INT(r));")
+
+(define-cproc odbm-firstkey ()
+  "datum dkey; ScmObj r;
+   CHECK_ODBM();
+   dkey = firstkey();
+   FROM_DATUM(r, dkey);
+   SCM_RETURN(r);")
+
+(define-cproc odbm-nextkey (key)
+  (assert (string? key))
+  "datum dkey, dnkey; ScmObj r;
+   CHECK_ODBM();
+   TO_DATUM(dkey, key);
+   dnkey = nextkey(dkey);
+   FROM_DATUM(r, dnkey);
+   SCM_RETURN(r);")
+
+;; Local variables:
+;; mode: scheme
+;; end:
