@@ -75,10 +75,11 @@ gauche-refe.info.gz : gauche-refe.texi
 gauche-refj.html : gauche-refj.texi
 	texi2html -number gauche-refj.texi
 
+# the sed stuff fixes broken charset spec
 gauche-refj_toc.html : gauche-refj.texi
 	texi2html -split section -number gauche-refj.texi;
 	for f in gauche-refj*.html; do \
-	  sed -e 's/LANG=""/LANG="ja"/' $$f > $$f.t && mv $$f.t $$f; \
+	  sed -e '1d;s/LANG=""//;s|^<HEAD>$$|<html><head><meta http-equiv="Content-Type" content="text/html; charset=euc-jp">|' $$f > $$f.t && mv $$f.t $$f; \
 	done
 
 gauche-refj.dvi : gauche-refj.texi
