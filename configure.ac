@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.44 2004-11-10 11:56:29 shirok Exp $
+dnl $Id: configure.ac,v 1.45 2004-11-21 11:56:30 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.2_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.44 $)
+AC_REVISION($Revision: 1.45 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -401,7 +401,7 @@ case $target in
     SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
     ;;
-  *netbsd*)
+  *netbsd*|*openbsd*)
     SHLIB_SO_CFLAGS="-fPIC -DPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"
