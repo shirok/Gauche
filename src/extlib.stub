@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.28 2001-02-22 19:47:06 shiro Exp $
+;;; $Id: extlib.stub,v 1.29 2001-02-28 23:48:16 shiro Exp $
 ;;;
 
 ;;
@@ -115,6 +115,7 @@
   }
   SCM_RETURN(Scm_Gensym(p));")
 
+;; keywords
 (define-cproc keyword? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_KEYWORDP(obj)));")
 
@@ -124,6 +125,14 @@
 
 (define-cproc get-keyword (key list &optional fallback)
   "  SCM_RETURN(Scm_GetKeyword(key, list, fallback));")
+
+;; identifiers
+(define-cproc identifier? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_IDENTIFIERP(obj)));")
+
+(define-cproc identifier->symbol (obj)
+  (assert (identifier? obj))
+  "  SCM_RETURN(SCM_OBJ(SCM_IDENTIFIER(obj)->name));")
 
 ;;
 ;; 6.3.4  Characters
@@ -207,6 +216,11 @@
   "  if (SCM_PORT_TYPE(oport) != SCM_PORT_OSTR)
         Scm_Error(\"output string port required, but got: %S\", oport);
   SCM_RETURN(Scm_GetOutputString(oport));")
+
+(define-cproc flush (&optional (oport (current-output-port)))
+  (assert (output-port? oport))
+  "  Scm_Flush(oport);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc current-error-port ()     ;gauche extention
   "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
