@@ -17,7 +17,7 @@ AS=as $(ABI_FLAG)
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
 #  if you use something other than the default ABI on your machine.
 
-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSMALL_CONFIG -DSILENT -DDONT_ADD_BYTE_AT_END
+CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSMALL_CONFIG -DSILENT -DDONT_ADD_BYTE_AT_END $(SHLIB_DSO_CCFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
 # PIC code, e.g. -fPIC on Linux.
