@@ -30,17 +30,17 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.8 2003-10-06 12:18:50 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.9 2004-04-10 12:14:17 fuyuki Exp $
 ;;;
 
 (define-module gauche.auxsys
   (export fmod frexp modf ldexp
-          sys-abort sys-mkfifo
+          sys-abort sys-realpath sys-mkfifo
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
           sys-putenv sys-setenv sys-unsetenv
-          sys-gettimeofday sys-chown sys-utime
+          sys-gettimeofday sys-chown sys-lchown sys-utime
           sys-getgroups sys-getlogin sys-localeconv)
   )
 (select-module gauche.auxsys)

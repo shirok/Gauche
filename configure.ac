@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.31 2004-02-27 04:45:42 shirok Exp $
+dnl $Id: configure.ac,v 1.32 2004-04-10 12:14:14 fuyuki Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.4.2, shiro@acm.org)
-AC_REVISION($Revision: 1.31 $)
+AC_REVISION($Revision: 1.32 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -287,7 +287,7 @@ AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
 
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(isnan isinf trunc rint)
-AC_CHECK_FUNCS(symlink readlink mkstemp gettimeofday nanosleep usleep)
+AC_CHECK_FUNCS(symlink readlink lchown mkstemp realpath nanosleep usleep)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
 AC_CHECK_FUNCS(putenv setenv unsetenv getpgid)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)

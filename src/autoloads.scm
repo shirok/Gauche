@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.7 2004-04-01 12:13:26 shirok Exp $
+;;; $Id: autoloads.scm,v 1.8 2004-04-10 12:14:17 fuyuki Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.7 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.8 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -161,11 +161,12 @@
 
 (autoload gauche.auxsys
           fmod frexp modf ldexp
-          sys-abort sys-mkfifo
+          sys-abort sys-realpath sys-mkfifo
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
-          sys-gethostname sys-getdomainname sys-putenv
-          sys-gettimeofday sys-chown sys-utime
+          sys-gethostname sys-getdomainname
+          sys-putenv sys-setenv sys-unsetenv
+          sys-gettimeofday sys-chown sys-lchown sys-utime
           sys-getgroups sys-getlogin sys-localeconv)
 
 (autoload gauche.defvalues
