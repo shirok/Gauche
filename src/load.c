@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.28 2001-03-25 03:03:42 shiro Exp $
+ *  $Id: load.c,v 1.29 2001-04-01 07:18:49 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -27,6 +27,8 @@
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
+
+#define LOAD_SUFFIX ".scm"
 
 /*
  * Load file.
@@ -170,6 +172,9 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
             }
             fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
             fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(file));
+            if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
+                break;
+            fpath = Scm_StringAppendC(SCM_STRING(fpath), LOAD_SUFFIX, -1, -1);
             if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
                 break;
         }
