@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.35 2001-02-13 06:03:23 shiro Exp $
+ *  $Id: vm.c,v 1.36 2001-02-13 12:29:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -41,7 +41,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->module = module ? module : base->module;
     v->escape = base ? base->escape : NULL;
     v->errorHandler = SCM_FALSE;
-
+    v->history = NULL;
+    
     v->curin  = SCM_PORT(Scm_Stdin());
     v->curout = SCM_PORT(Scm_Stdout());
     v->curerr = SCM_PORT(Scm_Stderr());
@@ -219,6 +220,8 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     do {                                        \
         sp -= ENV_SIZE(env->size);              \
         env = env->up;                          \
+        if (sp < vm->stackBase)                 \
+            sp = vm->stackBase;                 \
     } while (0)
 
 #define VM_DUMP(delimiter)                      \
@@ -358,7 +361,7 @@ static void run_loop()
                        (ScmObj*)cont + CONT_FRAME_SIZE,
                        cont->size * sizeof(void*));
                 after = (ScmObj (*)(ScmObj, void**))cont->pc;
-                sp = (ScmObj*)cont;
+                if (IN_STACK_P((ScmObj*)cont)) sp = (ScmObj*)cont;
                 cont = cont->prev;
                 env = cont->env;
                 SAVE_REGS();
@@ -895,11 +898,10 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
  *   returns, continuations saved during the execution of the
  *   Scheme code becomes invalid.
  *
- *   To realize this, we make a chain of records which keeps
- *   VM status at the border.   Call/cc captures the tail of
+ *   To realize this, we make a chain of records (ScmVMActivationHistory)
+ *   which keeps VM status at the border.   Call/cc captures the tail of
  *   the chain.  And when the captured continuation is invoked,
- *   it checks if the chain is still valid.  This chain is
- *   placed in a C stack.
+ *   it checks if the chain is still valid.
  */
 
 /* Border gate.  All the C->Scheme calls should go through here.  */
@@ -907,13 +909,25 @@ static ScmObj user_eval_inner(ScmObj program)
 {
     DECL_REGS_VOLATILE;
     volatile ScmObj result = SCM_UNDEFINED;
+
+    /* Keep activation history in heap.  It can be on the C stack,
+       since it is discarded when this routine returns.  However,
+       it may not be safe to do so if some routine other than Gauche
+       does longjmp() and discards the current frame... */
+    ScmVMActivationHistory *h = SCM_NEW(ScmVMActivationHistory);
+    h->prev = theVM->history;
+    h->stackBase = theVM->sp;
+    theVM->history = h;
+
     SCM_PUSH_ERROR_HANDLER {
         theVM->pc = program;
         run_loop();
         result = theVM->val0;
+        theVM->history = theVM->history->prev;
     }
     SCM_WHEN_ERROR {
         SAVE_REGS();            /* restore current VM regs */
+        theVM->history = theVM->history->prev;
         SCM_PROPAGATE_ERROR;
     }
     SCM_POP_ERROR_HANDLER;
@@ -1086,6 +1100,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 struct cont_data {
     ScmContFrame *cont;
     ScmObj handlers;
+    ScmVMActivationHistory *history;
 };
 
 static ScmObj throw_cont_cc(ScmObj, void **);
@@ -1165,7 +1180,7 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
     return throw_cont_body(cur_handlers, dest_handlers, cont, args);
 }
 
-static void throw_continuation(ScmObj *argframe, int nargs, void *data)
+static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
 {
 
     struct cont_data *cd = (struct cont_data*)data;
@@ -1177,13 +1192,14 @@ static void throw_continuation(ScmObj *argframe, int nargs, void *data)
     SCM_ASSERT(cont != NULL);
     args = argframe[0];
     
-    throw_cont_body(current, handlers, cont, args);
+    return throw_cont_body(current, handlers, cont, args);
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
 {
     ScmObj contproc;
     struct cont_data *data;
+    ScmVM *vm = theVM;
 
     if (!SCM_PROCEDUREP(proc) || SCM_PROCEDURE_REQUIRED(proc) != 1)
         Scm_Error("Procedure taking one argument is required, but got: %S",
@@ -1200,12 +1216,14 @@ ScmObj Scm_VMCallCC(ScmObj proc)
        Copying frame-by-frame will be terribly slow.  I'd like to fix
        it asap. */
     {
-        ScmVM *vm = theVM;
         ScmContFrame *c = vm->cont;
         for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
             ScmEnvFrame *e = save_env(vm, c->env, c);
             int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
             ScmContFrame *csave = SCM_NEW2(ScmContFrame*, size);
+
+            if (c->env == vm->env) vm->env = e;
+            if (c == vm->cont) vm->cont = csave;
             if (c->argp) {
                 memcpy(csave, c, CONT_FRAME_SIZE * sizeof(ScmObj));
                 memcpy((void**)csave + CONT_FRAME_SIZE,
@@ -1218,7 +1236,14 @@ ScmObj Scm_VMCallCC(ScmObj proc)
             }
         }
     }
-    return SCM_UNDEFINED;
+    data = SCM_NEW(struct cont_data);
+    data->cont = vm->cont;
+    data->handlers = vm->handlers;
+    data->history = vm->history;
+
+    contproc = Scm_MakeSubr(throw_continuation, data, 1, 0,
+                            SCM_MAKE_STR("continuation"));
+    return Scm_VMApply1(proc, contproc);
 }
 
 /*==============================================================
