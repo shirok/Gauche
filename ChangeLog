@@ -1,5 +1,6 @@
 2002-09-21  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.6.3
 	* ext/syslog/* : added syslog(3) interface.
 	* lib/gauche/logger.scm : allow a procedure for log prefix generator.
 	  Also integrated to the syslog feature.
