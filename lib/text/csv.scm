@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: csv.scm,v 1.4 2001-09-24 08:50:04 shirok Exp $
+;;;  $Id: csv.scm,v 1.5 2002-12-22 01:01:16 shirok Exp $
 ;;;
 
 (define-module text.csv
@@ -53,7 +53,7 @@
     (define (start line fields)
       (if (eof-object? line)
           (reverse! fields)
-          (let ((next (string-trim line)))
+          (let ((next (string-trim line #[ ])))
             (if (string-prefix? "\"" next)
                 (quoted (string-drop next 1) fields '())
                 (noquote next fields)))))
@@ -63,7 +63,7 @@
                   (start (string-drop line (+ i 1))
                          (cons (string-trim-right (string-take line i))
                                fields))))
-            (else (reverse! (cons (string-trim-right line) fields)))))
+            (else (reverse! (cons (string-trim-right line #[ ]) fields)))))
     (define (quoted line fields partial)
       (cond ((eof-object? line) (error "unterminated quoted field"))
             ((string-null? line)
