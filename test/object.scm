@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.5 2001-03-27 06:28:18 shiro Exp $
+;; $Id: object.scm,v 1.6 2001-03-27 10:15:07 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -149,7 +149,7 @@
 (define s4 (make <ss> :v '(1 . 0)))
 
 (test "make <ss> :v"
-      '((1 0 "s" (1 . 0)) ("i" 0 5 ("i" . 0)))
+      '((1 0 5 (1 . 0)) ("i" 0 5 ("i" . 0)))
       (lambda () (list (slot-values s4) (slot-values s3))))
 
 ;;----------------------------------------------------------------
