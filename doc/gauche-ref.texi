@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.217 2002-06-15 03:33:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.218 2002-06-16 00:23:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19458,8 +19458,22 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 @section @code{srfi-19} - Time data types and procedures
 @c NODE 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
 
-This SRFI defines various representations of time and
+@c EN
+This SRFI defines various representations of time and date, and
+conversion methods among them.
+@c JP
+このSRFIは、時間と日付に関する様々な表現と、それらの間の変換メソッドを提供します。
+@c COMMON
 
+@c EN
+On Gauche, time object is supported natively by @code{<time>} class
+(@xref{SRFI time}).  Date object is supported by @code{<date>} class
+described below.
+@c JP
+Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込みで
+サポートされています(@ref{SRFI time}参照)。dateオブジェクトは以下で説明する
+@code{<date>}クラスとしてサポートされます。
+@c COMMON
 
 @menu
 * SRFI-19 Time types::          
@@ -19473,22 +19487,78 @@ This SRFI defines various representations of time and
 @subsection Time types
 @c NODE 時間のタイプ
 
+@c EN
+Time type is represented by a symbol.  This module defines
+the following constant variables that is bound to its name, for
+convenience.
+@c JP
+時間のタイプはシンボルで表現されます。
+このモジュールでは以下の定数が自分の名前に束縛された形で提供されています。
+@c COMMON
+
 @defvr {Constant} time-utc
+[SRFI-19]
+@c EN
+UTC time.  Gauche's built-in @code{current-time} always returns
+this type (@xref{SRFI time}).
+@c JP
+UTC timeです。Gaucheの組み込みの@code{current-time}は常にこのタイプの時間を
+返します (@ref{SRFI time}参照)。
+@c COMMON
 @end defvr
 
 @defvr {Constant} time-tai
+[SRFI-19]
+@c EN
+International Atomic Time.  This time is a bit larger than UTC, due to
+the leap seconds.
+@c JP
+International Atomic Time。この時間は閏秒を計算に入れており、
+UTCより若干大きな値を取ります。
+@c COMMON
 @end defvr
 
 @defvr {Constant} time-monotonic
+[SRFI-19]
+@c EN
+Implementation-dependent monotonically increasing time.
+In Gauche, this is the same as @code{time-tai}.
+@c JP
+実装依存の、単調増加する時間。Gaucheの実装ではこれは@code{time-tai}と同じです。
+@c COMMON
 @end defvr
 
 @defvr {Constant} time-duration
+[SRFI-19]
+@c EN
+Duration between two absolute time points.
+@c JP
+二つの絶対的な時点の間の期間。
+@c COMMON
 @end defvr
 
 @defvr {Constant} time-process
+[SRFI-19]
+@c EN
+CPU time in current process.
+Gauche calculates this from user time and system time returned by 
+POSIX times(3).
+@c JP
+現在のプロセスのCPU時間。
+Gaucheは、POSIX time(3)コールが返すユーザ時間とシステム時間の合計からこの値を
+計算します。
+@c COMMON
 @end defvr
 
 @defvr {Constant} time-thread
+[SRFI-19]
+@c EN
+CPU time in current thread.
+In the current implementation, this is the same as @code{time-process}.
+@c JP
+現在のスレッドのCPU時間。
+現在の実装ではこれは@code{time-process}と同じです。
+@c COMMON
 @end defvr
 
 @node SRFI-19 Time queries, SRFI-19 Time procedures, SRFI-19 Time types, Time data types and procedures
@@ -19496,18 +19566,60 @@ This SRFI defines various representations of time and
 @c NODE 時間に関する問い合わせ
 
 @defun current-time &optional time-type
+[SRFI-19]
+@c EN
+Extends Gauche built-in @code{current-time} (@xref{SRFI time}) to take
+optional @var{time-type} argument to specify the desired time type.
+@var{time-type} must be one of the types described in @ref{SRFI-19 Time types}.
+@c JP
+Gauche組み込みの@code{current-time} (@ref{SRFI time}参照)を拡張して、
+必要な時間のタイプを省略可能な引数@var{time-type}で指定できるようにしています。
+可能な@var{time-type}の値は@ref{SRFI-19 Time types}で説明されているものです。
+@c COMMON
 @end defun
 
 @defun current-date &optional tz-offset
+[SRFI-19]
+@c EN
+Returns the current date as an instance of @code{<date>} class
+(@xref{SRFI-19 Date}).  If @var{tz-offset} is given, it must be
+an offset from UTC in number of seconds.  If @var{tz-offset} is
+not given, returns the date in local time zone.
+@c JP
+現在の日付を@code{<date>}クラスのインスタンスとして返します(@ref{SRFI-19 Date}参照)。
+@var{tz-offset}が与えられた場合、それがUTCからのオフセットを表す秒数として
+使われます。@var{tz-offset}が与えられなかった場合はローカルタイムゾーンで
+表現された日付が返されます。
+@c COMMON
 @end defun
 
 @defun current-julian-day 
+[SRFI-19]
+@c EN
+Returns the current julian day, a point in time as a real number of
+days since -4714-11-24T12:00:00Z (November 24, -4714 at noon, UTC). 
+@c JP
+現在のJulian dayを返します。Julian dayは
+-4714-11-24T12:00:00Z (November 24, -4714 at noon, UTC) からの日数を
+実数で表現したものです。
+@c COMMON
 @end defun
 
 @defun current-modified-julian-day
+[SRFI-19]
+@c EN
+Returns the current modified julian day, a point in time as a real
+number of days since 1858-11-17T00:00:00Z
+(November 17, 1858 at midnight, UTC). 
+@c JP
+現在のModified julian dayを返します。Modified julian dayは
+1858-11-17T00:00:00Z (November 17, 1858 at midnight, UTC)
+からの日数を実数で表現したものです。
+@c COMMON
 @end defun
 
 @defun time-resolution
+[SRFI-19]
 @end defun
 
 
@@ -19516,19 +19628,39 @@ This SRFI defines various representations of time and
 @c NODE 時間に関する手続き
 
 @defun make-time type seconds nanoseconds
+[SRFI-19]
+@c EN
+Returns an instance of @code{<time>} class with specified initial values.
+Equivalent to @code{(make <time> :type type :second seconds :nanosecond nanoseconds)}.
+@c JP
+与えられた初期値を持つ@code{<time>}クラスのインスタンスを返します。
+@code{(make <time> :type type :second seconds :nanosecond nanoseconds)}
+と等価です。
+@c COMMON
 @end defun
 
 @defun time-type time
 @defunx time-second time
 @defunx time-nanosecond time
-@end defun
-
-@defun set-time-type! time type
+@defunx set-time-type! time type
 @defunx set-time-second! time second
 @defunx set-time-nanosecond! time nanosecond
+[SRFI-19]
+@c EN
+Getter and setter of @code{<time>} object slots.
+@c JP
+@code{<time>}オブジェクトのスロットのアクセサです。
+@c COMMON
 @end defun
 
 @defun copy-time time
+[SRFI-19]
+@c EN
+Returns a new instance of @code{<time>} whose content is the same as
+given @var{time}
+@c JP
+与えられた@var{time}と同じ内容の新しい@code{<time>}オブジェクトを返します。
+@c COMMON
 @end defun
 
 @defun time=? time0 time1
@@ -19536,20 +19668,47 @@ This SRFI defines various representations of time and
 @defunx time<=? time0 time1
 @defunx time>? time0 time1
 @defunx time>=? time0 time1
+[SRFI-19]
+@c EN
+Compares two times.  Types of both times must match.
+@c JP
+二つの時間を比較します。時間のタイプは一致していなければなりません。
+@c COMMON
 @end defun
 
 @defun time-difference time0 time1
 @defunx time-difference! time0 time1
+[SRFI-19]
+@c EN
+Returns the difference of two times, in @code{time-duration} time.
+Types of both times must match.  
+@code{Time-difference!} modifies @var{time0} to store the result.
+@c JP
+二つの時間の差を@code{time-duration}タイプの時間として返します。
+二つの時間のタイプは一致していなければなりません。
+@code{Time-difference!}は結果を格納するために@var{time0}を変更します。
+@c COMMON
 @end defun
 
 @defun add-duration time0 time-duration
 @defunx add-duration! time0 time-duration
-@end defun
-
-@defun subtract-duration time0 time-duration
+@defunx subtract-duration time0 time-duration
 @defunx subtract-duration! time0 time-duration
+[SRFI-19]
+@c EN
+Adds or subtracts @var{time-duration} to or from @var{time0}.
+Type of returned time is the same as @var{time0}.  Type of
+@var{time-duration} must be @code{time-duration}.
+@code{add-duration!} and @code{subtract-duration!} reuse
+@var{time0} to store the result.
+@c JP
+@var{time-duration}を@var{time0}に加算、または@var{time0}から減算します。
+返される時間のタイプは@var{time0}と同じです。@var{time-duration}のタイプは
+@code{time-duration}でなければなりません。
+@code{add-duration!}と@code{subtract-duration!}は結果を格納するのに
+@var{time0}を再利用します。
+@c COMMON
 @end defun
-
 
 @node SRFI-19 Date, SRFI-19 Date reader and writer, SRFI-19 Time procedures, Time data types and procedures
 @subsection Date
@@ -19557,12 +19716,17 @@ This SRFI defines various representations of time and
 
 @deftp {Class} <date>
 @clindex date
+@c EN
+@c JP
+@c COMMON
 @end deftp
 
 @defun make-date nanosecond second minute hour day month year zone-offset
+[SRFI-19]
 @end defun
 
 @defun date?
+[SRFI-19]
 @end defun
 
 @defun date-nanosecond date
@@ -19573,11 +19737,13 @@ This SRFI defines various representations of time and
 @defunx date-month date
 @defunx date-year date
 @defunx date-zone-offset date
+[SRFI-19]
 @end defun
 
 @defun date-year-day date
 @defunx date-week-day date
 @defunx date-week-number date day-of-week-starting-week
+[SRFI-19]
 @end defun
 
 @defun date->julian-day date
@@ -19585,18 +19751,24 @@ This SRFI defines various representations of time and
 @defunx date->time-monotonic date
 @defunx date->time-tai date
 @defunx date->time-utc date
+[SRFI-19]
+Conversions from date to various date/time types.
 @end defun
 
 @defun julian-day->date jd &optional tz-offset
 @defunx julian-day->time-monotonic jd
 @defunx julian-day->time-tai jd
 @defunx julian-day->time-utc jd
+[SRFI-19]
+Conversions from julian-day to various date/time types.
 @end defun
 
 @defun modified-julian-day->date jd &optional tz-offset
 @defunx modified-julian-day->time-monotonic jd
 @defunx modified-julian-day->time-tai jd
 @defunx modified-julian-day->time-utc jd
+[SRFI-19]
+Conversions from modified julian-day to various date/time types.
 @end defun
 
 @defun time-monotonic->date time &optional tz-offset
@@ -19606,6 +19778,8 @@ This SRFI defines various representations of time and
 @defunx time-monotonic->time-tai! time
 @defunx time-monotonic->time-utc time
 @defunx time-monotonic->time-utc! time
+[SRFI-19]
+Conversions from time-monotonic to various date/time types.
 @end defun
 
 @defun time-tai->date time &optional tz-offset
@@ -19615,6 +19789,8 @@ This SRFI defines various representations of time and
 @defunx time-tai->time-monotonic! time
 @defunx time-tai->time-utc time
 @defunx time-tai->time-utc! time
+[SRFI-19]
+Conversions from time-tai to various date/time types.
 @end defun
 
 @defun time-utc->date time &optional tz-offset
@@ -19624,6 +19800,8 @@ This SRFI defines various representations of time and
 @defunx time-utc->time-monotonic! time
 @defunx time-utc->time-tai time
 @defunx time-utc->time-tai! time
+[SRFI-19]
+Conversions from time-utc to various date/time types.
 @end defun
 
 @node SRFI-19 Date reader and writer,  , SRFI-19 Date, Time data types and procedures
@@ -19631,9 +19809,11 @@ This SRFI defines various representations of time and
 @c NODE 日付の読み書き
 
 @defun date->string date &optional format-string
+[SRFI-19]
 @end defun
 
 @defun string->date string template-string
+[SRFI-19]
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -19692,18 +19872,36 @@ generator.
 
 @defun random-source-randomize! s
 [SRFI-27]
+Makes an effort to set the state of the random source @var{s} to 
+a truly random state.  The current implementation uses the current
+time and the process ID to set the random seed.
 @end defun
 
 @defun random-source-pseudo-randomize! s i j
 [SRFI-27]
+Changes the state of the random source @var{s} into the initial state 
+of the (@var{i}, @var{j})-th independent random source, 
+where @var{i} and @var{j} are non-negative integers. 
+This procedure can be used to reuse a random source @var{s} as large 
+number of independent random source, indexed by two non-negative integers.
+Note that this procedure is entirely deterministic. 
 @end defun
 
 @defun random-source-make-integers s
 [SRFI-27]
+Returns a procedure, that takes one integer argument @var{n} and
+returns a random integer between 0 and @var{n}-1 inclusive for every
+invocation, from the random source @var{s}.
 @end defun
 
 @defun ransom-source-make-reals s &optional unit
 [SRFI-27]
+Returns a procedure, that takes no argument and
+returns a random real between 0 and 1 exclusive for
+every invocation, from the random source @var{s}.
+If @var{unit} is given, the random real the returned procedure
+generates will be quantized by the given @var{unit}, where 
+0 < @var{unit} < 1.
 @end defun
 
 @c ----------------------------------------------------------------------
