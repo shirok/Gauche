@@ -16,13 +16,16 @@ CONFIG_GENERATED = Makefile gauche-config gauche/config.h gauche/arch.h
 LIB_INSTALL_DIR = @libdir@
 BIN_INSTALL_DIR = @bindir@
 DATA_INSTALL_DIR = @datadir@
-GAUCHE_HOME_DIR = @datadir@/gauche
-HEADER_INSTALL_DIR = $(GAUCHE_HOME_DIR)/@GAUCHE_VERSION@/include
+
+GAUCHE_DATA_DIR = @datadir@/gauche
+GAUCHE_ARCH_DIR = @libdir@/gauche
+
+HEADER_INSTALL_DIR    = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/include
 SUBHEADER_INSTALL_DIR = $(HEADER_INSTALL_DIR)/gauche
-SCM_INSTALL_DIR = $(GAUCHE_HOME_DIR)/@GAUCHE_VERSION@/lib
-ARCH_INSTALL_DIR = $(GAUCHE_HOME_DIR)/@GAUCHE_VERSION@/@host@
-SITE_SCM_DIR = $(GAUCHE_HOME_DIR)/site/lib
-SITE_ARCH_DIR = $(GAUCHE_HOME_DIR)/site/@host@
+SCM_INSTALL_DIR       = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
+ARCH_INSTALL_DIR      = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/@host@
+SITE_SCM_DIR          = $(GAUCHE_DATA_DIR)/site/lib
+SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@host@
 ARCH = @host@
 
 INSTALL_HEADERS = gauche.h ../gc/gc.h 
@@ -95,7 +98,8 @@ realclean : clean
 
 install : all
 	$(INSTALL) -d $(DATA_INSTALL_DIR)
-	$(INSTALL) -d $(GAUCHE_HOME_DIR)
+	$(INSTALL) -d $(GAUCHE_DATA_DIR)
+	$(INSTALL) -d $(GAUCHE_ARCH_DIR)
 	$(INSTALL) -d $(HEADER_INSTALL_DIR)
 	for f in $(INSTALL_HEADERS); do \
 	  $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \

@@ -4,7 +4,7 @@
                         Compiling and Installing Gauche
 
 
-$Id: INSTALL,v 1.1 2001-03-07 06:58:53 shiro Exp $
+$Id: INSTALL,v 1.2 2001-03-08 10:24:02 shiro Exp $
 
 [Quick Start]
 -------------
@@ -35,7 +35,7 @@ The files are installed in those locations:
      The interpreter (gosh) and configuration script (gauche-config).
 
   $EXEC_PREFIX/lib/*
-     Library (libgauche.a).   Actually, it's a symlink to
+     Library (libgauche.a).
 
   $PREFIX/share/gauche/VERSION/include/*
      Header files required to create applications using libgauche.
@@ -43,11 +43,11 @@ The files are installed in those locations:
   $PREFIX/share/gauche/VERSION/lib/*
      Machine-independent scheme files.
 
-  $PREFIX/share/gauche/VERSION/ARCHITECTURE/*
+  $EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*
      Machine-dependent files (.so files, gosh, gauche-config, and libgauche.a)
 
   $PREFIX/share/gauche/site/lib/*
-  $PREFIX/share/gauche/site/ARCHITECTURE/*
+  $EXEC_PREFIX/lib/gauche/site/ARCHITECTURE/*
      These are default locations where user installed machine-indenepdent/
      dependent files will go.
 
