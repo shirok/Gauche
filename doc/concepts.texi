@@ -143,7 +143,7 @@ SRFI-6の手続きは組み込みになっています。@ref{String ports}参照。
 Supported as an autoloaded macro.  
 @xref{Feature-based program configuration language}.
 @c JP
-@item SRFI-7, Feature-based program configuration language
+@item SRFI-7, 機能ベースプログラム設定言語
 オートロードされるマクロとしてサポートされています。
 @ref{Feature-based program configuration language}参照。
 @c COMMON
@@ -298,7 +298,7 @@ Gauche組み込みの@code{format}がSRFI-28のもののスーパーセットに
 Supported by the module @code{srfi-29}.
 @xref{Localization}.
 @c JP
-@item SRFI-29, Localization
+@item SRFI-29, 地域化
 モジュール@code{srfi-29}でサポートされます。
 @ref{Localization}参照。
 @c COMMON
