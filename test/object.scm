@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.14 2001-11-29 11:51:31 shirok Exp $
+;; $Id: object.scm,v 1.15 2001-12-02 12:54:52 shirok Exp $
 
 (use gauche.test)
 
@@ -352,5 +352,48 @@
 (define-class <single-2> () () :metaclass <singleton-meta>)
 
 (test "singleton" #f (lambda () (eq? single-obj (make <single-2>))))
+
+;;----------------------------------------------------------------
+(test-section "metaclass/validator")
+
+(use gauche.validator)
+
+(define-class <validator> ()
+  ((a :accessor a-of
+      :initform 'doo
+      :validator (lambda (obj value) (x->string value)))
+   (b :accessor b-of
+      :initform 99
+      :validator (lambda (obj value)
+                   (if (integer? value)
+                       value
+                       (error "integer required for slot b")))))
+  :metaclass <validator-meta>)
+
+(define v (make <validator>))
+
+(test "validator" "doo"
+      (lambda () (slot-ref v 'a)))
+
+(test "validator" "foo"
+      (lambda () (slot-set! v 'a 'foo) (slot-ref v 'a)))
+
+(test "validator" "1234"
+      (lambda () (set! (a-of v) 1234)  (a-of v)))
+
+(test "validator" 99
+      (lambda () (slot-ref v 'b)))
+
+(test "validator" 55
+      (lambda () (slot-set! v 'b 55) (slot-ref v 'b)))
+
+(test "validator" #t
+      (lambda ()
+        (with-error-handler (lambda (e) #t)
+                            (lambda () (slot-set! v 'b 3.4)))))
+(test "validator" #t
+      (lambda ()
+        (with-error-handler (lambda (e) #t)
+                            (lambda () (set! (b-of v) 3.4)))))
 
 (test-end)
