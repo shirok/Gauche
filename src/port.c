@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.37 2001-07-09 20:12:46 shirok Exp $
+ *  $Id: port.c,v 1.38 2001-08-09 09:42:52 shirok Exp $
  */
 
 #include <unistd.h>
@@ -649,6 +649,17 @@ static int fdport_getc_unbuffered(ScmPort *port)
     return ch;
 }
 
+static int fdport_getz_unbuffered(char *buf, int buflen, ScmPort *port)
+{
+    int nread;
+    DECL_FDPORT(pdata, port);
+    CHECK_EOF(pdata, 0);
+
+    nread = read(pdata->info.fd, buf, buflen);
+    CHECK_RESULT(nread, pdata, 0);
+    return nread;
+}
+
 static int fdport_ready_unbuffered(ScmPort *port)
 {
     /* TODO: write me */
@@ -757,6 +768,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
         pdata->eofread = pdata->err = FALSE;
         vt.Getb = fdport_getb_unbuffered;
         vt.Getc = fdport_getc_unbuffered;
+        vt.Getz = fdport_getz_unbuffered;
         vt.Getline = NULL;      /* use default */
         vt.Ready = fdport_ready_unbuffered;
         vt.Putb = fdport_putb_unbuffered;
