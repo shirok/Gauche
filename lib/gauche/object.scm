@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.53 2004-05-21 08:38:13 shirok Exp $
+;;;  $Id: object.scm,v 1.54 2004-05-21 20:05:54 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -527,6 +527,13 @@
   (slot-ref obj slot))
 (define-method (setter ref) ((obj <top>) (slot <symbol>) value)
   (slot-set! obj slot value))
+
+(define-method ref ((obj <hash-table>) key)
+  (hash-table-get obj key))
+(define-method ref ((obj <hash-table>) key fallback)
+  (hash-table-get obj key fallback))
+(define-method (setter ref) ((obj <hash-table>) key value)
+  (hash-table-put! obj key value))
 
 ;;----------------------------------------------------------------
 ;; Generalized application hooks

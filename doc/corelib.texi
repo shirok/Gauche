@@ -4125,6 +4125,15 @@ Puts a key @var{key} with a value @var{value} to the hash table @var{ht}.
 @c COMMON
 @end defun
 
+@deffn {Method} ref (ht <hash-table>) key &optional default
+@deffnx {Method} (setter ref) (ht <hash-table>) key value
+@c EN
+Method versions of @code{hash-table-get} and @code{hash-table-put!}.
+@c JP
+@code{hash-table-get}と@code{hash-table-put!}のメソッド版です。
+@c COMMON
+@end deffn
+
 @defun hash-table-exists? ht key
 @c EN
 Returns @code{#t} if a hash table @var{ht} has a key @var{key}.
