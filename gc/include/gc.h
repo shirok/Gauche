@@ -88,10 +88,6 @@
 # endif
 #endif
 
-#if !defined(LIBGAUCHE_BODY) && defined(LIBGAUCHE_CYGWIN)
-#define GC_API __declspec(dllimport)
-#endif
-
 #if (defined(__DMC__) || defined(_MSC_VER)) \
 		&& (defined(_DLL) && !defined(GC_NOT_DLL) \
 	            || defined(GC_DLL))
@@ -394,6 +390,10 @@ GC_API void GC_clear_roots GC_PROTO((void));
 /* Add a root segment.  Wizards only. */
 GC_API void GC_add_roots GC_PROTO((char * low_address,
 				   char * high_address_plus_1));
+
+/* [SK 2002/02/09] add data segment of dlopened object */
+GC_API void GC_register_dlopen_data GC_PROTO((GC_PTR start, 
+					      GC_PTR end));
 
 /* Add a displacement to the set of those considered valid by the	*/
 /* collector.  GC_register_displacement(n) means that if p was returned */

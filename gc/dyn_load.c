@@ -15,6 +15,7 @@
  * Heavily modified by Hans Boehm and others
  */
 
+
 /*
  * This is incredibly OS specific code for tracking down data sections in
  * dynamic libraries.  There appears to be no way of doing this quickly
@@ -30,6 +31,16 @@
 #  include <sys/types.h>
 #endif
 #include "private/gc_priv.h"
+
+/* [SK 2002/02/09] Added this API for platforms that isn't supported
+   DYNAMIC_LOADING to register the data section of dlopen-ed library
+   explicitly. */
+void GC_register_dlopen_data(GC_PTR start, GC_PTR end)
+{
+#ifndef DYNAMIC_LOADING
+    GC_add_roots(start, end);
+#endif  /*!DYNAMIC_LOADING*/
+}
 
 /* BTL: avoid circular redefinition of dlopen if SOLARIS_THREADS defined */
 # if (defined(LINUX_THREADS) || defined(SOLARIS_THREADS) \
