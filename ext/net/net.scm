@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.17 2003-05-04 10:05:49 shirok Exp $
+;;;  $Id: net.scm,v 1.18 2003-05-10 23:50:16 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -38,6 +38,9 @@
 (dynamic-load "libnet" :export-symbols #t)
 
 (define ipv6-capable (symbol-bound? 'sys-getaddrinfo))
+
+(export-if-defined
+ |IPPROTO_IP| |IPPROTO_ICMP| |IPPROTO_TCP| |IPPROTO_UDP| |IPPROTO_IPV6|)
 
 (if ipv6-capable
     (define (make-sys-addrinfo . args)

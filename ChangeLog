@@ -1,10 +1,15 @@
 2003-05-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/net/netlib.stub, lib/net/net.scm : made 'flags' argument of
+	  sys-getnameinfo optional, and export a bunch of IPPROTO_* enums.
+	  (Patch from Kimura Fuyuki)
+
 	* lib/util/list.scm : incorporated Alex Shinn's associative list
 	  library.
 
 	* src/bignum.c (Scm_BignumCmp3U): fixed a bug that caused the last
 	  digit of certain floating point numbers to be printed incorrectly.
+	  (Thanks to OGURISU Osamu for finding this bug).
 
 2003-05-02  Shiro Kawai  <shiro@acm.org>
 

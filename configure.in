@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.89 2003-05-04 10:05:42 shirok Exp $
+dnl $Id: configure.in,v 1.90 2003-05-10 23:49:54 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7_pre3, shiro@acm.org)
-AC_REVISION($Revision: 1.89 $)
+AC_REVISION($Revision: 1.90 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -321,7 +321,7 @@ fi
 
 if test "$ac_cv_ipv6" = yes; then
  AC_CACHE_CHECK(struct sockaddr_in6 has sin6_len, ac_cv_struct_sockaddr_in6_len, [
-AC_TRY_COMPILE([#include <netinet/in6.h>], [
+AC_TRY_COMPILE([#include <netinet/in.h>], [
 struct sockaddr_in6 addr;
 int z = addr.sin6_len;
 ], ac_cv_struct_sockaddr_in6_len=yes, ac_cv_struct_sockaddr_in6_len=no)])
