@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.59 2002-07-31 22:09:11 shirok Exp $
+ *  $Id: main.c,v 1.60 2002-08-01 02:26:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -50,7 +50,6 @@ void usage(void)
             "  -u<module> (use) load and import <module>\n"
             "  -f<flag> sets various flags\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
-            "      compat-0.5      'main' behaves backward-compatible for 0.5 and before\n"
             "      load-verbose    report while loading files\n"
             "      no-inline       don't inline primitive procedures\n"
             "      no-source-info  don't preserve source information for debug\n"
@@ -90,11 +89,12 @@ void further_options(const char *optarg)
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
     else if (strcmp(optarg, "compat-0.5") == 0) {
+        Scm_Warn("-fcompat-0.5 option is deprecated and will be removed soon.");
         srfi22_mode = FALSE;
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold or -fcompat-0.5, -fload-verbose, -fno-inline, -fno-source-info\n");
+        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-source-info\n");
         exit(1);
     }
 }
@@ -174,6 +174,7 @@ int main(int argc, char **argv)
 
     /* For backward compatibility -- see the notes about SRFI-22 below. */
     if (getenv("GAUCHE_COMPAT_0_5") != NULL) {
+        Scm_Warn("using environment variable GAUCHE_COMPAT_0_5 is deprecated.");
         srfi22_mode = FALSE;
     }
 
