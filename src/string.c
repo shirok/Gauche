@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.37 2001-05-19 20:54:03 shirok Exp $
+ *  $Id: string.c,v 1.38 2001-05-19 22:25:35 shirok Exp $
  */
 
 #include <stdio.h>
@@ -358,7 +358,6 @@ static const char *forward_pos(const char *current, int offset)
 ScmChar Scm_StringRef(ScmString *str, int pos)
 {
     int len = SCM_STRING_LENGTH(str);
-    int size = SCM_STRING_SIZE(str);
 
     if (pos < 0 || pos >= len) Scm_Error("argument out of range: %d", pos);
 
@@ -467,7 +466,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
         ScmObj str = SCM_CAR(cp);
         if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
         size += SCM_STRING_SIZE(str);
-        if (SCM_STRING_INCOMPLETE_P(str)) {
+        if (SCM_STRING_INCOMPLETE_P(str) || len < 0) {
             len = -1;
         } else {
             len += SCM_STRING_LENGTH(str);
@@ -482,6 +481,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
     }
     size += dsize * ndelim;
     if (len >= 0 && !SCM_STRING_INCOMPLETE_P(delim)) len += dlen * ndelim;
+    else len = -1;
 
     bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
     if (grammer == SCM_STRING_JOIN_PREFIX) {
@@ -553,18 +553,23 @@ static ScmObj string_substitute(ScmString *x, int start,
 
 ScmObj Scm_StringSubstitute(ScmString *x, int start, ScmString *y)
 {
-    int sizey = SCM_STRING_SIZE(y), leny = SCM_STRING_LENGTH(y);
-
-    return string_substitute(x, start, y->start, sizey, leny,
+    return string_substitute(x, start,
+                             SCM_STRING_START(y), SCM_STRING_SIZE(y),
+                             SCM_STRING_LENGTH(y),
                              SCM_STRING_INCOMPLETE_P(y));
 }
 
 ScmObj Scm_StringSet(ScmString *x, int k, ScmChar ch)
 {
-    char buf[SCM_CHAR_MAX_BYTES+1];
-    int size = SCM_CHAR_NBYTES(ch);
-    SCM_CHAR_PUT(buf, ch);
-    return string_substitute(x, k, buf, size, 1, FALSE);
+    if (SCM_STRING_INCOMPLETE_P(x)) {
+        char byte = (char)ch;
+        return string_substitute(x, k, &byte, 1, 1, TRUE);
+    } else {
+        char buf[SCM_CHAR_MAX_BYTES+1];
+        int size = SCM_CHAR_NBYTES(ch);
+        SCM_CHAR_PUT(buf, ch);
+        return string_substitute(x, k, buf, size, 1, FALSE);
+    }
 }
 
 ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
