@@ -13,72 +13,77 @@
   (export lcs lcs-with-positions lcs-fold lcs-edit-list))
 (select-module util.lcs)
 
-;; The base algorithm.   This algorithm consumes NxM space and time
-;; where N = (length a-ls) and M = (length b-ls)
-
-;; [SK] The original version by Alex, using recursion and memoization,
-;; was clean and elegant, but the current Gauche doesn't handle deep
-;; recursion well (its stack handler sucks).  So I rewrote it by
-;; imperative style (ugh).  Once I fixed Gauche's stack handler,
-;; I may get Alex' version back.
+;; The base algorithm.   This algorithm implements
+;; Eugene Myers, "An O(ND) Difference Algorithm and Its Variations",
+;; Algorithmica Vol. 1 No. 2, 1986, pp. 251-266.
+;; It takes O((M+N)D) time and space, where N = (length a) and N = (length b)
+;; and D is the length of the smallest edit sequence.  In most applications
+;; the difference is small, so it is much better than DP algorithm
+;; that is generally O(MN).  The worst case where a and b totally differ
+;; is O((M+N)^2).  The Myers's paper gives refinement of the algorithm
+;; that improves worst case behavior, but I don't implement it --[SK]
 
 (define (lcs-with-positions a-ls b-ls . opt-eq)
   (let* ((eq (get-optional opt-eq equal?))
-         (a-size (+ 1 (size-of a-ls)))
-         (b-size (+ 1 (size-of b-ls)))
-         (a-rev  (reverse a-ls))
-         (b-rev  (reverse b-ls))
-         (undef  (cons #f #f))
-         (len-tab (make-vector (* a-size b-size) 0))
-         (seq-tab (make-vector (* a-size b-size) 0)))
-    (let-syntax ((tref
-                  (syntax-rules ()
-                    ((_ t a b) (vector-ref t (+ (* a b-size) b)))))
-                 (tset!
-                  (syntax-rules ()
-                    ((_ t a b v) (vector-set! t (+ (* a b-size) b) v)))))
+         (A  (list->vector a-ls))
+         (B  (list->vector b-ls))
+         (N  (vector-length A))
+         (M  (vector-length B))
+         (M+N (+ N M))
+         (V_d (make-vector (+ (* 2 M+N) 1) 0))
+         (V_r (make-vector (+ (* 2 M+N) 1) '()))
+         (V_l (make-vector (+ (* 2 M+N) 1) 0)))
 
-      ;; set up boundary
-      (dotimes (pos a-size)
-        (tset! len-tab pos (- b-size 1) 0)
-        (tset! seq-tab pos (- b-size 1) '()))
-      (dotimes (pos b-size)
-        (tset! len-tab (- a-size 1) pos 0)
-        (tset! seq-tab (- a-size 1) pos '()))
-      ;; fill the table from the bottom-right
-      (let a-loop ((a a-rev) (a-pos (- a-size 2)))
-        (unless (null? a)
-          (let b-loop ((b b-rev) (b-pos (- b-size 2)))
-            (if (null? b)
-              (a-loop (cdr a) (- a-pos 1))
-              (let* ((a-pos1 (+ a-pos 1))
-                     (b-pos1 (+ b-pos 1))
-                     (a-tail-len (tref len-tab a-pos1 b-pos))
-                     (b-tail-len (tref len-tab a-pos b-pos1)))
-                (receive (len seq)
-                    (if (eq (car a) (car b))
-                      ;; we got match.
-                      (let1 a-b-tail-len (+ (tref len-tab a-pos1 b-pos1) 1)
-                        (if (>= a-tail-len b-tail-len)
-                          (if (>= a-b-tail-len a-tail-len)
-                            (values a-b-tail-len
-                                    (cons (list (car a) a-pos b-pos)
-                                          (tref seq-tab a-pos1 b-pos1)))
-                            (values a-tail-len (tref seq-tab a-pos1 b-pos)))
-                          (if (>= a-b-tail-len b-tail-len)
-                            (values a-b-tail-len
-                                    (cons (list (car a) a-pos b-pos)
-                                          (tref seq-tab a-pos1 b-pos1)))
-                            (values b-tail-len (tref seq-tab a-pos b-pos1)))))
-                      ;; non-common 
-                      (if (>= a-tail-len b-tail-len)
-                        (values a-tail-len (tref seq-tab a-pos1 b-pos))
-                        (values b-tail-len (tref seq-tab a-pos b-pos1))))
-                  (tset! len-tab a-pos b-pos len)
-                  (tset! seq-tab a-pos b-pos seq)
-                  (b-loop (cdr b) (- b-pos 1))))))))
-      
-      (list (tref len-tab 0 0) (tref seq-tab 0 0))
+    (let-syntax ((vd
+                  (syntax-rules ()
+                    ((vd i) (vector-ref V_d (+ i M+N)))
+                    ((vd i x) (vector-set! V_d (+ i M+N) x))))
+                 (vr
+                  (syntax-rules ()
+                    ((vr i) (vector-ref V_r (+ i M+N)))
+                    ((vr i x) (vector-set! V_r (+ i M+N) x))))
+                 (vl
+                  (syntax-rules ()
+                    ((vl i) (vector-ref V_l (+ i M+N)))
+                    ((vl i x) (vector-set! V_l (+ i M+N) x)))))
+
+      (define (finish)
+        (let loop ((i (- M+N)) (maxl 0) (r '()))
+          (cond ((> i M+N) (list maxl (reverse! r)))
+                ((> (vl i) maxl)
+                 (loop (+ i 1) (vl i) (vr i)))
+                (else
+                 (loop (+ i 1) maxl r)))))
+
+      (let d-loop ((d 0))
+        (if (> d M+N)
+          (error "lcs-with-positions; something's wrong (implementation error?)")
+          (let k-loop ((k (- d)))
+            (if (> k d)
+              (d-loop (+ d 1))
+              (receive (x l r)
+                  (if (or (= k (- d))
+                          (and (not (= k d))
+                               (< (vd (- k 1)) (vd (+ k 1)))))
+                    (values (vd (+ k 1)) (vl (+ k 1)) (vr (+ k 1)))
+                    (values (+ (vd (- k 1)) 1) (vl (- k 1)) (vr (- k 1))))
+                (receive (x y l r)
+                    (let xy-loop ((x x) (y (- x k)) (l l) (r r))
+                      (cond ((>= x N) (values x y l r))
+                            ((>= y M) (values x y l r))
+                            ((eq (vector-ref A x) (vector-ref B y))
+                             (xy-loop (+ x 1) (+ y 1) (+ l 1)
+                                      (cons (list (vector-ref A x) x y)
+                                            r)))
+                            (else (values x y l r))))
+                  (vd k x)
+                  (vr k r)
+                  (vl k l)
+                  (if (and (>= x N) (>= y M))
+                    (finish)
+                    (k-loop (+ k 2))))
+                )))
+          ))
       )))
 
 ;; Just returns the LCS
