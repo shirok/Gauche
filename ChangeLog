@@ -1,5 +1,9 @@
 2004-07-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/makeverslink: fixed to follow the convention of symlinks, i.e.
+	  it renames the real sofile to libgauche.so.$(VERSION), and make
+	  libgauche.so a symlink to it, etc.
+	
 	* src/syslib.stub, src/system.c (Scm_SysMkstemp): provides alternative
 	  of mkstemp() for platforms that don't have one (e.g. Win32).
 	* src/load.c : for MinGW, changed the default load path to look for
