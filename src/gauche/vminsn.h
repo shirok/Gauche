@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.12 2001-02-13 06:02:51 shiro Exp $
+ *  $Id: vminsn.h,v 1.13 2001-02-15 10:29:56 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -60,7 +60,7 @@ DEFINSN(SCM_VM_PRE_TAIL, "PRE-TAIL", 0)
  */
 DEFINSN(SCM_VM_CALL, "CALL", 1)
 
-/* TAIL_CALL(NARGS)
+/* TAIL-CALL(NARGS)
  *
  *  Call procedure in val0.
  */

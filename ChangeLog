@@ -1,3 +1,14 @@
+2001-02-14  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.11
+	* src/vm.c: Fix problem of user_eval_inner.  Complete call/cc
+	  implementation.  Added multiple values support (not finished yet).
+	* src/gauche.h, src/gauche/vm.h, src/stdlib.stub, src/comple.c:
+	  Added multiple values support (not finished yet).
+	* lib/srfi-1.scm: SRFI-1 support added.  Not working completely
+	  because of lack of multiple values.
+	* lib/srfi-2.scm: SRFI-2 support added.
+	
 2001-02-13  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.10
