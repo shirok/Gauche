@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.56 2002-04-26 10:26:08 shirok Exp $
+ *  $Id: port.c,v 1.57 2002-04-27 00:54:01 shirok Exp $
  */
 
 #include <unistd.h>
@@ -226,11 +226,11 @@ int Scm_CharReady(ScmPort *p)
  *  Output
  *
  *    When used as output, the end pointer always points one byte past
- *    the buffer.  Initially, the buffer is empty and the current pointer
+ *    the buffer.  Initially the buffer is empty and the current pointer
  *    is the same as the beginning of the buffer.
  *
- *    port->src.buf.flusher(ScmPort* p, int mincnt) is called when the
- *    buffer doesn't have enough space.   When the flusher is called,
+ *    port->src.buf.flusher(ScmPort* p, int cnt) is called when the port
+ *    needs to create some room in the buffer.   When the flusher is called,
  *    the buffer is like this:
  *
  *        <--------------- size ---------------->
@@ -238,12 +238,12 @@ int Scm_CharReady(ScmPort *p)
  *        ^                                ^     ^
  *        b                                c     e
  *
- *    The flusher is supposed to output the whole valid data between
- *    buffer and current to the underlying device.  The flusher MUST
- *    output at least mincnt bytes of data; however, it may return
- *    before entire data is output, in case like underlying device is
- *    busy.  The flusher returns the number of bytes actually written out.
- *    If an error occurs, the flusher must throw an error.
+ *    The flusher is supposed to output as much data as from the beginning
+ *    of the buffer up to the cnt bytes, which is usually up to the current
+ *    pointer.  The flusher may return before entire data is output, in
+ *    case like underlying device is busy.  The flusher must output at least
+ *    one byte.  The flusher returns the number of bytes actually written out.
+ *    If an error occurs, the flusher must return -1.
  *
  *    After flusher returns, bufport_flush shifts the unflushed data
  *    (if any), so the buffer becomes like this:
@@ -258,7 +258,7 @@ int Scm_CharReady(ScmPort *p)
  *    When used as input, the end pointer points to one byte past the
  *    end of the valid data, which may be before the end of the buffer.
  *
- *    port->src.buf.filler(ScmPort *p, int mincnt) is called when the buffer
+ *    port->src.buf.filler(ScmPort *p, int cnt) is called when the buffer
  *    doesn't have enough data to read.   Suppose the input routine detects
  *    the buffer doesn't have enough data when it looks like this:
  *
@@ -276,10 +276,11 @@ int Scm_CharReady(ScmPort *p)
  *        bc  e
  *
  *    Then port->src.buf.filler is called.  It is supposed to read as many
- *    bytes as (b + size - e), putting them after the end pointer.
- *    It must read at least mincnt bytes before it returns.   The filler
- *    returns the number of bytes actually read in.
- *    The filler may return 0 if it reaches the end of the data source.
+ *    bytes as cnt, putting them after the end pointer.   It may read
+ *    less if all cnt bytes of data is not available immediately.
+ *    The filler returns the number of bytes actually read in.
+ *    The filler should return 0 if it reaches the end of the data source.
+ *    If an error occurs, the filler must return -1.
  *
  *    bufport_fill then adjust the end pointer, so the buffer becomes like
  *    this.
@@ -291,7 +292,7 @@ int Scm_CharReady(ScmPort *p)
  *
  *  Close
  *    Port is closed either explicitly (via close-port etc) or implicity
- *    (via GC -> finalizer).   In either case, the flusher is called
+ *    (via GC -> finalizer).   In either case, the flusher is called first
  *    if there's any data remaining in the buffer.   Then, if the closer
  *    procedure (port->src.buf.closer) is not NULL, and port->owner is TRUE,
  *    the closer procedure is called which has to take care of any system-
@@ -333,7 +334,15 @@ int Scm_CharReady(ScmPort *p)
  *    {For Input}
  *      SCM_PORT_BUFFER_FULL : Full buffering.  The filler procedure
  *         is called only if the buffer doesn't have enough data to
- *         satisfy the read request.
+ *         satisfy the read request.   Read-block or read-string won't
+ *         return until the specified bytes/characters are read from
+ *         the port, except the port reaches EOF.
+ *
+ *      SCM_PORT_BUFFER_LINE : For input ports, this is almost the same
+ *         as BUFFER_FULL, except that read-block and read-string may
+ *         return shorter data than requested, if only that amount of
+ *         data is immediately available.   Usually this mode is suitable
+ *         for the ports that is attached to a pipe or network.
  *
  *      SCM_PORT_BUFFER_NONE : No buffering.  Every time the data is
  *         requested, the filler procedure is called with exact amount
@@ -376,13 +385,15 @@ ScmObj Scm_MakeBufferedPort(ScmObj name,
     return SCM_OBJ(p);
 }
 
-/* flushes the buffer, to make a room of at least mincnt bytes. */
-static void bufport_flush(ScmPort *p, int mincnt)
+/* flushes the buffer, to make a room of cnt bytes.  cnt == 0 means
+   all the available data. */
+static void bufport_flush(ScmPort *p, int cnt)
 {
     int cursiz = SCM_PORT_BUFFER_AVAIL(p);
     int nwrote;
-    if (mincnt <= 0) mincnt = cursiz;
-    nwrote = p->src.buf.flusher(p, mincnt);
+    if (cursiz == 0) return;
+    if (cnt <= 0) cnt = cursiz;
+    nwrote = p->src.buf.flusher(p, cnt);
     if (nwrote >= 0 && nwrote < cursiz) {
         memmove(p->src.buf.buffer, p->src.buf.buffer+nwrote, cursiz-nwrote);
         p->src.buf.current -= nwrote;
@@ -391,8 +402,8 @@ static void bufport_flush(ScmPort *p, int mincnt)
     }
 }
 
-/* writes siz bytes in src to the buffered port.  siz may be larger than
-   the port's buffer. */
+/* Writes siz bytes in src to the buffered port.  siz may be larger than
+   the port's buffer.  Won't return until entire siz bytes are written. */
 static void bufport_write(ScmPort *p, const char *src, int siz)
 {
     do {
@@ -411,11 +422,12 @@ static void bufport_write(ScmPort *p, const char *src, int siz)
     } while (siz > 0);
 }
 
-/* fills the buffer to make at least mincnt bytes. */
-static void bufport_fill(ScmPort *p, int mincnt)
+/* fills the buffer up to cnt bytes.  if sync is TRUE, this won't return
+   until cnt bytes are read. */
+static int bufport_fill(ScmPort *p, int cnt, int sync)
 {
     int cursiz = (int)(p->src.buf.end - p->src.buf.current);
-    int nread;
+    int nread = 0;
     if (cursiz > 0) {
         memmove(p->src.buf.buffer, p->src.buf.current, cursiz);
         p->src.buf.current = p->src.buf.buffer;
@@ -423,11 +435,16 @@ static void bufport_fill(ScmPort *p, int mincnt)
     } else {
         p->src.buf.current = p->src.buf.end = p->src.buf.buffer;
     }
-    if (mincnt < 0) {
-        mincnt = SCM_PORT_BUFFER_ROOM(p);
+    if (cnt <= 0) {
+        cnt = SCM_PORT_BUFFER_ROOM(p);
     }
-    nread = p->src.buf.filler(p, mincnt);
-    if (nread > 0) p->src.buf.end += nread; /* safety net */
+    do {
+        int r = p->src.buf.filler(p, cnt-nread);
+        if (r <= 0) break;
+        nread += r;
+        p->src.buf.end += r;
+    } while (sync && nread < cnt);
+    return nread;
 }
 
 /* reads siz bytes to dst from the buffered port.  siz may be larger
@@ -448,7 +465,7 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
             nread += avail;
             siz -= avail;
             dst += avail;
-            bufport_fill(p, (siz > p->src.buf.size)? 0 : siz);
+            bufport_fill(p, (siz > p->src.buf.size)? 0 : siz, TRUE);
             if (p->src.buf.current == p->src.buf.end) break;
         }
     } while (siz > 0);
@@ -702,8 +719,7 @@ int Scm_Getb(ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current >= p->src.buf.end) {
-            bufport_fill(p, 1);
-            if (p->src.buf.current >= p->src.buf.end) return EOF;
+            if (bufport_fill(p, 1, FALSE) == 0) return EOF;
         }
         b = (unsigned char)*p->src.buf.current++;
         break;
@@ -738,8 +754,7 @@ int Scm_Getc(ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current >= p->src.buf.end) {
-            bufport_fill(p, 1);
-            if (p->src.buf.current >= p->src.buf.end) return EOF;
+            if (bufport_fill(p, 1, FALSE) == 0) return EOF;
         }
         first = (unsigned char)*p->src.buf.current++;
         nb = SCM_CHAR_NFOLLOWS(first);
@@ -753,7 +768,7 @@ int Scm_Getc(ScmPort *p)
                 memcpy(p->scratch, p->src.buf.current-1, p->scrcnt);
                 p->src.buf.current = p->src.buf.end;
                 rest = nb + 1 - p->scrcnt;
-                bufport_fill(p, rest);
+                bufport_fill(p, rest, TRUE);
                 if (p->src.buf.current + rest > p->src.buf.end) {
                     /* TODO: make this behavior customizable */
                     Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
@@ -864,16 +879,15 @@ ScmObj Scm_ReadLine(ScmPort *p)
  * File Port
  */
 
-static int file_filler(ScmPort *p, int mincnt)
+static int file_filler(ScmPort *p, int cnt)
 {
     int nread = 0, r;
-    int room = SCM_PORT_BUFFER_ROOM(p);
     int fd = (int)p->src.buf.data;
     char *datptr = p->src.buf.end;
     SCM_ASSERT(fd >= 0);
-    while (nread < mincnt) {
+    do {
         errno = 0;
-        r = read(fd, datptr, room-nread);
+        r = read(fd, datptr, cnt-nread);
         if (r < 0) {
             if (errno == EINTR) {
                 Scm_SigCheck(Scm_VM());
@@ -888,11 +902,11 @@ static int file_filler(ScmPort *p, int mincnt)
             datptr += r;
             nread += r;
         }
-    }
+    } while (0);
     return nread;
 }
 
-static int file_flusher(ScmPort *p, int mincnt)
+static int file_flusher(ScmPort *p, int cnt)
 {
     int nwrote = 0, r;
     int datsiz = SCM_PORT_BUFFER_AVAIL(p);
@@ -900,7 +914,7 @@ static int file_flusher(ScmPort *p, int mincnt)
     char *datptr = p->src.buf.buffer;
     
     SCM_ASSERT(fd >= 0);
-    while (nwrote < mincnt) {
+    while (nwrote == 0) {
         errno = 0;
         r = write(fd, datptr, datsiz-nwrote);
         if (r < 0) {
