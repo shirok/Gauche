@@ -1,5 +1,7 @@
 2004-03-13  Shiro Kawai  <shiro@acm.org>
 
+	* ext/xlink : not to make a link when there's already a desired link.
+
 	* ext/charconv/guess.c (guess_jp): returns IAEA-compliant CES name.
 
 	* lib/srfi-13/searcher.scm (string-contains, string-contains-ci):
