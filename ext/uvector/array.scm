@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.10 2003-04-25 03:38:45 foof Exp $
+;;;  $Id: array.scm,v 1.11 2004-03-12 01:53:11 foof Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -35,6 +35,9 @@
           array-for-each array-every array-any
           tabulate-array array-retabulate!
           array-map array-map! array->vector array->list
+          make-u8array make-s8array make-u16array make-s16array
+          make-u32array make-s32array make-u64array make-s64array
+          make-f32array make-f64array
           )
   )
 (select-module gauche.array)
@@ -45,8 +48,25 @@
    (backing-storage-getter  :init-keyword :backing-storage-getter
                             :getter backing-storage-getter-of)
    (backing-storage-setter  :init-keyword :backing-storage-setter
-                            :getter backing-storage-setter-of))
+                            :getter backing-storage-setter-of)
+   (backing-storage-length  :init-keyword :backing-storage-length
+                            :getter backing-storage-length-of))
   )
+
+;; auto reader and writer for array-meta
+
+(define-method initialize ((class <array-meta>) initargs)
+  (next-method)
+  (let ((name (class-name class)))
+    (when name
+      (define-method write-object ((self class) port)
+        (format port "#,(~A ~S" name (array->list (array-shape self)))
+        (array-for-each (cut format port " ~S" <>) self)
+        (display ")" port))
+      (define-reader-ctor name
+        (lambda (sh . inits)
+          (list-fill-array! (make class :shape (apply shape sh)) inits))))))
+
 
 (define-class <array-base> ()
   ((start-vector    :init-keyword :start-vector :getter start-vector-of)
@@ -59,21 +79,123 @@
   :metaclass <array-meta>)
 
 (define-method initialize ((self <array-base>) initargs)
-  (next-method)
-  (let ((get   (backing-storage-getter-of (class-of self)))
-        (set   (backing-storage-setter-of (class-of self)))
-        (store (backing-storage-of self)))
-    (set! (slot-ref self 'getter)
-          (lambda (index) (get store index)))
-    (set! (slot-ref self 'setter)
-          (lambda (index value) (set store index value)))
-    ))
+  (let-keywords* initargs
+      ((shape #f)
+       (start-vector #f)
+       (end-vector #f)
+       (mapper #f)
+       (backing-storage #f)
+       (create-args '()))
+    (unless (and start-vector end-vector)
+      (set!-values (start-vector end-vector) (shape->start/end-vector shape)))
+    (unless mapper
+      (set! mapper (generate-amap start-vector end-vector)))
+    (unless backing-storage
+      (set! backing-storage
+            (apply (backing-storage-creator-of (class-of self))
+                   (fold * 1 (s32vector-sub end-vector start-vector))
+                   create-args)))
+    (next-method self `(:start-vector ,start-vector :end-vector ,end-vector
+                        :mapper ,mapper :backing-storage ,backing-storage ,@initargs))
+    (let ((get   (backing-storage-getter-of (class-of self)))
+          (set   (backing-storage-setter-of (class-of self)))
+          (store (backing-storage-of self)))
+      (set! (slot-ref self 'getter)
+            (lambda (index) (get store index)))
+      (set! (slot-ref self 'setter)
+            (lambda (index value) (set store index value)))
+      )))
 
 (define-class <array> (<array-base>)
   ()
   :backing-storage-creator make-vector
   :backing-storage-getter vector-ref
-  :backing-storage-setter vector-set!)
+  :backing-storage-setter vector-set!
+  :backing-storage-length vector-length)
+
+(define-class <u8array> (<array-base>)
+  ()
+  :backing-storage-creator make-u8vector
+  :backing-storage-getter u8vector-ref
+  :backing-storage-setter u8vector-set!
+  :backing-storage-length u8vector-length)
+
+(define-class <s8array> (<array-base>)
+  ()
+  :backing-storage-creator make-s8vector
+  :backing-storage-getter s8vector-ref
+  :backing-storage-setter s8vector-set!
+  :backing-storage-length s8vector-length)
+
+(define-class <u16array> (<array-base>)
+  ()
+  :backing-storage-creator make-u16vector
+  :backing-storage-getter u16vector-ref
+  :backing-storage-setter u16vector-set!
+  :backing-storage-length u16vector-length)
+
+(define-class <s16array> (<array-base>)
+  ()
+  :backing-storage-creator make-s16vector
+  :backing-storage-getter s16vector-ref
+  :backing-storage-setter s16vector-set!
+  :backing-storage-length s16vector-length)
+
+(define-class <u32array> (<array-base>)
+  ()
+  :backing-storage-creator make-u32vector
+  :backing-storage-getter u32vector-ref
+  :backing-storage-setter u32vector-set!
+  :backing-storage-length u32vector-length)
+
+(define-class <s32array> (<array-base>)
+  ()
+  :backing-storage-creator make-s32vector
+  :backing-storage-getter s32vector-ref
+  :backing-storage-setter s32vector-set!
+  :backing-storage-length s32vector-length)
+
+(define-class <u32array> (<array-base>)
+  ()
+  :backing-storage-creator make-u32vector
+  :backing-storage-getter u32vector-ref
+  :backing-storage-setter u32vector-set!
+  :backing-storage-length u32vector-length)
+
+(define-class <s32array> (<array-base>)
+  ()
+  :backing-storage-creator make-s32vector
+  :backing-storage-getter s32vector-ref
+  :backing-storage-setter s32vector-set!
+  :backing-storage-length s32vector-length)
+
+(define-class <u64array> (<array-base>)
+  ()
+  :backing-storage-creator make-u64vector
+  :backing-storage-getter u64vector-ref
+  :backing-storage-setter u64vector-set!
+  :backing-storage-length u64vector-length)
+
+(define-class <s64array> (<array-base>)
+  ()
+  :backing-storage-creator make-s64vector
+  :backing-storage-getter s64vector-ref
+  :backing-storage-setter s64vector-set!
+  :backing-storage-length s64vector-length)
+
+(define-class <f32array> (<array-base>)
+  ()
+  :backing-storage-creator make-f32vector
+  :backing-storage-getter f32vector-ref
+  :backing-storage-setter f32vector-set!
+  :backing-storage-length f32vector-length)
+
+(define-class <f64array> (<array-base>)
+  ()
+  :backing-storage-creator make-f64vector
+  :backing-storage-getter f64vector-ref
+  :backing-storage-setter f64vector-set!
+  :backing-storage-length f64vector-length)
 
 (define-method copy-object ((self <array-base>))
   (make (class-of self)
@@ -85,19 +207,6 @@
 ;; NB: these should be built-in; but here for now.
 (define-method copy-object ((self <vector>))
   (vector-copy self))
-
-;; reader and writer
-
-(define-method write-object ((self <array-base>) port)
-  (format port "#,~s"
-          (list* (class-name (class-of self))
-                 (array->list (array-shape self))
-                 (array->list self))))
-
-;; TODO: register read-ctor when subclass of <array-meta> is initialized.
-(define-reader-ctor '<array>
-  (lambda (sh . inits)
-    (apply array (apply shape sh) inits)))
 
 ;;-------------------------------------------------------------
 ;; Affine mapper
@@ -149,21 +258,21 @@
 
 ;; shape index tests
 
-(define-method shape-valid-index? ((sh <array>) (ind <s32vector>))
+(define-method shape-valid-index? ((sh <array-base>) (ind <s32vector>))
   (let*-values (((Vb Ve) (shape->start/end-vector sh)))
     (and
      (= (s32vector-length ind) (s32vector-length Vb))
      (not (s32vector-range-check ind Vb (s32vector-sub Ve 1))))))
 
-(define-method shape-valid-index? ((sh <array>) (ind <vector>))
+(define-method shape-valid-index? ((sh <array-base>) (ind <vector>))
   (shape-valid-index? sh (vector->s32vector ind)))
-(define-method shape-valid-index? ((sh <array>) (ind <pair>))
+(define-method shape-valid-index? ((sh <array-base>) (ind <pair>))
   (shape-valid-index? sh (list->s32vector ind)))
-(define-method shape-valid-index? ((sh <array>) (ind <array>))
+(define-method shape-valid-index? ((sh <array-base>) (ind <array>))
   (shape-valid-index? sh (vector->s32vector (array->vector ind))))
-(define-method shape-valid-index? ((sh <array>) (ind <integer>) . more-index)
+(define-method shape-valid-index? ((sh <array-base>) (ind <integer>) . more-index)
   (shape-valid-index? sh (list->s32vector (cons ind more-index))))
-(define-method shape-valid-index? ((sh <array>))
+(define-method shape-valid-index? ((sh <array-base>))
   ;; special case - zero dimensional array
   (null? (array->list sh)))
 
@@ -222,27 +331,42 @@
 ;; Make general array
 ;;
 
-(define (make-array shape . maybe-init)
-  (receive (Vb Ve) (shape->start/end-vector shape)
-    (make <array>
-      :start-vector Vb
-      :end-vector Ve
-      :mapper (generate-amap Vb Ve)
-      :backing-storage (apply make-vector
-                              (fold * 1 (s32vector-sub Ve Vb))
-                              maybe-init))))
+(define (make-array shape . opt)
+  (make <array> :shape shape :create-args opt))
+(define (make-u8array shape . opt)
+  (make <u8array> :shape shape :create-args opt))
+(define (make-s8array shape . opt)
+  (make <s8array> :shape shape :create-args opt))
+(define (make-u16array shape . opt)
+  (make <u16array> :shape shape :create-args opt))
+(define (make-s16array shape . opt)
+  (make <s16array> :shape shape :create-args opt))
+(define (make-u32array shape . opt)
+  (make <u32array> :shape shape :create-args opt))
+(define (make-s32array shape . opt)
+  (make <s32array> :shape shape :create-args opt))
+(define (make-u64array shape . opt)
+  (make <u64array> :shape shape :create-args opt))
+(define (make-s64array shape . opt)
+  (make <s64array> :shape shape :create-args opt))
+(define (make-f32array shape . opt)
+  (make <f32array> :shape shape :create-args opt))
+(define (make-f64array shape . opt)
+  (make <f64array> :shape shape :create-args opt))
 
-(define (array shape . inits)
-  (let* ((a   (make-array shape))
-         (bv  (backing-storage-of a))
-         (len (vector-length bv)))
+(define (list-fill-array! a inits)
+  (let* ((bv  (backing-storage-of a))
+         (set (backing-storage-setter-of (class-of a)))
+         (len ((backing-storage-length-of (class-of a)) bv)))
     (unless (= (length inits) len)
-      (errorf "array element initializer doesn't match the shape ~s: ~s"
-              (array->list shape) inits))
+      (errorf "array element initializer doesn't match the shape ~s [~s]: ~s"
+              (array->list (array-shape a)) len inits))
     (do ((i 0 (+ i 1))
          (inits inits (cdr inits)))
         ((= i len) a)
-      (vector-set! bv i (car inits)))))
+      (set bv i (car inits)))))
+
+(define (array shape . inits) (list-fill-array! (make-array shape) inits))
 
 (define (subarray ar sh)
   (let*-values (((Vb Ve) (shape->start/end-vector sh)))
@@ -375,7 +499,7 @@
 (define (array-size ar)
   (reduce * 1 (map (cute array-length ar <>) (iota (array-rank ar)))))
 
-(define-method object-equal? ((a <array>) (b <array>))
+(define-method object-equal? ((a <array-base>) (b <array-base>))
   (let ((r   (array-rank a)))
     (and (= r (array-rank b))
          (every (lambda (dim)
@@ -385,11 +509,11 @@
          (call/cc
           (lambda (break)
             (array-for-each-index a
-                                  (lambda (index)
-                                    (unless (equal? (array-ref a index)
-                                                    (array-ref b index))
-                                      (break #f)))
-                                  (make-vector r 0))
+              (lambda (index)
+                (unless (equal? (array-ref a index)
+                                (array-ref b index))
+                  (break #f)))
+              (make-vector r 0))
             #t)))))
 
 ;; returns a proc that applies proc to indices that is given by a vector.
@@ -500,27 +624,17 @@
 (define (shape-for-each sh proc . o)
   (let* ((rank (array-end sh 0))
          (ser  (iota rank)))
-    (array-for-each-int proc
-                        ser
-                        (map-to <s32vector> (cut array-ref sh <> 0) ser)
-                        (map-to <s32vector> (cut array-ref sh <> 1) ser)
-                        o)))
+    (array-for-each-int
+     proc
+     ser
+     (map-to <s32vector> (cut array-ref sh <> 0) ser)
+     (map-to <s32vector> (cut array-ref sh <> 1) ser)
+     o)))
 
-(define (tabulate-array sh proc . o)
-  (let1 ar (make-array sh)
-    (cond
-     ((null? o)
-      (let ((iv (make-vector (array-end sh 0)))
-            (applier (array-index-applier (array-end sh 0))))
-        (shape-for-each sh (lambda (ind)
-                                   (array-set! ar ind (applier proc ind)))
-                              iv)))
-     ((or (vector? (car o)) (array? (car o)))
-      (shape-for-each sh (lambda (ind)
-                                 (array-set! ar ind (proc ind)))
-                            (car o)))
-     (else "bad index object (vector or array required)" (car o)))
-    ar))
+(define (tabulate-array sh . args)
+  (let ((res (make-array sh)))
+    (apply array-retabulate! res args)
+    res))
 
 ;; Mapping onto array.
 ;;   array-retabulate!
@@ -532,69 +646,70 @@
 ;; implementation it's not much of use.  I keep it just for compatibility
 ;; to Jussi's.
 
-(define-method array-retabulate! ((ar <array>) (sh <array>) (proc <procedure>) . o)
+(define-method array-retabulate! ((ar <array-base>) (sh <array-base>) (proc <procedure>) . o)
   ;; need to check the shape sh matches the ar's shape.
   (apply array-retabulate! ar proc o))
 
-(define-method array-retabulate! ((ar <array>) (proc <procedure>) . o)
-  (cond ((null? o)
-         (let ((applier (array-index-applier (array-rank ar))))
+(define-method array-retabulate! ((ar <array-base>) (proc <procedure>) . o)
+  (let ((set (backing-storage-setter-of (class-of ar)))
+        (store (backing-storage-of ar))
+        (mapper (mapper-of ar)))
+    (cond ((null? o)
+           (let ((applier (array-index-applier (array-rank ar))))
+             (array-for-each-index ar
+               (lambda (ind)
+                 (set store (mapper ind) (applier proc ind)))
+               (make-vector (array-rank ar)))))
+          ((or (vector? (car o)) (array? (car o)))
            (array-for-each-index ar
-                                 (lambda (ind)
-                                   (array-set! ar ind
-                                               (applier proc ind)))
-                                 (make-vector (array-rank ar)))))
-        ((or (vector? (car o)) (array? (car o)))
-         (array-for-each-index ar
-                               (lambda (ind)
-                                 (array-set! ar ind (proc ind)))
-                               (car o)))
-        (else "bad index object (vector or array required)" (car o))))
+             (lambda (ind)
+               (set store (mapper ind) (proc ind)))
+             (car o)))
+          (else "bad index object (vector or array required)" (car o)))))
 
-(define-method array-map! ((ar <array>) (sh <array>) (proc <procedure>) ar0 . more-arrays)
+(define-method array-map! ((ar <array-base>) (sh <array-base>) (proc <procedure>) ar0 . more-arrays)
   ;; need to check the shape sh matches the ar's shape.
   (apply array-map! ar proc ar0 more-arrays))
 
-(define-method array-map! ((ar <array>) (proc <procedure>) ar0)
-  (array-for-each-index ar
-                        (lambda (ind)
-                          (array-set! ar ind (proc (array-ref ar0 ind)))
-                          (make-vector (array-rank ar)))))
+(define-method array-map! ((ar <array-base>) (proc <procedure>) ar0)
+  (let ((set (backing-storage-setter-of (class-of ar)))
+        (store (backing-storage-of ar))
+        (mapper (mapper-of ar))
+        (get0 (backing-storage-getter-of (class-of ar0)))
+        (store0 (backing-storage-of ar0))
+        (mapper0 (mapper-of ar0)))
+    (array-for-each-index ar0
+      (lambda (ind)
+        (set store (mapper ind) (proc (get0 store0 (mapper0 ind)))))
+      (make-vector (array-rank ar)))))
 
-(define-method array-map! ((ar <array>) (proc <procedure>) ar0)
-  (array-for-each-index ar
-                        (lambda (ind)
-                          (array-set! ar ind (proc (array-ref ar0 ind))))
-                        (make-vector (array-rank ar))))
+(define-method array-map! ((ar <array-base>) (proc <procedure>) ar0 ar1)
+  (let ((set (backing-storage-setter-of (class-of ar)))
+        (store (backing-storage-of ar))
+        (mapper (mapper-of ar))
+        (get0 (backing-storage-getter-of (class-of ar0)))
+        (store0 (backing-storage-of ar0))
+        (mapper0 (mapper-of ar0))
+        (get1 (backing-storage-getter-of (class-of ar1)))
+        (store1 (backing-storage-of ar1))
+        (mapper1 (mapper-of ar1)))
+    (array-for-each-index ar0
+      (lambda (ind)
+        (set store (mapper ind) (proc (get0 store0 (mapper0 ind))
+                                      (get1 store1 (mapper1 ind)))))
+      (make-vector (array-rank ar)))))
 
-(define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1)
-  (array-for-each-index ar
-                        (lambda (ind)
-                          (array-set! ar ind
-                                      (proc (array-ref ar0 ind)
-                                            (array-ref ar1 ind))))
-                        (make-vector (array-rank ar))))
-
-(define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1 ar2)
-  (array-for-each-index ar
-                        (lambda (ind)
-                          (array-set! ar ind
-                                      (proc (array-ref ar0 ind)
-                                            (array-ref ar1 ind)
-                                            (array-ref ar2 ind))))
-                        (make-vector (array-rank ar))))
-
-(define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1 ar2 . more)
+(define-method array-map! ((ar <array-base>) (proc <procedure>) ar0 ar1 ar2 . more)
   (let1 arlist (list* ar0 ar1 ar2 more)
     (array-for-each-index ar
-                          (lambda (ind)
-                            (array-set! ar ind
-                                        (apply proc
-                                               (map (cut array-ref <> ind)
-                                                    arlist))))
-                          (make-vector (array-rank ar)))))
+      (lambda (ind)
+        (array-set! ar ind
+                    (apply proc
+                           (map (cut array-ref <> ind)
+                                arlist))))
+      (make-vector (array-rank ar)))))
 
-(define-method array-map ((sh <array>) (proc <procedure>) ar0 . more)
+(define-method array-map ((sh <array-base>) (proc <procedure>) ar0 . more)
   (apply array-map proc ar0 more))
 
 (define-method array-map ((proc <procedure>) ar0 . more)
@@ -605,17 +720,17 @@
 (define (array->vector ar)
   (with-builder (<vector> add! get :size (array-size ar))
     (array-for-each-index ar
-                          (lambda (ind)
-                            (add! (array-ref ar ind)))
-                          (make-vector (array-rank ar)))
+      (lambda (ind)
+        (add! (array-ref ar ind)))
+      (make-vector (array-rank ar)))
     (get)))
 
 (define (array->list ar)
   (with-builder (<list> add! get)
     (array-for-each-index ar
-                          (lambda (ind)
-                            (add! (array-ref ar ind)))
-                          (make-vector (array-rank ar)))
+      (lambda (ind)
+        (add! (array-ref ar ind)))
+      (make-vector (array-rank ar)))
     (get)))
 
 (provide "gauche/array")
