@@ -1,7 +1,7 @@
 /*
  * gauche/port.h - Port inline macros
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.9 2004-04-24 09:58:15 shirok Exp $
+ *  $Id: port.h,v 1.10 2004-09-17 03:42:10 shirok Exp $
  */
 
 /*
@@ -133,3 +133,4 @@
      p->lockCount = 1;                          \
    } while (0)
    
+

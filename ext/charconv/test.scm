@@ -406,4 +406,34 @@
          (lambda () (char->ucs (string-ref (read-from-string "\"\\u30421\"") 0))))
    ))
 
+;;--------------------------------------------------------------------
+(test-section "program source encoding")
+
+(define *target-string*
+  (case (gauche-character-encoding)
+    ((euc-jp sjis utf-8)
+     (read-from-string
+      "\"\\u3053\\u3093\\u306b\\u3061\\u306f\\u3001\\u4e16\\u754c\""))
+    ((none)
+     (read-from-string
+      "\"\\xe3\\x81\\x93\\xe3\\x82\\x93\\xe3\\x81\\xab\\xe3\\x81\\xa1\\xe3\\x81\\xaf\\xe3\\x80\\x81\\xe4\\xb8\\x96\\xe7\\x95\\x8c\""))))
+
+(define (test-program-source-port num encoding)
+  (when (ces-conversion-supported? (gauche-character-encoding) encoding)
+    (test* (format "program source port reading from jpsrc~a.~a" num encoding)
+           *target-string*
+           (call-with-input-file (format "data/jpsrc~a.~a.scm" num encoding)
+             (lambda (in)
+               (let ((src (open-program-source-port in)))
+                 (let loop ((x (read src)))
+                   (cond ((eof-object? x) (close-input-port src) x)
+                         ((eq? (cadr x) '*the-string*)
+                          (close-input-port src)
+                          (caddr x))
+                         (else (loop (read src)))))))))))
+
+(dolist (num '(1 2 3))
+  (dolist (enc '("EUCJP" "SJIS" "UTF-8"))
+    (test-program-source-port num enc)))
+
 (test-end)

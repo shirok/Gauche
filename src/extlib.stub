@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.222 2004-08-01 05:41:22 shirok Exp $
+;;; $Id: extlib.stub,v 1.223 2004-09-17 03:42:10 shirok Exp $
 ;;;
 
 "
@@ -761,6 +761,9 @@
 
 (define-cproc get-remaining-input-string (iport::<input-port>)
   (return "Scm_GetRemainingInputString"))
+
+(define-cproc open-program-source-port (iport::<input-port>)
+  (return "Scm_MakeProgramSourcePort"))
 
 ;; Buffered port
 ;; NB: the interface may be changed soon!!

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.19 2004-05-21 05:02:12 shirok Exp $
+ *  $Id: portapi.c,v 1.20 2004-09-17 03:42:10 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -736,6 +736,44 @@ ScmObj Scm_ReadLineUnsafe(ScmPort *p)
 
     LOCK(p);
     SAFE_CALL(p, r = readline_body(p));
+    UNLOCK(p);
+    return r;
+}
+
+/*=================================================================
+ * ByteReady
+ */
+
+#ifdef SAFE_PORT_OP
+int Scm_ByteReady(ScmPort *p)
+#else
+int Scm_ByteReadyUnsafe(ScmPort *p)
+#endif
+{
+    int r = 0;
+    VMDECL;
+    SHORTCUT(p, return Scm_ByteReadyUnsafe(p));
+    if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
+    LOCK(p);
+    if (SCM_PORT_UNGOTTEN(p) != SCM_CHAR_INVALID
+        || p->scrcnt > 0) {
+        r = TRUE;
+    } else {
+        switch (SCM_PORT_TYPE(p)) {
+        case SCM_PORT_FILE:
+            if (p->src.buf.current < p->src.buf.end) r = TRUE;
+            else if (p->src.buf.ready == NULL) r = TRUE;
+            else {
+                SAFE_CALL(p, r = (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK));
+            }
+            break;
+        case SCM_PORT_PROC:
+            SAFE_CALL(p, r = p->src.vt.Ready(p));
+            break;
+        default:
+            r = TRUE;
+        }
+    }
     UNLOCK(p);
     return r;
 }

@@ -1,7 +1,7 @@
 /*
  * char-sjis.h
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_sjis.h,v 1.5 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: char_sjis.h,v 1.6 2004-09-17 03:42:10 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -116,7 +116,10 @@
 /* Array of character encoding names, recognizable by iconv, that are
    compatible with this native encoding. */
 static const char *supportedCharacterEncodings[] = {
+    "SHIFT_JIS",
     "SHIFT-JIS",
+    "SHIFT_JISX0213",
+    "SHIFT-JISX0213",
     "SJIS",
     NULL
 };

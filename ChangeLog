@@ -1,5 +1,13 @@
 2004-09-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm_MakeProgramSourcePort): preparation of enabling
+          'coding:' magic comment in the source file.
+	* src/gauche.h: ditto
+	* src/extlib.stub (open-program-source-port): ditto
+	* ext/charconv/charconv.c: ditto
+	* tests/io.scm, ext/charconv/test.scm: ditto.
+	* src/portapi.c (Scm_ByteReady): added
+	* src/gauche/char_sjis.h: added some more encoding aliases of sjis.
 	* src/char.c (Scm_SupportedCharacterEncodingP): compare the encoding
 	  names case-insensitively.
 

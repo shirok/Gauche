@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.46 2003-12-08 08:32:58 shirok Exp $
+ *  $Id: charconv.c,v 1.47 2004-09-17 03:42:10 shirok Exp $
  */
 
 #include <string.h>
@@ -304,6 +304,19 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 
     name = conv_name(SCM_PORT_INPUT, fromPort, fromCode, toCode);
     return Scm_MakeBufferedPort(name, SCM_PORT_INPUT, TRUE, &bufrec);
+}
+
+/* a special case of input conversion port --- program source conversion.
+   this function is called via Scm_ProgramSourceConversionHook from
+   src/port.c */
+
+static ScmPort *program_source_conv(ScmPort *src, const char *encoding)
+{
+    return SCM_PORT(Scm_MakeInputConversionPort(src,
+                                                encoding,
+                                                Scm_SupportedCharacterEncodings()[0],
+                                                SCM_FALSE,
+                                                0, TRUE));
 }
 
 /*------------------------------------------------------------
@@ -588,6 +601,8 @@ extern void Scm_Init_convlib(ScmModule *module);
 extern void Scm_Init_convguess(void);
 SCM_EXTERN ScmChar (*Scm_UcsToCharHook)(int ucs4);
 SCM_EXTERN int (*Scm_CharToUcsHook)(ScmChar ch);
+SCM_EXTERN ScmPort *(*Scm_ProgramSourceConversionHook)(ScmPort *src,
+                                                       const char *encoding);
 
 void Scm_Init_libcharconv(void)
 {
@@ -612,4 +627,5 @@ void Scm_Init_libcharconv(void)
     Scm_Init_convlib(mod);
     Scm_UcsToCharHook = ucstochar;
     Scm_CharToUcsHook = chartoucs;
+    Scm_ProgramSourceConversionHook = program_source_conv;
 }

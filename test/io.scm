@@ -580,5 +580,71 @@
 (test* "#;#;(123 456) 789 1" 1
        (read-from-string "#;#;(123 456) 789 1"))
 
+;;-------------------------------------------------------------------
+(test-section "program-source-port basic")
+
+;; Testing source port _without_ any conversion.  Basically, these
+;; tests just checks up the boundary condition of source-port prefetching
+;; routine.
+;; The actual conversion is tested in ext/charconv.
+
+(define (with-program-source-port input proc)
+  (let* ((src  (open-input-string input))
+         (wrap (open-program-source-port src)))
+    (proc src wrap)))
+
+(test* "ownership" #t
+       (with-program-source-port
+        "abc"
+        (lambda (src wrap)       
+          (close-input-port wrap)          
+          (port-closed? src))))
+
+(test* "read from empty port" '(#t #t #t #t #t)
+       (map (lambda (p) (with-program-source-port "" p))
+            (list
+             (lambda (src wrap) (eof-object? (read-char wrap)))
+             (lambda (src wrap) (eof-object? (read-byte wrap)))
+             (lambda (src wrap) (eof-object? (peek-char wrap)))
+             (lambda (src wrap) (eof-object? (peek-byte wrap)))
+             (lambda (src wrap) (eof-object? (read-line wrap))))))
+
+(let ((tdata '("abc" "abc\n" "\nabc" "abc\ndef\n"
+               "abc\ndef\nghi" "abc\ndef\nghi\n"
+               "abc\ndef\nghi\njkl" "abc\ndef\nghi\njkl\n")))
+  (test* "read from simple contents"
+         tdata
+         (map (lambda (i)
+                (with-program-source-port
+                 i
+                 (lambda (src wrap)
+                   (let loop ((ch (read-char wrap))
+                              (r  '()))
+                     (if (eof-object? ch)
+                       (list->string (reverse r))
+                       (loop (read-char wrap) (cons ch r)))))))
+              tdata)))
+
+(let ((tdata '("coding: abcde\naa"
+               ";coding:\nabcdef\naa"
+               "coding: coding: coding:; abcde\naa"
+               ";; co\nding: foobar\naa"
+               ";; coding:\n;; foobar\naa"
+               ";; coding : foobar\naa"
+               "\n\n;; coding: foobar\naa"
+               "\n;;    codincodincoding:\naa")))
+  (test* "to confuse DFA"
+         tdata
+         (map (lambda (i)
+                (with-program-source-port
+                 i
+                 (lambda (src wrap)
+                   (let loop ((ch (read-char wrap))
+                              (r  '()))
+                     (if (eof-object? ch)
+                       (list->string (reverse r))
+                       (loop (read-char wrap) (cons ch r)))))))
+              tdata)))
+
 (test-end)
 
