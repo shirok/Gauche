@@ -1,3 +1,7 @@
+2003-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/html-lite.scm : generate "<tag />" for empty element.
+
 2003-06-25  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in, Makefiles : de-libtool-ized.  Tested on Cygwin,
