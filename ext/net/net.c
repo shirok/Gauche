@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.34 2004-07-16 11:16:09 shirok Exp $
+ *  $Id: net.c,v 1.35 2004-07-16 11:17:43 shirok Exp $
  */
 
 #include "net.h"
@@ -177,7 +177,7 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 #ifndef __MINGW32__
 	outfd = sock->fd;
 #else  /*__MINGW32__*/
-	outfd = _open_osfhandle(sock->fd, O_RDONLY);
+	outfd = _open_osfhandle(sock->fd, 0);
 #endif /*__MINGW32__*/
 
         /* NB: I keep the socket itself in the port name, in order to avoid
