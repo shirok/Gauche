@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.33 2002-05-07 07:35:10 shirok Exp $
+;;;  $Id: object.scm,v 1.34 2002-06-11 12:30:00 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -490,6 +490,6 @@
                 slot-definition-allocation slot-definition-getter
                 slot-definition-setter slot-definition-accessor
                 class-slot-definition class-slot-accessor
-                x->string x->integer x->number ref)
+                x->string x->integer x->number ref |setter of ref|)
 
 (provide "gauche/object")
