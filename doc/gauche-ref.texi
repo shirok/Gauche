@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.206 2002-05-25 02:56:04 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.207 2002-05-27 12:22:52 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6576,6 +6576,13 @@ Partial application version of @code{apply}, @code{map} and @code{for-each}.
 
 @end defun
 
+@c EN
+There are more 'partial-applied' version of procedures defined in
+SRFI-1 (@xref{List library}).
+@c JP
+他にもいくつかの部分適用版の手続きが定義されています。
+@ref{List library}を参照してください。
+@c COMMON
 
 @defun compose f g h @dots{}
 @c EN
@@ -13389,6 +13396,19 @@ all the collections are sequences.
 @c COMMON
 @end deffn
 
+
+@deffn {Generic Function} fold$ proc
+@deffnx {Generic Function} fold$ proc knil
+@deffnx {Generic Function} map$ proc
+@deffnx {Generic Function} for-each$ proc
+@c EN
+Partial-application version of @code{fold}, @code{map} and @code{for-each}.
+@c JP
+@code{fold}、@code{map}、@code{for-each}の部分評価版です。
+@c COMMON
+@end deffn
+
+
 @c EN
 @emph{Discussion:}  It is debatable what type of collection @code{map}
 should return when it operates on the collections other than lists.
@@ -17406,6 +17426,13 @@ At least one of the argument lists must be finite:
 @end example
 @end defun
 
+@defun count$ pred
+Partial application version of @code{count}
+@example
+((count$ pred) arg @dots{}) === (count pred arg $dots{})
+@end example
+@end defun
+
 @node SRFI-1 Fold, SRFI-1 Filterling & partitioning, SRFI-1 List miscellaneous routines, List library
 @subsection List fold, unfold & map
 
@@ -17502,7 +17529,15 @@ this function is just a synonym of @code{map}.
 @end defun
 
 @defun filter-map  f clist1 clist2 @dots{}
-[SRIF-1]
+[SRFI-1]
+@end defun
+
+@defun fold$ kons &optional knil
+@defunx fold-right$ kons &optional knil
+@defunx reduce$ f &optional ridentity
+@defunx reduce-right$ f &optional ridentity
+Partial application versions of @code{fold}, @code{fold-right},
+@code{reduce}, and @code{reduce-right}.
 @end defun
 
 @node SRFI-1 Filterling & partitioning, SRFI-1 Searching, SRFI-1 Fold, List library
@@ -17543,6 +17578,14 @@ removing elements of @var{list} by @var{pred}.
 @code{partition!} is the linear-update variant.  It may destructively
 modifies @var{list} to produce the result.
 @end defun
+
+@defun filter$ pred
+@defunx remove$ pred
+@defunx partition$ pred
+Partial application versions of @code{filter}, @code{remove} and
+@code{partition}.
+@end defun
+
 
 @node SRFI-1 Searching, SRFI-1 Deletion, SRFI-1 Filterling & partitioning, List library
 @subsection List searching
@@ -17585,12 +17628,25 @@ true on.
 [SRFI-1]
 @end defun
 
+@defun member$ item
+@defunx find$ pred
+@defunx find-tail$ pred
+@defunx any$ pred
+@defunx every$ pred
+Partial application version of @code{member}, @code{find}, @code{find-tail},
+@code{any} and @code{every}.
+@end defun
+
 @node SRFI-1 Deletion, SRFI-1 Association lists, SRFI-1 Searching, List library
 @subsection List deletion
 
 @defun delete x list &optional elt=
 @defunx delete! x list &optional elt=
 [SRFI-1]
+@end defun
+
+@defun delete$ x
+Partial application version of @code{delete}.
 @end defun
 
 @defun delete-duplicates list &optional elt=
@@ -17613,6 +17669,10 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @defun alist-delete key alist &optional =
 @defunx alist-delete! key alist &optional =
 [SRFI-1]
+@end defun
+
+@defun assoc$ item
+Partial application version of @code{assoc}.
 @end defun
 
 @node SRFI-1 set operations,  , SRFI-1 Association lists, List library
