@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.298 2002-11-12 04:53:17 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.299 2002-11-13 00:56:58 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -20350,6 +20350,24 @@ the procedure returns the number of @emph{elements} read (not bytes).
 @c JP
 @code{read-block!}が呼ばれた時既に@var{iport}がEOFに達していた場合は
 EOFが、そうでなければ読まれた要素の数 (バイト数ではありません) が返されます。
+@c COMMON
+
+@c EN
+If the @var{iport} is a buffered port with `modest' or `none'
+buffering mode (@xref{File ports}), @code{read-block!} may return
+before all the elements in @var{vec} is filled, even if @var{iport}
+hasn't reached EOF.  The ports connected to a pipe or a network socket
+behave so by default.  If you know there will be enough data arriving and
+want to make sure @var{vec} is filled, change the buffering mode of
+@var{iport} to `full'.
+@c JP
+@var{iport}がバッファードポートであり、そのバッファリングモードが
+`modest' か `none' であった場合、@code{read-block!}は@var{iport}が
+EOFに達していなくても、@var{vec}を埋める前に戻ることがあります
+(バッファリングモードについては@ref{File ports})を参照して下さい。
+パイプやネットワークに接続されたポートはデフォルトでそのように振舞います。
+もし、十分なデータが到着することがわかっており、@var{vec}を確実に埋めたい場合は
+ポートのバッファリングモードを`full'に変更して下さい。
 @c COMMON
 
 @c EN
