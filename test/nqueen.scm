@@ -57,4 +57,9 @@
     result))
 
 ; sample
-(display (nqueen 8))(newline)(exit)
+;(display (nqueen 8))(newline)(exit)
+
+(define (main args)
+  (display (nqueen 8))
+  (newline)
+  0)
