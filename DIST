@@ -23,7 +23,7 @@ if [ "$tgz" = "yes" ]; then
   rm -rf ../Gauche-$VERSION
   if [ -f Makefile ]; then make realclean; fi
   ./AUTOCONF
-  ./configure
+  ./configure --enable-threads=pthreads
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
   (cd ext/charconv/; make GOSH=/usr/local/bin/gosh eucj2ucs.c)
   (cd ext/charconv/; make GOSH=/usr/local/bin/gosh guess_tab.c)
@@ -70,7 +70,7 @@ if [ "$test" = "yes" ]; then
   cd ../test
   tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz
   cd Gauche-$VERSION
-  ./configure
+  ./configure --enable-threads=pthreads
   make
   make -s test
   make install
@@ -87,22 +87,22 @@ if [ "$testcode" = "yes" ]; then
   cd Gauche-$VERSION
   rm -f testcode.log
   echo "EUC-JP ----------------------------------------------------"
-  ./configure --enable-multibyte=euc-jp >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
   make -s
   make -s test
   make -s distclean
   echo "UTF-8 -----------------------------------------------------"
-  ./configure --enable-multibyte=utf-8  >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
   make -s
   make -s test
   make -s distclean
   echo "SJIS ------------------------------------------------------"
-  ./configure --enable-multibyte=sjis   >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=sjis   >> testcode.log 2>&1
   make -s
   make -s test
   make -s distclean
   echo "NONE ------------------------------------------------------"
-  ./configure --enable-multibyte=none   >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=none   >> testcode.log 2>&1
   make -s
   make -s test
 fi
