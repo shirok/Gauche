@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.7 2001-02-19 23:30:47 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.8 2001-02-20 06:02:13 shiro Exp $
 ;;;
 
 ;;
@@ -37,6 +37,10 @@
 ;;
 
 (define CALL/CC call-with-current-continuation)
+
+;; will be implemented in C later.
+(define (CALL-WITH-VALUES producer consumer)
+  (receive vals (producer) (apply consumer vals)))
 
 ;;
 ;; Require and provide (temporary solution)
