@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.16 2001-03-25 03:10:13 shiro Exp $
+ *  $Id: main.c,v 1.17 2001-03-25 03:14:34 shiro Exp $
  */
 
 #include <unistd.h>
@@ -30,7 +30,7 @@ void usage(void)
             "options:\n"
             "  -V       print version and exit.\n"
             "  -q       don't read the default initiailzation file.\n"
-            "  -I<path> add <path> to the head of load path (multiple -I is allowed).\n"
+            "  -I<path> add <path> to the head of load path (multiple -I's are allowed).\n"
         );
     exit(1);
 }
