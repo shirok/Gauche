@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.7 2002-05-13 00:19:40 shirok Exp $
+;;;  $Id: collection.scm,v 1.8 2002-05-24 22:53:31 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -23,7 +23,7 @@
   (use util.queue)
   (export call-with-iterator with-iterator call-with-iterators
           call-with-builder  with-builder
-          fold map map-to for-each
+          fold map map-to for-each map$ for-each$
           find filter filter-to remove remove-to partition partition-to
           size-of lazy-size-of coerce-to)
   )
@@ -205,6 +205,9 @@
             (apply %map proc coll more)
             (next-method)))))
 
+;; redefine map$ to use generic version of map
+(define (map$ proc) (pa$ map proc))
+
 ;; map-to -----------------------------------------------
 
 ;; generic way.
@@ -250,6 +253,9 @@
         (if (every pair? more)
             (apply %for-each proc coll more)
             (next-method)))))
+
+;; redefine for-each$ to use generic version of for-each
+(define (for-each$ proc) (pa$ for-each proc))
 
 ;; size-of ----------------------------------------------
 

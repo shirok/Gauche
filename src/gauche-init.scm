@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.83 2002-05-24 10:20:22 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.84 2002-05-24 22:53:30 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -155,7 +155,7 @@
 (autoload gauche.procedure
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          compose pa$)
+          compose pa$ map$ for-each$ apply$)
 
 (autoload gauche.vm.debugger
           enable-debug disable-debug (:macro debug-print))

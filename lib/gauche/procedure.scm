@@ -12,14 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: procedure.scm,v 1.4 2002-05-20 21:42:13 shirok Exp $
+;;;  $Id: procedure.scm,v 1.5 2002-05-24 22:53:31 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
   (export arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          compose pa
+          compose pa map$ for-each$ apply$
           ))
 
 (select-module gauche.procedure)
@@ -71,5 +71,9 @@
       (compose f (apply compose g more))))
 
 (define (compose$ f) (pa$ compose f))
+
+(define (map$ proc)      (pa$ map proc))
+(define (for-each$ proc) (pa$ for-each proc))
+(define (apply$ proc)    (pa$ apply proc))
 
 (provide "gauche/procedure")
