@@ -1,7 +1,7 @@
 ;;;
 ;;; syslib.stub - system interface functions
 ;;;
-;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;   Copyright (c) 2000-2002 Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;   Permission to use, copy, modify, distribute this software and
 ;;;   accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.60 2002-02-17 07:25:03 shirok Exp $
+;;; $Id: syslib.stub,v 1.61 2002-02-21 08:57:24 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -26,8 +26,6 @@
 #include <pwd.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/times.h>
-#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <signal.h>
 #if TIME_WITH_SYS_TIME
@@ -338,18 +336,6 @@
     SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   }")
 
-(if (defined? "HAVE_PUTENV")
-    (define-cproc sys-putenv (name value)
-      (assert (string? name))
-      (assert (string? value))
-      "  ScmObj s;
- s  = Scm_StringAppend(SCM_LIST3(SCM_OBJ(name),
-                                 SCM_MAKE_STR(\"=\"),
-                                 SCM_OBJ(value)));
- putenv(Scm_GetStringConst(SCM_STRING(s)));
- SCM_RETURN(SCM_UNDEFINED);")
-)
-
 ;; Note: the return value of system() is not portable.
 (define-cproc sys-system (command)
   (assert (string? command))
@@ -473,47 +459,9 @@
   SCM_RETURN(SCM_FALSE);")
 
 ;;---------------------------------------------------------------------
-;; sys/times.h
-
-(define-cproc sys-times ()
-  "  struct tms info;
-  ScmObj h = SCM_NIL, t;
-  int r = Scm_SysCall(times(&info));
-  if (r < 0) Scm_SysError(\"times() failed\");
-  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_utime));
-  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_stime));
-  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cutime));
-  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cstime));
-#ifdef CLOCKS_PER_SEC
-  SCM_APPEND1(h, t, Scm_MakeInteger(CLOCKS_PER_SEC));
-#else
-#ifdef CLK_TCK
-  SCM_APPEND1(h, t, Scm_MakeInteger(CLK_TCK)); /* older name */
-#else
-  SCM_APPEND1(h, t, Scm_MakeInteger(1));  /* or maybe 100, we don't know ...*/
-#endif
-#endif
-  SCM_RETURN(h);")
-
-;;---------------------------------------------------------------------
-;; sys/utsname.h
-
-;; returns list of (sysname nodename release version machine)
-(define-cproc sys-uname ()
-  "  struct utsname info;
-  ScmObj head = SCM_NIL, tail;
-  if (uname(&info) < 0) Scm_SysError(\"uname() failed\");
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.sysname));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.nodename));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.release));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.version));
-  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.machine));
-  return head;")
-
-;;---------------------------------------------------------------------
 ;; sys/wait.h
 
-;; returns a pair of pid and status 
+;; returns pid and status 
 (define-cproc sys-wait ()
   "  int status;
   pid_t r = wait(&status);
