@@ -12,14 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: dbm.scm,v 1.4 2001-10-28 11:38:14 shirok Exp $
+;;;  $Id: dbm.scm,v 1.5 2001-10-30 20:03:07 shirok Exp $
 ;;;
 
 (define-module dbm
   (export <dbm>
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
-          dbm-fold    dbm-for-each  dbm-map   dbm-error
+          dbm-fold    dbm-for-each  dbm-map
           %dbm-k2s    %dbm-s2k    %dbm-v2s    %dbm-s2v)
   )
 (select-module dbm)
