@@ -1,0 +1,146 @@
+;;
+;; test for procedures
+;;
+
+(use gauche.test)
+(test-start "procedures")
+
+;;-------------------------------------------------------------------
+(test-section "combinatorial programming utilities")
+
+(test "pa$" 10 (lambda () ((pa$ + 3) 7)))
+(test "pa$" '(a b c)
+      (lambda () ((pa$ list 'a) 'b 'c)))
+(test "pa$" '(a b c)
+      (lambda () ((pa$ list 'a 'b) 'c)))
+(test "pa$" '(a b c)
+      (lambda () ((pa$ (pa$ list 'a) 'b) 'c)))
+
+(test "map$" '(2 4 6)
+      (lambda ()
+        (define map2* (map$ (pa$ * 2)))
+        (map2* '(1 2 3))))
+
+(test "compose" '(#t #f #t)
+      (lambda ()
+        (define not-zero? (compose not zero?))
+        (list (not-zero? 3)
+              (not-zero? 0)
+              (not-zero? -100))))
+
+(test "compose, apply$, map$" 32
+      (lambda ()
+        (define dot-product (compose (apply$ +) (map$ *)))
+        (dot-product '(1 2 3) '(4 5 6))))
+
+(test "any-pred" '(#t #t #f)
+      (lambda ()
+        (define string-or-symbol? (any-pred string? symbol?))
+        (list (string-or-symbol? "abc")
+              (string-or-symbol? 'abc)
+              (string-or-symbol? 3))))
+
+(test "any-pred" '(b c)
+      (lambda ()
+        ((any-pred (cut memq <> '(a b c))
+                   (cut memq <> '(1 2 3)))
+         'b)))
+
+(test "any-pred" '(#t #f)
+      (lambda ()
+        (define <> (any-pred < >))
+        (list (<> 3 4)
+              (<> 3 3))))
+
+(test "every-pred" '(#t #f #f)
+      (lambda ()
+        (list ((every-pred odd? positive?) 3)
+              ((every-pred odd? positive?) 4)
+              ((every-pred odd? positive?) -3))))
+
+(test "every-pred" '(3 #f)
+      (lambda ()
+        (define safe-length (every-pred list? length))
+          (list (safe-length '(a b c))
+                (safe-length "aaa"))))
+
+;;-------------------------------------------------------------------
+(test-section "optional arguments")
+
+(define (oof x . args)
+  (let-optionals* args ((a 'a)
+                        (b 'b)
+                        (c 'c))
+    (list x a b c)))
+
+(test "let-optionals*" '(0 a b c) (lambda () (oof 0)))
+(test "let-optionals*" '(0 1 b c) (lambda () (oof 0 1)))
+(test "let-optionals*" '(0 1 2 c) (lambda () (oof 0 1 2)))
+(test "let-optionals*" '(0 1 2 3) (lambda () (oof 0 1 2 3)))
+
+(define (oof* x . args)
+  (let-optionals* args ((a 'a)
+                        (b 'b)
+                        . c)
+    (list x a b c)))
+
+(test "let-optionals*" '(0 a b ()) (lambda () (oof* 0)))
+(test "let-optionals*" '(0 1 b ()) (lambda () (oof* 0 1)))
+(test "let-optionals*" '(0 1 2 ()) (lambda () (oof* 0 1 2)))
+(test "let-optionals*" '(0 1 2 (3)) (lambda () (oof* 0 1 2 3)))
+
+(define (oof+ x . args)
+  (let ((i 0))
+    (let-optionals* (begin (inc! i) args)
+        ((a 'a)
+         (b 'b)
+         (c 'c))
+      i)))
+
+(test "let-optionals*" 1 (lambda () (oof+ 0)))
+(test "let-optionals*" 1 (lambda () (oof+ 0 1)))
+(test "let-optionals*" 1 (lambda () (oof+ 0 1 2)))
+(test "let-optionals*" 1 (lambda () (oof+ 0 1 2 3)))
+
+(define (oaf x . args)
+  (let ((y (get-optional args 'foof)))
+    (list x y)))
+
+(test "get-optional" '(0 foof) (lambda () (oaf 0)))
+(test "get-optional" '(0 1)    (lambda () (oaf 0 1)))
+
+(define (oaf+ x . args)
+  (let ((i 0))
+    (let ((y (get-optional (begin (inc! i) args) 'foof)))
+      i)))
+
+(test "get-optional" 1 (lambda () (oaf+ 0)))
+(test "get-optional" 1 (lambda () (oaf+ 0 1)))
+
+(define (oef x . args)
+  (let-keywords* args ((a 'a)
+                       (b :bb 'b)
+                       (c 'c))
+    (list x a b c)))
+
+(test "let-keywords*" '(0 a b c) (lambda () (oef 0)))
+(test "let-keywords*" '(0 1 b c) (lambda () (oef 0 :a 1)))
+(test "let-keywords*" '(0 a 1 c) (lambda () (oef 0 :bb 1)))
+(test "let-keywords*" '(0 a b 1) (lambda () (oef 0 :c 1)))
+(test "let-keywords*" '(0 1 2 3) (lambda () (oef 0 :c 3 :bb 2 :a 1)))
+
+(define (oef+ x . args)
+  (let ((i 0))
+    (let-keywords* (begin (inc! i) args)
+        ((a 'a)
+         (b :bb 'b)
+         (c 'c))
+      i)))
+
+(test "let-keywords*" 1 (lambda () (oef+ 0)))
+(test "let-keywords*" 1 (lambda () (oef+ 0 :a 1)))
+(test "let-keywords*" 1 (lambda () (oef+ 0 :bb 1)))
+(test "let-keywords*" 1 (lambda () (oef+ 0 :c 1)))
+(test "let-keywords*" 1 (lambda () (oef+ 0 :c 3 :bb 2 :a 1)))
+
+(test-end)

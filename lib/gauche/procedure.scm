@@ -12,17 +12,120 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: procedure.scm,v 1.6 2002-10-18 05:02:35 shirok Exp $
+;;;  $Id: procedure.scm,v 1.7 2002-10-26 08:41:31 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
-  (export arity procedure-arity-includes?
+  (export compose pa$ map$ for-each$ apply$
+          any-pred every-pred
+          let-optionals* let-keywords* get-optional
+          arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          compose pa map$ for-each$ apply$
           ))
 
 (select-module gauche.procedure)
+
+;; Combinator utilities -----------------------------------------
+
+(define (pa$ fn . args)                  ;partial apply
+  (lambda more-args (apply fn (append args more-args))))
+
+(define (compose f g . more)
+  (if (null? more)
+      (lambda args
+        (call-with-values (lambda () (apply g args)) f))
+      (compose f (apply compose g more))))
+
+(define (compose$ f) (pa$ compose f))
+
+(define (map$ proc)      (pa$ map proc))
+(define (for-each$ proc) (pa$ for-each proc))
+(define (apply$ proc)    (pa$ apply proc))
+
+(define (any-pred . preds)
+  (lambda args
+    (let loop ((preds preds))
+      (cond ((null? preds) #f)
+            ((apply (car preds) args))
+            (else (loop (cdr preds)))))))
+
+(define (every-pred . preds)
+  (if (null? preds)
+      (lambda args #t)
+      (lambda args
+        (let loop ((preds preds))
+          (cond ((null? (cdr preds))
+                 (apply (car preds) args))
+                ((apply (car preds) args)
+                 (loop (cdr preds)))
+                (else #f))))))
+
+;; Macros for optional arguments ---------------------------
+
+(define-syntax get-optional
+  (syntax-rules ()
+    ((_ args default)
+     (let ((a args))
+       (if (pair? a) (car a) default)))
+    ((_ . other)
+     (syntax-error "badly formed get-optional" (get-optional . other)))
+    ))
+
+(define-syntax let-optionals*
+  (syntax-rules ()
+    ((_ "binds" arg binds () body) (let* binds . body))
+    ((_ "binds" arg (binds ...) ((var default) . more) body)
+     (let-optionals* "binds"
+         (if (null? tmp) tmp (cdr tmp))
+       (binds ...
+              (tmp arg)
+              (var (if (null? tmp) default (car tmp))))
+       more
+       body))
+    ((_ "binds" arg (binds ...) (var . more) body)
+     (let-optionals* "binds"
+         (if (null? tmp) tmp (cdr tmp))
+       (binds ...
+              (tmp arg)
+              (var (if (null? tmp) (undefined) (car tmp))))
+       more
+       body))
+    ((_ "binds" arg (binds ...) var body)
+     (let-optionals* "binds"
+         arg
+       (binds ... (var arg))
+       ()
+       body))
+    ((_ arg vars . body)
+     (let-optionals* "binds" arg () vars body))
+    ((_ . other)
+     (syntax-error "badly formed let-optionals*" (let-optionals* . other)))
+    ))
+
+;; We want to generate corresponding keyword for each variable
+;; beforehand, so I use a traditional macro as a wrapper.
+
+(define-macro (let-keywords* arg vars . body)
+  (let* ((tmp (gensym))
+         (triplets
+          (map (lambda (var&default)
+                 (or (and (list? var&default)
+                          (symbol? (car var&default))
+                          (case (length var&default)
+                            ((2) `(,(car var&default)
+                                   ,(make-keyword (car var&default))
+                                  ,(cadr var&default)))
+                            ((3) var&default)
+                            (else #f)))
+                     (error "bad binding form in let-keywords*" var&default)))
+               vars)))
+    `(let* ((,tmp ,arg)
+            ,@(map (lambda (binds)
+                     `(,(car binds)
+                       (get-keyword* ,(cadr binds) ,tmp ,(caddr binds))))
+                   triplets))
+       ,@body)))
 
 ;; Procedure arity -----------------------------------------
 
@@ -58,22 +161,5 @@
     (if (list? a)
         (any check a)
         (check a))))
-
-;; Combinator utilities -----------------------------------------
-
-(define (pa$ fn . args)                  ;partial apply
-  (lambda more-args (apply fn (append args more-args))))
-
-(define (compose f g . more)
-  (if (null? more)
-      (lambda args
-        (call-with-values (lambda () (apply g args)) f))
-      (compose f (apply compose g more))))
-
-(define (compose$ f) (pa$ compose f))
-
-(define (map$ proc)      (pa$ map proc))
-(define (for-each$ proc) (pa$ for-each proc))
-(define (apply$ proc)    (pa$ apply proc))
 
 (provide "gauche/procedure")

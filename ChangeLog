@@ -1,3 +1,11 @@
+2002-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/procedure.scm : moved let-optionals* here, with new
+	  macros get-optional and let-keyword*.  These are "official"
+	  autoloaded macros now.   Also added procedures any-pred and
+	  every-pred.
+	* src/gauche-init.scm : added get-keyword* macro
+
 2002-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/listener.scm : fixed a bug around error handling.
