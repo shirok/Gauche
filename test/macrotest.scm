@@ -172,7 +172,7 @@
               (let ((newtemp b)
                     (newtemp d))
                 (set! a newtemp)
-                (set! d newtemp)
+                (set! c newtemp)
                 e f g))
             (%letrec ((a b) (c d)) e f g))
 (test "%letrec" '(1 2 3)
