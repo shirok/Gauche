@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_utf_8.h,v 1.5 2001-05-28 11:55:20 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.6 2001-12-23 03:39:57 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -35,7 +35,7 @@ extern void Scm_CharUtf8Putc(char *, ScmChar);
  * two-byte character, it returns 1.   It may return -1 if
  * the given byte can't be a valid first byte of multibyte characters.
  */
-#define SCM_CHAR_NFOLLOWS(ch) ((int)Scm_CharSizeTable[(ch)])
+#define SCM_CHAR_NFOLLOWS(ch) ((int)Scm_CharSizeTable[(unsigned char)(ch)])
 
 /* Given wide character CH, returns # of bytes used when CH is
  * encoded in multibyte string.
@@ -148,7 +148,7 @@ ScmChar Scm_CharUtf8Getc(const char *cp)
     ScmChar ch;
     unsigned char *ucp = (unsigned char *)cp;
     unsigned char first = *ucp++;
-    if (first < 0x80) { /* nothing to do */ }
+    if (first < 0x80) { ch = first; }
     else if (first < 0xc0) { ch = SCM_CHAR_INVALID; }
     else if (first < 0xe0) {
         ch = first&0x1f;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.54 2001-10-29 07:16:34 shirok Exp $
+ *  $Id: string.c,v 1.55 2001-12-23 03:39:56 shirok Exp $
  */
 
 #include <stdio.h>
@@ -101,11 +101,14 @@ static inline int count_length(const char *str, int size)
     int count = 0;
 
     while (size-- > 0) {
-        unsigned char c = (unsigned char)*str++;
+        ScmChar ch;
+        unsigned char c = (unsigned char)*str;
         int i = SCM_CHAR_NFOLLOWS(c);
         if (i < 0 || i > size) return -1;
+        SCM_CHAR_GET(str, ch);
+        if (ch == SCM_CHAR_INVALID) return -1;
         count++;
-        str += i;
+        str += i+1;
         size -= i;
     }
     return count;
@@ -1169,9 +1172,7 @@ ScmObj Scm_DStringGet(ScmDString *dstr)
     int len = dstr->length;
     int size = dstr->current - dstr->start;
     
-    if (len < 0) {
-        len = count_length(dstr->start, size);
-    }
+    if (len < 0) len = count_length(dstr->start, size);
     return SCM_OBJ(make_str(len, size, dstr->start));
 }
 
