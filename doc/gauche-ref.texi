@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.121 2001-11-10 11:45:58 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.122 2001-11-12 09:49:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11885,13 +11885,13 @@ to prepare a file to be read by Windows programs.
 Provides procedures to construct an HTML document easily.
 For example, you can construct an HTML table by the following code:
 @example
-(html-table
-  (html-tr (html-th "Item No") (html-th "Quantity"))
-  (html-tr (html-td 1) (html-td 120))
-  (html-tr (html-td 2) (html-td 30))
-  (html-tr (html-td 3) (html-td 215)))
+(html:table
+  (html:tr (html:th "Item No") (html:th "Quantity"))
+  (html:tr (html:td 1) (html:td 120))
+  (html:tr (html:td 2) (html:td 30))
+  (html:tr (html:td 3) (html:td 215)))
 @end example
-See the description of @code{html-@var{element}} below for details.
+See the description of @code{html:@var{element}} below for details.
 
 This module does almost no checks for the constructed html documents,
 and does not provide a feature to parse the html document; hence 
@@ -11913,84 +11913,84 @@ or @code{:frameset}, corresponding HTML4.01 strict, transitional or
 frameset DTD, respectively.
 @end defun
 
-@deftp {Function} html-@var{element} args @dots{}
-@findex html-a
-@findex html-abbr
-@findex html-acronym
-@findex html-address
-@findex html-area
-@findex html-b
-@findex html-base
-@findex html-bdo
-@findex html-big
-@findex html-blockquote
-@findex html-body
-@findex html-br
-@findex html-button
-@findex html-caption
-@findex html-cite
-@findex html-code
-@findex html-col
-@findex html-colgroup
-@findex html-dd
-@findex html-del
-@findex html-dfn
-@findex html-div
-@findex html-dl
-@findex html-dt
-@findex html-em
-@findex html-fieldset
-@findex html-form
-@findex html-h1
-@findex html-h2
-@findex html-h3
-@findex html-h4
-@findex html-h5
-@findex html-h6
-@findex html-head
-@findex html-hr
-@findex html-html
-@findex html-i
-@findex html-img
-@findex html-input
-@findex html-ins
-@findex html-kbd
-@findex html-label
-@findex html-legend
-@findex html-li
-@findex html-link
-@findex html-map
-@findex html-meta
-@findex html-noscript
-@findex html-object
-@findex html-ol
-@findex html-optgroup
-@findex html-option
-@findex html-p
-@findex html-param
-@findex html-pre
-@findex html-q
-@findex html-samp
-@findex html-script
-@findex html-select
-@findex html-small
-@findex html-span
-@findex html-strong
-@findex html-style
-@findex html-sub
-@findex html-sup
-@findex html-table
-@findex html-tbody
-@findex html-td
-@findex html-textarea
-@findex html-tfoot
-@findex html-th
-@findex html-thead
-@findex html-title
-@findex html-tr
-@findex html-tt
-@findex html-ul
-@findex html-var
+@deftp {Function} html:@var{element} @var{args} @dots{}
+@findex html:a
+@findex html:abbr
+@findex html:acronym
+@findex html:address
+@findex html:area
+@findex html:b
+@findex html:base
+@findex html:bdo
+@findex html:big
+@findex html:blockquote
+@findex html:body
+@findex html:br
+@findex html:button
+@findex html:caption
+@findex html:cite
+@findex html:code
+@findex html:col
+@findex html:colgroup
+@findex html:dd
+@findex html:del
+@findex html:dfn
+@findex html:div
+@findex html:dl
+@findex html:dt
+@findex html:em
+@findex html:fieldset
+@findex html:form
+@findex html:h1
+@findex html:h2
+@findex html:h3
+@findex html:h4
+@findex html:h5
+@findex html:h6
+@findex html:head
+@findex html:hr
+@findex html:html
+@findex html:i
+@findex html:img
+@findex html:input
+@findex html:ins
+@findex html:kbd
+@findex html:label
+@findex html:legend
+@findex html:li
+@findex html:link
+@findex html:map
+@findex html:meta
+@findex html:noscript
+@findex html:object
+@findex html:ol
+@findex html:optgroup
+@findex html:option
+@findex html:p
+@findex html:param
+@findex html:pre
+@findex html:q
+@findex html:samp
+@findex html:script
+@findex html:select
+@findex html:small
+@findex html:span
+@findex html:strong
+@findex html:style
+@findex html:sub
+@findex html:sup
+@findex html:table
+@findex html:tbody
+@findex html:td
+@findex html:textarea
+@findex html:tfoot
+@findex html:th
+@findex html:thead
+@findex html:title
+@findex html:tr
+@findex html:tt
+@findex html:ul
+@findex html:var
 Construct an HTML element @var{element}.  Right now,
 the following elements are provided.
 (The elements defined in HTML 4.01 DTD,
@@ -12019,12 +12019,12 @@ can be converted to a string by @code{tree->string}
 You can specify attributes of the element by using a keyword-value
 notation before the actual content.
 @example
-(tree->string (html-a :href "http://foo/bar" "foobar"))
+(tree->string (html:a :href "http://foo/bar" "foobar"))
   @result{}
   "<a href=\"http://foo/bar\">foobar</a>\n"
 
 (tree->string
-  (html-table :width "100%" :cellpading 0 "content here"))
+  (html:table :width "100%" :cellpading 0 "content here"))
   @result{}
   "<table width=\"100%\" cellpadding=\"0\">content here</table>\n"
 @end example
@@ -12033,10 +12033,10 @@ The boolean value given to the attribute has a special meaning.
 If @code{#t} is given, the attribute is renfered without a value.
 If @code{#f} is given, the attribute is not rendered.
 @example
-(tree->string (html-table :border #t))
+(tree->string (html:table :border #t))
   @result{} "<table border></table>\n"
 
-(tree->string (html-table :border #f))
+(tree->string (html:table :border #f))
   @result{} "<table></table>\n"
 @end example
 
@@ -12729,34 +12729,72 @@ If the graph contains circular reference, an error is signalled.
 
 @deftp {Module} www.cgi
 @mdindex www.cgi
+@c EN
 Provides a few basic functions useful to write a CGI script.
 
-Note: it seems that there is no active formal specification for CGI.
-See @uref{http://w3c.org/CGI/} for more information.
-
-In order to write CGI script easily, you may need to `use'
+In order to write CGI script easily, you may want to use
 other modules, such as @code{rfc.uri} (@xref{URI parsing and construction}),
 @code{text.html-lite} (@xref{Simple HTML document construction}) and
 @code{text.tree} (@xref{Lazy text construction}).
+
+Note: it seems that there is no active formal specification for CGI.
+See @uref{http://w3c.org/CGI/} for more information.
+@c JP
+CGIスクリプトを書くのに便利ないくつかの基本的な手続きを提供します。
+
+CGIスクリプトを手軽に書くにはこのモジュールの他に、
+@code{rfc.uri} (@ref{URI parsing and construction})、
+@code{text.html-lite} (@ref{Simple HTML document construction})、
+@code{text.tree} (@ref{Lazy text construction}) 等のモジュールを併せて
+使うとよいでしょう。
+
+注：現在有効な、CGIに関する「正式な」仕様というのはどうも無いようです。
+@uref{http://w3c.org/CGI/}あたりを参照して下さい。
+@c COMMON
 @end deftp
 
 @defun cgi-parse-parameters &keyword :query-string :merge-cookies
+@c EN
 Parses query string and returns associative list of parameters.
 When a keyword argument @var{query-string} is given, it is used
 as a source query string.  Otherwise, the function checks the environment
 variable @code{REQUEST_METHOD} and obtain the query string
-depending on the value.  If @code{QUERY_STRING} is not defined and
+depending on the value (either from stdin or from the environment
+variable @code{QUERY_STRING}).
+If such an environment variable is not defined and
 the current input port is a terminal, the function prompts the user
 to type parameters; useful for interactive debugging.
+@c JP
+CGIプログラムに渡されたquery stringをパーズして、パラメータの連想リストにして
+返します。文字列がキーワード引数@var{query-string}に与えられればそれがパーズすべき
+query stringとなります。その引数が渡されなければこの手続きは環境変数@code{REQUEST_METHOD}を
+参照し、その値によって標準入力もしくは
+環境変数@code{QUERY_STRING}からquery stringが取られます。
+そのような環境変数が定義されておらず、かつ現在の入力ポートが端末である場合、
+インタラクティブにデバッグをしているものと考えて、
+この手続きはプロンプトを出してユーザにパラメータの入力を促します。
+@c COMMON
 
+@c EN
 When a true value is given to @var{merge-cookies}, the cookie
 values obtained from the environment variable @code{HTTP_COOKIE}
 are appended to the result.
+@c JP
+キーワード引数@var{merge-cookies}に真の値が与えられた場合は、
+環境変数@code{HTTP_COOKIE}からクッキーの値が読まれ、解析されて
+結果に追加されます。
+@c COMMON
 
+@c EN
 Note that the query parameter may have multiple values,
 so @code{cdr} of each element in the result is a list, not an atom.
 If no value is given to the parameter, @code{#t} is placed as its value.
 See the following example:
+@c JP
+パラメータは複数の値を取り得るため、結果のパラメータに対応する値は常にリストになります。
+パラメータに値が与えられていなければ、結果のパラメータに対する値には@code{#t}が置かれます。
+次の例を参照して下さい。
+@c COMMON
 @example
 (cgi-parse-parameters
   :query-string "foo=123&bar=%22%3f%3f%22&bar=zz&buzz")
@@ -12787,7 +12825,68 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 
 @defun cgi-header &keyword content-type location cookies
 Creates a text tree (@xref{Lazy text construction}) for the
-HTTP header of the reply message.
+HTTP header of the reply message.  The most simple form is
+like this:
+@example
+(tree->string (cgi-header))
+  @result{} "Content-type: text/html\r\n\r\n"
+@end example
+
+You can specify alternative content-type by the keyword argument
+@var{content-type}.   If you want to set cookies to the client,
+specify a list of cookie strings to the keyword argument @var{cookies}.
+You can use @code{construct-cookie-string} (@xref{HTTP cookie handling})
+to build such a list of cookie strings.
+
+The keyword argument @var{location} may be used to generate
+a @code{Location:} header to redirect the client to the specified URI.
+@end defun
+
+@defun cgi-main proc &keyword on-error merge-cookies
+A convenient wrapper function for CGI script.
+This function calls @code{cgi-parse-parameters}, then calls
+@var{proc} with the result of @code{cgi-parse-parameters}.
+The keyword argument @var{merge-cookies} is passed to
+@code{cgi-parse-parameters}.
+
+@var{proc} has to return a tree of strings
+(@xref{Lazy text construction}), including the HTTP header.
+@code{cgi-main} outputs the returned tree to the current output port
+by @code{write-tree}, then returns zero.
+
+If an error is signalled in @var{proc}, it is caught and an HTML
+page reporting the error is generated.  You can customize the
+error page by providing a procedure to the @var{on-error} keyword argument.
+The procedure takes an @code{<exception>} object (@xref{Exception object}),
+and has to return a tree of string for the error reporting HTML
+page, including an HTTP header.
+
+The following example shows the parameters given to the CGI program.
+
+@example
+#!/usr/local/bin/gosh
+
+(use text.html-lite)
+(use www.cgi)
+
+(define (main args)
+  (cgi-main
+    (lambda (params)
+      `(,(cgi-header)
+        ,(html-doctype)
+        ,(html:html
+          (html:head (html:title "Example"))
+          (html:body
+           (html:table
+            :border 1
+            (html:tr (html:th "Name") (html:th "Value"))
+            (map (lambda (p)
+                   (html:tr
+                    (html:td (html-escape-string (car p)))
+                    (html:td (html-escape-string (x->string (cdr p))))))
+                 params))))
+       ))))
+@end example
 @end defun
 
 @c ======================================================================
