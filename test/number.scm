@@ -488,6 +488,25 @@
       (lambda () (- xx yy)))
 
 ;;------------------------------------------------------------------
+(test-section "small immediate integer constants")
+
+;; pushing small literal integer on the stack may be done
+;; by combined instruction PUSHI.  These tests if it works.
+
+(define (foo a b c d e) (list a b c d e))
+
+;; 2^19-1
+(test "PUSHI" '(0 524287 524288 -524287 -524288)
+      (lambda ()
+        (foo 0 524287 524288 -524287 -524288)))
+;; 2^51-1
+(test "PUSHI" '(0 2251799813685247 2251799813685248
+                  -2251799813685247 -2251799813685248 )
+      (lambda ()
+        (foo 0 2251799813685247 2251799813685248
+             -2251799813685247 -2251799813685248)))
+
+;;------------------------------------------------------------------
 (test-section "small immediate integer additions")
 
 ;; small literal integer x (-2^19 <= x < 2^19 on 32bit architecture)
