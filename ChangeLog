@@ -1,6 +1,12 @@
+2003-09-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/lcs.scm (lcs-with-positions) : rewrote to use Eugene Myers'
+	  O(ND) algorithm which performs much better in typical case,
+	  then the previous DP algorithm that requires O(NM).
+
 2003-09-01  Shiro Kawai  <shiro@acm.org>
 
-	* lib/www.cgi.scm (cgi-parse-parameters) : accept ';' as well as '&'
+	* lib/www/cgi.scm (cgi-parse-parameters) : accept ';' as well as '&'
 	  as a parameter separator.  (Support of ';' is recommended in the
 	  B.2.2 of HTML4.01 specification).
 
