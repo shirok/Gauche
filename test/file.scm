@@ -9,9 +9,11 @@
 
 ;; NB: copy-file in file.util uses copy-port, which requires gauche.uvector.
 ;; To allow in-place test, we pre-loads gauche.uvector.
-(add-load-path "../ext/uvector")
-(load "uvector")
-(import gauche.uvector)
+(when (file-exists? "../ext/uvector/uvector.scm")
+  (eval '(begin (add-load-path "../ext/uvector/")
+                (load "uvector"))
+        (interaction-environment))
+  (eval '(import gauche.uvector) (interaction-environment)))
 
 ;;------------------------------------------------------------------
 (test-section "file.util")

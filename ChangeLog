@@ -1,3 +1,11 @@
+2002-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.6.5
+
+2002-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/reload.scm : updated to the Alex's newest version.
+	
 2002-11-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/port/* -> lib/compat/* : moved.  port.* is obsoleted.
