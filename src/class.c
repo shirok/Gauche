@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.55 2001-09-16 01:37:02 shirok Exp $
+ *  $Id: class.c,v 1.56 2001-09-18 08:06:53 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1725,13 +1725,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_GLOC,             "<gloc>");
 
     /* system.c */
-    CINIT(SCM_CLASS_SYS_STAT,         "<sys-stat>");
-    CINIT(SCM_CLASS_SYS_TM,           "<sys-tm>");
-    CINIT(SCM_CLASS_SYS_GROUP,        "<sys-group>");
-    CINIT(SCM_CLASS_SYS_PASSWD,       "<sys-passwd>");
-#ifdef HAVE_SELECT
-    CINIT(SCM_CLASS_SYS_FDSET,        "<sys-fdset>");
-#endif
+    /* initialized in Scm__InitSystem */
     
     /* vector.c */
     CINIT(SCM_CLASS_VECTOR,           "<vector>");
