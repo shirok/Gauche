@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.22 2003-05-28 10:51:15 shirok Exp $
+$Id: INSTALL.esc,v 1.23 2004-01-19 21:54:53 fuyuki Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -123,7 +123,7 @@ libiconv以外の名前 (libmyconvとか) だったとしたら、
 --with-iconv-lib=myconv というオプションも指定して下さい。
 
 外部のiconvライブラリとしては、Bruno Haible氏のlibiconvが以下から入手可能です。
-http://clisp.cons.org/~haible/packages-libiconv.html
+http://www.gnu.org/software/libiconv/
 <? else !>
 For example, if your say --with-iconv=/usr/local, Gauche looks
 for the header iconv.h from /usr/local/include and the library
@@ -133,7 +133,7 @@ libmyconv, you can also specify --with-iconv-lib=myconv to tell
 Gauche to link against the library.
 
 You can obtain Bruno Haible's libiconv library from here:
-http://clisp.cons.org/~haible/packages-libiconv.html
+http://www.gnu.org/software/libiconv/
 <? ) !>
 
 <? (header "ローカルライブラリパス" "Local library paths") !>
