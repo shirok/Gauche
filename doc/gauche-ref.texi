@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.51 2001-09-07 10:25:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.52 2001-09-08 11:25:36 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2667,7 +2667,6 @@ provide lower level routines as well.
 * System Inquiry::              
 * Time::                        
 * Unix process management::     
-* Termios::                     
 * I/O multiplexing::            
 * Miscellaneous system calls::  
 @end menu
@@ -3210,7 +3209,7 @@ local time.
 @defun sys-tm->alist tm
 @end defun
 
-@node Unix process management, Termios, Time, System interface
+@node Unix process management, I/O multiplexing, Time, System interface
 @subsection Unix process management
 
 @menu
@@ -3350,41 +3349,7 @@ true @var{untraced} argument.  @code{sys-wait-stopsig} returns the
 signum number that stopped the child.
 @end defun
 
-@node Termios, I/O multiplexing, Unix process management, System interface
-@subsection Termios
-
-@deftp {Builtin Class} <sys-termios>
-@clindex sys-termios
-
-@end deftp
-
-@defun sys-tcgetattr port-or-fd
-@end defun
-
-@defun sys-tcsetattr port-or-fd options termios
-@end defun
-
-@defun sys-tcsendbreak port-or-fd duration
-@end defun
-
-@defun sys-tcdrain port-or-fd
-@end defun
-
-@defun sys-tcflush port-or-fd queue
-@end defun
-
-@defun sys-tcflow port-or-fd action
-@end defun
-
-@defun sys-tcgetpgrp port-or-fd
-@end defun
-
-@defun sys-tcsetpgrp port-or-fd pgrp
-@end defun
-
-
-
-@node I/O multiplexing, Miscellaneous system calls, Termios, System interface
+@node I/O multiplexing, Miscellaneous system calls, Unix process management, System interface
 @subsection I/O multiplexing
 
 The interface functions for @code{select(2)}.
@@ -3702,6 +3667,7 @@ of descendants of @var{class}.
 * Regular expression utilities::  
 * Simple dispatcher::           
 * Serializer::                  
+* Termios::                     
 * Unit Testing::                
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
@@ -5131,16 +5097,55 @@ This is a simple example of "echo" server:
 
 
 @c ----------------------------------------------------------------------
-@node Serializer, Unit Testing, Simple dispatcher, Libarary Modules
+@node Serializer, Termios, Simple dispatcher, Libarary Modules
 @section @code{gauche.serializer} - Serializer
 
 @deftp {Module} gauche.serializer
 @mdindex gauche.serializer
 @end deftp
 
+@c ----------------------------------------------------------------------
+@node Termios, Unit Testing, Serializer, Libarary Modules
+@section @code{gauche.termios} - Termios
+
+@deftp {Builtin Class} <sys-termios>
+@clindex sys-termios
+
+@end deftp
+
+@defun sys-tcgetattr port-or-fd
+@end defun
+
+@defun sys-tcsetattr port-or-fd options termios
+@end defun
+
+@defun sys-tcsendbreak port-or-fd duration
+@end defun
+
+@defun sys-tcdrain port-or-fd
+@end defun
+
+@defun sys-tcflush port-or-fd queue
+@end defun
+
+@defun sys-tcflow port-or-fd action
+@end defun
+
+@defun sys-tcgetpgrp port-or-fd
+@end defun
+
+@defun sys-tcsetpgrp port-or-fd pgrp
+@end defun
+
+@defun sys-cfgetispeed termios
+@defunx sys-cfsetispeed termios speed
+@defunx sys-cfgetospeed termios
+@defunx sys-cfsetospeed termios speed
+@end defun
+
 
 @c ----------------------------------------------------------------------
-@node Unit Testing, RFC822 Message parsing, Serializer, Libarary Modules
+@node Unit Testing, RFC822 Message parsing, Termios, Libarary Modules
 @section @code{gauche.test} - Unit Testing
 
 @deftp {Module} gauche.test
@@ -6824,7 +6829,8 @@ R5RS @code{ceiling}.  @xref{Arithmetics}.
 @itemx cfgetospeed
 @itemx cfsetispeed
 @itemx cfsetospeed
-Not supported yet.
+Gauche @code{sys-cfgetispeed}, @code{sys-cfgetospeed},
+@code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{Termios}.
 @item chdir
 Gauche @code{sys-chdir}.   @xref{Other file operations}.
 @item chmod
@@ -7149,6 +7155,8 @@ If the syntax is very simple, you may be able to utilize
 @code{string-tokenize} in @code{srfi-14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expression},
 also @ref{Regular expression utilities}.
+@item select
+Gauche @code{sys-select}.  @xref{I/O multiplexing}.
 @item setbuf
 Not necessary.
 @item setgid
