@@ -1,23 +1,23 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.1 2001-03-10 05:36:54 shiro Exp $
+dnl $Id: configure.in,v 1.2 2001-03-10 09:57:59 shiro Exp $
 AC_INIT(example.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
 if test -f ../../src/gauche.h; then
   GAUCHE_CONFIG="sh ../../src/gauche-config"
-  GAUCHE_SRC='../../src'
+  GAUCHE_TOP='../../'
   GAUCHE_INC="-I../../src -I../../gc"
   GOSH="../../src/gosh"
 else
   GAUCHE_CONFIG=gauche-config
-  GAUCHE_SRC=
+  GAUCHE_TOP=
   GAUCHE_INC=`gauche-config -I`
   GOSH=gosh
 fi
 AC_SUBST(GAUCHE_CONFIG)
-AC_SUBST(GAUCHE_SRC)
+AC_SUBST(GAUCHE_TOP)
 AC_SUBST(GAUCHE_INC)
 AC_SUBST(GOSH)
 

@@ -3,6 +3,7 @@ CFLAGS = @CFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 GOSH = @GOSH@
+GAUCHE_TOP = @GAUCHE_TOP@
 
 TARGET = example.so
 OBJS = example.o
@@ -24,7 +25,7 @@ example.so : $(OBJS)
 
 test : all
 	@rm -f test.log
-	@$(GOSH) test.scm > test.log
+	@GAUCHE_LOAD_PATH=$(GAUCHE_TOP)src:$(GAUCHE_TOP)lib $(GOSH) test.scm > test.log
 
 install : all
 
