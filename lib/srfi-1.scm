@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.7 2001-04-06 19:52:41 shiro Exp $
+;; $Id: srfi-1.scm,v 1.8 2001-04-10 06:58:02 shiro Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -161,12 +161,18 @@
   (map (lambda (elt) (cons (car elt) (cdr elt)))
        alist))
 
-(define (alist-delete key alist . maybe-=)
-  (let ((= (%optional maybe-= equal?)))
-    (filter (lambda (elt) (not (= key (car elt)))) alist)))
+(define (alist-delete key alist . args)
+  (%case-by-cmp args =
+                (%alist-delete key alist 'eq?)
+                (%alist-delete key alist 'eqv?)
+                (%alist-delete key alist 'equal?)
+                (filter (lambda (elt) (not (= key (car elt)))) alist)))
 
 (define (alist-delete! key alist . maybe-=)
-  (let ((= (%optional maybe-= equal?)))
-    (filter! (lambda (elt) (not (= key (car elt)))) alist)))
+  (%case-by-cmp args =
+                (%alist-delete! key alist 'eq?)
+                (%alist-delete! key alist 'eqv?)
+                (%alist-delete! key alist 'equal?)
+                (filter! (lambda (elt) (not (= key (car elt)))) alist)))
 
 (provide "srfi-1")
