@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.1 2002-06-24 10:19:54 shirok Exp $
+;;;  $Id: array.scm,v 1.2 2002-06-25 11:51:08 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -22,6 +22,7 @@
   (use srfi-1)
   (use srfi-4)
   (use gauche.collection)
+  (use gauche.sequence)
   (use gauche.let-opt)
   (export <array-meta> <array>
           array? make-array shape array array-rank
@@ -83,20 +84,32 @@
 ;;
 ;;  Mapping
 ;;   off = c0*(i0-b0) + c1*(i1-b1) + .. + cN*(iN-bN)
+;;
+;;  
+
+(define (zero-vector? vec)
+  (not (s32vector-range-check vec 0 0)))
 
 (define (generate-amap Vb Ve)
   (let* ((rank    (s32vector-length Vb))
          (indices (iota rank))
          (Vs      (s32vector-sub Ve Vb))
-         (Vc      (coerce-to <s32vector>
-                             (cdr
-                              (fold-right (lambda (sN l)
-                                            (cons (* sN (car l)) l))
-                                          '(1)
-                                          (s32vector->list Vs)))))
+         (vcl     (fold-right (lambda (sN l) (cons (* sN (car l)) l))
+                              '(1)
+                              (s32vector->list Vs)))
+         (Vc      (coerce-to <s32vector> (cdr vcl)))
          )
-    (lambda (Vi) (s32vector-dot Vc Vi))))
-
+    (lambda (Vi)
+      (cond ((s32vector-range-check Ve Vi #f)
+             => (lambda (i)
+                  (errorf "index of dimension ~s is too big: ~s"
+                          i (ref Vi i))))
+            ((s32vector-range-check Vb #f Vi)
+             => (lambda (i)
+                  (errorf "index of dimension ~s is too small: ~s"
+                          i (ref Vi i))))
+            (else
+             (s32vector-dot Vc Vi))))))
 
 ;;---------------------------------------------------------------
 ;; Shape
@@ -183,6 +196,6 @@
 (define (array-ref array . indices)
   ((backing-storage-getter-of (class-of array))
    (backing-storage-of array)
-   ((mapper-of array) (list->s32vector indices))))
+   (apply (mapper-of array) indices)))
 
 (provide "gauche/array")
