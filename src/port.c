@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.13 2001-03-12 06:15:31 shiro Exp $
+ *  $Id: port.c,v 1.14 2001-03-12 08:30:20 shiro Exp $
  */
 
 #include <errno.h>
@@ -526,11 +526,6 @@ ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable, void *data,
 
 struct fdport {
     ScmProcPortInfo info;       /* includes file descriptor */
-    char *buf;                  /* if !NULL, points the buffer */
-    char *cur;                  /* if buf!=NULL, points the current char */
-    int bufsiz;                 /* if buf!=NULL, alocated buffer size */
-    int cursiz;                 /* if buf!=NULL, size of valid data in buf */
-
     char eofread;               /* TRUE if EOF is read. */
     char err;                   /* TRUE if error has occurred. */
 };
@@ -558,6 +553,8 @@ static int fdport_getb_unbuffered(ScmPort *port)
     CHECK_EOF(pdata, EOF);
     nread = read(pdata->info.fd, &c, 1);
     CHECK_RESULT(nread, pdata, EOF);
+    if (c == '\n') { pdata->info.line++; pdata->info.position = 1; }
+    else pdata->info.position++;
     return c;
 }
 
@@ -580,6 +577,8 @@ static int fdport_getc_unbuffered(ScmPort *port)
         CHECK_RESULT(nread, pdata, SCM_CHAR_INVALID);
     }
     SCM_STR_GETC(chbuf, ch);
+    if (ch == '\n') { pdata->info.line++; pdata->info.position = 1; }
+    else pdata->info.position++;
     return ch;
 }
 
@@ -638,19 +637,6 @@ static int fdport_close_unbuffered(ScmPort *port)
         return close(pdata->info.fd);
 }
 
-/* Buffered I/O */
-static inline int fdport_fill_buffer(struct fdport *pdata)
-{
-    int nread = read(pdata->info.fd, pdata->buf, pdata->bufsiz);
-    if (nread < 0) {
-        pdata->err = errno;
-        return -1;
-    }
-    pdata->cur = pdata->buf;
-    pdata->cursiz = nread;
-    return nread;
-}
-
 static ScmProcPortInfo *fdport_info(ScmPort *port)
 {
     DECL_FDPORT(pdata, port);
@@ -661,34 +647,32 @@ static ScmProcPortInfo *fdport_info(ScmPort *port)
       NAME  - used for the name of the port.
       DIRECTION - either SCM_PORT_INPUT or SCM_PORT_OUTPUT
       FD - the opened file descriptor.
-      BUFSIZ - if >0, the port will be buffered, and BUFSIZ becomes
-            the buffer size.
+      BUFFERED - if TRUE, the port will be buffered (using fdopen).
       OWNERP - if TRUE, fd will be closed when this port is closed.
  */
 ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
-                          int fd, int bufsiz, int ownerp)
+                          int fd, int buffered, int ownerp)
 {
-    ScmPortVTable vt;
-    struct fdport *pdata;
-    
-    pdata = SCM_NEW(struct fdport);
-    pdata->info.name = name;
-    pdata->info.line = 1;
-    pdata->info.position = 1;
-    pdata->info.fd = fd;
-    pdata->info.fp = NULL;
-    pdata->eofread = pdata->err = FALSE;
-    pdata->cursiz = 0;
-
-    if (bufsiz > 0) {
-        pdata->buf = SCM_NEW_ATOMIC2(char *, bufsiz);
-        pdata->bufsiz = bufsiz;
-        pdata->cur = pdata->buf;
-        Scm_Error("buffered file port is not supported yet, sorry.");
+    if (buffered) {
+        FILE *fp;
+        char *mode;
+        if (direction == SCM_PORT_INPUT) mode = "r";
+        else if (direction == SCM_PORT_OUTPUT) mode = "w";
+        else Scm_Error("invalid port direction: %d", direction);
+        fp = fdopen(fd, mode);
+        if (fp == NULL) Scm_SysError("fdopen failed on %d", fd);
+        return Scm_MakeFilePort(fp, name, mode, ownerp);
     } else {
-        pdata->buf = NULL;
-        pdata->bufsiz = 0;
-        pdata->cur = NULL;
+        ScmPortVTable vt;
+        struct fdport *pdata;
+    
+        pdata = SCM_NEW(struct fdport);
+        pdata->info.name = name;
+        pdata->info.line = 1;
+        pdata->info.position = 1;
+        pdata->info.fd = fd;
+        pdata->info.fp = NULL;
+        pdata->eofread = pdata->err = FALSE;
         vt.Getb = fdport_getb_unbuffered;
         vt.Getc = fdport_getc_unbuffered;
         vt.Getline = NULL;      /* use default */
@@ -699,8 +683,8 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
         vt.Flush = NULL;        /* use default */
         vt.Close = fdport_close_unbuffered;
         vt.Info = fdport_info;
+        return Scm_MakeVirtualPort(direction, &vt, pdata, ownerp);
     }
-    return Scm_MakeVirtualPort(direction, &vt, pdata, ownerp);
 }
 
 /*===============================================================
