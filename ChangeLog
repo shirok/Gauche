@@ -1,5 +1,11 @@
 2002-07-18  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.6
+	* DIST : includes pre-extracted info files in the distribution;
+	  'extract' script doesn't work unless gosh is compiled with euc-jp
+	  support.
+	* doc/Makefile.in : fixed info file installation when info directory
+	  doesn't exist.
 	* aclocal.m4, configure.in, src/gauche-config.in : save the default
 	  CFLAGS in gauche-config.  includes AC_GAUCHE_OPTFLAGS in
 	  AC_GAUCHE_FLAGS.
