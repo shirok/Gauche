@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.17 2001-03-10 09:40:21 shiro Exp $
+;;; $Id: syslib.stub,v 1.18 2001-03-12 02:28:44 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -21,6 +21,7 @@
 "#include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <locale.h>
 #include <grp.h>
 #include <pwd.h>
 #include <stdlib.h>
@@ -99,6 +100,64 @@
 
 ;;---------------------------------------------------------------------
 ;; locale.h
+
+(define-symbol LC_ALL "lc_all" "Scm_MakeInteger(LC_ALL)")
+(define-symbol LC_COLLATE "lc_collate" "Scm_MakeInteger(LC_COLLATE)")
+(define-symbol LC_CTYPE "lc_ctype" "Scm_MakeInteger(LC_CTYPE)")
+(define-symbol LC_MONETARY "lc_monetary" "Scm_MakeInteger(LC_MONETARY)")
+(define-symbol LC_NUMERIC "lc_numeric" "Scm_MakeInteger(LC_NUMERIC)")
+(define-symbol LC_TIME "lc_time" "Scm_MakeInteger(LC_TIME)")
+
+(define-cproc sys-setlocale (category locale)
+  (assert (small-integer? category))
+  (assert (string? locale))
+  "  char *result = setlocale(category, Scm_GetStringConst(locale));
+  if (result) SCM_RETURN(Scm_MakeString(result, -1, -1));
+  else SCM_RETURN(SCM_FALSE);")
+
+; struct lconv
+(define-symbol decimal_point "sym_decimal_point")
+(define-symbol thousands_sep "sym_thousands_sep")
+(define-symbol grouping "sym_grouping")
+(define-symbol int_curr_symbol "sym_int_curr_symbol")
+(define-symbol currency_symbol "sym_currency_symbol")
+(define-symbol mon_decimal_point "sym_mon_decimal_point")
+(define-symbol mon_thousands_sep "sym_mon_thousands_sep")
+(define-symbol mon_grouping "sym_mon_grouping")
+(define-symbol positive_sign "sym_positive_sign")
+(define-symbol negative_sign "sym_negative_sign")
+(define-symbol int_frac_digits "sym_int_frac_digits")
+(define-symbol frac_digits "sym_frac_digits")
+(define-symbol p_cs_precedes "sym_p_cs_precedes")
+(define-symbol p_sep_by_space "sym_p_sep_by_space")
+(define-symbol n_cs_precedes "sym_n_cs_precedes")
+(define-symbol n_sep_by_space "sym_n_sep_by_space")
+(define-symbol p_sign_posn "sym_p_sign_posn")
+(define-symbol n_sign_posn "sym_n_sign_posn")
+
+(define-cproc sys-localeconv ()
+  "  struct lconv *lc = localeconv();
+  ScmObj p = SCM_NIL;
+
+  p = Scm_Acons(sym_decimal_point, Scm_MakeString(lc->decimal_point, -1, -1), p);
+  p = Scm_Acons(sym_thousands_sep, Scm_MakeString(lc->thousands_sep, -1, -1), p);
+  p = Scm_Acons(sym_grouping, Scm_MakeString(lc->grouping, -1, -1), p);
+  p = Scm_Acons(sym_int_curr_symbol, Scm_MakeString(lc->int_curr_symbol, -1, -1), p);
+  p = Scm_Acons(sym_currency_symbol, Scm_MakeString(lc->currency_symbol, -1, -1), p);
+  p = Scm_Acons(sym_mon_decimal_point, Scm_MakeString(lc->mon_decimal_point, -1, -1), p);
+  p = Scm_Acons(sym_mon_thousands_sep, Scm_MakeString(lc->mon_thousands_sep, -1, -1), p);
+  p = Scm_Acons(sym_mon_grouping, Scm_MakeString(lc->mon_grouping, -1, -1), p);
+  p = Scm_Acons(sym_positive_sign, Scm_MakeString(lc->positive_sign, -1, -1), p);
+  p = Scm_Acons(sym_negative_sign, Scm_MakeString(lc->negative_sign, -1, -1), p);
+  p = Scm_Acons(sym_int_frac_digits, SCM_MAKE_CHAR(lc->int_frac_digits), p);
+  p = Scm_Acons(sym_frac_digits, SCM_MAKE_CHAR(lc->frac_digits), p);
+  p = Scm_Acons(sym_p_cs_precedes, SCM_MAKE_CHAR(lc->p_cs_precedes), p);
+  p = Scm_Acons(sym_p_sep_by_space, SCM_MAKE_CHAR(lc->p_sep_by_space), p);
+  p = Scm_Acons(sym_n_cs_precedes, SCM_MAKE_CHAR(lc->n_cs_precedes), p);
+  p = Scm_Acons(sym_n_sep_by_space, SCM_MAKE_CHAR(lc->n_sep_by_space), p);
+  p = Scm_Acons(sym_p_sign_posn, SCM_MAKE_CHAR(lc->p_sign_posn), p);
+  p = Scm_Acons(sym_n_sign_posn, SCM_MAKE_CHAR(lc->n_sign_posn), p);
+  return p;")
 
 ;;---------------------------------------------------------------------
 ;; math.h
