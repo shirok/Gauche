@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.271 2002-07-01 08:52:06 shirok Exp $
+ *  $Id: gauche.h,v 1.272 2002-07-03 01:12:19 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1094,10 +1094,15 @@ struct ScmPortRec {
     unsigned int closed    : 1; /* TRUE if this port is closed */
 
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
-    
+
     ScmChar ungotten;           /* ungotten character.
                                    SCM_CHAR_INVALID if empty. */
     ScmObj name;                /* port's name */
+
+    ScmInternalMutex mutex;     /* for port mutex */
+    ScmInternalCond  cv;        /* for port mutex */
+    ScmVM *lockOwner;           /* for port mutex; owner of the lock */
+    int lockCount;              /* for port mutex; # of recursive locks */
 
     union {
         ScmPortBuffer buf;      /* buffered port */

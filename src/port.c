@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.66 2002-06-14 02:34:35 shirok Exp $
+ *  $Id: port.c,v 1.67 2002-07-03 01:12:19 shirok Exp $
  */
 
 #include <unistd.h>
@@ -24,6 +24,70 @@
 
 #define MAX(a, b) ((a)>(b)? (a) : (b))
 #define MIN(a, b) ((a)<(b)? (a) : (b))
+
+/* Mutex of ports:
+ *  SRFI-18 requires the system to serialize access to ports.
+ *  I need to implement a few tricks to avoid this requirement
+ *  from affecting performance too much.
+ *
+ *  Each port has recursive lock, that is, the same thread can
+ *  lock the port many times; the port will be fully unlocked
+ *  when the thread calls unlock as many times as it called lock.
+ *
+ *  The port functions may call-back Scheme code or other Gauche
+ *  C API that may take arbitrarily long time to execute, and may
+ *  raise an error.  It prevents us from using simple mutex; we
+ *  need to use CVs, and need to save dynamic context to revert
+ *  lock state in case an error is thrown during processing.
+ *
+ *  If implemented naively, it costs too much, since in most
+ *  cases the port operation is trivial; such as fetching some
+ *  bytes from memory and incrementing a counter.   Only in some
+ *  occasions the operation involves system calls or calling other
+ *  Gauche C functions.  So the port functions defer CV update and
+ *  setting dynamic context until they are needed.  Consequently,
+ *  in most cases operations can be performed with just a pair of
+ *  mutex lock/unlock.
+ *
+ *  Furthermore, some port functions have 'locked' mode, which 
+ *  should be called when the caller is sure that the thread
+ *  already locked the port.
+ */
+
+#define PORT_LOCK(p, vm)                                        \
+    do {                                                        \
+        (void)SCM_INTERNAL_MUTEX_LOCK(p->mutex);                \
+        if (p->lockOwner != vm) {                               \
+            while (p->lockOwner != NULL) {                      \
+                (void)SCM_INTERNAL_COND_WAIT(p->cv, p->mutex);  \
+            }                                                   \
+            p->lockOwner = vm;                                  \
+            p->lockCount = 0;       /* for safety */            \
+        } else {                                                \
+            p->lockCount++;                                     \
+        }                                                       \
+    } while (0)
+
+#define PORT_UNLOCK(p)                                  \
+    do {                                                \
+        if (--p->lockCount <= 0) {                      \
+            p->lockOwner = NULL;                        \
+            (void)SCM_INTERNAL_COND_SIGNAL(p->cv);      \
+            (void)SCM_INTERNAL_MUTEX_UNLOCK(p->mutex);  \
+        }                                               \
+    } while (0) 
+
+#define PORT_SAFE_CALL(p, call)                         \
+    do {                                                \
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(p->mutex);      \
+        SCM_UNWIND_PROTECT {                            \
+            call;                                       \
+        } SCM_WHEN_ERROR {                              \
+            (void)SCM_INTERNAL_MUTEX_LOCK(p->mutex);    \
+            PORT_UNLOCK(p);                             \
+            SCM_NEXT_HANDLER;                           \
+        } SCM_END_PROTECT;                              \
+    } while (0)
 
 /*================================================================
  * Class stuff
@@ -93,6 +157,10 @@ static ScmPort *make_port(int dir, int type, int ownerp)
     port->closed = FALSE;
     port->ownerp = ownerp;
     port->name = SCM_FALSE;
+    (void)SCM_INTERNAL_MUTEX_INIT(port->mutex);
+    (void)SCM_INTERNAL_COND_INIT(port->cv);
+    port->lockOwner = NULL;
+    port->lockCount = 0;
     switch (type) {
     case SCM_PORT_FILE: /*FALLTHROUGH*/;
     case SCM_PORT_PROC:
@@ -120,6 +188,14 @@ ScmObj Scm_ClosePort(ScmPort *port)
 #define CLOSE_CHECK(port)                                               \
     (SCM_PORT_CLOSED_P(port)                                            \
      && (Scm_Error("I/O attempted on closed port: %S", (port)), 0))
+
+#define CLOSE_CHECK_SAFE(port)                                          \
+    do {                                                                \
+        if (SCM_PORT_CLOSED_P(port)) {                                  \
+            PORT_UNLOCK(p);                                             \
+            Scm_Error("I/O attempted on closed port: %S", (port));      \
+        }                                                               \
+    } while (0)
 
 /*===============================================================
  * Getting information
@@ -656,7 +732,7 @@ ScmObj Scm_GetBufferingMode(ScmPort *port)
  * Generic procedures
  */
 
-void Scm_Putb(ScmByte b, ScmPort *p)
+void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
 {
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
@@ -677,7 +753,41 @@ void Scm_Putb(ScmByte b, ScmPort *p)
     }
 }
 
-void Scm_Putc(ScmChar c, ScmPort *p)
+void Scm_Putb(ScmByte b, ScmPort *p)
+{
+    int err = FALSE;
+    ScmVM *vm = Scm_VM();
+
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK_SAFE(p);
+
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        if (p->src.buf.current >= p->src.buf.end) {
+            PORT_SAFE_CALL(p, bufport_flush(p, 1));
+        }
+        SCM_ASSERT(p->src.buf.current < p->src.buf.end);
+        *p->src.buf.current++ = b;
+        if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+            PORT_SAFE_CALL(p, bufport_flush(p, 1));
+        }
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_OSTR:
+        SCM_DSTRING_PUTB(&p->src.ostr, b);
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_PROC:
+        PORT_SAFE_CALL(p, p->src.vt.Putb(b, p));
+        PORT_UNLOCK(p);
+        break;
+    default:
+        PORT_UNLOCK(p);
+        Scm_Error("bad port type for output: %S", p);
+    }
+}
+
+void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
 {
     int nb;
     
@@ -706,7 +816,47 @@ void Scm_Putc(ScmChar c, ScmPort *p)
     }
 }
 
-void Scm_Puts(ScmString *s, ScmPort *p)
+void Scm_Putc(ScmChar c, ScmPort *p)
+{
+    int nb;
+    ScmVM *vm = Scm_VM();
+    
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK_SAFE(p);
+    
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        nb = SCM_CHAR_NBYTES(c);
+        if (p->src.buf.current+nb > p->src.buf.end) {
+            PORT_SAFE_CALL(p, bufport_flush(p, nb));
+        }
+        SCM_ASSERT(p->src.buf.current+nb <= p->src.buf.end);
+        SCM_CHAR_PUT(p->src.buf.current, c);
+        p->src.buf.current += nb;
+        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+            if (c == '\n') {
+                PORT_SAFE_CALL(p, bufport_flush(p, nb));
+            }
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+            PORT_SAFE_CALL(p, bufport_flush(p, nb));
+        }
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_OSTR:
+        SCM_DSTRING_PUTC(&p->src.ostr, c);
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_PROC:
+        PORT_SAFE_CALL(p, p->src.vt.Putc(c, p));
+        PORT_UNLOCK(p);
+        break;
+    default:
+        PORT_UNLOCK(p);
+        Scm_Error("bad port type for output: %S", p);
+    }
+}
+
+void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
 {
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
@@ -735,7 +885,44 @@ void Scm_Puts(ScmString *s, ScmPort *p)
     }
 }
 
-void Scm_Putz(const char *s, int siz, ScmPort *p)
+void Scm_Puts(ScmString *s, ScmPort *p)
+{
+    ScmVM *vm = Scm_VM();
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK_SAFE(p);
+    
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        PORT_SAFE_CALL(p, bufport_write(p, SCM_STRING_START(s), SCM_STRING_SIZE(s)));
+        
+        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+            const char *cp = p->src.buf.current;
+            while (cp-- > p->src.buf.buffer) {
+                if (*cp == '\n') {
+                    PORT_SAFE_CALL(p, bufport_flush(p, (int)(cp - p->src.buf.current)));
+                    break;
+                }
+            }
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+            PORT_SAFE_CALL(p, bufport_flush(p, 0));
+        }
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_OSTR:
+        Scm_DStringAdd(&p->src.ostr, s);
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_PROC:
+        PORT_SAFE_CALL(p, p->src.vt.Puts(s, p));
+        PORT_UNLOCK(p);
+        break;
+    default:
+        PORT_UNLOCK(p);
+        Scm_Error("bad port type for output: %S", p);
+    }
+}
+
+void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
 {
     CLOSE_CHECK(p);
     if (siz < 0) siz = strlen(s);
@@ -766,7 +953,43 @@ void Scm_Putz(const char *s, int siz, ScmPort *p)
     }
 }
 
-void Scm_Flush(ScmPort *p)
+void Scm_Putz(const char *s, int siz, ScmPort *p)
+{
+    ScmVM *vm = Scm_VM();
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK_SAFE(p);
+    if (siz < 0) siz = strlen(s);
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        PORT_SAFE_CALL(p, bufport_write(p, s, siz));
+        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+            const char *cp = p->src.buf.current;
+            while (cp-- > p->src.buf.buffer) {
+                if (*cp == '\n') {
+                    PORT_SAFE_CALL(p, bufport_flush(p, (int)(cp - p->src.buf.current)));
+                    break;
+                }
+            }
+        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+            PORT_SAFE_CALL(p, bufport_flush(p, 0));
+        }
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_OSTR:
+        Scm_DStringPutz(&p->src.ostr, s, siz);
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_PROC:
+        PORT_SAFE_CALL(p, p->src.vt.Putz(s, siz, p));
+        PORT_UNLOCK(p);
+        break;
+    default:
+        PORT_UNLOCK(p);
+        Scm_Error("bad port type for output: %S", p);
+    }
+}
+
+void Scm_FlushUnsafe(ScmPort *p)
 {
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
@@ -783,9 +1006,40 @@ void Scm_Flush(ScmPort *p)
     }
 }
 
-void Scm_Ungetc(ScmChar c, ScmPort *port)
+void Scm_Flush(ScmPort *p)
 {
-    SCM_UNGETC(c, port);
+    ScmVM *vm = Scm_VM();
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK(p);
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        PORT_SAFE_CALL(p, bufport_flush(p, 0));
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_OSTR:
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_PROC:
+        PORT_SAFE_CALL(p, p->src.vt.Flush(p));
+        PORT_UNLOCK(p);
+        break;
+    default:
+        PORT_UNLOCK(p);
+        Scm_Error("bad port type for output: %S", p);
+    }
+}
+
+void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
+{
+    SCM_UNGETC(c, p);
+}
+
+void Scm_Ungetc(ScmChar c, ScmPort *p)
+{
+    ScmVM *vm = Scm_VM();
+    PORT_LOCK(p, vm);
+    SCM_UNGETC(c, p);
+    PORT_UNLOCK(p);
 }
 
 /*---------------------------------------------------
