@@ -73,7 +73,7 @@ libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
 
 libgauche.@SHLIB_SO_SUFFIX@ : $(OBJS) $(GCLIB)
-	$(LD) @SHLIB_SO_LDFLAGS@ libgauche.@SHLIB_SO_SUFFIX@ $(OBJS) `$(AR) t $(GCLIB)` $(LIBS)
+	$(CC) @SHLIB_SO_LDFLAGS@ libgauche.@SHLIB_SO_SUFFIX@ $(OBJS) `$(AR) t $(GCLIB)` $(LIBS)
 
 gauche/arch.h : Makefile
 	@rm -f gauche/arch.h

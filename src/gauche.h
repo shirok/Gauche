@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.75 2001-03-13 09:20:43 shiro Exp $
+ *  $Id: gauche.h,v 1.76 2001-03-14 09:18:59 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -205,9 +205,6 @@ typedef struct ScmHeaderRec {
 #define SCM_CLASS_OF(obj)      (SCM_OBJ(obj)->klass)
 #define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj) == (klass)))
 
-#define SCM_CLASS(obj)        ((ScmClass*)(obj))
-#define SCM_CLASSP(obj)       SCM_XTYPEP(obj, SCM_CLASS_CLASS)
-
 #define SCM_MALLOC(size)          GC_MALLOC(size)
 #define SCM_MALLOC_ATOMIC(size)   GC_MALLOC_ATOMIC(size)
 #define SCM_REALLOC(ptr, size)    GC_REALLOC(ptr, size)
@@ -290,31 +287,43 @@ extern ScmObj Scm_VMThrowException(ScmObj exception);
  * CLASS
  */
 
-/* Class instance can be either statically defined or dynamically
- * constructed.  Because of limited functions of C's static initializer,
- * some of the members of statically defined classes won't get initialized
- * properly.  Class API's will check them and initialize on demand.
- * The members marked as `internal' below are such fields, and the user
- * code shouldn't assume they contain valid data.
- */
 /* See class.c for the description of function pointer members. */
 struct ScmClassRec {
     SCM_HEADER;
-    char *name;
+    char *name;                 /* char* for static initialization */
     int (*print)(ScmObj obj, ScmPort *sink, int mode);
     int (*equal)(ScmObj x, ScmObj y);
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
+    ScmObj (*make)(ScmObj initargs);
+    ScmObj (*apply)(ScmObj obj, ScmObj args);
     struct ScmClassRec **cpa;
-    ScmObj directSupers;        /* internal */
-    ScmObj cpl;                 /* internal */
-    ScmObj directSlots;         /* internal */
-    ScmObj effectiveSlots;      /* internal */
+    unsigned int flags;
+    ScmObj directSupers;
+    ScmObj cpl;
+    ScmObj directSlots;
+    ScmObj effectiveSlots;
 };
+
+#define SCM_CLASS(obj)        ((ScmClass*)(obj))
+#define SCM_CLASSP(obj)       SCM_XTYPEP(obj, SCM_CLASS_CLASS)
+
+/* Class flags (bitmask) */
+enum {
+    SCM_CLASS_BUILTIN = 0x01,   /* true if builtin class */
+    SCM_CLASS_FINAL = 0x02      /* true if the class is final */
+};
+
+#define SCM_CLASS_FLAGS(obj)     (SCM_CLASS(obj)->flags)
+#define SCM_CLASS_BUILTIN_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_BUILTIN)
+#define SCM_CLASS_SCHEME_P(obj)  (!SCM_CLASS_BUILTIN_P(obj))
+#define SCM_CLASS_FINAL_P(obj)   (SCM_CLASS_FLAGS(obj)&SCM_CLASS_FINAL)
 
 extern ScmClass *Scm_ClassOf(ScmObj obj);
 extern ScmObj Scm_ClassCPL(ScmClass *klass);
 extern ScmObj Scm_ClassDirectSupers(ScmClass *klass);
+extern ScmObj Scm_ClassDirectSlots(ScmClass *klass);
+extern ScmObj Scm_ClassEffectiveSlots(ScmClass *klass);
 extern ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 extern ScmObj Scm_TypeP(ScmObj obj, ScmClass *type);
 
@@ -330,6 +339,7 @@ extern ScmClass Scm_ClassClass;
 extern ScmClass Scm_UnknownClass;
 extern ScmClass Scm_CollectionClass;
 extern ScmClass Scm_SequenceClass;
+extern ScmClass Scm_ObjectClass; /* base of Scheme-defined objects */
 
 #define SCM_CLASS_TOP          (&Scm_TopClass)
 #define SCM_CLASS_BOOL         (&Scm_BoolClass)
@@ -342,15 +352,18 @@ extern ScmClass Scm_SequenceClass;
 extern ScmClass *Scm_DefaultCPL[];
 extern ScmClass *Scm_CollectionCPL[];
 extern ScmClass *Scm_SequenceCPL[];
+extern ScmClass *Scm_ObjectCPL[];
 
 #define SCM_CLASS_DEFAULT_CPL     (Scm_DefaultCPL)
 #define SCM_CLASS_COLLECTION_CPL  (Scm_CollectionCPL)
 #define SCM_CLASS_SEQUENCE_CPL    (Scm_SequenceCPL)
-
+#define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
+    
 /* define built-in class statically */
-#define SCM_DEFCLASS(cname, sname, printer, cpa)                \
-    ScmClass cname = {                                          \
-        SCM_CLASS_CLASS, sname, printer, NULL, NULL, NULL, cpa  \
+#define SCM_DEFCLASS(cname, sname, printer, cpa)                            \
+    ScmClass cname = {                                                      \
+        SCM_CLASS_CLASS, sname, printer, NULL, NULL, NULL, NULL, NULL, cpa, \
+        0, SCM_FALSE, SCM_FALSE, SCM_NIL, SCM_NIL                           \
     }
 
 /*--------------------------------------------------------

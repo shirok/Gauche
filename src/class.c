@@ -12,16 +12,16 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.9 2001-03-13 09:20:32 shiro Exp $
+ *  $Id: class.c,v 1.10 2001-03-14 09:18:59 shiro Exp $
  */
 
 #include "gauche.h"
 
-static int printClass(ScmObj, ScmPort *, int);
-
 /*
  * Built-in classes
  */
+
+static int class_print(ScmObj, ScmPort *, int);
 
 ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
 ScmClass *Scm_CollectionCPL[] = {
@@ -36,7 +36,7 @@ SCM_DEFCLASS(Scm_BoolClass,    "<bool>",    NULL, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_CharClass,    "<char>",    NULL, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_UnknownClass, "<unknown>", NULL, SCM_CLASS_DEFAULT_CPL);
 
-SCM_DEFCLASS(Scm_ClassClass,   "<class>", printClass, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFCLASS(Scm_ClassClass,   "<class>", class_print, SCM_CLASS_DEFAULT_CPL);
 
 /* Collection and sequence types */
 SCM_DEFCLASS(Scm_CollectionClass, "<collection>", NULL, SCM_CLASS_DEFAULT_CPL);
@@ -46,7 +46,59 @@ SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
  * Class metaobject
  */
 
-/* Built-in protocols:
+/* One of the design goals of Gauche object system is to make Scheme-defined
+ * class easily accessible from C code, and vice versa.
+ *
+ * Classes in Gauche fall into four categories: core final class, core
+ * base class, core abstract class and Scheme class.  A C-defined class
+ * may belong to one of the first three, while a Scheme-defined class is
+ * always a Scheme class.
+ *
+ * Core final classes are the ones that represents basic objects of the
+ * language, such as <integer> or <port>.   Those classes are just
+ * the way to reify the basic object, and don't follow object protorol;
+ * for example, you can't overload "initialize" method specialized to
+ * <integer> to customize initialization of integers, nor subclass <integer>,
+ * although you can use them to specialize methods you write.  "Make" methods
+ * for these objects are dispatched to the appropriate C functions.
+ *
+ * Core base classes are the ones from which you can derive Scheme classes.
+ * <class>, <generic-method> and <method> are in this category.  The instance
+ * of those classes have extra slots that contains C-specific data, such
+ * as function pointers.  You can subclass them, but there is one restriction:
+ * There can't be more than one core base class in the class' superclasses.
+ * Because of this fact, C routines can take the pointer to the instance
+ * of subclasses and safely cast it to oen of the core base classes.
+ *
+ * Core abstract classes are just for method specialization.  They can't
+ * create instances directly, and they shouldn't have any direct slots.
+ * <top>, <object> and <sequence> are in this category, among others.
+ *
+ * Since a class must be <class> itself or its descendants, C code can
+ * treat them as ScmClass*, and can determine the category of the class.
+ *
+ * Depending on its category, a class must or may provide those function
+ * pointers:
+ *
+ *   Category:  core final     core base     core abstract 
+ *   -----------------------------------------------------
+ *    make       required       optional        ignored
+ *    apply      (*1)           ignored         ignored
+ *    print      optional       optional        ignored
+ *    equal      optional       optional        ignored
+ *    compare    optional       optional        ignored
+ *    serialize  optional       optional        ignored
+ *
+ *  (*1: required for applicable classes, and ignored otherwise)
+ *
+ * If the function is optional, you can set NULL there and the system
+ * uses default function.  For Scheme class the system sets appropriate
+ * functions.   See the following section for details of these function
+ * potiners.
+ */
+
+/*
+ * Built-in protocols
  *
  *  int klass->print(ScmObj obj, ScmPort *sink, int mode)
  *     OBJ is an instance of klass (you can safely assume it).  This
@@ -99,7 +151,8 @@ ScmClass *Scm_ClassOf(ScmObj obj)
 ScmObj Scm_ClassCPL(ScmClass *klass)
 {
     /* TODO: MT safeness */
-    if (klass->cpl == NULL || !SCM_PAIRP(klass->cpl)) {
+    if (!SCM_PAIRP(klass->cpl)) {
+        /* This is the case of builtin class. */
         ScmClass **p = klass->cpa;
         ScmObj h = SCM_NIL, t;
         SCM_APPEND1(h, t, SCM_OBJ(klass));
@@ -108,29 +161,27 @@ ScmObj Scm_ClassCPL(ScmClass *klass)
             p++;
         }
         klass->cpl = h;
+        klass->directSupers = SCM_LIST1(SCM_CDR(h));
     }
     return klass->cpl;
 }
 
 ScmObj Scm_ClassDirectSupers(ScmClass *klass)
 {
+    if (!SCM_PAIRP(klass->directSupers)) {
+        Scm_ClassCPL(klass);    /* set directSupers */
+    }
     return klass->directSupers;
 }
 
 ScmObj Scm_ClassDirectSlots(ScmClass *klass)
 {
-    if (klass->directSlots == NULL)
-        return SCM_NIL;
-    else
-        return klass->directSlots;
+    return klass->directSlots;
 }
 
 ScmObj Scm_ClassEffectiveSlots(ScmClass *klass)
 {
-    if (klass->effectiveSlots == NULL)
-        return SCM_NIL;
-    else
-        return klass->effectiveSlots;
+    return klass->effectiveSlots;
 }
 
 ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type)
@@ -154,7 +205,7 @@ ScmObj Scm_TypeP(ScmObj obj, ScmClass *type)
  * fallback print method
  */
 
-static int printClass(ScmObj obj, ScmPort *port, int mode) 
+static int class_print(ScmObj obj, ScmPort *port, int mode) 
 {
     ScmClass *c = (ScmClass*)obj;
     return Scm_Printf(port, "#<class %s>", c->name);
@@ -225,14 +276,14 @@ ScmClass *Scm_MakeBuiltinClass(const char *name,
     return c;
 }
 
-
-
 /*=====================================================================
- * 
+ * Generic methods
  */
 
 
-/*
+
+
+/*=====================================================================
  * Class initialization
  */
 
