@@ -24,7 +24,7 @@
      (lambda (out)
        (call-with-input-file file
          (lambda (in)
-           (let ((cv (open-output-conversion-port out to from)))
+           (let ((cv (open-output-conversion-port out to :from-code from)))
              (let loop ((data (reader in)))
                (if (eof-object? data)
                    (close-output-port cv)
@@ -54,7 +54,7 @@
                   (lambda () (file->string-conv/in fromfile from)))
             (test infostr
                   (file->string tofile)
-                  (lambda () (file->string-conv/in fromfile from to))))
+                  (lambda () (file->string-conv/in fromfile from :to-code to))))
         (test infostr "(not supported)"
               (lambda () "(not supported)")))
     ))

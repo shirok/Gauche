@@ -12,60 +12,38 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: convlib.stub,v 1.5 2001-06-04 20:07:48 shirok Exp $
+;;; $Id: convlib.stub,v 1.6 2001-06-06 20:17:52 shirok Exp $
 ;;;
 
 "#include \"charconv.h\""
 
 (define-cproc ces-conversion-supported? (from to)
-  " const char *cfrom = NULL, *cto = NULL;
-  if (SCM_FALSEP(from)) {
-    cfrom = Scm_SupportedCharacterEncodings()[0];
-  } else if (!SCM_STRINGP(from)) {
-    Scm_Error(\"string or #f is required for from-code, but got %S\", from);
-  } else {
-    cfrom = Scm_GetStringConst(SCM_STRING(from));
-  }
-  if (SCM_FALSEP(to)) {
-    cto = Scm_SupportedCharacterEncodings()[0];
-  } else if (!SCM_STRINGP(to)) {
-    Scm_Error(\"string or #f is required for to-code, but got %S\", to);
-  } else {
-    cto = Scm_GetStringConst(SCM_STRING(to));
-  }
+  " const char *cfrom, *cto;
+  cfrom = Scm_GetCESName(from, \"from-code\");
+  cto   = Scm_GetCESName(to, \"to-code\");
   SCM_RETURN(SCM_MAKE_BOOL(Scm_ConversionSupportedP(cfrom, cto)));")
 
 (define-cproc open-input-conversion-port (source from-code
-                                          &optional to-code (buffer-size 0))
+                                          &keyword to-code
+                                                   (buffer-size 0)
+                                                   (owner? #f))
   (assert (input-port? source))
-  (assert (string? from-code))
   (assert (small-integer? buffer-size))
-  " ScmString *tc;
-  if (SCM_UNBOUNDP(to_code) || SCM_FALSEP(to_code)) {
-    tc = SCM_STRING(SCM_MAKE_STR_IMMUTABLE(Scm_SupportedCharacterEncodings()[0]));
-  } else if (!SCM_STRINGP(to_code)) {
-    Scm_Error(\"string required, but got %S\", to_code);
-  } else {
-    tc = SCM_STRING(to_code);
-  } 
-  SCM_RETURN(Scm_MakeInputConversionPort(source, from_code,
-                                         tc, buffer_size));")
+  " const char *fc = Scm_GetCESName(from_code, \"from-code\");
+  const char *tc = Scm_GetCESName(to_code, \"to-code\");
+  SCM_RETURN(Scm_MakeInputConversionPort(source, fc, tc,
+                                         buffer_size, !SCM_FALSEP(ownerP)));")
 
 (define-cproc open-output-conversion-port (sink to-code
-                                           &optional from-code (buffer-size 0))
+                                           &keyword from-code
+                                                    (buffer-size 0)
+                                                    (owner? #f))
   (assert (output-port? sink))
-  (assert (string? to-code))
   (assert (small-integer? buffer-size))
-  " ScmString *fc;
-  if (SCM_UNBOUNDP(from_code) || SCM_FALSEP(from_code)) {
-    fc = SCM_STRING(SCM_MAKE_STR_IMMUTABLE(Scm_SupportedCharacterEncodings()[0]));
-  } else if (!SCM_STRINGP(from_code)) {
-    Scm_Error(\"string required, but got %S\", from_code);
-  } else {
-    fc = SCM_STRING(from_code);
-  } 
-  SCM_RETURN(Scm_MakeOutputConversionPort(sink, to_code,
-                                          fc, buffer_size));")
+  " const char *fc = Scm_GetCESName(from_code, \"from-code\");
+  const char *tc = Scm_GetCESName(to_code, \"to-code\");
+  SCM_RETURN(Scm_MakeOutputConversionPort(sink, tc, fc,
+                                          buffer_size, !SCM_FALSEP(ownerP)));")
 
 
 ;;; Local variables:

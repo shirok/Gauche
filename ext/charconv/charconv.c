@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.11 2001-06-06 19:43:06 shirok Exp $
+ *  $Id: charconv.c,v 1.12 2001-06-06 20:17:52 shirok Exp $
  */
 
 #include <errno.h>
@@ -32,6 +32,7 @@ int iconv(iconv_t handle, const char **inbuf, size_t *inroom, char **outbuf, siz
 typedef struct conv_info_rec {
     iconv_t handle;
     ScmPort *remote;
+    int ownerp;
     int bufsiz;
     char *inbuf;
     char *inptr;
@@ -42,6 +43,21 @@ typedef struct conv_info_rec {
 /*------------------------------------------------------------
  * Query
  */
+
+/* Auxiliary function */
+const char* Scm_GetCESName(ScmObj code, const char *argname)
+{
+    const char *c = NULL;
+    if (SCM_UNBOUNDP(code) || SCM_FALSEP(code)) {
+        c = Scm_SupportedCharacterEncodings()[0];
+    } else if (!SCM_STRINGP(code)) {
+        Scm_Error("string or #f is required for %s, but got %S",
+                  argname, code);
+    } else {
+        c = Scm_GetStringConst(SCM_STRING(code));
+    }
+    return c;
+}
 
 int Scm_ConversionSupportedP(const char *from, const char *to)
 {
@@ -71,6 +87,7 @@ static int conv_input_filler(char *buf, int len, void *data)
     insize = info->inptr - info->inbuf, 
     nread = Scm_Getz(info->inptr, info->bufsiz - insize, info->remote);
     if (nread <= 0) {
+        if (info->ownerp) Scm_ClosePort(info->remote);
         if (insize == 0) return 0; /* All done. */
     } else {
         insize += nread;
@@ -124,9 +141,10 @@ static int conv_input_filler(char *buf, int len, void *data)
 }
 
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
-                                   ScmString *fromCode,
-                                   ScmString *toCode,
-                                   int bufsiz)
+                                   const char *fromCode,
+                                   const char *toCode,
+                                   int bufsiz,
+                                   int ownerp)
 {
     conv_info *cinfo;
     iconv_t handle;
@@ -135,12 +153,11 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     if (!SCM_IPORTP(fromPort))
         Scm_Error("input port required, but got %S", fromPort);
 
-    handle = iconv_open(Scm_GetStringConst(toCode),
-                        Scm_GetStringConst(fromCode));
+    handle = iconv_open(toCode, fromCode);
     if (handle == (iconv_t)-1) {
         if (errno == EINVAL) {
-            Scm_Error("conversion from code %S to code %S is not supported",
-                      SCM_OBJ(fromCode), SCM_OBJ(toCode));
+            Scm_Error("conversion from code %s to code %s is not supported",
+                      fromCode, toCode);
         } else {
             /* TODO: try to call gc to collect unused file descriptors */
             Scm_SysError("iconv_open failed");
@@ -149,6 +166,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     cinfo = SCM_NEW(conv_info);
     cinfo->handle = handle;
     cinfo->remote = fromPort;
+    cinfo->ownerp = ownerp;
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
     cinfo->inbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->inptr = cinfo->inbuf;
@@ -193,6 +211,7 @@ static int conv_output_flusher(char *buf, int len, void *data)
         /* the port is closed.  flush outbuf */
         Scm_Putz(info->outbuf, info->outptr - info->outbuf, info->remote);
         Scm_Flush(info->remote);
+        if (info->ownerp) Scm_ClosePort(info->remote);
         return 0;
     }
 
@@ -258,9 +277,9 @@ static int conv_output_flusher(char *buf, int len, void *data)
 }
 
 ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
-                                    ScmString *toCode,
-                                    ScmString *fromCode,
-                                    int bufsiz)
+                                    const char *toCode,
+                                    const char *fromCode,
+                                    int bufsiz, int ownerp)
 {
     conv_info *cinfo;
     iconv_t handle;
@@ -269,12 +288,11 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
 
-    handle = iconv_open(Scm_GetStringConst(toCode),
-                        Scm_GetStringConst(fromCode));
+    handle = iconv_open(toCode, fromCode);
     if (handle == (iconv_t)-1) {
         if (errno == EINVAL) {
-            Scm_Error("conversion from code %S to code %S is not supported",
-                      SCM_OBJ(fromCode), SCM_OBJ(toCode));
+            Scm_Error("conversion from code %s to code %s is not supported",
+                      fromCode, toCode);
         } else {
             /* TODO: try to call gc to collect unused file descriptors */
             Scm_SysError("iconv_open failed");
@@ -283,6 +301,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo = SCM_NEW(conv_info);
     cinfo->handle = handle;
     cinfo->remote = toPort;
+    cinfo->ownerp = ownerp;
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
     cinfo->inbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->inptr = cinfo->inbuf;
