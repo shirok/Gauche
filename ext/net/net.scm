@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.26 2004-02-03 22:10:09 shirok Exp $
+;;;  $Id: net.scm,v 1.27 2004-06-01 03:07:33 shirok Exp $
 ;;;
 
 (define-module gauche.net
   (use srfi-1)
+  (use srfi-2)
   (export <socket> make-socket
           |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
@@ -211,14 +212,18 @@
                   (sys-getaddrinfo host port hints))))
           (else
            (let* ((proto (symbol->string proto))
-                  (port (if (number? port)
-                            port
-                            (slot-ref (sys-getservbyname port proto) 'port))))
+                  (port (cond ((number? port) port)
+                              ((sys-getservbyname port proto)
+                               => (cut slot-ref <> 'port))
+                              (else
+                               (error "couldn't find a port number of service:"
+                                      port)))))
              (if host
-                 (map (lambda (host)
-                        (make <sockaddr-in> :host host :port port))
-                      (slot-ref (sys-gethostbyname host) 'addresses))
-                 (list (make <sockaddr-in> :host :any :port port))))))))
+               (let ((hh (sys-gethostbyname host)))
+                 (unless hh (error "couldn't find host: " host))
+                 (map (cut make <sockaddr-in> :host <> :port port)
+                      (slot-ref hh 'addresses)))
+               (list (make <sockaddr-in> :host :any :port port))))))))
 
 (define (call-with-client-socket socket proc)
   (with-error-handler
