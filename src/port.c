@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.36 2001-06-05 19:53:40 shirok Exp $
+ *  $Id: port.c,v 1.37 2001-07-09 20:12:46 shirok Exp $
  */
 
 #include <unistd.h>
@@ -209,6 +209,12 @@ int Scm_PortFileNo(ScmPort *port)
     } else {
         return -1;
     }
+}
+
+int Scm_CharReady(ScmPort *port)
+{
+    /* WRITEME */
+    return TRUE;
 }
 
 /*===============================================================
