@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.6 2002-05-25 09:56:53 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.7 2002-05-25 10:26:39 shirok Exp $
 
 (define-module srfi-19
   (use gauche.let-opt)
@@ -443,13 +443,38 @@
 ;; System-dependent.
 
 (define (tm:local-tz-offset)
-  (let* ((local (sys-localtime 0))
-         (secs  (+ (* (slot-ref local 'hour) 3600)
-                   (* (slot-ref local 'min) 60)
-                   (slot-ref local 'sec))))
-    (if (< (slot-ref local 'year) 1970)
-        (- secs tm:sid)
-        secs)))
+  (define (tm->seconds-in-year tm)
+    (+ (cond ((assv (+ (slot-ref tm 'mon) 1) tm:month-assoc) =>
+              (lambda (p)
+                (* (+ (cdr p)
+                      (slot-ref tm 'mday)
+                      (if (and (> (car p) 2)
+                               (tm:leap-year? (slot-ref tm 'year)))
+                          1 0))
+                   3600 24)))
+             (else (error "something wrong")))
+       (* (slot-ref tm 'hour) 3600)
+       (* (slot-ref tm 'min) 60)))
+  (let* ((now   (sys-time))
+         (local (sys-localtime now))
+         (local-sec (tm->seconds-in-year local))
+         (local-yr  (slot-ref local 'year))
+         (gm    (sys-gmtime now))
+         (gm-sec (tm->seconds-in-year gm))
+         (gm-yr  (slot-ref gm 'year)))
+    (cond ((= local-yr gm-yr)
+           (- local-sec gm-sec))
+          ;; The following two cases are very rare, when this function is
+          ;; called very close to the year boundary.
+          ((< local-yr gm-yr)
+           (- (- local-sec
+                 (if (tm:leap-year? (slot-ref local 'year)) 31622400 31536000))
+              gm-sec))
+          (else
+           (- local-sec
+              (- gm-sec
+                 (if (tm:leap-year? (slot-ref gm 'year)) 31622400 31536000))))
+          )))
 
 ;; special thing -- ignores nanos
 ;; Gauche doesn't have exact rational arithmetic.  To avoid precision loss,
@@ -562,7 +587,7 @@
 (define (leap-year? date)
   (tm:leap-year? (date-year date)))
 
-(define  tm:month-assoc '((2 . 31)  (3 . 59)   (4 . 90)   (5 . 120) 
+(define  tm:month-assoc '((1 . 0)  (2 . 31)  (3 . 59)   (4 . 90)   (5 . 120) 
 			  (6 . 151) (7 . 181)  (8 . 212)  (9 . 243)
 			  (10 . 273) (11 . 304) (12 . 334)))
 
