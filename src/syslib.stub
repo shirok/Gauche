@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.56 2002-01-24 10:17:01 shirok Exp $
+;;; $Id: syslib.stub,v 1.57 2002-01-25 09:37:06 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -245,6 +245,10 @@
 (define-cproc sys-sigset-delete! (set &rest sigs)
   (assert (sys-sigset? set))
   "SCM_RETURN(Scm_SysSigsetOp(set, sigs, TRUE));")
+
+(define-cproc sys-signal-name (sig)
+  (assert (small-integer? sig))
+  "SCM_RETURN(Scm_SignalName(sig));")
 
 (define-cproc sys-kill (pid sig)
   (assert (exact? pid))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.9 2002-01-25 09:12:29 shirok Exp $
+ *  $Id: signal.c,v 1.10 2002-01-25 09:37:06 shirok Exp $
  */
 
 #include <signal.h>
@@ -50,7 +50,9 @@ static struct sigdesc {
     SIGDEF(SIGINT),	/* Interrupt (ANSI).  */
     SIGDEF(SIGQUIT),	/* Quit (POSIX).  */
     SIGDEF(SIGILL),	/* Illegal instruction (ANSI).  */
-    SIGDEF(SIGTRAP),	/* Trace trap (POSIX).  */
+#ifdef SIGTRAP
+    SIGDEF(SIGTRAP),	/* Trace trap.  */
+#endif
     SIGDEF(SIGABRT),	/* Abort (ANSI).  */
 #ifdef SIGIOT
     SIGDEF(SIGIOT),	/* IOT trap (4.2 BSD).  */
@@ -140,6 +142,17 @@ static void sigset_op(sigset_t *s1, sigset_t *s2, int delp)
             else       sigdelset(s1, desc->num);
         }
     }
+}
+
+ScmObj Scm_SignalName(int signum)
+{
+    struct sigdesc *desc = sigDesc;
+    for (; desc->name; desc++) {
+        if (desc->num == signum) {
+            return SCM_MAKE_STR_IMMUTABLE(desc->name);
+        }
+    }
+    return SCM_FALSE;
 }
 
 /*
