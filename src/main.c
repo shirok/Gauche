@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.71 2003-12-16 09:50:46 shirok Exp $
+ *  $Id: main.c,v 1.72 2003-12-16 20:08:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -252,7 +252,7 @@ int main(int argc, char **argv)
             scriptfile = argv[optind];
 #ifdef __CYGWIN__
 	} else if (isalpha(argv[optind][0]) && argv[optind][1] == ':') {
-	    /* support of f*$(#*% legacy DOS drive letter */
+	    /* support of wicked legacy DOS drive letter */
 	    scriptfile = argv[optind];
 #endif /* __CYGWIN__ */
         } else {
