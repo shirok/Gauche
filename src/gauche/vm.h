@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.2 2004-12-23 11:04:02 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.3 2004-12-24 00:05:56 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -440,7 +440,7 @@ enum {
 
 
 enum {
-#define DEFINSN(sym, nam, nparams)  sym,
+#define DEFINSN(sym, nam, nparams, type)  sym,
 #include "vminsn.h"
 #undef DEFINSN
     SCM_VM_NUM_INSNS

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.4 2004-12-23 11:03:31 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.5 2004-12-24 00:05:08 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -60,6 +60,15 @@ static ScmWord boundaryFrameMark = SCM_NVM_INSN(SCM_VM_HALT);
 static ScmWord return_code[] = { SCM_NVM_INSN(SCM_VM_RET) };
 #define PC_TO_RETURN  return_code
 
+
+static struct insn_info {
+    const char *name;
+    int nparams;
+} insn_table[] = {
+#define DEFINSN(sym, nam, np, type) { nam, np },
+#include "gauche/vminsn.h"
+#undef DEFINSN
+};
 
 /*
  * The VM. 
@@ -437,6 +446,23 @@ void Scm__InitVM(void)
         }                                       \
     } while (0)
 
+/* inline expansion of number comparison. */
+#define NUM_CMP(op)                                                     \
+    do {                                                                \
+        ScmObj arg;                                                     \
+        POP_ARG(arg);                                                   \
+        if (SCM_INTP(val0) && SCM_INTP(arg)) {                          \
+            val0 = SCM_MAKE_BOOL((signed long)arg op (signed long)val0); \
+        } else if (SCM_FLONUMP(val0) && SCM_FLONUMP(arg)) {             \
+            val0 = SCM_MAKE_BOOL(SCM_FLONUM_VALUE(arg) op               \
+                                 SCM_FLONUM_VALUE(val0));               \
+        } else {                                                        \
+            SAVE_REGS();                                                \
+            val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) op 0);           \
+            RESTORE_REGS();                                             \
+        }                                                               \
+    } while (0)
+
 /* to take advantage of GCC's `computed goto' feature
    (see gcc.info, "Labels as Values") */
 #ifdef __GNUC__
@@ -462,12 +488,27 @@ void Scm__InitVM(void)
 
 #ifdef __GNUC__
     static void *dispatch_table[256] = {
-#define DEFINSN(insn, name, nargs)   && CAT2(LABEL_, insn),
+#define DEFINSN(insn, name, nargs, type)   && CAT2(LABEL_, insn),
 #include "gauche/vminsn.h"
 #undef DEFINSN
     };
-#endif /* __GNUC__ */    
-    
+#endif /* __GNUC__ */
+
+#if 0
+    static int init = 0;
+    if (!init) {
+        int i;
+        for (i=0; i<SCM_VM_NUM_INSNS; i++) {
+            fprintf(stderr, "%3d %-15s %p (+%04x, %5d)\n",
+                    i, insn_table[i].name,
+                    dispatch_table[i],
+                    (char*)dispatch_table[i] - (char*)run_loop,
+                    (char*)dispatch_table[i] - (char*)run_loop);
+        }
+        init = TRUE;
+    }
+#endif
+
     for (;;) {
         /*VM_DUMP("");*/
         
@@ -482,18 +523,8 @@ void Scm__InitVM(void)
             continue;
         }
 
+        /* Dispatch */
         FETCH_INSN(code);
-
-#if 0
-        if (!SCM_VM_INSNP(code)) {
-            /* literal object */
-            val0 = code;
-            vm->numVals = 1;
-            continue;
-        }
-#endif
-
-        /* VM instructions */
         SWITCH(SCM_NVM_INSN_CODE(code)) {
 
             CASE(SCM_VM_CONST) {
@@ -559,7 +590,14 @@ void Scm__InitVM(void)
                        stack has no longer useful information. */
                     to = vm->stackBase;
                 }
-                if (argc) memmove(to, argp, argc*sizeof(ScmObj));
+                if (argc) {
+                    ScmObj *t = to, *a = argp;
+                    int c;
+                    /* The destintation and the source may overlap, but
+                       in such case the destination is always lower than
+                       the source, so we can safely use incremental copy. */
+                    for (c=0; c<argc; c++) *t++ = *a++;
+                }
                 argp = to;
                 sp = to + argc;
                 /* We discarded the current env, so make sure we don't have
@@ -1013,9 +1051,8 @@ void Scm__InitVM(void)
                 NEXT;
             }
             CASE(SCM_VM_QUOTE_INSN) {
-                FETCH_OPERAND(val0);
-                INCR_PC;
-                NEXT;
+                /* no longer used */
+                Scm_Panic("QUOTE-INSN no longer used.");
             }
             /* combined push immediate */
             CASE(SCM_VM_PUSHI) {
@@ -1346,58 +1383,70 @@ void Scm__InitVM(void)
                 POP_ARG(arg);
                 if (SCM_INTP(val0) && SCM_INTP(arg)) {
                     val0 = SCM_MAKE_BOOL(val0 == arg);
+                } else if (SCM_FLONUMP(val0) && SCM_FLONUMP(arg)) {
+                    val0 = SCM_MAKE_BOOL(SCM_FLONUM_VALUE(val0) ==
+                                         SCM_FLONUM_VALUE(arg));
                 } else {
                     SAVE_REGS();
                     val0 = SCM_MAKE_BOOL(Scm_NumEq(arg, val0));
+                    RESTORE_REGS();
                 }
                 vm->numVals = 1;
                 NEXT;
             }
             CASE(SCM_VM_NUMLT2) {
-                ScmObj arg;
-                POP_ARG(arg);
-                SAVE_REGS();
-                val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) < 0);
+                NUM_CMP(<);
                 vm->numVals = 1;
                 NEXT;
             }
             CASE(SCM_VM_NUMLE2) {
-                ScmObj arg;
-                POP_ARG(arg);
-                SAVE_REGS();
-                val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) <= 0);
+                NUM_CMP(<=);
                 vm->numVals = 1;
                 NEXT;
             }
             CASE(SCM_VM_NUMGT2) {
-                ScmObj arg;
-                POP_ARG(arg);
-                SAVE_REGS();
-                val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) > 0);
+                NUM_CMP(>);
                 vm->numVals = 1;
                 NEXT;
             }
             CASE(SCM_VM_NUMGE2) {
-                ScmObj arg;
-                POP_ARG(arg);
-                SAVE_REGS();
-                val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) >= 0);
+                NUM_CMP(>=);
                 vm->numVals = 1;
                 NEXT;
             }
             CASE(SCM_VM_NUMADD2) {
                 ScmObj arg;
                 POP_ARG(arg);
-                SAVE_REGS();
-                val0 = Scm_Add(arg, val0, SCM_NIL);
+                if (SCM_INTP(arg) && SCM_INTP(val0)) {
+                    long r = SCM_INT_VALUE(arg) + SCM_INT_VALUE(val0);
+                    if (SCM_SMALL_INT_FITS(r)) {
+                        val0 = SCM_MAKE_INT(r);
+                    } else {
+                        val0 = Scm_MakeInteger(r);
+                    }
+                } else {
+                    SAVE_REGS();
+                    val0 = Scm_Add(arg, val0, SCM_NIL);
+                    RESTORE_REGS();
+                }
                 vm->numVals = 1;
                 NEXT;
             }
             CASE(SCM_VM_NUMSUB2) {
                 ScmObj arg;
                 POP_ARG(arg);
-                SAVE_REGS();
-                val0 = Scm_Subtract(arg, val0, SCM_NIL);
+                if (SCM_INTP(arg) && SCM_INTP(val0)) {
+                    long r = SCM_INT_VALUE(arg) - SCM_INT_VALUE(val0);
+                    if (SCM_SMALL_INT_FITS(r)) {
+                        val0 = SCM_MAKE_INT(r);
+                    } else {
+                        val0 = Scm_MakeInteger(r);
+                    }
+                } else {
+                    SAVE_REGS();
+                    val0 = Scm_Subtract(arg, val0, SCM_NIL);
+                    RESTORE_REGS();
+                }
                 vm->numVals = 1;
                 NEXT;
             }
@@ -2720,15 +2769,6 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
  * Printer of VM instruction.
  */
 
-static struct insn_info {
-    const char *name;
-    int nparams;
-} insn_table[] = {
-#define DEFINSN(sym, nam, np) { nam, np },
-#include "gauche/vminsn.h"
-#undef DEFINSN
-};
-
 void Scm__VMInsnWrite(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     struct insn_info *info;
@@ -3128,7 +3168,7 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
             }
             break;
         case SCM_VM_QUOTE_INSN:;
-            pk_emit(data, insn);
+            pk_emit(data, SCM_VM_INSN(SCM_VM_CONST));
             cp = SCM_CDR(cp);
             pk_emit(data, SCM_CAR(cp));
             break;
@@ -3257,7 +3297,6 @@ ScmObj Scm_PackCode(ScmObj compiled)
             target = cc->code + SCM_INT_VALUE(SCM_CAR(cp));
             cc->code[i++] = SCM_WORD(target);
             break;
-        case SCM_VM_QUOTE_INSN:;
         case SCM_VM_CONST:;
         case SCM_VM_GREF:;
         case SCM_VM_GSET:;
@@ -3338,7 +3377,6 @@ void Scm_CompiledCodeDump(ScmObj obj)
             case SCM_VM_DEFINE_CONST:;
             case SCM_VM_GREF:;
             case SCM_VM_GSET:;
-            case SCM_VM_QUOTE_INSN:;
             case SCM_VM_CONST:;
                 Scm_Printf(out, "%S", p[i+1]);
                 i++;
