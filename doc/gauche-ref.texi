@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.314 2002-12-07 03:02:38 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.315 2002-12-07 03:07:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -756,7 +756,6 @@ Supported by the native reader.  @xref{Lexical structure}.
 @c JP
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 @c COMMON
-@end table
 
 @item SRFI-31, A special form rec for recursive evaluation
 @c EN
