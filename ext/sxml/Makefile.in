@@ -1,0 +1,24 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = sxml
+
+include ../Makefile.ext
+
+.SUFFIXES: .scm .scm.in
+
+.scm.in.scm :
+	$(GOSH) ./trans.scm $<
+
+GENERATED_TARGET = ssax.scm tree-trans.scm to-html.scm
+GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
+CLEANFILES += $(GENERATED_TARGET) $(GENERATED_TEST)
+GENERATED = Makefile
+SCMFILES = $(GENERATED_TARGET) adaptor.scm
+
+all : $(GENERATED_TARGET)
+
+check : $(GENERATED_TEST)
+
+install : install-std

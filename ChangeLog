@@ -1,3 +1,9 @@
+2003-07-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml : integrated Oleg Kiselyov's SXML.  Just incorporated
+	  sxml-gauche 0.9 sources with minor modifications; need to catch
+	  up the current SXML versions.
+
 2003-07-15  Shiro Kawai  <shiro@acm.org>
 
 	* gc/*, src/gauche/memory.h : upgraded to Boehm GC 6.2

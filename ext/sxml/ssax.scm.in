@@ -1,0 +1,43 @@
+;;;
+;;; sxml.ssax - XML parser
+;;;
+;;;   This file is mechanically translated for Gauche from
+;;;   Oleg Kiselyov's SSAX XML parser, SSAX.scm, v4.9.
+;;;   Public domain.
+;;;
+;;; $Id: ssax.scm.in,v 1.1 2003-07-16 11:57:55 shirok Exp $
+;;;
+
+(define-module sxml.ssax
+  (use srfi-1)
+  (use srfi-13)
+  (use text.parse)
+  (use sxml.adaptor)
+  (export SSAX:read-markup-token
+          SSAX:read-cdata-body
+          SSAX:read-char-ref
+          SSAX:handle-parsed-entity
+          SSAX:read-attributes
+          SSAX:resolve-name
+          SSAX:uri-string->symbol
+          SSAX:complete-start-tag
+          SSAX:read-external-id
+          SSAX:scan-Misc
+          SSAX:read-char-data
+          SSAX:assert-token
+          SSAX:make-pi-parser
+          SSAX:make-elem-parser
+          SSAX:make-parser
+          SSAX:XML->SXML
+          *SSAX:warn-handler*
+          ))
+(select-module sxml.ssax)
+
+;#include-body "src/SSAX.scm"
+
+(provide "sxml/ssax")
+
+          
+;; Local variables:
+;; mode: scheme
+;; end:

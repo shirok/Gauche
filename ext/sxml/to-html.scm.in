@@ -1,0 +1,31 @@
+;;;
+;;; sxml.to-html - SXML->HTML translator
+;;;
+;;;   This file is mechanically translated for Gauche from
+;;;   Oleg Kiselyov's SXML->HTML.scm.
+;;;   Public domain.
+;;;
+;;; $Id: to-html.scm.in,v 1.1 2003-07-16 11:57:55 shirok Exp $
+;;;
+
+(define-module sxml.to-html
+  (use text.parse)
+  (use text.html-lite)
+  (use sxml.adaptor)
+  (use sxml.tree-trans)
+  (export SXML->HTML))
+(select-module sxml.to-html)
+
+;; Hack: a procedure "make-char-quotator" is used in the original code
+;; to generate a procedure that does escaping for HTML.   Since it is
+;; used only for that purpose, we can just replace it to what we have
+;; in text.html-lite module.
+(define (make-char-quotator . _) html-escape-string)
+
+;#include-body "src/SXML-to-HTML.scm"
+
+(provide "sxml/to-html")
+
+;; Local variables:
+;; mode: scheme
+;; end:

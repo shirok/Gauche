@@ -1,0 +1,27 @@
+This is a port of Oleg Kiselyov's (S)XML utilities.
+
+  http://pobox.com/~oleg/ftp/Scheme/SXML-short-paper.html
+  http://pobox.com/~oleg/ftp/Scheme/SXML.html
+  http://pobox.com/~oleg/ftp/Scheme/xml.html
+
+The package contains the following components.
+
+   SSAX - XML parser.  Parses XML documents to produce SXML structure.
+          Based on SSAX version 4.9.
+          This is available as module sxml.ssax from Gauche.
+
+   SXML-tree-trans - utility routines for SXML tree manipulation.
+          Based on SXML-tree-trans version 1.5.
+          This is available as module sxml.tree-trans from Gauche.
+
+   SXML-to-HTML - translates SXML tree to HTML.
+          Based on SXML-to-HTML version 1.3
+          This is available as module sxml.to-html from Gauche.
+
+oleg/    This directory contains Oleg's original code which
+         the Gauche version is based on.
+
+sxml/    `make' creates Gauche-ported version of files under
+         this directory.   Some auxiliary files are also provided
+         to adapt original code to Gauche.
+
