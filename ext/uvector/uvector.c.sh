@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.3 2001-02-19 14:48:49 shiro Exp $
+ *  \$Id: uvector.c.sh,v 1.4 2001-02-20 10:44:41 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -296,6 +296,27 @@ cat <<EOF
 #undef PRINT_ELT
 EOF
 
+# s32vector ----------------------------------------------------------
+
+cat <<EOF
+#define BOX(obj, elt)    obj = Scm_MakeInteger(elt)
+#define UNBOX(elt, obj)                                                 \
+    do {                                                                \
+        long v;                                                         \
+        if (SCM_INTP(obj)) v = SCM_INT_VALUE(obj);                      \
+        else if (SCM_BIGNUMP(obj)) v = Scm_BignumToSI(SCM_BIGNUM(obj)); \
+        else Scm_Error("argument out of domain: %S", obj);              \
+        elt = v;                                                        \
+    } while (0)
+#define PRINT_ELT(out, elt, nc) \
+    nc += Scm_Printf(out, "%d", elt)
+EOF
+emit s32 S32Vector "long"
+cat <<EOF
+#undef BOX
+#undef UNBOX
+#undef PRINT_ELT
+EOF
 
 
 # epilogue -----------------------------------------------------------
