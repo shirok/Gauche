@@ -1,3 +1,10 @@
+2001-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* ext/dbm/dbm.scm : introduced <dbm-meta>, metaclass for all <dbm>
+	  instances.
+	* lib/www/cgi.scm : fixed a bug in cgi-parse-parameters that returned
+	  a redundant result for a null query string.  added cgi-main.
+
 2001-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c : fixed a bug that estimated the bytecode size
