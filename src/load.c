@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.12 2001-02-09 09:19:54 shiro Exp $
+ *  $Id: load.c,v 1.13 2001-02-13 06:01:40 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,6 +20,12 @@
 /*
  * Load file.
  */
+
+/* To peek *load-path* variable from C */
+static ScmGloc *load_path_rec;
+
+/* To peek *load-history* variable from C */
+static ScmGloc *load_history_rec;
 
 /*
  * Scm_LoadFromPort
@@ -109,9 +115,6 @@ void Scm_Load(const char *cpath)
  * Utilities
  */
 
-/* To peek *load-path* variable from C */
-static ScmGloc *load_path_rec;
-
 ScmObj Scm_GetLoadPath(void)
 {
     return load_path_rec->value;
@@ -139,10 +142,10 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 void Scm__InitLoad(void)
 {
     ScmObj instdir = SCM_MAKE_STR(SCM_INSTALL_DIR);
+    ScmModule *m = Scm_SchemeModule();
 
-    Scm_Define(Scm_SchemeModule(), SCM_SYMBOL(SCM_SYM_LOAD_PATH),
-               SCM_LIST1(instdir));
-    load_path_rec = Scm_FindBinding(Scm_SchemeModule(),
-                                    SCM_SYMBOL(SCM_SYM_LOAD_PATH),
-                                    TRUE);
+    Scm_Define(m, SCM_SYMBOL(SCM_SYM_LOAD_PATH), SCM_LIST1(instdir));
+    Scm_Define(m, SCM_SYMBOL(SCM_SYM_LOAD_HISTORY), SCM_NIL);
+    load_path_rec = Scm_FindBinding(m, SCM_SYMBOL(SCM_SYM_LOAD_PATH), TRUE);
+    load_history_rec = Scm_FindBinding(m, SCM_SYMBOL(SCM_SYM_LOAD_HISTORY), TRUE);
 }
