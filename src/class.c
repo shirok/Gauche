@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.59 2001-10-17 10:49:24 shirok Exp $
+ *  $Id: class.c,v 1.60 2001-10-24 09:37:17 shirok Exp $
  */
 
 #include "gauche.h"
@@ -100,6 +100,7 @@ static ScmObj key_instance;
 static ScmObj key_accessor;
 static ScmObj key_slot_accessor;
 static ScmObj key_builtin;
+static ScmObj key_class;
 static ScmObj key_name;
 static ScmObj key_supers;
 static ScmObj key_slots;
@@ -551,6 +552,7 @@ typedef struct ScmInstanceRec {
     ScmObj slots[1];
 } ScmInstance;
 
+
 #define SCM_INSTANCE(obj)      ((ScmInstance *)obj)
 
 static inline int scheme_slot_index(ScmObj obj, int number)
@@ -560,7 +562,7 @@ static inline int scheme_slot_index(ScmObj obj, int number)
     if (offset == 0)
         Scm_Error("scheme slot accessor called with C-defined object %S.  implementation error?",
                   obj);
-    if (number < 0 || number > k->numInstanceSlots)
+    if (number < 0 || number >= k->numInstanceSlots)
         Scm_Error("instance slot index %d out of bounds for %S",
                   number, obj);
     return number-offset+1;
@@ -579,13 +581,27 @@ static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
     SCM_INSTANCE(obj)->slots[index] = val;
 }
 
+/* These two are exposed to Scheme to do some nasty things. */
+ScmObj Scm_InstanceSlotRef(ScmObj obj, int number)
+{
+    return scheme_slot_ref(obj, number);
+}
+
+void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val)
+{
+    scheme_slot_set(obj, number, val);
+}
+
 static void scheme_slot_default(ScmObj obj)
 {
-    int index = scheme_slot_index(obj, 0);
     int count = SCM_CLASS_OF(obj)->numInstanceSlots;
-    int i;
-    for (i=0; i<count; i++, index++)
-        SCM_INSTANCE(obj)->slots[index] = SCM_UNBOUND;
+    if (count > 0) {
+        int index = scheme_slot_index(obj, 0);
+        int i;
+        for (i=0; i<count; i++, index++) {
+            SCM_INSTANCE(obj)->slots[index] = SCM_UNBOUND;
+        }
+    }
 }
 
 /* initialize slot according to its accessor spec */
@@ -658,16 +674,12 @@ static ScmObj slot_ref_cc(ScmObj result, void **data)
     }
 }
 
-ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
+/* assumes accessor belongs to the proper class */
+static ScmObj slot_ref_using_accessor(ScmObj obj,
+                                      ScmSlotAccessor *ca,
+                                      int boundp)
 {
-    ScmClass *klass = Scm_ClassOf(obj);
-    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
     ScmObj val = SCM_UNBOUND;
-
-    if (ca == NULL) {
-        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
-                           SCM_LIST3(SCM_OBJ(klass), obj, slot));
-    }
     if (ca->getter) {
         val = ca->getter(obj);
     } else if (ca->slotNumber >= 0) {
@@ -676,33 +688,52 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
                && SCM_PROCEDUREP(SCM_CAR(ca->schemeAccessor))) {
         void *data[3];
         data[0] = obj;
-        data[1] = slot;
+        data[1] = ca->name;
         data[2] = (void*)boundp;
         Scm_VMPushCC(slot_ref_cc, data, 3);
         return Scm_VMApply(SCM_CAR(ca->schemeAccessor), SCM_LIST1(obj));
     } else {
         Scm_Error("don't know how to retrieve value of slot %S of object %S (MOP error?)",
-                  slot, obj);
+                  ca->name, obj);
     }
     if (boundp) {
         return SCM_MAKE_BOOL(!(SCM_UNBOUNDP(val) || SCM_UNDEFINEDP(val)));
     } else {
-        if (SCM_UNBOUNDP(val) || SCM_UNDEFINEDP(val))
-            return SLOT_UNBOUND(klass, obj, slot);
-        else
+        if (SCM_UNBOUNDP(val) || SCM_UNDEFINEDP(val)) {
+            return SLOT_UNBOUND(Scm_ClassOf(obj), obj, ca->name);
+        } else {
             return val;
+        }
     }
 }
 
-ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
+ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
-    
     if (ca == NULL) {
         return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
-                           SCM_LIST4(SCM_OBJ(klass), obj, slot, val));
+                           SCM_LIST3(SCM_OBJ(klass), obj, slot));
     }
+    return slot_ref_using_accessor(obj, ca, boundp);
+}
+
+ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj, ScmSlotAccessor *ca, int boundp)
+{
+    ScmClass *klass = Scm_ClassOf(obj);
+    if (klass != ca->klass) {
+        Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
+                  SCM_OBJ(ca), obj);
+    }
+    return slot_ref_using_accessor(obj, ca, boundp);
+}
+
+
+/* assumes accessor belongs to the proper class */
+ScmObj slot_set_using_accessor(ScmObj obj,
+                               ScmSlotAccessor *ca,
+                               ScmObj val)
+{
     if (ca->setter) {
         ca->setter(obj, val);
     } else if (ca->slotNumber >= 0) {
@@ -711,9 +742,31 @@ ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
                && SCM_PROCEDUREP(SCM_CDR(ca->schemeAccessor))) {
         return Scm_VMApply(SCM_CDR(ca->schemeAccessor), SCM_LIST2(obj, val));
     } else {
-        Scm_Error("slot %S of class %S is read-only", slot, SCM_OBJ(klass));
+        Scm_Error("slot %S of class %S is read-only", ca->name,
+                  SCM_OBJ(Scm_ClassOf(obj)));
     }
     return SCM_UNDEFINED;
+}
+
+ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
+{
+    ScmClass *klass = Scm_ClassOf(obj);
+    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
+    if (ca == NULL) {
+        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
+                           SCM_LIST4(SCM_OBJ(klass), obj, slot, val));
+    }
+    return slot_set_using_accessor(obj, ca, val);
+}
+
+ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj, ScmSlotAccessor *ca, ScmObj val)
+{
+    ScmClass *klass = Scm_ClassOf(obj);
+    if (klass != ca->klass) {
+        Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
+                  SCM_OBJ(ca), obj);
+    }
+    return slot_set_using_accessor(obj, ca, val);
 }
 
 /* slot-bound?
@@ -934,9 +987,16 @@ static ScmObj builtin_initialize(ScmObj *args, int nargs, ScmGeneric *gf)
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmSlotAccessor *sa = SCM_NEW(ScmSlotAccessor);
-    ScmObj slotnum, slotget, slotset;
+    ScmObj parentklass, slotnum, slotget, slotset;
 
     SCM_SET_CLASS(sa, klass);
+    parentklass = Scm_GetKeyword(key_class, initargs, SCM_FALSE);
+    if (!Scm_TypeP(parentklass, SCM_CLASS_CLASS)) {
+        Scm_Error(":class argument must be a class metaobject, but got %S",
+                  parentklass);
+    }
+    sa->klass = SCM_CLASS(parentklass);
+    sa->name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     sa->getter = NULL;
     sa->setter = NULL;
     sa->initValue =   Scm_GetKeyword(key_init_value, initargs, SCM_UNDEFINED);
@@ -964,7 +1024,9 @@ static void slot_accessor_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     ScmSlotAccessor *sa = SCM_SLOT_ACCESSOR(obj);
     
-    Scm_Printf(out, "#<slot-accessor ");
+    Scm_Printf(out, "#<slot-accessor %S.%S ",
+               (sa->klass? sa->klass->name : SCM_FALSE),
+               sa->name);
     if (sa->getter) Scm_Printf(out, "native");
     else if (SCM_PAIRP(sa->schemeAccessor)) Scm_Printf(out, "proc");
     else if (sa->slotNumber >= 0) Scm_Printf(out, "%d", sa->slotNumber);
@@ -1560,6 +1622,8 @@ void bootstrap_class(ScmClass *k,
     if (specs) {
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
+            specs->accessor.klass = k;
+            specs->accessor.name = snam;
             acc = Scm_Acons(snam, SCM_OBJ(&specs->accessor), acc);
             specs->accessor.initKeyword = SCM_MAKE_KEYWORD(specs->name);
             SCM_APPEND1(slots, t,
@@ -1621,6 +1685,7 @@ void Scm__InitClass(void)
     key_builtin = SCM_MAKE_KEYWORD("builtin");
     key_accessor = SCM_MAKE_KEYWORD("accessor");
     key_slot_accessor = SCM_MAKE_KEYWORD("slot-accessor");
+    key_class = SCM_MAKE_KEYWORD("class");
     key_name = SCM_MAKE_KEYWORD("name");
     key_supers = SCM_MAKE_KEYWORD("supers");
     key_slots = SCM_MAKE_KEYWORD("slots");

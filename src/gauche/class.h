@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.19 2001-09-16 01:37:02 shirok Exp $
+ *  $Id: class.h,v 1.20 2001-10-24 09:37:17 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -22,14 +22,21 @@
 extern "C" {
 #endif
 
-/* keep class initialization & access info */
+/*
+ * SlotAccessor
+ *  - Packages slot initialization and accessing methods.
+ */
 typedef struct ScmSlotAccessorRec {
     SCM_HEADER;
-    ScmObj (*getter)(ScmObj instance);
-    void (*setter)(ScmObj instance, ScmObj value);
-    ScmObj initValue;
-    ScmObj initKeyword;
-    ScmObj initThunk;
+    ScmClass *klass;            /* the class this accessor belongs to.
+                                   need to be checked before used, for the
+                                   class may be changed. */
+    ScmObj name;                /* slot name (symbol) */
+    ScmObj (*getter)(ScmObj instance); /* getter for C accessor */
+    void (*setter)(ScmObj instance, ScmObj value); /* setter for C accessor */
+    ScmObj initValue;           /* :init-value */
+    ScmObj initKeyword;         /* :init-keyword */
+    ScmObj initThunk;           /* :initform or :init-thunk */
     int slotNumber;             /* for :instance slot access */
     ScmObj schemeAccessor;      /* for :virtual slot (getter . setter) */
 } ScmSlotAccessor;
@@ -50,6 +57,7 @@ struct ScmClassStaticSlotSpecRec {
 
 #define SCM_CLASS_SLOT_SPEC(name, getter, setter)       \
     { name, { { SCM_CLASS_SLOT_ACCESSOR },              \
+              NULL, NULL,                               \
               (ScmNativeGetterProc)getter,              \
               (ScmNativeSetterProc)setter,              \
               SCM_UNBOUND,                              \
@@ -73,6 +81,15 @@ extern ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
                                  ScmObj *args, int nargs, int copyArgs);
 extern ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
 
+extern ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj,
+                                         ScmSlotAccessor *acc,
+                                         int boundp);
+extern ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
+                                         ScmSlotAccessor *acc,
+                                         ScmObj val);
+
+extern ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
+extern void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
 
 extern ScmGeneric Scm_GenericApplyGeneric;
 
