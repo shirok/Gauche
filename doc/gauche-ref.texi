@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.161 2002-02-19 10:08:12 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.162 2002-02-21 08:58:07 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17463,6 +17463,7 @@ R5RS arithmetic procedure @code{-}.   @xref{Arithmetics}.
 @item -=
 Gauche @code{dec!} macro.  @xref{Assignments}.
 @item ->
+Gauche @code{slot-ref} is something close to this.  @xref{Accessing Instance}.
 @item * (binary)
 R5RS arithmetic procedure @code{*}.   @xref{Arithmetics}.
 @item * (unary)
@@ -17519,7 +17520,11 @@ R5RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
 @item %=
 No equivalent procedure.
 @item []
+R5RS @code{vector-ref} (@xref{Vectors}) is something close.
+Or you can use Gauche's generic function @code{ref} (@xref{Sequences})
+for arbitrary sequences.
 @item .
+Gauche @code{slot-ref} is something close to this.  @xref{Accessing Instance}.
 @item ~
 Gauche @code{lognot}.  @xref{Bitwise operations}.
 @item ~=
@@ -17536,7 +17541,7 @@ No equivalent procedure.
 
 @table @code
 @item abort
-No equivalent function in Gauche.
+Gauche @code{sys-abort}. 
 @item abs
 R5RS @code{abs}.  @xref{Arithmetics}.
 @item access
@@ -17583,7 +17588,8 @@ Not supported yet.
 @item clearerr
 Not supported yet.
 @item clock
-Not supported yet.
+No equivalent function in Gauche.  You can use @code{sys-times}
+to get information about CPU time.
 @item close
 You can't directly close the file descriptor, but when you use
 @code{close-input-port} or @code{close-output-port}, underlying
@@ -17665,7 +17671,7 @@ Use @code{read-line}.    @xref{Input}.
 @item floor
 R5RS @code{floor}.   @xref{Arithmetics}.
 @item fmod
-Not directly supported.
+Gauche's @code{sys-fmod}.
 @item fopen
 R5RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
@@ -17689,7 +17695,7 @@ You don't need this in Scheme.
 @item freopen
 Not supported.
 @item frexp
-Not supported.
+Gauche's @code{sys-frexp}
 @item fscanf
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
@@ -17829,14 +17835,14 @@ No equivalent functions.
 @item mkdir
 Gauche's @code{sys-mkdir}.  @xref{Directory manipulation}.
 @item mkfifo
-Not supported yet.
+Gauche's @code{sys-mkfifo}.
 @item mkstemp
 Gauche's @code{sys-mkstemp}.   @xref{Directory manipulation}.
 Use this instead of tmpnam.
 @item mktime
 Gauche's @code{sys-mktime}.  @xref{Time}.
 @item modf
-No equivalent function.
+Gauche's @code{sys-modf}
 @item open
 Not directly supported.
 R5RS @code{open-input-file} or @code{open-output-file}
@@ -17850,7 +17856,9 @@ Not supported.
 @item pause
 Gauche's @code{sys-pause}.  @xref{Miscellaneous system calls}.
 @item perror
-Not directly supported.
+No equivalent function in Gauche.  System calls generally throws an
+error (@code{<system-error>}), including the description of the reason
+of failure.
 @item pipe
 Gauche's @code{sys-pipe}.  @xref{Other file operations}.
 @item pow
@@ -17868,7 +17876,9 @@ Use @code{display}.   @xref{Output}.
 Gauche's @code{sort} and @code{sort!} provides a convenient way to sort
 list of items.  @xref{Comparison and sorting}.
 @item raise
-Not supported yet.
+No equivalent function in Gauche.  Scheme function @code{raise} (SRFI-18)
+is to raise an exception.   You can use @code{(sys-kill (sys-getpid) SIG)}
+to send a signal @code{SIG} to the current process.
 @item rand
 Not supported directly, but on most platforms a better RNG is available
 as @code{sys-random}.  @xref{Miscellaneous system calls}.
@@ -17907,18 +17917,18 @@ Gauche @code{sys-select}.  @xref{I/O multiplexing}.
 @item setbuf
 Not necessary.
 @item setgid
-Not supported yet
+Gauche's @code{sys-setgid}.
 @item setjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @item setlocale
 Gauche's @code{sys-setlocale}.
 @item setpgid
-Not supported yet.
+Gauche's @code{sys-setpgid}.
 @item setsid
-Not supported yet.
+Gauche's @code{sys-setsid}.
 @item setuid
-Not supported yet.
+Gauche's @code{sys-setuid}.
 @item setvbuf
 Not necessary.
 @item sigaction
