@@ -12,26 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.89 2002-10-15 10:28:00 shirok Exp $
+ *  $Id: compile.c,v 1.90 2002-11-05 22:55:16 shirok Exp $
  */
 
 #include <stdlib.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-
-/*
- * Identifier object
- */
-
-static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    Scm_Printf(port, "#<id %p %A::%A>",
-               obj,
-               SCM_IDENTIFIER(obj)->module->name,
-               SCM_IDENTIFIER(obj)->name);
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
 
 /* constructor definition comes below */
 
@@ -400,6 +386,20 @@ ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op)
 {
     return lookup_env(sym, env, op);
 }
+
+/*-------------------------------------------------------------
+ * Identifier object
+ */
+
+static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    Scm_Printf(port, "#<id %p %A::%A>",
+               obj,
+               SCM_IDENTIFIER(obj)->module->name,
+               SCM_IDENTIFIER(obj)->name);
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
 
 ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env)
 {
@@ -1952,6 +1952,14 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
     }
     return code;
 }
+
+/*===================================================================
+ * Code emitting pass
+ *   This is an experimental code for the new VM.
+ */
+
+#ifdef GAUCHE_USE_NVM
+#endif /*GAUCHE_USE_NVM*/
 
 /*===================================================================
  * Initializer

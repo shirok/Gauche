@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.184 2002-11-03 04:26:35 shirok Exp $
+ *  $Id: vm.c,v 1.185 2002-11-05 22:55:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -375,25 +375,6 @@ void Scm__InitVM(void)
       Scm_Error errargs;                        \
    } while (0)
 
-/* to take advantage of GCC's `computed goto' feature
-   (see gcc.info, "Labels as Values") */
-#ifdef __GNUC__
-#define SWITCH(val) goto *dispatch_table[val];
-#define CAT2(a, b)  a##b
-#define CASE(insn)  CAT2(LABEL_, insn) :
-#define DEFAULT     LABEL_DEFAULT :
-#else /* !__GNUC__ */
-#define SWITCH(val) switch (val)
-#define CASE(insn)  case insn :
-#define DEFAULT     default :
-#endif
-
-#ifdef GAUCHE_USE_NVM
-#define NEXT        goto *(void*)pc
-#else  /* !GAUCHE_USE_NVM */
-#define NEXT        continue
-#endif /* !GAUCHE_USE_NVM */
-
 /* check the argument count is OK for call to PROC.  if PROC takes &rest
  * args, fold those arguments to the list.  Returns adjusted size of
  * the argument frame.
@@ -419,8 +400,37 @@ void Scm__InitVM(void)
         }                                       \
     } while (0)
 
-/*
- * main loop of VM
+/* to take advantage of GCC's `computed goto' feature
+   (see gcc.info, "Labels as Values") */
+#ifdef __GNUC__
+#define SWITCH(val) goto *dispatch_table[val];
+#define CAT2(a, b)  a##b
+#define CASE(insn)  CAT2(LABEL_, insn) :
+#define DEFAULT     LABEL_DEFAULT :
+#else /* !__GNUC__ */
+#define SWITCH(val) switch (val)
+#define CASE(insn)  case insn :
+#define DEFAULT     default :
+#endif
+
+#ifdef GAUCHE_USE_NVM
+#define NEXT        goto *(void*)++pc
+#else  /* !GAUCHE_USE_NVM */
+#define NEXT        continue
+#endif /* !GAUCHE_USE_NVM */
+
+#ifdef GAUCHE_USE_NVM
+static void *vmInsnAddressTable = NULL;
+
+void *Scm_VMInsnAddress(int insn)
+{
+    /*TODO: check range*/
+    return vmInsnAddressTable[insn];
+}
+#endif /*GAUCHE_USE_NVM*/
+
+/*===================================================================
+ * Main loop of VM
  */
 static void run_loop()
 {
@@ -434,6 +444,11 @@ static void run_loop()
 #include "gauche/vminsn.h"
 #undef DEFINSN
     };
+#ifdef GAUCHE_USE_NVM
+    if (vmInsnAddressTable == NULL) {
+        vmInsnAddressTable = dispatch_table;
+    }
+#endif /* GAUCHE_USE_NVM */
 #endif /* __GNUC__ */    
     
     for (;;) {

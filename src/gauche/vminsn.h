@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.32 2002-09-19 20:17:38 shirok Exp $
+ *  $Id: vminsn.h,v 1.33 2002-11-05 22:55:28 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -86,10 +86,9 @@ DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
 DEFINSN(SCM_VM_DEFINE, "DEFINE", 0)
 DEFINSN(SCM_VM_DEFINE_CONST, "DEFINE-CONST", 0)
 
-/* LAMBDA(NARGS,RESTARG) <ARGLIST> <CODE>
+/* LAMBDA(NARGS,RESTARG) <CODE>
  *
- *  Create a closure capturing current environment.  Two operands are
- *  taken: ARGLIST is a form of lambda list; it is just for debug.
+ *  Create a closure capturing current environment.
  *  CODE is the compiled code.   Leaves created closure in the stack.
  */
 DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
@@ -195,6 +194,24 @@ DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
  *  It occurs when VM insn is passed to apply.
  */
 DEFINSN(SCM_VM_QUOTE_INSN, "QUOTE-INSN", 0)
+
+/* Only used in NVM code */
+#ifdef GAUCHE_USE_NVM
+/* CONST <VALUE>
+ *   Load <VALUE> to the register.
+ */
+DEFINSN(SCM_VM_CONST, "CONST", 0)
+
+/* RET
+ *   Pop the topmost continuation frame
+ */
+DEFINSN(SCM_VM_RET, "RET", 0)
+
+/* JUMP <NEXT>
+ *   Transfer the control to <NEXT>
+ */
+DEFINSN(SCM_VM_JUMP, "JUMP", 0)
+#endif /*GAUCHE_USE_NVM*/
 
 /* Inlined operators
  *  They work the same as corresponding Scheme primitives, but they are
