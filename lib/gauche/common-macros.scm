@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.4 2001-12-01 10:58:14 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.5 2001-12-01 21:13:51 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -131,7 +131,7 @@
           (var 0 (+ var 1)))
          ((>= var limit) res)
        . body))
-    ((_ (var n) body . body)
+    ((_ (var n) . body)
      (do ((limit n)
           (var 0 (+ var 1)))
          ((>= var limit))
