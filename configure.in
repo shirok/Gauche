@@ -120,6 +120,18 @@ case $host in
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     ;;
+  *solaris*)
+    if test X$CC = Xgcc; then
+      SHLIB_SO_CFLAGS="-fpic"
+      SHLIB_SO_LDFLAGS="-shared -o"
+    else
+      SHLIB_SO_CFLAGS="-Kpic"
+      SHLIB_SO_LDFLAGS="-G -h"
+    fi
+    SHLIB_SO_SUFFIX="so"
+    SHLIB_MAIN_LDFLAGS=""
+    SHLIB_OK=ok
+    ;;
   *)
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS=""
