@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.411 2003-06-09 07:10:04 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.412 2003-06-09 07:56:07 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13474,7 +13474,7 @@ This form installs @var{proc} as the signal handler for @var{signals}.
 @c EN
 When the control exits from @var{thunk}, the signal handler setting
 before @code{with-signal-handlers} are recovered.
-@c JP
+o@c JP
 @var{thunk}から制御が抜けた時に、@code{with-signal-handlers}が呼ばれた時点での
 シグナルハンドラが再設定されます。
 @c COMMON
@@ -21971,9 +21971,9 @@ so that you will know the situation.  @xref{Synchronization primitives}.
 呼ぶチャンスがないので、この手続きは注意して使って下さい。
 @var{thread}がクリティカルセクションにあるならば、一貫性のない状態を残すことに
 なります。
-しかし、あるスレッドが一旦終了すると、そのスレッドが保持していたロックは
-'放棄'状態になり、そのようなロックを獲得しようとしてスレッドは
-'放棄されたロックの例外'を投げるので、その状況を知ることができます。
+しかし、あるスレッドが一旦終了すると、そのスレッドが保持していたmutexは
+'abandoned'(放棄された)状態になり、そのようなmutexをロックしようとするスレッドは
+'abandoned mutex exception'を投げるので、その状況を知ることができます。
 @ref{Synchronization primitives}参照。
 @c COMMON
 @end defun
@@ -22038,28 +22038,30 @@ A mutex becomes unlocked either by @code{mutex-unlock!} or the owner
 thread terminates.  In the former case, a mutex becomes unlocked/not-abandoned
 state.  In the latter case, a mutex becomes unlocked/abandoned state.
 @c JP
-原始的な同期化デバイスです。次の4つの状態のいずれかを持ちます:
+同期のための基本的デバイスです。次の4つの状態のいずれかを持ちます:
 locked/owned、locked/not-owned、unlocked/abandoned、unlocked/not-abandoned。
-ロックは、それがロックされていない状態(unlocked)の場合のみ(@code{mutex-lock!}により)獲得できます。
-'所有されている(owned)'ロックは、そのロックを所有しているスレッドを保持します。
-一般的に、スレッドの所有者はロックを獲得したスレッドですが、
-ロックしているスレッドとは別に、ロックを獲得するスレッドを作ることができます。
-ロックは@code{mutex-unlock!}により解放されるか、所有するスレッドが終了すると解放されます。
-前者の場合はロックされていない/放棄されていない(unlocked/not-abandoned)状態になります。
-後者の場合はロックされていない/放棄された状態(unlocked/abandoned)になります。
+Mutexは、それがunlocked(ロックされていない状態)であるときのみ、
+(@code{mutex-lock!}により)ロックされます。
+所有されている(owned) mutexは、そのmutexを所有しているスレッドを記憶しています。
+通常、所有者となるスレッドはmutexをロックしたスレッドですが、
+ロックしたのとは別のスレッドがmutexを所有するようにすることもできます。
+ロックは@code{mutex-unlock!}によるか、所有するスレッドが終了すると解放されます。
+前者の場合、mutexはunlocked/not-abandoned(ロックされておらず、放棄されていない状態)
+になります。
+後者の場合、mutexはunlocked/abandoned(ロックされておらず、放棄された状態)になります。
 @c COMMON
 
 @c EN
 A mutex has the following external slots.
 @c JP
-ロックオブジェクトは以下の外部スロットを持ちます。
+Mutexは、以下の外部スロットを持ちます。
 @c COMMON
 
 @defivar <mutex> name
 @c EN
 The name of the mutex.
 @c JP
-ロックオブジェクトの名前。
+Mutexの名前。
 @c COMMON
 @end defivar
 
@@ -22068,7 +22070,7 @@ The name of the mutex.
 The state of the mutex.  This is a read-only slot.
 See the descrption of @code{mutex-state} below.
 @c JP
-ロックオブジェクトの状態。これは読み取りのみ可能なスロットです。
+Mutexの状態。これは読み取りのみ可能なスロットです。
 下記の@code{mutex-state}の説明を参照して下さい。
 @c COMMON
 @end defivar
@@ -22079,7 +22081,7 @@ A slot an application can keep arbitrary data.  For example, an application
 can implement a 'recursive' mutex using the specific field.
 @c JP
 アプリケーションが任意のデータを保持することのできるスロットです。
-例えば、アプリケーションはこの固有フィールドで'再帰的な'ロックオブジェクトを
+例えば、アプリケーションはこの固有フィールドで'再帰的な' mutexを
 実装することができます。
 @c COMMON
 @end defivar
@@ -22091,7 +22093,7 @@ can implement a 'recursive' mutex using the specific field.
 Returns @code{#t} if @var{obj} is a mutex, @code{#f} otherwise.
 @c JP
 [SRFI-18]、[SRFI-21]
-@var{obj}がロックオブジェクトなら@code{#t}、そうでなければ@code{#f}を返します。
+@var{obj}がmutexであれば@code{#t}、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -22103,10 +22105,9 @@ When created, the mutex is in unlocked/not-abandoned state.
 Optionally, you can give a name to the mutex.
 @c JP
 [SRFI-18]、[SRFI-21]
-新しいロックオブジェクトを生成して返します。
-生成時には、ロックオブジェクトの状態は、ロックされていない/放棄されていない状態
-(unlocked/not-abandoned)です。オプションで、このロックオブジェクトに名前を
-付けることができます。
+新しいmutexオブジェクトを生成して返します。
+生成時には、mutexの状態は、unlocked/not-abandoned(ロックされておらず、
+放棄されていない状態)です。オプションで、このmutexに名前を付けることができます。
 @c COMMON
 @end defun
 
@@ -22116,7 +22117,7 @@ Optionally, you can give a name to the mutex.
 Returns the name of the mutex.
 @c JP
 [SRFI-18]、[SRFI-21]
-ロックオブジェクトの名前を返します。
+Mutexの名前を返します。
 @c COMMON
 @end defun
 
@@ -22127,7 +22128,7 @@ Returns the name of the mutex.
 Gets/sets the specific value of the mutex.
 @c JP
 [SRFI-18]、[SRFI-21]
-ロックオブジェクトの固有の値を取得/セットできます。
+Mutexの固有の値を取得/セットできます。
 @c COMMON
 @end defun
 
@@ -22152,13 +22153,13 @@ The mutex is unlocked/abandoned.
 The mutex is unlocked/not-abandoned.
 @c JP
 @item あるスレッド
-ロックは獲得され所有されており、所有者は返されたスレッド。
+Mutexはlocked/owned(ロックされ所有されている)で、所有者は返されたスレッド。
 @item シンボル @code{not-owned}
-ロックは獲得されているが所有されていない。
+Mutexはlocked/not-owned(ロックされているが所有されていない)。
 @item シンボル @code{abandoned}
-ロックは獲得されておらず、放棄されている。
+Mutexはunlocked/abandoned(ロックされておらず、放棄されている)。
 @item シンボル @code{not-abandoned}
-ロックは獲得されておらず、放棄されていない。
+Mutexはunlocked/not-abandoned(ロックされておらず、放棄されていない)。
 @c COMMON
 @end table
 @end defun
@@ -22174,13 +22175,14 @@ If @var{thread} argument is given and @code{#f}, the mutex becomes
 locked/not-owned state.
 @c JP
 [SRFI-18]、[SRFI-21]
-@var{mutex}をロックします。@var{mutex}がロックされておらず放棄されていない状態なら、
-この手続きはその状態を排他的にロックされた状態に変更します。
-デフォルトでは、@var{mutex}はロックされ、呼び出したスレッドに所有された状態に
-なります。
+@var{mutex}をロックします。@var{mutex}がunlocked/not-abandoned(
+ロックされておらず放棄されていない状態)なら、
+この手続きはその状態を排他的なlocked(ロックされた状態)に変更します。
+デフォルトでは、@var{mutex}はlocked/owned(ロックされ、所有された状態)になり、
+所有者は呼び出したスレッドです。
 他の所有しているスレッドを、引数@var{thread}を与えることもできます。
-引数@var{thread}に@code{#f}が与えられると、ロックオブジェクトは
-ロックされ所有されていない状態になります。
+引数@var{thread}に@code{#f}が与えられると、mutexはlocked/not-owned
+(ロックされ所有されていない状態)になります。
 @c COMMON
 
 @c EN
@@ -22189,9 +22191,9 @@ thread has been terminated without unlocking it, this procedure
 signals 'abandoned mutex exception' (@xref{Thread exceptions})
 after changing the state of @var{mutex}.
 @c JP
-@var{mutex}がロックされておらず放棄された状態ならば、それはつまり、
+@var{mutex}がunlocked/abandoned(ロックされておらず放棄された状態)ならば、それはつまり、
 他の何らかのスレッドがそのロックを解放せずに終了した場合、
-この手続きは@var{mutex}の状態を変更した後に、'放棄されたロックオブジェクト例外'
+この手続きは@var{mutex}の状態を変更した後に、'abandoned mutex exception'
 (@ref{Thread exceptions}参照)を通知します。
 @c COMMON
 
@@ -22204,7 +22206,7 @@ case it couldn't obtain a lock.  You can give @var{timeout}
 an absolute point of time (by @code{<time>} object, @xref{SRFI time}),
 or a relative time (by a real number).
 @c JP
-@var{mutex}がロックされた状態で、@var{timeout}が省略されるか@code{#f}ならば、
+@var{mutex}がlocked(ロックされた状態)で、@var{timeout}が省略されるか@code{#f}ならば、
 この手続きは@var{mutex}のロックが解放されるまでブロックします。
 @var{timeout}が指定されている場合は、ロックが獲得できなかったケースでは
 指定された時間に達した時に@code{mutex-lock!}は戻ります。
@@ -22229,7 +22231,7 @@ The following example is taken from SRFI-18 document:
 @c JP
 @var{mutex}それ自身は'再帰的なロック'の機能は実装していません。
 つまり、@var{mutex}をロックしたスレッドが再度@var{mutex}をロックしようと
-すると、そのスレッドはブロックします。しかし、このロックオブジェクトに
+すると、そのスレッドはブロックします。しかし、このmutexに
 基づいて再帰的なロックをセマンティクスを実装することは難しくありません。
 次の例は、SRFI-18のドキュメントから引用したものです。
 @c COMMON
@@ -22258,8 +22260,9 @@ Unlocks @var{mutex}.  The state of @var{mutex} becomes unlocked/not-abandoned.
 It is allowed to unlock a mutex that is not owned by the calling thread.
 @c JP
 [SRFI-18]、[SRFI-21]
-@var{mutex}をアンロックします。@var{mutex}の状態は、ロックされていない/放棄されていない状態と
-なります。呼び出しているスレッドにより所有されていないロックオブジェクトをアンロックすることは
+@var{mutex}をアンロックします。@var{mutex}の状態は、unlocked/not-abandoned
+(ロックされておらず、放棄されていない状態)となります。
+呼び出しているスレッドにより所有されていないmutexをアンロックすることは
 許されています。
 @c COMMON
 
@@ -22462,8 +22465,8 @@ An exception thrown by @code{mutex-lock!} when a @var{mutex} to be
 locked is in unlocked/abandoned state.  Inherits @code{<thread-exception>}.
 It has one additional slot.
 @c JP
-ロックされる@var{mutex}が、ロックされていない/放棄された状態(unlocked/abandoned)に
-あるときに@code{mutex-lock!}により投げられる例外。
+ロックされる@var{mutex}が、unlocked/abandoned(ロックされておらず、放棄された状態)
+であるときに@code{mutex-lock!}により投げられる例外。
 @code{<thread-exception>}を継承しています。スロットを1つ持ちます。
 @c COMMON
 
@@ -22471,7 +22474,7 @@ It has one additional slot.
 @c EN
 A mutex that caused this exception.
 @c JP
-この例外の原因となったロックオブジェクト。
+この例外の原因となったmutex。
 @c COMMON
 @end defivar
 @end deftp
