@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.60 2004-11-29 22:13:59 shirok Exp $
+ *  $Id: error.c,v 1.61 2004-11-29 22:18:10 shirok Exp $
  */
 
 #include <errno.h>
@@ -232,6 +232,17 @@ static void readerror_line_set(ScmReadError *obj, ScmObj val)
     obj->line = SCM_INT_VALUE(val);
 }
 
+static ScmObj readerror_dummy_get(ScmReadError *obj)
+{
+    return SCM_FALSE;
+}
+
+static void readerror_dummy_set(ScmReadError *obj, ScmObj val)
+{
+    /* nothing */
+}
+
+
 static ScmObj porterror_port_get(ScmPortError *obj)
 {
     return obj->port? SCM_OBJ(obj->port) : SCM_FALSE;
@@ -253,6 +264,9 @@ static ScmClassStaticSlotSpec syserror_slots[] = {
 static ScmClassStaticSlotSpec readerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("port", readerror_port_get, readerror_port_set),
     SCM_CLASS_SLOT_SPEC("line", readerror_line_get, readerror_line_set),
+    SCM_CLASS_SLOT_SPEC("column", readerror_dummy_get, readerror_dummy_set),
+    SCM_CLASS_SLOT_SPEC("position", readerror_dummy_get, readerror_dummy_set),
+    SCM_CLASS_SLOT_SPEC("span", readerror_dummy_get, readerror_dummy_set),
     { NULL }
 };
 
