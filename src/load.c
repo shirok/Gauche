@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.23 2001-03-08 10:18:43 shiro Exp $
+ *  $Id: load.c,v 1.24 2001-03-09 08:37:48 shiro Exp $
  */
 
 #include <unistd.h>
@@ -31,12 +31,18 @@
  * Load file.
  */
 
-/* To peek Scheme variable from C */
+/* To peek Scheme variable from C. */
+/* TODO: need to lock in MT */
 static ScmGloc *load_path_rec;       /* *load-path*         */
+static ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
+
+/* TODO: the followings should be in VM prvate in MT env */
 static ScmGloc *load_next_rec;       /* *load-next*         */
 static ScmGloc *load_history_rec;    /* *load-history*      */
 static ScmGloc *load_port_rec;       /* *load-port*         */
-static ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
+
+/* List of provided features.  Must be protected in MT. */
+static ScmObj provided;
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -124,7 +130,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
  *   
  *    (1) If given filename begins with "/", "./" or "../", the file is
  *        searched.
- *    (2) If gievn filename begins with "~", unix-style username
+ *    (2) If given filename begins with "~", unix-style username
  *        expansion is done, then the resulting file is searched.
  *    (3) Otherwise, the file is searched for each directory in
  *        *load-path*.
@@ -317,14 +323,17 @@ static const char *get_dynload_initfn(const char *filename)
 {
     const char *head, *tail, *s;
     char *name, *d;
+    const char prefix[] = "Scm_Init_";
+    
     head = strrchr(filename, '/');
     if (head == NULL) head = filename;
     else head++;
     tail = strchr(head, '.');
     if (tail == NULL) tail = filename + strlen(filename);
 
-    name = SCM_NEW_ATOMIC2(char *, tail-head+1);
-    for (s = head, d = name; s < tail; s++, d++) {
+    name = SCM_NEW_ATOMIC2(char *, sizeof(prefix) + tail-head+1);
+    strcpy(name, prefix);
+    for (s = head, d = name + sizeof(prefix); s < tail; s++, d++) {
         if (isalnum(*s)) *d = tolower(*s);
         else *d = '_';
     }
@@ -372,6 +381,57 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
     Scm_Error("dynamic linking is not supported on this architecture");
     return SCM_FALSE;           /* dummy */
 #endif
+}
+
+/*------------------------------------------------------------------
+ * Require and provide
+ */
+
+/* STk's require takes a string.  SLIB's require takes a symbol.
+   For now, I allow only a string. */
+/* Note that require and provide is recognized at compile time. */
+/* TODO: in MT env, we should prevent the race condition that
+   more than one thread requires the same (unprovided) feature
+   simultaneously.  Some kind of "providing" flag, maybe. */
+/* IDEA: allow require and provide an optional :version argument.
+   For example, (require "foo" :version 1.2) looks for the module
+   with (provide "foo" :version 1.2).  Allows mutiple versions of
+   files coexist in a path.   In order to do that, the "providing"
+   module needs to be compiled in a kind of sandbox environment, until
+   the system confirms it has a proper version of 'provide'. */
+/* TODO: related to above issue; what if an error occurs during loading
+   a require file?  what we should really do is to rollback the interpreter
+   state before loading that module; including cancelling any (provide)-ed
+   feature in the module.  The sandbox environment mentioned above will
+   help such unrolling, but it's not perfect if the toplevel expression
+   in the module changes the global state.  */
+ScmObj Scm_Require(ScmObj feature)
+{
+    if (!SCM_STRINGP(feature))
+        Scm_Error("require: string expected, but got %S\n", feature);
+    if (SCM_FALSEP(Scm_Member(feature, provided, SCM_CMP_EQUAL))) {
+        ScmObj filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
+        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)));
+    }
+    return SCM_TRUE;
+}
+
+ScmObj Scm_Provide(ScmObj feature)
+{
+    if (!SCM_STRINGP(feature))
+        Scm_Error("provide: string expected, but got %S\n", feature);
+    if (SCM_FALSEP(Scm_Member(feature, provided, SCM_CMP_EQUAL))) {
+        provided = Scm_Cons(feature, provided);
+    }
+    return feature;
+}
+
+ScmObj Scm_ProvidedP(ScmObj feature)
+{
+    if (SCM_FALSEP(Scm_Member(feature, provided, SCM_CMP_EQUAL)))
+        return SCM_FALSE;
+    else
+        return SCM_TRUE;
 }
 
 /*------------------------------------------------------------------
@@ -450,4 +510,8 @@ void Scm__InitLoad(void)
     DEF(load_history_rec, SCM_SYM_LOAD_HISTORY, SCM_NIL);
     DEF(load_next_rec,    SCM_SYM_LOAD_NEXT, SCM_NIL);
     DEF(load_port_rec,    SCM_SYM_LOAD_PORT, SCM_FALSE);
+
+    provided = SCM_LIST2(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
+                         SCM_MAKE_STR("srfi-8")  /* receive (builtin) */
+                         );
 }
