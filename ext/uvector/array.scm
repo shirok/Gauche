@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.13 2004-09-13 20:22:50 shirok Exp $
+;;;  $Id: array.scm,v 1.14 2004-11-22 10:42:01 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -76,7 +76,7 @@
       (define-method write-object ((self class) port)
         (format port "#,(~A ~S" name (array->list (array-shape self)))
         (array-for-each (cut format port " ~S" <>) self)
-        (display ")" port))
+        (format port ")"))
       (define-reader-ctor name
         (lambda (sh . inits)
           (list-fill-array! (make-array-internal class (apply shape sh)) inits))))))

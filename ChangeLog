@@ -1,3 +1,8 @@
+2004-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm (initialize): fixed write-object method
+	  to avoid stale shared-structure output.
+
 2004-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_LibraryDirectory etc): made these API instead of
