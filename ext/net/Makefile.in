@@ -12,8 +12,9 @@ SCMFILES = net.scm
 HEADERS = 
 
 TARGET = net.so
-OBJS = net.o
-CONFIG_GENERATED = Makefile config.cache config.log config.status
+OBJS = net.o netlib.o
+CONFIG_GENERATED = Makefile config.cache config.log config.status \
+	netconfig.h netlib.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
@@ -24,6 +25,9 @@ all : $(TARGET)
 
 net.so : $(OBJS)
 	$(CC) $(LDFLAGS) net.so $(OBJS) $(LIBS)
+
+netlib.c : netlib.stub
+	$(GOSH) genstub netlib.stub
 
 test : all
 	@rm -f test.log

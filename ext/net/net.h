@@ -1,9 +1,34 @@
+/*
+ * net.h - network interface
+ *
+ *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *
+ *  Permission to use, copy, modify, distribute this software and
+ *  accompanying documentation for any purpose is hereby granted,
+ *  provided that existing copyright notices are retained in all
+ *  copies and that this notice is included verbatim in all
+ *  distributions.
+ *  This software is provided as is, without express or implied
+ *  warranty.  In no circumstances the author(s) shall be liable
+ *  for any damages arising out of the use of this software.
+ *
+ *  $Id: net.h,v 1.2 2001-05-25 09:07:24 shirok Exp $
+ */
+
+#ifndef GAUCHE_NET_H
+#define GAUCHE_NET_H
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <gauche.h>
+#include "netconfig.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*==================================================================
  * Socket
@@ -13,7 +38,24 @@
  * Socket address
  */
 
+typedef struct ScmSockAddrRec {
+    SCM_HEADER;
+    union {
+        struct sockaddr common;
+        struct sockaddr_in addr_in;
+        struct sockaddr_un addr_un;
+    } addr;
+} ScmSockAddr;
 
+extern ScmClass Scm_SockAddrClass;
+#define SCM_CLASS_SOCKADDR    (&Scm_SockAddrClass)
+#define SCM_SOCKADDR(obj)     ((ScmSockAddr*)(obj))
+#define SCM_SOCKADDRP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOCKADDR)
+
+void Scm_StringToSockAddr(ScmString *address, ScmSockAddr *result);
+
+ScmObj Scm_MakeSockAddrInet(ScmString *host, ScmString *port);
+ScmObj Scm_MakeSockAddrUnix(ScmString *path);
 
 /*------------------------------------------------------------------
  * Socket
@@ -77,3 +119,8 @@ extern ScmClass Scm_ProtoEntClass;
 #define SCM_PROTOENT(obj)   ((ScmProtoEnt*)obj)
 #define SCM_PROTOENTP(obj)  SCM_XTYPEP(obj, SCM_CLASS_PROTOENT)
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /*GAUCHE_NET_H */

@@ -1,3 +1,20 @@
+/*
+ * net.c - network interface
+ *
+ *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *
+ *  Permission to use, copy, modify, distribute this software and
+ *  accompanying documentation for any purpose is hereby granted,
+ *  provided that existing copyright notices are retained in all
+ *  copies and that this notice is included verbatim in all
+ *  distributions.
+ *  This software is provided as is, without express or implied
+ *  warranty.  In no circumstances the author(s) shall be liable
+ *  for any damages arising out of the use of this software.
+ *
+ *  $Id: net.c,v 1.2 2001-05-25 09:07:24 shirok Exp $
+ */
+
 #include "net.h"
 
 /*==================================================================
@@ -61,7 +78,7 @@ ScmObj Scm_SocketShutdown(ScmSocket *s, int how)
 
 ScmObj Scm_SocketClose(ScmSocket *s)
 {
-    if (s->stats == SCM_SOCKET_STATUS_CLOSED) {
+    if (s->status == SCM_SOCKET_STATUS_CLOSED) {
         return SCM_FALSE;
     }
     socket_cleanup(s);
@@ -98,10 +115,12 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock)
     return SCM_OBJ(sock->outPort);
 }
 
+/*==================================================================
+ * High-level library
+ */
 
-ScmObj Scm_SocketBind(ScmSocket *s, ScmObj address)
-{
-}
+
+
 
 
                           
