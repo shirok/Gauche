@@ -2902,17 +2902,28 @@ take a look at @code{test/object.scm}.
 @subheading メソッドの定義
 @c COMMON
 
-@defmac define-generic name
+@defmac define-generic name &keyword class
 @c EN
 Creates a generic function and bind it to @var{name}.
 
 You don't usually need to use this, since the @code{define-method}
 macro implicitly creates a generic function if it doesn't exist yet.
+
+You can pass a subclass of @code{<generic>} to the @var{class}
+keyword argument so that the created generic function will be the
+instance of the passed class, instead of the default @code{<generic>} class.
+It is useful when you defined a subclass of @code{<generic>} to customize
+generic function application behavior.
 @c JP
 ジェネリック関数を生成し、@var{name} に束縛します。
 
 通常は、これを使う必要はありません。もし、まだ存在していなければ、
 @code{define-method} マクロが暗黙裏にジェネリック関数を生成してくれるからです。
+
+キーワード引数@code{class}に、@code{<generic>}のサブクラスを渡すことで、
+作られるジェネリック関数をデフォルトの@code{<generic>}クラスのインスタンスでは
+なく指定のクラスのインスタンスにすることができます。@code{<generic>}の
+サブクラスを定義してメソッド適用をカスタマイズする場合に便利です。
 @c COMMON
 @end defmac
 
