@@ -37,7 +37,7 @@ odbm.so : odbm.o
 	$(CC) $(LDFLAGS) odbm.so odbm.o @ODBMLIB@ $(LIBS)
 
 bdbm.so : bdbm.o bsddb.o
-	$(CC) $(LDFLAGS) odbm.so bdbm.o bsddb.o @BDBMLIB@ $(LIBS)
+	$(CC) $(LDFLAGS) bdbm.so bdbm.o bsddb.o @BDBMLIB@ $(LIBS)
 
 test : all
 	@rm -f test.log
