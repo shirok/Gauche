@@ -1,7 +1,7 @@
 /*
  * boolean.c
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.15 2002-07-01 08:52:05 shirok Exp $
+ *  $Id: boolean.c,v 1.16 2002-07-01 09:36:33 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -27,8 +27,13 @@ int Scm_EqvP(ScmObj x, ScmObj y)
 {
     /* for our implementation, only the number matters. */
     if (SCM_NUMBERP(x)) {
-        if (SCM_NUMBERP(y)) return Scm_NumEq(x, y);
-        else return FALSE;
+        if (SCM_NUMBERP(y)) {
+            if ((SCM_EXACTP(x) && SCM_EXACTP(y))
+                || (SCM_INEXACTP(x) && SCM_INEXACTP(y))) {
+                return Scm_NumEq(x, y);
+            }
+        }
+        return FALSE;
     }
     return (x == y);
 }
