@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.97 2001-10-15 09:20:36 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.98 2001-10-16 12:03:25 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -354,8 +354,17 @@ The API of the entry reflects the API specified in POSIX.
 @section Structure of this document
 @c NODE 本書の構成
 
----To be written---
+@c EN
+This document is consisted of the following chapters.
+Chapter 2, ``Concepts'', explains several features that are
+specific to Gauche.  Chapter 3, ``Programming in Gauche'',
+describes how to invoke the interpreter and to develop 
+Scheme scripts.  Chapter 4 ``Core syntax'', Chapter 5 ``Macros''
+and Chapter 6 ``Core libraries'' covers Gauche's built-in syntaxes and
+libraries.  Chapter 7, ``Object System''
 
+@c JP
+@c COMMON
 
 @c ======================================================================
 @node Concepts, Programming in Gauche, Introduction, Top
@@ -1525,6 +1534,7 @@ this introduce a local binding of the variable.
 
 @c explanation of internal define here
 @c JP
+このフォームがローカルスコープの中に現われた場合、ローカル変数の束縛となります。
 @c COMMON
 
 
@@ -3233,29 +3243,51 @@ Returns a string consisted by @var{char} @dots{}.
 @c NODE 文字列のアクセスと変更
 
 @defun string-length string
-[R5RS] Returns a length of (possibly incomplete) string @var{string}.
+[R5RS]
+@c EN
+Returns a length of (possibly incomplete) string @var{string}.
+@c JP
+文字列@var{string}の長さ(文字数)を返します。
+@var{string}は不完全な文字列であっても構いません。
+@c COMMON
 @end defun
 
 @defun string-size string
+@c EN
 Returns a size of (possibly incomplete) @var{string}.
 A size of string is a number of bytes @var{string} occupies on memory.
 The same string may have different sizes if the native encoding scheme
 differs.
 
 For incomplete string, its length and its size always match.
+@c JP
+文字列@var{string}の大きさを返します。文字列の大きさは、
+@var{string}が占めるメモリ上のバイト数で、これは文字列の内部エンコーディングに
+依存します。同じ文字列であっても内部エンコーディングが違えば違う大きさになる場合も
+あります。
+
+不完全な文字列では、文字列の長さと大きさは常に一致します。
+@c COMMON
 @end defun
 
 @defun string-ref cstring k &optional fallback
-[R5RS+] Returns @var{k}-th character of a complete string @var{cstring}.
-@var{k} must be greater than or equal to zero, and less than
-@code{(string-length @var{cstring})}.
-
+[R5RS+]
+@c EN
+Returns @var{k}-th character of a complete string @var{cstring}.
 It is an error to pass an incomplete string.
 
 By default, an error is signalled if @code{k} is out of range
 (negative, or greater than or equal to the length of @var{cstring}).
 However, if an optional argument @var{fallback} is given,
 it is returned in such case.  This is Gauche's extension.
+@c JP
+完全な文字列@var{cstring}の@var{k}番目の文字を返します。
+不完全な文字列を渡すのはエラーです。
+
+@var{k}が負数であったり@var{cstring}の長さと同じかそれ以上であった場合には
+エラーが報告されます。但し、引数@var{fallback}が与えられている場合にはエラーを
+報告せず@var{fallback}が返されます。これはGaucheの拡張です。
+@c COMMON
 @end defun
 
 @defun string-byte-ref string k
