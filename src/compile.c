@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.75 2002-04-15 10:44:37 shirok Exp $
+ *  $Id: compile.c,v 1.76 2002-04-21 21:14:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -54,8 +54,11 @@ static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
 #define LIST2_P(obj) \
     (SCM_PAIRP(obj) && SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj)))
 
+#define TAILP(ctx)  ((ctx) == SCM_COMPILE_TAIL)
+
 #define ADDCODE1(c)   SCM_APPEND1(code, codetail, c)
 #define ADDCODE(c)    SCM_APPEND(code, codetail, c)
+
 
 /* create local ref/set insn.  special instruction is used for local
    ref/set to the first frame with small number of offset (<5) for
@@ -443,11 +446,11 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             }
 
             ADDCODE(head);
-            ADDCODE1(((ctx == SCM_COMPILE_TAIL)?
+            ADDCODE1((TAILP(ctx)?
                       SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
                       SCM_VM_INSN1(SCM_VM_CALL, nargs)));
 
-            if (ctx == SCM_COMPILE_TAIL) {
+            if (TAILP(ctx)) {
                 code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs), code);
             } else {
                 code = SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs), code);
@@ -659,11 +662,11 @@ static ScmObj compile_set(ScmObj form,
         ADDCODE(compile_int(SCM_CAR(location), env, SCM_COMPILE_NORMAL));
         ADDCODE1(SCM_VM_INSN(SCM_VM_SETTER));
 
-        ADDCODE1(((ctx == SCM_COMPILE_TAIL)?
-                  SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
-                  SCM_VM_INSN1(SCM_VM_CALL, nargs)));
+        ADDCODE1(TAILP(ctx)?
+                 SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs) :
+                 SCM_VM_INSN1(SCM_VM_CALL, nargs));
         
-        if (ctx == SCM_COMPILE_TAIL) {
+        if (TAILP(ctx)) {
             code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs), code);
         } else {
             code = SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs), code);
@@ -929,7 +932,7 @@ static ScmObj compile_if(ScmObj form, ScmObj env, int ctx, void *data)
     ScmObj tail = SCM_CDR(form);
     ScmObj then_code = SCM_NIL, then_tail = SCM_NIL;
     ScmObj else_code = SCM_NIL, else_tail = SCM_NIL;
-    ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
+    ScmObj merger = TAILP(ctx)? SCM_NIL : SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     int nargs = Scm_Length(tail);
     
     if (nargs < 2 || nargs > 3) Scm_Error("syntax error: %S", form);
@@ -957,7 +960,7 @@ static ScmObj compile_when(ScmObj form, ScmObj env, int ctx, void *data)
     ScmObj tail = SCM_CDR(form);
     ScmObj then_code = SCM_NIL, then_tail = SCM_NIL;
     ScmObj else_code = SCM_NIL, else_tail = SCM_NIL;
-    ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
+    ScmObj merger = TAILP(ctx)? SCM_NIL : SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     int unlessp = (data != NULL);
     int nargs = Scm_Length(tail);
     if (nargs < 2) Scm_Error("syntax error: %S", form);
@@ -1015,7 +1018,7 @@ static ScmObj compile_and(ScmObj form, ScmObj env, int ctx, void *data)
         if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
         else return orp ? SCM_LIST1(SCM_FALSE) : SCM_LIST1(SCM_TRUE);
     } else {
-        ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
+        ScmObj merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
         return compile_and_rec(tail, merger, orp, env, ctx);
     }
 }
@@ -1090,7 +1093,7 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
         SCM_APPEND1(xcode, xtail, SCM_VM_INSN(SCM_VM_PUSH));
         SCM_APPEND(xcode, xtail,
                    compile_int(SCM_CADR(body), env, SCM_COMPILE_NORMAL));
-        if (ctx == SCM_COMPILE_TAIL) {
+        if (TAILP(ctx)) {
             SCM_APPEND1(xcode, xtail, SCM_VM_INSN1(SCM_VM_TAIL_CALL, 1));
             SCM_APPEND(xcode, xtail, merger);
             ADDCODE(Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, 1), xcode));
@@ -1143,7 +1146,7 @@ static ScmObj compile_cond(ScmObj form, ScmObj env, int ctx, void *data)
     if (SCM_NULLP(clauses)) {
         Scm_Error("at least one clause is required for cond: %S", form);
     }
-    merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
+    merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     return compile_cond_int(form, clauses, merger, env, ctx, FALSE);
 }
 
@@ -1168,7 +1171,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
 #endif
     ADDCODE(compile_int(key, env, SCM_COMPILE_NORMAL));
     ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
-    merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
+    merger = TAILP(ctx)? SCM_NIL:SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     ADDCODE(compile_cond_int(form, clauses, merger, env, ctx, TRUE));
     return code;
 }

@@ -1,3 +1,8 @@
+2002-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c : eliminated the "merger" NOP instruction at the
+	  tail position; that prevented proper tail recursion in some cases.
+
 2002-04-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parameter.scm : added.
