@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.22 2001-10-24 08:43:34 shirok Exp $
+;;;  $Id: object.scm,v 1.23 2001-10-24 09:37:54 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -197,6 +197,7 @@
                (inittnk (get-keyword :init-thunk (cdr slot) unbound)))
           (cons name
                 (apply make <slot-accessor>
+                       :class class :name slot
                        `(,@(if (eq? initval unbound)
                                '()
                                (list :init-value initval))
