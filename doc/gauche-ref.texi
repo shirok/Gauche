@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.321 2002-12-11 00:21:37 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.322 2002-12-11 03:09:25 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -23672,6 +23672,7 @@ generates will be quantized by the given @var{unit}, where
 * rfc.822 - RFC822 message parsing::  
 * rfc.base64 - Base64 encoding/decoding::  
 * rfc.cookie - HTTP cookie handling::  
+* rfc.hmac - HMAC keyed-hashing::  
 * rfc.http - HTTP::             
 * rfc.md5 - MD5 message digest::  
 * rfc.quoted-printable - Quoted-printable encoding/decoding::  
@@ -25377,7 +25378,7 @@ set are silently ignored.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.cookie - HTTP cookie handling, rfc.http - HTTP, rfc.base64 - Base64 encoding/decoding, Library modules - Utilities
+@node rfc.cookie - HTTP cookie handling, rfc.hmac - HMAC keyed-hashing, rfc.base64 - Base64 encoding/decoding, Library modules - Utilities
 @section @code{rfc.cookie} - HTTP cookie handling
 @c NODE rfc.cookie - HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
@@ -25469,7 +25470,64 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.http - HTTP, rfc.md5 - MD5 message digest, rfc.cookie - HTTP cookie handling, Library modules - Utilities
+@node rfc.hmac - HMAC keyed-hashing, rfc.http - HTTP, rfc.cookie - HTTP cookie handling, Library modules - Utilities
+@section @code{rfc.hmac} - HMAC keyed-hashing
+
+@deftp {Module} rfc.hmac
+@mdindex rfc.hmac
+This module implements HMAC algorithm,
+Keyed-hashing for message authentication, defined in RFC 2104.
+
+For simple batched keyed hashing, you can use high-level API 
+@code{hmac-digest} and @code{hmac-digest-string}.
+Or you can create @code{<hmac>} object and update its state
+as the data coming in.
+@end deftp
+
+@deftp {Class} <hmac>
+@clindex hmac
+Keeps state informatoin of HMAC algorithm.
+Key and the hashing algorithm should be given at the construction
+time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
+You can pass any class object that implements message digest 
+interface (@xref{util.digest - Message digester framework}),
+such as @code{<md5>} (@xref{rfc.md5 - MD5 message digest})
+or @code{<sha1>} (@xref{rfc.sha1 - SHA1 message digest}).
+
+Example:
+@example
+(make <hmac> :key (make-byte-string 16 #x0b) :hasher <md5>)
+@end example
+@end deftp
+
+@deffn {Method} hmac-update! (hmac <hmac>) data
+Updates the internal state of @var{hmac} by @var{data},
+which must be represented by a (possibly incomplete) string.
+@end deffn
+
+@deffn {Method} hmac-final! (hmac <hmac>)
+Finalizes the internal state of @var{hmac} and returns the
+hashed string in incomplete string.
+You can use @code{digest-hexify}
+(@xref{util.digest - Message digester framework}) to obtain "hexified"
+result.
+Once finalized, you can't call @code{hmac-update!} or @code{hmac-final!}
+on @var{hmac}.
+@end deffn
+
+@deffn {Method} hmac-digest &keyword key hasher
+Creates an @code{<hmac>} object and hash the data stream
+from the current input port, then writes the hashed result
+(in an incomplete string) to the current output port.
+@end deffn
+
+@deffn {Method} hmac-digest-string string &keyword key hasher
+Creates an @code{<hmac>} object and hash the data in @var{string},
+then returns the hashed result in an incomplete string.
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node rfc.http - HTTP, rfc.md5 - MD5 message digest, rfc.hmac - HMAC keyed-hashing, Library modules - Utilities
 @section @code{rfc.http} - HTTP
 
 @deftp {Module} rfc.http
@@ -25608,7 +25666,29 @@ The module extends util.digest
 (@xref{util.digest - Message digester framework}).
 @end deftp
 
+@deftp {Class} <md5>
+@clindex md5
+The instance of this class keeps internal state of MD5 digest algorithm.
 
+This class implements @code{util.digest} framework interface,
+@code{digest-update!}, @code{digest-final!}, 
+@code{digest}, and @code{digest-string}.
+@xref{util.digest - Message digester framework}, for detailed explanation
+of these methods.
+@end deftp
+
+Besides the digester framework, this module provides to 
+short-cut procedures.
+
+@defun md5-digest
+Reads data from the current input port until EOF, and writes
+its digest (in an incomplete string) to the current output port.
+@end defun
+
+@defun md5-digest-string string
+Digest the data in @var{string}, and returns the result 
+in an incomplete string.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.sha1 - SHA1 message digest, rfc.md5 - MD5 message digest, Library modules - Utilities
@@ -25659,6 +25739,30 @@ defined in RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}).
 The module extends util.digest 
 (@xref{util.digest - Message digester framework}).
 @end deftp
+
+@deftp {Class} <sha1>
+@clindex sha1
+The instance of this class keeps internal state of SHA1 digest algorithm.
+
+This class implements @code{util.digest} framework interface,
+@code{digest-update!}, @code{digest-final!}, 
+@code{digest}, and @code{digest-string}.
+@xref{util.digest - Message digester framework}, for detailed explanation
+of these methods.
+@end deftp
+
+Besides the digester framework, this module provides to 
+short-cut procedures.
+
+@defun sha1-digest
+Reads data from the current input port until EOF, and writes
+its digest (in an incomplete string) to the current output port.
+@end defun
+
+@defun sha1-digest-string string
+Digest the data in @var{string}, and returns the result 
+in an incomplete string.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node rfc.uri - URI parsing and construction, slib - SLIB, rfc.sha1 - SHA1 message digest, Library modules - Utilities
@@ -26524,17 +26628,33 @@ A base class of message digest algorithm implementation.
 The concrete subclass of message digest algorithm has to
 implement the following methods.
 
-@deffn {Generic function} digest-update algorithm data
+@deffn {Generic function} digest-update! algorithm data
+Takes the instance of massage-digest algorithm, and updates it
+with the data @var{data}, represented in a (possibly incomplete) string.
 @end deffn
 
-@deffn {Generic function} digest-final algorithm
+@deffn {Generic function} digest-final! algorithm
+Finalizes the instance of message-digest algorithm, and
+returns the digest result in an incomplete string.
 @end deffn
 
-@deffn {Generic function} digest algorithm-meta
+@deffn {Generic function} digest class
+A wrapper of digest routines.  Given message-digest algorithm @var{class},
+this function reads the input data from current input port until EOF,
+and writes the digest result in an incomplete string to the current
+output port.
 @end deffn
 
-@deffn {Generic function} digest-string algorithm-meta
+@deffn {Generic function} digest-string class string
+A wrapper of digest routines.  Given message-digest algorithm @var{class},
+this function reads the input data from @var{string},
+and returns the digest result in an incomplete string.
 @end deffn
+
+@defun digest-hexify digest-result
+An utility procedure.  Given the result of digest, @var{digest-result},
+converts it to a hexified string.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node util.isomorph - Determine isomorphism, util.queue - Queue, util.digest - Message digester framework, Library modules - Utilities

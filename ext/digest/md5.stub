@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: md5.stub,v 1.2 2002-12-07 00:23:41 shirok Exp $
+;;;  $Id: md5.stub,v 1.3 2002-12-11 03:09:26 shirok Exp $
 ;;;
 
 "
@@ -58,11 +58,11 @@
 
 (define-type <md5> "ScmMd5*")
 
-(define-cproc %md5-update! (md5::<md5> data::<string>)
+(define-cproc %md5-update (md5::<md5> data::<string>)
   "  MD5Update(&md5->ctx, Scm_GetString(data), SCM_STRING_SIZE(data));
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc %md5-final! (md5::<md5>)
+(define-cproc %md5-final (md5::<md5>)
   "  unsigned char digest[16];
   MD5Final(digest, &md5->ctx);
   SCM_RETURN(Scm_MakeString(digest, 16, 16, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING));")

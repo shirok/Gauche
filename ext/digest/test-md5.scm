@@ -8,19 +8,13 @@
 (add-load-path ".")
 (load "md5")
 (import rfc.md5)
-(use util.digest)
-
-(define (hexify string)
-  (with-string-io string
-    (lambda ()
-      (port-for-each (lambda (x) (format #t "~2,'0x" x)) read-byte))))
 
 (for-each
  (lambda (args)
    (test "md5-digest-string" (car args)
-	 (lambda () (hexify (apply md5-digest-string (cdr args)))))
+	 (lambda () (digest-hexify (apply md5-digest-string (cdr args)))))
    (test "digest-string" (car args)
- 	 (lambda () (hexify (apply digest-string <md5> (cdr args))))))
+ 	 (lambda () (digest-hexify (apply digest-string <md5> (cdr args))))))
  '(("d41d8cd98f00b204e9800998ecf8427e" "")
    ("0cc175b9c0f1b6a831c399e269772661" "a")
    ("900150983cd24fb0d6963f7d28e17f72" "abc")

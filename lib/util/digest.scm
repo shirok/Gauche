@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: digest.scm,v 1.3 2002-12-07 00:23:41 shirok Exp $
+;;;  $Id: digest.scm,v 1.4 2002-12-11 03:09:26 shirok Exp $
 ;;;
 
 ;; An abstract base- and meta-class of message digest algorithms.
@@ -21,8 +21,9 @@
 
 (define-module util.digest
   (export <message-digest-algorithm> <message-digest-algorithm-meta>
-	  digest-update! digest-final! digest digest-string))
-
+	  digest-update! digest-final! digest digest-string
+          digest-hexify)
+  )
 (select-module util.digest)
 
 (define-class <message-digest-algorithm-meta> (<class>)
@@ -40,5 +41,11 @@
   #f)
 (define-method digest-string ((class <message-digest-algorithm-meta>) string)
   #f)
+
+;; utility
+(define (digest-hexify string)
+  (with-string-io string
+    (lambda ()
+      (port-for-each (lambda (x) (format #t "~2,'0x" x)) read-byte))))
 
 (provide "util/digest")
