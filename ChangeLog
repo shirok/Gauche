@@ -1,3 +1,9 @@
+2001-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/extlib.stub : added error handling mechanism,
+	  with-error-handler.
+	* test/error.scm : added to test error handler mechanism.
+
 2001-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/gauche/vm.h : fixed continuations thrown across
