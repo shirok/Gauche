@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.1 2003-07-09 11:37:26 shirok Exp $
+dnl $Id: net.ac,v 1.2 2003-08-08 09:58:09 shirok Exp $
 
 # ext/net -------------------------------------------------
 
@@ -185,6 +185,8 @@ fi
 if test $ac_cv_func_getservbyport_r != no; then
   AC_DEFINE_UNQUOTED(GETSERVBYPORT_R_NUMARGS, $ac_cv_func_getservbyport_r_nargs, [Define number of args getservbyport_r takes])
 fi
+
+TYPE_SOCKLEN_T
 
 dnl Local variables:
 dnl mode: autoconf

@@ -1,5 +1,9 @@
 2003-08-07  Shiro Kawai  <shiro@acm.org>
 
+	* aclocal.m4, ext/net/net.ac, src/gauche/config.h : added test for
+	  socklen_t, which appears to be necessary on MacOS X when using
+	  ipv6.  (Patch from Hisazumi Kenji).
+
 	* Makefile.in, lib/Makefile.in, lib/mklibcat : added 'slibcat-in-place'
 	  make target which creates 'slibcat' within the source tree before
 	  installing gauche.  This is useful to make a package of the
