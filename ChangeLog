@@ -1,3 +1,11 @@
+2003-12-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/autoloads.scm : added missing #define LIBGAUCHE_BODY --- it
+	  matters on cygwin.
+
+	* src/main.c, src/load.c : added ad-hoc support of legacy DOS
+	  drive letter under __CYGWIN__.
+
 2003-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/mime.scm (mime-parse-message, etc): revised API.

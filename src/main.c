@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.69 2003-07-11 13:08:40 shirok Exp $
+ *  $Id: main.c,v 1.70 2003-12-16 08:34:18 shirok Exp $
  */
 
 #include <unistd.h>
@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <ctype.h>
 #include "gauche.h"
 
 #ifdef HAVE_GETOPT_H
@@ -249,6 +250,11 @@ int main(int argc, char **argv)
         if (argv[optind][0] == '\0') Scm_Error("bad script name");
         if (argv[optind][0] == '/') {
             scriptfile = argv[optind];
+#ifdef __CYGWIN__
+	} else if (isalpha(argv[optind][0]) && argv[optind][1] == ':') {
+	    /* support of f*$(#*% legacy DOS drive letter */
+	    scriptfile = argv[optind];
+#endif /* __CYGWIN__ */
         } else {
             if (stat(argv[optind], &statbuf) == 0) {
                 ScmDString ds;

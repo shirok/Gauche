@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.79 2003-12-09 19:45:48 shirok Exp $
+ *  $Id: load.c,v 1.80 2003-12-16 08:34:18 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -258,7 +258,12 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
         use_load_paths = FALSE;
     } else if (*ptr == '/'
                || (*ptr == '.' && *(ptr+1) == '/')
-               || (*ptr == '.' && *(ptr+1) == '.' && *(ptr+2) == '/')) {
+               || (*ptr == '.' && *(ptr+1) == '.' && *(ptr+2) == '/')
+#ifdef __CYGWIN__
+	       /* support for legacy DOS drive letter */
+	       || (isalpha(*ptr) && *(ptr+1) == ':')
+#endif /* __CYGWIN__ */
+	       ) {
         use_load_paths = FALSE;
     }
 

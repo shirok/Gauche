@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.1 2003-12-09 19:50:31 shirok Exp $
+;;; $Id: autoloads.scm,v 1.2 2003-12-16 08:34:18 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -44,6 +44,7 @@
                          (iota (length syms)) syms))
          )
     (print "/* Generated automatically.  DO NOT EDIT */")
+    (print "#define LIBGAUCHE_BODY")
     (print "#include \"gauche.h\"")
     ;; declarations
     (dolist (sym sym-alist)
