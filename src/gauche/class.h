@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.3 2001-03-17 08:23:20 shiro Exp $
+ *  $Id: class.h,v 1.4 2001-03-18 08:05:36 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -50,24 +50,6 @@ typedef struct ScmClassStaticSlotSpecRec {
               (ScmNativeSetterProc)setter }}
               
 /* object system base classes */
-typedef struct ScmGenericRec {
-    SCM_HEADER;
-    ScmObj name;
-    ScmObj methods;
-} ScmGeneric;
-
-extern ScmClass Scm_GenericClass;
-#define SCM_CLASS_GENERIC  (&Scm_GenericClass)
-
-typedef struct ScmMethodRec {
-    SCM_HEADER;
-    ScmObj generic;
-    ScmObj specializers;
-    ScmObj body;
-} ScmMethod;
-
-extern ScmClass Scm_MethodClass;
-#define SCM_CLASS_METHOD   (&Scm_MethodClass)
 
 
 /* for subclassing */
