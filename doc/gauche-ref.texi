@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.42 2001-07-08 19:39:37 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.43 2001-07-09 10:24:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2410,6 +2410,159 @@ You can customize how the object is printed out by this method.
 @end defun
 
 @defun format port string arg @dots{}
+Format @var{arg} @dots{} according to @var{string}.
+This function is a subset of CommonLisp's @code{format} function.
+
+@var{port} specifies the destination; if it is an output port, the
+formatted result is written to it; if it is @code{#t},
+the result is written to the current output port;
+if it is @code{#f}, the formatted result is returned as a string.
+
+@var{string} is a string that contains format directives.
+A format directive is a character sequence begins with tilda, `@code{~}',
+and ends with some specific characters.  A format directive takes
+the corresponding @var{arg} and formats it.  The rest of string is
+copied to the output as is.
+
+@example
+(format #f "the answer is ~s" 42)
+  @result{} "the answer is 42"
+@end example
+
+The format directive can take one or more @var{parameters}, separated
+by comma characters.  A parameter may be an integer or a character;
+if it is a character, it should be preceded by a quote character.
+Parameter can be omitted, in such case the system default value is
+used.  The interpretation of the parameters depends on the 
+format directive.
+
+Furthermore, a format directive can take two
+additional flags: atmark `@code{@@}' and colon `@code{:}'.  One or
+both of them may modify the behavior of the format directive.
+Those flags must be placed immediately before the directive
+character.
+
+If a character `@code{v}' or `@code{V}' is in the place of the
+parameter, the value of the parameter is taken from the format's
+argument.  The argument must be either an integer, a character, or
+@code{#f} (indicating that the parameter is effectively omitted).
+
+Some examples:
+
+@table @code
+@item ~10,2s
+A format directive @code{~s}, with two parameters, 10 and 2.
+@item ~12,,,'*A
+A format directive @code{~a}, with 10 for the first parameter and
+a character `@code{*}' for the fourth parameter.  The second and
+third parameters are omitted.
+@item ~10@@d
+A format directive @code{~d}, with 10 for the first parameter and
+`@code{@@}' flag.
+@item ~v,vx
+A format directive @code{~x}, whose first and second parameter will
+be taken from the arguments.
+@end table
+
+The following is a complete list of the supported format directives.
+
+@table @asis
+@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar}@b{A}
+Ascii output.  The corresponding argument is printed by @code{display}.
+If an integer @var{mincol} is given, it specifies the minimum number
+of characters to be output; if the formatted result is shorter than
+@var{mincol}, a whitespace is padded to the right (i.e. the result
+is left justified).
+
+The @var{colinc}, @var{minpad} and @var{padchar} parameters
+control, if given, further padding.  A character @var{padchar} replaces
+the padding character for the whitespace.  If an integer @var{minpad}
+is given and greater than 0, at least @var{minpad} padding character
+is used, regardless of the resulting width.  If an integer @var{colinc}
+is given, the padding character is added (after @var{minpad}) in chunk
+of @var{colinc} characters, until the entire width exceeds @var{mincol}.
+
+If atmark-flag is given, the format result is right justified, i.e.
+padding is added to the left.
+
+@example
+(format #f "|~a|" "oops")
+  @result{} "|oops|"
+(format #f "|~10a|" "oops")
+  @result{} "|      oops|"
+(format #f "|~10@@a|" "oops")
+  @result{} "|oops      |"
+(format #f "|~10,,,'*a|" "oops")
+  @result{} "|******oops|"
+@end example
+
+@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar}@b{S}
+S-expression output.  The corresponding argument is printed
+by @code{write}.  The semantics of parameters and flags are the same
+as @code{~A} directive.
+
+@example
+(format #f "|~s|" "oops")
+  @result{} "|\"oops\"|"
+(format #f "|~10s|" "oops")
+  @result{} "|    \"oops\"|"
+(format #f "|~10@@s|" "oops")
+  @result{} "|\"oops\"    |"
+(format #f "|~10,,,'*s|" "oops")
+  @result{} "|****\"oops\"|"
+@end example
+
+@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{D}
+Decimal output.  The argument is formatted as an decimal integer.
+If the argument is not an integer, @code{~A} is used to format it.
+
+If an integer parameter @var{mincol} is given, it specifies minimum
+width of the formatted result; if the result is shorter than it,
+@var{padchar} is padded on the left (i.e. the result is right
+justified).  The default of @var{padchar} is a whitespace.
+
+@example
+(format #f "|~d|" 12345)
+  @result{} "|12345|"
+(format #f "|~10d|" 12345)
+  @result{} "|     12345|"
+(format #f "|~10,'0d|" 12345)
+  @result{} "|0000012345|"
+@end example
+
+If atmark-flag is given, the sign `@code{+}' is printed for the
+positive argument.
+
+If colon-flag is given, every @var{interval}-th digit of
+the result is grouped and @var{commachar} is inserted between them.
+The default of @var{commachar} is `@code{,}', and the default of
+@var{interval} is 3.
+
+@example
+(format #f "|~:d|" 12345)
+  @result{} "|12,345|"
+(format #f "|~,,'_,4:d|" -12345678)
+  @result{} "|-1234_5678|"
+@end example
+
+@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{B}
+Binary output.  The argument is formatted as a binary integer.
+The semantics of parameters and flags are the same as
+the @code{~D} directive.
+
+@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{O}
+Octal output.  The argument is formatted as an octal integer.
+The semantics of parameters and flags are the same as
+the @code{~D} directive.
+
+@item @b{~}@var{mincol},@var{padchar},@var{commachar},@var{interval}@b{X}
+Hexadecimal output.
+The argument is formatted as a hexadecimal integer.
+The semantics of parameters and flags are the same as
+the @code{~D} directive.
+
+@end table
+
 @end defun
 
 
