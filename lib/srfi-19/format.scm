@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.2 2002-03-09 20:25:44 shirok Exp $
+;;; $Id: format.scm,v 1.3 2002-05-24 10:21:26 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -27,25 +27,22 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 (select-module srfi-19)
+(use srfi-13)
+(use gauche.collection)
 
 (define tm:locale-number-separator ".")
 
-(define tm:locale-abbr-weekday-vector (vector "Sun" "Mon" "Tue" "Wed"
-					     "Thu" "Fri" "Sat")) 
-(define tm:locale-long-weekday-vector (vector "Sunday" "Monday"
-					     "Tuesday" "Wednesday"
-					     "Thursday" "Friday"
-					     "Saturday"))
+(define tm:locale-abbr-weekday-vector
+  '#("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat"))
+(define tm:locale-long-weekday-vector
+  '#("Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"))
 ;; note empty string in 0th place. 
-(define tm:locale-abbr-month-vector   (vector "" "Jan" "Feb" "Mar"
-					     "Apr" "May" "Jun" "Jul"
-					     "Aug" "Sep" "Oct" "Nov"
-					     "Dec")) 
-(define tm:locale-long-month-vector   (vector "" "January" "February"
-					     "March" "April" "May"
-					     "June" "July" "August"
-					     "September" "October"
-					     "November" "December")) 
+(define tm:locale-abbr-month-vector
+  '#("" "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul"
+     "Aug" "Sep" "Oct" "Nov" "Dec")) 
+(define tm:locale-long-month-vector
+  '#("" "January" "February" "March" "April" "May"
+     "June" "July" "August" "September" "October" "November" "December"))
 
 (define tm:locale-pm "PM")
 (define tm:locale-am "AM")
@@ -57,7 +54,7 @@
 (define tm:iso-8601-date-time-format "~Y-~m-~dT~H:~M:~S~z")
 
 ;; returns a string rep. of number N, of minimum LENGTH,
-;; padded with character PAD-WITH. If PAD-WITH if #f, 
+;; padded with character PAD-WITH. If PAD-WITH is #f, 
 ;; no padding is done, and it's as if number->string was used.
 ;; if string is longer than LENGTH, it's as if number->string was used.
 
@@ -81,49 +78,37 @@
 (define (tm:locale-long-month n)
   (vector-ref tm:locale-long-month-vector n))
 
-(define (tm:vector-find needle haystack comparator)
-  (let ((len (vector-length haystack)))
-    (define (tm:vector-find-int index)
-      (cond
-       ((>= index len) #f)
-       ((comparator needle (vector-ref haystack index)) index)
-       (else (tm:vector-find-int (+ index 1)))))
-    (tm:vector-find-int 0)))
-
 (define (tm:locale-abbr-weekday->index string)
-  (tm:vector-find string tm:locale-abbr-weekday-vector string=?))
+  (find (pa$ string=? string) tm:locale-abbr-weekday-vector))
 
 (define (tm:locale-long-weekday->index string)
-  (tm:vector-find string tm:locale-long-weekday-vector string=?))
+  (find (pa$ string=? string) tm:locale-long-weekday-vector))
 
 (define (tm:locale-abbr-month->index string)
-  (tm:vector-find string tm:locale-abbr-month-vector string=?))
+  (find (pa$ string=? string) tm:locale-abbr-month-vector))
 
 (define (tm:locale-long-month->index string)
-  (tm:vector-find string tm:locale-long-month-vector string=?))
-
-
+  (find (pa$ string=? string) tm:locale-long-month-vector string=?))
 
 ;; do nothing. 
 ;; Your implementation might want to do something...
 ;; 
-(define (tm:locale-print-time-zone date port)
+(define (tm:locale-print-time-zone date)
   (values))
 
 ;; Again, locale specific.
 (define (tm:locale-am/pm hr)
   (if (> hr 11) tm:locale-pm tm:locale-am))
 
-(define (tm:tz-printer offset port)
+(define (tm:tz-printer offset)
   (cond
-   ((= offset 0) (display "Z" port))
-   ((negative? offset) (display "-" port))
-   (else (display "+" port)))
-  (if (not (= offset 0))
-      (let ( (hours   (abs (quotient offset (* 60 60))))
-	     (minutes (abs (quotient (remainder offset (* 60 60)) 60))) )
-	(display (tm:padding hours #\0 2) port)
-	(display (tm:padding minutes #\0 2) port))))
+   ((= offset 0) (display "Z"))
+   ((negative? offset) (display "-"))
+   (else (display "+")))
+  (unless (zero? offset)
+    (let ((hours   (abs (quotient offset (* 60 60))))
+          (minutes (abs (quotient (remainder offset (* 60 60)) 60))) )
+      (format #t "~2,'0d~2,'0d" hours minutes))))
 
 ;; A table of output formatting directives.
 ;; the first time is the format char.
@@ -131,214 +116,162 @@
 ;; (which might be #f), and the output port.
 ;;
 (define tm:directives 
-  (list
-   (cons #\~ (lambda (date pad-with port) (display #\~ port)))
-
-   (cons #\a (lambda (date pad-with port)
-	       (display (tm:locale-abbr-weekday (date-week-day date))
-			port)))
-   (cons #\A (lambda (date pad-with port)
-	       (display (tm:locale-long-weekday (date-week-day date))
-			port)))
-   (cons #\b (lambda (date pad-with port)
-	       (display (tm:locale-abbr-month (date-month date))
-			port)))
-   (cons #\B (lambda (date pad-with port)
-	       (display (tm:locale-long-month (date-month date))
-			port)))
-   (cons #\c (lambda (date pad-with port)
-	       (display (date->string date tm:locale-date-time-format) port)))
-   (cons #\d (lambda (date pad-with port)
-	       (display (tm:padding (date-day date)
-				    #\0 2)
-			    port)))
-   (cons #\D (lambda (date pad-with port)
-	       (display (date->string date "~m/~d/~y") port)))
-   (cons #\e (lambda (date pad-with port)
-	       (display (tm:padding (date-day date)
-				    #\Space 2)
-			port)))
-   (cons #\f (lambda (date pad-with port)
-	       (if (> (date-nanosecond date)
-		      tm:nano)
-		   (display (tm:padding (+ (date-second date) 1)
-					pad-with 2)
-			    port)
-		   (display (tm:padding (date-second date)
-					pad-with 2)
-			    port))
-	       (receive (i f) 
-			(tm:split-real (/ 
-					(date-nanosecond date)
-					tm:nano 1.0))
-			(let* ((ns (number->string f))
-			       (le (string-length ns)))
-			  (if (> le 2)
-			      (begin
-				(display tm:locale-number-separator port)
-				(display (substring ns 2 le) port)))))))
-   (cons #\h (lambda (date pad-with port)
-	       (display (date->string date "~b") port)))
-   (cons #\H (lambda (date pad-with port)
-	       (display (tm:padding (date-hour date)
-				    pad-with 2)
-			port)))
-   (cons #\I (lambda (date pad-with port)
-	       (let ((hr (date-hour date)))
-		 (if (> hr 12)
-		     (display (tm:padding (- hr 12)
-					  pad-with 2)
-			      port)
-		     (display (tm:padding hr
-					  pad-with 2)
-			      port)))))
-   (cons #\j (lambda (date pad-with port)
-	       (display (tm:padding (date-year-day date)
-				    pad-with 3)
-			port)))
-   (cons #\k (lambda (date pad-with port)
-	       (display (tm:padding (date-hour date)
-				    #\Space 2)
-			    port)))
-   (cons #\l (lambda (date pad-with port)
-	       (let ((hr (if (> (date-hour date) 12)
-			     (- (date-hour date) 12) (date-hour date))))
-		 (display (tm:padding hr  #\Space 2)
-			  port))))
-   (cons #\m (lambda (date pad-with port)
-	       (display (tm:padding (date-month date)
-				    pad-with 2)
-			port)))
-   (cons #\M (lambda (date pad-with port)
-	       (display (tm:padding (date-minute date)
-				    pad-with 2)
-			port)))
-   (cons #\n (lambda (date pad-with port)
-	       (newline port)))
-   (cons #\N (lambda (date pad-with port)
-	       (display (tm:padding (date-nanosecond date)
-				    pad-with 7)
-			port)))
-   (cons #\p (lambda (date pad-with port)
-	       (display (tm:locale-am/pm (date-hour date)) port)))
-   (cons #\r (lambda (date pad-with port)
-	       (display (date->string date "~I:~M:~S ~p") port)))
-   (cons #\s (lambda (date pad-with port)
-	       (display (time-second (date->time-utc date)) port)))
-   (cons #\S (lambda (date pad-with port)
-	       (if (> (date-nanosecond date)
-		      tm:nano)
-	       (display (tm:padding (+ (date-second date) 1)
-				    pad-with 2)
-			port)
-	       (display (tm:padding (date-second date)
-				    pad-with 2)
-			port))))
-   (cons #\t (lambda (date pad-with port)
-	       (display #\Tab port)))
-   (cons #\T (lambda (date pad-with port)
-	       (display (date->string date "~H:~M:~S") port)))
-   (cons #\U (lambda (date pad-with port)
-	       (if (> (tm:days-before-first-week date 0) 0)
-		   (display (tm:padding (+ (date-week-number date 0) 1)
-					#\0 2) port)
-		   (display (tm:padding (date-week-number date 0)
-					#\0 2) port))))
-   (cons #\V (lambda (date pad-with port)
-	       (display (tm:padding (date-week-number date 1)
-				    #\0 2) port)))
-   (cons #\w (lambda (date pad-with port)
-	       (display (date-week-day date) port)))
-   (cons #\x (lambda (date pad-with port)
-	       (display (date->string date tm:locale-short-date-format) port)))
-   (cons #\X (lambda (date pad-with port)
-	       (display (date->string date tm:locale-time-format) port)))
-   (cons #\W (lambda (date pad-with port)
-	       (if (> (tm:days-before-first-week date 1) 0)
-		   (display (tm:padding (+ (date-week-number date 1) 1)
-					#\0 2) port)
-		   (display (tm:padding (date-week-number date 1)
-					#\0 2) port))))
-   (cons #\y (lambda (date pad-with port)
-	       (display (tm:padding (tm:last-n-digits 
-				     (date-year date) 2)
-				    pad-with
-				    2)
-			port)))
-   (cons #\Y (lambda (date pad-with port)
-	       (display (date-year date) port)))
-   (cons #\z (lambda (date pad-with port)
-	       (tm:tz-printer (date-zone-offset date) port)))
-   (cons #\Z (lambda (date pad-with port)
-	       (tm:locale-print-time-zone date port)))
-   (cons #\1 (lambda (date pad-with port)
-	       (display (date->string date "~Y-~m-~d") port)))
-   (cons #\2 (lambda (date pad-with port)
-	       (display (date->string date "~k:~M:~S~z") port)))
-   (cons #\3 (lambda (date pad-with port)
-	       (display (date->string date "~k:~M:~S") port)))
-   (cons #\4 (lambda (date pad-with port)
-	       (display (date->string date "~Y-~m-~dT~k:~M:~S~z") port)))
-   (cons #\5 (lambda (date pad-with port)
-	       (display (date->string date "~Y-~m-~dT~k:~M:~S") port)))
-   ))
-
+  `((#\~ . ,(lambda (date pad-with) (display #\~)))
+    (#\a . ,(lambda (date pad-with)
+              (display (tm:locale-abbr-weekday (date-week-day date)))))
+    (#\A . ,(lambda (date pad-with)
+              (display (tm:locale-long-weekday (date-week-day date)))))
+    (#\b . ,(lambda (date pad-with)
+              (display (tm:locale-abbr-month (date-month date)))))
+    (#\B . ,(lambda (date pad-with)
+              (display (tm:locale-long-month (date-month date)))))
+    (#\c . ,(lambda (date pad-with)
+              (display (date->string date tm:locale-date-time-format))))
+    (#\d . ,(lambda (date pad-with)
+              (format #t "~2,'0d" (date-day date))))
+    (#\D . ,(lambda (date pad-with)
+              (display (date->string date "~m/~d/~y"))))
+    (#\e . ,(lambda (date pad-with)
+              (format #t "~2,' d" (date-day date))))
+    (#\f . ,(lambda (date pad-with)
+              (display (tm:padding (date-second date) pad-with 2))
+              (display tm:locale-number-separator)
+              (let1 nanostr (number->string (/ (date-nanosecond date) tm:nano))
+                (cond ((string-index nanostr #\.)
+                       => (lambda (i) (display (string-drop nanostr (+ i 1)))))
+                      ))))
+    (#\h . ,(lambda (date pad-with)
+              (display (date->string date "~b"))))
+    (#\H . ,(lambda (date pad-with)
+              (display (tm:padding (date-hour date) pad-with 2))))
+    (#\I . ,(lambda (date pad-with)
+              (let ((hr (date-hour date)))
+                (if (> hr 12)
+                    (display (tm:padding (- hr 12) pad-with 2))
+                    (display (tm:padding hr pad-with 2))))))
+    (#\j . ,(lambda (date pad-with)
+              (display (tm:padding (date-year-day date) pad-with 3))))
+    (#\k . ,(lambda (date pad-with)
+              (format #t "~2,' d" (date-hour date))))
+    (#\l . ,(lambda (date pad-with)
+              (let ((hr (if (> (date-hour date) 12)
+                            (- (date-hour date) 12)
+                            (date-hour date))))
+                (format #t "~2,' d" hr))))
+    (#\m . ,(lambda (date pad-with)
+              (display (tm:padding (date-month date) pad-with 2))))
+    (#\M . ,(lambda (date pad-with)
+              (display (tm:padding (date-minute date) pad-with 2))))
+    (#\n . ,(lambda (date pad-with) (newline)))
+    (#\N . ,(lambda (date pad-with)
+              (display (tm:padding (date-nanosecond date) pad-with 9))))
+    (#\p . ,(lambda (date pad-with)
+              (display (tm:locale-am/pm (date-hour date)))))
+    (#\r . ,(lambda (date pad-with)
+              (display (date->string date "~I:~M:~S ~p"))))
+    (#\s . ,(lambda (date pad-with)
+              (display (time-second (date->time-utc date)))))
+    (#\S . ,(lambda (date pad-with)
+              (display (tm:padding (date-second date) pad-with 2))))
+    (#\t . ,(lambda (date pad-with)
+              (display #\tab)))
+    (#\T . ,(lambda (date pad-with)
+              (display (date->string date "~H:~M:~S"))))
+    (#\U . ,(lambda (date pad-with)
+              (format #t "~2,'0d"
+                      (if (> (tm:days-before-first-week date 0) 0)
+                          (+ (date-week-number date 0) 1)
+                          (date-week-number date 0)))))
+    (#\V . ,(lambda (date pad-with)
+              (format #t "~2,'0d" (date-week-number date 1))))
+    (#\w . ,(lambda (date pad-with)
+              (display (date-week-day date))))
+    (#\x . ,(lambda (date pad-with)
+              (display (date->string date tm:locale-short-date-format))))
+    (#\X . ,(lambda (date pad-with)
+              (display (date->string date tm:locale-time-format))))
+    (#\W . ,(lambda (date pad-with)
+              (format #t "~2,'0d"
+                      (if (> (tm:days-before-first-week date 1) 0)
+                          (+ (date-week-number date 1) 1)
+                          (date-week-number date 1)))))
+    (#\y . ,(lambda (date pad-with)
+              (display (tm:padding (tm:last-n-digits (date-year date) 2) pad-with 2))))
+    (#\Y . ,(lambda (date pad-with)
+              (display (date-year date))))
+    (#\z . ,(lambda (date pad-with)
+              (tm:tz-printer (date-zone-offset date))))
+    (#\Z . ,(lambda (date pad-with)
+              (tm:locale-print-time-zone date)))
+    (#\1 . ,(lambda (date pad-with)
+              (display (date->string date "~Y-~m-~d"))))
+    (#\2 . ,(lambda (date pad-with)
+              (display (date->string date "~k:~M:~S~z"))))
+    (#\3 . ,(lambda (date pad-with)
+              (display (date->string date "~k:~M:~S"))))
+    (#\4 . ,(lambda (date pad-with)
+              (display (date->string date "~Y-~m-~dT~k:~M:~S~z"))))
+    (#\5 . ,(lambda (date pad-with)
+              (display (date->string date "~Y-~m-~dT~k:~M:~S"))))
+    ))
 
 (define (tm:get-formatter char)
   (let ( (associated (assoc char tm:directives)) )
     (if associated (cdr associated) #f)))
 
-(define (tm:date-printer date index format-string str-len port)
-  (define (bad) 
-    (errorf "tm:date-printer: bad date format string: ~s" format-string))
+(define (tm:date-printer date index format-string str-len)
+  (define (bad i) 
+    (errorf "tm:date-printer: bad date format string: \"~a >>>~a<<< ~a\""
+            (string-take format-string i)
+            (substring format-string i (+ i 1))
+            (string-drop format-string (+ i 1))))
   (if (>= index str-len)
       (values)
       (let ( (current-char (string-ref format-string index)) )
 	(if (not (char=? current-char #\~))
 	    (begin
-	      (display current-char port)
-	      (tm:date-printer date (+ index 1) format-string str-len port))
+	      (display current-char)
+	      (tm:date-printer date (+ index 1) format-string str-len))
 	    (if (= (+ index 1) str-len) ; bad format string.
-                (bad)
+                (bad index)
                 (let ( (pad-char? (string-ref format-string (+ index 1))) )
                   (cond
                    ((char=? pad-char? #\-)
                     (when (= (+ index 2) str-len) ; bad format string.
-                      (bad))
+                      (bad (+ index 1)))
                     (let ( (formatter (tm:get-formatter 
                                        (string-ref format-string
                                                    (+ index 2)))) )
-                      (unless formatter (bad))
-                      (formatter date #f port)
+                      (unless formatter (bad (+ index 1)))
+                      (formatter date #f)
                       (tm:date-printer date (+ index 3)
-                                       format-string str-len port)))
+                                       format-string str-len)))
 
                    ((char=? pad-char? #\_)
                     (when (= (+ index 2) str-len) ; bad format string.
-                      (bad))
+                      (bad (+ index 1)))
                     (let ( (formatter (tm:get-formatter 
                                        (string-ref format-string
                                                    (+ index 2)))) )
-                      (unless formatter (bad))
-                      (formatter date #\Space port)
+                      (unless formatter (bad (+ index 1)))
+                      (formatter date #\Space)
                       (tm:date-printer date (+ index 3)
-                                       format-string str-len port)))
+                                       format-string str-len)))
 
                    (else
                     (let ( (formatter (tm:get-formatter 
                                        (string-ref format-string
                                                    (+ index 1)))) )
-                      (unless formatter (bad))
-                      (formatter date #\0 port)
+                      (unless formatter (bad (+ index 1)))
+                      (formatter date #\0)
                       (tm:date-printer date (+ index 2)
-                                       format-string str-len port))))))))))
-
+                                       format-string str-len))))))))))
 
 (define (date->string date .  format-string)
   (let-optionals* format-string ((fmt-str "~c"))
-    (let ( (str-port (open-output-string)))
-      (tm:date-printer date 0 fmt-str (string-length fmt-str) str-port)
-      (get-output-string str-port))))
+    (with-output-to-string
+      (lambda () 
+        (tm:date-printer date 0 fmt-str (string-length fmt-str))))))
 	
 (define (tm:char->int ch)
   (or (digit->integer ch) 
@@ -349,7 +282,7 @@
   (define (accum-int port accum nchars)
     (let ((ch (peek-char port)))
       (if (or (eof-object? ch)
-              n(not (char-numeric? ch))
+              (not (char-numeric? ch))
               (and upto (>= nchars  upto )))
           accum
           (accum-int port
@@ -484,46 +417,47 @@
    (list #\A char-alphabetic? locale-reader-long-weekday do-nothing)
    (list #\b char-alphabetic? locale-reader-abbr-month
 	 (lambda (val object)
-	   (tm:set-date-month! object val)))
+	   (slot-set! object 'month val)))
    (list #\B char-alphabetic? locale-reader-long-month
 	 (lambda (val object)
-	   (tm:set-date-month! object val)))
+	   (slot-set! object 'month val)))
    (list #\d char-numeric? ireader2 (lambda (val object)
-					       (tm:set-date-day!
-						object val)))
+                                      (slot-set! object 'day val)))
    (list #\e char-fail eireader2 (lambda (val object)
-					       (tm:set-date-day! object val)))
+                                   (slot-set! object 'day val)))
    (list #\h char-alphabetic? locale-reader-abbr-month
 	 (lambda (val object)
-	   (tm:set-date-month! object val)))
+	   (slot-set! object 'month val)))
    (list #\H char-numeric? ireader2 (lambda (val object)
-							(tm:set-date-hour! object val)))
+                                      (slot-set! object 'hour val)))
    (list #\k char-fail eireader2 (lambda (val object)
-					       (tm:set-date-hour! object val)))
+                                   (slot-set! object 'hour val)))
    (list #\m char-numeric? ireader2 (lambda (val object)
-					       (tm:set-date-month! object val)))
+                                      (slot-set! object 'month val)))
    (list #\M char-numeric? ireader2 (lambda (val object)
-					       (tm:set-date-minute!
-						object val)))
+                                      (slot-set! object 'minute val)))
    (list #\S char-numeric? ireader2 (lambda (val object)
-							(tm:set-date-second! object val)))
+                                      (slot-set! object 'second val)))
    (list #\y char-fail eireader2 
 	 (lambda (val object)
-	   (tm:set-date-year! object (tm:natural-year val))))
+	   (slot-set! object 'year (tm:natural-year val))))
    (list #\Y char-numeric? ireader4 (lambda (val object)
-					       (tm:set-date-year! object val)))
+                                      (slot-set! object 'year val)))
    (list #\z (lambda (c)
 	       (or (char=? c #\Z)
 		   (char=? c #\z)
 		   (char=? c #\+)
 		   (char=? c #\-)))
 	 tm:zone-reader (lambda (val object)
-			  (tm:set-date-zone-offset! object val)))
+			  (slot-set! object 'zone-offset val)))
    )))
 
 (define (tm:string->date date index format-string str-len port template-string)
   (define (bad) 
-    (errorf "string->date: bad date format string: ~s" template-string))
+    (errorf "string->date: bad date format string: \"~a >>>~a<<< ~a\""
+            (string-take template-string index)
+            (substring template-string index (+ index 1))
+            (string-drop template-string (+ index 1))))
   (define (skip-until port skipper)
     (let ((ch (peek-char port)))
       (if (eof-object? port)

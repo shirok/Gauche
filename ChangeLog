@@ -1,6 +1,23 @@
+2002-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfi-19.scm, src/srfi-19/format.scm : fixes bugs.
+	* test/srfi.scm : added tests for srfi-19.
+	* src/system.c : allowed negative value in Scm_Time slots; required
+	  to represent negative time duration.
+	* src/proc.c (proc_print): prints closure info.
+
+2002-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/auxsyslib.stub (sys-times): fixed the way to find out
+	  clock ticks.
+	* ext/charconv/configure.in : add proper include path when --with-iconv
+	  is specified.
+
 2002-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c : protecting some system-wide static states by mutexes.
+	* src/stdlib.stub, src/extlib.stub : moved definitions of Scheme
+	  subrs load and load-from-port to load.c.
 
 2002-05-20  Shiro Kawai  <shiro@acm.org>
 

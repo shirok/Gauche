@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.4 2002-05-15 05:09:03 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.5 2002-05-24 10:21:26 shirok Exp $
 
 (define-module srfi-19
   (use gauche.let-opt)
@@ -65,12 +65,12 @@
 ;;; Constants
 ;;;
 
-(define time-tai 'time-tai)
-(define time-utc 'time-utc)
-(define time-monotonic 'time-monotonic)
-(define time-thread 'time-thread)
-(define time-process 'time-process)
-(define time-duration 'time-duration)
+(define-constant time-tai 'time-tai)
+(define-constant time-utc 'time-utc)
+(define-constant time-monotonic 'time-monotonic)
+(define-constant time-thread 'time-thread)
+(define-constant time-process 'time-process)
+(define-constant time-duration 'time-duration)
 
 ;; example of extension (MZScheme specific)
 ;(define time-gc 'time-gc)
@@ -79,15 +79,15 @@
 ;;-- only the tm:tai-epoch-in-jd might need changing if
 ;;   a different epoch is used.
 
-(define tm:nano 1000000000)
-(define tm:sid  86400)    ; seconds in a day
-(define tm:sihd 43200)    ; seconds in a half day
-(define tm:tai-epoch-in-jd 4881175/2) ; julian day number for 'the epoch'
+(define-constant tm:nano 1000000000)
+(define-constant tm:sid  86400)    ; seconds in a day
+(define-constant tm:sihd 43200)    ; seconds in a half day
+(define-constant tm:tai-epoch-in-jd 4881175/2) ; julian day number for 'the epoch'
 
 ;; each entry is ( tai seconds since epoch . # seconds to subtract for utc )
 ;; note they go higher to lower, and end in 1972.
 ;; See srfi-19/read-tai.scm to update this list.
-(define tm:leap-second-table
+(define-constant tm:leap-second-table
   '((915148800 . 32)
     (867715200 . 31)
     (820454400 . 30)
@@ -122,8 +122,7 @@
 
 ;;;----------------------------------------------------------
 ;;; TIME strcture interface
-;;; The <time> class is defined in gauche.time.  We define
-;;; several APIs here.
+;;;  The <time> class is built-in.  We just define some APIs.
 
 (define-method time-type       ((t <time>)) (slot-ref t 'type))
 (define-method time-second     ((t <time>)) (slot-ref t 'second))
@@ -153,8 +152,8 @@
   (syntax-rules ()
     ((_ time type caller)
      (unless (eq? (time-type time) type)
-       (errof "~a: incompatible time type: ~a type required, but got ~a"
-              caller type time)))
+       (errorf "~a: incompatible time type: ~a type required, but got ~a"
+               caller type time)))
     ))
 
 ;;;----------------------------------------------------------
@@ -172,18 +171,20 @@
          (nsec  (* (/ tm:nano tick) (remainder cpu tick))))
     (make-time type sec nsec)))
 
+(define (tm:current-time-tai type)
+  (let* ((now (with-module gauche (current-time)))
+         (sec (slot-ref now 'second)))
+    (make <time> :type type :second (+ sec (tm:leap-second-delta sec))
+          :nanosecond (slot-ref now 'nanosecond))))
+
+
+;; redefine built-in current-time
 (define (current-time . args)
   (let-optionals* args ((clock-type 'time-utc))
     (case clock-type
-     ((time-tai)
-      (receive (sec usec) (sys-gettimeofday)
-        (tm:make-time-usec 'time-tai (+ sec (tm:leap-second-delta sec)) usec)))
-     ((time-utc)
-      (receive (sec usec) (sys-gettimeofday)
-        (tm:make-time-usec 'time-utc sec usec)))
-     ((time-monotonic)
-      (receive (sec usec) (sys-gettimeofday)
-        (tm:make-time-usec 'time-tai (+ sec (tm:leap-second-delta sec)) usec)))
+     ((time-tai) (tm:current-time-tai clock-type))
+     ((time-utc) (with-module gauche (current-time)))
+     ((time-monotonic) (tm:current-time-tai clock-type))
      ((time-thread)  (tm:current-time-process 'time-thread))
      ((time-process) (tm:current-time-process 'time-process))
      (else (error "current-time: invalid-clock-type" clock-type)))))
@@ -202,8 +203,11 @@
 	  (not (eq? (time-type time1) (time-type time2))))
       (errorf "~a: incompatible time types: ~s, ~s"
               caller time1 time2)
-      (and (proc (time-second time1) (time-second time2))
-	   (proc (time-nanosecond time1) (time-nanosecond time2)))))
+      (cond ((= (time-second time1) (time-second time2))
+             (proc (time-nanosecond time1) (time-nanosecond time2)))
+            ((and (not (eq? proc =))
+                  (proc (time-second time1) (time-second time2))))
+            (else #f))))
 
 (define (time=? time1 time2)
   (tm:time-compare time1 time2 = 'time=?))
@@ -240,7 +244,7 @@
 	time3)))
 
 (define (time-difference time1 time2)
-  (tm:time-difference time1 time2 (make-time #f #f #f)))
+  (tm:time-difference time1 time2 (make <time>)))
 
 (define (time-difference! time1 time2)
   (tm:time-difference time1 time2 time1))
@@ -264,7 +268,7 @@
       time3)))
 
 (define (add-duration time1 duration)
-  (tm:add-duration time1 duration (make-time (time-type time1) #f #f)))
+  (tm:add-duration time1 duration (make <time> :type (time-type time1))))
 
 (define (add-duration! time1 duration)
   (tm:add-duration time1 duration time1))
@@ -288,7 +292,7 @@
       time3)))
 
 (define (subtract-duration time1 duration)
-  (tm:subtract-duration time1 duration (make-time (time-type time1) #f #f)))
+  (tm:subtract-duration time1 duration (make <time> :type (time-type time1))))
 
 (define (subtract-duration! time1 duration)
   (tm:subtract-duration time1 duration time1))
@@ -305,7 +309,7 @@
   time-out)
 
 (define (time-tai->time-utc time-in)
-  (tm:time-tai->time-utc! time-in (make-time #f #f #f) 'time-tai->time-utc))
+  (tm:time-tai->time-utc! time-in (make <time>) 'time-tai->time-utc))
 
 (define (time-tai->time-utc! time-in)
   (tm:time-tai->time-utc! time-in time-in 'time-tai->time-utc!))
@@ -321,7 +325,7 @@
   time-out)
 
 (define (time-utc->time-tai time-in)
-  (tm:time-utc->time-tai! time-in (make-time #f #f #f) 'time-utc->time-tai))
+  (tm:time-utc->time-tai! time-in (make <time>) 'time-utc->time-tai))
 
 (define (time-utc->time-tai! time-in)
   (tm:time-utc->time-tai! time-in time-in 'time-utc->time-tai!))
@@ -351,7 +355,7 @@
 
 (define (time-utc->time-monotonic time-in)
   (tm:check-time-type time-in 'time-utc 'time-utc->time-monotonic)
-  (let ((ntime (tm:time-utc->time-tai! time-in (make-time #f #f #f)
+  (let ((ntime (tm:time-utc->time-tai! time-in (make <time>)
 				       'time-utc->time-monotonic)))
     (set-time-type! ntime time-monotonic)
     ntime))
@@ -396,7 +400,7 @@
     :day day :month month :year year :zone-offset zone-offset))
 
 (define-method write-object ((obj <date>) port)
-  (format port "#<date ~a/~2,'0a/~2,'0a ~2,'0a:~2,'0a:~2,'0a.~a (~a)>"
+  (format port "#<date ~d/~2,'0d/~2,'0d ~2,'0d:~2,'0d:~2,'0d.~9,'0d (~a)>"
           (date-year obj) (date-month obj) (date-day obj)
           (date-hour obj) (date-minute obj) (date-second obj)
           (date-nanosecond obj) (date-zone-offset obj)))
@@ -417,9 +421,10 @@
 (define (tm:split-real r)
   (receive (frac int) (modf r) (values int frac)))
 
-;; gives the seconds/date/month/year 
+;; Gives the seconds/date/month/year
+;; In Gauche, jdn is scaled by tm:sid to avoid precision loss.
 (define (tm:decode-julian-day-number jdn)
-  (let* ((days (truncate jdn))
+  (let* ((days (inexact->exact (truncate (/ jdn tm:sid))))
 	 (a (+ days 32044))
 	 (b (quotient (+ (* 4 a) 3) 146097))
 	 (c (- a (quotient (* 146097 b) 4)))
@@ -428,7 +433,7 @@
 	 (m (quotient (+ (* 5 e) 2) 153))
 	 (y (+ (* 100 b) d -4800 (quotient m 10))))
     (values ; seconds date month year
-     (* (- jdn days) tm:sid)
+     (- jdn (* days tm:sid))
      (+ e (- (quotient (+ (* 153 m) 2) 5)) 1)
      (+ m 3 (* -12 (quotient m 10)))
      (if (>= 0 y) (- y 1) y))
@@ -439,20 +444,19 @@
 
 (define (tm:local-tz-offset)
   (let* ((local (sys-localtime 0))
-         (secs  (+ (* (slot-ref local 'hour) tm:sid)
+         (secs  (+ (* (slot-ref local 'hour) 3600)
                    (* (slot-ref local 'min) 60)
                    (slot-ref local 'sec))))
     (if (< (slot-ref local 'year) 1970)
-        (- secs (* tm:sid 24))
+        (- secs tm:sid)
         secs)))
 
 ;; special thing -- ignores nanos
+;; Gauche doesn't have exact rational arithmetic.  To avoid precision loss,
+;; the result is scaled by tm:sid.
 (define (tm:time->julian-day-number seconds tz-offset)
-  (+ (/ (+ seconds
-	   tz-offset
-	   tm:sihd)
-	tm:sid)
-     tm:tai-epoch-in-jd))
+  (+ (+ seconds tz-offset tm:sihd)
+     (inexact->exact (* tm:tai-epoch-in-jd tm:sid))))
 
 (define (tm:leap-second? second)
   (and (assoc second tm:leap-second-table) #t))
@@ -481,8 +485,8 @@
 (define (time-tai->date time  . tz-offset)
   (tm:check-time-type time 'time-tai 'time-tai->date)
   (let-optionals* tz-offset ((offset (tm:local-tz-offset)))
-    (let ((seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
-	  (is-leap-second (tm:leap-second? (+ offset seconds))) )
+    (let* ((seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
+           (is-leap-second (tm:leap-second? (+ offset seconds))) )
       (receive (secs date month year)
 	  (if is-leap-second
 	      (tm:decode-julian-day-number (tm:time->julian-day-number (- seconds 1) offset))
@@ -505,8 +509,8 @@
 (define (time-monotonic->date time . tz-offset)
   (tm:check-time-type time 'time-monotonic 'time-monotonic->date)
   (let-optionals* tz-offset ((offset (tm:local-tz-offset)))
-    (let ((seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
-	  (is-leap-second (tm:leap-second? (+ offset seconds))) )
+    (let* ((seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
+           (is-leap-second (tm:leap-second? (+ offset seconds))) )
       (receive (secs date month year)
 	  (if is-leap-second
 	      (tm:decode-julian-day-number (tm:time->julian-day-number (- seconds 1) offset))
@@ -532,7 +536,8 @@
 	 (hour (date-hour date))
 	 (day (date-day date))
 	 (month (date-month date))
-	 (year (date-year date)) )
+	 (year (date-year date))
+         (offset (date-zone-offset date)) )
     (let ( (jdays (- (tm:encode-julian-day-number day month year)
 		     tm:tai-epoch-in-jd)) )
       (make-time 
@@ -540,7 +545,8 @@
        (+ (* (- jdays 1/2) 24 60 60)
 	  (* hour 60 60)
 	  (* minute 60)
-	  second)
+	  second
+          (- offset))
        nanosecond))))
 
 (define (date->time-tai date)
@@ -556,12 +562,12 @@
 (define (leap-year? date)
   (tm:leap-year? (date-year date)))
 
-(define  tm:month-assoc '((1 . 31)  (2 . 59)   (3 . 90)   (4 . 120) 
-			  (5 . 151) (6 . 181)  (7 . 212)  (8 . 243)
-			  (9 . 273) (10 . 304) (11 . 334) (12 . 365)))
+(define  tm:month-assoc '((2 . 31)  (3 . 59)   (4 . 90)   (5 . 120) 
+			  (6 . 151) (7 . 181)  (8 . 212)  (9 . 243)
+			  (10 . 273) (11 . 304) (12 . 334)))
 
 (define (tm:year-day day month year)
-  (let ((days-pr (assoc day tm:month-assoc)))
+  (let ((days-pr (assoc month tm:month-assoc)))
     (if (not days-pr)
         (errorf "date-year-day: invalid month: ~a" month))
     (if (and (tm:leap-year? year) (> month 2))
