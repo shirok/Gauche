@@ -1,3 +1,9 @@
+2002-02-11  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in : recovered GOSH_USE_SHLIB substitution that was
+	  accidentally dropped.
+	* lib/rfc/cookie.scm : avoid using %T in strftime, for it's not POSIX.
+
 2002-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* aclocal.m4 (AC_GAUCHE_EXT_FIXUP): allow optional second arg.
