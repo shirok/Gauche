@@ -1,6 +1,13 @@
+2001-04-03  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.20:
+	* src/char.c, src/extlib.stub: added more charset stuff.
+	* src/syslib.stub (sys-tmpnam): use mkstemp() instead of tmpnam()
+	  if possible.
+
 2001-04-02  Shiro Kawai  <shiro@scherzo>
 
-	* release 0.2.19: release candidate for 0.3
+	* release 0.2.19:
 	* gauche/serializer.scm, gauche/serializer/aserializer.scm: ports
 	  from the modules written for STk.  This is an experimental code
 	  and its API may change later.
