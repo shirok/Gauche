@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.11.2.2 2005-01-01 23:47:14 shirok Exp $
+;;;  $Id: procedure.scm,v 1.11.2.3 2005-01-02 00:10:27 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -210,7 +210,11 @@
 ;; I'm not sure whether this should be here or not, but fot the time being...
 
 (define (disasm proc)
-  (let ((dumper (with-module gauche.internal vm-dump-code)))
+  ;; kludge
+  (let ((dumper (if (find-module 'gauche.internal)
+                  (eval '(with-module gauche.internal vm-dump-code)
+                        (find-module 'gauche))
+                  vm-dump-code)))
     (dumper (closure-code proc))))
 
 (provide "gauche/procedure")
