@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.32 2002-07-15 10:51:04 shirok Exp $
+ *  $Id: write.c,v 1.33 2002-07-18 10:45:32 shirok Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/port.h"
 
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
@@ -151,29 +152,25 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     }
 }
 
-/* An adapter routine to be called from WithPortLocking */
-static ScmObj write_internal_proc(ScmPort *out, void *data)
-{
-    write_internal(((ScmWriteContext*)data)->obj, out, (ScmWriteContext*)data);
-    return SCM_UNDEFINED;
-}
-
 /*
  * Scm_Write - Standard Write.  Returns # of written characters.
  */
 void Scm_Write(ScmObj obj, ScmObj port, int mode)
 {
     ScmWriteContext ctx;
+    ScmVM *vm = Scm_VM();
     if (!SCM_OPORTP(port)) {
         Scm_Error("output port required, but got %S", port);
     }
     ctx.mode = mode;
     ctx.flags = 0;
-    ctx.obj = obj;
     /* if case mode is not specified, use default taken from VM default */
     if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
 
-    Scm_WithPortLocking(SCM_PORT(port), write_internal_proc, (void*)&ctx);
+    PORT_LOCK(SCM_PORT(port), vm);
+    PORT_SAFE_CALL(SCM_PORT(port),
+                   write_internal(obj, SCM_PORT(port), &ctx));
+    PORT_UNLOCK(SCM_PORT(port));
 }
 
 /* 
@@ -337,13 +334,6 @@ static void write_circular(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     }
 }
 
-static ScmObj write_circular_proc(ScmPort *port, void *data)
-{
-    write_circular(((ScmWriteContext*)data)->obj, port,
-                   (ScmWriteContext*)data);
-    return SCM_UNDEFINED;
-}
-
 int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
 {
     ScmWriteContext ctx;
@@ -377,8 +367,11 @@ int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
             return nc;
         }
     } else {
-        ctx.obj = obj;
-        Scm_WithPortLocking(SCM_PORT(port), write_circular_proc, (void*)&ctx);
+        ScmVM *vm = Scm_VM();
+        PORT_LOCK(SCM_PORT(port), vm);
+        PORT_SAFE_CALL(SCM_PORT(port),
+                       write_circular(obj, SCM_PORT(port), &ctx));
+        PORT_UNLOCK(SCM_PORT(port));
     }
     return 0;
 }
@@ -409,16 +402,15 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
  * Formatters
  */
 
-/* Very simple formatter, for now.
- * TODO: provide option to compile format string.
- */
-#define NEXT_ARG(arg, args)                                                 \
-    do {                                                                    \
-        if (!SCM_PAIRP(args))                                               \
-            Scm_Error("too few arguments for format string: %S", ctx->fmt); \
-        arg = SCM_CAR(args);                                                \
-        args = SCM_CDR(args);                                               \
-        argcnt++;                                                           \
+/* TODO: provide option to compile format string. */
+
+#define NEXT_ARG(arg, args)                                             \
+    do {                                                                \
+        if (!SCM_PAIRP(args))                                           \
+            Scm_Error("too few arguments for format string: %S", fmt);  \
+        arg = SCM_CAR(args);                                            \
+        args = SCM_CDR(args);                                           \
+        argcnt++;                                                       \
     } while (0)
 
 /* max # of parameters for a format directive */
@@ -543,20 +535,11 @@ static void format_integer(ScmPort *out, ScmObj arg,
     format_pad(out, SCM_STRING(str), mincol, 1, padchar, TRUE);
 }
 
-struct format_ctx {
-    int out_to_str;
-    ScmString *fmt;
-    ScmPort *fmtstr;
-    ScmObj args;
-};
-
-static ScmObj format_proc(ScmPort *out, void *data)
+static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args)
 {
-    struct format_ctx *ctx = (struct format_ctx*)data;
-    ScmPort *fmtstr = ctx->fmtstr;
     ScmChar ch = 0;
-    ScmObj arg, args = ctx->args;
-    int out_to_str = ctx->out_to_str;
+    ScmObj arg, oargs = args;
+    ScmPort *fmtstr = SCM_PORT(Scm_MakeInputStringPort(fmt));
     int backtracked = FALSE;    /* true if ~:* is used */
     int arglen, argcnt;
     ScmWriteContext sctx, actx; /* context for ~s and ~a */
@@ -576,15 +559,10 @@ static ScmObj format_proc(ScmPort *out, void *data)
         
         ch = Scm_GetcUnsafe(fmtstr);
         if (ch == EOF) {
-            if (!SCM_NULLP(args) && !backtracked) {
-                Scm_Error("too many arguments for format string: %S",
-                          ctx->fmt);
+            if (!backtracked && !SCM_NULLP(args)) {
+                Scm_Error("too many arguments for format string: %S", fmt);
             }
-            if (out_to_str) {
-                return Scm_GetOutputString(SCM_PORT(out));
-            } else {
-                return SCM_UNDEFINED;
-            }
+            return;
         }
 
         if (ch != '~') {
@@ -691,10 +669,10 @@ static ScmObj format_proc(ScmPort *out, void *data)
                         backtracked = TRUE;
                     }
                     if (argindex < 0 || argindex >= arglen) {
-                        Scm_Error("'~*' format directive refers outside of argument list in %S", ctx->fmt);
+                        Scm_Error("'~*' format directive refers outside of argument list in %S", fmt);
                     }
                     argcnt = argindex;
-                    args = Scm_ListTail(ctx->args, argcnt);
+                    args = Scm_ListTail(oargs, argcnt);
                     break;
                 }
             case 'v':; case 'V':;
@@ -703,7 +681,7 @@ static ScmObj format_proc(ScmPort *out, void *data)
                 NEXT_ARG(arg, args);
                 if (!SCM_FALSEP(arg) && !SCM_INTP(arg) && !SCM_CHARP(arg)) {
                     Scm_Error("argument for 'v' format parameter in %S should be either an integer, a character or #f, but got %S",
-                              ctx->fmt, arg);
+                              fmt, arg);
                 }
                 params[numParams++] = arg;
                 ch = Scm_GetcUnsafe(fmtstr);
@@ -712,14 +690,14 @@ static ScmObj format_proc(ScmPort *out, void *data)
             case '@':
                 if (atflag) {
                     Scm_Error("too many @-flag for formatting directive: %S",
-                              ctx->fmt);
+                              fmt);
                 }
                 atflag = TRUE;
                 continue;
             case ':':
                 if (colonflag) {
                     Scm_Error("too many :-flag for formatting directive: %S",
-                              ctx->fmt);
+                              fmt);
                 }
                 colonflag = TRUE;
                 continue;
@@ -768,26 +746,32 @@ static ScmObj format_proc(ScmPort *out, void *data)
         }
     }
   badfmt:
-    Scm_Error("illegal format string: %S", ctx->fmt);
-    return SCM_UNDEFINED;       /* dummy */
+    Scm_Error("illegal format string: %S", fmt);
+    return;       /* dummy */
 }
 
 ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
 {
-    struct format_ctx ctx;
-    ctx.out_to_str = FALSE;
+    ScmVM *vm;
+    
     if (out == SCM_FALSE) {
         out = Scm_MakeOutputStringPort();
-        ctx.out_to_str = TRUE;
-    } else if (out == SCM_TRUE) {
+        /* no need to lock */
+        format_proc(SCM_PORT(out), fmt, args);
+        return Scm_GetOutputString(SCM_PORT(out));
+    }
+
+    if (out == SCM_TRUE) {
         out = SCM_OBJ(SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM()));
     } else if (!SCM_OPORTP(out)) {
         Scm_Error("output port required, but got %S", out);
     }
-    ctx.fmtstr = SCM_PORT(Scm_MakeInputStringPort(fmt));
-    ctx.fmt = fmt;
-    ctx.args = args;
-    return Scm_WithPortLocking(SCM_PORT(out), format_proc, (void*)&ctx);
+    
+    vm = Scm_VM();
+    PORT_LOCK(SCM_PORT(out), vm);
+    PORT_SAFE_CALL(SCM_PORT(out), format_proc(SCM_PORT(out), fmt, args));
+    PORT_UNLOCK(SCM_PORT(out));
+    return SCM_UNDEFINED;
 }
 
 /* C version of format for convenience */
@@ -861,11 +845,10 @@ struct vprintf_ctx {
  * va_list type of argument in a closure packet easily.
  */
 
-static ScmObj vprintf_proc(ScmPort *out, void *data)
+static vprintf_proc(ScmPort *out, const char *fmt, ScmObj args)
 {
-    struct vprintf_ctx *ctx = (struct vprintf_ctx*)data;
-    const char *fmtp = ctx->fmt;
-    ScmObj args = ctx->args, val;
+    const char *fmtp = fmt;
+    ScmObj val;
     ScmDString argbuf;
     char buf[SPBUFSIZ];
     int c, longp = 0, len, mode;
@@ -1026,7 +1009,7 @@ static ScmObj vprintf_proc(ScmPort *out, void *data)
             break;
         }
         if (c == 0) {
-            Scm_Error("incomplete %-directive in format string: %s", ctx->fmt);
+            Scm_Error("incomplete %-directive in format string: %s", fmt);
         }
     }
 }
@@ -1036,6 +1019,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
     struct vprintf_ctx ctx;
     ScmObj h = SCM_NIL, t = SCM_NIL;
     const char *fmtp = fmt;
+    ScmVM *vm;
     int c;
     
     if (!SCM_OPORTP(out)) {
@@ -1104,11 +1088,12 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
         }
     }
     /*
-     * Second pass is called within Scm_WithPortLocking
+     * Second pass is called while locking the port.
      */
-    ctx.fmt = fmt;
-    ctx.args = h;
-    Scm_WithPortLocking(out, vprintf_proc, (void*)&ctx);
+    vm = Scm_VM();
+    PORT_LOCK(out, vm);
+    PORT_SAFE_CALL(out, vprintf_proc(out, fmt, h));
+    PORT_UNLOCK(out);
 }
 
 void Scm_Printf(ScmPort *out, const char *fmt, ...)
