@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.188 2002-04-30 00:53:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.189 2002-04-30 01:32:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7496,6 +7496,26 @@ the port.
 参照)を利用した場合、エラー時にポートを閉じるのはプログラマの責任になります。
 @c COMMON
 
+
+@defun open-input-fd-port fd &keyword buffering name owner?
+@defunx open-output-fd-port fd &keyword buffering name owner?
+@c EN
+Creates and returns an input or output port on top of the given
+file descriptor.  @var{Buffering} specifies the buffering mode
+as described in @code{open-input-file} entry above; the default
+is @code{:full}.  @var{Name} is used for the created port's name
+and returned by @code{port-name}.  A boolean flag @code{owner?}
+specfies whether @var{fd} should be closed when the port is closed.
+@c JP
+与えられたファイルディスクリプタにアクセスする入力または出力ポートを
+作成して返します。@var{buffering} は@code{open-input-file} の項で
+説明されたポートのバッファリングモードを指定します。デフォルトは@code{:full}です。
+@var{name}は@code{port-name}によって返されるポートの名前を指定します。
+@var{owner?} は、このポートを閉じた時に@var{fd}もクローズすべきかどうかを
+指定するブーリアン値です。
+@c COMMON
+@end defun
+
 @node String ports, Procedural ports, File ports, Input and output
 @subsection String ports
 @c NODE 文字列ポート
@@ -7988,22 +8008,26 @@ You can customize how the object is printed out by this method.
 @defun newline &optional port
 [R5RS]
 @c EN
+Writes a newline character to @var{port}
 @c JP
+@var{port}に改行文字を書き出します。
 @c COMMON
 @end defun
 
 @defun flush &optional port
-@c @defunx flush-output-port &optional port
-[R5RS]
+@defunx flush-all-ports
 @c EN
-Output the buffered data in @var{port}.
-This function is called in variety of ways on the various
+Output the buffered data in @var{port}, or all ports, respectively.
+
+The function "flush" is called in variety of ways on the various
 Scheme implementations: @code{force-output} (Scsh, SCM),
 @code{flush-output} (Gambit), or @code{flush-output-port} (Bigloo).
 The name @code{flush} is taken from STk and STklos.
 @c JP
-@var{port}にバッファされているデータを全て書き出します。
-この手続きはScheme実装によって様々な名前で呼ばれています：
+それぞれ、@var{port}、および全てのポートにバッファされているデータを
+全て書き出します。
+
+手続き"flush"はScheme実装によって様々な名前で呼ばれています：
 @code{force-output} (Scsh, SCM)、
 @code{flush-output} (Gambit)、@code{flush-output-port} (Bigloo) 等。
 @code{flush}の名前はSTkとSTklosから取りました。
@@ -18905,19 +18929,20 @@ its governing port is garbage collected.
 Implented as @code{sys-fcntl} in @code{gauche.fcntl} module.
 @xref{Low-level file operations}.
 @item fdopen
-Not supported yet.
+Gauche's @code{open-input-fd-port} or @code{open-output-fd-port}.
+@xref{File ports}.
 @item feof
 Not supported yet.
 @item ferror
 Not supported yet.
 @item fflush
-Gauche's @code{flush}.
+Gauche's @code{flush}.   @xref{Output}.
 @item fgetc
 Use @code{read-char} or @code{read-byte}.  @xref{Input}.
 @item fgetpos
 Not supported yet.
 @item fgets
-Use @code{read-line}.    @xref{Input}.
+Use @code{read-line} or @code{read-block}.    @xref{Input}.
 @item fileno
 @code{port-file-numer}.   @xref{Common port operations}.
 @item floor
