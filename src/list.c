@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.21 2001-03-31 08:45:45 shiro Exp $
+ *  $Id: list.c,v 1.22 2001-04-01 21:59:12 shiro Exp $
  */
 
 #include "gauche.h"
@@ -135,6 +135,29 @@ ScmObj Scm_ArrayToList(ScmObj *elts, int nelts)
         }
     }
     return h;
+}
+
+ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
+{
+    ScmObj *array, lp;
+    int len = Scm_Length(list), i;
+    if (len < 0) Scm_Error("proper list required, but got %S", list);
+    if (store == NULL) {
+        array = SCM_NEW2(ScmObj *, sizeof(ScmObj)*len);
+    } else {
+        if (*nelts < len) {
+            if (!alloc)
+                Scm_Error("ListToArray: storage too small");
+            array = SCM_NEW2(ScmObj *, sizeof(ScmObj)*len);
+        } else {
+            array = store;
+        }
+    }
+    for (i=0, lp=list; i<len; i++, lp=SCM_CDR(lp)) {
+        array[i] = SCM_CAR(lp);
+    }
+    *nelts = len;
+    return array;
 }
 
 /* Procedures intended to be used from Scheme */
