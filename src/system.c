@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.12 2001-03-20 07:35:21 shiro Exp $
+ *  $Id: system.c,v 1.13 2001-03-30 07:41:55 shiro Exp $
  */
 
 #include <stdio.h>
@@ -40,8 +40,6 @@
 #ifdef HAVE_GLOB_H
 #include <glob.h>
 #endif
-
-
 
 /*
  * Auxiliary system interface functions.   See syslib.stub for
@@ -235,9 +233,7 @@ ScmObj Scm_DirName(ScmString *filename)
  * Stat (sys/stat.h)
  */
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SysStatClass,
-                         NULL, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysStatClass, NULL);
 
 ScmObj Scm_MakeSysStat(void)
 {
@@ -250,9 +246,7 @@ ScmObj Scm_MakeSysStat(void)
  * Time (sys/time.h)
  */
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SysTimeClass,
-                         NULL, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysTimeClass, NULL);
 
 ScmObj Scm_MakeSysTime(time_t t)
 {
@@ -262,9 +256,7 @@ ScmObj Scm_MakeSysTime(time_t t)
     return SCM_OBJ(st);
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SysTmClass,
-                         NULL, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysTmClass, NULL);
 
 ScmObj Scm_MakeSysTm(struct tm *tm)
 {
@@ -278,9 +270,7 @@ ScmObj Scm_MakeSysTm(struct tm *tm)
  * Groups (grp.h)
  */
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SysGroupClass,
-                         NULL, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysGroupClass, NULL);
 
 static ScmObj make_group(struct group *g)
 {
@@ -325,9 +315,7 @@ ScmObj Scm_GetGroupByName(ScmString *name)
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
  */
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SysPasswdClass,
-                         NULL, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysPasswdClass, NULL);
 
 static ScmObj make_passwd(struct passwd *pw)
 {
@@ -372,3 +360,110 @@ ScmObj Scm_GetPasswdByName(ScmString *name)
     if (pdata == NULL) return SCM_FALSE;
     else return make_passwd(pdata);
 }
+
+/*
+ * Exec
+ *   execvp(), with optionally setting stdios correctly.
+ *
+ *   iomap argument, when provided, specifies how the open file descriptors
+ *   are treated.  If it is not a pair, nothing will be changed for open
+ *   file descriptors.  If it is a pair, it must be a list of
+ *   (<to> . <from>), where <tofd> is an integer file descriptor that
+ *   executed process will get, and <from> is either an integer file descriptor
+ *   or a port.   If a list is passed to iomap, any file descriptors other
+ *   than specified in the list will be closed before exec().
+ *
+ *   Don't expect this function to raise a catchable error.  Once the file
+ *   descriptors are set up, it's likely that Scheme's standard ports
+ *   are useless, so Scm_Error() is not an option.  It just exits by
+ *   Scm_Panic().
+ */
+
+void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
+{
+    int argc = Scm_Length(args), i;
+    char **argv;
+    ScmObj ap, iop;
+
+    if (argc < 1)
+        Scm_Error("argument list must have at least one element: %S", args);
+    
+    argv = SCM_NEW2(char **, sizeof(char *)*(argc+1));
+    for (i=0, ap = args; i<argc; i++, ap = SCM_CDR(ap)) {
+        if (!SCM_STRINGP(SCM_CAR(ap)))
+            Scm_Error("bad argument (string required): %S", SCM_CAR(ap));
+        argv[i] = Scm_GetString(SCM_STRING(SCM_CAR(ap)));
+    }
+    argv[i] = NULL;
+
+    /* swappling file descriptors. */
+    if (SCM_PAIRP(iomap)) {
+        int iollen = Scm_Length(iomap), maxfd, j;
+        int *tofd, *fromfd, *tmpfd;
+
+        /* check argument vailidity before duping file descriptors, so that
+           we can still use Scm_Error */
+        if (iollen < 0)
+            Scm_Error("proper list required for iolist, but got %S", iomap);
+        tofd   = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
+        fromfd = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
+        tmpfd  = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
+        i = 0;
+        SCM_FOR_EACH(iop, iomap) {
+            ScmObj port, elt = SCM_CAR(iop);
+            if (!SCM_PAIRP(elt) || !SCM_INTP(SCM_CAR(elt))
+                || (!SCM_PORTP(SCM_CDR(elt)) && !SCM_INTP(SCM_CDR(elt)))) {
+                Scm_Error("bad iomap specification: needs (int . int-or-port): %S", elt);
+            }
+            tofd[i] = SCM_INT_VALUE(SCM_CAR(elt));
+            if (SCM_INTP(SCM_CDR(elt))) {
+                fromfd[i] = SCM_INT_VALUE(SCM_CDR(elt));
+            } else {
+                port = SCM_CDAR(iop);
+                fromfd[i] = Scm_PortFileNo(SCM_PORT(port));
+                if (fromfd[i] < 0) {
+                    Scm_Error("iolist requires a port that has associated file descriptor, but got %S",
+                              SCM_CDAR(iop));
+                }
+                if (tofd[i] == 0 && !SCM_IPORTP(port))
+                    Scm_Error("input port required to make it stdin: %S",
+                              port);
+                if (tofd[i] == 1 && !SCM_OPORTP(port))
+                    Scm_Error("output port required to make it stdout: %S",
+                              port);
+                if (tofd[i] == 2 && !SCM_OPORTP(port))
+                    Scm_Error("output port required to make it stderr: %S",
+                              port);
+            }
+            i++;
+        }
+
+        /* TODO: use getdtablehi if available */
+        if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0)
+            Scm_Error("failed to get OPEN_MAX value from sysconf");
+
+        for (i=0; i<iollen; i++) {
+            if (tofd[i] == fromfd[i]) continue;
+            for (j=i+1; j<iollen; j++) {
+                if (tofd[i] == fromfd[j]) {
+                    int tmp = dup(tofd[i]);
+                    if (tmp < 0) Scm_Panic("dup failed: %s", strerror(errno));
+                    fromfd[j] = tmp;
+                }
+            }
+            if (dup2(fromfd[i], tofd[i]) < 0)
+                Scm_Panic("dup2 failed: %s", strerror(errno));
+        }
+        for (i=0; i<maxfd; i++) {
+            for (j=0; j<iollen; j++) {
+                if (i == tofd[j]) break;
+            }
+            if (j == iollen) close(i);
+        }
+    }
+
+    execvp(Scm_GetStringConst(file), (char *const*)argv);
+    /* here, we failed */
+    Scm_Panic("exec failed: %s", strerror(errno));
+}
+
