@@ -200,6 +200,9 @@
 (test* "build-path" "/a/b/c" (build-path "/" "a/b" "c"))
 (test* "build-path" "./a/b/c" (build-path "." "a/b" "c"))
 (test* "build-path" *test-error* (build-path "." "/a/b"))
+(test* "build-path" "foo" (build-path "" "foo"))
+(test* "build-path" "foo/bar" (build-path "" "foo" "" "bar"))
+(test* "build-path" "foo" (build-path "" "foo" ""))
 
 (test* "resolve-path" "/" (resolve-path "/"))
 (test* "resolve-path" "." (resolve-path "."))

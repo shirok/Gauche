@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.24 2004-05-14 12:26:17 shirok Exp $
+;;;  $Id: util.scm,v 1.25 2004-05-21 10:34:42 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -191,9 +191,12 @@
                     ((string-prefix? "/" p)
                      (error "can't append absolute path after other path" p))
                     (else p)))
-          (rec (if (string-suffix? "/" base)
-                   (string-append base component)
-                   (string-append base "/" component))
+          (rec (cond ((string-null? base) component)
+                     ((string-null? component) base)
+                     ((string-suffix? "/" base)
+                      (string-append base component))
+                     (else
+                      (string-append base "/" component)))
                (cdr components)))))
   (rec base-path components))
 

@@ -1,3 +1,8 @@
+2004-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/file/util.scm (build-path): ignore empty string in the components
+	  (patch from Grzegorz Chrupa-B³a).$)B
+
 2004-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (run_loop): fixed a problem of application of user-defined
