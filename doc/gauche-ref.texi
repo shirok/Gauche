@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.158 2002-02-15 10:51:29 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.159 2002-02-16 09:46:16 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12104,8 +12104,8 @@ a very simple www client.
         (copy-port in (current-output-port))))))
 
 (define (main args)
-  (if (= (length args) 1)
-      (get (car args))
+  (if (= (length args) 2)
+      (get (cadr args))
       (usage))
   0)
 @end example
@@ -17254,6 +17254,12 @@ Olin Shivers, Character-set Library, December 2000. @*
 @item [SRFI-17]
 Per Bothner, Generalized @code{set!}, July 2000. @*
 @url{http://srfi.schemers.org/srfi-17/srfi-17.html}.
+
+@anchor{srfi-22}
+@item [SRFI-22]
+Martin Gasbichler and Michael Sperber, 
+Running Scheme Scripts on Unix, January 2002. @*
+@url{http://srfi.schemers.org/srfi-22/srfi-22.html}.
 
 @anchor{srfi-23}
 @item [SRFI-23]
