@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.124 2001-11-13 10:53:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.125 2001-11-14 11:33:12 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6134,13 +6134,13 @@ Gaucheではいずれ、自前のglob()実装を持つ予定です。
 @defun sys-remove filenmae
 [POSIX] 
 @c EN
-If @var{filename} is a file, or an empty directory,
-it is removed.   An error is signaled if @var{filename} doesn't
-exist, or is a non-empty directory.
+If @var{filename} is a file it is removed.
+On some systems this may also work on an empty directory,
+but portable scripts shouldn't depend on it.
 @c JP
-@var{filename}がファイル、もしくは空のディレクトリであればそれを消去します。
-@var{filename}が存在しなかったり、空でないディレクトリであったり、
-必要な権限が無ければエラーが通知されます。
+@var{filename}がファイルであればそれを消去します。
+システムによっては@var{filename}が空のディレクトリであっても動作しますが、
+移植性を気にする場合はその動作に依存しない方が良いでしょう。
 @c COMMON
 @end defun
 
@@ -7630,7 +7630,7 @@ level, so the external representation of the same key must match.
 @end deftp
 
 @deftp {Metaclass} <dbm-meta>
-@clindex <dbm-meta>
+@clindex dbm-meta
 @c EN
 A metaclass of @code{<dbm>} and its subclasses.
 @c JP
@@ -7809,14 +7809,6 @@ which is returned as a result of @code{dbm-map}.
 @mdindex dbm.gdbm
 @end deftp
 
-@menu
-* GDBM-specific options::       
-* GDBM low-level::              
-@end menu
-
-@node GDBM-specific options, GDBM low-level, GDBM interface, GDBM interface
-@subsection GDBM-specific options
-
 @deftp {Class} <gdbm>
 @clindex gdbm
 Inherits @code{<dbm>}.  Provides an implementation for GDBM library.
@@ -7831,12 +7823,10 @@ This module is only installed when your system already has GDBM
 @end defivar
 @end deftp
 
-
-@node GDBM low-level,  , GDBM-specific options, GDBM interface
-@subsection GDBM low-level interface
-
-These functions are direct interface to the gdbm library.
-See gdbm manpage for 
+Besides the unified DBM interface (@xref{Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the gdbm API.  See gdbm manual for details of these
+APIs.
 
 @defun gdbm-open path &optional size rwmode fmode error-callback
 
@@ -7943,15 +7933,11 @@ See gdbm manpage for
 @end deftp
 @end defun
 
-
 @defun gdbm-version
 @end defun
 
-
-@defvar *gdbm-errno*
+@defun gdbm-errno
 @end defvar
-
-
 
 @c ----------------------------------------------------------------------
 @node NDBM interface, Original DBM interface, GDBM interface, Library modules
@@ -7961,22 +7947,16 @@ See gdbm manpage for
 @mdindex dbm.ndbm
 @end deftp
 
-@menu
-* NDBM-specific options::       
-* NDBM low-level::              
-@end menu
-
-@node NDBM-specific options, NDBM low-level, NDBM interface, NDBM interface
-@subsection NDBM-specific options
-
 @deftp {Class} <ndbm>
 @clindex ndbm
 Inherits @code{<dbm>}.  Provides an implementation for NDBM library.
 This module is only installed when your system already has NDBM.
 @end deftp
 
-@node NDBM low-level,  , NDBM-specific options, NDBM interface
-@subsection NDBM low-level interface
+Besides the unified DBM interface (@xref{Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the ndbm API.  See ndbm manual for details of these
+APIs.
 
 @defun ndbm-open path flags mode
 @end defun
@@ -7989,7 +7969,6 @@ This module is only installed when your system already has NDBM.
 
 @defun ndbm-store ndbm-object key content &optional flag
 @end defun
-
 
 @defun ndbm-fetch ndbm-object key
 @end defun
@@ -8006,7 +7985,6 @@ This module is only installed when your system already has NDBM.
 @defun ndbm-error ndbm-object
 @end defun
 
-
 @defun ndbm-clear-error ndbm-object
 @end defun
 
@@ -8017,14 +7995,6 @@ This module is only installed when your system already has NDBM.
 @deftp {Module} dbm.odbm
 @mdindex dbm.odbm
 @end deftp
-
-@menu
-* DBM-specific options::        
-* DBM low-level::               
-@end menu
-
-@node DBM-specific options, DBM low-level, Original DBM interface, Original DBM interface
-@subsection DBM-specific options
 
 @deftp {Class} <odbm>
 @clindex odbm
@@ -8038,8 +8008,10 @@ instances, but you can open at most one of it at a time, or
 you'll get an error.
 @end deftp
 
-@node DBM low-level,  , DBM-specific options, Original DBM interface
-@subsection DBM low-level interface
+Besides the unified DBM interface (@xref{Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the dbm API.  See dbm manual for details of these
+APIs.
 
 @defun odbm-init path
 @end defun
