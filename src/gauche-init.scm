@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.53 2001-12-11 10:19:54 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.54 2001-12-15 09:45:30 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -73,35 +73,31 @@
 ;;
 
 (define-macro (autoload file . vars)
-  (receive (path import-from import-into)
-      (cond ((string? file) (values file #f #f))
+  (define (bad)
+    (error "bad autoload spec" (list* 'autoload file vars)))
+  (define (macrodef? v)
+    (and (pair? v) (eq? (car v) :macro) (symbol? (cadr v))))
+  (receive (path module)
+      (cond ((string? file) (values file #f))
             ((symbol? file)
              (values (string-join (string-split (symbol->string file) #\.) "/")
-                     file
-                     #f))
-            ((and (pair? file)
-                  (symbol? (car file))
-                  (string? (cadr file)))
-             (values (cadr file) #f (car file)))
-            (else (error "bad autoload spec" (list* 'autoload file vars))))
-    (let ((defines
-            (map (lambda (v)
-                   (cond ((symbol? v)
-                          `(define ,v ((with-module gauche %make-autoload)
-                                       ',v ,path ',import-from)))
-                         ((and (pair? v)
-                               (eq? (car v) :macro)
-                               (symbol? (cadr v)))
-                          `(define-macro ,(cadr v)
-                             ,(%make-autoload (cadr v) path import-from)))
-                         (else
-                          (error "bad autoload spec"
-                                 (list* 'autoload file vars)))))
-                 vars)))
-      (if import-into
-          `(with-module ,import-into ,@defines)
-          `(begin ,@defines)))
-    ))
+                     file))
+            (else (bad)))
+    `(begin ,@(map (lambda (v)
+                     (cond ((symbol? v)
+                            `(define ,v (%make-autoload ',v ,path ',module)))
+                           ((macrodef? v)
+                            `(define-macro ,(cadr v)
+                               ,(%make-autoload (cadr v) path module)))
+                           (else (bad))))
+                   vars))))
+
+;; special macro to define autoload in Scheme module.
+(define-macro (%autoload-scheme file . vars)
+  `(with-module scheme
+     ,@(map (lambda (v)
+              `(define ,v ((with-module gauche %make-autoload) ',v ,file)))
+            vars)))
 
 ;;
 ;; Auxiliary definitions
@@ -113,9 +109,9 @@
 (define (call-with-values producer consumer)
   (with-module gauche (receive vals (producer) (apply consumer vals))))
 
-(autoload (scheme "gauche/with")
-          call-with-input-file call-with-output-file
-          with-input-from-file with-output-to-file)
+(%autoload-scheme "gauche/with"
+                  call-with-input-file call-with-output-file
+                  with-input-from-file with-output-to-file)
 
 (autoload "gauche/with"
           with-output-to-string call-with-output-string
@@ -128,8 +124,9 @@
           port-fold port-fold-right port-for-each port-map
           port-position-prefix)
 
-(autoload (scheme "gauche/numerical")
-          gcd lcm numerator denominator make-polar real-part imag-part)
+(%autoload-scheme "gauche/numerical"
+                  gcd lcm numerator denominator
+                  make-polar real-part imag-part)
 
 (autoload "gauche/numerical" 
           %complex-exp %complex-log %complex-sqrt %complex-expt
@@ -147,11 +144,10 @@
           (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
           (:macro dotimes) (:macro while) (:macro until))
 
-;; This doesn't work well for now...
-;(autoload gauche.regexp
-;          (:macro rxmatch-let) (:macro rxmatch-if)
-;          (:macro rxmatch-cond) (:macro rxmatch-case)
-;          regexp-replace regexp-replace-all)
+(autoload gauche.regexp
+          (:macro rxmatch-let) (:macro rxmatch-if)
+          (:macro rxmatch-cond) (:macro rxmatch-case)
+          regexp-replace regexp-replace-all)
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)

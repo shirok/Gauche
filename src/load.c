@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.48 2001-12-10 10:03:03 shirok Exp $
+ *  $Id: load.c,v 1.49 2001-12-15 09:45:30 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -496,8 +496,9 @@ static void autoload_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_AutoloadClass, autoload_print);
 
-ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path,
-                        ScmSymbol *targetModule)
+ScmObj Scm_MakeAutoload(ScmSymbol *name,
+                        ScmString *path,
+                        ScmSymbol *import_from)
 {
     ScmObj p;
     ScmAutoload *adata = SCM_NEW(ScmAutoload);
@@ -505,7 +506,7 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path,
     adata->name = name;
     adata->module = SCM_CURRENT_MODULE();
     adata->path = path;
-    adata->targetModule = targetModule;
+    adata->import_from = import_from;
     adata->loaded = FALSE;
     return SCM_OBJ(adata);
 }
@@ -513,27 +514,39 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path,
 ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 {
     ScmObj r;
-    ScmGloc *g;
     
     if (adata->loaded) Scm_Error("Autoload is not working? %S", adata);
     adata->loaded = TRUE;
     Scm_Require(SCM_OBJ(adata->path));
-    if (adata->targetModule) {
-        ScmObj m = Scm_FindModule(adata->targetModule, FALSE);
+    if (adata->import_from) {
+        /* autoloaded file defines import_from module.  we need to
+           import the binding individually. */
+        ScmObj m = Scm_FindModule(adata->import_from, FALSE);
+        ScmGloc *f, *g;
         if (!SCM_MODULEP(m)) {
             Scm_Error("Trying to autoload module %S from file %S, but the file doesn't define such a module",
-                      adata->targetModule, adata->path);
+                      adata->import_from, adata->path);
         }
-        Scm_ImportModules(adata->module,
-                          SCM_LIST1(SCM_OBJ(adata->targetModule)));
+        f = Scm_FindBinding(SCM_MODULE(m), adata->name, FALSE);
+        g = Scm_FindBinding(adata->module, adata->name, FALSE);
+        SCM_ASSERT(f != NULL);
+        SCM_ASSERT(g != NULL);
+        if (SCM_UNBOUNDP(f->value) || SCM_AUTOLOADP(f->value)) {
+            Scm_Error("Autoloaded symbol %S is not defined in the module %S",
+                      adata->name, adata->import_from);
+        }
+        return (g->value = f->value);
+    } else {
+        /* Normal import.  The binding must have been inserted to
+           adata->module */
+        ScmGloc *g = Scm_FindBinding(adata->module, adata->name, FALSE);
+        SCM_ASSERT(g != NULL);
+        if (SCM_UNBOUNDP(g->value) || SCM_AUTOLOADP(g->value)) {
+            Scm_Error("Autoloaded symbol %S is not defined in the file %S",
+                      adata->name, adata->path);
+        }
+        return g->value;
     }
-    g = Scm_FindBinding(adata->module, adata->name, FALSE);
-    SCM_ASSERT(g != NULL);
-    if (SCM_UNBOUNDP(g->value) || SCM_AUTOLOADP(g->value)) {
-        Scm_Error("Autoloaded symbol %S is not defined in the file %S",
-                  adata->name, adata->path);
-    }
-    return g->value;
 }
 
 /*------------------------------------------------------------------

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.120 2001-12-10 10:03:03 shirok Exp $
+;;; $Id: extlib.stub,v 1.121 2001-12-15 09:45:30 shirok Exp $
 ;;;
 
 "
@@ -835,10 +835,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc provided? (feature)
   "  SCM_RETURN(Scm_ProvidedP(feature));")
 
-(define-cproc %make-autoload (sym path &optional mod)
+(define-cproc %make-autoload (sym path &optional import-from)
   (assert (symbol? sym))
   (assert (string? path))
-  "  SCM_RETURN(Scm_MakeAutoload(sym, path, SCM_SYMBOLP(mod)? SCM_SYMBOL(mod) : NULL));")
+  "ScmSymbol *from = SCM_SYMBOLP(import_from)? SCM_SYMBOL(import_from) : NULL;
+   SCM_RETURN(Scm_MakeAutoload(sym, path, from));")
 
 (define-cproc undefined ()
   "  SCM_RETURN(SCM_UNDEFINED);")

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.193 2001-12-09 09:37:57 shirok Exp $
+ *  $Id: gauche.h,v 1.194 2001-12-15 09:45:30 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1902,9 +1902,12 @@ extern ScmObj Scm_ProvidedP(ScmObj feature);
 typedef struct ScmAutoloadRec {
     SCM_HEADER;
     ScmSymbol *name;            /* variable to be autoloaded */
-    ScmModule *module;          /* where the binding should be inserted */
+    ScmModule *module;          /* where the binding should be inserted.
+                                   this is where autoload is defined. */
     ScmString *path;            /* file to load */
-    ScmSymbol *targetModule;    /* module to be imported after loading */
+    ScmSymbol *import_from;     /* module to be imported after loading */
+    ScmModule *import_to;       /* module to where import_from should be
+                                   imported */
     int loaded;
 } ScmAutoload;
 
@@ -1914,7 +1917,7 @@ extern ScmClass Scm_AutoloadClass;
 #define SCM_AUTOLOAD(obj)       ((ScmAutoload*)(obj))
 
 extern ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path,
-                               ScmSymbol *targetModule);
+                               ScmSymbol *import_from);
 extern ScmObj Scm_LoadAutoload(ScmAutoload *autoload);
 
 /*---------------------------------------------------
