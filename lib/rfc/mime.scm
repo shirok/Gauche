@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.4 2003-12-16 05:31:12 shirok Exp $
+;;;  $Id: mime.scm,v 1.5 2003-12-16 06:05:19 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -181,14 +181,16 @@
                          '("text" "plain" ("charset" . "us-ascii"))))
          )
     (define (line-reader port)
-      (let1 l (reader port)
-        (cond ((eof-object? l)
-               (set! state 'eof) *eof-object*)
-              ((equal? l --boundary)
-               (set! state 'body) *eof-object*)
-              ((equal? l --boundary--)
-               (set! state 'epilogue) *eof-object*)
-              (else l))))
+      (if (eq? state 'eof)
+        *eof-object*
+        (let1 l (reader port)
+          (cond ((eof-object? l)
+                 (set! state 'eof) *eof-object*)
+                ((equal? l --boundary)
+                 (set! state 'body) *eof-object*)
+                ((equal? l --boundary--)
+                 (set! state 'epilogue) *eof-object*)
+                (else l)))))
     ;; skip prologue
     (do () ((not (eq? state 'prologue))) (line-reader port))
     ;; main part
@@ -197,8 +199,7 @@
       (let* ((headers (rfc822-header->list port :reader line-reader))
              (r (internal-parse port headers handler
                                 line-reader packet index
-                                default-type))
-             )
+                                default-type)))
         (case state
           ((epilogue)
            ;; skip epilogue
@@ -214,11 +215,19 @@
     ))
 
 (define (message-parse port packet handler reader)
-  (let* ((headers (rfc822-header->list port)))
-    (set! (ref packet 'content)
-          (list
-           (internal-parse port headers handler reader packet 0
-                           '("text" "plain" ("charset" . "us-ascii")))))
+  (let ((state 'body))
+    ;; we need to detect premature end of headers,
+    ;; to avoid reading body past the boundary.
+    (define (line-reader port)
+      (if (eq? state 'eof)
+        *eof-object*
+        (let1 l (reader port)
+          (cond ((eof-object? l) (set! state 'eof) *eof-object*)
+                (else l)))))
+    (let* ((headers (rfc822-header->list port :reader line-reader))
+           (r (internal-parse port headers handler line-reader packet 0
+                              '("text" "plain" ("charset" . "us-ascii")))))
+      (set! (ref packet 'content) (list r)))
     packet))
 
 ;;===============================================================

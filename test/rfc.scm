@@ -301,7 +301,7 @@ Content-Length: 4349
            (list (ref mesg 'content))
            (map (cut mime-message-resolver <> mesg) (ref mesg 'content)))))
 
-(dotimes (n 4)
+(dotimes (n 5)
   (mime-message-tester n))
 
 ;;--------------------------------------------------------------------
