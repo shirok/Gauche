@@ -6315,11 +6315,11 @@ to the following rewriting rules:
                      (node-closure (ntype?? '*any*)))
  (sxpath1 '(equal? x)) -> (select-kids (node-equal? x))
  (sxpath1 '(eq? x))    -> (select-kids (node-eq? x))
- (sxpath1 '(or@ ...))  -> (select-kids (ntype-names??
-                                          (cdr '(or@ ...))))
- (sxpath1 '(not@ ...)) -> (select-kids (sxml:invert 
+ (sxpath1 '(or@@ ...))  -> (select-kids (ntype-names??
+                                          (cdr '(or@@ ...))))
+ (sxpath1 '(not@@ ...)) -> (select-kids (sxml:invert 
                                          (ntype-names??
-                                          (cdr '(not@ ...)))))
+                                          (cdr '(not@@ ...)))))
  (sxpath1 '(ns-id:* x)) -> (select-kids 
                                       (ntype-namespace-id?? x))
  (sxpath1 ?symbol)     -> (select-kids (ntype?? ?symbol))
