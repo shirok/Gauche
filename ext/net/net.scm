@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.6 2001-06-25 01:35:06 shirok Exp $
+;;;  $Id: net.scm,v 1.7 2001-06-25 07:53:21 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -78,7 +78,7 @@
          (let-optional* args ((port #f))
            (unless (integer? port)
              (error "inet socket requires port number, but got ~s" port))
-           (apply make-server-socket-inet port args)))
+           (apply make-server-socket-inet port (cdr args))))
         ((integer? proto)
          ;; STk compatibility
          (apply make-server-socket-inet proto args))
@@ -93,7 +93,7 @@
 
 (define (make-server-socket-inet port . args)
   (let ((reuse-addr? (get-keyword :reuse-addr args #f))
-        (address (make <sockaddr-un> :host :any :port port))
+        (address (make <sockaddr-in> :host :any :port port))
         (socket (make-socket pf_inet sock_stream)))
     (when reuse-addr?
       (socket-setsockopt socket sol_socket so_reuseaddr 1))
