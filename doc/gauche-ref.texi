@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.134 2001-12-03 20:39:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.135 2001-12-06 11:04:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2555,14 +2555,23 @@ Hyperbolic trigonometric functions.  Work for complex numbers as well.
 @defun sqrt z
 [R5RS]
 @c EN
+Returns a square root of a complex number @var{z}.
+The branch cut scheme is the same as Common Lisp.
+For real numbers, it returns a positive root.
 @c JP
+複素数@var{z}の平方根のひとつを返します。枝刈りの定義はCommon Lispと同じです。
+実数に対しては正の平方根を返します。
 @c COMMON
 @end defun
 
 @defun expt z1 z2
 [R5RS]
 @c EN
+Returns @var{z1}^@var{z2} (@var{z1} powered by @var{z2}),
+where @var{z1} and @var{z2} are complex numbers.
 @c JP
+複素数@var{z1}, @var{z2}に対して、
+@var{z1}^@var{z2} (@var{z1}の@var{z2}乗)を返します。
 @c COMMON
 @end defun
 
@@ -2814,13 +2823,14 @@ Returns @code{#t} if @var{obj} is a boolean value.
 @clindex list
 @c EN
 An abstract class respresents lists.   A parent class of @code{<null>}
-and @code{<pair>}.
+and @code{<pair>}.   Inherits @code{<sequence>}.
 
 Note that a cirular list is also an instance of the @code{<list>} class,
 while R5RS procedure @code{list?} returns false on the circular lists and
 dotted lists.
 @c JP
 リストを表す抽象クラスで、クラス@code{<null>}とクラス@code{<pair>}の親クラスです。
+クラス@code{<sequence>}を継承します。
 
 循環リストやドットリストも@code{<list>}クラスのインスタンスですが、
 @code{list?}は偽の値を返すことに注意して下さい。
