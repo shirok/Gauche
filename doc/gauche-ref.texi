@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.294 2002-10-27 08:45:17 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.295 2002-11-02 23:15:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5841,6 +5841,9 @@ A keyword is a sort of a special symbol that is automatically quoted.
 It is extensively used in pass-by-name arguments (keyword arguments),
 and keyword-value list
 Unlike CommonLisp, keywords and symbols are distinct types.
+
+See also @code{let-keywords*} macro (@ref{Optional argument parsing})
+for keyword argument processing.
 @end  deftp
 
 @deftp {Reader syntax} @code{:@var{name}}
@@ -8027,7 +8030,7 @@ Returns (a) value(s) @var{proc} returns.
 @menu
 * Mapping::                     
 * Combinators::                 
-* Macros to support optional arguments::  
+* Optional argument parsing::   
 * Procedure arity::             
 @end menu
 
@@ -8091,7 +8094,7 @@ extends @code{for-each} to work on any type of collection.
 @end defun
 
 
-@node Combinators, Macros to support optional arguments, Mapping, Procedures
+@node Combinators, Optional argument parsing, Mapping, Procedures
 @subsubsection Combinators
 @c NODE コンビネータ
 
@@ -8223,13 +8226,13 @@ returns @code{#f} without calling further @var{pred}s.
 @end example
 @end defun
 
-@node Macros to support optional arguments, Procedure arity, Combinators, Procedures
-@subsubsection Macros to support optional arguments
-@c NODE 省略可能な引数のサポートマクロ
+@node Optional argument parsing, Procedure arity, Combinators, Procedures
+@subsubsection Optional argument parsing
+@c NODE 省略可能引数のパージング
 
 To have optional arguments or keyword arguments in Scheme,
 you have to take variable arguments as a list and decompose
-them by yourself.   The following macros helps the procedure.
+them by yourself.   The following macros help it.
 
 @defmac let-optionals* restargs (var-spec @dots{}) body @dots{}
 @defmacx let-optionals* restargs (var-spec @dots{} . restvar) body @dots{}
@@ -8345,7 +8348,7 @@ it is simply ignored.
 @end defmac
 
 
-@node Procedure arity,  , Macros to support optional arguments, Procedures
+@node Procedure arity,  , Optional argument parsing, Procedures
 @subsubsection Procedure arity
 @c NODE 手続きのアリティ
 
