@@ -1,0 +1,42 @@
+This directory contains a minimal set of files to create dynamic loadable
+Gauche extension.   I hope this serves as a template.
+
+configure.in shows how to obtain some parameters consistent to the ones
+Gauche has been compiled with.
+
+(1) Finding working gosh and gauche-config
+
+ It is desirable that your extension can be compiled both within the
+ Gauche distribution and stand-alone (i.e. adding extension to the
+ installed Gauche).   The sample configure.in checks the existence
+ of Gauche source, and sets up some parameters like GAUCHE_CONFIG and
+ GOSH.
+
+(2) Finding compiler flags
+
+ Do not use AC_PROG_CC.  You have to use the same compiler that
+ compiled gosh.  gauche-config script tells you which cc and which
+ flags are used.
+
+(3) Installation
+
+ Use gauche-config with appropriate options to obtain default installation
+ directories.  There are two categories of those directories, and each
+ category has three target directories.
+
+ A category 'sys' is for the extensions which works with main Gauche
+ distribution.  A category 'site' is for the ones which are considered
+ as auxiliary stuff to fulfill site-specific needs.  The distinction
+ is not very strict, though.
+
+ Each category has target directories for header files,
+ other architecture-independent files (mostly Scheme files), and
+ architecture-dependent files (mostly DSO files).
+
+ It is nice if you give the user a choice to which category he/she
+ will install the extension.   Also it's nice that he/she can choose
+ it both in configuration time and make time.  The sample configure.in
+ and Makefile.in show how to do it.
+
+
+ 
