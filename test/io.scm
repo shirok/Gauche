@@ -393,5 +393,48 @@
 (test "format ~@*" "1 2 5"
       (lambda () (format #f "~a ~a ~4@*~a" 1 2 3 4 5)))
 
+;;-------------------------------------------------------------------
+(test-section "nested multi-line comments")
+
+(test "#|...|#" '(foo bar baz)
+      (lambda ()
+        (read-from-string "(foo bar #||# baz)")))
+(test "#|...|#" '(foo bar baz)
+      (lambda ()
+        (read-from-string "(foo bar #| oof rab |# baz)")))
+(test "#|...|#" '(foo bar baz)
+      (lambda ()
+        (read-from-string "(foo bar #| oof rab) |# baz)")))
+(test "#|...|# (multiline)" '(foo bar baz)
+      (lambda ()
+        (read-from-string "(foo bar #| oof \nrab) |# baz)")))
+(test "#|...|# (multiline)" '(foo bar baz)
+      (lambda ()
+        (read-from-string "(foo bar #| oof \nrab)\n|# baz)")))
+(test "#|...|# (nested)" '(foo bar baz)
+      (lambda ()
+        (read-from-string "(foo bar #| oof #|\nrab)|#\n|# baz)")))
+(test "#|...|# (nested)" '(foo bar baz)
+      (lambda ()
+        (read-from-string "(foo bar #|#|\nrab)|#|# baz)")))
+(test "#|...|# (intertwined with string)"
+      '(foo bar this is outside of comment "hence this is in a string")
+      (lambda ()
+        (read-from-string
+         "(foo bar #| grok
+ \"the following bar-and-sharp terminates the comment |# 
+   this is outside of comment
+ \"hence this is in a string\")
+ ")))
+(test "#|...|# (intertwined with string)"
+      '(foo bar
+        "#| this is a string, not a comment"
+        |# and this is not a comment terminator but an escaped symbol|)
+      (lambda ()
+        (read-from-string
+         "(foo bar 
+ \"#| this is a string, not a comment\"
+ |# and this is not a comment terminator but an escaped symbol|)")))
+
 (test-end)
 

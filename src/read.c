@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.53 2002-08-18 02:49:03 shirok Exp $
+ *  $Id: read.c,v 1.54 2002-08-19 04:05:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -203,10 +203,39 @@ inline static int skipws(ScmPort *port)
     }
 }
 
+static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
+{
+    int nesting = 0;
+    int line = Scm_PortLine(port);
+    for (;;) {
+        ScmChar c = Scm_GetcUnsafe(port), c1;
+        switch (c) {
+        case '#':
+            c1 = Scm_GetcUnsafe(port);
+            if (c1 == '|')   nesting++;
+            else if (c1 == EOF) goto eof;
+            break;
+        case '|':
+            c1 = Scm_GetcUnsafe(port);
+            if (c1 == '#') {
+                if (nesting-- == 0) {
+                    return;
+                }
+            }
+            else if (c1 == EOF) goto eof;
+            break;
+        case EOF:
+          eof:
+            Scm_Error("encountered EOF inside nested multi-line comment (comment begins at line %d)", line);
+        }
+    }
+}
+
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
 {
     int c;
 
+  restart:
     c = skipws(port);
     switch (c) {
     case '(':
@@ -257,6 +286,10 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     ScmObj form = read_internal(port, ctx);
                     return read_sharp_comma(port, form);
                 }
+            case '|':
+                /* #| - block comment (SRFI-30) */
+                read_nested_comment(port, ctx);
+                goto restart;
             case '`':
                 /* #`"..." - (string-interpolate "...") */
                 {
