@@ -283,10 +283,12 @@ class.  That is,
 Returns @code{#t} if @var{obj} is a number, a complex number, a real number,
 a rational number or an integer, respectively.   In Gauche, a set of
 numbers is the same as a set of complex numbers, and a set of
-rational numbers is the same as a set of integers.
+rational numbers is the same as a set of real numbers
+(since we have only limited-precision floating numbers).
 @c JP
 @var{obj}がそれぞれ数、複素数、実数、有理数、整数ならば@code{#t}を返します。
-Gaucheでは、数の集合は複素数の集合と同一であり、有理数の集合は整数の集合と同一です。
+Gaucheでは、数の集合は複素数の集合と同一であり、有理数の集合は実数の集合と同一
+(浮動小数点数が有限精度のであるため)です。
 @c COMMON
 
 @example
