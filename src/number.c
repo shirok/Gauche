@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.54 2001-07-09 09:42:35 shirok Exp $
+ *  $Id: number.c,v 1.55 2001-08-31 08:31:53 shirok Exp $
  */
 
 #include <math.h>
@@ -411,7 +411,6 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
     int result_int = 0;
     double result_real, result_imag;
 
-  retry:
     if (SCM_INTP(v)) {
         result_int = SCM_INT_VALUE(v);
         for (;;) {
