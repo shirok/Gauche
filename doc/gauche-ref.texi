@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.405 2003-06-06 08:37:56 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.406 2003-06-06 11:59:13 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24968,7 +24968,7 @@ Optional @var{start} and @var{end} limit the range of @var{s} to search.
 See also the Gauche built-in procedure @code{string-scan}
 (@ref{String utilities}), if you need speed over portability.
 @c JP
-速度よりもポータビリティを重視する場合は、Gaucheのビルトイン手続き
+ポータビリティよりも速度を重視する場合は、Gaucheのビルトイン手続き
 @code{string-scan}(@ref{String utilities})を参照して下さい。
 @c COMMON
 @end defun
@@ -25018,7 +25018,7 @@ See also the Gauche built-in procedure @code{string-scan}
 オプションの@var{start1}、@var{end1}、@var{start2}、@var{end2}は、
 @var{s1}と@var{s2}の範囲を制限します。
 
-速度よりもポータビリティを重視する場合は、Gaucheのビルトイン手続き
+ポータビリティよりも速度を重視する場合は、Gaucheのビルトイン手続き
 @code{string-scan}(@ref{String utilities})を参照して下さい。
 @c COMMON
 @end defun
