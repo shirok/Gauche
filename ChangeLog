@@ -1,3 +1,12 @@
+2002-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c : added sys-sigset class.
+
+2002-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c : make Scm_Load() return a boolean value as
+	  Scheme's load.
+
 2002-01-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c, src/extlib.stub : added paths keyword arg to load.
