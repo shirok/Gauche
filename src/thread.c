@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: thread.c,v 1.3 2002-07-06 22:33:52 shirok Exp $
+ *  $Id: thread.c,v 1.4 2002-07-09 09:47:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -123,6 +123,9 @@ static void *thread_entry(void *data)
     pthread_cleanup_pop(TRUE);
     return NULL;
 }
+
+/* The default signal mask on the thread creation */
+static sigset_t defaultThreadSigmask;
 #endif /* GAUCHE_USE_PTHREAD */
 
 ScmObj Scm_ThreadStart(ScmVM *vm)
@@ -130,6 +133,8 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 #ifdef GAUCHE_USE_PTHREAD
     int err_state = FALSE, err_create = FALSE;
     pthread_attr_t thattr;
+    sigset_t omask, dummy;
+
     (void)SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
     if (vm->state != SCM_VM_NEW) {
         err_state = TRUE;
@@ -138,10 +143,12 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
         vm->state = SCM_VM_RUNNABLE;
         pthread_attr_init(&thattr);
         pthread_attr_setdetachstate(&thattr, TRUE);
+        pthread_sigmask(SIG_SETMASK, &defaultThreadSigmask, &omask);
         if (pthread_create(&vm->thread, &thattr, thread_entry, vm) != 0) {
             vm->state = SCM_VM_NEW;
             err_create = TRUE;
         }
+        pthread_sigmask(SIG_SETMASK, &omask, &dummy);
         pthread_attr_destroy(&thattr);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
@@ -258,5 +265,15 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
     Scm_Error("not implemented!\n");
 #endif /*!GAUCHE_USE_PTHREAD*/
     return SCM_UNDEFINED;
+}
+
+/*
+ * Initialization.
+ */
+void Scm__InitThread(void)
+{
+#ifdef GAUCHE_USE_PTHREAD
+    sigfillset(&defaultThreadSigmask);
+#endif /*GAUCHE_USE_PTHREAD*/
 }
 
