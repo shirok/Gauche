@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.118 2001-12-18 11:02:29 shirok Exp $
+ *  $Id: vm.c,v 1.119 2001-12-19 20:12:01 shirok Exp $
  */
 
 #include "gauche.h"
@@ -38,6 +38,8 @@ static ScmVM *theVM;    /* this must be thread specific in MT version */
 
 static void save_stack(ScmVM *vm);
 
+static ScmSubr default_exception_handler_rec;
+#define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
 static ScmObj throw_cont_body(ScmObj, ScmObj, ScmEscapePoint*, ScmObj);
 static ScmObj handle_exception(ScmVM *, ScmEscapePoint *, ScmObj);
 
@@ -80,6 +82,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     
     v->handlers = SCM_NIL;
 
+    v->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
@@ -1710,16 +1713,13 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
  *  - There are messy lonjmp/setjmp stuff involved to keep C stack sane.
  */
 
-/*
- * Default exception handler
- */
-
-void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
+/* default error reporter */
+static void report_error(ScmObj e)
 {
     ScmVM *vm = theVM;
     ScmObj stack = Scm_VMGetStackLite(vm), cp;
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
-    ScmObj handlers = vm->handlers, hp;
+    ScmObj handlers = vm->handlers;
     int depth = 0;
 
     if (Scm_ExceptionP(e) && SCM_STRINGP(SCM_EXCEPTION_MESSAGE(e))) {
@@ -1747,19 +1747,87 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
             Scm_Printf(SCM_PORT(err), "\n");
         }
     }
+}
 
-    /* unwind the dynamic handlers */
-    SCM_FOR_EACH(hp, handlers) {
-        ScmObj proc = SCM_CDAR(hp);
-        vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
-        Scm_Apply(proc, SCM_NIL);
+/*
+ * Default exception handler
+ */
+
+void Scm_VMDefaultExceptionHandler(ScmObj e)
+{
+    ScmVM *vm = theVM;
+    ScmEscapePoint *ep = vm->escapePoint;
+    ScmObj hp;
+
+    if (ep) {
+        ScmObj target, current;
+        ScmObj result, rvals[SCM_VM_MAX_VALUES];
+        int numVals, i;
+
+        vm->escapePoint = ep->prev;
+        /* Call the error handler and save the results. */
+        result = Scm_Apply(ep->ehandler, SCM_LIST1(e));
+        if ((numVals = vm->numVals) > 1) {
+            for (i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
+        }
+        target = ep->handlers;
+        current = vm->handlers;
+        /* Call dynamic handlers */
+        for (hp = current; SCM_PAIRP(hp) && hp != target; hp = SCM_CDR(hp)) {
+            ScmObj proc = SCM_CDAR(hp);
+            vm->handlers = SCM_CDR(hp);
+            Scm_Apply(proc, SCM_NIL);
+        }
+        /* Install the continuation */
+        for (i=0; i<numVals; i++) vm->vals[i] = rvals[i];
+        vm->numVals = numVals;
+        vm->cont = ep->cont;
+        vm->val0 = result;
+    } else {
+        if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
+            Scm_Apply(vm->defaultEscapeHandler, SCM_LIST1(e));
+        } else {
+            report_error(e);
+        }
+        /* unwind the dynamic handlers */
+        SCM_FOR_EACH(hp, vm->handlers) {
+            ScmObj proc = SCM_CDAR(hp);
+            vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
+            Scm_Apply(proc, SCM_NIL);
+        }
+    }
+
+    if (vm->cstack) {
+        vm->escapeReason = SCM_VM_ESCAPE_ERROR;
+        vm->escapeData[0] = ep;
+        vm->escapeData[1] = e;
+        longjmp(vm->cstack->jbuf, 1);
+    } else {
+        exit(EX_SOFTWARE);
     }
 }
 
-/* Entry point of throwing exception.
+static ScmObj default_exception_handler_body(ScmObj *argv, int argc, void *data)
+{
+    SCM_ASSERT(argc == 1);
+    Scm_VMDefaultExceptionHandler(argv[0]);
+    return SCM_UNDEFINED;       /*NOTREACHED*/
+}
+
+static SCM_DEFINE_STRING_CONST(default_exception_handler_name,
+                               "default-exception-handler",
+                               25, 25); /* strlen("default-exception-handler") */
+static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
+                       SCM_OBJ(&default_exception_handler_name),
+                       default_exception_handler_body, NULL, NULL);
+
+/*
+ * Entry point of throwing exception.
  *
- * There are 
- *
+ *  This function may be called from Scheme function raise or throw,
+ *  or C-function Scm_Error families and signal handler.   So we can't
+ *  push the handler to continuation and return; we have to use Scm_Apply
+ *  to run the handler.
  */
 ScmObj Scm_VMThrowException(ScmObj exception)
 {
@@ -1769,60 +1837,26 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 
     vm->runtimeFlags &= ~SCM_ERROR_BEING_HANDLED;
 
-    /* Call the active escape handler. */
-    if (!ep && !vm->cstack) {
-        /* No C stack is defined.   We're called as a library functions
-           from C program. */
-        Scm_VMDefaultExceptionHandler(exception, NULL);
-        exit(EX_SOFTWARE);
-    } else {
-        if (!ep) {
-            if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
-                Scm_Apply(vm->defaultEscapeHandler, SCM_LIST1(exception));
-            } else {
-                Scm_VMDefaultExceptionHandler(exception, NULL);
-            }
-        } else {
-            vm->escapePoint = ep->prev;
-            vm->val0 = handle_exception(vm, ep, exception);
+    if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
+        vm->val0 = Scm_Apply(vm->exceptionHandler, SCM_LIST1(exception));
+        if (!Scm_ContinuableExceptionP(exception)) {
+            /* the user-installed exception handler returned while it
+               shouldn't.  In order to prevent infinite loop, we should
+               pop the erroneous handler.  For now, we just reset
+               the current exception handler. */
+            vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
+            Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
-        vm->escapeReason = SCM_VM_ESCAPE_ERROR;
-        vm->escapeData[0] = ep;
-        vm->escapeData[1] = exception;
-        longjmp(vm->cstack->jbuf, 1);
+        /* this may return. */
+    } else {
+        Scm_VMDefaultExceptionHandler(exception);
+        /* this does not return. */
     }
-    /* NOTREACHED */
-    return SCM_UNDEFINED;
-}
-
-static ScmObj handle_exception(ScmVM *vm, ScmEscapePoint *ep,
-                               ScmObj exception)
-{
-    ScmObj target = ep->handlers, current = vm->handlers, hp;
-    ScmObj result, rvals[SCM_VM_MAX_VALUES];
-    int numVals, i;
-
-    /* Call the error handler and save the results. */
-    result = Scm_Apply(ep->ehandler, SCM_LIST1(exception));
-    if ((numVals = vm->numVals) > 1) {
-        for (i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
-    }
-
-    /* Call dynamic handlers */
-    for (hp = current; SCM_PAIRP(hp) && hp != target; hp = SCM_CDR(hp)) {
-        ScmObj h = SCM_CAR(hp);
-        Scm_Apply(SCM_CDR(h), SCM_NIL);
-    }
-    
-    /* Install the continuation */
-    for (i=0; i<numVals; i++) vm->vals[i] = rvals[i];
-    vm->numVals = numVals;
-    vm->cont = ep->cont;
-    return result;
+    return vm->val0;
 }
 
 /*
- *
+ * with-error-handler
  */
 static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
 {
@@ -1834,6 +1868,8 @@ static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
     ep->cont = vm->cont;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
+    ep->xhandler = vm->exceptionHandler;
+    vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     vm->escapePoint = ep;
     return SCM_UNDEFINED;
 }
@@ -1842,6 +1878,7 @@ static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
     theVM->escapePoint = ep;
+    if (ep) theVM->exceptionHandler = ep->xhandler;
     return SCM_UNDEFINED;
 }
 
@@ -1850,6 +1887,27 @@ ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
     ScmEscapePoint *ep = theVM->escapePoint;
     ScmObj before = Scm_MakeSubr(install_ehandler, handler, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
+    return Scm_VMDynamicWind(before, thunk, after);
+}
+
+/* 
+ * with-exception-handler
+ *
+ *   This primitive gives the programmer whole responsibility of
+ *   dealing with exceptions.
+ */
+
+static ScmObj install_xhandler(ScmObj *args, int nargs, void *data)
+{
+    theVM->exceptionHandler = SCM_OBJ(data);
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
+{
+    ScmObj current = theVM->exceptionHandler;
+    ScmObj before = Scm_MakeSubr(install_xhandler, handler, 0, 0, SCM_FALSE);
+    ScmObj after  = Scm_MakeSubr(install_xhandler, current, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, thunk, after);
 }
 

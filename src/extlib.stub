@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.121 2001-12-15 09:45:30 shirok Exp $
+;;; $Id: extlib.stub,v 1.122 2001-12-19 20:12:01 shirok Exp $
 ;;;
 
 "
@@ -1023,6 +1023,23 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
     Scm_Error(\"thunk required, but got %S\", thunk);
   }
   SCM_RETURN(Scm_VMWithErrorHandler(handler, thunk));")
+
+;; srfi-18 primitive exception mechanism
+(define-cproc current-exception-handler ()
+  "  SCM_RETURN(Scm_VM()->exceptionHandler);")
+
+(define-cproc with-exception-handler (handler thunk)
+  "  if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {
+    Scm_Error(\"exception handler must take at least 1 argument, but got %S\",
+              handler);
+  }
+  if (!SCM_PROCEDURE_TAKE_NARG_P(thunk, 0)) {
+    Scm_Error(\"thunk required, but got %S\", thunk);
+  }
+  SCM_RETURN(Scm_VMWithExceptionHandler(handler, thunk));")
+
+(define-cproc raise (exception)
+  "  SCM_RETURN(Scm_VMThrowException(exception));")
 
 ;;
 ;; Inspecting feature

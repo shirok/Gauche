@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.49 2001-12-18 11:02:31 shirok Exp $
+ *  $Id: vm.h,v 1.50 2001-12-19 20:12:04 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -151,6 +151,7 @@ typedef struct ScmEscapePointRec {
     ScmContFrame *cont;         /* saved continuation */
     ScmObj handlers;            /* saved dynamic handler chain */
     ScmCStack *cstack;          /* C stack */
+    ScmObj xhandler;            /* saved exception handler */
 } ScmEscapePoint;
 
 
@@ -166,7 +167,8 @@ typedef struct ScmEscapePointRec {
 struct ScmVMRec {
     SCM_HEADER;
     ScmVM *parent;
-    ScmModule *module;          /* current global namespace */
+    ScmModule *module;          /* current global namespace.  note that this
+                                   is used only in compilation. */
     ScmCStack *cstack;          /* current escape point.  see the comment of
                                    "C stack rewinding" below. */
 
@@ -199,9 +201,15 @@ struct ScmVMRec {
     int stackSize;
 
     /* Escape handling */
-    ScmEscapePoint *escapePoint;
-    int escapeReason;
-    void *escapeData[2];
+    ScmObj exceptionHandler;    /* the current exception handler installed by
+                                   with-exception-handler. */
+    ScmEscapePoint *escapePoint;/* chain of escape points (a kind of one-shot
+                                   continuation).  used by system's default
+                                   exception handler to escape from the error
+                                   handlers. */
+    int escapeReason;           /* temporary storage to pass data across
+                                   longjmp(). */
+    void *escapeData[2];        /* ditto. */
 
     /* Custom debugger */
     ScmObj defaultEscapeHandler;
@@ -215,7 +223,7 @@ struct ScmVMRec {
 extern ScmVM *Scm_SetVM(ScmVM *vm);
 extern ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module);
 extern void Scm_VMDump(ScmVM *vm);
-extern void Scm_VMDefaultExceptionHandler(ScmObj, void *);
+extern void Scm_VMDefaultExceptionHandler(ScmObj);
 
 extern ScmClass Scm_VMClass;
 #define SCM_CLASS_VM              (&Scm_VMClass)

@@ -1,3 +1,14 @@
+2001-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : reorganized exception handling scheme.  merged SRFI-18
+	  compatible with-exception-handler.
+
+2001-12-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c : added convenience function Scm_ReadFromString and
+	  Scm_ReadFromCString.
+	* src/main.c : added command line options -l (load) and -e (eval).
+
 2001-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c : improved default stack trace display to include source
