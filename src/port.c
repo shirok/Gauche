@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.26 2001-05-21 09:14:05 shirok Exp $
+ *  $Id: port.c,v 1.27 2001-05-22 20:29:36 shirok Exp $
  */
 
 #include <unistd.h>
@@ -74,6 +74,7 @@ static ScmPort *make_port(int dir, int type, int ownerp)
     port->bufcnt = 0;
     port->ungotten = SCM_CHAR_INVALID;
     port->ownerp = ownerp;
+    port->icpolicy = SCM_PORT_IC_IGNORE; /* default */
     if (ownerp) {
         GC_REGISTER_FINALIZER(port,
                               port_finalize,
