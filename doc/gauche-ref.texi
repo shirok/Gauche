@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.168 2002-02-26 20:32:51 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.169 2002-02-27 10:42:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6918,26 +6918,32 @@ Opens a file specified by @var{string} for input/output,
 and call @var{proc} with one argument, the file port.  When @var{proc}
 returns, or an error is signalled from @var{proc} that is not captured
 within @var{proc}, the file is closed.
-
-The keyword arguments have the same meanings of
-@code{open-input-file} and @code{open-output-file}'s.  Note that
-if you specify @code{#f} to @var{if-exists} and/or @var{if-does-not-exist},
-@var{proc} may receive @code{#f} instead of a port object when
-the file is not opened.
-
-Returns the value(s) @code{proc} returned.
 @c JP
 @var{string}で示されるファイルを入力または出力用にオープンし、
 作成されたポートを引数として手続き@var{proc}を呼び出します。
 @var{proc}が正常終了するか、@var{proc}内で捕捉されないエラーが起きた場合に
 ファイルはクローズされます。
+@c COMMON
 
-キーワード引数は
+@c EN
+The keyword arguments @code{if-exists}, @code{element-type} and
+@code{if-does-not-exist} have the same meanings of
+@code{open-input-file} and @code{open-output-file}'s.  Note that
+if you specify @code{#f} to @var{if-exists} and/or @var{if-does-not-exist},
+@var{proc} may receive @code{#f} instead of a port object when
+the file is not opened.
+@c JP
+キーワード引数は@code{if-exists}、@code{element-type}、
+@code{if-does-not-exist}は
 @code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
 @var{if-exists}や@var{if-does-not-exist}に@code{#f}を指定した場合、
 ファイルがオープンされなかった場合は@var{proc}にポートではなく@code{#f}が渡される
 ことに注意して下さい。
+@c COMMON
 
+@c EN
+Returns the value(s) @code{proc} returned.
+@c JP
 @var{proc}が返す値を返します。
 @c COMMON
 @end defun
