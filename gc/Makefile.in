@@ -17,6 +17,10 @@ ABI_FLAG=
 CC=@CC@ $(ABI_FLAG)
 CXX=g++ $(ABI_FLAG)
 AS=@AS@ $(ABI_FLAG)
+
+# i686 prefetch flag.
+I686OPT=@I686OPT@
+
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
@@ -27,7 +31,7 @@ AS=@AS@ $(ABI_FLAG)
 srcdir= .
 VPATH= $(srcdir)
 
-CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DSILENT -DALL_INTERIOR_POINTERS -DDONT_ADD_BYTE_AT_END @I686OPT@ @SHLIB_SO_CFLAGS@
+CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DSILENT -DALL_INTERIOR_POINTERS -DDONT_ADD_BYTE_AT_END $(I686OPT) @SHLIB_SO_CFLAGS@
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
