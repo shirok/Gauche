@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.385 2004-09-19 21:41:12 shirok Exp $
+ *  $Id: gauche.h,v 1.386 2004-09-20 05:43:51 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1096,11 +1096,21 @@ SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
  * well as character streams.  Some port may interchange byte (binary)
  * I/O versus character I/O, while some may signal an error if you
  * mix those operations.
+ *
+ * You shouldn't rely on the underlying port implementation, for
+ * it is likely to be changed in future.  There are enough macros
+ * and API functions provided to use and extend the port mechanism.
+ * See also ext/vport/* for the way to extend the port from Scheme.
  */
 
 /* Substructures */
 
-/* The alternative of FILE* structure */
+/* The alternative of FILE* structure, used by buffered (file) port.
+   The members are owned by the port, and client shouldn't change the
+   elements.  You can create your own custom buffered port by using
+   Scm_MakeBufferedPort() --- with it, you pass ScmPortBuffer with
+   the function pointers filled in, which is copied to the port's
+   internal ScmPortBuffer structure. */
    
 typedef struct ScmPortBufferRec {
     char *buffer;       /* ptr to the buffer area */
@@ -1126,6 +1136,8 @@ typedef struct ScmPortBufferRec {
    be flushed by the flusher */
 #define SCM_PORT_BUFFER_AVAIL(p) \
     (int)((p)->src.buf.current-(p)->src.buf.buffer)
+
+/* The funtion table of procedural port. */
 
 typedef struct ScmPortVTableRec {
     int       (*Getb)(ScmPort *p);

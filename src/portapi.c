@@ -1,7 +1,7 @@
 /*
  * portapi.c - port common API
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.21 2004-09-17 10:39:04 shirok Exp $
+ *  $Id: portapi.c,v 1.22 2004-09-20 05:43:52 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
- * variant of port common APIs.
+ * variant of port common APIs.  It is to minimize the overhead of
+ * locking operations.
  *
  * The macro SHORTCUT allows 'safe' version to bypass lock/unlock
  * stuff by calling 'unsafe' version when the port is already locked by
