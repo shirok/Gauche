@@ -1,3 +1,10 @@
+2004-08-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmSubr, ScmInliner),
+	  src/compile.c (compile_int),
+	  src/genstub, src/stdlib.stub: making an inliner into a generic
+	  compiler macro, stage 1.
+
 2004-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/Makefile.in (slibcat-in-place): fix.  patch from Kogulé, Ryo.

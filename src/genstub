@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.97 2004-03-14 09:54:20 shirok Exp $
+;;;  $Id: genstub,v 1.98 2004-08-12 20:39:50 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1037,25 +1037,31 @@
         (req  (num-reqargs-of cproc))
         (opt  (num-optargs-of cproc))
         )
-    (f "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)" inliner)
+    (f "static ScmObj ~a(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)"
+       inliner)
     ))
 
 (define (emit-inliner-call cproc insn)
-  (f "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\", depth);"
+  (f "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\");"
      (num-reqargs-of cproc)
      (if (or (< 0 (num-optargs-of cproc)) (have-rest-arg? cproc)) "TRUE" "FALSE")
      insn
      (scheme-name-of cproc)))
 
 (define (emit-record cproc)
-  (let1 c-func-name (c-name-of cproc)
+  (let ((c-func-name (c-name-of cproc))
+        (inliner-name "NULL"))
     (emit-static-string c-func-name (scheme-name-of cproc))
+    (when (inliner-of cproc)
+      (set! inliner-name (format "&~a__INLINER" c-func-name))
+      (f "static SCM_DEFINE_INLINER(~a__INLINER, ~a, NULL);"
+         c-func-name (inliner-of cproc)))
     (f "static SCM_DEFINE_SUBR(~a__STUB, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
        c-func-name
        (num-reqargs-of cproc)
        (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
        c-func-name
-       (or (inliner-of cproc) "NULL")
+       inliner-name
        )
     (newline)))
 

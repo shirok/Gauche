@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.104 2004-05-14 11:28:25 shirok Exp $
+;;; $Id: stdlib.stub,v 1.105 2004-08-12 20:39:50 shirok Exp $
 ;;;
 
 
@@ -131,19 +131,19 @@
   "ScmObj r; Scm_MinMax(arg0, args, &r, NULL); SCM_RETURN(r);")
 
 "/* inliner for `+' */
-static ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env, int *depth)
+static ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env)
 {
-  return Scm_Append2X(Scm_Compile(arg1, env, SCM_COMPILE_NORMAL /*,depth*/),
+  return Scm_Append2X(Scm_Compile(arg1, env, SCM_COMPILE_NORMAL),
                       Scm_Cons(SCM_VM_INSN1(insn, arg0), SCM_NIL));
 }
 
-static ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env, int *depth)
+static ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
 {
   return Scm_CompileInliner(SCM_LIST3(SCM_FALSE, arg0, arg1), env,
-                            2, 0, insn, \"\", depth);
+                            2, 0, insn, \"\");
 }
 
-static ScmObj plus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)
+static ScmObj plus_inliner(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)
 {
   ScmObj args = SCM_CDR(form), arg0, arg1;
   long imm;
@@ -156,16 +156,16 @@ static ScmObj plus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int 
     }
     imm = SCM_INT_VALUE(arg0);
     if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg1, env, depth);
+      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg1, env);
   } else if (SCM_INTP(arg1)) {
     imm = SCM_INT_VALUE(arg1);
     if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg0, env, depth);
+      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg0, env);
   }
-  return num2op_inliner(SCM_VM_NUMADD2, arg0, arg1, env, depth);
+  return num2op_inliner(SCM_VM_NUMADD2, arg0, arg1, env);
 }
 
-static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)
+static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)
 {
   ScmObj args = SCM_CDR(form), arg0, arg1;
   long imm;
@@ -178,13 +178,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int
     }
     imm = SCM_INT_VALUE(arg0);
     if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMSUBI, imm, arg1, env, depth);
+      return immediate_integer_inliner(SCM_VM_NUMSUBI, imm, arg1, env);
   } else if (SCM_INTP(arg1)) {
     imm = SCM_INT_VALUE(arg1);
     if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMADDI, -imm, arg0, env, depth);
+      return immediate_integer_inliner(SCM_VM_NUMADDI, -imm, arg0, env);
   }
-  return num2op_inliner(SCM_VM_NUMSUB2, arg0, arg1, env, depth);
+  return num2op_inliner(SCM_VM_NUMSUB2, arg0, arg1, env);
 }
 
 "
@@ -377,7 +377,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int
 "
 
 "static ScmObj cxxr_inliner(ScmObj form, ScmObj env,
-                            const char *name, int insn1, int insn2, int *depth)
+                            const char *name, int insn1, int insn2)
  {
    ScmObj h = SCM_NIL, t = SCM_NIL;
    if (Scm_Length(form) != 2)
@@ -387,14 +387,14 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int
    SCM_APPEND1(h, t, SCM_VM_INSN(insn2));
    return h;
  }
- static ScmObj caar_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)
- { return cxxr_inliner(form, env, \"caar\", SCM_VM_CAR, SCM_VM_CAR, depth); }
- static ScmObj cadr_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)
- { return cxxr_inliner(form, env, \"cadr\", SCM_VM_CDR, SCM_VM_CAR, depth); }
- static ScmObj cdar_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)
- { return cxxr_inliner(form, env, \"cdar\", SCM_VM_CAR, SCM_VM_CDR, depth); }
- static ScmObj cddr_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx, int *depth)
- { return cxxr_inliner(form, env, \"cddr\", SCM_VM_CDR, SCM_VM_CDR, depth); }
+ static ScmObj caar_inliner(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)
+ { return cxxr_inliner(form, env, \"caar\", SCM_VM_CAR, SCM_VM_CAR); }
+ static ScmObj cadr_inliner(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)
+ { return cxxr_inliner(form, env, \"cadr\", SCM_VM_CDR, SCM_VM_CAR); }
+ static ScmObj cdar_inliner(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)
+ { return cxxr_inliner(form, env, \"cdar\", SCM_VM_CAR, SCM_VM_CDR); }
+ static ScmObj cddr_inliner(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)
+ { return cxxr_inliner(form, env, \"cddr\", SCM_VM_CDR, SCM_VM_CDR); }
 "
 
 (define-cproc caar (obj)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.49 2004-07-12 21:58:21 shirok Exp $
+ *  $Id: macro.c,v 1.50 2004-08-12 20:39:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -180,7 +180,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 }
 
 static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
-                                   int *depth, void *data)
+                                   void *data)
 {
     ScmObj name, trans, mt = SCM_NIL;
     int len;
@@ -900,7 +900,7 @@ static ScmObj synrule_transform(ScmObj form, ScmObj env, void *data)
  *    Internal macro of syntax-rules.  Taking macro name as the first arg.
  */
 static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
-                                   int ctx, int *depth, void *data)
+                                   int ctx, void *data)
 {
     ScmObj name, literals, rules;
     ScmSyntaxRules *sr;
@@ -941,7 +941,7 @@ static ScmSyntax syntax_syntax_rules = {
  */
 
 static ScmObj compile_define_syntax(ScmObj form, ScmObj env, int ctx,
-                                    int *depth, void *data)
+                                    void *data)
 {
     ScmObj var, body, synrule;
     if (Scm_Length(form) != 3) Scm_Error("malformed define-syntax: %S", form);
@@ -957,7 +957,7 @@ static ScmObj compile_define_syntax(ScmObj form, ScmObj env, int ctx,
         Scm_Error("define-syntax needs a syntax-rules form, but got %S", body);
     synrule = compile_syntax_rules(Scm_Cons(SCM_SYM_SYNTAX_RULES_INT,
                                             Scm_Cons(var, SCM_CDR(body))),
-                                   env, ctx, depth, NULL);
+                                   env, ctx, NULL);
     SCM_ASSERT(SCM_PAIRP(synrule));
     Scm_Define(SCM_CURRENT_MODULE(), SCM_SYMBOL(var), SCM_CAR(synrule));
     return synrule;
@@ -976,7 +976,7 @@ static ScmSyntax syntax_define_syntax = {
  */
 
 static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx,
-                                 int *depth, void *data)
+                                 void *data)
 {
     int letrecp = (data != NULL);
     ScmObj var, rule, vars = SCM_NIL, vars_t = SCM_NIL;
@@ -1022,7 +1022,7 @@ static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx,
         rule = SCM_CDAR(sp);
         synrule = compile_syntax_rules(Scm_Cons(SCM_SYM_SYNTAX_RULES_INT,
                                                 Scm_Cons(var, SCM_CDR(rule))),
-                                       newenv, ctx, depth, NULL);
+                                       newenv, ctx, NULL);
         SCM_ASSERT(SCM_PAIRP(synrule));
         SCM_SET_CDR(SCM_CAR(sp), SCM_CAR(synrule));
     }
@@ -1091,7 +1091,7 @@ ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
  * From scheme, this syntax is visible as %macro-expand.
  */
 static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
-                                   int ctx, int *depth, void *data)
+                                   int ctx, void *data)
 {
     int oncep = (data != NULL);
     if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.377 2004-08-01 05:41:22 shirok Exp $
+ *  $Id: gauche.h,v 1.378 2004-08-12 20:39:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -388,7 +388,7 @@ SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
 SCM_EXTERN ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
 				     int reqargs, int optargs,
-				     int insn, char *proc, int *depth);
+				     int insn, char *proc);
 SCM_EXTERN ScmObj Scm_Eval(ScmObj form, ScmObj env);
 SCM_EXTERN ScmObj Scm_Apply(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_Values(ScmObj args);
@@ -1845,6 +1845,20 @@ SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict);
  * PROCEDURE (APPLICABLE OBJECT)
  */
 
+/* Packet for inliner */
+typedef ScmObj (*ScmInlinerProc)(ScmObj proc, ScmObj form, ScmObj env,
+                                 int ctx, void *data);
+
+typedef struct ScmInlinerRec {
+    ScmInlinerProc proc;
+    void *data;
+} ScmInliner;
+
+#define SCM_DEFINE_INLINER(name, proc, data)     \
+    ScmInliner name = { (proc), (data) }
+
+
+
 /* Base structure */
 struct ScmProcedureRec {
     SCM_INSTANCE_HEADER;
@@ -1854,6 +1868,7 @@ struct ScmProcedureRec {
     unsigned char locked;       /* setter locked? */
     ScmObj info;                /* source code info */
     ScmObj setter;              /* setter, if exists. */
+    ScmInliner *inliner;        /* inliner */
 };
 
 /* procedure type */
@@ -1871,6 +1886,7 @@ enum {
 #define SCM_PROCEDURE_TYPE(obj)     SCM_PROCEDURE(obj)->type
 #define SCM_PROCEDURE_INFO(obj)     SCM_PROCEDURE(obj)->info
 #define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
+#define SCM_PROCEDURE_INLINER(obj)  SCM_PROCEDURE(obj)->inliner
 
 SCM_CLASS_DECL(Scm_ProcedureClass);
 #define SCM_CLASS_PROCEDURE    (&Scm_ProcedureClass)
@@ -1889,10 +1905,11 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->optional = opt,                 \
     SCM_PROCEDURE(obj)->type = typ,                     \
     SCM_PROCEDURE(obj)->info = inf,                     \
-    SCM_PROCEDURE(obj)->setter = SCM_FALSE
+    SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
+    SCM_PROCEDURE(obj)->inliner = NULL
 
-#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf) \
-    { { klass }, (req), (opt), (typ), FALSE, (inf), SCM_FALSE }
+#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf, inl)  \
+    { { klass }, (req), (opt), (typ), FALSE, (inf), SCM_FALSE, (inl) }
 
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
@@ -1916,7 +1933,6 @@ SCM_EXTERN ScmObj Scm_MakeClosure(int required, int optional,
 struct ScmSubrRec {
     ScmProcedure common;
     ScmObj (*func)(ScmObj *, int, void*);
-    ScmObj (*inliner)(ScmSubr *, ScmObj, ScmObj, int, int*);
     void *data;
 };
 
@@ -1924,14 +1940,13 @@ struct ScmSubrRec {
     (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_SUBR))
 #define SCM_SUBR(obj)              ((ScmSubr*)(obj))
 #define SCM_SUBR_FUNC(obj)         SCM_SUBR(obj)->func
-#define SCM_SUBR_INLINER(obj)      SCM_SUBR(obj)->inliner
 #define SCM_SUBR_DATA(obj)         SCM_SUBR(obj)->data
 
 #define SCM_DEFINE_SUBR(cvar, req, opt, inf, func, inliner, data)           \
     ScmSubr cvar = {                                                        \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_ProcedureClass),\
-                                   req, opt, SCM_PROC_SUBR, inf),           \
-        (func), (inliner), (data)                                           \
+                                   req, opt, SCM_PROC_SUBR, inf, inliner),  \
+        (func), (data)                                                      \
     }
 
 SCM_EXTERN ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
@@ -1963,7 +1978,8 @@ SCM_CLASS_DECL(Scm_GenericClass);
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_GenericClass),\
-                                   0, 0, SCM_PROC_GENERIC, SCM_FALSE),  \
+                                   0, 0, SCM_PROC_GENERIC, SCM_FALSE,   \
+                                   NULL),                               \
         SCM_NIL, cfunc, data                                            \
     }
 
@@ -1998,7 +2014,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
     ScmMethod cvar = {                                                  \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_PTR(Scm_MethodClass),\
                                    req, opt, SCM_PROC_METHOD,           \
-                                   SCM_FALSE),                          \
+                                   SCM_FALSE, NULL),                    \
         gf, specs, func, data, NULL                                     \
     }
 
@@ -2034,7 +2050,6 @@ SCM_EXTERN ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args);
 typedef ScmObj (*ScmCompileProc)(ScmObj form,
                                  ScmObj env,
                                  int context,
-                                 int *depth,
                                  void *data);
 
 struct ScmSyntaxRec {

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.90 2004-07-15 23:16:13 shirok Exp $
+ *  $Id: vm.h,v 1.91 2004-08-12 20:39:50 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -46,6 +46,17 @@
 #define SCM_VM_SIGQ_SIZE       32
 
 #define SCM_PCTYPE ScmObj
+
+/*
+ * Compiled code packet
+ */
+
+typedef struct ScmCompiledCodeRec {
+    ScmObj *code;               /* code vector */
+    ScmObj *constants;          /* constant vector */
+    int maxstack;               /* maximum runtime stack depth */
+    ScmObj info;                /* debug info */
+} ScmCompiledCode;
 
 /*
  * Environment frame
@@ -452,6 +463,10 @@ enum {
     SCM_COMPILE_TAIL,           /* This is a tail expression. */
     SCM_COMPILE_NORMAL          /* Normal calling sequence. */
 };
+
+typedef struct ScmCompilerPacketRec {
+    ScmObj constants;
+} ScmCompilerContext;
 
 /*
  * Compiler flags

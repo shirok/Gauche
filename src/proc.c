@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.37 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: proc.c,v 1.38 2004-08-12 20:39:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -94,7 +94,6 @@ ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
     SCM_SET_CLASS(s, SCM_CLASS_PROCEDURE);
     SCM_PROCEDURE_INIT(s, required, optional, SCM_PROC_SUBR, info);
     s->func = func;
-    s->inliner = NULL;
     s->data = data;
     return SCM_OBJ(s);
 }
