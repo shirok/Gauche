@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.38 2004-08-02 04:20:58 shirok Exp $
+dnl $Id: configure.ac,v 1.39 2004-08-02 10:36:06 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.1_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.38 $)
+AC_REVISION($Revision: 1.39 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -475,6 +475,7 @@ case $target in
     GOSH_USE_SHLIB=yes
     ext_use_uvector=yes
     ext_use_libgauche=yes
+    libgauche_version_link=no
     ;;
   *)
     SHLIB_SO_CFLAGS=""
