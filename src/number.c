@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.41 2001-05-10 08:49:33 shirok Exp $
+ *  $Id: number.c,v 1.42 2001-05-10 19:29:22 shirok Exp $
  */
 
 #include <math.h>
@@ -1162,7 +1162,7 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTS(SCM_STRING(s), port);
 }
 
-static void double_print(char *buf, int buflen, double val)
+static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
     /* TODO: Look at the algorithm of Burger & Dybvig :"Priting Floating-Point
        Numbers Quickly and Accurately", PLDI '96, pp108--116. */
@@ -1171,6 +1171,7 @@ static void double_print(char *buf, int buflen, double val)
     } else if (SCM_IS_NAN(val)) {
         strcpy(buf, "#<nan>");
     } else {
+        if (plus_sign && val > 0) { *buf++ = '+'; buflen--; }
         snprintf(buf, buflen - 3, "%.20g", val);
         if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
             strcat(buf, ".0");
@@ -1201,14 +1202,13 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
     } else if (SCM_BIGNUMP(obj)) {
         r = Scm_BignumToString(SCM_BIGNUM(obj), radix);
     } else if (SCM_FLONUMP(obj)) {
-        double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj));
+        double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE);
         r = Scm_MakeString(buf, -1, -1);
     } else if (SCM_COMPLEXP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort();
-        double_print(buf, FLT_BUF, SCM_COMPLEX_REAL(obj));
+        double_print(buf, FLT_BUF, SCM_COMPLEX_REAL(obj), FALSE);
         SCM_PUTCSTR(buf, SCM_PORT(p));
-        SCM_PUTC('+', SCM_PORT(p));
-        double_print(buf, FLT_BUF, SCM_COMPLEX_IMAG(obj));
+        double_print(buf, FLT_BUF, SCM_COMPLEX_IMAG(obj), TRUE);
         SCM_PUTCSTR(buf, SCM_PORT(p));
         SCM_PUTC('i', SCM_PORT(p));
         r = Scm_GetOutputString(SCM_PORT(p));
