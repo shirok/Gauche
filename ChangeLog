@@ -1,3 +1,8 @@
+2004-01-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (read-block) : allow 0 to be passed as nbytes.
+	  read-block returns a null string in such a case.
+
 2004-01-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-decompose-authority): fixed regexp to exclude

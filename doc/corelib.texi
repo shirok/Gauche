@@ -6966,11 +6966,16 @@ so that you can then use an appropriate character conversion port.
 Reads @var{nbytes} bytes from @var{iport}, and returns an incomplete
 string consisted by those bytes.  The size of returned string may
 shorter than @var{nbytes} when @var{iport} doesn't have enough bytes
-to fill.  If @var{iport} has already reached EOF, an eof object is returned.
+to fill.  
+If @var{nbytes} is zero, a null string is always returned.
+
+If @var{iport} has already reached EOF, an eof object is returned.
 @c JP
 @var{nbytes}バイトのデータを@var{iport}から読み込み、
 不完全な文字列として返します。@var{iport}に十分なデータが無い場合、
 返される文字列は@var{nbytes}より短いかもしれません。
+@var{nbytes}が0の場合は、常に空文字列が返されます。
+
 @var{iport}が既にEOFに達していた場合はEOFオブジェクトが返されます。
 @c COMMON
 

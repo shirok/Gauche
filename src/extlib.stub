@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.210 2003-12-09 19:45:48 shirok Exp $
+;;; $Id: extlib.stub,v 1.211 2004-01-16 23:19:58 shirok Exp $
 ;;;
 
 "
@@ -877,7 +877,8 @@
 (define-cproc read-block (bytes::<fixnum>
                           &optional (port::<input-port> (current-input-port)))
   "  char *buf; int nread;
-  if (bytes <= 0) Scm_Error(\"bytes must be non-zero positive integer: %d\", bytes);
+  if (bytes < 0) Scm_Error(\"bytes must be non-negative integer: %d\", bytes);
+  if (bytes == 0) SCM_RETURN(Scm_MakeString(\"\", 0, 0, 0));
   buf = SCM_NEW_ATOMIC2(char*, bytes);
   nread = Scm_Getz(buf, bytes, port);
   if (nread <= 0) {
