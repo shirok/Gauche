@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.6 2001-05-11 10:27:16 shirok Exp $
+;;;  $Id: numerical.scm,v 1.7 2001-05-11 20:03:15 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -163,10 +163,12 @@
   (log (+ z (sqrt (+ (* z z) 1)))))
 
 (define (%complex-acos z)
-  ;; The same discussion as asin is applied here.
-  (if (> (magnitude z) 1.0e5)
-      (make-rectangular (log 0.0) (log 0.0))
-      (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
+  ;; The definition of acos is
+  ;;  (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
+  ;; This also falls in the victim of numerical unstability; worse than
+  ;; asin, sometimes the real part of marginal value "hops" between
+  ;; +pi and -pi.  It's rather stable to use asin.
+  (- 1.5707963267948966 (asin z)))
 
 (define (%complex-acosh z)
   (log (+ z (sqrt (- (* z z) 1)))))
