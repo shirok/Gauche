@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.4 2001-03-21 19:31:50 shiro Exp $
+;;; $Id: moplib.stub,v 1.5 2001-03-25 04:42:31 shiro Exp $
 ;;;
 
 "
@@ -42,6 +42,28 @@
   nargs = SCM_VECTOR_SIZE(argv);
   argp = SCM_VECTOR_ELEMENTS(argv);
   SCM_RETURN(Scm_ComputeApplicableMethods(SCM_GENERIC(gf), argp, nargs));")
+
+"static ScmObj call_fallback_proc(ScmObj *args, int nargs, ScmGeneric *gf)
+ {
+  ScmObj proc = SCM_OBJ(gf->data);
+  ScmObj arglist = Scm_ArrayToList(args, nargs);
+  SCM_RETURN(Scm_VMApply(proc, arglist));
+ }
+"
+
+(define-cproc %ensure-generic-function (name module)
+  (assert (symbol? name))
+  (assert (module? module))
+  "  ScmObj val = Scm_SymbolValue(module, name);
+  if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {
+    if (SCM_SUBRP(val) || SCM_CLOSUREP(val)) {
+      val = Scm_MakeBaseGeneric(SCM_OBJ(name), call_fallback_proc, val);
+    } else {
+      val = Scm_MakeBaseGeneric(SCM_OBJ(name), NULL, NULL);
+    }
+    Scm_Define(module, name, val);
+  }
+  SCM_RETURN(val);")
 
 ;;
 ;; Public interface
