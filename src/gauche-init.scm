@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.16 2001-03-17 09:17:51 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.17 2001-03-20 07:41:48 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -45,8 +45,8 @@
 
 ;; create built-in srfi-6 and srfi-8 modules, so that (use srfi-6)
 ;; won't complain.
-(define-module srfi-6)
-(define-module srfi-8)
+(define-module srfi-6 )
+(define-module srfi-8 )
 
 ;;
 ;; Autoload
@@ -70,4 +70,13 @@
   (let ((out (open-output-string)))
     (with-output-to-port out thunk)
     (get-output-string out)))
+
+;;
+;; For convenience
+;;
+
+(let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
+  (when (sys-access dotfile F_OK)
+    (load dotfile)))
+
 
