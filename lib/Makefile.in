@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.17 2001-05-02 08:20:25 shirok Exp $
+#  $Id: Makefile.in,v 1.18 2001-05-03 19:14:15 shirok Exp $
 #
 
 prefix = @prefix@
@@ -29,7 +29,7 @@ SCMS = srfi-0.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        rfc/base64.scm
 
-SUBDIRS = gauche gauche/vm gauche/serializer rfc srfi-1
+SUBDIRS = gauche gauche/vm gauche/serializer rfc srfi-1 srfi-13 srfi-14
 
 INSTALL=@INSTALL@
 
