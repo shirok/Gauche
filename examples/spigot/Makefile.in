@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.3 2003-10-24 02:48:30 fuyuki Exp $
+# $Id: Makefile.in,v 1.4 2003-10-25 01:28:04 fuyuki Exp $
 #
 
 SHELL       = @SHELL@
@@ -42,9 +42,9 @@ GENERATED = spigotlib.c $(MODULE)_head.c $(MODULE)_tail.c
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   configure.lineno autom4te*.cache
 
-HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
-SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
-ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+HEADER_INSTALL_DIR  = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+SCM_INSTALL_DIR     = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+ARCH_INSTALL_DIR    = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
 all : $(TARGET)
 
@@ -70,12 +70,21 @@ check : all
 
 install : all
 	if test ! -z "$(HEADERS)"; then \
+	  if test ! -d $(HEADER_INSTALL_DIR); then \
+	    $(INSTALL) -d $(HEADER_INSTALL_DIR); \
+	  fi; \
 	  $(INSTALL) -m 444 $(HEADERS) $(HEADER_INSTALL_DIR); \
 	fi
 	if test ! -z "$(SCMFILES)"; then \
+	  if test ! -d $(SCM_INSTALL_DIR); then \
+	    $(INSTALL) -d $(SCM_INSTALL_DIR); \
+	  fi; \
 	  $(INSTALL) -m 444 $(SCMFILES) $(SCM_INSTALL_DIR); \
 	fi
 	if test ! -z "$(ARCHFILES)"; then \
+	  if test ! -d $(ARCH_INSTALL_DIR); then \
+	    $(INSTALL) -d $(ARCH_INSTALL_DIR); \
+	  fi; \
 	  $(INSTALL) -m 555 $(ARCHFILES) $(ARCH_INSTALL_DIR); \
 	fi
 

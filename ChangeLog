@@ -1,3 +1,7 @@
+2003-10-25  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* examples/spigot/Makefile.in : Respect DESTDIR.
+
 2003-10-24  Kimura Fuyuki  <fuyuki@nigredo.org>
 
 	* Makefile.in, examples/spigot/Makefile.in : Add configure.lineno
