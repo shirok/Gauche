@@ -1,3 +1,8 @@
+2002-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/cookie.scm, doc/gauche-ref.texi : applied patch from
+	  KIMURA Shigenobu.
+
 2002-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c, src/gauche-init.scm, lib/gauche/interpolate.scm :

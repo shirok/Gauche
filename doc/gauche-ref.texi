@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.304 2002-11-15 04:27:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.305 2002-11-24 21:25:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24812,13 +24812,13 @@ with comma and send it at once.  See RFC2965 for further details.
 Some examples:
 @example
 (construct-cookie-string
-   '(("name" "foo" :domain "foo.com :path "/"
-                   :expires (+ (sys-time) 86400) :max-age 86400)))
+   `(("name" "foo" :domain "foo.com" :path "/"
+                   :expires ,(+ (sys-time) 86400) :max-age 86400)))
  @result{} ("name=foo;Domain=foo.com;Path=/;Max-age=86400")
 
 (construct-cookie-string
-   '(("name" "foo" :domain "foo.com :path "/"
-                   :expires (+ (sys-time) 86400) :max-age 86400))
+   `(("name" "foo" :domain "foo.com" :path "/"
+                   :expires ,(+ (sys-time) 86400) :max-age 86400))
    0)
  @result{}
  ("name=foo;Domain=foo.com;Path=/;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
