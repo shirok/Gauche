@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interpolate.scm,v 1.2 2002-02-19 10:08:56 shirok Exp $
+;;;  $Id: interpolate.scm,v 1.3 2002-07-10 21:26:07 shirok Exp $
 ;;;
 
 ;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
@@ -38,7 +38,7 @@
              (cond ((eof-object? c2) (write-char c acc) (accum c2 acc))
                    ((char=? c2 #\,)
                     (write-char (read-char) acc) (accum (read-char) acc))
-                   ((char-set-contains? #[\x00-\x20\),\;\[\\\]\{\}\7f] c2)
+                   ((char-set-contains? #[\x00-\x20\),\;\[\\\]\{\}\x7f] c2)
                     (write-char c acc) (accum (read-char) acc))
                    (else
                     (cons (get-output-string acc) (insert))))))
