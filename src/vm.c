@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.179 2002-09-19 20:17:27 shirok Exp $
+ *  $Id: vm.c,v 1.180 2002-09-20 10:00:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2427,7 +2427,7 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
     SCM_VECTOR_ELEMENT(vec, 0) = env2vec(env->up, etab);
     SCM_VECTOR_ELEMENT(vec, 1) = Scm_VMGetBindInfo(env->info);
     for (i=0; i<env->size; i++) {
-        SCM_VECTOR_ELEMENT(vec, i+2) = ENV_DATA(env, i);
+        SCM_VECTOR_ELEMENT(vec, i+2) = ENV_DATA(env, (env->size-i-1));
     }
     if (etab->numEntries < DEFAULT_ENV_TABLE_SIZE) {
         etab->entries[etab->numEntries].env = env;
