@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: quoted-printable.scm,v 1.2 2001-09-19 07:46:49 shirok Exp $
+;;;  $Id: quoted-printable.scm,v 1.3 2001-10-17 10:30:12 shirok Exp $
 ;;;
 
 
@@ -24,11 +24,31 @@
   )
 (select-module rfc.quoted-printable)
 
-;(define (quoted-printable-encode)
-;  (let loop ((c (read-byte))
-;             (lcnt 0))
-;    (cond ((eof-object? c))
-;          ((= c #x0d)
+;; TODO: binary encoding
+(define (quoted-printable-encode . args)
+  (define binary? (get-keyword :binary? args #t))
+  (let loop ((c (read-byte))
+             (lcnt 0))
+    (cond ((eof-object? c))
+          ((>= lcnt 73) (display "=\r\n") (loop c 0)) ;soft newline
+          ((= c #x3d) ; '='
+           (display "=3D") (loop (read-byte) (+ lcnt 3)))
+          ((and (>= lcnt 72)            ; space or tab at the end of line
+                (or (= c #x20) (= c #x09)))
+           (write-byte c) (display "=\r\n") (loop (read-byte) 0))
+          ((= c #x0d)
+           (let ((c1 (read-byte)))
+             (cond (= c1 #x0a) (display "\r\n") (loop (read-byte) 0))
+                   (else (display "\r\n") (loop c1 0)))))
+          ((= c #x0a)
+           (display "\r\n") (loop (read-byte) 0))
+          ((<= #x21 c #x7e)
+           (write-byte c) (loop (read-byte) (+ lcnt 1)))
+          (else (format #t "=~2,'0X" c) (loop (read-byte) (+ lcnt 3)))
+          ))
+
+(define (quoted-printable-encode-string string . args)
+  (with-string-io string (lambda () (apply quoted-printable-encode args))))
 
 (define (quoted-printable-decode)
   (let loop ((c (read-char)))
