@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.144 2002-04-30 00:11:59 shirok Exp $
+;;; $Id: extlib.stub,v 1.145 2002-04-30 01:15:17 shirok Exp $
 ;;;
 
 "
@@ -756,6 +756,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc flush (&optional (oport (current-output-port)))
   (assert (output-port? oport))
   "  Scm_Flush(oport); SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc flush-all-ports ()
+  "  Scm_FlushAllPorts(FALSE); SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc port-closed? (obj)
   (assert (port? obj))
