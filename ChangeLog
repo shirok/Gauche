@@ -1,3 +1,8 @@
+2004-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (let-args): fixed a bug of 'else' clause
+	  formal parameter handling.
+
 2004-10-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h: avoid using 'template' as an argument name.

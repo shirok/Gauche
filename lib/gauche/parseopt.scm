@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parseopt.scm,v 1.7 2004-04-12 08:48:40 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.8 2004-10-17 10:22:26 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
@@ -255,13 +255,13 @@
     ((_ args binds (opts ...) ((else => else-cb) . varspecs) body)
      (let-args-internal args
          ((e else-cb) . binds)
-         (opts ... (else f (e f)))
+         (opts ... (else f (apply e f)))
          varspecs
          body))
     ((_ args binds (opts ...) ((else formals . forms) . varspecs) body)
      (let-args-internal args
          ((e (lambda formals . forms)) . binds)
-         (opts ... (else f (e f)))
+         (opts ... (else f (apply e f)))
          varspecs
          body))
     ;;
