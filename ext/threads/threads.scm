@@ -1,5 +1,5 @@
 ;;;
-;;; thread.scm - thread related procedures.  to be autoloaded
+;;; threads.scm - thread related procedures.  to be autoloaded
 ;;;
 ;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
@@ -12,19 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: thread.scm,v 1.1 2002-05-21 10:56:40 shirok Exp $
+;;;  $Id: threads.scm,v 1.1 2002-07-14 09:53:38 shirok Exp $
 ;;;
 
-(define-module gauche.thread
-  (export thread? thread-name thread-specific thread-specific-set!
-          mutex? mutex-name mutex-specific mutex-specific-set!
-          condition-variable? condition-variable-name
-          condition-variable-specific condition-variable-specific-set!
-          join-timeout-exception? abandoned-mutex-exception?
-          terminated-thread-exception? uncaught-exception?
-          uncaught-exception-reason)
-  )
-(select-module gauche.thread)
+(define-module gauche.threads
+  (export-all))
+(select-module gauche.threads)
+
+(dynamic-load "threads")
 
 ;;
 ;; Thread
@@ -113,4 +108,4 @@
   (check-arg uncaught-exception? exc)
   (slot-ref exc 'reason))
 
-(provide "gauche/thread")
+(provide "gauche/threads")

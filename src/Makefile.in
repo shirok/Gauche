@@ -49,9 +49,9 @@ GCLIB = ../gc/.libs/libgc.a
 
 OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o weak.o \
-       symbol.o keyword.o compare.o regexp.o signal.o thread.o mutex.o \
+       symbol.o keyword.o compare.o regexp.o signal.o \
        module.o proc.o number.o bignum.o load.o promise.o repl.o \
-       system.o stdlib.o extlib.o exclib.o syslib.o moplib.o thrlib.o
+       system.o stdlib.o extlib.o exclib.o syslib.o moplib.o
 
 TESTFILES = `cat ../test/TESTS`
 
@@ -74,7 +74,6 @@ extlib.c : extlib.stub genstub
 exclib.c : exclib.stub genstub
 syslib.c : syslib.stub genstub
 moplib.c : moplib.stub genstub
-thrlib.c : thrlib.stub genstub
 
 port.o : port.c portapi.c
 

@@ -12,11 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.11 2002-07-09 10:39:32 shirok Exp $
+ *  $Id: mutex.c,v 1.1 2002-07-14 09:53:38 shirok Exp $
  */
 
 #include <math.h>
-#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/exception.h"
@@ -336,17 +335,11 @@ ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond)
  * Initialization
  */
 
-extern void Scm_Init_thrlib(ScmModule *mod);
-
-void Scm__InitMutex(void)
+void Scm_Init_mutex(ScmModule *mod)
 {
-    ScmModule *mod = Scm_GaucheModule();
     sym_not_owned     = SCM_INTERN("not-owned");
     sym_abandoned     = SCM_INTERN("abandoned");
     sym_not_abandoned = SCM_INTERN("not-abandoned");
     Scm_InitBuiltinClass(&Scm_MutexClass, "<mutex>", mutex_slots, sizeof(ScmMutex), mod);
     Scm_InitBuiltinClass(&Scm_ConditionVariableClass, "<condition-variable>", cv_slots, sizeof(ScmConditionVariable), mod);
-    Scm_Init_thrlib(mod);
 }
-
-

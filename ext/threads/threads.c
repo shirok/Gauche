@@ -12,12 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: thread.c,v 1.5 2002-07-09 10:39:32 shirok Exp $
+ *  $Id: threads.c,v 1.1 2002-07-14 09:53:38 shirok Exp $
  */
 
-#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/extend.h"
 #include "gauche/exception.h"
 
 #include <unistd.h>
@@ -125,7 +125,10 @@ static void *thread_entry(void *data)
 }
 
 /* The default signal mask on the thread creation */
-static sigset_t defaultThreadSigmask;
+static struct threadRec {
+    int dummy;                  /* required to place this in data area */
+    sigset_t defaultSigmask;
+} threadrec = { 0 };
 #endif /* GAUCHE_USE_PTHREADS */
 
 ScmObj Scm_ThreadStart(ScmVM *vm)
@@ -143,7 +146,7 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
         vm->state = SCM_VM_RUNNABLE;
         pthread_attr_init(&thattr);
         pthread_attr_setdetachstate(&thattr, TRUE);
-        pthread_sigmask(SIG_SETMASK, &defaultThreadSigmask, &omask);
+        pthread_sigmask(SIG_SETMASK, &threadrec.defaultSigmask, &omask);
         if (pthread_create(&vm->thread, &thattr, thread_entry, vm) != 0) {
             vm->state = SCM_VM_NEW;
             err_create = TRUE;
@@ -270,10 +273,17 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
 /*
  * Initialization.
  */
-void Scm__InitThread(void)
+extern void Scm_Init_mutex(ScmModule*);
+extern void Scm_Init_thrlib(ScmModule*);
+
+void Scm_Init_threads(void)
 {
+    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.threads", TRUE));
+    SCM_INIT_EXTENSION(threads);
 #ifdef GAUCHE_USE_PTHREADS
-    sigfillset(&defaultThreadSigmask);
+    sigfillset(&threadrec.defaultSigmask);
 #endif /*GAUCHE_USE_PTHREADS*/
+    Scm_Init_mutex(mod);
+    Scm_Init_thrlib(mod);
 }
 

@@ -4,8 +4,12 @@
 
 (use gauche.test)
 (use gauche.sequence)
+(add-load-path ".")
 
-(test-start "thread")
+(test-start "threads")
+
+(load "threads")
+(import gauche.threads)
 
 (unless (eq? (gauche-thread-type) 'pthread)
   (format #t "thread not supported\n")

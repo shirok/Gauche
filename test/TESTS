@@ -14,7 +14,6 @@ colseq.scm
 regexp.scm
 mb-chars
 system.scm
-thread.scm
 rfc.scm
 parseopt.scm
 parameter.scm

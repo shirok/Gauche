@@ -12,11 +12,12 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.162 2002-07-01 08:52:06 shirok Exp $
+;;; $Id: extlib.stub,v 1.163 2002-07-14 09:53:38 shirok Exp $
 ;;;
 
 "
 #include <gauche/arch.h>
+#include <gauche/class.h>
 "
 
 ;;
@@ -1199,6 +1200,34 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (small-integer? code))
   "  Scm_Exit(code);
   SCM_RETURN(SCM_UNDEFINED);")
+
+;;
+;; External view of VM.
+;;
+
+(define-cclass <thread> "ScmVM" "Scm_VMClass"
+  ()
+  ((name)
+   (specific)
+   )
+  (printer
+   "ScmVM *vm = SCM_VM(obj);
+    const char *state;
+    switch (vm->state) {
+    case SCM_VM_NEW:        state = \"new\"; break;
+    case SCM_VM_RUNNABLE:   state = \"runnable\"; break;
+    case SCM_VM_BLOCKED:    state = \"blocked\"; break;
+    case SCM_VM_TERMINATED: state = \"terminated\"; break;
+    default: state = \"(unknown state)\";
+    }
+    Scm_Printf(port, \"#<thread %S %s %p>\", vm->name, state, vm);")
+  )
+
+(define-cproc vm-dump (&optional vm)
+  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
+  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
+  Scm_VMDump(SCM_VM(vm));
+  SCM_RETURN(SCM_UNDEFINED); ")
 
 ;;
 ;; Inspecting feature

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: thrlib.stub,v 1.3 2002-07-09 10:39:32 shirok Exp $
+;;; $Id: thrlib.stub,v 1.1 2002-07-14 09:53:38 shirok Exp $
 ;;;
 
 "
@@ -77,25 +77,6 @@
 (define-cproc thread-terminate! (vm)
   (assert (thread? vm))
   "SCM_RETURN(Scm_ThreadTerminate(vm));")
-
-;; external view of VM.
-(define-cclass <thread> "ScmVM" "Scm_VMClass"
-  ()
-  ((name)
-   (specific)
-   )
-  (printer
-   "ScmVM *vm = SCM_VM(obj);
-    const char *state;
-    switch (vm->state) {
-    case SCM_VM_NEW:        state = \"new\"; break;
-    case SCM_VM_RUNNABLE:   state = \"runnable\"; break;
-    case SCM_VM_BLOCKED:    state = \"blocked\"; break;
-    case SCM_VM_TERMINATED: state = \"terminated\"; break;
-    default: state = \"(unknown state)\";
-    }
-    Scm_Printf(port, \"#<thread %S %s %p>\", vm->name, state, vm);")
-  )
 
 ;;===============================================================
 ;; Mutex
@@ -189,12 +170,6 @@
 ;; VM inspection (temporary; may be changed later)
 ;;
 
-(define-cproc vm-dump (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  Scm_VMDump(SCM_VM(vm));
-  SCM_RETURN(SCM_UNDEFINED); ")
-
 (define-cproc vm-get-stack-trace (&optional vm)
   " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
   else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
@@ -225,8 +200,6 @@
   "  SCM_RETURN(Scm_VM()->load_next);")
 (define-cproc current-load-port ()
   "  SCM_RETURN(Scm_VM()->load_port);")
-
-
 
 ;; Local variables:
 ;; mode: scheme

@@ -1,5 +1,9 @@
 2002-07-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/thread.c, src/mutex.c, ext/threads/* : moved Scheme-level
+	  thread support to ext/threads (module gauche.threads).  This keeps
+	  gosh core small, and also explicitly specifying (use gauche.threads)
+	  may be a good idea for readers to be aware of the use of threads.
 	* src/read.c, src/write.c : let Scm_Read and Scm_Write (and likes)
 	  to hold the port lock so that they can call faster version of
 	  port primitives.
