@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.2 2001-03-25 10:24:09 shiro Exp $
+;; $Id: object.scm,v 1.3 2001-03-25 10:55:28 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -81,8 +81,27 @@
 (test "make <r> :a :b" '(20 100) (lambda () (slot-values r3)))
 
 
+;;----------------------------------------------------------------
+(test-section "next method")
 
+(define (nm obj) 'fallback)
 
-      
+(define-method nm ((obj <x>))  (list 'x-in (next-method) 'x-out))
+(define-method nm ((obj <y>))  (list 'y-in (next-method) 'y-out))
+(define-method nm ((obj <z>))  (list 'z-in (next-method) 'z-out))
+(define-method nm ((obj <w>))  (list 'w-in (next-method) 'w-out))
+(define-method nm ((obj <w2>))  (list 'w2-in (next-method) 'w2-out))
+  
+(test "next method"
+      '(y-in (x-in fallback x-out) y-out)
+      (lambda () (nm (make <y>))))
+(test "next-method"
+      '(w-in (z-in (y-in (x-in fallback x-out) y-out) z-out) w-out)
+      (lambda () (nm (make <w>))))
+
+;; This test fails, since sort-methods is not implemented properly.
+;(test "next-method"
+;      '(w2-in (y-in (x-in (z-in fallback z-out) x-out) y-out) w2-out)
+;      (lambda () (nm (make <w2>))))
 
 (test-end)
