@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.15 2001-04-22 07:44:43 shiro Exp $
+ *  $Id: system.c,v 1.16 2001-04-22 07:51:37 shiro Exp $
  */
 
 #include <stdio.h>
@@ -124,7 +124,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         if (*(dstp-1) != '/') { *dstp++ = '/'; *(dstp+1) = '\0'; }
     } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/') {
         int dirlen;
-        const char *p = getcwd(NULL, -1);
+        char *p = getcwd(NULL, -1);
         if (p == NULL) Scm_Error("couldn't get current directory.");
         dirlen = strlen(p);
         buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);

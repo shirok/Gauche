@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.33 2001-04-04 06:57:51 shiro Exp $
+;;;  $Id: genstub,v 1.34 2001-04-22 07:51:06 shiro Exp $
 ;;;
 
 ;; (define-cproc scheme-name (argspec)
@@ -212,7 +212,7 @@
          (c-name (caddr form))
          (value  (cdddr form))
          (scheme-name-len (string-length (symbol->string scheme-name))))
-    (println "static ScmString ~a_NAME = { SCM_CLASS_STRING, ~a, ~a, \"~a\" };"
+    (println "static ScmString ~a_NAME = { {SCM_CLASS_STRING}, ~a, ~a, \"~a\" };"
              c-name scheme-name-len scheme-name-len scheme-name)
     (println "static ScmObj ~a;" c-name)
     (newline)
@@ -493,7 +493,7 @@
     (println "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)" inliner)
     (println "{")
     (println "  ScmObj cp = SCM_CDR(form);")
-    (println "  ScmObj code = SCM_NIL, tail;")
+    (println "  ScmObj code = SCM_NIL, tail = SCM_NIL;")
     (println "  int nargs = Scm_Length(cp);")
     (cond ((have-rest-arg? cproc)
            (println "  if (nargs < ~a)" req)
@@ -518,17 +518,17 @@
 (define (emit-record cproc)
   (let* ((scm-func-name (symbol->string (scheme-name-of cproc)))
          (c-func-name (c-name-of cproc)))
-    (println "static ScmString ~a_NAME = { SCM_CLASS_STRING, ~a, ~a, \"~a\" };"
+    (println "static ScmString ~a_NAME = { { SCM_CLASS_STRING }, ~a, ~a, \"~a\" };"
              c-func-name
              (string-length scm-func-name)
              (string-length scm-func-name)
              scm-func-name)
     (println "static ScmSubr ~a_STUB = {" c-func-name)
-    (println "  SCM_CLASS_PROCEDURE,")
+    (println "  {{SCM_CLASS_PROCEDURE},")
     (println "  ~a, ~a, SCM_PROC_SUBR,"
              (num-reqargs-of cproc)
              (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0))
-    (println "  SCM_OBJ(&~a_NAME)," c-func-name)
+    (println "  SCM_OBJ(&~a_NAME)}," c-func-name)
     (println "  ~a," c-func-name)
     (println "  ~a, " (or (inliner-of cproc) "NULL"))
     (println "  NULL")

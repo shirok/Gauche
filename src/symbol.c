@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.15 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: symbol.c,v 1.16 2001-04-22 07:51:29 shiro Exp $
  */
 
 #include "gauche.h"
@@ -53,7 +53,7 @@ ScmObj Scm_Apropos(ScmString *substr)
 {
     ScmHashIter iter;
     ScmHashEntry *e;
-    ScmObj h = SCM_NIL, t;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     Scm_HashIterInit(obtable, &iter);
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
         if (!SCM_FALSEP(Scm_StringContains(SCM_STRING(e->key), substr)))

@@ -12,11 +12,15 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.41 2001-04-14 23:52:30 shiro Exp $
+;;; $Id: stdlib.stub,v 1.42 2001-04-22 07:50:54 shiro Exp $
 ;;;
 
 
-"#include <math.h>\n"
+"
+#include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
+"
 
 ;;
 ;; 6.1  Equivalence predicates
@@ -274,14 +278,14 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   SCM_RETURN(z);")
 
 (define-cproc real-part (z)
-  "  ScmObj r;
+  "  ScmObj r = SCM_NIL;
   if (SCM_INTP(z)) r = z;
   else if (SCM_FLONUMP(z)) r = z;
   else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
   else Scm_Error(\"number required, but got %S\", z);
   SCM_RETURN(r);")
 (define-cproc imag-part (z)
-  "  ScmObj r;
+  "  ScmObj r = SCM_NIL;
   if (SCM_INTP(z)) r = SCM_MAKE_INT(0);
   else if (SCM_FLONUMP(z)) r = Scm_MakeFlonum(0.0);
   else if (SCM_COMPLEXP(z)) r = Scm_MakeFlonum(SCM_COMPLEX_REAL(z));
@@ -815,7 +819,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc read-char (&optional (port (current-input-port)))
   (assert (input-port? port))
   (inliner "SCM_VM_READ_CHAR")
-  "  int ch;
+  "  int ch = EOF;
   SCM_GETC(ch, port);
   if (ch == EOF) SCM_RETURN(SCM_EOF);
   else SCM_RETURN(SCM_MAKE_CHAR(ch));")
