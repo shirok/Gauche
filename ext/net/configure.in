@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.3 2001-06-14 07:11:59 shirok Exp $
+dnl $Id: configure.in,v 1.4 2001-06-14 11:04:46 shirok Exp $
 AC_INIT(net.c)
 AC_CONFIG_HEADER(netconfig.h)
 
@@ -42,7 +42,7 @@ AC_SEARCH_LIBS(shutdown, socket)
 dnl Check for reentrant version synopsis of netdb functions.
 dnl   The calling synopsis of netdb functions like gethostbyname_r differ
 dnl   among platforms.
-AC_CHECK_FUNCS(gethostbyaddr_r getprotobyname_r)
+AC_CHECK_FUNCS(gethostbyaddr_r)
 
 AC_CACHE_CHECK(number of arguments for gethostbyname_r,
                ac_cv_func_gethostbyname_r, [
@@ -62,6 +62,70 @@ AC_CACHE_CHECK(number of arguments for gethostbyname_r,
 
 if test $ac_cv_func_gethostbyname_r != no; then
   AC_DEFINE_UNQUOTED(GETHOSTBYNAME_R_NUMARGS, $ac_cv_func_gethostbyname_r)
+fi
+
+AC_CACHE_CHECK(number of arguments for getprotobyname_r,
+               ac_cv_func_getprotobyname_r, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    char *n; struct protoent *h, *r; char buf[4096]; int len=4096;
+    (void)getprotobyname_r(n, h, buf, len, &r);
+    ], ac_cv_func_getprotobyname_r=5, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    char *n; struct protoent *h; char buf[4096]; int len=4096;
+    (void)getprotobyname_r(n, h, buf, len);
+    ], ac_cv_func_getprotobyname_r=4, [
+  ac_cv_func_getprotobyname_r=no])])])
+
+if test $ac_cv_func_getprotobyname_r != no; then
+  AC_DEFINE_UNQUOTED(GETPROTOBYNAME_R_NUMARGS, $ac_cv_func_getprotobyname_r)
+fi
+
+AC_CACHE_CHECK(number of arguments for getprotobynumber_r,
+               ac_cv_func_getprotobynumber_r, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    int n; struct protoent *h, *r; char buf[4096]; int len=4096;
+    (void)getprotobynumber_r(n, h, buf, len, &r);
+    ], ac_cv_func_getprotobynumber_r=5, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    int n; struct protoent *h; char buf[4096]; int len=4096;
+    (void)getprotobynumber_r(n, h, buf, len);
+    ], ac_cv_func_getprotobynumber_r=4, [
+  ac_cv_func_getprotobynumber_r=no])])])
+
+if test $ac_cv_func_getprotobynumber_r != no; then
+  AC_DEFINE_UNQUOTED(GETPROTOBYNUMBER_R_NUMARGS, $ac_cv_func_getprotobynumber_r)
+fi
+
+AC_CACHE_CHECK(number of arguments for getservbyname_r,
+               ac_cv_func_getservbyname_r, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    char *n, *p; struct servent *h, *r; char buf[4096]; int len=4096;
+    (void)getservbyname_r(n, p, h, buf, len, &r);
+    ], ac_cv_func_getservbyname_r=6, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    char *n, *p; struct servent *h; char buf[4096]; int len=4096;
+    (void)getservbyname_r(n, p, h, buf, len);
+    ], ac_cv_func_getservbyname_r=5, [
+  ac_cv_func_getservbyname_r=no])])])
+
+if test $ac_cv_func_getservbyname_r != no; then
+  AC_DEFINE_UNQUOTED(GETSERVBYNAME_R_NUMARGS, $ac_cv_func_getservbyname_r)
+fi
+
+AC_CACHE_CHECK(number of arguments for getservbyport_r,
+               ac_cv_func_getservbyport_r, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    int n; char *p; struct servent *h, *r; char buf[4096]; int len=4096;
+    (void)getservbyport_r(n, p, h, buf, len, &r);
+    ], ac_cv_func_getservbyport_r=6, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    int n; char *p; struct servent *h; char buf[4096]; int len=4096;
+    (void)getservbyport_r(n, p, h, buf, len);
+    ], ac_cv_func_getservbyport_r=5, [
+  ac_cv_func_getservbyport_r=no])])])
+
+if test $ac_cv_func_getservbyport_r != no; then
+  AC_DEFINE_UNQUOTED(GETSERVBYPORT_R_NUMARGS, $ac_cv_func_getservbyport_r)
 fi
 
 dnl Set LDFLAGS to generate shared library.
