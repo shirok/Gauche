@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.16 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: number.c,v 1.17 2001-03-26 07:34:00 shiro Exp $
  */
 
 #include <math.h>
@@ -1120,7 +1120,6 @@ ScmObj Scm_Round(ScmObj num, int mode)
 #endif
     default: Scm_Panic("something screwed up");
     }
-    printf("%lf\n", r);
     return Scm_MakeFlonum(r);
 }
 
