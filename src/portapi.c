@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.20 2004-09-17 03:42:10 shirok Exp $
+ *  $Id: portapi.c,v 1.21 2004-09-17 10:39:04 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -543,7 +543,7 @@ int Scm_GetcUnsafe(ScmPort *p)
             }
         } else {
             c = first;
-            if (c == '\n') p->src.buf.line++;
+            if (c == '\n') p->line++;
         }
         UNLOCK(p);
         return c;
@@ -564,16 +564,18 @@ int Scm_GetcUnsafe(ScmPort *p)
             p->src.istr.current += nb;
         } else {
             c = first;
+            if (c == '\n') p->line++;
         }
         UNLOCK(p);
         return c;
     case SCM_PORT_PROC:
         SAFE_CALL(p, c = p->src.vt.Getc(p));
+        if (c == '\n') p->line++;
         UNLOCK(p);
         return c;
     default:
         UNLOCK(p);
-        Scm_Error("bad port type for output: %S", p);
+        Scm_Error("bad port type for input: %S", p);
     }
     return 0;/*dummy*/
 }
@@ -719,7 +721,7 @@ ScmObj readline_body(ScmPort *p)
         SCM_DSTRING_PUTB(&ds, b1);
         b1 = Scm_GetbUnsafe(p);
     }
-    if(SCM_PORT_TYPE(p) == SCM_PORT_FILE) p->src.buf.line++;
+    p->line++;
     return Scm_DStringGet(&ds);
 }
 #endif /* READLINE_AUX */

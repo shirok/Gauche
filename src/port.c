@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.103 2004-09-17 10:00:00 shirok Exp $
+ *  $Id: port.c,v 1.104 2004-09-17 10:39:04 shirok Exp $
  */
 
 #include <unistd.h>
@@ -124,6 +124,7 @@ static ScmPort *make_port(int dir, int type)
     port->lockOwner = NULL;
     port->lockCount = 0;
     port->data = SCM_FALSE;
+    port->line = 1;
     switch (type) {
     case SCM_PORT_FILE: /*FALLTHROUGH*/;
     case SCM_PORT_PROC:
@@ -194,13 +195,7 @@ ScmObj Scm_PortName(ScmPort *port)
 
 int Scm_PortLine(ScmPort *port)
 {
-    switch (SCM_PORT_TYPE(port)) {
-    case SCM_PORT_FILE:
-        return port->src.buf.line;
-    default:
-        /* TODO: proc port to customize */
-        return -1;
-    }
+    return port->line;
 }
 
 int Scm_PortPosition(ScmPort *port)
@@ -462,7 +457,6 @@ ScmObj Scm_MakeBufferedPort(ScmObj name,
     p->src.buf.filenum = bufrec->filenum;
     p->src.buf.seeker = bufrec->seeker;
     p->src.buf.data = bufrec->data;
-    p->src.buf.line = 1;
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
     return SCM_OBJ(p);
 }

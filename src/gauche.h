@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.382 2004-09-17 10:00:00 shirok Exp $
+ *  $Id: gauche.h,v 1.383 2004-09-17 10:39:04 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1108,7 +1108,6 @@ typedef struct ScmPortBufferRec {
     char *end;          /* the end of the current valid data */
     int  size;          /* buffer size */
     int  mode;          /* buffering mode (ScmPortBufferMode) */
-    int  line;          /* line counter */
     int  (*filler)(ScmPort *p, int min);
     int  (*flusher)(ScmPort *p, int cnt, int forcep);
     int  (*closer)(ScmPort *p);
@@ -1146,7 +1145,8 @@ typedef struct ScmPortVTableRec {
 
 struct ScmPortRec {
     SCM_HEADER;
-    unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
+    unsigned int direction : 2; /* SCM_PORT_INPUT or SCM_PORT_OUTPUT.
+                                   There may be I/O port in future. */
     unsigned int type      : 2; /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
     unsigned int scrcnt    : 3; /* # of bytes in the scratch buffer */
 
@@ -1169,6 +1169,8 @@ struct ScmPortRec {
     int lockCount;              /* for port mutex; # of recursive locks */
 
     ScmObj data;                /* used internally */
+
+    unsigned int line;          /* line counter */
 
     union {
         ScmPortBuffer buf;      /* buffered port */
