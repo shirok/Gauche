@@ -37,8 +37,9 @@
 (title "cond" 5)        (run (cond (#f 2) (else 5)))
 (title "cond" 2)        (run (cond (1 2) (else 5)))
 (title "cond" 8)        (run (cond (#f 2) (1 8) (else 5)))
+(title "cond" 3)        (run (cond (1 => (lambda (x) (+ x 2))) (else 8)))
 
-;; case
+(title "case" #t)       (run (case (+ 2 3) ((1 3 5 7 9) #t) ((0 2 4 6 8) #f)))
 
 ;;----------------------------------------------------------------
 (section "closure and saved env")
