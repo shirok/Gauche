@@ -1,5 +1,5 @@
 ;; Tests Andrew Wright's match package in Gauche
-;; $Id: match.scm,v 1.1 2004-05-12 12:10:11 shirok Exp $
+;; $Id: match.scm,v 1.2 2004-05-13 09:09:58 shirok Exp $
 
 (use gauche.test)
 
@@ -51,6 +51,7 @@
               ((x) (y))
               #(x y z))))
 
+
 (test* "repetition pattern" '((1 1 2 (3 4 5))
                               ;(2 1 2 (3 4 5))
                               (3 1 2 (3 4))
@@ -74,6 +75,9 @@
 (test* "nested pattern" '((1 4) (2 5) (3 6))
        (match '((1 (2 3)) (4 (5 6)))
               (((a (b c)) ...) (list a b c))))
+
+
+
 
 ;; examples shown in Wright&Duba
 (test* "xmap" '(2 4 6)
@@ -137,7 +141,7 @@
 
 (test* "object" '(1 "bar")
        (match (make <foo> :a 1 :b "bar")
-              ((object <foo> :b bb :a aa) (list aa bb))))
+              ((object <foo> (b bb) (a aa)) (list aa bb))))
 
 ;; examples shown in Wright&Duba
 (define-class Lam ()
@@ -181,11 +185,11 @@
 
 (define unparse-obj
   (match-lambda
-   ((object Var :s symbol) symbol)
-   ((object Const :n number) number)
-   ((object Lam :body body-expr :args lambda-list)
+   ((@ Var (s symbol)) symbol)
+   ((@ Const (n number)) number)
+   ((@ Lam (body body-expr) (args lambda-list))
     `(lambda ,lambda-list ,(unparse-obj body-expr)))
-   ((object App :fun f :args args)
+   ((@ App (fun f) (args args))
     `(,(unparse-obj f) ,@(map unparse-obj args)))))
 
 (test* "parse-unparse-obj"
@@ -217,6 +221,13 @@
          (match x
                 (#(a b (set! setter) d e) (setter 'o)))
          x))
+
+;;--------------------------------------------------------------
+(test-section "match-let etc.")
+
+(test* "match-let1" '((a b c) (1 2 3))
+       (match-let1 ((ca . cd) ...) '((a . 1) (b . 2) (c . 3))
+                   (list ca cd)))
 
 
 (test-end)

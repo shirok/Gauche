@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.1 2004-05-12 12:10:10 shirok Exp $
+;; $Id: match.scm,v 1.2 2004-05-13 09:09:58 shirok Exp $
 
 (define-module util.match
   (use srfi-1)
@@ -16,7 +16,10 @@
           match-let
           match-let*
           match-letrec
+          match-let1
           match-define
+          match:$-ref
+          match:every
           match:error))
 (select-module util.match)
 
@@ -140,35 +143,20 @@
 
 (define match:error
   (lambda (val . args)
-    (for-each print args)
-    (error "no matching clause for " val)))
-(define match:andmap
-  (lambda (f l)
-    (if (null? l)
-        (and)
-        (and (f (car l)) (match:andmap f (cdr l))))))
+    (errorf "~a: no matching clause for ~a"
+            (string-join (map x->string args) " ")
+            val)))
+
+(define match:every every) ; alias srfi-1's every, in case the user of
+                           ; util.match isn't using srfi-1.
+
 (define match:syntax-err
   (lambda (obj msg) (error msg obj)))
-(define match:disjoint-structure-tags '())
-(define match:make-structure-tag
-  (lambda (name)
-    (if (or (eq? match:structure-control 'disjoint)
-            match:runtime-structures)
-        (let ((tag (gensym)))
-          (set! match:disjoint-structure-tags
-            (cons tag match:disjoint-structure-tags))
-          tag)
-        (string->symbol
-          (string-append "<" (symbol->string name) ">")))))
-(define match:structure?
-  (lambda (tag) (memq tag match:disjoint-structure-tags)))
-(define match:structure-control 'vector)
-(define match:set-structure-control
-  (lambda (v) (set! match:structure-control v)))
-(define match:set-error (lambda (v) (set! match:error v)))
+
 (define match:error-control 'error)
 (define match:set-error-control
   (lambda (v) (set! match:error-control v)))
+
 (define match:disjoint-predicates
   (cons 'null
         '(pair?
@@ -275,7 +263,7 @@
   (and (symbol? x)
        (not (dot-dot-k? x))
        (not (memq x '(quasiquote quote unquote unquote-splicing
-                      ? _ $ object = and or not set! get! ... ___)))))
+                      ? _ $ struct @ object = and or not set! get! ... ___)))))
 
 (define (dot-dot-k? s)
   (and (symbol? s)
@@ -346,13 +334,15 @@
            (if (and (list? (cdr p)) (pair? (cdr p)))
              `(not ,@(map ordinary (cdr p)))
              (cons-ordinary (car p) (cdr p))))
-          (($)
+          (($ struct)
            (if (and (pair? (cdr p)) (symbol? (cadr p)) (list? (cddr p)))
              `($ ,(cadr p) ,@(map ordinary (cddr p)))
              (cons-ordinary (car p) (cdr p))))
-          ((object)
+          ((@ object)
            (if (and (pair? (cdr p)) (symbol? (cadr p)) (list? (cddr p)))
-             `(object ,(cadr p) ,@(map ordinary (cddr p)))
+             `(object ,(cadr p) ,@(map (lambda (p)
+                                         (list (car p) (ordinary (cadr p))))
+                                       (cddr p)))
              (cons-ordinary (car p) (cdr p))))
           ((set!)
            (if (and (pair? (cdr p)) (pattern-var? (cadr p)) (null? (cddr p)))
@@ -495,25 +485,23 @@
                          ,(gensym)
                          ,(map (lambda (_) (gensym)) bvars))
                     b)))))
-     ((and (pair? p) (eq? '$ (car p)))
+     ((and (pair? p) (memq (car p) '($ struct)))
       (bound* (cddr p)
               a
               (lambda (p1 a)
                 (k `($ ,(cadr p) ,@p1) a))))
-     ((and (pair? p) (eq? 'object (car p)))  ;; Gauche extension
+     ((and (pair? p) (memq (car p) '(@ object)))  ;; Gauche extension
       (unless (and (pair? (cdr p))
-                   (even? (length (cddr p))))
+                   (every (lambda (p) (and (list? p) (= (length p) 2)))
+                          (cddr p)))
         (match:error plist))
-      (receive (slots pats)
-          (let loop ((p (cddr p)) (s '()) (v '()))
-            (cond ((null? p) (values (reverse! s) (reverse! v)))
-                  (else (loop (cddr p) (cons (car p) s) (cons (cadr p) v)))))
-        (bound* pats
-                a
-                (lambda (p1 a)
-                  (k `(object ,(cadr p)
-                          ,@(map list slots p1))
-                     a)))))
+      (bound* (map cadr (cddr p))
+              a
+              (lambda (p1 a)
+                (k `(object ,(cadr p)
+                            ,@(map (lambda (p q) (list (car p) q))
+                                   (cddr p) p1))
+                   a))))
      ((and (pair? p) (eq? 'set! (car p)))
       (if (memq (cadr p) a)
         (k p a)
@@ -716,7 +704,7 @@
                       (if (= n rlen)
                         (ks sf)
                         (next (list-ref fields n)
-                              `(,match:$-ref ,tag ,(- n 1) ,e)
+                              `(match:$-ref ,tag ,(- n 1) ,e)
                               sf kf (rloop (+ 1 n)))))))))
          ((and (pair? p) (eq? 'object (car p)))  ;; Gauche extension
           (let* ((tag (cadr p))
@@ -728,8 +716,7 @@
                       (if (null? fields)
                         (ks sf)
                         (next (cadar fields)
-                              `(ref ,e ',(string->symbol (x->string
-                                                          (caar fields))))
+                              `(ref ,e ',(caar fields))
                               sf kf (rloop (cdr fields)))))))))
          ((and (pair? p) (eq? 'set! (car p)))
           (set! v (cons (cons (cadr p) (get-setter e p)) v))
@@ -758,7 +745,7 @@
                                                         (null? (cddr ptst)))
                                                  (car ptst)
                                                  `(lambda (,eta) ,ptst))))
-                                     (assm `(,match:andmap ,tst ,e)
+                                     (assm `(match:every ,tst ,e)
                                            (kf sf)
                                            (ks sf))))
                                   ((and (symbol? (car p))
@@ -1217,7 +1204,7 @@
   (cond
     ((and (list? args)
           (<= 1 (length args))
-          (match:andmap
+          (match:every
             (lambda (y) (and (list? y) (<= 2 (length y))))
             (cdr args))) (let* ((exp (car args))
                                 (clauses (cdr args))
@@ -1236,7 +1223,7 @@
 
 (define-macro (match-lambda . args)
   (if (and (list? args)
-           (match:andmap
+           (match:every
              (lambda (g126)
                (if (and (pair? g126) (list? (cdr g126)))
                    (pair? (cdr g126))
@@ -1251,7 +1238,7 @@
 
 (define-macro (match-lambda* . args)
   (if (and (list? args)
-           (match:andmap
+           (match:every
              (lambda (g134)
                (if (and (pair? g134) (list? (cdr g134)))
                    (pair? (cdr g134))
@@ -1286,7 +1273,7 @@
                   (if (null? g162)
                       (if (and (list? (cddr args)) (pair? (cddr args)))
                           ((lambda (name pat exp body)
-                             (if (match:andmap
+                             (if (match:every
                                    (cadddr match:expanders)
                                    pat)
                                  `(let ,@args)
@@ -1307,7 +1294,7 @@
                           (g146))))
                 (g146))
             (if (list? (car args))
-                (if (match:andmap
+                (if (match:every
                       (lambda (g167)
                         (if (and (pair? g167)
                                  (g136 (car g167))
@@ -1488,6 +1475,9 @@
                     (g146))))
         (g146))))
 
+(define-macro (match-let1 pat exp . body) ;; Gauche extension
+  `(match ,exp (,pat ,@body)))
+
 (define-macro (match-let* . args)
   (let ((g176 (lambda ()
                 (match:syntax-err `(match-let* ,@args) "syntax error in"))))
@@ -1513,6 +1503,7 @@
                  (cdr args))
                 (g176)))
         (g176))))
+
 (define-macro (match-letrec . args)
   (let ((g200 (cadddr match:expanders))
         (g199 (lambda (p1 e1 p2 e2 body)
@@ -1533,7 +1524,7 @@
                  `(match-letrec ((,pat ,exp)) ,@body)))))
     (if (pair? args)
         (if (list? (car args))
-            (if (match:andmap
+            (if (match:every
                   (lambda (g206)
                     (if (and (pair? g206)
                              (g200 (car g206))
@@ -1723,10 +1714,5 @@
                  (cadr args))
                 (g209)))
         (g209))))
-(define match:runtime-structures #f)
-(define match:set-runtime-structures
-  (lambda (v) (set! match:runtime-structures v)))
-(define match:primitive-vector? vector?)
-
 
 (provide "util/match")
