@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.345 2003-01-16 03:52:53 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.346 2003-01-18 14:23:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -763,7 +763,17 @@ Defined as an autoloaded macro.  @xref{Binding constructs}.
 @c JP
 オートロードされるマクロとして定義されています。@ref{Binding constructs}参照。
 @c COMMON
+
+@item SRFI-37, args-fold: a program argument processor
+@c EN
+Supported by the module @code{srfi-37}.
+@xref{srfi-37 - a program argument processor}.
+@c JP
+モジュール@code{srfi-37}でサポートされます。
+@ref{srfi-37 - a program argument processor}参照。
+@c COMMON
 @end table
+
 
 @node Multibyte Strings, Case-sensitivity, Standard conformance, Concepts
 @section Multibyte Strings
@@ -14058,7 +14068,7 @@ If the object doesn't have the specified slot, a generic function
 @end defun
 
 @defun slot-bound? obj slot
-Returns true if object @var{obj}'s slot @var{slot} is bount, 
+Returns true if object @var{obj}'s slot @var{slot} is bound, 
 otherwise returns false.
 
 If the object doesn't have the specified slot, a generic function
@@ -14072,12 +14082,12 @@ Returns true iff @var{obj} has the slot named @var{slot}.
 @end defun
 
 @defun slot-push! obj slot value
-This function implements the common idiom.  It is equivalent
-to the following code (except @var{obj} and @var{slot} is not
-evaluated twice, of course).
+This function implements the common idiom.
+It can be defined like the following code
+(but it may be optimized in the future versions).
 @example
-(slot-set! @var{obj} @var{slot}
-           (cons @var{value} (slot-ref @var{obj} @var{slot})))
+(define (slot-push! obj slot value)
+  (slot-set! obj slot (cons value (slot-ref obj slot))))
 @end example
 @end defun
 
@@ -18240,8 +18250,13 @@ This module defines a convenient way to parse command-line options.
 The interface is hinted by Perl, and conveniently handles long-format
 options with mutiple option arguments.
 
-Note that you can also use the standard @code{getopt} interface by SLIB,
-if you prefer.
+Actually, you have a few choices to parse command-line
+options in Gauche.
+SRFI-37 (@xref{srfi-37 - a program argument processor}) provides
+functional interface to parse POSIX/GNU compatible argument syntax.
+SLIB has @code{getopt}-compatible utility.
+Required features may differ from application to application,
+so choose whichever fits your requirement.
 @end deftp
 
 @defmac parse-options args (option-clause @dots{})
@@ -22047,6 +22062,7 @@ of supported SRFIs.
 * srfi-14 - Character-set library::  
 * srfi-19 - Time data types and procedures::  
 * srfi-27 - Sources of random bits::  
+* srfi-37 - a program argument processor::  
 @end menu
 
 @node srfi-0 - Feature conditional, srfi-1 - List library, Library modules - SRFIs, Library modules - SRFIs
@@ -24180,7 +24196,7 @@ Conversions from time-utc to various date/time types.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node srfi-27 - Sources of random bits,  , srfi-19 - Time data types and procedures, Library modules - SRFIs
+@node srfi-27 - Sources of random bits, srfi-37 - a program argument processor, srfi-19 - Time data types and procedures, Library modules - SRFIs
 @section @code{srfi-27} - Sources of Random Bits
 @c NODE srfi-27 - ランダムビットのソース, @code{srfi-27} - ランダムビットのソース
 
@@ -24266,6 +24282,165 @@ If @var{unit} is given, the random real the returned procedure
 generates will be quantized by the given @var{unit}, where 
 0 < @var{unit} < 1.
 @end defun
+
+@c ----------------------------------------------------------------------
+@node srfi-37 - a program argument processor,  , srfi-27 - Sources of random bits, Library modules - SRFIs
+@section @code{srfi-37} - args-fold: a program argument processor
+
+@deftp {Module} srfi-37
+@mdindex srfi-37
+This module implements @code{args-fold},
+yet another procedure to process command-line
+arguments, defined in SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}).
+
+Unlike @code{gauche.parseopt}
+(@xref{gauche.parseopt - Parsing command-line options}),
+@code{args-fold} provides functional interface, i.e. 
+the user's states are explicitly passed via parser's argument and
+return values, and also follows POSIX and GNU getopt guidelines,
+including long options.
+@end deftp
+
+@defun args-fold args options unrecognized-proc operand-proc &rest seeds
+Processes program options @var{args} from left to right,
+according to given option specification @var{options},
+and two procedures @var{unrecognized-proc} and @var{operand-proc}.
+
+@var{Options} is a list of option objects, explained below.
+Each option object keeps the name(s) of the option, 
+a flag to specify whether the option takes
+an argument or not, and a procedure to process that option
+(we'll call it @emph{option procedure}).  
+
+@code{Args-fold} recognizes both single-character options (short options)
+and long options.  A short option must begin with single hyphen
+(e.g. @code{-a}), while long option must begin with double hyphens
+(e.g. @code{--help}).   Short options can be
+concatenated, e.g. @code{-abc} or @code{-a -b -c}.
+Both a short option and a long option can take
+required or optional arguments.   Required short-option argument
+can appear with or without space after the option, e.g.
+@code{-afoo} or @code{-a foo}.
+Long-option argument can appear after character '@code{=}' or
+space, e.g. @code{--long=foo} or @code{--long foo}.
+
+When @code{args-fold} encounters a command-line argument that cannot
+be an option argument, and doesn't begin with hyphen, the argument is
+treated as an @emph{operand}.   @code{Args-fold} allows operands and
+options to be interleaved.  However, if @code{args-fold} encounters
+'@code{--}', the rest of arguments are treated as operands,
+regardless of beginning with hyphen or not.
+
+When the given option matches one of option object in @var{options},
+the option procedure is called as follows:
+@example
+(@var{option-proc} @var{option} @var{name} @var{arg} @var{seed} @dots{})
+@end example
+where @var{option} is the matched option object, @var{name} is
+the string actually used to specify the option, @var{arg} is
+the option argument (or @code{#f} if there's none), and
+@var{seed} @dots{} is the user's state information.
+@var{Option-proc} must return as many arguments as @var{seed}s.
+
+When @code{args-fold} encounters an option that doesn't match
+any of the option objects, it creates a new option object
+for the option and calls @var{unrecognized-proc}
+with the same arguments as @var{option-proc}.  
+
+When @code{args-fold} finds an operand, @var{operand-proc}
+is called as follows:
+@example
+(@var{operand-proc} @var{operand} @var{seed} @dots{})
+@end example
+@var{Operand-proc} must return as many arguments as @var{seed}s.
+
+The caller's state should be explicitly passed around seed arguments
+and return values.  The initial seed values are @var{seed}s given
+to @code{args-fold}.  The values returned from option procedure,
+@var{unrecognized-proc} and @var{operand-proc} are used as the seed
+arguments of next invocation of those procedures.  The values
+returned from the last call to the procedures are returned
+from @code{args-fold}.
+@end defun
+
+@defun option names require-arg? optional-arg? processor
+Creates an option object with the passed properties.
+
+@var{Names} is a list of characters and/or strings.
+A character is used for a short option, and a string is used
+for a long option.
+
+Two flags, @var{require-arg?} and @var{optional-arg?}
+indicates whether the option should take an option argument,
+or may take an option argument.  
+
+@var{Processor} is the option processor procedure.
+
+Note that, if an option argument is passed using '@code{=}'
+character, it is passed to the option procedure even if 
+the option has @code{#f} in both @var{require-arg?}
+and @var{optional-arg?}.  It is up to the option procedure
+to deal with the argument.
+
+It should also be noted that the optional option argument
+for a short option is only recognized if it is given
+without whitespace after the short option.  That is, if
+a short option '@code{d}' is marked to take optional option argument,
+then '@code{-dfoo}' is interpreted as '@code{-d}' with argument '@code{foo}',
+but '@code{-d foo}' is interpreted as '@code{-d}' without argument
+and an operand @code{foo}.  If '@code{d}' is marked to
+take required option argument, however, both are interpreted
+as '@code{-d}' with argument '@code{foo}'.
+@end defun
+
+@defun option? obj
+Returns @code{#t} if @var{obj} is an option object,
+@code{#f} otherwise.
+@end defun
+
+@defun option-name option
+@defunx option-required-arg? option
+@defunx option-optional-arg? option
+@defunx option-processor
+Returns the properties of an option object @var{option}.
+@end defun
+
+A simple example:
+
+@example
+(use srfi-37)
+
+(define options
+ (list (option '(#\d "debug") #f #t
+               (lambda (option name arg debug batch paths files)
+                 (values (or arg "2") batch paths files)))
+       (option '(#\b "batch") #f #f
+               (lambda (option name arg debug batch paths files)
+                 (values debug #t paths files)))
+       (option '(#\I "include") #t #f
+               (lambda (option name arg debug batch paths files)
+                 (values debug batch (cons arg paths) files)))))
+
+(define (main args)
+  (receive (debug-level batch-mode include-paths files)
+    (args-fold (cdr args)
+               options
+               (lambda (option name arg . seeds)         ; unrecognized
+                 (error "Unrecognized option:" name))
+               (lambda (operand debug batch paths files) ; operand
+                 (values debug batch paths (cons operand files)))
+               0      ; default value of debug level
+               #f     ; default value of batch mode
+               '()    ; initial value of include paths
+               '()    ; initial value of files
+               )
+     (print "debug level = " debug-level)
+     (print "batch mode = " batch-mode)
+     (print "include paths = " (reverse include-paths))
+     (print "files = " (reverse files))
+     0))
+@end example
+
 
 
 @c ======================================================================
@@ -28380,6 +28555,12 @@ Sebastian Egner, Sources of Random Bits, June 2002.@*
 @item [SRFI-28]
 Scott G. Miller, Basic Format Strings, June 2002.@*
 @url{http://srfi.schemers.org/srfi-28/srfi-28.html}.
+
+
+@anchor{srfi-37}
+@item [SRFI-37]
+Anthony Carrico, Args-fold: a program argument processor, Jan. 2003.@*
+@url{http://srfi.schemers.org/srfi-37/srfi-37.html}.
 
 @anchor{ssax}
 @item [SSAX]
