@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.393 2003-05-28 10:51:29 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.394 2003-05-28 11:34:03 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2276,7 +2276,7 @@ Unicodeを使う @code{#\u@var{NN}}という表記があります。
 
 @c EN
 @item Extended sharp syntax
-Many more special tokens begins with '@code{#}' is defined.
+Many more special tokens begins with '@code{#}' are defined.
 See the table below.
 @c JP
 @item 拡張された#構文
@@ -24552,12 +24552,45 @@ always a copy of @var{s}, even no character is dropped.
 @defun string-pad s len &optional char start end
 @defunx string-pad-right s len &optional char start end
 [SRFI-13]
+If a string @var{s} is shorter than @var{len}, 
+returns a string of @var{len} where @var{char} is
+padded to the left or right, respectively.
+If @var{s} is longer than @var{len}, the rightmost
+or leftmost @var{len} chars are taken.
+@var{Char} defaults to @code{#\space}.
+If @var{start} and @var{end} are provided, 
+the substring of @var{s} is used as the source.
+
+@example
+(string-pad "abc" 10)    @result{} "       abc"
+(string-pad "abcdefg" 3) @result{} "efg"
+
+(string-pad-right "abc" 10) @result{} "abc       "
+
+(string-pad "abcdefg" 10 #\+ 2 5)
+  @result{} "+++++++cde"
+@end example
 @end defun
 
 @defun string-trim s &optional char/char-set/pred start end
 @defunx string-trim-right s &optional char/char-set/pred start end
 @defunx string-trim-both s &optional char/char-set/pred start end
 [SRFI-13]
+Removes characters that match @var{char/char-set/pred}
+from @var{s}.  @code{String-trim} removes the characters from
+left of @var{s}, @code{string-trim-right} does from right,
+and @code{string-trim-both} does from both sides.
+
+@var{Char/char-set/pred} defaults to @code{#[\s]}, i.e. a char-set
+of whitespaces.
+If @var{start} and @var{end} are provided, 
+the substring of @var{s} is used as the source.
+
+@example
+(string-trim "   abc  ")       @result{} "abc  "
+(string-trim-right "   abc  ") @result{} "   abc"
+(string-trim-both "   abc  ")  @result{} "abc"
+@end example
 @end defun
 
 @node SRFI-13 String Comparison, SRFI-13 String Prefixes & Suffixes, SRFI-13 String Selection, srfi-13 - String library
@@ -25930,8 +25963,8 @@ in a large file and unpack from it.  Also, templates may be stored as
 dispatch closures to pack, unpack or even skip over values without
 re-parsing the template.
 
-See also binary.io - Binary I/O for utilities to read and write
-individual binary values.
+@c See also binary.io - Binary I/O for utilities to read and write
+@c individual binary values.
 @end deftp
 
 @defun pack template list &keyword :output :to-string?
@@ -26060,6 +26093,10 @@ An sexp, handled with @code{read} and @code{write}.
 If the optional keyword @var{:output} is given that port is used
 instead of the current output port.  If @var{:to-string?} is given and
 true, then pack accumulates and returns the output as a string.
+
+Note that the returned string may be an incomplete string
+if the packed string contains a byte sequence invalid as
+a character sequence.
 
 @example
 (pack "CCCC" '(65 66 67 68) :to-string? #t)
@@ -30032,7 +30069,7 @@ as the state value of the next call of either one of the procedures.
 @var{Seed} is used as the initial value of the state value.
 The last state value is returned from @code{lcs-fold}.
 
-The three procedures are called in the following order; if the sequence
+The three procedures are called in the following order: Suppose the sequence
 @var{a} consists of @var{a'}@var{c}@var{a''}, and @var{b} consists of 
 @var{b'}@var{c}@var{b''}, where @var{a'}, @var{b'}, @var{a''}, and @var{b''}
 are subsequences, and @var{c} is the head of the 
