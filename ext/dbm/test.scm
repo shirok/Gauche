@@ -125,7 +125,7 @@
 
 ;; clean up files
 (define (clean-up)
-  (when (file-exists? *test-dbm*) (sys-unlink *test-dbm*))
+  (when (file-exists? *test-dbm*) (sys-system #`"rm -rf ,*test-dbm*"))
   (when (file-exists? (string-append *test-dbm* ".dir"))
     (sys-unlink (string-append *test-dbm* ".dir")))
   (when (file-exists? (string-append *test-dbm* ".pag"))
@@ -184,6 +184,14 @@
             (test-module ',module)
             (full-test ,class))
     ))
+
+;;
+;; FSDBM test
+;;
+
+(use dbm.fsdbm)
+(test-module 'dbm.fsdbm)
+(full-test <fsdbm>)
 
 ;;
 ;; GDBM test

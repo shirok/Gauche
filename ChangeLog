@@ -1,3 +1,7 @@
+2003-09-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm/fsdbm.scm : added.
+
 2003-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub : added gauche-dso-suffix to query dlopen()-able
