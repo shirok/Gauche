@@ -160,6 +160,19 @@
 (test "format ~s" "*****\"abc\""
       (lambda () (format #f "~10,,,'*@s" "abc")))
 
+(test "format ~s" "\"abc\"*****"
+      (lambda () (format #f "~10,,,'*,15s" "abc")))
+(test "format ~s" "*****\"abc\""
+      (lambda () (format #f "~10,,,'*,15@s" "abc")))
+(test "format ~s" "(\"abc\" \"def\" \"g"
+      (lambda () (format #f "~10,,,'*,15s" '("abc" "def" "ghi" "jkl"))))
+(test "format ~s" "(\"abc\" \"def\" \"g"
+      (lambda () (format #f "~10,,,'*,15@s" '("abc" "def" "ghi" "jkl"))))
+(test "format ~s" "(\"abc\" \"def ..."
+      (lambda () (format #f "~10,,,'*,15:s" '("abc" "def" "ghi" "jkl"))))
+(test "format ~s" "(\"abc\" \"def ..."
+      (lambda () (format #f "~10,,,'*,15@:s" '("abc" "def" "ghi" "jkl"))))
+
 (test "format ~a" "abc"
       (lambda () (format #f "~a" "abc")))
 (test "format ~a" "abc       "
@@ -178,6 +191,15 @@
       (lambda () (format #f "~10,,,'*a" "abc")))
 (test "format ~a" "*******abc"
       (lambda () (format #f "~10,,,'*@a" "abc")))
+
+(test "format ~a" "(abc def ghi jk"
+      (lambda () (format #f "~10,,,'*,15a" '("abc" "def" "ghi" "jkl"))))
+(test "format ~a" "(abc def ghi jk"
+      (lambda () (format #f "~10,,,'*,15@a" '("abc" "def" "ghi" "jkl"))))
+(test "format ~a" "(abc def gh ..."
+      (lambda () (format #f "~10,,,'*,15:a" '("abc" "def" "ghi" "jkl"))))
+(test "format ~a" "(abc def gh ..."
+      (lambda () (format #f "~10,,,'*,15@:a" '("abc" "def" "ghi" "jkl"))))
 
 (test "format ~d" "12345"       (lambda () (format #f "~d" 12345)))
 (test "format ~d" "-12345"      (lambda () (format #f "~d" -12345)))
