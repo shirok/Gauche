@@ -37,9 +37,9 @@ libcharconv.la : $(OBJS)
 convlib.c : convlib.stub
 	$(GOSH) genstub convlib.stub
 
-jconv.o : eucj2ucs.c ucs2eucj.c jconv.c
+jconv.lo : eucj2ucs.c ucs2eucj.c jconv.c
 
-guess.o : guess_tab.c guess.c
+guess.lo : guess_tab.c guess.c
 
 $(OBJS) : charconv.h
 
