@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.152 2002-05-23 06:21:56 shirok Exp $
+ *  $Id: vm.c,v 1.153 2002-05-24 10:19:40 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -157,39 +157,6 @@ void Scm_VMSetResult(ScmObj obj)
 ScmVM *Scm_VM(void)
 {
     return theVM;
-}
-
-/*
- * Safe locking.
- */
-ScmObj Scm_WithLock(ScmInternalMutex *mutex,
-                    ScmObj (*func)(void *),
-                    void *data,
-                    const char *info)
-{
-#ifdef GAUCHE_USE_PTHREAD
-    volatile ScmObj obj;
-    int r = pthread_mutex_lock(mutex);
-    if (r == EDEADLK) {
-        if (info) {
-            Scm_Error("dead lock detected when trying to lock %s", info);
-        } else {
-            Scm_Error("dead lock detected");
-        }
-    }
-    SCM_UNWIND_PROTECT {
-        obj = func(data);
-    }
-    SCM_WHEN_ERROR {
-        pthread_mutex_unlock(mutex);
-        SCM_NEXT_HANDLER;
-    }
-    SCM_END_PROTECT;
-    pthread_mutex_unlock(mutex);
-    return obj;
-#else  /* !GAUCHE_USE_PTHREAD */
-    return func(data);
-#endif /* !GAUCHE_USE_PTHREAD */
 }
 
 /*
@@ -1464,60 +1431,6 @@ ScmEnvFrame *Scm_GetCurrentEnv(void)
 /*==================================================================
  * Function application from C
  */
-
-/* Called from VM loop, by SCM_VM_APPLY instruction.
-   At this point, VM state is as follows
-   (suppose we're called as (apply proc arg0 arg1 argN)
-
-       |           |
-    sp>|           |
-       +-----------+
-       |   arg1    |
-       |   arg0    |          +-----------+
-       |   proc    |     val0 |   argN    |
-       +-----------+          +-----------+
-       |    :      |
-       |   (env)   |
-   env>|    :      |
-       +-----------+
-       |   (cont)  |
-       |    :      |
-
-   This procedure has to arrange VM so that it would ready to call
-   proc with argument (arg0 arg1 . argN).   Specifically, this procedure
-   rearranges the stack to be like this: (suppose argN == (arg2 arg3) )
-
-
-    sp>|           |
-       +-----------+
-       |   arg3    |
-       |   arg2    |
-       |   arg1    |
-       |   arg0    |
-       +-----------+
-  argp>| <env-hdr> |
-       +-----------+          +-----------+
-  cont>|   <cont>  |     val0 |   proc    |
-       +-----------+          +-----------+
-       |    :      |
-       |   (env)   |
-   env>|    :      |
-       +-----------+
-       |   (cont)  |
-       |    :      |
-
-*/
-
-#if 0
-static ScmObj inlined_apply(ScmVM *vm, int nargs)
-{
-    ScmObj proc = *(vm->sp - nargs + 1);
-    ScmObj argN = vm->val0;
-    int argc = (nargs-1) + Scm_Length(argN);
-    
-    
-}
-#endif
 
 /* called from Scm_VMApply, this effectively generates the VM code
    to call proc with args, and sets up the continuation so that
