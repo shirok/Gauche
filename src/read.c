@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.25 2001-09-19 07:20:36 shirok Exp $
+ *  $Id: read.c,v 1.26 2001-09-19 07:41:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -327,8 +327,8 @@ static ScmObj read_string(ScmPort *port, int incompletep)
                       SCM_GETC(c3, port);
                       if (c3 == EOF) goto eof_exit;
                       if (SCM_CHAR_ASCII_P(c2) && isxdigit(c3)) {
-                          int cc = ((Scm_CharToDigit(c2, 16)<<4)
-                                    + Scm_CharToDigit(c3, 16));
+                          int cc = ((Scm_DigitToInt(c2, 16)<<4)
+                                    + Scm_DigitToInt(c3, 16));
                           ACCUMULATE(cc);
                       } else {
                           ACCUMULATE('\\');
@@ -409,7 +409,7 @@ static ScmObj read_char(ScmPort *port)
             int i = 1, cc;
             unsigned long code = 0;
             do {
-                cc = Scm_CharToDigit(cname[i], 16);
+                cc = Scm_DigitToInt(cname[i], 16);
                 code = code * 16 + cc; /* TODO: check overflow */
                 if (cname[++i] == '\0') return SCM_MAKE_CHAR(code);
             } while (isxdigit(cname[i]));
