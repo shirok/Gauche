@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.70 2002-07-23 14:06:13 shirok Exp $
+;;;  $Id: genstub,v 1.71 2002-07-24 16:09:18 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -21,6 +21,7 @@
 (use gauche.let-opt)
 (use gauche.parseopt)
 (use gauche.parameter)
+(use text.tr)
 
 (define *file-prefix* "")
 (define *insert-sharp-line* #t)         ;if #t, output #line directive
@@ -34,105 +35,255 @@
 ;; Type handling
 ;;
 
-;; (define-type name assert-predicate c-type c-predicate unboxer [boxer])
+;; Stub's type system doesn't exactly match Scheme's, since stub has
+;; to handle internal guts of Scheme implementations as well as
+;; C type systems.  We call the types used in the stub generator
+;; "stub type", apart from "C type" and "Scheme type".
 ;;
-;;  name := <string>             ; used for messages
-;;  assert-predicate := <symbol> ; used in assert declaration
-;;  c-type := <string>           ; corresponding C type name when unboxed
-;;  c-predicate := <string>      ; name of C function or macro that maps
-;;                               ;   ScmObj -> C boolean
-;;  unboxer := <string>          ; name of C function or macro that maps
-;;                               ;   ScmObj -> c-type
-;;                               ;   Can be "" if no unboxing needed
-;;  boxer := <string>            ; name of C function or macro that maps
-;;                               ;   c-type -> ScmObj
-;;                               ;   Can be "" if no boxing needed
-;;                               ;   Can be #f if no boxing available
+;; For each existing conversion between C type and Scheme type, a stub
+;; type is defined.  For types that has one-to-one mapping between
+;; C and Scheme (such as most aggregate types, for example, Scheme's
+;; <u32vector> and C's ScmU32Vector*), there is only one stub type,
+;; which uses the same name as the Scheme's.  There are some stub types
+;; that reflects C type variations: <int>, <int8>, <int16>, <int32>,
+;; <uint>, <uint8>, <uint16>, <uint32> --- these are mapped to Scheme's
+;; integer, but the range limit is taken into account.   <fixnum>
+;; refers to the integers that can be represented in an immediate integer.
+;; Note that a stub type <integer> corresponds to Scheme's exact integers,
+;; but it is mapped to C's ScmObj, since C's integer isn't enough to
+;; represent all of Scheme integers.   A stub type <void> is
+;; used to denote a procedure return type.
+;;
+;; Each stub type has a "boxer" and an "unboxer".  A boxer is a C name
+;; of a function or a macro that takes an object of C type of the stub
+;; type and returns a Scheme object.  An unboxer is a C name of a function
+;; or a macro that takes Scheme object and checks its vailidy, then
+;; returns a C object of the C type or throws an error.
+;;
+;; Here's a summary of primitive stub types and the mapping each one
+;; represents.
+;;
+;;   stub type    Scheme       C           Notes
+;;  -----------------------------------------------------------------
+;;   <fixnum>     <integer>    int         Integers within fixnum range
+;;   <integer>    <integer>    ScmObj      Any exact integers
+;;   <real>       <real>       double
+;;   <number>     <number>     ScmObj      Any numbers
+;;
+;;   <int>        <integer>    int         Integers representable in C
+;;   <int8>       <integer>    int
+;;   <int16>      <integer>    int
+;;   <int32>      <integer>    int
+;;   <uint>       <integer>    uint        Integers representable in C
+;;   <uint8>      <integer>    uint
+;;   <uint16>     <integer>    uint
+;;   <uint32>     <integer>    uint
+;;   <float>      <real>       float
+;;   <double>     <real>       double      Alias of <real>
+;;
+;;   <boolean>    <boolean>    int         Boolean value
+;;   <char>       <char>       ScmChar     NB: not a C char
+;;
+;;   <void>       -            void        (Used only as a return type.
+;;                                          Scheme function returns #<undef>)
+;;
+;;   <pair>       <pair>       ScmPair*
+;;   <list>       <list>       ScmObj
+;;   <string>     <string>     ScmString*
+;;   <symbol>     <symbol>     ScmSymbol*
+;;   <vector>     <vector>     ScmVector*
+;;    :
+;;
 
+;; Stub type definition
 (define-class <type> ()
-  ((scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
-   (c-name      :init-keyword :c-name      :accessor c-name-of)
-   (predicate   :getter predicate-of)
+  ((name        :init-keyword :name        :accessor name-of)
+   ;; ::<symbol> - name of this stub type.
    (c-type      :init-keyword :c-type      :accessor c-type-of)
+   ;; ::<string> - C type name this stub type represents
+   (description :init-keyword :description :accessor description-of)
+   ;; ::<string> - used in the type error message
    (c-predicate :init-keyword :c-predicate :accessor c-predicate-of)
+   ;; ::<string> - name of a C function (macro) to find out the given
+   ;;              ScmObj has a valid type for this stub type.
    (unboxer     :init-keyword :unboxer     :accessor unboxer-of)
+   ;; ::<string> - name of a C function (macro) that takes Scheme object
+   ;;              and returns a C object.
    (boxer       :init-keyword :boxer       :accessor boxer-of
                 :init-value "SCM_OBJ_SAFE")
+   ;; ::<string> - name of a C function (macro) that takes C object
+   ;;              and returns a Scheme Object.
    (all-types   :allocation :class :initform '())
+   ;; list of all types.
    ))
 
 (define-method initialize ((self <type>) initargs)
   (next-method)
-  (slot-set! self 'predicate (string->symbol #`",(scheme-name-of self)?"))
   (slot-push! self 'all-types self))
+
+(define (find-type-by-name name)
+  ;; trick for transition - will be removed later
+  (define (canon-type-name type-name)
+    (let1 n (x->string type-name)
+      (if (string-prefix? "<" n)
+          (string->symbol (string-trim-both n #[<>]))
+          (begin (warn "old-style type name used: ~s" type-name)
+                 type-name))))
+  (let1 cname (canon-type-name name)
+    (find (lambda (type) (eq? (canon-type-name (name-of type)) cname))
+          (class-slot-ref <type> 'all-types))))
+
+(define (name->type name)
+  (or (find-type-by-name name) (error "unknown type" name)))
+
+;; [Genstub Form] define-type name c-type [desc c-predicate unboxer boxer]
+;;
+;;   Creates a new stub type for existing scheme type.
+
+(define (process-define-type form)
+  (define (strip<> name) (string-trim-both name #[<>]))
+  (define (default-cpred name)
+    (if (string-index name #\-)
+        (string-append "SCM_"
+                       (string-tr (strip<> name) "a-z-" "A-Z_")
+                       "_P")
+        #`"SCM_,(string-upcase (strip<> name))P"))
+  (define (default-unbox name)
+    #`"SCM_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
+  (define (default-box name)
+    #`"SCM_MAKE_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
+
+  (if (string? (cadr form))
+      ;; comatibility
+      (receive (desc assert c-type c-pred unboxer . maybe-boxer)
+          (apply values (cdr form))
+        (warn "~s: using obsolete define-type form (~s)"
+              (pair-attribute-get form 'source-info) desc)
+        (process-define-type
+         `(define-type
+            ,(string->symbol #`"<,(string-drop-right (symbol->string assert) 1)>")
+            ,c-type
+            ,desc
+            ,c-pred
+            ,unboxer
+            ,@maybe-boxer)))
+      (begin
+        (unless (<= 3 (length form) 7)
+          (error "malformed define-type:" form))
+        (let ((name   (list-ref form 1))
+              (c-type (list-ref form 2))
+              (desc   (list-ref form 3 #f))
+              (c-pred (list-ref form 4 #f))
+              (unbox  (list-ref form 5 #f))
+              (box    (list-ref form 6 #f)))
+          (make <type>
+            :name name :c-type c-type
+            :description (or desc (x->string name))
+            :c-predicate (or c-pred (default-cpred (x->string name)))
+            :unboxer     (or unbox (default-unbox (x->string name)))
+            :boxer       (or box "SCM_OBJ_SAFE"))))
+      ))
 
 ;; Builtin types
 (for-each
- (lambda (data)
-   (receive (name c-name c-type c-pred unbox . box) (apply values data)
-     (make <type> :scheme-name name :c-name c-name :c-type c-type
-           :c-predicate c-pred :unboxer unbox
-           :boxer (if (null? box) "SCM_OBJ_SAFE" (car box)))))
- '((pair "pair" "ScmObj" "SCM_PAIRP" "")
-   (list "list" "ScmObj" "SCM_LISTP" "")
-   (vector "vector" "ScmVector*" "SCM_VECTORP" "SCM_VECTOR")
-   (string "string" "ScmString*" "SCM_STRINGP" "SCM_STRING")
-   (symbol "symbol" "ScmSymbol*" "SCM_SYMBOLP" "SCM_SYMBOL")
-   (keyword "keyword" "ScmKeyword*" "SCM_KEYWORDP" "SCM_KEYWORD")
-   (identifier "identifier" "ScmIdentifier*" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
-   (boolean "boolean" "int" "SCM_BOOLP" "!SCM_FALSEP" "SCM_MAKE_BOOL")
-   (small-integer "small integer" "int" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
-   (small-positive-integer "small positive integer" "unsigned int" "SCM_UINTP" "(unsigned int)SCM_INT_VALUE" "SCM_MAKE_INT")
-   (exact "exact integer" "int" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
-   (positive-exact "positive exact integer" "unsigned int" "SCM_UINTEGERP" "Scm_MakeUInteger")
-   (real "real" "double" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
-   (number "number" "ScmObj" "SCM_NUMBERP" "")
-   (char "character" "ScmChar" "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
-   (char-set "char-set" "ScmCharSet*" "SCM_CHARSETP" "SCM_CHARSET")
-   (port "port" "ScmPort*" "SCM_PORTP"  "SCM_PORT")
-   (input-port "input port" "ScmPort*" "SCM_IPORTP" "SCM_PORT")
-   (output-port "output port" "ScmPort*" "SCM_OPORTP" "SCM_PORT")
+ process-define-type
+ '(;; Numeric types
+   (define-type <fixnum>  "int" "small integer"
+     "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
+   (define-type <integer> "ScmObj" "exact integer"
+     "SCM_EXACTP" "")
+   (define-type <real>    "double" "real number"
+     "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+   (define-type <number>  "ScmObj" "number"
+     "SCM_NUMBERP" "")
+   (define-type <int>     "int" "C integer"
+     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (define-type <long>    "long" "C integer"
+     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (define-type <int8>    "int" "C integer"
+     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (define-type <int16>   "int" "C integer"
+     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (define-type <int32>   "int" "C integer"
+     "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (define-type <uint>    "uint" "C integer"
+     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+   (define-type <ulong>   "ulong" "C integer"
+     "SCM_EXACTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+   (define-type <uint8>   "uint" "C integer"
+     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+   (define-type <uint16>  "uint" "C integer"
+     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+   (define-type <uint32>  "uint" "C integer"
+     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+   (define-type <float>   "float" "real number"
+     "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
+   (define-type <double>  "double" "real number"
+     "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+   
+   ;; Basic immediate types
+   (define-type <boolean> "int" "boolean"
+     "SCM_BOOLP"   "SCM_BOOL_VALUE" "SCM_MAKE_BOOL")
+   (define-type <char>    "ScmChar" "character"
+     "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
+   (define-type <void>    "void" "void"
+     ""      ""  "SCM_VOID_RETURN_VALUE")
+   (define-type <top>     "ScmObj" "scheme object" "" "")
 
-   (procedure "procedure" "ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE")
-   (closure "closure" "ScmClosure*" "SCM_CLOSUREP" "SCM_CLOSURE")
-   (hash-table "hash table" "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
-   (class "class" "ScmClass*" "SCM_CLASSP" "SCM_CLASS")
-   (module "module" "ScmModule*" "SCM_MODULEP" "SCM_MODULE")
-   (thread "thread" "ScmVM*" "SCM_VMP" "SCM_VM")
-   (mutex "mutex" "ScmMutex*" "SCM_MUTEXP"  "SCM_MUTEX")
-   (condition-variable "condition variable" "ScmConditionVariable*" "SCM_CONDITION_VARIABLE_P"  "SCM_CONDITION_VARIABLE")
-   (weak-vector "weak vector" "ScmWeakVector*" "SCM_WEAKVECTORP" "SCM_WEAKVECTOR")
+   ;; Aggregate types
+   (define-type <pair> "ScmPair*" "pair"
+     "SCM_PAIRP" "SCM_PAIR" "SCM_OBJ")
+   (define-type <list> "ScmObj" "list"
+     "SCM_LISTP" "")
+   (define-type <vector> "ScmVector*" "vector"
+     "SCM_VECTORP" "SCM_VECTOR")
+   (define-type <string> "ScmString*" "string"
+     "SCM_STRINGP" "SCM_STRING")
+   (define-type <symbol> "ScmSymbol*" "symbol"
+     "SCM_SYMBOLP" "SCM_SYMBOL")
+   (define-type <keyword> "ScmKeyword*" "keyword"
+     "SCM_KEYWORDP" "SCM_KEYWORD")
+   (define-type <identifier> "ScmIdentifier*" "identifier"
+     "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
+   (define-type <char-set> "ScmCharSet*" "char-set"
+     "SCM_CHARSETP" "SCM_CHARSET")
+   (define-type <port> "ScmPort*" "port"
+     "SCM_PORTP" "SCM_PORT")
+   (define-type <input-port> "ScmPort*" "input port"
+     "SCM_IPORTP" "SCM_PORT")
+   (define-type <output-port> "ScmPort*" "output port"
+     "SCM_OPORTP" "SCM_PORT")
+   (define-type <procedure> "ScmProcedure*" "procedure"
+     "SCM_PROCEDUREP" "SCM_PROCEDURE")
+   (define-type <closure> "ScmClosure*" "closure"
+     "SCM_CLOSUREP" "SCM_CLOSURE")
+   (define-type <hash-table> "ScmHashTable*" "hash table"
+     "SCM_HASHTABLEP" "SCM_HASHTABLE")
+   (define-type <class> "ScmClass*" "class"
+     "SCM_CLASSP" "SCM_CLASS")
+   (define-type <module> "ScmModule*" "module"
+     "SCM_MODULEP" "SCM_MODULE")
+   (define-type <thread> "ScmVM*" "thread"
+     "SCM_VMP" "SCM_VM")
+   (define-type <mutex> "ScmMutex*" "mutex"
+     "SCM_MUTEXP" "SCM_MUTEX")
+   (define-type <condition-variable> "ScmConditionVariable*"
+     "condition variable" "SCM_CONDITION_VARIABLE_P" "SCM_CONDITION_VARIABLE")
+   (define-type <weak-vector> "ScmWeakVector*" "weak vector"
+     "SCM_WEAKVECTORP" "SCM_WEAKVECTOR")
    ))
 
 ;; default
-(define *scm-type*
-  (make <type> :scheme-name 'scheme-object :c-name "scheme object"
-        :c-predicate #f :c-type "ScmObj" :unboxer ""))
+(define *scm-type* (name->type '<top>))
+
+;; compatibility stuff
+(define-method predicate-of ((self <type>))
+  (string->symbol #`",(string-trim-both (x->string (name-of self)) #[<>])?"))
 
 (define (predicate->type pred)
   (or (find (lambda (type) (eq? (predicate-of type) pred))
             (class-slot-ref <type> 'all-types))
       (error "unknown predicate to assert" pred)))
-
-(define (scheme-name->type name)
-  (or (find (lambda (type) (eq? (scheme-name-of type) name))
-            (class-slot-ref <type> 'all-types))
-      (error "unknown type" name)))
-
-;; process type definition in stub file
-;; (this keeps backward compatibility)
-(define (process-define-type form)
-  (unless (<= 6 (length form) 7)
-    (error "malformed define-type:" form))
-  (receive (name pred c-type c-pred unbox . maybe-box)
-      (apply values (cdr form))
-    (make <type>
-      :scheme-name (string->symbol (string-drop-right (symbol->string pred) 1))
-      :c-name name
-      :c-type c-type
-      :c-predicate c-pred
-      :unboxer unbox
-      :boxer (if (null? maybe-box) "SCM_OBJ_SAFE" (car maybe-box)))))
 
 ;;===================================================================
 ;; Stub
@@ -304,7 +455,7 @@
    (c-name   :accessor c-name-of)
    (scm-name :accessor scm-name-of)
    (count    :init-keyword :count :accessor count-of)
-   (c-type   :initform *scm-type* :accessor c-type-of)
+   (type     :init-keyword :type :accessor  type-of)
    (category :init-keyword :category :initform :required :accessor category-of)
    (default  :init-keyword :default :initform *unbound* :accessor default-of)
    ))
@@ -333,8 +484,10 @@
 (define (process-assert cproc form)
   (let* ((op  (car form))
          (arg (get-arg cproc (cadr form))))
+    (warn "~s: assert form obsoleted: use the new argument type annotation"
+          (pair-attribute-get form 'source-info))
     (unless arg (error "assertion for unknown arg:" form))
-    (set! (c-type-of arg) (predicate->type op))))
+    (set! (type-of arg) (predicate->type op))))
 
 ;; (define-cproc scheme-name (argspec)
 ;;   assertions ...
@@ -369,6 +522,18 @@
       (emit-inliner cproc)
       (emit-record cproc))))
 
+;; create arg object.  used in cproc and cmethod
+(define (make-arg class argname count . rest)
+  (define (grok-argname argname)
+    (let1 namestr (symbol->string argname)
+      (receive (realname typename) (string-scan namestr "::" 'both)
+        (if realname
+            (values (string->symbol realname)
+                    (name->type (string->symbol typename)))
+            (values argname *scm-type*)))))
+  (receive (arg type) (grok-argname argname)
+    (apply make class :name arg :type type :count count rest)))
+
 ;; returns a list of args, # of reqargs,  # of optargs, and have-rest-arg?
 (define (process-cproc-args argspecs)
   (define (badarg arg) (error "bad argument in argspec:" arg))
@@ -380,9 +545,7 @@
           ((eq? (car specs) '&keyword)  (keyword (cdr specs) args nreqs 0))
           ((symbol? (car specs))
            (required (cdr specs)
-                     (cons (make <required-arg>
-                                 :name (car specs) :count nreqs)
-                           args)
+                     (cons (make-arg <required-arg> (car specs) nreqs) args)
                      (+ nreqs 1)))
           (else (badarg (car specs)))))
 
@@ -394,15 +557,16 @@
           ((eq? (car specs) '&rest)  (rest (cdr specs) args nreqs nopts))
           ((symbol? (car specs))
            (optional (cdr specs)
-                     (cons (make <optional-arg>
-                                 :name (car specs) :count (+ nreqs nopts))
+                     (cons (make-arg <optional-arg>
+                                     (car specs) (+ nreqs nopts))
                            args)
                      nreqs
                      (+ nopts 1)))
           ((and (list? (car specs)) (= (length (car specs)) 2))
            (optional (cdr specs)
-                     (cons (make <optional-arg> :default (cadar specs)
-                                 :name (caar specs) :count (+ nreqs nopts))
+                     (cons (make-arg <optional-arg>
+                                     (caar specs) (+ nreqs nopts)
+                                     :default (cadar specs))
                            args)
                      nreqs
                      (+ nopts 1)))
@@ -416,15 +580,16 @@
           ((eq? (car specs) '&rest) (rest (cdr specs) args nreqs nopts))
           ((symbol? (car specs))
            (keyword (cdr specs)
-                    (cons (make <keyword-arg>
-                                :name (car specs) :count (+ nreqs nopts))
+                    (cons (make-arg <keyword-arg>
+                                    (car specs) (+ nreqs nopts))
                           args)
                     nreqs
                     (+ nopts 1)))
           ((and (list? (car specs)) (= (length (car specs)) 2))
            (keyword (cdr specs)
-                    (cons (make <keyword-arg> :default (cadar specs)
-                                :name (caar specs) :count (+ nreqs nopts))
+                    (cons (make-arg <keyword-arg>
+                                    (caar specs) (+ nreqs nopts)
+                                    :default (cadar specs))
                           args)
                     nreqs
                     (+ nopts 1)))
@@ -434,8 +599,7 @@
     (cond ((null? specs) (values (reverse args) nreqs nopts #f))
           ((and (null? (cdr specs)) (symbol? (car specs)))
            (values (reverse
-                    (cons (make <rest-arg>
-                                :name (car specs) :count (+ nreqs nopts))
+                    (cons (make-arg <rest-arg> (car specs) (+ nreqs nopts))
                           args))
                    nreqs
                    (+ nopts 1)
@@ -514,9 +678,9 @@
      (push-stmt! cproc #`"SCM_RETURN(,(cadr form)(,(args)));"))
     ((2)
      (unless (and (symbol? (cadr form)) (string? (caddr form))) (err))
-     (if (eq? (cadr form) 'void)
+     (if (memq (cadr form) '(void <void>)) ;trick for transition
          (push-stmt! cproc #`",(caddr form)(,(args)); SCM_RETURN(SCM_UNDEFINED);")
-         (push-stmt! cproc #`"SCM_RETURN(,(boxer-of (scheme-name->type (cadr form)))(,(caddr form)(,(args))));")))
+         (push-stmt! cproc #`"SCM_RETURN(,(boxer-of (name->type (cadr form)))(,(caddr form)(,(args))));")))
     (else (err))))
 
 ;;; emit code
@@ -564,15 +728,15 @@
 
 (define (emit-arg-decl arg)
   (f "  ScmObj ~a;" (scm-name-of arg))
-  (f "  ~a ~a;" (c-type-of (c-type-of arg)) (c-name-of arg)))
+  (f "  ~a ~a;" (c-type-of (type-of arg)) (c-name-of arg)))
 
 (define (emit-arg-unbox arg)
   (let* ((class (class-of arg))
-         (type  (c-type-of arg))
+         (type  (type-of arg))
          (cname (c-name-of arg))
          (sname (scm-name-of arg))
          (count (count-of arg))
-         (tname (c-name-of type))
+         (tdesc (description-of type))
          (pred  (c-predicate-of type))
          (unbox (unboxer-of type)))
     (cond
@@ -594,7 +758,7 @@
       (f "  ~a = SCM_OPTARGS;" sname)))
     (when pred
       (f "  if (!~a(~a)) Scm_Error(\"~a required, but got %S\", ~a);"
-         pred sname tname sname))
+         pred sname tdesc sname))
     (if unbox
         (f "  ~a = ~a(~a);" cname unbox sname)
         (f "  ~a = ~a;" cname sname))))
@@ -609,6 +773,7 @@
           (set! (c-keyword-of arg) c-key)
           (emit-definition c-key)))))
 
+;; TODO: arg type assertion
 (define (emit-inliner cproc)
   (let* ((insn (inline-insn-of cproc)))
     (when insn
@@ -814,15 +979,14 @@
     (cond ((null? arglist)
            (values args specs (length args) #f))
           ((symbol? arglist)
-           (values (cons (make <rest-arg> :name arglist :count (length args))
+           (values (cons (make-arg <rest-arg> arglist (length args))
                          args)
                    (cons "Scm_ListClass" specs)
                    (length args) #t))
           ((not (pair? arglist)) (badlist))
           ((symbol? (car arglist))
            (loop (cdr arglist)
-                 (cons (make <required-arg>
-                             :name (car arglist) :count (length args))
+                 (cons (make-arg <required-arg> (car arglist) (length args))
                        args)
                  (cons "Scm_TopClass" specs)))
           ((not (and (pair? (car arglist))
@@ -830,11 +994,11 @@
                      (symbol? (caar arglist))
                      (string? (cadar arglist))))
            (badlist))
-          (else (loop (cdr arglist)
-                      (cons (make <required-arg>
-                                  :name (caar arglist) :count (length args))
-                            args)
-                      (cons (cadar arglist) specs)))
+          (else
+           (loop (cdr arglist)
+                 (cons (make-arg <required-arg> (caar arglist) (length args))
+                       args)
+                 (cons (cadar arglist) specs)))
           )))
 
 ;;-----------------------------------------------------------------
@@ -842,6 +1006,10 @@
 ;;
 ;;  - Generates C stub for static class definition, slot accessors and
 ;;    initialization.   Corresponding C struct has to be defined elsewhere.
+;;
+;;  - <cclass> should be a <type> as well, but currently not.
+;;    If not corresponding type is defined at the time define-cclass is
+;;    parsed, the type is created with the default parameters.
 
 ;; (define-cclass scheme-name c-type-name c-class-name cpa
 ;;   (<slot-spec> ...)
@@ -873,12 +1041,19 @@
               :accessor slot-spec-of)
    ))
 
+(define-method initialize ((self <cclass>) initargs)
+  (next-method)
+  (unless (find-type-by-name (scheme-name-of self))
+    (process-define-type
+     `(define-type ,(scheme-name-of self) ,(c-type-of self))))
+  )
+
 (define-class <cslot> ()
   ((cclass      :init-keyword :cclass :accessor cclass-of)
    (scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
    (c-name      :init-keyword :c-name :accessor c-name-of)
    (c-spec      :init-keyword :c-spec :accessor c-spec-of)
-   (type        :init-keyword :type   :accessor type-of :init-value 'scheme-object)
+   (type        :init-keyword :type   :accessor type-of :init-value '<top>)
    (getter      :init-keyword :getter :accessor getter-of :init-value #t)
    (setter      :init-keyword :setter :accessor setter-of :init-value #t)
    ))
@@ -974,14 +1149,14 @@
   (map (lambda (spec)
          (unless (list? spec) (error "bad slot spec" spec))
          (let* ((name (car spec))
-                (type   (get-keyword :type (cdr spec) 'scheme-object))
+                (type   (get-keyword :type (cdr spec) '<top>))
                 (c-name (get-keyword :c-name (cdr spec) (get-c-name "" name)))
                 (c-spec (get-keyword :c-spec (cdr spec) #f))
                 (getter (get-keyword :getter (cdr spec) #t))
                 (setter (get-keyword :setter (cdr spec) #t)))
            (make <cslot>
              :cclass cclass :scheme-name name :c-name c-name
-             :c-spec c-spec :type (scheme-name->type type)
+             :c-spec c-spec :type (name->type type)
              :getter getter :setter setter)))
        slot-spec))
 
@@ -1003,9 +1178,12 @@
     (emit-setter slot)))
 
 (define-method emit-getter ((slot <cslot>))
-  (let ((type (type-of slot)))
-    (print #`"static ScmObj ,(slot-getter-name slot)(,(c-type-of (cclass-of slot)) *obj)")
+  (let* ((type  (type-of slot))
+         (class (cclass-of slot))
+         (class-type (name->type (scheme-name-of class))))
+    (print #`"static ScmObj ,(slot-getter-name slot)(ScmObj OBJARG)")
     (print "{")
+    (print #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
     (cond ((string? (getter-of slot)) (print (getter-of slot)))
           ((string? (c-spec-of slot))
            (f "  return ~a(~a);" (boxer-of type) (c-spec-of slot)))
@@ -1015,9 +1193,12 @@
     (newline)))
 
 (define-method emit-setter ((slot <cslot>))
-  (let ((type (type-of slot)))
-    (print #`"static void ,(slot-setter-name slot)(,(c-type-of (cclass-of slot)) *obj, ScmObj value)")
+  (let* ((type (type-of slot))
+         (class (cclass-of slot))
+         (class-type (name->type (scheme-name-of class))))
+    (print #`"static void ,(slot-setter-name slot)(ScmObj OBJARG, ScmObj value)")
     (print "{")
+    (print #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
     (if (string? (setter-of slot))
         (print (setter-of slot))
         (begin

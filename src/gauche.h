@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.290 2002-07-18 10:50:35 shirok Exp $
+ *  $Id: gauche.h,v 1.291 2002-07-24 16:09:17 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -169,6 +169,7 @@ typedef struct ScmClassRec ScmClass;
  * BOOLEAN
  */
 #define SCM_BOOLP(obj)       ((obj) == SCM_TRUE || (obj == SCM_FALSE))
+#define SCM_BOOL_VALUE(obj)  (!SCM_FALSEP(obj))
 #define	SCM_MAKE_BOOL(obj)   ((obj)? SCM_TRUE:SCM_FALSE)
 
 #define SCM_EQ(x, y)         ((x) == (y))
@@ -1942,6 +1943,7 @@ typedef struct ScmSystemErrorRec {
     
 SCM_CLASS_DECL(Scm_SystemErrorClass);
 #define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
+#define SCM_SYSTEM_ERROR(obj)      ((ScmSystemError*)(obj))
 #define SCM_SYSTEM_ERROR_P(obj)    Scm_TypeP(obj, SCM_CLASS_SYSTEM_ERROR)
 
 SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
@@ -2027,6 +2029,7 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 #define SCM_ARGREF(count)           (SCM_FP[count])
 #define SCM_RETURN(value)           return value
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
+#define SCM_VOID_RETURN_VALUE(expr) ((void)(expr), SCM_UNDEFINED)
 
 /*---------------------------------------------------
  * SIGNAL

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: exclib.stub,v 1.6 2002-07-23 14:06:13 shirok Exp $
+;;; $Id: exclib.stub,v 1.7 2002-07-24 16:09:17 shirok Exp $
 ;;;
 
 "
@@ -24,8 +24,7 @@
 ;; Exception procedures
 ;;
 
-(define-cproc error (reason &rest args)
-  (assert (string? reason))
+(define-cproc error (reason::<string> &rest args)
   (return "Scm_SError"))
 
 (define-cproc errorf (fmt &rest args)
@@ -76,7 +75,7 @@
                Scm__InternalClassName(k), SCM_ERROR_MESSAGE(obj));
  }"
 
-(define-cclass <error> "ScmError" "Scm_ErrorClass"
+(define-cclass <error> "ScmError*" "Scm_ErrorClass"
   ()
   ((message))
   (allocator
@@ -87,10 +86,10 @@
   (printer (c "error_print"))
   )
 
-(define-cclass <system-error> "ScmSystemError" "Scm_SystemErrorClass"
+(define-cclass <system-error> "ScmSystemError*" "Scm_SystemErrorClass"
   ("Scm_ErrorClass")
   ((message :c-name "common.message")
-   (errno   :c-name "error_number" :type small-positive-integer))
+   (errno   :c-name "error_number" :type <uint>))
   (allocator
    "ScmSystemError *e = SCM_ALLOCATE(ScmSystemError, klass);
     SCM_SET_CLASS(e, klass);

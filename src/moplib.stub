@@ -12,15 +12,14 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.15 2002-07-23 14:06:13 shirok Exp $
+;;; $Id: moplib.stub,v 1.16 2002-07-24 16:09:18 shirok Exp $
 ;;;
 
 "
 #include <gauche/class.h>
 "
 
-(define-type "slot-accessor" slot-accessor?
-  "ScmSlotAccessor*" "SCM_SLOT_ACCESSOR_P" "SCM_SLOT_ACCESSOR")
+(define-type <slot-accessor> "ScmSlotAccessor*")
 
 ;;
 ;; Internal routines
@@ -34,9 +33,7 @@
  }
 "
 
-(define-cproc %ensure-generic-function (name module)
-  (assert (symbol? name))
-  (assert (module? module))
+(define-cproc %ensure-generic-function (name::<symbol> module::<module>)
   "  ScmObj val = Scm_SymbolValue(module, name);
   if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {
     if (SCM_SUBRP(val) || SCM_CLOSUREP(val)) {
@@ -48,9 +45,7 @@
   }
   SCM_RETURN(val);")
 
-(define-cproc %make-next-method (gf methods args)
-  (assert (list? methods))
-  (assert (list? args))
+(define-cproc %make-next-method (gf methods::<list> args::<list>)
   "  ScmObj mp, *argv; int nargs = Scm_Length(args);
   if (!Scm_TypeP(gf, SCM_CLASS_GENERIC)) 
     Scm_Error(\"generic function requied, but got %S\", gf);
@@ -94,21 +89,17 @@
 (define-cproc slot-bound? (obj slot)
   (return "Scm_VMSlotBoundP"))
 
-(define-cproc slot-ref-using-accessor (obj accessor)
-  (assert (slot-accessor? accessor))
+(define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
   "  SCM_RETURN(Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE));")
 
-(define-cproc slot-set-using-accessor (obj accessor value)
-  (assert (slot-accessor? accessor))
+(define-cproc slot-set-using-accessor (obj accessor::<slot-accessor> value)
   (return "Scm_VMSlotSetUsingAccessor"))
 
-(define-cproc instance-slot-ref (obj num)
-  (assert (small-integer? num))
+(define-cproc instance-slot-ref (obj num::<fixnum>)
   (return "Scm_InstanceSlotRef"))
 
-(define-cproc instance-slot-set (obj num value)
-  (assert (small-integer? num))
-  (return void "Scm_InstanceSlotSet"))
+(define-cproc instance-slot-set (obj num::<fixnum> value)
+  (return <void> "Scm_InstanceSlotSet"))
 
 ;; Local variables:
 ;; mode: scheme

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.80 2002-07-23 14:06:13 shirok Exp $
+;;; $Id: syslib.stub,v 1.81 2002-07-24 16:09:18 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -44,56 +44,46 @@
 ;; dirent.h - read directory
 ;;   we don't have correspoinding functions, but provide these:
 
-(define-cproc sys-readdir (pathname)
-  (assert (string? pathname))
+(define-cproc sys-readdir (pathname::<string>)
   (return "Scm_ReadDirectory"))
 
-(define-cproc sys-glob (pattern)
-  (assert (string? pattern))
+(define-cproc sys-glob (pattern::<string>)
   (return "Scm_GlobDirectory"))
 
 ;; Bonus
 
-(define-cproc sys-normalize-pathname (pathname
+(define-cproc sys-normalize-pathname (pathname::<string>
                                       &keyword (absolute #f)
                                                (expand #f)
                                                (canonicalize #f))
-  (assert (string? pathname))
   "  int flags = 0;
   if (!SCM_FALSEP(absolute)) flags |= SCM_PATH_ABSOLUTE;
   if (!SCM_FALSEP(expand))   flags |= SCM_PATH_EXPAND;
   if (!SCM_FALSEP(canonicalize)) flags |= SCM_PATH_CANONICALIZE;
   SCM_RETURN(Scm_NormalizePathname(pathname, flags));")
 
-(define-cproc sys-basename (pathname)
-  (assert (string? pathname))
+(define-cproc sys-basename (pathname::<string>)
   (return "Scm_BaseName"))
 
-(define-cproc sys-dirname (pathname)
-  (assert (string? pathname))
+(define-cproc sys-dirname (pathname::<string>)
   (return "Scm_DirName"))
 
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
 
-(define-type "sys-group" sys-group?
-  "ScmSysGroup*"  "SCM_SYS_GROUP_P" "SCM_SYS_GROUP")
+(define-type <sys-group> "ScmSysGroup*")
 
-(define-cproc sys-getgrgid (gid)
-  (assert (small-integer? gid))         ;TODO: make sure it covers all gids
+(define-cproc sys-getgrgid (gid::<int>)
   (return "Scm_GetGroupById"))
-(define-cproc sys-getgrnam (name)
-  (assert (string? name))
+(define-cproc sys-getgrnam (name::<string>)
   (return "Scm_GetGroupByName"))
 
 ;; faster functions; bypassing creation of group object
-(define-cproc sys-gid->group-name (gid)
-  (assert (small-integer? gid))         ;TODO: make sure it covers all gids
+(define-cproc sys-gid->group-name (gid::<int>)
   "  struct group *g = getgrgid(gid);
   if (g == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
   else SCM_RETURN(SCM_MAKE_STR_COPYING(g->gr_name));")
-(define-cproc sys-group-name->gid (name)
-  (assert (string? name))
+(define-cproc sys-group-name->gid (name::<string>)
   "  struct group *g = getgrnam(Scm_GetStringConst(name));
   if (g == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
   else SCM_RETURN(Scm_MakeInteger(g->gr_gid));")
@@ -108,9 +98,7 @@
 (define-enum LC_NUMERIC)
 (define-enum LC_TIME)
 
-(define-cproc sys-setlocale (category locale)
-  (assert (small-integer? category))
-  (assert (string? locale))
+(define-cproc sys-setlocale (category::<fixnum> locale::<string>)
   "  char *result = setlocale(category, Scm_GetStringConst(locale));
   if (result) SCM_RETURN(SCM_MAKE_STR_COPYING(result));
   else SCM_RETURN(SCM_FALSE);")
@@ -168,24 +156,19 @@
 ;;---------------------------------------------------------------------
 ;; pwd.h - passwords
 
-(define-type "sys-passwd" sys-passwd?
-  "ScmSysPasswd*"  "SCM_SYS_PASSWD_P" "SCM_SYS_PASSWD")
+(define-type <sys-passwd> "ScmSysPasswd*")
 
-(define-cproc sys-getpwuid (uid)
-  (assert (small-integer? uid))         ;TODO: make sure it covers all gids
+(define-cproc sys-getpwuid (uid::<int>)
   (return "Scm_GetPasswdById"))
-(define-cproc sys-getpwnam (name)
-  (assert (string? name))
+(define-cproc sys-getpwnam (name::<string>)
   (return "Scm_GetPasswdByName"))
 
 ;; faster functions; bypassing creation of passwd object
-(define-cproc sys-uid->user-name (uid)
-  (assert (small-integer? uid))         ;TODO: make sure it covers all uids
+(define-cproc sys-uid->user-name (uid::<int>)
   "  struct passwd *p = getpwuid(uid);
   if (p == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
   else SCM_RETURN(SCM_MAKE_STR_COPYING(p->pw_name));")
-(define-cproc sys-user-name->uid (name)
-  (assert (string? name))
+(define-cproc sys-user-name->uid (name::<string>)
   "  struct passwd *p = getpwnam(Scm_GetStringConst(name));
   if (p == NULL) { Scm_SigCheck(Scm_VM()); SCM_RETURN(SCM_FALSE); }
   else SCM_RETURN(Scm_MakeInteger(p->pw_uid));")
@@ -198,32 +181,24 @@
 ;;---------------------------------------------------------------------
 ;; signal.h
 
-(define-type "sys-sigset" sys-sigset?
-  "ScmSysSigset*"  "SCM_SYS_SIGSET_P" "SCM_SYS_SIGSET")
+(define-type <sys-sigset> "ScmSysSigset*")
 
-(define-cproc sys-sigset-add! (set &rest sigs)
-  (assert (sys-sigset? set))
+(define-cproc sys-sigset-add! (set::<sys-sigset> &rest sigs)
   "SCM_RETURN(Scm_SysSigsetOp(set, sigs, FALSE));")
 
-(define-cproc sys-sigset-delete! (set &rest sigs)
-  (assert (sys-sigset? set))
+(define-cproc sys-sigset-delete! (set::<sys-sigset> &rest sigs)
   "SCM_RETURN(Scm_SysSigsetOp(set, sigs, TRUE));")
 
-(define-cproc sys-sigset-fill! (set)
-  (assert (sys-sigset? set))
+(define-cproc sys-sigset-fill! (set::<sys-sigset>)
   "SCM_RETURN(Scm_SysSigsetFill(set, FALSE));")
 
-(define-cproc sys-sigset-empty! (set)
-  (assert (sys-sigset? set))
+(define-cproc sys-sigset-empty! (set::<sys-sigset>)
   "SCM_RETURN(Scm_SysSigsetFill(set, TRUE));")
 
-(define-cproc sys-signal-name (sig)
-  (assert (small-integer? sig))
+(define-cproc sys-signal-name (sig::<fixnum>)
   (return "Scm_SignalName"))
 
-(define-cproc sys-kill (pid sig)
-  (assert (exact? pid))
-  (assert (exact? sig))
+(define-cproc sys-kill (pid::<int> sig::<fixnum>)
   "  int r = Scm_SysCall(kill(pid, sig));
   if (r < 0) Scm_SysError(\"kill failed\");
   SCM_RETURN(SCM_UNDEFINED);")
@@ -231,8 +206,7 @@
 (define-cproc set-signal-handler! (sig proc)
   (return "Scm_SetSignalHandler"))
 
-(define-cproc get-signal-handler (sig)
-  (assert (exact? sig))
+(define-cproc get-signal-handler (sig::<fixnum>)
   (return "Scm_GetSignalHandler"))
 
 (define-cproc get-signal-handlers ()
@@ -242,13 +216,10 @@
 (define-enum SIG_BLOCK)
 (define-enum SIG_UNBLOCK)
 
-(define-cproc sys-sigmask (how mask)
-  (assert (small-integer? how))
-  (assert (sys-sigset? mask))
+(define-cproc sys-sigmask (how::<fixnum> mask::<sys-sigset>)
   (return "Scm_SysSigmask"))
 
-(define-cproc sys-sigsuspend (mask)
-  (assert (sys-sigset? mask))
+(define-cproc sys-sigsuspend (mask::<sys-sigset>)
   (return "Scm_SigSuspend"))
 
 ;(define-cproc %with-signal-handlers (handlers thunk)
@@ -260,15 +231,12 @@
 ;;---------------------------------------------------------------------
 ;; stdio.h
 
-(define-cproc sys-remove (filename)
-  (assert (string? filename))
+(define-cproc sys-remove (filename::<string>)
   "  if (Scm_SysCall(remove(Scm_GetStringConst(filename))) < 0)
        Scm_SysError(\"removing %S failed\", filename);
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-rename (old new)
-  (assert (string? old))
-  (assert (string? new))
+(define-cproc sys-rename (old::<string> new::<string>)
   "  if (Scm_SysCall(rename(Scm_GetStringConst(old), Scm_GetStringConst(new))) < 0)
        Scm_SysError(\"renaming %S to %S failed\", old, new);
   SCM_RETURN(SCM_TRUE);")
@@ -289,8 +257,7 @@
   SCM_RETURN(SCM_MAKE_STRNIG_COPYING(s));
 #endif")
 
-(define-cproc sys-mkstemp (template)
-  (assert (string? template))
+(define-cproc sys-mkstemp (template::<string>)
   "
 #ifdef HAVE_MKSTEMP
 #define MKSTEMP_PATH_MAX 1025  /* Gee, remove me */
@@ -318,12 +285,10 @@
 ;;---------------------------------------------------------------------
 ;; stdlib.h
 
-(define-cproc sys-exit (code)
-  (assert (small-integer? code))
+(define-cproc sys-exit (code::<fixnum>)
   (return void "_exit"))
 
-(define-cproc sys-getenv (name)
-  (assert (string? name))
+(define-cproc sys-getenv (name::<string>)
   "  const char *p = getenv(Scm_GetStringConst(name));
   if (p == NULL) {
     SCM_RETURN(SCM_FALSE);
@@ -332,8 +297,7 @@
   }")
 
 ;; Note: the return value of system() is not portable.
-(define-cproc sys-system (command)
-  (assert (string? command))
+(define-cproc sys-system (command::<string>)
   "  int r = Scm_SysCall(system(Scm_GetStringConst(command)));
   SCM_RETURN(Scm_MakeInteger(r));")
 
@@ -358,8 +322,8 @@
 #endif
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-symbol |RAND_MAX| "sym_rand_max"
-  "Scm_MakeInteger(LONG_MAX)")
+(define-const RAND_MAX "sym_rand_max"
+  "Scm_MakeInteger(RAND_MAX)")
 
 ;;---------------------------------------------------------------------
 ;; string.h
@@ -369,18 +333,15 @@
 ;;---------------------------------------------------------------------
 ;; sys/stat.h
 
-(define-type "sys-stat" sys-stat?
-  "ScmSysStat*"  "SCM_SYS_STAT_P" "SCM_SYS_STAT")
+(define-type <sys-stat> "ScmSysStat*")
 
-(define-cproc sys-stat (path)
-  (assert (string? path))
+(define-cproc sys-stat (path::<string>)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r = Scm_SysCall(stat(Scm_GetStringConst(path), &s->statrec));
   if (r < 0) Scm_SysError(\"stat failed for %S\", path);
   SCM_RETURN(SCM_OBJ(s));")
 
-(define-cproc sys-lstat (path)
-  (assert (string? path))
+(define-cproc sys-lstat (path::<string>)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r = Scm_SysCall(lstat(Scm_GetStringConst(path), &s->statrec));
   if (r < 0) Scm_SysError(\"lstat failed for %S\", path);
@@ -407,8 +368,7 @@
   }
   SCM_RETURN(Scm_Values2(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
 
-(define-cproc sys-waitpid (pid &keyword (nohang #f) (untraced #f))
-  (assert (small-integer? pid))         ;TODO: small-int is enough?
+(define-cproc sys-waitpid (pid::<int> &keyword (nohang #f) (untraced #f))
   "  int status, options = 0;  pid_t r;
   if (!SCM_FALSEP(nohang))   options |= WNOHANG;
   if (!SCM_FALSEP(untraced)) options |= WUNTRACED;
@@ -420,38 +380,30 @@
   SCM_RETURN(Scm_Values2(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
 
 ;; status interpretation
-(define-cproc sys-wait-exited? (status)
-  (assert (small-integer? status))      ;TODO: small-int is enough?
-  "  SCM_RETURN(SCM_MAKE_BOOL(WIFEXITED(status)));")
+(define-cproc sys-wait-exited? (status::<int>)
+  (return <boolean> "WIFEXITED"))
 
-(define-cproc sys-wait-exit-status (status)
-  (assert (small-integer? status))      ;TODO: small-int is enough?
-  "  SCM_RETURN(Scm_MakeInteger(WEXITSTATUS(status)));")
+(define-cproc sys-wait-exit-status (status::<int>)
+  (return <int> "WEXITSTATUS"))
 
-(define-cproc sys-wait-signaled? (status)
-  (assert (small-integer? status))      ;TODO: small-int is enough?
-  "  SCM_RETURN(SCM_MAKE_BOOL(WIFSIGNALED(status)));")
+(define-cproc sys-wait-signaled? (status::<int>)
+  (return <boolean> "WIFSIGNALED"))
 
-(define-cproc sys-wait-termsig (status)
-  (assert (small-integer? status))      ;TODO: small-int is enough?
-  "  SCM_RETURN(Scm_MakeInteger(WTERMSIG(status)));")
+(define-cproc sys-wait-termsig (status::<int>)
+  (return <int> "WTERMSIG"))
 
-(define-cproc sys-wait-stopped? (status)
-  (assert (small-integer? status))      ;TODO: small-int is enough?
-  "  SCM_RETURN(SCM_MAKE_BOOL(WIFSTOPPED(status)));")
+(define-cproc sys-wait-stopped? (status::<int>)
+  (return <boolean> "WIFSTOPPED"))
 
-(define-cproc sys-wait-stopsig (status)
-  (assert (small-integer? status))      ;TODO: small-int is enough?
-  "  SCM_RETURN(Scm_MakeInteger(WSTOPSIG(status)));")
+(define-cproc sys-wait-stopsig (status::<int>)
+  (return <int> "WSTOPSIG"))
 
 ;;---------------------------------------------------------------------
 ;; time.h
 
-(define-type "time" time?
-  "ScmTime*"      "SCM_TIMEP"    "SCM_TIME")
+(define-type <time> "ScmTime*")
 
-(define-type "sys-tm" sys-tm?
-  "ScmSysTm*"     "SCM_SYS_TM_P" "SCM_SYS_TM")
+(define-type <sys-tm> "ScmSysTm*")
 
 (define-cproc sys-time ()
   "SCM_RETURN(Scm_MakeSysTime(time(NULL)));")
@@ -460,18 +412,15 @@
   (return "Scm_CurrentTime"))
 
 (define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21
-  (return boolean "SCM_TIMEP"))
+  (return <boolean> "SCM_TIMEP"))
 
-(define-cproc time->seconds (t)         ;SRFI-18
-  (assert (time? t))
+(define-cproc time->seconds (t::<time>) ;SRFI-18
   (return "Scm_TimeToSeconds"))
 
-(define-cproc seconds->time (t)         ;SRFI-18
-  (assert (real? t))
+(define-cproc seconds->time (t::<real>) ;SRFI-18
   (return "Scm_RealSecondsToTime"))
 
-(define-cproc sys-asctime (tm)
-  (assert (sys-tm? tm))
+(define-cproc sys-asctime (tm::<sys-tm>)
   "  SCM_RETURN(SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm))));")
 
 (define-cproc sys-ctime (time)
@@ -482,9 +431,7 @@
   "SCM_RETURN(Scm_MakeFlonum(difftime(Scm_GetSysTime(time1),
                                       Scm_GetSysTime(time0))));")
 
-(define-cproc sys-strftime (format tm)
-  (assert (string? format))
-  (assert (sys-tm? tm))
+(define-cproc sys-strftime (format::<string> tm::<sys-tm>)
   "  char tmpbuf[256];
   strftime(tmpbuf, sizeof(tmpbuf),
            Scm_GetStringConst(format), &SCM_SYS_TM_TM(tm));
@@ -498,8 +445,7 @@
   "time_t tim = Scm_GetSysTime(time);
   SCM_RETURN(Scm_MakeSysTm(localtime(&tim)));")
 
-(define-cproc sys-mktime (tm)
-  (assert (sys-tm? tm))
+(define-cproc sys-mktime (tm::<sys-tm>)
   "  SCM_RETURN(Scm_MakeSysTime(mktime(&SCM_SYS_TM_TM(tm))));")
 
 ;;---------------------------------------------------------------------
@@ -511,9 +457,7 @@
 (define-enum F_OK)
 
 ;; FREEBSD's and Darwin's access(2) implementation is not quite reliable.
-(define-cproc sys-access (pathname amode)
-  (assert (string? pathname))
-  (assert (exact? amode))
+(define-cproc sys-access (pathname::<string> amode::<int>)
   "
 #if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__) && defined(__ppc__))
   struct stat statbuf;
@@ -528,15 +472,12 @@
   SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);
 #endif")
 
-(define-cproc sys-chdir (pathname)
-  (assert (string? pathname))
+(define-cproc sys-chdir (pathname::<string>)
   "  if (Scm_SysCall(chdir(Scm_GetStringConst(pathname))) < 0)
     Scm_SysError(\"chdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-chmod (pathname mode)
-  (assert (string? pathname))
-  (assert (small-integer? mode))
+(define-cproc sys-chmod (pathname::<string> mode::<int>)
   "  if (Scm_SysCall(chmod(Scm_GetStringConst(pathname), mode)) < 0)
     Scm_SysError(\"chmod failed\");
   SCM_RETURN(SCM_TRUE);")
@@ -545,9 +486,7 @@
   "  int pid = Scm_SysCall(fork());
   SCM_RETURN(Scm_MakeInteger(pid));")
 
-(define-cproc sys-exec (command args &optional iomap)
-  (assert (string? command))
-  (assert (list? args))
+(define-cproc sys-exec (command::<string> args::<list> &optional iomap)
   "  Scm_SysExec(command, args, iomap);
   SCM_RETURN(SCM_UNDEFINED); /* dummy */")
 
@@ -558,10 +497,10 @@
   s = SCM_MAKE_STR_COPYING(p);
   SCM_RETURN(s);")
 
-(define-cproc sys-getegid () (return exact "getegid"))
-(define-cproc sys-getgid ()  (return exact "getgid"))
-(define-cproc sys-geteuid () (return exact "geteuid"))
-(define-cproc sys-getuid ()  (return exact "getuid"))
+(define-cproc sys-getegid () (return <int> "getegid"))
+(define-cproc sys-getgid ()  (return <int> "getgid"))
+(define-cproc sys-geteuid () (return <int> "geteuid"))
+(define-cproc sys-getuid ()  (return <int> "getuid"))
 
 (define-cproc sys-getgroups ()
   "
@@ -591,12 +530,10 @@
   if (p) SCM_RETURN(SCM_MAKE_STR_COPYING(p));
   else SCM_RETURN(SCM_FALSE);")
 
-(define-cproc sys-getpid ()  (return exact "getpid"))
-(define-cproc sys-getppid () (return exact "getppid"))
+(define-cproc sys-getpid ()  (return <int> "getpid"))
+(define-cproc sys-getppid () (return <int> "getppid"))
 
-(define-cproc sys-link (existing new)
-  (assert (string? existing))
-  (assert (string? new))
+(define-cproc sys-link (existing::<string> new::<string>)
   "  if (Scm_SysCall(link(Scm_GetStringConst(existing), Scm_GetStringConst(new))) < 0)
         Scm_SysError(\"link failed\");
   SCM_RETURN(SCM_TRUE);")
@@ -607,8 +544,7 @@
   ;; in a queue and pause() may not return.
   (return "Scm_Pause"))
 
-(define-cproc sys-alarm (seconds)
-  (assert (small-integer? seconds))
+(define-cproc sys-alarm (seconds::<fixnum>)
   "  int r = Scm_SysCall(alarm(seconds));
   SCM_RETURN(Scm_MakeInteger(r));")
 
@@ -626,29 +562,23 @@
   wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], bufmode, TRUE);
   SCM_RETURN(Scm_Values2(rend, wend));")  
 
-(define-cproc sys-mkdir (pathname mode)
-  (assert (string? pathname))
-  (assert (small-integer? mode))
+(define-cproc sys-mkdir (pathname::<string> mode::<int>)
   "  if (Scm_SysCall(mkdir(Scm_GetStringConst(pathname), mode)) < 0)
     Scm_SysError(\"mkdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-rmdir (pathname)
-  (assert (string? pathname))
+(define-cproc sys-rmdir (pathname::<string>)
   "  if (Scm_SysCall(rmdir(Scm_GetStringConst(pathname))) < 0)
     Scm_SysError(\"rmdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-umask (mode)
-  (assert (small-integer? mode))
-  "  SCM_RETURN(Scm_MakeInteger(umask(mode)));")
+(define-cproc sys-umask (mode::<fixnum>)
+  (return <int> "umask"))
 
-(define-cproc sys-sleep (seconds)
-  (assert (exact? seconds))
-  "  SCM_RETURN(Scm_MakeInteger(sleep(seconds)));")
+(define-cproc sys-sleep (seconds::<fixnum>)
+  (return <int> "sleep"))
 
-(define-cproc sys-unlink (pathname)
-  (assert (string? pathname))
+(define-cproc sys-unlink (pathname::<string>)
   "  if (Scm_SysCall(unlink(Scm_GetStringConst(pathname))) < 0) {
      if (errno == ENOENT) { SCM_RETURN(SCM_FALSE); }
      else Scm_SysError(\"unlink failed\");
@@ -670,9 +600,7 @@
 ;; prototype.  However, it screws up something else.  Just for now I
 ;; cast the return value of crypt() to avoid it...such a kludge...
 (if "defined(HAVE_CRYPT)"
-(define-cproc sys-crypt (key salt)
-  (assert (string? key))
-  (assert (string? salt))
+(define-cproc sys-crypt (key::<string> salt::<string>)
   "
   SCM_RETURN(SCM_MAKE_STR_COPYING((const char *)crypt(Scm_GetStringConst(key),
                                                       Scm_GetStringConst(salt))));")
@@ -685,9 +613,7 @@
 ;; symbolic link
 
 (if "defined(HAVE_SYMLINK)"
-(define-cproc sys-symlink (existing new)
-  (assert (string? existing))
-  (assert (string? new))
+(define-cproc sys-symlink (existing::<string> new::<string>)
   "
 #ifdef HAVE_SYMLINK
   int r = Scm_SysCall(symlink(Scm_GetStringConst(existing), Scm_GetStringConst(new)));
@@ -701,8 +627,7 @@
 )
 
 (if "defined(HAVE_READLINK)"
-(define-cproc sys-readlink (path)
-  (assert (string? path))
+(define-cproc sys-readlink (path::<string>)
   "#define READLINK_PATH_MAX 1024  /* TODO: needs to be configured */
   char buf[READLINK_PATH_MAX];
   int n = Scm_SysCall(readlink(Scm_GetStringConst(path), buf, READLINK_PATH_MAX));
@@ -714,11 +639,9 @@
 ;;---------------------------------------------------------------------
 ;; select
 
-(define-type "sys-fdset" sys-fdset?
-  "ScmSysFdset*"  "SCM_SYS_FDSET_P" "SCM_SYS_FDSET")
+(define-type <sys-fdset> "ScmSysFdset*")
 
-(define-cproc sys-fdset-ref (fdset pf)
-  (assert (sys-fdset? fdset))
+(define-cproc sys-fdset-ref (fdset::<sys-fdset> pf)
   "#ifdef HAVE_SELECT
   int fd = Scm_GetPortFd(pf, FALSE);
   if (fd < 0) SCM_RETURN(SCM_TRUE);
@@ -728,9 +651,7 @@
 #endif"
   (setter sys-fdset-set!))
   
-(define-cproc sys-fdset-set! (fdset pf flag)
-  (assert (sys-fdset? fdset))
-  (assert (boolean? flag))
+(define-cproc sys-fdset-set! (fdset::<sys-fdset> pf flag::<boolean>)
   "#ifdef HAVE_SELECT
   int fd = Scm_GetPortFd(pf, FALSE);
   if (fd >= 0) {
@@ -751,15 +672,14 @@
 #endif
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc sys-fdset-max-fd (fdset)
-  (assert (sys-fdset? fdset))
+(define-cproc sys-fdset-max-fd (fdset::<sys-fdset>)
   "  SCM_RETURN(Scm_MakeInteger(fdset->maxfd));")
 
 (define-cproc sys-select (rfds wfds efds &optional (timeout #f))
-  "  SCM_RETURN(Scm_SysSelect(rfds, wfds, efds, timeout));")
+  (return "Scm_SysSelect"))
 
 (define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
-  "  SCM_RETURN(Scm_SysSelectX(rfds, wfds, efds, timeout));")
+  (return "Scm_SysSelectX"))
 
 
 ;; Local variables:
