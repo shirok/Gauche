@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: validator.scm,v 1.3 2001-12-01 21:44:24 shirok Exp $
+;;;  $Id: validator.scm,v 1.4 2001-12-01 21:44:36 shirok Exp $
 ;;;
 
 (define-module gauche.validator
@@ -22,8 +22,6 @@
 
 (define-class <validator-meta> (<class>)
   ())
-
-;; TODO: need to enable :init-value / :init-thunk 
 
 (define-method compute-get-n-set ((class <validator-meta>) slot)
   (cond ((slot-definition-option slot :validator #f)
