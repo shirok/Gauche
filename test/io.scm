@@ -7,6 +7,98 @@
 (test-start "io")
 
 ;;-------------------------------------------------------------------
+(test-section "file i/o")
+
+(sys-system "rm -f tmp2.o")
+
+(test "open-input-file" #t
+      (lambda ()
+        (with-error-handler
+         (lambda (e) #t)
+         (lambda () (open-input-file "tmp2.o")))))
+
+(test "open-input-file :if-does-not-exist #f" #f
+      (lambda ()
+        (open-input-file "tmp2.o" :if-does-not-exist #f)))
+
+(test "open-output-file :if-does-not-exist :error" #t
+      (lambda ()
+        (with-error-handler
+         (lambda (e) #t)
+         (lambda () (open-output-file "tmp2.o" :if-does-not-exist :error)))))
+
+(test "open-output-file :if-does-not-exit #f" #f
+      (lambda ()
+        (open-output-file "tmp2.o" :if-does-not-exist #f)))
+
+(test "open-output-file" #t
+      (lambda ()
+        (let* ((p (open-output-file "tmp2.o"))
+               (r (output-port? p)))
+          (display "abcde" p)
+          (close-output-port p)
+          r)))
+
+(test "open-input-file" 'abcde
+      (lambda ()
+        (let* ((p (open-input-file "tmp2.o"))
+               (s (read p)))
+          (close-input-port p)
+          s)))
+
+(test "open-output-file :if-exists :error" #t
+      (lambda ()
+        (with-error-handler
+         (lambda (e) #t)
+         (lambda ()
+           (open-output-file "tmp2.o" :if-exists :error)))))
+
+(test "open-output-file :if-exists :supersede" 'cdefg
+      (lambda ()
+        (let ((o (open-output-file "tmp2.o")))
+          (display "cdefg" o)
+          (close-output-port o)
+          (let* ((i (open-input-file "tmp2.o"))
+                 (s (read i)))
+            (close-input-port i)
+            s))))
+
+(test "open-output-file :if-exists :append" 'cdefghij
+      (lambda ()
+        (let ((o (open-output-file "tmp2.o" :if-exists :append)))
+          (display "hij" o)
+          (close-output-port o)
+          (let* ((i (open-input-file "tmp2.o"))
+                 (s (read i)))
+            (close-input-port i)
+            s))))
+
+(test "open-output-file :if-exists :append" 'cdefghijklm
+      (lambda ()
+        (let ((o (open-output-file "tmp2.o"
+                                   :if-exists :append
+                                   :if-does-not-exist :error)))
+          (display "klm" o)
+          (close-output-port o)
+          (let* ((i (open-input-file "tmp2.o"))
+                 (s (read i)))
+            (close-input-port i)
+            s))))
+
+(test "open-output-file :if-exists :supersede" 'nopqr
+      (lambda ()
+        (let ((o (open-output-file "tmp2.o"
+                                   :if-exists :supersede
+                                   :if-does-not-exist #f)))
+          (display "nopqr" o)
+          (close-output-port o)
+          (let* ((i (open-input-file "tmp2.o"))
+                 (s (read i)))
+            (close-input-port i)
+            s))))
+
+
+;;-------------------------------------------------------------------
 (test-section "format")
 
 (test "format ~s" "\"abc\""
