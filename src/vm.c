@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.63 2001-03-27 06:25:39 shiro Exp $
+ *  $Id: vm.c,v 1.64 2001-03-28 09:38:16 shiro Exp $
  */
 
 #include "gauche.h"
@@ -485,16 +485,23 @@ static void run_loop()
                 }
                 if (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL) {
                     /* discard the caller's argument frame, and shift
-                       the callee's argument frame there.  This argument
-                       shifting is not necessary if the caller's continuation
-                       is saved in the heap.
-                    */
-                    ScmObj *to = (ScmObj*)argp - ENV_SIZE(env->size);
-                    if (to >= vm->stackBase) {
-                        memmove(to, argp, ENV_SIZE(argcnt)*sizeof(ScmObj));
-                        argp = (ScmEnvFrame*)to;
-                        sp = to + ENV_SIZE(argcnt);
+                       the callee's argument frame there. */
+                    ScmObj *to;
+                    if (IN_STACK_P((ScmObj*)cont)) {
+                        if (cont->argp) {
+                            to = (ScmObj*)cont + CONT_FRAME_SIZE;
+                        } else {
+                            /* C continuation */
+                            to = (ScmObj*)cont + CONT_FRAME_SIZE + cont->size;
+                        }
+                    } else {
+                        /* continuation has been saved, which means the
+                           stack has no longer useful information. */
+                        to = vm->stackBase;
                     }
+                    memmove(to, argp, ENV_SIZE(argcnt)*sizeof(ScmObj));
+                    argp = (ScmEnvFrame*)to;
+                    sp = to + ENV_SIZE(argcnt);
                 }
 
                 /*
