@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.51 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: error.c,v 1.52 2004-10-09 11:57:36 shirok Exp $
  */
 
 #include <errno.h>
@@ -47,6 +47,7 @@ static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs);
 
 /* Setting up CPL is a bit tricky, since we have multiple
@@ -130,18 +131,37 @@ static ScmClass *error_cpl[] = {
     NULL
 };
 
+static ScmClass *porterror_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_PortErrorClass),
+    SCM_CLASS_STATIC_PTR(Scm_IOErrorClass),
+    ERROR_CPL,
+};
+    
+
 SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
                       message_print, NULL, NULL, 
                       message_allocate, error_cpl+1);
 SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
                       message_print, NULL, NULL,
                       syserror_allocate, error_cpl);
-SCM_DEFINE_BASE_CLASS(Scm_IOErrorClass, ScmIOError,
-                      message_print, NULL, NULL, 
-                      message_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
                       message_print, NULL, NULL,
                       readerror_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOErrorClass, ScmIOError,
+                      message_print, NULL, NULL, 
+                      message_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_PortErrorClass, ScmPortError,
+                      message_print, NULL, NULL, 
+                      porterror_allocate, porterror_cpl+1);
+SCM_DEFINE_BASE_CLASS(Scm_IOReadErrorClass, ScmIOReadError,
+                      message_print, NULL, NULL, 
+                      porterror_allocate, porterror_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOWriteErrorClass, ScmIOWriteError,
+                      message_print, NULL, NULL, 
+                      porterror_allocate, porterror_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_IOClosedErrorClass, ScmIOClosedError,
+                      message_print, NULL, NULL, 
+                      porterror_allocate, porterror_cpl);
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -159,6 +179,14 @@ static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
     e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
     e->line = -1;                  /* set by initialize */
+    return SCM_OBJ(e);
+}
+
+static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmPortError *e = SCM_ALLOCATE(ScmPortError, klass);
+    SCM_SET_CLASS(e, klass);
+    e->port = NULL;                /* set by initialize */
     return SCM_OBJ(e);
 }
 
@@ -207,17 +235,32 @@ static void readerror_line_set(ScmReadError *obj, ScmObj val)
     obj->line = SCM_INT_VALUE(val);
 }
 
+static ScmObj porterror_port_get(ScmPortError *obj)
+{
+    return obj->port? SCM_OBJ(obj->port) : SCM_FALSE;
+}
+
+static void porterror_port_set(ScmPortError *obj, ScmObj val)
+{
+    if (!SCM_PORTP(val) && !SCM_FALSEP(val)) {
+        Scm_Error("port or #f required, but got %S", val);
+    }
+    obj->port = SCM_FALSEP(val)? NULL : SCM_PORT(val);
+}
+
 static ScmClassStaticSlotSpec syserror_slots[] = {
-    SCM_CLASS_SLOT_SPEC("errno", syserror_number_get,
-                        syserror_number_set),
+    SCM_CLASS_SLOT_SPEC("errno", syserror_number_get, syserror_number_set),
     { NULL }
 };
 
 static ScmClassStaticSlotSpec readerror_slots[] = {
-    SCM_CLASS_SLOT_SPEC("port", readerror_port_get,
-                        readerror_port_set),
-    SCM_CLASS_SLOT_SPEC("line", readerror_line_get,
-                        readerror_line_set),
+    SCM_CLASS_SLOT_SPEC("port", readerror_port_get, readerror_port_set),
+    SCM_CLASS_SLOT_SPEC("line", readerror_line_get, readerror_line_set),
+    { NULL }
+};
+
+static ScmClassStaticSlotSpec porterror_slots[] = {
+    SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
     { NULL }
 };
 
@@ -687,8 +730,16 @@ void Scm__InitExceptions(void)
                         mod, syserror_slots, 0);
     Scm_InitStaticClass(SCM_CLASS_READ_ERROR, "<read-error>",
                         mod, readerror_slots, 0);
-    Scm_InitStaticClass(SCM_CLASS_READ_ERROR, "<io-error>",
+    Scm_InitStaticClass(SCM_CLASS_IO_ERROR, "<io-error>",
                         mod, NULL, 0);
+    Scm_InitStaticClass(SCM_CLASS_PORT_ERROR, "<port-error>",
+                        mod, porterror_slots, 0);
+    Scm_InitStaticClass(SCM_CLASS_IO_READ_ERROR, "<io-read-error>",
+                        mod, porterror_slots, 0);
+    Scm_InitStaticClass(SCM_CLASS_IO_WRITE_ERROR, "<io-write-error>",
+                        mod, porterror_slots, 0);
+    Scm_InitStaticClass(SCM_CLASS_IO_CLOSED_ERROR, "<io-closed-error>",
+                        mod, porterror_slots, 0);
 
     Scm_InitStaticClass(SCM_CLASS_COMPOUND_CONDITION,
                         "<compound-condition>",
