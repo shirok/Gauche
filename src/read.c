@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.45 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: read.c,v 1.46 2002-06-17 02:28:37 shirok Exp $
  */
 
 #include <stdio.h>
@@ -799,8 +799,10 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
         Scm_ReadError(port, "invalid uniform vector tag: %s", buf);
     }
     if (Scm_ReadUvectorHook == NULL) {
-        /* load srfi-4. */
-        Scm_Load("srfi-4", FALSE);
+        /* Require srfi-4.
+           NB: we don't need mutex here, for the loading of srfi-4 is
+           serialized in Scm_Require. */
+        Scm_Require(SCM_MAKE_STR("srfi-4"));
         if (Scm_ReadUvectorHook == NULL)
             Scm_Error("couldn't load srfi-4 module");
     }
