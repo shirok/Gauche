@@ -1,3 +1,8 @@
+2003-12-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (MIN, MAX): #undef before defining.  Some platforms
+	  defines them and warns the duplicate definition.
+
 2003-12-16  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.7.3

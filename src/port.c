@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.96 2003-12-05 19:38:28 shirok Exp $
+ *  $Id: port.c,v 1.97 2003-12-18 00:45:14 shirok Exp $
  */
 
 #include <unistd.h>
@@ -41,6 +41,8 @@
 #include "gauche.h"
 #include "gauche/port.h"
 
+#undef MAX
+#undef MIN
 #define MAX(a, b) ((a)>(b)? (a) : (b))
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
