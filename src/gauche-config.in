@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.6 2001-06-30 09:28:00 shirok Exp $
+# $Id: gauche-config.in,v 1.7 2001-07-08 08:31:17 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -61,8 +61,8 @@ if [ $# != 1 ]; then usage; fi;
 
 case $1 in
   -V) echo $gauche_version;;
-  -I) echo "-I $gauche_incdir";;
-  -L) echo "-L $gauche_archdir";;
+  -I) echo "-I$gauche_incdir";;
+  -L) echo "-L$gauche_archdir";;
   -l) echo $gauche_libs;;
   --cc) echo $cc;;
 
