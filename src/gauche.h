@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.237 2002-04-25 03:31:57 shirok Exp $
+ *  $Id: gauche.h,v 1.238 2002-04-25 07:08:54 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1025,12 +1025,12 @@ typedef struct ScmPortBufferRec {
     char *current;      /* current buffer position */
     char *end;          /* the end of the current valid data */
     int  size;          /* buffer size */
+    int  mode;          /* buffering mode */
     int (*filler)(ScmPort *p, int min);
     int (*flusher)(ScmPort *p, int min);
     int (*closer)(ScmPort *p);
     int fd;
     int line;
-    int column;
 } ScmPortBuffer;
 
 /* For input buffered port, returns the size of room that can be filled
@@ -1043,16 +1043,6 @@ typedef struct ScmPortBufferRec {
 #define SCM_PORT_BUFFER_AVAIL(p) \
     (int)((p)->src.buf.current-(p)->src.buf.buffer)
 
-#if 0
-typedef struct ScmProcPortInfoRec {
-    ScmObj name;
-    int line;
-    int position;
-    int fd;
-    FILE *fp;
-} ScmProcPortInfo;
-#endif
-    
 typedef struct ScmPortVTableRec {
     int       (*Getb)(ScmPort *p);
     int       (*Getc)(ScmPort *p);
@@ -1070,7 +1060,7 @@ typedef struct ScmPortVTableRec {
 struct ScmPortRec {
     SCM_HEADER;
     unsigned char direction;    /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
-    unsigned char type;         /* SCM_PORT_{BUF|STR|PROC} */
+    unsigned char type;         /* SCM_PORT_{FILE|ISTR|OSTR|PROC} */
     unsigned char scrcnt;       /* # of bytes in the scratch buffer */
 
     unsigned int ownerp    : 1; /* TRUE if this port owns underlying
@@ -1096,7 +1086,7 @@ struct ScmPortRec {
     } src;
 };
 
-/* Port direction */
+/* Port direction.  Bidirectional port is not supported yet. */
 enum ScmPortDirection {
     SCM_PORT_INPUT = 1,
     SCM_PORT_OUTPUT = 2
@@ -1110,6 +1100,7 @@ enum ScmPortType {
     SCM_PORT_PROC               /* virtual port */
 };
 
+#if 0 /* not implemented */
 /* Incomplete character handling policy.
    When Scm_Getc encounters a byte sequence that doesn't consist a valid
    multibyte character, it may take one of the following actions,
@@ -1121,6 +1112,7 @@ enum ScmPortICPolicy {
     SCM_PORT_IC_REPLACE,        /* replace invalid byte to a designated
                                    character. */
 };
+#endif
 
 /* Predicates & accessors */
 #define SCM_PORTP(obj)          (SCM_XTYPEP(obj, SCM_CLASS_PORT))

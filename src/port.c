@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.49 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: port.c,v 1.50 2002-04-25 07:08:54 shirok Exp $
  */
 
 #include <unistd.h>
@@ -121,8 +121,13 @@ ScmObj Scm_PortName(ScmPort *port)
 
 int Scm_PortLine(ScmPort *port)
 {
-    /* TODO: WRITEME */
-    return -1;
+    switch (SCM_PORT_TYPE(port)) {
+    case SCM_PORT_FILE:
+        return port->src.buf.line;
+    default:
+        /* TODO: proc port to customize */
+        return -1;
+    }
 }
 
 int Scm_PortPosition(ScmPort *port)
@@ -273,8 +278,7 @@ ScmObj Scm_MakeBufferedPort(int dir,     /* direction */
     p->src.buf.flusher = flusher;
     p->src.buf.closer = closer;
     p->src.buf.fd = fd;
-    p->src.buf.line = 0;
-    p->src.buf.column = 0;
+    p->src.buf.line = 1;
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
     return SCM_OBJ(p);
 }
@@ -640,6 +644,7 @@ int Scm_Getc(ScmPort *p)
             }
         } else {
             c = first;
+            if (c == '\n') p->src.buf.line++;
         }
         return c;
     case SCM_PORT_ISTR:
@@ -825,6 +830,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     /* TODO: buffered mode */
     p = Scm_MakeBufferedPort(direction, 0, 0, NULL,
                              file_filler, file_flusher, file_closer, fd);
+    SCM_PORT(p)->name = name;
     SCM_PORT(p)->ownerp = ownerp;
     return p;
 }
