@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.292 2002-10-26 19:34:59 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.293 2002-10-26 20:57:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8206,7 +8206,7 @@ return @code{#f}, @code{#f} is returned.
 @end defun
 
 @defun every-pred pred @dots{}
-Retursn a procedure which applies given argument(s) to
+Returns a procedure which applies given argument(s) to
 each predicate @var{pred}.  If every @var{pred} returns
 a non-@code{#f} value, the value returned by the last @var{pred}
 is returned.  If any @var{pred} returns @code{#f}, @code{every-pred}
@@ -8267,6 +8267,26 @@ The extra values are simply ignored in the first form.
 (proc 0 1)       @result{} (0 1 b c)
 (proc 0 1 2)     @result{} (0 1 2 c)
 (proc 0 1 2 3)   @result{} (0 1 2 3)
+
+(define (proc2 . args)
+  (let-optionals* args ((a 'a) . b)
+    (list a b)))
+
+(proc2)          @result{} (a ())
+(proc2 0)        @result{} (0 ())
+(proc2 0 1)      @result{} (0 (1))
+(proc2 0 1 2)    @result{} (0 (1 2))
+
+(define (proc3 . args)
+  (let-optionals* args ((a 0)
+                        (b (+ a 1))
+                        (c (+ b 1)))
+    (list a b c)))
+
+(proc3)          @result{} (0 1 2)
+(proc3 8)        @result{} (8 9 10)
+(proc3 8 2)      @result{} (8 2 3)
+(proc3 8 2 -1)   @result{} (8 2 -1)
 @end example
 @end defmac
 
