@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.5 2004-11-29 09:06:23 shirok Exp $
+;;;  $Id: condutil.scm,v 1.6 2004-11-29 22:13:59 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -89,7 +89,8 @@
       (if (null? slots)
         cc
         (let ((sn (slot-definition-name (car slots))))
-          (slot-set! cc sn (slot-ref c sn))
+          (when (slot-bound? c sn)
+            (slot-set! cc sn (slot-ref c sn)))
           (loop (cdr slots)))))))
 
 ;; macros

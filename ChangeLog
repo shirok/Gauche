@@ -1,8 +1,10 @@
 2004-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (porterror_cpl): added missing terminating NULL of CPA.
+	  (porterror_allocate): added missing initialization of 'message slot.
 	* src/gauche/vm.h (SCM_SIGPENDING): recovered, for some extensions
 	  use this macro.  Should be considered deprecated.
+	* lib/gauche/exclib.stub (extract-condition): added slot-bound check.
 
 2004-11-28  Shiro Kawai  <shiro@acm.org>
 

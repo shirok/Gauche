@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.59 2004-11-29 22:06:21 shirok Exp $
+ *  $Id: error.c,v 1.60 2004-11-29 22:13:59 shirok Exp $
  */
 
 #include <errno.h>
@@ -182,6 +182,7 @@ static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmPortError *e = SCM_ALLOCATE(ScmPortError, klass);
     SCM_SET_CLASS(e, klass);
+    e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
     return SCM_OBJ(e);
 }
