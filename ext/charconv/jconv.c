@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.4 2002-06-06 11:11:20 shirok Exp $
+ *  $Id: jconv.c,v 1.5 2002-06-08 10:08:22 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -771,6 +771,292 @@ static int eucj2utf(ScmConvInfo *cinfo, const char *inptr, int inroom,
 }
 
 /*=================================================================
+ * ISO2022-JP
+ */
+
+/* ISO2022-JP{-1(,2),3} -> EUC_JP
+ * Strategy: accepts as many possibilities as possible.
+ * The following escape sequence is recognized:
+ * (See Lunde, CJKV information processing, O'Reilly, pp.155--158)
+ *
+ *  <ESC> ( B     ASCII
+ *  <ESC> ( J     JIS-Roman
+ *  <ESC> ( H     JIS-Roman (for compatibility)
+ *  <ESC> ( I     Half-width katakana (JIS X 0201 kana)
+ *  <ESC> $ @     JIS C 6226-1978 (78JIS)
+ *  <ESC> $ B     JIS X 0208-1983 (83JIS)
+ *  <ESC> $ ( D   JIS X 0212-1990
+ *  <ESC> $ ( O   JIS X 0213:2000 plane 1
+ *  <ESC> $ ( P   JIS X 0213:2000 plane 2
+ *  <ESC> & @ <ESC> $ B   JIS X 0208-1990, JIS X 0208:1997
+ *  0x0e          JIS7 half-width katakana shift-out
+ *  0x0f          JIS7 half-width katakana shift-in
+ *
+ * The state is reset to ASCII whenever newline character is read.
+ *
+ * The following escape sequences defined in ISO2022-JP-2 are recognized,
+ * but all the characters within the sequence will be replaced by '?'.
+ *
+ *  <ESC> $ A     (GB2312-80) unsupported
+ *  <ESC> $ ( C   (KS X 1001:1992) unsupported
+ *  <ESC> . A     (ISO8859-1:1998) unsupported
+ *  <ESC> . F     (ISO8859-7:1998) unsupported
+ * 
+ * If other escape sequence is seen, the converter returns ILLEGAL_SEQUENCE.
+ *
+ * JIS8 kana is allowed.
+ */
+
+/* input states */
+enum {
+    JIS_ASCII,
+    JIS_ROMAN,
+    JIS_KANA,
+    JIS_78,
+    JIS_0212,
+    JIS_0213_1,
+    JIS_0213_2,
+    JIS_UNKNOWN,
+};
+
+/* deal with escape sequence.  escape byte itself is already consumed.
+   returns # of input bytes consumed by the escape sequence,
+   or an error code.  cinfo->istate is updated accordingly. */
+static int jis_esc(ScmConvInfo *cinfo, const char *inptr, int inroom)
+{
+    unsigned char j1, j2;
+    INCHK(2);
+    j1 = inptr[0];
+    j2 = inptr[1];
+    switch (j1) {
+    case '(':
+        switch (j2) {
+        case 'B': cinfo->istate = JIS_ASCII; break;
+        case 'J': cinfo->istate = JIS_ROMAN; break;
+        case 'H': cinfo->istate = JIS_ROMAN; break;
+        case 'I': cinfo->istate = JIS_KANA;  break;
+        default: return ILLEGAL_SEQUENCE;
+        }
+        return 2;
+    case '$':
+        switch (j2) {
+        case '@': cinfo->istate = JIS_78; break;
+        case 'B': cinfo->istate =  JIS_0213_1; break;
+        case 'A': cinfo->istate =  JIS_UNKNOWN; break;
+        case '(':
+            {
+                INCHK(3);
+                switch (inptr[2]) {
+                case 'D': cinfo->istate = JIS_0212; break;
+                case 'O': cinfo->istate = JIS_0213_1; break;
+                case 'P': cinfo->istate = JIS_0213_2; break;
+                case 'C': cinfo->istate = JIS_UNKNOWN; break;
+                default:  return ILLEGAL_SEQUENCE;
+                }
+                return 3;
+                break;
+            }
+        default: return ILLEGAL_SEQUENCE;
+        }
+        return 2;
+    case '&':
+        {
+            INCHK(6);
+            if (inptr[2] == '@' && inptr[3] == 0x1b && inptr[4] == '$'
+                && inptr[5] == 'B') {
+                cinfo->istate = JIS_0213_1;
+                return 5;
+            } else {
+                return ILLEGAL_SEQUENCE;
+            }
+        }
+    case '.':
+        switch (inptr[2]) {
+        case 'A':/*fallthrough*/;
+        case 'F':   cinfo->istate = JIS_UNKNOWN; break;
+        default:    return ILLEGAL_SEQUENCE;
+        }
+        return 2;
+    default: return ILLEGAL_SEQUENCE;
+    }
+}
+
+/* main routine for iso2022-jp -> euc_jp */
+static int jis2eucj(ScmConvInfo *cinfo, const char *inptr, int inroom,
+                    char *outptr, int outroom, int *outchars)
+{
+    unsigned char j0, j1;
+    int inoffset = 0, r;
+    
+    j0 = inptr[inoffset];
+    /* skip escape sequence */
+    while (j0 == 0x1b) {
+        inoffset++;
+        r = jis_esc(cinfo, inptr+inoffset, inroom-inoffset);
+        if (r < 0) return r;
+        inoffset += r;
+        j0 = inptr[inoffset];
+    }
+    
+    if (j0 == '\n' || j0 == '\r') {
+        cinfo->istate = JIS_ASCII;
+        outptr[0] = j0;
+        *outchars = 1;
+        return 1+inoffset;
+    } else if (j0 < 0x20) {
+        outptr[0] = j0;
+        *outchars = 1;
+        return 1+inoffset;
+    } else if (j0 >= 0xa1 && j0 <= 0xdf) {
+        /* JIS8 kana */
+        OUTCHK(2);
+        outptr[0] = 0x8e;
+        outptr[1] = j0;
+        *outchars = 2;
+        return 1+inoffset;
+    } else {
+        switch (cinfo->istate) {
+        case JIS_ROMAN:
+            /* jis-roman and ascii differs on 0x5c and 0x7e -- for now,
+               I ignore the difference. */
+            /* FALLTHROUGH */
+        case JIS_ASCII:
+            outptr[0] = j0;
+            *outchars = 1;
+            return 1+inoffset;
+        case JIS_KANA:
+            OUTCHK(2);
+            outptr[0] = 0x8e;
+            outptr[1] = j0 + 0x80;
+            *outchars = 2;
+            return 1+inoffset;
+        case JIS_78:
+            /* for now, I ignore the difference between JIS78 and 
+            /* FALLTHROUGH */
+        case JIS_0213_1:
+            INCHK(inoffset+2);
+            OUTCHK(2);
+            j1 = inptr[inoffset+1];
+            outptr[0] = j0 + 0x80;
+            outptr[1] = j1 + 0x80;
+            *outchars = 2;
+            return 2+inoffset;
+        case JIS_0212:
+            /* jis x 0212 and jis x 0213 plane 2 are different character sets,
+               but uses the same conversion scheme. */
+            /* FALLTHROUGH */
+        case JIS_0213_2:
+            INCHK(inoffset+2);
+            OUTCHK(3);
+            j1 = inptr[inoffset+1];
+            outptr[0] = 0x8f;
+            outptr[1] = j0 + 0x80;
+            outptr[2] = j1 + 0x80;
+            *outchars = 3;
+            return 2+inoffset;
+        case JIS_UNKNOWN:
+            outptr[0] = SUBST1_CHAR;
+            *outchars = 1;
+            return 1+inoffset;
+        default:
+            Scm_Error("internal state of ISO2022-JP -> EUC_JP got messed up (%d).  Implementation error?", cinfo->istate);
+        }
+    }
+    return ILLEGAL_SEQUENCE;
+}
+
+/* EUC_JP -> ISO2022JP(-3)
+ *
+ * For now, I follow the strategy of iso2022jp-3-compatible behavior.
+ */
+
+/* ensure the current state is newstate.  returns # of output chars.
+   may return OUTPUT_NOT_ENOUGH. */
+static int jis_ensure_state(ScmConvInfo *cinfo, int newstate, int outbytes,
+                            char *outptr, int outroom)
+{
+    const char *escseq = NULL;
+    int esclen = 0;
+    
+    if (cinfo->istate == newstate) return 0;
+    switch (newstate) {
+    case JIS_ASCII:
+        escseq = "\033(B";  esclen = 3; break;
+    case JIS_KANA:
+        escseq = "\033(I";  esclen = 3; break;
+    case JIS_0213_1:
+        escseq = "\033$B";  esclen = 3; break;
+    case JIS_0213_2:
+        escseq = "\033$(P"; esclen = 4; break;
+    case JIS_0212:
+        escseq = "\033$(D"; esclen = 4; break;
+    default:
+        Scm_Error("something wrong in jis_ensure_state: implementation error?");
+        return 0;               /* dummy */
+    }
+    OUTCHK(esclen + outbytes);
+    memcpy(outptr, escseq, esclen);
+    cinfo->istate = newstate;
+    return esclen;
+}
+
+static int eucj2jis(ScmConvInfo *cinfo, const char *inptr, int inroom,
+                    char *outptr, int outroom, int *outchars)
+{
+    unsigned char e0, e1;
+    int outoffset = 0;
+    e0 = inptr[0];
+    if (e0 < 0x80) {
+        outoffset = jis_ensure_state(cinfo, JIS_ASCII, 1, outptr, outroom);
+        if (outoffset < 0) return outoffset;
+        outptr[outoffset] = e0;
+        *outchars = outoffset+1;
+        return 1;
+    } else if (e0 == 0x8e) {
+        INCHK(2);
+        e1 = inptr[1];
+        if (e1 > 0xa0 && e1 < 0xff) {
+            outoffset = jis_ensure_state(cinfo, JIS_KANA, 1, outptr, outroom);
+            if (outoffset < 0) return outoffset;
+            outptr[outoffset] = e1 - 0x80;
+            *outchars = outoffset+1;
+            return 2;
+        }
+    } else if (e0 == 0x8f) {
+        INCHK(3);
+        e0 = inptr[1];
+        e1 = inptr[2];
+        if (e0 > 0xa0 && e0 < 0xff && e1 > 0xa0 && e1 < 0xff) {
+            int newstate = JIS_0212;
+            switch (e0) {
+            case 0xa1:; case 0xa3:; case 0xa4:; case 0xa5:;
+            case 0xa8:; case 0xac:; case 0xad:; case 0xae:; case 0xaf:;
+                newstate = JIS_0213_2; break;
+            default:
+                if (e0 >= 0xee) newstate = JIS_0213_2;
+            }
+            outoffset = jis_ensure_state(cinfo, newstate, 2, outptr, outroom);
+            outptr[outoffset] = e0 - 0x80;
+            outptr[outoffset+1] = e1 - 0x80;
+            *outchars = outoffset+1;
+            return 3;
+        }
+    } else if (e0 > 0xa0 && e0 < 0xff) {
+        INCHK(2);
+        e1 = inptr[1];
+        if (e1 > 0xa0 && e1 < 0xff) {
+            outoffset = jis_ensure_state(cinfo, JIS_0213_1, 2, outptr, outroom);
+            if (outoffset < 0) return outoffset;
+            outptr[outoffset] = e0 - 0x80;
+            outptr[outoffset+1] = e1 - 0x80;
+            *outchars = outoffset+2;
+            return 2;
+        }
+    }
+    return ILLEGAL_SEQUENCE;
+}
+
+/*=================================================================
  * EUC_JP
  */
 
@@ -791,8 +1077,8 @@ enum {
     JCODE_EUCJ,
     JCODE_SJIS,
     JCODE_UTF8,
-#if 0
     JCODE_ISO2022JP,
+#if 0
     JCODE_ISO2022JP-2,
     JCODE_ISO2022JP-3
 #endif
@@ -807,6 +1093,7 @@ static struct conv_converter_rec {
     { eucj2eucj, eucj2eucj },
     { sjis2eucj, eucj2sjis },
     { utf2eucj,  eucj2utf  },
+    { jis2eucj,  eucj2jis  },
 };
 
 /* map convesion name to the canonical code */
@@ -823,6 +1110,12 @@ static struct conv_support_rec {
     { "sjis",         JCODE_SJIS },
     { "utf-8",        JCODE_UTF8 },
     { "utf8",         JCODE_UTF8 },
+    { "iso2022jp",    JCODE_ISO2022JP },
+    { "iso2022-jp",   JCODE_ISO2022JP },
+    { "csiso2022jp",  JCODE_ISO2022JP },
+    { "iso2022jp-1",  JCODE_ISO2022JP },
+    { "iso2022jp-2",  JCODE_ISO2022JP },
+    { "iso2022jp-3",  JCODE_ISO2022JP },
     { NULL, 0 }
 };
 
@@ -1042,6 +1335,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
     info->convproc[1] = convproc[1];
     info->handle = handle;
     info->toCode = toCode;
+    info->istate = info->ostate = JIS_ASCII;
     info->fromCode = fromCode;
     return info;
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.5 2002-06-06 11:11:20 shirok Exp $
+ *  $Id: charconv.h.in,v 1.6 2002-06-08 10:08:22 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -47,23 +47,14 @@ typedef struct ScmConvInfoRec {
                                    handled by iconv */
     const char *fromCode;       /* convert from ... */
     const char *toCode;         /* conver to ... */
+    int istate;                 /* current input state */
+    int ostate;                 /* current output state */
     ScmPort *remote;            /* source or drain port */
     int ownerp;                 /* do I own remote port? */
     int bufsiz;                 /* size of conversion buffer */
     char *buf;                  /* internal conversion buffer */
     char *ptr;                  /* current ptr in the internal conv buf */
 } ScmConvInfo;
-
-/* Constants for internal conversion routine */
-enum {
-    JCONV_NONE,                 /* no conversion needed. */
-    JCONV_SJIS,
-    JCONV_UTF8,
-    JCONV_ISO2022JP,
-    JCONV_ISO2022JP_2,
-    JCONV_ISO2022JP_3,
-    JCONV_ICONV                 /* use iconv */
-};
 
 extern ScmObj Scm_MakeInputConversionPort(ScmPort *source,
                                           const char *fromCode,
