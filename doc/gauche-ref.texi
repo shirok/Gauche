@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.408 2003-06-09 06:02:12 nobsun Exp $
+@c $Id: gauche-ref.texi,v 1.409 2003-06-09 06:27:54 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -21489,29 +21489,59 @@ Prints out list of failed tests.
 @section @code{gauche.threads} - Threads
 @c NODE gauche.threads - スレッド, @code{gauche.threads} - スレッド
 
+@c EN
 If enabled at compilation time, Gauche can use threads
-built on top of POSIX threads (pthreads). 
+built on top of POSIX threads (pthreads).
+@c JP
+Gaucheでは、コンパイル時に有効にしていれば、POSIXスレッド(pthreads)の
+上に構築されるスレッドを使うことができます。
+@c COMMON
 
 @deftp {Module} gauche.threads
 @mdindex gauche.threads
+@c EN
 Provides thread API.   You can 'use' this module regardless
 whether the thread support is compiled in or not; if threads are not
 supported, many thread-related procedures simply signals a 
 "not supported" error.
+@c JP
+スレッドを扱うAPIを提供します。コンパイル時にスレッドのサポートを
+指定したか否かに関わらず、このモジュールを'usr'することができます。
+スレッドがサポートされていない場合は、多くのスレッド関連の手続きは
+単に``not supported''エラーを通知するだけです。
+@c COMMON
 @end deftp
 
+@c EN
 To check if threads are available in the running Gauche program,
 use the following procedure.
+@c JP
+動作中のGaucheプログラムの中でスレッドが有効かどうかをチェックするためには、
+次の手続きを使います。
+@c COMMON
 
 @defun gauche-thread-type
+@c EN
 Returns a symbol that indicates the supported thread type.
 In the current version, the return value may be @code{pthread}
 when threads on top of POSIX threads are available, or
 @code{none} when threads are not available.
+@c JP
+サポートされているスレッドのタイプを表すシンボルを返します。
+現在のバージョンでは、POSIXスレッドの上に構築されるスレッドが
+有効な場合は@code{pthread}を返し、スレッドが有効でない場合は
+@code{none}を返します。
+@c COMMON
 @end defun
 
+@c EN
 Scheme-level thread API conforms SRFI-18, "Multithreading support"
 (@ref{srfi-18,,[SRFI-18]}), wrapped around Gauche's object interface.
+@c JP
+SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポート''
+(@ref{srfi-18,,[SRFI-18]})を満たし、Gaucheのオブジェクトの
+インターフェースでラップされます。
+@c COMMON
 
 @menu
 * Thread programming tips::     
@@ -21523,8 +21553,9 @@ Scheme-level thread API conforms SRFI-18, "Multithreading support"
 @node Thread programming tips, Thread procedures, gauche.threads - Threads, gauche.threads - Threads
 @subsection Thread programming tips
 
+@c EN
 Although the surface API of threads looks simple and portable,
-you need know how the threads are implemented in order to utilize
+you need to know how the threads are implemented in order to utilize
 the feature's potential.   Some languages support threads as
 language's built-in construct and encourage programmers
 to express the calculation in terms of threads.
@@ -21533,7 +21564,19 @@ alternative ways than threads to implement the desired
 algorithm, and you need to compare advantages and
 disadvantages of using threads depending on how the threads
 are realized in the underlying system.
+@c JP
+スレッドのAPIは外見上シンプルでポータブルに見えますが、
+その機能の潜在的な力を活用するためには、スレッドがどのように
+実装されているかを知る必要があります。
+いくつかの言語では言語組み込みの機能としてスレッドをサポートし、
+プログラマによるスレッドの利用を支援します。
+しかし、多くの場合、実現したいアルゴリズムをスレッドを使わずに
+実装する方法があるということに注意すべきで、またスレッドを
+使うことの利点と欠点を、そのスレッドがシステムによってどのように
+実現されているかを考慮した上で比較する必要があります。
+@c COMMON
 
+@c EN
 In Gauche, the primary purpose of threads is to write programs
 that @emph{require} preemptive scheduling, therefore are
 difficult to express in other ways.  Preemptive threads may
@@ -21541,7 +21584,16 @@ be required, for example, when you have to call a module that
 does blocking I/O which you can't intercept, or may spend
 nondeterministic amount of calculation time that you want
 to interrupt.
+@c JP
+Gaucheでは、スレッドを使う一番の目的は、他の方法で表現することが
+難しい、プリエンプティブなスケジューリングを@emph{必要}とする
+プログラムを書くことです。プリエンプティブなスレッドは、
+例えば、中断できないブロッキングI/Oを行うモジュールを
+使わなければならないときや、実行時間の分からない計算に
+割り込みを行いたいときなどに必要となります。
+@c COMMON
 
+@c EN
 For each Gauche's thread, an individual VM is allocated
 and it is run by the dedicated POSIX thread.  Thus there
 is not much overhead in context switch than the native
@@ -21549,44 +21601,97 @@ thread, but the creation of threads costs much higher than,
 say, lightweight threads built on top of call/cc.
 So Gauche's preemptive threads are @emph{not} designed for
 applications that want to create thousands of threads
-for fine-grained calculation. 
+for fine-grained calculation.
+@c JP
+それぞれのGaucheのスレッドには、個別の仮想マシンが割り当てられ、
+専用のPOSIXスレッドにより実行されます。したがって、コンテキスト
+スイッチにおいてネイティブスレッドよりもオーバヘッドを
+抑えることができます。しかし、スレッドの生成は例えば
+call/ccによる軽量スレッドよりはコストのかかる処理です。
+このように、Gaucheのプリエンプティブなスレッドは、
+きめ細かい計算のために幾千ものスレッドを生成したいアプリケーション
+向けでは@emph{ありません}。
+@c COMMON
 
+@c EN
 The recommended usage is the technique so called "thread pool",
 that you create a set of threads and keep them around for
 long time and dispatch jobs to them as needed.
+@c JP
+推奨される使用方法は、いわゆる``スレッドプール''と呼ばれる
+テクニックです。つまり、スレッドの集合を作って長時間それを
+保持し、必要になったときにジョブをそこへディスパッチする
+というものです。
+@c COMMON
 
+@c EN
 Preemptive threads have other difficulties
 (e.g. see @ref{fairthreads,[FairThreads],FairThreads}),
 and sometimes the alternatives may be a better fit
 than the native preemptive threads.
+@c JP
+プリエンプティブなスレッドには他にも難しい点があり
+(@ref{fairthreads,[FairThreads],FairThreads}参照)、
+しばしばネイティブなプリエンプティブスレッドよりも
+より良くフィットする代替策があります。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 If what you need is just a concurrent calculation, you
 might be able to use cooperative thread technique built
 on top of @code{call/cc}.   Creating call/cc-based threads
-is much faster than creating native threads. 
+is much faster than creating native threads.
+@c JP
+単に同時実行が必要なだけなら、@code{call/cc}による協調スレッド
+テクニックが使えるでしょう。call/ccベースのスレッドの生成は、
+ネイティブスレッドを生成するよりも高速です。
+@c COMMON
 
 @item
+@c EN
 If what you need is to deal with blocking I/O, and you have
 all your code at hand, it is sometimes easier to use good old
 @code{select}-based dispatching (@xref{gauche.selector - Simple dispatcher},
 for example).
+@c JP
+ブロッキングI/Oを扱う必要があり、全てのコードが手元にある場合は、
+古き良き@code{select}ベースのディスパッチ(@ref{gauche.selector - Simple dispatcher}に
+例があります)を使うほうが簡単なことがあります。
+@c COMMON
 
 @item
+@c EN
 If what you need is to control the resouce consumption in the
 subsystem, and the subsystem works fairly independently from
 the main system, you may be able to use Unix processes instead of threads.
 It may sound to go backward, but Unix process does provide
 higher "shield" between the subsystem and the main system
 (e.g. the main system can keep running even if subsystem segfaults).
+@c JP
+サブシステムにおけるリソースの消費をコントロールする必要がある場合で、
+サブシステムがメインシステムとは独立公平に動作する場合は、
+スレッドの代わりにUnixプロセスが使えることでしょう。
+時代に逆行するように聞こえますが、Unixプロセスはサブシステムと
+メインシステムの間に高度な``防御壁''を提供します。
+(例えば、サブシステムがセグメンテーション違反を起こしても、
+メインシステムは実行しつづけられます。)
+@c COMMON
 
 @end itemize
 
+@c EN
 Of course, these technique are not mutually exclusive with
 native threads.  You can use dispatcher with "thread pool" technique,
 for example.   Just keep it in your mind that the native threads
 are not only but one of the ways to realize those features.
+@c JP
+もちろん、これらのテクニックはネイティブスレッドとは相互排他ではありません。
+例えば、``スレッドプール''テクニックと一緒にディスパッチャを使うこともできます。
+それらの機能を実現するために、ネイティブスレッドが唯一の方法ではないということを
+心に留め置いて下さい。
+@c COMMON
 
 
 @node Thread procedures, Synchronization primitives, Thread programming tips, gauche.threads - Threads
@@ -21594,116 +21699,240 @@ are not only but one of the ways to realize those features.
 
 @deftp {Builtin Class} <thread>
 @clindex thread
+@c EN
 A thread.  Each thread has an associated thunk which is evaluated by
 a POSIX thread.  When thunk returns normally, the result is stored
 in the internal 'result' slot, and can be retrieved by @code{thread-join!}.
 When thunk terminates abnormally, either by raising an exception or
 terminated by @code{thread-terminate!}, the exception condition is
-stored in ther internal 'result exception' slot, and will be passed
+stored in their internal 'result exception' slot, and will be passed
 to the thread calling @code{thread-join!} on the terminated thread.
+@c JP
+スレッドを表すクラスです。それぞれのスレッドは、POSIXスレッドにより
+評価される関連付けられた手続きを持ちます。手続きが正常に戻ると、
+その結果は内部的な``結果''スロットに格納され、@code{thread-join!}により
+取得することができます。手続きが異常終了すると、例外が投げられるか
+@code{thread-terminate!}により終了され、例外条件が内部的な``結果としての例外''
+スロットに格納され、その終了したスレッドに対して@code{thread-join!}を
+呼ぶスレッドに渡されます。
+@c COMMON
 
+@c EN
 Each thread has its own dynamic environment and dynamic handler stack.
 When a thread is created, its dynamic environment is initialized by
 the creator's dynamic environment.  The thread's dynamic handler
 stack is initially empty.
+@c JP
+それぞれのスレッドは独自の動的な環境と動的なハンドラスタックを持っています。
+あるスレッドが生成されると、その動的な環境は生成者の動的な環境によって
+初期化されます。そのスレッドの動的なハンドラスタックは初期においては空です。
+@c COMMON
 
+@c EN
 Access to the resouces shared by multiple threads must be protected
 explicitly by synchronization primitives.
 @xref{Synchronization primitives}.
+@c JP
+複数のスレッドで共有されるリソースへのアクセスは、同期化プリミティブにより
+明示的に保護されなければなりません。@ref{Synchronization primitives}参照。
+@c COMMON
 
+@c EN
 Access to ports are serialized by Gauche. If multiple threads attempt
 to write to a port, their output may be interleaved but no output
 will be lost, and the state of the port is kept consistent.
 If multiple threads attempt to read from a port, a single read
 primitive (e.g. @code{read}, @code{read-char} or @code{read-line})
 works atomically.
+@c JP
+ポートへのアクセスはGaucheによりシリアライズされます。
+複数のスレッドが1つのポートへの書き込みを試みた場合、それらの出力は
+混じることもありますが、失われる出力はなく、そのポートのステータスは
+一貫性が保たれます。複数のスレッドが1つのポートからの読み込みを試みた
+場合、1つの読み込みプリミティブ(例えば、@code{read}や@code{read-char}、
+@code{read-line}など)がアトミックに実行されます。
+@c COMMON
 
+@c EN
 Signal handlers are shared by all threads, but each thread has
 its own signal mask.  @xref{Signals and threads}, for details.
+@c JP
+シグナルハンドラは全てのスレッドで共有されますが、それぞれのスレッドは
+独自のシグナルマスクを持ちます。詳細は、@ref{Signals and threads}を参照。
+@c COMMON
 
+@c EN
 A thread object has the following external slots.
+@c JP
+スレッドオブジェクトは以下の外部スロットを持ちます。
+@c COMMON
 
 @defivar <thread> name
+@c EN
 A name can be associated to a thread.
 This is just for the convenience of the application.
 The primordial thread has the name "@code{root}".
+@c JP
+スレッドに関連付けられる名前。
+これは単にアプリケーションにとっての便宜を図るためのものです。
+原始となるスレッドは``@code{root}''という名前を持ちます。
+@c COMMON
 @end defivar
 
 @defivar <thread> specific
+@c EN
 A thread-local slot for use of the application.
+@c JP
+アプリケーションが使うスレッドローカルなスロット。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun current-thread
+@c EN
 [SRFI-18], [SRFI-21]
 Returns the current thread.
+@c JP
+[SRFI-18]、[SRFI-21]
+現在のスレッドを返します。
+@c COMMON
 @end defun
 
 @defun thread? obj
+@c EN
 [SRFI-18], [SRFI-21]
 Returns @code{#t} if @var{obj} is a thread, @code{#f} otherwise.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{obj}がスレッドなら@code{#t}、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun make-thread thunk &optional name
+@c EN
 [SRFI-18], [SRFI-21]
 Creates and returns a new thread.  To run the thread, you need to
 call @code{thread-start!}.
+@c JP
+[SRFI-18]、[SRFI-21]
+新しいスレッドを生成して返します。そのスレッドを実行するためには、
+@code{thread-start!}を呼ぶ必要があります。
+@c COMMON
 
+@c EN
 You can provide the name of the thread by the optional argument @var{name}.
+@c JP
+オプション引数@var{name}を与えることで、そのスレッドに名前を与えることができます。
+@c COMMON
 
+@c EN
 Internally, this procedure just allocates and initializes a Scheme
 thread object; the POSIX thread is not created until @code{thread-start!}
 is called.
+@c JP
+内部的に、この手続きは単にSchemeスレッドオブジェクトを割り当て初期化している
+だけです。POSIXスレッドは@code{thread-start!}が呼ばれるまで生成されません。
+@c COMMON
 @end defun
 
 @defun thread-name thread
+@c EN
 [SRFI-18], [SRFI-21]
 Returns the value of @var{name} slot of @var{thread}.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{thread}のスロット@var{name}の値を返します。
+@c COMMON
 @end defun
 
 @defun thread-specific thread
 @defunx thread-specific-set! thread value
+@c EN
 [SRFI-18], [SRFI-21]
 Gets/sets the value of the @var{thread}'s specific slot.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{thread}のし呈したスレッドの値を取得/設定します。
+@c COMMON
 @end defun
 
 @defun thread-start! thread
+@c EN
 [SRFI-18], [SRFI-21]
 Starts the @var{thread}.  It is an error if @var{thread} is already started.
 Returns @var{thread}.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{thread}を開始します。@var{thread}がすでに開始されていればエラーになります。
+@var{thread}を返します。
+@c COMMON
 @end defun
 
 @defun thread-yield!
+@c EN
 [SRFI-18], [SRFI-21]
 Suspends the execution of the calling thread and yields CPU to other
 waiting runnable threads, if any.
+@c JP
+[SRFI-18]、[SRFI-21]
+呼び出しているスレッドの実行を中断し、他に待機中の実行可能なスレッドがあれば、
+CPUにそれを処理させます。
+@c COMMON
 @end defun
 
 @defun thread-sleep! timeout
+@c EN
 [SRFI-18], [SRFI-21]
 Suspends the calling thread for the period specified by @var{timeout},
 which must be either a @code{<time>} object (@xref{SRFI time}) that
 specifies absolute point of time, or a real number that specifies
 relative point of time from the time this procedure is called
 in number of seconds.
+@c JP
+[SRFI-18]、[SRFI-21]
+呼び出しているスレッドを@var{timeout}に指定した時間だけ中断します。
+@var{timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{SRFI time}参照)か、
+この手続きが呼ばれた時刻からの相対的な秒数を表す実数でなければなりません。
+@c COMMON
 
+@c EN
 After the specified time passes, @code{thread-sleep!} returns with
 unspecified value.
+@c JP
+指定された時間が経過すると、@code{thread-sleep!}は未定義値を返します。
+@c COMMON
 
+@c EN
 If @var{timeout} points a past time, @code{thread-sleep!} returns
 immediately.
+@c JP
+@var{timeout}が過去の時間を指していたら、@code{thread-sleep!}はすぐに戻ります。
+@c COMMON
 @end defun
 
 @defun thread-terminate! thread
+@c EN
 [SRFI-18], [SRFI-21]
 Terminates the specified thread @var{thread}.
 The @var{thread} is terminated and an instance of 
 @code{<terminated-thread-exception>} is stored in the result exception
 field of @var{thread}.
+@c JP
+[SRFI-18]、[SRFI-21]
+指定されたスレッド@var{thread}を終了します。
+@var{thread}は終了され、@code{<terminated-thread-exception>}のインスタンスが
+@var{thread}の結果例外のフィールドに格納されます。
+@c COMMON
 
+@c EN
 If @var{thread} is the same as the calling thread, this procedure
 won't return.  Otherwise, this procedure returns unspecified value.
+@c JP
+@var{thread}が呼び出しているスレッドと同じ場合、この手続きは戻りません。
+そうでなければ、この手続きは未定義値を返します。
+@c COMMON
 
+@c EN
 This procedure should be used with care, since
 @var{thread} won't have a chance to call cleanup
 procedures (such as 'after' thunks of @code{dynamic-wind})
@@ -21712,26 +21941,60 @@ inconsistent.  However, once a thread is terminated, any mutex
 that the thread has kept becomes 'abandoned' state, and an attempt
 to lock such a mutex by other thread raises an 'abandoned mutex exception',
 so that you will know the situation.  @xref{Synchronization primitives}.
+@c JP
+@var{thread}には(@code{dynamic-wind}での'after'手続きのような)クリーンアップ手続きを
+呼ぶチャンスがないので、この手続きは注意して使って下さい。
+@var{thread}がクリティカルセクションにあるならば、一貫性のない状態を残すことに
+なります。
+しかし、あるスレッドが一旦終了すると、そのスレッドが保持していたロックは
+'放棄'状態になり、そのようなロックを獲得しようとしてスレッドは
+'放棄されたロックの例外'を投げるので、その状況を知ることができます。
+@ref{Synchronization primitives}参照。
+@c COMMON
 @end defun
 
 
 @defun thread-join! thread &optional timeout timeout-val
+@c EN
 [SRFI-18], [SRFI-21]
 Waits termination of @var{thread}, or until the timeout is reached
 if @var{timeout} is given.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{thread}の終了、あるいは@var{timeout}が与えられていればtimeoutが
+それに達するのを待ちます。
+@c COMMON
 
+@c EN
 @var{Timeout} must be either a @code{<time>} object (@xref{SRFI time})
 that specifies absolute point of time, or a real number that specifies
 relative point of time from the time this procedure is called
 in number of seconds, or @code{#f} that indicates no timeout (default).
+@c JP
+@var{Timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{SRFI time}参照)か、
+この手続きが呼ばれた時刻からの相対的な時間を秒数で表した実数でなければなりません。
+タイムアウトが指定されていない(デフォルト)は@code{#f}です。
+@c COMMON
 
+@c EN
 If @var{thread} terminates normally, @code{thread-join!} returns
 a value which is stored in the result field of @var{thread}.
 If @var{thread} terminates abnormally, @code{thread-join!} raises
 an exception which is stored in the result exception field of @var{thread}.
+@c JP
+@var{thread}が正常に終了したら、@code{thread-join!}は@var{thread}の
+結果フィールとに格納されている値を返します。
+@var{thread}が異常終了したら、@code{thread-join!}は@var{thread}の結果例外
+フィールドに格納されている例外を投げます。
+@c COMMON
 
+@c EN
 If the timeout is reached, @var{thread-join!} returns @var{timeout-val}
 if given, or raises @code{<join-timeout-exception>}.
+@c JP
+タイムアウトに達すると、@var{timeout-val}が与えられていれば@var{thread-join!}を返し、
+与えられていなければ@code{<join-timeout-exception>}を投げます。
+@c COMMON
 @end defun
 
 @node Synchronization primitives, Thread exceptions, Thread procedures, gauche.threads - Threads
@@ -21739,6 +22002,7 @@ if given, or raises @code{<join-timeout-exception>}.
 
 @deftp {Builtin Class} <mutex>
 @clindex mutex
+@c EN
 A primitive synchronization device.  It can take one of four states:
 locked/owned, locked/not-owned, unlocked/abandoned and unlocked/not-abandoned.
 A mutex can be locked (by @code{mutex-lock!}) only if it is in unlocked state.
@@ -21748,52 +22012,111 @@ but you can make a thread other than the locking thread own a mutex.
 A mutex becomes unlocked either by @code{mutex-unlock!} or the owner
 thread terminates.  In the former case, a mutex becomes unlocked/not-abandoned
 state.  In the latter case, a mutex becomes unlocked/abandoned state.
+@c JP
+原始的な同期化デバイスです。次の4つの状態のいずれかを持ちます:
+locked/owned、locked/not-owned、unlocked/abandoned、unlocked/not-abandoned。
+ロックは、それがロックされていない状態(unlocked)の場合のみ(@code{mutex-lock!}により)獲得できます。
+'所有されている(owned)'ロックは、そのロックを所有しているスレッドを保持します。
+一般的に、スレッドの所有者はロックを獲得したスレッドですが、
+ロックしているスレッドとは別に、ロックを獲得するスレッドを作ることができます。
+ロックは@code{mutex-unlock!}により解放されるか、所有するスレッドが終了すると解放されます。
+前者の場合はロックされていない/放棄されていない(unlocked/not-abandoned)状態になります。
+後者の場合はロックされていない/放棄された状態(unlocked/abandoned)になります。
+@c COMMON
 
+@c EN
 A mutex has the following external slots.
+@c JP
+ロックオブジェクトは以下の外部スロットを持ちます。
+@c COMMON
 
 @defivar <mutex> name
+@c EN
 The name of the mutex.
+@c JP
+ロックオブジェクトの名前。
+@c COMMON
 @end defivar
 
 @defivar <mutex> state
+@c EN
 The state of the mutex.  This is a read-only slot.
 See the descrption of @code{mutex-state} below.
+@c JP
+ロックオブジェクトの状態。これは読み取りのみ可能なスロットです。
+下記の@code{mutex-state}の説明を参照して下さい。
+@c COMMON
 @end defivar
 
 @defivar <mutex> specific
+@c EN
 A slot an application can keep arbitrary data.  For example, an application
 can implement a 'recursive' mutex using the specific field.
+@c JP
+アプリケーションが任意のデータを保持することのできるスロットです。
+例えば、アプリケーションはこの固有フィールドで'再帰的な'ロックオブジェクトを
+実装することができます。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun mutex? obj
+@c EN
 [SRFI-18], [SRFI-21]
 Returns @code{#t} if @var{obj} is a mutex, @code{#f} otherwise.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{obj}がロックオブジェクトなら@code{#t}、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun make-mutex &optional name
+@c EN
 [SRFI-18], [SRFI-21]
 Creates and returns a new mutex object.
 When created, the mutex is in unlocked/not-abandoned state.
 Optionally, you can give a name to the mutex.
+@c JP
+[SRFI-18]、[SRFI-21]
+新しいロックオブジェクトを生成して返します。
+生成時には、ロックオブジェクトの状態は、ロックされていない/放棄されていない状態
+(unlocked/not-abandoned)です。オプションで、このロックオブジェクトに名前を
+付けることができます。
+@c COMMON
 @end defun
 
 @defun mutex-name mutex
+@c EN
 [SRFI-18], [SRFI-21]
 Returns the name of the mutex.
+@c JP
+[SRFI-18]、[SRFI-21]
+ロックオブジェクトの名前を返します。
+@c COMMON
 @end defun
 
 @defun mutex-specific mutex
 @defunx mutex-specific-set! mutex value
+@c EN
 [SRFI-18], [SRFI-21]
 Gets/sets the specific value of the mutex.
+@c JP
+[SRFI-18]、[SRFI-21]
+ロックオブジェクトの固有の値を取得/セットできます。
+@c COMMON
 @end defun
 
 @defun mutex-state mutex
+@c EN
 [SRFI-18], [SRFI-21]
 Returns the state of @var{mutex}, which may be one of the followings:
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{mutex}の状態を返します。状態は以下のうちの1つです。
+@c COMMON
 
 @table @asis
+@c EN
 @item a thread
 The mutex is locked/owned, and the owner is the returned thread.
 @item symbol @code{not-owned}
@@ -21802,10 +22125,21 @@ The mutex is locked/not-owned.
 The mutex is unlocked/abandoned.
 @item symbol @code{not-abandoned}
 The mutex is unlocked/not-abandoned.
+@c JP
+@item あるスレッド
+ロックは獲得され所有されており、所有者は返されたスレッド。
+@item シンボル @code{not-owned}
+ロックは獲得されているが所有されていない。
+@item シンボル @code{abandoned}
+ロックは獲得されておらず、放棄されている。
+@item シンボル @code{not-abandoned}
+ロックは獲得されておらず、放棄されていない。
+@c COMMON
 @end table
 @end defun
 
 @defun mutex-lock! mutex &optional timeout thread
+@c EN
 [SRFI-18], [SRFI-21]
 Locks @var{mutex}.  If @var{mutex} is in unlocked/not-abandoned
 state, this procedure changes its state to locked state exclusively.
@@ -21813,12 +22147,30 @@ By default, @var{mutex} becomes locked/owned state, owned by the
 calling thread.  You can give other owner thread as @var{thread} argument.
 If @var{thread} argument is given and @code{#f}, the mutex becomes
 locked/not-owned state.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{mutex}をロックします。@var{mutex}がロックされておらず放棄されていない状態なら、
+この手続きはその状態を排他的にロックされた状態に変更します。
+デフォルトでは、@var{mutex}はロックされ、呼び出したスレッドに所有された状態に
+なります。
+他の所有しているスレッドを、引数@var{thread}を与えることもできます。
+引数@var{thread}に@code{#f}が与えられると、ロックオブジェクトは
+ロックされ所有されていない状態になります。
+@c COMMON
 
+@c EN
 If @var{mutex} is in unlocked/abandoned state, that is, some other
 thread has been terminated without unlocking it, this procedure
 signals 'abandoned mutex exception' (@xref{Thread exceptions})
 after changing the state of @var{mutex}.
+@c JP
+@var{mutex}がロックされておらず放棄された状態ならば、それはつまり、
+他の何らかのスレッドがそのロックを解放せずに終了した場合、
+この手続きは@var{mutex}の状態を変更した後に、'放棄されたロックオブジェクト例外'
+(@ref{Thread exceptions}参照)を通知します。
+@c COMMON
 
+@c EN
 If @var{mutex} is in locked state and
 @var{timeout} is omitted or @code{#f}, this procedure blocks until
 @var{mutex} becomes unlocked.   If @var{timeout} is specified,
@@ -21826,15 +22178,36 @@ If @var{mutex} is in locked state and
 case it couldn't obtain a lock.  You can give @var{timeout}
 an absolute point of time (by @code{<time>} object, @xref{SRFI time}),
 or a relative time (by a real number).
+@c JP
+@var{mutex}がロックされた状態で、@var{timeout}が省略されるか@code{#f}ならば、
+この手続きは@var{mutex}のロックが解放されるまでブロックします。
+@var{timeout}が指定されている場合は、ロックが獲得できなかったケースでは
+指定された時間に達した時に@code{mutex-lock!}は戻ります。
+@var{timeout}には、絶対的な時間(@code{<time>}オブジェクト、@ref{SRFI time}参照)か、
+相対的な時間を(実数で)指定できます。
+@c COMMON
 
+@c EN
 @code{Mutex-lock!} returns @code{#t} if @var{mutex} is successfully
 locked, or @code{#f} if timeout reached.
+@c JP
+@var{mutex}のロックが成功すると@code{mutex-lock!}は@code{#t}を返し、
+タイムアウトに達すると@code{#f}が返ります。
+@c COMMON
 
+@c EN
 Note that @var{mutex} itself doesn't implements a 'recursive lock'
 feature; that is, if a thread that has locked @var{mutex} tries to lock
 @var{mutex} again, the thread blocks.  It is not difficult, however,
 to implement a recursive lock semantics on top of this mutex.
 The following example is taken from SRFI-18 document:
+@c JP
+@var{mutex}それ自身は'再帰的なロック'の機能は実装していません。
+つまり、@var{mutex}をロックしたスレッドが再度@var{mutex}をロックしようと
+すると、そのスレッドはブロックします。しかし、このロックオブジェクトに
+基づいて再帰的なロックをセマンティクスを実装することは難しくありません。
+次の例は、SRFI-18のドキュメントから引用したものです。
+@c COMMON
 
 @example
 (define (mutex-lock-recursively! mutex)
@@ -21854,10 +22227,18 @@ The following example is taken from SRFI-18 document:
 @end defun
 
 @defun mutex-unlock! mutex &optional condition-variable timeout
+@c EN
 [SRFI-18], [SRFI-21]
 Unlocks @var{mutex}.  The state of @var{mutex} becomes unlocked/not-abandoned.
 It is allowed to unlock a mutex that is not owned by the calling thread.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{mutex}をアンロックします。@var{mutex}の状態は、ロックされていない/放棄されていない状態と
+なります。呼び出しているスレッドにより所有されていないロックオブジェクトをアンロックすることは
+許されています。
+@c COMMON
 
+@c EN
 If optional @var{condition-variable} is given, @code{mutex-unlock!}
 serves the "condition variable wait" operation (e.g. @code{pthread_cond_wait}
 in POSIX threads).   The current thread atomically wait on
@@ -21871,6 +22252,22 @@ a real number to represent a relative time in seconds, or @code{#f} which
 means never.  The calling thread may be unblocked prematurely,
 so it should reacquire the lock of @var{mutex} and checks the
 condition, as in the follwing example (it is taken from SRFI-18 document):
+@c JP
+オプショナル引数の@var{conditional-variable}が与えられている場合、
+@code{mutex-unlock!}は``条件変数待機''の動作も行います(例えば、POSIXスレッドの
+@code{pthread_cond_wait})。
+現在のスレッドは@var{condition-variable}をアトミックに待ち、@var{mutex}を
+アンロックします。
+スレッドは、他のスレッドが@var{condition-variable}にシグナルを通知するか
+(下記の@code{condition-variable-signal!}と@code{condition-variable-broadcast!}を
+見て下さい)、
+@var{timeout}が与えられていてそれに達すると、ブロックが解除されます。
+引数@var{timeout}は、絶対的な時間を表す@code{<time>}オブジェクト(@ref{SRFI time}参照)、
+相対的な時間を秒数で表す実数、タイムアウトしないことを表す@code{#f}のいずれかです。
+呼び出しているスレッドは繰り上げてブロックを解除するかも知れないので、
+次に挙げる例(SRFI-18のドキュメントより引用)のように、
+@var{mutex}のロックを再獲得して条件を検査するべきです。
+@c COMMON
 
 @example
 (let loop ()
@@ -21887,112 +22284,212 @@ condition, as in the follwing example (it is taken from SRFI-18 document):
 
 @deftp {Builtin Class} <condition-variable>
 @clindex condition-variable
+@c EN
 A condition variable keeps a set of threads that are waiting for
 a certain condition to be true.  When a thread modifies the state 
 of the concerned condition, it can call @code{condition-variable-signal!}
 or @code{condition-variable-broadcast!}, which unblock one or more
 waiting threads so that they can check if the condition is satisfied.
+@c JP
+条件変数は、ある条件が真になるのを待っているスレッドの集合を保持します。
+あるスレッドがその条件を変更する時、@code{condition-variable-signal!}あるいは
+@code{condition-variable-broadcast!}が呼ばれ、それは1つ以上の待機中の
+スレッドのブロックを解除するため、それらのスレッドは条件が満足するかどうか
+検査できます。
+@c COMMON
 
+@c EN
 A condition variable object has the following slots.
+@c JP
+条件変数オブジェクトは以下のスロットを持ちます。
+@c COMMON
 
 @defivar <mutex> name
+@c EN
 The name of the condition variable.
+@c JP
+条件変数の名前。
+@c COMMON
 @end defivar
 
 @defivar <mutex> specific
-A slot an application can keep arbitrary data. 
+@c EN
+A slot an application can keep arbitrary data.
+@c JP
+アプリケーションが任意のデータを保持できるスロット。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun condition-variable? obj
+@c EN
 [SRFI-18], [SRFI-21]
 Returns @code{#t} if @var{obj} is a condition variable,
 @code{#f} otherwise.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{obj}が条件変数なら@code{#t}、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun make-condition-variable &optional name
+@c EN
 [SRFI-18], [SRFI-21]
 Returns a new condition variable.  You can give its name by
 optional @var{name} argument.
+@c JP
+[SRFI-18]、[SRFI-21]
+新しい条件変数を返します。オプショナル引数@var{name}で
+その名前を与えることができます。
+@c COMMON
 @end defun
 
 @defun condition-variable-name cv
+@c EN
 [SRFI-18], [SRFI-21]
 Returns the name of the condition variable.
+@c JP
+[SRFI-18]、[SRFI-21]
+条件変数の名前を返します。
+@c COMMON
 @end defun
 
 @defun condition-variable-specific cv
 @defunx condition-variable-specific-set! cv value
+@c EN
 [SRFI-18], [SRFI-21]
 Gets/sets the specific value of the condition variable.
+@c JP
+[SRFI-18]、[SRFI-21]
+条件変数の固有の値を取得/セットします。
+@c COMMON
 @end defun
 
-@defun condition-variable-signal! cv 
+@defun condition-variable-signal! cv
+@c EN
 [SRFI-18], [SRFI-21]
 If there are threads waiting on @var{cv}, causes the scheduler to select
 one of them and to make it runnable.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{cv}で待機しているスレッドがある場合は、それらのうちの1つがスケジューラに
+より選択され、実行可能にされます。
+@c COMMON
 @end defun
 
 @defun condition-variable-broadcast! cv
+@c EN
 [SRFI-18], [SRFI-21]
 Unblocks all the threads waiting on @var{cv}.
+@c JP
+[SRFI-18]、[SRFI-21]
+@var{cv}で待機している全てのスレッドのブロックを解除します。
+@c COMMON
 @end defun
 
 @node Thread exceptions,  , Synchronization primitives, gauche.threads - Threads
 @subsection Thread exceptions
 
+@c EN
 Some types of exceptions may be thrown from thread-related procedures.
 These exceptions can be handled by Gauche's exception mechanism
-(@xref{Exceptions}).   
-
-
+(@xref{Exceptions}).
+@c JP
+例外のいくつかのタイプは、スレッド関連の手続きから投げられます。
+これらの例外は、Gaucheの例外メカニズム(@ref{Exceptions}参照)により
+扱われます。
+@c COMMON
 
 @deftp {Builtin Class} <thread-exception>
 @clindex thread-exception
+@c EN
 A base class of thread-related exceptions.  Inherits @code{<exception>} class.
 It has one slot.
+@c JP
+スレッド関連の例外の基底クラスです。@code{<exception>}クラスを継承しています。
+スロットを1つ持っています。
+@c COMMON
 
 @defivar <thread-exception> thread
+@c EN
 A thread that threw this exception.
+@c JP
+この例外を投げたスレッド。
+@c COMMON
 @end defivar
 @end deftp
 
 @deftp {Builtin Class} <join-timeout-exception>
 @clindex join-timeout-exception
+@c EN
 An exception thrown by @code{thread-join!} when a timeout reaches
 before the waited thread returns.  Inherits @code{<thread-exception>}.
+@c JP
+待機していたスレッドが戻る前にタイムアウトに達した時に@code{thread-join!}によって
+投げられる例外。@code{<thread-exception>}を継承しています。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <abandoned-mutex-exception>
 @clindex abandoned-mutex-exception
+@c EN
 An exception thrown by @code{mutex-lock!} when a @var{mutex} to be
 locked is in unlocked/abandoned state.  Inherits @code{<thread-exception>}.
 It has one additional slot.
+@c JP
+ロックされる@var{mutex}が、ロックされていない/放棄された状態(unlocked/abandoned)に
+あるときに@code{mutex-lock!}により投げられる例外。
+@code{<thread-exception>}を継承しています。スロットを1つ持ちます。
+@c COMMON
 
 @defivar <abandoned-mutex-exception> mutex
+@c EN
 A mutex that caused this exception.
+@c JP
+この例外の原因となったロックオブジェクト。
+@c COMMON
 @end defivar
 @end deftp
 
 @deftp {Builtin Class} <terminated-thread-exception>
 @clindex terminated-thread-exception
+@c EN
 An exception thrown by @code{thread-join!} when the waited thread
 is terminated abnormally (by @code{thread-terminate!}).
 Inherits @code{<thread-exception>}.  It has one additional slot.
+@c JP
+待機していたスレッドが(@code{thread-terminate!}により)異常終了した
+場合に(@code{thread-join!}により)投げられる例外。
+@code{<thread-exception>}を継承し、スロットを1つ持ちます。
+@c COMMON
 
 @defivar <terminated-thread-exception> terminator
+@c EN
 A thread that terminated the thread that causes this exception.
+@c JP
+この例外の原因となったスレッドを終了したスレッド。
+@c COMMON
 @end defivar
 @end deftp
 
 @deftp {Builtin Class} <uncaught-exception>
 @clindex uncaught-exception
+@c EN
 An exception thrown by @code{thread-join!} when the waited thread
 is terminated by an uncaught exception.
 Inherits @code{<thread-exception>}.  It has one additional slot.
+@c JP
+待機していたスレッドが捕捉されない例外により終了された場合に
+@code{thread-join!}により投げられる例外。
+@code{<thread-exception>}を継承し、スロットを1つ持ちます。
+@c COMMON
 
 @defivar <uncaught-exception> reason
+@c EN
 An exception that caused the termination of the thread.
+@c JP
+そのスレッドの終了の原因となった例外。
+@c COMMON
 @end defivar
 @end deftp
 
@@ -22000,16 +22497,29 @@ An exception that caused the termination of the thread.
 @defunx abandoned-mutex-exception? obj
 @defunx terminated-thread-exception? obj
 @defunx uncaught-exception? obj
+@c EN
 [SRFI-18], [SRFI-21]
 These procedures checks if @var{obj} is a certain type of exception.
 Provided for the compatibility to SRFI-18.
+@c JP
+[SRFI-18]、[SRFI-21]
+これらの手続きは、@var{obj}が特定のタイプの例外かどうかを検査します。
+SRFI-18との互換性のために提供されています。
+@c COMMON
 @end defun
 
 @defun uncaught-exception-reason exc
+@c EN
 [SRFI-18], [SRFI-21]
 Returns the value of @code{reason} slot of @code{<uncaught-exception>}
 object.
 Provided for the compatibility to SRFI-18.
+@c JP
+[SRFI-18]、[SRFI-21]
+@code{<uncaught-exception>}オブジェクトの@code{reason}スロットの値を
+返します。
+SRFI-18との互換性のために提供されています。
+@c COMMON
 @end defun
 
 
