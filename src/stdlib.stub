@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.53 2001-05-08 18:26:34 shirok Exp $
+;;; $Id: stdlib.stub,v 1.54 2001-05-09 10:26:33 shirok Exp $
 ;;;
 
 
@@ -65,7 +65,7 @@
 (define-cproc = (arg0 arg1 &rest args)
   (inliner (case-nargs (2 "SCM_VM_NUMEQ2") (else #f)))
   "  for (;;) {
-  if (Scm_NumCmp(arg0, arg1) != 0) return SCM_FALSE;
+  if (!Scm_NumEq(arg0, arg1)) return SCM_FALSE;
   if (SCM_NULLP(args)) return SCM_TRUE;
   arg1 = SCM_CAR(args); args = SCM_CDR(args);
   }")
