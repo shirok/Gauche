@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.6 2001-06-15 20:10:31 shirok Exp $
+ *  $Id: net.h,v 1.7 2001-06-22 08:17:48 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -132,18 +132,62 @@ extern ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
  */
 
 /*
- * Protcol Entry
+ * Host entry
+ */
+typedef struct ScmSysHostentRec {
+    SCM_HEADER;
+    ScmObj name;                /* Scheme string of the host */
+    ScmObj aliases;             /* list of aliases */
+    ScmObj addresses;           /* list of addresses */
+} ScmSysHostent;
+
+extern ScmClass Scm_SysHostentClass;
+#define SCM_CLASS_SYS_HOSTENT  (&Scm_SysHostentClass)
+#define SCM_SYS_HOSTENT        ((ScmHostent*)obj)
+#define SCM_SYS_HOSTENT_P      SCM_XTYPEP(obj, SCM_CLASS_SYS_HOSTENT)
+
+extern ScmObj Scm_GetHostByName(const char *name);
+extern ScmObj Scm_GetHostByAddr(const char *addr, int type);
+extern int Scm_HostNameToAddr(const char *name, char *addrbuf, int *addrlen);
+
+/*
+ * Protocol Entry
  */
 
-typedef struct ScmSysProtoEntRec {
+typedef struct ScmSysProtoentRec {
     SCM_HEADER;
-    struct protoent entry;
-} ScmSysProtoEnt;
+    ScmObj name;
+    ScmObj aliases;
+    ScmObj proto;
+} ScmSysProtoent;
 
-extern ScmClass Scm_ProtoEntClass;
-#define SCM_CLASS_PROTOENT  (&Scm_ProtoEntClass)
-#define SCM_PROTOENT(obj)   ((ScmProtoEnt*)obj)
-#define SCM_PROTOENTP(obj)  SCM_XTYPEP(obj, SCM_CLASS_PROTOENT)
+extern ScmClass Scm_SysProtoentClass;
+#define SCM_CLASS_SYS_PROTOENT  (&Scm_SysProtoentClass)
+#define SCM_SYS_PROTOENT(obj)   ((ScmSysProtoent*)obj)
+#define SCM_SYS_PROTOENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_PROTOENT)
+
+extern ScmObj Scm_GetProtoByName(const char *name);
+extern ScmObj Scm_GetProtoByNumber(int proto);
+    
+/*
+ * Service Entry
+ */
+
+typedef struct ScmSysServentRec {
+    SCM_HEADER;
+    ScmObj name;
+    ScmObj aliases;
+    ScmObj port;
+    ScmObj proto;
+} ScmSysServent;
+
+extern ScmClass Scm_SysServentClass;
+#define SCM_CLASS_SYS_SERVENT  (&Scm_SysServentClass)
+#define SCM_SYS_SERVENT(obj)   ((ScmSysServent*)obj)
+#define SCM_SYS_SERVENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_SERVENT)
+
+extern ScmObj Scm_GetServByName(const char *name, const char *proto);
+extern ScmObj Scm_GetServByPort(int port, const char *proto);
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.5 2001-06-21 07:34:07 shirok Exp $
+dnl $Id: configure.in,v 1.6 2001-06-22 08:17:48 shirok Exp $
 AC_INIT(net.c)
 AC_CONFIG_HEADER(netconfig.h)
 
@@ -52,11 +52,7 @@ AC_CACHE_CHECK(number of arguments for gethostbyname_r,
     char *n; struct hostent *h; char buf[4096]; int len=4096; int err;
     (void)gethostbyname_r(n, h, buf, len, &err);
     ], ac_cv_func_gethostbyname_r=5, [
-  AC_TRY_COMPILE([#include <netdb.h>],[
-    char *n; struct hostent *h; struct hostent_data d;
-    (void)gethostbyname_r(n, h, &d);
-    ], ac_cv_func_gethostbyname_r=3, [
-  ac_cv_func_gethostbyname_r=no])])])])
+  ac_cv_func_gethostbyname_r=no])])])
 
 if test $ac_cv_func_gethostbyname_r != no; then
   AC_DEFINE_UNQUOTED(GETHOSTBYNAME_R_NUMARGS, $ac_cv_func_gethostbyname_r)

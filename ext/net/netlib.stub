@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.6 2001-06-19 19:49:02 shirok Exp $
+;;  $Id: netlib.stub,v 1.7 2001-06-22 08:17:48 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -70,6 +70,9 @@
 
 (define-symbol PF_UNIX "sym_pf_unix" "Scm_MakeInteger(PF_UNIX)")
 (define-symbol PF_INET "sym_pf_inet" "Scm_MakeInteger(PF_INET)")
+
+(define-symbol AF_UNIX "sym_af_unix" "Scm_MakeInteger(AF_UNIX)")
+(define-symbol AF_INET "sym_af_inet" "Scm_MakeInteger(AF_INET)")
 
 (define-symbol SOCK_STREAM "sym_sock_stream" "Scm_MakeInteger(SOCK_STREAM)")
 (define-symbol SOCK_DGRAM  "sym_sock_dgram" "Scm_MakeInteger(SOCK_DGRAM)")
@@ -151,6 +154,36 @@
   (assert (small-integer? option))
   (assert (small-integer? rsize))
   "  SCM_RETURN(Scm_SocketGetOpt(sock, level, option, rsize));")
+
+;;----------------------------------------------------------
+;; netdb routines
+
+(define-cproc sys-gethostbyname (name)
+  (assert (string? name))
+  "  SCM_RETURN(Scm_GetHostByName(Scm_GetStringConst(name)));")
+
+(define-cproc sys-gethostbyaddr (addr type)
+  (assert (string? addr))
+  (assert (small-integer? type))
+  "  SCM_RETURN(Scm_GetHostByAddr(Scm_GetStringConst(addr), type));")
+
+(define-cproc sys-getprotobyname (name)
+  (assert (string? name))
+  "  SCM_RETURN(Scm_GetProtoByName(Scm_GetStringConst(name)));")
+
+(define-cproc sys-getprotobynumber (number)
+  (assert (small-integer? number))
+  "  SCM_RETURN(Scm_GetProtoByNumber(number));")
+
+(define-cproc sys-getservbyname (name proto)
+  (assert (string? name))
+  (assert (string? proto))
+  "  SCM_RETURN(Scm_GetServByName(Scm_GetStringConst(name), Scm_GetStringConst(proto)));")
+
+(define-cproc sys-getservbyport (port proto)
+  (assert (small-integer? port))
+  (assert (string? proto))
+  "  SCM_RETURN(Scm_GetServByPort(port, Scm_GetStringConst(proto)));")
 
 ;; Local variables:
 ;; mode: scheme

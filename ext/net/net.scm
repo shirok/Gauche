@@ -12,20 +12,23 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.3 2001-06-13 19:56:53 shirok Exp $
+;;;  $Id: net.scm,v 1.4 2001-06-22 08:17:48 shirok Exp $
 ;;;
 
 (define-module gauche.net
   (use srfi-2)
   (use srfi-13)
   (export <socket> make-socket
-          pf_unix pf_inet sock_stream sock_dgram sock_raw
+          pf_unix pf_inet af_unix af_inet sock_stream sock_dgram sock_raw
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect
           socket-listen socket-accept socket-setsockopt socket-getsockopt
           <sockaddr> <sockaddr-in> <sockaddr-un>
           sockaddr-name sockaddr-family
           make-client-socket make-server-socket
+          <sys-hostent> sys-gethostbyname sys-gethostbyaddr
+          <sys-protoent> sys-getprotobyname sys-getprotobynumber
+          <sys-servent> sys-getservbyname sys-getservbyport
           ))
           
 (select-module gauche.net)
