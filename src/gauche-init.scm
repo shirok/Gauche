@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.103 2003-01-08 09:35:21 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.104 2003-05-01 09:37:37 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -35,6 +35,22 @@
 
 (define-macro (export-all)
   `',(%export-all))
+
+(define-macro (export-if-defined . symbols)
+  ;; CAVEAT: this form sees whether the given symbols are defined or not
+  ;; _at_compile_time_.  So the definitions of symbols have to appear
+  ;; before this form.   Furthermore, the semantics of this form is ambigous
+  ;; when used except top-level.  It's not very nice, so you should
+  ;; avoid this form unless you really need it.
+  ;; NB: filter is in srfi-1, and we don't want to load it here.  Ugh.
+  `(export
+    ,@(let loop ((syms symbols) (r '()))
+        (cond ((null? syms) (reverse! r))
+              ((not (symbol? (car syms)))
+               (error "non-symbol in export-if-defined form:" (car syms)))
+              ((symbol-bound? (car syms))
+               (loop (cdr syms) (cons (car syms) r)))
+              (else (loop (cdr syms) r))))))
 
 ;; Preferred way
 ;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
