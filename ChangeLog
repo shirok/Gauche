@@ -1,3 +1,13 @@
+2002-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/csv.scm : provisional fix for the problem that the
+	  consecutive tabs are ignored even if the separator is a tab.
+	  The real fix should be to add the flag to csv-reader to
+	  tell whether the reader should strip whitespaces surrounding
+	  field data.
+	* ext/mt-random/mt-lib.stub : fixed a bug the mt-set-random-seed!
+	  always sets the same value if a bignum is given.
+
 2002-12-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.scm (rxmatch-case): catch the case that caused
