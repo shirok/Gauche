@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.32 2002-10-15 10:28:00 shirok Exp $
+ *  $Id: regexp.c,v 1.33 2002-10-18 05:00:17 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -127,7 +127,7 @@ static ScmRegexp *make_regexp(void)
  * Compiler
  */
 
-/* Two-pass compiler.
+/* Two-and-half-pass compiler.
  *
  *  pass 1: parse pattern, generating parse tree and also counting sizes
  *          of necessary storage.
@@ -341,7 +341,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
                 goto ordchar;
             }
         case '\\':
-            /* TODO: handle special excape sequences */
+            /* TODO: handle special escape sequences */
             SCM_GETC(ch, ctx->ipat);
             if (ch == SCM_CHAR_INVALID)
                 Scm_Error("stray backslash at the end of pattern: %S\n",
@@ -819,11 +819,11 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     compiled = re_compile_pass1(rx, &cctx);
     re_compile_setup_charsets(rx, &cctx);
 
-    /* pass 2 : count required bytecode size */
+    /* pass 2.1 : count required bytecode size */
     cctx.codemax = 1;
     re_compile_pass2(compiled, rx, &cctx, TRUE, FALSE, TRUE);
     
-    /* pass 3 : generate bytecodes */
+    /* pass 2.2 : generate bytecodes */
     cctx.code = SCM_NEW_ATOMIC2(char *, cctx.codemax);
     rx->numCodes = cctx.codemax;
     re_compile_pass2(compiled, rx, &cctx, TRUE, TRUE, TRUE);
@@ -868,7 +868,7 @@ struct match_ctx {
     sigjmp_buf cont;
 };
 
-#define MAX_STACK_USAGE   0x100000 /* 1MB */
+#define MAX_STACK_USAGE   0x100000
 
 static struct match_list *push_match(struct match_list *mlist,
                                             int grpnum, const char *ptr)

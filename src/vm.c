@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.181 2002-10-15 10:28:00 shirok Exp $
+ *  $Id: vm.c,v 1.182 2002-10-18 05:00:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1735,7 +1735,7 @@ static ScmObj user_eval_inner(ScmObj program)
                 /* This loop is the outermost C stack, and nobody will
                    capture the error.  Usually this means we're running
                    scripts.  We can safely exit here, for the dynamic
-                   stack is already rewind. */
+                   stack is already rewound. */
                 exit(EX_SOFTWARE);
             } else {
                 /* Jump again until C stack is recovered.  We sould pop
@@ -1946,7 +1946,7 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
  *        (lambda () (set! %xh prev)))))
  *
  * In C level, the chain of the handlers are represented in the chain
- * of ScmExcapePoints.
+ * of ScmEscapePoints.
  *
  * Note that this model assumes an exception handler returns unless it
  * explictly invokes continuation captured elsewhere.   In reality,
