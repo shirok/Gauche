@@ -30,21 +30,21 @@ test : all
 	@GAUCHE_LOAD_PATH=$(GAUCHE_TOP)src:$(GAUCHE_TOP)lib $(GOSH) test.scm > test.log
 
 install : all
-	@if test ! -z $(HEADERS); then \
-	  for f in $(HEADERS); do \
+	@for f in $(HEADERS) _end; do \
+	  if test $$f != _end; then \
 	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
-	  done; \
-	fi
-	@if test ! -z $(SCMFILES); then \
-	  for f in $(SCMFILES); do \
+	  fi; \
+	done
+	@for f in $(SCMFILES) _end; do \
+	  if test $$f != _end; then \
 	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
-	  done; \
-	fi
-	@if test ! -z $(ARCHFILES); then \
-	  for f in $(ARCHFILES); do \
+	  fi; \
+	done
+	@for f in $(ARCHFILES) _end; do \
+	  if test $$f != _end; then \
 	    $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
-	  done; \
-	fi
+	  fi; \
+	done
 
 clean :
 	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
