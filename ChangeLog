@@ -1,5 +1,20 @@
+2001-06-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub (sys-pipe): INCOMPATIBLE CHANGE: sys-pipe now
+	  returns two values, instead of one value of a list of two ports.
+	  Other files are fixed accordingly.
+	* src/syslib.stub (sys-wait): INCOMPATIBLE CHANGE: sys-wait
+	  and sys-waitpid now returns two values, pid and exit code,
+	  instead of cons of them.
+	  Other files are fixed accordingly.
+	* src/vm.c, src/gauche/vminsn.h, src/stdlib.stub: added instructions
+	  for values, char?, pair?, string?,... and make them inline.
+	* ext/net/net.scm : fixed bugs.
+
 2001-06-23  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/configure.in : check existence of get*by*_r functions
+	  before checking their synopsys.  Suggested by MINOURA Makoto.
 	* release 0.3.15
 	* doc/gauche-ref.texi : added description of process ports.
 
