@@ -24,6 +24,7 @@ logger.scm
 text.scm
 gettext.scm
 util.scm
+match.scm
 io2.scm
 process.scm
 version.scm

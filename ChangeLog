@@ -1,5 +1,11 @@
 2004-05-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/match.scm: added Andrew Wright's match macro, tailored
+	  for Gauche.
+	* lib/Makefile.in: ditto
+	* test/match.scm: test for util.match
+	* test/TESTS: ditto
+	
 	* src/test.scm : added *test-report-error* variable to control
 	  showing stack trace of captured errors.
 

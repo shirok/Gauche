@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.114 2004-04-23 06:01:26 shirok Exp $
+#  $Id: Makefile.in,v 1.115 2004-05-12 12:10:10 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place clean distclean \
         maintainer-clean
@@ -70,7 +70,7 @@ SCMFILES = srfi-0.scm \
        math/const.scm \
        util/isomorph.scm util/toposort.scm util/queue.scm util/tree.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
-       util/record.scm \
+       util/record.scm util/match.scm \
        compat/jfilter.scm compat/stk.scm \
        file/filter.scm file/util.scm \
        rfc/822.scm rfc/mime.scm rfc/base64.scm rfc/uri.scm rfc/cookie.scm \
