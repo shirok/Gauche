@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.147 2002-05-17 22:25:48 shirok Exp $
+ *  $Id: vm.c,v 1.148 2002-05-18 04:08:20 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -83,6 +83,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->specific = SCM_FALSE;
     v->thunk = NULL;
     v->result = SCM_UNDEFINED;
+    v->resultException = SCM_UNDEFINED;
     v->module = module ? module : base->module;
     v->cstack = base ? base->cstack : NULL;
     
@@ -2397,7 +2398,20 @@ static void *thread_entry(void *vm)
         /* NB: at this point, theVM is not set and we can't use Scm_Error. */
         Scm_Panic("pthread_setspecific failed");
     }
-    SCM_VM(vm)->result = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
+    SCM_UNWIND_PROTECT {
+        SCM_VM(vm)->result = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
+    } SCM_WHEN_ERROR {
+        switch (SCM_VM(vm)->escapeReason) {
+        case SCM_VM_ESCAPE_CONT:
+            /* TODO: sets appropriate exception to resultException
+               instead of panic */
+            Scm_Panic("continuation thrown in different thread");
+        default:
+            Scm_Panic("unknown escape");
+        case SCM_VM_ESCAPE_ERROR:
+            SCM_VM(vm)->resultException = SCM_OBJ(SCM_VM(vm)->escapeData[1]);
+        }
+    } SCM_END_PROTECT;
     return NULL;
 }
 #endif /* GAUCHE_USE_PTHREAD */

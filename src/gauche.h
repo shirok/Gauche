@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.256 2002-05-17 10:36:29 shirok Exp $
+ *  $Id: gauche.h,v 1.257 2002-05-18 04:08:20 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -312,7 +312,7 @@ typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmRegexpRec    ScmRegexp;
 typedef struct ScmRegMatchRec  ScmRegMatch;
-typedef struct ScmExceptionRec ScmException;
+typedef struct ScmErrorRec     ScmError;
 typedef struct ScmWriteContextRec ScmWriteContext;
 
 /*---------------------------------------------------------
@@ -1861,28 +1861,22 @@ SCM_EXTERN ScmObj Scm_Force(ScmObj p);
  *  In Gauche, you can throw any object.  It is a programmer's
  *  choice of how to interpret them.  However, there are some
  *  predefined objects that the Gauche system throws.
- *
- *  <exception>
- *    +- <debug-break>
- *    +- <application-exit>
- *    +- <error>
- *         +- <system-error>
  */
 
-/* <exception> class is just a virtual class */
+/* <exception> : abstract class for predefined exceptions. */
 SCM_CLASS_DECL(Scm_ExceptionClass);
 #define SCM_CLASS_EXCEPTION        (&Scm_ExceptionClass)
 #define SCM_EXCEPTIONP(obj)        Scm_TypeP(obj, SCM_CLASS_EXCEPTION)
 
-/* <error>: Root of all errors */
-typedef struct ScmErrorRec {
+/* <error>: root of all errors (uncontinuable exceptions). */
+struct ScmErrorRec {
     SCM_HEADER;
     ScmObj message;             /* error message */
-} ScmError;
+};
 
 SCM_CLASS_DECL(Scm_ErrorClass);
 #define SCM_CLASS_ERROR            (&Scm_ErrorClass)
-#define SCM_ERRORP(obj)            Scm_TypeP(obj, SCM_CLASS_EXCEPTION)
+#define SCM_ERRORP(obj)            Scm_TypeP(obj, SCM_CLASS_ERROR)
 #define SCM_ERROR(obj)             ((ScmError*)(obj))
 #define SCM_ERROR_MESSAGE(obj)     SCM_ERROR(obj)->message
 

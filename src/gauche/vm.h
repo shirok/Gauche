@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.64 2002-05-14 09:36:03 shirok Exp $
+ *  $Id: vm.h,v 1.65 2002-05-18 04:08:23 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -195,6 +195,7 @@ struct ScmVMRec {
     ScmObj specific;            /* Scheme thread specific data. */
     ScmProcedure *thunk;        /* Entry point of this VM. */
     ScmObj result;              /* Result of thunk. */
+    ScmObj resultException;     /* Exception that causes the thread to terminate.*/
     ScmModule *module;          /* current global namespace.  note that this
                                    is used only in compilation. */
     ScmCStack *cstack;          /* current escape point.  see the comment of

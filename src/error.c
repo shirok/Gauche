@@ -1,7 +1,7 @@
 /*
  * error.c - error handling
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, disribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.29 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: error.c,v 1.30 2002-05-18 04:08:20 shirok Exp $
  */
 
 #include <errno.h>
@@ -20,16 +20,49 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
-
-
+#include "gauche/exception.h"
 
 /*-----------------------------------------------------------
  * Exception class hierarchy
+ *
+ *   SRFI-18 semantics allows exception to be "continuable",
+ *   that is, an exception handler may return to the
+ *   continuation of the primitive that raised an exception.
+ *   One of the useful way to have such exception is just to ignore
+ *   certain conditions.  In some cases, however, it is not
+ *   desirable for exception handlers to return.
+ *
+ *   In Gauche, two class <exception> and <error> is defined;
+ *   the former can be used for continuable exception.  The latter
+ *   can be used for uncontinuable exception.  The Gauche primitive
+ *   checks if the exception handler returns on <error> exception,
+ *   and handles it properly.  See Scm_VMThrowException.
+ *   Note that the user program can throw any Scheme object.
+ *   Scheme objects except <error> are treated as continuable exception.
+ *
+ *   Exception class hierarchy:
+ *
+ *    <exception>
+ *      +- <debug-break>
+ *      +- <thread-exception>
+ *           +- <join-timeout-exception>
+ *           +- <abandoned-mutex-exception>
+ *           +- <terminated-thread-exception>
+ *           +- <uncaught-exception>
+ *    <error>
+ *      +- <system-error>
+ *      +- <uncontinuable-exception-error>
  */
 
 static ScmClass *exception_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_ErrorClass),
     SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+static ScmClass *error_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ErrorClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
@@ -91,6 +124,22 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_ApplicationExitClass,
 /*
  * Constructors
  */
+
+static ScmObj thread_exception_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmThreadException *e = SCM_ALLOCATE(ScmThreadException, klass);
+    SCM_SET_CLASS(e, klass);
+    e->thread = NULL;
+    e->data = SCM_UNDEFINED;
+    return SCM_OBJ(e);
+}
+
+ScmObj Scm_MakeThreadException(ScmClass *klass, ScmVM *thread)
+{
+    ScmThreadException *e = (ScmThreadException*)thread_exception_allocate(klass, SCM_NIL);
+    e->thread = thread;
+    return SCM_OBJ(e);
+}
 
 static ScmObj error_allocate(ScmClass *klass, ScmObj initargs)
 {
