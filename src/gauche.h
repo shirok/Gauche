@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.151 2001-06-04 02:18:15 shirok Exp $
+ *  $Id: gauche.h,v 1.152 2001-06-04 02:26:10 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -743,6 +743,9 @@ extern ScmObj  Scm_StringToList(ScmString *str);
 extern ScmObj  Scm_ListToString(ScmObj chars);
 extern ScmObj  Scm_StringFill(ScmString *str, ScmChar c,
                               ScmObj maybeStart, ScmObj maybeEnd);
+
+extern ScmObj Scm_ConstCStringArrayToList(const char **array, int size);
+extern ScmObj Scm_CStringArrayToList(char **array, int size);
 
 /* You can allocate a constant string statically, if you calculate
    the length by yourself. */

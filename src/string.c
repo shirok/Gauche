@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.45 2001-06-02 09:01:46 shirok Exp $
+ *  $Id: string.c,v 1.46 2001-06-04 02:26:10 shirok Exp $
  */
 
 #include <stdio.h>
@@ -832,6 +832,32 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     str->size = prelen + (end-start)*chlen + postlen;
     str->start = newstr;
     return SCM_OBJ(str);
+}
+
+ScmObj Scm_ConstCStringArrayToList(const char **array, int size)
+{
+    int i;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    if (size < 0) {
+        for (;*array; array++) SCM_APPEND1(h, t, SCM_MAKE_STR(*array));
+    } else {
+        for (i=0; i<size; i++) SCM_APPEND1(h, t, SCM_MAKE_STR(*array));
+    }
+    return h;
+}
+
+ScmObj Scm_CStringArrayToList(char **array, int size)
+{
+    int i;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    if (size < 0) {
+        for (;*array; array++)
+            SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array));
+    } else {
+        for (i=0; i<size; i++)
+            SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array));
+    }
+    return h;
 }
 
 /*----------------------------------------------------------------
