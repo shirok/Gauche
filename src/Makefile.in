@@ -31,7 +31,7 @@ ARCH = @host@
 INSTALL_HEADERS = gauche.h ../gc/gc.h 
 INSTALL_SUBHEADERS = gauche/config.h gauche/char_euc_jp.h gauche/vm.h \
                      gauche/vminsn.h gauche/predef-syms.h
-INSTALL_LIBS = libgauche.a
+INSTALL_LIBS = libgauche.a @SHLIB_LIBGAUCHE@
 INSTALL_BINS = gosh gauche-config
 INSTALL_SCMS = genstub gauche-init.scm
 
@@ -57,7 +57,7 @@ TESTFILES = ../test/primsyn.scm \
 
 HDRS = gauche.h gauche/arch.h
 
-all : gosh
+all : gosh @SHLIB_LIBGAUCHE@
 
 gosh : libgauche.a main.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o gosh main.o -L. -lgauche $(LIBS)
@@ -71,6 +71,9 @@ syslib.c : syslib.stub genstub
 libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) x $(GCLIB)
 	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
+
+libgauche.@SHLIB_DSO_SUFFIX@ : $(OBJS) $(GCLIB)
+	$(LD) @SHLIB_DSO_LDFLAGS@ libgauche.@SHLIB_DSO_SUFFIX@ $(OBJS) `$(AR) t $(GCLIB)` $(LIBS)
 
 gauche/arch.h : Makefile
 	@rm -f gauche/arch.h
@@ -89,7 +92,7 @@ test : gosh
 	@echo "See test.log for details."
 
 clean :
-	rm -f core gosh *.o *~ *.a *.t test.log gauche/*~
+	rm -f core gosh @SHLIB_LIBGAUCHE@ *.o *~ *.a *.t test.log gauche/*~
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
