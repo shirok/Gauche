@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-14.scm,v 1.3 2001-04-05 08:17:41 shiro Exp $
+;;;  $Id: srfi-14.scm,v 1.4 2001-04-20 08:32:26 shiro Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -422,27 +422,22 @@
 ;; We need to switch charset contents by underlying character encoding.
 ;; for now, I put ascii stuff.
 
-(define char-set:lower-case (%char-set-add-range! (char-set) #\a #\z))
-(define char-set:upper-case (%char-set-add-range! (char-set) #\A #\Z))
-(define char-set:title-case (%char-set-add-range! (char-set) #\A #\Z))
-(define char-set:letter (char-set-union char-set:lower-case char-set:upper-case))
-(define char-set:digit (string->char-set "0123456789"))
-(define char-set:hex-digit (string->char-set "0123456789ABCDEFabcdef"))
-(define char-set:punctuation (string->char-set "!\"#%&'()*,-./:;?@[\\]_{}"))
-(define char-set:symbol (string->char-set "$+<=>^`|~"))
-(define char-set:whitespace (char-set #\space #\newline #\tab #\page
-                                      #\return)) ;TODO vertical-tab
-(define char-set:blank (char-set #\space #\tab))
-(define char-set:graphic (char-set-union char-set:letter
-                                         char-set:digit
-                                         char-set:punctuation
-                                         char-set:symbol))
-(define char-set:printing (char-set-union char-set:graphic char-set:whitespace))
-(define char-set:iso-control  (let ((cs (char-set)))
-                                (%char-set-add-range! cs 0 31)
-                                (%char-set-add-range! cs 127 127)))
-(define char-set:ascii (integer-range->char-set 0 128))
-(define char-set:empty (char-set))
-(define char-set:full (%char-set-complement! (char-set)))
+(define char-set:letter      (%char-set-predefined 1))   ; ALPHA
+(define char-set:blank       (%char-set-predefined 2))   ; BLANK
+(define char-set:iso-control (%char-set-predefined 3))   ; CNTRL
+(define char-set:digit       (%char-set-predefined 4))   ; DIGIT
+(define char-set:graphic     (%char-set-predefined 5))   ; GRAPH
+(define char-set:lower-case  (%char-set-predefined 6))   ; LOWER
+(define char-set:printing    (%char-set-predefined 7))   ; PRINT
+(define char-set:punctuation (%char-set-predefined 8))   ; PUNCT
+(define char-set:whitespace  (%char-set-predefined 9))   ; SPACE
+(define char-set:upper-case  (%char-set-predefined 10))  ; UPPER
+(define char-set:title-case  (%char-set-predefined 10))  ; UPPER
+(define char-set:hex-digit   (%char-set-predefined 11))  ; XDIGITS
+
+(define char-set:symbol      (string->char-set "$+<=>^`|~"))
+(define char-set:ascii       (integer-range->char-set 0 128))
+(define char-set:empty       (char-set))
+(define char-set:full        (%char-set-complement! (char-set)))
 
 (provide "srfi-14")
