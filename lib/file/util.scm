@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.7 2002-05-09 03:03:52 shirok Exp $
+;;;  $Id: util.scm,v 1.8 2002-05-09 09:52:21 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -37,7 +37,7 @@
           file-mtime=? file-mtime<? file-mtime<=? file-mtime>? file-mtime>=?
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
-          touch-file
+          touch-file copy-file
           ))
 (select-module file.util)
 
@@ -331,5 +331,72 @@
       (sys-utime pathname)
       (close-output-port (open-output-file pathname)))
   (values))
+
+;; copy-file
+;;  if-exists     - :error :supersede :backup #f
+;;  backup-suffix
+;;  safe
+;;  keep-timestamp
+(define (copy-file src dst . opts)
+  (let* ((if-exists (get-keyword :if-exists opts :error))
+         (backsfx   (get-keyword :backup-suffix opts ".orig"))
+         (safe      (get-keyword :safe opts #f))
+         (keeptime  (get-keyword :keep-timestamp opts #f))
+         (backfile  (string-append dst backsfx))
+         (times     '())
+         (tmpfile   #f)
+         (inport    #f)
+         (outport   #f))
+    (define (rollback)
+      (cond (inport  => close-input-port))
+      (cond (outport => close-output-port))
+      (cond (tmpfile => sys-unlink)))
+    (define (commit)
+      (cond (inport  => close-input-port))
+      (cond (outport => close-output-port))
+      (when tmpfile
+        (when (eq? if-exists :backup) (sys-rename dst backfile))
+        (sys-rename tmpfile dst))
+      (unless (null? times) (apply sys-utime dst times)))
+    (define (open-destination)
+      (if safe
+          (cond
+           ((and (eq? if-exists :error) (file-exists? dst))
+            (error "destination file exists" dst))
+           ((and (not if-exists) (file-exists? dst)) #f)
+           (else
+            (set!-values (outport tmpfile) (sys-mkstemp dst)) #t))
+          (cond
+           ((eq? if-exists :error)
+            (set! outport (open-output-file dst :if-exists :error)) #t)
+           ((not if-exists)
+            (set! outport (open-output-file dst :if-exists #f)) outport)
+           ((eq? if-exists :backup)
+            (when (file-exists? dst) (sys-rename dst backfile))
+            (set! outport (open-output-file dst)) #t)
+           (else
+            (set! outport (open-output-file dst :if-exists :supersede)) #t))
+          ))
+    (define (do-copy)
+      (with-error-handler
+       (lambda (e) (rollback) (raise e))
+       (lambda ()
+         (set! inport (open-input-file src))
+         (when keeptime
+           (set! times (let1 stat (sys-fstat inport)
+                         (map (l_ (slot-ref stat _)) '(atime mtime)))))
+         (begin0
+          (and (open-destination)
+               (copy-port inport outport)
+               #t)
+          (commit)))))
+
+    ;; body of copy-file
+    (unless (memq if-exists '(#f :error :supersede :backup))
+      (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
+    (when (and (file-exists? src) (file-eqv? src dst))
+      (errorf "source ~s and destination ~s are the same file" src dst))
+    (do-copy)
+    ))
 
 (provide "file/util")
