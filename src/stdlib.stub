@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.50 2001-05-05 21:33:20 shirok Exp $
+;;; $Id: stdlib.stub,v 1.51 2001-05-06 07:45:21 shirok Exp $
 ;;;
 
 
@@ -20,6 +20,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.1415926535897932384
+#endif
 "
 
 ;;
@@ -223,20 +227,68 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 ;; rationalize
 
-(define-cproc exp (z)  "  SCM_RETURN(Scm_Exp(z));")
-(define-cproc log (z)  "  SCM_RETURN(Scm_Log(z));")
-(define-cproc sin (z)  "  SCM_RETURN(Scm_Sin(z));")
-(define-cproc cos (z)  "  SCM_RETURN(Scm_Cos(z));")
-(define-cproc tan (z)  "  SCM_RETURN(Scm_Tan(z));")
-(define-cproc asin (z) "  SCM_RETURN(Scm_Asin(z));")
-(define-cproc acos (z) "  SCM_RETURN(Scm_Acos(z));")
+;; Transcedentals.  Complex numbers are handled in Scheme
+(define-cproc %exp (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(exp(Scm_GetDouble(x))));")
+(define-cproc %log (x)
+  "  int sign;
+  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  sign = Scm_Sign(x);
+  if (sign == 0) Scm_Error(\"can't take log of 0\");
+  if (sign < 0)
+    SCM_RETURN(Scm_MakeComplex(log(-Scm_GetDouble(x)), M_PI));
+  else
+    SCM_RETURN(Scm_MakeFlonum(log(Scm_GetDouble(x))));")
+(define-cproc %sin (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(sin(Scm_GetDouble(x))));")
+(define-cproc %cos (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(cos(Scm_GetDouble(x))));")
+(define-cproc %tan (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(tan(Scm_GetDouble(x))));")
+(define-cproc %asin (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(asin(Scm_GetDouble(x))));")
+(define-cproc %acos (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(acos(Scm_GetDouble(x))));")
 
-(define-cproc atan (z &optional x)
-  "  if (x == SCM_UNBOUND) SCM_RETURN(Scm_Atan(z));
-  else SCM_RETURN(Scm_Atan2(z, x));")
-(define-cproc sqrt (z)
-  "  SCM_RETURN(Scm_Sqrt(z));")
-(define-cproc expt (x y)
+(define-cproc %atan (z &optional x)
+  "  if (!SCM_REALP(z)) Scm_Error(\"real number required, but got %S\", z);
+  if (x == SCM_UNBOUND) {
+     SCM_RETURN(Scm_MakeFlonum(atan(Scm_GetDouble(z))));
+  } else {
+     if (!SCM_REALP(z)) Scm_Error(\"real number required, but got %S\", z);
+     SCM_RETURN(Scm_MakeFlonum(atan2(Scm_GetDouble(z), Scm_GetDouble(x))));
+  }")
+
+(define-cproc %sinh (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(sinh(Scm_GetDouble(x))));")
+(define-cproc %cosh (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(cosh(Scm_GetDouble(x))));")
+(define-cproc %tanh (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(tanh(Scm_GetDouble(x))));")
+(define-cproc %asinh (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(asinh(Scm_GetDouble(x))));")
+(define-cproc %acosh (x)
+  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(acosh(Scm_GetDouble(x))));")
+
+(define-cproc %sqrt (x)
+  "  double vx;
+  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  vx = Scm_GetDouble(x);
+  if (vx < 0) SCM_RETURN(Scm_MakeComplex(0.0, sqrt(-vx)));
+  else        SCM_RETURN(Scm_MakeFlonum(sqrt(vx)));")
+  
+(define-cproc %expt (x y)
   "  SCM_RETURN(Scm_Expt(x, y));")
 
 (define-cproc make-rectangular (a b)
