@@ -1,18 +1,22 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.5 2004-10-11 05:52:14 shirok Exp $
+;; $Id: exception.scm,v 1.6 2004-10-11 07:06:11 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
 
 ;;--------------------------------------------------------------------
-(test-section "constructors")
+(test-section "bare constructors")
 
-(test* "make <error>" '(#t #t #f)
+(test* "make <error>" '(#t #t #t #f)
        (let ((e (make <error>)))
-         (list (is-a? e <exception>)
+         (list (is-a? e <condition>)
+               (is-a? e <serious-condition>)
                (is-a? e <error>)
                (ref e 'message))))
+
+(test* "make <message-condition>" "huge"
+       (ref (make <message-condition> :message "huge") 'message))
 
 (test* "make <error>" "hoge"
        (ref (make <error> :message "hoge") 'message))
@@ -21,6 +25,96 @@
        (let ((e (make <system-error> :message "oops" :errno 12)))
          (map (cut ref e <>) '(message errno))))
 
+;;--------------------------------------------------------------------
+(test-section "srfi-35 constructors, predicates and accessors")
+
+(test* "make-condition <error>" '(#t #t #f "moo")
+       (let ((e (make-condition <error> 'message "moo")))
+         (list
+          (condition-has-type? e <error>)
+          (condition-has-type? e <serious-condition>)
+          (condition-has-type? e <read-error>)
+          (condition-ref e 'message))))
+
+(test* "make-condition <port-error>" `(#t #t #t #f "moo" ,(current-input-port))
+       (let ((e (make-condition <port-error>
+                                'port (current-input-port)
+                                'message "moo")))
+         (list
+          (condition-has-type? e <error>)
+          (condition-has-type? e <serious-condition>)
+          (condition-has-type? e <io-error>)
+          (condition-has-type? e <read-error>)
+          (condition-ref e 'message)
+          (condition-ref e 'port))))
+
+(test* "make-compound-condition"
+       `(#t #t #t "sys" 12 ,(current-input-port))
+       (let ((e (make-compound-condition
+                 (make-condition <system-error>
+                                 'message "sys" 'errno 12)
+                 (make-condition <io-read-error>
+                                 'message "io" 'port (current-input-port)))))
+         (list
+          (condition-has-type? e <error>)
+          (condition-has-type? e <system-error>)
+          (condition-has-type? e <io-read-error>)
+          (condition-ref e 'message)
+          (condition-ref e 'errno)
+          (condition-ref e 'port))))
+
+(test* "make-compound-condition"
+       `(#t #t #t "io" 12 ,(current-input-port))
+       (let ((e (make-compound-condition
+                 (make-condition <io-read-error>
+                                 'message "io" 'port (current-input-port))
+                 (make-condition <system-error>
+                                 'message "sys" 'errno 12))))
+         (list
+          (condition-has-type? e <error>)
+          (condition-has-type? e <system-error>)
+          (condition-has-type? e <io-read-error>)
+          (condition-ref e 'message)
+          (condition-ref e 'errno)
+          (condition-ref e 'port))))
+          
+(test* "make-compound-condition"
+       `(#t #t #t "message" 12 ,(current-input-port))
+       (let ((e (make-compound-condition
+                 (make-compound-condition
+                  (make-condition <message-condition> 'message "message")
+                  (make-condition <io-read-error>
+                                  'message "io" 'port (current-input-port))
+                 (make-condition <system-error>
+                                 'message "sys" 'errno 12)))))
+         (list
+          (condition-has-type? e <error>)
+          (condition-has-type? e <system-error>)
+          (condition-has-type? e <io-read-error>)
+          (condition-ref e 'message)
+          (condition-ref e 'errno)
+          (condition-ref e 'port))))
+
+(test* "extract-condition"
+       `(("message")
+         ("message" ,(current-input-port))
+         ("message" 12))
+       (let* ((e (make-compound-condition
+                  (make-compound-condition
+                   (make-condition <message-condition> 'message "message")
+                   (make-condition <io-read-error>
+                                   'message "io" 'port (current-input-port))
+                   (make-condition <system-error>
+                                   'message "sys" 'errno 12))))
+              (m (extract-condition e <message-condition>))
+              (i (extract-condition e <io-read-error>))
+              (s (extract-condition e <system-error>)))
+         (list
+          (list (condition-ref m 'message))
+          (list (condition-ref i 'message) (condition-ref i 'port))
+          (list (condition-ref s 'message) (condition-ref s 'errno)))
+         ))
+       
 ;;--------------------------------------------------------------------
 (test-section "srfi-35 style condition definitions")
 
