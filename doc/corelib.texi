@@ -6403,7 +6403,7 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 @c COMMON
 @end defun
 
-@defun call-with-input-file string proc &keyword if-exists buffering element-type
+@defun call-with-input-file string proc &keyword if-does-not-exist buffering element-type
 @defunx call-with-output-file string proc &keyword if-does-not-exist if-exists buffering element-type
 [R5RS]
 @c EN
@@ -6441,7 +6441,7 @@ Returns the value(s) @code{proc} returned.
 @c COMMON
 @end defun
 
-@defun with-input-from-file string thunk &keyword if-exists buffering element-type
+@defun with-input-from-file string thunk &keyword if-does-not-exist buffering element-type
 @defunx with-output-to-file string thunk &keyword if-does-not-exist if-exists buffering element-type
 [R5RS]
 @c EN
@@ -6451,24 +6451,27 @@ then calls @var{thunk}.  The file is closed when @var{thunk}
 returns or an error is signalled from @var{thunk} that is not
 captured within @var{thunk}.
 
+Returns the value(s) @code{thunk} returns.
+
 The keyword arguments have the same
 meanings of @code{open-input-file} and @code{open-output-file}'s,
-except that @code{#f} is not allowed to @var{if-exists} and
-@var{if-does-not-exist}; i.e. an error is always signalled if the
-file can't be opened.
-
-Returns the value(s) @code{thunk} returned.
+except that when @code{#f} is given to @var{if-exists} and
+@var{if-does-not-exist} and the opening port is failed,
+@var{thunk} isn't called at all and @code{#f} is returned
+as the result of @code{with-input-from-file} and
+@code{with-output-to-file}.
 @c JP
 @var{string}で示されるファイルを入力または出力用にオープンし、オープンされた
 ポートを現在の入力または出力ポートに設定して、@var{thunk}を呼び出します。
 @var{thunk}が戻るか、@var{thunk}内で捕捉されないエラーが生じた際にファイルは閉じられます。
 
+@var{thunk}が返す値を返します。
+
 キーワード引数は
 @code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
-但し@var{if-exists}や@var{if-does-not-exist}に@code{#f}を指定することは
-出来ません。ファイルがオープンできなかった場合は常にエラーとなります。
-
-@var{thunk}が返す値を返します。
+但し@var{if-exists}や@var{if-does-not-exist}に@code{#f}が指定され、
+ファイルがオープンできなかった場合は、@var{thunk}は呼ばれずに
+直ちに@code{#f}が返されます。
 @c COMMON
 @end defun
 
