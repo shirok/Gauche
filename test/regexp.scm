@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.16 2003-10-07 12:46:34 shirok Exp $
+;; $Id: regexp.scm,v 1.17 2003-10-25 02:42:09 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -228,6 +228,18 @@
        (match&list #/a\[b/ "a[b" 1))
 
 ;;-------------------------------------------------------------------------
+(test-section "word boundary")
+
+(test* ".z\\b" '("oz")
+       (match&list #/.z\b/ "bzbazoz ize" 1))
+(test* "\\b.z" '("iz")
+       (match&list #/\b.z/ "brzbazoz ize" 1))
+(test* ".z\\B" '("iz")
+       (match&list #/.z\B/ "bz baz oz ize" 1))
+(test* "\\B.z" '("az")
+       (match&list #/\B.z/ "bz baz oz ize" 1))
+
+;;-------------------------------------------------------------------------
 (test-section "repetitions")
 
 (test* "ab*c" '("abc")
@@ -264,6 +276,38 @@
        (match&list #/a.*c/ "bacbababbbbadbaba" 1))
 (test* "a.*c" #f
        (match&list #/a.*c/ "abaaaabababbadbabdba" 1))
+
+;;-------------------------------------------------------------------------
+(test-section "repetitions (non-greedy)")
+
+(test* "ab*?." '("ab")
+       (match&list #/ab*?./ "abc" 1))
+(test* "ab*?." '("ac")
+       (match&list #/ab*?./ "ac" 1))
+(test* "a.*?c" '("abbbc")
+       (match&list #/a.*?c/ "abbbc" 1))
+(test* "a.*?a" '("abba")
+       (match&list #/a.*?a/ "abbabaabbc" 1))
+(test* "<.*?>" '("<tag1>")
+       (match&list #/<.*?>/ "<tag1><tag2><tag3>" 1))
+
+(test* "ab+?." '("abc")
+       (match&list #/ab+?./ "abc" 1))
+(test* "ab+?." '("abb")
+       (match&list #/ab+?./ "abbc" 1))
+(test* "a.+?a" '("abba")
+       (match&list #/a.+?a/ "abbabaabbc" 1))
+(test* "<.+?>" '("<><tag1>")
+       (match&list #/<.+?>/ " <><tag1><tag2>" 1))
+
+(test* "ab??c" '("abc")
+       (match&list #/ab??c/ "abc" 1))
+(test* "ab??c" '("ac")
+       (match&list #/ab??c/ "abbaac" 1))
+(test* "ab??." '("ab")
+       (match&list #/ab??./ "abbaac" 1))
+(test* "a(hoge)??hoge" '("ahoge")
+       (match&list #/a(hoge)??hoge/ "ahogehoge" 1))
 
 ;;-------------------------------------------------------------------------
 (test-section "character class")
@@ -382,7 +426,7 @@
 (test* "a{,2}*" "def"       (rxmatch-after (#/a{,2}*/  "za{,2}}def")))
 
 (test* "(ab){2}"   "abba"      (rxmatch-after (#/(ab){2}/ "babbabababba")))
-(test* "(ab){2,2}" "abba"      (rxmatch-after (#/(ab){2}/ "babbabababba")))
+(test* "(ab){2,2}" "abba"      (rxmatch-after (#/(ab){2,2}/ "babbabababba")))
 (test* "(ab){2,}"  "ba"        (rxmatch-after (#/(ab){2,}/ "babbabababba")))
 (test* "(ab){1,2}" "babababba" (rxmatch-after (#/(ab){1,2}/ "babbabababba")))
 (test* "(ab){2,3}" "ba"        (rxmatch-after (#/(ab){2,3}/ "babbabababba")))
@@ -406,6 +450,31 @@
 (test* "{-1}" #t           (regexp? (string->regexp "{-1}")))
 (test* "{300}" *test-error* (regexp? (string->regexp "{300}")))
 (test* "{3,1}" *test-error* (regexp? (string->regexp "{3,1}")))
+
+;;-------------------------------------------------------------------------
+(test-section "{n,m} (non-greedy)")
+
+(test* "a{2}?"   "aabaa"    (rxmatch-after (#/a{2}?/ "abaaaabaa")))
+(test* "a{2,}?"  "aabaa"    (rxmatch-after (#/a{2,}?/ "abaaaabaa")))
+(test* "a{1,2}?" "baaaabaa" (rxmatch-after (#/a{1,2}?/ "abaaaabaa")))
+(test* "a{2,3}?" "aabaa"    (rxmatch-after (#/a{2,3}?/ "abaaaabaa")))
+
+(test* "(ab){2}?"   "abba"      (rxmatch-after (#/(ab){2}?/ "babbabababba")))
+(test* "(ab){2,2}?" "abba"      (rxmatch-after (#/(ab){2,2}?/ "babbabababba")))
+(test* "(ab){2,}?"  "abba"      (rxmatch-after (#/(ab){2,}?/ "babbabababba")))
+(test* "(ab){1,2}?" "babababba" (rxmatch-after (#/(ab){1,2}?/ "babbabababba")))
+(test* "(ab){2,3}?" "abba"      (rxmatch-after (#/(ab){2,3}?/ "babbabababba")))
+
+(test* "(\\d{2,}?)(\\d{2,}?)" '("1234" "12" "34")
+       (match&list #/(\d{2,}?)(\d{2,}?)/ "a12345b" 3))
+(test* "(\\d{2,})(\\d{2,}?)" '("12345" "123" "45")
+       (match&list #/(\d{2,})(\d{2,}?)/ "a12345b" 3))
+(test* "(\\d{2,}?)(\\d{2,})" '("12345" "12" "345")
+       (match&list #/(\d{2,}?)(\d{2,})/ "a12345b" 3))
+(test* "(\\d{1,3}?)(\\d{2,}?)" '("123" "1" "23")
+       (match&list #/(\d{1,3}?)(\d{2,}?)/ "a1234b" 3))
+(test* "(\\d{1,3}?)(\\d{0,2}?)" '("1" "1" "")
+       (match&list #/(\d{1,3}?)(\d{0,2}?)/ "a1234b" 3))
 
 ;;-------------------------------------------------------------------------
 (test-section "uncapturing group")

@@ -2,6 +2,10 @@
 
 	* examples/spigot/Makefile.in : Respect DESTDIR.
 
+2003-10-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c : added non-greedy match (*?, +?, ??, {n,[m]}?).
+
 2003-10-24  Kimura Fuyuki  <fuyuki@nigredo.org>
 
 	* Makefile.in, examples/spigot/Makefile.in : Add configure.lineno

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.45 2003-10-07 12:46:34 shirok Exp $
+ *  $Id: regexp.c,v 1.46 2003-10-25 02:42:09 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -158,8 +158,10 @@ enum {
  *           | (seq-uncase . <ast>) ; sequence (case insensitive match)
  *           | (seq-case . <ast>) ; sequence (case sensitive match)
  *           | (alt . <ast>)      ; alternative
- *           | (rep . <ast>)      ; 0 or more repetition of <ast>
- *           | (rep-bound <n> . <ast>) ; repetition up to <n>
+ *           | (rep . <ast>)      ; 0 or more repetition of <ast> (greedy)
+ *           | (rep-min . <ast>)  ; 0 or more repetition of <ast> (lazy)
+ *           | (rep-bound <n> . <ast>) ; repetition up to <n> (greedy)
+ *           | (rep-bound-min <n> . <ast>) ; repetition up to <n> (lazy)
  *           | (rep-while . <ast>) ; like rep, but no backtrack
  *           | (<integer> . <ast>) ; capturing group 
  * 
@@ -173,7 +175,9 @@ ScmObj sym_seq_uncase = SCM_UNBOUND; /* seq-uncase */
 ScmObj sym_seq_case   = SCM_UNBOUND; /* seq-case */
 ScmObj sym_alt        = SCM_UNBOUND; /* alt */
 ScmObj sym_rep        = SCM_UNBOUND; /* rep */
+ScmObj sym_rep_min    = SCM_UNBOUND; /* rep-min */
 ScmObj sym_rep_bound  = SCM_UNBOUND; /* rep-bound */
+ScmObj sym_rep_bound_min = SCM_UNBOUND; /* rep-bound-min */
 ScmObj sym_rep_while  = SCM_UNBOUND; /* rep-while */
 ScmObj sym_any        = SCM_UNBOUND; /* any */
 ScmObj sym_bol        = SCM_UNBOUND; /* bol */
@@ -181,11 +185,14 @@ ScmObj sym_eol        = SCM_UNBOUND; /* eol */
 ScmObj sym_wb         = SCM_UNBOUND; /* wb */
 ScmObj sym_nwb        = SCM_UNBOUND; /* nwb */
 ScmObj sym_comp       = SCM_UNBOUND; /* complement charset */
-ScmObj sym_star       = SCM_UNBOUND; /* '*' */
-ScmObj sym_plus       = SCM_UNBOUND; /* '+' */
-ScmObj sym_question   = SCM_UNBOUND; /* '?' */
-ScmObj sym_open       = SCM_UNBOUND; /* '(' */
-ScmObj sym_close      = SCM_UNBOUND; /* ')' */
+ScmObj sym_star       = SCM_UNBOUND; /* '*'  */
+ScmObj sym_starq      = SCM_UNBOUND; /* '*?' */
+ScmObj sym_plus       = SCM_UNBOUND; /* '+'  */
+ScmObj sym_plusq      = SCM_UNBOUND; /* '+?' */
+ScmObj sym_question   = SCM_UNBOUND; /* '?'  */
+ScmObj sym_questionq  = SCM_UNBOUND; /* '??' */
+ScmObj sym_open       = SCM_UNBOUND; /* '('  */
+ScmObj sym_close      = SCM_UNBOUND; /* ')'  */
 
 
 static void regexp_print(ScmObj obj, ScmPort *port, ScmWriteContext *c);
@@ -267,6 +274,7 @@ static void rc_ctx_init(regcomp_ctx *ctx, ScmRegexp *rx)
 
 static ScmObj rc_charset(regcomp_ctx *ctx);
 static void rc_register_charset(regcomp_ctx *ctx, ScmCharSet *cs);
+static ScmObj rc1_maybe_lazy(regcomp_ctx *ctx, ScmObj greedy, ScmObj lazy);
 static ScmObj rc1_lex_minmax(regcomp_ctx *ctx);
 static ScmObj rc1_lex_open_paren(regcomp_ctx *ctx);
 static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key);
@@ -293,6 +301,10 @@ static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key);
  *         | <atom> "+"
  *         | <atom> "?"
  *         | <atom> "{" <n> ("," <m>?)? "}"
+ *         | <atom> "*?"
+ *         | <atom> "+?"
+ *         | <atom> "??"
+ *         | <atom> "{" <n> ("," <m>?)? "}?"
  *         | <atom>
  *
  *  <atom> : a normal char, an escaped char, or a char-set
@@ -314,14 +326,14 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
     case '(': return rc1_lex_open_paren(ctx);
     case ')': return sym_close;
     case '|': return sym_alt;
-    case '+': return sym_plus;
-    case '*': return sym_star;
-    case '?': return sym_question;
     case '^': return sym_bol;
     case '.': return sym_any;
     case '$': return sym_eol;
     case '[': return rc_charset(ctx);
     case '{': return rc1_lex_minmax(ctx);
+    case '+': return rc1_maybe_lazy(ctx, sym_plus, sym_plusq);
+    case '*': return rc1_maybe_lazy(ctx, sym_star, sym_starq);
+    case '?': return rc1_maybe_lazy(ctx, sym_question, sym_questionq);
     case '\\':
         ch = Scm_GetcUnsafe(ctx->ipat);
         if (ch == SCM_CHAR_INVALID) {
@@ -408,6 +420,16 @@ static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key)
     return r;
 }
 
+/* Called after '+', '*' or '?' is read, and check if there's a
+   following '?' (lazy quantifier) */
+static ScmObj rc1_maybe_lazy(regcomp_ctx *ctx, ScmObj greedy, ScmObj lazy)
+{
+    ScmChar ch = Scm_GetcUnsafe(ctx->ipat);
+    if (ch == '?') return lazy;
+    Scm_UngetcUnsafe(ch, ctx->ipat);
+    return greedy;
+}
+
 /* Reads '('-sequence - either one of "(", "(?:", "(?i:" or "(?-i:".
    The leading "(" has already been read. */
 static ScmObj rc1_lex_open_paren(regcomp_ctx *ctx)
@@ -446,11 +468,14 @@ static ScmObj rc1_lex_open_paren(regcomp_ctx *ctx)
    If successfully parsed, returns (rep-bound <n> . <m>) where
     <m> == #f if the pattern is "{n}"   (exact count), or
     <m> == #t if the pattern is "{n,}"  (minimum count), or
-    <m> == integer if the pattern is "{n,m}" (limited count). */
+    <m> == integer if the pattern is "{n,m}" (limited count).
+   If the pattern is followed by '?', rep-bound-min is used instead.
+ */
 static ScmObj rc1_lex_minmax(regcomp_ctx *ctx)
 {
     int rep_min = -1, rep_max = -1, exact = FALSE, ch;
     ScmObj pos, m;
+    ScmObj type = sym_rep_bound; /* default is greedy */
 
     pos = Scm_PortSeekUnsafe(ctx->ipat, SCM_MAKE_INT(0), SEEK_CUR);
     
@@ -497,7 +522,12 @@ static ScmObj rc1_lex_minmax(regcomp_ctx *ctx)
     if (exact)            m = SCM_FALSE;
     else if (rep_max < 0) m = SCM_TRUE;
     else                  m = SCM_MAKE_INT(rep_max);
-    return Scm_Cons(sym_rep_bound, Scm_Cons(SCM_MAKE_INT(rep_min), m));
+
+    ch = Scm_GetcUnsafe(ctx->ipat);
+    if (ch == '?') type = sym_rep_bound_min;
+    else Scm_UngetcUnsafe(ch, ctx->ipat);
+    return Scm_Cons(type, Scm_Cons(SCM_MAKE_INT(rep_min), m));
+
   out_of_range:
     Scm_Error("{n,m}-syntax can accept up to %d count: %S",
               MAX_LIMITED_REPEAT, ctx->pattern);
@@ -591,11 +621,26 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             PUSH1(item);
             continue;
         }
+        if (SCM_EQ(token, sym_starq)) {
+            /* "x*?" => (rep-min x) */
+            if (SCM_NULLP(stack)) goto synerr;
+            item = SCM_LIST2(sym_rep_min, SCM_CAR(stack));
+            PUSH1(item);
+            continue;
+        }
         if (SCM_EQ(token, sym_plus)) {
             /* "x+" => (seq x (rep x)) */
             if (SCM_NULLP(stack)) goto synerr;
             item = SCM_LIST3(sym_seq, SCM_CAR(stack),
                              SCM_LIST2(sym_rep, SCM_CAR(stack)));
+            PUSH1(item);
+            continue;
+        }
+        if (SCM_EQ(token, sym_plusq)) {
+            /* "x+?" => (seq x (rep-min x)) */
+            if (SCM_NULLP(stack)) goto synerr;
+            item = SCM_LIST3(sym_seq, SCM_CAR(stack),
+                             SCM_LIST2(sym_rep_min, SCM_CAR(stack)));
             PUSH1(item);
             continue;
         }
@@ -607,11 +652,25 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             PUSH1(item);
             continue;
         }
-        if (SCM_PAIRP(token)&&SCM_EQ(SCM_CAR(token), sym_rep_bound)) {
-            /* "x{n}"   => (seq x .... x) 
-               "x{n,}"  => (seq x .... x (rep x))
-               "x{n,m}" => (seq x .... x (rep-bound m-n x)) */
+        if (SCM_EQ(token, sym_questionq)) {
+            /* "x??" => (alt () x) */
+            if (SCM_NULLP(stack)) goto synerr;
+            item = rc1_fold_alts(ctx,
+                                 SCM_LIST2(SCM_LIST1(SCM_CAR(stack)), SCM_NIL));
+            PUSH1(item);
+            continue;
+        }
+        if (SCM_PAIRP(token)&&
+            (SCM_EQ(SCM_CAR(token), sym_rep_bound) ||
+             SCM_EQ(SCM_CAR(token), sym_rep_bound_min))) {
+            /* "x{n}"    => (seq x .... x) 
+               "x{n,}"   => (seq x .... x (rep x))
+               "x{n,m}"  => (seq x .... x (rep-bound m-n x))
+               "x{n,}?"  => (seq x .... x (rep-min x))
+               "x{n,m}?" => (seq x .... x (rep-bound-min m-n x)) */
             ScmObj n = SCM_CADR(token), m = SCM_CDDR(token);
+            int greedy = SCM_EQ(SCM_CAR(token), sym_rep_bound);
+
             if (SCM_NULLP(stack)) goto synerr;
             SCM_ASSERT(SCM_INTP(n));
             item = Scm_MakeList(SCM_INT_VALUE(n), SCM_CAR(stack));
@@ -620,7 +679,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             } else if (SCM_TRUEP(m)) {
                 item = Scm_Cons(sym_seq, item);
                 item = Scm_Append2X(item,
-                                    SCM_LIST1(SCM_LIST2(sym_rep,
+                                    SCM_LIST1(SCM_LIST2((greedy? sym_rep : sym_rep_min),
                                                         SCM_CAR(stack))));
             } else {
                 int m_n;
@@ -630,7 +689,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
                 item = Scm_Cons(sym_seq, item);
                 if (m_n > 0) {
                     item = Scm_Append2X(item,
-                                        SCM_LIST1(SCM_LIST3(sym_rep_bound,
+                                        SCM_LIST1(SCM_LIST3((greedy? sym_rep_bound : sym_rep_bound_min),
                                                             SCM_MAKE_INT(m_n),
                                                             SCM_CAR(stack))));
                 }
@@ -1051,6 +1110,11 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         type = sym_rep;
     }
     if (SCM_EQ(type, sym_rep)) {
+        /* rep: TRY next
+                <seq>
+                JUMP rep
+           next:
+        */
         int ocodep = ctx->codep;
         rc3_emit(ctx, RE_TRY);
         rc3_emit_offset(ctx, 0); /* will be patched */
@@ -1060,7 +1124,40 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         rc3_fill_offset(ctx, ocodep+1, ctx->codep);
         return;
     }
+    if (SCM_EQ(type, sym_rep_min)) {
+        /* non-greedy repeat
+           rep: TRY seq
+                JUMP next
+           seq: <seq>
+                JUMP rep
+           next:
+        */
+        int ocodep1 = ctx->codep, ocodep2;
+        rc3_emit(ctx, RE_TRY);
+        rc3_emit_offset(ctx, 0); /* will be patched */
+        ocodep2 = ctx->codep;
+        rc3_emit(ctx, RE_JUMP);
+        rc3_emit_offset(ctx, 0); /* will be patched */
+        rc3_fill_offset(ctx, ocodep1+1, ctx->codep);
+        rc3_seq(ctx, SCM_CDR(ast), FALSE, FALSE);
+        rc3_emit(ctx, RE_JUMP);
+        rc3_emit_offset(ctx, ocodep1);
+        rc3_fill_offset(ctx, ocodep2+1, ctx->codep);
+        return;
+    }
     if (SCM_EQ(type, sym_alt)) {
+        /*     TRY #1
+               <alt0>
+               JUMP next
+           #1: TRY #2
+               <alt1>
+               JUMP next
+                :
+                :
+               TRY next
+               <altN>
+           next:
+        */
         ScmObj clause;
         ScmObj jumps = SCM_NIL;
         int patchp;
@@ -1088,9 +1185,9 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         }
         return;
     }
-    if (SCM_EQ(type, sym_rep_bound)) {
+    if (SCM_EQ(type, sym_rep_bound) || SCM_EQ(type, sym_rep_bound_min)) {
         /* (rep-bound <n> . <x>)
-           =>
+
                TRY  #01
                JUMP #11
            #01:TRY  #02
@@ -1102,29 +1199,65 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
                 :
            #1n:<X>
            #1N:
+
+           (rep-bound-min <n> . <x>)
+           
+               TRY  #01
+               JUMP #1N
+           #01:TRY  #02
+               JUMP #1n
+                :
+           #0n TRY  #11
+               JUMP #12
+           #11:<X>
+           #12:<X>
+                :
+           #1n:<X>
+           #1N:
+
          */
         ScmObj item, jlist = SCM_NIL;
         int count, n, j0 = 0, jn;
+        int greedy = SCM_EQ(type, sym_rep_bound);
+
         SCM_ASSERT(Scm_Length(ast) == 3 && SCM_INTP(SCM_CADR(ast)));
         count = SCM_INT_VALUE(SCM_CADR(ast));
         SCM_ASSERT(count > 0);
         item = SCM_CDDR(ast);
+        /* first part - TRYs and JUMPs
+           j0 is used to patch the label #0k
+           the destination of jumps to be patched are linked to jlist */
         for (n=0; n<count; n++) {
             if (n>0) rc3_fill_offset(ctx, j0, ctx->codep);
             rc3_emit(ctx, RE_TRY);
             if (ctx->emitp) j0 = ctx->codep;
-            rc3_emit_offset(ctx, 0);
+            rc3_emit_offset(ctx, 0); /* to be patched */
             rc3_emit(ctx, RE_JUMP);
             if (ctx->emitp) {
                 jlist = Scm_Cons(SCM_MAKE_INT(ctx->codep), jlist);
             }
-            rc3_emit_offset(ctx, 0);
+            rc3_emit_offset(ctx, 0); /* to be patched */
         }
-        rc3_fill_offset(ctx, j0, ctx->codep);
-        rc3_emit(ctx, RE_JUMP);
-        jn = ctx->codep;
-        rc3_emit_offset(ctx, 0);
-        if (ctx->emitp) jlist = Scm_ReverseX(jlist);
+        rc3_fill_offset(ctx, j0, ctx->codep); /* patch #0n */
+        /* finishing the first part.
+           for non-greedy match, we need one more TRY. */
+        if (greedy) {
+            rc3_emit(ctx, RE_JUMP);
+            jn = ctx->codep;
+            rc3_emit_offset(ctx, 0); /* to be patched */
+        } else {
+            rc3_emit(ctx, RE_TRY);
+            jn = ctx->codep;
+            rc3_emit_offset(ctx, 0);  /* to be patched */
+            rc3_emit(ctx, RE_JUMP);
+            if (ctx->emitp) {
+                jlist = Scm_Cons(SCM_MAKE_INT(ctx->codep), jlist);
+            }
+            rc3_emit_offset(ctx, 0);  /* to be patched */
+            rc3_fill_offset(ctx, jn, ctx->codep);
+        }
+        if (ctx->emitp && greedy) jlist = Scm_ReverseX(jlist);
+        if (!greedy) rc3_seq(ctx, item, FALSE, toplevelp);
         for (n=0; n<count; n++) {
             if (ctx->emitp) {
                 rc3_fill_offset(ctx, SCM_INT_VALUE(SCM_CAR(jlist)),
@@ -1133,7 +1266,16 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
             rc3_seq(ctx, item, FALSE, toplevelp);
             if (ctx->emitp) jlist = SCM_CDR(jlist);
         }
-        rc3_fill_offset(ctx, jn, ctx->codep);
+        if (greedy) {
+            /* the last JUMP to #1N */
+            rc3_fill_offset(ctx, jn, ctx->codep);
+        } else {
+            /* the first JUMP to #1N */
+            if (ctx->emitp) {
+                SCM_ASSERT(SCM_PAIRP(jlist));
+                rc3_fill_offset(ctx, SCM_INT_VALUE(SCM_CAR(jlist)), ctx->codep);
+            }
+        }
         return;
     }
     Scm_Error("internal error in regexp compilation: bad node: %S", ast);
@@ -1913,7 +2055,9 @@ void Scm__InitRegexp(void)
     sym_seq_uncase = SCM_INTERN("seq-uncase");
     sym_alt = SCM_INTERN("alt");
     sym_rep = SCM_INTERN("rep");
+    sym_rep_min = SCM_INTERN("rep-min");
     sym_rep_bound = SCM_INTERN("rep-bound");
+    sym_rep_bound_min = SCM_INTERN("rep-bound-min");
     sym_rep_while = SCM_INTERN("rep-while");
     sym_any = SCM_INTERN("any");
     sym_bol = SCM_INTERN("bol");
@@ -1922,8 +2066,11 @@ void Scm__InitRegexp(void)
     sym_nwb = SCM_INTERN("nwb");
     sym_comp = SCM_INTERN("comp");
     sym_star = SCM_INTERN("*");
+    sym_starq = SCM_INTERN("*?");
     sym_plus = SCM_INTERN("+");
+    sym_plusq = SCM_INTERN("+?");
     sym_question = SCM_INTERN("?");
+    sym_questionq = SCM_INTERN("??");
     sym_open = SCM_INTERN("(");
     sym_close = SCM_INTERN(")");
 }

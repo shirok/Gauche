@@ -3329,8 +3329,32 @@ occurrences of @i{re}.   @code{@i{re}@{@i{n},@}} matches
 @code{@i{re}@{@i{n}@}}は@i{re}の@i{n}回の繰り返しにマッチします。
 @code{@i{re}@{@i{n},@}}は@i{re}の@i{n}回以上の繰り返しにマッチします。
 @code{@i{re}@{@i{n},@i{m}@}}は@i{re}の@i{n}回以上、@i{m}回以下の
-繰り返しのマッチします。但し@var{n} <= @var{m}とします。
+繰り返しにマッチします。但し@var{n} <= @var{m}とします。
 @c COMMON
+
+@item @i{re}*?
+@itemx @i{re}+?
+@itemx @i{re}??
+@itemx @i{re}@{@i{n},@}?
+@itemx @i{re}@{@i{n},@i{m}@}?
+@c EN
+Same as the above repetition construct, but these syntaxes
+use "non-greedy" or "lazy" match strategy.  That is, they try to match
+the minimum number of occurrences of @i{re} first, then retry
+longer ones only if it fails.  Compare the following examples:
+@c JP
+上記の繰り返し構造とほぼ同じですが、これらの構文は「non-greedy」または
+「lazy」と呼ばれるマッチ戦略を用います。すなわち、まず@i{re}がマッチする
+最小の回数を試し、それが失敗したら順に繰り返しの回数を増やしてゆきます。
+次の例を比べてみてください：
+@c COMMON
+@example
+(rxmatch-substring (#/<.*>/ "<tag1><tag2><tag3>") 0)
+  @result{} "<tag1><tag2><tag3>"
+
+(rxmatch-substring (#/<.*?>/ "<tag1><tag2><tag3>") 0)
+  @result{} "<tag1>"
+@end example
 
 @item (@i{re}@dots{})
 @c EN
