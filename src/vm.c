@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.29 2001-02-06 12:04:55 shiro Exp $
+ *  $Id: vm.c,v 1.30 2001-02-07 20:45:45 shiro Exp $
  */
 
 #include "gauche.h"
@@ -31,8 +31,6 @@ SCM_DEFCLASS(Scm_VMClass, "<vm>", NULL, SCM_CLASS_DEFAULT_CPL);
 static ScmVM *theVM;    /* this must be thread specific in MT version */
 
 /* base can be NULL iff called from Scm_Init. */
-
-static ScmEnvFrame *topenv(ScmModule *module);
 
 ScmVM *Scm_NewVM(ScmVM *base,
                  ScmModule *module)
@@ -69,7 +67,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
 static void vm_reset()
 {
     theVM->sp = theVM->stack;
-    theVM->env = NULL; /*topenv(theVM->module);*/
+    theVM->env = NULL;
     theVM->argp = (ScmEnvFrame*)theVM->stack;
     theVM->cont = NULL;
     theVM->pc = SCM_NIL;
@@ -241,25 +239,34 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 #ifdef __GNUC__
 inline
 #endif
-static ScmEnvFrame *save_env(ScmVM *vm)
+static ScmEnvFrame *save_env(ScmVM *vm,
+                             ScmEnvFrame *env_begin,
+                             ScmContFrame *cont_begin)
 {
-    ScmEnvFrame *e = vm->env, *prev = NULL;
-    ScmContFrame *c = vm->cont;
+    ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin;
+    ScmContFrame *c = cont_begin;
     for (; IN_STACK_P((ScmObj*)e); e = e->up) {
-        int size = sizeof(ScmEnvFrame) + (e->size-1)*sizeof(ScmObj);
+        int size = ENV_SIZE(e->size) * sizeof(ScmObj);
         ScmEnvFrame *s = SCM_NEW2(ScmEnvFrame*, size);
         memcpy(s, e, size);
-        for (; c; c = c->prev) {
+        for (c = cont_begin; c; c = c->prev) {
             if (c->env == e) {
                 c->env = s;
-                break;
             }
         }
-        if (vm->env == e) vm->env = s;
+        if (e == env_begin) head = s;
         if (prev) prev->up = s;
         prev = s;
     }
-    return vm->env;
+    return head;
+}
+
+static ScmContFrame *save_cont(ScmVM *vm)
+{
+    ScmContFrame *c = vm->cont;
+    for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
+    }
+    return c;
 }
 
 /* check the argument count is OK for call to PROC.  if PROC takes &rest
@@ -305,18 +312,6 @@ static int adjust_argument_frame(ScmVM *vm,
     return callee_args;
 }
 
-
-
-static ScmEnvFrame *topenv(ScmModule *module)
-{
-    ScmEnvFrame *e = (ScmEnvFrame *)theVM->sp;
-    e->up = NULL;
-    e->info = SCM_MAKE_STR("[toplevel]");
-    e->size = 1;
-    e->data[0] = SCM_OBJ(module);
-    theVM->sp += 5;
-    return e;
-}
 
 /*
  * main loop of VM
@@ -597,11 +592,11 @@ static void run_loop()
 
                 /* move environment to the heap. */
                 SAVE_REGS();
-                env = save_env(vm);
+                vm->env = save_env(vm, vm->env, vm->cont);
                 val0 = Scm_MakeClosure(SCM_VM_INSN_ARG0(code),
                                        SCM_VM_INSN_ARG1(code),
                                        body,
-                                       env,
+                                       vm->env,
                                        info);
                 RESTORE_REGS();
                 continue;
