@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.6 2001-06-22 08:17:48 shirok Exp $
+dnl $Id: configure.in,v 1.7 2001-06-23 07:05:23 shirok Exp $
 AC_INIT(net.c)
 AC_CONFIG_HEADER(netconfig.h)
 
@@ -25,7 +25,7 @@ AC_SUBST(GOSH)
 dnl A user has a choice to install the module into Gauche system directory
 dnl or site local directory, by setting environment variable INSTALL_TYPE
 dnl to either 'sys' or 'site'.   The variable can be overridden at make time.
-: ${INSTALL_TYPE=site}  dnl This sets the default.
+: ${INSTALL_TYPE=sys}  dnl This sets the default.
 AC_SUBST(INSTALL_TYPE)
 
 dnl Get compiler parameters which Gauche has been compiled with.
@@ -38,6 +38,7 @@ AC_PROG_INSTALL
 
 dnl Check if we need -lsocket for socket related libraries
 AC_SEARCH_LIBS(shutdown, socket)
+AC_SEARCH_LIBS(inet_aton, resolv)
 
 dnl Check for reentrant version synopsis of netdb functions.
 dnl   The calling synopsis of netdb functions like gethostbyname_r differ
