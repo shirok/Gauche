@@ -9241,7 +9241,7 @@ See the following example:
 @example
 (cgi-parse-parameters
   :query-string "foo=123&bar=%22%3f%3f%22&bar=zz&buzz")
- @result{} (("foo" "123") ("bar "\"??\"" "zz") ("buzz #t))
+ @result{} (("foo" "123") ("bar "\"??\"" "zz") ("buzz" #t))
 @end example
 @end defun
 
