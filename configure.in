@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.77 2002-09-12 21:28:42 shirok Exp $
+dnl $Id: configure.in,v 1.78 2002-09-22 20:03:21 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.77 $)
+AC_REVISION($Revision: 1.78 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -94,7 +94,7 @@ AC_ARG_WITH(rpath, [  --with-rpath=PATH:PATH... : Use -rpath option while buildi
                           loadable objects (experimental).], [
   case $with_rpath in
     yes|no) ;;
-    *) rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath /' -e 's/:/ -Wl,-rpath /'`";;
+    *) rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath /' -e 's/:/ -Wl,-rpath /g'`";;
   esac
 ])
 
