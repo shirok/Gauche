@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.2 2001-09-29 23:30:17 shirok Exp $
+;;;  $Id: debugger.scm,v 1.3 2001-10-04 11:20:03 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
@@ -37,8 +37,8 @@
 (define (debug exn)
   ;; TODO: we need to gain terminal I/O.
   (disable-debug)
-  (let ((inp   (current-input-port))
-        (outp  (current-error-port))
+  (let ((inp   (standard-input-port))
+        (outp  (standard-error-port))
         (stack (cdddr (vm-get-stack-trace))) ;remove our stack frames
         )
 
@@ -69,6 +69,7 @@
               ((eqv? cmd :up)   (up   level))
               ((eqv? cmd :down) (down level))
               ((eqv? cmd :quit))
+              ((eof-object? cmd) (newline outp))
               (else (help level)))))
 
     (define (show level)
@@ -90,7 +91,11 @@
                  (loop (- level 1)))))
 
     (define (help level)
-      (format outp "?\n")
+      (format outp "Commands:\n")
+      (format outp "  :show       show current frame\n")
+      (format outp "  :up         up one frame\n")
+      (format outp "  :down       down one frame\n")
+      (format outp "  :quit       return to toplevel\n")
       (loop level))
     
     (if (is-a? exn <exception>)
@@ -105,7 +110,7 @@
            (format outp "...\n")))
       (format outp "~3d   " i)
       (write-limit (caar s) outp))
-    (format outp "Entering debugger\n")
+    (format outp "Entering debugger.  Type :help for help.\n")
     (loop 0)
     )
   (enable-debug))
