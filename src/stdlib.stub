@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.60 2001-05-19 22:21:18 shirok Exp $
+;;; $Id: stdlib.stub,v 1.61 2001-06-17 09:30:59 shirok Exp $
 ;;;
 
 
@@ -387,11 +387,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc car (obj)
   (inliner "SCM_VM_CAR")
   (assert (pair? obj))
+  (setter set-car!)
   "  SCM_RETURN(SCM_CAR(obj));")
 
 (define-cproc cdr (obj)
   (inliner "SCM_VM_CDR")
   (assert (pair? obj))
+  (setter set-cdr!)
   "  SCM_RETURN(SCM_CDR(obj));")
 
 (define-cproc set-car! (obj value)
@@ -612,6 +614,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc string-ref (str k)
   (assert (string? str))
   (assert (small-integer? k))
+  (setter string-set!)
   "  SCM_RETURN(SCM_MAKE_CHAR(Scm_StringRef(str, k)));")
 
 (define-cproc string-set! (str k c)
@@ -716,6 +719,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   (inliner "SCM_VM_VEC_REF")
   (assert (vector? vec))
   (assert (small-integer? k))
+  (setter vector-set!)
   "  SCM_RETURN(Scm_VectorRef(vec, k));")
 
 (define-cproc vector-set! (vec k obj)
