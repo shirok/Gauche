@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.1 2002-02-21 08:55:52 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.2 2002-03-04 19:59:20 shirok Exp $
 ;;;
 
 "
@@ -84,16 +84,22 @@
   SCM_RETURN(Scm_MakeInteger(r));")
 
 (if (defined? "HAVE_SETPGRP")
-    (define-cproc sys-setpgrp ()
+    (define-cproc %sys-setpgrp ()
       "  int r = Scm_SysCall(setpgrp());
       if (r < 0) Scm_SysError(\"setpgrp failed\");
       SCM_RETURN(Scm_MakeInteger(r));"))
 
 (if (defined? "HAVE_GETPGID")
-    (define-cproc sys-getpgid ()
-      "  int r = (int)Scm_SysCall(getpgid());
+    (define-cproc %sys-getpgid (pid)
+      (assert (exact? pid))
+      "  int r = (int)Scm_SysCall(getpgid(pid));
       if (r < 0) Scm_SysError(\"getpgid failed\");
       SCM_RETURN(Scm_MakeInteger(r));"))
+
+(define-cproc sys-getpgrp ()
+  "int r = (int)Scm_SysCall(getpgrp());
+  if (r < 0) Scm_SysError(\"getpgrp failed\");
+  SCM_RETURN(Scm_MakeInteger(r));")
 
 (define-cproc sys-setsid ()
   "  int r = Scm_SysCall(setsid());
@@ -145,14 +151,14 @@
 #endif"
 
 (if (defined? "HAVE_GETHOSTNAME")
-    (define-cproc sys-gethostname ()
+    (define-cproc %sys-gethostname ()
       "  char buf[HOSTNAMELEN]; int r;
          r = Scm_SysCall(gethostname(buf, HOSTNAMELEN));
          if (r < 0) Scm_SysError(\"gethostname failed\");
          SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
 
 (if (defined? "HAVE_GETDOMAINNAME")
-    (define-cproc sys-getdomainname ()
+    (define-cproc %sys-getdomainname ()
       "  char buf[HOSTNAMELEN]; int r;
          r = Scm_SysCall(getdomainname(buf, HOSTNAMELEN));
          if (r < 0) Scm_SysError(\"getdomainname failed\");
@@ -160,7 +166,7 @@
 
 ;; putenv
 (if (defined? "HAVE_PUTENV")
-    (define-cproc sys-putenv (name value)
+    (define-cproc %sys-putenv (name value)
       (assert (string? name))
       (assert (string? value))
       "  ScmObj s;

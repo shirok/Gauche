@@ -12,14 +12,47 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: auxsys.scm,v 1.1 2002-02-21 08:55:52 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.2 2002-03-04 19:59:20 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
-  (export-all)
+  (export sys-abort sys-fmod sys-frexp sys-modf sys-mkfifo
+          sys-setgid sys-setpgid sys-setpgrp sys-getpgid sys-getpgrp
+          sys-setsid sys-setuid sys-times sys-uname
+          sys-gethostname sys-getdomainname sys-putenv)
   )
 (select-module gauche.auxsys)
 
 (dynamic-load "auxsys")
+
+;; define alternatives if the platform doesn't support...
+
+(define sys-gethostname
+  (if (symbol-bound? '%sys-gethostname)
+      %sys-gethostname
+      (lambda () (cadr (sys-uname)))))  ;utsname.nodename
+
+(define sys-getdomainname
+  (if (symbol-bound? '%sys-getdomainname)
+      %sys-getdomainname
+      (lambda () "localdomain")))
+
+(define sys-putenv
+  (if (symbol-bound? '%sys-putenv)
+      %sys-putenv
+      (lambda (var val) (error "sys-putenv not supported on this platform"))))
+
+(define sys-setpgrp
+  (if (symbol-bound? '%sys-setpgrp)
+      %sys-setpgrp
+      (lambda () (sys-setpgid 0 0))))
+
+(define sys-getpgid
+  (if (symbol-bound? '%sys-getpgid)
+      %sys-getpgid
+      (lambda (pid)
+        (if (zero? pid)
+            (sys-getpgrp)
+            (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
 
 (provide "gauche/auxsys")

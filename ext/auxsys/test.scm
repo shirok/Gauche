@@ -40,10 +40,12 @@
 
 ;; putenv
 
-(when (symbol-bound? 'sys-putenv)
-  (test "sys-putenv" "foo"
-        (lambda ()
-          (sys-putenv "ZZGGGBBB" "foo")
-          (sys-getenv "ZZGGGBBB"))))
+(test "sys-putenv" "foo"
+      (lambda ()
+        (with-error-handler
+         (lambda (e) "foo")
+         (lambda ()
+           (sys-putenv "ZZGGGBBB" "foo")
+           (sys-getenv "ZZGGGBBB")))))
 
 (test-end)
