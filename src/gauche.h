@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.74 2001-03-12 08:31:05 shiro Exp $
+ *  $Id: gauche.h,v 1.75 2001-03-13 09:20:43 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -290,15 +290,31 @@ extern ScmObj Scm_VMThrowException(ScmObj exception);
  * CLASS
  */
 
+/* Class instance can be either statically defined or dynamically
+ * constructed.  Because of limited functions of C's static initializer,
+ * some of the members of statically defined classes won't get initialized
+ * properly.  Class API's will check them and initialize on demand.
+ * The members marked as `internal' below are such fields, and the user
+ * code shouldn't assume they contain valid data.
+ */
+/* See class.c for the description of function pointer members. */
 struct ScmClassRec {
     SCM_HEADER;
     char *name;
-    int (*print)(ScmObj obj, ScmPort *sink, int level);
-    struct ScmClassRec **cpl;
+    int (*print)(ScmObj obj, ScmPort *sink, int mode);
+    int (*equal)(ScmObj x, ScmObj y);
+    int (*compare)(ScmObj x, ScmObj y);
+    int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
+    struct ScmClassRec **cpa;
+    ScmObj directSupers;        /* internal */
+    ScmObj cpl;                 /* internal */
+    ScmObj directSlots;         /* internal */
+    ScmObj effectiveSlots;      /* internal */
 };
 
 extern ScmClass *Scm_ClassOf(ScmObj obj);
 extern ScmObj Scm_ClassCPL(ScmClass *klass);
+extern ScmObj Scm_ClassDirectSupers(ScmClass *klass);
 extern ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 extern ScmObj Scm_TypeP(ScmObj obj, ScmClass *type);
 
@@ -332,9 +348,9 @@ extern ScmClass *Scm_SequenceCPL[];
 #define SCM_CLASS_SEQUENCE_CPL    (Scm_SequenceCPL)
 
 /* define built-in class statically */
-#define SCM_DEFCLASS(cname, sname, printer, cpl)        \
-    ScmClass cname = {                                  \
-        SCM_CLASS_CLASS, sname, printer, cpl            \
+#define SCM_DEFCLASS(cname, sname, printer, cpa)                \
+    ScmClass cname = {                                          \
+        SCM_CLASS_CLASS, sname, printer, NULL, NULL, NULL, cpa  \
     }
 
 /*--------------------------------------------------------
