@@ -1,7 +1,7 @@
 /*
  * compile.c - compile the given form to an intermediate form
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.74 2002-02-26 09:04:23 shirok Exp $
+ *  $Id: compile.c,v 1.75 2002-04-15 10:44:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -226,7 +226,7 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 
 static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
 {
-    ScmObj ep, frame, fp;
+    ScmObj ep, frame, fp, found = SCM_FALSE;
     int depth = 0, offset = 0;
     SCM_FOR_EACH(ep, env) {
         if (SCM_IDENTIFIERP(var) && SCM_IDENTIFIER(var)->env == ep) {
@@ -236,6 +236,7 @@ static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
         frame = SCM_CAR(ep);
         if (SCM_PAIRP(frame)) {
             if (SCM_TRUEP(SCM_CAR(frame))) {
+                /* macro binding */
                 if (op) {
                     SCM_FOR_EACH(fp, SCM_CDR(frame)) {
                         if (SCM_CAAR(fp) == var) return SCM_CDAR(fp);
@@ -243,10 +244,18 @@ static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
                 }
                 continue;
             }
+            /* seek for variable binding.  there may be a case that
+               single frame contains more than one variable with the
+               same name (in the case like '(let* ((x 1) (x 2)) ...)'),
+               so we have to scan the frame until the end.
+             */
             SCM_FOR_EACH(fp, frame) {
-                if (SCM_CAR(fp) == var) return make_lref(depth, offset);
+                if (SCM_CAR(fp) == var) {
+                    found = make_lref(depth, offset);
+                }
                 offset++;
             }
+            if (!SCM_FALSEP(found)) return found;
         }
         depth++;
         offset = 0;
