@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.26 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: vm.c,v 1.27 2001-02-06 07:01:03 shiro Exp $
  */
 
 #include "gauche.h"
@@ -386,6 +386,17 @@ static void run_loop()
                 PUSH_ARG(val0);
                 continue;
             }
+        case SCM_VM_POP:
+            {
+                POP_ARG(val0);
+                continue;
+            }
+        case SCM_VM_DUP:
+            {
+                ScmObj arg = *(sp-1);
+                PUSH_ARG(arg);
+                continue;
+            }
         case SCM_VM_PRE_CALL:
             {
                 ScmObj prep = SCM_CAR(pc), next = SCM_CDR(pc);
@@ -505,7 +516,7 @@ static void run_loop()
                 POP_LOCAL_ENV();
                 continue;
             }
-        case SCM_VM_SET:
+        case SCM_VM_GSET:
             {
                 ScmObj location, val;
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -513,23 +524,13 @@ static void run_loop()
                 location = SCM_CAR(pc);
                 if (SCM_GLOCP(location)) {
                     SCM_GLOC(location)->value = val0;
-                } else if (SCM_VM_INSNP(location)
-                           && SCM_VM_INSN_CODE(location) == SCM_VM_LREF) {
-                    ScmEnvFrame *e = env;
-                    int dep = SCM_VM_INSN_ARG0(location);
-                    int off = SCM_VM_INSN_ARG1(location);
-                    
-                    while (dep-- > 0) {
-                        VM_ASSERT(e != NULL);
-                        e = e->up;
-                    }
-                    VM_ASSERT(e != NULL);
-                    VM_ASSERT(e->size > off);
-                    e->data[off] = val0;
                 } else if (SCM_SYMBOLP(location)) {
+                    /* The third arg of this call should be TRUE
+                       (stay_in_module).  See the discussion about modules
+                       in compile.c.  For now, this one is more convenient. */
                     ScmGloc *gloc = Scm_FindBinding(vm->module,
                                                     SCM_SYMBOL(location),
-                                                    TRUE);
+                                                    FALSE);
                     if (gloc == NULL) {
                         VM_ERR(("symbol not defined: %S", location));
                     }
@@ -540,6 +541,21 @@ static void run_loop()
                     Scm_Panic("SET instruction got invalid operand");
                 }
                 pc = SCM_CDR(pc);
+                continue;
+            }
+        case SCM_VM_LSET:
+            {
+                int dep = SCM_VM_INSN_ARG0(code);
+                int off = SCM_VM_INSN_ARG1(code);
+                ScmEnvFrame *e = env;
+                
+                while (dep-- > 0) {
+                    VM_ASSERT(e != NULL);
+                    e = e->up;
+                }
+                VM_ASSERT(e != NULL);
+                VM_ASSERT(e->size > off);
+                e->data[off] = val0;
                 continue;
             }
         case SCM_VM_NOP:
