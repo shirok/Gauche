@@ -424,9 +424,8 @@
     (linebreak)))
 
 (define (emit-initializer name)
-  (println "void Scm_Init_~a()" name)
+  (println "void Scm_Init_~a(ScmModule *module)" name)
   (println "{")
-  (println "  ScmModule *module = Scm_VM()->module;")
   (for-each (lambda (cproc)
               (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
                        (symbol->string (scheme-name-of cproc))
