@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.35 2001-05-06 07:38:46 shirok Exp $
+ *  $Id: number.c,v 1.36 2001-05-06 07:43:31 shirok Exp $
  */
 
 #include <math.h>
@@ -1151,19 +1151,6 @@ ScmObj Scm_Expt(ScmObj x, ScmObj y)
         double vy = Scm_GetDouble(y);
         double r = pow(vx, vy);
         return Scm_MakeFlonum(r);
-    }
-}
-
-ScmObj Scm_Sqrt(ScmObj z)
-{
-    if (!SCM_REALP(z)) Scm_Error("real number required, but got %S", z);
-    {
-        double vz = Scm_GetDouble(z);
-        if (vz < 0){
-            return Scm_MakeComplex(0.0, sqrt(-vz));
-        } else {
-            return Scm_MakeFlonum(sqrt(vz));
-        }
     }
 }
 
