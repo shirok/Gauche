@@ -1,3 +1,21 @@
+2001-03-24  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.10
+	* test/object.scm: test file for object system.
+	* src/moplib.stub: added %ensure-generic-function.
+	* src/class.c: finished slot initialization protocol.  implemented
+	  code to deal with Scheme-defined slots.
+	* src/class.c (Scm_MakeBaseGeneric): added for C code to create
+	  a generic fucntion.
+	* src/gauche-init.scm: load object system as well.
+	* src/main.c: adapted to the changes of load.c and core.c.
+	  redesigned command-line options.
+	* src/load.c: current dir is not added to the load-path by default.
+	  it's also up to the application.
+	* src/core.c (Scm_Init): it no longer loads initfile.  loading
+	  initfile is up to the application.
+	* src/list.c: Scm_Delete added.
+
 2001-03-23  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.9
