@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.11 2001-03-12 04:19:19 shiro Exp $
+ *  $Id: port.c,v 1.12 2001-03-12 04:38:41 shiro Exp $
  */
 
 #include <errno.h>
@@ -489,7 +489,7 @@ static ScmProcPortInfo *null_info(ScmPort *dummy)
 ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable, void *data,
                            int ownerp)
 {
-    ScmPortVTable *vt;
+    ScmPortVTable *vt = SCM_NEW_ATOMIC(ScmPortVTable);
     ScmPort *port = make_port(direction, SCM_PORT_PROC, ownerp);
     
     /* Copy vtable, and ensure all entries contain some ptr */
@@ -644,6 +644,12 @@ static inline int fdport_fill_buffer(struct fdport *pdata)
     return nread;
 }
 
+static ScmProcPortInfo *fdport_info(ScmPort *port)
+{
+    DECL_FDPORT(pdata, port);
+    return &pdata->info;
+}
+
 /* Create a port on specified file descriptor.
       NAME  - used for the name of the port.
       DIRECTION - either SCM_PORT_INPUT or SCM_PORT_OUTPUT
@@ -684,6 +690,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
         vt.Putc = fdport_putc_unbuffered;
         vt.Puts = fdport_puts_unbuffered;
         vt.Close = fdport_close_unbuffered;
+        vt.Info = fdport_info;
     }
     return Scm_MakeVirtualPort(direction, &vt, pdata, ownerp);
 }
