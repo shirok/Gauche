@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.236 2002-07-06 23:22:47 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.237 2002-07-07 10:47:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -737,7 +737,7 @@ Gauche組み込みの@code{format}がSRFI-28のもののスーパーセットに
 
 @c EN
 Traditionally, a string is considered as a simple array of bytes.
-Programmers tend to image a string as a simple
+Programmers tend to imagine a string as a simple
 array of characters (though a character may occupy more than one byte).
 It's not the case in Gauche.
 @c JP
@@ -1700,7 +1700,6 @@ option processing and error handling.
 @c COMMON
 
 @example
-@cartouche
 #!/usr/bin/env gosh
 
 (define (main args)   ;@r{entry point}
@@ -1712,7 +1711,6 @@ option processing and error handling.
                       (copy-port in (current-output-port)))))
                 (cdr args)))
   0)
-@end cartouche
 @end example
 
 @c EN
@@ -1722,7 +1720,6 @@ The following script is a simple grep command.
 @c COMMON
 
 @example
-@cartouche
 #!/usr/bin/env gosh
 
 (define (usage)
@@ -1753,7 +1750,6 @@ The following script is a simple grep command.
                           (lambda (p) (grep rx p))))
                       (cddr args)))))
   0)
-@end cartouche
 @end example
 
 @c EN
@@ -3624,6 +3620,7 @@ symbols.
 * Control features::            
 * Exceptions::                  
 * Eval::                        
+* Threads::                     
 * Input and output::            
 * Loading Programs::            
 * Comparison and sorting::      
@@ -6792,17 +6789,35 @@ a setter method of @code{ref}.
 @c COMMON
 @end defun
 
-@defun vector->list vector
+@defun vector->list vector &optional start end
 @defunx list->vector list
-[R5RS]
+[R5RS+]
 @c EN
 Converts a vector to a list, or vice versa.
+
+The optional @var{start} and @var{end} argument of @code{vector->list}
+limits the range of the @var{vector} to be retrieved.
+
+@example
+(vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
+(list->vector '(1 2 3 4 5))      @result{} #(1 2 3 4 5)
+(vector->list '#(1 2 3 4 5) 2 4) @result{} (3 4)
+@end example
 
 With @var{gauche.collection} module, you can use
 @code{(coerce-to <list> @var{vector})} and 
 @code{(coerce-to <vector> @var{list})} as well.
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
+
+@var{vector->list}に省略可能な引数@var{start}と@var{end}を与えることにより、
+値を取り出す範囲を制限することができます。
+
+@example
+(vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
+(list->vector '(1 2 3 4 5))      @result{} #(1 2 3 4 5)
+(vector->list '#(1 2 3 4 5) 2 4) @result{} (3 4)
+@end example
 
 @code{gauche.collection}モジュールをロードしていれば、
 @code{(coerce-to <list> @var{vector})} と
@@ -6829,6 +6844,21 @@ These optional arguments are Gauche's extension.
 それぞれ0と@var{vector}の大きさです。
 @var{start}, @var{end}引数はGaucheの拡張です。
 @c COMMON
+@end defun
+
+@defun vector-copy vector &optional start end
+@c EN
+Copies a vector @var{vector}.  Optional @var{start} and @var{end}
+arguments can be used to limit the range of @var{vector} to be copied.
+@c JP
+ベクタ@var{vector}をコピーします。引数@var{start}と@var{end}を与えることで
+コピーされる範囲を制限することができます。
+@c COMMON
+
+@example
+(vector-copy '#(1 2 3 4 5))     @result{} #(1 2 3 4 5)
+(vector-copy '#(1 2 3 4 5) 2 4) @result{} #(3 4)
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -7758,7 +7788,7 @@ the following conceptual Scheme code.
 @end example
 
 @c ----------------------------------------------------------------------
-@node Eval, Input and output, Exceptions, Core library
+@node Eval, Threads, Exceptions, Core library
 @section Eval
 
 @defun eval expr env
@@ -7797,7 +7827,260 @@ a better way.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Input and output, Loading Programs, Eval, Core library
+@node Threads, Input and output, Eval, Core library
+@section Threads
+@c NODE スレッド
+
+If enabled at compilation time, Gauche can use threads
+built on top of POSIX threads (pthreads). 
+To check if threads are available in the running Gauche program,
+use the following procedure.
+
+@defun gauche-thread-type
+Returns a symbol that indicates the supported thread type.
+In the current version, the return value may be @code{pthread}
+when threads on top of POSIX threads are available, or
+@code{none} when threads are not available.
+@end defun
+
+Scheme-level thread API conforms SRFI-18, "Multithreading support"
+(@ref{srfi-18,,[SRFI-18]}), wrapped around Gauche's object interface.
+
+@menu
+* Thread procedures::           
+* Synchronization primitives::  
+* Thread exceptions::           
+@end menu
+
+@node Thread procedures, Synchronization primitives, Threads, Threads
+@subsection Thread procedures
+
+@deftp {Builtin Class} <thread>
+@clindex thread
+A thread.  Each thread has an associated thunk which is evaluated by
+a POSIX thread.  When thunk returns normally, the result is stored
+in the internal 'result' slot, and can be retrieved by @code{thread-join!}.
+When thunk terminates abnormally, either by raising an exception or
+terminated by @code{thread-terminate!}, the exception condition is
+stored in ther internal 'result exception' slot, and will be passed
+to the thread calling @code{thread-join!} on the terminated thread.
+
+Each thread has its own dynamic environment and dynamic handler stack.
+When a thread is created, its dynamic environment is initialized by
+the creator's dynamic environment.  The thread's dynamic handler
+stack is initially empty.
+
+A thread object has the following external slots.
+
+@defivar <thread> name
+A name can be associated to a thread.
+This is just for the convenience of the application.
+The primordial thread has the name "@code{root}".
+@end defivar
+
+@defivar <thread> specific
+A thread-local slot for use of the application.
+@end defivar
+@end deftp
+
+@defun current-thread
+[SRFI-18], [SRFI-21]
+Returns the current thread.
+@end defun
+
+@defun thread? obj
+[SRFI-18], [SRFI-21]
+Returns @code{#t} if @var{obj} is a thread, @code{#f} otherwise.
+@end defun
+
+@defun make-thread thunk &optional name
+[SRFI-18], [SRFI-21]
+Creates and returns a new thread.  To run the thread, you need to
+call @code{thread-start!}.
+
+You can provide the name of the thread by the optional argument @var{name}.
+
+Internally, this procedure just allocates and initializes a Scheme
+thread object; the POSIX thread is not created until @code{thread-start!}
+is called.
+@end defun
+
+@defun thread-name thread
+[SRFI-18], [SRFI-21]
+Returns the value of @var{name} slot of @var{thread}.
+@end defun
+
+@defun thread-specific thread
+@defunx thread-specific-set! thread value
+[SRFI-18], [SRFI-21]
+Gets/sets the value of the @var{thread}'s specific slot.
+@end defun
+
+@defun thread-start! thread
+[SRFI-18], [SRFI-21]
+Starts the @var{thread}.  It is an error if @var{thread} is already started.
+Returns @var{thread}.
+@end defun
+
+@defun thread-yield!
+[SRFI-18], [SRFI-21]
+Suspends the execution of the calling thread and yields CPU to other
+waiting runnable threads, if any.
+@end defun
+
+@defun thread-sleep! timeout
+[SRFI-18], [SRFI-21]
+Suspends the calling thread for the period specified by @var{timeout},
+which must be either a @code{<time>} object (@xref{SRFI time}) that
+specifies absolute point of time, or a real number that specifies
+relative point of time from the time this procedure is called
+in number of seconds.
+
+After the specified time passes, @code{thread-sleep!} returns with
+unspecified value.
+
+If @var{timeout} points a past time, @code{thread-sleep!} returns
+immediately.
+@end defun
+
+@defun thread-terminate! thread
+[SRFI-18], [SRFI-21]
+Terminates the specified thread @var{thread}.
+The @var{thread} is terminated and an instance of 
+@code{<terminated-thread-exception>} is stored in the result exception
+field of @var{thread}.
+
+If @var{thread} is the same as the calling thread, this procedure
+won't return.  Otherwise, this procedure returns unspecified value.
+
+This procedure should be used with care, since
+@var{thread} won't have a chance to call cleanup
+procedures (such as 'after' thunks of @code{dynamic-wind})
+If @var{thread} is in the critical section, it leaves some state
+inconsistent.  However, once a thread is terminated, any mutex
+that the thread has kept becomes 'abandoned' state, and an attempt
+to lock such a mutex by other thread raises an 'abandoned mutex exception',
+so that you will know the situation.  @xref{Synchronization primitives}.
+@end defun
+
+
+@defun thread-join! thread &optional timeout timeout-val
+[SRFI-18], [SRFI-21]
+Waits termination of @var{thread}, or until the timeout is reached
+if @var{timeout} is given.
+
+@var{Timeout} must be either a @code{<time>} object (@xref{SRFI time})
+that specifies absolute point of time, or a real number that specifies
+relative point of time from the time this procedure is called
+in number of seconds, or @code{#f} that indicates no timeout (default).
+
+If @var{thread} terminates normally, @code{thread-join!} returns
+a value which is stored in the result field of @var{thread}.
+If @var{thread} terminates abnormally, @code{thread-join!} raises
+an exception which is stored in the result exception field of @var{thread}.
+
+If the timeout is reached, @var{thread-join!} returns @var{timeout-val}
+if given, or raises @code{<join-timeout-exception>}.
+@end defun
+
+@node Synchronization primitives, Thread exceptions, Thread procedures, Threads
+@subsection Synchronization primitives
+
+@deftp {Builtin Class} <mutex>
+@clindex mutex
+@end deftp
+
+@defun mutex? obj
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun make-mutex &optional name
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun mutex-name mutex
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun mutex-specific mutex
+@defunx mutex-specific-set! mutex value
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun mutex-state mutex
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun mutex-lock! mutex &optional timeout thread
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun mutex-unlock! mutex &optional condition-variable timeout
+[SRFI-18], [SRFI-21]
+@end defun
+
+@deftp {Builtin Class} <condition-variable>
+@clindex condition-variable
+@end deftp
+
+@defun condition-variable? obj
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun make-condition-variable &optional name
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun condition-variable-name cv
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun condition-variable-specific cv
+@defunx condition-variable-specific-set! cv value
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun condition-variable-signal! cv 
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun condition-variable-broadcast! cv
+[SRFI-18], [SRFI-21]
+@end defun
+
+@node Thread exceptions,  , Synchronization primitives, Threads
+@subsection Thread exceptions
+
+@deftp {Builtin Class} <join-timeout-exception>
+@clindex join-timeout-exception
+@end deftp
+
+@deftp {Builtin Class} <abandoned-mutex-exception>
+@clindex abandoned-mutex-exception
+@end deftp
+
+@deftp {Builtin Class} <terminated-thread-exception>
+@clindex terminated-thread-exception
+@end deftp
+
+@deftp {Builtin Class} <uncaught-exception>
+@clindex uncaught-exception
+@end deftp
+
+@defun join-timeout-exception? obj
+@defunx abandoned-mutex-exception? obj
+@defunx terminated-thread-exception> obj
+@defunx uncaught-exception? obj
+[SRFI-18], [SRFI-21]
+@end defun
+
+@defun uncaught-exception-reasion exc
+[SRFI-18], [SRFI-21]
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Input and output, Loading Programs, Threads, Core library
 @section Input and Output
 @c NODE 入出力
 
@@ -22801,10 +23084,20 @@ Olin Shivers, Character-set Library, December 2000. @*
 Per Bothner, Generalized @code{set!}, July 2000. @*
 @url{http://srfi.schemers.org/srfi-17/srfi-17.html}.
 
+@anchor{srfi-18}
+@item [SRFI-18]
+Marc Feeley, Multithreading Support, April 2000. @*
+@url{http://srfi.schemers.org/srfi-18/srfi-18.html}.
+
 @anchor{srfi-19}
 @item [SRFI-19]
 Will Fitzgerald, Time Data Types and Procedures, August 2000. @*
-@url{http://srfi.schemers.org/srfi-18/srfi-18.html}.
+@url{http://srfi.schemers.org/srfi-19/srfi-19.html}.
+
+@anchor{srfi-21}
+@item [SRFI-21]
+Marc Feeley, Readl-time Multithreading Support, April 2000. @*
+@url{http://srfi.schemers.org/srfi-21/srfi-21.html}.
 
 @anchor{srfi-22}
 @item [SRFI-22]
