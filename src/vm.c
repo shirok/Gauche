@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.23 2001-02-03 11:29:39 shiro Exp $
+ *  $Id: vm.c,v 1.24 2001-02-05 00:36:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -64,18 +64,18 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->enableInline = TRUE;
     v->debugCompile = FALSE;
 
-    /* initial frame */
+    v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
+    v->sp = v->stack;
+    v->stackSize = SCM_VM_STACK_SIZE;
+
     v->env = NULL;
-        
+    v->argp = (ScmEnvFrame*)v->stack;
     v->cont = NULL;
     v->pc = SCM_NIL;
     v->val0 = SCM_UNDEFINED;
     
     v->handlers = SCM_NIL;
 
-    v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
-    v->sp = v->stack;
-    v->stackSize = SCM_VM_STACK_SIZE;
     return v;
 }
 
@@ -136,14 +136,17 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 
 /* declare local variables for registers, and copy the current VM regs
    to them. */
-#define DECL_REGS                               \
-    ScmVM *vm = theVM;                          \
-    ScmObj pc = vm->pc;                         \
-    ScmContFrame *cont = vm->cont;              \
-    ScmEnvFrame *env = vm->env;                 \
-    ScmEnvFrame *argp = vm->argp;               \
-    ScmObj *sp = vm->sp;                        \
-    ScmObj val0 = vm->val0
+#define DECL_REGS             DECL_REGS_INT(/**/)
+#define DECL_REGS_VOLATILE    DECL_REGS_INT(volatile)
+
+#define DECL_REGS_INT(VOLATILE)                 \
+    ScmVM *VOLATILE vm = theVM;                 \
+    VOLATILE ScmObj pc = vm->pc;                \
+    ScmContFrame *VOLATILE cont = vm->cont;     \
+    ScmEnvFrame *VOLATILE env = vm->env;        \
+    ScmEnvFrame *VOLATILE argp = vm->argp;      \
+    ScmObj *VOLATILE sp = vm->sp;               \
+    VOLATILE ScmObj val0 = vm->val0
 
 /* save VM regs into VM structure. */
 #define SAVE_REGS()                             \
@@ -900,24 +903,58 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     return SCM_UNDEFINED;
 }
 
-/* User level eval().  */
-ScmObj Scm_Eval(ScmObj expr, ScmObj e)
-{
-    vm_reset(); /* shouldn't reset, actually.  we need
-                   some mechanism to save the current vm state,
-                   and recover it upon leaving this continuation. */
-    theVM->pc = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-    if (theVM->debugCompile)
-        Scm_Printf(theVM->curerr, "== %#S\n", theVM->pc);
-    run_loop();
-}
-
-/* Adjusts sp so that a VM function can be called outside of a subr.
-   Usually followed by Scm_VM* function. */
-/* TODO: ugly interface.  any good alternative? */
-void Scm_VMPrepareCall(void)
+/*
+ * User level eval and apply.
+ */
+static ScmObj user_eval_inner(ScmObj program)
 {
     DECL_REGS;
+    pc = program;
+    SAVE_REGS();
+    run_loop();
+    return theVM->val0;
+}
+
+ScmObj Scm_Eval(ScmObj expr, ScmObj e)
+{
+    DECL_REGS_VOLATILE;
+    ScmObj result = SCM_UNDEFINED;
+    SCM_PUSH_ERROR_HANDLER {
+        ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+        if (theVM->debugCompile)
+            Scm_Printf(theVM->curerr, "== %#S\n", v);
+        result = user_eval_inner(v);
+    }
+    SCM_WHEN_ERROR {
+        SAVE_REGS();            /* restore curren VM regs */
+        SCM_PROPAGATE_ERROR;
+    }
+    SCM_POP_ERROR_HANDLER;
+    return result;
+}
+
+ScmObj Scm_Apply(ScmObj proc, ScmObj args)
+{
+    DECL_REGS_VOLATILE;
+    ScmObj result = SCM_UNDEFINED;
+    SCM_PUSH_ERROR_HANDLER {
+        ScmObj code = SCM_NIL, tail, cp;
+        int nargs = 0;
+        SCM_FOR_EACH(cp, args) {
+            SCM_APPEND1(code, tail, SCM_CAR(cp));
+            SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
+            nargs++;
+        }
+        SCM_APPEND1(code, tail, proc);
+        SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, nargs));
+        result = user_eval_inner(SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL),code));
+    }
+    SCM_WHEN_ERROR {
+        SAVE_REGS();            /* restore current VM regs */
+        SCM_PROPAGATE_ERROR;
+    }
+    SCM_POP_ERROR_HANDLER;
+    return result;
 }
 
 /*
