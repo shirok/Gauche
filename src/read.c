@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.34 2002-01-03 21:45:49 shirok Exp $
+ *  $Id: read.c,v 1.35 2002-01-05 08:00:56 shirok Exp $
  */
 
 #include <stdio.h>
@@ -90,7 +90,7 @@ ScmObj Scm_ReadFromCString(const char *cstr)
  * Error
  */
 
-static void read_error(ScmPort *port, const char *msg, ...)
+void Scm_ReadError(ScmPort *port, const char *msg, ...)
 {
     ScmObj ostr = Scm_MakeOutputStringPort();
     ScmObj name = Scm_PortName(port);
@@ -152,7 +152,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             SCM_GETC(c1, port);
             switch (c1) {
             case EOF:
-                read_error(port, "premature #-sequence at EOF");
+                Scm_ReadError(port, "premature #-sequence at EOF");
             case 't':; case 'T': return SCM_TRUE;
             case 'f':; case 'F': return maybe_uvector(port, 'f', ctx);
             case 's':; case 'S': return maybe_uvector(port, 's', ctx);
@@ -198,7 +198,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     return SCM_LIST2(SCM_INTERN("debug-print"), form);
                 }
             default:
-                read_error(port, "unsupported #-syntax: #%C", c1);
+                Scm_ReadError(port, "unsupported #-syntax: #%C", c1);
             }
         }
     case '\'': return read_quoted(port, SCM_SYM_QUOTE, ctx);
@@ -210,7 +210,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             int c1 = 0;
             SCM_GETC(c1, port);
             if (c1 == EOF) {
-                read_error(port, "unterminated unquote");
+                Scm_ReadError(port, "unterminated unquote");
             } else if (c1 == '@') {
                 return read_quoted(port, SCM_SYM_UNQUOTE_SPLICING, ctx);
             } else {
@@ -235,7 +235,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             SCM_GETC(c1, port);
             switch (c1) {
             PUNCT_CASE:
-                read_error(port, "dot in wrong context");
+                Scm_ReadError(port, "dot in wrong context");
             default:
                 SCM_UNGETC(c1, port);
                 return read_symbol_or_number(port, c);
@@ -247,7 +247,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
            but some Scheme programs use such identifiers. */
         return read_symbol_or_number(port, c);
     case ')':; case ']':; case '}':;
-        read_error(port, "extra close parenthesis");
+        Scm_ReadError(port, "extra close parenthesis");
     case EOF:
         return SCM_EOF;
     default:
@@ -269,20 +269,32 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     
     for (;;) {
         c = skipws(port);
-        if (c == EOF) read_error(port, "EOF inside a list");
+        if (c == EOF) {
+            if (line >= 0) {
+                Scm_ReadError(port, "EOF inside a list (starting from line %d)", line);
+            } else {
+                Scm_ReadError(port, "EOF inside a list");
+            }
+        }
         if (c == closer) return start;
 
-        if (dot_seen) read_error(port, "bad dot syntax");
+        if (dot_seen) Scm_ReadError(port, "bad dot syntax");
 
         if (c == '.') {
             int c2 = 0;
             SCM_GETC(c2, port);
-            if (c2 == closer || c2 == EOF) {
-                read_error(port, "bad dot syntax");
+            if (c2 == closer) { 
+                Scm_ReadError(port, "bad dot syntax");
+            } else if (c2 == EOF) {
+                if (line >= 0) {
+                    Scm_ReadError(port, "EOF inside a list (starting from line %d)", line);
+                } else {
+                    Scm_ReadError(port, "EOF inside a list");
+                }
             } else if (isspace(c2)) {
                 /* dot pair at the end */
                 if (start == SCM_NIL) {
-                    read_error(port, "bad dot syntax");
+                    Scm_ReadError(port, "bad dot syntax");
                 }
                 item = read_internal(port, ctx);
                 SCM_SET_CDR(last, item);
@@ -308,7 +320,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 {
     ScmObj item = read_internal(port, ctx);
-    if (SCM_EOFP(item)) read_error(port, "unterminated quote");
+    if (SCM_EOFP(item)) Scm_ReadError(port, "unterminated quote");
     return Scm_Cons(quoter, Scm_Cons(item, SCM_NIL));
 }
 
@@ -384,7 +396,7 @@ static ScmObj read_string(ScmPort *port, int incompletep)
         }
     }
  eof_exit:
-    read_error(port, "EOF encountered in a string literal: %S", Scm_DStringGet(&ds));
+    Scm_ReadError(port, "EOF encountered in a string literal: %S", Scm_DStringGet(&ds));
     /* NOTREACHED */
     return SCM_FALSE; 
 }
@@ -423,7 +435,7 @@ static ScmObj read_char(ScmPort *port)
     
     SCM_GETC(c, port);
     switch (c) {
-    case EOF: read_error(port, "EOF encountered in character literal");
+    case EOF: Scm_ReadError(port, "EOF encountered in character literal");
     case '(':; case ')':; case '[':; case ']':; case '{':; case '}':;
     case '"':; case ' ':; case '\\':; case '|':; case ';':;
     case '#':;
@@ -451,7 +463,7 @@ static ScmObj read_char(ScmPort *port)
             if (strcmp(cntab->name, cname) == 0) return cntab->ch;
             cntab++;
         }
-        read_error(port, "Unknown character name: #\\%s", cname);
+        Scm_ReadError(port, "Unknown character name: #\\%s", cname);
     }
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -495,7 +507,7 @@ static ScmObj read_number(ScmPort *port, ScmChar initial)
     ScmString *s = SCM_STRING(read_word(port, initial));
     ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
-        read_error(port, "bad numeric format: %S", s);
+        Scm_ReadError(port, "bad numeric format: %S", s);
     return num;
 }
 
@@ -524,7 +536,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
     for (;;) {
         SCM_GETC(c, port);
         if (c == EOF) {
-            read_error(port, "unterminated escaped symbol: |%s ...",
+            Scm_ReadError(port, "unterminated escaped symbol: |%s ...",
                        Scm_DStringGetz(&ds));
         } else if (c == delim) {
             ScmString *s = SCM_STRING(Scm_DStringGet(&ds));
@@ -548,13 +560,13 @@ static ScmObj read_regexp(ScmPort *port)
     for (;;) {
         SCM_GETC(c, port);
         if (c == SCM_CHAR_INVALID) {
-            read_error(port, "unterminated literal regexp");
+            Scm_ReadError(port, "unterminated literal regexp");
         }
         if (c == '\\') {
             SCM_DSTRING_PUTC(&ds, c);
             SCM_GETC(c, port);
             if (c == SCM_CHAR_INVALID) {
-                read_error(port, "unterminated literal regexp");
+                Scm_ReadError(port, "unterminated literal regexp");
             }
             SCM_DSTRING_PUTC(&ds, c);
         } else if (c == '/') {
@@ -592,13 +604,13 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmObj form)
     ScmHashEntry *e;
 
     if (len <= 0) {
-        read_error(port, "bad #,-form: #,%S", form);
+        Scm_ReadError(port, "bad #,-form: #,%S", form);
     }
 
     /* TODO: MT Safeness */
     e = Scm_HashTableGet(read_ctor_table, SCM_CAR(form));
     if (e == NULL) {
-        read_error(port, "unknown #,-key: %S", SCM_CAR(form));
+        Scm_ReadError(port, "unknown #,-key: %S", SCM_CAR(form));
     }
     SCM_ASSERT(SCM_PROCEDUREP(e->value));
     return Scm_Apply(e->value, SCM_CDR(form));
@@ -655,7 +667,7 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
             bufp += SCM_CHAR_NBYTES(c2);
         }
         *bufp = '\0';
-        read_error(port, "invalid uniform vector tag: %s", buf);
+        Scm_ReadError(port, "invalid uniform vector tag: %s", buf);
     }
     if (Scm_ReadUvectorHook == NULL) {
         /* load srfi-4. */
