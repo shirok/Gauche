@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.59 2001-04-06 10:02:04 shiro Exp $
+;;; $Id: extlib.stub,v 1.60 2001-04-07 06:40:07 shiro Exp $
 ;;;
 
 "
@@ -104,6 +104,11 @@
   SCM_FOR_EACH(ap, SCM_CDR(args))
     set = Scm_Union(set, SCM_CAR(ap));
   SCM_RETURN(set);")
+
+(define-cproc append! (&rest list)
+  "  ScmObj cp, h = SCM_NIL, t;
+  SCM_FOR_EACH(cp, list) SCM_APPEND(h, t, SCM_CAR(cp));
+  SCM_RETURN(h);")
 
 (define-cproc reverse! (list)
   "  SCM_RETURN(Scm_ReverseX(list));")
@@ -203,6 +208,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 ;; 6.3.4  Characters
 ;;
+
+(define-cproc gauche-character-encoding ()
+  "  SCM_RETURN(Scm_CharEncodingName());")
 
 ;; character sets (SRFI-14)
 ;;   not all of srfi-14 functions are defined in C.  you need to load
