@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.19 2002-07-09 10:39:32 shirok Exp $
+ *  $Id: signal.c,v 1.20 2002-07-16 23:18:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -46,9 +46,21 @@
  *  since GC uses it in the Linux/pthread environment.
  */
 
+#ifdef GAUCHE_USE_PTHREADS
+#define SIGPROCMASK pthread_sigmask
+#else
+#define SIGPROCMASK sigprocmask
+#endif
+
 /* Master signal handler vector. */
 static struct sigHandlersRec {
-    sigset_t masterSigset;      /* the signals Gauche is allowed to handle */
+    sigset_t masterSigset;      /* The signals Gauche is _allowed_ to handle.
+                                   set by Scm_SetMasterSigset.
+                                   For some signals in this set Gauche sets
+                                   the default signal handlers; for other
+                                   signals in this set Gauche leaves them
+                                   for the system to handle.  These can be
+                                   overridden by Scm_SetSignalHandler. */
     ScmObj handlers[NSIG];      /* Scheme signal handlers */
     ScmInternalMutex mutex;
 } sigHandlers;
@@ -308,18 +320,19 @@ static void sig_handle(int signum)
 void Scm_SigCheck(ScmVM *vm)
 {
     ScmObj tail, cell, sp;
+    sigset_t cmask, omask;
     int sigQsize, i;
     int sigQcopy[SCM_VM_SIGQ_SIZE]; /* copy of signal queue */
 
     /* Copy VM's signal queue to local storage, for we can't call
        storage allocation during blocking signals. */
-    sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);
+    SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
     for (sigQsize = 0; vm->sigQueueHead != vm->sigQueueTail; sigQsize++) {
         sigQcopy[sigQsize] = vm->sigQueue[vm->sigQueueHead++];
         if (vm->sigQueueHead >= SCM_VM_SIGQ_SIZE) vm->sigQueueHead = 0;
     }
     vm->sigOverflow = 0; /*TODO: we should do something*/
-    sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
+    SIGPROCMASK(SIG_SETMASK, &omask, NULL);
 
     /* Now, prepare queued signal handlers
        If an error is thrown in this loop, the queued signals will be
@@ -393,9 +406,9 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler)
             if (!sigismember(&sigHandlers.masterSigset, desc->num)) continue;
             if (sigaction(desc->num, &act, NULL) != 0) {
                 sigactionfailed = desc->num;
-                break;
+            } else {
+                sigHandlers.handlers[desc->num] = handler;
             }
-            sigHandlers.handlers[desc->num] = handler;
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
@@ -502,15 +515,9 @@ ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
     if (how != SIG_SETMASK && how != SIG_BLOCK && how != SIG_UNBLOCK) {
         Scm_Error("bad 'how' argument for signal mask action: %d", how);
     }
-#ifdef GAUCHE_USE_PTHREADS
-    if (pthread_sigmask(how, &(newmask->set), &(oldmask->set)) != 0) {
-        Scm_Error("pthread_sigmask failed");
+    if (SIGPROCMASK(how, &(newmask->set), &(oldmask->set)) != 0) {
+        Scm_Error("sigprocmask failed");
     }
-#else  /*!GAUCHE_USE_PTHREADS*/
-    if (sigprocmask(how, &(newmask->set), &(oldmask->set)) != 0) {
-        Scm_SysError("sigprocmask failed");
-    }
-#endif /*!GAUCHE_USE_PTHREADS*/
     return SCM_OBJ(oldmask);
 }
 
