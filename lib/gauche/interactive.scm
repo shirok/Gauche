@@ -12,11 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interactive.scm,v 1.7 2001-11-12 11:50:13 shirok Exp $
+;;;  $Id: interactive.scm,v 1.8 2001-12-15 11:07:35 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
-  (use gauche.vm.debugger)
   (export apropos describe d)
   )
 (select-module gauche.interactive)
