@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.222 2002-03-14 11:20:21 shirok Exp $
+ *  $Id: gauche.h,v 1.223 2002-03-28 19:50:54 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -374,6 +374,7 @@ SCM_EXTERN ScmObj Scm_WithLock(ScmInternalMutex *mutex,
                                const char *info);
 SCM_EXTERN ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
 SCM_EXTERN ScmObj Scm_ThreadStart(ScmVM *vm);
+SCM_EXTERN ScmObj Scm_ThreadJoin(ScmVM *vm);
 
 /*---------------------------------------------------------
  * CLASS
@@ -1882,6 +1883,7 @@ typedef struct ScmMutexRec {
     SCM_HEADER;
     ScmInternalMutex mutex;
     ScmObj specific;
+    int    status;
     ScmVM *owner;
 } ScmMutex;
 
@@ -1890,6 +1892,14 @@ SCM_CLASS_DECL(Scm_MutexClass);
 #define SCM_MUTEX(obj)         ((ScmMutex*)obj)
 #define SCM_MUTEXP(obj)        SCM_XTYPEP(obj, SCM_CLASS_MUTEX)
 
+enum {
+    SCM_MUTEX_UNLOCKED,
+    SCM_MUTEX_LOCKED,
+    SCM_MUTEX_ABANDONED
+};
+
+ScmObj Scm_MutexLock(ScmMutex *mutex);
+ScmObj Scm_MutexUnlock(ScmMutex *mutex);    
 
 /*---------------------------------------------------
  * SIGNAL

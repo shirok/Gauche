@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.55 2002-03-13 12:07:39 shirok Exp $
+;;;  $Id: genstub,v 1.56 2002-03-28 19:50:54 shirok Exp $
 ;;;
 
 (use srfi-0)
@@ -118,6 +118,7 @@
 (make-type "class"     'class?     "ScmClass*"     "SCM_CLASSP" "SCM_CLASS")
 (make-type "module"    'module?    "ScmModule*"    "SCM_MODULEP" "SCM_MODULE")
 (make-type "thread"    'thread?    "ScmVM*"        "SCM_VMP"     "SCM_VM")
+(make-type "mutex"     'mutex?     "ScmMutex*"     "SCM_MUTEXP"  "SCM_MUTEX")
 
 ;; default
 (define *scm-type*

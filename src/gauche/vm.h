@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.59 2002-03-14 11:20:22 shirok Exp $
+ *  $Id: vm.h,v 1.60 2002-03-28 19:50:54 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -168,6 +168,17 @@ typedef struct ScmEscapePointRec {
  *
  *  In Gauche, each thread has a VM.  Indeed, the Scheme object
  *  <thread> is ScmVM in C.
+ *
+ *  Most fields of VM are private to the thread that owns the VM.
+ *  Only the fields marked as "PUBLIC" should be modified by other
+ *  thread, and only with obtaining the lock by VMLOCK mutex.
+ *
+ *  Note that some fields like "name" and "specific" are not marked
+ *  as PUBLIC although they can be referenced or modified by other
+ *  thread (via Scheme call thread-specific-set! etc.)   It is the
+ *  user program's responsibility to use a mutex.
+ *  When you should introspect other thread (like stack trace), make
+ *  sure you stopped that thread, or you may get inconsistent result.
  */
 
 struct ScmVMRec {
@@ -175,15 +186,20 @@ struct ScmVMRec {
 #ifdef GAUCHE_USE_PTHREAD
     pthread_t thread;           /* the thread executing this VM. */
 #endif /*!GAUCHE_USE_PTHREAD*/
-    int state;                  /* thread state. */
-    ScmInternalMutex  vmlock;   /* mutex to be used to lock this VM structure. */
+    int state;                  /* thread state. PUBLIC. */
+    ScmInternalMutex  vmlock;   /* mutex to be used to lock this VM
+                                   structure.  PUBLIC. */
+    ScmInternalCond cond;       /* the condition variable to wait for state
+                                   change of this VM.  PUBLIC. */
     ScmObj name;                /* Scheme thread name. */
     ScmObj specific;            /* Scheme thread specific data. */
     ScmProcedure *thunk;        /* Entry point of this VM. */
+    ScmObj result;              /* Result of thunk. */
     ScmModule *module;          /* current global namespace.  note that this
                                    is used only in compilation. */
     ScmCStack *cstack;          /* current escape point.  see the comment of
                                    "C stack rewinding" below. */
+    ScmObj mutexes;             /* list of mutexes this thread is locking. */
 
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */

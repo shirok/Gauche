@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.129 2002-03-14 11:20:21 shirok Exp $
+;;; $Id: extlib.stub,v 1.130 2002-03-28 19:50:54 shirok Exp $
 ;;;
 
 "
@@ -1086,6 +1086,16 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc gauche-site-architecture-directory ()
   "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));")
 
+(define-symbol pthread "sym_pthread")
+(define-symbol uthread "sym_uthread")
+
+(define-cproc gauche-thread-type ()
+  "#ifdef GAUCHE_USE_PTHREADS
+  SCM_RETURN(sym_pthread);
+#else
+  SCM_RETURN(sym_uthread);
+#endif")
+
 ;;
 ;; Thread = VM
 ;;
@@ -1114,6 +1124,29 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc thread-start! (vm)
   (assert (thread? vm))
   "SCM_RETURN(Scm_ThreadStart(vm));")
+
+(define-cproc thread-join! (vm)
+  (assert (thread? vm))
+  "SCM_RETURN(Scm_ThreadJoin(vm));")
+
+(define-cproc mutex? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_MUTEXP(obj)));")
+
+(define-cproc mutex-lock! (mutex)
+  (assert (mutex? mutex))
+  "SCM_RETURN(Scm_MutexLock(mutex));")
+  
+(define-cproc mutex-unlock! (mutex)
+  (assert (mutex? mutex))
+  "SCM_RETURN(Scm_MutexUnlock(mutex));")
+
+(define-cproc mutex-specific (mutex)
+  (assert (mutex? mutex))
+  "SCM_RETURN(mutex->specific);")
+
+(define-cproc mutex-specific-set! (mutex obj)
+  (assert (mutex? mutex))
+  "mutex->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc vm-dump (&optional vm)
   " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());

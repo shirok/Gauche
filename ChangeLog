@@ -1,3 +1,11 @@
+2002-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/vm.h : adding more thread support.
+	* src/mutex.c : added.
+	* configure.in, Makefile.in, gc/Makefile.in : compile GC with
+	  pthred support when requested.   It was the cause of hang
+	  problem found in 3/13.
+
 2002-03-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/vm.h : added initial code for make-thread and

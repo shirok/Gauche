@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.135 2002-03-14 11:20:21 shirok Exp $
+ *  $Id: vm.c,v 1.136 2002-03-28 19:50:54 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -73,12 +73,15 @@ ScmVM *Scm_NewVM(ScmVM *base,
     
     SCM_SET_CLASS(v, SCM_CLASS_VM);
     SCM_INTERNAL_MUTEX_INIT(v->vmlock);
+    SCM_INTERNAL_COND_INIT(v->cond);
     v->state = SCM_VM_NEW;
     v->name = name;
     v->specific = SCM_FALSE;
     v->thunk = NULL;
+    v->result = SCM_UNDEFINED;
     v->module = module ? module : base->module;
     v->cstack = base ? base->cstack : NULL;
+    v->mutexes = SCM_NIL;
     
     v->curin  = SCM_PORT(Scm_Stdin());
     v->curout = SCM_PORT(Scm_Stdout());
@@ -146,7 +149,15 @@ void Scm_VMSetResult(ScmObj obj)
 void vm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmVM *vm = SCM_VM(obj);
-    Scm_Printf(port, "#<thread %S %p>", vm->name, vm);
+    const char *state;
+    switch (vm->state) {
+    case SCM_VM_NEW:        state = "new"; break;
+    case SCM_VM_RUNNABLE:   state = "runnable"; break;
+    case SCM_VM_BLOCKED:    state = "blocked"; break;
+    case SCM_VM_TERMINATED: state = "terminated"; break;
+    default: state = "(unknown state)";
+    }
+    Scm_Printf(port, "#<thread %S %s %p>", vm->name, state, vm);
 }
 
 /*
@@ -200,17 +211,22 @@ ScmObj Scm_WithLock(ScmInternalMutex *mutex,
 static void vm_cleanup(void *data)
 {
     ScmVM *vm = SCM_VM(data);
-    if (pthread_mutex_lock(&vm->vmlock) == EDEADLK) {
-        Scm_Panic("dead lock in vm_cleanup.");
-    }
-    vm->state = SCM_VM_TERMINATED;
-    pthread_mutex_unlock(&vm->vmlock);
+    /* Remove this VM from the global list. */
     if (pthread_mutex_lock(&vmListMutex) == EDEADLK) {
         Scm_Panic("dead lock in vm_cleanup.");
     }
     /* NB: Assuming Scm_DeleteX doesn't throw an error for EQ comparison. */
     vmList = Scm_DeleteX(SCM_OBJ(vm), vmList, SCM_CMP_EQ);
     pthread_mutex_unlock(&vmListMutex);
+
+    /* Change this VM state to TERMINATED, and signals the change
+       to the waiting threads. */
+    if (pthread_mutex_lock(&vm->vmlock) == EDEADLK) {
+        Scm_Panic("dead lock in vm_cleanup.");
+    }
+    vm->state = SCM_VM_TERMINATED;
+    pthread_cond_broadcast(&vm->cond);
+    pthread_mutex_unlock(&vm->vmlock);
 }
 #endif /* GAUCHE_USE_PTHREAD */
 
@@ -2332,7 +2348,7 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
  * Thread interface
  */
 
-/* Creation.  In the "NEW" state, just VM is allocated but actual thread
+/* Creation.  In the "NEW" state, a VM is allocated but actual thread
    is not created. */
 static ScmObj insert_self(void *self)
 {
@@ -2353,29 +2369,45 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
 }
 
 /* Start a thread.  If the VM is in "NEW" state, create a new thread and
-   make it run.  Otherwise, if the thread has been stopped, restart it. */
+   make it run.  Otherwise, if the thread has been stopped, restart it.
+
+   With pthread, the real thread is started as "detached" mode; i.e. once
+   the thread exits, the resources allocated for the thread by the system
+   is collected, including the result of the thread.  During this
+   deconstruction phase, the handler vm_cleanup() runs and saves the
+   thread result to the ScmVM structure.  If nobody cares about the
+   result of the thread, ScmVM structure will eventually be GCed.
+   This is to prevent exitted thread's system resources from being
+   uncollected.
+ */
 static void *thread_entry(void *vm)
 {
-    ScmObj r;
     if (pthread_setspecific(vm_key, vm) != 0) {
-        Scm_Error("pthread_setspecific failed on %S", vm);
+        /* NB: at this point, theVM is not set and we can't use Scm_Error. */
+        Scm_Panic("pthread_setspecific failed");
     }
-    r = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
+    SCM_VM(vm)->result = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
     return NULL;
 }
 
 static ScmObj thread_start(void *data)
 {
     ScmVM *vm = SCM_VM(data);
+#ifdef GAUCHE_USE_PTHREAD
+    pthread_attr_t thattr;
+#endif /* GAUCHE_USE_PTHREAD */
     switch (vm->state) {
     case SCM_VM_NEW:
 #ifdef GAUCHE_USE_PTHREAD
         SCM_ASSERT(vm->thunk);
         vm->state = SCM_VM_RUNNABLE;
-        if (pthread_create(&vm->thread, NULL, thread_entry, data) != 0) {
+        pthread_attr_init(&thattr);
+        pthread_attr_setdetachstate(&thattr, TRUE);
+        if (pthread_create(&vm->thread, &thattr, thread_entry, data) != 0) {
             vm->state = SCM_VM_NEW;
             Scm_Error("couldn't create a pthread for thread %S", vm);
         }
+        pthread_attr_destroy(&thattr);
 #else  /*!GAUCHE_USE_PTHREAD*/
 #endif /*!GAUCHE_USE_PTHREAD*/
         break;
@@ -2397,6 +2429,29 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 {
     return Scm_WithLock(&(vm->vmlock), thread_start,
                         (void*)vm, "starting thread");
+}
+
+/* Join thread.  Wait on condition variable */
+#ifdef GAUCHE_USE_PTHREAD
+static ScmObj thread_join(void *data)
+{
+    ScmVM *target = SCM_VM(data);
+    if (target->state != SCM_VM_TERMINATED) {
+        pthread_cond_wait(&(target->cond), &(target->vmlock));
+    }
+    return target->result;
+}
+#endif /*GAUCHE_USE_PTHREAD*/
+
+ScmObj Scm_ThreadJoin(ScmVM *target)
+{
+#ifdef GAUCHE_USE_PTHREAD
+    return Scm_WithLock(&(target->vmlock), thread_join, (void*)target,
+                        "thread join");
+#else  /*!GAUCHE_USE_PTHREAD*/
+    Scm_Error("not implemented!\n");
+    return SCM_UNDEFINED;
+#endif /*!GAUCHE_USE_PTHREAD*/
 }
 
 /*==============================================================

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.58 2002-03-13 10:45:51 shirok Exp $
+dnl $Id: configure.in,v 1.59 2002-03-28 19:50:49 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.58 $)
+AC_REVISION($Revision: 1.59 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -100,9 +100,11 @@ AC_ARG_WITH(rpath, [  --with-rpath=PATH:PATH... : Use -rpath option while buildi
 
 dnl --with-pthread
 dnl  
+GAUCHE_THREAD_TYPE=uthread
 AC_ARG_WITH(pthread, [  --with-pthread:  Use pthread ], [
   case $with_pthread in
     yes) 
+     GAUCHE_THREAD_TYPE=pthread
      AC_DEFINE(GAUCHE_USE_PTHREAD)
      LIBS="$LIBS -lpthread"
     ;;
@@ -214,7 +216,7 @@ AC_SEARCH_LIBS(dlopen, dl, HAVE_DLOPEN=yes, HAVE_DLOPEN=no)
 AC_CHECK_LIB(dyld, dlopen, HAVE_DLOPEN=yes; LIBS="-ldyld $LIBS", HAVE_DLOPEN=no)
 AC_DEFINE(HAVE_DLOPEN)
 
-dnl Checks compiler options for dynamic link.
+dnl Checks compiler options for dynamic link and thread support.
 dnl
 dnl  SHLIB_SO_SUFFIX     Suffix of dlopen-able module.  most systems doesn't
 dnl                      have restriction for this.  default "so".
@@ -253,6 +255,11 @@ case $host in
     SHLIB_SO_SUFFIX="so"
     SHLIB_MAIN_LDFLAGS="-rdynamic"
     SHLIB_OK=ok
+    if test X$GAUCHE_THREAD_TYPE = Xpthread; then
+      AC_DEFINE(GC_LINUX_THREADS)
+      AC_DEFINE(_REENTRANT)
+      THREADOPTS="-DGC_LINUX_THREADS -D_REENTRANT"
+    fi
     ;;
   *netbsd*)
     SHLIB_SO_CFLAGS="-fPIC -DPIC"
@@ -360,6 +367,7 @@ AC_SUBST(LIBGAUCHE_SO)
 AC_SUBST(GOSH_USE_SHLIB)
 AC_SUBST(GOSH_LIBGAUCHE_LIB)
 AC_SUBST(GOSH_LIBGAUCHE_FILES)
+AC_SUBST(THREADOPTS)
 AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX")
 AC_MSG_RESULT($SHLIB_OK)
 

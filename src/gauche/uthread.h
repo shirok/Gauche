@@ -12,15 +12,22 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: uthread.h,v 1.3 2002-03-14 11:20:22 shirok Exp $
+ *  $Id: uthread.h,v 1.4 2002-03-28 19:50:54 shirok Exp $
  */
 
 #ifndef GAUCHE_UTHREAD_H
 #define GAUCHE_UTHREAD_H
 
 typedef int ScmInternalMutex;
-#define SCM_INTERNAL_MUTEX_INIT(mutex)     /* empty (for now) */
-#define SCM_INTERNAL_MUTEX_LOCK(mutex)     /* empty (for now) */
-#define SCM_INTERNAL_MUTEX_UNLOCK(mutex)   /* empty (for now) */
+#define SCM_INTERNAL_MUTEX_INIT(mutex)     0 
+#define SCM_INTERNAL_MUTEX_LOCK(mutex)     0 
+#define SCM_INTERNAL_MUTEX_UNLOCK(mutex)   0
+
+typedef int ScmInternalCond;
+#define SCM_INTERNAL_COND_INIT(cond)       0
+#define SCM_INTERNAL_COND_SIGNAL(cond)     0
+#define SCM_INTERNAL_COND_BROADCAST(cond)  0
+#define SCM_INTERNAL_COND_WAIT(cond, mutex) 0
+#define SCM_INTERNAL_COND_DESTROY(cond)    0
 
 #endif /* GAUCHE_UTHREAD_H */

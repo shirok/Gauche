@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.21 2002-03-13 10:45:53 shirok Exp $
+ * $Id: config.h.in,v 1.22 2002-03-28 19:50:54 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -14,6 +14,10 @@
 #undef GAUCHE_CHAR_ENCODING_EUC_JP
 #undef GAUCHE_CHAR_ENCODING_UTF_8
 #undef GAUCHE_CHAR_ENCODING_SJIS
+
+/* Some of these should be defined to use thread on some architecture */
+#undef GC_LINUX_THREADS
+#undef _REENTRANT
 
 /* Define if the compiler supports __inline__ or __inline, or empty if not. */
 #undef inline
