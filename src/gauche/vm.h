@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.38 2001-09-02 21:43:46 shirok Exp $
+ *  $Id: vm.h,v 1.39 2001-09-04 10:49:37 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -53,6 +53,8 @@ typedef struct ScmEnvFrameRec {
 #define ENV_HDR_SIZE   3        /* envframe header size */
 #define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
 
+extern ScmEnvFrame *Scm_GetCurrentEnv(void);
+
 /*
  * Continuation
  *
@@ -72,20 +74,6 @@ typedef struct ScmContFrameRec {
 extern void Scm_CallCC(ScmObj body);
 
 /*
- * Frame table
- */
-
-typedef struct ScmVMFrameTableRec ScmVMFrameTable;
-
-typedef struct ScmFramePointerRec {
-    ScmObj *ptr;
-    int *index;                 /* -1 if ptr doesn't point stack */
-} ScmFramePointer;
-
-extern void Scm_FramePointerRelease(ScmFramePointer *fp);
-extern void Scm_FramePointerSet(ScmFramePointer *fp);
-
-/*
  * VM activation history
  *
  *   Activation history keeps the chain of C calls from where
@@ -97,6 +85,7 @@ typedef struct ScmVMActivationHistoryRec {
     struct ScmVMActivationHistoryRec *prev; /* previous history */
     ScmObj *stackBase;          /* saved stack base */
     ScmContFrame *cont;         /* saved continuation frame chain */
+    ScmEnvFrame *env;           /* saved environment frame chain */
 } ScmVMActivationHistory;
 
 /*
@@ -212,10 +201,6 @@ struct ScmVMRec {
     ScmObj *stackBase;          /* base of current stack area  */
     ScmObj *stackEnd;           /* end of current stack area */
     int stackSize;
-
-    ScmVMFrameTable *frameTable; /* stack pointer table */
-    int frameTableEntries;
-    int frameTableSize;
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);

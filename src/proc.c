@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.23 2001-09-02 21:43:45 shirok Exp $
+ *  $Id: proc.c,v 1.24 2001-09-04 10:49:36 shirok Exp $
  */
 
 #include "gauche.h"
@@ -46,26 +46,16 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
  * Closure
  */
 
-//static void closure_finalize(GC_PTR obj, GC_PTR data)
-//{
-//    ScmClosure *c = (ScmClosure *)obj;
-//    printf("finalizing closure\n");
-//    Scm_FramePointerRelease(&c->env);
-//}
-
 ScmObj Scm_MakeClosure(int required, int optional,
                        ScmObj code, ScmObj info)
 {
-//    GC_finalization_proc ofn; GC_PTR ocd;
     ScmVM *vm = Scm_VM();
     ScmClosure *c = SCM_NEW(ScmClosure);
     
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
     SCM_PROCEDURE_INIT(c, required, optional, SCM_PROC_CLOSURE, info);
     c->code = code;
-    Scm_FramePointerSet(&c->env);
-
-//    GC_REGISTER_FINALIZER(c, closure_finalize, NULL, &ofn, &ocd);
+    c->env = Scm_GetCurrentEnv();
     return SCM_OBJ(c);
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.166 2001-09-02 21:43:45 shirok Exp $
+ *  $Id: gauche.h,v 1.167 2001-09-04 10:49:36 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1471,7 +1471,7 @@ extern ScmClass Scm_ProcedureClass;
 struct ScmClosureRec {
     ScmProcedure common;
     ScmObj code;                /* compiled code */
-    ScmFramePointer env;        /* environment */
+    ScmEnvFrame *env;           /* environment */
 };
 
 #define SCM_CLOSUREP(obj) \
@@ -1552,7 +1552,7 @@ struct ScmMethodRec {
     ScmClass **specializers;    /* array of specializers, size==required */
     ScmObj (*func)(ScmNextMethod *nm, ScmObj *args, int nargs, void * data);
     void *data;                 /* closure, or code */
-    ScmFramePointer env;
+    ScmEnvFrame *env;           /* environment (for Scheme created method) */
 };
 
 extern ScmClass Scm_MethodClass;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.25 2001-06-22 07:32:29 shirok Exp $
+ *  $Id: core.c,v 1.26 2001-09-04 10:49:36 shirok Exp $
  */
 
 #include "gauche.h"
@@ -24,7 +24,7 @@
 
 static GC_PTR oom_handler(size_t bytes)
 {
-    Scm_Panic("out of memory.  aborting...");
+    Scm_Panic("out of memory (%d).  aborting...", bytes);
     return NULL;                /* dummy */
 }
 
