@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.8 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: load.c,v 1.9 2001-02-06 06:56:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,6 +20,9 @@
 /*
  * Load file.
  */
+
+/* To peek *load-path* variable from C */
+static ScmGloc *load_path_rec;
 
 /*
  * Scm_LoadFromPort
@@ -60,13 +63,42 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
  * Load
  */
 
-ScmObj Scm_VMLoad(const char *s)
+ScmObj Scm_VMTryLoad(const char *s)
 {
     ScmObj p = Scm_OpenFilePort(s, "r");
-    if (SCM_FALSEP(p)) {
-        Scm_Error("cannot open file: %s", s);
-    }
+    if (SCM_FALSEP(p)) return FALSE;
     return Scm_VMLoadFromPort(SCM_PORT(p));
+}
+
+ScmObj Scm_VMLoad(const char *s)
+{
+    ScmObj p, lpath;
+
+    /* TODO: expand ~user */
+    if (*s == '/') {
+        p = Scm_OpenFilePort(s, "r");
+        if (SCM_FALSEP(p)) {
+            Scm_Error("cannot open file: %s", s);
+        }
+    } else {
+        /* TODO: more efficient pathname handling */
+        ScmObj spath = Scm_MakeString(s, -1, -1), fullpath;
+        SCM_FOR_EACH(lpath, load_path_rec->value) {
+            if (!SCM_STRINGP(SCM_CAR(lpath))) {
+                /* TODO: should be warning? */
+                Scm_Error("*load-path* contains invalid element: %S",
+                          load_path_rec->value);
+            }
+            fullpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
+            fullpath = Scm_StringAppend2(SCM_STRING(fullpath), SCM_STRING(spath));
+            p = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(fullpath)), "r");
+            if (SCM_FALSEP(p)) continue;
+            return Scm_VMLoadFromPort(SCM_PORT(p));
+        }
+        Scm_Error("cannot find file %s in *load-path* %S",
+                  s, load_path_rec->value);
+        return SCM_UNDEFINED;
+    }
 }
 
 void Scm_Load(const char *s)
@@ -76,6 +108,18 @@ void Scm_Load(const char *s)
     Scm_Eval(SCM_LIST2(l, f), SCM_NIL);
 }
 
+/*
+ * Initialization
+ */
 
+void Scm__InitLoad(void)
+{
+    ScmObj instdir = SCM_MAKE_STR(SCM_INSTALL_DIR);
+    ScmObj curdir = SCM_MAKE_STR(".");
 
-
+    Scm_Define(Scm_SchemeModule(), SCM_SYMBOL(SCM_SYM_LOAD_PATH),
+               SCM_LIST2(instdir, curdir));
+    load_path_rec = Scm_FindBinding(Scm_SchemeModule(),
+                                    SCM_SYMBOL(SCM_SYM_LOAD_PATH),
+                                    TRUE);
+}
