@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.25 2001-07-05 10:34:39 shirok Exp $
+ *  $Id: vminsn.h,v 1.26 2001-09-02 07:58:47 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -89,7 +89,7 @@ DEFINSN(SCM_VM_DEFINE, "DEFINE", 0)
  */
 DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
 
-/* LET(NLOCALS)
+/* LET(NLOCALS) <INFO> <BODY>
  *
  *  Create a new environment frame, size of NLOCALS.  let-families
  *  like let, let* and letrec yields this instruction.

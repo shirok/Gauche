@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.57 2001-07-24 19:23:13 shirok Exp $
+ *  $Id: compile.c,v 1.58 2001-09-02 07:58:47 shirok Exp $
  */
 
 #include "gauche.h"
@@ -737,12 +737,11 @@ static ScmObj compile_body(ScmObj form,
             formtail = SCM_CDR(formtail);
             continue;
         } else if (!body_started && idefs > 0) {
-            /* starting the `real' body */
+            /* This is the beginning of the real body after interal defines.
+               Creates a new env for them and bind them. */
             int cnt;
             
             env = Scm_Cons(idef_vars, env);
-            SCM_APPEND1(body, bodytail, SCM_VM_INSN1(SCM_VM_LET, idefs));
-            SCM_APPEND1(body, bodytail, form);
             for (cnt=0; cnt<idefs; cnt++) {
                 SCM_APPEND(body, bodytail,
                            compile_int(SCM_CAR(idef_vals), env, SCM_COMPILE_NORMAL));
@@ -762,9 +761,12 @@ static ScmObj compile_body(ScmObj form,
         body_started = !SCM_NULLP(body);
         formtail = SCM_CDR(formtail);
     }
-    
-    if (idefs > 0 && body_started && ctx != SCM_COMPILE_TAIL) {
-        SCM_APPEND1(body, bodytail, SCM_VM_INSN(SCM_VM_POPENV));
+
+    if (idefs > 0) {
+        /* Internal defines introduced a new scope. */
+        body = SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, idefs),
+                         form,
+                         body);
     }
     return body;
 }
@@ -1162,8 +1164,6 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     ScmObj cfr = SCM_NIL, cfrtail = SCM_NIL;  /* current frame */
     ScmObj newenv, varp, valp;
     int count = 0;
-    ADDCODE1(SCM_VM_INSN1(SCM_VM_LET, nvars));
-    ADDCODE1(form);             /* debug info */
 
     if (type == BIND_LETREC) cfr = vars;
     else                     cfr = SCM_NIL;
@@ -1181,12 +1181,10 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
             newenv = Scm_Cons(cfr, env);
         }
     }
-    
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
     ADDCODE(body_compiler(body, newenv, ctx));
-    if (ctx != SCM_COMPILE_TAIL)
-        ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
-    return code;
+
+    return SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), form, code);
 }
 
 static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
@@ -1671,9 +1669,7 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
     ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
     ADDCODE1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, nvars, restvars));
     ADDCODE1(form);             /* info; should be source-inro? */
-    ADDCODE(compile_body(body, Scm_Cons(bind, env), ctx));
-    if (ctx != SCM_COMPILE_TAIL)
-        ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
+    ADDCODE1(compile_body(body, Scm_Cons(bind, env), ctx));
     return code;
 }
 

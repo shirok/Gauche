@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.94 2001-08-31 08:37:29 shirok Exp $
+ *  $Id: vm.c,v 1.95 2001-09-02 07:58:47 shirok Exp $
  */
 
 #include "gauche.h"
@@ -212,6 +212,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
         newcont->pc = next_pc;                          \
         cont = newcont;                                 \
         sp += CONT_FRAME_SIZE;                          \
+        argp = (ScmEnvFrame*)sp;                        \
     } while (0)
 
 /* pop a continuation frame, i.e. return from a procedure. */
@@ -359,7 +360,7 @@ static void run_loop()
 #endif /* __GNUC__ */    
     
     for (;;) {
-        VM_DUMP("");
+        /*VM_DUMP("");*/
         
 
         /* See if we're at the end of procedure.  It's safer to use
@@ -681,15 +682,22 @@ static void run_loop()
             }
             CASE(SCM_VM_LET) {
                 int nlocals = SCM_VM_INSN_ARG(code);
-                ScmObj info;
+                int size = CONT_FRAME_SIZE + ENV_SIZE(nlocals);
+                ScmObj info, body;
 #ifdef ENABLE_STACK_CHECK
 #if !defined(FUNCTION_STACK_CHECK)
-                CHECK_STACK(ENV_SIZE(nlocals));
+                CHECK_STACK(size);
 #endif
 #endif
                 VM_ASSERT(SCM_PAIRP(pc));
                 FETCH_INSN(info);
+                VM_ASSERT(SCM_PAIRP(pc));
+                FETCH_INSN(body);
+                if (!SCM_NULLP(pc)) {
+                    PUSH_CONT(pc);
+                }
                 PUSH_LOCAL_ENV(nlocals, info);
+                pc = body;
                 continue;
             }
             CASE(SCM_VM_POPENV) {
@@ -787,13 +795,14 @@ static void run_loop()
                 /* TODO: clean up stack management */
                 int reqargs = SCM_VM_INSN_ARG0(code);
                 int restarg = SCM_VM_INSN_ARG1(code);
+                int size = CONT_FRAME_SIZE + ENV_SIZE(reqargs + restarg);
                 int i = 0, argsize;
-                ScmObj rest = SCM_NIL, tail = SCM_NIL, info;
+                ScmObj rest = SCM_NIL, tail = SCM_NIL, info, body;
                 ScmEnvFrame *argpsave;
 
 #ifdef ENABLE_STACK_CHECK
 #if !defined(FUNCTION_STACK_CHECK)
-                CHECK_STACK(ENV_SIZE(reqargs + restarg));
+                CHECK_STACK(size);
 #endif
 #endif
                 FETCH_INSN(info);
@@ -803,8 +812,12 @@ static void run_loop()
                     VM_ERR(("received more values than expected"));
                 }
                 argsize = reqargs + (restarg? 1 : 0);
+                FETCH_INSN(body);
 
-                argpsave = argp;
+                if (!SCM_NULLP(pc)) {
+                    PUSH_CONT(pc);
+                }
+
                 PUSH_ENV_HDR();
                 if (reqargs > 0) {
                     PUSH_ARG(val0);
@@ -828,7 +841,8 @@ static void run_loop()
                 argp->size = argsize;
                 argp->info = info;
                 env = argp;
-                argp = argpsave;
+                argp = (ScmEnvFrame *)sp;
+                pc = body;
                 continue;
             }
 
@@ -1242,7 +1256,7 @@ static void run_loop()
 /* frame pointer table --- maintains indirect references from outside
    objects into the stack */
 
-#define FRAME_TABLE_SHIFT 8
+#define FRAME_TABLE_SHIFT 12
 #define FRAME_TABLE_SIZE  (1L<<FRAME_TABLE_SHIFT)
 #define FRAME_TABLE_MASK  (FRAME_TABLE_SIZE-1)
 
@@ -1447,14 +1461,19 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
     }
 }
 
+//#include <sys/time.h>
+
 static void stack_gc(ScmVM *vm)
 {
     int i;
     ScmVMFrameTable *tab;
+//    struct timeval t0, t1;
+//    gettimeofday(&t0, NULL);
     
-    fprintf(stderr, "stack_gc\n");
+//    fprintf(stderr, "stack_gc\n");
 //    Scm_VMDump(vm);
 
+//    printf("tabsiz = %d\n", vm->frameTableEntries);
     /* move frames to heap */
     save_env(vm, vm->env);
     save_cont(vm, vm->cont);
@@ -1502,10 +1521,12 @@ static void stack_gc(ScmVM *vm)
         ScmObj *p = vm->sp;
         for (; p < vm->stackEnd; p++) *p = NULL;
     }
-
-    fprintf(stderr, "stack_gc done\n");
+//    fprintf(stderr, "stack_gc done\n");
 //    Scm_VMDump(vm);
 //    fprintf(stderr, "done\n");
+//    gettimeofday(&t1, NULL);
+//    printf("elapsed: %d\n",
+//           (t1.tv_sec - t0.tv_sec)*1000000 + (t1.tv_usec - t0.tv_usec));
 }
 
 /*==================================================================
@@ -1613,7 +1634,7 @@ static ScmObj user_eval_inner(ScmObj program)
 {
     ScmVM *vm = theVM;
     volatile ScmObj result = SCM_UNDEFINED, pc = vm->pc;
-    volatile ScmFrameIndex conti, envi, argpi;
+    volatile ScmFrameIndex conti, envi;
 
     /* Keep activation history in heap.  It can be on the C stack,
        since it is discarded when this routine returns.  However,
@@ -1627,7 +1648,6 @@ static ScmObj user_eval_inner(ScmObj program)
     vm->numVals = 1;
     conti = frame_ptr2index(vm, (ScmObj*)vm->cont, FRAME_TYPE_CONT);
     envi  = frame_ptr2index(vm, (ScmObj*)vm->env, FRAME_TYPE_ENV);
-    argpi = frame_ptr2index(vm, (ScmObj*)vm->argp, FRAME_TYPE_ARGP);
     
     SCM_PUSH_ERROR_HANDLER {
         vm->cont = NULL;
@@ -1638,10 +1658,8 @@ static ScmObj user_eval_inner(ScmObj program)
         vm->pc = pc;
         vm->cont = (ScmContFrame*)frame_index2ptr(vm, conti);
         vm->env  = (ScmEnvFrame*)frame_index2ptr(vm, envi);
-        vm->argp = (ScmEnvFrame*)frame_index2ptr(vm, argpi);
         Scm_FrameIndexRelease(conti);
         Scm_FrameIndexRelease(envi);
-        Scm_FrameIndexRelease(argpi);
     }
     SCM_WHEN_ERROR {
         ScmVM *vm = theVM;
@@ -1649,10 +1667,8 @@ static ScmObj user_eval_inner(ScmObj program)
         vm->pc = pc;
         vm->cont = (ScmContFrame*)frame_index2ptr(vm, conti);
         vm->env  = (ScmEnvFrame*)frame_index2ptr(vm, envi);
-        vm->argp = (ScmEnvFrame*)frame_index2ptr(vm, argpi);
         Scm_FrameIndexRelease(conti);
         Scm_FrameIndexRelease(envi);
-        Scm_FrameIndexRelease(argpi);
         SCM_PROPAGATE_ERROR;
     }
     SCM_POP_ERROR_HANDLER;

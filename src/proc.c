@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.21 2001-08-31 08:37:29 shirok Exp $
+ *  $Id: proc.c,v 1.22 2001-09-02 07:58:47 shirok Exp $
  */
 
 #include "gauche.h"
@@ -46,17 +46,25 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
  * Closure
  */
 
-/* NOTE: env shouldn't point to the VM stack. If you want to capture
-   the current VM env, you should call Scm_VMSaveCurrentEnv() to move
-   frames to the heap, then pass its result to Scm_MakeClosure. */
+static void closure_finalize(GC_PTR obj, GC_PTR data)
+{
+    ScmClosure *c = (ScmClosure *)obj;
+//    printf("finalizing closure\n");
+    Scm_FrameIndexRelease(c->env);
+}
+
 ScmObj Scm_MakeClosure(int required, int optional,
                        ScmObj code, ScmFrameIndex env, ScmObj info)
 {
+    GC_finalization_proc ofn; GC_PTR ocd;
     ScmClosure *c = SCM_NEW(ScmClosure);
+    
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
     SCM_PROCEDURE_INIT(c, required, optional, SCM_PROC_CLOSURE, info);
     c->code = code;
     c->env = env;
+
+    GC_REGISTER_FINALIZER(c, closure_finalize, NULL, &ofn, &ocd);
     return SCM_OBJ(c);
 }
 

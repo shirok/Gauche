@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.28 2001-08-31 08:32:51 shirok Exp $
+ *  $Id: main.c,v 1.29 2001-09-02 07:58:47 shirok Exp $
  */
 
 #include <unistd.h>
@@ -157,15 +157,17 @@ int main(int argc, char **argv)
                SCM_MAKE_STR_IMMUTABLE(argv[0]));
 
     /* (use gauche.interactive) only for interactive session */
-    SCM_PUSH_ERROR_HANDLER {
-        Scm_Require(SCM_MAKE_STR("gauche/interactive"));
-        Scm_ImportModules(SCM_CURRENT_MODULE(),
-                          SCM_LIST1(SCM_INTERN("gauche.interactive")));
+    if (load_initfile) {
+        SCM_PUSH_ERROR_HANDLER {
+            Scm_Require(SCM_MAKE_STR("gauche/interactive"));
+            Scm_ImportModules(SCM_CURRENT_MODULE(),
+                              SCM_LIST1(SCM_INTERN("gauche.interactive")));
+        }
+        SCM_WHEN_ERROR {
+            fprintf(stderr, "warning: couldn't load gauche.interactive\n");
+        }
+        SCM_POP_ERROR_HANDLER;
     }
-    SCM_WHEN_ERROR {
-        fprintf(stderr, "warning: couldn't load gauche.interactive\n");
-    }
-    SCM_POP_ERROR_HANDLER;
 
     if (batch_mode || !isatty(0)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()));
