@@ -65,7 +65,7 @@
    defined below. */
 #define ENABLE_EXPLICIT_INITIALIZATION
 void GC_register_dynamic_libraries(){}
-#endif /* !defiend(SUNOS4) && ... && !(defined(FREEBSD)&&defined(__ELF__)) */
+#endif /* !defined(SUNOS4) && ... && !(defined(FREEBSD)&&defined(__ELF__)) */
 #endif /* (defined(DYNAMIC_LOADING) || ...) && !defined(PCR) */
 
 /* [SK 2002/02/09] Added this API for platforms that isn't supported
