@@ -388,6 +388,11 @@
 (test* "slices (fill)" '((0 1 2 3) (4 5 6 7) (8 9 10 11) (12 -1 -1 -1))
        (slices (iota 13) 4 #t -1))
 
+(test* "intersperse" '(1 + 2 + 3) (intersperse '+ '(1 2 3)))
+(test* "intersperse" '(1 + 2) (intersperse '+ '(1 2)))
+(test* "intersperse" '(1) (intersperse '+ '(1)))
+(test* "intersperse" '() (intersperse '+ '()))
+
 (test* "cond-list" '() (cond-list))
 (test* "cond-list" '(a) (cond-list ('a)))
 (test* "cond-list" '(a) (cond-list (#t 'a) (#f 'b)))
