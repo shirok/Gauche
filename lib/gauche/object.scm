@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.49 2003-11-27 11:16:04 shirok Exp $
+;;;  $Id: object.scm,v 1.50 2003-12-13 09:13:48 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -301,16 +301,11 @@
   ;; NB: STklos ignores :initform slot option for class slots, but
   ;;     I think it's sometimes useful.
   (define (make-class-slot)
-    (let ((cell (undefined))
-          (init-value (slot-definition-option slot :init-value (undefined)))
-          (init-thunk (slot-definition-option slot :init-thunk #f)))
-      (list (lambda (o)
-              (when (undefined? cell)
-                (cond ((not (undefined? init-value)) (set! cell init-value))
-                      ((procedure? init-thunk) (set! cell (init-thunk)))))
-              cell)
-            (lambda (o v)
-              (set! cell v)))))
+    (let* ((init-value (slot-definition-option slot :init-value (undefined)))
+           (init-thunk (slot-definition-option slot :init-thunk #f)))
+      (if init-thunk
+        (%make-class-slot (init-thunk))
+        (%make-class-slot init-value))))
   
   (let ((slot-name (slot-definition-name slot))
         (alloc (slot-definition-allocation slot)))
@@ -343,6 +338,11 @@
                    (car slot) class)))
       (else
        (error "unsupported slot allocation:" alloc)))))
+
+(define (%make-class-slot cell)
+  (list (lambda (o)   cell)
+        (lambda (o v) (set! cell v))
+        (lambda (o)   (not (undefined? cell)))))
 
 ;; METHOD COMPUTE-SLOT-ACCESSOR (class <class>) g-n-s
 ;;  this method doesn't have equivalent one in STklos.
@@ -385,6 +385,9 @@
            (slot-unbound class slot-name)
            val)))
    class-slot-set!))
+
+(define (class-slot-bound? class slot-name)
+  (apply (%class-slot-gns class slot-name 'bound?) '(#f)))
 
 ;; default class printer.  Avoid using class-name so that in case
 ;; when obj's class has been redefined, this wouldn't trigger updating obj.
@@ -555,7 +558,7 @@
 
 (insert-symbols define-generic define-method define-class
                 compute-slots compute-get-n-set compute-slot-accessor
-                class-slot-ref class-slot-set!
+                class-slot-ref class-slot-set! class-slot-bound?
                 slot-push! slot-unbound slot-missing
                 slot-exists? slot-exists-using-class?
                 change-class
