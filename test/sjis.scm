@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with shift-jis.
 
-;; $Id: sjis.scm,v 1.6 2003-02-06 11:47:53 shirok Exp $
+;; $Id: sjis.scm,v 1.7 2003-02-28 02:03:58 shirok Exp $
 
 (use gauche.test)
 
@@ -468,6 +468,41 @@
              (else #f)))
 (test* "regexp" "‚¢a‚ëB‚ÍC"
        (cond ((rxmatch #/([‚Ÿ-‚ñ][a-z])+/i "XY‚¢a‚ëB‚ÍCd‚É")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/(.*)a/ "‚ ‚¢‚¤")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "‚ ‚¢a"
+       (cond ((rxmatch #/(.*)a/ "‚ ‚¢a‚¤")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/([^a]*)a/ "‚ ‚¢‚¤")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "‚ ‚¢‚¤"
+       (cond ((rxmatch #/([^a]*)‚¤/ "‚ ‚¢‚¤")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "‚ ‚¢a"
+       (cond ((rxmatch #/([^a]+)a/ "a‚ ‚¢a‚¤")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/([^a]+)‚¤/ "a‚ ‚¢a‚¤")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "‚ ‚¢"
+       (cond ((rxmatch #/([^a]+)‚¢/ "a‚ ‚¢a‚¤")
               => rxmatch-substring)
              (else #f)))
 
