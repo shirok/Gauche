@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.18 2002-12-23 00:04:09 shirok Exp $
+ *  $Id: boolean.c,v 1.19 2003-01-03 21:01:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -20,7 +20,7 @@
 
 int Scm_EqP(ScmObj x, ScmObj y)
 {
-    return (x == y);
+    return SCM_EQ(x, y);
 }
 
 int Scm_EqvP(ScmObj x, ScmObj y)
@@ -35,12 +35,13 @@ int Scm_EqvP(ScmObj x, ScmObj y)
         }
         return FALSE;
     }
-    return (x == y);
+    return SCM_EQ(x, y);
 }
 
 int Scm_EqualP(ScmObj x, ScmObj y)
 {
     ScmClass *cx, *cy;
+    if (SCM_EQ(x, y)) return TRUE;
     if (SCM_PAIRP(x)) {
         if (SCM_PAIRP(y)) {
             if (Scm_EqualP(SCM_CAR(x), SCM_CAR(y))
@@ -85,14 +86,14 @@ int Scm_EqualP(ScmObj x, ScmObj y)
     if (cx == cy && cx->compare) {
         return (cx->compare(x, y, TRUE) == 0);
     }
-    return (x == y);
+    return FALSE;
 }
 
 int Scm_EqualM(ScmObj x, ScmObj y, int mode)
 {
     switch (mode) {
     case SCM_CMP_EQ:
-        return x == y;
+        return SCM_EQ(x, y);
     case SCM_CMP_EQV:
         return Scm_EqvP(x, y);
     case SCM_CMP_EQUAL:
