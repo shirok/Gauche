@@ -1,9 +1,9 @@
 /*
- * io.c - input/output
+ * read.c - reader
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: read.c,v 1.11 2001-04-15 21:53:39 shiro Exp $
  */
 
 #include <stdio.h>
@@ -33,13 +33,30 @@ static ScmObj read_word(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial);
 static ScmObj read_number(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
+static ScmObj read_keyword(ScmPort *port);
+static ScmObj read_regexp(ScmPort *port);
+static ScmObj maybe_uvector(ScmPort *port, char c);
 
+/* Special hook for SRFI-4 syntax */
+ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
+
+/*----------------------------------------------------------------
+ * Entry point
+ */
 ScmObj Scm_Read(ScmObj port)
 {
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
     return read_internal(SCM_PORT(port));
+}
+
+ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
+{
+    if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
+        Scm_Error("input port required: %S", port);
+    }
+    return read_list(SCM_PORT(port), closer);
 }
 
 /*----------------------------------------------------------------
@@ -82,6 +99,7 @@ static int skipws(ScmPort *port)
             for (;;) {
                 SCM_GETC(c, port);
                 if (c == '\n') break;
+                if (c == EOF) return EOF;
             }
             continue;
         }
@@ -112,7 +130,9 @@ ScmObj read_internal(ScmPort *port)
             case EOF:
                 read_error(port, "premature #-sequence at EOF");
             case 't':; case 'T': return SCM_TRUE;
-            case 'f':; case 'F': return SCM_FALSE;
+            case 'f':; case 'F': return maybe_uvector(port, 'f');
+            case 's':; case 'S': return maybe_uvector(port, 's');
+            case 'u':; case 'U': return maybe_uvector(port, 'u');
             case '(':
                 {
                     ScmObj v = read_list(port, ')');
@@ -125,16 +145,24 @@ ScmObj read_internal(ScmPort *port)
             case 'e':; case 'E':; case 'i':; case 'I':;
                 SCM_UNGETC(c1, port);
                 return read_number(port, c);
+            case '!':
+                /* allow `#!' magic of executable */
+                for (;;) {
+                    SCM_GETC(c, port);
+                    if (c == '\n') return read_internal(port);
+                    if (c == EOF) return SCM_EOF;
+                }
+            case '/':
+                /* #/.../ literal regexp */
+                return read_regexp(port);
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
         }
     case '\'': return read_quoted(port, SCM_SYM_QUOTE);
-    case '`': return read_quoted(port, SCM_SYM_BACKQUOTE);
+    case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE);
     case ':':
-        /* TODO: need to deal with keywords.
-           For now, just make them as symbols. */
-        return read_symbol(port, c);
+        return read_keyword(port);
     case ',':
         {
             int c1;
@@ -173,6 +201,8 @@ ScmObj read_internal(ScmPort *port)
     case '0':; case '1':; case '2':; case '3':; case '4':;
     case '5':; case '6':; case '7':; case '8':; case '9':;
         return read_number(port, c);
+    case ')':; case ']':; case '}':;
+        read_error(port, "extra close parenthesis");
     case EOF:
         return SCM_EOF;
     default:
@@ -218,7 +248,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer)
             SCM_UNGETC(c, port);
             item = read_internal(port);
         }
-        SCM_GROW_LIST(start, last, item);
+        SCM_APPEND1(start, last, item);
     }
 }
 
@@ -363,7 +393,7 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial)
 static ScmObj read_number(ScmPort *port, ScmChar initial)
 {
     ScmString *s = SCM_STRING(read_word(port, initial));
-    ScmObj num = Scm_StringToNumber(s);
+    ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         read_error(port, "bad numeric format: %S", s);
     return num;
@@ -372,9 +402,103 @@ static ScmObj read_number(ScmPort *port, ScmChar initial)
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial)
 {
     ScmString *s = SCM_STRING(read_word(port, initial));
-    ScmObj num = Scm_StringToNumber(s);
+    ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         return Scm_Intern(s);
     else
         return num;
 }
+
+static ScmObj read_keyword(ScmPort *port)
+{
+    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID));
+    return Scm_MakeKeyword(s);
+}
+
+/*----------------------------------------------------------------
+ * Regexp
+ */
+
+/* gauche extension :  #/regexp/ */
+static ScmObj read_regexp(ScmPort *port)
+{
+    ScmChar c;
+    ScmDString ds;
+    Scm_DStringInit(&ds);
+    for (;;) {
+        SCM_GETC(c, port);
+        if (c == SCM_CHAR_INVALID) {
+            read_error(port, "unterminated literal regexp");
+        }
+        if (c == '\\') {
+            SCM_DSTRING_PUTC(&ds, c);
+            SCM_GETC(c, port);
+            if (c == SCM_CHAR_INVALID) {
+                read_error(port, "unterminated literal regexp");
+            }
+            SCM_DSTRING_PUTC(&ds, c);
+        } else if (c == '/') {
+            return Scm_RegComp(SCM_STRING(Scm_DStringGet(&ds)));
+        } else {
+            SCM_DSTRING_PUTC(&ds, c);
+        }
+    }
+}
+
+/*----------------------------------------------------------------
+ * Uvector
+ */
+
+/* Uvector support is implemented by extention.  When the extention
+   is loaded, it sets up the pointer Scm_ReadUvectorHook. */
+
+static ScmObj maybe_uvector(ScmPort *port, char ch)
+{
+    ScmChar c1, c2 = SCM_CHAR_INVALID;
+    char *tag;
+
+    SCM_GETC(c1, port);
+    if (ch == 'f') {
+        if (c1 != '3' && c1 != '6') {
+            SCM_UNGETC(c1, port);
+            return SCM_FALSE;
+        }
+        SCM_GETC(c2, port);
+        if (c1 == '3' && c2 == '2') tag = "f32";
+        else if (c1 == '6' && c2 == '4') tag = "f64";
+    } else {
+        if (c1 == '8') tag = (ch == 's')? "s8" : "u8";
+        else if (c1 == '1') {
+            SCM_GETC(c2, port);
+            if (c2 == '6') tag = (ch == 's')? "s16" : "u16";
+        }
+        else if (c1 == '3') {
+            SCM_GETC(c2, port);
+            if (c2 == '2') tag = (ch == 's')? "s32" : "u32";
+        }
+        else if (c1 == '6') {
+            SCM_GETC(c2, port);
+            if (c2 == '4') tag = (ch == 's')? "s64" : "u64";
+        }
+    }
+    if (tag == NULL) {
+        char buf[SCM_CHAR_MAX_BYTES*4], *bufp = buf;
+        *bufp++ = ch;
+        SCM_STR_PUTC(bufp, c1);
+        bufp += SCM_CHAR_NBYTES(c1);
+        if (c2 != SCM_CHAR_INVALID) {
+            SCM_STR_PUTC(bufp, c2);
+            bufp += SCM_CHAR_NBYTES(c2);
+        }
+        *bufp = '\0';
+        read_error(port, "invalid uniform vector tag: %s", buf);
+    }
+    if (Scm_ReadUvectorHook == NULL) {
+        /* load srfi-4. */
+        Scm_Load("srfi-4", FALSE);
+        if (Scm_ReadUvectorHook == NULL)
+            Scm_Error("couldn't load srfi-4 module");
+    }
+    return Scm_ReadUvectorHook(port, tag);
+}
+
