@@ -7,6 +7,12 @@
 (use srfi-1)
 (use srfi-13)
 
+;; NB: copy-file in file.util uses copy-port, which requires gauche.uvector.
+;; To allow in-place test, we pre-loads gauche.uvector.
+(add-load-path "../ext/uvector")
+(load "uvector")
+(import gauche.uvector)
+
 ;;------------------------------------------------------------------
 (test-section "file.util")
 (use file.util)
