@@ -38,9 +38,9 @@ uvector.c : uvector.c.sh
 	rm -rf uvector.c
 	sh ./uvector.c.sh > uvector.c
 
-uvutil.c : uvutil.c.sh
+uvutil.c : uvutil.c.scm
 	rm -rf uvutil.c
-	sh ./uvutil.c.sh > uvutil.c
+	$(GOSH) uvutil.c.scm > uvutil.c
 
 uvlib.c : uvlib.stub
 	$(GOSH) genstub uvlib.stub
