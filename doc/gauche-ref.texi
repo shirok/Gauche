@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.186 2002-04-29 07:49:45 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.187 2002-04-29 20:01:37 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12888,6 +12888,7 @@ the code runs without logging.
 
 @deftp {Module} gauche.net
 @mdindex gauche.net
+@c EN
 Provides a set of functions necessary for network communications
 based on BSD socket interface.
 
@@ -12898,46 +12899,79 @@ typical connection-oriented server/client sockets.
 
 This module also provides APIs to obtain various information
 about hostnames, service ports, and protocols.
+@c JP
+BSDソケットに基づいたネットワーキングに必要な手続きを提供するモジュールです。
+
+2つのレベルのAPIが定義されています。低レベルの手続きは@code{bind(2)}のような
+BSDソケットインタフェースに近いインタフェースを提供し、高レベルの手続きは
+典型的なコネクション指向のクライアントサーバアプリケーションに便利な
+インタフェースを提供します。
+
+また、ホストネームやプロトコルに関する情報にアクセスするAPIも定義されます。
+@c COMMON
 @end deftp
 
 
 @menu
 * Socket address::              
-* High-level functions::        
+* High-level network functions::  
 * Low-level socket interface::  
 * Netdb interface::             
 @end menu
 
-@node Socket address, High-level functions, Networking, Networking
+@node Socket address, High-level network functions, Networking, Networking
 @subsection Socket address
+@c NODE ソケットアドレス
 
 @deftp {Builtin Class} <sockaddr>
 @clindex sockaddr
+@c EN
 An abstract base class of socket addresses.  Each socket address family
 is implemented as a subclass of this class.
 
 Although socket addresses are built-in classes, you can use
 @code{make} method to create an instance of a
 specific socket address family.
+@c JP
+ソケットアドレスの抽象ベースクラスです。
+ソケットアドレスファミリはこのクラスのサブクラスとして実装されます。
+
+ソケットアドレスはビルトインクラスですが、@code{make}メソッドで
+特定のソケットアドレスファミリのインスタンスを作成することができます。
+@c COMMON
 @end deftp
 
 @deffn {Generic Function} sockaddr-family addr
+@c EN
 Returns a symbol that indicates the family of the socket address
 @var{addr}.
+@c JP
+ソケットアドレス@var{addr}のファミリを表すシンボルを返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic Function} sockaddr-name addr
+@c EN
 Returns a string which represents the content of the socket address
 @var{addr}.
+@c JP
+ソケットアドレス@var{addr}の名前を表す文字列を返します。
+@c COMMON
 @end deffn
 
 @deftp {Builtin Class} <sockaddr-in>
 @clindex sockaddr-in
+@c EN
 AF_INET family socket address.  To create an instance of this class,
 use @code{make} method as follows:
+@c JP
+AF_INETファミリのソケットアドレスです。このクラスのインスタンスを
+作成するには、次のようにして@code{make}メソッドを呼びます。
+@c COMMON
 @example
 (make <sockaddr-in> :host @var{host} :port @var{port})
 @end example
+@c EN
 @var{host} can be a string, or one of the keywords
 @code{:any}, @code{:broadcast}, @code{:none} or @code{:loopback}.
 If it is a string, it is either a host name or a dotted IP notation.
@@ -12947,77 +12981,158 @@ or @code{:broadcast}, the address
 uses @code{INADDR_ANY}, or @code{INADDR_BROADCAST}
 respectively.  The keyword @code{:loopback} is a synonym to the
 IPv4 loopback address "127.0.0.1".
+@c JP
+@var{host}は文字列か、
+@code{:any}、@code{:broadcast}、@code{:none}、@code{:loopback}の
+いずれかのキーワードでなければなりません。
+文字列の場合、それはホスト名かIPアドレスのドット表記です。
+Gaucheは@code{gethostbyname(3)}を使って実際のIPアドレスを得ます。
+この値がキーワード@code{:any}か@code{:broadcast}なら、それぞれ
+@code{INADDR_ANY}か@code{INADDR_BROADCAST}がアドレスとして使われます。
+キーワード@code{:loopback}はIPv4のループバックアドレス"127.0.0.1"を表します。
+@c COMMON
 
+@c EN
 @var{port} must be a positive integer indicating the port number.
+@c JP
+@var{port}はポート番号を示す正の整数です。
+@c COMMON
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-in>)
+@c EN
 Returns a symbol @code{inet}.
+@c JP
+シンボル@code{inet}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} sockaddr-name (addr <sockaddr-in>)
+@c EN
 Returns a string in the form "@var{a}.@var{b}.@var{c}.@var{d}:@var{port}",
  where "@var{a}.@var{b}.@var{c}.@var{d}" is dotted decimal notion of
 the IP address and @var{port} is the port number.
+@c JP
+文字列"@var{a}.@var{b}.@var{c}.@var{d}:@var{port}"を返します。
+コロンの前はIPアドレスのドット表記で、@var{port}はポート番号です。
+@c COMMON
 @end deffn
 
 @deftp {Builtin Class} <sockaddr-un>
 @clindex sockaddr-un
+@c EN
 AF_UNIX family socket address.  To create an instance of this class,
 use @code{make} method as follows:
+@c JP
+AF_UNIXファミリのソケットアドレスです。このクラスのインスタンスを作成するには、
+@code{make}メソッドを次のように呼んで下さい。
+@c COMMON
 @example
 (make <sockaddr-un> :path @var{path})
 @end example
+@c EN
 @var{path} must be a string specifying pathname of the socket.
+@c JP
+@var{path}はソケットのパス名を表す文字列です。
+@c COMMON
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-un>)
+@c EN
 Returns a symbol @code{unix}.
+@c JP
+シンボル@code{unix}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} sockaddr-name (addr <sockaddr-un>)
+@c EN
 Returns a pathname of the socket address.
+@c JP
+ソケットアドレスのパス名を返します。
+@c COMMON
 @end deffn
 
 
-@node High-level functions, Low-level socket interface, Socket address, Networking
-@subsection High-level functions
+@node High-level network functions, Low-level socket interface, Socket address, Networking
+@subsection High-level network functions
+@c EN 高レベルネットワーク手続き
 
 @deftp {Builtin Class} <socket>
 @clindex socket
+@c EN
 Abstracts a socket, a communication endpoint.
 
 For a connection-oriented socket, you can access the communication
 channel by two ports associated to the socket, one for input and
 another for output.  @code{socket-input-port} and @code{socket-output-port}
 returns those ports, respectively.
+@c JP
+コミュニケーション終端であるソケットを表すクラスです。
+
+コネクション型のソケットに対しては、2つのポート(入力用と出力用)を使って
+コミュニケーションチャネルにアクセスすることができます。
+@code{socket-input-port}と@code{socket-output-port}がこれらのポートを
+それぞれ返します。
+@c COMMON
 @end deftp
 
+@c EN
 The following two functions are convenient ways to create
 a connection-oriented socket.  Those functions
 are to provide an easy methods for typical cases,
 but have less control.  If you need more than these functions
 provide, use low-level interface.
+@c JP
+以下の2つの手続きはコネクション型のソケットを作成する
+便利な手続きです。これらは典型的な場合に対する簡単な方法を提供しますが、
+細かい制御はできません。動作のより細かい制御が必要な場合は低レベルAPIを
+見て下さい。
+@c COMMON
 
 @defun make-client-socket &optional address-spec @dots{}
+@c EN
 Creates and returns a client socket, connected to the address
 specified by @var{address-spec} @dots{}.
+@c JP
+引数@var{address-spec} @dots{} によって指定されるアドレスと通信する
+クライアントソケットを作成して返します。
+@c COMMON
 
 @table @code
 @item (make-client-socket 'unix @var{path})
+@c EN
 The client socket is connected to the unix domain server socket
 of addreess @var{path}.
+@c JP
+@var{path}で待っているUnixドメインのサーバーソケットに接続します。
+@c COMMON
 @item (make-client-socket 'inet @var{host} @var{port})
+@c EN
 The client socket is connected to the inet domain server socket
 with hostname @var{host} and port @var{port}.   TCP protocol is
 assumed.   @var{host} can be either a dotted decimal notation of
 IPv4 address, or a hostname.  @var{port} must be an exact integer.
+@c JP
+ホスト@var{host}のポート@var{port}で待っているInetドメインのサーバーソケットに
+TCPを使って接続します。@var{host}はIPアドレスのドット表記でもホスト名でも
+構いません。@var{port}は正確な整数でなければなりません。
+@c COMMON
 @item (make-client-socket @var{host} @var{port})
+@c EN
 This works the same as above.  This form is for compatibility with STk.
+@c JP
+上と同じです。この形式はSTkとの互換性のために提供されています。
+@c COMMON
 @end table
 
+@c EN
 This function raises an error if it cannot create a socket,
 or cannot connect to the specified address.
+@c JP
+ソケットを作成できなかったり、指定されたアドレスに接続できなかった場合は
+エラーが報告されます。
+@c COMMON
 
 @example
 (make-client-socket 'inet "www.w3.com" 80)
@@ -13030,22 +13145,43 @@ or cannot connect to the specified address.
 @end defun
 
 @defun make-server-socket &optional address-spec @dots{}
+@c EN
 Creates and returns a server socket, listening the address
 specified by @var{address-spec}.
+@c JP
+@var{address-spec}にて接続を待つサーバソケットを作成して返します。
+@c COMMON
 
 @table @code
 @item (make-server-socket 'unix @var{path})
+@c EN
 The socket is bound to a unix domain socket with a name @var{path}.
+@c JP
+パス名@var{path}を持つUnixドメインソケットが作成されます。
+@c COMMON
 @item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}])
+@c EN
 The socket is bound to an inet domain TCP socket, listening
 port @var{port}, which is a positive exact integer.
 If a keyword argument @var{reuse-addr?} is given and true,
-@code{so_reuseaddr} option is set to the socket before bound to
+@code{SO_REUSEADDR} option is set to the socket before bound to
 the port.  This allows the process to bind the server socket
 immediately after other process releases the port.
+@c JP
+ポート@var{port}にて接続を待つInetドメインのTCPソケットが作成されます。
+キーワード引数@var{reuse-addr?}に真の値が与えられた場合は、
+ソケットに@code{SO_REUSEADDR}オプションがセットされます。
+このオプションをセットすると、他のプロセスがそのポートを使わなくなったら直ちに
+このプロセスがそのポートを使うことができます。
+@c COMMON
 @item (make-server-socket @var{port} [:reuse-addr? @var{flag}])
+@c EN
 This is a synonym to the above form.  This form is backward-compatible
 with STk's @code{make-server-socket}.
+@c JP
+これは上の形式と同じ動作をします。STkの@code{make-server-socket}との
+互換性のために提供されています。
+@c COMMON
 @end table
 
 @example
@@ -13058,51 +13194,75 @@ with STk's @code{make-server-socket}.
 @end example
 @end defun
 
+@c EN
 Several accessors are available on the returned socket object.
+@c JP
+返されたソケットオブジェクトに対して、以下のようなアクセサを適用することができます。
+@c COMMON
 
 @defun socket-address socket
+@c EN
 Returns a socket address associated with @var{socket}.
 If no address has been associated to the socket, @code{#f} is returned.
+@c JP
+ソケット@var{socket}のアドレスを返します。
+ソケットにアドレスがまだバインドされていない場合は@code{#f}が返ります。
+@c COMMON
 @end defun
 
-@defun socket-input-port socket &keyword (buffered? #t)
-Returns an input port associated with @var{socket}.
-The port can be used to receive information from the remote process
-connected to the socket.
+@defun socket-input-port socket &keyword (buffering @code{:modest})
+@defunx socket-output-port socket &keyword (buffering @code{:line})
+@c EN
+Returns an input and output port associated with @var{socket},
+respectively.
+@c JP
+@var{socket}からデータを読みだす入力ポート、または
+@var{socket}にデータを書き出す出力ポートを返します。
+@c COMMON
 
-If the keyword argument @var{buffered?} is given and false,
-the input port is created as an unbuffered input port
-(i.e. it uses @code{read(2)}, instead of @code{fread(3)} family, to 
-read from the socket).
-@end defun
-
-@defun socket-output-port socket &keyword (buffered? #t)
-Returns an output port associated with @var{socket}.
-The port can be used to send information to the remote process
-connected to the socket.
-
-If the keyword argument @var{buffered?} is given and false,
-the output port is created as an unbuffered output port
-(i.e. it uses @code{write(2)}, instead of @code{fwrite(3)} family, to 
-write to the socket).
+@c EN
+The keyword argument @var{buffering} specifies the buffering mode
+of the port.  @xref{File ports}, for explanation of the
+buffering mode.
+@c JP
+キーワード引数@var{buffering}はポートのバッファリングモードを
+指定します。バッファリングモードの説明は@ref{File ports}を見て下さい。
+@c COMMON
 @end defun
 
 @defun socket-close socket
+@c EN
 Closes @var{socket}.  All the ports associated to
 @var{socket} are closed as well.   If the socket is connected,
 it is shut down before closing.
+@c JP
+ソケット@var{socket}をクローズします。@var{socket}の入出力ポートも
+クローズされます。ソケットが接続されていた場合は、クローズの前に接続が
+シャットダウンされます。
+@c COMMON
 @end defun
 
 @defun call-with-client-socket socket proc
-@var{socket} is a connected client socket.  @var{proc} is called
+@c EN
+@var{socket} must be a connected client socket.  @var{proc} is called
 with two arguments, an input port that reads from the socket
 and an output port that writes to the socket.
 The socket is closed after @var{proc} returns or @var{proc}
 raises an error.
+@c JP
+@var{socket}は接続されたクライアントソケットでなければなりません。
+@var{proc}がソケットから読み出す入力ポートと、
+ソケットに書き出す出力ポートを引数として呼ばれます。
+@var{proc}が正常終了するか、エラーを投げた場合にソケットは閉じられます。
+@c COMMON
 @end defun
 
+@c EN
 This is an example of usage of high-level socket functions,
-a very simple www client.
+a very simple http client.
+@c JP
+これは高レベルソケット手続きを使った、非常に単純なhttpクライアントです。
+@c COMMON
 
 @example
 #!/usr/bin/env gosh
@@ -13137,8 +13297,9 @@ a very simple www client.
 @end example
 
 
-@node Low-level socket interface, Netdb interface, High-level functions, Networking
+@node Low-level socket interface, Netdb interface, High-level network functions, Networking
 @subsection Low-level socket interface
+@c NODE 低レベルソケットインタフェース
 
 These functions provide APIs similar to the system calls.
 Those who are familiar to programming with socket APIs will
@@ -13321,6 +13482,7 @@ Can be only used with @code{socket-getsockopt}.
 
 @node Netdb interface,  , Low-level socket interface, Networking
 @subsection  Netdb interface
+@c NODE Netdbインタフェース
 
 @deftp {Builtin Class} <sys-hostent>
 @clindex sys-hostent
