@@ -11442,6 +11442,14 @@ The application should move the temporary file to appropriate
 location; if you're using @code{cgi-main}, the temporary files
 created by this action will be unlinked when @code{cgi-main} exits.
 
+@item file+name
+Like @code{file}, but the value of the parameter is a list of
+tempoary filename and the filename passed by the client.
+It is useful if you want to use client's filename (but do not
+blindly assume the client sends a valid pathname; for example,
+you shouldn't use it to rename the uploaded file without 
+validating it).
+
 @item @var{procedure}
 In this case, @var{procedure} is called to handle the uploaded
 contents.  It is called with four arguments:
@@ -11484,6 +11492,16 @@ an error occurs during cgi processing.
 アプリケーションは、この一時ファイルを(必要ならば)適切な場所に
 移動しなければなりません。@code{cgi-main}を用いている場合は、
 一時ファイルは@code{cgi-main}を抜ける際に(まだあれば)unlinkされます。
+
+@item file+name
+@code{file}と同様ですが、パラメータの値が一時ファイル名と
+クライアントが送ってきたファイル名からなるリストになります。
+クライアントが送信したファイル名を利用したい場合に便利です
+(ただ、クライアントが常に正しいファイル名を送って来ると仮定しては
+いけません。例えば、アップロードされたファイルを
+チェック無しにクライアントが送ってきた名前にrenameするというような
+ことは避けてください)。
+
 
 @item @var{procedure}
 この場合、アップロードされた内容を処理するために、手続き@var{procedure}が
@@ -11563,36 +11581,53 @@ content of uploaded file saved in @file{/tmp/mycgi7gq0B}
 @end example
 
 @c EN
-Now, you pass the following structure to @var{part-handlers}:
+If you use a symbol @code{file+name} instead of @code{file} above,
+you'll get something like @code{("/tmp/mycgi7gq0B" "logo.jpg")} as
+the value of @code{"imagefile"}, where @code{"logo.jpg"} is the
+client-side filename.   (Note: the client can send any string
+as the name of the file, so @emph{never} assume it is a valid
+pathname).
 @c JP
-次のような構造を@var{part-handlers}に渡した場合：
+上の例でシンボル@code{file}のかわりに@code{file+name}を使えば、
+例えば@code{"imagefile"}の値として@code{("/tmp/mycgi7gq0B" "logo.jpg")}
+のようなものが得られるでしょう。ここで@code{"logo.jpg"}は
+アップロードされたファイルのクライアント側でのパス名です。
+(注意：クライアントは任意の文字列をファイル名として送信することが
+できるため、その文字列が有効なパス名であることを仮定してはなりません。)
+
 @c COMMON
 
-@example
-`(("imagefile" 
-  ,(lambda (name fname info iport)
-     (receive (outp tmpfile) (sys-mkstemp "/var/log/mycgi/tmp")
-       (mime-retrieve-body info iport outp)
-       (close-output-port outp)
-       (cgi-add-temporary-file tmpfile)
-       (string-append fname ":" tmpfile))))
- )
-@end example
+@c @c EN
+@c Now, you pass the following structure to @var{part-handlers}:
+@c @c JP
+@c 次のような構造を@var{part-handlers}に渡した場合：
+@c @c COMMON
 
-@c EN
-You'll get something like the following; i.e. the cgi application
-can see the client-side file name as well as the temporary file name.
-@c JP
-例えば次のようなパーズ結果が得られるでしょう。つまり、
-cgiアプリケーションは一時ファイル名と同時に
-クライアント側でのファイル名も参照することができます。
-@c COMMON
+@c @example
+@c `(("imagefile" 
+@c   ,(lambda (name fname info iport)
+@c      (receive (outp tmpfile) (sys-mkstemp "/var/log/mycgi/tmp")
+@c        (mime-retrieve-body info iport outp)
+@c        (close-output-port outp)
+@c        (cgi-add-temporary-file tmpfile)
+@c        (string-append fname ":" tmpfile))))
+@c  )
+@c @end example
 
-@example
-(("imagefile" "/home/foo/images/logo.jpg:/var/log/mycgi/tmp820iQj")
- ("description" "my image")
- ("mode" "normal"))
-@end example
+@c @c EN
+@c You'll get something like the following; i.e. the cgi application
+@c can see the client-side file name as well as the temporary file name.
+@c @c JP
+@c 例えば次のようなパーズ結果が得られるでしょう。つまり、
+@c cgiアプリケーションは一時ファイル名と同時に
+@c クライアント側でのファイル名も参照することができます。
+@c @c COMMON
+
+@c @example
+@c (("imagefile" "logo.jpg:/var/log/mycgi/tmp820iQj")
+@c  ("description" "my image")
+@c  ("mode" "normal"))
+@c @end example
 
 
 @c ----------------------------------------------------------------------

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.19 2004-11-13 09:57:06 shirok Exp $
+;;;  $Id: cgi.scm,v 1.20 2004-11-21 11:59:20 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -174,6 +174,10 @@
 ;;  <action>    : #f                ;; return as string
 ;;              : file [<prefix>]   ;; save content to a tmpfile,
 ;;                                  ;;   returns filename.
+;;              : file+name [<prefix>] ;; save content to a tmpfile,
+;;                                  ;;   returns a string ",tmpfile\0,origfile"
+;;                                  ;;   where origfile is the filename given
+;;                                  ;;   from the client.
 ;;              : ignore            ;; discard the value.
 ;;              : <procedure>       ;; calls <procedure> with
 ;;                                  ;;   name, part-info, input-port.
@@ -182,13 +186,15 @@
   (define (part-ref info name)
     (rfc822-header-ref (ref info 'headers) name))
 
-  (define (make-file-handler prefix)
+  (define (make-file-handler prefix honor-origfile?)
     (lambda (name filename part-info inp)
       (receive (outp tmpfile) (sys-mkstemp prefix)
         (cgi-add-temporary-file tmpfile)
         (mime-retrieve-body part-info inp outp)
         (close-output-port outp)
-        tmpfile)))
+        (if honor-origfile?
+          (list tmpfile filename)
+          tmpfile))))
 
   (define (string-handler name filename part-info inp)
     (mime-body->string part-info inp))
@@ -213,10 +219,11 @@
         (error "malformed part-handler clause:" handler))
        ((eq? (car action) #f)
         string-handler)
-       ((eq? (car action) 'file)
+       ((memq (car action) '(file file+name))
         (make-file-handler (if (null? (cdr action))
                              (build-path (temporary-directory) "gauche-cgi")
-                             (cadr action))))
+                             (cadr action))
+                           (eq? (car action) 'file+name)))
        ((eq? (car action) 'ignore)
         ignore-handler)
        (else
@@ -224,7 +231,7 @@
 
   (define (handle-part part-info inp)
     (let* ((cd   (part-ref part-info "content-disposition"))
-           (opts (rfc822-field->tokens cd))
+           (opts (if cd (rfc822-field->tokens cd) '()))
            (name (cond ((member "name=" opts) => cadr) (else #f)))
            (filename (cond ((member "filename=" opts) => cadr) (else #f)))
            (handler (cond ((not name) ignore-handler)
