@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.78 2002-08-26 07:30:28 shirok Exp $
+;;;  $Id: genstub,v 1.79 2002-08-26 12:23:30 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1465,7 +1465,7 @@
 (define-method emit-initializer ((self <initcode>))
   (for-each display (code-of self)))
 
-(define-form-parser process-initcode (code)
+(define-form-parser initcode (code)
   (make <initcode> :code code))
 
 ;;===================================================================
