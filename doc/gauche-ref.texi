@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.120 2001-11-09 09:13:55 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.121 2001-11-10 11:45:58 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7270,8 +7270,10 @@ of descendants of @var{class}.
 * String library::              
 * Character-set library::       
 * CSV tables::                  
+* Simple HTML document construction::  
 * Parsing input stream::        
 * Transliterate characters::    
+* Lazy text construction::      
 * Determine isomorphism::       
 * Queue::                       
 * Topological sort::            
@@ -11831,7 +11833,7 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Parsing input stream, Character-set library, Library modules
+@node CSV tables, Simple HTML document construction, Character-set library, Library modules
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -11875,7 +11877,181 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parsing input stream, Transliterate characters, CSV tables, Library modules
+@node Simple HTML document construction, Parsing input stream, CSV tables, Library modules
+@section @code{text.html-lite} - Simple HTML document construction
+
+@deftp {Module} text.html-lite
+@mdindex text.html-lite
+Provides procedures to construct an HTML document easily.
+For example, you can construct an HTML table by the following code:
+@example
+(html-table
+  (html-tr (html-th "Item No") (html-th "Quantity"))
+  (html-tr (html-td 1) (html-td 120))
+  (html-tr (html-td 2) (html-td 30))
+  (html-tr (html-td 3) (html-td 215)))
+@end example
+See the description of @code{html-@var{element}} below for details.
+
+This module does almost no checks for the constructed html documents,
+and does not provide a feature to parse the html document; hence 
+the name `lite'.
+@end deftp
+
+@defun html-escape
+@defunx html-escape-string string
+Escapes the ``unsafe'' characters in HTML.  @code{html-escape}
+reads input string from the current input port and writes the result
+to the current output port.   @code{html-escape-string} takes the
+input from @var{string} and returns the result in a string.
+@end defun
+
+@defun html-doctype &keyword type
+Returns a doctype declaration for an HTML document.
+@var{type} can be either one of @code{:strict}, @code{:transitional},
+or @code{:frameset}, corresponding HTML4.01 strict, transitional or
+frameset DTD, respectively.
+@end defun
+
+@deftp {Function} html-@var{element} args @dots{}
+@findex html-a
+@findex html-abbr
+@findex html-acronym
+@findex html-address
+@findex html-area
+@findex html-b
+@findex html-base
+@findex html-bdo
+@findex html-big
+@findex html-blockquote
+@findex html-body
+@findex html-br
+@findex html-button
+@findex html-caption
+@findex html-cite
+@findex html-code
+@findex html-col
+@findex html-colgroup
+@findex html-dd
+@findex html-del
+@findex html-dfn
+@findex html-div
+@findex html-dl
+@findex html-dt
+@findex html-em
+@findex html-fieldset
+@findex html-form
+@findex html-h1
+@findex html-h2
+@findex html-h3
+@findex html-h4
+@findex html-h5
+@findex html-h6
+@findex html-head
+@findex html-hr
+@findex html-html
+@findex html-i
+@findex html-img
+@findex html-input
+@findex html-ins
+@findex html-kbd
+@findex html-label
+@findex html-legend
+@findex html-li
+@findex html-link
+@findex html-map
+@findex html-meta
+@findex html-noscript
+@findex html-object
+@findex html-ol
+@findex html-optgroup
+@findex html-option
+@findex html-p
+@findex html-param
+@findex html-pre
+@findex html-q
+@findex html-samp
+@findex html-script
+@findex html-select
+@findex html-small
+@findex html-span
+@findex html-strong
+@findex html-style
+@findex html-sub
+@findex html-sup
+@findex html-table
+@findex html-tbody
+@findex html-td
+@findex html-textarea
+@findex html-tfoot
+@findex html-th
+@findex html-thead
+@findex html-title
+@findex html-tr
+@findex html-tt
+@findex html-ul
+@findex html-var
+Construct an HTML element @var{element}.  Right now,
+the following elements are provided.
+(The elements defined in HTML 4.01 DTD,
+@uref{http://www.w3.org/TR/html4/sgml/dtd.html}).
+@example
+a        abbr       acronym    address     area      b
+base     bdo        big        blockquote  body      br
+button   caption    cite       code        col       colgroup
+dd       del        dfn        div         dl        dt
+em       fieldset   form       h1          h2        h3
+h4       h5         h6         head        hr        html
+i        img        input      ins         kbd       label
+legend   li         link       map         meta      noscript
+object   ol         optgroup   option      p         param
+pre      q          samp       script      select    small
+span     strong     style      sub         sup       table
+tbody    td         textarea   tfoot       th        thead
+title    tr         tt         ul          var
+@end example
+
+The result of these functions is a tree of text segments,
+which can be written out to a port by @code{write-tree} or
+can be converted to a string by @code{tree->string}
+(@xref{Lazy text construction}).
+
+You can specify attributes of the element by using a keyword-value
+notation before the actual content.
+@example
+(tree->string (html-a :href "http://foo/bar" "foobar"))
+  @result{}
+  "<a href=\"http://foo/bar\">foobar</a>\n"
+
+(tree->string
+  (html-table :width "100%" :cellpading 0 "content here"))
+  @result{}
+  "<table width=\"100%\" cellpadding=\"0\">content here</table>\n"
+@end example
+
+The boolean value given to the attribute has a special meaning.
+If @code{#t} is given, the attribute is renfered without a value.
+If @code{#f} is given, the attribute is not rendered.
+@example
+(tree->string (html-table :border #t))
+  @result{} "<table border></table>\n"
+
+(tree->string (html-table :border #f))
+  @result{} "<table></table>\n"
+@end example
+
+Special characters in attribute values are escaped by the function,
+but the ones in the content are not.  It is caller's responsibility
+to escape them.
+
+The functions signal an error if a content is given to the
+HTML element that doesn't take a content.   They do not
+check if the given attribute is valid, neither
+if the given content is valid for the element.
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Parsing input stream, Transliterate characters, Simple HTML document construction, Library modules
 @section @code{text.parse} - Parsing input stream
 
 @deftp {Module} text.parse
@@ -11991,7 +12167,7 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, Determine isomorphism, Parsing input stream, Library modules
+@node Transliterate characters, Lazy text construction, Parsing input stream, Library modules
 @section @code{text.tr} - Transliterate characters
 @c NODE 文字変換, @code{text.tr} - 文字変換
 
@@ -12229,7 +12405,100 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Determine isomorphism, Queue, Transliterate characters, Library modules
+@node Lazy text construction, Determine isomorphism, Transliterate characters, Library modules
+@section @code{text.tree} - Lazy text construction
+
+@deftp {Module} text.tree
+@mdindex text.tree
+@c EN
+Defines simple but commonly used functions for a text construction.
+
+When you generate a text by a program, 
+It is a very common operation to concatenate text segments.
+However, using string-append repeatedly causes unnecessary
+copying of intermediate strings, and sometimes such intermediate
+strings are discarded due to the error situation (for example,
+think about constucting an HTML document in the CGI script).
+
+The efficient technique is to delay concatenation of those
+text segments until it is needed.  In Scheme it is done very
+easily by just consing the text segments together, thus forming
+a tree of text, and then traverse the tree to construct a text.
+You can even directly writes out the text during traversal,
+avoiding intermediate string buffer.
+(Hans Boehm's ``cord'' library, which comes with his garbage
+collector library, uses this technique and proves it is very
+efficient for editor-type application).
+
+Although the traversal of the tree can be written in a
+few lines of Scheme, I provide this module in the spirits
+of OnceAndOnlyOnce.   Also it's easier if we have a common interface.
+@c JP
+テキストを生成する場合によく使われるシンプルな手続きを定義します。
+
+プログラムでテキストを生成する場合、テキストの断片をつなぎ合わせて行く操作が
+非常に多く現われます。しかし単純に@code{string-append}を繰り返し
+呼んでしまうと、中間結果の文字列を保持するためだけにメモリアロケーションが多発しますし、
+途中でエラーが発生した場合にその中間結果は結局捨てられてしまうかもしれません
+(例えば、CGIスクリプト中でHTMLドキュメントを構築してゆくような場合を考えてみて下さい)。
+
+よく知られた効率の良い方法は、テキストの断片をつなぎ合わせるのを本当に必要に
+なるまで遅らせることです。Schemeではそれは非常に簡単です。単に断片をコンス
+していって木構造を作り、最後にそれをトラバースしてテキストを作成するのです。
+場合によっては、トラバースしながらテキストを出力すれば事足りてしまうので、
+中間結果のバッファを持つ必要さえありません。
+(Hans Boehmのガベージコレクションライブラリに附属している ``cord'' ライブラリ
+はこのテクニックを実装したもので、エディタ等のアプリケーションで非常に効率良く
+動作することが知られています)。
+
+木構造をトラバースする手続きなどほんの2〜3行で書けてしまいますが、
+「一度、そして一度だけ」の精神の下に、このモジュールを提供します。
+インタフェースが統一されてたほうが便利ですしね。
+@c COMMON
+@end deftp
+
+@deffn {Generic Function} write-tree tree &optional out
+@c EN
+Writes out an @var{tree} as a tree of text, to the output port @var{out}.
+If @var{out} is omitted, the current output port is used.
+
+Two methods are defined for this generic function, as shown below.
+If you have more complex behavior, you can define more methods
+to customize the behavior.
+@c JP
+@var{tree}をテキストの木構造とみなして、出力ポート@var{out}に出力します。
+@var{out}が省略された場合は現在の出力ポートが使われます。
+
+下に示す2つのメソッドが定義されています。より複雑な動作をさせたい場合は、
+単純なリストの替わりにノードとなるクラスを定義して、それにメソッドを定義するようにすれば
+動作をカスタマイズできます。
+@c COMMON
+@end deffn
+
+@deffn {Method} write-tree ((tree <list>) out)
+@deffnx {Method} write-tree ((tree <top>) out)
+@c EN
+Default methods.  For a list, @code{write-tree} is recursively
+called for each element.  Any objects other than list is written out
+using @code{display}.
+@c JP
+@code{write-tree}の既定の動作です。@var{tree}がリストなら、その要素それぞれに
+ついて@code{write-tree}を呼び出します。それ以外のオブジェクトに関しては
+@code{display}を呼んで出力します。
+@c COMMON
+@end deffn
+
+@defun tree->string tree
+@c EN
+Just calls the @code{write-tree} method for @var{tree} using
+an output string port, and returns the result string.
+@c JP
+出力文字列ポートを作成して@code{write-tree}を呼び、生成された文字列を返します。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Determine isomorphism, Queue, Lazy text construction, Library modules
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE 同型判定, @code{util.isomorph} - 同型判定
 
@@ -12464,6 +12733,11 @@ Provides a few basic functions useful to write a CGI script.
 
 Note: it seems that there is no active formal specification for CGI.
 See @uref{http://w3c.org/CGI/} for more information.
+
+In order to write CGI script easily, you may need to `use'
+other modules, such as @code{rfc.uri} (@xref{URI parsing and construction}),
+@code{text.html-lite} (@xref{Simple HTML document construction}) and
+@code{text.tree} (@xref{Lazy text construction}).
 @end deftp
 
 @defun cgi-parse-parameters &keyword :query-string :merge-cookies
@@ -12511,6 +12785,10 @@ argument @var{default} is returned; the default value of @var{default}
 is @code{#f} if @var{list} is false, or @code{()} otherwise.
 @end defun
 
+@defun cgi-header &keyword content-type location cookies
+Creates a text tree (@xref{Lazy text construction}) for the
+HTTP header of the reply message.
+@end defun
 
 @c ======================================================================
 @node References, C to Scheme mapping, Library modules, Top
