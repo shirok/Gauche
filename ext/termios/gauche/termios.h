@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.h,v 1.5 2002-05-04 04:39:52 shirok Exp $
+ *  $Id: termios.h,v 1.1 2003-04-14 10:11:55 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -20,7 +20,6 @@
 
 #include <gauche.h>
 #include <termios.h>
-#include "termconfig.h"
 #ifdef HAVE_PTY_H
 #include <pty.h>
 #endif

@@ -12,11 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.c,v 1.8 2002-04-30 01:52:32 shirok Exp $
+ *  $Id: termios.c,v 1.9 2003-04-14 10:11:55 shirok Exp $
  */
 
 #include <string.h>
-#include "termios.h"
+#include "gauche/termios.h"
 #include <gauche/class.h>
 #include <gauche/extend.h>
 

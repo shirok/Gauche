@@ -5,6 +5,7 @@ DOC_DEST="../test"
 RPMDIR="$HOME/rpm"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 XTRA_TEST_DIR="$HOME/src/test"
+CONFIG_H_IN="src/gauche-config.h.in"
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -22,10 +23,13 @@ done
 
 if [ "$gen" = "yes" ]; then
   if [ ! -d libltdl ]; then libtoolize --ltdl --copy --force; fi
+  if [ \( ! -f $CONFIG_H_IN \) -o \( $CONFIG_H_IN -ot configure.in \) ]; then
+    autoheader
+  fi
   aclocal
   automake -a -c
   (cd gc; automake)
-  ./AUTOCONF
+  autoconf
 fi
 
 if [ "$tgz" = "yes" ]; then

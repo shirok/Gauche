@@ -12,10 +12,10 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: termiolib.stub,v 1.7 2002-07-24 15:38:50 shirok Exp $
+;;; $Id: termiolib.stub,v 1.8 2003-04-14 10:11:55 shirok Exp $
 ;;;
 
-"#include \"termios.h\""
+"#include \"gauche/termios.h\""
 
 ;;---------------------------------------------------------------------
 ;; termios.h

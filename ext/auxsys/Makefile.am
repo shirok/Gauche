@@ -1,7 +1,5 @@
 include ../Makefile.ext
 
-INSTALL_TYPE = sys
-
 pkglibdir  = $(GAUCHE_ARCHDIR)
 pkgdatadir = $(GAUCHE_LIBDIR)/gauche
 
@@ -15,16 +13,5 @@ GENERATED = Makefile auxsyslib.c auxsys_head.c auxsys_tail.c
 
 pkgdata_SCRIPTS = auxsys.scm
 
-CLEANFILES = core *~ test.log
-
-DISTCLEANFILES = $(GENERATED)
-
-MAINTAINERCLEANFILES = Makefile.in $(GENERATED)
-
 auxsys_head.c auxsys_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension auxsys
-
-check :
-	@rm -f test.log
-	$(GOSH) -I. test.scm > test.log
-

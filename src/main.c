@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.65 2003-01-12 13:07:13 shirok Exp $
+ *  $Id: main.c,v 1.66 2003-04-14 10:11:57 shirok Exp $
  */
 
 #include <unistd.h>
@@ -184,10 +184,25 @@ int main(int argc, char **argv)
 
     /* If -ftest option is given, and we seems to be in the source
        tree, adds ../src and ../lib to the library path _before_
-       loading init file.  */
+       loading init file.   This is to help development of Gauche
+       itself; normal user should never need this. */
     if (test_mode) {
-        if (access("../lib", R_OK) == 0) Scm_AddLoadPath("../lib", FALSE);
-        if (access("../src", R_OK) == 0) Scm_AddLoadPath("../src", FALSE);
+        if (access("../lib", R_OK) == 0
+            && access("../lib/srfi-0.scm", R_OK) == 0) {
+            Scm_AddLoadPath("../lib", FALSE);
+        }
+        if (access("../../lib", R_OK) == 0
+            && access("../../lib/srfi-0.scm", R_OK) == 0) {
+            Scm_AddLoadPath("../../lib", FALSE);
+        }
+        if (access("../src", R_OK) == 0
+            && access("../src/stdlib.stub", R_OK) == 0) {
+            Scm_AddLoadPath("../src", FALSE);
+        }
+        if (access("../../src", R_OK) == 0
+            && access("../../src/stdlib.stub", R_OK) == 0) {
+            Scm_AddLoadPath("../../src", FALSE);
+        }
     }
 
     /* load init file */

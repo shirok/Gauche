@@ -1,6 +1,8 @@
 #ifndef _MD5_H_
 #define _MD5_H_
 
+#include <gauche.h>
+#include <gauche/extend.h>
 #include <sys/types.h>
 
 #define MD5_HASHBYTES 16

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.13 2003-02-15 07:13:44 shirok Exp $
+ *  $Id: net.h,v 1.14 2003-04-14 10:11:54 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -27,7 +27,6 @@
 #include <sys/un.h>
 #include <gauche.h>
 #include <errno.h>
-#include "netconfig.h"
 
 #ifdef HAVE_RPC_TYPES_H
 #include <rpc/types.h>

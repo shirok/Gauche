@@ -3,6 +3,8 @@
 #ifndef _SHA_H_
 #define _SHA_H_
 
+#include <gauche.h>
+#include <gauche/extend.h>
 #include <sys/types.h>
 
 #if !defined(HAVE_U_INT32_T)

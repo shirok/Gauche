@@ -1,3 +1,19 @@
+2003-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* various files: revised build process of built-in extensions (ext/*).
+	  They no longer have separate configure.in; the toplevel configure.in
+	  takes care of all the Makefiles.  All of them uses Makefile.am now.
+	  Removed ext/example, for the example of extension must be shown
+	  elsewhere.   This check-in passes "make check", but not tested
+	  for installation.
+	* Replace src/gauche/config.h for src/gauche-config.h, because
+	  automake adds -I flag for config.h.in location automatically
+	  even I don't want that.
+	* In ext/uvector, arranged the Makefile so that libuvector.so is
+	  created as a shared library which is used by a dlopen module
+	  uvector.so.  This should help to solve the DLL problem on cygwin
+	  but not tested.
+
 2003-04-11  Shiro Kawai  <shiro@acm.org>
 
 	* various files: automake+libtoolized, based on a patch from

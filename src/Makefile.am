@@ -12,13 +12,13 @@ SUFFIXES = .stub
 INCLUDES += @INCLTDL@
 AM_CFLAGS  = -I../gc -I../gc/include
 
-INST_HDR = gauche.h
-INST_SUBHDR = gauche/config.h gauche/vm.h gauche/vminsn.h \
+INST_HDR = gauche.h gauche-config.h
+INST_SUBHDR = gauche/vm.h gauche/vminsn.h \
 	     gauche/char_euc_jp.h gauche/char_utf_8.h	 \
 	     gauche/char_sjis.h gauche/char_none.h	 \
 	     gauche/predef-syms.h gauche/extend.h	 \
 	     gauche/class.h gauche/exception.h		 \
-	     gauche/gauche-pthread.h gauche/gauche-uthread.h
+	     gauche/pthread.h gauche/uthread.h
 # Header installs by special method.
 noinst_HEADERS = $(INST_HDR)
 
@@ -121,6 +121,6 @@ install-data-local:
 #
 CLEANFILES += test.log
 DISTCLEANFILES += $(GENERATED) gauche/stamp-h gauche/stamp-h.in gauche/stamp-h[0-9]*
-MAINTAINERCLEANFILES += Makefile.in configure $(STUBS:.stub=.c)
+MAINTAINERCLEANFILES += Makefile.in configure gauche-config.h.in $(STUBS:.stub=.c)
 
 # end

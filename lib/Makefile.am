@@ -6,7 +6,7 @@ pkgdataversion_DATA = srfi-0.scm \
        srfi-1/folder.scm srfi-1/generator.scm srfi-1/mapper.scm \
        srfi-1/nary.scm srfi-1/nth.scm srfi-1/pred.scm srfi-1/selector.scm \
        srfi-1/set.scm srfi-1/zipper.scm \
-       srfi-2.scm srfi-9.scm srfi-11.scm \
+       srfi-2.scm srfi-4.scm srfi-9.scm srfi-11.scm \
        srfi-13.scm srfi-13/casemap.scm srfi-13/comparer.scm \
        srfi-13/filter.scm srfi-13/folder.scm srfi-13/generator.scm \
        srfi-13/internal.scm srfi-13/kmp.scm srfi-13/misc.scm srfi-13/hash.scm \

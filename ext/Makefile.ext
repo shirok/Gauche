@@ -2,11 +2,19 @@
 
 AUTOMAKE_OPTIONS = foreign no-dependencies
 
-GOSH = $(top_srcdir)/src/gosh -q -I$(top_srcdir)/src -I$(top_srcdir)/lib -lgauche-init
+GOSH = $(top_srcdir)/src/gosh -ftest
 GAUCHE_CONFIG = $(SHELL) $(top_srcdir)/src/gauche-config
+INSTALL_TYPE = sys
 
-GAUCHE_ARCHDIR = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+GAUCHE_INCDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 GAUCHE_LIBDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+GAUCHE_ARCHDIR = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+CLEANFILES = core *~ test.log
+
+DISTCLEANFILES = $(GENERATED)
+
+MAINTAINERCLEANFILES = Makefile.in $(GENERATED)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/gc/include
 
@@ -14,3 +22,7 @@ SUFFIXES = .stub
 
 .stub.c :
 	$(GOSH) genstub $<
+
+check :
+	@rm -f test.log
+	$(GOSH) -I. test.scm > test.log

@@ -12,13 +12,12 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.15 2003-04-12 03:40:57 shirok Exp $
+;;  $Id: gdbm.stub,v 1.16 2003-04-14 10:11:51 shirok Exp $
 ;;
 
 "
  #include <gdbm.h>
  #include <stdlib.h>
- #include \"dbmconfig.h\"
  #include <gauche/extend.h>
 
  SCM_CLASS_DECL(Scm_GdbmClass);
