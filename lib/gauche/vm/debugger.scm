@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.11 2002-09-01 20:29:46 shirok Exp $
+;;;  $Id: debugger.scm,v 1.12 2002-09-20 11:59:56 shirok Exp $
 ;;;
 
 ;; NB: this is still a working version.  
@@ -81,14 +81,18 @@
 ;; Called when an error occurs
 (define (debug exception)
   (disable-debug) ;; prevent to enter debugger again
-  (let ((stack (cdddr (vm-get-stack-trace))) ;remove our stack frames
-        (outp  (current-error-port)))
-    (if (is-a? exception <exception>)
-        (format outp "*** Error: ~a\n" (slot-ref exception 'message))
-        (format outp "*** Error: ~a\n" exception))
-    (debug-print-stack stack *stack-show-depth*)
-    (format outp "Entering debugger.  Type help for help.\n")
-    (debug-loop stack))
+  (with-error-handler
+      (lambda (e)
+        (format (current-error-port) "Oops, error in debugger.\n"))
+    (lambda ()
+      (let ((stack (cdddr (vm-get-stack-trace))) ;remove our stack frames
+            (outp  (current-error-port)))
+        (if (is-a? exception <exception>)
+            (format outp "*** Error: ~a\n" (slot-ref exception 'message))
+            (format outp "*** Error: ~a\n" exception))
+        (debug-print-stack stack *stack-show-depth*)
+        (format outp "Entering debugger.  Type help for help.\n")
+        (debug-loop stack))))
   (enable-debug))
 
 ;; Internal debug command loop --------------------------------
@@ -110,7 +114,7 @@
         (cond ((not (list? vals))
                (when up (show-env up)))
               ((not (= (length vals) (- (vector-length env) 2)))
-               (format outp "[Unrecognized env; compiler error?]\n"))
+               (format outp "[Unrecognized env; compiler error?]\n" env))
               (else
                (do ((i 2 (+ i 1))
                     (vals vals (cdr vals)))
