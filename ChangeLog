@@ -1,5 +1,12 @@
 2001-03-21  Shiro Kawai  <shiro@scherzo>
 
+	* release 0.2.8
+	* src/class.c, lib/object.scm: (initialize <method> <list>) is
+	  finished.  (make <class> . initargs) works.  define-generic
+	  and define-method written.  still working on slot construction
+	  in the class initializer.
+	* src/macro.c: fixed a bug to treat dotted pattern.
+
 	* release 0.2.7
 	* src/gauche.h, src/class.c, src/moplib.stub: finished protocol
 	  to define generic functions and methods only in C.  removed some
