@@ -984,7 +984,7 @@ implementations may not.
 
 Obviously, it is not suitable for the database that has
 lots of entries, or has entries deleted and added very frequently.
-The advantage is when the number of entires
+The advantage is when the number of entries
 are relatively small, and the values are relatively large while
 keys are small.
 

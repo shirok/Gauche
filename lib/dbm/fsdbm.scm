@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.2 2003-10-07 01:25:51 fuyuki Exp $
+;;;  $Id: fsdbm.scm,v 1.3 2003-10-18 04:45:39 fuyuki Exp $
 ;;;
 
 (define-module dbm.fsdbm
@@ -47,7 +47,7 @@
 ;;; A key is filename, and its value is the content of the file.
 ;;; Obviously, it is not suitable for the database that has
 ;;; lots of entries, have entries deleted and added very frequently,
-;;; or has long keys.  The advantage is when the number of entires
+;;; or has long keys.  The advantage is when the number of entries
 ;;; are relatively small, and the values are relatively large while
 ;;; keys are small.
 ;;;
