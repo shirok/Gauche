@@ -1,3 +1,8 @@
+2001-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/bignu.c, src/extlib.stub, test/number.scm : finished logand
+	  and logior
+
 2001-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c, src/extlib.stub : added lognot.
