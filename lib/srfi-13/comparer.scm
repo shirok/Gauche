@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: comparer.scm,v 1.1 2001-04-27 09:22:27 shirok Exp $
+;;;  $Id: comparer.scm,v 1.2 2001-04-27 09:37:48 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -41,7 +41,7 @@
   (check-arg string? s2)
   (let-optional* args ((start1 0) end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
-          (str2 (%maybe-substring s2 start1 end1)))
+          (str2 (%maybe-substring s2 start2 end2)))
       (%string-compare-int start1 str1 str2
                            char<? char>?
                            proc< proc= proc>))))
@@ -51,7 +51,7 @@
   (check-arg string? s2)
   (let-optional* args ((start1 0) end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
-          (str2 (%maybe-substring s2 start1 end1)))
+          (str2 (%maybe-substring s2 start2 end2)))
       (%string-compare-int start1 str1 str2
                            char-ci<? char-ci>?
                            proc< proc= proc>))))
@@ -60,83 +60,83 @@
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda () #f) (lambda () #t) (lambda () #f)
+         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #f)
          args))
 
 (define (string<> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda () #t) (lambda () #f) (lambda () #t)
+         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #t)
          args))
 
 (define (string< s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda () #t) (lambda () #f) (lambda () #f)
+         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #f)
          args))
 
 (define (string<= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda () #t) (lambda () #t) (lambda () #f)
+         s1 s2 (lambda (_) #t) (lambda (_) #t) (lambda (_) #f)
          args))
 
 (define (string> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda () #f) (lambda () #f) (lambda () #t)
+         s1 s2 (lambda (_) #f) (lambda (_) #f) (lambda (_) #t)
          args))
 
 (define (string>= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda () #f) (lambda () #t) (lambda () #t)
+         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #t)
          args))
 
 (define (string-ci= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda () #f) (lambda () #t) (lambda () #f)
+         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #f)
          args))
 
 (define (string-ci<> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda () #t) (lambda () #f) (lambda () #t)
+         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #t)
          args))
 
 (define (string-ci< s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda () #t) (lambda () #f) (lambda () #f)
+         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #f)
          args))
 
 (define (string-ci<= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda () #t) (lambda () #t) (lambda () #f)
+         s1 s2 (lambda (_) #t) (lambda (_) #t) (lambda (_) #f)
          args))
 
 (define (string-ci> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda () #f) (lambda () #f) (lambda () #t)
+         s1 s2 (lambda (_) #f) (lambda (_) #f) (lambda (_) #t)
          args))
 
 (define (string-ci>= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda () #f) (lambda () #t) (lambda () #t)
+         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #t)
          args))
 
