@@ -84,9 +84,6 @@
 /* Define if uses libcrypt */
 #undef HAVE_CRYPT
 
-/* Define to 1 if you have the <dbm.h> header file. */
-#undef HAVE_DBM_H
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -95,15 +92,6 @@
 
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
-
-/* Define to 1 if you have the <gdbm/dbm.h> header file. */
-#undef HAVE_GDBM_DBM_H
-
-/* Define to 1 if you have the <gdbm.h> header file. */
-#undef HAVE_GDBM_H
-
-/* Define to 1 if you have the <gdbm/ndbm.h> header file. */
-#undef HAVE_GDBM_NDBM_H
 
 /* Define to 1 if you have the `getdomainname' function. */
 #undef HAVE_GETDOMAINNAME
@@ -158,9 +146,6 @@
 
 /* Define to 1 if you have the `nanosleep' function. */
 #undef HAVE_NANOSLEEP
-
-/* Define to 1 if you have the <ndbm.h> header file. */
-#undef HAVE_NDBM_H
 
 /* Define if you have openpty */
 #undef HAVE_OPENPTY

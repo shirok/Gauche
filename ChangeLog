@@ -1,5 +1,8 @@
 2003-07-19  Shiro Kawai  <shiro@acm.org>
 
+	* ext/dbm/dbmconf.h.in : splitted dbm-specific configure settings
+	  to this file from the main config.h.in.
+	
 	* configure.ac, src/Makefile.in : run relink before installing
 	  gosh with --relink option, so that the installed gosh dynamically
 	  links the proper libgauche.so.
