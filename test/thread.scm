@@ -9,7 +9,8 @@
 
 (unless (eq? (gauche-thread-type) 'pthread)
   (format #t "thread not supported")
-  (test-end))
+  (test-end)
+  (exit 0))
 
 ;;---------------------------------------------------------------------
 (test-section "basic thread API")
