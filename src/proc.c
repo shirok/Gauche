@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.24 2001-09-04 10:49:36 shirok Exp $
+ *  $Id: proc.c,v 1.25 2001-09-08 10:49:36 shirok Exp $
  */
 
 #include "gauche.h"
@@ -49,7 +49,6 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 ScmObj Scm_MakeClosure(int required, int optional,
                        ScmObj code, ScmObj info)
 {
-    ScmVM *vm = Scm_VM();
     ScmClosure *c = SCM_NEW(ScmClosure);
     
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);

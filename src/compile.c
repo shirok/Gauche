@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.58 2001-09-02 07:58:47 shirok Exp $
+ *  $Id: compile.c,v 1.59 2001-09-08 10:49:36 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1160,7 +1160,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
                                                          int ctx),
                                  ScmObj env, int ctx)
 {
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
     ScmObj cfr = SCM_NIL, cfrtail = SCM_NIL;  /* current frame */
     ScmObj newenv, varp, valp;
     int count = 0;
