@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl
-dnl $Id: configure.in,v 1.5 2001-10-29 06:38:55 shirok Exp $
+dnl $Id: configure.in,v 1.6 2001-10-29 09:40:29 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 
@@ -9,7 +9,7 @@ dnl Determine if we're configuring inside of Gauche main source tree or not.
 if test -f ../../src/gauche.h; then
   GAUCHE_CONFIG="sh ../../src/gauche-config"
   GAUCHE_TOP='../../'
-  GAUCHE_INC="-I../../src -I../../gc"
+  GAUCHE_INC="-I../../src -I../../gc/include"
   GOSH="../../src/gosh -I../../src -I../../lib"
 else
   GAUCHE_CONFIG=gauche-config

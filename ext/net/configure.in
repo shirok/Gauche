@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.net extension
 dnl
-dnl $Id: configure.in,v 1.11 2001-10-19 11:18:05 shirok Exp $
+dnl $Id: configure.in,v 1.12 2001-10-29 09:40:29 shirok Exp $
 AC_INIT(net.c)
 AC_CONFIG_HEADER(netconfig.h)
 
@@ -9,7 +9,7 @@ dnl Determine if we're configuring inside of Gauche main source tree or not.
 if test -f ../../src/gauche.h; then
   GAUCHE_CONFIG="sh ../../src/gauche-config"
   GAUCHE_TOP='../../'
-  GAUCHE_INC="-I../../src -I../../gc"
+  GAUCHE_INC="-I../../src -I../../gc/include"
   GOSH="../../src/gosh -I../../src -I../../lib"
 else
   GAUCHE_CONFIG=gauche-config
