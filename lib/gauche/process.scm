@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.3 2001-06-23 08:13:26 shirok Exp $
+;;;  $Id: process.scm,v 1.4 2001-06-24 22:02:33 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -97,24 +97,24 @@
   (let* ((toclose '())
          (iomap `(,(cons 0 (cond ((string? input) (open-input-file input))
                                  ((eqv? input :pipe)
-                                  (let ((pp (sys-pipe)))
-                                    (slot-set! proc 'input (cadr pp))
-                                    (set! toclose (cons (car pp) toclose))
-                                    (car pp)))
+                                  (receive (in out) (sys-pipe)
+                                    (slot-set! proc 'input out)
+                                    (set! toclose (cons in toclose))
+                                    in))
                                  (else 0)))
                   ,(cons 1 (cond ((string? output) (open-output-file output))
                                  ((eqv? output :pipe)
-                                  (let ((pp (sys-pipe)))
-                                    (slot-set! proc 'output (car pp))
-                                    (set! toclose (cons (cadr pp) toclose))
-                                    (cadr pp)))
+                                  (receive (in out) (sys-pipe)
+                                    (slot-set! proc 'output in)
+                                    (set! toclose (cons out toclose))
+                                    out))
                                  (else 1)))
                   ,(cons 2 (cond ((string? error) (open-output-file error))
                                  ((eqv? error :pipe)
-                                  (let ((pp (sys-pipe)))
-                                    (slot-set! proc 'error (car pp))
-                                    (set! toclose (cons (cadr pp) toclose))
-                                    (cadr pp)))
+                                  (receive (in out) (sys-pipe)
+                                    (slot-set! proc 'error in)
+                                    (set! toclose (cons out toclose))
+                                    out))
                                  (else 2)))
                   ))
         )
