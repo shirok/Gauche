@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parse.scm,v 1.6 2002-10-26 09:02:44 shirok Exp $
+;;;  $Id: parse.scm,v 1.7 2003-02-10 21:32:43 shirok Exp $
 ;;;
 
 ;; This module implements the input parsing utilities described in Oleg's site
@@ -144,9 +144,9 @@
     (peek-char port)))
 
 (define (next-token prefix-char-list/pred break-char-list/pred . args)
-  (let-optionals* args ((comment "")
+  (let-optionals* args ((comment "unexpected EOF")
                         (port (current-input-port)))
-    (define (bad) (errorf "~aunexpected EOF" (port-position-prefix port)))
+    (define (bad) (errorf "~a~a" (port-position-prefix port) comment))
     (let ((c (skip-while prefix-char-list/pred port)))
       (cond
        ((procedure? break-char-list/pred)
