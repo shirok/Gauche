@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.112 2004-09-19 11:49:52 shirok Exp $
+ *  $Id: number.c,v 1.113 2004-09-19 21:41:12 shirok Exp $
  */
 
 #include <math.h>
@@ -792,6 +792,7 @@ ScmObj Scm_PromoteToComplex(ScmObj obj)
         return Scm_MakeComplex(Scm_BignumToDouble(SCM_BIGNUM(obj)), 0.0);
     if (SCM_FLONUMP(obj))
         return Scm_MakeComplex(SCM_FLONUM_VALUE(obj), 0.0);
+    if (SCM_COMPLEXP(obj)) return obj;
     Scm_Panic("Scm_PromoteToComplex: can't be here");
     return SCM_UNDEFINED;       /* dummy */
 }

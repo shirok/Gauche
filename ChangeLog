@@ -1,6 +1,9 @@
 2004-09-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h : added missing prototypes of several number-related
+	  APIs. (Thanks to OGURISU Osamu for pointing this out).
 	* src/number.c (roundeven): fixed a bug.
+	  (Scm_PromoteToComplex): fixed a bug (Patch from OGURISU Osamu).
 
 2004-09-17  Shiro Kawai  <shiro@acm.org>
 

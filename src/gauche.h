@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.384 2004-09-17 23:32:16 shirok Exp $
+ *  $Id: gauche.h,v 1.385 2004-09-19 21:41:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1653,6 +1653,21 @@ SCM_EXTERN ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list);
  * NUMBER
  */
 
+/* "Normalized" numbers
+ *
+ * In Scheme world, numbers should be always in normalized form.
+ *
+ *  - Exact integers that can be representable in fixnum should be in
+ *    the fixnum form, not in the bignum form.
+ *  - Complex numbers whose imaginary part is 0.0 should be in the flonum
+ *    form, not in the complexnum form.
+ *
+ * Some C API returns anormalized numbers to avoid unnecessary
+ * conversion overhead.  These anormalized numbers shuold be used
+ * strictly in the intermediate form within C world.  Anything that
+ * is passed back to Scheme world must be normalized.
+ */
+
 #define SCM_SMALL_INT_SIZE         (SIZEOF_LONG*8-3)
 #define SCM_SMALL_INT_MAX          ((1L << SCM_SMALL_INT_SIZE) - 1)
 #define SCM_SMALL_INT_MIN          (-SCM_SMALL_INT_MAX-1)
@@ -1795,9 +1810,15 @@ SCM_EXTERN ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int hi, int lo);
 SCM_EXTERN ScmObj Scm_MakeFlonum(double d);
 SCM_EXTERN double Scm_GetDouble(ScmObj obj);
 SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
+SCM_EXTERN ScmObj Scm_MakeFlonumToNumber(double d, int exactp);
 
 SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
+SCM_EXTERN ScmObj Scm_MakeComplexNormalized(double real, double imag);
+
+SCM_EXTERN ScmObj Scm_PromoteToBignum(ScmObj obj);
+SCM_EXTERN ScmObj Scm_PromoteToComplex(ScmObj obj);
+SCM_EXTERN ScmObj Scm_PromoteToFlonum(ScmObj obj);
 
 SCM_EXTERN int    Scm_IntegerP(ScmObj obj);
 SCM_EXTERN int    Scm_OddP(ScmObj obj);
