@@ -1,0 +1,23 @@
+#! /bin/sh
+VERSION=`cat VERSION`
+
+if [ "$1" != "clean" ]; then
+  rm -rf ../test/Gauche
+  cd ../test
+  tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz
+  cd Gauche
+  ./configure
+  make
+  make test
+  make install
+  cd ..
+  for tt in primsyn module macro dynwind object srfi regexp; do
+    gosh Gauche/test/$tt.scm >> test.log
+  done
+else
+  rm -rf ../test/Gauche
+  rm -rf ../test/test.log ../test/temp.o
+fi
+
+
+

@@ -1,0 +1,75 @@
+CC = @CC@
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+GOSH = @GOSH@
+GAUCHE_CONFIG = @GAUCHE_CONFIG@
+GAUCHE_TOP = @GAUCHE_TOP@
+INSTALL = @INSTALL@
+
+ARCHFILES = libuvector.so
+SCMFILES  = srfi-4.scm
+HEADERS   = uvector.h
+
+TARGET    = libuvector.so
+OBJS      = uvector.o uvlib.o
+CONFIG_GENERATED = Makefile config.cache config.log config.status
+GENERATED = uvector.h uvector.c uvlib.c uvlib.stub
+
+INSTALL_TYPE = @INSTALL_TYPE@
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+all : $(TARGET)
+
+libuvector.so : $(OBJS)
+	$(CC) $(LDFLAGS) libuvector.so $(OBJS) $(LIBS)
+
+$(OBJS) : uvector.h
+
+uvector.h : uvector.h.sh
+	rm -rf uvector.h
+	sh ./uvector.h.sh > uvector.h
+
+uvector.c : uvector.c.sh
+	rm -rf uvector.c
+	sh ./uvector.c.sh > uvector.c
+
+uvlib.c : uvlib.stub
+	$(GOSH) genstub uvlib.stub
+
+uvlib.stub : uvlib.stub.sh
+	rm -rf uvlib.stub
+	sh ./uvlib.stub.sh > uvlib.stub
+
+test : all
+	@rm -f test.log
+	$(GOSH) test.scm > test.log
+
+install : all
+	@for f in $(HEADERS) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
+	  fi; \
+	done
+	@for f in $(SCMFILES) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
+	  fi; \
+	done
+	@for f in $(ARCHFILES) _end; do \
+	  if test $$f != _end; then \
+	    $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
+	  fi; \
+	done
+
+clean :
+	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+
+distclean : clean
+	rm -rf $(CONFIG_GENERATED)
+
+realclean : clean
+	rm -rf $(CONFIG_GENERATED) $(GENERATED) configure
+
