@@ -1,5 +1,6 @@
 /* 
  * Test VM stack sanity
+ * $Id: test-vmstack.c,v 1.2 2002-06-18 06:16:30 shirok Exp $
  */
 
 #include <stdio.h>
@@ -7,6 +8,18 @@
 #include "gauche/vm.h"
 
 int errcount = 0;
+
+void message(FILE *out, const char *m, int filler)
+{
+    int i;
+    fprintf(out, "%s", m);
+    if (filler) {
+        int len = 79 - strlen(m);
+        if (len < 0) len = 5;
+        for (i=0; i<len; i++) putc(filler, out);
+    }
+    putc('\n', out);
+}
 
 void test_eval(const char *msg, const char *sexp)
 {
@@ -37,8 +50,10 @@ ScmObj dummy_eproc(ScmObj *args, int nargs, void *data)
 int main(int argc, char **argv)
 {
     ScmObj eproc;
+    const char *testmsg = "Testing VM stack sanity... ";
 
-    fprintf(stderr, "Testing VM stack sanity... ");
+    fprintf(stderr, "%-65s", testmsg);
+    message(stdout, testmsg, '=');
     Scm_Init();
     
     eproc = Scm_MakeSubr(dummy_eproc, NULL, 0, 1, SCM_FALSE);
@@ -52,10 +67,12 @@ int main(int argc, char **argv)
     test_eval("with-error-handler (2)",
               "(car 3)");
 
-    if (errcount == 0) {
-        fprintf(stderr, "passed.\n");
+    if (errcount) {
+        fprintf(stderr, "failed.\n");
+        fprintf(stdout, "failed.\n");
     } else {
-        fprintf(stderr, "dispcrepancy found.\n");
+        fprintf(stderr, "passed.\n");
+        fprintf(stdout, "passed.\n");
     }
     return 0;
 }

@@ -1,5 +1,6 @@
 /*
  * Test gauche/arith.h macros
+ * $Id: test-arith.c,v 1.2 2002-06-18 06:16:30 shirok Exp $
  */
 
 #include <stdio.h>
@@ -15,7 +16,7 @@ void message(FILE *out, const char *m, int filler)
     int i;
     fprintf(out, "%s", m);
     if (filler) {
-        int len = 75 - strlen(m);
+        int len = 79 - strlen(m);
         if (len < 0) len = 5;
         for (i=0; i<len; i++) putc(filler, out);
     }
