@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.92 2001-03-25 07:32:13 shiro Exp $
+ *  $Id: gauche.h,v 1.93 2001-03-25 08:45:26 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -341,8 +341,8 @@ extern ScmObj Scm_ClassAccessors(ScmClass *klass);
 extern int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 extern int Scm_TypeP(ScmObj obj, ScmClass *type);
 
-extern ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot);
-extern void Scm_SlotSet(ScmObj obj, ScmObj slot, ScmObj value);
+extern ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot);
+extern ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj value);
 
 /* built-in classes */
 extern ScmClass Scm_TopClass;
