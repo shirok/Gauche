@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.4 2004-05-15 23:07:48 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.5 2004-05-15 23:54:06 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -43,20 +43,26 @@
 (use file.util)
 (use util.list)
 
-(define (p . args) (for-each print args))
+(define *commands* '())
+(define *helps* '())
 
-(define (usage)
-  (p
-   "Usage: gauche-package <command> [options] <args> ..."
-   "Commands:"
-   "  install <tarball> - extract, build, and install a package"
-   "  build <tarball>   - extract, and build the package."
-   "  reconfigure <package> - show ./configure command line options."
-   "Options:"
-   "  -n, --dry-run : only displays the commands to be executed."
-   "      --clean   : cleans working directory after install."
-   "  -C, --configure-options=OPTS : pass OPTS to configure."
-   )
+(define (usage . maybe-command)
+  (let ((cmd (get-optional maybe-command #f)))
+    (if cmd
+      (cond ((assoc-ref *helps* cmd)
+             => (lambda (doc)
+                  (print "Usage: gauche-package " (car doc)) ;; synopsys
+                  (print "  " (cadr doc)) ;; summary
+                  (unless (null? (cddr doc)) (print (caddr doc)))))
+            (else
+             (print "Unknown command name: " cmd)
+             (print "Valid commands are: " (map car (reverse *helps*)))))
+      (begin
+        (print "Usage: gauche-package <command> [options] <args> ...")
+        (print "Commands:")
+        (dolist (help (reverse *helps*))
+          (format #t "  ~15a - ~a\n" (car help) (caddr help)))
+        (print "Type 'gauche-package help <command>' for detailed help of each command."))))
   (exit 0))
 
 (define (app-error fmt . args)
@@ -75,8 +81,6 @@
         (set! (cdr p) (expand-path (cdr p))))))
   )
 
-(define *commands* '())
-
 (define (main args)
   (read-config)
   (cond ((null? (cdr args)) (usage))
@@ -89,19 +93,35 @@
 ;; Command definitions
 ;;
 
-(define-macro (define-cmd name . body)
-  `(push! *commands* (cons ,name (lambda (args) ,@body))))
+(define-macro (define-cmd name doc . body)
+  `(begin
+     (push! *helps* (cons ,name ',doc)) ; doc : (<synopsys> <summary> <detail>)
+     (push! *commands* (cons ,name
+                             (lambda (args)
+                               (let ((usage-self (lambda () (usage ,name))))
+                                 ,@body))))))
 
 ;;------------------------------------------------------
 ;; install
 ;;
 (define-cmd "install"
+  ("install [options] <tarball-path/url>"
+   "Fetch, extract, configure, make & install"
+   "Argument:
+  a path to a tarball (uncompressed, gzipped or bzipped), or URL (http or ftp)
+  of a tarball.
+Options:
+  -n, --dry-run   : shows commands to be executed, without running them.
+  -C, --configure-options=<options>
+                  : pass <options> to ./configure
+      --clean     : clean up build directory after installation
+  -S, --install-as=<user> : sudo to <user> when installing")
   (let-args args ((dry-run "n|dry-run")
                   (copts   "C|configure-options=s" #f)
                   (clean   "clean")
-                  (sudo    "install-as=s" #f)
+                  (sudo    "S|install-as=s" #f)
                   . args)
-    (unless (= (length args) 1) (usage))
+    (unless (= (length args) 1) (usage-self))
     (gauche-package-build (car args)
                           :config *config*
                           :dry-run dry-run :install #t :clean clean
@@ -112,10 +132,19 @@
 ;; build
 ;;
 (define-cmd "build"
+  ("build [options] <tarball-path/url>"
+   "Fetch, extract, configure & make"
+   "Argument:
+  a path to a tarball (uncompressed, gzipped or bzipped), or URL (http or ftp)
+  of a tarball.
+Options:
+  -n, --dry-run   : shows commands to be executed, without running them.
+  -C, --configure-options=<options>
+                  : pass <options> to ./configure")
   (let-args args ((dry-run "n|dry-run")
                   (copts   "C|configure-options=s" #f)
                   . args)
-    (unless (= (length args) 1) (usage))
+    (unless (= (length args) 1) (usage-self))
     (gauche-package-build (car args)
                           :config *config*
                           :dry-run dry-run
@@ -125,7 +154,12 @@
 ;; reconfigure
 ;;
 (define-cmd "reconfigure"
-  (unless (= (length args) 1) (usage))
+  ("reconfigure <package>"
+   "Show configure options of <package>"
+   "Argument: a package name.
+  If the package has installed .gpd (Gauche package description) file, show
+  the options to the configure script when the package is built.")
+  (unless (= (length args) 1) (usage-self))
   (let1 gpd (find-gauche-package-description (car args))
     (if gpd
       (print (ref gpd 'configure))
@@ -135,6 +169,8 @@
 ;; list
 ;;
 (define-cmd "list"
+  ("list"
+   "List known installed packages")
   (let1 gpds (map path->gauche-package-description
                   (gauche-package-description-paths))
     (dolist (gpd (sort gpds (lambda (a b)
@@ -145,8 +181,9 @@
 ;; make-gpd
 ;;
 (define-cmd "make-gpd"
-  (when (null? args)
-    (app-error "Usage: gauche-package make-gpd NAME PARAMETERS ..."))
+  ("make-gpd <name> <param> ..."
+   "Make gpd file (called from configure macro)")
+  (when (null? args) (usage-self))
   (let loop ((p (cdr args))
              (r '()))
     (cond ((null? p)
@@ -163,6 +200,15 @@
                         (make-keyword (string-trim (car p) #[-:]))
                         r)))
           )))
+
+;;------------------------------------------------------
+;; help
+;;
+
+(define-cmd "help"
+  ("help <command>"
+   "Show detailed help of <command>")
+  (apply usage args))
 
 ;; Local variables:
 ;; mode: scheme
