@@ -707,6 +707,14 @@
 (test* "inexact/inexact -> inexact" (d-result 3.25 #f)
       (d-tester 13.0 4.0))
 
+;; complex division
+(test* "complex division" 0.0
+       (let ((a 3)
+             (b 4+3i)
+             (c 7.3))
+         (- (/ a b c)
+            (/ (/ a b) c))))
+
 ;;------------------------------------------------------------------
 (test-section "quotient")
 

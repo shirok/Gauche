@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.110 2004-06-18 00:33:06 shirok Exp $
+ *  $Id: number.c,v 1.111 2004-06-27 23:27:28 shirok Exp $
  */
 
 #include <math.h>
@@ -1216,9 +1216,9 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
         double d, r, i;
         result_real = SCM_COMPLEX_REAL(arg0);
         result_imag = SCM_COMPLEX_IMAG(arg0);
-        div_imag = 0.0;
       DO_COMPLEX:
         for (;;) {
+            div_imag = 0.0;
             if (SCM_INTP(arg1)) {
                 div_real = (double)SCM_INT_VALUE(arg1);
             } else if (SCM_BIGNUMP(arg1)) {
