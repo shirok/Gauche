@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.21 2002-07-05 02:57:00 shirok Exp $
+ *  $Id: repl.c,v 1.22 2002-07-05 09:46:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -24,16 +24,18 @@
  *
  *  (define (repl reader evaluator printer prompter)
  *    (let loop1 ()
- *      (with-error-handler
- *        (lambda (e) (print-error e) (loop1))
- *        (lambda ()
- *          (display (prompter)) (flush)
- *          (let loop2 ((exp (reader)))
- *            (if (eof-object? loop2)
- *                (values)
- *                (begin
- *                  (call-with-values (lambda () (evaluator exp)) printer)
- *                  (loop2 (reader)))))))))
+ *      (and
+ *        (with-error-handler
+ *          (lambda (e) (print-error e) #t)
+ *          (lambda ()
+ *            (display (prompter)) (flush)
+ *            (let loop2 ((exp (reader)))
+ *              (if (eof-object? loop2)
+ *                  #f
+ *                  (begin
+ *                    (call-with-values (lambda () (evaluator exp)) printer)
+ *                    (loop2 (reader)))))))
+ *        (loop1))))
  *
  * It is implemented using trampoline so that it can run without crossing
  * C -> Scheme boundary.
@@ -81,7 +83,7 @@ static ScmObj repl_read_cc(ScmObj result, void **data)
     ScmObj *closure = (ScmObj*)data;
     ScmObj evaluator = closure[2];
     if (SCM_EOFP(result)) {
-        return SCM_UNDEFINED;
+        return SCM_FALSE;
     } else if (SCM_PROCEDUREP(evaluator)) {
         Scm_VMPushCC(repl_eval_cc, data, 4);
         return Scm_VMApply1(evaluator, result);
@@ -123,7 +125,17 @@ static ScmObj repl_error_handle(ScmObj *args, int nargs, void *data)
     ScmObj *closure = (ScmObj*)data;
     SCM_ASSERT(nargs == 1);
     Scm_ReportError(args[0]);
-    return Scm_VMRepl(closure[0], closure[1], closure[2], closure[3]);
+    return SCM_TRUE;
+}
+
+static ScmObj repl_loop_cc(ScmObj result, void **data)
+{
+    if (SCM_TRUEP(result)) {
+        ScmObj *closure = (ScmObj*)data;
+        return Scm_VMRepl(closure[0], closure[1], closure[2], closure[3]);
+    } else {
+        return SCM_FALSE;
+    }
 }
 
 ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
@@ -137,6 +149,7 @@ ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
     packet[3] = prompter;
     ehandler = Scm_MakeSubr(repl_error_handle, packet, 1, 0, SCM_FALSE);
     reploop = Scm_MakeSubr(repl_main, packet, 0, 0, SCM_FALSE);
+    Scm_VMPushCC(repl_loop_cc, (void**)packet, 4);
     return Scm_VMWithErrorHandler(ehandler, reploop);
 }
 
