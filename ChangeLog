@@ -1,5 +1,9 @@
 2002-09-26  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvector.[ch].sh : changed uvector struture to have
+	  separate data area from the object header.  This increases the
+	  cost of allocation, but enables the future extensions to share
+	  the vector storage.
 	* ext/charconv/jconv.c : use internal conversion routine for
 	  "iso-2022-jp" as well.
 
