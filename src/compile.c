@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.64 2001-09-29 23:35:44 shirok Exp $
+ *  $Id: compile.c,v 1.65 2001-10-06 09:58:17 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1778,6 +1778,40 @@ static ScmSyntax syntax_export = {
     compile_export,
     NULL
 };
+
+/*------------------------------------------------------------------
+ * Inlining routines
+ *   These routine are called from genstub-generated C code at
+ *   compile time to generate a code to inline it.
+ */
+ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
+                          int reqargs, int optargs, int insn, char *proc)
+{
+    ScmObj cp = SCM_CDR(form);
+    ScmObj code = SCM_NIL, tail = SCM_NIL;
+    int nargs = Scm_Length(cp);
+    if (optargs) {
+        if (0 < reqargs && nargs < reqargs) {
+            Scm_Error("%s requires at least %d arg(s)", proc, reqargs);
+        }
+    } else {
+        if (nargs != reqargs) {
+            Scm_Error("%s requires exactly %d arg(s)", proc, reqargs);
+        }
+    }
+    SCM_FOR_EACH(cp, cp) {
+        SCM_APPEND(code, tail, Scm_Compile(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));
+        if (SCM_PAIRP(SCM_CDR(cp))) {
+            SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
+        }
+    }
+    if (optargs) {
+        SCM_APPEND1(code, tail, SCM_VM_INSN1(insn, nargs));
+    } else {
+        SCM_APPEND1(code, tail, SCM_VM_INSN(insn));
+    }
+    return code;
+}
 
 /*===================================================================
  * Initializer

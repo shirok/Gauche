@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.47 2001-09-29 22:35:40 shirok Exp $
+;;;  $Id: genstub,v 1.48 2001-10-06 09:58:17 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -530,35 +530,27 @@
 (define (emit-inliner cproc)
   (let* ((insn (inline-insn-of cproc)))
     (when insn
-      (let ((inliner (string-append (c-name-of cproc) "_inline"))
-            (name (scheme-name-of cproc))
-            (req  (num-reqargs-of cproc))
-            (opt  (num-optargs-of cproc))
-            )
-        (set! (inliner-of cproc) inliner)
-        (emit-inliner-header cproc)
-        (cond ((string? insn)
-               (println "  SCM_APPEND1(code, tail, ~a);"
-                        (if (or (have-rest-arg? cproc) (> opt 0))
-                            (format #f "SCM_VM_INSN1(~a, nargs)" insn)
-                            (format #f "SCM_VM_INSN(~a)" insn)))
-               (println "  return code;"))
-              ((and (pair? insn) (eq? (car insn) 'case-nargs))
-               (for-each (lambda (clause)
-                           (let ((nargs (car clause))
-                                 (insn  (cadr clause)))
-                             (if (eq? nargs 'else)
-                                 (print "else ")
-                                 (print "if (nargs == ~a) " nargs))
-                             (println "{")
-                             (if insn
-                                 (println "  SCM_APPEND1(code, tail, SCM_VM_INSN(~a)); return code;" insn)
-                                 (println "  return SCM_FALSE;"))
-                             (println "}")))
-                         (cdr insn))))
-        (println "}")
-        ))
-    ))
+      (set! (inliner-of cproc) (string-append (c-name-of cproc) "_inline"))
+      (emit-inliner-header cproc)
+      (println "{")
+      (cond ((string? insn) (emit-inliner-call cproc insn))
+            ((and (pair? insn) (eq? (car insn) 'case-nargs))
+             (println "  int nargs = Scm_Length(SCM_CDR(form));")
+             (for-each (lambda (clause)
+                         (let ((nargs (car clause))
+                               (insn  (cadr clause)))
+                           (if (eq? nargs 'else)
+                               (print "else ")
+                               (print "if (nargs == ~a) " nargs))
+                           (println "{")
+                           (if insn
+                               (emit-inliner-call cproc insn)
+                               (println "  return SCM_FALSE;"))
+                           (println "}")))
+                       (cdr insn))))
+      (println "}")
+      ))
+  )
 
 (define (emit-inliner-header cproc)
   (let ((inliner (inliner-of cproc))
@@ -567,29 +559,14 @@
         (opt  (num-optargs-of cproc))
         )
     (println "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)" inliner)
-    (println "{")
-    (println "  ScmObj cp = SCM_CDR(form);")
-    (println "  ScmObj code = SCM_NIL, tail = SCM_NIL;")
-    (println "  int nargs = Scm_Length(cp);")
-    (cond ((have-rest-arg? cproc)
-           (println "  if (nargs < ~a)" req)
-           (println "     Scm_Error(\"~s requires at least ~s arg(s)\");" name req)
-           )
-          ((> opt 0)
-           (println "  if (nargs < ~a || nargs > ~a)" req (+ req opt))
-           (println "     Scm_Error(\"~s requires at least ~s arg(s), and at most ~s arg(s)\");" name req (+ req opt))
-           )
-          (else
-           (println "  if (nargs != ~a)" req)
-           (println "     Scm_Error(\"~s requires exactly ~s arg(s)\");" name req)
-           ))
-    (println "  SCM_FOR_EACH(cp, cp) {")
-    (println "    SCM_APPEND(code, tail, Scm_Compile(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));")
-    (println "    if (SCM_PAIRP(SCM_CDR(cp))) {")
-    (println "      SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));")
-    (println "    }")
-    (println "  }")
     ))
+
+(define (emit-inliner-call cproc insn)
+  (println "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\");"
+           (num-reqargs-of cproc)
+           (if (or (< 0 (num-optargs-of cproc)) (have-rest-arg? cproc)) "TRUE" "FALSE")
+           insn
+           (scheme-name-of cproc)))
 
 (define (emit-record cproc)
   (let* ((scm-func-name (ensure-string (scheme-name-of cproc)))
