@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.9 2004-11-13 09:57:05 shirok Exp $
+;;;  $Id: mime.scm,v 1.10 2004-11-21 09:15:42 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -189,8 +189,8 @@
             ((= ind max)
              (cond ((memv b '(#x0d #x0a)) ;;found boundary
                     (read-byte srcport)   ;;consume LF or CRLF
-                    (when (and (eqv? b #x0d) 
-                               (eqv? b (peek-byte srcport)))
+                    (when (and (eqv? #x0d b) 
+                               (eqv? #x0a (peek-byte srcport)))
                       (read-byte srcport))
                     (dequeue-all! q)
                     (set! (ref port 'state) 'boundary)

@@ -280,7 +280,7 @@ Content-Length: 4349
          (mime-decode-word "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=")))
 
 ;; NB: this assumes the test is run either under src/ or test/
-(define (mime-message-tester num)
+(define (mime-message-tester num headers)
   (let ((src #`"../test/data/rfc-mime-,|num|.txt")
         (res (call-with-input-file #`"../test/data/rfc-mime-,|num|.res.txt"
                read)))
@@ -288,7 +288,7 @@ Content-Length: 4349
       (lambda (inp)
         (let* ((title (read-line inp)) ;; test title
                (expl  (read-line inp)) ;; explanation (ignored)
-               (headers (rfc822-header->list inp)))
+               (headers (or headers (rfc822-header->list inp))))
           (test* #`"mime-parse-message (,|num| - ,|title|)"
                  res
                  (and (equal? (mime-parse-version
@@ -309,8 +309,12 @@ Content-Length: 4349
            (list (ref mesg 'content))
            (map (cut mime-message-resolver <> mesg) (ref mesg 'content)))))
 
-(dotimes (n 5)
-  (mime-message-tester n))
+(dotimes (n 7)
+  (mime-message-tester
+   n
+   (and (= n 6)
+        '(("mime-version" " 1.0")
+          ("content-type" "multipart/form-data; boundary=\"---------------------------6578815652962098482130719379\"")))))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.uri")

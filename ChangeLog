@@ -1,3 +1,8 @@
+2004-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/mime.scm (make-mime-port): fixed a bug that didn't
+	  consume '\n' following '\r' after the boundary.
+
 2004-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/vport/vport.c (Scm_Init_vport): added missing SCM_INIT_EXTENSION
