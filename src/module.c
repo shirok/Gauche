@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.34 2002-08-20 20:47:19 shirok Exp $
+ *  $Id: module.c,v 1.35 2002-08-22 11:52:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -204,12 +204,17 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
     ScmObj lp, mod;
+    ScmSymbol *name = NULL;
     SCM_FOR_EACH(lp, list) {
-        if (!SCM_SYMBOLP(SCM_CAR(lp)))
+        if (SCM_SYMBOLP(SCM_CAR(lp))) {
+            name = SCM_SYMBOL(SCM_CAR(lp));
+        } else if (SCM_IDENTIFIERP(SCM_CAR(lp))) {
+            name = SCM_IDENTIFIER(SCM_CAR(lp))->name;
+        } else {
             Scm_Error("module name required, but got %S", SCM_CAR(lp));
-        mod = Scm_FindModule(SCM_SYMBOL(SCM_CAR(lp)), FALSE);
-        if (!SCM_MODULEP(mod))
-            Scm_Error("no such module: %S", SCM_CAR(lp));
+        }
+        mod = Scm_FindModule(name, FALSE);
+        if (!SCM_MODULEP(mod)) Scm_Error("no such module: %S", SCM_CAR(lp));
         (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
         if (SCM_FALSEP(Scm_Memq(mod, module->imported))) {
             module->imported = Scm_Cons(mod, module->imported);
