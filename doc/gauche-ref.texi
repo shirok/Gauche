@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.339 2003-01-11 11:27:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.340 2003-01-14 06:06:20 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4304,16 +4304,28 @@ R5RSの健全なマクロは特別なパターン言語に基づいていて、
 
 @defspec define-macro name procedure
 @defspecx define-macro (name formals) body @dots{}
+@c EN
 Defines @var{name} to be a global macro whose transformer is @var{procedure}.
 The second form is a shorthand notation of the following form:
+@c JP
+変換子が @var{procedure} である大域マクロ @var{name} を定義します。
+2番目のフォームは、以下のフォームの簡易記法です。
+@c COMMON
 @example
 (define-macro name (lambda formals body @dots{}))
 @end example
 
+@c EN
 When a form @code{(name @var{arg} @dots{})} is seen by the compiler,
 it calls @var{procedure} with @var{arg} @dots{}.  When @var{procedure}
 returns, the compiler inserts the returned form in place of the original
 form, and compile it again.
+@c JP
+コンパイラが @code{(name @var{arg} @dots{})} というフォームを見つけると、
+@var{arg} @dots{} を引数として @var{procedure} を呼び出します。
+@var{procedure} が戻ると、コンパイラは元のフォームの場所に返されたフォームを
+挿入し、再度それをコンパイルします。
+@c COMMON
 @end defspec
 
 @node Macro expansion, Macro utilities, Traditional Macros, Macros
@@ -4322,6 +4334,7 @@ form, and compile it again.
 
 @defun macroexpand form
 @defunx macroexpand-1 form
+@c EN
 If @var{form} is a list and its first element is a variable
 globally bound to a macro, @code{macroexpand-1}
 invokes its macro transformer and
@@ -4331,6 +4344,18 @@ returns the expanded form.  Otherwise, returns @var{form} as is.
 @var{form} can't be expanded.
 
 These procedures can be used to expand globally defined macros.
+@c JP
+@var{form} がリストで、その最初の要素が大域的にマクロに束縛された
+変数であるならば、@code{macroexpand-1}はそのマクロ変換子を実行し、
+展開されたフォームを返します。そうでなければ、@var{form} をそのまま
+返します。
+
+@code{macroexpand} は、@var{form} が展開できなくなるまで
+@code{macroexpand-1} を繰り返します。
+
+これらの手続きは、大域的に定義されたマクロを展開するために使うことが
+できます。
+@c COMMON
 @end defun
 
 @defspec %macroexpand form
@@ -4343,6 +4368,7 @@ These procedures can be used to expand globally defined macros.
 
 @defmac syntax-error msg arg @dots{}
 @defmacx syntax-errorf fmt arg @dots{}
+@c EN
 Signal an error.  They are same as
 @code{error} and @code{errorf} (@xref{Signalling errors}),
 except that the error is signalled at macro-expansion time
@@ -4353,6 +4379,9 @@ the comprehensive way, instead of the cryptic error from the macro
 expander.   Because of the purpose, @var{arg} @dots{} are first
 passed to @code{unwrap-syntax} described below, to strip off
 the internal syntactic binding informations.
+@c JP
+エラーを通知します。
+@c COMMON
 
 @example
 (define-syntax my-macro
@@ -13748,12 +13777,20 @@ of descendants of @var{class}.
 @section Defining class
 @c NODE クラスの定義
 
+@c EN
 A class is a first-class object in Gauche and you can create it
 on the fly at run-time using procedure calls.
 However, for convenience, a macro is defined to create a class
 and bind it globally.
+@c JP
+クラスは、Gaucheではファーストクラスのオブジェクトなので、
+手続き呼び出しを使って実行時に動的に作成することができます。
+簡便のため、グローバルに束縛されたクラスを生成するマクロが
+定義されています。
+@c COMMON
 
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
+@c EN
 Creates a class object according to the arguments, and globally
 bind it to a variable @var{name}.   This macro should be used at toplevel.
 
@@ -13778,6 +13815,32 @@ corresponding value is used for metaclass (class that instantiates
 another class).   Other options are passed to the @code{make}
 method to create the class object.  @xref{Class instantiation},
 for the usage of metaclass.
+@c JP
+引数によって指定されたクラスオブジェクトを作成し、それを @var{name} に
+グローバルに束縛します。このマクロはトップレベルでのみ使われます。
+
+@var{Supers} はそのクラスが継承する直接のスーパークラスのリストです。
+多重継承も使えます。継承関係の優先についてのルールについては、
+@ref{多重継承} を参照して下さい。
+
+@var{Slot-spec} は「スロット」の仕様で、「フィールド」や「インスタンス
+変数」と呼ばれるものです(これに対して、@var{slot-spec} を使って「クラス変数」
+を指定することもできます)。
+@var{slot-spec} の最も単純なフォームはシンボルそのもので、その名前が
+スロットであるものです。あるいは、最初の要素がシンボルで残りの要素が
+ネストしたリスト(キーワードと値)であるリストを渡すこともできます。
+このリストフォームは、スロットの名前を定義するだけでなく、そのスロットの
+振る舞いも定義します。詳細は、@ref{Slot specification} を参照して下さい。
+
+最後に、@var{option} @dots{} は、クラスオブジェクトがどのように
+作られるかを指定する、キーワードと値のネストしたリストです。
+このマクロでは1つのキーワード引数、@code{:metaclass} により、
+メタクラス(他のクラスをインスタンス化するクラス)を指定できます。
+他のオプションはクラスオブジェクトを作成するために、@code{make}
+メソッドに渡されます。メタクラスの使用方法については、
+@ref{Class instantiation}を参照。
+
+@c COMMON
 @end defmac
 
 @menu
