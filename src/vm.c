@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.45 2001-02-21 13:45:24 shiro Exp $
+ *  $Id: vm.c,v 1.46 2001-02-22 06:47:41 shiro Exp $
  */
 
 #include "gauche.h"
@@ -480,11 +480,13 @@ static void run_loop()
                                            SCM_IDENTIFIER(sym)->name,
                                            FALSE);
                     if (gloc == NULL) {
-                        VM_ERR(("unbound variable: %S", sym));
+                        VM_ERR(("unbound variable: %S",
+                                SCM_IDENTIFIER(sym)->name));
                     }
                     val0 = gloc->value;
                     if (val0 == SCM_UNBOUND) {
-                        VM_ERR(("unbound variable: %S", sym));
+                        VM_ERR(("unbound variable: %S",
+                                SCM_IDENTIFIER(sym)->name));
                     }
                     /* memorize gloc */
                     /* TODO: make it MT safe! */
