@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.38 2004-08-19 06:49:14 shirok Exp $
+;; $Id: srfi.scm,v 1.39 2004-11-01 21:51:05 shirok Exp $
 
 (use gauche.test)
 
@@ -1525,19 +1525,33 @@
 
 ;; NB: in Gauche, the round-trip conversion from time -> julian-day -> time
 ;; can't be guaranteed because of the limited precision of julian-day
-;; calcularion.
-'(let1 t0 (make-time time-utc 0 1022191954)
-   (test "julian day number"
-         t0
-         (lambda ()
-           (julian-day->time-utc (time-utc->julian-day t0)))
-         time=?))
-'(let1 t0 (make-time time-utc 0 1022191954)
-   (test "modified julian day number"
-         t0
-         (lambda ()
-           (modified-julian-day->time-utc (time-utc->modified-julian-day t0)))
-         time=?))
+;; calcularion.   We round the nanosecond range.
+(define (round-to-seconds time)
+  (let ((n (time-nanosecond time)))
+    (set! (ref time 'nanosecond) 0)
+    (when (> n 500000000)
+      (add-duration! time (make-time 'time-duration 0 1)))
+    time))
+  
+(let1 t0 (make-time time-utc 0 1022191954)
+  (test "julian day number, via time-utc"
+        t0
+        (lambda ()
+          (round-to-seconds (julian-day->time-utc (time-utc->julian-day t0))))
+        time=?))
+(let1 jd 2453311.0
+  (test "julian day number, via date"
+        jd
+        (lambda ()
+          (date->julian-day (julian-day->date jd)))))
+(let1 t0 (make-time time-utc 0 1022191954)
+  (test "modified julian day number"
+        t0
+        (lambda ()
+          (round-to-seconds
+           (modified-julian-day->time-utc (time-utc->modified-julian-day t0))))
+        time=?))
+
 
 (test* "date->string"
        "2002/05/15 01:23:34.001234567 -1000 3"

@@ -1,5 +1,7 @@
 2004-11-01  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-19.scm (date->julian-day): fix a bug to honor tz-offset.
+
 	* configure.ac, ext/Makefile.in : added ext/vport
 	* src/gauche.h : removed 'Getline' entry from ScmPortVTableRec; it
 	  seems only to add extra complexity.  Also changed the return value

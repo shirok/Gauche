@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.14 2004-07-15 09:20:48 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.15 2004-11-01 21:51:04 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -655,13 +655,16 @@
 	 (hour (date-hour date))
 	 (day (date-day date))
 	 (month (date-month date))
-	 (year (date-year date)) )
+	 (year (date-year date))
+         (offset (date-zone-offset date))
+         )
     (+ (tm:encode-julian-day-number day month year)
        (- 1/2)
        (+ (/ (+ (* hour 60 60)
 		(* minute 60)
 		second
-		(/ nanosecond tm:nano))
+		(/ nanosecond tm:nano)
+                (- offset))
 	     tm:sid)))))
 
 (define (date->modified-julian-day date)
