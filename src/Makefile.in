@@ -1,9 +1,7 @@
 CC = @CC@
 LIBS = @LIBS@
 DEFS = @DEFS@
-#CFLAGS = -g -O2 -I. -I../gc -I../gc/include @SHLIB_SO_CFLAGS@
-CFLAGS = -g -O2 -I. -I../gc -I../gc/include @SHLIB_SO_CFLAGS@
-#CFLAGS = -O2 -I. -I../gc -I../gc/include
+CFLAGS = @CFLAGS@ @DEFS@ -I. -I../gc/include @SHLIB_SO_CFLAGS@
 LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 AR = ar
 RANLIB = @RANLIB@
@@ -29,7 +27,7 @@ SITE_SCM_DIR          = $(GAUCHE_DATA_DIR)/site/lib
 SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@/@host@
 ARCH = @host@
 
-INSTALL_HEADERS = gauche.h ../gc/gc.h 
+INSTALL_HEADERS = gauche.h ../gc/include/gc.h 
 INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/char_euc_jp.h gauche/char_utf_8.h    \
                      gauche/char_sjis.h gauche/char_none.h       \
