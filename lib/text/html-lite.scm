@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: html-lite.scm,v 1.1 2001-11-08 10:49:47 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.2 2001-11-08 11:10:38 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -27,6 +27,7 @@
                      ((#\>) (display "&gt;"))
                      ((#\&) (display "&amp;"))
                      ((#\") (display "&quot;"))
+                     (else (display c))
                      ))
                  read-char))
 
@@ -38,7 +39,8 @@
          (list " "
                (if (pair? spec)
                    (list (car spec)
-                         (format #f "=~s" (html-escape (cadr spec))))
+                         (format #f "=~s"
+                                 (html-escape-string (cadr spec))))
                    spec)))
        attrspecs))
 
@@ -48,7 +50,7 @@
       (if (and (pair? args)
                (pair? (car args))
                (eq? (caar args) '@))
-          (values (make-attribute (car args)) (cdr args))
+          (values (make-attribute (cdar args)) (cdr args))
           (values '() args)))
 
     (if empty?
@@ -63,20 +65,22 @@
 
 (define-macro (define-html-elements . elements)
   (define (make-scheme-name name)
-    (string->symbol (format #f "html-~a" (car elements))))
+    (string->symbol (format #f "html-~a" name)))
   (let loop ((elements elements)
              (r '()))
-    (cond ((null? elements) `(begin ,(reverse r)))
+    (cond ((null? elements) `(begin ,@(reverse r)))
           ((and (pair? (cdr elements)) (eqv? (cadr elements) :empty))
            (loop (cddr elements)
-                 (cons `(define ,(make-scheme-name name)
-                          (make-html-element ,name :empty? #t))
-                       r)))
+                 (list* `(define ,(make-scheme-name (car elements))
+                           (make-html-element ',(car elements) :empty? #t))
+                        `(export ,(make-scheme-name (car elements)))
+                        r)))
           (else
            (loop (cdr elements)
-                 (cons `(define ,(make-scheme-name name)
-                          (make-html-element ,name))
-                       r))))
+                 (list* `(define ,(make-scheme-name (car elements))
+                           (make-html-element ',(car elements)))
+                        `(export ,(make-scheme-name (car elements)))
+                        r))))
     ))
 
 ;; http://www.w3.org/TR/html4/sgml/dtd.html
