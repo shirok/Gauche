@@ -1,18 +1,10 @@
 ;;;
 ;;; spigot - 'spigot' module Scheme wrapper
 ;;;
-;;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
+;;;  Written by Shiro Kawai (shiro@acm.org)
+;;;  I put this program in public domain.  Use it as you like.
 ;;;
-;;;  Permission to use, copy, modify, distribute this software and
-;;;  accompanying documentation for any purpose is hereby granted,
-;;;  provided that existing copyright notices are retained in all
-;;;  copies and that this notice is included verbatim in all
-;;;  distributions.
-;;;  This software is provided as is, without express or implied
-;;;  warranty.  In no circumstances the author(s) shall be liable
-;;;  for any damages arising out of the use of this software.
-;;;
-;;;  $Id: spigot.scm,v 1.1 2003-06-10 20:59:45 shirok Exp $
+;;;  $Id: spigot.scm,v 1.2 2003-06-12 11:09:23 shirok Exp $
 ;;;
 
 ;; Defines module
