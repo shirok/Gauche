@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.398 2003-06-05 21:51:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.399 2003-06-05 22:00:32 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17313,6 +17313,7 @@ The default procedure prints @code{"listener> "}.
 引数をとらない手続きです。カレント出力ポートにプロンプトを
 印字しなければなりません。リスナーは、この手続きが面倒を見なくてよいように、
 出力をフラッシュします。
+デフォルトの手続きは @code{"listener> "} を印字します。
 @c COMMON
 @end defivar
 
@@ -17334,7 +17335,7 @@ It can be @code{#f} if no such procedure is needed.
 The default value is @code{#f}.
 @c JP
 @code{input-port}からEOFが読み込まれたときに呼び出されるサンクです。
-このような手続きが必要なかった場合には@code{#f}になります。
+このような手続きが必要ない場合は@code{#f}にしておいて構いません。
 デフォルトの値は@code{#f}です。
 @c COMMON
 @end defivar
@@ -17350,6 +17351,7 @@ error exception by @code{report-error}.
 エラー例外をひとつ引数としてとる手続きです。read-eval-printの最中に
 エラーが発生すると、エラーシグナルが発生すのと同じ動的環境で、
 呼び出されます。
+デフォルト値はエラー例外を@code{report-error}を使って印字する手続きです。
 @c COMMON
 @end defivar
 @end deftp
@@ -17387,21 +17389,21 @@ Repeats from 2.
 呼ばれるサンクを返します。
 
 返されたサンク(readハンドラ)は、以下のように実行されます。
-最初のプロンプトはこの手続きが印字しているのでは@emph{ない}ことに
+この手続きは最初のプロンプトを印字@emph{しない}ことに
 注意してください。これについては後述の@code{listener-show-prompt}を
 参照してください。
 @enumerate
 @item
-@code{input-port}から正しいデータを読み、これをリスナーの内部バッファに
+@code{input-port}にあるデータを読み、これをリスナーの内部バッファに
 連結する。
 @item
-バッファをスキャンして、それが完結したＳ式であるかを確かめ、
+バッファをスキャンして、それが完結したS式であるかを確かめ、
 完結していなければ、リターンする。
 @item
-バッファからそのＳ式を読み込み、そのバッファからは
+バッファからそのS式を読み込み、そのバッファからは
 そのデータを除去する。
 @item
-そのＳ式を評価して、結果を@code{output-port}へ印字する。
+そのS式を評価して、結果を@code{output-port}へ印字する。
 @code{output-port}.
 @item
 プロンプタ手続きを使って、プロンプトを@code{output-port}に印字したのち、
@@ -17439,8 +17441,8 @@ This procedure may raise an error if the input contains
 '@code{#<}' character sequence.
 @c JP
 もし、@var{str}が完結したＳ式を含んでいれば@code{#t}を返します。
-このユーティリティ手続きは、他の目的にも有用なので、よく
-エクスポートされます。
+このユーティリティ手続きは、他の目的にも有用なので、
+他の手続きといっしょにエクスポートしてあります。
 
 この手続きは構文のチェックをするだけで、(不正な文字名を含んだり、
 登録されていないSRFI-10のタグを含むなど)誤りのある式を判別するわけでは
