@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.389 2003-05-10 23:19:58 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.390 2003-05-13 23:00:16 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -25809,7 +25809,7 @@ A simple example:
 
 @c ----------------------------------------------------------------------
 @menu
-* binary.pack - Packing Binary Data::
+* binary.pack - Packing Binary Data::  
 * dbm - Generic DBM interface::  
 * dbm.gdbm - GDBM interface::   
 * dbm.ndbm - NDBM interface::   
@@ -25829,6 +25829,7 @@ A simple example:
 * rfc.uri - URI parsing and construction::  
 * slib - SLIB::                 
 * text.csv - CSV tables::       
+* text.diff - Calculate difference of text files::  
 * text.html-lite - Simple HTML document construction::  
 * text.parse - Parsing input stream::  
 * text.tr - Transliterate characters::  
@@ -25836,6 +25837,7 @@ A simple example:
 * util.combinations - Combination library::  
 * util.digest - Message digester framework::  
 * util.isomorph - Determine isomorphism::  
+* util.lcs - The longest common subsequence::  
 * util.list - Additional list library::  
 * util.queue - Queue::          
 * util.toposort - Topological sort::  
@@ -28682,7 +28684,7 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node text.csv - CSV tables, text.html-lite - Simple HTML document construction, slib - SLIB, Library modules - Utilities
+@node text.csv - CSV tables, text.diff - Calculate difference of text files, slib - SLIB, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -28760,6 +28762,21 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
+@node text.diff - Calculate difference of text files, text.html-lite - Simple HTML document construction, text.csv - CSV tables, Library modules - Utilities
+@section @code{text.diff} - Calculate difference of text files
+
+@deftp {Module} text.diff
+@mdindex text.diff
+@end deftp
+
+@defun diff src-a src-b &keyword reader eq-fn
+@end defun
+
+@defun diff-report src-a src-b &keyword reader eq-fn writer
+@end defun
+
+
+@c ----------------------------------------------------------------------
 @c @node text.gettext - Dealing with localized messages
 @c @section @code{text.gettext} - Dealing with localized messages
 
@@ -28816,7 +28833,7 @@ to prepare a file to be read by Windows programs.
 @c @end defun
 
 @c ----------------------------------------------------------------------
-@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.csv - CSV tables, Library modules - Utilities
+@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.diff - Calculate difference of text files, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
 
 @deftp {Module} text.html-lite
@@ -29761,7 +29778,7 @@ converts it to a hexified string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.isomorph - Determine isomorphism, util.list - Additional list library, util.digest - Message digester framework, Library modules - Utilities
+@node util.isomorph - Determine isomorphism, util.lcs - The longest common subsequence, util.digest - Message digester framework, Library modules - Utilities
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE util.isomorph - 票房冉年, @code{util.isomorph} - 票房冉年
 
@@ -29827,7 +29844,28 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node util.list - Additional list library, util.queue - Queue, util.isomorph - Determine isomorphism, Library modules - Utilities
+@node util.lcs - The longest common subsequence, util.list - Additional list library, util.isomorph - Determine isomorphism, Library modules - Utilities
+@section @code{util.lcs} - The longest common subsequence
+
+@deftp {Module} util.lcs
+@mdindex util.lcs
+This module implements the algorithm to find the longest common subsequence
+of two given sequences.
+
+One of the applications of this algorithm is to calculate
+the difference of two text files;
+see @ref{text.diff - Calculate difference of text files}.
+@end deftp
+
+@defun lcs-with-positions seq-a seq-b &optional eq-fn
+@end defun
+
+@defun lcs seq-a seq-b &optional eq-fn
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node util.list - Additional list library, util.queue - Queue, util.lcs - The longest common subsequence, Library modules - Utilities
 @section @code{util.list} - Additional list library
 
 @deftp {Module} util.list

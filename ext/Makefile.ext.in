@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.3 2003-04-26 06:54:24 shirok Exp $
+## $Id: Makefile.ext.in,v 1.4 2003-05-13 23:00:23 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -20,7 +20,7 @@ LDFLAGS  = @LDFLAGS@
 
 
 # These are set by configure
-LIBTOOL  = @LIBTOOL@
+LIBTOOL  = @LIBTOOL@ --disable-static
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
 INCLUDES = -I$(srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/gc/include @LOCAL_INC@ $(EXTRA_INCLUDES)
@@ -41,7 +41,7 @@ GAUCHE_CONFIG = $(SHELL) $(top_srcdir)/src/gauche-config
 INSTALL_TYPE = sys
 
 MOD_LDFLAGS  = -module -avoid-version
-LIBGAUCHE = $(top_builddir)/src/libgauche.la
+EXT_LIBGAUCHE = @EXT_LIBGAUCHE@
 
 GAUCHE_INCDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 GAUCHE_LIBDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`

@@ -283,6 +283,11 @@ do
     prev=tag
     ;;
 
+  ## [SK]: Turn off dynamic library or static library generation at
+  ## run time.
+  --disable-static)  build_old_libs= ;;
+  --disable-dynamic) build_libtool_libs= ;;
+
   -dlopen)
     prevopt="-dlopen"
     prev=execute_dlfiles
