@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.267 2002-09-21 05:16:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.268 2002-09-21 08:37:02 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7267,6 +7267,24 @@ the created regexp object becomes case-folding regexp.
 キーワード引数@var{case-fold}に真の値が与えられた場合、作成される正規表現は
 大文字小文字を区別しないものとなります。
 (大文字小文字を区別しない正規表現に関しては上の説明を参照して下さい)。
+@c COMMON
+@end defun
+
+@defun regexp? @var{obj}
+@c EN
+Returns true iff @var{obj} is a regexp object.
+@c JP
+@var{obj}が正規表現オブジェクトなら真の値を返します。
+@c COMMON
+@end defun
+
+@defun regexp->string @var{regexp}
+@c EN
+Returns a source string describing the regexp @var{regexp}.
+The returned string is immutable.
+@c JP
+正規表現@var{regexp}を記述する元になった文字列を返します。
+返される文字列は変更不可な文字列です。
 @c COMMON
 @end defun
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.31 2002-09-21 03:00:10 shirok Exp $
+ *  $Id: char.c,v 1.32 2002-09-21 08:37:02 shirok Exp $
  */
 
 #include <ctype.h>
@@ -595,7 +595,9 @@ static ScmChar read_charset_xdigits(ScmPort *port, int ndigs, int key)
    If complement_p is not NULL, the location get a boolean value of
    whether complement character (caret in the beginning) appeared or not.
    In that case, the returned charset is not complemented. */
-/* TODO:  [:class:] and other posix weird stuff. */
+
+static ScmObj read_predef_charset(ScmPort*, ScmObj*);
+
 ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                        int error_p, int bracket_syntax)
 {
@@ -688,6 +690,11 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
             }
             Scm_CharSetAdd(set, SCM_CHARSET(moreset));
             continue;
+        case '[':
+            moreset = read_predef_charset(input, &chars);
+            if (!SCM_CHARSETP(moreset)) goto err;
+            Scm_CharSetAdd(set, SCM_CHARSET(moreset));
+            continue;
         ordchar:
         default:
             if (inrange) {
@@ -719,6 +726,55 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
     if (error_p)
         Scm_Error("Unclosed bracket in charset syntax [%A",
                   Scm_ListToString(Scm_ReverseX(chars)));
+    return SCM_FALSE;
+}
+
+/* Read posix [:alpha:] etc.  The first '[' is already read.
+   Return #f on error.  Set reverse list of read chars in *chars */
+#define MAX_CHARSET_NAME_LEN  10
+ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
+{
+    int i;
+    char name[MAX_CHARSET_NAME_LEN];
+    ScmChar ch;
+    for (i=0; i<MAX_CHARSET_NAME_LEN; i++) {
+        SCM_GETC(ch, input);
+        if (ch == SCM_CHAR_INVALID) return SCM_FALSE;
+        *chars = Scm_Cons(SCM_MAKE_CHAR(ch), *chars);
+        if (!SCM_CHAR_ASCII_P(ch)) break;
+        if (ch != ']') {
+            name[i] = ch;
+            continue;
+        }
+        if (strncmp(name, ":alnum:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+        } else if (strncmp(name, ":alpha:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_ALPHA);
+        } else if (strncmp(name, ":blank:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_BLANK);
+        } else if (strncmp(name, ":cntrl:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_CNTRL);
+        } else if (strncmp(name, ":digit:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
+        } else if (strncmp(name, ":graph:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_GRAPH);
+        } else if (strncmp(name, ":lower:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_LOWER);
+        } else if (strncmp(name, ":print:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_PRINT);
+        } else if (strncmp(name, ":punct:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_PUNCT);
+        } else if (strncmp(name, ":space:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
+        } else if (strncmp(name, ":upper:", 7) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_UPPER);
+        } else if (strncmp(name, ":xdigit:", 8) == 0) {
+            return Scm_GetStandardCharSet(SCM_CHARSET_XDIGIT);
+        } else break;
+    }
+    /* here we got invalid charset name */
+    name[i] = '\0';
+    Scm_Error("invalid or unsupported POSIX charset '[%s]'", name);
     return SCM_FALSE;
 }
 

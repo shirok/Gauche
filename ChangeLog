@@ -1,5 +1,7 @@
 2002-09-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/char.c (Scm_CharSetRead): support POSIX character class
+	  notation such as '[:alpha:]'.
 	* src/regexp.c, src/char.c, src/read.c, src/extlib.stub : added
 	  case-fold regexp match.  New syntax #/.../i for it.
 
@@ -7,6 +9,8 @@
 
 	* src/vm.c, src/compile.c, src/gauche/vminsn.h : implemented
 	 "combined push" instructions, like LREF-PUSH and PUSHI.
+	* src/compile.c : fixed a bug that didn't add bind-info of
+	  internal defines properly.
 
 2002-09-18  Shiro Kawai  <shiro@acm.org>
 
