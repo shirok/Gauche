@@ -875,6 +875,10 @@ drawing must be done in specialized way for each subclasses.
       (when (ref self 'closed)
         (apply format #t "~a ~a lineto\n" (point->list (car pts))))
       (format #t "closepath\n"))))
+
+;; utility method
+(define-method point->list ((pt <2d-point>))
+  (list (x-of pt) (y-of pt)))
 @end example
 
 @c EN
