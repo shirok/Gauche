@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.29 2001-03-26 08:24:13 shiro Exp $
+ *  $Id: class.c,v 1.30 2001-03-26 10:03:49 shiro Exp $
  */
 
 #include "gauche.h"
@@ -591,26 +591,37 @@ static ScmObj slot_initialize(ScmObj obj, ScmObj acc, ScmObj initargs)
     return SCM_UNDEFINED;
 }
 
-/*
- * Convenient function
+/*-------------------------------------------------------------------
+ * slot-ref, slot-set! and families
  */
-inline ScmSlotAccessor *Scm_GetSlotAccessor(ScmObj obj, ScmObj slot)
+inline ScmSlotAccessor *Scm_GetSlotAccessor(ScmClass *klass, ScmObj slot)
 {
-    ScmObj p = Scm_Assq(slot, Scm_ClassOf(obj)->accessors);
+    ScmObj p = Scm_Assq(slot, klass->accessors);
     if (!SCM_PAIRP(p)) return NULL;
     if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
         Scm_Error("slot accessor information of class %S, slot %S is screwed up.",
-                  SCM_OBJ(Scm_ClassOf(obj)), slot);
+                  SCM_OBJ(klass), slot);
     return SCM_SLOT_ACCESSOR(SCM_CDR(p));
 }
 
-/*
- * slot-ref & slot-set!
- */
+#define SLOT_UNBOUND(klass, obj, slot)                  \
+    Scm_VMApply(SCM_OBJ(&Scm_GenericSlotUnbound),       \
+                SCM_LIST3(SCM_OBJ(klass), obj, slot))
+
+static ScmObj slot_ref_cc(ScmObj result, void **data)
+{
+    ScmObj obj = data[0];
+    ScmObj slot = data[1];
+    if (SCM_UNBOUNDP(result))
+        return SLOT_UNBOUND(Scm_ClassOf(obj), obj, slot);
+    else
+        return result;
+}
+
 ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot)
 {
-    ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmSlotAccessor *ca = Scm_GetSlotAccessor(obj, slot);
+    ScmClass *klass = Scm_ClassOf(obj);
+    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
     ScmObj val = SCM_UNBOUND;
 
     if (ca == NULL) {
@@ -623,23 +634,23 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot)
         val = scheme_slot_ref(obj, ca->slotNumber);
     } else if (SCM_PAIRP(ca->schemeAccessor)
                && SCM_PROCEDUREP(SCM_CAR(ca->schemeAccessor))) {
-        val = Scm_VMApply(SCM_CAR(ca->schemeAccessor), SCM_LIST1(obj));
+        void *data[2];
+        data[0] = obj;
+        data[1] = slot;
+        Scm_VMPushCC(slot_ref_cc, data, 2);
+        return Scm_VMApply(SCM_CAR(ca->schemeAccessor), SCM_LIST1(obj));
     } else {
         Scm_Error("don't know how to retrieve value of slot %S of object %S (MOP error?)",
                   slot, obj);
     }
-    if (SCM_UNBOUNDP(val)) {
-        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotUnbound),
-                           SCM_LIST3(SCM_OBJ(klass), obj, slot));
-    }
+    if (SCM_UNBOUNDP(val)) return SLOT_UNBOUND(klass, obj, slot);
     return val;
 }
 
 ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
 {
-    ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmSlotAccessor *ca = Scm_GetSlotAccessor(obj, slot);
-    ScmObj r = SCM_UNDEFINED;
+    ScmClass *klass = Scm_ClassOf(obj);
+    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
     
     if (ca == NULL) {
         return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
@@ -651,12 +662,168 @@ ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
         scheme_slot_set(obj, ca->slotNumber, val);
     } else if (SCM_PAIRP(ca->schemeAccessor)
                && SCM_PROCEDUREP(SCM_CDR(ca->schemeAccessor))) {
-        r = Scm_VMApply(SCM_CDR(ca->schemeAccessor), SCM_LIST2(obj, val));
+        return Scm_VMApply(SCM_CDR(ca->schemeAccessor), SCM_LIST2(obj, val));
     } else {
         Scm_Error("slot %S of class %S is read-only", slot, SCM_OBJ(klass));
     }
-    return r;
+    return SCM_UNDEFINED;
 }
+
+#if 0
+/* NB: Scm_GetSlotRefProc(CLASS, SLOT) and Scm_GetSlotSetProc(CLASS, SLOT)
+ *   return subrs that can be used in place of (slot-ref OBJ SLOT) and
+ *   and (slot-set! OBJ SLOT), where OBJ's class is CLASS.   The intention
+ *   is to pre-calculate slot lookup and type dispatch according to
+ *   the slot implementation.  The rudimental benchmark showed it is
+ *   faster than applying slot-ref/slot-set!.
+ *
+ *   However, I found that inlining slot-ref/slot-set! makes
+ *   the code even faster, so you don't need to do all these precalculation
+ *   for speed.   I leave the code inside #if 0 -- #endif, for in future
+ *   I may find it useful...
+ */
+struct slot_acc_packet {
+    union {
+        ScmNativeGetterProc cgetter;
+        ScmNativeSetterProc csetter;
+        int slotNum;
+        ScmObj sgetter;
+        ScmObj ssetter;
+    } method;
+    ScmObj slot;
+};
+
+static ScmObj slot_ref_native(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    ScmObj val = p->method.cgetter(args[0]);
+    if (SCM_UNBOUNDP(val)) 
+        return SLOT_UNBOUND(Scm_ClassOf(args[0]), args[0], p->slot);
+    else
+        return val;
+}
+
+static ScmObj slot_ref_instance(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    ScmObj val = scheme_slot_ref(args[0], p->method.slotNum);
+    if (SCM_UNBOUNDP(val)) 
+        return SLOT_UNBOUND(Scm_ClassOf(args[0]), args[0], p->slot);
+    else
+        return val;
+}
+
+static ScmObj slot_ref_procedural(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    void *next[2];
+    next[0] = args[0];
+    next[1] = p->slot;
+    Scm_VMPushCC(slot_ref_cc, next, 2);
+    return Scm_VMApply(p->method.sgetter, SCM_LIST1(args[0]));
+}
+
+static ScmObj slot_ref_missing(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
+                       SCM_LIST3(SCM_OBJ(Scm_ClassOf(args[0])), args[0],
+                                         p->slot));
+
+}
+
+static ScmObj slot_set_native(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    p->method.csetter(args[0], args[1]);
+    return SCM_UNDEFINED;
+}
+
+static ScmObj slot_set_instance(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    scheme_slot_set(args[0], p->method.slotNum, args[1]);
+    return SCM_UNDEFINED;
+}
+
+static ScmObj slot_set_procedural(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    return Scm_VMApply(p->method.ssetter, SCM_LIST2(args[0], args[1]));
+}
+
+static ScmObj slot_set_missing(ScmObj *args, int nargs, void *data)
+{
+    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
+    return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
+                       SCM_LIST4(SCM_OBJ(Scm_ClassOf(args[0])), args[0],
+                                         p->slot, args[1]));
+
+}
+
+ScmObj Scm_GetSlotRefProc(ScmClass *klass, ScmObj slot)
+{
+    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
+    struct slot_acc_packet *p = SCM_NEW(struct slot_acc_packet);
+    ScmObj outp = Scm_MakeOutputStringPort(), name;
+    p->slot = slot;
+
+    Scm_Printf(SCM_PORT(outp), "slot-ref %S %S", klass->name, slot);
+    name = Scm_GetOutputString(SCM_PORT(outp));
+
+    if (ca == NULL) {
+        return Scm_MakeSubr(slot_ref_missing, p, 1, 0, name);
+    }
+    if (ca->getter) {
+        p->method.cgetter = ca->getter;
+        return Scm_MakeSubr(slot_ref_native, p, 1, 0, name);
+    }
+    if (ca->slotNumber >= 0) {
+        p->method.slotNum = ca->slotNumber;
+        return Scm_MakeSubr(slot_ref_instance, p, 1, 0, name);
+    }
+    if (SCM_PAIRP(ca->schemeAccessor)
+        && SCM_PROCEDUREP(SCM_CAR(ca->schemeAccessor))) {
+        p->method.sgetter = SCM_CAR(ca->schemeAccessor);
+        return Scm_MakeSubr(slot_ref_procedural, p, 1, 0, name);
+    } else {
+        Scm_Error("don't know how to make slot referencer of slot %S of class %S (MOP error?)",
+                  slot, klass);
+        return SCM_UNDEFINED;
+    }
+}
+
+ScmObj Scm_GetSlotSetProc(ScmClass *klass, ScmObj slot)
+{
+    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
+    struct slot_acc_packet *p = SCM_NEW(struct slot_acc_packet);
+    ScmObj outp = Scm_MakeOutputStringPort(), name;
+    p->slot = slot;
+
+    Scm_Printf(SCM_PORT(outp), "slot-set %S %S", klass->name, slot);
+    name = Scm_GetOutputString(SCM_PORT(outp));
+    
+    if (ca == NULL) {
+        return Scm_MakeSubr(slot_set_missing, p, 2, 0, name);
+    }
+    if (ca->setter) {
+        p->method.csetter = ca->setter;
+        return Scm_MakeSubr(slot_set_native, p, 2, 0, name);
+    }
+    if (ca->slotNumber >= 0) {
+        p->method.slotNum = ca->slotNumber;
+        return Scm_MakeSubr(slot_set_instance, p, 2, 0, name);
+    }
+    if (SCM_PAIRP(ca->schemeAccessor)
+        && SCM_PROCEDUREP(SCM_CDR(ca->schemeAccessor))) {
+        p->method.ssetter = SCM_CDR(ca->schemeAccessor);
+        return Scm_MakeSubr(slot_set_procedural, p, 2, 0, name);
+    } else {
+        Scm_Error("slot %S of class %S is read-only", slot, SCM_OBJ(klass));
+        return SCM_UNDEFINED;
+    }
+}
+#endif
 
 /*--------------------------------------------------------------
  * Slot accessor object
