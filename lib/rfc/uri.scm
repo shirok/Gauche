@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.9 2001-09-19 07:46:49 shirok Exp $
+;;;  $Id: uri.scm,v 1.10 2001-09-24 05:39:42 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -112,26 +112,24 @@
 (define (uri-decode-string string . args)
   (with-string-io string (lambda () (apply uri-decode args))))
 
-;; Default set of characters to be escaped
-;; See 2.4.3 "Excluded US-ASCII characters" of RFC 2396
-(define *uri-special-char-set* #[\x00-\x20<>#%\"{}|\\^\`\[\]])
+;; Default set of characters that can passed without escaping.
+;; See 2.3 "Unreserved Characters" of RFC 2396.
+(define *uri-unreserved-char-set* #[-_.!~*'()0-9A-Za-z])
 
 (define (uri-encode . args)
-  (let ((echars (get-keyword :escaped-char-set args *uri-special-char-set*)))
+  (let ((echars (get-keyword :noescape args *uri-unreserved-char-set*)))
     (let loop ((c (read-char)))
       (cond ((eof-object? c))
             ((char-set-contains? echars c)
-             (format #t "%~2,'0x" (char->integer c))
-             (loop (read-char)))
-            ((char>=? c #\del)
+             (write-char c) (loop (read-char)))
+            (else
              (let loop1 ((i (char->integer c)))
                (if (< i #x100)
                    (format #t "%~2,'0x" i)
                    (begin
-                     (loop1 (quotient i 16))
-                     (format #t "%~2,'0x" (modulo i 16)))))
-             (loop (read-char)))
-            (else (write-char c) (loop (read-char)))))))
+                     (loop1 (quotient i #x100))
+                     (format #t "%~2,'0x" (modulo i #x100)))))
+             (loop (read-char)))))))
 
 (define (uri-encode-string string . args)
   (with-string-io string (lambda () (apply uri-encode args))))
