@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.26 2003-10-05 10:17:19 shirok Exp $
+# $Id: Gauche.spec,v 1.27 2003-10-22 02:04:05 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -105,6 +105,7 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 /usr/share/info/
 /usr/share/man/man1/
 /usr/share/gauche/site
+/usr/share/aclocal/gauche.m4
 
 %files %{encoding} -f rpmfiles-encoding.txt
 %defattr(-,root,root)
@@ -120,6 +121,9 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 %defattr(-,root,root)
 
 %changelog
+* Tue Oct 21 2003 Shiro Kawai
+- include aclocal/gauche.m4 in common rpm
+
 * Sat Oct  4 2003 Shiro Kawai
 - Gauche release 0.7.2.
 Splitted into common, encoding-dependent part, and gdbm package.

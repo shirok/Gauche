@@ -1,5 +1,11 @@
 2003-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* Makefile.in, Gauche.spec : installs acinclude.m4 as gauche.m4 under
+	  $(datadir)/aclocal.  Patch from Kimura Fuyuki.
+
+	* src/Makefile.in : make uninstall remove libgauche.so.  Patch from
+	  Kimura Fuyuki.
+
 	* src/gauche-init.scm : evaluates "~/.gaucherc" in the user module.
 	  NB: this is still not an official feature, and might be moved to
 	  gauche.interactive in future.
