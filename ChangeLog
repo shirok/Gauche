@@ -1,3 +1,12 @@
+2002-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c, src/read.c, ext/uvector/uvector.c.sh : added
+	  read-context flag to control whether literal structure should
+	  be immutable or not.   The default ScmRead reads as mutable
+	  object, while ScmLoad reads as immutable object.
+	  Currently this only affects literal uvectors.  (It's debatable
+	  that string should obey this flag).
+
 2002-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-encode): process byte-wise, instead of

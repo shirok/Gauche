@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.h,v 1.4 2002-10-12 13:56:01 shirok Exp $
+ *  $Id: port.h,v 1.5 2002-12-30 07:44:12 shirok Exp $
  */
 
 /*
@@ -75,6 +75,7 @@
         }                                                       \
     } while (0)
 
+/* Assumes the calling thread has the lock */
 #define PORT_UNLOCK(p)                                  \
     do {                                                \
         if (--p->lockCount <= 0) {                      \
@@ -93,5 +94,6 @@
         } SCM_END_PROTECT;                              \
     } while (0)
 
+#define PORT_LOCKED(p, vm)  ((p)->lockOwner == (vm))
 
 

@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.29 2002-12-25 23:52:53 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.30 2002-12-30 07:44:12 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -317,7 +317,8 @@ cat <<EOF
 /*
  * Reader extension
  */
-static ScmObj read_uvector(ScmPort *port, const char *tag)
+static ScmObj read_uvector(ScmPort *port, const char *tag,
+                           ScmReadContext *ctx)
 {
     ScmChar c;
     ScmObj list, uv = SCM_UNDEFINED;
@@ -336,8 +337,10 @@ static ScmObj read_uvector(ScmPort *port, const char *tag)
     else if (strcmp(tag, "f32") == 0) uv = Scm_ListToF32Vector(list, 0);
     else if (strcmp(tag, "f64") == 0) uv = Scm_ListToF64Vector(list, 0);
     else Scm_Error("invalid unform vector tag: %s", tag);
-    /* make literal uvectors immutable */
-    SCM_UVECTOR_IMMUTABLE_P(uv) = TRUE;
+    /* If we are reading source file, let literal uvectors be immutable. */
+    if (ctx->flags & SCM_READ_LITERAL_IMMUTABLE) {
+        SCM_UVECTOR_IMMUTABLE_P(uv) = TRUE;
+    }
     return uv;
 }
 
@@ -345,7 +348,8 @@ static ScmObj read_uvector(ScmPort *port, const char *tag)
  * Initialization
  */
 extern void Scm_Init_uvlib(ScmModule *);
-SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
+SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
+                                         ScmReadContext *ctx);
  
 void Scm_Init_libuvector(void)
 {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.61 2002-11-29 10:23:12 shirok Exp $
+ *  $Id: read.c,v 1.62 2002-12-30 07:44:12 shirok Exp $
  */
 
 #include <stdio.h>
@@ -31,7 +31,7 @@ static void   read_context_init(ScmVM *vm, ScmReadContext *ctx);
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_item(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
-static ScmObj read_string(ScmPort *port, int incompletep);
+static ScmObj read_string(ScmPort *port, int incompletep, ScmReadContext *ctx);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
@@ -50,7 +50,8 @@ static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj, int);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
-ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
+ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
+                              ScmReadContext *ctx);
 
 /* A symbol to look up string interpolator */
 ScmObj sym_string_interpolate = SCM_NIL;
@@ -59,64 +60,79 @@ ScmObj sym_string_interpolate = SCM_NIL;
 static struct {
     ScmHashTable *table;
     ScmInternalMutex mutex;
-} readCtorData;
+} readCtorData = { NULL };
 
 /*----------------------------------------------------------------
  * Entry points
  *   Note: Entire read operation are done while locking the input port.
  *   So we can use 'unsafe' version of port operations inside this file.
  *   The lock is removed if reader routine signals an error.  It is OK
- *   to call read routine recursively; the port lock handles it properly.
+ *   to call read routine recursively.
  */
-ScmObj Scm_Read(ScmObj port)
+ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
 {
-    ScmReadContext ctx;
     ScmVM *vm = Scm_VM();
     volatile ScmObj r = SCM_NIL;
-    
-    read_context_init(vm, &ctx);
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-
-    PORT_LOCK(SCM_PORT(port), vm);
-    PORT_SAFE_CALL(SCM_PORT(port),
-                   r = read_item(SCM_PORT(port), &ctx));
-    PORT_UNLOCK(SCM_PORT(port));
+    if (PORT_LOCKED(SCM_PORT(port), vm)) {
+        r = read_item(SCM_PORT(port), ctx);
+    } else {
+        PORT_LOCK(SCM_PORT(port), vm);
+        PORT_SAFE_CALL(SCM_PORT(port), r = read_item(SCM_PORT(port), ctx));
+        PORT_UNLOCK(SCM_PORT(port));
+    }
     return r;
+}
+
+ScmObj Scm_Read(ScmObj port)
+{
+    ScmReadContext ctx;
+    read_context_init(Scm_VM(), &ctx);
+    return Scm_ReadWithContext(port, &ctx);
 }
 
 /* convenience functions */
 ScmObj Scm_ReadFromString(ScmString *str)
 {
     ScmObj inp = Scm_MakeInputStringPort(str);
-    return Scm_Read(inp);
+    ScmReadContext ctx;
+    read_context_init(Scm_VM(), &ctx);
+    return read_item(SCM_PORT(inp), &ctx);
 }
 
 ScmObj Scm_ReadFromCString(const char *cstr)
 {
     ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
     ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s));
-    return Scm_Read(inp);
+    ScmReadContext ctx;
+    read_context_init(Scm_VM(), &ctx);
+    return read_item(SCM_PORT(inp), &ctx);
+}
+
+ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer, ScmReadContext *ctx)
+{
+    ScmVM *vm = Scm_VM();
+    volatile ScmObj r = SCM_NIL;
+    if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
+        Scm_Error("input port required: %S", port);
+    }
+    if (PORT_LOCKED(SCM_PORT(port), vm)) {
+        r = read_list(SCM_PORT(port), closer, ctx);
+    } else {
+        PORT_LOCK(SCM_PORT(port), vm);
+        PORT_SAFE_CALL(SCM_PORT(port), r = read_list(SCM_PORT(port), closer, ctx));
+        PORT_UNLOCK(SCM_PORT(port));
+    }
+    return r;
 }
 
 ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 {
     ScmReadContext ctx;
-    ScmVM *vm = Scm_VM();
-    volatile ScmObj r = SCM_NIL;
-
-    read_context_init(vm, &ctx);
-    ctx.closer = closer;
-    if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
-        Scm_Error("input port required: %S", port);
-    }
-    
-    PORT_LOCK(SCM_PORT(port), vm);
-    PORT_SAFE_CALL(SCM_PORT(port),
-                   r = read_list(SCM_PORT(port), closer, &ctx));
-    PORT_UNLOCK(SCM_PORT(port));
-    return r;
+    read_context_init(Scm_VM(), &ctx);
+    return Scm_ReadListWithContext(port, closer, &ctx);
 }
 
 static void read_context_init(ScmVM *vm, ScmReadContext *ctx)
@@ -250,7 +266,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
     case '(':
         return read_list(port, ')', ctx);
     case '"':
-        return read_string(port, FALSE);
+        return read_string(port, FALSE, ctx);
     case '#':
         {
             int c1 = Scm_GetcUnsafe(port);
@@ -338,7 +354,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 {
                     int c2;
                     c2 = Scm_GetcUnsafe(port);
-                    if (c2 == '"') return read_string(port, TRUE);
+                    if (c2 == '"') return read_string(port, TRUE, ctx);
                     Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
                 }
             default:
@@ -509,7 +525,8 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
     return r;
 }
 
-static ScmObj read_string(ScmPort *port, int incompletep)
+static ScmObj read_string(ScmPort *port, int incompletep,
+                          ScmReadContext *ctx)
 {
     int c = 0;
     ScmDString ds;
@@ -932,7 +949,7 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
         if (Scm_ReadUvectorHook == NULL)
             Scm_Error("couldn't load srfi-4 module");
     }
-    return Scm_ReadUvectorHook(port, tag);
+    return Scm_ReadUvectorHook(port, tag, ctx);
 }
 
 /*----------------------------------------------------------------

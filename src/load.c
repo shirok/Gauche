@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.65 2002-07-31 22:09:11 shirok Exp $
+ *  $Id: load.c,v 1.66 2002-12-30 07:44:12 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -25,6 +25,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arch.h"
+#include "gauche/port.h"
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
@@ -77,6 +78,7 @@ static struct {
 struct load_packet {
     ScmPort *port;
     ScmModule *prev_module;
+    ScmReadContext ctx;
     ScmObj prev_port;
     ScmObj prev_history;
     ScmObj prev_next;
@@ -98,11 +100,11 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
 /* C-continuation of the loading */
 static ScmObj load_cc(ScmObj result, void **data)
 {
-    ScmObj port = SCM_OBJ(data[0]);
-    ScmObj expr = Scm_Read(port);
+    struct load_packet *p = (struct load_packet*)(data[0]);
+    ScmObj expr = Scm_ReadWithContext(SCM_OBJ(p->port), &(p->ctx));
 
     if (!SCM_EOFP(expr)) {
-        Scm_VMPushCC(load_cc, (void **)&port, 1);
+        Scm_VMPushCC(load_cc, data, 1);
         return Scm_VMEval(expr, SCM_UNBOUND);
     } else {
         return SCM_TRUE;
@@ -111,8 +113,7 @@ static ScmObj load_cc(ScmObj result, void **data)
 
 static ScmObj load_body(ScmObj *args, int nargs, void *data)
 {
-    struct load_packet *p = (struct load_packet *)data;
-    return load_cc(SCM_NIL, (void **)&p->port);
+    return load_cc(SCM_NIL, &data);
 }
 
 ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths)
@@ -133,6 +134,12 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths)
     p->prev_history = vm->load_history;
     p->prev_next = vm->load_next;
 
+    SCM_READ_CONTEXT_INIT(&(p->ctx));
+    p->ctx.flags = SCM_READ_LITERAL_IMMUTABLE | SCM_READ_SOURCE_INFO;
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
+        p->ctx.flags |= SCM_READ_CASE_FOLD;
+    }
+    
     vm->load_next = next_paths;
     vm->load_port = SCM_OBJ(port);
     if (SCM_PORTP(p->prev_port)) {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.318 2002-12-23 00:04:09 shirok Exp $
+ *  $Id: gauche.h,v 1.319 2002-12-30 07:44:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1328,18 +1328,24 @@ SCM_EXTERN void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
  */
 
 typedef struct ScmReadContextRec {
-    int flags;
-    ScmHashTable *table;        /* used internally */
-    ScmChar closer;             /* used internally */
+    int flags;                  /* see below */
+    ScmHashTable *table;        /* used internally.  initialize with NULL. */
 } ScmReadContext;
 
 enum {
-    SCM_READ_SOURCE_INFO = (1L<<0), /* preserving souce file information */
-    SCM_READ_CASE_FOLD   = (1L<<1)  /* case-fold read */
+    SCM_READ_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
+    SCM_READ_CASE_FOLD   = (1L<<1),  /* case-fold read */
+    SCM_READ_LITERAL_IMMUTABLE = (1L<<2) /* literal should be read as immutable */
 };
 
+#define SCM_READ_CONTEXT_INIT(ctx) \
+   do { (ctx)->flags = 0; (ctx)->table = NULL; } while (0)
+
 SCM_EXTERN ScmObj Scm_Read(ScmObj port);
+SCM_EXTERN ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx);
 SCM_EXTERN ScmObj Scm_ReadList(ScmObj port, ScmChar closer);
+SCM_EXTERN ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer,
+                                          ScmReadContext *ctx);
 SCM_EXTERN ScmObj Scm_ReadFromString(ScmString *string);
 SCM_EXTERN ScmObj Scm_ReadFromCString(const char *string);
 
@@ -2262,7 +2268,7 @@ SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, int export);
 SCM_EXTERN ScmObj Scm_Require(ScmObj feature);
 SCM_EXTERN ScmObj Scm_Provide(ScmObj feature);
 SCM_EXTERN int    Scm_ProvidedP(ScmObj feature);
-    
+
 typedef struct ScmAutoloadRec {
     SCM_HEADER;
     ScmSymbol *name;            /* variable to be autoloaded */
