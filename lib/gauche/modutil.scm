@@ -30,36 +30,122 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: modutil.scm,v 1.1 2003-08-08 20:54:39 shirok Exp $
+;;;  $Id: modutil.scm,v 1.2 2003-09-12 21:12:46 shirok Exp $
 ;;;
 
 (define-module gauche.modutil
-  (export-all))
+  (use srfi-1)
+  (use srfi-13)
+  (export library-exists? library-fold library-has-module?))
 (select-module gauche.modutil)
 
-;; module-available? tries to determine if the named module can be
-;; 'use'-ed, using heuristics depending on the module file convention.
-(define (module-available? name)
+;; library-fold - iterate over the modules or libraries whose name matches
+;;  the given pattern.
+;;  proc takes the matched module/library name, full pathname, and seed value.
+;;  This can be more involved once customized module mapping system
+;;  is introduced; for now, we simply apply the default mapping rule.
 
-  (define (module-file? file)
-    (let1 exp (with-error-handler
-                  (lambda (e) #f)
-                (lambda ()
-                  (with-input-from-file file read :if-does-not-exist #f)))
-      (and (pair? exp)
-           (eq? (car exp) 'define-module)
-           (pair? (cdr exp))
-           (eq? (cadr exp) name)
-           file)))
+(define (library-fold pattern proc seed . opts)
+  (let-keywords* opts ((paths *load-path*)
+                       (allow-duplicates? #f)
+                       (strict? #f))
+    (define pats
+      (cond ((string? pattern)
+             (string-split pattern #\/))
+            ((symbol? pattern)
+             (string-split (x->string pattern) #\.))
+            (else
+             (error "string or symbol required for pattern, but got"
+                    pattern))))
+
+    (define seen '())
+
+    (define (match? pat component) ;; for now...
+      (cond ((equal? pat "*") #t)
+            (else (string=? pat component))))
+
+    ;; pats - list of pattern components splitted by '.' or '/'
+    ;; prefix - one of load paths, e.g. /usr/share/gauche/site/lib/
+    ;; file - path components after prefix, e.g. gauche/mop
+    ;; base - the last component of file, e.g. mop
+    (define (search pats prefix file base seed)
+      (let* ((path (topath prefix file)))
+        (cond ((and (not (null? (cdr pats)))
+                    (match? (car pats) base)
+                    (file-is-directory? path))
+               (fold (lambda (subfile seed)
+                       (search (cdr pats) prefix #`",|file|/,|subfile|"
+                               subfile seed))
+                     seed (readdir path)))
+              ((and (null? (cdr pats))
+                    (string-suffix? ".scm" base)
+                    (match? (car pats) (string-drop-right base 4))
+                    (file-exists? path))
+               (proc file path seed))
+              (else seed))))
+
+    ;; main body
+    (fold (lambda (prefix seed)
+            (fold (lambda (file seed)
+                    (search pats prefix file file seed))
+                  seed (readdir prefix)))
+          seed paths)
+    ))
+
+(define (library-exists? mod/path . opts)
+  (let-optionals* opts ((force-search? #f)
+                        (strict? #f)
+                        (paths *load-path*))
+    (define (for-each-paths proc name)
+      (let loop ((paths paths))
+        (if (null? paths)
+          #f
+          (let1 p (string-append (car paths) "/" name ".scm")
+            (or (and (file-exists? p) (proc p))
+                (loop (cdr paths)))))))
+    
+    (or (and (not force-search?)
+             ;; see if specified mod/path is already loaded
+             (or (and (string? mod/path) (provided? mod/path))
+                 (and (symbol? mod/path) (find-module mod/path))))
+        ;; scan the filesystem
+        (cond ((string? mod/path)
+               (for-each-paths identity mod/path))
+              ((symbol? mod/path)
+               (let1 name (module-name->path mod/path)
+                 (for-each-paths (lambda (p)
+                                   (if strict?
+                                     (library-has-module? p mod/path)
+                                     #t))
+                                 name)))
+              (else
+               (error "string or symbol required, bot got" mod/path))))
+    ))
+
+;; Try to determine the file is a module source file
+(define (module-file? file name)
+  (let1 exp (with-error-handler (lambda (e) #f)
+              (lambda ()
+                (with-input-from-file file read :if-does-not-exist #f)))
+    (and (pair? exp)
+         (eq? (car exp) 'define-module)
+         (pair? (cdr exp))
+         (eq? (cadr exp) name)
+         file)))
   
-  (or (not (not (find-module name))) ;; if it's already loaded, no problemo.
-      (let ((path (%module-name->path name)))
-        (let loop ((paths *load-path*))
-          (cond ((null? paths) #f)
-                ;; NB: avoid build-path, for file.util depends on whole
-                ;; bunch of other modules.
-                ((module-file? (string-append (car paths) "/" path ".scm")))
-                (else (loop (cdr paths)))))))
-  )
+;; Auxiliary procedures
+;;  we don't want to depend file.util here, so some simple utils.
+
+;; readdir with removing "." and "..".
+(define (readdir dir)
+  (if (file-is-directory? dir)
+    (let loop ((p (sys-readdir dir)) (r '()))
+      (cond ((null? p) (reverse! r))
+            ((member (car p) '("." "..")) (loop (cdr p) r))
+            (else (loop (cdr p) (cons (car p) r)))))
+    '()))
+
+(define (topath prefix file)
+  (sys-normalize-pathname (string-append prefix "/" file) :canonicalize #t))
 
 (provide "gauche/modutil")
