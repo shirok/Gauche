@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tr.scm,v 1.2 2001-09-20 20:16:22 shirok Exp $
+;;;  $Id: tr.scm,v 1.3 2001-09-20 20:44:32 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
@@ -37,9 +37,9 @@
 (define string-transliterate string-tr) ;alias
 
 (define (build-transliterator from to . options)
-  (let* ((d? (get-keyword :delete-unreplaced options #f))
-         (s? (get-keyword :squash options #f))
-         (c? (get-keyword :complement-match options #f))
+  (let* ((d? (get-keyword :delete options #f))
+         (s? (get-keyword :squeeze options #f))
+         (c? (get-keyword :complement options #f))
          (size (get-keyword :table-size options 256))
          (tab  (build-tr-table from to size)))
     (lambda ()
