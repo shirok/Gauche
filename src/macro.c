@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.15 2001-03-04 07:57:01 shiro Exp $
+ *  $Id: macro.c,v 1.16 2001-03-04 08:17:28 shiro Exp $
  */
 
 #include "gauche.h"
@@ -285,25 +285,10 @@ static ScmObj compile_rule1(ScmObj form,
         return h;
     }
     else if (SCM_VECTORP(form)) {
-        int i, len = SCM_VECTOR_SIZE(form);
-        ScmObj *pe = SCM_VECTOR_ELEMENTS(form);
-        ScmObj nv;
-        nv = Scm_MakeVector((pe[len-1] == SCM_SYM_ELLIPSIS ? len-1 : len),
-                            SCM_FALSE);
-        for (i=0; i<len-1; i++, pe++) {
-            if (*(pe+1) == SCM_SYM_ELLIPSIS) {
-                ScmSyntaxPattern *nspat;
-                if (i != len-2) BAD_ELLIPSIS(ctx);
-                nspat = make_syntax_pattern(spat->level+1, TRUE);
-                if (ctx->maxlev <= spat->level) ctx->maxlev++;
-                nspat->pattern = compile_rule1(*pe, nspat, ctx, patternp);
-                SCM_VECTOR_ELEMENT(nv, i) = SCM_OBJ(nspat);
-                spat->vars = Scm_Append2(spat->vars, nspat->vars);
-                break;
-            }
-            SCM_VECTOR_ELEMENT(nv, i) = compile_rule1(*pe, spat, ctx, patternp);
-        }
-        return nv;
+        /* TODO: this is a sloppy implementation.
+           Eliminate intermediate list structure! */
+        ScmObj l = Scm_VectorToList(SCM_VECTOR(form));
+        return Scm_ListToVector(compile_rule1(l, spat, ctx, patternp));
     }
     else if (patternp && SCM_IDENTIFIERP(form)) {
         /* this happens in a macro produced by another macro */
@@ -688,7 +673,22 @@ static ScmObj realize_template_rec(ScmObj template,
         }
     }
     if (SCM_VECTORP(template)) {
-        Scm_Error("!!! NOT SUPPORTED YET!!!");
+        ScmObj h = SCM_NIL, t, r, *pe;
+        int len = SCM_VECTOR_SIZE(template), i;
+        pe = SCM_VECTOR_ELEMENTS(template);
+        
+        for (i=0; i<len; i++, pe++) {
+            if (SCM_SYNTAX_PATTERN_P(*pe)) {
+                r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
+                if (SCM_UNBOUNDP(r)) return r;
+                SCM_APPEND(h, t, r);
+            } else {
+                r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
+                if (SCM_UNBOUNDP(r)) return r;
+                SCM_APPEND1(h, t, r);
+            }
+        }
+        return Scm_ListToVector(h);
     }
     if (SCM_IDENTIFIERP(template)) {
         /* we copy the identifier, so that the symbol bindings introduced
@@ -859,8 +859,6 @@ static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx, void *data)
     
     if (!letrecp) newenv = Scm_Cons(frame, env);
 
-    Scm_Printf(SCM_CUROUT, "$$$ %S\n", newenv);
-    
     return Scm_CompileBody(body, newenv, ctx);
 }
 
