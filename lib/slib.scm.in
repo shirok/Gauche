@@ -190,7 +190,7 @@
 
 (define-syntax defmacro
   (syntax-rules ()
-    ((_ params . body) (define-macro params . body))))
+    ((_ name params . body) (define-macro (name . params) . body))))
 
 ;(define *defmacros*
 ;  (list (cons 'defmacro
