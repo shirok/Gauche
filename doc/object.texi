@@ -355,7 +355,7 @@ three arguments, @var{pt}, @var{dy}, @var{dy}, where @var{pt} is
 an instance of @code{<2d-point>}.
 
 @c JP
-そうです。同じアクセサ名を @code{x-of} のように使うことができるます。
+そうです。同じアクセサ名を @code{x-of} のように使うことができます。
 これは事実上、多重定義されます。
 
 主流のオブジェクト指向言語に慣れた方は、そろそろ、メソッドはどこにあるのだと
