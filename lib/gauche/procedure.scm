@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.9 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: procedure.scm,v 1.10 2004-01-19 22:30:26 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -41,6 +41,7 @@
           let-optionals* let-keywords* get-optional
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
+          case-lambda
           ))
 
 (select-module gauche.procedure)
@@ -182,5 +183,26 @@
     (if (list? a)
         (any check a)
         (check a))))
+
+;; case-lambda (srfi-16) ---------------------------------------
+
+;; This is a temporary implementation.  There's a plan to replace it
+;; for more efficient dispatching mechanism.  (But I'm not sure when).
+
+(define-syntax case-lambda
+  (syntax-rules ()
+    ((case-lambda (arg . body) ...)
+     (make-dispatcher (list (lambda arg . body) ...)))
+    ((case-lambda . _)
+     (syntax-error "malformed case-lambda" (case-lambda . _)))))
+
+;; support procedure
+(define (make-dispatcher closures)
+  (lambda args
+    (let ((len (length args)))
+      (cond ((find (lambda (p) (procedure-arity-includes? p len)) closures)
+             => (cut apply <> args))
+            (else
+             (error "wrong number of arguments to case-lambda:" args))))))
 
 (provide "gauche/procedure")
