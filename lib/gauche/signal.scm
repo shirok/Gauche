@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: signal.scm,v 1.2 2002-01-24 10:33:35 shirok Exp $
+;;;  $Id: signal.scm,v 1.3 2002-07-09 03:46:25 shirok Exp $
 ;;;
 
 ;; This file is to be autoloaded
@@ -33,14 +33,14 @@
   (syntax-rules (=>)
     ((_ "loop" () handlers thunk)
      (%with-signal-handlers (list . handlers) thunk))
-    ((_ "loop" ((sigs => proc) . clauses) (handlers ...) thunk)
+    ((_ "loop" ((sigs => proc) . clauses) handlers thunk)
      (with-signal-handlers "loop" clauses
-                           (handlers ... (cons (%make-sigset sigs) proc))
+                           ((cons (%make-sigset sigs) proc) . handlers)
                            thunk))
-    ((_ "loop" ((sigs expr ...) . clauses) (handlers ...) thunk)
+    ((_ "loop" ((sigs expr ...) . clauses) handlers thunk)
      (with-signal-handlers "loop" clauses
-                           (handlers ...
-                            (cons (%make-sigset sigs) (lambda _ expr ...)))
+                           ((cons (%make-sigset sigs) (lambda _ expr ...))
+                            . handlers)
                            thunk))
     ((_ "loop" whatever handlers thunk)
      (syntax-error "bad clause in with-signal-handlers" whatever))
@@ -61,6 +61,17 @@
     (apply sys-sigset-add! (make <sys-sigset>) signals))
    (else
     (error "bad signal set" signals))))
+
+(define (%with-signal-handlers handlers-alist thunk)
+  (let ((ohandlers (get-signal-handlers)))
+    (dynamic-wind
+     (lambda ()
+       (for-each (lambda (p) (set-signal-handler! (car p) (cdr p)))
+                 handlers-alist))
+     thunk
+     (lambda ()
+       (for-each (lambda (p) (set-signal-handler! (car p) (cdr p)))
+                 ohandlers)))))
 
 (provide "gauche/signal")
 
