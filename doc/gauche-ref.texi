@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.207 2002-05-27 12:22:52 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.208 2002-05-27 23:36:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6578,9 +6578,11 @@ Partial application version of @code{apply}, @code{map} and @code{for-each}.
 
 @c EN
 There are more 'partial-applied' version of procedures defined in
-SRFI-1 (@xref{List library}).
+SRFI-1 (@xref{List library}), such as @code{fold$},
+@code{filter$}, @code{member$}, etc.
 @c JP
-他にもいくつかの部分適用版の手続きが定義されています。
+他にも@code{fold$}、@code{filter$}、@code{member$}等
+いくつかの部分適用版の手続きが定義されています。
 @ref{List library}を参照してください。
 @c COMMON
 
@@ -10502,67 +10504,111 @@ in that case, microseconds portion is always zero.
 
 @deftp {Builtin Class} <sys-tm>
 @clindex sys-tm
-Represents @code{struct tm}.
+Represents @code{struct tm}, a calendar date.  It has the following slots.
+@defivar <sys-tm> sec
+Seconds. 0-61.
+@end defivar
+@defivar <sys-tm> min
+Minutes. 0-59.
+@end defivar
+@defivar <sys-tm> hour
+Hours.  0-23.
+@end defivar
+@defivar <sys-tm> mday
+Day of the month, counting from 1.  1-31.
+@end defivar
+@defivar <sys-tm> mon
+Month, counting from 0.  0-11.
+@end defivar
+@defivar <sys-tm> year
+Years since 1900, e.g. 102 for the year 2002.
+@end defivar
+@defivar <sys-tm> wday
+Day of the week.  Sunday = 0 .. Saturday = 6.
+@end defivar
+@defivar <sys-tm> yday
+Day of tye year.  January 1 = 0 .. December 31 = 364 or 365.
+@end defivar
+@defivar <sys-tm> isdst
+A flag that indicates if the daylight saving time is in effect.
+Positive if DST is in effect, zero if not, or negative if unknown.
+@end defivar
 @end deftp
 
 @defun sys-gmtime time
-[POSIX] @var{time} is a number of seconds since Epoch.
-This function converts it to @code{<sys-tm>} object, represented in GMT.
-@end defun
-
-@defun sys-localtime time
-[POSIX] @var{time} is a number of seconds since Epoch.
-This function converts it to @code{<sys-tm>} object, represented in the
-local time.
+@defunx sys-localtime time
+[POSIX] Converts @var{time} to @code{<sys-tm>} object, represented in GMT
+or local timezone, respectively.   @var{Time} can be either POSIX-time or
+SRFI-time.
 @end defun
 
 @defun sys-ctime time
-[POSIX]
+[POSIX] Converts @var{time} to it string representation, using POSIX ctime().
+@var{Time} can be either POSIX-time or SRFI-time.
 @end defun
 
 @defun sys-difftime time1 time0
-[POSIX]
+[POSIX] Returns the difference of two times in the real number of seconds.
+@var{Time0} and @var{tiem1} can be either POSIX-time or SRFI-time.
 @end defun
 
 @defun sys-asctime tm
-[POSIX]
+[POSIX] Converts @code{<sys-tm>} object @var{tm} to a string representation.
 @end defun
 
 @defun sys-strftime format tm
-[POSIX]
+[POSIX] Converts @code{<sys-tm>} object @var{tm} to a string representation,
+according to a format string @var{format}.
 @end defun
 
 @defun sys-mktime tm
-[POSIX]
+[POSIX] Converts @code{<sys-tm>} object @var{tm}, expressed as local time,
+to the POSIX-time (number of seconds since Epoch).
 @end defun
 
 @defun sys-tm->alist tm
+(Deprecated function)
 @end defun
+
 
 @node SRFI time,  , POSIX time, Time
 @subsubsection SRFI time
 
 @deftp {Builtin Class} <time>
+The @code{<time>} object also represents a point of time.
+
 @clindex time
 @defivar <time> type
+Indicates time type.  @code{time-utc} is the default, and that
+represents the number of seconds since Unix Epoch.
+SRFI-19 (@xref{Time data types and procedures}) adds more types.
 @end defivar
 @defivar <time> second
+Second part of the time.
 @end defivar
 @defivar <time> nanosecond
+Nanosecond part of the time.
 @end defivar
 @end deftp
 
 @defun current-time
 [SRFI-18][SRFI-21]
+Returns the @code{<time>} object representing the current time in
+@code{time-utc}.   @xref{Time data types and procedures}, for
+it redefines @code{current-time} to allow optional argument to
+specify time type.
 @end defun
 
-@defun time?
+@defun time? obj
 [SRFI-18][SRFI-19][SRFI-21]
+Returns @code{#t} if @var{obj} is a time object.
 @end defun
 
-@defun time->seconds
-@defunx seconds->time
-[SRFI-18]
+@defun time->seconds time
+@defunx seconds->time seconds
+[SRFI-18][SRFI-21]
+Converts between time object and the number of seconds (POSIX-time).
+@var{Time} argument of @code{time->seconds} has to be a @code{<time>} object.
 @end defun
 
 
