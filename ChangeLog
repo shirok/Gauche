@@ -1,14 +1,19 @@
+2001-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/html-lite.scm : experimentally added.
+
 2001-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib.scm.in : fixed a bug that made building a new catalog
 	  fail.  Thanks to Hiroshi INAMURA for the patch.
+	* lib/gauche/singleton.scm : experimentally added.
 
 2001-11-06  Shiro Kawai  <shiro@acm.org>
 
 	* various files : fixed a bug that didn't instantiate metaobjects
-	  defined in Scheme sublassing a C-defined class.  It changed
-	  the interface of Scm_InitBuiltinClass, and several files were
-	  updated accordingly.
+	  correctly when defined in Scheme sublassing a C-defined class.
+	  This fix changed the interface of Scm_InitBuiltinClass, and
+	  several files were updated accordingly.
 
 2001-11-05  Shiro Kawai  <shiro@acm.org>
 
