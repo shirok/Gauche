@@ -1,3 +1,11 @@
+2002-06-09  Shiro Kawai  <shiro@acm.org>
+
+	* gc/dyn_load.c (GC_register_dlopen_data), src/gauche/extend.h,
+	  aclocal.m4 : fixed a GC problem that the bss data in the dlopened
+	  module was not added to the GC root.  This caused memory fault
+	  on Cygwin etc.
+	* ext/charconv/jconv.c : added #ifdef's to compile without iconv.
+
 2002-06-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c : fixed usage message.  disabled SIGWINCH by default.
