@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.4 2001-04-18 07:51:56 shiro Exp $
+;; $Id: regexp.scm,v 1.5 2001-04-20 08:34:50 shiro Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -314,5 +314,27 @@
       (lambda ()
         (match&list #/[ab][cd][ef][gh][ij][kl][mn][op][q]/
                     "xacegikmoqy" 1)))
+
+(test "\\s" '(" ")  (lambda () (match&list #/\s/ "  " 1)))
+(test "\\s" '("  ")  (lambda () (match&list #/\s\s/ "  " 1)))
+(test "\\s" '("\t")  (lambda () (match&list #/\s/ "\t " 1)))
+(test "\\s" #f  (lambda () (match&list #/\s\s/ "\\s" 1)))
+(test "\\\\s" '("\\s ")  (lambda () (match&list #/\\s\s/ "\\s " 1)))
+(test "\\s\\S" '("\txyz   " "\t" "xyz" "   ")
+      (lambda () (match&list #/(\s*)(\S+)(\s*)/ "\txyz   abc" 4)))
+(test "\\d\\D" '("1234) 5678-9012" "1234" ") " "5678" "-" "9012")
+      (lambda () (match&list #/(\d+)(\D+)(\d+)(\D+)(\d+)/
+                             " (1234) 5678-9012 " 6)))
+(test "\\w\\W" '("three o" "three" " " "o")
+      (lambda () (match&list #/(\w+)(\W+)(\w+)/
+                             "three o'clock" 4)))
+
+(test "[ab\\sc]+" '(" ba ") (lambda () (match&list #/[ab\sc]+/ "d ba e" 1)))
+(test "[\\sa-c]+" '(" ba ") (lambda () (match&list #/[\sabc]+/ "d ba e" 1)))
+(test "[\\S\\t]+" '("\tab") (lambda () (match&list #/[\S\t]+/ "\tab cd" 1)))
+(test "[\\s\\d]+" '(" 1 2 3 ")
+      (lambda () (match&list #/[\s\d]+/ "a 1 2 3 b " 1)))
+(test "[\\s\\D]+" '("a ")
+      (lambda () (match&list #/[\s\D]+/ "a 1 2 3 b " 1)))
 
 (test-end)
