@@ -100,9 +100,13 @@ if [ "$test" = "yes" ]; then
 fi
 
 if [ "$testcode" = "yes" ]; then
+  if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
+  VERSION=`cat VERSION`
+  if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
+  mkdir -p ../test
   rm -rf ../test/Gauche-$VERSION
   cd ../test
-  tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz >& /dev/null
+  tar xzvf ../Gauche-$VERSION.tgz >& /dev/null
   cd Gauche-$VERSION
   rm -f testcode.log
   echo "EUC-JP ----------------------------------------------------"
