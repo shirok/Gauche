@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.13 2004-02-04 22:41:10 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.14 2004-07-15 09:20:48 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -233,8 +233,7 @@
 (define (tm:time-difference time1 time2 time3)
   (if (or (not (and (time? time1) (time? time2)))
 	  (not (eq? (time-type time1) (time-type time2))))
-      (errorf "time-difference: incompatible time types: ~s, ~s"
-              caller time1 time2)
+      (errorf "time-difference: incompatible time types: ~s, ~s" time1 time2)
       (let ( (sec-diff (- (time-second time1) (time-second time2)))
 	     (nsec-diff (- (time-nanosecond time1) (time-nanosecond time2))) )
 	(set-time-type! time3 time-duration)
