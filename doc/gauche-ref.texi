@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.36 2001-06-29 19:58:10 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.37 2001-06-30 10:26:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -421,6 +421,9 @@ works as far as @code{gosh} is in the PATH.
 After the file is successfully loaded, @code{gosh} calls a
 procedure named `@code{main}' with the list of the remaining
 command-line arguments, if it is defined in the user module.
+When @code{main} returns, and its value is an integer, @code{gosh}
+uses it for exit code of the program.  Otherwise, @code{gosh} exits
+with value 0.
 This behavior is compatible with
 the draft SRFI-22.  Although you can still write the program
 main body as toplevel expressions, like shell scripts or Perl scripts,
@@ -1973,6 +1976,7 @@ useful macros to deal with regular expression matching.
 @menu
 * Procedures::                  
 * Continuation and escaping::   
+* Errors::                      
 * Multiple values::             
 * Delayed Evaludation::         
 @end menu
@@ -2000,7 +2004,7 @@ useful macros to deal with regular expression matching.
 [R5RS]
 @end defun
 
-@node Continuation and escaping, Multiple values, Procedures, Control features
+@node Continuation and escaping, Errors, Procedures, Control features
 @subsection Continuation and escaping
 
 
@@ -2013,7 +2017,38 @@ useful macros to deal with regular expression matching.
 [R5RS]
 @end defun
 
-@node Multiple values, Delayed Evaludation, Continuation and escaping, Control features
+@node Errors, Multiple values, Continuation and escaping, Control features
+@subsection Errors
+
+@defun error string arg @dots{}
+[SRFI-23] Signals an error.  This causes the following actions:
+@enumerate
+@item
+@var{string} is printed by @code{display}, and each @var{arg} is printed
+by @code{write}, into the current error port.
+@item
+A current stack trace is also displayed (although it is buggy
+in the current release).
+@item
+If Gauche is running in the interactive mode, the control goes
+to the toplevel REPL.  If Gauche is running as a script,
+the program exits with an exit code 70 (EX_SOFTWARE).
+@end enumerate
+
+Currently there's no way to catch the error or change this
+behavior.  Error handling mechanism will be provided in 0.4.x, though.
+@end defun
+
+@defun errorf fmt-string arg @dots{}
+Similar to an error, but the error message is formatted by
+@code{format}, i.e. it is equivalent to:
+@example
+(define (errorf fmt . args)
+  (error (apply format #f fmt args)))
+@end example
+@end defun
+
+@node Multiple values, Delayed Evaludation, Errors, Control features
 @subsection Multiple values
 
 @defun values obj @dots{}
