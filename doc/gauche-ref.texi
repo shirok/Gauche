@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.230 2002-06-30 23:37:21 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.231 2002-07-01 01:14:43 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13421,6 +13421,21 @@ by changing the vector elements, for it won't involve memory allocation.
 @c COMMON
 
 @c EN
+Arrays can be compared by the @code{equal?} procedure.
+@code{Equal?} returns @code{#t} if two arrays have the same
+shape and their corresponding elements are the same
+in the sense of @code{equal?}.
+@c JP
+配列は@code{equal?}手続きで比較することが出来ます。
+二つの配列のshapeが等しく、また対応する各要素が@code{equal?}の意味で
+等しい場合に二つの配列は@code{equal?}であると見なされます。
+@c COMMON
+@end defun
+
+@c JP
+@c COMMON
+
+@c EN
 Internally, an array consists of a backing storage and a mapping procedure.
 A backing storage is an object of aggregate type that can be accessed
 by an integer index.  A mapping procedure takes
@@ -13509,7 +13524,7 @@ Shapeが@var{shape}である配列を作成します。
 
 @example
 (make-array (shape 0 2 0 2 0 2) 5)
- @result{} #,(<array> (0 2 0 2) 5 5 5 5 5 5 5 5)
+ @result{} #,(<array> (0 2 0 2 0 2) 5 5 5 5 5 5 5 5)
 @end example
 @end defun
 
@@ -13535,8 +13550,17 @@ of an array.
 @defun array shape init @dots{}
 [SRFI-25]
 @c EN
+Creates an array of shape @var{shape}, initializing its elements by
+@var{init} @dots{}.
 @c JP
+Shapeが@var{shape}であるような配列を作成し、
+その要素を@var{init} @dots{}で初期化します。
 @c COMMON
+
+@example
+(array (shape 0 2 1 3) 'a 'b 'c 'd)
+ @result{} #,(<array> (0 2 1 3) a b c d)
+@end example
 @end defun
 
 @defun array-rank array
@@ -13566,9 +13590,28 @@ Returns a shape array of @var{array}.
 @defunx array-length array dim
 [SRFI-25+]
 @c EN
-
+@code{Array-start} returns the inclusive lower bound of index of
+@var{dim}-th dimension of an array @var{array}.
+@code{Array-end} returns the exclusive upper bound.
+And @code{array-length} returns the difference between two.
+@code{Array-start} and @code{array-end} are defined in SRFI-25.
 @c JP
+@code{array-start}は配列@var{array}の@var{dim}番目の次元の
+インデックスの下限を返します。
+@code{array-end}は上限+1を、そして@code{array-start}は両者の差を返します。
+@code{array-start}と@code{array-end}はSRFI-25で定義されています。
 @c COMMON
+
+@example
+(define a (make-array (shape 1 5 0 2)))
+
+(array-start a 0)  @result{} 1
+(array-end a 0)    @result{} 5
+(array-length a 0) @result{} 4
+(array-start a 1)  @result{} 0
+(array-end a 1)    @result{} 2
+(array-length a 1) @result{} 2
+@end example
 @end defun
 
 @defun array-size array
@@ -13585,21 +13628,65 @@ Returns the total number of elements in the array @var{array}.
 @end example
 @end defun
 
-@defun array-equal? array1 array2
-@end defun
-
 @defun array-ref array k @dots{}
-@defunx array-ref array k index
+@defunx array-ref array index
 [SRFI-25]
+@c EN
+Gets the element of array @code{array}.  In the first form,
+the element is specified by indices @var{k} @dots{}.
+In the second form, the element is specified by an index object
+@var{index}, which must be a vector or an one-dimensional array.
+@c JP
+配列@var{array}の要素を取り出します。最初の形式では、
+要素は整数のインデックス@var{k} @dots{}で指定されます。
+2番目の形式では、要素はベクタまたは1次元配列のインデックスオブジェクト@var{index}
+で指定されます。
+@c COMMON
 @end defun
 
 @defun array-set! array k @dots{} value
-@defunx array-set! array k index value
+@defunx array-set! array index value
 [SRFI-25]
+@c EN
+Sets the element of array @var{array} to @var{value}.  In the first form,
+the element is specified by indices @var{k} @dots{}.
+In the second form, the element is specified by an index object
+@var{index}, which must be a vector or an one-dimensional array.
+@c JP
+配列@var{array}の要素に@var{value}をセットします。
+最初の形式では、
+要素は整数のインデックス@var{k} @dots{}で指定されます。
+2番目の形式では、要素はベクタまたは1次元配列のインデックスオブジェクト@var{index}
+で指定されます。
+@c COMMON
 @end defun
 
 @defun share-array array shape proc
 [SRFI-25]
+@c EN
+Creates and returns a new array of shape @var{shape}, that shares
+the backing storage with the given array @var{array}.
+The procedure @var{proc} maps the indices of the new array to
+the indices to the original array, i.e. @var{proc} must be a @var{n}-ary
+procedure that returns @var{m} values, where @var{n} is the dimension
+of the new array and @var{m} is the one of the original array.
+Furthermore, @var{proc} must be an affine function; each mapping
+has to be a linear combination of input arguments plus optional constant.
+(@code{Share-array} optimizes the mapping function based on the affinity
+assumption, so @var{proc} won't be called every time the new array
+is accessed).
+@c JP
+Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
+共有する新しい配列を作成して返します。
+@var{proc}は、新しい配列へのインデックスを古い配列へのインデックスへ
+マップする手続きです。新しい配列の次元数を@var{n}、古い配列の次元数を@var{m}と
+した時、@var{proc}は@var{n}個の引数を取り@var{m}個の値を返す手続きでなければ
+なりません。さらに、各マッピングはaffineマッピング、すなわち、
+出力は入力の線形合成(プラス定数)でなければなりません。
+(@code{share-array}は@var{proc}がaffineマッピングであるという事実に基づいた
+最適化を行います。新しい配列にアクセスする度に@var{proc}が呼ばれるというわけでは
+ありません)。
+@c COMMON
 @end defun
 
 @defun array-for-each-index array proc &optional index
