@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.322 2002-12-11 03:09:25 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.323 2002-12-11 09:18:50 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17673,6 +17673,9 @@ The optional @var{where} argument must be either a symbol
 @code{append} or @code{prepend}, to specify whether @var{proc} should
 be prepended or appended to the existing observer procedure list.
 If omitted, @code{append} is assumed.
+
+@emph{Note}: Although the parameter value itself is thread-local,
+the observer list is shared by all threads.
 @end deffn
 
 @deffn {Method} parameter-observer-delete! (p <parameter>) proc &optional when
@@ -17688,6 +17691,9 @@ from both lists.
 @deffnx {Method} parameter-post-observers (p <parameter>)
 Returns a hook object (@xref{gauche.hook - Hooks}) that keeps
 "before" or "after" observers, respectively.
+
+@emph{Note}: Although the parameter value itself is thread-local,
+these hook objects are shared by all threads.
 @end deffn
 
 @c ----------------------------------------------------------------------
