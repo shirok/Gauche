@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.40 2001-03-07 06:58:54 shiro Exp $
+;;; $Id: extlib.stub,v 1.41 2001-03-09 08:33:42 shiro Exp $
 ;;;
 
 "
@@ -296,7 +296,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (input-port? port))
   "  SCM_RETURN(Scm_VMLoadFromPort(port));")
 
-(define-cproc add-load-path (path &optional (afterp #f))
+(define-cproc %add-load-path (path &optional (afterp #f))
   (assert (string? path))
   "  const char *cpath = Scm_GetStringConst(path);
   SCM_RETURN(Scm_AddLoadPath(cpath, !SCM_FALSEP(afterp)));")
@@ -304,6 +304,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc dynamic-load (file &keyword (init-function #f))
   (assert (string? file))
   "  SCM_RETURN(Scm_DynLoad(file, init_function));")
+
+(define-cproc %require (feature)
+  "  SCM_RETURN(Scm_Require(feature));")
+(define-cproc provide (feature)
+  "  SCM_RETURN(Scm_Provide(feature));")
+(define-cproc provided? (feature)
+  "  SCM_RETURN(Scm_ProvidedP(feature));")
 
 (define-cproc %make-autoload (sym path)
   (assert (symbol? sym))
