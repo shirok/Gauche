@@ -1,3 +1,18 @@
+2001-10-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/parse.scm : extended functions to be more orthogonal,
+	  i.e. those which take char-list also take predicate.
+	* src/compile.c, src/genstub : made auto-generated inliner code
+	  a bit more compact.
+	
+2001-10-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub : added sys-mkstemp.
+	* lib/text/parse.scm : implements the input stream parsing
+	  primitives compatible with Oleg Kiselyov.
+	* lib/gauche/port.scm : added port-position-prefix.
+	* doc/gauche-ref.texi : making bilingual.
+
 2001-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c, etc. : merged safe version of accessors (*-ref+)
