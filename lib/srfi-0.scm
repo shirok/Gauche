@@ -1,14 +1,16 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.2 2001-03-09 08:32:51 shiro Exp $
+;;; $Id: srfi-0.scm,v 1.3 2001-03-11 07:28:13 shiro Exp $
 ;;;
 
 ;; This implementation is based on the reference implementation
 ;; by Mark Feeley.
 
 (define-syntax cond-expand
-  (syntax-rules (and or not else srfi-0 srfi-5)
+  (syntax-rules (and or not else
+                 srfi-0 srfi-1 srfi-2 srfi-6 srfi-8
+                 srfi-11 srfi-17)
     ((cond-expand) (error "Unfulfilled cond-expand"))
     ((cond-expand (else body ...))
      (begin body ...))
@@ -39,15 +41,17 @@
     ((cond-expand (srfi-0 body ...) more-clauses ...)
      (begin body ...))
     ((cond-expand (srfi-1 body ...) more-clauses ...)
-     (begin (require "srfi-1") body ...))
+     (begin (use srfi-1) body ...))
     ((cond-expand (srfi-2 body ...) more-clauses ...)
-     (begin (require "srfi-2") body ...))
+     (begin (use srfi-2) body ...))
     ((cond-expand (srfi-6 body ...) more-clauses ...)
      (begin body ...))
     ((cond-expand (srfi-8 body ...) more-clauses ...)
      (begin body ...))
     ((cond-expand (srfi-11 body ...) more-clauses ...)
-     (begin (require "srfi-11") body ...))
+     (begin (use srfi-11) body ...))
+    ((cond-expand (srfi-17 body ...) more-clauses ...)
+     (begin (use srfi-17) body ...))
     ((cond-expand (feature-id body ...) more-clauses ...)
      (cond-expand more-clauses ...))))
 
