@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: stk.scm,v 1.1 2001-10-17 09:52:17 shirok Exp $
+;;;  $Id: stk.scm,v 1.2 2002-02-25 20:51:16 shirok Exp $
 ;;;
 
 (define-module port.stk
@@ -20,6 +20,8 @@
   (use srfi-13)
   (use srfi-14)
   (use gauche.let-opt)
+  (use gauche.auxsys)
+  (use gauche.sequence)
   (export *argc*
           copy-tree remq remv remove string->uninterned-symbol bignum?
           string-find string-index string-lower string-upper split-string
@@ -47,6 +49,13 @@
           gc gc-stats expand-heap version machine-type
           random set-random-seed! dump get-internal-info
           time uncode
+          posix-perror posix-stat posix-stat->vector
+          posix-access posix-pipe posix-unlink posix-symlink
+          posix-chmod posix-rename posix-getlogin posix-mkdir
+          posix-rmdir posix-time posix-ctime posix-localtime
+          posix-gmtime posix-mktime posix-tm->vector vector->posix-tm
+          posix-strftime posix-fork posix-wait posix-uname
+          posix-host-name posix-domain-name 
           )
   )
 (select-module port.stk)
@@ -166,8 +175,55 @@
 (define set-random-seed! sys-srandom)
 ; dump
 ; get-internal-info
-(define time sys-time)
+; time
 ; uncode
+
+;; POSIX
+(provide "posix") ; to fool (require "posix")
+
+; *errno*
+; posix-perror
+
+(define posix-stat sys-stat)
+(define (posix-stat->vector stat)
+  (apply vector
+         (map (lambda (p) (p stat))
+              (list sys-stat->dev
+                    sys-stat->ino
+                    sys-stat->mode
+                    sys-stat->nlink
+                    sys-stat->uid
+                    sys-stat->gid
+                    sys-stat->size
+                    sys-stat->atime
+                    sys-stat->mtime
+                    sys-stat->ctime))))
+(define posix-access sys-access)
+(define (posix-pipe)
+  (receive io (sys-pipe) io))
+(define posix-unlink sys-unlink)
+(define posix-symlink sys-symlink)
+(define posix-chmod sys-chmod)
+(define posix-rename sys-rename)
+(define posix-getlogin sys-getlogin)
+(define posix-rmdir sys-rmdir)
+(define posix-time sys-time)
+(define posix-ctime sys-ctime)
+(define posix-localtime sys-localtime)
+(define posix-gmtime sys-gmtime)
+(define posix-mktime sys-mktime)
+(define (posix-tm->vector tm)
+  (error "not implemented yet"))
+(define (vector->posix-tm tm)
+  (error "not implemented yet"))
+(define posix-strftime sys-strftime)
+(define posix-fork sys-fork)
+(define (posix-wait)
+  (receive st (sys-wait) st))
+(define (posix-uname)
+  (list->vector (sys-uname)))
+(define posix-host-name sys-gethostname)
+(define posix-domain-name sys-getdomainname)
 
 (provide "port/stk")
 
