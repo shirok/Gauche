@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.352 2003-01-27 06:42:55 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.353 2003-02-01 04:24:36 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9316,6 +9316,7 @@ and re-invoke them afterwards.
 
 @menu
 * Ports::                       
+* Port and threads::            
 * Common port operations::      
 * File ports::                  
 * String ports::                
@@ -9324,7 +9325,7 @@ and re-invoke them afterwards.
 * Output::                      
 @end menu
 
-@node Ports, Common port operations, Input and output, Input and output
+@node Ports, Port and threads, Input and output, Input and output
 @subsection Ports
 @c NODE ポート
 
@@ -9404,7 +9405,90 @@ to implement other functionality.
 
 @end deftp
 
-@node Common port operations, File ports, Ports, Input and output
+@node Port and threads, Common port operations, Ports, Input and output
+@subsection Port and threads
+@c NODE ポートとスレッド
+
+@c EN
+When Gauche is compiled with thread support, 
+the builtin port operations locks the port, so that port access
+from multiple threads will be serialized.   
+(It is required by SRFI-18, BTW).
+Here, "builtin port opertaions" are the port access functions
+that takes a port and does some I/O or query on it,
+such as @code{read}/@code{write}, @code{read-char}/@code{write-char}, 
+@code{port->string}, etc.
+Note that @code{call-with-*} and @code{with-*} procedures do not
+lock the port during calling the given procedures, since the
+procedure may pass the reference of the port to the other thread,
+and Gauche wouldn't know if that's the case.
+@c JP
+GaucheがスレッドサポートをONにしてコンパイルされている場合、
+組み込みのポート操作関数はポートをロックして、
+複数のスレッドからの同一のポートへのアクセスがポートの内部状態を壊さないように
+しています。
+(SRFI-18によって要求されている動作です)。
+ここで「組み込みのポート操作関数」はGaucheにより提供される、
+ポートを引数に取り何らかのI/O動作や問い合わせを行う手続きで、
+@code{read}/@code{write}、@code{read-char}/@code{write-char}、
+@code{port->string}等を含みます。
+但し、@code{call-with-*}や@code{with-*}系関数は、
+与えられた手続きを呼ぶ際にはポートをロックしません。
+その手続きが別のスレッドにポートを渡すかもしれず、Gaucheにはそれを知ることが
+できないからです。
+@c COMMON
+
+@c EN
+This means usually you don't need to worry about accessing the
+ports under multithreaded environment, but also it costs some
+overhead for each port access.  The overhead may be a problem
+if your program is I/O intensive and does a lot of fine-grained
+port access (character-wise or byte-wise).
+If that is the case, you can explicitly lock the port during
+the processing by the following procedure:
+@c JP
+このことはつまり、マルチスレッド環境でポートへのアクセス競合にそれほど
+気を使わなくても良いということですが、同時にポートアクセスの度に
+いくぶんかのオーバヘッドがあることを意味します。I/Oを多く行うプログラムで、
+しかもその粒度が細かい場合(文字ごととかバイトごととか)、このオーバヘッドが
+問題になるかもしれません。
+その場合、次の手続きを使って処理中にポートを明示的にロックすることができます。
+@c COMMON
+
+@defun with-port-locking port thunk
+@c EN
+Executes @var{thunk}, while making the calling thread
+hold the exclusive lock of @var{port} during the dynamic extent
+of @var{thunk}.
+
+Calls of the builtin port functions during the lock is held
+would bypass mutex operations and yield better performance.
+
+Note that the lock is held during the dynamic extent of @var{thunk};
+so, if @var{thunk} invokes a continuation captured outside of
+@code{with-port-locking}, the lock is released.  If the continuation
+captured within @var{thunk} is invoked afterwards, the lock is re-acquired.
+
+@code{With-port-locking} may be nested.  The lock is valid during
+the outermost call of @code{with-port-locking}.
+@c JP
+@var{port}をロックし、@var{thunk}を実行します。
+ロックは@var{thunk}のダイナミックエクステントの期間有効です。
+
+@var{port}がロックされている期間での組み込みのポートアクセス関数の
+呼び出しは排他制御をバイパスするため、性能向上が見込まれます。
+
+ロックの有効期間は@var{thunk}のダイナミックエクステントなので、
+@var{thunk}内から@code{with-port-locking}の外で捕捉された
+継続を呼んだ場合、ロックは解放されます。その後、@var{thunk}内で
+捕捉された継続が呼ばれた場合、再びロックが獲得されます。
+
+@code{with-port-locking}はネスト可能です。ロックは最も外側の
+@code{with-port-locking}の期間中有効となります。
+@c COMMON
+@end defun
+
+@node Common port operations, File ports, Port and threads, Input and output
 @subsection Common port operations
 @c NODE ポート共通の操作
 
