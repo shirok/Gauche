@@ -1,3 +1,11 @@
+2003-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : fix in :base qualified define-cclass, which used
+	  to pass wrong C type to calculate C object size.
+	* src/gauche/class.h : fixed a bug in the default value of
+	  slotNumber of static slot accessors, which created invalid
+	  setter access when the slot is read-only.
+
 2003-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c : added experimental runtime flag that disables mutation
