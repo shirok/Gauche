@@ -1,3 +1,11 @@
+2002-12-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm, test/* : added test-error API, and rewrote
+	  some tests with it.
+	* src/port.c, src/portapi.c : added Scm_PortSeek() API.
+	* src/stdlib.stub : allow :if-exists :overwrite option in
+	  open-output-file.
+
 2002-12-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/digest/*.scm, lib/util/digest.scm : define digest-string

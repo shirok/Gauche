@@ -12,13 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: portutil.scm,v 1.2 2002-11-13 12:13:44 shirok Exp $
+;;;  $Id: portutil.scm,v 1.3 2002-12-13 11:41:39 shirok Exp $
 ;;;
 
 (define-module gauche.portutil
   (export port->string port->list port->string-list port->sexp-list
           copy-port port-fold port-fold-right port-for-each port-map
-          port-position-prefix)
+          port-position-prefix port-tell)
   )
 (select-module gauche.portutil)
 
@@ -176,5 +176,11 @@
             (format #f "~s:line ~a: " n l)
             (format #f "~s: " n))
         "")))
+
+;;-----------------------------------------------------
+;; useful alias
+;;
+
+(define (port-tell p) (port-seek p 0 SEEK_CUR))
 
 (provide "gauche/portutil")

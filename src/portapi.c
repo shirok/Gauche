@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.3 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: portapi.c,v 1.4 2002-12-13 11:41:41 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -646,7 +646,89 @@ int Scm_CharReadyUnsafe(ScmPort *p)
     return r;
 }
 
+/*=================================================================
+ * PortSeek
+ */
 
+#ifdef SAFE_PORT_OP
+ScmObj Scm_PortSeek(ScmPort *p, ScmObj off, int whence)
+#else
+ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
+#endif
+{
+    off_t r = (off_t)-1, o = Scm_IntegerToOffset(off);
+    int nomove = (whence == SEEK_CUR && o == 0);
+    VMDECL;
+    if (SCM_PORT_CLOSED_P(p)) {
+        Scm_Error("attempt to seek on closed port: %S", p);
+    }
+    LOCK(p);
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        /* NB: we might be able to skip calling seeker if we keep the
+           # of bytes read or write so far, but such count may be off
+           when the port has been experienced an error condition. */
+        /* NB: the following doesn't work if we have bidirectional port.
+           In such case we need to keep whether the last call of buffer
+           handling routine was input or output. */
+        if (!p->src.buf.seeker) break;
+        if (nomove) {
+            SAFE_CALL(p, r = p->src.buf.seeker(p, 0, SEEK_CUR));
+            if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
+                r -= (off_t)(p->src.buf.end - p->src.buf.current);
+            } else {
+                r += (off_t)(p->src.buf.current - p->src.buf.buffer);
+            }
+        } else {
+            /* NB: possible optimization: the specified position is within
+               the current buffer, we can avoid calling seeker. */
+            if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
+                if (whence == SEEK_CUR) {
+                    o -= (off_t)(p->src.buf.end - p->src.buf.current);
+                }
+                p->src.buf.current = p->src.buf.end; /* invalidate buffer */
+                SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
+            } else {
+                SAFE_CALL(p, bufport_flush(p, 0));
+                SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
+            }
+        }
+        break;
+    case SCM_PORT_ISTR:
+        if (nomove) {
+            r = (off_t)(p->src.istr.current - p->src.istr.start);
+        } else {
+            long z = (long)o;
+            if (whence == SEEK_CUR) {
+                z += (long)(p->src.istr.current - p->src.istr.start);
+            } else if (whence == SEEK_END) {
+                z += (long)(p->src.istr.end - p->src.istr.start);
+            }
+            if (z < 0 || z > (long)(p->src.istr.end - p->src.istr.start)) {
+                r = (off_t)-1;
+            } else {
+                p->src.istr.current = p->src.istr.start + z;
+                r = (off_t)(p->src.istr.current - p->src.istr.start);
+            }
+        }
+        break;
+    case SCM_PORT_OSTR:
+        if (nomove) {
+            r = (off_t)Scm_DStringSize(&(p->src.ostr));
+        } else {
+            /* Not supported yet */
+            r = (off_t)-1;
+        }
+        break;
+    case SCM_PORT_PROC:
+        /*writeme*/
+        break;
+    default:
+    }
+    UNLOCK(p);
+    if (r == (off_t)-1) return SCM_FALSE;
+    else return Scm_OffsetToInteger(r);
+}
 
 #undef VMDECL
 #undef LOCK

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.99 2002-12-12 06:16:08 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.100 2002-12-13 11:41:40 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -139,7 +139,7 @@
 (autoload gauche.portutil
           port->string port->list port->string-list port->sexp-list
           copy-port port-fold port-fold-right port-for-each port-map 
-          port-position-prefix)
+          port-position-prefix port-tell)
 
 (%autoload-scheme "gauche/numerical"
                   exp log sqrt expt cos sin tan asin acos atan

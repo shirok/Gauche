@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.325 2002-12-12 06:32:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.326 2002-12-13 11:41:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9321,6 +9321,121 @@ to the system file I/O.  Returns @code{#f} otherwise.
 @c COMMON
 @end defun
 
+@defun port-seek port offset &optional whence
+@c EN
+If the given @var{port} allows random access, this procedure sets
+the read/write pointer of the @var{port} accodring to the given @var{offset}
+and @var{whence}, then returns the updated offset (number of bytes
+from the beginning of the data).  If @var{port} is not random-accessible,
+@code{#f} is returned.  In the current version, file ports and
+input string ports are fully random-accessible.  You can only query
+the current byte offset of output string ports.
+@c JP
+@var{port}がランダムアクセス可能なポートの場合、
+この手続きは@var{port}のread/writeポインタを@var{offset}と@var{whence}の値によって
+設定し、新たなread/writeポインタの値(データの先頭からのバイトオフセット)を
+返します。@var{port}がランダムアクセス可能でない場合は@code{#f}が返されます。
+現在のバージョンでは、ファイルポートおよび入力文字列ポートがランダムアクセス可能です。
+出力文字列ポートは現在のポインタの値を問い合わせる動作だけが可能です。
+@c COMMON
+
+@c EN
+Note that port position is represented by byte count, not character count.
+@c JP
+ポートのポインタはバイト数で表現され、文字数とは異なることに注意して下さい。
+@c COMMON
+
+@c EN
+It is allowed to seek after the data if @var{port} is an output
+file port.  See POSIX lseek(2) document for details of the behavior.
+For input file port and input string port, you can't seek after the data.
+@c JP
+@var{port}が出力ファイルポートの場合は、データの終端を超えた位置までseek
+することが可能です。その場合の動作はPOSIXのlseek(2)に準じます。
+入力ファイルポートや入力文字列ポートではデータの終端以降にseekすることはできません。
+@c COMMON
+
+@c EN
+The @var{whence} argument must be a small integer represents
+from where @var{offset} should be counted.   The following constant
+values are defined.
+@c JP
+@var{whence}引数は、@var{offset}の基準を指定する小さな整数です。
+以下の定数が定義されています。
+@c COMMON
+
+@table @code
+@item SEEK_SET
+@c EN
+@var{Offset} represents the byte count from the beginning of the data.
+This is the default behavior when @var{whence} is omitted.
+@c JP
+@var{offset}はデータ先頭からのバイト数を指定します。
+@var{whence}が省略された場合のデフォルトの動作です。
+@c COMMON
+
+@item SEEK_CUR
+@c EN
+@var{Offset} represents the byte count relative to the current read/write
+pointer.  If you pass 0 to @var{offset}, you can get the current
+port position without changing it.
+@c JP
+@var{offset}は現在のread/writeポインタからの相対バイト数を指定します。
+@var{offset}が0であれば、ポインタを動かさずに現在のポート位置を知ることができます。
+@c COMMON
+
+@item SEEK_END
+@c EN
+@var{Offset} represents the byte count relative to the end of the data.
+@c JP
+@var{offset}はデータの終端からの相対バイト数を指定します。
+@c COMMON
+@end table
+@end defun
+
+@defun port-tell port
+@c EN
+Returns the current read/write pointer of @var{port} in byte count,
+if @var{port} is random-accessible.   Returns @code{#f} otherwise.
+This is equivalent to the following call:
+@c JP
+@var{port}の現在のread/writeポインタの値をバイト数で返します。
+@var{port}がランダムアクセス可能でない場合は@code{#f}が返されます。
+これは以下の呼び出しと等価です。
+@c COMMON
+@example
+(port-seek @var{port} 0 SEEK_CUR)
+@end example
+@end defun
+
+@c EN
+@emph{Note on the names}:  @code{Port-seek} is called
+@code{seek}, @code{file-position} or @code{input-port-position}/
+@code{output-port-position} on some implementations.
+@code{Port-tell} is called @code{tell}, @code{ftell} or
+@code{set-file-position!}.   Some implementations have
+@code{port-position} for different functionality.
+CommonLisp has @code{file-position}, but it is not suitable
+for us since @var{port} need not be a file port.  @code{Seek} and
+@code{tell} reflects POSIX name, and with Gauche naming convention
+we could use @code{sys-seek} and @code{sys-tell}; however, @var{port}
+deals with higher level of abstraction than system calls, so I dropped
+those names, and adopted new names.
+@c JP
+@emph{名前に関するメモ}: @code{port-seek}は他の処理系で
+@code{seek}、@code{file-position}、@code{input-port-position}/
+@code{output-port-position}等と呼ばれています。
+@code{port-tell}は@code{tell}、@code{ftell}、@code{set-file-position!}等と
+呼ばれています。いくつかの処理系は@code{port-position}という手続きを
+持っていますが、@code{port-seek}とは別の機能を実現しています。
+@code{file-position}はCommonLisp由来の名前ですが、
+fileポート以外のものも扱うため採用しませんでした。
+また、@code{seek}と@code{tell}はPOSIXの名前由来であり、
+Gaucheの名前付け規則を使って@code{sys-seek}と@code{sys-tell}としても
+よさそうですが、portの操作はシステムコールレベルよりも抽象度が高いため
+これも採用しませんでした。結局、新しい名前を採用することにしました。
+@c COMMON
+
 @defun copy-port src dst &keyword (unit 0)
 @c EN
 Copies data from an input port @var{src} to an output port @var{dst},
@@ -9393,6 +9508,16 @@ The existing file is truncated.  This is the default behavior.
 The output data will be appended to the existing file.
 @c JP
 既存のファイルにこれから書き出す内容が追加されます。
+@c COMMON
+@item :overwrite
+@c EN
+The output data will overwrite the existing content.
+If the output data is shorter than the existing file, the rest of
+existing file remains.
+@c JP
+既存のファイルにこれから書き出す内容が上書きされます。
+書き出されるデータが既存のファイルのデータよりも短い場合、
+残りの部分はそのまま残されます。
 @c COMMON
 @item :error
 @c EN

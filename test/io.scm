@@ -253,6 +253,134 @@
           (lambda () (port-map (lambda (x) x) read)))))
 
 ;;-------------------------------------------------------------------
+(test-section "seeking")
+
+(define (seek-tester1 p)
+  (display (read-block 5 p))
+  (let ((p0 (port-tell p)))
+    (port-seek p -3 SEEK_CUR)
+    (display (read-block 5 p))
+    (port-seek p p0)
+    (display (read p))
+    (port-seek p 0 SEEK_SET)
+    (display (read-block 3 p))
+    (port-seek p -3 SEEK_END)
+    (display (read p))))
+
+(test "seek (istr)" "abcdecdefgfghijabchij"
+      (lambda ()
+        (with-output-to-string
+          (lambda ()
+            (call-with-input-string "abcdefghij" seek-tester1)))))
+(test "seek (istr, boundary)" #\a
+      (lambda ()
+        (call-with-input-string "abcdefghij"
+          (lambda (p)
+            (read-char p)
+            (port-seek p -1 SEEK_CUR)
+            (read-char p)))))
+(test "seek (istr, boundary)" #t
+      (lambda ()
+        (call-with-input-string "abcdefghij"
+          (lambda (p)
+            (read-char p)
+            (port-seek p 10)
+            (eof-object? (read-char p))))))
+(test "seek (istr, out of range)" #f
+      (lambda ()
+        (call-with-input-string "abcdefghij"
+          (lambda (p)
+            (read-char p)
+            (port-seek p 10 SEEK_CUR)))))
+(test "seek (istr, out of range)" #f
+      (lambda ()
+        (call-with-input-string "abcdefghij"
+          (lambda (p)
+            (read-char p)
+            (port-seek p -2)))))
+
+(test "seek (ifile)" "abcdecdefgfghijabchij"
+      (lambda ()
+        (sys-unlink "test.o")
+        (with-output-to-file "test.o" (lambda () (display "abcdefghij")))
+        (with-output-to-string
+          (lambda ()
+            (call-with-input-file "test.o" seek-tester1)))))
+
+(test "seek (ofile)" "--//efg**j++"
+      (lambda ()
+        (call-with-output-file "test.o"
+          (lambda (p)
+            (port-seek p 0)
+            (display "--" p)
+            (let ((p0 (port-tell p)))
+              (port-seek p 0 SEEK_END)
+              (display "++" p)
+              (port-seek p -5 SEEK_CUR)
+              (display "**" p)
+              (port-seek p p0)
+              (display "//" p)))
+          :if-exists :overwrite)
+        (call-with-input-file "test.o" port->string)))
+
+(test "seek (ifile, large)"
+      "0000050055019999050100027500"
+      (lambda ()
+        (sys-unlink "test.o")
+        (with-output-to-file "test.o"
+          (lambda () (dotimes (n 10000) (format #t "~4,'0d" n))))
+        (with-output-to-string
+          (lambda ()
+            (call-with-input-file "test.o"
+              (lambda (p)
+                (display (read-block 4 p))
+                (port-seek p 2000)
+                (display (read-block 4 p))
+                (let ((p0 (port-tell p)))
+                  (port-seek p 20000 SEEK_CUR)
+                  (display (read-block 4 p))
+                  (port-seek p -4 SEEK_END)
+                  (display (read-block 4 p))
+                  (port-seek p p0)
+                  (display (read-block 4 p))
+                  (port-seek p -2000 SEEK_CUR)
+                  (display (read-block 4 p))
+                  (port-seek p -10000 SEEK_END)
+                  (display (read-block 4 p))
+                  )))))))
+
+(test "seek (ofile, large)"
+      "*0-0*/-0999+"
+      (lambda ()
+        (call-with-output-file "test.o"
+          (lambda (p)
+            (display "*" p)
+            (port-seek p 20000)
+            (display "*" p)
+            (let ((p0 (port-tell p)))
+              (port-seek p -19999 SEEK_CUR)
+              (display "-" p)
+              (port-seek p -19998 SEEK_END)
+              (display "-" p)
+              (port-seek p 19996 SEEK_CUR)
+              (display "+" p)
+              (port-seek p p0)
+              (display "/" p)))
+          :if-exists :overwrite)
+        (with-output-to-string
+          (lambda ()
+            (call-with-input-file "test.o"
+              (lambda (p)
+                (display (read-block 4 p))
+                (port-seek p 20000)
+                (display (read-block 4 p))
+                (port-seek p 39996)
+                (display (read-block 4 p))))))
+        ))
+
+(sys-unlink "test.o")
+
+;;-------------------------------------------------------------------
 (test-section "format")
 
 (test "format ~s" "\"abc\""

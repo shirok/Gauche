@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.84 2002-12-10 10:07:49 shirok Exp $
+ *  $Id: port.c,v 1.85 2002-12-13 11:41:41 shirok Exp $
  */
 
 #include <unistd.h>
@@ -409,6 +409,7 @@ ScmObj Scm_MakeBufferedPort(ScmObj name,
     p->src.buf.closer = bufrec->closer;
     p->src.buf.ready = bufrec->ready;
     p->src.buf.filenum = bufrec->filenum;
+    p->src.buf.seeker = bufrec->seeker;
     p->src.buf.data = bufrec->data;
     p->src.buf.line = 1;
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
@@ -764,6 +765,11 @@ static int file_filenum(ScmPort *p)
     return (int)p->src.buf.data;
 }
 
+static off_t file_seeker(ScmPort *p, off_t offset, int whence)
+{
+    return lseek((int)p->src.buf.data, offset, whence);
+}
+
 ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
 {
     int fd, dir = 0;
@@ -785,6 +791,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
+    bufrec.seeker = file_seeker;
     bufrec.data = (void*)fd;
     p = Scm_MakeBufferedPort(SCM_MAKE_STR_COPYING(path), dir, TRUE, &bufrec);
     return p;
@@ -811,6 +818,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
+    bufrec.seeker = NULL;
     bufrec.data = (void*)fd;
     
     p = Scm_MakeBufferedPort(name, direction, ownerp, &bufrec);
@@ -824,6 +832,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 ScmObj Scm_MakeInputStringPort(ScmString *str)
 {
     ScmPort *p = make_port(SCM_PORT_INPUT, SCM_PORT_ISTR, FALSE);
+    p->src.istr.start = SCM_STRING_START(str);
     p->src.istr.current = SCM_STRING_START(str);
     p->src.istr.end = SCM_STRING_START(str) + SCM_STRING_SIZE(str);
     SCM_PORT(p)->name = SCM_MAKE_STR("(input string port)");

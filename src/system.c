@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.45 2002-12-12 22:09:52 shirok Exp $
+ *  $Id: system.c,v 1.46 2002-12-13 11:41:41 shirok Exp $
  */
 
 #include <stdio.h>
@@ -42,36 +42,25 @@
  */
 
 /*
- * Convertion between off_t and Scheme integer.
- * off_t might be either 31bit or 63bit.   Absorb dependency here.
+ * Conversion between off_t and Scheme integer.
+ * off_t might be either 32bit or 64bit.  However, as far as I know,
+ * on ILP32 machines off_t is kept 32bits for compabitility and
+ * a separate off64_t is defined for 64bit offset access.
+ * To aim completeness I have to support the case that
+ * sizeof(off_t) > sizeof(long).  For the time being, I just signal
+ * an error outside the long value.
  */
 off_t Scm_IntegerToOffset(ScmObj i)
 {
-#if SIZEOF_OFF_T == SIZEOF_LONG
     if (SCM_INTP(i)) {
         return (off_t)SCM_INT_VALUE(i);
     } else if (SCM_BIGNUMP(i)) {
-        if (SCM_BIGNUM_SIGN(i) < 0) return (off_t)-1;
-        if (SCM_BIGNUM_SIZE(i) > 1) {
+        if (SCM_BIGNUM_SIZE(i) > 1
+            || SCM_BIGNUM(i)->values[0] > LONG_MAX) {
             Scm_Error("offset value too large: %S", i);
         }
         return (off_t)Scm_GetInteger(i);
     }
-#else
-    if (SCM_INTP(i)) {
-        return (off_t)SCM_INT_VALUE(i);
-    } else if (SCM_BIGNUMP(i)) {
-        off_t r;
-        if (SCM_BIGNUM_SIGN(i) < 0) return (off_t)-1;
-        if (SCM_BIGNUM_SIZE(i) > 2) {
-            Scm_Error("offset value too large: %S", i);
-        }
-        r = SCM_BIGNUM(i)->values[1];
-        r <<= SIZEOF_LONG*8;
-        r += SCM_BIGNUM(i)->values[0];
-        return r;
-    }
-#endif
     Scm_Error("bad value as offset: %S", i);
     return (off_t)-1;       /* dummy */
 }
@@ -81,13 +70,11 @@ ScmObj Scm_OffsetToInteger(off_t off)
 #if SIZEOF_OFF_T == SIZEOF_LONG
     return Scm_MakeInteger(off);
 #else
-    if (off < LONG_MAX) {
+    if (off <= LONG_MAX && off >= LONG_MIN) {
         return Scm_MakeInteger(off);
     } else {
-        u_long l[2];
-        l[0] = r & (u_long)-1;
-        l[1] = (r >> SIZEOF_LONG*8);
-        return Scm_MakeBignumFromUIArray(1, l, 2);
+        Scm_Error("offset value too large to support");
+        return Scm_MakeInteger(-1); /* dummy */
     }
 #endif
 }

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.96 2002-12-12 06:16:08 shirok Exp $
+;;; $Id: stdlib.stub,v 1.97 2002-12-13 11:41:41 shirok Exp $
 ;;;
 
 
@@ -695,6 +695,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-keyword create "key_create")
 (define-keyword append "key_append")
 (define-keyword supersede "key_supersede")
+(define-keyword overwrite "key_overwrite")
 (define-keyword character "key_character")
 (define-keyword binary "key_binary")
 
@@ -743,9 +744,10 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
     }
   }
   else if (SCM_EQ(if_exists, key_supersede)) flags |= O_TRUNC;
+  else if (SCM_EQ(if_exists, key_overwrite)) /*no need to add flags*/;
   else if (SCM_FALSEP(if_exists)) { flags |= O_EXCL; ignerr = TRUE; }
   else {
-    Scm_Error(\"argument for :if-exists must be either :supersede, :append, :error or #f, but got %S\", if_exists);
+    Scm_Error(\"argument for :if-exists must be either :supersede, :overwrite, :append, :error or #f, but got %S\", if_exists);
   }
 
   if (SCM_EQ(if_does_not_exist, key_create)) flags |= O_CREAT;
