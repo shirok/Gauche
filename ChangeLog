@@ -1,3 +1,9 @@
+2003-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/thrlib.stub, src/extlib.stub : moved current-thread
+	  back to the main library.  It is handy to have it even if we're
+	  not using threads.
+
 2003-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/binary/pack.scm, lib/binary/io.scm, test/binary.scm :

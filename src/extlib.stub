@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.196 2003-03-25 06:18:38 shirok Exp $
+;;; $Id: extlib.stub,v 1.197 2003-05-24 10:44:10 shirok Exp $
 ;;;
 
 "
@@ -1192,6 +1192,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));")
 (define-cproc gauche-site-architecture-directory ()
   "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));")
+
+;; Other thread stuff is in ext/threads/thrlib.stub
+(define-cproc current-thread ()
+  "SCM_RETURN(SCM_OBJ(Scm_VM()));")
 
 ;; GC stuff
 (define-cproc gc () (return <void> "GC_gcollect"))
