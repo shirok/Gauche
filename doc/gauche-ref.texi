@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.403 2003-06-06 06:39:33 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.404 2003-06-06 07:49:03 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24741,10 +24741,16 @@ satisfies @var{char/char-set/pred}, @code{#f} is returned.
 @subsection String Constructors
 
 @defun string-tabulate proc len
+@c EN
 [SRFI-13] @var{proc} must be a procedure that takes an integer
 argument and returns a character.  @code{string-tabulate}
 creates a string, whose @var{i}-th character is calculated by
 @code{(proc i)}.
+@c JP
+[SRFI-13] @var{proc}は整数を1つ引数として取り文字を返す手続きで
+なければなりません。@code{string-tabulate}は、その@var{i}番目の
+文字が@code{(proc i)}で計算されるような文字列を返します。
+@c COMMON
 @example
 (string-tabulate
   (lambda (i) (integer->char (+ i #x30))) 10)
@@ -24761,19 +24767,30 @@ creates a string, whose @var{i}-th character is calculated by
 @subsection String selection
 
 @defun substring/shared s start &optional end
+@c EN
 [SRFI-13] In Gauche, this is the same as @code{substring}, except
 that the @var{end} argument is optional.
+@c JP
+[SRFI-13] Gaucheでは、引数@var{end}がオプショナルであることを除いて、
+@code{substring}と同じです。
+@c COMMON
 @example
 (substring/shared "abcde" 2) @result{} "cde"
 @end example
 @end defun
 
 @defun string-copy! target tstart s &optional start end
+@c EN
 [SRFI-13] Copies a string @var{s} into a string
 @var{target} from the position @var{tstart}.
 Optional @var{start} and @var{end} arguments limits the range of @var{s}.
 If the copied string run over the end of @var{target}, an error is
 signalled.
+@c JP
+[SRFI-13] 文字列@var{s}を、文字列@var{target}の@var{tstart}番目以降へコピーします。
+オプションの引数@var{start}と@var{end}は、@var{s}の範囲を制限します。
+コピーされた文字列が@var{target}の終端を越えたらエラーが通知されます。
+@c COMMON
 @example
 (define s (string-copy "abcde"))
 (string-copy! s 2 "ZZ")
@@ -24785,11 +24802,19 @@ s @result{} "abZZe"
 @defunx string-drop s nchars
 @defunx string-take-right s nchars
 @defunx string-drop-right s nchars
+@c EN
 [SRFI-13] Returns the first @var{nchars}-character string of @var{s}
 (@code{string-take}) or the string without first @var{nchars}
 (@code{string-drop}).  The @code{*-right} variation counts from
 the end of string.  It is guaranteed that the returned string is
 always a copy of @var{s}, even no character is dropped.
+@c JP
+[SRFI-13] @code{string-take}は、@var{s}の最初の@var{nchars}文字からなる文字列を返します。
+@code{string-drop}は、@var{s}から最初の@var{nchars}文字からなる文字列を
+除いた残りを返します。@code{*-right}バージョンは、文字列の最後から数えます。
+返される文字列はいつも@vaar{s}のコピーであり、どの文字も削除されないことが
+保証されています。
+@c COMMON
 @example
 (string-take "abcde" 2) @result{} "ab"
 (string-drop "abcde" 2) @result{} "cde"
@@ -24801,6 +24826,7 @@ always a copy of @var{s}, even no character is dropped.
 
 @defun string-pad s len &optional char start end
 @defunx string-pad-right s len &optional char start end
+@c EN
 [SRFI-13]
 If a string @var{s} is shorter than @var{len}, 
 returns a string of @var{len} where @var{char} is
@@ -24810,6 +24836,15 @@ or leftmost @var{len} chars are taken.
 @var{Char} defaults to @code{#\space}.
 If @var{start} and @var{end} are provided, 
 the substring of @var{s} is used as the source.
+@c JP
+[SRFI-13]
+文字列@var{s}が@var{len}より短い場合は、@var{char}がそれぞれ左か
+右にパディングされた長さ@var{len}の文字列を返します。
+@var{s}が@var{len}よりも長い場合は、@var{len}文字が右端か左端から
+取り除かれます。@var{Char}のデフォルト値は@code{#\space}です。
+@var{start}と@var{end}が与えられると、@var{s}の部分文字列がソース
+文字列として使われます。
+@c COMMON
 
 @example
 (string-pad "abc" 10)    @result{} "       abc"
@@ -24825,16 +24860,29 @@ the substring of @var{s} is used as the source.
 @defun string-trim s &optional char/char-set/pred start end
 @defunx string-trim-right s &optional char/char-set/pred start end
 @defunx string-trim-both s &optional char/char-set/pred start end
+@c EN
 [SRFI-13]
 Removes characters that match @var{char/char-set/pred}
 from @var{s}.  @code{String-trim} removes the characters from
 left of @var{s}, @code{string-trim-right} does from right,
 and @code{string-trim-both} does from both sides.
-
+@c JP
+[SRFI-13]
+@var{s}から@var{char/char-set/pred}にマッチする文字を削除します。
+@code{String-trim}は@var{s}の左から文字を削除し、
+@code{string-trim-right}は右から、@code{string-trim-both}は
+両端から削除します。
+@c COMMON
+@c EN
 @var{Char/char-set/pred} defaults to @code{#[\s]}, i.e. a char-set
 of whitespaces.
 If @var{start} and @var{end} are provided, 
 the substring of @var{s} is used as the source.
+@c JP
+@var{Char/char-set/pred}のデフォルト値は@code{#[\s]}、つまり空白文字の
+文字セットです。@var{start}と@var{end}が与えられると、@var{s}の部分文字列が
+ソース文字列として使われます。
+@c COMMON
 
 @example
 (string-trim "   abc  ")       @result{} "abc  "
