@@ -7,6 +7,9 @@
 	  to pathname or vice versa must go through this API (they shouldn't
 	  assume replacing '.' to '/' is enough).
 
+	* lib/gauche/common-macros.scm : moved check-arg and get-keyword*
+	  to here from gauche-init.scm, as autoloaded macros.
+
 2003-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm : Added various keyword arguments to

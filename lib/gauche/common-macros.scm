@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.14 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.15 2003-09-07 12:39:23 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -218,15 +218,27 @@
              (lambda () ,@body)
              ,swap))))))
 
-;; Anaphoric macros.   Cf. Paul Graham, "On Lisp"
-;(define-macro (l_ . body) `(lambda (_) ,@body))
-;(define-macro (let_ expr . body) `(let1 _ ,expr ,@body))
-;(define-macro (if_ test then . else)
-;  `(let ((_ ,test)) (if _ ,then ,@else)))
-;(define-macro (when_ test . body)
-;  `(let ((_ ,test)) (when _ ,@body)))
-;(define-macro (while_ test . body)
-;  `(do ((_ test test)) ((not _)) ,@body))
+;;;-------------------------------------------------------------
+;;; useful argument utility
+
+(define-syntax check-arg
+  (syntax-rules ()
+    ((_ test arg)
+     (let ((tmp arg))
+       (unless (test tmp)
+         (errorf "bad type of argument for ~s: ~s" 'arg tmp))))
+    ))
+
+(define-syntax get-keyword*
+  (syntax-rules ()
+    ((_ key lis default)
+     (let ((li lis))
+       (let loop ((l li))
+         (cond ((null? l) default)
+               ((null? (cdr l)) (error "keyword list not even" li))
+               ((eq? key (car l)) (cadr l))
+               (else (loop (cddr l)))))))
+    ((_ key lis) (get-keyword key lis))))
 
 ;;;-------------------------------------------------------------
 ;;; repeat construct
