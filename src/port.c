@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.62 2002-04-30 08:10:56 shirok Exp $
+ *  $Id: port.c,v 1.63 2002-04-30 09:12:07 shirok Exp $
  */
 
 #include <unistd.h>
@@ -430,12 +430,11 @@ static void bufport_write(ScmPort *p, const char *src, int siz)
 }
 
 /* Fills the buffer.  Reads at least MIN bytes (unless it reaches EOF).
- * If SYNC is true or the port buffering mode is BUFFER_NONE, this function
- * reads no more than MIN bytes.  Otherwise, this function may read more
- * bytes if possible.
+ * If ALLOW_LESS is true, however, we allow to return before the full
+ * data is read.
  * Returns the number of bytes actually read, or 0 if EOF, or -1 if error.
  */
-static int bufport_fill(ScmPort *p, int min, int sync)
+static int bufport_fill(ScmPort *p, int min, int allow_less)
 {
     int cursiz = (int)(p->src.buf.end - p->src.buf.current);
     int nread = 0, toread;
@@ -447,10 +446,10 @@ static int bufport_fill(ScmPort *p, int min, int sync)
         p->src.buf.current = p->src.buf.end = p->src.buf.buffer;
     }
     if (min <= 0) min = SCM_PORT_BUFFER_ROOM(p);
-    if (sync || p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
-        toread = min;
-    } else {
+    if (p->src.buf.mode == SCM_PORT_BUFFER_FULL) {
         toread = SCM_PORT_BUFFER_ROOM(p);
+    } else {
+        toread = min;
     }
 
     do {
@@ -458,7 +457,7 @@ static int bufport_fill(ScmPort *p, int min, int sync)
         if (r <= 0) break;
         nread += r;
         p->src.buf.end += r;
-    } while (nread < min);
+    } while (!allow_less && nread < min);
     return nread;
 }
 
