@@ -453,6 +453,11 @@
 (test "negative?" #f (lambda () (negative? 134539485343498539458394)))
 (test "negative?" #t (lambda () (negative? -134539485343498539458394)))
 
+(test "eqv?" #t (lambda () (eqv? 20 20)))
+(test "eqv?" #t (lambda () (eqv? 20.0 20.00000)))
+(test "eqv?" #t (lambda () (eqv? 20 (inexact->exact 20.0))))
+(test "eqv?" #f (lambda () (eqv? 20 20.0)))
+
 ;;==================================================================
 ;; Arithmetics
 ;;
