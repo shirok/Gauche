@@ -15,7 +15,7 @@ HEADERS =
 
 TARGET = @ARCHFILES@
 CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h
-GENERATED = gdbm.c ndbm.c odbm.c bsddb.c
+GENERATED = gdbm.c ndbm.c odbm.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
@@ -36,8 +36,8 @@ ndbm.so : ndbm.o
 odbm.so : odbm.o
 	$(CC) $(LDFLAGS) odbm.so odbm.o @ODBMLIB@ $(LIBS)
 
-bdbm.so : bdbm.o bsddb.o
-	$(CC) $(LDFLAGS) bdbm.so bdbm.o bsddb.o @BDBMLIB@ $(LIBS)
+#bdbm.so : bdbm.o bsddb.o
+#	$(CC) $(LDFLAGS) bdbm.so bdbm.o bsddb.o @BDBMLIB@ $(LIBS)
 
 test : all
 	@rm -f test.log

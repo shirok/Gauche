@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl
-dnl $Id: configure.in,v 1.10 2001-12-03 09:46:53 shirok Exp $
+dnl $Id: configure.in,v 1.11 2001-12-14 20:38:56 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 
@@ -58,11 +58,11 @@ AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
   ARCHFILES="odbm.so $ARCHFILES"
   SCMFILES="odbm.scm $SCMFILES"
 ])
-AC_CHECK_HEADERS(db.h, [
-  BDBM_HEADER=$ac_header
-  ARCHFILES="bdbm.so $ARCHFILES"
-  SCMFILES="bdbm.scm $SCMFILES"
-])
+#AC_CHECK_HEADERS(db.h, [
+#  BDBM_HEADER=$ac_header
+#  ARCHFILES="bdbm.so $ARCHFILES"
+#  SCMFILES="bdbm.scm $SCMFILES"
+#])
 
 AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
 LIBSAVE="$LIBS"
@@ -76,14 +76,14 @@ if test "$ODBM_HEADER" = "gdbm/dbm.h"; then
 else
   AC_SEARCH_LIBS(dbminit,  dbm gdbm, [ ODBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
 fi
-AC_CHECK_LIB(db, dbopen, [ BDBMLIB="-ldb" ])
+#AC_CHECK_LIB(db, dbopen, [ BDBMLIB="-ldb" ])
 
 AC_SUBST(ARCHFILES)
 AC_SUBST(SCMFILES)
 AC_SUBST(GDBMLIB)
 AC_SUBST(NDBMLIB)
 AC_SUBST(ODBMLIB)
-AC_SUBST(BDBMLIB)
+#AC_SUBST(BDBMLIB)
 
 dnl Set LDFLAGS to generate shared library.
 dnl This has to come after all the tests that requre linking, or those test
