@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.4 2001-01-15 04:44:54 shiro Exp $
+ *  $Id: string.c,v 1.5 2001-01-16 04:44:40 shiro Exp $
  */
 
 #include <stdio.h>
@@ -167,7 +167,7 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
     for (i=0, p=ptr; i<len; i++, p+=size) {
         SCM_STR_PUTC(p, fill);
     }
-    p[size*len+1] = '\0';
+    ptr[size*len] = '\0';
     INITSTR(z, len, size*len, ptr);
     return SCM_OBJ(z);
 }
@@ -252,6 +252,23 @@ ScmObj Scm_StringEqual(ScmString *x, ScmString *y)
     return SCM_FALSE;
 }
 
+#define STRCMP(fn, op1, op2)                                            \
+ScmObj fn(ScmString *x, ScmString *y)                                   \
+{                                                                       \
+    int sizx = SCM_STRING_SIZE(x);                                      \
+    int sizy = SCM_STRING_SIZE(y);                                      \
+    int siz = (sizx < sizy)? sizx : sizy;                               \
+    int r = memcmp(SCM_STRING_START(x), SCM_STRING_START(y), siz);      \
+    if (r op1 0) return SCM_TRUE;                                       \
+    if (r == 0 && sizx op2 sizy) return SCM_TRUE;                       \
+    else return SCM_FALSE;                                              \
+}
+
+STRCMP(Scm_StringLt, <, <)
+STRCMP(Scm_StringLe, <, <=)
+STRCMP(Scm_StringGt, >, >)
+STRCMP(Scm_StringGe, >, >=)
+
 /*
  * Reference
  */
@@ -310,8 +327,7 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     int sizey = SCM_STRING_SIZE(y), leny = SCM_STRING_LENGTH(y);
     int lenz;
     ScmString *z;
-    char *p = (char *)GC_malloc_atomic(sizex + sizey + 1);
-    if (p == NULL) Scm_Abort("out of memory");
+    char *p = SCM_NEW_ATOMIC2(char *,sizex + sizey + 1);
 
     memcpy(p, x->start, sizex);
     memcpy(p+sizex, y->start, sizey);
@@ -497,13 +513,14 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch)
 {
     int len = SCM_STRING_LENGTH(str), i;
     int chlen = SCM_CHAR_NBYTES(ch);
-    char *newstr = SCM_NEW_ATOMIC2(char *, len * chlen);
+    char *newstr = SCM_NEW_ATOMIC2(char *, len * chlen + 1);
     char *p = newstr;
 
     for (i=0; i<len; i++) {
         SCM_STR_PUTC(p, ch);
         p += chlen;
     }
+    p[len*chlen] = '\0';
     /* modify str */
     str->size = len * chlen;
     str->start = newstr;
@@ -592,9 +609,10 @@ void Scm__DStringRealloc(ScmDString *dstr, int minincr)
     /* TODO: Maybe we should avoid realloc.  Maybe we should use chained
        segments of str.  So far, what I know is the program crashes
        if we use GC_realloc here. */
+#if 0
     p = (char *)Scm_Malloc(newsize);
     memcpy(p, dstr->start, GC_size(dstr->start));
-#if 0
+#else
     p = (char *)Scm_Realloc(dstr->start, newsize);
 #endif
 
