@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.204 2002-05-12 03:24:45 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.205 2002-05-15 02:56:02 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -16475,6 +16475,7 @@ See @ref{MT,,MT}, for details about the algorithm.
 @end deftp
 
 @deftp {Class} <mersenne-twister>
+@clindex mersenne-twister
 A class to encapsulate the state of Mersenne Twister RNG.
 Each instance of this class has its own state, and can be used
 as an independent source of random bits if initialized
