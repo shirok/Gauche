@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.275 2002-09-25 22:16:02 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.276 2002-10-13 07:36:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -906,7 +906,7 @@ Schemeもその流れを汲んでおり、R5RSでもシンボルは読み込まれる時に大文字小文字の
 
 @c EN
 However, nowadays programming is hardly completed in one language.
-When you interacts with other languages that distinguishes uppercase
+When you have to interact with other languages that distinguishe uppercase
 and lowercase characters, it is desirable that Scheme distinguishes them
 as well.
 @c JP
@@ -1943,56 +1943,6 @@ in such case.
 @c COMMON
 @end itemize
 
-@c EN
-To help transition, @code{gosh} keeps the previous behavior if
-either (a) command line argument @code{-fcompat-0.5} is given,
-or (b) an environment variable @code{GAUCHE_COMPAT_0_5} is defined.
-You can run the Scheme scripts written for previous Gauche
-unchanged using either of these methods.
-@c JP
-移行を助けるため、@code{gosh}は (a)コマンドライン引数@code{-fcompat-0.5}が与えられるか
-(b)環境変数@code{GAUCHE_COMPAT_0_5} が定義されていた場合は
-以前のバージョンと同じ振舞いをします。このいずれかの手段を用いることにより、
-以前のGaucheのために書かれたスクリプトを走らせることができます。
-@c COMMON
-
-@c EN
-This backward compatibility feature is a temporary solution,
-and will be removed after a few releases.
-I encourage you to move to the new interface by then.
-@c JP
-この後方互換機能は一時的な解決で、いくつかリリースを重ねた時点で
-取り除かれる予定です。なるべくそれまでに新しいインタフェースに
-移行して下さい。
-@c COMMON
-
-@c EN
-To write a script that works both 0.5.1 and the previous version,
-you can use some hack like this:
-@c JP
-0.5.1とそれ以前のGaucheと両方で動作するスクリプトを書くには、
-次のようなハックが必要になります。
-@c COMMON
-@example
-(define (main args)
-  (let ((pure-args (if (string=? (gauche-version) "0.5.1")
-                       (cdr args)
-                       args)))
-    @dots{}
-   ))
-@end example
-
-@c EN
-(@code{Cond-expand} form is the mechanism supposed to be used in
-this kind of situation.  Unfortunately, the implementation of
-@code{cond-expand} in the previous versions of Gauche was broken
-and didn't work.)
-@c JP
-(@code{Cond-expand} フォームが、本来このような状況で使われるべき
-ものなのですが、以前のGaucheでは@code{cond-expand}の実装が壊れて
-いたため使えません。)
-@c COMMON
-
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
 @section Writing Gauche modules
@@ -2812,6 +2762,9 @@ which takes one argument and returns one value.   The original value of
 (define a (cons 2 3))
 (update! (car a) (lambda (v) (* v 3))) @result{} @r{undefined}
 a @result{} (6 . 3)
+
+(update! (cdr a) (cut - <> 3))
+a @result{} (6 . 0)
 @end example
 @end defmac
 
@@ -5519,30 +5472,30 @@ Note: @code{(setter car)} @equiv{} @code{set-car!}, and
 
 @defun caar pair
 @defunx cadr pair
-@findex cdar pair
-@findex cddr pair
-@findex caaar pair
-@findex caadr pair
-@findex cadar pair
-@findex caddr pair
-@findex cdaar pair
-@findex cdadr pair
-@findex cddar pair
-@findex cdddr pair
-@findex caaaar pair
-@findex caaadr pair
-@findex caadar pair
-@findex caaddr pair
-@findex cadaar pair
-@findex cadadr pair
-@findex caddar pair
-@findex cadddr pair
-@findex cdaaar pair
-@findex cdaadr pair
-@findex cdadar pair
-@findex cdaddr pair
-@findex cddaar pair
-@findex cddadr pair
+@findex cdar
+@findex cddr
+@findex caaar
+@findex caadr
+@findex cadar
+@findex caddr
+@findex cdaar
+@findex cdadr
+@findex cddar
+@findex cdddr
+@findex caaaar
+@findex caaadr
+@findex caadar
+@findex caaddr
+@findex cadaar
+@findex cadadr
+@findex caddar
+@findex cadddr
+@findex cdaaar
+@findex cdaadr
+@findex cdadar
+@findex cdaddr
+@findex cddaar
+@findex cddadr
 @dots{}
 @end defun
 @defun cdddar pair
@@ -7237,7 +7190,7 @@ literals (@xref{Character set}) are valid.
 @c COMMON
 @item
 @c EN
-Beginning of line @code{^} and end of line @code{$} assertions.
+Beginning of the string @code{^} and end of the string @code{$} assertions.
 @c JP
 文字列の先頭@code{^}、および末尾@code{$}へのマッチ。
 @c COMMON
@@ -7262,7 +7215,6 @@ And Gauche does not supports:
 以下の機能はサポートされていません。
 @c COMMON
 @itemize @bullet
-@item
 @item
 @c EN
 Collating elements, e.g. @code{[=e=]} and @code{[.ll.]}.
@@ -13530,6 +13482,7 @@ WWWで主として使われるプロトコルやデータフォーマットの実装。
 * Termios::                     
 * Unit Testing::                
 * Threads::                     
+* Measure timings::             
 * Uniform vectors::             
 * Slot with validator::         
 * Comparing version numbers::   
@@ -18017,7 +17970,7 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Threads, Uniform vectors, Unit Testing, Library modules - Gauche extensions
+@node Threads, Measure timings, Unit Testing, Library modules - Gauche extensions
 @section @code{gauche.threads} - Threads
 @c NODE スレッド, @code{gauche.threads} - スレッド
 
@@ -18474,9 +18427,217 @@ object.
 Provided for the compatibility to SRFI-18.
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Measure timings, Uniform vectors, Threads, Library modules - Gauche extensions
+@section @code{gauche.time} - Measure timings
+@c NODE 時間の計測, @code{gauche.time} - 時間の計測
+
+@deftp {Module} gauche.time
+@mdindex gauche.time
+@c EN
+Provides two simple ways to measure execution time of Scheme code.
+A macro @code{time}, which is convenient for interactive use,
+and @code{<time-counter>} objects which are useful to be embedded
+in the program.
+@c JP
+Schemeコードの実行時間を測る2つの単純な方法を提供します。
+インタラクティブな使用に便利な@code{time}マクロ及び、
+プログラム中に埋め込んで使える@code{<time-counter>}オブジェクトです。
+@c COMMON
+@end deftp
+
+@defmac time expr expr2 @dots{}
+@c EN
+Evaluates @var{expr} @var{expr2} @dots{} sequentially, as @code{begin},
+and returns the result(s) of the last expression.
+Before returning the value(s), the macro reports the elapsed (real) time
+and CPU times in the user space and the kernel space to the current
+error port, much like the bourne shell's time command.
+@c JP
+式@var{expr} @var{expr2} @dots{} を順に評価し、最後の式の結果を返します。
+結果が返される前に、全ての式の評価にかかった実(経過)時間および
+ユーザースペース、カーネルスペースで費されたCPU時間がカレントエラーポートに
+報告されます。
+@c COMMON
+
+@c EN
+The current version uses @code{sys-gettimeofday} (@xref{POSIX time}) to
+calculate the elapsed time, and @code{sys-times} (@xref{System Inquiry})
+to calculate user and system CPU times.  So the resolution of these numbers
+depends on these underlying system calls.  Usually the CPU
+time has 10ms resolution, while the elapsed time might have higher
+resolution.  On the systems that doesn't have gettimeofday(2) support,
+however, the elapsed time resolution can be as bad as a second.
+@c JP
+現在の実装は、経過時間に対しては@code{sys-gettimeofday}
+(@ref{POSIX time}参照)を、CPU時間に対しては@code{sys-times}
+(@ref{System Inquiry}参照)を用いています。従って、
+それぞれの数値の分解能はこれらの手続きが用いているシステムコールに依存します。
+CPU時間は10ms単位で、経過時間はそれより細かいことが多いです。
+但しgettimeofday(2)コールをサポートしていないOSでは経過時間が最悪の場合
+秒単位になります。
+@c COMMON
+
+@example
+gosh> (time (length (sort (call-with-input-file "/usr/share/dict/words" port->string-list))))
+;(time (length (sort (call-with-input-file "/usr/share/dict/words" port- ...
+; real   0.357
+; user   0.350
+; sys    0.000
+45427
+@end example
+@end defmac
+
+@deftp {Class} <time-counter>
+@clindex time-counter
+@c EN
+An abstract class of time counters.  Time counter is a kind of timer
+whose value is incremented as the time passes.  The counting
+can be started and stopped any number of times.
+The value of the counter can be read
+when the timer is stopping.
+You can have multiple time counters.  It is useful, for example,
+to measure the time in two parts inside a loop independently.
+@c JP
+時間カウンタの抽象クラスです。時間カウンタは
+時間の経過と共にその値が増加してゆく一種のタイマーです。
+何度でもカウントを止めたり開始したりできます。
+カウンタの値はカウントが止まっている時に読み出すことができます。
+複数の時間カウンタを使えば、
+例えばループ中の二つの部分について費される時間を別々に計測することもできます。
+@c COMMON
+
+@c EN
+The concrete subclass determines which time it is counting.
+You have to instantiate one of those subclasses described below
+to use the time counter.
+@c JP
+具体的なサブクラスが、どの時間をカウントするかを決定します。
+時間カウンタを使うには、下に挙げるサブクラスのいずれかを
+インスタンシエイトしなければなりません。
+@c COMMON
+@end deftp
+
+@deftp {Class} <real-time-counter>
+@deftpx {Class} <user-time-counter>
+@deftpx {Class} <system-time-counter>
+@deftpx {Class} <process-time-counter>
+@clindex real-time-counter
+@clindex user-time-counter
+@clindex system-time-counter
+@clindex process-time-counter
+@c EN
+Classes for time counters that count real (elapsed) time, user-space CPU time,
+kernel-space CPU time, and total CPU time (user + system), respectively.
+@c JP
+それぞれ、実経過時間、ユーザースペースCPU時間、カーネルスペースCPU時間、
+総CPU時間 (ユーザー+カーネル)を計測する時間カウンタのクラスです。
+@c COMMON
+@end deftp
+
+@defmethod <time-counter> time-counter-start! counter
+@defmethodx <time-counter> time-counter-stop! counter
+@c EN
+Starts and stops the @var{counter}.  The time during the counter is
+running is accumulated to the counter value when the counter is stopped.
+@c JP
+時間カウンタ@var{counter}を開始/停止します。カウンタが走っている間の時間が、
+カウンタが停止した時点でカウンタの値に加算されます。
+@c COMMON
+
+@c EN
+Start/stop pairs can be nested,
+but only the outermost pair takes the effect.  That is, if you call
+@code{time-counter-start!} on the counter that is already started,
+it doesn't have any effect except that to stop such a counter
+you have to call @code{time-counter-stop!} one more time.  It is useful
+when you want to measure the time spent in the larger block that
+may already contain timer start/stop pairs.
+@c JP
+開始/停止の対はネストすることができます。その場合は、一番外側の対のみが
+有効です。
+つまり、既に走っているカウンタに対し@code{time-counter-start!}を呼んでも
+何も起こりませんが、一度余分に@code{time-counter-stop!}を呼ばないと
+カウンタは止まりません。
+これは、内部に既に開始/停止の対を含んでいるかもしれない大きなコードブロックの
+全体の時間を計測したいというような場合に便利です。
+@c COMMON
+
+@c EN
+Calling @code{time-counter-stop!} on the already stopped counter
+has no effect.
+@c JP
+既に停止しているカウンタに対して@code{time-counter-stop!}を呼んでも
+何も起こりません。
+@c COMMON
+@end defmethod
+
+@defmethod <time-counter> time-counter-reset! counter
+@c EN
+Resets the value of @var{counter}.  If @var{counter} is already
+running, it is forced to stop before being reset.
+@c JP
+カウンタ@var{counter}の値をリセットします。既に@var{counter}が走っている
+場合は、リセットの前にカウンタは停止させられます。
+@c COMMON
+@end defmethod
+
+@defmethod <time-counter> time-counter-value counter
+@c EN
+Returns the current value of the counter as the number of seconds,
+in a real number.  The resolution depends on the source of the counter.
+@c JP
+カウンタ@var{counter}の現在の値(秒数)を実数で返します。
+分解能はそれぞれのカウンタが用いているシステムコールに依存します。
+@c COMMON
+@end defmethod
+
+@defmac with-time-counter counter expr @dots{}
+@c EN
+A convenience macro to run the @var{counter} while @var{expr} @dots{}
+are evaluated.  Returns the result(s) of the last expression.
+It is defined as follows.
+@c JP
+式@var{expr} @dots{}が評価される間だけ@var{counter}を走らせる、
+便利なマクロです。最後の式の結果を返します。このマクロは次のように
+定義されます。
+@c COMMON
+@example
+(define-syntax with-time-counter
+  (syntax-rules ()
+    ((_ counter . exprs)
+     (dynamic-wind
+      (lambda () (time-counter-start! counter))
+      (lambda () . exprs)
+      (lambda () (time-counter-stop! counter))))
+    ))
+@end example
+@end defmac
+
+@c EN
+The following example measures approximate times
+spend in process-A and process-B inside a loop.
+@c JP
+下の例では、ループ内でのprocess-Aとprocess-Bにて費された
+概略の時間をそれぞれ計測します。
+@c COMMON
+
+@example
+(let ((ta (make <real-time-counter>))
+      (tb (make <real-time-counter>)))
+  (dotimes (i 100000)
+    (with-time-counter ta
+      (process-A))
+    (with-time-counter tb
+      (process-B)))
+  (format #t "Time spent in process-A: ~s\n" (time-counter-value ta))
+  (format #t "Time spent in process-B: ~s\n" (time-counter-value tb))
+  )
+@end example
+
 
 @c ----------------------------------------------------------------------
-@node Uniform vectors, Slot with validator, Threads, Library modules - Gauche extensions
+@node Uniform vectors, Slot with validator, Measure timings, Library modules - Gauche extensions
 @section @code{gauche.uvector} - Uniform vectors
 @c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
 
@@ -25969,8 +26130,4 @@ For readability, the surrounding @code{<} and @code{>} are stripped off.
 
 @contents
 @bye
-
-@c Local variables:
-@c outline-regexp: "@chap\\|@unnu\\|@\\(sub\\)*section"
-@c end:
 

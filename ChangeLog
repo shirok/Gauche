@@ -1,3 +1,7 @@
+2002-10-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/time.scm : added
+
 2002-10-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, lib/gauche/port.scm, src/extlib.stub : exposed 'unsafe'
