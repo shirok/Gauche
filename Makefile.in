@@ -11,6 +11,7 @@ clean :
 	rm -rf core *~
 	cd gc; $(MAKE) clean
 	cd src; $(MAKE) clean
+	cd test; $(MAKE) clean
 
 allclean : clean
 	rm -rf Makefile src/Makefile config.cache config.log config.status
