@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.404 2003-06-06 07:49:03 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.405 2003-06-06 08:37:56 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -25046,8 +25046,13 @@ See also the Gauche built-in procedure @code{string-scan}
 
 @defun string-reverse s &optional start end
 @defunx string-reverse! s &optional start end
-[SRFI-13] Returns a string in which the character posisions are reversed
+@c EN
+[SRFI-13] Returns a string in which the character positions are reversed
 from @var{s}.  @code{string-reverse!} modifies @var{s}.
+@c JP
+[SRFI-13] @var{s}の文字の位置を逆順にした文字列を返します。
+@code{string-reverse!}は@var{s}そのものを変更します。 
+@c COMMON
 @example
 (string-reverse "mahalo") @result{} "olaham"
 (string-reverse "mahalo" 3) @result{} "ola"
@@ -25061,7 +25066,11 @@ from @var{s}.  @code{string-reverse!} modifies @var{s}.
 @end defun
 
 @defun string-concatenate string-list
+@c EN
 [SRFI-13] Concatenates list of strings.
+@c JP
+[SRFI-13] 文字列のリストを連結します。
+@c COMMON
 @example
 (string-concatenate '("humuhumu" "nukunuku" "apua" "`a"))
   @result{} "humuhumunukunukuapua`a"
@@ -25070,14 +25079,24 @@ from @var{s}.  @code{string-reverse!} modifies @var{s}.
 
 @defun string-concatenate/shared string-list
 @defunx string-append/shared s @dots{}
+@c EN
 [SRFI-13] ``Shared'' version of @code{string-concatenate} and
 @code{string-append}.  In Gauche, these are just synonyms of them.
+@c JP
+[SRFI-13] @code{string-concatenate}と@code{string-append}の``共有''
+バージョンです。Gaucheでは、これらは単に別名です。
+@c COMMON
 @end defun
 
 @defun string-concatenate-reverse string-list
 @defunx string-concatenate-reverse/shared string-list
+@c EN
 [SRFI-13] Reverses @var{string-list} before concatenation.
 ``Shared'' version works the same in Gauche.
+@c JP
+[SRFI-13] @var{string-list}を連結する前に逆順にします。
+Gaucheでは、``共有''バージョンは全く同じ動作をします。
+@c COMMON
 @end defun
 
 @node SRFI-13 String mapping, SRFI-13 String rotation, SRFI-13 String reverse & append, srfi-13 - String library
@@ -25085,9 +25104,15 @@ from @var{s}.  @code{string-reverse!} modifies @var{s}.
 
 @defun string-map proc s &optional start end
 @defunx string-map! proc s &optional start end
+@c EN
 [SRFI-13] @code{string-map} applies @var{proc} on every character of @var{s},
 and collects the results into a string and returns it.
 On the other hand, @code{string-map!} modifies @var{s}.
+@c JP
+[SRFI-13] @code{string-map}は、@var{s}の全ての文字に対して@var{proc}を
+適用し、その結果を文字列に集めそれを返します。
+一方、@code{string-map!}は@var{s}そのものを変更します。
+@c COMMON
 @example
 (string-map char-upcase "wikiwiki") @result{} "WIKIWIKI"
 (string-map char-upcase "wikiwiki" 4) @result{} "WIKI"
