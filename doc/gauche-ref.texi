@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.251 2002-08-24 08:37:54 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.252 2002-08-24 22:58:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9376,6 +9376,23 @@ the @code{~D} directive.
 (format #f "~8,'0X" 259847592)
   @result{} "0F7CF5A8"
 @end example
+
+@item @b{~}@var{count}@b{*}
+@c EN
+Moves the argument counter @var{count} times forward, effectively skips
+next @var{count} arguments.  The default value of @var{count} is 1,
+hence skip the next argument.  If a colon-flag is given, moves the argument
+counter backwards, e.g. @code{~:*} makes the next directive to process
+last argument again.  If an atmark-flag is given, @var{count} specifies
+absolute position of the arguments, starting from 0.
+@c JP
+引数のカウンタを@var{count}だけ後方にずらします。つまり、@var{count}個の引数が
+無視されることになります。@var{count}のデフォルト値は1です。
+コロンフラグが与えられた場合は引数カウンタを前方に動かします。
+例えば@code{~:*}は次のディレクティブが直前に使った引数を再び使うようにします。
+アトマークフラグが与えられた場合は、@var{count}が引数の絶対位置を示します。
+0が最初の引数です。
+@c COMMON
 @end table
 
 @end defun
