@@ -30,13 +30,31 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: int64.h,v 1.3 2004-02-04 01:50:50 shirok Exp $
+ *  $Id: int64.h,v 1.4 2004-11-02 06:37:43 shirok Exp $
  */
 
 /* Some Scheme API needs to deal with 64bit signed/unsigned integer
    (such as srfi-4 vectors and binary I/O routines.)
    This file defines some macros to help writing code without
-   concerning about how the hardware/compiler supports int64. */
+   concerning about how the hardware/compiler supports int64.
+
+   This header defines the following types and macros.
+
+   [type] ScmInt64     64-bit signed integer.
+   [type] ScmUInt64    64-bit unsigned integer.
+   [type] ScmInt32     32-bit signed integer.
+   [type] ScmUInt32    32-bit signed integer.
+
+   Based on these types, gauche.h declares some conversion functions
+   that can be used regardless of the representation of 64bit integer
+   on the target machine.
+
+   To box 64bit integer as ScmObj, use Scm_MakeInteger64 and
+   Scm_MakeIntegerU64.
+
+   To unbox 64bit integer from ScmObj, use Scm_GetInteger64 and
+   Scm_GetIntegerU64.
+*/
 
 #ifndef GAUCHE_INT64_H
 #define GAUCHE_INT64_H
