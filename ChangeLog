@@ -42,7 +42,7 @@
 2004-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-19.scm (tm:time-difference): fixed bad args for error
-	  procedure (pointed out by Michal Maru-Bπka)$)B
+	  procedure (pointed out by Michal Maru≈°ka)
 
 	* src/gauche/mingw-compat.h: added for MinGW port.
 	* doc/mingw-memo.txt: added for MinGW port.
@@ -122,7 +122,7 @@
 
 	* src/compile.c (compile_cond_int): fixed a bug that 'case' didn't
 	  work when it appeared in the macro-expanded form (Pointed out by
-	  Grzegorz Chrupa-B≥a).$)B
+	  Grzegorz Chrupa≈Ça).
 
 2004-05-31  Shiro Kawai  <shiro@acm.org>
 
@@ -179,7 +179,7 @@
 	  (patch from Nekoie).
 
 	* lib/file/util.scm (build-path): ignore empty string in the components
-	  (patch from Grzegorz Chrupa-B≥a).$)B
+	  (patch from Grzegorz Chrupa≈Ça).
 
 2004-05-20  Shiro Kawai  <shiro@acm.org>
 
@@ -390,7 +390,7 @@
 
 2004-03-14  Shiro Kawai  <shiro@acm.org>
 
-	* src/genstub (process-setter): fixed typo (Pointed by Michal Maru-Bπka)$)B
+	* src/genstub (process-setter): fixed typo (Pointed by Michal Maru≈°ka)
 
 2004-03-13  Shiro Kawai  <shiro@acm.org>
 
@@ -400,7 +400,7 @@
 
 	* lib/srfi-13/searcher.scm (string-contains, string-contains-ci):
 	  Return value was wrong when start1 is given (patch from 
-	  Grzegorz Chrupa-B≥a).$)B
+	  Grzegorz Chrupa≈Ça).
 
 2004-03-04  Shiro Kawai  <shiro@acm.org>
 
@@ -439,7 +439,7 @@
 	* lib/srfi-13/revapp.scm (string-concatenate-reverse): optional arg
 	  handling was missing.
 	* lib/www/cgi.scm (cgi-get-query): fixed a funky behavior when used
-	  interactively (Patch from Grzegorz Chrupa-B≥a).$)B
+	  interactively (Patch from Grzegorz Chrupa≈Ça).
 	* lib/srfi-1/set.scm (lset-xor, lset-xor!): fixed bad call
 	  of lset-difference (pointed out by Ueyama Rui).
 
@@ -960,7 +960,7 @@
 	  no longer need them.
 
 	* lib/srfi-1.scm : added missing autoload fro list=  (Patch from
-	  Michal Maru-Bπka.$)B
+	  Michal Maru≈°ka).
 
 2003-11-09  Shiro Kawai  <shiro@acm.org>
 
@@ -1117,7 +1117,7 @@
 	  instruction vectorization.   Not yet finalized.
 
 	* lib/dbm.scm (dbm-open): fixed a bug when a custom accessor
-	  specification is given (Patch from Grzegorz Chrupala).
+	  specification is given (Patch from Grzegorz Chrupa≈Ça).
 
 2003-10-08  Shiro Kawai  <shiro@acm.org>
 
@@ -1220,7 +1220,7 @@
 	  to (null-list? ...).  The latter change makes the code check an
 	  improper list more strictly, and the original srfi-1 reference
 	  implmentation uses null-list? consistently, but "not pair?" sneaked
-	  in when I tuned some procedures.  (Patch from Grzegorz Chrupala)
+	  in when I tuned some procedures.  (Patch from Grzegorz Chrupa≈Ça)
 
 2003-09-18  Shiro Kawai  <shiro@acm.org>
 
@@ -1724,7 +1724,7 @@
 	  src/core.c : snapshot to make things work on cygwin (not quite, yet).
 
 	* doc/gauche-ref.texi : fix in srfi-37 description
-	  (patch from Grzegorz Chrupala).
+	  (patch from Grzegorz Chrupa≈Ça).
 
 	* Makefile.am's, Makefile.in's, ext/Makefile.ext.in, DIST:
 	  Removed automake dependency.
@@ -1863,7 +1863,7 @@
 2003-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/parse.scm (next-token) : fixed error message handling
-	  (Patch from Grzegorz Chrupala).
+	  (Patch from Grzegorz Chrupa≈Ça).
 
 2003-02-09  Shiro Kawai  <shiro@acm.org>
 
@@ -5583,3 +5583,6 @@
 
 	* internal release 0.0.1
 
+;; Local Variables:
+;; coding: utf-8
+;; End:
