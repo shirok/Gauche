@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.406 2003-06-06 11:59:13 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.407 2003-06-09 04:29:41 nobsun Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18445,38 +18445,68 @@ a very simple http client.
 @subsection Low-level socket interface
 @c NODE 低レベルソケットインタフェース
 
+@c EN
 These functions provide APIs similar to the system calls.
 Those who are familiar to programming with socket APIs will
 find these functions useful since you can have more detailed control over
 the sockets.
+@c JP
+ここにある関数群はシステムコールと類似した API を提供します。
+ソケット API プログラミングに慣れていれば、ソケットをより細かく
+制御できるので、役に立つでしょう。
+@c COMMON
 
 @defun make-socket domain type &optional protocol
+@c EN
 Returns a socket with specified parameters.
+@c JP
+パラメータで指定したソケットを返します。
+@c COMMON
 @end defun
 
 @defvar PF_UNIX
 @defvarx PF_INET
+@c EN
 These variables are bound to @code{PF_UNIX} and @code{PF_INET}.
+@c JP
+これらの変数はそれぞれ、@code{PF_UNIX}、@code{PF_INET}
+に束縛されています。
+@c COMMON
 @end defvar
 
 @defvar AF_UNIX
 @defvarx AF_INET
+@c EN
 These variables are bound to @code{AF_UNIX} and @code{AF_INET}.
+@c JP
+これらの変数はそれぞれ、@code{AF_UNIX}、@code{AF_INET}
+に束縛されています。
+@c COMMON
 @end defvar
 
 @defvar SOCK_STREAM
 @defvarx SOCK_DGRAM
 @defvarx SOCK_RAW
+@c EN
 These variables are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
 and @code{SOCK_RAW}.
+@c JP
+これらの変数はそれぞれ、@code{SOCK_STREAM}、@code{SOCK_DGRAM}、
+@code{SOCK_RAW} に束縛されています。
+@c COMMON
 @end defvar
 
 @defun socket-fd socket
+@c EN
 Returns an integer system file descriptor of the underlying socket.
+@c JP
+ソケットのもつ整数のシステムファイルディスクリプタを返します。
+@c COMMON
 @end defun
 
 
 @defun socket-status socket
+@c EN
 Returns a internal status of @var{socket}, by one of the following
 symbols.
 @multitable {aaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
@@ -18493,9 +18523,27 @@ symbols.
 @item closed
 @tab The socket is closed by @code{socket-close}.
 @end multitable
+@c JP
+@var{socket} の内部状態を、以下のシンボルのどれかで返します。
+@multitable {aaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item none
+@tab 生成直後
+@item bound
+@tab @code{socket-bind} によって、あるアドレスに束縛されている
+@item listening
+@tab @code{socket-listen} によって、接続をリッスンしている
+@item connected 
+@tab @code{socket-connect} あるいは @code{socket-accept} によって接続されている
+@item shutdown
+@tab @code{socket-shutdown} によってシャットダウンされた
+@item closed
+@tab @code{socket-close} によってクローズされた
+@end multitable
+@c COMMON
 @end defun
 
 @defun socket-bind socket address
+@c EN
 Binds @var{socket} to the local network address @var{address}.
 It is usually used to associate specific address to the server port.
 If binding failed, an error is signalled (most likely the address is
@@ -18504,15 +18552,32 @@ already in use).
 For the inet domain address, you can pass @var{address} with port=0;
 the system assigns the port number and sets the actual address to
 the @code{address} slot of @var{socket}.
+@c JP
+@var{socket} をローカルネットワークアドレス @{address} に束縛します。
+通常は、特定のアドレスをこのサーバのポートに結びつけるのに用います。
+もし、束縛が失敗したら(多くの場合、そのアドレスが既に使用されている)、
+エラーシグナルが発生します。
+
+INET ドメインアドレスの場合には port=0 とした @var{address} を
+渡せます。システムがポート番号を割当て、@var{socket} の
+@code{address} スロットに実際のアドレスをセットします。
+@c COMMON
 @end defun
 
 @defun socket-listen socket backlog
+@c EN
 Listens @var{socket}.  The socket must be already bound to some
 address.  @var{backlog} specifies maximum number of connection
 requests to be queued.
+@c JP
+@var{socket} をリッスンします。ソケットは既になんらかのアドレスに
+束縛されていなければなりません。@var{backlog} はキューに入れる
+接続要求の最大数を指定します。
+@c COMMON
 @end defun
 
 @defun socket-accept socket
+@c EN
 Accepts a connection request coming to @var{socket}.
 Returns a new socket that is connected to the remote entity.
 The original @var{socket} keeps waiting for further connections.
@@ -18520,14 +18585,30 @@ If there's no connection requests, this call waits for one to come.
 
 You can use @code{sys-select} to check if there's a pending connection
 request.
+@c JP
+@var{socket}に来た接続要求をアクセプトします。リモートエンティティへ
+接続している新しいソケットを返します。元の @var{socket} は引き続き
+次の接続要求を待ちます。接続要求がないとき、これの呼出しは要求が
+一つ来るまで待ちます。
+
+接続要求をペンディングしているかどうかをチェックするのに
+@code{sys-select}が使えます。
+@c COMMON
 @end defun
 
 @defun socket-connect socket address
+@c EN
 Connects @var{socket} to the remote address @var{address}.
 This is the way for a client socket to connect to the remote entity.
+@c JP
+@var{socket} をリモートアドレス @var{address} に接続します。
+これは、クライアントソケットをリモートエンティティに接続するための
+方法です。
+@c COMMON
 @end defun
 
 @defun socket-shutdown socket how
+@c EN
 Shuts down connection of @var{socket}.  If @var{how} is 0, the receive
 channel of @var{socket} is disallowed.  If @var{how} is 1, the send
 channel of @var{socket} is disallowed.  If @var{how} is 2, both
@@ -18540,13 +18621,34 @@ expects EOF before sending something back to you.
 
 Other than this kind of special cases, you don't usually need to
 call @code{socket-shutdown} explicitly; @code{socket-close} calls it anyway.
+@c JP
+@var{socket} の接続をシャットダウンします。@var{how} が0なら、
+@var{socket} の受信チャネルが不許可となります。@var{how} が1なら、
+@var{socket} の送信チャネルが不許可となります。@var{how} が2なら、
+@var{socket} の送受信チャネルの両方が不許可となります。
+接続していないソケットに対して、この手続きを呼ぶとエラーになります。
+
+ソケットの送信チャネルをシャットダウンすると、リモート側の受信チャネル
+に EOF があらわれます。これは、リモート側が何かを送り返す前に EOF
+を受けとることを期待している場合、便利です。
+
+この特殊な場合を除けば、通常、@code{socket-shutdown} が明示的に必要に
+なることはありません。どのみち、@code{socket-close} がこの手続きを
+呼びます。
+@c COMMON
 @end defun
 
+@c EN
 Further control over sockets and protocol layers is possible
 by getsockopt/setsockopt interface, as described below.
+@c JP
+以下に解説する getsockopt/setsockopt インタフェースを使えば、
+ソケットやプロトコルをさらに制御することができます。
+@c COMMON
 
 @defun socket-setsockopt socket level option value
 @defunx socket-getsockopt socket level option rsize
+@c EN
 These are the interface to setsockopt() and getsockopt() calls.
 The interface is a bit clumsy, in order to allow full access to
 those low-level calls.
@@ -18574,58 +18676,144 @@ Note about the name: I tempted to name these function socket-@{set|get@}opt
 or socket-@{set|get@}-option,
 but I rather took the naming consistency.  Hence duplicated "sock"s.
 
+@c JP
+これらは、setsockopt() および getsockopt() を呼ぶための
+インタフェースです。このインタフェースが少々ぎこちないのは、
+低レベルの呼び出しすべてにアクセスできるようにしているためです。
+
+@var{socket} および @var{option} は、処理する対象の
+プロトコルスタックのレベルおよびオプションを指定する
+正確な整数です。以下にリストアップしたシステム定数に束縛された
+変数があります。
+
+ソケットオプションを設定するには、@var{value} に正確な整数を渡す方法と
+文字列を渡す方法があります。それが、整数なら、その値は、C の
+@code{int} として setsockopt (2) に渡されます。文字列なら、バイト列が
+そのまま渡されます。どの型の値が要求されるかは、オプションに依存します。
+Gauche 側では渡された値が setsockopt (2) で期待された型であるかどうかは
+知ることができません。正しい値が渡されるかどうかはプログラマの責任です。
+
+ソケットオプションを知るには、結果として期待する最大の長さを @var{rsize}
+を使って教える必要があります。Gauche 側は返されるそれぞれのオプションの
+合計を知らないからです。
+@code{socket-getsockopt} はオプションの値をバイト列として返します。
+オプションの値が整数だと、わかっているなら @var{rsize} に0を渡すこと
+ができます。その場合 @{socket-getsockopt} は正確な整数として値を返します。
+
+関数名に関する註: これらの関数の名前を socket-@{set|get@}opt あるいは
+socket-@{set|get@}-option にしようかとも思いましたが、結局、命名の
+一貫性をとることにしました。それで、"sock" が重複しています。
+@c COMMON
+
 @end defun
 
+@c EN
 The following predefined variables are provided.
 Note that some of them are not available on all platforms.
 See manpages @code{socket(7)}, @code{tcp(7)} or @code{ip(7)} of
 your system to find out exact specification of those values.
 
 For ``level'' argument:
+@c JP
+以下のような定義済みの変数が用意されています。
+すべてのプラットフォームで利用できるわけではないものも含まれている
+ことに注意してください。
+これらの値の正確な使用は、お使いのシステムの man ページ @code{socket(7)}、
+@code{tcp(7)} あるいは @code{ip(7)} を参照してください。
+
+``level'' 引数
+@c COMMON
 @defvar SOL_SOCKET
 @defvarx SOL_TCP
 @defvarx SOL_IP
+@c EN
 These variables are bound to @code{SOL_SOCKET}, @code{SOL_TCP} and
 @code{SOL_IP}, respectively.
+@c JP
+これらの変数は、それぞれ、@code{SOL_SOCKET}、@code{SOL_TCP} および
+@code{SOL_IP} に束縛されています。
+@c COMMON
 @end defvar
 
+@c EN
 For ``option'' argument:
+@c JP
+``option'' 引数
+@c COMMON
 @defvar SO_KEEPALIVE
+@c EN
 Expects integer value.  If it is not zero, enables sending  of
 keep-alive messages on connection-oriented sockets.
+@c JP
+整数が期待されています。0でなければ、コネクション指向ソケットに
+キープアライブ(keep-alive)メッセージを送ることができます。
+@c COMMON
 @end defvar
 
 @defvar SO_OOBINLINE
+@c EN
 Expects integer value.  If it is not zero, out-of-band data is
 directly placed into the receive data stream.  Otherwise
 out-of-band  data  is  only passed when the
 MSG_OOB flag is set during receiving.
+@c JP
+整数が期待されています。0でなければ、帯域外データは直接
+受信データストリームに乗ります。さもなければ、帯域外データは、受信中に
+MSG_OOBフラグが設定されてたときにのみ渡されます。
+@c COMMON
 @end defvar
 
 @defvar SO_REUSEADDR
+@c EN
 Expects integer value.  If it is not zero, @code{socket-bind}
 allows to reuse local addresses, unless an active listening
 socket bound to the address.
+@c JP
+整数が期待されています。0ではない場合、@code{socket-bind}は、
+ローカル・アドレスが、アクティブソケットにリッスンされていない
+場合にかぎり、そのアドレスを再利用することを許可されます。
+
+@c COMMON
 @end defvar
 
 @defvar SO_TYPE
+@c EN
 Gets the socket type as an integer (like @code{sock_stream}).
 Can be only used with @code{socket-getsockopt}.
+@c JP
+ソケットの型(@code{sock_stream}など)を整数として取得します。
+@code{socket-getsockopt}でのみ使用可能です。
+@c COMMON
 @end defvar
 
 @defvar SO_BROADCAST
+@c EN
 Expects integer value.  If it is not zero, datagram sockets
 are allowed to send/receive broadcast packets.
+@c JP
+整数が期待されています。0でなければ、データグラムソケットは
+ブロードキャストパケットを送受信することを許されます。
+@c COMMON
 @end defvar
 
 @defvar SO_PRIORITY
+@c EN
 Expects integer value, specifying the protocol-defined priority
 for all packets to be sent on this socket.
+@c JP
+整数が期待されています。このソケットで送信されるすべてのパケットに
+ついてプロトコル定義の優先順位を指定します。
+@c COMMON
 @end defvar
 
 @defvar SO_ERROR
+@c EN
 Gets and clears the pending socket error as an integer.
 Can be only used with @code{socket-getsockopt}.
+@c JP
+保留状態のソケットエラー(整数値)を取得し、それをクリアします。
+@code{socket-getsockopt}でのみ使用可能です。
+@c COMMON
 @end defvar
 
 @node Netdb interface,  , Low-level socket interface, gauche.net - Networking
