@@ -55,4 +55,25 @@
            (sys-putenv "ZZGGGBBB" "foo")
            (sys-getenv "ZZGGGBBB")))))
 
+;; setenv
+
+(test "sys-setenv" "foo"
+      (lambda ()
+        (with-error-handler
+            (lambda (e) "foo") ;need to catch if system doesn't have setenv().
+          (lambda ()
+            (sys-setenv "ZZGGGBBB" "foo" #t)
+            (sys-getenv "ZZGGGBBB")))))
+
+;; unsetenv
+
+(test "sys-unsetenv" #f
+      (lambda ()
+        (with-error-handler
+            (lambda (e) #f) ;need to catch if system doesn't have unsetenv().
+          (lambda ()
+            (sys-setenv "ZZGGGBBB" "foo" #t)
+            (sys-unsetenv "ZZGGGBBB")
+            (sys-getenv "ZZGGGBBB")))))
+
 (test-end)

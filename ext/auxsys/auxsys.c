@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: auxsys.c,v 1.2 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: auxsys.c,v 1.3 2003-10-06 12:18:50 shirok Exp $
  */
 
 #include <gauche.h>
 #include <gauche/extend.h>
+#include "auxsysconf.h"
 
 extern void Scm_Init_auxsyslib(ScmModule *mod);
 

@@ -30,10 +30,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.15 2003-07-05 03:29:10 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.16 2003-10-06 12:18:50 shirok Exp $
 ;;;
 
 "
+#include \"auxsysconf.h\"
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -249,6 +250,16 @@
  putenv(buf);
  SCM_RETURN(SCM_UNDEFINED);")
 )
+
+(if "defined HAVE_SETENV"
+  (define-cproc %sys-setenv (name::<string> value::<string> overwrite::<boolean>)
+    "  setenv(Scm_GetStringConst(name), Scm_GetStringConst(value), overwrite);
+       SCM_RETURN(SCM_UNDEFINED);"))
+
+(if "defined HAVE_UNSETENV"
+  (define-cproc %sys-unsetenv (name::<string>)
+    "  unsetenv(Scm_GetStringConst(name));
+       SCM_RETURN(SCM_UNDEFINED);"))
 
 ;; ctermid
 (define-cproc sys-ctermid ()

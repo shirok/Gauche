@@ -1,5 +1,11 @@
 2003-10-05  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, ext/auxsys/auxsys.scm, ext/auxsys/auxsyslib.stub :
+	  added sys-setenv and sys-unsetenv (Patch from Kimura Fuyuki).
+
+	* src/gauche/config.h.in, ext/auxsys/auxsysconf.h.in : moved
+	  #defines that only used in auxsys into auxsysconf.h.in.
+	
 	* lib/util/lcs.scm (lcs-with-positions) : fixed an error in
 	  the edge case, when both sequences are empty.
 

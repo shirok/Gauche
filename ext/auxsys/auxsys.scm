@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.7 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.8 2003-10-06 12:18:50 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -38,7 +38,8 @@
           sys-abort sys-mkfifo
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
-          sys-gethostname sys-getdomainname sys-putenv
+          sys-gethostname sys-getdomainname
+          sys-putenv sys-setenv sys-unsetenv
           sys-gettimeofday sys-chown sys-utime
           sys-getgroups sys-getlogin sys-localeconv)
   )
@@ -50,35 +51,45 @@
 
 (define sys-gethostname
   (if (symbol-bound? '%sys-gethostname)
-      %sys-gethostname
-      (lambda () (cadr (sys-uname)))))  ;utsname.nodename
+    %sys-gethostname
+    (lambda () (cadr (sys-uname)))))  ;utsname.nodename
 
 (define sys-getdomainname
   (if (symbol-bound? '%sys-getdomainname)
-      %sys-getdomainname
-      (lambda () "localdomain")))
+    %sys-getdomainname
+    (lambda () "localdomain")))
 
 (define sys-putenv
   (if (symbol-bound? '%sys-putenv)
-      %sys-putenv
-      (lambda (var val) (error "sys-putenv not supported on this platform"))))
+    %sys-putenv
+    (lambda (var val) (error "sys-putenv not supported on this platform"))))
+
+(define sys-setenv
+  (if (symbol-bound? '%sys-setenv)
+    %sys-setenv
+    (lambda (var val val) (error "sys-setenv not supported on this platform"))))
+
+(define sys-unsetenv
+  (if (symbol-bound? '%sys-unsetenv)
+    %sys-unsetenv
+    (lambda (var) (error "sys-unsetenv not supported on this platform"))))
 
 (define sys-setpgrp
   (if (symbol-bound? '%sys-setpgrp)
-      %sys-setpgrp
-      (lambda () (sys-setpgid 0 0))))
+    %sys-setpgrp
+    (lambda () (sys-setpgid 0 0))))
 
 (define sys-getpgid
   (if (symbol-bound? '%sys-getpgid)
-      %sys-getpgid
-      (lambda (pid)
-        (if (zero? pid)
-            (sys-getpgrp)
-            (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
+    %sys-getpgid
+    (lambda (pid)
+      (if (zero? pid)
+        (sys-getpgrp)
+        (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
 
 (define sys-gettimeofday
   (if (symbol-bound? '%sys-gettimeofday)
-      %sys-gettimeofday
-      (lambda () (values (sys-time) 0))))
+    %sys-gettimeofday
+    (lambda () (values (sys-time) 0))))
 
 (provide "gauche/auxsys")

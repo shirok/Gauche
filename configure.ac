@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.13 2003-10-05 09:34:35 shirok Exp $
+dnl $Id: configure.ac,v 1.14 2003-10-06 12:18:43 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.2, shiro@acm.org)
-AC_REVISION($Revision: 1.13 $)
+AC_REVISION($Revision: 1.14 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -276,7 +276,7 @@ AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(isnan isinf trunc rint)
 AC_CHECK_FUNCS(symlink readlink mkstemp gettimeofday nanosleep usleep)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
-AC_CHECK_FUNCS(putenv setpgrp getpgid)
+AC_CHECK_FUNCS(putenv setenv unsetenv getpgid)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)
 AC_CHECK_FUNCS(gettimeofday)
 AC_CHECK_FUNCS(syslog setlogmask)
@@ -582,7 +582,7 @@ AC_OUTPUT(Makefile
           lib/Makefile lib/slib.scm
           doc/gosh.1 doc/gauche-config.1 doc/Makefile
           ext/Makefile ext/Makefile.ext
-          ext/auxsys/Makefile
+          ext/auxsys/Makefile ext/auxsys/auxsysconf.h
           ext/charconv/Makefile ext/charconv/charconv.h
           ext/dbm/Makefile
           ext/digest/Makefile
