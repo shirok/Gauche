@@ -1,5 +1,8 @@
 2003-04-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/genstub (define-cclass): fixed a bug that #if directive was
+	  ineffective for define-cclass.
+
 	* src/*.c: avoid having uninitialized variables.  On some platforms,
 	  gc doesn't scan bss area of DSO modules, which causes a problem
 	  when libgauche is used as a DSO.   (Note that in dlopen-ed
