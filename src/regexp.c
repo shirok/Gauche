@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.6 2001-04-15 12:37:02 shiro Exp $
+ *  $Id: regexp.c,v 1.7 2001-04-15 21:46:20 shiro Exp $
  */
 
 #include <setjmp.h>
@@ -24,8 +24,6 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
 #ifndef CHAR_MAX
 #define CHAR_MAX 256
 #endif
-
-/* THIS CODE IS EXPERIMENTAL, AND NOT WORKING YET. */
 
 /* I don't like to reinvent wheels, so I looked for a regexp implementation
  * that can handle multibyte encodings and not bound to Unicode.
@@ -241,7 +239,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
         case '+':  /* x+ === xx* */
             elt = Scm_CopyList(last_item(ctx, head, tail, grpstack, ch));
             SCM_APPEND1(head, tail, Scm_Cons(sym_rep, elt));
-            insncount++;
+            insncount += 4;
             continue;
         case '?':  /* x? === (x|) */
             elt = last_item(ctx, head, tail, grpstack, ch);
@@ -267,6 +265,13 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             SCM_APPEND1(head, tail, re_compile_charset(rx, ctx));
             insncount++;
             continue;
+        case '\\':
+            /* TODO: handle special excape sequences */
+            if (ctx->rxlen <= 0)
+                Scm_Error("stray backslash at the end of pattern: %S\n",
+                          ctx->pattern);
+            ch = fetch_pattern(ctx);
+            /* FALLTHROUGH */
         default:
             insncount += SCM_CHAR_NBYTES(ch);
             SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
@@ -344,9 +349,11 @@ static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
 static void re_compile_setup_charsets(ScmRegexp *rx, struct comp_ctx *ctx)
 {
     ScmObj cp;
-    rx->numSets = 0;
-    SCM_FOR_EACH(cp, Scm_Reverse(ctx->sets)) {
-        rx->sets[rx->numSets++] = SCM_CHARSET(SCM_CAR(cp));
+    int i;
+    rx->numSets = Scm_Length(ctx->sets);
+    rx->sets = SCM_NEW2(ScmCharSet**, sizeof(ScmCharSet*)*rx->numSets);
+    for (i=0, cp = Scm_Reverse(ctx->sets); !SCM_NULLP(cp); cp = SCM_CDR(cp)) {
+        rx->sets[i++] = SCM_CHARSET(SCM_CAR(cp));
     }
 }
 
@@ -558,6 +565,10 @@ ScmObj Scm_RegComp(ScmString *pattern)
     ScmRegexp *rx = make_regexp();
     ScmObj compiled;
     struct comp_ctx cctx;
+
+    if (SCM_STRING_LENGTH(pattern) < 0)
+        Scm_Error("incomplete string is not allowed: %S", pattern);
+
     cctx.pattern = pattern;
     cctx.rxstr = SCM_STRING_START(pattern);
     cctx.rxlen = SCM_STRING_LENGTH(pattern);
@@ -692,27 +703,27 @@ static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
     rm->numMatches = rx->numGroups;
     rm->matches = SCM_NEW2(struct ScmRegMatchSub*,
                            sizeof(struct ScmRegMatchSub)*rx->numGroups);
-    rm->input = orig;
+    rm->input = SCM_STRING_START(orig);
     for (i=0; i<rx->numGroups; i++) {
-        rm->matches[i].index = -1;
-        rm->matches[i].len = -1;
-        rm->matches[i].start = NULL;
-        rm->matches[i].end = NULL;
+        rm->matches[i].start = -1;
+        rm->matches[i].length = -1;
+        rm->matches[i].startp = NULL;
+        rm->matches[i].endp = NULL;
     }
 
-    rm->matches[0].end = ctx->last;
+    rm->matches[0].endp = ctx->last;
     /* scan through match result */
     for (ml = ctx->matches; ml; ml = ml->next) {
         if (ml->grpnum >= 0) {
-            rm->matches[ml->grpnum].start = ml->ptr;
+            rm->matches[ml->grpnum].startp = ml->ptr;
         } else {
-            rm->matches[-ml->grpnum].end = ml->ptr;
+            rm->matches[-ml->grpnum].endp = ml->ptr;
         }
     }
 
     /* sanity check (not necessary, but for now...) */
     for (i=0; i<rx->numGroups; i++) {
-        if (!rm->matches[i].start || !rm->matches[i].end) {
+        if (!rm->matches[i].startp || !rm->matches[i].endp) {
             Scm_Panic("discrepancy in regexp match!");
         }
     }
@@ -743,8 +754,10 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
 {
     const char *start = SCM_STRING_START(str);
     const char *end = start + SCM_STRING_SIZE(str);
-    /* TODO: prescreening */
 
+    if (SCM_STRING_LENGTH(str) < 0)
+        Scm_Error("incomplete string is not allowed: %S", str);
+    /* TODO: prescreening */
     for (; start < end - rx->mustMatchLen; start++) {
         ScmObj r = re_exec(rx, str, start, end);
         if (!SCM_FALSEP(r)) return r;
@@ -756,6 +769,52 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
  * Retrieving matches
  */
 
+/* TODO: MT Warning: these retrival functions change match object's     
+ * internal state.
+ */
+ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, int i)
+{
+    struct ScmRegMatchSub *sub;
+    if (i < 0 || i >= rm->numMatches)
+        Scm_Error("submatch index out of range: %d", i);
+    sub = &rm->matches[i];
+    if (sub->length >= 0) {
+        return Scm_MakeString(sub->startp, sub->endp - sub->startp,
+                              sub->length);
+    } else {
+        ScmObj s = Scm_MakeString(sub->startp, sub->endp - sub->startp, -1);
+        sub->length = SCM_STRING_LENGTH(s);
+        return s;
+    }
+}
+
+ScmObj Scm_RegMatchStart(ScmRegMatch *rm, int i)
+{
+    struct ScmRegMatchSub *sub;
+    if (i < 0 || i >= rm->numMatches)
+        Scm_Error("submatch index out of range: %d", i);
+    sub = &rm->matches[i];
+    if (sub->start < 0) {
+        sub->start = Scm_MBLen(rm->input, sub->startp);
+    }
+    return Scm_MakeInteger(sub->start);
+}
+
+ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, int i)
+{
+    struct ScmRegMatchSub *sub;
+    if (i < 0 || i >= rm->numMatches)
+        Scm_Error("submatch index out of range: %d", i);
+    sub = &rm->matches[i];
+    if (sub->start < 0) {
+        sub->start = Scm_MBLen(rm->input, sub->startp);
+    }
+    if (sub->length < 0) {
+        sub->length = Scm_MBLen(sub->startp, sub->endp);
+    }
+    return Scm_MakeInteger(sub->start + sub->length);
+}
+
 /* for debug */
 void Scm_RegMatchDump(ScmRegMatch *rm)
 {
@@ -766,11 +825,12 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
     Scm_Printf(SCM_CUROUT, "  numMatches = %d\n", rm->numMatches);
     Scm_Printf(SCM_CUROUT, "  input = %S\n", rm->input);
     for (i=0; i<rm->numMatches; i++) {
+        struct ScmRegMatchSub *sub = &rm->matches[i];
         Scm_Printf(SCM_CUROUT, "[%3d-%3d]  %S\n",
-                   rm->matches[i].start - SCM_STRING_START(rm->input),
-                   rm->matches[i].end - SCM_STRING_START(rm->input),
-                   Scm_MakeStringConst(rm->matches[i].start,
-                                       rm->matches[i].end - rm->matches[i].start,
+                   sub->startp - rm->input,
+                   sub->endp - rm->input,
+                   Scm_MakeStringConst(sub->startp,
+                                       sub->endp - sub->startp,
                                        -1));
     }
 }
