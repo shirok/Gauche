@@ -1,7 +1,7 @@
 dnl
 dnl configure termios extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.7 2002-07-18 10:52:22 shirok Exp $
+dnl $Id: configure.in,v 1.8 2002-07-19 02:20:56 shirok Exp $
 AC_INIT(termios.c)
 AC_CONFIG_HEADER(termconfig.h)
 AC_CANONICAL_SYSTEM
@@ -13,7 +13,6 @@ AC_GAUCHE_INSTALL_TYPE(sys)
 # Get compiler parameters which Gauche has been compiled with.
 AC_GAUCHE_CC
 AC_GAUCHE_FLAGS
-AC_GAUCHE_OPTFLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL

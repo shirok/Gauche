@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.charconv extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.16 2002-07-18 10:52:21 shirok Exp $
+dnl $Id: configure.in,v 1.17 2002-07-19 02:20:56 shirok Exp $
 AC_INIT(charconv.c)
 AC_CANONICAL_SYSTEM
 AC_GAUCHE_INIT_EXT
@@ -25,7 +25,6 @@ LIBS="$LIBS $iconv_lib"
 # Get compiler parameters which Gauche has been compiled with.
 AC_GAUCHE_CC
 AC_GAUCHE_FLAGS
-AC_GAUCHE_OPTFLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL
