@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.19 2001-10-16 20:35:00 shirok Exp $
+ *  $Id: write.c,v 1.20 2001-11-20 08:18:19 shirok Exp $
  */
 
 #include <stdio.h>
@@ -107,6 +107,25 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     } else {
         if (SCM_PAIRP(obj)) {
             ScmObj p;
+            /* special case for quote etc.*/
+            if (SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj))) {
+                int special = TRUE;
+                if (SCM_CAR(obj) == SCM_SYM_QUOTE) {
+                    SCM_PUTC('\'', out);
+                } else if (SCM_CAR(obj) == SCM_SYM_QUASIQUOTE) {
+                    SCM_PUTC('`', out);
+                } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE) {
+                    SCM_PUTC(',', out);
+                } else if (SCM_CAR(obj) == SCM_SYM_UNQUOTE_SPLICING) {
+                    SCM_PUTZ(",@", -1, out);
+                } else {
+                    special = FALSE;
+                }
+                if (special) {
+                    write_internal(SCM_CADR(obj), out, ctx);
+                    return;
+                }
+            }
             SCM_PUTC('(', out);
             write_internal(SCM_CAR(obj), out, ctx);
             SCM_FOR_EACH(p, SCM_CDR(obj)) {
