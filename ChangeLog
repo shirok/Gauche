@@ -1,5 +1,7 @@
 2002-10-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procedure.scm (arity-at-least-value): fixed a bug
+	  (Thanks to Kimura Fuyuki).
 	* ext/auxsys/auxsyslib.stub (sys-times): fixed a bug that caused
 	  sys-times fails on some platforms (Thanks to Kimura Fuyuki).
 
