@@ -11,7 +11,7 @@ while [ $# -gt 0 ]; do
     gen) gen=yes; shift ;;
     doc) doc=yes; shift ;;
     docs) doc=yes; docs=yes; shift ;;
-    tgz) gen=yes; tgz=yes; shift ;;
+    tgz) tgz=yes; shift ;;
     test) test=yes; shift ;;
     testcode) testcode=yes; shift ;;
     testclean) testclean=yes; shift ;;
@@ -27,16 +27,18 @@ fi
 
 if [ "$tgz" = "yes" ]; then
   if [ -f Makefile ]; then make maintainer-clean; fi
-  ./configure --enable-threads=pthreads -C
-  (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
-  (cd ext/charconv/; make GOSH=gosh eucj2ucs.c)
-  (cd ext/charconv/; make GOSH=gosh guess_tab.c)
-  (cd ext/charconv/data; make)
-  (cd doc; make texi)
-  make distclean
+  autoconf
+  (cd gc; autoconf)
+  ./configure --enable-threads=pthreads -C || exit 1
+  (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done) || exit 1
+  (cd ext/charconv/; make GOSH=gosh eucj2ucs.c) || exit 1
+  (cd ext/charconv/; make GOSH=gosh guess_tab.c) || exit 1
+  (cd ext/charconv/data; make GOSH=gosh) || exit 1
+  (cd doc; make GOSH=gosh texi) || exit 1
+  make distclean || exit 1
 
+  if [ ! -f VERSION ]; then echo "No VERSION; something wrong?"; exit 1; fi
   VERSION=`cat VERSION`
-  if [ -z "VERSION" ]; then echo "No VERSION; something wrong?"; exit 1; fi
   rm -rf ../Gauche-$VERSION
 
   rm -f DIST_EXCLUDE_X
