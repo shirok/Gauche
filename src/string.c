@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.32 2001-05-01 10:16:30 shirok Exp $
+ *  $Id: string.c,v 1.33 2001-05-03 10:29:17 shirok Exp $
  */
 
 #include <stdio.h>
@@ -497,11 +497,12 @@ ScmObj Scm_StringSubstituteCstr(ScmString *x, int start, int end,
     return SCM_OBJ(x);
 }
 
-ScmObj Scm_StringSubstitute(ScmString *x, int start, int end, ScmString *y)
+ScmObj Scm_StringSubstitute(ScmString *x, int start, ScmString *y)
 {
     int sizey = SCM_STRING_SIZE(y), leny = SCM_STRING_LENGTH(y);
 
-    return Scm_StringSubstituteCstr(x, start, end, y->start, sizey, leny);
+    return Scm_StringSubstituteCstr(x, start, start + (leny < 0 ? sizey : leny),
+                                    y->start, sizey, leny);
 }
 
 ScmObj Scm_StringSet(ScmString *x, int k, ScmChar ch)
