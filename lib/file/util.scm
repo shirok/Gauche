@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.10 2002-05-10 21:02:42 shirok Exp $
+;;;  $Id: util.scm,v 1.11 2002-05-15 05:25:43 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -26,7 +26,6 @@
   (use srfi-11)
   (use srfi-13)
   (use gauche.let-opt)
-  (use gauche.time)
   (export current-directory directory-list directory-list2 directory-fold
           make-directory* create-directory* remove-directory* delete-directory*
           build-path resolve-path expand-path simplify-path
@@ -319,9 +318,9 @@
        (define-method name (a (b <string>))
          (cmp a (sys-stat b)))
        (define-method name ((a <time>) b)
-         (cmp (time-second a) b))
+         (cmp (slot-ref a 'second) b))
        (define-method name (a  (b <time>))
-         (cmp b (time-second b)))
+         (cmp a (slot-ref b 'second)))
        ))))
 
 (define-time-comparer file-mtime=?  'mtime =)
