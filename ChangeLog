@@ -1,3 +1,15 @@
+2004-03-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h, src/vm.c and src/regexp.c: make sigsetjmp not
+	  to save signal mask.   Those sigsetjmps were introduced around
+	  release 0.5 when I implemented the signal stuff.  But I cannot
+	  recall why I needed to save a signal mask. (The initial version
+	  of Scm_SigCheck did use SCM_UNWIND_PROTECT while it altered
+	  signal mask, so it needed some handling.  It is irrelevant for
+	  the current version, however).  Since sigsetjmp(_, TRUE) issues
+	  a system call every time while sigsetjmp(_, FALSE) doesn't,
+	  the latter has significant performance advantage.
+
 2004-02-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (skipws): fixed a bug that didn't increment line count

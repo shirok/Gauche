@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.88 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: vm.h,v 1.89 2004-03-05 05:26:09 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -383,7 +383,7 @@ SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
        cstack.prev = Scm_VM()->cstack;          \
        cstack.cont = NULL;                      \
        Scm_VM()->cstack = &cstack;              \
-       if (sigsetjmp(cstack.jbuf, TRUE) == 0) {
+       if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
            
 #define SCM_WHEN_ERROR                          \
        } else {

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.48 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: regexp.c,v 1.49 2004-03-05 05:26:08 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1870,7 +1870,7 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
     ctx.matches = NULL;
     ctx.begin_stack = (void*)&ctx;
 
-    if (sigsetjmp(ctx.cont, TRUE) == 0) {
+    if (sigsetjmp(ctx.cont, FALSE) == 0) {
         rex_rec(ctx.codehead, start, &ctx, NULL);
         return SCM_FALSE;
     } else {
