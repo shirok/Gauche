@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.14 2001-03-05 04:23:49 shiro Exp $
+ *  $Id: list.c,v 1.15 2001-03-13 08:36:05 shiro Exp $
  */
 
 #include "gauche.h"
@@ -515,6 +515,8 @@ ScmObj Scm_Union(ScmObj list1, ScmObj list2)
 
 /* Return intersection of two lists. */
 
+
+#if 0                           /* I'm not sure it needs to be here. */
 /*
  * Topological sort
  *
@@ -575,6 +577,7 @@ ScmObj Scm_TopologicalSort(ScmObj lists)
 
     return result;
 }
+#endif /* #if 0 for topologicalsort */
 
 /*
  * Monotonic Merge
