@@ -1,3 +1,11 @@
+2002-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMDefaultExceptionHandler): fix the problem that
+	  user-defined error handler can't get a proper stack trace.
+	* gc/configure.in: enable DONT_ADD_BYTE_AT_END option.  Otherwise,
+	  pair attribute field of cons wasn't scanned properly, losing
+	  source-code information after GC.
+
 2002-07-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub : obsoleted 'assert' form, replacing it for bigloo-like

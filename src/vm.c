@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.164 2002-07-17 19:16:48 shirok Exp $
+ *  $Id: vm.c,v 1.165 2002-07-29 18:50:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1843,7 +1843,6 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         int numVals, i;
 
         vm->escapePoint = ep->prev;
-        vm->cont = ep->cont;
 
         /* Call the error handler and save the results. */
         result = Scm_Apply(ep->ehandler, SCM_LIST1(e));
@@ -1862,6 +1861,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         for (i=0; i<numVals; i++) vm->vals[i] = rvals[i];
         vm->numVals = numVals;
         vm->val0 = result;
+        vm->cont = ep->cont;
     } else {
         if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
             Scm_Apply(vm->defaultEscapeHandler, SCM_LIST1(e));
