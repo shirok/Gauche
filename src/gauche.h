@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.35 2001-02-11 02:50:50 shiro Exp $
+ *  $Id: gauche.h,v 1.36 2001-02-12 12:52:07 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1394,6 +1394,13 @@ extern ScmObj Scm_SError(ScmObj fmt, ScmObj args);
 
 extern ScmObj Scm_ReadDirectory(ScmString *pathname);
 extern ScmObj Scm_GlobDirectory(ScmString *pattern);
+
+#define SCM_PATH_ABSOLUTE       (1L<<0)
+#define SCM_PATH_EXPAND         (1L<<1)
+extern ScmObj Scm_NormalizePathname(ScmString *pathname, int flags);
+extern ScmObj Scm_DirName(ScmString *filename);
+extern ScmObj Scm_BaseName(ScmString *filename);
+
 extern ScmObj Scm_GetGroupById(gid_t gid);
 extern ScmObj Scm_GetGroupByName(ScmString *name);
 

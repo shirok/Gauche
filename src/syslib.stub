@@ -33,6 +33,25 @@
   (assert (string? pattern))
   "  SCM_RETURN(Scm_GlobDirectory(pattern));")
 
+;; Bonus
+
+(define-cproc sys-normalize-pathname (pathname
+                                      &keyword (absolute #f)
+                                               (expand #f))
+  (assert (string? pathname))
+  "  int flags = 0;
+  if (!SCM_FALSEP(absolute)) flags |= SCM_PATH_ABSOLUTE;
+  if (!SCM_FALSEP(expand))   flags |= SCM_PATH_EXPAND;
+  SCM_RETURN(Scm_NormalizePathname(pathname, flags));")
+
+(define-cproc sys-basename (pathname)
+  (assert (string? pathname))
+  "  SCM_RETURN(Scm_BaseName(pathname));")
+
+(define-cproc sys-dirname (pathname)
+  (assert (string? pathname))
+  "  SCM_RETURN(Scm_DirName(pathname));")
+
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
 
