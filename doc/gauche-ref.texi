@@ -4,7 +4,11 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.5 2001-05-22 20:39:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.6 2001-05-23 09:19:09 shirok Exp $
+
+@c module and class index
+@defcodeindex mo
+@defcodeindex cl
 
 @iftex
 @finalout
@@ -13,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.3.10
+@subtitle version 0.3.11
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -33,12 +37,13 @@ This is a reference manual of Gauche, an R5RS Scheme implementation.
 @node Introduction
 @chapter Introduction
 
-This is a programmers' guide and reference of Gauche Scheme system.
+This is a programmers' guide and reference manual of
+the Gauche Scheme system.
 Here I tried to describe Gauche's implementation precisely,
-sometimes with background design choices.
-The target audiences are those who already know Scheme and
-want to write useful programs in Gauche.
+sometimes referring to background design choices.
 
+The target readers are those who already know Scheme and
+want to write useful programs in Gauche.
 For those who are new to Scheme, it'll be easier to start
 from some kind of tutorial.  I'm planning to write one.
 
@@ -48,48 +53,104 @@ in a separate document I'm planning.
 Those who wants to use Gauche as an embedded language, or wants
 to write an extension, need that volume.
 
+For the Scheme side, I tried to make this manual self-contained,
+i.e. as far as you want to look up Gauche's features you don't
+need to refer to other documents, for reader's convenience.
+For example, description of functions defined in the standard
+documents are included in this manual, instead of saying
+"see this document".   However, this document is not a verbatim
+copy of the standard document; sometimes I omit detailed
+discussions in the standard documents, for brevity.
+I put pointers to the original documents, so consult them if you
+need to refer to the standards.
+
+If you're reading this document off-line, you may find the most
+recent version on the web @uref{http://www.shiro.dreamhost.com/scheme/gauche/}.
+
 @node Overview of Gauche
 @section Overview of Gauche
 
-Gauche is a Scheme language interpreter, almost conformant of
-"Revised^5 Report on the Algorithmic Language Scheme".
-Gauche has also various extensions, such as CLOS-like object system,
-module system, and regular expression matcher,
-so that it can be used in the daily works of programmers and system
-administrators, and/or an extensible embedded scripting language.
+Gauche is a script interpreter, based on Scheme.
+Gauche conforms the language standard
+"Revised^5 Report on the Algorithmic Language Scheme"
+(@uref{http://www.schemers.org/Documents/Standards/R5RS/HTML/}),
+and supports various common libraries defined in SRFIs
+(@uref{http://srfi.schemers.org}).
 
-There are lots of Scheme implementations out there.
-Some even say there are more Scheme implementations than
-the applications written in Scheme.
-Partly because Scheme is very good as a test bench 
-to explore various programming language concepts.  Partly
-because it's purely fun to write a language system, and
-Scheme is small enough to encourage it (although it's
-implementation involves lots of technically challenges).
+The goal of Gauche is to provide a handy tool for
+programmers and system administrators to handle
+daily works conveniently and efficiently in the production environment.
 
-There is even a pracical reason to have lots of Scheme systems.
-When implementing a language, you always have to decide
-one strategy that fits best for your goal,
-out of some possible implementation designs.
-Since different goals may require different choices,
-there can't be a single "right" implementation of the language.
+@table @b
+@item Quick startup
 
-So, what are Gauche's goals and strengths?
-Basically, Gauche aims to the areas where people currently
-use Python, Perl or Tcl.  The scripting work such that
-you need to build something quick, and you may use it only several
-times and discard it, while sometimes the code lives much longer
-than you expected first.
+In the production environment, there are situations that 
+you write a ten-line Scheme script which does a simple but useful thing,
+and others invoke it from 
+from their shell scripts (or Perl, Phthon, Tcl, whatever) very frequently.
+You don't want to use a big fat scripting engine that takes half a second
+to start up for this kind of scripts, or people start writing their own
+libraries in their own favorite languages.
+Sharing scripts, not only code, is very important in the practical
+situation, and you want to have a reasonably lightweight interpreter
+to populate your scripts.
 
-No, I'm not trying to replace those languages.
-However, there are jobs in that application domain to which
-Scheme style of programming fits.  Those scripting languages,
-although started from simple concepts, have eventually involved
-lots of modern programming language concepts such as object orientation
-and first-class closures.  There have been demands to include
-those fancy concepts.  Then, why don't we use a language
-carefully designed with those concepts from the beginning,
-at least for the problems that requires those fancy concepts?
+Gauche includes a set of most common features in its executable,
+while splits less common stuffs into libraries which are to be loaded
+on demand, to make itself start quickly.
+
+@item Modular development
+
+Richness of libraries is one of the criteria on which
+people choose scripting language, so you want to include as many
+libraries as possible.  You cannot, however, write everything by
+your own.   The key to enrich the libraries are the framework to
+allow and to encourage people to write reusable, modulalized code.
+
+Gauche has several mechanisms to realize this framework.
+The simple and clean module system, a powerful CLOS-like object
+syste with a metaobject protocol, and feature based on-demand
+file loading system are the elements.
+@xref{Module System} for details.
+
+@item Multibyte strings
+
+We can no longer live happily in ASCII-only or 1-byte-per-character world.
+Nowadays you have to exchange text information in various encodings,
+some of them have much more characters than 256 (or, in fact, more than 65536).
+The practical language implementations are required to handle
+multibyte (wide) characters in some way.
+
+Gauche supports multibyte strings natively, providing robust and
+consistent support than @i{ad hoc} library-level implementation.
+@xref{Multibyte Strings} for details.
+
+@item System interface
+
+Although Scheme abstracts lots of details of the machine,
+sometimes you have to bypass these high-level layers and
+go down to the basement to make things work.
+
+Gauche has built-in support of most of POSIX.1 system calls.
+Other modules, such as networking module, usually provide
+both high-level abstract interface and low-level interface.
+
+@item Powerful I/O
+
+No real application can be written without dealing with I/O.
+Scheme neatly abstracts I/O as a port, but defines least operations on it.
+Gauche uses a port object as a unified abstraction, but 
+
+
+@item Clean C API
+
+
+
+@end table
+
+
+
+
 
 @node Notations
 @section Notations
@@ -162,6 +223,7 @@ convenient when used together.
 @node Core Syntax
 @chapter Core Syntax
 
+@c ----------------------------------------------------------------------
 @node Literals
 @section Literals
 
@@ -169,22 +231,21 @@ convenient when used together.
 [R5RS]
 @end defspec
 
-
-
-
+@c ----------------------------------------------------------------------
 @node Making Procedures
 @section Making Procedures
 
-@defspec lambda formals body
+@defspec lambda formals body @dots{}
 [R5RS]
 @end defspec
 
 
+@c ----------------------------------------------------------------------
 @node Assignments
 @section Assignments
 
 Gauche adopts the concept of "generalized set!"
-specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
+specified in SRFI-17.
 
 @defspec set! variable expression
 @defspecx set! location expression
@@ -200,13 +261,16 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 
+@c ----------------------------------------------------------------------
 @node Conditionals
 @section Conditionals
 
 
 @defspec if test consequent alternate
 @defspecx if test consequent
-[R5RS]
+[R5RS] @var{Test} is evaluated.  If it yields a true value,
+@var{consequent} is evaluated.  Otherwise, @var{alternative} is
+evaluated.  If @var{alternative} is not provided, it results undefined value.
 @end defspec
 
 
@@ -221,7 +285,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 
 
 @defspec and test @dots{}
-[R5RS]
+[R5RS] 
 @end defspec
 
 
@@ -233,9 +297,9 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defspecx unless test . body
 @end defspec
 
+
 @node Binding constructs
 @section Binding constructs
-
 
 @defspec let bindings body
 [R5RS]
@@ -276,6 +340,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defspec
 
 
+@c ----------------------------------------------------------------------
 @node Quasiquotation
 @section Quasiquotation
 
@@ -284,6 +349,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defspec
 
 
+@c ----------------------------------------------------------------------
 @node Definitions
 @section Definitions
 
@@ -292,36 +358,81 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defspec
 
-
+@c ----------------------------------------------------------------------
 @node Modules
 @section Modules
+
+Module is an object that maps symbols onto @emph{bindings}.
+
+Unlike CommonLisp's packages, which map names to symbols,
+in Gauche symbols are always @code{eq?} if two have the
+same name.  However, different bindings can be associated
+to the same symbol, that yield different values.
+
+
+
 
 @node Module syntax
 @subsection Module syntax
 
-@defspec define-module name body
+@defspec define-module name body @dots{}
+If a module named @var{name} does not exist, create one.
+Then compiles and evaluates @var{body} sequentially in the module.
 @end defspec
 
 @defspec select-module name
+Makes a module named @var{name} as the current module.
+It is an error if no module named @var{name} exists.
+
+If @code{select-module} is used in the Scheme file, its effect is
+limited inside the file, i.e. even if you load/require a file that uses
+@code{select-module} internallly, the current module of requirer is
+not affected.
 @end defspec
 
-@defspec with-module name body
+@defspec with-module name body @dots{}
+Compiles and evaluates @var{body} sequentially in the module
+named @var{name}.  If no moudle named @var{name}, an error is signalled.
 @end defspec
 
 @defspec export symbol @dots{}
+Makes bindings of @var{symbol}s in the current module available
+from modules that imports the current module.
+@end defspec
+
+@defspec export-all
 @end defspec
 
 @defspec import module-name @dots{}
+Makes all exported bindings in the module named @var{module-name}
+available in the current module.
+@end defspec
+
+@defspec current-module
+Evaluates to the current module in the compile context.
+Note that this is a special form, not a function.
+Module in Gauche is statically determined at compile time.
+@lisp
+(define-module foo
+  (export get-current-module)
+  (define (get-current-module) (module-name (current-module))))
+
+(define-module bar
+  (import foo)
+  (get-current-module)) @result{} foo @r{; not bar}
+@end lisp
 @end defspec
 
 @defmac use name
+A convenience macro that combines module imports and on-demand
+file loading.
 @end defmac
-
 
 @node Module introspection
 @subsection Module introspection
 
 @deftp {Builtin Class} <module>
+@clindex module
 @end deftp
 
 @defun module? obj
@@ -338,6 +449,25 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 
 @defun all-modules
 @end defun
+
+@node Predefined modules
+@subsection Predefined modules
+
+@deftp {Builtin Module} null
+@moindex null
+@end deftp
+
+@deftp {Builtin Module} scheme
+@moindex scheme
+@end deftp
+
+@deftp {Builtin Module} gauche
+@moindex gauche
+@end deftp
+
+@deftp {Builtin Module} user
+@moindex user
+@end deftp
 
 @c ======================================================================
 @node Macros
@@ -383,15 +513,15 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Equivalence
 
 @defun eq? obj1 obj2
-[R5Rs]
+[R5RS]
 @end defun
 
 @defun eqv? obj1 obj2
-[R5Rs]
+[R5RS]
 @end defun
 
 @defun equal? obj1 obj2
-[R5Rs]
+[R5RS]
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -405,6 +535,22 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @deftpx {Builtin Class} <complex>
 @deftpx {Builtin Class} <real>
 @deftpx {Builtin Class} <integer>
+@clindex number
+@clindex complex
+@clindex real
+@clindex integer
+These classes consist a hierarchy of representation of numbers.
+Note that these classes does not exactly corresponds to the
+number hierarchy defined in R5RS.  Especially, 
+only exact integers are the instances of the @code{<integer>}
+class.  That is,
+@lisp
+(integer? 1) @result{} #t
+(is-a? 1 <integer>) @result {} #t
+
+(integer? 1.0) @result{} #t
+(is-a? 1.0 <integer>) @result{} #f
+@end lisp
 @end deftp
 
 @node Numerical predicates
@@ -415,21 +561,21 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defunx real? obj
 @defunx rational? obj
 @defunx integer? obj
-[R5Rs]
+[R5RS]
 @end defun
 
 @defun exact? obj
 @defunx inexact? obj
-[R5Rs]
+[R5RS]
 @end defun
 
 @defun zero? z
-[R5Rs]
+[R5RS]
 @end defun
 
 @defun positive? x
 @defunx negative? x
-[R5Rs]
+[R5RS]
 @end defun
 
 @defun odd? n
@@ -516,14 +662,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defunx asinh z
 @defunx acosh z
 @defunx atanh z
-
+Hyperbolic trigonometric functions.
 @end defun
-
 
 @defun sqrt z
 [R5RS]
 @end defun
-
 
 @defun expt z1 z2
 [R5RS]
@@ -531,7 +675,6 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 
 @node Numericaln conversions
 @subsection Numerical conversions
-
 
 @defun make-rectangular x1 x2
 @defunx make-polar x1 x2
@@ -541,7 +684,6 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defunx angle z
 [R5RS]
 @end defun
-
 
 @defun exact->inexact z
 @defunx inexact->exact z
@@ -557,32 +699,40 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @subsection Logical operations
 
 @defun ash n count
+Shifts integer @var{n} left with @var{count} bits.
+If @var{count} is negative, @code{ash} shifts @var{n} right with
+@minus{}@var{count} bits.
+Negative @var{n} is interpreted as 2's complement numbers
+with 1's continue infinitely on the left side of the number.
 @end defun
-
+        
 @defun logand n1 n2
-@end defun
-
-@defun logior n1 n2
-@end defun
-
-@defun logxor n1 n2
+@defunx logior n1 n2
+@defunx logxor n1 n2
+Returns bitwise and, bitwise inclusive or and bitwise exclusive or
+of two integers @var{n1} and @var{n2}.
 @end defun
 
 @defun lognot n
+Returns bitwise not of an integer @var{n}.
 @end defun
 
 @node Booleans
 @section Booleans
 
 @deftp {Builtin Class} <boolean>
+@clindex boolean
+A boolean class.  Only @code{#t} and @var{#f} belong to this class.
 @end deftp
 
 @defun not obj
-[R5RS]
+[R5RS] Returns @code{#t} if and only if @var{obj} is @code{#t},
+and returns @code{#f} otherwise.
 @end defun
 
 @defun boolean? obj
-[R5RS]
+[R5RS] Returns @code{#t} if and only if @var{obj} is a boolean
+value, and returns @code{#f} otherwise.
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -593,12 +743,27 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @subsection Pair and null class
 
 @deftp {Builtin Class} <list>
+@clindex list
+An abstract class respresents lists.   A parent class of @code{<null>}
+and @code{<pair>}.
+
+Note that a cirular list is also an instance of the @code{<list>} class,
+while R5RS procedure @code{list?} returns false on the circular lists.
+@lisp
+(use srfi-1)
+(list? (circular-list 1 2)) @result{} #f
+(is-a? (circular-list 1 2) <list>) @result{} #t
+@end lisp
 @end deftp
 
 @deftp {Builtin Class} <null>
+@clindex null
+A class of empty list.  @code{()} is the only instance.
 @end deftp
 
 @deftp {Builtin Class} <pair>
+@clindex pair
+A class of pairs.
 @end deftp
 
 @node List predicates
@@ -620,26 +785,49 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @subsection List constructors
 
 @defun cons obj1 obj2
-[R5RS]
+[R5RS] Constructs a pair of @var{obj1} and @var{obj2} and returns it.
+@lisp
+(cons 'a 'b) @result{} (a . b)
+@end lisp
 @end defun
 
 @defun acons obj1 obj2 obj3
-[SRFI-1]
+[SRFI-1] Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
+Useful to put an entry at the head of an associative list.
+@lisp
+(acons 'a 'b '((c . d))) @result{} ((a . b) (c . d))
+@end lisp
 @end defun
 
-@defun make-list len [fill]
-[SRFI-1]
+@defun make-list len &optional fill
+[SRFI-1] Makes a proper list of length @var{len}.  If optional argument
+@var{fill} is provided, each element is initialized by it.  Otherwise
+each element is undefined.
+@lisp
+(make-list 5 #t) @result{} (#t #t #t #t #t)
+@end lisp
 @end defun
 
 @defun list obj @dots{}
-[R5RS]
+[R5RS] Makes a list, whose elements are @var{obj} @dots{}.
+@lisp
+(list 1 2 3) @result{} (1 2 3)
+(list) @result{} ()
+@end lisp
 @end defun
 
-@defun list* obj @dots{}
+@defun list* obj1 obj2 @dots{}
+Like @code{list}, but the last argument becomes cdr of the last pair.
+SRFI-1 defines the same function with the name @var{cons*}.
+@lisp
+(list* 1 2 3) @result{} (1 2 . 3)
+(list* 1) @result{} 1
+@end lisp
 @end defun
 
 @defun list-copy list
-[SRFI-1]
+[SRFI-1] Shallow copies @var{list}.  If @var{list} is circular,
+this function diverges.
 @end defun
 
 
@@ -648,12 +836,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 
 @defun car pair
 @defunx cdr pair
-[R5RS]
+[R5RS] Returns car and cdr of @var{pair}, respectively.
 @end defun
 
 @defun set-car! pair obj
 @defunx set-cdr! pair obj
-[R5RS]
+[R5RS] Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
 @end defun
 
 @defun caar pair
@@ -749,6 +937,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Symbols
 
 @deftp {Builtin Class} <symbol>
+@clindex symbol
 @end  deftp
 
 @defun symbol? obj
@@ -772,6 +961,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Keywords
 
 @deftp {Builtin Class} <keyword>
+@clindex keyword
 @end  deftp
 
 @defun keyword? obj
@@ -788,6 +978,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Identifiers
 
 @deftp {Builtin Class} <identifier>
+@clindex identifier
 @end  deftp
 
 @defun identifier? obj
@@ -802,6 +993,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Characters
 
 @deftp {Builtin Class} <char>
+@clindex char
 @end  deftp
 
 @defun char? obj
@@ -851,6 +1043,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Character Set
 
 @deftp {Builtin Class} <char-set>
+@clindex char-set
 @end deftp
 
 @defun char-set? obj
@@ -876,6 +1069,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Strings
 
 @deftp {Builtin Class} <string>
+@clindex string
 @end deftp
 
 @node String Predicates
@@ -1013,26 +1207,26 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @section Regular Expression
 
 @deftp {Builtin Class} <regexp>
+@clindex regexp
 @end deftp
 
 @deftp {Builtin Class} <regmatch>
+@clindex regmatch
+@end deftp
+
+@deftp {Reader Syntax} #/@i{regexp-spec}/
 @end deftp
 
 @defun string->regexp string
 @end defun
 
-@defun rxmatch regexp str
-@code{regexp} is a regular expression object.
- A string @code{string} is matched by
-@code{regexp}.  If it matches, the function returns a @code{<regmatch>}
+@defun rxmatch regexp string
+@var{Regexp} is a regular expression object.
+A string @var{string} is matched by
+@var{regexp}.  If it matches, the function returns a @code{<regmatch>}
 object.  Otherwise it returns @code{#f}.
 
-This method can be extended to accept other types in @code{regexp},
-to extend matching functionality.
-
 This corresponds to scsh's @code{regexp-search}.
-@end deffn
-
 @end defun
 
 @defun rxmatch-substring match &optional (i 0)
@@ -1056,6 +1250,7 @@ and @code{match:substring}.
 @section Vectors
 
 @deftp {Builtin Class} <vector>
+@clindex vector
 @end deftp
 
 @defun vector? obj
@@ -1096,6 +1291,7 @@ and @code{match:substring}.
 @section Hashtables
 
 @deftp {Builtin Class} <hash-table>
+@clindex hash-table
 @end deftp
 
 @defun make-hash-table args
@@ -1132,6 +1328,7 @@ and @code{match:substring}.
 @subsection Procedures
 
 @deftp {Builtin Class} <procedure>
+@clindex procedure
 @end deftp
 
 @defun procedure? obj
@@ -1379,7 +1576,7 @@ and @code{match:substring}.
 @end defun
 
 @defmac autoload file var @dots{}
-@end defun
+@end defmac
 
 
 @c ----------------------------------------------------------------------
@@ -1397,6 +1594,8 @@ and @code{match:substring}.
 @subsection Environment Inquiry
 
 @defun sys-getenv name
+Returns the value of the environment variable @var{name} as a string,
+or @code{#f} if the environment variable is not defined.
 @end defun
 
 @defun gauche-version
@@ -1457,6 +1656,7 @@ and @code{match:substring}.
 @subsubsection File stats
 
 @deftp {Builtin Class} <sys-stat>
+@clindex sys-stat
 @end deftp
 
 @defun sys-stat path
@@ -1493,6 +1693,7 @@ and @code{match:substring}.
 @subsubsection Unix Group
 
 @deftp {Builtin Class} <sys-group>
+@clindex sys-group
 @end deftp
 
 @defun sys-getgrid gid
@@ -1507,6 +1708,7 @@ and @code{match:substring}.
 @subsubsection Unix Password
 
 @deftp {Builtin Class} <sys-passwd>
+@clindex sys-passwd
 @end deftp
 
 @defun sys-getpwuid uid
@@ -1522,6 +1724,11 @@ and @code{match:substring}.
 @subsubsection Password encryption
 
 @defun sys-crypt key salt
+This is the interface to @code{crypt(3)}.   @var{Key} and @var{salt}
+must be a string, and an encrypted string is returned.
+
+On systems where @code{crypt(3)} is not available, call to this
+function signals an error.
 @end defun
 
 @node Locale
@@ -1599,9 +1806,11 @@ and @code{match:substring}.
 @end defun
 
 @deftp {Builtin Class} <sys-time>
+@clindex sys-time
 @end deftp
 
 @deftp {Builtin Class} <sys-tm>
+@clindex sys-tm
 @end deftp
 
 @defun sys-time
@@ -1628,7 +1837,7 @@ and @code{match:substring}.
 @defun sys-mktime tm
 @end defun
 
-@defin sys-tm->alist tm
+@defun sys-tm->alist tm
 @end defun
 
 
@@ -1639,14 +1848,60 @@ and @code{match:substring}.
 @subsubsection Fork and exec
 
 @defun sys-system command
+Runs @var{command} in a subprocess.
+
+This function returns an integer value @code{system()} returned.
+Since POSIX doesn't define what @code{system()} returns, you can't
+interpret the returned value in a portable way.
 @end defun
 
 @defun sys-fork
+Fork the current process.  Returns 0 if you're in the child process,
+and a child process' pid if you're in the parent process.
+All the opened file descriptors are shared between the parent and
+the child.
 @end defun
 
 @defun sys-exec command args &optional iomap
+Execute @var{command} with @var{args}, a list of arguments.
+The current process image is replaced by @var{command},
+so this function never returns.
+
+All elements of @var{args} must be strings.  The first element of
+@var{args} is used as @code{argv[0]}, i.e. the program name.
+
+The optional @var{iomap} argument, when provided, specifies how the
+open file descriptors are treated.  It must be the following format:
+@example
+((@i{to-fd} . @i{from-port-or-fd}) @dots{})
+@end example
+@i{To-fd} must be an integer,
+and @i{from-port-or-fd} must be an integer file descriptor or a port.
+Each element of the list makes the file descriptor of @i{from-port-or-fd}
+of the current process be mapped to the file descriptr @i{to-fd}
+in the executed process.
+
+If @var{iomap} is provided,
+any file descriptors other than specified in the iomap list will be closed
+before @code{exec()}.  Otherwise, all file descriptors in the current
+process remain open.
+
+@example
+(sys-exec "ls" '("ls" "-l")) @result{} ;; ls is executed.
+
+(sys-exec "ls" '("ls" "-l") '((1 . 2) (1 . 1)))
+   @result{} ;; ls is executed, with its stderr and stdout are mapped to the
+              current process's stdout.
+@end example
+
+When it encounters an error, most of the time it raises an error condition.
+Once the file descriptors are permuted, however, it would be impractical
+to handle errors in reasonable way (you don't even know stderr is still
+available!), so Gauche simply exits on the error.
 @end defun
 
+See also @ref{High Level Process Interface}, which provides
+more convenient process handling on top of above primitives.
 
 @node Wait
 @subsubsection Wait
@@ -1769,15 +2024,19 @@ and @code{match:substring}.
 @subsection System metaclasses
 
 @deftp {Class} <class>
+@clindex class
 @end deftp
 
 @deftp {Class} <generic>
+@clindex generic
 @end deftp
 
 @deftp {Class} <method>
+@clindex method
 @end deftp
 
 @deftp {Class} <object>
+@clindex object
 @end deftp
 
 
@@ -1847,12 +2106,28 @@ and @code{match:substring}.
 @node Networking
 @section @code{gauche.net} - Networking
 
+@deftp {Module} gauche.net
+@moindex gauche.net
+@end deftp
+
 
 @c ----------------------------------------------------------------------
-@node Process interface
+@node High Level Process Interface
 @section @code{gauche.process} - Object-oriented interface for processes
 
+@deftp {Module} gauche.process
+@moindex gauche.process
+This module provides a higher-level API of Unix process control,
+implemented on top of low-level system calls such as @code{sys-fork}
+and @code{sys-exec}.  The interface is mostly compatible with
+STk's process library.
+
+To use this module, say @code{(use gauche.process)}.
+@end deftp
+
 @deftp {Class} <process>
+@clindex process
+An object to keep the status of a child process.
 @end deftp
 
 @defun run-process command arg @dots{}
@@ -1896,12 +2171,15 @@ and @code{match:substring}.
 @node Regular expression library
 @section @code{gauche.regexp} - Regular expression library
 
+@deftp {Module} gauche.regexp
+@moindex gauche.regexp
 This module defines some macros useful in regexp match.
 
 The interface is borrowed from scsh, but I changed the name of
 macros since scsh's @code{match-cond} can be confusing
 (e.g. Bigloo has @code{match-lambda} and @code{match-case} in
 pattern match library, that sounds too similar).
+@end deftp
 
 In the following macros, @code{match-expr} is an expression
 which produces a match object or @code{#f}. 
@@ -1921,19 +2199,19 @@ you don't care that variable
 This macro corresponds to scsh's @code{let-match}.
 @end defmac
 
-@defmac rxmatch-if MATCH-EXPR (VAR @dots{}) THEN-FORM ELSE-FORM
-Evaluates @code{match-expr}, and if matched, binds @code{VAR @dots{}}
-to the matched strings and evaluate @code{THEN-FORM}.
-Otherwise evaluate @code{ELSE-FORM}.
+@defmac rxmatch-if match-expr (var @dots{}) then-form else-form
+Evaluates @var{match-expr}, and if matched, binds @var{var} @dots{}
+to the matched strings and evaluate @var{then-form}.
+Otherwise evaluates @var{else-form}.
 
 This macro corresponds to scsh's @code{if-match}.
 @end defmac
 
-@defmac rxmatch-cond CLAUSE @dots{}
-@code{CLAUSE} may be one of the following pattern.
+@defmac rxmatch-cond clause @dots{}
+@var{Clause} may be one of the following pattern.
 
 @table @code
-@item (MATCH-EXPR (VAR @dots{}) FORM @dots{})
+@item (match-expr (var @dots{}) form @dots{})
 If @code{MATCH-EXPR} returns a match, works like @code{rxmatch-let}.
 
 @item (test EXPR FORM @dots{})
@@ -1982,25 +2260,86 @@ evaluated.
 @node Serializer
 @section @code{gauche.serializer} - Serializer
 
+@deftp {Module} gauche.serializer
+@moindex gauche.serializer
+@end deftp
+
+
 @c ----------------------------------------------------------------------
 @node Unit Testing
 @section @code{gauche.test} - Unit Testing
 
-@defun test name 
+@deftp {Module} gauche.test
+@moindex gauche.test
+Defines a set of functions to write test scripts.
+A test script will look like this:
+@lisp
+(use gauche.test)
+(test-start "my feature")
+(load "my-feature")         ; @r{load your program}
+(select-module my-feature)  ; @r{if your program defines a module.}
+
+(test-section "feature group 1")
+(test "feature 1-1" EXPECT (lambda () TEST-BODY))
+(test "feature 1-2" EXPECT (lambda () TEST-BODY))
+ @dots{}
+
+(test-section "feature group 2")
+(define test-data ...)
+(test "feature 2-1" EXPECT (lambda () TEST-BODY))
+ @dots{}
+
+(test-end)
+@end lisp
+
+With this convention, you can run test both interactively or
+in batch.   To run a test interactively, just load the file
+and it reports a result of each test, as well as the summary
+of failed test at the end.  To run a test in batch, it is
+convenient to redirect the stdout to some file
+If stdout is redirected to other than tty, all the verbose logs will go
+there, and only a small amount of messages go to stderr.
+
+It is recommended to have a "test" target always in Makefile
+of your module/program, so that the user of your program can run a
+test easily.  The rule may look like this:
+
+@example
+test :
+        gosh my-feature-test.scm > test.log
+@end example
+
+@end deftp
+
+@defun test name expected thunk &optional =
+Calls @var{thunk}, and compares its result with @var{expected}.
+The comparison predicate is @var{equal?} by default, but you can
+specify your own predicate by the argument @var{=}.
+@var{Name} is a name of the test, for logging purpose.
 @end defun
 
 @defun test-start module-name
+Initializes internal state and prints a log header.
+This should be called before any tests.
+@var{Module-name} is used only for logging purpose.
 @end defun
 
 @defun test-section section-name
+Marks beginning of the group of tests.  This is just for logging.
 @end defun
 
 @defun test-end
+Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
 @node Base64 encoding/decoding
 @section @code{rfc.base64} - Base64 encoding/decoding
+
+@deftp {Module} rfc.base64
+@moindex rfc.base64
+@end deftp
+
 
 @defun base64-encode
 @end defun
@@ -2019,24 +2358,377 @@ evaluated.
 @node SLIB
 @section @code{slib} - SLIB interface
 
+@deftp {Module} slib
+@moindex slib
+This module is the interface to the Aubrey Jaffer's SLIB.
+To use SLIB, say @code{(use slib)}.   SLIB itself is not included
+in Gauche distribution.   If you don't have it on your system,
+get it from @uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}.
+
+This module defines @code{require}, shadowing the Gauche's original
+@code{require}.  If it gets a symbol as an argument, it works as
+SLIB's @code{require}, while if it gets a string, it works as
+Gauche's @code{require}.   The same applies to @code{provide} and
+@code{provided?}.
+
+All SLIB symbol bindings, loaded by @code{require}, stay in the
+module @code{slib}.
+@end deftp
+
 @c ----------------------------------------------------------------------
 @node Feature Conditional
 @section @code{srfi-0} - Feature Conditional
 
+@deftp {Module} srfi-0
+@moindex srfi-0
+@end deftp
+
+@defmac cond-expand (feature-requirement command-or-definition @dots{}) @dots{}
+[SRFI-0]
+@end defmac
 
 @c ----------------------------------------------------------------------
 @node List library
 @section @code{srfi-1} - List library
 
+@deftp {Module} srfi-1
+@moindex srfi-1
+SRFI-1 is a rich collection of list manipulation library.
+It is available by saying @code{(use srfi-1)}.
+The implementation is based on Olin Shivers's reference implementation.
+I splitted it into number of subfiles that will be autoloaded on demand.
+
+Detailed specificaion of SRFI-1 is available at
+@uref{http://srfi.schemers.org/srfi-1/srfi-1.html}.
+@end deftp
+
+@node SRFI-1 List constructors
+@subsection SRFI-1 List constructors
+
+@defun xcons cd ca
+[SRFI-1] Equivalent to @code{(cons ca cd)}.  Useful to pass to
+higher-order procedures.
+@end defun
+
+@defun cons* elt1 elt2 @dots{}
+[SRFI-1] Like @code{list}, but the last argument provides the tail of
+the constructed list.  This is just a synonym of Gauche built-in procedure
+@code{list*}.
+@example
+(cons* 1 2 3 4) @result{} (1 2 3 . 4)
+(cons* 1) @result{} 1
+@end example
+@end defun
+
+@defun list-tabulate n init-proc
+[SRFI-1] Returns an @var{n}-element list.  Element @i{i} of the
+list, where 0 <= @i{i} < @i{n}, is produced by @code{(@var{init-proc} @i{i})}.
+No guarantee is made about the dynamic order in which init-proc is
+applied to these indices.
+@example
+(list-tabulate 4 values) @result{} (0 1 2 3)
+@end example
+@end defun
+
+@defun circular-list elt1 elt2 @dots{}
+[SRFI-1] Constructs a circular list of the elements.
+@example
+(circular-list 'z 'q) @result{} (z q z q z q @dots{})
+@end example
+@end defun
+
+@defun iota count &optional start step
+[SRFI-1] Returns a list containing the elements
+@example
+(@var{start} @var{start}+@var{step} @dots{} @var{start}+(@var{count}-1)*@var{step})
+@end example
+
+The @var{start} and @var{step} parameters default to 0 and 1, respectively.
+This procedure takes its name from the APL primitive.
+
+@example
+(iota 5) @result{} (0 1 2 3 4)
+(iota 5 0 -0.1) @result{} (0 -0.1 -0.2 -0.3 -0.4)
+@end example
+@end defun
+
+@node SRFI-1 List predicates
+@subsection SRFI-1 List predicates
+
+@defun proper-list? x
+[SRFI-1] Returns true iff x is a proper list -- a finite, nil-terminated list.
+@end defun
+
+@defun cicular-list? x
+[SRFI-1] True if x is a circular list.
+@end defun
+
+@defun dotted-list? x
+[SRFI-1] True if x is a finite, non-nil-terminated list.
+This includes non-pair, non-() values (e.g. symbols, numbers),
+which are considered to be dotted lists of length 0.
+@end defun
+
+@defun null-list? list
+[SRFI-1] @var{List} is a proper or circular list.
+This procedure returns true if the argument is the empty list @code{()},
+and false otherwise.
+It is an error to pass this procedure a value which is not a proper or
+circular list. This procedure is recommended as
+the termination condition for list-processing procedures that are
+not defined on dotted lists. 
+@end defun
+
+@defun not-pair? x
+[SRFI-1] @code{(lambda (x) (not (pair? x)))}.
+Provided as a procedure as it can be useful as the termination condition
+for list-processing procedures that wish to
+handle all finite lists, both proper and dotted. 
+@end defun
+
+@defun list= elt= list @dots{}
+[SRFI-1] Determines list equality, given an element-equality procedure.
+Proper list A equals proper list B if they are of the
+same length, and their corresponding elements are equal, as determined
+by @var{elt=}. If the element-comparison
+procedure's first argument is from list A, then its second argument is
+from list B, i.e. it is always called as @code{(elt= a b)} for @code{a}
+an element of list A, and @code{b} an element of list B. 
+
+In the n-ary case, every list(i) is compared to list(i+1) (as opposed,
+for example, to comparing list1 to every listi, for
+i>1). If there are no list arguments at all, @code{list=} simply returns true. 
+
+It is an error to apply @code{list=} to anything except proper lists.
+While implementations may choose to extend it to
+circular lists, note that it cannot reasonably be extended to
+dotted lists, as it provides no way to specify an equality
+procedure for comparing the list terminators. 
+
+Note that the dynamic order in which the @var{elt=} procedure
+is applied to pairs of elements is not specified. For
+example, if @code{list=} is applied to three lists, A, B, and C,
+it may first completely compare A to B, then compare B to C,
+or it may compare the first elements of A and B,
+then the first elements of B and C, then the second elements of A and B,
+and so forth. 
+
+The equality procedure must be consistent with @code{eq?}. That is,
+it must be the case that
+@example
+(eq? x y) @result{} (elt= x y).
+@end example
+@end defun
+
+@node SRFI-1 List selectors
+@subsection SRFI-1 List selectors
+
+@defun  first pair
+@defunx second pair
+@defunx third pair
+@defunx fourth pair
+@defunx fifth pair
+@defunx sixth pair
+@defunx seventh pair
+@defunx eighth pair
+@defunx ninth pair
+@defunx tenth pair
+[SRFI-1] Returns n-th element of the (maybe improper) list.
+@end defun
+
+@defun car+cdr pair
+[SRFI-1] Returns two values, @code{(car pair)} and @code{(cdr pair)}.
+@end defun
+
+@defun take x i
+@defunx drop x i
+[SRFI-1] 
+@end defun
 
 @c ----------------------------------------------------------------------
 @node And-let*
 @section @code{srfi-2} - And-let*
 
+@deftp {Module} srfi-2
+@moindex srfi-2
+@end deftp
+
+@defmac and-let* (bindings @dots{}) body @dots{}
+@end defmac
 
 @c ----------------------------------------------------------------------
 @node Homogeneous Vectors
 @section @code{srfi-4} - Homogeneous Vectors
+
+@deftp {Module} srfi-4
+@moindex srfi-4
+@end deftp
+
+@deftp {Builtin Class} <s8vector>
+@deftpx {Builtin Class} <u8vector>
+@deftpx {Builtin Class} <s16vector>
+@deftpx {Builtin Class} <u16vector>
+@deftpx {Builtin Class} <s32vector>
+@deftpx {Builtin Class} <u32vector>
+@deftpx {Builtin Class} <s64vector>
+@deftpx {Builtin Class} <u64vector>
+@deftpx {Builtin Class} <f32vector>
+@deftpx {Builtin Class} <f64vector>
+@clindex s8vector
+@clindex u8vector
+@clindex s16vector
+@clindex u16vector
+@clindex s32vector
+@clindex u32vector
+@clindex s64vector
+@clindex u64vector
+@clindex f32vector
+@clindex f64vector
+[SRFI-4]
+@end deftp
+
+@defun s8vector? obj
+@defunx u8vector? obj
+@defunx s16vector? obj
+@defunx u16vector? obj
+@defunx s32vector? obj
+@defunx u32vector? obj
+@defunx s64vector? obj
+@defunx u64vector? obj
+@defunx f32vector? obj
+@defunx f64vector? obj
+[SRFI-4]
+@end defun
+
+@defun s8vector n @dots{}
+@defunx u8vector n @dots{}
+@defunx s16vector n @dots{}
+@defunx u16vector n @dots{}
+@defunx s32vector n @dots{}
+@defunx u32vector n @dots{}
+@defunx s64vector n @dots{}
+@defunx u64vector n @dots{}
+@defunx f32vector x @dots{}
+@defunx f64vector x @dots{}
+[SRFI-4]
+@end defun
+
+@defun  make-s8vector len &optional fill
+@defunx make-u8vector len &optional fill
+@defunx make-s16vector len &optional fill
+@defunx make-u16vector len &optional fill
+@defunx make-s32vector len &optional fill
+@defunx make-u32vector len &optional fill
+@defunx make-s64vector len &optional fill
+@defunx make-u64vector len &optional fill
+@defunx make-f32vector len &optional fill
+@defunx make-f64vector len &optional fill
+[SRFI-4]
+@end defun
+
+@defun  s8vector-ref vec k
+@defunx u8vector-ref vec k
+@defunx s16vector-ref vec k
+@defunx u16vector-ref vec k
+@defunx s32vector-ref vec k
+@defunx u32vector-ref vec k
+@defunx s64vector-ref vec k
+@defunx u64vector-ref vec k
+@defunx f32vector-ref vec k
+@defunx f64vector-ref vec k
+[SRFI-4]
+@end defun
+
+@defun  s8vector-set! vec k n
+@defunx u8vector-set! vec k n
+@defunx s16vector-set! vec k n
+@defunx u16vector-set! vec k n
+@defunx s32vector-set! vec k n
+@defunx u32vector-set! vec k n
+@defunx s64vector-set! vec k n
+@defunx u64vector-set! vec k n
+@defunx f32vector-set! vec k x
+@defunx f64vector-set! vec k x
+[SRFI-4]
+@end defun
+
+@defun  s8vector-copy vec
+@defunx u8vector-copy vec
+@defunx s16vector-copy vec
+@defunx u16vector-copy vec
+@defunx s32vector-copy vec
+@defunx u32vector-copy vec
+@defunx s64vector-copy vec
+@defunx u64vector-copy vec
+@defunx f32vector-copy vec
+@defunx f64vector-copy vec
+[SRFI-4]
+@end defun
+
+@defun  s8vector-copy! dstvec srcvec
+@defunx u8vector-copy! dstvec srcvec
+@defunx s16vector-copy! dstvec srcvec
+@defunx u16vector-copy! dstvec srcvec
+@defunx s32vector-copy! dstvec srcvec
+@defunx u32vector-copy! dstvec srcvec
+@defunx s64vector-copy! dstvec srcvec
+@defunx u64vector-copy! dstvec srcvec
+@defunx f32vector-copy! dstvec srcvec
+@defunx f64vector-copy! dstvec srcvec
+[SRFI-4]
+@end defun
+
+@defun  s8vector->list vec
+@defunx u8vector->list vec
+@defunx s16vector->list vec
+@defunx u16vector->list vec
+@defunx s32vector->list vec
+@defunx u32vector->list vec
+@defunx s64vector->list vec
+@defunx u64vector->list vec
+@defunx f32vector->list vec
+@defunx f64vector->list vec
+[SRFI-4]
+@end defun
+
+@defun  s8vector->vector vec
+@defunx u8vector->vector vec
+@defunx s16vector->vector vec
+@defunx u16vector->vector vec
+@defunx s32vector->vector vec
+@defunx u32vector->vector vec
+@defunx s64vector->vector vec
+@defunx u64vector->vector vec
+@defunx f32vector->vector vec
+@defunx f64vector->vector vec
+[SRFI-4]
+@end defun
+
+@defun  list->s8vector list
+@defunx list->u8vector list
+@defunx list->s16vector list
+@defunx list->u16vector list
+@defunx list->s32vector list
+@defunx list->u32vector list
+@defunx list->s64vector list
+@defunx list->u64vector list
+@defunx list->f32vector list
+@defunx list->f64vector list
+[SRFI-4]
+@end defun
+
+@defun  vector->s8vector vec
+@defunx vector->u8vector vec
+@defunx vector->s16vector vec
+@defunx vector->u16vector vec
+@defunx vector->s32vector vec
+@defunx vector->u32vector vec
+@defunx vector->s64vector vec
+@defunx vector->u64vector vec
+@defunx vector->f32vector vec
+@defunx vector->f64vector vec
+[SRFI-4]
+@end defun
 
 @c ----------------------------------------------------------------------
 @node SRFI String ports
@@ -2045,6 +2737,10 @@ evaluated.
 String ports, defined in SRFI-6, are builtin feature of Gauche.
 The form @code{(use srfi-6)} doesn't do anything.
 
+@deftp {Module} srfi-6
+@moindex srfi-6
+@end deftp
+
 @c ----------------------------------------------------------------------
 @node Syntax to receive multiple values
 @section @code{srfi-8} - Syntax to receive multiple values
@@ -2052,19 +2748,36 @@ The form @code{(use srfi-6)} doesn't do anything.
 Syntax @code{receive}, defined in SRFI-8, is builtin feature of Gauche.
 The form @code{(use srfi-8)} doesn't do anything.
 
+@deftp {Module} srfi-8
+@moindex srfi-8
+@end deftp
+
+
 @c ----------------------------------------------------------------------
 @node Let-values
 @section @code{srfi-11} - Let-values
+
+@deftp {Module} srfi-11
+@moindex srfi-11
+@end deftp
 
 
 @c ----------------------------------------------------------------------
 @node String library
 @section @code{srfi-13} - String library
 
+@deftp {Module} srfi-13
+@moindex srfi-13
+@end deftp
+
 
 @c ----------------------------------------------------------------------
 @node Character-set library
 @section @code{srfi-14} - Character-set library
+
+@deftp {Module} srfi-14
+@moindex srfi-14
+@end deftp
 
 
 
@@ -2080,9 +2793,17 @@ The form @code{(use srfi-8)} doesn't do anything.
 @unnumbered Function and Syntax Index
 @printindex fn
 
+@node Module Index
+@unnumbered Module Index
+@printindex mo
+
+
 @node Class Index
 @unnumbered Class Index
-@printindex tp
+
+For readability, the surrounding @code{<} and @code{>} are stripped off.
+
+@printindex cl
 
 @node Variable Index
 @unnumbered Variable Index
