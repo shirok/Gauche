@@ -35,7 +35,7 @@
   (use srfi-1)
   (use srfi-11)
   (export option option-names option-required-arg? option-optional-arg?
-          option-processor option args-fold)
+          option-processor option? args-fold)
   )
 (select-module srfi-37)
 

@@ -1,3 +1,8 @@
+2003-10-20  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* lib/srfi-37.scm : Fixed a typo in the export list. We seem to
+	  need some sort of "duplication checker".
+
 2003-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/jconv.c : fixed a bug in utf8->eucjp conversion routine
