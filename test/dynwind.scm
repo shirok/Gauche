@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.15 2001-12-20 11:47:13 shirok Exp $
+;; $Id: dynwind.scm,v 1.16 2002-05-12 07:44:13 shirok Exp $
 
 (use gauche.test)
 
@@ -262,5 +262,12 @@
                       (read)))))
           (list (port-closed? p)
                 (eq? p (current-input-port))))))
+
+;;-----------------------------------------------------------------------
+;; Al Petrofsky's finding
+;; http://groups.google.com/groups?dq=&hl=ja&selm=87g00y4b6l.fsf%40radish.petrofsky.org
+
+(test "Al's call/cc test" 1
+      (lambda () (call/cc (lambda (c) (0 (c 1))))))
 
 (test-end)
