@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.13 2002-04-28 01:03:44 shirok Exp $
+;; $Id: euc-jp.scm,v 1.14 2002-09-21 03:00:13 shirok Exp $
 
 (use gauche.test)
 
@@ -452,5 +452,19 @@
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 3)
                            '("あいうえお" "かきくけこ" "さしすせ" "そ"))))
+
+;;-------------------------------------------------------------------
+(test-section "regexp")
+
+(test "regexp" "いaろbはc"
+      (lambda ()
+        (cond ((rxmatch #/([ぁ-ん][a-z])+/ "xyいaろbはcdに")
+               => rxmatch-substring)
+              (else #f))))
+(test "regexp" "いaろBはC"
+      (lambda ()
+        (cond ((rxmatch #/([ぁ-ん][a-z])+/i "XYいaろBはCdに")
+               => rxmatch-substring)
+              (else #f))))
 
 (test-end)

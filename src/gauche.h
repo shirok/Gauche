@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.303 2002-09-20 19:40:14 shirok Exp $
+ *  $Id: gauche.h,v 1.304 2002-09-21 03:00:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -76,7 +76,7 @@ SCM_DECL_BEGIN
 
 /* This defines several auxiliary routines that are useful for debugging */
 #ifndef SCM_DEBUG_HELPER
-#define SCM_DEBUG_HELPER      FALSE
+#define SCM_DEBUG_HELPER      TRUE
 #endif
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
@@ -735,6 +735,7 @@ SCM_EXTERN ScmObj Scm_CharSetAddRange(ScmCharSet *cs,
 				      ScmChar from, ScmChar to);
 SCM_EXTERN ScmObj Scm_CharSetAdd(ScmCharSet *dest, ScmCharSet *src);
 SCM_EXTERN ScmObj Scm_CharSetComplement(ScmCharSet *cs);
+SCM_EXTERN ScmObj Scm_CharSetCaseFold(ScmCharSet *cs);
 SCM_EXTERN ScmObj Scm_CharSetRanges(ScmCharSet *cs);
 SCM_EXTERN ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
 				  int error_p, int bracket_syntax);
@@ -2016,7 +2017,7 @@ SCM_CLASS_DECL(Scm_RegexpClass);
 #define SCM_REGEXPP(obj)          SCM_XTYPEP(obj, SCM_CLASS_REGEXP)
 
 /* flags */
-#define SCM_REGEXP_IGNORE_CASE      (1L<<0)
+#define SCM_REGEXP_CASE_FOLD      (1L<<0)
 
 SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern, int flags);
 SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.29 2002-09-20 19:40:15 shirok Exp $
+ *  $Id: regexp.c,v 1.30 2002-09-21 03:00:13 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -117,7 +117,7 @@ static ScmRegexp *make_regexp(void)
     return rx;
 }
 
-#define IGNCASEP(rx)   ((rx)->flags&SCM_REGEXP_IGNORE_CASE)
+#define CASEFOLDP(rx)   ((rx)->flags&SCM_REGEXP_CASE_FOLD)
 
 #ifndef CHAR_MAX
 #define CHAR_MAX 256
@@ -401,7 +401,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             break;
         default:
         ordchar:
-            if (IGNCASEP(rx)) ch = SCM_CHAR_DOWNCASE(ch);
+            if (CASEFOLDP(rx)) ch = SCM_CHAR_DOWNCASE(ch);
             SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
             continue;
         }
@@ -422,8 +422,12 @@ static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
 {
     int complement;
     ScmObj set = Scm_CharSetRead(ctx->ipat, &complement, FALSE, TRUE);
-    if (!SCM_CHARSETP(set))
+    if (!SCM_CHARSETP(set)) {
         Scm_Error("bad charset spec in pattern: %S", ctx->pattern);
+    }
+    if (CASEFOLDP(rx)) {
+        Scm_CharSetCaseFold(SCM_CHARSET(set));
+    }
     
     re_compile_register_charset(ctx, SCM_CHARSET(set));
     if (complement) {
@@ -527,7 +531,7 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
             }
             
             /* find out the longest run of bytes */
-            re_compile_emit(ctx, (IGNCASEP(rx)? RE_MATCH_CI:RE_MATCH), emitp);
+            re_compile_emit(ctx, (CASEFOLDP(rx)? RE_MATCH_CI:RE_MATCH), emitp);
             re_compile_emit(ctx, 0, emitp); /* patched later */
             do {
                 ch = SCM_CHAR_VALUE(item);
@@ -545,7 +549,7 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                 /* patches the jump offset.  if we are matching to a
                    single byte char, use MATCH1 insn. */
                 if (nrun == 1) {
-                    ctx->code[ocodep] = IGNCASEP(rx)?RE_MATCH1_CI:RE_MATCH1;
+                    ctx->code[ocodep] = CASEFOLDP(rx)?RE_MATCH1_CI:RE_MATCH1;
                     ctx->code[ocodep+1] = ctx->code[ocodep+2];
                     ctx->codep = ocodep+2;
                 } else {
@@ -713,8 +717,9 @@ void Scm_RegDump(ScmRegexp *rx)
                 u_int numchars = (u_int)rx->code[codep];
                 int i;
                 Scm_Printf(SCM_CUROUT, "%4d  %s(%3d) '",
+                           codep-1,
                            (rx->code[codep-1]==RE_MATCH? "MATCH":"MATCH_CI"),
-                           codep-1, numchars);
+                           numchars);
                 for (i=0; i< numchars; i++)
                     Scm_Printf(SCM_CUROUT, "%c", rx->code[++codep]);
                 Scm_Printf(SCM_CUROUT, "'\n");
@@ -861,7 +866,7 @@ struct match_ctx {
 
 #define MAX_STACK_USAGE   0x100000 /* 1MB */
 
-static inline struct match_list *push_match(struct match_list *mlist,
+static struct match_list *push_match(struct match_list *mlist,
                                             int grpnum, const char *ptr)
 {
     struct match_list *elt = SCM_NEW(struct match_list);
@@ -869,6 +874,26 @@ static inline struct match_list *push_match(struct match_list *mlist,
     elt->grpnum = grpnum;
     elt->ptr = ptr;
     return elt;
+}
+
+static int match_ci(const char **input, const char **code, int length)
+{
+    unsigned char inch, c;
+    int csize, i;
+    do {
+        inch = *(*input)++;
+        c = *(*code)++;
+        if ((csize = SCM_CHAR_NFOLLOWS(inch)) == 0) {
+            if (c != SCM_CHAR_DOWNCASE(inch)) return FALSE;
+        } else {
+            if (c != inch) return FALSE;
+            for (i=0; i<csize; i++) {
+                if (*(*code)++ != *(*input)++) return FALSE;
+            }
+        }
+        length -= (csize+1);
+    } while (length > 0);
+    return TRUE;
 }
 
 void re_exec_rec(const char *code,
@@ -902,27 +927,14 @@ void re_exec_rec(const char *code,
         case RE_MATCH_CI:
             param = (unsigned char)*code++;
             if (ctx->stop - input < param) return;
-            do {
-                char in = *input++, c = *code++;
-                int nf = SCM_CHAR_NFOLLOWS(in);
-                if (nf == 0) {
-                    if (c != SCM_CHAR_DOWNCASE(in)) return;
-                } else{
-                    if (c != in) return;
-                    while (nf-- > 0) {
-                        if (*code++ != *input++) return;
-                    }
-                }
-                param -= nf+1;
-            } while (param > 0);
+            if (!match_ci(&input, &code, param)) return;
             continue;
         case RE_MATCH1_CI:
             if (ctx->stop == input) return;
-            else {
-                char in = *input++, c = *code++;
-                if (SCM_CHAR_NFOLLOWS(in) != 0 || c != SCM_CHAR_DOWNCASE(in))
-                    return;
-            }
+            param  = (unsigned char)*input++;
+            param2 = (unsigned char)*code++;
+            if (SCM_CHAR_NFOLLOWS(param)!=0 || param2!=SCM_CHAR_DOWNCASE(param))
+                return;
             continue;
         case RE_ANY:
             if (ctx->stop == input) return;

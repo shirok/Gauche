@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.10 2002-09-02 03:35:21 shirok Exp $
+;; $Id: regexp.scm,v 1.11 2002-09-21 03:00:13 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -463,5 +463,63 @@
                               (format #f "(bra^~a)"
                                       (/ (string-length (rxmatch-substring m 1))
                                          3))))))
+
+;;-------------------------------------------------------------------------
+(test-section "regexp cimatch")
+
+(test "regexp/ci" "BC"
+      (lambda ()
+        (cond ((rxmatch #/bc/i "ABCD") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" "bC"
+      (lambda ()
+        (cond ((rxmatch #/Bc/i "AbCD") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" "bc"
+      (lambda ()
+        (cond ((rxmatch #/BC/i "AbcD") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" #f
+      (lambda ()
+        (cond ((rxmatch #/Bc/ "AbCD") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" #f
+      (lambda ()
+        (cond ((rxmatch #/BC/ "ABcD") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" "PAD"
+      (lambda ()
+        (cond ((rxmatch #/p[a-z]d/i "PAD") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" "pad"
+      (lambda ()
+        (cond ((rxmatch #/P[A-Z]D/i "pad") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" "bad"
+      (lambda ()
+        (cond ((rxmatch #/.[a-pQ-Z][A-Pq-z]/i "bad") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" #f
+      (lambda ()
+        (cond ((rxmatch #/p[a-z]d/ "PAD") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" #f
+      (lambda ()
+        (cond ((rxmatch #/P[A-Z]D/ "pad") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" #f
+      (lambda ()
+        (cond ((rxmatch #/.[a-pQ-Z][A-Pq-z]/ "bad") => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" "pad"
+      (lambda ()
+        (cond ((rxmatch (string->regexp "p[A-Z]d" :case-fold #t) "pad")
+               => rxmatch-substring)
+              (else #f))))
+(test "regexp/ci" #f
+      (lambda ()
+        (cond ((rxmatch (string->regexp "p[A-Z]d") "pad")
+               => rxmatch-substring)
+              (else #f))))
 
 (test-end)

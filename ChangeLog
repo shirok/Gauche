@@ -1,3 +1,8 @@
+2002-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c, src/char.c, src/read.c, src/extlib.stub : added
+	  case-fold regexp match.  New syntax #/.../i for it.
+
 2002-09-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/compile.c, src/gauche/vminsn.h : implemented
