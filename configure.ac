@@ -1,13 +1,13 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.14 2003-10-06 12:18:43 shirok Exp $
+dnl $Id: configure.ac,v 1.15 2003-10-23 23:45:46 fuyuki Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.2, shiro@acm.org)
-AC_REVISION($Revision: 1.14 $)
+AC_REVISION($Revision: 1.15 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
 dnl ==========================================================
-dnl Process args given to configre
+dnl Process args given to configure
 dnl
 
 dnl ----------------------------------------------------------
