@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.284 2002-10-15 04:06:47 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.285 2002-10-17 06:54:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2514,7 +2514,7 @@ to the call of @var{expr-or-slot}.  See the fourth example below.
 (cut <> a b)           @equiv{} (lambda (f) (f a b))
 
 ;; Usage
-(map (cut * 2 <>) '(1 2 3 4)
+(map (cut * 2 <>) '(1 2 3 4))
 (for-each (cut write <> port) exprs)
 @end example
 
@@ -2834,7 +2834,7 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
 (if (number? #f) 'yes 'no) @result{} no
 
 (let ((x '(1 . 2)))
-  (if (cons? x)
+  (if (pair? x)
       (values (car x) (cdr x))
       (values #f #f)))
   @result{} 1 @r{and} 2
@@ -4390,15 +4390,15 @@ do not call @code{object-equal?} directly; call @code{equal?} on each element.
 
 @example
 (define-class <foo> ()
-  ((x :init-keyword x))
-  ((y :init-keyword y)))
+  ((x :init-keyword :x)
+   (y :init-keyword :y)))
 
 (define-method object-equal? ((a <foo>) (b <foo>))
   (and (equal? (slot-ref a 'x) (slot-ref b 'x))
        (equal? (slot-ref a 'y) (slot-ref b 'y))))
 
-(equal? (make <foo> :x 1 :y (list a b))
-        (make <foo> :x 1 :y (list a b)))
+(equal? (make <foo> :x 1 :y (list 'a 'b))
+        (make <foo> :x 1 :y (list 'a 'b)))
   @result{} #t
 
 (equal? (make <foo> :x 1 :y (make <foo> :x 3 :y 4))
@@ -16535,10 +16535,10 @@ If a service is found, an instance of @code{<sys-servent>} is returned.
 Otherwise, @code{#f} is returned.
 @example
 (let ((serv (sys-getservbyname "http" "tcp")))
-  (list (slot-ref host 'name)
-        (slot-ref host 'aliases)
-        (slot-ref host 'port)
-        (slot-ref host 'proto)))
+  (list (slot-ref serv 'name)
+        (slot-ref serv 'aliases)
+        (slot-ref serv 'port)
+        (slot-ref serv 'proto)))
   @result{} ("http" () 80 "tcp")
 @end example
 @end defun
@@ -16551,10 +16551,10 @@ If a service is found, an instance of @code{<sys-servent>} is returned.
 Otherwise, @code{#f} is returned.
 @example
 (let ((serv (sys-getservbyport 6000 "tcp")))
-  (list (slot-ref host 'name)
-        (slot-ref host 'aliases)
-        (slot-ref host 'port)
-        (slot-ref host 'proto)))
+  (list (slot-ref serv 'name)
+        (slot-ref serv 'aliases)
+        (slot-ref serv 'port)
+        (slot-ref serv 'proto)))
   @result{} ("x-server" () 6000 "tcp")
 @end example
 @end defun
@@ -16582,9 +16582,9 @@ If a protocol is found, an instance of @code{<sys-protoent>} is returned.
 Otherwise, @code{#f} is returned.
 @example
 (let ((proto (sys-getprotobyname "icmp")))
-  (list (slot-ref host 'name)
-        (slot-ref host 'aliases)
-        (slot-ref host 'proto)))
+  (list (slot-ref proto 'name)
+        (slot-ref proto 'aliases)
+        (slot-ref proto 'proto)))
   @result{} ("icmp" ("ICMP") 1)
 @end example
 @end defun
@@ -16596,9 +16596,9 @@ If a protocol is found, an instance of @code{<sys-protoent>} is returned.
 Otherwise, @code{#f} is returned.
 @example
 (let ((proto (sys-getprotobynumber 17)))
-  (list (slot-ref host 'name)
-        (slot-ref host 'aliases)
-        (slot-ref host 'proto)))
+  (list (slot-ref proto 'name)
+        (slot-ref proto 'aliases)
+        (slot-ref proto 'proto)))
   @result{} ("udp" ("UDP") 17)
 @end example
 @end defun
@@ -16782,12 +16782,12 @@ Examples:
 @example
 (parse-options '("-file" "foo")
   (("file=s" (file)
-     (format #t "file is ~s\n"))))
+     (format #t "file is ~s\n" file))))
  @result{} ;@r{``@code{file is "foo"}'' is printed}
 
 (parse-options '("-scale" "1.5" "2.2")
   (("scale=ff" (xscale yscale)
-     (format #t "scale is ~sx~s\n" xscale yscale)
+     (format #t "scale is ~sx~s\n" xscale yscale))))
  @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
 
 (parse-options '("-scale" "1.5" "2.2")
@@ -17503,11 +17503,11 @@ This is the uniform sequence modifier.
 @c COMMON
 
 @example
-(let ((x (list a b c)))
+(let ((x (list 'a 'b 'c)))
   (set! (ref x 1) 'z)
   x) @result{} (a z c)
 
-(let ((x (vector a b c)))
+(let ((x (vector 'a 'b 'c)))
   (set! (ref x 1) 'z)
   x) @result{} #(a z c)
 
@@ -23612,7 +23612,7 @@ by default.
 @c COMMON
 
 @example
-(find-file-in-path "ls")
+(find-file-in-paths "ls")
   @result{} "/bin/ls"
 
 @c EN
@@ -23620,7 +23620,7 @@ by default.
 @c JP
 ;; @r{アプリケーション"myapp"のユーザプレファレンスファイルを探す例}
 @c COMMON
-(find-file-in-path "userpref"
+(find-file-in-paths "userpref"
   :paths `(,(expand-path "~/.myapp")
            "/usr/local/share/myapp"
            "/usr/share/myapp")

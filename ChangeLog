@@ -1,5 +1,7 @@
 2002-10-16  Shiro Kawai  <shiro@acm.org>
 
+	* doc/gauche-ref.texi : applied a patch to fix many of erroneous
+	  examples.  (Thanks to Kimura Fuyuki for providing the patch).
 	* src/gauche-config.in : added --mandir and --infodir
 
 2002-10-14  Shiro Kawai  <shiro@acm.org>
