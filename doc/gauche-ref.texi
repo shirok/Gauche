@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.160 2002-02-18 20:52:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.161 2002-02-19 10:08:12 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4935,6 +4935,7 @@ SRFI-13については@ref{String library}を参照してください。
 @menu
 * String Predicates::           
 * String Constructors::         
+* String Interpolation::        
 * String Accessors & Modifiers::  
 * String Comparison::           
 * String utilities::            
@@ -4967,7 +4968,7 @@ Returns @code{#t} if @var{obj} is an immutable string, @code{#f} otherwise
 Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @end defun
 
-@node String Constructors, String Accessors & Modifiers, String Predicates, Strings
+@node String Constructors, String Interpolation, String Predicates, Strings
 @subsection String Constructors
 @c NODE 文字列の作成
 
@@ -5043,13 +5044,134 @@ Other class may provide a method to customize the behavior.
 @c COMMON
 @end deffn
 
-@node String Interpolation
+@node String Interpolation, String Accessors & Modifiers, String Constructors, Strings
 @subsection String Interpolation
 @c NODE 文字列の補間
 
-The term "string interpolation" is used in the Perl
+@c EN
+The term "string interpolation" is used in various scripting languages
+such as Perl and Python to refer to the feature to embed expressions
+in a string literal, which are evaluated and then their results are
+inserted into the string literal at run time.
+@c JP
+「文字列の補間(string interpolation)」という用語は、
+PerlやPythonなど様々なスクリプト言語で、文字列リテラル内に式を埋め込んでおき
+実行時に式を評価した値をそのリテラル内に埋め込む機能を指します。
+@c COMMON
 
-@node String Accessors & Modifiers, String Comparison, String Constructors, Strings
+@c EN
+Scheme doesn't define such a feature, but Gauche implements it as a
+reader macro.
+@c JP
+Schemeはそのような機能を定義していませんが、Gaucheではリーダーマクロを使って
+文字列の補間を実装しました。
+@c COMMON
+
+@deftp {Reader syntax} #`@var{string-literal}
+
+@c EN
+Evaluates to a string.  If @var{string-literal} contains the
+character sequence @code{,@var{expr}}, where 
+@var{expr} is a valid external representation
+of a Scheme expression, @var{expr} is evaluated and
+its result is inserted in the original place (by using @code{x->string},
+see @ref{String Constructors}).
+@c JP
+文字列に評価されます。@var{string-literal}内に、@code{,@var{expr}}
+というシーケンス(ここで@var{expr}は有効なScheme式の外部表現)が
+現われたら、@var{expr}が評価されてその結果がもとの位置に埋め込まれます。
+結果の文字列化には@code{x->string}が使われます(@ref{String Constructors}参照)。
+@c COMMON
+
+@c EN
+The comma and the following expression must be adjacent (without containing
+any whitespace characters), or it is not recognized as a special sequence.
+@c JP
+コンマと続く式とは、空白文字等を入れずに隣接していなければなりません。
+そうでない場合は置換されません。
+@c COMMON
+
+@c EN
+Two adjacent commas are converted to a single comma.  You can embed
+a comma before a non-whitespace character in @var{string-literal}
+by this.
+@c JP
+二つの連続するコンマは一つのリテラルのコンマ文字に置き換えられます。
+これによって、コンマと非空白文字の連続を@var{string-literal}に入れることができます。
+@c COMMON
+
+@c EN
+Other characters in the @var{string-literal} are copied as is.
+@c JP
+それ以外の@var{string-literal}内の文字シーケンスはそのままコピーされます。
+@c COMMON
+
+@c EN
+If you use a variable as @var{expr} and need to delimit it from the
+subsequent string, you can use the symbol escape syntax
+using `|' character, as shown in the last two examples below.
+@c JP
+@var{Expr}に単独の変数を使う場合で、それに続く文字列と変数名を区切りたい
+場合は、`|'文字を使ったシンボルエスケープ構文が使えます。下の例の最後の
+2つを見て下さい。
+@c COMMON
+
+@example
+#`"This is Gauche, version ,(gauche-version)."
+ @result{} "This is Gauche, version @VERSION@."
+
+#`"Date: ,(sys-strftime \"%Y/%m/%d\" (sys-localtime (sys-time)))"
+ @result{} "Date: 2002/02/18"
+
+(let ((a "AAA")
+      (b "BBB"))
+ #`"xxx ,a ,b zzz")
+ @result{} "xxx AAA BBB zzz"
+
+#`"123,,456,,789"
+ @result{} "123,456,789"
+
+(let ((n 5)) #`"R,|n|RS")
+ @result{} "R5RS"
+
+(let ((x "bar")) #`"foo,|x|.")
+ @result{} "foobar"
+@end example
+
+@c EN
+In fact, the reader expands this syntax into a macro call,
+which is then expanded into a call of @code{string-append}
+as follows:
+@c JP
+実は、リーダーはこの構文をマクロ呼び出しへと変換し、それが最終的には
+@code{string-append}への呼び出しへと変換されます。
+@c COMMON
+@example
+#`"This is Gauche, version ,(gauche-version)."
+ @equiv{}
+(string-append "This is Gauche, version "
+               (x->string (gauche-version))
+               ".")
+@end example
+@end deftp
+
+@c EN
+@emph{Rationale of the syntax:}
+Some other scripting languages use `@code{$expr}' or '@code{#@{...@}}'.
+I chose this syntax with respect to the quasiquote (@xref{Quasiquotation}).
+Althogh it may be awkward to delimit variable names by `|',
+the comma syntax should be easier to read than the other exotic syntax
+for seasoned Scheme programmers.
+@c JP
+@emph{この構文を採用した理由:} 
+他のスクリプト言語では、`@code{$expr}' や '@code{#@{...@}}' が良く使われています。
+準クオート (@ref{Quasiquotation}参照) との類似性からこの構文を採用しました。
+変数名の区切りを明確にするのに`|'を使う必要があるのは少々奇妙ですが、
+慣れたSchemeプログラマならコンマ構文を読むのは他の言語から借りた構文よりも
+楽だと思います。
+@c COMMON
+
+@node String Accessors & Modifiers, String Comparison, String Interpolation, Strings
 @subsection String Accessors & Modifiers
 @c NODE 文字列のアクセスと変更
 
@@ -9281,11 +9403,16 @@ method to create the class object.  @xref{Class instantiation},
 for the usage of metaclass.
 @end defmac
 
-@node Multiple inheritance
+@menu
+* Multiple inheritance::        
+* Slot specification::          
+@end menu
+
+@node Multiple inheritance, Slot specification, Defining class, Defining class
 @subsection Multiple inheritance
 @c NODE 多重継承
 
-@node Slot specification
+@node Slot specification,  , Multiple inheritance, Defining class
 @subsection Slot specification
 @c NODE スロットの記述
 
