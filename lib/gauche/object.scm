@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.9 2001-03-28 08:45:45 shiro Exp $
+;;;  $Id: object.scm,v 1.10 2001-03-31 06:53:08 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -306,6 +306,12 @@
 
 (define-method slot-missing ((class <class>) obj slot . value)
   (error "object ~s doesn't have such slot: ~s" obj slot))
+
+(define (slot-exists? obj slot)
+  (slot-exists-using-class? (class-of obj) obj slot))
+
+(define-method slot-exists-using-class? (class obj slot)
+  (not (not (assq slot (class-slots class)))))
 
 ;;----------------------------------------------------------------
 ;; Introspection routines
