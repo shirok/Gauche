@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.76 2001-05-16 09:27:06 shirok Exp $
+;;; $Id: extlib.stub,v 1.77 2001-05-16 09:59:20 shirok Exp $
 ;;;
 
 "
@@ -502,12 +502,6 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (output-port? port))
   (assert (procedure? thunk))
   "  SCM_RETURN(Scm_WithPort(port, thunk, 2, FALSE));")
-
-(define-cproc with-input-from-string (str thunk)
-  (assert (string? str))
-  (assert (procedure? thunk))
-  "  ScmObj in = Scm_MakeInputStringPort(str);
-  SCM_RETURN(Scm_WithPort(SCM_PORT(in), thunk, 0, TRUE));")
 
 (define-cproc port-name (port)
   (assert (port? port))
