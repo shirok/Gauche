@@ -61,19 +61,20 @@ In the shortest form, it can be defined like this:
 (define-class <2d-point> () (x y))
 @end example
 
+(You can find the code of definitions in the examples of this section
+in @code{examples/oointro.scm} of Gauche's source distribution.)
+
 The symbol @code{<2d-point>} is the name of the class, and also
 the global variable @code{<2d-point>} is bound to a class object.
 Surrounding a class name by @code{<} and @code{>} is just a
 convention; you can pass any symbol to @code{define-class}.
-(You can find the code of definitions in the examples of this section
-in @code{examples/oointro.scm} of Gauche's source distribution.)
 
 The second argument of @code{define-class} is a list of
-direct superclasses, from which you can inherit your class.
+direct superclasses, which specifies inheritance of the class.
 We'll come back to it later.
 
 The third argument of @code{define-class} is a list of
-@emph{slots}.  A slot is a space, usually in each object,
+@emph{slots}.  A slot is a storage space, usually in each object,
 where you can store a value.  It is something similar to
 what is called a field or an instance variable in other
 object-oriented languages; but slots can be configured more
@@ -90,7 +91,8 @@ a-point  @result{} #<<2d-point> 0x8117570>
 @end example
 
 If you are using @code{gosh} interactively, you can use
-a generic function @code{describe} to inspect its internals.
+a generic function @code{describe} to inspect the internal
+of an instance.
 A short alias, @code{d}, is defined to @code{describe} for
 the convenience.  (See @ref{gauche.interactive - Interactive session}
 for the details).
@@ -150,8 +152,8 @@ Note that each slot specification is now a list, instead of just
 a symbol as in the previous example.
 The list's car now specifies the slot name, and its cdr
 gives various information.   The value after @code{:init-value}
-defines a default value of the slot.  The keyword after @code{:init-keyword}
-defines a keyword argument which can be passed to @code{make} to
+defines the default value of the slot.  The keyword after @code{:init-keyword}
+defines the keyword argument which can be passed to @code{make} to
 initialize the slot at creation time.
 The name after keyword @code{:accessor} is bound to a generic
 function that can be used to access/modify the slot, instead of
@@ -196,11 +198,12 @@ gosh> (y-of a-point)
 @end example
 
 The full list of available slot options is described in 
-@ref{Defining class}.
-You might feel that the declarations of such slot options are overly
-verbose.  Actually it depends on the applications.
-Sometimes you find its flexibility convenient.  Besides,
-using a mechanism called metaobject protocol, you can customize
+@ref{Defining class}.  At a first grance,
+the declarations of such slot options may look verbose.
+The system might have provide a static way to define
+init-keywords or accessor names automatically; however,
+CLOS-like systems prefer flexibility.
+Using a mechanism called metaobject protocol, you can customize
 how these slot options are interpreted, and you can add
 your own slot options as well.
 See @ref{Metaobject protocol}, for details.
@@ -217,7 +220,7 @@ Yes, we can use the same accessor name like @code{x-of}, and
 it is effectively overloaded.
 
 If you are familiar with mainstream object-oriented languages,
-you may wonder where methods are.  Here it is.
+you may wonder where methods are.  Here they are.
 The following form defines a method @code{move-by!} of
 three arguments, @var{pt}, @var{dy}, @var{dy}, where @var{pt} is
 an instance of @code{<2d-point>}.
@@ -229,7 +232,7 @@ an instance of @code{<2d-point>}.
 @end example
 
 The second argument of @code{define-method} macro specifies a
-@emph{method specializer}.  It indicates the first argument must be
+@emph{method specializer list}.  It indicates the first argument must be
 an instance of @code{<2d-point>}, and the second and third
 can be any type.   The syntax to call a method is just like
 the one to call an ordinary function.
@@ -282,8 +285,8 @@ slots:
 
 You see that a method is dispached not only by its primary
 receiver (@code{<2d-point>}), but also other arguments.
-In fact, there is no difference between the first argument and
-the rest.  In CLOS-like system a method does not belong to
+In fact, the first argument is no more special than the rest.
+In CLOS-like system a method does not belong to
 a particular class.
 
 So what is actually a method?  Inspecting @code{move-by!}
@@ -326,15 +329,15 @@ slots:
 @end example
 
 In the mainstream dynamic object-oriented languages, a class
-has many roles: it defines a structure and a type, creates a
+has many roles; it defines a structure and a type, creates a
 namespace for its slots and methods, and is responsible for
 method dispatch.  In Gauche, namespace is managed by modules,
 and method dispatch is handled by generic functions.
 
 The default printed representation of object is not very user-friendly.
-Gauche's @code{write} and @code{display} function calls a generic
-function @code{write-object} when it encounters an instance
-it doesn't know how to print.  You can define its method
+Gauche's @code{write} and @code{display} function call a generic
+function @code{write-object} when they encounter an instance
+they don't know how to print.  You can define its method
 specialized to your class to customize how the instance is
 printed.
 
@@ -422,8 +425,8 @@ since we still need the init-keywords to be handled.
 
 The trick is a special method, @code{next-method}.  It can only be
 used inside a method body, and calls @emph{less specific method}
-of the same generic function---generally, it means you call the
-same method of @emph{superclass}.   
+of the same generic function---typically, it means you call the
+same method of superclass.
 Most object-oriented languages have the concept of calling
 superclass's method.  Because of multiple-argument
 dispatching and multiple inheritance, @code{next-method} is
@@ -443,7 +446,7 @@ memory for an instance of @code{<shape>}, and calls
 @code{initialize} generic funciton with the instance and
 @code{args @dots{}}.  It is dispatched to the @code{initialize}
 method you just defined.  In it, you call @code{next-method},
-which in fact calls @code{<object>} class's @code{initialize}
+which in turn calls @code{<object>} class's @code{initialize}
 method.  It initializes the instance with init-values and init-keywords.
 After it returns, you register the new @code{<shape>} instance
 to the global shape list @code{*shapes*}.
@@ -463,7 +466,7 @@ shape.  Now we define some concrete drawable shapes, by
 
 Note the second argument passed to @code{define-class}.
 It indicates that @code{<point-shape>} and @code{<polyline-shape>}
-inherits slots of @code{<shape>} class, and also instances of
+inherit slots of @code{<shape>} class, and also instances of
 those subclasses can be accepted wherever an instance of 
 @code{<shape>} class is accepted.
 
@@ -926,19 +929,60 @@ When multiple inheritance is involved, a story becomes a bit
 complicated.  We have to merge multiple CPLs of the superclasses
 into one CPL.  It is called @emph{linearization}, and there are
 several linealization strategies.  By default, Gauche uses
-the same algorithm used in Dylan, which has two properties:
+an algorithm called @emph{C3 linearization},
+which is consistent with the local precedence order,
+monotonicity, and the extended precedence graph.
+We don't go into the details here; as a general rule,
+the order of superclasses in a class's CPL is always
+consistent to the order of direct superclasses of
+the class, the order of CPL of each superclasses,
+and the order of direct superclasses of each superclass,
+and so on.   See @ref{dylan,[Dylan],Dylan} for the precise
+description.
 
-@table @i
-@item Observing local precedence order:
-If class @code{<A>} precedes class @code{<B>} in the local precedence
-order of class @code{<C>}, the linearizations of @code{<C>} and all
-of its subclasses have @code{<A>} before @code{<B>}.
-@item Monotonic:
-Every property inherited by a class is inherited or defined by one
-of its direct superclasses.
-@end table
+If a class inherits superclasses in a way that its CPL can't
+be constructed with satisfying consistencies, an error is reported.
 
-See @ref{dylan,[Dylan],Dylan} for the details.
+Here's a simple example of multiple inheritance.
+
+@example
+(define-class <grid-layout> () ())
+
+(define-class <horizontal-grid> (<grid-layout>) ())
+
+(define-class <vertical-grid> (<grid-layout>) ())
+
+(define-class <hv-grid> (<horizontal-grid> <vertical-grid>) ())
+
+(map class-name (class-precedence-list <hv-grid>))
+ @result{} (<hv-grid> <horizontal-grid> <vertical-grid> 
+     <grid-layout> <object> <top>)
+@end example
+
+Note that the order of direct superclasses of @code{<hv-grid>}
+(@code{<horizontal-grid>} and @code{<vertical-grid>}) is kept.
+
+The following is a little twisted example:
+
+@example
+(define-class <pane> () ())
+
+(define-class <scrolling-mixin> () ())
+
+(define-class <scrollable-pane> (<pane> <scrolling-mixin>) ())
+
+(define-class <editing-mixin> () ())
+
+(define-class <editable-pane> (<pane> <editing-mixin>) ())
+
+(define-class <editable-scrollable-pane>
+   (<scrollable-pane> <editable-pane>) ())
+
+(map class-name (class-precedence-list <editable-scrollable-pane>))
+ @result{} (<editable-scrollable-pane> <scrollable-pane> 
+     <editable-pane> <pane> <scrolling-mixin> <editing-mixin> 
+     <object> <top>)
+@end example
 
 Once the class precedence order is determined,
 the slots of defined class is calculated as follows:
@@ -1005,9 +1049,9 @@ Returns the class precedence list of @var{class}.
 @example
 (class-precedence-list <string>)
   @result{} (#<class <string>>
-             #<class <sequence>>
-             #<class <collection>>
-             #<class <top>>)
+      #<class <sequence>>
+      #<class <collection>>
+      #<class <top>>)
 @end example
 @end defun
 
@@ -1036,7 +1080,7 @@ adn whose cdr is a keyword-value list that specifies slot options.
 You can further inspect a slot definition to know what characteristics
 the slot has.  See @ref{Slot definition object} for the details.
 
-The standard way to get the list of slot names of a given class
+The standard way to get a list of slot names of a given class
 is @code{(map slot-definition-name (class-slots class))}.
 @end defun
 
@@ -1163,7 +1207,7 @@ See @ref{Changing classes}, for the details.
 Let's see some examples.  Suppose you are defining a graphical
 toolkit.  A @code{<window>} is a rectangle region on
 the screen, so it has width and height.  It can be organized
-hierarchically, i.e. a window can be placed in another window;
+hierarchically, i.e. a window can be placed within another window;
 so it has a pointer to the parent window.  And we specify the
 window's position, x, y, by the coordinate relative to its
 parent window.  Finally, we create a "root" window that
@@ -1220,34 +1264,62 @@ slots:
   y         : 5
 @end example
 
-
+If you're like me, you don't want to expose a global variable
+such as @code{*root-window*} for users of your toolkit.
+One way to encapsulate it (to certain extent) is to keep
+the pointer to the root window in a class variable.
+Add the following slot option to the definition of @code{<window>},
+and the slot @code{root-window} of the @code{<window>} class
+refers to the same storage space.
 
 @example
-   ;; Pointer to the root window, and absolute positions of the window.
+(define-class <window> ()
+  (...
+   ...
    (root-window :allocation :class)
-   (root-x      :allocation :virtual
-                :slot-ref  (lambda (o)
-                             (+ (ref (ref o 'parent) 'root-x)
-                                (ref o 'x)))
-                :slot-set! (lambda (o v)
-                             (set! (ref o 'x)
-                                   (- v (ref (ref o 'parent) 'root-x)))))
-   (root-y      :allocation :virtual
-                :slot-ref  (lambda (o)
-                             (+ (ref (ref o 'parent) 'root-y)
-                                (ref o 'y)))
-                :slot-set! (lambda (o v)
-                             (set! (ref o 'y)
-                                   (- v (ref (ref o 'parent) 'root-y)))))
-   ))
-
-  (let ((w (make <window> :parent #f
-             :width *screen-width* :height *screen-height*)))
-    (slot-set! w 'root-window w)
-    w))
+   ...))
 @end example
 
+You can use @code{slot-ref} and @code{slot-set!} on an instance
+of @code{<window>},
+or use @code{class-slot-ref} and @code{class-slot-set!} on the
+@code{<window>} class itself,
+to get/set the value of the @code{root-window} slot.
 
+The users of the toolkit may want to get the absolute position
+of the window (the coordinates in the root window) instead of
+the relative position.  You may provide virtual slots that
+returns the absolute positions, like the following:
+
+@example
+(define-class <window> ()
+  (...
+   ...
+   (root-x :allocation :virtual
+           :slot-ref  (lambda (o)
+                        (if (ref o 'parent)
+                            (+ (ref (ref o 'parent) 'root-x)
+                               (ref o 'x))
+                            (ref o 'x)))
+           :slot-set! (lambda (o v)
+                        (set! (ref o 'x)
+                              (if (ref o 'parent)
+                                  (- v (ref (ref o 'parent) 'root-x))
+                                  v)))
+            )
+    ...))
+@end example
+
+Whether providing such interface via methods or virtual slots is
+somewhat a matter of taste.   Using virtual slots has an advantage
+of being able to hide the change of implementation, i.e. you can
+change to keep @code{root-x} in a real slot and make @code{x} a virtual
+slot later without breaking the code using @code{<window>}.
+(In the mainstream object-oriented languages,
+such kind of "hiding implementation" is usually achieved
+by hiding instance variables and exposing methods.  In Gauche
+and other CLOS-like systems, slots are always visible to the
+users, so the situation is a bit different.
 
 
 @c ----------------------------------------------------------------------
