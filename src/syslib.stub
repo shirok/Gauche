@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.74 2002-07-08 12:33:47 shirok Exp $
+;;; $Id: syslib.stub,v 1.75 2002-07-09 03:47:00 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -226,6 +226,9 @@
 (define-cproc get-signal-handler (sig)
   (assert (exact? sig))
   "SCM_RETURN(Scm_GetSignalHandler(sig));")
+
+(define-cproc get-signal-handlers ()
+  "SCM_RETURN(Scm_GetSignalHandlers());")
 
 ;(define-cproc %with-signal-handlers (handlers thunk)
 ;  (assert (procedure? thunk))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.15 2002-07-08 12:33:47 shirok Exp $
+ *  $Id: signal.c,v 1.16 2002-07-09 03:45:48 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -344,8 +344,10 @@ void Scm_SigCheck(ScmVM *vm)
 ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler)
 {
     struct sigaction act;
+    struct sigdesc *desc;
     sigset_t sigset;
-    int badproc = FALSE, sigactionfailed = FALSE, i;
+    int badproc = FALSE, sigactionfailed = FALSE;
+
     if (SCM_INTP(sigs)) {
         int signum = SCM_INT_VALUE(sigs);
         if (signum < 0 || signum >= NSIG) {
@@ -373,20 +375,19 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler)
     if (!badproc) {
         sigemptyset(&act.sa_mask);
         act.sa_flags = 0;
-        for (i=0; i<NSIG; i++) {
-            if (sigismember(&sigset, i)
-                && sigismember(&sigHandlers.masterSigset, i)) {
-                if (sigaction(i, &act, NULL) != 0) {
-                    sigactionfailed = TRUE;
-                    break;
-                }
-                sigHandlers.handlers[i] = handler;
+        for (desc=sigDesc; desc->name; desc++) {
+            if (!sigismember(&sigset, desc->num)) continue;
+            if (!sigismember(&sigHandlers.masterSigset, desc->num)) continue;
+            if (sigaction(desc->num, &act, NULL) != 0) {
+                sigactionfailed = desc->num;
+                break;
             }
+            sigHandlers.handlers[desc->num] = handler;
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
     if (badproc) Scm_Error("bad signal handling procedure: must be either a procedure that takes at least one argument, #t, or #f, but got %S", handler);
-    if (sigactionfailed) Scm_Error("sigaction failed when setting a sighandler");
+    if (sigactionfailed) Scm_Error("sigaction failed when setting a sighandler for signal %d", sigactionfailed);
     return SCM_UNDEFINED;
 }
 
@@ -400,6 +401,38 @@ ScmObj Scm_GetSignalHandler(int signum)
     r = sigHandlers.handlers[signum];
     (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
     return r;
+}
+
+ScmObj Scm_GetSignalHandlers(void)
+{
+    ScmObj h = SCM_NIL, hp;
+    ScmObj handlers[NSIG];
+    struct sigdesc *desc;
+    sigset_t masterSet;
+    int i;
+
+    /* copy handler vector and master sig set locally, so that we won't
+       grab the lock for extensive time */
+    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
+    for (i=0; i<NSIG; i++) handlers[i] = sigHandlers.handlers[i];
+    masterSet = sigHandlers.masterSigset;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
+        
+    for (desc=sigDesc; desc->name; desc++) {
+        if (!sigismember(&masterSet, desc->num)) continue;
+        SCM_FOR_EACH(hp, h) {
+            if (SCM_EQ(SCM_CDAR(hp), handlers[desc->num])) {
+                sigaddset(&(SCM_SYS_SIGSET(SCM_CAAR(hp))->set), desc->num);
+                break;
+            }
+        }
+        if (SCM_NULLP(hp)) {
+            ScmObj set = sigset_allocate(SCM_CLASS_SYS_SIGSET, SCM_NIL);
+            sigaddset(&(SCM_SYS_SIGSET(set)->set), desc->num);
+            h = Scm_Acons(set, handlers[desc->num], h);
+        }
+    }
+    return h;
 }
 
 /*
