@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.10 2001-02-06 08:46:02 shiro Exp $
+ *  $Id: main.c,v 1.11 2001-02-07 08:51:44 shiro Exp $
  */
 
 #include <unistd.h>
@@ -44,7 +44,9 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    Scm_Repl(SCM_PORT(Scm_Stdin()), SCM_PORT(Scm_Stdout()));
+    Scm_Repl(SCM_MAKE_STR("gosh> "),
+             SCM_PORT(Scm_Stdin()),
+             SCM_PORT(Scm_Stdout()));
 
     return 0;
 }
