@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.43 2002-01-22 11:39:46 shirok Exp $
+ *  $Id: main.c,v 1.44 2002-01-25 09:12:24 shirok Exp $
  */
 
 #include <unistd.h>
@@ -94,7 +94,7 @@ static void sig_setup(void)
     sigdelset(&set, SIGKILL);
     sigdelset(&set, SIGCONT);
     sigdelset(&set, SIGSTOP);
-    sigdelset(&set, SIGSEGV); /* for now */
+    sigdelset(&set, SIGSEGV);
     sigdelset(&set, SIGCHLD); /* for now */
     Scm_SetMasterSigmask(&set);
 }

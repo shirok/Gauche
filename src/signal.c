@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.8 2002-01-23 08:25:54 shirok Exp $
+ *  $Id: signal.c,v 1.9 2002-01-25 09:12:29 shirok Exp $
  */
 
 #include <signal.h>
@@ -148,12 +148,13 @@ static void sigset_op(sigset_t *s1, sigset_t *s2, int delp)
 static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
 {
     int signum;
-    struct sigdesc *desc = sigDesc;
+    struct sigdesc *desc;
     const char *name = NULL;
     
     SCM_ASSERT(nargs == 1 && SCM_INTP(args[0]));
     signum = SCM_INT_VALUE(args[0]);
-    for (; desc->name; desc++) {
+
+    for (desc = sigDesc; desc->name; desc++) {
         if (desc->num == signum) {
             name = desc->name;
             break;
@@ -363,12 +364,12 @@ ScmObj Scm_VMWithSignalHandlers(ScmObj handlers, ScmProcedure *thunk)
 /*
  * set/get master signal
  */
-/* TODO: MT protected */
 sigset_t Scm_GetMasterSigmask(void)
 {
     return masterSigset;
 }
 
+/* this should be called before any threads but the master one is created. */
 void Scm_SetMasterSigmask(sigset_t *set)
 {
     struct sigdesc *desc = sigDesc;
@@ -397,6 +398,7 @@ void Scm_SetMasterSigmask(sigset_t *set)
         }
     }
     masterSigset = *set;
+    Scm_VM()->sigMask = masterSigset;
 }
 
 /*

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.30 2002-01-24 10:17:01 shirok Exp $
+ *  $Id: system.c,v 1.31 2002-01-25 09:12:29 shirok Exp $
  */
 
 #include <stdio.h>
@@ -45,6 +45,7 @@
 int Scm_SysCall(int r)
 {
     if (r < 0 && errno == EINTR) {
+        errno = 0;
         Scm_SigCheck(Scm_VM());
     }
     return r;
@@ -53,6 +54,7 @@ int Scm_SysCall(int r)
 void *Scm_PtrSysCall(void *r)
 {
     if (r == NULL && errno == EINTR) {
+        errno = 0;
         Scm_SigCheck(Scm_VM());
     }
     return r;
