@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.113 2001-04-15 07:27:14 shiro Exp $
+ *  $Id: gauche.h,v 1.114 2001-04-15 12:36:35 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1710,13 +1710,19 @@ extern ScmClass Scm_RegexpClass;
 #define SCM_REGEXP(obj)           ((ScmRegexp*)obj)
 #define SCM_REGEXPP(obj)          SCM_XTYPEP(obj, SCM_CLASS_REGEXP)
 
+extern ScmObj Scm_RegComp(ScmString *pattern);
+extern ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input);
+extern void Scm_RegDump(ScmRegexp *rx);
+
 struct ScmRegMatchRec {
     SCM_HEADER;
+    ScmString *input;
     int numMatches;
     struct ScmRegMatchSub {
-        int start;
+        int index;
         int len;
-        const char *ptr;
+        const char *start;
+        const char *end;
     } *matches;
 };
 
@@ -1724,6 +1730,8 @@ extern ScmClass Scm_RegMatchClass;
 #define SCM_CLASS_REGMATCH        (&Scm_RegMatchClass)
 #define SCM_REGMATCH(obj)         ((ScmRegMatch*)obj)
 #define SCM_REGMATCHP(obj)        SCM_XTYPEP(obj, SCM_CLASS_REGMATCH)
+
+extern void Scm_RegMatchDump(ScmRegMatch *match);
 
 /*-------------------------------------------------------
  * STUB MACROS

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.62 2001-04-13 06:18:06 shiro Exp $
+;;; $Id: extlib.stub,v 1.63 2001-04-15 12:36:46 shiro Exp $
 ;;;
 
 "
@@ -352,6 +352,27 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (string? s2))
   "  SCM_RETURN(Scm_StringContains(s1, s2));")
 
+;; Regexp
+(define-cproc string->regexp (str)
+  (assert (string? str))
+  "  SCM_RETURN(Scm_RegComp(str));")
+
+(define-cproc rxmatch (regexp str)
+  (assert (string? str))
+  "  ScmRegexp *rx = NULL;
+  if (SCM_STRINGP(regexp)) rx = SCM_REGEXP(Scm_RegComp(SCM_STRING(regexp)));
+  else if (SCM_REGEXPP(regexp)) rx = SCM_REGEXP(regexp);
+  else Scm_Error(\"regexp required, but got %S\", regexp);
+  SCM_RETURN(Scm_RegExec(rx, str));")
+
+(define-cproc %regexp-dump (rx)
+  "  if (!SCM_REGEXPP(rx)) Scm_Error(\"regexp required, but got %S\", rx);
+  Scm_RegDump(SCM_REGEXP(rx));  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc %regmatch-dump (rm)
+  "  if (!SCM_REGMATCHP(rm)) Scm_Error(\"regmatch required, but got %S\", rm);
+  Scm_RegMatchDump(SCM_REGMATCH(rm));  SCM_RETURN(SCM_UNDEFINED);")
+
 ;;
 ;; 6.3.6  Vectors
 ;;
@@ -668,14 +689,6 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc procedure-info (proc)
   (assert (procedure? proc))
   "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")
-
-;; for test
-"extern ScmObj re_compile(ScmString *);"
-
-(define-cproc %rx-compile (str)
-  (assert (string? str))
-  "  SCM_RETURN(re_compile(str));")
-
 
 ;; Local variables:
 ;; mode: scheme
