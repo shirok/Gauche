@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.7 2002-04-22 03:32:25 shirok Exp $
+;;;  $Id: cgi.scm,v 1.8 2002-04-29 09:20:10 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -30,7 +30,6 @@
   (use gauche.parameter)
   (use text.tree)
   (use text.html-lite)
-  (use text.parse)
   (export cgi-metavariables
           cgi-parse-parameters
           cgi-get-parameter
@@ -75,7 +74,7 @@
            ;; TODO: mutipart message
            (or (and-let* ((lenp (get-meta "CONTENT_LENGTH"))
                           (len  (x->integer lenp)))
-                 (read-string len (current-input-port)))
+                 (string-incomplete->complete (read-block len)))
                (port->string (current-input-port))))
           (else (error "unknown REQUEST_METHOD" method)))))
 
@@ -133,21 +132,23 @@
 
 ;; API: cgi-main proc &keyword on-error merge-cookies
 (define (cgi-main proc . args)
-  (let ((eproc (get-keyword :on-error args
-                            (lambda (e)
-                              `(,(cgi-header)
-                                ,(html-doctype)
-                                ,(html:html
-                                  (html:head (html:title "Error"))
-                                  (html:body (html:h1 "Error")
-                                             (html:p (html-escape-string
-                                                      (slot-ref e 'message))))
-                                  ))))))
+  (let1 eproc
+      (get-keyword :on-error args
+                   (lambda (e)
+                     `(,(cgi-header)
+                       ,(html-doctype)
+                       ,(html:html
+                         (html:head (html:title "Error"))
+                         (html:body (html:h1 "Error")
+                                    (html:p (html-escape-string
+                                             (slot-ref e 'message))))
+                         ))))
     (with-error-handler
      (lambda (e) (write-tree (eproc e)))
      (lambda ()
-       (let ((params (cgi-parse-parameters :merge-cookies
-                                           (get-keyword :merge-cookies args #f))))
+       (let1 params
+           (cgi-parse-parameters :merge-cookies
+                                 (get-keyword :merge-cookies args #f))
          (write-tree (proc params)))))
     ))
 
