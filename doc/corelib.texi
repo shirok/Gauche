@@ -3177,6 +3177,7 @@ Returns @code{#t} if @var{obj} is a string pointer.
 
 @node Incomplete strings,  , String Pointers, Strings
 @subsection Incomplete strings
+@c NODE 不完全文字列
 
 @defun string-complete->incomplete str
 @end defun
@@ -5195,6 +5196,7 @@ For an error exception, this is the error message.
 
 @node Low-level exception mechanism,  , Exception object, Exceptions
 @subsection Low-level exception mechanism
+@c NODE 低レベルな例外メカニズム
 
 @c EN
 This layer provides SRFI-18 compatible simple exception mechanism.
