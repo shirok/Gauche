@@ -1,3 +1,21 @@
+2001-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, src/gauche/config.h.in, src/gauche/char_*.h:  added
+	  --enable-multibyte=ENCODING option so that the user can choose
+	  native encoding system.
+	* many files: changed SCM_STR_{GET|PUT}C to SCM_CHAR_{GET|PUT} for
+	  consistency.
+	* src/string.c : start adding StringPointer object.
+
+2001-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-14/query.scm, lib/srfi-14/set.scm: splitted srfi-14.
+	
+2001-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-13/generator.scm, lib/srfi-13/pred.scm,
+	  lib/srfi-13/selector.scm: added some srfi-13 functions.
+
 2001-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.8

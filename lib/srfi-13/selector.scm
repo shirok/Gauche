@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.1 2001-04-25 07:34:17 shiro Exp $
+;;;  $Id: selector.scm,v 1.2 2001-04-26 08:23:42 shiro Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -53,7 +53,7 @@
              (string-take str len))
             (else str)))))
 
-      
+
     
 
     
