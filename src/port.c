@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.77 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: port.c,v 1.78 2002-08-16 23:55:51 shirok Exp $
  */
 
 #include <unistd.h>
@@ -680,7 +680,7 @@ static int file_filler(ScmPort *p, int cnt)
     int fd = (int)p->src.buf.data;
     char *datptr = p->src.buf.end;
     SCM_ASSERT(fd >= 0);
-    do {
+    while (nread == 0) {
         errno = 0;
         r = read(fd, datptr, cnt-nread);
         if (r < 0) {
@@ -699,7 +699,7 @@ static int file_filler(ScmPort *p, int cnt)
             datptr += r;
             nread += r;
         }
-    } while (0);
+    }
     return nread;
 }
 
