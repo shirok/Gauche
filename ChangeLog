@@ -1,3 +1,16 @@
+2002-09-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/compile.c, src/gauche/vminsn.h : implemented
+	 "combined push" instructions, like LREF-PUSH and PUSHI.
+
+2002-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/proc.c, src/vm.c, src/class.c : extend object-apply mechanism
+	  to setter, i.e. defining (setter object-apply) allows non-procedural
+	  object to be used as (set! (obj arg ...) arg ...).
+	* ext/mt-random/mt-random.scm, ext/threads/threads.scm : make symbols
+	  in *.so exported.  (Based on the discussion in gauche-devel).
+
 2002-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/compile.c, src/proc.c : changed VM_LAMBDA instruction

@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.265 2002-09-16 10:13:12 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.266 2002-09-19 21:31:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1115,6 +1115,21 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 メタオブジェクトプロトコルの更に詳しいことについては、
 @ref{mop,[MOP],MOP}が参考になります。
 @c COMMON
+
+@c EN
+@item Class doesn't create namespace
+In the mainstream OO language, a class often creates its own namespace.
+This isn't the case in CLOS-style object system.
+In Gauche, a namespace is managed by the module system
+which is orthogonal to the object system.
+@c JP
+@item クラスは名前空間を作らない
+メインストリームのOO言語ではクラスが名前空間を作ることがよくあります。
+CLOSスタイルのオブジェクトシステムはそうではありません。
+Gaucheでは、名前空間はオブジェクトシステムとは直交する、
+モジュールシステムによって管理されます。
+@c COMMON
+
 @end table
 
 @node Module system, Compilation, Integerated Object System, Concepts
@@ -7800,12 +7815,13 @@ Weak vector @var{wvec}の@var{k}番目の要素を@var{obj}に変更します。
 
 @menu
 * Procedures::                  
+* Applicable objects::          
 * Continuation::                
 * Multiple values::             
 * Delayed Evaludation::         
 @end menu
 
-@node Procedures, Continuation, Control features, Control features
+@node Procedures, Applicable objects, Control features, Control features
 @subsection Procedures
 @c NODE 手続き
 
@@ -8000,6 +8016,7 @@ Some examples:
 @end example
 @end defun
 
+
 @node Procedure arity,  , Combinators, Procedures
 @subsubsection Procedure arity
 @c NODE 手続きのアリティ
@@ -8044,7 +8061,99 @@ If a procedure @var{proc} can take @var{k} arguments, returns @code{#t}.
 Otherwise returns @code{#f}.
 @end defun
 
-@node Continuation, Multiple values, Procedures, Control features
+
+@node Applicable objects, Continuation, Procedures, Control features
+@subsection Applicable objects
+@c NODE 適用可能なオブジェクト
+
+@c EN
+Gauche has a special hook to make an arbitrary object @emph{applicable}.
+@c JP
+@c COMMON
+
+@deffn {Generic Function} object-apply @var{object} @var{arg} @dots{}
+@c EN
+If an object that is neither a procedure nor a generic function
+is applied to some arguments, 
+the object and the arguments are passed to a generic function
+@code{object-apply}.
+
+This can be explained better by examples.
+@c JP
+手続きでもジェネリックファンクションでもないオブジェクトが何らかの引数に
+適用されたとき、そのオブジェクトと引数がジェネリックファンクション@code{object-apply}
+に渡されます。
+
+この機能は、具体的な例を挙げた方が説明し易いでしょう。
+@c COMMON
+@end deffn
+
+@c EN
+For example, suppose you try to evaluate the
+following expression:
+@c JP
+例えば、次のような式を評価しようとしたとします。
+@c COMMON
+
+@example
+("abcde" 2)
+@end example
+
+@c EN
+The operator evaluates to a string, which is neither a procedure
+nor a generic fuction.  So Gauche interpretes the expression
+as if it were like this:
+@c JP
+オペレータは文字列に評価されますから、手続きでもジェネリックファンクションでも
+ありません。そこで、Gaucheはこの式を、あたかも次のような式が与えられた
+かのように解釈します。
+@c COMMON
+
+@example
+(object-apply "abcde" 2)
+@end example
+
+@c EN
+Gauche doesn't define a method of @code{object-apply} that takes
+@code{<string>} and @code{<integer>} by default, so this signals an error.
+However, if you define such a method:
+@c JP
+デフォルトでは、@code{<string>}と@code{<integer>}を引数とする
+@code{object-apply}のメソッドはGauche定義されていないので、
+この式はエラーになります。しかし、次のようなメソッドを定義すると：
+@c COMMON
+
+@example
+(define-method object-apply ((s <string>) (i <integer>))
+  (string-ref s i))
+@end example
+
+@c EN
+Then the first expression works as if a string is @emph{applied} on
+the integer:
+@c JP
+最初の式はまるで文字列が整数に適用されたかのように動作します。
+@c COMMON
+
+@example
+("abcde" 2) @result{} #\c
+@end example
+
+@c EN
+This mechanism works on almost all occasions where a procedure is allowed.
+@c JP
+このメカニズムは手続きが許されるほとんどの箇所で使うことができます。
+@c COMMON
+
+@example
+(apply "abcde" '(1))   @result{} (#\b)
+(map "abcde" '(3 2 1)) @result{} (#\d #\c #\b)
+@end example
+
+
+
+
+@node Continuation, Multiple values, Applicable objects, Control features
 @subsection Continuation
 @c NODE 継続
 
