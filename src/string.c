@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.31 2001-05-01 09:50:15 shirok Exp $
+ *  $Id: string.c,v 1.32 2001-05-01 10:16:30 shirok Exp $
  */
 
 #include <stdio.h>
@@ -402,13 +402,6 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
         return SCM_MAKE_STR("");
     }
 
-    if (grammer == SCM_STRING_JOIN_INFIX
-        || grammer == SCM_STRING_JOIN_STRICT_INFIX) {
-        ndelim = nstrs - 1;
-    } else {
-        ndelim = nstrs;
-    }
-    
     SCM_FOR_EACH(cp, strs) {
         ScmObj str = SCM_CAR(cp);
         if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
@@ -417,6 +410,12 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
             len += SCM_STRING_LENGTH(str);
         }
         nstrs++;
+    }
+    if (grammer == SCM_STRING_JOIN_INFIX
+        || grammer == SCM_STRING_JOIN_STRICT_INFIX) {
+        ndelim = nstrs - 1;
+    } else {
+        ndelim = nstrs;
     }
     size += dsize * ndelim;
     if (len >= 0) len += dlen * ndelim;
