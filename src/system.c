@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.3 2001-02-13 06:04:35 shiro Exp $
+ *  $Id: system.c,v 1.4 2001-02-16 06:55:54 shiro Exp $
  */
 
 #include <stdio.h>
@@ -128,12 +128,20 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         free(p);                /* allocated by getcwd() */
         dstp = buf + dirlen;
         if (*(dstp-1) != '/') *dstp++ = '/';
-    } else {
+    } else if (flags & SCM_PATH_CANONICALIZE) {
         dstp = buf = SCM_NEW_ATOMIC2(char*, size+1);
         if (*str == '/') {
             *dstp++ = '/';
             SKIP_SLASH;
         }
+    } else {
+        return SCM_OBJ(pathname); /* nothing to do (short path) */
+    }
+
+    if (!(flags & SCM_PATH_CANONICALIZE)) {
+        memcpy(dstp, srcp, size);
+        *(dstp + size) = '\0';
+        return Scm_MakeStringConst(buf, (dstp-buf)+size, -1);
     }
 
     while (srcp < str+size) {
