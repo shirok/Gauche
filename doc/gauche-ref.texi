@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.274 2002-09-25 04:38:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.275 2002-09-25 22:16:02 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -636,9 +636,9 @@ Supported by the module @code{srfi-9}.  @xref{Record types}.
 
 @item SRFI-10, Sharp-comma external form.
 @c EN
-Built-in.
+Built-in.  @xref{Read-time constructor}.
 @c JP
-組み込みです。
+組み込みです。@ref{Read-time constructor}参照。
 @c COMMON
 
 @item SRFI-11, Syntax for receiving multiple values.
@@ -674,6 +674,15 @@ Complete set of SRFI-14 is supported by the module @code{srfi-14}.
 Built-in.  @xref{Assignments}.
 @c JP
 組み込みです。@ref{Assignments}参照。
+@c COMMON
+
+@item SRFI-18, Multithreading support
+@c EN
+Some SRFI-18 features are built-in, and the rest is in @code{gauche.threads}
+module.  @xref{Threads}.
+@c JP
+いくつかのSRFI-18の機能は組み込みであり、、残りのAPIは
+@code{gauche.threads}モジュールで提供されます。@ref{Threads}参照。
 @c COMMON
 
 @item SRFI-19, Time Data Types and Procedures.
@@ -9669,12 +9678,22 @@ indicate the port is closed.
 @c NODE 入力
 
 @c EN
-For the following procedures, the optional @var{iport} argument must be
+For the input-related procedures, the optional @var{iport} argument must be
 an input port, and when omitted, the current input port is assumed.
 @c JP
-以下の手続きで、省略可能な引数@var{iport}は入力ポートでなければなりません。
+入力に関する手続きで、省略可能な引数@var{iport}は入力ポートでなければなりません。
 省略された場合が現在の入力ポートが使われます。
 @c COMMON
+
+@menu
+* Reading data::                
+* Read-time constructor::       
+* Input utility functions::     
+@end menu
+
+@node Reading data, Read-time constructor, Input, Input
+@subsubsection Reading data
+@c NODE データの読み込み
 
 @defun read &optional iport
 [R5RS]
@@ -9805,6 +9824,27 @@ sequence, then use input string port to read characters.)
 入力文字列ポート等を使って文字毎に読むようにして下さい。)
 @c COMMON
 @end defun
+
+@node Read-time constructor, Input utility functions, Reading data, Input
+@subsubsection Read-time constructor
+@c NODE 読み込み時コンストラクタ
+
+Read-time constructor, defined in SRFI-10, provides an easy way
+to create an external representation of user-defined structures.
+
+
+@deftp {Reader Syntax} @code{#,(@var{tag} @var{arg} @dots{})}
+[SRFI-10]
+@end deftp
+
+@defun define-read-ctor @var{tag} @var{procedure}
+[SRFI-10]
+@end defun
+
+
+@node Input utility functions,  , Read-time constructor, Input
+@subsubsection Input utility functions
+@c NODE 入力ユーティリティ手続き
 
 @defun port->string port
 @defunx port->list reader port
@@ -10943,7 +10983,7 @@ System calls that deal with filesystems.
 See also @ref{Filesystem utilities}, which defines high-level APIs
 on top of the procedures described here.
 @c JP
-ファイルシステムに関するシステムコール郡です。
+ファイルシステムに関するシステムコール群です。
 ここで述べる手続きの上に、より高レベルなAPIがモジュール@code{file.util}として
 実装されています。@ref{Filesystem utilities}を参照して下さい。
 @c COMMON
@@ -23260,8 +23300,9 @@ If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
 specifies the suffix attached to the @var{dst} to be renamed.
 The default value is @code{".orig"}.
 @c JP
-@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
-名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
+@var{if-exists}が@code{:backup}である場合、
+@var{dst}がリネームされる名前は
+@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
 付けたものとなります。デフォルト値は@code{".orig"}です。
 @c COMMON
 
