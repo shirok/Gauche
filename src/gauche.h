@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.252 2002-05-15 03:34:40 shirok Exp $
+ *  $Id: gauche.h,v 1.253 2002-05-15 10:49:39 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1978,12 +1978,8 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
  *  (ScmInternalMutex and ScmInternalCond).
  */
 
-/* Scheme mutex.
- *  If locker == NULL, the mutex is unlocked/not-abandoned
- *  If locker != NULL
- *    If locker->state != SCM_VM_TERMINATED, the mutex is locked/owned
- *    If locker->state == SCM_VM_TERMINATED, the mutex is unlocked/abandoned
- * In Gauche, mutex doesn't take the state locked/not-owned.
+/*
+ * Scheme mutex.
  */
 typedef struct ScmMutexRec {
     SCM_HEADER;
@@ -1991,7 +1987,8 @@ typedef struct ScmMutexRec {
     ScmInternalCond  cv;
     ScmObj name;
     ScmObj specific;
-    ScmVM *locker;              /* the thread who owns this lock */
+    int   locked;
+    ScmVM *owner;              /* the thread who owns this lock; may be NULL */
 } ScmMutex;
 
 SCM_CLASS_DECL(Scm_MutexClass);
@@ -2000,7 +1997,7 @@ SCM_CLASS_DECL(Scm_MutexClass);
 #define SCM_MUTEXP(obj)        SCM_XTYPEP(obj, SCM_CLASS_MUTEX)
 
 ScmObj Scm_MakeMutex(ScmObj name);
-ScmObj Scm_MutexLock(ScmMutex *mutex);
+ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner);
 ScmObj Scm_MutexUnlock(ScmMutex *mutex);
 
 /*---------------------------------------------------

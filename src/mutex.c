@@ -12,12 +12,37 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.3 2002-05-14 09:36:03 shirok Exp $
+ *  $Id: mutex.c,v 1.4 2002-05-15 10:49:40 shirok Exp $
  */
 
+#include <math.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
+
+/*=====================================================
+ * Time -> timespec
+ */
+#ifdef GAUCHE_USE_PTHREAD
+struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
+{
+    if (SCM_FALSEP(t)) return NULL;
+    if (SCM_TIMEP(t)) {
+        spec->tv_sec = SCM_TIME(t)->sec;
+        spec->tv_nsec = SCM_TIME(t)->nsec;
+    } else if (SCM_EXACTP(t)) {
+        spec->tv_sec = Scm_GetUInteger(t);
+        spec->tv_nsec = 0;
+    } else if (SCM_FLONUMP(t)) {
+        double s;
+        spec->tv_nsec = (unsigned long)(modf(Scm_GetDouble(t), &s)*1.0e9);
+        spec->tv_sec = (unsigned long)s;
+    } else {
+        Scm_Error("bad timeout spec: <time> object or real number is required, but got %S", t);
+    }
+    return spec;
+}
+#endif /* GAUCHE_USE_PTHREAD */
 
 /*=====================================================
  * Mutex
@@ -55,32 +80,43 @@ static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
 #endif /*!GAUCHE_USE_PTHREAD*/
     mutex->name = SCM_FALSE;
     mutex->specific = SCM_UNDEFINED;
-    mutex->locker = NULL;
+    mutex->locked = FALSE;
+    mutex->owner = NULL;
     return SCM_OBJ(mutex);
 }
 
 static void mutex_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmMutex *mutex = SCM_MUTEX(obj);
-    ScmVM *vm = mutex->locker;
-    ScmObj name = mutex->name;
+    ScmVM *vm;
+    ScmObj name;
+    int locked;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(mutex->mutex);
+    locked = mutex->locked;
+    vm = mutex->owner;
+    name = mutex->name;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
     
     if (SCM_FALSEP(name)) Scm_Printf(port, "#<mutex %p ", mutex);
     else                  Scm_Printf(port, "#<mutex %S ", name);
-    if (vm) {
-        if (vm->state == SCM_VM_TERMINATED) {
-            Scm_Printf(port, "abandoned");
+    if (locked) {
+        if (vm) {
+            if (vm->state == SCM_VM_TERMINATED) {
+                Scm_Printf(port, "unlocked/abandoned>");
+            } else {
+                Scm_Printf(port, "locked/owned by %S>", vm);
+            }
         } else {
-            Scm_Printf(port, "locked by %S", vm);
+            Scm_Printf(port, "locked/not-owned>");
         }
     } else {
-        Scm_Printf(port, "unlocked");
+        Scm_Printf(port, "unlocked/not-abandoned>");
     }
-    Scm_Printf(port, ">");
 }
 
 /*
- * Mame mutex
+ * Make mutex
  */
 ScmObj Scm_MakeMutex(ScmObj name)
 {
@@ -93,20 +129,40 @@ ScmObj Scm_MakeMutex(ScmObj name)
  * Lock and unlock mutex
  */
 
-ScmObj Scm_MutexLock(ScmMutex *mutex)
+ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 {
 #ifdef GAUCHE_USE_PTHREAD
-    ScmVM *vm = Scm_VM();
+    struct timespec ts, *pts;
+    ScmObj r;
+    int intr = FALSE;
+    
+    pts = Scm_GetTimeSpec(timeout, &ts);
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-lock!: failed to lock");
     }
-    while (mutex->locker) {
-        pthread_cond_wait(&(mutex->cv), &(mutex->mutex));
+    if (pts) {
+        r = SCM_TRUE;
+        while (mutex->locked) {
+            int tr = pthread_cond_timedwait(&(mutex->cv), &(mutex->mutex), pts);
+            if (tr == ETIMEDOUT) { r = SCM_FALSE; break; }
+            else if (tr == EINTR) { intr = TRUE; break; }
+        }
+    } else {
+        while (mutex->locked) {
+            pthread_cond_wait(&(mutex->cv), &(mutex->mutex));
+        }
+        r = SCM_TRUE;
     }
-    mutex->locker = vm;
+    if (SCM_TRUEP(r)) {
+        mutex->locked = TRUE;
+        mutex->owner = owner;
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
-#endif /* GAUCHE_USE_PTHREAD */
-    return SCM_OBJ(mutex);
+    if (intr) Scm_SigCheck(Scm_VM());
+    return r;
+#else  /* !GAUCHE_USE_PTHREAD */
+    return SCM_TRUE;            /* dummy */
+#endif /* !GAUCHE_USE_PTHREAD */
 }
 
 ScmObj Scm_MutexUnlock(ScmMutex *mutex)
@@ -116,7 +172,8 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex)
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-unlock!: failed to lock");
     }
-    mutex->locker = NULL;
+    mutex->locked = FALSE;
+    mutex->owner = NULL;
     pthread_cond_signal(&(mutex->cv));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
 #endif /* GAUCHE_USE_PTHREAD */
