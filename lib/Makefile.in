@@ -1,12 +1,13 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.47 2002-03-06 18:59:10 shirok Exp $
+#  $Id: Makefile.in,v 1.48 2002-04-16 05:39:25 shirok Exp $
 #
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 SCM_INSTALL_DIR = @datadir@/gauche/@GAUCHE_VERSION@/lib
+SLIB_DIR = @SLIB_DIR@
 
 SCMS = srfi-0.scm \
        srfi-1.scm srfi-1/cat.scm srfi-1/filter.scm srfi-1/finder.scm \
@@ -46,6 +47,13 @@ SUBDIRS = gauche gauche/vm gauche/serializer file port rfc \
 INSTALL=@INSTALL@
 
 all : $(SCMS)
+
+# If we have slib, creates catalog file for Gauche.   This should be called
+# after everything is installed.
+slibcat : 
+	if test -f $(SLIB_DIR)/require.scm; then \
+	  ../src/gosh -uslib -e "(load (in-vicinity (library-vicinity) \"mklibcat\"))" -e "(exit 0)";\
+	fi
 
 clean :
 	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ port/*~ rfc/*~ srfi-1/*~
