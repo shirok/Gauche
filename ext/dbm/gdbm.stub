@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.7 2001-10-29 11:29:55 shirok Exp $
+;;  $Id: gdbm.stub,v 1.8 2001-10-29 11:40:41 shirok Exp $
 ;;
 
 "
@@ -67,8 +67,8 @@
  #ifndef GDBM_CENTFREE
  #define GDBM_CENTFREE 0
  #endif
- #ifndef GDBN_COALESCEBLKS
- #define GDBN_COALESCEBLKS 0
+ #ifndef GDBM_COALESCEBLKS
+ #define GDBM_COALESCEBLKS 0
  #endif
 
  /* Hack for initialization stub */
