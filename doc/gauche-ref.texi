@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.118 2001-11-07 20:28:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.119 2001-11-08 09:55:39 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -26,7 +26,7 @@
 @c JP
 @title Gauche リファレンスマニュアル
 @c COMMON
-@subtitle version 0.4.8
+@subtitle version 0.4.9
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -231,6 +231,7 @@ Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
 @c COMMON
 
 @c EN
+
 @c JP
 @c COMMON
 
@@ -1582,15 +1583,15 @@ value is returned.
 @section Binding constructs
 @c NODE 変数束縛
 
-@defspec let bindings body
+@defspec let bindings body @dots{}
 [R5RS]
 @end defspec
 
-@defspec let* bindings body
+@defspec let* bindings body @dots{}
 [R5RS]
 @end defspec
 
-@defspec letrec bindings body
+@defspec letrec bindings body @dots{}
 [R5RS]
 @end defspec
 
@@ -1613,12 +1614,12 @@ value is returned.
 @section Iteration
 @c NODE 繰り返し
 
-@defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body
+@defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body @dots{}
 [R5RS]
 @end defspec
 
 
-@defspec let name bindings body
+@defspec let name bindings body @dots{}
 [R5RS]
 @end defspec
 
@@ -2440,6 +2441,7 @@ The complex part is Gauche extension.
 Returns the quotient, remainder and modulo of dividing an integer @var{n1}
 by an integer @var{n2}.
 @c JP
+
 @c COMMON
 @end defun
 
@@ -2458,7 +2460,15 @@ of the given integers, respectively
 @defunx denominator q
 [R5RS]
 @c EN
+Returns the numerator and denominator of a rational number @var{q}.
+Since Gauche doesn't support full rational numbers, they actually
+work only on integers; that is, given integer @var{q}, @code{numerator}
+always returns @var{q} and @code{denominator} always return 1.
 @c JP
+有理数@var{q}の分子と分母をそれぞれ返します。Gaucheでは今のところ有理数を完全には
+サポートしていないため、これらの手続きは実際には整数にしか使えません。すなわち、
+整数@var{q}に対して@code{numerator}は常に@var{q}を返し、@code{denominator}
+は常に1を返します。
 @c COMMON
 @end defun
 
