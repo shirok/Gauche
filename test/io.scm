@@ -136,7 +136,7 @@
       (lambda () (eof-object? (call-with-input-file "tmp1.o" read-line))))
 (test "read-block (EOF)" #t
       (lambda ()
-        (eof-object? (call-with-input-file "tmp1.o" (pa read-block 10)))))
+        (eof-object? (call-with-input-file "tmp1.o" (l_ (read-block 10 _))))))
 
 (with-output-to-file "tmp1.o" (lambda () (display "ab")))
 (test "read-char (a)" #\a
@@ -153,7 +153,7 @@
         (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-byte _)))))
 (test "read-block (a)" #"ab"
       (lambda ()
-        (call-with-input-file "tmp1.o" (pa read-block 10))))
+        (call-with-input-file "tmp1.o" (l_ (read-block 10 _)))))
 (test "read-block (ungotten)" #"ab"
       (lambda ()
         (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-block 10 _)))))

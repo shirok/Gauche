@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: procedure.scm,v 1.3 2002-05-07 20:17:19 shirok Exp $
+;;;  $Id: procedure.scm,v 1.4 2002-05-20 21:42:13 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -61,13 +61,15 @@
 
 ;; Combinator utilities -----------------------------------------
 
+(define (pa$ fn . args)                  ;partial apply
+  (lambda more-args (apply fn (append args more-args))))
+
 (define (compose f g . more)
   (if (null? more)
       (lambda args
         (call-with-values (lambda () (apply g args)) f))
       (compose f (apply compose g more))))
 
-(define (pa fn . args)                  ;partial apply
-  (lambda more-args (apply fn (append args more-args))))
+(define (compose$ f) (pa$ compose f))
 
 (provide "gauche/procedure")
