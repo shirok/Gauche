@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.30 2001-12-01 22:30:52 shirok Exp $
+;;;  $Id: object.scm,v 1.31 2001-12-02 12:54:27 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -62,8 +62,10 @@
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
   (cond ((symbol? name) (values name #f))
+        ((identifier? name) (values name #f))
         ((and (pair? name) (eq? (car name) 'setter)
-              (pair? (cdr name)) (symbol? (cadr name))
+              (pair? (cdr name)) (or (symbol? (cadr name))
+                                     (identifier? (cadr name)))
               (null? (cddr name)))
          (values (%make-setter-name (cadr name)) (cadr name)))
         (else (error "Bad name for generic function or method" name))))
