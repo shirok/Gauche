@@ -82,6 +82,19 @@
         (load "test.o/d" :environment (find-module 'load.test))
         (with-module load.test foo)))
 
+;; a compicated case involving eval, load and restoration of environment.
+;; this is actually testing code in Scm_VMEval, but I put it here
+;; since the 'eval' test is done before i/o.
+(with-output-to-file "test.o/d.scm"
+  (lambda ()
+    (display "(print (current-module)) (define foo 6)")))
+
+(test "eval & load & environment"
+      6
+      (lambda ()
+        (eval '(load "test.o/d") (find-module 'load.test))
+        (with-module load.test foo)))
+
 (sys-system "rm -rf test.o")
 
 (test-end)

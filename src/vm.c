@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.195 2003-01-01 14:05:17 shirok Exp $
+ *  $Id: vm.c,v 1.196 2003-01-01 14:12:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1662,9 +1662,11 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
            after eval */
         ScmVM *vm = Scm_VM();
         ScmObj body = Scm_MakeClosure(0, 0, v, SCM_FALSE);
+        ScmObj before = Scm_MakeSubr(eval_restore_env, SCM_MODULE(e),
+                                     0, 0, SCM_FALSE);
         ScmObj after = Scm_MakeSubr(eval_restore_env, (void*)vm->module,
                                     0, 0, SCM_FALSE);
-        return Scm_VMDynamicWind(Scm_NullProc(), body, after);
+        return Scm_VMDynamicWind(before, body, after);
     } else {
         /* shortcut */
         ScmVM *vm = Scm_VM();
