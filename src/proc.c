@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.25 2001-09-08 10:49:36 shirok Exp $
+ *  $Id: proc.c,v 1.26 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /*=================================================================

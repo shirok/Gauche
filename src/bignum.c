@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.26 2001-10-16 20:35:00 shirok Exp $
+ *  $Id: bignum.c,v 1.27 2002-02-04 09:28:39 shirok Exp $
  */
 
 #include <math.h>
 #include <limits.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /* This is a very naive implementation.  For now, I think bignum

@@ -12,12 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.55 2001-12-23 03:39:56 shirok Exp $
+ *  $Id: string.c,v 1.56 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *);

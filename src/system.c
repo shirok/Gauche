@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.31 2002-01-25 09:12:29 shirok Exp $
+ *  $Id: system.c,v 1.32 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <stdio.h>
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 

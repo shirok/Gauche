@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: promise.c,v 1.8 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: promise.c,v 1.9 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /*

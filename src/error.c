@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.27 2002-01-04 16:10:05 shirok Exp $
+ *  $Id: error.c,v 1.28 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <errno.h>
 #include <string.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 
@@ -64,12 +65,12 @@ static ScmObj sys_error_allocate(ScmClass *klass, ScmObj initargs);
 SCM_DEFINE_BUILTIN_CLASS(Scm_ErrorClass,
                          error_print, NULL, NULL,
                          error_allocate,
-                         exception_cpl+1);
+			 exception_cpl+1);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SystemErrorClass,
                          error_print, NULL, NULL,
                          sys_error_allocate,
-                         exception_cpl);
+			 exception_cpl);
 
 /* Application-exit is not exactly an error, but implemented here. */
 static void appexit_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -83,7 +84,7 @@ static ScmObj appexit_allocate(ScmClass *, ScmObj);
 SCM_DEFINE_BUILTIN_CLASS(Scm_ApplicationExitClass,
                          appexit_print, NULL, NULL,
                          appexit_allocate,
-                         exception_cpl+1);
+			 exception_cpl+1);
                          
 /*
  * Constructors
@@ -207,7 +208,8 @@ static ScmClassStaticSlotSpec appexit_slots[] = {
 void Scm__InitExceptions(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    Scm_InitBuiltinClass(&Scm_ExceptionClass, "<exception>", NULL, 0, mod);
+    Scm_InitBuiltinClass(&Scm_ExceptionClass, "<exception>",
+			 NULL, 0, mod);
     Scm_InitBuiltinClass(&Scm_ErrorClass, "<error>",
                          error_slots, sizeof(ScmError), mod);
     Scm_InitBuiltinClass(&Scm_SystemErrorClass, "<system-error>",

@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.22 2002-01-22 11:13:24 shirok Exp $
+ *  $Id: regexp.c,v 1.23 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <setjmp.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, NULL);

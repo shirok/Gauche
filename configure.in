@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.48 2002-01-25 11:02:32 shirok Exp $
+dnl $Id: configure.in,v 1.49 2002-02-04 09:28:36 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -289,6 +289,14 @@ case $host in
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     ;;
+  *cygwin*)
+    SHLIB_SO_CFLAGS=""
+    SHLIB_SO_LDFLAGS="-shared -o"
+    SHLIB_SO_SUFFIX="so"
+    SHLIB_DYLIB_SUFFIX="dll"
+    SHLIB_MAIN_LDFLAGS=""
+    SHLIB_OK=ok
+    ;;
   *)
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS=""
@@ -298,8 +306,10 @@ case $host in
     ;;
 esac
 if test -z "$SHLIB_DYLIB_LDFLAGS"; then
-	SHLIB_DYLIB_LDFLAGS=$SHLIB_SO_LDFLAGS
-	SHLIB_DYLIB_SUFFIX=$SHLIB_SO_SUFFIX
+  SHLIB_DYLIB_LDFLAGS=$SHLIB_SO_LDFLAGS
+fi
+if test -z "$SHLIB_DYLIB_SUFFIX"; then
+  SHLIB_DYLIB_SUFFIX=$SHLIB_SO_SUFFIX
 fi
 if test "$SHLIB_OK" = ok; then
   LIBGAUCHE_SO="libgauche.$SHLIB_DYLIB_SUFFIX"
@@ -337,6 +347,6 @@ AC_CONFIG_SUBDIRS($extensions)
 
 dnl ===========================================================
 dnl Create output files
-AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile lib/slib.scm
-          gc/Makefile
+AC_OUTPUT(src/Makefile src/gauche-config src/ldwrap.sh 
+          lib/Makefile lib/slib.scm gc/Makefile
           Makefile)

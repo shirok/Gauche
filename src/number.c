@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.59 2002-01-11 19:28:24 shirok Exp $
+ *  $Id: number.c,v 1.60 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <math.h>
 #include <limits.h>
 #include <string.h>
 #include <ctype.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 #ifndef M_PI

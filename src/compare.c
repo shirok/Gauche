@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compare.c,v 1.3 2001-04-01 21:55:00 shiro Exp $
+ *  $Id: compare.c,v 1.4 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <stdlib.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /*

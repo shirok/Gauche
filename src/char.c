@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.24 2001-11-03 21:15:46 shirok Exp $
+ *  $Id: char.c,v 1.25 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <ctype.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /*=======================================================================

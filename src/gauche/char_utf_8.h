@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_utf_8.h,v 1.6 2001-12-23 03:39:57 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.7 2002-02-04 09:28:40 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -25,9 +25,9 @@
  */
 #define SCM_CHAR_ENCODING_NAME "utf-8"
 
-extern char Scm_CharSizeTable[];
-extern ScmChar Scm_CharUtf8Getc(const char *);
-extern void Scm_CharUtf8Putc(char *, ScmChar);
+SCM_EXTERN char Scm_CharSizeTable[];
+SCM_EXTERN ScmChar Scm_CharUtf8Getc(const char *);
+SCM_EXTERN void Scm_CharUtf8Putc(char *, ScmChar);
 
 /* Given first byte of the multibyte character, returns # of
  * bytes that follows, i.e. if the byte consists a single-byte

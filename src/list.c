@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.31 2001-11-29 07:48:32 shirok Exp $
+ *  $Id: list.c,v 1.32 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/memory.h"
 

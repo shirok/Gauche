@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.24 2002-01-12 10:44:14 shirok Exp $
+ *  $Id: symbol.c,v 1.25 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /*-----------------------------------------------------------

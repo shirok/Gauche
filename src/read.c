@@ -12,12 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.38 2002-01-29 11:39:40 shirok Exp $
+ *  $Id: read.c,v 1.39 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.54 2002-01-31 09:41:06 shirok Exp $
+ *  $Id: vm.h,v 1.55 2002-02-04 09:28:40 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -54,7 +54,7 @@ typedef struct ScmEnvFrameRec {
 #define ENV_HDR_SIZE   3        /* envframe header size */
 #define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
 
-extern ScmEnvFrame *Scm_GetCurrentEnv(void);
+SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
 
 /*
  * Continuation
@@ -73,7 +73,7 @@ typedef struct ScmContFrameRec {
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
 
-extern void Scm_CallCC(ScmObj body);
+SCM_EXTERN void Scm_CallCC(ScmObj body);
 
 /*
  * Identifier
@@ -91,16 +91,17 @@ typedef struct ScmIdentifierRec {
     ScmObj env;
 } ScmIdentifier;
 
-extern ScmClass Scm_IdentifierClass;
-#define SCM_CLASS_IDENTIFIER    (&Scm_IdentifierClass)
+SCM_CLASS_DECL(Scm_IdentifierClass);
+#define SCM_CLASS_IDENTIFIER    SCM_CLASS_PTR(Scm_IdentifierClass)
 
 #define SCM_IDENTIFIER(obj)     ((ScmIdentifier*)(obj))
 #define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
 
-extern ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env);
-extern ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
-extern int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env);
-extern int Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
+SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env);
+SCM_EXTERN ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
+SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
+					   ScmObj env);
+SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
 
 /*
  * Source info
@@ -118,13 +119,13 @@ typedef struct ScmSourceInfoRec {
     struct ScmSourceInfoRec *up;
 } ScmSourceInfo;
 
-extern ScmClass Scm_SourceInfoClass;
-#define SCM_CLASS_SOURCE_INFO    (&Scm_SourceInfoClass)
+SCM_CLASS_DECL(Scm_SourceInfoClass);
+#define SCM_CLASS_SOURCE_INFO    SCM_CLASS_PTR(Scm_SourceInfoClass)
 
 #define SCM_SOURCE_INFO(obj)     ((ScmSourceInfo*)(obj))
 #define SCM_SOURCE_INFOP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOURCE_INFO)
 
-extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
+SCM_EXTERN ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 
 /*
  * Escape handling
@@ -231,13 +232,13 @@ struct ScmVMRec {
     sigset_t sigMask;           /* current signal mask */
 };
 
-extern ScmVM *Scm_SetVM(ScmVM *vm);
-extern ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module);
-extern void Scm_VMDump(ScmVM *vm);
-extern void Scm_VMDefaultExceptionHandler(ScmObj);
+SCM_EXTERN ScmVM *Scm_SetVM(ScmVM *vm);
+SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module);
+SCM_EXTERN void Scm_VMDump(ScmVM *vm);
+SCM_EXTERN void Scm_VMDefaultExceptionHandler(ScmObj);
 
-extern ScmClass Scm_VMClass;
-#define SCM_CLASS_VM              (&Scm_VMClass)
+SCM_CLASS_DECL(Scm_VMClass);
+#define SCM_CLASS_VM              SCM_CLASS_PTR(Scm_VMClass)
 
 /*
  * VM instructions
@@ -270,8 +271,9 @@ enum {
     SCM_VM_NUM_INSNS
 };
 
-extern void Scm__VMInsnWrite(ScmObj insn, ScmPort *port, ScmWriteContext *ctx);
-extern ScmObj Scm_VMInsnInspect(ScmObj obj);
+SCM_EXTERN void   Scm__VMInsnWrite(ScmObj insn, ScmPort *port,
+				   ScmWriteContext *ctx);
+SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 /*
  * C stack rewinding
@@ -356,12 +358,12 @@ typedef struct ScmCContinuation {
 #define SCM_CCONT(obj)            ((ScmCContinuation*)(obj))
 #define SCM_CCONTP(obj)           SCM_XTYPEP(obj, SCM_CLASS_CCONT)
 
-extern ScmClass Scm_CContClass;
-#define SCM_CLASS_CCONT           (&Scm_CContClass)
+SCM_CLASS_DECL(Scm_CContClass);
+#define SCM_CLASS_CCONT           SCM_CLASS_PTR(Scm_CContClass)
 
-extern void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
-                         void **data,
-                         int datasize);
+SCM_EXTERN void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
+			     void **data,
+			     int datasize);
 
 /*
  * Compiler context

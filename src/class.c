@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.68 2002-01-02 21:16:12 shirok Exp $
+ *  $Id: class.c,v 1.69 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/macro.h"
 #include "gauche/class.h"
@@ -39,15 +40,28 @@ static void initialize_builtin_cpl(ScmClass *klass);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
-ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
+ScmClass *Scm_DefaultCPL[] = {
+    SCM_CLASS_TOP,
+    NULL
+};
+
 ScmClass *Scm_CollectionCPL[] = {
-    SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
+    SCM_CLASS_COLLECTION,
+    SCM_CLASS_TOP,
+    NULL
 };
+
 ScmClass *Scm_SequenceCPL[] = {
-    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
+    SCM_CLASS_SEQUENCE,
+    SCM_CLASS_COLLECTION,
+    SCM_CLASS_TOP,
+    NULL
 };
+
 ScmClass *Scm_ObjectCPL[] = {
-    SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL
+    SCM_CLASS_OBJECT,
+    SCM_CLASS_TOP,
+    NULL
 };
 
 SCM_DEFINE_ABSTRACT_CLASS(Scm_TopClass, NULL);
@@ -74,7 +88,10 @@ SCM_DEFINE_BASE_CLASS(Scm_MethodClass, ScmMethod,
                       SCM_CLASS_OBJECT_CPL);
 
 static ScmClass *Scm_MetaclassCPL[] = {
-    SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL
+    SCM_CLASS_CLASS,
+    SCM_CLASS_OBJECT,
+    SCM_CLASS_TOP,
+    NULL
 };
 
 /* Internally used classes */

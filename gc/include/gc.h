@@ -88,6 +88,10 @@
 # endif
 #endif
 
+#if !defined(LIBGAUCHE_BODY) && defined(LIBGAUCHE_CYGWIN)
+#define GC_API __declspec(dllimport)
+#endif
+
 #if (defined(__DMC__) || defined(_MSC_VER)) \
 		&& (defined(_DLL) && !defined(GC_NOT_DLL) \
 	            || defined(GC_DLL))

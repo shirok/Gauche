@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.44 2002-01-25 09:12:24 shirok Exp $
+ *  $Id: main.c,v 1.45 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <unistd.h>
@@ -107,6 +107,15 @@ int main(int argc, char **argv)
     int c;
     ScmObj cp;
 
+#ifdef LIBGAUCHE_CYGWIN
+    /* Cygwin needs explicit initialization for GC module.
+       This code is taken from gc.h and gcconfig.h (I don't want to
+       include private/gcconfig.h)
+       May not work except cygwin 1.3.x */
+    extern int _data_start__;
+    extern int _bss_end__;
+    GC_add_roots((void*)&_data_start__, (void*)&_bss_end__);
+#endif
     Scm_Init();
     while ((c = getopt(argc, argv, "+be:iql:u:Vf:I:-")) >= 0) {
         switch (c) {
@@ -127,7 +136,7 @@ int main(int argc, char **argv)
             break;
         case 'e':
             eval_expr = Scm_Cons(Scm_ReadFromCString(optarg), eval_expr);
-        case '-': break;
+	case '-': break;
         case '?': usage(); break;
         }
     }

@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.129 2002-01-22 11:39:46 shirok Exp $
+ *  $Id: vm.c,v 1.130 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/memory.h"
 #include "gauche/class.h"
@@ -55,7 +56,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     ScmVM *v = SCM_NEW(ScmVM);
     int i;
     
-    SCM_SET_CLASS(v, &Scm_VMClass);
+    SCM_SET_CLASS(v, SCM_CLASS_VM);
     v->parent = base;
     v->module = module ? module : base->module;
     v->cstack = base ? base->cstack : NULL;

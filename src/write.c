@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.22 2002-01-12 10:44:14 shirok Exp $
+ *  $Id: write.c,v 1.23 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);

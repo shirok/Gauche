@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.31 2002-01-30 09:02:54 shirok Exp $
+ *  $Id: core.c,v 1.32 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arch.h"
 
@@ -56,7 +57,6 @@ extern void Scm_Init_moplib(ScmModule *);
 void Scm_Init(void)
 {
     ScmVM *vm;
-
     GC_oom_fn = oom_handler;
     
     Scm__InitSymbol();

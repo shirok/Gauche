@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.70 2001-12-22 20:51:01 shirok Exp $
+ *  $Id: compile.c,v 1.71 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /*
@@ -1250,7 +1251,7 @@ static ScmSyntax syntax_let = {
 };
 
 static ScmSyntax syntax_let_star = {
-    { SCM_CLASS_SYNTAX},
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_LET_STAR),
     compile_let,
     (void*)BIND_LET_STAR

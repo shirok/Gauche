@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.h,v 1.3 2001-02-23 13:31:36 shiro Exp $
+ *  $Id: macro.h,v 1.4 2002-02-04 09:28:40 shirok Exp $
  */
 
 #ifndef GAUCHE_MACRO_H
@@ -30,8 +30,8 @@ typedef struct ScmSyntaxPatternRec {
     short repeat;               /* does this subpattern repeat? */
 } ScmSyntaxPattern;
 
-extern ScmClass Scm_SyntaxPatternClass;
-#define SCM_CLASS_SYNTAX_PATTERN   (&Scm_SyntaxPatternClass)
+SCM_CLASS_DECL(Scm_SyntaxPatternClass);
+#define SCM_CLASS_SYNTAX_PATTERN   SCM_CLASS_PTR(Scm_SyntaxPatternClass)
 
 #define SCM_SYNTAX_PATTERN(obj)   ((ScmSyntaxPattern*)(obj))
 #define SCM_SYNTAX_PATTERN_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_PATTERN)
@@ -55,8 +55,8 @@ typedef struct ScmSyntaxRules {
     ScmSyntaxRuleBranch rules[1]; /* variable length */
 } ScmSyntaxRules;
 
-extern ScmClass Scm_SyntaxRulesClass;
-#define SCM_CLASS_SYNTAX_RULES   (&Scm_SyntaxRulesClass)
+SCM_CLASS_DECL(Scm_SyntaxRulesClass);
+#define SCM_CLASS_SYNTAX_RULES   SCM_CLASS_PTR(Scm_SyntaxRulesClass)
 
 #define SCM_SYNTAX_RULES(obj)    ((ScmSyntaxRules*)(obj))
 #define SCM_SYNTAX_RULES_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_RULES)

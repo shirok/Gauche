@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.12 2001-05-06 01:27:44 shirok Exp $
+ *  $Id: boolean.c,v 1.13 2002-02-04 09:28:40 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 int Scm_EqP(ScmObj x, ScmObj y)

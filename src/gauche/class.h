@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.22 2002-01-02 21:16:14 shirok Exp $
+ *  $Id: class.h,v 1.23 2002-02-04 09:28:40 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -45,8 +45,8 @@ typedef struct ScmSlotAccessorRec {
 typedef ScmObj (*ScmNativeGetterProc)(ScmObj);
 typedef void   (*ScmNativeSetterProc)(ScmObj, ScmObj);
 
-extern ScmClass Scm_SlotAccessorClass;
-#define SCM_CLASS_SLOT_ACCESSOR    (&Scm_SlotAccessorClass)
+SCM_CLASS_DECL(Scm_SlotAccessorClass);
+#define SCM_CLASS_SLOT_ACCESSOR    SCM_CLASS_PTR(Scm_SlotAccessorClass)
 #define SCM_SLOT_ACCESSOR(obj)     ((ScmSlotAccessor*)obj)
 #define SCM_SLOT_ACCESSOR_P(obj)   SCM_XTYPEP(obj, SCM_CLASS_SLOT_ACCESSOR)
 
@@ -57,7 +57,7 @@ struct ScmClassStaticSlotSpecRec {
 };
 
 #define SCM_CLASS_SLOT_SPEC(name, getter, setter)       \
-    { name, { { SCM_CLASS_SLOT_ACCESSOR },              \
+    { name, { {SCM_CLASS_SLOT_ACCESSOR},                \
               NULL, NULL,                               \
               (ScmNativeGetterProc)getter,              \
               (ScmNativeSetterProc)setter,              \
@@ -76,27 +76,27 @@ struct ScmClassStaticSlotSpecRec {
 
 /* some internal methods */
     
-extern ScmObj Scm_ClassAllocate(ScmClass *klass, int nslots);
-extern ScmObj Scm_ComputeCPL(ScmClass *klass);
-extern ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
-                                           ScmObj *args,
-                                           int nargs);
-extern ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs);
-extern ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
-                                 ScmObj *args, int nargs, int copyArgs);
-extern ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
+SCM_EXTERN ScmObj Scm_ClassAllocate(ScmClass *klass, int nslots);
+SCM_EXTERN ScmObj Scm_ComputeCPL(ScmClass *klass);
+SCM_EXTERN ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
+					       ScmObj *args,
+					       int nargs);
+SCM_EXTERN ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs);
+SCM_EXTERN ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
+				     ScmObj *args, int nargs, int copyArgs);
+SCM_EXTERN ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
 
-extern ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj,
-                                         ScmSlotAccessor *acc,
-                                         int boundp);
-extern ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
-                                         ScmSlotAccessor *acc,
-                                         ScmObj val);
+SCM_EXTERN ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj,
+					     ScmSlotAccessor *acc,
+					     int boundp);
+SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
+					     ScmSlotAccessor *acc,
+					     ScmObj val);
 
-extern ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
-extern void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
+SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
+SCM_EXTERN void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
 
-extern ScmGeneric Scm_GenericApplyGeneric;
+SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,125 @@
+Note about Cygwin dll ports.
+
+Gauche heavily relies on the link-time relocation of variable
+references.  That is, Gauche uses the address of the ScmClass
+structure as the type tag of objects, and statically declared
+objects has a reference to them.   On unix, the dynamic-linker
+resolves this reference at the time the DSO file is loaded.
+
+
+    Gauche object                   Gauche class
+  +----------------+            (may be in another .so)
+  |  class tag    -------------> +-----------------+
+  +----------------+             |                 |
+  |  ...           |             |                 |
+  |                |             |                 |
+  +----------------+             +-----------------+
+
+This works quite nicely.   It has those characteristics.
+
+  * You can add a class without "registering" it to
+    the global class table to obtain a unique class tag.
+
+  * Since you don't need to refer to the run-time tag table,
+    you can have static reference to the classes.  Such as
+    an array of inherited classes or array of classes for
+    method arguments.
+
+On Win32, dynamic linker is not so smart.  Instead of scanning
+entire code to rewrite those external references, it allocates
+indirect pointer table at the compilation time, and the linker
+just rewrites the table.   If the ScmClass structure is in the
+other DLL, it works like this:
+
+    Gauche object
+  +----------------+
+  |  class tag -------\
+  +----------------+  |
+  |  ...           |  |
+  |                |  |
+  +----------------+  |
+                      |
+    relocation table  |
+   (in the same dll)  |                 Gauche class
+  +----------------+<-/              (in the different dll)
+  |                |---------------->+------------------+
+  +----------------+                 |                  |
+                                     +------------------+
+
+
+Of course this doesn't work as is, for we have one more pointer
+indirection (note that the function call to the external dll
+works fine, since the relocation table actually contains a jump
+instruction to the real entry).   So you have to declare the
+data in external dlls as "__declspec(dllimport)", and then
+the compiler treats the variable as if they are pointers.
+
+For example, if the source is like this:
+
+   extern __declspec(dllimport) int var_in_ext_dll;
+
+   foo() {
+       int x = var_in_ext_dll;
+       int *y = &var_in_ext_dll;
+   }
+
+It is actually compiled as if:
+
+   extern int *_imp__var_in_ext_dll;
+
+   foo() {
+       int x = *_imp__var_in_ext_dll;
+       int *y = _imp__var_in_ext_dll;
+   }
+
+In case of Gauche's type tag, the source is something like this:
+
+   extern __declspec(dllimport) ScmClass ScmFooClass;
+
+   static ScmFoo foo = {{&ScmFooClass}, ...};
+
+and it is compiled as if:
+
+   extern ScmClass *_imp__ScmFooClass;
+
+   static ScmFoo foo = {{_imp__ScmFooClass}, ...};
+
+Now, the problem is that the value of _imp__ScmFooClass
+can't be determined until the dynamic-link time, so it can't
+be used in the static initializer.
+
+So, for cygwin environment only, I use double indirection
+for the type tag.   After macro expansion, it will look
+like this:
+
+   extern __declspec(dllimport) ScmClass ScmFooClass;
+   extern ScmClass *_imp__ScmFooClass;
+
+   typedef ScmHeaderRec {
+       ScmClass *klass;
+   } ScmHeader;
+
+   static ScmFoo foo = {{(ScmClass *)&_imp__ScmFooClass}, ... };
+
+And other macros take care of dereferencing the faked class pointer.
+
+Casting ScmClass** to ScmClass* is ugly, yes, but I'd rather do
+that than cluttering #ifdefs in the source and obscure the
+underlying idea.
+
+Note that although _imp__ScmFooClass is declared as "extern", 
+its scope is actually just inside a single DLL, or a statically 
+linked executable.   So for the different DLLs, &_imp__ScmFooClass
+differs.  It is automatically initialized to point to the variable
+ScmFooClass, which actually resides in the DLL where it is defined.
+The body of _imp__ScmFooClass is automatically allocated by the
+linker.
+
+The above expansion is for the modules outside the DLL where
+ScmFooClass is defined.   In the DLL where ScmFooClass is
+defined, we need a different expansion.
+
+   extern ScmClass ScmFooClass;
+   extern ScmClass *ScmFooClass_ind;
+
+

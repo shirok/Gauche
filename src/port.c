@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.44 2002-01-24 10:17:01 shirok Exp $
+ *  $Id: port.c,v 1.45 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 
 /*================================================================

@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.10 2002-01-25 09:37:06 shirok Exp $
+ *  $Id: signal.c,v 1.11 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <signal.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
 #include "gauche/class.h"

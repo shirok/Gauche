@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.8 2002-01-24 10:17:15 shirok Exp $
+ *  $Id: portmacros.h,v 1.9 2002-02-04 09:28:40 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
@@ -203,7 +203,7 @@
         if (c == EOF && errno == EINTR) Scm_SigCheck(Scm_VM());         \
     } while (0)
 
-extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
+SCM_EXTERN int Scm__PortFileGetc(int prefetch, ScmPort *port);
 
 /*--------------------------------------------------------------------
  * String input
@@ -269,7 +269,7 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
         }                                                               \
     } while (0)
 
-extern int Scm__PortGetbInternal(ScmPort *port);
+SCM_EXTERN int Scm__PortGetbInternal(ScmPort *port);
 
 #define SCM_GETC(var, port)                                             \
     do {                                                                \
@@ -291,7 +291,7 @@ extern int Scm__PortGetbInternal(ScmPort *port);
         }                                                               \
     } while (0)
 
-extern int Scm__PortGetcInternal(ScmPort *port);
+SCM_EXTERN int Scm__PortGetcInternal(ScmPort *port);
 
 
 

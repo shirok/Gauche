@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.c,v 1.3 2002-01-26 10:00:11 shirok Exp $
+ *  $Id: fcntl.c,v 1.4 2002-02-04 09:28:39 shirok Exp $
  */
 
+#define LIBGAUCHE_BODY
 #include "fcntl.h"
 #include <errno.h>
 #include <gauche/class.h>

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.52 2002-01-15 11:38:19 shirok Exp $
+ *  $Id: load.c,v 1.53 2002-02-04 09:28:40 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <ctype.h>
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arch.h"
 
