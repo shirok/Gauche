@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.119 2001-12-19 20:12:01 shirok Exp $
+ *  $Id: vm.c,v 1.120 2001-12-20 07:16:57 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1503,6 +1503,7 @@ static ScmObj user_eval_inner(ScmObj program)
 
             val0 = vm->val0;
             if (ep && ep->cstack == vm->cstack) {
+                vm->cont = ep->cont;
                 RESTORE_REGS();
                 POP_CONT();
                 SAVE_REGS();
@@ -1518,12 +1519,6 @@ static ScmObj user_eval_inner(ScmObj program)
             }
         } else {
             Scm_Panic("invalid longjmp");
-        }
-        vm->cont = cstack.cont;
-        if (!restarted) {
-            RESTORE_REGS();
-            POP_CONT();
-            SAVE_REGS();
         }
         SCM_ASSERT(vm->cstack->prev);
         vm->cstack = vm->cstack->prev;
@@ -1623,23 +1618,41 @@ static ScmObj dynwind_before_cc(ScmObj result, void **data)
     d[0] = (void*)after;
     d[1] = (void*)prev;
     theVM->handlers = Scm_Cons(Scm_Cons(before, after), prev);
-
     Scm_VMPushCC(dynwind_body_cc, d, 2);
     return Scm_VMApply0(body);
 }
 
 static ScmObj dynwind_body_cc(ScmObj result, void **data)
 {
+    ScmVM *vm = theVM;
     ScmObj after = SCM_OBJ(data[0]);
     ScmObj prev  = SCM_OBJ(data[1]);
-    theVM->handlers = prev;
-    Scm_VMPushCC(dynwind_after_cc, (void**)&result, 1);
+    void *d[3];
+    int i;
+
+    vm->handlers = prev;
+    d[0] = (void*)result;
+    d[1] = (void*)vm->numVals;
+    if (vm->numVals > 1) {
+        ScmObj *array = SCM_NEW2(ScmObj*, (vm->numVals-1)*sizeof(ScmObj));
+        memcpy(array, vm->vals, sizeof(ScmObj)*(vm->numVals-1));
+        d[2] = (void*)array;
+    }
+    Scm_VMPushCC(dynwind_after_cc, d, 3);
     return Scm_VMApply0(after);
 }
 
 static ScmObj dynwind_after_cc(ScmObj result, void **data)
 {
-    return SCM_OBJ(data[0]);
+    ScmObj val0 = SCM_OBJ(data[0]);
+    ScmVM *vm = theVM;
+    int nvals = (int)data[1];
+    vm->numVals = nvals;
+    if (nvals > 1) {
+        SCM_ASSERT(nvals <= SCM_VM_MAX_VALUES);
+        memcpy(vm->vals, data[2], sizeof(ScmObj)*(nvals-1));
+    }
+    return val0;
 }
 
 /* C-friendly wrapper */
@@ -1765,6 +1778,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         int numVals, i;
 
         vm->escapePoint = ep->prev;
+        vm->cont = ep->cont;
         /* Call the error handler and save the results. */
         result = Scm_Apply(ep->ehandler, SCM_LIST1(e));
         if ((numVals = vm->numVals) > 1) {
@@ -1781,7 +1795,6 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         /* Install the continuation */
         for (i=0; i<numVals; i++) vm->vals[i] = rvals[i];
         vm->numVals = numVals;
-        vm->cont = ep->cont;
         vm->val0 = result;
     } else {
         if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
@@ -1865,7 +1878,10 @@ static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
     ScmVM *vm = theVM;
     ep->prev = vm->escapePoint;
     ep->ehandler = handler;
-    ep->cont = vm->cont;
+    /* NB: vm->cont has extra C-continuation frame pushed by dynamic-wind.
+       We want to capture the frame below. */
+    SCM_ASSERT(vm->cont);
+    ep->cont = vm->cont->prev;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->xhandler = vm->exceptionHandler;
@@ -1884,7 +1900,8 @@ static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
 
 ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
 {
-    ScmEscapePoint *ep = theVM->escapePoint;
+    ScmVM *vm = theVM;
+    ScmEscapePoint *ep = vm->escapePoint;
     ScmObj before = Scm_MakeSubr(install_ehandler, handler, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, thunk, after);
