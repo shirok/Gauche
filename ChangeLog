@@ -1,8 +1,14 @@
-2001-07-14  Shiro Kawai  <shiro@acm.ogr>
+2001-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c (compile_do): fixed a bug that reported an error
+	  on a valid do form (thanks to KIMURA Shigenobu).
+	* src/read.c : allow numbers to begin with dot, e.g. ``.12''
+
+2001-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.2
 
-2001-07-13  Shiro Kawai  <shiro@acm.ogr>
+2001-07-13  Shiro Kawai  <shiro@acm.org>
 
 	* various files: applied a patch for MacOS X provided from
 	  KIMURA Shigenobu.
@@ -29,7 +35,7 @@
 
 	* release 0.4.1
 	* src/vm.c, src/compile.c, src/gauche/vm.h : refined and tested
-	  stack oevrflow handling.
+	  stack overflow handling.
 	* configure.in, src/gauche/config.h.in, src/gauche-config.in,
 	  ext/net/net.h : added checks for sysint.h, and removed spaces
 	  after -I and -L options, in order to make MacOS X happy
