@@ -911,7 +911,8 @@
                  (let ((diff (- var-count (var-len-param))))
                    (var-len-param (+ (var-len-param) diff))
                    (or (port-seek (current-input-port) diff SEEK_CUR)
-                       (read-block diff))))
+                       (read-block diff))
+                   '()))
                #f)))
 
            ;; j   A signed integer value (a Perl internal integer, IV).
