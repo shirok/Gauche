@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.77 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: class.c,v 1.78 2002-05-07 07:03:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1808,7 +1808,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_PORT,             "<port>");
 
     /* proc.c */
-    CINIT(SCM_CLASS_PROCEDURE,        "<procedure>");
+    /* initialized in Scm__InitProc */
 
     /* promise.c */
     CINIT(SCM_CLASS_PROMISE,          "<promise>");

@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.27 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: proc.c,v 1.28 2002-05-07 07:03:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/class.h"
 
 /*=================================================================
  * Classes
@@ -305,9 +306,49 @@ ScmObj Scm_Setter(ScmProcedure *proc)
 }
 
 /*=================================================================
+ * Scheme-level accessors
+ */
+static ScmObj proc_required(ScmProcedure *p)
+{
+    return SCM_MAKE_INT(p->required);
+}
+
+static ScmObj proc_optional(ScmProcedure *p)
+{
+    return SCM_MAKE_BOOL(p->optional);
+}
+
+static ScmObj proc_locked(ScmProcedure *p)
+{
+    return SCM_MAKE_BOOL(p->locked);
+}
+
+static ScmObj proc_info(ScmProcedure *p)
+{
+    return p->info;
+}
+
+static ScmObj proc_setter(ScmProcedure *p)
+{
+    return p->setter;
+}
+
+static ScmClassStaticSlotSpec proc_slots[] = {
+    SCM_CLASS_SLOT_SPEC("required", proc_required, NULL),
+    SCM_CLASS_SLOT_SPEC("optional", proc_optional, NULL),
+    SCM_CLASS_SLOT_SPEC("locked", proc_locked, NULL),
+    SCM_CLASS_SLOT_SPEC("info", proc_info, NULL),
+    SCM_CLASS_SLOT_SPEC("setter", proc_setter, NULL),
+    {NULL},
+};
+
+
+/*=================================================================
  * Initialization
  */
 void Scm__InitProc(void)
 {
+    Scm_InitBuiltinClass(&Scm_ProcedureClass, "<procedure>",
+                         proc_slots, 0, Scm_GaucheModule());
     Scm_ProcedureClass.flags |= SCM_CLASS_APPLICABLE;
 }
