@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.22 2001-04-18 07:52:53 shiro Exp $
+ *  $Id: number.c,v 1.23 2001-04-18 09:30:17 shiro Exp $
  */
 
 #include <math.h>
@@ -1108,10 +1108,7 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
         }
         r = Scm_MakeString(buf, -1, -1);
     } else if (SCM_BIGNUMP(obj)) {
-        /* TODO: write proper printer! */
-        ScmObj p = Scm_MakeOutputStringPort();
-        Scm_DumpBignum(SCM_BIGNUM(obj), p);
-        r = Scm_GetOutputString(SCM_PORT(p));
+        r = Scm_BignumToString(SCM_BIGNUM(obj), radix);
     } else if (SCM_FLONUMP(obj)) {
         char buf[50];
         snprintf(buf, 47, "%.15g", SCM_FLONUM_VALUE(obj));
