@@ -21,6 +21,7 @@ if [ "$tgz" = "yes" ]; then
   configure
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
   (cd doc; make html)
+  (cd ext/charconv/data; make)
   make distclean
   escm -o INSTALL INSTALL.esc
   LANG=ja_JP escm -o INSTALL.eucjp INSTALL.esc
