@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.33 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: list.c,v 1.34 2002-04-18 10:02:04 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -275,6 +275,9 @@ ScmObj Scm_CopyList(ScmObj list)
 ScmObj Scm_MakeList(int len, ScmObj fill)
 {
     ScmObj start = SCM_NIL, last = SCM_NIL;
+    if (len < 0) {
+        Scm_Error("make-list: negative length given: %d", len);
+    }
     while (len--) {
         SCM_APPEND1(start, last, fill);
     }
