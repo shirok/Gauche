@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.26 2001-09-18 06:59:55 shirok Exp $
+ *  $Id: system.c,v 1.27 2001-09-18 08:06:16 shirok Exp $
  */
 
 #include <stdio.h>
@@ -683,5 +683,11 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 void Scm__InitSystem(void)
 {
     ScmModule *mod = Scm_GaucheModule();
+    Scm_InitBuiltinClass(&Scm_SysStatClass, "<sys-stat>", NULL, mod);
     Scm_InitBuiltinClass(&Scm_SysTmClass, "<sys-tm>", tm_slots, mod);
+    Scm_InitBuiltinClass(&Scm_SysGroupClass, "<sys-group>", NULL, mod);
+    Scm_InitBuiltinClass(&Scm_SysPasswdClass, "<sys-passwd>", NULL, mod);
+#ifdef HAVE_SELECT
+    Scm_InitBuiltinClass(&Scm_SysFdsetClass, "<sys-fdset>", NULL, mod);
+#endif
 }
