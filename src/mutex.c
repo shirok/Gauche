@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.5 2002-05-15 11:17:52 shirok Exp $
+ *  $Id: mutex.c,v 1.6 2002-05-15 11:45:56 shirok Exp $
  */
 
 #include <math.h>
@@ -210,7 +210,7 @@ static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
         GC_REGISTER_FINALIZER(cv, cv_finalize, NULL, &ofn, &ocd);
     }
 #else  /*!GAUCHE_USE_PTHREAD*/
-    (void)SCM_INTERNAL_CV_INIT(cv->cv);
+    (void)SCM_INTERNAL_COND_INIT(cv->cv);
 #endif /*!GAUCHE_USE_PTHREAD*/
     cv->name = SCM_FALSE;
     cv->specific = SCM_UNDEFINED;
