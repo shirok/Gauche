@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.371 2003-02-27 06:57:50 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.372 2003-02-27 07:11:56 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -23276,45 +23276,81 @@ Partial application versions of @code{fold}, @code{fold-right},
 
 @defun filter pred list
 @defunx filter! pred list
+@c EN
 [SRFI-1] A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned true on it is returned.
+@c JP
+[SRFI-1] 手続き @var{pred} が @var{list} の各要素に適用され、
+@var{pred} が真を返す要素のリストが返されます。
+@c COMMON
 @example
 (filter odd? '(3 1 4 5 9 2 6)) @result{} (3 1 5 9)
 @end example
+@c EN
 @code{filter!} is the linear-update variant.  It may destructively
 modifies @var{list} to produce the result.
+@c JP
+@code{filter!} はその場で更新されるバージョンです。結果を生成するために
+@var{list} を破壊的に変更します。
+@c COMMON
 @end defun
 
 @defun remove pred list
 @defunx remove! pred list
+@c EN
 [SRFI-1] A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned false on it is returned.
+@c JP
+[SRFI-1] 手続き @var{pred} が @var{list} の各要素に適用され、
+@var{pred} が偽を返す要素のリストが返されます。
+@c COMMON
 @example
 (remove odd? '(3 1 4 5 9 2 6)) @result{} (4 2 6)
 @end example
+@c EN
 @code{remove!} is the linear-update variant.  It may destructively
 modifies @var{list} to produce the result.
+@c JP
+@code{remove!} はその場で更新されるバージョンです。結果を生成するために
+@var{list} を破壊的に更新します。
+@c COMMON
 @end defun
 
 @defun partition pred list
 @defunx partition! pred list
+@c EN
 [SRFI-1] @code{filter} and @code{remove} simultaneously, i.e. 
 returns two lists, the first is the result of filtering elements of
 @var{list} by @var{pred}, and the second is the result of
 removing elements of @var{list} by @var{pred}.
+@c JP
+[SRFI-1] @code{filter} と @code{remove} は同時に、すなわち2つのリストを
+返しますが、一つ目は @var{pred} により @var{list} の要素をフィルタリング
+した結果で、二つ目は @var{pred} により @var{list} の要素を削除した結果
+です。 
+@c COMMON
 @example
 (partition odd? '(3 1 4 5 9 2 6))
   @result{} (3 1 5 9) (4 2 6)
 @end example
+@c EN
 @code{partition!} is the linear-update variant.  It may destructively
 modifies @var{list} to produce the result.
+@c JP
+@code{partition!} はその場で更新されるバージョンです。結果を生成するために
+@var{list} を破壊的に更新します。
+@c COMMON
 @end defun
 
 @defun filter$ pred
 @defunx remove$ pred
 @defunx partition$ pred
+@c EN
 Partial application versions of @code{filter}, @code{remove} and
 @code{partition}.
+@c JP
+@code{filter}、@code{remove}、@code{partition}の部分的に適用するバージョンです。
+@c COMMON
 @end defun
 
 
