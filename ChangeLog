@@ -1,5 +1,7 @@
 2002-12-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/arith_i386.h (UADD): modified to avoid a "register
+	  spilling error" on some processors.
 	* lib/gauche/procedure.scm (let-keywords*): take care of syntactic
 	  unwrapping in case when let-keywords* appear in the expanded
 	  form of R5RS macro.
