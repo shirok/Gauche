@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.49 2004-01-28 01:04:52 shirok Exp $
+# $Id: Makefile.in,v 1.50 2004-08-02 04:14:47 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check install uninstall clean distclean maintainer-clean install-check
@@ -39,10 +39,12 @@ install: install-pkg install-doc
 install-doc:
 	cd doc; $(MAKE) install
 
+# it is important to install lib and ext _before_ src, since they
+# depend on gosh's rpath to point a valid version of libgauche.so.
 install-pkg:
-	cd src; $(MAKE) install
 	cd lib; $(MAKE) install
 	cd ext; $(MAKE) install
+	cd src; $(MAKE) install
 	$(INSTALL) -m 444 acinclude.m4 $(DESTDIR)`sh src/gauche-config --ac`/aclocal.m4
 	$(MKINSTDIR) $(DESTDIR)$(datadir)/aclocal
 	$(INSTALL) -m 444 acinclude.m4 $(DESTDIR)$(datadir)/aclocal/gauche.m4
