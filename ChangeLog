@@ -1,5 +1,7 @@
 2004-05-31  Shiro Kawai  <shiro@acm.org>
 
+	* src/regexp.c: enable regexps to be compared by equal?.
+
 	* ext/net/net.ac: avoid checking getprotobyname_r etc on NetBSD,
 	  since these are not supposed to be used by user programs on the
 	  current NetBSD.  (Patch from MINOURA Makoto)

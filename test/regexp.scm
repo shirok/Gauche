@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.17 2003-10-25 02:42:09 shirok Exp $
+;; $Id: regexp.scm,v 1.18 2004-06-01 12:44:04 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -693,5 +693,19 @@
 (test* "regexp-quote" #t
        (let ((str "^(#$%#}{)\\-+?^$"))
          (regmatch? (rxmatch (string->regexp (regexp-quote str)) str))))
+
+;;-------------------------------------------------------------------------
+(test-section "regexp comparison")
+
+(test* "equal #/abc/ #/abc/" #t
+       (equal? #/abc/ #/abc/))
+(test* "not equal #/abc/ #/a(bc)/" #f
+       (equal? #/abc/ #/a(bc)/))
+(test* "not equal #/abc/ #/abc/i" #f
+       (equal? #/abc/ #/abc/i))
+(test* "not equal #/abc/i #/abc/" #f
+       (equal? #/abc/i #/abc/))
+(test* "equal #/abc/i #/abc/i" #t
+       (equal? #/abc/i #/abc/i))
 
 (test-end)

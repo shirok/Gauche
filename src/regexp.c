@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.49 2004-03-05 05:26:08 shirok Exp $
+ *  $Id: regexp.c,v 1.50 2004-06-01 12:44:04 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -172,8 +172,11 @@ enum {
  */
    
 static void regexp_print(ScmObj obj, ScmPort *port, ScmWriteContext *c);
+static int  regexp_compare(ScmObj x, ScmObj y, int equalp);
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, regexp_print);
+SCM_DEFINE_BUILTIN_CLASS(Scm_RegexpClass,
+                         regexp_print, regexp_compare, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
 
 static ScmRegexp *make_regexp(void)
@@ -199,6 +202,19 @@ static void regexp_print(ScmObj rx, ScmPort *out, ScmWriteContext *ctx)
         /* fail safe */
         Scm_Printf(out, "#<regexp %p>", rx);
     }
+}
+
+static int regexp_compare(ScmObj x, ScmObj y, int equalp)
+{
+    if (!equalp) {
+        Scm_Error("cannot compare regexps: %S and %S", x, y);
+    }
+    return !(SCM_REGEXP(x)->pattern
+             && SCM_REGEXP(y)->pattern
+             && Scm_StringEqual(SCM_STRING(SCM_REGEXP(x)->pattern),
+                                SCM_STRING(SCM_REGEXP(y)->pattern))
+             && ((SCM_REGEXP(x)->flags&SCM_REGEXP_CASE_FOLD)
+                 == (SCM_REGEXP(y)->flags&SCM_REGEXP_CASE_FOLD)));
 }
 
 #ifndef CHAR_MAX
@@ -1536,6 +1552,7 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
                                             SCM_MAKSTR_IMMUTABLE));
     rc_ctx_init(&cctx, rx);
     cctx.casefoldp = flags & SCM_REGEXP_CASE_FOLD;
+    rx->flags |= (flags & SCM_REGEXP_CASE_FOLD);
 
     /* pass 1 : parse regexp spec */
     ast = rc1(&cctx);
