@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.3 2001-03-25 04:48:05 shiro Exp $
+;;;  $Id: object.scm,v 1.4 2001-03-25 10:23:49 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -122,7 +122,7 @@
     `(define ,name
        (make ,class
              :name ',name
-             :supers ,supers
+             :supers (list ,@supers)
              :slots (list ,@slot-defs)
              ,@options))))
 
@@ -198,13 +198,19 @@
          (slot-set! class 'num-instance-slots (+ num 1))
          num))
       ((:builtin)
-       (let ((acc (get-keyword :accessor (cdr slot) #f)))
+       (let ((acc (get-keyword :slot-accessor (cdr slot) #f)))
          (unless acc
-           (error "builtin slot ~s of class ~s doesn't have associated accessor"
+           (error "builtin slot ~s of class ~s doesn't have associated slot accessor"
                   (car slot) class))
          acc))
       (else
        (error "unsupported slot allocation: ~s" alloc)))))
+
+(define-method slot-unbound ((class <class>) obj slot)
+  (error "slot ~s of object ~s is unbound" slot obj))
+
+(define-method slot-missing ((class <class>) obj slot . value)
+  (error "object ~s doesn't have such slot: ~s" obj slot))
 
 ;;----------------------------------------------------------------
 ;; Introspection routines
@@ -216,7 +222,16 @@
 (define (class-direct-slots class) (slot-ref class 'direct-slots))
 (define (class-slots class) (slot-ref class 'slots))
 
-;; more to come ...
+(define (slot-definition-name slot) (car slot))
+
+(define (slot-definition-alocation slot)
+  (get-keyword :allocation (cdr slot) #f))
+(define (slot-definition-getter slot)
+  (get-keyword :getter (cdr slot) #f))
+(define (slot-definition-setter slot)
+  (get-keyword :setter (cdr slot) #f))
+(define (slot-definition-accessor slot)
+  (get-keyword :accessor (cdr slot) #f))
 
 ;;----------------------------------------------------------------
 ;; Handy for debug (just for now)
