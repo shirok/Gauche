@@ -71,6 +71,7 @@ install : all
 	for f in $(INSTALL_HEADERS); do \
 	  $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
 	done
+	$(INSTALL) -d $(SUBHEADER_INSTALL_DIR)
 	for f in $(INSTALL_SUBHEADERS); do \
 	  $(INSTALL) -m 444 $$f $(SUBHEADER_INSTALL_DIR); \
 	done
