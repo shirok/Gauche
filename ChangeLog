@@ -1,3 +1,16 @@
+2001-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c : fixed a bug that couldn't handle pattern variables
+	  appear in the higher level than its defined level.
+	* lib/srfi-9.scm : added SRFI-9, record types.
+	* src/read.c (read_char): recognize #\xXXX type character name.
+	* src/number.c (Scm_NumberToString): fixed a bug that didn't print
+	  negative small integer correctly in radix 8 and 16.
+	* src/write.c (Scm_Forat): extended format to take parameters and
+	  flags for the format directives, and to handle format directive
+	  ~d, ~b, ~o and ~x.
+	* test/io.scm : added to test format.
+
 2001-07-07  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.1
