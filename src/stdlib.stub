@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.33 2001-03-10 09:39:59 shiro Exp $
+;;; $Id: stdlib.stub,v 1.34 2001-03-11 10:11:45 shiro Exp $
 ;;;
 
 
@@ -46,7 +46,8 @@
 (define-cproc rational? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INTEGERP(obj)));")
 (define-cproc integer? (obj)
-  "  SCM_RETURN(Scm_IntegerP(obj));")
+  "  if (!SCM_NUMBERP(obj)) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_IntegerP(obj));")
 
 (define-cproc exact? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EXACTP(obj)));")
