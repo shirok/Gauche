@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.38 2002-08-30 02:51:11 shirok Exp $
+ *  $Id: module.c,v 1.39 2002-09-03 00:30:57 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -43,7 +43,7 @@ static struct {
 
 /* Predefined modules - slots will be initialized by Scm__InitModule */
 #define DEFINE_STATIC_MODULE(cname) \
-    static ScmModule cname = { { SCM_CLASS_MODULE } }
+    static ScmModule cname = { { NULL } }
 
 DEFINE_STATIC_MODULE(nullModule);
 DEFINE_STATIC_MODULE(schemeModule);
@@ -370,6 +370,7 @@ ScmModule *Scm_CurrentModule(void)
 
 #define INIT_MOD(mod, name, mpl)                                           \
     do {                                                                   \
+        SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                             \
         init_module(&mod, SCM_SYMBOL(name));                               \
         mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl))); \
         mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                      \
