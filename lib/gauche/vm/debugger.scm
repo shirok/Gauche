@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.13 2002-09-20 12:04:34 shirok Exp $
+;;;  $Id: debugger.scm,v 1.14 2003-05-26 10:14:56 shirok Exp $
 ;;;
 
 ;; NB: this is still a working version.  
@@ -22,7 +22,6 @@
   (use srfi-2)
   (use srfi-13)
   (use gauche.vm.disasm)
-  (use gauche.threads)
   (use text.parse)
   (export enable-debug disable-debug debug-print)
   )
