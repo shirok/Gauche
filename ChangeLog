@@ -1,3 +1,8 @@
+2003-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/parse.scm (next-token) : fixed error message handling
+	  (Patch from Grzegorz Chrupala).
+
 2003-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (compile_define): check the module existence in
