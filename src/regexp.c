@@ -12,16 +12,52 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.3 2001-04-13 06:18:06 shiro Exp $
+ *  $Id: regexp.c,v 1.4 2001-04-13 10:27:52 shiro Exp $
  */
 
 #include "gauche.h"
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
 
 #ifndef CHAR_MAX
 #define CHAR_MAX 256
 #endif
+
+/* THIS CODE IS EXPERIMENTAL, AND NOT WORKING YET. */
+
+/* I don't like to reinvent wheels, so I looked for a regexp implementation
+ * that can handle multibyte encodings and not bound to Unicode.
+ * Without assuming Unicode it'll be difficult to define character classes
+ * correctly, but there are domains that you don't want to do native
+ * charset <-> UTF-8 each time for regexp match, trading correctness of
+ * character classes.
+ *
+ * The most recent version of famous Henry Spencer's regex is found in Tcl
+ * 8.3, that supports wide characters (the state machine seems to work
+ * with UCS-4, but the internal tables seem to be set up for UCS-2 only).
+ * Tcl does UTF-8 <-> UCS-2 conversion in order to do regexp match.
+ *
+ * Lots of variants of Spencer's old regex code is floating around, such
+ * as http://arglist.com/regex/ and the one in BSD.   They don't support
+ * multibyte strings, as far as I know.
+ *
+ * Another popular package is PCRE.  PCRE 3.4 has UTF-8 support, but only
+ * experimentally.
+ *
+ * None seems to satisfy my criteria.
+ *
+ * So I reluctantly started to write my own.  I don't think I can beat
+ * those guys, and am willing to grab someone's code anytime if it's suitable
+ * for my purpose and under a license like BSD one.  
+ */
+
+/*
+ * The idea here is to match string without converting mb <-> char as
+ * much as possible.  The conversion is inevitable anytime we have to
+ * match charsets, but there are number of cases we can avoid it.
+ * The engine itself will be implemented in NFA-based scheme.
+ */
 
 /* Instructions */
 enum {
@@ -43,6 +79,27 @@ enum {
                                    group. */
 };
 
+/* symbols used internally */
+ScmObj sym_alt;                 /* alt */
+ScmObj sym_rep;                 /* rep */
+ScmObj sym_any;                 /* any */
+
+static ScmRegexp *make_regexp(void)
+{
+    ScmRegexp *re = SCM_NEW(ScmRegexp);
+    SCM_SET_CLASS(re, SCM_CLASS_REGEXP);
+    re->code = NULL;
+    re->numCodes = 0;
+    re->numGroups = 0;
+    re->numSets = 0;
+    re->sets = NULL;
+    return re;
+}
+
+/*=======================================================================
+ * Compiler
+ */
+
 /* compiler state information */
 struct comp_ctx {
     ScmString *pattern;         /* original pattern */
@@ -60,20 +117,6 @@ static inline ScmChar fetch_pattern(struct comp_ctx *ctx)
     ctx->rxstr += SCM_CHAR_NBYTES(ch);
     ctx->rxlen--;
     return ch;
-}
-
-/* symbols used internally */
-ScmObj sym_alt;                 /* alt */
-ScmObj sym_rep;                 /* rep */
-ScmObj sym_any;                 /* any */
-
-static ScmRegexp *make_regexp(void)
-{
-    ScmRegexp *re = SCM_NEW(ScmRegexp);
-    SCM_SET_CLASS(re, SCM_CLASS_REGEXP);
-    re->code = NULL;
-    re->numGroups = 0;
-    return re;
 }
 
 static ScmObj last_item(struct comp_ctx *ctx, ScmObj head, ScmObj tail,
@@ -442,9 +485,20 @@ ScmObj re_compile(ScmString *pattern)
     return compiled;
 }
 
+/*=======================================================================
+ * Matcher
+ */
+
+/* to be written ... */
+
+/*=======================================================================
+ * Initializing stuff
+ */
+
 void Scm__InitRegexp(void)
 {
     Scm_InitBuiltinClass(SCM_CLASS_REGEXP, "<regexp>", Scm_GaucheModule());
+    Scm_InitBuiltinClass(SCM_CLASS_REGMATCH, "<regmatch>", Scm_GaucheModule());
 
     sym_alt = SCM_INTERN("alt");
     sym_rep = SCM_INTERN("rep");
