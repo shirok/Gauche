@@ -1,5 +1,5 @@
 ;;;
-;;; mop/validator.scm - validator slot option
+;;; gauche/validator.scm - validator slot option
 ;;;
 ;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
 ;;;
@@ -12,26 +12,29 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: validator.scm,v 1.1 2001-11-23 01:06:09 shirok Exp $
+;;;  $Id: validator.scm,v 1.2 2001-11-23 09:19:54 shirok Exp $
 ;;;
 
-(define-module mop.validator
+(define-module gauche.validator
   (export <validator-meta>)
   )
-(select-module mop.validator)
+(select-module gauche.validator)
 
 (define-class <validator-meta> (<class>)
   ())
+
+;; TODO: need to enable :init-value / :init-thunk 
 
 (define-method compute-get-n-set ((class <validator-meta>) slot)
   (cond ((slot-definition-option slot :validator #f)
          => (lambda (validator)
               (unless (procedure? validator)
-                (error "procedure required for validator, but got" validator))
-              (let* ((acc (compute-slot-accessor class slot (next-method))))
+                (error "a procedure required for validator, but got"
+                       validator))
+              (let ((acc (compute-slot-accessor class slot (next-method))))
                 (list (lambda (o) (slot-ref-using-accessor o acc))
                       (lambda (o v)
                         (slot-set-using-accessor o acc (validator o v)))))))
         (else (next-method))))
 
-(provide "mop/validator")
+(provide "gauche/validator")
