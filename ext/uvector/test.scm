@@ -389,25 +389,25 @@
        (num-equal? (coerce-to <vector> (subseq vec 1 3)) '#(0 3))))
 
 (test "s8vector collection interface" #t
-      (lambda () (collection-tester <s8vector> '#s8(1 2 3 4))))
+      (lambda () (collection-tester <s8vector> (s8vector 1 2 3 4))))
 (test "u8vector collection interface" #t
-      (lambda () (collection-tester <u8vector> '#u8(1 2 3 4))))
+      (lambda () (collection-tester <u8vector> (u8vector 1 2 3 4))))
 (test "s16vector collection interface" #t
-      (lambda () (collection-tester <s16vector> '#s16(1 2 3 4))))
+      (lambda () (collection-tester <s16vector> (s16vector 1 2 3 4))))
 (test "u16vector collection interface" #t
-      (lambda () (collection-tester <u16vector> '#u16(1 2 3 4))))
+      (lambda () (collection-tester <u16vector> (u16vector 1 2 3 4))))
 (test "s32vector collection interface" #t
-      (lambda () (collection-tester <s32vector> '#s32(1 2 3 4))))
+      (lambda () (collection-tester <s32vector> (s32vector 1 2 3 4))))
 (test "u32vector collection interface" #t
-      (lambda () (collection-tester <u32vector> '#u32(1 2 3 4))))
+      (lambda () (collection-tester <u32vector> (u32vector 1 2 3 4))))
 (test "s64vector collection interface" #t
-      (lambda () (collection-tester <s64vector> '#s64(1 2 3 4))))
+      (lambda () (collection-tester <s64vector> (s64vector 1 2 3 4))))
 (test "u64vector collection interface" #t
-      (lambda () (collection-tester <u64vector> '#u64(1 2 3 4))))
+      (lambda () (collection-tester <u64vector> (u64vector 1 2 3 4))))
 (test "f32vector collection interface" #t
-      (lambda () (collection-tester <f32vector> '#f32(1 2 3 4))))
+      (lambda () (collection-tester <f32vector> (f32vector 1 2 3 4))))
 (test "f64vector collection interface" #t
-      (lambda () (collection-tester <f64vector> '#f64(1 2 3 4))))
+      (lambda () (collection-tester <f64vector> (f64vector 1 2 3 4))))
 
 ;;-------------------------------------------------------------------
 (test-section "arithmetic operations")
@@ -1351,30 +1351,28 @@
                        4 8)))
 
 ;; test alignment check
-(test "alias u32 u8 (alignment violation)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (let* ((src (make-u8vector 9))
-                   (dst (uvector-alias <u32vector>)))
-              dst)))))
-(test "alias u32 u8 (alignment violation)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (let* ((src (make-u8vector 32))
-                   (dst (uvector-alias <u32vector> 2)))
-              dst)))))
-(test "alias u32 u8 (alignment violation)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (let* ((src (make-u8vector 32))
-                   (dst (uvector-alias <u32vector> 4 5)))
-              dst)))))
+(test-error "alias u32 u8 (alignment violation)" 
+            (lambda ()
+              (let* ((src (make-u8vector 9))
+                     (dst (uvector-alias <u32vector>)))
+                dst)))
+(test-error "alias u32 u8 (alignment violation)"
+            (lambda ()
+              (let* ((src (make-u8vector 32))
+                     (dst (uvector-alias <u32vector> 2)))
+                dst)))
+(test-error "alias u32 u8 (alignment violation)"
+            (lambda ()
+              (let* ((src (make-u8vector 32))
+                     (dst (uvector-alias <u32vector> 4 5)))
+                dst)))
+
+;; test if immutable property propagates
+(test-error "immutability violation"
+            (lambda ()
+              (let* ((src '#u8(0 1 2 3))
+                     (dst (uvector-alias <u8vector> src)))
+                (u8vector-set! dst 0 1))))
 
 ;;-------------------------------------------------------------------
 ; (use gauche.array)

@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.21 2002-10-17 08:49:16 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.22 2002-12-25 23:52:53 shirok Exp $
 ;;;
 
 "
@@ -305,7 +305,11 @@ cat <<EOF
   }
   if (reqalign >= srcalign) dstsize = (end-start) / (reqalign/srcalign);
   else dstsize = (end-start) * (srcalign/reqalign);
-  SCM_RETURN(Scm_MakeUVector(SCM_CLASS(klass), dstsize, (char*)v->elements + start*srcalign));
+  SCM_RETURN(Scm_MakeUVectorFull(SCM_CLASS(klass),
+                                 dstsize,
+                                 (char*)v->elements + start*srcalign,
+                                 SCM_UVECTOR_IMMUTABLE_P(v),
+                                 SCM_UVECTOR_OWNER(v)));
   ")
 EOF
 
@@ -320,6 +324,7 @@ cat <<EOF
                                      (end::<fixnum> -1))
   "int len = SCM_UVECTOR_SIZE(v), eltsize, r;
   SCM_CHECK_START_END(start, end, len);
+  SCM_UVECTOR_CHECK_MUTABLE(v);
   eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
   SCM_ASSERT(eltsize >= 1);
   r = Scm_Getz((char*)v->elements + start*eltsize, (end-start)*eltsize, port);

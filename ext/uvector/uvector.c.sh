@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.28 2002-12-25 13:02:04 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.29 2002-12-25 23:52:53 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -218,6 +218,7 @@ ScmObj Scm_${vecttype}Fill(Scm${vecttype} *vec, ${itemtype} fill, int start, int
 {
     int i, size = SCM_${VECTTYPE}_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
+    SCM_UVECTOR_CHECK_MUTABLE(vec);
     for (i=start; i<end; i++) vec->elements[i] = fill;
     return SCM_OBJ(vec);
 }
@@ -241,6 +242,7 @@ ScmObj Scm_${vecttype}Set(Scm${vecttype} *vec, int index, ScmObj val, int clamp)
     ${itemtype} elt;
     if (index < 0 || index >= SCM_${VECTTYPE}_SIZE(vec))
         Scm_Error("index out of range: %d", index);
+    SCM_UVECTOR_CHECK_MUTABLE(vec);
     ${VECTTAG}UNBOX(elt, val);
     vec->elements[index] = elt;
     return SCM_OBJ(vec);
@@ -289,6 +291,7 @@ ScmObj Scm_${vecttype}CopyX(Scm${vecttype} *dst, Scm${vecttype} *src)
     if (SCM_${VECTTYPE}_SIZE(dst) != len) {
         Scm_Error("same size of vectors are required: %S, %S", dst, src);
     }
+    SCM_UVECTOR_CHECK_MUTABLE(dst);
     memcpy(SCM_${VECTTYPE}_ELEMENTS(dst), SCM_${VECTTYPE}_ELEMENTS(src),
            len * sizeof(${itemtype}));
     return SCM_OBJ(dst);
@@ -317,23 +320,25 @@ cat <<EOF
 static ScmObj read_uvector(ScmPort *port, const char *tag)
 {
     ScmChar c;
-    ScmObj list;
+    ScmObj list, uv = SCM_UNDEFINED;
 
     SCM_GETC(c, port);
     if (c != '(') Scm_Error("bad uniform vector syntax for %s", tag);
     list = Scm_ReadList(SCM_OBJ(port), ')');
-    if (strcmp(tag, "s8") == 0)  return Scm_ListToS8Vector(list, 0);
-    if (strcmp(tag, "u8") == 0)  return Scm_ListToU8Vector(list, 0);
-    if (strcmp(tag, "s16") == 0) return Scm_ListToS16Vector(list, 0);
-    if (strcmp(tag, "u16") == 0) return Scm_ListToU16Vector(list, 0);
-    if (strcmp(tag, "s32") == 0) return Scm_ListToS32Vector(list, 0);
-    if (strcmp(tag, "u32") == 0) return Scm_ListToU32Vector(list, 0);
-    if (strcmp(tag, "s64") == 0) return Scm_ListToS64Vector(list, 0);
-    if (strcmp(tag, "u64") == 0) return Scm_ListToU64Vector(list, 0);
-    if (strcmp(tag, "f32") == 0) return Scm_ListToF32Vector(list, 0);
-    if (strcmp(tag, "f64") == 0) return Scm_ListToF64Vector(list, 0);
-    Scm_Error("invalid unform vector tag: %s", tag);
-    return SCM_UNDEFINED; /* dummy */
+    if (strcmp(tag, "s8") == 0)  uv = Scm_ListToS8Vector(list, 0);
+    else if (strcmp(tag, "u8") == 0)  uv = Scm_ListToU8Vector(list, 0);
+    else if (strcmp(tag, "s16") == 0) uv = Scm_ListToS16Vector(list, 0);
+    else if (strcmp(tag, "u16") == 0) uv = Scm_ListToU16Vector(list, 0);
+    else if (strcmp(tag, "s32") == 0) uv = Scm_ListToS32Vector(list, 0);
+    else if (strcmp(tag, "u32") == 0) uv = Scm_ListToU32Vector(list, 0);
+    else if (strcmp(tag, "s64") == 0) uv = Scm_ListToS64Vector(list, 0);
+    else if (strcmp(tag, "u64") == 0) uv = Scm_ListToU64Vector(list, 0);
+    else if (strcmp(tag, "f32") == 0) uv = Scm_ListToF32Vector(list, 0);
+    else if (strcmp(tag, "f64") == 0) uv = Scm_ListToF64Vector(list, 0);
+    else Scm_Error("invalid unform vector tag: %s", tag);
+    /* make literal uvectors immutable */
+    SCM_UVECTOR_IMMUTABLE_P(uv) = TRUE;
+    return uv;
 }
 
 /*

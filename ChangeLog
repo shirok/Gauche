@@ -1,3 +1,8 @@
+2002-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/* : added immutability check for all destructive ops.
+	  made literal uvectors immutable.
+
 2002-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.[ch].sh : added immutable and owner field
