@@ -1,3 +1,10 @@
+2002-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/jconv.c : wrapping up.  passes the current tests.
+	* lib/srfi-27.scm : added srfi-27 support.
+	* src/vm.c (report_error): limit the depth of stack dump of the
+	  default error reporter.
+
 2002-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/* : reorganized to make jconv intercept iconv (but
