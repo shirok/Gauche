@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.22 2002-04-25 14:02:30 shirok Exp $
+ *  $Id: charconv.c,v 1.23 2002-04-25 22:31:47 shirok Exp $
  */
 
 #include <string.h>
@@ -185,10 +185,10 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 {
     conv_info *cinfo;
     iconv_t handle;
-    ScmPort *newport;
     conv_guess *guess;
     char *inbuf = NULL;
     int preread = 0;
+    ScmPortBuffer bufrec;
 
     if (!SCM_IPORTP(fromPort))
         Scm_Error("input port required, but got %S", fromPort);
@@ -236,14 +236,18 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     }
     cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->outptr = cinfo->outbuf;
+
+    bufrec.size = cinfo->bufsiz;
+    bufrec.buffer = cinfo->outbuf;
+    bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+    bufrec.filler = conv_input_filler;
+    bufrec.flusher = NULL;
+    bufrec.closer = conv_input_closer;
+    bufrec.ready = NULL;
+    bufrec.fileno = NULL;
+    bufrec.data = (void*)cinfo;
     
-    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_INPUT, SCM_PORT_BUFFER_ALWAYS,
-                                            cinfo->bufsiz, cinfo->outbuf,
-                                            ownerp,
-                                            conv_input_filler, NULL,
-                                            conv_input_closer, NULL,
-                                            cinfo));
-    return SCM_OBJ(newport);
+    return Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_INPUT, TRUE, &bufrec);
 }
 
 /*------------------------------------------------------------
@@ -354,7 +358,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
 {
     conv_info *cinfo;
     iconv_t handle;
-    ScmPort *newport;
+    ScmPortBuffer bufrec;
     
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
@@ -379,13 +383,17 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->outptr = cinfo->outbuf;
     
-    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_OUTPUT, SCM_PORT_BUFFER_ALWAYS,
-                                            cinfo->bufsiz, cinfo->inbuf,
-                                            ownerp,
-                                            NULL, conv_output_flusher,
-                                            conv_output_closer, NULL,
-                                            cinfo));
-    return SCM_OBJ(newport);
+    bufrec.size = cinfo->bufsiz;
+    bufrec.buffer = cinfo->inbuf;
+    bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+    bufrec.filler = NULL;
+    bufrec.flusher = conv_output_flusher;
+    bufrec.closer = conv_output_closer;
+    bufrec.ready = NULL;
+    bufrec.fileno = NULL;
+    bufrec.data = (void*)cinfo;
+    
+    return Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_OUTPUT, TRUE, &bufrec);
 }
 
 /*------------------------------------------------------------

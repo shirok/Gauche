@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.241 2002-04-25 14:02:34 shirok Exp $
+ *  $Id: gauche.h,v 1.242 2002-04-25 22:31:47 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1031,6 +1031,7 @@ typedef struct ScmPortBufferRec {
     int  (*flusher)(ScmPort *p, int min);
     int  (*closer)(ScmPort *p);
     int  (*ready)(ScmPort *p);
+    int  (*fileno)(ScmPort *p);
     void *data;
 } ScmPortBuffer;
 
@@ -1056,6 +1057,7 @@ typedef struct ScmPortVTableRec {
     int       (*Puts)(ScmString *s, ScmPort *p);
     int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
+    void      *data;
 } ScmPortVTable;
 
 struct ScmPortRec {
@@ -1074,8 +1076,6 @@ struct ScmPortRec {
                                    SCM_CHAR_INVALID if empty. */
     ScmObj name;                /* port's name */
 
-    void *data;                 /* client data */
-    
     union {
         ScmPortBuffer buf;      /* buffered port */
         struct {
@@ -1161,20 +1161,14 @@ SCM_EXTERN ScmObj Scm_MakeOutputStringPort(void);
 SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(int direction,
-				      ScmPortVTable *vtable,
-				      void *clientData);
-SCM_EXTERN ScmObj Scm_MakeBufferedPort(int direction, int mode,
-				       int bufsize,   char *buffer,
+				      ScmPortVTable *vtable);
+SCM_EXTERN ScmObj Scm_MakeBufferedPort(ScmObj name, int direction,
                                        int ownerp,
-                                       int (*filler)(ScmPort *p, int cnt),
-                                       int (*flusher)(ScmPort *p, int cnt),
-                                       int (*closer)(ScmPort *p),
-                                       int (*ready)(ScmPort *p),
-                                       void *data);
+                                       ScmPortBuffer *bufrec);
 SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
 				     int direction,
 				     int fd,
-				     int buffered,
+				     int bufmode,
 				     int ownerp);
 
 SCM_EXTERN ScmObj Scm_PortName(ScmPort *port);

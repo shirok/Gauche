@@ -1,3 +1,8 @@
+2002-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/gauche.h, src/extlib.stub, ext/charconv/charconv.c,
+	  ext/net/net.c : Changed file port API.
+
 2002-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/charconv.c : adapted to the new port API.

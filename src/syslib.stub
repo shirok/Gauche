@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.66 2002-04-25 03:31:57 shirok Exp $
+;;; $Id: syslib.stub,v 1.67 2002-04-25 22:31:47 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -310,7 +310,7 @@
   fd = Scm_SysCall(mkstemp(name));
   if (fd < 0) Scm_SysError(\"mkstemp failed\");
   sname = SCM_MAKE_STR_COPYING(name);
-  SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd, TRUE, TRUE), sname));
+  SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd, SCM_PORT_BUFFER_ALWAYS, TRUE), sname));
 #else
   /* TODO: provide alternative */
   Scm_Error(\"mkstemp() is not supported on this platform (yet)\");
@@ -710,9 +710,9 @@
   r = Scm_SysCall(pipe(fds));
   if (r < 0) Scm_SysError(\"pipe failed\");
   rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0],
-                            !SCM_FALSEP(bufferedP), TRUE);
+                            SCM_FALSEP(bufferedP) ? SCM_PORT_BUFFER_NEVER : SCM_PORT_BUFFER_ALWAYS, TRUE);
   wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1],
-                            !SCM_FALSEP(bufferedP), TRUE);
+                            SCM_FALSEP(bufferedP) ? SCM_PORT_BUFFER_NEVER : SCM_PORT_BUFFER_ALWAYS, TRUE);
   SCM_RETURN(Scm_Values2(rend, wend));")  
 
 (define-cproc sys-mkdir (pathname mode)

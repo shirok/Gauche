@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.138 2002-04-25 14:02:34 shirok Exp $
+;;; $Id: extlib.stub,v 1.139 2002-04-25 22:31:47 shirok Exp $
 ;;;
 
 "
@@ -713,8 +713,18 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc open-input-buffered-port (filler buffer-size)
   (assert (procedure? filler))
   (assert (small-integer? buffer-size))
-  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_INPUT, SCM_PORT_BUFFER_ALWAYS, buffer_size, NULL, FALSE, bufport_filler, NULL, bufport_closer, NULL, (void*)filler);
-  SCM_RETURN(p);")
+  "  ScmPortBuffer bufrec;
+  bufrec.size = buffer_size;
+  bufrec.buffer = NULL;
+  bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+  bufrec.filler = bufport_filler;
+  bufrec.flusher = NULL;
+  bufrec.closer = bufport_closer;
+  bufrec.ready = NULL;
+  bufrec.fileno = NULL;
+  bufrec.data = (void*)filler;
+  SCM_RETURN(Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_INPUT, TRUE, &bufrec));
+  ")
 
 "static int bufport_flusher(ScmPort *p, int mincnt)
  {
@@ -730,8 +740,18 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc open-output-buffered-port (flusher buffer-size)
   (assert (procedure? flusher))
   (assert (small-integer? buffer-size))
-  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_OUTPUT, SCM_PORT_BUFFER_ALWAYS, buffer_size, NULL, FALSE, NULL, bufport_flusher, bufport_closer, NULL, (void*)flusher);
-   SCM_RETURN(p);")
+  "  ScmPortBuffer bufrec;
+  bufrec.size = buffer_size;
+  bufrec.buffer = NULL;
+  bufrec.mode = SCM_PORT_BUFFER_ALWAYS;
+  bufrec.filler = NULL;
+  bufrec.flusher = bufport_flusher;
+  bufrec.closer = bufport_closer;
+  bufrec.ready = NULL;
+  bufrec.fileno = NULL;
+  bufrec.data = (void*)flusher;
+  SCM_RETURN(Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_OUTPUT, TRUE, &bufrec));
+  ")
 
 (define-cproc flush (&optional (oport (current-output-port)))
   (assert (output-port? oport))
