@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.16 2001-06-22 07:32:29 shirok Exp $
+ *  $Id: regexp.c,v 1.17 2001-08-31 08:34:49 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -688,8 +688,9 @@ ScmObj Scm_RegComp(ScmString *pattern)
     ScmObj compiled;
     struct comp_ctx cctx;
 
-    if (SCM_STRING_LENGTH(pattern) < 0)
+    if (SCM_STRING_INCOMPLETE_P(pattern)) {
         Scm_Error("incomplete string is not allowed: %S", pattern);
+    }
 
     cctx.pattern = pattern;
     cctx.ipat = SCM_PORT(Scm_MakeInputStringPort(pattern));
@@ -768,7 +769,7 @@ void re_exec_rec(const char *code,
 
     /* TODO: here we assume C-stack grows downward; need to check by
        configure */
-    if ((void*)&cset < ctx->begin_stack - MAX_STACK_USAGE) {
+    if ((char*)&cset < (char*)ctx->begin_stack - MAX_STACK_USAGE) {
         Scm_Error("stack overrun during matching regexp %S", ctx->rx);
     }
     
@@ -927,8 +928,9 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
     const char *start = SCM_STRING_START(str);
     const char *end = start + SCM_STRING_SIZE(str);
 
-    if (SCM_STRING_LENGTH(str) < 0)
+    if (SCM_STRING_INCOMPLETE_P(str)) {
         Scm_Error("incomplete string is not allowed: %S", str);
+    }
     /* TODO: prescreening */
     for (; start <= end - rx->mustMatchLen; start++) {
         ScmObj r = re_exec(rx, str, start, end);
