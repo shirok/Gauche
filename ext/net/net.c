@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.19 2002-06-30 04:23:40 shirok Exp $
+ *  $Id: net.c,v 1.20 2002-07-06 23:01:17 shirok Exp $
  */
 
 #include "net.h"
@@ -153,13 +153,23 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 
 ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 {
+    ScmSockAddr *naddr;
+    
     if (sock->fd < 0) {
         Scm_Error("attempt to bind a closed socket: %S", sock);
     }
     if (Scm_SysCall(bind(sock->fd, &addr->addr, addr->addrlen)) < 0) {
         Scm_SysError("bind failed to %S", addr);
     }
-    sock->address = addr;
+    /* The system may assign different address than <addr>, especially when
+       <addr> contains some 'wild card' (e.g. port=0).  We call getsockname
+       to obtain the exact address.   Patch provided by ODA Hideo */
+    naddr = SCM_SOCKADDR(Scm_MakeSockAddr(SCM_CLASS_OF(addr),
+                                          &addr->addr, addr->addrlen));
+    if (Scm_SysCall(getsockname(sock->fd, &naddr->addr, &naddr->addrlen)) < 0) {
+        Scm_SysError("getsockname failed to %S", addr);
+    }
+    sock->address = naddr;
     sock->status = SCM_SOCKET_STATUS_BOUND;
     return SCM_OBJ(sock);
 }

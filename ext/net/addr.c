@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.11 2002-06-30 04:23:40 shirok Exp $
+ *  $Id: addr.c,v 1.12 2002-07-06 23:01:17 shirok Exp $
  */
 
 #include "net.h"
@@ -79,6 +79,7 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
 {
     ScmSockAddr *addr = SCM_NEW2(ScmSockAddr*, sizeof(ScmObj)+len);
     SCM_SET_CLASS(addr, klass);
+    addr->addrlen = len;
     memset(&addr->addr, len, 0);
     memcpy(&addr->addr, saddr, len);
     return SCM_OBJ(addr);
