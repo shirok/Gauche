@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.11 2003-11-27 17:10:40 shirok Exp $
+;;;  $Id: 822.scm,v 1.12 2003-12-10 20:35:47 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -58,46 +58,37 @@
 ;;
 (define (rfc822-header->list iport . args)
   (let-optionals* args ((strict? #f))
+
+    (define (accum name bodies r)
+      (cons (list name (string-concatenate-reverse bodies)) r))
+    
     (let loop ((r '())
                (line (read-line iport)))
-      (receive (head body next)
-          (read-single-field iport line strict?)
-        (if next
-            (loop (cons (list head body) r) next)
-            (reverse (cons (list head body) r))))
-      )))
-
-;; Internal routine.  read a single header field.
-;;  iport - input port
-;;  pline  - prefetched line.  #f if none.
-;; Returns three values: field-name, field-body, and the prefetched line
-;; (to process folded field, the routne need to prefetch one line ahead).
-;; If it sees the end of the header, returns (values name body #f)
-(define (read-single-field input line strict?)
-  (rxmatch-case line
-    (test eof-object? (values #t #t #f))
-    (test string-null? (values #t #t #f))
-    (#/^([\x21-\x39\x3b-\x7e]+):\s*(.*)$/ (#f name body)
-     (let ((name (string-downcase name)))
-       (let loop ((nline (read-line input))
-                  (bodies (list body)))
-         (cond ((eof-object? nline)
-                ;; maybe premature end of the message
-                (if strict?
-                    (error "premature end of message header")
-                    (values name (string-concatenate-reverse bodies) #f)))
-               ((string-null? nline)     ;; end of the header
-                (values name (string-concatenate-reverse bodies) #f))
-               ((char-set-contains? #[ \t] (string-ref nline 0))
-                (loop (read-line input) (cons nline bodies)))
-               (else
-                (values name (string-concatenate-reverse bodies) nline)))
-         )
-       ))
-    (else
-     (if strict?
-         (error "bad header line:" line)
-         (read-single-field input (read-line input) #f)))))
+      (rxmatch-case line
+        (test eof-object?  (reverse! r))
+        (test string-null? (reverse! r))
+        (#/^([\x21-\x39\x3b-\x7e]+):\s*(.*)$/ (#f name body)
+            (let ((name (string-downcase name)))
+              (let loop2 ((nline (read-line iport))
+                          (bodies (list body)))
+                (cond ((eof-object? nline)
+                       ;; maybe premature end of the message
+                       (if strict?
+                         (error "premature end of message header")
+                         (reverse! (accum name bodies r))))
+                      ((string-null? nline)     ;; end of the header
+                       (reverse! (accum name bodies r)))
+                      ((char-set-contains? #[ \t] (string-ref nline 0))
+                       (loop2 (read-line iport) (cons nline bodies)))
+                      (else
+                       (loop (accum name bodies r) nline)))
+                )
+              ))
+        (else
+         (if strict?
+           (error "bad header line:" line)
+           (loop r (read-line iport))))))
+    ))
 
 ;;------------------------------------------------------------------
 ;; Comments, quoted pairs, atoms and quoted string.  Section 3.2
