@@ -4,7 +4,7 @@
 
 (use gauche.test)
 (use srfi-13)
-(test-start "gauche.procses")
+(test-start "gauche.process")
 
 (use gauche.process)
 (test-module 'gauche.process)
