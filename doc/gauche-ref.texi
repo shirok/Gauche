@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.65 2001-09-23 05:28:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.66 2001-09-24 00:27:40 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1823,7 +1823,14 @@ Return value is undefined.
 @end defun
 
 @defun string-fill! string char &optional start end
-[R5RS+][SRFI-13]
+[R5RS+][SRFI-13] Fills @var{string} by @var{char}.  Optional
+@var{start} and @var{end} limits the effective area.
+@example
+(string-fill! "orange" #\X)
+  @result{} "XXXXXX"
+(string-fill! "orange" #\X 2 4)
+  @result{} "orXXge"
+@end example
 @end defun
 
 @defun string-join strs &optional delim grammer
@@ -5400,10 +5407,12 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 
 @deftp {Module} gauche.regexp
 @mdindex gauche.regexp
-This module defines some macros useful in regexp match.
+This module defines some macros and utilities useful in regexp match.
 See @ref{Regular expression} for builtin regexp features.
 
-The interface is borrowed from scsh, but I changed the name of
+The interface of some of the macros is borrowed from scsh
+(@code{if-match}, @code{let-match} and @code{match-cond}),
+but I changed the name of
 macros since scsh's @code{match-cond} can be confusing
 (e.g. Bigloo has @code{match-lambda} and @code{match-case} in
 pattern match library, that sounds too similar).
@@ -5572,6 +5581,48 @@ The @code{parse-date} example above becomes simpler if you use
     (else (error "bogus: ~s" str))))
 @end example
 @end defmac
+
+
+@defun regexp-replace regexp string substitution
+@defunx regexp-replace-all regexp string substitution
+Replaces the part of @var{string} that matched to @var{regexp}
+for @var{substitution}.  @code{regexp-replace} just replaces
+the first match of @var{regexp}, while @code{regexp-replace-all}
+repeats the replacing throughout entire @var{string}.
+
+@var{substitution} may be a string or a procedure.  If it is a string,
+it can contain a digit sequence preceded by a backslash
+(e.g. @code{\2}) that refers the submatch.  @code{\0} refers to the
+entire match.  Note that you need two backslashes to include
+backslash character in the literal string; if you want to include a backslash
+character itself in the @var{substitution}, you need four backslashes.
+
+@example
+(regexp-replace #/def|DEF/ "abcdefghi" "...")
+  @result{} "abc...ghi"
+(regexp-replace #/def|DEF/ "abcdefghi" "|\\0|")
+  @result{} "abc|def|ghi"
+(regexp-replace #/def|DEF/ "abcdefghi" "|\\\\0|")
+  @result{} "abc|\\0|ghi"
+(regexp-replace #/c(.*)g/ "abcdefghi" "|\\1|")
+  @result{} "ab|def|hi"
+@end example
+
+If @var{substitution} is a procedure, for every match in @var{string}
+it is called with one argument, regexp-match object.  The returned
+value from the procedure is inserted to the output string using
+@code{display}.
+
+@example
+(regexp-replace #/c(.*)g/ "abcdefghi" 
+                (lambda (m)
+                  (list->string
+                   (reverse
+                    (string->list (rxmatch-substring m 1))))))
+ @result{} "abfedhi"
+@end example
+
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Simple dispatcher, Serializer, Regular expression utilities, Libarary Modules
@@ -5989,7 +6040,7 @@ set are silently ignored.
 @deftp {Module} rfc.cookie
 @mdindex rfc.cookie
 Defines a set of functions to parse and construct a ``cookie'' information
-defined in RFC 2965 (@ref{rfc2965,,[RFC2965]}).
+defined in RFC 2965 (@ref{rfc2965,,RFC2965}).
 @end deftp
 
 @defun parse-cookie-string string &optional version
@@ -6001,7 +6052,7 @@ If the cookie version is known, via ``Cookie2'' request header,
 the integer version must be passed to @var{version}.  Otherwise,
 @code{parse-cookie} figures out the version from @var{string}.
 
-The result is a list of the following format.
+The result has the following format.
 @example
 ((<name> <value> [:path <path>] [:domain <domain>] [:port <port>])
  @dots{})
@@ -6015,6 +6066,62 @@ as a form of keyword-value pair.
 @end defun
 
 @defun construct-cookie-string specs &optional version
+Given list of cookie specs, creates a cookie string suitable for
+@code{Set-cookie2} or @code{Set-cookie} header.
+
+Optional @var{version} argument specifies cookie protocol version.
+0 for the old Netscape style format, and 1 for RFC2965 style format.
+When omitted, version 1 is assumed.
+
+Each cookie spec has the following format.
+@example
+(<name> <value> [:comment <comment>] [:comment-url <url>]
+                [:discard <bool>] [:domain <domain>]
+                [:max-age <age>] [:path <path>]
+                [:port <port-list>] [:secure <bool>]
+                [:version <version>] [:expires <date>])
+@end example
+Where,
+@table @code
+@item <name>
+A string.  Name of the cookie.
+@item <value>
+Value of the cookie.  May be a string, or @code{#f} if no value is needed.
+@item <comment> <url> <domain> <path> <port-list>
+Strings.
+@item <bool>
+Boolean value
+@item <age> <version>
+Integers
+@item <date>
+Either an integer (seconds since Epoch) or a formatted date string
+following the netscape cookie specification.
+@end table
+
+The attribute values are quoted appropriately.  If the specified attribute
+is irrelevant for the @var{version}, it is ignored.  So you can pass
+the same specs to generate both old-style and new-style cookie strings.
+
+Return value is a list of cookie strings, each of which stands for
+each cookie.  For old-style protocol (using @code{Set-cookie} header)
+you must send each of them by individual header.  For new-style
+protocol (using @code{Set-cookie2} header), you can join them
+with comma and send it at once.  See RFC2965 for further details.
+
+Some examples:
+@example
+(construct-cookie-string
+   '(("name" "foo" :domain "foo.com :path "/"
+                   :expires (+ (sys-time) 86400) :max-age 86400)))
+ @result{} ("name=foo;Domain=foo.com;Path=/;Max-age=86400")
+
+(construct-cookie-string
+   '(("name" "foo" :domain "foo.com :path "/"
+                   :expires (+ (sys-time) 86400) :max-age 86400))
+   0)
+ @result{}
+ ("name=foo;Domain=foo.com;Path=/;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
