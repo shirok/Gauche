@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.net extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.14 2002-02-10 05:40:05 shirok Exp $
+dnl $Id: configure.in,v 1.15 2002-02-11 09:51:29 shirok Exp $
 AC_INIT(net.c)
 AC_CONFIG_HEADER(netconfig.h)
 AC_GAUCHE_INIT_EXT
@@ -15,6 +15,9 @@ AC_GAUCHE_FLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL
+
+# Check for headers
+AC_CHECK_HEADERS(rpc/types.h)
 
 # Check if we need -lsocket for socket related libraries
 AC_SEARCH_LIBS(shutdown, socket)
