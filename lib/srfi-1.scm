@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.8 2001-04-10 06:58:02 shiro Exp $
+;; $Id: srfi-1.scm,v 1.9 2001-06-01 19:41:56 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -111,7 +111,7 @@
                 (%delete! x lis 'eq?)
                 (%delete! x lis 'eqv?)
                 (%delete! x lis 'equal?)
-                (filter (lambda (y) (not (= x y))) lis)))
+                (filter! (lambda (y) (not (= x y))) lis)))
 
 ;;; Extended from R4RS to take an optional comparison argument.
 (define (member x lis . args)
