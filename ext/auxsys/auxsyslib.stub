@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.7 2002-05-09 02:52:54 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.8 2002-05-23 09:17:54 shirok Exp $
 ;;;
 
 "
@@ -156,8 +156,8 @@
   SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_stime));
   SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cutime));
   SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cstime));
-#ifdef CLOCKS_PER_SEC
-  SCM_APPEND1(h, t, Scm_MakeInteger(CLOCKS_PER_SEC));
+#ifdef _SC_CLK_TCK
+  SCM_APPEND1(h, t, Scm_MakeInteger(sysconf(_SC_CLK_TCK)));
 #else
 #ifdef CLK_TCK
   SCM_APPEND1(h, t, Scm_MakeInteger(CLK_TCK)); /* older name */
