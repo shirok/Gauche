@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.70 2002-04-04 08:25:40 shirok Exp $
+ *  $Id: number.c,v 1.71 2002-04-04 10:13:20 shirok Exp $
  */
 
 #include <math.h>
@@ -1423,7 +1423,8 @@ static inline long ipow(int r, int n)
     return k;
 }
 
-/* Returns either small integer or bignum. */
+/* Returns either small integer or bignum.
+   Note that value_big may keep denormalized bignum. */
 static ScmObj read_uint(const char **strp, int *lenp,
                         struct numread_packet *ctx,
                         int fractpart)
@@ -1476,9 +1477,10 @@ static ScmObj read_uint(const char **strp, int *lenp,
                fixnum. */
             value_big = Scm_MakeBignumFromSI(SCM_INT_VALUE(value_big));
         }
-        value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
+        return Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
+    } else {
+        return Scm_NormalizeBignum(SCM_BIGNUM(value_big));
     }
-    return value_big;
 }
 
 static ScmObj read_real(const char **strp, int *lenp,
