@@ -2037,9 +2037,15 @@ list (@ref{Module inheritance}参照) を返します。
 @end defun
 
 @defun symbol-bound? symbol &optional module
-Returns true iff @var{symbol}'s global binding is visible
+@c EN
+Returns true if @var{symbol}'s global binding is visible
 from @var{module}.  If @var{module} is omitted, the current module
 is used.
+@c JP
+@var{symbol}のグローバルなバインディングが@var{module}から
+可視であれば、真を返します。@var{module}が省略された場合は、
+現在のモジュールが使われます。
+@c COMMON
 @end defun
 
 @node Predefined modules,  , Module introspection, Modules
