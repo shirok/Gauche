@@ -5,6 +5,10 @@
 	  It should be able to use maximum buffer size---only PORT_BUFFER_NONE
 	  need to fetch minimum chunk at a time.
 
+	* src/system.c (pipe): implemented via _pipe().
+	  (fork, kill, etc): sets windows error ERROR_CALL_NOT_IMPLEMENTED
+	  before returning.
+
 	* src/error.c (Scm_SysError): on MinGW, retrieve error message using
 	  FormatMessage instead of strerr; the former covers wider range of
 	  Windows errors.

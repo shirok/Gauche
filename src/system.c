@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.57 2004-07-15 07:10:07 shirok Exp $
+ *  $Id: system.c,v 1.58 2004-07-16 11:45:47 shirok Exp $
  */
 
 #include <stdio.h>
@@ -50,6 +50,7 @@
 #include <windows.h>
 #include <lm.h>
 #include <tlhelp32.h>
+#include <fcntl.h>
 #endif  /*__MINGW32__*/
 
 #define LIBGAUCHE_BODY
@@ -1312,17 +1313,21 @@ pid_t getppid(void)
 
 int fork(void)
 {
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return -1;
 }
 
 int kill(pid_t pid, int signal)
 {
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return -1; /*TODO: is there any alternative? */
 }
 
 int pipe(int fd[])
 {
-    return -1;
+#define PIPE_BUFFER_SIZE 512
+    int r = _pipe(fd, PIPE_BUFFER_SIZE, O_BINARY);
+    return r;
 }
 
 char *ttyname(int desc)
@@ -1342,14 +1347,16 @@ int ftruncate(int fd, off_t len)
 
 unsigned int alarm(unsigned int seconds)
 {
-    Scm_Error("alarm() not supported on MinGW port");
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    Scm_SysError("alarm");
     return 0;
 }
 
 /* file links */
 int link(const char *existing, const char *newpath)
 {
-    Scm_Error("link() not supported on MinGW port");
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    Scm_Error("link");
     return -1;
 #if 0 /* only on NTFS */
     BOOL r = CreateHardLink((LPCTSTR)newpath, (LPCTSTR)existing, NULL);
