@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.105 2001-10-22 19:59:25 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.106 2001-10-24 10:17:43 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2505,7 +2505,7 @@ Transcedental functions.  Work for complex numbers as well.
 @c COMMON
 @end defun
 
-@defunx atan x y
+@defun atan x y
 [R5RS]
 @c EN
 For real numbers @var{x} and @var{y}, returns @code{atan(@var{y}/@var{x})}.
@@ -6760,6 +6760,11 @@ of descendants of @var{class}.
 @subsubsection Slot definition
 @c NODE スロットの定義
 
+@deftp {Class} <slot-accessor>
+@clindex slot-accessor
+@end deftp
+
+
 @defun class-slot-definition class slot-name
 @end defun
 
@@ -6784,17 +6789,50 @@ of descendants of @var{class}.
 @subsection Class instantiation
 @c NODE クラスのインスタンシエーション
 
+@deffn {Method} make (class <class>) &rest initargs
+@end deffn
+
+
 @node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
 @subsection Customizing slot access
 @c NODE スロットアクセスのカスタマイズ
+
+
+@deffn {Generic Function} compute-slots
+@end deffn
+
+@deffn {Generic Function} compute-get-n-set
+@end deffn
+
+@defun slot-ref-using-accessor obj slot-accessor
+@defunx slot-set-using-accessor obj slot-accessor value
+@end defun
 
 @node Method instantiation, Customizing method application, Customizing slot access, Metaobject protocol
 @subsection Method instantiation
 @c NODE メソッドのインスタンシエーション
 
+@deffn {Method} make (class <method>) &rest initargs
+@end deffn
+
 @node Customizing method application,  , Method instantiation, Metaobject protocol
 @subsection Customizing method application
 @c NODE メソッド適用のカスタマイズ
+
+@deffn {Generic Function} apply-generic gf args
+@end deffn
+
+@deffn {Generic Function} sort-applicable-methods gf methods args
+@end deffn
+
+@deffn {Generic Function} method-more-specific? method1 method2 classes
+@end deffn
+
+@deffn {Generic Function} apply-methods gf methods args
+@end deffn
+
+@deffn {Generic Function} apply-method gf method build-next args
+@end deffn
 
 
 @c ======================================================================
@@ -6881,13 +6919,63 @@ SRFI implementations.
 
 @deftp {Module} algorithm.isomorph
 @mdindex algorithm.isomorph
-
+@c EN
+Provides a procedure that determines whether two structures are
+isomorphic.
+@c JP
+二つの構造が同型かどうかを判定する手続きを提供するモジュールです。
+@c COMMON
 @end deftp
 
-@defun isomorph? obj1 obj2 &optional context
+@defun isomorphic? obj1 obj2 &optional context
+@c EN
+Returns @code{#t} if @var{obj1} and @var{obj2} are isomorphic.
+
+@var{context} is used if you want to call @code{isomorphic?}
+recursively inside @code{object-isomorphic?} described below.
+@c JP
+@var{obj1}と@var{obj2}が同型であれば@code{#t}を返します。
+
+省略可能な引数@var{context}は、下で説明する@code{object-isomorphic?}
+の中から@code{isomorphic?}を再帰的に呼び出す場合に使います。
+@c COMMON
+
+@example
+(isomorphic? '(a b) '(a b)) @result{} #t
+
+(define x (cons 0 0))
+(define y (cons 0 0))
+(isomorphic? (cons x x)
+             (cons x y))
+ @result{} #f
+(isomorphic? (cons x x)
+             (cons y y))
+ @result{} #t
+@end example
 @end defun
 
-@deffn {Generic Method} object-isomorph? obj1 obj2 context
+@deffn {Generic Function} object-isomorphic? obj1 obj2 context
+@c EN
+With this method, you can customize how to determine isomorphism of
+two objects.  Basically, you will call @code{isomorphic?} recursively
+for each slots of object you want to traverse; the method should return
+@code{#t} if all of the test succeeds, or return @code{#f} otherwise.
+@var{context} is an opaque structure
+that keeps the traversal context, and you should pass it to
+@code{isomorphic?} as is.
+
+The default method returns @code{#t} if @var{obj1} and @var{obj2} are
+equal (in the sense of @code{equal?}).
+@c JP
+このメソッドで、二つのオブジェクトの同型判定処理をカスタマイズできます。
+基本的には、オブジェクトのトラバースしたいスロットに対して@code{isomorphic?}を順に適用し、
+全てが成功すれば@code{#t}を、一つでも失敗すれば@code{#f}を返すようにします。
+@var{context}はトラバースのコンテクストを保持しているオブジェクトです。そのまま
+@code{isomorphic?}に渡して下さい。
+
+デフォルトメソッドは、@var{obj1}と@var{obj2}が@code{equal?}の意味で等しければ
+@code{#t}を返します。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
