@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.101 2001-04-01 21:55:08 shiro Exp $
+ *  $Id: gauche.h,v 1.102 2001-04-01 23:17:57 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -189,7 +189,6 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define SCM_CHAR_UPCASE(ch)     (SCM_CHAR_LOWER_P(ch)?((ch)-('a'-'A')):(ch))
 #define SCM_CHAR_DOWNCASE(ch)   (SCM_CHAR_UPPER_P(ch)?((ch)+('a'-'A')):(ch))
 
-
 /*
  * HEAP ALLOCATED OBJECTS
  *
@@ -219,6 +218,7 @@ typedef struct ScmHeaderRec {
 typedef struct ScmVMRec        ScmVM;
 typedef struct ScmClassRec     ScmClass;
 typedef struct ScmPairRec      ScmPair;
+typedef struct ScmCharSetRec   ScmCharSet;
 typedef struct ScmStringRec    ScmString;
 typedef struct ScmDStringRec   ScmDString;
 typedef struct ScmVectorRec    ScmVector;
@@ -573,6 +573,34 @@ extern ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
 extern ScmObj Scm_NullP(ScmObj obj);
 extern ScmObj Scm_ListP(ScmObj obj);
 
+/*--------------------------------------------------------
+ * CHAR-SET
+ */
+
+#define SCM_CHARSET_MASK_CHARS 128
+#define SCM_CHARSET_MASK_SIZE  (SCM_CHARSET_MASK_CHARS/(SIZEOF_LONG*8))
+    
+struct ScmCharSetRec {
+    SCM_HEADER;
+    unsigned long mask[SCM_CHARSET_MASK_SIZE];
+    struct ScmCharSetRange {
+        struct ScmCharSetRange *next;
+        ScmChar lo;
+        ScmChar hi;
+    } *ranges;
+};
+
+extern ScmClass Scm_CharSetClass;
+#define SCM_CLASS_CHARSET  (&Scm_CharSetClass)
+#define SCM_CHARSET(obj)   ((ScmCharSet*)obj)
+#define SCM_CHARSETP(obj)  SCM_XTYPEP(obj, SCM_CLASS_CHARSET)
+
+ScmObj Scm_MakeEmptyCharSet(void);
+ScmObj Scm_CopyCharSet(ScmCharSet *src);
+ScmObj Scm_CharSetAdd(ScmCharSet *cs, ScmChar ch);
+ScmObj Scm_CharSetAddCstr(ScmCharSet *cs, const char *s, int allowRange);
+ScmObj Scm_CharSetAddStr(ScmCharSet *cs, ScmString *s);
+    
 /*--------------------------------------------------------
  * STRING
  */
