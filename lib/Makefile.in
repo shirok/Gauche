@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.20 2001-05-29 04:27:41 shirok Exp $
+#  $Id: Makefile.in,v 1.21 2001-06-08 09:52:34 shirok Exp $
 #
 
 prefix = @prefix@
@@ -27,16 +27,17 @@ SCMS = srfi-0.scm \
        gauche/regexp.scm gauche/process.scm gauche/with.scm \
        gauche/numerical.scm gauche/vm/disasm.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
-       rfc/base64.scm
+       port/jfilter.scm \
+       rfc/822.scm rfc/base64.scm
 
-SUBDIRS = gauche gauche/vm gauche/serializer rfc srfi-1 srfi-13 srfi-14
+SUBDIRS = gauche gauche/vm gauche/serializer port rfc srfi-1 srfi-13 srfi-14
 
 INSTALL=@INSTALL@
 
 all : $(SCMS)
 
 clean :
-	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ rfc/*~ srfi-1/*~
+	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ port/*~ rfc/*~ srfi-1/*~
 
 distclean : clean
 	rm -f Makefile slib.scm
