@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.59 2001-09-18 07:43:27 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.60 2001-09-18 19:55:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1854,7 +1854,7 @@ string pointer objects, for portability.
 
 @c ----------------------------------------------------------------------
 @node Regular expression, Vectors, Strings, Core library
-@section Regular Expression
+@section Regular expression
 
 @deftp {Builtin Class} <regexp>
 @clindex regexp
@@ -4167,6 +4167,9 @@ an abbreviated month, ``DD'' is the day of month, ``hh'', ``mm'' and
 ``ss'' are hours (in 24 hour basis), minuts and seconds, respectively.
 This format is compatible with system logs.
 
+@item ~Y
+Current 4-digit year.
+
 @item ~P
 The program name.  The default value is the basename of
 @code{*program-name*}, but you can change it by the @code{program-name}
@@ -4206,8 +4209,11 @@ Sets the destination of the default log message to the path @var{path}.
 It can be a string or a boolean, as described above.
 You can also set prefix and program name by corresponding keyword 
 arguments.
-@end defun
 
+Despite its name, this function doesn't open the specified file
+immediately.  The file is opened and closed every time @code{log-format}
+is called.
+@end defun
 
 @deffn {Method} log-format (format <string>) arg @dots{}
 @deffnx {Method} log-format (drain <log-drain>) (format <string>) arg @dots{}
@@ -4216,9 +4222,10 @@ Formats a log message by @var{format} and @var{arg @dots{}}, by using
 to the default destination.  In the second form, the output goes to
 the specfied drain.
 
-The file is opened and closed every time.  Also @code{log-format}
-acquires a write lock of the log file by @code{sys-fcntl}
-(@xref{Low-level file operations}).
+The file is opened and closed every time.  You can safely move
+the log file while your program that touches the log file is running.
+Also @code{log-format} acquires a write lock of the log file by
+@code{sys-fcntl} (@xref{Low-level file operations}).
 @end deffn
 
 @c ----------------------------------------------------------------------
@@ -5212,6 +5219,7 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 @deftp {Module} gauche.regexp
 @mdindex gauche.regexp
 This module defines some macros useful in regexp match.
+See @ref{Regular expression} for builtin regexp features.
 
 The interface is borrowed from scsh, but I changed the name of
 macros since scsh's @code{match-cond} can be confusing
@@ -5390,7 +5398,7 @@ The @code{parse-date} example above becomes simpler if you use
 @deftp {Module} gauche.selector
 @mdindex gauche.selector
 This module provides a simple interface to dispatch I/O events to
-registered handlers, based on @code{sys-select}.
+registered handlers, based on @code{sys-select} (@xref{I/O multiplexing}).
 @end deftp
 
 @deftp {Class} <selector>
