@@ -10621,6 +10621,20 @@ one object, and each of them are pushed in order.
 @c COMMON
 @end defun
 
+@defun enqueue-unique! queue eq-proc obj &optional more-objs @dots{}
+@defunx queue-push-unique! queue eq-proc obj &optional more-objs @dots{}
+@c EN
+Like @code{enqueue!} and @code{queue-push!}, respectively, except that these
+don't modify @var{queue} if it already contains @var{obj}
+(elements are compared by two-argument procedure @var{eq-proc}).
+@c JP
+@var{obj}が既に@var{queue}の中に含まれている場合には@var{queue}を
+変更しないことを以外には、@code{enqueue!}および@code{queue-push!}と同じ
+動作をします。@var{obj}が含まれているかどうかの検査は
+2引数の関数@var{eq-proc}で行います。
+@c COMMON
+@end defun
+
 @defun dequeue! queue
 @defunx queue-pop! queue
 @c EN

@@ -1,3 +1,9 @@
+2004-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/queue.scm (queue-push-unique!, enqueue-unique!): added
+	  these procedures.
+	* test/util.scm, doc/modutil.texi: updated accordingly.
+
 2004-12-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in: changed LDFLAGS to have -L. before the directories

@@ -617,6 +617,32 @@
 (test* "remove-from-queue!" #f
        (remove-from-queue! (cut eq? <> 'd) q))
 
+
+(let ((q (make-queue)))
+  (test* "enqueue-unique!" '("a")
+         (begin (enqueue-unique! q equal? "a")
+                (queue->list q)))
+  (test* "enqueue-unique!" '("a" "b")
+         (begin (enqueue-unique! q equal? "b")
+                (queue->list q)))
+  (test* "enqueue-unique!" '("a" "b")
+         (begin (enqueue-unique! q equal? "a")
+                (queue->list q)))
+  (test* "enqueue-unique!" '("a" "b" "c" "d")
+         (begin (enqueue-unique! q equal? "a" "b" "c" "d")
+                (queue->list q)))
+  (test* "queue-push-unique!" '("e" "a" "b" "c" "d")
+         (begin (queue-push-unique! q equal? "d" "e")
+                (queue->list q)))
+  (set! q (make-queue))
+  (test* "queue-push-unique!" '("e" "d")
+         (begin (queue-push-unique! q equal? "d" "e")
+                (queue->list q)))
+  (test* "queue-push-unique!" '("c" "b" "a" "e" "d")
+         (begin (queue-push-unique! q equal? "a" "b" "c" "d" "e")
+                (queue->list q)))
+  )
+
 ;;-----------------------------------------------
 (test-section "util.record")
 (use util.record)

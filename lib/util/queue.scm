@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.7 2003-10-29 14:27:40 shirok Exp $
+;;;  $Id: queue.scm,v 1.8 2004-12-13 09:51:42 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
@@ -14,9 +14,13 @@
 ;; So it is unsafe, but faster.
 ;; The API is upper compatible with SLIB's queue module.
 
+;; NB: this module intentionally avoid using other modules
+;; for performance reasons.
+
 (define-module util.queue
   (export make-queue queue? queue-empty?
-          queue-push! enqueue! queue-pop! dequeue! dequeue-all!
+          queue-push! queue-push-unique! enqueue! enqueue-unique!
+          queue-pop! dequeue! dequeue-all!
           queue-front queue-rear queue-length
           queue->list list->queue
           find-in-queue remove-from-queue!)
@@ -40,34 +44,60 @@
 
 (define (queue-push! q obj . more-objs)
   (if (%empty? q)
-      (let ((cell (list obj)))
-        (set-car! q cell)
-        (set-cdr! q cell))
-      (set-car! q (cons obj (car q))))
+    (let ((cell (list obj)))
+      (set-car! q cell)
+      (set-cdr! q cell))
+    (set-car! q (cons obj (car q))))
   (unless (null? more-objs)
     (let loop ((head (car q))
                (objs more-objs))
       (if (null? objs)
-          (set-car! q head)
-          (loop (cons (car objs) head) (cdr objs)))))
+        (set-car! q head)
+        (loop (cons (car objs) head) (cdr objs)))))
   q)
+
+(define (queue-push-unique! q eq-proc obj . more-objs)
+  (if (%empty? q)
+    (apply queue-push! q obj more-objs)
+    (begin
+      (let loop ((p (car q)))
+        (cond ((null? p) (set-car! q (cons obj (car q))))
+              ((eq-proc (car p) obj))
+              (else (loop (cdr p)))))
+      (unless (null? more-objs)
+        (apply queue-push-unique! q eq-proc more-objs))
+      q)))
 
 (define (enqueue! q obj . more-objs)
   (if (%empty? q)
-      (let ((cell (list obj)))
-        (set-car! q cell)
-        (set-cdr! q cell))
-      (begin
-        (set-cdr! (cdr q) (list obj))
-        (set-cdr! q (cddr q))))
+    (let ((cell (list obj)))
+      (set-car! q cell)
+      (set-cdr! q cell))
+    (begin
+      (set-cdr! (cdr q) (list obj))
+      (set-cdr! q (cddr q))))
   (unless (null? more-objs)
     (let loop ((tail (cdr q))
                (objs more-objs))
       (if (null? objs)
-          (set-cdr! q tail)
-          (begin (set-cdr! tail (list (car objs)))
-                 (loop (cdr tail) (cdr objs))))))
+        (set-cdr! q tail)
+        (begin (set-cdr! tail (list (car objs)))
+               (loop (cdr tail) (cdr objs))))))
   q)
+
+(define (enqueue-unique! q eq-proc obj . more-objs)
+  (if (%empty? q)
+    (apply enqueue! q obj more-objs)
+    (begin
+      (let loop ((p (car q)))
+        (cond ((null? p)
+               (set-cdr! (cdr q) (list obj))
+               (set-cdr! q (cddr q)))
+              ((eq-proc (car p) obj))
+              (else (loop (cdr p)))))
+      (unless (null? more-objs)
+        (apply enqueue-unique! q eq-proc more-objs))
+      q)))
 
 (define (queue-front q)
   (when (%empty? q) (error "queue is empty" q))
