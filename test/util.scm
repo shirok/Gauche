@@ -333,30 +333,67 @@
 (use util.lcs)
 (test-module 'util.lcs)
 
-(test "lcs skip" '(a c)
-  (cut lcs '(a b c) '(a c)))
+(test* "lcs skip" '(a c)
+       (lcs '(a b c) '(a c)))
 
-(test "lcs head" '(a b)
-  (cut lcs '(a b c) '(a b)))
+(test* "lcs head" '(a b)
+       (lcs '(a b c) '(a b)))
 
-(test "lcs tail" '(b c)
-  (cut lcs '(a b c) '(b c)))
+(test* "lcs tail" '(b c)
+       (lcs '(a b c) '(b c)))
 
-(test "lcs same" '(a b c)
-  (cut lcs '(a b c) '(a b c)))
+(test* "lcs same" '(a b c)
+       (lcs '(a b c) '(a b c)))
 
-(test "lcs no common" '()
-  (cut lcs '(a b c) '(x y z)))
+(test* "lcs no common" '()
+       (lcs '(a b c) '(x y z)))
 
-(test "lcs empty" '()
-  (cut lcs '(a b c) '()))
+(test* "lcs empty" '()
+       (lcs '(a b c) '()))
 
-(test "lcs mislead" '(a x b y c z)
-  (cut lcs '(a x b y c z p d q) '(a b c a x b y c z)))
+(test* "lcs mislead" '(a x b y c z)
+       (lcs '(a x b y c z p d q) '(a b c a x b y c z)))
 
-(test "lcs mislead count"
-    '(6 ((a 0 0) (x 1 4) (b 2 5) (y 3 6) (c 4 7) (z 5 8)))
-  (cut lcs-with-positions '(a x b y c z p d q) '(a b c a x b y c z)))
+(test* "lcs mislead count"
+       '(6 ((a 0 0) (x 1 4) (b 2 5) (y 3 6) (c 4 7) (z 5 8)))
+       (lcs-with-positions '(a x b y c z p d q) '(a b c a x b y c z)))
+
+(test* "lcs edit-list"
+       '(((- 0 a))
+         ((+ 2 d))
+         ((- 4 h) (+ 4 f))
+         ((+ 6 k))
+         ((- 8 n) (- 9 p) (+ 9 r) (+ 10 s) (+ 11 t)))
+       (lcs-edit-list '(a b c e h j l m n p)
+                      '(b c d e f j k l m r s t)))
+
+(test* "lcs edit-list"
+       '(((- 0 a) (- 1 b) (- 2 c) (- 3 d) (+ 0 e) (+ 1 f) (+ 2 g) (+ 3 h)))
+       (lcs-edit-list '(a b c d) '(e f g h)))
+
+(test* "lcs edit-list"
+       '()
+       (lcs-edit-list '(a b c d) '(a b c d)))
+
+(test* "lcs edit-list"
+       '(((- 0 a) (- 1 b) (- 2 c) (- 3 d)))
+       (lcs-edit-list '(a b c d) '()))
+
+(test* "lcs edit-list"
+       '(((+ 0 a) (+ 1 b) (+ 2 c) (+ 3 d)))
+       (lcs-edit-list '() '(a b c d)))
+      
+(test* "lcs edit-list"
+       '(((- 0 a)) ((+ 1 a)))
+       (lcs-edit-list '(a b) '(b a)))
+
+(test* "lcs edit-list"
+       '(((- 1 b)))
+       (lcs-edit-list '(a b) '(a)))
+
+(test* "lcs edit-list"
+       '(((+ 1 b)))
+       (lcs-edit-list '(a) '(a b)))
 
 ;;-----------------------------------------------
 (test-section "util.list")

@@ -10,10 +10,10 @@
   (use gauche.sequence)
   (use srfi-1)
   (use srfi-11)
-  (export lcs lcs-with-positions))
+  (export lcs lcs-with-positions lcs-fold lcs-edit-list))
 (select-module util.lcs)
 
-;; utility for lcs-with-positions
+;; Utility for lcs-with-positions
 (define (max-seq . opt-ls)
   (if (null? opt-ls)
     (list 0 '())
@@ -25,6 +25,8 @@
             (loop a (cdr ls))
             (loop b (cdr ls))))))))
 
+;; The base algorithm.   This algorithm consumes NxM space and time
+;; where N = (length a-ls) and M = (length b-ls)
 (define (lcs-with-positions a-ls b-ls . opt-eq)
   (let* ((eq (get-optional opt-eq equal?))
          (a-size (+ 1 (size-of a-ls)))
@@ -62,7 +64,64 @@
         ;; return the computed cache
         (cache-ref a-pos b-pos) ))))
 
+;; Just returns the LCS
 (define (lcs a b . opt-eq)
   (map car (cadr (lcs-with-positions a b (get-optional opt-eq equal?)))))
+
+;; Fundamental iterator to deal with editlist.
+;;   Similar to Perl's Algorith::Diff's traverse_sequence.
+(define (lcs-fold a-only b-only both seed a b . opt-eq)
+  (let1 common (cadr (lcs-with-positions a b (get-optional opt-eq equal?)))
+    ;; Calculates edit-list from the LCS.
+    ;; Loop parameters:
+    ;;   common - list of common elements
+    ;;   seed   - seed value
+    ;;   a      - head of sequence a
+    ;;   a-pos  - current position count of sequence a
+    ;;   b      - head of sequence b
+    ;;   b-pos  - current position count of sequence b
+    (let loop ((common common) (seed seed)
+               (a a) (a-pos 0) (b b) (b-pos 0))
+      (if (null? common)
+        ;; No more common elements.  Fold the tail of a and b.
+        (fold b-only (fold a-only seed a) b)
+        ;; We have a common element.
+        (let* ((elt   (car common))
+               (a-off (cadr elt))
+               (a-skip (- a-off a-pos))
+               (b-off (caddr elt))
+               (b-skip (- b-off b-pos)))
+          (let-values (((a-head a-tail) (split-at a a-skip))
+                       ((b-head b-tail) (split-at b b-skip)))
+            (loop (cdr common)
+                  (both (car elt)
+                        (fold b-only (fold a-only seed a-head) b-head))
+                  (cdr a-tail) (+ a-off 1) (cdr b-tail) (+ b-off 1)))))
+      )
+    ))
+
+;; Returns an 'edit-list', which is a list of command sequences
+;; that turns the sequence a to the sequence b.
+;; The return value is a list of hunks, where each hunk is a
+;; list of edit commands, (<command> <index> <element>).
+
+(define (lcs-edit-list a b . opt-eq)
+  (define a-pos -1)  ;; we use pre-increment, so begin from -1.
+  (define b-pos -1)  ;; ditto
+  (define hunks '())
+  (let1 last
+      (apply lcs-fold
+             (lambda (elt hunk)  ;; a-only - remove
+               (inc! a-pos) `((- ,a-pos ,elt) ,@hunk))
+             (lambda (elt hunk)  ;; b-only - add
+               (inc! b-pos) `((+ ,b-pos ,elt) ,@hunk))
+             (lambda (elt hunk)  ;; same - reset hunks
+               (inc! a-pos) (inc! b-pos)
+               (unless (null? hunk) (push! hunks (reverse! hunk)))
+               '())
+             '()
+             a b opt-eq)
+    (unless (null? last) (push! hunks (reverse! last))))
+  (reverse! hunks))
 
 (provide "util/lcs")
