@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.39 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: macro.c,v 1.40 2002-05-12 06:35:20 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1000,10 +1000,10 @@ ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
                 sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
             }
             if (SCM_SYMBOLP(sym)) {
-                ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym),
-                                             FALSE);
-                if (g && SCM_SYNTAXP(g->value)) {
-                    syn = SCM_SYNTAX(g->value);
+                ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
+                if (g) {
+                    ScmObj gv = SCM_GLOC_GET(g);
+                    if (SCM_SYNTAXP(gv)) syn = SCM_SYNTAX(gv);
                 }
             }
         }

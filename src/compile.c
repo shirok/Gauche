@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.77 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: compile.c,v 1.78 2002-05-12 06:35:20 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -402,16 +402,17 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 
                 g = Scm_FindBinding(mod, sym, FALSE);
                 if (g != NULL) {
-                    if (SCM_SYNTAXP(g->value)) {
-                        ScmCompileProc cmpl = SCM_SYNTAX(g->value)->compiler;
-                        void *data = SCM_SYNTAX(g->value)->data;
+                    ScmObj gv = SCM_GLOC_GET(g);
+                    if (SCM_SYNTAXP(gv)) {
+                        ScmCompileProc cmpl = SCM_SYNTAX(gv)->compiler;
+                        void *data = SCM_SYNTAX(gv)->data;
                         return cmpl(form, env, ctx, data);
                     }
                     if (!(vm->compilerFlags & SCM_COMPILE_NOINLINE) &&
-                        SCM_SUBRP(g->value) && SCM_SUBR_INLINER(g->value)) {
+                        SCM_SUBRP(g->value) && SCM_SUBR_INLINER(gv)) {
                         ScmObj inlined
-                            = SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
-                                                         form, env, ctx);
+                            = SCM_SUBR_INLINER(gv)(SCM_SUBR(g->value),
+                                                   form, env, ctx);
                         if (!SCM_FALSEP(inlined)) {
                             add_srcinfo(Scm_LastPair(inlined), form);
 #ifdef EXPLICIT_STACK_CHECK

@@ -1,7 +1,7 @@
 /*
  * module.c - module implementation
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.25 2002-05-07 08:32:58 shirok Exp $
+ *  $Id: module.c,v 1.26 2002-05-12 06:35:20 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -22,7 +22,7 @@
  * Modules
  *
  *  A module maps symbols to global locations.
- *  Note that the mapping is resolved at the compile time.
+ *  The mapping is resolved at the compile time.   Therefore,
  *  Scheme's current-module is therefore a syntax, instead of
  *  a procedure, to capture compile-time information.
  */
@@ -113,17 +113,18 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol)
 {
     ScmGloc *g = Scm_FindBinding(module, symbol, FALSE);
-    return (g != NULL)? g->value : SCM_UNBOUND;
+    if (g == NULL) return SCM_UNBOUND;
+    else return SCM_GLOC_GET(g);
 }
 
 ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
     ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
     if (g) {
-        g->value = value;
+        SCM_GLOC_SET(g, value);
     } else {
         g = SCM_GLOC(Scm_MakeGloc(symbol, module));
-        g->value = value;
+        SCM_GLOC_SET(g, value);
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
     return SCM_OBJ(g);

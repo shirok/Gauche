@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.246 2002-05-05 05:00:50 shirok Exp $
+ *  $Id: gauche.h,v 1.247 2002-05-12 06:35:20 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1432,10 +1432,16 @@ struct ScmGlocRec {
     ScmSymbol *name;
     ScmModule *module;
     ScmObj value;
+    ScmObj (*getter)(ScmGloc *);
+    ScmObj (*setter)(ScmGloc *, ScmObj);
 };
 
 #define SCM_GLOC(obj)            ((ScmGloc*)(obj))
 #define SCM_GLOCP(obj)           SCM_XTYPEP(obj, SCM_CLASS_GLOC)
+#define SCM_GLOC_GET(gloc) \
+    ((gloc)->getter? (gloc)->getter(gloc) : (gloc)->value)
+#define SCM_GLOC_SET(gloc, val) \
+    ((gloc)->setter? (gloc)->setter((gloc), (val)) : ((gloc)->value = (val)))
 
 SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
 SCM_EXTERN void Scm__GlocPrint(ScmObj obj, ScmPort *port, int mode);

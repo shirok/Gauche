@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.58 2002-04-29 03:07:38 shirok Exp $
+ *  $Id: load.c,v 1.59 2002-05-12 06:35:20 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -532,7 +532,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
     if (adata->import_from) {
         /* autoloaded file defines import_from module.  we need to
            import the binding individually. */
-        ScmObj m = Scm_FindModule(adata->import_from, FALSE);
+        ScmObj m = Scm_FindModule(adata->import_from, FALSE), fv;
         ScmGloc *f, *g;
         if (!SCM_MODULEP(m)) {
             Scm_Error("Trying to autoload module %S from file %S, but the file doesn't define such a module",
@@ -542,21 +542,25 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
         g = Scm_FindBinding(adata->module, adata->name, FALSE);
         SCM_ASSERT(f != NULL);
         SCM_ASSERT(g != NULL);
-        if (SCM_UNBOUNDP(f->value) || SCM_AUTOLOADP(f->value)) {
+        fv = SCM_GLOC_GET(f);
+        if (SCM_UNBOUNDP(fv) || SCM_AUTOLOADP(fv)) {
             Scm_Error("Autoloaded symbol %S is not defined in the module %S",
                       adata->name, adata->import_from);
         }
-        return (g->value = f->value);
+        SCM_GLOC_SET(g, fv);
+        return fv;
     } else {
         /* Normal import.  The binding must have been inserted to
            adata->module */
+        ScmObj gv;
         ScmGloc *g = Scm_FindBinding(adata->module, adata->name, FALSE);
         SCM_ASSERT(g != NULL);
-        if (SCM_UNBOUNDP(g->value) || SCM_AUTOLOADP(g->value)) {
+        gv = SCM_GLOC_GET(g);
+        if (SCM_UNBOUNDP(gv) || SCM_AUTOLOADP(gv)) {
             Scm_Error("Autoloaded symbol %S is not defined in the file %S",
                       adata->name, adata->path);
         }
-        return g->value;
+        return gv;
     }
 }
 

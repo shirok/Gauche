@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.142 2002-04-25 11:52:02 shirok Exp $
+ *  $Id: vm.c,v 1.143 2002-05-12 06:35:20 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -759,10 +759,9 @@ static void run_loop()
                 } else {
                     gloc = SCM_GLOC(val0);
                 }
-                val0 = gloc->value;
+                val0 = SCM_GLOC_GET(gloc);
                 if (val0 == SCM_UNBOUND) {
-                    VM_ERR(("unbound variable: %S",
-                            SCM_OBJ(gloc->name)));
+                    VM_ERR(("unbound variable: %S", SCM_OBJ(gloc->name)));
                 } else if (SCM_AUTOLOADP(val0)) {
                     SAVE_REGS();
                     val0 = Scm_LoadAutoload(SCM_AUTOLOAD(val0));
@@ -847,7 +846,7 @@ static void run_loop()
                 
                 loc = SCM_CAR(pc);
                 if (SCM_GLOCP(loc)) {
-                    SCM_GLOC(loc)->value = val0;
+                    SCM_GLOC_SET(SCM_GLOC(loc), val0);
                 } else {
                     ScmGloc *gloc;
                     VM_ASSERT(SCM_IDENTIFIERP(loc));
@@ -857,10 +856,8 @@ static void run_loop()
                     gloc = Scm_FindBinding(SCM_IDENTIFIER(loc)->module,
                                            SCM_IDENTIFIER(loc)->name,
                                            FALSE);
-                    if (gloc == NULL) {
-                        VM_ERR(("symbol not defined: %S", loc));
-                    }
-                    gloc->value = val0;
+                    if (gloc == NULL) VM_ERR(("symbol not defined: %S", loc));
+                    SCM_GLOC_SET(gloc, val0);
                     /* memorize gloc */
                     /* TODO: make it MT safe! */
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
