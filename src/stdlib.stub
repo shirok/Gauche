@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.28 2001-02-19 14:48:49 shiro Exp $
+;;; $Id: stdlib.stub,v 1.29 2001-02-27 08:16:44 shiro Exp $
 ;;;
 
 
@@ -93,16 +93,80 @@
 (define-cproc min (arg0 &rest args)
   "  SCM_RETURN(Scm_Min(arg0, args));")
 
+"/* inliner for `+' */
+static inline ScmObj immediate_integer_inliner(long insn, int arg0, ScmObj arg1, ScmObj env)
+{
+  return Scm_Append2(Scm_Compile(arg1, env, SCM_COMPILE_NORMAL),
+                     Scm_Cons(SCM_VM_INSN1(insn, arg0), SCM_NIL));
+}
+
+static inline ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
+{
+  ScmObj code = SCM_NIL, tail;
+  SCM_APPEND(code, tail, Scm_Compile(arg0, env, SCM_COMPILE_NORMAL));
+  SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
+  SCM_APPEND(code, tail, Scm_Compile(arg1, env, SCM_COMPILE_NORMAL));
+  SCM_APPEND1(code, tail, SCM_VM_INSN(insn));
+  return code;
+}
+
+static ScmObj plus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
+{
+  ScmObj args = SCM_CDR(form), arg0, arg1;
+  int imm;
+  if (Scm_Length(form) != 3) return SCM_FALSE;
+  arg0 = SCM_CAR(args);
+  arg1 = SCM_CADR(args);
+  if (SCM_INTP(arg0)) {
+    if (SCM_INTP(arg1)) {
+      return(SCM_LIST1(Scm_MakeInteger(SCM_INT_VALUE(arg0)+SCM_INT_VALUE(arg1))));
+    }
+    imm = SCM_INT_VALUE(arg0);
+    if (SCM_VM_INSN_ARG_FITS(imm))
+      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg1, env);
+  } else if (SCM_INTP(arg1)) {
+    imm = SCM_INT_VALUE(arg1);
+    if (SCM_VM_INSN_ARG_FITS(imm))
+      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg0, env);
+  }
+  return num2op_inliner(SCM_VM_NUMADD2, arg0, arg1, env);
+}
+
+static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
+{
+  ScmObj args = SCM_CDR(form), arg0, arg1;
+  int imm;
+  if (Scm_Length(form) != 3) return SCM_FALSE;
+  arg0 = SCM_CAR(args);
+  arg1 = SCM_CADR(args);
+  if (SCM_INTP(arg0)) {
+    if (SCM_INTP(arg1)) {
+      return(SCM_LIST1(Scm_MakeInteger(SCM_INT_VALUE(arg0)-SCM_INT_VALUE(arg1))));
+    }
+    imm = SCM_INT_VALUE(arg0);
+    if (SCM_VM_INSN_ARG_FITS(imm))
+      return immediate_integer_inliner(SCM_VM_NUMSUBI, imm, arg1, env);
+  } else if (SCM_INTP(arg1)) {
+    imm = SCM_INT_VALUE(arg1);
+    if (SCM_VM_INSN_ARG_FITS(imm))
+      return immediate_integer_inliner(SCM_VM_NUMADDI, -imm, arg0, env);
+  }
+  return num2op_inliner(SCM_VM_NUMSUB2, arg0, arg1, env);
+}
+
+"
 
 (define-cproc + (&rest args)
-  (inliner (case-nargs (2 "SCM_VM_NUMADD2") (else #f)))
+;  (inliner (case-nargs (2 "SCM_VM_NUMADD2") (else #f)))
+  (inliner (proc "plus_inliner"))
   "  SCM_RETURN(Scm_Add(args)); ")
 
 (define-cproc * (&rest args)
   "  SCM_RETURN(Scm_Multiply(args));")
 
 (define-cproc - (arg1 &rest args)
-  (inliner (case-nargs (2 "SCM_VM_NUMSUB2") (else #f)))
+;  (inliner (case-nargs (2 "SCM_VM_NUMSUB2") (else #f)))
+  (inliner (proc "minus_inliner"))
   "  ScmObj r;
   if (SCM_NULLP(args)) r = Scm_Negate(arg1);
   else r = Scm_Subtract(arg1, SCM_CAR(args), SCM_CDR(args));
