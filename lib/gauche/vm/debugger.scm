@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.5 2001-12-15 10:59:20 shirok Exp $
+;;;  $Id: debugger.scm,v 1.6 2001-12-22 06:29:46 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
@@ -129,7 +129,6 @@
             (newline outp)
             (let ((cmd (with-input-from-string line
                          (lambda () (next-token #[\s] '(#[\s] *eof*))))))
-              (debug-print cmd)
               (cond
                ((equal? cmd "") (loop level))
                ((member cmd '("s" "sh" "sho" "show")) (show level))
