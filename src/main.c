@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.34 2001-12-07 08:20:58 shirok Exp $
+ *  $Id: main.c,v 1.35 2001-12-07 08:42:23 shirok Exp $
  */
 
 #include <unistd.h>
@@ -140,7 +140,9 @@ int main(int argc, char **argv)
         }
     }
 
-    /* if script file is specified, load it. */
+    /* If script file is specified, load it.
+       NB: if the script file is relative, we should explicitly add "./" 
+       to it, or the new load engine won't find the file. */
     if (optind < argc) {
         ScmObj av = SCM_NIL, at = SCM_NIL, mainproc;
         int ac;
@@ -150,7 +152,15 @@ int main(int argc, char **argv)
         SCM_DEFINE(Scm_UserModule(), "*argv*", av);
         SCM_DEFINE(Scm_UserModule(), "*program-name*",
                    SCM_MAKE_STR_IMMUTABLE(argv[optind]));
-        Scm_Load(argv[optind], TRUE);
+        if (argv[optind][0] == '/') {
+            Scm_Load(argv[optind], TRUE);
+        } else {
+            ScmDString loadfile;
+            Scm_DStringInit(&loadfile);
+            Scm_DStringPutz(&loadfile, "./", 2);
+            Scm_DStringPutz(&loadfile, argv[optind], -1);
+            Scm_Load(Scm_DStringGetz(&loadfile), TRUE);
+        }
 
         /* if symbol 'main is bound to a procedure in the user module,
            call it.  (SRFI-22) */
