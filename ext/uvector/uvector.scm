@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uvector.scm,v 1.1 2002-06-27 10:41:40 shirok Exp $
+;;;  $Id: uvector.scm,v 1.2 2002-08-10 01:06:18 shirok Exp $
 ;;;
 
 ;; This module defines the superset of SRFI-4, homogeneous numeric vector
@@ -42,7 +42,13 @@
          (->list    (string->symbol #`",|tagvector|->list"))
          (list->    (string->symbol #`"list->,|tagvector|"))
          (->vec     (string->symbol #`",|tagvector|->vector"))
-         (vec->     (string->symbol #`"vector->,|tagvector|")))
+         (vec->     (string->symbol #`"vector->,|tagvector|"))
+         ;; arithmetic ops
+         (add       (string->symbol #`",|tagvector|-add"))
+         (sub       (string->symbol #`",|tagvector|-sub"))
+         (mul       (string->symbol #`",|tagvector|-mul"))
+         (div       (string->symbol #`",|tagvector|-div"))
+         )
     `(begin
        (define-method call-with-iterator ((v ,class) proc . opts)
          (let* ((start (get-keyword :start opts #f))
@@ -74,6 +80,30 @@
          (,vec-> v))
        (define-method coerce-to ((c ,meta) (v ,class))
          (,copy v))
+       ;; Arithmetic operation override
+       (define-method object-+ ((a ,class) (b ,class)) (,add a b))
+       (define-method object-+ ((a ,class) (b <list>)) (,add a b))
+       (define-method object-+ ((a ,class) (b <vector>)) (,add a b))
+       (define-method object-+ ((a ,class) (b <number>)) (,add a b))
+       (define-method object-+ ((a <number>) (b ,class)) (,add b a))
+       (define-method object-- ((a ,class) (b ,class)) (,sub a b))
+       (define-method object-- ((a ,class) (b <list>)) (,sub a b))
+       (define-method object-- ((a ,class) (b <vector>)) (,sub a b))
+       (define-method object-- ((a ,class) (b <number>)) (,sub a b))
+       (define-method object-- ((a <number>) (b ,class)) (,sub b a))
+       (define-method object-* ((a ,class) (b ,class)) (,mul a b))
+       (define-method object-* ((a ,class) (b <list>)) (,mul a b))
+       (define-method object-* ((a ,class) (b <vector>)) (,mul a b))
+       (define-method object-* ((a ,class) (b <number>)) (,mul a b))
+       (define-method object-* ((a <number>) (b ,class)) (,mul b a))
+       ,@(if (member tag '(f32 f64))
+             `((define-method object-/ ((a ,class) (b ,class)) (,div a b))
+               (define-method object-/ ((a ,class) (b <list>)) (,div a b))
+               (define-method object-/ ((a ,class) (b <vector>)) (,div a b))
+               (define-method object-/ ((a ,class) (b <number>)) (,div a b))
+               (define-method object-/ ((a <number>) (b ,class)) (,div b a))
+               )
+             '())
        )))
 
 (%define-srfi-4-collection-interface s8)

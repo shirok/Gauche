@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.291 2002-07-24 16:09:17 shirok Exp $
+ *  $Id: gauche.h,v 1.292 2002-08-10 01:06:18 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1546,10 +1546,10 @@ SCM_EXTERN ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 #define SCM_UINTEGERP(obj) \
     (SCM_UINTP(obj) || (SCM_BIGNUMP(obj)&&SCM_BIGNUM_SIGN(obj)>=0))
 
-SCM_CLASS_DECL( Scm_NumberClass);
-SCM_CLASS_DECL( Scm_ComplexClass);
-SCM_CLASS_DECL( Scm_RealClass);
-SCM_CLASS_DECL( Scm_IntegerClass);
+SCM_CLASS_DECL(Scm_NumberClass);
+SCM_CLASS_DECL(Scm_ComplexClass);
+SCM_CLASS_DECL(Scm_RealClass);
+SCM_CLASS_DECL(Scm_IntegerClass);
 
 #define SCM_CLASS_NUMBER        (&Scm_NumberClass)
 #define SCM_CLASS_COMPLEX       (&Scm_ComplexClass)
@@ -1800,6 +1800,7 @@ SCM_CLASS_DECL(Scm_GenericClass);
 #define SCM_CLASS_GENERIC          (&Scm_GenericClass)
 #define SCM_GENERICP(obj)          SCM_XTYPEP(obj, SCM_CLASS_GENERIC)
 #define SCM_GENERIC(obj)           ((ScmGeneric*)obj)
+#define SCM_GENERIC_DATA(obj)      (SCM_GENERIC(obj)->data)
 
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \

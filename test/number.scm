@@ -1197,4 +1197,61 @@
 (test "integer-length" 4
       (lambda () (integer-length #b1111)))
 
+;;------------------------------------------------------------------
+(test-section "arithmetic operation override")
+
+;; NB: these tests requires the object system working.
+
+;; These code are only for tests, and do not suggest the real use of
+;; arithmetic operation override.  For practical use, it is important
+;; to define those operations consistently.  Note that Gauche's compiler
+;; may reorder or change operations based on the assumption of the
+;; normal definition of those arithmetic operations.
+
+(define-method object-+ ((a <string>) b) #`",|a|+,|b|")
+(define-method object-+ (a (b <string>)) #`",|a|+,|b|")
+(define-method object-- ((a <string>) b) #`",|a|-,|b|")
+(define-method object-- (a (b <string>)) #`",|a|-,|b|")
+(define-method object-* ((a <string>) b) #`",|a|*,|b|")
+(define-method object-* (a (b <string>)) #`",|a|*,|b|")
+(define-method object-/ ((a <string>) b) #`",|a|/,|b|")
+(define-method object-/ (a (b <string>)) #`",|a|/,|b|")
+
+(define-method object-- ((a <string>)) #`"-,|a|")
+(define-method object-/ ((a <string>)) #`"/,|a|")
+
+(test "object-+" "a+b" (lambda () (+ "a" "b")))
+(test "object-+" "a+b" (lambda () (+ "a" 'b)))
+(test "object-+" "a+b" (lambda () (+ 'a "b")))
+(test "object-+" "3+a" (lambda () (+ 3 "a")))
+;; NB: this becomes "3+a" instead of "a+3", because of compiler optimization.
+;; DO NOT COUNT ON THIS BEHAVIOR IN THE REAL CODE.   Might be changed in
+;; the future release.
+(test "object-+" "3+a" (lambda () (+ "a" 3)))
+
+(test "object--" "a-b" (lambda () (- "a" "b")))
+(test "object--" "a-b" (lambda () (- "a" 'b)))
+(test "object--" "a-b" (lambda () (- 'a "b")))
+(test "object--" "3-a" (lambda () (- 3 "a")))
+;; NB: this becomes "-3+a" instead of "a-3", because of compiler optimization
+;; DO NOT COUNT ON THIS BEHAVIOR IN THE REAL CODE.   Might be changed in
+;; the future release.
+(test "object--" "-3+a" (lambda () (- "a" 3)))
+
+(test "object--" "-a"  (lambda () (- "a")))
+
+(test "object-*" "a*b" (lambda () (* "a" "b")))
+(test "object-*" "a*b" (lambda () (* "a" 'b)))
+(test "object-*" "a*b" (lambda () (* 'a "b")))
+(test "object-*" "3*a" (lambda () (* 3 "a")))
+(test "object-*" "a*3" (lambda () (* "a" 3)))
+
+(test "object-/" "a/b" (lambda () (/ "a" "b")))
+(test "object-/" "a/b" (lambda () (/ "a" 'b)))
+(test "object-/" "a/b" (lambda () (/ 'a "b")))
+(test "object-/" "3/a" (lambda () (/ 3 "a")))
+(test "object-/" "a/3" (lambda () (/ "a" 3)))
+
+(test "object-/" "/a"  (lambda () (/ "a")))
+
 (test-end)

@@ -1,3 +1,10 @@
+2002-08-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm : defines object-[+-*/] methods for uvectors.
+	* src/number.c : adding generic arithmetic mechanism: operations such
+	  as '+' calls a generic function (object-+ for '+') when the
+	  argument is not a built-in numeric type.
+
 2002-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.1
@@ -5,7 +12,7 @@
 	* src/gauche/vm.h, src/error.c, src/vm.c : prevent an infinite loop
 	  when an uncaptured erorr occurs inside the error reporter.
 	  Introduced SCM_ERROR_BEING_REPORTED runtime flag to keep the
-	  dynamic context of error handling; see the commend of Scm_ReportError
+	  dynamic context of error handling; see the comment of Scm_ReportError
 	  and Scm_VMWithErrorHandler.
 
 2002-07-30  Shiro Kawai  <shiro@acm.org>

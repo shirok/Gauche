@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.96 2002-05-27 12:18:43 shirok Exp $
+ *  $Id: number.c,v 1.97 2002-08-10 01:06:18 shirok Exp $
  */
 
 #include <math.h>
@@ -77,6 +77,34 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass, number_print, NULL, NULL, NULL,
                          numeric_cpl+1);
 SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass, number_print, NULL, NULL, NULL,
                          numeric_cpl);
+
+/*=====================================================================
+ *  Generic Arithmetic
+ */
+
+/* Some arithmetic operations calls the corresponding generic function
+ * if the operand is not a number.
+ */
+
+/* Fallback Gf */
+static ScmObj bad_number_method(ScmObj *args, int nargs, ScmGeneric *gf)
+{
+    const char *fn = (const char *)SCM_GENERIC_DATA(gf);
+    if (nargs == 1) {
+        Scm_Error("operation %s is not defined on object %S", fn, args[0]);
+    } else if (nargs == 2) {
+        Scm_Error("operation %s is not defined between %S and %S",
+                  fn, args[0], args[1]);
+    } else {
+        Scm_Error("generic function for %s is called with args %S",
+                  fn, Scm_ArrayToList(args, nargs));
+    }
+    return SCM_UNDEFINED;
+}
+static SCM_DEFINE_GENERIC(generic_add, bad_number_method, "+");
+static SCM_DEFINE_GENERIC(generic_sub, bad_number_method, "-");
+static SCM_DEFINE_GENERIC(generic_mul, bad_number_method, "*");
+static SCM_DEFINE_GENERIC(generic_div, bad_number_method, "/");
 
 /*=====================================================================
  *  Flonums
@@ -396,7 +424,7 @@ ScmObj Scm_Negate(ScmObj obj)
         obj = Scm_MakeComplex(-SCM_COMPLEX_REAL(obj),
                               -SCM_COMPLEX_IMAG(obj));
     } else {
-        Scm_Error("number required: %S", obj);
+        obj = Scm_Apply(SCM_OBJ(&generic_sub), SCM_LIST1(obj));
     }
     return obj;
 }
@@ -425,7 +453,7 @@ ScmObj Scm_Reciprocal(ScmObj obj)
         i1 = -i/d;
         obj = Scm_MakeComplexNormalized(r1, i1);
     } else {
-        Scm_Error("number required: %S", obj);
+        obj = Scm_Apply(SCM_OBJ(&generic_div), SCM_LIST1(obj));
     }
     return obj;
 }
@@ -508,29 +536,39 @@ ScmObj Scm_PromoteToComplex(ScmObj obj)
    to keep intermediate result in C-native types whenever possible,
    so that I can avoid boxing/unboxing those numbers. */
 
+#define APPLY_GENERIC_ARITH(v, gf, arg0, arg1, args)    \
+  do {                                                  \
+    v = Scm_Apply(SCM_OBJ(&gf), SCM_LIST2(arg0, arg1)); \
+    if (SCM_NULLP(args)) return v;                      \
+    arg1 = SCM_CAR(args);                               \
+    args = SCM_CDR(args);                               \
+    goto retry;                                         \
+  } while (0)
+
 /*
  * Addition and subtraction
  */
 
 ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    ScmObj v = arg0;
-    long result_int = 0;
+    long result_int;
     double result_real, result_imag;
 
-    if (SCM_INTP(v)) {
-        result_int = SCM_INT_VALUE(v);
+  retry:
+    result_int = 0;
+    if (SCM_INTP(arg0)) {
+        result_int = SCM_INT_VALUE(arg0);
         for (;;) {
             if (SCM_INTP(arg1)) {
                 result_int += SCM_INT_VALUE(arg1);
                 if (result_int > SCM_SMALL_INT_MAX 
                     || result_int < SCM_SMALL_INT_MIN) {
-                    v = Scm_MakeBignumFromSI(result_int);
+                    arg0 = Scm_MakeBignumFromSI(result_int);
                     break;
                 }
             } else if (SCM_BIGNUMP(arg1)) {
-                v = Scm_BignumAdd(SCM_BIGNUM(Scm_MakeBignumFromSI(result_int)),
-                                  SCM_BIGNUM(arg1));
+                arg0 = Scm_BignumAdd(SCM_BIGNUM(Scm_MakeBignumFromSI(result_int)),
+                                     SCM_BIGNUM(arg1));
                 break;
             } else if (SCM_FLONUMP(arg1)) {
                 result_real = (double)result_int;
@@ -540,21 +578,28 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_add,
+                                    Scm_MakeInteger(result_int),
+                                    arg1, args);
             }
             if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
-        if (!SCM_PAIRP(args)) return v;
+        if (!SCM_PAIRP(args)) return arg0;
         arg1 = SCM_CAR(args);
         args = SCM_CDR(args);
     }
-    if (SCM_BIGNUMP(v)) {
-        return Scm_BignumAddN(SCM_BIGNUM(v), Scm_Cons(arg1, args));
+    if (SCM_BIGNUMP(arg0)) {
+        /* See if we should call generic version */
+        if (SCM_NUMBERP(arg1)) {
+            return Scm_BignumAddN(SCM_BIGNUM(arg0), Scm_Cons(arg1, args));
+        } else {
+            APPLY_GENERIC_ARITH(arg0, generic_add, arg0, arg1, args);
+        }
     }
-    if (SCM_FLONUMP(v)) {
-        result_real = SCM_FLONUM_VALUE(v);
+    if (SCM_FLONUMP(arg0)) {
+        result_real = SCM_FLONUM_VALUE(arg0);
       DO_FLONUM:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -567,16 +612,18 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_add,
+                                    Scm_MakeFlonum(result_real),
+                                    arg1, args);
             }
             if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_real);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
     }
-    if (SCM_COMPLEXP(v)) {
-        result_real = SCM_COMPLEX_REAL(v);
-        result_imag = SCM_COMPLEX_IMAG(v);
+    if (SCM_COMPLEXP(arg0)) {
+        result_real = SCM_COMPLEX_REAL(arg0);
+        result_imag = SCM_COMPLEX_IMAG(arg0);
       DO_COMPLEX:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -589,7 +636,10 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real += SCM_COMPLEX_REAL(arg1);
                 result_imag += SCM_COMPLEX_IMAG(arg1);
             } else {
-                Scm_Error("number required, but got: %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_add,
+                                    Scm_MakeComplexNormalized(result_real,
+                                                              result_imag),
+                                    arg1, args);
             }
             if (!SCM_PAIRP(args)) {
                 return Scm_MakeComplexNormalized(result_real, result_imag);
@@ -598,15 +648,20 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    Scm_Error("number required: %S", v);
+    APPLY_GENERIC_ARITH(arg0, generic_add,
+                        arg0, arg1, args);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
 ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    long result_int = 0;
-    double result_real = 0.0, result_imag = 0.0;
+    long result_int;
+    double result_real, result_imag;
 
+  retry:
+    result_int = 0;
+    result_real = 0.0;
+    result_imag = 0.0;
     if (SCM_INTP(arg0)) {
         result_int = SCM_INT_VALUE(arg0);
         for (;;) {
@@ -627,16 +682,21 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real = (double)result_int;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_sub,
+                                    Scm_MakeInteger(result_int),
+                                    arg1, args);
             }
-            if (SCM_NULLP(args))
-                return SCM_MAKE_INT(result_int);
+            if (SCM_NULLP(args)) return SCM_MAKE_INT(result_int);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
     }
     if (SCM_BIGNUMP(arg0)) {
-        return Scm_BignumSubN(SCM_BIGNUM(arg0), Scm_Cons(arg1, args));
+        if (SCM_NUMBERP(arg1)) {
+            return Scm_BignumSubN(SCM_BIGNUM(arg0), Scm_Cons(arg1, args));
+        } else {
+            APPLY_GENERIC_ARITH(arg0, generic_sub, arg0, arg1, args);
+        }
     }
     if (SCM_FLONUMP(arg0)) {
         result_real = SCM_FLONUM_VALUE(arg0);
@@ -651,7 +711,9 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
             } else if (SCM_COMPLEXP(arg1)) {
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_sub,
+                                    Scm_MakeFlonum(result_real),
+                                    arg1, args);
             }
             if (SCM_NULLP(args))
                 return Scm_MakeFlonum(result_real);
@@ -674,7 +736,10 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real -= SCM_COMPLEX_REAL(arg1);
                 result_imag -= SCM_COMPLEX_IMAG(arg1);
             } else {
-                Scm_Error("number required, but got %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_sub,
+                                    Scm_MakeComplexNormalized(result_real,
+                                                              result_imag),
+                                    arg1, args);
             }
             if (SCM_NULLP(args))
                 return Scm_MakeComplexNormalized(result_real, result_imag);
@@ -682,7 +747,7 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    Scm_Error("number required: %S", arg0);
+    APPLY_GENERIC_ARITH(arg0, generic_sub, arg0, arg1, args);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
@@ -692,13 +757,12 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
 
 ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    ScmObj v = arg0;
     long result_int;
     double result_real, result_imag;
 
   retry:
-    if (SCM_INTP(v)) {
-        result_int = SCM_INT_VALUE(v);
+    if (SCM_INTP(arg0)) {
+        result_int = SCM_INT_VALUE(arg0);
         for (;;) {
             if (SCM_INTP(arg1)) {
                 long vv = SCM_INT_VALUE(arg1);
@@ -708,12 +772,12 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
                     || k < SCM_SMALL_INT_MIN
                     || k > SCM_SMALL_INT_MAX) {
                     ScmObj big = Scm_MakeBignumFromSI(result_int);
-                    v = Scm_BignumMulSI(SCM_BIGNUM(big), vv);
+                    arg0 = Scm_BignumMulSI(SCM_BIGNUM(big), vv);
                     break;
                 }
                 result_int = k;
             } else if (SCM_BIGNUMP(arg1)) {
-                v = Scm_BignumMulSI(SCM_BIGNUM(arg1), result_int);
+                arg0 = Scm_BignumMulSI(SCM_BIGNUM(arg1), result_int);
                 break;
             } else if (SCM_FLONUMP(arg1)) {
                 result_real = (double)result_int;
@@ -723,22 +787,23 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_mul,
+                                    Scm_MakeInteger(result_int), arg1, args);
             }
             if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
-        if (!SCM_PAIRP(args)) return v;
+        if (!SCM_PAIRP(args)) return arg0;
         arg1 = SCM_CAR(args);
         args = SCM_CDR(args);
         goto retry;
     }
-    if (SCM_BIGNUMP(v)) {
-        return Scm_BignumMulN(SCM_BIGNUM(v), Scm_Cons(arg1, args));
+    if (SCM_BIGNUMP(arg0)) {
+        return Scm_BignumMulN(SCM_BIGNUM(arg0), Scm_Cons(arg1, args));
     }
-    if (SCM_FLONUMP(v)) {
-        result_real = SCM_FLONUM_VALUE(v);
+    if (SCM_FLONUMP(arg0)) {
+        result_real = SCM_FLONUM_VALUE(arg0);
       DO_FLONUM:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -751,16 +816,17 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got: %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_mul,
+                                    Scm_MakeFlonum(result_real), arg1, args);
             }
             if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_real);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
     }
-    if (SCM_COMPLEXP(v)) {
-        result_real = SCM_COMPLEX_REAL(v);
-        result_imag = SCM_COMPLEX_IMAG(v);
+    if (SCM_COMPLEXP(arg0)) {
+        result_real = SCM_COMPLEX_REAL(arg0);
+        result_imag = SCM_COMPLEX_IMAG(arg0);
       DO_COMPLEX:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -780,7 +846,10 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_imag   = result_real * i + result_imag * r;
                 result_real = t;
             } else {
-                Scm_Error("number required, but got: %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_mul,
+                                    Scm_MakeComplexNormalized(result_real,
+                                                              result_imag),
+                                    arg1, args);
             }
             if (!SCM_PAIRP(args)) {
                 return Scm_MakeComplexNormalized(result_real, result_imag);
@@ -789,7 +858,8 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    Scm_Error("number required: %S", v);
+    APPLY_GENERIC_ARITH(arg0, generic_mul,
+                        arg0, arg1, args);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
@@ -801,8 +871,10 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
     double result_real = 0.0, result_imag = 0.0;
     double div_real = 0.0, div_imag = 0.0;
-    int exact = 1;
+    int exact = TRUE;
 
+  retry:
+    result_real = result_imag = div_real = div_imag = 0.0;
     if (SCM_INTP(arg0)) {
         result_real = (double)SCM_INT_VALUE(arg0);
         goto DO_FLONUM;
@@ -817,7 +889,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                                          &rem);
             if (rem != 0) {
                 result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
-                exact = 0;
+                exact = FALSE;
                 goto DO_FLONUM;
             }
             if (SCM_NULLP(args)) return div;
@@ -827,27 +899,27 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
             ScmObj divrem = Scm_BignumDivRem(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
             if (SCM_CDR(divrem) != SCM_MAKE_INT(0)) {
                 result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
-                exact = 0;
+                exact = FALSE;
                 goto DO_FLONUM;
             }
             if (SCM_NULLP(args)) return SCM_CAR(divrem);
             return Scm_Divide(divrem, SCM_CAR(args), SCM_CDR(args));
         }
         if (SCM_FLONUMP(arg1)) {
-            exact = 0;
+            exact = FALSE;
             result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
             goto DO_FLONUM;
         }
         if (SCM_COMPLEXP(arg1)) {
-            exact = 0;
+            exact = FALSE;
             result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
             goto DO_COMPLEX;
         }
-        Scm_Error("number required, but got %S", arg1);
+        APPLY_GENERIC_ARITH(arg0, generic_div, arg0, arg1, args);
     }
     if (SCM_FLONUMP(arg0)) {
         result_real = SCM_FLONUM_VALUE(arg0);
-        exact = 0;
+        exact = FALSE;
       DO_FLONUM:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -856,14 +928,15 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                 div_real = Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 div_real = SCM_FLONUM_VALUE(arg1);
-                exact = 0;
+                exact = FALSE;
             } else if (SCM_COMPLEXP(arg1)) {
                 goto DO_COMPLEX;
             } else {
-                Scm_Error("number required, but got %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_div,
+                                    Scm_MakeFlonumToNumber(result_real, exact),
+                                    arg1, args);
             }
-            if (div_real == 0) 
-                Scm_Error("divide by zero");
+            if (div_real == 0) Scm_Error("divide by zero");
             result_real /= div_real;
             if (SCM_NULLP(args))
                 return Scm_MakeFlonumToNumber(result_real, exact);
@@ -888,11 +961,13 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                 div_real = SCM_COMPLEX_REAL(arg1);
                 div_imag = SCM_COMPLEX_IMAG(arg1);
             } else {
-                Scm_Error("number required, but got %S", arg1);
+                APPLY_GENERIC_ARITH(arg0, generic_div,
+                                    Scm_MakeComplexNormalized(result_real,
+                                                              result_imag),
+                                    arg1, args);
             }
             d = div_real*div_real + div_imag*div_imag;
-            if (d == 0.0)
-                Scm_Error("divide by zero");
+            if (d == 0.0) Scm_Error("divide by zero");
             r = (result_real*div_real + result_imag*div_imag)/d;
             i = (result_imag*div_real - result_real*div_imag)/d;
             result_real = r;
@@ -903,7 +978,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    Scm_Error("number required: %S", arg0);
+    APPLY_GENERIC_ARITH(arg0, generic_div, arg0, arg1, args);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
@@ -2258,8 +2333,10 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
 
 void Scm__InitNumber(void)
 {
+    ScmModule *mod = Scm_GaucheModule();
     int radix, i;
     u_long n;
+    
     for (radix = RADIX_MIN; radix <= RADIX_MAX; radix++) {
         longlimit[radix-RADIX_MIN] =
             (u_long)floor((double)LONG_MAX/radix - radix);
@@ -2276,4 +2353,9 @@ void Scm__InitNumber(void)
     iexpt2_53 = Scm_Ash(SCM_MAKE_INT(1), 53);
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);
+
+    Scm_InitBuiltinGeneric(&generic_add, "object-+", mod);
+    Scm_InitBuiltinGeneric(&generic_sub, "object--", mod);
+    Scm_InitBuiltinGeneric(&generic_mul, "object-*", mod);
+    Scm_InitBuiltinGeneric(&generic_div, "object-/", mod);
 }

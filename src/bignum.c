@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.44 2002-07-14 05:51:53 shirok Exp $
+ *  $Id: bignum.c,v 1.45 2002-08-10 01:06:18 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -548,7 +548,8 @@ ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args)
             ScmObj z = Scm_MakeFlonum(Scm_BignumToDouble(r));
             return Scm_Add(z, v, SCM_CDR(args));
         }
-        Scm_Error("number expected, but got %S", v);
+        /* Pass back to Scm_Add to deal with object-add hook */
+        return Scm_Add(Scm_NormalizeBignum(r), v, SCM_CDR(args));
     }
     return Scm_NormalizeBignum(r);
 }
