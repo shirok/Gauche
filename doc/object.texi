@@ -2235,6 +2235,23 @@ i.e. there's no "next method", an error is signalled.
 @section Metaobject protocol
 @c NODE メタオブジェクトプロトコル
 
+In CLOS-like object systems, the object system is built on
+top of itself---that is, things such as the structure of the class,
+how a class is created, how an instance is created and initialized,
+and how a method is dispatched and called, are all defined in terms
+of the object system.  For example, a class is just an instance of
+the class @code{<class>} that defines a generic structure and behavior 
+of standard classes.  If you subclass @code{<class>}, then you can
+create your own set of classes that behaves differently than the
+default behavior; in effect, you are creating your own object system.
+
+@emph{Metaobject protocols} are the definitions of APIs concerning
+about how the object systems are built---building-block classes,
+and the names and orders of generic functions to be called
+during operations of the object system.  Subclassing these classes
+and specializing these methods are the means of customizing object
+system behaviors.
+
 @menu
 * Class instantiation::         
 * Customizing slot access::     
@@ -2247,6 +2264,10 @@ i.e. there's no "next method", an error is signalled.
 @node Class instantiation, Customizing slot access, Metaobject protocol, Metaobject protocol
 @subsection Class instantiation
 @c NODE クラスのインスタンシエーション
+
+Every class is an instance of a group of special classes.
+A class that can be a class of another class is called @emph{metaclass}.
+(
 
 @deffn {Method} make (class <class>) &rest initargs
 @end deffn
