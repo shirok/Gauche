@@ -85,28 +85,28 @@ if [ "$test" = "yes" ]; then
 fi
 
 if [ "$testcode" = "yes" ]; then
-  rm -rf ../test/Gauche
+  rm -rf ../test/Gauche-$VERSION
   cd ../test
   tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz >& /dev/null
   cd Gauche-$VERSION
   rm -f testcode.log
   echo "EUC-JP ----------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
+  ./configure -C --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "UTF-8 -----------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
+  ./configure -C --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "SJIS ------------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=sjis   >> testcode.log 2>&1
+  ./configure -C --enable-threads=pthreads --enable-multibyte=sjis   >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "NONE ------------------------------------------------------"
-  ./configure --enable-threads=pthreads --enable-multibyte=none   >> testcode.log 2>&1
+  ./configure -C --enable-threads=pthreads --enable-multibyte=none   >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
 fi
