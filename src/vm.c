@@ -12,16 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.84 2001-06-24 23:49:20 shirok Exp $
+ *  $Id: vm.c,v 1.85 2001-06-30 09:22:50 shirok Exp $
  */
 
 #include "gauche.h"
 #include "gauche/memory.h"
 #include "gauche/class.h"
 
-#ifdef HAVE_SYSEXITS_H
-#include <sysexits.h>
-#else
+#ifndef EX_SOFTWARE
 /* SRFI-22 requires this. */
 #define EX_SOFTWARE 70
 #endif
@@ -1482,7 +1480,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
     if (theVM->escape) {
         longjmp(theVM->escape->jbuf, 1);
     } else {
-        /* No escape point */
+        /* No escape point.  Returns EX_SOFTWARE as specified in SRFI-22. */
         exit(EX_SOFTWARE);
     }
 
