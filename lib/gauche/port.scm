@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: port.scm,v 1.1 2001-10-04 10:45:40 shirok Exp $
+;;;  $Id: port.scm,v 1.2 2001-10-04 11:46:05 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -48,14 +48,14 @@
              (r    knil))
     (if (eof-object? item)
         r
-        (begin (loop (reader) (fn item r))))))
+        (loop (reader) (fn item r)))))
 
+;; This will consume large stack if input file is large.
 (define (port-fold-right fn knil reader)
-  (let loop ((item (reader))
-             (r    knil))
+  (let loop ((item (reader)))
     (if (eof-object? item)
-        r
-        (begin (loop (reader) (fn r item))))))
+        knil
+        (fn item (loop (reader))))))
 
 (define (port-for-each fn reader)
   (let loop ((item (reader)))
