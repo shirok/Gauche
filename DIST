@@ -26,6 +26,7 @@ if [ "$tgz" = "yes" ]; then
   ./configure
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
   (cd ext/charconv/; make GOSH=/usr/local/bin/gosh eucj2ucs.c)
+  (cd ext/charconv/; make GOSH=/usr/local/bin/gosh guess_tab.c)
   (cd ext/charconv/data; make)
   make distclean
 

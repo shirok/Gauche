@@ -1,5 +1,7 @@
 2002-06-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm : experimentally added file->string, file->list,
+	  file->string-list and file->sexp-list.
 	* src/gauche/char_euc_jp.h: adapted to 3-byte sequence (8F xx xx).
 	* ext/charconv/guess.scm, ext/charconv/guess.c : improved automatic
 	  character encoding detection, by using probabilistic DFA.
