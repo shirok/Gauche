@@ -134,7 +134,7 @@
 	sort
 ;	pretty-print
 	object->string
-	format				;Common-lisp output formatting
+;	format				;Common-lisp output formatting
 ;	trace				;has macros: TRACE and UNTRACE
 ;	compiler			;has (COMPILER)
 ;	ed				;(ED) is editor

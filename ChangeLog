@@ -1,5 +1,7 @@
 2003-12-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/slib.scm.in : let (require 'format) use slib's format.
+
 	* configure.ac, src/link-hpux : fixed compilation problem on
 	  HP-UX 11.11.
 
