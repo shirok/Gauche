@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.95 2002-11-21 06:05:04 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.96 2002-12-06 05:28:32 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -157,7 +157,7 @@
 (autoload gauche.regexp
           (:macro rxmatch-let) (:macro rxmatch-if)
           (:macro rxmatch-cond) (:macro rxmatch-case)
-          regexp-replace regexp-replace-all)
+          regexp-replace regexp-replace-all regexp-quote)
 
 (autoload gauche.procedure
           compose pa$ map$ for-each$ apply$ any-pred every-pred
@@ -175,7 +175,8 @@
 
 (autoload gauche.interpolate string-interpolate)
 
-(define-reader-ctor 'string-interpolate string-interpolate)
+(define-reader-ctor 'string-interpolate
+  (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
 
 (autoload gauche.auxsys
           fmod frexp modf ldexp
