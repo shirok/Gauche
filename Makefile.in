@@ -1,4 +1,5 @@
 EXTENSIONS=@EXTENSIONS@
+INSTALL=@INSTALL@
 .PHONY: test clean install
 
 
@@ -37,6 +38,7 @@ install :
 	cd lib; $(MAKE) install
 	cd doc; $(MAKE) install
 	cd ext; $(MAKE) install
+	$(INSTALL) -m 444 aclocal.m4 `sh src/gauche-config --ac`/aclocal.m4
 
 realclean : clean
 	cd src; $(MAKE) realclean
