@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.114 2001-04-15 12:36:35 shiro Exp $
+ *  $Id: gauche.h,v 1.115 2001-04-15 21:46:39 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -647,7 +647,7 @@ struct ScmStringRec {
 extern ScmClass Scm_StringClass;
 #define SCM_CLASS_STRING        (&Scm_StringClass)
 
-extern int     Scm_MBLen(const char *str);
+extern int     Scm_MBLen(const char *str, const char *stop);
 
 extern ScmObj  Scm_MakeString(const char *str, int size, int len);
 extern ScmObj  Scm_MakeStringConst(const char *str, int size, int len);
@@ -1716,13 +1716,13 @@ extern void Scm_RegDump(ScmRegexp *rx);
 
 struct ScmRegMatchRec {
     SCM_HEADER;
-    ScmString *input;
+    const char *input;
     int numMatches;
     struct ScmRegMatchSub {
-        int index;
-        int len;
-        const char *start;
-        const char *end;
+        int start;
+        int length;
+        const char *startp;
+        const char *endp;
     } *matches;
 };
 
@@ -1731,6 +1731,9 @@ extern ScmClass Scm_RegMatchClass;
 #define SCM_REGMATCH(obj)         ((ScmRegMatch*)obj)
 #define SCM_REGMATCHP(obj)        SCM_XTYPEP(obj, SCM_CLASS_REGMATCH)
 
+extern ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, int i);
+extern ScmObj Scm_RegMatchStart(ScmRegMatch *rm, int i);
+extern ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, int i);
 extern void Scm_RegMatchDump(ScmRegMatch *match);
 
 /*-------------------------------------------------------
