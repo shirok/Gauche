@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.59 2002-02-14 09:36:03 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.60 2002-02-18 20:45:46 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -160,6 +160,8 @@
           enable-debug disable-debug (:macro debug-print))
 
 (autoload srfi-0 (:macro cond-expand))
+
+(autoload gauche.interpolate (:macro string-interpolate))
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
