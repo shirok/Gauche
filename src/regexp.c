@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.7 2001-04-15 21:46:20 shiro Exp $
+ *  $Id: regexp.c,v 1.8 2001-04-16 09:42:28 shiro Exp $
  */
 
 #include <setjmp.h>
@@ -576,7 +576,7 @@ ScmObj Scm_RegComp(ScmString *pattern)
     cctx.codep = 0;
 
     compiled = re_compile_pass1(rx, &cctx);
-    Scm_Printf(SCM_CUROUT, "~~ %S %d\n", compiled, rx->numCodes);
+/*    Scm_Printf(SCM_CUROUT, "~~ %S %d\n", compiled, rx->numCodes);*/
     re_compile_setup_charsets(rx, &cctx);
 
     cctx.code = SCM_NEW_ATOMIC2(char *, rx->numCodes*2+1);
