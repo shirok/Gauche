@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.7 2001-03-07 07:59:36 shiro Exp $
+ *  $Id: system.c,v 1.8 2001-03-08 10:20:18 shiro Exp $
  */
 
 #include <stdio.h>
@@ -216,26 +216,68 @@ ScmObj Scm_DirName(ScmString *filename)
 }
 
 /*
+ * Stat (sys/stat.h)
+ */
+
+SCM_DEFCLASS(Scm_SysStatClass, "<sys-stat>", NULL, SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_MakeSysStat(void)
+{
+    ScmSysStat *s = SCM_NEW(ScmSysStat);
+    SCM_SET_CLASS(s, SCM_CLASS_SYS_STAT);
+    return SCM_OBJ(s);
+}
+
+/*
+ * Time (sys/time.h)
+ */
+
+SCM_DEFCLASS(Scm_SysTimeClass, "<sys-time>", NULL, SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_MakeSysTime(time_t t)
+{
+    ScmSysTime *st = SCM_NEW(ScmSysTime);
+    SCM_SET_CLASS(st, SCM_CLASS_SYS_TIME);
+    st->time = t;
+    return SCM_OBJ(st);
+}
+
+SCM_DEFCLASS(Scm_SysTmClass, "<sys-tm>", NULL, SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_MakeSysTm(struct tm *tm)
+{
+    ScmSysTm *st = SCM_NEW(ScmSysTm);
+    SCM_SET_CLASS(st, SCM_CLASS_SYS_TM);
+    st->tm = *tm;               /* copy */
+    return SCM_OBJ(st);
+}
+
+/*
  * Groups (grp.h)
  */
 
-/* TODO: should return some sort of record instead of list, so that
-   we can add more information when system supports it. */
-static ScmObj decode_group(struct group *g)
+SCM_DEFCLASS(Scm_SysGroupClass, "<sys-group>", NULL, SCM_CLASS_DEFAULT_CPL);
+
+static ScmObj make_group(struct group *g)
 {
-    ScmObj head = SCM_NIL, tail, memhead = SCM_NIL, memtail;
-    ScmObj p;
+    ScmObj head = SCM_NIL, tail, p;
     char **memp;
-    p = Scm_MakeString(g->gr_name, -1, -1);
-    SCM_APPEND1(head, tail, p);
-    p = Scm_MakeInteger(g->gr_gid);
-    SCM_APPEND1(head, tail, p);
+    ScmSysGroup *sg = SCM_NEW(ScmSysGroup);
+    SCM_SET_CLASS(sg, SCM_CLASS_SYS_GROUP);
+    
+    sg->name = Scm_MakeString(g->gr_name, -1, -1);
+#ifdef HAVE_GR_PASSWD
+    sg->passwd = Scm_MakeString(g->gr_passwd, -1, -1);
+#else
+    sg->passwd = SCM_FALSE;
+#endif
+    sg->gid = Scm_MakeInteger(g->gr_gid);
     for (memp = g->gr_mem; *memp; memp++) {
         p = Scm_MakeString(*memp, -1, -1);
-        SCM_APPEND1(memhead, memtail, p);
+        SCM_APPEND1(head, tail, p);
     }
-    SCM_APPEND1(head, tail, memhead);
-    return head;
+    sg->mem = head;
+    return SCM_OBJ(sg);
 }
 
 ScmObj Scm_GetGroupById(gid_t gid)
@@ -243,7 +285,7 @@ ScmObj Scm_GetGroupById(gid_t gid)
     struct group *gdata;
     gdata = getgrgid(gid);
     if (gdata == NULL) return SCM_FALSE;
-    else return decode_group(gdata);
+    else return make_group(gdata);
 }
 
 ScmObj Scm_GetGroupByName(ScmString *name)
@@ -251,7 +293,7 @@ ScmObj Scm_GetGroupByName(ScmString *name)
     struct group *gdata;
     gdata = getgrnam(Scm_GetStringConst(name));
     if (gdata == NULL) return SCM_FALSE;
-    else return decode_group(gdata);
+    else return make_group(gdata);
 }
 
 /*
@@ -259,25 +301,34 @@ ScmObj Scm_GetGroupByName(ScmString *name)
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
  */
 
-/* TODO: should return some sort of record instead of list, so that
-   we can add more information when system supports it. */
-static ScmObj decode_passwd(struct passwd *pw)
+SCM_DEFCLASS(Scm_SysPasswdClass, "<sys-passwd>", NULL, SCM_CLASS_DEFAULT_CPL);
+
+static ScmObj make_passwd(struct passwd *pw)
 {
-    ScmObj head = SCM_NIL, tail;
-    ScmObj p;
+    ScmSysPasswd *sp = SCM_NEW(ScmSysPasswd);
+    SCM_SET_CLASS(sp, SCM_CLASS_SYS_PASSWD);
 
-    p = Scm_MakeString(pw->pw_name, -1, -1);
-    SCM_APPEND1(head, tail, p);
-    p = Scm_MakeInteger(pw->pw_uid);
-    SCM_APPEND1(head, tail, p);
-    p = Scm_MakeInteger(pw->pw_gid);
-    SCM_APPEND1(head, tail, p);
-    p = Scm_MakeString(pw->pw_dir, -1, -1);
-    SCM_APPEND1(head, tail, p);
-    p = Scm_MakeString(pw->pw_shell, -1, -1);
-    SCM_APPEND1(head, tail, p);
-
-    return head;
+    sp->name = Scm_MakeString(pw->pw_name, -1, -1);
+    sp->uid = Scm_MakeInteger(pw->pw_uid);
+    sp->gid = Scm_MakeInteger(pw->pw_gid);
+#ifdef HAVE_PW_PASSWD
+    sp->passwd = Scm_MakeString(pw->pw_passwd, -1, -1);
+#else
+    sp->passwd = SCM_FALSE;
+#endif
+#ifdef HAVE_PW_GECOS
+    sp->gecos = Scm_MakeString(pw->pw_gecos, -1, -1);
+#else
+    sp->gecos = SCM_FALSE;
+#endif
+#ifdef HAVE_PW_CLASS
+    sp->class = Scm_MakeString(pw->pw_class, -1, -1);
+#else
+    sp->class = SCM_FALSE;
+#endif
+    sp->dir = Scm_MakeString(pw->pw_dir, -1, -1);
+    sp->shell = Scm_MakeString(pw->pw_shell, -1, -1);
+    return SCM_OBJ(sp);
 }
 
 ScmObj Scm_GetPasswdById(uid_t uid)
@@ -285,7 +336,7 @@ ScmObj Scm_GetPasswdById(uid_t uid)
     struct passwd *pdata;
     pdata = getpwuid(uid);
     if (pdata == NULL) return SCM_FALSE;
-    else return decode_passwd(pdata);
+    else return make_passwd(pdata);
 }
 
 ScmObj Scm_GetPasswdByName(ScmString *name)
@@ -293,5 +344,5 @@ ScmObj Scm_GetPasswdByName(ScmString *name)
     struct passwd *pdata;
     pdata = getpwnam(Scm_GetStringConst(name));
     if (pdata == NULL) return SCM_FALSE;
-    else return decode_passwd(pdata);
+    else return make_passwd(pdata);
 }
