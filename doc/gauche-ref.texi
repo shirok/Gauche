@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.229 2002-06-30 20:11:27 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.230 2002-06-30 23:37:21 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13378,17 +13378,58 @@ representation of arrays, using SRFI-10 mechanism.
 @c COMMON
 
 @c EN
-An array can take 
+Each element of an @var{N}-dimensional array can be accessed
+by @var{N} integer indices,
+@code{[ @var{i_0} @var{i_1} @dots{} @var{i_N-1} ]}.
+An array has associated @var{shape} that knows lower-bound @var{s_k} and
+upper-bound @var{e_k} of index of each dimension, where
+@var{s_k} <= @var{e_k}, and the index @var{i_k} must satisfy
+@var{s_k} <= @var{i_k} < @var{e_k}.
+(Note: it is allowed to have @var{s_k} == @var{e_k}, but such array can't
+store any data.  It is also allowed to have zero-dimensional array,
+that can store a single data.).
+The shape itself is a [ @var{D} x 2 ] array, where @var{D} is the
+dimension of the array which the shape represents.
 @c JP
+@var{N}次元の配列の各エレメントは@code{N}個の整数のインデックス
+@code{[ @var{i_0} @var{i_1} @dots{} @var{i_N-1} ]}でアクセスされます。
+配列は、各次元のインデックスの下限@var{s_k}および上限@var{e_k}を決める
+@var{shape}を持っています。ここで、@var{s_k} <= @var{e_k}であり、
+@var{k}次元目のインデックス@var{i_k}は
+@var{s_k} <= @var{i_k} < @var{e_k} を満たすものとします。
+(@var{s_k} == @var{e_k} であるような配列も作れますが、
+その配列にはデータをストアすることはできません。
+また、0次元の配列は作れます。それは一つだけデータを保持できます)。
+Shapeはそれ自体が [ @var{D} x 2 ] の配列です。
+ここで@var{D}はそのshapeが表現する配列の次元数です。
+@c COMMON
+
+@c EN
+You can pass index to array access primitives in a few ways;
+each index can be passed as individual argument,
+or can be 'packed' in a vector or one-dimensional array.
+In the latter case, such a vector or an array is called an "index object".
+Using vector is efficient in Gauche when you iterate over the elements
+by changing the vector elements, for it won't involve memory allocation.
+@c JP
+配列のプリミティブに対しインデックスを渡すにはいくつか方法があります。
+各インデックスをばらばらの引数として渡すこともできますし、
+ベクタや1次元の配列にパックして渡すこともできます。
+後者においてインデックスがパックされたベクタや配列を「インデックスオブジェクト」
+と呼ぶことがあります。Gaucheでは、配列の要素に次々とアクセスするような処理では
+ベクタをインデックスオブジェクトとして使うと若干効率が良いでしょう。
 @c COMMON
 
 @c EN
 Internally, an array consists of a backing storage and a mapping procedure.
 A backing storage is an object of aggregate type that can be accessed
-by integer index.  A mapping procedure takes
-multi-dimensional indices (or index object; see below) and 
+by an integer index.  A mapping procedure takes
+multi-dimensional indices (or index object) and 
 returns a scalar index into the backing storage.
 @c JP
+内部的には、配列は1次元のインデックスでアクセスされるバッキングストレージと、
+多次元のインデックスをバッキングストレージへのインデックスにマップする手続きとから
+構成されています。
 @c COMMON
 @end deftp
 
@@ -13398,39 +13439,150 @@ returns a scalar index into the backing storage.
 @end deftp
 
 @deftp {Reader syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
-An array's writer method 
+@c EN
+An array is written out in this format.  @var{shape} is a list
+of even number of integers, and each 2@var{n}-th integer
+and 2@var{n}+1-th integer specifies the
+inclusive lower-bound and exclusive upper-bound of @var{n}-th dimension,
+respectively.  The following @var{obj} @dots{} are the values in the array
+listed in row-major order.
+@c JP
+配列をこの形式で書き出されます。@var{shape}は偶数個の整数のリストで、
+2@var{n}番目の整数が@var{n}次元目のインデックスの下限を、2@var{n}+1番目の
+整数が@var{n}次元目のインデックスの上限(+1)を表します。
+その後に、配列の要素がrow-majorの順で書き出されます。
+@c COMMON
+
+@c EN
+When read back, this syntax is read as an array with the same shape
+and content, so it is @code{equal?} to the original array.
+@c JP
+この構文が読み込まれると、もとの配列と@code{equal?}である配列が作成されます。
+@c COMMON
+
+@example
+@c EN
+; an array such that:
+@c JP
+; 次のような配列：
+@c COMMON
+;   8 3 4
+;   1 5 9
+;   6 7 2
+#,(<array> (0 3 0 3) 8 3 4 1 5 9 6 7 2)
+
+@c EN
+; a 4x4 identity matrix
+@c JP
+; 4x4の単位行列
+@c COMMON
+#,(<array> (0 4 0 4) 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1)
+@end example
 @end deftp
 
 @defun array? obj
 [SRFI-25]
+@c EN
+Returns @code{#t} if @var{obj} is an array, @var{#f} otherwise.
+@c JP
+@var{obj}が配列であれば@var{#t}が、そうでなければ@var{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun make-array shape &optional init
 [SRFI-25]
+@c EN
+Creates an array of shape @var{shape}.
+@var{Shape} must be a [ @var{D} x 2 ] array, and for each @var{k}
+(0 <= @var{k} < @var{D}), the [ @var{k} 0 ] element must be less than or
+equal to the [ @var{k} 1] element.
+If @var{init} is given, all the elements are initialized by it.
+Otherwise, the initial value of the elements are undefined.
+@c JP
+Shapeが@var{shape}である配列を作成します。
+@var{Shape}は [ @var{D} x 2 ] の配列で、
+0 <= @var{k} < @var{D} なる各@var{k}に対して要素 [ @var{k} 0 ] は
+要素[ @var{k} 1 ]以下でなければなりません。
+@var{init}が与えられた場合は、配列の各要素が@var{init}で初期化されます。
+@var{init}が与えられなかった場合の配列の要素の初期値は不定です。
+@c COMMON
+
+@example
+(make-array (shape 0 2 0 2 0 2) 5)
+ @result{} #,(<array> (0 2 0 2) 5 5 5 5 5 5 5 5)
+@end example
 @end defun
 
 @defun shape bound @dots{}
 [SRFI-25]
+@c EN
+Takes even number of exact integer arguments, and returns
+a two-dimensional array that is suitable for representing the shape
+of an array.
+@c JP
+偶数個の正確な整数を引数に取り、配列のshapeとして使える2次元の配列を返します。
+@c COMMON
+
+@example
+(shape 0 2 1 3 3 5)
+ @result{} #,(<array> (0 3 0 2) 0 1 3 2 3 5)
+
+(shape)
+ @result{} #,(<array> (0 0 0 2))
+@end example
 @end defun
 
 @defun array shape init @dots{}
 [SRFI-25]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun array-rank array
 [SRFI-25]
+@c EN
+Returns the number of dimensions of an array @var{array}.
+@c JP
+配列@var{array}の次元数を返します。
+@c COMMON
+
+@example
+(array-rank (make-array (shape 0 2 0 2 0 2))) @result{} 3
+(array-rank (make-array (shape))) @result{} 0
+@end example
 @end defun
 
 @defun array-shape array
+@c EN
+Returns a shape array of @var{array}.
+@c JP
+配列@var{array}のshapeを表す配列を返します。
+@c COMMON
 @end defun
 
 @defun array-start array dim
 @defunx array-end array dim
 @defunx array-length array dim
 [SRFI-25+]
+@c EN
+
+@c JP
+@c COMMON
 @end defun
 
 @defun array-size array
+@c EN
+Returns the total number of elements in the array @var{array}.
+@c JP
+配列@var{array}の全要素数を返します。
+@c COMMON
+
+@example
+(array-size (make-array (shape 5 9 1 3))) @result{} 8
+(array-size (make-array (shape))) @result{} 1
+(array-size (make-array (shape 0 0 0 2))) @result{} 0
+@end example
 @end defun
 
 @defun array-equal? array1 array2
