@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.7 2001-05-11 20:03:15 shirok Exp $
+;;;  $Id: numerical.scm,v 1.8 2001-05-11 20:25:53 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -160,7 +160,9 @@
   )
 
 (define (%complex-asinh z)
-  (log (+ z (sqrt (+ (* z z) 1)))))
+  (if (> (magnitude z) 1.0e5)
+      (make-rectangular (log 0.0) (log 0.0)) ;NaN+NaNi
+      (log (+ z (sqrt (+ (* z z) 1))))))
 
 (define (%complex-acos z)
   ;; The definition of acos is
@@ -171,7 +173,9 @@
   (- 1.5707963267948966 (asin z)))
 
 (define (%complex-acosh z)
-  (log (+ z (sqrt (- (* z z) 1)))))
+  ;; See the discussion of CLtL2, pp. 313-314
+  (* 2 (log (+ (sqrt (/ (+ z 1) 2))
+               (sqrt (/ (- z 1) 2))))))
 
 (define (%complex-atan z)
   (let ((iz (* z +i)))
