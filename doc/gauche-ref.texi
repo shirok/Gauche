@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.94 2001-10-13 10:01:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.95 2001-10-13 10:20:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1940,7 +1940,8 @@ There's no limit of the size of number except the memory of the machine.
 Using @code{double}-type of underlying C compiler, usually IEEE 64-bit
 floating point number.
 @item inexact floating-point complex number
-A pair of floating point numbers.
+Real part and imaginary part are represented by inexact floating-point
+real numbers.
 @end table
 @c JP
 Gaucheは次のタイプの数値をサポートしています。
@@ -1950,7 +1951,7 @@ Gaucheは次のタイプの数値をサポートしています。
 @item 浮動少数点の不完全な実数
 実装に使われるC言語の@code{double}型で表現されます。通常IEEE 64bit浮動少数点数です。
 @item 浮動少数点の不完全な複素数
-内部では浮動少数点数のペアで表現されます。
+実部と虚部はそれぞれ浮動少数点の不完全な実数で表現されます。
 @end table
 @c COMMON
 
@@ -2204,12 +2205,22 @@ respectively.
 @end example
 @end defun
 
-@defun abs z @dots{}
+@defun abs z
 [R5RS+]
 @c EN
-
+For real number @var{z}, returns an absolute value of it.
+For complex number @var{z}, returns the magnitude of the number.
+The complex part is Gauche extension.
 @c JP
+実数の@var{z}に対しては、その絶対値を返します。
+複素数の@var{z}に対しては、そのmagnitudeを返します。
+複素数を扱うのはGaucheの拡張です。
 @c COMMON
+@example
+(abs -1)   @result{} 1
+(abs -1.0) @result{} 1.0
+(abs 1+i)  @result{} 1.4142135623731
+@end example
 @end defun
 
 @defun quotient n1 n2
@@ -3150,7 +3161,8 @@ then fills it one character at a time is @emph{extremely} inefficient
 in Gauche, and should be avoided.   That kind of algorithms unnecessarily
 assumes underlying string allocation and representation mechanism,
 which Gauche doesn't follow.
-You can use an output string port for a string construction.
+You can use an output string port for a string construction
+(@xref{String ports}).
 Even creating a list of characters and
 using @code{list->string} is faster than using @code{make-string} and
 @code{string-set!}.
@@ -3165,10 +3177,11 @@ using @code{list->string} is faster than using @code{make-string} and
 @end example
 
 @code{make-string}で必要な長さの文字列をアロケートして、@code{string-set!}
-で順番に埋めて行くアルゴリズムは、Gaucheでは@emph{極めて}不効率であることに
+で順番に埋めて行くアルゴリズムは、Gaucheでは@emph{極めて}非効率であることに
 注意してください。そのようなアルゴリズムは、文字列の内部表現とアロケーションメカニズムに
 関して不必要な仮定を置いており、Gaucheはその仮定とは合致しません。
-文字列の順次作成に適しているのは文字列ポートです。それが使えない場合、
+文字列の順次作成に適しているのは文字列ポートです
+(@ref{文字列ポート}参照)。それが使えない場合、
 文字のリストを作成し、@code{list->string}で変換する方がまだ@code{make-string}と
 @code{string-set!}を使うより良いでしょう。
 @c COMMON
@@ -4331,7 +4344,7 @@ sequentially than pre-allocate a string and fill it with
 @c COMMON
 @end defun
 
-@defun get-output-string
+@defun get-output-string port
 [SRFI-6]
 @c EN
 Takes an output string port @code{port} and returns a string
@@ -4817,6 +4830,7 @@ to terminate a forked process; @ref{Fork and exec} for details.
 
 @node Environment Inquiry, Filesystems, Program termination, System interface
 @subsection Environment Inquiry
+@c NODE 環境の問い合わせ
 
 @defun sys-getenv name
 [POSIX]
