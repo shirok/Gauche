@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.10 2001-06-02 09:51:28 shirok Exp $
+;; $Id: euc-jp.scm,v 1.11 2001-09-23 04:57:08 shirok Exp $
 
 (use gauche.test)
 
@@ -55,6 +55,24 @@
       (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "！" 'prefix)))
 (test "string-join" "ふぅ！ばぁ！ばず"
       (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "！" 'strict-infix)))
+
+(test "string-scan" 7
+      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい")))
+(test "string-scan" "あえいうえおあ"
+      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい" 'before)))
+(test "string-scan" "うえお"
+      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい" 'after)))
+(test "string-scan" '("あえいうえおあ" "おあいうえお")
+      (lambda ()
+        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'before*) r)))
+(test "string-scan" '("あえいうえおあおあい" "うえお")
+      (lambda ()
+        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'after*) r)))
+(test "string-scan" '("あえいうえおあ" "うえお")
+      (lambda ()
+        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'both) r)))
+(test "string-scan" #f
+      (lambda () (string-scan "あえいうえおあおあいうえお" "おい")))
 
 (test "string-substitute!" "うえおdefghi"
       (lambda ()

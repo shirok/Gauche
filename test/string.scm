@@ -69,6 +69,42 @@
 (test "string-join" "foo::bar::baz"
       (lambda () (string-join '("foo" "bar" "baz") "::" 'strict-infix)))
 
+(test "string-scan" 3 (lambda () (string-scan "abcdefghi" "def")))
+(test "string-scan" 3 (lambda () (string-scan "abcdefghi" "def" 'index)))
+(test "string-scan" "abc" (lambda () (string-scan "abcdefghi" "def" 'before)))
+(test "string-scan" "ghi" (lambda () (string-scan "abcdefghi" "def" 'after)))
+(test "string-scan" '("abc" "defghi")
+      (lambda ()
+        (receive r (string-scan "abcdefghi" "def" 'before*) r)))
+(test "string-scan" '("abcdef" "ghi")
+      (lambda ()
+        (receive r (string-scan "abcdefghi" "def" 'after*) r)))
+(test "string-scan" '("abc" "ghi")
+      (lambda ()
+        (receive r (string-scan "abcdefghi" "def" 'both) r)))
+
+(test "string-scan" 4 (lambda () (string-scan "abcdefghi" #\e)))
+(test "string-scan" "abcd" (lambda () (string-scan "abcdefghi" #\e 'before)))
+(test "string-scan" "fghi" (lambda () (string-scan "abcdefghi" #\e 'after)))
+(test "string-scan" '("abcd" "efghi")
+      (lambda ()
+        (receive r (string-scan "abcdefghi" #\e 'before*) r)))
+(test "string-scan" '("abcde" "fghi")
+      (lambda ()
+        (receive r (string-scan "abcdefghi" #\e 'after*) r)))
+(test "string-scan" '("abcd" "fghi")
+      (lambda ()
+        (receive r (string-scan "abcdefghi" #\e 'both) r)))
+
+(test "string-scan (boyer-moore)" 216
+      (lambda ()
+        (string-scan "abracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabr"
+                     "abracadabra")))
+
+(test "string-scan (special case)" 0
+      (lambda ()
+        (string-scan "abakjrgaker" "")))
+
 ;;-------------------------------------------------------------------
 (test-section "incomplete strings")
 
@@ -110,6 +146,18 @@
       (lambda () (string-join '("a" #"b" "c") ":")))
 (test "string-join" #"a:b:c"
       (lambda () (string-join '("a" "b" "c") #":")))
+
+(test "string-scan" 3
+      (lambda () (string-scan #"abcdefghi" "def")))
+(test "string-scan" 3
+      (lambda () (string-scan "abcdefghi" #"def")))
+(test "string-scan" '(#"abc" #"ghi")
+      (lambda () (receive r (string-scan #"abcdefghi" "def" 'both) r)))
+(test "string-scan" '(#"abc" #"ghi")
+      (lambda () (receive r (string-scan "abcdefghi" #"def" 'both) r)))
+(test "string-scan" '(#"abcd" #"fghi")
+      (lambda () (receive r (string-scan #"abcdefghi" #\e 'both) r)))
+
 
 (test "string-substitute!" #"abCDe"
       (lambda () (string-substitute! (string-copy "abcde") 2 #"CD")))
