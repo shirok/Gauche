@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.58 2001-10-11 09:08:05 shirok Exp $
+ *  $Id: class.c,v 1.59 2001-10-17 10:49:24 shirok Exp $
  */
 
 #include "gauche.h"
@@ -210,22 +210,18 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
  *     This protocol can be NULL for core base classes; if so, attempt
  *     to "make" such class reports an error.
  *
- *  int klass->print(ScmObj obj, ScmPort *sink, int mode)
+ *  void klass->print(ScmObj obj, ScmPort *sink, ScmWriteContext *ctx)
  *     OBJ is an instance of klass (you can safely assume it).  This
- *     function should print OBJ into SINK, and returns number of characters
- *     output to SINK.   MODE can be SCM_PRINT_DISPLAY for display(),
- *     SCM_PRINT_WRITE for write(), or SCM_PRINT_DEBUG for more precise
- *     debug information.
+ *     function should print OBJ into SINK.  See write.c about the
+ *     details of the context.
  *     If this function pointer is not set, a default print method
  *     is used.
  *
  *  int klass->compare(ScmObj x, ScmObj y)
- *     X and Y are instances of klass or its descendants.  If the objects
- *     are fully orderable, this function returns either -1, 0 or 1, depending
- *     X preceding Y, X being equal to Y, or X following Y, respectively.
- *     If the objects are not fully orderable, just returns 0.
- *     If this function pointer is not set, Gauche assumes objects are
- *     not orderable.
+ *     X and Y are instances of klass.  If the instance is orderable,
+ *     returns -1, 0, or 1, when X < Y, X == Y or X > Y, respectively.
+ *     If the instance is not orderable, returns -1 if X != Y and
+ *     0 if X == Y.
  *
  *  int klass->serialize(ScmObj obj, ScmPort *sink, ScmObj table)
  *     OBJ is an instance of klass.  This method is only called when OBJ
