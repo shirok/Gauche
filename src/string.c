@@ -1,7 +1,7 @@
 /*
  * string.c - string implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.72 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: string.c,v 1.73 2004-01-17 01:34:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -42,7 +42,7 @@
 
 void Scm_DStringDump(FILE *out, ScmDString *dstr);
 
-static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
+static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
@@ -110,10 +110,11 @@ static inline int count_size_and_length(const char *str, int *psize, int *plen)
         len++;
         size++;
         while (i-- > 0) {
-            if (!*p++) len = -1;
+            if (!*p++) { len = -1; goto eos; }
             size++;
         }
     }
+  eos:
     *psize = size;
     *plen = len;
     return len;
@@ -990,7 +991,7 @@ ScmObj Scm_ConstCStringArrayToList(const char **array, int size)
     if (size < 0) {
         for (;*array; array++) SCM_APPEND1(h, t, SCM_MAKE_STR(*array));
     } else {
-        for (i=0; i<size; i++) SCM_APPEND1(h, t, SCM_MAKE_STR(*array));
+        for (i=0; i<size; i++) SCM_APPEND1(h, t, SCM_MAKE_STR(*array++));
     }
     return h;
 }
@@ -1004,7 +1005,7 @@ ScmObj Scm_CStringArrayToList(char **array, int size)
             SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array));
     } else {
         for (i=0; i<size; i++)
-            SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array));
+            SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array++));
     }
     return h;
 }

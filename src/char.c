@@ -1,7 +1,7 @@
 /*
  * char.c - character and character set operations
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.39 2003-11-27 17:10:40 shirok Exp $
+ *  $Id: char.c,v 1.40 2004-01-17 01:34:48 shirok Exp $
  */
 
 #include <ctype.h>
@@ -265,14 +265,12 @@ ScmObj Scm_CopyCharSet(ScmCharSet *src)
     for (rs = src->ranges; rs; rs = rs->next) {
         if (rd == NULL) {
             rd = dst->ranges = SCM_NEW(struct ScmCharSetRange);
-            rd->lo = rs->lo;
-            rd->hi = rs->hi;
         } else {
             rd->next = SCM_NEW(struct ScmCharSetRange);
             rd = rd->next;
-            rd->lo = rs->lo;
-            rd->hi = rs->hi;
         }
+        rd->lo = rs->lo;
+        rd->hi = rs->hi;
     }
     if (rd) rd->next = NULL;
     return SCM_OBJ(dst);
@@ -391,7 +389,7 @@ static struct ScmCharSetRange *newrange(int lo, int hi,
 ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 {
     int i;
-    struct ScmCharSetRange *lo, *lop, *hi, *hip;
+    struct ScmCharSetRange *lo, *lop, *hi;
     
     if (to < from) return SCM_OBJ(cs);
     if (from < SCM_CHARSET_MASK_CHARS) {
@@ -422,7 +420,7 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
         lop->next = newrange(from, to, NULL);
         return SCM_OBJ(cs);
     }
-    for (hip = lop, hi = lo; hi; hip = hi, hi = hi->next) {
+    for (hi = lo; hi; hi = hi->next) {
         if (to <= hi->hi) break;
     }
     /* Then we insert, extend and/or merge the ranges accordingly. */
@@ -433,8 +431,6 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
                 else             lop->next = newrange(from, to, lo);
             } else {
                 lo->lo = from;
-                lo->hi = hi->hi;
-                lo->next = hi->next;
             }
         } else if (hi == NULL || to < hi->lo-1) {
             lo->lo = from;

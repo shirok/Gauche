@@ -111,6 +111,8 @@
        (map (lambda (flag) (sys-access "test.dir" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
 (sys-system "mkdir test.dir")
+(sys-system "mkdir test.dir/999")
+(sys-system "chmod 0777 test.dir/999")
 (sys-system "touch test.dir/777")
 (sys-system "chmod 0777 test.dir/777")
 (sys-system "touch test.dir/500")
@@ -134,6 +136,16 @@
 (test* "access" '(#t #f #f #f)
        (map (lambda (flag) (sys-access "test.dir/000" flag))
             (list |F_OK| |R_OK| |W_OK| |X_OK|)))
+
+(test* "sys-glob" '("test.dir/000" "test.dir/400" 
+      "test.dir/500" "test.dir/777" "test.dir/999")
+       (sys-glob "test.dir/*"))
+
+(test* "sys-glob" '("test.dir/." "test.dir/..")
+       (sys-glob "test.dir/.*"))
+
+(test* "sys-glob" ()
+       (sys-glob "test.dir/999/*"))
 
 (sys-system "rm -rf test.dir")
 

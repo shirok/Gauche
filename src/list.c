@@ -1,7 +1,7 @@
 /*
  * list.c - List related functions
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.42 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: list.c,v 1.43 2004-01-17 01:34:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -220,20 +220,18 @@ int Scm_Length(ScmObj obj)
     ScmObj slow = obj;
     int len = 0;
 
-    if (SCM_NULLP(obj)) return 0;
     for (;;) {
         if (SCM_NULLP(obj)) break;
         if (!SCM_PAIRP(obj)) return -1;
-	if (len != 0 && obj == slow) return -1; /* circular */
 	
 	obj = SCM_CDR(obj);
 	len++;
         if (SCM_NULLP(obj)) break;
         if (!SCM_PAIRP(obj)) return -1;
-	if (obj == slow) return -1; /* circular */
 
 	obj = SCM_CDR(obj);
 	slow = SCM_CDR(slow);
+	if (obj == slow) return -1; /* circular */
 	len++;
     }
     return len;
@@ -253,10 +251,7 @@ ScmObj Scm_CopyList(ScmObj list)
     SCM_FOR_EACH(list, list) {
         SCM_APPEND1(start, last, SCM_CAR(list));
     }
-    if (!SCM_NULLP(list)) {
-        if (start == SCM_NIL) start = list;
-        else SCM_SET_CDR(last, list);
-    }
+    if (!SCM_NULLP(list)) SCM_SET_CDR(last, list);
     return start;
 }
 
@@ -457,14 +452,20 @@ ScmObj Scm_Member(ScmObj obj, ScmObj list, int cmpmode)
 /* delete. */
 ScmObj Scm_Delete(ScmObj obj, ScmObj list, int cmpmode)
 {
+    ScmObj start = SCM_NIL, last = SCM_NIL, cp, prev = list;
+
     if (SCM_NULLP(list)) return SCM_NIL;
-    if (Scm_EqualM(obj, SCM_CAR(list), cmpmode)) {
-        return Scm_Delete(obj, SCM_CDR(list), cmpmode);
-    } else {
-        ScmObj tail = Scm_Delete(obj, SCM_CDR(list), cmpmode);
-        if (tail == SCM_CDR(list)) return list;
-        else return Scm_Cons(SCM_CAR(list), tail);
+    SCM_FOR_EACH(cp, list) {
+        if (Scm_EqualM(obj, SCM_CAR(cp), cmpmode)) {
+            for (; prev != cp; prev = SCM_CDR(prev))
+                SCM_APPEND1(start, last, SCM_CAR(prev));
+            prev = SCM_CDR(cp);
+        }
     }
+    if (list == prev) return list;
+    if (SCM_NULLP(start)) return prev;
+    if (SCM_PAIRP(prev)) SCM_SET_CDR(last, prev);
+    return start;
 }
 
 ScmObj Scm_DeleteX(ScmObj obj, ScmObj list, int cmpmode)
@@ -530,22 +531,26 @@ ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode)
 /* Assoc-delete */
 ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode)
 {
-    ScmObj p;
+    ScmObj start = SCM_NIL, last = SCM_NIL, cp, p, prev = alist;
     if (!SCM_LISTP(alist)) {
         Scm_Error("assoc-delete: list required, but got %S", alist);
     }
-    for (;;) {
-        if (SCM_NULLP(alist)) return SCM_NIL;
-        p = SCM_CAR(alist);
-        if (SCM_PAIRP(p) && Scm_EqualM(elt, SCM_CAR(p), cmpmode)) {
-            alist = SCM_CDR(alist);
-            continue;
-        } else {
-            ScmObj tail = Scm_AssocDelete(elt, SCM_CDR(alist), cmpmode);
-            if (tail == SCM_CDR(alist)) return alist;
-            else return Scm_Cons(p, tail);
+    if (SCM_NULLP(alist)) return SCM_NIL;
+    
+    SCM_FOR_EACH(cp, alist) {
+        p = SCM_CAR(cp);
+        if (SCM_PAIRP(p)) {
+            if (Scm_EqualM(elt, SCM_CAR(p), cmpmode)) {
+                for (; prev != cp; prev = SCM_CDR(prev))
+                    SCM_APPEND1(start, last, SCM_CAR(prev));
+                prev = SCM_CDR(cp);
+            }
         }
     }
+    if (alist == prev) return alist;
+    if (SCM_NULLP(start)) return prev;
+    if (SCM_PAIRP(prev)) SCM_SET_CDR(last, prev);
+    return start;
 }
 
 ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
@@ -556,13 +561,14 @@ ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
     }
     SCM_FOR_EACH(cp, alist) {
         ScmObj e = SCM_CAR(cp);
-        if (!SCM_PAIRP(e)) continue;
-        if (Scm_EqualM(elt, SCM_CAR(e), cmpmode)) {
-            if (SCM_NULLP(prev)) {
-                alist = SCM_CDR(cp);
-                continue;
-            } else {
-                SCM_SET_CDR(prev, SCM_CDR(cp));
+        if (SCM_PAIRP(e)) {
+            if (Scm_EqualM(elt, SCM_CAR(e), cmpmode)) {
+                if (SCM_NULLP(prev)) {
+                    alist = SCM_CDR(cp);
+                    continue;
+                } else {
+                    SCM_SET_CDR(prev, SCM_CDR(cp));
+                }
             }
         }
         prev = cp;
@@ -580,109 +586,21 @@ ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode)
             SCM_APPEND1(result, tail, SCM_CAR(lp));
         }
     }
+    if (!SCM_NULLP(lp)) SCM_SET_CDR(lp, tail);
     return result;
 }
 
 ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
 {
-    if (SCM_PAIRP(list)) {
-        ScmObj obj = SCM_CAR(list);
-        ScmObj tail =
-            Scm_DeleteDuplicatesX(Scm_DeleteX(obj, SCM_CDR(list), cmpmode),
-                                  cmpmode);
-        return (SCM_CDR(list) == tail)? list : Scm_Cons(obj, tail);
+    ScmObj lp;
+
+    SCM_FOR_EACH(lp, list) {
+        ScmObj obj = SCM_CAR(lp);
+        ScmObj tail = Scm_DeleteX(obj, SCM_CDR(lp), cmpmode);
+        if (SCM_CDR(lp) != tail) SCM_SET_CDR(lp, tail);
     }
     return list;
 }
-
-#if 0 /* SRFI-1 has this in Scheme.  Do we need C version? */
-/* Return union of two lists.
-   Comparison is done by `eq?'.
- */
-
-ScmObj Scm_Union(ScmObj list1, ScmObj list2)
-{
-    int len1 = Scm_Length(list1);
-    int len2 = Scm_Length(list2);
-    
-    if (len1 < 0 || len2 < 0) return SCM_NIL;
-    if (len1 == 0) return list2;
-    if (len2 == 0) return list1;
-
-    SCM_FOR_EACH(list1, list1) {
-        if (SCM_FALSEP(Scm_Memq(SCM_CAR(list1), list2))) {
-            list2 = Scm_Cons(SCM_CAR(list1), list2);
-        }
-    }
-    return list2;
-}
-#endif
-
-/* Return intersection of two lists. */
-
-
-#if 0                           /* I'm not sure it needs to be here. */
-/*
- * Topological sort
- *
- *  Given list of directed edge (from . to), returns a list of nodes
- *  sorted topologically.
- */
-
-ScmObj Scm_TopologicalSort(ScmObj lists)
-{
-    ScmObj nodes = SCM_NIL, nt;  /* list of (node indeg to ... ) */
-    ScmObj result = SCM_NIL, rt; /* result list */
-    ScmObj ep, np, nnp;
-    
-    /* construct node alist */
-    SCM_FOR_EACH(ep, lists) {
-        ScmObj edge = SCM_CAR(ep), p;
-        if (!SCM_PAIRP(edge)) Scm_Error("bad edge: %S", edge);
-
-        p = Scm_Assq(SCM_CAR(edge), nodes);
-        if (SCM_FALSEP(p)) {
-            SCM_APPEND1(nodes, nt,
-                        SCM_LIST3(SCM_CAR(edge),
-                                  SCM_MAKE_INT(0),
-                                  SCM_CDR(edge)));
-        } else {
-            Scm_Append2X(p, Scm_Cons(SCM_CDR(edge), SCM_NIL));
-        }
-        
-        p = Scm_Assq(SCM_CDR(edge), nodes);
-        if (SCM_FALSEP(p)) {
-            SCM_APPEND1(nodes, nt, SCM_LIST2(SCM_CDR(edge), SCM_MAKE_INT(1)));
-        } else {
-            int indeg = SCM_INT_VALUE(SCM_CADR(p)) + 1;
-            SCM_SET_CAR(SCM_CDR(p), SCM_MAKE_INT(indeg));
-        }
-    }
-
-    /* construct result */
-    while (!SCM_NULLP(nodes)) {
-        SCM_FOR_EACH(np, nodes) {
-            ScmObj node = SCM_CAR(np);
-            if (SCM_CADR(node) == SCM_MAKE_INT(0)) {
-                SCM_APPEND1(result, rt, SCM_CAR(node));
-                nodes = Scm_AssocDeleteX(SCM_CAR(node), nodes, SCM_CMP_EQ);
-                SCM_FOR_EACH(nnp, SCM_CDDR(node)) {
-                    ScmObj p = Scm_Assq(SCM_CAR(nnp), nodes);
-                    int indeg;
-                    
-                    if (!SCM_PAIRP(p))
-                        Scm_Error("internal error in topological-sort!");
-                    indeg = SCM_INT_VALUE(SCM_CADR(p)) - 1;
-                    SCM_SET_CAR(SCM_CDR(p), SCM_MAKE_INT(indeg));
-                }
-                break;
-            }
-        }
-    }
-
-    return result;
-}
-#endif /* #if 0 for topologicalsort */
 
 /*
  * Monotonic Merge

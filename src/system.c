@@ -1,7 +1,7 @@
 /*
  * system.c - system interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.52 2003-12-27 13:13:51 shirok Exp $
+ *  $Id: system.c,v 1.53 2004-01-17 01:34:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -183,17 +183,22 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i, r;
     SCM_SYSCALL(r, glob(Scm_GetStringConst(pattern), 0, NULL, &globbed));
-    if (r != 0 && r != GLOB_NOMATCH) Scm_Error("Couldn't glob %S", pattern);
+#ifdef GLOB_NOMATCH
+    if (r == GLOB_NOMATCH) return SCM_NIL;
+#else  /*!GLOB_NOMATCH*/
+    if (r == 0 && globbed.gl_pathc == 0) return SCM_NIL;
+#endif /*!GLOB_NOMATCH*/
+    if (r) Scm_Error("Couldn't glob %S", pattern);
     for (i = 0; i < globbed.gl_pathc; i++) {
         ScmObj path = SCM_MAKE_STR_COPYING(globbed.gl_pathv[i]);
         SCM_APPEND1(head, tail, path);
     }
     globfree(&globbed);
     return head;
-#else
+#else  /*!HAVE_GLOB_H*/
     Scm_Error("glob-directory is not supported on this architecture.");
     return SCM_UNDEFINED;
-#endif
+#endif /*!HAVE_GLOB_H*/
 }
 
 /*

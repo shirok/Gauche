@@ -1,5 +1,20 @@
 2004-01-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/boolean.c (Scm_EqualP) : loop over list spine instead of
+	  recursive call to CDR - it's more robust for very long lists.
+	* src/list.c (Scm_Length) : removed redundant code.
+	  (Scm_Delete, Scm_AssocDelete) : loop over list spine instead of
+	  recursive call to CDR.
+	* src/char.c (Scm_CharsetAddRange): removed redundant code.
+	* src/string.c (count_size_and_length): fixed a bug that potentially
+	  access beyond a terminating char.
+	  (Scm_ConstCStringArrayToList, Scm_CStringArrayToList): fixed bugs
+	  that doesn't make intended result when size is given.
+	* src/system.c (Scm_SysGlob): handles the case when GLOB_NOMATCH
+	  isn't defined.
+	* test/* : added some more tests.
+	* The above changes are based on a patch from Ueyama Rui.
+
 	* src/extlib.stub (read-block) : allow 0 to be passed as nbytes.
 	  read-block returns a null string in such a case.
 
