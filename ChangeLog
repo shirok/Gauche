@@ -1,3 +1,12 @@
+2003-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c, src/gauche-init.scm : incorporate module-name->path
+	  in the core binary, so that the future extension can add
+	  nontrivial translations between module names and pathnames.
+	  From now on, any interface that needs to translate module name
+	  to pathname or vice versa must go through this API (they shouldn't
+	  assume replacing '.' to '/' is enough).
+
 2003-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm : Added various keyword arguments to

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.106 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.107 2003-09-07 12:37:11 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -73,22 +73,17 @@
 ;; Preferred way
 ;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
 
-(define (%module-name->path module)
-  (let ((mod (cond ((symbol? module) module)
-                   ((identifier? module) (identifier->symbol module))
-                   (else (error "module name must be a symbol" module)))))
-    ;; Here, there will be some module-name translator hook
-    (string-join (%string-split-by-char (symbol->string mod) #\.) "/")))
-
 (define-macro (use module)
-  `(begin (with-module gauche (require ,(%module-name->path module)))
-          (import ,module)))
+  `(begin
+     (with-module gauche
+       (require ,(module-name->path module)))
+     (import ,module)))
 
 (define-macro (extend . modules)
   `',(%extend (map (lambda (m)
                      (or (find-module m)
                          (begin
-                           (%require (%module-name->path m))
+                           (%require (module-name->path m))
                            (find-module m))
                          (error "undefined module" m)))
                    modules)))
@@ -104,12 +99,20 @@
                (require ,compat)
                (import ,module))))))))
 
-;; create built-in srfi-6 and srfi-8 modules, so that (use srfi-6)
-;; won't complain.
+;; create built-in modules, so that (use srfi-6) won't complain, for example.
 (define-module srfi-6 )
 (define-module srfi-8 )
 (define-module srfi-10 )
 (define-module srfi-17 )
+
+;;
+;; Auxiliary definitions
+;;
+
+(define-in-module scheme call/cc call-with-current-continuation)
+
+(define-in-module scheme (call-with-values producer consumer)
+  (receive vals (producer) (apply consumer vals)))
 
 ;;
 ;; Autoload
@@ -135,31 +138,26 @@
                            (else (bad))))
                    vars))))
 
-;; special macro to define autoload in Scheme module.
-(define-macro (%autoload-scheme file . vars)
-  `(begin
-     ,@(map (lambda (v)
-              `(define-in-module scheme ,v (%make-autoload ',v ,file)))
-            vars)))
-
-;;
-;; Auxiliary definitions
-;;
-
-(define-in-module scheme call/cc call-with-current-continuation)
-
-;; 
-(define-in-module scheme (call-with-values producer consumer)
-  (receive vals (producer) (apply consumer vals)))
-
-(%autoload-scheme "gauche/listutil"
-                  caaar caadr cadar caddr cdaar cdadr cddar cdddr
-                  caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr
-                  cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr)
-
-(%autoload-scheme "gauche/with"
-                  call-with-input-file call-with-output-file
-                  with-input-from-file with-output-to-file)
+;; Some r5rs stuff are actually autoloaded
+(let-syntax ((%autoload-scheme
+              (syntax-rules ()
+                ((%autoload-scheme file v ...)
+                 (begin
+                   (define-in-module scheme v (%make-autoload 'v file))
+                   ...))))
+             )
+  (%autoload-scheme "gauche/listutil"
+                    caaar caadr cadar caddr cdaar cdadr cddar cdddr
+                    caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr
+                    cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr)
+  (%autoload-scheme "gauche/with"
+                    call-with-input-file call-with-output-file
+                    with-input-from-file with-output-to-file)
+  (%autoload-scheme "gauche/numerical"
+                    exp log sqrt expt cos sin tan asin acos atan
+                    gcd lcm numerator denominator
+                    real-part imag-part)
+  )
 
 (autoload "gauche/with"
           with-output-to-string call-with-output-string
@@ -175,11 +173,6 @@
           copy-port port-fold port-fold-right port-for-each port-map 
           port-position-prefix port-tell)
 
-(%autoload-scheme "gauche/numerical"
-                  exp log sqrt expt cos sin tan asin acos atan
-                  gcd lcm numerator denominator
-                  real-part imag-part)
-
 (autoload "gauche/numerical"
           sinh cosh tanh asinh acosh atanh)
 
@@ -189,7 +182,9 @@
 
 (autoload "gauche/common-macros"
           (:macro syntax-error) (:macro syntax-errorf) unwrap-syntax
-          (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!) (:macro update!)
+          (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
+          (:macro update!)
+          (:macro check-arg) (:macro get-keyword*)
           (:macro let1) (:macro begin0) (:macro fluid-let)
           (:macro dotimes) (:macro dolist) (:macro while) (:macro until))
 
@@ -243,26 +238,6 @@
 (define (file-is-directory? path)
   (and (sys-access path |F_OK|)
        (eq? (slot-ref (sys-stat path) 'type) 'directory)))
-
-;; useful stuff
-(define-syntax check-arg
-  (syntax-rules ()
-    ((_ test arg)
-     (let ((tmp arg))
-       (unless (test tmp)
-         (errorf "bad type of argument for ~s: ~s" 'arg tmp))))
-    ))
-
-(define-syntax get-keyword*
-  (syntax-rules ()
-    ((_ key lis default)
-     (let ((li lis))
-       (let loop ((l li))
-         (cond ((null? l) default)
-               ((null? (cdr l)) (error "keyword list not even" li))
-               ((eq? key (car l)) (cadr l))
-               (else (loop (cddr l)))))))
-    ((_ key lis) (get-keyword key lis))))
 
 ;; srfi-17
 (define (getter-with-setter get set)

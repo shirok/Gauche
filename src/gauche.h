@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.340 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: gauche.h,v 1.341 2003-09-07 12:37:38 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1485,6 +1485,9 @@ SCM_EXTERN void   Scm_SelectModule(ScmModule *mod);
 
 #define SCM_FIND_MODULE(name, createp) \
     Scm_FindModule(SCM_SYMBOL(SCM_INTERN(name)), createp)
+
+SCM_EXTERN ScmObj Scm_ModuleNameToPath(ScmSymbol *name);
+SCM_EXTERN ScmObj Scm_PathToModuleName(ScmString *path);
 
 SCM_EXTERN ScmModule *Scm_NullModule(void);
 SCM_EXTERN ScmModule *Scm_SchemeModule(void);

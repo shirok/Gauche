@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.199 2003-07-05 03:29:12 shirok Exp $
+;;; $Id: extlib.stub,v 1.200 2003-09-07 12:37:45 shirok Exp $
 ;;;
 
 "
@@ -1074,7 +1074,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  SCM_RETURN(Scm_FindModule(name, FALSE));")
 
 (define-cproc all-modules ()
-  "  SCM_RETURN(Scm_AllModules());")
+  (return "Scm_AllModules"))
 
 (define-keyword error "key_error") ; this is also in stdlib.stub.  should I
                                    ; consolidate these?
@@ -1093,6 +1093,16 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   }
   SCM_RETURN(Scm_MakeModule((SCM_FALSEP(name)?NULL:SCM_SYMBOL(name)),
                             error_if_exists));")
+
+(define-cproc module-name->path (name)
+  "  ScmSymbol *s = NULL;
+  if (SCM_SYMBOLP(name)) s = SCM_SYMBOL(name);
+  else if (SCM_IDENTIFIERP(name)) s = SCM_IDENTIFIER(name)->name;
+  else Scm_Error(\"symbol or identifier required, but got %S\", name);
+  SCM_RETURN(Scm_ModuleNameToPath(s));")
+
+(define-cproc path->module-name (path::<string>)
+  (return "Scm_PathToModuleName"))
 
 (define-cproc %export-all ()
   "  SCM_RETURN(Scm_ExportAll(SCM_CURRENT_MODULE()));")

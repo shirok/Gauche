@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: reload.scm,v 1.4 2003-09-07 03:36:07 shirok Exp $
+;;;  $Id: reload.scm,v 1.5 2003-09-07 12:37:58 shirok Exp $
 ;;;
 
 ;;; Created:    <2002-11-06 16:02:55 foof>
@@ -93,7 +93,7 @@
                                (hash-table-put! saves sym value))
                              (loop (cdr preds)))))))))
           ;; reload
-          (load (%module-name->path module-name))
+          (load (module-name->path module-name))
           ;; restore any remembered data
           (hash-table-for-each
            saves

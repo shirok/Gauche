@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.43 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: module.c,v 1.44 2003-09-07 12:37:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -40,7 +40,7 @@
  * Modules
  *
  *  A module maps symbols to global locations.
- *  The mapping is resolved at the compile time.   Therefore,
+ *  The mapping is resolved at the compile time.
  *  Scheme's current-module is therefore a syntax, instead of
  *  a procedure, to capture compile-time information.
  *
@@ -54,7 +54,10 @@
  *  The anonymous namespace will be garbage-collected if nobody references
  *  it, recovering its resouces.
  */
-static ScmObj anon_module_name = SCM_UNBOUND; /* symbol '#', set by init */
+
+static ScmObj anon_module_name = SCM_UNBOUND; /* Name used for anonymous
+                                                 modules.  Symbol '#',
+                                                 set by init */
 
 static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
@@ -407,6 +410,48 @@ void Scm_SelectModule(ScmModule *mod)
 }
 
 /*----------------------------------------------------------------------
+ * Module and pathnames
+ */
+
+/* Convert module name and pathname (mod load-path) and vice versa.
+   The default conversion is pretty straightforward, e.g.
+   util.list <=> "util/list"  etc.  However, modules and files can
+   have many-to-many mapping, and I'd like to reserve the room
+   of future extensions.   Eventually there will be some special
+   mapping table so the programmer can register exceptional mappings. */
+
+ScmObj Scm_ModuleNameToPath(ScmSymbol *name)
+{
+    char *buf = SCM_NEW_ATOMIC2(char *, SCM_STRING_SIZE(name->name)+1);
+    char *p = buf, *e = buf + SCM_STRING_SIZE(name->name);
+    memcpy(buf, SCM_STRING_START(name->name), SCM_STRING_SIZE(name->name));
+    while (p < e) {
+        int n = SCM_CHAR_NFOLLOWS(*p);
+        if (*p == '.') *p++ = '/';
+        else p += n+1;
+    }
+    *e = '\0';
+    return Scm_MakeString(buf, SCM_STRING_SIZE(name->name),
+                          SCM_STRING_LENGTH(name->name), 0);
+}
+
+ScmObj Scm_PathToModuleName(ScmString *path)
+{
+    char *buf = SCM_NEW_ATOMIC2(char *, SCM_STRING_SIZE(path)+1);
+    char *p = buf, *e = buf + SCM_STRING_SIZE(path);
+    memcpy(buf, SCM_STRING_START(path), SCM_STRING_SIZE(path));
+    while (p < e) {
+        int n = SCM_CHAR_NFOLLOWS(*p);
+        if (*p == '/') *p++ = '.';
+        else if (*p == '.') Scm_Error("bad pathname for module path: %S", path);
+        else p += n+1;
+    }
+    *e = '\0';
+    return SCM_INTERN(buf);
+}
+
+
+/*----------------------------------------------------------------------
  * Predefined modules and initialization
  */
 
@@ -435,7 +480,7 @@ ScmModule *Scm_CurrentModule(void)
     return Scm_VM()->module;
 }
 
-/* NB: we don't need to lock the global module table */
+/* NB: we don't need to lock the global module table in initialization */
 #define INIT_MOD(mod, mname, mpl)                                           \
     do {                                                                    \
         SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                              \
