@@ -1,5 +1,8 @@
 2002-07-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/exclib.stub : fix slot name of uncaught-exception.
+	* ext/net/net.c (Scm_SocketBind): call getsockaddr to get the actual
+	  address after binding.  (Thanks to ODA Hideo for a patch).
 	* src/vm.c, src/thread.c : separated Scheme thread API-related
 	  routines from vm.c to thread.c.  Fixed thread cleanup routine;
 	  now it's called by pthread_cleanup_push mechanism.
