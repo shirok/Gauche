@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.77 2001-10-03 09:53:36 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.78 2001-10-03 10:16:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1013,7 +1013,8 @@ traditional macros.
 @menu
 * Hygienic Macros::             
 * Traditional Macros::          
-* Macro Expansion::             
+* Macro expansion::             
+* Macro utilities::             
 @end menu
 
 @node Hygienic Macros, Traditional Macros, Macros, Macros
@@ -1033,20 +1034,60 @@ traditional macros.
 @end defspec
 
 
-@node Traditional Macros, Macro Expansion, Hygienic Macros, Macros
+@node Traditional Macros, Macro expansion, Hygienic Macros, Macros
 @section Traditional Macros
 
 @defspec define-macro (name formals) body @dots{}
 
 @end defspec
 
-@node Macro Expansion,  , Traditional Macros, Macros
-@section Macro Expansion
+@node Macro expansion, Macro utilities, Traditional Macros, Macros
+@section Macro expansion
 
 @defspec %macro-expand form
 @defspecx %macro-expand1 form
 @end defspec
 
+@node Macro utilities,  , Macro expansion, Macros
+@section Macro utilities
+
+@defmac syntax-error msg arg @dots{}
+@defmacx syntax-errorf fmt arg @dots{}
+Signal an error.  They are same as
+@code{error} and @code{errorf} (@xref{Signalling errors}),
+except that the error is signalled at macro-expansion time
+(i.e. compile time) rather than run time.
+
+They are useful to tell the user the wrong usage of macro in
+the comprehensive way, instead of the cryptic error from the macro
+expander.   Because of the purpose, @var{arg} @dots{} are first
+passed to @code{unwrap-syntax} described below, to strip off
+the internal syntactic binding informations.
+
+@example
+(define-syntax my-macro
+  (syntax-rules ()
+    ((_ a b)   (foo2 a b))
+    ((_ a b c) (foo3 a b c))
+    ((_ . ?)
+     (syntax-error "malformed my-macro" (my-macro . ?)))))
+
+(my-macro 1 2 3 4)
+  @result{} @r{error: "malformed my-macro: (mymacro 1 2 3 4)"}
+@end example
+
+@end defmac
+
+@defun unwrap-syntax form
+Removes internal syntactic information from @var{form}.
+In order to implement a hygienic macro, macro expander replaces
+symbols in the macro from for identifiers, which captures the
+syntactic environment where they are defined.  Although it is
+necessary information for the compiler, it is rather confusing
+for users if it appears in the messages.  This function
+replaces occurrences of identifiers in @var{form} to the original
+symbols.
+@end defun
 
 @c ======================================================================
 @node Core library, Object System, Macros, Top
