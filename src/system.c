@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.42 2002-07-17 19:16:48 shirok Exp $
+ *  $Id: system.c,v 1.43 2002-08-24 04:14:42 shirok Exp $
  */
 
 #include <stdio.h>
@@ -533,7 +533,7 @@ ScmObj Scm_TimeToSeconds(ScmTime *t)
     }
 }
 
-#ifdef GAUCHE_USE_PTHREADS
+#if defined(HAVE_STRUCT_TIMESPEC) || defined (GAUCHE_USE_PTHREADS)
 /* Scheme time -> timespec conversion, used by pthread routines.*/
 struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
 {
@@ -563,7 +563,7 @@ struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
     }
     return spec;
 }
-#endif /* GAUCHE_USE_PTHREADS */
+#endif /* defined(HAVE_STRUCT_TIMESPEC) || defined (GAUCHE_USE_PTHREADS) */
 
 /* <sys-tm> object */
 

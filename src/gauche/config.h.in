@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.28 2002-07-17 07:17:55 shirok Exp $
+ * $Id: config.h.in,v 1.29 2002-08-24 04:14:42 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -15,10 +15,6 @@
 #undef GAUCHE_CHAR_ENCODING_UTF_8
 #undef GAUCHE_CHAR_ENCODING_SJIS
 
-/* Some of these should be defined to use thread on some architecture */
-#undef GC_LINUX_THREADS
-#undef _REENTRANT
-
 /* Define if the compiler supports __inline__ or __inline, or empty if not. */
 #undef inline
 
@@ -28,85 +24,52 @@
 /* Define if the system allows including both time.h and sys/time.h */
 #undef TIME_WITH_SYS_TIME
 
-/* Define if the system has sys/time.h */
+/* Define if the system has appropriate headers */
 #undef HAVE_SYS_TIME_H
-
-/* Define if the system has glob(). */
 #undef HAVE_GLOB_H
-
-/* Define if the system has dlfcn.h */
 #undef HAVE_DLFCN_H
-
-/* Define if the system has stdint.h */
 #undef HAVE_STDINT_H
-
-/* Define if the system has getopt.h */
 #undef HAVE_GETOPT_H
-
-/* Define if the system has sched.h */
 #undef HAVE_SCHED_H
+#undef HAVE_ALLOCA_H
 
-/* Define if the system has sched_yield */
+/* Define if the system has appropriate functions */
 #undef HAVE_SCHED_YIELD
-
-/* Define if the system has isinf() and isnan() */
 #undef HAVE_ISINF
 #undef HAVE_ISNAN
-
-/* Define if the system has trunc */
 #undef HAVE_TRUNC
-
-/* Define if the system has rint */
 #undef HAVE_RINT
-
-/* Define if the system has those fns */
 #undef HAVE_RANDOM
 #undef HAVE_SRANDOM
 #undef HAVE_LRAND48
 #undef HAVE_SRAND48
-
-/* Define if the system has symlink */
 #undef HAVE_SYMLINK
-
-/* Define if the system has readlink */
 #undef HAVE_READLINK
-
-/* Define if the system has mkstemp */
 #undef HAVE_MKSTEMP
-
-/* Define if the system has select */
 #undef HAVE_SELECT
-
-/* Define if the system has gettimeofday */
 #undef HAVE_GETTIMEOFDAY
-
-/* Define if the compiler has alloca support */
-#undef HAVE_ALLOCA_H
+#undef HAVE_USLEEP
+#undef HAVE_NANOSLEEP
 #undef HAVE_ALLOCA
+#undef HAVE_CRYPT
 
-/* Define if the system has gr_passwd defined in struct group */
+/* Define if the system has the member defined in struct group */
 #undef HAVE_GR_PASSWD
-
-/* Define if the system has pw_passwd defined in struct passwd */
 #undef HAVE_PW_PASSWD
-
-/* Define if the system has pw_gecos defined in struct passwd */
 #undef HAVE_PW_GECOS
-
-/* Define if the system has pw_class defined in struct passwd */
 #undef HAVE_PW_CLASS
 
 /* Define if time_t is typedef'ed to an integral type */
 #undef INTEGRAL_TIME_T
+
+/* Define if the system has struct timespec */
+#undef HAVE_STRUCT_TIMESPEC
 
 /* Define if the system has dlopen() */
 #undef HAVE_DLOPEN
 
 /* Define to the suffix of dynamic loadable object */
 #define SHLIB_SO_SUFFIX  "so"
-
-/* Define if the system has crypt() */
-#undef HAVE_CRYPT
 
 /* sizes of some types */
 #define SIZEOF_LONG  4

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.81 2002-07-24 16:09:18 shirok Exp $
+;;; $Id: syslib.stub,v 1.82 2002-08-24 04:14:42 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -577,6 +577,14 @@
 
 (define-cproc sys-sleep (seconds::<fixnum>)
   (return <int> "sleep"))
+
+(if "defined(HAVE_USLEEP)"
+    (define-cproc sys-usleep (microseconds::<uint32>)
+      "int r = Scm_SysCall(usleep(microseconds));
+    if (r < 0 && errno == EINVAL) {
+      Scm_Error(\"invalid value for usleep: %d\", microseconds);
+    }
+    return SCM_MAKE_INT(r);"))
 
 (define-cproc sys-unlink (pathname::<string>)
   "  if (Scm_SysCall(unlink(Scm_GetStringConst(pathname))) < 0) {
