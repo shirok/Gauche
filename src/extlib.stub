@@ -83,6 +83,13 @@
   (assert (char? c))
   "  SCM_RETURN(Scm_StringByteSet(str, k, c));")
 
+;; SRFI-13's string-join takes one more argument---easier to implement
+;; in Scheme
+(define-cproc string-join (strs &optional (delim " "))
+  (assert (list? strs))
+  (assert (string? delim))
+  "  SCM_RETURN(Scm_StringJoin(strs, delim));")
+
 ;;
 ;; 6.3.6  Vectors
 ;;

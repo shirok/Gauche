@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.19 2001-02-02 09:29:52 shiro Exp $
+ *  $Id: gauche.h,v 1.20 2001-02-02 10:11:40 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -485,6 +485,8 @@ extern ScmObj  Scm_Substring(ScmString *x, int start, int end);
 
 extern ScmObj  Scm_StringAppend2(ScmString *x, ScmString *y);
 extern ScmObj  Scm_StringAppendC(ScmString *x, const char *s, int size, int len);
+extern ScmObj  Scm_StringAppend(ScmObj strs);
+extern ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim);
 
 extern ScmObj  Scm_StringP(ScmObj obj);
 extern ScmObj  Scm_StringToList(ScmString *str);

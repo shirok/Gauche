@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.8 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: string.c,v 1.9 2001-02-02 10:11:40 shiro Exp $
  */
 
 #include <stdio.h>
@@ -437,6 +437,72 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
         lenz = lenx + leny;
     }
     INITSTR(z, lenz, sizex + sizey, p);
+    return SCM_OBJ(z);
+}
+
+ScmObj Scm_StringAppend(ScmObj strs)
+{
+    ScmObj cp;
+    int size = 0, len = 0;
+    char *buf, *bufp;
+    ScmString *z;
+
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
+        size += SCM_STRING_SIZE(str);
+        if (len >= 0 && SCM_STRING_LENGTH(str) >= 0) {
+            len += SCM_STRING_LENGTH(str);
+        }
+    }
+
+    bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        memcpy(bufp, SCM_STRING_START(str), SCM_STRING_SIZE(str));
+        bufp += SCM_STRING_SIZE(str);
+    }
+    *bufp = '\0';
+    
+    INITSTR(z, len, size, buf);
+    return SCM_OBJ(z);
+}
+
+ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
+{
+    ScmObj cp;
+    int size = 0, len = 0, nstrs = 0;
+    int dsize = SCM_STRING_SIZE(delim), dlen = SCM_STRING_LENGTH(delim);
+    char *buf, *bufp;
+    ScmString *z;
+
+    if (SCM_NULLP(strs)) return SCM_MAKE_STR("");
+    
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
+        size += SCM_STRING_SIZE(str);
+        if (len >= 0 && SCM_STRING_LENGTH(str) >= 0 && dlen > 0) {
+            len += SCM_STRING_LENGTH(str);
+        }
+        nstrs++;
+    }
+    size += dsize * (nstrs-1);
+    if (len >= 0) len += dlen * (nstrs-1);
+
+    bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
+    SCM_FOR_EACH(cp, strs) {
+        ScmObj str = SCM_CAR(cp);
+        memcpy(bufp, SCM_STRING_START(str), SCM_STRING_SIZE(str));
+        bufp += SCM_STRING_SIZE(str);
+        if (SCM_PAIRP(SCM_CDR(cp))) {
+            memcpy(bufp, SCM_STRING_START(delim), dsize);
+            bufp += dsize;
+        }
+    }
+    *bufp = '\0';
+    
+    INITSTR(z, len, size, buf);
     return SCM_OBJ(z);
 }
 

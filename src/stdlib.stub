@@ -500,24 +500,7 @@
   "  SCM_RETURN(Scm_Substring(str, start, end));")
 
 (define-cproc string-append (&rest args)
-  "  ScmObj str, strs; int size=0, len=0; char *buf, *bufp;
-  SCM_FOR_EACH(strs, args) {
-    str = SCM_CAR(strs);
-    if (!SCM_STRINGP(str)) Scm_Error(\"string required, but got %S\", str);
-    size += SCM_STRING_SIZE(str);
-    if (len >= 0 && SCM_STRING_LENGTH(str) >= 0) 
-      len += SCM_STRING_LENGTH(str);
-    else
-      len = -1;
-  }
-  buf = bufp = SCM_NEW_ATOMIC2(char *, size+1);
-  SCM_FOR_EACH(strs, args) {
-    str = SCM_CAR(strs);
-    memcpy(bufp, SCM_STRING_START(str), SCM_STRING_SIZE(str));
-    bufp += SCM_STRING_SIZE(str);
-  }
-  SCM_RETURN(Scm_MakeStringConst(buf, size, len));
-")
+  "  SCM_RETURN(Scm_StringAppend(args));")
 
 (define-cproc string->list (str)
   (assert (string? str))

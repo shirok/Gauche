@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: file.c,v 1.1 2001-02-02 09:29:37 shiro Exp $
+ *  $Id: file.c,v 1.2 2001-02-02 10:11:40 shiro Exp $
  */
 
 #include <unistd.h>
@@ -119,7 +119,9 @@ static ScmObj normalize_path(ScmObj path)
     return head;
 }
 
-/* external interface */
+/*
+ * External API
+ */
 ScmObj Scm_ParsePathname(const char *pathname, int makeAbsolute, int normalize)
 {
     ScmObj path, parent = SCM_NIL;
