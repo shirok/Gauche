@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.247 2002-07-17 19:15:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.248 2002-07-18 10:49:02 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18237,6 +18237,20 @@ Each thread has its own dynamic environment and dynamic handler stack.
 When a thread is created, its dynamic environment is initialized by
 the creator's dynamic environment.  The thread's dynamic handler
 stack is initially empty.
+
+Access to the resouces shared by multiple threads must be protected
+explicitly by synchronization primitives.
+@xref{Synchronization primitives}.
+
+Access to ports are serialized by Gauche. If multiple threads attempt
+to write to a port, their output may be interleaved but no output
+will be lost, and the state of the port is kept consistent.
+If multiple threads attempt to read from a port, a single read
+primitive (e.g. @code{read}, @code{read-char} or @code{read-line})
+works atomically.
+
+Signal handlers are shared by all threads, but each thread has
+its own signal mask.  @xref{Signals and threads}, for details.
 
 A thread object has the following external slots.
 
