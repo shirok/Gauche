@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.68 2002-11-02 06:47:13 shirok Exp $
+ *  $Id: string.c,v 1.69 2002-11-18 07:04:20 shirok Exp $
  */
 
 #include <stdio.h>
@@ -161,7 +161,8 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
     int size = SCM_CHAR_NBYTES(fill), i;
     char *ptr = SCM_NEW_ATOMIC2(char *, size*len+1);
     char *p;
-    
+
+    if (len < 0) Scm_Error("length out of range: %d", len);
     for (i=0, p=ptr; i<len; i++, p+=size) {
         SCM_CHAR_PUT(p, fill);
     }
