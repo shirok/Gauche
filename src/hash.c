@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.28 2003-09-09 12:23:43 shirok Exp $
+ *  $Id: hash.c,v 1.29 2003-11-20 03:13:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -626,4 +626,14 @@ unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
     u_long hashval;
     hashval = string_hash(SCM_OBJ(str));
     return (hashval % modulo);
+}
+
+unsigned long Scm_EqHash(ScmObj obj)
+{
+    return address_hash(obj);
+}
+
+unsigned long Scm_EqvHash(ScmObj obj)
+{
+    return eqv_hash(obj);
 }

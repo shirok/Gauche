@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.205 2003-10-24 04:37:03 shirok Exp $
+;;; $Id: extlib.stub,v 1.206 2003-11-20 03:13:05 shirok Exp $
 ;;;
 
 "
@@ -949,6 +949,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 ;; Hashtable
 ;;
+
+(define-cproc eq-hash (obj)
+  (return <ulong> "Scm_EqHash"))
+
+(define-cproc eqv-hash (obj)
+  (return <ulong> "Scm_EqvHash"))
 
 (define-cproc hash (obj)
   (return <ulong> "Scm_Hash"))

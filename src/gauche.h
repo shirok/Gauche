@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.349 2003-11-11 09:35:31 shirok Exp $
+ *  $Id: gauche.h,v 1.350 2003-11-20 03:13:05 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1468,6 +1468,8 @@ SCM_EXTERN ScmObj Scm_HashTableStat(ScmHashTable *table);
 SCM_EXTERN void Scm_HashIterInit(ScmHashTable *hash, ScmHashIter *iter);
 SCM_EXTERN ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter);
 
+SCM_EXTERN unsigned long Scm_EqHash(ScmObj obj);
+SCM_EXTERN unsigned long Scm_EqvHash(ScmObj obj);
 SCM_EXTERN unsigned long Scm_Hash(ScmObj obj);
 SCM_EXTERN unsigned long Scm_HashString(ScmString *str, unsigned long bound);
 

@@ -1,3 +1,8 @@
+2003-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_EqHash, Scm_EqvHash), src/extlib.stub :
+	  experimentally added eq-hash and eqv-hash functions.
+
 2003-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_Assoc, Scm_AssocDelete, Scm_AssocDeleteX) :
