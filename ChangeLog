@@ -1,3 +1,16 @@
+2001-03-30  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.16
+	* src/vm.c, src/compile.c, src/gauche/vminsn.h, src/stdlib.stub:
+	  added SCM_VM_LREF1[0-5] instructions.   inline memq, assq, assv.
+	* src/extlib.stub: added read-byte
+	* src/symbol.c: escape illegal charcters in a symbol when wrote.
+	* src/class.c: added slot-bound? and slot-bound-using-class?
+	* src/compile.c: fixed a bug that didn't compile SCM_VM_LSET[0-5]
+	  properly.
+	* lib/gauche/object.scm: added slot-exists? and
+	  slot-exists-using-class?
+
 2001-03-29  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.15
