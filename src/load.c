@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.73 2003-05-16 07:49:07 shirok Exp $
+ *  $Id: load.c,v 1.74 2003-05-16 10:13:13 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -467,9 +467,10 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 
 typedef void (*ScmDynLoadInitFn)(void);
 
-#if defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
-#include "dl_darwin.c"
-#elif defined(HAVE_DLOPEN)
+/* NB: we rely on dlcompat library for dlopen instead of using dl_darwin.c
+   for now; Boehm GC requires dlopen when compiled with pthread, so there's
+   not much point to avoid dlopen here. */
+#if defined(HAVE_DLOPEN)
 #include "dl_dlopen.c"
 #else
 #include "dl_dummy.c"
