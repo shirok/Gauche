@@ -27,6 +27,22 @@
       (lambda () (with-module M
                     (cons (with-module user a) (with-module user b)))))
 
+(test "with-module (error)" *test-error*
+      (lambda () (eval '(with-module MM 4) (interaction-environment))))
+
+;;------------------------------------------------------------------
+;; define-in-module
+
+(test "define-in-module" 99
+      (lambda ()
+        (eval '(define-in-module M aa 99) (interaction-environment))
+        (eval '(with-module M aa) (interaction-environment))))
+
+(test "define-in-module" *test-error*
+      (lambda ()
+        (eval '(define-in-module MM aa 99) (interaction-environment))
+        (eval '(with-module MM aa) (interaction-environment))))
+
 ;;------------------------------------------------------------------
 ;; import, export
 
@@ -54,6 +70,9 @@
                    (push-result (+ b c))
                    (get-result))))
 
+(test "import (error)" *test-error*
+      (lambda () (eval '(import MM) (interaction-environment))))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 
@@ -75,6 +94,9 @@
           )))
 
 (test "select-module" 'user (lambda () (module-name (current-module))))
+
+(test "select-module (error)" *test-error*
+      (lambda () (eval '(select-moulde MM) (interaction-environment))))
 
 ;;------------------------------------------------------------------
 ;; module inheritance
@@ -115,6 +137,10 @@
 (test "module inheritance" '(alpha beta gamma dee)
       (lambda ()
         (with-module V (list a b c d))))
+
+(test "moduel inheritance (error)" *test-error*
+      (lambda ()
+        (eval '(with-module V (extend Q MM)) (interaction-environment))))
 
 ;;------------------------------------------------------------------
 ;; creates modules on-the-fly

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.97 2003-02-07 03:50:26 shirok Exp $
+ *  $Id: compile.c,v 1.98 2003-02-10 07:40:49 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -646,6 +646,9 @@ static ScmObj compile_define(ScmObj form, ScmObj env, int ctx,
         if (SCM_IDENTIFIERP(mod))  mod = SCM_OBJ(SCM_IDENTIFIER(mod)->name);
         if (SCM_SYMBOLP(mod)){
             module = SCM_MODULE(Scm_FindModule(SCM_SYMBOL(mod), FALSE));
+            if (!SCM_MODULEP(module)) {
+                Scm_Error("define-in-module: no such module: %S", mod);
+            }
         } else if (SCM_MODULEP(mod)) {
             module = SCM_MODULE(mod);
         } else {
