@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.70 2001-04-01 22:07:12 shiro Exp $
+ *  $Id: vm.c,v 1.71 2001-04-03 07:56:36 shiro Exp $
  */
 
 #include "gauche.h"
@@ -450,12 +450,10 @@ static void run_loop()
                             = Scm_ComputeApplicableMethods(SCM_GENERIC(val0),
                                                            argp->data, nargs);
                         if (!SCM_NULLP(mm)) {
-                            ScmObj *argv = SCM_NEW2(ScmObj*,
-                                                    sizeof(ScmObj)*nargs);
-                            memcpy(argv, argp->data, sizeof(ScmObj)*nargs);
-                            mm = Scm_SortMethods(mm, argv, nargs);
+                            mm = Scm_SortMethods(mm, argp->data, nargs);
                             nm = Scm_MakeNextMethod(SCM_GENERIC(val0),
-                                                    SCM_CDR(mm), argv, nargs);
+                                                    SCM_CDR(mm),
+                                                    argp->data, nargs, TRUE);
                             val0 = SCM_CAR(mm);
                             proctype = SCM_PROC_METHOD;
                         }
@@ -483,11 +481,9 @@ static void run_loop()
                         val0 = SCM_OBJ(n->generic);
                         proctype = SCM_PROC_GENERIC;
                     } else {
-                        ScmObj *argv = SCM_NEW2(ScmObj*, sizeof(ScmObj)*nargs);
-                        memcpy(argv, argp->data, sizeof(ScmObj)*nargs);
                         nm = Scm_MakeNextMethod(n->generic,
                                                 SCM_CDR(n->methods),
-                                                argv, nargs);
+                                                argp->data, nargs, TRUE);
                         val0 = SCM_CAR(n->methods);
                         proctype = SCM_PROC_METHOD;
                     }
@@ -558,6 +554,7 @@ static void run_loop()
                         /* TODO: stack boundary check */
                         PUSH_ARG(SCM_OBJ(nm));
                         env->up = m->env;
+                        env->size++; /* for next-method */
                         pc = SCM_OBJ(m->data);
                     }
                 } else {
