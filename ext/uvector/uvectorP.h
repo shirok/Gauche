@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: uvectorP.h,v 1.14 2002-10-14 12:20:24 shirok Exp $
+ *  $Id: uvectorP.h,v 1.15 2002-10-15 09:08:01 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -412,7 +412,7 @@
   do {                                                                  \
     if (SCM_INTP(obj)) {                                                \
       long V__ = SCM_INT_VALUE(obj);                                    \
-      CLAMP_INT(V__, U32MIN, U32MAX, clamp);                            \
+      CLAMP_INT(V__, U32MIN, U32MAX);                                   \
       (elt) = (SCM_UVECTOR_UINT32)V__;                                  \
     } else if (SCM_BIGNUMP(obj)) {                                      \
       if (Scm_NumCmp(obj, Scm_UvectorU32Min) < 0) {                     \
