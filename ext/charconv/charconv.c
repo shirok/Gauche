@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.14 2001-06-07 19:58:02 shirok Exp $
+ *  $Id: charconv.c,v 1.15 2001-06-08 08:56:06 shirok Exp $
  */
 
 #include <string.h>
@@ -26,8 +26,14 @@
 typedef void *iconv_t;
 iconv_t iconv_open(const char *tocode, const char *fromcode);
 int iconv_close(iconv_t handle);
-int iconv(iconv_t handle, const char **inbuf, size_t *inroom, char **outbuf, size_t *outroom);
+int iconv(iconv_t handle, char **inbuf, size_t *inroom, char **outbuf, size_t *outroom);
 #endif /* !HAVE_ICONV_H */
+
+#ifdef ICONV_CONST_INPUT
+#define INBUFCAST /*none*/
+#else
+#define INBUFCAST (char **)
+#endif
 
 #define DEFAULT_CONVERSION_BUFFER_SIZE 1024
 
@@ -135,7 +141,7 @@ static int conv_input_filler(char *buf, int len, void *data)
             info->inbuf, info->inptr, insize,
             info->outbuf, info->outptr, outroom);
 #endif
-    result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
+    result = iconv(info->handle, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
 #ifdef DEBUG
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
             result, inbuf, inroom, outbuf, outroom);
@@ -284,7 +290,7 @@ static int conv_output_flusher(char *buf, int len, void *data)
                 info->inbuf, len, inroom,
                 info->outbuf, info->outptr, outroom);
 #endif
-        result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
+        result = iconv(info->handle, INBUFCAST &inbuf, &inroom, &outbuf, &outroom);
 #ifdef DEBUG
         fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
                 result, inbuf, inroom, outbuf, outroom);
@@ -390,7 +396,7 @@ const char *Scm_GuessCES(const char *code, const char *buf, int buflen)
  * encoding.  The algorithm is a hardcoded DFA.
  */
 
-static const char eucjp[][256] = {
+static const signed char eucjp[][256] = {
     /* EUC-JP first byte dispatch */
     {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*0*/
@@ -450,7 +456,7 @@ static const char eucjp[][256] = {
     },
 };
 
-static const char sjis[][256] = {
+static const signed char sjis[][256] = {
     /* SJIS first byte dispatch */
     {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*0*/
@@ -491,7 +497,7 @@ static const char sjis[][256] = {
     },
 };
     
-static const char utf8[][256] = {
+static const signed char utf8[][256] = {
     /* UTF-8 first byte dispatch */
     {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*0*/
@@ -688,7 +694,7 @@ int iconv_close(iconv_t handle)
     return 0;
 }
 
-int iconv(iconv_t handle, const char **inbuf, size_t *inroom, char **outbuf, size_t *outroom)
+int iconv(iconv_t handle, char **inbuf, size_t *inroom, char **outbuf, size_t *outroom)
 {
     return 0;
 }
