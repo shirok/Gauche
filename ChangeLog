@@ -1,3 +1,12 @@
+2001-02-21  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.16
+	* src/macro.c, src/compile.c: more code for r5rs macro system (not
+	  finished yet)
+	* src/vm.c: fix error message of "unbound variables" to show
+	  symbols instead of identifiers.
+	* src/list.c, src/extlib.stub: added acons
+
 2001-02-20  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.15
