@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.2 2001-02-06 06:57:30 shiro Exp $
+ *  $Id: predef-syms.h,v 1.3 2001-02-13 06:01:22 shiro Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -42,6 +42,7 @@ DEFSYM(ScmQdelay,           "delay");
 
 DEFSYM(ScmQmacroExpand,     "%macro-expand");
 DEFSYM(ScmQloadPath,        "*load-path*");
+DEFSYM(ScmQloadHistory,     "*load-history*");
 
 /* cpp can't generate #define lines automatically... */
 #ifdef DEFSYM_DEFINES
@@ -69,4 +70,5 @@ DEFSYM(ScmQloadPath,        "*load-path*");
 #define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
 #define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
 #define SCM_SYM_LOAD_PATH        SCM_OBJ(&ScmQloadPath)
+#define SCM_SYM_LOAD_HISTORY     SCM_OBJ(&ScmQloadHistory)
 #endif /*DEFSYM_DEFINES*/
