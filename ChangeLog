@@ -2,6 +2,8 @@
 
 	* src/vm.c, src/gauche/vm.h : changed environment frame layout.  see
 	  the comment of vm.h.
+	* src/vm.c, src/gauche/vminsn.h, src/stdlib.stub : inline apply to
+	  use SCM_VM_APPLY instruction.
 
 2002-09-08  Shiro Kawai  <shiro@acm.org>
 
