@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.19 2001-03-26 10:06:34 shiro Exp $
+ *  $Id: vminsn.h,v 1.20 2001-03-31 08:38:49 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -143,12 +143,18 @@ DEFINSN(SCM_VM_GSET, "GSET", 0)
  */
 DEFINSN(SCM_VM_LREF, "LREF", 2)
 
-/* shortcut for the first frame, small offset */
+/* shortcut for the first and second frame, small offset */
 DEFINSN(SCM_VM_LREF0, "LREF0", 0)
 DEFINSN(SCM_VM_LREF1, "LREF1", 0)
 DEFINSN(SCM_VM_LREF2, "LREF2", 0)
 DEFINSN(SCM_VM_LREF3, "LREF3", 0)
 DEFINSN(SCM_VM_LREF4, "LREF4", 0)
+
+DEFINSN(SCM_VM_LREF10, "LREF10", 0)
+DEFINSN(SCM_VM_LREF11, "LREF11", 0)
+DEFINSN(SCM_VM_LREF12, "LREF12", 0)
+DEFINSN(SCM_VM_LREF13, "LREF13", 0)
+DEFINSN(SCM_VM_LREF14, "LREF14", 0)
 
 /* GREF <LOCATION>
  *
@@ -177,7 +183,10 @@ DEFINSN(SCM_VM_CAR, "CAR", 0)
 DEFINSN(SCM_VM_CDR, "CDR", 0)
 DEFINSN(SCM_VM_LIST, "LIST", 1)
 DEFINSN(SCM_VM_LIST_STAR, "LIST*", 1)
+DEFINSN(SCM_VM_MEMQ, "MEMQ", 0)
 DEFINSN(SCM_VM_MEMV, "MEMV", 0)
+DEFINSN(SCM_VM_ASSQ, "ASSQ", 0)
+DEFINSN(SCM_VM_ASSV, "ASSV", 0)
 DEFINSN(SCM_VM_EQ, "EQ?", 0)
 DEFINSN(SCM_VM_EQV, "EQV?", 0)
 DEFINSN(SCM_VM_APPEND, "APPEND", 1)
