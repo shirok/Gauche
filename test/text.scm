@@ -330,4 +330,17 @@
       (lambda ()
         (string-tr "Hello,-World!" "A\\-H" "_ \\*")))
 
+;;-------------------------------------------------------------------
+(test-section "tree")
+(use text.tree)
+ 
+(test "tree->string" "" (lambda () (tree->string '())))
+(test "tree->string" "" (lambda () (tree->string "")))
+(test "tree->string" "ab" (lambda () (tree->string "ab")))
+(test "tree->string" "ab" (lambda () (tree->string 'ab)))
+(test "tree->string" "ab" (lambda () (tree->string '(a . b))))
+(test "tree->string" "ab" (lambda () (tree->string '(a b))))
+(test "tree->string" "Ab" (lambda () (tree->string '(|A| . :b))))
+(test "tree->string" "ab" (lambda () (tree->string '((((() ())) . a) ((((b))))))))
+
 (test-end)
