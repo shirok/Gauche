@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;
+;;  $Id: comp.scm,v 1.1.2.3 2004-12-31 01:03:10 shirok Exp $
 
 (define-module gauche.compile
   (use util.match)
@@ -11,7 +11,7 @@
 (define (compile program . opts)
   (compile-int program (get-optional opts #f) 'tail))
 
-;; (Program, Env, Ctx) -> [Insn]
+;; compile-int:: (Program, Env, Ctx) -> [Insn]
 (define (compile-int program env ctx)
   (match program
     ((op . args)
@@ -91,7 +91,29 @@
         (make-identifier var '())
         var))))
 
+;;============================================================
+;; Special forms
+;;
 
+(define (syntax-if form env ctx)
+  (match form
+    ((if test then else)
+     (let ((test-code (compile-int test env 'normal))
+           (then-code (compile-int then env ctx))
+           (else-code (compile-int else env ctx)))
+       (if (eq? ctx tail)
+         (append test-code
+                 (cons '(IF) test-code)
+                 else-code)
+         (let1 merger (list (list 'MNOP))
+           (append test-code
+                   (cons '(IF) (append test-code merger))
+                   (append else-code merger))))))
+    ((if test then)
+     (syntax-if `(if ,test ,then (undefined))))
+    (else
+     (error "syntax error:" form))))
+       
 
 
         

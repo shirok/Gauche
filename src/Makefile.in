@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.134.2.4 2004-12-30 09:28:53 shirok Exp $
+#  $Id: Makefile.in,v 1.134.2.5 2004-12-31 01:03:03 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -129,7 +129,7 @@ libgauche_OBJECTS = \
 	module.$(OBJEXT) proc.$(OBJEXT) number.$(OBJEXT) bignum.$(OBJEXT) \
 	load.$(OBJEXT) promise.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \
 	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
-	syslib.$(OBJEXT) moplib.$(OBJEXT) comp.$(OBJEXT)
+	syslib.$(OBJEXT) moplib.$(OBJEXT) intlib.$(OBJEXT) comp.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
@@ -153,6 +153,7 @@ extlib.c : extlib.stub genstub
 exclib.c : exclib.stub genstub
 syslib.c : syslib.stub genstub
 moplib.c : moplib.stub genstub
+intlib.c : intlib.stub genstub
 
 autoloads.c : autoloads.scm
 	gosh -A../lib ./autoloads.scm
@@ -234,7 +235,7 @@ install-check :
 	done
 
 # clean ------------------------------------------------
-GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c \
+GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c intlib.c \
 	    autoloads.c builtin-syms.c gauche/builtin-syms.h \
             vminsn.c gauche/vminsn.h
 CONFIG_GENERATED = Makefile gauche-config gauche/config.h

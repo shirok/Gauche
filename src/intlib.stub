@@ -1,0 +1,115 @@
+;;;
+;;; intlib.stub - internal built-ins
+;;;  
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;; $Id: intlib.stub,v 1.1.2.1 2004-12-31 01:03:10 shirok Exp $
+;;;
+
+;; This file defines subrs that are used by Gauche internal routines
+;; (such as the compiler).  They are interned in gauche.internal module.
+;; The API in this module is still fluid.  Do not count on them.
+
+
+"
+#include <gauche/class.h>
+#include <gauche/vminsn.h>
+"
+
+;;
+;; Pair attributes
+;;
+;;  Pair attributes are almost exclusively used to attach source-code
+;;  information to s-exprs.
+
+(define-cproc pair-attributes (pair::<pair>)
+  (return "Scm_PairAttr"))
+
+(define-cproc pair-attribute-get (pair::<pair> key &optional fallback)
+  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
+
+(define-cproc pair-attribute-set! (pair::<pair> key value)
+  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
+
+;;
+;; Identifiers
+;;
+;;   Identifiers shouldn't be seen by programmers except they are
+;;   really aware of working with Gauche internals.  However, for
+;;   historical reasons, identifiers leak out to the Scheme world
+;;   in the expanded form of the macro.  Hence we leave identifer?
+;;   and identifier->symbol in extlib.stub.
+
+(define-cproc make-identifier (name::<symbol> env::<list>)
+  (return "Scm_MakeIdentifier"))
+
+;; Returns two values
+;; If found:      the value and #t
+;; If not found:  #<undef>  and #f
+(define-cproc module-find-binding (mod::<module> name::<symbol>
+                                                 stay-in-module::<boolean>)
+  "ScmGloc *g = Scm_FindBinding(mod, name, stay_in_module);
+   if (g) {
+     ScmObj val = SCM_GLOC_GET(g);
+     SCM_RETURN(Scm_Values2(val, SCM_TRUE));
+   } else {
+     SCM_RETURN(Scm_Values2(SCM_UNDEFINED, SCM_FALSE));
+   }")
+
+
+;;
+;; VM inspection and interface
+;;
+;;   "VMINSN" object will be gone in near future.
+
+(define-cproc vm-instruction? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_INSNP(obj)));")
+
+(define-cproc vm-insn-inspect (obj)
+  "  SCM_RETURN(Scm_VMInsnInspect(obj));")
+
+(define-cproc vm-pack-code (code)
+  (return "Scm_PackCode"))
+(define-cproc vm-dump-code (code::<compiled-code>)
+  (return <void> "Scm_CompiledCodeDump"))
+(define-cproc vm-code->list (code::<compiled-code>)
+  (return "Scm_CompiledCodeToList"))
+(define-cproc vm-compile (program &optional env)
+  (return "Scm_Compile"))
+(define-cproc vm-insn-build (insn)
+  (return <ulong> "Scm_VMInsnBuild"))
+
+
+
+
+
+;; Local variables:
+;; mode: scheme
+;; end:

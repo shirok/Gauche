@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.230.2.6 2004-12-30 09:28:54 shirok Exp $
+;;; $Id: extlib.stub,v 1.230.2.7 2004-12-31 01:03:10 shirok Exp $
 ;;;
 
 "
@@ -251,15 +251,6 @@
 
 (define-cproc monotonic-merge (start sequences::<list>)
   (return "Scm_MonotonicMerge"))
-
-(define-cproc pair-attributes (pair::<pair>)
-  (return "Scm_PairAttr"))
-
-(define-cproc pair-attribute-get (pair::<pair> key &optional fallback)
-  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
-
-(define-cproc pair-attribute-set! (pair::<pair> key value)
-  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
 
 ;;
 ;; 6.3.3  Symbols
@@ -1218,19 +1209,6 @@
 (define-cproc %extend (modules::<list>)
   "  SCM_RETURN(Scm_ExtendModule(SCM_CURRENT_MODULE(), modules));")
 
-;; Returns two values
-;; If found:      the value and #t
-;; If not found:  #<undef>  and #f
-(define-cproc module-find-binding (mod::<module> name::<symbol>
-                                                 stay-in-module::<boolean>)
-  "ScmGloc *g = Scm_FindBinding(mod, name, stay_in_module);
-   if (g) {
-     ScmObj val = SCM_GLOC_GET(g);
-     SCM_RETURN(Scm_Values2(val, SCM_TRUE));
-   } else {
-     SCM_RETURN(Scm_Values2(SCM_UNDEFINED, SCM_FALSE));
-   }")
-
 ;;
 ;; Gauche extentions
 ;;
@@ -1289,27 +1267,6 @@
   }
   SCM_VM(vm)->defaultEscapeHandler = handler;
   SCM_RETURN(SCM_UNDEFINED);")
-
-(define-cproc vm-instruction? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_INSNP(obj)));")
-
-(define-cproc vm-insn-inspect (obj)
-  "  SCM_RETURN(Scm_VMInsnInspect(obj));")
-
-;; temporary
-(define-cproc vm-pack-code (code)
-  (return "Scm_PackCode"))
-(define-cproc vm-dump-code (code::<compiled-code>)
-  (return <void> "Scm_CompiledCodeDump"))
-(define-cproc vm-code->list (code::<compiled-code>)
-  (return "Scm_CompiledCodeToList"))
-(define-cproc vm-compile (program &optional env)
-  (return "Scm_Compile"))
-(define-cproc vm-insn-build (insn)
-  (return <ulong> "Scm_VMInsnBuild"))
-
-(define-cproc make-identifier (name::<symbol> env::<list>)
-  (return "Scm_MakeIdentifier"))
 
 (define-cproc current-load-history ()
   "  SCM_RETURN(Scm_VM()->load_history);")

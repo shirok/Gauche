@@ -1,3 +1,8 @@
+2004-12-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/intlib.stub : moved some APIs from extlib which are only intended
+	  to be used by Gauche internal routines.
+
 2004-12-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_ClassOf, Scm_EOFObjectClass, Scm_UndefinedObjectClass):

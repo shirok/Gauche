@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.61.2.3 2004-12-30 09:28:54 shirok Exp $
+ *  $Id: core.c,v 1.61.2.4 2004-12-31 01:03:10 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -79,6 +79,7 @@ extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
 extern void Scm_Init_syslib(ScmModule *);
 extern void Scm_Init_moplib(ScmModule *);
+extern void Scm_Init_intlib(ScmModule *);
 
 extern void Scm__InitComp(void);
 
@@ -136,6 +137,7 @@ void Scm_Init(const char *signature)
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
     Scm_Init_moplib(Scm_GaucheModule());
+    Scm_Init_intlib(SCM_MODULE(SCM_FIND_MODULE("gauche.internal", TRUE)));
 
     Scm__InitComp();
 
