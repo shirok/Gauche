@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.3 2001-02-20 10:32:23 shiro Exp $
+ *  $Id: bignum.c,v 1.4 2001-03-08 10:21:46 shiro Exp $
  */
 
 #include <math.h>
@@ -169,6 +169,16 @@ long Scm_BignumToSI(ScmBignum *b)
         return LONG_MIN;
     } else {
         return -(long)b->values[0];
+    }
+}
+
+/* b must be normalized.  result is rounded between [0, ULONG_MAX] */
+u_long Scm_BignumToUI(ScmBignum *b) 
+{
+    if (b->sign >= 0) {
+        return b->values[0];
+    } else {
+        return 0;
     }
 }
 
