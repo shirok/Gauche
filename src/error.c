@@ -1,7 +1,7 @@
 /*
  * error.c - error handling
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, disribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.38 2002-09-20 12:28:22 shirok Exp $
+ *  $Id: error.c,v 1.39 2003-01-30 12:08:49 shirok Exp $
  */
 
 #include <errno.h>
@@ -320,5 +320,6 @@ void Scm_ReportError(ScmObj e)
         SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
     }
     SCM_END_PROTECT;
+    SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
 }
 
