@@ -21,6 +21,21 @@
 ;; 6.3.2  Pairs and lists
 ;;
 
+(define-cproc list* (&rest args)
+  (inliner "SCM_VM_LIST_STAR")
+  "  ScmObj head = SCM_NIL, tail, cp;
+  if (SCM_PAIRP(args)) {
+    SCM_FOR_EACH(cp, args) {
+      if (!SCM_PAIRP(SCM_CDR(cp))) {
+        if (SCM_NULLP(head)) head = SCM_CAR(cp);
+        else SCM_SET_CDR(tail, SCM_CAR(cp));
+        break;
+      }
+      SCM_APPEND1(head, tail, SCM_CAR(cp));
+    }
+  }
+  SCM_RETURN(head);")
+
 (define-cproc pair-attributes (pair)
   (assert (pair? pair))
   "  SCM_RETURN(SCM_PAIR_ATTR(pair));")
