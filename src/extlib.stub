@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.55 2001-04-04 18:57:08 shiro Exp $
+;;; $Id: extlib.stub,v 1.56 2001-04-05 07:07:41 shiro Exp $
 ;;;
 
 "
@@ -197,6 +197,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   }
  }"
 
+(define-cproc %char-set-equal? (x y)
+  (assert (char-set? x))
+  (assert (char-set? y))
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_CharSetEq(x, y)));")
+
 (define-cproc char-set (&rest chars)
   "  ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());
   char_set_add(cs, chars);
@@ -237,7 +242,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc %char-set-complement! (cs)
   (assert (char-set? cs))
   "  SCM_RETURN(Scm_CharSetComplement(cs));")
-  
+
+(define-cproc %char-set-ranges (cs)
+  (assert (char-set? cs))
+  "  SCM_RETURN(Scm_CharSetRanges(cs));")
+
 (define-cproc %char-set-dump (cs);for debug
   (assert (char-set? cs))
   "  Scm_CharSetDump(cs, SCM_CUROUT); SCM_RETURN(SCM_UNDEFINED);")
