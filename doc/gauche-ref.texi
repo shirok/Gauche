@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.139 2001-12-14 10:21:08 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.140 2001-12-15 11:01:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6093,7 +6093,7 @@ directive; usually they have no distinction, except noted.
 @c COMMON
 
 @table @asis
-@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar}@b{A}
+@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}@b{A}
 @c EN
 Ascii output.  The corresponding argument is printed by @code{display}.
 If an integer @var{mincol} is given, it specifies the minimum number
@@ -6130,6 +6130,20 @@ padding is added to the left.
 アトマーク `@code{@@}' フラグが与えられた場合、結果は右詰めになります。
 @c COMMON
 
+@c EN
+The @var{maxcol} parameter, if given, limits the maximum number of characters
+to be written.  If the length of formatted string exceeds
+@var{maxcol}, only @var{maxcol} characters are written.
+If colon-flag is given as well and the length of formatted string
+exceeds @var{maxcol}, @var{maxcol} - 4 characters are written and
+a string ``@code{ ...}'' is attached after it.
+@c JP
+@var{maxcol}パラメータは与えられていれば書かれる文字数の上限を指定します。
+フォーマット後の文字列の長さが@var{maxcol}を超えた場合、@var{maxcol}文字だけが
+書かれます。コロン `@code{:}' フラグが同時に与えられていれば、
+@var{maxcol} - 4 文字が書かれた後、文字列``@code{ ...}''が書かれます。
+@c COMMON
+
 @example
 (format #f "|~a|" "oops")
   @result{} "|oops|"
@@ -6143,9 +6157,14 @@ padding is added to the left.
 (format #f "|~10,,,'☆a|" "oops")
   @result{} "|oops☆☆☆☆☆☆|"
 @c COMMON
+
+(format #f "|~,,,,10a|" '(abc def ghi jkl)
+  @result{} "|(abc def gh|" 
+(format #f "|~,,,,10:a|" '(abc def ghi jkl)
+  @result{} "|(abc de ...|" 
 @end example
 
-@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar}@b{S}
+@item @b{~}@var{mincol},@var{colinc},@var{minpad},@var{padchar},@var{maxcol}@b{S}
 @c EN
 S-expression output.  The corresponding argument is printed
 by @code{write}.  The semantics of parameters and flags are the same
@@ -6506,13 +6525,15 @@ This delays the loading of @var{file/module} until it is needed.
 You can specify either a string file name or a symbol module name
 to @var{file/module}.  If it is a string, the named file is
 loaded.  If it is a symbol, the named module is loaded (using the
-same rule as of @code{use}) and @var{import}ed
-(@xref{Module syntax}, for details of @code{use} and @code{import}).
+same rule as of @code{use}), then the binding of @var{item} in the
+@var{file/module} is imported to the module used the autoload
+(@xref{Module syntax}, for details of @code{use}).
 @c JP
 引数@var{file/module}には、文字列かシンボルを指定できます。文字列の場合は
 そのファイルがロードされます。シンボルの場合、その名のモジュールが(@code{use}と
-同じルールで)ロードされ、インポートされます。(モジュールの@code{use}とインポート
-の詳細については@ref{Module syntax}を参照して下さい)。
+同じルールで)ロードされ、@var{item}が@var{file/module}から
+オートロードを呼び出したモジュールへとインポートされます。
+(モジュールの@code{use}の詳細については@ref{Module syntax}を参照して下さい)。
 @c COMMON
 
 @c EN
