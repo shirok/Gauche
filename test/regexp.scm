@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.15 2003-03-25 06:18:39 shirok Exp $
+;; $Id: regexp.scm,v 1.16 2003-10-07 12:46:34 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -337,6 +337,10 @@
        (match&list #/[ab][cd][ef][gh][ij][kl][mn][op][q]/
                    "xacegikmoqy" 1))
 
+;; this tests optimizer
+(test* "[^a]*." '("b")
+       (match&list #/[^a]*./ "b" 1))
+
 (test* "\\s" '(" ")  (match&list #/\s/ "  " 1))
 (test* "\\s" '("  ")  (match&list #/\s\s/ "  " 1))
 (test* "\\s" '("\t")  (match&list #/\s/ "\t " 1))
@@ -358,6 +362,14 @@
        (match&list #/[\s\d]+/ "a 1 2 3 b " 1))
 (test* "[\\s\\D]+" '("a ")
        (match&list #/[\s\D]+/ "a 1 2 3 b " 1))
+
+;; this tests optimizer
+(test* "^\\[?([^\\]]*)\\]?:(\\d+)$" '("127.0.0.1:80" "127.0.0.1" "80")
+       (match&list #/^\[?([^\]]*)\]?:(\d+)$/ "127.0.0.1:80" 3))
+(test* "^\\[?([^\\]]*)\\]?:(\\d+)$" '("[127.0.0.1:80" "127.0.0.1" "80")
+       (match&list #/^\[?([^\]]*)\]?:(\d+)$/ "[127.0.0.1:80" 3))
+(test* "^\\[?([^\\]]*)\\]?:(\\d+)$" '("[127.0.0.1]:80" "127.0.0.1" "80")
+       (match&list #/^\[?([^\]]*)\]?:(\d+)$/ "[127.0.0.1]:80" 3))
 
 ;;-------------------------------------------------------------------------
 (test-section "{n,m}")
@@ -437,6 +449,16 @@
        (rxmatch-substring (#/A(?-i:[A-Z]+)D/i "!aBCd!")))
 (test* "A(?-i:[A-Z]+)D/i" #f
        (rxmatch-substring (#/A(?-i:[A-Z]+)D/i "!abcd!")))
+
+;; these test optimizer
+(test* "^(?i:a*).$" "b"
+       (rxmatch-substring (#/^(?i:a*).$/ "b")))
+(test* "^(?i:a*).$" "a"
+       (rxmatch-substring (#/^(?i:a*).$/ "a")))
+(test* "^(?i:a*).$" "A"
+       (rxmatch-substring (#/^(?i:a*).$/ "A")))
+(test* "^(?i:a*).$" "Ab"
+       (rxmatch-substring (#/^(?i:a*).$/ "Ab")))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp macros")

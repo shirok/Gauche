@@ -1,3 +1,9 @@
+2003-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (is_distinct): fixed a bug in the optimizer, which
+	  makes a regexp that contains "a repeat of complemented charset
+	  followed by something except a char or a charset" fails.
+
 2003-10-07  Kimura Fuyuki  <fuyuki@nigredo.org>
 
 	* lib/dbm/fsdbm.scm: typo fix

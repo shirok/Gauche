@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.44 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: regexp.c,v 1.45 2003-10-07 12:46:34 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -796,7 +796,10 @@ static int is_distinct(ScmObj x, ScmObj y)
         carx = SCM_CAR(x);
         if (SCM_EQ(carx, sym_comp)) {
             SCM_ASSERT(SCM_CHARSETP(SCM_CDR(x)));
-            return !is_distinct(SCM_CDR(x), y);
+            if (SCM_CHARP(y) || SCM_CHARSETP(y)) {
+                return !is_distinct(SCM_CDR(x), y);
+            }
+            return FALSE;
         }
         if (SCM_INTP(carx)
             || SCM_EQ(carx, sym_seq_uncase)
