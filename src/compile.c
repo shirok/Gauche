@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.25 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: compile.c,v 1.26 2001-02-19 23:24:06 shiro Exp $
  */
 
 #include "gauche.h"
@@ -76,6 +76,7 @@ static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
                                     ScmObj env, int ctx);
 
 #define FREE_VAR_P(sym, env)  SCM_SYMBOLP(lookup_env(sym, env))
+#define TOPLEVEL_ENV_P(env)   SCM_NULLP(env)
 
 #define ADDCODE1(c)   SCM_APPEND1(code, codetail, c)
 #define ADDCODE(c)    SCM_APPEND(code, codetail, c)
@@ -541,8 +542,17 @@ static ScmObj compile_begin(ScmObj form,
                             int ctx,
                             void *data)
 {
-    /* TODO: distinguish toplevel begin */
-    return compile_body(SCM_CDR(form), env, ctx);
+    if (TOPLEVEL_ENV_P(env)) {
+        ScmObj code = SCM_NIL, codetail, cp;
+        SCM_FOR_EACH(cp, SCM_CDR(form)) {
+            ADDCODE(compile_int(SCM_CAR(cp), env,
+                                (SCM_NULLP(SCM_CDR(cp)))?
+                                SCM_COMPILE_NORMAL : SCM_COMPILE_STMT));
+        }
+        return code;
+    } else {
+        return compile_body(SCM_CDR(form), env, ctx);
+    }
 }
 
 static ScmSyntax syntax_begin = {
