@@ -71,11 +71,16 @@ void GC_register_dynamic_libraries(){}
 /* [SK 2002/02/09] Added this API for platforms that isn't supported
    DYNAMIC_LOADING to register the data section of dlopen-ed library
    explicitly. */
-void GC_register_dlopen_data(GC_PTR start, GC_PTR end)
+void GC_register_dlopen_data(GC_PTR datastart, GC_PTR dataend,
+			     GC_PTR bssstart, GC_PTR bssend)
 {
 #if !defined(DYNAMIC_LOADING) || defined(ENABLE_EXPLICIT_INITIALIZATION)
-    if (start && end) {
-        GC_add_roots(start, end);
+    if (datastart && dataend && bssstart && bssend) {
+	if (datastart < bssstart) {
+	    GC_add_roots(datastart, bssend);
+	} else {
+	    GC_add_roots(bssstart, dataend);
+	}
     }
 #endif  /*!DYNAMIC_LOADING*/
 }

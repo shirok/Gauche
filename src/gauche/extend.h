@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: extend.h,v 1.1 2002-02-10 06:12:00 shirok Exp $
+ *  $Id: extend.h,v 1.2 2002-06-10 00:28:21 shirok Exp $
  */
 
 #ifndef GAUCHE_EXTEND_H
@@ -30,8 +30,12 @@ extern "C" {
    do {									\
        extern GC_PTR SCM_CPP_CAT(Scm__datastart_, name);		\
        extern GC_PTR SCM_CPP_CAT(Scm__dataend_, name);			\
-       GC_register_dlopen_data(SCM_CPP_CAT(Scm__datastart_, name),	\
-                               SCM_CPP_CAT(Scm__dataend_, name));	\
+       extern GC_PTR SCM_CPP_CAT(Scm__bssstart_, name);		        \
+       extern GC_PTR SCM_CPP_CAT(Scm__bssend_, name);			\
+       GC_register_dlopen_data(&SCM_CPP_CAT(Scm__datastart_, name),     \
+                               &SCM_CPP_CAT(Scm__dataend_, name),       \
+                               &SCM_CPP_CAT(Scm__bssstart_, name),      \
+                               &SCM_CPP_CAT(Scm__bssend_, name));       \
    } while (0)
 
 #ifdef __cplusplus

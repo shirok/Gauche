@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.38 2002-05-21 10:56:41 shirok Exp $
+ *  $Id: core.c,v 1.39 2002-06-10 00:28:21 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -86,7 +86,7 @@ void Scm_Init(void)
     
     /* This is required in some platforms in order to link
        dyn_load.o properly. */
-    GC_register_dlopen_data(NULL, NULL);
+    GC_register_dlopen_data(NULL, NULL, NULL, NULL);
 
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());
@@ -140,4 +140,19 @@ const char *Scm_HostArchitecture(void)
     return GAUCHE_ARCH;
 }
 
+/*
+ * Useful routine for debugging, to check if an object is inadvertently
+ * collected.
+ */
 
+static void gc_sentinel(GC_PTR obj, GC_PTR data)
+{
+    Scm_Printf(SCM_CURERR, "WARNING: object %s(%p) is inadvertently collected\n", (char *)data, obj);
+}
+
+void Scm_GCSentinel(void *obj, const char *name)
+{
+    GC_finalization_proc ofn;
+    GC_PTR ocd;
+    GC_REGISTER_FINALIZER(obj, gc_sentinel, (void*)name, &ofn, &ocd);
+}

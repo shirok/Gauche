@@ -392,8 +392,10 @@ GC_API void GC_add_roots GC_PROTO((char * low_address,
 				   char * high_address_plus_1));
 
 /* [SK 2002/02/09] add data segment of dlopened object */
-GC_API void GC_register_dlopen_data GC_PROTO((GC_PTR start, 
-					      GC_PTR end));
+GC_API void GC_register_dlopen_data GC_PROTO((GC_PTR datastart, 
+					      GC_PTR dataend,
+					      GC_PTR bssstart,
+					      GC_PTR bssend));
 
 /* Add a displacement to the set of those considered valid by the	*/
 /* collector.  GC_register_displacement(n) means that if p was returned */
