@@ -1,3 +1,19 @@
+2001-04-01  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.18
+	* lib/gauche/object.scm: finishing metaclass stuff (not well tested
+	  yet).
+	* src/char.c: start adding character set stuff.
+	* src/boolean.c (Scm_EqualP): added a hook for class compare routine.
+	* lib/gauche/object.scm, src/vm.c: generic function application
+	  metaobject protocol implemented (not tested, though).
+	* src/moplib.stub: added %make-next-method
+	* src/list.c: added Scm_ListToArray.
+	* src/compare.c, src/extlib.stub: added sorting-related routines
+	  and Scheme functions sort and sort!.
+	* src/number.c (Scm_NumCmp): fixed a bug that didn't work properly
+	  for flonums.
+
 2001-03-31  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.17
