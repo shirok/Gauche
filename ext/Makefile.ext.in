@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.11 2003-07-19 11:47:30 shirok Exp $
+## $Id: Makefile.ext.in,v 1.12 2003-07-23 03:42:39 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -16,7 +16,7 @@ AR       = @AR@
 LIBS     = @LIBS@
 CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
-LDFLAGS  = @SHLIB_SO_LDFLAGS@
+LDFLAGS  = @LOCAL_LIB@ @SHLIB_SO_LDFLAGS@
 
 
 # These are set by configure

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.6 2003-07-20 05:09:38 shirok Exp $
+dnl $Id: configure.ac,v 1.7 2003-07-23 03:42:30 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.1_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.6 $)
+AC_REVISION($Revision: 1.7 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -333,7 +333,7 @@ dnl                      e.g. "-fpic"
 dnl  SHLIB_SO_LDFLAGS    flags to link files to create dlopen-able
 dnl                      module, e.g. "-shared -o"
 dnl  SHLIB_DYLIB_LDFLAGS flags to link files to create dynamically linkable
-dnl                      module.   On most unices it is the same as
+dnl                      module.   On most unices this is the same as
 dnl                      SHLIB_SO_LDFLAGS.
 dnl  SHLIB_MAIN_LDFLAGS  flags required to compile a main program which
 dnl                      exposes symbols to be referred by the dynamically
@@ -391,7 +391,7 @@ case $target in
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
-    SHLIB_DYLIB_LDFLAGS="-dynamiclib -o"
+    SHLIB_DYLIB_LDFLAGS='-dynamiclib -install_name "$$TARGETLIB/libgauche.dylib -o'
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
     SHLIB_MAIN_LDFLAGS=""
@@ -497,14 +497,11 @@ AC_CACHE_CHECK([linker takes --rpath flag], ac_cv_linker_rpath_flag, [
                  ac_cv_linker_rpath_flag=no)])
 CFLAGS="$cflags_save"
 if test "$ac_cv_linker_rpath_flag" = "yes"; then
-  RPATH_TMP='-Wl,--rpath -Wl,`pwd`'
-  RPATH_REAL='-Wl,--rpath -Wl,$(LIB_INSTALL_DIR)'
+  RPATH='-Wl,--rpath "-Wl,$$TARGETLIB"'
 else
-  RPATH_TMP=
-  RPATH_REAL=
+  RPATH=
 fi
-AC_SUBST(RPATH_TMP)
-AC_SUBST(RPATH_REAL)
+AC_SUBST(RPATH)
 
 dnl Sets some optimization flags by heuristics.
 AC_GAUCHE_OPTFLAGS
