@@ -10,6 +10,10 @@ Runtime library
 * comparison interface; give compare virtual method an extra parameter
   to tell if it is called for comparison or just for equivalence checking.
 
+* class copy protocol
+
+* general hash table interface
+
 o serial.c: realize native serializer.
 
 Compiler and VM
@@ -39,11 +43,29 @@ Modules
 
 * module dbi/* : unified DB interface
 
+* module gauche.lock :general file locking
+
+* module gauche.logger : logging
+
+* module cgi   : cgi interface
+
+* module file.utils : common file utils
+
+* module file.find 
+
+* module file.du
+
+* module text.csv
+
+* module text.tr
+
 * module math/mt-random : Mersenne Twister random number generator
 
 * module math/perlin-noise : Ken Perlin's noise function
 
-* module math/quaternion : Quaternions
+* module math/quat : Quaternions
+
+* module math/matrix : Matrices
 
 * module rfc/uri : url parsing
 

@@ -1,3 +1,31 @@
+2001-09-17  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.5
+	* src/regexp.c : fixed two bugs.  Jump offset overflowed in the large
+	  regexp.  Top level `?' didn't compiled correctly.
+	* lib/gauche/logger.scm : added.
+	* src/system.c : made members of struct tm visible from Scheme.
+	* src/bignum.c, src/char.c, src/port.c : applied a patch from
+	  Abe Hiroshi to fix bugs on LP64 architecture.
+	* src/gauche.h : fixed SCM_CHAR_MAX on LP64 architecture.
+	
+2001-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/stdlib.stub, src/port.c : added :if-exists, :if-does-not-exist
+	  and :element-type flags to open-input-file and open-output-file to
+	  control file operations precisely.
+	* src/read.c : added SRFI-10 sharp-comma reader extension.
+	
+2001-09-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : fixed a bug that caused assertion failed when an
+	  unhandled error is thrown from non-interactive script.
+	* src/class.c and other files: changed built-in class initialization
+	  routines.
+	* src/system.c : added Scm_GetPortFd to eliminate duplicated code
+	  on several files.
+	* ext/fcntl : added fcntl interface module.
+
 2001-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.4
