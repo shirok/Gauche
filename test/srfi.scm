@@ -2,12 +2,35 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.1 2001-03-11 07:22:53 shiro Exp $
+;; $Id: srfi.scm,v 1.2 2001-03-12 07:42:33 shiro Exp $
 
 (add-load-path "../lib")
 (use tester.tester)
 
 (test-start "SRFIs")
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-2")
+(use srfi-2)
+
+(define (srfi-2-look-up key alist)
+  (and-let* ((x (assq key alist))) (cdr x)))
+(test "and-let*" 3
+      (lambda () (srfi-2-look-up 'c '((a . 1) (b . 2) (c . 3)))))
+(test "and-let*" #f
+      (lambda () (srfi-2-look-up 'd '((a . 1) (b . 2) (c . 3)))))
+(test "and-let*" 3
+      (lambda ()
+        (let ((x 3))
+          (and-let* (((positive? x))
+                     (y x))
+                    y))))
+(test "and-let*" #f
+      (lambda ()
+        (let ((x -3))
+          (and-let* (((positive? x))
+                     (y x))
+                    y))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-17")
@@ -88,5 +111,8 @@
 
 (define x (cons 1 2))
 (test "(setter kar)" '(3 . 2) (lambda () (set! (kar x) 3) x))
+
+;; see it works as the normal set!
+(test "set!" '#f (lambda () (set! x #f) x))
 
 (test-end)
