@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.15 2002-06-17 05:48:05 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.16 2002-06-19 01:58:47 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -37,6 +37,18 @@ static ScmClass *sequence_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
+
+/* Useful constants.  Module initialization routine sets the actual value.
+   Initialization to SCM_NIL is necessary to place these vars in data area
+   instead of bss area. */
+ScmObj Scm_UvectorS32Max = SCM_NIL;
+ScmObj Scm_UvectorS32Min = SCM_NIL;
+ScmObj Scm_UvectorU32Max = SCM_NIL;
+ScmObj Scm_UvectorU32Min = SCM_NIL;
+ScmObj Scm_UvectorS64Max = SCM_NIL;
+ScmObj Scm_UvectorS64Min = SCM_NIL;
+ScmObj Scm_UvectorU64Max = SCM_NIL;
+ScmObj Scm_UvectorU64Min = SCM_NIL;
 EOF
 
 # template ------------------------------------------------------------
@@ -280,6 +292,8 @@ SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
 void Scm_Init_libuvector(void)
 {
     ScmModule *m;
+    ScmObj t;
+
     SCM_INIT_EXTENSION(uvector);
     m = SCM_MODULE(SCM_FIND_MODULE("srfi-4", TRUE));
     Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  NULL, 0, m);
@@ -292,6 +306,21 @@ void Scm_Init_libuvector(void)
     Scm_InitBuiltinClass(&Scm_U64VectorClass, "<u64vector>", NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_F32VectorClass, "<f32vector>", NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_F64VectorClass, "<f64vector>", NULL, 0, m);
+
+    /* initialize constant values */
+    t = Scm_Ash(SCM_MAKE_INT(1), 31);  /* 2^31 */
+    Scm_UvectorS32Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
+    Scm_UvectorS32Min = Scm_Negate(t);
+    t = Scm_Ash(SCM_MAKE_INT(1), 32);  /* 2^32 */
+    Scm_UvectorU32Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
+    Scm_UvectorU32Min = SCM_MAKE_INT(0);
+    t = Scm_Ash(SCM_MAKE_INT(1), 63);  /* 2^63 */
+    Scm_UvectorS64Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
+    Scm_UvectorS64Min = Scm_Negate(t);
+    t = Scm_Ash(SCM_MAKE_INT(1), 64);  /* 2^64 */
+    Scm_UvectorU64Max = Scm_Subtract2(t, SCM_MAKE_INT(1));
+    Scm_UvectorU64Min = SCM_MAKE_INT(0);
+
     Scm_Init_uvlib(m);
     Scm_ReadUvectorHook = read_uvector;
 }
