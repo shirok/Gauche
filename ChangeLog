@@ -1,3 +1,11 @@
+2002-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c (lookup_env): fixed the variable reference algorithm
+	  so that it can handle the case when a frame contains more than
+	  one variable with the same name, in the case like
+	  '(let* ((x 1) (x 2)) ...)'.  A bug pointed out by Paul Stodghill.
+	* src/bignum.c : further optimization.
+	
 2002-04-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (double_print): switched back to the MP version
