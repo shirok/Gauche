@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.7 2001-01-15 10:59:00 shiro Exp $
+ *  $Id: gauche.h,v 1.8 2001-01-16 04:46:01 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -444,6 +444,16 @@ extern char*   Scm_GetString(ScmString *str);
 extern const char* Scm_GetStringConst(ScmString *str);
 
 extern ScmObj  Scm_StringEqual(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringLt(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringLe(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringGt(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringGe(ScmString *x, ScmString *y);
+
+extern ScmObj  Scm_StringCiEqual(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringCiLt(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringCiLe(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringCiGt(ScmString *x, ScmString *y);
+extern ScmObj  Scm_StringCiGe(ScmString *x, ScmString *y);
 
 extern ScmChar Scm_StringRef(ScmString *str, int k);
 extern ScmObj  Scm_StringSet(ScmString *str, int k, ScmChar sc);
@@ -620,6 +630,7 @@ enum ScmPortType {
 #define SCM_PORT(obj)       ((ScmPort *)(obj))
 #define SCM_PORT_TYPE(obj)  (SCM_PORT(obj)->type)
 #define SCM_PORT_DIR(obj)   (SCM_PORT(obj)->direction)
+#define SCM_PORT_UNGOTTEN(obj)  (SCM_PORT(obj)->ungotten)
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT_TYPE(obj) == SCM_PORT_CLOSED)
 
