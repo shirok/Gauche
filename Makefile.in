@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.44 2003-08-26 09:57:02 shirok Exp $
+# $Id: Makefile.in,v 1.45 2003-09-28 04:42:14 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check install uninstall clean distclean maintainer-clean install-check
@@ -67,7 +67,7 @@ dist:
 distcheck:
 	@echo "To create a distribution tarball, use DIST script."
 
-install-check: install
+install-check:
 	@echo "Testing installed Gauche"
 	@rm -rf test.log
 	@(cd src; $(MAKE) install-check) >> test.log
