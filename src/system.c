@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.21 2001-06-20 10:44:01 shirok Exp $
+ *  $Id: system.c,v 1.22 2001-06-21 08:52:29 shirok Exp $
  */
 
 #include <stdio.h>
@@ -124,12 +124,13 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         if (*(dstp-1) != '/') { *dstp++ = '/'; *(dstp+1) = '\0'; }
     } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/') {
         int dirlen;
-        char *p = getcwd(NULL, -1);
-        if (p == NULL) Scm_Error("couldn't get current directory.");
+#define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
+        char p[GETCWD_PATH_MAX];
+        if (getcwd(p, GETCWD_PATH_MAX-1) == NULL)
+            Scm_SysError("couldn't get current directory.");
         dirlen = strlen(p);
         buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
         strcpy(buf, p);
-        free(p);                /* allocated by getcwd() */
         dstp = buf + dirlen;
         if (*(dstp-1) != '/') *dstp++ = '/';
     } else if (flags & SCM_PATH_CANONICALIZE) {
@@ -194,9 +195,10 @@ ScmObj Scm_BaseName(ScmString *filename)
     const char *p, *str = SCM_STRING_START(filename);
     int i, size = SCM_STRING_SIZE(filename);
 
-    if (size == 0) return SCM_OBJ(filename);
+    if (size == 0) return SCM_MAKE_STR("");
     p = str+size-1;
-    if (*p == '/') { p--; size--; } /* ignore trailing '/' */
+    while (*p == '/' && size > 0) { p--; size--; } /* ignore trailing '/' */
+    if (size == 0) return SCM_MAKE_STR("");
     for (i = 0; i < size; i++, p--) {
         if (*p == '/') break;
     }
@@ -209,14 +211,15 @@ ScmObj Scm_DirName(ScmString *filename)
     int i, size = SCM_STRING_SIZE(filename);
 
     if (size == 0) return SCM_MAKE_STR(".");
-    if (size == 1 && *str == '/') return SCM_MAKE_STR("/");
-    
     p = str+size-1;
-    if (*p == '/') { p--; size--; } /* ignore trailing '/' */
+    while (*p == '/' && size > 0) { p--; size--; } /* ignore trailing '/' */
+    if (size == 0) return SCM_MAKE_STR("/");
     for (i = size; i > 0; i--, p--) {
         if (*p == '/') break;
     }
     if (i == 0) return SCM_MAKE_STR(".");
+    while (*p == '/' && i > 0) { p--; i--; } /* delete trailing '/' */
+    if (i == 0) return SCM_MAKE_STR("/");
     return Scm_MakeString(str, i, -1, 0);
 }
 
@@ -572,8 +575,8 @@ static ScmObj select_int(ScmSysFdset *rfds, ScmSysFdset *wfds,
 ScmObj Scm_SysSelect(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 {
     ScmSysFdset *r = select_checkfd(rfds);
-    ScmSysFdset *w = select_checkfd(rfds);
-    ScmSysFdset *e = select_checkfd(rfds);
+    ScmSysFdset *w = select_checkfd(wfds);
+    ScmSysFdset *e = select_checkfd(efds);
     return select_int((r? fdset_copy(r) : NULL),
                       (w? fdset_copy(w) : NULL),
                       (e? fdset_copy(e) : NULL),
@@ -583,8 +586,8 @@ ScmObj Scm_SysSelect(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 {
     ScmSysFdset *r = select_checkfd(rfds);
-    ScmSysFdset *w = select_checkfd(rfds);
-    ScmSysFdset *e = select_checkfd(rfds);
+    ScmSysFdset *w = select_checkfd(wfds);
+    ScmSysFdset *e = select_checkfd(efds);
     return select_int(r, w, e, timeout);
 }
 
