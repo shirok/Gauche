@@ -7,6 +7,11 @@
 	* src/syslib.stub : for freebsd, sys-access uses stat(2) instead
 	  of somewhat unreliable access(2).
 	* src/gauche-config.h : autoloads srfi-0 (cond-expand).
+	* ext/net/configure.in, ext/net/netconfig.h.in, ext/net/net.h :
+	  includes rpc/types.h if the system has it.  (Suggested by
+	  Abe Hiroshi).
+	* src/number.c, src/bignum.c, ext/uvector/uvectorP.h : applied
+	  patch from Abe Hiroshi to make it work on HP_UX.
 
 2002-02-09  Shiro Kawai  <shiro@acm.org>
 
