@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.75 2001-09-29 11:33:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.76 2001-09-29 23:32:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2854,9 +2854,9 @@ padding is added to the left.
 (format #f "|~a|" "oops")
   @result{} "|oops|"
 (format #f "|~10a|" "oops")
-  @result{} "|      oops|"
-(format #f "|~10@@a|" "oops")
   @result{} "|oops      |"
+(format #f "|~10@@a|" "oops")
+  @result{} "|      oops|"
 (format #f "|~10,,,'*a|" "oops")
   @result{} "|******oops|"
 @end example
@@ -2870,9 +2870,9 @@ as @code{~A} directive.
 (format #f "|~s|" "oops")
   @result{} "|\"oops\"|"
 (format #f "|~10s|" "oops")
-  @result{} "|    \"oops\"|"
-(format #f "|~10@@s|" "oops")
   @result{} "|\"oops\"    |"
+(format #f "|~10@@s|" "oops")
+  @result{} "|    \"oops\"|"
 (format #f "|~10,,,'*s|" "oops")
   @result{} "|****\"oops\"|"
 @end example
