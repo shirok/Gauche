@@ -287,7 +287,7 @@ Gauche's @code{sys-gethostname}.  @xref{System Inquiry}.
 Gauche's @code{sys-getgid}.   @xref{System Inquiry}.
 @item getgrgid
 @itemx getgrnam
-Gauche's @code{sys-getgrgid} and @code{sys-getgrnam}.  @xref{Unix group}.
+Gauche's @code{sys-getgrgid} and @code{sys-getgrnam}.  @xref{Unix groups and users}.
 @item getgroups
 Gauche's @code{sys-getgroups}.   @xref{System Inquiry}.
 @item getlogin
@@ -299,7 +299,7 @@ Gauche's @code{sys-getpgrp}.   @xref{System Inquiry}.
 Gauche's @code{sys-getpid}.   @xref{System Inquiry}.
 @item getpwnam
 @itemx getpwuid
-Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix users}.
+Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix groups and users}.
 @item gets
 Use @code{read-line} or @code{read-block}.  @xref{Input}.
 @item gettimeofday

@@ -9257,15 +9257,7 @@ or @code{#f} if the port is not connected to a terminal.
 @subsection Unix groups and users
 @c NODE Unixのグループとユーザ
 
-@menu
-* Unix group::                  
-* Unix users::                  
-* Password encryption::         
-@end menu
-
-@node Unix group, Unix users, Unix groups and users, Unix groups and users
-@subsubsection Unix Group
-@c NODE Unixのグループ
+@subsubheading Unix groups
 
 @deftp {Builtin Class} <sys-group>
 @clindex sys-group
@@ -9332,9 +9324,7 @@ Convenience function to convert between group id and group name.
 @c COMMON
 @end defun
 
-@node Unix users, Password encryption, Unix group, Unix groups and users
-@subsubsection Unix users
-@c NODE Unixのユーザ
+@subsubheading Unix users
 
 @deftp {Builtin Class} <sys-passwd>
 @clindex sys-passwd
@@ -9436,9 +9426,7 @@ Convenience functions to convert between user id and user name.
 @end defun
 
 
-@node Password encryption,  , Unix users, Unix groups and users
-@subsubsection Password encryption
-@c NODE パスワードの暗号化
+@subsubheading Password encryption
 
 @defun sys-crypt key salt
 @c EN
@@ -10440,13 +10428,7 @@ SRFI互換の時間は@code{<time>}クラスのインスタンスとして表現され、
 @code{Current-time}はこの表現を返します。
 @c COMMON
 
-@menu
-* POSIX time::                  
-* SRFI time::                   
-@end menu
-
-@node POSIX time, SRFI time, Time, Time
-@subsubsection POSIX time
+@subsubheading POSIX time
 
 @defun sys-time
 @c EN
@@ -10620,8 +10602,7 @@ to the POSIX-time (number of seconds since Epoch).
 @end defun
 
 
-@node SRFI time,  , POSIX time, Time
-@subsubsection SRFI time
+@subsubheading SRFI time
 
 @deftp {Builtin Class} <time>
 @c EN
@@ -10702,14 +10683,7 @@ timeオブジェクトと秒数(POSIX時間)を変換します。
 @subsection Unix process management
 @c NODE Unixのプロセス管理
 
-@menu
-* Fork and exec::               
-* Wait::                        
-@end menu
-
-@node Fork and exec, Wait, Unix process management, Unix process management
-@subsubsection Fork and exec
-@c NODE forkとexec
+@subsubheading Fork and exec
 
 @defun sys-system command
 @c EN
@@ -10853,9 +10827,7 @@ more convenient process handling on top of above primitives.
 います。
 @c COMMON
 
-@node Wait,  , Fork and exec, Unix process management
-@subsubsection Wait
-@c NODE Wait
+@subsubheading Wait
 
 @defun sys-wait
 @c EN
