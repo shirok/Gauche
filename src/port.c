@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.82 2002-10-15 10:28:00 shirok Exp $
+ *  $Id: port.c,v 1.83 2002-11-12 02:23:22 shirok Exp $
  */
 
 #include <unistd.h>
@@ -349,8 +349,8 @@ int Scm_FdReady(int fd, int dir)
  *
  *      SCM_PORT_BUFFER_LINE : Line buffering.  The buffer is flushed
  *         when a newline character is put, other than the normal
- *         circumstances as in BUFFER_ALWAYS.   Unlike C stdio, the
- *         buffer isn't flushed when an input is called on the same
+ *         circumstances as in SCM_PORT_BUFFER_FULL.   Unlike C stdio,
+ *         the buffer isn't flushed when an input is called on the same
  *         terminal device.
  *         This is natural for output of interactive communication.
  *         This is the default of stdout.
