@@ -13,6 +13,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 @menu
 * Standard conformance::        
 * Multibyte Strings::           
+* Multibyte scripts::           
 * Case-sensitivity::            
 * Integerated Object System::   
 * Module system::               
@@ -349,7 +350,7 @@ Supported by the module @code{gauche.parameter}.
 @end table
 
 
-@node Multibyte Strings, Case-sensitivity, Standard conformance, Concepts
+@node Multibyte Strings, Multibyte scripts, Standard conformance, Concepts
 @section Multibyte Strings
 @c NODE マルチバイト文字列
 
@@ -481,14 +482,116 @@ as a special port. @xref{Character code conversion}, for details.
 @c COMMON
 
 @c EN
-Gauche assumes the Scheme program is written in its internal
-encoding scheme.
+The way to specify the encoding of source programs will be
+explained in the next section.
 @c JP
-Gaucheは、Schemeプログラムはその内部エンコーディングと同じエンコーディングで
-書かれているものとして読み込みます。
+ソースプログラムのエンコーディングを指定する方法については
+次の章で説明します。
 @c COMMON
 
-@node Case-sensitivity, Integerated Object System, Multibyte Strings, Concepts
+@node Multibyte scripts, Case-sensitivity, Multibyte Strings, Concepts
+@section Multibyte scripts
+@c NODE マルチバイトスクリプト
+
+@c EN
+You can use characters other than @code{us-ascii} not only in
+literal strings and characters, but in in commens, symbol names,
+literal regular expressions, and so on.
+@c JP
+リテラル文字列や文字以外にも、コメント、シンボル名、
+リテラル正規表現など様々な箇所で、@code{us-ascii}以外の文字を
+使うことができます。
+@c COMMON
+
+@c EN
+So far, Gauche treats any characters other than @code{us-ascii}
+as symbol constituent characters.  Unicode defines more than dozen
+"space" characters, though, and they will be treated as whitespace
+characters in future.  So it's better to avoid those characters
+(except in the strings, regexps and characters) for the time being.
+@c JP
+いまのところ、Gaucheは@code{us-ascii}以外の文字を全て、シンボルを
+構成する文字として扱います。但し、Unicodeは十数個の「空白」文字を定義
+しており、将来はそれらの文字がプログラム上も空白として扱われるように
+なるでしょう。従って現在のところはそれらの文字の使用は
+(文字列、正規表現、文字以外の箇所では)避けておくのが良いでしょう。
+@c COMMON
+
+@c EN
+By default, Gauche assumes the Scheme program is written in
+its internal encoding scheme.   It is fine as far as you're writing
+scripts to use your own environment, but becomes a problem if
+somebody else tries to use your script and finds out you're using
+different character encodings than his/hers.
+@c JP
+デフォルトでは、GaucheはSchemeプログラムをGaucheの内部文字エンコーディングで
+書かれているものとして扱います。これは、自分で書いたスクリプトを自分の
+環境で走らせるだけなら十分ですが、別の文字エンコーディングを使うように
+コンパイルされた環境でスクリプトを走らせたい場合に問題となります。
+@c COMMON
+
+@c EN
+So, if Gauche finds a comment something like the following within
+the first two lines of the program source, it assumes the rest of
+the source code is written in @code{<encoding-name>}, and does
+the appropriate character encoding conversion to read the source code:
+@c JP
+そこで、Gaucheは、次のようなコメントがプログラムソースコードの
+2行目までに現れた場合、ソースコードの残りの部分が@code{<encoding-name>}で
+指定されるエンコーディングで書かれているものとして、必要ならば
+適切なエンコーディング変換を行います。
+@c COMMON
+@example
+;; coding: <encoding-name>
+@end example
+
+@c EN
+More precisely, a comment in either first or second line that matches
+a regular expression @code{#/coding[:=]\s*([\w.-]+)/} is recognized, 
+and the first submatch is taken as an encoding name.
+If there are multiple matches, only the first one is effective.   
+The first two lines must not contain characters other than us-ascii
+in order for this mechanism to work.
+@c JP
+より正確には、1行目または2行目のコメントで、
+正規表現@code{#/coding[:=]\s*([\w.-]+)/}にマッチするものがあった場合に、
+最初の部分マッチがエンコーディング名として認識されます。
+複数のマッチがあった場合は最初のものが有効になります。
+このメカニズムを利用するためには、最初の2行以内にus-ascii以外の文字を
+含めないようにして下さい。
+@c COMMON
+
+@c EN
+The following example tells Gauche that the script is written
+in EUC-JP encoding.   Note that the string "@code{-*-}" around the coding
+would be recognized by Emacs to select the buffer's encoding
+appropriately.
+@c JP
+例えば次の例では、Gaucheはスクリプトがeuc-jpで書かれているものと
+認識します。coding指定の周囲の"@code{-*-}"は、Emacsが
+バッファのエンコーディングを適切に設定するのに使われます。
+@c COMMON
+
+@example
+#!/usr/bin/gosh
+;; -*- coding: euc-jp -*-
+
+... script written in euc-jp ...
+@end example
+
+@c EN
+Internally, the handling of this @emph{magic comment} is done by
+a special type of port.  See @ref{Coding-aware ports} for the
+details.  See also @ref{Loading Scheme file} for how to disable
+this feature.
+@c JP
+内部では、この特殊なコメントの処理は特別なポートによって
+行われています。詳細は@ref{Coding-aware ports}を参照して下さい。
+また、この処理を行わないようにする方法については
+@ref{Loading Scheme file}を参照して下さい。
+@c COMMON
+
+@node Case-sensitivity, Integerated Object System, Multibyte scripts, Concepts
 @section Case-sensitivity
 @c NODE 大文字小文字の区別
 

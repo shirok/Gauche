@@ -6101,6 +6101,7 @@ and re-invoke them afterwards.
 * Common port operations::      
 * File ports::                  
 * String ports::                
+* Coding-aware ports::          
 * Procedural ports::            
 * Input::                       
 * Output::                      
@@ -6970,7 +6971,7 @@ specfies whether @var{fd} should be closed when the port is closed.
 @c COMMON
 @end defun
 
-@node String ports, Procedural ports, File ports, Input and output
+@node String ports, Coding-aware ports, File ports, Input and output
 @subsection String ports
 @c NODE 文字列ポート
 
@@ -7166,7 +7167,51 @@ STkには@code{read-from-string}がありますが、省略可能な引数は取りません。
 @c COMMON
 @end defun
 
-@node Procedural ports, Input, String ports, Input and output
+@node Coding-aware ports, Procedural ports, String ports, Input and output
+@subsection Coding-aware ports
+@c NODE コーディング認識ポート
+
+@c EN
+A coding-aware port is a special type of procedural input port that
+is used by @code{load} to read a program source.  The port recognizes
+the magic comment to specify the character encoding of the
+program source, such as @code{;; -*- coding: utf-8 -*-}, and makes
+an appropriate character encoding conversion.  
+See @ref{Multibyte scripts} for the details of coding magic comment.
+@c JP
+コーディング認識ポートは特殊な手続的入力ポートで、@code{load}が
+プログラムソースコードを読む際に使われています。このポートは
+@code{;; -*- coding: utf-8 -*-}のような、プログラムソースの
+文字エンコーディングを指定する特殊なコメントを認識し、適切な
+文字エンコーディング変換を行います。
+特殊なコメントでソースの文字エンコーディングを指定することについては、
+@ref{Multibyte scripts}を参照して下さい。
+@c COMMON
+
+@defun open-coding-aware-port iport
+Takes an input port and returns an input coding aware port,
+which basically just pass through the data from @var{iport} to
+its reader.  However, if a magic comment appears within the
+first two lines of data from @var{iport}, the coding aware port
+applies the necessary character encoding conversion to the rest of the
+data as they are read.
+
+The passed port, @var{iport}, is "owned" by the created coding-aware
+port.  That is, when the coding-aware port is closed, @var{iport} is
+also closed.  The content read from @var{iport} is buffered in the
+coding-aware port, so other code shouldn't read from @var{iport}.
+
+By default, Gauche's @code{load} uses a coding aware port to read
+the program source, so that the coding magic comment works for
+the Gauche source programs (see @ref{Loading Scheme file}).
+However, since the mechanism itself
+is independent from @code{load}, you can use this port for
+other purposes; it is particulary useful to write a function
+that processes Scheme source programs which may have the coding
+magic comment.
+@end defun
+
+@node Procedural ports, Input, Coding-aware ports, Input and output
 @subsection Procedural ports
 @c NODE 手続き的ポート
 
@@ -8323,7 +8368,7 @@ absolute position of the arguments, starting from 0.
 @subsection Loading Scheme file
 @c NODE Schemeファイルのロード
 
-@defun load file &keyword paths (error-if-not-found #t) environment
+@defun load file &keyword paths (error-if-not-found #t) environment ignore-coding
 [R5RS+]
 @c EN
 Loads @var{file}, that is, read Scheme expressions in @var{file} and
@@ -8340,6 +8385,15 @@ On success, @code{load} returns @code{#t}.
 If the specified file is not found, an error is signalled unless
 the keyword argument @var{error-if-not-found} is @code{#f}, in
 which case @code{load} returns @code{#f}.
+
+By default, @code{load} uses a coding-aware port 
+(@xref{Coding-aware ports}) so that the "@code{coding:}" magic 
+comment at the beginning of the source file is effective.
+(See @ref{Multibyte scripts}, for the details of
+the coding magic comment).  If a true value is given to the
+keyword argument @var{ignore-coding}, @code{load} doesn't
+create the coding-aware port and directly reads from the
+file port.
 
 If a module is given to the keyword argument @var{environment},
 @code{load} works as if the given module is selected at the beginning
@@ -8365,6 +8419,14 @@ If you want to load a library file, it's better to use `@code{use}'
 指定ファイルがみつからない場合はエラーとなりますが、もしキーワード引数
 @code{error-if-not-found}に@code{#f}が与えられていれば単に@code{load}から
 @code{#f}が返されます。
+
+デフォルトでは、@code{load}はコーディング認識ポート(@ref{Coding-aware ports}参照)を
+使ってソースファイルを読み込むので、ファイル先頭の"@code{coding:}" コメントによる
+文字エンコーディング指定が有効になります。
+(codingコメントについては@ref{Multibyte scripts}を参照)。
+但し、キーワード引数@var{ignore-coding}に真の値が渡された場合、
+@code{load}はcoding-aware portを作成せず、直接ファイルポートから
+ソースを読み込みます。
 
 キーワード引数@var{environment}にモジュールが渡された場合は、
 あたかもそのモジュールがファイルの先頭でselectされたかのように
@@ -8443,8 +8505,14 @@ Gauche can still find the right library.
 @c EN
 Reads Scheme expressions from an input port @var{port} and evaluates
 them, until EOF is read.
+
+Note that unless you pass a coding-aware port to @var{port},
+the "@code{coding:}" magic comment won't be handled.
 @c JP
 入力ポート@var{port}から、EOFを読むまで繰り返しScheme式を読み込み評価します。
+
+@var{port}にコーディング認識ポートを渡さない限り、"@code{coding:}"コメント
+による文字コード変換は行われないことに注意して下さい。
 @c COMMON
 @end defun
 
