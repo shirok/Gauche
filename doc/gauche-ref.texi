@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.172 2002-04-13 10:52:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.173 2002-04-13 23:19:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10681,7 +10681,7 @@ in the processing.
 @c COMMON
 @end defun
 
-@defun file-filter proc &keyword input output temporary-file temporary-directory keep-output?
+@defun file-filter proc &keyword input output temporary-file keep-output?
 @c EN
 Calls @var{proc} with two arguments, an input port and 
 an output port.   Returns the result(s) of @var{proc}.
