@@ -1,3 +1,16 @@
+2001-06-28  Shiro Kawai  <shiro@acm.org>
+
+	* doc/gauche-ref.texi: added docs of sys-random and sys-srandom,
+	  and some more.
+
+2001-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm: changed call-with-io-process to
+	  call-with-process-io
+	* lib/gauche/with.scm : added call-with-string-io and
+	  with-string-io
+	* src/syslib.stub : added sys-random and sys-srandom.
+
 2001-06-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-pipe): INCOMPATIBLE CHANGE: sys-pipe now

@@ -27,7 +27,7 @@ Copyright and condition of use of main portion of the source:
 
 
 
-Copyright of gc/*
+Copyright of gc/* -----------------------------------------------------------
 
     Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
     Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
@@ -45,14 +45,14 @@ Copyright of gc/*
 
 
 
-Copyright of lib/srfi-1.scm
+Copyright of lib/srfi-1.scm -------------------------------------------------
 
 ;;; Copyright (c) 1998, 1999 by Olin Shivers. You may do as you please with
 ;;; this code as long as you do not remove this copyright notice or
 ;;; hold me liable for its use. Please send bug reports to shivers@ai.mit.edu.
 
 
-Copyright of lib/srfi-11.scm
+Copyright of lib/srfi-11.scm ------------------------------------------------
 
 ;;  Copyright (C) Lars T Hansen (1999). All Rights Reserved. 
 ;;
@@ -78,3 +78,5 @@ Copyright of lib/srfi-11.scm
 ;;  WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY
 ;;  RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A
 ;;  PARTICULAR PURPOSE.
+
+

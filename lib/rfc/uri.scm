@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.1 2001-06-25 09:34:00 shirok Exp $
+;;;  $Id: uri.scm,v 1.2 2001-06-29 20:01:00 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -31,6 +31,7 @@
   (use srfi-13)
   (use gauche.regexp)
   )
+(select-module rfc.uri)
 
 ;;==============================================================
 ;; Generic parser
@@ -63,8 +64,15 @@
     (values userinfo host port)
     (values #f #f #f)))
 
+
+
 ;;==============================================================
 ;; Relative -> Absolute
+;;
+
+
+;;==============================================================
+;; Encoding & decoding
 ;;
 
 
