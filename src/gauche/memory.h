@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: memory.h,v 1.5 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: memory.h,v 1.6 2003-07-15 11:10:31 shirok Exp $
  */
 
 #ifndef GAUCHE_MEM_H
@@ -50,7 +50,7 @@
 #ifdef SCM_INLINE_MALLOC_PRIMITIVES
 
 /* These #define's must match the ones libgc.a was compiled with. */
-#define SMALL_CONFIG
+/* NB: when cross-compiling, SMALL_CONFIG is defined in GC. */
 #define DONT_ADD_BYTE_AT_END
 #define ALL_INTERIOR_POINTERS
 

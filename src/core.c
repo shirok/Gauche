@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.50 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: core.c,v 1.51 2003-07-15 11:10:31 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -85,6 +85,10 @@ static int (*ptr_pthread_create)(void) = NULL;
 
 void Scm_Init(void)
 {
+    /* Some platforms require this.  It is harmless if GC is
+       already initialized, so we call it here just in case. */
+    GC_init();
+
     GC_oom_fn = oom_handler;
 
     /* Initialize components.  The order is important, for some components

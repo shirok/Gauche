@@ -1,3 +1,7 @@
+2003-07-15  Shiro Kawai  <shiro@acm.org>
+
+	* gc/*, src/gauche/memory.h : upgraded to Boehm GC 6.2
+
 2003-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/Makefile.ext.in : Added $(DESTDIR) to the install
