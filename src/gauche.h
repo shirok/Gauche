@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.148 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: gauche.h,v 1.149 2001-06-01 21:05:10 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -923,10 +923,10 @@ typedef struct ScmPortVTableRec {
     int       (*Getz)(char *buf, int buflen, ScmPort *p);
     ScmObj    (*Getline)(ScmPort *p);
     int       (*Ready)(ScmPort *p);
-    int       (*Putb)(ScmPort *p, ScmByte b);
-    int       (*Putc)(ScmPort *p, ScmChar c);
+    int       (*Putb)(ScmByte b, ScmPort *p);
+    int       (*Putc)(ScmChar c, ScmPort *p);
     int       (*Putz)(const char *buf, int len, ScmPort *p);
-    int       (*Puts)(ScmPort *p, ScmString *s);
+    int       (*Puts)(ScmString *s, ScmPort *p);
     int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
     ScmProcPortInfo *(*Info)(ScmPort *p);

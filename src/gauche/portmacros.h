@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.5 2001-06-01 20:39:25 shirok Exp $
+ *  $Id: portmacros.h,v 1.6 2001-06-01 21:05:10 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
@@ -74,17 +74,17 @@
  */
 
 #define SCM__PROC_PUTB(b, port)                         \
-    SCM_PORT(port)->src.proc.vtable->Putb(SCM_PORT(port), b)
+    SCM_PORT(port)->src.proc.vtable->Putb(b, SCM_PORT(port))
 
 #define SCM__PROC_PUTC(c, port)                         \
-    SCM_PORT(port)->src.proc.vtable->Putc(SCM_PORT(port), c)
+    SCM_PORT(port)->src.proc.vtable->Putc(c, SCM_PORT(port))
 
 #define SCM__PROC_PUTZ(s, len, port)                    \
     SCM_PORT(port)->src.proc.vtable->Putz(s, len, SCM_PORT(port))
 
 #define SCM__PROC_PUTS(s, port)                                 \
-    SCM_PORT(port)->src.proc.vtable->Puts(SCM_PORT(port),       \
-                                          SCM_STRING(s))
+    SCM_PORT(port)->src.proc.vtable->Puts(SCM_STRING(s),        \
+                                          SCM_PORT(port))
 
 #define SCM__PROC_FLUSH(port) \
     SCM_PORT(port)->src.proc.vtable->Flush(SCM_PORT(port))

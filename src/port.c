@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.33 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: port.c,v 1.34 2001-06-01 21:05:10 shirok Exp $
  */
 
 #include <unistd.h>
@@ -508,13 +508,13 @@ static int null_ready(ScmPort *dummy)
     return TRUE;
 }
 
-static int null_putb(ScmPort *dummy, ScmByte b)
+static int null_putb(ScmByte b, ScmPort *dummy)
     /*ARGSUSED*/
 {
     return 0;
 }
 
-static int null_putc(ScmPort *dummy, ScmChar c)
+static int null_putc(ScmChar c, ScmPort *dummy)
     /*ARGSUSED*/
 {
     return 0;
@@ -526,7 +526,7 @@ static int null_putz(const char *str, int len, ScmPort *dummy)
     return 0;
 }
 
-static int null_puts(ScmPort *dummy, ScmString *s)
+static int null_puts(ScmString *s, ScmPort *dummy)
     /*ARGSUSED*/
 {
     return 0;
@@ -648,7 +648,7 @@ static int fdport_ready_unbuffered(ScmPort *port)
     return TRUE;
 }
 
-static int fdport_putb_unbuffered(ScmPort *port, ScmByte b)
+static int fdport_putb_unbuffered(ScmByte b, ScmPort *port)
 {
     DECL_FDPORT(pdata, port);
     int nwrote;
@@ -659,7 +659,7 @@ static int fdport_putb_unbuffered(ScmPort *port, ScmByte b)
     return 1;
 }
 
-static int fdport_putc_unbuffered(ScmPort *port, ScmChar ch)
+static int fdport_putc_unbuffered(ScmChar ch, ScmPort *port)
 {
     DECL_FDPORT(pdata, port);
     int nwrote, nbytes, count;
@@ -689,7 +689,7 @@ static int fdport_putz_unbuffered(const char *buf, int len, ScmPort *port)
     return size;
 }
 
-static int fdport_puts_unbuffered(ScmPort *port, ScmString *str)
+static int fdport_puts_unbuffered(ScmString *str, ScmPort *port)
 {
     DECL_FDPORT(pdata, port);
     int nwrote, count = SCM_STRING_SIZE(str);
@@ -863,7 +863,7 @@ static void bufport_flush_internal(struct bufport *bp)
     bp->current = 0;
 }
 
-static int bufport_putb(ScmPort *port, ScmByte b)
+static int bufport_putb(ScmByte b, ScmPort *port)
 {
     struct bufport *bp = PORT_BUFPORT(port);
     if (bp->current >= bp->bufsiz) {
@@ -873,7 +873,7 @@ static int bufport_putb(ScmPort *port, ScmByte b)
     return 0;
 }
 
-static int bufport_putc(ScmPort *port, ScmChar c)
+static int bufport_putc(ScmChar c, ScmPort *port)
 {
     struct bufport *bp = PORT_BUFPORT(port);
     int nbytes = SCM_CHAR_NBYTES(c), i;
@@ -916,7 +916,7 @@ static int bufport_putz(const char *buf, int len, ScmPort *port)
     return bufport_put_internal(port, buf, (len < 0? strlen(buf) : len));
 }
 
-static int bufport_puts(ScmPort *port, ScmString *s)
+static int bufport_puts(ScmString *s, ScmPort *port)
 {
     return bufport_put_internal(port, SCM_STRING_START(s), 
                                 SCM_STRING_SIZE(s));
