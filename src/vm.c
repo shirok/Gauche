@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.16 2001-02-01 08:17:12 shiro Exp $
+ *  $Id: vm.c,v 1.17 2001-02-01 09:29:16 shiro Exp $
  */
 
 #include "gauche.h"
@@ -223,6 +223,11 @@ ScmVM *Scm_SetVM(ScmVM *vm)
         env = env->up;                          \
     } while (0)
 
+#define VM_DUMP(delimiter)                      \
+    SAVE_REGS();                                \
+    fprintf(stderr, delimiter);                 \
+    Scm_VMDump(theVM)
+
 #define VM_ASSERT(expr)                                                 \
     do {                                                                \
         if (!(expr))  {                                                 \
@@ -354,7 +359,7 @@ static void run_loop()
     int nvals;                  /* # of values */
     
     for (;;) {
-/*        SAVE_REGS(); Scm_VMDump(vm);*/
+/*        VM_DUMP("");*/
         
         if (!SCM_PAIRP(pc)) {
             /* We are at the end of procedure.  Activate the most recent
@@ -507,8 +512,6 @@ static void run_loop()
                 argp->up = env->up;
                 argp->info = env->info;
                 env = argp;
-                fprintf(stderr, "***********************************\n");
-                Scm_VMDump(theVM);
                 continue;
             }
         case SCM_VM_LET:
@@ -1190,11 +1193,11 @@ void Scm_VMDump(ScmVM *vm)
     int j;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
-    Scm_Printf(out, "   pc: %65.1S\n", vm->pc);
+    Scm_Printf(out, "   pc: %#65.1S\n", vm->pc);
     Scm_Printf(out, "   sp: %p\n", vm->sp);
     Scm_Printf(out, " argp: %p\n", vm->argp);
     Scm_Printf(out, "  btm: %p\n", vm->stack);
-    Scm_Printf(out, " val0: %65.1S\n", vm->val0);
+    Scm_Printf(out, " val0: %#65.1S\n", vm->val0);
 
     Scm_Printf(out, " envs:\n");
     while (env) {
@@ -1208,7 +1211,7 @@ void Scm_VMDump(ScmVM *vm)
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             argp = %p[%d]\n", cont->argp, cont->size);
         if (cont->argp) {
-            Scm_Printf(out, "               pc = %50.1S\n", cont->pc);
+            Scm_Printf(out, "               pc = %#50.1S\n", cont->pc);
         } else {
             Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
         }
