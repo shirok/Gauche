@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.1 2002-03-08 08:27:59 shirok Exp $
+# $Id: Gauche.spec,v 1.2 2002-03-11 08:46:28 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -56,12 +56,16 @@ OPTFLAG="I686OPT="
 make ${OPTFLAG}
 
 %install
+# These dirs are not cleared after rpm -ba --clean.   To ensure clean
+# install, we remove them.
+rm -rf ${RPM_BUILD_ROOT}/usr/lib/gauche
+rm -rf ${RPM_BUILD_ROOT}/usr/share/gauche
+rm -rf ${RPM_BUILD_ROOT}/usr/share/man/man1
 mkdir -p ${RPM_BUILD_ROOT}/usr
 make prefix=${RPM_BUILD_ROOT}/usr install
 make prefix=${RPM_BUILD_ROOT}/usr install-doc
 
 %clean
-make clean
 
 %files
 

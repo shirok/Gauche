@@ -1,6 +1,8 @@
 2002-03-10  Shiro Kawai  <shiro@acm.org>
 
+	* aclocal.m4 (AC_GAUCHE_INIT_EXT) : substitute GAUCHE_VERSION as well.
 	* src/gauche-init.scm : added print.
+	* Gauche.spec : ensure the build install destination is clean.
 
 2002-03-09  Shiro Kawai  <shiro@acm.org>
 
