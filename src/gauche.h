@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.275 2002-07-05 21:50:08 uid50821 Exp $
+ *  $Id: gauche.h,v 1.276 2002-07-06 22:33:51 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1923,6 +1923,8 @@ SCM_CLASS_DECL(Scm_ErrorClass);
 #define SCM_ERROR(obj)             ((ScmError*)(obj))
 #define SCM_ERROR_MESSAGE(obj)     SCM_ERROR(obj)->message
 
+SCM_EXTERN ScmObj Scm_MakeError(ScmObj message);
+
 /* <system-error> */
 typedef struct ScmSystemErrorRec {
     ScmError common;
@@ -1932,6 +1934,8 @@ typedef struct ScmSystemErrorRec {
 SCM_CLASS_DECL(Scm_SystemErrorClass);
 #define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
 #define SCM_SYSTEM_ERROR_P(obj)    Scm_TypeP(obj, SCM_CLASS_SYSTEM_ERROR)
+
+SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
 
 /* Throwing error */
 SCM_EXTERN void Scm_Error(const char *msg, ...);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: thread.c,v 1.2 2002-07-06 10:13:39 shirok Exp $
+ *  $Id: thread.c,v 1.3 2002-07-06 22:33:52 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -29,6 +29,18 @@
  * Thread interface
  */
 
+static ScmObj thread_error_handler(ScmObj *args, int nargs, void *data)
+{
+    /* For now, uncaptured error causes thread termination with
+       setting <uncaught-exception> to the resultException field.
+       It is handled in thread_entry(), so we don't need to do anything
+       here. */
+    return SCM_UNDEFINED;
+}
+
+static SCM_DEFINE_STRING_CONST(thread_error_handler_NAME, "thread-error-handler", 20, 20);
+static SCM_DEFINE_SUBR(thread_error_handler_STUB, 1, 0, SCM_OBJ(&thread_error_handler_NAME), thread_error_handler, NULL, NULL);
+
 /* Creation.  In the "NEW" state, a VM is allocated but actual thread
    is not created. */
 ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
@@ -40,6 +52,7 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
     }
     vm = Scm_NewVM(current, current->module, name);
     vm->thunk = thunk;
+    vm->defaultEscapeHandler = SCM_OBJ(&thread_error_handler_STUB);
     return SCM_OBJ(vm);
 }
 
@@ -78,30 +91,35 @@ static void thread_cleanup(void *data)
     pthread_mutex_unlock(&vm->vmlock);
 }
 
-static void *thread_entry(void *vm)
+static void *thread_entry(void *data)
 {
+    ScmVM *vm = SCM_VM(data);
+    pthread_cleanup_push(thread_cleanup, vm);
     if (pthread_setspecific(Scm_VMKey(), vm) != 0) {
         /* NB: at this point, theVM is not set and we can't use Scm_Error. */
-        Scm_Panic("pthread_setspecific failed");
+        vm->resultException =
+            Scm_MakeError(SCM_MAKE_STR("pthread_setspecific failed"));
+    } else {
+        SCM_UNWIND_PROTECT {
+            vm->result = Scm_Apply(SCM_OBJ(vm->thunk), SCM_NIL);
+        } SCM_WHEN_ERROR {
+            ScmObj exc;
+            switch (vm->escapeReason) {
+            case SCM_VM_ESCAPE_CONT:
+                /*TODO: better message*/
+                vm->resultException =
+                    Scm_MakeError(SCM_MAKE_STR("stale continuation thrown"));
+                break;
+            default:
+                Scm_Panic("unknown escape");
+            case SCM_VM_ESCAPE_ERROR:
+                exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
+                SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->escapeData[1]);
+                vm->resultException = exc;
+                break;
+            }
+        } SCM_END_PROTECT;
     }
-    pthread_cleanup_push(thread_cleanup, vm);
-    SCM_UNWIND_PROTECT {
-        SCM_VM(vm)->result = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
-    } SCM_WHEN_ERROR {
-        ScmObj exc;
-        switch (SCM_VM(vm)->escapeReason) {
-        case SCM_VM_ESCAPE_CONT:
-            /* TODO: sets appropriate exception to resultException
-               instead of panic */
-            Scm_Panic("continuation thrown in different thread");
-        default:
-            Scm_Panic("unknown escape");
-        case SCM_VM_ESCAPE_ERROR:
-            exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, SCM_VM(vm));
-            SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(SCM_VM(vm)->escapeData[1]);
-            SCM_VM(vm)->resultException = exc;
-        }
-    } SCM_END_PROTECT;
     pthread_cleanup_pop(TRUE);
     return NULL;
 }
