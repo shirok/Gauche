@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.13 2001-04-07 20:39:16 shiro Exp $
+#  $Id: Makefile.in,v 1.14 2001-04-16 02:26:30 shiro Exp $
 #
 
 prefix = @prefix@
@@ -19,7 +19,8 @@ SCMS = srfi-0.scm \
        srfi-17.scm \
        japanize-euc.scm \
        gauche/object.scm gauche/test.scm gauche/macroutil.scm \
-       gauche/process.scm gauche/with.scm gauche/vm/disasm.scm \
+       gauche/regexp.scm gauche/process.scm gauche/with.scm \
+       gauche/vm/disasm.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        rfc/base64.scm
 
