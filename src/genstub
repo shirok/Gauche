@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.82 2002-08-29 08:13:29 shirok Exp $
+;;;  $Id: genstub,v 1.83 2002-09-07 07:21:11 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -362,7 +362,7 @@
    (define-type <uint16>  "uint" "C integer"
      "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
    (define-type <uint32>  "uint" "C integer"
-     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+     "SCM_EXACTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
    (define-type <float>   "float" "real number"
      "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
    (define-type <double>  "double" "real number"
