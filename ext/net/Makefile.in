@@ -8,6 +8,7 @@ SCM_CATEGORY = gauche
 
 LIBFILES = libnet.$(SOEXT)
 SCMFILES = net.scm
+HDRFILES = net.h
 
 OBJECTS = net_head.$(OBJEXT) net.$(OBJEXT) addr.$(OBJEXT) netdb.$(OBJEXT) netlib.$(OBJEXT) net_tail.$(OBJEXT)
 
