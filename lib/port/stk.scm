@@ -1,0 +1,173 @@
+;;;
+;;; port.stk - stk compatibility interface
+;;;
+;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;
+;;;  Permission to use, copy, modify, distribute this software and
+;;;  accompanying documentation for any purpose is hereby granted,
+;;;  provided that existing copyright notices are retained in all
+;;;  copies and that this notice is included verbatim in all
+;;;  distributions.
+;;;  This software is provided as is, without express or implied
+;;;  warranty.  In no circumstances the author(s) shall be liable
+;;;  for any damages arising out of the use of this software.
+;;;
+;;;  $Id: stk.scm,v 1.1 2001-10-17 09:52:17 shirok Exp $
+;;;
+
+(define-module port.stk
+  (use srfi-1)
+  (use srfi-13)
+  (use srfi-14)
+  (use gauche.let-opt)
+  (export *argc*
+          copy-tree remq remv remove string->uninterned-symbol bignum?
+          string-find string-index string-lower string-upper split-string
+          vector-copy vector-resize promise? continuation? catch
+          procedure-body input-file-port? output-file-port? open-file
+          close-port port-closed? try-load autoload?
+          when-port-readable when-port-writable error
+          input-string-port? output-string-port? read-from-string
+          open-input-virtual open-output-virtual
+          input-virtual-port? output-virtual-port?
+          keyword->string
+          environment? the-environment parent-environment global-environment
+          environment->list procedure-environment
+          eval-hook
+          export-symbol export-all-symbols
+          module-environment module-symbols
+          macro macro? macro-expand macro-expand-1 macro-body
+          address-of address?
+          set-signal-handler! add-signal-handler! get-signal-handlers
+          send-signal
+          getcwd chdir getpid expand-file-name canonical-path
+          system getenv setenv! file-is-readable? file-is-writable?
+          file-is-executable? glob remove-file rename-file
+          temporary-file-name
+          gc gc-stats expand-heap version machine-type
+          random set-random-seed! dump get-internal-info
+          time uncode
+          )
+  )
+(select-module port.stk)
+
+;(define *argc* (length *argv*))
+
+; copy-tree
+
+(define (remq item list)   (delete item list eq?))
+(define (remv item list)   (delete item list eqv?))
+(define (remove item list) (delete item list equal?))
+
+; string->uninterned-symbol 
+; bignum?
+
+(define (string-find sub str)
+  (number? (string-contains str sub)))
+(define (string-index sub str)
+  (string-contains str sub))
+(define string-lower string-downcase)
+(define string-upper string-upcase)
+(define (split-string str . args)
+  (let-optionals* args ((delim #[\s]))
+    (string-tokenize str (char-set-complement delim))))
+
+; vector-copy
+; vector-resize
+
+; promise?
+; continuation?
+; catch
+; procedure-body
+
+; input-file-port?
+; output-file-port?
+; open-file
+; close-port
+; port-closed?
+
+; try-load
+; autoload?
+
+; when-port-readable
+; when-port-writable
+
+(define error errorf)
+
+; input-string-port?
+; output-string-port?
+
+(define (read-from-string str) (with-input-from-string str read))
+
+; open-input-virtual
+; open-output-virtual
+; input-virtual-port?
+; output-virtual-port?
+
+; keyword->string
+
+; environment?
+; the-environment
+; parent-environent
+; global-environment
+; environment->list
+; procedure-environment
+
+; eval-hook
+
+; export-symbol
+; export-all-symbols
+
+; module-environment
+; module-symbols
+
+; macro
+; macro?
+; macro-expand
+; macro-expand-1
+; macro-body
+
+; address-of
+; address?
+
+; set-signal-handler!
+; add-signal-handler!
+; get-signal-handlers
+; send-signal
+
+(define getcwd sys-getcwd)
+(define chdir  sys-chdir)
+(define getpid sys-getpid)
+(define (expand-file-name name)
+  (sys-normalize-pathname name :expand #t))
+(define (canonical-path name)
+  (sys-normalize-pathname name :canonical #t))
+(define system sys-system)
+(define getenv sys-getenv)
+(define setenv! sys-putenv)
+
+(define (file-is-readable? file)   (sys-access file |R_OK|))
+(define (file-is-writable? file)   (sys-access file |W_OK|))
+(define (file-is-executable? file) (sys-access file |X_OK|))
+
+(define glob sys-glob)
+(define remove-file sys-unlink)
+(define rename-file sys-rename)
+(define temporary-file-name sys-tmpnam)
+
+(define (eval-string str) (eval (read-from-string str)))
+
+; gc
+; gc-stats
+; expand-heap
+(define version gauche-version)
+; machine-type
+(define random sys-random)
+(define set-random-seed! sys-srandom)
+; dump
+; get-internal-info
+(define time sys-time)
+; uncode
+
+(provide "port/stk")
+
