@@ -81,6 +81,21 @@
 (test "hygiene" 3
       (lambda () (let ((+ *)) (hygiene 2))))
 
+(define-syntax vect1 (syntax-rules ()
+                       ((_ #(?a ...)) (?a ...))
+                       ((_ (?a ...))  #(?a ...))))
+(test-macro "vect1" (1 2 3 4 5)  (vect1 #(1 2 3 4 5)))
+(test-macro "vect1" #(1 2 3 4 5) (vect1 (1 2 3 4 5)))
+
+(define-syntax vect2 (syntax-rules ()
+                       ((_ #(#(?a ?b) ...))  #(?a ... ?b ...))
+                       ((_ #((?a ?b) ...))    (?a ... ?b ...))
+                       ((_ (#(?a ?b) ...))    (#(?a ...) #(?b ...)))))
+
+(test-macro "vect2" #(a c e b d f) (vect2 #(#(a b) #(c d) #(e f))))
+(test-macro "vect2"  (a c e b d f) (vect2 #((a b) (c d) (e f))))
+(test-macro "vect2"  (#(a c e) #(b d f)) (vect2 (#(a b) #(c d) #(e f))))
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
 (define-syntax %cond
