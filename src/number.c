@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.40 2001-05-10 08:41:14 shirok Exp $
+ *  $Id: number.c,v 1.41 2001-05-10 08:49:33 shirok Exp $
  */
 
 #include <math.h>
@@ -1193,11 +1193,11 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
         } else if (radix == 8) {
             snprintf(buf, 50, "%lo", SCM_INT_VALUE(obj));
         } else {
-            /* TODO: implement this! */
-            buf[0] = '?';
-            buf[1] = '\0';
+            /* sloppy way ... */
+            r = Scm_BignumToString(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(obj))),
+                                   radix);
         }
-        r = Scm_MakeString(buf, -1, -1);
+        if (r == SCM_NIL) r = Scm_MakeString(buf, -1, -1);
     } else if (SCM_BIGNUMP(obj)) {
         r = Scm_BignumToString(SCM_BIGNUM(obj), radix);
     } else if (SCM_FLONUMP(obj)) {
