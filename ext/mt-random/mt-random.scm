@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: mt-random.scm,v 1.2 2002-05-11 02:26:25 shirok Exp $
+;;;  $Id: mt-random.scm,v 1.3 2002-05-11 02:42:32 shirok Exp $
 ;;;
 
 (define-module math.mt-random
@@ -21,7 +21,6 @@
           mt-random-real
           mt-random-integer
           mt-random-fill-u32vector!
-          mt-random-fill-s32vector!
           mt-random-fill-f32vector!
           mt-random-fill-f64vector!)
   )
