@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvectorP.h,v 1.17 2004-01-27 23:52:14 shirok Exp $
+ *  $Id: uvectorP.h,v 1.18 2004-02-04 02:03:09 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -528,7 +528,7 @@
         if (CLAMP_HI) (elt) = S64MAX;                                   \
         else TOOLARGEOBJ(obj);                                          \
       } else {                                                          \
-        (elt) = (SCM_UVECTOR_INT64)Scm_BignumToSI(SCM_BIGNUM(obj));     \
+        (elt) = (SCM_UVECTOR_INT64)Scm_BignumToSI(SCM_BIGNUM(obj),TRUE,TRUE);     \
       }                                                                 \
     } else BADOBJ(obj);                                                 \
   } while (0)
@@ -624,7 +624,7 @@
         if (CLAMP_HI) (elt) = U64MAX;                                   \
         else TOOLARGEOBJ(obj);                                          \
       } else {                                                          \
-        (elt) = (SCM_UVECTOR_INT64)Scm_BignumToUI(SCM_BIGNUM(obj));     \
+        (elt) = (SCM_UVECTOR_INT64)Scm_BignumToUI(SCM_BIGNUM(obj), TRUE, TRUE);     \
       }                                                                 \
     } else BADOBJ(obj);                                                 \
   } while (0)
