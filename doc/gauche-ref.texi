@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.12 2001-05-30 07:55:07 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.13 2001-06-02 09:52:47 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.3.11
+@subtitle version 0.3.13
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -583,6 +583,7 @@ traditional macros.
 @section Traditional Macros
 
 @defspec define-macro (name formals) body @dots{}
+
 @end defspec
 
 @node Macro Expansion
@@ -675,11 +676,11 @@ class.  That is,
 @node Numerical comparison
 @subsection Numerical comparison
 
-@defun = z1 z2 z3 @dots{}
-@defunx < x1 x2 x3 @dots{}
-@defunx <= x1 x2 x3 @dots{}
-@defunx > x1 x2 x3 @dots{}
-@defunx >= x1 x2 x3 @dots{}
+@defun @code{=} z1 z2 z3 @dots{}
+@defunx @code{<} x1 x2 x3 @dots{}
+@defunx @code{<=} x1 x2 x3 @dots{}
+@defunx @code{>} x1 x2 x3 @dots{}
+@defunx @code{>=} x1 x2 x3 @dots{}
 [R5RS]
 @end defun
 
@@ -692,14 +693,14 @@ class.  That is,
 @node Arithmetics
 @subsection Arithmetics
 
-@defun + z @dots{}
-@defunx * z @dots{}
+@defun @code{+} z @dots{}
+@defunx @code{*} z @dots{}
 [R5RS]
 @end defun
 
 
-@defun - z1 z2 @dots{}
-@defunx / z1 z2 @dots{}
+@defun @code{-} z1 z2 @dots{}
+@defunx @code{/} z1 z2 @dots{}
 [R5RS]
 @end defun
 
@@ -1089,7 +1090,7 @@ If the named symbol hasn't existed, this function creates one.
 @clindex char
 @end  deftp
 
-@deftp {Reader Syntax} #\@i{charname}
+@deftp {Reader Syntax} @code{#\@i{charname}}
 Denotes a literal character.
 
 When the reader reads @code{#\}, it fetches a sbusequent character.
@@ -1105,19 +1106,19 @@ is signalled.
 [R5RS]
 @end defun
 
-@defun char=? char1 char2
-@defunx char<? char1 char2
-@defunx char<=? char1 char2
-@defunx char>? char1 char2
-@defunx char>=? char1 char2
+@defun char@code{=}? char1 char2
+@defunx char@code{<}? char1 char2
+@defunx char@code{<=}? char1 char2
+@defunx char@code{>}? char1 char2
+@defunx char@code{>=}? char1 char2
 [R5RS]
 @end defun
 
-@defun char-ci=? char1 char2
-@defunx char-ci<? char1 char2
-@defunx char-ci<=? char1 char2
-@defunx char-ci>? char1 char2
-@defunx char-ci>=? char1 char2
+@defun char-ci@code{=}? char1 char2
+@defunx char-ci@code{<}? char1 char2
+@defunx char-ci@code{<=}? char1 char2
+@defunx char-ci@code{>}? char1 char2
+@defunx char-ci@code{>=}? char1 char2
 [R5RS]
 @end defun
 
@@ -1157,7 +1158,7 @@ Further operations, such as set algebra, is defined in SRFI-14
 module (See @ref{Character-set library}).
 @end deftp
 
-@deftp {Reader Syntax} @code{#\[@i{char-set-spec}]}
+@deftp {Reader Syntax} @code{#[@i{char-set-spec}]}
 @end deftp
 
 @defun char-set? obj
@@ -1268,14 +1269,14 @@ Returned value is an integer in the range between 0 and 255.
 [R5RS]
 @end defun
 
-@defun string<? string1 string2
-@defunx string<=? string1 string2
-@defunx string>? string1 string2
-@defunx string>=? string1 string2
-@defunx string-ci<? string1 string2
-@defunx string-ci<=? string1 string2
-@defunx string-ci>? string1 string2
-@defunx string-ci>=? string1 string2
+@defun string@code{<}? string1 string2
+@defunx string@code{<=}? string1 string2
+@defunx string@code{>}? string1 string2
+@defunx string@code{>=}? string1 string2
+@defunx string-ci@code{<}? string1 string2
+@defunx string-ci@code{<=}? string1 string2
+@defunx string-ci@code{>}? string1 string2
+@defunx string-ci@code{>=}? string1 string2
 [R5RS]
 @end defun
 
@@ -1365,7 +1366,7 @@ string pointer objects, for portability.
 @clindex regmatch
 @end deftp
 
-@deftp {Reader Syntax} #/@i{regexp-spec}/
+@deftp {Reader Syntax} @code{#/@i{regexp-spec}/}
 @end deftp
 
 @defun string->regexp string
@@ -1396,7 +1397,7 @@ These functions correspond to scsh's @code{match:start}, @code{match:end}
 and @code{match:substring}.
 @end defun
 
-Seel also @ref{Regular expression library}, which defines
+Seel also @ref{Regular expression utilities}, which defines
 useful macros to deal with regular expression matching.
 
 @c ----------------------------------------------------------------------
@@ -1576,7 +1577,7 @@ opertaions.
 @table @asis
 @item Byte I/O
 You can read/write one byte at a time, instead of a character.
-Some ports even allow you to mix byte I/O and character I/O;
+Some ports allow you to mix byte I/O and character I/O;
 you can set the policy of handling such cases.
 
 @item Block I/O
@@ -1586,21 +1587,27 @@ if the port's underlying implementation supports block I/O
 operation (for example, if the underyling port is a unix buffered
 stream, this operation uses @code{fread} or @code{fwrite}).
 
+@item Conversion
+Some ports can be used to convert a data stream from one format
+to another; one of such applications is character code conversion
+ports, provided by @code{gauche.charconv} module
+(@xref{Character code conversion}, for details).
+You can define a procedural ports, in both Scheme and C, 
+to implement other functionality.
 @end table
-
-
 
 @end deftp
 
-
 @defun input-port? obj
 @defunx output-port? obj
-[R5RS]
+[R5RS] Returns true if @var{obj} is an input port and an output port,
+respectively.
 @end defun
 
 @defun port-closed? port
+Returns true if @var{obj} is a port and it is already closed.
+A closed port can't be reopened.
 @end defun
-
 
 @defun current-input-port
 @defunx current-output-port
@@ -1630,6 +1637,14 @@ Returns the current output port.
 
 @defun port-file-number
 @end defun
+
+@defun copy-port src dst &keyword unit
+Copies data from an input port @var{src} to an output port @var{dst},
+until eof is read from @var{src}.
+
+
+@end defun
+
 
 @node File ports
 @subsection File ports
@@ -1803,12 +1818,14 @@ provide lower level routines as well.
 @subsection Program termination
 
 @defun exit &optional code
+[POSIX]
 @end defun
 
 @node Environment Inquiry
 @subsection Environment Inquiry
 
 @defun sys-getenv name
+[POSIX]
 Returns the value of the environment variable @var{name} as a string,
 or @code{#f} if the environment variable is not defined.
 @end defun
@@ -1851,22 +1868,28 @@ signals an error of "feature not supported".
 @subsubsection Directory manipulation
 
 @defun sys-remove filenmae
+[POSIX]
 Remove @var{filename}.
 @end defun
 
 @defun sys-rename old new
+[POSIX]
 @end defun
 
 @defun sys-tmpnam
+[POSIX]
 @end defun
 
 @defun sys-link existing new
+[POSIX]
 @end defun
 
 @defun sys-rmdir pathname
+[POSIX]
 @end defun
 
 @defun sys-unlink pathname
+[POSIX]
 @end defun
 
 @defun sys-symlink existing new
@@ -1938,12 +1961,14 @@ An object that represents @code{struct stat}.
 @end deftp
 
 @defun sys-stat path
+[POSIX]
 @end defun
 
 @defun sys-lstat path
 @end defun
 
 @defun sys-fstat fd
+[POSIX]
 @end defun
 
 @defun sys-stat->mode stat
@@ -1962,6 +1987,7 @@ to @code{sys-stat->ctime} returns a @code{<sys-time>} object.
 @end defun
 
 @defun sys-access pathname amode
+[POSIX]
 An interface to @code{access(2)}.
 Returns a boolean value of indicating whether @var{pathname} is allowed
 in @var{amode}.  @var{amode} can be a combinations (logical or) of
@@ -1988,6 +2014,7 @@ of directories containing @var{pathname} prevents you from cheking
 @subsubsection Other file operations
 
 @defun sys-chdir dir
+[POSIX]
 An interface to @code{chdir(2)}.  Change the process's current
 working directory to @var{dir}.   An error is signalled if
 @var{dir} doesn't exist, or you don't have enough permission to
@@ -1995,12 +2022,15 @@ access @var{dir}.
 @end defun
 
 @defun sys-pipe &keyword name buffered?
+[POSIX]
 @end defun
 
 @defun sys-isatty port-or-fd
+[POSIX]
 @end defun
 
 @defun sys-ttyname port-or-fd
+[POSIX]
 @end defun
 
 @node Unix groups and passwords
@@ -2015,6 +2045,7 @@ access @var{dir}.
 
 @defun sys-getgrid gid
 @defunx sys-getgrnam name
+[POSIX]
 @end defun
 
 @defun sys-gid->group->name gid
@@ -2030,6 +2061,7 @@ access @var{dir}.
 
 @defun sys-getpwuid uid
 @defunx sys-getpwnam name
+[POSIX]
 @end defun
 
 @defun sys-uid->user-name uid
@@ -2052,6 +2084,7 @@ function signals an error.
 @subsection Locale
 
 @defun sys-setlocate category locale
+[POSIX]
 @end defun
 
 
@@ -2080,6 +2113,7 @@ function signals an error.
 @end defvar
 
 @defun sys-kill pid sig
+[POSIX]
 @end defun
 
 
@@ -2087,6 +2121,7 @@ function signals an error.
 @subsection System Inquiry
 
 @defun sys-uname
+[POSIX]
 @end defun
 
 @defun sys-getcwd
@@ -2118,13 +2153,16 @@ If the system can't determine the information, @code{#f} is returned.
 @end defun
 
 @defun sys-getpgrp
+[POSIX]
 @end defun
 
 @defun sys-getpid
 @defunx sys-getppid
+[POSIX]
 @end defun
 
 @defun sys-times
+[POSIX]
 @end defun
 
 @node Time
@@ -2182,6 +2220,7 @@ take leap seconds into acount.
 @subsubsection Fork and exec
 
 @defun sys-system command
+[POSIX]
 Runs @var{command} in a subprocess.
 
 This function returns an integer value @code{system()} returned.
@@ -2440,7 +2479,7 @@ of descendants of @var{class}.
 @chapter Library Modules
 
 @c ----------------------------------------------------------------------
-@node Character Code Conversion
+@node Character code conversion
 @section @code{gauche.charconv} - Character Code Conversion
 
 @deftp {Module} gauche.charconv
@@ -2523,7 +2562,7 @@ of descendants of @var{class}.
 
 @c ----------------------------------------------------------------------
 @node High Level Process Interface
-@section @code{gauche.process} - Object-oriented interface for processes
+@section @code{gauche.process} - High Level Process Interface
 
 @deftp {Module} gauche.process
 @mdindex gauche.process
@@ -2578,8 +2617,8 @@ An object to keep the status of a child process.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular expression library
-@section @code{gauche.regexp} - Regular expression library
+@node Regular expression utilities
+@section @code{gauche.regexp} - Regular expression utilities
 
 @deftp {Module} gauche.regexp
 @mdindex gauche.regexp
@@ -2591,20 +2630,35 @@ macros since scsh's @code{match-cond} can be confusing
 pattern match library, that sounds too similar).
 @end deftp
 
-In the following macros, @code{match-expr} is an expression
-which produces a match object or @code{#f}. 
+In the following macros, @var{match-expr} is an expression
+which produces a match object or @code{#f}. Typically
+it is a call of @code{rxmatch}, but it can be any expression.
 
-@defmac rxmatch-let MATCH-EXPR (VAR @dots{}) FORM @dots{}
+@defmac rxmatch-let match-expr (var @dots{}) form @dots{}
 
-Evaluates @code{match-expr}, and if matched, binds @code{VAR @dots{}}
-to the matched strings, then evaluates @code{FORM}s.
-The first @code{VAR} receives the entire match, and subsequent
+Evaluates @var{match-expr}, and if matched, binds @var{var @dots{}}
+to the matched strings, then evaluates @var{form}s.
+The first @var{var} receives the entire match, and subsequent
 variables receive submatches.  If the number of submatches are
 smaller than the number of variables to receive them, the rest
 of variables will get @code{#f}.
 
 It is possible to put @code{#f} in variable position, which says
-you don't care that variable
+you don't care that match.
+
+@example
+(rxmatch-let (rxmatch #/(\d+):(\d+):(\d+)/
+                      "Jan  1 23:59:58, 2001")
+   (time hh mm ss)
+  (list time hh mm ss))
+ @result{} ("23:59:58" "23" "59" "58")
+
+(rxmatch-let (rxmatch #/(\d+):(\d+):(\d+)/
+                      "Jan  1 23:59:58, 2001")
+   (#f hh mm)
+  (list hh mm))
+ @result{} ("23" "59")
+@end example
 
 This macro corresponds to scsh's @code{let-match}.
 @end defmac
@@ -2613,55 +2667,116 @@ This macro corresponds to scsh's @code{let-match}.
 Evaluates @var{match-expr}, and if matched, binds @var{var} @dots{}
 to the matched strings and evaluate @var{then-form}.
 Otherwise evaluates @var{else-form}.
+The rule of binding @var{var}s is the same as @code{rxmatch-let}.
+
+@example
+(rxmatch-if (rxmatch #/(\d+:\d+)/ "Jan 1 11:22:33")
+    (time)
+  (format #f "time is ~a" time)
+  "unknown time)
+ @result{} "time is 11:22"
+
+(rxmatch-if (rxmatch #/(\d+:\d+)/ "Jan 1 11-22-33")
+    (time)
+  (format #f "time is ~a" time)
+  "unknown time)
+ @result{} "unknown time"
+@end example
 
 This macro corresponds to scsh's @code{if-match}.
 @end defmac
 
 @defmac rxmatch-cond clause @dots{}
+Evaluate condition in @var{clause}s one by one.
+If a condition of a clause satisfies, rest portion of the clause
+is evaluated and becomes the result of @code{rxmatch-cond}.
 @var{Clause} may be one of the following pattern.
 
 @table @code
-@item (match-expr (var @dots{}) form @dots{})
-If @code{MATCH-EXPR} returns a match, works like @code{rxmatch-let}.
+@item (@var{match-expr} (@var{var} @dots{}) @var{form} @dots{})
+Evaluate @var{match-expr}, which may return a regexp match
+object or @code{#f}.  If it returns a match object, the matches
+are bound to @var{var}s, like @var{rxmatch-let}, and @var{form}s
+are evaluated.
 
-@item (test EXPR FORM @dots{})
-Nothing with regexp.  Evaluates @code{EXPR} and if it is true
-evaluates @code{FORM}s.
+@item (test @var{expr} @var{form} @dots{})
+Evaluates @var{expr}.  If it yields true, evaluates @var{form}s.
 
-@item (test EXPR => PROC)
-Nothing with regexp.  Evaluates @code{EXPR} and if it is true,
-calls @code{PROC} with the result of @code{EXPR} as the only argument.
+@item (test @var{expr} => @var{proc})
+Evaluates @var{expr} and if it is true,
+calls @var{proc} with the result of @var{expr} as the only argument.
 
-@item (else FORM @dots{})
-If other clauses fail, @code{FORM}s are 
-evaluated.
+@item (else @var{form} @dots{})
+If this clause exists, it must be the last clause.
+If other clauses fail, @var{form}s are evaluated.
 @end table
+
+If no @code{else} clause exists, and no other clause matched the
+@var{string-expr}, an undefined value is returned.
+
+@example
+;; @r{parses several possible date format}
+(define (parse-date str)
+  (rxmatch-cond
+    ((rxmatch #/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ str)
+        (#f mm dd yyyy)
+      (map string->number (list yyyy mm dd)))
+    ((rxmatch #/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ str)
+        (#f yyyy mm dd)
+      (map string->number (list yyyy mm dd)))
+    ((rxmatch #/^\d+\/\d+\/\d+$/ str)
+        (#f)
+     (error "ambiguous: ~s" str))
+    (else (error "bogus: ~s" str))))
+
+(parse-date "2001/2/3") @result{} (2001 2 3)
+(parse-date "12/25/1999") @result{} (1999 12 25)
+@end example
 
 This macro corresponds to scsh's @code{match-cond}.
 @end defmac
 
-@defmac rxmatch-case STRING CLAUSE @dots{}
-@code{CLAUSE} may be one of the following pattern.
+@defmac rxmatch-case string-expr clause @dots{}
+@var{String-expr} is evaluated, and @var{clause}s are interpreted
+one by one.  A @var{clause} may be one of the following pattern.
 
 @table @code
-@item (RE (VAR @dots{}) FORM @dots{})
-@code{RE} must be either a literal string describing a
-regexp, or a regexp object.  If it matches with given @code{STRING},
-the rest of clause works like @code{rxmatch-let}.
+@item (@var{re} (@var{var} @dots{}) @var{form} @dots{})
+@var{Re} must be either a literal string describing a
+regexp, or a regexp object.  If it matches with the result
+of @var{string-expr}, the match result is bound to @var{var}s
+and @var{form}s are evaluated, and @code{rxmatch-case} returns
+the result of the last @var{form}.
 
-@item (test EXPR FORM @dots{})
-Nothing with regexp.  Evaluates @code{EXPR} and if it is true
-evaluates @code{FORM}s.
+If @var{re} doesn't match the result of @var{string-expr},
+@var{string-expr} yields non-string value, the interpretation proceeds
+to the next clause.
 
-@item (test EXPR => PROC)
-Nothing with regexp.  Evaluates @code{EXPR} and if it is true,
-calls @code{PROC} with the result of @code{EXPR} as the only argument.
+@item (test @var{proc} @var{form} @dots{})
+A procedure @var{proc} is applied on the result of @var{string-expr}.
+If it yields true value, @var{form}s are evaluated, and
+@code{rxmatch-case} returns the result of the last @var{form}.
 
-@item (else FORM @dots{})
-If other clauses fail, @code{FORM}s are 
-evaluated.
+If @var{proc} yieds @code{#f}, the interpretation proceeds
+to the next clause.
 
+@item (test @var{proc} => @var{proc2})
+A procedure @var{proc} is applied on the result of @var{string-expr}.
+If it yields true value, @var{proc2} is applied on the result,
+and its result is returned as the result of @code{rxmatch-case}.
+
+If @var{proc} yieds @code{#f}, the interpretation proceeds
+to the next clause.
+
+@item (else @var{form} @dots{})
+This form must appear at the end of @var{clause}s, if any.
+If other clauses fail, @var{form}s are evaluated,
+and the result of the last @var{form} becomes the result of
+@code{rxmatch-case}.
 @end table
+
+If no @code{else} clause exists, and no other clause matched the
+@var{string-expr}, an undefined value is returned.
 
 @end defmac
 
@@ -2743,11 +2858,48 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
+@node RFC822 Message parsing
+@section @code{rfc.822} - RFC822 message parsing
+
+@deftp {Module} rfc.822
+@mdindex rfc.822
+Definds a set of functions that parses and constructs the ``Internet
+Message Format'', a text format used to exchange e-mails.
+The most recent specification can be found in
+@uref{http://www.rfc-editor.org/rfc/rfc2822.txt, RFC2822}.
+The format was originally defined in RFC 822, and people still 
+call it ``RFC822 format'', hence I named this module.
+In the following document, I also refer to the format as ``RFC822 format''.
+
+Say @code{(use rfc.822)} to use this module.
+@end deftp
+
+@defun rfc822-header->list iport &optional strict?
+Reads RFC822 format message from an input port @var{iport},
+until it reaches the end of the message header.
+The header fields are unfolded, and broken into a list of the following
+format:
+@example
+((name body) @dots{})
+@end example
+@var{Name} @dots{} are the field names, and @var{body} @dots{} are
+the corresponding field body, both as strings.
+Field names are converted to lower-case characters.
+Field bodies are not modified, except the folded line is concatenated,
+CRLFs removed.
+The order of fields are preserved.
+@end defun
+
+
+@c ----------------------------------------------------------------------
 @node Base64 encoding/decoding
 @section @code{rfc.base64} - Base64 encoding/decoding
 
 @deftp {Module} rfc.base64
 @mdindex rfc.base64
+This module defines a few functions to encode/decode Base64 format,
+defined in @uref{http://www.rfc-editor.org/rfc/rfc2045.txt, RFC 2045},
+section 6.3.
 @end deftp
 
 
@@ -3269,7 +3421,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @node SRFI-1 set operations
 @subsection Lists as sets
 
-@defun lset<= elt= list1 @dots{}
+@defun lset@code{<=} elt= list1 @dots{}
 [SRFI-1]
 @end defun
 
@@ -3594,20 +3746,20 @@ The form @code{(use srfi-8)} doesn't do anything.
 @end defun
 
 @defun string= s1 s2 &optional start1 end1 start2 end2
-@defunx string<> s1 s2 &optional start1 end1 start2 end2
-@defunx string< s1 s2 &optional start1 end1 start2 end2
-@defunx string<= s1 s2 &optional start1 end1 start2 end2
-@defunx string> s1 s2 &optional start1 end1 start2 end2
-@defunx string>= s1 s2 &optional start1 end1 start2 end2
+@defunx string@code{<>} s1 s2 &optional start1 end1 start2 end2
+@defunx string@code{<} s1 s2 &optional start1 end1 start2 end2
+@defunx string@code{<=} s1 s2 &optional start1 end1 start2 end2
+@defunx string@code{>} s1 s2 &optional start1 end1 start2 end2
+@defunx string@code{>=} s1 s2 &optional start1 end1 start2 end2
 [SRFI-13]
 @end defun
 
-@defun string-ci= s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci<> s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci< s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci<= s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci> s1 s2 &optional start1 end1 start2 end2
-@defunx string-ci>= s1 s2 &optional start1 end1 start2 end2
+@defun string-ci@code{=} s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci@code{<>} s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci@code{<} s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci@code{<=} s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci@code{>} s1 s2 &optional start1 end1 start2 end2
+@defunx string-ci@code{>=} s1 s2 &optional start1 end1 start2 end2
 [SRFI-13]
 @end defun
 
@@ -3826,7 +3978,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-14]
 @end defun
 
-@defun char-set<= char-set1 @dots{}
+@defun char-set@code{<=} char-set1 @dots{}
 [SRFI-14]
 @end defun
 
