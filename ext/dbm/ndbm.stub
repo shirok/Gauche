@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.5 2001-10-24 10:31:38 shirok Exp $
+;;  $Id: ndbm.stub,v 1.6 2001-10-24 19:39:26 shirok Exp $
 ;;
 
 "
@@ -33,6 +33,7 @@
  #define SCM_NDBM_P(obj)      SCM_XTYPEP(obj, SCM_CLASS_NDBM)
 
  typedef struct ScmNdbmRec {
+    SCM_HEADER;
     ScmObj name;
     DBM *dbf;                   /* NULL if closed */
  } ScmNdbm;
@@ -63,13 +64,12 @@
 
  void Scm_Init_ndbm(void)
  {
-    internal_init(SCM_MODULE(SCM_FIND_MODULE(\"dbm.ndbm\", TRUE)));
+    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"dbm.ndbm\", TRUE));
+    Scm_InitBuiltinClass(&Scm_NdbmClass, \"<ndbm-file>\", NULL, mod);
+    internal_init(mod);
  }
  #define Scm_Init_ndbm  internal_init
 "
-
-(initcode
- "Scm_InitBuiltinClass(&Scm_NdbmClass, \"<ndbm-file>\", NULL, module);\n")
 
 (define-type "ndbm" ndbm? "ScmNdbm*" "SCM_NDBM_P" "SCM_NDBM")
 

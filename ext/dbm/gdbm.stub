@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.4 2001-10-24 10:31:38 shirok Exp $
+;;  $Id: gdbm.stub,v 1.5 2001-10-24 19:39:26 shirok Exp $
 ;;
 
 "
@@ -27,6 +27,7 @@
  #define SCM_GDBM_P(obj)      SCM_XTYPEP(obj, SCM_CLASS_GDBM)
 
  typedef struct ScmGdbmRec {
+    SCM_HEADER;
     ScmObj name;
     GDBM_FILE dbf;              /* NULL if closed */
  } ScmGdbm;
@@ -58,13 +59,12 @@
 
  void Scm_Init_gdbm(void)
  {
-    internal_init(SCM_MODULE(SCM_FIND_MODULE(\"dbm.gdbm\", TRUE)));
+    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"dbm.gdbm\", TRUE));
+    Scm_InitBuiltinClass(&Scm_GdbmClass, \"<gdbm-file>\", NULL, mod);
+    internal_init(mod);
  }
  #define Scm_Init_gdbm  internal_init
 "
-
-(initcode
- "Scm_InitBuiltinClass(&Scm_GdbmClass, \"<gdbm-file>\", NULL, module);\n")
 
 (define-type "gdbm" gdbm? "ScmGdbm*" "SCM_GDBM_P" "SCM_GDBM")
 
@@ -94,7 +94,7 @@
 
 (define-cproc gdbm-closed? (gdbm)
   (assert (gdbm? gdbm))
-  "SCM_RETURN(SCM_MAKE_BOOL(gdbm->dbf != NULL));")
+  "SCM_RETURN(SCM_MAKE_BOOL(gdbm->dbf == NULL));")
 
 (define-cproc gdbm-store (gdbm key val &optional (flags 0))
   (assert (gdbm? gdbm))
