@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.14 2002-11-21 12:14:23 shirok Exp $
+;; $Id: srfi-1.scm,v 1.15 2003-01-08 02:24:20 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -68,7 +68,8 @@
 (autoload "srfi-1/filter"     filter filter! partition partition!
                               remove remove!
                               filter$ partition$ remove$)
-(autoload "srfi-1/finder"     find find-tail take-while drop-while span break
+(autoload "srfi-1/finder"     find find-tail take-while drop-while take-while!
+                              span break span! break!
                               any every list-index
                               find$ find-tail$ any$ every$)
 (autoload "srfi-1/set"        lset<= lset= lset-adjoin lset-union lset-union!
