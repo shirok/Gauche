@@ -621,7 +621,7 @@
   "  return Scm_Force(p);")
 
 (define-proc call-with-current-continuation (proc)
-  "  Scm_CallCC(proc);
+  "  Scm_VMCallCC(proc);
   SCM_RETURN(SCM_UNDEFINED);")
 
 ; values
