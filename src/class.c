@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.43 2001-04-03 10:10:42 shiro Exp $
+ *  $Id: class.c,v 1.44 2001-04-03 10:27:56 shiro Exp $
  */
 
 #include "gauche.h"
@@ -339,10 +339,10 @@ static ScmObj class_cpl(ScmClass *klass)
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
     /* have to make sure things are consistent */
-    int len;
+    int len, object_inherited = FALSE;
     ScmObj cp;
     ScmClass **p;
-    
+
     if (!SCM_PAIRP(val)) goto err;
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;
     /* set up the cpa */
@@ -358,19 +358,19 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
             Scm_Error("you can't inherit a final class %S", *p);
         if ((*p)->allocate) {
             if ((*p)->allocate != object_allocate) {
-                if (klass->allocate && klass->allocate != object_allocate) {
+                if (klass->allocate && klass->allocate != (*p)->allocate) {
                     Scm_Error("class precedence list has more than one C-defined base class (except <object>): %S", val);
                 }
                 klass->allocate = (*p)->allocate;
             } else {
-                if (klass->allocate == NULL) {
-                    klass->allocate = object_allocate;
-                }
+                object_inherited = TRUE;
             }
         }
     }
-    if (!klass->allocate)
+    if (!object_inherited)
         Scm_Error("class precedence list doesn't have a base class: %S", val);
+    if (!klass->allocate)
+        klass->allocate = object_allocate; /* default */
     return;
   err:
     Scm_Error("class precedence list must be a proper list of class "
