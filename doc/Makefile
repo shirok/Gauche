@@ -28,7 +28,7 @@ gauche-refe.pdf : gauche-refe.texi
 	texi2pdf gauche-refe.texi
 
 gauche-refe.texi : gauche-ref.texi extract
-	$(GOSH) extract -en -o gauche-refe.texi gauche-ref.texi
+	$(GOSH) ./extract -en -o gauche-refe.texi gauche-ref.texi
 
 gauche-refj.html : gauche-refj.texi
 	texi2html -number gauche-refj.texi
@@ -43,7 +43,7 @@ gauche-refj.pdf : gauche-refj.texi
 	texi2pdf gauche-refj.texi
 
 gauche-refj.texi : gauche-ref.texi extract
-	$(GOSH) extract -jp -o gauche-refj.texi gauche-ref.texi
+	$(GOSH) ./extract -jp -o gauche-refj.texi gauche-ref.texi
 
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
