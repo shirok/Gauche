@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.64 2001-07-09 20:12:46 shirok Exp $
+;;; $Id: stdlib.stub,v 1.65 2001-08-30 07:05:09 shirok Exp $
 ;;;
 
 
@@ -337,8 +337,10 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc %complex->real/imag (z)
   "  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
   else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_Values2(z, Scm_MakeFlonum(0.0))); }
-  else if (!SCM_COMPLEXP(z)) Scm_Error(\"number required, but got %S\", z);
-  else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));}")
+  else if (!SCM_COMPLEXP(z)) {
+    Scm_Error(\"number required, but got %S\", z);
+    SCM_RETURN(SCM_UNDEFINED);
+  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));}")
     
 ;; make-polar, real-part, imag-part - defined in gauche/numeric.scm
 
