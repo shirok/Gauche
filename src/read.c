@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.18 2001-06-21 08:44:04 shirok Exp $
+ *  $Id: read.c,v 1.19 2001-07-08 22:52:41 shirok Exp $
  */
 
 #include <stdio.h>
@@ -396,6 +396,19 @@ static ScmObj read_char(ScmPort *port)
             return SCM_MAKE_CHAR(c);
         }
         cname = Scm_GetStringConst(name);
+
+        /* handle #\x1f etc. */
+        if (cname[0] == 'x' && isxdigit(cname[1])) {
+            int i = 1, cc;
+            unsigned long code = 0;
+            do {
+                if (cname[i] <= '9') cc = cname[i] - '0';
+                else if (cname[i] <= 'F') cc = cname[i] - 'A' + 10;
+                else if (cname[i] <= 'f') cc = cname[i] - 'a' + 10;
+                code = code * 16 + cc; /* TODO: check overflow */
+                if (cname[++i] == '\0') return SCM_MAKE_CHAR(code);
+            } while (isxdigit(cname[i]));
+        }
         
         while (cntab->name) {
             if (strcmp(cntab->name, cname) == 0) return cntab->ch;
