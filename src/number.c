@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.80 2002-04-09 01:03:15 shirok Exp $
+ *  $Id: number.c,v 1.81 2002-04-10 00:21:26 shirok Exp $
  */
 
 #include <math.h>
@@ -1422,7 +1422,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             mm = ldexp(1.0, -1074);
         }
 
-/*        fprintf(stderr, "init f=%g, r=%g, s=%g, mp=%g, mm=%g, round=%d\n",
+        /*fprintf(stderr, "init f=%.20g, r=%.20g, s=%.20g, mp=%.20g, mm=%.20g, round=%d\n",
           f, r, s, mp, mm, round);*/
 
         /* estimate scale */
@@ -1481,7 +1481,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             }
         }
 
-/*        fprintf(stderr, "scale r=%g, s=%g, mp=%g, mm=%g, est=%d\n",
+        /*fprintf(stderr, "scale r=%.20g, s=%.20g, mp=%.20g, mm=%.20g, est=%d\n",
           r, s, mp, mm, est);*/
 
         /* generate */
@@ -1739,6 +1739,81 @@ static ScmObj read_uint(const char **strp, int *lenp,
     }
 }
 
+static double nextfloat(double z)
+{
+    double f;
+    int e;
+    f = frexp(z, &e);
+    if (f == 1.0-ldexp(1.0, -53)) return ldexp(0.5, e+1);
+    else                          return ldexp(f + ldexp(1.0, -53), e);
+}
+
+static double prevfloat(double z)
+{
+    double f;
+    int e;
+    f = frexp(z, &e);
+    if (f == 0.5) return ldexp(f - ldexp(1.0, -53), e);
+    else          return ldexp(f - ldexp(1.0, -52), e);
+}
+
+static double fixup(ScmObj f, int e, double z)
+{
+    ScmObj m, x, y, d, d2;
+    int k, s;
+    for (;;) {
+        m = Scm_DecodeFlonum(z, &k, &s);
+        if (e >= 0) {
+            if (k >= 0) {
+                x = Scm_Multiply(f, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(e)), SCM_NIL);
+                y = Scm_Multiply(m, Scm_Ash(SCM_MAKE_INT(1), k), SCM_NIL);
+            } else {
+                x = Scm_Multiply(f, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(e)), SCM_LIST1(Scm_Ash(SCM_MAKE_INT(1), -k)));
+                y = m;
+            }
+        } else {
+            if (k >= 0) {
+                x = f;
+                y = Scm_Multiply(m, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(-e)), SCM_LIST1(Scm_Ash(SCM_MAKE_INT(1), k)));
+            } else {
+                x = Scm_Multiply(f, Scm_Ash(SCM_MAKE_INT(1), -k), SCM_NIL);
+                y = Scm_Multiply(m, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(-e)), SCM_NIL);
+            }
+        }
+/*        Scm_Printf(SCM_CURERR, "z=%.20lg,\nx=%S,\ny=%S\nf=%S\nm=%S\ne=%d, k=%d\n", z, x, y, f, m, e, k);*/
+        /* compare */
+        d = Scm_Subtract(x, y, SCM_NIL);
+        d2 = Scm_Ash(Scm_Multiply(m, Scm_Abs(d), SCM_NIL), 1);
+        if (Scm_NumCmp(d2, y) < 0) {
+            if (Scm_NumCmp(m, Scm_Ash(SCM_MAKE_INT(1), 52)) == 0
+                && Scm_Sign(d) < 0
+                && Scm_NumCmp(Scm_Ash(d2, 1), y) > 0) {
+                z = prevfloat(z);
+            } else {
+                return z;
+            }
+        } else if (Scm_NumCmp(d2, y) == 0) {
+            if (!Scm_OddP(m)) {
+                if (Scm_NumCmp(m, Scm_Ash(SCM_MAKE_INT(1), 52)) == 0
+                    && Scm_Sign(d) < 0) {
+                    z = prevfloat(z);
+                } else {
+                    return z;
+                }
+            } else if (Scm_Sign(d) < 0) {
+                z = prevfloat(z);
+            } else {
+                z = nextfloat(z);
+            }
+        } else if (Scm_Sign(d) < 0) {
+            z = prevfloat(z);
+        } else {
+            z = nextfloat(z);
+        }
+    }
+    /*NOTREACHED*/
+}
+
 static ScmObj read_real(const char **strp, int *lenp,
                         struct numread_packet *ctx)
 {
@@ -1867,6 +1942,11 @@ static ScmObj read_real(const char **strp, int *lenp,
             realnum = realnum / pow(10.0, -exponent) / pow(10.0, fracdigs);
         } else {
             realnum = realnum / pow(10.0, -DBL_MAX_10_EXP-(exponent-fracdigs)) / pow(10.0, DBL_MAX_10_EXP);
+        }
+        if (Scm_NumCmp(fraction, Scm_Ash(SCM_MAKE_INT(1), 52)) > 0
+            || exponent-fracdigs > 15
+            || exponent-fracdigs < 15) {
+            realnum = fixup(fraction, exponent-fracdigs, realnum);
         }
         
         if (minusp) realnum = -realnum;
