@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.67 2001-09-24 05:25:56 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.68 2001-09-24 08:40:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1993,16 +1993,80 @@ string pointer objects, for portability.
 
 @deftp {Builtin Class} <regexp>
 @clindex regexp
+Regular expression object.  You can construct a regexp object
+from a string by @code{string->regexp} at run time.  Gauche also 
+has a special syntax to denote regexp literals, which construct
+regexp object at reading time.
+
+Gauche's regexp engine is fully aware of multibyte characters.
 @end deftp
 
 @deftp {Builtin Class} <regmatch>
 @clindex regmatch
+Regexp match object.  A regexp matcher @code{rxmatch} returns
+this object if match.  This object contains all the information
+about the match, including submatches.
+
+The advantage of using match object, rather than substrings or
+list of indices is efficiency.  The regmatch object keeps internal
+state of match, and computes indices and/or substrings only when
+requested.
 @end deftp
 
 @deftp {Reader Syntax} @code{#/@i{regexp-spec}/}
+Denotes literal regular expression object.  When read, it becomes
+an instance of @code{<regexp>}.
+
+The advantage of using this syntax over @code{string->regexp} is
+that the regexp is compiled only once.  You can use literal regexp
+inside loop without worring about regexp compilation overhead.
+If you want to construct regexp on-the-fly, however, use @code{string->regexp}.
+
+The recognized syntax is a subset of POSIX extended regular expression,
+with a bit of extension taken from Perl.  Specifically, Gauche supports:
+@itemize @bullet
+@item
+Repetition by @code{*}, @code{+} and @code{?}.
+@item
+Grouping by @code{()}.  No backslash escape is needed.
+@item
+Alternative by @code{|}.
+@item 
+Character class by @code{[]}.
+@item
+Beginning of line @code{^} and end of line @code{$} assertions.
+@item
+Several special character class abbreviations;
+@code{\d} for digits, @code{\D} for non-digits, @code{\w} for alfphanumeric
+characters, @code{\W} for non-alphanumeric characters, @code{\s} for
+whitespace characters, and @code{\S} for non-whitespace characters.
+These can be used both inside and outside of @code{[]}.
+@end itemize
+
+And Gauche does not supports:
+@itemize @bullet
+@item
+Symbolic character class notation, e.g. @code{[:alpha:]}.
+@item
+Collating elements, e.g. @code{[=e=]} and @code{[.ll.]}.
+@item
+Beginning/end of word assertions.
+@item
+Fixed-number repetition, @code{@{m,n@}}.
+@item
+Back reference of submatches.
+@end itemize
+
+Among those unsupported features, the first four will eventually
+be supported.  It is unlikely to support back reference, however.
+If you use back reference, you're not dealing with regular grammer
+any more.  And if you're dealing with higher class of grammer,
+there should be appropriate tools rather than regular expressions.
 @end deftp
 
 @defun string->regexp string
+Takes @var{string} as a regexp specification, and constructs
+an instance of @code{<regexp>} object.
 @end defun
 
 @defun rxmatch regexp string
@@ -2032,10 +2096,22 @@ and @code{match:substring}.
 
 @defun rxmatch-after match &optional (i 0)
 @defunx rxmatch-before match &optional (i 0)
+Returns substring of the input string after or before @var{match}.
+If optional argument is given, the @var{i}-th submatch is used
+(0-th submatch is the entire match).
+@example
+(define match (rxmatch #/(\d+)\.(\d+)/ "pi=3.14..."))
+
+(rxmatch-after match) @result{} "..."
+(rxmatch-after match 1) @result{} ".14..."
+
+(rxmatch-before match) @result{} "pi="
+(rxmatch-before match 2) @result{} "pi=3."
+@end example
 @end defun
 
 Seel also @ref{Regular expression utilities}, which defines
-useful macros to deal with regular expression matching.
+useful macros and functions to deal with regular expression matching.
 
 @c ----------------------------------------------------------------------
 @node Vectors, Hashtables, Regular expression, Core library
@@ -7744,11 +7820,14 @@ and @code{perl}.
 Gauche's @code{tr} is aware of multibyte characters.
 @end deftp
 
-@defun tr from-list to-list &keyword :complement :delete :squeeze :table-size
-Read from current input port and writes to current output,
+@defun tr from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
+Read from @var{input} and writes to @var{output},
 with transliterating characters in @var{from-list} to the
 corresponding ones in @var{to-list}.  Characters that doesn't
 appear in @var{from-list} are passed through.
+
+The default values of @var{input} and @var{output} are
+current input port and current output port, respectively.
 
 Both @var{from-list} and @var{to-list} must be strings.
 They may contain the following special syntax.
@@ -7824,7 +7903,7 @@ inside loop, consider to use @code{build-transliterator} described below.
 Works like @code{tr}, except that input is taken from a string @var{string}.
 @end defun
 
-@defun build-transliterator from-list to-list &keyword :complement :delete :squeeze :table-size
+@defun build-transliterator from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
 Returns a procedure that does the actual transliteration.  This effectively
 ``pre-compiles'' the internal data structure.   If you want to run
 @code{tr} with the same sets repeatedly, you may build the procedure
