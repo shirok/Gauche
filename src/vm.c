@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.66 2001-03-29 06:06:30 shiro Exp $
+ *  $Id: vm.c,v 1.67 2001-03-31 08:38:21 shiro Exp $
  */
 
 #include "gauche.h"
@@ -72,6 +72,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     return v;
 }
 
+#if 0
 static void vm_reset()
 {
     theVM->sp = theVM->stack;
@@ -82,6 +83,7 @@ static void vm_reset()
     theVM->val0 = SCM_UNDEFINED;
     theVM->numVals = 1;
 }
+#endif
 
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
@@ -582,26 +584,16 @@ static void run_loop()
                 pc = SCM_CDR(pc);
                 continue;
             }
-            CASE(SCM_VM_LREF0) {
-                val0 = env->data[0];
-                continue;
-            }
-            CASE(SCM_VM_LREF1) {
-                val0 = env->data[1];
-                continue;
-            }
-            CASE(SCM_VM_LREF2) {
-                val0 = env->data[2];
-                continue;
-            }
-            CASE(SCM_VM_LREF3) {
-                val0 = env->data[3];
-                continue;
-            }
-            CASE(SCM_VM_LREF4) {
-                val0 = env->data[4];
-                continue;
-            }
+            CASE(SCM_VM_LREF0) { val0 = env->data[0]; continue; }
+            CASE(SCM_VM_LREF1) { val0 = env->data[1]; continue; }
+            CASE(SCM_VM_LREF2) { val0 = env->data[2]; continue; }
+            CASE(SCM_VM_LREF3) { val0 = env->data[3]; continue; }
+            CASE(SCM_VM_LREF4) { val0 = env->data[4]; continue; }
+            CASE(SCM_VM_LREF10) { val0 = env->up->data[0]; continue; }
+            CASE(SCM_VM_LREF11) { val0 = env->up->data[1]; continue; }
+            CASE(SCM_VM_LREF12) { val0 = env->up->data[2]; continue; }
+            CASE(SCM_VM_LREF13) { val0 = env->up->data[3]; continue; }
+            CASE(SCM_VM_LREF14) { val0 = env->up->data[4]; continue; }
             CASE(SCM_VM_LREF) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
@@ -617,7 +609,6 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_TAILBIND) {
-                int nlocals = SCM_VM_INSN_ARG(code);
                 ScmObj *to, *from;
                 ScmObj info;
                 int env_size;
@@ -639,7 +630,7 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_LET) {
-                int nlocals = SCM_VM_INSN_ARG(code), i;
+                int nlocals = SCM_VM_INSN_ARG(code);
                 ScmObj info;
 
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -653,7 +644,7 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_GSET) {
-                ScmObj loc, val;
+                ScmObj loc;
                 VM_ASSERT(SCM_PAIRP(pc));
                 
                 loc = SCM_CAR(pc);
@@ -679,26 +670,11 @@ static void run_loop()
                 pc = SCM_CDR(pc);
                 continue;
             }
-            CASE(SCM_VM_LSET0) {
-                env->data[0] = val0;
-                continue;
-            }
-            CASE(SCM_VM_LSET1) {
-                env->data[1] = val0;
-                continue;
-            }
-            CASE(SCM_VM_LSET2) {
-                env->data[2] = val0;
-                continue;
-            }
-            CASE(SCM_VM_LSET3) {
-                env->data[3] = val0;
-                continue;
-            }
-            CASE(SCM_VM_LSET4) {
-                env->data[4] = val0;
-                continue;
-            }
+            CASE(SCM_VM_LSET0) { env->data[0] = val0; continue; }
+            CASE(SCM_VM_LSET1) { env->data[1] = val0; continue; }
+            CASE(SCM_VM_LSET2) { env->data[2] = val0; continue; }
+            CASE(SCM_VM_LSET3) { env->data[3] = val0; continue; }
+            CASE(SCM_VM_LSET4) { env->data[4] = val0; continue; }
             CASE(SCM_VM_LSET) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
@@ -865,10 +841,28 @@ static void run_loop()
                 val0 = SCM_MAKE_BOOL(Scm_EqvP(item, val0));
                 continue;
             }
+            CASE(SCM_VM_MEMQ) {
+                ScmObj item;
+                POP_ARG(item);
+                val0 = Scm_Memq(item, val0);
+                continue;
+            }
             CASE(SCM_VM_MEMV) {
                 ScmObj item;
                 POP_ARG(item);
                 val0 = Scm_Memv(item, val0);
+                continue;
+            }
+            CASE(SCM_VM_ASSQ) {
+                ScmObj item;
+                POP_ARG(item);
+                val0 = Scm_Assq(item, val0);
+                continue;
+            }
+            CASE(SCM_VM_ASSV) {
+                ScmObj item;
+                POP_ARG(item);
+                val0 = Scm_Assv(item, val0);
                 continue;
             }
             CASE(SCM_VM_APPEND) {
@@ -1041,7 +1035,7 @@ static void run_loop()
                 POP_ARG(obj);
                 PUSH_CONT(pc);
                 SAVE_REGS();
-                val0 = Scm_VMSlotRef(obj, val0);
+                val0 = Scm_VMSlotRef(obj, val0, FALSE);
                 RESTORE_REGS();
                 pc = SCM_NIL;
                 continue;
@@ -1094,7 +1088,6 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
  */
 ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 {
-    DECL_REGS;
     int numargs = Scm_Length(args);
     
     if (!SCM_PROCEDUREP(proc))
@@ -1542,7 +1535,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
 ScmObj Scm_Values(ScmObj args)
 {
     ScmVM *vm = theVM;
-    ScmObj val0, cp;
+    ScmObj cp;
     int nvals;
     
     if (!SCM_PAIRP(args)) {
@@ -1612,7 +1605,7 @@ static struct insn_info {
 int Scm__VMInsnWrite(ScmObj obj, ScmPort *out, int mode)
 {
     struct insn_info *info;
-    int nc, param0, param1;
+    int nc = 0, param0, param1;
     char buf[50];
     int insn = SCM_VM_INSN_CODE(obj);
     SCM_ASSERT(insn >= 0 && insn < SCM_VM_NUM_INSNS);
@@ -1692,11 +1685,9 @@ static void dump_env(ScmEnvFrame *env, ScmPort *out)
 void Scm_VMDump(ScmVM *vm)
 {
     ScmPort *out = vm->curerr;
-    char buf[50];
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
     ScmVMActivationHistory *hist = vm->history;
-    int j;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %#65.1S\n", vm->pc);
