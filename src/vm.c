@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.42 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: vm.c,v 1.43 2001-02-20 06:01:23 shiro Exp $
  */
 
 #include "gauche.h"
@@ -641,6 +641,7 @@ static void run_loop()
                     i++;
                 } else if (restarg && vm->numVals > 0) {
                     SCM_APPEND1(rest, tail, val0);
+                    i++;
                 }
                 for (; i < reqargs; i++) {
                     PUSH_ARG(vm->vals[i-1]);
@@ -1348,14 +1349,37 @@ ScmObj Scm_Values(ScmObj args)
     nvals = 1;
     SCM_FOR_EACH(cp, SCM_CDR(args)) {
         vm->vals[nvals-1] = SCM_CAR(cp);
-        nvals++;
+        if (nvals++ >= SCM_VM_MAX_VALUES) {
+            Scm_Error("too many values: %S", args);
+        }
     }
     vm->numVals = nvals;
     return SCM_CAR(args);
 }
 
+#if 0 /* call-with-values is defined in Scheme using receive (for now) */
+
 static ScmObj call_with_values_cc(ScmObj result, void *data[])
 {
+    ScmObj consumer = (ScmObj)data[0];
+    DECL_REGS;
+    ScmObj insn, info, body;
+
+    insn = SCM_VM_INSN2(SCM_VM_VALUES_BIND,
+                        SCM_PROCEDURE_REQUIRED(consumer),
+                        SCM_PROCEDURE_OPTIONAL(consumer));
+    info = SCM_PROCEDURE_INFO(consumer);
+
+    if (SCM_CLOSUREP(consumer)) {
+        env = SCM_CLOSURE(consumer)->env;
+        pc = SCM_CLOSURE(consumer)->code;
+    }
+    pc = Scm_Cons(info, pc);
+    pc = Scm_Cons(insn, pc);
+
+    SAVE_REGS();
+    fprintf(stderr, "numvals=%d\n", theVM->numVals);
+    Scm_VMDump(theVM);
     return result;
 }
 
@@ -1368,6 +1392,8 @@ ScmObj Scm_VMCallWithValues(ScmObj generator, ScmObj consumer)
     Scm_VMPushCC(call_with_values_cc, (void**)&consumer, 1);
     return Scm_VMApply0(generator);
 }
+
+#endif
 
 /*==============================================================
  * Debug features.
