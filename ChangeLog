@@ -1,3 +1,19 @@
+2001-03-11  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.1.8
+	* src/srfi-2.scm: rewrote completely using define-syntax.
+	* src/macro.c (compile_define_macro): fixed a bug that called
+	  Scm_MakeClosure with env argument pointing to VM stack.  The env
+	  should be saved to the heap.
+	* src/genstub, src/syslib.stub: added define-type stub directive,
+	  which allows stub files to include type parameters.
+	* src/syslib.stub: added interface for setlocale and localeconv
+	  by Yuuki Takahashi (t.yuuki@mbc.nifty.com).
+	* src/port.c, src/syslib.stub: complete procedural port protocol.
+	  added "port over file descriptor" as a class of procedural port,
+	  and implement sys-pipe using it.
+	* src/port.c, src/extlib.stub: Added read-line.
+
 2001-03-10  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.1.7
