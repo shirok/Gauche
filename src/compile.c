@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.47 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: compile.c,v 1.48 2001-04-09 12:49:10 shiro Exp $
  */
 
 #include "gauche.h"
@@ -700,7 +700,6 @@ static ScmObj compile_body(ScmObj form,
                 idef_vals = SCM_CDR(idef_vals);
             }
         }
-        body_started = 1;
 
         if (SCM_NULLP(SCM_CDR(formtail))) {
             /* tail call */
@@ -709,6 +708,7 @@ static ScmObj compile_body(ScmObj form,
             x = compile_int(expr, env, SCM_COMPILE_STMT);
         }
         SCM_APPEND(body, bodytail, x);
+        body_started = !SCM_NULLP(body);
     }
     
     if (idefs > 0 && body_started && ctx != SCM_COMPILE_TAIL) {
