@@ -1,5 +1,5 @@
 ;; Example of gauche.termios
-;;  $Id: noecho.scm,v 1.1 2002-02-25 11:20:33 shirok Exp $
+;;  $Id: noecho.scm,v 1.1 2003-01-08 02:06:27 shirok Exp $
 
 (use gauche.termios)
 

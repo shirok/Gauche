@@ -1,6 +1,6 @@
 ;;
 ;; Sample to use <listener> and <selector> for server application
-;;  $Id: scheme-server.scm,v 1.1 2002-10-22 10:17:48 shirok Exp $
+;;  $Id: scheme-server.scm,v 1.1 2003-01-08 02:06:38 shirok Exp $
 ;;
 ;; NOTE: This program is just for demonstation.  DO NOT RUN THIS
 ;; PROGRAM ON THE MACHINE THAT IS NOT PROTECTED PROPERLY, or anybody

@@ -1,5 +1,5 @@
 ;; Example of gauche.selector
-;;  $Id: echo-server.scm,v 1.1 2002-02-25 11:20:33 shirok Exp $
+;;  $Id: echo-server.scm,v 1.1 2003-01-08 02:05:30 shirok Exp $
 
 (use gauche.net)
 (use gauche.selector)
@@ -29,6 +29,10 @@
                    (socket-fd server)
                    accept-handler
                    '(r))
-    (do () (#f) (%inspect selector) (selector-select selector))))
+    (do () (#f) (selector-select selector))))
 
+(define (main args)
+  (print "echo server starting on port 3131")
+  (echo-server 3131)
+  0)
 

@@ -18,10 +18,10 @@
        read-line))))
 
 (define (main args)
-  (if (null? args)
+  (if (null? (cdr args))
       (usage)
-      (let ((rx (string->regexp (car args))))
-        (if (null? (cdr args))
+      (let ((rx (string->regexp (cadr args))))
+        (if (null? (cddr args))
             (grep rx (current-input-port))
             (for-each (lambda (f)
                         (call-with-input-file f
