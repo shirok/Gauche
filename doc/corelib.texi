@@ -3957,7 +3957,7 @@ and its cdr is used as a value.
 @c JP
 与えられたキーと値の列からタイプが@var{type}であるハッシュテーブルを構築して
 返します。@var{type}の意味は@code{make-hash-table}と同じです。
-各@var{key&value}はペアでなければならず。そのcarがキー、cdrが値として使われます。
+各@var{key&value}はペアでなければならず、そのcarがキー、cdrが値として使われます。
 @c COMMON
 
 @example
