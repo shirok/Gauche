@@ -12,36 +12,16 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.8 2001-03-31 08:46:13 shiro Exp $
+;;; $Id: moplib.stub,v 1.9 2001-04-01 21:58:26 shiro Exp $
 ;;;
 
 "
 #include <gauche/class.h>
 "
 
-;; Gauche object system interface
-
-(define-type "generic" generic?
-  "ScmGeneric*" "SCM_GENERIC_P" "SCM_GENERIC")
-
-(define-type "method" method?
-  "ScmMethod*" "SCM_METHOD_P" "SCM_METHOD")
-
-
 ;;
 ;; Internal routines
 ;;
-
-;; 
-(define-cproc %compute-applicable-methods (gf args)
-  (assert (list? args))
-  "  ScmObj argv, *argp;  int nargs;
-  if (!Scm_TypeP(gf, SCM_CLASS_GENERIC))
-     Scm_Error(\"generic function required, but got: %S\", gf);
-  argv = Scm_ListToVector(args);
-  nargs = SCM_VECTOR_SIZE(argv);
-  argp = SCM_VECTOR_ELEMENTS(argv);
-  SCM_RETURN(Scm_ComputeApplicableMethods(SCM_GENERIC(gf), argp, nargs));")
 
 "static ScmObj call_fallback_proc(ScmObj *args, int nargs, ScmGeneric *gf)
  {
@@ -64,6 +44,19 @@
     Scm_Define(module, name, val);
   }
   SCM_RETURN(val);")
+
+(define-cproc %make-next-method (gf methods args)
+  (assert (list? methods))
+  (assert (list? args))
+  "  ScmObj mp, ap, *argv; int nargs = Scm_Length(args), i;
+  if (!Scm_TypeP(gf, SCM_CLASS_GENERIC)) 
+    Scm_Error(\"generic function requied, but got %S\", gf);
+  SCM_FOR_EACH(mp, methods) {
+    if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
+      Scm_Error(\"method required, but got %S\", SCM_CAR(mp));
+  }
+  argv = Scm_ListToArray(args, &nargs, NULL, TRUE);
+  SCM_RETURN(Scm_MakeNextMethod(SCM_GENERIC(gf), methods, argv, nargs));")
 
 ;;
 ;; Public interface
