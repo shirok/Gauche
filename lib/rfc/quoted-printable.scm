@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: quoted-printable.scm,v 1.4 2002-09-13 03:35:36 shirok Exp $
+;;;  $Id: quoted-printable.scm,v 1.5 2002-09-16 09:01:33 shirok Exp $
 ;;;
 
 
@@ -38,8 +38,8 @@
            (write-byte c) (display "=\r\n") (loop (read-byte) 0))
           ((= c #x0d)
            (let ((c1 (read-byte)))
-             (cond (= c1 #x0a) (display "\r\n") (loop (read-byte) 0))
-                   (else (display "\r\n") (loop c1 0))))
+             (cond ((= c1 #x0a) (display "\r\n") (loop (read-byte) 0))
+                   (else (display "\r\n") (loop c1 0)))))
           ((= c #x0a)
            (display "\r\n") (loop (read-byte) 0))
           ((<= #x21 c #x7e)
@@ -55,23 +55,39 @@
     (cond ((eof-object? c))
           ((char=? c #\=)
            (let ((c1 (read-char)))
-             ((eof-object? c1) (write-char c))
-             ((char=? c1 #\newline) (loop (read-char))) ; soft newline
-             ((char=? c1 #\return)      ; soft newline
-              (let ((c2 (read-char)))
-                (if (char=? c2 #\newline) (loop (read-char)) (loop c2))))
-             ((digit->integer c1 16)
-              => (lambda (num1)
-                   (let ((c2 (read-char)))
-                     (cond ((eof-object? c2) (write-char c) (write-char c1))
-                           ((digit->integer c2 16)
-                            => (lambda (num2)
-                                 (write-byte (+ (* num1 16) num2))
-                                 (loop (read-char))))
-                           (else
-                            (write-char c) (write-char c1) (loop c2))))))
-             (else
-              (write-char c) (loop c1))))
+             (cond
+              ((eof-object? c1)) ; illegal, but we recognize it as a soft newline
+              ((char=? c1 #\newline) (loop (read-char))) ; soft newline
+              ((char=? c1 #\return)      ; soft newline
+               (let ((c2 (read-char)))
+                 (if (char=? c2 #\newline) (loop (read-char)) (loop c2))))
+              ((memv c1 '(#\tab #\space)) ; possibly soft newline
+               (let loop2 ((c2 (read-char))
+                           (r (list c1 c)))
+                 (cond ((eof-object? c2))
+                       ((char=? c2 #\newline) (loop (read-char)))
+                       ((char=? c2 #\return)
+                        (let ((c3 (read-char)))
+                          (if (char=? c3 #\newline)
+                              (loop (read-char))
+                              (loop c3))))
+                       ((memv c2 '(#\tab #\space))
+                        (loop2 (read-char) (cons c2 r)))
+                       (else
+                        (for-each write-char (reverse r))
+                        (loop c2)))))
+              ((digit->integer c1 16)
+               => (lambda (num1)
+                    (let ((c2 (read-char)))
+                      (cond ((eof-object? c2) (write-char c) (write-char c1))
+                            ((digit->integer c2 16)
+                             => (lambda (num2)
+                                  (write-byte (+ (* num1 16) num2))
+                                  (loop (read-char))))
+                            (else
+                             (write-char c) (write-char c1) (loop c2))))))
+              (else
+               (write-char c) (loop c1)))))
           (else
            (write-char c) (loop (read-char))))
     )
