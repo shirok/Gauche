@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.132 2001-12-02 22:00:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.133 2001-12-02 22:04:08 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8576,7 +8576,7 @@ Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを定義しており、
 @item 選択と探索
 @c COMMON
 @code{find}, @code{filter}, @code{filter-to},
-@code{remove}, @code{remove-to}, @code{partition}, @code{partition-to}.
+@code{remove}, @code{remove-to}, @code{partition}, @code{partition-to}
 @c EN
 @item Conversion
 @c JP
@@ -8588,7 +8588,7 @@ Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを定義しており、
 @c JP
 @item その他
 @c COMMON
-@code{size-of}, @code{lazy-size-of},
+@code{size-of}, @code{lazy-size-of}
 @c EN
 @item Fundamental iterator creator
 @c JP
@@ -8828,7 +8828,7 @@ collection class and have a builder interface
 @c JP
 @code{map}と同じように動作しますが、結果はクラス@var{class}のインスタンスとして返されます。
 @var{class}はコレクションクラスでなければなりません。
-また、構築インタフェースを持っている必要があります
+また、ビルダーインタフェースを持っている必要があります
 (@ref{Fundamental iterator creators}参照).
 @c COMMON
 
@@ -8904,7 +8904,7 @@ takes list everywhere.
 そのようなインタフェースは単純な場合には動作するように思えますが、
 一般的な拡張は困難です。文字列とベクタが同時に渡されたらどうします?
 更に、コレクションクラスによっては繰り返しインタフェースは持っていても
-構築インタフェースを持っていない場合があり、結果をそのコレクションクラスとして
+ビルダーインタフェースを持っていない場合があり、結果をそのコレクションクラスとして
 返せない場合もあります (データベースレコードのコレクションに対してマップする、
 といった用法を考えてみて下さい)。また、Schemeプログラマは@code{map}が
 リストを返すという事実に慣れ親しんでおり、既存のコードも@var{map}の戻り値を
