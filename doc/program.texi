@@ -441,10 +441,6 @@ uses it for exit code of the program.
 Otherwise, @code{gosh} exits with exit code 70 (@code{EX_SOFTWARE}).
 This behavior is compatible with the SRFI-22.
 
-(@emph{Note: this interface has been changed from Gauche release 0.5
-in incompatible way.   @xref{Script compatibility before release 0.5},
-for details.})
-
 If the @code{main} procedure is not defined, @code{gosh} exits
 after loading the script file.
 @c JP
@@ -456,9 +452,6 @@ userモジュールに `@code{main}' という手続きが定義されているかどうか調べ、
 @code{main}が整数の値を返したら、@code{gosh}はその値を終了ステータスとして終了します。
 @code{main}が整数以外の値を返した場合は@code{gosh}は終了ステータス70
 (@code{EX_SOFTWARE})で終了します。このふるまいはSRFI-22と互換です。
-
-(@emph{注：このインタフェースはGauche release 0.5から非互換な形で
-変更されました。@ref{Script compatibility before release 0.5}を参照して下さい。})
 
 @code{main}が定義されていなければ@code{gosh}はロード後にそのままステータス0で
 終了します。
@@ -583,56 +576,6 @@ parse command-line options.
 コマンドライン引数を処理するモジュールがあります。
 @ref{gauche.parseopt - Parsing command-line options}を参照してください。
 @c COMMON
-
-@menu
-* Script compatibility before release 0.5::  
-@end menu
-
-@node Script compatibility before release 0.5,  , Writing Scheme scripts, Writing Scheme scripts
-@subsection Script compatibility before release 0.5
-@c NODE リリース0.5以前とのスクリプトの互換性
-
-@c EN
-In order to conform final SRFI-22,
-Gauche release 0.5.1 changes the way @code{main} is called.
-Unfortunately, this makes the Scheme scripts that is written for older
-Gauche no longer work.
-I decided to take this change now, in the early stage of Gauche,
-rather than keeping incomatibility to the standard (srfi).
-@c JP
-SRFI-22に準拠するために、Gaucheはリリース0.5.1から@code{main}の呼ばれ方を
-変更しました。残念ながら、この変更によりそれ以前のGaucheのために書かれたスクリプトは
-動作しなくなります。
-標準(srfi)との非互換性を後々まで引きずるよりは、まだ開発の早い段階の今の時点で
-変更をしておいたほうが良いと判断しました。
-@c COMMON
-
-@c EN
-The incompatible changes are these two points.
-@c JP
-非互換な変更は以下の2点です。
-@c COMMON
-@itemize @bullet
-@item
-@c EN
-The argument list passed to @code{main} now includes the script
-name itself as the first element.  In older version, only the
-arguments after the script file name are passed.
-@c JP
-@code{main}に渡されるコマンドライン引数リストは、その第一要素にスクリプトファイル名を
-持つようになります。古いバージョンではスクリプトファイル名以降のコマンドライン引数だけが
-渡されていました。
-@c COMMON
-@item
-@c EN
-When @code{main} returns non-integral value, @code{gosh} exits
-with code 70.  In older version, @code{gosh} exits with code 0
-in such case.
-@c JP
-@code{main}が整数でない値を返した場合、@code{gosh}は終了ステータス70で終了します。
-古いバージョンではこのような場合、終了ステータス0で終了していました。
-@c COMMON
-@end itemize
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
