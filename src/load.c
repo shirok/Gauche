@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.30 2001-04-03 08:04:41 shiro Exp $
+ *  $Id: load.c,v 1.31 2001-04-06 08:56:54 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -146,6 +146,14 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
  *   find next matching filename.
  */
 
+static int regfilep(ScmObj path)
+{
+    struct stat statbuf;
+    int r = stat(Scm_GetStringConst(SCM_STRING(path)), &statbuf);
+    if (r < 0) return FALSE;
+    return S_ISREG(statbuf.st_mode);
+}
+
 ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
 {
     int size = SCM_STRING_LENGTH(filename);
@@ -172,11 +180,9 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
             }
             fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
             fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(file));
-            if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
-                break;
+            if (regfilep(fpath)) break;
             fpath = Scm_StringAppendC(SCM_STRING(fpath), LOAD_SUFFIX, -1, -1);
-            if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
-                break;
+            if (regfilep(fpath)) break;
         }
         if (SCM_PAIRP(lpath)) {
             *paths = SCM_CDR(lpath);
@@ -188,11 +194,9 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
         }
     } else {
         *paths = SCM_NIL;
-        if (access(Scm_GetStringConst(SCM_STRING(file)), F_OK) == 0)
-            return SCM_OBJ(file);
+        if (regfilep(file)) return SCM_OBJ(file);
         fpath = Scm_StringAppendC(SCM_STRING(file), LOAD_SUFFIX, -1, -1);
-        if (access(Scm_GetStringConst(SCM_STRING(fpath)), F_OK) == 0)
-            return fpath;
+        if (regfilep(fpath)) return fpath;
         if (error_if_not_found) {
             Scm_Error("cannot find file %S to load", file);
         }
