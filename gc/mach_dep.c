@@ -81,23 +81,6 @@ void GC_push_regs()
 	  register long TMP_SP; /* must be bound to r11 */
 #       endif
 
-#       if defined(MIPS) && defined(LINUX)
-	  /* I'm not sure whether this has actually been tested. */
-#         define call_push(x)     asm("move $4," x ";"); asm("jal GC_push_one")
-	  call_push("$2");
-	  call_push("$3");
-	  call_push("$16");
-	  call_push("$17");
-	  call_push("$18");
-	  call_push("$19");
-	  call_push("$20");
-	  call_push("$21");
-	  call_push("$22");
-	  call_push("$23");
-	  call_push("$30");
-#         undef call_push
-#       endif	/* MIPS && LINUX */
-
 #       ifdef VAX
 	  /* VAX - generic code below does not work under 4.2 */
 	  /* r1 through r5 are caller save, and therefore     */
@@ -245,7 +228,8 @@ void GC_push_regs()
 	|| ( defined(I386) && defined(FREEBSD) && defined(__ELF__) ) \
 	|| ( defined(I386) && defined(NETBSD) && defined(__ELF__) ) \
 	|| ( defined(I386) && defined(OPENBSD) && defined(__ELF__) ) \
-	|| ( defined(I386) && defined(HURD) && defined(__ELF__) )
+	|| ( defined(I386) && defined(HURD) && defined(__ELF__) ) \
+	|| ( defined(I386) && defined(DGUX) )
 
 	/* This is modified for Linux with ELF (Note: _ELF_ only) */
 	/* This section handles FreeBSD with ELF. */
@@ -429,7 +413,7 @@ ptr_t cold_gc_frame;
 		    *i = 0;
 		}
 #	      if defined(POWERPC) || defined(MSWIN32) || defined(MSWINCE) \
-	         || defined(UTS4) || defined(LINUX)
+                || defined(UTS4) || defined(LINUX) || defined(EWS4800)
 		  (void) setjmp(regs);
 #	      else
 	          (void) _setjmp(regs);
@@ -492,8 +476,11 @@ ptr_t cold_gc_frame;
 /* On IA64, we also need to flush register windows.  But they end	*/
 /* up on the other side of the stack segment.				*/
 /* Returns the backing store pointer for the register stack.		*/
-# ifdef IA64
-#   ifdef __GNUC__
+/* We now implement this as a separate assembly file, since inline	*/
+/* assembly code here doesn't work with either the Intel or HP 		*/
+/* compilers.								*/
+# if 0
+#   ifdef LINUX
 	asm("        .text");
 	asm("        .psr abi64");
 	asm("        .psr lsb");
@@ -510,12 +497,25 @@ ptr_t cold_gc_frame;
 	asm("        mov r8=ar.bsp");
 	asm("        br.ret.sptk.few rp");
 	asm("        .endp GC_save_regs_in_stack");
-#   else
-	void GC_save_regs_in_stack() {
-	  asm("        flushrs");
-	  asm("        ;;");
-	  asm("        mov r8=ar.bsp");
-	  asm("        br.ret.sptk.few rp");
+#   endif /* LINUX */
+#   if 0 /* Other alternatives that don't work on HP/UX */
+	word GC_save_regs_in_stack() {
+#	  if USE_BUILTINS
+	    __builtin_ia64_flushrs();
+	    return __builtin_ia64_bsp();
+#	  else
+#	    ifdef HPUX
+	      _asm("        flushrs");
+	      _asm("        ;;");
+	      _asm("        mov r8=ar.bsp");
+	      _asm("        br.ret.sptk.few rp");
+#	    else
+	      asm("        flushrs");
+	      asm("        ;;");
+	      asm("        mov r8=ar.bsp");
+	      asm("        br.ret.sptk.few rp");
+#	    endif
+#	  endif
 	}
 #   endif
 # endif

@@ -1,3 +1,12 @@
+2002-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* gc/* : upgraded to BoehmGC 6.1alpha5.
+	* src/core.c : moved GC registration code for dynamic-loadable
+	  extensions (used to be GC_register_dlopen_data) here, renaming to
+	  Scm_RegisterDL, so that I don't need to touch gc sources.
+	* configure.in, Makefile.in, src/Makefile.in : changed for new
+	  gc build process.
+
 2002-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/* : revised macro strategy of uvutil.c.  Adding tests

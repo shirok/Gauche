@@ -45,7 +45,7 @@ INSTALL_SCMS = genstub gauche-init.scm
 
 INSTALL=@INSTALL@
 
-GCLIB = ../gc/gc.a
+GCLIB = ../gc/.libs/libgc.a
 
 OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o weak.o \
@@ -76,14 +76,18 @@ syslib.c : syslib.stub genstub
 moplib.c : moplib.stub genstub
 thrlib.c : thrlib.stub genstub
 
-libgauche.a : $(OBJS) $(GCLIB)
-	$(AR) x $(GCLIB)
-	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB) | sed '/__.SYMDEF/d'`
+libgauche.a : $(OBJS) GCOBJS
+	gcobjs=`cat GCOBJS`; $(AR) cr libgauche.a $(OBJS) `for f in $$gcobjs; do echo ../gc/$$f; done`
 	$(RANLIB) libgauche.a
 
-@LIBGAUCHE_SO@ : $(OBJS) $(GCLIB)
-	$(AR) x $(GCLIB)
-	sh ldwrap.sh $(OBJS) `$(AR) t $(GCLIB) | sed '/__.SYMDEF/d'` @LOCAL_LIB@ $(LIBS)
+@LIBGAUCHE_SO@ : $(OBJS) GCOBJS
+	rm -rf .lo
+	mkdir .lo
+	for f in `cat GCOBJS`; do cp ../gc/`echo $$f | sed 's/o$$/lo/'` .lo/$$f; done
+	sh ldwrap.sh $(OBJS) .lo/*.o @LOCAL_LIB@ $(LIBS)
+
+GCOBJS : $(GCLIB)
+	(cd ../gc > /dev/null; echo *.o) > GCOBJS
 
 gauche/arch.h :
 	@rm -f gauche/arch.h
@@ -96,8 +100,8 @@ gauche/arch.h :
 
 test : gosh
 	@rm -f test.log
-	$(MAKE) test-vmstack
-	$(MAKE) test-arith
+	$(MAKE) test-vmstack; ./test-vmstack >> test.log
+	$(MAKE) test-arith; ./test-arith >> test.log
 	@for testfile in $(TESTFILES); do \
 	  ./gosh -I. -I../lib -I../test $$testfile >> test.log; \
 	done
@@ -105,16 +109,16 @@ test : gosh
 	@./gosh -I. -I../lib -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
 	@echo "See test.log for details."
 
-test-vmstack : test-vmstack.c libgauche.a
-	$(CC) $(CFLAGS) $(LDFLAGS) -o test-vmstack test-vmstack.c libgauche.a $(LIBS)
-	./test-vmstack >> test.log
+test-vmstack : test-vmstack.o @LIBGAUCHE_SO@
+	$(CC) $(CFLAGS) $(LDFLAGS) -o test-vmstack test-vmstack.o @GOSH_LIBGAUCHE_FILES@ $(LIBS)
 
-test-arith : test-arith.c libgauche.a
-	$(CC) $(CFLAGS) $(LDFLAGS) -o test-arith test-arith.c libgauche.a $(LIBS)
-	./test-arith >> test.log
+test-arith : test-arith.o @LIBGAUCHE_SO@
+	$(CC) $(CFLAGS) $(LDFLAGS) -o test-arith test-arith.o @GOSH_LIBGAUCHE_FILES@  $(LIBS)
 
 clean :
-	rm -rf core core.[0-9]* gosh test-vmstack @LIBGAUCHE_SO@ *.o *~ *.a *.t *.def *.exp *.exe test.log test.dir so_locations gauche/*~
+	rm -rf core core.[0-9]* gosh test-vmstack test-arith   \
+	       @LIBGAUCHE_SO@ *.o *~ *.a *.t *.def *.exp *.exe \
+	       .lo GCOBJS test.log test.dir so_locations gauche/*~
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)

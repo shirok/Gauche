@@ -35,6 +35,7 @@ clean : unlink
 	cd ext; $(MAKE) clean
 
 distclean : clean
+	cd gc; $(MAKE) distclean
 	cd src; $(MAKE) distclean
 	cd lib; $(MAKE) distclean
 	cd doc; $(MAKE) distclean
@@ -60,6 +61,7 @@ install-rpm :
 	$(INSTALL) -m 444 aclocal.m4 `sh src/gauche-config --ac`/aclocal.m4
 
 realclean : clean
+	cd gc; $(MAKE) distclean
 	cd src; $(MAKE) realclean
 	cd lib; $(MAKE) realclean
 	cd doc; $(MAKE) realclean
