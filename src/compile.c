@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.31 2001-02-27 08:25:04 shiro Exp $
+ *  $Id: compile.c,v 1.32 2001-03-03 08:48:09 shiro Exp $
  */
 
 #include "gauche.h"
@@ -23,7 +23,8 @@
 
 static int identifier_print(ScmObj obj, ScmPort *port, int mode)
 {
-    return Scm_Printf(port, "#<id %A::%A>",
+    return Scm_Printf(port, "#<id %p %A::%A>",
+                      obj,
                       SCM_IDENTIFIER(obj)->module->name,
                       SCM_IDENTIFIER(obj)->name);
 }
@@ -295,6 +296,16 @@ int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
 {
     ScmObj bf = get_binding_frame(SCM_OBJ(sym), env);
     return (bf == id->env);
+}
+
+ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
+{
+    ScmIdentifier *id = SCM_NEW(ScmIdentifier);
+    SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
+    id->name = orig->name;
+    id->module = orig->module;
+    id->env = orig->env;
+    return SCM_OBJ(id);
 }
 
 /*------------------------------------------------------------------
