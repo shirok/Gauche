@@ -1,3 +1,15 @@
+2002-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (arrange_application), src/gauche/vminsn.h : fix a bug
+	  that confused Scm_VMApply when VM instruction is given to arguments.
+	  (patch from Abe Hiroshi).
+	* src/load.c : patch to compile on FreeBSD 2.x (from Abe Hiroshi)
+	* src/gauche/portmacros.h (SCM__ISTR_GETB): fixed a bug that returned
+	  EOF  on some platforms when read-byte reads char > 0x80.
+	  (patch from Abe Hiroshi).
+	* gc/dyn_load.c : the previous fix isn't enough for the platforms
+	  such as FreeBSD 2.x.
+
 2002-02-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_InexactToExact): fixed the case when an inexact
