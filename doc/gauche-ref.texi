@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.148 2002-01-25 21:01:31 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.149 2002-01-26 09:59:01 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -245,7 +245,7 @@ Gaucheは名前空間を分離する単純なモジュールシステムを備えており、
 A powerful CLOS-like object system with MetaObject protocol
 (mostly compatible with STklos and Guile) is provided.
 @c JP
-CLOSライクなメタオブジェクトプロトコルを備えた橋梁kなオブジェクトシステム
+CLOSライクなメタオブジェクトプロトコルを備えた強力なオブジェクトシステム
 が組み込んであります。STklosやGuileのオブジェクトシステムとかなり互換性があります。
 @c COMMON
 
@@ -610,19 +610,38 @@ Gaucheは、Schemeプログラムはその内部エンコーディングと同じエンコーディングで
 @section Case-sensitivity
 @c NODE 大文字小文字の区別
 
+@c EN
 Historically, most Lisp-family languages are case-insensitive
 for symbols.  Scheme is no exception and R5RS defines symbols are
 read in case-insensitive way.  (Note that symbols are case-sensitive
 internally even in R5RS Scheme; case-insensitivity is about readers.)
+@c JP
+Lisp系の言語は歴史的にシンボルの大文字小文字を区別していませんでした。
+Schemeもその流れを汲んでおり、R5RSでもシンボルは読み込まれる時に大文字小文字の
+区別をしないと定義されています。(但し、R5RSの範囲内でも内部的なシンボル名は
+大文字小文字の区別がなされます。ここで問題としているのは読み込み時の動作です)。
+@c COMMON
 
+@c EN
 However, nowadays programming is hardly completed in one language.
 When you interacts with other languages that distinguishes uppercase
 and lowercase characters, it is desirable that Scheme distinguishes them
 as well.
+@c JP
+しかし現在では、プログラミングが一つの言語で完結することは滅多にありません。
+他の言語とインタフェースを取る場合、Scheme側でも大文字小文字を区別するように
+しておいた方が便利です。
+@c COMMON
 
+@c EN
 So Gauche has two modes in reading and writing symbols.
 @emph{By default, Gauche reads and writes symbols in case-sensitive manner}.
 This behavior doesn't conform R5RS.
+@c JP
+そこでGaucheでは、シンボルの読み込みと書き出しに2つのモードを用意しました。
+@emph{デフォルトのモードでは、Gaucheのリーダとライタはシンボルの大文字小文字を区別します}。
+このふるまいは厳密にはR5RSに準拠しません。
+@c COMMON
 
 @example
 ; @r{In case-sensitive mode (default)}
@@ -633,11 +652,19 @@ This behavior doesn't conform R5RS.
 (display (string->symbol "abc")) @result{} @r{writes} abc
 @end example
 
+@c EN
 You can make Gauche case-insensitive by giving @code{-fcase-fold}
 command-line option to the @code{gosh} interpreter (@xref{Invoking Gosh}).
 In this mode, the reader folds uppercase characters in symbols to lowercase
 ones.  If a symbol name contains uppercase characters, it is written
 out using |-escape (@xref{Symbols}).
+@c JP
+@code{gosh}インタプリタの起動時に@code{-fcase-fold}コマンドライン引数を
+与えると、Gaucheは大文字小文字を区別しないモードで動作します (@ref{Invoking Gosh}参照)。
+このモードでは、リーダはシンボルの読み込みの際に大文字を小文字に変換します。
+大文字を含んでいるシンボルに関しては、`|' 文字でエスケープされて書き出されます
+(@ref{Symbols}参照)。
+@c COMMON
 
 @example
 ; @r{In case-insensitive mode (with -fcase-fold option)}
@@ -648,8 +675,13 @@ out using |-escape (@xref{Symbols}).
 (display (string->symbol "abc")) @result{} @r{writes} abc
 @end example
 
+@c EN
 Right now, there's no way to switch these two modes back and forth
 inside the intepreter; an API will be provided in the later versions.
+@c JP
+今のところ、インタプリタの中から両方のモードを切り替えることはできません。
+将来のバージョンではその方法が提供されるでしょう。
+@c COMMON
 
 
 @node Integerated Object System, Module System, Case-sensitivity, Concepts
@@ -2230,42 +2262,79 @@ hierarchical file/module configuration, as in Guile.)
 
 @deftp {Builtin Class} <module>
 @clindex module
+@c EN
 A module class.
+@c JP
+モジュールクラスです。
+@c COMMON
 @end deftp
 
 @defun module? obj
+@c EN
 Returns true if @var{obj} is a module.
+@c JP
+@var{obj}がモジュールなら真の値を返します。
+@c COMMON
 @end defun
 
 @defun find-module name
+@c EN
 Returns a module object whose name is a symbol @var{name}.
 If the named module doesn't exist, @code{#f} is returned.
+@c JP
+名前がシンボル@var{name}であるようなモジュールを返します。
+その名前をもつモジュールが存在しなければ、@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun all-modules
+@c EN
 Returns a list of modules currently known to the system.
+@c JP
+現在存在する全てのモジュールのリストを返します。
+@c COMMON
 @end defun
 
 @defun module-name module
 @defunx module-imports module
 @defunx module-exports module
 @defunx module-table module
+@c EN
 Accessors of a module object.  Returns the name of the module (a symbol),
 list of imported modules, list of exported symbols, and a hash table
 that maps symbols to bindings, of the @var{module} are returned,
 respectively.
+@c JP
+モジュールオブジェクトのアクセスメソッドです。
+@var{module}の名前(シンボル)、@var{module}がインポートしているモジュールのリスト、
+エクスポートしているシンボルのリスト、そして
+シンボルから束縛へのマップを行うハッシュテーブルを返します。
+@c COMMON
 
+@c EN
 If the @var{module} exports all symbols, @code{module-exports} returns
 @code{#t}.
+@c JP
+もし@var{module}が全てのシンボルをエクスポートしている場合は、@code{module-exports}
+は@code{#t}を返します。
+@c COMMON
 
+@c EN
 It is an error to pass a non-module object.
+@c JP
+モジュールオブジェクト以外が渡された場合はエラーになります。
+@c COMMON
 @end defun
 
 @node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
 @c NODE 組み込みモジュール
 
+@c EN
 Several modules are predefined in Gauche.
+@c JP
+Gauche起動時にいくつかのモジュールがあらかじめ定義されています。
+@c COMMON
 
 @deftp {Builtin Module} null
 @mdindex null
