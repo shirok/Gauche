@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.2 2001-10-03 09:52:43 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.3 2001-10-09 08:32:13 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -76,6 +76,50 @@
        (car val)))
     ((_ . other)
      (syntax-error "malformed pop!" (pop! . other)))))
+
+(define-syntax inc!
+  (syntax-rules ()
+    ((_ "vars" ((var arg) ...) () proc num)
+     (let ((getter proc)
+           (delta num)
+           (var arg) ...)
+       (let ((val (getter var ...)))
+         ((setter getter) var ... (+ val delta)))))
+    ((_ "vars" ((var arg) ...) (arg0 arg1 ...) proc num)
+     (inc! "vars" ((var arg) ... (newvar arg0)) (arg1 ...) proc num))
+    ((_ (proc arg ...) num)
+     (inc! "vars" () (arg ...) proc num))
+    ((_ (proc arg ...))
+     (inc! "vars" () (arg ...) proc 1))
+    ((_ loc num)
+     (let ((val loc))
+       (set! loc (+ val num))))
+    ((_ loc)
+     (inc! loc 1))
+    ((_ . other)
+     (syntax-error "malformed inc!" (inc! . other)))))
+
+(define-syntax dec!
+  (syntax-rules ()
+    ((_ "vars" ((var arg) ...) () proc num)
+     (let ((getter proc)
+           (delta num)
+           (var arg) ...)
+       (let ((val (getter var ...)))
+         ((setter getter) var ... (- val delta)))))
+    ((_ "vars" ((var arg) ...) (arg0 arg1 ...) proc num)
+     (dec! "vars" ((var arg) ... (newvar arg0)) (arg1 ...) proc num))
+    ((_ (proc arg ...) num)
+     (dec! "vars" () (arg ...) proc num))
+    ((_ (proc arg ...))
+     (dec! "vars" () (arg ...) proc 1))
+    ((_ loc num)
+     (let ((val loc))
+       (set! loc (- val num))))
+    ((_ loc)
+     (dec! loc 1))
+    ((_ . other)
+     (syntax-error "malformed dec!" (dec! . other)))))
 
 ;;;-------------------------------------------------------------
 ;;; repeat construct
