@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.84 2001-03-20 08:47:04 shiro Exp $
+ *  $Id: gauche.h,v 1.85 2001-03-20 09:56:10 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -617,8 +617,8 @@ extern ScmObj  Scm_StringFill(ScmString *str, ScmChar c);
 
 /* You can allocate a constant string statically, if you calculate
    the length by yourself. */
-#define SCM_DEFINE_STRING_CONST(name, str, len, siz)        \
-    static ScmString name = {                           \
+#define SCM_DEFINE_STRING_CONST(name, str, len, siz)    \
+    ScmString name = {                                  \
         SCM_CLASS_STRING, (len), (siz), (str)           \
     };
 
@@ -1494,12 +1494,13 @@ extern ScmClass Scm_GenericClass;
 #define SCM_GENERICP(obj)          SCM_XTYPEP(obj, SCM_CLASS_GENERIC)
 #define SCM_GENERIC(obj)           ((ScmGeneric*)obj)
 
-#define SCM_DEFINE_GENERIC(cvar, info, cfunc, data)             \
-    ScmGeneric cvar = {                                         \
-        { SCM_CLASS_GENERIC, 0, 0, SCM_PROC_GENERIC, info },    \
-        SCM_NIL, cfunc, data                                    \
+#define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
+    ScmGeneric cvar = {                                                 \
+        { SCM_CLASS_GENERIC, 0, 0, SCM_PROC_GENERIC, SCM_FALSE },       \
+        SCM_NIL, cfunc, data                                            \
     };
 
+void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod);
 ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf);
 
 /* Method - method */
@@ -1515,6 +1516,14 @@ extern ScmClass Scm_MethodClass;
 #define SCM_CLASS_METHOD           (&Scm_MethodClass)
 #define SCM_METHODP(obj)           SCM_XTYPEP(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
+
+#define SCM_DEFINE_METHOD(cvar, generic, required, optional, func, data)      \
+    ScmMethod cvar = {                                                        \
+        { SCM_CLASS_METHOD, required, optional, SCM_PROC_METHOD, SCM_FALSE }, \
+        generic, SCM_NIL, func, data                                          \
+    };
+
+void Scm_InitBuiltinMethod(ScmMethod *m, ScmObj specializers);
 
 /* Next method object
    Next method is just another callable entity, with memorizing

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.57 2001-03-20 08:47:04 shiro Exp $
+ *  $Id: vm.c,v 1.58 2001-03-20 09:56:10 shiro Exp $
  */
 
 #include "gauche.h"
@@ -431,14 +431,15 @@ static void run_loop()
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
             CASE(SCM_VM_CALL) {
                 int nargs = SCM_VM_INSN_ARG(code);
-                int argcnt;
+                int argcnt, proctype;
                 ScmObj nm = SCM_FALSE;
 
                 if (!SCM_PROCEDUREP(val0)) VM_ERR(("bad procedure: %S", val0));
                 /*
                  * Step 1. Preprocess for generic function
                  */
-                if (SCM_PROCEDURE_TYPE(val0) == SCM_PROC_GENERIC) {
+                proctype = SCM_PROCEDURE_TYPE(val0);
+                if (proctype == SCM_PROC_GENERIC) {
                     ScmObj mm
                         = Scm_ComputeApplicableMethods(SCM_GENERIC(val0),
                                                        argp->data, nargs);
@@ -449,12 +450,29 @@ static void run_loop()
                         nm = Scm_MakeNextMethod(SCM_GENERIC(val0),
                                                 SCM_CDR(mm), argv, nargs);
                         val0 = SCM_CAR(mm);
+                        proctype = SCM_PROC_METHOD;
+                    }
+                } else if (proctype == SCM_PROC_NEXT_METHOD) {
+                    ScmNextMethod *n = SCM_NEXT_METHOD(val0);
+                    if (SCM_NULLP(n->methods)) {
+                        val0 = SCM_OBJ(n->generic);
+                        proctype = SCM_PROC_GENERIC;
+                    } else {
+                        ScmObj *argv = SCM_NEW2(ScmObj*, sizeof(ScmObj)*nargs);
+                        memcpy(argv, argp->data, sizeof(ScmObj)*nargs);
+                        nm = Scm_MakeNextMethod(n->generic,
+                                                SCM_CDR(n->methods),
+                                                argv, nargs);
+                        val0 = SCM_CAR(n->methods);
+                        proctype = SCM_PROC_METHOD;
                     }
                 }
                 /*
                  * Step 2. Prepare argument frame
                  */
-                ADJUST_ARGUMENT_FRAME(val0, nargs, argcnt);
+                if (proctype != SCM_PROC_GENERIC) {
+                    ADJUST_ARGUMENT_FRAME(val0, nargs, argcnt);
+                }
                 if (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL) {
                     /* discard the caller's argument frame, and shift
                        the callee's argument frame there.  This argument
@@ -472,27 +490,32 @@ static void run_loop()
                 /*
                  * Step 3. Call
                  */
-                if (SCM_SUBRP(val0)) {
-                    env = argp;
+                env = argp;
+                if (proctype == SCM_PROC_SUBR) {
                     SAVE_REGS();
                     val0 = SCM_SUBR(val0)->func(argp->data, argcnt,
                                                 SCM_SUBR(val0)->data);
                     RESTORE_REGS();
-                } else if (SCM_CLOSUREP(val0)) {
-                    env = argp;
+                } else if (proctype == SCM_PROC_CLOSURE) {
                     env->up = SCM_CLOSURE(val0)->env;
                     pc = SCM_CLOSURE(val0)->code;
-                } else if (SCM_PROCEDURE_TYPE(val0) == SCM_PROC_GENERIC) {
+                } else if (proctype == SCM_PROC_GENERIC) {
                     /* we have no applicable methods.  call fallback fn. */
-                    env = argp;
                     SAVE_REGS();
                     val0 = SCM_GENERIC(val0)->fallback(argp->data,
-                                                       argcnt,
+                                                       nargs,
                                                        SCM_GENERIC(val0));
                     RESTORE_REGS();
+                } else if (proctype == SCM_PROC_METHOD) {
+                    VM_ASSERT(!SCM_FALSEP(nm));
+                    SAVE_REGS();
+                    val0 = SCM_METHOD(val0)->func(SCM_NEXT_METHOD(nm),
+                                                  argp->data,
+                                                  argcnt,
+                                                  SCM_METHOD(val0)->data);
+                    RESTORE_REGS();
                 } else {
-                    /* it's method. */
-                    Scm_Error("method not supported yet.");
+                    Scm_Panic("(VM_CALL) something wrong internally");
                 }
                 continue;
             }

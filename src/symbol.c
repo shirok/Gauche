@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: symbol.c,v 1.12 2001-03-20 09:56:10 shiro Exp $
  */
 
 #include "gauche.h"
@@ -68,7 +68,7 @@ ScmObj Scm_Apropos(ScmString *substr)
 }
 
 /* Default prefix string. */
-SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
+static SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
 
 /* Returns uninterned symbol.
    PREFIX can be NULL*/
