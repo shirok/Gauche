@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.30 2002-01-21 10:34:10 shirok Exp $
+ *  $Id: core.c,v 1.31 2002-01-30 09:02:54 shirok Exp $
  */
 
 #include "gauche.h"
@@ -90,6 +90,15 @@ void Scm_Init(void)
 
 void Scm_Exit(int code)
 {
+    /* TODO: This should throw <application-exit> exception and
+       let the VM handle unwinding dynamic handlers.  For now,
+       we call the handlers here. */
+    ScmVM *vm = Scm_VM();
+    ScmObj hp;
+    SCM_FOR_EACH(hp, vm->handlers) {
+        vm->handlers = SCM_CDR(hp);
+        Scm_Apply(SCM_CDAR(hp), SCM_NIL);
+    }
     exit(code);
 }
 
