@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.45 2001-03-28 09:55:46 shiro Exp $
+ *  $Id: compile.c,v 1.46 2001-03-31 08:37:25 shiro Exp $
  */
 
 #include "gauche.h"
@@ -89,6 +89,14 @@ static inline ScmObj make_lref(int depth, int offset)
         case 2: return SCM_VM_INSN(SCM_VM_LREF2);
         case 3: return SCM_VM_INSN(SCM_VM_LREF3);
         case 4: return SCM_VM_INSN(SCM_VM_LREF4);
+        }
+    } else if (depth == 1) {
+        switch (offset) {
+        case 0: return SCM_VM_INSN(SCM_VM_LREF10);
+        case 1: return SCM_VM_INSN(SCM_VM_LREF11);
+        case 2: return SCM_VM_INSN(SCM_VM_LREF12);
+        case 3: return SCM_VM_INSN(SCM_VM_LREF13);
+        case 4: return SCM_VM_INSN(SCM_VM_LREF14);
         }
     }
     return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
@@ -301,7 +309,6 @@ ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op)
 
 ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env)
 {
-    ScmObj fp;
     ScmIdentifier *id = SCM_NEW(ScmIdentifier);
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
     id->name = name;
@@ -501,7 +508,7 @@ static ScmObj compile_define(ScmObj form,
 }
 
 static ScmSyntax syntax_define = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_DEFINE),
     compile_define,
     NULL
@@ -563,7 +570,7 @@ static ScmObj compile_quote(ScmObj form,
 }
 
 static ScmSyntax syntax_quote = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_QUOTE),
     compile_quote,
     NULL
@@ -599,15 +606,32 @@ static ScmObj compile_set(ScmObj form,
         ADDCODE1(SCM_VM_INSN(SCM_VM_GSET));
         ADDCODE1(location);
     } else {
-        int dep = SCM_VM_INSN_ARG0(location);
-        int off = SCM_VM_INSN_ARG1(location);
-        ADDCODE1(make_lset(dep, off));
+        switch (SCM_VM_INSN_CODE(location)) {
+        case SCM_VM_LREF: {
+            int dep = SCM_VM_INSN_ARG0(location);
+            int off = SCM_VM_INSN_ARG1(location);
+            ADDCODE1(make_lset(dep, off));
+            break;
+        }
+        case SCM_VM_LREF0: ADDCODE1(make_lset(0, 0)); break;
+        case SCM_VM_LREF1: ADDCODE1(make_lset(0, 1)); break;
+        case SCM_VM_LREF2: ADDCODE1(make_lset(0, 2)); break;
+        case SCM_VM_LREF3: ADDCODE1(make_lset(0, 3)); break;
+        case SCM_VM_LREF4: ADDCODE1(make_lset(0, 4)); break;
+        case SCM_VM_LREF10: ADDCODE1(make_lset(1, 0)); break;
+        case SCM_VM_LREF11: ADDCODE1(make_lset(1, 1)); break;
+        case SCM_VM_LREF12: ADDCODE1(make_lset(1, 2)); break;
+        case SCM_VM_LREF13: ADDCODE1(make_lset(1, 3)); break;
+        case SCM_VM_LREF14: ADDCODE1(make_lset(1, 4)); break;
+        default:
+            Scm_Panic("something definitely wrong with compiler");
+        }
     }
     return code;
 }
 
 static ScmSyntax syntax_set = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_SET),
     compile_set,
     NULL
@@ -742,7 +766,6 @@ static ScmObj compile_lambda(ScmObj form,
 {
     ScmObj tail = SCM_CDR(form);
     ScmObj args, body;
-    int nargs, restarg;
     
     if (!SCM_PAIRP(tail) || !SCM_PAIRP(SCM_CDR(tail))) {
         Scm_Error("bad lambda form: %S", form);
@@ -754,7 +777,7 @@ static ScmObj compile_lambda(ScmObj form,
 }
 
 static ScmSyntax syntax_lambda = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_LAMBDA),
     compile_lambda,
     NULL
@@ -782,7 +805,7 @@ static ScmObj compile_begin(ScmObj form,
 }
 
 static ScmSyntax syntax_begin = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_BEGIN),
     compile_begin,
     NULL
@@ -834,7 +857,7 @@ static ScmObj compile_if(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_if = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_IF),
     compile_if,
     NULL
@@ -863,14 +886,14 @@ static ScmObj compile_when(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_when = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_WHEN),
     compile_when,
     (void*)0
 };
 
 static ScmSyntax syntax_unless = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_UNLESS),
     compile_when,
     (void*)1
@@ -909,14 +932,14 @@ static ScmObj compile_and(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_and = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_AND),
     compile_and,
     (void*)0
 };
 
 static ScmSyntax syntax_or = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_OR),
     compile_and,
     (void*)1
@@ -1036,7 +1059,7 @@ static ScmObj compile_cond(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_cond = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_COND),
     compile_cond,
     NULL
@@ -1059,7 +1082,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_case = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_CASE),
     compile_case,
     NULL
@@ -1114,7 +1137,6 @@ static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
     int type = (int)data;
     ScmObj tail = SCM_CDR(form);
     ScmObj bindings, body, vars, vals, name = SCM_FALSE;
-    ScmObj newenv, code = SCM_NIL, codetail, bodycode;
     int nvars;
 
     if (!SCM_PAIRP(tail)) Scm_Error("syntax error: %S", form);
@@ -1184,21 +1206,21 @@ static ScmObj compile_named_let_body(ScmObj body, ScmObj env, int ctx)
 }
 
 static ScmSyntax syntax_let = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_LET),
     compile_let,
     (void*)BIND_LET
 };
 
 static ScmSyntax syntax_let_star = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX},
     SCM_SYMBOL(SCM_SYM_LET_STAR),
     compile_let,
     (void*)BIND_LET_STAR
 };
 
 static ScmSyntax syntax_letrec = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_LETREC),
     compile_let,
     (void*)BIND_LETREC
@@ -1212,7 +1234,6 @@ static ScmSyntax syntax_letrec = {
 static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
 {
     ScmObj test = SCM_CAR(body);
-    ScmObj vars = SCM_CADR(body);
     ScmObj updts = SCM_CAR(SCM_CDDR(body)), updtsp;
     ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
 
@@ -1295,7 +1316,7 @@ static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_do = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_DO),
     compile_do,
     NULL
@@ -1419,7 +1440,7 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
     int vlen = SCM_VECTOR_SIZE(form), i, alen = 0;
     int spliced = 0, last_spliced = FALSE;
     for (i=0; i<vlen; i++) {
-        ScmObj p = SCM_VECTOR_ELEMENT(form, i), q;
+        ScmObj p = SCM_VECTOR_ELEMENT(form, i);
         if (SCM_PAIRP(p)) {
             ScmObj car = SCM_CAR(p);
             if (UNQUOTEP(car, env)) {
@@ -1507,21 +1528,21 @@ static ScmObj compile_unquote(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_quasiquote = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_QUASIQUOTE),
     compile_quasiquote,
     NULL
 };
 
 static ScmSyntax syntax_unquote = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_UNQUOTE),
     compile_unquote,
     "unquote"
 };
 
 static ScmSyntax syntax_unquote_splicing = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_UNQUOTE_SPLICING),
     compile_unquote,
     "unquote-splicing"
@@ -1533,7 +1554,7 @@ static ScmSyntax syntax_unquote_splicing = {
 
 static ScmObj compile_delay(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj code = SCM_NIL, codetail, info, p;
+    ScmObj code = SCM_NIL, codetail;
     
     if (!LIST1_P(SCM_CDR(form))) Scm_Error("bad delay form: %S", form);
     ADDCODE(compile_int(SCM_LIST3(SCM_SYM_LAMBDA,
@@ -1545,7 +1566,7 @@ static ScmObj compile_delay(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_delay = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_DELAY),
     compile_delay,
     NULL
@@ -1559,7 +1580,7 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj code = SCM_NIL, codetail, vars, expr, body;
     ScmObj bind = SCM_NIL, bindtail, vp;
-    int nvars, restvars, nvals;
+    int nvars, restvars;
     
     if (Scm_Length(form) < 4) Scm_Error("badly formed receive: %S", form);
     vars = SCM_CADR(form);
@@ -1584,7 +1605,7 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_receive = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_RECEIVE),
     compile_receive,
     NULL
@@ -1632,14 +1653,14 @@ static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_with_module = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_WITH_MODULE),
     compile_with_module,
     (void*)0
 };
 
 static ScmSyntax syntax_define_module = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_DEFINE_MODULE),
     compile_with_module,
     (void*)1
@@ -1661,7 +1682,7 @@ static ScmObj compile_select_module(ScmObj form, ScmObj env, int ctx, void *data
 }
 
 static ScmSyntax syntax_select_module = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_SELECT_MODULE),
     compile_select_module,
     NULL
@@ -1674,7 +1695,7 @@ static ScmObj compile_current_module(ScmObj form, ScmObj env, int ctx, void *dat
 }
 
 static ScmSyntax syntax_current_module = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_CURRENT_MODULE),
     compile_current_module,
     NULL
@@ -1687,7 +1708,7 @@ static ScmObj compile_import(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_import = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_IMPORT),
     compile_import,
     NULL
@@ -1700,7 +1721,7 @@ static ScmObj compile_export(ScmObj form, ScmObj env, int ctx, void *data)
 }
 
 static ScmSyntax syntax_export = {
-    SCM_CLASS_SYNTAX,
+    { SCM_CLASS_SYNTAX },
     SCM_SYMBOL(SCM_SYM_EXPORT),
     compile_export,
     NULL
