@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.131 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: vm.c,v 1.132 2002-02-12 19:51:33 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -865,6 +865,12 @@ static void run_loop()
                 pc = body;
                 continue;
             }
+            CASE(SCM_VM_QUOTE_INSN) {
+                VM_ASSERT(SCM_PAIRP(pc));
+                val0 = SCM_CAR(pc);
+                pc = SCM_CDR(pc);
+                continue;
+            }
 
             /* Inlined procedures */
             CASE(SCM_VM_CONS) {
@@ -1400,6 +1406,9 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
 #endif
     SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_PRE_TAIL, numargs));
     SCM_FOR_EACH(cp, args) {
+        if (SCM_VM_INSNP(SCM_CAR(cp))) {
+            SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_QUOTE_INSN));
+        }
         SCM_APPEND1(code, tail, SCM_CAR(cp));
         SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
     }

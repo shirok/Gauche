@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.26 2001-09-02 07:58:47 shirok Exp $
+ *  $Id: vminsn.h,v 1.27 2002-02-12 19:51:37 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -175,6 +175,13 @@ DEFINSN(SCM_VM_GREF, "GREF", 0)
  *  object.
  */
 DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
+
+/* QUOTE-INSN <INSN>
+ *
+ *  Quote the next VM instruction.  Needs to load VM insn to val0.
+ *  It occurs when VM insn is passed to apply.
+ */
+DEFINSN(SCM_VM_QUOTE_INSN, "QUOTE-INSN", 0)
 
 /* Inlined operators
  *  They work the same as corresponding Scheme primitives, but they are
