@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.10 2001-03-14 09:18:59 shiro Exp $
+ *  $Id: class.c,v 1.11 2001-03-15 08:01:10 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/class.h"
 
 /*
  * Built-in classes
@@ -36,11 +37,17 @@ SCM_DEFCLASS(Scm_BoolClass,    "<bool>",    NULL, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_CharClass,    "<char>",    NULL, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_UnknownClass, "<unknown>", NULL, SCM_CLASS_DEFAULT_CPL);
 
-SCM_DEFCLASS(Scm_ClassClass,   "<class>", class_print, SCM_CLASS_DEFAULT_CPL);
-
 /* Collection and sequence types */
 SCM_DEFCLASS(Scm_CollectionClass, "<collection>", NULL, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
+
+/* Class metaobject needs customized initialization, which is done
+   in Scm__InitClass(). */
+SCM_DEFCLASS(Scm_ClassClass, "<class>", class_print, SCM_CLASS_DEFAULT_CPL);
+
+/* Some frequently-used pointers */
+static ScmObj key_allocation;
+static ScmObj key_instance;
 
 /*=====================================================================
  * Class metaobject
@@ -82,14 +89,14 @@ SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
  *
  *   Category:  core final     core base     core abstract 
  *   -----------------------------------------------------
- *    make       required       optional        ignored
- *    apply      (*1)           ignored         ignored
+ *    allocate   required       optional        NULL
+ *    apply      (*1)           NULL            NULL
  *    print      optional       optional        ignored
  *    equal      optional       optional        ignored
  *    compare    optional       optional        ignored
  *    serialize  optional       optional        ignored
  *
- *  (*1: required for applicable classes, and ignored otherwise)
+ *  (*1: required for applicable classes, must be NULL otherwise)
  *
  * If the function is optional, you can set NULL there and the system
  * uses default function.  For Scheme class the system sets appropriate
@@ -99,6 +106,16 @@ SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
 
 /*
  * Built-in protocols
+ *
+ *  ScmObj klass->allocate(ScmClass *klass, ScmObj initargs)
+ *     Called at the bottom of the chain of allocate-instance method.
+ *     Besides allocating the required space, it must initialize
+ *     members of the C-specific part of the instance, including SCM_HEADER.
+ *     This protocol can be NULL for core base classes; if so, attempt
+ *     to "make" such class reports an error.
+ *
+ *  ScmObj klass->apply(ScmObj obj, ScmObj args)
+ *     Called from the VM engine to initiate application.
  *
  *  int klass->print(ScmObj obj, ScmPort *sink, int mode)
  *     OBJ is an instance of klass (you can safely assume it).  This
@@ -126,6 +143,50 @@ SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
  *     OBJ is an instance of klass.  This method is only called when OBJ
  *     has not been output in the current serializing session.
  */
+
+/*
+ * Class metaobject protocol implementation
+ */
+
+/* Allocate class structure.  klass is a metaclass. */
+ScmObj Scm_ClassAllocate(ScmClass *klass, int nslots)
+{
+    ScmObj slots = klass->effectiveSlots, sp;
+    ScmClass *instance;
+    int i;
+
+    SCM_ASSERT(nslots >= 0);
+    instance = SCM_NEW2(ScmClass*,
+                        sizeof(ScmClass) + sizeof(ScmObj)*nslots);
+    SCM_SET_CLASS(instance, klass);
+    instance->name = "(uninitialized)";
+    instance->print = class_print;
+    instance->equal = NULL;
+    instance->compare = NULL;
+    instance->serialize = NULL; /* class_serialize? */
+    instance->allocate = Scm_ClassAllocate;
+    instance->apply = NULL;
+    instance->cpa = NULL;
+    instance->flags = 0;        /* ?? */
+    instance->directSupers = SCM_NIL;
+    instance->cpl = SCM_NIL;
+    instance->directSlots = SCM_NIL;
+    instance->effectiveSlots = SCM_NIL;
+    instance->directMethods = SCM_NIL;
+
+    if (nslots > 0) {
+        ScmSubClass *s = (ScmSubClass*)instance;
+        for (i=0; i<nslots; i++) s->slots[i] = SCM_UNBOUND;
+    }
+    return SCM_OBJ(instance);
+}
+
+/* fallback print method */
+static int class_print(ScmObj obj, ScmPort *port, int mode) 
+{
+    ScmClass *c = (ScmClass*)obj;
+    return Scm_Printf(port, "#<class %s>", c->name);
+}
 
 /*
  * Get class
@@ -202,16 +263,6 @@ ScmObj Scm_TypeP(ScmObj obj, ScmClass *type)
 }
 
 /*
- * fallback print method
- */
-
-static int class_print(ScmObj obj, ScmPort *port, int mode) 
-{
-    ScmClass *c = (ScmClass*)obj;
-    return Scm_Printf(port, "#<class %s>", c->name);
-}
-
-/*
  * External interface
  */
 
@@ -238,6 +289,18 @@ ScmObj Scm_ComputeCPL(ScmClass *klass, ScmObj directSupers)
         Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
                   directSupers);
     return result;
+}
+
+/*
+ * allocate instance
+ */
+ScmObj Scm_AllocateInstance(ScmClass *klass, int nslots)
+{
+    if (klass->allocate == NULL) {
+        Scm_Error("built-in class can't be allocated via allocate-instance: %S",
+                  klass);
+    }
+    return klass->allocate(klass, nslots);
 }
 
 /*
@@ -289,8 +352,16 @@ ScmClass *Scm_MakeBuiltinClass(const char *name,
 
 void Scm__InitClass(void)
 {
-    int i;
     ScmModule *mod = Scm_SchemeModule();
+    ScmClass *theClass = &Scm_ClassClass;
+
+    key_allocation = SCM_MAKE_KEYWORD("allocation");
+    key_instance = SCM_MAKE_KEYWORD("instance");
+
+    /* booting class metaobject */
+    theClass->allocate = Scm_ClassAllocate;
+    theClass->directSupers = SCM_LIST1(SCM_OBJ(SCM_CLASS_TOP)); /* TODO: <object> */
+    theClass->cpl = SCM_LIST1(SCM_OBJ(SCM_CLASS_TOP)); /* TODO: <object> */
     
     SCM_DEFINE(mod, "<top>",      SCM_OBJ(SCM_CLASS_TOP));
     SCM_DEFINE(mod, "<boolean>",  SCM_OBJ(SCM_CLASS_BOOL));

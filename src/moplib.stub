@@ -1,0 +1,73 @@
+;;;
+;;; moplib.stub - extra built-ins
+;;;
+;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: moplib.stub,v 1.1 2001-03-15 08:01:10 shiro Exp $
+;;;
+
+"
+#include <gauche/class.h>
+"
+
+;; Gauche object system interface
+
+;;
+;; Internal routines
+;;
+(define-cproc %allocate-instance (klass nslots)
+  (assert (class? klass))
+  (assert (small-integer? nslots))
+  "  SCM_RETURN(Scm_AllocateInstance(klass, nslots));")
+
+(define-cproc %class-direct-supers (klass)
+  (assert (class? klass))
+  "  SCM_RETURN(Scm_ClassDirectSupers(klass));")
+
+(define-cproc %class-direct-slots (klass)
+  (assert (class? klass))
+  "  SCM_RETURN(Scm_ClassDirectSlots(klass));")
+
+(define-cproc %class-effective-slots (klass)
+  (assert (class? klass))
+  "  SCM_RETURN(Scm_ClassEffectiveSlots(klass));")
+;; truly internal in the boot-up process.
+(define-cproc %%class-direct-slots-set! (klass slots)
+  (assert (class? klass))
+  "  klass->directSlots = slots; SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc %%class-effective-slots-set! (klass slots)
+  (assert (class? klass))
+  "  klass->directSlots = slots; SCM_RETURN(SCM_UNDEFINED);")
+
+;;
+;; Introspection
+;;
+
+(define-cproc class-of (obj)
+  "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+
+(define-cproc is-a? (obj klass)
+  (assert (class? klass))
+  "  SCM_RETURN(Scm_TypeP(obj, klass));")
+
+(define-cproc class-precedence-list (klass)
+  (assert (class? klass))
+  "  SCM_RETURN(Scm_ClassCPL(klass));")
+
+
+
+
+
+
+;; Local variables:
+;; mode: scheme
+;; end:

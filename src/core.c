@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.17 2001-03-09 09:53:05 shiro Exp $
+ *  $Id: core.c,v 1.18 2001-03-15 08:01:10 shiro Exp $
  */
 
 #include "gauche.h"
@@ -44,6 +44,7 @@ extern void Scm__InitLoad(void);
 extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
 extern void Scm_Init_syslib(ScmModule *);
+extern void Scm_Init_moplib(ScmModule *);
 
 void Scm_Init(const char *initfile)
 {
@@ -65,6 +66,7 @@ void Scm_Init(const char *initfile)
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
+    Scm_Init_moplib(Scm_GaucheModule());
     Scm_SelectModule(Scm_UserModule());
 
     if (initfile) {

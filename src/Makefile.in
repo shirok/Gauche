@@ -9,7 +9,7 @@ AR = ar
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
-GENERATED = stdlib.c extlib.c syslib.c
+GENERATED = stdlib.c extlib.c syslib.c moplib.c
 CONFIG_GENERATED = Makefile gauche-config gauche/config.h gauche/arch.h
 
 LIB_INSTALL_DIR = @libdir@
@@ -42,7 +42,7 @@ OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o \
        symbol.o keyword.o \
        module.o proc.o number.o bignum.o io.o load.o promise.o repl.o \
-       system.o stdlib.o extlib.o syslib.o
+       system.o stdlib.o extlib.o syslib.o moplib.o
 
 TESTFILES = ../test/primsyn.scm \
 	    ../test/module.scm  \
@@ -67,6 +67,7 @@ $(OBJS) main.o : $(HDRS)
 stdlib.c : stdlib.stub genstub 
 extlib.c : extlib.stub genstub
 syslib.c : syslib.stub genstub
+moplib.c : moplib.stub genstub
 
 libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) x $(GCLIB)
