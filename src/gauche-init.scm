@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.19 2001-03-25 03:11:28 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.20 2001-04-01 07:27:11 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -78,6 +78,7 @@
 ;;
 ;; Load object system
 ;;
+(require "srfi-17")                     ;generalized set!
 (require "gauche/object")
 
 ;;
