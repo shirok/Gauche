@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.4 2001-02-22 06:50:11 shiro Exp $
+ *  $Id: macro.c,v 1.5 2001-02-22 19:40:00 shiro Exp $
  */
 
 #include "gauche.h"
+#include "gauche/macro.h"
 
 /*===================================================================
  * Syntax object
@@ -36,6 +37,34 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
     s->compiler = compiler;
     s->data = data;
     return SCM_OBJ(s);
+}
+
+/*===================================================================
+ * SyntaxPattern object
+ *   Internal object to construct pattern matcher
+ */
+
+static int pattern_print(ScmObj obj, ScmPort *port, int mode)
+{
+    return Scm_Printf(port, "#<pattern/%d/%S %S%s >",
+                      SCM_SYNTAX_PATTERN(obj)->level,
+                      SCM_SYNTAX_PATTERN(obj)->vars,
+                      SCM_SYNTAX_PATTERN(obj)->pattern,
+                      SCM_SYNTAX_PATTERN(obj)->repeat? " ..." : "");
+}
+
+SCM_DEFCLASS(Scm_SyntaxPatternClass, "<syntax-pattern>",
+             pattern_print, SCM_CLASS_DEFAULT_CPL);
+
+ScmSyntaxPattern *make_syntax_pattern(int level, int repeat)
+{
+    ScmSyntaxPattern *p = SCM_NEW(ScmSyntaxPattern);
+    SCM_SET_CLASS(p, SCM_CLASS_SYNTAX_PATTERN);
+    p->pattern = SCM_NIL;
+    p->vars = SCM_NIL;
+    p->level = level;
+    p->repeat = repeat;
+    return p;
 }
 
 /*===================================================================
@@ -128,8 +157,43 @@ static ScmSyntax syntax_macro_expand = {
 /*-------------------------------------------------------------------
  * pattern language preprocessor
  *   - convert literals into identifiers
+ *   - recognize repeatable subpatterns and replace it to SyntaxPattern node.
  *   - convert all the free symbols in the template into identifiers
  */
+/* TODO: avoid unnecessary consing as much as possible */
+
+/* context of pattern traversal */
+typedef struct {                
+    ScmObj name;                /* name of this macro (for error msg)*/
+    ScmObj pattern;             /* entire pattern (for error msg) */
+    ScmObj literals;            /* list of literal identifiers */
+    ScmObj pvars;               /* list of (pattern-variable . level) */
+    ScmObj tvars;               /* list of identifies inserted in template */
+    ScmObj env;                 /* compiler env of this macro definition */
+} pattern_ctx;
+
+#define PUSH_PVAR(Ctx, Pat, Pvar)                                       \
+    do {                                                                \
+        ScmObj q = Scm_Assq(Pvar, Ctx->pvars);                          \
+        if (!SCM_FALSEP(q))                                             \
+            Scm_Error("pattern variable %S appears more than once "     \
+                      "in the macro definition of %S: %S",              \
+                      Pvar, Ctx->name, Ctx->pattern);                   \
+        Ctx->pvars = Scm_Acons(Pvar, SCM_MAKE_INT(Pat->level),          \
+                               Ctx->pvars);                             \
+        Pat->vars = Scm_Cons(Pvar, Pat->vars);                          \
+    } while (0)
+
+#define ELLIPSIS_FOLLOWING(Pat) \
+    (SCM_PAIRP(SCM_CDR(Pat)) && SCM_CADR(Pat)==SCM_SYM_ELLIPSIS)
+
+#define BAD_ELLIPSIS(Ctx)                                               \
+    Scm_Error("Bad ellipsis usage in macro definition of %S: %S",       \
+               Ctx->name, Ctx->pattern)
+
+#define BAD_PVAR(Ctx, Pvar)                                             \
+    Scm_Error("%S: Pattern variable %S is used in wrong level: %S",     \
+              Ctx->name, Pvar, Ctx->pattern)
 
 /* convert literal symbols into identifiers */
 static ScmObj preprocess_literals(ScmObj literals, ScmObj env)
@@ -149,27 +213,48 @@ static ScmObj preprocess_literals(ScmObj literals, ScmObj env)
     return h;
 }
 
-/* look into a pattern, and convert symbols in a literal list into
-   identifiers.  also collect pattern variables into patvars */
-static ScmObj preprocess_pattern(ScmObj pattern, ScmObj litids, ScmObj patvars)
+/* in a pattern, replace literal symbols into identifiers.   Leave
+   non-literal symbols (i.e. pattern variables) as they are, but
+   records it's presence in patvars structure.   Also, when encounters
+   a repeatable subpattern, replace it with SyntaxPattern node. */
+
+static ScmObj preprocess_pattern(ScmObj pattern,
+                                 ScmSyntaxPattern *spat,
+                                 pattern_ctx *ctx)
 {
     if (SCM_PAIRP(pattern)) {
-        ScmObj pp, elt, h = SCM_NIL, t;
+        ScmObj pp, h = SCM_NIL, t;
         SCM_FOR_EACH(pp, pattern) {
-            elt = SCM_CAR(pp);
-            SCM_APPEND1(h, t, preprocess_pattern(elt, litids, patvars));
+            if (ELLIPSIS_FOLLOWING(pp)) {
+                ScmSyntaxPattern *nspat;
+                if (!SCM_NULLP(SCM_CDDR(pp))) BAD_ELLIPSIS(ctx);
+                nspat = make_syntax_pattern(spat->level+1, TRUE);
+                nspat->pattern = preprocess_pattern(SCM_CAR(pp), nspat, ctx);
+                SCM_APPEND1(h, t, SCM_OBJ(nspat));
+                return h;
+            }
+            SCM_APPEND1(h, t, preprocess_pattern(SCM_CAR(pp), spat, ctx));
         }
         if (!SCM_NULLP(pp))
-            SCM_APPEND1(h, t, preprocess_pattern(pp, litids, patvars));
+            SCM_APPEND1(h, t, preprocess_pattern(pp, spat, ctx));
         return h;
     }
     else if (SCM_VECTORP(pattern)) {
         int i, len = SCM_VECTOR_SIZE(pattern);
         ScmObj *pe = SCM_VECTOR_ELEMENTS(pattern);
-        ScmObj nv = Scm_MakeVector(len, SCM_FALSE);
-        for (i=0; i<len; i++, pe++) {
-            ScmObj p = preprocess_pattern(*pe, litids, patvars);
-            SCM_VECTOR_ELEMENT(nv, i) = p;
+        ScmObj nv;
+        nv = Scm_MakeVector((pe[len-1] == SCM_SYM_ELLIPSIS ? len-1 : len),
+                            SCM_FALSE);
+        for (i=0; i<len-1; i++, pe++) {
+            if (*(pe+1) == SCM_SYM_ELLIPSIS) {
+                ScmSyntaxPattern *nspat;
+                if (i != len-2) BAD_ELLIPSIS(ctx);
+                nspat = make_syntax_pattern(spat->level+1, TRUE);
+                nspat->pattern = preprocess_pattern(*pe, nspat, ctx);
+                SCM_VECTOR_ELEMENT(nv, i) = SCM_OBJ(nspat);
+                break;
+            }
+            SCM_VECTOR_ELEMENT(nv, i) = preprocess_pattern(*pe, spat, ctx);
         }
         return nv;
     }
@@ -179,64 +264,79 @@ static ScmObj preprocess_pattern(ScmObj pattern, ScmObj litids, ScmObj patvars)
     }
     if (SCM_SYMBOLP(pattern)) {
         ScmObj lp;
-        if (pattern == SCM_SYM_ELLIPSIS) return pattern;
-        SCM_FOR_EACH(lp, litids) {
+        if (pattern == SCM_SYM_ELLIPSIS) BAD_ELLIPSIS(ctx);
+        SCM_FOR_EACH(lp, ctx->literals) {
             if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == pattern) {
                 return SCM_CAR(lp);
             }
         }
-        SCM_SET_CDR(patvars, Scm_Cons(pattern, SCM_CDR(patvars)));
-        return pattern;
+        PUSH_PVAR(ctx, spat, pattern);
     }
     return pattern;
 }
 
 static ScmObj preprocess_template(ScmObj templ,
-                                  ScmObj patvars, /* pattern variables */
-                                  ScmObj lits, /* list of literal identifiers */
-                                  ScmObj tempids, /* identifiers inserted by
-                                                     this template */
-                                  ScmObj env)
+                                  ScmSyntaxPattern *spat,
+                                  pattern_ctx *ctx)
 {
     if (SCM_SYMBOLP(templ)) {
-        ScmObj lp, id;
-        if (templ == SCM_SYM_ELLIPSIS) return templ;
-        SCM_FOR_EACH(lp, lits) {
+        ScmObj lp, id, q;
+        if (templ == SCM_SYM_ELLIPSIS) BAD_ELLIPSIS(ctx);
+        SCM_FOR_EACH(lp, ctx->literals) {
             if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == templ)
                 return SCM_CAR(lp);
         }
-        SCM_FOR_EACH(lp, patvars) {
-            if (templ == SCM_CAR(lp))
-                return SCM_CAR(lp);
+        q = Scm_Assq(templ, ctx->pvars);
+        if (!SCM_FALSEP(q)) {
+            int level;
+            SCM_ASSERT(SCM_INTP(SCM_CDAR(lp)));
+            level = SCM_INT_VALUE(SCM_CDAR(lp));
+            if (level != spat->level) BAD_PVAR(ctx, templ);
+            spat->vars = Scm_Cons(templ, spat->vars);
+            return templ;
         }
-        SCM_FOR_EACH(lp, SCM_CDR(tempids)) {
+        SCM_FOR_EACH(lp, SCM_CDR(ctx->tvars)) {
             if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == templ) {
                 return SCM_CAR(lp);
             }
         }
-        id = Scm_MakeIdentifier(SCM_SYMBOL(templ), env);
-        SCM_SET_CDR(tempids, Scm_Cons(id, SCM_CDR(tempids)));
+        id = Scm_MakeIdentifier(SCM_SYMBOL(templ), ctx->env);
+        ctx->tvars = Scm_Cons(id, ctx->tvars);
         return id;
     }
     if (SCM_PAIRP(templ)) {
         ScmObj cp, h=SCM_NIL, t;
         SCM_FOR_EACH(cp, templ) {
-            SCM_APPEND1(h, t, preprocess_template(SCM_CAR(cp), patvars,
-                                                  lits, tempids, env));
+            if (ELLIPSIS_FOLLOWING(cp)) {
+                ScmSyntaxPattern *nspat;
+                if (!SCM_NULLP(SCM_CDDR(cp))) BAD_ELLIPSIS(ctx);
+                nspat = make_syntax_pattern(spat->level+1, TRUE);
+                nspat->pattern = preprocess_template(SCM_CAR(cp), nspat, ctx);
+                SCM_APPEND(h, t, SCM_OBJ(nspat));
+            }
+            SCM_APPEND1(h, t, preprocess_template(SCM_CAR(cp), spat, ctx));
         }
         if (!SCM_NULLP(cp)) {
-            SCM_APPEND1(h, t, preprocess_template(cp, patvars,
-                                                  lits, tempids, env));
+            SCM_APPEND(h, t, preprocess_template(cp, spat, ctx));
         }
         return h;
     }
     if (SCM_VECTORP(templ)) {
         int i, len = SCM_VECTOR_SIZE(templ);
         ScmObj *pe = SCM_VECTOR_ELEMENTS(templ);
-        ScmObj nv = Scm_MakeVector(len, SCM_FALSE);
+        ScmObj nv;
+        nv = Scm_MakeVector((pe[len-1] == SCM_SYM_ELLIPSIS ? len-1 : len),
+                            SCM_FALSE);
         for (i=0; i<len; i++, pe++) {
-            SCM_VECTOR_ELEMENT(nv, i) = preprocess_template(*pe, patvars,
-                                                            lits, tempids, env);
+            if (*(pe+1) == SCM_SYM_ELLIPSIS) {
+                ScmSyntaxPattern *nspat;
+                if (i != len-2) BAD_ELLIPSIS(ctx);
+                nspat = make_syntax_pattern(spat->level+1, TRUE);
+                nspat->pattern = preprocess_template(*pe, nspat, ctx);
+                SCM_VECTOR_ELEMENT(nv, i) = SCM_OBJ(nspat);
+                break;
+            }
+            SCM_VECTOR_ELEMENT(nv, i) = preprocess_template(*pe, spat, ctx);
         }
         return nv;
     }
@@ -273,9 +373,6 @@ static inline int match_identifier(ScmIdentifier *id, ScmObj obj, ScmObj env)
     }
     return FALSE;
 }
-
-#define ELLIPSIS_FOLLOWING(pat) \
-    (SCM_PAIRP(SCM_CDR(pat)) && SCM_CADR(pat)==SCM_SYM_ELLIPSIS)
 
 /* See if form matches pattern.  If match, add matched syntax variable
    bindings to matchlist and returns modified matchlist. */
@@ -355,62 +452,88 @@ static ScmObj match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
 /*-------------------------------------------------------------------
  * pattern language transformer
  */
+
 static ScmObj synrule_transform(ScmObj form, ScmObj env,
                                 int ctx, void *data)
 {
     ScmObj cp;
-    ScmObj literals = SCM_CAR(data);
-    ScmObj rules = SCM_CADR(data);
-    ScmObj cmpl_env = SCM_CAR(SCM_CDDR(data));
+    ScmObj name = SCM_CAR(data), rules = SCM_CDR(data);
     
     Scm_Printf(SCM_CUROUT, "**** synrule_transform: %S\n", form);
     SCM_FOR_EACH(cp, rules) {
         ScmObj r = match_synrule(form, SCM_CAAR(cp), env, SCM_NIL);
-        Scm_Printf(SCM_CUROUT, "  %S => %S\n", SCM_CAAR(cp), r);
+        if (!SCM_FALSEP(r)) {
+            Scm_Printf(SCM_CUROUT, "match %S => %S\n",
+                       SCM_CAAR(cp), r);
+            return SCM_NIL;
+        }
     }
+    Scm_Error("malformed %S: %S", name, form);
     return SCM_NIL;
 }
 
-static ScmObj make_synrule_transformer(ScmObj literals, ScmObj rules,
-                                       ScmObj cmpl_env)
+static ScmObj make_synrule_transformer(ScmSymbol *name, ScmObj rules)
 {
-    return Scm_MakeSyntax(SCM_SYMBOL(SCM_INTERN("macro")), /* TODO: need better info */
+    return Scm_MakeSyntax(name,
                           synrule_transform,
-                          (void*)SCM_LIST3(literals, rules, cmpl_env));
+                          (void*)Scm_Cons(SCM_OBJ(name), rules));
 }
 
 /*-------------------------------------------------------------------
- * syntax-rules
+ * %syntax-rules
+ *    Internal macro of syntax-rules.  Taking macro name as the first arg.
  */
 static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
                                    int ctx, void *data)
 {
-    ScmObj literals, litids, rules, cp;
+    ScmObj name, literals, litids, rules, cp;
     ScmObj rhead = SCM_NIL, rtail, tmpids;
+    ScmSyntaxPattern *spat;
+    pattern_ctx *pctx;
+
+    if (Scm_Length(form) < 4) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CDR(form)));
+        goto badform;
+    }
+    name = SCM_CADR(form);
+    if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
+    SCM_ASSERT(SCM_SYMBOLP(name));
     
-    if (Scm_Length(form) < 3)
-        Scm_Error("malformed syntax-rules: %S", form);
-    literals = SCM_CADR(form);
-    rules = SCM_CDDR(form);
+    literals = SCM_CAR(SCM_CDDR(form));
+    rules = SCM_CDR(SCM_CDDR(form));
 
     litids = preprocess_literals(literals, env);
     tmpids = Scm_Cons(SCM_NIL, SCM_NIL);
+
+    spat = make_syntax_pattern(0, FALSE);
+    pctx = SCM_NEW(pattern_ctx);
+    pctx->name = name;
+    pctx->literals = litids;
+    pctx->pvars = SCM_NIL;
+    pctx->tvars = SCM_NIL;
+    pctx->env = env;
+    
     SCM_FOR_EACH(cp, rules) {
         ScmObj rule = SCM_CAR(cp), templ, patvars, pattern;
-        if (Scm_Length(rule) != 2) {
-            Scm_Error("malformed syntax-rules: %S", form);
-        }
-        patvars = Scm_Cons(SCM_NIL, SCM_NIL);
-        pattern = preprocess_pattern(SCM_CAR(rule), litids, patvars);
+        if (Scm_Length(rule) != 2) goto badform;
+        pctx->pattern = SCM_CAR(rule);
+        if (!SCM_PAIRP(pctx->pattern)) goto badform;
+        spat->pattern = preprocess_pattern(SCM_CDAR(rule), spat, pctx);
+#if 0        
         templ = preprocess_template(SCM_CADR(rule), SCM_CDR(patvars), litids,
                                     tmpids, env);
-        SCM_APPEND1(rhead, rtail, SCM_LIST2(pattern, templ));
+#endif
+        SCM_APPEND1(rhead, rtail, SCM_OBJ(spat));
     }
-    if (!SCM_NULLP(cp)) Scm_Error("malformed syntax-rules: %S", form);
+    if (!SCM_NULLP(cp)) goto badform;
 
     Scm_Printf(SCM_CUROUT, "lit=%S, rules=%S\n", litids, rhead);
     
-    return SCM_LIST1(make_synrule_transformer(litids, rhead, env));
+    return SCM_LIST1(make_synrule_transformer(SCM_SYMBOL(name), rhead));
+  badform:
+    Scm_Error("malformed syntax-rules: ",
+              Scm_Cons(SCM_INTERN("syntax-rules"), SCM_CDDR(form)));
+    return SCM_NIL;
 }
 
 static ScmSyntax syntax_syntax_rules = {
