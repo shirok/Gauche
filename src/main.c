@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.21 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: main.c,v 1.22 2001-05-30 08:21:01 shirok Exp $
  */
 
 #include <unistd.h>
@@ -21,6 +21,7 @@
 #include "gauche.h"
 
 int load_initfile = TRUE;
+int batch_mode = FALSE;
 ScmObj extra_load_paths = SCM_NIL;
 
 void usage(void)
@@ -68,8 +69,9 @@ int main(int argc, char **argv)
     ScmObj cp;
 
     Scm_Init();
-    while ((c = getopt(argc, argv, "qVf:I:-")) >= 0) {
+    while ((c = getopt(argc, argv, "bqVf:I:-")) >= 0) {
         switch (c) {
+        case 'b': batch_mode = TRUE; break;
         case 'q': load_initfile = FALSE; break;
         case 'V': version(); break;
         case 'f': further_options(optarg); break;
@@ -121,9 +123,12 @@ int main(int argc, char **argv)
         SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_NIL);
     }
 
-    Scm_Repl(SCM_MAKE_STR("gosh> "),
-             SCM_PORT(Scm_Stdin()),
-             SCM_PORT(Scm_Stdout()));
-
+    if (batch_mode || !isatty(0)) {
+        Scm_LoadFromPort(SCM_PORT(Scm_Stdin()));
+    } else {
+        Scm_Repl(SCM_MAKE_STR("gosh> "),
+                 SCM_PORT(Scm_Stdin()),
+                 SCM_PORT(Scm_Stdout()));
+    }
     return 0;
 }
