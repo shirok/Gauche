@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.60 2002-08-01 02:26:37 shirok Exp $
+ *  $Id: main.c,v 1.61 2002-09-01 19:55:35 shirok Exp $
  */
 
 #include <unistd.h>
@@ -40,7 +40,7 @@ ScmObj eval_expr = SCM_NIL;     /* -e expr */
 void usage(void)
 {
     fprintf(stderr,
-            "Usage: gosh [-biqV][-I<path>][-u<module>][--] [file]\n"
+            "Usage: gosh [-biqV][-I<path>][-u<module>][-l<file>][-e<expr>][--] [file]\n"
             "options:\n"
             "  -V       print version and exit.\n"
             "  -b       batch mode.  don't print prompts.  supersedes -i.\n"
@@ -48,6 +48,10 @@ void usage(void)
             "  -q       don't read the default initialization file.\n"
             "  -I<path> add <path> to the head of load path.\n"
             "  -u<module> (use) load and import <module>\n"
+            "  -l<file> Loads <file> before executing the script file or\n"
+            "           entering repl.\n"
+            "  -e<expr> Evaluate Scheme expression <expr> before executing\n"
+            "           the script file or entering repl.\n"
             "  -f<flag> sets various flags\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      load-verbose    report while loading files\n"
