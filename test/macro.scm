@@ -480,4 +480,18 @@
           (dotimes (n (if (null? m) 10 (error "Boom!")) (reverse m))
                    (push! m n)))))
 
+;;----------------------------------------------------------------------
+;; macro-expand
+
+(test-section "macro-expand")
+
+(define-macro (foo x)   `(bar ,x ,x))
+(define-macro (bar x y) `(list ,x ,x ,y ,y))
+
+(test "macro-expand" '(list 1 1 1 1)
+      (lambda () (macro-expand '(foo 1))))
+(test "macro-expand-1" '(bar 1 1)
+      (lambda () (macro-expand-1 '(foo 1))))
+
+
 (test-end)
