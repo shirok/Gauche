@@ -3396,7 +3396,7 @@ but the use of uppercase suffixed names are deprecated.
 新しい、SSAXのCVSバージョンをベースにしており、パッケージSXML-gauche-0.9は、
 SXML-4.9をベースにしています。
 SXMLのリリース4.9以降では、重要な変更があります。
-現在ではAPIは、大文字の接頭辞@code{SSAX:}の代わりに小文字の@code{ssax:}を
+現在のAPIでは、大文字の接頭辞@code{SSAX:}の代わりに小文字の@code{ssax:}を
 使います。Gaucheはデフォルトで文字の大小を区別するために、この違いは
 問題となります。
 後方互換性のためにエイリアスされた名前が定義されていますが、
@@ -3522,16 +3522,16 @@ by the user to represent URI. In the former case,
 @var{URI-SYMB} is created by @code{%}-quoting of bad URI characters and
 converting the resulting string into a symbol.
 @c JP
-名前空間を表すシンボル、あるいはURIを表すためにユーザが選んだ他のシンボル。
-前者の場合、@var{URI-SYMB}は不正なURI文字が@code{%}でクォートされ、その結果の
-文字列をシンボルに変換したもの。
+名前空間を表すシンボル、あるいはURIを表すためにユーザが選んだ他のシンボルです。
+前者の場合、@var{URI-SYMB}は不正なURI文字が@code{%}でクォートされた
+文字列をシンボルに変換したものです。
 @c COMMON
 @item NAMESPACES
 @c EN
 A list representing namespaces in effect. An element of the list
 has one of the following forms:
 @c JP
-効力を持つ名前空間を表すリスト。リストの要素は、以下のフォームのうちの1つ。
+効力を持つ名前空間を表すリストです。リストの要素は、以下のフォームのうちの1つです。
 @c COMMON
 
 @c EN
@@ -3570,7 +3570,7 @@ A @var{NAMESPACES} list may contain several elements for the same @var{PREFIX}.
 The one closest to the beginning of the list takes effect.
 @c JP
 @var{NAMESPACES}のリストは、同じ@var{PREFIX}についていくつかの要素を含むかも
-しれない。リストの先頭に近いものが効力を持つ。
+しれません。リストの先頭に近いものが効力を持ちます。
 @c COMMON
 
 @item ATTLIST
@@ -3579,7 +3579,7 @@ An ordered collection of (@var{NAME} . @var{VALUE}) pairs, where @var{NAME} is
 a @var{RES-NAME} or an @var{UNRES-NAME}. The collection is an ADT.
 @c JP
 ペア(@var{NAME} . @var{VALUE})の順序付きのコレクションで、@var{NAME}は
-@var{RES-NAME}か@var{UNRES-NAME}。このコレクションはADTである。
+@var{RES-NAME}か@var{UNRES-NAME}です。このコレクションはADTです。
 @c COMMON
 @item STR-HANDLER
 @c EN
@@ -3592,9 +3592,8 @@ The procedure is supposed to handle a chunk of character data
 @c JP
 3引数の手続き @code{(@var{string1} @var{string2} @var{seed})}で、
 新しい@var{seed}を返します。
-この手続きは、文字データ@var{string2}が続く文字データ@var{string1}を
-扱うものと前提されています。@var{string2}は、``\n''や``''であるような
-短い文字列です。
+この手続きは、文字データ@var{string2}が後に続く、文字データ@var{string1}を
+扱うものです。@var{string2}は、``\n''や``''のような短い文字列です。
 @c COMMON
 @item ENTITIES
 @c EN
@@ -3618,7 +3617,7 @@ WFC nonrecursion.
 @var{named-entity-body}はまた、@code{#f}かも知れません。
 これは、@var{named-entity-name}がその時点で展開されていることを
 示します。
-この@var{named-entity-name}への参照は、WFC非再帰の違反としてエラーに
+この@var{named-entity-name}への参照は、WFC非再帰違反としてエラーに
 なります。
 @c COMMON
 @item XML-TOKEN
@@ -3663,7 +3662,7 @@ For example,
 Character references are not represented by xml-tokens as these references
 are transparently resolved into the corresponding characters.
 @c JP
-文字参照は、対応する文字へ透過的に解決されるので、XMLトークンとしては
+文字参照は、対応する文字へと透過的に解決されるので、XMLトークンとしては
 表現されません。
 @c COMMON
 @item XML-DECL
@@ -3679,11 +3678,11 @@ ways (e.g., loaded from a file).
 @c JP
 @var{elems}、@var{entities}、@var{notations}という3つのスロットを持つレコードです。
 
-このレコードはXML文書のデータタイプを表現します。それは、
+このレコードは、XML文書のデータタイプを表現します。それは、
 宣言された要素とその属性のリスト、宣言された記法、
-解析済み一般実体の置換文字列やロードされる手続きのリスト、などです。
-通常、xml-declレコードは、それを作るには他にたくさんの方法があるにも
-関わらず(例えばファイルからロードするなど)、DTDかXML Schemaから
+解析済み一般実体の置換文字列やロードされる手続きのリストなどです。
+通常、xml-declレコードは、それを作るには他にたくさんの方法
+(例えばファイルからロードするなど)があるにも関わらず、DTDかXML Schemaから
 作られます。
 @c COMMON
 
@@ -3692,7 +3691,7 @@ ways (e.g., loaded from a file).
 the parser to do no validation of elements and attributes.
 @c JP
 @var{elems}: decl-elemか@code{#f}の(連想)リスト。後者は、パーザに、
-要素と属性の妥当性検査を行わないように指示する。
+要素と属性の妥当性検査を行わないように指示します。
 @c COMMON
 
 @c EN
@@ -3710,9 +3709,9 @@ IDs as they're encountered).
 @code{(@var{elem-name} @var{elem-content} @var{decl-attrs})};
 @var{elem-name}はその要素の@var{UNRES-NAME}。
 @var{elem-content}は@var{ELEM-CONTENT-MODEL}。
-@var{decl-attrs}は@var{ATTLIST}か、@code{(@attr-name} . @var{value})}の
+@var{decl-attrs}は@var{ATTLIST}か、@code{(@var{attr-name} . @var{value})}の
 連想リスト。
-この要素は、要素のパージングを扱うユーザ手続きを宣言できる。
+この要素は、要素のパージングを扱うユーザ手続きを宣言できます。
 (例えば、カスタムな妥当性検査を行ったり、タグに出会うたびに
 IDのハッシュを構築するなど。)
 @c COMMON
@@ -3730,8 +3729,8 @@ default-value is a string for the default value, or @code{#f} if not given.
 @code{(@var{attr-name} @var{content-type} @var{use-type} @var{default-value})}
 の宣言:
 @var{attr-name}はその宣言された属性の@var{UNRES-NAME}、
-@var{content-type}はシンボル@code{CDATA}、@var{NMTOKEN}、@var{NMTOKENS}などか、
-列挙されたタイプの文字列のリスト。
+@var{content-type}はシンボル@code{CDATA}、@var{NMTOKEN}、@var{NMTOKENS}、
+あるいは列挙されたタイプの文字列のリスト。
 @var{use-type}はシンボル@code{REQUIRED}、@code{IMPLIED}、@code{FIXED}。
 default-valueは、デフォルト値としての文字列か、与えられなければ@code{#f}。
 @c COMMON
@@ -3747,7 +3746,7 @@ default-valueは、デフォルト値としての文字列か、与えられなければ@code{#f}。
 Utility procedures to deal with attribute list, which
 keeps name-value association.
 @c JP
-名前-値の関連を保つ属性リストを扱うユーティリティ手続き。
+名前-値の属性リストを扱うユーティリティ手続きです。
 @c COMMON
 @end defun
 
@@ -3756,7 +3755,7 @@ keeps name-value association.
 @c EN
 A constructor and a predicate for a @var{XML-TOKEN} record.
 @c JP
-@var{XML-TOKEN}レコードのコンストラクタと述語。
+@var{XML-TOKEN}レコードのコンストラクタと述語です。
 @c COMMON
 @end defun
 
@@ -3765,7 +3764,7 @@ A constructor and a predicate for a @var{XML-TOKEN} record.
 @c EN
 Accessor macros of a @var{XML-TOKEN} record.
 @c JP
-@var{XML-TOKEN}レコードのアクセッサマクロ。
+@var{XML-TOKEN}レコードのアクセッサマクロです。
 @c COMMON
 @end defmac
 
@@ -3782,8 +3781,8 @@ must be called only when the start-tag has been detected and its @code{GI}
 has been read.
 @c JP
 これらは、プリミティブな字句解析ユニット(名前、空白、タグ)や、
-より一般的な生成物の断片を扱います。
-これらのパーザのほとんどは、適切な文脈で呼ばれなければなりません。
+より一般的な断片を扱います。
+これらのパーザのほとんどは、適切なコンテキストで呼ばれなければなりません。
 例えば、@code{ssax:complete-start-tag}は、開始タグが検知されその@code{GI}が
 読み込まれたときにのみ呼ばれなければなりません。
 @c COMMON
@@ -3874,7 +3873,7 @@ when that particular value is returned:
 この手続きは、見ているマークアップトークンがどの種類のものか見当を
 つけるに十分な程度、入力ストリームをスキャンします。
 この手続きは、そのトークンを表現するxml-token構造を返します。
-通常、現在のマークアップの読み込みは完了していないことに注意して下さい。
+通常、その時点のマークアップの読み込みは完了していないことに注意して下さい。
 特に、開始タグトークンの属性はスキャンされていません。
 
 特定の値が返されたときの戻り値と@var{port}での位置を詳細に説明します。
@@ -3889,7 +3888,7 @@ as well (for @code{PI}s whose content is attribute-value
 pairs)
 @c JP
 @code{PI}ターゲットのみが読み込まれました。
-処理命令を完了してそれを無視するためには、@code{ssax:skip-pi}を呼びます。
+処理命令の読み込みを完了してそれを無視するためには、@code{ssax:skip-pi}を呼びます。
 (@code{PI}の内容が、属性-値のペアの場合は、)@code{ssax:read-attributes}も
 便利です。
 @c COMMON
@@ -3914,7 +3913,7 @@ is right after "@code{-->}" that terminates the comment.
 The current position is right after "@code{<!CDATA[}".
 Use @code{ssax:read-cdata-body} to read the rest.
 @c JP
-現在の位置は、``@code{<!CDATA[}''の直後です。
+現在の位置は、"@code{<!CDATA[}"の直後です。
 残りを読むためには、@code{ssax:read-cdata-body}を使います。
 @c COMMON
 @item DECL
@@ -3938,7 +3937,7 @@ the token.
 @c JP
 この開始タグのキーワード(@code{GI})を読み込んだところです。
 属性はまだスキャンされていません。
-また、このタグが空の要素を持つかも分かりません。
+また、このタグが空の要素を持つかどうかも分かりません。
 このトークンのパージングを終了するためには、
 @code{ssax:complete-start-tag}を使います。
 @c COMMON
@@ -3960,8 +3959,8 @@ The current position is right after reading the @code{PITarget}. We read the
 body of @code{PI} and return it as a string. The port will point to the
 character right after '@code{?>}' combination that terminates @code{PI}.
 @c JP
-現在の位置は、@code{PITarget}を読んだ直後です。
-@code{PI}のボディを読んで、それを文字列として返します。
+現在の位置は、@code{PITarget}を読み込んだ直後です。
+@code{PI}のボディを読み込んで、それを文字列として返します。
 ポートでは、@code{PI}を終了する'@code{?>}'の直後の文字を指します。
 @c COMMON
 @example
@@ -3975,8 +3974,8 @@ The current pos in the port is inside an internal DTD subset
 (e.g., after reading @code{#\[ }that begins an internal DTD subset)
 Skip until the "@code{]>}" combination that terminates this DTD
 @c JP
-ポートでの現在の位置は、内部DTDサブセットの内側です。
-(例えば、内部DTDサブセットの始まりである@code{#\[ }を読み込んだところです。)
+ポートでの現在の位置は、内部DTDサブセットの内側です
+(例えば、内部DTDサブセットの始まりである@code{#\[ }を読み込んだところ)。
 このDTDを終了する、組み合わせとなる``@code{]>}''までをスキップします。
 @c COMMON
 @end defun
@@ -3988,10 +3987,10 @@ that begins a @code{CDATA} section. The current position must be the first
 position of the @code{CDATA} body. This function reads @emph{lines} of the @code{CDATA}
 body and passes them to a @var{STR-HANDLER}, a character data consumer.
 @c JP
-この手続きは、@code{CDATA}セクションを開始する文字列、``@code{<![CDATA[}''を
+この手続きは、@code{CDATA}セクションを開始する文字列、"@code{<![CDATA[}"を
 読み込んだ後に呼ばれなければなりません。
 現在の位置は、@code{CDATA}のボディの最初の位置です。
-この手続きは、@code{CDATA}ボディの@emph{行}を読み込み、それらを
+この手続きは、@code{CDATA}のボディの@emph{データ}を読み込み、それらを
 @var{STR-HANDLER}(文字データのコンシューマ)へ渡します。
 @c COMMON
 
@@ -4006,13 +4005,13 @@ consumer, and so on. The result of the last invocation of the
 @var{STR-HANDLER} is returned by the @code{ssax:read-cdata-body}.  Note a
 similarity to the fundamental '@code{fold}' iterator.
 @c JP
-str-handlerは、@code{string1} @var{string2} @var{seed}を取る手続き、
+str-handlerは、@code{string1} @var{string2} @var{seed}を取る手続き
 @var{STR-HANDLER}です。
 @var{STR-HANDLER}の最初の引数@var{string1}は、改行を含みません。
 2番目の引数@var{string2}は、改行を含むことがよくあります。
-@var{STR-HANDLER}の最初の呼び出しでは、seedは、@code{ssax:read-cdata-body}の
+@var{STR-HANDLER}の最初の呼び出しでは、seedは@code{ssax:read-cdata-body}の
 第3引数として渡されるものです。
-この最初の呼び出しの結果は、行のコンシューマの引数seedとして渡され、
+この最初の呼び出しの結果は、文字データのコンシューマの引数seedとして渡され、
 以降同じように続きます。
 @var{STR-HANDLER}の最後の呼び出しの結果は、@code{ssax:read-cdata-body}
 から返されるものです。
@@ -4032,7 +4031,7 @@ with only three exceptions:
 @code{CR}, @code{LF}, and @code{CRLF} are treated as line delimiters, and passed
 as a single @code{#\newline} to the @var{STR-HANDLER}.
 @c JP
-@code{CR}、@code{LF}、@code{CRLF}は行区切として扱われ、@var{STR-HANDLER}へは
+@code{CR}、@code{LF}、@code{CRLF}は行区切りとして扱われ、@var{STR-HANDLER}へは
 1つの@code{#\newline}として渡されます。
 @c COMMON
 @item
@@ -4069,7 +4068,7 @@ Faults detected: @code{WFC: XML-Spec.html#wf-Legalchar}.
 @c JP
 この手続きは、文字参照を表す``@code{&#}''を読み込んだ後に呼ばれなければ
 なりません。
-この手続きはこの参照を読み込んで、対応する文字を返します。
+この手続きは、この参照を読み込んで対応する文字を返します。
 @var{port}での現在の位置は、文字参照の終わりとなる``@code{;}''の後と
 なります。
 @code{WFC: XML-Spec.html#wf-Legalchar}も参照のこと。
@@ -4118,7 +4117,7 @@ Expand and handle a parsed-entity reference
 @c EN
 @var{name} - the name of the parsed entity to expand, a symbol.
 @c JP
-@var{name} - 展開する解析済み実体の名前、シンボル。
+@var{name} - 展開する解析済み実体の名前。シンボル。
 @c COMMON
 @item
 @c EN
@@ -4132,7 +4131,7 @@ Expand and handle a parsed-entity reference
 that is supposed to return a @var{seed}.
 @c JP
 @var{content-handler} - @var{port} @var{entities} @var{seed}を取る手続きで、
-@var{seed}を返すものと前提される。
+@var{seed}を返す。
 @c COMMON
 @item
 @c EN
@@ -4146,7 +4145,7 @@ turns out to be a pre-declared entity
 @c EN
 The result is the one returned by @var{content-handler} or @var{str-handler}.
 @c JP
-戻り値は、@var{content-handler}か@var{str-handler}から返されたものです。
+戻り値は、@var{content-handler}か@var{str-handler}から返された値です。
 @c COMMON
 
 @c EN
@@ -4180,7 +4179,7 @@ that is not an ncname-starting character.
 @c JP
 この手続きは、@var{Name}(@var{UNRES-NAME})と@var{Value}(文字列)のペアである
 @var{ATTLIST}を返します。
-@var{port}での現在の文字は、NCNameの開始文字ではない、空白ではない文字です。
+@var{port}での現在の文字は、NCNameの開始文字ではなく、空白ではない文字です。
 @c COMMON
 
 @c EN
@@ -4281,7 +4280,8 @@ Convert a @var{uri-str} to an appropriate symbol.
 This procedure is to complete parsing of a start-tag markup. The
 procedure must be called after the start tag token has been
 read. @var{Tag} is an @var{UNRES-NAME}.
-@var{Elems} is an instance of @code{xml-decl::elems};
+@var{Elem
+s} is an instance of @code{xml-decl::elems};
 it can be @code{#f} to tell the function to do @emph{no} validation of elements
 and their attributes.
 @c JP
@@ -4319,7 +4319,7 @@ the input list of namespaces amended with namespace
 (re-)declarations contained within the start-tag under parsing
 @var{ELEM-CONTENT-MODEL}.
 @c JP
-パージング中の開始タグに含まれる名前空間(再)宣言により修正後の
+パージング中の開始タグに含まれる名前空間(再)宣言により修正された後の
 名前空間の入力リスト。
 @c COMMON
 @end table
@@ -4328,7 +4328,7 @@ the input list of namespaces amended with namespace
 On exit, the current position in @var{port} will be the first character after
 @code{#\>} that terminates the start-tag markup.
 @c JP
-終了時に、@var{port}での現在の位置は、開始タグのマークアップを終了する
+終了時の@var{port}での現在の位置は、開始タグのマークアップを終了する
 @code{#\>}の後になります。
 @c COMMON
 
@@ -4353,7 +4353,7 @@ Note, although XML Recommendation does not explicitly say it,
 can be declared, to specify their default value).
 @c JP
 XML勧告では明示されていませんが、@var{xmlns}と@var{xmlns:}属性は、
-(そのデフォルト値を指定するために、宣言されることが出来ますが)
+(そのデフォルト値を指定するために宣言されることが出来ますが)
 宣言される必要がないことに注意して下さい。
 @c COMMON
 @end defun
@@ -4378,11 +4378,11 @@ that is, the current character must be either @code{#\S} or @code{#\P} that star
 correspondingly a @code{SYSTEM} or @code{PUBLIC} token. This procedure returns the
 @code{SystemLiteral} as a string. A @code{PubidLiteral} is disregarded if present.
 @c JP
-この手続きは、@code{ExternalID}が期待されるところで呼ばれるものと前提されています。
+この手続きは、@code{ExternalID}が期待されるところで呼ばれます。
 つまり、現在の文字は、それぞれ@code{SYSTEM}か@code{PUBLIC}トークンを開始する
 @code{#\S}か@code{#\P}でなければなりません。
 この手続きは、@code{SystemLiteral}を文字列として返します。
-@code{PubidLiteral}は、もし存在しても無視されます。
+@code{PubidLiteral}は、存在したとしても無視されます。
 @c COMMON
 @end defun
 
@@ -4419,7 +4419,7 @@ Comments are ignored and not reported.
 @c JP
 以下の関数は、プロローグかエピローグのコンテキストで呼ばれます。
 これらのコンテキストでは、空白文字は完全に無視されます。
-@code{ssax:scan-Misc}からの戻り値は、@code{PI}トークンか、@code{DECL}トークン、
+@code{ssax:scan-Misc}からの戻り値は、@code{PI}トークンか@code{DECL}トークン、
 @code{START}トークン、EOFのいずれかです。
 コメントは無視され報告されません。
 @c COMMON
@@ -4536,8 +4536,8 @@ the canonical XML Recommendation.
 コメントは無視されます。
 
 XML勧告が要求するように、文字データ中の全ての空白文字は保存されなければなりません。
-しかし、@code{CR}文字(@code{#xD})は、@code{LF}文字(@code{#A})の前に現れるか、
-@code{#xA}文字で置き換えられた場合は無視されなければなりません。
+しかし、@code{CR}文字(@code{#xD})は、@code{LF}文字(@code{#A})の前に現れるか
+@code{#xA}文字で置き換えられた場合は、無視されなければなりません。
 XML勧告のセクション2.10と2.11を参照して下さい。
 また、正規のXML勧告も参照して下さい。
 @c COMMON
@@ -4552,10 +4552,10 @@ If the assertion fails, @var{error-cont} is evaluated by passing it
 three arguments: @var{token} @var{kind} @var{gi}.
 The result of @var{error-cont} is returned.
 @c JP
-@var{token}は、予想された@var{kind}のもので、予想された@var{gi}を
+@var{token}が、予想された@var{kind}のもので、予想された@var{gi}を
 持つことを確認します。@var{gi}引数は、実際には2つのシンボル、
-名前空間URIかその接頭辞とそのローカル名のペアでしょう。
-アサーションが失敗したら、@var{error-cont}が3つの引数、@var{token} @var{kind} @var{gi}
+名前空間URIかその接頭辞と、そのローカル名のペアでしょう。
+アサーションが失敗したら、@var{error-cont}に3つの引数、@var{token} @var{kind} @var{gi}
 を渡されて評価されます。
 @var{error-cont}の結果が返されます。
 @c COMMON
@@ -4606,13 +4606,13 @@ one, which skips the body of the @code{PI}.
 @c JP
 @var{my-pi-handlers}:
 (@var{PI-TAG} . @var{PI-HANDLER})のペアの連想リスト。
-@var{PI-TAG}は、@var{NCName}のシンボル、@code{PI}ターゲットで、
-@var{PI-HANDLER}は、@var{port} @var{pi-tag} @var{seed}を引数とする手続きで
-@var{port}は@code{PI}ターゲットのあとの最初のシンボルを指しています。
-ハンドラは、@code{PI}を終了する組み合わせとなる'@code{?>}'を含む
+@var{PI-TAG}は@var{NCName}のシンボル、@code{PI}ターゲット。
+@var{PI-HANDLER}は@var{port} @var{pi-tag} @var{seed}を引数とする手続きで、
+@var{port}では@code{PI}ターゲットの後の最初のシンボルを指しています。
+ハンドラは、@code{PI}を終了する組み合わせとなる'@code{?>}'を含む、
 @code{PI}の残りを読み込みます。ハンドラは新しいseedを返します。
 @var{PI-TAG}の1つは、シンボル@code{*DEFAULT*}でしょう。
-対応するハンドラは、他のハンドラが扱わない@code{PI}を処理します。
+これに対応するハンドラは、他のハンドラが扱わない@code{PI}を処理します。
 @code{*DEFAULT*} @var{PI-TAG}が指定されていない場合は、
 @code{ssax:make-pi-parser}は、@code{PI}のボディをスキップするパーザを
 作ります。
@@ -4623,8 +4623,8 @@ The output of the @code{ssax:make-pi-parser} is a procedure
 @var{port} @var{pi-tag} @var{seed},
 that will parse the current @code{PI} accoding to user-specified handlers.
 @c JP
-@code{ssax:make-pi-parser}の出力は、@var{port} @var{pi-tag} @var{seed}を
-取る手続きで、ユーザ指定のハンドラに従い、現在の@code{PI}をパーズします。
+@code{ssax:make-pi-parser}が返すのは、@var{port} @var{pi-tag} @var{seed}を
+取る手続きで、ユーザ指定のハンドラに従い現在の@code{PI}をパーズします。
 @c COMMON
 @end defmac
 
@@ -4634,7 +4634,7 @@ Create a parser to parse and process one element, including its
 character content or children elements. The parser is typically
 applied to the root element of a document.
 @c JP
-1つの要素を、その文字内容や子要素を含んでパーズし処理するパーザを作ります。
+その文字内容や子要素をも含む１つの要素をパーズし処理するパーザを作ります。
 このパーザは通常、ドキュメントのルート要素の適用されます。
 @c COMMON
 
@@ -4648,7 +4648,7 @@ This procedure is to generate the seed to be passed
 to handlers that process the content of the element.
 @c JP
 @var{elem-gi} @var{attributes} @var{namespaces} @var{expected-content} @var{seed} @*
-取る手続きで、@var{elem-gi}は処理されようとしている要素の@var{RES-NAME}です。
+を引数に取る手続きで、@var{elem-gi}は処理されようとしている要素の@var{RES-NAME}です。
 この手続きは、要素の内容を処理するハンドラに渡されるseedを生成します。
 @c COMMON
 @c This is the function identified as 'fdown' in the denotational
@@ -4666,12 +4666,12 @@ The procedure is to generate a seed that will be the result
 of the element parser.
 @c JP
 @var{elem-gi} @var{attributes} @var{namespaces} @var{parent-seed} @var{seed} @*
-を取る手続きです。この手続きは、@var{elem-gi}のパージングが完了したときに
+を引数に取る手続きです。この手続きは、@var{elem-gi}のパージングが完了した時に
 呼ばれます。
-@var{seed}は、最後に呼ばれた内容のパーザからの(あるいは、
+@var{seed}は、最後に呼ばれたパーザからの(あるいは、
 要素が空要素であった場合は、@var{my-new-level-seed}からの)結果です。
 @var{parent-seed}は、@var{my-new-level-seed}へ渡されたのと同じseedです。
-この手続きは、要素パーザの結果となるseedを生成するためのものです。
+この手続きは、パーザの結果となるseedを生成するためのものです。
 @c COMMON
 @c This is the function identified as 'fup' in the denotational
 @c semantics of the XML parser given in the title comments to this
@@ -4704,7 +4704,7 @@ See @code{ssax:complete-start-tag::preserve-ws?}
 生成されたパーザは:
 @var{start-tag-head} @var{port} @var{elems} @var{entities} @var{namespaces}
 @var{preserve-ws?} @var{seed} @*
-を取る手続きです。
+を引数に取る手続きです。
 この手続きは、開始タグのトークンが読み込まれた後に呼ばれなければなりません。
 @var{start-tag-head}は要素の開始タグの@var{UNRES-NAME}です。
 @var{elems}は@code{xml-decl::elems}のインスタンスです。
@@ -4769,7 +4769,7 @@ if any, and returns @code{(values #f '() '() seed)}.
 開始となる@code{#\[}を読んだ直後です。
 手続きから戻る前に、このサブセットの残りの読み込みを完了しなければなりません
 (あるいは、それを読むことに興味がなければ、skip-internal-subsetを呼ばなければなりません)。
-終了時のポートは、DOCTYPE宣言全体のあとの最初のシンボルでなければなりません。
+終了時のポートでの位置は、DOCTYPE宣言全体のあとの最初のシンボルでなければなりません。
 
 ハンドラ手続きは4つの値: @*
 @var{elems} @var{entities} @var{namespaces} @var{seed} @*
@@ -4794,7 +4794,7 @@ must generate four values: @*
 The default handler-procedure returns @code{(values #f '() '() seed)}.
 @c JP
 ハンドラ手続きの引数: @var{elem-gi} @var{seed} @*
-@var{elem-gi}はルート要素の@var{UNRES-NAME}。
+@var{elem-gi}はルート要素の@var{UNRES-NAME}です。
 この手続きは、パージング中のXML文書が@code{DOCTYPE}宣言を@emph{含まない}時に
 呼ばれます。
 ハンドラ手続きは、上ではDOCTYPEハンドラですが、4つの値: @*
@@ -4815,10 +4815,10 @@ so wishes).
 The default handler-procedure is the identity function.
 @c JP
 ハンドラ手続きの引数: @var{elem-gi} @var{seed} @*
-@var{elem-gi}は、ルート要素の@var{UNRES-NAME}。
+@var{elem-gi}は、ルート要素の@var{UNRES-NAME}です。
 この手続きは、パージング中のXML文書が@code{DOCTYPE}宣言を含む場合に呼ばれます。
 このハンドラ手続きは、新しい@code{seed}を生成しなければなりません
-(そして、ハンドラがそう望めば、ルート要素の名前がDOCTYPEにマッチするかを
+(そして、ハンドラが望めば、ルート要素の名前がDOCTYPEにマッチするかを
 検証します)。
 デフォルトのハンドラ手続きは、それ自身を返す手続きです。
 @c COMMON
@@ -4863,10 +4863,11 @@ an element parser (created by ssax:make-elem-parser) to handle
 the rest.
 @c JP
 生成されるパーザは、@*
-@var{PORT} @var{SEED}を取る手続き、です。
+@var{PORT} @var{SEED}を取る手続き、@*
+です。
 
 この手続きは、ドキュメントのプロローグをパーズして、
-その残りを処理するために(ssax:make-elem-parserで作られた)要素パーザへ
+その残りを処理するために(ssax:make-elem-parserで作られた)パーザへ
 引き継いで終了します。
 @c COMMON
 
@@ -4915,9 +4916,9 @@ use the @code{ssax:reverse-collect-str} procedure instead.
 fragments(そのいくつかはテキスト文字列)のリストを渡すと、
 そのリストを逆順にして隣り合ったテキスト文字列を連結します。
 ``重要でない''空白文字、つまり、最初や最後、要素の間にある空白文字を
-削除します。文字データの中に含まれる空白文字には影響を与えません。
-この手続きを、パーズされたSXMLにある、``重要でない''空白文字を
-``知的に''削除するために使います。空白文字に関して厳密に
+削除します。文字データに含まれる空白文字には影響を与えません。
+この手続きは、パーズされたSXMLにある``重要でない''空白文字を
+``知的に''削除するために使います。空白文字に関して、厳密に
 XML勧告に準拠したい場合は、代わりに手続き
 @code{ssax:reverse-collect-str}を使って下さい。
 @c COMMON
@@ -4938,9 +4939,9 @@ first character after the root element.
 XMLドキュメントのSXML表現を返します。
 @var{namespace-pregix-assig}は、@code{(@var{USER-PREFIX} . @var{URI-STRING})}
 のリストで、特定の@var{URI-STRING}で識別されるある名前空間を
-@var{USER-PREFIX}に割り当てます。空リストでも構いません。
+@var{USER-PREFIX}に割り当てます。これは空リストでも構いません。
 この手続きは、SXMLツリーを返します。
-ポートは、ルート要素の後の最初の文字を指します。
+ポートでの位置は、ルート要素の後の最初の文字を指します。
 @c COMMON
 @end defun
 
