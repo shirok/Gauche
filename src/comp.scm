@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.6 2005-01-02 02:01:21 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.7 2005-01-02 12:20:13 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -63,31 +63,46 @@
        (extended-list loc))
      var)))
 
+;; Returns an insn list of function invocation 
+;;  PROGRAM = (OP . ARGS) and HEAD is the compiled insn list for OP.
 (define (compile-call head program env ctx)
-  (let* ((args    (cdr program))
-         (argcode (compile-args args env))
-         (numargs (length args)))
-    (case ctx
-      ((tail)
-       (append! (list (vm-insn-make 'PRE-TAIL numargs))
-                argcode
-                head
-                (add-srcinfo (extended-list
-                              (vm-insn-make 'TAIL-CALL numargs))
-                             program)))
-      (else
-       (list (vm-insn-make 'PRE-CALL numargs)
-             (append! argcode head
-                      (add-srcinfo 
-                       (extended-list (vm-insn-make 'CALL numargs))
-                       program)))))))
+  (compile-call-finish head (compile-args (cdr program) env)
+                       (length (cdr program)) program ctx))
 
+;; Finish compilation of calling sequence.  ARGCODE is an insn list
+;; to push arguments into the stack.  HEADCODE is an insn list to
+;; leave the procedure in the register.   PROGRAM is the source code
+;; to be attached to the call instruction.
+(define (compile-call-finish headcode argcode numargs program ctx)
+  (define (srcinfo insn)
+    (if program
+      (add-srcinfo (extended-list insn) program)
+      (list insn)))
+  (if (eq? ctx 'tail)
+    (append! (list (vm-insn-make 'PRE-TAIL numargs))
+             argcode
+             headcode
+             (srcinfo (vm-insn-make 'TAIL-CALL numargs)))
+    (list (vm-insn-make 'PRE-CALL numargs)
+          (append! argcode headcode
+                   (srcinfo (vm-insn-make 'CALL numargs))))))
+
+;; Returns an insn list to push arguments ARGS into the stack.
 (define (compile-args args env)
   (if (null? args)
     '()
     (append! (compile-int (car args) env 'normal)
              (list (vm-insn-make 'PUSH))
              (compile-args (cdr args) env))))
+
+;; Returns an insn list of executing EXPRS in sequence.
+(define (compile-seq exprs env ctx)
+  (match exprs
+    (() (list (undefined)))
+    ((expr) (compile-int expr env ctx))
+    ((expr . exprs)
+     (append! (compile-int expr env 'stmt)
+              (compile-seq exprs env ctx)))))
 
 ;; Look up local environment
 ;;
@@ -152,24 +167,92 @@
 ;; Special forms
 ;;
 
-(define (syntax-if form env ctx)
+(define-macro (define-primitive-syntax formals . body)
+  `(define ,(car formals)
+     (make-syntax ',(car formals) (lambda ,(cdr formals) ,@body))))
+
+;;------------------------------------------------------------
+;; IF family  (if, when, unless, and, or)
+;;
+
+(define (compile-if-family test-code then-code else-code env ctx)
+  (if (eq? ctx 'tail)
+    (append! test-code
+             (list (vm-insn-make 'IF) then-code)
+             else-code)
+    (let1 merger (list (vm-insn-make 'MNOP))
+      (append! test-code
+               (list (vm-insn-make 'IF) (append! then-code merger))
+               (append! else-code merger)))))
+
+(define-primitive-syntax (@if form env ctx)
   (match form
     ((_ test then else)
-     (let ((test-code (compile-int test env 'normal))
-           (then-code (compile-int then env ctx))
-           (else-code (compile-int else env ctx)))
-       (if (eq? ctx 'tail)
-         (append! test-code
-                  (list (vm-insn-make 'IF) then-code)
-                  else-code)
-         (let1 merger (list (vm-insn-make 'MNOP))
-           (append! test-code
-                    (list (vm-insn-make 'IF) (append! then-code merger))
-                    (append! else-code merger))))))
+     (compile-if-family (compile-int test env 'normal)
+                        (compile-int then env ctx)
+                        (compile-int else env ctx)
+                        env ctx))
     ((_ test then)
-     (syntax-if `(if ,test ,then ,(undefined)) env ctx))
+     (compile-if-family (compile-int test env 'normal)
+                        (compile-int then env ctx)
+                        (list (undefined))
+                        env ctx))
     (else
      (error "malformed if:" form))))
+
+(define-primitive-syntax (@when form env ctx)
+  (match form
+    ((_ test . body)
+     (compile-if-family (compile-int test env 'normal)
+                        (compile-seq body env ctx)
+                        (list (undefined))
+                        env ctx))
+    (else
+     (error "malformed when:" form))))
+
+(define-primitive-syntax (@unless form env ctx)
+  (match form
+    ((_ test . body)
+     (compile-if-family (compile-int test env 'normal)
+                        (list (undefined))
+                        (compile-seq body env ctx)
+                        env ctx))
+    (else
+     (error "malformed unless:" form))))
+
+(define-primitive-syntax (@and form env ctx)
+  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
+    (define (and-rec exprs)
+      (match exprs
+        (() (list #t))
+        ((expr) (append! (compile-int expr env ctx) merger))
+        ((expr . other)
+         (append! (compile-int expr env 'normal)
+                  (list (vm-insn-make 'IF)
+                        (and-rec other))
+                  merger))))
+    (and-rec (cdr form))))
+
+(define-primitive-syntax (@or form env ctx)
+  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
+    (define (or-rec exprs)
+      (match exprs
+        (() (list #f))
+        ((expr) (append! (compile-int expr env ctx) merger))
+        ((expr . other)
+         (append! (compile-int expr env 'normal)
+                  (list (vm-insn-make 'IF) merger)
+                  (or-rec other)))))
+    (or-rec (cdr form))))
+
+                                                     
+                                      
+
+         
+
+;; BEGIN
+
+
 
 ;;============================================================
 ;; Utilities
@@ -177,6 +260,15 @@
 
 (define (variable? arg)
   (or (symbol? arg) (identifier? arg)))
+
+(define (global-eq? var sym env)
+  (and (variable? var)
+       (let1 v (lookup-env var env #t)
+         (cond
+          ((identifier? v) (eq? (slot-ref v 'name) sym))
+          ((symbol? v) (eq? v sym))
+          (else #f)))))
+
 
 (define (find pred lis)
   (let loop ((lis lis))
@@ -234,8 +326,15 @@
 
 (define (init-compiler)
   ;; Injects syntax objects into basic modules.
-  (let ((null-module   (find-module 'null))
-        (gauche-module (find-module 'gauche)))
-    (%insert-binding null-module 'if (make-syntax 'if syntax-if))
-    ))
+  (define (inject module name comp)
+    (%insert-binding module name comp))
 
+  (let ((N (find-module 'null))
+        (G (find-module 'gauche)))
+    
+    (inject N 'if              @if)
+    (inject G 'when            @when)
+    (inject G 'unless          @unless)
+    (inject N 'and             @and)
+    (inject N 'or              @or)
+    ))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.1.2.1 2004-12-28 11:13:22 shirok Exp $
+;;;  $Id: gencomp,v 1.1.2.2 2005-01-02 12:20:13 shirok Exp $
 ;;;
 
 ;;;
@@ -102,6 +102,8 @@
       (('export . syms)
        (eval `(export ,@syms) (compile-module)) seed)
       (('provide arg) seed)
+      (('define-macro . rest)
+       (eval `(define-macro ,@rest) (compile-module)) seed)
       (else
        (cons (cgen-literal (vm-compile form (compile-module))) seed)))))
 
@@ -168,7 +170,7 @@
           ((addr) (loop (cddr code) (list* #f #f lits)))
           ((code) (loop (cddr code)
                         (list* (cgen-literal (cadr code)) #f lits)))
-          ((obj)  (loop (cddr code)
+          ((obj) (loop (cddr code)
                         (list* (cgen-literal (cadr code)) #f lits)))
           )))))
 
