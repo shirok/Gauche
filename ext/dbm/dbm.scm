@@ -12,17 +12,20 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: dbm.scm,v 1.5 2001-10-30 20:03:07 shirok Exp $
+;;;  $Id: dbm.scm,v 1.6 2001-11-10 23:10:51 shirok Exp $
 ;;;
 
 (define-module dbm
-  (export <dbm>
+  (export <dbm> <dbm-meta>
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
           dbm-fold    dbm-for-each  dbm-map
           %dbm-k2s    %dbm-s2k    %dbm-v2s    %dbm-s2v)
   )
 (select-module dbm)
+
+(define-class <dbm-meta> (<class>)
+  ())
 
 (define-class <dbm> ()
   ((path       :init-keyword :path)
@@ -31,8 +34,8 @@
    (key-convert   :init-keyword :key-convert :initform #f)
    (value-convert :init-keyword :value-convert :initform #f)
    ;; internal.  set up by dbm-open
-   k2s s2k v2s s2v
-   ))
+   k2s s2k v2s s2v)
+  :metaclass <dbm-meta>)
 
 ;; Macros that can be used by implementation modules
 (define-syntax %dbm-k2s
@@ -55,7 +58,7 @@
 ;; DBM-OPEN
 ;;
 
-(define-method dbm-open ((class <class>) . initargs)
+(define-method dbm-open ((class <dbm-meta>) . initargs)
   (dbm-open (apply make class initargs)))
 
 (define-method dbm-open ((self <dbm>))
