@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.3 2001-06-13 06:33:51 shirok Exp $
+ *  $Id: addr.c,v 1.4 2001-06-14 07:16:42 shirok Exp $
  */
 
 #include "net.h"
@@ -26,7 +26,6 @@ static ScmObj key_host;
 static ScmObj key_port;
 static ScmObj key_any;
 static ScmObj key_broadcast;
-static ScmObj key_none;
 static ScmObj key_loopback;
 
 /*==================================================================
@@ -215,8 +214,6 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
         addr->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     } else if (host == key_broadcast) {
         addr->addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-    } else if (host == key_none) {
-        addr->addr.sin_addr.s_addr = htonl(INADDR_NONE);
     } else if (host == key_loopback) {
         addr->addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     } else {
@@ -275,7 +272,6 @@ void Scm_Init_NetAddr(ScmModule *mod)
     key_port      = SCM_MAKE_KEYWORD("port");
     key_any       = SCM_MAKE_KEYWORD("any");
     key_broadcast = SCM_MAKE_KEYWORD("broadcast");
-    key_none      = SCM_MAKE_KEYWORD("none");
     key_loopback  = SCM_MAKE_KEYWORD("loopback");
 
     Scm_SockAddrClass.allocate = sockaddr_allocate;
