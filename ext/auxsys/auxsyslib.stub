@@ -1,0 +1,177 @@
+;;;
+;;; auxsyslib.stub - auxiliary system interface
+;;;
+;;;   Copyright (c) 2002 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: auxsyslib.stub,v 1.1 2002-02-21 08:55:52 shirok Exp $
+;;;
+
+"
+#include <stdlib.h>
+#include <math.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/times.h>
+#include <unistd.h>
+#include <sys/utsname.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+#include \"auxsysconf.h\"
+"
+
+;; stdlib.h
+(define-cproc sys-abort ()
+  "abort();  SCM_RETURN(SCM_UNDEFINED);")
+
+;; math.h
+(define-cproc sys-fmod (x y)
+  (assert (real? x))
+  (assert (real? y))
+  "if (y == 0.0) Scm_Error(\"Attempted to divide by zero\");
+  SCM_RETURN(Scm_MakeFlonum(fmod(x, y)));")
+
+(define-cproc sys-frexp (d)
+  (assert (real? d))
+  "  double fr; int exp;
+  fr = frexp(d, &exp);
+  SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeInteger(exp)));")
+
+(define-cproc sys-modf (x)
+  (assert (real? x))
+  "  double fr, inte;
+  fr = modf(x, &inte);
+  SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeFlonum(inte)));")
+
+;; sys/stat.h
+(define-cproc sys-mkfifo (path mode)
+  (assert (string? path))
+  (assert (small-integer? mode))
+  "  int r = Scm_SysCall(mkfifo(Scm_GetStringConst(path), mode));
+  if (r < 0) Scm_SysError(\"mkfifo failed\");
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+;; set*
+
+(define-cproc sys-setgid (gid)
+  (assert (exact? gid))
+  "  int r = Scm_SysCall(setgid(gid));
+  if (r < 0) Scm_SysError(\"setgid failed\");
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+(define-cproc sys-setpgid (pid pgid)
+  (assert (exact? pid))
+  (assert (exact? pgid))
+  "  int r = Scm_SysCall(setpgid(pid, pgid));
+  if (r < 0) Scm_SysError(\"setpgid failed\");
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+(if (defined? "HAVE_SETPGRP")
+    (define-cproc sys-setpgrp ()
+      "  int r = Scm_SysCall(setpgrp());
+      if (r < 0) Scm_SysError(\"setpgrp failed\");
+      SCM_RETURN(Scm_MakeInteger(r));"))
+
+(if (defined? "HAVE_GETPGID")
+    (define-cproc sys-getpgid ()
+      "  int r = (int)Scm_SysCall(getpgid());
+      if (r < 0) Scm_SysError(\"getpgid failed\");
+      SCM_RETURN(Scm_MakeInteger(r));"))
+
+(define-cproc sys-setsid ()
+  "  int r = Scm_SysCall(setsid());
+  if (r < 0) Scm_SysError(\"setsid failed\");
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+(define-cproc sys-setuid (uid)
+  (assert (exact? uid))
+  "  int r = Scm_SysCall(setuid(uid));
+  if (r < 0) Scm_SysError(\"setuid failed\");
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+;; sys/times.h
+(define-cproc sys-times ()
+  "  struct tms info;
+  ScmObj h = SCM_NIL, t;
+  int r = Scm_SysCall(times(&info));
+  if (r < 0) Scm_SysError(\"times failed\");
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_utime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_stime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cutime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cstime));
+#ifdef CLOCKS_PER_SEC
+  SCM_APPEND1(h, t, Scm_MakeInteger(CLOCKS_PER_SEC));
+#else
+#ifdef CLK_TCK
+  SCM_APPEND1(h, t, Scm_MakeInteger(CLK_TCK)); /* older name */
+#else
+  SCM_APPEND1(h, t, Scm_MakeInteger(1));  /* or maybe 100, we don't know ...*/
+#endif
+#endif
+  SCM_RETURN(h);")
+
+;; sys/utsname.h
+;; returns list of (sysname nodename release version machine)
+(define-cproc sys-uname ()
+  "  struct utsname info;
+  ScmObj head = SCM_NIL, tail;
+  if (uname(&info) < 0) Scm_SysError(\"uname failed\");
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.sysname));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.nodename));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.release));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.version));
+  SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.machine));
+  return head;")
+
+"#ifndef HOSTNAMELEN
+#define HOSTNAMELEN 1024
+#endif"
+
+(if (defined? "HAVE_GETHOSTNAME")
+    (define-cproc sys-gethostname ()
+      "  char buf[HOSTNAMELEN]; int r;
+         r = Scm_SysCall(gethostname(buf, HOSTNAMELEN));
+         if (r < 0) Scm_SysError(\"gethostname failed\");
+         SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
+
+(if (defined? "HAVE_GETDOMAINNAME")
+    (define-cproc sys-getdomainname ()
+      "  char buf[HOSTNAMELEN]; int r;
+         r = Scm_SysCall(getdomainname(buf, HOSTNAMELEN));
+         if (r < 0) Scm_SysError(\"getdomainname failed\");
+         SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
+
+;; putenv
+(if (defined? "HAVE_PUTENV")
+    (define-cproc sys-putenv (name value)
+      (assert (string? name))
+      (assert (string? value))
+      "  ScmObj s;
+ s  = Scm_StringAppend(SCM_LIST3(SCM_OBJ(name),
+                                 SCM_MAKE_STR(\"=\"),
+                                 SCM_OBJ(value)));
+ putenv(Scm_GetString(SCM_STRING(s)));
+ SCM_RETURN(SCM_UNDEFINED);")
+)
+
+
+;; Local variables:
+;; mode: scheme
+;; end:
