@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.26 2001-06-21 11:53:05 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.27 2001-06-22 08:42:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2422,7 +2422,6 @@ access @var{dir}.
 @defun sys-crypt key salt
 This is the interface to @code{crypt(3)}.   @var{Key} and @var{salt}
 must be a string, and an encrypted string is returned.
-
 On systems where @code{crypt(3)} is not available, call to this
 function signals an error.
 @end defun
@@ -2456,11 +2455,23 @@ function signals an error.
 @defvarx SIGTTOU
 @defvarx SIGUSR1
 @defvarx SIGUSR2
-
+These variables are bound to the corresponding signal numbers.
 @end defvar
 
 @defun sys-kill pid sig
-[POSIX]
+[POSIX] Sends a signal @var{sig} to the specified process.  @var{sig}
+must be a positive exact integer.  @var{pid} is an exact integer and
+specifies the target process(es):
+@itemize @bullet
+@item
+If @var{pid} is positive, it is the target process id.
+@item
+If @var{pid} is zero, the signal is sent to every process in the process
+group of the current process.
+@item
+If @var{pid} is less than -1, the signal is sent to every process in
+the process group @var{-pid}.
+@end itemize
 @end defun
 
 
@@ -2571,7 +2582,8 @@ local time.
 
 @defun sys-system command
 [POSIX]
-Runs @var{command} in a subprocess.
+Runs @var{command} in a subprocess.   @var{command} is usually passed
+to @code{sh}, so the shell metacharacters are interpreted.
 
 This function returns an integer value @code{system()} returned.
 Since POSIX doesn't define what @code{system()} returns, you can't
@@ -2583,7 +2595,7 @@ interpret the returned value in a portable way.
 Fork the current process.  Returns 0 if you're in the child process,
 and a child process' pid if you're in the parent process.
 All the opened file descriptors are shared between the parent and
-the child.
+the child.  See @code{fork(2)} of your system for details.
 
 If the forked process runs some Scheme code and exits instead of
 calling @code{sys-exec}, the forked process should call @code{sys-exit} to
@@ -3267,8 +3279,8 @@ connected to the socket.
 
 These functions provide APIs similar to the system calls.
 Those who are familiar to programming with socket APIs will
-find these functions useful for detailed control over
-communications.
+find these functions useful since you can have more detailed control over
+the sockets.
 
 @defun make-socket domain type &optional protocol
 Returns a socket with specified parameters.
@@ -3277,6 +3289,11 @@ Returns a socket with specified parameters.
 @defvar pf_unix
 @defvarx pf_inet
 These variables are bound to @code{PF_UNIX} and @code{PF_INET}.
+@end defvar
+
+@defvar af_unix
+@defvarx af_inet
+These variables are bound to @code{AF_UNIX} and @code{AF_INET}.
 @end defvar
 
 @defvar sock_stream
@@ -3289,29 +3306,40 @@ and @code{SOCK_RAW}.
 @defun socket-status socket
 Returns a internal status of @var{socket}, by one of the following
 symbols.
-@table @code
+@multitable {aaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item none
-The socket is just created.
+@tab The socket is just created.
 @item bound
-The socket is bound to an address by @code{socket-bind}
+@tab The socket is bound to an address by @code{socket-bind}
 @item listening
-The socket is listening a connection by @code{socket-listen}
-@item connected
-The socket is connected by @code{socket-connect} or @code{socket-accept}.
+@tab The socket is listening a connection by @code{socket-listen}
+@item connected 
+@tab The socket is connected by @code{socket-connect} or @code{socket-accept}.
 @item shutdown
-The socket is shutdown by @code{socket-shutdown}
+@tab The socket is shutdown by @code{socket-shutdown}
 @item closed
-The socket is closed by @code{socket-close}.
-@end table
+@tab The socket is closed by @code{socket-close}.
+@end multitable
 @end defun
 
 @defun socket-bind socket address
+Binds @var{socket} to the network address @var{address}.
 @end defun
 
 @defun socket-listen socket backlog
+Listens @var{socket}.  The socket must be already bound to some
+address.  @var{backlog} specifies maximum number of connection
+requests to be queued.
 @end defun
 
 @defun socket-accept socket
+Accepts a connection request coming to @var{socket}.
+Returns a new socket that is connected to the remote entity.
+The original @var{socket} keeps waiting for further connections.
+If there's no connection requests, this call waits for one to come.
+
+You can use @code{sys-select} to check if there's a pending connection
+request.
 @end defun
 
 @defun socket-connect socket address
@@ -3409,14 +3437,55 @@ Gets and clears the pending socket error as an integer.
 Can be only used with @code{socket-getsockopt}.
 @end defvar
 
-
-
 @node Netdb interface
 @subsection  Netdb interface
 
 @deftp {Builtin Class} <sys-hostent>
 @clindex sys-hostent
+A class of objects for network hosts.  Corresponding to
+@code{struct hostent}.  The following slots are available read-only.
+
+@defivar {<sys-hostent>} name
+The formal name of the host (string).
+@end defivar
+@defivar {<sys-hostent>} aliases
+A list of alias names of the host (list of strings).
+@end defivar
+@defivar {<sys-hostent>} addresses
+A list of addresses (list of strings).  Only ipv4 address is 
+supported currently.  Each address is represented by dotted decimal
+notation.
+@end defivar
 @end deftp
+
+@defun sys-gethostbyname name
+Looks up a host named @var{name}.
+If found, returns a @code{<sys-hostent>} object.
+Otherwise, returns @code{#f}.
+@example
+(let ((host (sys-gethostbyname "www.w3c.org")))
+  (list (slot-ref host 'name)
+        (slot-ref host 'aliases)
+        (slot-ref host 'addresses)))
+  @result{} ("www.w3.org" ("www.w3c.org") ("18.29.1.34" "18.29.1.35"))
+@end example
+@end defun
+
+@defun sys-gethostbyaddr addr proto
+Looks up a host that has an address @var{addr} of protocol @var{proto}.
+@var{addr} is a natural string representation of the address;
+for ipv4, it is a dotted decimal notation.  @var{proto} is a
+protocol number; only @code{af_inet} is supported currently.
+If the host is found, returns a @code{<sys-hostent>} object.
+Otherwise, returns @code{#f}.
+@example
+(let ((host (sys-gethostbyaddr "127.0.0.1" af_inet)))
+  (list (slot-ref host 'name)
+        (slot-ref host 'aliases)
+        (slot-ref host 'addresses))
+  @result{} ("localhost" ("localhost.localdomain") ("127.0.0.1"))
+@end example
+@end defun
 
 @deftp {Builtin Class} <sys-servent>
 @clindex sys-servent
