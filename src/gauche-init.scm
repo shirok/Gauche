@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.17 2001-03-20 07:41:48 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.18 2001-03-24 10:08:56 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -35,6 +35,10 @@
 
 ;; Preferred way
 ;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
+;; NB: should this be:
+;;  (use (x y z)) ==> (require "x/y/z") (import (x y z))
+;;  it's more Scheme-ish, and similar to Guile-way.
+
 (define-macro (use module)
   (unless (symbol? module) (error "use: symbol required: ~s" module))
   (let ((path (string-join (string-split (symbol->string module) #\.) "/")))
