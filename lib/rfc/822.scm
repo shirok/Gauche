@@ -12,20 +12,23 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.4 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: 822.scm,v 1.5 2001-09-18 07:07:17 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
 ;; RFC2822 Internet Message Format <ftp://ftp.isi.edu/in-notes/rfc2822.txt>
 
 (define-module rfc.822
+  (use srfi-1)
   (use srfi-13)
   (use gauche.let-opt)
   (use gauche.regexp)
   (export rfc822-header->list
           rfc822-skip-cfws
           rfc822-next-word
-          rfc822-next-phrase)
+          rfc822-next-phrase
+          rfc822-parse-date
+          )
   )
 
 (select-module rfc.822)
@@ -124,7 +127,54 @@
 ;; Date and time, section 3.3
 ;;
 
+;; Takes RFC-822 type date string, and returns eight values:
+;;   year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
+;; Timezone is an offset from UT in minutes.  Day-of-week is a day from
+;; sunday, and may be #f if that information is not available.
+;; If the string is not parsable, all the elements are #f.
 
+;; NB: This function follows the new definition of date format in RFC2822,
+;; but may fail to recognize "obsolete" format, which allows arbitrary
+;; comments appear between words.
 
+(define (rfc822-parse-date string)
+  (define (dow->number dow)
+    (- (length (member dow '("Sat" "Fri" "Thu" "Wed" "Tue" "Mon" "Sun"))) 1))
+  (define (mon->number mon)
+    (- (length (member mon '("Dec" "Nov" "Oct" "Sep" "Aug" "Jul"
+                             "Jun" "May" "Apr" "Mar" "Feb" "Jan")))
+       1))
+  (define (year->number year) ;; see obs-year definition of RFC-2822
+    (let ((y (string->number year)))
+      (and y
+           (cond ((< y 50)  (+ y 2000))
+                 ((< y 100) (+ y 1900))
+                 (else y)))))
+  (define (tz->number tz)
+    (cond ((string->number tz))
+          ((assoc tz '(("UT" . 0) ("GMT" . 0) ("EDT" . -400) ("EST" . -500)
+                       ("CDT" . -500) ("CST" . -600) ("MDT" . -600)
+                       ("MST" . -700) ("PDT" . -700) ("PST" . -800))))
+          (else #f)))
+
+  (rxmatch-case string
+    (#/((Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s*,)?\s*(\d+)\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d\d\d\d)\s+(\d\d)\s*:\s*(\d\d)\s*:\s*(\d\d)\s+([+-]\d\d\d\d|[A-Z][A-Z][A-Z])/
+       (#f #f dow dom mon yr hour min sec tz)
+       (values (year->number yr)
+               (mon->number mon)
+               (string->number dom)
+               (string->number hour)
+               (string->number min)
+               (string->number sec)
+               (tz->number tz)
+               (dow->number dow)))
+     (else (values #f #f #f #f #f #f #f #f))))
+
+;(define (rfc822-date->time string)
+;  (receive (year month day hour min sez tz . rest)
+;      (rfc822-parse-date string)
+;    (and year
+;         (
+  
 
 (provide "rfc/822")
