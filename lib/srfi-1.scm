@@ -8,7 +8,7 @@
 
 ;;; Modified for Gauche, by Shiro Kawai (shiro@acm.org)
 ;;; You can obtain the original version from http://srfi.schemers.org
-;;;   $Id: srfi-1.scm,v 1.1 2001-02-14 10:16:44 shiro Exp $
+;;;   $Id: srfi-1.scm,v 1.2 2001-02-16 06:54:32 shiro Exp $
 
 ;;; This is a library of list- and pair-processing functions. I wrote it after
 ;;; carefully considering the functions provided by the libraries found in
@@ -496,7 +496,7 @@
 (define (tenth   x) (cadr (cddddr (cddddr x))))
 
 ;; [SK] `values' not implemented yet
-;(define (car+cdr pair) (values (car pair) (cdr pair)))
+(define (car+cdr pair) (values (car pair) (cdr pair)))
 
 ;;; take & drop
 
