@@ -1,4 +1,4 @@
-<#? /usr/local/bin/gosh
+#? /usr/local/bin/gosh
 <? ;; Process this file with escm
 (define japanese? (equal? (sys-getenv "LANG") "ja_JP"))
 (define (header ja en)
@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.9 2001-11-15 09:54:55 shirok Exp $
+$Id: INSTALL.esc,v 1.10 2001-11-16 11:32:18 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
