@@ -2045,10 +2045,11 @@ slot @code{y} of new class, she may write something like this:
 
 @subsubheading Customizing instance update
 
-Updating instance for a redefined class is also handled
-as class change.  If object's class has been
-redefined (see @ref{Class redefinition}) when the object
-is accessed, @code{change-class} is called with the
+Updating an instance for a redefined class is also handled
+as class change.  When an object is accessed via normal
+slot accessor/modifier, its class is checked whether
+it has been redefined.  And if it has indeed been redefined,
+@code{change-class} is called with the
 redefined class as @var{new-class}; that is, updating
 an instance is regarded as changing object's class from
 the original one to the redefined one.
@@ -2091,8 +2092,8 @@ instance update, that is, @code{slot-ref-using-class},
 and @code{current-class-of}.
 
 If you want to carry over a slot whose value is calculated
-procedurally, such as a virtual slot, then you might call
-@code{slot-ref} etc. on @var{obj} during calculating the
+procedurally, such as a virtual slot, then @code{slot-ref} etc.
+might be called implicitly on @var{obj} during calculating the
 slot value.  Actually @code{change-object-class} has a
 special protection to detect such a recursion.  If that
 happens, @code{change-object-class} gives up to retrieve
@@ -2147,8 +2148,8 @@ the "rest" argument, for it is always bound to a list.
 The list of classes of the argument list is called
 @emph{method specializer list}, based on which the generic
 function will select appropriate methods(s).
-Here are some examples of @var{specs} and corresponding 
-specializers list:
+Here are some examples of @var{specs} and the corresponding 
+specializer list:
 
 @example
 specs:        ((self <myclass>) (index <integer>) value)
@@ -2165,7 +2166,7 @@ specializers: <top>
 @end example
 
 If you define a method on @var{name} whose specializer list matches with
-one in the generic function's method, then the existing method is
+one in the generic function's methods, then the existing method is
 replaced by the newly defined one.
 @end defmac
 
@@ -2174,7 +2175,7 @@ replaced by the newly defined one.
 When a generic function is applied, first it selects
 methods whose specializer list matches the given arguments.
 For example, suppose a generic function @code{foo} has
-three methods, whose specializer list are 
+three methods, whose specializer lists are 
 @code{(<string> <top>)}, @code{(<string> <string>)}, 
 and @code{(<top> <top>)}, respectively.
 When @code{foo} is applied like @code{(foo "abc" 3)},
@@ -2222,7 +2223,8 @@ the same arguments as this method is called with.
 Passing @var{args} @dots{} explicitly invokes the next method
 with the passed arguments.
 
-If there's no next method, an error is signalled.
+If @code{next-method} is called in the least specific method,
+i.e. there's no "next method", an error is signalled.
 @end deffn
 
 @c ----------------------------------------------------------------------
