@@ -1,3 +1,7 @@
+2002-09-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/quoted-printable.scm : fixed several bugs using test cases.
+
 2002-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/util.scm : fixed a problem in directory-fold etc. that
