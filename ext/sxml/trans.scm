@@ -1,7 +1,7 @@
 ;;;
 ;;; convert the original SSAX.scm into Gauche's preferable format.
 ;;;
-;;; $Id: trans.scm,v 1.2 2003-07-20 12:37:52 shirok Exp $
+;;; $Id: trans.scm,v 1.3 2003-07-21 12:19:39 shirok Exp $
 ;;;
 
 (use srfi-13)
@@ -81,7 +81,7 @@
                                         (eq? 'define (caadr sexp))
                                         (pair? (cadadr sexp))
                                         (memq (car (cadadr sexp))
-                                              '(SSAX:warn parser-error)))
+                                              '(ssax:warn parser-error)))
                              (write sexp)
                              (newline))))))
 

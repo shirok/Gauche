@@ -1,21 +1,30 @@
 ;		XML/HTML processing in Scheme
 ;		SXML expression tree transformers
 ;
-; $ Id: SXML-tree-trans.scm,v 1.5 2001/10/03 22:39:39 oleg Exp oleg $
+; IMPORT
+; A prelude appropriate for your Scheme system
+;	(myenv-bigloo.scm, myenv-mit.scm, etc.)
+;
+; EXPORT
+; (provide SRV:send-reply
+;	   post-order pre-post-order replace-range)
+;
+; See vSXML-tree-trans.scm for the validation code, which also
+; serves as usage examples.
+;
+; $Id: SXML-tree-trans.scm,v 1.2 2003-07-21 12:19:43 shirok Exp $
 
-; The following macro runs built-in test cases -- or does not run,
-; depending on which of the two lines below you commented out
-;(define-macro (run-test . body) `(begin (display "\n-->Test\n") ,@body))
-(define-macro (run-test . body) '(begin #f))
 
 ; Output the 'fragments'
 ; The fragments are a list of strings, characters,
-; numbers, thunks, #f -- and other fragments.
+; numbers, thunks, #f, #t -- and other fragments.
 ; The function traverses the tree depth-first, writes out
 ; strings and characters, executes thunks, and ignores
 ; #f and '().
 ; The function returns #t if anything was written at all;
 ; otherwise the result is #f
+; If #t occurs among the fragments, it is not written out
+; but causes the result of SRV:send-reply to be #t
 
 (define (SRV:send-reply . fragments)
   (let loop ((fragments fragments) (result #f))
@@ -23,6 +32,7 @@
       ((null? fragments) result)
       ((not (car fragments)) (loop (cdr fragments) result))
       ((null? (car fragments)) (loop (cdr fragments) result))
+      ((eq? #t (car fragments)) (loop (cdr fragments) #t))
       ((pair? (car fragments))
         (loop (cdr fragments) (loop (car fragments) result)))
       ((procedure? (car fragments))
@@ -36,85 +46,19 @@
 
 ;------------------------------------------------------------------------
 ;	          Traversal of an SXML tree or a grove:
-;			a <Node> or a <Nodeset>
+;			a <Node> or a <Nodelist>
 ;
-; A <Node> and a <Nodeset> are mutually-recursive datatypes that
+; A <Node> and a <Nodelist> are mutually-recursive datatypes that
 ; underlie the SXML tree:
-;	<Node> ::= (name . <Nodeset>) | "text string"
+;	<Node> ::= (name . <Nodelist>) | "text string"
 ; An (ordered) set of nodes is just a list of the constituent nodes:
-; 	<Nodeset> ::= (<Node> ...)
-; Nodesets, and Nodes other than text strings are both lists. A
-; <Nodeset> however is either an empty list, or a list whose head is
+; 	<Nodelist> ::= (<Node> ...)
+; Nodelists, and Nodes other than text strings are both lists. A
+; <Nodelist> however is either an empty list, or a list whose head is
 ; not a symbol (an atom in general). A symbol at the head of a node is
 ; either an XML name (in which case it's a tag of an XML element), or
 ; an administrative name such as '@'.
 ; See SXPath.scm and SSAX.scm for more information on SXML.
-
-; Borrowed from SXPath.scm
-(define (nodeset? x)
-  (or (and (pair? x) (not (symbol? (car x)))) (null? x)))
-
-	; Apply proc to each element of lst and return the list of results.
-	; if proc returns a nodeset, splice it into the result
-(define (map-union proc lst)
-  (if (null? lst) lst
-      (let ((proc-res (proc (car lst))))
-	((if (nodeset? proc-res) append cons)
-	 proc-res (map-union proc (cdr lst))))))
-
-; Post-order traversal of a tree and creation of a new tree:
-;	post-order:: <tree> x <bindings> -> <new-tree>
-; where
-; <bindings> ::= (<binding> ...)
-; <binding> ::= (<trigger-symbol> <new-bindings> . <handler>) |
-;		(<trigger-symbol> . <handler>)
-; <trigger-symbol> ::= XMLname | *text* | *default*
-; <handler> :: <trigger-symbol> x [<tree>] -> <new-tree>
-;
-; The post-order function visits the nodes and nodesets post-order
-; (depth-first).  For each <Node> of the form (name <Node> ...) it
-; looks up an association with the given name among its <bindings>. If
-; failed, post-order tries to locate a *default* binding. It's an
-; error if the latter attempt fails as well.  Having found a binding,
-; the post-order function first calls itself recursively for each
-; child of the current node, with <new-bindings> prepended to the
-; <bindings> in effect. The result of these calls is passed to the
-; <handler> (along with the head of the current <Node>). To be more
-; precise, the handler is _applied_ to the head of the current node
-; and its processed children. The result of the handler, which should
-; also be a <tree>, replaces the current <Node>. If the current <Node>
-; is a text string, a special binding with a symbol *text* is looked
-; up.
-
-(define (post-order tree bindings)
-  (cond
-   ((nodeset? tree)
-    (map (lambda (a-tree) (post-order a-tree bindings)) tree))
-   ((not (pair? tree))
-    (let ((trigger '*text*))
-      (cond
-       ((or (assq trigger bindings) (assq '*default* bindings)) =>
-	(lambda (binding)
-	  ((if (procedure? (cdr binding)) (cdr binding) (cddr binding))
-	   trigger tree)))
-       (else
-	(error "Unknown binding for " trigger " and no default")))
-      ))
-   (else
-    (let ((trigger (car tree)))
-      (cond
-       ((or (assq trigger bindings) (assq '*default* bindings)) =>
-	(lambda (binding)
-	  (apply
-	   (if (procedure? (cdr binding)) (cdr binding) (cddr binding))
-	   (cons trigger 
-		 (post-order (cdr tree) 
-			     (if (pair? (cdr binding))
-				 (append (cadr binding) bindings)
-				 bindings))))))
-       (else
-	(error "Unknown binding for " trigger " and no default"))))))
-)
 
 
 ; Pre-Post-order traversal of a tree and creation of a new tree:
@@ -122,18 +66,19 @@
 ; where
 ; <bindings> ::= (<binding> ...)
 ; <binding> ::= (<trigger-symbol> *preorder* . <handler>) |
+;               (<trigger-symbol> *macro* . <handler>) |
 ;		(<trigger-symbol> <new-bindings> . <handler>) |
 ;		(<trigger-symbol> . <handler>)
 ; <trigger-symbol> ::= XMLname | *text* | *default*
 ; <handler> :: <trigger-symbol> x [<tree>] -> <new-tree>
 ;
-; The pre-post-order function visits the nodes and nodesets pre-post-order
-; (depth-first).  For each <Node> of the form (name <Node> ...) it
-; looks up an association with the given 'name' among its <bindings>. If
-; failed, pre-post-order tries to locate a *default* binding. It's an
-; error if the latter attempt fails as well.  Having found a binding,
-; the pre-post-order function first checks to see if the binding is
-; of the form
+; The pre-post-order function visits the nodes and nodelists
+; pre-post-order (depth-first).  For each <Node> of the form (name
+; <Node> ...) it looks up an association with the given 'name' among
+; its <bindings>. If failed, pre-post-order tries to locate a
+; *default* binding. It's an error if the latter attempt fails as
+; well.  Having found a binding, the pre-post-order function first
+; checks to see if the binding is of the form
 ;	(<trigger-symbol> *preorder* . <handler>)
 ; If it is, the handler is 'applied' to the current node. Otherwise,
 ; the pre-post-order function first calls itself recursively for each
@@ -143,40 +88,52 @@
 ; precise, the handler is _applied_ to the head of the current node
 ; and its processed children. The result of the handler, which should
 ; also be a <tree>, replaces the current <Node>. If the current <Node>
-; is a text string, a special binding with a symbol *text* is looked
-; up.
+; is a text string or other atom, a special binding with a symbol
+; *text* is looked up.
+;
+; A binding can also be of a form
+;	(<trigger-symbol> *macro* . <handler>)
+; This is equivalent to *preorder* described above. However, the result
+; is re-processed again, with the current stylesheet.
 
 (define (pre-post-order tree bindings)
-  (cond
-   ((nodeset? tree)
-    (map (lambda (a-tree) (pre-post-order a-tree bindings)) tree))
-   ((not (pair? tree))
-    (let ((trigger '*text*))
+  (let* ((default-binding (assq '*default* bindings))
+	 (text-binding (or (assq '*text* bindings) default-binding))
+	 (text-handler			; Cache default and text bindings
+	   (and text-binding
+	     (if (procedure? (cdr text-binding))
+	         (cdr text-binding) (cddr text-binding)))))
+    (let loop ((tree tree))
       (cond
-       ((or (assq trigger bindings) (assq '*default* bindings)) =>
-	(lambda (binding)
-	  ((if (procedure? (cdr binding)) (cdr binding) (cddr binding))
-	   trigger tree)))
-       (else
-	(error "Unknown binding for " trigger " and no default")))
-      ))
-   (else
-    (let ((trigger (car tree)))
-      (cond
-       ((or (assq trigger bindings) (assq '*default* bindings)) =>
-	(lambda (binding)
-	  (if (and (pair? (cdr binding)) (eq? '*preorder* (cadr binding)))
-	      (apply (cddr binding) tree)
-	      (apply
-	       (if (procedure? (cdr binding)) (cdr binding) (cddr binding))
-	       (cons trigger 
-		     (pre-post-order (cdr tree) 
-				     (if (pair? (cdr binding))
-					 (append (cadr binding) bindings)
-					 bindings)))))))
-       (else
-	(error "Unknown binding for " trigger " and no default"))))))
-)
+	((null? tree) '())
+	((not (pair? tree))
+	  (let ((trigger '*text*))
+	    (if text-handler (text-handler trigger tree)
+	      (error "Unknown binding for " trigger " and no default"))))
+	((not (symbol? (car tree))) (map loop tree)) ; tree is a nodelist
+	(else				; tree is an SXML node
+	  (let* ((trigger (car tree))
+		 (binding (or (assq trigger bindings) default-binding)))
+	    (cond
+	      ((not binding) 
+		(error "Unknown binding for " trigger " and no default"))
+	      ((not (pair? (cdr binding)))  ; must be a procedure: handler
+		(apply (cdr binding) trigger (map loop (cdr tree))))
+	      ((eq? '*preorder* (cadr binding))
+		(apply (cddr binding) tree))
+	      ((eq? '*macro* (cadr binding))
+		(loop (apply (cddr binding) tree)))
+	      (else			    ; (cadr binding) is a local binding
+		(apply (cddr binding) trigger 
+		  (pre-post-order (cdr tree) (append (cadr binding) bindings)))
+		))))))))
+
+; post-order is a strict subset of pre-post-order without *preorder*
+; (let alone *macro*) traversals. 
+; Now pre-post-order is actually faster than the old post-order.
+; The function post-order is deprecated and is aliased below for
+; backward compatibility.
+(define post-order pre-post-order)
 
 ;------------------------------------------------------------------------
 ;			Extended tree fold
@@ -258,9 +215,9 @@
 	       ((not (pair? node))	; it's an atom, keep it
 		(loop (cdr forest) keep? (cons node new-forest)))
 	       (else
-		(let-values* 
-		 ((node? (symbol? (car node)))  ; or is it a nodeset?
-		  ((new-kids keep?)		; traverse its children
+		(let*-values
+		 (((node?) (symbol? (car node))) ; or is it a nodelist?
+		  ((new-kids keep?)		 ; traverse its children
 		   (loop (if node? (cdr node) node) #t '())))
 		 (loop (cdr forest) keep?
 		       (cons 
@@ -275,9 +232,9 @@
 	       ((not (pair? node))	; it's an atom, skip it
 		(loop (cdr forest) keep? new-forest))
 	       (else
-		(let-values* 
-		 ((node? (symbol? (car node)))  ; or is it a nodeset?
-		  ((new-kids keep?)		; traverse its children
+		(let*-values
+		 (((node?) (symbol? (car node)))  ; or is it a nodelist?
+		  ((new-kids keep?)		  ; traverse its children
 		   (loop (if node? (cdr node) node) #f '())))
 		 (loop (cdr forest) keep?
 		       (if (or keep? (pair? new-kids))
@@ -287,85 +244,6 @@
 			   new-forest)		; if all kids are skipped
 		       ))))))))			; skip the node too
   
-  (let-values* (((new-forest keep?) (loop forest #t '())))
+  (let*-values (((new-forest keep?) (loop forest #t '())))
      new-forest))
 
-; A few tests
-(run-test
- (let* ((tree
-	 '(root
-	      (n1 (n11) "s12" (n13))
-	    "s2"
-	    (n2 (n21) "s22")
-	    (n3 
-	     (n31 (n311))
-	     "s32"
-	     (n33 (n331) "s332" (n333))
-	     "s34")))
-	(test
-	 (lambda (pred-begin pred-end expected)
-	   (let ((computed
-		  (car (replace-range pred-begin pred-end (list tree)))))
-	     (assert (equal? computed expected)))))
-	)
-   (pp tree)
-      ; Remove one node, "s2"
-   (test
-    (lambda (node)
-      (and (equal? node "s2") '()))
-    (lambda (node) (list node))
-    '(root (n1 (n11) "s12" (n13))
-       (n2 (n21) "s22")
-       (n3 (n31 (n311)) "s32" (n33 (n331) "s332" (n333)) "s34")))
-
-      ; Replace one node, "s2" with "s2-new"
-   (test 
-    (lambda (node)
-      (and (equal? node "s2") '("s2-new")))
-    (lambda (node) (list node))
-    '(root (n1 (n11) "s12" (n13))
-       "s2-new"
-       (n2 (n21) "s22")
-       (n3 (n31 (n311)) "s32" (n33 (n331) "s332" (n333)) "s34")))
-
-      ; Replace one node, "s2" with "s2-new" and its brother (n-new "s")
-   (test 
-    (lambda (node)
-      (and (equal? node "s2") '("s2-new" (n-new "s"))))
-    (lambda (node) (list node))
-    '(root (n1 (n11) "s12" (n13))
-       "s2-new" (n-new "s")
-       (n2 (n21) "s22")
-       (n3 (n31 (n311)) "s32" (n33 (n331) "s332" (n333)) "s34")))
-
-      ; Remove everything from "s2" onward
-   (test 
-    (lambda (node)
-      (and (equal? node "s2") '()))
-    (lambda (node) #f)
-    '(root (n1 (n11) "s12" (n13))))
-   
-      ; Remove everything from "n1" onward
-   (test 
-    (lambda (node)
-      (and (pair? node) (eq? 'n1 (car node)) '()))
-    (lambda (node) #f)
-    '(root))
-
-      ; Replace from n1 through n33
-   (test 
-    (lambda (node)
-      (and (pair? node)
-	   (eq? 'n1 (car node))
-	   (list node '(n1* "s12*"))))
-    (lambda (node)
-      (and (pair? node)
-	   (eq? 'n33 (car node))
-	   (list node)))
-    '(root
-	 (n1 (n11) "s12" (n13))
-       (n1* "s12*")
-       (n3 
-	(n33 (n331) "s332" (n333))
-	"s34")))
-   ))

@@ -19,6 +19,10 @@ SCMFILES = $(GENERATED_TARGET) adaptor.scm
 
 all : $(GENERATED_TARGET)
 
+ssax.scm : src/SSAX.scm
+
+
+
 check : $(GENERATED_TEST)
 
 install : install-std

@@ -1,14 +1,22 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.2 2003-07-20 12:37:52 shirok Exp $
+;;; $Id: adaptor.scm,v 1.3 2003-07-21 12:19:39 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
   (use srfi-1)
-  (export assert |--| begin0 let-values*
-          *SSAX:warn-handler* SSAX:warn parser-error))
+  (export ascii->char ucscode->char char-return char-tab char-newline
+          assert |--| *ssax:warn-handler*
+          ssax:warn parser-error))
 (select-module sxml.adaptor)
+
+(define ascii->char integer->char)
+(define ucscode->char ucs->char)
+
+(define char-return  #\return)
+(define char-tab     #\tab)
+(define char-newline #\newline)
 
 ;; Derived from Oleg's myenv.scm -----------------------------
 
@@ -94,38 +102,11 @@
 (define-macro (|--| x) `(- ,x 1))
 
 
-;; Macros used in ssax main body ----------------------------------
-
-(define-syntax begin0
-  (syntax-rules ()
-    ((_ form forms ...)
-     (let ((var form)) forms ... var))))
-
-
-; Multiple values are supported natively in Gauche.
-; NB. we can't simply alias let-values* to SRFI-11 let*-values,
-; for let-values* differs in the handling of the variables that
-; receives a single value.
-;
-;   (let-values* ((v 1)) v)  => 1
-;   (let*-values ((v 1)) v)  => (1)   ; SRFI-11 behavior
-
-(define-syntax let-values*
-  (syntax-rules ()
-    ((_ () . body)
-     (begin . body))
-    ((_ (((vars ...) init) bindings ...) . body)
-     (receive (vars ...) init
-       (let-values* (bindings ...) . body)))
-    ((_ ((var init) bindings ...) . body)
-     (let ((var init))
-       (let-values* (bindings ...) . body)))))
-
 ;; Warn and error procedures. ------------------------------------
-(define *SSAX:warn-handler* #f)
+(define *ssax:warn-handler* #f)
 
-(define (SSAX:warn port msg . args)
-  (when (procedure? *SSAX:warn-handler*)
+(define (ssax:warn port msg . args)
+  (when (procedure? *ssax:warn-handler*)
     (let ((err (open-output-string)))
       (display (port-position-prefix port) err)
       (display "Warning: " err)
@@ -138,7 +119,7 @@
                         (else (write m err))))
                 args)
       (newline err)
-      (*SSAX:warn-handler* (get-output-string err)))))
+      (*ssax:warn-handler* (get-output-string err)))))
 
 (define (parser-error  port msg . args)
   (let ((err (open-output-string)))
