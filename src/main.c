@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.39 2001-12-18 11:02:29 shirok Exp $
+ *  $Id: main.c,v 1.40 2002-01-08 05:58:55 shirok Exp $
  */
 
 #include <unistd.h>
@@ -54,7 +54,8 @@ void usage(void)
 
 void version(void)
 {
-    printf("Gauche scheme interpreter, version %s\n", GAUCHE_VERSION);
+    printf("Gauche scheme interpreter, version %s [%s]\n",
+           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME);
     exit(0);
 }
 
