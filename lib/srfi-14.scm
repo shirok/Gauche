@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-14.scm,v 1.8 2002-12-15 01:31:49 shirok Exp $
+;;;  $Id: srfi-14.scm,v 1.9 2003-01-09 11:27:31 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -282,6 +282,7 @@
 ;; We need to switch charset contents by underlying character encoding.
 ;; for now, I put ascii stuff.
 
+(define char-set:letter+digit (%char-set-predefined 0))  ; ALNUM
 (define char-set:letter      (%char-set-predefined 1))   ; ALPHA
 (define char-set:blank       (%char-set-predefined 2))   ; BLANK
 (define char-set:iso-control (%char-set-predefined 3))   ; CNTRL
