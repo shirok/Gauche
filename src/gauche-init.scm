@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.45 2001-10-23 09:33:12 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.46 2001-10-23 09:43:56 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -110,14 +110,14 @@
                                %complex-asinh %complex-acosh %complex-atanh))
 
 ;; for backward compatibility (will be gone)
-(define r_ok (if (symbol-bound? 'r_ok) r_ok |R_OK|))
-(define w_ok (if (symbol-bound? 'w_ok) w_ok |W_OK|))
-(define x_ok (if (symbol-bound? 'x_ok) x_ok |X_OK|))
-(define f_ok (if (symbol-bound? 'f_ok) f_ok |F_OK|))
+;(define r_ok (if (symbol-bound? 'r_ok) r_ok |R_OK|))
+;(define w_ok (if (symbol-bound? 'w_ok) w_ok |W_OK|))
+;(define x_ok (if (symbol-bound? 'x_ok) x_ok |X_OK|))
+;(define f_ok (if (symbol-bound? 'f_ok) f_ok |F_OK|))
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
-  (sys-access path f_ok))
+  (sys-access path |F_OK|))
 (define (file-is-regular? path)
   (and (sys-access path |F_OK|)
        (eq? (sys-stat->file-type (sys-stat path)) 'regular)))
@@ -206,5 +206,5 @@
 ;;
 
 (let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
-  (when (sys-access dotfile F_OK)
+  (when (sys-access dotfile |F_OK|)
     (load dotfile)))
