@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.64 2002-05-02 01:24:52 shirok Exp $
+ *  $Id: port.c,v 1.65 2002-05-05 05:00:50 shirok Exp $
  */
 
 #include <unistd.h>
@@ -161,7 +161,7 @@ static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 int Scm_PortFileNo(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
-        if (port->src.buf.fileno) return port->src.buf.fileno(port);
+        if (port->src.buf.filenum) return port->src.buf.filenum(port);
         else return -1;
     } else {
         /* TODO: proc port */
@@ -312,8 +312,8 @@ int Scm_CharReady(ScmPort *p)
  *    the character is ready.   If port->src.buf.ready is NULL, bufport
  *    assumes the input is always ready.
  *
- *  Fileno
- *    Port->src.buf.fileno is a query procedure that should return the
+ *  Filenum
+ *    Port->src.buf.filenum is a query procedure that should return the
  *    underlying integer file descriptor of the port, or -1 if there's
  *    no associated one.   If it is NULL, the port is assumed not to
  *    be associated to any file descriptor.
@@ -385,7 +385,7 @@ ScmObj Scm_MakeBufferedPort(ScmObj name,
     p->src.buf.flusher = bufrec->flusher;
     p->src.buf.closer = bufrec->closer;
     p->src.buf.ready = bufrec->ready;
-    p->src.buf.fileno = bufrec->fileno;
+    p->src.buf.filenum = bufrec->filenum;
     p->src.buf.data = bufrec->data;
     p->src.buf.line = 1;
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
@@ -1251,7 +1251,7 @@ static int file_ready(ScmPort *p)
     return Scm_FdReady(fd, SCM_PORT_DIR(p));
 }
 
-static int file_fileno(ScmPort *p)
+static int file_filenum(ScmPort *p)
 {
     return (int)p->src.buf.data;
 }
@@ -1276,7 +1276,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     bufrec.flusher = file_flusher;
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
-    bufrec.fileno = file_fileno;
+    bufrec.filenum = file_filenum;
     bufrec.data = (void*)fd;
     p = Scm_MakeBufferedPort(SCM_MAKE_STR_COPYING(path), dir, TRUE, &bufrec);
     return p;
@@ -1302,7 +1302,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     bufrec.flusher =file_flusher;
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
-    bufrec.fileno = file_fileno;
+    bufrec.filenum = file_filenum;
     bufrec.data = (void*)fd;
     
     p = Scm_MakeBufferedPort(name, direction, ownerp, &bufrec);

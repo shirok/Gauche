@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.145 2002-04-30 01:15:17 shirok Exp $
+;;; $Id: extlib.stub,v 1.146 2002-05-05 05:00:50 shirok Exp $
 ;;;
 
 "
@@ -723,7 +723,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   bufrec.flusher = NULL;
   bufrec.closer = bufport_closer;
   bufrec.ready = NULL;
-  bufrec.fileno = NULL;
+  bufrec.filenum = NULL;
   bufrec.data = (void*)filler;
   SCM_RETURN(Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_INPUT, TRUE, &bufrec));
   ")
@@ -748,7 +748,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   bufrec.flusher = bufport_flusher;
   bufrec.closer = bufport_closer;
   bufrec.ready = NULL;
-  bufrec.fileno = NULL;
+  bufrec.filenum = NULL;
   bufrec.data = (void*)flusher;
   SCM_RETURN(Scm_MakeBufferedPort(SCM_FALSE, SCM_PORT_OUTPUT, TRUE, &bufrec));
   ")

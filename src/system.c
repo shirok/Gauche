@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.35 2002-04-30 05:35:46 shirok Exp $
+ *  $Id: system.c,v 1.36 2002-05-05 05:00:50 shirok Exp $
  */
 
 #include <stdio.h>
@@ -329,37 +329,37 @@ static ScmObj stat_perm_get(ScmSysStat *stat)
 
 #define STAT_GETTER_UI(name) \
   static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
-  { return Scm_MakeIntegerFromUI((u_long)s->statrec.name); }
+  { return Scm_MakeIntegerFromUI((u_long)s->statrec.SCM_CPP_CAT(st_, name)); }
 #define STAT_GETTER_TIME(name) \
   static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
-  { return Scm_MakeSysTime(s->statrec.name); }
+  { return Scm_MakeSysTime(s->statrec.SCM_CPP_CAT(st_, name)); }
 
-STAT_GETTER_UI(st_mode)
-STAT_GETTER_UI(st_ino)
-STAT_GETTER_UI(st_dev)
-STAT_GETTER_UI(st_rdev)
-STAT_GETTER_UI(st_nlink)
-STAT_GETTER_UI(st_uid)
-STAT_GETTER_UI(st_gid)
-STAT_GETTER_UI(st_size) /*TODO: check portability of off_t (maybe 64bits)*/
-STAT_GETTER_TIME(st_atime)
-STAT_GETTER_TIME(st_mtime)
-STAT_GETTER_TIME(st_ctime)
+STAT_GETTER_UI(mode)
+STAT_GETTER_UI(ino)
+STAT_GETTER_UI(dev)
+STAT_GETTER_UI(rdev)
+STAT_GETTER_UI(nlink)
+STAT_GETTER_UI(uid)
+STAT_GETTER_UI(gid)
+STAT_GETTER_UI(size) /*TODO: check portability of off_t (maybe 64bits)*/
+STAT_GETTER_TIME(atime)
+STAT_GETTER_TIME(mtime)
+STAT_GETTER_TIME(ctime)
 
 static ScmClassStaticSlotSpec stat_slots[] = {
     SCM_CLASS_SLOT_SPEC("type",  stat_type_get,  NULL),
     SCM_CLASS_SLOT_SPEC("perm",  stat_perm_get,  NULL),
-    SCM_CLASS_SLOT_SPEC("mode",  stat_st_mode_get,  NULL),
-    SCM_CLASS_SLOT_SPEC("ino",   stat_st_ino_get,   NULL),
-    SCM_CLASS_SLOT_SPEC("dev",   stat_st_dev_get,   NULL),
-    SCM_CLASS_SLOT_SPEC("rdev",  stat_st_rdev_get,  NULL),
-    SCM_CLASS_SLOT_SPEC("nlink", stat_st_nlink_get, NULL),
-    SCM_CLASS_SLOT_SPEC("uid",   stat_st_uid_get,   NULL),
-    SCM_CLASS_SLOT_SPEC("gid",   stat_st_gid_get,   NULL),
-    SCM_CLASS_SLOT_SPEC("size",  stat_st_size_get,  NULL),
-    SCM_CLASS_SLOT_SPEC("atime", stat_st_atime_get, NULL),
-    SCM_CLASS_SLOT_SPEC("mtime", stat_st_mtime_get, NULL),
-    SCM_CLASS_SLOT_SPEC("ctime", stat_st_ctime_get, NULL),
+    SCM_CLASS_SLOT_SPEC("mode",  stat_mode_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("ino",   stat_ino_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("dev",   stat_dev_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("rdev",  stat_rdev_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("nlink", stat_nlink_get, NULL),
+    SCM_CLASS_SLOT_SPEC("uid",   stat_uid_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("gid",   stat_gid_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("size",  stat_size_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("atime", stat_atime_get, NULL),
+    SCM_CLASS_SLOT_SPEC("mtime", stat_mtime_get, NULL),
+    SCM_CLASS_SLOT_SPEC("ctime", stat_ctime_get, NULL),
     { NULL }
 };
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.245 2002-04-29 23:58:58 shirok Exp $
+ *  $Id: gauche.h,v 1.246 2002-05-05 05:00:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1031,7 +1031,7 @@ typedef struct ScmPortBufferRec {
     int  (*flusher)(ScmPort *p, int min);
     int  (*closer)(ScmPort *p);
     int  (*ready)(ScmPort *p);
-    int  (*fileno)(ScmPort *p);
+    int  (*filenum)(ScmPort *p);
     void *data;
 } ScmPortBuffer;
 
