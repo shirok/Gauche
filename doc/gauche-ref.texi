@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.383 2003-04-17 07:45:10 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.384 2003-04-17 08:08:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18898,6 +18898,16 @@ second is a number.
 二つ目は数値です。
 @c COMMON
 @end table
+
+@c EN
+If the option has alternative names, they can be concatenated by "|".
+For example, an option spec @code{"h|help"} will match both
+"h" and "help".
+@c JP
+オプションにいくつかの別名がある場合は、"|" でつなげて書いておくことができます。
+例えば@code{"h|help"}という@var{option-spec}は
+"h"にも"help"にもマッチします。
+@c COMMON
 
 @c EN
 In the command line, the option may appear with preceding

@@ -7,7 +7,7 @@
 (test-start "parseopt")
 (use gauche.parseopt)
 (test-module 'gauche.parseopt)
-#|
+
 (define (help) (display "Help message"))
 
 (define parser
@@ -16,10 +16,11 @@
     ("a"        ()          (format #t "a,"))
     ("bb=s"     (arg)       (format #t "bb=~a," arg))
     ("cc=ss"    (arg1 arg2) (format #t "cc=(~a ~a)," arg1 arg2))
-    ("ddd=sss"  args       (format #t "ddd=~a," args))
+    ("ddd=sss"  args        (format #t "ddd=~a," args))
     ("eee=i"    (arg)       (format #t "eee=~s," arg))
     ("ffff=si"  (arg1 arg2) (format #t "ffff=(~a ~s)," arg1 arg2))
-    ("ggggg=fff" args        (format #t "ggggg=~s," args))
+    ("ggggg=fff" args       (format #t "ggggg=~s," args))
+    ("h|hh|hhh" ()          (format #t "h*,"))
     (else (option args looper)
           (format #t "?=~a," option)
           (looper args))
@@ -72,6 +73,10 @@
 
 (test "-ggggg" '("ggggg=(1.0 2.0 3.0),") (tester "-ggggg" "1.0" "2.0" "3.0"))
 
+(test "-h"   '("h*,") (tester "-h"))
+(test "-hh"  '("h*,") (tester "-hh"))
+(test "-hhh" '("h*,") (tester "-hhh"))
+
 (test "--" '("bb=x," "-a" "-cc") (tester "-bb" "x" "--" "-a" "-cc"))
 (test "--" '("" "-bb" "x" "--" "-a" "-cc") (tester "--" "-bb" "x" "--" "-a" "-cc"))
 
@@ -80,7 +85,7 @@
       (tester "-bb" "x" "-what" "-eee" "3" "x" "y"))
 (test "else" '("bb=x,?=what," "q" "-eee" "3" "x" "y")
       (tester "-bb" "x" "-what=q" "-eee" "3" "x" "y"))
-|#
+
 (test* "let-args (foo)" 9
        (let-args '() ((foo "foo=n" 9)) foo))
 

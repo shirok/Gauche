@@ -12,26 +12,30 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parseopt.scm,v 1.2 2003-04-17 07:44:31 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.3 2003-04-17 08:07:48 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
   (use gauche.regexp)
+  (use srfi-1)
   (use srfi-2)
   (export make-option-parser parse-options let-args))
 (select-module gauche.parseopt)
 
-;; Help functions
+;; Helper functions
 
-;; parse optspec clause
+;; Parse optspec clause, and returns
+;;  ((option-string argument-specs procedure) ...)
 (define (compose-entry a-spec)
   (unless (string? (car a-spec))
     (error "option spec must be a string, but got" (car a-spec)))
   (unless (procedure? (cadr a-spec))
     (error "action spec must be a procedure, but got" (cadr a-spec)))
-  (rxmatch-if (rxmatch #/^-*([-\w_+]+)(=(.+))?$/ (car a-spec))
+  (rxmatch-if (rxmatch #/^-*([-+\w|]+)(=(.+))?$/ (car a-spec))
       (#f opt #f argspec)
-    (list opt (if argspec (string->list argspec) '()) (cadr a-spec))
+    (let ((argspecs (if argspec (string->list argspec) '()))
+          (proc     (cadr a-spec)))
+      (map (cut list <> argspecs proc) (string-split opt #\|)))
     (error "unrecognized option spec:" (car a-spec))))
 
 ;; From the args given at the command line, get a next option.
@@ -42,7 +46,7 @@
       (rxmatch-case (car args)
         (test (lambda (opt) (string=? opt "--"))
               (values #f (cdr args)))
-        (#/^--?(\w[-\w_+]*)(=(.*))?$/
+        (#/^--?(\w[-+\w]*)(=(.*))?$/
           (#f opt #f maybe-arg)
           (values opt (if maybe-arg (cons maybe-arg (cdr args)) (cdr args))))
         (else
@@ -103,7 +107,7 @@
 
 ;; Build 
 (define (build-option-parser spec fallback)
-  (let ((speclist (map compose-entry spec)))
+  (let ((speclist (append-map compose-entry spec)))
     (lambda (args . maybe-fallback)
       (let ((fallback
              (if (pair? maybe-fallback)
