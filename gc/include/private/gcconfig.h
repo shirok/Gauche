@@ -714,7 +714,9 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
-#     define MPROTECT_VDB
+/* [SK]: this caused 'make check' to stall on MacOSX.  This flag is undef-ed
+   in boehm gc 6.2alpha1 anyway, so I undef it here. */
+/*#     define MPROTECT_VDB*/
 #     include <unistd.h>
 #     define GETPAGESIZE() getpagesize()
 #   endif
