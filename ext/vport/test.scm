@@ -282,5 +282,37 @@
            (begin (write-byte #x11 p) (flush p) (u8vector-copy v)))
     ))
 
+;;-----------------------------------------------------------
+(test-section "input-limited-length-port")
+
+(let ()
+  (define (tester size limit)
+    (test* #`"size=,size limit=,limit" #t
+           (let* ((source (string-tabulate
+                           (lambda (i) (integer->char (modulo i 128)))
+                           size))
+                  (expected (if (<= limit size)
+                              (string-take source limit)
+                              source))
+                  (sp (open-input-string source))
+                  (p (open-input-limited-length-port sp limit))
+                  (result (port->string p)))
+             (equal? expected result))))
+
+  (tester 10 0)
+  (tester 10 1)
+  (tester 10 5)
+  (tester 10 9)
+  (tester 10 10)
+  (tester 10 15)
+  
+  (tester 20000 19999)
+  (tester 20000 20000)
+  (tester 20000 20001)
+  
+  (tester 0  0)
+  (tester 0  1)
+  (tester 0  10)
+  )
 
 (test-end)

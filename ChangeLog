@@ -1,5 +1,8 @@
 2004-11-24  Shiro Kawai  <shiro@acm.org>
 
+	* ext/vport/vport.scm (open-input-limited-length-port): added
+	  experimentally.
+
 	* lib/www/cgi.scm (cgi-parse-parameters): better API to support
 	  POST with multipart/form-data.
 

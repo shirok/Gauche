@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: vport.scm,v 1.5 2004-11-12 11:31:00 shirok Exp $
+;;;  $Id: vport.scm,v 1.6 2004-11-25 06:05:55 shirok Exp $
 ;;;
 
 (define-module gauche.vport
@@ -41,6 +41,7 @@
           <buffered-output-port>
           open-input-uvector
           open-output-uvector
+          open-input-limited-length-port
           ))
 (select-module gauche.vport)
 
@@ -112,5 +113,33 @@
       index)
     (make <buffered-output-port>
       :flush flusher :seek seeker)))
+
+;;=======================================================
+;; A port with limited-length input/output
+;;
+
+(define (open-input-limited-length-port source limit . opts)
+  (let-keywords* opts ((limit-reached #f)
+                       (eof-reached #f)
+                       (closed #f))
+    (let ((nrest limit)
+          (eof #f))
+      (define (filler buf)
+        (cond
+         ((or (<= nrest 0) eof)
+          (if limit-reached (limit-reached buf) 0))
+         (else
+          (let* ((len   (u8vector-length buf))
+                 (nread (read-block! buf source 0 (min nrest len))))
+            (cond ((eof-object? nread)
+                   (set! eof #t)
+                   (if eof-reached (eof-reached buf) 0))
+                  (else
+                   (dec! nrest nread)
+                   nread))))))
+      (define (closer)
+        (when closed (closed)))
+      (make <buffered-input-port>
+        :fill filler :close closer))))
 
 (provide "gauche/vport")
