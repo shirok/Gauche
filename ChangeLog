@@ -1,3 +1,8 @@
+2003-06-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-init.scm, lib/gauche/common-macros.scm : added fluid-let
+	  macro provided by Dorai Sitaram.
+
 2003-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* Makefile.in, lib/Makefile.in : recover the rule to create slibcat

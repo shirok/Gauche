@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.12 2003-02-27 11:40:58 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.13 2003-06-09 12:04:53 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -178,6 +178,27 @@
        (apply values
               (map (lambda (i) (list-ref v i)) (list n m l k ...)))))
     ))
+
+;; fluid-let written by Dorai Sitaram
+;; NB: all threads shares the state of fluid global vers.
+(define-macro fluid-let 
+  (lambda (varvals . body)
+    (let ((vars (map car varvals))
+          (vars-twins (map (lambda (ig) (gensym)) varvals))
+          (swap (gensym))
+          (temp (gensym)))
+      `(let (,@(map list vars-twins (map cadr varvals)))
+         (let ((,swap
+                 (lambda ()
+                   ,@(map (lambda (var twin)
+                            `(let ((,temp ,var))
+                               (set! ,var ,twin)
+                               (set! ,twin ,temp)))
+                          vars vars-twins))))
+           (dynamic-wind
+             ,swap
+             (lambda () ,@body)
+             ,swap))))))
 
 ;; Anaphoric macros.   Cf. Paul Graham, "On Lisp"
 ;(define-macro (l_ . body) `(lambda (_) ,@body))

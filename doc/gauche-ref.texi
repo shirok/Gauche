@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.412 2003-06-09 07:56:07 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.413 2003-06-09 12:04:50 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3134,6 +3134,44 @@ Expanded as follows.
 
 @example
 (let ((@var{var} @var{expr})) @var{body} @dots{})
+@end example
+@end defmac
+
+@defmac fluid-let ((var val) @dots{}) body @dots{}
+@c EN
+A macro that emulates dynamic scoped variables.
+@var{Var}s must be variables bound in the scope including
+@code{fluid-let} form.  @var{Val}s are expressions.
+@code{Fluid-let} first evaluates @var{val}s, then 
+evaluates @var{body} @dots{}, with binding 
+@var{var}s to the corresponding values during the dynamic
+scope of @var{body} @dots{}.
+
+Note that, in multithreaded environment,
+the change of the value of @var{var}s are visible from
+all the threads.   This form is provided mainly for
+the porting convenience.   Use parameter objects instead
+(@xref{gauche.parameter - Parameters}) for thread-local dynamic state.
+@c JP
+動的スコープの変数をエミュレートするマクロです。
+@var{var}は@code{fluid-let}フォームを含むスコープで定義されている
+変数でなければなりません。@var{val}は式です。
+@code{fluid-let}はまず@var{val}を評価し、
+@var{val}を@var{var}に動的スコープで束縛して@var{body} @dots{} を評価します。
+
+マルチスレッド環境下では、@var{var}の値の変化は全てのスレッドから見えます。
+このフォームは主として他の処理系のコードを移植する際の利便性のために
+追加されました。スレッドローカルな動的状態を実現するには、
+パラメータオブジェクト(@ref{gauche.parameter - Parameters}参照)を
+使って下さい。
+@c COMMON
+@example
+(define x 0)
+
+(define (print-x) (print x))
+
+(fluid-let ((x 1))
+  (print-x))  @result{} ;; prints 1
 @end example
 @end defmac
 
