@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.26 2001-03-25 07:32:02 shiro Exp $
+ *  $Id: class.c,v 1.27 2001-03-25 08:45:07 shiro Exp $
  */
 
 #include "gauche.h"
@@ -82,6 +82,8 @@ SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetterMethod, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeSetterMethod, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -565,63 +567,65 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
  * Slot accessors
  */
 
-ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot)
+ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
     ScmSlotAccessor *ca;
     ScmObj p = Scm_Assq(slot, klass->accessors);
-    ScmObj val;
+    ScmObj val = SCM_UNBOUND;
 
-    if (SCM_PAIRP(p)) {
-        if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
-            Scm_Error("slot accessor information of class %S is screwed up.",
-                      SCM_OBJ(klass));
-        ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
-        if (ca->getter) {
-            val = ca->getter(obj);
-        } else if (ca->slotNumber >= 0) {
-            val = scheme_slot_ref(obj, ca->slotNumber);
-        } else {
-            return SCM_FALSE; /* should signal error? */
-        }
-        return val;
+    if (!SCM_PAIRP(p)) {
+        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
+                           SCM_LIST3(SCM_OBJ(klass), obj, slot));
     }
-#ifdef NOT_IMPLEMENTED_YET
-    return Scm_ApplyGeneric(SCM_GF_SLOT_MISSING,
-                            SCM_LIST3(SCM_OBJ(klass), obj, slot));
-#else
-    Scm_Error("no slot %S in class %S", slot, SCM_OBJ(klass));
-    return SCM_UNDEFINED;
-#endif
+    if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
+        Scm_Error("slot accessor information of class %S is screwed up.",
+                  SCM_OBJ(klass));
+    ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
+    if (ca->getter) {
+        val = ca->getter(obj);
+    } else if (ca->slotNumber >= 0) {
+        val = scheme_slot_ref(obj, ca->slotNumber);
+    } else if (SCM_PAIRP(ca->schemeAccessor)
+               && SCM_PROCEDUREP(SCM_CAR(ca->schemeAccessor))) {
+        val = Scm_VMApply(SCM_CAR(ca->schemeAccessor), SCM_LIST1(obj));
+    } else {
+        Scm_Error("don't know how to retrieve value of slot %S of object %S (MOP error?)",
+                  slot, obj);
+    }
+    if (SCM_UNBOUNDP(val)) {
+        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotUnbound),
+                           SCM_LIST3(SCM_OBJ(klass), obj, slot));
+    }
+    return val;
 }
 
-void Scm_SlotSet(ScmObj obj, ScmObj slot, ScmObj val)
+ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
     ScmSlotAccessor *ca;
     ScmObj p = Scm_Assq(slot, klass->accessors);
+    ScmObj r = SCM_UNDEFINED;
     
-    if (SCM_PAIRP(p)) {
-        if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
-            Scm_Error("slot accessor information of class %S is screwed up.",
-                      SCM_OBJ(klass));
-        ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
-        if (ca->setter) {
-            ca->setter(obj, val);
-        } else if (ca->slotNumber >= 0) {
-            scheme_slot_set(obj, ca->slotNumber, val);
-        } else {
-            Scm_Error("slot %S of class %S is read-only",
-                      slot, SCM_OBJ(klass));
-        }
-        return;
+    if (!SCM_PAIRP(p)) {
+        return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
+                           SCM_LIST4(SCM_OBJ(klass), obj, slot, val));
     }
-#ifdef NOT_IMPLEMENTED_YET
-    Scm_ApplyGeneric(SCM_GF_SLOT_MISSING,
-                     SCM_LIST4(SCM_OBJ(klass), obj, slot, val));
-#else
-    Scm_Error("no slot %S in class %S", slot, SCM_OBJ(klass));
-#endif
+    if (!SCM_XTYPEP(SCM_CDR(p), SCM_CLASS_SLOT_ACCESSOR))
+        Scm_Error("slot accessor information of class %S is screwed up.",
+                  SCM_OBJ(klass));
+    ca = SCM_SLOT_ACCESSOR(SCM_CDR(p));
+    if (ca->setter) {
+        ca->setter(obj, val);
+    } else if (ca->slotNumber >= 0) {
+        scheme_slot_set(obj, ca->slotNumber, val);
+    } else if (SCM_PAIRP(ca->schemeAccessor)
+               && SCM_PROCEDUREP(SCM_CDR(ca->schemeAccessor))) {
+        r = Scm_VMApply(SCM_CDR(ca->schemeAccessor), SCM_LIST2(obj, val));
+    } else {
+        Scm_Error("slot %S of class %S is read-only", slot, SCM_OBJ(klass));
+    }
+    return r;
 }
 
 ScmObj Scm_GetSlotAllocation(ScmObj slot)
@@ -1266,6 +1270,8 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
     GINIT(&Scm_GenericComputeGetterMethod, "compute-getter-method");
     GINIT(&Scm_GenericComputeSetterMethod, "compute-setter-method");
+    GINIT(&Scm_GenericSlotMissing, "slot-missing");
+    GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);
