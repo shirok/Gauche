@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.45 2001-09-28 10:00:14 shirok Exp $
+ *  $Id: vm.h,v 1.46 2001-10-30 09:00:34 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -227,11 +227,11 @@ extern ScmClass Scm_VMClass;
 #define SCM_VM_INSN_ARG1(obj)        ((SCM_WORD(obj) >> 22) & 0x03ff)
 
 #define SCM_VM_INSN(code) \
-    SCM_OBJ(((code)<<4)|SCM_VM_INSN_TAG)
+    SCM_OBJ((long)((code)<<4)|SCM_VM_INSN_TAG)
 #define SCM_VM_INSN1(code, arg) \
-    SCM_OBJ(((arg) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
+    SCM_OBJ((long)((arg) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
 #define SCM_VM_INSN2(code, arg0, arg1) \
-    SCM_OBJ(((arg1) << 22) | ((arg0) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
+    SCM_OBJ((long)((arg1) << 22) | ((arg0) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
 
 #define SCM_VM_INSN_ARG_MAX          ((1L<<((SIZEOF_LONG*8)-13))-1)
 #define SCM_VM_INSN_ARG_MIN          (-SCM_VM_INSN_ARG_MAX)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.22 2001-08-06 07:20:37 shirok Exp $
+ *  $Id: symbol.c,v 1.23 2001-10-30 09:00:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -191,7 +191,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 
 void Scm__InitSymbol(void)
 {
-    obtable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_STRING, NULL, 2000));
+    obtable = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 2000));
 
 #define DEFSYM(cname, sname) SYMREG(cname, sname)
 #include "gauche/predef-syms.h"

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.60 2001-10-24 09:37:17 shirok Exp $
+ *  $Id: class.c,v 1.61 2001-10-30 09:00:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -659,7 +659,7 @@ static ScmObj slot_ref_cc(ScmObj result, void **data)
 {
     ScmObj obj = data[0];
     ScmObj slot = data[1];
-    int boundp = (int)data[2];
+    int boundp = (data[2] != NULL);
 
     if (SCM_UNBOUNDP(result) || SCM_UNDEFINEDP(result)) {
         if (boundp)
@@ -689,7 +689,7 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
         void *data[3];
         data[0] = obj;
         data[1] = ca->name;
-        data[2] = (void*)boundp;
+        data[2] = (void*)(long)boundp;
         Scm_VMPushCC(slot_ref_cc, data, 3);
         return Scm_VMApply(SCM_CAR(ca->schemeAccessor), SCM_LIST1(obj));
     } else {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.186 2001-10-29 00:35:03 shirok Exp $
+ *  $Id: gauche.h,v 1.187 2001-10-30 09:00:30 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -166,7 +166,7 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 
 #define SCM_INTP(obj)        (SCM_TAG(obj) == 1)
 #define SCM_INT_VALUE(obj)   (((signed long int)(obj)) >> 2)
-#define SCM_MAKE_INT(obj)    SCM_OBJ(((obj) << 2) + 1)
+#define SCM_MAKE_INT(obj)    SCM_OBJ(((long)(obj) << 2) + 1)
 
 /*
  * CHARACTERS
@@ -180,7 +180,7 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define	SCM_CHAR(obj)           ((ScmChar)(obj))
 #define	SCM_CHARP(obj)          ((SCM_WORD(obj)&0x07L) == 2)
 #define	SCM_CHAR_VALUE(obj)     SCM_CHAR(SCM_WORD(obj) >> 3)
-#define	SCM_MAKE_CHAR(ch)       SCM_OBJ(((ch) << 3) + 2)
+#define	SCM_MAKE_CHAR(ch)       SCM_OBJ((long)((ch) << 3) + 2)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
 #if SIZEOF_LONG == 4
@@ -1131,8 +1131,8 @@ struct ScmHashTableRec {
     int numBuckets;
     int numEntries;
     int maxChainLength;
-    int type;
     int mask;
+    int type;
     ScmHashAccessProc accessfn;
     ScmHashProc hashfn;
     ScmHashCmpProc cmpfn;
@@ -1144,12 +1144,12 @@ struct ScmHashTableRec {
 extern ScmClass Scm_HashTableClass;
 #define SCM_CLASS_HASHTABLE  (&Scm_HashTableClass)
 
-#define SCM_HASH_ADDRESS   ((ScmHashProc)0)  /* eq?-hash */
-#define SCM_HASH_EQV       ((ScmHashProc)1)
-#define SCM_HASH_EQUAL     ((ScmHashProc)2)
-#define SCM_HASH_STRING    ((ScmHashProc)3)
-#define SCM_HASH_SMALLINT  ((ScmHashProc)4)
-#define SCM_HASH_GENERAL   ((ScmHashProc)5)
+#define SCM_HASH_ADDRESS   (0)  /* eq?-hash */
+#define SCM_HASH_EQV       (1)
+#define SCM_HASH_EQUAL     (2)
+#define SCM_HASH_STRING    (3)
+#define SCM_HASH_SMALLINT  (4)
+#define SCM_HASH_GENERAL   (5)
 
 /* auxiliary structure; not an ScmObj. */
 struct ScmHashEntryRec {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.22 2001-09-19 07:41:57 shirok Exp $
+ *  $Id: char.c,v 1.23 2001-10-30 09:00:30 shirok Exp $
  */
 
 #include <ctype.h>
@@ -61,7 +61,6 @@ int Scm_DigitToInt(ScmChar ch, int radix)
     if (ch < '0') return -1;
     if (radix <= 10) {
         if (ch <= '0' + radix) return (ch - '0');
-        return -1;
     } else {
         if (ch <= '9') return (ch - '0');
         if (ch < 'A') return -1;
@@ -69,6 +68,7 @@ int Scm_DigitToInt(ScmChar ch, int radix)
         if (ch < 'a') return -1;
         if (ch < 'a' + radix - 10) return (ch - 'a' + 10);
     }
+    return -1;
 }
 
 ScmChar Scm_IntToDigit(int n, int radix)

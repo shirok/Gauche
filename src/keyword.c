@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: keyword.c,v 1.6 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: keyword.c,v 1.7 2001-10-30 09:00:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -67,5 +67,5 @@ ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback)
 
 void Scm__InitKeyword(void)
 {
-    keywordTable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_STRING, NULL, 256));
+    keywordTable = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 256));
 }

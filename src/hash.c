@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.18 2001-10-16 11:14:18 shirok Exp $
+ *  $Id: hash.c,v 1.19 2001-10-30 09:00:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -395,6 +395,7 @@ static unsigned long general_hash(ScmObj obj)
     } else {
         /* TODO: allow to define per-object hash function */
         Scm_Error("object not hashable: %S", obj);
+        return 0;               /* dummy */
     }
 }
 
@@ -432,33 +433,33 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 
     for (i=0; i<initSize; i++) z->buckets[i] = NULL;
     
-    if (hashfn == SCM_HASH_ADDRESS) {
-        z->type = (int)SCM_HASH_ADDRESS;
+    if (hashfn == (ScmHashProc)SCM_HASH_ADDRESS) {
+        z->type = SCM_HASH_ADDRESS;
         z->accessfn = address_access;
         z->hashfn = address_hash;
         z->cmpfn = address_cmp;
-    } else if (hashfn == SCM_HASH_EQV) {
-        z->type = (int)SCM_HASH_EQUAL;
+    } else if (hashfn == (ScmHashProc)SCM_HASH_EQV) {
+        z->type = SCM_HASH_EQUAL;
         z->accessfn = general_access;
         z->hashfn = eqv_hash;
         z->cmpfn =  eqv_cmp;
-    } else if (hashfn == SCM_HASH_EQUAL) {
-        z->type = (int)SCM_HASH_EQUAL;
+    } else if (hashfn == (ScmHashProc)SCM_HASH_EQUAL) {
+        z->type = SCM_HASH_EQUAL;
         z->accessfn = general_access;
         z->hashfn = general_hash;
         z->cmpfn =  general_cmp;
-    } else if (hashfn == SCM_HASH_STRING) {
-        z->type = (int)SCM_HASH_STRING;
+    } else if (hashfn == (ScmHashProc)SCM_HASH_STRING) {
+        z->type = SCM_HASH_STRING;
         z->accessfn = string_access;
         z->hashfn = string_hash;
         z->cmpfn =  string_cmp;
-    } else if (hashfn == SCM_HASH_SMALLINT) {
-        z->type = (int)SCM_HASH_SMALLINT;
+    } else if (hashfn == (ScmHashProc)SCM_HASH_SMALLINT) {
+        z->type = SCM_HASH_SMALLINT;
         z->accessfn = smallint_access;
         z->hashfn = smallint_hash;
         z->cmpfn = smallint_cmp;
     } else {
-        z->type = (int)SCM_HASH_GENERAL;
+        z->type = SCM_HASH_GENERAL;
         z->accessfn = general_access;
         z->hashfn = hashfn;
         z->cmpfn = (cmpfn ? cmpfn : general_cmp);
@@ -594,10 +595,10 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     char *str;
 
     switch (ht->type) {
-    case SCM_HASH_ADDRESS: str = "eq?"; break;
-    case SCM_HASH_EQV:     str = "eqv?"; break;
-    case SCM_HASH_EQUAL:   str = "equal?"; break;
-    case SCM_HASH_STRING:  str = "string=?"; break;
+    case (int)SCM_HASH_ADDRESS: str = "eq?"; break;
+    case (int)SCM_HASH_EQV:     str = "eqv?"; break;
+    case (int)SCM_HASH_EQUAL:   str = "equal?"; break;
+    case (int)SCM_HASH_STRING:  str = "string=?"; break;
     default: str = "general"; break;
     }
 

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.111 2001-10-28 22:39:27 shirok Exp $
+;;; $Id: extlib.stub,v 1.112 2001-10-30 09:00:30 shirok Exp $
 ;;;
 
 "
@@ -854,10 +854,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc make-hash-table (&optional (type (c "sym_eq")))
   (assert (symbol? type))
   "  ScmHashProc htype = 0;
-  if (SCM_OBJ(type) == sym_eq)             htype = SCM_HASH_ADDRESS;
-  else if (SCM_OBJ(type) == sym_eqv)       htype = SCM_HASH_EQV;
-  else if (SCM_OBJ(type) == sym_equal)     htype = SCM_HASH_EQUAL;
-  else if (SCM_OBJ(type) == sym_string_eq) htype = SCM_HASH_STRING;
+  if (SCM_OBJ(type) == sym_eq)             htype = (ScmHashProc)SCM_HASH_ADDRESS;
+  else if (SCM_OBJ(type) == sym_eqv)       htype = (ScmHashProc)SCM_HASH_EQV;
+  else if (SCM_OBJ(type) == sym_equal)     htype = (ScmHashProc)SCM_HASH_EQUAL;
+  else if (SCM_OBJ(type) == sym_string_eq) htype = (ScmHashProc)SCM_HASH_STRING;
   else {
     Scm_Error(\"unsupported hash type: %S\", type);
   }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.66 2001-10-24 09:36:30 shirok Exp $
+ *  $Id: compile.c,v 1.67 2001-10-30 09:00:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -907,7 +907,7 @@ static ScmObj compile_when(ScmObj form, ScmObj env, int ctx, void *data)
     ScmObj then_code = SCM_NIL, then_tail = SCM_NIL;
     ScmObj else_code = SCM_NIL, else_tail = SCM_NIL;
     ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-    int unlessp = (int)data;
+    int unlessp = (data != NULL);
     int nargs = Scm_Length(tail);
     if (nargs < 2) Scm_Error("syntax error: %S", form);
     SCM_APPEND(then_code, then_tail, compile_body(SCM_CDR(tail), env, ctx));
@@ -957,7 +957,7 @@ static ScmObj compile_and_rec(ScmObj conds, ScmObj merger, int orp,
 static ScmObj compile_and(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj tail = SCM_CDR(form);
-    int orp = (int)data;
+    int orp = (data != NULL);
     
     if (!SCM_PAIRP(tail)) {
         /* (and) or (or) is compiled into a literal boolean */
@@ -1171,7 +1171,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
 
 static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    int type = (int)data;
+    long type = (long)data;
     ScmObj tail = SCM_CDR(form);
     ScmObj bindings, body, vars, vals, name = SCM_FALSE;
     int nvars;
@@ -1669,7 +1669,7 @@ static ScmSyntax syntax_receive = {
 static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj modname, module;
-    int createp = (int)data;
+    int createp = (data != NULL);
     volatile ScmObj body, code = SCM_NIL, codetail = SCM_NIL;
     volatile ScmModule *current;
 

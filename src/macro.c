@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.30 2001-10-05 08:36:57 shirok Exp $
+ *  $Id: macro.c,v 1.31 2001-10-30 09:00:30 shirok Exp $
  */
 
 #include "gauche.h"
@@ -971,7 +971,7 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
 {
     ScmObj expr, sym;
     ScmSyntax *syn;
-    int oncep = (int)data;
+    int oncep = (data != NULL);
 
     if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
         Scm_Error("syntax error: %S", form);
