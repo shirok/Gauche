@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.315 2002-12-13 23:58:20 shirok Exp $
+ *  $Id: gauche.h,v 1.316 2002-12-14 03:22:53 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1142,6 +1142,12 @@ enum ScmPortBufferMode {
     SCM_PORT_BUFFER_FULL,       /* full buffering */
     SCM_PORT_BUFFER_LINE,       /* flush the buffer for each line */
     SCM_PORT_BUFFER_NONE        /* flush the buffer for every output */
+};
+
+/* Port native endianness */
+enum ScmPortEndian {
+    SCM_PORT_BIG_ENDIAN,
+    SCM_PORT_LITTLE_ENDIAN
 };
 
 /* Return value from Scm_FdReady */

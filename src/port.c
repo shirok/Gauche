@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.86 2002-12-13 23:58:20 shirok Exp $
+ *  $Id: port.c,v 1.87 2002-12-14 03:22:54 shirok Exp $
  */
 
 #include <unistd.h>
@@ -37,7 +37,9 @@ static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int);
 static int file_closer(ScmPort *p);
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
+SCM_DEFINE_BASE_CLASS(Scm_PortClass,
+                      ScmPort, /* instance type */
+                      port_print, NULL, NULL, NULL, NULL);
 
 /*================================================================
  * Common
@@ -82,7 +84,7 @@ static void port_finalize(ScmObj obj, void* data)
  *   If this port owns the underlying file descriptor/stream, 
  *   ownerp must be TRUE.
  */
-static ScmPort *make_port(int dir, int type, int ownerp)
+static ScmPort *make_port(int dir, int type)
 {
     ScmPort *port;
 
@@ -93,9 +95,11 @@ static ScmPort *make_port(int dir, int type, int ownerp)
     port->scrcnt = 0;
     port->ungotten = SCM_CHAR_INVALID;
     port->closed = FALSE;
-    port->ownerp = ownerp;
     port->error = FALSE;
+    port->ownerp = FALSE;
     port->name = SCM_FALSE;
+    port->private = FALSE;
+    port->endian = SCM_PORT_BIG_ENDIAN;
     (void)SCM_INTERNAL_MUTEX_INIT(port->mutex);
     (void)SCM_INTERNAL_COND_INIT(port->cv);
     port->lockOwner = NULL;
@@ -392,8 +396,9 @@ ScmObj Scm_MakeBufferedPort(ScmObj name,
     
     if (size <= 0) size = SCM_PORT_DEFAULT_BUFSIZ;
     if (buf == NULL) buf = SCM_NEW_ATOMIC2(char*, size);
-    p = make_port(dir, SCM_PORT_FILE, ownerp);
+    p = make_port(dir, SCM_PORT_FILE);
     p->name = name;
+    p->ownerp = ownerp;
     p->src.buf.buffer = buf;
     if (dir == SCM_PORT_INPUT) {
         p->src.buf.current = p->src.buf.buffer;
@@ -831,7 +836,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 
 ScmObj Scm_MakeInputStringPort(ScmString *str)
 {
-    ScmPort *p = make_port(SCM_PORT_INPUT, SCM_PORT_ISTR, FALSE);
+    ScmPort *p = make_port(SCM_PORT_INPUT, SCM_PORT_ISTR);
     p->src.istr.start = SCM_STRING_START(str);
     p->src.istr.current = SCM_STRING_START(str);
     p->src.istr.end = SCM_STRING_START(str) + SCM_STRING_SIZE(str);
@@ -841,7 +846,7 @@ ScmObj Scm_MakeInputStringPort(ScmString *str)
 
 ScmObj Scm_MakeOutputStringPort(void)
 {
-    ScmPort *p = make_port(SCM_PORT_OUTPUT, SCM_PORT_OSTR, FALSE);
+    ScmPort *p = make_port(SCM_PORT_OUTPUT, SCM_PORT_OSTR);
     Scm_DStringInit(&p->src.ostr);
     SCM_PORT(p)->name = SCM_MAKE_STR("(output string port)");
     return SCM_OBJ(p);
@@ -933,7 +938,7 @@ static int null_flush(ScmPort *dummy)
 
 ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable)
 {
-    ScmPort *p = make_port(direction, SCM_PORT_PROC, TRUE);
+    ScmPort *p = make_port(direction, SCM_PORT_PROC);
     
     /* Copy vtable, and ensure all entries contain some ptr */
     p->src.vt = *vtable;
