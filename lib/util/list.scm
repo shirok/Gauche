@@ -2,6 +2,7 @@
 ;;; util/list.scm - more list library
 ;;;
 ;;;  Copyright(C) 2003 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2003 by Alex Shinn (foof@synthcode.com)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.6 2003-02-28 04:02:31 shirok Exp $
+;;;  $Id: list.scm,v 1.7 2003-05-10 12:32:32 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
@@ -20,7 +21,12 @@
 (define-module util.list
   (extend srfi-1)
   (export take* drop* take-right* drop-right* split-at*
-          slices intersperse cond-list)
+          slices intersperse cond-list
+          alist->hash-table hash-table->alist
+          rassq rassv rassoc
+          alist-ref assq-ref assv-ref assoc-ref
+          assq-set! assv-set! assoc-set!
+          rassq-ref rassv-ref rassoc-ref reverse-alist-ref)
   )
 (select-module util.list)
 
@@ -123,5 +129,58 @@
             (r (cond-list . rest)))
        (if tmp (cons (begin . expr) r) r)))
     ))
+
+;;-----------------------------------------------------------------
+;; Associative list library - based on Alex Shinn's implementation
+;;
+
+;; conversion to/from hash-table
+(define (alist->hash-table a . opt-eq)
+  (let ((tb (apply make-hash-table opt-eq)))
+    (for-each (lambda (x) (hash-table-put! tb (car x) (cdr x))) a) tb))
+
+(define (hash-table->alist h)
+  (hash-table-map h cons))
+
+;; `reverse' alist search fn
+(define (rassoc key alist . opt-eq)
+  (let-optionals* opt-eq ((eq equal?))
+    (find (lambda (elt)
+            (and (pair? elt) (eq (cdr elt0) key)))
+          alist)))
+
+(define rassq (cut rassoc <> <> eq?))
+(define rassv (cut rassoc <> <> eqv?))
+
+;; 'alist-ref', a shortcut of value retrieval w/ default value
+(define (alist-ref alist key . opts)
+  (let-optionals* opts ((eq      eqv?)
+                        (default #f))
+    (cond ((assoc key alist eq) => cdr)
+          (else default))))
+
+(define assq-ref  (cut alist-ref <> <> eq? <...>))
+(define assv-ref  (cut alist-ref <> <> eqv? <...>))
+(define assoc-ref (cut alist-ref <> <> equal? <...>))
+          
+(define (reverse-alist-ref alist key . opts)
+  (let-optionals* opts ((eq      eqv?)
+                        (default #f))
+    (cond ((rassoc key alist eq) => cdr)
+          (else default))))
+
+(define rassq-ref  (cut reverse-alist-ref <> <> eq? <...>))
+(define rassv-ref  (cut reverse-alist-ref <> <> eqv? <...>))
+(define rassoc-ref (cut reverse-alist-ref <> <> equal? <...>))
+
+;; 'assoc-set!'
+(define (assoc-set! alist key val . opt-eq)
+  (let-optionals* opt-eq ((eq equal?))
+    (cond ((assoc key val eq)
+           => (lambda (p) (set-cdr! p val) alist))
+          (else (acons key val alist)))))
+
+(define assq-set!  (cut assoc-set! <> <> <> eq?))
+(define assv-set!  (cut assoc-set! <> <> <> eqv?))
 
 (provide "util/list")
