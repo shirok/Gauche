@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.92 2002-04-14 02:57:05 shirok Exp $
+ *  $Id: number.c,v 1.93 2002-04-15 22:04:59 shirok Exp $
  */
 
 #include <math.h>
@@ -100,7 +100,7 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
             if (i > SCM_SMALL_INT_MAX || i < SCM_SMALL_INT_MIN) {
                 return Scm_MakeBignumFromDouble(i);
             } else {
-                return SCM_MAKE_INT((int)i);
+                return SCM_MAKE_INT((long)i);
             }
         }
     }
@@ -333,7 +333,7 @@ int Scm_OddP(ScmObj obj)
 ScmObj Scm_Abs(ScmObj obj)
 {
     if (SCM_INTP(obj)) {
-        int v = SCM_INT_VALUE(obj);
+        long v = SCM_INT_VALUE(obj);
         if (v < 0) obj = SCM_MAKE_INT(-v);
     } else if (SCM_BIGNUMP(obj)) {
         if (SCM_BIGNUM_SIGN(obj) < 0) {
@@ -358,7 +358,7 @@ ScmObj Scm_Abs(ScmObj obj)
    used to implement zero?, positive? and negative? */
 int Scm_Sign(ScmObj obj)
 {
-    int r = 0;
+    long r = 0;
     
     if (SCM_INTP(obj)) {
         r = SCM_INT_VALUE(obj);
@@ -382,7 +382,7 @@ int Scm_Sign(ScmObj obj)
 ScmObj Scm_Negate(ScmObj obj)
 {
     if (SCM_INTP(obj)) {
-        int v = SCM_INT_VALUE(obj);
+        long v = SCM_INT_VALUE(obj);
         if (v == SCM_SMALL_INT_MIN) {
             obj = Scm_MakeBignumFromSI(-v);
         } else {
@@ -404,7 +404,7 @@ ScmObj Scm_Negate(ScmObj obj)
 ScmObj Scm_Reciprocal(ScmObj obj)
 {
     if (SCM_INTP(obj)) {
-        int val = SCM_INT_VALUE(obj);
+        long val = SCM_INT_VALUE(obj);
         if (val == 0) Scm_Error("divide by zero");
         obj = Scm_MakeFlonum(1.0/(double)val);
     } else if (SCM_BIGNUMP(obj)) {
@@ -1125,7 +1125,8 @@ static void iexpt10_init(void)
 /* short cut for exact numbers */
 static ScmObj exact_expt(ScmObj x, ScmObj y)
 {
-    int sign = Scm_Sign(y), iy;
+    int sign = Scm_Sign(y);
+    long iy;
     ScmObj r = SCM_MAKE_INT(1);
 
     if (sign == 0) return r;
@@ -1255,7 +1256,7 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 
 void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
 {
-    int inexact = !SCM_EXACTP(arg0), r;
+    int inexact = !SCM_EXACTP(arg0);
     ScmObj mi = arg0;
     ScmObj ma = arg0;
     

@@ -1,7 +1,7 @@
 /*
  * fcntl.c - fcntl interface
  *
- *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.c,v 1.7 2002-02-10 05:40:05 shirok Exp $
+ *  $Id: fcntl.c,v 1.8 2002-04-15 22:04:59 shirok Exp $
  */
 
+#include <string.h>
 #include <errno.h>
 #include <gauche.h>
 #include <gauche/class.h>

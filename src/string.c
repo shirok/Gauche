@@ -1,7 +1,7 @@
 /*
  * string.c - string implementation
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,12 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.57 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: string.c,v 1.58 2002-04-15 22:04:59 shirok Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <string.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 

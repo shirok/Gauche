@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.61 2002-04-13 19:40:38 shirok Exp $
+ *  $Id: vm.h,v 1.62 2002-04-15 22:04:59 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -299,7 +299,7 @@ enum {
 #define SCM_VM_INSN2(code, arg0, arg1) \
     SCM_OBJ((long)((arg1) << 22) | ((arg0) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
 
-#define SCM_VM_INSN_ARG_MAX          ((1L<<((SIZEOF_LONG*8)-13))-1)
+#define SCM_VM_INSN_ARG_MAX          ((1L<<(32-13))-1)
 #define SCM_VM_INSN_ARG_MIN          (-SCM_VM_INSN_ARG_MAX)
 #define SCM_VM_INSN_ARG_FITS(k) \
     (((k)<=SCM_VM_INSN_ARG_MAX)&&((k)>=SCM_VM_INSN_ARG_MIN))

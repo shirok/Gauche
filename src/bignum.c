@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.39 2002-04-15 10:55:42 shirok Exp $
+ *  $Id: bignum.c,v 1.40 2002-04-15 22:04:59 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -506,7 +506,7 @@ static ScmBignum *bignum_add_si(ScmBignum *bx, long y)
 {
     long c;
     int i, rsize = bx->size+1;
-    int yabs = ((y < 0)? -y : y);
+    u_long yabs = ((y < 0)? -y : y);
     int ysign = ((y < 0)? -1 : 1);
     ScmBignum *br;
 
@@ -738,7 +738,7 @@ static ScmBignum *bignum_mul(ScmBignum *bx, ScmBignum *by)
 static ScmBignum *bignum_mul_si(ScmBignum *bx, long y)
 {
     ScmBignum *br;
-    int yabs;
+    u_long yabs;
     
     if (y == 1) return bx;
     if (y == 0) {
@@ -820,8 +820,8 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
 {
     ScmBignum *u, *v;
     int d = div_normalization_factor(divisor->values[divisor->size-1]);
-    int j, k, n, m, cy;
-    u_long vn_1, vn_2, vv, uj, uj2;
+    int j, k, n, m;
+    u_long vn_1, vn_2, vv, uj, uj2, cy;
 
 #define DIGIT(num, n) (((n)%2)? HI((num)->values[(n)/2]) : LO((num)->values[(n)/2]))
 #define DIGIT2(num, n) \

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.137 2002-04-01 22:45:36 shirok Exp $
+ *  $Id: vm.c,v 1.138 2002-04-15 22:04:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1281,7 +1281,7 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_NUMADDI) {
-                int imm = SCM_VM_INSN_ARG(code);
+                long imm = SCM_VM_INSN_ARG(code);
                 if (SCM_INTP(val0)) {
                     imm += SCM_INT_VALUE(val0);
                     if (SCM_SMALL_INT_FITS(imm)) {
@@ -1297,7 +1297,7 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_NUMSUBI) {
-                int imm = SCM_VM_INSN_ARG(code);
+                long imm = SCM_VM_INSN_ARG(code);
                 if (SCM_INTP(val0)) {
                     imm -= SCM_INT_VALUE(val0);
                     if (SCM_SMALL_INT_FITS(imm)) {

@@ -1,3 +1,7 @@
+2002-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* various files : fixes to LP64 architecture.
+
 2002-04-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (lookup_env): fixed the variable reference algorithm

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.80 2002-04-14 02:57:05 shirok Exp $
+;;; $Id: stdlib.stub,v 1.81 2002-04-15 22:04:59 shirok Exp $
 ;;;
 
 
@@ -121,7 +121,7 @@
   "ScmObj r; Scm_MinMax(arg0, args, &r, NULL); SCM_RETURN(r);")
 
 "/* inliner for `+' */
-static inline ScmObj immediate_integer_inliner(long insn, int arg0, ScmObj arg1, ScmObj env)
+static inline ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env)
 {
   return Scm_Append2X(Scm_Compile(arg1, env, SCM_COMPILE_NORMAL),
                       Scm_Cons(SCM_VM_INSN1(insn, arg0), SCM_NIL));
@@ -140,7 +140,7 @@ static inline ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj 
 static ScmObj plus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 {
   ScmObj args = SCM_CDR(form), arg0, arg1;
-  int imm;
+  long imm;
   if (Scm_Length(form) != 3) return SCM_FALSE;
   arg0 = SCM_CAR(args);
   arg1 = SCM_CADR(args);
@@ -162,7 +162,7 @@ static ScmObj plus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 {
   ScmObj args = SCM_CDR(form), arg0, arg1;
-  int imm;
+  long imm;
   if (Scm_Length(form) != 3) return SCM_FALSE;
   arg0 = SCM_CAR(args);
   arg1 = SCM_CADR(args);
