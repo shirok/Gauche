@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.26 2001-04-22 07:42:00 shiro Exp $
+ *  $Id: number.c,v 1.27 2001-04-22 09:53:08 shiro Exp $
  */
 
 #include <math.h>
@@ -799,8 +799,11 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
             r = SCM_INT_VALUE(x)/SCM_INT_VALUE(y);
             return SCM_MAKE_INT(r);
         }
-        rx = (double)SCM_INT_VALUE(x);
+        if (SCM_BIGNUMP(y)) {
+            return SCM_MAKE_INT(0);
+        }
         if (SCM_FLONUMP(y)) {
+            rx = (double)SCM_INT_VALUE(x);
             ry = SCM_FLONUM_VALUE(y);
             if (ry != floor(ry)) goto BADARGY;
             goto DO_FLONUM;
@@ -810,7 +813,7 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
         if (SCM_INTP(y)) {
             return Scm_BignumDivSI(SCM_BIGNUM(x), SCM_INT_VALUE(y), NULL);
         } else if (SCM_BIGNUMP(y)) {
-            Scm_Error("not supported yet\n");
+            return SCM_CAR(Scm_BignumDivRem(SCM_BIGNUM(x), SCM_BIGNUM(y)));
         } else if (SCM_FLONUMP(y)) {
             rx = Scm_BignumToDouble(SCM_BIGNUM(x));
             ry = SCM_FLONUM_VALUE(y);
