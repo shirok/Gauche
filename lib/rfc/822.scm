@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.1 2001-06-02 06:36:22 shirok Exp $
+;;;  $Id: 822.scm,v 1.2 2001-06-25 09:33:47 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -21,11 +21,21 @@
 (define-module rfc.822
   (use srfi-13)
   (use gauche.regexp)
-  (export rfc822-header->list)
+  (export rfc822-header->list
+          rfc822-skip-cfws
+          rfc822-next-word
+          rfc822-next-phrase)
   )
 
 (select-module rfc.822)
 
+;;=================================================================
+;; Parsers
+;;
+
+;;-----------------------------------------------------------------
+;; Generic header parser, recognizes folded line and field names
+;;
 (define (rfc822-header->list iport . args)
   (let-optional* args ((strict? #f))
     (let loop ((r '())
@@ -67,6 +77,53 @@
      (if strict?
          (error "bad header line: ~s" line)
          (read-single-field input (read-line input) #f)))))
+
+;;------------------------------------------------------------------
+;; Comments, quoted pairs, atoms and quoted string.  Section 3.2
+;;
+
+(define (rfc822-skip-cfws input prefetch)
+  (define (scan c)
+    (cond ((eof-object? c) c)
+          ((char=? c #\( ) (in-comment (read-char input)))
+          ((char-whitespace? c) (scan (read-char input)))
+          (else c)))
+  (define (in-comment c)
+    (cond ((eof-object? c) c)
+          ((char=? c #\) ) (scan (read-char input)))
+          ((char=? c #\\ ) (read-char input) (in-comment (read-char input)))
+          ((char=? c #\( ) (in-comment (in-comment (read-char input))))
+          (else (in-comment (read-char input)))))
+  (scan (or prefetch (read-char input))))
+
+(define (rfc822-next-word input prefetch)
+  (let ((out (open-output-string)))
+    (define (finish c) (values (get-output-string out) c))
+    (define (atom c)
+      (cond ((eof-object? c) (finish c))
+            ((char-set-contains? #[A-Za-z0-9!#$%&'*+/=?^_`{|}~-] c)
+             (write-char c out) (atom (read-char input)))
+            (else (finish c))))
+    (define (quoted c)
+      (cond ((eof-object? c) (finish c)) ;tolerate
+            ((char=? c #\") (finish #f))
+            ((char=? c #\\)
+             (let ((c (read-char input)))
+               (cond ((eof-object? c) (finish c)) ;tolerate
+                     (else (write-char c out) (quoted (read-char input))))))
+            (else (write-char c out) (quoted (read-char input)))))
+
+    (let ((c (rfc822-skip-cfws input prefetch)))
+      (cond ((eof-object? c) (values "" c))
+            ((char=? c #\") (quoted (read-char input)))
+            (else (atom c))))
+    ))
+
+;;------------------------------------------------------------------
+;; Date and time, section 3.3
+;;
+
+
 
 
 (provide "rfc/822")
