@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.37 2002-11-11 05:41:13 shirok Exp $
+ *  $Id: charconv.c,v 1.38 2002-11-13 07:25:21 shirok Exp $
  */
 
 #include <string.h>
@@ -120,7 +120,7 @@ static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *
 /*------------------------------------------------------------
  * Input conversion
  *
- *  <-- Bufferd port <--- filler <--(info->buf)--- getz(remote)
+ *  <-- Buffered port <--- filler <--(info->buf)--- getz(remote)
  */
 
 static int conv_input_filler(ScmPort *port, int mincnt)
@@ -284,7 +284,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 /*------------------------------------------------------------
  * Output conversion
  *
- *   Bufferd port ----> flusher -->(info->buf)--> putz(remote)
+ *   Buffered port ----> flusher -->(info->buf)--> putz(remote)
  */
 
 /* NB: Glibc-2.1.2's iconv() has a bug in SJIS handling.  If output
