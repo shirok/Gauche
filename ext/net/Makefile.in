@@ -6,29 +6,38 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = libnet.so
+ARCHFILES = libnet.la
 SCMFILES = net.scm
 HEADERS = net.h netconfig.h
 
-TARGET = libnet.so
-OBJS = net_head.o net.o addr.o netdb.o netlib.o net_tail.o
+TARGET = libnet.la
+OBJS = net_head.lo net.lo addr.lo netdb.lo netlib.lo net_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-                   autom4te*.cache netconfig.h netlib.c net_head.c net_tail.c
+                   autom4te*.cache libtool netconfig.h netlib.c net_head.c net_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-libnet.so : $(OBJS)
-	$(CC) $(LDFLAGS) libnet.so $(OBJS) $(LIBS)
+libnet.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) libnet.la $(OBJS) $(LIB)
 
 netlib.c : netlib.stub
 	$(GOSH) genstub netlib.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -52,10 +61,13 @@ install : all
 	done
 
 clean : 
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

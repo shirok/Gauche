@@ -1,5 +1,6 @@
 #! /bin/sh
 autoconf
 (cd gc; autoconf)
-extensions=`grep '^SUBDIRS=' ext/Makefile | sed -e 's/SUBDIRS=//'`
+(cd libltdl; autoconf)
+extensions=`grep '^SUBDIRS=' ext/Makefile.am | sed -e 's/SUBDIRS=//'`
 for ext in $extensions; do (echo $ext; cd ext/$ext; autoconf -I ../..); done

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: md5.stub,v 1.3 2002-12-11 03:09:26 shirok Exp $
+;;;  $Id: md5.stub,v 1.4 2003-04-12 03:40:57 shirok Exp $
 ;;;
 
 "
@@ -44,16 +44,16 @@
  }
 
  /* Hack for initialization stub */
- static void internal_init(ScmModule*);
+ static void Scm_md5_internal_init(ScmModule*);
  void Scm_Init_md5(void)
  {
    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"rfc.md5\", TRUE));
    SCM_INIT_EXTENSION(md5);
    Scm_InitBuiltinClass(&Scm_Md5Class, \"<md5-context>\", NULL, sizeof(ScmMd5), mod);
-   internal_init(mod);
+   Scm_md5_internal_init(mod);
  }
 
- #define Scm_Init_md5 internal_init
+ #define Scm_Init_md5 Scm_md5_internal_init
 "
 
 (define-type <md5> "ScmMd5*")

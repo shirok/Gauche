@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.15 2002-12-31 09:36:51 shirok Exp $
+dnl $Id: configure.in,v 1.16 2003-04-12 03:40:57 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 AC_CANONICAL_SYSTEM
@@ -16,28 +16,29 @@ AC_GAUCHE_FLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL
+AC_PROG_LIBTOOL
 
 # Check various dbm libraries availability
 # On some systems, legacy DBM and NDBM is emulated by more powerful
 # packages like BSD DB or GDBM.  We need to be careful to pick the
 # consistent header/library pair.
 AC_CHECK_HEADERS(gdbm.h, [
-  ARCHFILES=gdbm.so
+  ARCHFILES=gdbm.la
   SCMFILES=gdbm.scm
 ])
 AC_CHECK_HEADERS(ndbm.h gdbm/ndbm.h, [
   NDBM_HEADER=$ac_header
-  ARCHFILES="ndbm.so $ARCHFILES"
+  ARCHFILES="ndbm.la $ARCHFILES"
   SCMFILES="ndbm.scm $SCMFILES"
 ])
 AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
   ODBM_HEADER=$ac_header
-  ARCHFILES="odbm.so $ARCHFILES"
+  ARCHFILES="odbm.la $ARCHFILES"
   SCMFILES="odbm.scm $SCMFILES"
 ])
 #AC_CHECK_HEADERS(db.h, [
 #  BDBM_HEADER=$ac_header
-#  ARCHFILES="bsddb.so $ARCHFILES"
+#  ARCHFILES="bsddb.la $ARCHFILES"
 #  SCMFILES="bsddb.scm $SCMFILES"
 #])
 

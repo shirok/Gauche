@@ -6,16 +6,18 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = libuvector.so
+ARCHFILES = libuvector.la
 SCMFILES  = uvector.scm array.scm srfi-4.scm
 HEADERS   = uvector.h
 
-TARGET    = libuvector.so
-OBJS      = uvector_head.o uvector.o uvutil.o uvlib.o uvector_tail.o
+TARGET    = libuvector.la
+OBJS      = uvector_head.lo uvector.lo uvutil.lo uvlib.lo uvector_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te*.cache uvector_head.c uvector_tail.c
+		   autom4te*.cache libtool uvector_head.c uvector_tail.c
 GENERATED = gauche/uvector.h uvector.c uvutil.c uvlib.c uvlib.stub
 
 INSTALL_TYPE = @INSTALL_TYPE@
@@ -23,10 +25,15 @@ HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-libuvector.so : $(OBJS)
-	$(CC) $(LDFLAGS) libuvector.so $(OBJS) $(LIBS)
+libuvector.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) libuvector.la $(OBJS) $(LIBS)
 
 $(OBJS) : gauche/uvector.h uvectorP.h
 
@@ -50,6 +57,8 @@ uvlib.stub : uvlib.stub.sh
 	rm -rf uvlib.stub
 	sh ./uvlib.stub.sh > uvlib.stub
 
+check : test
+
 test : all
 	@rm -f test.log
 	$(GOSH) -I. test.scm > test.log
@@ -70,10 +79,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED) gauche
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) $(GENERATED) gauche configure

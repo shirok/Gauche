@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.14 2002-07-31 05:16:52 shirok Exp $
+;;  $Id: gdbm.stub,v 1.15 2003-04-12 03:40:57 shirok Exp $
 ;;
 
 "
@@ -75,17 +75,16 @@
  #endif
 
  /* Hack for initialization stub */
- void internal_init(ScmModule*);
-
+ static void Scm_gdbm_internal_init(ScmModule*);
  void Scm_Init_gdbm(void)
  {
     ScmModule *mod;
     SCM_INIT_EXTENSION(gdbm);
     mod = SCM_MODULE(SCM_FIND_MODULE(\"dbm.gdbm\", TRUE));
     Scm_InitBuiltinClass(&Scm_GdbmClass, \"<gdbm-file>\", NULL, sizeof(ScmGdbm), mod);
-    internal_init(mod);
+    Scm_gdbm_internal_init(mod);
  }
- #define Scm_Init_gdbm  internal_init
+ #define Scm_Init_gdbm  Scm_gdbm_internal_init
 "
 
 (define-type <gdbm> "ScmGdbm*")

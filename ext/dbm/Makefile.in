@@ -8,7 +8,9 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
 ARCHFILES = @ARCHFILES@
 SCMFILES = @SCMFILES@
@@ -18,35 +20,43 @@ TARGET = @ARCHFILES@
 CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h \
 		   gdbm_head.c gdbm_tail.c ndbm_head.c ndbm_tail.c \
                    odbm_head.c odbm_tail.c bsddb_head.c bsddb_tail.c \
-                   autom4te*.cache 
+                   autom4te*.cache libtool
 GENERATED = gdbm.c ndbm.c odbm.c bsddb.c
 
-GDBM_OBJS = gdbm_head.o gdbm.o gdbm_tail.o
-NDBM_OBJS = ndbm_head.o ndbm.o ndbm_tail.o
-ODBM_OBJS = odbm_head.o odbm.o odbm_tail.o
-BSDDB_OBJS = bsddb_head.o bsddb.o bsddb_tail.o
+GDBM_OBJS = gdbm_head.lo gdbm.lo gdbm_tail.lo
+NDBM_OBJS = ndbm_head.lo ndbm.lo ndbm_tail.lo
+ODBM_OBJS = odbm_head.lo odbm.lo odbm_tail.lo
+
+ALLOBJS = $(GDBM_OBJS) $(NDBM_OBJS) $(ODBM_OBJS)
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
 .stub.c :
 	$(GOSH) genstub $<
 
-gdbm.so : $(GDBM_OBJS)
-	$(CC) $(LDFLAGS) gdbm.so $(GDBM_OBJS) @GDBMLIB@ $(LIBS)
+gdbm.la : $(GDBM_OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) gdbm.la $(GDBM_OBJS) @GDBMLIB@ $(LIBS)
 
-ndbm.so : $(NDBM_OBJS)
-	$(CC) $(LDFLAGS) ndbm.so $(NDBM_OBJS) @NDBMLIB@ $(LIBS)
+ndbm.la : $(NDBM_OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) ndbm.la $(NDBM_OBJS) @NDBMLIB@ $(LIBS)
 
-odbm.so : $(ODBM_OBJS)
-	$(CC) $(LDFLAGS) odbm.so $(ODBM_OBJS) @ODBMLIB@ $(LIBS)
+odbm.la : $(ODBM_OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) odbm.la $(ODBM_OBJS) @ODBMLIB@ $(LIBS)
 
-#bsddb.so : $(BSDDB_OBJS)
-#	$(CC) $(LDFLAGS) bsddb.so $(BSDDB_OBJS) @BSDDBLIB@ $(LIBS)
+#bsddb.la : $(BSDDB_OBJS)
+#	$(CC) $(LDFLAGS) bsddb.la $(BSDDB_OBJS) @BSDDBLIB@ $(LIBS)
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -72,10 +82,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(GENERATED) *.o *~ test.log so_locations
+	rm -rf core $(TARGET) $(GENERATED) $(ALLOBKS) *.o *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

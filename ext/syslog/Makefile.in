@@ -6,29 +6,38 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = syslog.so
+ARCHFILES = syslog.la
 SCMFILES = syslog.scm
 HEADERS =
 
-TARGET = syslog.so
-OBJS = syslog_head.o syslog.o syslog_tail.o
+TARGET = syslog.la
+OBJS = syslog_head.lo syslog.lo syslog_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status syslog.c \
-		   autom4te*.cache syslog_head.c syslog_tail.c
+		   autom4te*.cache libtool syslog_head.c syslog_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-syslog.so : $(OBJS)
-	$(CC) $(LDFLAGS) syslog.so $(OBJS) $(LIBS)
+syslog.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) syslog.la $(OBJS) $(LIBS)
 
 syslog.c : syslog.stub
 	$(GOSH) genstub syslog.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -52,10 +61,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.15 2002-07-31 05:16:52 shirok Exp $
+;;  $Id: ndbm.stub,v 1.16 2003-04-12 03:40:57 shirok Exp $
 ;;
 
 "
@@ -62,17 +62,16 @@
  #define CHECK_NDBM(g)    if (!g->dbf) Scm_Error(\"ndbm file already closed: %S\", g)
 
  /* Hack for initialization stub */
- void internal_init(ScmModule*);
-
+ static void Scm_ndbm_internal_init(ScmModule*);
  void Scm_Init_ndbm(void)
  {
     ScmModule *mod;
     SCM_INIT_EXTENSION(ndbm);
     mod = SCM_MODULE(SCM_FIND_MODULE(\"dbm.ndbm\", TRUE));
     Scm_InitBuiltinClass(&Scm_NdbmClass, \"<ndbm-file>\", NULL, sizeof(ScmNdbm), mod);
-    internal_init(mod);
+    Scm_ndbm_internal_init(mod);
  }
- #define Scm_Init_ndbm  internal_init
+ #define Scm_Init_ndbm  Scm_ndbm_internal_init
 "
 
 (define-type <ndbm> "ScmNdbm*")

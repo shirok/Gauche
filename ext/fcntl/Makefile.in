@@ -6,29 +6,38 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = fcntl.so
+ARCHFILES = fcntl.la
 SCMFILES = fcntl.scm
 HEADERS = gauche/fcntl.h
 
-TARGET = fcntl.so
-OBJS = fcntl_head.o fcntl.o fcntlib.o fcntl_tail.o
+TARGET = fcntl.la
+OBJS = fcntl_head.lo fcntl.lo fcntlib.lo fcntl_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status fcntlib.c \
-		   autom4te*.cache fcntl_head.c fcntl_tail.c
+		   autom4te*.cache libtool fcntl_head.c fcntl_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-fcntl.so : $(OBJS)
-	$(CC) $(LDFLAGS) fcntl.so $(OBJS) $(LIBS)
+fcntl.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) fcntl.la $(OBJS) $(LIBS)
 
 fcntlib.c : fcntlib.stub
 	$(GOSH) genstub fcntlib.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -52,10 +61,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

@@ -6,16 +6,18 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = example.so
+ARCHFILES = example.la
 SCMFILES = example.scm
 HEADERS = 
 
-TARGET = example.so
-OBJS = example_head.o example.o example_tail.o
+TARGET = example.la
+OBJS = example_head.lo example.lo example_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te*.cache example_head.c example_tail.c
+		   autom4te*.cache libtool example_head.c example_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
@@ -24,8 +26,15 @@ ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
 all : $(TARGET)
 
-example.so : $(OBJS)
-	$(CC) $(LDFLAGS) example.so $(OBJS) $(LIBS)
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
+example.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) example.la $(OBJS) $(LIBS)
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -49,10 +58,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

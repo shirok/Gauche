@@ -1,15 +1,7 @@
-#
-# Makefile.in for Gauche/lib
-#
-#  $Id: Makefile.in,v 1.87 2003-02-04 12:33:59 shirok Exp $
-#
 
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-SCM_INSTALL_DIR = @datadir@/gauche/@GAUCHE_VERSION@/lib
-SLIB_DIR = @SLIB_DIR@
+pkgdataversiondir = $(pkgdatadir)/$(VERSION)/lib
 
-SCMS = srfi-0.scm \
+pkgdataversion_DATA = srfi-0.scm \
        srfi-1.scm srfi-1/cat.scm srfi-1/filter.scm srfi-1/finder.scm \
        srfi-1/folder.scm srfi-1/generator.scm srfi-1/mapper.scm \
        srfi-1/nary.scm srfi-1/nth.scm srfi-1/pred.scm srfi-1/selector.scm \
@@ -23,7 +15,7 @@ SCMS = srfi-0.scm \
        srfi-14.scm srfi-14/query.scm srfi-14/set.scm \
        srfi-19.scm srfi-19/format.scm srfi-19/read-tai.scm \
        srfi-26.scm srfi-27.scm srfi-31.scm srfi-37.scm \
-       slib.scm  \
+       slib.scm	 \
        gauche/object.scm gauche/test.scm gauche/macroutil.scm \
        gauche/listutil.scm gauche/stringutil.scm gauche/with.scm \
        gauche/regexp.scm gauche/process.scm gauche/signal.scm \
@@ -50,39 +42,25 @@ SCMS = srfi-0.scm \
        text/html-lite.scm text/info.scm text/gettext.scm \
        www/cgi.scm
 
-SUBDIRS = gauche gauche/vm gauche/serializer gauche/interactive \
-          gauche/mop file math compat rfc \
-	  srfi-1 srfi-13 srfi-14 srfi-19 util text www
-
-INSTALL=@INSTALL@
-
-all : $(SCMS)
-
-clean :
-	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ \
-	gauche/interactive/*~ gauche/mop/*~ file/*~ math/*~ port/*~ rfc/*~ \
-	srfi-1/*~ srfi-13/*~ srfi-14/*~ srfi-19/*~ util/*~ text/*~ www/*~
-
-distclean : clean
-	rm -f Makefile slib.scm
-
-realclean : clean
-	rm -f Makefile slib.scm
-
-install : all
-	for d in $(SUBDIRS); do \
-	  $(INSTALL) -d $(SCM_INSTALL_DIR)/$$d; \
-	done
-	for f in $(SCMS); do \
-	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR)/$$f; \
+install-pkgdataversionDATA:
+	for i in $(DATA) ; \
+	do \
+		d=`echo $${i} | sed -e 's,/[^/]*$$,,'` ; \
+		if test -d $${d}; \
+		then \
+			$(mkinstalldirs) "$(DESTDIR)$(pkgdataversiondir)/$${d}" ; \
+		fi ; \
+		\
+		if test -f "$(srcdir)/$${i}" ; \
+		then \
+			p=$(srcdir)/$${i} ; \
+		else \
+			p=$${i} ; \
+		fi ; \
+		\
+		$(INSTALL_DATA) $${p} "$(DESTDIR)$(pkgdataversiondir)/$${i}" ; \
 	done
 
-# If we have slib, creates catalog file for Gauche.   This should be called
-# after everything is installed.
-# For RPM, this has to be called in the postprocess script instead of
-# installation script.
-slibcat : 
-	if test -f $(SLIB_DIR)/require.scm; then \
-	  $(exec_prefix)/bin/gosh -uslib -e "(load (in-vicinity (library-vicinity) \"mklibcat\"))" -e "(exit 0)";\
-	fi
-
+CLEANFILES += core *~
+DISTCLEANFILES += 
+MAINTAINERCLEANFILES += Makefile.in

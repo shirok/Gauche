@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.68 2003-02-15 12:23:30 shirok Exp $
+ *  $Id: load.c,v 1.69 2003-04-12 03:41:21 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -30,6 +30,8 @@
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
+
+#include <ltdl.h>
 
 #define LOAD_SUFFIX ".scm"
 
@@ -55,10 +57,7 @@ static struct {
     ScmInternalCond  prov_cv;
 
     /* Dynamic linking */
-    ScmObj dso_list;              /* List of dynamically loaded objects. */
-    ScmObj dso_loading;           /* DSO file being loaded. */
     ScmInternalMutex dso_mutex;
-    ScmInternalCond dso_cv;
 } ldinfo;
 
 /* keywords used for load and load-from-port surbs */
@@ -437,92 +436,101 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * one time.
  */
 
-#ifdef HAVE_DLOPEN
-#if defined(__NetBSD__)
-#define DYNLOAD_PREFIX   ___STRING(_C_LABEL(Scm_Init_))
-#elif defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
-/* Darwin/MacOSX */
-#define DYNLOAD_PREFIX   "_Scm_Init_"
-#elif defined(__FreeBSD__) && __FreeBSD__ < 3
-/* FreeBSD 2.x   (patch from Abe Hiroshi) */
-#define RTLD_NOW         1
-#define RTLD_GLOBAL      4
-#define DYNLOAD_PREFIX   "_Scm_Init_"
-#else
-/* We might have some other ifdefs... */
 #define DYNLOAD_PREFIX   "Scm_Init_"
-#endif
 static const char *get_dynload_initfn(const char *filename)
 {
     const char *head, *tail, *s;
     char *name, *d;
-    const char prefix[] = DYNLOAD_PREFIX;
-    
+    static const char prefix[] = DYNLOAD_PREFIX;
+
     head = strrchr(filename, '/');
     if (head == NULL) head = filename;
-    else head++;
-    tail = strchr(head, '.');
-    if (tail == NULL) tail = filename + strlen(filename);
+    else              head++;
+    tail = filename + strlen(filename);
 
-    name = SCM_NEW_ATOMIC2(char *, sizeof(prefix) + tail - head);
-    strcpy(name, prefix);
+    name = SCM_NEW_ATOMIC2(char *, sizeof(prefix) + (tail - head));
+    strncpy(name, prefix, strlen(prefix));
     for (s = head, d = name + sizeof(prefix) - 1; s < tail; s++, d++) {
-        if (isalnum(*s)) *d = tolower(*s);
-        else *d = '_';
+        *d = isalnum(*s)? tolower(*s) : '_';
     }
     *d = '\0';
     return name;
 }
-#endif /* HAVE_DLOPEN */
 
-/* Dynamically load the specified object by FILENAME.
-   FILENAME must not contain the system's suffix (.so, for example).
-*/
-ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
+/* Dynamically load the specified object by LIBNAME.
+ * LIBNAME must not contain the system's suffix (e.g. .so).
+ */
+ScmObj Scm_DynLoad(ScmString *libname, ScmObj initfn, int export)
 {
-#ifdef HAVE_DLOPEN
-    ScmObj truename, load_paths = Scm_GetDynLoadPath();
-    void *handle;
+    ScmObj load_paths = Scm_GetDynLoadPath();
+    lt_dlhandle handle;
     void (*func)(void);
-    const char *cpath, *initname;
-    int flags = RTLD_NOW;
+    const char *cpath, *spath, *initsym, *err = NULL;
+    ScmObj p, h = SCM_NIL, t = SCM_NIL;
+    enum  {
+        DLERR_NONE,             /* no error */
+        DLERR_DLOPEN,           /* failure in lt_dlopen */
+        DLERR_NOINITFN,         /* failure in finding initfn */
+    } errtype = DLERR_NONE;
 
-    filename = SCM_STRING(Scm_StringAppendC(filename, "." SHLIB_SO_SUFFIX, -1, -1));
-    truename = Scm_FindFile(filename, &load_paths, TRUE);
-
-    if (!SCM_FALSEP(Scm_Member(truename, ldinfo.dso_list, SCM_CMP_EQUAL)))
-        return SCM_FALSE;
-
-    if (export) flags |= RTLD_GLOBAL;
-    cpath = Scm_GetStringConst(SCM_STRING(truename));
-    handle = dlopen(cpath, flags);
-    if (handle == NULL) {
-        /* TODO: check if dlerror() is available on all platforms */
-        const char *err = dlerror();
-        if (err == NULL) {
-            Scm_Error("failed to link %S dynamically", truename);
-        } else {
-            Scm_Error("failed to link %S dynamically: %s", truename, err);
-        }
+    /* NB: load_path might contain a relative pathname, but lt_dlsearchpath
+       requires all pathnames absolute.  So we loop over load_path.
+       (Actually, it is arguable whether the relative path in load_path
+       should be resolved when it is added to the load path list, or
+       when a module is about to be loaded.  For now, I resolve it here;
+       but it might be changed in future.) */
+    SCM_FOR_EACH(p, load_paths) {
+        SCM_APPEND1(h, t, Scm_NormalizePathname(SCM_STRING(SCM_CAR(p)),
+                                                SCM_PATH_ABSOLUTE));
     }
+    p = Scm_StringJoin(h, SCM_STRING(SCM_MAKE_STR(":")), SCM_STRING_JOIN_INFIX);
+    spath = Scm_GetStringConst(SCM_STRING(p));
+    cpath = Scm_GetStringConst(libname);
     if (SCM_STRINGP(initfn)) {
-        initname = Scm_GetStringConst(SCM_STRING(initfn));
+        initsym = Scm_GetStringConst(SCM_STRING(initfn));
     } else {
-        initname = get_dynload_initfn(cpath);
+        initsym = get_dynload_initfn(cpath);
     }
-    
-    func = (void(*)(void))dlsym(handle, initname);
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
+    lt_dlsetsearchpath(spath);
+    handle = lt_dlopenext(cpath);
+    if (handle == NULL) {
+        err = lt_dlerror();
+        errtype = DLERR_DLOPEN;
+        goto cleanup;
+    }
+    func = (void(*)(void))lt_dlsym(handle, initsym);
     if (func == NULL) {
-        dlclose(handle);
-        Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", truename, initname);
+        lt_dlclose(handle);
+        errtype = DLERR_NOINITFN;
+        goto cleanup;
     }
-    func();
-    ldinfo.dso_list = Scm_Cons(truename, ldinfo.dso_list);
+    /* TODO: if the module initialization function fails, there's no
+       safe way to unload the module, and we can't load the same module
+       again, we're stuck to the broken module.  This has to be addressed. */
+    SCM_UNWIND_PROTECT {
+        func();
+    } SCM_WHEN_ERROR {
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
+        SCM_NEXT_HANDLER;
+    } SCM_END_PROTECT;
+
+  cleanup:
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
+    switch (errtype) {
+    case DLERR_DLOPEN:
+        if (err == NULL) {
+            Scm_Error("failed to link %S dynamically", libname);
+        } else {
+            Scm_Error("failed to link %S dynamically: %s", libname, err);
+        }
+        /*NOTREACHED*/
+    case DLERR_NOINITFN:
+        Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", libname, initsym);
+        /*NOTREACHED*/
+    }
     return SCM_TRUE;
-#else
-    Scm_Error("dynamic linking is not supported on this architecture");
-    return SCM_FALSE;           /* dummy */
-#endif
 }
 
 /*------------------------------------------------------------------
@@ -774,6 +782,9 @@ void Scm__InitLoad(void)
     ScmModule *m = Scm_SchemeModule();
     ScmObj init_load_path, init_dynload_path, t;
 
+    /*LTDL_SET_PRELOADED_SYMBOLS();*/
+    lt_dlinit();
+
     init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
     SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));
@@ -788,7 +799,6 @@ void Scm__InitLoad(void)
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.prov_mutex);
     (void)SCM_INTERNAL_COND_INIT(ldinfo.prov_cv);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.dso_mutex);
-    (void)SCM_INTERNAL_COND_INIT(ldinfo.dso_cv);
 
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
@@ -810,6 +820,4 @@ void Scm__InitLoad(void)
         );
     ldinfo.providing = SCM_NIL;
     ldinfo.waiting = SCM_NIL;
-    ldinfo.dso_list = SCM_NIL;
-    ldinfo.dso_loading = SCM_FALSE;
 }

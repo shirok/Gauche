@@ -6,29 +6,38 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = mt-random.so
+ARCHFILES = mt-random.la
 SCMFILES = mt-random.scm
 HEADERS = 
 
-TARGET = mt-random.so
-OBJS = mt-random_head.o mt-random.o mt-lib.o mt-random_tail.o
+TARGET = mt-random.la
+OBJS = mt-random_head.lo mt-random.lo mt-lib.lo mt-random_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te*.cache mt-random_head.c mt-random_tail.c
+		   autom4te*.cache libtool mt-random_head.c mt-random_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/math
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-mt-random.so : $(OBJS)
-	$(CC) $(LDFLAGS) mt-random.so $(OBJS) $(LIBS)
+mt-random.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) mt-random.la $(OBJS) $(LIBS)
 
 mt-lib.c : mt-lib.stub
 	$(GOSH) genstub mt-lib.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -52,10 +61,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations mt-lib.c
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations mt-lib.c
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

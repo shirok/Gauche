@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: odbm.stub,v 1.8 2002-07-24 15:38:50 shirok Exp $
+;;  $Id: odbm.stub,v 1.9 2003-04-12 03:40:57 shirok Exp $
 ;;
 
 "
@@ -28,14 +28,13 @@
  #define CHECK_ODBM() if (!odbm_opened) Scm_Error(\"odbm file already closed\")
 
  /* Hack for initialization stub */
- void internal_init(ScmModule*);
-
+ static void Scm_odbm_internal_init(ScmModule*);
  void Scm_Init_odbm(void)
  {
     SCM_INIT_EXTENSION(odbm);
-    internal_init(SCM_MODULE(SCM_FIND_MODULE(\"dbm.odbm\", TRUE)));
+    Scm_odbm_internal_init(SCM_MODULE(SCM_FIND_MODULE(\"dbm.odbm\", TRUE)));
  }
- #define Scm_Init_odbm  internal_init
+ #define Scm_Init_odbm  Scm_odbm_internal_init
 
  #define TO_DATUM(datum_, scm_)                    \\
    do {                                            \\

@@ -6,29 +6,38 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = threads.so
+ARCHFILES = threads.la
 SCMFILES = threads.scm
 HEADERS = 
 
-TARGET = threads.so
-OBJS = threads_head.o threads.o mutex.o thrlib.o threads_tail.o
+TARGET = threads.la
+OBJS = threads_head.lo threads.lo mutex.lo thrlib.lo threads_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te*.cache threads_head.c threads_tail.c
+		   autom4te*.cache libtool threads_head.c threads_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-threads.so : $(OBJS)
-	$(CC) $(LDFLAGS) threads.so $(OBJS) $(LIBS)
+threads.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) threads.la $(OBJS) $(LIBS)
 
 thrlib.c : thrlib.stub
 	$(GOSH) genstub thrlib.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -52,10 +61,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log test.out so_locations thrlib.c
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log test.out so_locations thrlib.c
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

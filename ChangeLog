@@ -1,3 +1,13 @@
+2003-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* various files: automake+libtoolized, based on a patch from
+	  Yokota Hiroshi.
+	  The building process from CVS tree has been siginificantly changed;
+	  see HACKING file for the details.
+	  This check-in is a kind of working snapshot; it builds and passes
+	  tests, but haven't yet checked if it can be properly packaged and
+	  installed.
+
 2003-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/array.scm (tabulate-array): referred to non-existent

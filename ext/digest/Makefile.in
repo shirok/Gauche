@@ -6,22 +6,24 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = md5.so sha1.so
+ARCHFILES = md5.la sha1.la
 SCMFILES = md5.scm sha1.scm
 HEADERS =
 
-MD5_TARGET = md5.so
-MD5_OBJS = md5_head.o md5.o md5_tail.o md5c.o
-SHA1_TARGET = sha1.so
-SHA1_OBJS = sha1_head.o sha1.o sha1_tail.o sha.o
+MD5_TARGET = md5.la
+MD5_OBJS = md5_head.lo md5.lo md5_tail.lo md5c.lo
+SHA1_TARGET = sha1.la
+SHA1_OBJS = sha1_head.lo sha1.lo sha1_tail.lo sha.lo
 
 TARGET = $(MD5_TARGET) $(SHA1_TARGET)
 OBJS   = $(MD5_OBJS) $(SHA1_OBJS)
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te*.cache md5_head.c md5_tail.c \
+		   autom4te*.cache libtool md5_head.c md5_tail.c \
                    sha1_head.c sha1_tail.c
 GENERATED = md5.c sha1.c
 
@@ -30,19 +32,26 @@ HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/rfc
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-md5.so : $(MD5_OBJS)
-	$(CC) $(LDFLAGS) md5.so $(MD5_OBJS) $(LIBS)
+md5.la : $(MD5_OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) md5.la $(MD5_OBJS) $(LIBS)
 
 md5.c : md5.stub
 	$(GOSH) genstub md5.stub
 
-sha1.so : $(SHA1_OBJS)
-	$(CC) $(LDFLAGS) sha1.so $(SHA1_OBJS) $(LIBS)
+sha1.la : $(SHA1_OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) sha1.la $(SHA1_OBJS) $(LIBS)
 
 sha1.c : sha1.stub
 	$(GOSH) genstub sha1.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -68,10 +77,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(GENERATED) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(GENERATED) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

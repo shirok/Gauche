@@ -6,29 +6,39 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = auxsys.so
+ARCHFILES = auxsys.la
 SCMFILES = auxsys.scm
 HEADERS = 
 
-TARGET = auxsys.so
-OBJS = auxsys_head.o auxsys.o auxsyslib.o auxsys_tail.o
+TARGET = auxsys.la
+OBJS = auxsys_head.lo auxsys.lo auxsyslib.lo auxsys_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   auxsysconf.h autom4te*.cache auxsys_head.c auxsys_tail.c
+		   auxsysconf.h autom4te*.cache libtool \
+	 	   auxsys_head.c auxsys_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-auxsys.so : $(OBJS)
-	$(CC) $(LDFLAGS) auxsys.so $(OBJS) $(LIBS)
+auxsys.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) auxsys.la $(OBJS) $(LIBS)
 
 auxsyslib.c : auxsyslib.stub
 	$(GOSH) genstub auxsyslib.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -52,10 +62,13 @@ install : all
 	done
 
 clean : 
-	rm -rf core $(TARGET) $(OBJS) auxsyslib.c *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ auxsyslib.c test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

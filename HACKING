@@ -1,0 +1,28 @@
+This file is for those who wants to hack the cutting-edge
+Gauche sources in CVS repository.  If you just want to
+compile from the distribution, you don't need to read any further.
+
+Gauche has adopted automake and libtool.
+In order to build Gauche from CVS sources, instead of from
+distribution, you need to have the following tools:
+
+  automake 1.4-p5
+  libtool 1.4.2
+  autoconf 2.53
+
+Greater versions might work, although automake is known
+to have compatibility issues around 1.5.
+
+CVS source tree doesn't include some files that comes with
+autotools.  Run the "DIST" script in the toplevel directory
+with "gen" argument:
+
+  % ./DIST gen
+
+It is like "autogen.sh" found in some opensource packages.
+This creates missing files, including libltdl, and then
+runs aclocal, automake and autoconf in the source tree
+to generate Makefile.in's and configure's.  You need to
+run "./DIST gen" whenever you change one of Makefile.am's.
+
+

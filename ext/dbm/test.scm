@@ -177,7 +177,7 @@
 
 ;; conditionally test
 (define-macro (test-if-exists file module class)
-  (if (file-exists? (string-append file ".so"))
+  (if (file-exists? (string-append file ".la"))
       `(begin (require ,file)
               (import ,module)
               (test-module ',module)

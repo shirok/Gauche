@@ -6,27 +6,33 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = libcharconv.so
+ARCHFILES = libcharconv.la
 SCMFILES = charconv.scm
 HEADERS = 
 
-TARGET = libcharconv.so
-OBJS = charconv_head.o charconv.o convlib.o jconv.o guess.o charconv_tail.o
+TARGET = libcharconv.la
+OBJS = charconv_head.lo charconv.lo convlib.lo jconv.lo guess.lo charconv_tail.lo
 CONFIG_GENERATED = Makefile charconv.h config.cache config.log config.status \
-		   autom4te*.cache charconv_head.c charconv_tail.c
+		   autom4te*.cache libtool charconv_head.c charconv_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
 
 all : $(TARGET)
 
-libcharconv.so : $(OBJS)
-	$(CC) $(LDFLAGS) libcharconv.so $(OBJS) $(LIBS)
+libcharconv.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) libcharconv.la $(OBJS) $(LIBS)
 
 convlib.c : convlib.stub
 	$(GOSH) genstub convlib.stub
@@ -45,6 +51,8 @@ eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
 
 guess_tab.c : guess.scm
 	$(GOSH) guess.scm guess_tab.c
+
+check : test
 
 test : all
 	@cd data; $(MAKE) all
@@ -69,11 +77,14 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ convlib.c test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ convlib.c test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
 	cd data; $(MAKE) distclean
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure

@@ -1,7 +1,7 @@
 dnl
 dnl Configure fcntl extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.8 2002-07-19 02:20:56 shirok Exp $
+dnl $Id: configure.in,v 1.9 2003-04-12 03:40:57 shirok Exp $
 AC_INIT(fcntl.c)
 AC_CANONICAL_SYSTEM
 AC_GAUCHE_INIT_EXT
@@ -15,6 +15,7 @@ AC_GAUCHE_FLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL
+AC_PROG_LIBTOOL
 
 # Add more test
 

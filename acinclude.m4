@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.14 2003-01-04 09:26:25 shirok Exp $
+# $Id: acinclude.m4,v 1.1 2003-04-12 03:40:52 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks

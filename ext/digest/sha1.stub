@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: sha1.stub,v 1.3 2002-12-11 03:09:26 shirok Exp $
+;;;  $Id: sha1.stub,v 1.4 2003-04-12 03:40:57 shirok Exp $
 ;;;
 
 "
@@ -44,16 +44,16 @@
  }
 
  /* Hack for initialization stub */
- static void internal_init(ScmModule*);
+ static void Scm_sha_internal_init(ScmModule*);
  void Scm_Init_sha1(void)
  {
    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"rfc.sha1\", TRUE));
    SCM_INIT_EXTENSION(sha1);
    Scm_InitBuiltinClass(&Scm_Sha1Class, \"<sha1-context>\", NULL, sizeof(ScmSha1), mod);
-   internal_init(mod);
+   Scm_sha_internal_init(mod);
  }
 
- #define Scm_Init_sha1 internal_init
+ #define Scm_Init_sha1 Scm_sha_internal_init
 "
 
 (define-type <sha1> "ScmSha1*")

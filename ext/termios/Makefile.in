@@ -6,29 +6,39 @@ LIBS = @LIBS@
 GOSH = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
-INSTALL = @INSTALL@
+INSTALL = @LIBTOOL@ --mode=install @INSTALL@
+LIBTOOL = @LIBTOOL@
+top_builddir = $(GAUCHE_TOP)
 
-ARCHFILES = termios.so
+ARCHFILES = termios.la
 SCMFILES = termios.scm
 HEADERS = termios.h termconfig.h
 
-TARGET = termios.so
-OBJS = termios_head.o termios.o termiolib.o termios_tail.o
+TARGET = termios.la
+OBJS = termios_head.lo termios.lo termiolib.lo termios_tail.lo
 CONFIG_GENERATED = Makefile config.cache config.log config.status termiolib.c \
-		   autom4te*.cache termios_head.c termios_tail.c termconfig.h
+		   autom4te*.cache libtool \
+		   termios_head.c termios_tail.c termconfig.h
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
+.SUFFIXES: .lo
+
+.c.lo:
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $< -o $@
+
 all : $(TARGET)
 
-termios.so : $(OBJS)
-	$(CC) $(LDFLAGS) termios.so $(OBJS) $(LIBS)
+termios.la : $(OBJS)
+	$(LIBTOOL) --mode=link $(CC) -module -avoid-version -rpath $(ARCH_INSTALL_DIR) $(LDFLAGS) termios.la $(OBJS) $(LIBS)
 
 termiolib.c : termiolib.stub
 	$(GOSH) genstub termiolib.stub
+
+check : test
 
 test : all
 	@rm -f test.log
@@ -52,10 +62,13 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) $(OBJS:.lo=.o) *~ test.log so_locations
+	rm -rf .libs _libs
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : realclean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure
