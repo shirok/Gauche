@@ -1,3 +1,14 @@
+2002-04-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm, src/gauche-init.scm : experimentally
+	  added utility macros let1, pa, let_, l_, if_, when_ and while_.
+	  See how it's useful.
+
+2002-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/extlib.stub : getc, getb and getz can now work
+	  interchangebly on the same port.
+
 2002-04-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/gauche.h, src/extlib.stub, ext/charconv/charconv.c,

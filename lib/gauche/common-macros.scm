@@ -1,7 +1,7 @@
 ;;;
 ;;; common-macros.scm - common macros
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.6 2002-03-10 00:40:57 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.7 2002-04-28 00:16:05 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -141,6 +141,31 @@
      (dec! loc 1))
     ((_ . other)
      (syntax-error "malformed dec!" (dec! . other)))))
+
+;;;-------------------------------------------------------------
+;;; bind construct
+
+;; These are experimental --- just giving a try to see if useful
+;; Don't rely on them.  I might change my mind.
+
+(define-syntax let1                     ;single variable bind
+  (syntax-rules ()
+    ((_ var exp . body)
+     (let ((var exp)) . body))))
+
+(define-syntax pa                       ;partial apply
+  (syntax-rules ()
+    ((_ op arg ...) (lambda args (apply op arg ... args)))))
+
+;; Anaphoric macros.   Cf. Paul Graham, "On Lisp"
+(define-macro (l_ . body) `(lambda (_) ,@body))
+(define-macro (let_ expr . body) `(let1 _ ,expr ,@body))
+(define-macro (if_ test then . else)
+  `(let ((_ ,test)) (if _ ,then ,@else)))
+(define-macro (when_ test . body)
+  `(let ((_ ,test)) (when _ ,@body)))
+(define-macro (while_ test . body)
+  `(do ((_ test test)) ((not _)) ,@body))
 
 ;;;-------------------------------------------------------------
 ;;; repeat construct
