@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.39 2001-07-02 03:04:46 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.40 2001-07-02 11:25:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.4
+@subtitle version 0.4.1
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -550,6 +550,9 @@ The following script is a simple grep command.
         0))
 @end cartouche
 @end example
+
+See also @ref{Parsing command-line options}, for a convenient way to
+parse command-line options.
 
 
 @c ======================================================================
@@ -5735,6 +5738,7 @@ See the
 @uref{http://srfi.schemers.org/srfi-13/srfi-13.html, SRFI-13 document}
 for the detailed specification and discussion of design issues.
 This manual serves as a reference of function API.
+Some SRFI-13 functions are Gauche built-in and not listed here.
 
 Note: SRFI-13 documents suggests the name of the module that
 implements these functions to be ``string-lib'' and ``string-lib-internals''.
@@ -5761,8 +5765,52 @@ Gauche uses the name ``srfi-13'' for consistency.
 @node SRFI-13 General conventions, SRFI-13 String predicates, String library, String library
 @subsection General conventions
 
+There are a few common factors in string library API, which I don't
+repeat in each function description
 
+@table @emph
+@item argument convention
+The following argument names imply their types.
+@table @var
+@item s, s1, s2
+Those arguments must be strings.
+@item char/char-set/pred
+This argument can be a character, a character-set object,
+or a predicate that takes a single character and returns a boolean value.
+``Applying @var{char/char-set/pred} to a character'' means,
+if @var{char/char-set/pred} is a character, it is compared to the given
+character; if @var{char/char-set/pred} is a character set, it is
+checked if the character set contains the given character; if
+@var{char/char-set/pred} is a procedure, it is applied
+to the given character.  ``A character satisfies @var{char/char-set/pred}''
+means such application to the character yields true value.
 
+@item start, end
+Lots of SRFI-13 functions takes these two optional arguments, which
+limit the area of input string from @var{start}-th character
+(inclusive) to @var{end}-th character (exclusive),
+where the operation is performed.
+When specified, the condition
+0 <= @var{start} <= @var{end} <= @var{length of the string} must be
+satisfied.  Default value of @var{start} and @var{end} is
+0 and the length of the string, respectively.
+@end table
+
+@item `shared' variant
+Some functions have variants with ``/shared'' attached to its name.
+SRFI-13 defines those functions to allow to share the part of input
+string, for better performance.  Gauche doesn't have a concept of
+shared string, and these functions are mere synonyms of their
+non-shared variants.  However, Gauche @emph{internally} shares
+the storage of strings, so generally you don't need to worry
+about the overhead of copying substrings.
+
+@item `right' variant
+Most functions works from left to right of the input string.
+Some functions have variants with ``-right'' to its name, 
+that works from right to left.
+
+@end table
 
 @node SRFI-13 String predicates, SRFI-13 String Constructors, SRFI-13 General conventions, String library
 @subsection String predicates
@@ -5772,22 +5820,38 @@ Gauche uses the name ``srfi-13'' for consistency.
 @end defun
 
 @defun string-every char/char-set/pred s &optional start end
-[SRFI-13]
+[SRFI-13] Sees if every character in @var{s} satisfies
+@var{char/char-set/pred}.  If so, @code{string-every} returns
+the value that is returned at the last application of @var{char/char-set/pred}.
+If any of the application returns @code{#f}, @code{string-every}
+returns @code{#f} immediately.
 @end defun
 
 @defun string-any char/char-set/pred s &optional start end
-[SRFI-13]
+[SRFI-13] Sees if any character in @var{s} satisfies
+@var{char/char-set/pred}.  If so, @code{string-any} returns
+the value that is returned by the application.   If no character
+satisfies @var{char/char-set/pred}, @code{#f} is returned.
 @end defun
 
 @node SRFI-13 String Constructors, SRFI-13 String Selection, SRFI-13 String predicates, String library
 @subsection String Constructors
 
 @defun string-tabulate proc len
-[SRFI-13]
+[SRFI-13] @var{proc} must be a procedure that takes an integer
+argument and returns a character.  @code{string-tabulate}
+creates a string, whose @var{i}-th character is calculated by
+@code{(proc i)}.
+@example
+(string-tabulate
+  (lambda (i) (integer->char (+ i #x30))) 10)
+ @result{} "0123456789"
+@end example
+
 @end defun
 
 @defun reverse-list->string char-list
-[SRFI-13]
+[SRFI-13] @equiv{} @code{(list->string (reverse char-list))}.
 @end defun
 
 @node SRFI-13 String Selection, SRFI-13 String Comparison, SRFI-13 String Constructors, String library
