@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.17 2004-10-11 10:53:18 shirok Exp $
+;;; $Id: autoloads.scm,v 1.17.2.1 2004-12-23 07:12:22 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.17 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.17.2.1 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -147,7 +147,7 @@
           (:macro let-optionals*) (:macro let-keywords*)
           (:macro get-optional)
           arity procedure-arity-includes?
-          <arity-at-least> arity-at-least? arity-at-least-value
+          <arity-at-least> arity-at-least? arity-at-least-value disasm
           (:macro case-lambda))
 
 (autoload gauche.vm.debugger

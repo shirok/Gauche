@@ -9,6 +9,10 @@
 	* src/core.c, src/main.c :
 	  Added -fcollect-stats option experimentally, to collect and
 	  display VM stats info.
+	* lib/gauche/vm/disasm.scm : removed.  the functionality is
+	  supported by core.
+	* lib/gauche/procedure.scm : the 'disasm' function (wrapper
+	  of more primitive subrs) are defined here.
 
 2004-12-21  Shiro Kawai  <shiro@acm.org>
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.11 2004-11-12 07:07:42 shirok Exp $
+;;;  $Id: procedure.scm,v 1.11.2.1 2004-12-23 07:12:22 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -41,7 +41,7 @@
           let-optionals* let-keywords* get-optional
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          case-lambda
+          case-lambda disasm
           ))
 
 (select-module gauche.procedure)
@@ -205,5 +205,11 @@
              => (cut apply <> args))
             (else
              (error "wrong number of arguments to case-lambda:" args))))))
+
+;; disassembler.
+;; I'm not sure whether this should be here or not, but fot the time being...
+
+(define (disasm proc)
+  (vm-dump-code (closure-code proc)))
 
 (provide "gauche/procedure")
