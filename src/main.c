@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.22 2001-05-30 08:21:01 shirok Exp $
+ *  $Id: main.c,v 1.23 2001-06-02 08:50:08 shirok Exp $
  */
 
 #include <unistd.h>
@@ -23,16 +23,18 @@
 int load_initfile = TRUE;
 int batch_mode = FALSE;
 ScmObj extra_load_paths = SCM_NIL;
+ScmObj use_modules = SCM_NIL;
 
 void usage(void)
 {
     fprintf(stderr,
-            "Usage: gosh [-qV][-I<path>] [--] [file]\n"
+            "Usage: gosh [-qV][-I<path>][-u<module>] [--] [file]\n"
             "options:\n"
             "  -V       print version and exit.\n"
             "  -q       don't read the default initiailzation file.\n"
             "  -I<path> add <path> to the head of load path (multiple -I's are allowed).\n"
-        );
+            "  -u<module> (use) load and import <module>\n"
+            );
     exit(1);
 }
 
@@ -69,12 +71,15 @@ int main(int argc, char **argv)
     ScmObj cp;
 
     Scm_Init();
-    while ((c = getopt(argc, argv, "bqVf:I:-")) >= 0) {
+    while ((c = getopt(argc, argv, "bqu:Vf:I:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'q': load_initfile = FALSE; break;
         case 'V': version(); break;
         case 'f': further_options(optarg); break;
+        case 'u':
+            use_modules = Scm_Cons(SCM_INTERN(optarg), use_modules);
+            break;
         case 'I':
             extra_load_paths = Scm_Cons(SCM_MAKE_STR_COPYING(optarg),
                                         extra_load_paths);
@@ -89,6 +94,7 @@ int main(int argc, char **argv)
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(SCM_CAR(cp))), FALSE);
     }
 
+    /* set up load paths */
     if (geteuid() != 0) {     /* don't add extra paths when run by root */
         struct stat statbuf;
         if (stat("../lib/gauche", &statbuf) >= 0
@@ -98,8 +104,9 @@ int main(int argc, char **argv)
             Scm_AddLoadPath("../lib", FALSE);
         }
         Scm_AddLoadPath(".", FALSE);
-        
     }
+
+    /* load init file */
     if (load_initfile) {
         SCM_PUSH_ERROR_HANDLER {
             Scm_Load("gauche-init.scm", TRUE);
@@ -108,6 +115,19 @@ int main(int argc, char **argv)
             fprintf(stderr, "Error in initialization file.\n");
         }
         SCM_POP_ERROR_HANDLER;
+    }
+
+    /* pre-load specified modules */
+    if (!SCM_NULLP(use_modules)) {
+        ScmObj m;
+        SCM_FOR_EACH(m, Scm_Reverse(use_modules)) {
+            ScmObj mod = SCM_CAR(m);
+            ScmObj p = Scm_StringSplitByChar(SCM_SYMBOL_NAME(mod), '.');
+            ScmObj path = Scm_StringJoin(p, SCM_STRING(SCM_MAKE_STR("/")),
+                                         SCM_STRING_JOIN_INFIX);
+            Scm_Require(path);
+            Scm_ImportModules(SCM_CURRENT_MODULE(), SCM_LIST1(mod));
+        }
     }
 
     if (optind < argc) {
