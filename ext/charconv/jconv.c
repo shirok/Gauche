@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.1 2002-05-29 11:29:17 shirok Exp $
+ *  $Id: jconv.c,v 1.2 2002-06-05 00:04:17 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -50,6 +50,9 @@
 #define JIS_SUBST2_CHAR2   0x0e
 #define SJIS_SUBST2_CHAR1  0x81
 #define SJIS_SUBST2_CHAR2  0xac
+#define UTF8_SUBST2_CHAR1   0xe3
+#define UTF8_SUBST2_CHAR2   0x80
+#define UTF8_SUBST2_CHAR3   0x93
 
 #define EUCJ_SUBST                              \
   do { OUTCHK(2);                               \
@@ -62,6 +65,13 @@
        outptr[0] = SJIS_SUBST2_CHAR1;           \
        outptr[1] = SJIS_SUBST2_CHAR2;           \
        *outchars = 2; } while (0)
+
+#define UTF8_SUBST                              \
+  do { OUTCHK(3);                               \
+       outptr[0] = UTF8_SUBST2_CHAR1;           \
+       outptr[1] = UTF8_SUBST2_CHAR2;           \
+       outptr[2] = UTF8_SUBST2_CHAR2;           \
+       *outchars = 3; } while (0)
 
 /*=================================================================
  * Shift JIS
@@ -363,10 +373,388 @@ static int eucj2sjis(ScmConvInfo *cinfo, const char *inptr, int inroom,
  * and should be removed in later release.
  */
 
+/* [UTF8 -> EUC_JP conversion]
+ *
+ * EUC-JP has the corresponding characters to the wide range of
+ * UCS characters.
+ *
+ *   UCS4 character   # of EUC_JP characters
+ *   ---------------------------------------
+ *     U+0000+0xxx    564
+ *     U+0000+1xxx      6
+ *     U+0000+2xxx    321
+ *     U+0000+3xxx    422
+ *     U+0000+4xxx    347
+ *     U+0000+5xxx   1951
+ *     U+0000+6xxx   2047
+ *     U+0000+7xxx   1868
+ *     U+0000+8xxx   1769
+ *     U+0000+9xxx   1583
+ *     U+0000+fxxx    241
+ *     U+0002+xxxx    302
+ *
+ * It is so wide and so sparse that naive lookup table implementation from
+ * UCS to EUC can be space-wasting.  I use hierarchical table with some
+ * ad-hoc heuristics.   Since the hierarchical table is used, I directly
+ * translates UTF8 to EUC_JP, without converting it to UCS4.
+ *
+ * Strategy outline: say input consists of bytes named u0, u1, ....
+ *
+ *  u0 <= 0x7f  : ASCII range
+ *  u0 in [0xc2-0xd1] : UTF8 uses 2 bytes.  Some mappings within this range
+ *         is either very regular or very small, and they are
+ *         hardcoded.   Other mappings uses table lookup.
+ *  u0 == 0xe1  : UTF8 uses 3 bytes.  There are only 6 characters in this
+ *         range, and it is hardcoded.
+ *  u0 in [0xe2-0xe9, 0xef] : Large number of characters are in this range.
+ *         Two-level table of 64 entries each is used to dispatch the
+ *         characters.
+ *  u0 == 0xf0  : UTF8 uses 4 bytes.  u1 is in [0xa0-0xaa].  u2 and u3 is
+ *         used for dispatch table of 64 entries each.
+ *
+ * The final table entry is unsigned short.  0x0000 means no corresponding
+ * character is defined in EUC_JP.  >=0x8000 is the EUC_JP character itself.
+ * < 0x8000 means the character is in G3 plane; 0x8f should be preceded,
+ * and 0x8000 must be added to the value.
+ */
 
+#include "ucs2eucj.c"
+
+/* Emit given euc char */
+static inline int utf2euc_emit_euc(unsigned short euc, int inchars, char *outptr, int outroom, int *outchars)
+{
+    if (euc == 0) {
+        EUCJ_SUBST;
+    } else if (euc < 0x8000) {
+        OUTCHK(3);
+        outptr[0] = 0x8f;
+        outptr[1] = (euc >> 8) + 0x80;
+        outptr[2] = euc & 0xff;
+        *outchars = 3;
+    } else {
+        OUTCHK(2);
+        outptr[0] = (euc >> 8) + 0x80;
+        outptr[1] = euc & 0xff;
+        *outchars = 2;
+    }
+    return inchars;
+}
+
+/* handle 2-byte UTF8 sequence.  0xc0 <= u0 <= 0xdf */
+static inline int utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
+                            const char *inptr, int inroom,
+                            char *outptr, int outroom, int *outchars)
+{
+    unsigned char u1;
+    unsigned short *etab = NULL;
+    
+    INCHK(2);
+    u1 = (unsigned char)inptr[1];
+    if (u1 < 0x80 || u1 >= 0xbf) return ILLEGAL_SEQUENCE;
+
+    switch (u0) {
+    case 0xc2: etab = utf2euc_c2; break;
+    case 0xc3: etab = utf2euc_c3; break;
+    case 0xc4: etab = utf2euc_c4; break;
+    case 0xc5: etab = utf2euc_c5; break;
+    case 0xc6:
+        if (u1 == 0x93) { /* U+0193 -> euc ABA9 */
+            return utf2euc_emit_euc(0xaba9, 2, outptr, outroom, outchars);
+        } else break;
+    case 0xc7: etab = utf2euc_c7; break;
+    case 0xc9: etab = utf2euc_c9; break;
+    case 0xca: etab = utf2euc_ca; break;
+    case 0xcb: etab = utf2euc_cb; break;
+    case 0xcc: etab = utf2euc_cc; break;
+    case 0xcd:
+        if (u1 == 0xa1) { /* U+0361 -> euc ABD2 */
+            return utf2euc_emit_euc(0xabd2, 2, outptr, outroom, outchars);
+        } else break;
+    case 0xce: etab = utf2euc_ce; break;
+    case 0xcf: etab = utf2euc_cf; break;
+    default:
+        break;
+    }
+    if (etab != NULL) {
+        /* table lookup */
+        return utf2euc_emit_euc(etab[u1-0x80], 2, outptr, outroom, outchars);
+    }
+    EUCJ_SUBST;
+    return 2;
+}
+
+/* handle 3-byte UTF8 sequence.  0xe0 <= u0 <= 0xef */
+static inline int utf2euc_3(ScmConvInfo *cinfo, unsigned char u0,
+                            const char *inptr, int inroom,
+                            char *outptr, int outroom, int *outchars)
+{
+    unsigned char u1, u2;
+    unsigned char *tab1 = NULL;
+    unsigned short (*tab2)[64] = NULL;
+
+    INCHK(3);
+    u1 = (unsigned char)inptr[1];
+    u2 = (unsigned char)inptr[2];
+    
+    switch (u0) {
+    case 0xe1: /* special case : there's only 6 chars */
+        {
+            unsigned short euc = 0;
+            if (u1 == 0xb8) {
+                if (u2 == 0xbe)      euc = 0xa8f2;
+                else if (u2 == 0xbf) euc = 0xa8f3;
+            } else if (u1 == 0xbd) {
+                if (u2 == 0xb0)      euc = 0xabc6;
+                else if (u2 == 0xb1) euc = 0xabc7;
+                else if (u2 == 0xb2) euc = 0xabd0;
+                else if (u2 == 0xb3) euc = 0xabd1;
+            }
+            return utf2euc_emit_euc(euc, 3, outptr, outroom, outchars);
+        }
+    case 0xe2: tab1 = utf2euc_e2; tab2 = utf2euc_e2_xx; break;
+    case 0xe3: tab1 = utf2euc_e3; tab2 = utf2euc_e3_xx; break;
+    case 0xe4: tab1 = utf2euc_e4; tab2 = utf2euc_e4_xx; break;
+    case 0xe5: tab1 = utf2euc_e5; tab2 = utf2euc_e5_xx; break;
+    case 0xe6: tab1 = utf2euc_e6; tab2 = utf2euc_e6_xx; break;
+    case 0xe7: tab1 = utf2euc_e7; tab2 = utf2euc_e7_xx; break;
+    case 0xe8: tab1 = utf2euc_e8; tab2 = utf2euc_e8_xx; break;
+    case 0xe9: tab1 = utf2euc_e9; tab2 = utf2euc_e9_xx; break;
+    case 0xef: tab1 = utf2euc_ef; tab2 = utf2euc_ef_xx; break;
+    default:
+        break;
+    }
+    if (tab1 != NULL) {
+        unsigned char ind = tab1[u1-0x80];
+        if (ind != 0) {
+            return utf2euc_emit_euc(tab2[ind-1][u2-0x80], 3, outptr, outroom, outchars);
+        }
+    }
+    EUCJ_SUBST;
+    return 3;
+}
+
+/* handle 4-byte UTF8 sequence.  u0 == 0xf0, 0xa0 <= u1 <= 0xaa */
+static inline int utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
+                            const char *inptr, int inroom,
+                            char *outptr, int outroom, int *outchars)
+{
+    unsigned char u1, u2, u3;
+    unsigned short *tab = NULL;
+
+    INCHK(4);
+    if (u0 != 0xf0) {
+        EUCJ_SUBST;
+        return 4;
+    }
+    u1 = (unsigned char)inptr[1];
+    u2 = (unsigned char)inptr[2];
+    u3 = (unsigned char)inptr[3];
+    
+    switch (u1) {
+    case 0xa0: tab = utf2euc_f0_a0; break;
+    case 0xa1: tab = utf2euc_f0_a1; break;
+    case 0xa2: tab = utf2euc_f0_a2; break;
+    case 0xa3: tab = utf2euc_f0_a3; break;
+    case 0xa4: tab = utf2euc_f0_a4; break;
+    case 0xa5: tab = utf2euc_f0_a5; break;
+    case 0xa6: tab = utf2euc_f0_a6; break;
+    case 0xa7: tab = utf2euc_f0_a7; break;
+    case 0xa8: tab = utf2euc_f0_a8; break;
+    case 0xa9: tab = utf2euc_f0_a9; break;
+    case 0xaa: tab = utf2euc_f0_aa; break;
+    default:
+        break;
+    }
+    if (tab != NULL) {
+        int i;
+        unsigned short u2u3 = u2*256 + u3;
+        for (i=0; tab[i]; i+=2) {
+            if (tab[i] == u2u3) {
+                return utf2euc_emit_euc(tab[i+1], 4, outptr, outroom, outchars);
+            }
+        }
+    }
+    EUCJ_SUBST;
+    return 4;
+}
+
+/* Body of UTF8 -> EUC_JP conversion */
 static int utf2eucj(ScmConvInfo *cinfo, const char *inptr, int inroom,
                     char *outptr, int outroom, int *outchars)
 {
+    unsigned char u0;
+    
+    u0 = (unsigned char)inptr[0];
+    if (u0 <= 0x7f) {
+        *outptr = u0;
+        *outchars = 1;
+        return 1;
+    }
+    if (u0 <= 0xbf) {
+        /* invalid UTF8 sequence */
+        return ILLEGAL_SEQUENCE;
+    }
+    if (u0 <= 0xdf) {
+        /* 2-byte UTF8 sequence */
+        return utf2euc_2(cinfo, u0, inptr, inroom, outptr, outroom, outchars);
+    }
+    if (u0 <= 0xef) {
+        /* 3-byte UTF8 sequence */
+        return utf2euc_3(cinfo, u0, inptr, inroom, outptr, outroom, outchars);
+    }
+    if (u0 <= 0xf7) {
+        /* 4-byte UTF8 sequence */
+        return utf2euc_4(cinfo, u0, inptr, inroom, outptr, outroom, outchars);
+    }
+    if (u0 <= 0xfb) {
+        /* 5-byte UTF8 sequence */
+        INCHK(5);
+        EUCJ_SUBST;
+        return 5;
+    }
+    if (u0 <= 0xfd) {
+        /* 6-byte UTF8 sequence */
+        INCHK(6);
+        EUCJ_SUBST;
+        return 6;
+    }
+    return ILLEGAL_SEQUENCE;
 }
 
+/* [EUC_JP -> UTF8 conversion]
+ *
+ * Conversion strategy:
+ *   If euc0 is in ASCII range, or C1 range except 0x8e or 0x8f, map it as is.
+ *   If euc0 is 0x8e, use JISX0201-KANA table.
+ *   If euc0 is 0x8f, use JISX0213 plane 2 table.
+ *   If euc0 is in [0xa1-0xfe], use JISX0213 plane1 table.
+ *   If euc0 is 0xa0 or 0xff, return ILLEGAL_SEQUENCE.
+ *
+ * JISX0213 plane2 table is consisted by a 2-level tree.  The first-level
+ * returns an index to the second-level table by (euc1 - 0xa1).  Only the
+ * range of JISX0213 defined region is converted; JISX0212 region will be
+ * mapped to the substitution char.
+ */
 
+#include "eucj2ucs.c"
+
+/* UTF8 utility.  Similar stuff is included in gauche/char_utf_8.h
+   if the native encoding is UTF8, but not otherwise.
+   So I include them here as well. */
+
+/* Given UCS char, return # of bytes required for UTF8 encoding. */
+#define UCS2UTF_NBYTES(ucs)                      \
+    (((ucs) < 0x80) ? 1 :                        \
+     (((ucs) < 0x800) ? 2 :                      \
+      (((ucs) < 0x10000) ? 3 :                   \
+       (((ucs) < 0x200000) ? 4 :                 \
+        (((ucs) < 0x4000000) ? 5 : 6)))))
+
+static int ucs4_to_utf8(unsigned int ucs, char *cp)
+{
+    if (ucs < 0x80) {
+        *cp = ucs;
+    }
+    else if (ucs < 0x800) {
+        *cp++ = ((ucs>>6)&0x1f) | 0xc0;
+        *cp = (ucs&0x3f) | 0x80;
+    }
+    else if (ucs < 0x10000) {
+        *cp++ = ((ucs>>12)&0x0f) | 0xe0;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp = (ucs&0x3f) | 0x80;
+    }
+    else if (ucs < 0x200000) {
+        *cp++ = ((ucs>>18)&0x07) | 0xf0;
+        *cp++ = ((ucs>>12)&0x3f) | 0x80;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp = (ucs&0x3f) | 0x80;
+    }
+    else if (ucs < 0x4000000) {
+        *cp++ = ((ucs>>24)&0x03) | 0xf8;
+        *cp++ = ((ucs>>18)&0x3f) | 0x80;
+        *cp++ = ((ucs>>12)&0x3f) | 0x80;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp = (ucs&0x3f) | 0x80;
+    } else {
+        *cp++ = ((ucs>>30)&0x1) | 0xfc;
+        *cp++ = ((ucs>>24)&0x3f) | 0x80;
+        *cp++ = ((ucs>>18)&0x3f) | 0x80;
+        *cp++ = ((ucs>>12)&0x3f) | 0x80;
+        *cp++ = ((ucs>>6)&0x3f) | 0x80;
+        *cp++ = (ucs&0x3f) | 0x80;
+    }
+}
+
+/* Given 'encoded' ucs, emit utf8.  'Encoded' ucs is the entry of the
+   conversion table.  If ucs >= 0x100000, it is composed by two UCS2
+   character.  Otherwise, it is one UCS4 character. */
+static inline int eucj2utf_emit_utf(unsigned int ucs, int inchars,
+                                    char *outptr, int outroom, int *outchars)
+{
+    if (ucs == 0) {
+        UTF8_SUBST;
+    } else if (ucs < 0x100000) {
+        int outreq = UCS2UTF_NBYTES(ucs);
+        OUTCHK(outreq);
+        ucs4_to_utf8(ucs, outptr);
+        *outchars = outreq;
+    } else {
+        /* we need two UCS characters */
+        unsigned int ucs0 = (ucs >> 16) & 0xffff;
+        unsigned int ucs1 = ucs & 0xfff;
+        int outreq0 = UCS2UTF_NBYTES(ucs0);
+        int outreq1 = UCS2UTF_NBYTES(ucs1);
+        OUTCHK(outreq0+outreq1);
+        ucs4_to_utf8(ucs0, outptr);
+        ucs4_to_utf8(ucs1, outptr+outreq0);
+        *outchars = outreq0+outreq1;
+    }
+    return inchars;
+}
+
+static int eucj2utf(ScmConvInfo *cinfo, const char *inptr, int inroom,
+                    char *outptr, int outroom, int *outchars)
+{
+    unsigned char e0, e1, e2;
+    unsigned int ucs;
+    
+    e0 = (unsigned char)inptr[0];
+    if (e0 < 0xa0) {
+        if (e0 == 0x8e) {
+            /* JIS X 0201 KANA */
+            INCHK(2);
+            e1 = (unsigned char)inptr[1];
+            if (e1 < 0xa1 || e1 > 0xdf) return ILLEGAL_SEQUENCE;
+            ucs = 0xff61 + (e1 - 0xa1);
+            return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
+        }
+        else if (e0 == 0x8f) {
+            /* JIS X 0213 plane 2 */
+            int index;
+            
+            INCHK(3);
+            e1 = (unsigned char)inptr[1];
+            e2 = (unsigned char)inptr[2];
+            if (e1 < 0xa1 || e1 > 0xfe || e2 < 0xa1 || e2 > 0xfe) {
+                return ILLEGAL_SEQUENCE;
+            }
+            index = euc_jisx0213_2_index[e1 - 0xa1];
+            if (index < 0) {
+                UTF8_SUBST;
+                return 3;
+            }
+            ucs = euc_jisx0213_2_to_ucs2[index][e2 - 0xa1];
+            return eucj2utf_emit_utf(ucs, 3, outptr, outroom, outchars);
+        }
+    }
+    if (e0 > 0xa0 && e0 < 0xff) {
+        /* JIS X 0213 plane 1 */
+        INCHK(2);
+        e1 = (unsigned char)inptr[1];
+        if (e1 < 0xa1 || e1 > 0xfe) return ILLEGAL_SEQUENCE;
+        ucs = euc_jisx0213_1_to_ucs2[e0 - 0xa1][e1 - 0xa1];
+        return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
+    }
+    return ILLEGAL_SEQUENCE;
+}
