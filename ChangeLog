@@ -1,3 +1,12 @@
+2001-06-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub : added port->string, port->byte-string
+	* ext/charconv/* : made it work.
+
+2001-06-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub : added copy-port
+
 2001-06-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/gauche/portmacros.h, src/*.c : changed API of
