@@ -1,3 +1,15 @@
+2002-06-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/char_euc_jp.h: adapted to 3-byte sequence (8F xx xx).
+	* ext/charconv/guess.scm, ext/charconv/guess.c : improved automatic
+	  character encoding detection, by using probabilistic DFA.
+
+2002-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/object.scm : insert the binding of |setter of ref| into
+	  gauche module, or it doesn't work well with gauche.sequence module.
+	* src/moplib.stub (slot-ref): set setter of slot-ref to slot-set!.
+
 2002-06-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c: fixed a bug that Scm_Import added imported module
