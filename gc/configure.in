@@ -325,7 +325,7 @@ AC_DEFINE(ALL_INTERIOR_POINTERS)
 
 dnl By default, make the library as general as possible.
 AC_DEFINE(JAVA_FINALIZATION)
-AC_DEFINE(GC_GCJ_SUPPORT)
+dnl AC_DEFINE(GC_GCJ_SUPPORT)
 AC_DEFINE(ATOMIC_UNCOLLECTABLE)
 
 dnl This is something of a hack.  When cross-compiling we turn off
