@@ -69,6 +69,74 @@
 (test "string-join" "foo::bar::baz"
       (lambda () (string-join '("foo" "bar" "baz") "::" 'strict-infix)))
 
+;;-------------------------------------------------------------------
+(test-section "incomplete strings")
+
+;; Real test for incomplete string requires multibyte strings.
+;; Here I only check consistency of combination between complete
+;; and incomplete strings.
+
+(test "string-incomplete?" #f (lambda () (string-incomplete? "abc")))
+(test "string-incomplete?" #t (lambda () (string-incomplete? #"abc")))
+(test "string-incomplete?" #f (lambda () (string-incomplete? "")))
+(test "string-incomplete?" #t (lambda () (string-incomplete? #"")))
+
+(test "string-complete->incomplete" #"xyz"
+      (lambda () (string-complete->incomplete "xyz")))
+(test "string-complete->incomplete" #"xyz"
+      (lambda () (string-complete->incomplete #"xyz")))
+(test "string-incomplete->complete" "xyz"
+      (lambda () (string-incomplete->complete #"xyz")))
+(test "string-incomplete->complete" "xyz"
+      (lambda () (string-incomplete->complete "xyz")))
+
+(test "string=?" #t (lambda () (string=? #"abc" #"abc")))
+
+(test "string-ref" #\b (lambda () (string-ref #"abc" 1)))
+(test "string-ref" #\null (lambda () (string-ref #"\0\0\0" 1)))
+(test "string-byte-ref" (char->integer #\b)
+      (lambda () (string-byte-ref #"abc" 1)))
+(test "string-byte-ref" 0
+      (lambda () (string-byte-ref #"\0\0\0" 1)))
+
+(test "string-append" #"abcdef"
+      (lambda () (string-append "abc" #"def")))
+(test "string-append" #"abcdef"
+      (lambda () (string-append #"abc" "def")))
+(test "string-append" #"abcdef"
+      (lambda () (string-append #"abc" #"def")))
+(test "string-append" #"abcdef"
+      (lambda () (string-append "a" #"b" "c" "d" "e" #"f")))
+
+(test "string-join" #"a:b:c"
+      (lambda () (string-join '("a" #"b" "c") ":")))
+(test "string-join" #"a:b:c"
+      (lambda () (string-join '("a" "b" "c") #":")))
+
+(test "string-substitute!" #"abCDe"
+      (lambda () (string-substitute! (string-copy "abcde") 2 #"CD")))
+(test "string-substitute!" #"abCDe"
+      (lambda () (string-substitute! (string-copy #"abcde") 2 "CD")))
+(test "string-substitute!" #"abCDe"
+      (lambda () (string-substitute! (string-copy #"abcde") 2 #"CD")))
+
+(test "string-set!" #"abQde"
+      (lambda ()
+        (let ((s (string-copy #"abcde")))
+          (string-set! s 2 #\Q)
+          s)))
+(test "string-byte-set!" #"abQde"
+      (lambda ()
+        (let ((s (string-copy "abcde")))
+          (string-byte-set! s 2 (char->integer #\Q))
+          s)))
+(test "string-byte-set!" #"abQde"
+      (lambda ()
+        (let ((s (string-copy #"abcde")))
+          (string-byte-set! s 2 (char->integer #\Q))
+          s)))
+
+;(test "substring" 
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")
