@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.21 2003-07-19 11:47:30 shirok Exp $
+# $Id: gauche-config.in,v 1.22 2003-10-04 21:29:36 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -33,9 +33,8 @@ local_libdir="@LOCAL_LIB@"
 
 default_cflags="@DEFAULT_CFLAGS@"
 
-# NB: shlib-related parameters should be handled by libtool.
-# These are kept only for backward compatibility of extensions
-# written for pre-0.7 Gauche
+object_suffix="@OBJEXT@"
+executable_suffix="@EXEEXT@"
 shlib_so_suffix="@SHLIB_SO_SUFFIX@"
 shlib_so_cflags="@SHLIB_SO_CFLAGS@"
 shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
@@ -75,8 +74,12 @@ Parameters to install files
        directories where gauche manpage and info docs are installed
 
 Parameters to help building extensions
+  --object-suffix
+       Returns extension of the compiled objects (e.g. "o")
+  --executable-suffix
+       Returns extension of the executable (mostly empty, sometimes ".exe")
   --so-suffix
-       Suffix for dynamically loadable modules
+       Suffix for dynamically loadable (dlopen-able) modules
   --so-cflags
        CFLAGS to create dynamically loadable modules
   --so-ldflags
@@ -121,6 +124,8 @@ case $1 in
 
   --default-cflags) echo $default_cflags;;
 
+  --object-suffix) echo "$object_suffix";;
+  --executable-suffix) echo "$executable_suffix";;
   --so-suffix) echo $shlib_so_suffix;;
   --so-cflags) echo $shlib_so_cflags;;
   --so-ldflags) echo $shlib_so_ldflags;;
