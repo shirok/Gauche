@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.209 2002-05-29 11:38:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.210 2002-06-06 12:02:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2602,25 +2602,28 @@ for the @code{begin0} form is expanded as follows.
 
 
 @defmac dotimes (variable limit [result]) body @dots{}
+@defmacx dolist (variable lexpr [result]) body @dots{}
 @c EN
-Imported from Common Lisp.  This is equivalent to
+Imported from Common Lisp.  These are equivalent to the following forms,
+respectively.
 @c JP
-Common Lispからの輸入です。以下のように展開されます。
+Common Lispからの輸入です。それぞれ以下のように展開されます。
 @c COMMON
 @example
+(dotimes (variable limit result) body @dots{})
+==>
 (do ((tlimit limit)
      (variable 0 (+ variable 1)))
     ((>= variable tlimit) result)
   body @dots{})
+
+(dolist (variable lexpr result) body @dots{})
+==>
+(begin
+  (for-each (lambda (variable) body @dots{}) lexpr)
+  (let ((variable '())) result))
 @end example
 @end defmac
-
-@c EN
-There's no @code{dolist}.  Use @code{for-each}, or write your own.
-@c JP
-Common Lispの@code{dolist}は提供されていません。@code{for-each}を使うか、
-自分で書いて下さい。
-@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Quasiquotation, Definitions, Iteration, Core syntax
@@ -11212,6 +11215,7 @@ for the usage of metaclass.
 * String library::              
 * Character-set library::       
 * Time data types and procedures::  
+* Sources of Random Bits::      
 * CSV tables::                  
 * Simple HTML document construction::  
 * Parsing input stream::        
@@ -16797,7 +16801,7 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @c ----------------------------------------------------------------------
 @node Mathematic constants, Mersenne Twister Random number generator, Comparing version numbers, Library modules
 @section @code{math.const} - Mathematic constants
-@c NODE 定数
+@c NODE 定数, @code{math.const} - 定数
 
 @deftp {Module} math.const
 @mdindex math.const
@@ -17531,11 +17535,10 @@ Examples:
 @end defun
 
 @defun pair-fold kons knil clist1 clist2 @dots{}
+@defunx pair-fold-right kons knil clist1 clist2 @dots{}
 [SRFI-1] 
-@end defun
-
-@defun pair-fold-right kons knil clist1 clist2 @dots{}
-[SRFI-1]
+Like @code{fold} and @code{fold-right}, but the procedure @var{kons}
+gets each @code{cdr} of the given @var{clist}s, instead of @code{car}.
 @end defun
 
 @defun reduce f ridentity list
@@ -17561,6 +17564,9 @@ Examples:
 
 @defun map! f list1 clist2 @dots{}
 [SRFI-1]
+The procedure @var{f} is applied to each element of @var{list1} and
+corresponding elements of @var{clist}s, and the result is collected
+to a list.  Celss in @var{list1} is reused to construct the result list.
 @end defun
 
 @defun map-in-order f clist1 clist2 @dots{}
@@ -17572,6 +17578,8 @@ this function is just a synonym of @code{map}.
 
 @defun pair-for-each f clist1 clist2 @dots{}
 [SRFI-1]
+Like @var{for-each}, but the procedure @var{f} is applied on each @code{cdr}
+of @var{clist}s.
 @end defun
 
 @defun filter-map  f clist1 clist2 @dots{}
@@ -19108,9 +19116,9 @@ operations are Gauche's build-in functions.  @xref{Character set}.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node Time data types and procedures, CSV tables, Character-set library, Library modules
+@node Time data types and procedures, Sources of Random Bits, Character-set library, Library modules
 @section @code{srfi-19} - Time data types and procedures
-@c NODE 時間のデータ型と手続き
+@c NODE 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
 
 This SRFI defines various representations of time and
 
@@ -19290,9 +19298,48 @@ This SRFI defines various representations of time and
 @defun string->date string template-string
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Sources of Random Bits, CSV tables, Time data types and procedures, Library modules
+@section @code{srfi-27} - Sources of Random Bits
+@c NODE ランダムビットのソース, @code{srfi-27} - ランダムビットのソース
+
+@deftp {Module} srfi-27
+@mdindex srfi-27
+@end deftp
+
+@defun random-integer n
+@end defun
+
+@defun random-real
+@end defun
+
+@defvar default-random-source
+@end defvar
+
+@defun make-random-source
+@end defun
+
+@defun random-source? obj
+@end defun
+
+@defun random-source-state-ref s
+@defunx random-source-state-set! s state
+@end defun
+
+@defun random-source-randomize! s
+@end defun
+
+@defun random-source-pseudo-randomize! s i j
+@end defun
+
+@defun random-source-make-integers s
+@end defun
+
+@defun ransom-source-make-reals s &optional unit
+@end defun
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Simple HTML document construction, Time data types and procedures, Library modules
+@node CSV tables, Simple HTML document construction, Sources of Random Bits, Library modules
 @section @code{text.csv} - CSV tables
 
 @deftp {Module} text.csv
@@ -20532,6 +20579,11 @@ Olin Shivers, Character-set Library, December 2000. @*
 Per Bothner, Generalized @code{set!}, July 2000. @*
 @url{http://srfi.schemers.org/srfi-17/srfi-17.html}.
 
+@anchor{srfi-19}
+@item [SRFI-19]
+Will Fitzgerald, Time Data Types and Procedures, August 2000. @*
+@url{http://srfi.schemers.org/srfi-18/srfi-18.html}.
+
 @anchor{srfi-22}
 @item [SRFI-22]
 Martin Gasbichler and Michael Sperber, 
@@ -20542,6 +20594,11 @@ Running Scheme Scripts on Unix, January 2002. @*
 @item [SRFI-23]
 Stephan Housen, Error reporting mechanism, April 2001.@*
 @url{http://srfi.schemers.org/srfi-23/srfi-23.html}.
+
+@anchor{srfi-27}
+@item [SRFI-27]
+Sebastian Egner, Sources of Random Bits, June 2002.@*
+@url{http://srfi.schemers.org/srfi-27/srfi-27.html}.
 
 @anchor{ssax}
 @item [SSAX]
