@@ -24,11 +24,11 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.8 2002-10-26 09:02:41 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.9 2002-11-10 11:56:03 shirok Exp $
 
 (define-module srfi-19
   (export time-tai time-utc time-monotonic time-thread
-          time-process time-duration current-time
+          time-process time-duration current-time time-resolution
           make-time time? time-type time-second time-nanosecond
           set-time-type! set-time-second! set-time-nanosecond copy-time
           time=? time<? time<=? time>? time>=?
@@ -37,6 +37,7 @@
           make-date date? date-nanosecond date-second date-minute
           date-hour date-day date-month date-year date-zone-offset
           date-year-day date-week-day date-week-number current-date
+          current-julian-day current-modified-julian-day
           date->julian-day date->modified-julian-day date->time-monotonic
           date->time-tai date->time-utc
           julian-day->date julian-day->time-monotonic
