@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.105 2001-09-16 01:24:43 shirok Exp $
+ *  $Id: vm.c,v 1.106 2001-09-16 06:59:14 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1482,11 +1482,6 @@ static ScmObj user_eval_inner(ScmObj program)
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             ScmException *exn = (ScmException*)vm->escapeData[1];
 
-            if (!ep) {
-                Scm_VMDefaultExceptionHandler(SCM_OBJ(exn), NULL);
-                exit(EX_SOFTWARE);
-            }
-
             if (ep && ep->cstack == vm->cstack) {
                 val0 = handle_exception(vm, ep, exn);
                 RESTORE_REGS();
@@ -1494,6 +1489,11 @@ static ScmObj user_eval_inner(ScmObj program)
                 SAVE_REGS();
                 restarted = TRUE;
                 goto restart;
+            }
+            if (vm->cstack->prev == NULL) {
+                /* Unhandled error. */
+                Scm_VMDefaultExceptionHandler(SCM_OBJ(exn), NULL);
+                exit(EX_SOFTWARE);
             }
         } else {
             Scm_Panic("invalid longjmp");
