@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.57 2001-04-05 10:01:27 shiro Exp $
+;;; $Id: extlib.stub,v 1.58 2001-04-06 08:48:19 shiro Exp $
 ;;;
 
 "
@@ -23,6 +23,17 @@
 ;; 6.1  Equivalence predicates
 ;;
 
+;; to pass the cmpmode argument
+(define-symbol eq?    "sym_eq")
+(define-symbol eqv?   "sym_eqv")
+(define-symbol equal? "sym_equal")
+
+"static int getcmpmode(ScmObj opt)
+ { if (SCM_UNBOUNDP(opt) || opt == sym_equal) return SCM_CMP_EQUAL;
+   if (opt == sym_eq) return SCM_CMP_EQ;
+   if (opt == sym_eqv) return SCM_CMP_EQV;
+   Scm_Error(\"unrecognized compare mode: %S\", opt);
+   return 0; /* dummy */ }"
 
 ;;
 ;; 6.2  Numbers
@@ -68,6 +79,14 @@
     }
   }
   SCM_RETURN(head);")
+
+(define-cproc %delete (obj list &optional cmpmode)
+  (assert (list? list))
+  "  SCM_RETURN(Scm_Delete(obj, list, getcmpmode(cmpmode)));")
+
+(define-cproc %delete! (obj list &optional cmpmode)
+  (assert (list? list))
+  "  SCM_RETURN(Scm_DeleteX(obj, list, getcmpmode(cmpmode)));")
 
 (define-cproc union (&rest args)        ;use eq? to compare.
   (assert (list? args))
