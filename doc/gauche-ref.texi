@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.142 2001-12-21 10:18:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.143 2001-12-22 21:09:32 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -377,7 +377,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 @menu
 * Compilation::                 
 * Multibyte Strings::           
-* Objects::                     
+* Integerated Object System::   
 * Module System::               
 @end menu
 
@@ -485,7 +485,7 @@ a file on certain condition, use @code{load} or do dispatch in macro
 
 @end table
 
-@node Multibyte Strings, Objects, Compilation, Concepts
+@node Multibyte Strings, Integerated Object System, Compilation, Concepts
 @section Multibyte Strings
 @c NODE マルチバイト文字列
 
@@ -544,9 +544,9 @@ Gauche assumes the Scheme program is written in its internal
 encoding scheme.
 
 
-@node Objects, Module System, Multibyte Strings, Concepts
-@section Objects
-@c NODE オブジェクト
+@node Integerated Object System, Module System, Multibyte Strings, Concepts
+@section Integrated Object System
+@c NODE 統合されたオブジェクトシステム
 
 Gauche has a STklos-style object system, similar to CLOS.
 If you have used some kind of object oriented (OO) languages,
@@ -606,8 +606,7 @@ of those type of arguments:
 @end example
 
 Each method does not belong to a specific class.  It rather belongs 
-to a @emph{generic function} @code{product}.  You can have even
-methods with different number of arguments.
+to a @emph{generic function} ``@code{product}''.
 
 Since a method is not owned by a class, you can always define your
 own method on the existing class (except a few cases
@@ -636,7 +635,7 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 
 @end table
 
-@node Module System,  , Objects, Concepts
+@node Module System,  , Integerated Object System, Concepts
 @section Module System
 @c NODE モジュールシステム
 
@@ -675,7 +674,7 @@ to introspect module internals.
 @menu
 * Invoking Gosh::               
 * Interactive development::     
-* Debugger::                    
+* Debugging::                   
 * Writing Scheme scripts::      
 * Writing Gauche modules::      
 @end menu
@@ -841,20 +840,20 @@ although it is not generally recommended.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Interactive development, Debugger, Invoking Gosh, Programming in Gauche
+@node Interactive development, Debugging, Invoking Gosh, Programming in Gauche
 @section Interactive development
 @c NODE  インタラクティブな開発
 
 
 @c ----------------------------------------------------------------------
-@node Debugger, Writing Scheme scripts, Interactive development, Programming in Gauche
-@section Debugger
-@c NODE デバッガ
+@node Debugging, Writing Scheme scripts, Interactive development, Programming in Gauche
+@section Debugging
+@c NODE デバッグ
 
 
 
 @c ----------------------------------------------------------------------
-@node Writing Scheme scripts, Writing Gauche modules, Debugger, Programming in Gauche
+@node Writing Scheme scripts, Writing Gauche modules, Debugging, Programming in Gauche
 @section Writing Scheme scripts
 @c NODE Schemeスクリプトを書く
 
@@ -1724,21 +1723,58 @@ value is returned.
 @section Binding constructs
 @c NODE 変数束縛
 
-@defspec let bindings body @dots{}
+@defspec let ((var expr) @dots{}) body @dots{}
+@defspecx let* ((var expr) @dots{}) body @dots{}
+@defspecx letrec ((var expr) @dots{}) body @dots{}
 [R5RS]
-@end defspec
+Creates a local scope where @var{var} @dots{} are bound to the
+value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
+@var{var}s must be symbols, and there shouldn't be a duplication.
 
-@defspec let* bindings body @dots{}
-[R5RS]
-@end defspec
+The three forms differ in terms of the scope @var{expr}s are evaluated.
+@code{let} evaluates @var{expr}s before (outside of) @code{let} form.
+@code{let*} evaluates @var{expr}s in the scope where @var{var}s before
+it are bound.   @code{letrec} evaluates @var{expr}s in the environment
+where @var{var}s are already bound (to an undefined value, initially).
+@code{letrec} is necessary to define mutually recursive local procedures.
 
-@defspec letrec bindings body @dots{}
-[R5RS]
-@end defspec
+@example
+(define x 'top-x)
 
+(let  ((x 3) (y x)) (cons x y)) @result{} (3 . top-x)
+(let* ((x 3) (y x)) (cons x y)) @result{} (3 . 3)
+
+(let ((cons (lambda (a b) (+ a b)))
+      (list (lambda (a b) (cons a (cons b 0)))))
+  (list 1 2))  @result{} (1 2 . 0)
+
+(letrec ((cons (lambda (a b) (+ a b)))
+         (list (lambda (a b) (cons a (cons b 0)))))
+  (list 1 2))  @result{} 3
+@end example
+@end defspec
 
 @defspec receive formals expression body @dots{}
 [SRFI-8]
+This is the way to receive multiple values.
+@var{formals} can be a (maybe-improper) list of symbols.
+@var{expression} is evaluated, and the returned value(s)
+are bound to @var{formals}, then @var{body} @dots{} are
+evaluated.
+
+@example
+(define (divrem n m)
+  (values (quotient n m) (remainder n m)))
+
+(receive (q r) (divrem 13 4) (list q r))
+  @result{} (3 1)
+@end example
+
+See also @code{call-with-values} in @ref{Multiple values}
+which is the procedural equivalent of @code{receive}.
+Also @code{let-values} and @code{let*-values} 
+in SRFI-11 (@ref{Let-values}) provides
+@code{let}-like syntax with multiple values.
 @end defspec
 
 @node Sequencing, Iteration, Binding constructs, Core syntax
@@ -5142,15 +5178,37 @@ the following conceptual Scheme code.
 
 @defun eval expr env
 [R5RS]
-Evaluate @var{expr}.   In the current implementation @var{env} is 
-just ignored and evaluation takes place in the toplevel environment
-of `@code{user}' module.
+Evaluate @var{expr}.   @var{env} must be a value returned by
+the following procedures below.  Right now it is just a
+@code{<module>} object, but it is possible that the Gauche
+adopts a first-class environment object in future.
 @end defun
 
-@defun null-environment
-@defunx interaction-environment
+@defun null-environment version
 @defunx scheme-report-environment version
+@defunx interaction-environment
 [R5RS]
+Returns an environment specifier which can be used as the second
+argument of @code{eval}.   Right now an environment specifier
+is just a module.  @code{(null-environment 5)} returns
+a @code{null} module, which contains just the syntactic bindings
+specified in R5RS, @code{(scheme-report-environment 5)}
+returns a @code{scheme} module, which contains syntactic and procedure
+bindings in R5RS, and @code{(interaction-environment)} returns
+a @code{user} module that contains all the Gauche built-ins plus
+whatever the user defined.
+It is possible that the Gauche adopts a first-class environment object
+in future, so do not rely on the fact that the environment specifier
+is just a module.
+
+An error is signaled if a value other than 5 is passed as @var{version}
+argument.
+
+There's one difference from R5RS in @code{null-environment} and
+@code{scheme-report-environment}; they contain @code{with-module}
+special form.   It is necessary to define R5RS procedure using
+Gauche built-ins for now.  It'll be removed as soon as I find
+a better way.
 @end defun
 
 @c ----------------------------------------------------------------------
