@@ -1,7 +1,7 @@
 ;;;
 ;;; logger.scm - simple use-level logging
 ;;;
-;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: logger.scm,v 1.4 2002-09-22 05:41:11 shirok Exp $
+;;;  $Id: logger.scm,v 1.5 2002-12-02 02:17:11 shirok Exp $
 ;;;
 
 (define-module gauche.logger
@@ -25,15 +25,23 @@
   )
 (select-module gauche.logger)
 
-;; delay loading of gauche.syslog until needed
+;; delay loading some modules until needed
 (autoload gauche.syslog sys-openlog sys-syslog LOG_PID LOG_INFO LOG_USER)
+(autoload file.util file-mtime<?)
 
+;; Kludge! determine the default lock policy heuristically.
+;; AFAIK, MacOSX doesn't support fcntl lock.
+(define (default-lock-policy)
+  (if (#/apple-darwin/ (gauche-architecture)) 'file 'fcntl))
+
+;; <log-drain> class
 (define-class <log-drain> ()
   ((path   :init-keyword :path :initform #f)
    (program-name :init-keyword :program-name
                  :initform  (sys-basename (with-module user *program-name*)))
    (retry  :init-keyword :retry :initform 5)
    (prefix :init-keyword :prefix :initform "~T ~P[~$]: ")
+   (lock-policy :init-keyword :lock-policy :initform (default-lock-policy))
    ;; The following parameters are used for syslog.
    ;; The default values will be set when log-open is called with 'syslog.
    (syslog-option   :init-keyword :syslog-option)
@@ -115,19 +123,55 @@
           ((not pstr) "")
           (else (pstr drain)))))
 
+;; File lock handling
+;;   Only called if the drain is file and successfully opened.
+
+(define-constant FILE_LOCK_TIMEOUT 600)
+
+(define (lock-data drain port)
+  (case (slot-ref drain 'lock-policy)
+    ((fcntl) (make <sys-flock> :type |F_WRLCK| :whence 0))
+    ((file)  (string-append (slot-ref drain 'path) ".lock"))
+    (else    #t)))
+
+(define (lock-file drain port data)
+  (case (slot-ref drain 'lock-policy)
+    ((fcntl) (sys-fcntl port |F_SETLKW| data))
+    ((file)
+     (let loop ((retry 0)
+                (o (open-output-file data :if-exists #f)))
+       (cond (o (close-output-port o) #t)
+             ((> retry (slot-ref drain 'retry))
+              (errorf "couldn't obtain lock with ~a (retry limit reached)"
+                      data))
+             ((file-mtime<? data (- (sys-time) FILE_LOCK_TIMEOUT))
+              ;; maybe the lock file is stale.
+              (sys-unlink data)
+              (loop 0 (open-output-file data :if-exists #f)))
+             (else
+              (sys-sleep 1)
+              (loop (+ retry 1) (open-output-file data :if-exists #f))))))
+    (else #t)))
+
+(define (unlock-file drain port data)
+  (case (slot-ref drain 'lock-policy)
+    ((fcntl)
+     (slot-set! data 'type |F_UNLCK|)
+     (sys-fcntl port |F_SETLK| data))
+    ((file)
+     (sys-unlink data))
+    (else #t)))
+
+;; Write log
 (define (with-log-output drain proc)
   (let ((path (slot-ref drain 'path)))
     (cond ((string? path)
-           (let ((p (open-output-file path :if-exists :append))
-                 (l (make <sys-flock> :type |F_WRLCK| :whence 0)))
+           (let* ((p (open-output-file path :if-exists :append))
+                  (l (lock-data drain p)))
              (dynamic-wind
-              (lambda ()
-                (sys-fcntl p |F_SETLKW| l))
+              (lambda () (lock-file drain p l))
               (lambda () (proc p))
-              (lambda ()
-                (slot-set! l 'type |F_UNLCK|)
-                (sys-fcntl p |F_SETLK| l)
-                (close-output-port p)))))
+              (lambda () (unlock-file drain p l) (close-output-port p)))))
           ((eq? path #t)
            (proc (current-error-port)))
           ((eq? path #f)
@@ -139,6 +183,7 @@
           (else
            #f))))
 
+;; External APIs
 ;; log-format "fmtstr" arg ...
 ;; log-format drain "fmtstr" arg ...
 

@@ -1,3 +1,11 @@
+2002-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/logger.scm : added lock-policy slot to <log-drain>
+	  class to specify the file lock policy.  This allows logger to
+	  be used in MacOSX.
+	* lib/file/util.scm (define-time-comparer): fixed a bug that caused
+	  file-mtime<? etc. to fail if filename is given.
+
 2002-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/addr.c (Scm_MakeSockAddr): fixed a nasty bug that
