@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.46 2001-09-16 23:00:42 shirok Exp $
+;;;  $Id: genstub,v 1.47 2001-09-29 22:35:40 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -34,8 +34,6 @@
   (cond ((string? stuff) stuff)
         ((symbol? stuff) (symbol->string stuff))
         (else (with-output-to-string (lambda () (write stuff))))))
-
-(define (file-exists? file) (sys-access file F_OK))
 
 ;;===================================================================
 ;; Get configuration parameters
@@ -104,6 +102,7 @@
 (make-type "small integer" 'small-integer? "int" "SCM_INTP"    "SCM_INT_VALUE")
 ;; TODO: bignum!
 (make-type "exact integer" 'exact? "int"          "SCM_EXACTP"  "Scm_GetInteger")
+(make-type "real"      'real?      "double"       "SCM_REALP"   "Scm_GetDouble")
 (make-type "number"    'number?    "ScmObj"       "SCM_NUMBERP" #f)
 (make-type "character" 'char?      "ScmChar"      "SCM_CHARP" "SCM_CHAR_VALUE")
 (make-type "char-set"  'char-set?  "ScmCharSet*"  "SCM_CHARSETP" "SCM_CHARSET")
