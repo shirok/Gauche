@@ -1,7 +1,7 @@
 /*
  * regexp.c - regular expression
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.39 2003-03-06 23:27:36 shirok Exp $
+ *  $Id: regexp.c,v 1.40 2003-03-07 11:46:43 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -98,12 +98,34 @@ enum {
     RE_NUM_INSN
 };
 
-/* symbols used internally */
+/* AST - the first pass of regexp compiler creates intermediate AST.
+ * It is immediately compiled into bytecode by the pass 2.
+ *
+ *  <ast> : (<element> ...)
+ *  
+ *  <element> : <clause>   ; special clause
+ *         | <item>        ; matches <item>
+ *
+ *  <item> : <char>       ; matches char
+ *         | <char-set>   ; matches char set
+ *         | (comp . <char-set>) ; matches complement of char set
+ *         | any          ; matches any char
+ *         | bol | eol    ; beginning/end of line assertion
+ *         | integer      ; group marker (positive: begin, negative: end)
+ *
+ *  <clause> : (seq . <ast>)      ; sequence
+ *           | (alt . <ast>)      ; alternative
+ *           | (rep . <ast>)      ; 0 or more repetition of <ast>
+ *           | (lrep <n> . <ast>) ; repetition up to <n>
+ */
+   
+ScmObj sym_seq;                 /* seq */
 ScmObj sym_alt;                 /* alt */
 ScmObj sym_rep;                 /* rep */
 ScmObj sym_any;                 /* any */
 ScmObj sym_bol;                 /* bol */
 ScmObj sym_eol;                 /* eol */
+ScmObj sym_lrep;                /* lrep */
 ScmObj sym_comp;                /* complement charset */
 
 static ScmRegexp *make_regexp(void)
@@ -363,7 +385,9 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             break;
         case '{':
             elt = last_item(ctx, head, tail, grpstack, ch);
-            SCM_APPEND1(head, tail, re_compile_minmax(ctx, elt));
+            cell = re_compile_minmax(ctx, Scm_Cons(SCM_CAR(elt), SCM_CDR(elt)));
+            SCM_SET_CAR(elt, SCM_CAR(cell));
+            SCM_SET_CDR(elt, SCM_CDR(cell));
             break;
         case '\\':
             /* TODO: handle special escape sequences */
@@ -487,7 +511,9 @@ static void re_compile_setup_charsets(ScmRegexp *rx, struct comp_ctx *ctx)
 /* Reads {n,m}-type repeat syntax in pass 1 */
 static ScmObj re_compile_minmax(struct comp_ctx *ctx, ScmObj last_elt)
 {
-    int rep_min = -1, rep_max = -1, exact = FALSE, ch;
+    int rep_min = -1, rep_max = -1, exact = FALSE, ch, cnt;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    
     for (;;) {
         ch = Scm_GetcUnsafe(ctx->ipat);
         if (SCM_CHAR_ASCII_P(ch) && isdigit(ch)) {
@@ -522,7 +548,20 @@ static ScmObj re_compile_minmax(struct comp_ctx *ctx, ScmObj last_elt)
             }
         }
     }
-    return last_elt;
+
+    for (cnt = 0; cnt < rep_min; cnt++) {
+        SCM_APPEND(h, t, Scm_CopyList(last_elt));
+    }
+#if 0
+    if (!exact) {
+        if (rep_min < 0) {
+            SCM_APPEND1(h, t, Scm_Cons(rep, Scm_CopyList(last_elt)));
+        } else {
+            
+        }
+    }
+#endif
+    return h;
   bad_min_max:
     Scm_Error("invalid '{n,m}' directive in the pattern; %S\n", ctx->pattern);
     return SCM_UNDEFINED;       /* dummy */
@@ -668,6 +707,10 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
             ScmObj car = SCM_CAR(item);
             int ocodep;
 
+            if (car == sym_seq) {
+                re_compile_pass2(SCM_CDR(item), rx, ctx, lastp, emitp, FALSE);
+                continue;
+            }
             if (car == sym_rep) {
                 ocodep = ctx->codep;
                 re_compile_emit(ctx, RE_TRY, emitp);
@@ -1286,8 +1329,10 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
 
 void Scm__InitRegexp(void)
 {
+    sym_seq = SCM_INTERN("seq");
     sym_alt = SCM_INTERN("alt");
     sym_rep = SCM_INTERN("rep");
+    sym_lrep = SCM_INTERN("lrep");
     sym_any = SCM_INTERN("any");
     sym_bol = SCM_INTERN("bol");
     sym_eol = SCM_INTERN("eol");
