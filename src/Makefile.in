@@ -69,7 +69,7 @@ TESTFILES = ../test/primsyn.scm \
 .SUFFIXES: .stub
 
 .stub.c:
-	gosh genstub $<
+	gosh ./genstub $<
 
 HDRS = gauche.h gauche/arch.h
 
