@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.58 2002-02-11 09:23:35 shirok Exp $
+;;; $Id: syslib.stub,v 1.59 2002-02-11 10:26:31 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -652,7 +652,7 @@
   (assert (string? pathname))
   (assert (exact? amode))
   "
-#if defined(FREEBSD)
+#if defined(__FreeBSD__)
   struct stat statbuf;
   int r = Scm_SysCall(stat(Scm_GetStringConst(pathname), &statbuf));
   if (r < 0) SCM_RETURN(SCM_FALSE);
