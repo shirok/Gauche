@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: tree.scm,v 1.3 2001-11-02 09:54:07 shirok Exp $
+;;;  $Id: tree.scm,v 1.4 2002-06-06 22:33:52 shirok Exp $
 ;;;
 
 (define-module util.tree
@@ -32,7 +32,7 @@
       (for-each rec (reverse branches))))
   (if (leaf? tree) (proc tree) (rec tree)))
                     
-(define (tree-fold-bf tree proc knil leaf? walker)
+(define (tree-fold-bf tree proc knil leaf? folder)
   (define (rec node r)
     (let* ((branches '())
            (r (folder (lambda (n knil)
