@@ -7,7 +7,7 @@ CC = @CC@
 LIBS = @LIBS@
 DEFS = @DEFS@
 CFLAGS = @CFLAGS@ @DEFS@ -I$(srcdir) -I$(srcdir)/../gc/include \
-         @LOCAL_INC@ @SHLIB_SO_CFLAGS@
+         @LOCAL_INC@ @SHLIB_SO_CFLAGS@ $(OPTFLAGS)
 LDFLAGS = @LOCAL_LIB@ @SHLIB_MAIN_LDFLAGS@
 AR = @AR@
 RANLIB = @RANLIB@
@@ -167,3 +167,7 @@ install : all
 	done
 	$(INSTALL) -d $(SITE_SCM_DIR)
 	$(INSTALL) -d $(SITE_ARCH_DIR)
+
+uninstall :
+	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
+	rm -rf $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@ $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@ $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@
