@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.228 2002-06-30 04:20:32 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.229 2002-06-30 20:11:27 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13385,17 +13385,20 @@ An array can take
 @c EN
 Internally, an array consists of a backing storage and a mapping procedure.
 A backing storage is an object of aggregate type that can be accessed
-by integer index.  A mapping procedure is a procedure that takes
+by integer index.  A mapping procedure takes
 multi-dimensional indices (or index object; see below) and 
+returns a scalar index into the backing storage.
 @c JP
 @c COMMON
 @end deftp
 
 @deftp {Class} <array>
 @clindex array
+
 @end deftp
 
 @deftp {Reader syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
+An array's writer method 
 @end deftp
 
 @defun array? obj
