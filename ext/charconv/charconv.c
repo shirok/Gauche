@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.5 2001-05-30 09:01:17 shirok Exp $
+ *  $Id: charconv.c,v 1.6 2001-06-02 09:54:07 shirok Exp $
  */
 
 #include <errno.h>
@@ -39,30 +39,64 @@ typedef struct conv_info_rec {
     char *outptr;
 } conv_info;
 
-/* Called when the parent port needs more data in its buffer, i.e. 
-   in conv_info.outbuf. */
+/*------------------------------------------------------------
+  Input conversion
+
+   Scheme <-- Bufferd port       conv_info      remote
+                    ^              |  ^           |
+                    |              |  |           |
+                    \--- outbuf <--/  \-- inbuf --/
+   
+ */
+
 static int conv_input_filler(char *buf, int len, void *data)
 {
     conv_info *info = (conv_info*)data;
-    size_t inleft, outleft, converted;
+    size_t insize = info->inptr - info->inbuf, inroom;
+    size_t outroom = info->bufsiz;
+    size_t result;
+    int nread;
     const char *inbuf = info->inbuf;
     char *outbuf = info->outbuf;
 
+    printf("in(%p,%p)%d out(%p,%p)%d\n",
+           info->inbuf, info->inptr, insize,
+           info->outbuf, info->outptr, outroom);
+    
     /* fill the input buffer */
+    nread = Scm_Getz(info->remote, info->inptr, info->bufsiz - insize);
+    if (nread <= 0) {
+        if (insize == 0) return 0; /* EOF */
+    } else {
+        insize += nread;
+    }
+    inroom = insize;
+
+    /* conversion */
+    result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
+
+    printf("in(%p)%d out(%p)%d\n",
+           inbuf, inroom, outbuf, outroom);
     
-    inleft = info->inptr - info->inbuf;
-    outleft = info->outptr - info->outbuf;
-    converted = iconv(info->handle, &inbuf, &inleft, &outbuf, &outleft);
-    
-    if (converted == (size_t)-1) {
+    if (result == (size_t)-1) {
         if (errno == EINVAL) {
             /* conversion stopped due to an incomplete character at the
                end of the input buffer. */
+            
         } else if (errno == E2BIG) {
             /* output buffer is full. */
         } else {
             /* it's likely that input contains invalid sequence. */
         }
+    } else {
+        /* shift unconverted input bytes */
+        if (inroom > 0) {
+            memmove(info->inbuf, inbuf, inroom);
+            info->inptr = info->inbuf + inroom;
+        } else {
+            info->inptr = info->inbuf;
+        }
+        return info->bufsiz - outroom;
     }
     return 0;
 }

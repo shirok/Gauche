@@ -3,6 +3,11 @@
 	* src/gauche.h, src/gauche/portmacros.h, src/*.c : changed API of
 	  Scm_Getz to be consisntent with C's fgets (port comes last), and
 	  added len parameter to Scm_Putz.
+	* src/port.c : fixed bugs in bufport_putz.
+	* src/extlib.stub : added open-output-buffered-port.
+	* lib/rfc/822.scm : added.
+	* lib/gauche/regexp.scm, test/regexp.scm : added test and changed
+	  semantics of rxmatch-case.
 
 2001-05-31  Shiro Kawai  <shiro@acm.org>
 
