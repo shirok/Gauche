@@ -1,7 +1,7 @@
 /*
  * vm.h - Virtual machine
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.58 2002-03-13 12:07:49 shirok Exp $
+ *  $Id: vm.h,v 1.59 2002-03-14 11:20:22 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -166,22 +166,20 @@ typedef struct ScmEscapePointRec {
 /*
  * VM structure
  *
- *  In Gauche, VM == Thread.
- *
- *  Almost all members in the VM structure are private for the thread.
- *  Exception is a children list---it will be modified when the child
- *  thread exits.  We need to keep bidirectional link for child and
- *  parent, since GC may not see the thread specific data.
+ *  In Gauche, each thread has a VM.  Indeed, the Scheme object
+ *  <thread> is ScmVM in C.
  */
 
 struct ScmVMRec {
     SCM_HEADER;
-    ScmVM *parent;              /* link to the parent VM.  NULL for root VM */
-    ScmObj children;            /* list of child VMs. */
-    ScmInternalThread thread;   /* the thread executing this VM. */
-    ScmInternalMutex  vmlock;   /* mutex to be used for children list */
+#ifdef GAUCHE_USE_PTHREAD
+    pthread_t thread;           /* the thread executing this VM. */
+#endif /*!GAUCHE_USE_PTHREAD*/
+    int state;                  /* thread state. */
+    ScmInternalMutex  vmlock;   /* mutex to be used to lock this VM structure. */
     ScmObj name;                /* Scheme thread name. */
     ScmObj specific;            /* Scheme thread specific data. */
+    ScmProcedure *thunk;        /* Entry point of this VM. */
     ScmModule *module;          /* current global namespace.  note that this
                                    is used only in compilation. */
     ScmCStack *cstack;          /* current escape point.  see the comment of
@@ -250,6 +248,21 @@ SCM_EXTERN void Scm_VMDefaultExceptionHandler(ScmObj);
 
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
+
+/* Value of vm->state */
+enum {
+    SCM_VM_NEW,                 /* This VM is just created and not attached
+                                   to the running thread.  vm->thread is not
+                                   initialized. */
+    SCM_VM_RUNNABLE,            /* This VM is attached to a thread which is
+                                   runnable or blocked. */
+    SCM_VM_BLOCKED,             /* The thread attached to this VM is stopped
+                                   because of thread-yield! or thread-sleep!.
+                                   Note that if the thread is blocked by
+                                   system call, VM's state is still RUNNABLE.*/
+    SCM_VM_TERMINATED           /* The thread attached to this VM is
+                                   terminated. */
+} Scm_VMStates;
 
 /*
  * VM instructions

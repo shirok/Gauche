@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.128 2002-03-13 12:07:39 shirok Exp $
+;;; $Id: extlib.stub,v 1.129 2002-03-14 11:20:21 shirok Exp $
 ;;;
 
 "
@@ -1090,7 +1090,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; Thread = VM
 ;;
 (define-cproc current-thread ()
-  "  SCM_RETURN(SCM_OBJ(Scm_VM()));")
+  "SCM_RETURN(SCM_OBJ(Scm_VM()));")
+
+(define-cproc thread? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_VMP(obj)));")
 
 (define-cproc thread-name (vm)
   (assert (thread? vm))
@@ -1103,6 +1106,14 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc thread-specific-set! (vm obj)
   (assert (thread? vm))
   "vm->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc make-thread (thunk &optional (name #f))
+  (assert (procedure? thunk))
+  "SCM_RETURN(Scm_MakeThread(thunk, name));")
+
+(define-cproc thread-start! (vm)
+  (assert (thread? vm))
+  "SCM_RETURN(Scm_ThreadStart(vm));")
 
 (define-cproc vm-dump (&optional vm)
   " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.134 2002-03-13 12:07:39 shirok Exp $
+ *  $Id: vm.c,v 1.135 2002-03-14 11:20:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -31,6 +31,9 @@
  *   VM encapsulates the dynamic status of the current exection.
  *   In Gauche, there's always one active virtual machine per thread,
  *   referred by Scm_VM().   From Scheme, VM is seen as a <thread> object.
+ *
+ *   All the VMs are chained to a global list vmList.  It is necessary
+ *   since GC may not be able to see the thread specific data.
  */
 
 static void vm_print(ScmObj vm, ScmPort *port, ScmWriteContext *ctx);
@@ -38,6 +41,8 @@ static void vm_print(ScmObj vm, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, vm_print);
 
 static ScmVM *rootVM;           /* VM for primodial thread */
+static ScmObj vmList;           /* list of all VMs */
+static ScmInternalMutex vmListMutex; /* mutex for vmList. */
 
 #ifdef GAUCHE_USE_PTHREAD
 static pthread_key_t vm_key;
@@ -67,15 +72,11 @@ ScmVM *Scm_NewVM(ScmVM *base,
     int i;
     
     SCM_SET_CLASS(v, SCM_CLASS_VM);
-    v->parent = base;
-    v->children = SCM_NIL;
-#ifdef GAUCHE_USE_PTHREAD
-    pthread_mutex_init(&v->vmlock, NULL);
-#else  /* !GAUCHE_USE_PTHREAD */
-    v->vmlock = 0;
-#endif /* !GAUCHE_USE_PTHREAD */
+    SCM_INTERNAL_MUTEX_INIT(v->vmlock);
+    v->state = SCM_VM_NEW;
     v->name = name;
     v->specific = SCM_FALSE;
+    v->thunk = NULL;
     v->module = module ? module : base->module;
     v->cstack = base ? base->cstack : NULL;
     
@@ -157,25 +158,32 @@ ScmVM *Scm_VM(void)
 }
 
 /*
- * VM locking
+ * Safe locking.
  */
-ScmObj Scm_WithVMLock(ScmVM *vm, ScmObj (*func)(ScmVM *, void *), void *data)
+ScmObj Scm_WithLock(ScmInternalMutex *mutex,
+                    ScmObj (*func)(void *),
+                    void *data,
+                    const char *info)
 {
 #ifdef GAUCHE_USE_PTHREAD
     volatile ScmObj obj;
-    int r = pthread_mutex_lock(&vm->vmlock);
+    int r = pthread_mutex_lock(mutex);
     if (r == EDEADLK) {
-        Scm_Error("dead lock detected when trying to lock %S", vm);
+        if (info) {
+            Scm_Error("dead lock detected when trying to lock %s", info);
+        } else {
+            Scm_Error("dead lock detected");
+        }
     }
     SCM_UNWIND_PROTECT {
-        obj = func(vm, data);
+        obj = func(data);
     }
     SCM_WHEN_ERROR {
-        pthread_mutex_unlock(&vm->vmlock);
+        pthread_mutex_unlock(mutex);
         SCM_NEXT_HANDLER;
     }
     SCM_END_PROTECT;
-    pthread_mutex_unlock(&vm->vmlock);
+    pthread_mutex_unlock(mutex);
     return obj;
 #else  /* !GAUCHE_USE_PTHREAD */
     return func(vm, data);
@@ -184,22 +192,25 @@ ScmObj Scm_WithVMLock(ScmVM *vm, ScmObj (*func)(ScmVM *, void *), void *data)
 
 /*
  * Clean up VM when thread exits.
+ * NB: when this callback is invoked, pthread's thread specific data
+ * is already cleared, so theVM returns NULL.  We can't do much---even
+ * Scm_Error is not available.  
  */
 #ifdef GAUCHE_USE_PTHREAD
-static ScmObj vm_delete_child(ScmVM *vm, void *data)
-{
-    ScmVM *child = SCM_VM(data);
-    vm->children = Scm_DeleteX(SCM_OBJ(child), vm->children, SCM_CMP_EQ);
-    return SCM_UNDEFINED;
-}
-
 static void vm_cleanup(void *data)
 {
     ScmVM *vm = SCM_VM(data);
-    if (vm->parent) {
-        Scm_WithVMLock(vm->parent, vm_delete_child, (void*)vm);
-        vm->parent = NULL;
+    if (pthread_mutex_lock(&vm->vmlock) == EDEADLK) {
+        Scm_Panic("dead lock in vm_cleanup.");
     }
+    vm->state = SCM_VM_TERMINATED;
+    pthread_mutex_unlock(&vm->vmlock);
+    if (pthread_mutex_lock(&vmListMutex) == EDEADLK) {
+        Scm_Panic("dead lock in vm_cleanup.");
+    }
+    /* NB: Assuming Scm_DeleteX doesn't throw an error for EQ comparison. */
+    vmList = Scm_DeleteX(SCM_OBJ(vm), vmList, SCM_CMP_EQ);
+    pthread_mutex_unlock(&vmListMutex);
 }
 #endif /* GAUCHE_USE_PTHREAD */
 
@@ -217,9 +228,12 @@ void Scm__InitVM(void)
     if (pthread_setspecific(vm_key, rootVM) != 0) {
         Scm_Panic("pthread_setspecific failed.");
     }
+    rootVM->thread = pthread_self();
 #else   /* !GAUCHE_USE_PTHREAD */
     rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule());
 #endif  /* !GAUCHE_USE_PTHREAD */
+    vmList = SCM_LIST1(SCM_OBJ(rootVM));
+    SCM_INTERNAL_MUTEX_INIT(vmListMutex);
 }
 
 /*====================================================================
@@ -2312,6 +2326,77 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
     vm->vals[2] = val3;
     vm->vals[3] = val4;
     return val0;
+}
+
+/*==============================================================
+ * Thread interface
+ */
+
+/* Creation.  In the "NEW" state, just VM is allocated but actual thread
+   is not created. */
+static ScmObj insert_self(void *self)
+{
+    vmList = Scm_Cons(SCM_OBJ(self), vmList);
+}
+
+ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
+{
+    ScmVM *current = theVM, *vm;
+
+    if (SCM_PROCEDURE_REQUIRED(thunk) != 0) {
+        Scm_Error("thunk required, but got %S", thunk);
+    }
+    vm = Scm_NewVM(current, current->module, name);
+    vm->thunk = thunk;
+    Scm_WithLock(&vmListMutex, insert_self, (void*)vm, "global VM list");
+    return SCM_OBJ(vm);
+}
+
+/* Start a thread.  If the VM is in "NEW" state, create a new thread and
+   make it run.  Otherwise, if the thread has been stopped, restart it. */
+static void *thread_entry(void *vm)
+{
+    ScmObj r;
+    if (pthread_setspecific(vm_key, vm) != 0) {
+        Scm_Error("pthread_setspecific failed on %S", vm);
+    }
+    r = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
+    return NULL;
+}
+
+static ScmObj thread_start(void *data)
+{
+    ScmVM *vm = SCM_VM(data);
+    switch (vm->state) {
+    case SCM_VM_NEW:
+#ifdef GAUCHE_USE_PTHREAD
+        SCM_ASSERT(vm->thunk);
+        vm->state = SCM_VM_RUNNABLE;
+        if (pthread_create(&vm->thread, NULL, thread_entry, data) != 0) {
+            vm->state = SCM_VM_NEW;
+            Scm_Error("couldn't create a pthread for thread %S", vm);
+        }
+#else  /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREAD*/
+        break;
+    case SCM_VM_RUNNABLE:
+        /* do nothing */
+        break;
+    case SCM_VM_BLOCKED:
+#ifdef GAUCHE_USE_PTHREAD
+#else  /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREAD*/
+        break;
+    default:
+        Scm_Error("attempted to start a terminated thread: %S", vm);
+    }
+    return SCM_OBJ(vm);
+}
+
+ScmObj Scm_ThreadStart(ScmVM *vm)
+{
+    return Scm_WithLock(&(vm->vmlock), thread_start,
+                        (void*)vm, "starting thread");
 }
 
 /*==============================================================

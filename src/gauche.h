@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.221 2002-03-13 12:07:39 shirok Exp $
+ *  $Id: gauche.h,v 1.222 2002-03-14 11:20:21 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -328,10 +328,6 @@ typedef struct ScmWriteContextRec ScmWriteContext;
 
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
-SCM_EXTERN ScmObj Scm_WithVMLock(ScmVM *vm,
-                                 ScmObj (*func)(ScmVM *, void *),
-                                 void *data);
-
 SCM_EXTERN ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
@@ -371,6 +367,13 @@ SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
+
+SCM_EXTERN ScmObj Scm_WithLock(ScmInternalMutex *mutex, 
+                               ScmObj (*func)(void *),
+                               void *data,
+                               const char *info);
+SCM_EXTERN ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
+SCM_EXTERN ScmObj Scm_ThreadStart(ScmVM *vm);
 
 /*---------------------------------------------------------
  * CLASS
@@ -1879,6 +1882,7 @@ typedef struct ScmMutexRec {
     SCM_HEADER;
     ScmInternalMutex mutex;
     ScmObj specific;
+    ScmVM *owner;
 } ScmMutex;
 
 SCM_CLASS_DECL(Scm_MutexClass);

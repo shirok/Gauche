@@ -1,3 +1,9 @@
+2002-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/vm.h : added initial code for make-thread and
+	  thread-start!.  There's a problem that main thread hangs at
+	  sigsuspend in exit().
+
 2002-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in, src/gauche/config.h.in : added --with-pthread.
