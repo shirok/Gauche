@@ -3,7 +3,7 @@
 ;;
 
 (add-load-path "../../src")             ;allow 'in-the-place' testing
-(require "tester/tester")
+(use tester.tester)
 
 (require "example")
 (import example)

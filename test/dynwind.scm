@@ -2,10 +2,10 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.4 2001-03-07 06:58:54 shiro Exp $
+;; $Id: dynwind.scm,v 1.5 2001-03-10 07:51:49 shiro Exp $
 
 (add-load-path "../lib")
-(require "tester/tester")
+(use tester.tester)
 
 (test-start "dynamic-wind and call/cc")
 

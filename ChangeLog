@@ -1,3 +1,12 @@
+2001-03-09  Shiro Kawai  <shiro@scherzo>
+
+	* configure.in etc.: revised configuration process.  fixed protocol
+	  of build, test and call extension modules.
+	* ext/example: example of dynamic loadable extension.
+	* src/port.c: implement procedural port protocol.
+	* src/gauche-init.scm: added USE macro, which combines function of
+	  require and import.  Changed library and test files accordingly.
+
 2001-03-08  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.1.5

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.12 2001-03-09 08:34:26 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.13 2001-03-10 07:51:49 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -45,6 +45,16 @@
 ;; Same as above.
 (define-macro (require feature)
   `',(%require feature))
+
+;; Preferred way
+;;  (use x.y.z) === (require "x/y/z") (import x.y.z)
+(define-macro (use module)
+  (unless (symbol? module) (error "use: symbol required: ~s" module))
+  (let ((path (string-join (string-split (symbol->string module) #\.) "/")))
+    `(begin
+       (require ,path)
+       (import ,module)))
+  )
 
 ;;
 ;; Autoload

@@ -3,12 +3,12 @@
 ;;;
 
 (add-load-path "../lib")
-(require "tester/tester")
+(use tester.tester)
 
 (test-start "primitive syntax")
 
 ;;----------------------------------------------------------------
-(section "contitionals")
+(test-section "contitionals")
 
 (test "if" 5 (lambda ()  (if #f 2 5)))
 (test "if" 2 (lambda ()  (if (not #f) 2 5)))
@@ -24,11 +24,11 @@
 (test "or"  3  (lambda ()  (or #f 3 unbound-var)))
 
 (test "when" 4          (lambda ()  (when 3 5 4)))
-(test "when" *undef*    (lambda ()  (when #f 5 4)))
-(test "unless" *undef*  (lambda ()  (unless 3 5 4)))
+(test "when" (test-undef)    (lambda ()  (when #f 5 4)))
+(test "unless" (test-undef)  (lambda ()  (unless 3 5 4)))
 (test "unless" 4        (lambda ()  (unless #f 5 4)))
 
-(test "cond" *undef*  (lambda ()  (cond (#f 2))))
+(test "cond" (test-undef)  (lambda ()  (cond (#f 2))))
 (test "cond" 5        (lambda ()  (cond (#f 2) (else 5))))
 (test "cond" 2        (lambda ()  (cond (1 2) (else 5))))
 (test "cond" 8        (lambda ()  (cond (#f 2) (1 8) (else 5))))
@@ -37,7 +37,7 @@
 (test "case" #t (lambda ()  (case (+ 2 3) ((1 3 5 7 9) #t) ((0 2 4 6 8) #f))))
 
 ;;----------------------------------------------------------------
-(section "closure and saved env")
+(test-section "closure and saved env")
 
 (test "lambda" 5  (lambda ()  ((lambda (x) (car x)) '(5 6 7))))
 (test "lambda" 12
@@ -55,7 +55,7 @@
 (test "lambda" 2 (lambda ()  (count)))
 
 ;;----------------------------------------------------------------
-(section "application")
+(test-section "application")
 
 (test "apply" '(1 2 3) (lambda ()  (apply list 1 '(2 3))))
 (test "apply" '(1 2 3) (lambda ()  (apply apply (list list 1 2 '(3)))))
@@ -66,7 +66,7 @@
 (test "map" '((1 . 4) (2 . 5) (3 . 6))  (lambda ()  (map cons '(1 2 3) '(4 5 6))))
 
 ;;----------------------------------------------------------------
-(section "loop")
+(test-section "loop")
 
 (define (fact-non-tail-rec n)
   (if (<= n 1) n (* n (fact-non-tail-rec (- n 1)))))
@@ -90,7 +90,7 @@
 (test "loop do"           120 (lambda ()  (fact-do 5)))
 
 ;;----------------------------------------------------------------
-(section "quasiquote")
+(test-section "quasiquote")
 
 (test "qq" '(1 2 3)       (lambda ()  `(1 2 3)))
 (test "qq" '()            (lambda ()  `()))
@@ -106,7 +106,7 @@
 (test "qq" '#()           (lambda ()  `#(,@(list))))
 
 ;;----------------------------------------------------------------
-(section "multiple values")
+(test-section "multiple values")
 
 (test "receive" '(1 2 3)
       (lambda ()  (receive (a b c) (values 1 2 3) (list a b c))))

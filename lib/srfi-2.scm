@@ -10,7 +10,7 @@
 
 ;; [SK] Changed the macro name from LAND* to AND-LET*, according to the
 ;;      finalized SRFI.
-;; $Id: srfi-2.scm,v 1.1 2001-02-14 20:21:37 shiro Exp $
+;; $Id: srfi-2.scm,v 1.2 2001-03-10 07:51:48 shiro Exp $
 
 ; 			Checking of a LAND* special form
 ;
@@ -145,6 +145,10 @@
 ; The first "failure" triggers the guard and aborts the rest of the
 ; sequence (which presumably would not make any sense to execute anyway).
 ;
+
+(define-module srfi-2)
+(select-module srfi-2)
+(export and-let*)
 
 (define-macro (AND-LET* claws . body)
   (let* ((new-vars '()) (result (cons 'and '())) (growth-point result))

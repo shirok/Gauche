@@ -3,7 +3,7 @@
 ;;
 
 (add-load-path "../lib")
-(require "tester/tester")
+(use tester.tester)
 
 (test-start "macro")
 
