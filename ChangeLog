@@ -1,3 +1,8 @@
+2004-07-20  Kimura Fuyuki  <fuyuki@hadaly.org>
+
+	* ext/charconv/Makefile.in: Add three C files to the GENERATED
+	  variable since they should be cleaned out by `make distclean'.
+
 2004-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (write_ss_rec): fixed a bug to avoid numbers from

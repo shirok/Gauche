@@ -13,7 +13,8 @@ SCM_CATEGORY = gauche
 LIBFILES = libcharconv.$(SOEXT)
 SCMFILES = charconv.scm
 
-GENERATED = Makefile charconv.h convlib.c charconv_head.c charconv_tail.c
+GENERATED = Makefile charconv.h convlib.c charconv_head.c charconv_tail.c \
+	    eucj2ucs.c ucs2eucj.c guess_tab.c
 
 OBJECTS = charconv_head.$(OBJEXT) charconv.$(OBJEXT) convlib.$(OBJEXT) \
           jconv.$(OBJEXT) guess.$(OBJEXT) charconv_tail.$(OBJEXT)
