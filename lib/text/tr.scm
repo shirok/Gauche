@@ -12,12 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tr.scm,v 1.3 2001-09-20 20:44:32 shirok Exp $
+;;;  $Id: tr.scm,v 1.4 2001-09-21 09:58:33 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
 
-(define-motulde text.tr
+(define-module text.tr
   (use srfi-1)
   (use srfi-11) ;let-values
   (use srfi-13)
@@ -97,10 +97,12 @@
                      (start (read-char)
                             (cons (list size from to) r)))))))
       (define (repeat c d n r)
-        (cond ((eof-object? d) (reverse (cons (list n c) r)))
-              ((char-numeric? d) (repeat c (read-char)
-                                         (+ (* n 10) (digit->integer d)) r))
-              (else (start d (cons (list n c) r)))))
+        (cond ((eof-object? d)
+               (reverse (cons (list (if (= n 0) *char-code-max* n) c) r)))
+              ((char-numeric? d)
+               (repeat c (read-char) (+ (* n 10) (digit->integer d)) r))
+              (else
+               (start d (cons (list (if (= n 0) *char-code-max* n) c) r)))))
 
       (start (read-char) '()))))
 
