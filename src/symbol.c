@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.23 2001-10-30 09:00:30 shirok Exp $
+ *  $Id: symbol.c,v 1.24 2002-01-12 10:44:14 shirok Exp $
  */
 
 #include "gauche.h"
@@ -73,7 +73,9 @@ ScmObj Scm_Gensym(ScmString *prefix)
    bit 0: bad char for symbol to begin with
    bit 1: bad char for symbol to contain
    bit 2: bad char for symbol, and should be written as \nnn
-   bit 3: bad char for symbol, and should be written as \c */
+   bit 3: bad char for symbol, and should be written as \c
+   bit 4: may be escaped when case fold mode
+ */
 static char special[] = {
  /* NUL .... */
     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
@@ -84,9 +86,9 @@ static char special[] = {
  /* 0  1  2  3  4  5  6  7  8  9  :  ;  <  =  >  ?  */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0, 0, 0, 0,
  /* @  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  */
-    1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    1, 16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
  /* P  Q  R  S  T  U  V  W  X  Y  Z  [  \  ]  ^  _  */
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 11,3, 0, 0,
+    16,16,16,16,16,16,16,16,16,16,16,3, 11,3, 0, 0,
  /* `  a  b  c  d  e  f  g  h  i  j  k  l  m  n  o  */
     3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
  /* p  q  r  s  t  u  v  w  x  y  z  {  |  }  ~  ^? */
@@ -95,7 +97,7 @@ static char special[] = {
 
 static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    if (ctx->mode == SCM_WRITE_DISPLAY) {
+    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(SCM_SYMBOL(obj)->name, port);
     } else {
         /* See if we have special characters, and use |-escape if necessary. */
@@ -105,6 +107,8 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         const char *p = SCM_STRING_START(snam), *q;
         int siz = SCM_STRING_SIZE(snam), i;
         int escape = FALSE;
+        int case_mask =
+            ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);
         
         if (siz == 0) {         /* special case */
             SCM_PUTZ("||", -1, port);
@@ -118,7 +122,8 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             escape = TRUE;
         } else {
             for (i=0, q=p; i<siz; i++, q++) {
-                if ((unsigned int)*q < 128 && (special[(unsigned int)*q]&2)) {
+                if ((unsigned int)*q < 128
+                    && (special[(unsigned int)*q]&case_mask)) {
                     escape = TRUE;
                     break;
                 }

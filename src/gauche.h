@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.201 2002-01-11 11:35:00 shirok Exp $
+ *  $Id: gauche.h,v 1.202 2002-01-12 10:44:14 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1090,15 +1090,22 @@ struct ScmWriteContextRec {
 
 /* Print mode flags */
 enum {
-    SCM_WRITE_WRITE,            /* write mode   */
-    SCM_WRITE_DISPLAY,          /* display mode */
-    SCM_WRITE_DEBUG,            /* debug mode   */
-    SCM_WRITE_SCAN              /* this mode of call is only initiated
-                                   by Scm_WriteStar (write*).
-                                */
+    SCM_WRITE_WRITE = 0,        /* write mode   */
+    SCM_WRITE_DISPLAY = 1,      /* display mode */
+    SCM_WRITE_DEBUG = 2,        /* debug mode   */
+    SCM_WRITE_SCAN = 3,         /* this mode of call is only initiated
+                                   by Scm_WriteStar (write*). */
+    SCM_WRITE_MODE_MASK = 0x3,
+
+    SCM_WRITE_CASE_FOLD = 4,    /* case-fold mode.  need to escape capital
+                                   letters. */
+    SCM_WRITE_CASE_NOFOLD = 8,  /* case-sensitive mode.  no need to escape
+                                   capital letters */
+    SCM_WRITE_CASE_MASK = 0x0c
 };
 
-#define SCM_WRITE_MODE(ctx)   ((ctx)->mode)
+#define SCM_WRITE_MODE(ctx)   ((ctx)->mode & SCM_WRITE_MODE_MASK)
+#define SCM_WRITE_CASE(ctx)   ((ctx)->mode & SCM_WRITE_CASE_MASK)
 
 extern void Scm_Write(ScmObj obj, ScmObj port, int mode);
 extern int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.21 2001-12-14 10:55:57 shirok Exp $
+ *  $Id: write.c,v 1.22 2002-01-12 10:44:14 shirok Exp $
  */
 
 #include <stdio.h>
@@ -52,6 +52,11 @@ static const char *char_names[] = {
                                    is set up to look up for circular
                                    objects.
                                  */
+
+/* VM-default case mode */
+#define DEFAULT_CASE \
+   ((Scm_VM()->runtimeFlags&SCM_CASE_FOLD)? \
+    SCM_WRITE_CASE_FOLD:SCM_WRITE_CASE_NOFOLD)
 
 static inline int outlen(ScmPort *out)
 {
@@ -151,10 +156,14 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 void Scm_Write(ScmObj obj, ScmObj port, int mode)
 {
     ScmWriteContext ctx;
-    if (!SCM_OPORTP(port))
+    if (!SCM_OPORTP(port)) {
         Scm_Error("output port required, but got %S", port);
+    }
     ctx.mode = mode;
     ctx.flags = 0;
+
+    /* if case mode is not specified, use default taken from VM default */
+    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
     write_internal(obj, SCM_PORT(port), &ctx);
 }
 
@@ -180,6 +189,8 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     ctx.mode = mode;
     ctx.flags = WRITE_LIMITED;
     ctx.limit = width;
+    /* if case mode is not specified, use default taken from VM default */
+    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
     write_internal(obj, SCM_PORT(out), &ctx);
     nc = outlen(SCM_PORT(out));
     if (nc > width) {
@@ -323,6 +334,7 @@ int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
         Scm_Error("output port required, but got %S", port);
     ctx.mode = mode;
     ctx.flags = WRITE_CIRCULAR;
+    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
     if (width > 0) {
         ctx.flags |= WRITE_LIMITED;
         ctx.limit = width;
@@ -851,7 +863,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     int mode =
                         (c == 'A')? SCM_WRITE_DISPLAY : SCM_WRITE_WRITE;
                     ScmWriteContext ctx;
-                    ctx.mode = mode;
+                    ctx.mode = mode | DEFAULT_CASE;
                     ctx.flags = 0;
 
                     if (pound_appeared) {
