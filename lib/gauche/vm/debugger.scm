@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.6 2001-12-22 06:29:46 shirok Exp $
+;;;  $Id: debugger.scm,v 1.7 2002-01-05 11:08:18 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
@@ -35,7 +35,7 @@
     ((_ ?form)
      (receive (tmp . more) ?form
        (or (and-let* ((info (and (pair? '?form)
-                                 (pair-attribute-get '?form 'source-info)))
+                                 (pair-attribute-get '?form 'source-info #f)))
                       ((pair? info))
                       ((pair? (cadr info))))
              (format (current-error-port) "#?~s:~a:~,,,,50:s\n"
@@ -62,7 +62,7 @@
       (let ((code (caar s)))
         (format outp "~3d  ~,,,,v:s\n" i *expr-show-length* code)
         (or (and-let* (((pair? code))
-                       (info (pair-attribute-get code 'source-info))
+                       (info (pair-attribute-get code 'source-info #f))
                        ((pair? info))
                        ((pair? (cdr info))))
               (format outp "       At line ~a of ~s\n" (cadr info) (car info))
@@ -115,7 +115,7 @@
     (define (show-stack s level)
       (format outp "~3d:  ~,,,,v:s\n" level *expr-show-length* (car s))
       (and-let* (((pair? (car s)))
-                 (info (pair-attribute-get (car s) 'source-info))
+                 (info (pair-attribute-get (car s) 'source-info #f))
                  ((pair? info))
                  ((pair? (cdr info))))
         (format outp "       At line ~a of ~s\n" (cadr info) (car info)))
