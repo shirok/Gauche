@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.13 2002-10-15 10:27:53 shirok Exp $
+# $Id: aclocal.m4,v 1.14 2003-01-04 09:26:25 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -99,7 +99,7 @@ AC_SUBST(OPTFLAGS)
 
 # AC_GAUCHE_FIX_LIBS
 #   Sets LDFLAGS and LIBS to generate shared library.
-#   This has to come all the tests that requre linking, or those test
+#   This has to come after all the tests that requre linking, or those test
 #   will fail because they can't generate stand-alone executable.
 AC_DEFUN([AC_GAUCHE_FIX_LIBS],
          [
