@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.38 2001-09-17 01:36:39 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.39 2001-09-26 11:24:38 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -91,6 +91,17 @@
                                %complex-acos %complex-asin %complex-atan
                                %complex-sinh %complex-cosh %complex-tanh
                                %complex-asinh %complex-acosh %complex-atanh))
+
+;; these are so useful that I couldn't resist to add...
+(define (file-exists? path)
+  (sys-access path F_OK))
+(define (file-is-regular? path)
+  (and (sys-access path F_OK)
+       (eq? (sys-stat->file-type (sys-stat path)) 'regular)))
+(define (file-is-directory? path)
+  (and (sys-access path F_OK)
+       (eq? (sys-stat->file-type (sys-stat path)) 'directory)))
+
 
 (define-syntax define-trans
   (syntax-rules ()
