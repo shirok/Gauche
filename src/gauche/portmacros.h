@@ -12,11 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.7 2001-06-02 09:01:46 shirok Exp $
+ *  $Id: portmacros.h,v 1.8 2002-01-24 10:17:15 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
 #define GAUCHE_PORT_MACROS_H
+
+#include <errno.h>
 
 /*
  * Inlined operation for better performance.
@@ -183,6 +185,7 @@
         } else {                                                \
             SCM_PORT(port)->src.file.column++;                  \
         }                                                       \
+        if (b == EOF && errno == EINTR) Scm_SigCheck(Scm_VM()); \
     } while(0)
     
 #define SCM__FILE_GETC(c, port)                                         \
@@ -197,6 +200,7 @@
             SCM_PORT(port)->src.file.line++;                            \
             SCM_PORT(port)->src.file.column = 0;                        \
         }                                                               \
+        if (c == EOF && errno == EINTR) Scm_SigCheck(Scm_VM());         \
     } while (0)
 
 extern int Scm__PortFileGetc(int prefetch, ScmPort *port);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.29 2002-01-02 21:16:12 shirok Exp $
+ *  $Id: system.c,v 1.30 2002-01-24 10:17:01 shirok Exp $
  */
 
 #include <stdio.h>
@@ -37,6 +37,26 @@
  * Auxiliary system interface functions.   See syslib.stub for
  * Scheme binding.
  */
+
+/*
+ * Wrapper to the system call to handle signals.
+ * Use like Scm_SysCall(write(...)) etc.
+ */
+int Scm_SysCall(int r)
+{
+    if (r < 0 && errno == EINTR) {
+        Scm_SigCheck(Scm_VM());
+    }
+    return r;
+}
+
+void *Scm_PtrSysCall(void *r)
+{
+    if (r == NULL && errno == EINTR) {
+        Scm_SigCheck(Scm_VM());
+    }
+    return r;
+}
 
 /*
  * A utility function for the procedures that accepts either port or
@@ -75,11 +95,15 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
     struct dirent *dire;
     DIR *dirp = opendir(Scm_GetStringConst(pathname));
     
-    if (dirp == NULL) Scm_SysError("couldn't open directory %S", pathname);
+    if (dirp == NULL) {
+        Scm_SigCheck(Scm_VM());
+        Scm_SysError("couldn't open directory %S", pathname);
+    }
     while ((dire = readdir(dirp)) != NULL) {
         ScmObj ent = SCM_MAKE_STR_COPYING(dire->d_name);
         SCM_APPEND1(head, tail, ent);
     }
+    Scm_SigCheck(Scm_VM());
     closedir(dirp);
     return head;
 }
@@ -91,7 +115,8 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
 #ifdef HAVE_GLOB_H
     glob_t globbed;
     ScmObj head = SCM_NIL, tail = SCM_NIL;
-    int i, r = glob(Scm_GetStringConst(pattern), 0, NULL, &globbed);
+    int i, r;
+    r = Scm_SysCall(glob(Scm_GetStringConst(pattern), 0, NULL, &globbed));
     if (r < 0) Scm_Error("Couldn't glob %S", pattern);
     for (i = 0; i < globbed.gl_pathc; i++) {
         ScmObj path = SCM_MAKE_STR_COPYING(globbed.gl_pathv[i]);
@@ -129,15 +154,20 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
             ;
         if (p == str+1) {
             pwd = getpwuid(geteuid());
-            if (pwd == NULL) Scm_SysError("couldn't get home directory.\n");
+            if (pwd == NULL) {
+                Scm_SigCheck(Scm_VM());
+                Scm_SysError("couldn't get home directory.\n");
+            }
         } else {
             char *user = (char *)SCM_MALLOC_ATOMIC(p-str);
             memcpy(user, str+1, p-str-1);
             user[p-str-1] = '\0';
             pwd = getpwnam(user);
-            if (pwd == NULL)
+            if (pwd == NULL) {
+                Scm_SigCheck(Scm_VM());
                 Scm_Error("couldn't get home directory of user \"%s\".\n",
                           user);
+            }
         }
         srcp = p;
         SKIP_SLASH;
@@ -150,8 +180,10 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         int dirlen;
 #define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
         char p[GETCWD_PATH_MAX];
-        if (getcwd(p, GETCWD_PATH_MAX-1) == NULL)
+        if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) {
+            Scm_SigCheck(Scm_VM());
             Scm_SysError("couldn't get current directory.");
+        }
         dirlen = strlen(p);
         buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
         strcpy(buf, p);
@@ -391,16 +423,24 @@ ScmObj Scm_GetGroupById(gid_t gid)
 {
     struct group *gdata;
     gdata = getgrgid(gid);
-    if (gdata == NULL) return SCM_FALSE;
-    else return make_group(gdata);
+    if (gdata == NULL) {
+        Scm_SigCheck(Scm_VM());
+        return SCM_FALSE;
+    } else {
+        return make_group(gdata);
+    }
 }
 
 ScmObj Scm_GetGroupByName(ScmString *name)
 {
     struct group *gdata;
     gdata = getgrnam(Scm_GetStringConst(name));
-    if (gdata == NULL) return SCM_FALSE;
-    else return make_group(gdata);
+    if (gdata == NULL) {
+        Scm_SigCheck(Scm_VM());
+        return SCM_FALSE;
+    } else {
+        return make_group(gdata);
+    }
 }
 
 /*
@@ -442,16 +482,24 @@ ScmObj Scm_GetPasswdById(uid_t uid)
 {
     struct passwd *pdata;
     pdata = getpwuid(uid);
-    if (pdata == NULL) return SCM_FALSE;
-    else return make_passwd(pdata);
+    if (pdata == NULL) {
+        Scm_SigCheck(Scm_VM());
+        return SCM_FALSE;
+    } else {
+        return make_passwd(pdata);
+    }
 }
 
 ScmObj Scm_GetPasswdByName(ScmString *name)
 {
     struct passwd *pdata;
     pdata = getpwnam(Scm_GetStringConst(name));
-    if (pdata == NULL) return SCM_FALSE;
-    else return make_passwd(pdata);
+    if (pdata == NULL) {
+        Scm_SigCheck(Scm_VM());
+        return SCM_FALSE;
+    } else {
+        return make_passwd(pdata);
+    }
 }
 
 /*
@@ -478,8 +526,9 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
     char **argv;
     ScmObj ap, iop;
 
-    if (argc < 1)
+    if (argc < 1) {
         Scm_Error("argument list must have at least one element: %S", args);
+    }
     
     argv = SCM_NEW2(char **, sizeof(char *)*(argc+1));
     for (i=0, ap = args; i<argc; i++, ap = SCM_CDR(ap)) {
@@ -643,11 +692,11 @@ static ScmObj select_int(ScmSysFdset *rfds, ScmSysFdset *wfds,
     if (wfds && wfds->maxfd > maxfds) maxfds = wfds->maxfd;
     if (efds && efds->maxfd > maxfds) maxfds = efds->maxfd;
     
-    numfds = select(maxfds+1,
-                    (rfds? &rfds->fdset : NULL),
-                    (wfds? &wfds->fdset : NULL),
-                    (efds? &efds->fdset : NULL),
-                    select_timeval(timeout, &tm));
+    numfds = Scm_SysCall(select(maxfds+1,
+                                (rfds? &rfds->fdset : NULL),
+                                (wfds? &wfds->fdset : NULL),
+                                (efds? &efds->fdset : NULL),
+                                select_timeval(timeout, &tm)));
     
     if (numfds < 0) Scm_SysError("select failed");
     return Scm_Values4(Scm_MakeInteger(numfds),

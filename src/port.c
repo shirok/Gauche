@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.43 2001-11-12 10:39:29 shirok Exp $
+ *  $Id: port.c,v 1.44 2002-01-24 10:17:01 shirok Exp $
  */
 
 #include <unistd.h>
@@ -260,7 +260,7 @@ ScmObj Scm_OpenFilePort(const char *path, const char *mode)
         else      flags |= O_WRONLY;
         if (op != 'A') flags |= O_TRUNC;
 
-        fd = open(path, flags, 0666);
+        fd = Scm_SysCall(open(path, flags, 0666));
         if (fd < 0) {
             if (errno == EEXIST || errno == ENOENT) return SCM_FALSE;
             Scm_SysError("couldn't open %s", path);
@@ -272,7 +272,10 @@ ScmObj Scm_OpenFilePort(const char *path, const char *mode)
     } else {
         fp = fopen(path, mode);
     }
-    if (fp == NULL) return SCM_FALSE;
+    if (fp == NULL) {
+        Scm_SigCheck(Scm_VM());
+        return SCM_FALSE;
+    }
     return Scm_MakeFilePort(fp, SCM_MAKE_STR_COPYING(path), mode, TRUE);
 }
 
@@ -297,7 +300,10 @@ int Scm__PortFileGetc(int prefetch, ScmPort *port)
     nfollows = SCM_CHAR_NFOLLOWS(prefetch);
     for (i=1; i<= nfollows; i++) {
         next = getc(port->src.file.fp);
-        if (next == EOF) return EOF;
+        if (next == EOF) {
+            Scm_SigCheck(Scm_VM());
+            return EOF;
+        }
         if (next == '\n') port->src.file.line++;
         port->scratch[i] = next;
         port->scrcnt++;
@@ -457,6 +463,7 @@ int Scm_Getz(char *buf, int buflen, ScmPort *port)
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
         nread = fread(buf, 1, buflen, port->src.file.fp);
+        if (nread < 0 && errno == EINTR) Scm_SigCheck(Scm_VM());
         break;
     case SCM_PORT_ISTR:
         if (buflen <= port->src.istr.rest) {
@@ -643,14 +650,25 @@ struct fdport {
     struct fdport *pdata = (struct fdport *)port->src.proc.clientData
 #define CHECK_EOF(pdata, eofcode) \
     if (pdata->eofread) return EOF
-#define CHECK_RESULT(result, pdata, eofcode)                            \
-    do {                                                                \
-        if (result < 0)  { pdata->err = errno; return eofcode; }        \
-        if (result == 0) { pdata->eofread = TRUE; return eofcode; }     \
+#define CHECK_RESULT(result, pdata, eofcode)    \
+    do {                                        \
+        if (result < 0)  {                      \
+            Scm_SigCheck(Scm_VM());             \
+            pdata->err = errno;                 \
+            return eofcode;                     \
+        }                                       \
+        if (result == 0) {                      \
+            pdata->eofread = TRUE;              \
+            return eofcode;                     \
+        }                                       \
     } while (0)
-#define CHECK_ERROR(result, pdata)                              \
-    do {                                                        \
-        if (result < 0)  { pdata->err = errno; return -1; }     \
+#define CHECK_ERROR(result, pdata)              \
+    do {                                        \
+        if (result < 0)  {                      \
+            Scm_SigCheck(Scm_VM());             \
+            pdata->err = errno;                 \
+            return -1;                          \
+        }                                       \
     } while (0)
 
 /* Unbuffered I/O */
@@ -767,7 +785,7 @@ static int fdport_close_unbuffered(ScmPort *port)
 {
     DECL_FDPORT(pdata, port);
     if (SCM_PORT_OWNER_P(port) && pdata->info.fd >= 0)
-        return close(pdata->info.fd);
+        return Scm_SysCall(close(pdata->info.fd));
     else
         return -1;
 }

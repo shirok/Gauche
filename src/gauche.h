@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.209 2002-01-22 11:39:46 shirok Exp $
+ *  $Id: gauche.h,v 1.210 2002-01-24 10:17:01 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1823,6 +1823,9 @@ extern void   Scm_SetMasterSigmask(sigset_t *set);
 /*---------------------------------------------------
  * SYSTEM
  */
+
+extern int Scm_SysCall(int r);
+extern void *Scm_PtrSysCall(void *r);
 
 extern int Scm_GetPortFd(ScmObj port_or_fd, int needfd);
 
