@@ -1,24 +1,24 @@
 
-.SUFFIXES: .EUCJP .SJIS .UTF8 .CSISO2022JP .EUCKR .CSISO2022KR
+.SUFFIXES: .EUCJP .SJIS .UTF-8 .CSISO2022JP .EUCKR .CSISO2022KR
 
-GENERATED = jp1.SJIS jp1.UTF8 jp1.CSISO2022JP \
-            jp2.SJIS jp2.UTF8 jp2.CSISO2022JP \
-	    kr1.UTF8 kr1.CSISO2022KR
+GENERATED = jp1.SJIS jp1.UTF-8 jp1.CSISO2022JP \
+            jp2.SJIS jp2.UTF-8 jp2.CSISO2022JP \
+	    kr1.UTF-8 kr1.CSISO2022KR
 
 .EUCJP.SJIS:
-	iconv -f EUC-JP -t SJIS -o $@ $<
+	iconv -f EUC-JP -t SJIS $< > $@
 
-.EUCJP.UTF8:
-	iconv -f EUC-JP -t UTF8 -o $@ $<
+.EUCJP.UTF-8:
+	iconv -f EUC-JP -t UTF-8 $< > $@
 
 .EUCJP.CSISO2022JP:
-	iconv -f EUC-JP -t CSISO2022JP -o $@ $<
+	iconv -f EUC-JP -t CSISO2022JP $< > $@
 
-.EUCKR.UTF8:
-	iconv -f EUC-KR -t UTF8 -o $@ $<
+.EUCKR.UTF-8:
+	iconv -f EUC-KR -t UTF-8 $< > $@
 
 .EUCKR.CSISO2022KR:
-	iconv -f EUC-KR -t CSISO2022KR -o $@ $<
+	iconv -f EUC-KR -t CSISO2022KR $< > $@
 
 all: $(GENERATED)
 

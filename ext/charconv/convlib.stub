@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: convlib.stub,v 1.6 2001-06-06 20:17:52 shirok Exp $
+;;; $Id: convlib.stub,v 1.7 2001-06-07 07:15:17 shirok Exp $
 ;;;
 
 "#include \"charconv.h\""
@@ -24,7 +24,7 @@
   SCM_RETURN(SCM_MAKE_BOOL(Scm_ConversionSupportedP(cfrom, cto)));")
 
 (define-cproc open-input-conversion-port (source from-code
-                                          &keyword to-code
+                                          &keyword (to-code #f)
                                                    (buffer-size 0)
                                                    (owner? #f))
   (assert (input-port? source))
@@ -35,7 +35,7 @@
                                          buffer_size, !SCM_FALSEP(ownerP)));")
 
 (define-cproc open-output-conversion-port (sink to-code
-                                           &keyword from-code
+                                           &keyword (from-code #f)
                                                     (buffer-size 0)
                                                     (owner? #f))
   (assert (output-port? sink))
