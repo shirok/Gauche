@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: termiolib.stub,v 1.3 2001-09-16 07:00:45 shirok Exp $
+;;; $Id: termiolib.stub,v 1.4 2002-04-29 22:24:36 shirok Exp $
 ;;;
 
 "#include \"termios.h\""
@@ -136,6 +136,11 @@
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
+;; pty interface
+(if "defined(HAVE_OPENPTY)"
+(define-cproc sys-openpty (&optional term)
+  "SCM_RETURN(Scm_Openpty(term));")
+)
 
 ;; Local variables:
 ;; mode: scheme

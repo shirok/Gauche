@@ -1,7 +1,7 @@
 /*
  * termios.h - termios interface
  *
- *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.h,v 1.2 2002-02-10 05:40:06 shirok Exp $
+ *  $Id: termios.h,v 1.3 2002-04-29 22:24:36 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -20,6 +20,16 @@
 
 #include <gauche.h>
 #include <termios.h>
+#include "termconfig.h"
+#ifdef HAVE_PTY_H
+#include <pty.h>
+#endif
+#ifdef HAVE_UTIL_H
+#include <util.h>
+#endif
+#ifdef HAVE_LIBUTIL_H
+#include <libutil.h>
+#endif
 
 typedef struct ScmSysTermiosRec {
     SCM_HEADER;
@@ -31,6 +41,10 @@ SCM_CLASS_DECL(Scm_SysTermiosClass);
 #define SCM_SYS_TERMIOS(obj)    ((ScmSysTermios*)(obj))
 #define SCM_SYS_TERMIOS_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_SYS_TERMIOS))
 
-extern ScmObj Scm_MakeSysTermios(void);
+SCM_EXTERN ScmObj Scm_MakeSysTermios(void);
+
+#ifdef HAVE_OPENPTY
+SCM_EXTERN ScmObj Scm_Openpty(ScmObj slaveterm);
+#endif
 
 #endif /* GAUCHE_TERMIOS_H */

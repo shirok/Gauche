@@ -1,8 +1,9 @@
 dnl
 dnl configure termios extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.5 2002-02-10 05:40:06 shirok Exp $
+dnl $Id: configure.in,v 1.6 2002-04-29 22:24:36 shirok Exp $
 AC_INIT(termios.c)
+AC_CONFIG_HEADER(termconfig.h)
 AC_GAUCHE_INIT_EXT
 
 # Sets the default value of INSTALL_TYPE macro.
@@ -14,6 +15,13 @@ AC_GAUCHE_FLAGS
 
 # Check for other programs.
 AC_PROG_INSTALL
+
+# Check for headers
+AC_CHECK_HEADERS(pty.h util.h libutil.h)
+
+# check for libraries
+AC_SEARCH_LIBS(openpty, util, AC_DEFINE(HAVE_OPENPTY))
+AC_SEARCH_LIBS(forkpty, util, AC_DEFINE(HAVE_FORKPTY))
 
 # Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.c,v 1.6 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: termios.c,v 1.7 2002-04-29 22:24:36 shirok Exp $
  */
 
 #include <string.h>
@@ -20,6 +20,9 @@
 #include <gauche/class.h>
 #include <gauche/extend.h>
 
+/*
+ * Termios interface
+ */
 static ScmObj termios_allocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SysTermiosClass,
@@ -62,6 +65,30 @@ ScmObj Scm_MakeSysTermios(void)
 {
     return termios_allocate(NULL, SCM_NIL);
 }
+
+/*
+ * pty
+ */
+
+#ifdef HAVE_OPENPTY
+ScmObj Scm_Openpty(ScmObj slaveterm)
+{
+    int master, slave;
+    struct termios *term = NULL;
+
+    if (SCM_SYS_TERMIOS_P(slaveterm)) {
+        term = &SCM_SYS_TERMIOS(slaveterm)->term;
+    }
+    if (openpty(&master, &slave, NULL, term, NULL) < 0) {
+        Scm_SysError("openpty failed");
+    }
+    return Scm_Values2(SCM_MAKE_INT(master), SCM_MAKE_INT(slave));
+}
+#endif /*HAVE_OPENPTY*/
+
+#ifdef HAVE_FORKPTY
+#endif /*HAVE_FORKPTY*/
+
 
 /*
  * Initializaion
