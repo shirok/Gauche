@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.166 2002-02-26 09:44:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.167 2002-02-26 10:01:58 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5064,7 +5064,7 @@ Schemeはそのような機能を定義していませんが、Gaucheではリーダーマクロを使って
 文字列の補間を実装しました。
 @c COMMON
 
-@deftp {Reader syntax} #`@var{string-literal}
+@deftp {Reader syntax} @code{#`}@var{string-literal}
 
 @c EN
 Evaluates to a string.  If @var{string-literal} contains the
