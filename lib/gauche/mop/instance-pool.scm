@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: instance-pool.scm,v 1.1 2002-08-27 21:54:10 shirok Exp $
+;;;  $Id: instance-pool.scm,v 1.2 2002-10-14 01:50:39 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL.   THE API MAY CHANGE.
@@ -20,7 +20,6 @@
 (define-module gauche.mop.instance-pool
   (use srfi-1)
   (use util.queue)
-  (use gauche.threads)
   (export <instance-pool-meta> <instance-pool-mixin>
           <instance-table-meta> <instance-table-mixin>
           instance-pool->list instance-pool-find instance-pool-remove
@@ -68,44 +67,25 @@
 ;;
 ;;  instance-pool-compute-pools (class <instance-pool-meta>)
 
-;; The default pool.  Uses a queue.
-(define-class <instance-pool:queue-pool> ()
-  ((queue :initform (make-queue) :getter queue-of)
-   (mutex :getter mutex-of)))
+;; Default pool is just a list
+(define-class <instance-pool:list-pool> ()
+  ((instances :init-value '())))
 
-;; NB: temporary - will be in gauche.threads
-(define (with-locking-mutex mutex thunk)
-  (dynamic-wind
-   (lambda () (mutex-lock! mutex))
-   thunk
-   (lambda () (mutex-unlock! mutex))))
-;; end temporary code
-
-(define-method instance-pool:add ((pool <instance-pool:queue-pool>) instance)
-  (with-locking-mutex (mutex-of pool)
-    (lambda () (enqueue! (queue-of pool) instance))))
+(define-method instance-pool:add ((pool <instance-pool:list-pool>) instance)
+  (push! (ref pool 'instances) instance))
   
-(define-method instance-pool:find ((pool <instance-pool:queue-pool>) pred)
-  (with-locking-mutex (mutex-of pool)
-    (lambda () (find-in-queue pred (queue-of pool)))))
+(define-method instance-pool:find ((pool <instance-pool:list-pool>) pred)
+  (find pred (ref pool 'instances)))
   
-(define-method instance-pool:remove! ((pool <instance-pool:queue-pool>) pred)
-  (with-locking-mutex (mutex-of pool)
-    (lambda () (remove-from-queue! pred (queue-of pool)))))
+(define-method instance-pool:remove! ((pool <instance-pool:list-pool>) pred)
+  (update! (ref pool 'instances) (cut remove! pred <>)))
 
-(define-method instance-pool:->list ((pool <instance-pool:queue-pool>))
-  (with-locking-mutex (mutex-of pool)
-    (lambda () (queue->list (queue-of pool)))))
-
-(define (make-queue-pool class)
-  (let1 pool (make <instance-pool:queue-pool>)
-    (set! (ref pool 'mutex)
-          (make-mutex #`"mutex of pool of ,(class-name class)"))
-    pool))
+(define-method instance-pool:->list ((pool <instance-pool:list-pool>))
+  (reverse (ref pool 'instances)))
 
 ;; The default protocol
 (define-method instance-pool:create-pool ((class <instance-pool-meta>))
-  (make-queue-pool class))
+  (make <instance-pool:list-pool>))
 
 (define-method instance-pool:compute-pools ((class <instance-pool-meta>))
   (filter-map instance-pool-of (class-precedence-list class)))
