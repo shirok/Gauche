@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.396 2003-05-30 20:44:54 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.397 2003-06-05 15:18:52 nobsun Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17236,72 +17236,127 @@ Replセッションの状態を維持するオブジェクトです。
 @c COMMON
 
 @defivar <listener> input-port
+@c EN
 Specifies the input port from which the listener get the input.
 The default value is the current input port when the object is
 constructed.
+@c JP
+リスナーが入力を受けとる入力ポートを指定します。デフォルト値は、
+オブジェクトが構築された時のカレント入力ポートです。
+@c COMMON
 @end defivar
 
 @defivar <listener> output-port
+@c EN
 Specifies the output port to which the listener output will go.
 The default value is the current output port when the object is
 constructed.
+@c JP
+リスナーが出力をおこなう出力ポートを指定します。デフォルト値は、
+オブジェクトが構築された時のカレント出力ポートです。
+@c COMMON
 @end defivar
 
 @defivar <listener> error-port
+@c EN
 Specifies the output port to which the listener's error messages will go.
 The default value is the current error port when the object is
 constructed.
+@c JP
+リスナーのエラーメッセージを出力するポートを指定します。デフォルト値は、
+オブジェクトが構築された時のカレントエラー出力ポートです。
+@c COMMON
 @end defivar
 
 @defivar <listener> reader
+@c EN
 A procedure with no arguments.  It should read a Scheme expression
 from the current input port when called.
 The default value is system's @code{read} procedure.
+@c JP
+引数を取らない手続きです。呼び出し時のカレント入力ポートからScheme式を
+読み込まなければなりません。デフォルト値はシステムの@code{read}手続きです。
+@c COMMON
 @end defivar
 
 @defivar <listener> evaluator
+@c EN
 A procedure that takes two arguments, a Scheme expression and
 an environment specifier.  It should evaluate the expression in
 the given environment and returns zero or more value(s).
 The default value is system's @code{eval} procedure.
+@c JP
+Scheme式と環境指定子のふたつの引数をとる手続きです。
+式を与えられた環境で評価し、0個以上の値を返さなければなりません。
+デフォルト値はシステムの@code{eval}手続きです。
+@c COMMON
 @end defivar
 
 @defivar <listener> printer
+@c EN
 A procedure that takes zero or more argument(s) and prints them
 out to the current output port.  The default value is a procedure
 that prints each value by @code{write}, followed by a newline.
+@c JP
+0以上の引数をとり、カレント出力ポートに印字する手続きです。
+デフォルト値は、各値を@code{write}で印字したのち、改行する手続きです。
+@c COMMON
 @end defivar
 
 @defivar <listener> prompter
+@c EN
 A procedure with no arguments.  It should prints a prompt
 to the current output port.  The output is flushed by the listener
 object so this procedure doesn't need to care about it.
 The default procedure prints @code{"listener> "}.
+@c JP
+引数をとらない手続きです。カレント出力ポートにプロンプトを
+印字しなければなりません。リスナーは、この手続きが面倒を見なくてよいように、
+出力をフラッシュします。
+@c COMMON
 @end defivar
 
 @defivar <listener> environment
+@c EN
 An environment specifier where the expressions will be
 evaluated.  The default value is the value returned by
 @code{(interaction-environment)}.
+@c JP
+式を評価する環境指定子です。デフォルト値は@code{(interaction-environment)}が
+返す値です。
+@c COMMON
 @end defivar
 
 @defivar <listener> finalizer
+@c EN
 A thunk that will be called when EOF is read from @code{input-port}.
 It can be @code{#f} if no such procedure is needed.
 The default value is @code{#f}.
+@c JP
+@code{input-port}からEOFが読み込まれたときに呼び出されるサンクです。
+このような手続きが必要なかった場合には@code{#f}になります。
+デフォルトの値は@code{#f}です。
+@c COMMON
 @end defivar
 
 @defivar <listener> error-handler
+@c EN
 A procedure that takes one argument, an error exception.  It is
 called when an error occurs during read-eval-print stage,
 with the same dynamic environment as the error is signalled.
 The default value is a procedure that simply prints the
 error exception by @code{report-error}.
+@c JP
+エラー例外をひとつ引数としてとる手続きです。read-eval-printの最中に
+エラーが発生すると、エラーシグナルが発生すのと同じ動的環境で、
+呼び出されます。
+@c COMMON
 @end defivar
 @end deftp
 
 
 @deffn {Method} listener-read-handler (listener <listener>)
+@c EN
 Returns a thunk that is to be called when a data is available
 from @code{input-port} of the listener.
 
@@ -17327,16 +17382,52 @@ then flush @code{output-port}.
 @item
 Repeats from 2.
 @end enumerate
+@c JP
+リスナーの@code{input-port}から読み込んだデータが正しい時に
+呼ばれるサンクを返します。
+
+返されたサンク(readハンドラ)は、以下のように実行されます。
+最初のプロンプトはこの手続きが印字しているのでは@emph{ない}ことに
+注意してください。これについては後述の@code{listener-show-prompt}を
+参照してください。
+@enumerate
+@item
+@code{input-port}から正しいデータを読み、これをリスナーの内部バッファに
+連結する。
+@item
+バッファをスキャンして、それが完結したＳ式であるかを確かめ、
+完結していなければ、リターンする。
+@item
+バッファからそのＳ式を読み込み、そのバッファからは
+そのデータを除去する。
+@item
+そのＳ式を評価して、結果を@code{output-port}へ印字する。
+@code{output-port}.
+@item
+プロンプタ手続きを使って、プロンプトを@code{output-port}に印字したのち、
+@code{output-port}をフラッシュする。
+@item
+2から繰り返す。
+@end enumerate
+@c COMMON
 @end deffn
 
 @deffn {Method} listener-show-prompt (listener <listener>)
+@c EN
 Shows a prompt to the listener's output port, by using
 listener's prompter procedure.  Usually you want to use
 this procedure to print the first prompt, for instance,
 when the client is connected to the listener socket.
+@c JP
+リスナーの出力ポートにプロンプトを表示します。表示にはリスナーの
+プロンプタ手続きを使います。通常この手続きは最初のプロンプトを
+印字するために使います。たとえば、クライアントがリスナーソケットに
+接続してきたときです。
+@c COMMON
 @end deffn
 
 @defun complete-sexp? str
+@c EN
 Returns @code{#t} if @var{str} contains a complete S-expression.
 This utility procedure is exported as well, since it might be useful
 for other purposes.
@@ -17346,12 +17437,29 @@ and doesn't rule out erroneous expressions (such as containing
 invalid character name, unregistered SRFI-10 tag, etc.).
 This procedure may raise an error if the input contains
 '@code{#<}' character sequence.
+@c JP
+もし、@var{str}が完結したＳ式を含んでいれば@code{#t}を返します。
+このユーティリティ手続きは、他の目的にも有用なので、よく
+エクスポートされます。
+
+この手続きは構文のチェックをするだけで、(不正な文字名を含んだり、
+登録されていないSRFI-10のタグを含むなど)誤りのある式を判別するわけでは
+ないことに注意してください。この手続きは入力が'@code{#<}'文字の
+シーケンスを含むと、エラーを発生させます。
+@c COMMON
 @end defun
 
+@c EN
 The following code snippet opens a server socket, and opens
 a Scheme interactive session when a client is connected.
 (Note: this code is just for demonstration.  Do not run
 this program on the machine accessible from outside network!)
+@c JP
+以下のコード断片は、サーバソケットをオープンし、クライアントが
+接続してきたときにSchemeの対話的セッションをオープンするというものです。
+(註: このコードはdemo用のコードです。決して、外のネットワークから
+アクセス可能なマシン上で走らせてはいけません！)
+@c COMMON
 
 @example
 (use gauche.net)
