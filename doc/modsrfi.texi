@@ -1638,23 +1638,37 @@ sequence of forms.
 @c ----------------------------------------------------------------------
 @node srfi-11 - Let-values, srfi-13 - String library, srfi-9 - Record types, Library modules - SRFIs
 @section @code{srfi-11} - Let-values
+@c NODE @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
 @mdindex srfi-11
+@c EN
 Defines two macros, @code{let-values} and @code{let*-values}.
 They are convenient to use with multiple values (@ref{srfi-11,,[SRFI-11]}).
 
+@c JP
+二つのマクロ、code{let-values} と @code{let*-values} を定義しています。
+これらは、多値とともに利用すると便利です。(@ref{srfi-11,,[SRFI-11]})
 
+@c COMMON
 @end deftp
 
 @defmac let-values ((vars expr) @dots{}) body @dots{}
 [SRFI-11]
+@c EN
 @var{vars} are a list of variables. @var{expr} is evaluated, and
 its first return value is bound to the first variable in @var{vars},
 its second return value to the second variable, and so on, then
 @var{body} is evaluated.
 The scope of @var{expr}s are the outside of @code{let-values} form,
 like @code{let}.
+@c JP
+@var{vars} は変数のリストです。@var{expr} は評価され、最初の返り値は、
+@var{vars} の最初の変数に束縛されます。二番目の返り値は、@var{vars} の
+二番目の変数に束縛され、以下同様です。そのあと、@var{body} が評価されます。
+@var{expr} のスコープは @code{let} と同様に、@code{let-values} の
+外側になります。
+@c COMMON
 
 @example
 (let-values (((a b) (values 1 2))
@@ -1667,8 +1681,13 @@ like @code{let}.
     (list a b c d))) @result{} (3 4 1 2)
 @end example
 
+@c EN
 @var{vars} can be a dotted list or a single symbol, like the
 lambda parameters.
+@c JP
+@var{vars} lambda パラメータと同様に、ドット付リストでも、
+単一のシンボルでもかまいません。
+@c COMMON
 
 @example
 (let-values (((x . y) (values 1 2 3 4)))
@@ -1678,14 +1697,24 @@ lambda parameters.
   x) @result{} (1 2 3 4)
 @end example
 
+@c EN
 If the number of values returned by @var{expr} doesn't match
 what @var{vars} expects, an error is signalled.
+@c JP
+@var{expr} によって返された値の数と @var{vars} が期待する数とが一致しない
+場合にはエラーになります。
+@c COMMON
 @end defmac
 
 @defmac let*-values ((vars expr) @dots{}) body @dots{}
 [SRFI-11]
+@c EN
 Same as @code{let-values}, but each @var{expr}'s scope includes
 the preceding @var{vars}.
+@c JP
+@code{let-values}と同じですが、各 @var{expr} のスコープが先行する @var{vars}
+を含みます。
+@c COMMON
 
 @example
 (let ((a 1) (b 2) (c 3) (d 4))
@@ -1698,6 +1727,7 @@ the preceding @var{vars}.
 @c ----------------------------------------------------------------------
 @node srfi-13 - String library, srfi-14 - Character-set library, srfi-11 - Let-values, Library modules - SRFIs
 @section @code{srfi-13} - String library
+@c NODE @code{srfi-13} - 文字列ライブラリ
 
 @deftp {Module} srfi-13
 @mdindex srfi-13
@@ -2394,6 +2424,7 @@ which provides similar features but different criteria.
 @c ----------------------------------------------------------------------
 @node srfi-14 - Character-set library, srfi-19 - Time data types and procedures, srfi-13 - String library, Library modules - SRFIs
 @section @code{srfi-14} - Character-set library
+@c NODE @code{srfi-14} - 文字集合ライブラリ
 
 @deftp {Module} srfi-14
 @mdindex srfi-14
@@ -2995,57 +3026,105 @@ Type of returned time is the same as @var{time0}.  Type of
 
 @deftp {Class} <date>
 @clindex date
+@c EN
 Represents a date.
+@c JP
+日付を表現します。
+@c COMMON
 
 @defivar nanosecond
+@c EN
 Nanosecond portion of the date by an integer between 0 and 999,999,999,
 inclusive.
+@c JP
+日付のナノ秒部分、0 から 999,999,999 までの整数です。
+@c COMMON
 @end defivar
 
 @defivar second
+@c EN
 Second portion of the date by an integer between 0 and 60, inclusive.
 (60 for leap second).
+@c JP
+日付の秒部分、0 から 60 までの整数です。(60 は閏秒)
+@c COMMON
 @end defivar
 
 @defivar minute
+@c EN
 Minute portion of the date by an integer between 0 and 59, inclusive.
+@c JP
+日付の分部分、0 から 59 までの整数です。
+@c COMMON
 @end defivar
 
 @defivar hour
+@c EN
 Hour portion of the date by an integer between 0 and 23, inclusive.
+@c JP
+日付の時部分、0 から 23 までの整数です。
+@c COMMON
 @end defivar
 
 @defivar day
+@c EN
 Day portion of the date by an integer between 0 and 31, inclusive.
 The actual upper bound of the day is determined by the year and the month.
 (Note: 1 is for the first day; 0 is allowed by the specification,
 but I don't see why).
+@c JP
+日付の日部分、0 から 31 日までの整数です。実際の上限は年と月によって決定
+されます。(註: 1 は朔日(ついたち)、0 は仕様では認められていますが、
+なぜなのかはわかりません。)
+@c COMMON
 @end defivar
 
 @defivar month
+@c EN
 Month portion of the date by an integer between 1 and 12, inclusive.
 1 for January, 2 for February, and so on.
 (Note: this is different from POSIX's @code{<sys-tm>} convention).
+@c JP
+日付の月部分、1 から 12 までの整数です。1 は一月、2 は二月、以下同様です。
+(註: これは POSIX の @code{<sys-tm>} の命名法とは異ります。)
+@c COMMON
 @end defivar
 
 @defivar year
+@c EN
 Year portion of the date.
+@c JP
+日付の年部分です。
+@c COMMON
 @end defivar
 
-@defivar zone-offser
+@defivar zone-offset
+@c EN
 The number of seconds east of GMT for this timezone, by an integer.
+@c JP
+このタイムゾーンが GMT より何秒東にあるかを示す整数です。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun make-date nanosecond second minute hour day month year zone-offset
 [SRFI-19]
+@c EN
 Makes a @code{<date>} object from the given values.
 Note: this procedure does not check if the values are in the valid range.
+@c JP
+与えられた値から @code{<date>} オブジェクトを作成します。
+註: この手続きは与えられた値が正しい範囲であるかどうかをチェックしません。
+@c COMMON
 @end defun
 
 @defun date? obj
 [SRFI-19]
-Returns truee iff @var{obj} is a @code{<date>} object.
+@c EN
+Returns true iff @var{obj} is a @code{<date>} object.
+@c JP
+@var{obj} が @code{<date>} オブジェクトである場合にかぎり真を返します。
+@c COMMON
 @end defun
 
 @defun date-nanosecond date
@@ -3057,13 +3136,18 @@ Returns truee iff @var{obj} is a @code{<date>} object.
 @defunx date-year date
 @defunx date-zone-offset date
 [SRFI-19]
+@c EN
 Accessors.
+@c JP
+アクセサです。
+@c COMMON
 @end defun
 
 @defun date-year-day date
 @defunx date-week-day date
 @defunx date-week-number date day-of-week-starting-week
 [SRFI-19]
+@c EN
 Calculates the day number in the year (1 for January 1st),
 the day number in the week (0 for Sunday, 1 for Monday, ...),
 and the ordinal week of the year which holds this date,
@@ -3072,6 +3156,11 @@ ignoring a first partial week, respectively.
 @var{Day-of-week-starting-week} is the integer corresponding to
 the day of the week which is to be considered the first day of
 the week (Sunday=0, Monday=1, etc.).
+@c JP
+それぞれ、一年の何日目(一月一日が 1)か、何曜日(日曜日が 0、月曜日が 1
+など)か、一年のうち何週目(一年の最初の週が一週間に満たない場合はその
+週は無視)かを計算します。
+@c COMMON
 @end defun
 
 @defun date->julian-day date
@@ -3080,7 +3169,11 @@ the week (Sunday=0, Monday=1, etc.).
 @defunx date->time-tai date
 @defunx date->time-utc date
 [SRFI-19]
+@c EN
 Conversions from date to various date/time types.
+@c JP
+日付から様々な様式の日付/時間に変換します。
+@c COMMON
 @end defun
 
 @defun julian-day->date jd &optional tz-offset
@@ -3088,7 +3181,11 @@ Conversions from date to various date/time types.
 @defunx julian-day->time-tai jd
 @defunx julian-day->time-utc jd
 [SRFI-19]
+@c EN
 Conversions from julian-day to various date/time types.
+@c JP
+ユリウス暦からから様々な様式の日付/時間に変換します。
+@c COMMON
 @end defun
 
 @defun modified-julian-day->date jd &optional tz-offset
@@ -3096,7 +3193,11 @@ Conversions from julian-day to various date/time types.
 @defunx modified-julian-day->time-tai jd
 @defunx modified-julian-day->time-utc jd
 [SRFI-19]
+@c EN
 Conversions from modified julian-day to various date/time types.
+@c JP
+改訂ユリウス暦から様々な様式の日付/時間に変換します。
+@c COMMON
 @end defun
 
 @defun time-monotonic->date time &optional tz-offset
@@ -3107,7 +3208,11 @@ Conversions from modified julian-day to various date/time types.
 @defunx time-monotonic->time-utc time
 @defunx time-monotonic->time-utc! time
 [SRFI-19]
+@c EN
 Conversions from time-monotonic to various date/time types.
+@c JP
+モノトニック形式から様々な様式の日付/時間に変換します。
+@c COMMON
 @end defun
 
 @defun time-tai->date time &optional tz-offset
@@ -3118,7 +3223,11 @@ Conversions from time-monotonic to various date/time types.
 @defunx time-tai->time-utc time
 @defunx time-tai->time-utc! time
 [SRFI-19]
+@c EN
 Conversions from time-tai to various date/time types.
+@c JP
+国際原子時形式から様々な様式の日付/時間に変換します。
+@c COMMON
 @end defun
 
 @defun time-utc->date time &optional tz-offset
@@ -3129,7 +3238,11 @@ Conversions from time-tai to various date/time types.
 @defunx time-utc->time-tai time
 @defunx time-utc->time-tai! time
 [SRFI-19]
+@c EN
 Conversions from time-utc to various date/time types.
+@c JP
+UTC 形式から様々な様式の日付/時間に変換します。
+@c COMMON
 @end defun
 
 @node SRFI-19 Date reader and writer,  , SRFI-19 Date, srfi-19 - Time data types and procedures
