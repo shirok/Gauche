@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.57 2001-09-16 07:58:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.58 2001-09-16 23:05:15 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.4.4
+@subtitle version 0.4.5
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -2290,13 +2290,56 @@ the copying is done character by character, using C-version of
 @node File ports, String ports, Common port operations, Input and output
 @subsection File ports
 
-@defun open-input-file filename
-@defunx open-output-file filename
-[R5RS] Opens a file @var{filename} for input or output, and
+@defun open-input-file filename &keyword if-does-not-exist element-type
+@defunx open-output-file filename &keyword if-does-not-exist if-exists element-type
+[R5RS+] Opens a file @var{filename} for input or output, and
 returns an input or output port associated with it, respectively.
-If @var{filename} can't be opened, an error is signalled.
-If @code{open-output-file} is called on an existing file, the
-file is truncated.
+
+The keyword arguments specify precise behavior on the exceptional case.
+
+@table @code
+@item :if-exists
+This argument can be specified only for @code{open-output-file}, and
+specifies the action when the @var{filename} already exists.
+One of the following value can be given.
+@table @code
+@item :supersede
+This is the default behavior.  The existing file is truncated.
+@item :append
+The output data will be appended to the existing file.
+@item :error
+An error is signalled.  When @code{:create} is given to
+@code{:if-does-not-exist} argument as well, check of existence
+and file creation are done atomically (i.e. the file is opened
+using @code{O_CREAT|O_EXCL} flag of @code{open(2)} system call),
+so you can use this behavior for exclusive locking.  Note that,
+however, @code{O_EXCL} doesn't work on NFS mounted files on some
+operating systems.
+@end table
+
+@item :if-does-not-exist
+This argument specifies the action when @var{filename} does not exist.
+@table @code
+@item :error
+An error is signalled.  This is the default behavior of
+@code{open-input-file}.
+@item :create
+A file is created.  This is the default behavior of @code{open-output-file}.
+You can't specify this value for @code{open-input-file}.
+@item #f
+No action is taken, and the function returns @code{#f}.
+@end table
+
+@item :element-type
+This argument specifies the type of the file.
+@table @code
+@item :character
+The file is opened in ``character'' (or ``text'') mode.
+@item :binary
+The file is opened in ``binary'' mode.
+@end table
+The two makes no difference on most Unix systems.
+@end table
 
 Note for portability: Some Scheme implementations (e.g. STk) allows
 you to specify a command to @var{filename} and reads from, or
@@ -3923,7 +3966,9 @@ Sets the file descriptor flags given as @var{arg} to @var{port-or-fd}.
 For example, the portable way of setting @code{FL_CLOEXEC} flag is
 as follows:
 @example
-(sys-fcntl port |F_SETFD| (logior |FD_CLOEXEC| (sys-fcntl port |F_GETFD|)))
+(sys-fcntl port |F_SETFD|
+          (logior |FD_CLOEXEC|
+                  (sys-fcntl port |F_GETFD|)))
 @end example
 
 @item |F_GETFL|
@@ -7266,7 +7311,8 @@ file is closed.  Some port-related functions, such as
 when operation is finished.  The file is also closed when
 its governing port is garbage collected.
 @item fcntl
-Not implemented yet.
+Implented as @code{sys-fcntl} in @code{gauche.fcntl} module.
+@xref{Low-level file operations}.
 @item fdopen
 Not supported yet.
 @item feof
