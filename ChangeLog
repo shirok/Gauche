@@ -1,5 +1,6 @@
 2002-02-18  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interpolate.scm : fixed the interpolation syntax.
 	* src/ldwrap.sh.in : fix for cygwin (remove -lsomething from command
 	  line for dlltool).
 	* src/macro.c, src/extlib.stub : added procedure version of

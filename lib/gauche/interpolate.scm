@@ -12,10 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interpolate.scm,v 1.1 2002-02-18 20:45:48 shirok Exp $
+;;;  $Id: interpolate.scm,v 1.2 2002-02-19 10:08:56 shirok Exp $
 ;;;
 
-;;; #`"The value is ,{foo}." => (string-append "The value is " foo ".")
+;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
 ;;; 
 
 (define-module gauche.interpolate
@@ -34,27 +34,25 @@
   (define (accum c acc)
     (cond ((eof-object? c) (list (get-output-string acc)))
           ((char=? c #\,)
-           (let ((c2 (read-char)))
+           (let ((c2 (peek-char)))
              (cond ((eof-object? c2) (write-char c acc) (accum c2 acc))
-                   ((char=? c2 #\{)
-                    (cons (get-output-string acc) (insert #\} #t)))
-                   ((char=? c2 #\()
-                    (cons (get-output-string acc) (insert #\) #f)))
+                   ((char=? c2 #\,)
+                    (write-char (read-char) acc) (accum (read-char) acc))
+                   ((char-set-contains? #[\x00-\x20\),\;\[\\\]\{\}\7f] c2)
+                    (write-char c acc) (accum (read-char) acc))
                    (else
-                    (write-char c acc) (accum c2 acc)))))
+                    (cons (get-output-string acc) (insert))))))
           (else
            (write-char c acc) (accum (read-char) acc))))
-  (define (insert closer splice?)
+  (define (insert)
     (let* ((item
             (with-error-handler
              (lambda (e)
                (error "unmatched parenthesis in interpolating string: ~s" str))
-             (lambda () (read-list closer))))
+             (lambda () (read))))
            (rest
             (accum (read-char) (open-output-string))))
-      (if splice?
-          (list* (append (map (lambda (elt) `(x->string ,elt)) item) rest))
-          (cons `(,x->string ,item) rest))))
+      (cons `(,x->string ,item) rest)))
   (cons 'string-append
         (with-input-from-string str
           (lambda () (accum (read-char) (open-output-string)))))
