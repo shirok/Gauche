@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.93 2004-08-20 02:04:51 shirok Exp $
+ *  $Id: vm.h,v 1.94 2004-11-21 21:57:53 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -44,6 +44,9 @@
 
 /* Signal queue size */
 #define SCM_VM_SIGQ_SIZE       32
+
+/* Finalizer queue size */
+#define SCM_VM_FINQ_SIZE       32
 
 #define SCM_PCTYPE ScmObj
 
@@ -198,6 +201,30 @@ SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, int index, int id);
 SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value);
 
 /*
+ * Finalizer queue
+ *
+ *  If a finalizer needs to call Scheme procedure, it enqueues
+ *  the Scheme calling part, so that it runs when VM is in consistent
+ *  state.
+ */
+typedef ScmObj (*ScmQueuedFinalizerProc)(void *data);
+
+typedef struct ScmFinalizerClosureRec {
+    ScmQueuedFinalizerProc proc;
+    void *data;
+} ScmFinalizerClosure;
+
+typedef struct ScmFinalizerQueueRec {
+    ScmFinalizerClosure finQueue[SCM_VM_FINQ_SIZE]; /* finalizer queue */
+    unsigned int finQueueHead;
+    unsigned int finQueueTail;
+} ScmFinalizerQueue;
+
+SCM_EXTERN void Scm_FinalizerEnqueue(ScmQueuedFinalizerProc proc, void *data);
+SCM_EXTERN void Scm_FinalizerQueueInit(ScmFinalizerQueue* q);
+SCM_EXTERN void Scm_FinalizerRun(ScmVM *vm, ScmFinalizerQueue* q);
+
+/*
  * VM structure
  *
  *  In Gauche, each thread has a VM.  Indeed, the Scheme object
@@ -290,6 +317,9 @@ struct ScmVMRec {
     unsigned int sigOverflow;   /* flag to indicate queue overflow */
     ScmObj sigPending;          /* pending signal handlers */
     sigset_t sigMask;           /* current signal mask */
+
+    /* Finalizer queue */
+    ScmFinalizerQueue finq;     /* finalizer queue */
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module, ScmObj name);

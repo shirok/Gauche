@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.56 2004-11-21 12:46:58 shirok Exp $
+ *  $Id: core.c,v 1.57 2004-11-21 21:57:22 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -154,6 +154,17 @@ void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer, void *data)
     GC_REGISTER_FINALIZER_NO_ORDER(z, (GC_finalization_proc)finalizer,
                                    data, &ofn, &ocd);
 }
+
+void Scm_FinalizerQueueInit(ScmFinalizerQueue *q)
+{
+    int i;
+    for (i=0; i<SCM_VM_FINQ_SIZE; i++) {
+        q->finQueue[i].proc = NULL;
+        q->finQueue[i].data = NULL;
+    }
+    q->finQueueHead = q->finQueueTail = 0;
+}
+
 
 /*
  * Program termination
