@@ -3,3 +3,4 @@ Gauche/DIST
 Gauche/DIST_EXCLUDE
 Gauche/DIST_EXCLUDE_X
 Gauche/TEST
+Gauche/src/regexp.c
