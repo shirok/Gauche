@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.5 2001-10-16 12:00:26 shirok Exp $
+$Id: INSTALL.esc,v 1.6 2001-11-01 09:44:19 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -152,8 +152,9 @@ don't need to care about this.
 
 <? (if-lang japanese? !>
 しばしば、環境のコントロールができない箇所でGaucheを走らせなければならない
-場合があります。例えばCGIスクリプトがそうです。もし、Gaucheが標準的でない
-場所にインストールされた共有ライブラリに依存している場合、それが問題となります。
+場合があります。例えばCGIスクリプトをISPのサーバーで走らせる場合などです。
+もし、Gaucheが標準的でない場所にインストールされた共有ライブラリに依存し
+ている場合、それが問題となります。
 
 例えば、最新のlibiconv.soを自分でコンパイルして /home/yours/lib に
 インストールしたとします。--with-iconv=/home/yours/lib としてconfigure
@@ -171,16 +172,16 @@ CGIスクリプトはWeb serverによって起動され、Web serverはLD_LIBRARY_PATH
 動作しません。
 <? else !>
 In some cases, your have to run Gauche under the environment
-you don't have much control.  One of such cases is when your
-script is run as a CGI script.  It may become a problem that
-your build of Gauche depends on some dynamically loaded libraries
-that are installed in non-standard location.
+you don't have much control.  One of such cases is when you
+want to run CGI script on the ISP's machine.  It may become
+a problem that your build of Gauche depends on some dynamically
+loaded libraries that are installed in non-standard location.
 
-For example, suppose you install a new libiconv.so in /home/yours/lib,
-and compile Gauche with --with-iconv=/home/yours/lib.  You have
-set up correct environment variables such as LD_LIBRARY_PATH, so
-you can invoke Gauche interpreter gosh without a problem.  Now,
-you write a CGI script in C.  Unfortunately, the web server
+For example, suppose you install a new libiconv.so in /home/yours/lib
+on the ISP's server and compile Gauche with --with-iconv=/home/yours/lib.
+You have set up correct environment variables such as LD_LIBRARY_PATH,
+so you can invoke Gauche interpreter gosh without a problem.  Now,
+you write a CGI script.   Unfortunately, the ISP's web server
 doesn't set LD_LIBRARY_PATH as you desired, and your script never
 runs on the server, for the interpreter can't find libiconv.so
 in the system default path.
