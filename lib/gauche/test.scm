@@ -2,7 +2,7 @@
 ;;; Simple test routine
 ;;;
 
-;;; $Id: test.scm,v 1.4 2002-05-12 11:00:11 shirok Exp $
+;;; $Id: test.scm,v 1.5 2002-05-13 04:33:24 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -44,7 +44,8 @@
 (define (test-undef) (when #f #t))
 
 (define (test-section msg)
-  (format #t "<~a>-------------------------------------------------\n" msg))
+  (let ((msglen (string-length msg)))
+    (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
 
 (define (test msg expect thunk . compare)
   (let ((cmp (if (pair? compare) (car compare) equal?)))
@@ -62,7 +63,7 @@
 
 (define (test-start msg)
   (let* ((s (format #f "Testing ~a ... " msg))
-         (pad (make-string (- 65 (string-length s)) #\space)))
+         (pad (make-string (max 3 (- 65 (string-length s))) #\space)))
     (display s (current-error-port))
     (display pad (current-error-port))
     (flush (current-error-port))
@@ -72,9 +73,8 @@
   (set! *discrepancy-list* '())
   (unless (and (sys-isatty (current-error-port))
                (sys-isatty (current-output-port)))
-    (format #t
-            "Testing ~a ==============================================\n"
-            msg)
+    (let ((msglen (string-length msg)))
+      (format #t "Testing ~a ~a\n" msg (make-string (max 5 (- 70 msglen)) #\=)))
     (flush))
   )
 
