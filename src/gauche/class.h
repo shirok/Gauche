@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.14 2001-03-31 08:42:31 shiro Exp $
+ *  $Id: class.h,v 1.15 2001-04-01 22:08:02 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -70,6 +70,9 @@ extern ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs);
 extern ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
                                  ScmObj *args, int nargs);
 extern ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
+
+
+extern ScmGeneric Scm_GenericApplyGeneric;
 
 #ifdef __cplusplus
 }
