@@ -7,6 +7,45 @@
 (test-start "string")
 
 ;;-------------------------------------------------------------------
+(test-section "builtins")
+
+(test "string" "abcdefg" (lambda () (string #\a #\b #\c #\d #\e #\f #\g)))
+(test "string" "" (lambda () (string)))
+(test "list->string" "abcdefg"
+      (lambda () (list->string '(#\a #\b #\c #\d #\e #\f #\g))))
+(test "list->string" "" (lambda () (list->string '())))
+(test "make-string" "aaaaa" (lambda () (make-string 5 #\a)))
+(test "make-string" "" (lambda () (make-string 0 #\a)))
+
+(test "string->list" '(#\a #\b #\c #\d #\e #\f #\g)
+      (lambda () (string->list "abcdefg")))
+(test "string->list" '() (lambda () (string->list "")))
+
+(test "string-ref" #\b (lambda () (string-ref "abc" 2)))
+(define x (string-copy "abcde"))
+(test "string-set!" "abZde" (lambda () (string-set! x 2 #\Z)))
+
+(test "string-join" "foo bar baz"
+      (lambda () (string-join '("foo" "bar" "baz"))))
+(test "string-join" "foo::bar::baz"
+      (lambda () (string-join '("foo" "bar" "baz") "::")))
+(test "string-join" "foo::bar::baz"
+      (lambda () (string-join '("foo" "bar" "baz") "::" 'infix)))
+(test "string-join" ""
+      (lambda () (string-join '() "::")))
+(test "string-join" "foo::bar::baz::"
+      (lambda () (string-join '("foo" "bar" "baz") "::" 'suffix)))
+(test "string-join" ""
+      (lambda () (string-join '() "::" 'suffix)))
+(test "string-join" "::foo::bar::baz"
+      (lambda () (string-join '("foo" "bar" "baz") "::" 'prefix)))
+(test "string-join" ""
+      (lambda () (string-join '() "::" 'prefix)))
+(test "string-join" "foo::bar::baz"
+      (lambda () (string-join '("foo" "bar" "baz") "::" 'strict-infix)))
+
+
+;;-------------------------------------------------------------------
 (test-section "string-pointer")
 
 (define sp #f)
