@@ -12,12 +12,16 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.11 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: write.c,v 1.12 2001-03-30 07:41:33 shiro Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include "gauche.h"
+
+static int write_object(ScmObj obj, ScmPort *out, int mode);
+static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
+SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
 /*============================================================
  * Writers
@@ -122,7 +126,7 @@ static int write_internal(ScmObj obj, ScmPort *out, int mode,
         } else {
             ScmClass *c = Scm_ClassOf(obj);
             if (c->print) nc = c->print(obj, out, mode);
-            else          nc = Scm_Printf(out, "#<%S %p>", c->name, obj);
+            else          nc = write_object(obj, out, mode);
         }
     }
     return nc;
@@ -315,6 +319,33 @@ int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width)
     } else {
         return write_circular(obj, port, mode|WRITE_CIRCULAR, 0, &info);
     }
+}
+
+/* Default object printer delegates print action to generic function
+   write-object.   We can't use VMApply here since this function can be
+   called deep in the recursive stack of Scm_Write, so the control
+   may not return to VM immediately. */
+static int write_object(ScmObj obj, ScmPort *port, int mode)
+{
+    Scm_Apply(SCM_OBJ(&Scm_GenericWriteObject), SCM_LIST2(obj, SCM_OBJ(port)));
+    /* TODO: Scm_Write expects this function returns # of characters
+       printed.  However, it'll be a burden for method writers to
+       ensure calculating the value.  Port should keep the number, and
+       Scm_Write can take the difference.  For now, I just return 0. */
+    return 0;
+}
+
+/* Default method for write-object */
+static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
+{
+    ScmClass *klass;
+    if (nargs != 2 || (nargs == 2 && !SCM_OPORTP(args[1]))) {
+        Scm_Error("No applicable method for write-object with %S",
+                  Scm_ArrayToList(args, nargs));
+    }
+    klass = Scm_ClassOf(args[0]);
+    Scm_Printf(SCM_PORT(args[1]), "#<%A %p>", klass->name, args[0]);
+    return SCM_TRUE;
 }
 
 /*===================================================================
@@ -619,3 +650,11 @@ int Scm_Printf(ScmPort *out, const char *fmt, ...)
     return r;
 }
 
+/*
+ * Initialization
+ */
+void Scm__InitWrite(void)
+{
+    Scm_InitBuiltinGeneric(&Scm_GenericWriteObject, "write-object",
+                           Scm_GaucheModule());
+}
