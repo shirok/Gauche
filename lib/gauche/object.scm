@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.46 2003-11-11 09:35:31 shirok Exp $
+;;;  $Id: object.scm,v 1.47 2003-11-12 07:42:51 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -381,9 +381,11 @@
            val)))
    class-slot-set!))
 
-;; default class printer
+;; default class printer.  Avoid using class-name so that in case
+;; when obj's class has been redefined, this wouldn't trigger updating obj.
 (define-method write-object ((obj <class>) out)
-  (format out "#<class ~a>" (class-name obj)))
+  (format out "#<class ~a>"
+          (slot-ref-using-class (current-class-of obj) obj 'name)))
 
 ;; convenient routine to push the value to the slot.
 ;; this can be optimized later.
@@ -476,16 +478,19 @@
 ;; Change class.  Be very careful not to invoke updating obj recursively!
 (define-method change-class ((obj <object>)
                              (new-class <class>))
-  (let ((old-class (current-class-of obj))
-        (new       (allocate-instance new-class '())))
-    (for-each (lambda (slot)
-                (if (and (slot-exists-using-class? old-class obj slot)
-                         (slot-bound-using-class? old-class obj slot))
-                  (let ((val (slot-ref-using-class old-class obj slot)))
-                    (slot-set-using-class! new-class new slot val))
-                  (let ((acc (class-slot-accessor new-class slot)))
-                    (slot-initialize-using-accessor! new acc '()))))
-              (map slot-definition-name (class-slots new-class)))
+  (let* ((old-class (current-class-of obj))
+         (new       (allocate-instance new-class '())))
+    (for-each
+     (lambda (slot)
+       (let ((slot-name (slot-definition-name slot)))
+         (if (and (slot-exists-using-class? old-class obj slot-name)
+                  (not (eq? (slot-definition-allocation slot) :builtin))
+                  (slot-bound-using-class? old-class obj slot-name))
+           (let ((val (slot-ref-using-class old-class obj slot-name)))
+             (slot-set-using-class! new-class new slot-name val))
+           (let ((acc (class-slot-accessor new-class slot-name)))
+             (slot-initialize-using-accessor! new acc '())))))
+     (class-slots new-class))
     (%transplant-instance! new obj)
     obj))
 

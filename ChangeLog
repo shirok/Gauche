@@ -1,5 +1,10 @@
 2003-11-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/object.scm (change-class) : exclude builtin slots
+	  from processing.  They are copied by %transplant-instance
+	  anyway, and sometimes cause problems if we copy them in Scheme
+	  level.
+
 	* lib/gauche/mop/instance-pool.scm : export some accessors; without
 	  them, weird things happen when other modules creates subclasses
 	  of <instance-pool-meta>.  This fix is just to dodge the real

@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.26 2003-11-11 23:46:00 shirok Exp $
+;; $Id: object.scm,v 1.27 2003-11-12 07:42:51 shirok Exp $
 
 (use gauche.test)
 
@@ -734,6 +734,33 @@
   :metaclass <docu-meta-sub>)
 
 (test* "class slot in meta (sub)" '(#f "sub" xtra)
+       (list (slot-ref <xxx-sub> 'doc)
+             (slot-ref <xxx-sub> 'sub)
+             (slot-ref <xxx-sub> 'xtra)))
+
+;;----------------------------------------------------------------
+(test-section "metaclass redefintiion")
+
+;; NB: semantics of metaclass redefinition isn't really fixed yet.
+;; Should we allow it at all?  The problem is that the classes created
+;; by the original metaclass is semantically redefined, but what happens
+;; is that they are just updated (via change-class), so that instances
+;; of those classes won't be aware that their classes are changed.
+;; It works for trival cases, so we just allow it and see what happens.
+
+(define-class <docu-meta> (<class>)
+  ((doc  :init-keyword :doc :initform #t)
+   (doc2 :init-value "no doc")
+   (sub  :allocation :virtual
+         :slot-set! (lambda (o v) #f)
+         :slot-ref  (lambda (o) (slot-ref o 'doc2)))))
+
+(test* "redefinition of metaclass" '("Doc doc" "no doc" "no doc")
+       (list (slot-ref <xxx> 'doc)
+             (slot-ref <xxx> 'doc2)
+             (slot-ref <xxx> 'sub)))
+
+(test* "redefinition of metaclass (sub)" '(#f "no doc" xtra)
        (list (slot-ref <xxx-sub> 'doc)
              (slot-ref <xxx-sub> 'sub)
              (slot-ref <xxx-sub> 'xtra)))
