@@ -131,8 +131,9 @@ if [ "$testcode" = "yes" ]; then
 fi
 
 if [ "$testclean" = "yes" ]; then
-  rm -rf ../test/Gauche ../test/Gauche-$VERSION
+  rm -rf ../test/Gauche ../test/test-inst
   rm -rf ../test/test.log ../test/temp.o ../test/tmp1.o
+  if [ -f VERSION ]; then rm -rf ../test/Gauche-`cat VERSION`; fi
 fi
 
 if [ "$rpm" = "yes" ]; then

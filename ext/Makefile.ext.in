@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.7 2003-05-29 09:28:26 shirok Exp $
+## $Id: Makefile.ext.in,v 1.8 2003-05-29 21:12:13 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -34,6 +34,7 @@ EXEEXT   = @EXEEXT@
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 CCLD      = $(CC)
+MKINSTDIR = $(top_srcdir)/mkinstalldirs
 LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(EXT_NO_UNDEFINED) -o $@ -rpath $(GAUCHE_ARCHDIR)
 MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(EXT_NO_UNDEFINED) $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
 INSTALL   = $(LIBTOOL) --mode=install @INSTALL@
@@ -96,7 +97,7 @@ maintainer-clean : clean
 	rm -rf $(GENERATED)
 
 install-std : all
-	@INSTALL@ -d $(GAUCHE_LIBDIR)/$(SCM_CATEGORY)
+	$(MKINSTDIR) $(GAUCHE_LIBDIR)/$(SCM_CATEGORY)
 	@if test ! -z "$(HDRFILES)"; then \
 	  $(INSTALL) -m 444 $(HDRFILES) $(GAUCHE_INCDIR)/gauche; \
 	fi

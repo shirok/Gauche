@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.92 2003-05-28 11:51:01 shirok Exp $
+#  $Id: Makefile.in,v 1.93 2003-05-29 21:12:13 shirok Exp $
 
 DESTDIR =
 
@@ -16,6 +16,7 @@ top_srcdir   = @top_srcdir@
 GAUCHE_DATA_DIR = @datadir@/gauche
 SCM_INSTALL_DIR = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
 INSTALL         = @INSTALL@
+MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 
 CONFIG_GENERATED = Makefile slib.scm
 
@@ -71,7 +72,7 @@ check:
 
 install:
 	for d in $(SUBDIRS); do \
-	  $(INSTALL) -d $(DESTDIR)$(SCM_INSTALL_DIR)/$$d; \
+	  $(MKINSTDIR) $(DESTDIR)$(SCM_INSTALL_DIR)/$$d; \
 	done
 	for p in $(SCMFILES); do \
 	  $(INSTALL) -m 444 $$p $(DESTDIR)$(SCM_INSTALL_DIR)/$$p; \

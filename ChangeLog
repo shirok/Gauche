@@ -1,5 +1,26 @@
+2003-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* mkinstalldirs, src/Makefile.in, ext/Makefile.ext.in, lib/Makefile.in,
+	  doc/Makefile.in : changed to use mkinstalldirs instead of
+	  "install -d", for some system's install doesn't understand -d option.
+
+	* ext/*/Makefile.in : added explicit dependency between *.stub and *.c
+	  files, for some 'make' can't infer how to make .lo from .stub
+	  only by the inference rules.
+
+	* ext/syslog/syslog.scm : exported LOG_* constants only when they
+	  are defined.
+	
+	* configure.in : bypasses the test for select(2) on HP-UX; it doesn't
+	  like the way autoconf tests the select's existence.  Also replaced
+	  reference of $host for $target, for better support of
+	  cross-compiling.
+
 2003-05-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/syslib.stub : exclude sys-fdset and sys-select if select(2) is
+	  not available on the system.
+	
 	* Makefile.in, src/Makefile.in, ext/Makefile.in, ext/Makefile.ext.in,
 	  test/*, ext/*/test.scm : created install-check target, which runs
 	  tests with installed gosh.

@@ -1,8 +1,14 @@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
 MANPAGES = gosh.1 gauche-config.1
 EXTRACTED = gauche-refe.texi gauche-refj.texi
 GENERATED = Makefile $(MANPAGES)
 GOSH = ../src/gosh -q -I../src -I../lib -lgauche-init
 INSTALL = @INSTALL@
+MKINSTDIR = $(top_srcdir)/mkinstalldirs
 MAKEINFO = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
 
@@ -17,9 +23,9 @@ infodir = @infodir@
 all: info
 
 install: all
-	if test ! -d $(mandir)/man1; then $(INSTALL) -d $(mandir)/man1; fi
+	if test ! -d $(mandir)/man1; then $(MKINSTDIR) $(mandir)/man1; fi
 	$(INSTALL) -m 444 $(MANPAGES) $(mandir)/man1
-	if test ! -d $(infodir); then $(INSTALL) -d $(infodir); fi
+	if test ! -d $(infodir); then $(MKINSTDIR) $(infodir); fi
 	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
 	  for info in *.info*; do \
 	    $(INSTALL) -m 444 $$info $(infodir)/; \
