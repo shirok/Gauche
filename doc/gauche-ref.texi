@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.285 2002-10-17 06:54:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.286 2002-10-18 08:13:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3037,7 +3037,7 @@ value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
 The value(s) of the last expression of @var{body} @dots{} becomes
 the value(s) of this form.
 @c JP
-各変数@var{var}が@var{expr}の値に束縛されてているローカルな環境を作成し、
+各変数@var{var}が@var{expr}の値に束縛されているローカルな環境を作成し、
 その中で@var{body} @dots{}を評価します。@var{var}はシンボルでなければ
 ならず、重複があってはなりません。@var{body} @dots{}の最後の式の値が
 このフォームの値となります。
@@ -17152,13 +17152,13 @@ The rule of binding @var{var}s is the same as @code{rxmatch-let}.
 (rxmatch-if (rxmatch #/(\d+:\d+)/ "Jan 1 11:22:33")
     (time)
   (format #f "time is ~a" time)
-  "unknown time)
+  "unknown time")
  @result{} "time is 11:22"
 
 (rxmatch-if (rxmatch #/(\d+:\d+)/ "Jan 1 11-22-33")
     (time)
   (format #f "time is ~a" time)
-  "unknown time)
+  "unknown time")
  @result{} "unknown time"
 @end example
 
