@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.80 2002-11-03 04:26:37 shirok Exp $
+ *  $Id: vm.h,v 1.81 2002-11-07 00:05:36 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -30,14 +30,22 @@
 #define PCTYPE ScmObj
 #endif
 
-#ifdef GAUCHE_USE_NVM
+#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
 /*
  * Instruction vector (only for "new VM")
  */
 typedef struct ScmIVectorRec {
+    SCM_HEADER;
+    int size;
     ScmObj info;
     ScmObj insn[1];             /* variable length */
 } ScmIVector;
+
+SCM_CLASS_DECL(Scm_IVectorClass);
+#define SCM_CLASS_IVECTOR   (&Scm_IVectorClass)
+#define SCM_IVECTORP(obj)   SCM_XTYPEP(obj, SCM_CLASS_IVECTOR)
+#define SCM_IVECTOR(obj)    ((ScmIVector*)(obj))
+
 #endif /*GAUCHE_USE_NVM*/
 
 /*

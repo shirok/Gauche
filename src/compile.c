@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.90 2002-11-05 22:55:16 shirok Exp $
+ *  $Id: compile.c,v 1.91 2002-11-07 00:05:15 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1958,7 +1958,182 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
  *   This is an experimental code for the new VM.
  */
 
-#ifdef GAUCHE_USE_NVM
+#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
+
+ScmObj Scm_CompileNVM(ScmObj code);
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IVectorClass, NULL);
+
+static ScmIVector *make_ivec(int size)
+{
+    ScmIVector *iv;
+    int i;
+    
+    SCM_ASSERT(size > 0);
+    iv = SCM_NEW2(ScmIVector*, sizeof(ScmIVector) + (size-1)*sizeof(ScmObj));
+    SCM_SET_CLASS(iv, SCM_CLASS_IVECTOR);
+    iv->size = size;
+    iv->info = SCM_NIL;
+    for (i=0; i<size; i++) iv->insn[i] = NULL;
+    return iv;
+}
+
+/*
+ * Convert DG to a single-chained list.  SCM_VM_RET is inserted
+ * at the end of the graph.  SCM_VM_JUMP insns are also inserted.
+ * Uses the fact that the current compiler inserts NOPs at the
+ * merging point.
+ */
+typedef struct ScmCompileContextRec {
+    int insnCount;              /* instruction count */
+    ScmObj labelList;           /* list of (<target> . <addr>), where <target>
+                                   is a cell of the target of the jump
+                                   in the original graph */
+    ScmObj jumpList;            /* list of cells that points to the jump
+                                   target. */
+    ScmObj head;                /* head of insn chain */
+    ScmObj tail;                /* tail of insn chain */
+} ScmCompileContext;
+
+static inline void emit(ScmObj code, ScmCompileContext *ctx)
+{
+    SCM_APPEND1(ctx->head, ctx->tail, code);
+    ctx->insnCount++;
+}
+
+static inline void emitConst(ScmObj obj, ScmCompileContext *ctx)
+{
+    SCM_APPEND1(ctx->head, ctx->tail, SCM_VM_INSN(SCM_VM_CONST));
+    SCM_APPEND1(ctx->head, ctx->tail, obj);
+    ctx->insnCount+=2;
+}
+
+static inline void emitInsn0(int insn, ScmCompileContext *ctx)
+{
+    SCM_APPEND1(ctx->head, ctx->tail, SCM_VM_INSN(insn));
+    ctx->insnCount++;
+}
+
+static inline void emitInsn1(ScmObj insn, ScmCompileContext *ctx)
+{
+    SCM_APPEND1(ctx->head, ctx->tail, insn);
+    SCM_APPEND1(ctx->head, ctx->tail, SCM_MAKE_INT(SCM_VM_INSN_ARG(insn)));
+    ctx->insnCount+=2;
+}
+
+static inline void pushLabel(ScmObj target, ScmCompileContext *ctx)
+{
+    ctx->labelList = Scm_Acons(target, SCM_MAKE_INT(ctx->insnCount),
+                               ctx->labelList);
+}
+
+static inline void pushJump(ScmObj target, ScmCompileContext *ctx)
+{
+    SCM_APPEND1(ctx->head, ctx->tail, target);
+    ctx->insnCount++;
+    ctx->jumpList = Scm_Cons(ctx->tail, ctx->jumpList);
+}
+
+static void serialize_graph(ScmObj graph, ScmCompileContext *ctx)
+{
+    ScmObj item;
+
+    for (;;) {
+        if (SCM_NULLP(graph)) {
+            emitInsn0(SCM_VM_RET, ctx);
+            return;
+        }
+        item = SCM_CAR(graph);
+        if (!SCM_VM_INSNP(item)) {
+            emitConst(item, ctx);
+            graph = SCM_CDR(graph);
+            continue;
+        }
+        switch (SCM_VM_INSN_CODE(item)) {
+        case SCM_VM_NOP: {
+            ScmObj l = Scm_Assq(graph, ctx->labelList);
+            if (!SCM_FALSEP(l)) {
+                emitInsn0(SCM_VM_JUMP, ctx);
+                pushJump(graph, ctx);
+                return;
+            } else {
+                pushLabel(graph, ctx);
+                graph = SCM_CDR(graph);
+                break;
+            }
+        }
+        case SCM_VM_IF: {
+            ScmObj then_path = SCM_CADR(graph), else_path = SCM_CDDR(graph);
+            emit(item, ctx);
+            pushJump(then_path, ctx);
+            serialize_graph(else_path, ctx);
+            pushLabel(then_path, ctx);
+            graph = then_path;
+            break;
+        }
+        case SCM_VM_PRE_CALL: {
+            ScmObj pre_path = SCM_CADR(graph), next_path = SCM_CDDR(graph);
+            emit(item, ctx);
+            pushJump(next_path, ctx);
+            serialize_graph(pre_path, ctx);
+            pushLabel(next_path, ctx);
+            graph = next_path;
+            break;
+        }
+        case SCM_VM_LET: {
+            ScmObj body = SCM_CADR(graph), next_path = SCM_CDDR(graph);
+            emit(item, ctx);
+            pushJump(next_path, ctx);
+            serialize_graph(body, ctx);
+            pushLabel(next_path, ctx);
+            graph = next_path;
+            break;
+        }
+        case SCM_VM_CALL:;
+        case SCM_VM_TAIL_CALL:
+            emit(item, ctx);
+            return;
+        case SCM_VM_GREF:
+            emit(item, ctx);
+            emit(SCM_CADR(graph), ctx);
+            graph = SCM_CDDR(graph);
+            break;
+        case SCM_VM_LAMBDA:
+            emit(item, ctx);
+            emit(Scm_CompileNVM(SCM_CADR(graph)), ctx);
+            graph = SCM_CDDR(graph);
+            break;
+        default:
+            emit(item, ctx);
+            graph = SCM_CDR(graph);
+            break;
+        }
+    }
+}
+
+static void fix_jumps(ScmCompileContext *ctx)
+{
+    ScmObj cp;
+    SCM_FOR_EACH(cp, ctx->jumpList) {
+        ScmObj p = Scm_Assq(SCM_CAAR(cp), ctx->labelList);
+        if (SCM_FALSEP(p)) {
+            Scm_Printf(SCM_CURERR, "huh? %S\n", SCM_CAAR(cp));
+        } else {
+            SCM_SET_CAR(SCM_CAR(cp), SCM_CDR(p));
+        }
+    }
+}
+
+ScmObj Scm_CompileNVM(ScmObj code)
+{
+    ScmCompileContext ctx;
+    ctx.insnCount = 0;
+    ctx.labelList = ctx.jumpList = SCM_NIL;
+    ctx.head = ctx.tail = SCM_NIL;
+    serialize_graph(code, &ctx);
+    fix_jumps(&ctx);
+    return Scm_Values2(ctx.head, ctx.labelList);
+}
 #endif /*GAUCHE_USE_NVM*/
 
 /*===================================================================
@@ -2008,4 +2183,9 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_CURRENT_MODULE, syntax_current_module);
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
+
+#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
+    Scm_InitBuiltinClass(SCM_CLASS_IVECTOR, "<ivector>", NULL, 0,
+                         Scm_GaucheModule());
+#endif
 }

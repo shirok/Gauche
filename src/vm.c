@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.185 2002-11-05 22:55:16 shirok Exp $
+ *  $Id: vm.c,v 1.186 2002-11-07 00:05:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -983,6 +983,12 @@ static void run_loop()
                 PUSH_ARG(val0);
                 NEXT;
             }
+
+#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
+            CASE(SCM_VM_CONST);
+            CASE(SCM_VM_JUMP);
+            CASE(SCM_VM_RET);
+#endif
             /* Inlined procedures */
             CASE(SCM_VM_CONS) {
                 ScmObj ca;

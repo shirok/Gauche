@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.177 2002-10-12 13:56:01 shirok Exp $
+;;; $Id: extlib.stub,v 1.178 2002-11-07 00:05:15 shirok Exp $
 ;;;
 
 "
@@ -1212,7 +1212,12 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc procedure-info (proc::<procedure>)
   "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")
 
-
+;; For test
+(if "defined(GAUCHE_TEST_NVM)"
+    (begin
+      "extern ScmObj Scm_CompileNVM(ScmObj);"
+      (define-cproc compile-nvm (code)
+        (return "Scm_CompileNVM"))))
 
 ;; Local variables:
 ;; mode: scheme
