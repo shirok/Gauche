@@ -1,5 +1,8 @@
 2003-08-08  Shiro Kawai  <shiro@acm.org>
 
+	* ext/fcntl/fcntl.c, ext/net/addr.c, ext/termios/termios.c :
+	  corrected usage of memset() (Pointed by NISHIO Yasuhiro)
+
 	* ext/charconv/Makefile.in : changed LDFLAGS so that @ICONV_LDFLAGS@
 	  will be added before $LDFLAGS.  Patch from Kogule, Ryo.
 

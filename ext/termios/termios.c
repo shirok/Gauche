@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.10 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: termios.c,v 1.11 2003-08-08 19:39:15 shirok Exp $
  */
 
 #include <string.h>
@@ -52,7 +52,7 @@ static ScmObj termios_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmSysTermios *t = SCM_NEW(ScmSysTermios);
     SCM_SET_CLASS(t, SCM_CLASS_SYS_TERMIOS);
-    memset(&t->term, sizeof(t->term), 0);
+    memset(&t->term, 0, sizeof(t->term));
     return SCM_OBJ(t);
 }
 

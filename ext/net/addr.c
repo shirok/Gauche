@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.16 2003-05-04 10:05:49 shirok Exp $
+ *  $Id: addr.c,v 1.17 2003-08-08 19:39:15 shirok Exp $
  */
 
 #include "net.h"
@@ -82,7 +82,7 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
                     sizeof(ScmSockAddr) - sizeof(struct sockaddr) + len);
     SCM_SET_CLASS(addr, klass);
     addr->addrlen = len;
-    memset(&addr->addr, len, 0);
+    memset(&addr->addr, 0, len);
     memcpy(&addr->addr, saddr, len);
     return SCM_OBJ(addr);
 }
@@ -107,7 +107,7 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
     }
     addr = SCM_NEW(ScmSockAddrUn);
     SCM_SET_CLASS(addr, &Scm_SockAddrUnClass);
-    memset(&addr->addr, sizeof(struct sockaddr_un), 0);
+    memset(&addr->addr, 0, sizeof(struct sockaddr_un));
     addr->addr.sun_family = AF_UNIX;
     if (SCM_STRINGP(path)) {
         int size = SCM_STRING_SIZE(path);
@@ -142,7 +142,7 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     }
     addr = SCM_NEW(ScmSockAddrIn);
     SCM_SET_CLASS(addr, &Scm_SockAddrInClass);
-    memset(&addr->addr, sizeof(struct sockaddr_in), 0);
+    memset(&addr->addr, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_SIN_LEN
     addr->addr.sin_len = sizeof(struct sockaddr_in);
 #endif
@@ -203,7 +203,7 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
     }
     addr = SCM_NEW(ScmSockAddrIn6);
     SCM_SET_CLASS(addr, &Scm_SockAddrIn6Class);
-    memset(&addr->addr, sizeof(struct sockaddr_in6), 0);
+    memset(&addr->addr, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_SIN6_LEN
     addr->addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
