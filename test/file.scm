@@ -6,6 +6,107 @@
 (test-start "file utilities")
 (use srfi-13)
 
+;;------------------------------------------------------------------
+(test-section "file.util")
+(use file.util)
+
+(test "current-directory" '("/" "/" #t #t)
+      (lambda ()
+        (let* ((cur   (sys-getcwd))
+               (root  (begin (current-directory "/")
+                             (sys-getcwd)))
+               (root* (current-directory))
+               (cur*  (begin (current-directory cur)
+                             (sys-getcwd)))
+               (cur** (current-directory)))
+          (list root root* (string=? cur cur*) (string=? cur* cur**)))))
+
+;; prepare test data set
+(sys-system "rm -rf test.out")
+(sys-system "mkdir test.out")
+(with-output-to-file "test.out/test1.o"
+  (lambda () (display (make-string 100 #\o))))
+(with-output-to-file "test.out/test2.o"
+  (lambda () (display (make-string 100 #\o))))
+(with-output-to-file "test.out/test3.o"
+  (lambda () (display (make-string 100 #\i))))
+(with-output-to-file "test.out/test4.o"
+  (lambda () (display (make-string 20000 #\i))))
+(with-output-to-file "test.out/test5.o"
+  (lambda () (display (make-string 20000 #\i))))
+
+(if (symbol-bound? 'sys-symlink)
+    (begin
+      (sys-symlink "test.out/test1.o" "test.out/test6.o")
+      (sys-symlink "test.out/test6.o" "test.out/test7.o"))
+    (begin
+      (with-output-to-file "test.out/test6.o" (lambda () (newline)))
+      (with-output-to-file "test.out/test7.o" (lambda () (newline)))))
+
+(sys-system "mkdir test.out/test.d")
+(with-output-to-file "test.out/test.d/test10.o"
+  (lambda () (display (make-string 100 #\o))))
+(if (symbol-bound? 'sys-symlink)
+    (sys-symlink "test.out/test1.o" "test.out/test.d/test11.o")
+    (with-output-to-file "test.out/test.d/test11.o" (lambda () (newline))))
+
+(test "directory-list"
+      '("." ".." "test.d" "test1.o" "test2.o"
+        "test3.o" "test4.o" "test5.o" "test6.o" "test7.o" )
+      (lambda () (directory-list "test.out")))
+
+(test "directory-list :children?"
+      '("test.d" "test1.o" "test2.o"
+        "test3.o" "test4.o" "test5.o" "test6.o" "test7.o" )
+      (lambda () (directory-list "test.out" :children? #t)))
+
+(test "directory-list :add-path?"
+      '("test.out/." "test.out/.." "test.out/test.d" "test.out/test1.o"
+        "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
+        "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
+      (lambda () (directory-list "test.out/" :add-path? #t)))
+
+(test "directory-list :filter"
+      '("test.out/test1.o"
+        "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
+        "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
+      (lambda ()
+        (directory-list "test.out" :add-path? #t
+                        :filter (lambda (p) (string-suffix? "o" p)))))
+
+(test "directory-list2"
+      '(("." ".." "test.d")
+        ("test1.o" "test2.o" "test3.o" "test4.o"
+         "test5.o" "test6.o" "test7.o" ))
+      (lambda () (receive x (directory-list2 "test.out") x)))
+
+(test "directory-list2 :add-path"
+      '(("test.out/." "test.out/.." "test.out/test.d")
+        ("test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
+         "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
+         "test.out/test7.o"))
+      (lambda () (receive x (directory-list2 "test.out" :add-path? #t) x)))
+        
+(test "directory-list2 :children"
+      '(("test.out/test.d")
+        ("test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
+         "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
+         "test.out/test7.o"))
+      (lambda () (receive x (directory-list2 "test.out" :add-path? #t :children? #t) x)))
+        
+(test "directory-list2 :filter"
+      '(("test.d")
+        ("test1.o" "test2.o" "test3.o" "test4.o"
+         "test5.o" "test6.o" "test7.o" ))
+      (lambda ()
+        (receive x 
+            (directory-list2 "test.out"
+                             :filter (lambda (p) (string-contains p "test")))
+          x)))
+
+(sys-system "rm -rf test.out")
+
+;;------------------------------------------------------------------
 (test-section "file.filter")
 (use file.filter)
 
