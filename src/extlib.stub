@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.89 2001-06-04 01:22:55 shirok Exp $
+;;; $Id: extlib.stub,v 1.90 2001-06-04 02:25:15 shirok Exp $
 ;;;
 
 "
@@ -230,6 +230,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc gauche-character-encoding ()
   "  SCM_RETURN(Scm_CharEncodingName());")
+
+(define-cproc supported-character-encodings ()
+  "  SCM_RETURN(Scm_ConstCStringArrayToList(Scm_SupportedCharacterEncodings(), -1));")
+
+(define-cproc supported-character-encoding? (encoding)
+  (assert (string? encoding))
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_SupportedCharacterEncodingP(Scm_GetStringConst(encoding))));")
 
 ;; character sets (SRFI-14)
 ;;   not all of srfi-14 functions are defined in C.  you need to load
@@ -622,7 +629,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   }
   SCM_RETURN(Scm_GetOutputString(out));")
 
-(define-cproc port->byte-string (port)  ;scsh, stk
+(define-cproc port->byte-string (port)
   (assert (input-port? port))
   ;; TODO: use chunked I/O if appropriate
   " int b; ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort());
