@@ -4005,20 +4005,95 @@ Uniform Resource Identifiers をパーズする関数を提供します。
 @c COMMON
 @end deftp
 
-@defun uri-scheme&specific uri
+@defun uri-parse uri
+@defunx uri-scheme&specific uri
 @defunx uri-decompose-hierarchical specific
 @defunx uri-decompose-authority authority
 @c EN
 General parser of URI.  These functions does not decode
-URI encoding.
+URI encoding, since the parts to be decoded differ among
+the uri schemes.   After parsing uri, use @code{uri-decode} below
+to decode them.
+@c JP
+URIの一般的なパーザです。これらの関数はURIエンコーディングを
+デコードしません。URIスキームによってどの部分をデコードすべきかが
+異なるからです。パージングを行った後に、後述の@code{uri-decode}等を
+使ってデコードを行ってください。
+@c COMMON
 
+@c EN
+@code{uri-parse} is the most handy procedure.  It breaks the uri
+into the following parts and returns them as multiple values.
+If the uri doesn't have the corresponding
+parts, @code{#f} are returned for the parts.
+
+@itemize @bullet
+@item
+URI scheme as a string
+(e.g. @code{"mailto"} in @code{"mailto:foo@@example.com"}).
+@item
+User-info in the authority part (e.g. @code{"anonymous"}
+in @code{ftp://anonymous@@ftp.example.com/pub/foo}).
+@item
+Hostname in the authority part (e.g. @code{"ftp.example.com"}
+in @code{ftp://anonymous@@ftp.example.com/pub/foo}).
+@item
+Port number in the authority part, as an integer (e.g. @code{8080}
+in @code{http://www.example.com:8080/}).
+@item
+Path part (e.g. @code{"/index.html"} in
+@code{http://www.example.com/index.html}).
+@item
+Query part (e.g. @code{"key=xyz&lang=en"} in
+@code{http://www.example.com/search?key=xyz&lang=en}).
+@item
+Fragment part (e.g. @code{"section4"} in
+@code{http://www.example.com/document.html#section4}).
+@end itemize
+@c JP
+@code{uri-parse}は最も手軽な手続きで、uriを以下に示す部分に
+分割し、多値で返します。
+もし該当する部分がuriに無かった場合は、その部分には@code{#f}が返ります。
+@itemize @bullet
+@item
+URIスキームを文字列で。
+(例： @code{"mailto:foo@@example.com"}の@code{"mailto"})。
+@item
+authorityパートのuser-infoを文字列で。
+(例： @code{ftp://anonymous@@ftp.example.com/pub/foo}の@code{"anonymous"})。
+@item
+authorityパートのhostnameを文字列で。
+(例： @code{ftp://anonymous@@ftp.example.com/pub/foo}の
+@code{"ftp.example.com"})。
+@item
+authorityパートのport番号を整数で。
+(例： @code{http://www.example.com:8080/}の@code{8080})。
+@item
+pathパート。
+(例： @code{http://www.example.com/index.html}の@code{"/index.html"})。
+@item
+queryパート。
+(例： @code{http://www.example.com/search?key=xyz&lang=en}の
+@code{"key=xyz&lang=en"})。
+@item
+fragmentパート。
+(例： @code{http://www.example.com/document.html#section4}の
+@code{"section4"})。
+@end itemize
+@c COMMON
+
+@c EN
+The following procedures are finer grained and break up
+uris with different stages.
+@c JP
+以下の手続きはより詳細に、段階をふんでuriを分割してゆくものです。
+@c COMMON
+
+@c EN
 @code{uri-scheme&specific} takes a URI @var{uri}, and
 returns two values, its scheme part and its scheme-specific part.
 If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
 @c JP
-URIの一般的なパーザです。これらの関数はURIエンコーディングを
-デコードしません。
-
 @code{uri-scheme&specific} は URI @var{uri} を引数に取り、
 スキーム部分と、そのスキーム特有の部分を表す2つの値を返します。
 @var{uri} がスキーム部分を持たない場合、@var{#f} を返します。
