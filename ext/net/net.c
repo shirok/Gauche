@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.20 2002-07-06 23:01:17 shirok Exp $
+ *  $Id: net.c,v 1.21 2002-07-13 07:40:03 shirok Exp $
  */
 
 #include "net.h"
@@ -251,18 +251,17 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
     return SCM_TRUE;
 }
 
-ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rtype)
+ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 {
-    int r = 0, rsize;
+    int r = 0;
     if (s->fd < 0) {
         Scm_Error("attempt to get a socket option of a closed socket: %S", s);
     }
-    if (rtype > 0) {
-        char *buf = SCM_NEW_ATOMIC2(char *, rtype);
-        rsize = rtype;
+    if (rsize > 0) {
+        char *buf = SCM_NEW_ATOMIC2(char *, rsize);
         r = Scm_SysCall(getsockopt(s->fd, level, option, buf, &rsize));
         if (r < 0) Scm_SysError("getsockopt failed");
-        return Scm_MakeString(buf, rsize, -1, SCM_MAKSTR_INCOMPLETE);
+        return Scm_MakeString(buf, rsize, rsize, SCM_MAKSTR_INCOMPLETE);
     } else {
         int val;
         rsize = sizeof(int);
