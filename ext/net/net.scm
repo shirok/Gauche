@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.11 2001-07-12 20:38:59 shirok Exp $
+;;;  $Id: net.scm,v 1.12 2001-09-05 19:08:36 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -20,7 +20,7 @@
   (export <socket> make-socket
           pf_unix pf_inet af_unix af_inet sock_stream sock_dgram sock_raw
           socket-address socket-status socket-input-port socket-output-port
-          socket-shutdown socket-close socket-bind socket-connect
+          socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
           <sockaddr> <sockaddr-in> <sockaddr-un>
           sockaddr-name sockaddr-family
