@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.141 2001-05-21 09:12:26 shirok Exp $
+ *  $Id: gauche.h,v 1.142 2001-05-22 20:27:19 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -945,14 +945,27 @@ enum ScmPortType {
     SCM_PORT_CLOSED
 };
 
-/* Predicates & accessors */
-#define SCM_PORTP(obj)      (SCM_XTYPEP(obj, SCM_CLASS_PORT))
+/* Incomplete character handling policy.
+   When Scm_Getc encounters a byte sequence that doesn't consist a valid
+   multibyte character, it may take one of the following actions,
+   according to the port's icpolicy field. */
+enum ScmPortICPolicy {
+    SCM_PORT_IC_ERROR,          /* signal an error */
+    SCM_PORT_IC_IGNORE,         /* ignore bytes until Getc finds a
+                                   valid multibyte character */
+    SCM_PORT_IC_REPLACE,        /* replace invalid byte to a designated
+                                   character. */
+};
 
-#define SCM_PORT(obj)       ((ScmPort *)(obj))
-#define SCM_PORT_TYPE(obj)  (SCM_PORT(obj)->type)
-#define SCM_PORT_DIR(obj)   (SCM_PORT(obj)->direction)
-#define SCM_PORT_FLAGS(obj) (SCM_PORT(obj)->flags)
+/* Predicates & accessors */
+#define SCM_PORTP(obj)          (SCM_XTYPEP(obj, SCM_CLASS_PORT))
+
+#define SCM_PORT(obj)           ((ScmPort *)(obj))
+#define SCM_PORT_TYPE(obj)      (SCM_PORT(obj)->type)
+#define SCM_PORT_DIR(obj)       (SCM_PORT(obj)->direction)
+#define SCM_PORT_FLAGS(obj)     (SCM_PORT(obj)->flags)
 #define SCM_PORT_UNGOTTEN(obj)  (SCM_PORT(obj)->ungotten)
+#define SCM_PORT_ICPOLICY(obj)  (SCM_PORT(obj)->icpolicy)
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT_TYPE(obj) == SCM_PORT_CLOSED)
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
@@ -1152,6 +1165,7 @@ extern ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value);
 
 extern ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);
 extern ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
+extern ScmObj Scm_ExportAll(ScmModule *module);
 extern ScmObj Scm_FindModule(ScmSymbol *name, int createp);
 extern ScmObj Scm_AllModules(void);
 extern void   Scm_SelectModule(ScmModule *mod);
