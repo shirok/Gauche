@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.40 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: bignum.c,v 1.41 2002-04-20 07:51:07 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -1148,6 +1148,7 @@ ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper)
     return Scm_ListToString(Scm_ReverseX(h));
 }
 
+#if SCM_DEBUG_HELPER
 int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
 {
     int i;
@@ -1159,6 +1160,7 @@ int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
     SCM_PUTC('>', out);
     return 0;
 }
+#endif
 
 /*-----------------------------------------------------------------------
  * Denormalized bignum API

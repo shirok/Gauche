@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.59 2002-04-18 08:14:53 shirok Exp $
+ *  $Id: string.c,v 1.60 2002-04-20 07:51:08 shirok Exp $
  */
 
 #include <stdio.h>
@@ -52,6 +52,7 @@ static ScmString *make_str(int len, int siz, const char *p)
 #define DUMP_LENGTH   50
 
 /* for debug */
+#if SCM_DEBUG_HELPER
 void Scm_StringDump(FILE *out, ScmObj str)
 {
     int i;
@@ -71,6 +72,7 @@ void Scm_StringDump(FILE *out, ScmObj str)
         fputs("\"\n", out);
     }       
 }
+#endif /*SCM_DEBUG_HELPER*/
 
 /*
  * Multibyte length calculation
@@ -1314,6 +1316,7 @@ void Scm_DStringPutc(ScmDString *ds, ScmChar ch)
 
 
 /* for debug */
+#if SCM_DEBUG_HELPER
 void Scm_DStringDump(FILE *out, ScmDString *dstr)
 {
     fprintf(out, "DString %p\n", dstr);
@@ -1335,4 +1338,5 @@ void Scm_DStringDump(FILE *out, ScmDString *dstr)
         fprintf(out, "\"\n");
     }
 }
+#endif /*SCM_DEBUG_HELPER*/
 

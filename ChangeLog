@@ -1,3 +1,14 @@
+2002-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parameter.scm : added.
+	* src/genstub, *.stub : changed the way to handle C preprocessor
+	  symbols; instead of read C headers and parse them, genstub just
+	  emits cpp directives to the C source and let cpp handle them.
+	  Stub files are modified accordingly.
+	* src/gauche.h src/bignum.c, src/string.c, src/regexp.c, src/char.c :
+	  Introduced SCM_DEBUG_HELPER cpp symbol to exclude debug-only
+	  routines from the release code.
+
 2002-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (scheme_slot_index) : damn it!  this routine has

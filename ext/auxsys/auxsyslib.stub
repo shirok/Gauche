@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.4 2002-03-07 10:39:00 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.5 2002-04-20 07:51:07 shirok Exp $
 ;;;
 
 "
@@ -70,7 +70,7 @@
   "SCM_RETURN(Scm_MakeFlonum(log10(x)));")
 
 ;; sys/time.h
-(if (defined? "HAVE_GETTIMEOFDAY")
+(if "defined HAVE_GETTIMEOFDAY"
     (define-cproc %sys-gettimeofday ()
       "struct timeval tv;
        int r = Scm_SysCall(gettimeofday(&tv, NULL));
@@ -108,7 +108,7 @@
 ;      if (r < 0) Scm_SysError(\"setpgrp failed\");
 ;      SCM_RETURN(Scm_MakeInteger(r));"))
 
-(if (defined? "HAVE_GETPGID")
+(if "defined HAVE_GETPGID"
     (define-cproc %sys-getpgid (pid)
       (assert (exact? pid))
       "  int r = (int)Scm_SysCall(getpgid(pid));
@@ -169,14 +169,14 @@
 #define HOSTNAMELEN 1024
 #endif"
 
-(if (defined? "HAVE_GETHOSTNAME")
+(if "defined HAVE_GETHOSTNAME"
     (define-cproc %sys-gethostname ()
       "  char buf[HOSTNAMELEN]; int r;
          r = Scm_SysCall(gethostname(buf, HOSTNAMELEN));
          if (r < 0) Scm_SysError(\"gethostname failed\");
          SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
 
-(if (defined? "HAVE_GETDOMAINNAME")
+(if "defined HAVE_GETDOMAINNAME"
     (define-cproc %sys-getdomainname ()
       "  char buf[HOSTNAMELEN]; int r;
          r = Scm_SysCall(getdomainname(buf, HOSTNAMELEN));
@@ -184,7 +184,7 @@
          SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
 
 ;; putenv
-(if (defined? "HAVE_PUTENV")
+(if "defined HAVE_PUTENV"
     (define-cproc %sys-putenv (name value)
       (assert (string? name))
       (assert (string? value))

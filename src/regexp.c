@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.24 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: regexp.c,v 1.25 2002-04-20 07:51:08 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -620,6 +620,7 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
 }
 
 /* For debug */
+#if SCM_DEBUG_HELPER
 void Scm_RegDump(ScmRegexp *rx)
 {
     int end = rx->numCodes, codep;
@@ -713,6 +714,7 @@ void Scm_RegDump(ScmRegexp *rx)
         }
     }
 }
+#endif /* SCM_DEBUG_HELPER */
 
 /*--------------------------------------------------------------
  * Compiler entry point
@@ -1061,6 +1063,7 @@ ScmObj Scm_RegMatchAfter(ScmRegMatch *rm, int i)
 }
 
 /* for debug */
+#if SCM_DEBUG_HELPER
 void Scm_RegMatchDump(ScmRegMatch *rm)
 {
     int i;
@@ -1081,6 +1084,7 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
         }
     }
 }
+#endif /*SCM_DEBUG_HELPER*/
 
 /*=======================================================================
  * Initializing stuff

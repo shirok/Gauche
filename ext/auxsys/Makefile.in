@@ -27,7 +27,7 @@ auxsys.so : $(OBJS)
 	$(CC) $(LDFLAGS) auxsys.so $(OBJS) $(LIBS)
 
 auxsyslib.c : auxsyslib.stub
-	$(GOSH) genstub -config auxsysconf.h auxsyslib.stub
+	$(GOSH) genstub auxsyslib.stub
 
 test : all
 	@rm -f test.log

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.26 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: char.c,v 1.27 2002-04-20 07:51:07 shirok Exp $
  */
 
 #include <ctype.h>
@@ -413,6 +413,7 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
     return h;
 }
 
+#if SCM_DEBUG_HELPER
 void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 {
     int i;
@@ -425,6 +426,7 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
         Scm_Printf(port, "(%d-%d)", r->lo, r->hi);
     Scm_Printf(port, "\n");
 }
+#endif /* SCM_DEBUG_HELPER */
 
 /*-----------------------------------------------------------------
  * Reader

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.234 2002-04-18 08:14:52 shirok Exp $
+ *  $Id: gauche.h,v 1.235 2002-04-20 07:51:07 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -56,15 +56,6 @@ extern "C" {
 # define SCM_EXTERN extern
 #endif /*!__CYGWIN__*/
 
-#define SCM_INLINE_MALLOC_PRIMITIVES
-#define SCM_VM_STACK_SIZE     10000
-
-#ifdef GAUCHE_USE_PTHREAD
-# include <gauche/pthread.h>
-#else  /* !GAUCHE_USE_PTHREAD */
-# include <gauche/uthread.h>
-#endif /* !GAUCHE_USE_PTHREAD */
-
 /* Some useful macros */
 
 #ifndef FALSE
@@ -73,6 +64,18 @@ extern "C" {
 #ifndef TRUE
 #define TRUE (!FALSE)
 #endif
+
+/* This defines several auxiliary routines that are useful for debugging */
+#define SCM_DEBUG_HELPER      FALSE
+
+#define SCM_INLINE_MALLOC_PRIMITIVES
+#define SCM_VM_STACK_SIZE     10000
+
+#ifdef GAUCHE_USE_PTHREAD
+# include <gauche/pthread.h>
+#else  /* !GAUCHE_USE_PTHREAD */
+# include <gauche/uthread.h>
+#endif /* !GAUCHE_USE_PTHREAD */
 
 /*-------------------------------------------------------------
  * BASIC TYPES

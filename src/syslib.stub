@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.63 2002-03-06 08:46:39 shirok Exp $
+;;; $Id: syslib.stub,v 1.64 2002-04-20 07:51:08 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -759,7 +759,7 @@
 ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
 ;; prototype.  However, it screws up something else.  Just for now I
 ;; cast the return value of crypt() to avoid it...such a kludge...
-(if (defined? "HAVE_CRYPT")
+(if "defined(HAVE_CRYPT)"
 (define-cproc sys-crypt (key salt)
   (assert (string? key))
   (assert (string? salt))
@@ -774,7 +774,7 @@
 ;;---------------------------------------------------------------------
 ;; symbolic link
 
-(if (defined? "HAVE_SYMLINK")
+(if "defined(HAVE_SYMLINK)"
 (define-cproc sys-symlink (existing new)
   (assert (string? existing))
   (assert (string? new))
@@ -790,7 +790,7 @@
 ")
 )
 
-(if (defined? "HAVE_READLINK")
+(if "defined(HAVE_READLINK)"
 (define-cproc sys-readlink (path)
   (assert (string? path))
   "#define READLINK_PATH_MAX 1024  /* TODO: needs to be configured */
