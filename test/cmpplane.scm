@@ -373,7 +373,7 @@
         ;; Two far-apart far-out points.  Try to walk around
         ;;  outside the perimeter, in the shorter direction.
         (let* ((pdiff (angle (/ v w)))
-               (npoints (floor (abs pdiff) (asin .2)))
+               (npoints (floor (/ (abs pdiff) (asin 0.2))))
                (delta (/ pdiff (+ npoints 1)))
                (incr (cis delta)))
           (do ((j 0 (+ j 1))
