@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.56 2001-09-13 09:10:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.57 2001-09-16 07:58:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3730,6 +3730,7 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @menu
 * Character code conversion::   
+* Low-level file operations::   
 * Interactive session::         
 * Networking::                  
 * Parsing command-line options::  
@@ -3755,7 +3756,7 @@ of descendants of @var{class}.
 * Character-set library::       
 @end menu
 
-@node Character code conversion, Interactive session, Libarary Modules, Libarary Modules
+@node Character code conversion, Low-level file operations, Libarary Modules, Libarary Modules
 @section @code{gauche.charconv} - Character Code Conversion
 
 @deftp {Module} gauche.charconv
@@ -3888,7 +3889,160 @@ usually in favor of the native CES.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Interactive session, Networking, Character code conversion, Libarary Modules
+@node Low-level file operations, Interactive session, Character code conversion, Libarary Modules
+@section @code{gauche.fcntl} - Low-level file operations
+
+@deftp {Module} gauche.fcntl
+@mdindex gauche.fcntl
+Provides an interface to @code{fcntl(2)}, including
+advisory file locking.
+@end deftp
+
+@defun sys-fcntl port-or-fd operation &optional arg
+Performs certain operation on the file specfied by @var{port-or-fd},
+which should be a port object or an integer
+that specifies a system file descriptor.  If it is a port, it must
+be associated to the opened file.
+
+The operation is specified by an integer @var{operation}.
+Several variables are defined for valid @var{operation}.
+
+@table @code
+@item |F_GETFD|
+@vindex F_GETFD
+@vindex FD_CLOEXEC
+Returns flags associated to the file descriptor of @var{port-or-fd}.
+The optional argument @var{arg} is not used.   The return value is 
+an integer whose definition is system specific, except one flag,
+@code{|FD_CLOEXEC|}, which indicates the file descriptor should be
+closed on @code{exec}.
+
+@item |F_SETFD|
+@vindex F_SETFD
+Sets the file descriptor flags given as @var{arg} to @var{port-or-fd}.
+For example, the portable way of setting @code{FL_CLOEXEC} flag is
+as follows:
+@example
+(sys-fcntl port |F_SETFD| (logior |FD_CLOEXEC| (sys-fcntl port |F_GETFD|)))
+@end example
+
+@item |F_GETFL|
+@vindex F_GETFL
+Returns flags associated to the open files specified by @var{port-or-fd}.
+The flags includes the following information:
+
+@itemize @bullet
+@item
+@vindex O_ACCMODE
+@vindex O_RDONLY
+@vindex O_WRONLY
+@vindex O_RDWR
+File access mode.  When masked by @code{|O_ACCMODE|}, 
+it's either one of @code{|O_RDONLY|}, @code{|O_WRONLY|} or @code{|O_RDWR|}.
+@item
+@vindex O_CREAT
+@vindex O_EXCL
+@vindex O_TRUNC
+File creation options.  @code{|O_CREAT|}, @code{|O_EXCL|} and/or
+@code{|O_TRUNC|}.
+@item
+@vindex O_APPEND
+Whether appending is allowed or not, by @code{|O_APPEND|}
+@item
+@vindex O_NONBLOCK
+Whether I/O is blocking or non-blocking, by @code{|O_NONBLOCK|}.
+@item
+@vindex O_NOCTTY
+Whether it grabs terminal control, by @code{|O_NOCTTY|}.
+@end itemize
+
+The system may define system-specific flags.
+
+@item |F_SETFL|
+@vindex F_SETFL
+Sets flags to the open files specified by @var{port-or-fd}.
+Among the flags listed above, only @code{|O_NONBLOCK|} and @code{|O_APPEND|}
+can be changed.
+
+Note that @code{|F_GETFD|}/@code{|F_SETFD|} concern flags associated
+to the file descriptor itself, while @code{|F_GETFL|}/@code{|F_SETFL|}
+concern flags associated to the opened file itself.  This makes difference
+when more than one file descriptor points to the same opened file.
+
+@item |F_DUPFD|
+@vindex F_DUPFD
+Creates new file descriptor that points to the same file referred by
+@var{port-or-fd}.
+An integer must be provided as @var{arg}, and that specifies
+the minimum value of file descriptor to be assigned.
+
+@item |F_GETLK|
+@vindex F_GETLK
+The third argument must be provided and be an instance of @code{<sys-flock>}
+object described below.  It searches the lock information specified by
+@var{arg}, and modifies @var{arg} accordingly.
+
+@item |F_SETLK|
+@itemx |F_SETLKW|
+@vindex F_SETLK
+@vindex F_SETLKW
+The third argument must be provided and be an instance of @code{<sys-flock>}
+object described below.  Sets the advisory file lock according to 
+@var{arg}.   If the lock is successfully obtained, @code{#t} is returned.
+If the other process has the lock conflicting the request,
+@code{|F_SETLK|} returns @code{#f}, while @code{|F_SETLKW|} waits until
+the lock is available.
+@end table
+
+Other value for @var{operation} causes an error.
+@end defun
+
+@deftp {Builtin Class} <sys-flock>
+@clindex sys-flock
+A structure represents POSIX advisory record locking.
+Advisory record locking means the system may not prevents the process
+from operating on files that it doesn't have an appropriate lock.
+All the processes are expected to use @code{fcntl} to check locks
+before it operates on the files that may be shared.
+
+The following slots are defined.
+
+@defivar {<sys-flock>} type
+An integer represents lock type.  Following variables are predefined
+for the valid values:
+@table @code
+@item |F_RDLCK|
+@vindex F_RDLCK
+Read locking
+@item |F_WRLCK|
+@vindex F_WRLCK
+Write locking
+@item |F_UNLCK|
+@vindex F_UNLCK
+To remove a lock by @code{|F_SETLK|}, or to indicate the record is not
+locked by @code{|F_GETLK|}.
+@end table
+@end defivar
+
+@defivar {<sys-flock>} whence
+Indicates from where @code{start} is measured.
+@end defivar
+
+@defivar {<sys-flock>} start
+The offset of beginning of the locked region.
+@end defivar
+
+@defivar {<sys-flock>} len
+The number of bytes to lock.  Zero means ``until EOF''.
+@end defivar
+
+@defivar {<sys-flock>} pid
+An integer process id that holding the lock; used only by @code{|F_GETLK|}.
+@end defivar
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Interactive session, Networking, Low-level file operations, Libarary Modules
 @section @code{gauche.interactive} - Utilities for interactive session
 
 @deftp {Module} gauche.interactive
