@@ -1,3 +1,8 @@
+2002-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/reload.scm : added module reloading utility
+	  contributed by Alex Shinn.
+
 2002-11-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_VMApply): check if the length of argument list is
