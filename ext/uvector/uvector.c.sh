@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.23 2002-07-13 06:54:25 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.24 2002-09-27 06:14:51 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -104,11 +104,14 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_${vecttype}Class,
 /*
  * Constructor
  */
-static Scm${vecttype} *make_${vecttype}(int size)
+static Scm${vecttype} *make_${vecttype}(int size, ${itemtype} *eltp)
 {
-    Scm${vecttype} *vec =
-      ${ALLOC}(Scm${vecttype} *,
-               sizeof(Scm${vecttype}) + (size-1)*sizeof(${itemtype}));
+    Scm${vecttype} *vec = SCM_NEW(Scm${vecttype});
+    if (eltp) {
+        vec->elements = eltp;
+    } else {
+        vec->elements = ${ALLOC}(${itemtype}*, size*sizeof(${itemtype}));
+    }
     SCM_SET_CLASS(vec, SCM_CLASS_${VECTTYPE});
     vec->size = size;
     return vec;
@@ -116,7 +119,7 @@ static Scm${vecttype} *make_${vecttype}(int size)
 
 ScmObj Scm_Make${vecttype}(int size, ${itemtype} fill)
 {
-    Scm${vecttype} *vec = make_${vecttype}(size);
+    Scm${vecttype} *vec = make_${vecttype}(size, NULL);
     int i;
     for (i=0; i<size; i++) {
         vec->elements[i] = fill;
@@ -124,13 +127,19 @@ ScmObj Scm_Make${vecttype}(int size, ${itemtype} fill)
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_Make${vecttype}FromArray(int size, ${itemtype} array[])
+ScmObj Scm_Make${vecttype}FromArray(int size, const ${itemtype} array[])
 {
-    Scm${vecttype} *vec = make_${vecttype}(size);
+    Scm${vecttype} *vec = make_${vecttype}(size, NULL);
     int i;
     for (i=0; i<size; i++) {
         vec->elements[i] = array[i];
     }
+    return SCM_OBJ(vec);
+}
+
+ScmObj Scm_Make${vecttype}FromArrayShared(int size, ${itemtype} array[])
+{
+    Scm${vecttype} *vec = make_${vecttype}(size, array);
     return SCM_OBJ(vec);
 }
 
@@ -141,7 +150,7 @@ ScmObj Scm_ListTo${vecttype}(ScmObj list, int clamp)
     ScmObj cp;
 
     if (length < 0) Scm_Error("improper list not allowed: %S", list);
-    vec = make_${vecttype}(length);
+    vec = make_${vecttype}(length, NULL);
     for (i=0, cp=list; i<length; i++, cp = SCM_CDR(cp)) {
         ${itemtype} elt;
         ScmObj obj = SCM_CAR(cp);
@@ -157,7 +166,7 @@ ScmObj Scm_VectorTo${vecttype}(ScmVector *ivec, int start, int end, int clamp)
     Scm${vecttype} *vec;
     ScmObj cp;
     SCM_CHECK_START_END(start, end, length);
-    vec = make_${vecttype}(end-start);
+    vec = make_${vecttype}(end-start, NULL);
     for (i=start; i<end; i++) {
         ${itemtype} elt;
         ScmObj obj = SCM_VECTOR_ELEMENT(ivec, i);
