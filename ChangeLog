@@ -1,3 +1,10 @@
+2003-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (process-wait-any) : avoid calling
+	  sys-waitpid unless there are child processes regsitered in
+	  process-list; sys-waitpid raises an error when no child
+	  process to wait.
+
 2003-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* example/oointro.scm, doc/object.texi : added "introduction to

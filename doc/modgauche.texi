@@ -5390,16 +5390,12 @@ implemented on top of low-level system calls such as @code{sys-fork}
 and @code{sys-exec}.  The interface is mostly compatible with
 STk's process library.  This module also provides ``process ports'', 
 a convenient way to send/receive information to/from subprocesses.
-
-To use this module, say @code{(use gauche.process)}.
 @c JP
 このモジュールは、@code{sys-fork} や @code{sys-exec} などの低レベルな
 システムコールの上に実装された、Unix プロセス制御の高レベル API を提供します。
 インターフェースは、STk のプロセスライブラリとほとんどの点で互換性があります。
 また、このモジュールは、サブプロセスに情報を送ったり、サブプロセスから
 情報を受け取ったりするのに便利な「プロセスポート」を提供します。
-
-このモジュールを使うためには、@code{(use gauche.process)} として下さい。
 @c COMMON
 @end deftp
 
@@ -5416,10 +5412,33 @@ To use this module, say @code{(use gauche.process)}.
 @c EN
 An object to keep the status of a child process.  You can create
 the process object by @code{run-process} procedure described below.
+The process ports explained in the next section also use process objects.
 @c JP
 子プロセスの状態を保持するためのオブジェクト。以下で説明される
 @code{run-process} 手続きにより、プロセスを作ることができます。
+次章で説明するプロセスポートもプロセスオブジェクトを用いています。
 @c COMMON
+
+@c EN
+Note that the @code{<process>} class keeps track of
+the child processes spawned by high-level APIs such
+as @code{run-process} or @code{open-input-process}.
+The exit status of such children must be collected by
+@code{process-wait} or @code{process-wait-any} calls,
+which also do some bookkeeping.   Using
+the low-level process calls such as @code{sys-wait} or
+@code{sys-waitpid} directly will cause inconsistent state.
+@c JP
+@code{<process>}クラスは、@code{run-process}や@code{open-input-process}
+といった高レベルAPIで作られた子プロセスの状態を管理しています。
+それらの子プロセスの終了ステータスをとるには、
+@code{process-wait}や@code{process-wait-any}といった
+高レベルAPIを利用してください。これらの手続きはシステムコール以外の情報管理も
+行います。@code{sys-wait}や@code{sys-waitpid}といった低レベルAPIで
+直接子プロセスの終了ステータスを取ると、@code{<process>}クラスの
+内部状態に矛盾が生じます。
+@c COMMON
+
 @end deftp
 
 @defun run-process command arg @dots{}
@@ -5493,7 +5512,6 @@ it never returns.
 @code{run-process} は直接 @code{sys-exec} を呼ぶので、それは返りません。
 @c COMMON
 @end table
-
 @end defun
 
 @defun process? obj
@@ -5610,6 +5628,8 @@ If a true value is given to the optional argument @var{nohang}, this procedure
 returns @code{#f }immediately even if no child process has exit.
 If @var{nohang} is omitted or
 @code{#f}, this procedure waits for any of children exits.
+
+If there's no child processes, this procedure immediately returns @code{#f}.
 @c JP
 @code{run-process}で作られたサブプロセスのどれかの終了ステータスを取得します。
 終了ステータスが取得できたプロセスのプロセスオブジェクトを返します。
@@ -5617,6 +5637,8 @@ If @var{nohang} is omitted or
 真の値が@var{nohang}に与えられた場合は、どの子プロセスも終了していない場合は
 直ちに@code{#f}を返します。そうでなければ、この手続きはいずれかの子プロセスが
 終了するまで待ちます。
+
+子プロセスが存在しない場合は、この手続きは直ちに@code{#f}を返します。
 @c COMMON
 @end defun
 
