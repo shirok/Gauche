@@ -154,6 +154,9 @@
 ;;; (TMPNAM) makes a temporary file name.
 (define tmpnam sys-tmpnam)
 
+;;; SYSTEM
+(define system sys-system)
+
 ;;; GETENV
 (define getenv sys-getenv)
 
