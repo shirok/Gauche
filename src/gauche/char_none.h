@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_none.h,v 1.4 2001-05-28 11:55:20 shirok Exp $
+ *  $Id: char_none.h,v 1.5 2003-02-07 02:43:28 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -58,6 +58,7 @@
 /* Array of character encoding names, recognizable by iconv, that are
    compatible with this native encoding. */
 static const char *supportedCharacterEncodings[] = {
+    "NONE",
     "ASCII",
     "US-ASCII",
     "ISO-8859-1",
