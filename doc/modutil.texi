@@ -10914,13 +10914,13 @@ for the details of @code{parameterize}).
 @end example
 @end deffn
 
-@defun cgi-get-metavariables name
+@defun cgi-get-metavariable name
 @c EN
 Returns a value of cgi metavariable @var{name}.
 This function first searches the parameter @code{cgi-metavariables},
 and if the named variable is not found, calls @code{sys-getenv}.
 
-CGI scripts may want to use @code{cgi-get-metavariables} instead
+CGI scripts may want to use @code{cgi-get-metavariable} instead
 of directly calling @code{sys-getenv}; doing so makes reuse of
 the script easier. 
 @c JP
