@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.301 2002-11-14 02:01:58 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.302 2002-11-14 05:59:17 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -22948,6 +22948,7 @@ generates will be quantized by the given @var{unit}, where
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
 * HTTP cookie handling::        
+* HTTP::                        
 * Quoted-printable encoding/decoding::  
 * URI parsing and construction::  
 * SLIB::                        
@@ -24649,7 +24650,7 @@ set are silently ignored.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node HTTP cookie handling, Quoted-printable encoding/decoding, Base64 encoding/decoding, Library modules - Utilities
+@node HTTP cookie handling, HTTP, Base64 encoding/decoding, Library modules - Utilities
 @section @code{rfc.cookie} - HTTP cookie handling
 @c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
@@ -24741,7 +24742,135 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Quoted-printable encoding/decoding, URI parsing and construction, HTTP cookie handling, Library modules - Utilities
+@node HTTP, Quoted-printable encoding/decoding, HTTP cookie handling, Library modules - Utilities
+@section @code{rfc.http} - HTTP
+
+@deftp {Module} rfc.http
+@mdindex rfc.http
+This module provides a simple client API for
+HTTP/1.1, defined in RFC2616, "Hypertext Transfer Protocol -- HTTP/1.1"
+(@ref{rfc2616, [RFC2616], RFC2616}).
+
+Current API implements only a part of the protocol.
+Only GET, HEAD, and POST requests are supported,
+it doesn't talk with HTTP/1.0 server yet,
+and it doesn't support HTTP/1.1 advanced features
+such as persistent connection.
+Support for those features may be added in the future versions.
+@end deftp
+
+@defun http-get server request-uri &keyword sink flusher no-redirect @dots{}
+@defunx http-head server request-uri &keyword no-redirect @dots{}
+@defunx http-post server request-uri body &keyword sink flusher no-redirect @dots{}
+
+Send http GET, HEAD and POST requests to the http @var{server},
+and returns the server's reply.
+
+If the server returns "3xx" redirection reply, these procedures
+try to follow the URI returned in the "location" reply message header
+by default.  See the "keyword arguments" heading below to suppress
+redirection following.
+
+@strong{Required arguments:}
+The @var{server} argument specifies http server name in a string.
+A server name can be optionally followed by colon and a port number.
+Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"}.
+
+The @var{request-uri} argument is the request-uri specified in
+RFC2616; usually, this is the path part of http url.
+
+@code{Http-post} takes the third argument, @var{body}, which is
+a string to be posted to the server.   The body is sent "as is";
+the caller has to take care of necessary escaping or encoding.
+
+So, the most simple form of retrieving the content will be
+something like this:
+
+@example
+(http-get "www.shiro.dreamhost.com" "/scheme/index.html")
+@end example
+
+Access via proxy can be done by specifying proxy server to @var{server}
+and passing the entire URI to @var{request-uri}, but the author
+haven't tested yet.
+
+@strong{Return values:}
+All procedures return three values.
+
+The first value is the status code defined in RFC2616
+in a string (such as "200" for success, "404" for "not found").
+
+The second value is a list of parsed headers---each element of list
+is a list of @code{(@var{header-name} @var{value} @dots{})}, 
+where @var{header-name} is a string name of the header
+(such as "content-type" or "location"), and @var{value} is
+the corresponding value in a string.  The header name is converted
+to lowercase letters.  The value is untouched except that "soft line breaks"
+are removed, as defined in RFC2822.   If the server returns
+more than one headers with the same name, their values are
+consolidated to one list.  Except that, the order of the header list
+in the second return value is the same as the order in the server's reply.
+
+The third value is for the message body of the server's reply.
+By default, it is a message body itself in a string.   If the server's
+reply doesn't have a body, the third value is @code{#f}.  You can
+change how the message body is handled by keyword arguments; for example,
+you can directly store the returned message body to a file without
+creating intermediate string.  The details are explained below.
+
+@strong{Keyword arguments:}
+By default, these procedures only attaches @code{"Host"} header
+field to the request message.  You can give keyword arguments
+to add more header fields.
+
+@example
+(http-get "foo.bar.com" "/index.html"
+  :accept-language "ja"
+  :user-agent "My Scheme Program/1.0")
+@end example
+
+The following keyword arguments are recognized by the procedure
+and do not appear in the request headers.
+
+@table @var
+@item no-redirect
+If a true value is given, suppress the redirection tracking;
+i.e. the procedures return "3xx" message as is.
+
+@item sink, flusher
+You can customize how the message body is handled by these
+keyword arguments.  You have to pass an output port to @var{sink},
+and a procedure that takes two arguments to @var{flusher}.
+
+When the procedure starts receiving the message body, it
+feeds the received chunk to @var{sink}.  When the procedure
+receives entire message body, @var{flusher} method is called
+with @var{sink} and a list of message header fields (in the
+same format to be returned in the second value from the procedure).
+The return value of @var{flusher} becomes the third return value
+from the procedure.
+
+So, the default value of @var{sink} is a newly opened string
+port and the default value of @var{flusher} is
+@code{(lambda (sink headers) (get-output-string sink))}.
+
+The following example saves the message body directly to a file,
+without allocating (potentially very big) string buffer.
+
+@example
+(call-with-output-file "page.html"
+  (lambda (out)
+    (http-get "www.schemers.org" "/"
+       :sink out :flusher (lambda _ #t))))
+@end example
+
+@end table
+
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Quoted-printable encoding/decoding, URI parsing and construction, HTTP, Library modules - Utilities
 @section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
 @c NODE Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
 
@@ -26203,6 +26332,11 @@ T. Berners-Lee, R. Fielding, L. Masinter,
 Uniform Resource Identifiers (URI): Generic Syntax,
 August 1998. @*
 @url{ftp://ftp.isi.edu/in-notes/rfc2396.txt}.
+
+@anchor{rfc2616}
+@item [RFC2616]
+R. Fielding et al, Hypertext Transfer Protocol -- HTTP/1.1, June 1999. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc2616.txt}.
 
 @anchor{rfc2822}
 @item [RFC2822]
