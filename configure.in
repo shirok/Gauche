@@ -102,7 +102,7 @@ dnl                      system supports dso.  empty otherwise.
 
 AC_MSG_CHECKING(how to make dynamic loadable module)
 case $host in
-  *-linux-gnu)
+  *-linux-gnu|*freebsd*)
     SHLIB_SO_CFLAGS="-fpic"
     SHLIB_SO_LDFLAGS="-shared -o"
     SHLIB_SO_SUFFIX="so"
