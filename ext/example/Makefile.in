@@ -3,20 +3,22 @@ CFLAGS = @CFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 GOSH = @GOSH@
+GAUCHE_CONFIG = @GAUCHE_CONFIG@
 GAUCHE_TOP = @GAUCHE_TOP@
+INSTALL = @INSTALL@
+
+ARCHFILES = example.so
+SCMFILES = example.scm
+HEADERS = 
 
 TARGET = example.so
 OBJS = example.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status
 
 INSTALL_TYPE = @INSTALL_TYPE@
-INST_INC_DIR = @INST_INC_DIR@
-INST_SCM_DIR = @INST_SCM_DIR@
-INST_ARCH_DIR = @INST_ARCH_DIR@
-INST_SITE_INC_DIR = @INST_SITE_INC_DIR@
-INST_SITE_SCM_DIR = @INST_SITE_SCM_DIR@
-INST_SITE_ARCH_DIR = @INST_SITE_ARCH_DIR@
-
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
 all : $(TARGET)
 
@@ -28,6 +30,21 @@ test : all
 	@GAUCHE_LOAD_PATH=$(GAUCHE_TOP)src:$(GAUCHE_TOP)lib $(GOSH) test.scm > test.log
 
 install : all
+	@if test ! -z $(HEADERS); then \
+	  for f in $(HEADERS); do \
+	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
+	  done; \
+	fi
+	@if test ! -z $(SCMFILES); then \
+	  for f in $(SCMFILES); do \
+	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
+	  done; \
+	fi
+	@if test ! -z $(ARCHFILES); then \
+	  for f in $(ARCHFILES); do \
+	    $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
+	  done; \
+	fi
 
 clean :
 	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
