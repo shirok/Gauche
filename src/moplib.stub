@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.12 2001-10-24 09:42:49 shirok Exp $
+;;; $Id: moplib.stub,v 1.13 2001-11-29 11:39:44 shirok Exp $
 ;;;
 
 "
@@ -77,8 +77,10 @@
   "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
 
 (define-cproc is-a? (obj klass)
-  (assert (class? klass))
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_TypeP(obj, klass)));")
+  "if (!Scm_TypeP(klass, SCM_CLASS_CLASS)) {
+    Scm_Error(\"class required, but got %S\", klass);
+  }
+  SCM_RETURN(SCM_MAKE_BOOL(Scm_TypeP(obj, SCM_CLASS(klass))));")
 
 (define-cproc slot-ref (obj slot)
   (inliner "SCM_VM_SLOT_REF")
