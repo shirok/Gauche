@@ -6797,7 +6797,26 @@ an input port, and when omitted, the current input port is assumed.
 @defun read &optional iport
 [R5RS]
 @c EN
+Reads an S-expression from @var{iport} and returns it.
+Gauche recognizes the lexical structure specified in R5RS,
+and some additional lexical structures listed in @ref{Lexical structure}.
+
+If @var{iport} has already reached to the end of file,
+an eof object is returned.
+
+The procedure reads up to the last character that consists the S-expression,
+and leaves the rest in the port.  It's not like CommonLisp's @code{read},
+which consumes whitespaces after S-expression by default.
 @c JP
+@var{iport}からS式をひとつ読み込んで返します。
+GaucheはR5RSに定義されている構文要素に加え、@ref{Lexical structure}に
+定義されている拡張構文要素を認識します。
+
+@var{iport}が既にEOFに達していた場合は、EOFオブジェクトが返されます。
+
+この手続きはS式を構成する最後の文字までを読み、その後の文字はポートに
+残します。これは、S式に続く空白文字も読み込むCommonLispの@code{read}の
+振る舞いとは異なります。
 @c COMMON
 @end defun
 
@@ -6870,6 +6889,7 @@ If @var{iport} has already reached EOF, an eof object is returned.
 戻り値にはこれらの行末文字は含まれません。
 @var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
 @c COMMON
+
 @c EN
 If a byte sequence is read from @var{iport}
 which doesn't constitute a valid character in the native encoding,
