@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.7 2002-03-11 08:44:49 shirok Exp $
+# $Id: aclocal.m4,v 1.8 2002-03-11 09:46:12 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -35,7 +35,7 @@ AC_SUBST(GAUCHE_TOP)
 AC_SUBST(GAUCHE_INC)
 AC_SUBST(GOSH)
 
-GAUCHE_VERSION=`$(GAUCHE_CONFIG) --version`
+GAUCHE_VERSION=`$GAUCHE_CONFIG -V`
 AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
 ])
