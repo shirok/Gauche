@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.30 2001-03-28 09:55:46 shiro Exp $
+ *  $Id: vm.h,v 1.31 2001-03-29 06:06:18 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -157,6 +157,7 @@ struct ScmVMRec {
     ScmVMActivationHistory *history; /* activation history */
 
     unsigned int compilerFlags; /* Compiler flags */
+    unsigned int errorFlags;    /* Error flags */
 
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
@@ -255,6 +256,11 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
        }                                          \
        Scm_VM()->escape = Scm_VM()->escape->prev; \
     } while (0)
+
+/* flag for vm->errorFlag */
+enum {
+    SCM_ERROR_BEING_HANDLED = (1L<<0) /* we're in an error handler */
+};
 
 /*
  * C-continuation
