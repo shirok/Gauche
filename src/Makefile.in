@@ -49,7 +49,8 @@ TESTFILES = ../test/primsyn.scm \
 	    ../test/module.scm  \
 	    ../test/macro.scm   \
 	    ../test/dynwind.scm \
-	    ../test/srfi.scm
+	    ../test/srfi.scm \
+	    ../test/object.scm
 
 .SUFFIXES: .stub
 
