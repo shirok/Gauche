@@ -514,8 +514,9 @@
                        (unless sig (loop)))
                      (set-signal-handler! SIGINT #f)
                      (sys-sigmask SIG_UNBLOCK mask1)
-                     (let loop ()
-                       (unless chld (loop)))
+                     ;;Some systems appear to lose this SIGCHLD (esp. cygwin)
+                     ;;(let loop ()
+                     ;;  (unless chld (loop)))
                      sig))))))))
 
 
