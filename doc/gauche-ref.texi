@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.210 2002-06-06 12:02:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.211 2002-06-07 11:03:13 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4384,31 +4384,33 @@ Note: @code{(setter car)} @equiv{} @code{set-car!}, and
 
 @defun caar pair
 @defunx cadr pair
-@defunx cdar pair
-@defunx cddr pair
-@defunx caaar pair
-@defunx caadr pair
-@defunx cadar pair
-@defunx caddr pair
-@defunx cdaar pair
-@defunx cdadr pair
-@defunx cddar pair
-@defunx cdddr pair
-@defunx caaaar pair
-@defunx caaadr pair
-@defunx caadar pair
-@defunx caaddr pair
-@defunx cadaar pair
-@defunx cadadr pair
-@defunx caddar pair
-@defunx cadddr pair
-@defunx cdaaar pair
-@defunx cdaadr pair
-@defunx cdadar pair
-@defunx cdaddr pair
-@defunx cddaar pair
-@defunx cddadr pair
-@defunx cdddar pair
+@findex cdar pair
+@findex cddr pair
+@findex caaar pair
+@findex caadr pair
+@findex cadar pair
+@findex caddr pair
+@findex cdaar pair
+@findex cdadr pair
+@findex cddar pair
+@findex cdddr pair
+@findex caaaar pair
+@findex caaadr pair
+@findex caadar pair
+@findex caaddr pair
+@findex cadaar pair
+@findex cadadr pair
+@findex caddar pair
+@findex cadddr pair
+@findex cdaaar pair
+@findex cdaadr pair
+@findex cdadar pair
+@findex cdaddr pair
+@findex cddaar pair
+@findex cddadr pair
+@dots{}
+@end defun
+@defun cdddar pair
 @defunx cddddr pair
 [R5RS]
 @c EN
@@ -4548,19 +4550,29 @@ The cells of @var{list} may be reused to construct the returned list.
 
 @defun memq obj list
 @defunx memv obj list
+@defunx member obj list
 [R5RS]
 @c EN
 Searches @var{obj} in the @var{list}.  If @code{n}-th element of
 @var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
-@code{eqv?} for @code{memv}), @code{(list-tail @var{list} @var{n})} is
-returned.   Otherwise, @code{#f} is returned.
+@code{eqv?} for @code{memv}, and @code{equal?} for @code{member}), 
+@code{(list-tail @var{list} @var{n})} is returned.
+Otherwise, @code{#f} is returned.
 @c JP
 @var{list}から@var{obj}を探します。もし@var{list}の@var{n}番目の要素が
 @var{obj}と同一ならば、@code{(list-tail @var{list} @var{n})}を返します。
-@code{memq}は同一性の判定に@code{eq?}を、@code{memv}は@code{eqv?}を使います。
+@code{memq}は同一性の判定に@code{eq?}を、@code{memv}は@code{eqv?}を、
+@code{member}は@code{equal?}を使います。
 @var{obj}が@var{list}中に見つからなければ@code{#f}が返されます。
 @c COMMON
 
+@c EN
+If you use SRFI-1 (@xref{List library}), @code{member} is extended
+to take optional argument for a equality procedure.
+@c JP
+SRFI-1 (@ref{List library}) を使うと、@code{member}は
+オプショナルな同一性判定手続きを取るように拡張されます。
+@c COMMON
 @example
 (memq 'a '(a b c))          @result{} (a b c)
 (memq 'b '(a b c))          @result{}  (b c)
@@ -4570,28 +4582,14 @@ returned.   Otherwise, @code{#f} is returned.
 @end example
 @end defun
 
-@defun member obj list [=]
-[R5RS+][SRFI-1]
-@c EN
-@c JP
-@c COMMON
-@end defun
-
 @defun assq obj list
 @defunx assv obj list
+@defunx assoc obj list
 [R5RS]
 @c EN
 @c JP
 @c COMMON
 @end defun
-
-@defun assoc obj list [=]
-[R5RS+][SRFI-1]
-@c EN
-@c JP
-@c COMMON
-@end defun
-
 
 @c ----------------------------------------------------------------------
 @node Symbols, Keywords, Pairs and Lists, Core library
@@ -17173,20 +17171,47 @@ native multibyte representation.
 
 @deftp {Module} slib
 @mdindex slib
+@c EN
 This module is the interface to the Aubrey Jaffer's SLIB.
 To use SLIB, say @code{(use slib)}.   SLIB itself is not included
 in Gauche distribution.   If you don't have it on your system,
 get it from @uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}.
+@c JP
+このモジュールはAubrey Jaffer氏のSLIBへのインタフェースです。
+SLIBがインストールされている場合、@code{(use slib)} とすれば
+SLIBの機能が使えるようになります。
+SLIBそのものはGaucheのディストリビューションには含まれていません。
+あなたのシステムにまだインストールされていない場合は
+@uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}から入手することができます。
+@c COMMON
 
+@c EN
 This module redefines @code{require}, shadowing the Gauche's original
 @code{require}.  If it gets a symbol as an argument, it works as
 SLIB's @code{require}, while if it gets a string, it works as
 Gauche's @code{require}.   The same applies to @code{provide} and
 @code{provided?}.
+@c JP
+このモジュールは@code{require}を再定義し、Gaucheオリジナルの@code{require}を
+シャドウします。@code{require}にシンボルが渡された場合はSLIBの@code{require}
+のように動作します。@code{require}に文字列が渡された場合はGaucheの@code{require}
+のように動作します。@code{provide}と@code{provided?}についても同様です。
+@c COMMON
 
+@c EN
 All SLIB symbol bindings, loaded by @code{require}, stay in the
 module @code{slib}.
+@c JP
+@code{require}でロードされる、SLIBで導入されるすべての定義は、
+@code{slib}モジュール内で行われます。
+@c COMMON
 @end deftp
+
+@example
+(use slib)         ; @r{load and set up slib}
+(require 'getopt)  ; @r{load SLIB's getopt module}
+(require "foo")    ; @r{load Gauche's foo module}
+@end example
 
 @c ----------------------------------------------------------------------
 @node Feature Conditional, List library, SLIB, Library modules
@@ -17542,24 +17567,61 @@ gets each @code{cdr} of the given @var{clist}s, instead of @code{car}.
 @end defun
 
 @defun reduce f ridentity list
+@defunx reduce-right f ridentity list
 [SRFI-1]
-@end defun
+Variant of @code{fold} and @code{fold-right}.   @var{F} must be a
+binary operator, and @var{ridentity} is the value such that for
+any value @var{x} that is valid as @var{f}'s input,
+@example
+ (f x ridentity) @equiv{} ridentity
+@end example
 
-@defun reduce-right f ridentity list
-[SRFI-1]
+These functions effectively do the same thing as @code{fold} or
+@code{fold-right}, respectively, but omit application of @var{f}
+when @var{list} contains exactly one element, using the nature of
+@var{ridentity}.
 @end defun
 
 @defun unfold p f g seed &optional tail-gen
 [SRFI-1]
+Fundamental recursive list constructor.
+Defined by the following recursin.
+
+@example
+(unfold p f g seed tail-gen) @equiv{}
+   (if (p seed)
+       (tail-gen seed)
+       (cons (f seed)
+             (unfold p f g (g seed))))
+@end example
+That is, @var{p} determines where to stop, @var{g} is used to generate
+successive seed value from the current seed value, and @var{f} is used
+to map each seed value to a list element.
 @end defun
 
 @defun unfold-right p f g seed &optional tail
 [SRFI-1]
+Fundamental iterative list constructor.
+Defined by the following recursin.
+
+@example
+(unfold-right p f g seed tail) @equiv{}
+  (let lp ((seed seed) (lis tail))
+    (if (p seed)
+        lis
+        (lp (g seed) (cons (f seed) lis))))
+@end example
 @end defun
 
 @defun append-map f clist1 clist2 @dots{}
 @defunx append-map! f clist1 clist2 @dots{}
 [SRFI-1]
+Equivalent to
+@example
+  (apply append (map @var{f} @var{clist1} @var{clist2} @dots{}))
+  (apply append! (map @var{f} @var{clist1} @var{clist2} @dots{}))
+@end example
+At least one of the list arguments must be finite. 
 @end defun
 
 @defun map! f list1 clist2 @dots{}
@@ -17584,6 +17646,13 @@ of @var{clist}s.
 
 @defun filter-map  f clist1 clist2 @dots{}
 [SRFI-1]
+Like @code{map}, but only true values are saved.
+At least one of the list arguments must be finite. 
+@example
+(filter-map (lambda (x) (and (number? x) (* x x)))
+            '(a 1 b 3 c 7))
+  @result{} (1 9 49)
+@end example
 @end defun
 
 @defun fold$ kons &optional knil
@@ -17682,14 +17751,23 @@ satisfy @var{pred}, and returns the rest.
 
 @defun any pred clist1 clist2 @dots{}
 [SRFI-1]
+Applies @var{pred} across each element of @var{clist}s, and
+returns true if any application of @var{pred} returns true.
+The returned value is the true value @var{pred} returned.
 @end defun
 
 @defun every pred clist1 clist2 @dots{}
 [SRFI-1]
+Applies @var{pred} across each element of @var{clist}s, and
+returns true if every application of @var{pred} returns true.
+If all applications returns a true value until one of the lists
+is exhausted, @code{every} returns the value the last @var{pred}
+returned.
 @end defun
 
 @defun list-index pred clist1 clist2 @dots{}
 [SRFI-1]
+Returns the index of the leftmost element that satisfies @var{pred}.
 @end defun
 
 @defun member$ item
@@ -17707,6 +17785,12 @@ Partial application version of @code{member}, @code{find}, @code{find-tail},
 @defun delete x list &optional elt=
 @defunx delete! x list &optional elt=
 [SRFI-1]
+Equivalent to
+@example
+  (remove (lambda (y) (elt= x y)) list)
+  (remove! (lambda (y) (elt= x y)) list)
+@end example
+The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @end defun
 
 @defun delete$ x
@@ -17716,6 +17800,12 @@ Partial application version of @code{delete}.
 @defun delete-duplicates list &optional elt=
 @defunx delete-duplicates! list &optional elt=
 [SRFI-1]
+Removes duplicate elements from @var{list}.
+If there are multiple equal elements in @var{list},
+the result list only contains the first or leftmost of these
+elements in the result. The order of these surviving elements
+is the same as in the original list.
+The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @end defun
 
 @node SRFI-1 Association lists, SRFI-1 set operations, SRFI-1 Deletion, List library
@@ -17741,6 +17831,8 @@ Partial application version of @code{assoc}.
 
 @node SRFI-1 set operations,  , SRFI-1 Association lists, List library
 @subsection Lists as sets
+
+These procedures use lists as a set.
 
 @defun lset@code{<=} elt= list1 @dots{}
 [SRFI-1]
@@ -17780,6 +17872,8 @@ Partial application version of @code{assoc}.
 @defunx lset-xor! elt= list1 @dots{}
 @defunx lset-diff+intersection! elt= list1 list2 @dots{}
 [SRFI-1]
+Linear update variant of the corresponding procedures.
+The cells in the first list argument may be reused to construct the result.
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -17788,9 +17882,97 @@ Partial application version of @code{assoc}.
 
 @deftp {Module} srfi-2
 @mdindex srfi-2
+@c EN
+Provides SRFI-2 @code{and-let*} macro.
+@c JP
+SRFI-2の@code{and-let*}マクロを提供します。
+@c COMMON
 @end deftp
 
-@defmac and-let* (bindings @dots{}) body @dots{}
+@defmac and-let* (binding @dots{}) body @dots{}
+[SRFI-2]
+@c EN
+In short, it works like @code{let*}, but returns #f immediately
+whenever the expression in @var{binding}s evaluates to #f.
+@c JP
+簡単に言うと、このフォームは@code{let*}のように動作しますが、
+@var{bindings}中の式が@code{#f}に評価されたらそこで評価を打ち切り
+@code{#f}を返します。
+@c COMMON
+
+@c EN
+Each @var{binding} should be one of the following form:
+@c JP
+各@var{binding}は以下のいずれかの形式でなければなりません。
+@c COMMON
+@table @var
+@item (variable expression)
+@c EN
+The @var{expression} is evaluated; if it yields true value, the value
+is bound to @var{variable}, then proceed to the next binding.  If
+no more bindings, evaluates @var{body} @dots{}.   If @var{expression}
+yieds @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
+@c JP
+@var{expression}が評価されます。それが真の値を返したら、その値が@var{variable}
+に束縛され、次の@var{binding}へと進みます。もう@var{binding}が無ければ
+@var{body} @dots{}が評価されます。もし@var{expression}が@code{#f}を返したら、
+評価を打ち切り、@code{and-let*}から@code{#f}を返します。
+@c COMMON
+@item (expression)
+@c EN
+In this form, @var{variable} is omitted.  @var{Expression} is evaluated
+and the result is used just to determine whether we continue or
+stop further evaluation.
+@c JP
+この形式では@var{variable}が省略されています。@var{Expression}が評価され、
+その結果は評価を続行するか打ち切るかを判断するためにのみ使われます。
+@c COMMON
+@end table
+
+@c EN
+Let's see some examples.  The following code searches @var{key}
+from an assoc-list @var{alist} and returns its value if found.
+@c JP
+いくつか例を挙げます。次のコードは連想リスト@var{alist}から@var{key}を
+探し、見つかったらその値を返します。
+@c COMMON
+@example
+(and-let* ((entry (assoc key alist))) (cdr entry))
+@end example
+
+@c EN
+If @var{arg} is a string representation of an exact integer, returns its value;
+otherwise, returns 0:
+@c JP
+もし@var{arg}が正確な整数の文字列表現だった場合は@var{num}を返し、そうでなければ
+0を返します：
+@c COMMON
+@example
+(or (and-let* ((num (string->number arg))
+               ((exact? num))
+               ((integer? num)))
+      num)
+    0)
+@end example
+
+@c EN
+The following is a hypothetical code that searches a certain server port
+number from a few possibilities (environment variable, configuration file,
+...)
+@c JP
+以下のコードはとあるサーバーのポート番号をいくつかの可能性
+(環境変数、設定ファイル…)の中から探す仮想的なコードです。
+@c COMMON
+@example
+(or (and-let* ((val (sys-getenv "SERVER_PORT")))
+      (string->number val))
+    (and-let* ((portfile (expand-path "~/.server_port"))
+               ((file-exists? portfile))
+               (val (call-with-input-string portfile port->string)))
+      (string->number val))
+    8080) ; default
+@end example
+
 @end defmac
 
 @c ----------------------------------------------------------------------
