@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.81 2002-05-21 10:56:41 shirok Exp $
+ *  $Id: class.c,v 1.82 2002-07-01 00:56:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -37,6 +37,8 @@ static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
 static void scheme_slot_default(ScmObj obj);
 static void initialize_builtin_cpl(ScmClass *klass);
+
+static int object_compare(ScmObj x, ScmObj y);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
@@ -117,6 +119,7 @@ SCM_DEFINE_GENERIC(Scm_GenericMethodMoreSpecificP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -310,7 +313,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 #endif
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
-    instance->compare = NULL;
+    instance->compare = object_compare;
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
@@ -1129,6 +1132,14 @@ static SCM_DEFINE_METHOD(object_initialize_rec,
                          object_initialize_SPEC,
                          object_initialize, NULL);
 
+/* Default equal? delegates compare action to generic function object-equal?.
+   We can't use VMApply here */
+static int object_compare(ScmObj x, ScmObj y)
+{
+    ScmObj r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectEqualP), SCM_LIST2(x, y));
+    return (SCM_FALSEP(r)? -1 : 0);
+}
+
 /*=====================================================================
  * Generic function
  */
@@ -1877,6 +1888,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
+    GINIT(&Scm_GenericObjectEqualP, "object-equal?");
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);
