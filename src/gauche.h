@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.100 2001-04-01 20:18:37 shiro Exp $
+ *  $Id: gauche.h,v 1.101 2001-04-01 21:55:08 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -499,6 +499,7 @@ extern ScmObj Scm_Conses(ScmObj elt, ...);
 extern ScmObj Scm_VaList(va_list elts);
 extern ScmObj Scm_VaCons(va_list elts);
 extern ScmObj Scm_ArrayToList(ScmObj *elts, int nelts);
+extern ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc);
 
 extern ScmObj Scm_PairP(ScmObj obj);
 extern ScmObj Scm_Car(ScmObj obj);
