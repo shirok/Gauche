@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.50 2001-09-06 07:11:58 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.51 2001-09-07 10:25:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2667,6 +2667,7 @@ provide lower level routines as well.
 * System Inquiry::              
 * Time::                        
 * Unix process management::     
+* Termios::                     
 * I/O multiplexing::            
 * Miscellaneous system calls::  
 @end menu
@@ -3209,7 +3210,7 @@ local time.
 @defun sys-tm->alist tm
 @end defun
 
-@node Unix process management, I/O multiplexing, Time, System interface
+@node Unix process management, Termios, Time, System interface
 @subsection Unix process management
 
 @menu
@@ -3349,7 +3350,41 @@ true @var{untraced} argument.  @code{sys-wait-stopsig} returns the
 signum number that stopped the child.
 @end defun
 
-@node I/O multiplexing, Miscellaneous system calls, Unix process management, System interface
+@node Termios, I/O multiplexing, Unix process management, System interface
+@subsection Termios
+
+@deftp {Builtin Class} <sys-termios>
+@clindex sys-termios
+
+@end deftp
+
+@defun sys-tcgetattr port-or-fd
+@end defun
+
+@defun sys-tcsetattr port-or-fd options termios
+@end defun
+
+@defun sys-tcsendbreak port-or-fd duration
+@end defun
+
+@defun sys-tcdrain port-or-fd
+@end defun
+
+@defun sys-tcflush port-or-fd queue
+@end defun
+
+@defun sys-tcflow port-or-fd action
+@end defun
+
+@defun sys-tcgetpgrp port-or-fd
+@end defun
+
+@defun sys-tcsetpgrp port-or-fd pgrp
+@end defun
+
+
+
+@node I/O multiplexing, Miscellaneous system calls, Termios, System interface
 @subsection I/O multiplexing
 
 The interface functions for @code{select(2)}.
@@ -6789,7 +6824,7 @@ R5RS @code{ceiling}.  @xref{Arithmetics}.
 @itemx cfgetospeed
 @itemx cfsetispeed
 @itemx cfsetospeed
-Not supported yet.  Will be supported in termios extension module.
+Not supported yet.
 @item chdir
 Gauche @code{sys-chdir}.   @xref{Other file operations}.
 @item chmod
@@ -7240,21 +7275,17 @@ It is generally recommended to use the process library
 @itemx tanch
 R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
 @item tcdrain
-Not supported yet.
 @item tcflow
-Not supported yet.
 @item tcflush
-Not supported yet.
 @item tcgetattr
-Not supported yet.
 @item tcgetpgrp
-Not supported yet.
 @item tcsendbreak
-Not supported yet.
 @item tcsetattr
-Not supported yet.
 @item tcsetpgrp
-Not supported yet.
+Corresponding functions are: @code{sys-tcdrain}, @code{sys-tcflow},
+@code{sys-tcflush}, @code{sys-tcgetattr}, @code{sys-tcgetpgrp},
+@code{sys-tcsendbreak}, @code{sys-tcsetattr}, @code{sys-tcsetpgrp.}
+@xref{Termios}
 @item time
 Gauche's @code{sys-time}.  @xref{Time}.
 @item times
