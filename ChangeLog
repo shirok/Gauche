@@ -1,3 +1,10 @@
+2004-07-12  Shiro Kawai  <shiro@acm.org>
+
+	* macro.c, compile.c, gauche.h, class.c : introduced ScmMacro structure
+	  apart from ScmSyntax to represent macros.  necessary to separate
+	  the transform pass and the compile pass, in order to support
+	  internal defines generated as a result of macro expansion.
+
 2004-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* examples/spigot/configure.in: removed AC_PROG_INSTALL and commented

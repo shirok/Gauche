@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.48 2004-06-28 04:24:16 shirok Exp $
+ *  $Id: macro.c,v 1.49 2004-07-12 21:58:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -55,6 +55,28 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
     SCM_SET_CLASS(s, SCM_CLASS_SYNTAX);
     s->name = name;
     s->compiler = compiler;
+    s->data = data;
+    return SCM_OBJ(s);
+}
+
+/*===================================================================
+ * Macro object
+ */
+
+static void macro_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
+{
+    Scm_Printf(port, "#<macro %A>", SCM_MACRO(obj)->name);
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MacroClass, macro_print);
+
+ScmObj Scm_MakeMacro(ScmSymbol *name, ScmTransformerProc transformer,
+                     void *data)
+{
+    ScmMacro *s = SCM_NEW(ScmMacro);
+    SCM_SET_CLASS(s, SCM_CLASS_MACRO);
+    s->name = name;
+    s->transformer = transformer;
     s->data = data;
     return SCM_OBJ(s);
 }
@@ -125,38 +147,36 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 /* TODO: better error message on syntax error (macro invocation with
    bad number of arguments) */
 
-static ScmObj macro_transform(ScmObj form, ScmObj env, int ctx,
-                              int *depth, void *data)
+static ScmObj macro_transform(ScmObj form, ScmObj env, void *data)
 {
     ScmObj proc = SCM_OBJ(data);
     SCM_ASSERT(SCM_PAIRP(form));
-    return Scm_Compile(Scm_Apply(proc, SCM_CDR(form)), env, ctx);
+    return Scm_Apply(proc, SCM_CDR(form));
 }
 
 ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
 {
-    return Scm_MakeSyntax(name, macro_transform, (void*)proc);
+    return Scm_MakeMacro(name, macro_transform, (void*)proc);
 }
 
-static ScmSyntax *resolve_macro_autoload(ScmAutoload *adata)
+static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
 {
-    ScmObj syn = Scm_LoadAutoload(adata);
-    if (!SCM_SYNTAXP(syn)) {
-        Scm_Error("tried to autoload macro %S, but it yields non-macro object: %S", adata->name, syn);
+    ScmObj mac = Scm_LoadAutoload(adata);
+    if (!SCM_MACROP(mac)) {
+        Scm_Error("tried to autoload macro %S, but it yields non-macro object: %S", adata->name, mac);
     }
-    return SCM_SYNTAX(syn);
+    return SCM_MACRO(mac);
 }
 
-static ScmObj macro_autoload(ScmObj form, ScmObj env, int ctx,
-                             int *depth, void *data)
+static ScmObj macro_autoload(ScmObj form, ScmObj env, void *data)
 {
-    ScmSyntax *syn = resolve_macro_autoload(SCM_AUTOLOAD(data));
-    return syn->compiler(form, env, ctx, depth, syn->data);
+    ScmMacro *mac = resolve_macro_autoload(SCM_AUTOLOAD(data));
+    return mac->transformer(form, env, mac->data);
 }
 
 ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 {
-    return Scm_MakeSyntax(name, macro_autoload, (void*)adata);
+    return Scm_MakeMacro(name, macro_autoload, (void*)adata);
 }
 
 static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
@@ -869,12 +889,10 @@ static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
     return SCM_NIL;
 }
 
-static ScmObj synrule_transform(ScmObj form, ScmObj env,
-                                int ctx, int *depth, void *data)
+static ScmObj synrule_transform(ScmObj form, ScmObj env, void *data)
 {
     ScmSyntaxRules *sr = (ScmSyntaxRules *)data;
-    ScmObj expanded = synrule_expand(form, env, sr);
-    return Scm_Compile(expanded, env, ctx /*,depth*/);
+    return synrule_expand(form, env, sr);
 }
 
 /*-------------------------------------------------------------------
@@ -901,9 +919,9 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
 #ifdef DEBUG_SYNRULE
     Scm_Printf(SCM_CUROUT, "%S\n", sr);
 #endif
-    return SCM_LIST1(Scm_MakeSyntax(SCM_SYMBOL(name),
-                                    synrule_transform,
-                                    (void*)sr));
+    return SCM_LIST1(Scm_MakeMacro(SCM_SYMBOL(name),
+                                   synrule_transform,
+                                   (void*)sr));
         
   badform:
     Scm_Error("malformed syntax-rules: ",
@@ -1035,18 +1053,18 @@ static ScmSyntax syntax_letrec_syntax = {
 ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
 {
     ScmObj sym;
-    ScmSyntax *syn;
+    ScmMacro *mac;
 
     for (;;) {
         if (!SCM_PAIRP(expr)) return expr;
         if (!SCM_SYMBOLP(SCM_CAR(expr)) && !SCM_IDENTIFIERP(SCM_CAR(expr)))
             return expr;
 
-        syn = NULL;
+        mac = NULL;
         sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
-        if (SCM_SYNTAXP(sym)) {
+        if (SCM_MACROP(sym)) {
             /* local syntactic binding */
-            syn = SCM_SYNTAX(sym);
+            mac = SCM_MACRO(sym);
         } else {
             if (SCM_IDENTIFIERP(sym)) {
                 sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
@@ -1055,24 +1073,13 @@ ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
                 ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
                 if (g) {
                     ScmObj gv = SCM_GLOC_GET(g);
-                    if (SCM_SYNTAXP(gv)) syn = SCM_SYNTAX(gv);
+                    if (SCM_MACROP(gv)) mac = SCM_MACRO(gv);
                 }
             }
         }
-        if (syn) {
-            if (syn->compiler == macro_autoload) {
-                syn = resolve_macro_autoload(SCM_AUTOLOAD(syn->data));
-            }
-            if (syn->compiler == macro_transform) {
-                ScmObj proc = SCM_OBJ(syn->data);
-                expr = Scm_Apply(proc, SCM_CDR(expr));
-                if (!oncep) continue;
-            }
-            if (syn->compiler == synrule_transform) {
-                ScmSyntaxRules *sr = (ScmSyntaxRules *)syn->data;
-                expr = synrule_expand(expr, env, sr);
-                if (!oncep) continue;
-            }
+        if (mac) {
+            expr = mac->transformer(expr, env, mac->data);
+            if (!oncep) continue;
         }
         break;
     }

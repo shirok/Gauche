@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.373 2004-07-05 20:29:22 shirok Exp $
+ *  $Id: gauche.h,v 1.374 2004-07-12 21:58:21 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -349,6 +349,7 @@ typedef struct ScmGenericRec   ScmGeneric;
 typedef struct ScmMethodRec    ScmMethod;
 typedef struct ScmNextMethodRec ScmNextMethod;
 typedef struct ScmSyntaxRec    ScmSyntax;
+typedef struct ScmMacroRec     ScmMacro;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmRegexpRec    ScmRegexp;
 typedef struct ScmRegMatchRec  ScmRegMatch;
@@ -2018,13 +2019,17 @@ SCM_EXTERN ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args);
  * MACROS AND SYNTAX
  */
 
-typedef ScmObj (*ScmCompileProc)(ScmObj, ScmObj, int, int *, void*);
-
 /* Syntax is a built-in procedure to compile given form. */
+typedef ScmObj (*ScmCompileProc)(ScmObj form,
+                                 ScmObj env,
+                                 int context,
+                                 int *depth,
+                                 void *data);
+
 struct ScmSyntaxRec {
     SCM_HEADER;
     ScmSymbol *name;            /* for debug */
-    ScmCompileProc compiler;
+    ScmCompileProc compiler;    /* takes Sexpr and returns compiled insns */
     void *data;
 };
 
@@ -2036,6 +2041,27 @@ SCM_CLASS_DECL(Scm_SyntaxClass);
 
 SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name,
 				 ScmCompileProc compiler, void *data);
+
+/* Macro */
+typedef ScmObj (*ScmTransformerProc)(ScmObj form, ScmObj env, void *data);
+
+struct ScmMacroRec {
+    SCM_HEADER;
+    ScmSymbol *name;            /* for debug */
+    ScmTransformerProc transformer; /* (Sexpr, Env) -> Sexpr */
+    void *data;
+};
+
+#define SCM_MACRO(obj)             ((ScmMacro*)(obj))
+#define SCM_MACROP(obj)            SCM_XTYPEP(obj, SCM_CLASS_MACRO)
+
+SCM_CLASS_DECL(Scm_MacroClass);
+#define SCM_CLASS_MACRO            (&Scm_MacroClass)
+
+SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name,
+                                ScmTransformerProc transformer,
+                                void *data);
+
 SCM_EXTERN ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep);
 
 /*--------------------------------------------------------

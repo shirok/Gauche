@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.110 2004-06-18 00:33:06 shirok Exp $
+ *  $Id: compile.c,v 1.111 2004-07-12 21:58:21 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -515,11 +515,14 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx, int *depth)
     ScmVM *vm = Scm_VM();
     *depth = 0;
 
+  recompile:
+
     if (SCM_PAIRP(form)) {
         /* we have a pair.  This is either a special form
            or a function call */
         ScmObj head = SCM_CAR(form);
         ScmCompileProc cmpl;
+        ScmTransformerProc trns;
         void *data;
         int headdepth = 0;
 
@@ -538,6 +541,11 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx, int *depth)
                 cmpl = SCM_SYNTAX(var)->compiler;
                 data = SCM_SYNTAX(var)->data;
                 return cmpl(form, env, ctx, depth, data);
+            } else if (SCM_MACROP(var)) {
+                trns = SCM_MACRO(var)->transformer;
+                data = SCM_MACRO(var)->data;
+                form = trns(form, env, data);
+                goto recompile;
             } else {
                 /* it's a global variable.   Let's see if the symbol is
                    bound to a global syntax, or an inlinable procedure
@@ -549,6 +557,12 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx, int *depth)
                         cmpl = SCM_SYNTAX(gv)->compiler;
                         data = SCM_SYNTAX(gv)->data;
                         return cmpl(form, env, ctx, depth, data);
+                    }
+                    if (SCM_MACROP(gv)) {
+                        trns = SCM_MACRO(gv)->transformer;
+                        data = SCM_MACRO(gv)->data;
+                        form = trns(form, env, data);
+                        goto recompile;
                     }
                     if (!NOINLINEP(vm) && SCM_SUBRP(g->value)
                         && SCM_SUBR_INLINER(gv)) {
@@ -2056,24 +2070,6 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
    we use the old compiler to generate a directed graph, then call this
    routine to make a code vector out of it.  Later, the whole compiler
    passes will be reorganized for more efficient compilation.
-
-   Note that the constant values are embedded in the code vector; we
-   still need the constant vector, but that is only to protect heap-
-   allocated constants from GC; the code vector itself is allocated from
-   the atomic heap to reduce the scanning overhead of GC.
-
-   Vectorization pass takes DG from the first pass, and creates a code
-   vector and a constant vector.
-
-   The first pass of vectorization is a serialization pass, where DG
-   is turned into a list, inserting JUMP instructions.  Several peephole
-   optimizations are done in this stage, too.  During the serialization
-   pass, instructions are counted and the jump target cells (MNOPs) are
-   associated with its address.
-
-   Once the serialized form is obtained, a code vector is allocated and
-   the instructions are packed into it.  Since we already know the
-   jump target address, we don't need to back up to fill them in.
 */
 
 typedef struct v_context_rec {
@@ -2082,11 +2078,15 @@ typedef struct v_context_rec {
     ScmObj constants;           /* list of heap-allocated constants */
 } v_context;
 
-static ScmObj vectorize_rec(ScmObj form, v_context *ctx)
+
+
+static ScmObj vectorize_rec(ScmObj codelist, v_context *ctx)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    while (!SCM_NULLP(form)) {
-        ScmObj ca = SCM_CAR(form);
+    ScmObj alt;
+    
+    while (!SCM_NULLP(codelist)) {
+        ScmObj ca = SCM_CAR(codelist);
         int code;
         
         if (!SCM_VM_INSNP(ca)) {
@@ -2100,23 +2100,50 @@ static ScmObj vectorize_rec(ScmObj form, v_context *ctx)
 
         code = SCM_VM_INSN_CODE(ca);
         switch (code) {
-        case SCM_VM_NOP: break; /* We omit NOP */
+        case SCM_VM_NOP:
+            codelist = SCM_CDR(codeslit);
+            break;
         case SCM_VM_MNOP: /* we reached merging point */
             break;
         case SCM_VM_PUSH:;
         case SCM_VM_POP:;
         case SCM_VM_DUP:;
-            
+            goto simple_insn;
+
         case SCM_VM_PRE_CALL:;
+            SCM_APPEND(h, t, ca);
+            alt = vectorize_rec(SCM_CADR(codelist), ctx);
+            SCM_APPEND(h, t, alt);
+            codelist = SCM_CDDR(codelist);
+            break;
+
         case SCM_VM_PRE_TAIL:;
         case SCM_VM_CHECK_STACK:;
         case SCM_VM_CALL:;
         case SCM_VM_TAIL_CALL:;
+            goto simple_insn;
+            
         case SCM_VM_JUMP:;
+            /* This only appears in the vectorized code */
+            Scm_Error("Internal error: VM_JUMP in the original code");
+            break;
+            
         case SCM_VM_DEFINE:;
         case SCM_VM_DEFINE_CONST:;
+            goto operand1;
+            
         case SCM_VM_LAMBDA:;
+            SCM_APPEND(h, t, ca);
+            alt = create_vectorized_closure(SCM_CADR(codelist));
+            SCM_APPEND(h, t, alt);
+            codelist = SCM_CDDR(codelist);
+            break;
+
         case SCM_VM_LET:;
+            SCM_APPEND(h, t, ca);
+            
+            
+                
         case SCM_VM_IF:;
         case SCM_VM_VALUES_BIND:;
         case SCM_VM_LSET:;
@@ -2169,6 +2196,7 @@ static ScmObj vectorize_rec(ScmObj form, v_context *ctx)
         case SCM_VM_SLOT_SET:;
         }
     }
+    return h;
 }
 
 #endif /*GAUCHE_NVM_VECTORIZATION*/
