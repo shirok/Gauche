@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.52 2001-05-07 08:49:43 shirok Exp $
+;;; $Id: stdlib.stub,v 1.53 2001-05-08 18:26:34 shirok Exp $
 ;;;
 
 
@@ -469,6 +469,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_SYMBOLP(obj)));")
 
 (define-cproc symbol->string (obj)
+  (assert (symbol? obj))
   "  SCM_RETURN(SCM_OBJ(Scm_CopyString(SCM_SYMBOL_NAME(obj))));")
 
 (define-cproc string->symbol (obj)
