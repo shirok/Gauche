@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.34 2001-06-21 11:55:33 shirok Exp $
+;;; $Id: syslib.stub,v 1.35 2001-06-23 07:06:05 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -269,6 +269,7 @@
 (define-symbol SIGTTOU "sym_sigttou" "Scm_MakeInteger(SIGTTOU)")
 (define-symbol SIGUSR1 "sym_sigusr1" "Scm_MakeInteger(SIGUSR1)")
 (define-symbol SIGUSR2 "sym_sigusr2" "Scm_MakeInteger(SIGUSR2)")
+(define-symbol SIGTERM "sym_sigterm" "Scm_MakeInteger(SIGTERM)")
 
 (define-cproc sys-kill (pid sig)
   (assert (exact? pid))
