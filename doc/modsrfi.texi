@@ -2242,8 +2242,8 @@ always a copy of @var{s}, even no character is dropped.
 (string-take "abcde" 2) @result{} "ab"
 (string-drop "abcde" 2) @result{} "cde"
 
-(string-take-right "abcde" 2) @result{} "cde"
-(string-drop-right "abcde" 2) @result{} "ab"
+(string-take-right "abcde" 2) @result{} "de"
+(string-drop-right "abcde" 2) @result{} "abc"
 @end example
 @end defun
 
