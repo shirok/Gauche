@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.15 2001-04-02 10:26:38 shiro Exp $
+;;;  $Id: object.scm,v 1.16 2001-06-17 22:09:37 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -216,29 +216,29 @@
   )
 
 (define (%make-accessor class slot module)
-  (let ((getter   (slot-definition-getter slot))
-        (setter   (slot-definition-setter slot))
-        (accessor (slot-definition-accessor slot))
+  (let ((%getter   (slot-definition-getter slot))
+        (%setter   (slot-definition-setter slot))
+        (%accessor (slot-definition-accessor slot))
         (name     (slot-definition-name slot)))
-    (when getter
-      (let ((gf (%ensure-generic-function getter module)))
+    (when %getter
+      (let ((gf (%ensure-generic-function %getter module)))
         (add-method! gf
                      (make <method> :generic gf :specializers `(,class)
                            :lambda-list '(obj)
                            :body (lambda (obj next-method)
                                    (slot-ref obj name))))))
-    (when setter
-      (let ((gf (%ensure-generic-function setter module)))
+    (when %setter
+      (let ((gf (%ensure-generic-function %setter module)))
         (add-method! gf
                      (make <method> :generic gf
                            :specializers `(,class ,<top>)
                            :lambda-list '(obj val)
                            :body (lambda (obj val next-method)
                                    (slot-set! obj name val))))))
-    (when accessor
-      (let ((gf  (%ensure-generic-function accessor module))
+    (when %accessor
+      (let ((gf  (%ensure-generic-function %accessor module))
             (gfs (%ensure-generic-function
-                  (string->symbol (format #f "setter of ~s" accessor))
+                  (string->symbol (format #f "setter of ~s" %accessor))
                   module)))
         (add-method! gf
                      (make <method> :generic gf :specializers `(,class)
@@ -251,9 +251,8 @@
                            :lambda-list '(obj val)
                            :body (lambda (obj val next-method)
                                    (slot-set! obj name val))))
-        ;; TODO: (set! (setter gf) gfs) doesn't work -- find the reason.
-        ;; the following is a dirty trick.
-        (%setter-set! gf gfs)))
+        (set! (setter gf) gfs)
+        ))
     ))
  
 ;;; Method COMPUTE-SLOTS (class <class>)
