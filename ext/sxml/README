@@ -1,5 +1,9 @@
 This is a port of Oleg Kiselyov's (S)XML utilities.
 
+ Development:
+  http://ssax.sourceforge.net/
+
+ Documents:
   http://pobox.com/~oleg/ftp/Scheme/SXML-short-paper.html
   http://pobox.com/~oleg/ftp/Scheme/SXML.html
   http://pobox.com/~oleg/ftp/Scheme/xml.html
@@ -18,10 +22,5 @@ The package contains the following components.
           Based on SXML-to-HTML version 1.3
           This is available as module sxml.to-html from Gauche.
 
-oleg/    This directory contains Oleg's original code which
-         the Gauche version is based on.
-
-sxml/    `make' creates Gauche-ported version of files under
-         this directory.   Some auxiliary files are also provided
-         to adapt original code to Gauche.
-
+The directory src/ contains the original version of SXML tools.
+Running "make" creates a Gauche-specialized versions.
