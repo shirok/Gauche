@@ -1,3 +1,10 @@
+2002-03-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys: added wrappters for functions that are not POSIx.
+	* src/gauche-init.scm : added autoload for auxsys functions
+	* src/gauche.h, src/gauche/pthread.h, src/gauche/uthread.h :
+	  start adding thread-related structures.
+
 2002-03-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/html-lite.scm (make-html-element): fixed a bug that escapes
