@@ -1,3 +1,14 @@
+2001-04-06  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.3.2
+	* test/srfi.scm: added some test for srfi-1.
+	* src/gauche-init.scm: moved some functions into library, and
+	  define autoload for them.
+	* src/char.c, src/extlib.stub: added gauche-char-encoding
+	* src/vm.c: support multi-value continuation.  fixed a bug for
+	  multiple value handling.
+	* test/srfi.scm: added tests for srfi-1 functions.
+
 2001-04-05  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.3.1
