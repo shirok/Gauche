@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.5 2001-05-10 09:59:19 shirok Exp $
+;;;  $Id: numerical.scm,v 1.6 2001-05-11 10:27:16 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -108,7 +108,7 @@
   (make-rectangular (%log (magnitude z)) (angle z)))
 
 (define (%complex-sqrt z)
-  (exp (/ (log z) 2.0)))
+  (make-polar (%sqrt (magnitude z)) (/ (angle z) 2.0)))
 
 (define (%complex-expt x y)
   (if (real? x)
@@ -147,23 +147,38 @@
      (+ (exp z) (exp (- z)))))
 
 (define (%complex-asin z)
-  (* -i (log (+ (* +i z) (sqrt (- 1 (* z z)))))))
+  ;; The definition of asin is
+  ;;   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))
+  ;; This becomes unstable when the term in the log is reaching
+  ;; toward 0.0.  The term, k = (+ (* +i z) (sqrt (- 1 (* z z)))),
+  ;; gets closer to zero when |z| gets bigger, but for large |z|, k is prone
+  ;; to lose precision and starts drifting around the point zero.
+  ;; For now, I let asin to return NaN for large z's.
+  (if (> (magnitude z) 1.0e5)
+      (make-rectangular (log 0.0) (log 0.0)) ;NaN+NaNi
+      (* -i (log (+ (* +i z) (sqrt (- 1 (* z z)))))))
+  )
 
 (define (%complex-asinh z)
   (log (+ z (sqrt (+ (* z z) 1)))))
 
 (define (%complex-acos z)
-  (* -i (log (+ z (* +i (sqrt (- 1 (* z z))))))))
+  ;; The same discussion as asin is applied here.
+  (if (> (magnitude z) 1.0e5)
+      (make-rectangular (log 0.0) (log 0.0))
+      (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
 
 (define (%complex-acosh z)
   (log (+ z (sqrt (- (* z z) 1)))))
 
 (define (%complex-atan z)
   (let ((iz (* z +i)))
-    (/ (log (/ (+ 1 iz) (- 1 iz))) +2i)))
+    (/ (- (log (+ 1 iz))
+          (log (- 1 iz)))
+       +2i)))
 
 (define (%complex-atanh z)
-  (/ (log (/ (+ 1 z) (- 1 z))) 2.0))
+  (/ (- (log (+ 1 z)) (log (- 1 z))) 2))
 
 ;; Insert R5RS functions into scheme module
 
