@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.90 2002-04-13 23:19:52 shirok Exp $
+ *  $Id: number.c,v 1.91 2002-04-14 01:53:44 shirok Exp $
  */
 
 #include <math.h>
@@ -47,8 +47,12 @@
 #ifdef HAVE_TRUNC
 extern double trunc(double);
 #endif
+
 #ifdef HAVE_RINT
 extern double rint(double);
+#define roundeven rint
+#else
+static double roundeven(double);
 #endif
 
 /*
@@ -905,18 +909,25 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
 
 /*
  * Integer division
+ *   Returns (quotient x y)
+ *   If rem != NULL, sets *rem to be (remainder x y) as well.
  */
-ScmObj Scm_Quotient(ScmObj x, ScmObj y)
+ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
 {
-    double rx, ry, f, i;
+    double rx, ry;
     if (SCM_INTP(x)) {
         if (SCM_INTP(y)) {
-            int r;
+            long q, r;
             if (SCM_INT_VALUE(y) == 0) goto DIVBYZERO;
-            r = SCM_INT_VALUE(x)/SCM_INT_VALUE(y);
-            return SCM_MAKE_INT(r);
+            q = SCM_INT_VALUE(x)/SCM_INT_VALUE(y);
+            if (rem) {
+                r = SCM_INT_VALUE(x)%SCM_INT_VALUE(y);
+                *rem = SCM_MAKE_INT(r);
+            }
+            return SCM_MAKE_INT(q);
         }
         if (SCM_BIGNUMP(y)) {
+            if (rem) *rem = x;
             return SCM_MAKE_INT(0);
         }
         if (SCM_FLONUMP(y)) {
@@ -928,9 +939,14 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
         goto BADARGY;
     } else if (SCM_BIGNUMP(x)) {
         if (SCM_INTP(y)) {
-            return Scm_BignumDivSI(SCM_BIGNUM(x), SCM_INT_VALUE(y), NULL);
+            long r;
+            ScmObj q = Scm_BignumDivSI(SCM_BIGNUM(x), SCM_INT_VALUE(y), &r);
+            if (rem) *rem = SCM_MAKE_INT(r);
+            return q;
         } else if (SCM_BIGNUMP(y)) {
-            return SCM_CAR(Scm_BignumDivRem(SCM_BIGNUM(x), SCM_BIGNUM(y)));
+            ScmObj qr = Scm_BignumDivRem(SCM_BIGNUM(x), SCM_BIGNUM(y));
+            if (rem) *rem = SCM_CDR(qr);
+            return SCM_CAR(qr);
         } else if (SCM_FLONUMP(y)) {
             rx = Scm_BignumToDouble(SCM_BIGNUM(x));
             ry = SCM_FLONUM_VALUE(y);
@@ -952,9 +968,16 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
             goto BADARGY;
         }
       DO_FLONUM:
-        if (ry == 0.0) goto DIVBYZERO;
-        f = modf(rx/ry, &i);
-        return Scm_MakeFlonum(i);
+        {
+            double q;
+            if (ry == 0.0) goto DIVBYZERO;
+            q = roundeven(rx/ry);
+            if (rem) {
+                double rr = roundeven(rx - q*ry);
+                *rem = Scm_MakeFlonum(rr);
+            }
+            return Scm_MakeFlonum(q);
+        }
     }
   DIVBYZERO:
     Scm_Error("divide by zero");
@@ -1271,6 +1294,31 @@ void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
  * ROUNDING
  */
 
+/* NB: rint() is not in POSIX, so the alternative is provided here.
+   We don't use round(), for it behaves differently when the
+   argument is exactly the halfway of two whole numbers. */
+#ifdef HAVE_RINT
+#define roundeven rint
+#else  /* !HAVE_RINT */
+static double roundeven(double v)
+{
+    double r;
+    double frac = modf(v, &r);
+    if (v > 0.0) {
+        if (frac > 0.5) r += 1.0;
+        else if (frac == 0.5) {
+            if (r/2.0 != 0.0) r += 1.0;
+        }
+    } else {
+        if (frac < -0.5) r -= 1.0;
+        else if (frac == 0.5) {
+            if (r/2.0 != 0.0) r -= 1.0;
+        }
+    }
+    return r;
+}
+#endif /* !HAVE_RINT */
+
 ScmObj Scm_Round(ScmObj num, int mode)
 {
     double r = 0.0, v;
@@ -1282,31 +1330,13 @@ ScmObj Scm_Round(ScmObj num, int mode)
     switch (mode) {
     case SCM_ROUND_FLOOR: r = floor(v); break;
     case SCM_ROUND_CEIL:  r = ceil(v); break;
-    /* trunc and round is neither in ANSI nor in POSIX. */
+    /* trunc is neither in ANSI nor in POSIX. */
 #ifdef HAVE_TRUNC
     case SCM_ROUND_TRUNC: r = trunc(v); break;
 #else
     case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
 #endif
-#ifdef HAVE_RINT
-    case SCM_ROUND_ROUND: r = rint(v); break;
-#else
-    case SCM_ROUND_ROUND: {
-        double frac = modf(v, &r);
-        if (v > 0.0) {
-            if (frac > 0.5) r += 1.0;
-            else if (frac == 0.5) {
-                if (r/2.0 != 0.0) r += 1.0;
-            }
-        } else {
-            if (frac < -0.5) r -= 1.0;
-            else if (frac == 0.5) {
-                if (r/2.0 != 0.0) r -= 1.0;
-            }
-        }
-        break;
-    }
-#endif
+    case SCM_ROUND_ROUND: r = roundeven(v); break;
     default: Scm_Panic("something screwed up");
     }
     return Scm_MakeFlonum(r);
@@ -1486,9 +1516,13 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
     } else if (val == 0.0) {
         strcpy(buf, "0.0");
     } else {
-        /* variable names follows Burger&Dybvig paper. mp, mm for m+, m- */
+        /* variable names follows Burger&Dybvig paper. mp, mm for m+, m-.
+           note that m+ == m- for most cases, and m+ == 2*m- for the rest.
+           so we calculate m+ from m- for each iteration, using the flag
+           mp2 as   m+ = mp? m- : 2*m-. */
         ScmObj f, e, r, s, mp, mm, q, rp;
-        int exp, sign, est, tc1, tc2, digs, point, round;
+        int exp, sign, est, tc1, tc2, tc3, digs, point, round;
+        int mp2 = FALSE, fixup = FALSE;
 
         IEXPT10_INIT();
         if (val < 0) val = -val;
@@ -1501,24 +1535,24 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             if (Scm_NumCmp(f, iexpt2_52) != 0) {
                 r = Scm_Ash(f, exp+1);
                 s = SCM_MAKE_INT(2);
-                mp = be;
+                mp2= FALSE;
                 mm = be;
             } else {
                 r = Scm_Ash(f, exp+2);
                 s = SCM_MAKE_INT(4);
-                mp = Scm_Ash(be, 1);
+                mp2 = TRUE;
                 mm = be;
             }
         } else {
             if (exp == -1023 || Scm_NumCmp(f, iexpt2_52) != 0) {
                 r = Scm_Ash(f, 1);
                 s = Scm_Ash(SCM_MAKE_INT(1), -exp+1);
-                mp = SCM_MAKE_INT(1);
+                mp2 = FALSE;
                 mm = SCM_MAKE_INT(1);
             } else {
                 r = Scm_Ash(f, 2);
                 s = Scm_Ash(SCM_MAKE_INT(1), -exp+2);
-                mp = SCM_MAKE_INT(2);
+                mp2 = TRUE;
                 mm = SCM_MAKE_INT(1);
             }
         }
@@ -1530,21 +1564,22 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         } else {
             ScmObj scale = iexpt10(-est);
             r =  Scm_Multiply2(r, scale);
-            mp = Scm_Multiply2(mp, scale);
             mm = Scm_Multiply2(mm, scale);
         }
 
-        /* fixup */
-        if (round) {
-            if (Scm_NumCmp(Scm_Add2(r, mp), s) >= 0) {
-                s = Scm_Multiply2(s, SCM_MAKE_INT(10));
-                est++;
-            }
+        /* fixup.  avoid calculating m+ for obvious case. */
+        if (Scm_NumCmp(r, s) >= 0) {
+            fixup = TRUE;
         } else {
-            if (Scm_NumCmp(Scm_Add2(r, mp), s) > 0) {
-                s = Scm_Multiply2(s, SCM_MAKE_INT(10));
-                est++;
-            }
+            ScmObj rmp;
+            mp = (mp2? Scm_Ash(mm, 1) : mm);
+            rmp = Scm_Add2(r, mp);
+            fixup = ((round && Scm_NumCmp(rmp, s) >= 0)
+                     || (!round && Scm_NumCmp(rmp, s) > 0));
+        }
+        if (fixup) {
+            s = Scm_Multiply2(s, SCM_MAKE_INT(10));
+            est++;
         }
         
         /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
@@ -1553,21 +1588,22 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         /* generate */
         for (digs=0;;digs++) {
             ScmObj r10 = Scm_Multiply2(r, SCM_MAKE_INT(10));
-            q = Scm_Quotient(r10, s);
-            r = Scm_Modulo(r10, s, TRUE);
-            mp = Scm_Multiply2(mp, SCM_MAKE_INT(10));
+            q = Scm_Quotient(r10, s, &r);
             mm = Scm_Multiply2(mm, SCM_MAKE_INT(10));
+            mp = (mp2? Scm_Ash(mm, 1) : mm);
             
-            /* Scm_Printf(SCM_CURERR, "q=%S, s=%S, r=%S, mp=%S, mm=%S\n",
-               q, s, r, mp, mm); */
+            /* Scm_Printf(SCM_CURERR, "q=%S, r=%S, mp=%S, mm=%S\n",
+               q, r, mp, mm);*/
 
             SCM_ASSERT(SCM_INTP(q));
             if (round) {
                 tc1 = (Scm_NumCmp(r, mm) <= 0);
-                tc2 = (Scm_NumCmp(Scm_Add2(r, mp), s) >= 0);
+                tc2 = (Scm_NumCmp(r, s) >= 0
+                       || Scm_NumCmp(Scm_Add2(r, mp), s) >= 0);
             } else {
                 tc1 = (Scm_NumCmp(r, mm) < 0);
-                tc2 = (Scm_NumCmp(Scm_Add2(r, mp), s) > 0);
+                tc2 = (Scm_NumCmp(r, s) >= 0
+                       || Scm_NumCmp(Scm_Add2(r, mp), s) > 0);
             }
             if (!tc1) {
                 if (!tc2) {
@@ -1583,7 +1619,8 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                     *buf++ = SCM_INT_VALUE(q) + '0';
                     break;
                 } else {
-                    if (Scm_NumCmp(Scm_Ash(r, 1), s) < 0) {
+                    tc3 = Scm_NumCmp(Scm_Ash(r, 1), s);
+                    if ((round && tc3 <= 0) || (!round && tc3 < 0)) {
                         *buf++ = SCM_INT_VALUE(q) + '0';
                         break;
                     } else {
