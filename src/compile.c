@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.62 2001-09-26 10:45:47 shirok Exp $
+ *  $Id: compile.c,v 1.63 2001-09-27 11:13:43 shirok Exp $
  */
 
 #include "gauche.h"
@@ -56,8 +56,6 @@ static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
 #define ADDCODE1(c)   SCM_APPEND1(code, codetail, c)
 #define ADDCODE(c)    SCM_APPEND(code, codetail, c)
 
-static ScmObj sym_source_info;
-
 /* create local ref/set insn.  special instruction is used for local
    ref/set to the first frame with small number of offset (<5) for
    performance reason. */
@@ -100,7 +98,7 @@ static inline ScmObj make_lset(int depth, int offset)
 static inline ScmObj add_srcinfo(ScmObj code, ScmObj source)
 {
     if (SCM_PAIRP(code)) {
-        SCM_PAIR_ATTR(code) = Scm_Cons(Scm_Cons(sym_source_info, source),
+        SCM_PAIR_ATTR(code) = Scm_Cons(Scm_Cons(SCM_SYM_SOURCE_INFO, source),
                                        SCM_PAIR_ATTR(code));
     }
     return code;
@@ -1789,8 +1787,6 @@ void Scm__InitCompiler(void)
 {
     /* TODO: use different modules for R5RS syntax and others */
     ScmModule *m = SCM_MODULE(Scm_SchemeModule());
-
-    sym_source_info = SCM_INTERN("source-info");
 
 #define DEFSYN(symbol, syntax) \
     Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))

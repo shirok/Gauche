@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.109 2001-09-26 10:51:20 shirok Exp $
+ *  $Id: vm.c,v 1.110 2001-09-27 11:13:43 shirok Exp $
  */
 
 #include "gauche.h"
@@ -296,6 +296,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 
 #define VM_ERR(errargs)                         \
    do {                                         \
+      pc = prevpc;                              \
       SAVE_REGS();                              \
       Scm_Error errargs;                        \
    } while (0)
@@ -1712,7 +1713,7 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
 void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
 {
     ScmVM *vm = theVM;
-    ScmObj stack = Scm_VMGetStack(vm), cp;
+    ScmObj stack = Scm_VMGetStackLite(vm), cp;
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
     ScmObj handlers = vm->handlers, hp;
     int depth = 0;
@@ -1728,13 +1729,8 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
     SCM_PUTZ("Stack Trace:\n", -1, err);
     SCM_PUTZ("_______________________________________\n", -1, err);
     SCM_FOR_EACH(cp, stack) {
-        ScmObj frame = SCM_CAAR(cp);
-        ScmObj srcinfo;
-        if (!SCM_PAIRP(frame)) continue;
-        srcinfo = Scm_Assq(SCM_INTERN("source-info"), SCM_PAIR_ATTR(frame));
-        if (SCM_FALSEP(srcinfo)) continue;
         Scm_Printf(SCM_PORT(err), "%3d   %66.1S\n",
-                   depth++, SCM_CDR(srcinfo));
+                   depth++, SCM_CAR(cp));
     }
 
     /* unwind the dynamic handlers */
@@ -2053,27 +2049,30 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
 
 /*
  * Stack trace.
- *   Returns a chain of information of continuation frames.
- *   Each continuation frame info is...
- *     (<pc> <env-info>)
- *   where <pc> is the continuation instruction stream, and
- *   <env-info> is the info of captured env.  <pc> may be #f
- *   if it is C continuation.
+ *
+ *   The "lite" version returns a list of source information of
+ *   continuation frames.
+ *
+ *   The full stack trace includes the source information and
+ *   the environment.
  */
 
-ScmObj Scm_VMGetStack(ScmVM *vm)
+ScmObj Scm_VMGetStackLite(ScmVM *vm)
 {
     ScmContFrame *c = vm->cont;
-    ScmObj pc = vm->pc;
     ScmObj stack = SCM_NIL, stacktail = SCM_NIL;
+    ScmObj info;
 
+    if (SCM_PAIRP(vm->pc)) {
+        info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(vm->pc));
+        if (info) SCM_APPEND1(stack, stacktail, SCM_CDR(info));
+    }
+    
     while (c) {
-        ScmObj cinfo, einfo;
-        if (c->argp) cinfo = c->info;
-        else         cinfo = SCM_FALSE;
-        if (c->env)  einfo = c->env->info;
-        else         einfo = SCM_FALSE;
-        SCM_APPEND1(stack, stacktail, SCM_LIST2(cinfo, einfo));
+        if (SCM_PAIRP(c->info)) {
+            info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(c->info));
+            if (info) SCM_APPEND1(stack, stacktail, SCM_CDR(info));
+        }
         c = c->prev;
     }
     return stack;
