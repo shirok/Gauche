@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.26 2001-02-05 09:58:53 shiro Exp $
+ *  $Id: gauche.h,v 1.27 2001-02-05 10:15:36 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -140,7 +140,6 @@ typedef struct ScmHeaderRec *ScmObj;
 
 #define SCM_EQ(x, y)         ((x) == (y))
 
-extern ScmObj Scm_Not(ScmObj obj);
 extern ScmObj Scm_EqP(ScmObj x, ScmObj y);
 extern ScmObj Scm_EqvP(ScmObj x, ScmObj y);
 extern ScmObj Scm_EqualP(ScmObj x, ScmObj y);
