@@ -1,3 +1,15 @@
+2004-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h, src/gauche/vminsn.h,
+	  src/compile.c, src/proc.c, src/builtin-syms.scm :
+	  Changed VM to use code-vector instead of directed graph.
+	  The compiled code is now converted to ScmCompiledCode before
+	  executed.  This is the first stage of the new VM/compiler
+	  architecture.
+	* src/core.c, src/main.c :
+	  Added -fcollect-stats option experimentally, to collect and
+	  display VM stats info.
+
 2004-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/arith_i386.h (UMULOV, SMULOV): use "g" constraint to

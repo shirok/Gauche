@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.1 2004-12-23 06:57:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -50,11 +50,16 @@
 #define EX_SOFTWARE 70
 #endif
 
-/* An object to mark the boundary frame */
-static ScmObj boundaryFrameMark = SCM_UNBOUND;
+/* An object to mark the boundary frame. */
+static ScmObj boundaryFrameMark = SCM_VM_INSN(SCM_VM_HALT);
 
 /* return true if cont is a boundary continuation frame */
-#define BOUNDARY_FRAME_P(cont) (SCM_EQ((cont)->info, boundaryFrameMark))
+#define BOUNDARY_FRAME_P(cont) ((cont)->pc == &boundaryFrameMark)
+
+/* A stub VM code to make VM return immediately */
+static ScmObj return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
+#define PC_TO_RETURN  return_code
+
 
 /*
  * The VM. 
@@ -83,6 +88,8 @@ static ScmSubr default_exception_handler_rec;
 static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
+
+static ScmEnvFrame *get_env(ScmVM *vm);
 
 /*
  * Constructor
@@ -127,7 +134,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->env = NULL;
     v->argp = v->stack;
     v->cont = NULL;
-    v->pc = SCM_NIL;
+    v->pc = PC_TO_RETURN;
+    v->base = NULL;
     v->val0 = SCM_UNDEFINED;
     for (i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
@@ -147,6 +155,10 @@ ScmVM *Scm_NewVM(ScmVM *base,
 
     sigemptyset(&v->sigMask);
     Scm_SignalQueueInit(&v->sigq);
+
+    /* stats */
+    v->stat.sovCount = 0;
+    v->stat.sovTime = 0;
 
     return v;
 }
@@ -193,8 +205,6 @@ pthread_key_t Scm_VMKey(void)
  */
 void Scm__InitVM(void)
 {
-    boundaryFrameMark = SCM_MAKE_STR("boundary-frame");
-
     /* Create root VM */
 #ifdef GAUCHE_USE_PTHREADS
     if (pthread_key_create(&vm_key, NULL) != 0) {
@@ -211,6 +221,9 @@ void Scm__InitVM(void)
                                SCM_MAKE_STR_IMMUTABLE("root"));
 #endif  /* !GAUCHE_USE_PTHREADS */
     rootVM->state = SCM_VM_RUNNABLE;
+
+    /* TEMPORARY */
+    Scm_InitStaticClass(SCM_CLASS_COMPILED_CODE, "<compiled-code>", Scm_GaucheModule(), NULL, 0);
 }
 
 /*====================================================================
@@ -230,7 +243,9 @@ void Scm__InitVM(void)
 #define POP_ARG(var)       ((var) = *--sp)
 
 /* fetch an instruction */
-#define FETCH_INSN(var)    ((var) = SCM_CAR(pc), pc = SCM_CDR(pc))
+#define INCR_PC            (pc++)
+#define FETCH_INSN(var)    ((var) = *pc++)
+#define FETCH_OPERAND(var) ((var) = *pc)
 
 /* declare local variables for registers, and copy the current VM regs
    to them. */
@@ -239,7 +254,7 @@ void Scm__InitVM(void)
 
 #define DECL_REGS_INT(VOLATILE)                 \
     ScmVM *VOLATILE vm = theVM;                 \
-    VOLATILE SCM_PCTYPE pc = vm->pc;            \
+    SCM_PCTYPE VOLATILE pc = vm->pc;            \
     ScmContFrame *VOLATILE cont = vm->cont;     \
     ScmEnvFrame *VOLATILE env = vm->env;        \
     ScmObj *VOLATILE argp = vm->argp;           \
@@ -282,7 +297,7 @@ void Scm__InitVM(void)
 
 /* Push a continuation frame.  next_pc is the PC from where execution
    will be resumed.  */
-#define PUSH_CONT(old_pc, next_pc)                      \
+#define PUSH_CONT(next_pc)                              \
     do {                                                \
         ScmContFrame *newcont = (ScmContFrame*)sp;      \
         newcont->prev = cont;                           \
@@ -290,13 +305,11 @@ void Scm__InitVM(void)
         newcont->argp = argp;                           \
         newcont->size = sp - argp;                      \
         newcont->pc = next_pc;                          \
-        newcont->info = old_pc;                         \
+        newcont->base = vm->base;                       \
         cont = newcont;                                 \
         sp += CONT_FRAME_SIZE;                          \
         argp = sp;                                      \
     } while (0)
-
-#define PC_TO_RETURN  SCM_NIL
 
 /* pop a continuation frame, i.e. return from a procedure. */
 #define POP_CONT()                                                      \
@@ -312,6 +325,7 @@ void Scm__InitVM(void)
             argp = sp;                                                  \
             pc = PC_TO_RETURN;                                          \
             cont = cont->prev;                                          \
+            vm->base = cont->base;                                      \
             SAVE_REGS();                                                \
             val0 = after__(val0, data__);                               \
             RESTORE_REGS();                                             \
@@ -320,12 +334,14 @@ void Scm__InitVM(void)
             env  = cont->env;                                           \
             argp = cont->argp;                                          \
             pc   = cont->pc;                                            \
+            vm->base = cont->base;                                      \
             cont = cont->prev;                                          \
         } else {                                                        \
             int size__ = cont->size;                                    \
             argp = sp = vm->stackBase;                                  \
             env = cont->env;                                            \
             pc = cont->pc;                                              \
+            vm->base = cont->base;                                      \
             if (cont->argp && size__) {                                 \
                 memmove(sp, cont->argp, size__*sizeof(ScmObj*));        \
                 sp = argp + size__;                                     \
@@ -385,7 +401,6 @@ void Scm__InitVM(void)
 
 #define VM_ERR(errargs)                         \
    do {                                         \
-      pc = prevpc;                              \
       SAVE_REGS();                              \
       Scm_Error errargs;                        \
    } while (0)
@@ -433,11 +448,10 @@ void Scm__InitVM(void)
 /*===================================================================
  * Main loop of VM
  */
-static void run_loop()
+/*static*/ void run_loop()
 {
     DECL_REGS;
     ScmObj code = SCM_NIL;
-    ScmObj prevpc = SCM_NIL;
 
 #ifdef __GNUC__
     static void *dispatch_table[256] = {
@@ -453,7 +467,7 @@ static void run_loop()
         /* Check if there's a queued processing first. */
         if (vm->queueNotEmpty) {
             CHECK_STACK(CONT_FRAME_SIZE);
-            PUSH_CONT(prevpc, pc);
+            PUSH_CONT(pc);
             SAVE_REGS();
             process_queued_requests(vm);
             RESTORE_REGS();
@@ -461,21 +475,8 @@ static void run_loop()
             continue;
         }
 
-        /* See if we're at the end of procedure.  It's safer to use
-           !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.
-           (the former makes nqueen.scm 2% slower) */
-        if (SCM_NULLP(pc)) {
-            if (cont == NULL || BOUNDARY_FRAME_P(cont)) {
-                SAVE_REGS();
-                return; /* no more continuations */
-            }
-            POP_CONT();
-            continue;
-        }
-
-        prevpc = pc;
         FETCH_INSN(code);
-        
+
         if (!SCM_VM_INSNP(code)) {
             /* literal object */
             val0 = code;
@@ -502,15 +503,13 @@ static void run_loop()
                 NEXT;
             }
             CASE(SCM_VM_PRE_CALL) {
-                ScmObj prep = SCM_CAR(pc), next = SCM_CDR(pc);
-                /* Note: The call instruction will push extra word for
-                   next-method, hence +1 */
+                ScmObj *next;
                 int reqstack = CONT_FRAME_SIZE+ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
+                VM_ASSERT(SCM_INTP(*pc));
+                next = vm->base->code + SCM_INT_VALUE(*pc);
                 CHECK_STACK(reqstack);
-                if (!SCM_NULLP(next)) {
-                    PUSH_CONT(prevpc, next);
-                }
-                pc = prep;
+                PUSH_CONT(next);
+                INCR_PC;
                 NEXT;
             }
             CASE(SCM_VM_PRE_TAIL) {
@@ -533,6 +532,7 @@ static void run_loop()
                 */
                 ScmObj *to;
                 int argc = sp - argp;
+
                 if (IN_STACK_P((ScmObj*)cont)) {
                     if (cont->argp) {
                         to = (ScmObj*)cont + CONT_FRAME_SIZE;
@@ -584,10 +584,12 @@ static void run_loop()
                        procs called from subr won't be confused. */
                     ADJUST_ARGUMENT_FRAME(val0, argc);
                     sp = argp;
+
                     SAVE_REGS();
                     val0 = SCM_SUBR(val0)->func(argp, argc,
                                                 SCM_SUBR(val0)->data);
                     RESTORE_REGS();
+
                     NEXT;
                 }
                 if (proctype == SCM_PROC_CLOSURE) {
@@ -599,7 +601,10 @@ static void run_loop()
                         env = SCM_CLOSURE(val0)->env;
                         argp = sp;
                     }
-                    pc = SCM_CLOSURE(val0)->code;
+                    VM_ASSERT(SCM_COMPILED_CODE_P(SCM_CLOSURE(val0)->code));
+                    vm->base = SCM_COMPILED_CODE(SCM_CLOSURE(val0)->code);
+                    pc = vm->base->code;
+                    VM_ASSERT(pc != NULL);
                     NEXT;
                 }
                 /*
@@ -693,7 +698,10 @@ static void run_loop()
                     PUSH_ARG(SCM_OBJ(nm));
                     FINISH_ENV(SCM_PROCEDURE_INFO(val0),
                                SCM_METHOD(val0)->env);
-                    pc = SCM_OBJ(SCM_METHOD(val0)->data);
+                    VM_ASSERT(SCM_COMPILED_CODE_P(SCM_METHOD(val0)->data));
+                    vm->base = SCM_COMPILED_CODE(SCM_METHOD(val0)->data);
+                    pc = vm->base->code;
+                    VM_ASSERT(pc != NULL);
                 }
                 NEXT;
                 /*
@@ -704,13 +712,23 @@ static void run_loop()
                         val0, SCM_PROCEDURE_REQUIRED(val0), argc));
             }
             CASE(SCM_VM_JUMP) {
-                /* This is just a placeholder now. */
+                ScmObj off;
+                FETCH_OPERAND(off);
+                VM_ASSERT(SCM_INTP(off));
+                pc = vm->base->code + SCM_INT_VALUE(off);
+                NEXT;
+            }
+            CASE(SCM_VM_RET) {
+                if (cont == NULL || BOUNDARY_FRAME_P(cont)) {
+                    SAVE_REGS();
+                    return; /* no more continuations */
+                }
+                POP_CONT();
                 NEXT;
             }
             CASE(SCM_VM_GREF) {
                 ScmGloc *gloc;
-                VM_ASSERT(SCM_PAIRP(pc));
-                val0 = SCM_CAR(pc);
+                FETCH_OPERAND(val0);
 
                 if (!SCM_GLOCP(val0)) {
                     VM_ASSERT(SCM_IDENTIFIERP(val0));
@@ -723,7 +741,7 @@ static void run_loop()
                     }
                     /* memorize gloc */
                     /* TODO: make it MT safe! */
-                    SCM_SET_CAR(pc, SCM_OBJ(gloc));
+                    *pc = SCM_OBJ(gloc);
                 } else {
                     gloc = SCM_GLOC(val0);
                 }
@@ -735,7 +753,7 @@ static void run_loop()
                     val0 = Scm_LoadAutoload(SCM_AUTOLOAD(val0));
                     RESTORE_REGS();
                 }
-                pc = SCM_CDR(pc);
+                INCR_PC;
                 NEXT;
             }
             CASE(SCM_VM_LREF0) { val0 = ENV_DATA(env, 0); NEXT; }
@@ -810,22 +828,25 @@ static void run_loop()
             CASE(SCM_VM_LET) {
                 int nlocals = SCM_VM_INSN_ARG(code);
                 int size = CONT_FRAME_SIZE + ENV_SIZE(nlocals);
-                ScmObj body;
+                ScmObj *next;
                 CHECK_STACK(size);
-                VM_ASSERT(SCM_PAIRP(pc));
-                FETCH_INSN(body);
-                if (!SCM_NULLP(pc)) {
-                    PUSH_CONT(prevpc, pc);
-                }
-                PUSH_LOCAL_ENV(nlocals, prevpc);
-                pc = body;
+                VM_ASSERT(SCM_INTP(*pc));
+                next = vm->base->code + SCM_INT_VALUE(*pc);
+                PUSH_CONT(next);
+                PUSH_LOCAL_ENV(nlocals, SCM_FALSE);
+                INCR_PC;
+                NEXT;
+            }
+            CASE(SCM_VM_TAIL_LET) {
+                int nlocals = SCM_VM_INSN_ARG(code);
+                int size = ENV_SIZE(nlocals);
+                CHECK_STACK(size);
+                PUSH_LOCAL_ENV(nlocals, SCM_FALSE);
                 NEXT;
             }
             CASE(SCM_VM_GSET) {
                 ScmObj loc;
-                VM_ASSERT(SCM_PAIRP(pc));
-
-                loc = SCM_CAR(pc);
+                FETCH_OPERAND(loc);
                 if (SCM_GLOCP(loc)) {
                     SCM_GLOC_SET(SCM_GLOC(loc), val0);
                 } else {
@@ -853,9 +874,9 @@ static void run_loop()
                     SCM_GLOC_SET(gloc, val0);
                     /* memorize gloc */
                     /* TODO: make it MT safe! */
-                    SCM_SET_CAR(pc, SCM_OBJ(gloc));
+                    *pc = SCM_OBJ(gloc);
                 }
-                pc = SCM_CDR(pc);
+                INCR_PC;
                 NEXT;
             }
             CASE(SCM_VM_LSET0) { ENV_DATA(env, 0) = val0; NEXT; }
@@ -885,10 +906,9 @@ static void run_loop()
             }
             CASE(SCM_VM_DEFINE) {
                 ScmObj var; ScmSymbol *name;
-                VM_ASSERT(SCM_PAIRP(pc));
-                var = SCM_CAR(pc);
+                FETCH_OPERAND(var);
                 VM_ASSERT(SCM_IDENTIFIERP(var));
-                pc = SCM_CDR(pc);
+                INCR_PC;
                 Scm_Define(SCM_IDENTIFIER(var)->module,
                            (name = SCM_IDENTIFIER(var)->name), val0);
                 val0 = SCM_OBJ(name);
@@ -896,42 +916,45 @@ static void run_loop()
             }
             CASE(SCM_VM_DEFINE_CONST) {
                 ScmObj var; ScmSymbol *name;
-                VM_ASSERT(SCM_PAIRP(pc));
-                var = SCM_CAR(pc);
+                FETCH_OPERAND(var);
                 VM_ASSERT(SCM_IDENTIFIERP(var));
-                pc = SCM_CDR(pc);
+                INCR_PC;
                 Scm_DefineConst(SCM_IDENTIFIER(var)->module,
                                 (name = SCM_IDENTIFIER(var)->name), val0);
                 val0 = SCM_OBJ(name);
                 NEXT;
             }
             CASE(SCM_VM_IF) {
-                if (SCM_FALSEP(val0)) { pc = SCM_CDR(pc); }
-                else                  { pc = SCM_CAR(pc); }
+                if (SCM_FALSEP(val0)) {
+                    VM_ASSERT(SCM_INTP(*pc));
+                    pc = vm->base->code + SCM_INT_VALUE(*pc);
+                } else {
+                    INCR_PC;
+                }
                 NEXT;
             }
             CASE(SCM_VM_LAMBDA) {
                 ScmObj body;
-                VM_ASSERT(SCM_PAIRP(pc));
-                body = SCM_CAR(pc);
-                pc = SCM_CDR(pc);
+                FETCH_OPERAND(body);
+                INCR_PC;
 
                 /* preserve environment */
                 SAVE_REGS();
                 val0 = Scm_MakeClosure(SCM_VM_INSN_ARG0(code),
                                        SCM_VM_INSN_ARG1(code),
                                        body,
-                                       prevpc);
+                                       get_env(vm));
                 RESTORE_REGS();
                 NEXT;
             }
-            CASE(SCM_VM_VALUES_BIND) {
+            CASE(SCM_VM_RECEIVE) {
                 /* TODO: clean up stack management */
                 int reqargs = SCM_VM_INSN_ARG0(code);
                 int restarg = SCM_VM_INSN_ARG1(code);
                 int size = CONT_FRAME_SIZE + ENV_SIZE(reqargs + restarg);
                 int i = 0, argsize;
                 ScmObj rest = SCM_NIL, tail = SCM_NIL, body;
+                ScmObj *nextpc;
 
                 CHECK_STACK(size);
                 if (vm->numVals < reqargs) {
@@ -942,9 +965,9 @@ static void run_loop()
                 argsize = reqargs + (restarg? 1 : 0);
                 FETCH_INSN(body);
 
-                if (!SCM_NULLP(pc)) {
-                    PUSH_CONT(prevpc, pc);
-                }
+                VM_ASSERT(SCM_INTP(body));
+                nextpc = vm->base->code + SCM_INT_VALUE(body);
+                PUSH_CONT(nextpc);
 
                 if (reqargs > 0) {
                     PUSH_ARG(val0);
@@ -963,15 +986,12 @@ static void run_loop()
                     PUSH_ARG(rest);
                 }
                 vm->numVals = 1;
-
-                FINISH_ENV(prevpc, env);
-                pc = body;
+                FINISH_ENV(SCM_FALSE, env);
                 NEXT;
             }
             CASE(SCM_VM_QUOTE_INSN) {
-                VM_ASSERT(SCM_PAIRP(pc));
-                val0 = SCM_CAR(pc);
-                pc = SCM_CDR(pc);
+                FETCH_OPERAND(val0);
+                INCR_PC;
                 NEXT;
             }
             /* combined push immediate */
@@ -1179,11 +1199,12 @@ static void run_loop()
                 }
                 cp = val0;     /* now cp has arg list */
                 POP_ARG(val0); /* get proc */
-                if (!SCM_NULLP(pc)) {
-                    CHECK_STACK(CONT_FRAME_SIZE);
-                    PUSH_CONT(prevpc, pc);
-                    pc = SCM_NIL;
-                }
+
+                /*TODO: tail-apply*/
+                CHECK_STACK(CONT_FRAME_SIZE);
+                PUSH_CONT(pc);
+                pc = PC_TO_RETURN;
+
                 SAVE_REGS();
                 val0 = Scm_VMApply(val0, cp);
                 RESTORE_REGS();
@@ -1430,7 +1451,7 @@ static void run_loop()
                 ScmObj obj;
                 POP_ARG(obj);
                 CHECK_STACK(CONT_FRAME_SIZE);
-                PUSH_CONT(prevpc, pc);
+                PUSH_CONT(pc);
                 pc = PC_TO_RETURN;
                 SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
@@ -1443,12 +1464,16 @@ static void run_loop()
                 POP_ARG(slot);
                 POP_ARG(obj);
                 CHECK_STACK(CONT_FRAME_SIZE);
-                PUSH_CONT(prevpc, pc);
+                PUSH_CONT(pc);
                 pc = PC_TO_RETURN;
                 SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
                 vm->numVals = 1;
                 RESTORE_REGS();
+                NEXT;
+            }
+            CASE(SCM_VM_HALT) {
+                VM_ERR(("HALT instruction called!"));
                 NEXT;
             }
 #ifndef __GNUC__
@@ -1567,11 +1592,12 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
 static void save_stack(ScmVM *vm)
 {
     ScmObj *p;
-#if 0
     struct timeval t0, t1;
-    fprintf(stderr, "save_stack\n");
-    gettimeofday(&t0, NULL);
-#endif
+    int stats = SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS);
+
+    if (stats) {
+        gettimeofday(&t0, NULL);
+    }
     
     vm->env = save_env(vm, vm->env, vm->cont);
     save_cont(vm, vm->cont);
@@ -1581,16 +1607,17 @@ static void save_stack(ScmVM *vm)
     vm->argp = vm->stackBase;
     /* Clear the stack.  This removes bogus pointers and accelerates GC */
     for (p = vm->sp; p < vm->stackEnd; p++) *p = NULL;
-#if 0
-    gettimeofday(&t1, NULL);
-    fprintf(stderr, "elapsed = %d\n",
-            (t1.tv_sec - t0.tv_sec)*1000000+(t1.tv_usec - t0.tv_usec));
-#endif
+
+    if (stats) {
+        gettimeofday(&t1, NULL);
+        vm->stat.sovCount++;
+        vm->stat.sovTime +=
+            (t1.tv_sec - t0.tv_sec)*1000000+(t1.tv_usec - t0.tv_usec);
+    }
 }
 
-ScmEnvFrame *Scm_GetCurrentEnv(void)
+static ScmEnvFrame *get_env(ScmVM *vm)
 {
-    ScmVM *vm = theVM;
     return vm->env = save_env(vm, vm->env, vm->cont);
 }
 
@@ -1605,16 +1632,29 @@ ScmEnvFrame *Scm_GetCurrentEnv(void)
    but it should be returned as the return value of SUBR, which will be
    used by the VM.
    NB: we don't check proc is a procedure or not.  It can be a non-procedure
-   object, because of the object-apply hook.
- */
+   object, because of the object-apply hook. */
+
+/* Static VM instruction arrays.
+   Scm_VMApplyN modifies VM's pc to point it. */
+
+static ScmObj apply_calls[][2] = {
+    { SCM_VM_INSN1(SCM_VM_TAIL_CALL, 0),
+      SCM_VM_INSN(SCM_VM_RET) },
+    { SCM_VM_INSN1(SCM_VM_TAIL_CALL, 1),
+      SCM_VM_INSN(SCM_VM_RET) },
+    { SCM_VM_INSN1(SCM_VM_TAIL_CALL, 2),
+      SCM_VM_INSN(SCM_VM_RET) },
+    { SCM_VM_INSN1(SCM_VM_TAIL_CALL, 3),
+      SCM_VM_INSN(SCM_VM_RET) },
+};
+
 ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 {
     DECL_REGS;
-    ScmObj cp;
     int numargs = Scm_Length(args);
     int reqstack;
+    ScmObj cp;
 
-    SCM_ASSERT(SCM_NULLP(pc));
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
     reqstack = ENV_SIZE(numargs) + 1;
     if (reqstack >= SCM_VM_STACK_SIZE) {
@@ -1625,7 +1665,13 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
     SCM_FOR_EACH(cp, args) {
         PUSH_ARG(SCM_CAR(cp));
     }
-    pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, numargs));
+    if (numargs <= 3) {
+        pc = apply_calls[numargs];
+    } else {
+        pc = SCM_NEW_ARRAY(ScmObj, 2);
+        pc[0] = SCM_VM_INSN1(SCM_VM_TAIL_CALL, numargs);
+        pc[1] = SCM_VM_INSN(SCM_VM_RET);
+    }
     SAVE_REGS();
     return proc;
 }
@@ -1634,8 +1680,7 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 ScmObj Scm_VMApply0(ScmObj proc)
 {
     ScmVM *vm = theVM;
-    SCM_ASSERT(SCM_NULLP(vm->pc));
-    vm->pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 0));
+    vm->pc = apply_calls[0];
     return proc;
 }
 
@@ -1644,8 +1689,7 @@ ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
     DECL_REGS;
     CHECK_STACK(1);
     PUSH_ARG(arg);
-    SCM_ASSERT(SCM_NULLP(pc));
-    pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 1));
+    pc = apply_calls[1];
     SAVE_REGS();
     return proc;
 }
@@ -1656,8 +1700,7 @@ ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
     CHECK_STACK(2);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
-    SCM_ASSERT(SCM_NULLP(pc));
-    pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 2));
+    pc = apply_calls[2];
     SAVE_REGS();
     return proc;
 }
@@ -1669,8 +1712,7 @@ ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PUSH_ARG(arg3);
-    SCM_ASSERT(SCM_NULLP(pc));
-    pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 3));
+    pc = apply_calls[3];
     SAVE_REGS();
     return proc;
 }
@@ -1708,6 +1750,8 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     ScmObj v = SCM_NIL;
     ScmVM *vm = Scm_VM();
     int restore_module = FALSE;
+    
+    /* NB: v is ScmCompiledCode. */
         
     if (SCM_UNBOUNDP(e)) {
         /* if env is not given, just use the current env */
@@ -1722,11 +1766,13 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         Scm_Printf(theVM->curerr, "== %#S\n", v);
     }
 
+    /*Scm_CompiledCodeDump(v);*/
+
     vm->numVals = 1;
     if (restore_module) {
         /* if we swap the module, we need to make sure it is recovered
            after eval */
-        ScmObj body = Scm_MakeClosure(0, 0, v, SCM_FALSE);
+        ScmObj body = Scm_MakeClosure(0, 0, v, get_env(vm));
         ScmObj before = Scm_MakeSubr(eval_restore_env, SCM_MODULE(e),
                                      0, 0, SCM_FALSE);
         ScmObj after = Scm_MakeSubr(eval_restore_env, (void*)vm->module,
@@ -1734,8 +1780,10 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         return Scm_VMDynamicWind(before, body, after);
     } else {
         /* shortcut */
-        SCM_ASSERT(SCM_NULLP(vm->pc));
-        vm->pc = v;
+        SCM_ASSERT(SCM_COMPILED_CODE_P(v));
+        vm->base = SCM_COMPILED_CODE(v);
+        vm->pc = SCM_COMPILED_CODE(v)->code;
+        SCM_ASSERT(vm->pc != NULL);
         return SCM_UNDEFINED;
     }
 }
@@ -1759,19 +1807,26 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
  *   current VM stack information is saved (as a continuation
  *   frame pointer) in cstack.cont.
  */
+/* program is ScmCompiledCode. */
 static ScmObj user_eval_inner(ScmObj program)
 {
     DECL_REGS_VOLATILE;
     ScmCStack cstack;
+    /* Save prev_pc, for the boundary continuation uses pc slot
+       to mark the boundary. */
+    ScmObj * volatile prev_pc = pc;
 
     /* Push extra continuation.  This continuation frame is a 'boundary
-       frame' and marked by info == boundaryFrameMark.   VM loop knows
+       frame' and marked by pc == &boundaryFrameMark.   VM loop knows
        it should return to C frame when it sees a boundary frame.
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
     CHECK_STACK(CONT_FRAME_SIZE);
-    PUSH_CONT(boundaryFrameMark, pc);
-    pc = program;
+    PUSH_CONT(&boundaryFrameMark);
+    SCM_ASSERT(SCM_COMPILED_CODE_P(program));
+    vm->base = SCM_COMPILED_CODE(program);
+    pc = vm->base->code;
+    SCM_ASSERT(pc != NULL);
     SAVE_REGS();
 
     cstack.prev = vm->cstack;
@@ -1786,6 +1841,7 @@ static ScmObj user_eval_inner(ScmObj program)
         if (vm->cont == cstack.cont) {
             RESTORE_REGS();
             POP_CONT();
+            pc = prev_pc;
             SAVE_REGS();
         }
     } else {
@@ -1794,7 +1850,8 @@ static ScmObj user_eval_inner(ScmObj program)
              ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
                 ScmObj handlers = throw_cont_calculate_handlers(ep, vm);
-                vm->pc = SCM_NIL;
+                /* force popping continuation when restarted */
+                vm->pc = PC_TO_RETURN;
                 vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
                 goto restart;
             } else {
@@ -1811,7 +1868,7 @@ static ScmObj user_eval_inner(ScmObj program)
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
-                vm->pc = SCM_NIL;
+                vm->pc = PC_TO_RETURN;
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
@@ -1852,7 +1909,8 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
         v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
     }
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
-        Scm_Printf(theVM->curerr, "== %#S\n", v);
+        Scm_Printf(theVM->curerr, "==\n");
+        Scm_CompiledCodeDump(v);
     }
     return user_eval_inner(v);
 }
@@ -1870,8 +1928,9 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
         nargs++;
     }
     SCM_APPEND1(code, tail, proc);
-    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, nargs));
-    return user_eval_inner(SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs),code));
+    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs));
+    code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs),code);
+    return user_eval_inner(Scm_PackCode(code));
 }
 
 /* Arrange C function AFTER to be called after the procedure returns.
@@ -1890,9 +1949,9 @@ void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
     cc->prev = cont;
     cc->argp = NULL;
     cc->size = datasize;
-    cc->pc = SCM_OBJ(after);
+    cc->pc = (ScmObj*)after;
+    cc->base = vm->base;
     cc->env = env;
-    cc->info = SCM_NIL;
     for (i=0; i<datasize; i++) {
         PUSH_ARG(SCM_OBJ(data[i]));
     }
@@ -2327,7 +2386,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     /*
      * now, install the target continuation
      */
-    vm->pc = SCM_NIL;
+    vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
 
     nargs = Scm_Length(args);
@@ -2561,16 +2620,11 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
     ScmObj stack = SCM_NIL, tail = SCM_NIL;
     ScmObj info;
 
-    if (SCM_PAIRP(vm->pc)) {
-        info = Scm_VMGetSourceInfo(vm->pc);
-        if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
-    }
-    
+    info = Scm_VMGetSourceInfo(vm->base, vm->pc);
+    if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
     while (c) {
-        if (SCM_PAIRP(c->info)) {
-            info = Scm_VMGetSourceInfo(c->info);
-            if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
-        }
+        info = Scm_VMGetSourceInfo(c->base, c->pc);
+        if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
         c = c->prev;
     }
     return stack;
@@ -2599,7 +2653,7 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
     }
     vec = Scm_MakeVector(env->size+2, SCM_FALSE);
     SCM_VECTOR_ELEMENT(vec, 0) = env2vec(env->up, etab);
-    SCM_VECTOR_ELEMENT(vec, 1) = Scm_VMGetBindInfo(env->info);
+    SCM_VECTOR_ELEMENT(vec, 1) = SCM_NIL; /*Scm_VMGetBindInfo(env->info);*/
     for (i=0; i<env->size; i++) {
         SCM_VECTOR_ELEMENT(vec, i+2) = ENV_DATA(env, (env->size-i-1));
     }
@@ -2618,6 +2672,7 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
     ScmObj info, evec;
     struct EnvTab envTab;
 
+#if 0 /* for now */
     envTab.numEntries = 0;
     if (SCM_PAIRP(vm->pc)) {
         info = Scm_VMGetSourceInfo(vm->pc);
@@ -2630,6 +2685,7 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
         evec = env2vec(c->env, &envTab);
         SCM_APPEND1(stack, tail, Scm_Cons(info, evec));
     }
+#endif
     return stack;
 }
 
@@ -2713,22 +2769,41 @@ ScmObj Scm_VMInsnInspect(ScmObj obj)
 /*
  * Dump VM internal state.
  */
-
-ScmObj Scm_VMGetSourceInfo(ScmObj program)
+static ScmObj get_debug_info(ScmCompiledCode *base, ScmObj *pc)
 {
-    if (SCM_PAIRP(program)) {
-        ScmObj p = Scm_Assq(SCM_SYM_SOURCE_INFO,
-                            Scm_PairAttr(SCM_PAIR(program)));
+    int off;
+    ScmObj ip;
+    if (base == NULL
+        || (pc < base->code && pc >= base->code + base->codeSize)) {
+        return SCM_FALSE;
+    }
+    off = pc - base->code - 1;  /* pc is already incremented, so -1. */
+    SCM_FOR_EACH(ip, base->info) {
+        ScmObj p = SCM_CAR(ip);
+        if (!SCM_PAIRP(p) || !SCM_INTP(SCM_CAR(p))) continue;
+        if (SCM_INT_VALUE(SCM_CAR(p)) < off) {
+            return SCM_CDR(p);
+            break;
+        }
+    }
+    return SCM_FALSE;
+}
+
+ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *base, ScmObj *pc)
+{
+    ScmObj info = get_debug_info(base, pc);
+    if (SCM_PAIRP(info)) {
+        ScmObj p = Scm_Assq(SCM_SYM_SOURCE_INFO, info);
         if (SCM_PAIRP(p)) return SCM_CDR(p);
     }
     return SCM_FALSE;
 }
 
-ScmObj Scm_VMGetBindInfo(ScmObj program)
+ScmObj Scm_VMGetBindInfo(ScmCompiledCode *base, ScmObj *pc)
 {
-    if (SCM_PAIRP(program)) {
-        ScmObj p = Scm_Assq(SCM_SYM_BIND_INFO,
-                            Scm_PairAttr(SCM_PAIR(program)));
+    ScmObj info = get_debug_info(base, pc);
+    if (SCM_PAIRP(info)) {
+        ScmObj p = Scm_Assq(SCM_SYM_BIND_INFO, info);
         if (SCM_PAIRP(p)) return SCM_CDR(p);
     }
     return SCM_FALSE;
@@ -2737,7 +2812,7 @@ ScmObj Scm_VMGetBindInfo(ScmObj program)
 static void dump_env(ScmEnvFrame *env, ScmPort *out)
 {
     int i;
-    Scm_Printf(out, "   %p %55.1S\n", env, Scm_VMGetBindInfo(env->info));
+    Scm_Printf(out, "   %p %55.1S\n", env, env->info);
     Scm_Printf(out, "       up=%p size=%d\n", env->up, env->size);
     Scm_Printf(out, "       [");
     for (i=0; i<env->size; i++) {
@@ -2755,7 +2830,8 @@ void Scm_VMDump(ScmVM *vm)
     ScmEscapePoint *ep = vm->escapePoint;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
-    Scm_Printf(out, "   pc: %#65.1S\n", vm->pc);
+    Scm_Printf(out, "   pc: %08x ", vm->pc);
+    Scm_Printf(out, "%#65.1S\n", *vm->pc);
     Scm_Printf(out, "   sp: %p  base: %p  [%p-%p]\n", vm->sp, vm->stackBase,
                vm->stack, vm->stackEnd);
     Scm_Printf(out, " argp: %p\n", vm->argp);
@@ -2773,11 +2849,12 @@ void Scm_VMDump(ScmVM *vm)
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             argp = %p[%d]\n", cont->argp, cont->size);
         if (cont->argp) {
-            Scm_Printf(out, "               pc = %#50.1S\n", cont->pc);
+            Scm_Printf(out, "               pc = %p ", cont->pc);
+            Scm_Printf(out, "%#50.1S\n", *cont->pc);
         } else {
             Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
         }
-        Scm_Printf(out, "             info = %#50.1S\n", cont->info);
+        Scm_Printf(out, "             base = %p\n", cont->base);
         cont = cont->prev;
     }
 
@@ -2796,3 +2873,424 @@ void Scm_VMDump(ScmVM *vm)
     Scm_Printf(out, "dynenv: %S\n", vm->handlers);
 }
 
+/*===============================================================
+ * NVM related stuff
+ */
+
+/* Debug information:
+ *
+ *  debug info is kept as an assoc-list with insn offset
+ *  as a key.
+ */
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CompiledCodeClass, NULL);
+
+static ScmCompiledCode *make_compiled_code(void)
+{
+    ScmCompiledCode *cc = SCM_NEW(ScmCompiledCode);
+    SCM_SET_CLASS(cc, SCM_CLASS_COMPILED_CODE);
+    cc->code = NULL;
+    cc->constants = NULL;
+    cc->maxstack = -1;
+    cc->info = SCM_NIL;
+    return cc;
+}
+
+/* Quick and dirty version of packcode.
+   This is a temporary stub, until the compiler is rewritten
+   to generate packed code directly. */
+
+typedef struct pk_data_rec {
+    ScmObj code;                /* emitted code pushded here */
+    int count;                  /* # of insns pushed */
+    ScmObj constants;           /* constant pool */
+    ScmObj mergers;             /* alist of (merging point . count) */
+    ScmObj info;                /* debug info alist. */
+} pk_data;
+
+static void pk_init(pk_data *data)
+{
+    data->code = SCM_NIL;
+    data->count = 0;
+    data->constants = SCM_NIL;
+    data->mergers = SCM_NIL;
+    data->info = SCM_NIL;
+}
+
+static inline ScmObj pk_emit(pk_data *data, ScmObj insn)
+{
+    data->code = Scm_Cons(insn, data->code);
+    data->count++;
+    return data->code;
+}
+
+static inline void pk_constant(pk_data *data, ScmObj constobj)
+{
+    if (SCM_PTRP(constobj)
+        && SCM_FALSEP(Scm_Memq(constobj, data->constants))) {
+        data->constants = Scm_Cons(constobj, data->constants);
+    }
+}
+
+static inline void pk_merger(pk_data *data, ScmObj code)
+{
+    data->mergers = Scm_Acons(code, SCM_MAKE_INT(data->count), data->mergers);
+}
+
+/* Uses data->count, so it must be called before pk_emit. */
+static inline void pk_info(pk_data *data, ScmObj info)
+{
+    data->info = Scm_Acons(SCM_MAKE_INT(data->count), info,
+                           data->info);
+}
+
+/* Transfer argument info from bind-info attribute to compiled code's info */
+static void pk_add_arg_info(ScmCompiledCode *cc, ScmObj attrs)
+{
+    ScmObj binfo = Scm_Assq(SCM_SYM_BIND_INFO, attrs);
+    if (SCM_PAIRP(binfo)) {
+        cc->info = Scm_Acons(SCM_SYM_ARG_INFO, SCM_CDR(binfo), cc->info);
+    }
+}
+
+static inline void pk_rec(pk_data *data, ScmObj code)
+{
+    ScmObj cp, insn = SCM_FALSE;
+    ScmObj save, prev, info;
+    
+    SCM_FOR_EACH(cp, code) {
+        insn = SCM_CAR(cp);
+        info = Scm_PairAttr(SCM_PAIR(cp));
+        if (!SCM_NULLP(info)) pk_info(data, info);
+
+        if (!SCM_VM_INSNP(insn)) {
+            /* constant */
+            pk_constant(data, insn);
+            pk_emit(data, insn);
+            continue;
+        }
+        switch (SCM_VM_INSN_CODE(insn)) {
+        case SCM_VM_PUSH:;
+        case SCM_VM_POP:;
+        case SCM_VM_DUP:;
+            pk_emit(data, insn);
+            break;
+        case SCM_VM_PRE_CALL:;
+            pk_emit(data, insn);
+            save = pk_emit(data, SCM_MAKE_INT(0));
+            cp = SCM_CDR(cp);
+            pk_rec(data, SCM_CAR(cp)); /* prep part */
+            SCM_SET_CAR(save, SCM_MAKE_INT(data->count));
+            break;
+        case SCM_VM_PRE_TAIL:;
+        case SCM_VM_CHECK_STACK:;
+        case SCM_VM_TAIL_CALL:;
+        case SCM_VM_CALL:;
+            pk_emit(data, insn);
+            break;
+        case SCM_VM_JUMP:;
+            break;
+        case SCM_VM_GREF:;
+            pk_emit(data, insn);
+            cp = SCM_CDR(cp);
+            pk_constant(data, SCM_CAR(cp));
+            pk_emit(data, SCM_CAR(cp));
+            break;
+        case SCM_VM_LREF0:;
+        case SCM_VM_LREF1:;
+        case SCM_VM_LREF2:;
+        case SCM_VM_LREF3:;
+        case SCM_VM_LREF4:;
+        case SCM_VM_LREF10:;
+        case SCM_VM_LREF11:;
+        case SCM_VM_LREF12:;
+        case SCM_VM_LREF13:;
+        case SCM_VM_LREF14:;
+        case SCM_VM_LREF:;
+        case SCM_VM_LREF0_PUSH:;
+        case SCM_VM_LREF1_PUSH:;
+        case SCM_VM_LREF2_PUSH:;
+        case SCM_VM_LREF3_PUSH:;
+        case SCM_VM_LREF4_PUSH:;
+        case SCM_VM_LREF10_PUSH:;
+        case SCM_VM_LREF11_PUSH:;
+        case SCM_VM_LREF12_PUSH:;
+        case SCM_VM_LREF13_PUSH:;
+        case SCM_VM_LREF14_PUSH:;
+        case SCM_VM_LREF_PUSH:;
+            pk_emit(data, insn);
+            break;
+        case SCM_VM_LET:;
+            cp = SCM_CDR(cp);
+            if (SCM_NULLP(SCM_CDR(cp))) {
+                pk_emit(data, SCM_VM_INSN1(SCM_VM_TAIL_LET,
+                                           SCM_VM_INSN_ARG(insn)));
+                pk_rec(data, SCM_CAR(cp)); /* body */
+            } else {
+                pk_emit(data, insn);
+                save = pk_emit(data, SCM_MAKE_INT(0));
+                pk_rec(data, SCM_CAR(cp)); /* body */
+                SCM_SET_CAR(save, SCM_MAKE_INT(data->count));
+            }
+            break;
+        case SCM_VM_GSET:;
+            pk_emit(data, insn);
+            cp = SCM_CDR(cp);
+            pk_constant(data, SCM_CAR(cp));
+            pk_emit(data, SCM_CAR(cp));
+            break;
+        case SCM_VM_LSET0:;
+        case SCM_VM_LSET1:;
+        case SCM_VM_LSET2:;
+        case SCM_VM_LSET3:;
+        case SCM_VM_LSET4:;
+        case SCM_VM_LSET:;
+            pk_emit(data, insn);
+            break;
+        case SCM_VM_NOP:;
+            break;
+        case SCM_VM_MNOP:;
+            /* this may be a merging point. */
+            save = Scm_Assq(cp, data->mergers);
+            if (SCM_FALSEP(save)) {
+                pk_merger(data, cp);
+            } else {
+                insn = SCM_VM_INSN(SCM_VM_JUMP);
+                pk_emit(data, insn);
+                pk_emit(data, SCM_CDR(save));
+                return;
+            }
+            break;
+        case SCM_VM_DEFINE:;
+        case SCM_VM_DEFINE_CONST:;
+            pk_emit(data, insn);
+            cp = SCM_CDR(cp);
+            pk_constant(data, SCM_CAR(cp));
+            pk_emit(data, SCM_CAR(cp));
+            break;
+        case SCM_VM_IF:;
+            pk_emit(data, insn);
+            cp = SCM_CDR(cp);
+            save = pk_emit(data, SCM_MAKE_INT(0));
+            pk_rec(data, SCM_CAR(cp)); /* emit then clause first */
+            SCM_SET_CAR(save, SCM_MAKE_INT(data->count));
+            /* continues to else clause.  jump is taken care of by MNOP. */
+            break;
+        case SCM_VM_LAMBDA:;
+            pk_emit(data, insn);
+            save = Scm_PackCode(SCM_CADR(cp));
+            pk_add_arg_info(SCM_COMPILED_CODE(save),
+                            Scm_PairAttr(SCM_PAIR(cp)));
+            cp = SCM_CDR(cp);
+            pk_constant(data, save);
+            pk_emit(data, save);
+            break;
+        case SCM_VM_RECEIVE:;
+            pk_emit(data, insn);
+            cp = SCM_CDR(cp);
+            save = pk_emit(data, SCM_MAKE_INT(0));
+            pk_rec(data, SCM_CAR(cp)); /* body */
+            SCM_SET_CAR(save, SCM_MAKE_INT(data->count));
+            break;
+        case SCM_VM_QUOTE_INSN:;
+            pk_emit(data, insn);
+            cp = SCM_CDR(cp);
+            pk_emit(data, SCM_CAR(cp));
+            break;
+        case SCM_VM_PUSHI:;
+        case SCM_VM_PUSHNIL:;
+        case SCM_VM_CONS:;
+        case SCM_VM_CONS_PUSH:;
+        case SCM_VM_CAR:;
+        case SCM_VM_CAR_PUSH:;
+        case SCM_VM_CDR:;
+        case SCM_VM_CDR_PUSH:;
+        case SCM_VM_LIST:;
+        case SCM_VM_LIST_STAR:;
+        case SCM_VM_NOT:;
+        case SCM_VM_NULLP:;
+        case SCM_VM_EQ:;
+        case SCM_VM_EQV:;
+        case SCM_VM_MEMQ:;
+        case SCM_VM_MEMV:;
+        case SCM_VM_ASSQ:;
+        case SCM_VM_ASSV:;
+        case SCM_VM_PAIRP:;
+        case SCM_VM_CHARP:;
+        case SCM_VM_EOFP:;
+        case SCM_VM_STRINGP:;
+        case SCM_VM_SYMBOLP:;
+        case SCM_VM_APPEND:;
+        case SCM_VM_REVERSE:;
+        case SCM_VM_APPLY:;
+        case SCM_VM_PROMISE:;
+        case SCM_VM_SETTER:;
+        case SCM_VM_VALUES:;
+        case SCM_VM_VEC:;
+        case SCM_VM_APP_VEC:;
+        case SCM_VM_VEC_LEN:;
+        case SCM_VM_VEC_REF:;
+        case SCM_VM_VEC_SET:;
+        case SCM_VM_NUMEQ2:;
+        case SCM_VM_NUMLT2:;
+        case SCM_VM_NUMLE2:;
+        case SCM_VM_NUMGT2:;
+        case SCM_VM_NUMGE2:;
+        case SCM_VM_NUMADD2:;
+        case SCM_VM_NUMSUB2:;
+        case SCM_VM_NUMADDI:;
+        case SCM_VM_NUMSUBI:;
+        case SCM_VM_READ_CHAR:;
+        case SCM_VM_WRITE_CHAR:;
+        case SCM_VM_SLOT_REF:;
+        case SCM_VM_SLOT_SET:;
+            pk_emit(data, insn);
+            break;
+        default:
+            Scm_Error("unknown insn: %S", insn);
+        }
+    }
+    /* emit RET if necessary. */
+#if 0
+    if (SCM_VM_INSNP(insn)) {
+        switch (SCM_VM_INSN_CODE(insn)) {
+        case SCM_VM_CALL:;
+        case SCM_VM_TAIL_CALL:;
+        case SCM_VM_LET:;
+        case SCM_VM_JUMP:;
+            return;
+        }
+    }
+#endif
+    pk_emit(data, SCM_VM_INSN(SCM_VM_RET));
+}
+
+ScmObj Scm_PackCode(ScmObj compiled)
+{
+    pk_data data;
+    ScmCompiledCode *cc;
+    ScmObj cp;
+    int i;
+
+    pk_init(&data);
+    pk_rec(&data, compiled);
+
+    cc = make_compiled_code();
+    cc->code = SCM_NEW_ATOMIC2(ScmObj*, data.count * sizeof(ScmWord));
+    i = 0;
+    SCM_FOR_EACH(cp, Scm_ReverseX(data.code)) {
+        cc->code[i++] = SCM_CAR(cp);
+    }
+    cc->codeSize = i;
+
+    cc->constants = SCM_NEW_ARRAY(ScmObj, Scm_Length(data.constants));
+    i = 0;
+    SCM_FOR_EACH(cp, data.constants) {
+        cc->constants[i++] = SCM_CAR(cp);
+    }
+    cc->constantSize = i;
+
+    cc->info = data.info;
+
+    return SCM_OBJ(cc);
+}
+
+void Scm_CompiledCodeDump(ScmObj obj)
+{
+    int i;
+    ScmObj *p;
+    ScmCompiledCode *cc;
+    ScmObj closures = SCM_NIL, arginfo;
+    int clonum = 0;
+
+    if (!SCM_COMPILED_CODE_P(obj)) {
+        Scm_Error("compiled-code required, but got %S", obj);
+    }
+    cc = SCM_COMPILED_CODE(obj);
+    Scm_Printf(SCM_CUROUT, "main_code (size=%d, const=%d):\n",
+               cc->codeSize, cc->constantSize);
+    do {
+      loop:
+        p = cc->code;
+        arginfo = Scm_Assq(SCM_SYM_ARG_INFO, cc->info);
+        if (SCM_PAIRP(arginfo)) {
+            Scm_Printf(SCM_CUROUT, "args: %S\n", SCM_CDR(arginfo));
+        }
+        for (i=0; i < cc->codeSize; i++) {
+            ScmObj insn = p[i], info, s;
+            ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
+            int code;
+
+            info = Scm_Assq(SCM_MAKE_INT(i), cc->info);
+
+            if (!SCM_VM_INSNP(insn)) {
+                Scm_Printf(out, "  %4d CONST %S", i, insn);
+                goto show_info;
+            }
+            
+            code = SCM_VM_INSN_CODE(insn);
+            Scm_Printf(out, "  %4d %A ", i, Scm_VMInsnInspect(insn));
+            switch (code) {
+            case SCM_VM_PRE_CALL:;
+            case SCM_VM_GREF:;
+            case SCM_VM_LET:;
+            case SCM_VM_GSET:;
+            case SCM_VM_JUMP:;
+            case SCM_VM_DEFINE:;
+            case SCM_VM_DEFINE_CONST:;
+            case SCM_VM_IF:;
+            case SCM_VM_RECEIVE:;
+            case SCM_VM_QUOTE_INSN:;
+                Scm_Printf(out, "%S", p[i+1]);
+                i++;
+                break;
+            case SCM_VM_LAMBDA:;
+                Scm_Printf(out, "#<lambda %d>", clonum);
+                closures = Scm_Acons(p[i+1], SCM_MAKE_INT(clonum),
+                                     closures);
+                clonum++;
+                i++;
+                break;
+            default:
+                /*nothing*/;
+            }
+
+          show_info:
+            s = Scm_GetOutputStringUnsafe(out);
+            if (!SCM_PAIRP(info)) {
+                Scm_Puts(SCM_STRING(s), SCM_CUROUT);
+                Scm_Putc('\n', SCM_CUROUT);
+            } else {
+                int len = SCM_STRING_SIZE(s);
+                ScmObj srcinfo = Scm_Assq(SCM_SYM_SOURCE_INFO, info);
+                ScmObj bindinfo = Scm_Assq(SCM_SYM_BIND_INFO, info);
+                Scm_Puts(SCM_STRING(s), SCM_CUROUT);
+                Scm_Flush(SCM_CUROUT);
+                for (; len<32; len++) {
+                    Scm_Putc(' ', SCM_CUROUT);
+                }
+                if (SCM_FALSEP(srcinfo)) {
+                    Scm_Printf(SCM_CUROUT, "; lambda %#40.1S\n",
+                               SCM_CDR(bindinfo));
+                } else {
+                    Scm_Printf(SCM_CUROUT, "; %#40.1S\n", SCM_CDR(srcinfo));
+                }
+            }
+        }
+        if (!SCM_NULLP(closures)) {
+            cc = SCM_COMPILED_CODE(SCM_CAAR(closures));
+            Scm_Printf(SCM_CUROUT, "internal_closure_%S (size=%d const=%d):\n",
+                       SCM_CDAR(closures),
+                       cc->codeSize, cc->constantSize);
+            closures = SCM_CDR(closures);
+            goto loop;
+        }
+    } while (0);
+}
+
+ScmObj Scm_CompiledCodeArgInfo(ScmCompiledCode *cc)
+{
+    ScmObj ainfo = Scm_Assq(SCM_SYM_ARG_INFO, cc->info);
+    if (SCM_PAIRP(ainfo)) return SCM_CDR(ainfo);
+    else return SCM_FALSE;
+}

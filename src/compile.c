@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121 2004-12-18 04:11:12 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.1 2004-12-23 06:57:21 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -48,10 +48,6 @@ static ScmObj id_if     = SCM_UNBOUND;
 static ScmObj id_begin  = SCM_UNBOUND;
 static ScmObj id_letrec = SCM_UNBOUND;
 static ScmObj id_asm    = SCM_UNBOUND;
-
-/*#define GAUCHE_USE_NVM*/
-
-/*#define GAUCHE_NVM_VECTORIZATION*/
 
 /* Conventions of internal functions
  *
@@ -87,7 +83,6 @@ static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
    performance reason. */
 static inline ScmObj make_lref(int depth, int offset)
 {
-#ifndef GAUCHE_NVM_VECTORIZATION
     if (depth == 0) {
         switch (offset) {
         case 0: return SCM_VM_INSN(SCM_VM_LREF0);
@@ -106,9 +101,6 @@ static inline ScmObj make_lref(int depth, int offset)
         }
     }
     return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
-#else  /* GAUCHE_NVM_VECTORIZATION */
-    return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
-#endif /* GAUCHE_NVM_VECTORIZATION */
 }
 
 static inline ScmObj make_lset(int depth, int offset)
@@ -145,7 +137,6 @@ static ScmObj add_bindinfo(ScmObj code, ScmObj info)
    LREF, substitute it for combined instruction instead. */
 static void combine_push(ScmObj *head, ScmObj *tail)
 {
-#ifndef GAUCHE_NVM_VECTORIZATION
     if (SCM_NULLP(*head)) {
         SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
     } else if (!SCM_VM_INSNP(SCM_CAR(*tail))) {
@@ -208,9 +199,6 @@ static void combine_push(ScmObj *head, ScmObj *tail)
             SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
         }
     }
-#else  /* GAUCHE_NVM_VECTORIZATION */
-    SCM_APPEND1(*head, *tail, SCM_VM_INSN(SCM_VM_PUSH));
-#endif /* GAUCHE_NVM_VECTORIZATION */
 }
 
 /* type of let-family bindings */
@@ -286,13 +274,12 @@ enum {
 /* entry point. */
 ScmObj Scm_Compile(ScmObj form, ScmObj env, int context)
 {
-    int dummy;
-    return compile_int(form, env, context);
+    ScmObj code = compile_int(form, env, context);
+    return Scm_PackCode(code);
 }
 
 ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 {
-    int dummy;
     return compile_body(form, env, context);
 }
 
@@ -504,7 +491,7 @@ static ScmObj ensure_identifier(ScmObj var, ScmObj env, ScmModule *mod)
 
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 {
-    ScmObj code = SCM_NIL, codetail = SCM_NIL;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL, callinsn;
     ScmVM *vm = Scm_VM();
 
   recompile:
@@ -589,14 +576,19 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 
             ADDCODE(head);
             if (TAILP(ctx)) {
-                ADDCODE1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs));
+                callinsn = add_srcinfo(Scm_ExtendedCons(SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs),
+                                                        SCM_NIL),
+                                       form);
+                SCM_SET_CDR(codetail, callinsn);
                 code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs), code);
             } else {
-                ADDCODE1(SCM_VM_INSN1(SCM_VM_CALL, nargs));
+                callinsn = add_srcinfo(Scm_ExtendedCons(SCM_VM_INSN1(SCM_VM_CALL, nargs),
+                                                        SCM_NIL),
+                                       form);
+                SCM_SET_CDR(codetail, callinsn);
                 code = SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs), code);
             }
-            return add_srcinfo(Scm_ExtendedCons(SCM_CAR(code), SCM_CDR(code)),
-                                                form);
+            return code;
         }
     }
     if (VAR_P(form)) {
@@ -1901,7 +1893,7 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx,
     if (!SCM_NULLP(vp)) { restvars=1; SCM_APPEND1(bind, bindtail, vp); }
     
     ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
-    ADDCODE(add_bindinfo(Scm_ExtendedCons(SCM_VM_INSN2(SCM_VM_VALUES_BIND, nvars, restvars), SCM_NIL),
+    ADDCODE(add_bindinfo(Scm_ExtendedCons(SCM_VM_INSN2(SCM_VM_RECEIVE, nvars, restvars), SCM_NIL),
                          vars));
     ADDCODE1(compile_body(body, Scm_Cons(bind, env), ctx));
     return code;
@@ -2108,145 +2100,6 @@ ScmObj Scm_SimpleAsmInliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
     }
     return Scm_MakeInlineAsmForm(form, vminsn, SCM_CDR(form));
 }
-
-/*===================================================================
- * Code vectorization
- */
-
-#ifdef GAUCHE_NVM_VECTORIZATION
-/* This is the first step of moving to the New VM architecture, which
-   uses a vector instead of a list for code.  In this transitional stage,
-   we use the old compiler to generate a directed graph, then call this
-   routine to make a code vector out of it.  Later, the whole compiler
-   passes will be reorganized for more efficient compilation.
-*/
-
-typedef struct v_context_rec {
-    int numCodes;               /* # of instructions */
-    ScmObj targets;             /* assoc list of jump targets and addresses */
-    ScmObj constants;           /* list of heap-allocated constants */
-} v_context;
-
-static ScmObj vectorize_rec(ScmObj codelist, v_context *ctx)
-{
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    ScmObj alt;
-    
-    while (!SCM_NULLP(codelist)) {
-        ScmObj ca = SCM_CAR(codelist);
-        int code;
-        
-        if (!SCM_VM_INSNP(ca)) {
-            /* Constant */
-            SCM_APPEND1(h, t, ca);
-            if (SCM_PTRP(ca) && SCM_FALSEP(Scm_Memq(ctx->constants, ca))) {
-                ctx->constants = Scm_Cons(ca, ctx->constants);
-            }
-            continue;
-        }
-
-        code = SCM_VM_INSN_CODE(ca);
-        switch (code) {
-        case SCM_VM_NOP:
-            codelist = SCM_CDR(codeslit);
-            break;
-        case SCM_VM_MNOP: /* we reached merging point */
-            break;
-        case SCM_VM_PUSH:;
-        case SCM_VM_POP:;
-        case SCM_VM_DUP:;
-            goto simple_insn;
-
-        case SCM_VM_PRE_CALL:;
-            SCM_APPEND(h, t, ca);
-            alt = vectorize_rec(SCM_CADR(codelist), ctx);
-            SCM_APPEND(h, t, alt);
-            codelist = SCM_CDDR(codelist);
-            break;
-
-        case SCM_VM_PRE_TAIL:;
-        case SCM_VM_CHECK_STACK:;
-        case SCM_VM_CALL:;
-        case SCM_VM_TAIL_CALL:;
-            goto simple_insn;
-            
-        case SCM_VM_JUMP:;
-            /* This only appears in the vectorized code */
-            Scm_Error("Internal error: VM_JUMP in the original code");
-            break;
-            
-        case SCM_VM_DEFINE:;
-        case SCM_VM_DEFINE_CONST:;
-            goto operand1;
-            
-        case SCM_VM_LAMBDA:;
-            SCM_APPEND(h, t, ca);
-            alt = create_vectorized_closure(SCM_CADR(codelist));
-            SCM_APPEND(h, t, alt);
-            codelist = SCM_CDDR(codelist);
-            break;
-
-        case SCM_VM_LET:;
-            SCM_APPEND(h, t, ca);
-            
-            
-                
-        case SCM_VM_IF:;
-        case SCM_VM_VALUES_BIND:;
-        case SCM_VM_LSET:;
-        case SCM_VM_GSET:;
-        case SCM_VM_LREF:;
-        case SCM_VM_GREF:;
-        case SCM_VM_PROMISE:;
-        case SCM_VM_QUOTE_INSN:;
-        case SCM_VM_CONS:;
-        case SCM_VM_CAR:;
-        case SCM_VM_CDR:;
-        case SCM_VM_LIST:;
-        case SCM_VM_LIST_STAR:;
-        case SCM_VM_MEMQ:;
-        case SCM_VM_MEMV:;
-        case SCM_VM_ASSQ:;
-        case SCM_VM_ASSV:;
-        case SCM_VM_EQ:;
-        case SCM_VM_EQV:;
-        case SCM_VM_APPEND:;
-        case SCM_VM_NOT:;
-        case SCM_VM_REVERSE:;
-        case SCM_VM_APPLY:;
-        case SCM_VM_NULLP:;
-        case SCM_VM_PAIRP:;
-        case SCM_VM_CHARP:;
-        case SCM_VM_EOFP:;
-            
-        case SCM_VM_STRINGP:;
-        case SCM_VM_SYMBOLP:;
-        case SCM_VM_SETTER:;
-        case SCM_VM_VALUES:;
-        case SCM_VM_VEC:;
-        case SCM_VM_APP_VEC:;
-        case SCM_VM_VEC_LEN:;
-        case SCM_VM_VEC_REF:;
-        case SCM_VM_VEC_SET:;
-        case SCM_VM_NUMEQ2:;
-        case SCM_VM_NUMLT2:;
-        case SCM_VM_NUMLE2:;
-        case SCM_VM_NUMGT2:;
-        case SCM_VM_NUMGE2:;
-        case SCM_VM_NUMADD2:;
-        case SCM_VM_NUMSUB2:;
-        case SCM_VM_NUMADDI:;
-        case SCM_VM_NUMSUBI:;
-        case SCM_VM_READ_CHAR:;
-        case SCM_VM_WRITE_CHAR:;
-        case SCM_VM_SLOT_REF:;
-        case SCM_VM_SLOT_SET:;
-        }
-    }
-    return h;
-}
-
-#endif /*GAUCHE_NVM_VECTORIZATION*/
 
 /*===================================================================
  * Initializer

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vminsn.h,v 1.40 2004-07-10 12:44:03 shirok Exp $
+ *  $Id: vminsn.h,v 1.40.2.1 2004-12-23 06:57:36 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -72,6 +72,9 @@ DEFINSN(SCM_VM_DUP, "DUP", 0)
  *  Prepare for a normal call.   <prep> is a list of code that ends with CALL.
  *  The next insn is the continuation.  This instruction pushes the
  *  continuation, then go executing <prep>.
+ *
+ *  [NVM] the next word of PRE-CALL is a continuation address
+ *  (offset from base).
  */
 DEFINSN(SCM_VM_PRE_CALL, "PRE-CALL", 1)
 
@@ -104,10 +107,15 @@ DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
 
 /* JUMP <CODE>
  *
- *  Jump to <CODE>.  In the old VM architecture where compiled code
- *  is a list, this is equivalent to NOP.
+ *  [NVM] Jump to <CODE>.  
  */
 DEFINSN(SCM_VM_JUMP, "JUMP", 0)
+
+/* RET
+ *
+ *  [NVM] Pop the continuation stack.
+ */
+DEFINSN(SCM_VM_RET, "RET", 0)
 
 /* DEFINE <SYMBOL>
  *
@@ -123,6 +131,8 @@ DEFINSN(SCM_VM_DEFINE_CONST, "DEFINE-CONST", 0)
  *
  *  Create a closure capturing current environment.
  *  CODE is the compiled code.   Leaves created closure in the stack.
+ *
+ *  [NVM] the operand is ScmCompiledCode instance.
  */
 DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
 
@@ -130,22 +140,35 @@ DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
  *
  *  Create a new environment frame, size of NLOCALS.  let-families
  *  like let, let* and letrec yields this instruction.
+ *
+ *  [NVM] the operand is an integer offset of the continuation.
+ *  It may be 0 if this is the tail call.
  */
 DEFINSN(SCM_VM_LET, "LET", 1)
+
+/* TAIL_LET(NLOCALS)
+ *
+ *  Let-family at the tail position.  No need to push the
+ *  continuation.
+ */
+DEFINSN(SCM_VM_TAIL_LET, "LET", 1)
 
 /* IF  <THEN-CODE>
  *
  *  If val0 is true, transfer control to THEN-CODE.  Otherwise
  *  it continues execution.   Test arg is popped.
+ *
+ *  [NVM] first operand contains the offset of the else code
+ *  from the base.
  */
 DEFINSN(SCM_VM_IF, "IF", 0)
 
-/* VALUES-BIND(NARGS,RESTARG) <BODY> ...
+/* RECEIVE(NARGS,RESTARG) <BODY> ...
  *
  *  Primitive operation for receive and call-with-values.
  *  Turn the multiple values into an environment, then evaluate <BODY> ...
  */
-DEFINSN(SCM_VM_VALUES_BIND, "VALUES-BIND", 2)
+DEFINSN(SCM_VM_RECEIVE, "RECEIVE", 2)
 
 /* LSET(DEPTH, OFFSET)
  *
@@ -220,6 +243,13 @@ DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
  *  It occurs when VM insn is passed to apply.
  */
 DEFINSN(SCM_VM_QUOTE_INSN, "QUOTE-INSN", 0)
+
+/* HALT
+ *
+ *  [NVM] code for debugging, to ensure the part of the code should
+ *  never be executed.
+ */
+DEFINSN(SCM_VM_HALT, "HALT", 0)
 
 /* Inlined operators
  *  They work the same as corresponding Scheme primitives, but they are

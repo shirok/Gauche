@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98 2004-11-29 21:54:23 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.1 2004-12-23 06:57:21 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -52,18 +52,35 @@
 #define SCM_VM_SIGQ_MASK       1
 #define SCM_VM_FINQ_MASK       2
 
-#define SCM_PCTYPE ScmObj
+#define SCM_PCTYPE ScmObj*
 
 /*
  * Compiled code packet
  */
 
 typedef struct ScmCompiledCodeRec {
-    ScmObj *code;               /* code vector */
-    ScmObj *constants;          /* constant vector */
+    SCM_HEADER;
+    ScmObj *code;               /* Code vector.  this is allocated as atomic,
+                                   to prevent GC from scanning it. */
+    ScmObj *constants;          /* Constant vector.  this isn't used during
+                                   execution, but kept here so that the
+                                   constants in the code vector won't be
+                                   GC-ed. */
+    int codeSize;               /* size of code vector */
+    int constantSize;           /* size of constant vector */
     int maxstack;               /* maximum runtime stack depth */
     ScmObj info;                /* debug info */
 } ScmCompiledCode;
+
+SCM_CLASS_DECL(Scm_CompiledCodeClass);
+#define SCM_CLASS_COMPILED_CODE   (&Scm_CompiledCodeClass)
+
+#define SCM_COMPILED_CODE(obj)    ((ScmCompiledCode*)(obj))
+#define SCM_COMPILED_CODE_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_COMPILED_CODE)
+
+SCM_EXTERN ScmObj Scm_PackCode(ScmObj code);
+SCM_EXTERN void Scm_CompiledCodeDump(ScmObj cc);
+SCM_EXTERN ScmObj Scm_CompiledCodeArgInfo(ScmCompiledCode *cc);
 
 /*
  * Environment frame
@@ -83,7 +100,7 @@ typedef struct ScmCompiledCodeRec {
 
 typedef struct ScmEnvFrameRec {
     struct ScmEnvFrameRec *up;  /* static link */
-    ScmObj info;                /* source code info for debug */
+    ScmObj info;                /* reserved */
     int size;                   /* size of the frame (excluding header) */
 } ScmEnvFrame;
 
@@ -91,8 +108,6 @@ typedef struct ScmEnvFrameRec {
 #define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
 #define ENV_FP(env)        (((ScmObj*)(env))-((env)->size))
 #define ENV_DATA(env, num) (*(((ScmObj*)(env))-(num)-1))
-
-SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
 
 /*
  * Continuation frame
@@ -107,7 +122,7 @@ typedef struct ScmContFrameRec {
     ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
     SCM_PCTYPE pc;                /* next PC */
-    ScmObj info;                  /* debug info */
+    ScmCompiledCode *base;        /* base register value */
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
@@ -247,6 +262,22 @@ SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMFinalizerRun(ScmVM *vm);
 
 /*
+ * Statistics
+ *
+ *  Not much stats are collected yet, but will grow in future.
+ *  Stats collections are only active if SCM_COLLECT_VM_STATS 
+ *  runtime flag is TRUE.
+ *  Stats are collected per-VM (i.e. per-thread), but currently
+ *  we don't have an API to gather them.
+ */
+
+typedef struct ScmVMStatRec {
+    /* Stack overflow handler */
+    u_long     sovCount; /* # of stack overflow */
+    double     sovTime;  /* cumulated time of stack ov handling */
+} ScmVMStat;
+
+/*
  * VM structure
  *
  *  In Gauche, each thread has a VM.  Indeed, the Scheme object
@@ -295,8 +326,9 @@ struct ScmVMRec {
     ScmVMParameterTable parameters; /* parameter table */
 
     /* Registers */
-    SCM_PCTYPE pc;              /* Program pointer.  Points list of
-                                   instructions to be executed.              */
+    ScmCompiledCode *base;      /* Current executing closure's code packet. */
+    SCM_PCTYPE pc;              /* Program pointer.  Points into the code
+                                   vector. (base->code) */
     ScmEnvFrame *env;           /* Current environment.                      */
     ScmContFrame *cont;         /* Current continuation.                     */
     ScmObj *argp;               /* Current argument pointer.  Points
@@ -336,13 +368,16 @@ struct ScmVMRec {
     /* Signal information */
     ScmSignalQueue sigq;
     sigset_t sigMask;           /* current signal mask */
+
+    /* Statistics */
+    ScmVMStat stat;
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module, ScmObj name);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj);
-SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmObj program);
-SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmObj program);
+SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, ScmObj *pc);
+SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, ScmObj *pc);
 
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
@@ -468,9 +503,11 @@ enum {
     SCM_ERROR_BEING_REPORTED = (1L<<1), /* we're in an error reporter */
     SCM_LOAD_VERBOSE         = (1L<<2), /* report loading files */
     SCM_CASE_FOLD            = (1L<<3), /* symbols are case insensitive */
-    SCM_LIMIT_MODULE_MUTATION = (1L<<4)  /* disable set! to modify the
-                                            global binding in the other
-                                            module */
+    SCM_LIMIT_MODULE_MUTATION = (1L<<4),/* disable set! to modify the
+                                           global binding in the other
+                                           module */
+    SCM_COLLECT_VM_STATS     = (1L<<5)  /* enable statistics collection
+                                           (incurs runtime overhead) */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))

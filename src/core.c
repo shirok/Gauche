@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.61 2004-11-26 01:45:39 shirok Exp $
+ *  $Id: core.c,v 1.61.2.1 2004-12-23 06:57:21 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -200,6 +200,24 @@ void Scm_Exit(int code)
         Scm_Apply(SCM_CDAR(hp), SCM_NIL);
     }
     Scm_FlushAllPorts(TRUE);
+
+    /* Print statistics.
+       TODO: this should be enabled by separately from
+       SCM_COLLECT_VM_STATS flag, so that application can cutomize
+       how to utilize the statistics data. */
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS)) {
+        fprintf(stderr, "\n;; Statistics (*: main thread only):\n");
+        fprintf(stderr,
+                ";;  GC: %dbytes heap, %dbytes allocated\n",
+                GC_get_heap_size(), GC_get_total_bytes());
+        fprintf(stderr,
+                ";;  stack overflow*: %dtimes, %.2fms total/%.2fms avg\n",
+                vm->stat.sovCount,
+                vm->stat.sovTime/1000.0,
+                (vm->stat.sovCount > 0?
+                 (vm->stat.sovTime/vm->stat.sovCount)/1000.0 :
+                 0.0));
+    }
 
     exit(code);
 }

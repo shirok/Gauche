@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.77 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: main.c,v 1.77.2.1 2004-12-23 06:57:21 shirok Exp $
  */
 
 #include <unistd.h>
@@ -114,6 +114,9 @@ void further_options(const char *optarg)
     }
     else if (strcmp(optarg, "case-fold") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
+    }
+    else if (strcmp(optarg, "collect-stats") == 0) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_COLLECT_VM_STATS);
     }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
@@ -340,8 +343,9 @@ int main(int argc, char **argv)
             result = Scm_Apply(mainproc, SCM_LIST1(av));
             if (SCM_INTP(result)) Scm_Exit(SCM_INT_VALUE(result));
             else Scm_Exit(70);  /* EX_SOFTWARE, see SRFI-22. */
+        } else {
+            Scm_Exit(0);
         }
-        Scm_Exit(0);
     }
 
     /* Now we're in interactive mode. (use gauche.interactive) */

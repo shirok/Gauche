@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.39 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: proc.c,v 1.39.2.1 2004-12-23 06:57:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -56,7 +56,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         }
         SCM_PUTC('>', port);
     } else {
-        Scm_Printf(port, "#<closure %p%S>", obj, Scm_VMGetBindInfo(info));
+        Scm_Printf(port, "#<closure %S>", info);
     }
 }
 
@@ -65,19 +65,17 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
  */
 
 ScmObj Scm_MakeClosure(int required, int optional,
-                       ScmObj code, ScmObj info)
+                       ScmObj code, ScmEnvFrame *env)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
-    
+    ScmObj info;
+
+    SCM_ASSERT(SCM_COMPILED_CODE(code));
+    info = Scm_CompiledCodeArgInfo(SCM_COMPILED_CODE(code));
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
     SCM_PROCEDURE_INIT(c, required, optional, SCM_PROC_CLOSURE, info);
-#ifndef GAUCHE_USE_NVM
     c->code = code;
-#else   /*GAUCHE_USE_NVM*/
-    SCM_ASSERT(SCM_IVECTORP(code));
-    c->code = SCM_IVECTOR(code);
-#endif  /*GAUCHE_USE_NVM*/
-    c->env = Scm_GetCurrentEnv();
+    c->env = env;
     return SCM_OBJ(c);
 }
 

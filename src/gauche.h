@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.403 2004-12-18 04:11:12 shirok Exp $
+ *  $Id: gauche.h,v 1.403.2.1 2004-12-23 06:57:21 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2040,11 +2040,7 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
     ScmProcedure common;
-#ifdef GAUCHE_USE_NVM
-    ScmIVector *code;           /* compiled code */
-#else
     ScmObj code;                /* compiled code */
-#endif
     ScmEnvFrame *env;           /* environment */
 };
 
@@ -2053,7 +2049,7 @@ struct ScmClosureRec {
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
 
 SCM_EXTERN ScmObj Scm_MakeClosure(int required, int optional,
-				  ScmObj code, ScmObj info);
+				  ScmObj code, ScmEnvFrame *env);
 
 /* Subr - C defined procedure */
 struct ScmSubrRec {
