@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.212 2002-06-11 11:10:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.213 2002-06-14 00:07:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12804,7 +12804,7 @@ it to @var{dst}, then removes @var{src}.
 @mdindex gauche.charconv
 @c EN
 This module defines a set of functions that converts character encoding
-of the given data stream.
+schemes (CES) of the given data stream.
 This module also overloads Gauche's file stream creating functions
 (such as @code{open-input-file} and @code{call-with-output-file})
 so that they accept @code{:encoding} keyword argument.
@@ -12816,35 +12816,52 @@ so that they accept @code{:encoding} keyword argument.
 @c COMMON
 
 @c EN
-Internally, charconv module uses @code{iconv(3)} character code
-conversion library.
-The supported character encoding schemes (CES) are limited to what
-the underlying @code{iconv} supports.   Unfortunately, there is no
-standard way to query supported CES's from the system.  You have to
-check the manual of your iconv system (try @code{man iconv}) to find
-out what CES's are supported.
+As of release 0.5.6, Gauche natively supports conversions between
+typical Japanese character encodings: ISO2022JP, ISO2022JP-3,
+EUC-JP (EUC-JISX0213), Shift_JISX0213, UTF-8 (Unicode 3.2).
+Conversions between other encodings are handled by @code{iconv(3)}.
+@xref{Supported character encoding schemes}, for details.
 @c JP
-charconvモジュールは@code{iconv(3)}ライブラリを利用して文字コードを変換します。
-従って、変換可能な文字符号化方法(CES)は使用している@code{iconv}ライブラリが
-サポートするものに制限されます。どのCESがサポートされているかをプログラムから知るための
-APIは無いので、サポートされているCESを知るにはシステムのiconvのマニュアルを
-参照してください。
+リリース0.5.6より、Gaucheは日本語の主要エンコーディング
+(ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213), 
+UTF-8 (Unicode 3.2)間の変換を自前で持つようになりました。
+上記以外のコードとの変換は@code{iconv(3)}を利用します。
+サポートされるコーディングシステムに関する詳細は
+@ref{Supported character encoding schemes}を参照して下さい。
+@c COMMON
+@end deftp
+
+@menu
+* Supported character encoding schemes::  
+* Autodetecting the encoding scheme::  
+* Conversion ports::            
+* Extended port procedures::    
+@end menu
+
+@node Supported character encoding schemes, Autodetecting the encoding scheme, Character code conversion, Character code conversion
+@subsection Supported character encoding schemes
+@c NODE サポートされる文字エンコーディング
+
+@c EN
+A CES is represented by its name as a string.
+Case is ignored.  There may be several aliases defined for a single encoding.
+@c JP
+CESの名前は文字列で指定します。大文字小文字の違いは無視されます。
+同じCESにいくつかの別名がついていることがあります。
 @c COMMON
 
 @c EN
-A CES is represented by its name as a string (case insignificant).
-There may be several aliases defined for a single encoding.
-For example, both @code{"EUC-JP"} and @code{"EUCJP"} may work on the EUC-JP
-encoding.  The iconv in glibc 2.1 or later recognizes following
-names for the typical Japanese CES.
+Conversion between any two of the following CESes is handled by Gauche's
+built-in algorithm.  When other CES name is given, Gauche uses
+@code{iconv(3)} if it is linked.
 @c JP
-CESの名前は文字列で指定します。大文字小文字の違いは無視されます。
-同じCESにいくつかの名前がついていることがあります。例えば、@code{"EUC-JP"}と@code{"EUCJP"}
-はともにEUC-JPエンコーディングを指定するのに使えるかもしれません。
-glibc 2.1附属のiconvでは、次のようなCES名がよくある日本語のCESとして認識されるようです。
+以下のCES間の変換に関しては、Gaucheが内部に変換アルゴリズムを持っています。
+それ以外のCESに関しては、リンクされていればGaucheは@code{iconv(3)}を用いて
+変換を行います。
 @c COMMON
 
-@table @code
+
+@multitable {aaaaaaaa} {aaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item "EUC-JP", "EUCJP"
 EUC-JP
 @item "SJIS", "SHIFT-JIS"
@@ -12854,6 +12871,27 @@ UTF-8
 @item "CSISO2022JP"
 ISO-2022-JP
 @end table
+
+@c EN
+You can check whether the specific conversion is supported on
+your system or not, by the following function.
+@c JP
+特定の変換がシステムでサポートされているかどうかは次の手続きで調べることができます。
+@c COMMON
+
+@defun ces-conversion-supported? from-ces to-ces
+@c EN
+Returns @code{#t} if conversion from the character encoding scheme
+(CES) @var{from-ces} to @var{to-ces} is supported in this system.
+@c JP
+符号化方法@var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, Character code conversion
+@subsection Autodetecting the encoding scheme
+@c NODE 文字エンコーディングの自動判定
 
 @c EN
 There are cases that you don't know the CES of the input, but
@@ -12883,24 +12921,30 @@ This name can be used in place of CES name for some conversion functions.
 @c JP
 このアルゴリズム名は、いくつかの変換関数においてCES名の代わりに使うことができます。
 @c COMMON
-@end deftp
 
-@c EN
-You can check whether the specific conversion is supported on
-your system or not, by the following function.
-@c JP
-特定の変換がシステムでサポートされているかどうかは次の手続きで調べることができます。
-@c COMMON
 
-@defun ces-conversion-supported? from-ces to-ces
+@defun ces-guess-from-string string scheme
 @c EN
-Returns @code{#t} if conversion from the character encoding scheme
-(CES) @var{from-ces} to @var{to-ces} is supported in this system.
+Guesses the CES of @var{string} by the character guessing scheme
+@var{scheme} (e.g. "*JP").  Returns CES name that can be used
+by other charconv functions.   It may return @code{#f} if the
+guessing scheme finds no possible encoding in @var{string}.
+Note that if there may be more than one possible encoding in
+@var{string}, the guessing scheme returns one of them,
+usually in favor of the native CES.
 @c JP
-符号化方法@var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
-そうでなければ@code{#f}を返します。
+文字列@var{string}のCESを、CES推測アルゴリズム@var{scheme} ("*JP"など)
+を使って推測し、結果のCES名を返します。もしどのCESにも該当しないデータが
+含まれていれば@code{#f}が返されます。複数のCESが可能である場合、
+ネイティブエンコーディングが含まれていればそれを、そうでなければ可能なCESからどれか
+ひとつが選んで返されます。
 @c COMMON
 @end defun
+
+
+@node Conversion ports, Extended port procedures, Autodetecting the encoding scheme, Character code conversion
+@subsection Conversion ports
+@c NODE 変換ポート
 
 @c EN
 And the followings are the conversion function.
@@ -13033,6 +13077,35 @@ and true, however, it closes @var{sink} when it is closed.
 @c COMMON
 @end defun
 
+@defun ces-convert string from-code &optional to-code
+@c EN
+Convert @var{string}'s character encoding from @var{from-code}
+to @var{to-code}, and returns the converted string.
+The returned string may be a byte-string if @var{to-code}
+is different from the native CES.
+@c JP
+@var{from-code}でエンコーディングされた文字列@var{string}を
+@var{to-code}でエンコーディングされた文字列に変換します。
+@var{to-code}がネイティブエンコーディングで無い場合、返される文字列は
+バイト文字列(不完全な文字列)であるかもしれません。
+@c COMMON
+
+@c EN
+@var{from-code} can be a name of character guessing scheme
+(e.g. "*JP").  when @var{to-code} is omitted, the native CES is
+assumed.
+@c JP
+@var{from-code}にはCES推測アルゴリズム名("*JP"など)を与えることができます。
+@var{to-code}が省略された場合はネイティブエンコーディングと見なされます。
+@c COMMON
+@end defun
+
+
+
+@node Extended port procedures,  , Conversion ports, Character code conversion
+@subsection Extended port procedures
+@c NODE 拡張されたポート手続き
+
 
 @defun open-input-file filename &keyword encoding conversion-buffer-size @dots{}
 @defunx call-with-input-file filename proc &keyword encoding conversion-buffer-size @dots{}
@@ -13063,47 +13136,6 @@ meaning as @var{buffer-size} of @code{open-input-conversion-port}.
 
 @var{conversion-buffer-size}は@code{open-input-conversion-port}
 における@var{buffer-size}と同じ意味を持ちます。
-@c COMMON
-@end defun
-
-@defun ces-convert string from-code &optional to-code
-@c EN
-Convert @var{string}'s character encoding from @var{from-code}
-to @var{to-code}, and returns the converted string.
-The returned string may be a byte-string if @var{to-code}
-is different from the native CES.
-@c JP
-@var{from-code}でエンコーディングされた文字列@var{string}を
-@var{to-code}でエンコーディングされた文字列に変換します。
-@var{to-code}がネイティブエンコーディングで無い場合、返される文字列は
-バイト文字列(不完全な文字列)であるかもしれません。
-@c COMMON
-
-@c EN
-@var{from-code} can be a name of character guessing scheme
-(e.g. "*JP").  when @var{to-code} is omitted, the native CES is
-assumed.
-@c JP
-@var{from-code}にはCES推測アルゴリズム名("*JP"など)を与えることができます。
-@var{to-code}が省略された場合はネイティブエンコーディングと見なされます。
-@c COMMON
-@end defun
-
-@defun ces-guess-from-string string scheme
-@c EN
-Guesses the CES of @var{string} by the character guessing scheme
-@var{scheme} (e.g. "*JP").  Returns CES name that can be used
-by other charconv functions.   It may return @code{#f} if the
-guessing scheme finds no possible encoding in @var{string}.
-Note that if there may be more than one possible encoding in
-@var{string}, the guessing scheme returns one of them,
-usually in favor of the native CES.
-@c JP
-文字列@var{string}のCESを、CES推測アルゴリズム@var{scheme} ("*JP"など)
-を使って推測し、結果のCES名を返します。もしどのCESにも該当しないデータが
-含まれていれば@code{#f}が返されます。複数のCESが可能である場合、
-ネイティブエンコーディングが含まれていればそれを、そうでなければ可能なCESからどれか
-ひとつが選んで返されます。
 @c COMMON
 @end defun
 
