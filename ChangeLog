@@ -1,3 +1,8 @@
+2002-06-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c : added reader syntax for UCS characters: #\uXXXX
+	  for character literal,  and \uXXXX escape sequence in string literal.
+
 2002-06-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c, src/extlib.stub : added ucs<->char conversion routine
