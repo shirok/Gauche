@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.376 2003-02-27 12:17:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.377 2003-03-10 05:44:15 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24230,11 +24230,18 @@ always a copy of @var{s}, even no character is dropped.
 
 @defun string-index s char/char-set/pred &optional start end
 @defunx string-index-right s char/char-set/pred &optional start end
+@c EN
 [SRFI-13] Looks for the first element in a string @var{s}
 that matches @var{char/char-set/pred}, and returns its index.
 If @var{char/char-set/pred} is not found in @var{s}, returns @code{#f}.
 Optional @var{start} and @var{end} limit the range of @var{s} to search.
-
+@c JP
+[SRFI-13] 文字列@var{s}の中で、@var{char/char-set/pred}にマッチする
+最初の要素を探し、そのインデックスを返します。
+@var{s}の中に@var{char/char-set/pred}が見つからない場合は、@code{#f}を
+返します。オプションの@var{start}と@var{end}は、@var{s}の中で検索対象と
+なる範囲を制限します。
+@c COMMON
 @example
 (string-index "Aloha oe" #\a) @result{} 4
 (string-index "Aloha oe" #[Aa]) @result{} 0
@@ -24243,35 +24250,63 @@ Optional @var{start} and @var{end} limit the range of @var{s} to search.
 (string-index "Aloha oe" #\o 3) @result{} 6
 @end example
 
-
+@c EN
 See also the Gauche built-in procedure @code{string-scan}
 (@ref{String utilities}), if you need speed over portability.
+@c JP
+速度よりもポータビリティを重視する場合は、Gaucheのビルトイン手続き
+@code{string-scan}(@ref{String utilities})を参照して下さい。
+@c COMMON
 @end defun
 
 @defun string-skip s char/char-set/pred &optional start end
 @defunx string-skip-right s char/char-set/pred &optional start end
+@c EN
 [SRFI-13] Looks for the first element that does not match
 @var{char/char-set/pred} and returns its index.
 If such element is not found, returns @code{#f}.
 Optional @var{start} and @var{end} limit the range of @var{s} to search.
+@c JP
+[SRFI-13] @var{char/char-set/pred}にマッチしない最初の要素を探し、
+そのインデックスを返します。そのような要素が見つからない場合、@code{#f}を
+返します。オプションの@var{start}と@var{end}は、@var{s}の中で検索対象と
+なる範囲を制限します。
+@c COMMON
 @end defun
 
 @defun string-count s char/char-set/pred &optional start end
+@c EN
 [SRFI-13] Counts the number of elements in @var{s}
 that matches @var{char/char-set/pred}.
 Optional @var{start} and @var{end} limit the range of @var{s} to search.
+@c JP
+[SRFI-13] @var{s}の中で、@var{char/char-set/pred}にマッチする要素の数を
+カウントします。オプションの@var{start}と@var{end}は、@var{s}の中で検索対象と
+なる範囲を制限します。
+@c COMMON
 @end defun
 
 @defun string-contains s1 s2 &optional start1 end1 start2 end2
 @defunx string-contains-ci s1 s2 &optional start1 end1 start2 end2
+@c EN
 [SRFI-13] Looks for a string @var{s2} inside another string @var{s1}.
-If found, returns an index in @var{s1} from where the maching string
+If found, returns an index in @var{s1} from where the matching string
 begins.  Returns @code{#f} otherwise.
 Optional @var{start1}, @var{end1}, @var{start2} and @var{end2}
 limits the range of @var{s1} and @var{s2}.
 
 See also the Gauche built-in procedure @code{string-scan}
 (@ref{String utilities}), if you need speed over portability.
+@c JP
+[SRFI-13] @var{s1}の中で、文字列@var{s2}を探します。見つかった場合は、
+@var{s1}でマッチした文字列が始まるインデックスを返します。そうでなければ、
+@code{#f}を返します。
+オプションの@var{start1}、@var{end1}、@var{start2}、@var{end2}は、
+@var{s1}と@var{s2}の範囲を制限します。
+
+速度よりもポータビリティを重視する場合は、Gaucheのビルトイン手続き
+@code{string-scan}(@ref{String utilities})を参照して下さい。
+@c COMMON
 @end defun
 
 @node SRFI-13 String case mapping, SRFI-13 String reverse & append, SRFI-13 String searching, srfi-13 - String library
