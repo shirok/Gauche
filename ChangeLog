@@ -1,3 +1,8 @@
+2004-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (delete_entry): fixed a bug that didn't decrement
+	  numEntries when an entry was deleted.
+
 2004-02-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (readline_body): fixed a line count problem

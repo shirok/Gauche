@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.31 2004-01-20 05:10:25 shirok Exp $
+ *  $Id: hash.c,v 1.32 2004-02-21 06:27:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -170,6 +170,8 @@ static ScmHashEntry *delete_entry(ScmHashTable *table,
 {
     if (prev) prev->next = entry->next;
     else table->buckets[index] = entry->next;
+    table->numEntries--;
+    SCM_ASSERT(table->numEntries >= 0);
     return entry;
 }
 
