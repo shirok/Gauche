@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.378 2003-03-25 06:18:37 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.379 2003-03-26 00:43:56 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -25108,17 +25108,57 @@ Type of returned time is the same as @var{time0}.  Type of
 
 @deftp {Class} <date>
 @clindex date
-@c EN
-@c JP
-@c COMMON
+Represents a date.
+
+@defivar nanosecond
+Nanosecond portion of the date by an integer between 0 and 999,999,999,
+inclusive.
+@end defivar
+
+@defivar second
+Second portion of the date by an integer between 0 and 60, inclusive.
+(60 for leap second).
+@end defivar
+
+@defivar minute
+Minute portion of the date by an integer between 0 and 59, inclusive.
+@end defivar
+
+@defivar hour
+Hour portion of the date by an integer between 0 and 23, inclusive.
+@end defivar
+
+@defivar day
+Day portion of the date by an integer between 0 and 31, inclusive.
+The actual upper bound of the day is determined by the year and the month.
+(Note: 1 is for the first day; 0 is allowed by the specification,
+but I don't see why).
+@end defivar
+
+@defivar month
+Month portion of the date by an integer between 1 and 12, inclusive.
+1 for January, 2 for February, and so on.
+(Note: this is different from POSIX's @code{<sys-tm>} convention).
+@end defivar
+
+@defivar year
+Year portion of the date.
+@end defivar
+
+@defivar zone-offser
+The number of seconds east of GMT for this timezone, by an integer.
+@end defivar
 @end deftp
 
 @defun make-date nanosecond second minute hour day month year zone-offset
 [SRFI-19]
+Makes a @code{<date>} object from the given values.
+Note: this procedure does not check if the values are in the valid range.
 @end defun
 
-@defun date?
+@defun date? obj
 [SRFI-19]
+Returns truee iff @var{obj} is a @code{<date>} object.
 @end defun
 
 @defun date-nanosecond date
@@ -25130,12 +25170,21 @@ Type of returned time is the same as @var{time0}.  Type of
 @defunx date-year date
 @defunx date-zone-offset date
 [SRFI-19]
+Accessors.
 @end defun
 
 @defun date-year-day date
 @defunx date-week-day date
 @defunx date-week-number date day-of-week-starting-week
 [SRFI-19]
+Calculates the day number in the year (1 for January 1st),
+the day number in the week (0 for Sunday, 1 for Monday, ...),
+and the ordinal week of the year which holds this date,
+ignoring a first partial week, respectively.
+
+@var{Day-of-week-starting-week} is the integer corresponding to
+the day of the week which is to be considered the first day of
+the week (Sunday=0, Monday=1, etc.).
 @end defun
 
 @defun date->julian-day date
