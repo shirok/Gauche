@@ -1,7 +1,7 @@
 /*
  * main.c - interpreter main program
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.54 2002-07-09 04:56:45 shirok Exp $
+ *  $Id: main.c,v 1.55 2002-07-10 22:00:18 shirok Exp $
  */
 
 #include <unistd.h>
@@ -60,8 +60,14 @@ void usage(void)
 
 void version(void)
 {
-    printf("Gauche scheme interpreter, version %s [%s]\n",
-           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME);
+    printf("Gauche scheme interpreter, version %s [%s%s]\n",
+           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME,
+#ifdef GAUCHE_USE_PTHREADS
+           ",pthreads"
+#else
+           ""
+#endif
+        );
     exit(0);
 }
 
