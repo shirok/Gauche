@@ -12,13 +12,8 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.33 2002-04-13 06:39:55 shirok Exp $
+ *  $Id: bignum.c,v 1.34 2002-04-13 07:17:55 shirok Exp $
  */
-
-#include <math.h>
-#include <limits.h>
-#define LIBGAUCHE_BODY
-#include "gauche.h"
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
  * is not very critical for Gauche, except a few special cases (like
@@ -38,6 +33,26 @@
  * can be useful to write efficient routine.
  */
 /* Cf: Knuth: The Art of Computer Programming, sectin 4.3 */
+
+/* AIX requires this to be the first thing in the file.  */
+#ifndef __GNUC__
+# if HAVE_ALLOCA_H
+#  include <alloca.h>
+# else
+#  ifdef _AIX
+#pragma alloca
+#  else
+#   ifndef alloca /* predefined by HP cc +Olibcalls */
+char *alloca ();
+#   endif
+#  endif
+# endif
+#endif
+
+#include <math.h>
+#include <limits.h>
+#define LIBGAUCHE_BODY
+#include "gauche.h"
 
 #define SCM_ULONG_MAX      ((u_long)(-1L)) /* to be configured */
 #define WORD_BITS          (SIZEOF_LONG * 8)
@@ -90,12 +105,17 @@ static ScmBignum *make_bignum(int size)
 
 /* Allocate temporary bignum in the current function's stack frame
    if alloca() is available. */
+#ifdef HAVE_ALLOCA
 #define ALLOC_TEMP_BIGNUM(var_, size_)                  \
     (var_) = SCM_BIGNUM(alloca(BIGNUM_SIZE(size_)));    \
     SCM_SET_CLASS(var_, SCM_CLASS_INTEGER);             \
     (var_)->size = (size_);                             \
     (var_)->sign = 1;                                   \
     bignum_clear(var_)
+#else  /*!HAVE_ALLOCA*/
+#define ALLOC_TEMP_BIGNUM(var_, size)           \
+    (var_) = make_bignum(size_);
+#endif /*!HAVE_ALLOCA*/
 
 ScmObj Scm_MakeBignumFromSI(long val)
 {

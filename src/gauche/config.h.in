@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.22 2002-03-28 19:50:54 shirok Exp $
+ * $Id: config.h.in,v 1.23 2002-04-13 07:17:55 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -73,6 +73,10 @@
 
 /* Define if the system has putenv */
 #undef HAVE_PUTENV
+
+/* Define if the compiler has alloca support */
+#undef HAVE_ALLOCA_H
+#undef HAVE_ALLOCA
 
 /* Define if the system has gr_passwd defined in struct group */
 #undef HAVE_GR_PASSWD
