@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.2 2001-11-02 10:31:03 shirok Exp $
+;;;  $Id: queue.scm,v 1.3 2001-11-02 10:46:40 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
@@ -15,6 +15,9 @@
 ;; The API is upper compatible with SLIB's queue module.
 
 (define-module util.queue
+  (export make-queue queue? queue-empty?
+          queue-push! enqueue! queue-pop! dequeue!
+          queue-front queue-rear)
   )
 (select-module util.queue)
 
@@ -61,7 +64,7 @@
       (if (null? objs)
           (set-cdr! q tail)
           (begin (set-cdr! tail (list (car objs)))
-                 (loop (cdr tail) (cdr more-objs))))))
+                 (loop (cdr tail) (cdr objs))))))
   q)
 
 (define (queue-front q)
