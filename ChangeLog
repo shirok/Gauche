@@ -1,3 +1,8 @@
+2004-04-20  Kimura Fuyuki  <fuyuki@hadaly.org>
+
+	* config.guess, config.sub, install-sh, mkinstalldirs : updated
+	  autotools' scripts.
+
 2004-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/util.scm (file-is-symlink?): added.
