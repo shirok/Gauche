@@ -1,3 +1,8 @@
+2003-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.[ch]: applied a patch from John Kilburg to support
+	  datagram socket.
+
 2003-01-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/boolean.c (Scm_EqualP): check eq?-ness first.

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.21 2002-07-13 07:40:03 shirok Exp $
+ *  $Id: net.c,v 1.22 2003-01-04 23:51:47 shirok Exp $
  */
 
 #include "net.h"
@@ -76,7 +76,7 @@ static void socket_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, ">");
 }
 
-ScmSocket *make_socket(int fd)
+ScmSocket *make_socket(int fd, int type)
 {
     ScmSocket *s = SCM_NEW(ScmSocket);
     GC_finalization_proc ofn; GC_PTR ocd;
@@ -86,6 +86,7 @@ ScmSocket *make_socket(int fd)
     s->inPort = s->outPort = NULL;
     s->address = NULL;
     s->name = NULL;
+    s->type = type;
     GC_REGISTER_FINALIZER(s, socket_finalize, NULL, &ofn, &ocd);
     return s;
 }
@@ -95,7 +96,7 @@ ScmObj Scm_MakeSocket(int domain, int type, int protocol)
     ScmSocket *s;
     int sock = Scm_SysCall(socket(domain, type, protocol));
     if (sock < 0) Scm_SysError("couldn't create socket");
-    return SCM_OBJ(make_socket(sock));
+    return SCM_OBJ(make_socket(sock, type));
 }
 
 ScmObj Scm_SocketShutdown(ScmSocket *s, int how)
@@ -122,7 +123,8 @@ ScmObj Scm_SocketClose(ScmSocket *s)
 ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 {
     if (sock->inPort == NULL) {
-        if (sock->status < SCM_SOCKET_STATUS_CONNECTED) {
+        if (sock->type != SOCK_DGRAM &&
+            sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             Scm_Error("attempt to obtain an input port from unconnected socket: %S",
                       SCM_OBJ(sock));
         }
@@ -136,7 +138,8 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 {
     if (sock->outPort == NULL) {
-        if (sock->status < SCM_SOCKET_STATUS_CONNECTED) {
+        if (sock->type != SOCK_DGRAM &&
+            sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             Scm_Error("attempt to obtain an output port from an unconnected socket: %S",
                       SCM_OBJ(sock));
         }
@@ -204,7 +207,7 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
             Scm_SysError("accept(2) failed");
         }
     }
-    newsock = make_socket(newfd);
+    newsock = make_socket(newfd, sock->type);
     newsock->address =
         SCM_SOCKADDR(Scm_MakeSockAddr(addrClass,
                                       (struct sockaddr *)addrbuf,

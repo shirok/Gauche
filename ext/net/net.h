@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.11 2002-02-11 09:51:30 shirok Exp $
+ *  $Id: net.h,v 1.12 2003-01-04 23:51:48 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -98,6 +98,7 @@ typedef struct ScmSocketRec {
     SCM_HEADER;
     int fd;                     /* -1 if closed */
     int status;
+    int type;
     ScmSockAddr *address;
     ScmPort *inPort;
     ScmPort *outPort;
