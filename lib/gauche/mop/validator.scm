@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: validator.scm,v 1.2 2002-10-21 10:44:54 shirok Exp $
+;;;  $Id: validator.scm,v 1.3 2002-12-09 04:31:00 shirok Exp $
 ;;;
 
 (define-module gauche.mop.validator
@@ -24,18 +24,25 @@
   ())
 
 (define-method compute-get-n-set ((class <validator-meta>) slot)
-  (cond ((slot-definition-option slot :validator #f)
-         => (lambda (validator)
-              (unless (procedure? validator)
-                (error "a procedure required for validator, but got"
-                       validator))
-              (let ((acc (compute-slot-accessor class slot (next-method))))
-                (list (lambda (o) (slot-ref-using-accessor o acc))
-                      (lambda (o v)
-                        (slot-set-using-accessor o acc (validator o v)))
-                      ;; the last #t enables initialization by :initform etc.
-                      #t))))
-        (else (next-method))))
+  (let ((pre  (slot-definition-option slot :validator #f))
+        (post (slot-definition-option slot :post-validator #f)))
+    (if (or pre post)
+        (let* ((acc (compute-slot-accessor class slot (next-method)))
+               (getter (lambda (o) (slot-ref-using-accessor o acc)))
+               (setter (cond ((and pre post)
+                              (lambda (o v)
+                                (slot-set-using-accessor o acc (pre o v))
+                                (post o (slot-ref-using-accessor o acc))))
+                             (pre
+                              (lambda (o v)
+                                (slot-set-using-accessor o acc (pre o v))))
+                             (else
+                              (lambda (o v)
+                                (slot-set-using-accessor o acc v)
+                                (post o (slot-ref-using-accessor o acc)))))))
+          ;; the last #t enables initialization by :initform etc.
+          (list getter setter #t))
+        (next-method))))
 
 ;; convenience base class.  you can either inherit <validator-mixin>,
 ;; or specifying :metaclass <validator-meta> to your class.
