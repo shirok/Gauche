@@ -12,11 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.8 2001-03-27 10:16:50 shiro Exp $
+;;;  $Id: object.scm,v 1.9 2001-03-28 08:45:45 shiro Exp $
 ;;;
 
 (select-module gauche)
 (use srfi-17) ;; generalized set!.  TODO: support it natively!
+(use srfi-2)  ;; and-let*
 
 ;; Bootstrapping "make"
 ;;   We already have generic-function for "make" defined in C.  Just wanted
@@ -275,6 +276,30 @@
                   (car slot) class)))
       (else
        (error "unsupported slot allocation: ~s" alloc)))))
+
+;; access class allocated slot.  API compatible with Goops.
+(define class-slot-ref  (undefined))
+(define class-slot-set! (undefined))
+(let ()
+  (define (class-slot-gns class slot-name)
+    (or (and-let* ((slot  (class-slot-definition class slot-name))
+                   (alloc (slot-definition-allocation slot))
+                   ((memv alloc '(:class :each-subclass)))
+                   (acc   (class-slot-accessor class slot-name)))
+          (slot-ref acc 'getter-n-setter))
+        (error "attempt to access non-existent or non-class allocated slot ~s of class ~s as a class slot."
+               slot-name class)))
+
+  (set! class-slot-ref
+        (lambda (class slot-name)
+          (let ((val (apply (car (class-slot-gns class slot-name)) '(#f))))
+            (if (undefined? val)
+                (slot-unbound class slot-name)
+                val))))
+  (set! class-slot-set!
+        (lambda (class slot-name val)
+          (apply (cdr (class-slot-gns class slot-name)) (list #f val))))
+  )
 
 (define-method slot-unbound ((class <class>) obj slot)
   (error "slot ~s of object ~s is unbound" slot obj))
