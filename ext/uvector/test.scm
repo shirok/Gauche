@@ -1143,6 +1143,28 @@
 (test* "string->u8vector (OOB)" *test-error*
        (string->u8vector "abcde" 2 6))
 
+(test* "string->u8vector!" '#u8(64 65 66 67 68)
+       (let ((v (u8vector 0 1 2 3 4)))
+         (string->u8vector! v 0 "@ABCD")))
+(test* "string->u8vector!" '#u8(64 65 66 67 68)
+       (let ((v (u8vector 0 1 2 3 4)))
+         (string->u8vector! v 0 "@ABCDEFGHIJKLMNOPQRTSUVWXYZ")))
+(test* "string->u8vector!" '#u8(64 65 66 3 4)
+       (let ((v (u8vector 0 1 2 3 4)))
+         (string->u8vector! v 0 "@AB")))
+(test* "string->u8vector!" '#u8(0 64 65 66 4)
+       (let ((v (u8vector 0 1 2 3 4)))
+         (string->u8vector! v 1 "@AB")))
+(test* "string->u8vector!" '#u8(0 1 2 3 65)
+       (let ((v (u8vector 0 1 2 3 4)))
+         (string->u8vector! v 4 "@ABCDE" 1)))
+(test* "string->u8vector!" '#u8(0 1 2 3 4)
+       (let ((v (u8vector 0 1 2 3 4)))
+         (string->u8vector! v 8 "@ABCDE" 1)))
+(test* "string->u8vector!" '#u8(0 1 2 3 4)
+       (let ((v (u8vector 0 1 2 3 4)))
+         (string->u8vector! v -1 "@ABCDE" 1)))
+
 (test* "u8vector->string" "@ABCD"
        (u8vector->string '#u8(64 65 66 67 68)))
 (test* "u8vector->string (start)" "ABCD"
@@ -1164,6 +1186,28 @@
        (string->s8vector "@ABCD" 0 5))
 (test* "string->s8vector (OOB)" *test-error*
        (string->s8vector "abcde" 2 6))
+
+(test* "string->s8vector!" '#s8(64 65 66 67 68)
+       (let ((v (s8vector 0 1 2 3 4)))
+         (string->s8vector! v 0 "@ABCD")))
+(test* "string->s8vector!" '#s8(64 65 66 67 68)
+       (let ((v (s8vector 0 1 2 3 4)))
+         (string->s8vector! v 0 "@ABCDEFGHIJKLMNOPQRTSUVWXYZ")))
+(test* "string->s8vector!" '#s8(64 65 66 3 4)
+       (let ((v (s8vector 0 1 2 3 4)))
+         (string->s8vector! v 0 "@AB")))
+(test* "string->s8vector!" '#s8(0 64 65 66 4)
+       (let ((v (s8vector 0 1 2 3 4)))
+         (string->s8vector! v 1 "@AB")))
+(test* "string->s8vector!" '#s8(0 1 2 3 65)
+       (let ((v (s8vector 0 1 2 3 4)))
+         (string->s8vector! v 4 "@ABCDE" 1)))
+(test* "string->s8vector!" '#s8(0 1 2 3 4)
+       (let ((v (s8vector 0 1 2 3 4)))
+         (string->s8vector! v 8 "@ABCDE" 1)))
+(test* "string->s8vector!" '#s8(0 1 2 3 4)
+       (let ((v (s8vector 0 1 2 3 4)))
+         (string->s8vector! v -1 "@ABCDE" 1)))
 
 (test* "s8vector->string" "@ABCD"
        (s8vector->string '#s8(64 65 66 67 68)))

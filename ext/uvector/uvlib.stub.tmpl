@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.1 2004-11-05 10:34:25 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.2 2004-11-05 11:11:34 shirok Exp $
 ;;;
 
 "
@@ -222,6 +222,42 @@
                                           (end::<fixnum> -1))
   "SCM_RETURN(string_to_bytevector(SCM_CLASS_U8VECTOR, s, start, end));")
 
+"static ScmObj string_to_bytevectorX(ScmUVector *v, int tstart, ScmString *s, int start, int end)
+ {
+   int len = SCM_STRING_LENGTH(s); const char *sp, *ep; char *buf;
+   int tlen = SCM_UVECTOR_SIZE(v), i;
+
+   if (tstart >= tlen || tstart < 0) return SCM_OBJ(v);
+   SCM_UVECTOR_CHECK_MUTABLE(v);
+   SCM_CHECK_START_END(start, end, len);
+   if (start == 0) sp = SCM_STRING_START(s);
+   else sp = Scm_StringPosition(s, start);
+   if (end == len) ep = SCM_STRING_START(s)+SCM_STRING_SIZE(s);
+   else ep = Scm_StringPosition(s, end);
+
+   buf = (char *)SCM_UVECTOR_ELEMENTS(v) + tstart;
+   if (tlen - tstart > ep - sp) {
+     memcpy(buf, sp, ep - sp);
+   } else {
+     memcpy(buf, sp, tlen - tstart);
+   }
+   return SCM_OBJ(v);
+ }"
+
+(define-cproc string->s8vector! (v::<s8vector>
+                                 tstart::<int>
+                                 s::<string>
+                                 &optional (start::<fixnum> 0)
+                                           (end::<fixnum> -1))
+  "SCM_RETURN(string_to_bytevectorX(SCM_UVECTOR(v), tstart, s, start, end));")
+
+(define-cproc string->u8vector! (v::<u8vector>
+                                 tstart::<int>
+                                 s::<string>
+                                 &optional (start::<fixnum> 0)
+                                           (end::<fixnum> -1))
+  "SCM_RETURN(string_to_bytevectorX(SCM_UVECTOR(v), tstart, s, start, end));")
+
 "static ScmObj bytevector_to_string(ScmUVector *v, int start, int end)
  {
    int len = SCM_UVECTOR_SIZE(v);
@@ -229,6 +265,7 @@
    return Scm_MakeString((char *)(SCM_UVECTOR_ELEMENTS(v)+start),
                          end-start, -1, SCM_MAKSTR_COPYING);
  }"
+
 
 (define-cproc s8vector->string (v::<s8vector>
                                 &optional (start::<fixnum> 0)
