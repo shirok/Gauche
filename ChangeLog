@@ -1,3 +1,8 @@
+2005-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.scm (make-server-socket, make-server-sockets): added
+	  :sock-init keyword arguments (Patch from Tatsuya BIZENN).
+
 2005-01-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/mt-random/mt-random.scm (mt-random-integer): fixed a bug in

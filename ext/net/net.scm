@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.27 2004-06-01 03:07:33 shirok Exp $
+;;;  $Id: net.scm,v 1.28 2005-01-08 09:04:04 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -89,6 +89,8 @@
  <sockaddr-in6> <sys-addrinfo> sys-getaddrinfo make-sys-addrinfo
  |AI_PASSIVE| |AI_CANONNAME| |AI_NUMERICHOST| |AI_NUMERICSERV|
  |AI_V4MAPPED| |AI_ALL| |AI_ADDRCONFIG|
+ |IPV6_UNICAST_HOPS| |IPV6_MULTICAST_IF| |IPV6_MULTICAST_HOPS|
+ |IPV6_MULTICAST_LOOP| |IPV6_JOIN_GROUP| |IPV6_LEAVE_GROUP| |IPV6_V6ONLY|
  sys-getnameinfo
  |NI_NOFQDN| |NI_NUMERICHOST| |NI_NAMEREQD| |NI_NUMERICSERV| |NI_DGRAM|)
 
@@ -171,12 +173,15 @@
          (error "unsupported protocol:" proto))))
 
 (define (make-server-socket-from-addr addr . args)
-  (let ((reuse-addr? (get-keyword :reuse-addr? args #f))
-        (socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)))
-    (when reuse-addr?
-      (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
-    (socket-bind socket addr)
-    (socket-listen socket 5)))
+  (let-keywords* args ((reuse-addr? #f)
+		       (sock-init #f))
+    (let1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
+      (when (procedure? sock-init)
+	(sock-init socket addr))
+      (when reuse-addr?
+	(socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
+      (socket-bind socket addr)
+      (socket-listen socket 5))))
 
 (define (make-server-socket-unix path)
   (let ((address (make <sockaddr-un> :path path))
@@ -185,14 +190,8 @@
     (socket-listen socket 5)))
 
 (define (make-server-socket-inet port . args)
-  (let* ((reuse-addr? (get-keyword :reuse-addr? args #f))
-         (address (car (make-sockaddrs #f port)))
-         (socket (make-socket (address->protocol-family address)
-                              |SOCK_STREAM|)))
-    (when reuse-addr?
-      (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
-    (socket-bind socket address)
-    (socket-listen socket 5)))
+  (let1 addr (car (make-sockaddrs #f port))
+    (apply make-server-socket-from-addr addr args)))
 
 (define (make-server-sockets host port . args)
   (map (lambda (sockaddr) (apply make-server-socket sockaddr args))
