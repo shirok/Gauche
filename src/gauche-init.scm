@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.41 2001-09-29 23:44:21 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.42 2001-10-03 09:19:11 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -171,6 +171,12 @@
   (let ((proc (lambda x (apply get x))))
     (set! (setter proc) set)
     proc))
+
+;;
+;; Load common macros
+;;
+
+(require "gauche/common-macros")
 
 ;;
 ;; Load object system
