@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.95 2002-04-25 03:15:00 shirok Exp $
+ *  $Id: number.c,v 1.96 2002-05-27 12:18:43 shirok Exp $
  */
 
 #include <math.h>
@@ -453,7 +453,7 @@ ScmObj Scm_InexactToExact(ScmObj obj)
         if (d < SCM_SMALL_INT_MIN || d > SCM_SMALL_INT_MAX) {
             obj = Scm_MakeBignumFromDouble(d);
         } else {
-            obj = SCM_MAKE_INT((int)d);
+            obj = SCM_MAKE_INT((long)d);
         }
     } else if (SCM_COMPLEXP(obj)) {
         Scm_Error("exact complex is not supported: %S", obj);
