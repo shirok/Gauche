@@ -3,10 +3,12 @@
 ;;;
 ;;; Shiro Kawai (shiro@acm.org)
 ;;;
-;;; $Id: cvt.scm,v 1.1 2002-05-29 11:29:17 shirok Exp $
+;;; $Id: cvt.scm,v 1.2 2002-06-04 11:50:56 shirok Exp $
 
 (use srfi-1)
+(use srfi-2)
 (use srfi-11)
+(use gauche.collection)
 
 ;; Parse the table "euc-jp-2000-std.txt", and returns a list of all characters.
 ;; Each character is represented as
@@ -166,4 +168,83 @@
            (loop (+ column 1) data (+ next 1))))))
 
 ;; Generates UCS to EUC_JP table
-;; 
+;; The table is constructed hierarchically.
+;; This procedure first creates a tree of tables using vectors,
+;; then writes out them.
+
+(define (generate-utf8->eucj data)
+  (define root (make-hash-table 'eqv?))
+
+  (define (ensure-node container ref set key)
+    (or (ref container key #f)
+        (let1 v (make-vector 64 #f)
+          (set container key v)
+          v)))
+
+  (define (intern utf8 euc container)
+    (cond ((null? (cdr utf8))
+           (vector-set! container (- (car utf8) #x80) euc))
+          (else
+           (intern (cdr utf8) euc
+                   (ensure-node container vector-ref vector-set!
+                                (- (car utf8) #x80))))
+          ))
+
+  (define (euc-entry data)
+    (cond ((not data) 0)
+          ((> data #xffff) (- (logand data #xffff) #x8000))
+          (else data)))
+
+  ;; emit the table of 2-byte utf8 range
+  (define (emit-utf2b)
+    (dolist (u0 '(#xc2 #xc3 #xc4 #xc5 #xc7 #xc9 #xca #xcb #xcc #xce #xcf))
+      (format #t "\n/* 2-byte UTF8: [~X XX] */\n" u0)
+      (format #t "static unsigned short utf2euc_~x[64] = {\n" u0)
+      (let1 v (hash-table-get root u0)
+        (dotimes (i 64)
+          (format #t " 0x~4,'0x," (euc-entry (vector-ref v i)))
+          (when (= (modulo i 8) 7) (newline))))
+      (print "};")))
+
+  ;; emit the table of 3-byte utf8 range
+  (define (emit-utf3b)
+    (dolist (u0 '(#xe2 #xe3 #xe4 #xe5 #xe6 #xe7 #xe8 #xe9 #xef))
+      (format #t "\n/* 3-byte UTF8: [~X XX XX] */\n" u0)
+      (format #t "static unsigned char utf2euc_~x[64] = {\n" u0)
+      (let* ((v1 (hash-table-get root u0))
+             (s64 (iota 64)))
+        (fold (lambda (u1 count)
+                (begin0
+                 (if (vector-ref v1 u1)
+                     (begin (format #t " ~2d," count) (+ count 1))
+                     (begin (format #t "  0,") count))
+                 (when (= (modulo u1 8) 7) (newline))))
+              1
+              s64)
+        (print "};\n")
+        (format #t "static unsigned short utf2euc_~x_xx[][64] = {\n" u0)
+        (for-each (lambda (u1)
+                    (and-let* ((v2 (vector-ref v1 u1)))
+                      (format #t " {/* [~X ~X XX] */\n" u0 (+ u1 #x80))
+                      (dotimes (i 64)
+                        (format #t " 0x~4,'0x," (euc-entry (vector-ref v2 i)))
+                        (when (= (modulo i 8) 7) (newline)))
+                      (print " },\n")))
+                  s64)
+        (print "};\n"))))
+
+  ;; build the table tree
+  (dolist (entry data)
+    (unless (pair? (cdr entry))
+      (let1 utf8 (ucs4->utf8 (cdr entry))
+        (unless (null? (cdr utf8))
+          (intern (cdr utf8) (car entry)
+                  (ensure-node root hash-table-get hash-table-put! (car utf8))
+                  )))))
+        
+  ;; emit the tables
+  (emit-utf2b)
+  (emit-utf3b)
+
+  )
+
