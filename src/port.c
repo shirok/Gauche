@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.79 2002-09-12 21:28:47 shirok Exp $
+ *  $Id: port.c,v 1.80 2002-09-18 20:25:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -122,10 +122,12 @@ ScmObj Scm_ClosePort(ScmPort *port)
     PORT_LOCK(port, vm);
     PORT_SAFE_CALL(port,
                    do {
-                       result = port_cleanup(port);
-                       if (SCM_PORT_TYPE(port) == SCM_PORT_FILE
-                           && SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
-                           unregister_buffered_port(port);
+                       if (!SCM_PORT_CLOSED_P(port)) {
+                           result = port_cleanup(port);
+                           if (SCM_PORT_TYPE(port) == SCM_PORT_FILE
+                               && SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
+                               unregister_buffered_port(port);
+                           }
                        }
                    } while (0));
     PORT_UNLOCK(port);
