@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.7 2001-05-21 08:50:02 shirok Exp $
+;; $Id: euc-jp.scm,v 1.8 2001-05-31 10:12:40 shirok Exp $
 
 (use gauche.test)
 
@@ -198,5 +198,53 @@
                    (integer-range->char-set (char->integer #\ぁ)
                                             (char->integer #\お)))))
 
+
+;;-------------------------------------------------------------------
+(test-section "buffered ports")
+
+(define (make-filler)
+  (let* ((str #"あいうえおかきくけこ")  ;incomplete string
+         (len (string-size str))
+         (ind 0))
+    (lambda (siz)
+      (cond ((>= ind len) #f)
+            ((>= (+ ind siz) len)
+             (let ((r (substring str ind len)))
+               (set! ind len)
+               r))
+            (else
+             (let ((r (substring str ind (+ ind siz))))
+               (set! ind (+ ind siz))
+               r))))))
+
+(define (port->char-list p)
+  (let loop ((c (read-char p)) (r '()))
+    (if (eof-object? c) (reverse r) (loop (read-char p) (cons c r)))))
+
+
+(test "buffered port (getc, bufsiz=256)"
+      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+      (lambda ()
+        (port->char-list (open-input-buffered-port (make-filler) 256))))
+
+(test "buffered port (getc, bufsiz=7)"
+      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+      (lambda ()
+        (port->char-list (open-input-buffered-port (make-filler) 7))))
+
+(test "buffered port (getc, bufsiz=3)"
+      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+      (lambda ()
+        (port->char-list (open-input-buffered-port (make-filler) 3))))
+
+(test "buffered port (getc, bufsiz=2)"
+      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+      (lambda ()
+        (port->char-list (open-input-buffered-port (make-filler) 2))))
+
+(test "buffered port (getc, bufsiz=1)"
+      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+      (lambda ()
+        (port->char-list (open-input-buffered-port (make-filler) 1))))
 
 (test-end)
