@@ -1,3 +1,7 @@
+2003-08-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/test.scm : adapted to ipv6
+
 2003-08-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (Scm_ReadLine): removed the big overhead of
