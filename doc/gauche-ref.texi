@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.337 2003-01-07 13:28:03 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.338 2003-01-09 12:12:42 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19400,6 +19400,8 @@ A test script will look like this:
 (load "my-feature")  ; @r{load your program}
 (import my-feature)  ; @r{if your program defines a module.}
 
+(test-module 'my-feature) ; @r{tests consistency in your module.}
+
 (test-section "feature group 1")
 (test "feature 1-1" EXPECT (lambda () TEST-BODY))
 (test "feature 1-2" EXPECT (lambda () TEST-BODY))
@@ -19421,6 +19423,8 @@ A test script will look like this:
 (test-start "my feature")
 (load "my-feature")  ; @r{テストすべきプログラムをロード}
 (import my-feature)  ; @r{モジュールを定義している場合はインポート}
+
+(test-module 'my-feature) ; @r{モジュールの一貫性チェック}
 
 (test-section "feature group 1")
 (test "feature 1-1" EXPECT (lambda () TEST-BODY))
@@ -19522,6 +19526,24 @@ A convenience macro that wraps @var{expr} by lambda.
 @end example
 @end defmac
 
+@defun test-module module
+@c EN
+@var{Module} must be a symbol module name or a module.
+This procedure performs some heuristic consistency check of
+the given module: (1) whether symbols set as autoload
+in @var{module} can actually be loaded, and (2) whether
+the symbols declared in export list is actually defined
+in the module.   Although not perfect, this test can catch
+some careless typo in symbol names.
+@c JP
+@var{Module}はモジュール名のシンボルかモジュールでなければなりません。
+この手続きはモジュール@var{module}に関していくつかの経験的な一貫性チェックを
+行います：(1) autoloadに設定されたシンボルがちゃんとロードできるか、
+(2) exportにリストされたシンボルがモジュール内で定義されているか。
+この手続きは完璧ではないものの、
+ケアレスミスによる名前の綴り間違いを発見することができます。
+@c COMMON
+@end defun
 
 @defun test-start module-name
 @c EN
