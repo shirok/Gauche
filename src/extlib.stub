@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.219 2004-05-21 21:26:37 shirok Exp $
+;;; $Id: extlib.stub,v 1.220 2004-07-05 20:29:22 shirok Exp $
 ;;;
 
 "
@@ -1023,10 +1023,10 @@
 (define-cproc provide (feature)   (return "Scm_Provide"))
 (define-cproc provided? (feature) (return <boolean> "Scm_ProvidedP"))
 
-(define-cproc %make-autoload (sym::<symbol> path::<string>
-                              &optional import-from)
-  "ScmSymbol *from = SCM_SYMBOLP(import_from)? SCM_SYMBOL(import_from) : NULL;
-   SCM_RETURN(Scm_MakeAutoload(sym, path, from));")
+;(define-cproc %make-autoload (sym::<symbol> path::<string>
+;                              &optional import-from)
+;  "ScmSymbol *from = SCM_SYMBOLP(import_from)? SCM_SYMBOL(import_from) : NULL;
+;   SCM_RETURN(Scm_MakeAutoload(sym, path, from));")
 
 (define-cproc %autoload (mod::<module> file-or-module entries)
   (return <void> "Scm_DefineAutoload"))

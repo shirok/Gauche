@@ -1,3 +1,12 @@
+2004-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_MakeAutoload): fixed a bug of autoload that
+	  fails assertion.  (Reported from SEINO Katsuhiro).
+	* src/autoloads.scm : ditto
+	* src/gauche.h (Scm_MakeAutoload): ditto
+	* src/extlib.stub (%make-autoload): commented out since it isn't
+	  (shouldn't) used.
+
 2004-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (macro_autoload, Scm_MacroExpand): resolve autoloaded

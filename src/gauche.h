@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.372 2004-05-21 21:34:27 shirok Exp $
+ *  $Id: gauche.h,v 1.373 2004-07-05 20:29:22 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2446,7 +2446,8 @@ SCM_CLASS_DECL(Scm_AutoloadClass);
 #define SCM_AUTOLOADP(obj)      SCM_XTYPEP(obj, SCM_CLASS_AUTOLOAD)
 #define SCM_AUTOLOAD(obj)       ((ScmAutoload*)(obj))
 
-SCM_EXTERN ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path,
+SCM_EXTERN ScmObj Scm_MakeAutoload(ScmModule *where,
+                                   ScmSymbol *name, ScmString *path,
 				   ScmSymbol *import_from);
 SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
                                      ScmObj list);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.84 2004-05-21 21:34:27 shirok Exp $
+ *  $Id: load.c,v 1.85 2004-07-05 20:29:22 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -848,14 +848,15 @@ static void autoload_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_AutoloadClass, autoload_print);
 
-ScmObj Scm_MakeAutoload(ScmSymbol *name,
+ScmObj Scm_MakeAutoload(ScmModule *where,
+                        ScmSymbol *name,
                         ScmString *path,
                         ScmSymbol *import_from)
 {
     ScmAutoload *adata = SCM_NEW(ScmAutoload);
     SCM_SET_CLASS(adata, SCM_CLASS_AUTOLOAD);
     adata->name = name;
-    adata->module = SCM_CURRENT_MODULE();
+    adata->module = where;
     adata->path = path;
     adata->import_from = import_from;
     adata->loaded = FALSE;
@@ -887,13 +888,14 @@ void Scm_DefineAutoload(ScmModule *where,
         ScmObj entry = SCM_CAR(ep);
         if (SCM_SYMBOLP(entry)) {
             Scm_Define(where, SCM_SYMBOL(entry),
-                       Scm_MakeAutoload(SCM_SYMBOL(entry), path, import_from));
+                       Scm_MakeAutoload(where, SCM_SYMBOL(entry),
+                                        path, import_from));
         } else if (SCM_PAIRP(entry)
                    && SCM_EQ(key_macro, SCM_CAR(entry))
                    && SCM_PAIRP(SCM_CDR(entry))
                    && SCM_SYMBOLP(SCM_CADR(entry))) {
             ScmSymbol *sym = SCM_SYMBOL(SCM_CADR(entry));
-            ScmObj autoload = Scm_MakeAutoload(sym, path, import_from);
+            ScmObj autoload = Scm_MakeAutoload(where, sym, path, import_from);
             Scm_Define(where, sym,
                        Scm_MakeMacroAutoload(sym, SCM_AUTOLOAD(autoload)));
         } else {

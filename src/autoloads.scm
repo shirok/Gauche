@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.12 2004-05-20 04:50:33 shirok Exp $
+;;; $Id: autoloads.scm,v 1.13 2004-07-05 20:29:22 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.12 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.13 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -52,7 +52,7 @@
         (let ((str (cgen-literal (symbol->string (car ent)))))
           (cgen-init
            #`"  sym = SCM_SYMBOL(Scm_Intern(SCM_STRING(,(cgen-cexpr str))));"
-           #`"  al = Scm_MakeAutoload(sym, SCM_STRING(path), import_from);")
+           #`"  al = Scm_MakeAutoload(SCM_CURRENT_MODULE(), sym, SCM_STRING(path), import_from);")
           (if (cdr ent) ;; macro?
             (cgen-init
              #`"  Scm_Define(,|where|,, sym,, Scm_MakeMacroAutoload(sym,, SCM_AUTOLOAD(al)));")
