@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.189 2002-11-09 02:57:59 shirok Exp $
+ *  $Id: vm.c,v 1.190 2002-11-09 09:00:30 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1574,6 +1574,10 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
     SCM_ASSERT(SCM_NULLP(pc));
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
     reqstack = ENV_SIZE(numargs) + 1;
+    if (reqstack >= SCM_VM_STACK_SIZE) {
+        /* there's no way we can accept that many arguments */
+        Scm_Error("too many arguments (%d) to apply", numargs);
+    }
     CHECK_STACK(reqstack);
     SCM_FOR_EACH(cp, args) {
         PUSH_ARG(SCM_CAR(cp));
