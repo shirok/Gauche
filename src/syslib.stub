@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.22 2001-03-12 08:30:35 shiro Exp $
+;;; $Id: syslib.stub,v 1.23 2001-03-12 10:12:43 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -494,6 +494,11 @@
     
 ;;---------------------------------------------------------------------
 ;; unistd.h - miscellaneous functions
+
+(define-symbol r_ok "sym_r_ok" "Scm_MakeInteger(R_OK)")
+(define-symbol w_ok "sym_w_ok" "Scm_MakeInteger(W_OK)")
+(define-symbol x_ok "sym_x_ok" "Scm_MakeInteger(X_OK)")
+(define-symbol f_ok "sym_f_ok" "Scm_MakeInteger(F_OK)")
 
 (define-cproc sys-access (pathname amode)
   (assert (string? pathname))
