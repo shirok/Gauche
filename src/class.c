@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.65 2001-12-01 21:40:35 shirok Exp $
+ *  $Id: class.c,v 1.66 2001-12-02 05:56:01 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1647,7 +1647,7 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
 
         if (name[nlen - 1] == '>') {
             strncpy(metaname, name, nlen-1);
-            strcat(metaname, "-meta>");
+            strcpy(metaname+nlen-1, "-meta>");
         } else {
             strcpy(metaname, name);
             strcat(metaname, "-meta");
