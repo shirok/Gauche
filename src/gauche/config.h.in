@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.1 2001-02-20 00:48:27 shiro Exp $
+ * $Id: config.h.in,v 1.2 2001-03-06 08:39:28 shiro Exp $
  */
 
 #undef STDC_HEADERS
@@ -15,6 +15,12 @@
 
 /* Define if the system has dlfcn.h */
 #undef HAVE_DLFCN_H
+
+/* Define if the system has trunc */
+#undef HAVE_TRUNC
+
+/* Define if the system has round */
+#undef HAVE_ROUND
 
 /* Define if the system needs -ldl for dynamic loading */
 #undef HAVE_LIBDL
