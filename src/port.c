@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.42 2001-11-03 09:56:35 shirok Exp $
+ *  $Id: port.c,v 1.43 2001-11-12 10:39:29 shirok Exp $
  */
 
 #include <unistd.h>
@@ -494,8 +494,18 @@ static inline ScmObj readline_int(ScmPort *port)
     if (ch == SCM_CHAR_INVALID) return SCM_EOF;
     Scm_DStringInit(&ds);
     for (;;) {
-        if (ch == '\n' || ch == SCM_CHAR_INVALID)
-            return Scm_DStringGet(&ds);
+        if (ch == '\r') {
+            int ch2;
+            SCM_GETC(ch2, port);
+            if (ch2 == '\n' || ch == SCM_CHAR_INVALID) {
+                return Scm_DStringGet(&ds);
+            } else {
+                SCM_UNGETC(ch2, port);
+                return Scm_DStringGet(&ds);
+            }
+        } else if (ch == '\n' || ch == SCM_CHAR_INVALID) {
+            return Scm_DStringGet(&ds); 
+        }
         SCM_DSTRING_PUTC(&ds, ch);
         SCM_GETC(ch, port);
     }
