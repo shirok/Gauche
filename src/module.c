@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.45 2003-12-08 08:38:31 shirok Exp $
+ *  $Id: module.c,v 1.46 2003-12-27 13:02:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -295,9 +295,8 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
         mod = Scm_FindModule(name, FALSE);
         if (!SCM_MODULEP(mod)) Scm_Error("no such module: %S", SCM_CAR(lp));
         (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
-        if (SCM_FALSEP(Scm_Memq(mod, module->imported))) {
-            module->imported = Scm_Cons(mod, module->imported);
-        }
+        module->imported =
+            Scm_Cons(mod, Scm_DeleteX(mod, module->imported, SCM_CMP_EQ));
         (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
     }
     return module->imported;

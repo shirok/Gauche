@@ -1,3 +1,10 @@
+2003-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (sig_setup): exclude SIGPROF from Scheme-monitored
+	  signals.
+	* src/module.c (Scm_ImportModules) : reorder multiply imported
+	  modules, so that the last "import" supercedes the previous ones.
+
 2003-12-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi-test.scm : added.

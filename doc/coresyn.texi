@@ -1549,7 +1549,7 @@ the binding of imported or inherited modules.
 @c EN
 The resolution of binding of a global variable happens like this.
 First, the current module is searched.  Then, each
-imported module is taken in the order of import, and searched,
+imported module is taken in the reverse order of import, and searched,
 including each module's ancestors.
 Note that import is not transitive; imported module list is not
 chased recursively.
@@ -1557,11 +1557,34 @@ Finally, ancestors of the current module are searched in order.
 @c JP
 グローバル変数の束縛の解決は次の手順で行われます。
 まずカレントモジュールが探されます。次に、importしているモジュールが
-importの順番に並べられ、それぞれについてそのモジュールおよびそのモジュールの先祖
-(継承されているモジュール)が順に探されます。
+importされた逆の順番に並べられ、それぞれについてその
+モジュールおよびそのモジュールの先祖(継承されているモジュール)が順に探されます。
 importは遷移的ではありません；importされたモジュールがimportしているモジュール…
 というふうに再帰的に辿ることはしません。
 最後に、カレントモジュールの先祖が順に探されます。
+@c COMMON
+
+@c EN
+This order is important when more than one modules
+defines the same name and your module imports both.
+Assuming your module and the inherited modules don't define that name,
+if you first import a module @code{A} then a module @code{B},
+you'll see @code{B}'s binding.
+
+If you import @code{A}, then @code{B}, then @code{A} again,
+the last import takes precedence; that is, you'll see @code{A}'s
+binding.
+@c JP
+この順序は、複数のモジュールで同じ名前が定義され、あなたのモジュールが
+その両方をインポートしている場合に重要になります。
+その名前があなたのモジュールおよびあなたが継承しているモジュールで
+定義されていないとして、もしモジュール@code{A}がまずimportされ、
+次に@code{B}がimportされている場合、あなたのコードは@code{B}の
+束縛を見ることになります。
+
+@code{A}をimportして@code{B}をimportした後に再び@code{A}をimport
+した場合、後のimportの方が効力を持ちます。すなわち、@code{A}の束縛が
+見えることになります。
 @c COMMON
 
 @node Modules and libraries, Defining and selecting modules, Module semantics, Modules
