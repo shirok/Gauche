@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.50 2001-11-15 08:33:38 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.51 2001-12-07 08:23:48 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -73,9 +73,36 @@
 ;;
 
 ;; autoload doesn't work for syntactic binding for now...
-(define-macro (AUTOLOAD file . vars)
-  (cons 'begin (map (lambda (v) `(define ,v (%make-autoload ',v ,file)))
-                    vars)))
+(define-macro (autoload file . vars)
+  (receive (path import-from import-into)
+      (cond ((string? file) (values file #f #f))
+            ((symbol? file)
+             (values (string-join (string-split (symbol->string file) #\.) "/")
+                     file
+                     #f))
+            ((and (pair? file)
+                  (symbol? (car file))
+                  (string? (cadr file)))
+             (values (cadr file) #f (car file)))
+            (else (error "bad autoload spec" (list* 'autoload file vars))))
+    (let ((defines
+            (map (lambda (v)
+                   (cond ((symbol? v)
+                          `(define ,v ((with-module gauche %make-autoload)
+                                       ',v ,path)))
+                         ((and (pair? v)
+                               (eq? (car v) :macro)
+                               (symbol? (cadr v)))
+                          `(define-macro ,(cadr v)
+                             ,(%make-autoload (cadr v) path)))
+                         (else
+                          (error "bad autoload spec"
+                                 (list* 'autoload file vars)))))
+                 vars)))
+      (if import-into
+          `(with-module ,import-into ,@defines)
+          `(begin ,@defines)))
+    ))
 
 ;;
 ;; Auxiliary definitions
@@ -83,40 +110,43 @@
 
 (define call/cc call-with-current-continuation)
 
-(with-module scheme
-  (define (call-with-values producer consumer)
-    (with-module gauche (receive vals (producer) (apply consumer vals)))))
+;; 
+(define (call-with-values producer consumer)
+  (with-module gauche (receive vals (producer) (apply consumer vals))))
 
-(autoload "gauche/with" call-with-input-file call-with-output-file
-                        with-input-from-file with-output-to-file
-                        with-output-to-string call-with-output-string
-                        with-input-from-string call-with-input-string
-                        with-string-io call-with-string-io
-                        write-to-string read-from-string)
+(autoload (scheme "gauche/with")
+          call-with-input-file call-with-output-file
+          with-input-from-file with-output-to-file)
 
-(with-module scheme
-  (define call-with-input-file  (with-module gauche call-with-input-file))
-  (define call-with-output-file (with-module gauche call-with-output-file))
-  (define with-input-from-file  (with-module gauche with-input-from-file))
-  (define with-output-to-file   (with-module gauche with-output-to-file)))
+(autoload "gauche/with"
+          with-output-to-string call-with-output-string
+          with-input-from-string call-with-input-string
+          with-string-io call-with-string-io
+          write-to-string read-from-string)
 
-(autoload "gauche/port" port->string port->list
-                        port->string-list port->sexp-list
-                        port-fold port-fold-right
-                        port-for-each port-map
-                        port-position-prefix)
+(autoload "gauche/port"
+          port->string port->list port->string-list port->sexp-list
+          port-fold port-fold-right port-for-each port-map
+          port-position-prefix)
 
-(autoload "gauche/numerical" gcd lcm numerator denominator
-                             make-polar real-part imag-part
-                             %complex-exp %complex-log %complex-sqrt
-                             %complex-expt
-                             %complex-cos %complex-sin %complex-tan
-                             %complex-acos %complex-asin %complex-atan
-                             %complex-sinh %complex-cosh %complex-tanh
-                             %complex-asinh %complex-acosh %complex-atanh)
+(autoload (scheme "gauche/numerical")
+          gcd lcm numerator denominator make-polar real-part imag-part)
 
-(autoload "gauche/logical"   logtest logbit? copy-bit bit-field
-                             copy-bit-field logcount integer-length)
+(autoload "gauche/numerical" 
+          %complex-exp %complex-log %complex-sqrt %complex-expt
+          %complex-cos %complex-sin %complex-tan
+          %complex-acos %complex-asin %complex-atan
+          %complex-sinh %complex-cosh %complex-tanh
+          %complex-asinh %complex-acosh %complex-atanh)
+
+(autoload "gauche/logical"
+          logtest logbit? copy-bit bit-field copy-bit-field logcount
+          integer-length)
+
+(autoload "gauche/common-macros"
+          (:macro syntax-error) (:macro syntax-errorf) unwrap-syntax
+          (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
+          (:macro dotimes) (:macro while) (:macro until))
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
@@ -203,17 +233,22 @@
       (unless (eof-object? k)
         (proc k v) (loop i)))))
 
+;; *** temporary ***
+(define-syntax debug-print
+  (syntax-rules ()
+    ((_ ?form)
+     (receive (tmp . more) ?form
+       (format (current-error-port) "@@@ ~s\n" tmp)
+       (for-each (lambda (elt)
+                   (format (current-error-port) "@.. ~s\n" elt))
+                 more)
+       (apply values tmp more)))))
+
 ;; srfi-17
 (define (getter-with-setter get set)
   (let ((proc (lambda x (apply get x))))
     (set! (setter proc) set)
     proc))
-
-;;
-;; Load common macros
-;;
-
-(require "gauche/common-macros")
 
 ;;
 ;; Load object system
