@@ -1,3 +1,3 @@
-(load "ssax-test.scm")
-(load "tree-trans-test.scm")
-(load "to-html-test.scm")
+(load "./ssax-test.scm")
+(load "./tree-trans-test.scm")
+(load "./to-html-test.scm")
