@@ -68,8 +68,16 @@
          (with-input-from-string qs2
            cgi-parse-parameters)))
 
-
-;; TODO: more to come
+(test* "cgi-main" "Content-type: text/plain\n\na=foo bar"
+       (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "GET")
+                                           ("QUERY_STRING" ,qs1))))
+         (with-output-to-string
+           (lambda ()
+             (cgi-main
+              (lambda (params)
+                `(,(cgi-header :content-type "text/plain")
+                  "a="
+                  ,(cgi-get-parameter "a" params))))))))
 
 (test-end)
 

@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.360 2003-02-06 09:19:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.361 2003-02-06 10:15:53 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -29149,35 +29149,76 @@ CGIスクリプトを手軽に書くにはこのモジュールの他に、
 @c COMMON
 @end deftp
 
+@deffn {Parameter} cgi-metavariables &optional metavariables
+@c EN
+Normally, httpd passes a cgi progam various information
+via environment variables.
+Most procedures in @code{www.cgi} refer to them (meta-variables). 
+However, it is sometimes inconvenient to require environment variable access
+while you're developing cgi-related programs.
+With this parameter, you can overrides the information of meta-variables.
+
+@var{Metavariables} should be a list of two-element lists.
+Car of each inner list names the variable, and its cadr gives the
+value of the variable by string.
+
+For example, the following code overrides @code{REQUEST_METHOD}
+and @code{QUERY_STRING} meta-variables during execution of
+@code{my-cgi-procedure}.  (@xref{gauche.parameter - Parameters},
+for the details of @code{parameterize}).
+@c JP
+通常、httpdはcgiプログラムに様々な情報を環境変数経由で渡します。
+@code{www.cgi}中の多くの手続きはその情報(メタ変数)を参照します。
+しかし、cgiに関連するプログラムを開発中に環境変数にアクセスするのは
+不便な場合もあります。
+このパラメータを使うと、メタ変数をオーバライドすることができます。
+
+@var{Metavariables}は2要素のリストのリストです。
+内側のリストは、最初の要素が変数名を、2つめの要素がその値を、それぞれ
+文字列で与えます。
+
+例えば次のコードは@code{REQUEST_METHOD}と
+@code{QUERY_STRING}のメタ変数を@code{my-cgi-procedure}の実行期間中に
+上書きします。(@code{parameterize}の詳細については
+@ref{gauche.parameter - Parameters}を参照して下さい)。
+@c COMMON
+
+@example
+(parameterize ((cgi-metavariables (("REQUEST_METHOD" "GET")
+                                   ("QUERY_STRING" "x=foo"))))
+  (my-cgi-procedure))
+@end example
+@end deffn
+
 @defun cgi-parse-parameters &keyword :query-string :merge-cookies
 @c EN
 Parses query string and returns associative list of parameters.
 When a keyword argument @var{query-string} is given, it is used
-as a source query string.  Otherwise, the function checks the environment
-variable @code{REQUEST_METHOD} and obtain the query string
-depending on the value (either from stdin or from the environment
-variable @code{QUERY_STRING}).
-If such an environment variable is not defined and
+as a source query string.  Otherwise, the function checks the 
+metavariable @code{REQUEST_METHOD} and obtain the query string
+depending on the value (either from stdin or from the
+metavariable @code{QUERY_STRING}).
+If such an metavariable is not defined and
 the current input port is a terminal, the function prompts the user
 to type parameters; useful for interactive debugging.
 @c JP
 CGIプログラムに渡されたquery stringをパーズして、パラメータの連想リストにして
 返します。文字列がキーワード引数@var{query-string}に与えられればそれがパーズすべき
-query stringとなります。その引数が渡されなければこの手続きは環境変数@code{REQUEST_METHOD}を
-参照し、その値によって標準入力もしくは
-環境変数@code{QUERY_STRING}からquery stringが取られます。
-そのような環境変数が定義されておらず、かつ現在の入力ポートが端末である場合、
+query stringとなります。その引数が渡されなければこの手続きは
+メタ変数@code{REQUEST_METHOD}を参照し、その値によって標準入力もしくは
+メタ変数@code{QUERY_STRING}からquery stringが取られます。
+そのようなメタ変数が定義されておらず、かつ現在の入力ポートが端末である場合、
 インタラクティブにデバッグをしているものと考えて、
 この手続きはプロンプトを出してユーザにパラメータの入力を促します。
 @c COMMON
 
 @c EN
 When a true value is given to @var{merge-cookies}, the cookie
-values obtained from the environment variable @code{HTTP_COOKIE}
+values obtained from the metavariable @code{HTTP_COOKIE}
 are appended to the result.
 @c JP
 キーワード引数@var{merge-cookies}に真の値が与えられた場合は、
-環境変数@code{HTTP_COOKIE}からクッキーの値が読まれ、解析されて
+メタ変数@code{HTTP_COOKIE}からクッキーの値が読まれ、解析されて
 結果に追加されます。
 @c COMMON
 
@@ -29281,7 +29322,26 @@ a @code{Location:} header to redirect the client to the specified URI.
 @c COMMON
 @end defun
 
-@defun cgi-main proc &keyword on-error merge-cookies
+@deffn {Parameter} cgi-output-character-encoding &optional encoding
+@c EN
+The value of this parameter specifies the character encoding scheme (CES)
+used for CGI output by @code{cgi-main} defined below.
+The default value is Gauche's native encoding.
+If the parameter is set other than the native encoding, @code{cgi-main}
+converts the output
+encoding by @code{gauche.charconv} module
+(@xref{gauche.charconv - Character code conversion}).
+@c JP
+このパラメータの値は次に説明する@code{cgi-main}が出力するデータの
+文字符合化法(CES)を指定します。デフォルトの値はGaucheのネイティブエンコーディング
+です。それ以外の値がセットされている場合、@code{cgi-main}は
+@code{gauche.charconv}モジュールを用いて出力のエンコーディングの変換を
+行います。
+(@ref{gauche.charconv - Character code conversion}参照)。
+@c COMMON
+@end deffn
+
+@defun cgi-main proc &keyword on-error merge-cookies output-proc
 @c EN
 A convenient wrapper function for CGI script.
 This function calls @code{cgi-parse-parameters}, then calls
@@ -29321,6 +29381,33 @@ HTMLページが作成されて出力されます。このエラーページは、@var{on-error}キーワード
 手続きを渡すことでカスタマイズできます。@var{on-error}に渡された手続きは
 エラー発生時に@code{<exception>}オブジェクト(@ref{Exception object}参照)
 を引数として呼ばれ、HTTPヘッダを含むドキュメントをテキストツリー構造で返さねばなりません。
+@c COMMON
+
+@c EN
+When output the result, @code{cgi-main} refers to
+the value of the parameter @code{cgi-output-character-encoding}, 
+and converts the character encoding if necessary.
+@c JP
+@code{cgi-main}は最終的な結果を出力を書き出す時に
+パラメータ@code{cgi-output-character-encoding}を参照し、
+必要ならば出力の文字エンコーディングを変換します。
+@c COMMON
+
+@c EN
+The output behavior of @code{cgi-main} can be customized
+by a keyword argument @var{output-proc}; if it is given,
+the text tree (either the normal return value of @var{proc},
+or an error page constructed by ther error handler) is passed
+to the procedure given to @var{output-proc}.  The procedure
+is responsible to format and output a text to the current
+output port, including character conversions, if necessary.
+@c JP
+@code{cgi-main}の出力のふるまいはキーワード引数@var{output-proc}で
+カスタマイズできます。@var{output-proc}が渡された場合、それは
+@var{proc}の戻り値、あるいはエラーハンドラが作成したテキストツリー構造を
+受け取る手続きでなければなりません。その手続きはテキストツリーを
+フォーマットして現在の出力ポートに出力しなければなりません。
+必要ならば文字エンコーディングの変換もその手続き内で行います。
 @c COMMON
 
 @c EN

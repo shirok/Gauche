@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.9 2003-02-06 00:21:38 shirok Exp $
+;;;  $Id: cgi.scm,v 1.10 2003-02-06 10:15:55 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -28,9 +28,11 @@
   (use rfc.uri)
   (use rfc.cookie)
   (use gauche.parameter)
+  (use gauche.charconv)
   (use text.tree)
   (use text.html-lite)
   (export cgi-metavariables
+          cgi-output-character-encoding
           cgi-parse-parameters
           cgi-get-parameter
           cgi-header
@@ -150,24 +152,29 @@
 ;; API: cgi-main proc &keyword on-error merge-cookies
 ;;
 (define (cgi-main proc . args)
-  (let1 eproc
-      (get-keyword :on-error args
-                   (lambda (e)
-                     `(,(cgi-header)
-                       ,(html-doctype)
-                       ,(html:html
-                         (html:head (html:title "Error"))
-                         (html:body (html:h1 "Error")
-                                    (html:p (html-escape-string
-                                             (slot-ref e 'message))))
-                         ))))
+  (let-keywords* args ((on-error cgi-default-error-proc)
+                       (output-proc cgi-default-output))
     (with-error-handler
-     (lambda (e) (write-tree (eproc e)))
+     (lambda (e) (output-proc (on-error e)))
      (lambda ()
        (let1 params
            (cgi-parse-parameters :merge-cookies
                                  (get-keyword :merge-cookies args #f))
-         (write-tree (proc params)))))
+         (output-proc (proc params)))))
     ))
+
+;; aux fns
+(define (cgi-default-error-proc e)
+  `(,(cgi-header)
+    ,(html-doctype)
+    ,(html:html
+      (html:head (html:title "Error"))
+      (html:body (html:h1 "Error")
+                 (html:p (html-escape-string (slot-ref e 'message)))))))
+
+(define (cgi-default-output tree)
+  (write-tree tree (wrap-with-output-conversion
+                    (current-output-port)
+                    (cgi-output-character-encoding))))
 
 (provide "www/cgi")

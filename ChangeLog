@@ -1,5 +1,8 @@
 2003-02-05  Shiro Kawai  <shiro@acm.org>
 
+	* lib/www/cgi.scm : allow character encoding conversion of CGI output
+	  via cgi-output-character-encoding parameter.  Added output-proc
+	  keyword arg to cgi-main.
 	* ext/charconv/charconv.c : allows a symbol as a CES name, as well
 	  as a string.   Supports a special CES name "none".
 	  Also added ces-equivalent?, ces-upper-compatible?,
