@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: jfilter.scm,v 1.3 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: jfilter.scm,v 1.4 2001-11-20 20:12:20 shirok Exp $
 ;;;
 
 ;; This file defines a set of character-code conversion routine with
@@ -78,7 +78,7 @@
                         (add-cr #f)
                         (check-length 5000))
     (let ((from (ces-symbol->name from-code "*JP"))
-          (to   (ces-symbol->name from-code "EUCJP")))
+          (to   (ces-symbol->name to-code "EUCJP")))
 
       (define (cv-block iport oport)
         (copy-port (open-input-conversion-port iport from
