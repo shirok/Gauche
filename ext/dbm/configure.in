@@ -1,7 +1,7 @@
 dnl
 dnl Configuring gauche.dbm extension
 dnl  process this file with "autoconf -l ../.." to generate 'configure'.
-dnl $Id: configure.in,v 1.14 2002-07-19 02:20:56 shirok Exp $
+dnl $Id: configure.in,v 1.15 2002-12-31 09:36:51 shirok Exp $
 AC_INIT(dbm.scm)
 AC_CONFIG_HEADER(dbmconfig.h)
 AC_CANONICAL_SYSTEM
@@ -37,8 +37,8 @@ AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
 ])
 #AC_CHECK_HEADERS(db.h, [
 #  BDBM_HEADER=$ac_header
-#  ARCHFILES="bdbm.so $ARCHFILES"
-#  SCMFILES="bdbm.scm $SCMFILES"
+#  ARCHFILES="bsddb.so $ARCHFILES"
+#  SCMFILES="bsddb.scm $SCMFILES"
 #])
 
 AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
@@ -53,14 +53,14 @@ if test "$ODBM_HEADER" = "gdbm/dbm.h"; then
 else
   AC_SEARCH_LIBS(dbminit,  dbm gdbm, [ ODBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
 fi
-#AC_CHECK_LIB(db, dbopen, [ BDBMLIB="-ldb" ])
+#AC_CHECK_LIB(db, dbopen, [ BSDDBLIB="-ldb" ])
 
 AC_SUBST(ARCHFILES)
 AC_SUBST(SCMFILES)
 AC_SUBST(GDBMLIB)
 AC_SUBST(NDBMLIB)
 AC_SUBST(ODBMLIB)
-#AC_SUBST(BDBMLIB)
+#AC_SUBST(BSDDBLIB)
 
 # Set LDFLAGS to generate shared library.
 AC_GAUCHE_FIX_LIBS
@@ -69,4 +69,5 @@ AC_GAUCHE_FIX_LIBS
 AC_GAUCHE_EXT_FIXUP(gdbm)
 AC_GAUCHE_EXT_FIXUP(ndbm)
 AC_GAUCHE_EXT_FIXUP(odbm)
+#AC_GAUCHE_EXT_FIXUP(bsddb)
 AC_OUTPUT(Makefile)

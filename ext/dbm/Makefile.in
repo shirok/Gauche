@@ -17,12 +17,14 @@ HEADERS =
 TARGET = @ARCHFILES@
 CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h \
 		   gdbm_head.c gdbm_tail.c ndbm_head.c ndbm_tail.c \
-                   odbm_head.c odbm_tail.c autom4te*.cache 
-GENERATED = gdbm.c ndbm.c odbm.c
+                   odbm_head.c odbm_tail.c bsddb_head.c bsddb_tail.c \
+                   autom4te*.cache 
+GENERATED = gdbm.c ndbm.c odbm.c bsddb.c
 
 GDBM_OBJS = gdbm_head.o gdbm.o gdbm_tail.o
 NDBM_OBJS = ndbm_head.o ndbm.o ndbm_tail.o
 ODBM_OBJS = odbm_head.o odbm.o odbm_tail.o
+BSDDB_OBJS = bsddb_head.o bsddb.o bsddb_tail.o
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
@@ -43,8 +45,8 @@ ndbm.so : $(NDBM_OBJS)
 odbm.so : $(ODBM_OBJS)
 	$(CC) $(LDFLAGS) odbm.so $(ODBM_OBJS) @ODBMLIB@ $(LIBS)
 
-#bdbm.so : bdbm.o bsddb.o
-#	$(CC) $(LDFLAGS) bdbm.so bdbm.o bsddb.o @BDBMLIB@ $(LIBS)
+#bsddb.so : $(BSDDB_OBJS)
+#	$(CC) $(LDFLAGS) bsddb.so $(BSDDB_OBJS) @BSDDBLIB@ $(LIBS)
 
 test : all
 	@rm -f test.log
