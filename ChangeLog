@@ -1,3 +1,8 @@
+2004-04-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (let/cc): added let/cc (as in PLT).
+	* src/autoloads.scm: ditto.
+
 2004-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (user_eval_inner): saves signal mask.  it appears that

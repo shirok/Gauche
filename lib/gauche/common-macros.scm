@@ -1,7 +1,7 @@
 ;;;
 ;;; common-macros.scm - common macros
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.16 2003-12-19 23:59:23 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.17 2004-04-01 12:13:27 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -163,17 +163,19 @@
 ;;;-------------------------------------------------------------
 ;;; bind construct
 
-;; These are experimental --- just giving a try to see if useful
-;; Don't rely on them.  I might change my mind.
-
 (define-syntax let1                     ;single variable bind
   (syntax-rules ()
-    ((_ var exp . body)
+    ((let1 var exp . body)
      (let ((var exp)) . body))))
+
+(define-syntax let/cc                   ;as in PLT
+  (syntax-rules ()
+    ((let/cc var . body)
+     (call/cc (lambda (var) . body)))))
 
 (define-syntax begin0                   ;prog1 in Lisp.
   (syntax-rules ()
-    ((_ exp exp2 ...)
+    ((begin0 exp exp2 ...)
      (receive r exp exp2 ... (apply values r)))))
 
 (define-syntax values-ref               ;nth-value in Lisp
