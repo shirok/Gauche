@@ -2964,14 +2964,21 @@ to prepare a file to be read by Windows programs.
 @c ----------------------------------------------------------------------
 @node text.diff - Calculate difference of text streams, text.html-lite - Simple HTML document construction, text.csv - CSV tables, Library modules - Utilities
 @section @code{text.diff} - Calculate difference of text streams
+@c NODE テキストストリームの相違点を計算する, @code{text.diff} - テキストストリームの相違点を計算する
 
 @deftp {Module} text.diff
 @mdindex text.diff
+@c EN
 This module calculates the difference of two text streams or strings,
 using @code{util.lcs} (@xref{util.lcs - The longest common subsequence}).
+@c JP
+このモジュールでは、@code{util.lcs} (@ref{util.lcs - The longest common subsequence}参照)を
+使って、2つのテキストストリーム、あるいは2つの文字列の相違点を計算します。
+@c COMMON
 @end deftp
 
 @defun diff src-a src-b &keyword reader eq-fn
+@c EN
 Generates an "edit list" from text sources @var{src-a} and @var{src-b}.
 
 Each of text sources, @var{src-a} and @var{src-b}, can be either an input
@@ -2986,6 +2993,20 @@ An edit list is a set of commands that turn the text sequence
 from @code{src-a} to the one from @code{src-b}.
 See the description of @code{lcs-edit-list} for
 the detailed explanation of the edit list.
+@c JP
+テキストソース@var{src-a}と@var{src-b}から``編集リスト''を生成します。
+
+それぞれのテキストソース、@var{src-a}と@var{src-b}は入力ポートか文字列です。
+もし文字列であれば、それは内部的に文字列ポートに変換されます。
+そして、2つのソースからのテキストストリームは、それらに対して@var{reader}を繰り返し
+呼ぶことによってシーケンスに変換されます。デフォルトの@var{reader}は@var{read-line}で、
+2つのシーケンスは編集リストを計算するために@code{lcs-edit-list}に渡されます。
+@code{lcs-edit-list}には、等値を検査する関数@var{eq-fn}も渡されます。
+
+編集リストとは、@code{src-a}から@code{src-b}へテキストシーケンスを
+変更するためのコマンドのセットです。編集リストの詳細な説明は、
+@code{lcs-edit-list}を参照してください。
+@c COMMON
 
 @example
 (diff "a\nb\nc\nd\n" "b\ne\nd\nf\n")
@@ -2997,12 +3018,20 @@ the detailed explanation of the edit list.
 @end defun
 
 @defun diff-report src-a src-b &keyword reader eq-fn writer
+@c EN
 A convenience procedure to take the diff of two text sources
 and display the result nicely.  This procedure calls @code{lcs-fold}
 to calculate the difference of two text sources.  The meanings of
 @var{src-a}, @var{src-b}, @var{reader} and @var{eq-fn} are the
 same as @code{diff}'s.
+@c JP
+2つのテキストソースのdiffをとって、その結果をきれいに表示するための
+簡易手続きです。この手続きは、2つのテキストソースの相違点を計算する
+ために@code{lcs-fold}を呼び出します。@var{src-a}、@var{src-b}、
+@var{reader}、@var{eq-fn}の意味は、@code{diff}の場合と同じです。
+@c COMMON
 
+@c EN
 @var{Writer} is a procedure that takes two arguments, the text element
 and a type, which is either a symbol @code{+}, 
 a symbol @code{-}, or @code{#f}.   If the text element is only
@@ -3013,6 +3042,17 @@ is in both sources, it is called with the element and
 @code{#f}.   The default procedure of @var{writer} prints
 the passed text element to the current output port
 in unified-diff-like format:
+@c JP
+@var{writer}は2つの引数、テキスト要素とタイプ(シンボル@code{+}、
+シンボル@code{-}、あるいは@code{#f}のいずれか)を取る手続きです。
+テキスト要素が@var{src-a}にしかない場合は、@var{writer}がそのテキスト要素と
+@code{-}とともに呼ばれます。テキスト要素が@var{src-b}にしかない場合は、
+@var{writer}はそのテキスト要素と@code{+}とともに呼ばれます。
+テキスト要素が両方のソースにある場合は、@var{writer}はそのテキスト要素と
+@code{#f}とともに呼ばれます。@var{writer}のデフォルトの手続きは、
+渡されたテキスト要素を現在の出力ポートにユニファイドdiffのようなフォーマットで
+出力します。
+@c COMMON
 @example
 (diff-report "a\nb\nc\nd\n" "b\ne\nd\nf\n")
 @end example
@@ -4098,22 +4138,37 @@ equal (in the sense of @code{equal?}).
 @c ----------------------------------------------------------------------
 @node util.lcs - The longest common subsequence, util.list - Additional list library, util.isomorph - Determine isomorphism, Library modules - Utilities
 @section @code{util.lcs} - The longest common subsequence
+@c NODE 最長共通サブシーケンス, @code{util.lcs} - 最長共通サブシーケンス
 
 @deftp {Module} util.lcs
 @mdindex util.lcs
+@c EN
 This module implements the algorithm to find the longest common subsequence
 of two given sequences.
 
 One of the applications of this algorithm is to calculate
 the difference of two text streams;
 see @ref{text.diff - Calculate difference of text streams}.
+@c JP
+このモジュールは、与えられた2つのシーケンスの最長共通サブシーケンスを見つける
+アルゴリズムを実装しています。
+
+このアルゴリズムを使うアプリケーションの1つは、2つのテキストストリームの
+相違点を計算する@ref{text.diff - Calculate difference of text streams}です。
+@c COMMON
 @end deftp
 
 @defun lcs seq-a seq-b &optional eq-fn
+@c EN
 Calculates and returns the longest common sequence of
 two lists, @var{seq-a} and @var{seq-b}.
 Optional @var{eq-fn} specifies
 the comparison predicate; if omitted, @code{equal?} is used.
+@c JP
+2つのリスト、@var{seq-a}と@var{seq-b}の最長共通シーケンスを計算して
+返します。オプションの@var{eq-fn}では、比較を行う述語を指定します。
+省略されると、@code{equal?}が使われます。
+@c COMMON
 
 @example
 (lcs '(x a b y) '(p a q b))
@@ -4122,18 +4177,32 @@ the comparison predicate; if omitted, @code{equal?} is used.
 @end defun
 
 @defun lcs-with-positions seq-a seq-b &optional eq-fn
+@c EN
 This is the detailed version of @code{lcs}.
 The arguments are the same.
 
 Returns a list of the following structure:
+@c JP
+@code{lcs}の詳細バージョンです。引数は同じです。
+
+以下の構造のリストを返します。
+@c COMMON
+
 @example
 (@var{length} ((@var{elt} @var{a-pos} @var{b-pos}) @dots{}))
 @end example
 
+@c EN
 @var{Length} is an integer showing the length of the found LCS.
 What follows is a list of elements of LCS; each sublist
 consists of the element, the integer position of the element
 in @var{seq-a}, then the integer position of the element in @var{seq-b}.
+@c JP
+@var{length}は、見つかったLCS(最長共通サブシーケンス)の長さを表す整数です。
+それに続くのは、LCSの要素のリストで、その要素を構成するそれぞれのサブリスト、
+@var{seq-a}の中での要素の位置(整数)、@var{seq-b}の中での要素の位置(整数)
+となります。
+@c COMMON
 
 @example
 (lcs-with-positions '(a) '(a))
@@ -4151,6 +4220,7 @@ in @var{seq-a}, then the integer position of the element in @var{seq-b}.
 @end defun
 
 @defun lcs-fold a-proc b-proc both-proc seed a b &optional eq-fn
+@c EN
 A fundamental iterator over the "edit list" derived from
 two lists @var{a} and @var{b}.
 
@@ -4172,9 +4242,29 @@ LCS of @var{a} and @var{b}.   Then @var{a-proc} is called first on
 each element in @var{a'}, @var{b-proc} is called second on
 each element in @var{b'}, then @var{both-proc} is called on @var{c}.
 Afterwards, the process is repeated using @var{a''} and @var{b''}.
+@c JP
+2つのリスト@var{a}と@var{b}から引き出された``編集リスト''に対する
+基本的なイテレータです。
+
+@var{a-proc}、@var{b-proc}、@var{both-proc}は全て2引数を取る手続きです。
+2番目の引数は、計算の中間の値です。最初の値は、@var{a-proc}では@var{a}にしかない要素、
+@var{b-proc}では@var{b}にしかない要素、@var{both-proc}では@var{a}と@var{b}の両方に
+ある要素となります。それぞれの手続きが返す値は、次に呼び出される手続きのうちの1つの
+状態を表す値として使われます。@var{seed}は、状態を表す値の初期値として使われます。
+@code{lcs-fold}が返す値は、最後の状態を表す値です。
+
+これらの3つの手続きは、以下の順番で呼ばれます。ここでは、シーケンス@var{a}は
+@var{a'}@var{c}@var{a''}、@var{b}は@var{b'}@var{c}@var{b''}となっているとすると、
+ここでは@var{a'}、@var{b'}、@var{a''}、@var{b''}はサブシーケンスで、
+@var{c}は@var{a}と@var{b}のLCSの先頭になります。そして、@var{a-proc}はまず
+@var{a'}のそれぞれの要素に対して呼ばれ、@var{b-proc}が@var{b'}のそれぞれの
+要素に対して呼ばれ、@var{both-proc}が@var{c}に対して呼ばれます。
+その後、このプロセスは@var{a''}と@var{b''}を使って繰り返されます。
+@c COMMON
 @end defun
 
 @defun lcs-edit-list a b &optional eq-fn
+@c EN
 Calculates 'edit-list' from two lists @var{a} and @var{b}, which is
 the smallest set of commands (additions and deletions) that changes
 @var{a} into @var{b}.
@@ -4183,18 +4273,32 @@ This procedure is built on top of @code{lcs-fold} above.
 Returns a list of @emph{hunk}s, which is a contigous section of
 additions and deletions.  Each hunk consists of a list of
 directives, which is a form of:
+@c JP
+2つのリスト@var{a}と@var{b}から``編集リスト''を計算します。それは、
+@var{a}を@var{b}に変更するためのコマンド(追加と削除)の最小セットです。
+この手続きは、上の@code{lcs-fold}の上に構築されています。
+@c COMMON
 @example
 (@var{+}|@var{-} @var{position} @var{element})
 @end example
 
+@c EN
 Here's an example.  Suppose @var{a} and @var{b} are the following
 lists, respectively.
+@c JP
+例を挙げます。@var{a}と@var{b}がそれぞれ以下のようなリストだとします。
+@c COMMON
+
 @example
 @var{a} @equiv{} ("A" "B" "C" "E" "H" "J" "L" "M" "N" "P")
 @var{b} @equiv{} ("B" "C" "D" "E" "F" "J" "K" "L" "M" "R" "S" "T")
 @end example
 
+@c EN
 Then, @code{(lcs-edit-list a b equal?)} returns the following list.
+@c JP
+すると、@code{(lcs-edit-list a b equal?)}は以下のリストを返します。
+@c COMMON
 @example
 (((- 0 "A"))
  ((+ 2 "D"))
@@ -4203,7 +4307,7 @@ Then, @code{(lcs-edit-list a b equal?)} returns the following list.
  ((- 8 "N") (- 9 "P") (+ 9 "R") (+ 10 "S") (+ 11 "T"))
 )
 @end example
-
+@c EN
 The result consists of five hunks.  The first hunk consists of
 one directive, @code{(- 0 "A")}, which means the element @code{"A"}
 at the position 0 of list @var{a} has to be deleted.
@@ -4216,6 +4320,17 @@ has to be added.  The third hunk means @code{"H"} at the position
 If you are familiar with Perl's Algorithm::Diff module, you may 
 notice that this is the same structure that its @code{diff} procedure
 returns.
+@c JP
+結果は5つの片からなります。最初のものは1つのディレクティブ、@code{(- 0 ``A'')}から
+なり、これはリスト@var{a}の位置0にある要素@code{``A''}が削除されることを意味します。
+2番目のものはまた1つのディレクティブ、@code{(+ 2 ``D'')}からなり、これは
+リスト@var{b}の位置2にある要素@code{``D''}が追加されることを意味します。
+3番目のものは、リスト@var{a}の位置4にある@code{``H''}は削除され、リスト@var{b}の
+位置4にある@code{``F''}が追加される、などとなります。
+
+もしあなたがPerlのAlgorithm::Diffモジュールを良く知っていれば、
+その@code{diff}手続きが返すものと同じ構造だということが分かるでしょう。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
