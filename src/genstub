@@ -12,16 +12,18 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.48 2001-10-06 09:58:17 shirok Exp $
+;;;  $Id: genstub,v 1.49 2001-10-20 10:10:23 shirok Exp $
 ;;;
 
 (use srfi-1)
 (use srfi-13)
+(use gauche.parseopt)
 (use gauche.regexp)
 
 (define *file-prefix* "")
 (define *insert-sharp-line* #t)         ;if #t, output #line directive
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
+(define *config-files* '())
 
 (define (print fmt . args)
   (if (null? args) (display fmt) (apply format #t fmt args)))
@@ -29,11 +31,6 @@
 (define (println fmt . args)
   (if (null? args) (display fmt) (apply format #t fmt args))
   (newline))
-
-(define (ensure-string stuff)
-  (cond ((string? stuff) stuff)
-        ((symbol? stuff) (symbol->string stuff))
-        (else (with-output-to-string (lambda () (write stuff))))))
 
 ;;===================================================================
 ;; Get configuration parameters
@@ -44,6 +41,7 @@
 ;; parses config.h file and add defined symbols to *cpp-defines*.
 ;; this is not intended to parse generic CPP syntax.
 (define (read-config.h config.h)
+  (format #t "reading ~s\n" config.h)
   (with-input-from-file config.h
     (lambda ()
       (let loop ((line (read-line)))
@@ -59,11 +57,15 @@
 
 ;; find config.h's
 (define (init-config.h)
-  (for-each (lambda (dir)
-              (let ((f (string-append dir "/gauche/config.h")))
-                (when (file-exists? f)
-                  (read-config.h f))))
-            *load-path*))
+  (cond ((file-exists? "gauche/config.h") ; we're compiling Gauche
+         (push! *config-files* "gauche/config.h"))
+        ((file-exists? (string-append (gauche-library-directory)
+                                      "../include/gauche/config.h"))
+         (push! *config-files*
+                (string-append (gauche-library-directory)
+                               "../include/gauche/config.h")))
+        )
+  (for-each read-config.h *config-files*))
                     
 ;;===================================================================
 ;; Type handling
@@ -569,7 +571,7 @@
            (scheme-name-of cproc)))
 
 (define (emit-record cproc)
-  (let* ((scm-func-name (ensure-string (scheme-name-of cproc)))
+  (let* ((scm-func-name (x->string (scheme-name-of cproc)))
          (c-func-name (c-name-of cproc)))
     (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
              c-func-name
@@ -758,6 +760,17 @@
                       (cons (cadar arglist) specs)))
           )))
 
+(define-method emit-initializer ((name <string>))
+  (println "void Scm_Init_~a(ScmModule *module)" name)
+  (println "{")
+  (for-each emit-initializer (get-stubs <cproc>))
+  (for-each emit-initializer (get-stubs <csymbol>))
+  (for-each emit-initializer (get-stubs <ckeyword>))
+  (for-each emit-initializer (get-stubs <cgeneric>))
+  (for-each emit-initializer (get-stubs <cmethod>))
+  (println "}")
+  )
+
 ;;---------------------------------------------------------------
 ;; Miscellaneous utilities
 ;;
@@ -792,8 +805,8 @@
 (define (get-c-name prefix scheme-name)
   (with-output-to-string
     (lambda ()
-      (display (ensure-string prefix))
-      (with-input-from-string (ensure-string scheme-name)
+      (display (x->string prefix))
+      (with-input-from-string (x->string scheme-name)
         (lambda ()
           (let loop ((c (read-char)))
             (unless (eof-object? c)
@@ -839,11 +852,10 @@
   (assoc (cadr form) *cpp-defines*))
 
 (define (process-begin form)
-  (let loop ((f (cdr form))
-             (r #f))
-    (if (null? f)
-        r
-        (loop (cdr f) (process-form (car f))))))
+  (let loop ((f (cdr form)))
+    (unless (null? f)
+      (parse-form (car f))
+      (loop (cdr f)))))
 
 (define *syntax-table*
   `((define-cproc     . ,process-define-cproc)
@@ -868,50 +880,47 @@
 ;; main entry point
 ;;
 
-(define-method emit-initializer ((name <string>))
-  (println "void Scm_Init_~a(ScmModule *module)" name)
-  (println "{")
-  (for-each emit-initializer (get-stubs <cproc>))
-  (for-each emit-initializer (get-stubs <csymbol>))
-  (for-each emit-initializer (get-stubs <ckeyword>))
-  (for-each emit-initializer (get-stubs <cgeneric>))
-  (for-each emit-initializer (get-stubs <cmethod>))
-  (println "}")
-  )
+(define (main args)
+  (let ((args (parse-options args
+                (("config=s" (file) (push! *config-files* file))
+                 (else _ (usage))))))
+    (unless (and (= (length args) 1)
+                 (> (string-length (car args)) 5))
+      (usage))
 
-(define (main argv)
-  (unless (and (= (length argv) 1)
-               (> (string-length (car argv)) 5))
-    (println "Usage: genstub FILE.stub")
-    (exit 1))
+    (init-config.h)
 
-  (init-config.h)
-
-  (let* ((file (car argv))
-         (base (sys-basename file))
-         (filelen (string-length file))
-         (baselen (string-length base))
-         (prefix (substring base 0 (- baselen 5)))
-         (outfile (string-append (substring file 0 (- filelen 5)) ".c")))
-    (unless (file-exists? file)
-      (println "Couldn't open ~a" file)
-      (exit 1))
-    (set! *file-prefix* (string-append (get-c-name "" prefix) "_"))
-    (with-output-to-file outfile
-      (lambda ()
-        (println "/* Generated by genstub.  Do not edit. */")
-        (println "/* source: ~a */" file)
-        (println "#include <gauche.h>")
-        (newline)
-        (with-input-from-file file
-          (lambda ()
-            (let loop ((form (read)))
-              (unless (eof-object? form)
+    (let* ((file (car args))
+           (base (sys-basename file))
+           (filelen (string-length file))
+           (baselen (string-length base))
+           (prefix (substring base 0 (- baselen 5)))
+           (outfile (string-append (substring file 0 (- filelen 5)) ".c")))
+      (unless (file-exists? file)
+        (println "Couldn't open ~a" file)
+        (exit 1))
+      (set! *file-prefix* (string-append (get-c-name "" prefix) "_"))
+      (with-output-to-file outfile
+        (lambda ()
+          (println "/* Generated by genstub.  Do not edit. */")
+          (println "/* source: ~a */" file)
+          (println "#include <gauche.h>")
+          (newline)
+          (with-input-from-file file
+            (lambda ()
+              (let loop ((form (read)))
+                (unless (eof-object? form)
                 (parse-form form)
                 (loop (read))))))
-        (emit-initializer (get-c-name "" prefix))
-        )))
+          (emit-initializer (get-c-name "" prefix))
+          )))
+    )
   0)
+
+(define (usage)
+  (println "Usage: genstub [-config config.h] FILE.stub")
+  (exit 1))
+
 
 ;; Local variables:
 ;; mode: scheme
