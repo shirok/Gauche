@@ -230,7 +230,7 @@
        (receive r (decompose-path "d") r))
 (test* "decompose-path" '("/a.b" "c" #f)
        (receive r (decompose-path "/a.b/c") r))
-(test* "decompose-path" '("/" "a" "b")
+(test* "decompose-path" '("/a.b" #f #f)
        (receive r (decompose-path "/a.b/") r))
 (test* "decompose-path" '("/a.b" "c.c" "d")
        (receive r (decompose-path "/a.b/c.c.d") r))

@@ -1885,6 +1885,89 @@ This function does not access the filesystem.
 @c COMMON
 @end defun
 
+@defun decompose-path path
+@c EN
+Returns three values; the directory part of @var{path},
+the basename without extension of @var{path}, and
+the extension of @var{path}.    If the pathname doesn't have an extension,
+the third value is @code{#f}.  If the pathname ends with a directory
+separator, the second and third values are @code{#f}. (Note: This treatment
+of the trailing directory separator differs from 
+@code{sys-dirname}/@code{sys-basename}; those follow popular shell's
+convention, which ignores trailing slashes.)
+@c JP
+パス名@var{path}のディレクトリ部、拡張子を除いたファイル名、
+そして拡張子の3つの値を返します。パス名が拡張子を持たない場合、
+最後の値は@code{#f}になります。パス名がディレクトリセパレータで
+終わっている場合は2番目と3番目の値が@code{#f}になります。
+(後置されたディレクトリセパレータに関するこの取扱いは、
+@code{sys-dirname}/@code{sys-basename}と異なることに注意して下さい。
+@code{sys-dirname}等は後置されたディレクトリセパレータを無視するという
+シェル等の慣習に従っています。)
+@c COMMON
+@example
+(decompose-path "/foo/bar/baz.scm")
+  @result{} "/foo/bar", "baz", "scm"
+(decompose-path "/foo/bar/baz")
+  @result{} "/foo/bar", "baz", #f
+
+(decompose-path "baz.scm")
+  @result{} ".", "baz", "scm"
+(decompose-path "/baz.scm")
+  @result{} "/", "baz", "scm"
+
+;; Boundary cases
+(decompose-path "/foo/bar/baz.")
+  @result{} "/foo/bar", "baz", ""
+(decompose-path "/foo/bar/.baz")
+  @result{} "/foo/bar", ".baz", #f
+(decompose-path "/foo/bar.baz/")
+  @result{} "/foo/bar.baz", #f, #f
+@end example
+@end defun
+
+@defun path-extension path
+@defunx path-sans-extension path
+@c EN
+Returns an extension of @var{path},
+and  a pathname of @var{path} without extension, respectively.
+If @var{path} doesn't have an extension, @code{#f} and @var{path}
+is returnedm respectively.
+@c JP
+それぞれ、@var{path}の拡張子と、@var{path}から拡張子を除いたものを返します。
+@var{path}が拡張子を持っていない場合はそれぞれ@code{#f}と@var{path}が返されます。
+@c COMMON
+
+@example
+(path-extension "/foo/bar.c")       @result{} "c"
+(path-sans-extension "/foo/bar.c")  @result{} "/foo/bar"
+
+(path-extension "/foo/bar")         @result{} #f
+(path-sans-extension "/foo/bar")    @result{} "/foo/bar"
+@end example
+@end defun
+
+@defun path-swap-extension path newext
+@c EN
+Returns a pathname in which the extension of @var{path} is replaced
+by @var{newext}.  If @var{path} doesn't have an extension,
+"." and @var{newext} is appended to @var{path}.  
+
+If @var{newext} is @code{#f}, it returns @var{path} without extension.
+@c JP
+@var{path}の拡張子が@var{newext}に置換されたものが返されます。@code{path}が
+拡張子を持たない場合は、@var{path}に "." と@var{newext}が追加されます。
+
+@var{newext}が@code{#f}の場合は、@var{path}の拡張子が除かれたものが
+返されます。すなわち、
+@c COMMON
+
+@example
+(path-swap-extension "/foo/bar.c" "o")  @result{} "/foo/bar.o"
+(path-swap-extension "/foo/bar.c" #f)   @result{} "/foo/bar"
+@end example
+@end defun
+
 @defun find-file-in-paths name &keyword paths pred
 @c EN
 Looks for a file that has name @var{name} in the given list of pathnames

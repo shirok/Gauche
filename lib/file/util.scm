@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.28.2.1 2004-12-25 02:56:48 shirok Exp $
+;;;  $Id: util.scm,v 1.28.2.2 2004-12-25 03:08:18 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -235,17 +235,19 @@
   (sys-normalize-pathname path :canonicalize #t))
 
 (define (decompose-path path)
-  (let* ((dir (sys-dirname path))
-         (base (sys-basename path)))
-    (cond ((string-index-right base #\.)
-           => (lambda (pos)
-                (if (zero? pos)
-                  (values dir base #f)  ; '.' at the beginning doesn't delimit extension
-                  (values dir
-                          (string-take base pos)
-                          (string-drop base (+ pos 1))))))
-          (else
-           (values dir base #f)))))
+  (if (string-suffix? "/" path)
+    (values (string-trim-right path #\/) #f #f)
+    (let* ((dir (sys-dirname path))
+           (base (sys-basename path)))
+      (cond ((string-index-right base #\.)
+             => (lambda (pos)
+                  (if (zero? pos)
+                    (values dir base #f)  ; '.' at the beginning doesn't delimit extension
+                    (values dir
+                            (string-take base pos)
+                            (string-drop base (+ pos 1))))))
+            (else
+             (values dir base #f))))))
 
 (define (absolute-path? path)
   (or (string-prefix? "/" path) (string-prefix? "~" path)))
