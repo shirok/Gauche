@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.1 2001-10-13 11:45:40 shirok Exp $
+;; $Id: hash.scm,v 1.2 2001-10-16 11:08:28 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -103,8 +103,101 @@
       (lambda ()
         (lset= equal? (hash-table-values h-eqv) '(8 "b" #\c -1 4 5))))
 
+;;------------------------------------------------------------------
+(test-section "equal?-hash")
 
+(define h-equal (make-hash-table 'equal?))
 
+(test "make-hash-table" #t
+      (lambda () (hash-table? h-equal)))
+
+(test "a => 8" 8
+      (lambda ()
+        (hash-table-put! h-equal 'a 8)
+        (hash-table-get  h-equal 'a)))
+
+(test "b => non" #t
+      (lambda ()
+        (hash-table-get  h-equal 'b #t)))
+
+(test "b => \"b\"" "b"
+      (lambda ()
+        (hash-table-put! h-equal 'b "b")
+        (hash-table-get  h-equal 'b)))
+
+(test "2.0 => #\C" #\C
+      (lambda ()
+        (hash-table-put! h-equal 2.0 #\C)
+        (hash-table-get  h-equal 2.0)))
+
+(test "2.0 => #\c" #\c
+      (lambda ()
+        (hash-table-put! h-equal 2.0 #\c)
+        (hash-table-get  h-equal 2.0)))
+
+(test "87592876592374659237845692374523694756 => 0" 0
+      (lambda ()
+        (hash-table-put! h-equal 87592876592374659237845692374523694756 0)
+        (hash-table-get  h-equal 87592876592374659237845692374523694756)))
+
+(test "87592876592374659237845692374523694756 => -1" -1
+      (lambda ()
+        (hash-table-put! h-equal 87592876592374659237845692374523694756 -1)
+        (hash-table-get  h-equal 87592876592374659237845692374523694756)))
+
+(test "equal? test" 5
+      (lambda ()
+        (hash-table-put! h-equal (string #\d) 4)
+        (hash-table-put! h-equal (string #\d) 5)
+        (length (hash-table-keys h-equal))))
+
+(test "equal? test" 6
+      (lambda ()
+        (hash-table-put! h-equal (cons 'a 'b) 6)
+        (hash-table-put! h-equal (cons 'a 'b) 7)
+        (length (hash-table-keys h-equal))))
+
+(test "equal? test" 7
+      (lambda ()
+        (hash-table-put! h-equal (vector (cons 'a 'b) 3+3i) 60)
+        (hash-table-put! h-equal (vector (cons 'a 'b) 3+3i) 61)
+        (length (hash-table-keys h-equal))))
+
+(test "hash-table-values" #t
+      (lambda ()
+        (lset= equal? (hash-table-values h-equal) '(8 "b" #\c -1 5 7 61))))
+
+;;------------------------------------------------------------------
+(test-section "string?-hash")
+
+(define h-string (make-hash-table 'string=?))
+
+(test "make-hash-table" #t
+      (lambda () (hash-table? h-string)))
+
+(test "\"a\" => 8" 8
+      (lambda ()
+        (hash-table-put! h-string "a" 8)
+        (hash-table-get  h-string "a")))
+
+(test "\"b\" => non" #t
+      (lambda ()
+        (hash-table-get  h-string "b" #t)))
+
+(test "\"b\" => \"b\"" "b"
+      (lambda ()
+        (hash-table-put! h-string "b" "b")
+        (hash-table-get  h-string "b")))
+
+(test "string=? test" 3
+      (lambda ()
+        (hash-table-put! h-string (string #\d) 4)
+        (hash-table-put! h-string (string #\d) 5)
+        (length (hash-table-keys h-string))))
+
+(test "hash-table-values" #t
+      (lambda ()
+        (lset= equal? (hash-table-values h-string) '(8 "b" 5))))
 
 
       
