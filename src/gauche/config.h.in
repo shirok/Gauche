@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.25 2002-05-17 10:36:29 shirok Exp $
+ * $Id: config.h.in,v 1.26 2002-07-09 10:39:32 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -109,5 +109,5 @@
 #define SIZEOF_LONG  4
 #define SIZEOF_INT   4
 
-/* Define if we use pthread */
-#undef GAUCHE_USE_PTHREAD 
+/* Define if we use pthreads */
+#undef GAUCHE_USE_PTHREADS

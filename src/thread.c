@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: thread.c,v 1.4 2002-07-09 09:47:58 shirok Exp $
+ *  $Id: thread.c,v 1.5 2002-07-09 10:39:32 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -69,7 +69,7 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
    uncollected.
  */
 
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
 static void thread_cleanup(void *data)
 {
     ScmVM *vm = SCM_VM(data);
@@ -126,11 +126,11 @@ static void *thread_entry(void *data)
 
 /* The default signal mask on the thread creation */
 static sigset_t defaultThreadSigmask;
-#endif /* GAUCHE_USE_PTHREAD */
+#endif /* GAUCHE_USE_PTHREADS */
 
 ScmObj Scm_ThreadStart(ScmVM *vm)
 {
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     int err_state = FALSE, err_create = FALSE;
     pthread_attr_t thattr;
     sigset_t omask, dummy;
@@ -154,16 +154,16 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
     if (err_state) Scm_Error("attempt to start an already-started thread: %S", vm);
     if (err_create) Scm_Error("couldn't start a new thread: %S", vm);
-#else  /*!GAUCHE_USE_PTHREAD*/
+#else  /*!GAUCHE_USE_PTHREADS*/
     Scm_Error("not implemented!\n");
-#endif /*GAUCHE_USE_PTHREAD*/
+#endif /*GAUCHE_USE_PTHREADS*/
     return SCM_OBJ(vm);
 }
 
 /* Thread join */
 ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     struct timespec ts, *pts;
     ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
     int intr = FALSE, tout = FALSE;
@@ -193,31 +193,31 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
         result = Scm_VMThrowException(resultx);
     }
     return result;
-#else  /*!GAUCHE_USE_PTHREAD*/
+#else  /*!GAUCHE_USE_PTHREADS*/
     Scm_Error("not implemented!\n");
     return SCM_UNDEFINED;
-#endif /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREADS*/
 }
 
 /* Thread yield */
 ScmObj Scm_ThreadYield(void)
 {
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
 #if defined(HAVE_SCHED_H) && defined(_POSIX_PRIORITY_SCHEDULING)
     sched_yield();
 #else  /*!HAVE_SCHED_H*/
     /* what can I do? */
 #endif /*!HAVE_SCHED_H*/
-#else  /*!GAUCHE_USE_PTHREAD*/
+#else  /*!GAUCHE_USE_PTHREADS*/
     Scm_Error("not implemented!\n");
-#endif /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREADS*/
     return SCM_UNDEFINED;
 }
 
 /* Thread sleep */
 ScmObj Scm_ThreadSleep(ScmObj timeout)
 {
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     struct timespec ts, *pts;
     ScmInternalCond dummyc = PTHREAD_COND_INITIALIZER;
     ScmInternalMutex dummym = PTHREAD_MUTEX_INITIALIZER;
@@ -230,16 +230,16 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
     }
     pthread_mutex_unlock(&dummym);
     if (intr) Scm_SigCheck(Scm_VM());
-#else  /*!GAUCHE_USE_PTHREAD*/
+#else  /*!GAUCHE_USE_PTHREADS*/
     Scm_Error("not implemented!\n");
-#endif /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREADS*/
     return SCM_UNDEFINED;
 }
 
 /* Thread terminate */
 ScmObj Scm_ThreadTerminate(ScmVM *target)
 {
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     ScmVM *vm = Scm_VM();
     if (target == vm) {
         /* self termination */
@@ -261,9 +261,9 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
         }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
     }
-#else  /*!GAUCHE_USE_PTHREAD*/
+#else  /*!GAUCHE_USE_PTHREADS*/
     Scm_Error("not implemented!\n");
-#endif /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREADS*/
     return SCM_UNDEFINED;
 }
 
@@ -272,8 +272,8 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
  */
 void Scm__InitThread(void)
 {
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     sigfillset(&defaultThreadSigmask);
-#endif /*GAUCHE_USE_PTHREAD*/
+#endif /*GAUCHE_USE_PTHREADS*/
 }
 

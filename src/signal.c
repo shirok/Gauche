@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.18 2002-07-09 09:46:50 shirok Exp $
+ *  $Id: signal.c,v 1.19 2002-07-09 10:39:32 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -502,15 +502,15 @@ ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
     if (how != SIG_SETMASK && how != SIG_BLOCK && how != SIG_UNBLOCK) {
         Scm_Error("bad 'how' argument for signal mask action: %d", how);
     }
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     if (pthread_sigmask(how, &(newmask->set), &(oldmask->set)) != 0) {
         Scm_Error("pthread_sigmask failed");
     }
-#else  /*!GAUCHE_USE_PTHREAD*/
+#else  /*!GAUCHE_USE_PTHREADS*/
     if (sigprocmask(how, &(newmask->set), &(oldmask->set)) != 0) {
         Scm_SysError("sigprocmask failed");
     }
-#endif /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREADS*/
     return SCM_OBJ(oldmask);
 }
 

@@ -435,5 +435,10 @@
           (cut port-test-on-error <> #t))
         (call-with-input-file "test.out" port->string)))
 
+;;---------------------------------------------------------------------
+(test-section "thread and signal")
+
+
+
 (test-end)
 

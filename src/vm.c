@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.162 2002-07-08 12:33:47 shirok Exp $
+ *  $Id: vm.c,v 1.163 2002-07-09 10:39:32 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -50,12 +50,12 @@ static ScmObj boundaryFrameMark;
 
 static ScmVM *rootVM = NULL;         /* VM for primodial thread */
 
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
 static pthread_key_t vm_key;
 #define theVM   ((ScmVM*)pthread_getspecific(vm_key))
 #else
 static ScmVM *theVM;
-#endif  /* !GAUCHE_USE_PTHREAD */
+#endif  /* !GAUCHE_USE_PTHREADS */
 
 static void save_stack(ScmVM *vm);
 
@@ -162,12 +162,12 @@ ScmVM *Scm_VM(void)
 /*
  * Get VM key
  */
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
 pthread_key_t Scm_VMKey(void)
 {
     return vm_key;
 }
-#endif /*GAUCHE_USE_PTHREAD*/
+#endif /*GAUCHE_USE_PTHREADS*/
 
 /*
  * Initialization.  This should be called after modules are initialized.
@@ -177,7 +177,7 @@ void Scm__InitVM(void)
     boundaryFrameMark = SCM_MAKE_STR("boundary-frame");
 
     /* Create root VM */
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     if (pthread_key_create(&vm_key, NULL) != 0) {
         Scm_Panic("pthread_key_create failed.");
     }
@@ -187,10 +187,10 @@ void Scm__InitVM(void)
         Scm_Panic("pthread_setspecific failed.");
     }
     rootVM->thread = pthread_self();
-#else   /* !GAUCHE_USE_PTHREAD */
+#else   /* !GAUCHE_USE_PTHREADS */
     rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule(),
                                SCM_MAKE_STR_IMMUTABLE("root"));
-#endif  /* !GAUCHE_USE_PTHREAD */
+#endif  /* !GAUCHE_USE_PTHREADS */
     rootVM->state = SCM_VM_RUNNABLE;
 }
 

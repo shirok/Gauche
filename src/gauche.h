@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.281 2002-07-09 09:48:51 shirok Exp $
+ *  $Id: gauche.h,v 1.282 2002-07-09 10:39:32 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -72,11 +72,11 @@ extern "C" {
 #define SCM_INLINE_MALLOC_PRIMITIVES
 #define SCM_VM_STACK_SIZE     10000
 
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
-#else  /* !GAUCHE_USE_PTHREAD */
+#else  /* !GAUCHE_USE_PTHREADS */
 # include <gauche/uthread.h>
-#endif /* !GAUCHE_USE_PTHREAD */
+#endif /* !GAUCHE_USE_PTHREADS */
 
 /*-------------------------------------------------------------
  * BASIC TYPES
@@ -2185,9 +2185,9 @@ SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec);
 SCM_EXTERN ScmObj Scm_IntSecondsToTime(long sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
 SCM_EXTERN struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec);
-#endif /*GAUCHE_USE_PTHREAD*/
+#endif /*GAUCHE_USE_PTHREADS*/
 
 /* struct tm */
 typedef struct ScmSysTmRec {

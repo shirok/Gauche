@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.72 2002-07-08 12:33:48 shirok Exp $
+ *  $Id: vm.h,v 1.73 2002-07-09 10:39:32 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -187,9 +187,9 @@ typedef struct ScmEscapePointRec {
 
 struct ScmVMRec {
     SCM_HEADER;
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
     pthread_t thread;           /* the thread executing this VM. */
-#endif /*!GAUCHE_USE_PTHREAD*/
+#endif /*!GAUCHE_USE_PTHREADS*/
     int state;                  /* thread state. PUBLIC. */
     ScmInternalMutex  vmlock;   /* mutex to be used to lock this VM
                                    structure.  PUBLIC. */
@@ -269,7 +269,7 @@ SCM_EXTERN void Scm_VMDefaultExceptionHandler(ScmObj);
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
 
-#ifdef GAUCHE_USE_PTHREAD
+#ifdef GAUCHE_USE_PTHREADS
 SCM_EXTERN pthread_key_t Scm_VMKey(void);
 #endif
 

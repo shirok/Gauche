@@ -1,3 +1,8 @@
+2002-07-09  Shiro Kawai  <shiro@acm.org>
+
+	* various files: changed macro GAUCHE_USE_PTHREAD to
+	  GAUCHE_USE_PTHREADS.
+
 2002-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/thread.c (Scm_ThreadStart): made all signals blocked for newly
