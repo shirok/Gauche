@@ -12,12 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.60 2002-05-15 11:17:52 shirok Exp $
+;;;  $Id: genstub,v 1.61 2002-05-19 09:57:35 shirok Exp $
 ;;;
 
 (use srfi-1)
 (use srfi-2)
 (use srfi-13)
+(use gauche.let-opt)
 (use gauche.parseopt)
 (use gauche.regexp)
 (use gauche.parameter)
@@ -28,12 +29,7 @@
 
 (define cpp-condition (make-parameter #f))
 
-(define (print fmt . args)
-  (if (null? args) (display fmt) (apply format #t fmt args)))
-
-(define (println fmt . args)
-  (if (null? args) (display fmt) (apply format #t fmt args))
-  (newline))
+(define (f fmt . args) (apply format #t fmt args) (newline))
 
 ;;===================================================================
 ;; Type handling
@@ -135,9 +131,9 @@
   (syntax-rules ()
     ((_ stub . body)
      (let ((cpp (cpp-condition-of stub)))
-       (when cpp (println "#if ~a" cpp))
+       (when cpp (f "#if ~a" cpp))
        (begin . body)
-       (when cpp (println "#endif /*~a*/" cpp))
+       (when cpp (f "#endif /*~a*/" cpp))
        ))))
 
 ;;--------------------------------------------------------------------
@@ -155,18 +151,17 @@
     (let* ((scheme-name (scheme-name-of self))
            (c-name (c-name-of self))
            (scheme-name-len (string-length (symbol->string scheme-name))))
-      (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
-               c-name scheme-name scheme-name-len scheme-name-len)
-      (println "static ScmObj ~a;" c-name)
+      (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
+         c-name scheme-name scheme-name-len scheme-name-len)
+      (f "static ScmObj ~a;" c-name)
       (newline))))
 
 (define-method emit-initializer ((self <csymbol>))
   (with-cpp-condition self
-    (println "  ~a = Scm_Intern(&~a_NAME);"
-             (c-name-of self) (c-name-of self))
+    (print #`"  ,(c-name-of self) = Scm_Intern(&,(c-name-of self)_NAME);")
     (when (initializer-of self)
-      (println "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
-               (c-name-of self) (initializer-of self)))))
+      (f "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
+         (c-name-of self) (initializer-of self)))))
 
 (define (process-define-symbol form)
   (unless (and (<= 3 (length form) 4)
@@ -194,15 +189,14 @@
     (let* ((scheme-name (scheme-name-of self))
            (c-name (c-name-of self))
            (scheme-name-len (string-length (symbol->string scheme-name))))
-      (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
-               c-name scheme-name scheme-name-len scheme-name-len)
-      (println "static ScmObj ~a;" c-name)
+      (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
+         c-name scheme-name scheme-name-len scheme-name-len)
+      (f "static ScmObj ~a;" c-name)
       (newline))))
 
 (define-method emit-initializer ((self <ckeyword>))
   (with-cpp-condition self
-    (println "  ~a = Scm_MakeKeyword(&~a_NAME);"
-             (c-name-of self) (c-name-of self))))
+    (f "  ~a = Scm_MakeKeyword(&~a_NAME);" (c-name-of self) (c-name-of self))))
 
 (define (process-define-keyword form)
   (unless (and (= (length form) 3)
@@ -442,49 +436,47 @@
 (define-method emit-definition ((cproc <cproc>))
   (with-cpp-condition cproc
     (for-each ensure-keyword-arg (keyword-args-of cproc))
-    (println "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
-             (c-name-of cproc))
-    (println "{")
+    (f "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
+       (c-name-of cproc))
+    (print "{")
     ;; argument decl
     (for-each emit-arg-decl (args-of cproc))
     (when (> (num-optargs-of cproc) 0)
-      (println "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
-    (println "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
+      (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+    (f "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
     ;; argument count check (for optargs)
     (when (and (> (num-optargs-of cproc) 0)
                (null? (keyword-args-of cproc))
                (not (have-rest-arg? cproc)))
-      (println "  if (Scm_Length(SCM_OPTARGS) > ~a)" (num-optargs-of cproc))
-      (println "    Scm_Error(\"too many arguments: up to ~s is expected, %d given.\", Scm_Length(SCM_OPTARGS));"
-               (num-optargs-of cproc)))
+      (print #`"  if (Scm_Length(SCM_OPTARGS) > ,(num-optargs-of cproc))")
+      (print #`"    Scm_Error(\"too many arguments: up to ,(num-optargs-of cproc) is expected, %d given.\",, Scm_Length(SCM_OPTARGS));"))
     ;; argument assertions & unbox op.
     (for-each emit-arg-unbox (args-of cproc))
     ;; body
-    (println "  {")
-    (for-each println (reverse (stmts-of cproc)))
-    (println "  }")
-    (println "}")
+    (print "  {")
+    (for-each print (reverse (stmts-of cproc)))
+    (print "  }")
+    (print "}")
     (newline)
     ))
 
 (define-method emit-initializer ((cproc <cproc>))
   (with-cpp-condition cproc
     (when (symbol? (scheme-name-of cproc))
-      (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
-               (symbol->string (scheme-name-of cproc))
-               (c-name-of cproc)))
+      (f "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
+         (symbol->string (scheme-name-of cproc)) (c-name-of cproc)))
     (next-method)
     ))
 
 (define-method emit-initializer ((cproc <setter-mixin>))
   (when (setter-of cproc)
-    (println "  Scm_SetterSet(SCM_PROCEDURE(&~a_STUB), SCM_PROCEDURE(&~a_STUB), TRUE);"
-             (c-name-of cproc)
-             (setter-c-name-of cproc))))
+    (f "  Scm_SetterSet(SCM_PROCEDURE(&~a_STUB), SCM_PROCEDURE(&~a_STUB), TRUE);"
+       (c-name-of cproc)
+       (setter-c-name-of cproc))))
 
 (define (emit-arg-decl arg)
-  (println "  ScmObj ~a;" (scm-name-of arg))
-  (println "  ~a ~a;" (c-type-of (c-type-of arg)) (c-name-of arg)))
+  (f "  ScmObj ~a;" (scm-name-of arg))
+  (f "  ~a ~a;" (c-type-of (c-type-of arg)) (c-name-of arg)))
 
 (define (emit-arg-unbox arg)
   (let* ((class (class-of arg))
@@ -497,27 +489,27 @@
          (unbox (unboxer-of type)))
     (cond
      ((eq? class <required-arg>)
-      (println "  ~a = SCM_ARGREF(~a);" sname count))
+      (f "  ~a = SCM_ARGREF(~a);" sname count))
      ((eq? class <optional-arg>)
-      (println "  if (SCM_NULLP(SCM_OPTARGS)) ~a = ~a;"
-               sname
-               (scheme-constant->c-constant (default-of arg)))
-      (println "  else {")
-      (println "    ~a = SCM_CAR(SCM_OPTARGS);" sname)
-      (println "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
-      (println "  }"))
+      (f "  if (SCM_NULLP(SCM_OPTARGS)) ~a = ~a;"
+         sname
+         (scheme-constant->c-constant (default-of arg)))
+      (f "  else {")
+      (f "    ~a = SCM_CAR(SCM_OPTARGS);" sname)
+      (f "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
+      (f "  }"))
      ((eq? class <keyword-arg>)
-      (println "  ~a = Scm_GetKeyword(~a, SCM_OPTARGS, ~a);"
-               sname (c-name-of (c-keyword-of arg))
-               (scheme-constant->c-constant (default-of arg))))
+      (f "  ~a = Scm_GetKeyword(~a, SCM_OPTARGS, ~a);"
+         sname (c-name-of (c-keyword-of arg))
+         (scheme-constant->c-constant (default-of arg))))
      ((eq? class <rest-arg>)
-      (println "  ~a = SCM_OPTARGS;" sname)))
+      (f "  ~a = SCM_OPTARGS;" sname)))
     (when pred
-      (println "  if (!~a(~a)) Scm_Error(\"~a required, but got %S\", ~a);"
-               pred sname tname sname))
+      (f "  if (!~a(~a)) Scm_Error(\"~a required, but got %S\", ~a);"
+         pred sname tname sname))
     (if unbox
-        (println "  ~a = ~a(~a);" cname unbox sname)
-        (println "  ~a = ~a;" cname sname))))
+        (f "  ~a = ~a(~a);" cname unbox sname)
+        (f "  ~a = ~a;" cname sname))))
 
 (define (ensure-keyword-arg arg)
   (let ((c-key (get-ckeyword (name-of arg))))
@@ -534,23 +526,23 @@
     (when insn
       (set! (inliner-of cproc) (string-append (c-name-of cproc) "_inline"))
       (emit-inliner-header cproc)
-      (println "{")
+      (print "{")
       (cond ((string? insn) (emit-inliner-call cproc insn))
             ((and (pair? insn) (eq? (car insn) 'case-nargs))
-             (println "  int nargs = Scm_Length(SCM_CDR(form));")
+             (print "  int nargs = Scm_Length(SCM_CDR(form));")
              (for-each (lambda (clause)
                          (let ((nargs (car clause))
                                (insn  (cadr clause)))
                            (if (eq? nargs 'else)
-                               (print "else ")
-                               (print "if (nargs == ~a) " nargs))
-                           (println "{")
+                               (display "else ")
+                               (display #`"if (nargs == ,|nargs|) "))
+                           (print "{")
                            (if insn
                                (emit-inliner-call cproc insn)
-                               (println "  return SCM_FALSE;"))
-                           (println "}")))
+                               (print "  return SCM_FALSE;"))
+                           (print "}")))
                        (cdr insn))))
-      (println "}")
+      (print "}")
       ))
   )
 
@@ -560,32 +552,32 @@
         (req  (num-reqargs-of cproc))
         (opt  (num-optargs-of cproc))
         )
-    (println "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)" inliner)
+    (f "static ScmObj ~a(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)" inliner)
     ))
 
 (define (emit-inliner-call cproc insn)
-  (println "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\");"
-           (num-reqargs-of cproc)
-           (if (or (< 0 (num-optargs-of cproc)) (have-rest-arg? cproc)) "TRUE" "FALSE")
-           insn
-           (scheme-name-of cproc)))
+  (f "  return Scm_CompileInliner(form, env, ~a, ~a, ~a, \"~a\");"
+     (num-reqargs-of cproc)
+     (if (or (< 0 (num-optargs-of cproc)) (have-rest-arg? cproc)) "TRUE" "FALSE")
+     insn
+     (scheme-name-of cproc)))
 
 (define (emit-record cproc)
   (with-cpp-condition cproc
     (let* ((scm-func-name (x->string (scheme-name-of cproc)))
            (c-func-name (c-name-of cproc)))
-      (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
-               c-func-name
-               scm-func-name
-               (string-length scm-func-name)
-               (string-length scm-func-name))
-      (println "static SCM_DEFINE_SUBR(~a_STUB, ~a, ~a, SCM_OBJ(&~a_NAME), ~a, ~a, NULL);"
-               c-func-name
-               (num-reqargs-of cproc)
-               (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
-               c-func-name
-               c-func-name
-               (or (inliner-of cproc) "NULL"))
+      (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
+         c-func-name
+         scm-func-name
+         (string-length scm-func-name)
+         (string-length scm-func-name))
+      (f "static SCM_DEFINE_SUBR(~a_STUB, ~a, ~a, SCM_OBJ(&~a_NAME), ~a, ~a, NULL);"
+         c-func-name
+         (num-reqargs-of cproc)
+         (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
+         c-func-name
+         c-func-name
+         (or (inliner-of cproc) "NULL"))
       (newline))))
 
 ;;-----------------------------------------------------------------
@@ -605,15 +597,14 @@
 
 (define-method emit-definition ((self <cgeneric>))
   (with-cpp-condition self
-   (unless (extern? self) (print "static "))
-   (println "SCM_DEFINE_GENERIC(~a, ~a, NULL);"
-            (c-name-of self) (fallback-of self))
+   (unless (extern? self) (display "static "))
+   (f "SCM_DEFINE_GENERIC(~a, ~a, NULL);" (c-name-of self) (fallback-of self))
    (newline)))
 
 (define-method emit-initializer ((self <cgeneric>))
   (with-cpp-condition self
-    (println "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
-             (c-name-of self) (symbol->string (scheme-name-of self)))
+    (f "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
+       (c-name-of self) (symbol->string (scheme-name-of self)))
     (next-method)))
 
 (define (process-define-cgeneric form)
@@ -703,33 +694,33 @@
 
 (define-method emit-definition ((method <cmethod>))
   (with-cpp-condition method
-    (println "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
-             (c-name-of method))
-    (println "{")
+    (f "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
+       (c-name-of method))
+    (print "{")
     (for-each emit-arg-decl (args-of method))
     (when (have-rest-arg? method)
-      (println "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+      (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
     (for-each emit-arg-unbox (args-of method))
     ;; body
-    (println "  {")
-    (for-each println (stmts-of method))
-    (println "  }")
-    (println "}")
+    (print "  {")
+    (for-each print (stmts-of method))
+    (print "  }")
+    (print "}")
     (newline)
-    (print "static ScmClass *~a_SPEC[] = { " (c-name-of method))
-    (for-each (lambda (spec) (print "SCM_CLASS_STATIC_PTR(~a), " spec))
+    (display #`"static ScmClass *,(c-name-of method)_SPEC[] = { ")
+    (for-each (lambda (spec) (display #`"SCM_CLASS_STATIC_PTR(,|spec|), "))
               (reverse (specializers-of method)))
-    (println "};")
-    (println "static SCM_DEFINE_METHOD(~a_STUB, &~a, ~a, ~a, ~a_SPEC, ~a, NULL);"
-             (c-name-of method) (c-generic-of method)
-             (num-reqargs-of method) (if (have-rest-arg? method) "1" "0")
-             (c-name-of method) (c-name-of method))
+    (print "};")
+    (f "static SCM_DEFINE_METHOD(~a_STUB, &~a, ~a, ~a, ~a_SPEC, ~a, NULL);"
+       (c-name-of method) (c-generic-of method)
+       (num-reqargs-of method) (if (have-rest-arg? method) "1" "0")
+       (c-name-of method) (c-name-of method))
     (newline)
     ))
 
 (define-method emit-initializer ((method <cmethod>))
   (with-cpp-condition method
-    (println "  Scm_InitBuiltinMethod(&~a_STUB);" (c-name-of method))))
+    (f "  Scm_InitBuiltinMethod(&~a_STUB);" (c-name-of method))))
 
 ;; returns four values: args, specializers, numreqargs, have-optarg?
 (define (parse-specialized-args arglist)
@@ -762,6 +753,103 @@
                             args)
                       (cons (cadar arglist) specs)))
           )))
+
+;;-----------------------------------------------------------------
+;; Class
+;;
+;;  - Generates C stub for static class definition, slot accessors and
+;;    initialization.   Corresponding C struct has to be defined elsewhere.
+
+;; (define-cclass scheme-name c-type-name c-class-name cpa
+;;   (<slot-spec> ...)
+;;   [(allocator <proc-spec>)]
+;;   [(printer   <proc-spec>)]
+;;   )
+;;
+;; <slot-spec> := (slot-name [:getter <proc-spec>] [:setter <proc-spec>])
+;; <proc-spec> := <c-code> | (cproc <c-name>)
+
+(define-class <cclass> (<stub>)
+  ((cpa       :init-keyword :cpa       :init-value '()
+              :accessor cpa-of)
+   (allocator :init-keyword :allocator :init-value #f
+              :accessor allocator-of)
+   (c-allocator-name :accessor c-allocator-name-of :init-value "NULL")
+   (printer   :init-keyword :printer   :init-value #f
+              :accessor printer-of)
+   (c-printer-name :accessor c-printer-name-of :init-value "NULL")
+   (slot-spec :init-keyword :slot-spec :init-value '()
+              :accessor slot-spec-of)
+   (c-class-name :init-keyword :c-class-name :accessor c-class-name-of)
+   (c-slot-spec-name :init-value "NULL" :accessor c-slot-spec-name-of)
+   ))
+
+(define-class <cslot> ()
+  ((scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
+   (c-name      :init-keyword :c-name :accessor c-name-of)
+   (getter      :init-keyword :getter :accessor getter-of)
+   (setter      :init-keyword :setter :accessor setter-of :init-value #f)
+   ))
+
+(define (process-define-cclass form)
+  (unless (>= (length form) 6)
+    (error "malformed define-cclass" form))
+  (receive (_ scm-name c-name c-class-name cpa slot-spec . more) (apply values form)
+    (unless (and (symbol? scm-name) (string? c-class-name) (list? cpa) (list? slot-spec))
+      (error "malformed define-cclass" form))
+    (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
+           (printer   (cond ((assq 'printer more) => cadr) (else #f)))
+           (cclass (make <cclass>
+                     :scheme-name scm-name :c-name c-name
+                     :c-class-name c-class-name :cpa cpa
+                     :slot-spec (process-cclass-slots slot-spec)
+                     :allocator allocator :printer printer)))
+      (unless (null? (slot-spec-of cclass))
+        (set! (c-slot-spec-name-of cclass) #`",|c-name|_SLOTS"))
+      (when (string? printer)
+        (set! (c-printer-name-of cclass) #`",|c-class-name|_PRINT"))
+      (when (string? allocator)
+        (set! (c-allocator-name-of cclass) #`",|c-class-name|_ALLOCATE"))
+      (emit-definition cclass))))
+
+(define-method emit-definition ((self <cclass>))
+  (when (allocator-of self)
+    (print #`"static ScmObj ,(c-allocator-name-of self)(ScmClass *klass, ScmObj initargs)")
+    (print "{")
+    (print (allocator-of self))
+    (print "}")
+    (newline))
+  (when (printer-of self)
+    (print #`"static void ,(c-printer-name-of self)(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
+    (print "{")
+    (print (printer-of self))
+    (print "}")
+    (newline))
+  (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-class-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), NULL);")
+  (newline)
+  (when (pair? (slot-spec-of self))
+    (print #`"static ScmClassStaticSlotSpec ,(c-slot-spec-name-of self)[] = {")
+    (for-each emit-spec-definition (slot-spec-of self))
+    (print "  { NULL }")
+    (print "};")
+    (newline))
+  )
+
+(define-method emit-initializer ((self <cclass>))
+  (print #`"  Scm_InitBuiltinClass(,(c-class-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self),")
+  (print (if (c-name-of self)
+             #`"                       sizeof(,(c-name-of self)), module);"
+             #`"                       NULL, module);"))
+  )
+
+(define (process-cclass-slots slot-spec)
+  (map (lambda (spec)
+         (unless (list? spec) (error "bad slot spec" spec))
+         (let ((name (car spec))
+               (getter (get-keyword :getter (cdr spec) #f))
+               (setter (get-keyword :setter (cdr spec) #f)))
+           (make <cslot> :scheme-name name :getter getter :setter setter)))
+       slot-spec))
 
 ;;-----------------------------------------------------------------
 ;; Extra initializers
@@ -866,13 +954,14 @@
     (define-type      . ,process-define-type)
     (define-cgeneric  . ,process-define-cgeneric)
     (define-cmethod   . ,process-define-cmethod)
+    (define-cclass    . ,process-define-cclass)
     (if               . ,process-if)
     (begin            . ,process-begin)
     (initcode         . ,process-initcode)
     ))
 
 (define (parse-form form)
-  (cond ((string? form) (println form))
+  (cond ((string? form) (print form))
         ((not (pair? form))
          (error "bad form:" form))
         ((assq (car form) *syntax-table*)
@@ -880,15 +969,16 @@
         (else (error "bad form:" form))))
 
 (define-method emit-initializer ((name <string>))
-  (println "void Scm_Init_~a(ScmModule *module)" name)
-  (println "{")
+  (f "void Scm_Init_~a(ScmModule *module)" name)
+  (print "{")
+  (for-each emit-initializer (get-stubs <cclass>))
   (for-each emit-initializer (get-stubs <cproc>))
   (for-each emit-initializer (get-stubs <csymbol>))
   (for-each emit-initializer (get-stubs <ckeyword>))
   (for-each emit-initializer (get-stubs <cgeneric>))
   (for-each emit-initializer (get-stubs <cmethod>))
   (for-each emit-initializer (get-stubs <initcode>))
-  (println "}")
+  (print "}")
   )
 
 ;;===================================================================
@@ -911,15 +1001,15 @@
            (prefix (substring base 0 (- baselen 5)))
            (outfile (string-append (substring file 0 (- filelen 5)) ".c")))
       (unless (file-exists? file)
-        (println "Couldn't open ~a" file)
+        (f "Couldn't open ~a" file)
         (exit 1))
       (set! *file-prefix* (string-append (get-c-name "" prefix) "_"))
       (with-output-to-file outfile
         (lambda ()
-          (println "/* Generated by genstub.  Do not edit. */")
-          (println "/* source: ~a */" file)
-          (for-each (lambda (sym) (println "#define ~a" sym)) predef-syms)
-          (println "#include <gauche.h>")
+          (f "/* Generated by genstub.  Do not edit. */")
+          (f "/* source: ~a */" file)
+          (for-each (lambda (sym) (f "#define ~a" sym)) predef-syms)
+          (f "#include <gauche.h>")
           (newline)
           (with-input-from-file file
             (lambda ()
@@ -933,7 +1023,7 @@
   0)
 
 (define (usage)
-  (println "Usage: genstub [-D symbol] FILE.stub")
+  (print "Usage: genstub [-D symbol] FILE.stub")
   (exit 1))
 
 
