@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.22 2001-06-08 10:19:25 shirok Exp $
+#  $Id: Makefile.in,v 1.23 2001-06-19 06:24:31 shirok Exp $
 #
 
 prefix = @prefix@
@@ -21,8 +21,7 @@ SCMS = srfi-0.scm \
        srfi-13/pred.scm srfi-13/prefix.scm srfi-13/revapp.scm \
        srfi-13/rotator.scm srfi-13/searcher.scm srfi-13/selector.scm \
        srfi-14.scm srfi-14/query.scm srfi-14/set.scm \
-       srfi-17.scm slib.scm \
-       japanize-euc.scm \
+       slib.scm japanize-euc.scm \
        gauche/object.scm gauche/test.scm gauche/macroutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/with.scm \
        gauche/numerical.scm gauche/vm/disasm.scm \
