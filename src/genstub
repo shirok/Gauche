@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.89 2002-12-22 11:55:54 shirok Exp $
+;;;  $Id: genstub,v 1.90 2002-12-23 11:24:52 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1266,6 +1266,7 @@
 ;;   (<slot-spec> ...)
 ;;   [(allocator <proc-spec>)]
 ;;   [(printer   <proc-spec>)]
+;;   [(direct-supers <string> ...)]
 ;;   )
 ;;
 ;; <slot-spec> := slot-name
@@ -1280,7 +1281,19 @@
 ;;
 ;; <cpa> := (<string> ...)
 ;;
-;; qualifier := :base
+;; qualifier := :base | :built-in
+
+;; 'cpa' lists ancestor classes in precedence order.  They need to
+;; be C identifiers of Scheme class (Scm_*Class), for the time being.
+;; Scm_TopClass is added at the end automatically.
+;;
+;; 'direct-supers' specifies a list of direct superclass, if the
+;; defined class does multiple inheritance.  When omitted, the first
+;; element of 'cpa' is used as the only direct superclass.
+;;
+;; 'allocator' and 'printer' clause specifies custom allocator and/or
+;; printer procedure.  You can either directly write C function body
+;; as string, or specify a C function name by '(c <c-name>)' form.
 
 (define-class <cclass> (<stub>)
   ((cpa       :init-keyword :cpa       :init-value '()
@@ -1293,6 +1306,8 @@
               :accessor printer-of)
    (slot-spec :init-keyword :slot-spec :init-value '()
               :accessor slot-spec-of)
+   (direct-supers :init-keyword :direct-supers :init-value '()
+                  :accessor direct-supers-of)
    ))
 
 (define-method initialize ((self <cclass>) initargs)
@@ -1325,10 +1340,11 @@
       (error "unknown define-cclass qualifier" qual))
     (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
            (printer   (cond ((assq 'printer more) => cadr) (else #f)))
+           (dsupers   (cond ((assq 'direct-supers more) => cdr) (else '())))
            (cclass (make <cclass>
                      :scheme-name scm-name :c-type c-type :c-name c-name
                      :qualifier qual
-                     :cpa cpa
+                     :cpa cpa :direct-supers dsupers
                      :allocator allocator :printer printer)))
       (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
       (emit-definition cclass))))
@@ -1383,7 +1399,13 @@
   )
 
 (define-method emit-initializer ((self <cclass>))
-  (print #`"  Scm_InitBuiltinClass(&,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self), ,(c-type-size-of self), module);"))
+  (print #`"  Scm_InitBuiltinClass(&,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self), ,(c-type-size-of self), module);")
+  ;; adjust direct-supers if necessary
+  (let1 ds (direct-supers-of self)
+    (when (not (null? ds))
+      (format #t "  ~a.directSupers = Scm_List(" (c-name-of self))
+      (for-each (lambda (s) (format #t "SCM_OBJ(&~a), " s)) ds)
+      (format #t " NULL);\n"))))
 
 ;; cpa ----------
 ;;  For now, cpa should be a list of C class names, or c literal

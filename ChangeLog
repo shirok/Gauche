@@ -1,3 +1,9 @@
+2002-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : added support of direct-supers specifier in
+	  define-cclass.  NB: this is an ad hoc kludge.  Define-cclass
+	  need to be redesigned.
+
 2002-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c : made string equality be tested by separate function
