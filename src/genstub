@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.66 2002-05-21 04:46:45 shirok Exp $
+;;;  $Id: genstub,v 1.67 2002-06-04 00:05:44 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -20,7 +20,6 @@
 (use srfi-13)
 (use gauche.let-opt)
 (use gauche.parseopt)
-(use gauche.regexp)
 (use gauche.parameter)
 
 (define *file-prefix* "")
@@ -187,7 +186,7 @@
 
 (define-method emit-initializer ((self <csymbol>))
   (with-cpp-condition self
-    (f "  ~a = Scm_Intern(&~a_NAME);" (c-name-of self) (c-name-of self))
+    (f "  ~a = Scm_Intern(&~:*~a_NAME);" (c-name-of self))
     (when (initializer-of self)
       (f "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
          (c-name-of self) (initializer-of self)))))
@@ -221,7 +220,7 @@
 
 (define-method emit-initializer ((self <ckeyword>))
   (with-cpp-condition self
-    (f "  ~a = Scm_MakeKeyword(&~a_NAME);" (c-name-of self) (c-name-of self))))
+    (f "  ~a = Scm_MakeKeyword(&~:*~a_NAME);" (c-name-of self))))
 
 (define (process-define-keyword form)
   (unless (and (= (length form) 3)
@@ -589,13 +588,13 @@
   (with-cpp-condition cproc
     (let1 c-func-name (c-name-of cproc)
       (emit-static-string c-func-name (scheme-name-of cproc))
-      (f "static SCM_DEFINE_SUBR(~a_STUB, ~a, ~a, SCM_OBJ(&~a_NAME), ~a, ~a, NULL);"
+      (f "static SCM_DEFINE_SUBR(~a_STUB, ~a, ~a, SCM_OBJ(&~a_NAME), ~:*~a, ~a, NULL);"
          c-func-name
          (num-reqargs-of cproc)
          (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
          c-func-name
-         c-func-name
-         (or (inliner-of cproc) "NULL"))
+         (or (inliner-of cproc) "NULL")
+         )
       (newline))))
 
 ;;-----------------------------------------------------------------
@@ -729,10 +728,10 @@
     (for-each (lambda (spec) (display #`"SCM_CLASS_STATIC_PTR(,|spec|), "))
               (reverse (specializers-of method)))
     (print "};")
-    (f "static SCM_DEFINE_METHOD(~a_STUB, &~a, ~a, ~a, ~a_SPEC, ~a, NULL);"
+    (f "static SCM_DEFINE_METHOD(~a_STUB, &~a, ~a, ~a, ~a_SPEC, ~:*~a, NULL);"
        (c-name-of method) (c-generic-of method)
        (num-reqargs-of method) (if (have-rest-arg? method) "1" "0")
-       (c-name-of method) (c-name-of method))
+       (c-name-of method))
     (newline)
     ))
 
@@ -1044,8 +1043,8 @@
 ;; Emit static ScmString
 (define (emit-static-string c-name scm-name)
   (let1 len (string-length (x->string scm-name))
-    (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
-       c-name scm-name len len)))
+    (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~:*~a);"
+       c-name scm-name len)))
 
 ;; Check if item is in the form (c <string>)
 (define (c-literal? item)
