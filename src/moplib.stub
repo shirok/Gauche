@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.6 2001-03-25 08:46:04 shiro Exp $
+;;; $Id: moplib.stub,v 1.7 2001-03-26 10:06:45 shiro Exp $
 ;;;
 
 "
@@ -77,9 +77,11 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_TypeP(obj, klass)));")
 
 (define-cproc slot-ref (obj slot)
+  (inliner "SCM_VM_SLOT_REF")
   "  SCM_RETURN(Scm_VMSlotRef(obj, slot));")
 
 (define-cproc slot-set! (obj slot value)
+  (inliner "SCM_VM_SLOT_SET")
   "  SCM_RETURN(Scm_VMSlotSet(obj, slot, value));")
 
 ;; Local variables:
