@@ -2,14 +2,26 @@
 @chapter Object system
 @c NODE オブジェクトシステム
 
+@c EN
 Gauche's object system design is largely inspired by
 STklos, whose design has come from TinyCLOS.
 It supports multiple inheritance, multimethods,
 and metaobject protocol.
+@c JP
+Gaucheのオブジェクトシステムのデザインは、TinyCLOSから
+派生したSTklosから大きな影響を受けています。
+多重継承、マルチメソッド、メタオブジェクトプトロコルを
+サポートしています。
+@c COMMON
 
+@c EN
 The type system is integrated to the object system,
 that is, a string is an instance of the class @code{<string>},
 and so on.
+@c JP
+型システムは、オブジェクトシステムに統合されています。
+つまり、文字列は@code{<string>}クラスのインスタンスである、などです。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @menu
@@ -26,7 +38,11 @@ and so on.
 @c NODE 一般的な問い合わせ
 
 @defun class-of obj
+@c EN
 Returns a class metaobject of @var{obj}.
+@c JP
+@var{obj}のメタオブジェクト、クラスを返します。
+@c COMMON
 
 @example
 (class-of 3)     @result{} #<class <integer>>
@@ -35,8 +51,13 @@ Returns a class metaobject of @var{obj}.
 @end defun
 
 @defun is-a? obj class
+@c EN
 Returns true if @var{obj} is an instance of @var{class} or an instance
 of descendants of @var{class}.
+@c JP
+@var{obj}が@var{class}のインスタンスであるか、@var{class}のサブクラスの
+インスタンスである場合に、真を返します。
+@c COMMON
 
 @example
 (is-a? 3 <integer>)   @result{} #t
@@ -168,6 +189,7 @@ for the usage of metaclass.
 @c NODE インスタンスへのアクセス
 
 @defun slot-ref obj slot
+@c EN
 Returns a value of the slot @var{slot} of object @var{object}.
 
 If the specified slot is not bound to any value, a generic function
@@ -180,35 +202,75 @@ a generic function @code{slot-missing} is called with three
 arguments, @var{obj}'s class,
 @var{obj}, and @var{slot}.  The default behavior of @code{slot-missing}
 is to signal an error.
+@c JP
+オブジェクト@var{object}のスロット@var{slot}の値を返します。
+
+指定したスロットが値に束縛されていない場合、ジェネリック関数
+@code{slot-unbound}が3つの引数、@var{obj}のクラス、@var{obj}、@var{slot}
+を伴って呼び出されます。@code{slot-unbound}のデフォルトの振る舞いは、
+エラーの通知です。
+
+オブジェクトが指定されたスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が3つの引数、@var{obj}のクラス、@var{obj}、@var{slot}を
+伴って呼び出されます。@code{slot-missing}のデフォルトの振る舞いは、
+エラーの通知です。
+@c COMMON
 @end defun
 
 @defun slot-set! obj slot value
+@c EN
 Alters the value of the slot @var{slot} of object @var{object} to
 the value @var{value}.
 
 If the object doesn't have the specified slot, a generic function
 @code{slot-missing} is called with four arguments,
 @var{obj}'s class, @var{obj}, @var{slot}, @var{value}.
+@c JP
+オブジェクト@var{object}のスロット@var{slot}の値を、@var{value}に
+セットします。
+
+オブジェクトが指定したスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が4つの引数、@var{obj}のクラス、@var{obj}、
+@var{slot}、@var{value}を伴って呼び出されます。
+@c COMMON
 @end defun
 
 @defun slot-bound? obj slot
+@c EN
 Returns true if object @var{obj}'s slot @var{slot} is bound, 
 otherwise returns false.
 
 If the object doesn't have the specified slot, a generic function
-@code{slot-missing} is called with four arguments,
+@code{slot-missing} is called with three arguments,
 @var{obj}'s class, @var{obj}, @var{slot}.
+@c JP
+オブジェクト@var{obj}のスロット@var{slot}が束縛されていれば真を、
+そうでなければ偽を返します。
 
+オブジェクトが指定したスロットを持っていない場合は、ジェネリック関数
+@code{slot-missing}が3つの引数、@var{obj}のクラス、@var{obj}、
+@var{slot}を伴って呼び出されます。
+@c COMMON
 @end defun
 
 @defun slot-exists? obj slot
-Returns true iff @var{obj} has the slot named @var{slot}.
+@c EN
+Returns true if @var{obj} has the slot named @var{slot}.
+@c JP
+@var{obj}が@var{slot}を持っていれば真を返します。
+@c COMMON
 @end defun
 
 @defun slot-push! obj slot value
+@c EN
 This function implements the common idiom.
 It can be defined like the following code
 (but it may be optimized in the future versions).
+@c JP
+この関数は、一般的なイディオムの実装です。
+これは以下のようなコードで定義できます(が、将来のバージョンでは
+最適化されるでしょう)。
+@c COMMON
 @example
 (define (slot-push! obj slot value)
   (slot-set! obj slot (cons value (slot-ref obj slot))))
