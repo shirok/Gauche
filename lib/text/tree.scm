@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tree.scm,v 1.2 2001-10-24 08:36:56 shirok Exp $
+;;;  $Id: tree.scm,v 1.3 2001-11-10 11:46:49 shirok Exp $
 ;;;
 
 (define-module text.tree
@@ -30,7 +30,7 @@
 (define-method write-tree ((tree <top>) out)
   (display tree out))
 
-(define-method tree->string (tree)
+(define (tree->string tree)
   (with-output-to-string (lambda () (write-tree tree))))
 
 (provide "text/tree")
