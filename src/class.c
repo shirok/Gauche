@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.4 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: class.c,v 1.5 2001-02-02 06:35:28 shiro Exp $
  */
 
 #include "gauche.h"
@@ -145,6 +145,32 @@ static int printObj(ScmObj obj, ScmPort *port, int mode)
     ScmClass *c = Scm_ClassOf(obj);
     return Scm_Printf(port, "#<%s %p>", c->name, obj);
 }
+
+/*
+ * External interface
+ */
+
+ScmClass *Scm_MakeBuiltinClass(const char *name,
+                               int (*printer)(ScmObj, ScmPort*, int),
+                               ScmObj supers)
+{
+    ScmClass *c = SCM_NEW(ScmClass);
+    c->hdr.klass = SCM_CLASS_CLASS;
+    c->name = (char *)Scm_MallocAtomic(strlen(name)+1);
+    strcpy(c->name, name);
+    c->print = printer ? printer : printObj;
+
+    /* TODO: need to call compute-cpl.  for now, we ignore supers */
+    c->cpl = (ScmClass **)Scm_Malloc(sizeof(ScmClass*) * 2);
+    c->cpl[0] = SCM_CLASS_TOP;
+    c->cpl[1] = NULL;
+
+    /* TODO: need to intern to the current module */
+    SCM_DEFINE(Scm_SchemeModule(), name, SCM_OBJ(c));
+    
+    return c;
+}
+
 
 /*
  * Class initialization

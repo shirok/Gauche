@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.17 2001-02-01 08:18:00 shiro Exp $
+ *  $Id: gauche.h,v 1.18 2001-02-02 06:35:28 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -267,6 +267,10 @@ extern ScmClass *Scm_ClassOf(ScmObj obj);
 extern ScmObj Scm_ClassCPL(ScmClass *klass);
 extern ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 extern ScmObj Scm_TypeP(ScmObj obj, ScmClass *type);
+
+extern ScmClass *Scm_MakeBuiltinClass(const char *name,
+                                      int (*printer)(ScmObj, ScmPort*, int),
+                                      ScmObj supers);
 
 /* built-in classes */
 extern ScmClass Scm_TopClass;
