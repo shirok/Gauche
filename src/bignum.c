@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.18 2001-05-14 19:08:07 shirok Exp $
+ *  $Id: bignum.c,v 1.19 2001-05-17 09:04:43 shirok Exp $
  */
 
 #include <math.h>
@@ -284,10 +284,9 @@ static ScmBignum *bignum_2scmpl(ScmBignum *br)
     int rsize = SCM_BIGNUM_SIZE(br);
     int i, c;
     for (i=0, c=1; i<rsize; i++) {
-        long x = ~br->values[i];
+        unsigned long x = ~br->values[i];
         UADD(br->values[i], c, x, 0);
     }
-    SCM_ASSERT(c == 0);
     return br;
 }
 
@@ -873,27 +872,6 @@ ScmObj Scm_BignumAsh(ScmBignum *x, int cnt)
     }
 }
 
-ScmObj Scm_BignumLogAndSI(ScmBignum *x, long y)
-{
-    if (y == 0) {
-        return SCM_MAKE_INT(0);
-    } else if (y > 0) {
-        if (SCM_BIGNUM_SIGN(x) > 0) {
-            return Scm_MakeInteger(x->values[0] & y);
-        } else {
-            return Scm_MakeInteger(((~x->values[0])+1) & y);
-        }
-    } else if (y < 0) {
-        ScmBignum *z = SCM_BIGNUM(Scm_BignumCopy(x));
-        if (SCM_BIGNUM_SIGN(x) > 0) {
-            z->values[0] = x->values[0] & y;
-        } else {
-            z->values[0] = ~(((~x->values[0])+1) & y)+1;
-        }
-        return SCM_OBJ(z);
-    }
-}
-
 /* assumes x and y are normalized */
 ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
 {
@@ -913,9 +891,21 @@ ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
     SCM_BIGNUM_SIGN(z) = (xsign > 0 && ysign > 0)? 1 : -1;
     
     while (digit < zsize) {
-        
+        /*WRITEME*/
     }
     return SCM_OBJ(z);
+}
+
+ScmObj Scm_BignumLogIor(ScmBignum *x, ScmBignum *y)
+{
+    /*WRITEME*/
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_BignumLogXor(ScmBignum *x, ScmBignum *y)
+{
+    /*WRITEME*/
+    return SCM_UNDEFINED;
 }
 
 /*-----------------------------------------------------------------------
