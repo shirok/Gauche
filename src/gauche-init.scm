@@ -12,12 +12,8 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.1 2001-02-06 08:37:19 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.2 2001-02-09 20:41:14 shiro Exp $
 ;;;
-
-;;
-;;
-;;
 
 ;;
 ;; Macro
