@@ -96,7 +96,7 @@ test-vmstack : test-vmstack.c libgauche.a
 	./test-vmstack >> test.log
 
 clean :
-	rm -rf core gosh @LIBGAUCHE_SO@ *.o *~ *.a *.t test.log test.dir so_locations gauche/*~
+	rm -rf core gosh test-vmstack @LIBGAUCHE_SO@ *.o *~ *.a *.t test.log test.dir so_locations gauche/*~
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
