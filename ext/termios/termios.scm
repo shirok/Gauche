@@ -30,10 +30,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: termios.scm,v 1.5 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: termios.scm,v 1.6 2004-09-12 02:00:26 shirok Exp $
 ;;;
 
 (define-module gauche.termios
+  (use gauche.uvector)
   (export-all)
   )
 

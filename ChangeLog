@@ -1,3 +1,8 @@
+2004-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/termios/* : Added support of termios.c_cc (Patch from Kogule,
+	  Ryo).
+
 2004-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/fcntl/fcntl.c (Scm_SysFcntl): Supports F_GETOWN and F_SETOWN

@@ -13,10 +13,12 @@ OBJECTS = termios_head.$(OBJEXT) termios.$(OBJEXT) termiolib.$(OBJEXT) termios_t
 
 GENERATED = Makefile termiolib.c termios_head.c termios_tail.c
 
+EXTRA_INCLUDES = -I$(srcdir)/../uvector
+
 all : $(LIBFILES)
 
 termios.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) termios.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) termios.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 termiolib.c : termiolib.stub
 

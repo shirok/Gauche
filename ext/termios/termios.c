@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.12 2004-07-15 07:10:05 shirok Exp $
+ *  $Id: termios.c,v 1.13 2004-09-12 02:00:26 shirok Exp $
  */
 
 #include <string.h>
@@ -55,6 +55,7 @@ static ScmObj termios_allocate(ScmClass *klass, ScmObj initargs)
     ScmSysTermios *t = SCM_NEW(ScmSysTermios);
     SCM_SET_CLASS(t, SCM_CLASS_SYS_TERMIOS);
     memset(&t->term, 0, sizeof(t->term));
+    t->cc = Scm_MakeU8Vector(NCCS, 0);
     return SCM_OBJ(t);
 }
 
@@ -73,17 +74,58 @@ TERMIOS_GET_N_SET(c_oflag)
 TERMIOS_GET_N_SET(c_cflag)
 TERMIOS_GET_N_SET(c_lflag)
 
+static ScmObj termios_c_cc_get(ScmSysTermios* t)
+{
+    return t->cc;
+}
+
+static void termios_c_cc_set(ScmSysTermios* t, ScmObj val)
+{
+    if (!SCM_U8VECTORP(val)) {
+        Scm_Error("cc type must be a u8vector, but got %S", val);
+    }
+    if (SCM_U8VECTOR_SIZE(val) != NCCS) {
+        Scm_Error("size of cc must be %u, but got %u",
+                  NCCS, SCM_U8VECTOR_SIZE(val));
+    }
+    t->cc = val;
+}
+
 static ScmClassStaticSlotSpec termios_slots[] = {
     SCM_CLASS_SLOT_SPEC("iflag", termios_c_iflag_get, termios_c_iflag_set),
     SCM_CLASS_SLOT_SPEC("oflag", termios_c_oflag_get, termios_c_oflag_set),
     SCM_CLASS_SLOT_SPEC("cflag", termios_c_cflag_get, termios_c_cflag_set),
     SCM_CLASS_SLOT_SPEC("lflag", termios_c_lflag_get, termios_c_lflag_set),
+    SCM_CLASS_SLOT_SPEC("cc", termios_c_cc_get, termios_c_cc_set),
     { NULL }
 };
 
 ScmObj Scm_MakeSysTermios(void)
 {
     return termios_allocate(NULL, SCM_NIL);
+}
+
+/*
+ * sync functions for cc
+ */
+
+void termios_copyin_cc(ScmSysTermios* t)
+{
+    int i;
+    for (i = 0; i < NCCS; i++) {
+        Scm_U8VectorSet(SCM_U8VECTOR(t->cc), i,
+                        Scm_MakeIntegerFromUI(t->term.c_cc[i]),
+                        SCM_UVECTOR_CLAMP_NONE);
+    }
+}
+
+void termios_copyout_cc(ScmSysTermios* t)
+{
+    int i;
+    for (i = 0; i < NCCS; i++)
+        t->term.c_cc[i] =
+          Scm_GetUInteger(
+            Scm_U8VectorRef(SCM_U8VECTOR(t->cc), i, SCM_UNBOUND));
 }
 
 /*
@@ -290,6 +332,52 @@ void Scm_Init_termios(void)
     DEFSYM(PENDIN);
 #endif
 
+    /* c_cc size */
+    DEFSYM(NCCS);
+    
+    /* disable character */
+    DEFSYM(_POSIX_VDISABLE);
+
+    /* c_cc subscripts */
+    DEFSYM(VEOF);
+    DEFSYM(VEOL);
+    DEFSYM(VERASE);
+    DEFSYM(VINTR);
+    DEFSYM(VKILL);
+    DEFSYM(VMIN);
+    DEFSYM(VQUIT);
+    DEFSYM(VSTART);
+    DEFSYM(VSTOP);
+    DEFSYM(VSUSP);
+    DEFSYM(VTIME);
+#ifdef VDISCARD
+    DEFSYM(VDISCARD);
+#endif
+#ifdef VDSUSP
+    DEFSYM(VDSUSP);
+#endif
+#ifdef EOL2
+    DEFSYM(VEOL2);
+#endif
+#ifdef LNEXT
+    DEFSYM(VLNEXT);
+#endif
+#ifdef VREPRINT
+    DEFSYM(VREPRINT);
+#endif
+#ifdef VSTATUS
+    DEFSYM(VSTATUS);
+#endif
+#ifdef WERASE
+    DEFSYM(VWERASE);
+#endif
+#ifdef VSWTCH
+    DEFSYM(VSWTCH);
+#endif
+#ifdef VSWTC
+    DEFSYM(VSWTC);
+#endif
+    
     /* extra baudrates.   <= B38400 is defined in termiolib.stub */
 #ifdef B57600
     DEFSYM(B57600);
