@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.11 2001-03-24 10:47:17 shiro Exp $
+ *  $Id: class.h,v 1.12 2001-03-25 06:34:02 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -58,15 +58,6 @@ typedef struct ScmClassStaticSlotSpecRec {
               SCM_FALSE } }
 
 #define SCM_CLASS_SLOT_SPEC_END()   { NULL }
-
-/* base of scheme-defined objects */
-
-typedef struct ScmObjectRec {
-    SCM_HEADER;
-    ScmObj slots[1];
-} ScmObject;
-
-#define SCM_OBJECT(obj)      ((ScmObject *)obj)
 
 /* some internal methods */
     
