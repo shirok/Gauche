@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.144 2002-01-08 06:00:13 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.145 2002-01-14 06:02:40 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6454,15 +6454,22 @@ the @code{~D} directive.
 @section Loading Programs
 @c NODE プログラムのロード
 
-@defun load file &keyword (error-if-not-found #t)
+@node Loading Scheme file
+@subsection Load Scheme file
+@c NODE Schemeファイルのロード
+
+@defun load file &keyword paths (error-if-not-found #t)
 [R5RS+]
 @c EN
 Loads @var{file}, that is, read Scheme expressions in @var{file} and
 evaluates them.
 An extension ``@code{.scm}'' may be omitted from @var{file}.
 
-If @var{file} is a relative pathname, it is searched from the
-system file search list, stored in a variable @code{*load-path*}.
+If @var{file} doesn't begin with ``/'' or ``./'' or ``../'',
+it is searched from the system file search list,
+stored in a variable @code{*load-path*}.
+Or you can explicitly specify the search path by passing
+a list of directory names to the keyword argument @var{paths}.
 
 On success, @code{load} returns @code{#t}.
 If the specified file is not found, an error is signalled unless
@@ -6480,8 +6487,10 @@ If you want to load a library file, it's better to use `@code{use}'
 @var{file}をロードします。すなわち、@var{file}に書かれたScheme式を順次読み込んで
 評価します。@var{file}の拡張子 (``@code{.scm}'') は省略できます。
 
-@var{file}が相対パスで与えられた場合は、システムファイルサーチパス (変数
-@code{*load-path*} に格納されています) の中から該当ファイルが探されます。
+@var{file}が ``/'', ``./'' または ``../'' で始まっていない場合は、
+システムファイルサーチパス (変数@code{*load-path*} に格納されています)
+の中から該当ファイルが探されます。あるいは、キーワード引数@var{paths}にディレクトリ名の
+リストを渡すことによりサーチパスを指定することもできます。
 
 ロードに成功した場合は@code{#t}が返されます。
 指定ファイルがみつからない場合はエラーとなりますが、もしキーワード引数
@@ -6514,6 +6523,49 @@ described below, instead.
 @c COMMON
 @end defvar
 
+@defspec add-load-path path &optional (afterp #f)
+@c EN
+Adds a path @var{path} to the library load path list.
+If a true value is given to @var{afterp}, @var{path} is added
+after the existing paths; otherwise, @var{path} is added before the
+existing paths.
+
+Use this form instead of changing @code{*load-path*} directly.
+This form is a special form and recognized by the compiler;
+if you change @code{*load-path*}, it is in effect at run time,
+and that may be too late for ``use'' or ``require''.
+
+Furthermore,
+@code{add-load-path} looks for the architecture dependent directories
+under the specified path and if it exists, sets up the internal
+path list for dynamic loading correctly.   Suppose you have
+your Scheme module in @code{/home/yours/lib}, and that requires 
+a dyncamic loadable library.  You can put the library under
+@code{/home/yours/lib/@var{ARCH}/}, where @var{ARCH} is
+the value @code{(gauche-architecture)} returns (@xref{Environment Inquiry}).
+Then you can have compiled libraries for multiple platforms and
+Gauche can still find the right library.
+@c JP
+パス@var{path}をライブラリロードパスのリストに加えます。
+@var{afterp}に真の値が与えられていれば@var{path}は既存のリストの末尾に
+追加されます。そうでなければ@var{path}は既存のリストの先頭に追加されます。
+
+ロードパスを変更したい場合、@code{*load-path*}を直接替えずにこのフォームを
+使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{*load-path*}を
+書き換えるコードは実行時に解釈されます。``@code{use}'' や ``@code{require}'' は
+コンパイル時のロードパスを使うので、@code{*load-path*}への変更は反映されないかもしれません。
+
+更に、@code{add-load-path}は@var{path}の下にアーキテクチャ依存のディレクトリが
+ないかどうかを探し、あればそれを内部の共有ライブラリサーチパスに追加します。
+例えばあなたが自分のSchemeモジュールを@code{/home/yours/lib}に入れていて、
+それが共有ライブラリを必要としていたとします。手続き@code{gauche-architecture}
+(@ref{Environment Inquiry}参照)が返す値を@var{ARCH}として、
+共有ライブラリを@code{/home/yours/lib/@var{ARCH}/}に置いておくと、
+共有ライブラリはそこからロードされます。この方法を取ると、複数のプラットフォーム用に
+別々にコンパイルされた共有ライブラリを管理することができます。
+@c COMMON
+@end defspec
+
 @defun load-from-port port
 @c EN
 Reads Scheme expressions from an input port @var{port} and evaluates
@@ -6522,6 +6574,74 @@ them, until EOF is read.
 入力ポート@var{port}から、EOFを読むまで繰り返しScheme式を読み込み評価します。
 @c COMMON
 @end defun
+
+@defun current-load-port
+@defunx current-load-history
+@defunx current-load-next
+@c EN
+These procedures allows you to query the current context of loading.
+They returns the following values when called inside a file being loaded:
+@table @code
+@item current-load-port
+Returns the port object from which the file is being read.
+@item current-load-history
+Returns a list of pairs of a port and a line number (integer),
+representing the nesting of loads.  Suppose you load
+@file{foo.scm}, and from its line 7 it loads @file{bar.scm}, 
+and from its line 18 it loads @file{baz.scm}.   If you call
+@code{current-load-history} in the file @file{baz.scm}, you'll get
+@example
+((#<port "foo.scm"> . 7) (#<port "bar.scm"> . 18))
+@end example
+@item current-load-next
+Returns a list of remaining directories to be searched
+at the time this file is found.   Suppose the @code{*load-path*}
+is @code{("." "../lib" "/home/gauche/lib" "/share/gauche/lib")}
+and you load @file{foo.scm}, which happens to be in @file{../lib/}.
+Then, inside @file{foo.scm}, @code{current-load-next} returns:
+@example
+("/home/gauche/lib" "/share/gauche/lib")
+@end example
+@end table
+
+When called outside of @code{load}, these procedures returns
+@code{#f}, @code{()} and @code{()}, respectively.
+@c JP
+これらの手続きによって、現在のロードのコンテクストを知ることができます。
+ロードされているファイルの中でこれらの手続きを呼ぶと、次のような値が返されます。
+@table @code
+@item current-load-port
+現在のファイルがロードされている入力ポート。
+@item current-load-history
+入力ポートと行番号のペアのリストで、ロードのネスティングを示したもの。
+例えばあなたが@file{foo.scm}をロードし、そのファイルの7行目で
+@file{bar.scm}がロードされ、そのファイルの18行目で@file{baz.scm}が
+ロードされたとします。@code{current-load-history}を@file{baz.scm}中で
+呼ぶと、それは次のような値を返します。
+@example
+((#<port "foo.scm"> . 7) (#<port "bar.scm"> . 18))
+@end example
+@item current-load-next
+現在のファイルがロードされた時点での、ファイルサーチパスの残りを返します。
+例えば @code{*load-path*} が
+@code{("." "../lib" "/home/gauche/lib" "/share/gauche/lib")}で、
+あなたが@file{foo.scm}をロードしたところ、それが@file{../lib/}中に見つかったと
+しましょう。このとき、@file{foo.scm}中で@code{current-load-next}を呼べば
+@example
+("/home/gauche/lib" "/share/gauche/lib")
+@end example
+が返されます。
+@end table
+
+@code{load}されていない状態で呼ばれた時は、これらの手続きはそれぞれ@code{#f}、
+@code{()}、@code{()}を返します。
+@c COMMON
+@end defun
+
+
+@node Loading dynamic library
+@subsection Load dynamic library
+@c NODE ダイナミックライブラリのロード
 
 @defun dynamic-load file &keyword init-function export-symbols
 @c EN
@@ -6573,48 +6693,10 @@ There's no way to unload the loaded libraries.
 @c COMMON
 @end defun
 
-@defspec add-load-path path &optional (afterp #f)
-@c EN
-Adds a path @var{path} to the library load path list.
-If a true value is given to @var{afterp}, @var{path} is added
-after the existing paths; otherwise, @var{path} is added before the
-existing paths.
 
-Use this form instead of changing @code{*load-path*} directly.
-This form is a special form and recognized by the compiler;
-if you change @code{*load-path*}, it is in effect at run time,
-and that may be too late for ``use'' or ``require''.
-
-Furthermore,
-@code{add-load-path} looks for the architecture dependent directories
-under the specified path and if it exists, sets up the internal
-path list for dynamic loading correctly.   Suppose you have
-your Scheme module in @code{/home/yours/lib}, and that requires 
-a dyncamic loadable library.  You can put the library under
-@code{/home/yours/lib/@var{ARCH}/}, where @var{ARCH} is
-the value @code{(gauche-architecture)} returns (@xref{Environment Inquiry}).
-Then you can have compiled libraries for multiple platforms and
-Gauche can still find the right library.
-@c JP
-パス@var{path}をライブラリロードパスのリストに加えます。
-@var{afterp}に真の値が与えられていれば@var{path}は既存のリストの末尾に
-追加されます。そうでなければ@var{path}は既存のリストの先頭に追加されます。
-
-ロードパスを変更したい場合、@code{*load-path*}を直接替えずにこのフォームを
-使って下さい。このフォームはコンパイル時に解釈されるのに対し、@code{*load-path*}を
-書き換えるコードは実行時に解釈されます。``@code{use}'' や ``@code{require}'' は
-コンパイル時のロードパスを使うので、@code{*load-path*}への変更は反映されないかもしれません。
-
-更に、@code{add-load-path}は@var{path}の下にアーキテクチャ依存のディレクトリが
-ないかどうかを探し、あればそれを内部の共有ライブラリサーチパスに追加します。
-例えばあなたが自分のSchemeモジュールを@code{/home/yours/lib}に入れていて、
-それが共有ライブラリを必要としていたとします。手続き@code{gauche-architecture}
-(@ref{Environment Inquiry}参照)が返す値を@var{ARCH}として、
-共有ライブラリを@code{/home/yours/lib/@var{ARCH}/}に置いておくと、
-共有ライブラリはそこからロードされます。この方法を取ると、複数のプラットフォーム用に
-別々にコンパイルされた共有ライブラリを管理することができます。
-@c COMMON
-@end defspec
+@node Require and provide
+@subsection Require and provide
+@c NODE requireとprovide
 
 @defspec require feature
 @c EN
@@ -6661,6 +6743,9 @@ Returns @code{#t} if @var{feature} is already provided.
 @var{feature}が既にprovideされていれば@code{#t}を返します。
 @c COMMON
 @end defun
+
+@node Autoload
+@subsection Autoload
 
 @defmac autoload file/module item @dots{}
 @c EN
