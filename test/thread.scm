@@ -253,6 +253,156 @@
             (thread-join! tc)
             (reverse log)))))
 
+;;---------------------------------------------------------------------
+(test-section "port access serialization")
+
+(use srfi-1)
+
+(define (port-test-chunk-generator nchars c)
+  (lambda () (make-string nchars c)))
+
+(define (port-test-read-string nchars port)
+  (let loop ((i 1) (c (read-char port)) (r '()))
+    (cond ((eof-object? c)
+           (if (null? r) c (list->string (reverse r))))
+          ((= i nchars) (list->string (reverse (cons c r))))
+          (else (loop (+ i 1) (read-char port) (cons c r))))))
+
+(define (port-test-testers nchars nthread nrepeat line?)
+  (let* ((strgen     (map (lambda (i)
+                            (port-test-chunk-generator nchars
+                                                       (integer->char
+                                                        (+ (char->integer #\a)
+                                                           i))))
+                          (iota nthread)))
+         (generators (map (lambda (gen)
+                            (let ((i 0))
+                              (lambda ()
+                                (if (= i nrepeat)
+                                    #f
+                                    (begin
+                                      (inc! i)
+                                      (if line?
+                                          (string-append (gen) "\n")
+                                          (gen)))))))
+                          strgen))
+         (getter     (if line?
+                         read-line
+                         (lambda (port)
+                           (port-test-read-string nchars port))))
+         (confirmer  (lambda (inp)
+                       (let1 strs (map (cut <>) strgen)
+                         (let loop ((chunk (getter inp)))
+                           (cond ((eof-object? chunk) #t)
+                                 ((member chunk strs) (loop (getter inp)))
+                                 (else #f))))))
+         )
+    (values confirmer generators)))
+
+(define (port-test-kick-threads generators outp)
+  (let* ((thunks  (map (lambda (gen)
+                         (lambda ()
+                           (let loop ((s (gen)))
+                             (when s
+                               (display s outp)
+                               (thread-sleep! 0.001)
+                               (loop (gen))))))
+                       generators))
+         (threads (map (lambda (thunk) (make-thread thunk)) thunks))
+         )
+    (for-each thread-start! threads)
+    (for-each thread-join! threads)))
+
+(sys-system "rm -rf test.out")
+
+(test "write to file, buffered" #t
+      (lambda ()
+        (receive (confirmer generators)
+            (port-test-testers 160 8 20 #f)
+          (call-with-output-file "test.out"
+            (lambda (outp) (port-test-kick-threads generators outp)))
+          (call-with-input-file "test.out" confirmer))))
+
+(sys-system "rm -rf test.out")
+
+(test "write to file, line-buffered" #t
+      (lambda ()
+        (receive (confirmer generators)
+            (port-test-testers 160 8 20 #t)
+          (call-with-output-file "test.out"
+            (lambda (outp) (port-test-kick-threads generators outp))
+            :bufferling 'line)
+          (call-with-input-file "test.out" confirmer))))
+
+
+(sys-system "rm -rf test.out")
+
+(test "write to string" #t
+      (lambda ()
+        (receive (confirmer generators)
+            (port-test-testers 160 8 20 #f)
+          (let1 s (call-with-output-string
+                    (lambda (outp) (port-test-kick-threads generators outp)))
+            (call-with-input-string s confirmer)))))
+
+;; Check if port is properly unlocked when an error is signalled
+;; inside the port processing routine.
+
+(define *port-test-error* #f)
+
+(define (make-error-test-port outp flush?)
+  (open-output-buffered-port
+   (lambda (str)
+     (cond ((not str) (flush outp))
+           ((string-scan str "Z" 'before)
+            => (lambda (s)
+                 (display s outp)
+                 (if flush? (flush outp))
+                 (unless *port-test-error*
+                   (set! *port-test-error* #t)
+                   (error "error"))))
+           (else (display str outp) (if flush? (flush outp)))))
+   5))
+
+(define (port-test-on-error port use-flush?)
+  (set! *port-test-error* #f)
+  (let* ((p   (make-error-test-port port use-flush?))
+         (th1 (make-thread
+               (lambda ()
+                 (with-error-handler
+                     (lambda (e) #f)
+                   (lambda () (display "aaaaaAAAZAa" p))))
+               'th1))
+         (th2 (make-thread
+               (lambda ()
+                 (display "bbbbbbbb" p))
+               'th2)))
+    (thread-start! th1)
+    (thread-join! th1)
+    (thread-start! th2)
+    (thread-join! th2)
+    (close-output-port p)))
+
+(test "check if port is unlocked on error" "aaaaaAAAAAAbbbbbbbb"
+      (lambda ()
+        (call-with-output-string (cut port-test-on-error <> #f))))
+(test "check if port is unlocked on error" "aaaaaAAAAAAbbbbbbbb"
+      (lambda ()
+        (call-with-output-string (cut port-test-on-error <> #t))))
+
+(sys-system "rm -f test.out")
+(test "check if port is unlocked on error (use file)" "aaaaaAAAAAAbbbbbbbb"
+      (lambda ()
+        (call-with-output-file "test.out"
+          (cut port-test-on-error <> #f))
+        (call-with-input-file "test.out" port->string)))
+
+(sys-system "rm -f test.out")
+(test "check if port is unlocked on error (use file)" "aaaaaAAAAAAbbbbbbbb"
+      (lambda ()
+        (call-with-output-file "test.out"
+          (cut port-test-on-error <> #t))
+        (call-with-input-file "test.out" port->string)))
 
 (test-end)
 
