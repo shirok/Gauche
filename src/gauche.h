@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.292 2002-08-10 01:06:18 shirok Exp $
+ *  $Id: gauche.h,v 1.293 2002-08-19 13:57:44 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2046,9 +2046,11 @@ SCM_CLASS_DECL(Scm_SysSigsetClass);
 #define SCM_SYS_SIGSET(obj)    ((ScmSysSigset*)(obj))
 #define SCM_SYS_SIGSET_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYS_SIGSET)
 
+#define SCM_SIGPENDING(vm) \
+    ((vm)->sigQueueTail != (vm)->sigQueueHead)
+
 #define SCM_SIGCHECK(vm) \
-    do { if ((vm)->sigQueueTail != (vm)->sigQueueHead) Scm_SigCheck(vm); \
-    } while (0)
+    do { if (SCM_SIGPENDING(vm)) Scm_SigCheck(vm); } while (0)
 
 SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_SysSigsetOp(ScmSysSigset*, ScmObj, int);
