@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.236 2002-04-24 23:18:15 shirok Exp $
+ *  $Id: gauche.h,v 1.237 2002-04-25 03:31:57 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -362,6 +362,7 @@ SCM_EXTERN ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
 SCM_EXTERN ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 
+SCM_EXTERN ScmObj Scm_VMCallCC(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
 				     ScmObj (*body)(ScmObj *, int, void *),
@@ -1246,6 +1247,7 @@ enum {
 #define SCM_WRITE_CASE(ctx)   ((ctx)->mode & SCM_WRITE_CASE_MASK)
 
 SCM_EXTERN void Scm_Write(ScmObj obj, ScmObj port, int mode);
+SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmPort *port, int mode, int width);
 SCM_EXTERN int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);
 SCM_EXTERN ScmObj Scm_Format(ScmObj port, ScmString *fmt, ScmObj args);
 SCM_EXTERN ScmObj Scm_Cformat(ScmObj port, const char *fmt, ...);

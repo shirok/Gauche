@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.82 2002-04-24 23:18:15 shirok Exp $
+;;; $Id: stdlib.stub,v 1.83 2002-04-25 03:31:57 shirok Exp $
 ;;;
 
 
@@ -130,7 +130,7 @@ static inline ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1
 
 static inline ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
 {
-  ScmObj code = SCM_NIL, tail;
+  ScmObj code = SCM_NIL, tail = SCM_NIL;
   SCM_APPEND(code, tail, Scm_Compile(arg0, env, SCM_COMPILE_NORMAL));
   SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
   SCM_APPEND(code, tail, Scm_Compile(arg1, env, SCM_COMPILE_NORMAL));

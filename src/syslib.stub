@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.65 2002-04-24 23:18:15 shirok Exp $
+;;; $Id: syslib.stub,v 1.66 2002-04-25 03:31:57 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -300,7 +300,7 @@
 #define MKSTEMP_PATH_MAX 1025  /* Gee, remove me */
   char name[MKSTEMP_PATH_MAX];
   ScmObj sname;
-  int siz = SCM_STRING_SIZE(template), fd; FILE *fp;
+  int siz = SCM_STRING_SIZE(template), fd;
   if (siz >= MKSTEMP_PATH_MAX-6) { 
     Scm_Error(\"pathname too long: %S\", template);
   }
@@ -664,7 +664,7 @@
   for (;;) {
     int i, n = getgroups(size, pglist);
     if (n >= 0) {
-      ScmObj head = SCM_NIL, tail;
+      ScmObj head = SCM_NIL, tail = SCM_NIL;
       for (i=0; i<n; i++) SCM_APPEND1(head, tail, Scm_MakeInteger(pglist[i]));
       SCM_RETURN(head);
     }
