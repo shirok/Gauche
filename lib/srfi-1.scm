@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.10 2001-06-30 09:42:38 shirok Exp $
+;; $Id: srfi-1.scm,v 1.11 2001-11-24 09:01:20 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -168,7 +168,7 @@
                 (%alist-delete key alist 'equal?)
                 (filter (lambda (elt) (not (= key (car elt)))) alist)))
 
-(define (alist-delete! key alist . maybe-=)
+(define (alist-delete! key alist . args)
   (%case-by-cmp args =
                 (%alist-delete! key alist 'eq?)
                 (%alist-delete! key alist 'eqv?)
