@@ -1,3 +1,8 @@
+2002-12-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/regexp.scm (rxmatch-case): catch the case that caused
+	  infinite loop (patch from Kimura Fuyuki)
+
 2002-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-0.scm : added srfi-31 and some missing feature ids.
