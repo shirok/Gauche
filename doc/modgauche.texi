@@ -6785,17 +6785,28 @@ the log level @var{level}.
 @c ----------------------------------------------------------------------
 @node gauche.termios - Termios, gauche.test - Unit testing, gauche.syslog - Syslog, Library modules - Gauche extensions
 @section @code{gauche.termios} - Termios
+@c NODE gauche.termios - Termios, @code{gauche.termios} - Termios
 
 @deftp {Module} gauche.termios
 @mdindex gauche.termios
+@c EN
 This module defines POSIX termios interface, which
 controls terminal attributes.  This module also provides
 pseudo tty interface, if the system provides it.
+@c JP
+このモジュールは端末の属性を制御する POSIX termios インタフェースを
+定義しています。さらに、このモジュールでは、システムが提供している場合には
+擬似 tty のインタフェースも提供しています。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <sys-termios>
 @clindex sys-termios
+@c EN
 POSIX termios(7) structure.
+@c JP
+POSIX termios(7) の構造体です。
+@c COMMON
 
 @defivar {<sys-termios>}  iflag
 @end defivar
@@ -6808,113 +6819,223 @@ POSIX termios(7) structure.
 
 @end deftp
 
+@c EN
 Throughout this section, argument @var{port-or-fd} refers to
 either a port object or a small integer representing system's file 
 descriptor.  If @var{port} is not associated
 to the system terminal, an error is signalled.  (You can check if @var{port}
 has an associated terminal by @code{sys-isatty?}.
 @xref{Other file operations}).
+@c JP
+このセクションを通じて、引数 @var{port-or-fd} はポートオブジェクトか
+システムのファイルディスクリプタを表現する小さい整数かのどちらかです。
+@var{port}がシステム端末に結びついていないければ、エラーを示すシグナルが
+あがります。(@code{sys-isatty?}を使えば@var{port}が端末と結びついているか
+どうかチェックできます。 @ref{Other file operations}参照)
+@c COMMON
 
 @defun sys-tcgetattr port-or-fd
+@c EN
 Returns terminal parameters in a @code{<sys-termios>} object,
 associated to @var{port-or-fd}.
+@c JP
+@var{port-or-fd} と結びついている @code{<sys-termios>}オブジェクトの
+端末パラメータを返します。
+@c COMMON
 @end defun
 
 @defun sys-tcsetattr port-or-fd when termios
+@c EN
 Sets terminal parameters associated to @var{port-or-fd} by @var{termios},
 which must be an instance of @code{<sys-termios>}.
 
 An integer argument @var{when} specifies when the changes take effect.
 Three variables are pre-defined for the argument:
+@c JP
+@var{port-or-fd}と結びついている端末のパラメータを @var{termios} に設定します。
+@var{termios} は @code{<sys-termios>} のインスタンスでなければなりません。
+
+整数の引数@var{when}はいつ変更を有効にするかを指定します。
+この引数用に3つの変数があらかじめ定義されています。
+@c COMMON
 @table @code
 @item TCSANOW
 @vindex TCSANOW 
+@c EN
 The change is reflected immediately.
+@c JP
+変更を直ちに反映します。
+@c COMMON
 @item TCSADRAIN
 @vindex TCSADRAIN
+@c EN
 The change is reflected after all pending output is flushed.
+@c JP
+変更を、すべてのペンディングになっている出力がフラッシュされた後に反映します。
+@c COMMON
 @item TCSAFLUSH
 @vindex TCSAFLUSH
+@c EN
 The change is reflected after all pending output is flushed,
 and all pending input is discarded.
+@c JP
+変更を、すべてのペンディングになっている出力がフラッシュされ、かつ、
+すべてのペンディングになっている入力が破棄されたあとに反映します。
+@c COMMON
 @end table
 @end defun
 
 @defun sys-tcsendbreak port-or-fd duration
+@c EN
 Transmits a zero stream for the specified duration
 to the terminal associated to @var{port-or-fd}.
 The unit of duration depends on the system; see man tcsendbreak(3) of
 your system for details.
+@c JP
+ゼロストリームを指定した時間、@var{port-or-fd}と結びついている端末に
+送出します。。時間の単位はシステム依存です。詳しくは、おつかいの
+システムのマニュアルページ tcsendbreak(3)を参照してください。
+@c COMMON
 @end defun
 
 @defun sys-tcdrain port-or-fd
+@c EN
 Waits until all output written to @var{port-or-fd} is transmitted.
+@c JP
+@var{port-or-fd}へのすべての出力が送出されるまで待ちます。
+@c COMMON
 @end defun
 
 @defun sys-tcflush port-or-fd queue
+@c EN
 Discards data in the buffer of @var{port-or-fd}, specified by 
 @var{queue}, which may be one of the following values.
+@c JP
+@var{port-or-fd}のバッファ内のデータを破棄する。@var{queue}には以下の値の
+どれかを指定します。
+@c COMMON
 @table @code
 @item TCIFLUSH
 @vindex TCIFLUSH
+@c EN
 Discards data received but not read.
+@c JP
+受信データしたが読み込んではいないデータを破棄します。
+@c COMMON
 @item TCOFLUSH
 @vindex TCOFLUSH
+@c EN
 Discards data written but not transmitted.
+@c JP
+書き出したが送出していないデータを破棄します。
+@c COMMON
 @item TCIOFLUSH
 @vindex TCIOFLUSH
+@c EN
 Do both @code{TCIFLUSH} and @code{TCOFLUSH} action.
+@c JP
+@code{TCIFLUSH} と @code{TCOFLUSH} の両方の動作をします。
+@c COMMON
 @end table
 @end defun
 
 @defun sys-tcflow port-or-fd action
+@c EN
 Controls data flow of @var{port-or-fd} by @var{action}, which may be
 one of the following values:
+@c JP
+@var{port-or-fd}のデータフローを@var{action}で制御します。@var{action}は
+以下の値のうちどれかです。
+@c COMMON
 @table @code
 @item TCOOFF
 @vindex TCOOFF
+@c EN
 Suspends output transmission.
+@c JP
+出力の送出をサスペンドします。
+@c COMMON
 @item TCOON
 @vindex TCOON
+@c EN
 Restarts output transmission.
+@c JP
+出力の送出を再開します。
+@c COMMON
 @item TCIOFF
 @vindex TCIOFF
+@c EN
 Transmits a STOP character to make the terminal device stop transmitting
 data to the system.
+@c JP
+端末デバイスがシステムへの送出を止めるよう STOP 文字を送出する。
+@c COMMON
 @item TCION
 @vindex TCION
+@c EN
 Transmits a START character to make the terminal device resume transmitting
 data to the system.
+@c JP
+端末デバイスがシステムへの送出を再開するよう START 文字を送出する。
+@c COMMON
 @end table
 @end defun
 
 @defun sys-tcgetpgrp port-or-fd
+@c EN
 Returns process group ID of the terminal associated to @var{port-or-fd}.
+@c JP
+@var{port-or-fd}の結びついている端末のプロセスのグループIDを返します。
+@c COMMON
 @end defun
 
 @defun sys-tcsetpgrp port-or-fd pgrp
+@c EN
 Sets process group ID of the terminal associated to @var{port-or-fd}
 to @var{pgrp}.
+@c JP
+@var{port-or-fd}の結びついている端末のプロセスのグループIDを@var{pgrp}に
+設定します。
+@c COMMON
 @end defun
 
 @defun sys-cfgetispeed termios
 @defunx sys-cfsetispeed termios speed
 @defunx sys-cfgetospeed termios
 @defunx sys-cfsetospeed termios speed
+@c EN
 Gets/sets input/output speed (baud rate) parameter stored in @var{termios}
 object.   Speed is represented by the following predefined numbers:
 @code{B0}, @code{B50}, @code{B75}, @code{B110}, @code{B134}, 
 @code{B150}, @code{B200}, @code{B300}, @code{B600}, @code{B1200}, 
 @code{B1800}, @code{B2400}, @code{B4800}, @code{B9600},
 @code{B19200}, @code{B38400}.
+@c JP
+@var{termios}内の入出力スピード(ボーレート)を取得/設定します。スピードは
+以下の定義ずみの数値で表現されてます：
+@code{B0}、@code{B50}、@code{B75}、@code{B110}、@code{B134}、
+@code{B150}、@code{B200}、@code{B300}、@code{B600}、@code{B1200}、
+@code{B1800}、@code{B2400}、@code{B4800}、@code{B9600}、
+@code{B19200}、@code{B38400}。
+@c COMMON
+
+@c EN
 Some system may support higher baud rate, such as @code{B57600},
 @code{B115200} or @code{B230400}.  You can use @code{symbol-bound?}
 to check these options are defined.  @code{B0} is used to
 terminate the connection.
+@c JP
+もっと速いボーレート、たとえば、@code{B57600}、
+@code{B115200} あるいは @code{B230400} をサポートしている
+システムもあります。@code{symbol-bound?}をつかえば、これらの
+オプションが定義されているかどうかをチェックできます。@code{B0}
+はコネクションを終了するのに使われます。
+@c COMMON
 @end defun
 
 @defun sys-openpty &optional term
-Openes a pair of pseudo ttys, one for master and the other for slave,
+@c EN
+Opens a pair of pseudo ttys, one for master and the other for slave,
 then returns two integers which are their file descriptors.
 An optional argument @var{term} must be, if passed, a @code{<sys-termios>}
 object; it sets the slave pty's parameters.
@@ -6925,10 +7046,25 @@ To obtain pseudo tty's name, use @code{sys-ttyname}
 (@xref{Other file operations}).
 
 This function is available only if the system supports @code{openpty(3)}.
+@c JP
+擬似 tty のペア、マスターとスレーブをオープンし、これらの
+ファイルディスクリプタの整数を返します。オプション引数 @var{term} 
+は通るなら、@code{<sys-termios>}オブジェクトでなければなりません。
+これは、pty パラメータを設定します。
+
+@code{open-input-fd-port}と@code{open-output-fd-port}の両方またはどちらか
+を返されたファイルディスクリプタに対するポートを生成するために使うことが
+できます(@ref{File ports}参照)。擬似端末の名前を得るには @code{sys-ttyname}
+を使います(@ref{Other file operations}参照)。
+
+この関数はシステムが @code{openpty(3)} をサポートしている場合にのみ利用
+可能です。
+@c COMMON
 @end defun
 
 @defun sys-forkpty &optional term
-Openes a pair of pseudo ttys, one for master and the other for slave,
+@c EN
+Opens a pair of pseudo ttys, one for master and the other for slave,
 sets the slave pty suitable for login terminal, then fork(2).
 
 Returns two integers; the first value is a child pid for the parent process,
@@ -6939,11 +7075,28 @@ An optional argument @var{term} must be, if passed, a @code{<sys-termios>}
 object; it sets the slave pty's parameters.
 
 This function is available only if the system supports @code{forkpty(3)}.
+@c JP
+擬似 ttyのペア、マスターとスレーブをオープンし、スレーブ sty を
+ログイン端末になるよう設定し、fork(2) します。
+
+二つの整数、最初の値は親プロセスに対しては子の pid の値で、0ならば
+子プロセスです。ふたつ目の値はマスター pty のファイルディスクリプタの
+値です。
+
+オプション引数 @var{term}は、通るなら、@code{<sys-termios>}オブジェクト
+でなければなりません。これはスレーブ pty のパラメータを設定します。
+
+この関数はシステムが @code{forkpty(3)} をサポートしている場合にのみ利用
+可能です。
+@c COMMON
 @end defun
 
-
+@c EN
 The following example shows how to get a password from the user
 without echoing:
+@c JP
+以下の例は、ユーザからのパスワードをエコーなしで取得する方法を示しています。
+@c COMMON
 
 @example
 (use gauche.termios)
