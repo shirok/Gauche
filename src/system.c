@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.38 2002-05-15 03:34:40 shirok Exp $
+ *  $Id: system.c,v 1.39 2002-05-17 10:36:29 shirok Exp $
  */
 
 #include <stdio.h>
@@ -530,6 +530,38 @@ ScmObj Scm_TimeToSeconds(ScmTime *t)
         return Scm_MakeIntegerFromUI(t->sec);
     }
 }
+
+#ifdef GAUCHE_USE_PTHREAD
+/* Scheme time -> timespec conversion, used by pthread routines.*/
+struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
+{
+    if (SCM_FALSEP(t)) return NULL;
+    if (SCM_TIMEP(t)) {
+        spec->tv_sec = SCM_TIME(t)->sec;
+        spec->tv_nsec = SCM_TIME(t)->nsec;
+    } else if (!SCM_REALP(t)) {
+        Scm_Error("bad timeout spec: <time> object or real number is required, but got %S", t);
+    } else {
+        ScmTime *ct = SCM_TIME(Scm_CurrentTime());
+        spec->tv_sec = ct->sec;
+        spec->tv_nsec = ct->nsec;
+        if (SCM_EXACTP(t)) {
+            spec->tv_sec += Scm_GetUInteger(t);
+        } else if (SCM_FLONUMP(t)) {
+            double s;
+            spec->tv_nsec += (unsigned long)(modf(Scm_GetDouble(t), &s)*1.0e9);
+            spec->tv_sec += (unsigned long)s;
+            while (spec->tv_nsec >= 1000000000) {
+                spec->tv_nsec -= 1000000000;
+                spec->tv_sec += 1;
+            }
+        } else {
+            Scm_Panic("implementation error: Scm_GetTimeSpec: something wrong");
+        }
+    }
+    return spec;
+}
+#endif /* GAUCHE_USE_PTHREAD */
 
 /* <sys-tm> object */
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.255 2002-05-16 09:53:53 shirok Exp $
+ *  $Id: gauche.h,v 1.256 2002-05-17 10:36:29 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -379,7 +379,10 @@ SCM_EXTERN ScmObj Scm_WithLock(ScmInternalMutex *mutex,
                                const char *info);
 SCM_EXTERN ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
 SCM_EXTERN ScmObj Scm_ThreadStart(ScmVM *vm);
-SCM_EXTERN ScmObj Scm_ThreadJoin(ScmVM *vm);
+SCM_EXTERN ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
+SCM_EXTERN ScmObj Scm_ThreadYield(void);
+SCM_EXTERN ScmObj Scm_ThreadSleep(ScmObj timeout);
+SCM_EXTERN ScmObj Scm_ThreadTerminate(ScmVM *vm);
 
 /*---------------------------------------------------------
  * CLASS
@@ -2126,6 +2129,9 @@ SCM_EXTERN ScmObj Scm_MakeTime(ScmObj type, unsigned long sec, unsigned long nse
 SCM_EXTERN ScmObj Scm_IntSecondsToTime(unsigned long sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
+#ifdef GAUCHE_USE_PTHREAD
+SCM_EXTERN struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec);
+#endif /*GAUCHE_USE_PTHREAD*/
 
 /* struct tm */
 typedef struct ScmSysTmRec {

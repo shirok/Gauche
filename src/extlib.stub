@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.152 2002-05-16 11:45:55 shirok Exp $
+;;; $Id: extlib.stub,v 1.153 2002-05-17 10:36:29 shirok Exp $
 ;;;
 
 "
@@ -1256,9 +1256,15 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (thread? vm))
   "SCM_RETURN(Scm_ThreadStart(vm));")
 
-(define-cproc thread-join! (vm)
+(define-cproc thread-yield! ()
+  "SCM_RETURN(Scm_ThreadYield());")
+
+(define-cproc thread-sleep! (timeout)
+  "SCM_RETURN(Scm_ThreadSleep(timeout));")
+
+(define-cproc thread-join! (vm &optional (timeout #f) timeout-val)
   (assert (thread? vm))
-  "SCM_RETURN(Scm_ThreadJoin(vm));")
+  "SCM_RETURN(Scm_ThreadJoin(vm, timeout, timeout_val));")
 
 (define-cproc make-mutex (&optional (name #f))
   "SCM_RETURN(Scm_MakeMutex(name));")

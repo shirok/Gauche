@@ -38,6 +38,43 @@
             (let1 t (thread-start! (make-thread (lambda () (display "hello" p))))
               (thread-join! t))))))
 
+;; calculate fibonacchi in awful way
+(define (mt-fib n)
+  (let ((threads (make-vector n)))
+    (dotimes (i n)
+      (set! (ref threads i)
+            (make-thread
+             (case i
+               ((0) (lambda () 1))
+               ((1) (lambda () 1))
+               (else (lambda () (+ (thread-join! (ref threads (- i 1)))
+                                   (thread-join! (ref threads (- i 2)))))))
+             i)))
+    (dotimes (i n)
+      (thread-start! (ref threads (- n i 1))))
+    (thread-join! (ref threads (- n 1)))))
+(test "thread-join!" 1346269 (lambda () (mt-fib 31)))
+
+;; NB: the result of the following test is not guaranteed; theoretically,
+;; there can be indefinite delay between thread-start! and the execution
+;; of the thunk, so the execution of t1 may be delayed and the result can
+;; be '(a b c). 
+(test "thread-sleep!" '(b a c)
+      (lambda ()
+        (let* ((l '())
+               (t0 (make-thread (lambda ()
+                                  (thread-sleep! 0.1)
+                                  (push! l 'a))))
+               (t1 (make-thread (lambda ()
+                                  (push! l 'b)
+                                  (thread-sleep! 0.15)
+                                  (push! l 'c)))))
+          (thread-start! t0)
+          (thread-start! t1)
+          (thread-join! t0)
+          (thread-join! t1)
+          (reverse l))))
+
 ;;---------------------------------------------------------------------
 (test-section "basic mutex API")
 
@@ -213,24 +250,6 @@
             (thread-join! tc)
             (reverse log)))))
 
-
-;; calculate fibonacchi in awful way
-(define (mt-fib n)
-  (let ((threads (make-vector n)))
-    (dotimes (i n)
-      (set! (ref threads i)
-            (make-thread
-             (case i
-               ((0) (lambda () 1))
-               ((1) (lambda () 1))
-               (else (lambda () (+ (thread-join! (ref threads (- i 1)))
-                                   (thread-join! (ref threads (- i 2)))))))
-             i)))
-    ;(print threads)
-    (dotimes (i n)
-      (thread-start! (ref threads (- n i 1))))
-    ;(print threads)
-    (thread-join! (ref threads (- n 1)))))
 
 (test-end)
 

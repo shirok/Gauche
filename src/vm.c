@@ -12,13 +12,18 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.145 2002-05-14 09:36:03 shirok Exp $
+ *  $Id: vm.c,v 1.146 2002-05-17 10:36:29 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/memory.h"
 #include "gauche/class.h"
+
+#include <unistd.h>
+#ifdef HAVE_SCHED_H
+#include <sched.h>
+#endif
 
 #ifndef EX_SOFTWARE
 /* SRFI-22 requires this. */
@@ -247,6 +252,7 @@ void Scm__InitVM(void)
     rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule(),
                                SCM_MAKE_STR_IMMUTABLE("root"));
 #endif  /* !GAUCHE_USE_PTHREAD */
+    rootVM->state = SCM_VM_RUNNABLE;
     vmList = SCM_LIST1(SCM_OBJ(rootVM));
     (void)SCM_INTERNAL_MUTEX_INIT(vmListMutex);
 }
@@ -2357,11 +2363,6 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
 
 /* Creation.  In the "NEW" state, a VM is allocated but actual thread
    is not created. */
-static ScmObj insert_self(void *self)
-{
-    return vmList = Scm_Cons(SCM_OBJ(self), vmList);
-}
-
 ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
 {
     ScmVM *current = theVM, *vm;
@@ -2371,12 +2372,14 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
     }
     vm = Scm_NewVM(current, current->module, name);
     vm->thunk = thunk;
-    Scm_WithLock(&vmListMutex, insert_self, (void*)vm, "global VM list");
+    (void)SCM_INTERNAL_MUTEX_LOCK(vmListMutex);
+    vmList = Scm_Cons(SCM_OBJ(vm), vmList);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(vmListMutex);
     return SCM_OBJ(vm);
 }
 
 /* Start a thread.  If the VM is in "NEW" state, create a new thread and
-   make it run.  Otherwise, if the thread has been stopped, restart it.
+   make it run.
 
    With pthread, the real thread is started as "detached" mode; i.e. once
    the thread exits, the resources allocated for the thread by the system
@@ -2399,68 +2402,104 @@ static void *thread_entry(void *vm)
 }
 #endif /* GAUCHE_USE_PTHREAD */
 
-static ScmObj thread_start(void *data)
+ScmObj Scm_ThreadStart(ScmVM *vm)
 {
-    ScmVM *vm = SCM_VM(data);
 #ifdef GAUCHE_USE_PTHREAD
+    int err_state = FALSE, err_create = FALSE;
     pthread_attr_t thattr;
-#endif /* GAUCHE_USE_PTHREAD */
-    switch (vm->state) {
-    case SCM_VM_NEW:
-#ifdef GAUCHE_USE_PTHREAD
+    (void)SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
+    if (vm->state != SCM_VM_NEW) {
+        err_state = TRUE;
+    } else {
         SCM_ASSERT(vm->thunk);
         vm->state = SCM_VM_RUNNABLE;
         pthread_attr_init(&thattr);
         pthread_attr_setdetachstate(&thattr, TRUE);
-        if (pthread_create(&vm->thread, &thattr, thread_entry, data) != 0) {
+        if (pthread_create(&vm->thread, &thattr, thread_entry, vm) != 0) {
             vm->state = SCM_VM_NEW;
-            Scm_Error("couldn't create a pthread for thread %S", vm);
+            err_create = TRUE;
         }
         pthread_attr_destroy(&thattr);
-#else  /*!GAUCHE_USE_PTHREAD*/
-#endif /*!GAUCHE_USE_PTHREAD*/
-        break;
-    case SCM_VM_RUNNABLE:
-        /* do nothing */
-        break;
-    case SCM_VM_BLOCKED:
-#ifdef GAUCHE_USE_PTHREAD
-#else  /*!GAUCHE_USE_PTHREAD*/
-#endif /*!GAUCHE_USE_PTHREAD*/
-        break;
-    default:
-        Scm_Error("attempted to start a terminated thread: %S", vm);
     }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
+    if (err_state) Scm_Error("attempt to start an already-started thread: %S", vm);
+    if (err_create) Scm_Error("couldn't start a new thread: %S", vm);
+#else  /*!GAUCHE_USE_PTHREAD*/
+    Scm_Error("not implemented!\n");
+#endif /*GAUCHE_USE_PTHREAD*/
     return SCM_OBJ(vm);
 }
 
-ScmObj Scm_ThreadStart(ScmVM *vm)
+/* Thread join */
+ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
-    return Scm_WithLock(&(vm->vmlock), thread_start,
-                        (void*)vm, "starting thread");
-}
-
-/* Join thread.  Wait on condition variable */
 #ifdef GAUCHE_USE_PTHREAD
-static ScmObj thread_join(void *data)
-{
-    ScmVM *target = SCM_VM(data);
-    if (target->state != SCM_VM_TERMINATED) {
-        pthread_cond_wait(&(target->cond), &(target->vmlock));
+    struct timespec ts, *pts;
+    ScmObj result = SCM_FALSE;
+    int intr = FALSE, tout = FALSE;
+    
+    pts = Scm_GetTimeSpec(timeout, &ts);
+    (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
+    while (target->state != SCM_VM_TERMINATED) {
+        if (pts) {
+            int tr = pthread_cond_timedwait(&(target->cond), &(target->vmlock), pts);
+            if (tr == ETIMEDOUT) { tout = TRUE; break; }
+            else if (tr == EINTR) { intr = TRUE; break; }
+        } else {
+            pthread_cond_wait(&(target->cond), &(target->vmlock));
+        }
     }
-    return target->result;
-}
-#endif /*GAUCHE_USE_PTHREAD*/
-
-ScmObj Scm_ThreadJoin(ScmVM *target)
-{
-#ifdef GAUCHE_USE_PTHREAD
-    return Scm_WithLock(&(target->vmlock), thread_join, (void*)target,
-                        "thread join");
+    if (!tout) result = target->result;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
+    if (intr) Scm_SigCheck(theVM);
+    if (tout) {
+        if (SCM_UNBOUNDP(timeoutval)) {
+            /* TODO: throw join-timeout-exception */
+            Scm_Error("thread-join! timeout waiting for %S", target);
+        }
+        result = timeoutval;
+    }
+    return result;
 #else  /*!GAUCHE_USE_PTHREAD*/
     Scm_Error("not implemented!\n");
     return SCM_UNDEFINED;
 #endif /*!GAUCHE_USE_PTHREAD*/
+}
+
+/* Thread yield */
+ScmObj Scm_ThreadYield(void)
+{
+#ifdef GAUCHE_USE_PTHREAD
+#if defined(HAVE_SCHED_H) && defined(_POSIX_PRIORITY_SCHEDULING)
+    sched_yield();
+#else  /*!HAVE_SCHED_H*/
+    /* what can I do? */
+#endif /*!HAVE_SCHED_H*/
+#else  /*!GAUCHE_USE_PTHREAD*/
+    Scm_Error("not implemented!\n");
+#endif /*!GAUCHE_USE_PTHREAD*/
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_ThreadSleep(ScmObj timeout)
+{
+#ifdef GAUCHE_USE_PTHREAD
+    struct timespec ts, *pts;
+    ScmInternalCond dummyc = PTHREAD_COND_INITIALIZER;
+    ScmInternalMutex dummym = PTHREAD_MUTEX_INITIALIZER;
+    int intr;
+    pts = Scm_GetTimeSpec(timeout, &ts);
+    if (pts == NULL) Scm_Error("thread-sleep! can't take #f as a timeout value");
+    pthread_mutex_lock(&dummym);
+    if (pthread_cond_timedwait(&dummyc, &dummym, pts) == EINTR) {
+        intr = TRUE;
+    }
+    pthread_mutex_unlock(&dummym);
+    if (intr) Scm_SigCheck(theVM);
+#else  /*!GAUCHE_USE_PTHREAD*/
+    Scm_Error("not implemented!\n");
+#endif /*!GAUCHE_USE_PTHREAD*/
+    return SCM_UNDEFINED;
 }
 
 /*==============================================================

@@ -1,3 +1,12 @@
+2002-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/mutex.c (Scm_GetTimeSpec): fixed according to SRFI-18 spec
+	  (real number for relative time from now).
+	* src/system.c : moved Scm_GetTimeSpec here.
+	* src/vm.c : more thread interface.  made Scm_ThreadJoin take
+	  timeout arg.
+	* test/thread.scm : more tests.
+
 2002-05-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/mutex.c : fixed mutex-unlock! to handle timeout and condition

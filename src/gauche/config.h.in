@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.24 2002-05-15 02:48:15 shirok Exp $
+ * $Id: config.h.in,v 1.25 2002-05-17 10:36:29 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -42,6 +42,9 @@
 
 /* Define if the system has getopt.h */
 #undef HAVE_GETOPT_H
+
+/* Define if the system has sched.h */
+#undef HAVE_SCHED_H
 
 /* Define if the system has isinf() and isnan() */
 #undef HAVE_ISINF
