@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.18 2001-09-04 20:12:55 shirok Exp $
+;;;  $Id: object.scm,v 1.19 2001-10-20 08:19:00 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -424,12 +424,24 @@
         (else #f)))
 
 ;;----------------------------------------------------------------
-;; Handy for debug (just for now)
-;;
+;; Generic coercion
+;;  (should this be in separate file, e.g. coerce.scm?
+;;   autoload may have problem with autoloading generic fn.)
 
-(define (%inspect obj)
-  (if (is-a? obj <object>)
-      (for-each (lambda (slot)
-                  (format #t "~s: ~s\n" (car slot) (slot-ref obj (car slot))))
-                (class-slots (class-of obj)))
-      obj))
+(define-method x->string ((obj <string>)) obj)
+(define-method x->string ((obj <number>)) (number->string obj))
+(define-method x->string ((obj <symbol>)) (symbol->string obj))
+(define-method x->string ((obj <top>))
+  (with-output-to-string (lambda () (display obj))))
+
+(define-method x->integer ((obj <integer>)) obj)
+(define-method x->integer ((obj <number>))
+  (inexact->exact (round obj)))
+(define-method x->integer ((obj <top>))
+  (inexact->exact (round (x->number obj))))
+
+(define-method x->number  ((obj <number>)) obj)
+(define-method x->number  ((obj <string>))
+  (or (string->number obj) 0))
+(define-method x->number  ((obj <top>)) 0)
+
