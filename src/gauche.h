@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.42 2001-02-17 12:18:51 shiro Exp $
+ *  $Id: gauche.h,v 1.43 2001-02-19 14:06:30 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1144,6 +1144,8 @@ ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 #define SCM_SMALL_INT_MAX          ((1L << 29) - 1)
 #define SCM_SMALL_INT_MIN          (-SCM_SMALL_INT_MAX-1)
 
+#define SCM_RADIX_MAX              36
+
 #define SCM_INTEGERP(obj)          (SCM_INTP(obj) || SCM_BIGNUMP(obj))
 #define SCM_REALP(obj)             (SCM_INTEGERP(obj)||SCM_FLONUMP(obj))
 #define SCM_NUMBERP(obj)           (SCM_REALP(obj)||SCM_COMPLEXP(obj))
@@ -1154,23 +1156,41 @@ extern ScmClass  Scm_NumberClass;
 extern ScmClass  Scm_ComplexClass;
 extern ScmClass  Scm_RealClass;
 extern ScmClass  Scm_IntegerClass;
-#define SCM_CLASS_NUMBER     (&Scm_NumberClass)
-#define SCM_CLASS_COMPLEX    (&Scm_ComplexClass)
-#define SCM_CLASS_REAL       (&Scm_RealClass)
-#define SCM_CLASS_INTEGER    (&Scm_IntegerClass)
+
+#define SCM_CLASS_NUMBER        (&Scm_NumberClass)
+#define SCM_CLASS_COMPLEX       (&Scm_ComplexClass)
+#define SCM_CLASS_REAL          (&Scm_RealClass)
+#define SCM_CLASS_INTEGER       (&Scm_IntegerClass)
 
 struct ScmBignumRec {
     SCM_HEADER;
-    char sign;
-    short size;                 /* length of values vector */
-    long values[1];             /* values[0] is the least significant */
+    short sign;
+    u_short size;
+    u_long values[1];           /* variable length */
 };
 
-#define SCM_BIGNUM(obj)            ((ScmBignum*)(obj))
-#define SCM_BIGNUMP(obj)           0 /* for now */
+#define SCM_BIGNUM(obj)        ((ScmBignum*)(obj))
+#define SCM_BIGNUMP(obj)       SCM_XTYPEP(obj, SCM_CLASS_INTEGER)
+#define SCM_BIGNUM_SIZE(obj)   SCM_BIGNUM(obj)->size
+#define SCM_BIGNUM_SIGN(obj)   SCM_BIGNUM(obj)->sign
 
-extern ScmObj Scm_MakeBignum(int sign, int size, long *values);
-extern ScmObj Scm_IntToBignum(long value, int size);
+ScmObj Scm_MakeBignumFromSI(long val);
+ScmObj Scm_BignumCopy(ScmBignum *b);
+
+long   Scm_BignumToSI(ScmBignum *b);
+double Scm_BignumToDouble(ScmBignum *b);
+ScmObj Scm_NormalizeBignum(ScmBignum *b);
+ScmObj Scm_BignumNegate(ScmBignum *b);
+int    Scm_BignumCmp(ScmBignum *bx, ScmBignum *by);
+ScmObj Scm_BignumAdd(ScmBignum *bx, ScmBignum *by);
+ScmObj Scm_BignumAddSI(ScmBignum *bx, long y);
+ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args);
+ScmObj Scm_BignumSub(ScmBignum *bx, ScmBignum *by);
+ScmObj Scm_BignumSubSI(ScmBignum *bx, long y);
+ScmObj Scm_BignumSubN(ScmBignum *bx, ScmObj args);
+ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by);
+ScmObj Scm_BignumMulSI(ScmBignum *bx, long y);
+ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args);
 
 struct ScmFlonumRec {
     SCM_HEADER;
