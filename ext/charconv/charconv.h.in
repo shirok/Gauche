@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.8 2002-06-14 11:18:52 shirok Exp $
+ *  $Id: charconv.h.in,v 1.9 2002-06-17 05:41:04 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -95,6 +95,16 @@ extern int jconv_close(ScmConvInfo*);
 extern size_t jconv(ScmConvInfo*, const char **inptr, size_t *inroom,
                     char **outptr, size_t *outroom);
 extern size_t jconv_reset(ScmConvInfo *, char *outptr, size_t outroom);
+
+/* Given UCS char, return # of bytes required for UTF8 encoding. */
+#define UCS2UTF_NBYTES(ucs)                      \
+    (((ucs) < 0x80) ? 1 :                        \
+     (((ucs) < 0x800) ? 2 :                      \
+      (((ucs) < 0x10000) ? 3 :                   \
+       (((ucs) < 0x200000) ? 4 :                 \
+        (((ucs) < 0x4000000) ? 5 : 6)))))
+
+extern void jconv_ucs4_to_utf8(unsigned int ucs, char *cp);
 
 #ifdef __cplusplus
 }

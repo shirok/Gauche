@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.8 2002-06-14 11:18:52 shirok Exp $
+ *  $Id: jconv.c,v 1.9 2002-06-17 05:41:04 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -476,6 +476,8 @@ static inline size_t utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
         } else break;
     case 0xce: etab = utf2euc_ce; break;
     case 0xcf: etab = utf2euc_cf; break;
+    case 0xd0: etab = utf2euc_d0; break;
+    case 0xd1: etab = utf2euc_d1; break;
     default:
         break;
     }
@@ -646,15 +648,7 @@ static size_t utf2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
    if the native encoding is UTF8, but not otherwise.
    So I include them here as well. */
 
-/* Given UCS char, return # of bytes required for UTF8 encoding. */
-#define UCS2UTF_NBYTES(ucs)                      \
-    (((ucs) < 0x80) ? 1 :                        \
-     (((ucs) < 0x800) ? 2 :                      \
-      (((ucs) < 0x10000) ? 3 :                   \
-       (((ucs) < 0x200000) ? 4 :                 \
-        (((ucs) < 0x4000000) ? 5 : 6)))))
-
-static void ucs4_to_utf8(unsigned int ucs, char *cp)
+void jconv_ucs4_to_utf8(unsigned int ucs, char *cp)
 {
     if (ucs < 0x80) {
         *cp = ucs;
@@ -702,7 +696,7 @@ static inline size_t eucj2utf_emit_utf(unsigned int ucs, size_t inchars,
     } else if (ucs < 0x100000) {
         int outreq = UCS2UTF_NBYTES(ucs);
         OUTCHK(outreq);
-        ucs4_to_utf8(ucs, outptr);
+        jconv_ucs4_to_utf8(ucs, outptr);
         *outchars = outreq;
     } else {
         /* we need two UCS characters */
@@ -711,8 +705,8 @@ static inline size_t eucj2utf_emit_utf(unsigned int ucs, size_t inchars,
         int outreq0 = UCS2UTF_NBYTES(ucs0);
         int outreq1 = UCS2UTF_NBYTES(ucs1);
         OUTCHK(outreq0+outreq1);
-        ucs4_to_utf8(ucs0, outptr);
-        ucs4_to_utf8(ucs1, outptr+outreq0);
+        jconv_ucs4_to_utf8(ucs0, outptr);
+        jconv_ucs4_to_utf8(ucs1, outptr+outreq0);
         *outchars = outreq0+outreq1;
     }
     return inchars;
