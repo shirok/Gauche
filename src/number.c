@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.105 2004-01-27 23:52:14 shirok Exp $
+ *  $Id: number.c,v 1.106 2004-01-28 00:50:08 shirok Exp $
  */
 
 #include <math.h>
@@ -397,7 +397,7 @@ ScmObj Scm_MakeIntegerU64(ScmUInt64 i)
     if (i.hi == 0) return Scm_MakeIntegerU(i.lo);
     val[0] = i.lo;
     val[1] = i.hi;
-    return Scm_MakeBignumFromUIArray(1, val 2);
+    return Scm_MakeBignumFromUIArray(1, val, 2);
 #else /*SCM_EMULATE_INT64*/
     u_long val[2];
     val[0] = (uint64_t)i & ULONG_MAX;
