@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.8 2001-05-11 20:25:53 shirok Exp $
+;;;  $Id: numerical.scm,v 1.9 2001-05-12 19:25:15 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -86,14 +86,10 @@
   (make-rectangular (* r (%cos t)) (* r (%sin t))))
 
 (define (real-part z)
-  (cond ((real? z) z)
-        ((number? z) (car (%complex->real/imag z)))
-        (else (error "number required, but got: %S" z))))
+  (receive (x y) (%complex->real/imag z) x))
 
 (define (imag-part z)
-  (cond ((real? z) (if (exact? z) 0 0.0))
-        ((number? z) (cdr (%complex->real/imag z)))
-        (else (error "number required, but got: %S" z))))
+  (receive (x y) (%complex->real/imag z) y))
 
 ;; Complex transcedental functions.
 ;; These are called by the main transcedental functions.  assumes
@@ -101,8 +97,9 @@
 ;;  Cf. Teiji Takagi: "Kaiseki Gairon" pp.193--198
 
 (define (%complex-exp z)
-  (let ((xy (%complex->real/imag z)))
-    (make-polar (%exp (car xy)) (cdr xy))))
+  (receive (x y)
+      (%complex->real/imag z)
+    (make-polar (%exp x) y)))
 
 (define (%complex-log z)
   (make-rectangular (%log (magnitude z)) (angle z)))
@@ -112,29 +109,29 @@
 
 (define (%complex-expt x y)
   (if (real? x)
-      (let ((ri (%complex->real/imag y)))
-        (* (%expt x (car ri)) (exp (* +i (cdr ri) (%log x)))))
+      (receive (real imag) (complex->real/imag y)
+        (* (%expt x real) (exp (* +i imag (%log x)))))
       (exp (* y (log x)))))
 
 (define (%complex-cos z)
-  (let ((xy (%complex->real/imag z)))
-    (make-rectangular (* (%cos (car xy)) (%cosh (cdr xy)))
-                      (- (* (%sin (car xy)) (%sinh (cdr xy)))))))
+  (receive (x y) (%complex->real/imag z)
+    (make-rectangular (* (%cos x) (%cosh y))
+                      (- (* (%sin x) (%sinh y))))))
 
 (define (%complex-cosh z)
-  (let ((xy (%complex->real/imag z)))
-    (make-rectangular (* (%cosh (car xy)) (%cos (cdr xy)))
-                      (* (%sinh (car xy)) (%sin (cdr xy))))))
+  (receive (x y) (%complex->real/imag z)
+    (make-rectangular (* (%cosh x) (%cos y))
+                      (* (%sinh x) (%sin y)))))
 
 (define (%complex-sin z)
-  (let ((xy (%complex->real/imag z)))
-    (make-rectangular (* (%sin (car xy)) (%cosh (cdr xy)))
-                      (* (%cos (car xy)) (%sinh (cdr xy))))))
+  (receive (x y) (%complex->real/imag z)
+    (make-rectangular (* (%sin x) (%cosh y))
+                      (* (%cos x) (%sinh y)))))
 
 (define (%complex-sinh z)
-  (let ((xy (%complex->real/imag z)))
-    (make-rectangular (* (%sinh (car xy)) (%cos (cdr xy)))
-                      (* (%cosh (car xy)) (%sin (cdr xy))))))
+  (receive (x y) (%complex->real/imag z)
+    (make-rectangular (* (%sinh x) (%cos y))
+                      (* (%cosh x) (%sin y)))))
 
 (define (%complex-tan z)
   (let ((iz (* +i z)))
