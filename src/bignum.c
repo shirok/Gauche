@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.28 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: bignum.c,v 1.29 2002-02-11 10:06:15 shirok Exp $
  */
 
 #include <math.h>
@@ -172,12 +172,17 @@ ScmObj Scm_NormalizeBignum(ScmBignum *b)
 long Scm_BignumToSI(ScmBignum *b) 
 {
     if (b->sign >= 0) {
-        long r = (long)b->values[0];
-        return (r < 0)? LONG_MAX : r;
-    } else if (b->values[0] == 0 && b->values[1]) {
-        return LONG_MIN;
+        if (b->values[0] > LONG_MAX || b->size >= 2) {
+            return LONG_MAX;
+        } else {
+            return (long)b->values[0];
+        }
     } else {
-        return -(long)b->values[0];
+        if (b->values[0] > (u_long)LONG_MAX+1 || b->size >= 2) {
+            return LONG_MIN;
+        } else {
+            return -(long)b->values[0];
+        }
     }
 }
 
@@ -185,7 +190,11 @@ long Scm_BignumToSI(ScmBignum *b)
 u_long Scm_BignumToUI(ScmBignum *b) 
 {
     if (b->sign >= 0) {
-        return b->values[0];
+        if (b->size >= 2) {
+            return SCM_ULONG_MAX;
+        } else {
+            return b->values[0];
+        }
     } else {
         return 0;
     }
