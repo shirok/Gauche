@@ -1,3 +1,12 @@
+2003-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in, src/Makefile.in, ext/Makefile.in, ext/Makefile.ext.in,
+	  test/*, ext/*/test.scm : created install-check target, which runs
+	  tests with installed gosh.
+
+	* src/load.c (Scm_DynLoad): reports dynamic loading if -fload-verbose
+	  flag is set.
+
 2003-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.scm : made make-client-socket and make-server-socket

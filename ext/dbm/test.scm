@@ -7,8 +7,7 @@
 
 (test-start "dbm")
 
-(load "dbm")
-(import dbm)
+(use dbm)
 (test-module 'dbm)
 
 ;;
@@ -177,12 +176,14 @@
 
 ;; conditionally test
 (define-macro (test-if-exists file module class)
-  (if (file-exists? (string-append file ".la"))
-      `(begin (require ,file)
-              (import ,module)
-              (test-module ',module)
-              (full-test ,class))
-      #f))
+  (when (file-exists? (string-append file ".la"))
+    `(begin ,(if (member "." *load-path*) ;; trick to allow in-place test
+               `(require ,file)
+               `(require ,#`"dbm/,file"))
+            (import ,module)
+            (test-module ',module)
+            (full-test ,class))
+    ))
 
 ;;
 ;; GDBM test

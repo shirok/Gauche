@@ -30,4 +30,5 @@ maintainer-clean: clean
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) maintainer-clean); done
 	rm -rf $(CONFIG_GENERATED)
 
-
+install-check:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install-check); done

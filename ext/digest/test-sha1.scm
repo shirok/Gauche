@@ -5,8 +5,9 @@
 (use gauche.test)
 (test-start "sha1")
 
-(add-load-path ".")
-(load "sha1")
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "sha1")
+  (load "rfc/sha1"))
 (import rfc.sha1)
 (test-module 'rfc.sha1)
 

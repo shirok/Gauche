@@ -4,7 +4,9 @@
 
 (use gauche.test)
 
-(load "charconv")
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "charconv")
+  (load "gauche/charconv"))
 (import gauche.charconv)
 
 (test-start "charconv")

@@ -4,7 +4,9 @@
 
 (use gauche.test)
 
-(load "auxsys")
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "auxsys")
+  (load "gauche/auxsys"))
 (import gauche.auxsys)
 
 (test-start "auxsys")

@@ -9,12 +9,13 @@
 
 (test-start "mt-random")
 ;; instead of (use srfi-4) ...
-(add-load-path "../uvector")
-(load "uvector")
+(if (member "." *load-path*)
+  (begin (add-load-path "../uvector")
+         (load "uvector")
+         (load "mt-random"))
+  (begin (load "gauche/uvector")
+         (load "math/mt-random")))
 (import gauche.uvector)
-
-(add-load-path ".")
-(load "mt-random")
 (import math.mt-random)
 (test-module 'math.mt-random)
 

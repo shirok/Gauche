@@ -6,10 +6,13 @@
 (test-start "hmac")
 
 ;; kludge for "in-place" test
-(add-load-path ".")
-(load "md5")
+(if (member "." *load-path*)
+  (load "md5")
+  (load "rfc/md5"))
 (import rfc.md5)
-(load "sha1")
+(if (member "." *load-path*)
+  (load "sha1")
+  (load "rfc/sha1"))
 (import rfc.sha1)
 
 (add-load-path "../uvector")

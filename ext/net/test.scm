@@ -6,7 +6,9 @@
 (use srfi-13)
 (test-start "net")
 
-(load "net")
+(if (member "." *load-path*) ;;trick to allow in-place test
+  (load "net")
+  (load "gauche/net"))
 (import gauche.net)
 (test-module 'gauche.net)
 

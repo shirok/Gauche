@@ -170,6 +170,11 @@ test-arith$(EXEEXT) : test-arith.$(OBJEXT) libgauche.la
 
 test-arith.$(OBJEXT) : gauche/arith.h
 
+install-check :
+	@rm -rf test.log
+	@for f in `cat ../test/TESTS`; do \
+	  ${prefix}/bin/gosh ../test/$$f; \
+	done
 
 # clean ------------------------------------------------
 GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c thrlib.c

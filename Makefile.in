@@ -1,6 +1,8 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.36 2003-04-22 21:50:30 shirok Exp $
+# $Id: Makefile.in,v 1.37 2003-05-29 09:28:19 shirok Exp $
 #  Run 'configure' script to generate Makefile
+
+.PHONY: all test check install uninstall clean distclean maintainer-clean install-check
 
 @SET_MAKE@
 SHELL       = @SHELL@
@@ -35,8 +37,8 @@ uninstall:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
 
 clean:
+	rm -rf test.log core *~
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
-	rm -rf core *~
 
 distclean: clean
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) distclean); done
@@ -51,6 +53,12 @@ dist:
 
 distcheck:
 	@echo "To create a distribution tarball, use DIST script."
+
+install-check: install
+	@echo "Testing installed Gauche"
+	@rm -rf test.log
+	@(cd src; $(MAKE) install-check) >> test.log
+	@(cd ext; $(MAKE) install-check) >> test.log
 
 # NB: I intentionally make aclocal.m4 not depend on acinclude.m4, to
 # prevent aclocal from running accidentally.

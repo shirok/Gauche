@@ -5,8 +5,9 @@
 (use gauche.test)
 (test-start "md5")
 
-(add-load-path ".")
-(load "md5")
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "md5")
+  (load "rfc/md5"))
 (import rfc.md5)
 (test-module 'rfc.md5)
 

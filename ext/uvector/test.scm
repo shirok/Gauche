@@ -3,9 +3,12 @@
 ;;
 
 (use gauche.test)
-;(use srfi-4)
+
 (test-start "uniform vector and array")
-(load "uvector")
+
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "uvector")
+  (load "gauche/uvector"))
 (import gauche.uvector)
 (use srfi-1)
 
@@ -1301,7 +1304,9 @@
 ;;-------------------------------------------------------------------
 ; (use gauche.array)
 (test-section "gauche.array")
-(load "array")
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "array")
+  (load "gauche/array"))
 (import gauche.array)
 (test-module 'gauche.array)
 

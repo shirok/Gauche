@@ -8,7 +8,9 @@
 
 (test-start "threads")
 
-(load "threads")
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "threads")
+  (load "gauche/threads"))
 (import gauche.threads)
 (test-module 'gauche.threads)
 

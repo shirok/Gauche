@@ -5,7 +5,9 @@
 (use gauche.test)
 (test-start "fcntl")
 
-(load "fcntl")
+(if (member "." *load-path*) ;; trick to allow in-place test
+  (load "fcntl")
+  (load "gauche/fcntl"))
 (import gauche.fcntl)
 (test-module 'gauche.fcntl)
 
