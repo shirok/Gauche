@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.353 2003-02-01 04:24:36 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.354 2003-02-05 00:54:55 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11619,11 +11619,12 @@ the code is executed or not.
 @deffn {Generic Function} object-compare obj1 obj2
 @end deffn
 
-@defun sort list &optional cmfpn
-@defunx sort! list &optional cmfpn
-Sorts elements in @var{list} in ascending order and returns the sorted
-list.  @code{sort!} destructively reuses the cons cells of the original
-@var{list}.  The sorting order is specified by @code{cmpfn}, which is
+@defun sort seq &optional cmfpn
+@defunx sort! seq &optional cmfpn
+Sorts elements in a sequence @var{seq} (a list or a vector) 
+in ascending order and returns the sorted sequence.
+@code{sort!} destructively reuses the original sequence.
+The sorting order is specified by @code{cmpfn}, which is
 a procedure takes two elements of @var{list}, and returns @code{#t}
 if the first argument strictly precedes the second.
 
@@ -11639,6 +11640,9 @@ if the first argument strictly precedes the second.
 
 Some builtin objects have natural comparison order, and it is used
 if @code{cmpfn} is omitted.
+
+Built-in sort function uses quicksort and heapsort algorithm, 
+so it is not a stable sort.
 @end defun
 
 
@@ -15507,6 +15511,16 @@ takes a collection class argument and returns the collection of the class.
 @node Mapping over collection, Selection and searching in collection, gauche.collection - Collection framework, gauche.collection - Collection framework
 @subsection Mapping over collection
 @c NODE コレクションに対するマッピング
+
+@c EN
+These generic functions extends the standard mapping procedures.
+See also @ref{Mapping over sequences}, if you care the index
+as well as elements.
+@c JP
+これらのジェネリックファンクションは標準のマッピング手続きを拡張します。
+要素だけでなくそのインデックスも必要な場合は@ref{Mapping over sequences}を
+参照して下さい。
+@c COMMON
 
 @deffn {Generic function} fold proc knil coll coll2 @dots{}
 @c EN
@@ -19546,6 +19560,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
 @menu
 * Fundamental sequence accessors::  
 * Slicing sequence::            
+* Mapping over sequences::      
 * Implementing sequence::       
 @end menu
 
@@ -19607,7 +19622,7 @@ This is the uniform sequence modifier.
 @deffn {Generic function} modifier (seq <sequence>)
 @end deffn
 
-@node Slicing sequence, Implementing sequence, Fundamental sequence accessors, gauche.sequence - Sequence framework
+@node Slicing sequence, Mapping over sequences, Fundamental sequence accessors, gauche.sequence - Sequence framework
 @subsection Slicing sequence
 @c NODE シーケンスのスライス
 
@@ -19659,8 +19674,71 @@ s @result{} #(#\a #\b 5 6 e)
 @end example
 @end deffn
 
+@node Mapping over sequences, Implementing sequence, Slicing sequence, gauche.sequence - Sequence framework
+@subsection Mapping over sequences
+@c NODE シーケンス上のマップ
 
-@node Implementing sequence,  , Slicing sequence, gauche.sequence - Sequence framework
+You can use extended @code{fold}, @code{map}, @code{for-each} and other
+generic functions on sequences, since a sequence is also a collection.
+However, sometimes you want to have index as well as the element itself
+during iteration.   There are several generic functions for it.
+
+@deffn {Generic function} fold-with-index kons knil (seq <sequence>) @dots{}
+Like generic @code{fold}, except @var{kons} is given
+the index within @var{seq}, as the first argument,
+as well as each element from @var{seq}s and the accrued value.
+
+@example
+(fold-with-index acons '() '(a b c))
+  @result{} ((2 . c) (1 . b) (0 . a))
+@end example
+@end deffn
+
+@deffn {Generic function} map-with-index proc (seq <sequence>) @dots{}
+@deffnx {Generic function} map-to-with-index class proc (seq <sequence>) @dots{}
+@deffnx {Generic function} for-each-with-index proc (seq <sequence>) @dots{}
+Like @code{map}, @code{map-to} and @code{for-each}, except @var{proc}
+receives the index as the first argument.
+
+@example
+(map-with-index list '(a b c d) '(e f g h))
+  @result{} ((0 a e) (1 b f) (2 c g) (3 d h))
+
+(map-to-with-index <vector> cons '(a b c d))
+  @result{} #((0 . a) (1 . b) (2 . c) (3 . d))
+@end example
+@end deffn
+
+@deffn {Generic function} find-with-index pred (seq <sequence>)
+Finds the first element in @var{seq} that satisfies @var{pred}
+like @code{find}, but returns two values, the index of the element
+and the element itself.   If no element satisfies @var{pred},
+two @code{#f}'s are returned.
+
+@example
+(find-with-index char-upper-case? "abraCadabra")
+  @result{} 4 and #\C
+
+(find-with-index char-numeric? "abraCadabra")
+  @result{} #f and #f
+@end example
+@end deffn
+
+@deffn {Generic function} find-index pred (seq <sequence>)
+Like @code{find}, but returns the index of the first element
+that satisfies @var{pred} in @var{seq}, instead of the element itself.
+If no element in @var{seq} satisfies @var{pred}, @code{#f} is returned.
+
+@example
+(find-index char-upper-case? "abraCadabra")
+  @result{} 4 
+
+(find-index char-numeric? "abraCadabra")
+  @result{} #f
+@end example
+@end deffn
+
+@node Implementing sequence,  , Mapping over sequences, gauche.sequence - Sequence framework
 @subsection Implementing sequence
 
 
@@ -22567,6 +22645,10 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 on @var{x}.  The returned value shares a common tail with @var{x}.
 On the other hand, take always allocates a new list 
 for result if the argument is a list of non-zero length.
+
+An error is signalled if @var{i} is past the end of list @var{x}.
+@xref{util.list - Additional list library}, for more tolerant version
+of @code{take} and @code{drop}.
 @end defun
 
 @defun take-right flist i
@@ -22588,6 +22670,10 @@ for result if the argument is a list of non-zero length.
 tail with @var{flist}.
 @code{drop-right} always allocates a new list
 if the argument is a list of non-zero length.
+
+An error is signalled if @var{i} is larger than the length of @var{flist}.
+@xref{util.list - Additional list library}, for more tolerant version
+of @code{take-right} and @code{drop-right}.
 @end defun
 
 @defun take! x i
@@ -24741,8 +24827,10 @@ A simple example:
 * text.parse - Parsing input stream::  
 * text.tr - Transliterate characters::  
 * text.tree - Lazy text construction::  
+* util.combinations - Combination library::  
 * util.digest - Message digester framework::  
 * util.isomorph - Determine isomorphism::  
+* util.list - Additional list library::  
 * util.queue - Queue::          
 * util.toposort - Topological sort::  
 * www.cgi - CGI Utility::       
@@ -28117,7 +28205,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.tree - Lazy text construction, util.digest - Message digester framework, text.tr - Transliterate characters, Library modules - Utilities
+@node text.tree - Lazy text construction, util.combinations - Combination library, text.tr - Transliterate characters, Library modules - Utilities
 @section @code{text.tree} - Lazy text construction
 
 @deftp {Module} text.tree
@@ -28210,7 +28298,120 @@ an output string port, and returns the result string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.digest - Message digester framework, util.isomorph - Determine isomorphism, text.tree - Lazy text construction, Library modules - Utilities
+@node util.combinations - Combination library, util.digest - Message digester framework, text.tree - Lazy text construction, Library modules - Utilities
+@section @code{util.combinations} - Combination library
+
+@deftp {Module} util.combinations
+@mdindex util.combinations
+This module implements several useful procedures of
+combinations, permutations and related operations.
+
+Most procedures in the module have two variants: a procedure without
+star (e.g. @code{permutations}) treats all elements in the given
+set distinct, while a procedure with star (e.g. @code{permutations*})
+considers duplication.  The procedures with star take optional @var{eq}
+argument that is used to test equality, which defaults to @code{eqv?}.
+@end deftp
+
+@defun permutations set
+@defunx permutations* set &optional eq
+Returns a list of all permutations of a list @var{set}.
+
+@example
+(permutations '(a b c))
+  @result{} ((a b c) (a c b) (b a c) (b c a) (c a b) (c b a))
+
+(permutations '(a a b))
+  @result{} ((a a b) (a b a) (a a b) (a b a) (b a a) (b a a))
+
+(permutations* '(a a b))
+  @result{} ((a a b) (a b a) (b a a))
+@end example
+
+The number of possible permutations explodes if @var{set} has
+more than several elements.  Use with care.  If you want to process
+each permutation at a time, consider @code{permutations-for-each} below.
+@end defun
+
+@defun permutations-for-each proc set
+@defunx permutations*-for-each proc set &optional eq
+For each permutation of a list @var{set}, calls @var{proc}.
+Returns an undefined value.
+@end defun
+
+@defun combinations set n
+@defunx combinations* set n &optional eq
+Returns a list of all possible combinations of @var{n} elements out
+of a list @var{set}.
+
+@example
+(combinations '(a b c) 2)
+  @result{} ((a b) (a c) (b c))
+
+(combinations '(a a b) 2)
+  @result{} ((a a) (a b) (a b))
+
+(combinations* '(a a b) 2)
+  @result{} ((a a) (a b))
+@end example
+
+Watch out the explosion of combinations when @var{set} is large.
+@end defun
+
+@defun combinations-for-each proc set n
+@defunx combinations*-for-each proc set n &optional eq
+Calls @var{proc} for each combination of @var{n} elements out of @var{set}.
+Returns an undefined value.
+@end defun
+
+@defun power-set set
+@defunx power-set* set &optional eq
+Returns power set (all subsets) of a list @var{set}.
+
+@example
+(power-set '(a b c))
+  @result{} (() (a) (b) (c) (a b) (a c) (b c) (a b c))
+
+(power-set* '(a a b)
+  @result{} (() (a) (b) (a a) (a b) (a a b))
+@end example
+@end defun
+
+@defun power-set-for-each proc set
+@defunx power-set*-for-each proc set &optional eq
+Calls @var{proc} for each subset of @var{set}.
+@end defun
+
+@defun power-set-binary set
+Returns power set of @var{set}, like @code{power-set}, but in different order.
+@code{Power-set-binary} traverses subset space in depth-first order,
+while @code{power-set} in breadth-first order.
+
+@example
+(power-set-binary '(a b c))
+  @result{} (() (c) (b) (b c) (a) (a c) (a b) (a b c))
+@end example
+@end defun
+
+@defun cartesian-product list-of-sets
+@defunx cartesian-product-right list-of-sets
+Returns a cartesian product of sets in @var{list-of-sets}.
+@code{Cartesian-product} construct the result in left fixed order
+(the rightmost element varies first), while 
+@code{cartesian-product-right} in right fixed order
+(the leftmost element varies first).
+
+@example
+(cartesian-product '((a b c) (0 1)))
+  @result{} ((a 0) (a 1) (b 0) (b 1) (c 0) (c 1))
+
+(cartesian-product-right '((a b c) (0 1)))
+  @result{} ((a 0) (b 0) (c 0) (a 1) (b 1) (c 1))
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node util.digest - Message digester framework, util.isomorph - Determine isomorphism, util.combinations - Combination library, Library modules - Utilities
 @section @code{util.digest} - Message digester framework
 @c NODE util.digest - メッセージダイジェストフレームワーク, @code{util.digest} - メッセージダイジェストフレームワーク
 
@@ -28262,7 +28463,7 @@ converts it to a hexified string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.isomorph - Determine isomorphism, util.queue - Queue, util.digest - Message digester framework, Library modules - Utilities
+@node util.isomorph - Determine isomorphism, util.list - Additional list library, util.digest - Message digester framework, Library modules - Utilities
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE util.isomorph - 同型判定, @code{util.isomorph} - 同型判定
 
@@ -28328,7 +28529,87 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node util.queue - Queue, util.toposort - Topological sort, util.isomorph - Determine isomorphism, Library modules - Utilities
+@node util.list - Additional list library, util.queue - Queue, util.isomorph - Determine isomorphism, Library modules - Utilities
+@section @code{util.list} - Additional list library
+
+@deftp {Module} util.list
+@mdindex util.list
+This module provides list utility functions which are not in srfi-1
+(@xref{srfi-1 - List library}) but generally useful.
+
+See also @ref{gauche.collection - Collection framework}
+and @ref{gauche.sequence - Sequence framework}, for
+these modules also defines useful generic functions that can
+be used for lists.
+@end deftp
+
+@defun take* list k &optional fill? padding
+Returns a list that consists of the first @var{k} elements in
+@var{list}, like SRFI-1's @code{take}, except this procedure
+is more tolerant.  That is, if @var{list}
+is shorter than @var{k}, @code{take*} doesn't signals an error.
+Instead, it returns a copy of @var{list} by default (or the optional
+argument @var{fill?} is @code{#f}).   If @var{fill?} is true,
+@var{padding} is added to the result to make its length @var{k}.
+The default value of @var{padding} is @code{#f}.
+
+@example
+(take* '(a b c d) 3)       @result{} (a b c)
+(take* '(a b c d) 6)       @result{} (a b c d)
+(take* '(a b c d) 6 #t)    @result{} (a b c d #f #f)
+(take* '(a b c d) 6 #t 'z) @result{} (a b c d z z)
+@end example
+@end defun
+
+@defun drop* list k
+Returns a list that the first @var{k} elements of @var{list} is
+dropped, like SRFI-1's @code{drop}, except this procedure
+is more tolerant.  If @var{list} is shorter than @var{k},
+an empty list is returned.
+
+@example
+(drop* '(a b c d) 3)       @result{} (d)
+(drop* '(a b c d) 5)       @result{} ()
+@end example
+@end defun
+
+@defun take-right* list k &optional fill? padding
+Like @code{take*}, but counts from right of @var{list}.
+If needed, @var{padding} is added on left of the result.
+@end defun
+
+@defun drop-right* list k
+Like @code{drop*}, but counts from right of @var{list}.
+@end defun
+
+@defun split-at* list k &optional fill? padding
+More tolerant version of SRFI-1's @code{split-at}.
+Returns the results of @code{take*} and @var{drop*}.
+
+@example
+(split-at* '(a b c d) 6 #t 'z)
+  @result{} (a b c d z z) @r{and} ()
+@end example
+@end defun
+
+@defun slices list k &optional fill? padding
+Splits @var{list} into the sublists (slices) where the length of
+each slice is @var{k}.
+If the length of @var{list} is not a multiple of @var{k},
+the last slice is dealt in the same way as @code{take*}; that is,
+it is shorter than @var{k} by default, or added @var{padding} if
+@var{fill?} is true.
+
+@example
+(slices '(a b c d e f g) 3)
+  @result{} ((a b c) (d e f) (g))
+(slices '(a b c d e f g) 3 #t 'z)
+  @result{} ((a b c) (d e f) (g z z))
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node util.queue - Queue, util.toposort - Topological sort, util.list - Additional list library, Library modules - Utilities
 @section @code{util.queue} - Queue
 @c NODE util.queue - キュー, @code{util.queue} - キュー
 
