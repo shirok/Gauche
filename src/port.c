@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.47 2002-04-24 23:18:15 shirok Exp $
+ *  $Id: port.c,v 1.48 2002-04-25 02:42:47 shirok Exp $
  */
 
 #include <unistd.h>
@@ -30,6 +30,7 @@ static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void port_finalize(GC_PTR obj, GC_PTR data);
 static void register_buffered_port(ScmPort *port);
 static void unregister_buffered_port(ScmPort *port);
+static void bufport_flush(ScmPort*, int);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
 
@@ -46,6 +47,7 @@ static int port_cleanup(ScmPort *port)
     if (SCM_PORT_CLOSED_P(port)) return 0;
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
+        if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) bufport_flush(port, 0);
         if (port->src.buf.closer) port->src.buf.closer(port);
         break;
     case SCM_PORT_PROC:
