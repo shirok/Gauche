@@ -27,6 +27,12 @@
 #    define LINUX
 # endif
 
+# if defined(__NetBSD__)
+#    define NETBSD
+#    undef unix
+#    define unix 1	/* symbol unix is no longer defined in NetBSD */
+# endif
+
 /* Determine the machine type: */
 # if defined(sun) && defined(mc68000)
 #    define M68K
@@ -50,10 +56,13 @@
 # endif
 # if defined(__NetBSD__) && defined(m68k)
 #    define M68K
-#    define NETBSD
 #    define mach_type_known
 # endif
-# if defined(__NetBSD__) && defined(arm32)
+# if defined(__NetBSD__) && defined(__powerpc__)
+#    define POWERPC
+#    define mach_type_known
+# endif
+# if defined(__NetBSD__) && defined(__arm32__)
 #    define ARM32
 #    define NETBSD
 #    define mach_type_known
@@ -65,6 +74,10 @@
 #    else
 #	define BSD
 #    endif
+#    define mach_type_known
+# endif
+# if defined(__NetBSD__) && defined(__vax__)
+#    define VAX
 #    define mach_type_known
 # endif
 # if defined(mips) || defined(__mips)
@@ -81,6 +94,9 @@
 #	 endif
 #      endif
 #    endif /* !LINUX */
+#    if defined(__NetBSD__) && defined(__MIPSEL__)
+#      undef ULTRIX
+#    endif
 #    define mach_type_known
 # endif
 # if defined(sequent) && defined(i386)
@@ -114,13 +130,17 @@
 #   define mach_type_known
 # endif
 # if defined(sparc) && defined(unix) && !defined(sun) && !defined(linux) \
-     && !defined(__OpenBSD__)
+     && !defined(__OpenBSD__) && !(__NetBSD__)
 #   define SPARC
 #   define DRSNX
 #   define mach_type_known
 # endif
 # if defined(_IBMR2)
 #   define RS6000
+#   define mach_type_known
+# endif
+# if defined(__NetBSD__) && defined(__sparc__)
+#   define SPARC
 #   define mach_type_known
 # endif
 # if defined(_M_XENIX) && defined(_M_SYSV) && defined(_M_I386)
@@ -172,7 +192,7 @@
 # endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
-#   if !defined(LINUX)
+#   if !defined(LINUX) && !defined(NETBSD)
 #     define OSF1	/* a.k.a Digital Unix */
 #   endif
 #   define mach_type_known
@@ -221,7 +241,6 @@
 # endif
 # if defined(__NetBSD__) && defined(i386)
 #   define I386
-#   define NETBSD
 #   define mach_type_known
 # endif
 # if defined(bsdi) && defined(i386)
@@ -573,6 +592,14 @@
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
 #   endif
+#   ifdef NETBSD
+#     define ALIGNMENT 4
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+      extern char etext;
+#     define DATASTART GC_data_start
+#     define DYNAMIC_LOADING
+#   endif
 # endif
 
 # ifdef VAX
@@ -589,6 +616,10 @@
 #	define OS_TYPE "ULTRIX"
 #	define STACKBOTTOM ((ptr_t) 0x7fffc800)
 #   endif
+#   ifdef NETBSD
+#	define OS_TYPE "NETBSD"
+#	define HEURISTIC2
+#   endif
 # endif
 
 # ifdef RT
@@ -602,7 +633,6 @@
 #   define MACH_TYPE "SPARC"
 #   define ALIGNMENT 4	/* Required by hardware	*/
 #   define ALIGN_DOUBLE
-    extern int etext;
 #   ifdef SUNOS5
 #	define OS_TYPE "SUNOS5"
 	extern int _etext;
@@ -674,7 +704,19 @@
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     define STACKBOTTOM ((ptr_t) 0xf8000000)
+      extern int etext;
 #     define DATASTART ((ptr_t)(&etext))
+#   endif
+#   ifdef NETBSD
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+#     ifdef __ELF__
+#	define DATASTART GC_data_start
+#	define DYNAMIC_LOADING
+#     else
+	extern char etext;
+#	define DATASTART ((ptr_t)(&etext))
+#     endif
 #   endif
 # endif
 
@@ -960,6 +1002,21 @@
 #	endif
 #	define DYNAMIC_LOADING
 #   endif
+#   if defined(NETBSD) && defined(__MIPSEL__)
+#     define ALIGNMENT 4
+#     define OS_TYPE "NETBSD"
+#     define HEURISTIC2
+#     define USE_GENERIC_PUSH_REGS 1
+#     ifdef __ELF__
+        extern int etext;
+#       define DATASTART GC_data_start
+#       define NEED_FIND_LIMIT
+#       define DYNAMIC_LOADING
+#     else
+#       define DATASTART ((ptr_t) 0x10000000)
+#       define STACKBOTTOM ((ptr_t) 0x7ffff000)
+#     endif /* _ELF_ */
+#  endif
 # endif
 
 # ifdef RS6000
@@ -1019,6 +1076,16 @@
 	/* fp registers in some cases when the target is a 21264.  The assembly	*/
 	/* code doesn't handle that yet, and version dependencies make that a	*/
 	/* bit tricky.  Do the easy thing for now.				*/
+#   ifdef NETBSD
+#	define OS_TYPE "NETBSD"
+#	define HEURISTIC2
+#	define DATASTART GC_data_start
+#	define ELFCLASS32 32
+#	define ELFCLASS64 64
+#	define ELF_CLASS ELFCLASS64
+#   	define CPP_WORDSZ 64
+#       define DYNAMIC_LOADING
+#   endif
 #   ifdef OSF1
 #	define OS_TYPE "OSF1"
 #   	define DATASTART ((ptr_t) 0x140000000)

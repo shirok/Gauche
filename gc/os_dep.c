@@ -161,6 +161,19 @@
   }
 #endif
 
+#if defined(NETBSD) && defined(__ELF__)
+  ptr_t GC_data_start;
+
+  void GC_init_netbsd_elf()
+  {
+    extern ptr_t GC_find_limit();
+    extern char **environ;
+	/* This may need to be environ, without the underscore, for	*/
+	/* some versions.						*/
+    GC_data_start = GC_find_limit((ptr_t)&environ, FALSE);
+  }
+#endif
+
 # ifdef OS2
 
 # include <stddef.h>
@@ -2554,7 +2567,7 @@ struct hblk *h;
 #     if defined (DRSNX)
 #	include <sys/sparc/frame.h>
 #     else
-#        if defined(OPENBSD)
+#        if defined(OPENBSD) || defined(NETBSD)
 #          include <frame.h>
 #        else
 #          include <sys/frame.h>
@@ -2569,7 +2582,7 @@ struct hblk *h;
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 
-#ifdef OPENBSD
+#if defined(OPENBSD) || defined(NETBSD)
 #  define FR_SAVFP fr_fp
 #  define FR_SAVPC fr_pc
 #else

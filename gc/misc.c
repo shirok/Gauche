@@ -453,6 +453,9 @@ void GC_init_inner()
 	/* This doesn't really work if the collector is in a shared library. */
 	GC_init_linux_data_start();
 #   endif
+#   if defined(NETBSD) && defined(__ELF__)
+	GC_init_netbsd_elf();
+#   endif
 #   ifdef SOLARIS_THREADS
 	GC_thr_init();
 	/* We need dirty bits in order to find live stack sections.	*/

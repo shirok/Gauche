@@ -12,6 +12,7 @@ CC=cc $(ABI_FLAG)
 HOSTCC=$(CC)
 CXX=g++ $(ABI_FLAG)
 AS=as $(ABI_FLAG)
+ASCPP=gcc -c -x assembler-with-cpp $(ABI_FLAG)
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
@@ -181,7 +182,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
     solaris_threads.h backptr.h hpux_test_and_clear.s include/gc_gcj.h \
-    dbg_mlc.h $(CORD_SRCS)
+    dbg_mlc.h sparc_netbsd_mach_dep.s $(CORD_SRCS)
 
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
            README test.c test_cpp.cc setjmp_t.c SMakefile.amiga \
@@ -322,6 +323,7 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ul
 	./if_mach SPARC SUNOS5 $(AS) -o mach_dep.o $(srcdir)/sparc_mach_dep.s
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
+	./if_mach SPARC NETBSD $(ASCPP) -o mach_dep.o $(srcdir)/sparc_netbsd_mach_dep.s
 	./if_mach HP_PA HPUX $(AS) -o hpux_test_and_clear.o $(srcdir)/hpux_test_and_clear.s
 	./if_mach HP_PA HPUX $(CC) -c -o md_tmp.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 	./if_mach HP_PA HPUX ld -r -o mach_dep.o md_tmp.o hpux_test_and_clear.o

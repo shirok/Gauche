@@ -220,9 +220,10 @@ void GC_push_regs()
 #       if defined(I386) &&!defined(OS2) &&!defined(SVR4) \
 	&& (defined(__MINGW32__) || !defined(MSWIN32)) \
 	&& !defined(SCO) && !defined(SCO_ELF) \
- 	&& !(defined(LINUX)       && defined(__ELF__)) \
+	&& !(defined(LINUX) && defined(__ELF__)) \
 	&& !(defined(FREEBSD) && defined(__ELF__)) \
 	&& !(defined(NETBSD) && defined(__ELF__)) \
+	&& !(defined(OPENBSD) && defined(__ELF__)) \
 	&& !defined(DOS4GW)
 	/* I386 code, generic code does not appear to work */
 	/* It does appear to work under OS2, and asms dont */
@@ -237,8 +238,9 @@ void GC_push_regs()
 #       endif
 
 #	if ( defined(I386) && defined(LINUX) && defined(__ELF__)  ) \
-	|| ( defined(I386) && defined(FREEBSD) && defined(__ELF__)) \
-	|| ( defined(I386) && defined(NETBSD) && defined(__ELF__) )
+	|| ( defined(I386) && defined(FREEBSD) && defined(__ELF__) ) \
+	|| ( defined(I386) && defined(NETBSD) && defined(__ELF__) ) \
+	|| ( defined(I386) && defined(OPENBSD) && defined(__ELF__) )
 
 	/* This is modified for Linux with ELF (Note: _ELF_ only) */
 	/* This section handles FreeBSD with ELF. */

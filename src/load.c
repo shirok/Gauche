@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.37 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: load.c,v 1.38 2001-05-23 09:30:43 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -339,11 +339,17 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  */
 
 #ifdef HAVE_DLOPEN
+#if defined(__NetBSD__)
+#define DYNLOAD_PREFIX   ___STRING(_C_LABEL(Scm_Init_))
+#else
+/* We might have some other ifdefs... */
+#define DYNLOAD_PREFIX   "Scm_Init_"
+#endif
 static const char *get_dynload_initfn(const char *filename)
 {
     const char *head, *tail, *s;
     char *name, *d;
-    const char prefix[] = "Scm_Init_";
+    const char prefix[] = DYNLOAD_PREFIX;
     
     head = strrchr(filename, '/');
     if (head == NULL) head = filename;
