@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.20 2001-03-22 08:21:23 shiro Exp $
+ *  $Id: class.c,v 1.21 2001-03-22 10:34:09 shiro Exp $
  */
 
 #include "gauche.h"
@@ -74,6 +74,11 @@ SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericAllocate, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericInitialize, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericAddMethod, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericComputeCPL, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericComputeGetterMethod, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericComputeSetterMethod, Scm_NoNextMethod, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -279,6 +284,21 @@ static SCM_DEFINE_METHOD(class_allocate_rec, &Scm_GenericAllocate,
                          2, 0, class_allocate_SPEC, allocate, NULL);
 
 /*
+ * (compute-cpl <class>)
+ */
+static ScmObj class_compute_cpl(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                void *d)
+{
+    ScmClass *c = SCM_CLASS(args[0]);
+    return Scm_ComputeCPL(c);
+}
+
+static ScmClass *class_compute_cpl_SPEC[] = { SCM_CLASS_CLASS };
+static SCM_DEFINE_METHOD(class_compute_cpl_rec, &Scm_GenericComputeCPL,
+                         1, 0, class_compute_cpl_SPEC,
+                         class_compute_cpl, NULL);
+
+/*
  * Get class
  */
 
@@ -451,20 +471,19 @@ static ScmObj compute_cpl_cb(ScmObj k, void *dummy)
     return SCM_CLASS(k)->directSupers;
 }
 
-ScmObj Scm_ComputeCPL(ScmClass *klass, ScmObj directSupers)
+ScmObj Scm_ComputeCPL(ScmClass *klass)
 {
-    ScmObj seqh = SCM_NIL, seqt, dp, result, cp;
-    int cpllen, i;
-    
-    SCM_FOR_EACH(dp, directSupers) {
+    ScmObj seqh = SCM_NIL, seqt, dp, result;
+    SCM_FOR_EACH(dp, klass->directSupers) {
         if (!SCM_CLASSP(SCM_CAR(dp)))
-            Scm_Error("non-class found in direct superclass list: %S", directSupers);
+            Scm_Error("non-class found in direct superclass list: %S",
+                      klass->directSupers);
         SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS(SCM_CAR(dp))));
     }
     result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh, compute_cpl_cb, NULL);
     if (SCM_FALSEP(result))
         Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
-                  directSupers);
+                  klass->directSupers);
     return result;
 }
 
@@ -475,9 +494,12 @@ ScmObj Scm_ComputeCPL(ScmClass *klass, ScmObj directSupers)
 ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmObj p = Scm_Assq(slot, klass->accessors);
+    ScmObj p = Scm_Assq(slot, klass->accessors), acc;
     if (SCM_PAIRP(p)) {
-        ScmObj acc = SCM_CDR(p);
+        if (!SCM_PAIRP(SCM_CDR(p)))
+            Scm_Error("accessor list of slot %S of class %S is broken: %S",
+                      slot, SCM_OBJ(klass), p);
+        acc = SCM_CDDR(p);
         if (SCM_XTYPEP(acc, SCM_CLASS_CLASS_ACCESSOR)) {
             ScmClassAccessor *ca = SCM_CLASS_ACCESSOR(acc);
             if (ca->getter) {
@@ -500,9 +522,12 @@ ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot)
 void Scm_SlotSet(ScmObj obj, ScmObj slot, ScmObj val)
 {
     ScmClass *klass = SCM_CLASS_OF(obj);
-    ScmObj p = Scm_Assq(slot, klass->accessors);
+    ScmObj p = Scm_Assq(slot, klass->accessors), acc;
     if (SCM_PAIRP(p)) {
-        ScmObj acc = SCM_CDR(p);
+        if (!SCM_PAIRP(SCM_CDR(p)))
+            Scm_Error("accessor list of slot %S of class %S is broken: %S",
+                      slot, SCM_OBJ(klass), p);
+        acc = SCM_CDDR(p);
         if (SCM_XTYPEP(acc, SCM_CLASS_CLASS_ACCESSOR)) {
             ScmClassAccessor *ca = SCM_CLASS_ACCESSOR(acc);
             if (ca->setter) {
@@ -667,7 +692,9 @@ static int method_print(ScmObj obj, ScmPort *port, int mode)
 
 /*
  * (initialize <method> (&key lamdba-list generic specializers body))
- *    Method initialization.
+ *    Method initialization.   This needs to be hardcoded, since
+ *    we can't call Scheme verison of initialize to initialize the
+ *    "initialize" method (chicken-and-egg circularity).
  */
 static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
                                 void *data)
@@ -861,8 +888,10 @@ void bootstrap_class(ScmClass *k,
     if (specs) {
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
-            acc = Scm_Acons(snam, SCM_OBJ(&specs->accessor), acc);
-            SCM_APPEND1(slots, t, snam);
+            acc = Scm_Acons(snam, Scm_Cons(SCM_NIL, SCM_OBJ(&specs->accessor)),
+                            acc);
+            SCM_APPEND1(slots, t,
+                        SCM_LIST3(snam, key_allocation, key_builtin));
         }
     }
     k->accessors = acc;
@@ -995,12 +1024,21 @@ void Scm__InitClass(void)
     /* vm.c */
     CINIT(SCM_CLASS_VM,               "<vm>");
 
-    Scm_InitBuiltinGeneric(&Scm_GenericMake, "make", mod);
-    Scm_InitBuiltinGeneric(&Scm_GenericAllocate, "allocate-instance", mod);
-    Scm_InitBuiltinGeneric(&Scm_GenericInitialize, "initialize", mod);
-    Scm_InitBuiltinGeneric(&Scm_GenericAddMethod, "add-method!", mod);
+#define GINIT(gf, nam) \
+    Scm_InitBuiltinGeneric(gf, nam, mod);
+
+    GINIT(&Scm_GenericMake, "make");
+    GINIT(&Scm_GenericAllocate, "allocate-instance");
+    GINIT(&Scm_GenericInitialize, "initialize");
+    GINIT(&Scm_GenericAddMethod, "add-method!");
+    GINIT(&Scm_GenericComputeCPL, "compute-cpl");
+    GINIT(&Scm_GenericComputeSlots, "compute-slots");
+    GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
+    GINIT(&Scm_GenericComputeGetterMethod, "compute-getter-method");
+    GINIT(&Scm_GenericComputeSetterMethod, "compute-setter-method");
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
+    Scm_InitBuiltinMethod(&class_compute_cpl_rec);
     Scm_InitBuiltinMethod(&generic_initialize_rec);
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
     Scm_InitBuiltinMethod(&method_initialize_rec);
