@@ -12,18 +12,24 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.2 2001-03-30 07:44:07 shiro Exp $
+;;;  $Id: process.scm,v 1.3 2001-06-23 08:13:26 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
 ;; as an object on top of basic system interface.
 
 (define-module gauche.process
+  (use srfi-1)
   (export <process> run-process process? process-alive? process-pid
           process-input process-output process-error
           process-wait process-exit-status
           process-send-signal process-kill process-stop process-continue
-          process-list))
+          process-list
+          ;; process ports
+          open-input-process-port   open-output-process-port
+          call-with-input-process   call-with-output-process
+          with-input-from-process   with-output-to-process
+          call-with-io-process))
 (select-module gauche.process)
 
 (define-class <process> ()
@@ -146,6 +152,8 @@
   (if (process-alive? process)
       (let ((result (sys-waitpid (process-pid process))))
         (slot-set! process 'status (cdr result))
+        (slot-set! process 'processes
+                   (delete process (slot-ref process 'processes)))
         #t)
       #f))
 
@@ -156,5 +164,65 @@
 (define (process-kill process) (process-send-signal process SIGKILL))
 (define (process-stop process) (process-send-signal process SIGSTOP))
 (define (process-continue process) (process-send-signal process SIGCONT))
+
+;; Process ports
+
+(define (open-input-process-port command)
+  ;; TODO: how to terminate & wait the process?
+  (let ((p (run-process "/bin/sh" "-c" command
+                        :input "/dev/null" :error "/dev/null"
+                        :output :pipe)))
+    (process-output p)))
+
+(define (call-with-input-process command proc)
+  (let* ((p (run-process "/bin/sh" "-c" command
+                         :input "/dev/null" :output :pipe :error "/dev/null"))
+         (i (process-output p)))
+    (dynamic-wind
+     (lambda () #f)
+     (lambda () (proc i))
+     (lambda ()
+       (process-send-signal p SIGTERM)
+       (close-input-port i)
+       (process-wait p)))))
+
+(define (with-input-from-process command thunk)
+  (call-with-input-process command
+    (lambda (p) (with-input-from-port p thunk))))
+
+(define (open-output-process-port command)
+  (let ((p (run-process "/bin/sh" "-c" command
+                        :input :pipe :output "/dev/null"
+                        :error "/dev/null")))
+    (process-input p)))
+
+(define (call-with-output-process command proc)
+  (let* ((p (run-process "/bin/sh" "-c" command
+                         :input :pipe :output "/dev/null" :error "/dev/null"))
+         (o (process-input p)))
+    (dynamic-wind
+     (lambda () #f)
+     (lambda () (proc o))
+     (lambda ()
+       (close-output-port o)
+       (process-wait p)))))
+
+(define (with-output-to-process command thunk)
+  (call-with-output-process command
+    (lambda (p) (with-output-to-port p thunk))))
+
+(define (call-with-io-process command proc)
+  (let* ((p (run-process "/bin/sh" "-c" command
+                         :input :pipe :output :pipe
+                         :error "/dev/null"))
+         (i (process-output p))
+         (o (process-input p)))
+    (dynamic-wind
+     (lambda () #f)
+     (lambda () (proc i o))
+     (lambda ()
+       (close-output-port o)
+       (close-input-port i)
+       (process-wait p)))))
 
 (provide "gauche/process")
