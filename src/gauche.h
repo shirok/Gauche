@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.91 2001-03-25 06:33:32 shiro Exp $
+ *  $Id: gauche.h,v 1.92 2001-03-25 07:32:13 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -546,6 +546,8 @@ extern ScmObj Scm_Assq(ScmObj obj, ScmObj alist);
 extern ScmObj Scm_Assv(ScmObj obj, ScmObj alist);
 extern ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode);
 
+extern ScmObj Scm_Delete(ScmObj obj, ScmObj list, int cmpmode);
+extern ScmObj Scm_DeleteX(ScmObj obj, ScmObj list, int cmpmode);
 extern ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode);
 extern ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode);
 
