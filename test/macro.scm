@@ -108,13 +108,13 @@
 (test-macro "dot1" #f        (dot1 ()))
 
 (define-syntax dot2 (syntax-rules ()
-                      ((_ ?a . ?b) (?a ?b))
+                      ((_ ?a . ?b) (?b . ?a))
                       ((_ . ?loser) #f)))
-(test-macro "dot2" (1 2)     (dot2 1 . 2))
-(test-macro "dot2" (1 (2))   (dot2 1 2))
-(test-macro "dot2" (1 ())    (dot2 1))
-(test-macro "dot2" (1 (2 3)) (dot2 1 2 3))
-(test-macro "dot2" #f        (dot2))
+(test-macro "dot2" (2 . 1)     (dot2 1 . 2))
+(test-macro "dot2" ((2) . 1)   (dot2 1 2))
+(test-macro "dot2" (() . 1)    (dot2 1))
+(test-macro "dot2" ((2 3) . 1) (dot2 1 2 3))
+(test-macro "dot2" #f          (dot2))
 
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
