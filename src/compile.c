@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.69 2001-12-18 11:02:29 shirok Exp $
+ *  $Id: compile.c,v 1.70 2001-12-22 20:51:01 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1822,37 +1822,43 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
 
 void Scm__InitCompiler(void)
 {
-    /* TODO: use different modules for R5RS syntax and others */
-    ScmModule *m = SCM_MODULE(Scm_SchemeModule());
+    ScmModule *n = SCM_MODULE(Scm_NullModule());   /* for r5rs syntax */
+    ScmModule *g = SCM_MODULE(Scm_GaucheModule()); /* for gauche syntax */
 
-#define DEFSYN(symbol, syntax) \
-    Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
-    
-    DEFSYN(SCM_SYM_DEFINE,       syntax_define);
-    DEFSYN(SCM_SYM_QUOTE,        syntax_quote);
-    DEFSYN(SCM_SYM_QUASIQUOTE,   syntax_quasiquote);
-    DEFSYN(SCM_SYM_UNQUOTE,      syntax_unquote);
-    DEFSYN(SCM_SYM_UNQUOTE_SPLICING, syntax_unquote_splicing);
-    DEFSYN(SCM_SYM_SET,          syntax_set);
-    DEFSYN(SCM_SYM_LAMBDA,       syntax_lambda);
-    DEFSYN(SCM_SYM_BEGIN,        syntax_begin);
-    DEFSYN(SCM_SYM_IF,           syntax_if);
-    DEFSYN(SCM_SYM_WHEN,         syntax_when);
-    DEFSYN(SCM_SYM_UNLESS,       syntax_unless);
-    DEFSYN(SCM_SYM_AND,          syntax_and);
-    DEFSYN(SCM_SYM_OR,           syntax_or);
-    DEFSYN(SCM_SYM_COND,         syntax_cond);
-    DEFSYN(SCM_SYM_CASE,         syntax_case);
-    DEFSYN(SCM_SYM_LET,          syntax_let);
-    DEFSYN(SCM_SYM_LET_STAR,     syntax_let_star);
-    DEFSYN(SCM_SYM_LETREC,       syntax_letrec);
-    DEFSYN(SCM_SYM_DO,           syntax_do);
-    DEFSYN(SCM_SYM_DELAY,        syntax_delay);
-    DEFSYN(SCM_SYM_RECEIVE,      syntax_receive);
-    DEFSYN(SCM_SYM_DEFINE_MODULE, syntax_define_module);
-    DEFSYN(SCM_SYM_WITH_MODULE,  syntax_with_module);
-    DEFSYN(SCM_SYM_SELECT_MODULE, syntax_select_module);
-    DEFSYN(SCM_SYM_CURRENT_MODULE, syntax_current_module);
-    DEFSYN(SCM_SYM_IMPORT,       syntax_import);
-    DEFSYN(SCM_SYM_EXPORT,       syntax_export);
+#define DEFSYN_N(symbol, syntax) \
+    Scm_Define(n, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
+#define DEFSYN_G(symbol, syntax) \
+    Scm_Define(g, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
+
+    /* NB: with-module shouldn't be in scheme module, but without it
+     * we can't define r5rs procedure using gauche features for now.
+     * Just leave that until I find a better way.
+     */
+    DEFSYN_N(SCM_SYM_DEFINE,       syntax_define);
+    DEFSYN_N(SCM_SYM_QUOTE,        syntax_quote);
+    DEFSYN_N(SCM_SYM_QUASIQUOTE,   syntax_quasiquote);
+    DEFSYN_N(SCM_SYM_UNQUOTE,      syntax_unquote);
+    DEFSYN_N(SCM_SYM_UNQUOTE_SPLICING, syntax_unquote_splicing);
+    DEFSYN_N(SCM_SYM_SET,          syntax_set);
+    DEFSYN_N(SCM_SYM_LAMBDA,       syntax_lambda);
+    DEFSYN_N(SCM_SYM_BEGIN,        syntax_begin);
+    DEFSYN_N(SCM_SYM_IF,           syntax_if);
+    DEFSYN_G(SCM_SYM_WHEN,         syntax_when);
+    DEFSYN_G(SCM_SYM_UNLESS,       syntax_unless);
+    DEFSYN_N(SCM_SYM_AND,          syntax_and);
+    DEFSYN_N(SCM_SYM_OR,           syntax_or);
+    DEFSYN_N(SCM_SYM_COND,         syntax_cond);
+    DEFSYN_N(SCM_SYM_CASE,         syntax_case);
+    DEFSYN_N(SCM_SYM_LET,          syntax_let);
+    DEFSYN_N(SCM_SYM_LET_STAR,     syntax_let_star);
+    DEFSYN_N(SCM_SYM_LETREC,       syntax_letrec);
+    DEFSYN_N(SCM_SYM_DO,           syntax_do);
+    DEFSYN_N(SCM_SYM_DELAY,        syntax_delay);
+    DEFSYN_G(SCM_SYM_RECEIVE,      syntax_receive);
+    DEFSYN_G(SCM_SYM_DEFINE_MODULE, syntax_define_module);
+    DEFSYN_N(SCM_SYM_WITH_MODULE,  syntax_with_module);
+    DEFSYN_G(SCM_SYM_SELECT_MODULE, syntax_select_module);
+    DEFSYN_G(SCM_SYM_CURRENT_MODULE, syntax_current_module);
+    DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
+    DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
 }
