@@ -1,4 +1,4 @@
-.\" $Id: gauche-config.1.in,v 1.1 2002-03-07 07:06:43 shirok Exp $ -*-nroff-*-
+.\" $Id: gauche-config.1.in,v 1.2 2002-10-24 00:47:12 shirok Exp $ -*-nroff-*-
 .TH GOSH "version @GAUCHE_VERSION@"
 .UC 4
 .SH NAME
@@ -51,6 +51,9 @@ Directories where architecture-dependent system/site files go.
 .TP
 .B --sysincdir, --siteincdir
 Directories where system/site header files of extensions go.
+.TP
+.B --mandir, --infodir
+Directories where gauche manpage and info docs are installed.
 
 .SH Parameters to compile Gauche extention
 .TP

@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.288 2002-10-23 08:07:32 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.289 2002-10-24 00:47:12 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13510,6 +13510,7 @@ WWWで主として使われるプロトコルやデータフォーマットの実装。
 * Arrays::                      
 * Character code conversion::   
 * Collection framework::        
+* Getting configuration parameters::  
 * Low-level file operations::   
 * Interactive session::         
 * Listener::                    
@@ -14343,7 +14344,7 @@ meaning as @var{buffer-size} of @code{open-input-conversion-port}.
 
 
 @c ----------------------------------------------------------------------
-@node Collection framework, Low-level file operations, Character code conversion, Library modules - Gauche extensions
+@node Collection framework, Getting configuration parameters, Character code conversion, Library modules - Gauche extensions
 @section @code{gauche.collection} - Collection framework
 @c NODE コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
 
@@ -15314,7 +15315,40 @@ Optionally, you can overload other generic functions to optimize
 performance.
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Interactive session, Collection framework, Library modules - Gauche extensions
+@node Getting configuration parameters, Low-level file operations, Collection framework, Library modules - Gauche extensions
+@section @code{gauche.config} - Getting configuration parameters
+@c NODE コンフィグレーション情報へのアクセス, @code{gauche.config} - コンフィグレーション情報へのアクセス
+
+@deftp {Module} gauche.config
+@mdindex gauche.config
+This module provides a simple wrapper to obtain configuration
+parameters via @code{gauche-config} program.
+
+The @code{gauche-config} program is a simple shell script
+that records various parameters given at the configuration time
+of Gauche.
+@end deftp
+
+@defun gauche-config option
+Calls @code{gauche-config} with the option @var{option}, and
+returns the string of the parameter value.  It is an error
+to give the option gauche-config doesn't understand.
+
+See the manpage of @code{gauche-config}, or run @code{gauche-config}
+without any argument from the shell, to find out the valid options.
+
+@example
+(gauche-config "--cc")
+  @result{} "gcc"
+(gauche-config "-L")
+  @result{} "-L/usr/lib/gauche/0.6.5/i686-pc-linux-gnu"
+(gauche-config "-l")
+  @result{} "-ldl -lcrypt -lm -lpthread"
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Low-level file operations, Interactive session, Getting configuration parameters, Library modules - Gauche extensions
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
