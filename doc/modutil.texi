@@ -11301,7 +11301,7 @@ Keeps a list of filenames registered by @code{cgi-add-temorary-file}.
 @c JP
 @code{cgi-add-temporary-file}で登録された一時ファイルを保持するパラメータです。
 @c COMMON
-@end defun
+@end deffn
 
 @c EN
 @subheading Handling file uploads
