@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use srfi-1)
+(use gauche.collection)
 
 (test-start "dbm")
 
@@ -92,6 +93,17 @@
                (dbm-map *current-dbm*
                         (lambda (k v) v)))))))
 
+;; does collection framework works?
+(define (test:collection-read dataset)
+  (call/cc
+   (lambda (return)
+     (for-each (lambda (entry)
+                 (unless (equal? (hash-table-get dataset (car entry))
+                                 (cdr entry))
+                   (return #f)))
+               *current-dbm*)
+     #t)))
+
 ;; does delete work?
 (define (test:delete dataset)
   (call/cc
@@ -137,31 +149,33 @@
   (dynamic-wind
    clean-up
    (lambda ()
-     ;; 1. create read/write db
+     ;; create read/write db
      (test (tag "make") #t (lambda () (test:make class :create serializer)))
-     ;; 2. put stuffs
+     ;; put stuffs
      (test (tag "put!") #t (lambda () (test:put! dataset)))
-     ;; 3, 4. get stuffs
+     ;; get stuffs
      (test (tag "get") #t (lambda () (test:get dataset)))
      (test (tag "get-exceptional") #t (lambda () (test:get-exceptional)))
-     ;; 5. for each
+     ;; traverse
      (test (tag "for-each") #t (lambda () (test:for-each dataset)))
-     ;; 6. close
+     ;(test (tag "collection-read") #t
+     ;      (lambda () (test:collection-read dataset)))
+     ;; close
      (test (tag "close") #t (lambda () (test:close)))
-     ;; 7. open again with read only
+     ;; open again with read only
      (test (tag "read-only open") #t (lambda () (test:make class :read serializer)))
-     ;; 8. does it still have stuffs?
+     ;; does it still have stuffs?
      (test (tag "get again") #t (lambda () (test:get dataset)))
-     ;; 9. does it work as read-only?
+     ;; does it work as read-only?
      (test (tag "read-only") #t (lambda () (test:read-only)))
-     ;; 10. close and open it again
+     ;; close and open it again
      (test (tag "close again") #t
            (lambda ()
              (dbm-close *current-dbm*)
              (test:make class :write serializer)))
-     ;; 11. delete stuffs
+     ;; delete stuffs
      (test (tag "delete") #t (lambda () (test:delete dataset)))
-     ;; 12. close again
+     ;; close again
      (test (tag "close again") #t (lambda () (test:close))))
    clean-up))
 

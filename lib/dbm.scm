@@ -30,10 +30,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.4 2003-11-25 04:39:05 shirok Exp $
+;;;  $Id: dbm.scm,v 1.5 2004-04-02 00:02:31 shirok Exp $
 ;;;
 
 (define-module dbm
+  (use gauche.collection)
   (export <dbm> <dbm-meta>
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
@@ -45,7 +46,7 @@
 (define-class <dbm-meta> (<class>)
   ())
 
-(define-class <dbm> ()
+(define-class <dbm> (<collection>)
   ((path       :init-keyword :path)
    (rw-mode    :init-keyword :rw-mode    :initform :write)
    (file-mode  :init-keyword :file-mode  :initform #o664)
@@ -165,6 +166,32 @@
   (when (dbm-closed? dbm) (errorf "dbm-map: dbm already closed: ~s" dbm))
   (unless (procedure? proc) (errorf "dbm-map: bad procedure: ~s" proc))
   (reverse (dbm-fold dbm (lambda (key value r) (cons (proc key value) r)) '())))
+
+;; Collection framework
+;;   This is a fallback, using "iterator inversion" technique to obtain
+;;   a generator from dbm-fold.  The subclass may directly implement
+;;   them if they have underlying generators.
+;; NB: this doesn't work due to the bug of call/cc handling.
+;(define-method call-with-iterator ((dbm <dbm>) proc . options)
+;  (define restart #f)
+;  (define buf #f)
+;  (define (fetch)
+;    (cond
+;     ((eq? restart 'end) #f) ;; already finished
+;     ((not restart)          ;; initial setup
+;      (let/cc return
+;        (dbm-fold dbm
+;                  (lambda (k v r)
+;                    (let/cc res
+;                      (set! restart res)
+;                      (return (cons k v))))
+;                  #f)
+;        (set! restart 'end)
+;        'end))
+;     (else (restart #f))))
+;  (set! buf (fetch))
+;  (proc (lambda () (eq? buf 'end))
+;        (lambda () (begin0 buf (set! buf (fetch))))))
 
 ;;
 ;; Meta-operations
