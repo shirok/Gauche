@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.8 2001-06-04 20:07:48 shirok Exp $
+ *  $Id: charconv.c,v 1.9 2001-06-05 19:52:46 shirok Exp $
  */
 
 #include <errno.h>
@@ -79,6 +79,7 @@ static int conv_input_filler(char *buf, int len, void *data)
     /* Conversion. */
     inroom = insize;
     outroom = info->bufsiz;
+#define DEBUG
 #ifdef DEBUG
     fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
             info->inbuf, info->inptr, insize,
@@ -87,7 +88,7 @@ static int conv_input_filler(char *buf, int len, void *data)
     result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
 #ifdef DEBUG
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
-           result, inbuf, inroom, outbuf, outroom);
+            result, inbuf, inroom, outbuf, outroom);
 #endif
     if (result == (size_t)-1) {
         if (errno == EINVAL || errno == E2BIG) {
@@ -101,12 +102,16 @@ static int conv_input_filler(char *buf, int len, void *data)
         } else {
             /* it's likely that input contains invalid sequence.
                TODO: we should handle this case gracefully. */
-            Scm_Error("invalid character sequence in the input stream");
+            int cnt = inroom >= 6 ? 6 : inroom;
+            ScmObj s = Scm_MakeString(info->inbuf+insize-inroom, cnt, cnt,
+                                      SCM_MAKSTR_COPYING|SCM_MAKSTR_INCOMPLETE);
+            Scm_Error("invalid character sequence in the input stream: %S ...",
+                      s);
             return 0;           /* dummy */
         }
     } else {
         /* Conversion is done completely. */
-        SCM_ASSERT(inroom == 0);
+        /*SCM_ASSERT(inroom == 0);*/
         info->inptr = info->inbuf;
         return info->bufsiz - outroom;
     }
@@ -152,7 +157,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 /*------------------------------------------------------------
  * Output conversion
  *
- *   Bufferd port -->outbuf--> flusher -->inbuf--> putz(remote)
+ *   Bufferd port -->inbuf--> flusher -->outbuf--> putz(remote)
  */
 
 static int conv_output_flusher(char *buf, int len, void *data)
@@ -170,9 +175,10 @@ static int conv_output_flusher(char *buf, int len, void *data)
         outsize = info->bufsiz - (info->outptr - info->outbuf);
         inroom = len;
         outroom = outsize;
+#define DEBUG
 #ifdef DEBUG
         fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
-                info->inbuf, info->inptr, insize,
+                info->inbuf, info->inptr, inroom,
                 info->outbuf, info->outptr, outroom);
 #endif
         result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);

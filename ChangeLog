@@ -1,3 +1,8 @@
+2001-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c : allow bufport's flusher to flush less bytes than
+	  specified.  unflushed bytes are shifted by the bufport routine.
+
 2001-06-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub : added port->string, port->byte-string
