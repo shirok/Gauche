@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.10 2001-04-01 10:21:53 shiro Exp $
+ *  $Id: boolean.c,v 1.11 2001-04-01 22:21:23 shiro Exp $
  */
 
 #include "gauche.h"
@@ -34,6 +34,7 @@ int Scm_EqvP(ScmObj x, ScmObj y)
 
 int Scm_EqualP(ScmObj x, ScmObj y)
 {
+    ScmClass *cx, *cy;
     if (SCM_PAIRP(x)) {
         if (SCM_PAIRP(y)) {
             if (Scm_EqualP(SCM_CAR(x), SCM_CAR(y))
@@ -66,6 +67,12 @@ int Scm_EqualP(ScmObj x, ScmObj y)
             }
         }
         return FALSE;
+    }
+    if (!SCM_PTRP(x)) return (x == y);
+    cx = Scm_ClassOf(x);
+    cy = Scm_ClassOf(y);
+    if (cx == cy && cx->compare) {
+        return (cx->compare(x, y) == 0);
     }
     return (x == y);
 }
