@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: hash.c,v 1.2 2001-01-30 06:29:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -247,6 +247,52 @@ static int string_cmp(ScmObj key, ScmHashEntry *e)
 }
 
 /*
+ * Accessor functions for small integer
+ */
+static ScmHashEntry *smallint_access(ScmHashTable *table,
+                                     ScmObj key, int mode, ScmObj value)
+{
+    unsigned long hashval, index;
+    int ikey;
+    ScmHashEntry *e;
+
+    if (!SCM_INTP(key)) {
+        Scm_Abort("Got non-integer key to the small integer hashtable");
+    }
+    ikey = SCM_INT_VALUE(key);
+    SMALL_INT_HASH(hashval, ikey);
+    index = HASH2INDEX(table, hashval);
+    
+    for (e = table->buckets[index]; e; e = e->next) {
+        if (e->key == key) {
+            if (mode == HASH_FIND || mode == HASH_ADD) return e;
+            else {
+                e->value = value;
+                return e;
+            }
+        }
+    }
+
+    if (mode == HASH_FIND) return NULL;
+    else return insert_entry(table, key, value, index);
+}
+
+static unsigned long smallint_hash(ScmObj obj)
+{
+    unsigned long hashval;
+    int ikey;
+    if (!SCM_INTP(obj)) return 0;
+    ikey = SCM_INT_VALUE(obj);
+    SMALL_INT_HASH(hashval, ikey);
+    return hashval;
+}
+
+static int smallint_cmp(ScmObj key, ScmHashEntry *e)
+{
+    return (key == e->key ? 0 : -1);
+}
+
+/*
  * Accessor function for general case
  *    (hashfn and cmpfn are given by user)
  */
@@ -333,6 +379,10 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
         z->accessfn = address_access;
         z->hashfn = address_hash;
         z->cmpfn = address_cmp;
+    } else if (hashfn == SCM_HASH_SMALLINT) {
+        z->accessfn = smallint_access;
+        z->hashfn = smallint_hash;
+        z->cmpfn = smallint_cmp;
     } else {
         z->accessfn = general_access;
         z->hashfn = hashfn;
