@@ -116,5 +116,10 @@
 (test "format ~x" "0000012345"  (lambda () (format #f "~10,'0x" 74565)))
 (test "format ~x" "0000-12345"  (lambda () (format #f "~10,'0x" -74565)))
 
+(test "format v param" "     12345"
+      (lambda () (format #f "~vd" 10 12345)))
+(test "format v param" "0000012345"
+      (lambda () (format #f "~v,vd" 10 #\0 12345)))
+
 (test-end)
 
