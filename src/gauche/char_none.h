@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_none.h,v 1.1 2001-04-26 07:04:54 shiro Exp $
+ *  $Id: char_none.h,v 1.2 2001-04-26 07:10:42 shiro Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -26,18 +26,11 @@
 #define SCM_CHAR_GET(cp, ch) ((ch) = *(cp))
 #define SCM_CHAR_PUT(cp, ch)  (*(cp) = (ch))
 
-#define SCM_CHAR_BACKWARD(cp, start, result)                            \
-    do {                                                                \
-        (result) = (cp);                                                \
-        while ((result) >= (start)) {                                   \
-            if ((result) + SCM_CHAR_NFOLLOWS(*(result)) + 1 == (cp)) {  \
-                break;                                                  \
-            }                                                           \
-            (result)--;                                                 \
-        }                                                               \
-        if ((result) < (start)) (result) = NULL;                        \
+#define SCM_CHAR_BACKWARD(cp, start, result)    \
+    do {                                        \
+        if ((cp) > (start)) (result) = (cp)-1;  \
+        else (result) = NULL;                   \
     } while (0)
-
 
 #else  /* !SCM_CHAR_ENCODING_BODY */
 

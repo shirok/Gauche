@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_utf_8.h,v 1.1 2001-04-26 07:04:47 shiro Exp $
+ *  $Id: char_utf_8.h,v 1.2 2001-04-26 07:10:42 shiro Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -41,18 +41,6 @@ extern void Scm_CharUtf8Putc(char *, ScmChar);
         }                                               \
     } while (0)
 
-#define SCM_CHAR_BACKWARD(cp, start, result)                            \
-    do {                                                                \
-        (result) = (cp);                                                \
-        while ((result) >= (start)) {                                   \
-            if ((result) + SCM_CHAR_NFOLLOWS(*(result)) + 1 == (cp)) {  \
-                break;                                                  \
-            }                                                           \
-            (result)--;                                                 \
-        }                                                               \
-        if ((result) < (start)) (result) = NULL;                        \
-    } while (0)
-
 #define SCM_CHAR_PUT(cp, ch)                    \
     do {                                        \
         if (ch >= 0x80) {                       \
@@ -60,6 +48,18 @@ extern void Scm_CharUtf8Putc(char *, ScmChar);
         } else {                                \
             *(cp) = (ch);                       \
         }                                       \
+    } while (0)
+
+#define SCM_CHAR_BACKWARD(cp, start, result)                                \
+    do {                                                                    \
+        (result) = (cp);                                                    \
+        while ((result) >= (start) && (cp)-(result)<= SCM_CHAR_MAX_BYTES) { \
+            if ((result) + SCM_CHAR_NFOLLOWS(*(result)) + 1 == (cp)) {      \
+                break;                                                      \
+            }                                                               \
+            (result)--;                                                     \
+        }                                                                   \
+        if ((result) < (start)) (result) = NULL;                            \
     } while (0)
 
 #else  /* !SCM_CHAR_ENCODING_BODY */
