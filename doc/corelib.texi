@@ -5061,6 +5061,22 @@ A filler and a flusher callbacks of buffered ports
 @end example
 @end defun
 
+@defmac let/cc var body @dots{}
+@c EN
+This macro expands to :
+@c JP
+このマクロは次のように展開されます :
+@c COMMON
+@code{(call/cc (lambda (@var{var}) @var{body} @dots{})}.
+@c EN
+The API is taken from PLT Scheme.
+@c JP
+APIはPLT Schemeから取りました。
+@c COMMON
+@end defmac
+
+
+
 @defun dynamic-wind before thunk after
 [R5RS]
 @c EN
@@ -5106,6 +5122,7 @@ scope of @code{dynamic-wind}, @var{before} is called.
  @result{} (connect talk1 disconnect connect talk2 disconnect)
 @end example
 @end defun
+
 
 @node Multiple values, Delayed Evaludation, Continuation, Control features
 @subsection Multiple values
