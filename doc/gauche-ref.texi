@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.135 2001-12-06 11:04:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.136 2001-12-08 08:04:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -674,7 +674,11 @@ This option controls the compiler behavior.  For now we have
 following options available:
 @table @asis
 @item no-inline
-Prohibits the compiler to iniline primitive Scheme procedures.
+Prohibits the compiler from inilining primitive Scheme procedures.
+@item no-source-info
+Don't keep source information for debugging.  Consumes less memory.
+@item load-verbose
+Reports whenever a file is loaded.
 @end table
 @c JP
 このオプションはコンパイラの動作に影響を与えます、今のところ、次のオプションのみが
@@ -682,6 +686,10 @@ Prohibits the compiler to iniline primitive Scheme procedures.
 @table @asis
 @item no-inline
 Schemeの基本関数のインライン展開を行いません。
+@item no-source-info
+デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
+@item load-verbose
+ファイルがロードされる時にそれを報告します。
 @end table
 @c COMMON
 @end deftp
@@ -6146,25 +6154,90 @@ Returns @code{#t} if @var{feature} is already provided.
 @c COMMON
 @end defun
 
-@defmac autoload file symbol @dots{}
+@defmac autoload file/module item @dots{}
 @c EN
-Sets up @var{symbol} @dots{} to be autoloaded.
-That is, if @var{symbol}s are referenced next time,
-@var{file} is loaded before the @var{symbol} is evaluated.
-This delays the loading of @var{file} until it is needed.
-@var{file} must define @var{symbol}, or an error is signalled
-when @var{file} is loaded.
-
-The autoloading takes place at run time, so you can't
-autoload macros.
+Sets up @var{item} @dots{} to be autoloaded.
+That is, when an @var{item} is referenced for the first time,
+@var{file/module} is loaded before the @var{item} is evaluated.
+This delays the loading of @var{file/module} until it is needed.
 @c JP
-@var{symbol} @dots{} がオートロードされるように設定します。すなわち、
-次に@var{symbol}の値が参照された時、それが実際に評価される前に@var{file}がロード
-されるようにします。これによって、必要とされる時まで@var{file}のロードを遅らせる
-ことができます。@var{symbol}は@var{file}の中で定義されなければなりません。
-そうでなければロード時にエラーが報告されます。
+@var{item} @dots{} がオートロードされるように設定します。すなわち、
+次に@var{item}が参照された時、それが実際に評価される前に@var{file/module}がロード
+されるようにします。これによって、必要とされる時まで@var{file/module}のロードを遅らせる
+ことができます。
+@c COMMON
 
-オートロードは実行時に機能します。従って、マクロ定義をオートロードすることはできません。
+@c EN
+You can specify either a string file name or a symbol module name
+to @var{file/module}.  If it is a string, the named file is
+loaded.  If it is a symbol, the named module is loaded (using the
+same rule as of @code{use}) and @var{import}ed
+(@xref{Module syntax}, for details of @code{use} and @code{import}).
+@c JP
+引数@var{file/module}には、文字列かシンボルを指定できます。文字列の場合は
+そのファイルがロードされます。シンボルの場合、その名のモジュールが(@code{use}と
+同じルールで)ロードされ、インポートされます。(モジュールの@code{use}とインポート
+の詳細については@ref{Module syntax}を参照して下さい)。
+@c COMMON
+
+@c EN
+@var{Item} can be either a variable name (symbol), 
+or a form @code{(:macro @var{symbol})}.  If it is a variable,
+the named file/module is loaded when the variable is
+about to be evaluated.  If it is the latter form,
+the named file/module is loaded when a form
+@code{(@var{symbol} arg @dots{})} is about to be @emph{compiled},
+which enables autoloading macros.
+@c JP
+@var{item}は変数名(シンボル)か、@code{(:macro @var{symbol})}というフォーム
+でなければなりません。変数名の場合は、その変数が評価されようとした時に
+指定のファイル／モジュールがロードされます。後者のフォームの場合は、
+@code{(@var{symbol} arg @dots{})} というフォームがコンパイルされようとした
+時に指定のファイル／モジュールがロードされます。後者はマクロのオートロードになります。
+@c COMMON
+
+@c EN
+@var{file/module} must define @var{symbol} in it, or an error is signalled
+when @var{file/module} is autoloaded.
+@c JP
+@var{symbol}は@var{file/module}の中で定義されなければなりません。
+そうでなければロード時にエラーが報告されます。
+@c COMMON
+
+@c EN
+The following is an example of autoloading procedures.
+@c JP
+手続きのオートロードの例を示します。
+@c COMMON
+@example
+(autoload "foo" foo0 foo1)
+(autoload "bar" bar0 bar1)
+
+(define (foobar x)
+  (if (list? x)
+      (map bar0 x)
+      (foo0)))
+
+@c EN
+(foobar '(1 2)) ; @r{"bar" is loaded at this moment}
+
+(foobar '())    ; @r{"foo" is loaded at this moment}
+@c JP
+(foobar '(1 2)) ; @r{この時点で "bar" がロードされる}
+
+(foobar '())    ; @r{この時点で "foo" がロードされる}
+@c COMMON
+@end example
+
+@c EN
+Note that if you set to autoload macro, the file/module is loaded
+immediately when such form that uses the macro is compiled,
+regardless of the piece of
+the code is executed or not.
+@c JP
+マクロのオートロードを設定した場合、指定のファイルまたはモジュールは、
+そのマクロを使っているフォームが実行されるされないにかかわらず、
+コンパイラがそのフォームを見た時点でロードされることに注意してください。
 @c COMMON
 @end defmac
 
