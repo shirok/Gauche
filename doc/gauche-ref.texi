@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.232 2002-07-01 01:19:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.233 2002-07-01 04:30:48 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -526,7 +526,7 @@ Gaucheは、以下に挙げる点を除き、オプショナルな構文や手続きも含め
 @itemize @bullet
 @item
 @c EN
-By default, Gauche's reads symbols by case-sensitive way.
+By default, Gauche reads symbols by case-sensitive way.
 A command-line option is provided to make the reader case-insensitive.
 (@xref{Case-sensitivity}, for details).
 @c JP

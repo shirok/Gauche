@@ -1,3 +1,10 @@
+2002-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.5.7
+	* src/class.c : added object-equal? generic function to extend equal?.
+	* ext/uvector/array.scm (generate-amap): fixed a bug in the boundary
+	  check that passes an index equal to the array-end.
+
 2002-06-28  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/array.scm : more array utils, and array reader/write

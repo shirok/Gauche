@@ -113,6 +113,8 @@ if [ "$testclean" = "yes" ]; then
 fi
 
 if [ "$rpm" = "yes" ]; then
+  rm -f $RPMDIR/SOURCES/Gauche-$VERSION.tgz
+  cp $TGZ_DEST/Gauche-$VERSION.tgz $RPMDIR/SOURCES/
   spec=$RPMDIR/SPECS/Gauche.spec
   echo "UTF8, i386 ----------------------------------------------"
   rm -f $spec
@@ -130,4 +132,10 @@ if [ "$rpm" = "yes" ]; then
   rm -f $spec
   cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
   rpm -ba --clean --target i686 $spec
+  echo "Finishing..."
+  mv $RPMDIR/RPMS/i386/Gauche-eucjp-*.rpm $TGZ_DEST
+  mv $RPMDIR/RPMS/i386/Gauche-utf8-*.rpm $TGZ_DEST
+  mv $RPMDIR/RPMS/i686/Gauche-eucjp-*.rpm $TGZ_DEST
+  mv $RPMDIR/RPMS/i686/Gauche-utf8-*.rpm $TGZ_DEST
+  mv $RPMDIR/SRPMS/Gauche-*.rpm $TGZ_DEST
 fi

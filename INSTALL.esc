@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.17 2002-07-01 02:51:17 shirok Exp $
+$Id: INSTALL.esc,v 1.18 2002-07-01 04:30:46 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -362,7 +362,7 @@ architecture using gcc.
 
 として下さい。
 <? else !>
-You can remove installed Gauche software by run
+You can remove installed Gauche software by running
 
   make uninstall
 
