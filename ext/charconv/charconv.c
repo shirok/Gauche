@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.10 2001-06-05 20:17:25 shirok Exp $
+ *  $Id: charconv.c,v 1.11 2001-06-06 19:43:06 shirok Exp $
  */
 
 #include <errno.h>
@@ -79,7 +79,6 @@ static int conv_input_filler(char *buf, int len, void *data)
     /* Conversion. */
     inroom = insize;
     outroom = info->bufsiz;
-#define DEBUG
 #ifdef DEBUG
     fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
             info->inbuf, info->inptr, insize,
@@ -167,6 +166,21 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
  *   Bufferd port -->inbuf--> flusher -->outbuf--> putz(remote)
  */
 
+/* NB: Glibc-2.1.2's iconv() has a bug in SJIS handling.  If output
+ * is in SJIS and output buffer overflows in the middle of two-byte
+ * sequence, it leaves the first byte in the output buffer as if
+ * it were valid converted character, while the input buffer pointer
+ * stops just before the unconverted character, as supposed.
+ * There's no way to detect that unless I scan the output by myself
+ * to see the last byte of conversion is invalid or not.
+ *
+ * As a walkaround, I flush the output buffer more frequently than
+ * needed, avoiding the situation that the output buffer overflow.
+ * Hoping the bugs are fixed in the future release of glibc.
+ */
+
+#define GLIBC_2_1_ICONV_BUG
+
 static int conv_output_flusher(char *buf, int len, void *data)
 {
     conv_info *info = (conv_info*)data;
@@ -175,17 +189,23 @@ static int conv_output_flusher(char *buf, int len, void *data)
     const char *inbuf;
     char *outbuf;
 
+    if (buf == NULL) {
+        /* the port is closed.  flush outbuf */
+        Scm_Putz(info->outbuf, info->outptr - info->outbuf, info->remote);
+        Scm_Flush(info->remote);
+        return 0;
+    }
+
     inbuf = info->inbuf;
-    outbuf = info->outptr;
+    inroom = len;
     for (;;) {
         /* Conversion. */
+        outbuf = info->outptr;
         outsize = info->bufsiz - (info->outptr - info->outbuf);
-        inroom = len;
         outroom = outsize;
-#define DEBUG
 #ifdef DEBUG
         fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
-                info->inbuf, info->inptr, inroom,
+                info->inbuf, len, inroom,
                 info->outbuf, info->outptr, outroom);
 #endif
         result = iconv(info->handle, &inbuf, &inroom, &outbuf, &outroom);
@@ -195,15 +215,25 @@ static int conv_output_flusher(char *buf, int len, void *data)
 #endif
         if (result == (size_t)-1) {
             if (errno == EINVAL) {
+#ifndef GLIBC_2_1_ICONV_BUG
                 /* Conversion stopped due to an incomplete character at the
                    end of the input buffer.  We just return # of bytes
                    flushed.  (Shifting unconverted characters is done by
                    buffered port routine) */
-                return len - outroom;
+                info->outptr = outbuf;
+                return len - inroom;
+#else
+                /* See the above notes.  We always flush the output buffer
+                   here, so that we can avoid output buffer overrun. */
+                Scm_Putz(info->outbuf, outbuf - info->outbuf, info->remote);
+                info->outptr = info->outbuf;
+                return len - inroom;
+#endif
             } else if (errno == E2BIG) {
-                /* Output buffer got full.  Flush it. */
-                Scm_Putz(info->outbuf, info->bufsiz - outroom, info->remote);
-                outbuf = info->outptr = info->outbuf;
+                /* Output buffer got full.  Flush it, and continue
+                   conversion. */
+                Scm_Putz(info->outbuf, outbuf - info->outbuf, info->remote);
+                info->outptr = info->outbuf;
                 continue;
             } else {
                 /* it's likely that input contains invalid sequence.
@@ -212,15 +242,17 @@ static int conv_output_flusher(char *buf, int len, void *data)
                 return 0;           /* dummy */
             }
         } else {
+#ifndef GLIBC_2_1_ICONV_BUG
             /* Conversion is done completely.  Update outptr. */
-            SCM_ASSERT(inroom == 0);
             info->outptr = outbuf;
-            if (buf == NULL) {
-                /* the port is closed.  flush outbuf */
-                Scm_Putz(info->outbuf, info->outptr - info->outbuf,
-                         info->remote);
-            }
-            return len;
+            return len - inroom;
+#else
+            /* See the above notes.  We always flush the output buffer here,
+               so that we can avoid output buffer overrun. */
+            Scm_Putz(info->outbuf, outbuf - info->outbuf, info->remote);
+            info->outptr = info->outbuf;
+            return len - inroom;
+#endif
         }
     }
 }

@@ -35,6 +35,11 @@
               (for-each (lambda (to) (tester file from to)) to-codes))
             from-codes))
 
+;(test "zz"
+;      (file->string "t5")
+;      (lambda ()
+;        (file->string-conv/out "t6" "SJIS" "UTF8" read-byte write-byte)))
+
 ;;--------------------------------------------------------------------
 (test-section "input conversion")
 
@@ -54,15 +59,15 @@
               (lambda () "(not supported)")))
     ))
 
-(map-test test-input "data/jp1"
+'(map-test test-input "data/jp1"
           '("EUCJP" "UTF8" "SJIS" "CSISO2022JP")
           '("EUCJP" "UTF8" "SJIS" "CSISO2022JP"))
-(map-test test-input "data/jp2"
+'(map-test test-input "data/jp2"
           '("EUCJP" "UTF8" "SJIS" "CSISO2022JP")
           '("EUCJP" "UTF8" "SJIS" "CSISO2022JP"))
-(map-test test-input "data/kr1"
-          '("EUCKR" "UTF8")
-          '("EUCKR" "UTF8" "ZIRKYU"))
+'(map-test test-input "data/kr1"
+          '("EUCKR" "UTF8" "CSISO2022KR")
+          '("EUCKR" "UTF8" "CSISO2022KR"))
 
 ;;--------------------------------------------------------------------
 (test-section "output conversion")
@@ -84,13 +89,13 @@
   (test-output "byte" read-byte write-byte file from to))
         
 (define (test-output/char file from to)
-  (test-output "byte" read-char write-char file from to))
+  (test-output "char" read-char write-char file from to))
         
 (define (test-output/chunk256 file from to)
-  (test-output "byte" (lambda (p) (read-block 256 p)) display file from to))
+  (test-output "chunk256" (lambda (p) (read-block 256 p)) display file from to))
         
 (define (test-output/chunk20 file from to)
-  (test-output "byte" (lambda (p) (read-block 20 p)) display file from to))
+  (test-output "chunk20" (lambda (p) (read-block 20 p)) display file from to))
 
 (map-test test-output/byte "data/jp1"
           '("EUCJP" "UTF8" "SJIS" "CSISO2022JP")
@@ -118,6 +123,15 @@
           '("EUCJP")
           '("EUCJP" "UTF8" "SJIS" "CSISO2022JP"))
 
+(map-test test-output/byte "data/kr1"
+          '("EUCKR" "UTF8" "CSISO2022KR")
+          '("EUCKR" "UTF8" "CSISO2022KR"))
+(map-test test-output/chunk256 "data/kr1"
+          '("EUCKR" "UTF8" "CSISO2022KR")
+          '("EUCKR" "UTF8" "CSISO2022KR"))
+(map-test test-output/chunk20 "data/kr1"
+          '("EUCKR" "UTF8" "CSISO2022KR")
+          '("EUCKR" "UTF8" "CSISO2022KR"))
 
 ;; WRITEME
 
