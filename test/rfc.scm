@@ -53,6 +53,33 @@ Content-Length: 4349
                 (rfc822-header->list (open-input-string rfc822-header1)))))
 
 
+;;--------------------------------------------------------------------
+(test-section "rfc.base64")
+(use rfc.base64)
+
+(test "encode" "YQ==" (lambda () (base64-encode-string "a")))
+(test "encode" "MA==" (lambda () (base64-encode-string "0")))
+(test "encode" "Cg==" (lambda () (base64-encode-string "\n")))
+(test "encode" "YTA=" (lambda () (base64-encode-string "a0")))
+(test "encode" "YTAK" (lambda () (base64-encode-string "a0\n")))
+(test "encode" "PQk0" (lambda () (base64-encode-string "=\t4")))
+(test "encode" "eTQ5YQ==" (lambda () (base64-encode-string "y49a")))
+(test "encode" "RWdqYWk=" (lambda () (base64-encode-string "Egjai")))
+(test "encode" "OTNiamFl" (lambda () (base64-encode-string "93bjae")))
+(test "encode" "QkFSMGVyOQ==" (lambda () (base64-encode-string "BAR0er9")))
+
+(test "decode" "a" (lambda () (base64-decode-string "YQ==")))
+(test "decode" "a" (lambda () (base64-decode-string "YQ=")))
+(test "decode" "a" (lambda () (base64-decode-string "YQ")))
+(test "decode" "a0" (lambda () (base64-decode-string "YTA=")))
+(test "decode" "a0" (lambda () (base64-decode-string "YTA")))
+(test "decode" "a0\n" (lambda () (base64-decode-string "YTAK")))
+(test "decode" "y49a" (lambda () (base64-decode-string "eTQ5YQ==")))
+(test "decode" "Egjai" (lambda () (base64-decode-string "RWdqYWk=")))
+(test "decode" "93bjae" (lambda () (base64-decode-string "OTNiamFl")))
+(test "decode" "BAR0er9" (lambda () (base64-decode-string "QkFSMGVyOQ==")))
+(test "decode" "BAR0er9" (lambda () (base64-decode-string "QkFS\r\nMGVyOQ\r\n==")))
+
 
 (test-end)
 
