@@ -3,7 +3,7 @@
  *
  *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.1 2001-02-19 12:04:28 shiro Exp $
+ *  $Id: bignum.c,v 1.2 2001-02-19 14:06:09 shiro Exp $
  */
 
 #include <math.h>
@@ -82,6 +82,14 @@ ScmObj Scm_BignumCopy(ScmBignum *b)
 /*-----------------------------------------------------------------------
  * Conversion
  */
+
+static ScmBignum *bignum_clear(ScmBignum *b)
+{
+    int i;
+    for (i=0; i<b->size; i++) b->values[i] = 0;
+    return b;
+}
+
 ScmObj Scm_NormalizeBignum(ScmBignum *b)
 {
     int size = b->size;
@@ -144,6 +152,27 @@ ScmObj Scm_BignumNegate(ScmBignum *b)
     return Scm_NormalizeBignum(SCM_BIGNUM(c));
 }
     
+/*-----------------------------------------------------------------------
+ * Compare
+ */
+
+/* bx and by must be normalized */
+int Scm_BignumCmp(ScmBignum *bx, ScmBignum *by)
+{
+    int i;
+    
+    if (bx->sign < by->sign) return -1;
+    if (bx->sign > by->sign) return 1;
+    if (bx->size < by->size) return (bx->sign > 0) ? -1 : 1;
+    if (bx->size > by->size) return (bx->sign > 0) ? 1 : -1;
+
+    for (i=bx->size-1; i>=0; i--) {
+        if (bx->values[i] < by->values[i]) return (bx->sign > 0) ? -1 : 1;
+        if (bx->values[i] > by->values[i]) return (bx->sign > 0) ? 1 : -1;
+    }
+    return 0;
+}
+
 /*-----------------------------------------------------------------------
  * Add & subtract
  */
@@ -441,21 +470,113 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
         if (lo < t4_) hi++;                                             \
     } while (0)
 
-/* br += bx * y.   br must have enough size. */
-static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx, u_long y)
+/* br += bx * y << off*WORD_BITS.   br must have enough size. */
+static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx,
+                                  u_long y, int off)
 {
-    u_long hi, lo, x, r0, r1, r2, c1, c2, prev=0;
-    int i;
+    u_long hi, lo, x, r0, r1, c;
+    int i,j;
     
     for (i=0; i<bx->size; i++) {
-        x = bx->values[i]; r0 = br->values[i]; c1 = 0;
+        x = bx->values[i];
         UMUL(hi, lo, x, y);
-        UADD(r1, c1, r0, lo);
-        c2 = 0;
-        UADD(r2, c2, r1, prev);
+        c = 0;
+
+        r0 = br->values[i+off];
+        UADD(r1, c, r0, lo);
+        br->values[i+off] = r1;
+
+        r0 = br->values[i+off+1];
+        UADD(r1, c, r0, hi);
+        br->values[i+off+1] = r1;
+
+        for (j=i+off+2; c && j<br->size; j++) {
+            r0 = br->values[j];
+            UADD(r1, c, r0, 0);
+            br->values[j] = r1;
+        }
     }
-    return NULL;
+    return br;
 }
+
+/* returns bx * by.  not normalized */
+static ScmBignum *bignum_mul(ScmBignum *bx, ScmBignum *by)
+{
+    int i;
+    ScmBignum *br = make_bignum(bx->size + by->size);
+    bignum_clear(br);
+    for (i=0; i<by->size; i++) {
+        bignum_mul_word(br, bx, by->values[i], i);
+    }
+    br->sign = bx->sign * by->sign;
+    return br;
+}
+
+static ScmBignum *bignum_mul_si(ScmBignum *bx, long y)
+{
+    ScmBignum *br;
+    int yabs;
+    
+    if (y == 1) return bx;
+    if (y == 0) {
+        br = make_bignum(1);
+        br->sign = 1;
+        br->values[0] = 0;
+        return br;
+    }
+    if (y == -1) {
+        br = SCM_BIGNUM(Scm_BignumCopy(bx));
+        br->sign = -br->sign;
+        return br;
+    }
+    /* TODO: optimize for 2^n case !*/
+    br = make_bignum(bx->size + 1); /* TODO: more accurate estimation */
+    bignum_clear(br);
+    yabs = (y<0)? -y:y;
+    br->sign = bx->sign;
+    bignum_mul_word(br, bx, yabs, 0);
+    if (y<0) br->sign = -br->sign;
+    return br;
+}
+
+ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by)
+{
+    ScmBignum *br = bignum_mul(bx, by);
+    return Scm_NormalizeBignum(br);
+}
+
+ScmObj Scm_BignumMulSI(ScmBignum *bx, long y)
+{
+    ScmBignum *br = bignum_mul_si(bx, y);
+    return Scm_NormalizeBignum(br);
+}
+
+ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args)
+{
+    ScmBignum *r = bx;
+    for (; SCM_PAIRP(args); args = SCM_CDR(args)) {
+        ScmObj v = SCM_CAR(args);
+        if (SCM_INTP(v)) {
+            r = bignum_mul_si(r, SCM_INT_VALUE(v));
+            continue;
+        }
+        if (SCM_BIGNUMP(v)) {
+            r = bignum_mul(r, SCM_BIGNUM(v));
+            continue;
+        }
+        if (SCM_FLONUMP(v) || SCM_COMPLEXP(v)) {
+            ScmObj f = Scm_MakeFlonum(Scm_BignumToDouble(r));
+            return Scm_Multiply(Scm_Cons(f, args));
+        }
+        Scm_Error("number expected, but got %S", v);
+    }
+    return Scm_NormalizeBignum(r);
+}
+
+/*-----------------------------------------------------------------------
+ * Division
+ */
+
 
 /*-----------------------------------------------------------------------
  * For debug
