@@ -1,0 +1,43 @@
+dnl
+dnl Example of configuring Gauche extension
+dnl
+dnl $Id: configure.in,v 1.1 2001-05-19 22:30:41 shirok Exp $
+AC_INIT(net.c)
+
+dnl Determine if we're configuring inside of Gauche main source tree or not.
+if test -f ../../src/gauche.h; then
+  GAUCHE_CONFIG="sh ../../src/gauche-config"
+  GAUCHE_TOP='../../'
+  GAUCHE_INC="-I../../src -I../../gc"
+  GOSH="../../src/gosh -I../../src -I../../lib"
+else
+  GAUCHE_CONFIG=gauche-config
+  GAUCHE_TOP=
+  GAUCHE_INC=`gauche-config -I`
+  GOSH=gosh
+fi
+AC_SUBST(GAUCHE_CONFIG)
+AC_SUBST(GAUCHE_TOP)
+AC_SUBST(GAUCHE_INC)
+AC_SUBST(GOSH)
+
+dnl A user has a choice to install the module into Gauche system directory
+dnl or site local directory, by setting environment variable INSTALL_TYPE
+dnl to either 'sys' or 'site'.   The variable can be overridden at make time.
+: ${INSTALL_TYPE=site}  dnl This sets the default.
+AC_SUBST(INSTALL_TYPE)
+
+dnl Get compiler parameters which Gauche has been compiled with.
+CC="`$GAUCHE_CONFIG --cc`"
+AC_SUBST(CC)
+
+CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
+LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
+
+dnl Check for other programs.
+AC_PROG_INSTALL
+
+dnl Add more test
+
+dnl Output
+AC_OUTPUT(Makefile)

@@ -1,0 +1,6 @@
+"#include \"net.h\"
+"
+
+(define-type "socket" socket?
+  "ScmSocket*" "SCM_SOCKETP" "SCM_SOCKET")
+
