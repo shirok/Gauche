@@ -1647,7 +1647,7 @@ Defines two macros, @code{let-values} and @code{let*-values}.
 They are convenient to use with multiple values (@ref{srfi-11,,[SRFI-11]}).
 
 @c JP
-二つのマクロ、code{let-values} と @code{let*-values} を定義しています。
+二つのマクロ、@code{let-values} と @code{let*-values} を定義しています。
 これらは、多値とともに利用すると便利です。(@ref{srfi-11,,[SRFI-11]})
 
 @c COMMON
