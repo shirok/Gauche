@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.31 2001-03-05 04:02:59 shiro Exp $
+;;; $Id: stdlib.stub,v 1.32 2001-03-09 10:42:34 shiro Exp $
 ;;;
 
 
@@ -702,7 +702,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc values (&rest args)
   "  SCM_RETURN(Scm_Values(args));")
 
-; call-with-values
+;; call-with-values - defined in gauche-init.scm
 
 (define-cproc dynamic-wind (pre body post)
   "  SCM_RETURN(Scm_VMDynamicWind(pre, body, post));")
@@ -710,10 +710,15 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc eval (expr env)
   "  SCM_RETURN(Scm_VMEval(expr, env));")
 
-;; TODO: implement environments!
-; scheme-report-environment
-; null-environment
-; interaction-environment
+;; for now, just return a module.
+(define-cproc null-environment ()
+  "  SCM_RETURN(SCM_OBJ(Scm_NullModule()));")
+(define-cproc interaction-environment ()
+  "  SCM_RETURN(SCM_OBJ(Scm_UserModule()));")
+(define-cproc scheme-report-environment (version)
+  (assert (small-integer? version))
+  "  if (version != 5) Scm_Error(\"unknown rNrs version: %d\", version);
+  SCM_RETURN(SCM_OBJ(Scm_SchemeModule()));")
 
 ;;
 ;; 6.6.1  Ports
