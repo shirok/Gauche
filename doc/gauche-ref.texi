@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.62 2001-09-20 19:56:46 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.63 2001-09-20 20:02:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1602,7 +1602,7 @@ Note: CommonLisp has a similar function in rather confusing name,
 @code{digit-char-p}.
 @end defun
 
-@defin integer->digit integer &optional (radix 10)
+@defun integer->digit integer &optional (radix 10)
 Reverse operation of @code{digit->integer}.  Returns a character that
 represents the number @var{integer} in the radix @var{radix} system.
 If @var{integer} is out of the valid range, @code{#f} is returned.
@@ -1611,7 +1611,7 @@ If @var{integer} is out of the valid range, @code{#f} is returned.
 (integer->digit 10) @result{} #f
 @end example
 Note: CommonLisp's @code{digit-char}.
-@end defin
+@end defun
 
 @defun gauche-character-encoding
 Returns a symbol designates the native character encoding, selected
