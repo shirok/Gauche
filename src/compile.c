@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.3 2004-12-24 22:13:30 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.4 2004-12-27 01:15:03 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -38,6 +38,7 @@
 #include "gauche.h"
 #include "gauche/vm.h"
 #include "gauche/vminsn.h"
+#include "gauche/class.h"
 #include "gauche/builtin-syms.h"
 
 /* constructor definition comes below */
@@ -526,6 +527,28 @@ static ScmObj ensure_identifier(ScmObj var, ScmObj env, ScmModule *mod)
         return var;
     }
 }
+
+static ScmObj identifier_name_get(ScmObj obj)
+{
+    return SCM_OBJ(SCM_IDENTIFIER(obj)->name);
+}
+
+static ScmObj identifier_module_get(ScmObj obj)
+{
+    return SCM_OBJ(SCM_IDENTIFIER(obj)->module);
+}
+
+static ScmObj identifier_env_get(ScmObj obj)
+{
+    return SCM_IDENTIFIER(obj)->env;
+}
+
+static ScmClassStaticSlotSpec identifier_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name", identifier_name_get, NULL),
+    SCM_CLASS_SLOT_SPEC("module", identifier_module_get, NULL),
+    SCM_CLASS_SLOT_SPEC("env", identifier_env_get, NULL),
+    { NULL }
+};
 
 /*------------------------------------------------------------------
  * Compiler main body
@@ -2187,6 +2210,9 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
     DEFSYN_G(SCM_SYM_ASM,          syntax_asm);
+
+    Scm_InitStaticClass(SCM_CLASS_IDENTIFIER, "<identifier>", g,
+                        identifier_slots, 0);
 
     id_lambda = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LAMBDA), SCM_NIL);
     id_if = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_IF), SCM_NIL);

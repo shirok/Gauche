@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.117 2004-12-18 04:11:12 shirok Exp $
+ *  $Id: class.c,v 1.117.2.1 2004-12-27 01:17:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2843,7 +2843,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_CHARSET,          "<char-set>");
 
     /* compile.c */
-    CINIT(SCM_CLASS_IDENTIFIER,       "<identifier>");
+    /* initialized in Scm__InitCompiler */
 
     /* error.c */
     /* initialized in Scm__InitExceptions */
