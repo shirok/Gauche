@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.5 2001-04-07 08:56:08 shiro Exp $
+# $Id: gauche-config.in,v 1.6 2001-06-30 09:28:00 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -19,7 +19,7 @@ gauche_libdir="$datadir/@GAUCHE_VERSION@/lib"
 gauche_archdir="$archdir/@GAUCHE_VERSION@/@host@"
 gauche_siteincdir="$datadir/site/include"
 gauche_sitelibdir="$datadir/site/lib"
-gauche_sitearchdir="$archdir/site/@host@"
+gauche_sitearchdir="$archdir/site/@GAUCHE_VERSION@/@host@"
 gauche_version=@GAUCHE_VERSION@
 gauche_libs="@LIBS@"
 arch="@host@"
@@ -42,7 +42,7 @@ usage () {
     echo "  -l   libraries required to link programs using gauche"
     echo "  --cc name of the compiler"
     echo
-    echo "Parameters to install stuff related to Gauche"
+    echo "Parameters to install files"
     echo "  --syslibdir/--sitelibdir"
     echo "       directories where system/site scheme files go"
     echo "  --sysarchdir/--sitearchdir"
