@@ -1,0 +1,12 @@
+#! /bin/sh
+VERSION=`cat VERSION`
+
+rm -rf ../test/Gauche
+cd ../test
+tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz
+cd Gauche
+./configure
+make
+make test
+make install
+
