@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.100 2004-04-24 09:58:14 shirok Exp $
+ *  $Id: port.c,v 1.101 2004-07-16 11:27:41 shirok Exp $
  */
 
 #include <unistd.h>
@@ -530,7 +530,7 @@ static int bufport_fill(ScmPort *p, int min, int allow_less)
         p->src.buf.current = p->src.buf.end = p->src.buf.buffer;
     }
     if (min <= 0) min = SCM_PORT_BUFFER_ROOM(p);
-    if (p->src.buf.mode == SCM_PORT_BUFFER_FULL) {
+    if (p->src.buf.mode != SCM_PORT_BUFFER_NONE) {
         toread = SCM_PORT_BUFFER_ROOM(p);
     } else {
         toread = min;
@@ -609,9 +609,10 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
 #define PORT_VECTOR_SIZE 256    /* need to be 2^n */
 
 static struct {
+    int dummy;
     ScmWeakVector   *ports;
     ScmInternalMutex mutex;
-} active_buffered_ports = { NULL };
+} active_buffered_ports = { 1, NULL }; /* magic to put this in .data area */
 
 #define PORT_HASH(port)  \
     ((((SCM_WORD(port)>>3) * 2654435761UL)>>16) % PORT_VECTOR_SIZE)

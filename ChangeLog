@@ -1,5 +1,10 @@
 2004-07-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (bufport_fill): somehow it called filler() with
+	  minimum buffer size when the buffering mode is PORT_BUFFER_LINE.
+	  It should be able to use maximum buffer size---only PORT_BUFFER_NONE
+	  need to fetch minimum chunk at a time.
+
 	* src/error.c (Scm_SysError): on MinGW, retrieve error message using
 	  FormatMessage instead of strerr; the former covers wider range of
 	  Windows errors.
