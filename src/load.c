@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.15 2001-02-17 10:23:26 shiro Exp $
+ *  $Id: load.c,v 1.16 2001-02-17 12:06:43 shiro Exp $
  */
 
 #include <unistd.h>
@@ -203,9 +203,16 @@ ScmObj Scm_DynLink(ScmString *filename)
     ScmObj truename, load_paths = Scm_GetLoadPath();
     void *handle;
 
-    truename = Scm_FindFile(filename, &load_paths, FALSE);
+    truename = Scm_FindFile(filename, &load_paths, TRUE);
     handle = dlopen(Scm_GetStringConst(SCM_STRING(truename)), RTLD_LAZY);
-    if (handle == NULL) return SCM_FALSE;
+    if (handle == NULL) {
+        const char *err = dlerror();
+        if (err == NULL) {
+            Scm_Error("failed to link %S dynamically", truename);
+        } else {
+            Scm_Error("failed to link %S dynamically: %s", truename, err);
+        }
+    }
 
     dlobj = SCM_NEW(ScmDLObj);
     SCM_SET_CLASS(dlobj, SCM_CLASS_DLOBJ);
@@ -220,6 +227,7 @@ ScmObj Scm_DynLink(ScmString *filename)
 
 int Scm_DynInit(ScmDLObj *dlobj, ScmString *initfn)
 {
+#ifdef HAVE_DLFCN_H
     void (*func)(void);
 
     if (!dlobj->initialized) {
@@ -229,6 +237,29 @@ int Scm_DynInit(ScmDLObj *dlobj, ScmString *initfn)
         dlobj->initialized = TRUE;
     }
     return TRUE;
+#else
+    Scm_Error("dynamic linking is not supported on this architecture");
+    return FALSE;               /* dummy */
+#endif
+}
+
+ScmObj Scm_DynLoad(ScmString *filename)
+{
+#ifdef HAVE_DLFCN_H
+    ScmObj dlobj = Scm_DynLink(filename);
+    if (!SCM_DLOBJP(dlobj)) {
+        Scm_Error("dynamic linking of %S failed", filename);
+    }
+    if (!Scm_DynInit(SCM_DLOBJ(dlobj),
+                     SCM_STRING(SCM_MAKE_STR("Scm_DLInit")))) {
+        dlclose(SCM_DLOBJ(dlobj)->handle);
+        Scm_Error("dynamic linking of %S failed: couldn't find initialization function", filename);
+    }
+    return dlobj;
+#else
+    Scm_Error("dynamic linking is not supported on this architecture");
+    return SCM_FALSE;           /* dummy */
+#endif
 }
 
 /*
