@@ -1,3 +1,14 @@
+2001-09-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/selector.scm : added
+	* ext/net : added socket-fd
+	
+2001-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c and other files: realized that stack-gc won't improve
+	  performance unless I implement a special marking method in the
+	  stack area.  Reverted stack handling to the previous way.
+
 2001-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c and other files: implemented stack garbage collector.
