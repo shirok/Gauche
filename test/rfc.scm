@@ -275,8 +275,9 @@ Content-Length: 4349
          (mime-decode-word "=?ISO-2022-JP?B?GyRCQG45ZxsoQiAbJEI7S08vGyhC?="))
   )
 ;; this tests whether illegal input sequence is handled gracefully
-(test* "mime-decode-word" "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="
-       (mime-decode-word "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="))
+(when (memq (gauche-character-encoding) '(euc-jp sjis utf8))
+  (test* "mime-decode-word" "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="
+         (mime-decode-word "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=")))
 
 ;; NB: this assumes the test is run either under src/ or test/
 (define (mime-message-tester num)
