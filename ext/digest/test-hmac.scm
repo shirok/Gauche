@@ -55,4 +55,3 @@
 				    :key (make-byte-string 80 #xaa)
 				    :hasher <sha1>))))
 
-(test-end)
