@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.56 2002-09-21 03:00:12 shirok Exp $
+ *  $Id: read.c,v 1.57 2002-09-21 10:30:50 shirok Exp $
  */
 
 #include <stdio.h>
@@ -279,6 +279,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 return read_charset(port);
             case '"':
                 /* #"..." explicit incomplete string */
+                /* NB: this syntax will be taken by string interpolation
+                   in future.  Use #*"..." instead. */
                 return read_string(port, TRUE);
             case ',':
                 /* #,(form) - SRFI-10 read-time macro */
@@ -318,6 +320,15 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case '5': case '6': case '7': case '8': case '9':
                 /* #N# or #N= form */
                 return read_reference(port, c1, ctx);
+            case '*':
+                /* #*"...." byte string
+                   #*01001001 for bit vector, maybe in future. */
+                {
+                    int c2;
+                    c2 = Scm_GetcUnsafe(port);
+                    if (c2 == '"') return read_string(port, TRUE);
+                    Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
+                }
             default:
                 Scm_ReadError(port, "unsupported #-syntax: #%C", c1);
             }

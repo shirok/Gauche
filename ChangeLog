@@ -1,5 +1,11 @@
 2002-09-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c, src/string.c : changed incomplete string syntax
+	  from #"..." to #*"...".  The old syntax is still recognized,
+	  but the written representation is switched to the new syntax.
+	  This is a preparation for string interpolation to take #"..." syntax.
+	* lib/gauche/object.scm : added object-apply definitions for
+	  <regexp> and <regmatch>.
 	* src/char.c (Scm_CharSetRead): support POSIX character class
 	  notation such as '[:alpha:]'.
 	* src/regexp.c, src/char.c, src/read.c, src/extlib.stub : added

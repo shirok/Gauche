@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.65 2002-08-24 09:08:44 shirok Exp $
+ *  $Id: string.c,v 1.66 2002-09-21 10:30:50 shirok Exp $
  */
 
 #include <stdio.h>
@@ -994,7 +994,7 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             const char *cp = SCM_STRING_START(str);
             int size = SCM_STRING_SIZE(str);
             if (SCM_STRING_INCOMPLETE_P(str)) {
-                SCM_PUTZ("#\"", -1, port);
+                SCM_PUTZ("#*\"", -1, port);
             } else {
                 SCM_PUTC('"', port);
             }

@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with shift-jis.
 
-;; $Id: sjis.scm,v 1.1 2001-12-23 01:37:33 shirok Exp $
+;; $Id: sjis.scm,v 1.2 2002-09-21 10:30:50 shirok Exp $
 
 (use gauche.test)
 
@@ -144,35 +144,35 @@
 ;;-------------------------------------------------------------------
 (test-section "incomplete strings")
 
-(test "string-length" 6 (lambda () (string-length #"‚ ‚¢‚¤")))
-(test "string-complete->incomplete" #"‚ ‚¢‚¤" 
+(test "string-length" 6 (lambda () (string-length #*"‚ ‚¢‚¤")))
+(test "string-complete->incomplete" #*"‚ ‚¢‚¤" 
       (lambda () (string-complete->incomplete "‚ ‚¢‚¤")))
-(test "string-complete->incomplete" #"‚ ‚¢‚¤"
-      (lambda () (string-complete->incomplete #"‚ ‚¢‚¤")))
+(test "string-complete->incomplete" #*"‚ ‚¢‚¤"
+      (lambda () (string-complete->incomplete #*"‚ ‚¢‚¤")))
 (test "string-incomplete->complete" "‚ ‚¢‚¤"
-      (lambda () (string-incomplete->complete #"‚ ‚¢‚¤")))
+      (lambda () (string-incomplete->complete #*"‚ ‚¢‚¤")))
 (test "string-incomplete->complete" "‚ ‚¢‚¤"
       (lambda () (string-incomplete->complete "‚ ‚¢‚¤")))
 
-(test "string=?" #t (lambda () (string=? #"‚ ‚¢‚¤" #"‚ ‚¢‚¤")))
+(test "string=?" #t (lambda () (string=? #*"‚ ‚¢‚¤" #*"‚ ‚¢‚¤")))
 
-(test "string-byte-ref" #xa0 (lambda () (string-byte-ref #"‚ ‚¢‚¤" 1)))
+(test "string-byte-ref" #xa0 (lambda () (string-byte-ref #*"‚ ‚¢‚¤" 1)))
 
-(test "string-append" #"‚ ‚¢‚¤‚¦‚¨"
-      (lambda () (string-append "‚ ‚¢‚¤" #"‚¦‚¨")))
-(test "string-append" #"‚ ‚¢‚¤‚¦‚¨"
-      (lambda () (string-append #"‚ ‚¢‚¤" "‚¦‚¨")))
-(test "string-append" #"‚ ‚¢‚¤‚¦‚¨"
-      (lambda () (string-append #"‚ ‚¢‚¤" #"‚¦‚¨")))
+(test "string-append" #*"‚ ‚¢‚¤‚¦‚¨"
+      (lambda () (string-append "‚ ‚¢‚¤" #*"‚¦‚¨")))
+(test "string-append" #*"‚ ‚¢‚¤‚¦‚¨"
+      (lambda () (string-append #*"‚ ‚¢‚¤" "‚¦‚¨")))
+(test "string-append" #*"‚ ‚¢‚¤‚¦‚¨"
+      (lambda () (string-append #*"‚ ‚¢‚¤" #*"‚¦‚¨")))
 (test "string-append" 10
-      (lambda () (string-length (string-append "‚ ‚¢‚¤" "‚¦‚¨" #""))))
+      (lambda () (string-length (string-append "‚ ‚¢‚¤" "‚¦‚¨" #*""))))
 
-(test "string-substitute!" #"\x82bc\xa2"
-      (lambda () (string-substitute! (string-copy #"‚ ‚¢") 1 #"bc")))
+(test "string-substitute!" #*"\x82bc\xa2"
+      (lambda () (string-substitute! (string-copy #*"‚ ‚¢") 1 #*"bc")))
 
 (test "string-incompltet->incomplete" "‚ "
       (lambda () (string-incomplete->complete
-                  (string-append #"\x82" #"\xa0"))))
+                  (string-append #*"\x82" #*"\xa0"))))
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
@@ -242,7 +242,7 @@
 (test-section "buffered ports")
 
 (define (make-filler)
-  (let* ((str #"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±")  ;incomplete string
+  (let* ((str #*"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±")  ;incomplete string
          (len (string-size str))
          (ind 0))
     (lambda (siz)
@@ -324,41 +324,41 @@
         (port->byte-list (open-input-buffered-port (make-filler) 1))))
 
 (test "buffered port (getz, siz=20,5)"
-      '(#"\x82\xa0\x82\xa2\x82" #"\xa4\x82\xa6\x82\xa8"
-        #"\x82\xa9\x82\xab\x82" #"\xad\x82\xaf\x82\xb1")
+      '(#*"\x82\xa0\x82\xa2\x82" #*"\xa4\x82\xa6\x82\xa8"
+        #*"\x82\xa9\x82\xab\x82" #*"\xad\x82\xaf\x82\xb1")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 20) 5)))
 
 (test "buffered port (getz, siz=20,20)"
-      '(#"\x82\xa0\x82\xa2\x82\xa4\x82\xa6\x82\xa8\x82\xa9\x82\xab\x82\xad\x82\xaf\x82\xb1")
+      '(#*"\x82\xa0\x82\xa2\x82\xa4\x82\xa6\x82\xa8\x82\xa9\x82\xab\x82\xad\x82\xaf\x82\xb1")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 20) 20)))
 
 (test "buffered port (getz, siz=9,20)"
-      '(#"\x82\xa0\x82\xa2\x82\xa4\x82\xa6\x82\xa8\x82\xa9\x82\xab\x82\xad\x82\xaf\x82\xb1")
+      '(#*"\x82\xa0\x82\xa2\x82\xa4\x82\xa6\x82\xa8\x82\xa9\x82\xab\x82\xad\x82\xaf\x82\xb1")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 9) 20)))
 
 (test "buffered port (getz, siz=9,7)"
-      '(#"\x82\xa0\x82\xa2\x82\xa4\x82" #"\xa6\x82\xa8\x82\xa9\x82\xab"
-        #"\x82\xad\x82\xaf\x82\xb1")
+      '(#*"\x82\xa0\x82\xa2\x82\xa4\x82" #*"\xa6\x82\xa8\x82\xa9\x82\xab"
+        #*"\x82\xad\x82\xaf\x82\xb1")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 9) 7)))
 
 (test "buffered port (getz, siz=3,50)"
-      '(#"\x82\xa0\x82\xa2\x82\xa4\x82\xa6\x82\xa8\x82\xa9\x82\xab\x82\xad\x82\xaf\x82\xb1")
+      '(#*"\x82\xa0\x82\xa2\x82\xa4\x82\xa6\x82\xa8\x82\xa9\x82\xab\x82\xad\x82\xaf\x82\xb1")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 3) 50)))
 
 (test "buffered port (getz, siz=2,7)"
-      '(#"\x82\xa0\x82\xa2\x82\xa4\x82" #"\xa6\x82\xa8\x82\xa9\x82\xab"
-        #"\x82\xad\x82\xaf\x82\xb1")
+      '(#*"\x82\xa0\x82\xa2\x82\xa4\x82" #*"\xa6\x82\xa8\x82\xa9\x82\xab"
+        #*"\x82\xad\x82\xaf\x82\xb1")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 2) 7)))
 
 (test "buffered port (getz, siz=1,7)"
-      '(#"\x82\xa0\x82\xa2\x82\xa4\x82" #"\xa6\x82\xa8\x82\xa9\x82\xab"
-        #"\x82\xad\x82\xaf\x82\xb1")
+      '(#*"\x82\xa0\x82\xa2\x82\xa4\x82" #*"\xa6\x82\xa8\x82\xa9\x82\xab"
+        #*"\x82\xad\x82\xaf\x82\xb1")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 1) 7)))
 
@@ -388,53 +388,67 @@
   *flusher-out*)
 
 (test "buffered port (putb, bufsiz=7)"
-      #"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       (lambda ()
         (byte-list->port (open-output-buffered-port flusher 7)
                          (iota 27 #x40))))
 
 (test "buffered port (putb, bufsiz=30)"
-      #"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       (lambda ()
         (byte-list->port (open-output-buffered-port flusher 30)
                          (iota 27 #x40))))
 
 (test "buffered port (putc, bufsiz=7)"
-      #"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
+      #*"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
       (lambda ()
         (char-list->port (open-output-buffered-port flusher 7)
                          '(#\‚  #\‚¢ #\‚¤ #\‚¦ #\‚¨ #\‚© #\‚« #\‚­ #\‚¯ #\‚±
                            #\‚³ #\‚µ #\‚· #\‚¹ #\‚»))))
 
 (test "buffered port (putc, bufsiz=30)"
-      #"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
+      #*"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
       (lambda ()
         (char-list->port (open-output-buffered-port flusher 30)
                          '(#\‚  #\‚¢ #\‚¤ #\‚¦ #\‚¨ #\‚© #\‚« #\‚­ #\‚¯ #\‚±
                            #\‚³ #\‚µ #\‚· #\‚¹ #\‚»))))
 
 (test "buffered port (puts, bufsiz=6)"
-      #"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
+      #*"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 6)
                            '("‚ ‚¢‚¤" "‚¦‚¨‚©" "‚«‚­‚¯" "‚±‚³‚µ" "‚·‚¹‚»"))))
 
 (test "buffered port (puts, bufsiz=7)"
-      #"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
+      #*"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 7)
                            '("‚ ‚¢‚¤" "‚¦‚¨‚©" "‚«‚­‚¯" "‚±‚³‚µ" "‚·‚¹‚»"))))
 
 (test "buffered port (puts, bufsiz=7)"
-      #"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
+      #*"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 7)
                            '("‚ ‚¢‚¤‚¦‚¨" "‚©‚«‚­‚¯‚±" "‚³‚µ‚·‚¹" "‚»"))))
 
 (test "buffered port (puts, bufsiz=3)"
-      #"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
+      #*"‚ ‚¢‚¤‚¦‚¨‚©‚«‚­‚¯‚±‚³‚µ‚·‚¹‚»"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 3)
                            '("‚ ‚¢‚¤‚¦‚¨" "‚©‚«‚­‚¯‚±" "‚³‚µ‚·‚¹" "‚»"))))
+
+;;-------------------------------------------------------------------
+(test-section "regexp")
+
+(test "regexp" "‚¢a‚ëb‚Íc"
+      (lambda ()
+        (cond ((rxmatch #/([‚Ÿ-‚ñ][a-z])+/ "xy‚¢a‚ëb‚Ícd‚É")
+               => rxmatch-substring)
+              (else #f))))
+(test "regexp" "‚¢a‚ëB‚ÍC"
+      (lambda ()
+        (cond ((rxmatch #/([‚Ÿ-‚ñ][a-z])+/i "XY‚¢a‚ëB‚ÍCd‚É")
+               => rxmatch-substring)
+              (else #f))))
 
 (test-end)

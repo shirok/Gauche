@@ -151,10 +151,10 @@
 (test "read-byte (ungotten)" 97
       (lambda ()
         (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-byte _)))))
-(test "read-block (a)" #"ab"
+(test "read-block (a)" #*"ab"
       (lambda ()
         (call-with-input-file "tmp1.o" (l_ (read-block 10 _)))))
-(test "read-block (ungotten)" #"ab"
+(test "read-block (ungotten)" #*"ab"
       (lambda ()
         (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-block 10 _)))))
 

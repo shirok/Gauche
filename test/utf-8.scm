@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.1 2001-12-23 03:40:23 shirok Exp $
+;; $Id: utf-8.scm,v 1.2 2002-09-21 10:30:50 shirok Exp $
 
 (use gauche.test)
 
@@ -124,35 +124,35 @@
 ;;-------------------------------------------------------------------
 (test-section "incomplete strings")
 
-(test "string-length" 9 (lambda () (string-length #"あいう")))
-(test "string-complete->incomplete" #"あいう" 
+(test "string-length" 9 (lambda () (string-length #*"あいう")))
+(test "string-complete->incomplete" #*"あいう" 
       (lambda () (string-complete->incomplete "あいう")))
-(test "string-complete->incomplete" #"あいう"
-      (lambda () (string-complete->incomplete #"あいう")))
+(test "string-complete->incomplete" #*"あいう"
+      (lambda () (string-complete->incomplete #*"あいう")))
 (test "string-incomplete->complete" "あいう"
-      (lambda () (string-incomplete->complete #"あいう")))
+      (lambda () (string-incomplete->complete #*"あいう")))
 (test "string-incomplete->complete" "あいう"
       (lambda () (string-incomplete->complete "あいう")))
 
-(test "string=?" #t (lambda () (string=? #"あいう" #"あいう")))
+(test "string=?" #t (lambda () (string=? #*"あいう" #*"あいう")))
 
-(test "string-byte-ref" #x81 (lambda () (string-byte-ref #"あいう" 1)))
+(test "string-byte-ref" #x81 (lambda () (string-byte-ref #*"あいう" 1)))
 
-(test "string-append" #"あいうえお"
-      (lambda () (string-append "あいう" #"えお")))
-(test "string-append" #"あいうえお"
-      (lambda () (string-append #"あいう" "えお")))
-(test "string-append" #"あいうえお"
-      (lambda () (string-append #"あいう" #"えお")))
+(test "string-append" #*"あいうえお"
+      (lambda () (string-append "あいう" #*"えお")))
+(test "string-append" #*"あいうえお"
+      (lambda () (string-append #*"あいう" "えお")))
+(test "string-append" #*"あいうえお"
+      (lambda () (string-append #*"あいう" #*"えお")))
 (test "string-append" 15
-      (lambda () (string-length (string-append "あいう" "えお" #""))))
+      (lambda () (string-length (string-append "あいう" "えお" #*""))))
 
-(test "string-substitute!" #"\xe3bc\xe3\x81\x84"
-      (lambda () (string-substitute! (string-copy #"あい") 1 #"bc")))
+(test "string-substitute!" #*"\xe3bc\xe3\x81\x84"
+      (lambda () (string-substitute! (string-copy #*"あい") 1 #*"bc")))
 
 (test "string-incompltet->incomplete" "あ"
       (lambda () (string-incomplete->complete
-                  (string-append #"\xe3" #"\x81" #"\x82"))))
+                  (string-append #*"\xe3" #*"\x81" #*"\x82"))))
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
@@ -222,7 +222,7 @@
 (test-section "buffered ports")
 
 (define (make-filler)
-  (let* ((str #"あいうえおかきくけこ")  ;incomplete string
+  (let* ((str #*"あいうえおかきくけこ")  ;incomplete string
          (len (string-size str))
          (ind 0))
     (lambda (siz)
@@ -309,53 +309,53 @@
         (port->byte-list (open-input-buffered-port (make-filler) 1))))
 
 (test "buffered port (getz, siz=20,5)"
-      '(#"\xe3\x81\x82\xe3\x81" #"\x84\xe3\x81\x86\xe3"
-        #"\x81\x88\xe3\x81\x8a" #"\xe3\x81\x8b\xe3\x81"
-        #"\x8d\xe3\x81\x8f\xe3" #"\x81\x91\xe3\x81\x93")
+      '(#*"\xe3\x81\x82\xe3\x81" #*"\x84\xe3\x81\x86\xe3"
+        #*"\x81\x88\xe3\x81\x8a" #*"\xe3\x81\x8b\xe3\x81"
+        #*"\x8d\xe3\x81\x8f\xe3" #*"\x81\x91\xe3\x81\x93")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 20) 5)))
 
 (test "buffered port (getz, siz=20,20)"
-      '(#"\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a\xe3\x81\x8b\xe3\x81"
-        #"\x8d\xe3\x81\x8f\xe3\x81\x91\xe3\x81\x93")
+      '(#*"\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a\xe3\x81\x8b\xe3\x81"
+        #*"\x8d\xe3\x81\x8f\xe3\x81\x91\xe3\x81\x93")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 20) 20)))
 
 (test "buffered port (getz, siz=9,20)"
-      '(#"\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a\xe3\x81\x8b\xe3\x81"
-        #"\x8d\xe3\x81\x8f\xe3\x81\x91\xe3\x81\x93")
+      '(#*"\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a\xe3\x81\x8b\xe3\x81"
+        #*"\x8d\xe3\x81\x8f\xe3\x81\x91\xe3\x81\x93")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 9) 20)))
 
 (test "buffered port (getz, siz=9,7)"
-      '(#"\xe3\x81\x82\xe3\x81\x84\xe3"
-        #"\x81\x86\xe3\x81\x88\xe3\x81"
-        #"\x8a\xe3\x81\x8b\xe3\x81\x8d"
-        #"\xe3\x81\x8f\xe3\x81\x91\xe3"
-        #"\x81\x93")
+      '(#*"\xe3\x81\x82\xe3\x81\x84\xe3"
+        #*"\x81\x86\xe3\x81\x88\xe3\x81"
+        #*"\x8a\xe3\x81\x8b\xe3\x81\x8d"
+        #*"\xe3\x81\x8f\xe3\x81\x91\xe3"
+        #*"\x81\x93")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 9) 7)))
 
 (test "buffered port (getz, siz=3,50)"
-      '(#"\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a\xe3\x81\x8b\xe3\x81\x8d\xe3\x81\x8f\xe3\x81\x91\xe3\x81\x93")
+      '(#*"\xe3\x81\x82\xe3\x81\x84\xe3\x81\x86\xe3\x81\x88\xe3\x81\x8a\xe3\x81\x8b\xe3\x81\x8d\xe3\x81\x8f\xe3\x81\x91\xe3\x81\x93")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 3) 50)))
 
 (test "buffered port (getz, siz=2,7)"
-      '(#"\xe3\x81\x82\xe3\x81\x84\xe3"
-        #"\x81\x86\xe3\x81\x88\xe3\x81"
-        #"\x8a\xe3\x81\x8b\xe3\x81\x8d"
-        #"\xe3\x81\x8f\xe3\x81\x91\xe3"
-        #"\x81\x93")
+      '(#*"\xe3\x81\x82\xe3\x81\x84\xe3"
+        #*"\x81\x86\xe3\x81\x88\xe3\x81"
+        #*"\x8a\xe3\x81\x8b\xe3\x81\x8d"
+        #*"\xe3\x81\x8f\xe3\x81\x91\xe3"
+        #*"\x81\x93")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 2) 7)))
 
 (test "buffered port (getz, siz=1,7)"
-      '(#"\xe3\x81\x82\xe3\x81\x84\xe3"
-        #"\x81\x86\xe3\x81\x88\xe3\x81"
-        #"\x8a\xe3\x81\x8b\xe3\x81\x8d"
-        #"\xe3\x81\x8f\xe3\x81\x91\xe3"
-        #"\x81\x93")
+      '(#*"\xe3\x81\x82\xe3\x81\x84\xe3"
+        #*"\x81\x86\xe3\x81\x88\xe3\x81"
+        #*"\x8a\xe3\x81\x8b\xe3\x81\x8d"
+        #*"\xe3\x81\x8f\xe3\x81\x91\xe3"
+        #*"\x81\x93")
       (lambda ()
         (port->chunk-list (open-input-buffered-port (make-filler) 1) 7)))
 
@@ -385,53 +385,67 @@
   *flusher-out*)
 
 (test "buffered port (putb, bufsiz=7)"
-      #"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       (lambda ()
         (byte-list->port (open-output-buffered-port flusher 7)
                          (iota 27 #x40))))
 
 (test "buffered port (putb, bufsiz=30)"
-      #"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       (lambda ()
         (byte-list->port (open-output-buffered-port flusher 30)
                          (iota 27 #x40))))
 
 (test "buffered port (putc, bufsiz=7)"
-      #"あいうえおかきくけこさしすせそ"
+      #*"あいうえおかきくけこさしすせそ"
       (lambda ()
         (char-list->port (open-output-buffered-port flusher 7)
                          '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
                            #\さ #\し #\す #\せ #\そ))))
 
 (test "buffered port (putc, bufsiz=30)"
-      #"あいうえおかきくけこさしすせそ"
+      #*"あいうえおかきくけこさしすせそ"
       (lambda ()
         (char-list->port (open-output-buffered-port flusher 30)
                          '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
                            #\さ #\し #\す #\せ #\そ))))
 
 (test "buffered port (puts, bufsiz=6)"
-      #"あいうえおかきくけこさしすせそ"
+      #*"あいうえおかきくけこさしすせそ"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 6)
                            '("あいう" "えおか" "きくけ" "こさし" "すせそ"))))
 
 (test "buffered port (puts, bufsiz=7)"
-      #"あいうえおかきくけこさしすせそ"
+      #*"あいうえおかきくけこさしすせそ"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 7)
                            '("あいう" "えおか" "きくけ" "こさし" "すせそ"))))
 
 (test "buffered port (puts, bufsiz=7)"
-      #"あいうえおかきくけこさしすせそ"
+      #*"あいうえおかきくけこさしすせそ"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 7)
                            '("あいうえお" "かきくけこ" "さしすせ" "そ"))))
 
 (test "buffered port (puts, bufsiz=3)"
-      #"あいうえおかきくけこさしすせそ"
+      #*"あいうえおかきくけこさしすせそ"
       (lambda ()
         (string-list->port (open-output-buffered-port flusher 3)
                            '("あいうえお" "かきくけこ" "さしすせ" "そ"))))
+
+;;-------------------------------------------------------------------
+(test-section "regexp")
+
+(test "regexp" "いaろbはc"
+      (lambda ()
+        (cond ((rxmatch #/([ぁ-ん][a-z])+/ "xyいaろbはcdに")
+               => rxmatch-substring)
+              (else #f))))
+(test "regexp" "いaろBはC"
+      (lambda ()
+        (cond ((rxmatch #/([ぁ-ん][a-z])+/i "XYいaろBはCdに")
+               => rxmatch-substring)
+              (else #f))))
 
 (test-end)

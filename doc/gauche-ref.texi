@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.270 2002-09-21 09:50:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.271 2002-09-21 10:30:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2253,12 +2253,16 @@ The table below lists sharp-syntaxes.
  @tab [SRFI-22] Specifies interpreter at the beginning of file.
       Scheme loader ignores the line.
 @item @code{#"}
- @tab Introducing incomplete string.  @xref{Strings}.
+ @tab Introducing incomplete string.  This is deprecated; use '@code{#*"..."}'.
 @item @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
  @tab Unused.
 @item @code{#(}
  @tab [R5RS] Introduces a vector.
-@item @code{#)}, @code{#*}, @code{#+}
+@item @code{#)}
+ @tab Unused.
+@item @code{#*}
+ @tab If followed by a double quote, denotes an incomplete string.  @xref{Strings}.
+@item @code{#+}
  @tab Unused.
 @item @code{#,}
  @tab [SRFI-10] Introduces reader constructor syntax.
@@ -6524,13 +6528,35 @@ GaucheがUTF-8以外の内部エンコーディングでコンパイルされていた場合、
 @c COMMON
 @end deftp
 
-@deftp {Reader syntax} @code{#"}@dots{}@code{"}
+@deftp {Reader syntax} @code{#*"}@dots{}@code{"}
 @c EN
 Denotes incomplete string.  The same escape sequences as the complete
 string syntax are recognized.
 @c JP
 不完全な文字列のリテラル表記です。完全な文字列と同様のエスケープシーケンスが
 使えます。
+@c COMMON
+
+@c EN
+Note: literal incomplete strings used to be @code{#"..."}.
+As of Gauche 0.6.3, the syntax switched to @code{#*"..."}.
+The old syntax is still recognized, but eventually will fade away.
+String interpolation will eventually take @code{#"..."} syntax.
+
+Rationale of the syntax: '@code{#*}' is used for bit vector
+in Common Lisp.  Since an incomplete strings is really a byte vector,
+it has similarity.  (Bit vector can be added later, if necessary,
+and two can coexist).
+@c JP
+註：以前は、不完全な文字列のリテラル表記には@code{#"..."}という構文が使われていました。
+Gauche 0.6.3から構文は@code{#*"..."}に変更されました。
+以前の構文もしばらくは認識されますが、いずれサポートされなくなります。
+その後、文字列の補間機能が@code{#"..."}構文を使うようになります。
+
+'@code{#*}' という構文はCommon Lispでビットベクタの表記に使われています。
+不完全な文字列は実際はバイトベクタであることから、類似点を認めてこの構文を
+採用しました。(もし将来必要になってビットベクタが実装されたとしても、
+この構文と共存できます)。
 @c COMMON
 @end deftp
 

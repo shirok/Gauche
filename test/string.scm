@@ -113,78 +113,78 @@
 ;; and incomplete strings.
 
 (test "string-incomplete?" #f (lambda () (string-incomplete? "abc")))
-(test "string-incomplete?" #t (lambda () (string-incomplete? #"abc")))
+(test "string-incomplete?" #t (lambda () (string-incomplete? #*"abc")))
 (test "string-incomplete?" #f (lambda () (string-incomplete? "")))
-(test "string-incomplete?" #t (lambda () (string-incomplete? #"")))
+(test "string-incomplete?" #t (lambda () (string-incomplete? #*"")))
 
-(test "string-complete->incomplete" #"xyz"
+(test "string-complete->incomplete" #*"xyz"
       (lambda () (string-complete->incomplete "xyz")))
-(test "string-complete->incomplete" #"xyz"
-      (lambda () (string-complete->incomplete #"xyz")))
+(test "string-complete->incomplete" #*"xyz"
+      (lambda () (string-complete->incomplete #*"xyz")))
 (test "string-incomplete->complete" "xyz"
-      (lambda () (string-incomplete->complete #"xyz")))
+      (lambda () (string-incomplete->complete #*"xyz")))
 (test "string-incomplete->complete" "xyz"
       (lambda () (string-incomplete->complete "xyz")))
 
-(test "string=?" #t (lambda () (string=? #"abc" #"abc")))
+(test "string=?" #t (lambda () (string=? #*"abc" #*"abc")))
 
 (test "string-byte-ref" (char->integer #\b)
-      (lambda () (string-byte-ref #"abc" 1)))
+      (lambda () (string-byte-ref #*"abc" 1)))
 (test "string-byte-ref" 0
-      (lambda () (string-byte-ref #"\0\0\0" 1)))
+      (lambda () (string-byte-ref #*"\0\0\0" 1)))
 
-(test "string-append" #"abcdef"
-      (lambda () (string-append "abc" #"def")))
-(test "string-append" #"abcdef"
-      (lambda () (string-append #"abc" "def")))
-(test "string-append" #"abcdef"
-      (lambda () (string-append #"abc" #"def")))
-(test "string-append" #"abcdef"
-      (lambda () (string-append "a" #"b" "c" "d" "e" #"f")))
+(test "string-append" #*"abcdef"
+      (lambda () (string-append "abc" #*"def")))
+(test "string-append" #*"abcdef"
+      (lambda () (string-append #*"abc" "def")))
+(test "string-append" #*"abcdef"
+      (lambda () (string-append #*"abc" #*"def")))
+(test "string-append" #*"abcdef"
+      (lambda () (string-append "a" #*"b" "c" "d" "e" #*"f")))
 
-(test "string-join" #"a:b:c"
-      (lambda () (string-join '("a" #"b" "c") ":")))
-(test "string-join" #"a:b:c"
-      (lambda () (string-join '("a" "b" "c") #":")))
+(test "string-join" #*"a:b:c"
+      (lambda () (string-join '("a" #*"b" "c") ":")))
+(test "string-join" #*"a:b:c"
+      (lambda () (string-join '("a" "b" "c") #*":")))
 
 (test "string-scan" 3
-      (lambda () (string-scan #"abcdefghi" "def")))
+      (lambda () (string-scan #*"abcdefghi" "def")))
 (test "string-scan" 3
-      (lambda () (string-scan "abcdefghi" #"def")))
-(test "string-scan" '(#"abc" #"ghi")
-      (lambda () (receive r (string-scan #"abcdefghi" "def" 'both) r)))
-(test "string-scan" '(#"abc" #"ghi")
-      (lambda () (receive r (string-scan "abcdefghi" #"def" 'both) r)))
-(test "string-scan" '(#"abcd" #"fghi")
-      (lambda () (receive r (string-scan #"abcdefghi" #\e 'both) r)))
+      (lambda () (string-scan "abcdefghi" #*"def")))
+(test "string-scan" '(#*"abc" #*"ghi")
+      (lambda () (receive r (string-scan #*"abcdefghi" "def" 'both) r)))
+(test "string-scan" '(#*"abc" #*"ghi")
+      (lambda () (receive r (string-scan "abcdefghi" #*"def" 'both) r)))
+(test "string-scan" '(#*"abcd" #*"fghi")
+      (lambda () (receive r (string-scan #*"abcdefghi" #\e 'both) r)))
 
 
-(test "string-substitute!" #"abCDe"
-      (lambda () (string-substitute! (string-copy "abcde") 2 #"CD")))
-(test "string-substitute!" #"abCDe"
-      (lambda () (string-substitute! (string-copy #"abcde") 2 "CD")))
-(test "string-substitute!" #"abCDe"
-      (lambda () (string-substitute! (string-copy #"abcde") 2 #"CD")))
+(test "string-substitute!" #*"abCDe"
+      (lambda () (string-substitute! (string-copy "abcde") 2 #*"CD")))
+(test "string-substitute!" #*"abCDe"
+      (lambda () (string-substitute! (string-copy #*"abcde") 2 "CD")))
+(test "string-substitute!" #*"abCDe"
+      (lambda () (string-substitute! (string-copy #*"abcde") 2 #*"CD")))
 
 ;; NB: should we allow this?
-(test "string-set!" #"abQde"
+(test "string-set!" #*"abQde"
       (lambda ()
-        (let ((s (string-copy #"abcde")))
+        (let ((s (string-copy #*"abcde")))
           (string-set! s 2 #\Q)
           s)))
-(test "string-byte-set!" #"abQde"
+(test "string-byte-set!" #*"abQde"
       (lambda ()
         (let ((s (string-copy "abcde")))
           (string-byte-set! s 2 (char->integer #\Q))
           s)))
-(test "string-byte-set!" #"abQde"
+(test "string-byte-set!" #*"abQde"
       (lambda ()
-        (let ((s (string-copy #"abcde")))
+        (let ((s (string-copy #*"abcde")))
           (string-byte-set! s 2 (char->integer #\Q))
           s)))
 
-(test "substring" #"ab"
-      (lambda () (substring #"abcde" 0 2)))
+(test "substring" #*"ab"
+      (lambda () (substring #*"abcde" 0 2)))
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")
@@ -264,9 +264,9 @@
 (test "read-byte" 98  (lambda () (read-byte istr)))
 (test "read-byte from ungotten buffer" 99
       (lambda () (peek-char istr) (read-byte istr)))
-(test "read-block using ungotten buffer" #"d"
+(test "read-block using ungotten buffer" #*"d"
       (lambda () (peek-char istr) (read-block 1 istr)))
-(test "read-block using ungotten buffer" #"efg"
+(test "read-block using ungotten buffer" #*"efg"
       (lambda () (peek-char istr) (read-block 10 istr)))
 (test "termination" #t
       (lambda () (eof-object? (read-char istr))))
