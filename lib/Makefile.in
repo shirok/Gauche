@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.118.2.3 2004-12-25 00:34:55 shirok Exp $
+#  $Id: Makefile.in,v 1.118.2.4 2005-01-03 12:27:34 shirok Exp $
 
 .PHONY: all check pre-package install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -52,7 +52,7 @@ SCMFILES = srfi-0.scm \
        gauche/condutil.scm \
        gauche/with.scm gauche/regexp.scm gauche/process.scm gauche/signal.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
-       gauche/vm/insn.scm gauche/procedure.scm \
+       gauche/vm/debugger.scm gauche/vm/insn.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
        gauche/selector.scm gauche/logger.scm gauche/portutil.scm \
