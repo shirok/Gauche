@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.115 2004-05-14 12:06:35 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.116 2004-05-21 06:01:36 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -44,8 +44,8 @@
 ;; weird compiler-evaluator problem.
 ;; I don't like the current name "add-load-path", though---looks like
 ;; more a procedure than a compiler syntax---any ideas?
-(define-macro (add-load-path path)
-  `',(%add-load-path path))
+(define-macro (add-load-path path . args)
+  `',(apply %add-load-path path args))
 
 ;; Same as above.
 (define-macro (require feature)
