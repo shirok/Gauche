@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.14 2002-07-24 15:38:50 shirok Exp $
+;;  $Id: ndbm.stub,v 1.15 2002-07-31 05:16:52 shirok Exp $
 ;;
 
 "
@@ -32,7 +32,7 @@
 
  #define SCM_CLASS_NDBM       (&Scm_NdbmClass)
  #define SCM_NDBM(obj)        ((ScmNdbm*)obj)
- #define SCM_NDBM_P(obj)      SCM_XTYPEP(obj, SCM_CLASS_NDBM)
+ #define SCM_NDBMP(obj)       SCM_XTYPEP(obj, SCM_CLASS_NDBM)
 
  typedef struct ScmNdbmRec {
     SCM_HEADER;
