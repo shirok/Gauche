@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.8 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: class.c,v 1.9 2001-03-13 09:20:32 shiro Exp $
  */
 
 #include "gauche.h"
@@ -42,6 +42,39 @@ SCM_DEFCLASS(Scm_ClassClass,   "<class>", printClass, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_CollectionClass, "<collection>", NULL, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
 
+/*=====================================================================
+ * Class metaobject
+ */
+
+/* Built-in protocols:
+ *
+ *  int klass->print(ScmObj obj, ScmPort *sink, int mode)
+ *     OBJ is an instance of klass (you can safely assume it).  This
+ *     function should print OBJ into SINK, and returns number of characters
+ *     output to SINK.   MODE can be SCM_PRINT_DISPLAY for display(),
+ *     SCM_PRINT_WRITE for write(), or SCM_PRINT_DEBUG for more precise
+ *     debug information.
+ *     If this function pointer is not set, a default print method
+ *     is used.
+ *
+ *  int klass->equal(ScmObj x, ScmObj y)
+ *     X and Y are instances of klass.  This function should return TRUE iff
+ *     X equals Y, FALSE otherwise.   If this function pointer is not set,
+ *     Gauche uses pointer comparison to see their equality.
+ *
+ *  int klass->compare(ScmObj x, ScmObj y)
+ *     X and Y are instances of klass or its descendants.  If the objects
+ *     are fully orderable, this function returns either -1, 0 or 1, depending
+ *     X preceding Y, X being equal to Y, or X following Y, respectively.
+ *     If the objects are not fully orderable, just returns 0.
+ *     If this function pointer is not set, Gauche assumes objects are
+ *     not orderable.
+ *
+ *  int klass->serialize(ScmObj obj, ScmPort *sink, ScmObj table)
+ *     OBJ is an instance of klass.  This method is only called when OBJ
+ *     has not been output in the current serializing session.
+ */
+
 /*
  * Get class
  */
@@ -65,13 +98,39 @@ ScmClass *Scm_ClassOf(ScmObj obj)
 
 ScmObj Scm_ClassCPL(ScmClass *klass)
 {
-    ScmClass **p = klass->cpl;
-    ScmObj start = SCM_NIL, last;
-    while (*p) {
-        SCM_APPEND1(start, last, SCM_OBJ(*p));
-        p++;
+    /* TODO: MT safeness */
+    if (klass->cpl == NULL || !SCM_PAIRP(klass->cpl)) {
+        ScmClass **p = klass->cpa;
+        ScmObj h = SCM_NIL, t;
+        SCM_APPEND1(h, t, SCM_OBJ(klass));
+        while (*p) {
+            SCM_APPEND1(h, t, SCM_OBJ(*p));
+            p++;
+        }
+        klass->cpl = h;
     }
-    return start;
+    return klass->cpl;
+}
+
+ScmObj Scm_ClassDirectSupers(ScmClass *klass)
+{
+    return klass->directSupers;
+}
+
+ScmObj Scm_ClassDirectSlots(ScmClass *klass)
+{
+    if (klass->directSlots == NULL)
+        return SCM_NIL;
+    else
+        return klass->directSlots;
+}
+
+ScmObj Scm_ClassEffectiveSlots(ScmClass *klass)
+{
+    if (klass->effectiveSlots == NULL)
+        return SCM_NIL;
+    else
+        return klass->effectiveSlots;
 }
 
 ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type)
@@ -79,7 +138,7 @@ ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type)
     ScmClass **p;
     if (sub == type) return SCM_TRUE;
 
-    p = sub->cpl;
+    p = sub->cpa;
     while (*p) {
         if (*p++ == type) return SCM_TRUE;
     }
@@ -92,7 +151,7 @@ ScmObj Scm_TypeP(ScmObj obj, ScmClass *type)
 }
 
 /*
- * fallback print methods
+ * fallback print method
  */
 
 static int printClass(ScmObj obj, ScmPort *port, int mode) 
@@ -105,26 +164,72 @@ static int printClass(ScmObj obj, ScmPort *port, int mode)
  * External interface
  */
 
+/*
+ * compute-cpl
+ */
+static ScmObj compute_cpl_cb(ScmObj k, void *dummy)
+{
+    return SCM_CLASS(k)->directSupers;
+}
+
+ScmObj Scm_ComputeCPL(ScmClass *klass, ScmObj directSupers)
+{
+    ScmObj seqh = SCM_NIL, seqt, dp, result, cp;
+    int cpllen, i;
+    
+    SCM_FOR_EACH(dp, directSupers) {
+        if (!SCM_CLASSP(SCM_CAR(dp)))
+            Scm_Error("non-class found in direct superclass list: %S", directSupers);
+        SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS(SCM_CAR(dp))));
+    }
+    result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh, compute_cpl_cb, NULL);
+    if (SCM_FALSEP(result))
+        Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
+                  directSupers);
+    return result;
+}
+
+/*
+ * Class constructor of the builtin class.
+ */
 ScmClass *Scm_MakeBuiltinClass(const char *name,
                                int (*printer)(ScmObj, ScmPort*, int),
                                ScmObj supers)
 {
-    ScmClass *c = SCM_NEW(ScmClass);
+    ScmClass *c;
+    ScmObj cp;
+    int i, cpllen;
+
+    c = SCM_NEW(ScmClass);
     SCM_SET_CLASS(c, SCM_CLASS_CLASS);
     c->name = (char *)SCM_MALLOC_ATOMIC(strlen(name)+1);
     strcpy(c->name, name);
     c->print = printer;
+    c->equal = NULL;            /* for now */
+    c->compare = NULL;          /* for now */
+    c->serialize = NULL;        /* for now */
 
-    /* TODO: need to call compute-cpl.  for now, we ignore supers */
-    c->cpl = (ScmClass **)SCM_MALLOC(sizeof(ScmClass*) * 2);
-    c->cpl[0] = SCM_CLASS_TOP;
-    c->cpl[1] = NULL;
+    /* Compute CPL */
+    c->cpl = Scm_ComputeCPL(c, supers);
+    c->directSupers = supers;
+    cpllen = Scm_Length(c->cpl);
+    c->cpa = SCM_NEW2(ScmClass **, sizeof(ScmClass*)*cpllen);
+    for (i=0, cp = SCM_CDR(c->cpl); SCM_PAIRP(cp); i++, cp = SCM_CDR(cp)) {
+        c->cpa[i] = SCM_CLASS(SCM_CAR(cp));
+    }
+    c->cpa[i] = NULL;
 
-    /* TODO: need to intern to the current module */
-    SCM_DEFINE(Scm_SchemeModule(), name, SCM_OBJ(c));
-    
+    /* TODO: compute slots */
+
+    SCM_DEFINE(SCM_CURRENT_MODULE(), name, SCM_OBJ(c));
     return c;
 }
+
+
+
+/*=====================================================================
+ * 
+ */
 
 
 /*
