@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.28 2004-11-01 21:53:30 shirok Exp $
+;;;  $Id: util.scm,v 1.28.2.1 2004-12-25 02:56:48 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -47,8 +47,9 @@
   (export current-directory directory-list directory-list2 directory-fold
           home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
-          build-path resolve-path expand-path simplify-path
+          build-path resolve-path expand-path simplify-path decompose-path
           absolute-path? relative-path? find-file-in-paths
+          path-extension path-sans-extension path-swap-extension
           file-is-readable? file-is-writable? file-is-executable?
           file-is-symlink?
           file-type file-perm file-mode file-ino file-dev file-rdev file-nlink
@@ -233,11 +234,36 @@
 (define (simplify-path path)
   (sys-normalize-pathname path :canonicalize #t))
 
+(define (decompose-path path)
+  (let* ((dir (sys-dirname path))
+         (base (sys-basename path)))
+    (cond ((string-index-right base #\.)
+           => (lambda (pos)
+                (if (zero? pos)
+                  (values dir base #f)  ; '.' at the beginning doesn't delimit extension
+                  (values dir
+                          (string-take base pos)
+                          (string-drop base (+ pos 1))))))
+          (else
+           (values dir base #f)))))
+
 (define (absolute-path? path)
   (or (string-prefix? "/" path) (string-prefix? "~" path)))
 
 (define (relative-path? path)
   (not (absolute-path? path)))
+
+(define (path-extension path)
+  (receive (dir file ext) (decompose-path path) ext))
+
+(define (path-sans-extension path)
+  (receive (dir file ext) (decompose-path path) (build-path dir file)))
+
+(define (path-swap-extension path ext)
+  (if ext
+    (receive (dir file _) (decompose-path path)
+      (build-path dir (string-append file "." ext)))
+    (path-sans-extension path)))
 
 (define (find-file-in-paths name . opts)
   (let* ((paths (get-keyword :paths opts

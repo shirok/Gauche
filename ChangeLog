@@ -1,5 +1,7 @@
 2004-12-24  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm: added decompose-path, path-extension,
+	  path-sans-extension and path-swap-extension.
 	* Makefile.in, src/Makefile.in, lib/Makefile.in (pre-package):
 	  added a target 'pre-package', which should be run before creating
 	  distribution tarball.  It generates some files that requires
