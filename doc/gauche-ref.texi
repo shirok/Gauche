@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.23 2001-06-14 09:04:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.24 2001-06-16 18:41:59 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1998,6 +1998,33 @@ You can customize how the object is printed out by this method.
 
 @defmac autoload file symbol @dots{}
 @end defmac
+
+
+@c ----------------------------------------------------------------------
+@node Comparison and sorting
+@section Comparison and sorting
+
+@defun sort list &optional cmfpn
+@defunx sort! list &optional cmfpn
+Sorts elements in @var{list} in ascending order and returns the sorted
+list.  @code{sort!} destructively reuses the cons cells of the original
+@var{list}.  The sorting order is specified by @code{cmpfn}, which is
+a procedure takes two elements of @var{list}, and returns @code{#t}
+if the first argument strictly precedes the second.
+
+@example
+(sort '(("Chopin" "Frederic") 
+        ("Liszt" "Franz")
+        ("Alkan" "Charles-Valentin"))
+      (lambda (x y) (string<? (car x) (car y))))
+  @result{} (("Alkan" "Charles-Valentin")
+             ("Chopin" "Frederic")
+             ("Liszt" "Franz"))
+@end example
+
+Some builtin objects have natural comparison order, and it is used
+if @code{cmpfn} is omitted.
+@end defun
 
 
 @c ----------------------------------------------------------------------
@@ -4809,7 +4836,10 @@ The form @code{(use srfi-8)} doesn't do anything.
 @unnumbered References
 
 
-
+@c Appendix : C to Scheme mapping
+@c Appendix : Common Lisp to Scheme mapping
+@c Appendix : Perl to Scheme mapping
+@c Appendix : Python to Scheme mapping?
 
 @c ======================================================================
 @node Function and Syntax Index
