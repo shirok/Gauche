@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.214 2002-06-14 09:40:12 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.215 2002-06-14 11:22:41 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -12964,9 +12964,20 @@ These encodings differ a bit
 (except ISO2022JP and CSISO2022JP, which are synonyms), but
 Gauche handles them same.  If one of these CES is specified as input,
 Gauche recognizes escape sequences of any of CES.
-For output, Gauche switches escape sequence based on 
+ISO2022JP-2 defines several non-Japanese escape sequences, and
+they are recognized by Gauche, but mapped to substitution character
+('?' or geta mark).
+For output, Gauche assumes ISO2022JP first, and uses ISO2022JP-1
+escape sequence to put JIS X 0212 character, or uses ISO2022JP-3
+escape sequence to put JIS X 0213 plane 2 character.
+Thus, if the string contains only JIS X 0208 characters, 
+the output is compatible to ISO2022JP.
+Precisely speaking, JIS X 0213 specifies some characters within
+plane 1 that should be put with 
 @c JP
 @c COMMON
+
+
 @end table
 
 @node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, Character code conversion
