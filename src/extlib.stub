@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.201 2003-09-09 12:21:26 shirok Exp $
+;;; $Id: extlib.stub,v 1.202 2003-09-14 12:41:56 shirok Exp $
 ;;;
 
 "
@@ -222,28 +222,29 @@
 (define-cproc reverse! (list)
   (return "Scm_ReverseX"))
 
-(define-cproc sort (seq &optional (fn #f))
-  "if (SCM_VECTORP(seq)) {
-    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1);
-    Scm_SortArray(SCM_VECTOR_ELEMENTS(r), SCM_VECTOR_SIZE(r), fn);
-    SCM_RETURN(r);
-  } else if (Scm_Length(seq) >= 0) {
-    SCM_RETURN(Scm_SortList(seq, fn));
-  } else {
-    Scm_Error(\"proper list or vector required, but got %S\", seq);
-    SCM_RETURN(SCM_UNDEFINED);
-  }")
+;; See comments in sort.c
+;(define-cproc sort (seq &optional (fn #f))
+;  "if (SCM_VECTORP(seq)) {
+;    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1);
+;    Scm_SortArray(SCM_VECTOR_ELEMENTS(r), SCM_VECTOR_SIZE(r), fn);
+;    SCM_RETURN(r);
+;  } else if (Scm_Length(seq) >= 0) {
+;    SCM_RETURN(Scm_SortList(seq, fn));
+;  } else {
+;    Scm_Error(\"proper list or vector required, but got %S\", seq);
+;    SCM_RETURN(SCM_UNDEFINED);
+;  }")
 
-(define-cproc sort! (seq &optional (fn #f))
-  "if (SCM_VECTORP(seq)) {
-    Scm_SortArray(SCM_VECTOR_ELEMENTS(seq), SCM_VECTOR_SIZE(seq), fn);
-    SCM_RETURN(seq);
-  } else if (Scm_Length(seq) >= 0) {
-    SCM_RETURN(Scm_SortList(seq, fn));
-  } else {
-    Scm_Error(\"proper list or vector required, but got %S\", seq);
-    SCM_RETURN(SCM_UNDEFINED);
-  }")
+;(define-cproc sort! (seq &optional (fn #f))
+;  "if (SCM_VECTORP(seq)) {
+;    Scm_SortArray(SCM_VECTOR_ELEMENTS(seq), SCM_VECTOR_SIZE(seq), fn);
+;    SCM_RETURN(seq);
+;  } else if (Scm_Length(seq) >= 0) {
+;    SCM_RETURN(Scm_SortList(seq, fn));
+;  } else {
+;    Scm_Error(\"proper list or vector required, but got %S\", seq);
+;    SCM_RETURN(SCM_UNDEFINED);
+;  }")
 
 ;(define-cproc topological-sort (edges)
 ;  (assert (list? edges))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.342 2003-09-09 12:21:26 shirok Exp $
+ *  $Id: gauche.h,v 1.343 2003-09-14 12:41:56 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2364,9 +2364,11 @@ SCM_EXTERN const char *Scm_HostArchitecture(void);
 
 /* Compare and Sort */
 SCM_EXTERN int Scm_Compare(ScmObj x, ScmObj y);
+#if 0 /* see comments in compare.c */
 SCM_EXTERN void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn);
 SCM_EXTERN ScmObj Scm_SortList(ScmObj objs, ScmObj fn);
 SCM_EXTERN ScmObj Scm_SortListX(ScmObj objs, ScmObj fn);
+#endif
 
 /* Assertion */
 

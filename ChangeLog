@@ -1,3 +1,13 @@
+2003-09-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/compare.c, lib/gauche/sortutil.scm, src/extlib.stub :
+	  replaced sort and sort! implementation with Scheme version
+	  (by Richard A. O'Keefe, based on the code by D.H.D.Warren).
+	  The C version performs terribly when compare function is
+	  provided from Scheme; more than 15 times slower than Scheme
+	  version.
+	* src/gauche-init.scm : sets autoload to sort and sort!.
+
 2003-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/*/Makefile.in : added missing $(LIBS) in the link rule.
