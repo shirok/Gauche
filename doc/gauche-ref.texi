@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.112 2001-10-31 20:31:55 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.113 2001-11-02 12:17:40 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -26,7 +26,7 @@
 @c JP
 @title Gauche リファレンスマニュアル
 @c COMMON
-@subtitle version 0.4.7
+@subtitle version 0.4.8
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -6956,6 +6956,7 @@ of descendants of @var{class}.
 * Parsing input stream::        
 * Transliterate characters::    
 * Determine isomorphism::       
+* Queue::                       
 * Topological sort::            
 * CGI::                         
 @end menu
@@ -11685,32 +11686,65 @@ Gaucheの@code{tr}はマルチバイト文字／文字列を正しく扱います。
 @end deftp
 
 @defun tr from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
-Read from @var{input} and writes to @var{output},
+@c EN
+Reads from @var{input} and writes to @var{output},
 with transliterating characters in @var{from-list} to the
 corresponding ones in @var{to-list}.  Characters that doesn't
 appear in @var{from-list} are passed through.
+@c JP
+@var{input}から文字を読み込み、その文字が@var{from-list}内にあれば
+対応する@var{to-list}内の文字に置き換えて、@var{output}へと書き出します。
+@var{from-list}に無い文字はそのまま@var{output}へと渡されます。
+@c COMMON
 
+@c EN
 The default values of @var{input} and @var{output} are
 current input port and current output port, respectively.
+@c JP
+@var{input}と@var{output}の既定値はそれぞれ現在の入力ポートと
+出力ポートです。
+@c COMMON
 
+@c EN
 Both @var{from-list} and @var{to-list} must be strings.
 They may contain the following special syntax.
+Other characters that doesn't fits in the syntax are taken as they are.
+@c JP
+@var{from-list}と@var{to-list}は文字列でなければなりません。
+その中には次のような表記を使うことができます。それ以外の文字はそのまま使われます。
+@c COMMON
 
 @table @code
 @item @b{x-y}
-Expanded to the sequence of characters from @code{x} to @code{y},
+@c EN
+Expanded to the increasing sequence of characters from @code{x} to @code{y},
 inclusive.  The order is determined by the internal character
 encoding system; generally it is safer to limit use of this within
 the range of the same character class.   The character @code{x}
 must be before @code{y}.
+@c JP
+文字@code{x}から文字@code{y}までの文字の昇順の並びと解釈されます。
+@code{x}と@code{y}は含まれます。文字の並びはGaucheの内部文字エンコーディングに
+よって決定されるので、一般には@code{x}と@code{y}は同じキャラクタクラスの中に
+止めておいた方が安全でしょう。@code{x}は@code{y}より小さくなければなりません。
+@c COMMON
 
 @item @b{x*n}
-Repeat @code{x} for @code{n} times.   Meaningful only in
+@c EN
+Repeat @code{x} for @code{n} times.  @code{n} is a decimal number notation.
+Meaningful only in
 @var{to-list}; it is an error to use this form in @var{from-list}.
 If @code{n} is omitted or zero, @code{x} is repeated until @var{to-list}
 matches the length of @var{from-list} (any character after it is ignored).
+@c JP
+文字@code{x}の@code{n}個の並び。@code{n}は10進数で表記された数値です。
+これは@var{to-list}でのみ有効で、@var{from-list}で使うとエラーになります。
+@code{n}が省略されるか0の場合、@code{x}は@var{to-list}の長さが@var{from-list}
+の長さに達するまで繰り返されます(その場合、@var{to-list}の残りは無視されます)。
+@c COMMON
 
 @item @b{@code{\}x}
+@c EN
 Represents @code{x} itself.  Use this escape to avoid a special
 character to be interpreted as itself.   Note that if you place
 a backslash in a string, you must write @code{\\}, for the Scheme
@@ -11718,15 +11752,37 @@ reader also interprets backslash as a special character.
 
 There's no special sequence to represent non-graphical characters,
 for you can put such characters by the string syntax.
+@c JP
+文字@code{x}それ自身。特殊文字そのものを埋め込みたい場合に使います。
+文字列のリーダも@code{\}を解釈するので、@code{\\}と書かねばならないことに注意
+して下さい。
+
+グラフィカルでない文字のための構文はありません。文字列リーダの構文を使って
+そのような文字を文字列に含めることができます。
+@c COMMON
 @end table
 
+@c EN
 Here's some basic examples.
 @example
+;; @r{swaps case of input}
 (tr "A-Za-z" "a-zA-Z")
-  @result{} @r{swaps case of input}
+
+;; @r{replaces 7-bit non-graphical characters to `?'}
 (tr "\x00-\x19\x7f" "?*")
-  @result{} @r{replaces 7-bit non-graphical characters to `?'}
 @end example
+@c JP
+@example
+;; @r{大文字と小文字を交換します}
+(tr "A-Za-z" "a-zA-Z")
+
+;; @r{ひらがなとかたかなを交換します}
+(tr "ぁ-んァ-ン" "ァ-ンぁ-ん")
+
+;; @r{7ビットのノングラフィカルな文字を`?'に変換します}
+(tr "\x00-\x19\x7f" "?*")
+@end example
+@c COMMON
 
 The @var{to-list} can be empty.  It is meaningful if @var{:delete}
 and/or @var{:squeeze} flag is specified.
@@ -11791,7 +11847,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Determine isomorphism, Topological sort, Transliterate characters, Library modules
+@node Determine isomorphism, Queue, Transliterate characters, Library modules
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE 同型判定, @code{util.isomorph} - 同型判定
 
@@ -11857,7 +11913,113 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Topological sort, CGI, Determine isomorphism, Library modules
+@node Queue, Topological sort, Determine isomorphism, Library modules
+@section @code{util.queue} - Queue
+@c NODE キュー, @code{util.queue} - キュー
+
+@deftp {Module} util.queue
+@mdindex util.queue
+@c EN
+Provides a queue (FIFO).   This implementation is tuned for speed
+than safety; a queue is simply a pair that keeps head and tail of
+the queue, and minimal check is done in most of the operations.
+
+SLIB (@xref{SLIB}) provides the queue library that is safer.
+This API is upper compatible to the SLIB's.
+The idea is that this queue is used inside other procedure or
+structure that you know you don't need the strict checks.
+Use either one depending on your requirement.
+@c JP
+キュー(FIFO)機能を提供します。この実装は安全さよりスピードに重点を置いています。
+キューは単に先頭と末尾のpairで表現され、多くのオペレーションでキューが正しいかどうかは
+チェックされません。
+
+SLIB (@ref{SLIB}参照)にはより安全なキューの実装があります。
+このAPIはSLIBの実装の上位互換です。特定の手続きや構造体の中だけで使うため、
+厳しいチェックが必要でない場合にはこのモジュールを使うのが良く、そうでない場合は
+SLIBのものが良いでしょう。要求仕様によって使い分けて下さい。
+@c COMMON
+@end deftp
+
+@defun make-queue
+@c EN
+Creates and returns an empty queue.
+@c JP
+空のキューを作って返します。
+@c COMMON
+@end defun
+
+@defun queue? obj
+@c EN
+Returns @code{#t} if @var{obj} is a queue.  This operation checks
+@var{obj} is really in a shape of the queue.
+@c JP
+@var{obj}がキューであれば@code{#t}を返します。この操作に限り、@var{obj}が
+本当にキューの構造をしているかどうかのチェックがなされます。
+@c COMMON
+@end defun
+
+@defun queue-empty? queue
+@c EN
+Returns @code{#t} if @var{obj} is an empty queue.
+@c JP
+@var{obj}が空のキューであれば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun enqueue! queue obj &optional more-objs @dots{}
+@c EN
+Add @var{obj} to the end of @var{queue}.  You may give more than
+one object, and each of them are enqueued in order.
+(Note: SLIB version doesn't take the optional arguments).
+@c JP
+@var{obj}をキュー@var{queue}の末尾に追加します。
+一つ以上の@var{obj}を与えることができ、その場合はそれらが順にenqueueされます。
+(註：SLIBの@code{enqueue!}はオプショナルな引数を取りません)。
+@c COMMON
+@end defun
+
+@defun queue-push! queue obj &optional more-objs @dots{}
+@c EN
+Add @var{obj} in front of @var{queue}.  You may give more than
+one object, and each of them are pushed in order.
+(Note: SLIB version doesn't take the optional arguments).
+@c JP
+@var{obj}をキュー@var{queue}の先頭に追加します。
+一つ以上の@var{obj}を与えることができ、その場合はそれらが順にpushされます。
+(註：SLIBの@code{queue-push!}はオプショナルな引数を取りません)。
+@c COMMON
+@end defun
+
+@defun dequeue! queue
+@defunx queue-pop! queue
+@c EN
+Take one object from the front of the queue @var{queue} and returns it.
+Both function works the same, but @code{queue-pop!} may be used to
+emphasize it works with @code{queue-push!}.  An error is signalled
+if @var{queue} is empty.
+@c JP
+キュー@var{queue}の先頭からひとつ要素を取って返します。
+二つの手続きは全く同じ動作をします。@code{queue-pop!}は@code{queue-push!}と
+ペアで使われていることを強調したいときに使うと良いでしょう。キューが空の場合は
+エラーが報告されます。
+@c COMMON
+@end defun
+
+@defun queue-front queue
+@defunx queue-rear queue
+@c EN
+Peek the head or the tail of the queue and returns the object, respectively.
+@var{Queue} is not modified.  An error is signalled
+if @var{queue} is empty.
+@c JP
+キュー@var{queue}の先頭もしくは末尾の要素を返します。キューそのものは変更されます。
+キューが空の場合はエラーが報告されます。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Topological sort, CGI, Queue, Library modules
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
