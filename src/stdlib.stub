@@ -303,6 +303,7 @@
 
 (define-cproc reverse (list)
   (assert (list? list))
+  (inliner "SCM_VM_REVERSE")
   "  SCM_RETURN(Scm_Reverse(list));")
 
 (define-cproc list-tail (list k)
