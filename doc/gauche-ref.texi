@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.400 2003-06-06 04:06:37 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.401 2003-06-06 05:15:27 nobsun Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17804,19 +17804,30 @@ the code runs without logging.
 @c ----------------------------------------------------------------------
 @node gauche.mop.singleton - Singleton, gauche.mop.validator - Slot with validator, gauche.logger - User-level logging, Library modules - Gauche extensions
 @section @code{gauche.mop.singleton} - Singleton
+@c NODE gauche.mop.singleton - シングルトン, @code{gauche.mop.singleton} - シングルトン
 
 @deftp {Module} gauche.mop.singleton
 @mdindex gauche.mop.singleton
+@c EN
 Provides a metaclass to define a singleton class.
+@c JP
+シングルトンクラスを定義するためのメタクラスを提供します。
+@c COMMON
 @end deftp
 
 @deftp {Class} <singleton-meta>
 @clindex singleton-meta
+@c EN
 Creates a singleton class.  A singleton class is a class that is
 guaranteed to create only one instance.
 The first invocation of @code{make} creates the single instance,
 and further attempt of creation returns the same instance.
-
+@c JP
+シングルトンクラスを生成します。シングルトンクラスはそのインスタンスが
+ただ一つしかないことを保証するクラスです。 @code{make} の
+最初の呼び出しで、唯一のインスタンスを生成し、その後の呼出しでは
+最初に生成したものと同一のインスタンスを返します。
+@c COMMON
 @example
 (define-class single () () :metaclass <singleton-meta>)
 
@@ -17826,22 +17837,40 @@ and further attempt of creation returns the same instance.
 (eq? a b) @result{} #t
 @end example
 
+@c EN
 The slots of the instance are initialized at the first invocation
 of @code{make}.  Initargs of @code{make} are effective only in the
 fist invocation, and ignored in the subsequent invocation.
+@c JP
+インスタンスのスロットは最初の @code{make} の呼び出し時に
+初期化されます。@code{make}への初期引数は最初の呼び出しのときに
+だけ効果があり、それ以降の呼び出しでは無視されます。
+@c COMMON
 @end deftp
 
 @deffn {Method} instance-of (class <singleton-meta>) &rest initargs
+@c EN
 This method just calls @code{make} with the passed arguments.
 It is more obvious in the program that you're dealing with singleton.
+@c JP
+このメソッドは渡された引数とともに @code{make} を呼んでいるだけです。
+シングルトンを扱うプログラム中ではこちらの方が分りやすいでしょう。
+@c COMMON
 @end deffn
 
 @deftp {Class} <singleton-mixin>
 @clindex singleton-mixin
+@c EN
 An instance of @code{<singleton-meta>}.  Instead of specifying
 @code{<singleton-meta>} as the @code{:metaclass} argument of
 @code{define-class}, you can inherit this class to give your
 class the property of singleton.
+@c JP
+@code{<singleton-meta>}のインスタンスです。@code{<singleton-meta>}
+を @code{define-class} の @code{:metaclass} 引数として指定せずに、
+このクラスを継承することで、定義しようとするクラスにシングルトンの
+性質を与えることができます。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
