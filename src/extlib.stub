@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.61 2001-04-10 07:01:28 shiro Exp $
+;;; $Id: extlib.stub,v 1.62 2001-04-13 06:18:06 shiro Exp $
 ;;;
 
 "
@@ -670,11 +670,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")
 
 ;; for test
-"extern ScmObj re_compile(const char *, int);"
+"extern ScmObj re_compile(ScmString *);"
 
 (define-cproc %rx-compile (str)
   (assert (string? str))
-  "  SCM_RETURN(re_compile(SCM_STRING_START(str), SCM_STRING_LENGTH(str)));")
+  "  SCM_RETURN(re_compile(str));")
 
 
 ;; Local variables:

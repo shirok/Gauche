@@ -1,3 +1,13 @@
+2001-04-09  Shiro Kawai  <shiro@scherzo>
+
+	* src/list.c, src/extlib.c, lib/srfi-1.scm: added %assoc-delete[!]
+	  and rewrite assoc-delete[!] to use them if possible.
+
+2001-04-08  Shiro Kawai  <shiro@scherzo>
+
+	* src/compile.c (compile_body): body of "begin" is correctly spliced
+	  into it's surrounding body.
+
 2001-04-07  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.3.3

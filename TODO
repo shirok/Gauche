@@ -26,6 +26,10 @@ Compiler and VM
 
 * Check stack overflow.
 
+o Method cache.  Each VM to have a table that maps (gf, targs ...) => sorted
+  method list.  Invalidated if any of method of gf is redefined.
+  Keep it in VM rather than gf makes MT easier.
+
 o Stack garbage collection.
   
 

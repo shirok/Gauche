@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.108 2001-04-07 06:39:04 shiro Exp $
+ *  $Id: gauche.h,v 1.109 2001-04-13 06:18:06 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -253,6 +253,8 @@ typedef struct ScmMethodRec    ScmMethod;
 typedef struct ScmNextMethodRec ScmNextMethod;
 typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
+typedef struct ScmRegexpRec    ScmRegexp;
+typedef struct ScmRegMatchRec  ScmRegMatch;
 typedef struct ScmExceptionRec ScmException;
 typedef struct ScmWriteContextRec ScmWriteContext;
 
@@ -1686,6 +1688,39 @@ extern ScmClass Scm_ExceptionClass;
 extern void Scm_Error(const char *msg, ...);
 extern void Scm_SysError(const char *msg, ...);
 extern ScmObj Scm_SError(ScmObj fmt, ScmObj args);
+
+/*--------------------------------------------------------
+ * REGEXP
+ */
+
+struct ScmRegexpRec {
+    SCM_HEADER;
+    const char *code;
+    int numGroups;
+    int numCodes;
+    ScmCharSet **sets;
+    int numSets;
+};
+
+extern ScmClass Scm_RegexpClass;
+#define SCM_CLASS_REGEXP          (&Scm_RegexpClass)
+#define SCM_REGEXP(obj)           ((ScmRegexp*)obj)
+#define SCM_REGEXPP(obj)          SCM_XTYPEP(obj, SCM_CLASS_REGEXP)
+
+struct ScmRegMatchRec {
+    SCM_HEADER;
+    int numMatches;
+    struct ScmRegMatchSub {
+        int start;
+        int len;
+        const char *ptr;
+    } *matches;
+};
+
+extern ScmClass Scm_RegMatchClass;
+#define SCM_CLASS_REGMATCH        (&Scm_RegMatchClass)
+#define SCM_REGMATCH(obj)         ((ScmRegMatch*)obj)
+#define SCM_REGMATCHP(obj)        SCM_XTYPEP(obj, SCM_CLASS_REGMATCH)
 
 /*-------------------------------------------------------
  * STUB MACROS
