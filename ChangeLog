@@ -1,3 +1,21 @@
+2001-02-19  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.13
+	* src/bignum.c, src/number.c: bignum support added (partly)
+
+2001-02-17  Shiro Kawai  <shiro@scherzo>
+
+	* src/load.c: dynamic link loader starts working
+	* ext/uvector/*: uvector extention module added (not working yet)
+
+2001-02-16  Shiro Kawai  <shiro@scherzo>
+
+	* src/system.c: fix bug in Scm_NormalizePathname for "~user" expansion
+	* src/proc.c: added Scm_NullProc.
+	* src/vm.c: added Scm_VMDynamicWindC, a C-friendly interface of
+	  dynamic-wind.
+	* src/module.c: Scm_Define returns Gloc object instead of symbol
+
 2001-02-15  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.12
