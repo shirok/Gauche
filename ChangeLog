@@ -1,3 +1,7 @@
+2002-06-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/array.scm : added.  right now, it is just a prototype.
+
 2002-06-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/arith.h : added macros that checks integer arithmetic
