@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.8 2001-02-23 19:43:18 shiro Exp $
+ *  $Id: macro.c,v 1.9 2001-02-27 05:54:33 shiro Exp $
  */
 
 #include "gauche.h"
@@ -120,48 +120,6 @@ ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
 {
     return Scm_MakeSyntax(name, macro_transform, (void*)proc);
 }
-
-/* Expand macro.
- * To capture locally-bound macros, macro-expand needs to be a syntax.
- * From scheme, this syntax is visible as %macro-expand.
- * The procedure version, which works only for globally defined macros,
- * can be defined as
- *  (define (macro-expand form) (%macro-expand form))
- */
-static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
-                                   int ctx, void *data)
-{
-    ScmObj expr, sym;
-    ScmGloc *gloc;
-    
-    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
-        Scm_Error("syntax error: %S", form);
-    expr = SCM_CADR(form);
-    if (!SCM_PAIRP(expr)) return SCM_LIST1(expr);
-    if (!SCM_SYMBOLP(SCM_CAR(expr))) return SCM_LIST1(expr);
-    
-    sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
-    /* TODO: adapt to the new compiler API (check identifier/syntax) */
-    if (SCM_SYMBOLP(sym)) {
-        ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
-        if (g && SCM_SYNTAXP(g->value)) {
-            ScmSyntax *syn = SCM_SYNTAX(g->value);
-            if (syn->compiler == macro_transform) {
-                ScmObj proc = SCM_OBJ(syn->data);
-                ScmObj translated = Scm_Apply(proc, expr);
-                return SCM_LIST1(translated);
-            }
-        }
-    }
-    return SCM_LIST1(expr);
-}
-
-static ScmSyntax syntax_macro_expand = {
-    SCM_CLASS_SYNTAX,
-    SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
-    compile_macro_expand,
-    NULL
-};
 
 /*===================================================================
  * R5RS Macro
@@ -310,6 +268,11 @@ static ScmObj compile_rule1(ScmObj form,
                 nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
                                                patternp);
                 SCM_APPEND1(h, t, SCM_OBJ(nspat));
+                if (!patternp && SCM_NULLP(nspat->vars)) {
+                    Scm_Error("in definition of macro %S: "
+                              "template contains repetition of constant form: %S",
+                              ctx->name, form);
+                }
                 spat->vars = Scm_Append2(spat->vars, nspat->vars);
                 return h;
             }
@@ -359,6 +322,8 @@ static ScmObj compile_rule1(ScmObj form,
                 id = Scm_MakeIdentifier(SCM_SYMBOL(form), ctx->env);
                 ctx->tvars = Scm_Cons(id, ctx->tvars);
                 return id;
+            } else {
+                spat->vars = Scm_Cons(pvref, spat->vars);
             }
             return pvref;
         }
@@ -604,8 +569,6 @@ static inline int match_subpattern(ScmObj form, ScmSyntaxPattern *pat,
 static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
                          MatchVar *mvec)
 {
-    Scm_Printf(SCM_CUROUT, "--- %S %S\n", form, pattern);
-
     if (PVREF_P(pattern)) {
         match_insert(pattern, form, mvec);
         return TRUE;
@@ -681,7 +644,6 @@ static ScmObj realize_template_rec(ScmObj template,
             if (SCM_SYNTAX_PATTERN_P(e)) {
                 r = realize_template_rec(e, mvec, level, indices);
                 SCM_APPEND(h, t, r);
-                return h;
             } else {
                 r = realize_template_rec(e, mvec, level, indices);
                 SCM_APPEND1(h, t, r);
@@ -700,6 +662,7 @@ static ScmObj realize_template_rec(ScmObj template,
     if (SCM_SYNTAX_PATTERN_P(template)) {
         ScmSyntaxPattern *pat = SCM_SYNTAX_PATTERN(template);
         ScmObj h = SCM_NIL, t, r;
+        indices[level+1] = 0;
         for (;;) {
             r = realize_template_rec(pat->pattern, mvec, level+1, indices);
             if (r == SCM_UNBOUND) return h;
@@ -725,31 +688,42 @@ static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
     return realize_template_rec(branch->template, mvec, 0, indices);
 }
 
-static ScmObj synrule_transform(ScmObj form, ScmObj env,
-                                int ctx, void *data)
+static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
 {
-    ScmSyntaxRules *sr = (ScmSyntaxRules *)data;
-    int i;
     MatchVar *mvec = alloc_matchvec(sr->maxNumPvars);
-    
+    ScmObj expanded;
+    int i;
+
+#ifdef DEBUG_SYNRULE    
     Scm_Printf(SCM_CUROUT, "**** synrule_transform: %S\n", form);
+#endif
     for (i=0; i<sr->numRules; i++) {
+#ifdef DEBUG_SYNRULE    
         Scm_Printf(SCM_CUROUT, "pattern #%d: %S\n", i, sr->rules[i].pattern);
+#endif
         init_matchvec(mvec, sr->rules[i].numPvars);
         if (match_synrule(SCM_CDR(form), sr->rules[i].pattern, env, mvec)) {
-            Scm_Printf(SCM_CUROUT, "success:\n");
+#ifdef DEBUG_SYNRULE    
+            Scm_Printf(SCM_CUROUT, "success #%d:\n", i);
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);
-            {
-                ScmObj r = realize_template(&sr->rules[i], mvec);
-                Scm_Printf(SCM_CUROUT, "result: %S\n", r);
-            }
-            return SCM_NIL;
-        } else {
-            Scm_Printf(SCM_CUROUT, "failed.\n");
+#endif
+            expanded = realize_template(&sr->rules[i], mvec);
+#ifdef DEBUG_SYNRULE    
+            Scm_Printf(SCM_CUROUT, "result: %S\n", expanded);
+#endif
+            return expanded;
         }
     }
     Scm_Error("malformed %S: %S", SCM_CAR(form), form);
     return SCM_NIL;
+}
+
+static ScmObj synrule_transform(ScmObj form, ScmObj env,
+                                int ctx, void *data)
+{
+    ScmSyntaxRules *sr = (ScmSyntaxRules *)data;
+    ScmObj expanded = synrule_expand(form, env, sr);
+    return Scm_Compile(expanded, env, ctx);
 }
 
 /*-------------------------------------------------------------------
@@ -774,7 +748,9 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
     rules = SCM_CDR(SCM_CDDR(form));
 
     sr = compile_rules(name, literals, rules, env);
+#ifdef DEBUG_SYNRULE
     Scm_Printf(SCM_CUROUT, "%S\n", sr);
+#endif
     return SCM_LIST1(Scm_MakeSyntax(SCM_SYMBOL(name),
                                     synrule_transform,
                                     (void*)sr));
@@ -792,6 +768,84 @@ static ScmSyntax syntax_syntax_rules = {
     NULL
 };
 
+/*-------------------------------------------------------------------
+ * let-syntax, letrec-syntax
+ */
+
+static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    int letrecp = (data != NULL);
+    ScmObj vars = SCM_NIL, vars_t, rules = SCM_NIL, rules_t, body;
+
+    Scm_Error("%S is not supported yet.", SCM_CAR(form));
+    return SCM_NIL;
+}
+
+static ScmSyntax syntax_let_syntax = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_LET_SYNTAX),
+    compile_let_syntax,
+    (void*)0
+};
+
+static ScmSyntax syntax_letrec_syntax = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_LETREC_SYNTAX),
+    compile_let_syntax,
+    (void*)1
+};
+
+/*===================================================================
+ * macro-expand
+ */
+
+/*
+ * To capture locally-bound macros, macro-expand needs to be a syntax.
+ * From scheme, this syntax is visible as %macro-expand.
+ * The procedure version, which works only for globally defined macros,
+ * can be defined as
+ *  (define (macro-expand form) (%macro-expand form))
+ */
+static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
+                                   int ctx, void *data)
+{
+    ScmObj expr, sym;
+    ScmGloc *gloc;
+    
+    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
+        Scm_Error("syntax error: %S", form);
+    expr = SCM_CADR(form);
+    if (!SCM_PAIRP(expr)) return SCM_LIST1(expr);
+    if (!SCM_SYMBOLP(SCM_CAR(expr))) return SCM_LIST1(expr);
+    
+    sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
+    /* TODO: adapt to the new compiler API (check identifier/syntax) */
+    if (SCM_SYMBOLP(sym)) {
+        ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
+        if (g && SCM_SYNTAXP(g->value)) {
+            ScmSyntax *syn = SCM_SYNTAX(g->value);
+            if (syn->compiler == macro_transform) {
+                ScmObj proc = SCM_OBJ(syn->data);
+                ScmObj translated = Scm_Apply(proc, expr);
+                return SCM_LIST1(translated);
+            }
+            if (syn->compiler == synrule_transform) {
+                ScmSyntaxRules *sr = (ScmSyntaxRules *)syn->data;
+                ScmObj expanded = synrule_expand(expr, env, sr);
+                return SCM_LIST1(expanded);
+            }
+        }
+    }
+    return SCM_LIST1(expr);
+}
+
+static ScmSyntax syntax_macro_expand = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
+    compile_macro_expand,
+    NULL
+};
+
 /*===================================================================
  * Initializer
  */
@@ -805,4 +859,6 @@ void Scm__InitMacro(void)
     
     DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
     DEFSYN(SCM_SYM_SYNTAX_RULES, syntax_syntax_rules);
+    DEFSYN(SCM_SYM_LET_SYNTAX, syntax_let_syntax);
+    DEFSYN(SCM_SYM_LETREC_SYNTAX, syntax_letrec_syntax);
 }
