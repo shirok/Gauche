@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.76 2002-04-03 10:36:13 shirok Exp $
+;;; $Id: stdlib.stub,v 1.77 2002-04-03 10:46:37 shirok Exp $
 ;;;
 
 
@@ -103,8 +103,9 @@
   }")
 
 (define-cproc zero? (obj)
-  "  if (SCM_COMPLEXP(obj)) SCM_RETURN(SCM_FALSE);
-  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) == 0));")
+  "if (SCM_COMPLEXP(obj))
+       SCM_RETURN(SCM_MAKE_BOOL(SCM_COMPLEX_IMAG(obj) == 0.0));
+  else SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) == 0));")
 (define-cproc positive? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) > 0));")
 (define-cproc negative? (obj)
@@ -341,7 +342,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
     SCM_RETURN(SCM_UNDEFINED);
   } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));}")
     
-;; make-polar, real-part, imag-part - defined in gauche/numeric.scm
+;; real-part, imag-part - defined in gauche/numeric.scm
 
 (define-cproc magnitude (z)
   "  SCM_RETURN(Scm_Magnitude(z));")
