@@ -1,3 +1,7 @@
+2002-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : added Scm_VMApply3
+
 2002-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsys/* : moved sys-getgroups, sys-getlogin and sys-localeconv
