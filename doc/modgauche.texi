@@ -3668,11 +3668,14 @@ Gaucheは@code{gethostbyname(3)}を使って実際のIPアドレスを得ます。
 @var{port} must be a positive integer indicating the port number.
 @c JP
 @var{port}はポート番号を示す正の整数です。
-@c COMMON
-
+@c EN
 See also @code{make-sockaddrs} below, to create multiple
 socket addresses on the machine which may have more than one
 protocol stack.
+@c JP
+2つ以上のプロトコルスタックを持つようなマシン上で複数のソケットアドレスを
+生成するには、後述の @code{make-sockaddrs} も参照してください。
+@c COMMON
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-in>)
@@ -3755,14 +3758,18 @@ The constructor and the slots are the same as @code{<sockaddr-in>}.
 AF_INET6ファミリのソケットアドレスです。
 このクラスはgaucheが--enable-ipv6つきでconfigureされている場合に使えます。
 コンストラクタとスロットは@code{<sockaddr-in>}と同じです。
-@c COMMON
-
+@c EN
 See also @code{make-sockaddrs} below, to create multiple
 socket addresses on the machine which may have more than one
 protocol stack.
+@c JP
+2つ以上のプロトコルスタックを持つようなマシン上で複数のソケットアドレスを
+生成するには、後述の @code{make-sockaddrs} も参照してください。
+@c COMMON
 @end deftp
 
 @defun make-sockaddrs host port &optional proto
+@c EN
 This is a higher-level utility procedure to create all possible
 inet domain socket addresses that point to @code{@var{host}:@var{port}}
 of protocol @var{proto}.  Particularly, if the specified host has
@@ -3780,6 +3787,24 @@ and the default is @code{tcp}.
 
 It always returns a list of socket addresses.  If the lookup of @var{host}
 is failed, null list is returned.
+@c JP
+これは上位レベルのユーティリティ手続きで、プロトコル @var{proto} の
+@code{@var{host}:@var{port}} を指す、可能なすべてのドメインソケット
+アドレスを生成します。特に、指定したホストが IPv4 および IPv6 の両方の
+アドレスを持ち、稼働中のシステムがその両方をサポートしている場合、IPv4 と
+IPv6 の両方のソケットアドレスが返ります。もし、@var{host} が複数の
+IP アドレスをもつ場合、ソケットアドレスはそれぞれのIPアドレス毎に生成
+されます。自分のネットワークアプリケーションを異るネットワークスタックの
+設定の間でこれまでよりはるかにポータブルなものにすることができます。
+
+@var{host} に @code{#f} を渡すと、ローカルな(サーバ)アドレスが生成されます。
+@var{port} 引数に整数のかわりに、サービス名(たとえば、@code{"http"})を
+わたすこともできます。@var{proto} の値は、@code{tcp} あるいは @code{udp}
+のどちらかのシンボルになります。デフォルトでは、@code{tcp} です。
+
+この手続きは常にソケットアドレスのリストを返します。もし、@var{host} の
+検索に失敗した場合には、空リストが返ります。
+@c COMMON
 @end defun
 
 
@@ -3963,6 +3988,7 @@ by an instance of @code{<sockaddr>}.
 @end defun
 
 @defun make-server-sockets host port &keyword reuse-addr?
+@c EN
 Creates one or more sockets that listen at @var{port}
 on all available network interfaces of @var{host}.
 You can specify a service name (such as "@code{http}") to
@@ -3973,6 +3999,19 @@ This procedure is particularly useful when the host
 has multiple protocol stacks, such as IPv4 and IPv6; in which
 case, you can start a server that listenes both protocol
 using @code{make-server-sockets}.
+@c JP
+@var{host} のすべての利用可能なネットワークインタフェース上の
+@var{port} をリッスンする1つ以上のソケットを生成します。
+@var{port} に対しては数字のポート番号と同様に、サービス名を
+指定できます。たとえば、"@code{http}" です。この手続きは
+オープンされ、バインドされ、リッスンされたソケットのリストを
+返します。
+
+この手続きは、ホストが複数のプロトコルスタック(IPv4とIPv6など)を
+持つ場合に特に便利です。このような場合、両方のプロトコルで
+リッスンするようなサーバを @code{make-server-sockets} をつかって、
+スタートすることができます。
+@c COMMON
 @end defun
 
 @c EN
@@ -4018,13 +4057,20 @@ Closes @var{socket}.  All the ports associated to
 @c JP
 ソケット@var{socket}をクローズします。@var{socket}の入出力ポートも
 クローズされます。
-@c COMMON
 
+@c EN
 Note: as of release 0.7.2, this procedure does not shutdown
 the connection.  It is because @var{socket} may be referenced
 by forked process(es) and you might want to close it without
 interfering the existing connection.   You can call
 @code{socket-shutdown} to shutdown the connection explicitly.
+
+@c JP
+注意: リリース 0.7.2 より、この手続きは接続をシャットダウンしないように
+なりました。その理由は、@var{socket} が fork した別プロセスから参照され
+ている可能性があり、既存の接続を妨害することなくクローズしたい場合がある
+からです。@code{socket-shutdown} を呼べば接続を明示的にシャットダウンできます。
+@c COMMON
 @end defun
 
 @defun call-with-client-socket socket proc
