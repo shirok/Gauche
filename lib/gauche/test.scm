@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.9 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: test.scm,v 1.10 2004-01-27 02:50:17 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -164,7 +164,7 @@
       (if (null? report)
           (format #t "ok\n")
           (let ((s (apply string-append report)))
-            (format #t "ERROR: ~a" s)
+            (format #t "ERROR: ~a\n" s)
             (set! *discrepancy-list*
                   (cons (list (format #f "bindings in module ~a" (module-name mod))
                               '() s)
