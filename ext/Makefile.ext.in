@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.19 2004-08-01 11:09:33 shirok Exp $
+## $Id: Makefile.ext.in,v 1.20 2004-08-02 12:20:47 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -89,7 +89,7 @@ maintainer-clean : clean
 	rm -rf $(GENERATED)
 
 install-std : all
-	$(GAUCHE_INSTALL) -m 444 -T $(GAUCHE_INCDIR)/gauche $(HDRFILES)
+	$(GAUCHE_INSTALL) -m 444 -T $(GAUCHE_INCDIR) $(HDRFILES)
 	$(GAUCHE_INSTALL) -m 444 -T $(GAUCHE_LIBDIR)/$(SCM_CATEGORY) $(SCMFILES)
 	$(GAUCHE_INSTALL) -m 555 -T $(GAUCHE_ARCHDIR) $(LIBFILES) 
 

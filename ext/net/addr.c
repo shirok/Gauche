@@ -1,7 +1,7 @@
 /*
  * addr.c - socket address
  *
- *  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2004 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,10 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.19 2004-07-15 09:18:10 shirok Exp $
+ *  $Id: addr.c,v 1.20 2004-08-02 12:20:54 shirok Exp $
  */
 
-#include "net.h"
+#include "gauche/net.h"
 #include <string.h>
 
 static ScmObj key_path = SCM_FALSE;
