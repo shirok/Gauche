@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.28 2001-11-23 01:03:14 shirok Exp $
+;;;  $Id: object.scm,v 1.29 2001-12-01 21:41:01 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -316,12 +316,14 @@
       gns
       (apply make <slot-accessor>
              :class class :name (slot-definition-name slot)
-             `(,@(cond ((integer? gns) (list :slot-number gns))
-                       ((pair? gns) (list :slot-ref (car gns)
-                                          :slot-set! (cadr gns)))
-                       (else
-                        (errorf "bad getter-and-setter returned by compute-get-n-set for ~s ~s: ~s"
-                                class slot gns)))
+             `(,@(cond
+                  ((integer? gns) (list :slot-number gns :initializable #t))
+                  ((list? gns)
+                   (list :getter-n-setter (cons (car gns) (list-ref gns 1 #f))
+                         :initializable (list-ref gns 2 #f)))
+                  (else
+                   (errorf "bad getter-and-setter returned by compute-get-n-set for ~s ~s: ~s"
+                           class slot gns)))
                ,@(cdr slot)))))
 
 ;; access class allocated slot.  API compatible with Goops.
