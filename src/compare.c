@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compare.c,v 1.2 2001-04-01 20:18:25 shiro Exp $
+ *  $Id: compare.c,v 1.3 2001-04-01 21:55:00 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -109,14 +109,9 @@ void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn)
 static ScmObj sort_list_int(ScmObj objs, ScmObj fn, int destructive)
 {
     ScmObj cp;
-    ScmObj starray[STATIC_SIZE], *array = starray;
-    int len = Scm_Length(objs), i;
-    if (len < 0) Scm_Error("improper list not allowed: %S", objs);
-    if (len >= STATIC_SIZE)
-        array = SCM_NEW2(ScmObj *, sizeof(ScmObj)*len);
-    for (i=0, cp=objs; !SCM_NULLP(cp); i++, cp = SCM_CDR(cp)) {
-        array[i] = SCM_CAR(cp);
-    }
+    ScmObj starray[STATIC_SIZE], *array;
+    int len = STATIC_SIZE, i;
+    array = Scm_ListToArray(objs, &len, starray, TRUE);
     Scm_SortArray(array, len, fn);
     if (destructive) {
         for (i=0, cp=objs; i<len; i++, cp = SCM_CDR(cp)) {
