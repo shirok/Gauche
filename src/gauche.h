@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.200 2002-01-05 08:00:56 shirok Exp $
+ *  $Id: gauche.h,v 1.201 2002-01-11 11:35:00 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1117,7 +1117,8 @@ typedef struct ScmReadContextRec {
 } ScmReadContext;
 
 enum {
-    SCM_READ_SOURCE_INFO = (1L<<0) /* preserving souce file information */
+    SCM_READ_SOURCE_INFO = (1L<<0), /* preserving souce file information */
+    SCM_READ_CASE_FOLD   = (1L<<1)  /* case-fold read */
 };
 
 extern ScmObj Scm_Read(ScmObj port);

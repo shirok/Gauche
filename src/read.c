@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.35 2002-01-05 08:00:56 shirok Exp $
+ *  $Id: read.c,v 1.36 2002-01-11 11:35:00 shirok Exp $
  */
 
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
 #include "gauche.h"
+#include "gauche/vm.h"
 
 /*
  * READ
@@ -28,13 +29,13 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
-static ScmObj read_char(ScmPort *port);
-static ScmObj read_word(ScmPort *port, ScmChar initial);
-static ScmObj read_symbol(ScmPort *port, ScmChar initial);
-static ScmObj read_number(ScmPort *port, ScmChar initial);
-static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
+static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
+static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
+static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
+static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
+static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim);
-static ScmObj read_keyword(ScmPort *port);
+static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
@@ -58,6 +59,9 @@ ScmObj Scm_Read(ScmObj port)
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
+    if (Scm_VM()->runtimeFlags & SCM_CASE_FOLD) {
+        ctx.flags |= SCM_READ_CASE_FOLD;
+    }
     return read_internal(SCM_PORT(port), &ctx);
 }
 
@@ -68,6 +72,9 @@ ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
     ctx.table = NULL;
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
+    }
+    if (Scm_VM()->runtimeFlags & SCM_CASE_FOLD) {
+        ctx.flags |= SCM_READ_CASE_FOLD;
     }
     return read_list(SCM_PORT(port), closer, &ctx);
 }
@@ -112,6 +119,38 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
  * Miscellaneous routines
  */
 
+/* Table of initial 128 bytes of ASCII characters to dispatch for
+   special meanings.
+    bit 0 : a valid constituent char of words
+    bit 1 : candidate of case folding
+*/
+static unsigned char ctypes[] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+ /*     !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /  */
+    0,  1,  0,  0,  1,  1,  1,  0,  0,  0,  1,  1,  0,  1,  1,  1,
+ /* 0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?  */
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1,  1,  1,  1,
+ /* @   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O  */
+    1,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
+ /* P   Q   R   S   T   U   V   W   X   Y   Z   [   \   ]   ^   _  */
+    3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  0,  0,  0,  1,  1,
+ /* `   a   b   c   d   e   f   g   h   i   j   k   l   m   n   o  */
+    0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+ /* p   q   r   s   t   u   v   w   x   y   z   {   |   }   ~   ^? */
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1,  0,
+};
+
+inline static int char_word_constituent(int c)
+{
+    return (c >= 128 || (c >= 0 && (ctypes[(unsigned char)c]&1)));
+}
+
+inline static int char_word_case_fold(int c)
+{
+    return (c >= 0 && c < 128 && (ctypes[(unsigned char)c]&2));
+}
+
 inline static int skipws(ScmPort *port)
 {
     int c = 0;
@@ -130,11 +169,6 @@ inline static int skipws(ScmPort *port)
         return c;
     }
 }
-
-#define PUNCT_CASE \
-    case '(':; case ')':; case '[':; case ']':;       \
-    case '{':; case '}':; case '"':; case ';':;       \
-    case ' ':; case '\n':; case '\t':; case '\r'
 
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
 {
@@ -163,12 +197,12 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     return Scm_ListToVector(v);
                 }
             case '\\':
-                return read_char(port);
+                return read_char(port, ctx);
             case 'x':; case 'X':; case 'o':; case 'O':;
             case 'b':; case 'B':; case 'd':; case 'D':;
             case 'e':; case 'E':; case 'i':; case 'I':;
                 SCM_UNGETC(c1, port);
-                return read_number(port, c);
+                return read_number(port, c, ctx);
             case '!':
                 /* allow `#!' magic of executable */
                 for (;;) {
@@ -204,7 +238,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
     case '\'': return read_quoted(port, SCM_SYM_QUOTE, ctx);
     case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE, ctx);
     case ':':
-        return read_keyword(port);
+        return read_keyword(port, ctx);
     case ',':
         {
             int c1 = 0;
@@ -228,30 +262,28 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
     case '+':; case '-':
         /* Note: R5RS doesn't permit identifiers beginning with '+' or '-',
            but some Scheme programs use such identifiers. */
-        return read_symbol_or_number(port, c);
+        return read_symbol_or_number(port, c, ctx);
     case '.':;
         {
-            int c1 = 0;
+            int c1;
             SCM_GETC(c1, port);
-            switch (c1) {
-            PUNCT_CASE:
+            if (!char_word_constituent(c1)) {
                 Scm_ReadError(port, "dot in wrong context");
-            default:
-                SCM_UNGETC(c1, port);
-                return read_symbol_or_number(port, c);
             }
+            SCM_UNGETC(c1, port);
+            return read_symbol_or_number(port, c, ctx);
         }
     case '0':; case '1':; case '2':; case '3':; case '4':;
     case '5':; case '6':; case '7':; case '8':; case '9':;
         /* Note: R5RS doesn't permit identifiers beginning with digits,
            but some Scheme programs use such identifiers. */
-        return read_symbol_or_number(port, c);
+        return read_symbol_or_number(port, c, ctx);
     case ')':; case ']':; case '}':;
         Scm_ReadError(port, "extra close parenthesis");
     case EOF:
         return SCM_EOF;
     default:
-        return read_symbol(port, c);
+        return read_symbol(port, c, ctx);
     }
 }
 
@@ -302,7 +334,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
                 continue;
             }
             SCM_UNGETC(c2, port);
-            item = read_symbol_or_number(port, c);
+            item = read_symbol_or_number(port, c, ctx);
         } else {
             SCM_UNGETC(c, port);
             item = read_internal(port, ctx);
@@ -426,7 +458,7 @@ static struct char_name {
     { NULL, 0 }
 };
 
-static ScmObj read_char(ScmPort *port)
+static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 {
     int c = 0;
     ScmString *name;
@@ -442,7 +474,7 @@ static ScmObj read_char(ScmPort *port)
         return SCM_MAKE_CHAR(c);
     default:
         /* need to read word to see if it is a character name */
-        name = SCM_STRING(read_word(port, c));
+        name = SCM_STRING(read_word(port, c, ctx));
         if (SCM_STRING_LENGTH(name) == 1) {
             return SCM_MAKE_CHAR(c);
         }
@@ -472,48 +504,45 @@ static ScmObj read_char(ScmPort *port)
  * Symbols and Numbers
  */
 
-static ScmObj read_word(ScmPort *port, ScmChar initial)
+static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    int c = 0;
+    int c = 0, case_fold = (ctx->flags & SCM_READ_CASE_FOLD);
     ScmDString ds;
     Scm_DStringInit(&ds);
-    if (initial != SCM_CHAR_INVALID) c = initial;
-    else SCM_GETC(c, port);
+    if (initial != SCM_CHAR_INVALID) {
+        if (case_fold && char_word_case_fold(initial)) initial = tolower(initial);
+        SCM_DSTRING_PUTC(&ds, initial);
+    }
     
     for (;;) {
-        switch (c) {
-        case EOF:;
-        case '(':; case ')':; case '[':; case ']':; case '{':; case '}':;
-        case '"':; case ' ':; case '\n':; case '\r':; case '\t':;
-        case ';':;
-            SCM_UNGETC(c, port);
+        SCM_GETC(c, port);
+        if (c == EOF || !char_word_constituent(c)) {
+            SCM_UNGETC(c, port); 
             return Scm_DStringGet(&ds);
-        default:
-            if (c >= 'A' && c <= 'Z') c += ('a' - 'A');
-            SCM_DSTRING_PUTC(&ds, c);
-            SCM_GETC(c, port);
         }
+        if (case_fold && char_word_case_fold(c)) c = tolower(c);
+        SCM_DSTRING_PUTC(&ds, c);
     }
 }
 
-static ScmObj read_symbol(ScmPort *port, ScmChar initial)
+static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx));
     return Scm_Intern(s);
 }
 
-static ScmObj read_number(ScmPort *port, ScmChar initial)
+static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx));
     ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         Scm_ReadError(port, "bad numeric format: %S", s);
     return num;
 }
 
-static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial)
+static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx));
     ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         return Scm_Intern(s);
@@ -521,9 +550,9 @@ static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial)
         return num;
 }
 
-static ScmObj read_keyword(ScmPort *port)
+static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID));
+    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID, ctx));
     return Scm_MakeKeyword(s);
 }
 

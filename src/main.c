@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.40 2002-01-08 05:58:55 shirok Exp $
+ *  $Id: main.c,v 1.41 2002-01-11 11:35:00 shirok Exp $
  */
 
 #include <unistd.h>
@@ -72,6 +72,9 @@ void further_options(const char *optarg)
     }
     else if (strcmp(optarg, "load-verbose") == 0) {
         Scm_VM()->runtimeFlags |= SCM_LOAD_VERBOSE;
+    }
+    else if (strcmp(optarg, "case-fold") == 0) {
+        Scm_VM()->runtimeFlags |= SCM_CASE_FOLD;
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);

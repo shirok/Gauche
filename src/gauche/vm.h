@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.50 2001-12-19 20:12:04 shirok Exp $
+ *  $Id: vm.h,v 1.51 2002-01-11 11:35:03 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -326,7 +326,8 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
  */
 enum {
     SCM_ERROR_BEING_HANDLED = (1L<<0), /* we're in an error handler */
-    SCM_LOAD_VERBOSE        = (1L<<1)  /* report loading files */
+    SCM_LOAD_VERBOSE        = (1L<<1), /* report loading files */
+    SCM_CASE_FOLD           = (1L<<2)  /* symbols are case insensitive */
 };
 
 /*
