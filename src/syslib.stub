@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.59 2002-02-11 10:26:31 shirok Exp $
+;;; $Id: syslib.stub,v 1.60 2002-02-17 07:25:03 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -647,12 +647,12 @@
 (define-symbol |X_OK| "sym_x_ok" "Scm_MakeInteger(X_OK)")
 (define-symbol |F_OK| "sym_f_ok" "Scm_MakeInteger(F_OK)")
 
-;; FREEBSD's access(2) implementation is not quite reliable.
+;; FREEBSD's and Darwin's access(2) implementation is not quite reliable.
 (define-cproc sys-access (pathname amode)
   (assert (string? pathname))
   (assert (exact? amode))
   "
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__) && defined(__ppc__))
   struct stat statbuf;
   int r = Scm_SysCall(stat(Scm_GetStringConst(pathname), &statbuf));
   if (r < 0) SCM_RETURN(SCM_FALSE);

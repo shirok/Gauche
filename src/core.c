@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.33 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: core.c,v 1.34 2002-02-17 07:25:03 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -74,6 +74,10 @@ void Scm_Init(void)
     Scm__InitRead();
     Scm__InitSignal();
     Scm__InitSystem();
+
+    /* This is required in some platforms in order to link
+       dyn_load.o properly. */
+    GC_register_dlopen_data(NULL, NULL);
 
     vm = Scm_NewVM(NULL, Scm_SchemeModule());
     Scm_SetVM(vm);

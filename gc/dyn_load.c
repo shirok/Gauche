@@ -74,7 +74,9 @@ void GC_register_dynamic_libraries(){}
 void GC_register_dlopen_data(GC_PTR start, GC_PTR end)
 {
 #if !defined(DYNAMIC_LOADING) || defined(ENABLE_EXPLICIT_INITIALIZATION)
-    GC_add_roots(start, end);
+    if (start && end) {
+        GC_add_roots(start, end);
+    }
 #endif  /*!DYNAMIC_LOADING*/
 }
 

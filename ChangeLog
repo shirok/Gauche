@@ -1,3 +1,9 @@
+2002-02-16  Shiro Kawai  <shiro@acm.org>
+
+	* gc/dyn_load.c, src/core.c : fix required to link dyn_load.o
+	  on MacOS X.
+	* src/syslib.stub : use stat(2) for sys-access on MacOS X as well.
+
 2002-02-15  Shiro Kawai  <shiro@acm.org>
 
 	* aclocal.m4 : the rule to generate *_head.c and *_tail.c in
