@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: http.scm,v 1.5 2002-11-14 05:16:07 shirok Exp $
+;;;  $Id: http.scm,v 1.6 2003-06-17 07:47:53 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -203,7 +203,8 @@
          => (lambda (p)
               (if (equal? (cadr p) "chunked")
                   (receive-body-chunked remote sink)
-                  (error "unsupported transfer-encoding" (cadr p))))))
+                  (error "unsupported transfer-encoding" (cadr p)))))
+        (else (copy-port remote sink)))
   (flusher sink headers))
 
 (define (receive-body-nochunked size remote sink)
