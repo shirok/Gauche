@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.8 2005-01-03 01:08:33 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.9 2005-01-03 09:40:27 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -277,16 +277,17 @@
 ;;     set-count - in how many places this variable is set!
 ;;
 
-(define (make-lvar name) (vector name 0 0))
+(define (make-lvar name) (vector 'lvar name 0 0))
 
-(define (lvar-name var)      (vector-ref var 0))
-(define (lvar-ref-count var) (vector-ref var 1))
-(define (lvar-set-count var) (vector-ref var 2))
+(define (lvar? obj)      (and (vector? obj) (eq? (vector-ref obj 0) 'lvar)))
+(define (lvar-name var)      (vector-ref var 1))
+(define (lvar-ref-count var) (vector-ref var 2))
+(define (lvar-set-count var) (vector-ref var 3))
 
 (define (lvar-ref++! var)
-  (vector-set! var 1 (+ 1 (vector-ref var 1))))
-(define (lvar-set++! var)
   (vector-set! var 2 (+ 1 (vector-ref var 2))))
+(define (lvar-set++! var)
+  (vector-set! var 3 (+ 1 (vector-ref var 3))))
 
 ;; Compile-time environment (cenv)
 ;;
@@ -299,11 +300,11 @@
 ;;                a <macro> object for the local macro frames, and
 ;;                lvar object for the local binding frames.
 
-(define (make-cenv module frames)
-  (vector module frames))
+(define (make-cenv module frames) (vector 'cenv module frames))
 
-(define (cenv-module cenv)   (vector-ref var 0))
-(define (cenv-frames cenv)   (vector-ref var 1))
+(define (cenv? obj)      (and (vector? obj) (eq? (vector-ref obj 0) 'cenv)))
+(define (cenv-module cenv)   (vector-ref cenv 1))
+(define (cenv-frames cenv)   (vector-ref cenv 2))
 
 (define (make-bottom-cenv)
   (make-cenv (vm-current-module) '()))
@@ -312,32 +313,59 @@
   (make-cenv (cenv-module cenv)
              (acons syntax? frame (cenv-frames cenv))))
 
-;(define (cenv-lookup cenv sym-or-id syntax?)
-;  (let ((frames (cenv-frames cenv)))
-;    (let loop ((frames frames))
-;      (cond ((null? frames) 
+;; Lookup compiler enviroment.  Returns either lvar, syntax, or identifier.
+;; NB: the treatment of locally-bound identifier should be fixed.
+(define (cenv-lookup cenv sym-or-id syntax?)
+  (define (find-lvar frame)
+    (if (car frame) ;; syntactic frame
+      (cond ((and syntax? (assq sym-or-id (cdr frame))) => cdr)
+            (else #f))
+      (cond ((assq sym-or-id (cdr frame)) => cdr)
+            (else #f))))
 
+  (let ((frames (cenv-frames cenv)))
+    (let loop ((frames frames))
+      (cond ((null? frames)
+             (if (identifier? sym-or-id)
+               sym-or-id
+               (make-identifier sym-or-id '() (cenv-module cenv))))
+            ((find-lvar (car frames)))
+            (else (loop (cdr frames)))))))
 
 ;; Intermediate form
 ;;
 ;; <top-expr> :=
 ;;    <expr>
-;;    ($define <id> <expr>)
-;;    ($define-macro <id> <expr>)
+;;    ($define <flags> <id> <expr>)
+;;    ($define-macro <flags> <id> <expr>)
 ;;
 ;; <expr> :=
 ;;    ($lref <lvar>)        ;; local variable reference
 ;;    ($lset <lvar> <expr>) ;; local variable modification
 ;;    ($gref <id>)          ;; global variable reference
 ;;    ($gset <id> <expr>)   ;; global variable modification
-;;    ($if <expr> <expr> <expr>) ;; branch
 ;;    ($const <obj>)        ;; constant literal
-;;    ($let (<lvar> ...) (<expr> ...) <expr>) ;; local binding
-;;    ($receive <formal> (<lvar> ...) <expr> <expr>) ;; local binding (mv)
-;;    ($lambda <formal> (<lvar> ...) <expr>)  ;; closure
+;;    ($if <o> <expr> <expr+> <expr>) ;; branch
+;;    ($let <o> (<lvar> ...) (<expr> ...) <expr>) ;; local binding
+;;    ($receive <o> <reqarg> <optarg> (<lvar> ...) <expr> <expr>) ;; local binding (mv)
+;;    ($lambda <o> <reqarg> <optarg> (<lvar> ...) <expr>)  ;; closure
 ;;    ($seq <expr> ...)     ;; sequencing
-;;    ($call <proc-expr> <arg-expr> ...) ;; procedure call
-
+;;    ($call <o> <proc-expr> <arg-expr> ...) ;; procedure call
+;;
+;;    ($cons <o> <ca> <cd>)       ;; used in quasiquote
+;;    ($append <o> <ca> <cd>)     ;; ditto
+;;    ($vector <o> <elt> ...)     ;; ditto
+;;    ($list->vector <o> <list>)  ;; ditto
+;;
+;; <expr+> :=
+;;    <expr>
+;;    ($it)                 ;; refer to the value in the last test clause.
+;;
+;;  NB: <o> is the original form, used to generate debug info.
+;;      if the intermediate form doesn't have corresponding original
+;;      form, it will be #f.
+;;
+;;  
 
 ;; Pass 1
 ;;   - Expand macros
@@ -345,9 +373,365 @@
 ;;   - Convert special forms into a few number of primitive
 ;;     operators
 
+(define (pass1 program cenv)
+  (match program
+    ((op . args)
+     (if (variable? op)
+       (let1 head (cenv-lookup cenv op #t)
+         (cond
+          ((lvar? head)
+           (lvar-ref++! head)
+           (pass1/call program `($lref ,head) args cenv))
+          ((is-a? head <macro>)
+           (error "local macro not supported yet"))
+          ((identifier? head)
+           (pass1/global-call head program cenv))
+          (else
+           (error "[internal] unknown resolution of head:" head))))
+       (pass1/call program (pass1 op cenv) args cenv)))
+    ((? variable?)
+     (pass1/variable program cenv))
+    (else
+     `($const ,program))))
 
+(define (pass1/variable var cenv)
+  (let ((r (cenv-lookup cenv var #f)))
+    (cond ((lvar? r)
+           (begin (lvar-ref++! r) `($lref ,r)))
+          ((identifier? r)
+           `($gref ,r))
+          ((symbol? r)
+           `($gref ,(make-identifier r '() (cenv-module cenv))))
+          (else
+           (error "[internal] pass1/variable got weird object:" var)))))
 
+(define (pass1/call program proc args cenv)
+  `($call ,program ,proc ,@(map (lambda (arg) (pass1 arg cenv)) args)))
 
+(define (pass1/global-call id program cenv)
+  (let1 gloc (find-binding (slot-ref id 'module)
+                           (slot-ref id 'name)
+                           #f)
+    (if (not gloc)
+      (pass1/call program `($gref ,id) (cdr program) cenv)
+      (let1 gval (gloc-ref gloc)
+        (cond
+         ((is-a? gval <macro>)
+          (error "macro not supported yet:" program))
+         ((is-a? gval <syntax>)
+          ((get-pass1-syntax gval) program cenv))
+         (else
+          (pass1/call program `($gref ,id) (cdr program) cenv)))))))
+
+(define (pass1/body forms cenv)
+  ;; TODO: internal define
+  `($seq ,@(map (cut pass1 <> cenv) forms)))
+
+(define (ensure-identifier sym-or-id cenv)
+  (if (identifier? sym-or-id)
+    sym-or-id
+    (make-identifier sym-or-id '() (cenv-module cenv))))
+
+;; Returns <list of args>, <# of reqargs>, <has optarg?>
+(define (parse-lambda-args formals)
+  (let loop ((formals formals) (args '()))
+    (cond ((null? formals) (values (reverse args) (length args) #f))
+          ((pair? formals) (loop (cdr formals) (cons (car formals) args)))
+          (else (values (reverse (cons formals args)) (length args) #t)))))
+
+;; Strip syntactic info from form; unlike built-in unwrap-syntax,
+;; this can handle circular structure.
+(define (%unwrap-syntax form)
+  (define (unwrap form history)
+    (cond
+     ((assq form history) form)
+     ((pair? form)
+      (let* ((h  (cons form history))
+             (ca (unwrap (car form) h))
+             (cd (unwrap (cdr form) h)))
+        (if (and (eq? (car form) ca) (eq? (cdr form) cd))
+          form
+          (cons ca cd))))
+     ((identifier? form)
+      (slot-ref form 'name))
+     ((vector? form)
+      (let ((h (cons form history))
+            (len (vector-length form)))
+        (let loop ((i 0))
+          (if (= i len)
+            form
+            (let* ((elt (vector-ref form i))
+                   (nelt (unwrap elt h)))
+              (if (eq? elt nelt)
+                (loop (+ i 1))
+                (let ((newvec (copy-vector form)))
+                  (let loop ((i i))
+                    (if (= i len)
+                      newvec
+                      (begin (vector-set! newvec i
+                                          (unwrap (vector-ref form i) h))
+                             (loop (+ i 1))))))
+                ))))
+        ))
+     (else form)))
+  (unwrap form '()))
+
+;;----------------------------------------------------------------
+;; Pass1 syntaxes
+;;
+
+(define *pass1-syntax-alist* '())
+
+(define-macro (define-pass1-syntax formals . body)
+  `(set! *pass1-syntax-alist*
+         (acons ,(car formals)
+                (lambda ,(cdr formals) ,@body)
+                *pass1-syntax-alist*)))
+
+(define (global-id id)
+  (make-identifier id '() (find-module 'gauche)))
+
+;; Definitions ........................................
+
+(define (pass1/define form flags module cenv origform)
+  (match form
+    ((_ (name . args) body ...)
+     (pass1/define-common `(define name
+                             (,(global-id 'lambda) ,args ,@body))
+                          flags module cenv origform))
+    ((_ name expr)
+     (unless (variable? name)
+       (error "syntax-error:" origform))
+     `($define ,flags
+               ,(make-identifier (%unwrap-syntax name) '() module)
+               ,(pass1 expr cenv)))
+    (else (error "syntax-error:" origform))))
+
+(define-pass1-syntax (define form cenv)
+  (pass1/define form '() (cenv-module module) cenv form))
+
+(define-pass1-syntax (define-constant form cenv)
+  (pass1/define form '(const) (cenv-module module) cenv form))
+
+;; If family ........................................
+
+(define-pass1-syntax (if form cenv)
+  (match form
+    ((_ test then else)
+     `($if ,form ,(pass1 test cenv) ,(pass1 then cenv) ,(pass1 else cenv)))
+    ((_ test then)
+     `($if ,form ,(pass1 test cenv) ,(pass1 then cenv) ($const ,(undefined))))
+    (else
+     (error "syntax-error: malformed if:" form))))
+
+(define-pass1-syntax (and form cenv)
+  (define (rec exprs)
+    (match exprs
+      (() '($const #t))
+      ((expr) (pass1 expr cenv))
+      ((expr . more)
+       `($if #f ,(pass1 expr cenv) ,(rec more) ($it)))
+      (else
+       (error "syntax-error: malformed and:" form))))
+  (rec (cdr form)))
+
+(define-pass1-syntax (or form cenv)
+  (define (rec exprs)
+    (match exprs
+      (() '($const #f))
+      ((expr) (pass1 expr cenv))
+      ((expr . more)
+       `($if #f ,(pass1 expr cenv) ($it) ,(rec more)))
+      (else
+       (error "syntax-error: malformed or:" form))))
+  (rec (cdr form)))
+
+(define-pass1-syntax (when form cenv)
+  (match form
+    ((_ test body ...)
+     `($if ,form ,(pass1 test cenv)
+           ($seq ,@(map (cut pass1 <> cenv) body))
+           ($const ,(undefined))))
+    (else
+     (error "syntax-error: malformed when:" form))))
+
+(define-pass1-syntax (unless form cenv)
+  (match form
+    ((_ test body ...)
+     `($if ,form ,(pass1 test cenv)
+           ($const ,(undefined))
+           ($seq ,@(map (cut pass1 <> cenv) body))))
+    (else
+     (error "syntax-error: malformed unless:" form))))
+
+;; Quote and quasiquote ................................
+
+(define (pass1/quote obj)
+  `($const ,(%unwrap-syntax obj)))
+
+(define-pass1-syntax (quote form cenv)
+  (match form
+    ((_ obj) (pass1/quote obj))
+    (else (error "syntax-error: malformed quote:" form))))
+
+(define-pass1-syntax (quasiquote form cenv)
+  (define (wrap obj orig)
+    (if (eq? obj orig) `($const ,obj) obj))
+  (define (quasi obj)
+    (match obj
+      (('unquote x)
+       (pass1 x cenv))
+      ((x 'unquote-splicing y)            ;; `(x . ,@y)
+       (error "unquote-splicing appeared in invalid context:" obj))
+      ((('unquote-splicing x) 'unquote y) ;; `(,@x . ,y)
+       `($append ,(car obj) ,(pass1 x cenv) ,(pass1 y cenv)))
+      ((('unquote-splicing x) . y)        ;; `(,@x . rest)
+       (let1 yy (quasi y)
+         `($append ,(car obj) ,(pass1 x cenv) ,(wrap yy y))))
+      ((x 'unquote y)                     ;; `(x . ,y)
+       (let1 xx (quasi x)
+         `($cons ,(wrap xx x) ,(pass1 y cenv))))
+      ((x . y)                            ;; general case of pair
+       (let ((ca (quasi (car obj)))
+             (cd (quasi (cdr obj))))
+         (if (and (eq? ca (car obj)) (eq? cd (cdr obj)))
+           obj
+           `($cons ,obj ,(wrap ca (car obj)) ,(wrap cd (cdr obj))))))
+      ((? vector?)
+       (quasi-vector obj))
+      (else obj)))
+
+  (define (quasi-vector obj)
+    (case (scan-vector obj)
+      ((has-unquote)
+       `($vector ,obj
+                 ,@(map (lambda (elt) (let1 v (quasi elt) (wrap v elt)))
+                        (vector->list obj))))
+      ((has-splicing)
+       `($list->vector ,obj ,(quasi (vector->list obj))))
+      (else obj)))
+
+  (define (scan-vector obj)
+    (let loop ((i 0) (r 'const))
+      (if (= i (vector-length obj))
+        r
+        (match (vector-ref obj i)
+          (('unquote-splicing _) 'has-splicing)
+          (('unquote _) (loop (+ i 1) 'has-unquote))
+          (else (loop (+ i 1) r))))))
+  
+  (match form
+    ((_ obj) 
+     (let1 v (quasi obj) (wrap v obj)))
+    (else (error "syntax-error: malformed quasiquote:" form))))
+
+;; Lambda family (binding constructs) ...................
+
+(define-pass1-syntax (lambda form cenv)
+  (match form
+    ((_ formals . body)
+     (receive (args reqargs has-optarg?) (parse-lambda-args formals)
+       (let* ((lvars (map make-lvar args))
+              (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
+         `($lambda ,form ,reqargs ,has-optarg?
+                   ,lvars ,(pass1/body body newenv)))))
+    (else
+     (error "syntax-error: malformed lambda:" form))))
+
+(define-pass1-syntax (receive form cenv)
+  (match form
+    ((_ formals expr body ...)
+     (receive (args reqargs has-optarg?) (parse-lambda-args formals)
+       (let* ((lvars (map make-lvar args))
+              (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
+         `($receive ,form ,reqargs ,has-optarg?
+                    ,lvars ,(pass1/body body newenv)))))
+    (else
+     (error "syntax-error: malformed receive:" form))))
+
+(define-pass1-syntax (let form cenv)
+  (match form
+    ((_ ((var expr) ...) body ...)
+     (let* ((lvars (map make-lvar var))
+            (newenv (cenv-extend cenv (cons #f (map cons var lvars)) #f)))
+       `($let ,form ,lvars ,(map (cut pass1 <> newenv) expr)
+              ,(pass1/body body newenv))))
+    ((_ name ((var expr) ...) body ...)
+     (unless (variable? name)
+       (error "bad name for named let:" name))
+     ;; (let name ((var exp) ...) body ...)
+     ;; == ((letrec ((name (lambda (var ...) body ...))) name) exp ...)
+     (let* ((lvar (make-lvar name))
+            (args (map make-lvar var))
+            (env1 (cenv-extend cenv `(#f (,name . ,lvar)) #f))
+            (env2 (cenv-extend env1 (cons #f (map cons var args)) #f)))
+     `($call ,form
+             ($let #f (,lvar) (($const ,(undefined)))
+                   ($seq ($lset ,lvar
+                                ($lambda ,form ,(length args) #f
+                                         ,args ,(pass1/body body env2)))
+                         ($lref ,lvar)))
+             ,@(map (cut pass1 <> cenv) expr))))
+    (else
+     (error "syntax-error: malformed let:" form))))
+
+(define-pass1-syntax (let* form cenv)
+  (match form
+    ((_ ((var expr) ...) body ...)
+     (let loop ((vars var) (inits expr) (cenv cenv))
+       (if (null? vars)
+         (pass1/body body cenv)
+         (let* ((lv (make-lvar (car vars)))
+                (newenv (cenv-extend cenv (list #f (cons (car vars) lv)) #f)))
+           `($let #f (,lv) (,(pass1 (car inits) cenv))
+                  ,(loop (cdr vars) (cdr inits) newenv))))))
+    (else
+     (error "syntax-error: malformed let*:" form))))
+
+(define-pass1-syntax (letrec form cenv)
+  (match form
+    ((_ ((var expr) ...) body ...)
+     (let* ((lvars (map make-lvar var))
+            (newenv (cenv-extend cenv (cons #f (map cons var lvars)) #f))
+            (setup (map (lambda (lv init)
+                          `($lset ,lv ,(pass1 init newenv)))
+                        lvars expr)))
+       `($let ,form ,lvars ,(map (lambda (_) `($const ,(undefined))) lvars)
+              ($seq ,@setup ,(pass1/body body newenv)))))
+    (else
+     (error "syntax-error: malformed letrec:" form))))
+
+;; Set! ......................................................
+
+(define-pass1-syntax (set! form cenv)
+  (match form
+    ((_ (op . args) expr)
+     `($call ,form
+             ($gref ,(global-id 'setter))
+             ,@(map (cut pass1 <> cenv) args)
+             ,(pass1 expr cenv)))
+    ((_ name expr)
+     (unless (variable? name)
+       (error "syntax-error: malformed set!:" form))
+     (let ((var (cenv-lookup cenv name #f))
+           (val (pass1 expr cenv)))
+       (if (lvar? var)
+         (begin (lvar-set++! var) `($lset ,var ,val))
+         `($gset ,(ensure-identifier var cenv) ,val))))
+    (else
+     (error "syntax-error: malformed set!:" form))))
+
+;; Begin .....................................................
+
+(define-pass1-syntax (begin form cenv)
+  `($seq ,@(map (cut pass1 <> cenv) (cdr form))))
+
+;; Bridge to dispatch new compiler pass-1 syntax handler based on
+;; original binding
+
+(define (get-pass1-syntax val)
+  (cond ((assq val *pass1-syntax-alist*) => cdr)
+        (else (error "pass1 syntax not supported:" val))))
 
 ;;============================================================
 ;; Utilities
@@ -364,6 +748,8 @@
           ((symbol? v) (eq? v sym))
           (else #f)))))
 
+  
+  
 
 (define (find pred lis)
   (let loop ((lis lis))
