@@ -1,15 +1,15 @@
 SCM = snow
 CC = cc
-#CFLAGS = -g -I. -I../gc
-CFLAGS = -O2 -I. -I../gc -I../gc/include
+CFLAGS = -g -I. -I../gc -I../gc/include
+#CFLAGS = -O2 -I. -I../gc -I../gc/include
 LDFLAGS = -lm
 AR = ar
 
 GENERATED = stdlib.c extlib.c
 
-OBJS = core.o vm.o compile.o inline.o class.o boolean.o char.o string.o \
-       list.o port.o hash.o write.o read.o vector.o symbol.o module.o proc.o \
-       number.o io.o load.o promise.o stdlib.o extlib.o
+OBJS = core.o vm.o compile.o error.o inline.o class.o boolean.o char.o \
+       string.o list.o port.o hash.o write.o read.o vector.o symbol.o \
+       module.o proc.o number.o io.o load.o promise.o stdlib.o extlib.o
 
 .SUFFIXES: .stub
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.10 2001-01-17 08:22:37 shiro Exp $
+ *  $Id: gauche.h,v 1.11 2001-01-18 19:41:39 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -209,6 +209,7 @@ typedef struct ScmClosureRec   ScmClosure;
 typedef struct ScmSubrRec      ScmSubr;
 typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
+typedef struct ScmExceptionRec ScmException;
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -224,6 +225,8 @@ typedef struct ScmPromiseRec   ScmPromise;
 #define SCM_VM_CURRENT_INPUT_PORT(vm)   (SCM_VM(vm)->curin)
 #define SCM_VM_CURRENT_OUTPUT_PORT(vm)  (SCM_VM(vm)->curout)
 #define SCM_VM_CURRENT_ERROR_PORT(vm)   (SCM_VM(vm)->curerr)
+
+#define SCM_VM_ERRSTR(vm)               (SCM_VM(vm)->errstr)
 
 extern ScmVM *Scm_VM(void);     /* Returns the current VM */
 
@@ -242,6 +245,8 @@ extern void Scm_Apply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
 extern void Scm_Eval(ScmObj expr, ScmObj env);
 
 extern void Scm_DynamicWind(ScmObj pre, ScmObj body, ScmObj post);
+
+extern void Scm_ThrowEXception(ScmObj exception);
 
 /*---------------------------------------------------------
  * CLASS
@@ -1337,6 +1342,27 @@ extern ScmClass Scm_PromiseClass;
 extern ScmObj Scm_MakePromise(ScmObj code);
 extern void Scm_Force(ScmObj p);
 
+/*--------------------------------------------------------
+ * EXCEPTION
+ */
+
+struct ScmExceptionRec {
+    SCM_HEADER;
+    ScmObj data;
+};
+
+extern ScmClass Scm_ExceptionClass;
+#define SCM_CLASS_EXCEPTION       (&Scm_ExceptionClass)
+
+#define SCM_EXCEPTIONP(obj)       SCM_XTYPEP(obj, SCM_CLASS_EXCEPTION)
+#define SCM_EXCEPTION(obj)        ((ScmException*)(obj))
+#define SCM_EXCEPTION_DATA(obj)   SCM_EXCEPTION(obj)->data
+
+/* Throwing error */
+extern void Scm_Error(const char *msg, ...);
+extern void Scm_SError(ScmObj fmt, ScmObj args);
+
+
 /*-------------------------------------------------------
  * STUB MACROS
  */
@@ -1357,10 +1383,6 @@ extern void Scm_Init(void);
 extern void Scm_Exit(int code);
 extern void Scm_Abort(const char *msg);
 extern void Scm_Panic(const char *msg, ...);
-
-/* Error handling */
-
-extern void Scm_Error(const char *msg, ...);
 
 /* Load */
 

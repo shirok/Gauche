@@ -12,11 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.8 2001-01-17 08:22:38 shiro Exp $
+ *  $Id: vm.c,v 1.9 2001-01-18 19:41:39 shiro Exp $
  */
 
 #include "gauche.h"
-#include "gauche/mem.h"
+#include "gauche/memory.h"
 
 /*
  * The VM.
@@ -56,7 +56,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->parent = base;
     v->module = module ? module : base->module;
     v->escape = base ? base->escape : NULL;
-    v->errstr = SCM_FALSE;
+    v->errorHandler = SCM_FALSE;
 
     v->curin  = SCM_PORT(Scm_Stdin());
     v->curout = SCM_PORT(Scm_Stdout());
@@ -79,7 +79,6 @@ ScmVM *Scm_NewVM(ScmVM *base,
 
 static void vm_reset()
 {
-    theVM->errstr = SCM_FALSE;
     theVM->env = topenv(theVM->module);
     theVM->cont = NULL;
     theVM->argp = SCM_NIL;
@@ -89,11 +88,6 @@ static void vm_reset()
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
     return Scm_Reverse(vm->argp);
-}
-
-ScmObj Scm_VMGetErrorString(ScmVM *vm)
-{
-    return vm->errstr;
 }
 
 /*
@@ -125,13 +119,7 @@ static ScmEnvFrame *newenv(ScmObj info, int nlocals, ScmEnvFrame *up)
 {
     ScmEnvFrame *e;
     int size = sizeof(ScmEnvFrame) + (nlocals-1)*sizeof(ScmObj);
-
-    if (nlocals < 8) {          /* 8 is arbitrary.  can be set any number
-                                   as long as the env size < MAXOBJSZ. */
-        SCM_MALLOC_WORDS(e, size/sizeof(GC_word), ScmEnvFrame*);
-    } else {
-        e = (ScmEnvFrame*)Scm_Malloc(size);
-    }
+    e = (ScmEnvFrame*)Scm_Malloc(size);
     e->up = up;
     e->info = info;
     e->size = nlocals;
@@ -179,7 +167,13 @@ static void run_loop(ScmObj);
 void Scm_Run(ScmObj program)
 {
     vm_reset();
-    run_loop(program);
+    SCM_PUSH_ERROR_HANDLER {
+        run_loop(program);
+    }
+    SCM_WHEN_ERROR {
+        
+    }
+    SCM_POP_ERROR_HANDLER;
 }
 
 void Scm_Cont(void)
@@ -806,7 +800,7 @@ void Scm_Eval(ScmObj expr, ScmObj env)
     theVM->pc = code;
 }
 
-/*
+/*=================================================================
  * Dynamic handlers
  */
 
@@ -864,6 +858,50 @@ static void dynwind_after_cc(ScmObj result, void **data)
     SCM_RETURN(r);
 }
 
+/*=================================================================
+ * Exception handling
+ */
+
+void throw_exception_cc(ScmObj result, void **data)
+{
+    ScmObj handlers = SCM_OBJ(data[0]);
+    if (!SCM_NULLP(handlers)) {
+        ScmObj proc = SCM_CAAR(handlers);
+        void *data = SCM_CDR(handlers);
+        theVM->handlers = SCM_CDR(handlers);
+        Scm_VMPushCC(throw_exception_cc, &data, 1);
+        Scm_Apply0(proc);
+        return;
+    }
+
+    if (theVM->escape) {
+        longjmp(theVM->escape->jbuf, 1);
+    } else {
+        /* No error handler */
+        exit(1);
+    }
+}
+
+void Scm_ThrowException(ScmObj exception)
+{
+    void *data = theVM->handlers;
+    if (SCM_PROCEDUREP(theVM->errorHandler)) {
+        Scm_VMPushCC(throw_exception_cc, &data, 1);
+        Scm_Apply1(theVM->errorHandler, exception);
+        return;
+    } else {
+        /* the default error handler */
+        if (SCM_EXCEPTIONP(exception)) {
+            ScmObj data = SCM_EXCEPTION_DATA(exception);
+            if (SCM_STRINGP(data)) {
+                fprintf(stderr, "%s\n", Scm_GetStringConst(SCM_STRING(data)));
+            }
+        }
+        /* TODO: need to print exception object */
+    }   
+    throw_exception_cc(SCM_UNDEFINED, &data);
+}
+
 /*==============================================================
  * Continuation
  */
@@ -889,28 +927,43 @@ static void throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
      * first, check to see if we need to evaluate dynamic handlers.
      */
     if (cur_handlers != dest_handlers) {
-        if (SCM_PAIRP(cur_handlers) 
-            && SCM_FALSEP(Scm_Memq(SCM_CAR(cur_handlers), dest_handlers))) {
-            /* evaluate "after" handlers of the current continuation */
+        while (SCM_PAIRP(cur_handlers)) {
             SCM_ASSERT(SCM_PAIRP(SCM_CAR(cur_handlers)));
-            data[0] = (void*)SCM_CDR(cur_handlers);
-            data[1] = (void*)dest_handlers;
-            data[2] = (void*)cont;
-            data[3] = (void*)args;
-            Scm_VMPushCC(throw_cont_cc, data, 4);
-            Scm_Apply0(SCM_CDR(SCM_CAR(cur_handlers)));
-            return;
-        } else if (SCM_PAIRP(dest_handlers)
-                   && SCM_FALSEP(Scm_Memq(SCM_CAR(dest_handlers), cur_handlers))) {
-            /* evaluate "before" handlers of the target continuation */
+            if (SCM_CAAR(cur_handlers) == SCM_FALSE)
+                continue;       /* this is an error handler */
+            if (SCM_FALSEP(Scm_Memq(SCM_CAR(cur_handlers), dest_handlers))) {
+                /* evaluate "after" handlers of the current continuation */
+                data[0] = (void*)SCM_CDR(cur_handlers);
+                data[1] = (void*)dest_handlers;
+                data[2] = (void*)cont;
+                data[3] = (void*)args;
+                theVM->handlers = SCM_CDR(cur_handlers);
+                Scm_VMPushCC(throw_cont_cc, data, 4);
+                Scm_Apply0(SCM_CDAR(cur_handlers));
+                return;
+            } else {
+                /* the destination is in the same dynamic environment, so
+                   we don't need to go further */
+                break;
+            }
+        }
+        while (SCM_PAIRP(dest_handlers)) {
             SCM_ASSERT(SCM_PAIRP(SCM_CAR(dest_handlers)));
-            data[0] = (void*)cur_handlers;
-            data[1] = (void*)SCM_CDR(dest_handlers);
-            data[2] = (void*)cont;
-            data[3] = (void*)args;
-            Scm_VMPushCC(throw_cont_cc, data, 4);
-            Scm_Apply0(SCM_CAR(SCM_CAR(dest_handlers)));
-            return;
+            if (SCM_CAAR(dest_handlers) == SCM_FALSE)
+                continue;       /* this is an error handler */
+            if (SCM_FALSEP(Scm_Memq(SCM_CAR(dest_handlers), cur_handlers))) {
+                /* evaluate "before" handlers of the target continuation */
+                data[0] = (void*)cur_handlers;
+                data[1] = (void*)SCM_CDR(dest_handlers);
+                data[2] = (void*)cont;
+                data[3] = (void*)args;
+                theVM->handlers = SCM_CDR(dest_handlers);
+                Scm_VMPushCC(throw_cont_cc, data, 4);
+                Scm_Apply0(SCM_CAR(SCM_CAR(dest_handlers)));
+                return;
+            } else {
+                break;
+            }
         }
     }
 

@@ -12,14 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.5 2001-01-17 08:22:37 shiro Exp $
+ *  $Id: core.c,v 1.6 2001-01-18 19:41:39 shiro Exp $
  */
 
 #include "gauche.h"
 
 /*
  * Malloc wrapper
- *   see gauche/mem.h for inlined version of small object malloc's.
+ *   see gauche/memory.h for inlined version of small object malloc's.
  */
 
 void *Scm_Malloc(size_t size)
@@ -97,35 +97,3 @@ void Scm_Panic(const char *msg, ...)
     exit(1);
 }
 
-/*
- * Error handler should interact with dynamic env.
- * for now, we just jump.
- */
-
-void Scm_Error(const char *msg, ...)
-{
-    ScmVM *vm = Scm_VM();
-    va_list args;
-    
-    if (vm && vm->escape) {
-        SCM_PUSH_ERROR_HANDLER {
-            ScmObj ostr = Scm_MakeOutputStringPort();
-            va_start(args, msg);
-            Scm_Vprintf(SCM_PORT(ostr), msg, args);
-            va_end(args);
-            vm->errstr = Scm_GetOutputString(SCM_PORT(ostr));
-        }
-        SCM_WHEN_ERROR {
-            vm->errstr = SCM_MAKE_STR("Error occurred in error handler");
-        }
-        SCM_POP_ERROR_HANDLER;
-        
-        longjmp(vm->escape->jbuf, 1);
-    } else {
-        /* No error handler is installed.  Just exit. */
-        va_start(args, msg);
-        vfprintf(stderr, msg, args);
-        va_end(args);
-        exit(1);
-    }
-}

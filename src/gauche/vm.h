@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.5 2001-01-16 09:08:46 shiro Exp $
+ *  $Id: vm.h,v 1.6 2001-01-18 19:41:39 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -107,7 +107,8 @@ struct ScmVMRec {
     ScmModule *module;          /* current global namespace */
     ScmErrorHandler *escape;    /* current escape point */
     ScmObj errstr;              /* error string */
-
+    ScmObj errorHandler;        /* error handler */
+    
     int debugLevel;             /* debug level */
     int enableInline;           /* enable inlining on compilation */
 

@@ -230,6 +230,9 @@
   (assert (small-integer? code))
   "  Scm_Exit(code);")
 
+(define-cproc error (fmt &rest args)
+  "  Scm_SError(fmt, args);")
+
 ;; Inspecting feature
 (define-cproc current-vm ()
   "  SCM_RETURN(SCM_OBJ(Scm_VM()));")
