@@ -12,14 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: propagate.scm,v 1.1 2002-10-15 04:06:48 shirok Exp $
+;;;  $Id: propagate.scm,v 1.2 2002-12-04 11:12:23 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL.   THE API MAY CHANGE.
 
 (define-module gauche.mop.propagate
   (use srfi-2)
-  (export <propagate-meta>)
+  (export <propagate-meta> <propagate-mixin>)
   )
 (select-module gauche.mop.propagate)
 
@@ -64,5 +64,10 @@
                             prop name class))
                    )))
           (else (next-method)))))
+
+;; convenient to be used as a mixin
+(define-class <propagate-mixin> ()
+  ()
+  :metaclass <propagate-meta>)
 
 (provide "gauche/mop/propagate")
