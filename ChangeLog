@@ -1,3 +1,8 @@
+2004-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-parse-parameters): better API to support
+	  POST with multipart/form-data.
+
 2004-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/charconv.scm (ces-convert): close temporary ports
