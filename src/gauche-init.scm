@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.23 2001-04-07 06:40:44 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.24 2001-04-23 06:31:08 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -74,6 +74,9 @@
 (with-module gauche
   (autoload "gauche/with" with-output-to-string call-with-output-string
                           with-input-from-string call-with-input-string))
+
+(with-module gauche
+  (autoload "gauche/numerical" gcd lcm))
 
 ;; useful stuff
 (define-syntax check-arg
