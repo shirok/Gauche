@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.20 2001-02-05 10:15:26 shiro Exp $
+ *  $Id: compile.c,v 1.21 2001-02-06 07:00:40 shiro Exp $
  */
 
 #include "gauche.h"
@@ -363,10 +363,16 @@ static ScmObj compile_set(ScmObj form,
         Scm_Error("syntax error: %S", form);
     }
 
-    code = compile_int(expr, env, SCM_COMPILE_NORMAL);
-    codetail = Scm_LastPair(code);
-    ADDCODE1(SCM_VM_INSN(SCM_VM_SET));
-    ADDCODE1(lookup_env(location, env));
+    location = lookup_env(location, env);
+    ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
+    if (SCM_SYMBOLP(location)) {
+        ADDCODE1(SCM_VM_INSN(SCM_VM_GSET));
+        ADDCODE1(location);
+    } else {
+        int dep = SCM_VM_INSN_ARG0(location);
+        int off = SCM_VM_INSN_ARG1(location);
+        ADDCODE1(SCM_VM_INSN2(SCM_VM_LSET, dep, off));
+    }
     return code;
 }
 
@@ -438,11 +444,9 @@ static ScmObj compile_body(ScmObj form,
             SCM_APPEND1(body, bodytail, SCM_VM_INSN1(SCM_VM_LET, idefs));
             SCM_APPEND1(body, bodytail, form);
             for (cnt=0; cnt<idefs; cnt++) {
-                ScmObj loc = compile_varref(SCM_CAR(idef_vars), env);
                 SCM_APPEND(body, bodytail,
                            compile_int(SCM_CAR(idef_vals), env, SCM_COMPILE_NORMAL));
-                SCM_APPEND1(body, bodytail, SCM_VM_INSN(SCM_VM_SET));
-                SCM_APPEND(body, bodytail, loc);
+                SCM_APPEND1(body, bodytail, SCM_VM_INSN2(SCM_VM_LSET, 0, cnt));
                 idef_vars = SCM_CDR(idef_vars);
                 idef_vals = SCM_CDR(idef_vals);
             }
@@ -553,29 +557,18 @@ static ScmSyntax syntax_begin = {
  */
 
 /* Common part for compiling if-family.  TEST_CODE is a form or a
-   compiled code of the test part (if it is a compiled code, the
-   first element must be a vm insn.).
+   compiled code of the test part.
    THEN_CODE and ELSE_CODE must be a compiled code for then clause
-   and else clause, respectively.
-   INSN is a VM instruction to be emitted, which is one of 
-   SCM_VM_IF, SCM_VM_AND or SCM_VM_OR. */
+   and else clause, respectively. */
 
 static ScmObj compile_if_family(ScmObj test_code, ScmObj then_code,
                                 ScmObj else_code,
-                                int mergep, ScmObj env)
+                                int test_compile_p, ScmObj env)
 {
     ScmObj code = SCM_NIL, codetail;
-
-    if (!SCM_PAIRP(test_code) || !SCM_VM_INSNP(SCM_CAR(test_code))) {
+    if (test_compile_p) {
         test_code = compile_int(test_code, env, SCM_COMPILE_NORMAL);
     }
-    if (mergep) {
-        /* make two instruction stream merges */
-        ScmObj next_cell = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-        then_code = Scm_Append2X(then_code, next_cell);
-        else_code = Scm_Append2X(else_code, next_cell);
-    }
-    
     ADDCODE(test_code);
     ADDCODE1(SCM_VM_INSN(SCM_VM_IF));
     ADDCODE1(then_code);
@@ -585,20 +578,23 @@ static ScmObj compile_if_family(ScmObj test_code, ScmObj then_code,
 
 static ScmObj compile_if(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj tail = SCM_CDR(form), then_clause, else_clause;
+    ScmObj tail = SCM_CDR(form);
+    ScmObj then_code = SCM_NIL, then_tail;
+    ScmObj else_code = SCM_NIL, else_tail;
+    ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     int nargs = Scm_Length(tail);
     
     if (nargs < 2 || nargs > 3) Scm_Error("syntax error: %S", form);
-    then_clause = SCM_CADR(tail);
+    SCM_APPEND(then_code, then_tail, compile_int(SCM_CADR(tail), env, ctx));
+    SCM_APPEND(then_code, then_tail, merger);
     if (nargs == 3) {
-        else_clause = SCM_CAR(SCM_CDDR(tail));
+        SCM_APPEND(else_code, else_tail,
+                   compile_int(SCM_CAR(SCM_CDDR(tail)), env, ctx));
     } else {
-        else_clause = SCM_UNDEFINED;
+        SCM_APPEND1(else_code, else_tail, SCM_UNDEFINED);
     }
-    return compile_if_family(SCM_CAR(tail),
-                             compile_int(then_clause, env, ctx),
-                             compile_int(else_clause, env, ctx),
-                             TRUE, env);
+    SCM_APPEND(else_code, else_tail, merger);
+    return compile_if_family(SCM_CAR(tail), then_code, else_code, TRUE, env);
 }
 
 static ScmSyntax syntax_if = {
@@ -610,19 +606,23 @@ static ScmSyntax syntax_if = {
 
 static ScmObj compile_when(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj tail = SCM_CDR(form), body, then_code, else_code;
+    ScmObj tail = SCM_CDR(form), body;
+    ScmObj then_code = SCM_NIL, then_tail;
+    ScmObj else_code = SCM_NIL, else_tail;
+    ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     int unlessp = (int)data;
     int nargs = Scm_Length(tail);
     if (nargs < 2) Scm_Error("syntax error: %S", form);
-    body = SCM_CDR(tail);
-    then_code = compile_body(body, env, ctx);
-    else_code = (ctx == SCM_COMPILE_STMT)? SCM_NIL : SCM_LIST1(SCM_UNDEFINED);
+    SCM_APPEND(then_code, then_tail, compile_body(SCM_CDR(tail), env, ctx));
+    SCM_APPEND(then_code, then_tail, merger);
+    if (ctx != SCM_COMPILE_STMT)
+        SCM_APPEND1(else_code, else_tail, SCM_UNDEFINED);
+    SCM_APPEND(else_code, else_tail, merger);
 
     if (unlessp) {
         /* for UNLESS, we just swap then and else clause. */
         ScmObj t = then_code; then_code = else_code; else_code = t;
     }
-
     return compile_if_family(SCM_CAR(tail), then_code, else_code, TRUE, env);
 }
 
@@ -653,7 +653,7 @@ static ScmObj compile_and_rec(ScmObj conds, ScmObj merger, int orp,
         return compile_if_family(SCM_CAR(conds),
                                  orp? no_more_test : more_test,
                                  orp? more_test : no_more_test,
-                                 FALSE, env);
+                                 TRUE, env);
     }
 }
 
@@ -663,8 +663,7 @@ static ScmObj compile_and(ScmObj form, ScmObj env, int ctx, void *data)
     int orp = (int)data;
     
     if (!SCM_PAIRP(tail)) {
-        /* (and) or (or) is compiled into a literal boolean, or
-           even a null if at the statement context. */
+        /* (and) or (or) is compiled into a literal boolean */
         if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
         else return orp ? SCM_LIST1(SCM_FALSE) : SCM_LIST1(SCM_TRUE);
     } else {
@@ -690,7 +689,7 @@ static ScmSyntax syntax_or = {
 /* Common part of compiling cond/case.
  *   CLAUSES - list of clauses
  *   MERGER - compiled code stream to where all the control emerge.
- *   CASEP - 1 if we're compiling case, 0 for cond.
+ *   CASEP - TRUE if we're compiling case, FALSE for cond.
  */
 static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
                                ScmObj env, int ctx, int casep)
@@ -701,6 +700,7 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     int clen;
 
     if (SCM_NULLP(clauses)) {
+        if (casep) ADDCODE1(SCM_VM_INSN(SCM_VM_POP));
         /* If caller expects a result, let it have undefined value. */
         if (ctx != SCM_COMPILE_STMT) ADDCODE1(SCM_UNDEFINED);
         /* merge control */
@@ -711,7 +711,8 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     
     clause = SCM_CAR(clauses);
     clen = Scm_Length(clause);
-    if (clen <= 0+casep) Scm_Error("invalid clause in the form: %S", form);
+    if ((casep && clen < 2) || (!casep && clen < 1))
+        Scm_Error("invalid clause in the form: %S", form);
     test = SCM_CAR(clause);
     body = SCM_CDR(clause);
 
@@ -724,6 +725,7 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
         if (!SCM_PAIRP(body)) {
             Scm_Error("empty `else' clause is not allowed: %S", form);
         }
+        if (casep) ADDCODE1(SCM_VM_INSN(SCM_VM_POP));
         ADDCODE(compile_body(body, env, ctx));
         ADDCODE(merger);
         return code;
@@ -759,28 +761,29 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
         ADDCODE(merger);
     } else {
         /* Normal case */
+        if (casep) ADDCODE1(SCM_VM_INSN(SCM_VM_POP));
         ADDCODE(compile_body(body, env, ctx));
         ADDCODE(merger);
     }
 
-    /* Rest of clauses.   We have the result of test
-       on the stack when the rest of clauses are called, so
-       we need to pop it first. */
+    /* Rest of clauses. */
     SCM_APPEND(altcode, altcodetail,
                compile_cond_int(form, SCM_CDR(clauses),
                                 merger, env, ctx, casep));
 
-    /* Emit test code for `case' form.  The value of the key is already
-       on top of the stack. */
+    /* Emit test code. */
     if (casep) {
         ScmObj testcode = SCM_NIL, testtail;
         int testlen = Scm_Length(test);
         if (testlen < 0)
             Scm_Error("badly formed clause in case form: %S", clause);
-        SCM_APPEND1(testcode, testtail, SCM_VM_INSN(SCM_VM_PUSH));
+        /* the value of the key is on top of the stack.  */
+        SCM_APPEND1(testcode, testtail, SCM_VM_INSN(SCM_VM_DUP));
         SCM_APPEND1(testcode, testtail, test);
         SCM_APPEND1(testcode, testtail, SCM_VM_INSN(SCM_VM_MEMV));
         test = testcode;
+    } else {
+        test = compile_int(test, env, SCM_COMPILE_NORMAL);
     }
     
     return compile_if_family(test, code, altcode, FALSE, env);
@@ -814,6 +817,7 @@ static ScmObj compile_case(ScmObj form, ScmObj env, int ctx, void *data)
     clauses = SCM_CDR(tail);
 
     ADDCODE(compile_int(key, env, SCM_COMPILE_NORMAL));
+    ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
     merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     ADDCODE(compile_cond_int(form, clauses, merger, env, ctx, TRUE));
     return code;
@@ -855,8 +859,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
          count++, varp=SCM_CDR(varp), valp=SCM_CDR(valp)) {
         ScmObj val = compile_int(SCM_CAR(valp), newenv, SCM_COMPILE_NORMAL);
         ADDCODE(val);
-        ADDCODE1(SCM_VM_INSN(SCM_VM_SET));
-        ADDCODE1(SCM_VM_INSN2(SCM_VM_LREF, 0, count));
+        ADDCODE1(SCM_VM_INSN2(SCM_VM_LSET, 0, count));
             
         if (type == BIND_LET_STAR) {
             SCM_APPEND1(cfr, cfrtail, SCM_CAR(varp));
@@ -1012,10 +1015,9 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
        We need to negate the test so that the loop will exits through
        'else' branch.   Otherwise, 'else' branch becomes circular
        list and the rest of compilers will be confused. */
-    SCM_APPEND(code, codetail, merger);
-    SCM_APPEND(code, codetail,
-               compile_int(SCM_CAR(test), env, SCM_COMPILE_NORMAL));
-    SCM_APPEND1(code, codetail, SCM_VM_INSN(SCM_VM_NOT));
+    ADDCODE(merger);
+    ADDCODE(compile_int(SCM_CAR(test), env, SCM_COMPILE_NORMAL));
+    ADDCODE1(SCM_VM_INSN(SCM_VM_NOT));
     code = compile_if_family(code, bodycode, fincode, FALSE, env);
 
     /* Make the list circular.   */
