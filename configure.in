@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.28 2001-06-02 21:13:09 shirok Exp $
+dnl $Id: configure.in,v 1.29 2001-06-13 06:38:45 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -83,9 +83,7 @@ dnl ===========================================================
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h)
-AC_CHECK_HEADERS(glob.h)
-AC_CHECK_HEADERS(dlfcn.h)
+AC_CHECK_HEADERS(sys/time.h glob.h dlfcn.h sysexits.h)
 
 dnl ===========================================================
 dnl Checks for typedefs, structures, and compiler characteristics.
