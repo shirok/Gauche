@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.105 2004-09-17 23:32:16 shirok Exp $
+ *  $Id: port.c,v 1.106 2004-09-20 13:27:15 shirok Exp $
  */
 
 #include <unistd.h>
@@ -949,6 +949,12 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port)
  * Procedural port
  */
 
+/* To create a procedural port, fill in the ScmPortVTable function
+   pointers and pass it to Scm_MakeVirutalPort.  You don't need to
+   provide all the functions; put NULL if you think you don't
+   provide the functionality.
+*/
+
 /* default dummy procedures */
 static int null_getb(ScmPort *dummy)
     /*ARGSUSED*/
@@ -973,7 +979,7 @@ static ScmObj null_getline(ScmPort *port)
     return SCM_EOF;
 }
 
-static int null_ready(ScmPort *dummy)
+static int null_ready(ScmPort *dummy, int charp)
     /*ARGSUSED*/
 {
     return TRUE;

@@ -1,3 +1,8 @@
+2004-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c, src/gauche.h : changed ScmPortVTable.Ready to take
+	  extra arg to distinguish between byte-ready? and char-ready?.
+
 2004-09-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h : added missing prototypes of several number-related

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.386 2004-09-20 05:43:51 shirok Exp $
+ *  $Id: gauche.h,v 1.387 2004-09-20 13:27:15 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1110,7 +1110,8 @@ SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
    elements.  You can create your own custom buffered port by using
    Scm_MakeBufferedPort() --- with it, you pass ScmPortBuffer with
    the function pointers filled in, which is copied to the port's
-   internal ScmPortBuffer structure. */
+   internal ScmPortBuffer structure.
+   See port.c for the details of function pointers. */
    
 typedef struct ScmPortBufferRec {
     char *buffer;       /* ptr to the buffer area */
@@ -1144,7 +1145,7 @@ typedef struct ScmPortVTableRec {
     int       (*Getc)(ScmPort *p);
     int       (*Getz)(char *buf, int buflen, ScmPort *p);
     ScmObj    (*Getline)(ScmPort *p);
-    int       (*Ready)(ScmPort *p);
+    int       (*Ready)(ScmPort *p, int charp);
     int       (*Putb)(ScmByte b, ScmPort *p);
     int       (*Putc)(ScmChar c, ScmPort *p);
     int       (*Putz)(const char *buf, int len, ScmPort *p);

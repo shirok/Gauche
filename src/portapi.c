@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.22 2004-09-20 05:43:52 shirok Exp $
+ *  $Id: portapi.c,v 1.23 2004-09-20 13:27:15 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -771,7 +771,7 @@ int Scm_ByteReadyUnsafe(ScmPort *p)
             }
             break;
         case SCM_PORT_PROC:
-            SAFE_CALL(p, r = p->src.vt.Ready(p));
+            SAFE_CALL(p, r = p->src.vt.Ready(p, FALSE));
             break;
         default:
             r = TRUE;
@@ -807,7 +807,7 @@ int Scm_CharReadyUnsafe(ScmPort *p)
             }
             break;
         case SCM_PORT_PROC:
-            SAFE_CALL(p, r = p->src.vt.Ready(p));
+            SAFE_CALL(p, r = p->src.vt.Ready(p, TRUE));
             break;
         default:
             r = TRUE;
