@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.8 2001-03-05 04:41:56 shiro Exp $
+ *  $Id: module.c,v 1.9 2001-03-05 05:24:49 shiro Exp $
  */
 
 #include "gauche.h"
@@ -164,6 +164,19 @@ ScmObj Scm_FindModule(ScmSymbol *name)
     ScmHashEntry *e = Scm_HashTableGet(moduleTable, SCM_OBJ(name));
     if (e == NULL) return SCM_FALSE;
     else return e->value;
+}
+
+ScmObj Scm_AllModules(void)
+{
+    ScmObj h = SCM_NIL, t;
+    ScmHashIter iter;
+    ScmHashEntry *e;
+    
+    Scm_HashIterInit(moduleTable, &iter);
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        SCM_APPEND1(h, t, e->value);
+    }
+    return h;
 }
 
 /*----------------------------------------------------------------------
