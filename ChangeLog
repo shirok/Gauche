@@ -1,3 +1,21 @@
+2001-03-18  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.5
+	* src/gauche.h, src/proc.c: applicable objects (including subrs
+	  and closures) are marked so in its class structure.  SCM_PROCEDUREP
+	  is changed accordingly.
+	* src/class.c, src/moplib.stub: further code for mop support.
+	* src/vm.c, src/compile.c, src/gauche/vminsn.h: optimization by
+	  adding shortcut operation of LREF/LSET.
+
+2001-03-17  Shiro Kawai  <shiro@scherzo>
+
+	* doc/Makefile: added.
+	* src/gauche.h, src/gauche/class.h: ScmGeneric and ScmMethod
+	  is now inherits ScmProcedure, for they share the common part
+	  as applicable objects.
+	* src/vm.c: a bit of optimization.
+
 2001-03-16  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.4
