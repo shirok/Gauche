@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.31 2002-06-14 01:41:12 shirok Exp $
+ *  $Id: module.c,v 1.32 2002-08-01 01:11:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -203,7 +203,7 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 
 ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
 {
-    ScmObj lp, syms, badsym;
+    ScmObj lp, syms, badsym = SCM_FALSE;
     int error = FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.2 2002-07-05 21:50:08 uid50821 Exp $
+ *  $Id: portapi.c,v 1.3 2002-08-01 01:11:02 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -51,7 +51,6 @@ void Scm_Putb(ScmByte b, ScmPort *p)
 void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
 #endif
 {
-    int err = FALSE;
     VMDECL;
 
     LOCK(p);
@@ -302,7 +301,7 @@ int Scm_Getb(ScmPort *p)
 int Scm_GetbUnsafe(ScmPort *p)
 #endif
 {
-    int b = 0, r;
+    int b = 0, r = 0;
     VMDECL;
 
     LOCK(p);
@@ -356,7 +355,7 @@ static int getc_scratch_unsafe(ScmPort *p)
 {
     char tbuf[SCM_CHAR_MAX_BYTES];
     int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]), ch, i, curr = p->scrcnt;
-    int r;
+    int r = 0;
     
     memcpy(tbuf, p->scratch, curr);
     p->scrcnt = 0;
@@ -379,7 +378,7 @@ int Scm_Getc(ScmPort *p)
 int Scm_GetcUnsafe(ScmPort *p)
 #endif
 {
-    int first, nb, c = 0, r;
+    int first, nb, c = 0, r = 0;
     VMDECL;
 
     LOCK(p);
@@ -496,7 +495,7 @@ static int getz_scratch(char *buf, int buflen, ScmPort *p)
 static int getz_scratch_unsafe(char *buf, int buflen, ScmPort *p)
 #endif
 {
-    int i, n;
+    int i, n = 0;
     if (p->scrcnt >= buflen) {
         memcpy(buf, p->scratch, buflen);
         p->scrcnt -= buflen;
@@ -517,7 +516,7 @@ int Scm_Getz(char *buf, int buflen, ScmPort *p)
 int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
 #endif
 {
-    int siz, r;
+    int siz = 0, r = 0;
     VMDECL;
     LOCK(p);
     CLOSE_CHECK(p);
@@ -624,7 +623,7 @@ int Scm_CharReady(ScmPort *p)
 int Scm_CharReadyUnsafe(ScmPort *p)
 #endif
 {
-    int r;
+    int r = 0;
     VMDECL;
     if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
     LOCK(p);

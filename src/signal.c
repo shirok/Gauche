@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.22 2002-07-17 19:16:47 shirok Exp $
+ *  $Id: signal.c,v 1.23 2002-08-01 01:11:02 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -320,7 +320,7 @@ static void sig_handle(int signum)
 void Scm_SigCheck(ScmVM *vm)
 {
     ScmObj tail, cell, sp;
-    sigset_t cmask, omask;
+    sigset_t omask;
     int sigQsize, i;
     int sigQcopy[SCM_VM_SIGQ_SIZE]; /* copy of signal queue */
 

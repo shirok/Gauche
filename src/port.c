@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.76 2002-07-18 10:45:29 shirok Exp $
+ *  $Id: port.c,v 1.77 2002-08-01 01:11:02 shirok Exp $
  */
 
 #include <unistd.h>
@@ -117,7 +117,7 @@ static ScmPort *make_port(int dir, int type, int ownerp)
  */
 ScmObj Scm_ClosePort(ScmPort *port)
 {
-    int result;
+    int result = 0;
     ScmVM *vm = Scm_VM();
     PORT_LOCK(port, vm);
     PORT_SAFE_CALL(port,
@@ -139,7 +139,7 @@ ScmObj Scm_WithPortLocking(ScmPort *port, ScmObj (*proc)(ScmPort*, void*),
                            void *data)
 {
     ScmVM *vm = Scm_VM();
-    ScmObj r;
+    ScmObj r = SCM_FALSE;
     PORT_LOCK(port, vm);
     PORT_SAFE_CALL(port, r = proc(port, data));
     PORT_UNLOCK(port);

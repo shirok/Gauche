@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.51 2002-07-31 22:09:11 shirok Exp $
+ *  $Id: read.c,v 1.52 2002-08-01 01:11:02 shirok Exp $
  */
 
 #include <stdio.h>
@@ -21,12 +21,13 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/port.h"
 
 /*
  * READ
  */
 
-static void   read_context_init(ScmReadContext *ctx);
+static void   read_context_init(ScmVM *vm, ScmReadContext *ctx);
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep);
@@ -63,13 +64,18 @@ static ScmHashTable *read_ctor_table;
 ScmObj Scm_Read(ScmObj port)
 {
     ScmReadContext ctx;
-    read_context_init(&ctx);
+    ScmVM *vm = Scm_VM();
+    volatile ScmObj r = SCM_NIL;
+    
+    read_context_init(vm, &ctx);
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-    return Scm_WithPortLocking(SCM_PORT(port),
-                               (ScmObj (*)(ScmPort*,void*))read_internal,
-                               (void*)&ctx);
+
+    PORT_LOCK(SCM_PORT(port), vm);
+    PORT_SAFE_CALL(SCM_PORT(port), r = read_internal(SCM_PORT(port), &ctx));
+    PORT_UNLOCK(SCM_PORT(port));
+    return r;
 }
 
 /* convenience functions */
@@ -86,28 +92,30 @@ ScmObj Scm_ReadFromCString(const char *cstr)
     return Scm_Read(inp);
 }
 
-static ScmObj read_list_proc(ScmPort *port, void *data)
-{
-    return read_list(port, ((ScmReadContext*)data)->closer,
-                     (ScmReadContext*)data);
-}
-
 ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 {
     ScmReadContext ctx;
-    read_context_init(&ctx);
+    ScmVM *vm = Scm_VM();
+    volatile ScmObj r = SCM_NIL;
+
+    read_context_init(vm, &ctx);
     ctx.closer = closer;
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-    return Scm_WithPortLocking(SCM_PORT(port), read_list_proc, (void*)&ctx);
+    
+    PORT_LOCK(SCM_PORT(port), vm);
+    PORT_SAFE_CALL(SCM_PORT(port),
+                   r = read_list(SCM_PORT(port), closer, &ctx));
+    PORT_UNLOCK(SCM_PORT(port));
+    return r;
 }
 
-static void read_context_init(ScmReadContext *ctx)
+static void read_context_init(ScmVM *vm, ScmReadContext *ctx)
 {
     ctx->flags = SCM_READ_SOURCE_INFO;
     ctx->table = NULL;
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)) {
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_CASE_FOLD)) {
         ctx->flags |= SCM_READ_CASE_FOLD;
     }
 }

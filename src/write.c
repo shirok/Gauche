@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.34 2002-07-31 22:09:12 shirok Exp $
+ *  $Id: write.c,v 1.35 2002-08-01 01:11:02 shirok Exp $
  */
 
 #include <stdio.h>
@@ -845,7 +845,7 @@ struct vprintf_ctx {
  * va_list type of argument in a closure packet easily.
  */
 
-static vprintf_proc(ScmPort *out, const char *fmt, ScmObj args)
+static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args)
 {
     const char *fmtp = fmt;
     ScmObj val;
@@ -1016,7 +1016,6 @@ static vprintf_proc(ScmPort *out, const char *fmt, ScmObj args)
 
 void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
 {
-    struct vprintf_ctx ctx;
     ScmObj h = SCM_NIL, t = SCM_NIL;
     const char *fmtp = fmt;
     ScmVM *vm;

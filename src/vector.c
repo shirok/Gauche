@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.18 2002-06-25 06:28:04 shirok Exp $
+ *  $Id: vector.c,v 1.19 2002-08-01 01:11:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -68,7 +68,7 @@ ScmObj Scm_ListToVector(ScmObj l)
 
 ScmObj Scm_VectorToList(ScmVector *v, int start, int end)
 {
-    int i, len = SCM_VECTOR_SIZE(v);
+    int len = SCM_VECTOR_SIZE(v);
     SCM_CHECK_START_END(start, end, len);
     return Scm_ArrayToList(SCM_VECTOR_ELEMENTS(v)+start,
                            end-start);

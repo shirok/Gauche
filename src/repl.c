@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.22 2002-07-05 09:46:42 shirok Exp $
+ *  $Id: repl.c,v 1.23 2002-08-01 01:11:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -122,7 +122,6 @@ static ScmObj repl_main(ScmObj *args, int nargs, void *data)
 
 static ScmObj repl_error_handle(ScmObj *args, int nargs, void *data)
 {
-    ScmObj *closure = (ScmObj*)data;
     SCM_ASSERT(nargs == 1);
     Scm_ReportError(args[0]);
     return SCM_TRUE;
