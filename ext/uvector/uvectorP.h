@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: uvectorP.h,v 1.11 2002-06-22 04:07:56 shirok Exp $
+ *  $Id: uvectorP.h,v 1.12 2002-06-22 11:06:10 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -417,7 +417,7 @@
   } while (0)
 #define U32ADD(dst, x, y, clamp) dst = uadd(x, y, clamp)
 #define U32SUB(dst, x, y, clamp) dst = usub(x, y, clamp)
-#define U32MUL(dst, x, y, clamp) dst = umul(x, y, CLAMP_HI_P(clamp))
+#define U32MUL(dst, x, y, clamp) dst = umul(x, y, clamp)
 #define U32ADDOBJ(dst, x, y, clamp) \
   dst = uaddobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
 #define U32SUBOBJ(dst, x, y, clamp) \
@@ -645,7 +645,7 @@
 
 #define U64ADD(dst, x, y, clamp) dst = uadd(x, y, clamp)
 #define U64SUB(dst, x, y, clamp) dst = usub(x, y, clamp)
-#define U64MUL(dst, x, y, clamp) dst = umul(x, y, CLAMP_HI_P(clamp))
+#define U64MUL(dst, x, y, clamp) dst = umul(x, y, clamp)
 #define U64DIV(dst, x, y) dst = 0
 #define U64AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define U64IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)

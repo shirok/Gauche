@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.12 2002-06-20 08:49:26 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.13 2002-06-22 11:06:10 shirok Exp $
 ;;;
 
 "
@@ -148,6 +148,11 @@ emit() {
   (assert (${vecttag}vector? v0))
   " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_MUL, clamp_arg(clamp)));")
+
+(define-cproc ${vecttag}vector-dot (v0 v1)
+  (assert (${vecttag}vector? v0))
+  (assert (${vecttag}vector? v1))
+  "SCM_RETURN(Scm_${vecttype}DotProd(v0, v1));")
 
 EOF
 

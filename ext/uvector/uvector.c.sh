@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.18 2002-06-19 08:18:23 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.19 2002-06-22 11:06:10 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -52,11 +52,11 @@ ScmObj Scm_UvectorU64Min = SCM_NIL;
 
 #define CHECK_START_END(start, end, size)                   \\
   do {                                                      \\
-    if (start < 0 || start >= size) {                       \\
+    if (start < 0 || start > size) {                        \\
         Scm_Error("start index out of range: %d\n", start); \\
     }                                                       \\
     if (end < 0) end = size;                                \\
-    else if (end < start || end >= size) {                  \\
+    else if (end <= start || end > size) {                  \\
         Scm_Error("end index out of range: %d\n", end);     \\
     }                                                       \\
   } while (0)
