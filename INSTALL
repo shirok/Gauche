@@ -4,7 +4,7 @@
                         Compiling and Installing Gauche
 
 
-$Id: INSTALL,v 1.5 2001-05-03 19:22:26 shirok Exp $
+$Id: INSTALL,v 1.6 2001-05-29 04:53:31 shirok Exp $
 
 Note: The Gauche system is a work in progress and frequently updated.
 Check out the latest information on the site:
@@ -33,6 +33,26 @@ encoding.
   ./configure --enable-encoding=utf-8   ;; UTF-8
   ./configure --enable-encoding=sjis    ;; Shift JIS
   ./configure --enable-encoding=no      ;; No multibyte string
+
+
+[Selecting SLIB location]
+-------------------------
+
+SLIB is a portable Scheme library containing various useful functions,
+entirely written in Scheme.  Gauche can use SLIB features.
+
+The configure script tries to find where SLIB, a portable scheme
+library, is installed.  It looks for some typical directories like
+/usr/local/slib or /usr/share/slib.  If you installed your SLIB in
+some non-standard location, you can tell it to the configure script as
+follows:
+
+   ./configure --with-slib=PATH
+
+where PATH is the path you installed your SLIB.
+
+Gauche works without SLIB, anyway.  If you're not interested, you
+don't need to care about this.
 
 
 [Customizing install location]
