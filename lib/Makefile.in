@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.19 2001-05-06 23:58:27 shirok Exp $
+#  $Id: Makefile.in,v 1.20 2001-05-29 04:27:41 shirok Exp $
 #
 
 prefix = @prefix@
@@ -33,16 +33,16 @@ SUBDIRS = gauche gauche/vm gauche/serializer rfc srfi-1 srfi-13 srfi-14
 
 INSTALL=@INSTALL@
 
-all :
+all : $(SCMS)
 
 clean :
 	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ rfc/*~ srfi-1/*~
 
 distclean : clean
-	rm -f Makefile
+	rm -f Makefile slib.scm
 
 realclean : clean
-	rm -f Makefile
+	rm -f Makefile slib.scm
 
 install : all
 	for d in $(SUBDIRS); do \

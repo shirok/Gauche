@@ -1,8 +1,56 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.25 2001-05-26 21:14:34 shirok Exp $
+dnl $Id: configure.in,v 1.26 2001-05-29 04:27:41 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
+
+dnl ==========================================================
+dnl Process args given to configre
+AC_ARG_ENABLE(multibyte, [--enable-multibyte=ENCODING:  Enables multibyte string handling.
+                          This option is ON by default.  Following encodings
+                          are currently recognized:
+                             euc-jp     EUC-JP code (default)
+                             utf-8      UTF-8
+                             sjis       Shift-JIS
+                             no         No multibyte support ], [
+ case $enable_multibyte in
+   euc-jp|yes)     AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
+   utf-8|utf8)     AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
+   sjis|shift-jis) AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
+   no|none) ;;
+   *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
+      exit 1;;
+ esac], [ AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP)])
+
+SLIB_DIR=/usr/local/slib
+AC_ARG_WITH(slib, [--with-slib[=PATH]:       Configure Gauche's slib module to use Aubrey
+                          Jaffer's SLIB installed under PATH.  If PATH is
+                          not specified, or this option is omitted, Gauche
+                          still tries to find your slib installation from
+                          some typical places.], [
+ case $with_slib in 
+   no)  search_slib=no;;
+   yes) search_slib=yes;;
+   *)   search_slib=no; SLIB_DIR=$with_slib;;
+ esac
+], [ search_slib=yes ])
+
+if test $search_slib = "yes"; then
+  AC_MSG_CHECKING(slib)
+  slib_found=no
+  for dir in /usr/local/slib /usr/local/lib/slib /usr/share/slib /usr/local/share/slib /usr/src/slib; do
+    if test -f $dir/require.scm; then
+       SLIB_DIR=$dir
+       AC_MSG_RESULT($SLIB_DIR)
+       slib_found=yes
+       break
+    fi
+  done
+  if test $slib_found = "no"; then
+    AC_MSG_RESULT([not found, using fallback $SLIB_DIR])
+  fi
+fi
+AC_SUBST(SLIB_DIR)
 
 dnl ==========================================================
 dnl Checks for programs.
@@ -186,23 +234,6 @@ GAUCHE_VERSION=`cat VERSION`
 AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
 
-dnl ==========================================================
-dnl Process args given to configre
-AC_ARG_ENABLE(multibyte, [--enable-multibyte=ENCODING:  Enables multibyte string handling.
-This option is ON by default.  Following encodings are currently recognized:
-  --enable-multibyte=euc-jp     EUC-JP code (default)
-  --enable-multibyte=utf-8      UTF-8
-  --enable-multibyte=sjis       Shift-JIS
-  --enable-multibyte=no         No multibyte support ], [
- case $enable_multibyte in
-   euc-jp|yes)     AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
-   utf-8|utf8)     AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
-   sjis|shift-jis) AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
-   no|none) ;;
-   *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
-      exit 1;;
- esac], [ AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP)])
-
 dnl ===========================================================
 dnl Configure extensions
 changequote(<<, >>)dnl
@@ -212,5 +243,5 @@ AC_CONFIG_SUBDIRS($extensions)
 
 dnl ===========================================================
 dnl Create output files
-AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile 
+AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile lib/slib.scm
           Makefile)
