@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.182 2002-04-26 09:30:42 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.183 2002-04-26 09:57:35 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6104,6 +6104,23 @@ gosh> (gc)
 gosh> (weak-vector-ref v 0)
 #f
 @end example
+
+@deftp {Builtin Class} <weak-vector>
+@c EN
+The weak vector class.  Inherits @code{<sequence>} and @code{<collection>},
+so you can use
+@code{gauche.collection} (@xref{Collection framework}) and
+@code{gauche.sequence} (@xref{Sequence framework}).
+@c JP
+Weak vectorのクラスです。@code{<sequence>}と@code{<collection>}を継承しているので、
+@code{gauche.collection} (@ref{Collection framework}参照) と
+@code{gauche.sequence} (@ref{Sequence framework}参照) も使えます。
+@c COMMON
+@example
+(coerce-to <weak-vector> '(1 2 3 4))
+  @result{} a weak vector with four elements
+@end example
+@end deftp
 
 @defun make-weak-vector size
 @c EN
