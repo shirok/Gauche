@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.12 2001-04-22 07:37:32 shiro Exp $
+ *  $Id: regexp.c,v 1.13 2001-04-26 07:06:00 shiro Exp $
  */
 
 #include <setjmp.h>
@@ -472,7 +472,7 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
             do {
                 ch = SCM_CHAR_VALUE(item);
                 nb = SCM_CHAR_NBYTES(ch);
-                SCM_STR_PUTC(chbuf, SCM_CHAR_VALUE(item));
+                SCM_CHAR_PUT(chbuf, SCM_CHAR_VALUE(item));
                 for (i=0; i<nb; i++) re_compile_emit(ctx, chbuf[i]);
                 nrun += nb;
                 cp = SCM_CDR(cp);
@@ -816,7 +816,7 @@ void re_exec_rec(const char *code,
         case RE_SET:
             if (ctx->stop == input) return;
             param = (unsigned char)*code++;
-            SCM_STR_GETC(input, ch);
+            SCM_CHAR_GET(input, ch);
             cset = ctx->rx->sets[param];
             if (!Scm_CharSetContains(cset, ch)) return;
             input += SCM_CHAR_NBYTES(ch);
@@ -824,7 +824,7 @@ void re_exec_rec(const char *code,
         case RE_NSET:
             if (ctx->stop == input) return;
             param = (unsigned char)*code++;
-            SCM_STR_GETC(input, ch);
+            SCM_CHAR_GET(input, ch);
             cset = ctx->rx->sets[param];
             if (Scm_CharSetContains(cset, ch)) return;
             input += SCM_CHAR_NBYTES(ch);

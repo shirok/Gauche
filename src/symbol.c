@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.16 2001-04-22 07:51:29 shiro Exp $
+ *  $Id: symbol.c,v 1.17 2001-04-26 07:06:00 shiro Exp $
  */
 
 #include "gauche.h"
@@ -142,7 +142,7 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             SCM_PUTC('|', port);
             for (q=p; q<p+siz; ) {
                 unsigned int ch;
-                SCM_STR_GETC(q, ch);
+                SCM_CHAR_GET(q, ch);
                 q += SCM_CHAR_NBYTES(ch);
                 if (ch < 128) {
                     if (special[ch] & 8) {

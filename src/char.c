@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.14 2001-04-22 07:30:41 shiro Exp $
+ *  $Id: char.c,v 1.15 2001-04-26 07:06:00 shiro Exp $
  */
 
 #include <ctype.h>
@@ -27,6 +27,19 @@ ScmObj Scm_CharEncodingName(void)
 {
     return SCM_INTERN(SCM_CHAR_ENCODING_NAME);
 }
+
+/* includes encoding-specific auxiliary functions */
+#define SCM_CHAR_ENCODING_BODY
+#if   defined(GAUCHE_CHAR_ENCODING_EUC_JP)
+#include "gauche/char_euc_jp.h"
+#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
+#include "gauche/char_utf_8.h"
+#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
+#include "gauche/char_sjis.h"
+#else
+#include "gauche/char_none.h"
+#endif
+
 
 /*=======================================================================
  * Character set (cf. SRFI-14)
@@ -72,7 +85,7 @@ static void charset_print_ch(ScmPort *out, ScmChar ch)
     } else {
         char chbuf[SCM_CHAR_MAX_BYTES];
         int i;
-        SCM_STR_PUTC(chbuf, ch);
+        SCM_CHAR_PUT(chbuf, ch);
         for (i=0; i<SCM_CHAR_NBYTES(ch); i++) {
             Scm_Printf(out, "%c", chbuf[i]);
         }

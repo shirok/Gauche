@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.14 2001-04-22 07:40:38 shiro Exp $
+ *  $Id: read.c,v 1.15 2001-04-26 07:06:00 shiro Exp $
  */
 
 #include <stdio.h>
@@ -494,10 +494,10 @@ static ScmObj maybe_uvector(ScmPort *port, char ch)
     if (tag == NULL) {
         char buf[SCM_CHAR_MAX_BYTES*4], *bufp = buf;
         *bufp++ = ch;
-        SCM_STR_PUTC(bufp, c1);
+        SCM_CHAR_PUT(bufp, c1);
         bufp += SCM_CHAR_NBYTES(c1);
         if (c2 != SCM_CHAR_INVALID) {
-            SCM_STR_PUTC(bufp, c2);
+            SCM_CHAR_PUT(bufp, c2);
             bufp += SCM_CHAR_NBYTES(c2);
         }
         *bufp = '\0';

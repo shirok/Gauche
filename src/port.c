@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.20 2001-04-24 19:49:34 shiro Exp $
+ *  $Id: port.c,v 1.21 2001-04-26 07:06:00 shiro Exp $
  */
 
 #include <unistd.h>
@@ -259,7 +259,7 @@ int Scm__PortFileGetc(int prefetch, ScmPort *port)
         port->bufcnt++;
     }
     p = port->buf;
-    SCM_STR_GETC(p, ch);
+    SCM_CHAR_GET(p, ch);
     port->bufcnt = 0;
     return ch;
 }
@@ -273,7 +273,7 @@ int Scm__PortGetbInternal(ScmPort *port)
     if ((ch = port->ungotten) != SCM_CHAR_INVALID) {
         char *p = port->buf;
         port->bufcnt = SCM_CHAR_NBYTES(ch);
-        SCM_STR_PUTC(p, ch);
+        SCM_CHAR_PUT(p, ch);
         port->ungotten = SCM_CHAR_INVALID;
     }
     if (!port->bufcnt) {
@@ -315,7 +315,7 @@ int Scm__PortGetcInternal(ScmPort *port)
             port->buf[port->bufcnt] = b;
         }
         p = port->buf;
-        SCM_STR_GETC(p, ch);
+        SCM_CHAR_GET(p, ch);
     }
     return ch;
 }
@@ -579,7 +579,7 @@ static int fdport_getc_unbuffered(ScmPort *port)
         nread = read(pdata->info.fd, &chbuf[chcnt], 1);
         CHECK_RESULT(nread, pdata, SCM_CHAR_INVALID);
     }
-    SCM_STR_GETC(chbuf, ch);
+    SCM_CHAR_GET(chbuf, ch);
     if (ch == '\n') { pdata->info.line++; pdata->info.position = 1; }
     else pdata->info.position++;
     return ch;
@@ -608,7 +608,7 @@ static int fdport_putc_unbuffered(ScmPort *port, ScmChar ch)
     int nwrote, nbytes, count;
     char chbuf[SCM_CHAR_MAX_BYTES], *bufp;
     count = nbytes = SCM_CHAR_NBYTES(ch);
-    SCM_STR_PUTC(chbuf, ch);
+    SCM_CHAR_PUT(chbuf, ch);
     bufp = chbuf;
     do {
         nwrote = write(pdata->info.fd, bufp, count);

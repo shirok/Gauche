@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.121 2001-04-25 07:31:08 shiro Exp $
+ *  $Id: gauche.h,v 1.122 2001-04-26 07:06:00 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -45,17 +45,6 @@ extern "C" {
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
 #define SCM_VM_STACK_SIZE     10000
-#define CHARCODE_EUC_JP
-
-#ifdef CHARCODE_EUC_JP
-#include "gauche/char_euc_jp.h"
-#else
-#ifdef CHARCODE_SJIS
-#include "gauche/char_sjis.h"
-#else
-#include "gauche/char_utf8.h"
-#endif
-#endif
 
 /* Some useful macros */
 
@@ -202,6 +191,16 @@ extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define SCM_CHAR_DOWNCASE(ch)   (SCM_CHAR_UPPER_P(ch)?((ch)+('a'-'A')):(ch))
 
 extern ScmObj Scm_CharEncodingName(void);
+
+#if   defined(GAUCHE_CHAR_ENCODING_EUC_JP)
+#include "gauche/char_euc_jp.h"
+#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
+#include "gauche/char_utf_8.h"
+#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
+#include "gauche/char_sjis.h"
+#else
+#include "gauche/char_none.h"
+#endif
 
 /*
  * HEAP ALLOCATED OBJECTS
@@ -747,7 +746,7 @@ extern void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
         int siz_DSTR = SCM_CHAR_NBYTES(ch_DSTR);        \
         if (d_DSTR->current + siz_DSTR >= d_DSTR->end)  \
             Scm__DStringRealloc(d_DSTR, siz_DSTR);      \
-        SCM_STR_PUTC(d_DSTR->current, ch_DSTR);         \
+        SCM_CHAR_PUT(d_DSTR->current, ch_DSTR);         \
         d_DSTR->current += siz_DSTR;                    \
         if (d_DSTR->length >= 0) d_DSTR->length++;      \
     } while (0)
@@ -935,7 +934,7 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
     putc(b, SCM_PORT(port)->src.file.fp)
 #define SCM__FILE_PUTC(c, port)                         \
     do { char buf_PORT[SCM_CHAR_MAX_BYTES];             \
-         SCM_STR_PUTC(buf_PORT, c);                     \
+         SCM_CHAR_PUT(buf_PORT, c);                     \
          fwrite(buf_PORT, 1, SCM_CHAR_NBYTES(c),        \
                 SCM_PORT(port)->src.file.fp);           \
     } while(0)
@@ -1084,7 +1083,7 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
            if (SCM_PORT(port)->src.istr.rest < siz) {           \
                (c) = EOF;                                       \
            } else {                                             \
-               SCM_STR_GETC(cp, c);                             \
+               SCM_CHAR_GET(cp, c);                             \
            }                                                    \
            SCM_PORT(port)->src.istr.current += siz + 1;         \
            SCM_PORT(port)->src.istr.rest -= siz + 1;            \

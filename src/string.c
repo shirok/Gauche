@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.26 2001-04-25 07:30:13 shiro Exp $
+ *  $Id: string.c,v 1.27 2001-04-26 07:06:00 shiro Exp $
  */
 
 #include <stdio.h>
@@ -140,7 +140,7 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
     char *p;
     
     for (i=0, p=ptr; i<len; i++, p+=size) {
-        SCM_STR_PUTC(p, fill);
+        SCM_CHAR_PUT(p, fill);
     }
     ptr[size*len] = '\0';
     return SCM_OBJ(make_str(len, size*len, ptr));
@@ -163,7 +163,7 @@ static ScmObj makestring_from_list(ScmObj chars)
     bufp = buf = SCM_NEW_ATOMIC2(char *, size+1);
     SCM_FOR_EACH(cp, chars) {
         ch = SCM_CHAR_VALUE(SCM_CAR(cp));
-        SCM_STR_PUTC(bufp, ch);
+        SCM_CHAR_PUT(bufp, ch);
         bufp += SCM_CHAR_NBYTES(ch);
     }
     *bufp = '\0';
@@ -245,8 +245,8 @@ static int mb_strcasecmp(const char *px, int lenx,
 {
     int cx, cy, ccx, ccy, ix, iy;
     for (; lenx > 0 && leny > 0; lenx--, leny--, px+=ix, py+=iy) {
-        SCM_STR_GETC(px, cx);
-        SCM_STR_GETC(py, cy);
+        SCM_CHAR_GET(px, cx);
+        SCM_CHAR_GET(py, cy);
         ccx = SCM_CHAR_UPCASE(cx);
         ccy = SCM_CHAR_UPCASE(cy);
         if (ccx != ccy) return (ccx - ccy);
@@ -298,7 +298,7 @@ ScmChar Scm_StringRef(ScmString *str, int pos)
             if (pos < len) {
                 const char *p = forward_pos(SCM_STRING_START(str), pos);
                 ScmChar c;
-                SCM_STR_GETC(p, c);
+                SCM_CHAR_GET(p, c);
                 return c;
             }
         } else {
@@ -490,7 +490,7 @@ ScmObj Scm_StringSet(ScmString *x, int k, ScmChar ch)
 {
     char buf[SCM_CHAR_MAX_BYTES+1];
     int size = SCM_CHAR_NBYTES(ch);
-    SCM_STR_PUTC(buf, ch);
+    SCM_CHAR_PUT(buf, ch);
     return Scm_StringSubstituteCstr(x, k, k+1, buf, size, 1);
 }
 
@@ -592,7 +592,7 @@ ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
         ScmChar cc;
         int ncc;
 
-        SCM_STR_GETC(p, cc);
+        SCM_CHAR_GET(p, cc);
         ncc = SCM_CHAR_NBYTES(cc);
         if (ch == cc) {
             SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
@@ -708,7 +708,7 @@ ScmObj Scm_StringToList(ScmString *str)
     ScmChar ch;
     
     while (len-- > 0) {
-        SCM_STR_GETC(bufp, ch);
+        SCM_CHAR_GET(bufp, ch);
         bufp += SCM_CHAR_NBYTES(ch);
         SCM_APPEND1(start, end, SCM_MAKE_CHAR(ch));
     }
@@ -769,7 +769,7 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     memcpy(p, SCM_STRING_START(str), prelen);
     p += prelen;
     for (i=0; i < end-start; i++) {
-        SCM_STR_PUTC(p, ch);
+        SCM_CHAR_PUT(p, ch);
         p += chlen;
     }
     memcpy(p, SCM_STRING_START(str) + prelen + midlen, postlen);
@@ -794,7 +794,7 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             int len = SCM_STRING_LENGTH(str);
 
             while (len--) {
-                SCM_STR_GETC(cp, ch);
+                SCM_CHAR_GET(cp, ch);
                 switch (ch) {
                 case '\\': SCM_PUTCSTR("\\\\", port); break;
                 case '"':  SCM_PUTCSTR("\\\"", port); break;
