@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.32 2001-03-27 10:49:50 shiro Exp $
+ *  $Id: class.c,v 1.33 2001-03-29 06:06:06 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,6 +27,9 @@ static int class_print(ScmObj, ScmPort *, int);
 static int generic_print(ScmObj, ScmPort *, int);
 static int method_print(ScmObj, ScmPort *, int);
 static int slot_accessor_print(ScmObj, ScmPort *, int);
+static int object_print(ScmObj, ScmPort *, int);
+
+static ScmObj object_print_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
 
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static void scheme_slot_default(ScmObj obj);
@@ -83,6 +86,7 @@ SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericWriteObject, object_print_fallback, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
@@ -242,7 +246,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance = SCM_NEW2(ScmClass*,
                         sizeof(ScmClass) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
-    instance->print = NULL;
+    instance->print = object_print; /* default print, calls write-object */
     instance->equal = NULL;
     instance->compare = NULL;
     instance->serialize = NULL; /* class_serialize? */
@@ -979,6 +983,32 @@ static SCM_DEFINE_METHOD(object_initialize_rec,
                          object_initialize_SPEC,
                          object_initialize, NULL);
 
+/* default object printer delegates print action to generic function
+   write-object.   We can't use VMApply since this function can be
+   called deep in the recursive stack of Scm_Write, so the control
+   may not return to VM immediately. */
+static int object_print(ScmObj obj, ScmPort *port, int mode)
+{
+    Scm_Apply(SCM_OBJ(&Scm_GenericWriteObject), SCM_LIST2(obj, SCM_OBJ(port)));
+    /* TODO: Scm_Write expects this function returns # of characters
+       printed.  However, it'll be a burden for method writers to
+       ensure calculating the value.  Port should keep the number, and
+       Scm_Write can take the difference.  For now, I just return 0. */
+    return 0;
+}
+
+static ScmObj object_print_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
+{
+    ScmClass *klass;
+    if (nargs != 2 || (nargs == 2 && !SCM_OPORTP(args[1]))) {
+        Scm_Error("No applicable method for write-object with %S",
+                  Scm_ArrayToList(args, nargs));
+    }
+    klass = Scm_ClassOf(args[0]);
+    Scm_Printf(SCM_PORT(args[1]), "#<%A %p>", klass->name, args[0]);
+    return SCM_TRUE;
+}
+
 /*=====================================================================
  * Generic function
  */
@@ -1590,6 +1620,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
+    GINIT(&Scm_GenericWriteObject, "write-object");
 
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&class_compute_cpl_rec);
