@@ -10,17 +10,12 @@
 ;;; change of current DLL build process.   For now, I omit the use
 ;;; of uvector if defined(__CYGWIN__).
 
-(define-type "mersenne-twister" mersenne-twister?
-  "ScmMersenneTwister*" "SCM_MERSENNE_TWISTER_P" "SCM_MERSENNE_TWISTER")
-(define-type "u32vector" u32vector?
-  "ScmU32Vector*" "SCM_U32VECTORP" "SCM_U32VECTOR")
-(define-type "f32vector" f32vector?
-  "ScmF32Vector*" "SCM_F32VECTORP" "SCM_F32VECTOR")
-(define-type "f64vector" f64vector?
-  "ScmF64Vector*" "SCM_F64VECTORP" "SCM_F64VECTOR")
+(define-type <mersenne-twister> "ScmMersenneTwister*")
+(define-type <u32vector> "ScmU32Vector*")
+(define-type <f32vector> "ScmF32Vector*")
+(define-type <f64vector> "ScmF64Vector*")
 
-(define-cproc mt-random-set-seed! (mt init)
-  (assert (mersenne-twister? mt))
+(define-cproc mt-random-set-seed! (mt::<mersenne-twister> init)
   "if (SCM_EXACTP(init)) {
     Scm_MTInitByUI(mt, Scm_GetUInteger(init));
 #if !defined(__CYGWIN__)
@@ -32,8 +27,7 @@
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc mt-random-get-state (mt)
-  (assert (mersenne-twister? mt))
+(define-cproc mt-random-get-state (mt::<mersenne-twister>)
   "
 #if !defined(__CYGWIN__)
    ScmObj v = Scm_MakeU32Vector(N+1, 0);
@@ -47,9 +41,7 @@
    ")
 
 (if "!defined(__CYGWIN__)"
-(define-cproc mt-random-set-state! (mt state)
-  (assert (mersenne-twister? mt))
-  (assert (u32vector? state))
+(define-cproc mt-random-set-state! (mt::<mersenne-twister> state::<u32vector>)
   "int i;
   if (SCM_U32VECTOR_SIZE(state) != N+1) {
     Scm_Error(\"u32vector of length %d is required, but got length %d\", N+1, SCM_U32VECTOR_SIZE(state));
@@ -62,26 +54,20 @@
 ;;  "Scm_Error(\"mt-random-set-state is not supported on cygwin (for now)\");")
 ) ;; if !defined(__CYGWIN__)
 
-(define-cproc mt-random-real (mt)
-  (assert (mersenne-twister? mt))
+(define-cproc mt-random-real (mt::<mersenne-twister>)
   "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt, TRUE)));")
 
-(define-cproc mt-random-real0 (mt)
-  (assert (mersenne-twister? mt))
+(define-cproc mt-random-real0 (mt::<mersenne-twister>)
   "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt, FALSE)));")
 
-(define-cproc %mt-random-integer (mt n)
-  (assert (mersenne-twister? mt))
+(define-cproc %mt-random-integer (mt::<mersenne-twister> n)
   "SCM_RETURN(Scm_MTGenrandInt(mt, n));")
 
-(define-cproc %mt-random-uint32 (mt)
-  (assert (mersenne-twister? mt))
+(define-cproc %mt-random-uint32 (mt::<mersenne-twister>)
   "SCM_RETURN(Scm_MakeIntegerFromUI(Scm_MTGenrandU32(mt)));")
 
 (if "!defined(__CYGWIN__)"
-(define-cproc mt-random-fill-u32vector! (mt v)
-  (assert (mersenne-twister? mt))
-  (assert (u32vector? v))
+(define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
   " int len = SCM_U32VECTOR_SIZE(v), i;
   SCM_UVECTOR_UINT32 *p = SCM_U32VECTOR_ELEMENTS(v);
   for (i=0; i<len; i++) *p++ = Scm_MTGenrandU32(mt);
@@ -92,9 +78,7 @@
 ) ;; if !defined(__CYGWIN__)
 
 (if "!defined(__CYGWIN__)"
-(define-cproc mt-random-fill-f32vector! (mt v)
-  (assert (mersenne-twister? mt))
-  (assert (f32vector? v))
+(define-cproc mt-random-fill-f32vector! (mt::<mersenne-twister> v::<f32vector>)
   " int len = SCM_F32VECTOR_SIZE(v), i;
   float *p = SCM_F32VECTOR_ELEMENTS(v);
   for (i=0; i<len; i++) *p++ = Scm_MTGenrandF32(mt, TRUE);
@@ -105,9 +89,7 @@
 ) ;; if !defined(__CYGWIN__)
 
 (if "!defined(__CYGWIN__)"
-(define-cproc mt-random-fill-f64vector! (mt v)
-  (assert (mersenne-twister? mt))
-  (assert (f64vector? v))
+(define-cproc mt-random-fill-f64vector! (mt::<mersenne-twister> v::<f64vector>)
   " int len = SCM_F64VECTOR_SIZE(v), i;
   double *p = SCM_F64VECTOR_ELEMENTS(v);
   for (i=0; i<len; i++) *p++ = Scm_MTGenrandF64(mt, TRUE);

@@ -12,17 +12,16 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.17 2002-07-23 14:06:13 shirok Exp $
+;;  $Id: netlib.stub,v 1.18 2002-07-24 15:38:50 shirok Exp $
 ;;
 
 "#include \"net.h\"
 "
 
-(define-type "socket-address" socket-address?
-  "ScmSockAddr*" "Scm_SockAddrP" "SCM_SOCKADDR")
+(define-type <socket-address> "ScmSockAddr*" "socket address"
+  "Scm_SockAddrP" "SCM_SOCKADDR")
 
-(define-type "socket" socket?
-  "ScmSocket*" "SCM_SOCKETP" "SCM_SOCKET")
+(define-type <socket> "ScmSocket*")
 
 ;;----------------------------------------------------------
 ;; Socket address methods
@@ -66,11 +65,9 @@
 ;;----------------------------------------------------------
 ;; low-level socket routines
 
-(define-cproc make-socket (domain type &optional (protocol 0))
-  (assert (small-integer? domain))
-  (assert (small-integer? type))
-  (assert (small-integer? protocol))
-  "  SCM_RETURN(Scm_MakeSocket(domain, type, protocol));")
+(define-cproc make-socket (domain::<fixnum> type::<fixnum>
+                                            &optional (protocol::<fixnum> 0))
+  (return "Scm_MakeSocket"))
 
 (define-enum PF_UNIX)
 (define-enum PF_INET)
@@ -82,8 +79,7 @@
 (define-enum SOCK_DGRAM)
 (define-enum SOCK_RAW)
 
-(define-cproc socket-address (sock)
-  (assert (socket? sock))
+(define-cproc socket-address (sock::<socket>)
   "  if (sock->address) { SCM_RETURN(SCM_OBJ(sock->address)); }
   else { SCM_RETURN(SCM_FALSE); }")
 
@@ -94,8 +90,7 @@
 (define-symbol SHUTDOWN  "sym_shutdown")
 (define-symbol CLOSED    "sym_closed")
 
-(define-cproc socket-status (sock)
-  (assert (socket? sock))
+(define-cproc socket-status (sock::<socket>)
   "  switch (sock->status) {
   case SCM_SOCKET_STATUS_NONE:      SCM_RETURN(sym_none);
   case SCM_SOCKET_STATUS_BOUND:     SCM_RETURN(sym_bound);
@@ -108,15 +103,13 @@
            SCM_RETURN(SCM_UNDEFINED); /* dummy */
   }")
 
-(define-cproc socket-fd (sock)
-  (assert (socket? sock))
+(define-cproc socket-fd (sock::<socket>)
   "  SCM_RETURN(Scm_MakeInteger(sock->fd));")
 
 ;; NB: buffered? keyword args in the following two procedures are
 ;; deprecated; use buffering arg.
-(define-cproc socket-input-port (sock &keyword (buffering #f)
-                                               (buffered? #f))
-  (assert (socket? sock))
+(define-cproc socket-input-port (sock::<socket>
+                                 &keyword (buffering #f) (buffered? #f))
   " int bufmode;
   if (!SCM_FALSEP(bufferedP)) { /*for backward compatibility */
     bufmode = SCM_PORT_BUFFER_FULL;
@@ -125,9 +118,8 @@
   }
   SCM_RETURN(Scm_SocketInputPort(sock, bufmode));")
 
-(define-cproc socket-output-port (sock &keyword (buffering #f)
-                                                (buffered? #f))
-  (assert (socket? sock))
+(define-cproc socket-output-port (sock::<socket>
+                                  &keyword (buffering #f) (buffered? #f))
   " int bufmode;
   if (!SCM_FALSEP(bufferedP)) { /* for backward compatibility */
     bufmode = SCM_PORT_BUFFER_FULL;
@@ -136,77 +128,54 @@
   }
   SCM_RETURN(Scm_SocketOutputPort(sock, bufmode));")
 
-(define-cproc socket-shutdown (sock &optional (how 2))
-  (assert (socket? sock))
-  (assert (small-integer? how))
+(define-cproc socket-shutdown (sock::<socket> &optional (how::<fixnum> 2))
   (return "Scm_SocketShutdown"))
   
-(define-cproc socket-close (sock)
-  (assert (socket? sock))
+(define-cproc socket-close (sock::<socket>)
   (return "Scm_SocketClose"))
 
-(define-cproc socket-bind (sock addr)
-  (assert (socket? sock))
-  (assert (socket-address? addr))
+(define-cproc socket-bind (sock::<socket> addr::<socket-address>)
   (return "Scm_SocketBind"))
 
-(define-cproc socket-listen (sock backlog)
-  (assert (socket? sock))
-  (assert (small-integer? backlog))
+(define-cproc socket-listen (sock::<socket> backlog::<fixnum>)
   (return "Scm_SocketListen"))
 
-(define-cproc socket-accept (sock)
-  (assert (socket? sock))
+(define-cproc socket-accept (sock::<socket>)
   (return "Scm_SocketAccept"))
 
-(define-cproc socket-connect (sock addr)
-  (assert (socket? sock))
-  (assert (socket-address? addr))
+(define-cproc socket-connect (sock::<socket> addr::<socket-address>)
   (return "Scm_SocketConnect"))
 
 ;; socket option interface
 
-(define-cproc socket-setsockopt (sock level option value)
-  (assert (socket? sock))
-  (assert (small-integer? level))
-  (assert (small-integer? option))
+(define-cproc socket-setsockopt (sock::<socket>
+                                 level::<fixnum> option::<fixnum> value)
   (return "Scm_SocketSetOpt"))
 
-(define-cproc socket-getsockopt (sock level option rsize)
-  (assert (socket? sock))
-  (assert (small-integer? level))
-  (assert (small-integer? option))
-  (assert (small-integer? rsize))
+(define-cproc socket-getsockopt (sock::<socket>
+                                 level::<fixnum> option::<fixnum>
+                                 rsize::<fixnum>)
   (return "Scm_SocketGetOpt"))
 
 ;;----------------------------------------------------------
 ;; netdb routines
 
-(define-cproc sys-gethostbyname (name)
-  (assert (string? name))
+(define-cproc sys-gethostbyname (name::<string>)
   "  SCM_RETURN(Scm_GetHostByName(Scm_GetStringConst(name)));")
 
-(define-cproc sys-gethostbyaddr (addr type)
-  (assert (string? addr))
-  (assert (small-integer? type))
+(define-cproc sys-gethostbyaddr (addr::<string> type::<fixnum>)
   "  SCM_RETURN(Scm_GetHostByAddr(Scm_GetStringConst(addr), type));")
 
-(define-cproc sys-getprotobyname (name)
-  (assert (string? name))
+(define-cproc sys-getprotobyname (name::<string>)
   "  SCM_RETURN(Scm_GetProtoByName(Scm_GetStringConst(name)));")
 
-(define-cproc sys-getprotobynumber (number)
-  (assert (small-integer? number))
+(define-cproc sys-getprotobynumber (number::<fixnum>)
   "  SCM_RETURN(Scm_GetProtoByNumber(number));")
 
-(define-cproc sys-getservbyname (name proto)
-  (assert (string? name))
-  (assert (string? proto))
+(define-cproc sys-getservbyname (name::<string> proto::<string>)
   "  SCM_RETURN(Scm_GetServByName(Scm_GetStringConst(name), Scm_GetStringConst(proto)));")
 
-(define-cproc sys-getservbyport (port proto)
-  (assert (small-integer? port))
-  (assert (string? proto))
+(define-cproc sys-getservbyport (port::<fixnum> proto::<string>)
   "  SCM_RETURN(Scm_GetServByPort(port, Scm_GetStringConst(proto)));")
 
 ;; Local variables:

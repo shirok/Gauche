@@ -1,7 +1,7 @@
 ;;
 ;; gdbm.stub - gdbm interface
 ;;
-;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;
 ;;  Permission to use, copy, modify, distribute this software and
 ;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.12 2002-07-22 18:37:19 shirok Exp $
+;;  $Id: gdbm.stub,v 1.13 2002-07-24 15:38:50 shirok Exp $
 ;;
 
 "
@@ -88,7 +88,7 @@
  #define Scm_Init_gdbm  internal_init
 "
 
-(define-type "gdbm" gdbm? "ScmGdbm*" "SCM_GDBM_P" "SCM_GDBM")
+(define-type <gdbm> "ScmGdbm*")
 
 ;; finalization
 "static void gdbm_finalize(GC_PTR obj, GC_PTR data)
@@ -99,14 +99,10 @@
 "
 
 
-(define-cproc gdbm-open (name &optional
-                              (size 0)
-                              (rwmode (c "SCM_MAKE_INT(GDBM_READER)"))
-                              (fmode (c "SCM_MAKE_INT(0666)")))
-  (assert (string? name))
-  (assert (small-integer? size))
-  (assert (small-integer? rwmode))
-  (assert (small-integer? fmode))
+(define-cproc gdbm-open (name::<string>
+                         &optional (size::<fixnum> 0)
+                                   (rwmode::<fixnum> (c "SCM_MAKE_INT(GDBM_READER)"))
+                                   (fmode::<fixnum> (c "SCM_MAKE_INT(0666)")))
   "GC_finalization_proc ofn; GC_PTR ocd;
   ScmGdbm *z = SCM_NEW(ScmGdbm);
   SCM_SET_CLASS(z, SCM_CLASS_GDBM);
@@ -116,8 +112,7 @@
   if (z->dbf == NULL) Scm_SysError(\"couldn't open gdbm file %S\", name);
   SCM_RETURN(SCM_OBJ(z));")
 
-(define-cproc gdbm-close (gdbm)
-  (assert (gdbm? gdbm))
+(define-cproc gdbm-close (gdbm::<gdbm>)
   "CHECK_GDBM(gdbm);
   if (gdbm->dbf) {
     gdbm_close(gdbm->dbf);
@@ -125,15 +120,11 @@
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc gdbm-closed? (gdbm)
-  (assert (gdbm? gdbm))
+(define-cproc gdbm-closed? (gdbm::<gdbm>)
   "SCM_RETURN(SCM_MAKE_BOOL(gdbm->dbf == NULL));")
 
-(define-cproc gdbm-store (gdbm key val &optional (flags 0))
-  (assert (gdbm? gdbm))
-  (assert (string? key))
-  (assert (string? val))
-  (assert (small-integer? flags))
+(define-cproc gdbm-store (gdbm::<gdbm> key::<string> val::<string>
+                                       &optional (flags::<fixnum> 0))
   "datum dkey, dval; int r;
   CHECK_GDBM(gdbm);
   TO_DATUM(dkey, key);
@@ -141,9 +132,7 @@
   r = gdbm_store(gdbm->dbf, dkey, dval, flags);
   SCM_RETURN(SCM_MAKE_INT(r));")
 
-(define-cproc gdbm-fetch (gdbm key)
-  (assert (gdbm? gdbm))
-  (assert (string? key))
+(define-cproc gdbm-fetch (gdbm::<gdbm> key::<string>)
   "datum dkey, dval; ScmObj r;
   CHECK_GDBM(gdbm);
   TO_DATUM(dkey, key);
@@ -151,24 +140,19 @@
   FROM_DATUM(r, dval);
   SCM_RETURN(r);")
 
-(define-cproc gdbm-delete (gdbm key)
-  (assert (gdbm? gdbm))
-  (assert (string? key))
+(define-cproc gdbm-delete (gdbm::<gdbm> key::<string>)
   "datum dkey; int r;
   CHECK_GDBM(gdbm);
   TO_DATUM(dkey, key);
   r = gdbm_delete(gdbm->dbf, dkey);
   SCM_RETURN(SCM_MAKE_INT(r));")
 
-(define-cproc gdbm-firstkey (gdbm)
-  (assert (gdbm? gdbm))
+(define-cproc gdbm-firstkey (gdbm::<gdbm>)
   "datum dkey = gdbm_firstkey(gdbm->dbf); ScmObj r;
   FROM_DATUM(r, dkey);
   SCM_RETURN(r);")
 
-(define-cproc gdbm-nextkey (gdbm key)
-  (assert (gdbm? gdbm))
-  (assert (string? key))
+(define-cproc gdbm-nextkey (gdbm::<gdbm> key::<string>)
   "datum dkey, dnkey; ScmObj r;
   CHECK_GDBM(gdbm);
   TO_DATUM(dkey, key);
@@ -176,35 +160,28 @@
   FROM_DATUM(r, dnkey);
   SCM_RETURN(r);")
 
-(define-cproc gdbm-reorganize (gdbm)
-  (assert (gdbm? gdbm))
+(define-cproc gdbm-reorganize (gdbm::<gdbm>)
   "int r;
   CHECK_GDBM(gdbm);
   r = gdbm_reorganize(gdbm->dbf);
   SCM_RETURN(SCM_MAKE_INT(r));")
 
-(define-cproc gdbm-sync (gdbm)
-  (assert (gdbm? gdbm))
+(define-cproc gdbm-sync (gdbm::<gdbm>)
   "CHECK_GDBM(gdbm);
   gdbm_sync(gdbm->dbf);
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc gdbm-exists? (gdbm key)
-  (assert (gdbm? gdbm))
-  (assert (string? key))
+(define-cproc gdbm-exists? (gdbm::<gdbm> key::<string>)
   "datum dkey; int r;
   CHECK_GDBM(gdbm);
   TO_DATUM(dkey, key);
   r = gdbm_exists(gdbm->dbf, dkey);
   SCM_RETURN(SCM_MAKE_BOOL(r));")
 
-(define-cproc gdbm-strerror (errno)
-  (assert (small-integer? errno))
+(define-cproc gdbm-strerror (errno::<fixnum>)
   "SCM_RETURN(SCM_MAKE_STR_IMMUTABLE(gdbm_strerror(errno)));")
 
-(define-cproc gdbm-setopt (gdbm option val)
-  (assert (gdbm? gdbm))
-  (assert (small-integer? option))
+(define-cproc gdbm-setopt (gdbm::<gdbm> option::<fixnum> val)
   "int ival, r;
   CHECK_GDBM(gdbm);
   if (SCM_EXACTP(val)) ival = Scm_GetUInteger(val);

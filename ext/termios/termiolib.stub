@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: termiolib.stub,v 1.6 2002-07-22 18:37:20 shirok Exp $
+;;; $Id: termiolib.stub,v 1.7 2002-07-24 15:38:50 shirok Exp $
 ;;;
 
 "#include \"termios.h\""
@@ -20,8 +20,7 @@
 ;;---------------------------------------------------------------------
 ;; termios.h
 
-(define-type "sys-termios" sys-termios?
-  "ScmSysTermios*"  "SCM_SYS_TERMIOS_P" "SCM_SYS_TERMIOS")
+(define-type <sys-termios> "ScmSysTermios*")
 
 (define-enum TCSANOW)
 (define-enum TCSADRAIN)
@@ -59,17 +58,14 @@
   }
   SCM_RETURN(SCM_OBJ(term));")
 
-(define-cproc sys-tcsetattr (port-or-fd option term)
-  (assert (exact? option))
-  (assert (sys-termios? term))
+(define-cproc sys-tcsetattr (port-or-fd option::<fixnum> term::<sys-termios>)
   "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcsetattr(fd, option, &term->term) < 0) {
     Scm_SysError(\"tcsetattr failed\");
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc sys-tcsendbreak (port-or-fd duration)
-  (assert (exact? duration))
+(define-cproc sys-tcsendbreak (port-or-fd duration::<fixnum>)
   "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   SCM_RETURN(tcsendbreak(fd, duration) < 0 ? SCM_FALSE : SCM_TRUE);")
 
@@ -80,16 +76,14 @@
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc sys-tcflush (port-or-fd queue)
-  (assert (exact? queue))
+(define-cproc sys-tcflush (port-or-fd queue::<int>)
   "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcflush(fd, queue) < 0) {
     Scm_SysError(\"tcflush failed\");
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc sys-tcflow (port-or-fd action)
-  (assert (exact? action))
+(define-cproc sys-tcflow (port-or-fd action::<int>)
   "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcflow(fd, action) < 0) {
     Scm_SysError(\"tcflow failed\");
@@ -102,35 +96,28 @@
   if (r < 0) { Scm_SysError(\"tcgetpgrp failed\"); }
   SCM_RETURN(Scm_MakeInteger(r));")
 
-(define-cproc sys-tcsetpgrp (port-or-fd pgrp)
-  (assert (exact? pgrp))
+(define-cproc sys-tcsetpgrp (port-or-fd pgrp::<int>)
   "  int fd = Scm_GetPortFd(port_or_fd, TRUE);
   if (tcsetpgrp(fd, pgrp) < 0) {
     Scm_SysError(\"tcsetpgrp failed\");
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc sys-cfgetispeed (term)
-  (assert (sys-termios? term))
+(define-cproc sys-cfgetispeed (term::<sys-termios>)
   "  speed_t s = cfgetispeed(&term->term);
   SCM_RETURN(Scm_MakeInteger(s));")
 
-(define-cproc sys-cfsetispeed (term speed)
-  (assert (sys-termios? term))
-  (assert (exact? speed))
+(define-cproc sys-cfsetispeed (term::<sys-termios> speed::<int>)
   "  if (cfsetispeed(&term->term, speed) < 0) {
      Scm_SysError(\"cfsetispeed\");
   }
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc sys-cfgetospeed (term)
-  (assert (sys-termios? term))
+(define-cproc sys-cfgetospeed (term::<sys-termios>)
   "  speed_t s = cfgetospeed(&term->term);
   SCM_RETURN(Scm_MakeInteger(s));")
 
-(define-cproc sys-cfsetospeed (term speed)
-  (assert (sys-termios? term))
-  (assert (exact? speed))
+(define-cproc sys-cfsetospeed (term::<sys-termios> speed::<int>)
   "  if (cfsetospeed(&term->term, speed) < 0) {
      Scm_SysError(\"cfsetispeed\");
   }

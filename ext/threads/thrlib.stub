@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: thrlib.stub,v 1.3 2002-07-15 23:20:50 shirok Exp $
+;;; $Id: thrlib.stub,v 1.4 2002-07-24 15:38:50 shirok Exp $
 ;;;
 
 "
@@ -43,59 +43,50 @@
 (define-cproc current-thread ()
   "SCM_RETURN(SCM_OBJ(Scm_VM()));")
 
-(define-cproc thread? (obj)
-  "SCM_RETURN(SCM_MAKE_BOOL(SCM_VMP(obj)));")
+(define-cproc thread? (obj) (return <boolean> "SCM_VMP"))
 
-(define-cproc thread-name (vm)
-  (assert (thread? vm))
+(define-cproc thread-name (vm::<thread>)
   "SCM_RETURN(vm->name);")
 
-(define-cproc thread-specific (vm)
-  (assert (thread? vm))
+(define-cproc thread-specific (vm::<thread>)
   "SCM_RETURN(vm->specific);")
 
-(define-cproc thread-specific-set! (vm obj)
-  (assert (thread? vm))
+(define-cproc thread-specific-set! (vm::<thread> obj)
   "vm->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc make-thread (thunk &optional (name #f))
-  (assert (procedure? thunk))
-  "SCM_RETURN(Scm_MakeThread(thunk, name));")
+(define-cproc make-thread (thunk::<procedure> &optional (name #f))
+  (return "Scm_MakeThread"))
 
-(define-cproc thread-start! (vm)
-  (assert (thread? vm))
-  "SCM_RETURN(Scm_ThreadStart(vm));")
+(define-cproc thread-start! (vm::<thread>)
+  (return "Scm_ThreadStart"))
 
 (define-cproc thread-yield! ()
-  "SCM_RETURN(Scm_ThreadYield());")
+  (return "Scm_ThreadYield"))
 
 (define-cproc thread-sleep! (timeout)
-  "SCM_RETURN(Scm_ThreadSleep(timeout));")
+  (return "Scm_ThreadSleep"))
 
-(define-cproc thread-join! (vm &optional (timeout #f) timeout-val)
-  (assert (thread? vm))
-  "SCM_RETURN(Scm_ThreadJoin(vm, timeout, timeout_val));")
+(define-cproc thread-join! (vm::<thread> &optional (timeout #f) timeout-val)
+  (return "Scm_ThreadJoin"))
 
-(define-cproc thread-terminate! (vm)
-  (assert (thread? vm))
-  "SCM_RETURN(Scm_ThreadTerminate(vm));")
+(define-cproc thread-terminate! (vm::<thread>)
+  (return "Scm_ThreadTerminate"))
 
 ;;===============================================================
 ;; Mutex
 ;;
 
 (define-cproc make-mutex (&optional (name #f))
-  "SCM_RETURN(Scm_MakeMutex(name));")
+  (return "Scm_MakeMutex"))
 
 (define-cproc mutex? (obj)
-  "SCM_RETURN(SCM_MAKE_BOOL(SCM_MUTEXP(obj)));")
+  (return <boolean> "SCM_MUTEXP"))
 
 (define-symbol not-owned "sym_not_owned")
 (define-symbol abandoned "sym_abandoned")
 (define-symbol not-abandoned "sym_not_abandoned")
 
-(define-cproc mutex-state (mutex)
-  (assert (mutex? mutex))
+(define-cproc mutex-state (mutex::<mutex>)
   "ScmObj r;
   (void)SCM_INTERNAL_MUTEX_LOCK(mutex->mutex);
   if (mutex->locked) {
@@ -111,31 +102,26 @@
   (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
   SCM_RETURN(r);")
 
-(define-cproc mutex-lock! (mutex &optional (timeout #f) thread)
-  (assert (mutex? mutex))
+(define-cproc mutex-lock! (mutex::<mutex> &optional (timeout #f) thread)
   "ScmVM *owner = NULL;
   if (SCM_VMP(thread)) owner = SCM_VM(thread);
   else if (SCM_UNBOUNDP(thread)) owner = Scm_VM();
   else if (!SCM_FALSEP(thread)) Scm_Error(\"thread or #f required, but got %S\", thread);
   SCM_RETURN(Scm_MutexLock(mutex, timeout, owner));")
   
-(define-cproc mutex-unlock! (mutex &optional (cv #f) (timeout #f))
-  (assert (mutex? mutex))
+(define-cproc mutex-unlock! (mutex::<mutex> &optional (cv #f) (timeout #f))
   "ScmConditionVariable *cond = NULL;
   if (SCM_CONDITION_VARIABLE_P(cv)) cond = SCM_CONDITION_VARIABLE(cv);
   else if (!SCM_FALSEP(cv)) Scm_Error(\"condition variable or #f required, but got %S\", cv);
   SCM_RETURN(Scm_MutexUnlock(mutex, cond, timeout));")
 
-(define-cproc mutex-specific (mutex)
-  (assert (mutex? mutex))
+(define-cproc mutex-specific (mutex::<mutex>)
   "SCM_RETURN(mutex->specific);")
 
-(define-cproc mutex-specific-set! (mutex obj)
-  (assert (mutex? mutex))
+(define-cproc mutex-specific-set! (mutex::<mutex> obj)
   "mutex->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc mutex-name (mutex)
-  (assert (mutex? mutex))
+(define-cproc mutex-name (mutex::<mutex>)
   "SCM_RETURN(mutex->name);")
 
 ;;===============================================================
@@ -143,30 +129,25 @@
 ;;
 
 (define-cproc make-condition-variable (&optional (name #f))
-  "SCM_RETURN(Scm_MakeConditionVariable(name));")
+  (return "Scm_MakeConditionVariable"))
 
 (define-cproc condition-variable? (obj)
-  "SCM_RETURN(SCM_MAKE_BOOL(SCM_CONDITION_VARIABLE_P(obj)));")
+  (return <boolean> "SCM_CONDITION_VARIABLE_P"))
 
-(define-cproc condition-variable-name (cv)
-  (assert (condition-variable? cv))
+(define-cproc condition-variable-name (cv::<condition-variable>)
   "SCM_RETURN(cv->name);")
 
-(define-cproc condition-variable-specific (cv)
-  (assert (condition-variable? cv))
+(define-cproc condition-variable-specific (cv::<condition-variable>)
   "SCM_RETURN(cv->specific);")
 
-(define-cproc condition-variable-specific-set! (cv obj)
-  (assert (condition-variable? cv))
+(define-cproc condition-variable-specific-set! (cv::<condition-variable> obj)
   "cv->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc condition-variable-signal! (cv)
-  (assert (condition-variable? cv))
-  "SCM_RETURN(Scm_ConditionVariableSignal(cv));")
+(define-cproc condition-variable-signal! (cv::<condition-variable>)
+  (return "Scm_ConditionVariableSignal"))
 
-(define-cproc condition-variable-broadcast! (cv)
-  (assert (condition-variable? cv))
-  "SCM_RETURN(Scm_ConditionVariableBroadcast(cv));")
+(define-cproc condition-variable-broadcast! (cv::<condition-variable>)
+  (return "Scm_ConditionVariableBroadcast"))
 
 ;;===============================================================
 ;; Thread exceptions
@@ -212,46 +193,58 @@
  };"
 
 (define-cclass <thread-exception>
-  "ScmThreadException" "Scm_ThreadExceptionClass"
+  "ScmThreadException*" "Scm_ThreadExceptionClass"
   ("Scm_ExceptionClass")
-  ((thread :type thread))
+  ((thread :type <thread>))
   (allocator (c "thread_exception_allocate"))
   (printer   (c "thread_exception_print")))
 
+(define-type <join-timeout-exception> "ScmThreadException*" #f
+  "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
+
 (define-cclass <join-timeout-exception>
-  "ScmThreadException" "Scm_JoinTimeoutExceptionClass"
+  "ScmThreadException*" "Scm_JoinTimeoutExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type thread
+  ((thread :type <thread>
            :getter (c "Scm_ThreadExceptionClass_thread_GET")
            :setter (c "Scm_ThreadExceptionClass_thread_SET"))
    )
   (allocator (c "thread_exception_allocate"))
   (printer   (c "thread_exception_print")))
 
+(define-type <abandoned-mutex-exception> "ScmThreadException*" #f
+  "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
+
 (define-cclass <abandoned-mutex-exception>
-  "ScmThreadException" "Scm_AbandonedMutexExceptionClass"
+  "ScmThreadException*" "Scm_AbandonedMutexExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type thread
+  ((thread :type <thread>
            :getter (c "Scm_ThreadExceptionClass_thread_GET")
            :setter (c "Scm_ThreadExceptionClass_thread_SET"))
    (mutex  :c-name "data"))
   (allocator (c "thread_exception_allocate"))
   (printer   (c "thread_exception_print")))
 
+(define-type <terminated-thread-exception> "ScmThreadException*" #f
+  "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
+
 (define-cclass <terminated-thread-exception>
-  "ScmThreadException" "Scm_TerminatedThreadExceptionClass"
+  "ScmThreadException*" "Scm_TerminatedThreadExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type thread
+  ((thread :type <thread>
            :getter (c "Scm_ThreadExceptionClass_thread_GET")
            :setter (c "Scm_ThreadExceptionClass_thread_SET"))
    (terminator :c-name "data"))
   (allocator (c "thread_exception_allocate"))
   (printer   (c "terminated_thread_print")))
 
+(define-type <uncaught-exception> "ScmThreadException*" #f
+  "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
+
 (define-cclass <uncaught-exception>
-  "ScmThreadException" "Scm_UncaughtExceptionClass"
+  "ScmThreadException*" "Scm_UncaughtExceptionClass"
   (c "thread_exception_cpa")
-  ((thread :type thread
+  ((thread :type <thread>
            :getter (c "Scm_ThreadExceptionClass_thread_GET")
            :setter (c "Scm_ThreadExceptionClass_thread_SET"))
    (reason :c-name data))

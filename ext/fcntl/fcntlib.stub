@@ -12,13 +12,12 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: fcntlib.stub,v 1.4 2002-07-23 14:06:13 shirok Exp $
+;;; $Id: fcntlib.stub,v 1.5 2002-07-24 15:38:50 shirok Exp $
 ;;;
 
 "#include \"fcntl.h\""
 
-(define-type "sys-fcntl" sys-fcntl?
-  "ScmSysFcntl" "SCM_SYS_FCNTL_P" "SCM_SYS_FCNTL")
+(define-type <sys-fcntl> "ScmSysFcntl*")
 
 (define-enum F_DUPFD)
 (define-enum F_GETFD)
@@ -46,8 +45,7 @@
 (define-enum O_NONBLOCK)
 (define-enum O_TRUNC)
 
-(define-cproc sys-fcntl (port-or-fd op &optional arg)
-  (assert (small-integer? op))
+(define-cproc sys-fcntl (port-or-fd op::<fixnum> &optional arg)
   (return "Scm_SysFcntl"))
 
 ;; Local variables:

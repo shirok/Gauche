@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.9 2002-07-23 14:06:13 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.10 2002-07-24 15:38:50 shirok Exp $
 ;;;
 
 "
@@ -38,35 +38,28 @@
 "
 
 ;; stdlib.h
-(define-cproc sys-abort ()  (return void "abort"))
+(define-cproc sys-abort ()  (return <void> "abort"))
 
 ;; math.h
-(define-cproc fmod (x y)
-  (assert (real? x))
-  (assert (real? y))
+(define-cproc fmod (x::<real> y::<real>)
   "if (y == 0.0) Scm_Error(\"Attempted to divide by zero\");
   SCM_RETURN(Scm_MakeFlonum(fmod(x, y)));")
 
-(define-cproc frexp (d)
-  (assert (real? d))
+(define-cproc frexp (d::<real>)
   "  double fr; int exp;
   fr = frexp(d, &exp);
   SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeInteger(exp)));")
 
-(define-cproc modf (x)
-  (assert (real? x))
+(define-cproc modf (x::<real>)
   "  double fr, inte;
   fr = modf(x, &inte);
   SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeFlonum(inte)));")
 
-(define-cproc ldexp (x exp)
-  (assert (real? x))
-  (assert (exact? exp))
-  (return real "ldexp"))
+(define-cproc ldexp (x::<real> exp::<int>)
+  (return <real> "ldexp"))
 
-(define-cproc log10 (x)
-  (assert (real? x))
-  (return real "log10"))
+(define-cproc log10 (x::<real>)
+  (return <real> "log10"))
 
 ;; sys/time.h
 (if "defined HAVE_GETTIMEOFDAY"
@@ -77,17 +70,14 @@
        SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
 
 ;; sys/stat.h
-(define-cproc sys-mkfifo (path mode)
-  (assert (string? path))
-  (assert (small-integer? mode))
+(define-cproc sys-mkfifo (path::<string> mode::<int>)
   "  int r = Scm_SysCall(mkfifo(Scm_GetStringConst(path), mode));
   if (r < 0) Scm_SysError(\"mkfifo failed on %S\", path);
   SCM_RETURN(Scm_MakeInteger(r));")
 
 ;; utime.h
 
-(define-cproc sys-utime (path &optional (atime #f) (mtime #f))
-  (assert (string? path))
+(define-cproc sys-utime (path::<string> &optional (atime #f) (mtime #f))
   "  struct utimbuf tim; int r;
   if (SCM_FALSEP(atime)&&SCM_FALSEP(mtime)) {
     r = Scm_SysCall(utime(Scm_GetStringConst(path), NULL));
@@ -101,15 +91,12 @@
 
 ;; set*
 
-(define-cproc sys-setgid (gid)
-  (assert (exact? gid))
+(define-cproc sys-setgid (gid::<int>)
   "  int r = Scm_SysCall(setgid(gid));
   if (r < 0) Scm_SysError(\"setgid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
 
-(define-cproc sys-setpgid (pid pgid)
-  (assert (exact? pid))
-  (assert (exact? pgid))
+(define-cproc sys-setpgid (pid::<int> pgid::<int>)
   "  int r = Scm_SysCall(setpgid(pid, pgid));
   if (r < 0) Scm_SysError(\"setpgid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
@@ -123,8 +110,7 @@
 ;      SCM_RETURN(Scm_MakeInteger(r));"))
 
 (if "defined HAVE_GETPGID"
-    (define-cproc %sys-getpgid (pid)
-      (assert (exact? pid))
+    (define-cproc %sys-getpgid (pid::<int>)
       "  int r = (int)Scm_SysCall(getpgid(pid));
       if (r < 0) Scm_SysError(\"getpgid failed\");
       SCM_RETURN(Scm_MakeInteger(r));"))
@@ -139,8 +125,7 @@
   if (r < 0) Scm_SysError(\"setsid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
 
-(define-cproc sys-setuid (uid)
-  (assert (exact? uid))
+(define-cproc sys-setuid (uid::<int>)
   "  int r = Scm_SysCall(setuid(uid));
   if (r < 0) Scm_SysError(\"setuid failed\");
   SCM_RETURN(Scm_MakeInteger(r));")
@@ -199,9 +184,7 @@
 
 ;; putenv
 (if "defined HAVE_PUTENV"
-    (define-cproc %sys-putenv (name value)
-      (assert (string? name))
-      (assert (string? value))
+    (define-cproc %sys-putenv (name::<string> value::<string>)
       "  ScmObj s;
  s  = Scm_StringAppend(SCM_LIST3(SCM_OBJ(name),
                                  SCM_MAKE_STR(\"=\"),
@@ -217,10 +200,7 @@
   SCM_RETURN(SCM_MAKE_STR_COPYING(r));")
 
 ;; chown
-(define-cproc sys-chown (path owner group)
-  (assert (string? path))
-  (assert (exact? owner))
-  (assert (exact? group))
+(define-cproc sys-chown (path::<string> owner::<int> group::<int>)
   "int r = Scm_SysCall(chown(Scm_GetStringConst(path), owner, group));
   if (r < 0) Scm_SysError(\"chown failed on %S\", path);
   SCM_RETURN(SCM_TRUE);")
