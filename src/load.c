@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.60 2002-05-22 00:52:03 shirok Exp $
+ *  $Id: load.c,v 1.61 2002-05-22 09:20:59 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -45,7 +45,7 @@ static struct {
 
     /* Provided features */
     ScmObj provided;              /* List of provided features. */
-    ScmObj providing;             /* List of features that is being loaded. */
+    ScmObj providing;             /* Alist of features that is being loaded. */
     ScmInternalMutex prov_mutex;
     ScmInternalCond  prov_cv;
 
@@ -141,10 +141,27 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths)
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
+/* Scheme subr (load-from-port subr paths) */
+static ScmObj load_from_port(ScmObj *args, int argc, void *data)
+{
+    ScmPort *port;
+    ScmObj paths = SCM_NIL;
+    if (!SCM_IPORTP(args[0])) {
+        Scm_Error("input port required, but got %S", args[0]);
+    }
+    port = SCM_PORT(args[0]);
+    if (SCM_PAIRP(args[1])) paths = SCM_CAR(args[1]);
+    return Scm_VMLoadFromPort(port, paths);
+}
+
+static SCM_DEFINE_STRING_CONST(load_from_port_NAME, "load-from-port", 14, 14);
+static SCM_DEFINE_SUBR(load_from_port_STUB, 1, 1,
+                       SCM_OBJ(&load_from_port_NAME), load_from_port,
+                       NULL, NULL);
+
 void Scm_LoadFromPort(ScmPort *port)
 {
-    ScmObj l = SCM_INTERN("load-from-port");
-    Scm_Eval(SCM_LIST2(l, SCM_OBJ(port)), SCM_UNBOUND);
+    Scm_Apply(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)));
 }
 
 /*---------------------------------------------------------------------
@@ -244,24 +261,42 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths, int errorp)
     port = Scm_OpenFilePort(Scm_GetStringConst(SCM_STRING(truename)),
                             O_RDONLY, SCM_PORT_BUFFER_FULL, 0);
     if (SCM_FALSEP(port)) {
-        if (errorp)
-            Scm_Error("file %S exists, but couldn't open.", truename);
-        else
-            return SCM_FALSE;
+        if (errorp) Scm_Error("file %S exists, but couldn't open.", truename);
+        else        return SCM_FALSE;
     }
     return Scm_VMLoadFromPort(SCM_PORT(port), load_paths);
 }
 
+/* Scheme subr (%load filename &keyword paths error-if-not-found) */
+static ScmObj key_paths;
+static ScmObj key_error_if_not_found;
+
+static ScmObj load(ScmObj *args, int argc, void *data)
+{
+    ScmString *file;
+    ScmObj paths;
+    int errorp;
+    if (!SCM_STRINGP(args[0])) {
+        Scm_Error("string required, but got %S", args[0]);
+    }
+    file = SCM_STRING(args[0]);
+    paths  = Scm_GetKeyword(key_paths, args[1], SCM_FALSE);
+    errorp = !SCM_FALSEP(Scm_GetKeyword(key_error_if_not_found, args[1], SCM_TRUE));
+    return Scm_VMLoad(file, paths, errorp);
+}
+
+static SCM_DEFINE_STRING_CONST(load_NAME, "load", 4, 4);
+static SCM_DEFINE_SUBR(load_STUB, 1, 1, SCM_OBJ(&load_NAME), load, NULL, NULL);
+
+
 int Scm_Load(const char *cpath, int errorp)
 {
-    ScmObj f = SCM_MAKE_STR_COPYING(cpath);
-    ScmObj l = SCM_INTERN("load");
-    ScmObj r;
+    ScmObj r, f = SCM_MAKE_STR_COPYING(cpath);
     if (errorp) {
-        r = Scm_Eval(SCM_LIST2(l, f), SCM_UNBOUND);
+        r = Scm_Apply(SCM_OBJ(&load_STUB), SCM_LIST1(f));
     } else {
-        ScmObj k = SCM_MAKE_KEYWORD("error-if-not-found");
-        r = Scm_Eval(SCM_LIST4(l, f, k, SCM_FALSE), SCM_UNBOUND);
+        r = Scm_Apply(SCM_OBJ(&load_STUB),
+                      SCM_LIST3(f, key_error_if_not_found, SCM_FALSE));
     }
     return !SCM_FALSEP(r);
 }
@@ -272,12 +307,20 @@ int Scm_Load(const char *cpath, int errorp)
 
 ScmObj Scm_GetLoadPath(void)
 {
-    return ldinfo.load_path_rec->value;
+    ScmObj paths;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
+    paths = Scm_CopyList(ldinfo.load_path_rec->value);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
+    return paths;
 }
 
 ScmObj Scm_GetDynLoadPath(void)
 {
-    return ldinfo.dynload_path_rec->value;
+    ScmObj paths;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
+    paths = Scm_CopyList(ldinfo.dynload_path_rec->value);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
+    return paths;
 }
 
 static ScmObj break_env_paths(const char *envname)
@@ -467,23 +510,28 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
 /* STk's require takes a string.  SLIB's require takes a symbol.
    For now, I allow only a string. */
 /* Note that require and provide is recognized at compile time. */
-/* IDEA: allow require and provide an optional :version argument.
-   For example, (require "foo" :version 1.2) looks for the module
-   with (provide "foo" :version 1.2).  Allows mutiple versions of
-   files coexist in a path.   In order to do that, the "providing"
-   module needs to be compiled in a kind of sandbox environment, until
-   the system confirms it has a proper version of 'provide'. */
-/* TODO: related to above issue; what if an error occurs during loading
-   a require file?  what we should really do is to rollback the interpreter
-   state before loading that module; including cancelling any (provide)-ed
-   feature in the module.  The sandbox environment mentioned above will
-   help such unrolling, but it's not perfect if the toplevel expression
-   in the module changes the global state.  */
+
+/* [Preventing Race Condition]
+ *
+ *   When <feature> is required and it is neither provided nor being
+ *   provided, 'require' pushes <feature> to ldinfo.providing, then
+ *   loads the file.  When 'provide' is called in the file, <feature>
+ *   is moved from ldinfo.providing to ldinfo.provided.
+ *   If a thread tries to require a <feature> and finds it is being
+ *   provided (in the list of ldinfo.providing), the thread blocks
+ *   until the feature is provided (or removed from providing list
+ *   for some reason, e.g. error).
+ */
+
 ScmObj Scm_Require(ScmObj feature)
 {
+    ScmObj filename;
     int provided = FALSE, providing = TRUE;
-    if (!SCM_STRINGP(feature))
+    
+    if (!SCM_STRINGP(feature)) {
         Scm_Error("require: string expected, but got %S\n", feature);
+    }
+    
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
     do {
         provided = !SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL));
@@ -500,10 +548,9 @@ ScmObj Scm_Require(ScmObj feature)
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
 
-    if (SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
-        ScmObj filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
-        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), TRUE);
-    }
+    if (provided) return SCM_TRUE;
+    filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
+    Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), TRUE);
     return SCM_TRUE;
 }
 
@@ -623,7 +670,13 @@ void Scm__InitLoad(void)
     (void)SCM_INTERNAL_COND_INIT(ldinfo.prov_cv);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.dso_mutex);
     (void)SCM_INTERNAL_COND_INIT(ldinfo.dso_cv);
+
+    key_paths = SCM_MAKE_KEYWORD("paths");
+    key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
     
+    SCM_DEFINE(m, "load-from-port", SCM_OBJ(&load_from_port_STUB));
+    SCM_DEFINE(m, "load", SCM_OBJ(&load_STUB));
+
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
 
