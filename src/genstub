@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.49 2001-10-20 10:10:23 shirok Exp $
+;;;  $Id: genstub,v 1.50 2001-10-21 06:36:04 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -41,7 +41,6 @@
 ;; parses config.h file and add defined symbols to *cpp-defines*.
 ;; this is not intended to parse generic CPP syntax.
 (define (read-config.h config.h)
-  (format #t "reading ~s\n" config.h)
   (with-input-from-file config.h
     (lambda ()
       (let loop ((line (read-line)))
@@ -84,8 +83,7 @@
 
 (define-method initialize ((self <type>) initargs)
   (next-method)
-  (slot-set! self 'all-types
-             (cons self (slot-ref self 'all-types))))
+  (slot-push! self 'all-types self))
 
 (define (make-type name predicate c-type c-predicate unboxer)
   (make <type> :name name :predicate predicate
@@ -123,15 +121,13 @@
   (make-type "scheme object" #f     "ScmObj"       #f           #f))
 
 (define (predicate->type pred)
-  (let loop ((types (class-slot-ref <type> 'all-types)))
-    (cond ((null? types) (error "unknown predicate to assert:" pred))
-          ((eq? (predicate-of (car types)) pred) (car types))
-          (else (loop (cdr types))))))
+  (or (find (lambda (type) (eq? (predicate-of type) pred))
+            (class-slot-ref <type> 'all-types))
+      (error "unknown predicate to assert:" pred)))
 
 ;; process type definition in stub file
 (define (process-define-type form)
-  (unless (= (length form) 6)
-    (error "malformed define-type:" form))
+  (unless (= (length form) 6) (error "malformed define-type:" form))
   (apply make-type (cdr form)))
 
 ;;===================================================================
@@ -151,7 +147,7 @@
 
 (define-method initialize ((self <stub>) initargs)
   (next-method)
-  (slot-set! self 'all-stubs (cons self (slot-ref self 'all-stubs))))
+  (slot-push! self 'all-stubs self))
 
 (define (get-stubs class)
   (reverse (filter (lambda (s) (is-a? s class))
@@ -199,6 +195,10 @@
 (define-class <ckeyword> (<stub>)
   ()
   )
+
+(define (get-ckeyword key)
+  (find (lambda (k) (equal? (x->string key) (x->string (scheme-name-of k))))
+        (get-stubs <ckeyword>)))
 
 (define-method emit-definition ((self <ckeyword>))
   (let* ((scheme-name (scheme-name-of self))
@@ -253,6 +253,13 @@
    (default  :init-keyword :default :initform *unbound* :accessor default-of)
    ))
 
+(define-class <required-arg> (<arg>) ())
+(define-class <optional-arg> (<arg>) ())
+(define-class <keyword-arg>  (<arg>)
+  ((c-keyword :initform #f :accessor c-keyword-of)
+   ))
+(define-class <rest-arg> (<arg>) ())
+
 (define-method write-object ((self <arg>) out)
   (format out "#<arg ~a ~a>" (name-of self) (category-of self)))
 
@@ -261,24 +268,11 @@
   (set! (c-name-of self) (get-c-name "" (name-of self)))
   (set! (scm-name-of self) (string-append (c-name-of self) "_scm")))
 
-(define (push-arg! cproc arg)
-  (let* ((argname   (car arg))
-         (argname-c (get-c-name "" argname))
-         (argname-s (string-append argname-c "_scm"))
-         (argcnt    (length (args-of cproc))))
-    (set! (args-of cproc) (cons arg (args-of cproc)))
-    (set-cdr! arg (list* :c-name argname-c :s-name argname-s
-                         :count argcnt (cdr arg)))))
-
 (define (get-arg cproc arg)
   (find (lambda (x) (eq? arg (name-of x))) (args-of cproc)))
 
-(define (arg-attr-set! cproc arg key val)
-  (cond ((get-arg cproc arg)
-         => (lambda (arg) (set-cdr! arg (list* key val (cdr arg)))))))
-
 (define (push-stmt! cproc stmt)
-  (set! (stmts-of cproc) (cons stmt (stmts-of cproc))))
+  (push! (stmts-of cproc) stmt))
 
 (define (process-assert cproc form)
   (let* ((op  (car form))
@@ -313,7 +307,7 @@
                    :num-optargs nopts
                    :have-rest-arg? rest?)))
       (set! (keyword-args-of cproc)
-            (filter (lambda (x) (eqv? (category-of x) :keyword)) args))
+            (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
       (process-body cproc (cdddr form))
       (emit-definition cproc)
       (emit-inliner cproc)
@@ -322,7 +316,7 @@
 ;; returns a list of args, # of reqargs,  # of optargs, and have-rest-arg?
 (define (process-cproc-args argspecs)
   (define (badarg arg) (error "bad argument in argspec:" arg))
-  
+
   (define (required specs args nreqs)
     (cond ((null? specs) (values (reverse args) nreqs 0 #f))
           ((eq? (car specs) '&optional) (optional (cdr specs) args nreqs 0))
@@ -330,7 +324,9 @@
           ((eq? (car specs) '&keyword)  (keyword (cdr specs) args nreqs 0))
           ((symbol? (car specs))
            (required (cdr specs)
-                     (cons (make <arg> :name (car specs) :count nreqs) args)
+                     (cons (make <required-arg>
+                                 :name (car specs) :count nreqs)
+                           args)
                      (+ nreqs 1)))
           (else (badarg (car specs)))))
 
@@ -342,15 +338,15 @@
           ((eq? (car specs) '&rest)  (rest (cdr specs) args nreqs nopts))
           ((symbol? (car specs))
            (optional (cdr specs)
-                     (cons (make <arg> :name (car specs) :count (+ nreqs nopts)
-                                 :category :optional :default *unbound*)
+                     (cons (make <optional-arg>
+                                 :name (car specs) :count (+ nreqs nopts))
                            args)
                      nreqs
                      (+ nopts 1)))
           ((and (list? (car specs)) (= (length (car specs)) 2))
            (optional (cdr specs)
-                     (cons (make <arg> :name (caar specs) :count (+ nreqs nopts)
-                                 :category :optional :default (cadar specs))
+                     (cons (make <optional-arg> :default (cadar specs)
+                                 :name (caar specs) :count (+ nreqs nopts))
                            args)
                      nreqs
                      (+ nopts 1)))
@@ -364,15 +360,15 @@
           ((eq? (car specs) '&rest) (rest (cdr specs) args nreqs nopts))
           ((symbol? (car specs))
            (keyword (cdr specs)
-                    (cons (make <arg> :name (car specs) :count (+ nreqs nopts)
-                                :category :keyword :default *unbound*)
+                    (cons (make <keyword-arg>
+                                :name (car specs) :count (+ nreqs nopts))
                           args)
                     nreqs
                     (+ nopts 1)))
           ((and (list? (car specs)) (= (length (car specs)) 2))
            (keyword (cdr specs)
-                    (cons (make <arg> :name (caar specs) :count (+ nreqs nopts)
-                                :category :keyword :default (cadar specs))
+                    (cons (make <keyword-arg> :default (cadar specs)
+                                :name (caar specs) :count (+ nreqs nopts))
                           args)
                     nreqs
                     (+ nopts 1)))
@@ -382,8 +378,8 @@
     (cond ((null? specs) (values (reverse args) nreqs nopts #f))
           ((and (null? (cdr specs)) (symbol? (car specs)))
            (values (reverse
-                    (cons (make <arg> :name (car specs) :count (+ nreqs nopts)
-                                :category :rest)
+                    (cons (make <rest-arg>
+                                :name (car specs) :count (+ nreqs nopts))
                           args))
                    nreqs
                    (+ nopts 1)
@@ -443,7 +439,7 @@
         (set! (setter-of cproc) setter)
         (set! (setter-c-name-of cproc) (c-name-of setter))
         (set! (keyword-args-of setter)
-              (filter (lambda (x) (eqv? (category-of x) :keyword)) args))
+              (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
         (process-body setter (cdr decl))
         (emit-definition setter)
         (emit-inliner setter)
@@ -453,6 +449,7 @@
 ;;; emit code
 
 (define-method emit-definition ((cproc <cproc>))
+  (for-each ensure-keyword-arg (keyword-args-of cproc))
   (println "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
            (c-name-of cproc))
   (println "{")
@@ -497,7 +494,7 @@
   (println "  ~a ~a;" (c-type-of (c-type-of arg)) (c-name-of arg)))
 
 (define (emit-arg-unbox arg)
-  (let* ((category (category-of arg))
+  (let* ((class (class-of arg))
          (type  (c-type-of arg))
          (cname (c-name-of arg))
          (sname (scm-name-of arg))
@@ -505,29 +502,39 @@
          (tname (name-of type))
          (pred  (c-predicate-of type))
          (unbox (unboxer-of type)))
-    (case category
-      ((:required)
-       (println "  ~a = SCM_ARGREF(~a);" sname count))
-      ((:optional)
-       (println "  if (SCM_NULLP(SCM_OPTARGS)) ~a = ~a;"
-                sname
-                (scheme-constant->c-constant (default-of arg)))
-       (println "  else {")
-       (println "    ~a = SCM_CAR(SCM_OPTARGS);" sname)
-       (println "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
-       (println "  }"))
-      ((:keyword)
-       (println "  ~a = Scm_GetKeyword(SCM_MAKE_KEYWORD(\"~a\"), SCM_OPTARGS, ~a);"
-                sname (name-of arg)
-                (scheme-constant->c-constant (default-of arg))))
-      ((:rest)
-       (println "  ~a = SCM_ARGREF(SCM_ARGCNT-1);" sname)))
+    (cond
+     ((eq? class <required-arg>)
+      (println "  ~a = SCM_ARGREF(~a);" sname count))
+     ((eq? class <optional-arg>)
+      (println "  if (SCM_NULLP(SCM_OPTARGS)) ~a = ~a;"
+               sname
+               (scheme-constant->c-constant (default-of arg)))
+      (println "  else {")
+      (println "    ~a = SCM_CAR(SCM_OPTARGS);" sname)
+      (println "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
+      (println "  }"))
+     ((eq? class <keyword-arg>)
+      (println "  ~a = Scm_GetKeyword(~a, SCM_OPTARGS, ~a);"
+               sname (c-name-of (c-keyword-of arg))
+               (scheme-constant->c-constant (default-of arg))))
+     ((eq? class <rest-arg>)
+      (println "  ~a = SCM_ARGREF(SCM_ARGCNT-1);" sname)))
     (when pred
       (println "  if (!~a(~a)) Scm_Error(\"~a required, but got %S\", ~a);"
                pred sname tname sname))
     (if unbox
         (println "  ~a = ~a(~a);" cname unbox sname)
         (println "  ~a = ~a;" cname sname))))
+
+(define (ensure-keyword-arg arg)
+  (let ((c-key (get-ckeyword (name-of arg))))
+    (if c-key
+        (set! (c-keyword-of arg) c-key)
+        (let ((c-key (make <ckeyword>
+                           :scheme-name (name-of arg)
+                           :c-name (get-c-name "KEYARG_" (name-of arg)))))
+          (set! (c-keyword-of arg) c-key)
+          (emit-definition c-key)))))
 
 (define (emit-inliner cproc)
   (let* ((insn (inline-insn-of cproc)))
@@ -735,16 +742,15 @@
     (cond ((null? arglist)
            (values args specs (length args) #f))
           ((symbol? arglist)
-           (values (cons (make <arg> :name arglist :count (length args)
-                               :category :rest)
+           (values (cons (make <rest-arg> :name arglist :count (length args))
                          args)
                    (cons "SCM_CLASS_LIST" specs)
                    (length args) #t))
           ((not (pair? arglist)) (badlist))
           ((symbol? (car arglist))
            (loop (cdr arglist)
-                 (cons (make <arg> :name (car arglist) :count (length args)
-                             :category :required)
+                 (cons (make <required-arg>
+                             :name (car arglist) :count (length args))
                        args)
                  (cons "SCM_CLASS_TOP" specs)))
           ((not (and (pair? (car arglist))
@@ -753,23 +759,27 @@
                      (string? (cadar arglist))))
            (badlist))
           (else (loop (cdr arglist)
-                      (cons (make <arg> :name (caar arglist)
-                                  :count (length args)
-                                  :category :required)
+                      (cons (make <required-arg>
+                                  :name (caar arglist) :count (length args))
                             args)
                       (cons (cadar arglist) specs)))
           )))
 
-(define-method emit-initializer ((name <string>))
-  (println "void Scm_Init_~a(ScmModule *module)" name)
-  (println "{")
-  (for-each emit-initializer (get-stubs <cproc>))
-  (for-each emit-initializer (get-stubs <csymbol>))
-  (for-each emit-initializer (get-stubs <ckeyword>))
-  (for-each emit-initializer (get-stubs <cgeneric>))
-  (for-each emit-initializer (get-stubs <cmethod>))
-  (println "}")
-  )
+;;-----------------------------------------------------------------
+;; Extra initializers
+;;
+
+(define-class <initcode> (<stub>)
+  ((code  :initform '() :init-keyword :code :accessor code-of)
+   ))
+
+(define-method emit-defintion ((self <initcode>))
+  #f)
+(define-method emit-initializer ((self <initcode>))
+  (for-each display (code-of self)))
+
+(define (process-initcode form)
+  (make <initcode> :code (cdr form)))
 
 ;;---------------------------------------------------------------
 ;; Miscellaneous utilities
@@ -805,7 +815,7 @@
 (define (get-c-name prefix scheme-name)
   (with-output-to-string
     (lambda ()
-      (display (x->string prefix))
+      (display (x->string prefix)) 
       (with-input-from-string (x->string scheme-name)
         (lambda ()
           (let loop ((c (read-char)))
@@ -866,7 +876,9 @@
     (define-cmethod   . ,process-define-cmethod)
     (if               . ,process-if)
     (defined?         . ,process-defined?)
-    (begin            . ,process-begin)))
+    (begin            . ,process-begin)
+    (initcode         . ,process-initcode)
+    ))
 
 (define (parse-form form)
   (cond ((string? form) (println form))
@@ -875,6 +887,18 @@
         ((assq (car form) *syntax-table*)
          => (lambda (p) ((cdr p) form)))
         (else (error "bad form:" form))))
+
+(define-method emit-initializer ((name <string>))
+  (println "void Scm_Init_~a(ScmModule *module)" name)
+  (println "{")
+  (for-each emit-initializer (get-stubs <cproc>))
+  (for-each emit-initializer (get-stubs <csymbol>))
+  (for-each emit-initializer (get-stubs <ckeyword>))
+  (for-each emit-initializer (get-stubs <cgeneric>))
+  (for-each emit-initializer (get-stubs <cmethod>))
+  (for-each emit-initializer (get-stubs <initcode>))
+  (println "}")
+  )
 
 ;;===================================================================
 ;; main entry point
