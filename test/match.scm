@@ -1,5 +1,5 @@
 ;; Tests Andrew Wright's match package in Gauche
-;; $Id: match.scm,v 1.2 2004-05-13 09:09:58 shirok Exp $
+;; $Id: match.scm,v 1.3 2004-05-14 01:41:00 shirok Exp $
 
 (use gauche.test)
 
@@ -20,15 +20,15 @@
                            any)
        (map (lambda (exp)
               (match exp
-                     ((a b) (list 'huh? a b))
-                     (()    'emptylist)
-                     (#t    'true)
-                     (#f    'false)
-                     ("a"   'string)
-                     (1     'number)
-                     (#\a   'character)
-                     ('a    'symbol)
-                     (_     'any)))
+                ((a b) (list 'huh? a b))
+                (()    'emptylist)
+                (#t    'true)
+                (#f    'false)
+                ("a"   'string)
+                (1     'number)
+                (#\a   'character)
+                ('a    'symbol)
+                (_     'any)))
             '(() #t #f "a" 1 #\a a #())))
 
 (test* "pattern" '((5 x (y z))
@@ -39,11 +39,11 @@
                    (3 x y z))
        (map (lambda (exp)
               (match exp
-                     (((a b) c)   (list 1 a b c))
-                     (((a . b) c) (list 2 a b c))
-                     (#(a b c)    (list 3 a b c))
-                     ((a b)       (list 4 a b))
-                     ((a . b)     (list 5 a b))))
+                (((a b) c)   (list 1 a b c))
+                (((a . b) c) (list 2 a b c))
+                (#(a b c)    (list 3 a b c))
+                ((a b)       (list 4 a b))
+                ((a . b)     (list 5 a b))))
             '((x y z)
               (x y)
               ((x y z) (u v w))
@@ -53,20 +53,20 @@
 
 
 (test* "repetition pattern" '((1 1 2 (3 4 5))
-                              ;(2 1 2 (3 4 5))
+                                        ;(2 1 2 (3 4 5))
                               (3 1 2 (3 4))
                               (4 1 2 (3 4))
                               (3 1 2 ())
                               (4 1 2 ()))
        (map (lambda (exp)
               (match exp
-                     ((a b c ..3)  (list 1 a b c))
-                     (#(a b c ..3) (list 2 a b c))
-                     ((a b c ...)  (list 3 a b c))
-                     (#(a b c ...) (list 4 a b c))
-                     ))
+                ((a b c ..3)  (list 1 a b c))
+                (#(a b c ..3) (list 2 a b c))
+                ((a b c ...)  (list 3 a b c))
+                (#(a b c ...) (list 4 a b c))
+                ))
             '((1 2 3 4 5)
-              ;#(1 2 3 4 5)  ; doesn't work?
+                                        ;#(1 2 3 4 5)  ; doesn't work?
               (1 2 3 4)
               #(1 2 3 4)
               (1 2)
@@ -74,32 +74,29 @@
 
 (test* "nested pattern" '((1 4) (2 5) (3 6))
        (match '((1 (2 3)) (4 (5 6)))
-              (((a (b c)) ...) (list a b c))))
-
-
-
+         (((a (b c)) ...) (list a b c))))
 
 ;; examples shown in Wright&Duba
 (test* "xmap" '(2 4 6)
        (letrec ((xmap (lambda (f l)
                         (match l
-                               (() ())
-                               ((x . y) (cons (f x) (xmap f y)))))))
+                          (() ())
+                          ((x . y) (cons (f x) (xmap f y)))))))
          (xmap (cut * <> 2) '(1 2 3))))
 
 (test* "Y?" '(#t #f)
        (letrec ((y? (match-lambda
-                     (('lambda (f1)
-                        ('lambda (y1)
-                          ((('lambda (x1) (f2 ('lambda (z1) ((x2 x3) z2))))
-                            ('lambda (a1) (f3 ('lambda (b1) ((a2 a3) b2)))))
-                           y2)))
-                      (and (symbol? f1) (symbol? y1) (symbol? x1)
-                           (symbol? z1) (symbol? a1) (symbol? b1)
-                           (eq? f1 f2) (eq? f1 f3) (eq? y1 y2)
-                           (eq? x1 x2) (eq? x1 x3) (eq? z1 z2)
-                           (eq? a1 a2) (eq? a1 a3) (eq? b1 b2)))
-                     (_ #f))))
+                      (('lambda (f1)
+                         ('lambda (y1)
+                           ((('lambda (x1) (f2 ('lambda (z1) ((x2 x3) z2))))
+                             ('lambda (a1) (f3 ('lambda (b1) ((a2 a3) b2)))))
+                            y2)))
+                       (and (symbol? f1) (symbol? y1) (symbol? x1)
+                            (symbol? z1) (symbol? a1) (symbol? b1)
+                            (eq? f1 f2) (eq? f1 f3) (eq? y1 y2)
+                            (eq? x1 x2) (eq? x1 x3) (eq? z1 z2)
+                            (eq? a1 a2) (eq? a1 a3) (eq? b1 b2)))
+                      (_ #f))))
          (list
           (y? '(lambda (F)
                  (lambda (Y)
@@ -118,11 +115,11 @@
 
 (test* "pred" '(a b c)
        (match '("abc" a b c)
-              (((? string?) x ...) x)))
+         (((? string?) x ...) x)))
 
 (test* "pred" "abc" 
        (match '("abc" a b c)
-              (((? string? k) x ...) k)))
+         (((? string? k) x ...) k)))
 
 ;;--------------------------------------------------------------
 (test-section "struct")
@@ -133,15 +130,15 @@
 
 (test* "struct" '(0 "foo")
        (match (make <foo> :a 0 :b "foo")
-              (($ <foo> x y) (list x y))))
+         (($ <foo> x y) (list x y))))
 
 (test* "field" 0
        (match (make <foo> :a 0 :b "foo")
-              ((= a-of aa) aa)))
+         ((= a-of aa) aa)))
 
 (test* "object" '(1 "bar")
        (match (make <foo> :a 1 :b "bar")
-              ((object <foo> (b bb) (a aa)) (list aa bb))))
+         ((object <foo> (b bb) (a aa)) (list aa bb))))
 
 ;; examples shown in Wright&Duba
 (define-class Lam ()
@@ -203,31 +200,58 @@
 (test* "get! / pair" 3
        (let ((x (list 1 (list 2 3))))
          (match x
-                ((_ (_ (get! getter))) (getter)))))
+           ((_ (_ (get! getter))) (getter)))))
 
 (test* "set! / pair" '(1 (2 4))
        (let ((x (list 1 (list 2 3))))
          (match x
-                ((_ (_ (set! setter))) (setter 4)))
+           ((_ (_ (set! setter))) (setter 4)))
          x))
 
 (test* "get! / vector" 3
        (let ((x (vector 1 2 3 4 5)))
          (match x
-                (#(a b (get! getter) d e) (getter)))))
+           (#(a b (get! getter) d e) (getter)))))
 
 (test* "set! / vector" '#(1 2 o 4 5)
        (let ((x (vector 1 2 3 4 5)))
          (match x
-                (#(a b (set! setter) d e) (setter 'o)))
+           (#(a b (set! setter) d e) (setter 'o)))
          x))
+
+(test* "get! / $" 'foo
+       (let* ((v (make Var :s 'foo))
+              (x (list 0 0 (vector 0 0 v 0) 0)))
+         (match x
+           ((_ _ #(_ _ ($ Var (get! getter)) _) _) (getter)))))
+
+(test* "get! / @" 'foo
+       (let* ((v (make Var :s 'foo))
+              (x (list 0 0 (vector 0 0 v 0) 0)))
+         (match x
+           ((_ _ #(_ _ (@ Var (s (get! getter))) _) _) (getter)))))
+           
+(test* "set! / $" 'bar
+       (let* ((v (make Var :s 'foo))
+              (x (list 0 0 (vector 0 0 v 0) 0)))
+         (match x
+           ((_ _ #(_ _ ($ Var (set! setter)) _) _)
+            (setter 'bar)
+            (ref v 's)))))
+           
+(test* "set! / @" 'bar
+       (let* ((v (make Var :s 'foo))
+              (x (list 0 0 (vector 0 0 v 0) 0)))
+         (match x
+           ((_ _ #(_ _ (@ Var (s (set! setter))) _) _)
+            (setter 'bar)
+            (ref v 's)))))
 
 ;;--------------------------------------------------------------
 (test-section "match-let etc.")
 
 (test* "match-let1" '((a b c) (1 2 3))
        (match-let1 ((ca . cd) ...) '((a . 1) (b . 2) (c . 3))
-                   (list ca cd)))
-
+         (list ca cd)))
 
 (test-end)

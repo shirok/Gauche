@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.2 2004-05-13 09:09:58 shirok Exp $
+;; $Id: match.scm,v 1.3 2004-05-14 01:41:00 shirok Exp $
 
 (define-module util.match
   (use srfi-1)
@@ -49,6 +49,7 @@
 ;; Following is a brief summary of the new forms.  See the associated
 ;; LaTeX documentation for a full description of their functionality.
 ;;
+;; [SK]: check out Gauche texinfo manual for modified spec.
 ;;
 ;;         match expressions:
 ;;
@@ -85,7 +86,6 @@
 ;;                                           of remainder must match pat_n+1
 ;;       | #&pat                           box
 ;;       | ($ struct-name pat_1 ... pat_n) a structure
-;;       | (object class-name key_1 pat_1 ...key_n pat_n) an object
 ;;       | (= field pat)                   a field of a structure
 ;;       | (and pat_1 ... pat_n)           if all of pat_1 thru pat_n match
 ;;       | (or pat_1 ... pat_n)            if any of pat_1 thru pat_n match
@@ -160,19 +160,24 @@
 (define match:disjoint-predicates
   (cons 'null
         '(pair?
-           symbol?
-           boolean?
-           number?
-           string?
-           char?
-           procedure?
-           vector?)))
-(define match:vector-structures '())
+          symbol?
+          boolean?
+          number?
+          string?
+          char?
+          procedure?
+          vector?)))
 
-(define (match:$-ref class fnum obj)
-  (let ((slot (list-ref (class-slots class) fnum #f)))
-    (and slot
-         (slot-ref obj (slot-definition-name slot)))))
+(define match:$-ref
+  (getter-with-setter
+   (lambda (class fnum obj)
+     (let ((slot (list-ref (class-slots class) fnum #f)))
+       (and slot
+            (slot-ref obj (slot-definition-name slot)))))
+   (lambda (class fnum obj val)
+     (let ((slot (list-ref (class-slots class) fnum #f)))
+       (and slot
+            (slot-set! obj (slot-definition-name slot) val))))))
 
 (define (genmatch x clauses match-expr)
   (let* ((length>= (gensym))
@@ -890,8 +895,6 @@
                          (else '()))))
                      ((eq? (car tst) 'null?)
                       `((list? ,e)))
-                     ((vec-structure? tst)
-                      `((vector? ,e)))
                      (else '())))
            (not-imp (case (car tst)
                       ((list?) `((not (null? ,e))))
@@ -1040,18 +1043,6 @@
                               (disjoint? x)
                               (not (memq (car x) '(list? pair? null?))))
                          (mem (cdr l)))))))
-              ((vec-structure? srch)
-               (let mem ((l l))
-                 (if (null? l)
-                   #f
-                   (let ((x (car l)))
-                     (or (and (equal? (cadr x) (cadr srch))
-                              (or (disjoint? x)
-                                  (vec-structure? x))
-                              (not (equal? (car x) 'vector?))
-                              (not (equal? (car x) (car srch))))
-                         (equal? x `(not (vector? ,(cadr srch))))
-                         (mem (cdr l)))))))
               (else #f))))))
 
 (define (equal-test? tst)
@@ -1072,9 +1063,6 @@
 
 (define (disjoint? tst)
   (memq (car tst) match:disjoint-predicates))
-
-(define (vec-structure? tst)
-  (memq (car tst) match:vector-structures))
 
 (define (add-a a)
   (let ((new (and (pair? a) (assq (car a) c---rs))))
@@ -1100,102 +1088,15 @@
                  (cdddr cadddr . cddddr)))
 
 (define (get-setter e p)
-  (let ((mk-setter (lambda (s)
-                     (symbol-append 'set- s '!))))
-    (cond
-     ((not (pair? e)) (match:syntax-err
-                       p
-                       "unnested set! pattern"))
-     ((eq? (car e) 'vector-ref) `(let ((x ,(cadr e)))
-                                   (lambda (y)
-                                     (vector-set!
-                                      x
-                                      ,(caddr e)
-                                      y))))
-     ((eq? (car e) 'unbox) `(let ((x ,(cadr e)))
-                              (lambda (y)
-                                (set-box! x y))))
-     ((eq? (car e) 'car) `(let ((x ,(cadr e)))
-                            (lambda (y)
-                              (set-car! x y))))
-     ((eq? (car e) 'cdr) `(let ((x ,(cadr e)))
-                            (lambda (y)
-                              (set-cdr! x y))))
-     ((let ((a (assq (car e) get-c---rs)))
-        (and a
-             `(let ((x (,(cadr a) ,(cadr e))))
-                (lambda (y)
-                  (,(mk-setter (cddr a)) x y))))))
-     (else `(let ((x ,(cadr e)))
-              (lambda (y) (,(mk-setter (car e)) x y)))))))
+  (unless (pair? e)
+    (match:syntax-err p "unnested set! pattern"))
+  `(cute (or (setter ,(car e)) (error "no setter defined to bind " ',p))
+         ,@(cdr e) <>))
 
 (define (get-getter e p)
-  (cond
-   ((not (pair? e)) (match:syntax-err
-                     p
-                     "unnested get! pattern"))
-   ((eq? (car e) 'vector-ref) `(let ((x ,(cadr e)))
-                                 (lambda ()
-                                   (vector-ref
-                                    x
-                                    ,(caddr e)))))
-   ((eq? (car e) 'unbox) `(let ((x ,(cadr e)))
-                            (lambda () (unbox x))))
-   ((eq? (car e) 'car) `(let ((x ,(cadr e)))
-                          (lambda () (car x))))
-   ((eq? (car e) 'cdr) `(let ((x ,(cadr e)))
-                          (lambda () (cdr x))))
-   ((let ((a (assq (car e) get-c---rs)))
-      (and a
-           `(let ((x (,(cadr a) ,(cadr e))))
-              (lambda () (,(cddr a) x))))))
-   (else `(let ((x ,(cadr e)))
-            (lambda () (,(car e) x))))))
-
-(define get-c---rs '((caar car . car)
-                     (cadr cdr . car)
-                     (cdar car . cdr)
-                     (cddr cdr . cdr)
-                     (caaar caar . car)
-                     (caadr cadr . car)
-                     (cadar cdar . car)
-                     (caddr cddr . car)
-                     (cdaar caar . cdr)
-                     (cdadr cadr . cdr)
-                     (cddar cdar . cdr)
-                     (cdddr cddr . cdr)
-                     (caaaar caaar . car)
-                     (caaadr caadr . car)
-                     (caadar cadar . car)
-                     (caaddr caddr . car)
-                     (cadaar cdaar . car)
-                     (cadadr cdadr . car)
-                     (caddar cddar . car)
-                     (cadddr cdddr . car)
-                     (cdaaar caaar . cdr)
-                     (cdaadr caadr . cdr)
-                     (cdadar cadar . cdr)
-                     (cdaddr caddr . cdr)
-                     (cddaar cdaar . cdr)
-                     (cddadr cdadr . cdr)
-                     (cdddar cddar . cdr)
-                     (cddddr cdddr . cdr)))
-
-(define (symbol-append . l)
-  (string->symbol
-   (apply
-    string-append
-    (map (lambda (x)
-           (cond
-            ((symbol? x) (symbol->string x))
-            ((number? x) (number->string x))
-            (else x)))
-         l))))
-
-(define (rac l) (if (null? (cdr l)) (car l) (rac (cdr l))))
-
-(define (rdc l)
-  (if (null? (cdr l)) '() (cons (car l) (rdc (cdr l)))))
+  (unless (pair? e)
+    (match:syntax-err p "unnested get! pattern"))
+  `(cute ,@e))
 
 (define match:expanders
   (list genmatch genletrec gendefine pattern-var?))
