@@ -1,3 +1,8 @@
+2003-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMEval): resets numVals before evaluating the
+	  compiled code, in order to prevent wrong numVals from propagating.
+
 2003-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/list.scm : extends srfi-1, instead of uses it.
