@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.135 2001-05-12 21:22:10 shirok Exp $
+ *  $Id: gauche.h,v 1.136 2001-05-14 19:09:02 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1460,6 +1460,14 @@ extern ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args);
 extern ScmObj Scm_BignumDivSI(ScmBignum *bx, long y, long *r);
 extern ScmObj Scm_BignumDivRem(ScmBignum *bx, ScmBignum *by);
 
+extern ScmObj Scm_BignumLogAndSI(ScmBignum *bx, long y);
+extern ScmObj Scm_BignumLogAnd(ScmBignum *bx, ScmBignum *by);
+extern ScmObj Scm_BignumLogIor(ScmBignum *bx, ScmBignum *by);
+extern ScmObj Scm_BignumLogXor(ScmBignum *bx, ScmBignum *by);
+extern ScmObj Scm_BignumLogNot(ScmBignum *bx);
+extern ScmObj Scm_BignumLogBit(ScmBignum *bx, int bit);
+extern ScmObj Scm_BignumAsh(ScmBignum *bx, int cnt);
+
 struct ScmFlonumRec {
     SCM_HEADER;
     double value;
@@ -1515,6 +1523,14 @@ extern int    Scm_NumCmp(ScmObj x, ScmObj y);
 extern ScmObj Scm_Max(ScmObj arg0, ScmObj args);
 extern ScmObj Scm_Min(ScmObj arg0, ScmObj args);
 
+extern ScmObj Scm_LogAnd(ScmObj x, ScmObj y);
+extern ScmObj Scm_LogIor(ScmObj x, ScmObj y);
+extern ScmObj Scm_LogXor(ScmObj x, ScmObj y);
+extern ScmObj Scm_LogNot(ScmObj x);
+extern int    Scm_LogTest(ScmObj x, ScmObj y);
+extern int    Scm_LogBit(ScmObj x, int bit);
+extern ScmObj Scm_Ash(ScmObj x, int cnt);
+    
 enum {
     SCM_ROUND_FLOOR,
     SCM_ROUND_CEIL,
