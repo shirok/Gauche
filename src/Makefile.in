@@ -86,7 +86,7 @@ moplib.c : moplib.stub genstub
 
 libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) x $(GCLIB)
-	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
+	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB) | sed '/__.SYMDEF/d'`
 	$(RANLIB) libgauche.a
 
 libgauche.@SHLIB_DYLIB_SUFFIX@ : $(OBJS) $(GCLIB)
