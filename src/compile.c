@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.83 2002-09-12 09:54:24 shirok Exp $
+ *  $Id: compile.c,v 1.84 2002-09-17 09:42:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -100,11 +100,20 @@ static inline ScmObj make_lset(int depth, int offset)
     return SCM_VM_INSN2(SCM_VM_LSET, depth, offset);
 }
 
-static inline ScmObj add_srcinfo(ScmObj code, ScmObj source)
+static ScmObj add_srcinfo(ScmObj code, ScmObj source)
 {
     if (SCM_PAIRP(code)) {
-        SCM_PAIR_ATTR(code) = Scm_Cons(Scm_Cons(SCM_SYM_SOURCE_INFO, source),
-                                       SCM_PAIR_ATTR(code));
+        SCM_PAIR_ATTR(code) = Scm_Acons(SCM_SYM_SOURCE_INFO, source,
+                                        SCM_PAIR_ATTR(code));
+    }
+    return code;
+}
+
+static ScmObj add_bindinfo(ScmObj code, ScmObj info)
+{
+    if (SCM_PAIRP(code)) {
+        SCM_PAIR_ATTR(code) = Scm_Acons(SCM_SYM_BIND_INFO, info,
+                                        SCM_PAIR_ATTR(code));
     }
     return code;
 }
@@ -231,7 +240,7 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 
 #define TOPLEVEL_ENV_P(env)   SCM_NULLP(env)
 
-static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
+static ScmObj lookup_env(ScmObj var, ScmObj env, int op)
 {
     ScmObj ep, frame, fp;
     int depth = 0;
@@ -271,7 +280,7 @@ static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
     }
 }
 
-static inline ScmObj get_binding_frame(ScmObj var, ScmObj env)
+static ScmObj get_binding_frame(ScmObj var, ScmObj env)
 {
     ScmObj frame, fp;
     SCM_FOR_EACH(frame, env) {
@@ -829,9 +838,8 @@ static ScmObj compile_body(ScmObj form,
 
     if (idefs > 0) {
         /* Internal defines introduced a new scope. */
-        body = SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, idefs),
-                         idef_vars,
-                         body);
+        body = add_bindinfo(SCM_LIST2(SCM_VM_INSN1(SCM_VM_LET, idefs), body),
+                            idef_vars);
     }
     return body;
 }
@@ -1250,7 +1258,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     ADDCODE(body_compiler(body, newenv, ctx));
 
     if (nvars > 0) {
-        return add_srcinfo(SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), vars, code), form);
+        return add_bindinfo(add_srcinfo(SCM_LIST2(SCM_VM_INSN1(SCM_VM_LET, nvars), code), form), vars);
     } else {
         return add_srcinfo(code, form);
     }
@@ -1382,7 +1390,6 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
 
     SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN1(SCM_VM_PRE_CALL, varcnt));
     SCM_APPEND1(updcode, updtail, SCM_VM_INSN1(SCM_VM_TAILBIND, varcnt));
-    SCM_APPEND1(updcode, updtail, SCM_NIL); /* dbg info */
     SCM_APPEND1(bodycode, bodytail, updcode);
 
     /* Compile finalization code */
@@ -1736,8 +1743,8 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
     if (!SCM_NULLP(vp)) { restvars=1; SCM_APPEND1(bind, bindtail, vp); }
     
     ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
-    ADDCODE1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, nvars, restvars));
-    ADDCODE1(form);             /* info; should be source-inro? */
+    ADDCODE(add_bindinfo(SCM_LIST1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, nvars, restvars)),
+                         vars));
     ADDCODE1(compile_body(body, Scm_Cons(bind, env), ctx));
     return code;
 }

@@ -170,6 +170,15 @@
 (test "call-with-values" '()
       (lambda ()  (call-with-values (lambda () (values)) list)))
 
+;; This is not 'right' in R5RS sense---for now, I just tolerate it
+;; by CommonLisp way, i.e. if more than one value is passed to an
+;; implicit continuation that expects one value, the second and after
+;; values are just discarded.  This behavior may be changed later,
+;; so do not count on it.   The test just make sure it doesn't screw
+;; up anything.
+(test "receive" '((0 0))
+      (lambda ()  (receive l (list 0 (values 0 1 2)) l)))
+
 ;;----------------------------------------------------------------
 (test-section "eval")
 

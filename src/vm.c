@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.175 2002-09-12 09:54:24 shirok Exp $
+ *  $Id: vm.c,v 1.176 2002-09-17 09:42:06 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -725,11 +725,8 @@ static void run_loop()
             }
             CASE(SCM_VM_TAILBIND) {
                 ScmObj *to, *from;
-                ScmObj info;
                 int env_size = SCM_VM_INSN_ARG(code);
                 ScmEnvFrame *e;
-                FETCH_INSN(info); /* dummy info. discard it for now. */
-                
                 /* Shift env frame. */
                 /* NB: if env_size is zero, we don't have an env frame 
                    to copy.  Just need to adjust sp. */
@@ -752,16 +749,14 @@ static void run_loop()
             CASE(SCM_VM_LET) {
                 int nlocals = SCM_VM_INSN_ARG(code);
                 int size = CONT_FRAME_SIZE + ENV_SIZE(nlocals);
-                ScmObj info, body;
+                ScmObj body;
                 CHECK_STACK(size);
-                VM_ASSERT(SCM_PAIRP(pc));
-                FETCH_INSN(info);
                 VM_ASSERT(SCM_PAIRP(pc));
                 FETCH_INSN(body);
                 if (!SCM_NULLP(pc)) {
                     PUSH_CONT(prevpc, pc);
                 }
-                PUSH_LOCAL_ENV(nlocals, info);
+                PUSH_LOCAL_ENV(nlocals, prevpc);
                 pc = body;
                 continue;
             }
@@ -864,11 +859,10 @@ static void run_loop()
                 int restarg = SCM_VM_INSN_ARG1(code);
                 int size = CONT_FRAME_SIZE + ENV_SIZE(reqargs + restarg);
                 int i = 0, argsize;
-                ScmObj rest = SCM_NIL, tail = SCM_NIL, info, body;
+                ScmObj rest = SCM_NIL, tail = SCM_NIL, body;
                 ScmEnvFrame *e;
 
                 CHECK_STACK(size);
-                FETCH_INSN(info);
                 if (vm->numVals < reqargs) {
                     VM_ERR(("received fewer values than expected"));
                 } else if (!restarg && vm->numVals > reqargs) {
@@ -899,7 +893,7 @@ static void run_loop()
                 }
                 vm->numVals = 1;
 
-                FINISH_ENV(info, env);
+                FINISH_ENV(prevpc, env);
                 pc = body;
                 continue;
             }
@@ -922,12 +916,14 @@ static void run_loop()
                 if (!SCM_PAIRP(val0))
                     VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CAR(val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_CDR) {
                 if (!SCM_PAIRP(val0))
                     VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CDR(val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_LIST) {
@@ -944,6 +940,7 @@ static void run_loop()
                     }
                 }
                 val0 = cp;
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_LIST_STAR) {
@@ -959,20 +956,24 @@ static void run_loop()
                     }
                 }
                 val0 = cp;
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NOT) {
                 val0 = SCM_MAKE_BOOL(SCM_FALSEP(val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NULLP) {
                 val0 = SCM_MAKE_BOOL(SCM_NULLP(val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_EQ) {
                 ScmObj item;
                 POP_ARG(item);
                 val0 = SCM_MAKE_BOOL(item == val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_EQV) {
@@ -980,6 +981,7 @@ static void run_loop()
                 POP_ARG(item);
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_EqvP(item, val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_MEMQ) {
@@ -987,6 +989,7 @@ static void run_loop()
                 POP_ARG(item);
                 SAVE_REGS();
                 val0 = Scm_Memq(item, val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_MEMV) {
@@ -994,6 +997,7 @@ static void run_loop()
                 POP_ARG(item);
                 SAVE_REGS();
                 val0 = Scm_Memv(item, val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_ASSQ) {
@@ -1001,6 +1005,7 @@ static void run_loop()
                 POP_ARG(item);
                 SAVE_REGS();
                 val0 = Scm_Assq(item, val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_ASSV) {
@@ -1008,26 +1013,32 @@ static void run_loop()
                 POP_ARG(item);
                 SAVE_REGS();
                 val0 = Scm_Assv(item, val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_PAIRP) {
                 val0 = SCM_MAKE_BOOL(SCM_PAIRP(val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_CHARP) {
                 val0 = SCM_MAKE_BOOL(SCM_CHARP(val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_EOFP) {
                 val0 = SCM_MAKE_BOOL(SCM_EOFP(val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_STRINGP) {
                 val0 = SCM_MAKE_BOOL(SCM_STRINGP(val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_SYMBOLP) {
                 val0 = SCM_MAKE_BOOL(SCM_SYMBOLP(val0));
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_APPEND) {
@@ -1044,11 +1055,13 @@ static void run_loop()
                     }
                 }
                 val0 = cp;
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_REVERSE) {
                 SAVE_REGS();
                 val0 = Scm_Reverse(val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_APPLY) {
@@ -1069,11 +1082,13 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_VMApply(val0, cp);
                 RESTORE_REGS();
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_PROMISE) {
                 SAVE_REGS();
                 val0 = Scm_MakePromise(val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_SETTER) {
@@ -1082,6 +1097,7 @@ static void run_loop()
                     VM_ERR(("procedure required, but got %S\n", val0));
                 val0 = Scm_Setter(SCM_PROCEDURE(val0));
                 RESTORE_REGS();
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_VALUES) {
@@ -1112,6 +1128,7 @@ static void run_loop()
                     SCM_VECTOR_ELEMENT(vec, 0) = arg;
                 }
                 val0 = vec;
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_APP_VEC) {
@@ -1129,6 +1146,7 @@ static void run_loop()
                 }
                 SAVE_REGS();
                 val0 = Scm_ListToVector(cp);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_VEC_LEN) {
@@ -1137,6 +1155,7 @@ static void run_loop()
                     VM_ERR(("vector expected, but got %S\n", val0));
                 siz = SCM_VECTOR_SIZE(val0);
                 val0 = SCM_MAKE_INT(siz);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_VEC_REF) {
@@ -1151,6 +1170,7 @@ static void run_loop()
                 if (k < 0 || k >= SCM_VECTOR_SIZE(vec))
                     VM_ERR(("index out of range: %d\n", k));
                 val0 = SCM_VECTOR_ELEMENT(vec, k);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_VEC_SET) {
@@ -1167,6 +1187,7 @@ static void run_loop()
                     VM_ERR(("index out of range: %d\n", k));
                 SCM_VECTOR_ELEMENT(vec, k) = val0;
                 val0 = SCM_UNDEFINED;
+                vm->numVals = 1;
                 continue;
 
             }
@@ -1179,6 +1200,7 @@ static void run_loop()
                     SAVE_REGS();
                     val0 = SCM_MAKE_BOOL(Scm_NumEq(arg, val0));
                 }
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMLT2) {
@@ -1186,6 +1208,7 @@ static void run_loop()
                 POP_ARG(arg);
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) < 0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMLE2) {
@@ -1193,6 +1216,7 @@ static void run_loop()
                 POP_ARG(arg);
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) <= 0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMGT2) {
@@ -1200,6 +1224,7 @@ static void run_loop()
                 POP_ARG(arg);
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) > 0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMGE2) {
@@ -1207,6 +1232,7 @@ static void run_loop()
                 POP_ARG(arg);
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) >= 0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMADD2) {
@@ -1214,6 +1240,7 @@ static void run_loop()
                 POP_ARG(arg);
                 SAVE_REGS();
                 val0 = Scm_Add(arg, val0, SCM_NIL);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMSUB2) {
@@ -1221,6 +1248,7 @@ static void run_loop()
                 POP_ARG(arg);
                 SAVE_REGS();
                 val0 = Scm_Subtract(arg, val0, SCM_NIL);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMADDI) {
@@ -1237,6 +1265,7 @@ static void run_loop()
                     SAVE_REGS();
                     val0 = Scm_Add(SCM_MAKE_INT(imm), val0, SCM_NIL);
                 }
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_NUMSUBI) {
@@ -1253,6 +1282,7 @@ static void run_loop()
                     SAVE_REGS();
                     val0 = Scm_Subtract(SCM_MAKE_INT(imm), val0, SCM_NIL);
                 }
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_READ_CHAR) {
@@ -1269,6 +1299,7 @@ static void run_loop()
                 SCM_GETC(ch, port);
                 RESTORE_REGS();
                 val0 = (ch < 0)? SCM_EOF : SCM_MAKE_CHAR(ch);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_WRITE_CHAR) {
@@ -1289,7 +1320,8 @@ static void run_loop()
                 SAVE_REGS();
                 SCM_PUTC(SCM_CHAR_VALUE(ch), port);
                 RESTORE_REGS();
-                val0 = SCM_MAKE_INT(1);
+                val0 = SCM_UNDEFINED;
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_SLOT_REF) {
@@ -1300,6 +1332,7 @@ static void run_loop()
                 pc = SCM_NIL;
                 SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
+                vm->numVals = 1;
                 RESTORE_REGS();
                 continue;
             }
@@ -1312,6 +1345,7 @@ static void run_loop()
                 pc = SCM_NIL;
                 SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
+                vm->numVals = 1;
                 RESTORE_REGS();
                 continue;
             }

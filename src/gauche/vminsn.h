@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.30 2002-09-10 20:16:48 shirok Exp $
+ *  $Id: vminsn.h,v 1.31 2002-09-17 09:42:06 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -90,7 +90,7 @@ DEFINSN(SCM_VM_DEFINE_CONST, "DEFINE-CONST", 0)
  */
 DEFINSN(SCM_VM_LAMBDA, "LAMBDA", 2)
 
-/* LET(NLOCALS) <INFO> <BODY>
+/* LET(NLOCALS) <BODY>
  *
  *  Create a new environment frame, size of NLOCALS.  let-families
  *  like let, let* and letrec yields this instruction.
@@ -104,7 +104,7 @@ DEFINSN(SCM_VM_LET, "LET", 1)
  */
 DEFINSN(SCM_VM_IF, "IF", 0)
 
-/* TAILBIND(NARGS) <INFO>
+/* TAILBIND(NARGS)
  *
  *  Lightweight tail call.  This instruction appears in the loop body
  *  and the tail call to inlined procedures.

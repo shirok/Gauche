@@ -1,3 +1,13 @@
+2002-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/compile.c : changed VM_LET, VM_VALUES_BIND and
+	  VM_TAILBIND not to take extra debug info word after the instruction.
+	  This shortens instruction stream and makes execution slightly faster.
+	  The debug information is kept in the pair attribute 'bind-info'
+	  of the instruction stream.
+	* src/vm.c : fixed a problem of inlined procedures being confused
+	  if they passed multiple values.
+
 2002-09-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/quoted-printable.scm : fixed several bugs using test cases.
