@@ -1,7 +1,7 @@
 ;;;
 ;;; port related utility functions.  to be autoloaded.
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: portutil.scm,v 1.3 2002-12-13 11:41:39 shirok Exp $
+;;;  $Id: portutil.scm,v 1.4 2003-01-31 02:34:30 shirok Exp $
 ;;;
 
 (define-module gauche.portutil
@@ -27,22 +27,24 @@
 ;;   TODO: allow caller to specify reading units
 (define (port->string port)
   (let ((out (open-output-string)))
-    (%with-port-locking port
+    (with-port-locking port
       (lambda ()
-        (%with-port-locking out
+        (with-port-locking out
           (lambda ()
-            (let loop ((ch (%read-char-unsafe port)))
+            (let loop ((ch (read-char port)))
               (unless (eof-object? ch)
-                (%write-char-unsafe ch out)
-                (loop (%read-char-unsafe port))))
+                (write-char ch out)
+                (loop (read-char port))))
             (get-output-string out)))))))
 
 (define (port->list reader port)
-  (let loop ((obj (reader port))
-             (result '()))
-    (if (eof-object? obj)
-        (reverse! result)
-        (loop (reader port) (cons obj result)))))
+  (with-port-locking port
+    (lambda ()
+      (let loop ((obj (reader port))
+                 (result '()))
+        (if (eof-object? obj)
+            (reverse! result)
+            (loop (reader port) (cons obj result)))))))
 
 (define (port->string-list port)
   (port->list read-line port))
@@ -58,9 +60,9 @@
 (autoload gauche.uvector make-u8vector read-block! write-block)
 
 (define-macro (%do-copy reader writer incr)
-  `(%with-port-locking src
+  `(with-port-locking src
     (lambda ()
-      (%with-port-locking dst
+      (with-port-locking dst
         (lambda ()
           (let loop ((data  ,reader)
                      (count 0))
@@ -70,9 +72,9 @@
                        (loop ,reader ,incr)))))))))
 
 (define-macro (%do-copy/limit1 reader writer limit)
-  `(%with-port-locking src
+  `(with-port-locking src
     (lambda ()
-      (%with-port-locking dst
+      (with-port-locking dst
         (lambda ()
           (let loop ((count 0))
             (if (>= count ,limit)
@@ -83,10 +85,10 @@
                       (begin ,writer
                              (loop (+ count 1))))))))))))
 
-(define (%do-copy/limitN src dst buf unit limit)
-  (%with-port-locking src
+(define (do-copy/limitN src dst buf unit limit)
+  (with-port-locking src
     (lambda ()
-      (%with-port-locking dst
+      (with-port-locking dst
         (lambda ()
           (let loop ((count 0))
             (if (>= count limit)
@@ -107,19 +109,19 @@
                        (size 0))
     (cond ((eq? unit 'byte)
            (if (and (integer? size) (positive? size))
-               (%do-copy/limit1 (%read-byte-unsafe src)
-                                (%write-byte-unsafe data dst)
+               (%do-copy/limit1 (read-byte src)
+                                (write-byte data dst)
                                 size)
-               (%do-copy (%read-byte-unsafe src)
-                         (%write-byte-unsafe data dst)
+               (%do-copy (read-byte src)
+                         (write-byte data dst)
                          (+ count 1))))
           ((eq? unit 'char)
            (if (and (integer? size) (positive? size))
-               (%do-copy/limit1 (%read-char-unsafe src)
-                                (%write-char-unsafe data dst)
+               (%do-copy/limit1 (read-char src)
+                                (write-char data dst)
                                 size)
-               (%do-copy (%read-char-unsafe src)
-                         (%write-char-unsafe data dst)
+               (%do-copy (read-char src)
+                         (write-char data dst)
                          (+ count 1))))
           ((integer? unit)
            (let ((buf (make-u8vector (if (zero? unit) 4196 unit))))

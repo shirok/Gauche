@@ -1,7 +1,7 @@
 /*
  * portapi.c - port common API
  *
- *  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2002-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,11 +12,15 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.6 2002-12-13 23:58:20 shirok Exp $
+ *  $Id: portapi.c,v 1.7 2003-01-31 02:34:30 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
  * variant of port common APIs.
+ *
+ * The macro SHORTCUT allows 'safe' version to bypass lock/unlock
+ * stuff by calling 'unsafe' version when the port is already locked by
+ * the calling thread.
  */
 
 #ifdef SAFE_PORT_OP
@@ -24,11 +28,14 @@
 #define LOCK(p)       PORT_LOCK(p, vm)
 #define UNLOCK(p)     PORT_UNLOCK(p)
 #define SAFE_CALL(p, exp) PORT_SAFE_CALL(p, exp)
+#define SHORTCUT(p, unsafe) \
+  do { if (PORT_LOCKED(p, vm)) { unsafe; }} while (0)
 #else
 #define VMDECL        /*none*/
 #define LOCK(p)       /*none*/
 #define UNLOCK(p)     /*none*/
 #define SAFE_CALL(p, exp) (exp)
+#define SHORTCUT(p, unsafe) /* none */
 #endif
 
 /* Convenience macro */
@@ -52,7 +59,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
 #endif
 {
     VMDECL;
-
+    SHORTCUT(p, Scm_PutbUnsafe(b, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
 
@@ -94,7 +101,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
 {
     int nb;
     VMDECL;
-    
+    SHORTCUT(p, Scm_PutcUnsafe(c, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
     
@@ -141,6 +148,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
 #endif
 {
     VMDECL;
+    SHORTCUT(p, Scm_PutsUnsafe(s, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
     
@@ -186,6 +194,7 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
 #endif
 {
     VMDECL;
+    SHORTCUT(p, Scm_PutzUnsafe(s, siz, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
     if (siz < 0) siz = strlen(s);
@@ -230,6 +239,7 @@ void Scm_FlushUnsafe(ScmPort *p)
 #endif
 {
     VMDECL;
+    SHORTCUT(p, Scm_FlushUnsafe(p); return);
     LOCK(p);
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
@@ -261,6 +271,7 @@ void Scm_UngetcUnsafe(ScmChar c, ScmPort *p)
 #endif
 {
     VMDECL;
+    SHORTCUT(p, Scm_UngetcUnsafe(c, p); return);
     LOCK(p);
     SCM_UNGETC(c, p);
     UNLOCK(p);
@@ -303,7 +314,7 @@ int Scm_GetbUnsafe(ScmPort *p)
 {
     int b = 0, r = 0;
     VMDECL;
-
+    SHORTCUT(p, return Scm_GetbUnsafe(p));
     LOCK(p);
     CLOSE_CHECK(p);
 
@@ -380,7 +391,7 @@ int Scm_GetcUnsafe(ScmPort *p)
 {
     int first, nb, c = 0, r = 0;
     VMDECL;
-
+    SHORTCUT(p, return Scm_GetcUnsafe(p));
     LOCK(p);
     CLOSE_CHECK(p);
     if (p->scrcnt > 0) {
@@ -537,6 +548,7 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
 {
     int siz = 0, r = 0;
     VMDECL;
+    SHORTCUT(p, return Scm_GetzUnsafe(buf, buflen, p));
     LOCK(p);
     CLOSE_CHECK(p);
 
@@ -596,6 +608,7 @@ ScmObj Scm_ReadLineUnsafe(ScmPort *p)
     int c1, c2;
     ScmDString ds;
     VMDECL;
+    SHORTCUT(p, return Scm_ReadLineUnsafe(p));
 
     Scm_DStringInit(&ds);
     LOCK(p);
@@ -631,6 +644,7 @@ int Scm_CharReadyUnsafe(ScmPort *p)
 {
     int r = 0;
     VMDECL;
+    SHORTCUT(p, return Scm_CharReadyUnsafe(p));
     if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
     LOCK(p);
     if (SCM_PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) r = TRUE;
@@ -692,6 +706,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     off_t r = (off_t)-1, o = Scm_IntegerToOffset(off);
     int nomove = (whence == SEEK_CUR && o == 0);
     VMDECL;
+    SHORTCUT(p, return Scm_PortSeekUnsafe(p, off, whence));
     if (SCM_PORT_CLOSED_P(p)) {
         Scm_Error("attempt to seek on closed port: %S", p);
     }
@@ -754,5 +769,6 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
 #undef LOCK
 #undef UNLOCK
 #undef SAFE_CALL
+#undef SHORTCUT
 #undef CLOSE_CHECK
 
