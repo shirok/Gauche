@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.14 2001-12-20 07:18:16 shirok Exp $
+;; $Id: dynwind.scm,v 1.15 2001-12-20 11:47:13 shirok Exp $
 
 (use gauche.test)
 
@@ -145,6 +145,28 @@
 (test "dynamic-wind"
       '(3 connect talk1 disconnect connect talk2 disconnect 1)
       dynwind-test2)
+
+(test "dynamic-wind" '(a b c d e f g b c d e f g h)
+      (lambda ()
+        (let ((x '())
+              (c #f))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (dynamic-wind
+              (lambda () (push! x 'b))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'c))
+                 (lambda () (set! c (call/cc identity)))
+                 (lambda () (push! x 'd))))
+              (lambda () (push! x 'e)))
+             (dynamic-wind
+              (lambda () (push! x 'f))
+              (lambda () (when c (c #f)))
+              (lambda () (push! x 'g))))
+           (lambda () (push! x 'h)))
+          (reverse x))))
 
 ;; Test for multiple values
 (test "dynamic-wind (multival)" '(a b c)
