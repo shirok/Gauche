@@ -1,4 +1,5 @@
 #! /bin/sh
 autoconf
+(cd gc; autoconf)
 extensions=`grep '^SUBDIRS=' ext/Makefile | sed -e 's/SUBDIRS=//'`
 for ext in $extensions; do (echo $ext; cd ext/$ext; autoconf -l ../..); done
