@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.28 2001-06-23 08:14:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.29 2001-06-23 10:30:43 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2105,11 +2105,21 @@ the copying is done character by character, using C-version of
 @subsection File ports
 
 @defun open-input-file filename
-[R5RS]
-@end defun
+@defunx open-output-file filename
+[R5RS] Opens a file @var{filename} for input or output, and
+returns an input or output port associated with it, respectively.
+If @var{filename} can't be opened, an error is signalled.
+If @code{open-output-file} is called on an existing file, the
+file is truncated.
 
-@defun open-output-file filename
-[R5RS]
+Note for portability: Some Scheme implementations (e.g. STk) allows
+you to specify a command to @var{filename} and reads from, or
+writes to, the subprocess standard input/output.  Some other scripting
+languages (e.g. Perl) have similar features.  In Gauche,
+@code{open-input-file} and @code{open-output-file} strictly operates
+on files.  However, you can use ``process ports'' to invoke
+other command in a subprocess and to communiate it.
+@xref{Process ports}, for details.
 @end defun
 
 @defun call-with-input-file string proc
@@ -2703,6 +2713,7 @@ function signals an error.
 @defvarx SIGQUIT
 @defvarx SIGSEGV
 @defvarx SIGSTOP
+@defvarx SIGTERM
 @defvarx SIGTSTP
 @defvarx SIGTTIN
 @defvarx SIGTTOU
@@ -3983,8 +3994,10 @@ If the corresponding i/o is not connected to the pipe,
 the function returns @code{#f}.
 
 @example
-(let ((process (run-process "date" :output :pipe)))
-  (read-line (process-output process)))
+(let* ((process (run-process "date" :output :pipe))
+       (line (read-line (process-output process))))
+  (process-wait process)
+  line)
  @result{} "Fri Jun 22 22:22:22 HST 2001"
 @end example
 @end deffn
@@ -4021,9 +4034,38 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @subsection Process ports
 
 @defun open-input-process-port command
+Runs @var{command} via @code{/bin/sh} asynchronously.
+An input port is returned, which is connected to the
+stdout of @var{command}.   The stdin and stderr of @var{command}
+is redirected from/to @code{/dev/null}.  If you need to get
+an error output, you can use shell's redirection.
+@example
+(let ((port (open-input-process-port "ls -l Makefile")))
+  (read-line port))
+ @result{} "-rw-r--r--   1 shiro    users        1013 Jun 22 21:09 Makefile"
+
+(open-input-process-port "command 2>&1")
+ @result{} ;@r{the port reads both stdout and stderr}
+
+(open-input-process-port "command 2>&1 1>/dev/null")
+ @result{} ;@r{the port reads stderr}
+@end example
+Metacharacters are interpreted by shell.
+You have to be careful if you pass the string provided from
+the outside world, for it may make a security flaw.
+
+The exit status of subprocess is not automatically collected.
+It is the caller's responsibility to issue @code{process-wait},
+or the subprocess remains in a zombie state.  If it bothers you,
+you can use one of the following functions.
 @end defun
 
 @defun call-with-input-process command proc
+Runs @var{command} via @code{/bin/sh} and pipes its stdout
+to an input port, then call @var{proc} with the port as an argument.
+When @var{proc} returns, it collects its exit status,
+then returns the result @var{proc} returned.
+The cleanup is done even if @var{proc} raises an error.
 @end defun
 
 @defun with-input-from-process command thunk
