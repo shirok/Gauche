@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.19 2001-06-22 07:32:29 shirok Exp $
+ *  $Id: char.c,v 1.20 2001-09-18 07:57:20 shirok Exp $
  */
 
 #include <ctype.h>
@@ -84,7 +84,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
 
 #define MASK_INDEX(ch)       ((ch) >> MASK_BIT_SHIFT)
 #define MASK_BIT(ch)         (1L << ((ch) & MASK_BIT_MASK))
-#define MASK_ISSET(cs, ch)   (cs->mask[MASK_INDEX(ch)] & MASK_BIT(ch))
+#define MASK_ISSET(cs, ch)   (!!(cs->mask[MASK_INDEX(ch)] & MASK_BIT(ch)))
 #define MASK_SET(cs, ch)     (cs->mask[MASK_INDEX(ch)] |= MASK_BIT(ch))
 #define MASK_RESET(cs, ch)   (cs->mask[MASK_INDEX(ch)] &= ~MASK_BIT(ch))
 
