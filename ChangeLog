@@ -1,5 +1,9 @@
 2002-04-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c (scheme_slot_index) : damn it!  this routine has
+	  returned bogus index that causes illegal memory access.  It's
+	  a wonder that it hasn't revealed until now.  This was the reason
+	  of the bug described in the entry below.
 	* src/string.c, src/gauche.h: a snapshot of improving dynamic string
 	  handling by avoiding realloc.   NB: this version contains a nasty
 	  memory bug.

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.74 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: class.c,v 1.75 2002-04-18 10:30:47 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -673,7 +673,7 @@ static inline int scheme_slot_index(ScmObj obj, int number)
     if (number < 0 || number >= k->numInstanceSlots)
         Scm_Error("instance slot index %d out of bounds for %S",
                   number, obj);
-    return number-offset+1;
+    return number+offset-1;
 }
 
 
