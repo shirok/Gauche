@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.129 2001-05-06 01:26:26 shirok Exp $
+ *  $Id: gauche.h,v 1.130 2001-05-06 07:44:25 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1517,16 +1517,6 @@ enum {
 };
 extern ScmObj Scm_Round(ScmObj num, int mode);
 
-extern ScmObj Scm_Exp(ScmObj z);
-extern ScmObj Scm_Log(ScmObj z);
-extern ScmObj Scm_Sin(ScmObj z);
-extern ScmObj Scm_Cos(ScmObj z);
-extern ScmObj Scm_Tan(ScmObj z);
-extern ScmObj Scm_Asin(ScmObj z);
-extern ScmObj Scm_Acos(ScmObj z);
-extern ScmObj Scm_Atan(ScmObj z);
-extern ScmObj Scm_Atan2(ScmObj y, ScmObj x);
-extern ScmObj Scm_Sqrt(ScmObj z);
 extern ScmObj Scm_Expt(ScmObj z1, ScmObj z2);
 
 extern ScmObj Scm_Magnitude(ScmObj z);
