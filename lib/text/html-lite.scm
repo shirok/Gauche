@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: html-lite.scm,v 1.13 2003-12-05 01:39:42 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.14 2004-05-21 11:10:11 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -219,6 +219,9 @@
 
 ;; DOCUMENT STRUCTURE
 (define-html-elements html)
+
+;; FRAMES
+(define-html-elements frameset frame noframes iframe)
 
 (provide "text/html-lite")
 
