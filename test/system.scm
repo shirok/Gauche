@@ -153,8 +153,10 @@
          (sys-chmod "test.dir" #o755)
          (get-lsmode "test.dir")))
 
+(define *fs-test-str* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
 (with-output-to-file "test.dir/xyzzy"
-  (lambda () (display "zzzzzZzzzzZZzZzzzzzzzZzzZZZZz") (newline)))
+  (lambda () (display *fs-test-str*)))
 
 (test* "rename" '(#f #t)
        (begin
@@ -180,11 +182,25 @@
          (sys-rename "test.dir/xyzzy" "test.dir/zzZzz")
          (sort (sys-readdir "test.dir"))))
 
+(test* "truncate" "abcdefghijklmno"
+       (begin
+         (sys-truncate "test.dir/zzZzz" 15)
+         (call-with-input-file "test.dir/zzZzz" read-line)))
+
+(test* "ftruncate" "abcde"
+       (begin
+         (call-with-output-file "test.dir/zzZzz"
+           (cut sys-ftruncate <> 5)
+           :if-exists :append)
+         (call-with-input-file "test.dir/zzZzz" read-line)))
+
 (test* "rmdir" #f
        (begin
          (sys-unlink "test.dir/zzZzz")
          (sys-rmdir "test.dir")
          (sys-access "test.dir" |F_OK|)))
+
+
 
 ;;-------------------------------------------------------------------
 (test-section "stat")

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.93 2003-12-05 19:38:28 shirok Exp $
+;;; $Id: syslib.stub,v 1.94 2004-01-07 10:57:55 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -569,6 +569,19 @@
   name = ttyname(fd);
   if (name) SCM_RETURN(SCM_MAKE_STR_COPYING(name));
   else SCM_RETURN(SCM_FALSE);")
+
+(define-cproc sys-truncate (path::<string> length::<integer>)
+  "int r;
+  SCM_SYSCALL(r, truncate(Scm_GetStringConst(path), Scm_IntegerToOffset(length)));
+  if (r < 0) Scm_SysError(\"truncate failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-ftruncate (port_or_fd length::<integer>)
+  "int r;
+  int fd = Scm_GetPortFd(port_or_fd, TRUE);
+  SCM_SYSCALL(r, ftruncate(fd, Scm_IntegerToOffset(length)));
+  if (r < 0) Scm_SysError(\"ftruncate failed\");
+  SCM_RETURN(SCM_TRUE);")
 
 ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
 ;; prototype.  However, it screws up something else.  Just for now I
