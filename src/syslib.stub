@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.32 2001-06-20 10:44:01 shirok Exp $
+;;; $Id: syslib.stub,v 1.33 2001-06-20 18:49:20 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -586,6 +586,13 @@
     Scm_SysError(\"chdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
+(define-cproc sys-chmod (pathname mode)
+  (assert (string? pathname))
+  (assert (small-integer? mode))
+  "  if (chmod(Scm_GetStringConst(pathname), mode) < 0)
+    Scm_SysError(\"chmod failed\");
+  SCM_RETURN(SCM_TRUE);")
+
 (define-cproc sys-fork ()
   "  int pid = fork();
   SCM_RETURN(Scm_MakeInteger(pid));")
@@ -697,8 +704,10 @@
 
 (define-cproc sys-unlink (pathname)
   (assert (string? pathname))
-  "  if (unlink(Scm_GetStringConst(pathname)) < 0)
-        Scm_SysError(\"unlink failed\");
+  "  if (unlink(Scm_GetStringConst(pathname)) < 0) }
+     if (errno == ENOENT) { SCM_RETURN(SCM_FALSE); }
+     else Scm_SysError(\"unlink failed\");
+  }
   SCM_RETURN(SCM_TRUE);")
 
 (define-cproc sys-isatty (port_or_fd)
