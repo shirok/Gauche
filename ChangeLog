@@ -7,6 +7,9 @@
 	  a string, a regexp or a predicate.  The character case is handled
 	  by built-in (Scm_StringSplitByChar, %string-split-by-char), and
 	  the other cases are handled by autoloaded module gauche.stringutil.
+	* src/extlib.stub :added make-byte-string.
+	* lib/util/digest.scm, lib/rfc/hmac.scm, ext/digest/* : renamed
+	  *-update and *-final for *-update! and *-final!, respectively.
 
 2002-12-05  Shiro Kawai  <shiro@acm.org>
 

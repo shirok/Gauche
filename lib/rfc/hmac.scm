@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: hmac.scm,v 1.2 2002-12-03 01:25:01 shirok Exp $
+;;;  $Id: hmac.scm,v 1.3 2002-12-07 00:23:41 shirok Exp $
 ;;;
 
 ;;; RFC 2104 HMAC: Keyed-Hashing for Message Authentication
@@ -20,14 +20,9 @@
 (define-module rfc.hmac
   (use util.digest)
   (use gauche.uvector)
-  (export <hmac> make-byte-string
-	  hmac-update hmac-final hmac-digest hmac-digest-string))
+  (export <hmac> hmac-update! hmac-final! hmac-digest hmac-digest-string))
 
 (select-module rfc.hmac)
-
-;; temporary defined here
-(define (make-byte-string length byte)
-  (u8vector->string (make-u8vector length byte)))
 
 (define-class <hmac> ()
   ((key :getter key-of)
@@ -50,15 +45,15 @@
     (slot-set! self 'hasher (make hasher))
     (let* ((v (string->u8vector (key-of self)))
 	   (ipad (u8vector->string (u8vector-xor v #x36))))
-      (digest-update (hasher-of self) ipad))))
+      (digest-update! (hasher-of self) ipad))))
 
-(define-method hmac-update ((self <hmac>) data)
-  (digest-update (hasher-of self) data))
+(define-method hmac-update! ((self <hmac>) data)
+  (digest-update! (hasher-of self) data))
 
-(define-method hmac-final ((self <hmac>))
+(define-method hmac-final! ((self <hmac>))
   (let* ((v (string->u8vector (key-of self)))
 	 (opad (u8vector->string (u8vector-xor v #x5c)))
-	 (inner (digest-final (hasher-of self)))
+	 (inner (digest-final! (hasher-of self)))
 	 (outer (digest-string (class-of (hasher-of self))
 			       (string-append opad inner))))
     outer))
@@ -66,9 +61,9 @@
 (define (hmac-digest . args)
   (let ((hmac (apply make <hmac> args)))
     (port-for-each
-     (lambda (b) (hmac-update hmac b))
+     (lambda (b) (hmac-update! hmac b))
      (lambda () (read-block 4096)))
-    (hmac-final hmac)))
+    (hmac-final! hmac)))
 
 (define (hmac-digest-string string . args)
   (with-input-from-string string

@@ -12,12 +12,16 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: digest.scm,v 1.2 2002-12-03 01:25:01 shirok Exp $
+;;;  $Id: digest.scm,v 1.3 2002-12-07 00:23:41 shirok Exp $
 ;;;
+
+;; An abstract base- and meta-class of message digest algorithms.
+;; The concrete implementation is given in modules such as
+;; rfc.md5 and rfc.sha1.
 
 (define-module util.digest
   (export <message-digest-algorithm> <message-digest-algorithm-meta>
-	  digest-update digest-final digest digest-string))
+	  digest-update! digest-final! digest digest-string))
 
 (select-module util.digest)
 
@@ -28,9 +32,9 @@
   ()
   :metaclass <message-digest-algorithm-meta>)
 
-(define-method digest-update ((self <message-digest-algorithm>) data)
+(define-method digest-update! ((self <message-digest-algorithm>) data)
   #f)
-(define-method digest-final ((self <message-digest-algorithm>))
+(define-method digest-final! ((self <message-digest-algorithm>))
   #f)
 (define-method digest ((class <message-digest-algorithm-meta>))
   #f)

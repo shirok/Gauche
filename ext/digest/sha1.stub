@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: sha1.stub,v 1.1 2002-12-03 01:19:16 shirok Exp $
+;;;  $Id: sha1.stub,v 1.2 2002-12-07 00:23:41 shirok Exp $
 ;;;
 
 "
@@ -58,11 +58,11 @@
 
 (define-type <sha1> "ScmSha1*")
 
-(define-cproc %sha1-update (sha1::<sha1> data::<string>)
+(define-cproc %sha1-update! (sha1::<sha1> data::<string>)
   "  SHAUpdate(&sha1->ctx, Scm_GetString(data), SCM_STRING_SIZE(data));
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc %sha1-final (sha1::<sha1>)
+(define-cproc %sha1-final! (sha1::<sha1>)
   "  unsigned char digest[20];
   SHAFinal(digest, &sha1->ctx);
   SCM_RETURN(Scm_MakeString(digest, 20, 20, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING));")

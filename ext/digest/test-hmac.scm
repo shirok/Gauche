@@ -26,10 +26,10 @@
 (define hmac (make <hmac>
 	           :key (make-byte-string 16 #x0b)
 	           :hasher <md5>))
-(hmac-update hmac "Hi ")
-(hmac-update hmac "There")
-(test "hmac-final" "9294727a3638bb1c13f48ef8158bfc9d"
-      (lambda () (hexify (hmac-final hmac))))
+(hmac-update! hmac "Hi ")
+(hmac-update! hmac "There")
+(test "hmac-final!" "9294727a3638bb1c13f48ef8158bfc9d"
+      (lambda () (hexify (hmac-final! hmac))))
 
 (test "hmac-digest-string" "9294727a3638bb1c13f48ef8158bfc9d"
       (lambda ()
