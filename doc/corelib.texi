@@ -8403,6 +8403,14 @@ I tried to keep the interface similar whenever reasonable.
 @c COMMON
 
 @c EN
+Gauche restarts a system call after it is interrupted by a signal.
+See @ref{Signal} for the details.
+@c JP
+なお、Gaucheはシステムコールがシグナルによって割り込まれた場合、
+システムコールをリスタートします。詳しくは@ref{Signal}を参照して下さい。
+@c COMMON
+
+@c EN
 If you are familiar with system programming in C,
 see also @ref{C to Scheme mapping}, which shows
 correspondence between C standard library functions
@@ -9547,6 +9555,18 @@ See @ref{Signals and threads}, for details.
 詳しくは@ref{Signals and threads}を参照して下さい。
 @c COMMON
 
+@c EN
+When a system call is interrupted by a signal,
+and a programmer defines a handler for the signal that doesn't transfer
+control to other context, the system call is restarted after
+the handler returns.  
+@c JP
+システムコールがシグナルによって割り込まれ、
+プログラマがシグナルハンドラをセットしており、そのハンドラが別コンテキストに
+制御を移さずに戻った場合、そのシステムコールはハンドラからの復帰後に
+リスタートされます。
+@c COMMON
+
 @menu
 * Signals and signal sets::     
 * Sending signals::             
@@ -9761,7 +9781,7 @@ queuing the signal).
 VMは「安全なポイント」に達した時にキューを検査し、シグナルが届いていれば
 それを順に処理します。
 (このメカニズムのため、@code{SIGILL}のようなシグナルはSchemeレベルでは
-処理できません。そのシグナルをキューに入れた後でプロセスが処理を続行できない
+処理できません。そのシグナルをキューに入れた後でプロセスが意味のある処理を続行できない
 からです)。
 @c COMMON
 
@@ -10060,7 +10080,7 @@ while allowing programmers to do tricky stuff.
 シグナルのセマンティクスはマルチスレッド環境では少々複雑に見えます。
 しかし、いくつかのルールを覚えてしまえば、とても理解しやすいものでも
 あります。さらにGaucheでは、プログラマの簡単に使えるようにデフォルトの
-振る舞いをセットアップしてくれています。
+振る舞いをセットアップしています。
 @c COMMON
 
 @c EN
@@ -10071,8 +10091,8 @@ primordial (main) thread.  However, if the main thread
 is suspended on mutex or condition variable,
 the signal may not be handled at all, so be careful.
 @c JP
-細かいことは知りたくないという場合は、脚注付きで1つのことだけを
-覚えておいて下さい。
+細かいことは知りたくないという場合は、
+次の1つのことだけを覚えておいて下さい。
 @strong{デフォルトでは}、シグナルはメインスレッドで処理されます。
 しかし、メインスレッドがmutexや条件変数で一時停止している場合は、
 シグナルは全く処理されないので注意が必要です。
@@ -10103,8 +10123,8 @@ delivered from other processes), one thread is chosen, out of
 threads which don't block that signal.
 @c JP
 プロセスが非同期のシグナルを受け取ったら(他のプロセスからシグナルが
-送出されたと考えて下さい)、1つのスレッドが選ばれ、他のスレッドは
-そのシグナルをブロックしません。
+送出されたと考えて下さい)、そのシグナルをブロックしていないスレッドの
+うちから任意の1つのスレッドが選ばれます。
 @c COMMON
 @item
 @c EN
@@ -10136,13 +10156,13 @@ if the receiver thread is waiting on mutex or condition variable.
 So, it is recommended to make sure, for each signal, there is only one
 thread that can receive it.
 @c JP
-特定のシグナルをブロックしない1つ以上のスレッドがある場合、どのスレッドが
-そのシグナルを受け取るかを知る術はありません。
+特定のシグナルをブロックしないスレッドが1つ以上ある場合、
+どのスレッドがそのシグナルを受け取るかを知る術はありません。
 そのような状況は、GaucheにおいてはCプログラムよりもさらに不便です。
 なぜなら、受信側のスレッドがmutexや条件変数で待機している場合、
 シグナル処理は無期限に遅延されうるからです。
 したがって、それぞれのシグナルについて、それを受け取ることのできるスレッドが
-ただの1つしかないことを確認することを推奨します。
+常にただの1つしかないようにすることを推奨します。
 @c COMMON
 
 @c EN
@@ -10154,7 +10174,7 @@ to be directed to the primordial (main) thread.
 Gaucheでは、@code{make-thread}(@ref{Thread procedures}参照)
 で作られた全てのスレッドは、デフォルトで全てのシグナル(予約済みを除く)
 をブロックします。これは、全てのシグナルがメインスレッドへ
-リダイレクトされるということです。
+送られるということです。
 @c COMMON
 
 @c EN
@@ -10167,8 +10187,8 @@ Such a thread can just loop on @code{sys-pause}.
 もう1つの戦略は、シグナル処理のみを行うスレッドを作る方法です。
 そうするためには、メインスレッドでシグナルをブロックして、
 シグナル処理専用スレッドを作り、そのスレッドで全てのシグナルを
-受け付けることになります。そのようなスレッドは@code{sys-pause}
-で単にループすることだけが可能です。
+受け付けることにします。そのようなスレッドは@code{sys-pause}
+で単にループしていれば良いでしょう。
 @c COMMON
 
 @example
@@ -10187,8 +10207,7 @@ signal.
 @c JP
 複雑なアプリケーションでは、正確にスレッド毎のシグナル処理を
 制御したいかもしれません。それは、いつでも、指定されたスレッドのみが
-望むシグナルをブロックしないことを確実にすれば、そうすることも
-可能です。
+望むシグナルをブロックしないようにすれば、可能です。
 @c COMMON
 
 @node System Inquiry, Time, Signal, System interface
