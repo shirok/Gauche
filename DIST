@@ -23,7 +23,6 @@ if [ "$tgz" = "yes" ]; then
   ./AUTOCONF
   configure
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
-#  (cd doc; make html)
   (cd ext/charconv/data; make)
   make distclean
   escm -o INSTALL INSTALL.esc
@@ -34,9 +33,11 @@ if [ "$tgz" = "yes" ]; then
 fi
 
 if [ "$docs" = "yes" ]; then
-  cp doc/gauche-ref.texi doc/extract doc/Makefile $MAN_DEST
+  (cd doc; make texi)
+  cp doc/gauche-ref.texi doc/gauche-refe.texi doc/gauche-refj.texi doc/extract doc/Makefile $MAN_DEST
   (cd $MAN_DEST; make htmls)
   rm -f $MAN_DEST/*.texi $MAN_DEST/extract $MAN_DEST/Makefile
+  (cd doc; make html; gzip gauche-ref?.html; mv gauche-ref?.html.gz $TGZ_DEST)
 fi
 
 if [ "$test" = "yes" ]; then
