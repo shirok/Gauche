@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.18 2004-02-17 13:56:46 shirok Exp $
+ *  $Id: portapi.c,v 1.19 2004-05-21 05:02:12 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -800,6 +800,7 @@ static off_t seek_istr(ScmPort *p, off_t o, int whence, int nomove)
             p->src.istr.current = p->src.istr.start + z;
             r = (off_t)(p->src.istr.current - p->src.istr.start);
         }
+        p->ungotten = SCM_CHAR_INVALID;
     }
     return r;
 }
@@ -848,6 +849,8 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
                 SAFE_CALL(p, bufport_flush(p, 0, TRUE));
                 SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
             }
+            /* Invalidate ungotten char */
+            p->ungotten = SCM_CHAR_INVALID;
         }
         break;
     case SCM_PORT_ISTR:

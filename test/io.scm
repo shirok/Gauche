@@ -280,7 +280,32 @@
          (lambda (p)
            (read-char p)
            (port-seek p -2))))
+;; ungetc and seek interaction; pointed out by Alex Shinn
+(test* "seek (istr, with peek-char)" '("hello" "hello")
+       (letrec ((read-zstring
+                 (lambda (p)
+                   (let loop ((ls '()))
+                     (let ((c (peek-char p)))
+                       (if (or (eof-object? c) (eqv? c #\null))
+                         (list->string (reverse ls))
+                         (begin (read-char p) (loop (cons c ls)))))))))
+         (call-with-input-string "hello\0world"
+           (lambda (p)
+             (let* ((first (read-zstring p))
+                    (dummy (port-seek p 0))
+                    (second (read-zstring p)))
+               (list first second))))))
+(test* "seek (istr, with peek-char)" '(#\b #\b)
+       (with-input-from-string "abc"
+         (lambda ()
+           (read-char)
+           (let ((c1 (peek-char)))
+             (port-seek (current-input-port) 0 SEEK_CUR)
+             (list c1 (peek-char))))))
 
+;; NB: in the following four test, each ifile-ofile test is a pair
+;;     (the ofile test depends on the previous state by ifile).  do not
+;;     separate them.
 (test* "seek (ifile)" "abcdecdefgfghijabchij"
        (begin
          (sys-unlink "test.o")
@@ -359,6 +384,25 @@
                  (port-seek p 39996)
                  (display (read-block 4 p))))))
          ))
+
+(test* "seek (ifile, with peek-char)" '("hello" "hello")
+       (letrec ((read-zstring
+                 (lambda (p)
+                   (let loop ((ls '()))
+                     (let ((c (peek-char p)))
+                       (if (or (eof-object? c) (eqv? c #\null))
+                         (list->string (reverse ls))
+                         (begin (read-char p) (loop (cons c ls)))))))))
+         (begin
+           (sys-unlink "test.o")
+           (with-output-to-file "test.o"
+             (lambda () (display "hello\0world")))
+           (call-with-input-file "test.o"
+             (lambda (p)
+               (let* ((first (read-zstring p))
+                      (dummy (port-seek p 0))
+                      (second (read-zstring p)))
+                 (list first second)))))))
 
 (sys-unlink "test.o")
 
