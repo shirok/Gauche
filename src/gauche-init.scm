@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.8 2001-02-20 06:02:13 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.9 2001-02-23 19:42:39 shiro Exp $
 ;;;
 
 ;;
@@ -31,6 +31,13 @@
         (%make-macro-transformer
          ',(car spec)
          (lambda ,spec ,@body))))))
+
+(define-macro (DEFINE-SYNTAX name synrule)
+  (unless (and (pair? synrule) (eq? (car synrule) 'syntax-rules))
+    (error "syntax specification required, but got: ~s" synrule))
+  (unless (symbol? name)
+    (error "symbol required as the macro name, but got: ~s" name))
+  `(define ,name (%syntax-rules ,name ,@(cdr synrule))))
 
 ;;
 ;; Some useful aliases
