@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tr.scm,v 1.7 2001-09-22 10:30:43 shirok Exp $
+;;;  $Id: tr.scm,v 1.8 2001-09-24 05:37:20 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
@@ -41,25 +41,27 @@
          (s? (get-keyword :squeeze options #f))
          (c? (get-keyword :complement options #f))
          (size (get-keyword :table-size options 256))
+         (in   (get-keyword :input options (current-input-port)))
+         (out  (get-keyword :output options (current-output-port)))
          (tab  (build-tr-table from to size c?)))
     (lambda ()
-      (let loop ((char (read-char))
+      (let loop ((char (read-char in))
                  (prev #f))
         (unless (eof-object? char)
           (let ((c (tr-table-ref tab (char->integer char))))
             (cond ((char? c)            ;transliterated
                    (unless (and s? (eqv? prev c))
-                     (display c))
-                   (loop (read-char) c))
+                     (display c out))
+                   (loop (read-char in) c))
                   (c                    ;char is not in from-set
-                   (display char)
-                   (loop (read-char) #f))
+                   (display char out)
+                   (loop (read-char in) #f))
                   (!d?                  ;char is in from but not to, and no :d
                    (unless (and s? (eqv? prev char))
-                     (display char))
-                   (loop (read-char) char))
+                     (display char out))
+                   (loop (read-char in) char))
                   (else
-                   (loop (read-char) prev)))))))
+                   (loop (read-char in) prev)))))))
     ))
 
 ;;--------------------------------------------------------------------
