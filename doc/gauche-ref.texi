@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.293 2002-10-26 20:57:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.294 2002-10-27 08:45:17 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5882,10 +5882,10 @@ is done by @code{eq?}.
 This procedure is taken from STk.
 @end defun
 
-@demac get-keyword* key list &optional fallback
+@defmac get-keyword* key list &optional fallback
 Like @code{get-keyword}, but @var{fallback} is evaluated only
 if @var{list} does not have @var{key}.
-@end defun
+@end defmac
 
 @c ----------------------------------------------------------------------
 @node Identifiers, Characters, Keywords, Core library
@@ -8201,7 +8201,7 @@ return @code{#f}, @code{#f} is returned.
 
 ((any-pred (cut memq <> '(a b c))
            (cut memq <> '(1 2 3)))
- 'b)  @result {} '(b c)
+ 'b)  @result{} '(b c)
 @end example
 @end defun
 
