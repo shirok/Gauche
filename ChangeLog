@@ -1,3 +1,8 @@
+2004-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/file/util.scm (make-directory*) : remove trailing '/' if any,
+	  for mkdir of some platforms complains on it.
+
 2004-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/makeverslink: fixed to follow the convention of symlinks, i.e.

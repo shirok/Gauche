@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.25 2004-05-21 10:34:42 shirok Exp $
+;;;  $Id: util.scm,v 1.26 2004-07-24 10:35:37 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -159,7 +159,8 @@
                       d dir))
             (sys-mkdir p mode)
             )))
-    (rec dir)))
+    ;; some platform complains the last "/"
+    (rec (string-trim-right dir #[/]))))
 
 ;; synonym
 (define create-directory* make-directory*)
