@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.13 2001-11-07 09:33:00 shirok Exp $
+ *  $Id: net.c,v 1.14 2002-01-26 10:00:11 shirok Exp $
  */
 
 #include "net.h"
@@ -92,7 +92,7 @@ ScmSocket *make_socket(int fd)
 ScmObj Scm_MakeSocket(int domain, int type, int protocol)
 {
     ScmSocket *s;
-    int sock = socket(domain, type, protocol);
+    int sock = Scm_SysCall(socket(domain, type, protocol));
     if (sock < 0) Scm_SysError("couldn't create socket");
     return SCM_OBJ(make_socket(sock));
 }
@@ -102,7 +102,7 @@ ScmObj Scm_SocketShutdown(ScmSocket *s, int how)
     if (s->status != SCM_SOCKET_STATUS_CONNECTED) {
         return SCM_FALSE;
     }
-    if (shutdown(s->fd, how) < 0) {
+    if (Scm_SysCall(shutdown(s->fd, how)) < 0) {
         Scm_SysError("socket shutdown failed for %S", SCM_OBJ(s));
     }
     s->status = SCM_SOCKET_STATUS_SHUTDOWN;
@@ -157,7 +157,7 @@ ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
     if (sock->fd < 0) {
         Scm_Error("attempt to bind a closed socket: %S", sock);
     }
-    if (bind(sock->fd, &addr->addr, addr->addrlen) < 0) {
+    if (Scm_SysCall(bind(sock->fd, &addr->addr, addr->addrlen)) < 0) {
         Scm_SysError("bind failed to %S", addr);
     }
     sock->address = addr;
@@ -170,7 +170,7 @@ ScmObj Scm_SocketListen(ScmSocket *sock, int backlog)
     if (sock->fd < 0) {
         Scm_Error("attempt to listen a closed socket: %S", sock);
     }
-    if (listen(sock->fd, backlog) < 0) {
+    if (Scm_SysCall(listen(sock->fd, backlog)) < 0) {
         Scm_SysError("listen(2) failed");
     }
     sock->status = SCM_SOCKET_STATUS_LISTENING;
@@ -187,7 +187,7 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
     if (sock->fd < 0) {
         Scm_Error("attempt to accept a closed socket: %S", sock);
     }
-    newfd = accept(sock->fd, (struct sockaddr *)addrbuf, &addrlen);
+    newfd = Scm_SysCall(accept(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
     if (newfd < 0) {
         if (errno == EAGAIN) {
             return SCM_FALSE;
@@ -209,7 +209,7 @@ ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
     if (sock->fd < 0) {
         Scm_Error("attempt to connect a closed socket: %S", sock);
     }
-    if (connect(sock->fd, &addr->addr, addr->addrlen) < 0) {
+    if (Scm_SysCall(connect(sock->fd, &addr->addr, addr->addrlen)) < 0) {
         Scm_SysError("connect failed to %S", addr);
     }
     sock->address = addr;
@@ -230,11 +230,11 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
         Scm_Error("attempt to set a socket option of a closed socket: %S", s);
     }
     if (SCM_STRINGP(value)) {
-        r = setsockopt(s->fd, level, option, SCM_STRING_START(value),
-                       SCM_STRING_SIZE(value));
+        r = Scm_SysCall(setsockopt(s->fd, level, option, SCM_STRING_START(value),
+                                   SCM_STRING_SIZE(value)));
     } else if (SCM_INTP(value) || SCM_BIGNUMP(value)) {
         int v = Scm_GetInteger(value);
-        r = setsockopt(s->fd, level, option, &v, sizeof(int));
+        r = Scm_SysCall(setsockopt(s->fd, level, option, &v, sizeof(int)));
     } else {
         Scm_Error("socket option must be a string or an integer: %S", value);
     }
@@ -251,13 +251,13 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rtype)
     if (rtype > 0) {
         char *buf = SCM_NEW_ATOMIC2(char *, rtype);
         rsize = rtype;
-        r = getsockopt(s->fd, level, option, buf, &rsize);
+        r = Scm_SysCall(getsockopt(s->fd, level, option, buf, &rsize));
         if (r < 0) Scm_SysError("getsockopt failed");
         return Scm_MakeString(buf, rsize, -1, SCM_MAKSTR_INCOMPLETE);
     } else {
         int val;
         rsize = sizeof(int);
-        r = getsockopt(s->fd, level, option, &val, &rsize);
+        r = Scm_SysCall(getsockopt(s->fd, level, option, &val, &rsize));
         if (r < 0) Scm_SysError("getsockopt failed");
         return Scm_MakeInteger(val);
     }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.c,v 1.2 2001-11-07 09:33:00 shirok Exp $
+ *  $Id: fcntl.c,v 1.3 2002-01-26 10:00:11 shirok Exp $
  */
 
 #include "fcntl.h"
@@ -90,7 +90,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
     
     switch (op) {
     case F_GETFD:; case F_GETFL:;
-        r = fcntl(fd, op);
+        r = Scm_SysCall(fcntl(fd, op));
         if (r < 0) {
             Scm_SysError("fcntl(%s) failed", flag_name(op));
         }
@@ -100,7 +100,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
             Scm_Error("exact integer required for fcntl(%s), but got %S",
                       flag_name(op), arg);
         }
-        r = fcntl(fd, op, Scm_GetInteger(arg));
+        r = Scm_SysCall(fcntl(fd, op, Scm_GetInteger(arg)));
         if (r < 0) {
             Scm_SysError("fcntl(%s) failed", flag_name(op));
         }
@@ -111,7 +111,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
                       flag_name(op), arg);
         }
         fl = SCM_SYS_FLOCK(arg);
-        r = fcntl(fd, op, &fl->lock);
+        r = Scm_SysCall(fcntl(fd, op, &fl->lock));
         if (op == F_SETLK) {
             if (r >= 0) return SCM_TRUE;
             if (errno == EAGAIN) return SCM_FALSE;
