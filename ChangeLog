@@ -2,6 +2,7 @@
 
 	* lib/port/* -> lib/compat/* : moved.  port.* is obsoleted.
 	* lib/japanize-euc.scm : moved to test/japanize-euc.scm
+	* lib/rfc/http.scm : added
 
 2002-11-12  Shiro Kawai  <shiro@acm.org>
 
