@@ -1,3 +1,8 @@
+2003-01-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/mop/instance-pool.scm : renamed *-remove methods to
+	  *-remove!.
+
 2003-01-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c : fixed Scm_VMEval to set the module to the specified
