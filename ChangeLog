@@ -1,3 +1,8 @@
+2003-11-18  Kimura Fuyuki  <fuyuki@nigredo.org>
+
+	* ext/net/test.scm : Relax checking of (sockaddr-name v6addr).
+	  The result string of inet_ntop() varies among implementations.
+
 2003-11-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_VMSlotSet) : fix calling slot-missing.

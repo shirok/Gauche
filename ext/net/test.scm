@@ -54,7 +54,7 @@
 	(lambda ()
 	  (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
 	    (and (eq? (sockaddr-family addr) 'inet6)
-		 (equal? (sockaddr-name addr) "[2001:200:0:8002:203:47ff:fea5:3085]:23")
+		 (#/\[2001:200:0?:8002:203:47ff:fea5:3085\]:23/ (sockaddr-name addr))
 		 (= (sockaddr-addr addr) #x2001020000008002020347fffea53085)
 		 (= (sockaddr-port addr) 23)
 		 #t)))))
