@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: prefix.scm,v 1.2 2001-05-02 08:20:25 shirok Exp $
+;;;  $Id: prefix.scm,v 1.3 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -34,7 +34,7 @@
 (define (string-prefix-length s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-prefix-int str1 str2 char=? (lambda (cnt flag) cnt)))))
@@ -42,7 +42,7 @@
 (define (string-prefix-length-ci s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-prefix-int str1 str2 char-ci=? (lambda (cnt flag) cnt)))))
@@ -50,7 +50,7 @@
 (define (string-prefix? s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-prefix-int str1 str2 char=? (lambda (cnt flag) flag)))))
@@ -58,7 +58,7 @@
 (define (string-prefix-ci? s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-prefix-int str1 str2 char-ci=? (lambda (cnt flag) flag)))))
@@ -80,7 +80,7 @@
 (define (string-suffix-length s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-suffix-int str1 str2 char=? (lambda (cnt flag) cnt)))))
@@ -88,7 +88,7 @@
 (define (string-suffix-length-ci s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-suffix-int str1 str2 char-ci=? (lambda (cnt flag) cnt)))))
@@ -96,7 +96,7 @@
 (define (string-suffix? s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-suffix-int str1 str2 char=? (lambda (cnt flag) flag)))))
@@ -104,7 +104,7 @@
 (define (string-suffix-ci? s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
-  (let-optional* args (start1 end1 start2 end2)
+  (let-optionals* args (start1 end1 start2 end2)
     (let ((str1 (%maybe-substring s1 start1 end1))
           (str2 (%maybe-substring s2 start2 end2)))
       (%string-suffix-int str1 str2 char-ci=? (lambda (cnt flag) flag)))))

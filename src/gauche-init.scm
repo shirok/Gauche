@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.35 2001-06-26 09:40:37 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.36 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -148,23 +148,6 @@
      (let ((tmp ?arg))
        (unless (?test tmp)
          (error "bad type of argument for ~s: ~s" '?arg tmp))))
-    ))
-
-(define-syntax let-optional*
-  (syntax-rules ()
-    ((_ ?arg () . ?body) (begin . ?body))
-    ((_ ?arg ((?var ?default) . ?more) . ?body)
-     (receive (?var next-arg)
-         (if (pair? ?arg)
-             (values (car ?arg) (cdr ?arg))
-             (values ?default '()))
-       (let-optional* next-arg ?more . ?body)))
-    ((_ ?arg (?var . ?more) . ?body)
-     (receive (?var next-arg)
-         (if (pair? ?arg)
-             (values (car ?arg) (cdr ?arg))
-             (values (undefined) '()))
-       (let-optional* next-arg ?more . ?body)))
     ))
 
 ;; srfi-17

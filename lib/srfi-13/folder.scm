@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: folder.scm,v 1.3 2001-05-03 10:28:38 shirok Exp $
+;;;  $Id: folder.scm,v 1.4 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -34,7 +34,7 @@
 (define (string-map! proc s . args)
   (check-arg procedure? proc)
   (check-arg string? s)
-  (let-optional* args ((start 0) end)
+  (let-optionals* args ((start 0) end)
      (let ((mapped (apply string-map proc s args)))
        (string-substitute! s start mapped))))
 
@@ -64,7 +64,7 @@
   (check-arg procedure? p)
   (check-arg procedure? f)
   (check-arg procedure? g)
-  (let-optional* args ((base "") (make-final (lambda (_) "")))
+  (let-optionals* args ((base "") (make-final (lambda (_) "")))
     (let ((dest (open-output-string)))
       (display base dest)
       (let loop ((seed seed))
@@ -79,7 +79,7 @@
   (check-arg procedure? p)
   (check-arg procedure? f)
   (check-arg procedure? g)
-  (let-optional* args ((base "") (make-final (lambda (_) "")))
+  (let-optionals* args ((base "") (make-final (lambda (_) "")))
     (let ((dest (open-output-string)))
       (let loop ((seed seed))
         (if (p seed)
@@ -103,7 +103,7 @@
 (define (string-for-each-index proc s . args)
   (check-arg procedure? proc)
   (check-arg string? s)
-  (let-optional* args ((start 0) (end (string-length s)))
+  (let-optionals* args ((start 0) (end (string-length s)))
     (do ((i start (+ i 1)))
         ((>= i end))
       (proc i)))

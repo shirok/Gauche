@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: misc.scm,v 1.3 2001-05-01 10:01:50 shirok Exp $
+;;;  $Id: misc.scm,v 1.4 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -28,7 +28,7 @@
 
 (define (string-tokenize s . args)
   (check-arg string? s)
-  (let-optional* args ((token-set #[\S]) start end)
+  (let-optionals* args ((token-set #[\S]) start end)
     (letrec ((src (open-input-string (%maybe-substring s start end)))
              (in-word (lambda (ch dst r)
                         (cond ((eof-object? ch)

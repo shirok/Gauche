@@ -12,10 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.7 2001-06-25 07:53:21 shirok Exp $
+;;;  $Id: net.scm,v 1.8 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 (define-module gauche.net
+  (use gauche.let-opt)
   (export <socket> make-socket
           pf_unix pf_inet af_unix af_inet sock_stream sock_dgram sock_raw
           socket-address socket-status socket-input-port socket-output-port
@@ -38,12 +39,12 @@
 
 (define (make-client-socket proto . args)
   (cond ((eq? proto 'unix)
-         (let-optional* args ((path #f))
+         (let-optionals* args ((path #f))
            (unless (string? path)
              (error "unix socket requires pathname, but got ~s" path))
            (make-client-socket-unix path)))
         ((eq? proto 'inet)
-         (let-optional* args ((host #f) (port #f))
+         (let-optionals* args ((host #f) (port #f))
            (unless (and (string? host) (integer? port))
              (error "inet socket requires host name and port, but got ~s and ~s"
                     host port))
@@ -70,12 +71,12 @@
 
 (define (make-server-socket proto . args)
   (cond ((eq? proto 'unix)
-         (let-optional* args ((path #f))
+         (let-optionals* args ((path #f))
            (unless (string? path)
              (error "unix socket requires pathname, but got ~s" path))
            (make-server-socket-unix path)))
         ((eq? proto 'inet)
-         (let-optional* args ((port #f))
+         (let-optionals* args ((port #f))
            (unless (integer? port)
              (error "inet socket requires port number, but got ~s" port))
            (apply make-server-socket-inet port (cdr args))))

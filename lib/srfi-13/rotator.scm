@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: rotator.scm,v 1.3 2001-05-03 10:30:29 shirok Exp $
+;;;  $Id: rotator.scm,v 1.4 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -22,7 +22,7 @@
 (define (xsubstring s from . args)
   (check-arg string? s)
   (check-arg (lambda (x) (and (integer? x) (exact? x))) from)
-  (let-optional* args (to start end)
+  (let-optionals* args (to start end)
     (let* ((str (%maybe-substring s start end))
            (len (string-length str))
            (from-rank (quotient from len))

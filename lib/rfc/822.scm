@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.2 2001-06-25 09:33:47 shirok Exp $
+;;;  $Id: 822.scm,v 1.3 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -20,6 +20,7 @@
 
 (define-module rfc.822
   (use srfi-13)
+  (use gauche.let-opt)
   (use gauche.regexp)
   (export rfc822-header->list
           rfc822-skip-cfws
@@ -37,7 +38,7 @@
 ;; Generic header parser, recognizes folded line and field names
 ;;
 (define (rfc822-header->list iport . args)
-  (let-optional* args ((strict? #f))
+  (let-optionals* args ((strict? #f))
     (let loop ((r '())
                (line (read-line iport)))
       (receive (head body next)

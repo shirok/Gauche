@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.5 2001-05-03 10:31:59 shirok Exp $
+;;;  $Id: selector.scm,v 1.6 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -32,7 +32,7 @@
     (string-substitute! target tstart str)))
 
 (define (string-pad s len . args)
-  (let-optional* args ((char #\space) start end)
+  (let-optionals* args ((char #\space) start end)
     (check-arg char? char)
     (let* ((str (%maybe-substring s start end))
            (slen (string-length str)))
@@ -43,7 +43,7 @@
             (else str)))))
 
 (define (string-pad-right s len . args)
-  (let-optional* args ((char #\space) start end)
+  (let-optionals* args ((char #\space) start end)
     (check-arg char? char)
     (let* ((str (%maybe-substring s start end))
            (slen (string-length str)))
@@ -79,7 +79,7 @@
 
 (define (string-trim s . args)
   (check-arg string? s)
-  (let-optional* args ((c/s/p #[\s]) start end)
+  (let-optionals* args ((c/s/p #[\s]) start end)
     (let ((pred (%get-char-pred c/s/p))
           (sp (make-string-pointer (%maybe-substring s start end))))
       (let loop ((ch (string-pointer-next! sp)))
@@ -92,7 +92,7 @@
 
 (define (string-trim-right s . args)
   (check-arg string? s)
-  (let-optional* args ((c/s/p #[\s]) start end)
+  (let-optionals* args ((c/s/p #[\s]) start end)
     (let ((pred (%get-char-pred c/s/p))
           (sp (make-string-pointer (%maybe-substring s start end) -1)))
       (let loop ((ch (string-pointer-prev! sp)))
@@ -105,7 +105,7 @@
 
 (define (string-trim-both s . args)
   (check-arg string? s)
-  (let-optional* args ((c/s/p #[\s]) start end)
+  (let-optionals* args ((c/s/p #[\s]) start end)
     (let ((pred (%get-char-pred c/s/p))
           (sp (make-string-pointer (%maybe-substring s start end))))
       (let loop ((ch (string-pointer-next! sp)))

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-13.scm,v 1.6 2001-05-06 23:58:11 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.7 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Srfi-13 is a large set of functions, so I splitted it up to a number of
@@ -30,6 +30,7 @@
 ;;   string-append string-contains
 
 (define-module srfi-13
+  (use gauche.let-opt)
   (export string-null? string-every string-any
           string-tabulate reverse-list->string
           substring/shared string-copy!

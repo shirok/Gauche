@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: internal.scm,v 1.3 2001-05-01 10:01:50 shirok Exp $
+;;;  $Id: internal.scm,v 1.4 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -26,7 +26,7 @@
 (define (string-parse-start+end proc s args)
   (check-arg string? s)
   (let ((slen (string-length s)))
-    (let-optional* args (start end)
+    (let-optionals* args (start end)
       (if (undefined? start)
           (values '() 0 slen)
           (if (not (and (integer? start) (exact? start) (<= 0 start slen)))
@@ -44,7 +44,7 @@
 (define (string-parse-final-start+end proc s args)
   (check-arg string? s)
   (let ((slen (string-length s)))
-    (let-optional* args (start end)
+    (let-optionals* args (start end)
       (if (undefined? start)
           (values '() 0 slen)
           (if (not (and (integer? start) (exact? start) (<= 0 start slen)))

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: jfilter.scm,v 1.1 2001-06-08 09:51:18 shirok Exp $
+;;;  $Id: jfilter.scm,v 1.2 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; This file defines a set of character-code conversion routine with
@@ -27,6 +27,7 @@
 ;; is irrelevant.  I only implement the higher-level routines.
 
 (define-module port.jfilter
+  (use gauche.let-opt)
   (use gauche.charconv)
   (use srfi-13)
   (export cv-file
@@ -53,7 +54,7 @@
     (else (error "unsupported encoding symbol: ~a" sym))))
 
 (define (judge-file input . args)
-  (let-optional* args ((prefetch 5000))
+  (let-optionals* args ((prefetch 5000))
 
     (define (judge-port port)
       (let ((str (read-block prefetch port)))
@@ -74,9 +75,9 @@
                (ces-symbol->name to-code   "EUCJP")))
 
 (define (cv-file input output from-code to-code . args)
-  (let-optional* args ((remove-cr #f)
-                       (add-cr #f)
-                       (check-length 5000))
+  (let-optionals* args ((remove-cr #f)
+                        (add-cr #f)
+                        (check-length 5000))
     (let ((from (ces-symbol->name from-code "*JP"))
           (to   (ces-symbol->name from-code "EUCJP")))
 

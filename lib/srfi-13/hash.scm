@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: hash.scm,v 1.1 2001-05-06 23:58:49 shirok Exp $
+;;;  $Id: hash.scm,v 1.2 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -21,12 +21,12 @@
 
 (define (string-hash s . args)
   (check-arg string? s)
-  (let-optional* args (bound start end)
+  (let-optionals* args (bound start end)
     (%hash-string (%maybe-substring s start end) bound)))
 
 (define (string-hash-ci s . args)
   (check-arg string? s)
-  (let-optional* args (bound start end)
+  (let-optionals* args (bound start end)
     ;; oops! optimization required!
     (%hash-string (string-upcase (%maybe-substring s start end)) bound)))
 

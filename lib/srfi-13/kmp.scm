@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: kmp.scm,v 1.2 2001-05-01 09:37:09 shirok Exp $
+;;;  $Id: kmp.scm,v 1.3 2001-06-29 20:32:47 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -28,7 +28,7 @@
 ;; in the original SRFI design.
 
 (define (make-kmp-restart-vector s . args)
-  (let-optional* args ((c= char=?) start end)
+  (let-optionals* args ((c= char=?) start end)
     (let* ((pat (%maybe-substring s start end))
            (rv (make-vector (string-length pat) -1))
            (plen (string-length pat))
@@ -52,7 +52,7 @@
 
 ;; This is inefficient if input string s contains multibyte characters.
 (define (string-kmp-partial-search pat rv s i . args)
-  (let-optional* args ((c= char=?) (p-start 0) start end)
+  (let-optionals* args ((c= char=?) (p-start 0) start end)
     (let ((patlen (vector-length rv)))
       (let lp ((si s-start)
                (vi i))
