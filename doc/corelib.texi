@@ -6092,9 +6092,9 @@ Every condition class is an instance of this class.
 This class defines @code{object-apply} so that you can use
 a condition class as a predicate, e.g.:
 
-{{{
+@example
 (<error> obj) @equiv{} (condition-has-type? obj <error>)
-}}}
+@end example
 @end deftp
 
 
@@ -6121,25 +6121,22 @@ Represents a compound condition.
 @end deftp
 
 @deftp {Class} <error>
-@c EN
-The code:
-@c JP
-@c COMMON
+@clindex error
+Indicates an error.  Inherits @code{<serious-condition>}
+and @code{<message-condition>}, thus has @code{message} slot.
+
+Note: SRFI-35 @code{&error} condition only inherits @code{&serious}
+and not @code{&message}, so you have to use compound condition
+to attach a message to the error condition.  Gauche uses multiple
+inheritance here, largely because of backward compatibility.
+To write a portable code, an error condition should be used
+with a message condition, like this:
+
 @example
-(error "something wend wrong.")
+(condition
+  (&message (message "Error message"))
+  (&error))
 @end example
-@c EN
-is conceptually equivalent to:
-@c JP
-は概念的には、
-@c COMMON
-@example
-(raise (make <error> :message "something went wrong"))
-@end example
-@c EN
-@c JP
-と同等です。
-@c COMMON
 @end deftp
 
 @deftp {Class} <system-error>
