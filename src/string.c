@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.38 2001-05-19 22:25:35 shirok Exp $
+ *  $Id: string.c,v 1.39 2001-05-19 23:06:16 shirok Exp $
  */
 
 #include <stdio.h>
@@ -914,7 +914,7 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index)
     }
     sp = SCM_NEW(ScmStringPointer);
     SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
-    sp->length = SCM_STRING_LENGTH(src);
+    sp->length = (SCM_STRING_INCOMPLETE_P(src)? -1 : SCM_STRING_LENGTH(src));
     sp->size = SCM_STRING_SIZE(src);
     sp->start = SCM_STRING_START(src);
     sp->index = index;
