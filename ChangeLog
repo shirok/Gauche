@@ -1,3 +1,8 @@
+2003-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c (Scm_ParameterTableInit): fixed a bug that corrupts
+	  memory.
+
 2003-12-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_MonotonicMerge), src/class.c, src/module.c,
