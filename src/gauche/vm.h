@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.11 2001-01-31 11:55:17 shiro Exp $
+ *  $Id: vm.h,v 1.12 2001-02-01 08:17:35 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -55,14 +55,6 @@ typedef struct ScmEnvFrameRec {
  * Continuation
  *
  *  Continuation is represented as a chain of ScmContFrames.
- *  At non-tail procedure call, current environment, accumulated argument
- *  and program pointer are saved into the frame.  When procedure returns,
- *  Environment and program pointer is restored.  (Argument pointer is
- *  not restored by the normal procedure return, since the normal return
- *  may have pushed more arguments.  When a captured continuation is
- *  invoked, however, the argument pointer is restored.)
- *
- *  Capturing continuation is just a simple matter of saving the chain.
  */
 
 typedef struct ScmContFrameRec {
