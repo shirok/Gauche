@@ -2,7 +2,7 @@
 ;;; Simple test routine
 ;;;
 
-;;; $Id: test.scm,v 1.2 2002-02-14 07:39:07 shirok Exp $
+;;; $Id: test.scm,v 1.3 2002-05-12 10:59:36 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -61,8 +61,14 @@
       )))
 
 (define (test-start msg)
-  (format (current-error-port) "Testing ~a ... " msg)
-  (flush (current-error-port))
+  (let* ((s (format #f "Testing ~a ... " msg))
+         (pad (make-string (- 65 (string-length s)) #\space)))
+    (display s (current-error-port))
+    (display pad (current-error-port))
+    (flush (current-error-port))
+    (when (and (sys-isatty (current-error-port))
+               (sys-isatty (current-output-port)))
+      (newline (current-error-port))))
   (set! *discrepancy-list* '())
   (unless (and (sys-isatty (current-error-port))
                (sys-isatty (current-output-port)))
@@ -84,7 +90,7 @@
     (if (null? *discrepancy-list*)
         (fmt "passed.\n")
         (begin
-          (fmt "discrepancies found.  Errors are:\n")
+          (fmt "failed.\ndiscrepancies found.  Errors are:\n")
           (for-each (lambda (r)
                       (apply fmt "test ~a: expects ~s => got ~s\n" r))
                     (reverse *discrepancy-list*))))
