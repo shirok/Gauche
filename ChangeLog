@@ -1,3 +1,13 @@
+2001-03-25  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.11
+	* lib/gauche/object.scm: support :getter, :setter and :accessor
+	  slot options.
+	* src/class.c: implemented SortMethod.
+	* src/vm.c, src/moplib.stub: made slot-ref and slot-set! inlinable.
+	* src/vm.c (ADJUST_ARGUMENT_FRAME): fixed a bug that didn't saved
+	  VM regs before calling Scm_Error.
+
 2001-03-24  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.10
