@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.259 2002-05-21 04:47:15 shirok Exp $
+ *  $Id: gauche.h,v 1.260 2002-05-22 00:52:03 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2230,7 +2230,7 @@ SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, int export);
 
 SCM_EXTERN ScmObj Scm_Require(ScmObj feature);
 SCM_EXTERN ScmObj Scm_Provide(ScmObj feature);
-SCM_EXTERN ScmObj Scm_ProvidedP(ScmObj feature);
+SCM_EXTERN int    Scm_ProvidedP(ScmObj feature);
     
 typedef struct ScmAutoloadRec {
     SCM_HEADER;

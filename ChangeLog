@@ -1,3 +1,7 @@
+2002-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c : protecting some system-wide static states by mutexes.
+
 2002-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub : define-cclass starts working.  The interface may

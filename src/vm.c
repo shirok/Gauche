@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.150 2002-05-21 10:56:41 shirok Exp $
+ *  $Id: vm.c,v 1.151 2002-05-22 00:52:03 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -120,6 +120,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->load_history = SCM_NIL;
     v->load_next = SCM_NIL;
     v->load_port = SCM_FALSE;
+    v->load_requiring = SCM_NIL;
 
     for (i=0; i<SCM_VM_SIGQ_SIZE; i++) v->sigQueue[i] = -1;
     v->sigQueueHead = v->sigQueueTail = 0;

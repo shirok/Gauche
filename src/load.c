@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.59 2002-05-12 06:35:20 shirok Exp $
+ *  $Id: load.c,v 1.60 2002-05-22 00:52:03 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -36,16 +36,25 @@
  * Load file.
  */
 
-/* To peek Scheme variable from C. */
-/* TODO: need to lock in MT */
-static ScmGloc *load_path_rec;       /* *load-path*         */
-static ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
+/* Static parameters */
+static struct {
+    /* Load path list */
+    ScmGloc *load_path_rec;       /* *load-path*         */
+    ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
+    ScmInternalMutex path_mutex;
 
-/* List of provided features.  Must be protected in MT. */
-static ScmObj provided;
+    /* Provided features */
+    ScmObj provided;              /* List of provided features. */
+    ScmObj providing;             /* List of features that is being loaded. */
+    ScmInternalMutex prov_mutex;
+    ScmInternalCond  prov_cv;
 
-/* List of dynamically loaded objects.  Must be protected in MT. */
-static ScmObj dso_list;
+    /* Dynamic linking */
+    ScmObj dso_list;              /* List of dynamically loaded objects. */
+    ScmObj dso_loading;           /* DSO file being loaded. */
+    ScmInternalMutex dso_mutex;
+    ScmInternalCond dso_cv;
+} ldinfo;
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -263,12 +272,12 @@ int Scm_Load(const char *cpath, int errorp)
 
 ScmObj Scm_GetLoadPath(void)
 {
-    return load_path_rec->value;
+    return ldinfo.load_path_rec->value;
 }
 
 ScmObj Scm_GetDynLoadPath(void)
 {
-    return dynload_path_rec->value;
+    return ldinfo.dynload_path_rec->value;
 }
 
 static ScmObj break_env_paths(const char *envname)
@@ -292,16 +301,8 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 {
     ScmObj spath = SCM_MAKE_STR_COPYING(cpath);
     ScmObj dpath;
+    ScmObj r;
     struct stat statbuf;
-
-    if (!SCM_PAIRP(load_path_rec->value)) {
-        load_path_rec->value = SCM_LIST1(spath);
-    } else if (afterp) {
-        load_path_rec->value =
-            Scm_Append2(load_path_rec->value, SCM_LIST1(spath));
-    } else {
-        load_path_rec->value = Scm_Cons(spath, load_path_rec->value);
-    }
 
     /* check dynload path */
     dpath = Scm_StringAppendC(SCM_STRING(spath), "/", 1, 1);
@@ -316,16 +317,29 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
         }
     }
 
-    if (!SCM_PAIRP(dynload_path_rec->value)) {
-        dynload_path_rec->value = SCM_LIST1(dpath);
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
+    if (!SCM_PAIRP(ldinfo.load_path_rec->value)) {
+        ldinfo.load_path_rec->value = SCM_LIST1(spath);
     } else if (afterp) {
-        dynload_path_rec->value =
-            Scm_Append2(dynload_path_rec->value, SCM_LIST1(dpath));
+        ldinfo.load_path_rec->value =
+            Scm_Append2(ldinfo.load_path_rec->value, SCM_LIST1(spath));
     } else {
-        dynload_path_rec->value = Scm_Cons(dpath, dynload_path_rec->value);
+        ldinfo.load_path_rec->value = Scm_Cons(spath, ldinfo.load_path_rec->value);
     }
+    r = ldinfo.load_path_rec->value;
+
+    if (!SCM_PAIRP(ldinfo.dynload_path_rec->value)) {
+        ldinfo.dynload_path_rec->value = SCM_LIST1(dpath);
+    } else if (afterp) {
+        ldinfo.dynload_path_rec->value =
+            Scm_Append2(ldinfo.dynload_path_rec->value, SCM_LIST1(dpath));
+    } else {
+        ldinfo.dynload_path_rec->value =
+            Scm_Cons(dpath, ldinfo.dynload_path_rec->value);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     
-    return load_path_rec->value;
+    return r;
 }
 
 /*------------------------------------------------------------------
@@ -411,7 +425,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
     filename = SCM_STRING(Scm_StringAppendC(filename, "." SHLIB_SO_SUFFIX, -1, -1));
     truename = Scm_FindFile(filename, &load_paths, TRUE);
 
-    if (!SCM_FALSEP(Scm_Member(truename, dso_list, SCM_CMP_EQUAL)))
+    if (!SCM_FALSEP(Scm_Member(truename, ldinfo.dso_list, SCM_CMP_EQUAL)))
         return SCM_FALSE;
 
     if (export) flags |= RTLD_GLOBAL;
@@ -438,7 +452,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
         Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", truename, initname);
     }
     func();
-    dso_list = Scm_Cons(truename, dso_list);
+    ldinfo.dso_list = Scm_Cons(truename, ldinfo.dso_list);
     return SCM_TRUE;
 #else
     Scm_Error("dynamic linking is not supported on this architecture");
@@ -453,9 +467,6 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
 /* STk's require takes a string.  SLIB's require takes a symbol.
    For now, I allow only a string. */
 /* Note that require and provide is recognized at compile time. */
-/* TODO: in MT env, we should prevent the race condition that
-   more than one thread requires the same (unprovided) feature
-   simultaneously.  Some kind of "providing" flag, maybe. */
 /* IDEA: allow require and provide an optional :version argument.
    For example, (require "foo" :version 1.2) looks for the module
    with (provide "foo" :version 1.2).  Allows mutiple versions of
@@ -470,9 +481,26 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
    in the module changes the global state.  */
 ScmObj Scm_Require(ScmObj feature)
 {
+    int provided = FALSE, providing = TRUE;
     if (!SCM_STRINGP(feature))
         Scm_Error("require: string expected, but got %S\n", feature);
-    if (SCM_FALSEP(Scm_Member(feature, provided, SCM_CMP_EQUAL))) {
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
+    do {
+        provided = !SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL));
+        if (!provided) {
+            providing = !SCM_FALSEP(Scm_Member(feature, ldinfo.providing, SCM_CMP_EQUAL));
+            if (providing) {
+                (void)SCM_INTERNAL_COND_WAIT(ldinfo.prov_cv, ldinfo.prov_mutex);
+                continue;
+            }
+        }
+    } while (0);
+    if (!provided) {
+        ldinfo.providing = Scm_Cons(feature, ldinfo.providing);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
+
+    if (SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
         ScmObj filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
         Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), TRUE);
     }
@@ -483,18 +511,25 @@ ScmObj Scm_Provide(ScmObj feature)
 {
     if (!SCM_STRINGP(feature))
         Scm_Error("provide: string expected, but got %S\n", feature);
-    if (SCM_FALSEP(Scm_Member(feature, provided, SCM_CMP_EQUAL))) {
-        provided = Scm_Cons(feature, provided);
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
+    if (SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
+        ldinfo.provided = Scm_Cons(feature, ldinfo.provided);
     }
+    if (!SCM_FALSEP(Scm_Member(feature, ldinfo.providing, SCM_CMP_EQUAL))) {
+        ldinfo.providing = Scm_DeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
+    }
+    (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
     return feature;
 }
 
-ScmObj Scm_ProvidedP(ScmObj feature)
+int Scm_ProvidedP(ScmObj feature)
 {
-    if (SCM_FALSEP(Scm_Member(feature, provided, SCM_CMP_EQUAL)))
-        return SCM_FALSE;
-    else
-        return SCM_TRUE;
+    int r;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
+    r = !SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL));
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
+    return r;
 }
 
 /*------------------------------------------------------------------
@@ -582,17 +617,25 @@ void Scm__InitLoad(void)
     SCM_APPEND(init_dynload_path, t, break_env_paths("GAUCHE_DYNLOAD_PATH"));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_ARCH_DIR));
+
+    (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.path_mutex);
+    (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.prov_mutex);
+    (void)SCM_INTERNAL_COND_INIT(ldinfo.prov_cv);
+    (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.dso_mutex);
+    (void)SCM_INTERNAL_COND_INIT(ldinfo.dso_cv);
     
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
 
-    DEF(load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
-    DEF(dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
+    DEF(ldinfo.load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
+    DEF(ldinfo.dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
 
-    provided = SCM_LIST4(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
-                         SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
-                         SCM_MAKE_STR("srfi-10"), /* #, (builtin) */
-                         SCM_MAKE_STR("srfi-17")  /* set! (builtin) */
-                         );
-    dso_list = SCM_NIL;
+    ldinfo.provided = SCM_LIST4(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
+                                SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
+                                SCM_MAKE_STR("srfi-10"), /* #, (builtin) */
+                                SCM_MAKE_STR("srfi-17")  /* set! (builtin) */
+        );
+    ldinfo.providing = SCM_NIL;
+    ldinfo.dso_list = SCM_NIL;
+    ldinfo.dso_loading = SCM_FALSE;
 }
