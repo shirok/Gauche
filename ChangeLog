@@ -1,3 +1,8 @@
+2003-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/stringutil.scm (string-split) : raises an error when
+	  splitter matches a null string.
+
 2003-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (run-process): make sure the fds opened for

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: stringutil.scm,v 1.2 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: stringutil.scm,v 1.3 2003-10-03 10:12:10 shirok Exp $
 ;;;
 
 (define-module gauche.stringutil
@@ -52,7 +52,12 @@
 
 ;; aux fns
 (define (%string-split-scanner splitter)
+
+  (define (null-splitter)
+    (error "string-split: splitter must not match a null string:" splitter))
+
   (cond ((string? splitter)
+         (when (string=? splitter "") (null-splitter))
          (lambda (s)
            (receive (before after) (string-scan s splitter 'both)
              (if before (values before after) (values s #f)))))
@@ -65,9 +70,7 @@
                   => (lambda (m)
                        (let ((before (m 'before))
                              (after  (m 'after)))
-                         (when (string=? s after)
-                           (errorf "splitting string by regexp #/~a/ would cause infinite loop"
-                                   (regexp->string splitter)))
+                         (when (string=? s after) (null-splitter))
                          (values before after))))
                  (else (values s #f)))))
         (else ;; assume splitter is a predicate
