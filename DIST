@@ -91,6 +91,7 @@ if [ "$test" = "yes" ]; then
   ./configure --enable-threads=pthreads --prefix=`pwd`/../test-inst
   make
   make -s test
+  make install
   make install-check
   cd ..
   testgosh=`pwd`/test-inst/bin/gosh
