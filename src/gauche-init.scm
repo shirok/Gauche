@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.30 2001-05-11 10:19:01 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.31 2001-05-22 20:28:52 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -32,6 +32,9 @@
 ;; Same as above.
 (define-macro (require feature)
   `',(%require feature))
+
+(define-macro (export-all)
+  `',(%export-all))
 
 ;; Preferred way
 ;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)
