@@ -1929,6 +1929,7 @@ implementator to take care of the resource problem.
 @subsection Implementing collections
 @c NODE コレクションの実装
 
+@c EN
 The minimum requirements of the collection class implementation
 is as follow:
 @itemize @bullet
@@ -1940,13 +1941,34 @@ A method @code{call-with-iterator} is implemented.
 
 This makes iterator methods such as @code{map}, @code{for-each},
 @code{find} and @code{filter} to work.
+@c JP
+コレクションクラスの実装に最低限要求されるものには、以下のものがあります。
+@itemize @bullet
+@item
+抽象クラス@code{<collection>}を継承している。
+@item
+メソッド@code{call-with-iterator}が実装されている。
+@end itemize
 
+これにより、@code{map}、@code{for-each}、@code{find}、@code{filter}などの
+イテレータメソッドが動作するようになります。
+@c COMMON
+
+@c EN
 In order to make the constructive methods (e.g. @code{map-to} to
 create your collection), you have to implement @code{call-with-builder}
 method as well.  Note that @code{call-with-builder} method must work
 a sort of class method, dispatched by class, rather than normal method
 dispatched by instance.   In Gauche, you can implement it by using a
 metaclass.   Then the minimal code will look like this:
+@c JP
+建設的なメソッド(例えば、コレクションを作るための@code{map-to}など)を
+作るためには、メソッド@code{call-with-builder}も実装しなければなりません。
+メソッド@code{call-with-builder}は、クラスによりディスパッチされるクラスメソッドの
+一種で、インスタンスによりディスパッチされる通常のメソッドとは異なります。
+Gaucheでは、これはメタクラスを使うことによって実装できます。
+最小限のコードは次のようになります。
+@c COMMON
 
 @example
 (define-class <your-collection-meta> (<class>) ())
@@ -1966,8 +1988,13 @@ metaclass.   Then the minimal code will look like this:
   )
 @end example
 
+@c EN
 Optionally, you can overload other generic functions to optimize
 performance.
+@c JP
+パフォーマンスの最適化のために、他のジェネリック関数をオーバロードすることも
+できます。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node gauche.config - Configuration parameters, gauche.fcntl - Low-level file operations, gauche.collection - Collection framework, Library modules - Gauche extensions
