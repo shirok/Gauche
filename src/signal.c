@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.7 2002-01-22 11:39:46 shirok Exp $
+ *  $Id: signal.c,v 1.8 2002-01-23 08:25:54 shirok Exp $
  */
 
 #include <signal.h>
@@ -143,6 +143,40 @@ static void sigset_op(sigset_t *s1, sigset_t *s2, int delp)
 }
 
 /*
+ * default handler
+ */
+static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
+{
+    int signum;
+    struct sigdesc *desc = sigDesc;
+    const char *name = NULL;
+    
+    SCM_ASSERT(nargs == 1 && SCM_INTP(args[0]));
+    signum = SCM_INT_VALUE(args[0]);
+    for (; desc->name; desc++) {
+        if (desc->num == signum) {
+            name = desc->name;
+            break;
+        }
+    }
+    if (name) {
+        Scm_Error("unhandled signal %d (%s)", signum, name);
+    } else {
+        Scm_Error("unhandled signal %d (unknown signal)", signum);
+    }
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+static SCM_DEFINE_STRING_CONST(default_sighandler_name,
+                               "%default-signal-handler", 22, 22);
+static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
+                       SCM_OBJ(&default_sighandler_name),
+                       default_sighandler,
+                       NULL, NULL);
+
+#define DEFAULT_SIGHANDLER    SCM_OBJ(&default_sighandler_stub)
+
+/*
  * sigset class
  */
 
@@ -230,7 +264,7 @@ void Scm_SigCheck(ScmVM *vm)
     int i;
     ScmObj sp, tail;
 
-    /*sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);*/
+    sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);
     /* NB: if an error occurs during the critical section,
        some signals may be lost. */
     SCM_UNWIND_PROTECT {
@@ -246,25 +280,50 @@ void Scm_SigCheck(ScmVM *vm)
                 SCM_ASSERT(SCM_PAIRP(sigh)&&SCM_SYS_SIGSET_P(SCM_CAR(sigh)));
                 set = &(SCM_SYS_SIGSET(SCM_CAR(sigh))->set);
                 if (sigismember(set, signum)) {
+                    ScmObj cell = Scm_Acons(SCM_CDR(sigh),
+                                            SCM_MAKE_INT(signum),
+                                            SCM_NIL);
                     if (SCM_NULLP(tail)) {
-                        tail = Scm_Cons(SCM_CDR(sigh), SCM_NIL);
+                        vm->sigPending = tail = cell;
                     } else {
-                        SCM_SET_CDR(tail, Scm_Cons(SCM_CDR(sigh), SCM_NIL));
+                        SCM_SET_CDR(tail, cell);
                         tail = SCM_CDR(tail);
                     }
                     break;
                 }
             }
+            if (SCM_NULLP(sp)) {
+                /* No handler is defined for signum. Call default handler */
+                ScmObj cell = Scm_Acons(DEFAULT_SIGHANDLER,
+                                        SCM_MAKE_INT(signum),
+                                        SCM_NIL);
+                if (SCM_NULLP(tail)) {
+                    vm->sigPending = tail = cell;
+                } else {
+                    SCM_SET_CDR(tail, cell);
+                    tail = SCM_CDR(tail);
+                }
+            }
         }
     }
     SCM_WHEN_ERROR {
-        /*sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);*/
+        sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
         SCM_NEXT_HANDLER;
     }
     SCM_END_PROTECT;
     /* TODO: signal overflow handling */
     vm->sigOverflow = 0;
-    /*sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);*/
+    sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
+
+    /* Call the queued signal handlers.  If an error is thrown in one
+       of those handlers, the rest of handlers remain in the queue. */
+    /* TODO: if VM is active, it'd be better to make the active VM to handle
+       those handler procs, instead of calling Scm_Eval. */
+    SCM_FOR_EACH(sp, vm->sigPending) {
+        ScmObj h = SCM_CAR(sp);
+        vm->sigPending = SCM_CDR(sp);
+        Scm_Apply(SCM_CAR(h), SCM_LIST1(SCM_CDR(h)));
+    }
 }
 
 /*
@@ -347,6 +406,7 @@ void Scm_SetMasterSigmask(sigset_t *set)
 void Scm__InitSignal(void)
 {
     ScmModule *mod = Scm_GaucheModule();
+    ScmObj defsigh_sym = Scm_Intern(&default_sighandler_name);
     struct sigdesc *desc;
 
     sigemptyset(&masterSigset);
@@ -357,5 +417,5 @@ void Scm__InitSignal(void)
     for (desc = sigDesc; desc->name; desc++) {
         SCM_DEFINE(mod, desc->name, SCM_MAKE_INT(desc->num));
     }
+    Scm_Define(mod, SCM_SYMBOL(defsigh_sym), DEFAULT_SIGHANDLER);
 }
-    
