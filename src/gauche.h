@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.71 2001-03-12 04:19:39 shiro Exp $
+ *  $Id: gauche.h,v 1.72 2001-03-12 04:40:14 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -738,6 +738,11 @@ extern ScmObj Scm_GetOutputString(ScmPort *port);
 extern ScmObj Scm_MakeVirtualPort(int direction,
                                   ScmPortVTable *vtable,
                                   void *clientData, int ownerp);
+extern ScmObj Scm_MakePortWithFd(ScmObj name,
+                                 int direction,
+                                 int fd,
+                                 int buffer_size,
+                                 int ownerp);
 
 extern ScmObj Scm_PortName(ScmPort *port);
 extern int    Scm_PortLine(ScmPort *port);
