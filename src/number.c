@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.81 2002-04-10 00:21:26 shirok Exp $
+ *  $Id: number.c,v 1.82 2002-04-11 06:26:03 shirok Exp $
  */
 
 #include <math.h>
@@ -1380,9 +1380,38 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  * Accurately", PLDI '96, pp.108--116, 1996), except I use floating-point
  * arithmetic instead of multiple-precision integer arithmetic.
  * So it is fast but inaccurate.
- * A special care must be taken when the exponent part is very large
- * or very small, for it may cause some parameters to overflow.
+ *
+ * Mainly I avoid the inaccuracy by emitting more digits than the strictly
+ * necessary shown in Burger&Dybvig.  It is done by scaling m+ and m-
+ * 10% smaller when checking the termination condition.  This idea is
+ * taken from Aubrey Jaffer's SCM.
+ *
+ * Still there are cases that double precision comes short.  For example,
+ * 9.999999999999784e-1 and 9.999999999999782e-1 become indistinguishable
+ * after scaling using double.  On x86, however, the floating-point
+ * registers actually have extended precision, and with compiler optimization
+ * the intermediate result is kept in extended precision and works without
+ * loss of precision.
  */
+
+static double dpow10[] = { 1.0, 1.0e1, 1.0e2, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7};
+
+static double raise_pow10(double x, int n)
+{
+    if (n >= 0) {
+        while (n > 7) {
+            x *= 1e8;
+            n -= 8;
+        }
+        return x*dpow10[n];
+    } else {
+        while (n < -7) {
+            x /= 1e8;
+            n += 8;
+        }
+        return x/dpow10[-n];
+    }
+}
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
@@ -1396,113 +1425,74 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         strcpy(buf, "0.0");
     } else {
         /* variable names follows Burger&Dybvig paper. mp, mm for m+, m- */
-        double f, r, s, mp, mm, q, est;
-        int exp, tc1, tc2, digs, round;
+        double f, r, s, mp, mm, q;
+        int exp, est, tc1, tc2, digs, round;
 
         if (val < 0) val = -val;
         
         /* initialize r, s, m+ and m- */
         f = frexp(val, &exp);
         round = (fmod(ldexp(f, 53), 2.0) == 0.0);
-        if (exp-55 > -1022) {
-            r = val;
-            s = 1.0;
-            mp = ldexp(0.5, exp-53);
+        s = 1.0;
+        if (exp > -1022) {
+            mp = ldexp(0.5, -53);
             if (f != 0.5) {
-                mm = ldexp(0.5, exp-53);
+                mm = ldexp(0.5, -53);
             } else {
-                mm = ldexp(0.25, exp-53);
+                mm = ldexp(0.25, -53);
             }
         } else {
-            /* Within this range, we have to scale r so that m+ and m- can be
-               representable as the minimum floating point number */
-            r = val * 2.0;
-            s = 2.0;
-            mp = ldexp(1.0, -1074);
-            mm = ldexp(1.0, -1074);
+            /* val is denormalized.  we should scale mp and mm accordingly. */
+            mp = ldexp(0.5, -exp-1074);
+            mm = ldexp(0.5, -exp-1074);
         }
-
-        /*fprintf(stderr, "init f=%.20g, r=%.20g, s=%.20g, mp=%.20g, mm=%.20g, round=%d\n",
-          f, r, s, mp, mm, round);*/
 
         /* estimate scale */
-        est = ceil(log10(val) - 0.1);
-        if (est >= 0) {
-            if (est >= DBL_MAX_10_EXP) {
-                s *= pow(10.0, est-1);
-                r /= 10.0;
-                mp /= 10.0;
-                mm /= 10.0;
-            } else {
-                s *= pow(10.0, est);
-            }
-        } else {
-            double scale;
-            if (-est >= DBL_MAX_10_EXP) {
-                scale = pow(10.0, DBL_MAX_10_EXP);
-                s /= pow(10.0, -est-DBL_MAX_10_EXP);
-            } else {
-                scale = pow(10.0, -est);
-            }
-            r *= scale;
-            mp *= scale;
-            mm *= scale;
-        }
+        est = (int)ceil(log10(val) - 0.1);
+        r  = raise_pow10(val, -est+1);
+        mp = ldexp(raise_pow10(mp, -est+1), exp);
+        mm = ldexp(raise_pow10(mm, -est+1), exp);
+
+        /*fprintf(stderr, "scale est=%d, r=%.20g, mp=%.20g, mm=%.20g\n",
+          est, r, mp, mm);*/
 
         /* fixup */
-        if (est < DBL_MAX_10_EXP) {
-            if (round) {
-                if (r + mp >= s) {
-                    s *= 10.0;
-                    est++;
-                }
-            } else {
-                if (r + mp > s) {
-                    s *= 10.0;
-                    est++;
-                }
-            }
-        } else {
-            /* avoid overflow */
-            if (round) {
-                if (r + mp >= s) {
-                    r  /= 10.0;
-                    mp /= 10.0;
-                    mm /= 10.0;
-                    est++;
-                }
-            } else {
-                if (r + mp > s) {
-                    r  /= 10.0;
-                    mp /= 10.0;
-                    mm /= 10.0;
-                    est++;
-                }
-            }
+        if (r + mp >= 10.0) {
+            r /= 10.0;
+            mp /= 10.0;
+            mm /= 10.0;
+            est++;
+        } else if (r < mm) {
+            r *= 10.0;
+            mp *= 10.0;
+            mm *= 10.0;
+            est--;
         }
 
-        /*fprintf(stderr, "scale r=%.20g, s=%.20g, mp=%.20g, mm=%.20g, est=%d\n",
-          r, s, mp, mm, est);*/
+        /*fprintf(stderr, "fixup est=%d, r=%.20g, mp=%.20g, mm=%.20g\n",
+          est, r, mp, mm);*/
 
         /* generate */
         for (digs=0;buflen>5;digs++) {
-            double r10 = r * 10.0;
-            int q = (int)floor(r10/s);
-            r = fmod(r10, s);
-            mp *= 10.0;
-            mm *= 10.0;
-            
+            int q;
+            q = r;
+            r -= q;
+
+            /*fprintf(stderr, "generate, r=%.20g, mp=%.20g\n", r, mp);*/
             if (round) {
-                tc1 = (r <= mm);
-                tc2 = (r + mp >= s);
+                tc1 = (r <= 0.9*mm);
+                tc2 = (r + 0.9*mp >= s);
             } else {
-                tc1 = (r < mm);
-                tc2 = (r + mp > s);
+                tc1 = (r < 0.9*mm);
+                tc2 = (r + 0.9*mp > s);
             }
             if (!tc1) {
                 if (!tc2) {
                     *buf++ = q + '0', buflen--;
                     if (digs == 0) *buf++ = '.', buflen--;
+                    r *= 10.0;
+            mp *= 10.0;
+            mm *= 10.0;
                     continue;
                 } else {
                     *buf++ = q + '1', buflen--;
@@ -1739,77 +1729,89 @@ static ScmObj read_uint(const char **strp, int *lenp,
     }
 }
 
-static double nextfloat(double z)
-{
-    double f;
-    int e;
-    f = frexp(z, &e);
-    if (f == 1.0-ldexp(1.0, -53)) return ldexp(0.5, e+1);
-    else                          return ldexp(f + ldexp(1.0, -53), e);
-}
+static ScmObj expt_two_52;
+static double expt_two_minus_52, expt_two_minus_53;
 
-static double prevfloat(double z)
+static ScmObj expt10big[330];
+
+static inline ScmObj expt10(int e)
 {
-    double f;
-    int e;
-    f = frexp(z, &e);
-    if (f == 0.5) return ldexp(f - ldexp(1.0, -53), e);
-    else          return ldexp(f - ldexp(1.0, -52), e);
+    SCM_ASSERT(e < 330);
+    return expt10big[e];
 }
 
 static double fixup(ScmObj f, int e, double z)
 {
     ScmObj m, x, y, d, d2;
-    int k, s;
+    double ff;
+    int k, s, ee;
     for (;;) {
         m = Scm_DecodeFlonum(z, &k, &s);
         if (e >= 0) {
             if (k >= 0) {
-                x = Scm_Multiply(f, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(e)), SCM_NIL);
-                y = Scm_Multiply(m, Scm_Ash(SCM_MAKE_INT(1), k), SCM_NIL);
+                x = Scm_Multiply(f, expt10(e), SCM_NIL);
+                y = Scm_Ash(m, k);
             } else {
-                x = Scm_Multiply(f, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(e)), SCM_LIST1(Scm_Ash(SCM_MAKE_INT(1), -k)));
+                x = Scm_Ash(Scm_Multiply(f, expt10(e), SCM_NIL), -k);
                 y = m;
             }
         } else {
             if (k >= 0) {
                 x = f;
-                y = Scm_Multiply(m, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(-e)), SCM_LIST1(Scm_Ash(SCM_MAKE_INT(1), k)));
+                y = Scm_Ash(Scm_Multiply(m, expt10(-e), SCM_NIL), k);
             } else {
-                x = Scm_Multiply(f, Scm_Ash(SCM_MAKE_INT(1), -k), SCM_NIL);
-                y = Scm_Multiply(m, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(-e)), SCM_NIL);
+                x = Scm_Ash(f, -k);
+                y = Scm_Multiply(m, expt10(-e), SCM_NIL);
             }
         }
-/*        Scm_Printf(SCM_CURERR, "z=%.20lg,\nx=%S,\ny=%S\nf=%S\nm=%S\ne=%d, k=%d\n", z, x, y, f, m, e, k);*/
+        /*Scm_Printf(SCM_CURERR, "z=%.20lg,\nx=%S,\ny=%S\nf=%S\nm=%S\ne=%d, k=%d\n", z, x, y, f, m, e, k);*/
         /* compare */
         d = Scm_Subtract(x, y, SCM_NIL);
         d2 = Scm_Ash(Scm_Multiply(m, Scm_Abs(d), SCM_NIL), 1);
         if (Scm_NumCmp(d2, y) < 0) {
-            if (Scm_NumCmp(m, Scm_Ash(SCM_MAKE_INT(1), 52)) == 0
+            if (Scm_NumCmp(m, expt_two_52) == 0
                 && Scm_Sign(d) < 0
                 && Scm_NumCmp(Scm_Ash(d2, 1), y) > 0) {
-                z = prevfloat(z);
+                goto prevfloat;
             } else {
                 return z;
             }
         } else if (Scm_NumCmp(d2, y) == 0) {
             if (!Scm_OddP(m)) {
-                if (Scm_NumCmp(m, Scm_Ash(SCM_MAKE_INT(1), 52)) == 0
+                if (Scm_NumCmp(m, expt_two_52) == 0
                     && Scm_Sign(d) < 0) {
-                    z = prevfloat(z);
+                    goto prevfloat;
                 } else {
                     return z;
                 }
             } else if (Scm_Sign(d) < 0) {
-                z = prevfloat(z);
+                goto prevfloat;
             } else {
-                z = nextfloat(z);
+                goto nextfloat;
             }
         } else if (Scm_Sign(d) < 0) {
-            z = prevfloat(z);
+            goto prevfloat;
         } else {
-            z = nextfloat(z);
+            goto nextfloat;
         }
+      prevfloat:
+        ff = frexp(z, &ee);
+        if (ee > -1022) {
+            if (ff == 0.5) z = ldexp(ff - expt_two_minus_53, ee);
+            else          z = ldexp(ff - expt_two_minus_52, ee);
+        } else {
+            z -= ldexp(1.0, -1074);
+        }
+        continue;
+      nextfloat:
+        ff = frexp(z, &ee);
+        if (ee > -1022) {
+            if (ff == 1.0-expt_two_minus_53) z = ldexp(0.5, ee+1);
+            else                          z = ldexp(ff + expt_two_minus_53, ee);
+        } else {
+            z += ldexp(1.0, -1074);
+        }
+        continue;
     }
     /*NOTREACHED*/
 }
@@ -1948,7 +1950,6 @@ static ScmObj read_real(const char **strp, int *lenp,
             || exponent-fracdigs < 15) {
             realnum = fixup(fraction, exponent-fracdigs, realnum);
         }
-        
         if (minusp) realnum = -realnum;
         /* check exactness */
         if (ctx->exactness == EXACT) {
@@ -2121,5 +2122,11 @@ void Scm__InitNumber(void)
                 break;
             }
         }
+    }
+    expt_two_52 = Scm_Ash(SCM_MAKE_INT(1), 52);
+    expt_two_minus_52 = ldexp(1.0, -52);
+    expt_two_minus_53 = ldexp(1.0, -53);
+    for (i=0; i<330; i++) {
+        expt10big[i] = Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(i));
     }
 }
