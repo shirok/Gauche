@@ -4,7 +4,7 @@
 ;;; public domain
 ;;;
 
-;; $Id: const.scm,v 1.3 2002-08-31 08:33:03 shirok Exp $
+;; $Id: const.scm,v 1.4 2004-01-26 09:48:19 shirok Exp $
 
 (define-module math.const
   (export pi e 1/pi 180/pi pi/2 pi/4 pi/180 2pi))
@@ -12,6 +12,7 @@
 (select-module math.const)
 
 (define-constant pi     3.141592653589793)
+(define-constant 2pi    6.283185307179586)
 (define-constant pi/2   1.5707963267948966)
 (define-constant pi/4   0.7853981633974483)
 (define-constant pi/180 0.017453292519943295)

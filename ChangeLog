@@ -1,5 +1,7 @@
 2004-01-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/math/const.scm : added missing definition of 2pi.
+
 	* lib/www/cgi-test.scm : documented officially.
 
 	* src/gauche.h, src/number.c (Scm_GetIntegerCheck etc), src/bignum.c
