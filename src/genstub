@@ -2,7 +2,7 @@
 ;;; Simple stub generator
 ;;;
 
-;;; $Id: genstub,v 1.30 2001-03-31 12:01:15 shiro Exp $
+;;; $Id: genstub,v 1.31 2001-04-01 09:19:44 shiro Exp $
 
 (add-load-path "../lib")
 
@@ -40,8 +40,6 @@
 ;;   These are only here to make the rest of program, originally written
 ;;   for STk, work under the current gosh.
 ;;   I'll remove them once Gauche has a proper OO.
-
-(use srfi-17)                           ;generalized set!
 
 (define-syntax define-klass
   (syntax-rules ()
