@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.36 2002-08-30 00:18:53 shirok Exp $
+ *  $Id: module.c,v 1.37 2002-08-30 00:46:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -63,7 +63,7 @@ static void init_module(ScmModule *m, ScmSymbol *name)
     m->name = name;
     m->imported = m->exported = SCM_NIL;
     m->parents = defaultParents;
-    m->mpl = defaultMpl;
+    m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
     m->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(m->mutex);
     Scm_HashTablePut(modules.table, SCM_OBJ(name), SCM_OBJ(m));
@@ -110,7 +110,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
         SCM_FOR_EACH(p, module->imported) {
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
             if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), searched))) continue;
-            
+
             m = SCM_MODULE(SCM_CAR(p));
             (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
             e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
