@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.13 2001-02-11 13:32:35 shiro Exp $
+ *  $Id: string.c,v 1.14 2001-02-13 06:02:21 shiro Exp $
  */
 
 #include <stdio.h>
@@ -641,6 +641,45 @@ ScmObj Scm_StringTake(ScmString *x, int nchars, int takefirst, int fromright)
         return Scm_Substring(x, 0, nchars);
     else
         return Scm_Substring(x, nchars, len);
+}
+
+/*----------------------------------------------------------------
+ * Search & parse
+ */
+
+/* Split string by char.  Char itself is not included in the result. */
+/* TODO: fix semantics.  What should be returned for (string-split "" #\.)? */
+ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
+{
+    int size = SCM_STRING_SIZE(str), sizecnt = 0;
+    int len = SCM_STRING_LENGTH(str), lencnt = 0;
+    const char *s = SCM_STRING_START(str), *p = s, *e = s + size;
+    ScmObj head = SCM_NIL, tail;
+
+    if (len < 0) {
+        /* TODO: fix the policy of handling incomplete string */
+        Scm_Error("incomplete string not accepted: %S", str);
+    }
+    
+    while (p < e) {
+        ScmChar cc;
+        int ncc;
+
+        SCM_STR_GETC(p, cc);
+        ncc = SCM_CHAR_NBYTES(cc);
+        if (ch == cc) {
+            SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
+            sizecnt = lencnt = 0;
+            p += ncc;
+            s = p;
+        } else {
+            p += ncc;
+            sizecnt += ncc;
+            lencnt ++;
+        }
+    }
+    SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt));
+    return head;
 }
 
 /*----------------------------------------------------------------
