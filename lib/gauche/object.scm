@@ -12,11 +12,15 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.21 2001-10-22 11:18:17 shirok Exp $
+;;;  $Id: object.scm,v 1.22 2001-10-24 08:43:34 shirok Exp $
 ;;;
 
-(select-module gauche)
-(use srfi-2)  ;; and-let*
+;; This module is not meant to be `use'd.   It is just to hide
+;; auxiliary procedures from the rest of the system.  The initialization
+;; file loads this file, and this file inserts exported symbols into
+;; gauche module explicitly.
+(define-module gauche.object )
+(select-module gauche.object)
 
 ;;; I'm trying to make MOP as close to STklos and Goops as possible.
 ;;; The perfect compatibility can't be done since the underlying implemenation
@@ -110,7 +114,7 @@
         `'(,slot)))
   (let ((slot-defs (map transform-slot-definition slots))
         (metaclass (or (get-keyword :metaclass options #f)
-                       `(%get-default-metaclass (list ,@supers))))
+                       `(,%get-default-metaclass (list ,@supers))))
         (class     (gensym))
         (slot      (gensym)))
     `(define ,name
@@ -120,7 +124,7 @@
                        :slots (list ,@slot-defs)
                        ,@options)))
          (for-each (lambda (,slot)
-                     (%make-accessor ,class ,slot (current-module)))
+                     (,%make-accessor ,class ,slot (current-module)))
                    (class-slots ,class))
          ,class))
     ))
@@ -317,28 +321,28 @@
        (error "unsupported slot allocation:" alloc)))))
 
 ;; access class allocated slot.  API compatible with Goops.
-(define class-slot-ref  (undefined))
-(define class-slot-set! (undefined))
-(let ()
-  (define (class-slot-gns class slot-name)
-    (or (and-let* ((slot  (class-slot-definition class slot-name))
-                   (alloc (slot-definition-allocation slot))
-                   ((memv alloc '(:class :each-subclass)))
-                   (acc   (class-slot-accessor class slot-name)))
-          (slot-ref acc 'getter-n-setter))
-        (errorf "attempt to access non-existent or non-class allocated slot ~s of class ~s as a class slot."
-                slot-name class)))
+(define (%class-slot-gns class slot-name)
+  (cond ((class-slot-definition class slot-name)
+         => (lambda (slot)
+              (if (memv (slot-definition-allocation slot)
+                        '(:class :each-subclass))
+                  (slot-ref (class-slot-accessor class slot-name)
+                            'getter-n-setter)
+                  (errorf "attempt to access non-class allocated slot ~s of class ~s as a class slot." slot-name class))))
+        (else
+         (errorf "attempt to access non-existent slot ~s of class ~s as a class slot." slot-name class))))
 
-  (set! class-slot-ref
-        (lambda (class slot-name)
-          (let ((val (apply (car (class-slot-gns class slot-name)) '(#f))))
-            (if (undefined? val)
-                (slot-unbound class slot-name)
-                val))))
-  (set! class-slot-set!
-        (lambda (class slot-name val)
-          (apply (cdr (class-slot-gns class slot-name)) (list #f val))))
-  )
+(define (class-slot-set! class slot-name val)
+  (apply (cdr (%class-slot-gns class slot-name)) (list #f val)))
+
+(define class-slot-ref
+  (getter-with-setter
+   (lambda (class slot-name)
+     (let ((val (apply (car (%class-slot-gns class slot-name)) '(#f))))
+       (if (undefined? val)
+           (slot-unbound class slot-name)
+           val)))
+   class-slot-set!))
 
 ;; convenient routine to push the value to the slot.
 ;; this can be optimized later.
@@ -449,3 +453,31 @@
 (define-method x->number  ((obj <char>)) (char->integer obj))
 (define-method x->number  ((obj <top>)) 0)
 
+;;;
+;;; Make exported symbol visible from outside
+;;;
+
+(define-syntax insert-symbols
+  (syntax-rules ()
+    ((_ symbol ...)
+     (with-module gauche
+       (define symbol (with-module gauche.object symbol)) ...))
+    ))
+
+(insert-symbols define-generic define-method define-class
+                compute-slots compute-get-n-set
+                class-slot-ref class-slot-set!
+                slot-push! slot-unbound slot-missing
+                slot-exists? slot-exists-using-class?
+                apply-generic sort-applicable-methods
+                apply-methods apply-method
+                class-name class-precedence-list class-direct-supers
+                class-direct-slots class-slots
+                slot-definition-name slot-definition-options
+                slot-definition-option
+                slot-definition-allocation slot-definition-getter
+                slot-definition-setter slot-definition-accessor
+                class-slot-definition class-slot-accessor
+                x->string x->integer x->number)
+
+(provide "gauche/object")
