@@ -606,8 +606,8 @@
                  ((procedure? count)
                   (lambda ()
                     (let* ((actual-count (get-count (count-unpack)))
-                           (str (string-incomplete->complete!
-                                 (read-block actual-count)))
+                           (bstr (read-block actual-count))
+                           (str (or (string-incomplete->complete! bstr) bstr))
                            (size (string-size str)))
                       (list
                        (if (< size actual-count)
@@ -615,7 +615,8 @@
                          str)))))
                  (else
                   (lambda ()
-                    (let* ((str (string-incomplete->complete! (read-block count)))
+                    (let* ((bstr (read-block count))
+                           (str (or (string-incomplete->complete! bstr) bstr))
                            (size (string-size str)))
                       (list
                        (if (< size count)
