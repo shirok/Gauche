@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: hook.scm,v 1.2 2002-12-11 10:24:48 shirok Exp $
+;;;  $Id: hook.scm,v 1.3 2002-12-11 10:44:56 shirok Exp $
 ;;;
 
 ;; The API is upper-comaptible of Guile's.   The differences are:
@@ -41,7 +41,7 @@
                             v))
    ))
 
-;; make-hook [arity] - arity can be <arity-at-least> object.
+;; make-hook [arity]
 (define (make-hook . maybe-arity)
   (make <hook> :arity (get-optional maybe-arity 0)))
 
