@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.28 2001-03-04 07:57:38 shiro Exp $
+ *  $Id: vm.h,v 1.29 2001-03-12 07:43:15 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -52,6 +52,8 @@ typedef struct ScmEnvFrameRec {
 
 #define ENV_HDR_SIZE   3        /* envframe header size */
 #define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
+
+extern ScmEnvFrame *Scm_VMSaveCurrentEnv(void);
 
 /*
  * Continuation
