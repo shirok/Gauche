@@ -1,3 +1,7 @@
+2002-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (Scm_Format): added ~* directive.
+
 2002-05-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub : removed obsolete definition of print and println, and

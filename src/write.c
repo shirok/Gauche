@@ -1,7 +1,7 @@
 /*
  * write.c - writer
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.28 2002-05-18 07:19:50 shirok Exp $
+ *  $Id: write.c,v 1.29 2002-05-19 20:29:36 shirok Exp $
  */
 
 #include <stdio.h>
@@ -400,6 +400,7 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
             Scm_Error("too few arguments for format string: %S", fmt);  \
         arg = SCM_CAR(args);                                            \
         args = SCM_CDR(args);                                           \
+        argcnt++;                                                       \
     } while (0)
 
 /* max # of parameters for a format directive */
@@ -525,8 +526,9 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
 {
     ScmObj fmtstr = Scm_MakeInputStringPort(fmt);
     ScmChar ch = 0;
-    ScmObj arg;
+    ScmObj arg, oargs = args;
     int out_to_str = 0;
+    int arglen, argcnt;
 
     if (out == SCM_FALSE) {
         out = Scm_MakeOutputStringPort();
@@ -536,6 +538,9 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
     } else if (!SCM_OPORTP(out)) {
         Scm_Error("output port required, but got %S", out);
     }
+
+    arglen = Scm_Length(args);
+    argcnt = 0;
     
     for (;;) {
         int atflag, colonflag;
@@ -638,6 +643,28 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
                                    colonflag, atflag, ch == 'X');
                 }
                 break;
+            case '*':
+                {
+                    int argindex;
+                    if (numParams) {
+                        if (!SCM_INTP(params[0])) goto badfmt;
+                        argindex = SCM_INT_VALUE(params[0]);
+                    } else {
+                        argindex = 1;
+                    }
+                    if (colonflag) {
+                        if (atflag) goto badfmt;
+                        argindex = argcnt - argindex;
+                    } else if (!atflag) {
+                        argindex = argcnt + argindex;
+                    }
+                    if (argindex < 0 || argindex >= arglen) {
+                        Scm_Error("'~*' format directive refers outside of argument list in %S", fmt);
+                    }
+                    argcnt = argindex;
+                    args = Scm_ListTail(oargs, argcnt);
+                    break;
+                }
             case 'v':; case 'V':;
                 if (atflag || colonflag || numParams >= MAX_PARAMS)
                     goto badfmt;

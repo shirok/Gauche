@@ -380,5 +380,16 @@
 (test "format v param" "0000012345"
       (lambda () (format #f "~v,vd" 10 #\0 12345)))
 
+(test "format ~*" "1 2 4 5"
+      (lambda () (format #f "~a ~a ~*~a ~a" 1 2 3 4 5)))
+(test "format ~*" "1 5"
+      (lambda () (format #f "~a ~3*~a" 1 2 3 4 5)))
+(test "format ~:*" "1 2 2 3 4 5"
+      (lambda () (format #f "~a ~a ~:*~a ~a ~a ~a" 1 2 3 4 5)))
+(test "format ~:*" "1 2 3 1 2 3 4 5"
+      (lambda () (format #f "~a ~a ~a ~3:*~a ~a ~a ~a ~a" 1 2 3 4 5)))
+(test "format ~@*" "1 2 5"
+      (lambda () (format #f "~a ~a ~4@*~a" 1 2 3 4 5)))
+
 (test-end)
 
