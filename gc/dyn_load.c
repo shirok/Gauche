@@ -32,16 +32,6 @@
 #endif
 #include "private/gc_priv.h"
 
-/* [SK 2002/02/09] Added this API for platforms that isn't supported
-   DYNAMIC_LOADING to register the data section of dlopen-ed library
-   explicitly. */
-void GC_register_dlopen_data(GC_PTR start, GC_PTR end)
-{
-#ifndef DYNAMIC_LOADING
-    GC_add_roots(start, end);
-#endif  /*!DYNAMIC_LOADING*/
-}
-
 /* BTL: avoid circular redefinition of dlopen if SOLARIS_THREADS defined */
 # if (defined(LINUX_THREADS) || defined(SOLARIS_THREADS) \
       || defined(HPUX_THREADS) || defined(IRIX_THREADS)) && defined(dlopen) \
@@ -66,10 +56,26 @@ void GC_register_dlopen_data(GC_PTR start, GC_PTR end)
     !defined(RS6000) && !defined(SCO_ELF) && \
     !(defined(NETBSD) && defined(__ELF__)) && !defined(HURD) && \
     !(defined(FREEBSD) && defined(__ELF__))
+/*
  --> We only know how to find data segments of dynamic libraries for the
  --> above.  Additional SVR4 variants might not be too
  --> hard to add.
+*/
+/* [SK 2002/02/11] for these cases, Gauche uses explicit initialization
+   defined below. */
+#define ENABLE_EXPLICIT_INITIALIZATION
+void GC_register_dynamic_libraries(){}
 #endif
+
+/* [SK 2002/02/09] Added this API for platforms that isn't supported
+   DYNAMIC_LOADING to register the data section of dlopen-ed library
+   explicitly. */
+void GC_register_dlopen_data(GC_PTR start, GC_PTR end)
+{
+#if !defined(DYNAMIC_LOADING) || defined(ENABLE_EXPLICIT_INITIALIZATION)
+    GC_add_roots(start, end);
+#endif  /*!DYNAMIC_LOADING*/
+}
 
 #include <stdio.h>
 #ifdef SUNOS5DL
