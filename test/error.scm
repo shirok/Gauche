@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.2 2001-09-13 09:53:29 shirok Exp $
+;;  $Id: error.scm,v 1.3 2001-09-26 10:58:44 shirok Exp $
 
 (use gauche.test)
 (test-start "error handlers")
@@ -65,4 +65,14 @@
               (lambda () (set! x (cons 'a x))))))
           x)))
 
+(test "repeat" 10
+      (lambda ()
+        (let loop ((i 0))
+          (if (< i 10)
+              (begin (with-error-handler
+                      (lambda (e) i)
+                      (lambda () (car i)))
+                     (loop (+ i 1)))
+              i))))
+              
 (test-end)
