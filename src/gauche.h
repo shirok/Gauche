@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.144 2001-05-25 09:00:52 shirok Exp $
+ *  $Id: gauche.h,v 1.145 2001-05-26 21:38:57 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1706,19 +1706,13 @@ extern ScmClass Scm_SysStatClass;
 
 extern ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
 
-/* time_t */
-typedef struct ScmSysTimeRec {
-    SCM_HEADER;
-    time_t time;
-} ScmSysTime;
-    
-extern ScmClass Scm_SysTimeClass;
-#define SCM_CLASS_SYS_TIME    (&Scm_SysTimeClass)
-#define SCM_SYS_TIME(obj)     ((ScmSysTime*)(obj))
-#define SCM_SYS_TIME_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_TIME))
-#define SCM_SYS_TIME_TIME(obj) SCM_SYS_TIME(obj)->time
-
-extern ScmObj Scm_MakeSysTime(time_t);
+/* time_t
+ * NB: POSIX defines time_t to be a type to represent number of seconds
+ * since Epoch.  It may be a structure.  In Gauche we just convert it
+ * to a number.
+ */
+extern ScmObj Scm_MakeSysTime(time_t time);
+extern time_t Scm_GetSysTime(ScmObj val);
 
 /* struct tm */
 typedef struct ScmSysTmRec {

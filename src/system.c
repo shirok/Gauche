@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.17 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: system.c,v 1.18 2001-05-26 21:38:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -237,14 +237,29 @@ ScmObj Scm_MakeSysStat(void)
  * Time (sys/time.h)
  */
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysTimeClass, NULL);
-
+/* NB: I assume time_t is typedefed to either an integral type or
+ * a floating point type.  As far as I know it is true on most
+ * current architectures.  POSIX doesn't specify so, however; it
+ * may be some weird structure.  If you find such an architecture,
+ * tweak configure.in and modify the following two functions.
+ */
 ScmObj Scm_MakeSysTime(time_t t)
 {
-    ScmSysTime *st = SCM_NEW(ScmSysTime);
-    SCM_SET_CLASS(st, SCM_CLASS_SYS_TIME);
-    st->time = t;
-    return SCM_OBJ(st);
+#ifdef INTEGRAL_TIME_T
+    return Scm_MakeIntegerFromUI((unsigned long)t);
+#else
+    double val = (double)t;
+    return Scm_MakeFlonum(val);
+#endif
+}
+
+time_t Scm_GetSysTime(ScmObj val)
+{
+#ifdef INTEGRAL_TIME_T
+    return (time_t)Scm_GetUInteger(val);
+#else
+    return (tiem_t)Scm_GetDouble(val);
+#endif
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysTmClass, NULL);

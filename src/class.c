@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.47 2001-04-26 08:23:00 shiro Exp $
+ *  $Id: class.c,v 1.48 2001-05-26 21:38:57 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1703,7 +1703,6 @@ void Scm__InitClass(void)
 
     /* system.c */
     CINIT(SCM_CLASS_SYS_STAT,         "<sys-stat>");
-    CINIT(SCM_CLASS_SYS_TIME,         "<sys-time>");
     CINIT(SCM_CLASS_SYS_TM,           "<sys-tm>");
     CINIT(SCM_CLASS_SYS_GROUP,        "<sys-group>");
     CINIT(SCM_CLASS_SYS_PASSWD,       "<sys-passwd>");

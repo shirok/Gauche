@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.28 2001-05-19 10:56:28 shirok Exp $
+;;; $Id: syslib.stub,v 1.29 2001-05-26 21:38:57 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -473,9 +473,6 @@
 ;;---------------------------------------------------------------------
 ;; time.h
 
-(define-type "sys-time" sys-time?
-  "ScmSysTime*"   "SCM_SYS_TIME_P" "SCM_SYS_TIME")
-
 (define-type "sys-tm" sys-tm?
   "ScmSysTm*"     "SCM_SYS_TM_P" "SCM_SYS_TM")
 
@@ -484,14 +481,15 @@
   "  SCM_RETURN(SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm))));")
 
 (define-cproc sys-ctime (time)
-  (assert (sys-time? time))
-  "  SCM_RETURN(SCM_MAKE_STR_COPYING(ctime(&SCM_SYS_TIME_TIME(time))));")
+  (assert (number? time))
+  "  time_t tim = Scm_GetSysTime(time);
+  SCM_RETURN(SCM_MAKE_STR_COPYING(ctime(&tim)));")
 
 (define-cproc sys-difftime (time1 time0)
-  (assert (sys-time? time1))
-  (assert (sys-time? time0))
-  "  SCM_RETURN(Scm_MakeFlonum(difftime(SCM_SYS_TIME_TIME(time1),
-                                        SCM_SYS_TIME_TIME(time0))));")
+  (assert (number? time1))
+  (assert (number? time0))
+  "  SCM_RETURN(Scm_MakeFlonum(difftime(Scm_GetSysTime(time1),
+                                        Scm_GetSysTime(time0))));")
 
 (define-cproc sys-strftime (format tm)
   (assert (string? format))
@@ -502,12 +500,14 @@
   SCM_RETURN(SCM_MAKE_STR_COPYING(tmpbuf));")
 
 (define-cproc sys-gmtime (time)
-  (assert (sys-time? time))
-  "  SCM_RETURN(Scm_MakeSysTm(gmtime(&SCM_SYS_TIME_TIME(time))));")
+  (assert (number? time))
+  "  time_t tim = Scm_GetSysTime(time);
+  SCM_RETURN(Scm_MakeSysTm(gmtime(&tim)));")
 
 (define-cproc sys-localtime (time)
-  (assert (sys-time? time))
-  "  SCM_RETURN(Scm_MakeSysTm(localtime(&SCM_SYS_TIME_TIME(time))));")
+  (assert (number? time))
+  "  time_t tim = Scm_GetSysTime(time);
+  SCM_RETURN(Scm_MakeSysTm(localtime(&tim)));")
 
 (define-cproc sys-mktime (tm)
   (assert (sys-tm? tm))
