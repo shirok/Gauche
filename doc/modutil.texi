@@ -47,7 +47,7 @@
 @c ----------------------------------------------------------------------
 @node binary.pack - Packing Binary Data, dbm - Generic DBM interface, Library modules - Utilities, Library modules - Utilities
 @section @code{binary.pack} - Packing Binary Data
-@c NODE binary.pack - バイナリデータのパック, @code{dbm} - バイナリデータのパック
+@c NODE binary.pack - バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
 
 @deftp {Module} binary.pack
 @mdindex binary.pack
