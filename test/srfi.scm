@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.3 2001-03-24 10:09:37 shiro Exp $
+;; $Id: srfi.scm,v 1.4 2001-04-01 07:27:29 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -34,7 +34,6 @@
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-17")
-(use srfi-17)
 
 (define x (cons 1 2))
 (test "(setter car)" '((3 3) . 2)
