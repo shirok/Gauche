@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.4 2001-02-14 10:08:04 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.5 2001-02-16 06:58:22 shiro Exp $
 ;;;
 
 ;;
@@ -42,7 +42,10 @@
 ;; Require and provide (temporary solution)
 ;;
 
-(define *provided* '())
+(define *provided*
+  '("srfi-6"                            ; string ports (builtin)
+    "srfi-8"                            ; receive (builtin)
+    ))
 
 (define (REQUIRE feature)
   (unless (member feature *provided*)
