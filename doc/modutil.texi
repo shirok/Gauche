@@ -9190,8 +9190,8 @@ for the details of @code{parameterize}).
 @c COMMON
 
 @example
-(parameterize ((cgi-metavariables (("REQUEST_METHOD" "GET")
-                                   ("QUERY_STRING" "x=foo"))))
+(parameterize ((cgi-metavariables '(("REQUEST_METHOD" "GET")
+                                    ("QUERY_STRING" "x=foo"))))
   (my-cgi-procedure))
 @end example
 @end deffn
