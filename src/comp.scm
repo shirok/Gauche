@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.10 2005-01-03 10:35:27 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.11 2005-01-06 08:43:41 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -164,8 +164,16 @@
   (vm-current-module))
 
 (define (add-srcinfo form info)
-  (pair-attribute-set! form 'source-info info)
+  (when info
+    (pair-attribute-set! form 'source-info info))
   form)
+
+(define (list/info info arg0 . args)
+  (if info
+    (let1 p (extended-cons arg0 args)
+      (pair-attribute-set! p 'source-info info)
+      p)
+    (cons arg0 args)))
 
 ;;============================================================
 ;; Special forms
@@ -423,9 +431,64 @@
          (else
           (pass1/call program `($gref ,id) (cdr program) cenv)))))))
 
-(define (pass1/body forms cenv)
+(define (pass1/body forms origform cenv)
+  ;; Scan internal defines.  We need to expand macros at this stage,
+  ;; since the macro may produce more internal defines.  Note that the
+  ;; previous internal definition in the same body may shadow the macro
+  ;; binding, so we need to check idef_vars for that.
+  ;;
+  ;; Actually, this part touches the hole of R5RS---we can't determine
+  ;; the scope of the identifiers of the body until we find the boundary
+  ;; of internal define's, but in order to find all internal defines
+  ;; we have to expand the macro and we need to detemine the scope
+  ;; of the macro keyword.  Search "macro internal define" in
+  ;; comp.lang.scheme for the details.
+  ;;
+  ;; I use the model that appears the same as Chez, which adopts
+  ;; let*-like semantics for the purpose of determining macro binding
+  ;; during expansion.
+  (define (pick-intdefs exprs intdefs)
+    (match exprs
+      (() (error "empty-body" origform))
+      (((op . args) . rest)
+       (if (assq op intdefs)
+         ;; This can't be an internal define.
+         (wrap-intdefs intdefs exprs)
+         (let1 var (cenv-lookup cenv op #t)
+           (cond
+            ((lvar? var) (wrap-intdefs intdefs exprs))
+            ((is-a? var <macro>)
+             (pick-intdefs
+              (append (call-macro-expander var (car exprs) cenv)
+                      exprs)
+              intdefs))
+            ((identifier? var)
+             (if (eq? (slot-ref var 'name) 'define)
+               (handle-intdef (car exprs) rest intdefs)
+               (wrap-intdefs intdefs exprs)))
+            (else
+             (error "[internal] pass1/body" var))))))
+      (else
+       (wrap-intdefs intdefs exprs))))
+
+  (define (handle-intdef def exprs intdefs)
+    (match def
+      ((_ (name . args) body ...)
+       (pick-intdefs exprs
+                     (cons (list name `(,(global-id 'lambda) ,args ,@body))
+                           intdefs)))
+      ((_ name expr)
+       (pick-intdefs exprs (cons (list name expr) intdefs)))
+      (else
+       (error "malformed internal define:" def))))
+
+  (define (wrap-intdefs intdefs exprs)
+    (if (null? intdefs)
+      `($seq ,@(map (cut pass1 <> cenv) exprs))
+      (pass1 `(,(global-id 'letrec) ,intdefs ,@exprs) cenv)))
+  
   ;; TODO: internal define
-  `($seq ,@(map (cut pass1 <> cenv) forms)))
+  (pick-intdefs forms '()))
 
 (define (ensure-identifier sym-or-id cenv)
   (if (identifier? sym-or-id)
@@ -640,7 +703,7 @@
        (let* ((lvars (map make-lvar args))
               (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
          `($lambda ,form ,reqargs ,has-optarg?
-                   ,lvars ,(pass1/body body newenv)))))
+                   ,lvars ,(pass1/body body form newenv)))))
     (else
      (error "syntax-error: malformed lambda:" form))))
 
@@ -651,17 +714,19 @@
        (let* ((lvars (map make-lvar args))
               (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
          `($receive ,form ,reqargs ,has-optarg?
-                    ,lvars ,(pass1/body body newenv)))))
+                    ,lvars ,(pass1/body body form newenv)))))
     (else
      (error "syntax-error: malformed receive:" form))))
 
 (define-pass1-syntax (let form cenv)
   (match form
+    ((_ () body ...)
+     (pass1/body body form cenv))
     ((_ ((var expr) ...) body ...)
      (let* ((lvars (map make-lvar var))
             (newenv (cenv-extend cenv (cons #f (map cons var lvars)) #f)))
        `($let ,form ,lvars ,(map (cut pass1 <> newenv) expr)
-              ,(pass1/body body newenv))))
+              ,(pass1/body body form newenv))))
     ((_ name ((var expr) ...) body ...)
      (unless (variable? name)
        (error "bad name for named let:" name))
@@ -675,7 +740,7 @@
              ($let #f (,lvar) (($const ,(undefined)))
                    ($seq ($lset ,lvar
                                 ($lambda ,form ,(length args) #f
-                                         ,args ,(pass1/body body env2)))
+                                         ,args ,(pass1/body body form env2)))
                          ($lref ,lvar)))
              ,@(map (cut pass1 <> cenv) expr))))
     (else
@@ -686,7 +751,7 @@
     ((_ ((var expr) ...) body ...)
      (let loop ((vars var) (inits expr) (cenv cenv))
        (if (null? vars)
-         (pass1/body body cenv)
+         (pass1/body body form cenv)
          (let* ((lv (make-lvar (car vars)))
                 (newenv (cenv-extend cenv (list #f (cons (car vars) lv)) #f)))
            `($let #f (,lv) (,(pass1 (car inits) cenv))
@@ -696,6 +761,8 @@
 
 (define-pass1-syntax (letrec form cenv)
   (match form
+    ((_ () body ...)
+     (pass1/body body form cenv))
     ((_ ((var expr) ...) body ...)
      (let* ((lvars (map make-lvar var))
             (newenv (cenv-extend cenv (cons #f (map cons var lvars)) #f))
@@ -703,7 +770,7 @@
                           `($lset ,lv ,(pass1 init newenv)))
                         lvars expr)))
        `($let ,form ,lvars ,(map (lambda (_) `($const ,(undefined))) lvars)
-              ($seq ,@setup ,(pass1/body body newenv)))))
+              ($seq ,@setup ,(pass1/body body form newenv)))))
     (else
      (error "syntax-error: malformed letrec:" form))))
 
@@ -755,6 +822,177 @@
   (cond ((assq val *pass1-syntax-alist*) => cdr)
         (else (error "pass1 syntax not supported:" val))))
 
+;;------------------------------------------------------------
+;; Pass 2.  Optimization
+;;
+
+(define (pass2 form)
+  form)
+
+;;------------------------------------------------------------
+;; Pass 3.  Code generation
+;;
+
+;; This pass pushes down a runtime environment, renv.  It is
+;; a list of lvars.  
+;; 
+;; The context, ctx, is either one of the following symbols.
+;;
+;;   normal/bottom : the FORM is evaluated in the context that the
+;;            stack has no pending arguments (i.e. a continuation
+;;            frame is just pushed).
+;;   normal/top : the FORM is evaluated, while there are pending
+;;            arguments in the stack top.  Such premature arguments
+;;            should be protected if VM calls something that may
+;;            capture the continuation.
+;;   stmt/bottom : Like normal/bottom, but the result of FORM won't
+;;            be used.
+;;   stmt/top : Like normal/top, but the result of FORM won't be used.
+;;   tail   : FORM is evaluated in the tail context.  It is always
+;;            bottom.
+;;
+
+;; predicate
+(define (normal-context? ctx) (memq ctx '(normal/bottm normal/top)))
+(define (stmt-context? ctx)   (memq ctx '(stmt/bottm stmt/top)))
+(define (tail-context? ctx)   (eq? ctx 'tail))
+(define (bottom-context? ctx) (memq ctx '(normal/bottom stmt/bottom tail)))
+(define (top-context? ctx)    (memq ctx '(normal/top stmt/top)))
+
+;; context switch 
+(define (normal-context prev-ctx)
+  (if (bottom-context? prev-ctx) 'normal/bottom 'normal/top))
+
+(define (stmt-context prev-ctx)
+  (if (bottom-context? prev-ctx) 'stmt/bottom 'stmt/top))
+
+(define (tail-context prev-ctx) 'tail)
+
+;;
+;; Pass 3 main entry
+;;
+(define (pass3 form renv ctx)
+  (match form
+    (('$lref lvar)
+     (receive (depth offset) (pass3/lookup-lvar lvar renv ctx)
+       (list/info (lvar-name lvar)
+                  (vm-insn-make 'LREF depth offset))))
+    (('$lset lvar expr)
+     (receive (depth offset) (pass3/lookup-lvar lvar renv ctx)
+       (append! (pass3 expr renv (normal-context ctx))
+                (list/info (lvar-name lvar)
+                           (vm-insn-make 'LSET depth ofset)))))
+    (('$gref id)
+     (list/info id (vm-insn-make 'GREF) id))
+    (('$gset id expr)
+     (append! (pass3 expr renv (normal-context ctx))
+              (list/info id (vm-insn-make 'GSET) id)))
+    (('$const value)
+     (if (stmt-context? ctx) '() (list value)))
+    (('$if info test then else)
+     (let1 merger (if (tail-context? ctx) '() (list (vm-insn-make 'MNOP)))
+       (append! (pass3 test renv (normal-context ctx))
+                (list/info info
+                           (vm-insn-make 'IF)
+                           (append! (pass3 then ctx) merger)
+                           (pass3 else ctx)
+                           merger))))
+    (('$it) '())
+    (('$let info lvars inits expr)
+     ;;TBD
+     (append! (pass3/prepare-args inits renv)
+              (list/info info (vm-insn-make 'LOCAL-ENV))
+              (pass3 expr (cons lvars renv) ctx)))
+    (('$receive info nargs optarg? lvars expr body)
+     (append! (pass3 expr (normal-context ctx))
+              (if (bottom-context? ctx)
+                (append! (list/info info
+                                    (vm-insn-make 'TAIL-RECEIVE nargs optarg?))
+                         (pass3 body (cons lvars renv) ctx))
+                (list/info info
+                           (vm-insn-make 'RECEIVE nargs (if optarg? 1 0))
+                           (pass3 body (cons lvars renv) ctx)))))
+    (('$lambda info nargs optarg? lvars expr)
+     (list/info info
+                (vm-insn-make 'LAMBDA nargs (if optarg? 1 0))
+                (pass3 expr renv (tail-context ctx))))
+    (('$seq . exprs)
+     (if (null? exprs)
+       '()
+       (let loop ((exprs exprs)
+                  (codes '()))
+         (match exprs
+           ((expr)
+            (apply append! (reverse! codes)
+                   (list (pass3 expr renv (tail-context ctx)))))
+           ((expr . rest)
+            (loop rest (cons (pass3 expr renv (stmt-context ctx)) codes)))))))
+    (('$call info proc . args)
+     (let ((argcode (pass3/args args renv ctx))
+           (numargs (length args)))
+       (if (tail-context? ctx)
+         (append! (list (vm-insn-make 'PRE-TAIL numargs))
+                  argcode
+                  (pass3/args proc renv 'normal/top)
+                  (list/info info (vm-insn-make 'TAIL-CALL numargs)))
+         (append! (list (vm-insn-make 'PRE-CALL numargs))
+                  (append! argcode
+                           (pass3/args proc renv 'normal/top)
+                           (list/info info (vm-insn-make 'CALL numargs)))
+                  ))))
+    (('$cons info x y)
+     (append! (pass3 x renv (normal-context ctx))
+              (list (vm-insn-make 'PUSH))
+              (pass3 y renv (normal-context ctx))
+              (list/info info (vm-insn-make 'CONS))))
+    (('$append info x y)
+     (append! (pass3 x renv (normal-context ctx))
+              (list (vm-insn-make 'PUSH))
+              (pass3 y renv (normal-context ctx))
+              (list/info info (vm-insn-make 'APPEND))))
+    (('$vector info . elts)
+     (if (null? elts)
+       (list/info info (vm-insn-make 'VECTOR 0))
+       (let loop ((elts elts)
+                  (code '()))
+         (match elts
+           ((elt)
+            (append! (reverse! code)
+                     (pass3 elt renv 'normal/top)
+                     (list/info info (vm-insn-make 'VECTOR))))
+           ((elt . elts)
+            (loop elts
+                  (list* (list (vm-insn-make 'PUSH))
+                         (pass3 elt renv 'normal/top)
+                         code)))))))
+    (('$list->vector info list)
+     (list/info info (vm-insn-make 'LIST2VEC)))
+    (else
+     (error "[internal error] broken intermediate form:" form))))
+
+;; Returns depth and offset of local variable reference.
+(define (pass3/lookup-lvar lvar renv ctx)
+  (let outer ((renv renv)
+             (depth 0))
+    (if (null? renv)
+      (error "[internal error] stray local variable:" lvar)
+      (let inner ((frame (car renv))
+                  (count 1))
+        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
+              ((eq? (car frame) lvar)
+               (values depth (- (length frame) count)))
+              (else (inner (cdr frame) (+ count 1))))))))
+
+(define (pass3/prepare-args args renv)
+  ;; TODO: compose PUSH instructions
+  (let loop ((args args) (r '()))
+    (if (null? args)
+      (apply append! args)
+      (loop (cdr args)
+            (list* (list (vm-insn-make 'PUSH))
+                   (pass3 (car args) renv 'normal)
+                   r)))))
+         
 ;;============================================================
 ;; Utilities
 ;;
@@ -769,9 +1007,6 @@
           ((identifier? v) (eq? (slot-ref v 'name) sym))
           ((symbol? v) (eq? v sym))
           (else #f)))))
-
-  
-  
 
 (define (find pred lis)
   (let loop ((lis lis))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.117 2004-10-09 11:36:37 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.117.2.1 2005-01-06 08:43:41 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -71,6 +71,9 @@
 (define-module srfi-8 )
 (define-module srfi-10 )
 (define-module srfi-17 )
+
+;; for backqard compatibility
+(define-module gauche.vm.debugger )
 
 ;;
 ;; Auxiliary definitions
