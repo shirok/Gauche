@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.39 2001-02-15 08:57:09 shiro Exp $
+ *  $Id: gauche.h,v 1.40 2001-02-16 06:56:32 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1268,6 +1268,8 @@ extern ScmClass Scm_ProcedureClass;
 #define SCM_CLASS_PROCEDURE   (&Scm_ProcedureClass)
 
 #define SCM_PROCEDUREP(obj)         (SCM_SUBRP(obj)||SCM_CLOSUREP(obj))
+#define SCM_PROCEDURE_TAKE_NARG_P(obj, narg) \
+    (SCM_PROCEDUREP(obj)&&SCM_PROCEDURE_REQUIRED(obj)==(narg))
 
 struct ScmClosureRec {
     ScmProcedure common;
@@ -1391,6 +1393,8 @@ extern ScmObj Scm_GlobDirectory(ScmString *pattern);
 
 #define SCM_PATH_ABSOLUTE       (1L<<0)
 #define SCM_PATH_EXPAND         (1L<<1)
+#define SCM_PATH_CANONICALIZE   (1L<<2)
+#define SCM_PATH_FOLLOWLINK     (1L<<3) /* not supported yet */
 extern ScmObj Scm_NormalizePathname(ScmString *pathname, int flags);
 extern ScmObj Scm_DirName(ScmString *filename);
 extern ScmObj Scm_BaseName(ScmString *filename);
