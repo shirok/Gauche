@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.1 2001-05-30 08:57:01 shirok Exp $
+$Id: INSTALL.esc,v 1.2 2001-06-08 09:55:00 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -66,6 +66,40 @@ encoding.
   ./configure --enable-encoding=sjis    ;; Shift JIS
   ./configure --enable-encoding=no      ;; No multibyte string
 
+<? (if-lang japanese? !>
+Gaucheはiconvを利用したキャラクタエンコーディングを変換するモジュールを持っています。
+システムによっては、iconvがサポートされていなかったり、サポートされていても
+エンコーディングに制限があったりバグがあるかもしれません。--with-iconvオプションで
+外部のiconvライブラリを利用することができます。
+<? else !>
+Gauche has a module to convert various character encodings, using
+iconv() function.   Some systems lack iconv, or have the one with
+limited capability or bugs, and you may want to use an external
+iconv library.  If so, you can specify the location of your external
+iconv library by --with-iconv option.
+<? ) !>
+
+  ./configure --with-iconv=DIR
+
+<? (if-lang japanese? !>
+例えば --with-iconv=/usr/local とすれば、Gaucheはiconv.hを/usr/local/include
+から、libiconvを/usr/local/libから探します。もしあなたのiconvライブラリが
+libiconv以外の名前 (libmyconvとか) だったとしたら、
+--with-iconv-lib=myconv というオプションも指定して下さい。
+
+外部のiconvライブラリとしては、Bruno Haible氏のlibiconvが以下から入手可能です。
+http://clisp.cons.org/~haible/packages-libiconv.html
+<? else !>
+For example, if your say --with-iconv=/usr/local, Gauche looks
+for the header iconv.h from /usr/local/include and the library
+libiconv from /usr/local/lib.
+In case if your iconv library is named other than libiconv, say,
+libmyconv, you can also specify --with-iconv-lib=myconv to tell
+Gauche to link against the library.
+
+You can obtain Bruno Haible's libiconv library from here:
+http://clisp.cons.org/~haible/packages-libiconv.html
+<? ) !>
 
 <? (header "SLIBの場所" "Selecting SLIB location") !>
 
