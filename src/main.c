@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.61 2002-09-01 19:55:35 shirok Exp $
+ *  $Id: main.c,v 1.62 2002-09-23 22:35:53 shirok Exp $
  */
 
 #include <unistd.h>
@@ -61,16 +61,16 @@ void usage(void)
     exit(1);
 }
 
+#ifdef GAUCHE_USE_PTHREADS
+#define PTHREAD_OPT ",pthreads"
+#else
+#define PTHREAD_OPT ""
+#endif
+
 void version(void)
 {
     printf("Gauche scheme interpreter, version %s [%s%s]\n",
-           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME,
-#ifdef GAUCHE_USE_PTHREADS
-           ",pthreads"
-#else
-           ""
-#endif
-        );
+           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, PTHREAD_OPT);
     exit(0);
 }
 
