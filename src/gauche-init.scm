@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.18 2001-03-24 10:08:56 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.19 2001-03-25 03:11:28 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -56,7 +56,7 @@
 ;; Autoload
 ;;
 
-;; autoload doesn't work for syntactic binding...
+;; autoload doesn't work for syntactic binding for now...
 (define-macro (AUTOLOAD file . vars)
   (cons 'begin (map (lambda (v) `(define ,v (%make-autoload ',v ,file)))
                     vars)))
@@ -76,11 +76,14 @@
     (get-output-string out)))
 
 ;;
+;; Load object system
+;;
+(require "gauche/object")
+
+;;
 ;; For convenience
 ;;
 
 (let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
   (when (sys-access dotfile F_OK)
     (load dotfile)))
-
-
