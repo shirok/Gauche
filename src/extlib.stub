@@ -124,6 +124,27 @@
   (assert (string? delim))
   "  SCM_RETURN(Scm_StringJoin(strs, delim));")
 
+;; SRFI-13
+(define-cproc string-take (s nchars)
+  (assert (string? s))
+  (assert (small-integer? nchars))
+  "  SCM_RETURN(Scm_StringTake(s, nchars, TRUE, FALSE));")
+
+(define-cproc string-drop (s nchars)
+  (assert (string? s))
+  (assert (small-integer? nchars))
+  "  SCM_RETURN(Scm_StringTake(s, nchars, FALSE, FALSE));")
+
+(define-cproc string-take-right (s nchars)
+  (assert (string? s))
+  (assert (small-integer? nchars))
+  "  SCM_RETURN(Scm_StringTake(s, nchars, FALSE, TRUE));")
+
+(define-cproc string-drop-right (s nchars)
+  (assert (string? s))
+  (assert (small-integer? nchars))
+  "  SCM_RETURN(Scm_StringTake(s, nchars, TRUE, TRUE));")
+
 ;;
 ;; 6.3.6  Vectors
 ;;
