@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.111 2004-10-23 06:36:38 shirok Exp $
+ *  $Id: port.c,v 1.112 2004-11-01 10:40:01 shirok Exp $
  */
 
 #include <unistd.h>
@@ -84,9 +84,9 @@ SCM_DEFINE_BASE_CLASS(Scm_CodingAwarePortClass,
  *   may share the same file descriptor for efficiency (e.g. stdios).
  *   In such cases, it is C code's responsibility to destroy the port.
  */
-static int port_cleanup(ScmPort *port)
+static void port_cleanup(ScmPort *port)
 {
-    if (SCM_PORT_CLOSED_P(port)) return 0;
+    if (SCM_PORT_CLOSED_P(port)) return;
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
         if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT
@@ -102,7 +102,6 @@ static int port_cleanup(ScmPort *port)
         break;
     }
     SCM_PORT_CLOSED_P(port) = TRUE;
-    return 0;
 }
 
 /* called by GC */
@@ -151,15 +150,14 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
 /*
  * Close
  */
-ScmObj Scm_ClosePort(ScmPort *port)
+void Scm_ClosePort(ScmPort *port)
 {
-    int result = 0;
     ScmVM *vm = Scm_VM();
     PORT_LOCK(port, vm);
     PORT_SAFE_CALL(port,
                    do {
                        if (!SCM_PORT_CLOSED_P(port)) {
-                           result = port_cleanup(port);
+                           port_cleanup(port);
                            if (SCM_PORT_TYPE(port) == SCM_PORT_FILE
                                && SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
                                unregister_buffered_port(port);
@@ -167,7 +165,6 @@ ScmObj Scm_ClosePort(ScmPort *port)
                        }
                    } while (0));
     PORT_UNLOCK(port);
-    return result? SCM_FALSE : SCM_TRUE;
 }
 
 /*
@@ -971,11 +968,6 @@ static int null_getz(char *buf, int buflen, ScmPort *dummy)
     return 0;
 }
 
-static ScmObj null_getline(ScmPort *port)
-{
-    return SCM_EOF;
-}
-
 static int null_ready(ScmPort *dummy, int charp)
     /*ARGSUSED*/
 {
@@ -1017,7 +1009,6 @@ ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
     if (!p->src.vt.Getb)  p->src.vt.Getb = null_getb;
     if (!p->src.vt.Getc)  p->src.vt.Getc = null_getc;
     if (!p->src.vt.Getz)  p->src.vt.Getz = null_getz;
-    if (!p->src.vt.Getline) p->src.vt.Getline = null_getline;
     if (!p->src.vt.Ready) p->src.vt.Ready = null_ready;
     if (!p->src.vt.Putb)  p->src.vt.Putb = null_putb;
     if (!p->src.vt.Putc)  p->src.vt.Putc = null_putc;

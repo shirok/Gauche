@@ -1,3 +1,12 @@
+2004-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, ext/Makefile.in : added ext/vport
+	* src/gauche.h : removed 'Getline' entry from ScmPortVTableRec; it
+	  seems only to add extra complexity.  Also changed the return value
+	  of Scm_ClosePort to void, since the return value hasn't used at all.
+	* src/port.c : fixed accordingly.
+	* ext/vport/* : the first phase of supporting virtual ports.
+
 2004-10-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (byte-ready?): added.

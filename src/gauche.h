@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.395 2004-10-23 06:36:38 shirok Exp $
+ *  $Id: gauche.h,v 1.396 2004-11-01 10:40:00 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1162,14 +1162,13 @@ typedef struct ScmPortVTableRec {
     int       (*Getb)(ScmPort *p);
     int       (*Getc)(ScmPort *p);
     int       (*Getz)(char *buf, int buflen, ScmPort *p);
-    ScmObj    (*Getline)(ScmPort *p);
     int       (*Ready)(ScmPort *p, int charp);
     void      (*Putb)(ScmByte b, ScmPort *p);
     void      (*Putc)(ScmChar c, ScmPort *p);
     void      (*Putz)(const char *buf, int size, ScmPort *p);
     void      (*Puts)(ScmString *s, ScmPort *p);
     void      (*Flush)(ScmPort *p);
-    int       (*Close)(ScmPort *p);
+    void      (*Close)(ScmPort *p);
     off_t     (*Seek)(ScmPort *p, off_t off, int whence);
     void      *data;
 } ScmPortVTable;
@@ -1340,7 +1339,7 @@ SCM_EXTERN int    Scm_ByteReadyUnsafe(ScmPort *port);
 SCM_EXTERN int    Scm_CharReady(ScmPort *port);
 SCM_EXTERN int    Scm_CharReadyUnsafe(ScmPort *port);
 
-SCM_EXTERN ScmObj Scm_ClosePort(ScmPort *port);
+SCM_EXTERN void   Scm_ClosePort(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_VMWithPortLocking(ScmPort *port,
                                         ScmObj closure);

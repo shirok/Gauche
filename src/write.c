@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.47 2004-09-17 23:32:16 shirok Exp $
+ *  $Id: write.c,v 1.48 2004-11-01 10:40:01 shirok Exp $
  */
 
 #include <stdio.h>
@@ -318,7 +318,7 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
 static ScmPortVTable walker_port_vtable = {
     NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL
+    NULL, NULL
 };
 
 static ScmPort *make_walker_port(void)

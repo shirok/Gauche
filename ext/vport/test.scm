@@ -3,142 +3,167 @@
 ;;
 
 (use gauche.test)
-(use gauche.uvector)
 
-(test-start "termios")
-(use gauche.termios)
-(test-module 'gauche.termios)
+(test-start "vport")
+(use gauche.vport)
+(test-module 'gauche.vport)
 
-(define (list-if-bound . cans)
-  (let loop ((cans cans)
-             (syms '())
-             (str ""))
-    (if (null? cans)
-      (map cons
-           syms
-           (let ((p (open-input-string (string-append "(list " str ")"))))
-             (eval (read p) (interaction-environment))))
-      (if (symbol-bound? (car cans))
-        (loop (cdr cans)
-              (cons (car cans) syms)
-              (string-append str " " (symbol->string (car cans))))
-        (loop (cdr cans) syms str)))))
+;;-----------------------------------------------------------
+(test-section "virtual-input-port")
 
-(define iport (open-input-file (sys-ctermid)))
-(define oport (open-output-file (sys-ctermid)))
+(test* "vanilla" (make-list 8 #t)
+       (let ((p (make <virtual-input-port>)))
+         (list (eof-object? (read-byte p))
+               (eof-object? (read-char p))
+               (eof-object? (read-line p))
+               (eof-object? (read-block 10 p))
+               (byte-ready? p)
+               (char-ready? p)
+               (eof-object? (peek-byte p))
+               (eof-object? (peek-char p)))))
 
-(define speeds
-  (list-if-bound 'B0 'B50 'B75 'B110 'B134 'B150 'B200 'B300 'B600 'B1200
-                 'B1800 'B2400 'B4800 'B9600 'B19200 'B38400 'B57600
-                 'B115200 'B230400))
+(test* "getc" '(#\a #\a #\a 97 97 97 #*"aaaaaaaaaa")
+       (let* ((p (make <virtual-input-port> :getc (lambda () #\a)))
+              (c0 (read-char p))
+              (c1 (read-char p))
+              (c2 (read-char p))
+              (b0 (read-byte p))
+              (b1 (read-byte p))
+              (b2 (read-byte p))
+              (s  (read-block 10 p)))
+         (list c0 c1 c2 b0 b1 b2 s)))
 
-(define iflags
-  (list-if-bound 'IGNBRK 'BRKINT 'IGNPAR 'PARMRK 'INPCK 'ISTRIP 'INLCR
-                 'IGNCR 'ICRNL 'IXON 'IXOFF 'IXANY 'IUCLC 'IMAXBEL))
+(test* "getb" '(#\a #\a #\a 97 97 97 #*"aaaaaaaaaa")
+       (let* ((p (make <virtual-input-port> :getb (lambda () 97)))
+              (c0 (read-char p))
+              (c1 (read-char p))
+              (c2 (read-char p))
+              (b0 (read-byte p))
+              (b1 (read-byte p))
+              (b2 (read-byte p))
+              (s  (read-block 10 p)))
+         (list c0 c1 c2 b0 b1 b2 s)))
 
-(define oflags
-  (list-if-bound 'OPOST 'OLCUC 'ONLCR 'OCRNL 'ONOCR 'ONLRET 'OFILL 'OFDEL
-                 'NLDLY 'NL0 'NL1 'CRDLY 'CR0 'CR1 'CR2 'CR3 'BSDLY 'BS0
-                 'BS1 'VTDLY 'VT0 'VT1 'FFDLY 'FF0 'FF1))
+(test* "peekc/peekb & getc" '(#\a #\a 98 #\b)
+       (let* ((x '(#\a #\b #\c))
+              (p (make <virtual-input-port>
+                   :getc (lambda ()
+                           (and (pair? x) (pop! x)))))
+              (c0 (peek-char p))
+              (c1 (read-char p))
+              (c2 (peek-byte p))
+              (c3 (read-char p))
+              )
+         (list c0 c1 c2 c3)))
 
-(define cflags
-  (list-if-bound 'CLOCAL 'CREAD 'CSIZE 'CS5 'CS6 'CS7 'CS8 'CSTOPB 'HUPCL
-                 'PARENB 'PARODD 'CIBAUD 'CRTSCTS))
+(test* "peekc/peekb & getb" '(97 #\a #\b 98)
+       (let* ((x '(97 98 99))
+              (p (make <virtual-input-port>
+                   :getb (lambda ()
+                           (and (pair? x) (pop! x)))))
+              (c0 (peek-byte p))
+              (c1 (read-char p))
+              (c2 (peek-char p))
+              (c3 (read-byte p)))
+         (list c0 c1 c2 c3)))
 
-(define lflags
-  (list-if-bound 'ECHO 'ECHOE 'ECHOK 'ECHONL 'ICANON 'ISIG 'NOFLSH 'TOSTOP
-                 'IEXTEN 'XCASE 'ECHOCTL 'ECHOPRT 'ECHOKE 'FLUSH0
-                 'PENDIN))
+(test* "getc -> read-line" "abcd"
+       (let* ((x '(#\a #\b #\c #\d))
+              (p (make <virtual-input-port>
+                   :getc (lambda ()
+                           (and (pair? x) (pop! x))))))
+         (read-line p)))
 
-(define ccs
-  (list-if-bound 'VEOF 'VEOL 'VERASE 'VINTR 'VKILL 'VMIN 'VQUIT 'VSTART
-                 'VSTOP 'VSUSP 'VTIME 'VDISCARD 'VDSUSP 'VEOL2 'VLNEXT
-                 'VREPRINT 'VSTATUS 'VWERASE 'VSWTCH 'VSWTC))
+(test* "getc -> read-line" '("abcd" "efg")
+       (let* ((x '(#\a #\b #\c #\d #\newline #\e #\f #\g #\newline))
+              (p (make <virtual-input-port>
+                   :getc (lambda ()
+                           (and (pair? x) (pop! x))))))
+         (port->string-list p)))
+         
+(test* "getb -> read-line" '("abcd" "efg")
+       (let* ((x '(97 98 99 100 10 101 102 103 10))
+              (p (make <virtual-input-port>
+                   :getb (lambda ()
+                           (and (pair? x) (pop! x))))))
+         (port->string-list p)))
 
-(define iterm #f)
-(define oterm #f)
+(test* "getc -> read-block" #*"abcd\ne"
+       (let* ((x '(#\a #\b #\c #\d #\newline #\e #\f #\g #\newline))
+              (p (make <virtual-input-port>
+                   :getc (lambda ()
+                           (and (pair? x) (pop! x))))))
+         (read-block 6 p)))
 
-(test "termios-tcgetattr" #t
-      (lambda ()
-        (set! iterm (sys-tcgetattr iport))
-        (set! oterm (sys-tcgetattr oport))
-        #t))
+(test* "getc -> read-block" #*"abcd\nefg\n"
+       (let* ((x '(#\a #\b #\c #\d #\newline #\e #\f #\g #\newline))
+              (p (make <virtual-input-port>
+                   :getc (lambda ()
+                           (and (pair? x) (pop! x))))))
+         (read-block 200 p)))
 
-(test "termios-tcdrain" #t
-      (lambda ()
-        (sys-tcdrain oport)
-        #t))
+(test* "getb -> read-block" #*"abcd\ne"
+       (let* ((x '(97 98 99 100 10 101 102 103 10))
+              (p (make <virtual-input-port>
+                   :getb (lambda ()
+                           (and (pair? x) (pop! x))))))
+         (read-block 6 p)))
 
-(test "termios-tcflush" #t
-      (lambda ()
-        (sys-tcflush iport TCIFLUSH)
-        (sys-tcflush oport TCOFLUSH)
-        #t))
+(test* "getb -> read-block" #*"abcd\nefg\n"
+       (let* ((x '(97 98 99 100 10 101 102 103 10))
+              (p (make <virtual-input-port>
+                   :getb (lambda ()
+                           (and (pair? x) (pop! x))))))
+         (read-block 200 p)))
 
-(test "termios-tcflow" (make-list 4 (if #f #f))
-      (lambda ()
-        (map
-          (cut sys-tcflow oport <>)
-          (list TCOOFF TCOON TCIOFF TCION))))
+(test* "gets -> read-block" #*"this is fr"
+       (let* ((buf "this is from gets")
+              (p (make <virtual-input-port>
+                   :getc (lambda () #f)
+                   :getb (lambda () #f)
+                   :gets (lambda (length)
+                           (if (< length (string-size buf))
+                             (substring buf 0 length)
+                             buf)))))
+         (read-block 10 p)))
 
-(test "termios-tcsetattr" (make-list 3 (if #f #f))
-      (lambda ()
-        (map
-          (cut sys-tcsetattr iport <> iterm)
-          (list TCSANOW TCSADRAIN TCSAFLUSH))))
+;;-----------------------------------------------------------
+(test-section "virtual-output-port")
 
-(test "termios-set-n-get-speed" (make-list (length speeds) (if #f #f))
-      (lambda ()
-        (map
-          (lambda (speed)
-            (let ((orig-ispeed 0)
-                  (orig-ospeed 0))
-              (dynamic-wind
-                (lambda ()
-                  (set! orig-ispeed (sys-cfgetispeed iterm))
-                  (set! orig-ospeed (sys-cfgetospeed oterm)))
-                (lambda ()
-                  (sys-cfsetispeed iterm speed)
-                  (let ((result (sys-cfgetispeed iterm)))
-                    (if (not (eq? result speed))
-                      (errorf "sys-cfgetispeed expects ~a, but got ~a" speed result)))
-                  (sys-cfsetospeed oterm speed)
-                  (let ((result (sys-cfgetospeed oterm)))
-                    (if (not (eq? result speed))
-                      (errorf "sys-cfsetispeed expects ~a, but got ~a" speed result))))
-                (lambda ()
-                  (sys-cfsetispeed iterm orig-ispeed)
-                  (sys-cfsetospeed oterm orig-ospeed))
-                )))
-          (map (lambda (dot) (apply cdr (list dot))) speeds))))
+(test* "putc" "abcdef"
+       (call-with-output-string
+         (lambda (o)
+           (let* ((p (make <virtual-output-port>
+                       :putc (lambda (c) (write-char c o)))))
+             (write-char #\a p)
+             (display "bcd" p)
+             (write-byte 101 p)
+             (write-char #\f p)
+             (get-output-string o)))))
 
-(test "termios-cc" (make-list (length ccs) #t)
-      (lambda ()
-        (define test-char #x01)
-        (map
-          (lambda (ss-pair)
-            (let* ((ss (cdr ss-pair))
-                   (orig-cc (slot-ref iterm 'cc))
-                   (cc (u8vector-copy orig-cc)))
-              (dynamic-wind
-                (lambda ()
-                  (slot-set! iterm 'cc cc))
-                (lambda ()
-                  (u8vector-set! cc ss test-char)
-                  (slot-set! iterm 'cc cc)
-                  (sys-tcsetattr iport TCSANOW iterm)
-                  (let ((char (u8vector-ref
-                                   (slot-ref (sys-tcgetattr iport) 'cc)
-                                   ss)))
-                    (if (eqv? char (u8vector-ref cc ss))
-                      #t
-                      (format "~a of cc cannot change" (car ss-pair)))))
-                (lambda ()
-                  (slot-set! iterm 'cc orig-cc)
-                  (sys-tcsetattr iport TCSANOW iterm))
-                )))
-          ccs)))
+(test* "putb" "abcdef"
+       (call-with-output-string
+         (lambda (o)
+           (let* ((p (make <virtual-output-port>
+                       :putb (lambda (b) (write-byte b o)))))
+             (write-char #\a p)
+             (display "bcd" p)
+             (write-byte 101 p)
+             (write-char #\f p)
+             (get-output-string o)))))
 
-
+(test* "puts" "bcdxyz"
+       (call-with-output-string
+         (lambda (o)
+           (let* ((p (make <virtual-output-port>
+                       :putb (lambda (b) #f)
+                       :putc (lambda (c) #f)
+                       :puts (lambda (s) (display s o)))))
+             (write-char #\a p)
+             (display "bcd" p)
+             (write-byte 101 p)
+             (write-char #\f p)
+             (display "xyz" p)
+             (get-output-string o)))))
 
 (test-end)
