@@ -1,7 +1,7 @@
 ;;;
 ;;; sequence.scm - sequence operations
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: sequence.scm,v 1.3 2001-12-02 05:27:21 shirok Exp $
+;;;  $Id: sequence.scm,v 1.4 2002-04-26 10:05:07 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -27,11 +27,13 @@
 
 (define-method referencer ((obj <list>))   list-ref)
 (define-method referencer ((obj <vector>)) vector-ref)
+(define-method referencer ((obj <weak-vector>)) weak-vector-ref)
 (define-method referencer ((obj <string>)) string-ref)
 
 (define-method modifier   ((obj <list>))
   (lambda (o i v) (set-car! (list-tail o i) v)))
 (define-method modifier   ((obj <vector>)) vector-set!)
+(define-method modifier   ((obj <weak-vector>)) weak-vector-set!)
 (define-method modifier   ((obj <string>)) string-set!)
 
 ;; ref and (setter ref) --------------------------------

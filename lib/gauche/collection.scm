@@ -1,7 +1,7 @@
 ;;;
 ;;; collection.scm - collection generics
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.5 2001-12-02 05:13:58 shirok Exp $
+;;;  $Id: collection.scm,v 1.6 2002-04-26 10:05:06 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -49,6 +49,12 @@
         (i   (get-keyword :start args 0)))
     (proc (lambda () (>= i len))
           (lambda () (let ((e (vector-ref coll i))) (inc! i) e)))))
+
+(define-method call-with-iterator ((coll <weak-vector>) proc . args)
+  (let ((len (weak-vector-length coll))
+        (i   (get-keyword :start args 0)))
+    (proc (lambda () (>= i len))
+          (lambda () (let ((e (weak-vector-ref coll i))) (inc! i) e)))))
 
 (define-method call-with-iterator ((coll <string>) proc . args)
   (let* ((start (get-keyword :start args #f))
@@ -105,6 +111,26 @@
           (proc (lambda (item) (enqueue! q item))
                 (lambda () (list->vector (dequeue-all! q))))))))
 
+(define-method call-with-builder ((class <weak-vector-meta>) proc . args)
+  (let ((size (get-keyword :size args #f)))
+    (if size
+        (let ((v (make-weak-vector size))
+              (i 0))
+          (proc (lambda (item)
+                  (when (< i size)
+                    (weak-vector-set! v i item)
+                    (inc! i)))
+                (lambda () v)))
+        (let ((q (make-queue))
+              (cnt 0))
+          (proc (lambda (item) (enqueue! q item) (inc! cnt))
+                (lambda ()
+                  (let ((v (make-weak-vector cnt)))
+                    (do ((i 0 (+ i 1)))
+                        ((= i cnt) v)
+                      (weak-vector-set! v i (dequeue! q)))))))
+        )))
+
 (define-method call-with-builder ((class <string-meta>) proc . args)
   (let ((s (open-output-string)))
     (proc (lambda (item)
@@ -113,7 +139,7 @@
             (write-char item s))
           (lambda () (get-output-string s)))))
 
-(define-method call-with-builder ((class <hash-table>) proc . args)
+(define-method call-with-builder ((class <hash-table-meta>) proc . args)
   (let* ((type (get-keyword :type args 'eq?))
          (h    (make-hash-table type)))
     (proc (lambda (item)
