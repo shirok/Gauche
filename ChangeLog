@@ -1,3 +1,8 @@
+2004-07-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (write_ss_rec): fixed a bug to avoid numbers from
+	  begin written out by srfi-38 notation.
+
 2004-07-17  Kimura Fuyuki  <fuyuki@hadaly.org>
 
 	* ext/dbm/test.scm: Some ndbm implementations create a single file

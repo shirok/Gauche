@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.45 2004-04-23 12:56:43 shirok Exp $
+ *  $Id: write.c,v 1.46 2004-07-19 09:19:07 shirok Exp $
  */
 
 #include <stdio.h>
@@ -343,7 +343,8 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ht = SCM_HASHTABLE(SCM_CDR(port->data));
 
     for (;;) {
-        if (!SCM_PTRP(obj) || SCM_SYMBOLP(obj) || SCM_KEYWORDP(obj)) {
+        if (!SCM_PTRP(obj) || SCM_SYMBOLP(obj) || SCM_KEYWORDP(obj)
+            || SCM_NUMBERP(obj)) {
             return;
         }
             
@@ -440,6 +441,12 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
         return;
     }
+    if (SCM_NUMBERP(obj)) {
+        /* number may be heap allocated, but we don't use srfi-38 notation. */
+        write_general(obj, port, ctx);
+        return;
+    }
+    
     if ((SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) == 0)
         || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
         /* special case where we don't put a reference tag. */
