@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.36 2002-11-09 02:58:01 shirok Exp $
+ *  $Id: vminsn.h,v 1.37 2002-11-29 04:05:26 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -106,13 +106,6 @@ DEFINSN(SCM_VM_LET, "LET", 1)
  *  it continues execution.   Test arg is popped.
  */
 DEFINSN(SCM_VM_IF, "IF", 0)
-
-/* TAILBIND(NARGS)
- *
- *  Lightweight tail call.  This instruction appears in the loop body
- *  and the tail call to inlined procedures.
- */
-DEFINSN(SCM_VM_TAILBIND, "TAILBIND", 1)
 
 /* VALUES-BIND(NARGS,RESTARG) <BODY> ...
  *

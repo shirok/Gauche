@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.190 2002-11-09 09:00:30 shirok Exp $
+ *  $Id: vm.c,v 1.191 2002-11-29 04:05:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -768,29 +768,6 @@ static void run_loop()
                 VM_ASSERT(e->size > off);
                 val0 = ENV_DATA(e, off);
                 PUSH_ARG(val0);
-                NEXT;
-            }
-            CASE(SCM_VM_TAILBIND) {
-                ScmObj *to, *from;
-                int env_size = SCM_VM_INSN_ARG(code);
-                ScmEnvFrame *e;
-                /* Shift env frame. */
-                /* NB: if env_size is zero, we don't have an env frame 
-                   to copy.  Just need to adjust sp. */
-                if (env_size > 0) {
-                    e = (ScmEnvFrame*)sp;
-                    e->size = env_size;
-                    e->up = env->up;
-                    e->info = env->info;
-                    to = argp - ENV_SIZE(env_size) - CONT_FRAME_SIZE;
-                    from = argp;
-                    POP_CONT(); /* recover argp */
-                    memmove(to, from, ENV_SIZE(env_size) * sizeof(ScmObj *));
-                    env = (ScmEnvFrame *)(to + env->size);
-                    sp = to + ENV_SIZE(env_size);
-                } else {
-                    sp = argp - CONT_FRAME_SIZE;
-                }
                 NEXT;
             }
             CASE(SCM_VM_LET) {

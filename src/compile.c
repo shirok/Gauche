@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.94 2002-11-09 02:57:59 shirok Exp $
+ *  $Id: compile.c,v 1.95 2002-11-29 04:05:13 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -20,6 +20,14 @@
 #include "gauche.h"
 
 /* constructor definition comes below */
+
+/* global id to be inserted during transformation.
+   initialized by Init routine. */
+static ScmObj id_lambda = SCM_NIL;
+static ScmObj id_if = SCM_NIL;
+static ScmObj id_begin = SCM_NIL;
+static ScmObj id_letrec = SCM_NIL;
+
 
 /* Conventions of internal functions
  *
@@ -857,7 +865,7 @@ static ScmObj compile_body(ScmObj form,
                     Scm_Error("badly formed internal define: %S", expr);
                 /* TODO: this doens't work if `lambda' is locally bound.
                    I should use an identifier instead. */
-                val = Scm_Cons(SCM_SYM_LAMBDA,
+                val = Scm_Cons(id_lambda,
                                Scm_Cons(args, SCM_CDDR(expr)));
             } else {
                 if (!VAR_P(var) || llen != 3)
@@ -1375,7 +1383,7 @@ static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
         /* Named let. */
         static ScmObj compile_named_let_body(ScmObj, ScmObj, int);
         /* TODO: this is broken if lambda is locally bound! */
-        ScmObj proc = Scm_Cons(SCM_SYM_LAMBDA, Scm_Cons(vars, body));
+        ScmObj proc = Scm_Cons(id_lambda, Scm_Cons(vars, body));
         return compile_let_family(form, SCM_LIST1(name), SCM_LIST1(proc),
                                   1, BIND_LETREC,
                                   Scm_Cons(env, Scm_Cons(name, vals)),
@@ -1419,66 +1427,15 @@ static ScmSyntax syntax_letrec = {
 
 /*------------------------------------------------------------------
  * Loop construct (DO)
- *   Beware!  These functions create a circular list.  
  */
-
-static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
-{
-    ScmObj test = SCM_CAR(body);
-    ScmObj updts = SCM_CAR(SCM_CDDR(body)), updtsp;
-    ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
-
-    ScmObj code = SCM_NIL, codetail = SCM_NIL;
-    ScmObj fincode = SCM_NIL, fintail = SCM_NIL;
-    ScmObj bodycode = SCM_NIL, bodytail = SCM_NIL;
-    ScmObj updcode = SCM_NIL, updtail = SCM_NIL;
-    int varcnt;
-
-    /* Compile body */
-    body = SCM_CDR(SCM_CDR(SCM_CDR(body)));
-    SCM_APPEND(bodycode, bodytail, compile_body(body, env, SCM_COMPILE_STMT));
-    varcnt = 0;
-    /* Compile updates.  We need to calculate all the updates first,
-       discard current env, allocates new env then put the updates. */
-    SCM_FOR_EACH(updtsp, updts) {
-        SCM_APPEND(updcode, updtail,
-                   compile_int(SCM_CAR(updtsp), env, SCM_COMPILE_NORMAL));
-        combine_push(&updcode, &updtail);
-        varcnt++;
-    }
-
-    SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN1(SCM_VM_PRE_CALL, varcnt));
-    SCM_APPEND1(updcode, updtail, SCM_VM_INSN1(SCM_VM_TAILBIND, varcnt));
-    SCM_APPEND1(bodycode, bodytail, updcode);
-
-    /* Compile finalization code */
-    if (SCM_PAIRP(SCM_CDR(test))) {
-        SCM_APPEND(fincode, fintail, compile_body(SCM_CDR(test), env, ctx));
-    } else {
-        if (ctx != SCM_COMPILE_STMT)
-            SCM_APPEND1(fincode, fintail, SCM_UNDEFINED);
-    }
-
-    /* Compile test part and branch.
-       We need to negate the test so that the loop will exits through
-       'else' branch.   Otherwise, 'else' branch becomes circular
-       list and the rest of compilers will be confused. */
-    ADDCODE(merger);
-    ADDCODE(compile_int(SCM_CAR(test), env, SCM_COMPILE_NORMAL));
-    ADDCODE1(SCM_VM_INSN(SCM_VM_NOT));
-    code = compile_if_family(code, bodycode, fincode, FALSE, env);
-
-    /* Make the list circular.   */
-    SCM_APPEND(bodycode, bodytail, merger);
-    return code;
-}
 
 static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj binds, test, body, bp;
+    ScmObj binds, test, body, bp, testbody, newform;
     ScmObj vars = SCM_NIL, vars_tail = SCM_NIL;
     ScmObj inits = SCM_NIL, inits_tail = SCM_NIL;
     ScmObj updts = SCM_NIL, updts_tail = SCM_NIL;
+    ScmObj do_id = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_DO), SCM_NIL);
     int nvars = 0;
     int flen = Scm_Length(form);
     if (flen < 3) Scm_Error("badly formed `do': %S", form);
@@ -1498,11 +1455,25 @@ static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
         nvars++;
     }
     if (!SCM_NULLP(bp)) Scm_Error("badly formed `do': %S", form);
-    
+
     if (Scm_Length(test) < 1) Scm_Error("bad test form in `do': %S", form);
-    return compile_let_family(form, vars, inits, nvars, BIND_LET,
-                              Scm_Cons(test, Scm_Cons(vars, Scm_Cons(updts, body))),
-                              compile_do_body, env, ctx);
+
+    if (SCM_NULLP(SCM_CDR(test))) {
+        testbody = SCM_UNDEFINED;
+    } else {
+        testbody = Scm_Cons(id_begin, SCM_CDR(test));
+    }
+
+    body = SCM_LIST4(id_if, SCM_CAR(test), testbody,
+                     SCM_LIST3(id_begin, Scm_Cons(id_begin, body),
+                               Scm_Cons(do_id, updts)));
+
+    newform =
+        SCM_LIST3(id_letrec,
+                  SCM_LIST1(SCM_LIST2(do_id,
+                                      SCM_LIST3(id_lambda, vars, body))),
+                  Scm_Cons(do_id, inits));
+    return compile_int(newform, env, ctx);
 }
 
 static ScmSyntax syntax_do = {
@@ -1749,7 +1720,7 @@ static ScmObj compile_delay(ScmObj form, ScmObj env, int ctx, void *data)
     ScmObj code = SCM_NIL, codetail = SCM_NIL;
     
     if (!LIST1_P(SCM_CDR(form))) Scm_Error("bad delay form: %S", form);
-    ADDCODE(compile_int(SCM_LIST3(SCM_SYM_LAMBDA,
+    ADDCODE(compile_int(SCM_LIST3(id_lambda,
                                   SCM_NIL,
                                   SCM_CADR(form)),
                         env, SCM_COMPILE_NORMAL));
@@ -2000,5 +1971,10 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_CURRENT_MODULE, syntax_current_module);
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
+
+    id_lambda = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LAMBDA), SCM_NIL);
+    id_if = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_IF), SCM_NIL);
+    id_begin = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_BEGIN), SCM_NIL);
+    id_letrec = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LETREC), SCM_NIL);
 }
 

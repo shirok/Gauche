@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.46 2002-09-12 21:28:47 shirok Exp $
+ *  $Id: core.c,v 1.47 2002-11-29 04:05:14 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -79,6 +79,7 @@ void Scm_Init(void)
     Scm__InitProc();
     Scm__InitPort();
     Scm__InitWrite();
+    Scm__InitVM();
     Scm__InitCompiler();
     Scm__InitMacro();
     Scm__InitLoad();
@@ -86,7 +87,6 @@ void Scm_Init(void)
     Scm__InitRead();
     Scm__InitSignal();
     Scm__InitSystem();
-    Scm__InitVM();
     Scm__InitRepl();
     
     Scm_Init_stdlib(Scm_SchemeModule());
